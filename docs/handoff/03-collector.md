@@ -70,7 +70,8 @@ Red run before the collector: `Failed Tests 4`, `TypeError: runSnapshot is not a
 - Plan §6 says `NOT NULL` for the columns listed under Decisions; they are nullable.
 - Plan §11.3 calls the collector integration test "real local Postgres, every commit". The committed tests use the in-memory Repo, CI has no Postgres, and the Neon driver cannot reach plain Postgres without a WebSocket proxy. The Drizzle repo was verified once by hand instead.
 - The Phase 3 pseudocode inserts the snapshot after the quota check; this code claims it first (D18).
-- **Branch:** commits are on the worktree branch `claude/session-3-schema-compute-collector-534db3`, pushed as `session/03-collector`.
+- **Branch:** commits are on the worktree branch `claude/session-3-schema-compute-collector-534db3`, pushed as `session/03-collector`. The branch started from `main` (Session 2 was merged there, see #5), so `origin/dev` was merged in (`2d50f16`) for the PR to target `dev`. Conflicts came only from the squashed history: dev's `lib/` and the docs touched here were identical to main's, so this branch's side was kept. The merge brings dev's plan, prereqs and playbook edits (#6, #7).
+- **PR not opened from the session:** `gh` on this Mac is logged in as `danilosilvackl`, which has `pull` only on `daniro-san/LAPTracker` (`createPullRequest` → "must be a collaborator"). The owner opens it from the pushed branch.
 - **`lib/compute.ts` was rewritten once in this session.** A mutation check restored it with `git checkout`, which reverted it to the committed Session 2 version. I wrote the same content again and re-ran its tests. Later mutation checks restore from a scratch copy.
 
 ## Verified
