@@ -1,0 +1,104 @@
+// Read models for GET /api/events and /api/events/[id]. Columns are listed one by one: raw_json and
+// member rows are never selected, so no blocked roster key (plan §12.1) can reach a response.
+import { asc, desc, eq, inArray } from "drizzle-orm";
+
+import type { Db } from "../db";
+import { allianceSnapshots, events, snapshots } from "../schema";
+
+const snapshotColumns = {
+  id: snapshots.id,
+  eventId: snapshots.eventId,
+  phase: snapshots.phase,
+  status: snapshots.status,
+  startedAt: snapshots.startedAt,
+  finishedAt: snapshots.finishedAt,
+};
+
+export async function listEvents(db: Db) {
+  const rows = await db
+    .select({
+      id: events.id,
+      name: events.name,
+      eventAtUtc: events.eventAtUtc,
+      isTest: events.isTest,
+    })
+    .from(events)
+    .orderBy(desc(events.eventAtUtc));
+  const phases = rows.length
+    ? await db
+        .select(snapshotColumns)
+        .from(snapshots)
+        .where(
+          inArray(
+            snapshots.eventId,
+            rows.map((e) => e.id),
+          ),
+        )
+    : [];
+  return rows.map((e) => ({
+    ...e,
+    snapshots: phases.filter((s) => s.eventId === e.id).map(({ eventId: _, ...s }) => s),
+  }));
+}
+
+export type EventSummary = Awaited<ReturnType<typeof listEvents>>[number];
+
+/** Served alliance fields: §12.1's list plus the row's source and whether it failed. */
+async function allianceRows(db: Db, snapshotIds: number[]) {
+  if (snapshotIds.length === 0) return [];
+  const rows = await db
+    .select({
+      snapshotId: allianceSnapshots.snapshotId,
+      unionId: allianceSnapshots.unionId,
+      tag: allianceSnapshots.tag,
+      name: allianceSnapshots.name,
+      memberCount: allianceSnapshots.memberCount,
+      totalPower: allianceSnapshots.totalPower,
+      totalKills: allianceSnapshots.totalKills,
+      powerBoard: allianceSnapshots.powerBoard,
+      killsBoard: allianceSnapshots.killsBoard,
+      source: allianceSnapshots.source,
+      sourceUpdatedAt: allianceSnapshots.sourceUpdatedAt,
+      cached: allianceSnapshots.cached,
+      isFresh: allianceSnapshots.isFresh,
+      error: allianceSnapshots.error,
+    })
+    .from(allianceSnapshots)
+    .where(inArray(allianceSnapshots.snapshotId, snapshotIds))
+    .orderBy(asc(allianceSnapshots.unionId));
+  return rows.map(({ error, ...row }) => ({ ...row, failed: error !== null }));
+}
+
+export async function getEventDetail(db: Db, eventId: number) {
+  const [event] = await db
+    .select({
+      id: events.id,
+      name: events.name,
+      eventAtUtc: events.eventAtUtc,
+      isTest: events.isTest,
+    })
+    .from(events)
+    .where(eq(events.id, eventId));
+  if (!event) return null;
+  const phases = await db
+    .select({
+      ...snapshotColumns,
+      callsUsed: snapshots.callsUsed,
+      quotaRemainingAfter: snapshots.quotaRemainingAfter,
+      boardPulledAt: snapshots.boardPulledAt,
+      durationMs: snapshots.durationMs,
+    })
+    .from(snapshots)
+    .where(eq(snapshots.eventId, eventId));
+  const rows = await allianceRows(
+    db,
+    phases.map((s) => s.id),
+  );
+  return {
+    ...event,
+    snapshots: phases.map(({ eventId: _, ...s }) => ({
+      ...s,
+      alliances: rows.filter((r) => r.snapshotId === s.id).map(({ snapshotId: _, ...r }) => r),
+    })),
+  };
+}

@@ -130,4 +130,34 @@ describe("runSnapshot", () => {
 
     expect(await repo.findSnapshot(EVENT_ID, "before")).toMatchObject({ status: "running" });
   });
+
+  it("writes one v1.fetch line per /v1 call with its status, cache flag and duration", async () => {
+    const v1 = fakeV1((id) => (id === FIRST ? new UpstreamError(503) : fresh(id)));
+    const lines: { code: string; data: Record<string, unknown> }[] = [];
+    const { deps } = makeDeps(v1);
+    const record = async (code: string, data: Record<string, unknown> = {}) => {
+      lines.push({ code, data });
+    };
+
+    const summary = await runSnapshot(EVENT_ID, "before", {
+      ...deps,
+      logger: { info: record, warn: record, error: record },
+    });
+
+    const fetches = lines.filter((l) => l.code === "v1.fetch");
+    expect(fetches).toHaveLength(summary.callsUsed);
+    expect(fetches.filter((l) => l.data.endpoint === "quota")).toHaveLength(1);
+    expect(fetches.find((l) => l.data.union_id === FIRST)?.data).toMatchObject({
+      endpoint: "alliance",
+      http_status: 503,
+    });
+    expect(fetches.find((l) => l.data.union_id === SECOND)?.data).toEqual({
+      endpoint: "alliance",
+      union_id: SECOND,
+      http_status: 200,
+      cached: false,
+      duration_ms: 0,
+      quota_remaining: 900,
+    });
+  });
 });
