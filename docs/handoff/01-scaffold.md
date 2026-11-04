@@ -150,7 +150,7 @@ Both were reverted.
 
 ## Open issues
 
-- **Alliance list:** the owner chose the strict `/v1` top 20 (TRM → AFR 67111040, verified `/v1` #19; 404 → FGH 67111128, not yet verified: two 502s). `config/alliances.ts` is unchanged until FGH is verified or the owner decides otherwise.
+- **Alliance list changed (owner's decision, strict `/v1` top 20):** TRM → AFR (67111040, verified `/v1` #19) and 404 → FGH (67111128). FGH is **unverified** on `/v1`: two 502s on 2026-11-04 and no fixture; the owner accepted it as is. The first real read of FGH is the dry run (Session 9). If it keeps returning 502, the snapshot will be `partial` for that row.
 - Previously from 00-prereqs: **TRM (67110063)** is `/v1` rank 31, not the board's #19. Swapping it is the owner's call. GitHub secret scanning and push protection still need turning on.
 - The stale branches `claude/dreamy-cori-r5ve6a` and `claude/session-0-prerequisites-692c79` can be deleted; main has Session 0.
 - `.env.local` is untracked, but its content stays in the first commit's history. The owner says the key in it was already rotated. gitleaks run over the working tree flags `.env.local` (generic-api-key), so do not re-add it.
@@ -178,7 +178,7 @@ Plan changes needed:
 <adjustments>
 - Paths: the plan is at docs/IMPLEMENTATION_PLAN.md. Stubs with header comments already exist at lib/sources/{v1,internal,index}.ts; replace them.
 - Node 26's fetch: branch on `response.status` only (already in .claude/rules/collector.md).
-- Fixtures: 22 `/v1` alliance bodies (`fixtures/v1-*/alliance-*.json`, `fixtures/v1-ids/*.json`). Non-ASCII names for parser tests: 67111313 (꧁Black Raven꧂) and 67110811 (Берсерк, tag `404`). New fixtures only via the record-fixture skill.
+- Fixtures: 22 `/v1` alliance bodies (`fixtures/v1-*/alliance-*.json`, `fixtures/v1-ids/*.json`). Non-ASCII names for parser tests: 67111313 (꧁Black Raven꧂) and 67110811 (Берсерк, tag `404`; no longer tracked, but its fixture still serves as a test body). FGH (67111128) is tracked but has no fixture. New fixtures only via the record-fixture skill.
 - Measured `/v1` read time (00-prereqs): 1.46–2.53 s, median ≈ 1.9 s.
 - `members[].kills` can be `null` (one member of AFR, `fixtures/v1-ids/67111040.json`). The parser and `total_kills = sum(kills)` must handle it; decide null → 0 vs. marking the row, and state it in DECISIONS.
 - `/v1` returned `502` twice in a row for FGH (67111128) on 2026-11-04 19:52 UTC while another alliance answered between them. 502s count against quota.
