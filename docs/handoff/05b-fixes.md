@@ -57,3 +57,5 @@ Plan changes needed (do not edit in 6):
 <adjustments for="Session 8">
 - N3 is still open: a tick that loses a phase to a manual run answers 409, and `curl --fail` in `tick.yml` makes that a red run. Either accept it or map the tick's refusal to 2xx before Session 8.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/16
