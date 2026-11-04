@@ -72,6 +72,13 @@ Every snapshot is stored forever; nothing is overwritten. Volume is tiny: 26 wee
 - Avoid KV/Blob: the data is relational and edited row by row.
 - Store the **raw upstream responses** (`raw_json`) alongside the computed numbers, so that if the "might" or "kills" formula ever changes, history can be recomputed without spending quota.
 
+**Two databases, one schema — migrations run on deploy (owner's question, 2026-11-04).** Nothing keeps the Neon `main` and `preview` branches in step by itself; as shipped after Session 4 the migrations `drizzle/0000–0002` had been applied only to PGlite in tests. The rule, implemented in Session 8:
+- `pnpm db:migrate` = `drizzle-kit migrate` over `DATABASE_URL_UNPOOLED` (direct connection; that is why Preview has one too). Vercel's **Build Command** becomes `pnpm db:migrate && pnpm build`, so every deployment migrates *its own* database first: a PR or `dev` build migrates the `preview` branch, a `main` build migrates production. The two can only drift by one PR's worth, and a migration that fails fails the build — the deploy never runs code against a schema it doesn't have.
+- **Additive only (expand/contract):** a migration never drops or renames a column that the previous release still reads, because Instant Rollback puts the previous build back on the migrated schema and two PRs can share `preview`. Removal is a later release, after nothing reads the column.
+- **Drift gate in CI:** `pnpm db:generate` must produce no new file (schema.ts changed without a migration = red), and `drizzle-kit check` validates the migration journal. Both in `pnpm check`.
+- **Visible:** the Friday message and `/admin` show the production schema version (the newest row in `drizzle.__drizzle_migrations`); `/admin` on a preview shows the preview's. Same number = same schema.
+- Data is not synced, and shouldn't be: `preview` holds seed data. To look at real data in a preview, Neon's *Reset from parent* on the `preview` branch copies production in one click; the next deploy re-migrates if needed.
+
 ### 3.3 Edit protection
 Public page + editable fields with no protection = vandalism. v1: a single shared **PIN** (`EDIT_PIN` env var) required for the "run now" button. Checked server-side. Not real security; good enough for a guild tool.
 
@@ -395,6 +402,8 @@ The reason every snapshot is kept forever is to see change over weeks. v1 shows 
 ### Phase 5b — Branding: "Old Grandmas" × plague-era aesthetic
 The alliance running this is **Old Grandmas**. Visual identity = plague-doctor / apothecary era meets grandma crafts (knitting, crochet, yarn, doilies, tea). Tone: a serious tool with a wink, not a joke page.
 
+**The contract is `docs/DESIGN.md`** (added 2026-11-04 at the owner's request, to keep generic "AI" styling out): tokens with roles, two typefaces, spacing/radius/surface rules, the closed component list, the ornament budget, motion and voice rules, a "never" list, and the enforcement tests. Every UI session reads it first; this section is the brief it was written from. The format follows the DESIGN.md convention that agent toolchains read (getdesign.md / awesome-design-md); the content is ours — a third party's design file (Discord's, say) would carry its look and its trademarks into a project that must own its visuals.
+
 **Hard rules**
 - **No assets from the game.** No logo, no character art, no screenshots, no fonts ripped from it. Everything is original SVG or open-licensed (OFL fonts, CC0 textures). Genre motifs (beaked mask silhouette, apothecary bottles, lanterns, wax seals, parchment) are fine; the game's specific designs are not.
 - Decoration lives in **corners, borders, header and empty states only**. The data table stays plain: high contrast, monospaced-tabular numerals, no textured background behind numbers.
@@ -622,7 +631,7 @@ The alliance roster includes `x`, `y` (map coordinates), `online`, `last_online_
 
 ### 12.5 Platform
 - Vercel: env vars marked sensitive and scoped — Production values never reach Preview (§11.6: preview DB branch, own secrets, no webhooks); previews behind Vercel Deployment Protection. Function logs contain no secrets by construction (12.2).
-- Neon: the app's role can read/write the project's tables and nothing else; migrations run with a separate role from the session or CI, not from the app.
+- Neon: v1 runs migrations with the integration's role at build time (§3.2); a separate least-privilege role for the app is v2 — with one deployable and no user data it buys nothing yet.
 - `run_logs` / `app_errors`: carry `union_id`, `uid`, counts and codes — no names, no secrets (the logger passes every `data` object through `lib/redact.ts`).
 - GitHub: public repo; `main` and `dev` rulesets per §11.6 (PR + `check` + no force-push, no bypass actors, including for the Claude GitHub App — sessions push branches); secret scanning + push protection on; Dependabot alerts on; Actions `permissions` minimal per workflow.
 
@@ -636,6 +645,21 @@ No user accounts, no OAuth, no per-user permissions: a shared PIN plus rate limi
 - Data pruning — never delete snapshots
 - Real authentication
 - Auto-discovery of the top 20 from the ranks board at run time (the list is config so before/after stay comparable; re-seeding it is a config change)
+
+## 10b. As shipped — corrections the sessions reported (Sessions 3–5b, 2026-11-04)
+Where the text above and the code disagree, the code is right and this list says how. Each item names the handoff that found it. Sections are not rewritten retroactively; a session that reads a section listed here reads this list too.
+
+- **§3.1 manual fallback** (05b): "Run BEFORE/AFTER now" is allowed only at or after the event's `before_at`; an earlier press answers `409 snapshot_not_due`.
+- **§3.1 verdict, quota line** (04): the drop is `first − last + 1` (the first response counts itself). (05, N1): if the run's last `/v1` attempts all fail and the internal fallback fills the row, those attempts carry no quota object and the line can read `calls_used ≠ drop` on a run that was fine; the verdict says "n `/v1` attempts returned no quota" when `run_logs` has a `v1.fetch` warn for the run. Rare; an exact count needs a column.
+- **§3.4 / Phase 3** (05b): AFTER on an event with no alliance list fails with "no alliance list on the event: BEFORE has not run" and makes no quota call. (03): the run claim happens before the quota call; `force` clears the rows (D18). An abort at `MAX_UPSTREAM_CALLS` is `failed`; a `429` mid-run is `partial` — the code follows the more specific section in each case.
+- **§4 / Phase 4** (04): the quota routes are authenticated like the others.
+- **§6** (03, 04): nullable as shipped — `alliance_snapshots.{tag,name,member_count,total_power,total_kills,raw_json}` on error rows, `member_snapshots.{power,kills}` (D15). Added: `events.unique(event_at_utc)`, `events.quota_checked_at`, `snapshots.quota_remaining_before`, and a `rehearsal_slots` table (the weekly `REHEARSAL_AT` bookkeeping).
+- **Phase 6 partial template** (05, N11 / 05b): alliances with no row at all are listed under `failed` as "not fetched: …", not as "came back with old data".
+- **Phase 6 observability, alert cadence** (05, N2): as shipped, the app-error alert fires after an hour *without* errors, not once per hour of continuing errors, and two instances can post at once. Accepted for v1; the fix is a claimed alert row like `claimQuotaCheck`.
+- **Phase 6 logging guarantees** (04): `RunLogger.shutdown()` exists but only awaits in-flight inserts; nothing is buffered. The "no flush" wording meant "no buffered transport".
+- **§11.3 integration tier** (03, 04): PGlite in tests, not the in-memory Repo.
+- **§11.2 dependency-rule lint** (owner): the `import-x/no-restricted-paths` zones were scheduled for Session 4 after it had started; they move to Session 8.
+- **§12.2 client IP** (05, N10): whether a client can spoof `x-real-ip` on Vercel is unverified; the per-IP limit may be weaker than stated, the global 20/h lockout is not. Session 8 checks.
 
 ## 10. Open questions for the owner (answer before Phase 1)
 1. ~~Server number and alliances~~ — answered: 325, §7 list from the board; Session 0 verifies the ids.
