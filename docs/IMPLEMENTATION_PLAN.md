@@ -72,6 +72,13 @@ Every snapshot is stored forever; nothing is overwritten. Volume is tiny: 26 wee
 - Avoid KV/Blob: the data is relational and edited row by row.
 - Store the **raw upstream responses** (`raw_json`) alongside the computed numbers, so that if the "might" or "kills" formula ever changes, history can be recomputed without spending quota.
 
+**Two databases, one schema — migrations run on deploy (owner's question, 2026-11-04).** Nothing keeps the Neon `main` and `preview` branches in step by itself; as shipped after Session 4 the migrations `drizzle/0000–0002` had been applied only to PGlite in tests. The rule, implemented in Session 8:
+- `pnpm db:migrate` = `drizzle-kit migrate` over `DATABASE_URL_UNPOOLED` (direct connection; that is why Preview has one too). Vercel's **Build Command** becomes `pnpm db:migrate && pnpm build`, so every deployment migrates *its own* database first: a PR or `dev` build migrates the `preview` branch, a `main` build migrates production. The two can only drift by one PR's worth, and a migration that fails fails the build — the deploy never runs code against a schema it doesn't have.
+- **Additive only (expand/contract):** a migration never drops or renames a column that the previous release still reads, because Instant Rollback puts the previous build back on the migrated schema and two PRs can share `preview`. Removal is a later release, after nothing reads the column.
+- **Drift gate in CI:** `pnpm db:generate` must produce no new file (schema.ts changed without a migration = red), and `drizzle-kit check` validates the migration journal. Both in `pnpm check`.
+- **Visible:** the Friday message and `/admin` show the production schema version (the newest row in `drizzle.__drizzle_migrations`); `/admin` on a preview shows the preview's. Same number = same schema.
+- Data is not synced, and shouldn't be: `preview` holds seed data. To look at real data in a preview, Neon's *Reset from parent* on the `preview` branch copies production in one click; the next deploy re-migrates if needed.
+
 ### 3.3 Edit protection
 Public page + editable fields with no protection = vandalism. v1: a single shared **PIN** (`EDIT_PIN` env var) required for the "run now" button. Checked server-side. Not real security; good enough for a guild tool.
 
@@ -622,7 +629,7 @@ The alliance roster includes `x`, `y` (map coordinates), `online`, `last_online_
 
 ### 12.5 Platform
 - Vercel: env vars marked sensitive and scoped — Production values never reach Preview (§11.6: preview DB branch, own secrets, no webhooks); previews behind Vercel Deployment Protection. Function logs contain no secrets by construction (12.2).
-- Neon: the app's role can read/write the project's tables and nothing else; migrations run with a separate role from the session or CI, not from the app.
+- Neon: v1 runs migrations with the integration's role at build time (§3.2); a separate least-privilege role for the app is v2 — with one deployable and no user data it buys nothing yet.
 - `run_logs` / `app_errors`: carry `union_id`, `uid`, counts and codes — no names, no secrets (the logger passes every `data` object through `lib/redact.ts`).
 - GitHub: public repo; `main` and `dev` rulesets per §11.6 (PR + `check` + no force-push, no bypass actors, including for the Claude GitHub App — sessions push branches); secret scanning + push protection on; Dependabot alerts on; Actions `permissions` minimal per workflow.
 
