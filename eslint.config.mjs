@@ -5,7 +5,17 @@ import { importX } from "eslint-plugin-import-x";
 import tseslint from "typescript-eslint";
 
 export default defineConfig(
-  { ignores: [".next/**", "node_modules/**", "next-env.d.ts", "fixtures/**", "coverage/**"] },
+  // .claude/worktrees: agent worktrees inside the main checkout carry their own config and node_modules.
+  {
+    ignores: [
+      ".next/**",
+      "node_modules/**",
+      "next-env.d.ts",
+      "fixtures/**",
+      "coverage/**",
+      ".claude/worktrees/**",
+    ],
+  },
   js.configs.recommended,
   tseslint.configs.strict,
   {
