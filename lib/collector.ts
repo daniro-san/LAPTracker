@@ -3,6 +3,7 @@
 import { requiredQuota } from "./budget";
 import { isFresh } from "./compute";
 import type { Logger } from "./logger";
+import { trimRaw } from "./raw-json";
 import type { AllianceRow, MemberRow, Phase, Repo, SnapshotRow, SnapshotStatus } from "./repo";
 import { ALLIANCES, SERVER } from "../config/alliances";
 import {
@@ -10,6 +11,7 @@ import {
   type InternalSource,
   NotFoundError,
   NotLiveError,
+  type Quota,
   QuotaExhaustedError,
   type RanksBoard,
   SchemaError,
@@ -86,6 +88,33 @@ function attemptHook(run: Run, unionId: number | null) {
   };
 }
 
+/** The adapter returns only on 2xx and exposes no status then, so success is recorded as 200. */
+function httpStatusOf(e: unknown): number | null {
+  if (e === undefined) return 200;
+  if (e instanceof UpstreamError) return e.status;
+  if (e instanceof QuotaExhaustedError) return 429;
+  return e instanceof NotFoundError ? 404 : null;
+}
+
+/** One run_logs line per /v1 call (plan "Observability"); retries add their own v1.retry lines. */
+async function logV1Fetch(
+  run: Run,
+  started: Date,
+  call: { endpoint: "alliance" | "quota"; unionId: number | null },
+  result: { cached?: boolean | null; quota?: Quota | null; error?: unknown },
+): Promise<void> {
+  const e = result.error;
+  await run.deps.logger[e === undefined ? "info" : "warn"]("v1.fetch", {
+    endpoint: call.endpoint,
+    union_id: call.unionId,
+    http_status: httpStatusOf(e),
+    cached: result.cached ?? null,
+    duration_ms: run.deps.now().getTime() - started.getTime(),
+    quota_remaining: result.quota?.remaining ?? null,
+    ...(e === undefined ? {} : { error: describe(e) }),
+  });
+}
+
 function noteQuota(run: Run, remaining: number | undefined) {
   if (remaining === undefined) return;
   run.lowestRemaining =
@@ -117,8 +146,10 @@ async function allianceIds(deps: Deps, eventId: number, phase: Phase): Promise<n
 
 /** Returns an error line when the run must not fetch rosters, else null. */
 async function checkQuota(run: Run, idCount: number): Promise<string | null> {
+  const started = run.deps.now();
   try {
     const quota = await run.deps.v1.fetchQuota(attemptHook(run, null));
+    await logV1Fetch(run, started, { endpoint: "quota", unionId: null }, { quota });
     noteQuota(run, quota.remaining);
     // INVARIANT budget.reserve-for-after
     const needed = requiredQuota(idCount);
@@ -126,6 +157,7 @@ async function checkQuota(run: Run, idCount: number): Promise<string | null> {
     await run.deps.logger.error("quota", { remaining: quota.remaining, required: needed });
     return `quota: remaining ${quota.remaining} < required ${needed}`;
   } catch (e) {
+    await logV1Fetch(run, started, { endpoint: "quota", unionId: null }, { error: e });
     await run.deps.logger.error("quota", { error: describe(e) });
     return `quota: ${describe(e)}`;
   }
@@ -139,27 +171,6 @@ async function fetchBoard(deps: Deps): Promise<RanksBoard | null> {
     await deps.logger.warn("board.failed", { error: describe(e) });
     return null;
   }
-}
-
-/** §6: raw_json keeps the response minus bulk and free text. */
-function trimRaw(raw: unknown): unknown {
-  if (typeof raw !== "object" || raw === null) return raw;
-  const { badge_url, server_badge_url, bulletin, declaration, quota, ...rest } = raw as Record<
-    string,
-    unknown
-  >;
-  void [badge_url, server_badge_url, bulletin, declaration, quota];
-  if (!Array.isArray(rest.members)) return rest;
-  const members: unknown[] = rest.members;
-  return {
-    ...rest,
-    members: members.map((m) => {
-      if (typeof m !== "object" || m === null) return m;
-      const { avatar_url, frame_url, ...member } = m as Record<string, unknown>;
-      void [avatar_url, frame_url];
-      return member;
-    }),
-  };
 }
 
 function dataRow(run: Run, a: AllianceSnapshotInput, source: AllianceRow["source"]): AllianceRow {
@@ -212,12 +223,16 @@ async function collectOne(run: Run, unionId: number): Promise<void> {
   const { deps } = run;
   let row: AllianceRow;
   let members: MemberRow[] = [];
+  const started = deps.now();
+  const call = { endpoint: "alliance", unionId } as const;
   try {
     const a = await deps.v1.fetchAlliance(unionId, attemptHook(run, unionId));
+    await logV1Fetch(run, started, call, { cached: a.cached, quota: a.quota });
     noteQuota(run, a.quota?.remaining);
     row = dataRow(run, a, "v1");
     members = a.members;
   } catch (e) {
+    await logV1Fetch(run, started, call, { error: e });
     if (e instanceof CallCapError) run.capped = true;
     if (e instanceof QuotaExhaustedError || e instanceof CallCapError) {
       // INVARIANT quota-429-aborts: no fallback, no further fetches; rows so far are kept.

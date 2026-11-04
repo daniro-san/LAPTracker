@@ -8,6 +8,13 @@
       "when": 1793826065083,
       "tag": "0000_flippant_slapstick",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793828730506,
+      "tag": "0001_lowly_luckman",
+      "breakpoints": true
     }
   ]
 }
