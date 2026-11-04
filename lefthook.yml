@@ -1,0 +1,13 @@
+# Pre-commit gates (plan §11.4). The secrets scan is the reason this hook exists: the repo is public.
+# No pre-push hook: CI and the Claude Code Stop hook already run `pnpm check`.
+pre-commit:
+  parallel: true
+  jobs:
+    - name: secrets
+      run: gitleaks git --pre-commit --staged --redact --no-banner --verbose
+    - name: prettier
+      glob: "*.{ts,tsx,mjs,js,json,md,yml,yaml,css}"
+      run: pnpm exec prettier --check {staged_files}
+    - name: eslint
+      glob: "*.{ts,tsx,mjs,js}"
+      run: pnpm exec eslint --max-warnings=0 {staged_files}

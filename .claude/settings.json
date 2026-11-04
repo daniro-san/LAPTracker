@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(pnpm *)",
+      "Bash(git commit *)",
+      "Bash(curl *)",
+      "Bash(gh api *)",
+      "Bash(gh workflow *)",
+      "Bash(git push -u origin HEAD)",
+      "Bash(gh pr *)",
+      "Bash(gh release *)"
+    ],
+    "deny": [
+      "Bash(git push origin main)",
+      "Bash(rm -rf *)",
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(git reset --hard*)",
+      "Bash(pnpm drizzle-kit drop*)",
+      "Bash(pnpm exec drizzle-kit drop*)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/scripts/install_pkgs.sh\"",
+            "timeout": 300
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/scripts/hooks/post-edit-lint.mjs\"",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/scripts/hooks/stop-check.sh\"",
+            "timeout": 300
+          }
+        ]
+      }
+    ]
+  }
+}

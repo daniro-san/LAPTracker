@@ -16,5 +16,6 @@ All recorded on 2026-11-04 (Wednesday). Quota is per account per UTC day (1,000;
 | `v1-20261104T154755Z/` | Documented API round 1 (`scripts/probe-v1.sh`): `GET /v1/quota`, `GET /v1/alliances/67111155`, `GET /v1/alliances/67110320`, `GET /v1/quota` | 15:47 | 4 calls (`used` 1 → 4) |
 | `v1-20261104T155902Z/` | Same round 11 min later: both alliances `cached: false`, `updated_at` = read time again (refresh-on-read, plan §3.7) | 15:59 | 4 calls (`used` 5 → 8) |
 | `v1-ids/<union_id>.json` | `GET /v1/alliances/{id}` for the 18 §7 alliances not covered above (Session 0). All `200`, `cached: false`, `name`/`abbr` equal to the board | 19:40:10–19:40:56 | 19 calls (`used` 32 → 50; one `502` on 67110584 counted and was retried once) |
+| `v1-ids/67111040.json` | `GET /v1/alliances/67111040` (AFR, AllianceFr): candidate to replace TRM; `rank.rank` 19, `cached: false`, 73 members, one member with `kills: null`. Recorded in Session 1 at the owner's request. FGH (67111128) returned `502` twice and was not saved | 19:52–19:53 | 7 calls (`used` 51 → 57: quota ×3, AFR 502 + 200, FGH 502 ×2) |
 
 The internal refresh endpoint is closed to us on purpose (plan §3.5). No fixture will ever be recorded from it again.

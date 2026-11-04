@@ -1,6 +1,6 @@
 # LAP Tracker — rules for every session
 
-Read docs/handoff/00-prereqs.md first, then the latest docs/handoff/*.md, then the part of IMPLEMENTATION_PLAN.md the session names.
+Read docs/handoff/00-prereqs.md first, then the latest docs/handoff/*.md, then the part of docs/IMPLEMENTATION_PLAN.md the session names.
 
 ## Scope
 Keep working until everything the session asked for is done, and only stop to ask when you can't go on without the owner or before a risky step. When the work is done and checked, stop and report. Don't add features, tests, files, docs or refactors that weren't asked for; if one would help, mention it in the handoff instead of doing it.
@@ -20,6 +20,7 @@ Before you start, say in a line what you're about to do; brief updates while you
 
 ## Hard rules
 - English only in code, comments, UI copy, commit messages and docs.
+- Never commit to main. Work on `session/NN-<slug>` (or `fix/`, `chore/`), Conventional Commits, push the branch, open the PR titled as the session's done_when says, put the PR URL as the last line of the handoff, and stop: the owner merges.
 - Never print, log, commit or paste an API key, PIN, webhook URL or secret. Read them from .env.local or the environment only.
 - Never run anything that spends upstream API quota unless the session explicitly allows it. Never call the site's refresh endpoint or imitate the site (Origin/Referer/cookies): the maintainer closed it on purpose.
 - Stack: Next.js App Router, TypeScript, Tailwind, Drizzle + Neon, Vitest. Node 26 (`.nvmrc` = `26`), pnpm 12 (`packageManager`). Test: `pnpm test`. Typecheck: `pnpm typecheck`. All gates: `pnpm check`.
@@ -30,5 +31,5 @@ Before you start, say in a line what you're about to do; brief updates while you
 - Secrets are compared with timingSafeEqual; PIN and cron routes are rate-limited; responses never carry stack traces.
 - UI is mobile-first: designed at 360 px, cards below 640 px, nothing hover-only, touch targets ≥ 44 px, compact numbers; reads only through lib/queries; no charts in v1; player pages look like alliance pages.
 
-## Handoff (every session, last step before the commit)
-Write docs/handoff/NN-<name>.md with sections Built / Decisions / Deviations / Verified / Open issues / Next. Before writing `## Next`, re-read the NEXT session's prompt in SESSION_PLAYBOOK.md and fill `## Next` in the exact shape given there: model/effort as keep / raise one / lower one with a measurable reason; what the owner must do first; whether the plan itself needs a change (say which section — do not edit IMPLEMENTATION_PLAN.md or SESSION_PLAYBOOK.md); and an `<adjustments>` block with additions only: facts you established that change what the next session should build, real numbers to replace the plan's estimates, things to skip because they're already done. If you also notice a prompt further ahead that your findings affect, add a second `<adjustments for="Session M">` block.
+## Handoff (every session, last step before the PR)
+Write docs/handoff/NN-<name>.md with sections Built / Decisions / Deviations / Verified / Open issues / Next. Before writing `## Next`, re-read the NEXT session's prompt in docs/SESSION_PLAYBOOK.md and fill `## Next` in the exact shape given there: model/effort as keep / raise one / lower one with a measurable reason; what the owner must do first; whether the plan itself needs a change (say which section — do not edit docs/IMPLEMENTATION_PLAN.md or docs/SESSION_PLAYBOOK.md); and an `<adjustments>` block with additions only: facts you established that change what the next session should build, real numbers to replace the plan's estimates, things to skip because they're already done. If you also notice a prompt further ahead that your findings affect, add a second `<adjustments for="Session M">` block.
