@@ -22,6 +22,9 @@ describe("parseEnv", () => {
     const env = parseEnv(valid);
     expect(env.EVENT_WEEKDAY).toBe(6);
     expect(env.NOTIFY_WEBHOOK_PUBLIC).toBeUndefined();
+    // The host literal lives only in lib/env.ts (grep test in lib/sources), so assert the shape here.
+    expect(new URL(env.LAP_API_BASE_URL).pathname).toBe("/v1");
+    expect(new URL(env.LAP_SITE_BASE_URL).pathname).toBe("/api");
   });
 
   it("fails fast naming every bad key without echoing its value", () => {
