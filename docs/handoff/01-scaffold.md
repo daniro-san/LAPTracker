@@ -157,6 +157,7 @@ Both were reverted.
 - **Node 26 on PATH in a fresh cloud session is unverified.** `cloud-setup.sh` appends the PATH line to `~/.bashrc`, but this session's Bash tool didn't pick it up (shell snapshot taken at start). `install_pkgs.sh` also writes the PATH to `CLAUDE_ENV_FILE`, which should cover it. The next cloud session must run `node -v` first; if it prints v22, prefix commands with `PATH=/opt/node26/bin:$PATH` and report it.
 - Permissions allow `git push origin main`, but cloud sessions push to `claude/*` branches, so those pushes will still prompt. Add a rule if that's unwanted.
 - `BLOCKED_ROSTER_KEYS` follows §12.1 and CLAUDE.md exactly. The roster also has `frame_url` (bulk, trimmed from `raw_json` by §6) and `active` (behavioural). Neither is on the list; that's the owner's call.
+- `vercel.json` pins `"framework": "nextjs"`. The Vercel project had been created as "Other" before the repo had a `package.json`, so the first preview failed with `No Output Directory named "public" found`; the build itself succeeded. Session 8 still owns the rest of the Vercel setup (env vars, `ENABLE_EXPERIMENTAL_COREPACK=1`, preview protection).
 - The two moderate audit findings above. Dependabot will surface the fixes when upstreams release them.
 - `pnpm build` rewrites `tsconfig.json` if `esModuleInterop` is removed. Leave it in.
 - The plan still says `lib/lat-client.ts` in §11.2 and §11.6. §11.1 and Phase 2 say `lib/sources/v1.ts`. I treated `lat-client` as stale.
