@@ -637,6 +637,21 @@ No user accounts, no OAuth, no per-user permissions: a shared PIN plus rate limi
 - Real authentication
 - Auto-discovery of the top 20 from the ranks board at run time (the list is config so before/after stay comparable; re-seeding it is a config change)
 
+## 10b. As shipped — corrections the sessions reported (Sessions 3–5b, 2026-11-04)
+Where the text above and the code disagree, the code is right and this list says how. Each item names the handoff that found it. Sections are not rewritten retroactively; a session that reads a section listed here reads this list too.
+
+- **§3.1 manual fallback** (05b): "Run BEFORE/AFTER now" is allowed only at or after the event's `before_at`; an earlier press answers `409 snapshot_not_due`.
+- **§3.1 verdict, quota line** (04): the drop is `first − last + 1` (the first response counts itself). (05, N1): if the run's last `/v1` attempts all fail and the internal fallback fills the row, those attempts carry no quota object and the line can read `calls_used ≠ drop` on a run that was fine; the verdict says "n `/v1` attempts returned no quota" when `run_logs` has a `v1.fetch` warn for the run. Rare; an exact count needs a column.
+- **§3.4 / Phase 3** (05b): AFTER on an event with no alliance list fails with "no alliance list on the event: BEFORE has not run" and makes no quota call. (03): the run claim happens before the quota call; `force` clears the rows (D18). An abort at `MAX_UPSTREAM_CALLS` is `failed`; a `429` mid-run is `partial` — the code follows the more specific section in each case.
+- **§4 / Phase 4** (04): the quota routes are authenticated like the others.
+- **§6** (03, 04): nullable as shipped — `alliance_snapshots.{tag,name,member_count,total_power,total_kills,raw_json}` on error rows, `member_snapshots.{power,kills}` (D15). Added: `events.unique(event_at_utc)`, `events.quota_checked_at`, `snapshots.quota_remaining_before`, and a `rehearsal_slots` table (the weekly `REHEARSAL_AT` bookkeeping).
+- **Phase 6 partial template** (05, N11 / 05b): alliances with no row at all are listed under `failed` as "not fetched: …", not as "came back with old data".
+- **Phase 6 observability, alert cadence** (05, N2): as shipped, the app-error alert fires after an hour *without* errors, not once per hour of continuing errors, and two instances can post at once. Accepted for v1; the fix is a claimed alert row like `claimQuotaCheck`.
+- **Phase 6 logging guarantees** (04): `RunLogger.shutdown()` exists but only awaits in-flight inserts; nothing is buffered. The "no flush" wording meant "no buffered transport".
+- **§11.3 integration tier** (03, 04): PGlite in tests, not the in-memory Repo.
+- **§11.2 dependency-rule lint** (owner): the `import-x/no-restricted-paths` zones were scheduled for Session 4 after it had started; they move to Session 8.
+- **§12.2 client IP** (05, N10): whether a client can spoof `x-real-ip` on Vercel is unverified; the per-IP limit may be weaker than stated, the global 20/h lockout is not. Session 8 checks.
+
 ## 10. Open questions for the owner (answer before Phase 1)
 1. ~~Server number and alliances~~ — answered: 325, §7 list from the board; Session 0 verifies the ids.
 2. ~~Game server timezone~~ — answered: UTC−2 fixed, `Etc/GMT+2` (2026-11-04).

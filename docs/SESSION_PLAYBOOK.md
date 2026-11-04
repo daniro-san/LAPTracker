@@ -556,6 +556,16 @@ Mock approved by me; pages re-screenshotted; 404 and error pages exist with thei
 
 ## Session 8 — Deploy, GitHub Actions, env, webhooks
 
+**Owner-supplied `<adjustments>` (2026-11-04) — paste right after `</task>`, together with the block from `docs/handoff/07-brand.md`:**
+
+```text
+<adjustments>
+- Lint the dependency rule (plan §11.2; it was scheduled for Session 4 too late): add `import-x/no-restricted-paths` zones to eslint.config.mjs from docs/ARCHITECTURE.md — lib/compute, lib/budget, lib/schedule import nothing from `@/`; `lib/**` never imports `@/app/**`; `app/**` never imports `@/lib/sources/**` or `@/lib/repo/**`. If the current code violates a zone, that is a finding: list it in the handoff and fix only what is a one-line import move; otherwise narrow the zone and say so. Prove the rule with a scratch file `pnpm lint` rejects, then delete it.
+- Plan §10b lists what Sessions 3–5b changed relative to the plan text; read it before the deploy checks. N10 (x-real-ip trust on Vercel) is yours to verify empirically: send a request with a forged `x-real-ip` to the deployed /api/snapshot and read which IP the limiter recorded.
+</adjustments>
+```
+
+
 **Model:** sonnet · **Effort:** medium · **Mode:** default
 **Before starting (you, by hand):** `PREREQUISITES.md` §6, row "Session 8".
 
