@@ -243,7 +243,7 @@ Session 1 of SESSION_PLAYBOOK.md. Read CLAUDE.md, docs/handoff/00-prereqs.md, IM
 Plan first. Then build, in this order:
 1. Scaffold: Next.js (stable), TypeScript strict (+ noUncheckedIndexedAccess, exactOptionalPropertyTypes), Tailwind, Vitest, Drizzle + @neondatabase/serverless, zod, fast-check. Nothing else unless §12.4's test is met and the reason is written in docs/DECISIONS.md. Keep config/alliances.ts, fixtures/, docs/, CLAUDE.md, .env.example untouched. Folder layout exactly as §11.1 (empty modules with a one-line header comment are fine).
 1b. Runtime pins from plan §11.4: `.nvmrc` = `26` (major only), `engines.node` = `">=22.0.0"`, `packageManager` = the pnpm 12 version you have (`pnpm -v`), `.npmrc` with `engine-strict=false`; `scripts/cloud-setup.sh` that resolves the newest 26.x from `nodejs.org/dist/index.json`, installs it into `/opt/node26`, prepends it to PATH in `~/.bashrc`, and installs pnpm 12 (the owner pastes it as the cloud environment's setup script — PREREQUISITES §3b). No Dockerfile, no devcontainer — the plan says why.
-2. Tooling from §11.2 and §11.4: ESLint (typescript-eslint strict, import/order, max-lines 300, max-lines-per-function 50, complexity 12), Prettier, `pnpm check`, lefthook pre-commit (prettier + eslint on staged, `gitleaks git --pre-commit --staged` with a custom `lap_` rule), `.github/workflows/ci.yml` with pnpm/action-setup + setup-node (`node-version-file: .nvmrc`, `cache: pnpm`), `pnpm install --frozen-lockfile`, `pnpm check`, `pnpm audit --audit-level high`, actions pinned to SHAs, `permissions: contents: read`, job name `check` (the ruleset requires this exact name). `.github/dependabot.yml` for npm and github-actions, weekly, grouped minor/patch.
+2. Tooling from §11.2 and §11.4: ESLint (typescript-eslint strict, import/order, max-lines 300, max-lines-per-function 80, complexity 12, max-depth 3), Prettier, `pnpm check`, lefthook pre-commit (prettier + eslint on staged, `gitleaks git --pre-commit --staged` with a custom `lap_` rule), `.github/workflows/ci.yml` with pnpm/action-setup + setup-node (`node-version-file: .nvmrc`, `cache: pnpm`), `pnpm install --frozen-lockfile`, `pnpm check`, `pnpm audit --audit-level high`, actions pinned to SHAs, `permissions: contents: read`, job name `check` (the ruleset requires this exact name). `.github/dependabot.yml` for npm and github-actions, weekly, grouped minor/patch.
 3. Harness from §11.5: `.claude/settings.json` (hooks: PostToolUse Edit|Write → eslint --fix on the changed file; Stop → pnpm check; SessionStart → scripts/install_pkgs.sh cloud-aware; permissions allow/deny as §11.4, with `git push origin main`, `git push origin dev` and `git push --force*` denied and `git push -u origin HEAD`, `gh pr *`, `gh api *` allowed), `.claude/rules/{collector,api-routes,tests}.md`, `.claude/skills/record-fixture/SKILL.md` (complete — it spends quota), `REVIEW.md` with the Session 5 checklist plus the §12.1 blocked-keys check.
 4. Security baseline from §12.3 and §12.5: security headers in next.config; `lib/env.ts` with zod validation of every variable in .env.example (fail fast); a `lib/redact.ts` helper the logger will use; a `BLOCKED_ROSTER_KEYS` constant in lib/queries with a test that no read model exports them.
 5. Docs: docs/ARCHITECTURE.md (§11.1 with the Deps interface in TypeScript), docs/GLOSSARY.md, docs/DECISIONS.md seeded from §3.1–§3.6 and the dependency list (one paragraph each, dated).
@@ -356,6 +356,16 @@ Every test named above exists and passes; migration generated; docs/handoff/03-c
 ---
 
 ## Session 4 — Routes, logger, notifications
+
+**Owner-supplied `<adjustments>` (2026-11-04) — paste right after `</task>`, together with the block from `docs/handoff/03-*.md`:**
+
+```text
+<adjustments>
+- Lint the dependency rule (plan §11.2): add `import-x/no-restricted-paths` zones to eslint.config.mjs from docs/ARCHITECTURE.md — lib/compute, lib/budget, lib/schedule import nothing from `@/`; `lib/**` never imports `@/app/**`; `app/**` never imports `@/lib/sources/**` or `@/lib/repo/**`. Prove it with a scratch file containing a forbidden import that `pnpm lint` rejects, then delete the file and paste the output in the handoff.
+- max-lines-per-function is 80 and max-depth is 3 (PR "chore: lint limits"); don't split a function only to satisfy a counter — split along the architecture or leave it.
+</adjustments>
+```
+
 
 **Model:** opus · **Effort:** medium · **Mode:** plan mode first
 
