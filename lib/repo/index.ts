@@ -55,6 +55,8 @@ export interface SnapshotResult {
   finishedAt: Date;
   /** Added to the stored calls_used, so a re-run keeps the snapshot's whole quota cost. */
   callsUsed: number;
+  /** The quota check's `remaining`; null when the check failed. */
+  quotaRemainingBefore: number | null;
   quotaRemainingAfter: number | null;
   boardPulledAt: Date | null;
   error: string | null;

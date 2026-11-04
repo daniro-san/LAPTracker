@@ -1,7 +1,7 @@
-// When things are due (plan §3.1). Pure: `now` is passed in, times come from the env in server
-// time (SERVER_TZ), and every instant returned is UTC. Works for any IANA zone, not only fixed offsets.
+// Saturday times and weekly slots from the env (plan §3.1). Pure: `now` is passed in, times are server
+// time (SERVER_TZ), every instant returned is UTC; works for any IANA zone, not only fixed offsets.
+// Which phase is due is not decided here: the tick reads before_at/after_at from the events rows.
 import type { Env } from "./env";
-import type { Phase } from "./repo";
 
 export type ScheduleConfig = Pick<
   Env,
@@ -12,21 +12,14 @@ export type ScheduleConfig = Pick<
   | "SNAPSHOT_AFTER"
   | "SNAPSHOT_WINDOW_MIN"
   | "QUOTA_CHECK_AT"
+  | "REHEARSAL_AT"
 >;
-
-export type Action = "quota-check" | Phase;
 
 export interface ScheduledEvent {
   name: string;
   eventAtUtc: Date;
-  /** The event day's date in server time, YYYY-MM-DD. */
-  date: string;
-}
-
-export interface DueAction {
-  action: Action;
-  event: ScheduledEvent;
-  at: Date;
+  beforeAt: Date;
+  afterAt: Date;
 }
 
 const WEEKDAYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
@@ -74,7 +67,7 @@ function wallClock(instant: Date, tz: string): WallClock {
 }
 
 /** The UTC instant at which the wall clock in `tz` reads the given date and time. */
-function zonedToUtc(day: { y: number; m: number; d: number }, hhmm: string, tz: string): Date {
+function zonedToUtc(day: Day, hhmm: string, tz: string): Date {
   const [hh = 0, mm = 0] = hhmm.split(":").map(Number);
   const guess = Date.UTC(day.y, day.m - 1, day.d, hh, mm);
   const offset = (t: number) => {
@@ -87,20 +80,22 @@ function zonedToUtc(day: { y: number; m: number; d: number }, hhmm: string, tz: 
 }
 
 /** Calendar arithmetic on a server-time date, independent of the host's zone. */
-function addDays(day: { y: number; m: number; d: number }, n: number) {
+type Day = { y: number; m: number; d: number };
+
+function addDays(day: Day, n: number): Day {
   const t = new Date(Date.UTC(day.y, day.m - 1, day.d) + n * DAY_MS);
   return { y: t.getUTCFullYear(), m: t.getUTCMonth() + 1, d: t.getUTCDate() };
 }
 
-const isoDate = (day: { y: number; m: number; d: number }) =>
+const isoDate = (day: Day) =>
   `${day.y}-${String(day.m).padStart(2, "0")}-${String(day.d).padStart(2, "0")}`;
 
-function eventOn(day: { y: number; m: number; d: number }, cfg: ScheduleConfig): ScheduledEvent {
-  const date = isoDate(day);
+function eventOn(day: Day, cfg: ScheduleConfig): ScheduledEvent {
   return {
-    name: `${WEEKDAY_NAMES[cfg.EVENT_WEEKDAY]} Event ${date}`,
+    name: `${WEEKDAY_NAMES[cfg.EVENT_WEEKDAY]} Event ${isoDate(day)}`,
     eventAtUtc: zonedToUtc(day, cfg.EVENT_TIME, cfg.SERVER_TZ),
-    date,
+    beforeAt: zonedToUtc(day, cfg.SNAPSHOT_BEFORE, cfg.SERVER_TZ),
+    afterAt: zonedToUtc(day, cfg.SNAPSHOT_AFTER, cfg.SERVER_TZ),
   };
 }
 
@@ -117,43 +112,56 @@ export function currentEvent(now: Date, cfg: ScheduleConfig): ScheduledEvent {
   return eventsAround(now, cfg).reduce((best, e) => (distance(e) < distance(best) ? e : best));
 }
 
-/** When each action of `event` is scheduled. The quota check is the last QUOTA_CHECK_AT before it. */
-export function actionTimes(event: ScheduledEvent, cfg: ScheduleConfig): Record<Action, Date> {
-  const [y = 0, m = 0, d = 0] = event.date.split("-").map(Number);
-  const day = { y, m, d };
-  const [checkDay = "fri", checkTime = "20:00"] = cfg.QUOTA_CHECK_AT.split(" ");
-  const back =
-    (cfg.EVENT_WEEKDAY - WEEKDAYS.indexOf(checkDay as (typeof WEEKDAYS)[number]) + 7) % 7;
-  const sameDayAfter = back === 0 && checkTime >= cfg.EVENT_TIME;
-  return {
-    "quota-check": zonedToUtc(addDays(day, -(sameDayAfter ? 7 : back)), checkTime, cfg.SERVER_TZ),
-    before: zonedToUtc(day, cfg.SNAPSHOT_BEFORE, cfg.SERVER_TZ),
-    after: zonedToUtc(day, cfg.SNAPSHOT_AFTER, cfg.SERVER_TZ),
-  };
-}
-
-/** The first event whose AFTER snapshot is still ahead of `now`, for the Friday message. */
-export function nextEvent(now: Date, cfg: ScheduleConfig): ScheduledEvent {
-  const events = eventsAround(now, cfg);
-  return events.find((e) => actionTimes(e, cfg).after > now) ?? (events.at(-1) as ScheduledEvent);
-}
+const windowMs = (cfg: ScheduleConfig) => cfg.SNAPSHOT_WINDOW_MIN * 60_000;
 
 /**
- * Every action whose window [at, at + SNAPSHOT_WINDOW_MIN) contains `now`, earliest first. The tick
- * runs the first one not already done, and only that one.
+ * The Saturday events that should have a row now: from a day before BEFORE until AFTER's window
+ * closes (plan §3.1 "create it when within a day of it"). Usually none, at most one.
  */
-export function dueActions(now: Date, cfg: ScheduleConfig): DueAction[] {
-  const windowMs = cfg.SNAPSHOT_WINDOW_MIN * 60_000;
-  return eventsAround(now, cfg)
-    .flatMap((event) =>
-      Object.entries(actionTimes(event, cfg)).map(([action, at]) => ({
-        action: action as Action,
-        event,
-        at,
-      })),
-    )
-    .filter(({ at }) => now >= at && now.getTime() < at.getTime() + windowMs)
-    .sort((a, b) => a.at.getTime() - b.at.getTime());
+export function eventsToCreate(now: Date, cfg: ScheduleConfig): ScheduledEvent[] {
+  const t = now.getTime();
+  return eventsAround(now, cfg).filter(
+    (e) => t >= e.beforeAt.getTime() - DAY_MS && t < e.afterAt.getTime() + windowMs(cfg),
+  );
+}
+
+/** The first event whose AFTER is still ahead of `now`, for the Friday message. */
+export function nextEvent(now: Date, cfg: ScheduleConfig): ScheduledEvent {
+  const events = eventsAround(now, cfg);
+  return events.find((e) => e.afterAt > now) ?? (events.at(-1) as ScheduledEvent);
+}
+
+/** The most recent occurrence of "<day> HH:MM" (server time) at or before `now`. */
+function lastOccurrence(slot: string, now: Date, cfg: ScheduleConfig): Date {
+  const [dayName = "", time = "00:00"] = slot.trim().split(/\s+/);
+  const weekday = WEEKDAYS.indexOf(dayName as (typeof WEEKDAYS)[number]);
+  const local = wallClock(now, cfg.SERVER_TZ);
+  const day = addDays(local, -((local.weekday - weekday + 7) % 7));
+  const at = zonedToUtc(day, time, cfg.SERVER_TZ);
+  return at > now ? zonedToUtc(addDays(day, -7), time, cfg.SERVER_TZ) : at;
+}
+
+const inWindow = (now: Date, at: Date, cfg: ScheduleConfig) =>
+  now >= at && now.getTime() < at.getTime() + windowMs(cfg);
+
+/** The Friday check's occurrence whose window holds `now`, or null (plan §3.1). */
+export function quotaCheckDue(now: Date, cfg: ScheduleConfig): Date | null {
+  const at = lastOccurrence(cfg.QUOTA_CHECK_AT, now, cfg);
+  return inWindow(now, at, cfg) ? at : null;
+}
+
+/** REHEARSAL_AT occurrences whose window holds `now` (plan §3.1); empty REHEARSAL_AT = none. */
+export function rehearsalSlotsDue(now: Date, cfg: ScheduleConfig): Date[] {
+  return cfg.REHEARSAL_AT.split(",")
+    .filter((slot) => slot.trim() !== "")
+    .map((slot) => lastOccurrence(slot, now, cfg))
+    .filter((at) => inWindow(now, at, cfg))
+    .sort((a, b) => a.getTime() - b.getTime());
+}
+
+/** 0 = Sunday … 6 = Saturday, in server time. */
+export function serverWeekday(at: Date, cfg: Pick<ScheduleConfig, "SERVER_TZ">): number {
+  return wallClock(at, cfg.SERVER_TZ).weekday;
 }
 
 /** "Sat 2026-11-07 10:00 server (12:00 UTC)", for admin messages. */
