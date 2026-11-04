@@ -19,7 +19,11 @@
 - `.claude/settings.json` (hooks plus permissions), `.claude/rules/{collector,api-routes,tests}.md`, `.claude/skills/record-fixture/SKILL.md`, `REVIEW.md`.
 - `scripts/cloud-setup.sh` (Node 26 from nodejs.org with a SHA-256 check, pnpm 12, gitleaks via `go install`), `scripts/install_pkgs.sh` (SessionStart), `scripts/hooks/post-edit-lint.mjs`, `scripts/hooks/stop-check.sh`.
 - `docs/ARCHITECTURE.md`, `docs/GLOSSARY.md`, `docs/DECISIONS.md` (D1–D14), `README.md`.
-- From Session 0's no-quota part (owner decision): `CLAUDE.md` (playbook §C verbatim) and `.env.example`.
+- Merged `origin/main` (Session 0, `0e3aaf3`) into this branch. Conflicts resolved this way:
+  - `CLAUDE.md`: kept this branch's copy. The text is the same; only the paths point to `docs/`.
+  - `.gitignore`: kept this branch's copy, a superset of main's.
+  - `.env.example`: kept main's version verbatim. Its header still names `IMPLEMENTATION_PLAN.md §7` at the root; left as is.
+  - `docs/handoff/` added to `.prettierignore`, because 00-prereqs.md would otherwise fail `prettier --check`, and handoffs are records not to be rewritten.
 - Moved with `git mv`: `IMPLEMENTATION_PLAN.md`, `SESSION_PLAYBOOK.md` and `PREREQUISITES.md` are now in `docs/`, with path references updated (D13).
 - Untracked: `.env.local` (`git rm --cached`; the local file is kept, the owner had already rotated the key) and `fixtures/.DS_Store`. `.gitignore` covers `.env*` (except `.env.example`), `node_modules`, `.next`, `.claude/worktrees`.
 
@@ -32,7 +36,8 @@
 - **gitleaks command**: `gitleaks git --pre-commit --staged`, because `protect` is hidden/deprecated in v8.30 (D12).
 - **Planning docs moved to `docs/`** (D13, owner request).
 - **`instrumentation.ts` calls `process.exit(1)`.** If `register()` only throws, Next keeps the server up and answers 500 to every request (measured). Exiting is the fail-fast the plan asks for.
-- **`QUOTA_CHECK_AT="fri 20:00"` is quoted** in `.env.example`, because unquoted it breaks `set -a; . .env` in a shell. Next's dotenv strips the quotes.
+- `lib/env.ts` validates every app variable in `.env.example`. It leaves out `APP_URL` (a GitHub secret) and `ENABLE_EXPERIMENTAL_COREPACK` (a Vercel build var), as 00-prereqs asked. It also accepts an optional `LAP_LIVE_TEST` (plan §11.3), which `.env.example` doesn't list.
+- `QUOTA_CHECK_AT` contains a space, so it has to be quoted (`"fri 20:00"`) if a .env file is ever `source`d by a shell. Next's dotenv handles it either way.
 - **Stop hook does not honour `stop_hook_active`.** The plan wants it to block while `pnpm check` fails, bounded by Claude Code's block cap. My plan said otherwise; I changed it to match the plan.
 - **Two extra deny rules** beyond §11.4's literal list: `Bash(git push -f*)` and `Bash(pnpm exec drizzle-kit drop*)`. They are aliases of rules that are already there.
 - **Permissions-Policy** leaves out `interest-cohort` (obsolete).
@@ -40,7 +45,7 @@
 
 ## Deviations
 
-- **Session 0 never ran.** This session wrote `CLAUDE.md` and `.env.example`, which belong to Session 0, on the owner's instruction. `config/alliances.ts`, `fixtures/README.md` and `docs/handoff/00-prereqs.md` still don't exist; they need 18 API calls and the owner's in-game clock reading. §11.1 lists `config/alliances.ts`; it is the only §11.1 path not created.
+- **This branch first started from the first commit, before Session 0 reached main.** Session 0 was merged in afterwards (see Built). `config/alliances.ts` comes from Session 0 and passes `pnpm check` unchanged.
 - **The three planning docs were edited** (path references only) and moved. The playbook says sessions don't edit them; the owner asked for the move in this session's prompt.
 - The plan says `import/order` → `import-x/order`, `typescript` latest → 6.0.3, and `gitleaks protect` → `gitleaks git --pre-commit --staged` (see Decisions).
 - Files not in §11.1, all required by §12 or Next: `proxy.ts`, `instrumentation.ts`, `lib/budget.ts` (the prompt asked for it), `lib/redact.ts`, `lib/queries/blocked-keys.ts`.
@@ -145,7 +150,8 @@ Both were reverted.
 
 ## Open issues
 
-- **Session 0's remaining parts are not done:** `config/alliances.ts` (20 verified ids), `fixtures/README.md` and `docs/handoff/00-prereqs.md`. Session 2 reads 00-prereqs and fixtures/README; run Session 0 before Session 2.
+- Still open from 00-prereqs: **TRM (67110063)** is `/v1` rank 31, not the board's #19. Swapping it is the owner's call. GitHub secret scanning and push protection still need turning on.
+- The stale branches `claude/dreamy-cori-r5ve6a` and `claude/session-0-prerequisites-692c79` can be deleted; main has Session 0.
 - `.env.local` is untracked, but its content stays in the first commit's history. The owner says the key in it was already rotated. gitleaks run over the working tree flags `.env.local` (generic-api-key), so do not re-add it.
 - **Node 26 on PATH in a fresh cloud session is unverified.** `cloud-setup.sh` appends the PATH line to `~/.bashrc`, but this session's Bash tool didn't pick it up (shell snapshot taken at start). `install_pkgs.sh` also writes the PATH to `CLAUDE_ENV_FILE`, which should cover it. The next cloud session must run `node -v` first; if it prints v22, prefix commands with `PATH=/opt/node26/bin:$PATH` and report it.
 - Permissions allow `git push origin main`, but cloud sessions push to `claude/*` branches, so those pushes will still prompt. Add a rule if that's unwanted.
@@ -156,31 +162,24 @@ Both were reverted.
 
 ## Next
 
-Session: 2 — Source adapters + tests (only after Session 0's remaining steps)
+Session: 2 — Source adapters + tests
 Model / effort: keep — no signal. The scaffold took no design judgment beyond version compatibility.
 Owner must do first:
 
-- Run Session 0 (config/alliances.ts, fixtures/README.md, 00-prereqs.md; 18 API calls, weekday only). Paste the Session 0 adjustments below.
+- Merge this PR into main.
 - Paste `scripts/cloud-setup.sh` as the cloud environment's setup script, if not done.
 
 Plan changes needed:
 
 - §11.4 says `gitleaks protect` and `import/order`; §12.4 implies TypeScript latest. These are now `gitleaks git --pre-commit --staged`, `import-x/order` and TypeScript 6.0 (DECISIONS D8, D9, D12).
 - §11.2 and §11.6 mention `lib/lat-client.ts`; it should be `lib/sources/v1.ts`.
-- The playbook's Session 0 prompt tells it to write CLAUDE.md and .env.example, which now exist.
-
-<adjustments for="Session 0">
-- CLAUDE.md (playbook §C verbatim) and .env.example already exist (written in Session 1 on the owner's instruction). Do not rewrite them. Check that .env.example matches §7 and PREREQUISITES §4 and only add what's missing; lib/env.ts validates every variable in it, so update lib/env.ts and lib/env.test.ts in the same commit if you add one.
-- The planning docs now live in docs/: docs/IMPLEMENTATION_PLAN.md, docs/SESSION_PLAYBOOK.md, docs/PREREQUISITES.md.
-- .env.local is already untracked and gitignored.
-- Fixture recording follows .claude/skills/record-fixture/SKILL.md. Save the 18 responses as the prompt says (fixtures/v1-ids/<id>.json) and create fixtures/README.md with the skill's table.
-- A pre-commit gitleaks rule blocks `lap_` + 20 or more alphanumerics; a response that echoes the key will be refused.
-</adjustments>
 
 <adjustments>
 - Paths: the plan is at docs/IMPLEMENTATION_PLAN.md. Stubs with header comments already exist at lib/sources/{v1,internal,index}.ts; replace them.
 - Node 26's fetch: branch on `response.status` only (already in .claude/rules/collector.md).
-- Put test bodies in fixtures/ via the record-fixture skill only; tests read `fixtures/v1-20261104T155902Z/alliance-*.json` (existing) and `fixtures/v1-ids/*` (Session 0).
+- Fixtures: 22 `/v1` alliance bodies (`fixtures/v1-*/alliance-*.json`, `fixtures/v1-ids/*.json`). Non-ASCII names for parser tests: 67111313 (꧁Black Raven꧂) and 67110811 (Берсерк, tag `404`). New fixtures only via the record-fixture skill.
+- Measured `/v1` read time (00-prereqs): 1.46–2.53 s, median ≈ 1.9 s.
+- `config/alliances.ts` exports `SERVER`, `TrackedAlliance` and `ALLIANCES`; import them, don't redefine.
 - `lib/budget.ts` has `requiredQuota(n) = 2 × (n + 5)`; reuse it, don't re-derive.
 - `max-lines-per-function` is off for `*.test.ts` (D14); every other lint limit applies to tests.
 - `exactOptionalPropertyTypes` is on: optional fields on the adapter output type must be `T | null` (as in docs/ARCHITECTURE.md), not `?: T` assigned `undefined`.
