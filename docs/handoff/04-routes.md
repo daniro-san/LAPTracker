@@ -274,4 +274,4 @@ Plan changes needed:
 - `run_logs` has a `v1.fetch` line per `/v1` call with `duration_ms` and `cached`: read the per-call timings and the cached/not-cached counts from there.
 </adjustments>
 
-https://github.com/daniro-san/LAPTracker/pull/13
+https://github.com/daniro-san/LAPTracker/pull/14
