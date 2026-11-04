@@ -4,12 +4,15 @@
     "allow": [
       "Bash(pnpm *)",
       "Bash(git commit *)",
-      "Bash(git push origin main)",
       "Bash(curl *)",
       "Bash(gh api *)",
-      "Bash(gh workflow *)"
+      "Bash(gh workflow *)",
+      "Bash(git push -u origin HEAD)",
+      "Bash(gh pr *)",
+      "Bash(gh release *)"
     ],
     "deny": [
+      "Bash(git push origin main)",
       "Bash(rm -rf *)",
       "Bash(git push --force*)",
       "Bash(git push -f*)",

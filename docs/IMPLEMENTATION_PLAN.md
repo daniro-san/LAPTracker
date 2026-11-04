@@ -2,7 +2,7 @@
 
 > **For Claude Code:** read this whole file first. Implement phase by phase, in order. Stop after each phase and show what was built before moving on. Do not skip Phase 0 checks. Everything in the codebase (code, comments, UI copy, commit messages) is in **English**.
 >
-> **Companion files:** `docs/SESSION_PLAYBOOK.md` has one prompt per session with model/effort/mode and the handoff contract; `docs/PREREQUISITES.md` lists accounts, CLIs, secrets and what the owner does by hand before each session. Sessions are driven from the playbook; this file is the specification they implement.
+> **Companion files:** `SESSION_PLAYBOOK.md` has one prompt per session with model/effort/mode and the handoff contract; `PREREQUISITES.md` lists accounts, CLIs, secrets and what the owner does by hand before each session. Sessions are driven from the playbook; this file is the specification they implement.
 
 ## 1. Goal
 
@@ -57,7 +57,7 @@ Vercel Hobby cron fires once a day at an imprecise minute, so it's out. GitHub A
 - **`POST /api/tick`** decides: compute now in `SERVER_TZ`; the current event is the Saturday whose `EVENT_TIME` is nearest; for each phase, if `now ∈ [SNAPSHOT_<PHASE>, SNAPSHOT_<PHASE> + SNAPSHOT_WINDOW_MIN)` and no snapshot exists for `(event, phase)`, run it. The `unique (event_id, phase)` constraint and the run lock make a double tick harmless. Outside the windows it returns `204` in milliseconds.
 - **Times are env vars** (`SNAPSHOT_BEFORE=10:00`, `SNAPSHOT_AFTER=14:00`, `EVENT_TIME=12:00`, all server time): change them in Vercel from a phone, redeploy, done. No YAML edit, no commit. `/admin` shows the effective schedule read-only. A DB-backed settings form is v2, only if env edits prove annoying.
 - Precision = Actions jitter (5–20 min at busy times) + the 15-min cadence: a 10:00 snapshot lands between 10:00 and ~10:35. Fine with hours of margin; stated in the admin message (`scheduled 10:00, ran 10:12`).
-- **`.github/workflows/keepalive.yml`** (monthly commit) stays: GitHub disables schedules after 60 days without a commit on the default branch.
+- **`.github/workflows/keepalive.yml`** (monthly commit to a `keepalive` branch — `main` is protected, §11.6) stays: GitHub disables schedules in a public repo after 60 days without repository activity.
 - **Friday check** is a tick too: `/api/tick` runs it in the first tick after `QUOTA_CHECK_AT` (default Friday 20:00 server). It always posts to the admin webhook: quota `remaining` (⚠️ if `< 900`), database size via `pg_database_size()` (⚠️ above 700 MB), and the next BEFORE/AFTER in server time and UTC — so a silent week means the tick is dead, which is itself the signal.
 - Manual fallback: "Run BEFORE/AFTER now" on `/admin` (PIN). This is the real backup if Actions is late or down.
 
@@ -120,7 +120,7 @@ Alliances rename (URSA was "Wolves" until recently); players rename too. `union_
 |---|---|
 | 20 alliance fetches × 2 phases | 40 |
 | quota check × 2, Friday check | 3 |
-| retries | ≤ 10 |
+| retries | ≤ 10 (a `502` counts against quota — measured 2026-11-04, `used` advanced on the 502; `calls_used` counts failed calls too) |
 | **Total** | **~55** |
 | Headroom | ~945 |
 
@@ -256,14 +256,16 @@ export const ALLIANCES = [
   { unionId: 67110465, tag: "BOH",  name: "BladesOfHonor" },         // #16 · #26
   { unionId: 67110415, tag: "CR8R", name: "BCR8RNU" },               // #17 · #18
   { unionId: 67110999, tag: "WOK",  name: "Wolfskinder" },           // #18 · #24
-  { unionId: 67110063, tag: "TRM",  name: "Thermopylae" },           // #19 · #19
-  { unionId: 67110811, tag: "404",  name: "Берсерк" },               // #20 · #25  (Cyrillic name; another reason for ids, not names)
+  { unionId: 67111040, tag: "AFR",  name: "AllianceFr" },            // #19 · #15 · v1 #19 — replaced TRM (67110063, v1 #31) on 2026-11-04 at the owner's choice: follow /v1 rank
+  { unionId: 67111128, tag: "FGH",  name: "MegaDeath" },             // #20 · #33 · v1 unverified (502 twice on 2026-11-04) — replaced 404 (67110811, Берсерк, v1 #21). Session 2's smoke call verifies it.
 ] as const;
 ```
 
 Env vars (`.env.example` + Vercel):
 ```
 LAP_API_KEY=lap_...
+LAP_API_BASE_URL=https://api.lastasylumtracker.com/v1   # documented API; override if the host or version path moves
+LAP_SITE_BASE_URL=https://lastasylumtracker.com/api      # internal API (ranks board, live-roster fallback)
 DATABASE_URL=postgres://...
 CRON_SECRET=<random 32+ chars>
 EDIT_PIN=<6-8 digits>
@@ -297,7 +299,9 @@ Still needed, and that is all Session 0 does:
 - One output type: `AllianceSnapshotInput = { unionId, tag, name, memberCount, totalPower, members: { uid, name, power, kills, lv }[], sourceUpdatedAt, cached, raw }`.
 - `v1.ts`: `fetchAlliance(id)`, `fetchQuota()`; `Authorization` + `User-Agent` on every request; the alliance response is a flat object (no wrapper) — parse `power, member_count, level, rank.rank, updated_at, cached, members[]{uid, nick_name, power, kills, lv}` and `quota` from each response; retries `502/503/504` max 3 (1s/2s/4s + jitter, `Retry-After` honoured); `429` → `QuotaExhaustedError`; `404` → `NotFoundError`; per-call timeout 30 s (a read may be a live pull); concurrency 4.
 - `internal.ts`: `fetchRanks(server)` → `{ pulledAt, power: Map<unionId, number>, kills: Map<unionId, number> }` (open GET); `fetchAlliance(id)` parsing the `live: true` shape only and throwing `NotLiveError` on the stub — used only as the per-alliance fallback in §3.5. Header comment: unofficial, read-only, **no refresh calls, ever**.
+- `members[].kills` can be `null` (seen once, AFR 67111040, 2026-11-04): the parser keeps `null` on the member row, `sumKills` treats it as 0, the UI shows `—` for that member. Same rule for `power` if it ever happens. Stated in DECISIONS.
 - `index.ts` exports `{ v1, internal }`. No source switch.
+- **Where the upstream lives is config; what it returns is code.** Base URLs come from `lib/env` (`LAP_API_BASE_URL`, `LAP_SITE_BASE_URL`, §7) and appear nowhere else — a test greps `lib/` and `app/` for `lastasylumtracker` and fails on any hit outside `lib/env.ts` defaults. Each adapter parses with a zod schema of exactly the fields it uses (not the whole response), so an upstream rename fails loudly as `v1.schema` in `run_logs` + a ❌ admin message, never as silent zeros. A new provider is a third file implementing the same two functions; the collector and everything above it don't change. What this does *not* try to be: a config-driven field mapping — a schema change needs a code change and a test either way, and the zod schema is what tells you it happened.
 - Tests (mocked `fetch`; bodies from `fixtures/v1-*` and `fixtures/probe-*`): both parsers → the same type; `totalKills == sum(members.kills)`; `cached` parsed; retry then success; `429` aborts; headers always present; ranks parsing; `NotLiveError` on the stub shape.
 
 ### Phase 3 — Collector (`lib/collector.ts`)
@@ -405,7 +409,8 @@ The alliance running this is **Old Grandmas**. Visual identity = plague-doctor /
 ### Phase 6 — Scheduling + deploy
 - Vercel project, link Neon from Marketplace, set env vars, `drizzle-kit push`.
 - `.github/workflows/tick.yml`: `schedule: */15 * * * 5,6,0` → one `curl --fail --max-time 150 -X POST $APP_URL/api/tick` with `CRON_SECRET`; plus `workflow_dispatch` with a `phase` input that calls `/api/snapshot` directly for manual runs from the GitHub UI. `APP_URL` and `CRON_SECRET` as repository secrets. **Public repo: never commit `.env`, keys, or the PIN.** No times in YAML — they are env vars (§3.1).
-- `.github/workflows/keepalive.yml`: monthly, commits a timestamp to `.keepalive` on `main`. This prevents GitHub from disabling the schedule after 60 days of inactivity. Not optional.
+- `.github/workflows/keepalive.yml`: monthly, commits a timestamp to `.keepalive` on the `keepalive` branch (force-updated; never `main`, which is protected). Together with weekly Dependabot PRs this is the "repository activity" that keeps GitHub from disabling the schedule after 60 days. Not optional. The Friday message (§3.1) is the detector if GitHub's definition of activity turns out narrower than this.
+- `.github/workflows/dependabot-automerge.yml` (Session 8, with the other workflows): on Dependabot PRs for minor/patch updates, `gh pr merge --auto --squash`; CI still has to pass. Majors are left for the owner.
 - Document in README how to change the alliance list (edit config → redeploy).
 - **Notifications — two audiences, two channels.** Two optional env vars:
   - `NOTIFY_WEBHOOK_PUBLIC` (alliance Discord channel, non-technical readers). Plain language, no numbers that need explaining, no jargon. Templates:
@@ -486,14 +491,14 @@ Dependency rule: `app → lib/{collector,queries,repo}`; `lib/collector → lib/
 ### 11.2 Code rules (enforced by tooling, not by memory)
 
 - TypeScript `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`. No `any`; `unknown` at boundaries + narrowing.
-- Boundaries validated with zod: `lib/env.ts` (fail fast at startup), upstream responses (`lat-client` parses into typed objects; raw JSON is stored as-is in `raw_json`), route bodies.
+- Boundaries validated with zod: `lib/env.ts` (fail fast at startup), upstream responses (`lib/sources/v1.ts` and `internal.ts` parse into typed objects; `raw_json` stores the trimmed response, §6), route bodies.
 - Errors are classes (`QuotaExhaustedError` etc.); callers match on `instanceof`, never on message strings.
 - Pure logic (budget math, delta computation, roster diff) lives in functions with no IO and is tested directly. IO lives at the edges.
 - Soft limits via ESLint: files ≤ 300 lines, functions ≤ 50 lines, cyclomatic complexity ≤ 12. Exceeding one is a signal to split, not a reason to disable the rule.
 - Names: **LAP** = Last Asylum Plague, the game (its key prefix is `lap_`); **the tracker** = lastasylumtracker.com, the third-party site and API we read; **LAPTracker** = this project. Never "LAT".
 - Naming follows `docs/GLOSSARY.md`: *might* (UI word) = `total_power` (API/DB word); *kills* = `total_kills` (roster sum) vs *board kills* = `kills_board`; *snapshot*, *phase*, *fresh*, *partial*, *stale*, *source* (`v1` | `internal`); *identity* = `union_id` / `uid`, *name* and *tag* are labels with a history. One name per concept, both in code and in prose, so an agent can grep.
 - Comments explain *why* (a quota rule, an upstream quirk), never *what*. Each invariant from §3.4, §3.7 and the "Logging guarantees" is referenced by name in a comment next to the code that enforces it, e.g. `// INVARIANT budget.reserve-for-after`.
-- Formatting: Prettier, no debate. Imports: ESLint `import/order`. Commit messages: conventional (`feat:`, `fix:`, `chore:`, `docs:`, `test:`).
+- Formatting: Prettier, no debate. Imports: ESLint `import-x/order` (eslint-plugin-import-x; Session 1, DECISIONS D9). Commit messages: conventional (`feat:`, `fix:`, `chore:`, `docs:`, `test:`).
 
 ### 11.3 Tests as the spec
 
@@ -510,7 +515,7 @@ Dependency rule: `app → lib/{collector,queries,repo}`; `lib/collector → lib/
 ### 11.4 Deterministic gates
 
 - `pnpm check` = `prettier --check && eslint && tsc --noEmit && vitest run`. Everything below calls this.
-- Pre-commit (lefthook): prettier + eslint on staged files, `gitleaks protect`. The secrets scan is the reason the hook exists — public repo. No pre-push hook: CI and the Stop hook already run `check`.
+- Pre-commit (lefthook): prettier + eslint on staged files, `gitleaks git --pre-commit --staged` (gitleaks 8.x syntax; `protect` is gone) with a custom `lap_` rule in `.gitleaks.toml`. The secrets scan is the reason the hook exists — public repo. No pre-push hook: CI and the Stop hook already run `check`.
 - `.github/workflows/ci.yml`: `pnpm/action-setup` (pinned SHA, version from `packageManager`) → `actions/setup-node` with `node-version-file: .nvmrc` and `cache: pnpm` → `pnpm install --frozen-lockfile && pnpm check` on push and PR.
 - Claude Code hooks in `.claude/settings.json` (committed, so they run in cloud sessions too):
   - `PostToolUse` on `Edit|Write` → `eslint --fix` on the changed file (fast; errors go straight back to the agent). `tsc` runs in the Stop hook, not per edit, unless it proves fast enough.
@@ -540,16 +545,27 @@ docs/
 
 Rules are path-scoped so they load only when the agent touches those files; CLAUDE.md stays short. UI conventions (reads via `lib/queries`, mobile-first at 360 px, no charts) are one line in CLAUDE.md, not a rules file. "Verify a snapshot" is `pnpm snapshot:dry`, "pre-release" is a README checklist — neither needs a skill.
 
-### 11.6 Evals
+### 11.6 Source control, PRs, releases — small, but not sloppy
+Trunk-based, one short-lived branch per session, squash-merged through a PR. Nothing lands on `main` without CI, including the owner's own commits and the AI's.
+
+- **Branches:** `session/NN-<slug>` for playbook sessions (`session/03-collector`), `fix/<slug>` and `chore/<slug>` otherwise. Deleted on merge (repo setting).
+- **Commits:** Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`, `test:`, `refactor:`), English, imperative, one concern per commit. The PR title follows the same format because the squash commit is the PR title + body.
+- **PRs:** every session ends by pushing its branch and opening a PR whose title is the string in its `<done_when>`; the handoff's last line is the PR URL. The PR body is the handoff's `## Built` + `## Verified` sections, so the diff can be reviewed from a phone with the evidence next to it. **The owner merges** (squash) after reading the handoff; sessions never merge their own PR. The next session starts from the merged `main`. Exception: Dependabot minor/patch PRs auto-merge on green CI (`dependabot-automerge.yml`, `gh pr merge --auto --squash` with `GITHUB_TOKEN`); majors wait for a human.
+- **`main` protection (GitHub ruleset, no bypass actors):** require a PR, require the `check` status, block force-pushes, require linear history. Repo settings: squash merge only, auto-delete head branches, allow auto-merge. With no bypass, the keepalive cannot commit to `main` — it pushes to a `keepalive` branch instead (Phase 6); GitHub's rule is "no repository activity in 60 days", and weekly Dependabot PRs are activity too. The Friday Discord message is the detector if that assumption ever fails.
+- **Deploys:** Vercel's Git integration deploys every merge to `main` to production and every PR to a preview URL. Preview deployments get **Preview-scoped** env vars: `DATABASE_URL` → a Neon `preview` branch (seeded with `pnpm db:seed`, reset from `main`'s data when wanted), their own `CRON_SECRET`/`EDIT_PIN`, no `NOTIFY_*` (a preview never posts to Discord), and Vercel Deployment Protection (Vercel Authentication) so a preview URL is not a public copy. The tick only ever calls `APP_URL` = production. That is what lets Sessions 6/6b/7 be reviewed on a phone before merge.
+- **Releases:** tags only, semver, `gh release create vX.Y.Z --generate-notes` (notes come from the conventional PR titles — no CHANGELOG file to maintain, no release bot with write access). `v0.1.0` at the first production deploy (Session 8), `v1.0.0` when the dry run reconciles (Session 9), then a tag per merged feature or fix batch, cut by the owner or by a session when asked. `package.json` `version` stays `0.0.0`; the tag is the version.
+- **Cloud sessions:** `gh pr create` is GraphQL and is rejected there (§A2 of the playbook); the REST call works: `gh api repos/{owner}/{repo}/pulls -f title=... -f head=... -f base=main -F body=@docs/handoff/NN-*.md`. Locally `gh pr create --fill` is fine. `gh release create` is REST and works in both.
+
+### 11.7 Evals
 
 For this app, "evals" are three things, in order of value:
 1. The **property-based compute tests** and the freshness tests (11.3) — the executable statement of the two guarantees that matter: numbers add up, and stale data is never reported as a delta.
-2. The **dry run** (Phase 7) — re-run after any change to `lib/collector.ts` or `lib/lat-client.ts`; the numbers table in `docs/handoff/09-dryrun.md` is the baseline.
+2. The **dry run** (Phase 7) — re-run after any change to `lib/collector.ts` or `lib/sources/*`; the numbers table in `docs/handoff/09-dryrun.md` is the baseline.
 3. **`/code-review` against `REVIEW.md`** on every change that touches `lib/` — a fresh context checking invariants, not the author grading itself.
 
 Skill-level evals (`claude plugin eval`) are not worth it at this size.
 
-### 11.7 What this deliberately does not include
+### 11.8 What this deliberately does not include
 
 Clean-architecture folder trees (`domain/application/infrastructure`), repository interfaces per table, custom error hierarchies beyond the four classes, a custom reviewer agent, more than one skill, numeric coverage gates, a plugin for the harness, monorepo tooling, Storybook, E2E browser tests for v1. Each would add surface for the agent to misread without changing what Saturday needs. If a later session proposes adding one of these, the handoff must say which concrete failure it would have prevented.
 
@@ -558,7 +574,7 @@ Clean-architecture folder trees (`domain/application/infrastructure`), repositor
 What we hold: one third-party API key, one shared PIN, one scheduler secret, Discord webhook URLs, and snapshots of ~2,000 players' public game stats. Our `/v1` reads can trigger pulls on the maintainer's side, which is a reason to keep them to ~40 a day and never retry in a tight loop. The game data is already public on the tracker site; the things worth protecting are the secrets, the quota, and the few roster fields that describe a person's *behaviour* rather than their stats.
 
 ### 12.1 Data we store but never serve
-The alliance roster includes `x`, `y` (map coordinates), `online`, `last_online_at`, `joined_at`, `daily_honor`, `daily_tech`. We keep them in `raw_json` so history can be recomputed, and **nothing reads them out**: not `lib/queries`, not any route, not the UI, not `run_logs`, not Discord. The read models expose only: alliance name/tag/union_id/member_count/total_power/total_kills/board numbers/freshness, member name/uid/power/lv/kills. A test asserts that `GET /api/events/[id]` responses contain none of the blocked keys. If v2 ever wants roster churn by timestamp, it reads `joined_at` server-side and returns a boolean. The player pages (Phase 5d) follow the same list: stats and names only.
+The alliance roster includes `x`, `y` (map coordinates), `online`, `last_online_at`, `joined_at`, `active`, `daily_honor`, `daily_tech` (`avatar_url`, `frame_url` are trimmed before storage, §6). We keep the rest in `raw_json` so history can be recomputed, and **nothing reads them out**: not `lib/queries`, not any route, not the UI, not `run_logs`, not Discord. The read models expose only: alliance name/tag/union_id/member_count/total_power/total_kills/board numbers/freshness, member name/uid/power/lv/kills. A test asserts that `GET /api/events/[id]` responses contain none of the blocked keys. If v2 ever wants roster churn by timestamp, it reads `joined_at` server-side and returns a boolean. The player pages (Phase 5d) follow the same list: stats and names only.
 
 ### 12.2 Secrets
 - Secrets reach the app only via environment variables (Vercel) or network secrets (cloud sessions). Never in code, fixtures, logs, Discord messages, responses or commit history. `gitleaks` in pre-commit and GitHub push protection are the two automated checks; `lib/logger.ts` redacts `Authorization`, `x-edit-pin`, and any value equal to a known secret before emitting.
@@ -587,10 +603,10 @@ The alliance roster includes `x`, `y` (map coordinates), `online`, `last_online_
 - Before adding any package: check last release date, open-issue response, and whether it runs install scripts (`pnpm view <pkg> scripts`). A package with a `postinstall` that downloads binaries needs a reason.
 
 ### 12.5 Platform
-- Vercel: env vars marked sensitive; preview deployments disabled or protected (a preview URL with production env vars is a public copy of the app). Function logs contain no secrets by construction (12.2).
+- Vercel: env vars marked sensitive and scoped — Production values never reach Preview (§11.6: preview DB branch, own secrets, no webhooks); previews behind Vercel Deployment Protection. Function logs contain no secrets by construction (12.2).
 - Neon: the app's role can read/write the project's tables and nothing else; migrations run with a separate role from the session or CI, not from the app.
 - `run_logs` / `app_errors`: carry `union_id`, `uid`, counts and codes — no names, no secrets (the logger passes every `data` object through `lib/redact.ts`).
-- GitHub: public repo, branch protection on `main` requiring CI, secret scanning + push protection on, Dependabot alerts on. The Claude GitHub App (cloud sessions) pushes through branch protection only if you allow it; otherwise sessions use branches.
+- GitHub: public repo; `main` ruleset per §11.6 (PR + `check` + no force-push + linear, no bypass actors, including for the Claude GitHub App — sessions push branches); secret scanning + push protection on; Dependabot alerts on; Actions `permissions` minimal per workflow.
 
 ### 12.6 What we don't do, and why
 No user accounts, no OAuth, no per-user permissions: a shared PIN plus rate limiting is proportional to a guild tool whose worst case is a vandalised kill count. No WAF, no secrets manager, no SOC2 theatre. If the alliance ever stores anything private (Discord IDs for `/ask` in v2 is the first candidate), §12.1 gets a new row and §12.2 gets a real auth story.
@@ -605,14 +621,8 @@ No user accounts, no OAuth, no per-user permissions: a shared PIN plus rate limi
 
 ## 10. Open questions for the owner (answer before Phase 1)
 1. ~~Server number and alliances~~ — answered: 325, §7 list from the board; Session 0 verifies the ids.
-   Answered — see docs/handoff/00-prereqs.md
 2. ~~Game server timezone~~ — answered: UTC−2 fixed, `Etc/GMT+2` (2026-11-04).
-   Answered — see docs/handoff/00-prereqs.md
 3. ~~API key~~ — answered: exists.
-   Answered — see docs/handoff/00-prereqs.md
 4. ~~Lost-power breakdown~~ — answered 2026-11-04: no per-member breakdown; the card shows members ↑↓ with `+joined/−left`, might ↑↓ with %, kills with % and a member-loss note when negative (Phase 5).
-   Answered — see docs/handoff/00-prereqs.md
 5. ~~Maintainer~~ — notified 2026-11-04.
-   Answered — see docs/handoff/00-prereqs.md
 6. ~~Event window~~ — deferred by the owner 2026-11-04: ship with `SNAPSHOT_BEFORE=10:00` / `SNAPSHOT_AFTER=14:00`; the real window is unconfirmed, so the first real Saturday (Phase 8 runbook) is also the measurement — if the AFTER lands mid-event, move the env var and redeploy, no code change.
-   Answered — see docs/handoff/00-prereqs.md
