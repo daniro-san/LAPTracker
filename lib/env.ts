@@ -19,6 +19,9 @@ const discordWebhook = z
 
 export const envSchema = z.object({
   LAP_API_KEY: z.string().startsWith("lap_", "expected a lap_ key"),
+  // The only place upstream hosts appear (plan Phase 2); override if the host or version path moves.
+  LAP_API_BASE_URL: z.url().default("https://api.lastasylumtracker.com/v1"),
+  LAP_SITE_BASE_URL: z.url().default("https://lastasylumtracker.com/api"),
   DATABASE_URL: z.string().regex(/^postgres(ql)?:\/\//, "expected a postgres:// URL"),
   CRON_SECRET: z.string().min(32, "expected 32+ characters"),
   EDIT_PIN: z.string().regex(/^\d{6,8}$/, "expected 6-8 digits"),
@@ -45,13 +48,31 @@ export type Env = z.infer<typeof envSchema>;
 const withoutEmpty = (source: Record<string, string | undefined>) =>
   Object.fromEntries(Object.entries(source).filter(([, v]) => v !== undefined && v !== ""));
 
-export function parseEnv(source: Record<string, string | undefined>): Env {
-  const result = envSchema.safeParse(withoutEmpty(source));
+function parseWith<T extends z.ZodType>(
+  schema: T,
+  source: Record<string, string | undefined>,
+): z.infer<T> {
+  const result = schema.safeParse(withoutEmpty(source));
   if (!result.success) {
     const problems = result.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`);
     throw new Error(`Invalid environment:\n  ${problems.join("\n  ")}`);
   }
   return result.data;
+}
+
+export function parseEnv(source: Record<string, string | undefined>): Env {
+  return parseWith(envSchema, source);
+}
+
+/** What lib/sources needs, so a source can run (live smoke test) without the database or schedule vars. */
+const sourceEnvSchema = envSchema.pick({
+  LAP_API_KEY: true,
+  LAP_API_BASE_URL: true,
+  LAP_SITE_BASE_URL: true,
+});
+
+export function getSourceEnv(): z.infer<typeof sourceEnvSchema> {
+  return parseWith(sourceEnvSchema, process.env);
 }
 
 let cached: Env | undefined;
