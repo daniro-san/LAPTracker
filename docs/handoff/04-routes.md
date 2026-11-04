@@ -1,10 +1,10 @@
 # 04 — Routes, logger, notifications
 
-This session first implemented the Session 4 prompt as it stood when it started. PRs #11 and #12 rewrote that prompt on `dev` during the session (event-driven tick, rehearsals). At the owner's request (2026-11-04), the same PR was extended to the new prompt. Everything below describes the final state.
+This session first implemented the Session 4 prompt as it stood when it started. PRs #11 and #12 rewrote that prompt on `dev` during the session (event-driven tick, rehearsals). The owner asked for the PR to be extended to the new prompt, but #13 had already been merged at 22:06 UTC with the first version (head `ccaabb9`). The extension is therefore a follow-up PR on the same branch: migration 0002 on top of the merged 0001, and D21 appended after the merged D20. Everything below describes the state after the follow-up.
 
 ## Built
 
-- **Schema** (`lib/schema.ts`, one migration `drizzle/0001_sparkling_lake.sql`):
+- **Schema** (`lib/schema.ts`; `drizzle/0001_lowly_luckman.sql` merged in #13, `drizzle/0002_woozy_yellow_claw.sql` in the follow-up):
   - new tables `run_logs`, `auth_attempts`, `app_errors` and `rehearsal_slots`;
   - `events`: `before_at` and `after_at` (NOT NULL, as 3b asks), `quota_checked_at`, and `unique(event_at_utc)`;
   - `snapshots`: `quota_remaining_before`.
@@ -45,11 +45,11 @@ This session first implemented the Session 4 prompt as it stood when it started.
   - `lib/collector.test.ts`: 1 test and 1 assertion added.
 - **Test helpers:** `lib/db.test-helpers.ts` (PGlite migrated from `drizzle/`) and `lib/app-context.test-helpers.ts`.
 - **Dependency:** `@electric-sql/pglite` 0.5.14 (dev, exact pin, D19).
-- **Docs:** `docs/DECISIONS.md` D19 and D20; `docs/ARCHITECTURE.md`.
+- **Docs:** `docs/DECISIONS.md` D19, D20 (merged in #13) and D21 (the follow-up; it supersedes D20's `test=1` and tick bullets); `docs/ARCHITECTURE.md`.
 
 ## Decisions
 
-All of these are in D19 and D20. The ones a reviewer should know first:
+All of these are in D19, D20 and D21. The ones a reviewer should know first:
 
 - **DB-backed tests run on PGlite** (owner's choice, D19).
 - **The tick does one thing per call:**
@@ -74,11 +74,13 @@ All of these are in D19 and D20. The ones a reviewer should know first:
 
 ## Deviations
 
-- §6: `events.unique(event_at_utc)`, `events.quota_checked_at`, `snapshots.quota_remaining_before` and the `rehearsal_slots` table are not in the plan (D20).
+- §6: `events.unique(event_at_utc)`, `events.quota_checked_at`, `snapshots.quota_remaining_before` and the `rehearsal_slots` table are not in the plan (D20, D21).
 - Phase 4 lists no auth on the quota routes; both require it.
 - §11.3 says "real local Postgres"; the tests use PGlite (D19).
 - Phase 6 "Logging guarantees": the failed-insert counter goes into the admin message (`run_logs write failures: N`), not into `RunSummary`.
-- Branch: `claude/laughing-tesla-z7alwg`, assigned by the cloud harness. The branch started from `main`, so `origin/dev` was merged in (no conflicts) and the PR targets `dev`.
+- Branch: `claude/laughing-tesla-z7alwg`, assigned by the cloud harness.
+  - The branch started from `main`, so `origin/dev` was merged in (no conflicts) and the PRs target `dev`.
+  - After #13 merged, `dev` was recorded as merged with `-s ours`, which is exact because `dev`'s tree equalled the branch's pre-extension tree. The follow-up was not rebased, because `git push --force*` is denied by `.claude/settings.json`.
 
 ## Verified
 
@@ -192,8 +194,8 @@ Quota cost: a snapshot ~21 calls; a rehearsal ~45 over ~50 min, spent by the tic
 
 ## Open issues
 
-- **Migration 0001 is applied only in PGlite.** Neon main and preview need it before any route works.
-  - `ALTER TABLE events ADD COLUMN before_at … NOT NULL` fails if `events` already has rows. Check with `select count(*) from events` first. If there are rows, delete the test rows or add the columns nullable, backfill them, then set NOT NULL.
+- **Migrations 0001 and 0002 are applied only in PGlite.** Neon main and preview need both before any route works.
+  - 0002's `ALTER TABLE events ADD COLUMN before_at … NOT NULL` fails if `events` already has rows (0001 may already have been applied after #13 merged; that would not add rows by itself). Check with `select count(*) from events` first. If there are rows, delete the test rows or add the columns nullable, backfill them, then set NOT NULL.
 - **Vercel env:** the owner reports adding the rehearsal variable(s) and fixing one value during the session. Unverified from here. An empty `REHEARSAL_AT` turns rehearsals off; unset means `fri 18:00`.
 - **Client IP is unverified:** `x-real-ip`, else the first `x-forwarded-for` hop. If clients can set these, the per-IP limit can be bypassed; the global 20/h lockout still holds.
 - **Two simultaneous "Rehearse now" presses** can both pass the pending check (read-then-insert) and create two rehearsals. Scheduled slots can't race.
@@ -229,11 +231,11 @@ Plan changes needed:
   - `lib/repo/{run-logs,auth-attempts,app-errors,database,events,rehearsals}.ts`;
   - `lib/queries/events.ts`;
   - `app/api/**/route.ts`, `instrumentation.ts`;
-  - `drizzle/0001_sparkling_lake.sql`.
+  - `drizzle/0001_lowly_luckman.sql`, `drizzle/0002_woozy_yellow_claw.sql`.
 - The run lock is still Session 3's compare-and-set in `repo.startSnapshot`; `RunRefusedError('running')` → 409 in `lib/run.ts`.
 - Due phases come from `events.before_at` and `after_at` (`duePhases`). The env only creates Saturday rows (`eventsToCreate`). A Saturday row's times are fixed when the row is created, a day ahead: changing `SNAPSHOT_BEFORE` after that does not move that week's run.
 - Logger: one INSERT per line; lines before the claim are dropped; the 400th row is `log.capped`; `shutdown()` awaits the collector's un-awaited `v1.retry` inserts.
-- Choices to check against the plan, each in D20:
+- Choices to check against the plan, each in D20 or D21:
   - the quota routes behind auth;
   - client IP header trust (unverified);
   - `http_status: 200` assumed on success;
@@ -260,7 +262,7 @@ Plan changes needed:
 </adjustments>
 
 <adjustments for="Session 8">
-- Apply `drizzle/0001_sparkling_lake.sql` to Neon main and preview, after checking that `events` is empty: the NOT NULL `before_at`/`after_at` columns can't be added to existing rows.
+- Apply `drizzle/0001_lowly_luckman.sql` and `drizzle/0002_woozy_yellow_claw.sql` to Neon main and preview, after checking that `events` is empty: 0002's NOT NULL `before_at`/`after_at` columns can't be added to existing rows.
 - `tick.yml`: `*/15 * * * *` → `POST /api/tick` with `Authorization: Bearer $CRON_SECRET`. `workflow_dispatch` → `POST /api/snapshot?phase=<input>` with the same header.
 - Step 4's rehearsal: `POST /api/rehearsal` takes `x-edit-pin` only (CRON_SECRET is refused there by design).
 - Verify in Vercel's docs that `x-real-ip` and `x-forwarded-for` are set by the edge (`lib/auth.ts` `clientIp`).

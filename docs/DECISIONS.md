@@ -118,40 +118,47 @@ ESLint counts a `describe(() => { ... })` callback as one function, so any test 
 
 Session 4's rate-limiter test has to read state back from a real database, and CI has no Postgres; the Neon driver cannot reach a plain Postgres without a WebSocket proxy. Added `@electric-sql/pglite` 0.5.14 (devDependency, exact pin), released 2026-10-31. 0.5.15 came out 2026-11-03, one day before this session, so the previous release was taken. 0 dependencies, no install scripts (`pnpm view @electric-sql/pglite scripts` lists only build/test scripts), 26 MB unpacked (the WASM build of Postgres). drizzle-orm 0.45.4 supports it (`drizzle-orm/pglite`, optional peer `>=0.2.0`). Tests open one in-process instance per file, migrate it from `drizzle/` and cast it to `Db`, as Session 3 did by hand with node-postgres. Alternatives rejected: `pg` plus a Postgres service in ci.yml (DB tests would be skipped or fail on a laptop without a running cluster), and the memory repo (cannot show that limiter state outlives a module). Cost measured: opening and migrating one instance takes ~4.0 s; `pnpm check` went from ~2.5–6.5 s to 17.2 s in the cloud container. It is the same Postgres engine, not Neon's server: driver-level behaviour (WebSocket pool, connection limits) is not covered.
 
-## D20 — Route and rehearsal details the plan left open (2026-11-04, Session 4)
+## D20 — Route details the plan left open (2026-11-04, Session 4)
 
 - **`GET /api/quota` and `GET /api/quota/check` require Bearer CRON_SECRET or the PIN**, with the same rate limiter as `/api/snapshot`. Plan Phase 4 lists no auth for them, but each request spends one `/v1` call, so an open route lets anyone drain the 1,000/day quota in a loop.
+- **Events:** `events.event_at_utc` is unique, and the event row is found-or-created by it (insert on conflict do nothing, then select). Without the constraint two concurrent ticks could create two events, and so two runs and twice the quota. `events.quota_checked_at` makes the Friday check exactly-once: a conditional update claims it, like the run lock.
+- **`test=1` on `/api/snapshot`** creates a new `is_test` event dated now (owner's choice), so the weekday dry run (Phase 7) cannot complete the coming Saturday's BEFORE. Test events notify both channels like any run (Session 9 watches both messages).
+- **The tick** runs the earliest due action (Friday check, BEFORE, AFTER) whose window `[at, at + SNAPSHOT_WINDOW_MIN)` holds now and that is not done yet: a snapshot row of any status, or `quota_checked_at` set. It never re-runs a phase that has a row; a failed or partial run is re-run by hand. The Friday check uses the same window as the snapshots.
+- **Finalising a crashed run:** the route wraps `repo.startSnapshot` to capture the id the claim returned, instead of `findSnapshot` afterwards, which could finalise another run's row if ours died before its claim. The row gets `status = failed`, 0 added calls (the real count died with the run) and the real duration.
+- **Logger:** a line is one INSERT; error lines are mirrored to `console.error`; the first failed insert of a run is mirrored once. The 400th line is written as `log.capped` and nothing after it, so a run has at most 400 rows. `shutdown()` only awaits inserts already in flight (the collector fires `v1.retry` without awaiting); nothing is buffered.
+- **Links in Discord messages** use the request's origin, so no new env var: the tick is called on `APP_URL`. `avatar_url` is left out until Phase 5b's PNG exists.
+- **Client IP** for the limiter is `x-real-ip`, else the first `x-forwarded-for` hop. That Vercel overwrites both was not verified (vercel.com was not reachable from the session). If a client could set them, the per-IP limit weakens; the global lockout does not.
+- **`v1.fetch`** lines record `http_status: 200` on success: the adapter returns only on 2xx and does not expose the status then.
+
+## D21 — Event-driven tick and rehearsals (2026-11-04, Session 4 follow-up; supersedes parts of D20)
+
+The Session 4 prompt was rewritten on `dev` (#11, #12) while the session ran; #13 was merged with the first version. This entry covers the follow-up that implements the rewrite.
+
+- **Supersedes D20's `test=1`:** that parameter is gone from `/api/snapshot`. A dry run is a rehearsal (`POST /api/rehearsal`).
+- **Supersedes D20's tick bullet:** phase times live on the event (`events.before_at`, `after_at`, NOT NULL; migration 0002). The tick does one thing per call, in this order:
+  - it creates the coming Saturday's row from the env, silently, from 24 h before BEFORE until AFTER's window closes;
+  - it runs the earliest phase of any event (Saturday or rehearsal) whose `[x_at, x_at + SNAPSHOT_WINDOW_MIN)` window holds now and that has no snapshot row of any status;
+  - otherwise it runs the Friday check, claimed on the coming Saturday's row;
+  - otherwise it runs a due `REHEARSAL_AT` slot.
+
+  A Saturday row's times are fixed when the row is created, so changing `SNAPSHOT_BEFORE` after that does not move that week's run.
+
 - **Credentials per route:**
   - `/api/tick` accepts CRON_SECRET only;
   - `/api/rehearsal` accepts the PIN only (plan Phase 4);
   - the others accept either.
-- **Events:**
-  - `events.event_at_utc` is unique. A Saturday row is found-or-created by it (insert on conflict do nothing, then select), so two concurrent ticks can't create two events, two runs and twice the quota.
-  - A rehearsal's `event_at_utc` is the midpoint between its phases (created + 30 min).
-  - `events.quota_checked_at` makes the Friday check exactly-once: a conditional update on the coming Saturday's row claims it, like the run lock.
-- **The tick does one thing per call**, in this order:
-  - it creates the coming Saturday's row (silently, from 24 h before BEFORE until AFTER's window closes);
-  - it runs the earliest phase of any event whose `[x_at, x_at + SNAPSHOT_WINDOW_MIN)` window holds now and that has no snapshot row of any status;
-  - otherwise it runs the Friday check;
-  - otherwise it runs a due `REHEARSAL_AT` slot.
-
-  It never re-runs a phase that has a row: a failed or partial phase is re-run by hand. The Friday check and the rehearsal slots use the same window as the snapshots.
-
 - **`REHEARSAL_AT` slots are rows in `rehearsal_slots`.** The first tick in a slot's window claims it (insert on conflict do nothing), then creates the rehearsal, or records why it was skipped and posts one `[TEST]` admin note. So a slot runs at most once and a skip is announced once.
-  - An empty `REHEARSAL_AT` means off. `lib/env.ts` keeps that one key's empty value instead of treating it as unset (which would apply the `fri 18:00` default).
+  - An empty `REHEARSAL_AT` means off: `lib/env.ts` keeps that one key's empty value instead of applying the `fri 18:00` default.
+  - `REHEARSAL_KEEP` defaults to 4.
 - **Rehearsal guards** (button and schedule alike), in this order:
   - neither now nor the rehearsal's AFTER (now + 45 min) may fall on `EVENT_WEEKDAY` or the day after;
-  - no real BEFORE in (now, now + 3 h], checked against both the DB rows and the env-computed coming Saturday, whose row may not exist yet;
+  - no real BEFORE in (now, now + 3 h], checked against both the DB rows and the env-computed coming Saturday;
   - no real snapshot `running` and younger than 10 min;
-  - no pending rehearsal, meaning one whose AFTER window is still open and whose AFTER has not finished.
+  - no pending rehearsal (AFTER window still open, AFTER not finished).
 
-  The pending check is read-then-insert, so two simultaneous button presses could create two rehearsals. A scheduled slot cannot race; its claim is the insert.
+  The pending check is read-then-insert, so two simultaneous button presses could create two rehearsals; a scheduled slot cannot race.
 
-- **Retention:** creating a rehearsal deletes all but the newest `REHEARSAL_KEEP` test events, together with their run_logs, member rows, alliance rows and snapshots, in one transaction. The slot rows stay, with `event_id` set to null.
-- **The verdict** is computed from the database (`loadVerdictInput`), so `/admin` can recompute it. It is posted right after a test event's AFTER run, whichever route ran it. The quota line uses the new `snapshots.quota_remaining_before`, which is the quota check's `remaining`. That response already counts its own call, so the run's quota drop is `before − after + 1`, and that has to equal `calls_used`. If a rehearsal's AFTER never runs (missed window, dead tick), no verdict is posted; the missing message is the signal.
-- **Test events** never reach the public webhook. Their admin lines start with `[TEST]`. `GET /api/events` and `/api/events/[id]` don't serve them.
-- **Finalising a crashed run:** the route wraps `repo.startSnapshot` to capture the id the claim returned, instead of `findSnapshot` afterwards, which could finalise another run's row if ours died before its claim. The row gets `status = failed`, 0 added calls (the real count died with the run) and the real duration.
-- **Logger:** a line is one INSERT; error lines are mirrored to `console.error`; the first failed insert of a run is mirrored once. The 400th line is written as `log.capped` and nothing after it, so a run has at most 400 rows. `shutdown()` only awaits inserts already in flight (the collector fires `v1.retry` without awaiting); nothing is buffered.
-- **Links in Discord messages** use the request's origin, so no new env var: the tick is called on `APP_URL`. `avatar_url` is left out until Phase 5b's PNG exists. Admin run messages include "scheduled …, started …" (plan §3.1).
-- **Client IP** for the limiter is `x-real-ip`, else the first `x-forwarded-for` hop. That Vercel overwrites both was not verified (vercel.com was not reachable from the session). If a client could set them, the per-IP limit weakens; the global lockout does not.
-- **`v1.fetch`** lines record `http_status: 200` on success: the adapter returns only on 2xx and does not expose the status then.
+- **A rehearsal's `event_at_utc`** is the midpoint between its phases (created + 30 min). It keeps the column unique.
+- **Retention:** creating a rehearsal deletes all but the newest `REHEARSAL_KEEP` test events, with their run_logs, member rows, alliance rows and snapshots, in one transaction. Slot rows stay, with `event_id` set to null.
+- **The verdict** is computed from the database (`loadVerdictInput` + `rehearsalVerdict`), so `/admin` can recompute it. It is posted after any test event's AFTER run. Its quota line uses `snapshots.quota_remaining_before` (new, migration 0002): the quota check's `remaining`. That response already counts its own call, so a run's quota drop is `before − after + 1`, and it has to equal `calls_used`. No AFTER run means no verdict; the missing message is the signal.
+- **Test events** never reach the public webhook. Their admin lines start with `[TEST]`. `GET /api/events` and `/api/events/[id]` don't serve them. Admin run messages now include "scheduled …, started …" (plan §3.1).

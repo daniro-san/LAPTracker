@@ -12,12 +12,6 @@ CREATE TABLE "auth_attempts" (
 	"window_start" timestamp with time zone NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "rehearsal_slots" (
-	"slot_at" timestamp with time zone PRIMARY KEY NOT NULL,
-	"event_id" integer,
-	"outcome" text NOT NULL
-);
---> statement-breakpoint
 CREATE TABLE "run_logs" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"snapshot_id" integer NOT NULL,
@@ -29,11 +23,7 @@ CREATE TABLE "run_logs" (
 	CONSTRAINT "run_logs_level_check" CHECK ("run_logs"."level" in ('info', 'warn', 'error'))
 );
 --> statement-breakpoint
-ALTER TABLE "events" ADD COLUMN "before_at" timestamp with time zone NOT NULL;--> statement-breakpoint
-ALTER TABLE "events" ADD COLUMN "after_at" timestamp with time zone NOT NULL;--> statement-breakpoint
 ALTER TABLE "events" ADD COLUMN "quota_checked_at" timestamp with time zone;--> statement-breakpoint
-ALTER TABLE "snapshots" ADD COLUMN "quota_remaining_before" integer;--> statement-breakpoint
-ALTER TABLE "rehearsal_slots" ADD CONSTRAINT "rehearsal_slots_event_id_events_id_fk" FOREIGN KEY ("event_id") REFERENCES "public"."events"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "run_logs" ADD CONSTRAINT "run_logs_snapshot_id_snapshots_id_fk" FOREIGN KEY ("snapshot_id") REFERENCES "public"."snapshots"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "app_errors_at_idx" ON "app_errors" USING btree ("at");--> statement-breakpoint
 CREATE INDEX "run_logs_snapshot_id_idx" ON "run_logs" USING btree ("snapshot_id");--> statement-breakpoint

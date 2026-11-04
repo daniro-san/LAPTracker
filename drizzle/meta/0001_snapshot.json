@@ -1,5 +1,5 @@
 {
-  "id": "65ec7ed1-fe29-4a9e-8165-7a1bece2f6cf",
+  "id": "887f3a52-e5fc-4141-a029-5aafa68e04f2",
   "prevId": "e3b895ff-5504-43f3-9752-ecdaab5ceca2",
   "version": "7",
   "dialect": "postgresql",
@@ -285,18 +285,6 @@
           "notNull": true,
           "default": "now()"
         },
-        "before_at": {
-          "name": "before_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "after_at": {
-          "name": "after_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
         "quota_checked_at": {
           "name": "quota_checked_at",
           "type": "timestamp with time zone",
@@ -410,51 +398,6 @@
           ]
         }
       },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.rehearsal_slots": {
-      "name": "rehearsal_slots",
-      "schema": "",
-      "columns": {
-        "slot_at": {
-          "name": "slot_at",
-          "type": "timestamp with time zone",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "event_id": {
-          "name": "event_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "outcome": {
-          "name": "outcome",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "rehearsal_slots_event_id_events_id_fk": {
-          "name": "rehearsal_slots_event_id_events_id_fk",
-          "tableFrom": "rehearsal_slots",
-          "tableTo": "events",
-          "columnsFrom": [
-            "event_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -595,12 +538,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": 0
-        },
-        "quota_remaining_before": {
-          "name": "quota_remaining_before",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
         },
         "quota_remaining_after": {
           "name": "quota_remaining_after",
