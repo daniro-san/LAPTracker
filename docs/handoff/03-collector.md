@@ -207,3 +207,5 @@ Plan changes needed:
 - `calls_used` counts every `/v1` attempt (the quota check, reads and retries) and nothing from the internal API. A clean run is exactly 21; each 502/503/504 retry adds 1. That is the number to reconcile against the quota `used` delta.
 - A re-run adds its own calls to the same snapshot's `calls_used`. A plain re-run of a partial snapshot costs 1 call plus one per missing alliance; `force` costs 21.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/8
