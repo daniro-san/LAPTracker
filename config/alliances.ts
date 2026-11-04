@@ -1,8 +1,8 @@
 // The 20 alliances tracked on server 325, addressed by union_id (plan §3.4): tags are
 // case-sensitive and not unique, ids never change. Seeded from the alliance_power board
 // (2026-11-03 16:35 UTC); every entry verified on GET /v1/alliances/{id} on 2026-11-04
-// (fixtures/v1-ids/<id>.json, fixtures/v1-*/alliance-<id>.json), except FGH (67111128):
-// /v1 answered 502 twice; added unverified at the owner's request (Session 1). Names are stored as the
+// (fixtures/v1-ids/<id>.json, fixtures/v1-*/alliance-<id>.json); FGH (67111128) after two 502s on
+// 2026-11-04 19:52 UTC, by the Session 2 smoke call at 20:23 UTC. Names are stored as the
 // API returns them and rendered as text.
 // Comments: board power rank · board kills rank · /v1 rank.rank at verification.
 // To change the list: edit here, redeploy. A change mid-Saturday does not affect the
@@ -38,5 +38,5 @@ export const ALLIANCES = [
   { unionId: 67110415, tag: "CR8R", name: "BCR8RNU" }, // #17 · #18 · v1 #17
   { unionId: 67110999, tag: "WOK", name: "Wolfskinder" }, // #18 · #24 · v1 #18
   { unionId: 67111040, tag: "AFR", name: "AllianceFr" }, // #19 · #15 · v1 #19 (board of 2026-11-04 16:41 UTC; replaced TRM, v1 #31)
-  { unionId: 67111128, tag: "FGH", name: "MegaDeath" }, // #20 · #33 · v1 unverified: 502 twice on 2026-11-04 (board of 16:41 UTC; replaced 404, v1 #21)
+  { unionId: 67111128, tag: "FGH", name: "MegaDeath" }, // #20 · #33 · v1 #20 (board of 16:41 UTC; replaced 404, v1 #21)
 ] as const satisfies readonly TrackedAlliance[];
