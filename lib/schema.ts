@@ -1,7 +1,9 @@
-// Drizzle schema for plan §6 (events, snapshots, alliance_snapshots, member_snapshots).
-// Deviations from §6, both forced by other decisions:
+// Drizzle schema for plan §6.
+// Deviations from §6, each forced by another decision:
 // - member_snapshots.power/kills are nullable: a null from upstream stays null (DECISIONS D15).
 // - alliance_snapshots data columns are nullable for error rows, which have no data (owner, Session 3).
+// - events.event_at_utc is unique and events.quota_checked_at exists, so a double tick can create
+//   neither two events nor two Friday checks (Session 4, DECISIONS D20).
 import { sql } from "drizzle-orm";
 import {
   bigint,
@@ -21,15 +23,21 @@ const tstz = (name: string) => timestamp(name, { withTimezone: true });
 // Ids and totals exceed 2^31 (uids ~4.6e11, power ~4e9) but stay far below 2^53.
 const big = (name: string) => bigint(name, { mode: "number" });
 
-export const events = pgTable("events", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  eventAtUtc: tstz("event_at_utc").notNull(),
-  // INVARIANT event.after-uses-event-copy: written by the BEFORE run, read by the AFTER run.
-  allianceIds: big("alliance_ids").array().notNull(),
-  isTest: boolean("is_test").notNull().default(false),
-  createdAt: tstz("created_at").notNull().defaultNow(),
-});
+export const events = pgTable(
+  "events",
+  {
+    id: serial("id").primaryKey(),
+    name: text("name").notNull(),
+    eventAtUtc: tstz("event_at_utc").notNull(),
+    // INVARIANT event.after-uses-event-copy: written by the BEFORE run, read by the AFTER run.
+    allianceIds: big("alliance_ids").array().notNull(),
+    isTest: boolean("is_test").notNull().default(false),
+    createdAt: tstz("created_at").notNull().defaultNow(),
+    // INVARIANT tick.friday-check-once: claimed by a conditional update, like the run lock.
+    quotaCheckedAt: tstz("quota_checked_at"),
+  },
+  (t) => [unique("events_event_at_utc_unique").on(t.eventAtUtc)],
+);
 
 export const snapshots = pgTable(
   "snapshots",
@@ -105,4 +113,44 @@ export const memberSnapshots = pgTable(
     unique("member_snapshots_alliance_uid_unique").on(t.allianceSnapshotId, t.uid),
     index("member_snapshots_uid_idx").on(t.uid),
   ],
+);
+
+/** The "why" of every run (plan §6, Phase 6 "Observability"): counts and codes, never names. */
+export const runLogs = pgTable(
+  "run_logs",
+  {
+    id: serial("id").primaryKey(),
+    snapshotId: integer("snapshot_id")
+      .notNull()
+      .references(() => snapshots.id),
+    at: tstz("at").notNull(),
+    level: text("level", { enum: ["info", "warn", "error"] }).notNull(),
+    code: text("code").notNull(),
+    unionId: big("union_id"),
+    data: jsonb("data").notNull(),
+  },
+  (t) => [
+    index("run_logs_snapshot_id_idx").on(t.snapshotId),
+    check("run_logs_level_check", sql`${t.level} in ('info', 'warn', 'error')`),
+  ],
+);
+
+/** Rate limiter state (plan §12.2): keys 'ip:<addr>' and 'global'. Pruned on write. */
+export const authAttempts = pgTable("auth_attempts", {
+  key: text("key").primaryKey(),
+  count: integer("count").notNull(),
+  windowStart: tstz("window_start").notNull(),
+});
+
+/** Errors outside a run (plan §6). Capped at 500 rows by the insert. */
+export const appErrors = pgTable(
+  "app_errors",
+  {
+    id: serial("id").primaryKey(),
+    at: tstz("at").notNull(),
+    route: text("route").notNull(),
+    digest: text("digest"),
+    message: text("message").notNull(),
+  },
+  (t) => [index("app_errors_at_idx").on(t.at)],
 );

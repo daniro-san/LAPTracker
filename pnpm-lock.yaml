@@ -171,7 +171,7 @@ importers:
         version: 1.2.0
       drizzle-orm:
         specifier: 0.45.4
-        version: 0.45.4(@neondatabase/serverless@1.2.0)
+        version: 0.45.4(@electric-sql/pglite@0.5.14)(@neondatabase/serverless@1.2.0)
       next:
         specifier: 16.4.5
         version: 16.4.5(@types/node@26.6.6)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -185,6 +185,9 @@ importers:
         specifier: 4.6.7
         version: 4.6.7
     devDependencies:
+      '@electric-sql/pglite':
+        specifier: 0.5.14
+        version: 0.5.14
       '@eslint/js':
         specifier: 10.0.1
         version: 10.0.1(eslint@10.14.0(jiti@2.7.0))
@@ -251,6 +254,9 @@ packages:
 
   '@drizzle-team/brocli@0.10.2':
     resolution: {integrity: sha512-z33Il7l5dKjUgGULTqBsQBQwckHh5AbIuxhdsIxDDiZAzBOrZO6q9ogcWC65kU382AfynTfgNumVcNIjuIua6w==}
+
+  '@electric-sql/pglite@0.5.14':
+    resolution: {integrity: sha512-aAQe7iArcFB2w1xtx91l3l9trxhMzD6aZf+WnosSHNhwgp70EJz80Igw/bHnW14fUEFYWPBoQ1sGom8Xc0Jttg==}
 
   '@emnapi/runtime@1.11.3':
     resolution: {integrity: sha512-Xz4Tpyki7XyrpbUK1jR1AhdAdaXyhhY4lZ3neLodmhpuWfy2PAQN5B46sAiU4liOXGLkHypn/qU+jvfWSCYYLA==}
@@ -2285,6 +2291,8 @@ snapshots:
 
   '@drizzle-team/brocli@0.10.2': {}
 
+  '@electric-sql/pglite@0.5.14': {}
+
   '@emnapi/runtime@1.11.3':
     dependencies:
       tslib: 2.9.1
@@ -3110,8 +3118,9 @@ snapshots:
       esbuild: 0.25.12
       tsx: 4.23.15
 
-  drizzle-orm@0.45.4(@neondatabase/serverless@1.2.0):
+  drizzle-orm@0.45.4(@electric-sql/pglite@0.5.14)(@neondatabase/serverless@1.2.0):
     optionalDependencies:
+      '@electric-sql/pglite': 0.5.14
       '@neondatabase/serverless': 1.2.0
 
   enhanced-resolve@5.26.1:
