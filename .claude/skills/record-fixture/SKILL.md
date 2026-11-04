@@ -16,9 +16,10 @@ description: Record a new upstream API response into fixtures/ (spends LAP API q
 
 ## 2. Credentials, never printed
 
-- **Local:** read `LAP_API_KEY` from `.env.local` into a shell variable without echoing it:
+- If `LAP_API_KEY` is set in the environment (cloud environment variable), use it as is.
+- Otherwise, locally, read it from `.env.local` into a shell variable without echoing it:
   `LAP_API_KEY=$(grep -E '^LAP_API_KEY=' .env.local | cut -d= -f2- | tr -d "\"' \r")`
-- **Cloud session:** the environment's network secret injects `Authorization` for `api.lastasylumtracker.com`. Send no Authorization header yourself.
+- Send it as `Authorization: Bearer`. A `401 {"detail":"missing_api_key"}` means no key reached the API (that call costs no quota); stop and tell the owner.
 - Never `echo`, `set -x`, `env` or paste the key. Never put it in a file under the repo.
 
 ## 3. Call and save the raw body
@@ -26,16 +27,21 @@ description: Record a new upstream API response into fixtures/ (spends LAP API q
 ```bash
 UA="laptracker/1.0 (+https://github.com/daniro-san/LAPTracker)"
 API="https://api.lastasylumtracker.com/v1"
-DIR="fixtures/<kind>-$(date -u +%Y%m%dT%H%M%SZ)"   # kind: v1, v1-ids, ranks, probe
-mkdir -p "$DIR"
-AUTH=(); [ -n "${LAP_API_KEY:-}" ] && AUTH=(-H "Authorization: Bearer $LAP_API_KEY")
-get() { curl -sS -A "$UA" "${AUTH[@]}" -H 'Accept: application/json' --max-time 60 -o "$2" -w '%{http_code} %{time_total}s\n' "$1"; }
-
-get "$API/quota"                    "$DIR/quota-before.json"
-get "$API/alliances/<union_id>"     "$DIR/alliance-<union_id>.json"   # one line per resource
-get "$API/quota"                    "$DIR/quota-after.json"
+# One line per call: <path under /v1> <output file>. Positional shell parameters are avoided on
+# purpose: the skill loader substitutes them with the skill's arguments.
+while read -r path out; do
+  code=$(curl -sS -A "$UA" -H "Authorization: Bearer $LAP_API_KEY" -H 'Accept: application/json' \
+    --max-time 60 -o "$out" -w '%{http_code} %{time_total}s' "$API/$path")
+  echo "$path -> $code"
+  case "$code" in 401* | 403* | 429*) echo STOP; break ;; esac
+done <<'CALLS'
+quota            /tmp/quota-before.json
+alliances/<id>   fixtures/v1-ids/<id>.json
+quota            /tmp/quota-after.json
+CALLS
 ```
 
+- Alliance bodies go in `fixtures/v1-ids/<id>.json` (Session 0's layout); other kinds in `fixtures/<kind>-<utc timestamp>/`. Quota bodies are only for the count and need not be kept (every response carries `quota`).
 - Save the response body exactly as returned. No pretty-printing, no trimming: tests must see what the parsers will see. (The DB trims `raw_json`; fixtures don't.)
 - Stop at the first `401`, `403` or `429`. Don't retry `429`. Retry `502/503/504` at most once, after 5 s.
 - Never call `POST /api/alliances/{id}/refresh` or any refresh endpoint. Never send `Origin`, `Referer` or cookies to `lastasylumtracker.com`. The maintainer closed that on purpose.
@@ -44,13 +50,11 @@ get "$API/quota"                    "$DIR/quota-after.json"
 
 - `grep -rl 'lap_' "$DIR"` must print nothing. A response that echoes the key is deleted, not committed.
 - Every file parses: `for f in "$DIR"/*.json; do node -e 'JSON.parse(require("fs").readFileSync(process.argv[1],"utf8"))' "$f" || echo "BAD $f"; done`
-- Calls actually spent = `quota-before.remaining - quota-after.remaining`. It must equal your step-1 estimate. If it doesn't, say so.
+- Calls actually spent = `quota-after.used - quota-before.used + 1` (the before call counts itself). `502`s count. If it differs from your step-1 estimate, say so.
+- A `502`/`503` body (`error code: 502`) is not a fixture; delete it.
 
 ## 5. Record it
 
-Add one row to `fixtures/README.md` (create the file with this table header if it is missing):
-
-| Folder | Recorded (UTC) | Endpoints | Calls spent | Why |
-| ------ | -------------- | --------- | ----------- | --- |
+Add one row to the table in `fixtures/README.md`, in its existing columns (Folder · What · Recorded (UTC) · Cost). The cost cell gives calls and the `used` before → after.
 
 Then report to the owner in one line: folder, calls spent, quota remaining. Commit the fixture and the README row together (`test: record <kind> fixture for <what>`). gitleaks runs on the commit; if it flags anything, stop.
