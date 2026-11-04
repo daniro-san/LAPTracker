@@ -105,7 +105,7 @@ Create these before the session that needs them. **Never paste any of them into 
 | `EDIT_PIN` | Vercel | Session 8 | 6–8 digits you'll share with alliance admins (6 is the minimum the limiter math assumes, plan §12.2). |
 | `NOTIFY_WEBHOOK_PUBLIC`, `NOTIFY_WEBHOOK_ADMIN`, `NOTIFY_ADMIN_MENTION` (optional) | Vercel | Session 8 | §1b. |
 | `APP_URL` | GitHub repo secret | Session 8 | The Vercel production URL. |
-| `SERVER_TZ`, `EVENT_WEEKDAY`, `EVENT_TIME`, `SNAPSHOT_BEFORE`, `SNAPSHOT_AFTER`, `SNAPSHOT_WINDOW_MIN`, `QUOTA_CHECK_AT` | Vercel, `.env.local` | Session 8 | Server time. Change snapshot times here, redeploy — no commit (plan §3.1). |
+| `SERVER_TZ`, `EVENT_WEEKDAY`, `EVENT_TIME`, `SNAPSHOT_BEFORE`, `SNAPSHOT_AFTER`, `SNAPSHOT_WINDOW_MIN`, `QUOTA_CHECK_AT`, `REHEARSAL_AT`, `REHEARSAL_KEEP` | Vercel, `.env.local` | Session 8 | Server time. Change snapshot times here, redeploy — no commit (plan §3.1). |
 | `ENABLE_EXPERIMENTAL_COREPACK=1` | Vercel | Session 8 | Makes the build use the pnpm version in `packageManager`. Not a secret. |
 
 ## 5. Decisions to make before Session 0 (plan §10)
@@ -127,6 +127,7 @@ Create these before the session that needs them. **Never paste any of them into 
 | Session 7 | Review the `/brand` mock and say yes/no before step 2. |
 | Session 8 (most of it can be done now) | **Vercel → project Settings:** *Build and Deployment* → Node.js Version **26.x**; *Environment Variables* → `ENABLE_EXPERIMENTAL_COREPACK=1` (all environments), the schedule variables from §4 (all environments), `LAP_API_KEY` (Production + Preview, mark *Sensitive*), `CRON_SECRET` and `EDIT_PIN` with **different values** in Production and Preview, `NOTIFY_WEBHOOK_PUBLIC` / `NOTIFY_WEBHOOK_ADMIN` / `NOTIFY_ADMIN_MENTION` **Production only**, `DATABASE_URL` Production = Neon main, Preview = Neon `preview` (after Session 3 created the schema on both); *Deployment Protection* → **Standard Protection** with **Vercel Authentication** (protects every preview and `dev`, leaves the production domain public). (No dashboard setting for the `keepalive` branch: Session 8 adds `git.deploymentEnabled: { "keepalive": false }` to the repo's `vercel.json`, so that branch never deploys.) **GitHub → Settings → Secrets and variables → Actions:** repository secrets `APP_URL` (the production domain, `https://…vercel.app`) and `CRON_SECRET` (the Production value). **Discord:** both webhooks (§1b). |
 | Session 9 | Pick a weekday. Compare OGs' kill sum with the in-game alliance screen when asked. |
+| Every Friday | Nothing to start: `REHEARSAL_AT=fri 18:00` runs the rehearsal by itself (17:00 Brasília; verdict ~17:50). Read `[TEST] Rehearsal PASS` and freeze `main`. 19:00 Brasília: the Friday message — check *next BEFORE/AFTER at …* says Saturday 10:00 / 14:00 server. Released something after the rehearsal? Tap **Rehearse now** before 21:00 Brasília. |
 | First Saturday | Confirm the Friday quota message arrived; watch the channel around SNAPSHOT_BEFORE and SNAPSHOT_AFTER server time (+ up to ~35 min of tick/Actions lag). Note when the KvK really starts and ends in-game: that settles the event-window decision (§5 item 2). |
 
 ## 7. Cost summary
