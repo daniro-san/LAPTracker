@@ -46,6 +46,7 @@ describe("runSnapshot", () => {
     expect(first?.members).toHaveLength(3);
     expect(first?.row.raw).toEqual({ union_id: FIRST, members: [{ uid: 1, x: 1 }] });
     expect(repo.tables.snapshots[0]?.result?.boardPulledAt).toEqual(ago(T0, minutes(240)));
+    expect(repo.tables.snapshots[0]?.result?.quotaRemainingBefore).toBe(1000);
   });
 
   it("marks the snapshot partial and names the alliance when its roster updated_at is old", async () => {

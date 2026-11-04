@@ -1,76 +1,97 @@
 # 04 — Routes, logger, notifications
 
+This session first implemented the Session 4 prompt as it stood when it started. PRs #11 and #12 rewrote that prompt on `dev` during the session (event-driven tick, rehearsals). At the owner's request (2026-11-04), the same PR was extended to the new prompt. Everything below describes the final state.
+
 ## Built
 
-- `lib/schema.ts` + `drizzle/0001_lowly_luckman.sql`:
-  - new tables `run_logs` (FK to snapshots, level CHECK, index on snapshot_id), `auth_attempts` (key pk) and `app_errors` (index on at);
-  - on `events`: `unique(event_at_utc)` and a `quota_checked_at` column.
-- `lib/repo/`:
-  - `run-logs.ts` (`insertRunLog`);
-  - `auth-attempts.ts` (`recordFailure`: one atomic upsert with a window reset, plus a prune of rows older than 1 h; `currentCount`; `resetKey`);
-  - `app-errors.ts` (`insertAppError` keeps the newest 500 rows; `lastAppErrorAt`);
-  - `database.ts` (`databaseSizeBytes`);
-  - `events.ts` gains `findOrCreateEvent`, `createTestEvent` and `claimQuotaCheck`.
-- `lib/logger.ts`: `createRunLogger(sink, { snapshotId, secrets, now })`, plus `MAX_RUN_LOG_LINES = 400`, `stats()` and `shutdown()`. `Logger` and `consoleLogger` are unchanged.
-- `lib/notify.ts`: `createNotifier` (public/admin, silent when the URL is unset), `publicSnapshotMessage` (the three Phase 6 templates) and `adminSnapshotMessage`.
-- `lib/schedule.ts`: SERVER_TZ ↔ UTC through `Intl` (works for any IANA zone), `currentEvent`, `actionTimes`, `dueActions`, `nextEvent` and `describeInstant`.
-- `lib/auth.ts`: `secretEquals` (sha256 on both sides, then `timingSafeEqual`), `authorize` (the §12.2 limiter) and `clientIp`.
-- `lib/run.ts`: `executeSnapshot` (claim id captured, finalise and `logger.shutdown()` in `finally`, then notify) and `quotaReport` (the Friday check).
-- `lib/run-response.ts`, `lib/route.ts` (`withContext`, `errorResponse`, `parseQuery`), `lib/app-context.ts` (`getAppContext`, `secretsOf`) and `lib/app-errors.ts` (`recordAppError`: at most 1 insert/s per instance, an admin alert at most once an hour, read from the DB).
-- `lib/queries/events.ts`: `listEvents` and `getEventDetail`. Columns are listed one by one; `raw_json` and members are never selected.
-- `lib/collector.ts`: a `v1.fetch` line per `/v1` call (quota check and alliance reads) with `endpoint, union_id, http_status, cached, duration_ms, quota_remaining`, plus `error` on failure. `trimRaw` moved to `lib/raw-json.ts`, unchanged, to keep the file under 300 lines.
-- Routes:
-  - `app/api/tick/route.ts`, replacing the 501 placeholder;
-  - `app/api/snapshot/route.ts`;
-  - `app/api/events/route.ts` and `app/api/events/[id]/route.ts`;
-  - `app/api/quota/route.ts` and `app/api/quota/check/route.ts`.
-- `instrumentation.ts`: `onRequestError` → `recordAppError`, nodejs runtime only.
-- Tests:
-  - `app/api/tick/route.test.ts` (2), replacing the placeholder test;
+- **Schema** (`lib/schema.ts`, one migration `drizzle/0001_sparkling_lake.sql`):
+  - new tables `run_logs`, `auth_attempts`, `app_errors` and `rehearsal_slots`;
+  - `events`: `before_at` and `after_at` (NOT NULL, as 3b asks), `quota_checked_at`, and `unique(event_at_utc)`;
+  - `snapshots`: `quota_remaining_before`.
+- **`lib/repo/`:**
+  - `run-logs.ts`, `auth-attempts.ts` (an atomic upsert with a window reset, plus pruning), `app-errors.ts` (keeps the newest 500 rows) and `database.ts` (`pg_database_size`);
+  - `events.ts`: `findOrCreateEvent` (with its times), `duePhases` (DB windows, no snapshot row, earliest first) and `claimQuotaCheck`;
+  - `rehearsals.ts`: `claimSlot`, `setSlotOutcome`, the guard queries, `insertRehearsal`, `pruneRehearsals` and `loadVerdictInput`.
+- **`lib/logger.ts`:** `createRunLogger` with `MAX_RUN_LOG_LINES = 400`, `stats()` and `shutdown()`; `Logger` and `consoleLogger` are unchanged.
+- **`lib/notify.ts`:**
+  - `createNotifier`: `public`, and `admin(content, { test })` with a `[TEST]` prefix;
+  - `publicSnapshotMessage` (the Phase 6 templates);
+  - `adminSnapshotMessage` (with "scheduled …, started …");
+  - `rehearsalVerdictMessage`.
+- **`lib/schedule.ts`** (pure): SERVER_TZ ↔ UTC through `Intl`, `currentEvent`, `eventsToCreate`, `nextEvent`, `quotaCheckDue`, `rehearsalSlotsDue`, `serverWeekday` and `describeInstant`.
+- **`lib/tick.ts`:** `runTick`, the §3.1 decision.
+- **`lib/rehearsal.ts`:** `createRehearsal` (the guards, insert and retention) and the pure `rehearsalVerdict`.
+- **`lib/auth.ts`:** `secretEquals`, `authorize(…, { cron, pin })` (the §12.2 limiter) and `clientIp`.
+- **`lib/run.ts`:**
+  - `executeSnapshot` captures the claim id, then in `finally` finalises a crashed row and awaits `logger.shutdown()`;
+  - after that it notifies: public unless the event is a test event, admin with `[TEST]` for test events, and the verdict after a test event's AFTER;
+  - `quotaReport` is the Friday check.
+- **Route plumbing:** `lib/route.ts`, `lib/app-context.ts`, `lib/app-errors.ts` and `lib/run-response.ts`.
+- **`lib/queries/events.ts`:** `listEvents` and `getEventDetail`. Columns are listed explicitly; no `raw_json`, no members, no test events.
+- **`lib/env.ts`:** `REHEARSAL_AT` (default `fri 18:00`; an empty value means off) and `REHEARSAL_KEEP` (default 4); `.env.example` lists both.
+- **`lib/collector.ts`:**
+  - a `v1.fetch` line per `/v1` call;
+  - it records `quota_remaining_before`;
+  - `trimRaw` → `lib/raw-json.ts` and `describe`/`httpStatusOf` → `lib/upstream-errors.ts`, both unchanged, to stay under 300 lines.
+- **Routes:** `app/api/{tick,snapshot,rehearsal,events,events/[id],quota,quota/check}/route.ts`.
+- **`instrumentation.ts`:** `onRequestError` → `recordAppError`.
+- **Tests** (16 files, 68 passing + 1 skipped):
+  - `app/api/tick/route.test.ts` (4);
   - `app/api/snapshot/route.test.ts` (5);
+  - `app/api/rehearsal/route.test.ts` (4);
   - `app/api/events/[id]/route.test.ts` (1);
   - `lib/logger.test.ts` (3);
-  - 1 added in `lib/collector.test.ts`.
-- Test helpers: `lib/db.test-helpers.ts` (PGlite, migrated from `drizzle/`) and `lib/app-context.test-helpers.ts`.
-- `@electric-sql/pglite` 0.5.14, devDependency, exact pin (D19).
-- `docs/DECISIONS.md` D19 and D20; `docs/ARCHITECTURE.md` (new lib modules, how routes get their deps, `Notifier`).
+  - `lib/rehearsal.test.ts` (3);
+  - `lib/collector.test.ts`: 1 test and 1 assertion added.
+- **Test helpers:** `lib/db.test-helpers.ts` (PGlite migrated from `drizzle/`) and `lib/app-context.test-helpers.ts`.
+- **Dependency:** `@electric-sql/pglite` 0.5.14 (dev, exact pin, D19).
+- **Docs:** `docs/DECISIONS.md` D19 and D20; `docs/ARCHITECTURE.md`.
 
 ## Decisions
 
-- **DB-backed tests use PGlite** (owner's choice, D19).
-- **`test=1` on `/api/snapshot`** creates an `is_test` event dated now (owner's choice). Without it, a weekday dry run would create the coming Saturday's event and complete its BEFORE, and the real Saturday run would then be refused as `complete`.
-- **Quota routes require auth.** Each request costs one `/v1` call, so they take Bearer CRON_SECRET or the PIN plus the limiter (D20).
-- **Events are unique on `event_at_utc`**, and the Friday check is claimed through `events.quota_checked_at`. Both are race-safe the same way as the run lock (D20).
-- **The tick** runs the earliest due action not yet done. A phase with a snapshot row of any status counts as done, so the tick never re-runs a failed or partial phase; that is a manual run (D20).
-- **The crash path:** the route captures the claimed id by wrapping `repo.startSnapshot`, rather than calling `findSnapshot` afterwards as the adjustment suggested. `findSnapshot` could return another run's row if ours died before claiming. The row is closed as `failed` with 0 added calls and the real duration.
-- **"shutdown()"** in the constraint and verify maps to `RunLogger.shutdown()`: it awaits inserts already in flight. The plan's Phase 6 says "no shutdown()/flush", meaning no buffer; there is none. The collector fires `v1.retry` without awaiting it, and that line is what `shutdown()` exists for (see Verified, mutation table).
-- **The log cap:** at most 400 rows per run, and the 400th is `log.capped` (`{ max: 400 }`). That is my reading of "stops at MAX_RUN_LOG_LINES = 400 with a final log.capped line".
-- **Credentials:** a missing or wrong bearer counts per IP only. A wrong PIN counts per IP and globally. A correct PIN resets the IP key. A correct CRON_SECRET is checked before any limit (§12.2: the tick is never locked out). The admin alert fires on the request whose global upsert returns exactly 20, so once per window with no extra state.
-- **Error codes:** `unauthorized`, `rate_limited`, `pin_locked`, `bad_request`, `snapshot_running`, `snapshot_complete`, `event_not_found`, `not_found`, `run_failed`, `upstream_error`, `internal`.
-- **Discord links** use the request origin, so no new env var is needed. `avatar_url` is left out until the Phase 5b PNG exists.
-- **`GET /api/events/[id]`** serves the §12.1 alliance fields, plus `source`, `cached`, `source_updated_at` and `failed` (a boolean, not the error text). It serves no members, `server_rank` or `level`, because §12.1's list doesn't name the latter two.
+All of these are in D19 and D20. The ones a reviewer should know first:
+
+- **DB-backed tests run on PGlite** (owner's choice, D19).
+- **The tick does one thing per call:**
+  1. it creates the coming Saturday's row, silently, from 24 h before BEFORE;
+  2. it runs the earliest open phase that has no snapshot row of any status;
+  3. otherwise the Friday check;
+  4. otherwise a `REHEARSAL_AT` slot.
+
+  A failed or partial phase is never re-run by the tick.
+- **`REHEARSAL_AT` slots are claimed rows (`rehearsal_slots`).** Each slot runs once, and a skipped slot gets exactly one `[TEST]` admin note. Window: `SNAPSHOT_WINDOW_MIN` from the slot time.
+- **Rehearsal guards:**
+  - start or AFTER on `EVENT_WEEKDAY` or the next day → `rehearsal_event_day`;
+  - a real BEFORE in (now, now + 3 h] → `rehearsal_before_real`, checked against both the DB rows and the env-computed coming Saturday;
+  - a real snapshot running → `rehearsal_real_running`;
+  - a pending rehearsal → `rehearsal_pending`.
+- **The verdict's quota line:** the quota check's response already counts itself, so a run's drop is `quota_remaining_before − quota_remaining_after + 1`, and it must equal `calls_used`. That needs the new `snapshots.quota_remaining_before` column, written by the collector.
+- **The verdict is posted after any test event's AFTER** (tick or manual), computed from the DB, so `/admin` can recompute it.
+- **Credentials:** the tick takes CRON_SECRET only, the rehearsal route the PIN only, the others either. The quota routes need auth because each call spends quota.
+- **The crash path** captures the claimed id by wrapping `repo.startSnapshot`, instead of calling `findSnapshot` afterwards. The row is closed `failed` with 0 added calls and the real duration.
+- **"shutdown()"** in the constraint and verify is `RunLogger.shutdown()`: it awaits inserts in flight (the collector's un-awaited `v1.retry`). Nothing is buffered.
+- **Log cap:** at most 400 rows per run, the 400th being `log.capped`.
 
 ## Deviations
 
-- §6 `events`: added `unique(event_at_utc)` and `quota_checked_at` (D20).
-- Phase 4 lists no auth on `GET /api/quota` and `/api/quota/check`; both require it here.
-- §11.3 says "real local Postgres" for integration tests; they use PGlite (D19).
-- Phase 6 "Logging guarantees": the failed-insert counter goes to the admin message (`run_logs write failures: N`), not into `RunSummary`, so the collector's types did not change.
-- Branch: `claude/laughing-tesla-z7alwg` (assigned by the cloud harness), not `session/04-routes`.
+- §6: `events.unique(event_at_utc)`, `events.quota_checked_at`, `snapshots.quota_remaining_before` and the `rehearsal_slots` table are not in the plan (D20).
+- Phase 4 lists no auth on the quota routes; both require it.
+- §11.3 says "real local Postgres"; the tests use PGlite (D19).
+- Phase 6 "Logging guarantees": the failed-insert counter goes into the admin message (`run_logs write failures: N`), not into `RunSummary`.
+- Branch: `claude/laughing-tesla-z7alwg`, assigned by the cloud harness. The branch started from `main`, so `origin/dev` was merged in (no conflicts) and the PR targets `dev`.
 
 ## Verified
 
-Node: the container started on v22.23.4. `bash scripts/cloud-setup.sh` (49 s) installed v26.13.0, pnpm 12.16.1 and gitleaks v8.30.1. Every command ran with `PATH=/opt/node26/bin:$PATH`. No upstream calls were made (0 quota).
+- **Node:** the container started on v22.23.4. `bash scripts/cloud-setup.sh` (49 s) installed v26.13.0, pnpm 12.16.1 and gitleaks v8.30.1. Every command ran with `PATH=/opt/node26/bin:$PATH`.
+- **Quota:** 0 upstream calls this session.
 
-`pnpm check` (14.8 s and 17.2 s wall, two runs):
+`pnpm check` (15.7 s wall):
 
 ```
 All matched files use Prettier code style!
- Test Files  14 passed | 1 skipped (15)
-      Tests  59 passed | 1 skipped (60)
+ Test Files  16 passed | 1 skipped (17)
+      Tests  68 passed | 1 skipped (69)
 ```
-
-The skipped test is the opt-in live smoke test. One PGlite open and migration takes ~4.0 s (measured once by itself); three test files open one each.
 
 `pnpm build`: exit 0, and all routes are dynamic:
 
@@ -79,72 +100,59 @@ The skipped test is the opt-in live smoke test. One PGlite open and migration ta
 ├ ƒ /api/events/[id]
 ├ ƒ /api/quota
 ├ ƒ /api/quota/check
+├ ƒ /api/rehearsal
 ├ ƒ /api/snapshot
 └ ƒ /api/tick
 ```
 
-It prints one warning: `process.exit` in `register()` is not supported in the Edge runtime. The warning is the same with the committed `instrumentation.ts` restored (checked by building it), so it predates this session.
+The one build warning (`process.exit` in `register()`, Edge runtime) also appears with the committed `instrumentation.ts`, so it predates this session.
 
-**Repo semantics on PGlite** (a probe test, since deleted):
-- `recordFailure` counts 1, 2, then 1 again once the window has passed;
-- `findOrCreateEvent` twice returns the same id;
-- `claimQuotaCheck` returns true, then false;
-- 503 `insertAppError` calls leave 500 rows (min id 4).
+**The new spec's tests**, as named in the prompt:
 
-**`next start` smoke** with a dummy env (an unreachable `DATABASE_URL`, `.invalid` upstream hosts):
+- tick creates the Saturday event once and never twice: rows appear at Fri 12:05 UTC (a day before BEFORE), not at 11:45, with `before_at` 12:00 / `after_at` 16:00 UTC on Saturday;
+- REHEARSAL_AT once per slot per week, never on the event day or the day after: slots `wed 18:00, sat 18:00, sun 09:00` over two weeks → 2 rehearsals, 2 `event-day` skips, 2 `[TEST]` notes;
+- the 3 h guard: 409 `rehearsal_before_real` at 2 h 59 min before, 201 at 3 h 01 min;
+- REHEARSAL_KEEP: the oldest rehearsal and its snapshot, alliance row, member row and run_logs line are deleted;
+- a rehearsal created at T runs BEFORE at T+15 and AFTER at T+45: 204 at T+14, T+30, T+44 and T+50;
+- verdict: PASS on a fresh pair; FAIL `updated_at did not advance: A2`; FAIL `calls_used ≠ quota drop: after 4 ≠ 6`;
+- test events post to admin only: 0 public posts, 3 admin posts all prefixed `[TEST]`, the last `[TEST] Rehearsal PASS|FAIL (event N)`.
 
-```
-GET /api/events/abc            {"code":"bad_request"} -> 400
-GET /api/events?x=1            {"code":"bad_request"} -> 400
-GET /api/events/1?x=1          {"code":"bad_request"} -> 400
-POST /api/tick                 {"code":"internal"} -> 500
-POST /api/snapshot?phase=never {"code":"internal"} -> 500
-GET /api/quota                 {"code":"internal"} -> 500
-GET /api/events                {"code":"internal"} -> 500
-DELETE /api/tick               -> 405
-```
+**Mutation checks.** Each mutant was applied, the named tests run, and the file restored from a scratch copy; all are killed:
 
-- Every response carries `content-security-policy: default-src 'none'; frame-ancestors 'none'`.
-- The 500s come from the DB being unreachable. Auth runs first and needs the DB.
-- The server log has one line, `app.error { route: '/api/events', message: 'route Error', digest: null }`. The 1/s limit suppressed the rest, and no message, stack or secret appears.
-
-**Mutation checks.** Each mutant was applied, the named tests run, and the file restored from a scratch copy:
-
-| Mutant | Result |
+| Area | Mutants |
 |---|---|
-| logger cap `>` instead of `>=` | killed |
-| logger skips `redact` | killed |
-| logger rethrows sink errors | killed |
-| no finalise in `finally` | killed (3/3 runs) |
-| `logger.shutdown()` removed | killed (3/3 runs). It survived the first version of the crash test, because every line there was awaited. The test now fires a `v1.retry` without awaiting it, as the collector does, and makes only that insert slow (500 `setImmediate` yields), which models another pooled connection. |
-| PIN accepted as a bearer | killed |
-| `IP_LIMIT` 6 | killed |
-| `GLOBAL_LIMIT` 21 | killed |
-| CRON_SECRET subject to the global lockout | killed |
-| limiter counts in a module-scope Map | killed (2 tests) |
-| `getEventDetail` selects `raw_json` | killed |
-| tick ignores an existing snapshot | killed |
-| tick runs the later phase first | killed |
-| no `v1.fetch` line on success | killed |
+| logger | cap `>` vs `>=`; no redact; sink errors rethrown |
+| snapshot route | no finalise in `finally`; no `logger.shutdown()` (killed only after the crash test fired an un-awaited `v1.retry` with a slow insert; the first version was vacuous) |
+| auth | PIN accepted as a bearer; `IP_LIMIT` 6; `GLOBAL_LIMIT` 21; CRON_SECRET under the lockout; limiter in a module-scope Map |
+| read models | `raw_json` selected |
+| tick | ignores an existing snapshot; runs the later phase first; Saturday row 2 days ahead; slot not claimed |
+| rehearsal | no event-day guard; 3 h guard as 2 h; 3 h guard as 4 h (survived as 2 h until the test moved to the boundary); keep one more; BEFORE at +10 |
+| notify | test events go public; no `[TEST]`; no verdict after AFTER |
+| verdict | quota drop without +1; `updated_at` equal counts as advanced |
+| collector | no `v1.fetch` line on success |
 
 **Not testable here:** `secretEquals` vs `===`. Both give the same answers; only timing differs.
 
+**`next start` smoke** (before the rehearsal extension) with a dummy env and an unreachable DB:
+- bad input → 400 `{"code":"bad_request"}`;
+- DB-dependent routes → 500 `{"code":"internal"}`, with no message or stack;
+- every API response carries `default-src 'none'; frame-ancestors 'none'`;
+- one `app.error` log line, holding only the route pattern and the error class.
+
 **Trace of `/api/snapshot`: every early return and throw** (`withContext` → handler → `executeSnapshot`):
 
-1. `getAppContext()` throws (bad env): nothing is open yet. Next answers 500 and `onRequestError` records it. Boot already exits on a bad env.
-2. `authorize` throws (DB down) → `withContext` catch → `recordAppError` → 500 `internal`; `finally` runs `close()`.
-3. `authorize` returns 401 or 429 → return; `finally` runs `close()`.
-4. `parseQuery` fails → 400; `close()` runs.
-5. `createTestEvent` or `findOrCreateEvent` throws → as in 2.
-6. `runSnapshot` refused before the claim (`running`, `complete`): `claimedId` is null, so nothing to finalise. `finally` awaits `logger.shutdown()`, then 409, then `close()`.
-7. `findSnapshot` or `startSnapshot` throws before the claim: the catch logs `run.crashed` (dropped, no snapshot id). `finally` awaits `shutdown()`, then 500 `run_failed`, then `close()`. The first version returned 409 `snapshot_running` here; fixed during this trace.
-8. The collector throws after the claim: the catch logs `run.crashed`. `finally` runs `finishSnapshot(failed)` in its own try/catch, then `shutdown()`. Notify, then 500 `run_failed`, then `close()`.
-9. A refusal after the claim (`no-event`): `finally` finalises and shuts down. Notify, then 404, then `close()`.
-10. `finishSnapshot` throws inside the finalise: caught, logged `snapshot.finalise_failed`. `shutdown()` still runs; it uses `allSettled` and cannot throw.
-11. `notifyFinished` throws (it shouldn't: `send` and `listAllianceRows` are caught): the row is already final → `withContext` catch → 500, then `close()`.
-12. Success: the collector finalises its own row. `finally` runs `shutdown()`. Notify, then 200, then `close()`.
-
-Two fixes came out of this trace: path 7, and the duration of a crashed run, which had been recorded as 0.
+1. `getAppContext()` throws (bad env): nothing is open. Next answers 500 and `onRequestError` records it.
+2. `authorize` throws (DB down) → `withContext` catch → 500 `internal`; `finally` runs `close()`.
+3. `authorize` returns 401 or 429 → return; `close()`.
+4. `parseQuery` fails → 400; `close()`.
+5. `findOrCreateEvent` throws → as in 2.
+6. Refused before the claim (`running`, `complete`): nothing to finalise. `finally` awaits `logger.shutdown()`, then 409, then `close()`.
+7. `findSnapshot` or `startSnapshot` throws before the claim: `run.crashed` is logged (dropped, no snapshot id). `shutdown()`, then 500 `run_failed`, then `close()`. This returned 409 until the trace caught it.
+8. The collector throws after the claim: `run.crashed`. `finally` runs `finishSnapshot(failed)` in its own try/catch, then `shutdown()`. Notify, then 500, then `close()`.
+9. A refusal after the claim (`no-event`): finalised and shut down. Notify, then 404, then `close()`.
+10. `finishSnapshot` throws inside the finalise: caught and logged; `shutdown()` still runs (it uses `allSettled`).
+11. `notifyFinished` throws (`loadVerdictInput` for a test event, or a bug): the row is already final → 500 via the `withContext` catch, then `close()`.
+12. Success: `shutdown()`. Notify, then 200, then `close()`.
 
 **curl, one per route.** `$APP_URL`, `$CRON_SECRET` and `$EDIT_PIN` come from your shell; never paste values.
 
@@ -153,15 +161,15 @@ curl -i -X POST "$APP_URL/api/tick" -H "Authorization: Bearer $CRON_SECRET"
 ```
 
 ```bash
+curl -i -X POST "$APP_URL/api/rehearsal" -H "x-edit-pin: $EDIT_PIN"
+```
+
+```bash
 curl -i -X POST "$APP_URL/api/snapshot?phase=before" -H "Authorization: Bearer $CRON_SECRET"
 ```
 
 ```bash
 curl -i -X POST "$APP_URL/api/snapshot?phase=after&force=1" -H "x-edit-pin: $EDIT_PIN"
-```
-
-```bash
-curl -i -X POST "$APP_URL/api/snapshot?phase=before&test=1" -H "Authorization: Bearer $CRON_SECRET"
 ```
 
 ```bash
@@ -180,68 +188,88 @@ curl -i "$APP_URL/api/quota" -H "x-edit-pin: $EDIT_PIN"
 curl -i "$APP_URL/api/quota/check" -H "Authorization: Bearer $CRON_SECRET"
 ```
 
-The tick, snapshot and quota calls spend `/v1` quota: a snapshot ~21, quota 1. `/api/tick` spends nothing when it answers 204.
+Quota cost: a snapshot ~21 calls; a rehearsal ~45 over ~50 min, spent by the ticks; quota 1. `/api/tick` costs nothing when it answers 204.
 
 ## Open issues
 
-- **Migration 0001 is not applied anywhere but PGlite.** Neon main and preview need it before any route works (Session 8). The tables already exist from 0000.
-- **Client IP is unverified:** `x-real-ip`, else the first `x-forwarded-for` hop. Whether Vercel overwrites both could not be checked; vercel.com is outside this session's network allowlist. Session 8 should confirm it from Vercel's request-headers docs. If clients can set them, the per-IP limit can be bypassed by rotating the header; the global 20/h lockout still holds.
-- **`pnpm check` went from ~2.5–6.5 s to ~15–17 s**, from PGlite startup (~4 s per instance, 3 files). The Stop hook runs `pnpm check`, so every turn end pays it.
-- **PGlite is not Neon's driver.** The WebSocket pool, connection limits and `pool.end()` with queries in flight are untested. `logger.shutdown()` runs before `close()`, so `close()` should never meet a pending insert.
-- **`/admin/runs/<id>` and `/admin/errors` are linked from admin messages but don't exist yet** (Session 6 builds `/admin`). The app-error alert uses a relative `/admin/errors`, because `onRequestError` has no origin.
-- **A dry-run AFTER through `test=1`** creates a second test event with no alliances and ends `failed`. Phase 7 only runs BEFORE; an AFTER dry run would need an `event` id parameter.
-- **The tick never re-runs a failed or partial phase.** A BEFORE that failed at 10:05 is retried only by hand (`/admin`, which doesn't exist yet, or `workflow_dispatch`, Session 8). This follows §3.1's "no snapshot exists".
-- **Dry runs post to the alliance channel too**, as Session 9's prompt expects ("watch both Discord messages"). A public "✅ Saturday ledger updated" on a Wednesday may confuse members. If that's unwanted, skipping the public message for `is_test` events is a one-line change in `lib/run.ts`.
-- Pre-existing: `next build` warns about `process.exit` in `instrumentation.ts` `register()` (Edge runtime). It is harmless because register returns early outside nodejs, but the warning shows on every build.
-- **No `v1.fetch` http status on success:** the adapter does not expose it, so success is recorded as 200 (D20).
+- **Migration 0001 is applied only in PGlite.** Neon main and preview need it before any route works.
+  - `ALTER TABLE events ADD COLUMN before_at … NOT NULL` fails if `events` already has rows. Check with `select count(*) from events` first. If there are rows, delete the test rows or add the columns nullable, backfill them, then set NOT NULL.
+- **Vercel env:** the owner reports adding the rehearsal variable(s) and fixing one value during the session. Unverified from here. An empty `REHEARSAL_AT` turns rehearsals off; unset means `fri 18:00`.
+- **Client IP is unverified:** `x-real-ip`, else the first `x-forwarded-for` hop. If clients can set these, the per-IP limit can be bypassed; the global 20/h lockout still holds.
+- **Two simultaneous "Rehearse now" presses** can both pass the pending check (read-then-insert) and create two rehearsals. Scheduled slots can't race.
+- **No verdict is posted if a rehearsal's AFTER never runs** (missed window, dead tick). The missing message is the signal.
+- **The tick never re-runs a failed or partial phase.** That is manual (`/admin`, Session 6, or `workflow_dispatch`, Session 8), following §3.1.
+- **`pnpm check` went from ~2.5–6.5 s to ~15–17 s**, from PGlite startup (~4 s per instance, 4 files). The Stop hook pays it on every turn end.
+- **PGlite is not Neon's driver.** The WebSocket pool and `pool.end()` are untested; `logger.shutdown()` runs before `close()`.
+- **`/admin/runs/<id>`, `/admin/runs` and `/admin/errors` are linked from admin messages but don't exist yet** (Session 6). The app-error alert uses a relative `/admin/errors`.
+- **No `v1.fetch` http status on success:** recorded as 200 (D20).
+- Pre-existing: the `process.exit` Edge warning on every build.
 - Still open from 03: plain re-runs never re-fetch error or stale rows; GitHub secret scanning and push protection.
 
 ## Next
 
 Session: 5 — Adversarial review (read-only)
-Model / effort: keep (fable · xhigh). §A sets it as the floor for Sessions 2–5. The measurable signal for keeping it: tracing `/api/snapshot` found 2 defects in code that already passed its tests (409 on a DB error before the claim; duration 0 on a crashed run), and the first shutdown test was vacuous. The review covers 17 new or changed lib/app modules.
+Model / effort: keep (fable · xhigh). §A sets it as the floor for Sessions 2–5. Measurable reasons:
+- tracing `/api/snapshot` found 2 defects in code that already passed its tests;
+- 2 tests were vacuous until mutation checks caught them (the shutdown test, the 3 h guard);
+- the scope doubled mid-session: 23 new or changed lib/app modules.
+
 Owner must do first: merge this PR into `dev`. Nothing from PREREQUISITES §6 is due before Session 5.
+
 Plan changes needed:
-- Phase 4: auth on `GET /api/quota` and `/api/quota/check`, and `test=1` on `/api/snapshot`.
-- §6: `events` gets `unique(event_at_utc)` and `quota_checked_at`.
-- §11.3: the integration tier is PGlite (D19).
-- Phase 6 "Logging guarantees": "no shutdown()/flush" vs the Session 4 constraint. `RunLogger.shutdown()` awaits inserts in flight and buffers nothing; say that.
-- Session 9 prompt, step 1: create the test event with `POST /api/snapshot?phase=before&test=1`, not by hand.
+- Phase 4: auth on the quota routes.
+- §6: `events.unique(event_at_utc)`, `events.quota_checked_at`, `snapshots.quota_remaining_before` and the `rehearsal_slots` table.
+- §3.1 verdict: "the drop in quota_remaining between its first and last response" is `first − last + 1`, because the first response counts itself. Say so, or the check reads as off by one.
+- §11.3: the integration tier is PGlite.
+- Phase 6 "Logging guarantees": "no shutdown()/flush" vs the constraint. `RunLogger.shutdown()` awaits in-flight inserts and buffers nothing.
 
 <adjustments>
 - Files to review beyond Session 3's:
-  - `lib/{logger,notify,schedule,auth,run,run-response,route,app-context,app-errors,raw-json}.ts`;
-  - `lib/repo/{run-logs,auth-attempts,app-errors,database,events}.ts`;
+  - `lib/{logger,notify,schedule,tick,rehearsal,auth,run,run-response,route,app-context,app-errors,raw-json,upstream-errors}.ts`;
+  - `lib/repo/{run-logs,auth-attempts,app-errors,database,events,rehearsals}.ts`;
   - `lib/queries/events.ts`;
   - `app/api/**/route.ts`, `instrumentation.ts`;
-  - `drizzle/0001_lowly_luckman.sql`.
-- The run lock is still `repo.startSnapshot`'s compare-and-set (Session 3). The routes add no second lock; `RunRefusedError('running')` maps to 409 in `lib/run.ts`.
-- Logger: one INSERT per line. Lines before the claim are dropped (`snapshotId()` is null). The 400th row is `log.capped`. `shutdown()` awaits the collector's un-awaited `v1.retry` inserts. `lib/logger.ts` imports only `./redact` and a type from `./repo/run-logs`.
-- Things decided here that a reviewer may flag, each recorded in D20:
-  - quota routes behind auth;
+  - `drizzle/0001_sparkling_lake.sql`.
+- The run lock is still Session 3's compare-and-set in `repo.startSnapshot`; `RunRefusedError('running')` → 409 in `lib/run.ts`.
+- Due phases come from `events.before_at` and `after_at` (`duePhases`). The env only creates Saturday rows (`eventsToCreate`). A Saturday row's times are fixed when the row is created, a day ahead: changing `SNAPSHOT_BEFORE` after that does not move that week's run.
+- Logger: one INSERT per line; lines before the claim are dropped; the 400th row is `log.capped`; `shutdown()` awaits the collector's un-awaited `v1.retry` inserts.
+- Choices to check against the plan, each in D20:
+  - the quota routes behind auth;
   - client IP header trust (unverified);
   - `http_status: 200` assumed on success;
-  - the tick skipping a phase whose row is failed or partial;
-  - 0 calls recorded on a crashed run.
-- DB-backed tests run on PGlite (`lib/db.test-helpers.ts`). Route tests replace `@/lib/app-context` with `vi.mock`. The crash test replaces `runSnapshot` and slows only the `v1.retry` insert.
+  - the tick skipping phases whose row is failed or partial;
+  - 0 calls recorded on a crashed run;
+  - verdict quota = `before − after + 1`;
+  - the pending-rehearsal race on the button.
+- Route tests replace `@/lib/app-context` with `vi.mock` and run on PGlite (`lib/db.test-helpers.ts`). The crash test replaces `runSnapshot` and slows only the `v1.retry` insert.
 </adjustments>
 
 <adjustments for="Session 6">
-- Read models exist: `listEvents(db)` and `getEventDetail(db, id)` in `lib/queries/events.ts` (no members, no `raw_json`). `/admin/runs/[id]` needs a new read model over `run_logs` (`code`, `level`, `at`, `union_id`, `data`); none exists yet.
-- The PIN gate can reuse `authorize(headers, db, ctx, { allowPin: true })` from `lib/auth.ts`, which already rate-limits.
-- "Run BEFORE/AFTER now" = `POST /api/snapshot?phase=…` with `x-edit-pin`. Codes to show: `snapshot_running` (409), `snapshot_complete` (409, offer force=1), `rate_limited`, `pin_locked` (429), `run_failed` (500).
-- `GET /api/quota` spends 1 call per request: warn before calling it (Session 4 constraint).
+- **Read models:** `listEvents(db)` and `getEventDetail(db, id)` exist in `lib/queries/events.ts`. They exclude test events, members and `raw_json`.
+- **Needed and not built:**
+  - an admin read model over `run_logs` (`at`, `level`, `code`, `union_id`, `data`);
+  - one for rehearsals (test events with their snapshots).
+- **The last verdict** can be recomputed with `rehearsalVerdict(await loadVerdictInput(db, eventId), env.SNAPSHOT_WINDOW_MIN)` (`lib/rehearsal.ts`, `lib/repo/rehearsals.ts`).
+- **"Rehearse now"** = `POST /api/rehearsal` with `x-edit-pin`:
+  - 201 `{ event_id, before_at, after_at }`;
+  - 409 `rehearsal_event_day | rehearsal_before_real | rehearsal_real_running | rehearsal_pending`;
+  - 429 `rate_limited | pin_locked`.
+- **"Run BEFORE/AFTER now"** = `POST /api/snapshot?phase=…` with `x-edit-pin`. Codes: `snapshot_running` (409), `snapshot_complete` (409, offer `force=1`), `run_failed` (500).
+- **The PIN gate** can reuse `authorize(headers, db, ctx, { cron: false, pin: true })`.
+- **`GET /api/quota`** spends 1 call per request: warn before calling it.
 </adjustments>
 
 <adjustments for="Session 8">
-- Apply `drizzle/0001_lowly_luckman.sql` to Neon main and preview: 3 tables, plus the `events` column and unique constraint.
-- `tick.yml` posts `/api/tick` with `Authorization: Bearer $CRON_SECRET`. `workflow_dispatch` posts `/api/snapshot?phase=<input>` with the same header (add `&test=1` for dry runs).
-- Verify in Vercel's docs that `x-real-ip` and `x-forwarded-for` are set by the edge and cannot be supplied by the client (`lib/auth.ts` `clientIp`).
+- Apply `drizzle/0001_sparkling_lake.sql` to Neon main and preview, after checking that `events` is empty: the NOT NULL `before_at`/`after_at` columns can't be added to existing rows.
+- `tick.yml`: `*/15 * * * *` → `POST /api/tick` with `Authorization: Bearer $CRON_SECRET`. `workflow_dispatch` → `POST /api/snapshot?phase=<input>` with the same header.
+- Step 4's rehearsal: `POST /api/rehearsal` takes `x-edit-pin` only (CRON_SECRET is refused there by design).
+- Verify in Vercel's docs that `x-real-ip` and `x-forwarded-for` are set by the edge (`lib/auth.ts` `clientIp`).
+- Confirm `REHEARSAL_AT` holds a value (not empty) and `REHEARSAL_KEEP` is a number. The owner set them during Session 4; their values were not checked here.
 </adjustments>
 
 <adjustments for="Session 9">
-- Dry run: `POST /api/snapshot?phase=before&test=1` (or `workflow_dispatch` with that query) creates the `is_test` event itself; don't create one by hand. Both Discord channels get messages.
-- `run_logs` now has a `v1.fetch` line per `/v1` call with `duration_ms` and `cached`: the per-call timings and cached/not-cached counts can be read from the table instead of being timed by hand.
+- Admin messages for a rehearsal arrive as `[TEST] … snapshot …` twice, then `[TEST] Rehearsal PASS|FAIL (event N)` with six ✅/❌ lines. A `calls_used ≠ quota drop` line names the phase and both numbers; if anything else used the key during the rehearsal, this line fails.
+- `run_logs` has a `v1.fetch` line per `/v1` call with `duration_ms` and `cached`: read the per-call timings and the cached/not-cached counts from there.
 </adjustments>
 
 https://github.com/daniro-san/LAPTracker/pull/13

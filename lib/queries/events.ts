@@ -1,6 +1,7 @@
 // Read models for GET /api/events and /api/events/[id]. Columns are listed one by one: raw_json and
 // member rows are never selected, so no blocked roster key (plan §12.1) can reach a response.
-import { asc, desc, eq, inArray } from "drizzle-orm";
+// Test events (rehearsals) are not public (plan Phase 6): /admin reads them elsewhere.
+import { and, asc, desc, eq, inArray } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { allianceSnapshots, events, snapshots } from "../schema";
@@ -23,6 +24,7 @@ export async function listEvents(db: Db) {
       isTest: events.isTest,
     })
     .from(events)
+    .where(eq(events.isTest, false))
     .orderBy(desc(events.eventAtUtc));
   const phases = rows.length
     ? await db
@@ -78,7 +80,7 @@ export async function getEventDetail(db: Db, eventId: number) {
       isTest: events.isTest,
     })
     .from(events)
-    .where(eq(events.id, eventId));
+    .where(and(eq(events.id, eventId), eq(events.isTest, false)));
   if (!event) return null;
   const phases = await db
     .select({

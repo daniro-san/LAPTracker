@@ -73,7 +73,7 @@ beforeEach(async () => {
 
 async function currentEventId() {
   const event = currentEvent(T0, holder.ctx?.env ?? testContext(db).ctx.env);
-  return (await findOrCreateEvent(db, event.name, event.eventAtUtc)).id;
+  return (await findOrCreateEvent(db, event)).id;
 }
 
 describe("POST /api/snapshot", () => {

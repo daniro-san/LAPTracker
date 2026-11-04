@@ -57,6 +57,7 @@ export async function finishSnapshot(
       status: result.status,
       finishedAt: result.finishedAt,
       callsUsed: sql`${snapshots.callsUsed} + ${result.callsUsed}`,
+      quotaRemainingBefore: result.quotaRemainingBefore,
       quotaRemainingAfter: result.quotaRemainingAfter,
       boardPulledAt: result.boardPulledAt,
       error: result.error,

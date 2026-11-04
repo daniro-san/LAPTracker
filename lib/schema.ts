@@ -4,6 +4,7 @@
 // - alliance_snapshots data columns are nullable for error rows, which have no data (owner, Session 3).
 // - events.event_at_utc is unique and events.quota_checked_at exists, so a double tick can create
 //   neither two events nor two Friday checks (Session 4, DECISIONS D20).
+// - snapshots.quota_remaining_before and rehearsal_slots serve the rehearsal (plan §3.1, D20).
 import { sql } from "drizzle-orm";
 import {
   bigint,
@@ -33,6 +34,10 @@ export const events = pgTable(
     allianceIds: big("alliance_ids").array().notNull(),
     isTest: boolean("is_test").notNull().default(false),
     createdAt: tstz("created_at").notNull().defaultNow(),
+    // When each phase is due (plan §3.1). Saturdays: SNAPSHOT_BEFORE/AFTER in SERVER_TZ;
+    // rehearsals: created + 15 / + 45 min. The tick reads these, not the env.
+    beforeAt: tstz("before_at").notNull(),
+    afterAt: tstz("after_at").notNull(),
     // INVARIANT tick.friday-check-once: claimed by a conditional update, like the run lock.
     quotaCheckedAt: tstz("quota_checked_at"),
   },
@@ -51,6 +56,9 @@ export const snapshots = pgTable(
     finishedAt: tstz("finished_at"),
     status: text("status", { enum: ["running", "complete", "partial", "failed"] }).notNull(),
     callsUsed: integer("calls_used").notNull().default(0),
+    // The quota check's `remaining` (that response already counts its own call). With
+    // quota_remaining_after it gives the run's quota drop, which the rehearsal verdict checks.
+    quotaRemainingBefore: integer("quota_remaining_before"),
     quotaRemainingAfter: integer("quota_remaining_after"),
     boardPulledAt: tstz("board_pulled_at"),
     error: text("error"),
@@ -154,3 +162,13 @@ export const appErrors = pgTable(
   },
   (t) => [index("app_errors_at_idx").on(t.at)],
 );
+
+/**
+ * One row per REHEARSAL_AT occurrence (plan §3.1): the first tick in the slot's window claims it,
+ * so a slot creates at most one rehearsal, or is skipped once with one admin note.
+ */
+export const rehearsalSlots = pgTable("rehearsal_slots", {
+  slotAt: tstz("slot_at").primaryKey(),
+  eventId: integer("event_id").references(() => events.id, { onDelete: "set null" }),
+  outcome: text("outcome").notNull(),
+});

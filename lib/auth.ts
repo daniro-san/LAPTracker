@@ -46,17 +46,19 @@ export async function authorize(
   headers: Headers,
   db: Db,
   ctx: AppContext,
-  options: { allowPin: boolean },
+  accept: { cron: boolean; pin: boolean },
 ): Promise<AuthResult> {
   const now = ctx.now();
   const ipKey = `ip:${clientIp(headers)}`;
-  const bearer = /^Bearer (.+)$/.exec(headers.get("authorization") ?? "")?.[1];
+  const bearer = accept.cron
+    ? /^Bearer (.+)$/.exec(headers.get("authorization") ?? "")?.[1]
+    : undefined;
   if (bearer !== undefined) {
     // INVARIANT auth.cron-never-locked-out: the scheduler's secret is checked before any limit.
     if (secretEquals(bearer, ctx.env.CRON_SECRET)) return { ok: true, via: "cron" };
     return failIp(db, ipKey, now);
   }
-  const pin = options.allowPin ? headers.get("x-edit-pin") : null;
+  const pin = accept.pin ? headers.get("x-edit-pin") : null;
   if (pin === null) return failIp(db, ipKey, now);
 
   // INVARIANT auth.pin-rate-limit: 5 per IP per 15 min; 20 from anyone per hour disables PIN auth.
