@@ -5,7 +5,7 @@
   "type": "module",
   "packageManager": "pnpm@12.16.1",
   "engines": {
-    "node": ">=22.0.0"
+    "node": "26.x"
   },
   "scripts": {
     "dev": "next dev",
@@ -17,6 +17,7 @@
     "test": "vitest run",
     "check": "prettier --check . && eslint . && tsc --noEmit && vitest run",
     "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx scripts/migrate.ts",
     "snapshot:dry": "tsx scripts/snapshot-dry.ts",
     "db:seed": "tsx --env-file-if-exists=.env.local scripts/seed.ts",
     "prepare": "lefthook install || true"
