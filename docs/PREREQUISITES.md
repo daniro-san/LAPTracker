@@ -42,7 +42,7 @@ Don't put the admin webhook in a DM: Discord webhooks only post to server channe
 | **Claude Code CLI** | All sessions | `claude --version`; run `claude` in the repo and confirm `/model` lists the models above |
 | **GitHub CLI `gh`** | Sessions 8–9: `gh workflow run`, `gh secret set` | `gh auth status` |
 | **curl** + **jq** | Session 0 API verification, Session 8 checks | `curl --version`, `jq --version` |
-| **Vercel CLI** (optional) | `vercel env pull` to sync env vars locally; `vercel logs` | `pnpm dlx vercel --version` |
+| **Vercel CLI** (installed 2026-11-04) | `vercel env ls` / `vercel env pull` to check and sync env vars; `vercel logs`; `vercel promote` | `vercel --version`; `vercel link` once in the repo |
 | **openssl** | Generate `CRON_SECRET` | `openssl rand -hex 32` |
 
 Windows: use WSL2; the playbook assumes a POSIX shell.
@@ -52,7 +52,8 @@ Windows: use WSL2; the playbook assumes a POSIX shell.
 **Required MCP connectors: none.** Every session works with the shell, `curl`, `gh` and the files in the repo. That is deliberate — fewer moving parts, nothing to debug on a Saturday.
 
 Optional, only if you already use them:
-- **Neon MCP** — inspect tables during Sessions 3 and 9. Nice to have; `psql` or Drizzle Studio (`pnpm drizzle-kit studio`) do the same.
+- **Neon MCP** (added 2026-11-04) — inspect tables and branches during Sessions 3 and 9 without leaving the session; `psql` or Drizzle Studio (`pnpm drizzle-kit studio`) do the same.
+- **Vercel MCP** (added 2026-11-04) — read project settings, env var names per environment, deployments and logs from inside Sessions 8 and 9: the "confirm in the Vercel dashboard" steps become tool calls. Note for cloud sessions: an MCP tool call waits for your approval, and the session can expire while it waits (Claude Code docs) — approve promptly or run those sessions locally.
 - **frontend-design skill** — Session 7. If missing, the prompt still works; the branding brief in the plan is explicit enough.
 
 Settings worth having in `~/.claude/settings.json` or the repo's `.claude/settings.json`:
