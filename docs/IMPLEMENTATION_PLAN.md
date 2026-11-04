@@ -257,7 +257,7 @@ export const ALLIANCES = [
   { unionId: 67110415, tag: "CR8R", name: "BCR8RNU" },               // #17 · #18
   { unionId: 67110999, tag: "WOK",  name: "Wolfskinder" },           // #18 · #24
   { unionId: 67111040, tag: "AFR",  name: "AllianceFr" },            // #19 · #15 · v1 #19 — replaced TRM (67110063, v1 #31) on 2026-11-04 at the owner's choice: follow /v1 rank
-  { unionId: 67111128, tag: "FGH",  name: "MegaDeath" },             // #20 · #33 · v1 unverified (502 twice on 2026-11-04) — replaced 404 (67110811, Берсерк, v1 #21). Session 2's smoke call verifies it.
+  { unionId: 67111128, tag: "FGH",  name: "MegaDeath" },             // #20 · #33 · v1 #20 (verified 2026-11-04 20:23 UTC, fixtures/v1-ids) — replaced 404 (67110811, Берсерк, v1 #21)
 ] as const;
 ```
 
@@ -296,7 +296,7 @@ Still needed, and that is all Session 0 does:
 ### Phase 1 — Scaffold + harness (see §11, §12)
 
 ### Phase 2 — Source adapters (`lib/sources/`)
-- One output type: `AllianceSnapshotInput = { unionId, tag, name, memberCount, totalPower, members: { uid, name, power, kills, lv }[], sourceUpdatedAt, cached, raw }`.
+- One output type: `AllianceSnapshotInput = { unionId, tag, name, memberCount, totalPower, totalKills, serverRank, level, members: { uid, name, power, kills, lv }[], sourceUpdatedAt, cached, quota, raw }` — `quota` is the `/v1` response's quota object (null for internal), so the collector reads `remaining` from each alliance response instead of extra quota calls; `members[].power`/`kills` are `number | null` (Session 2, docs/ARCHITECTURE.md).
 - `v1.ts`: `fetchAlliance(id)`, `fetchQuota()`; `Authorization` + `User-Agent` on every request; the alliance response is a flat object (no wrapper) — parse `power, member_count, level, rank.rank, updated_at, cached, members[]{uid, nick_name, power, kills, lv}` and `quota` from each response; retries `502/503/504` max 3 (1s/2s/4s + jitter, `Retry-After` honoured); `429` → `QuotaExhaustedError`; `404` → `NotFoundError`; per-call timeout 30 s (a read may be a live pull); concurrency 4.
 - `internal.ts`: `fetchRanks(server)` → `{ pulledAt, power: Map<unionId, number>, kills: Map<unionId, number> }` (open GET); `fetchAlliance(id)` parsing the `live: true` shape only and throwing `NotLiveError` on the stub — used only as the per-alliance fallback in §3.5. Header comment: unofficial, read-only, **no refresh calls, ever**.
 - `members[].kills` can be `null` (seen once, AFR 67111040, 2026-11-04): the parser keeps `null` on the member row, `sumKills` treats it as 0, the UI shows `—` for that member. Same rule for `power` if it ever happens. Stated in DECISIONS.
@@ -409,7 +409,7 @@ The alliance running this is **Old Grandmas**. Visual identity = plague-doctor /
 ### Phase 6 — Scheduling + deploy
 - Vercel project, link Neon from Marketplace, set env vars, `drizzle-kit push`.
 - `.github/workflows/tick.yml`: `schedule: */15 * * * 5,6,0` → one `curl --fail --max-time 150 -X POST $APP_URL/api/tick` with `CRON_SECRET`; plus `workflow_dispatch` with a `phase` input that calls `/api/snapshot` directly for manual runs from the GitHub UI. `APP_URL` and `CRON_SECRET` as repository secrets. **Public repo: never commit `.env`, keys, or the PIN.** No times in YAML — they are env vars (§3.1).
-- `.github/workflows/keepalive.yml`: monthly, commits a timestamp to `.keepalive` on the `keepalive` branch (force-updated; never `dev` or `main`, which are protected). Together with weekly Dependabot PRs this is the "repository activity" that keeps GitHub from disabling the schedule after 60 days. Not optional. The Friday message (§3.1) is the detector if GitHub's definition of activity turns out narrower than this.
+- `.github/workflows/keepalive.yml`: monthly, commits a timestamp to `.keepalive` on the `keepalive` branch (force-updated; never `dev` or `main`, which are protected). Together with weekly Dependabot PRs this is the "repository activity" that keeps GitHub from disabling the schedule after 60 days. Not optional. `vercel.json` carries `git.deploymentEnabled: { keepalive: false }` so the monthly push never triggers a Vercel build. The Friday message (§3.1) is the detector if GitHub's definition of activity turns out narrower than this.
 - `.github/workflows/dependabot-automerge.yml` (Session 8, with the other workflows): on Dependabot PRs for minor/patch updates, `gh pr merge --auto --squash`; CI still has to pass. Majors are left for the owner.
 - Document in README how to change the alliance list (edit config → redeploy).
 - **Notifications — two audiences, two channels.** Two optional env vars:
@@ -507,7 +507,7 @@ Dependency rule: `app → lib/{collector,queries,repo}`; `lib/collector → lib/
 | Unit | `lib/compute`, both adapters' parsers; **property-based tests** (fast-check): for any roster, `total_kills == sum(members.kills)` and the delta of two snapshots equals the sum of member deltas plus joined minus left | every commit |
 | Integration | collector against a mocked client (fixture bodies) + real local Postgres (`service postgresql start` in cloud sessions; docker/`DATABASE_URL` locally) | every commit |
 | Route | handlers with the collector mocked: auth, lock, shutdown-in-finally | every commit |
-| Live smoke | one `/v1/quota` call, opt-in `LAP_LIVE_TEST=1` | manual |
+| Live smoke | one `/v1/alliances/{id}` read (FGH), opt-in `LAP_LIVE_TEST=1`, 1 call | manual |
 | Dry run | Phase 7 | once, then after any change to collector/client |
 
 `fixtures/` is the contract with the upstream API. `fixtures/README.md` says when each was recorded and how many calls recording costs; adding a fixture is a deliberate act (the `record-fixture` skill), never a side effect of a test. No numeric coverage threshold — the rule is simpler: a change to `lib/compute.ts`, `lib/collector.ts` or `lib/sources/*` ships with a test, enforced by the collector rules file and by review, not by a percentage. Tests are named as sentences describing the invariant: `it("marks the snapshot partial when any roster is older than 20 minutes")`.

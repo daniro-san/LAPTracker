@@ -44,9 +44,15 @@ export interface RanksBoard {
   kills: Map<UnionId, number>;
 }
 
+/**
+ * Called before every /v1 request attempt, retries included (attempt 0 is the first). Each attempt
+ * spends quota, so the collector counts calls here. If it throws, that attempt is not sent.
+ */
+export type OnAttempt = (attempt: number) => void;
+
 export interface V1Source {
-  fetchAlliance(id: UnionId): Promise<AllianceSnapshotInput>;
-  fetchQuota(): Promise<Quota>;
+  fetchAlliance(id: UnionId, onAttempt?: OnAttempt): Promise<AllianceSnapshotInput>;
+  fetchQuota(onAttempt?: OnAttempt): Promise<Quota>;
 }
 
 export interface InternalSource {
