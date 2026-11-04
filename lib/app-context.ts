@@ -29,6 +29,7 @@ export function getAppContext(): AppContext {
 /** Every value the logger and messages must never carry (plan §12.2). */
 export function secretsOf(env: Env): string[] {
   return [
+    env.DATABASE_URL,
     env.CRON_SECRET,
     env.EDIT_PIN,
     env.LAP_API_KEY,
