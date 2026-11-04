@@ -8,12 +8,16 @@ app/(pages)/*       UI. Reads through lib/queries only.
 lib/collector.ts    domain: runSnapshot, freshness check, per-alliance fallback, resume logic.
 lib/compute.ts      pure functions only — sums, deltas, freshness predicate, roster diff; no IO, no Date.now() (passed in).
 lib/budget.ts       pure quota arithmetic (requiredQuota).
+lib/upstream-errors.ts, lib/raw-json.ts  the collector's error wording and raw_json trimming (split for size).
 lib/sources/*.ts    adapters: v1.ts (documented API, primary), internal.ts (site API: ranks board + live-roster fallback,
                     unofficial, read-only). One output type.
 lib/repo/*.ts       persistence: one module per table, plain functions over Drizzle.
 lib/queries/*.ts    read models for the UI (joins, sorting, name history). Never write. Never expose BLOCKED_ROSTER_KEYS.
 lib/logger.ts, lib/notify.ts, lib/env.ts, lib/redact.ts
-lib/schedule.ts     pure: SERVER_TZ ↔ UTC, the current event, which tick action is due.
+lib/schedule.ts     pure: SERVER_TZ ↔ UTC, Saturday events and their times, Friday-check and rehearsal slots.
+lib/tick.ts         the tick's decision: create the Saturday row, run the one due phase (from events.before_at/
+                    after_at), the Friday check, a REHEARSAL_AT slot.
+lib/rehearsal.ts    rehearsal creation (guards, retention) and the pure verdict.
 lib/auth.ts         Bearer CRON_SECRET / x-edit-pin in constant time; the Postgres-backed rate limiter.
 lib/run.ts          what a route runs: executeSnapshot (finalise + logger shutdown in finally, then notify)
                     and quotaReport (the Friday check).
@@ -27,7 +31,7 @@ instrumentation.ts  validates the environment once at server start
 
 ## Dependency rule
 
-- `app → lib/{route, auth, run, schedule, queries, repo}`; `lib/run → lib/collector`.
+- `app → lib/{route, auth, run, tick, rehearsal, schedule, queries, repo}`; `lib/run → lib/collector`.
 - `lib/collector → lib/{compute, sources, repo, logger, notify}` **through the `Deps` object passed in**.
 - `lib/compute` and `lib/budget` import nothing from the project.
 - `lib/logger` imports only `lib/repo` and `lib/redact`.

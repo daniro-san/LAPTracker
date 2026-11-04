@@ -5,18 +5,26 @@ import { secretsOf, type AppContext } from "./app-context";
 import { RunRefusedError, runSnapshot, type RunSummary } from "./collector";
 import type { Db } from "./db";
 import { createRunLogger } from "./logger";
-import { adminSnapshotMessage, createNotifier, publicSnapshotMessage } from "./notify";
+import {
+  adminSnapshotMessage,
+  createNotifier,
+  publicSnapshotMessage,
+  rehearsalVerdictMessage,
+} from "./notify";
+import { rehearsalVerdict } from "./rehearsal";
 import { createRepo, type Phase, type Repo } from "./repo";
 import { databaseSizeBytes } from "./repo/database";
+import type { EventInfo } from "./repo/events";
+import { loadVerdictInput } from "./repo/rehearsals";
 import { insertRunLog } from "./repo/run-logs";
-import { actionTimes, describeInstant, nextEvent, WEEKDAY_NAMES } from "./schedule";
+import { describeInstant, nextEvent, WEEKDAY_NAMES } from "./schedule";
 
 export type RunOutcome =
   | { ok: true; summary: RunSummary }
   | { ok: false; status: 404 | 409 | 500; code: string; snapshotId: number | null };
 
 export interface RunRequest {
-  eventId: number;
+  event: EventInfo;
   phase: Phase;
   force: boolean;
   /** The request's origin, for links in messages. */
@@ -54,33 +62,58 @@ async function finaliseCrashed(
     failed: [],
   };
   try {
-    await repo.finishSnapshot(snapshotId, { ...summary, finishedAt, boardPulledAt: null });
+    await repo.finishSnapshot(snapshotId, {
+      ...summary,
+      finishedAt,
+      quotaRemainingBefore: null,
+      boardPulledAt: null,
+    });
   } catch {
     console.error("snapshot.finalise_failed", { snapshot_id: snapshotId });
   }
   return summary;
 }
 
-/** Sent only after the snapshot row is final. */
+/**
+ * Sent only after the snapshot row is final. A test event (rehearsal) never reaches the public
+ * channel, its admin lines start with [TEST], and its AFTER run is followed by the verdict.
+ */
 async function notifyFinished(
   ctx: AppContext,
-  repo: Repo,
+  db: Db,
   req: RunRequest,
-  summary: RunSummary,
-  logWriteFailures: number,
+  run: { summary: RunSummary; startedAt: Date; logWriteFailures: number },
 ): Promise<void> {
-  const rows = await repo.listAllianceRows(summary.snapshotId).catch(() => []);
+  const { summary } = run;
+  const rows = await createRepo(db)
+    .listAllianceRows(summary.snapshotId)
+    .catch(() => []);
+  const scheduledAt = req.phase === "before" ? req.event.beforeAt : req.event.afterAt;
   const context = {
     weekdayName: WEEKDAY_NAMES[ctx.env.EVENT_WEEKDAY] ?? "Saturday",
     allianceCount: rows.length,
     tableUrl: `${req.origin}/`,
     runUrl: `${req.origin}/admin/runs/${summary.snapshotId}`,
-    eventId: req.eventId,
-    logWriteFailures,
+    eventId: req.event.id,
+    logWriteFailures: run.logWriteFailures,
+    scheduled: describeInstant(scheduledAt, ctx.env),
+    started: describeInstant(run.startedAt, ctx.env),
   };
   const notifier = createNotifier(ctx.env, ctx.fetch);
-  await notifier.public(publicSnapshotMessage(summary, context));
-  await notifier.admin(adminSnapshotMessage(summary, context));
+  const test = { test: req.event.isTest };
+  // INVARIANT notify.test-events-admin-only
+  if (!req.event.isTest) await notifier.public(publicSnapshotMessage(summary, context));
+  await notifier.admin(adminSnapshotMessage(summary, context), test);
+  if (req.event.isTest && req.phase === "after") {
+    const verdict = rehearsalVerdict(
+      await loadVerdictInput(db, req.event.id),
+      ctx.env.SNAPSHOT_WINDOW_MIN,
+    );
+    await notifier.admin(
+      rehearsalVerdictMessage(verdict, req.event.id, `${req.origin}/admin/runs`),
+      test,
+    );
+  }
 }
 
 export async function executeSnapshot(
@@ -107,7 +140,7 @@ export async function executeSnapshot(
   let summary: RunSummary | null = null;
   let refused: RunRefusedError | null = null;
   try {
-    summary = await runSnapshot(req.eventId, req.phase, deps, { force: req.force });
+    summary = await runSnapshot(req.event.id, req.phase, deps, { force: req.force });
   } catch (e) {
     if (e instanceof RunRefusedError) refused = e;
     else await logger.error("run.crashed", { error: e instanceof Error ? e.name : "unknown" });
@@ -124,7 +157,11 @@ export async function executeSnapshot(
       ? { ok: false, ...REFUSALS[refused.reason], snapshotId: null }
       : { ok: false, status: 500, code: "run_failed", snapshotId: null };
   }
-  await notifyFinished(ctx, repo, req, summary, logger.stats().failedWrites);
+  await notifyFinished(ctx, db, req, {
+    summary,
+    startedAt: claimedAt,
+    logWriteFailures: logger.stats().failedWrites,
+  });
   // A refusal after the claim ('no-event') was finalised above and still answers as a refusal.
   if (refused) return { ok: false, ...REFUSALS[refused.reason], snapshotId: summary.snapshotId };
   return summary.error === CRASH_ERROR
@@ -153,12 +190,11 @@ export async function quotaReport(
   if (!options.always && !low) return { remaining, posted: false };
   const bytes = await databaseSizeBytes(db);
   const event = nextEvent(ctx.now(), ctx.env);
-  const times = actionTimes(event, ctx.env);
   const lines = [
     `${low ? "⚠️" : "✅"} quota remaining: ${remaining ?? "unavailable (the /v1/quota call failed)"}`,
     `${bytes > DB_WARN_ABOVE_BYTES ? "⚠️" : "✅"} database size: ${(bytes / 1024 / 1024).toFixed(1)} MB`,
-    `next BEFORE: ${describeInstant(times.before, ctx.env)}`,
-    `next AFTER: ${describeInstant(times.after, ctx.env)}`,
+    `next BEFORE: ${describeInstant(event.beforeAt, ctx.env)}`,
+    `next AFTER: ${describeInstant(event.afterAt, ctx.env)}`,
   ];
   await createNotifier(ctx.env, ctx.fetch).admin(lines.join("\n"));
   return { remaining, posted: true };

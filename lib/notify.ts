@@ -4,10 +4,12 @@
 // member names, never secrets (plan §12.3).
 import type { RunSummary } from "./collector";
 import type { Env } from "./env";
+import type { Verdict } from "./rehearsal";
 
 export interface Notifier {
   public(content: string): Promise<void>;
-  admin(content: string): Promise<void>;
+  /** `test`: an is_test event (plan Phase 6): the line starts with `[TEST]`. */
+  admin(content: string, options?: { test: boolean }): Promise<void>;
 }
 
 type NotifyEnv = Pick<
@@ -52,7 +54,12 @@ export function createNotifier(env: NotifyEnv, fetchFn: typeof fetch): Notifier 
 
   return {
     public: (content) => send(env.NOTIFY_WEBHOOK_PUBLIC, content, { parse: [] }),
-    admin: (content) => send(env.NOTIFY_WEBHOOK_ADMIN, prefix + content, adminMentions),
+    admin: (content, options) =>
+      send(
+        env.NOTIFY_WEBHOOK_ADMIN,
+        `${prefix}${options?.test ? "[TEST] " : ""}${content}`,
+        adminMentions,
+      ),
   };
 }
 
@@ -64,6 +71,9 @@ export interface SnapshotContext {
   runUrl: string;
   eventId: number;
   logWriteFailures: number;
+  /** "Sat 2026-11-07 10:00 server (12:00 UTC)" for when the phase was due and when it started. */
+  scheduled: string;
+  started: string;
 }
 
 const label = (a: { unionId: number; tag: string | null }) => a.tag ?? String(a.unionId);
@@ -87,6 +97,7 @@ const STATUS_ICON = { complete: "✅", partial: "⚠️", failed: "❌" } as con
 export function adminSnapshotMessage(summary: RunSummary, ctx: SnapshotContext): string {
   const lines = [
     `${STATUS_ICON[summary.status]} ${summary.phase} snapshot ${summary.status} (event ${ctx.eventId}, snapshot ${summary.snapshotId})`,
+    `scheduled ${ctx.scheduled}, started ${ctx.started}`,
     `calls used ${summary.callsUsed} · quota remaining ${summary.quotaRemainingAfter ?? "unknown"} · ${(summary.durationMs / 1000).toFixed(1)} s`,
   ];
   if (summary.error) lines.push(`error: ${summary.error}`);
@@ -95,4 +106,17 @@ export function adminSnapshotMessage(summary: RunSummary, ctx: SnapshotContext):
   if (ctx.logWriteFailures > 0) lines.push(`run_logs write failures: ${ctx.logWriteFailures}`);
   lines.push(ctx.runUrl);
   return lines.join("\n");
+}
+
+/** Plan §3.1: `[TEST] Rehearsal PASS/FAIL` (the prefix is the notifier's), one ✅/❌ line per check. */
+export function rehearsalVerdictMessage(
+  verdict: Verdict,
+  eventId: number,
+  runsUrl: string,
+): string {
+  return [
+    `Rehearsal ${verdict.pass ? "PASS" : "FAIL"} (event ${eventId})`,
+    ...verdict.lines.map((l) => `${l.ok ? "✅" : "❌"} ${l.text}`),
+    runsUrl,
+  ].join("\n");
 }

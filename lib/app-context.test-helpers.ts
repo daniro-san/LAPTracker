@@ -8,6 +8,7 @@ import { parseEnv } from "./env";
 export const TEST_PIN = "482913";
 export const TEST_CRON_SECRET = "test".repeat(10); // 40 chars, low entropy: not key-shaped
 export const ADMIN_WEBHOOK = "https://discord.com/api/webhooks/1/admin-test";
+export const PUBLIC_WEBHOOK = "https://discord.com/api/webhooks/2/public-test";
 
 export const TEST_ENV = parseEnv({
   LAP_API_KEY: "lap_test-placeholder",
@@ -24,6 +25,7 @@ export const TEST_ENV = parseEnv({
   SNAPSHOT_WINDOW_MIN: "45",
   QUOTA_CHECK_AT: "fri 20:00",
   NOTIFY_WEBHOOK_ADMIN: ADMIN_WEBHOOK,
+  NOTIFY_WEBHOOK_PUBLIC: PUBLIC_WEBHOOK,
 });
 
 export function testContext(db: Db, env = TEST_ENV) {

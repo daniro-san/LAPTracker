@@ -36,7 +36,12 @@ describe("GET /api/events/[id]", () => {
   it("serves an event with a stored roster and none of BLOCKED_ROSTER_KEYS", async () => {
     holder.ctx = testContext(db).ctx;
     const repo = createRepo(db);
-    const { id: eventId } = await findOrCreateEvent(db, "Saturday Event 2026-11-07", T0);
+    const { id: eventId } = await findOrCreateEvent(db, {
+      name: "Saturday Event 2026-11-07",
+      eventAtUtc: T0,
+      beforeAt: T0,
+      afterAt: T0,
+    });
     const snapshotId = (await repo.startSnapshot(eventId, "before", T0, null)) ?? 0;
     const members = roster.members.map((m) => ({
       uid: m.uid,

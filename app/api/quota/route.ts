@@ -9,7 +9,7 @@ const noQuery = z.object({}).strict();
 
 export function GET(request: Request): Promise<Response> {
   return withContext("/api/quota", async (ctx, db) => {
-    const auth = await authorize(request.headers, db, ctx, { allowPin: true });
+    const auth = await authorize(request.headers, db, ctx, { cron: true, pin: true });
     if (!auth.ok) return errorResponse(auth.status, auth.code);
     if (!parseQuery(request, noQuery)) return errorResponse(400, "bad_request");
     const quota = await ctx.v1.fetchQuota().catch(() => null);

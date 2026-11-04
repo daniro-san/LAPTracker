@@ -15,6 +15,13 @@
       "when": 1793828730506,
       "tag": "0001_lowly_luckman",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793830763541,
+      "tag": "0002_woozy_yellow_claw",
+      "breakpoints": true
     }
   ]
 }

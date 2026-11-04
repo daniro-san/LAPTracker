@@ -5,17 +5,14 @@ import { isFresh } from "./compute";
 import type { Logger } from "./logger";
 import { trimRaw } from "./raw-json";
 import type { AllianceRow, MemberRow, Phase, Repo, SnapshotRow, SnapshotStatus } from "./repo";
+import { describe, httpStatusOf } from "./upstream-errors";
 import { ALLIANCES, SERVER } from "../config/alliances";
 import {
   type AllianceSnapshotInput,
   type InternalSource,
-  NotFoundError,
-  NotLiveError,
   type Quota,
   QuotaExhaustedError,
   type RanksBoard,
-  SchemaError,
-  UpstreamError,
   type V1Source,
 } from "./sources/types";
 
@@ -63,19 +60,11 @@ interface Run {
   startedAt: Date;
   calls: number;
   lowestRemaining: number | null;
+  /** The quota check's remaining: the run's starting point for the rehearsal's quota-drop check. */
+  quotaBefore: number | null;
   board: RanksBoard | null;
   abort: string | null;
   capped: boolean;
-}
-
-/** One line from our own error classes; never a third-party message. */
-function describe(e: unknown): string {
-  if (e instanceof UpstreamError) return `http ${e.status}`;
-  if (e instanceof NotFoundError) return "not found";
-  if (e instanceof NotLiveError) return "not live";
-  if (e instanceof SchemaError) return e.code;
-  if (e instanceof QuotaExhaustedError) return "quota exhausted (429)";
-  return e instanceof Error ? e.name : "unknown error";
 }
 
 /** The one place an upstream call is counted. Passed to every /v1 call as its onAttempt hook. */
@@ -86,14 +75,6 @@ function attemptHook(run: Run, unionId: number | null) {
     run.calls++;
     if (attempt > 0) void run.deps.logger.warn("v1.retry", { union_id: unionId, retry_n: attempt });
   };
-}
-
-/** The adapter returns only on 2xx and exposes no status then, so success is recorded as 200. */
-function httpStatusOf(e: unknown): number | null {
-  if (e === undefined) return 200;
-  if (e instanceof UpstreamError) return e.status;
-  if (e instanceof QuotaExhaustedError) return 429;
-  return e instanceof NotFoundError ? 404 : null;
 }
 
 /** One run_logs line per /v1 call (plan "Observability"); retries add their own v1.retry lines. */
@@ -150,6 +131,7 @@ async function checkQuota(run: Run, idCount: number): Promise<string | null> {
   try {
     const quota = await run.deps.v1.fetchQuota(attemptHook(run, null));
     await logV1Fetch(run, started, { endpoint: "quota", unionId: null }, { quota });
+    run.quotaBefore = quota.remaining;
     noteQuota(run, quota.remaining);
     // INVARIANT budget.reserve-for-after
     const needed = requiredQuota(idCount);
@@ -287,6 +269,7 @@ async function finish(run: Run, ids: number[], phase: Phase, error: string | nul
     status,
     finishedAt,
     callsUsed: run.calls,
+    quotaRemainingBefore: run.quotaBefore,
     quotaRemainingAfter: run.lowestRemaining,
     boardPulledAt: run.board?.pulledAt ?? null,
     error,
@@ -326,6 +309,7 @@ export async function runSnapshot(
     startedAt: deps.now(),
     calls: 0,
     lowestRemaining: null,
+    quotaBefore: null,
     board: null,
     abort: null,
     capped: false,
