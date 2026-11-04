@@ -402,6 +402,8 @@ The reason every snapshot is kept forever is to see change over weeks. v1 shows 
 ### Phase 5b — Branding: "Old Grandmas" × plague-era aesthetic
 The alliance running this is **Old Grandmas**. Visual identity = plague-doctor / apothecary era meets grandma crafts (knitting, crochet, yarn, doilies, tea). Tone: a serious tool with a wink, not a joke page.
 
+**The contract is `docs/DESIGN.md`** (added 2026-11-04 at the owner's request, to keep generic "AI" styling out): tokens with roles, two typefaces, spacing/radius/surface rules, the closed component list, the ornament budget, motion and voice rules, a "never" list, and the enforcement tests. Every UI session reads it first; this section is the brief it was written from. The format follows the DESIGN.md convention that agent toolchains read (getdesign.md / awesome-design-md); the content is ours — a third party's design file (Discord's, say) would carry its look and its trademarks into a project that must own its visuals.
+
 **Hard rules**
 - **No assets from the game.** No logo, no character art, no screenshots, no fonts ripped from it. Everything is original SVG or open-licensed (OFL fonts, CC0 textures). Genre motifs (beaked mask silhouette, apothecary bottles, lanterns, wax seals, parchment) are fine; the game's specific designs are not.
 - Decoration lives in **corners, borders, header and empty states only**. The data table stays plain: high contrast, monospaced-tabular numerals, no textured background behind numbers.
