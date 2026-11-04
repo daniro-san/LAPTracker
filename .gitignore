@@ -1,0 +1,18 @@
+# secrets — every .env file except the template
+.env*
+!.env.example
+
+# dependencies and build output
+node_modules/
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
+coverage/
+
+# Claude Code local state
+.claude/worktrees/
+.claude/settings.local.json
+
+# OS
+.DS_Store

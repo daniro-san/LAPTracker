@@ -1,0 +1,7 @@
+pnpm-lock.yaml
+fixtures/
+docs/IMPLEMENTATION_PLAN.md
+docs/SESSION_PLAYBOOK.md
+docs/PREREQUISITES.md
+.next/
+CLAUDE.md

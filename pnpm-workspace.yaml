@@ -1,0 +1,6 @@
+# Install scripts are denied explicitly (docs/DECISIONS.md, "Install scripts").
+# esbuild: postinstall only verifies its platform binary, which pnpm already installs as an optional dependency.
+# lefthook: postinstall runs `lefthook install`; the `prepare` script does that instead.
+allowBuilds:
+  esbuild: false
+  lefthook: false

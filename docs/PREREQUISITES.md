@@ -1,6 +1,6 @@
 # Prerequisites — LAP Tracker
 
-Everything you need **before** Session 0 of `SESSION_PLAYBOOK.md`, plus what each later session needs from you. Items are grouped by when they block. Nothing here costs money on the free tiers listed; verify limits yourself — they change.
+Everything you need **before** Session 0 of `docs/SESSION_PLAYBOOK.md`, plus what each later session needs from you. Items are grouped by when they block. Nothing here costs money on the free tiers listed; verify limits yourself — they change.
 
 ## 1. Accounts
 

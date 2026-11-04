@@ -1,0 +1,12 @@
+# Secrets scan config (plan §12.2). Extends gitleaks' default rules with the LAP key format,
+# which the defaults don't know. Placeholders such as `lap_...` and `lap_cloud-placeholder` don't match.
+title = "LAPTracker"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "lap-api-key"
+description = "Last Asylum Tracker API key (lap_ prefix)"
+regex = '''\blap_[A-Za-z0-9]{20,}\b'''
+keywords = ["lap_"]

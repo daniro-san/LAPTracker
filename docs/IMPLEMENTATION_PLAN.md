@@ -2,7 +2,7 @@
 
 > **For Claude Code:** read this whole file first. Implement phase by phase, in order. Stop after each phase and show what was built before moving on. Do not skip Phase 0 checks. Everything in the codebase (code, comments, UI copy, commit messages) is in **English**.
 >
-> **Companion files:** `SESSION_PLAYBOOK.md` has one prompt per session with model/effort/mode and the handoff contract; `PREREQUISITES.md` lists accounts, CLIs, secrets and what the owner does by hand before each session. Sessions are driven from the playbook; this file is the specification they implement.
+> **Companion files:** `docs/SESSION_PLAYBOOK.md` has one prompt per session with model/effort/mode and the handoff contract; `docs/PREREQUISITES.md` lists accounts, CLIs, secrets and what the owner does by hand before each session. Sessions are driven from the playbook; this file is the specification they implement.
 
 ## 1. Goal
 
