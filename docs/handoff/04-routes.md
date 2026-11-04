@@ -243,3 +243,5 @@ Plan changes needed:
 - Dry run: `POST /api/snapshot?phase=before&test=1` (or `workflow_dispatch` with that query) creates the `is_test` event itself; don't create one by hand. Both Discord channels get messages.
 - `run_logs` now has a `v1.fetch` line per `/v1` call with `duration_ms` and `cached`: the per-call timings and cached/not-cached counts can be read from the table instead of being timed by hand.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/13
