@@ -1,0 +1,10 @@
+# secrets — every .env file except the template
+.env*
+!.env.example
+
+# Claude Code local state
+.claude/worktrees/
+.claude/settings.local.json
+
+# OS
+.DS_Store
