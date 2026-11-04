@@ -7,6 +7,7 @@ import { readBody, rosterFields, TIMEOUT_MS, toSnapshotInput, USER_AGENT } from 
 import {
   type AllianceSnapshotInput,
   NotFoundError,
+  type OnAttempt,
   type Quota,
   QuotaExhaustedError,
   type UnionId,
@@ -55,7 +56,7 @@ function retryDelayMs(attempt: number, retryAfter: string | null): number {
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-async function request(path: string): Promise<Response> {
+async function request(path: string, onAttempt?: OnAttempt): Promise<Response> {
   const env = getSourceEnv();
   const headers = {
     Authorization: `Bearer ${env.LAP_API_KEY}`,
@@ -63,6 +64,8 @@ async function request(path: string): Promise<Response> {
     Accept: "application/json",
   };
   for (let attempt = 0; ; attempt++) {
+    // INVARIANT calls.max-upstream: every attempt is reported before it is sent, retries included.
+    onAttempt?.(attempt);
     const response = await limited(() =>
       fetch(`${env.LAP_API_BASE_URL}${path}`, {
         headers,
@@ -82,14 +85,17 @@ async function request(path: string): Promise<Response> {
   }
 }
 
-export async function fetchAlliance(id: UnionId): Promise<AllianceSnapshotInput> {
-  const response = await request(`/alliances/${id}`);
+export async function fetchAlliance(
+  id: UnionId,
+  onAttempt?: OnAttempt,
+): Promise<AllianceSnapshotInput> {
+  const response = await request(`/alliances/${id}`, onAttempt);
   const { data, raw } = await readBody(response, allianceSchema, "v1.schema");
   return toSnapshotInput(data, { cached: data.cached, quota: data.quota, raw });
 }
 
-export async function fetchQuota(): Promise<Quota> {
-  const response = await request("/quota");
+export async function fetchQuota(onAttempt?: OnAttempt): Promise<Quota> {
+  const response = await request("/quota", onAttempt);
   const { data } = await readBody(response, quotaResponseSchema, "v1.schema");
   return data.quota;
 }

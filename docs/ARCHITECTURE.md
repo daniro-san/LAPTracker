@@ -75,9 +75,12 @@ interface RanksBoard {
   kills: Map<UnionId, number>;
 }
 
+/** Called before every /v1 attempt, retries included; the collector counts calls here (Session 3). */
+type OnAttempt = (attempt: number) => void;
+
 interface V1Source {
-  fetchAlliance(id: UnionId): Promise<AllianceSnapshotInput>;
-  fetchQuota(): Promise<Quota>;
+  fetchAlliance(id: UnionId, onAttempt?: OnAttempt): Promise<AllianceSnapshotInput>;
+  fetchQuota(onAttempt?: OnAttempt): Promise<Quota>;
 }
 
 interface InternalSource {
@@ -89,8 +92,21 @@ interface InternalSource {
 // Errors (instanceof): QuotaExhaustedError (429), NotFoundError (404), NotLiveError (stub),
 // SchemaError { code: "v1.schema" | "internal.schema", paths }, UpstreamError { status }.
 
+// lib/repo/index.ts (Session 3); createRepo(db) over Drizzle, createMemoryRepo() for tests and snapshot:dry.
 interface Repo {
-  // One plain function per operation the collector needs, grouped from lib/repo/<table>.ts. Defined in Session 3.
+  getEvent(eventId: number): Promise<EventRow | null>;
+  setEventAllianceIds(eventId: number, ids: number[]): Promise<void>;
+  findSnapshot(eventId: number, phase: Phase): Promise<SnapshotRow | null>;
+  startSnapshot(
+    eventId: number,
+    phase: Phase,
+    startedAt: Date,
+    expected: SnapshotRow | null,
+  ): Promise<number | null>; // compare-and-set claim
+  clearAllianceRows(snapshotId: number): Promise<void>; // force only
+  listAllianceRows(snapshotId: number): Promise<AllianceRowStatus[]>;
+  insertAllianceRow(snapshotId: number, row: AllianceRow, members: MemberRow[]): Promise<void>; // one transaction
+  finishSnapshot(snapshotId: number, result: SnapshotResult): Promise<void>; // calls_used accumulates
 }
 
 interface Logger {
@@ -99,6 +115,8 @@ interface Logger {
   error(code: string, data?: Record<string, unknown>): Promise<void>;
 }
 
+// Session 4. Not in Deps yet: runSnapshot returns a RunSummary (status, stale and failed alliances)
+// for the caller to pass on.
 interface Notify {
   snapshotFinished(summary: {
     snapshotId: number;
@@ -112,7 +130,6 @@ interface Deps {
   internal: InternalSource;
   repo: Repo;
   logger: Logger;
-  notify: Notify;
   now: () => Date;
 }
 ```
