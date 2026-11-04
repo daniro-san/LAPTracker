@@ -17,6 +17,7 @@
     "test": "vitest run",
     "check": "prettier --check . && eslint . && tsc --noEmit && vitest run",
     "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
     "snapshot:dry": "tsx scripts/snapshot-dry.ts",
     "prepare": "lefthook install || true"
   },
