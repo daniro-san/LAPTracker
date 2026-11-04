@@ -285,9 +285,19 @@ async function finish(run: Run, ids: number[], phase: Phase, error: string | nul
     durationMs,
     error,
     stale: ok.filter((r) => !r.isFresh).map((r) => ({ unionId: r.unionId, tag: r.tag })),
-    failed: rows.flatMap((r) =>
-      r.error === null ? [] : [{ unionId: r.unionId, tag: r.tag, error: r.error }],
-    ),
+    failed: [
+      ...rows.flatMap((r) =>
+        r.error === null ? [] : [{ unionId: r.unionId, tag: r.tag, error: r.error }],
+      ),
+      // Alliances the run never reached (429, quota, cap): the admin needs them named to re-run.
+      ...ids
+        .filter((id) => !rows.some((r) => r.unionId === id))
+        .map((unionId) => ({
+          unionId,
+          tag: ALLIANCES.find((a) => a.unionId === unionId)?.tag ?? null,
+          error: `not fetched: ${error}`,
+        })),
+    ],
   } satisfies RunSummary;
 }
 
@@ -316,6 +326,10 @@ export async function runSnapshot(
   };
   const ids = await allianceIds(deps, eventId, phase);
   await deps.logger.info("snapshot.start", { snapshot_id: snapshotId, alliances: ids.length });
+  // The tick creates the event with an empty list; only BEFORE fills it. No list, no quota call.
+  if (ids.length === 0) {
+    return finish(run, ids, phase, "no alliance list on the event: BEFORE has not run");
+  }
 
   const quotaError = await checkQuota(run, ids.length);
   if (quotaError) return finish(run, ids, phase, quotaError);

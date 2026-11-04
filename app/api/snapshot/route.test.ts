@@ -95,6 +95,23 @@ describe("POST /api/snapshot", () => {
     expect(v1.calls).toEqual([]);
   });
 
+  it("refuses a manual run before the event's before_at, force included", async () => {
+    const { ctx, clock, v1 } = testContext(db);
+    holder.ctx = ctx;
+    clock.now = new Date("2026-11-04T12:00:00Z"); // Wednesday: the current event is 2026-11-07
+
+    const res = await post(
+      await importRoute(),
+      { authorization: `Bearer ${TEST_CRON_SECRET}` },
+      "phase=before&force=1",
+    );
+
+    expect(res.status).toBe(409);
+    expect(await res.json()).toEqual({ code: "snapshot_not_due", snapshot_id: null });
+    expect(await db.select().from(snapshots)).toEqual([]);
+    expect(v1.calls).toEqual([]);
+  });
+
   it("finalises the snapshot as failed and settles its logs when the collector throws", async () => {
     holder.ctx = testContext(db).ctx;
     holder.crash = true;

@@ -38,6 +38,7 @@ const REFUSALS = {
   running: { status: 409, code: "snapshot_running" },
   complete: { status: 409, code: "snapshot_complete" },
   "no-event": { status: 404, code: "event_not_found" },
+  "not-due": { status: 409, code: "snapshot_not_due" },
 } as const;
 
 /** The collector threw past its own handling: the claimed row is closed as failed, with 0 calls
@@ -116,11 +117,15 @@ async function notifyFinished(
   }
 }
 
+/** Refused before the event's before_at, force included: a weekday press would otherwise store the
+ * coming Saturday's phase with weekday data, and the tick would then skip the real run. */
 export async function executeSnapshot(
   ctx: AppContext,
   db: Db,
   req: RunRequest,
 ): Promise<RunOutcome> {
+  if (ctx.now() < req.event.beforeAt)
+    return { ok: false, ...REFUSALS["not-due"], snapshotId: null };
   const repo = createRepo(db);
   let claimedId: number | null = null;
   let claimedAt = ctx.now();

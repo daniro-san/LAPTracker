@@ -61,4 +61,12 @@ describe("createRunLogger", () => {
       nested: [REDACTED],
     });
   });
+
+  it("redacts DATABASE_URL, which carries the database password", async () => {
+    const { logger, lines } = recordingLogger();
+
+    await logger.error("db", { url: TEST_ENV.DATABASE_URL });
+
+    expect(lines[0]?.data).toEqual({ url: REDACTED });
+  });
 });
