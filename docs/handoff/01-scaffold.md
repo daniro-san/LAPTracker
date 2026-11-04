@@ -141,7 +141,7 @@ Both were reverted.
 - Playwright on `/`: status 200, the h1 renders, 14 scripts, all with a nonce, and no console messages on a clean load.
 - An injected `<img onerror>` handler (XSS-style) did not run, and Chrome reported the CSP violation.
 
-**CI** has not run yet; this is the first push. Check the `ci` workflow run on the branch.
+**CI**: run 1 on push of ef8f7af, `completed / success` in 27 s (Node from `.nvmrc`, pnpm from `packageManager`, frozen install, check, audit): https://github.com/daniro-san/LAPTracker/actions/runs/41898007351
 
 ## Open issues
 
@@ -162,7 +162,6 @@ Owner must do first:
 
 - Run Session 0 (config/alliances.ts, fixtures/README.md, 00-prereqs.md; 18 API calls, weekday only). Paste the Session 0 adjustments below.
 - Paste `scripts/cloud-setup.sh` as the cloud environment's setup script, if not done.
-- Confirm the first `ci` run on this branch is green.
 
 Plan changes needed:
 
