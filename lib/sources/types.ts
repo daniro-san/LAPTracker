@@ -1,0 +1,91 @@
+// The one output type of both adapters (plan Phase 2) and the errors callers match with instanceof.
+
+export type UnionId = number;
+export type Uid = number;
+
+export interface MemberInput {
+  uid: Uid;
+  name: string;
+  /** null when the upstream sends null; kept on the row, summed as 0 (DECISIONS D15). */
+  power: number | null;
+  kills: number | null;
+  lv: number | null;
+}
+
+export interface Quota {
+  remaining: number;
+  limit: number;
+  used: number;
+}
+
+export interface AllianceSnapshotInput {
+  unionId: UnionId;
+  tag: string;
+  name: string;
+  memberCount: number;
+  totalPower: number;
+  /** sum(members.kills), nulls as 0. INVARIANT total-kills-is-roster-sum */
+  totalKills: number;
+  members: MemberInput[];
+  serverRank: number | null;
+  level: number | null;
+  sourceUpdatedAt: Date | null;
+  /** null for the internal source, which has no cache flag. */
+  cached: boolean | null;
+  /** Quota as reported by this response; null for the internal source. */
+  quota: Quota | null;
+  raw: unknown;
+}
+
+export interface RanksBoard {
+  /** The older of the two boards' pulled_at. */
+  pulledAt: Date;
+  power: Map<UnionId, number>;
+  kills: Map<UnionId, number>;
+}
+
+export interface V1Source {
+  fetchAlliance(id: UnionId): Promise<AllianceSnapshotInput>;
+  fetchQuota(): Promise<Quota>;
+}
+
+export interface InternalSource {
+  fetchRanks(server: number): Promise<RanksBoard>;
+  /** live: true rosters only; throws NotLiveError on the stub shape. */
+  fetchAlliance(id: UnionId): Promise<AllianceSnapshotInput>;
+}
+
+export type SchemaCode = "v1.schema" | "internal.schema";
+
+/** 429: the daily quota is spent. The run aborts; never retried. */
+export class QuotaExhaustedError extends Error {
+  override name = "QuotaExhaustedError";
+}
+
+export class NotFoundError extends Error {
+  override name = "NotFoundError";
+}
+
+/** The internal API returned the live: false stub, which is never used (plan §3.5). */
+export class NotLiveError extends Error {
+  override name = "NotLiveError";
+}
+
+/** The response no longer matches the fields we read. `code` is the run_logs code. Paths only, no values. */
+export class SchemaError extends Error {
+  override name = "SchemaError";
+  constructor(
+    readonly code: SchemaCode,
+    readonly paths: string[],
+  ) {
+    super(`${code}: ${paths.join(", ")}`);
+  }
+}
+
+/** Any other non-2xx, or 502/503/504 after the last retry. */
+export class UpstreamError extends Error {
+  override name = "UpstreamError";
+  constructor(readonly status: number) {
+    super(`upstream status ${status}`);
+  }
+}
