@@ -131,6 +131,22 @@ describe("v1 requests", () => {
     expect(mock).toHaveBeenCalledTimes(4);
   });
 
+  it("reports every attempt to onAttempt before sending it, and sends nothing when it throws", async () => {
+    const mock = mockFetch(gateway(502), respond(readFixture(OGS)));
+    const attempts: number[] = [];
+    const done = fetchAlliance(67111155, (n) => attempts.push(n));
+    await vi.runAllTimersAsync();
+    await done;
+    expect(attempts).toEqual([0, 1]);
+    expect(mock).toHaveBeenCalledTimes(2);
+
+    const refused = fetchQuota(() => {
+      throw new Error("cap");
+    });
+    await expect(refused).rejects.toThrow("cap");
+    expect(mock).toHaveBeenCalledTimes(2);
+  });
+
   it("aborts on 429 with QuotaExhaustedError and no retry", async () => {
     const mock = mockFetch(respond("{}", 429), respond(readFixture(OGS)));
     await expect(fetchAlliance(67111155)).rejects.toBeInstanceOf(QuotaExhaustedError);
