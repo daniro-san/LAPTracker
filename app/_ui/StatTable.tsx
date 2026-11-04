@@ -33,11 +33,11 @@ const MUTED = "text-zinc-500 dark:text-zinc-400";
 function MetricCell({ m }: { m: StatMetric }) {
   const base = m.base ?? m.from ?? null;
   return (
-    <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 sm:block">
+    <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 sm:block sm:text-right">
       <span className={`w-20 shrink-0 text-xs uppercase tracking-wide sm:hidden ${MUTED}`}>
         {m.label}
       </span>
-      <span className="font-semibold tabular-nums">
+      <span className="font-medium tabular-nums">
         <Num n={m.value} />
       </span>
       <span className="tabular-nums text-sm sm:block">
@@ -108,7 +108,9 @@ export function StatTable({
       >
         <span>{leadLabel}</span>
         {columns.map((c) => (
-          <span key={c}>{c}</span>
+          <span key={c} className="text-right">
+            {c}
+          </span>
         ))}
       </div>
       <ul>
@@ -116,7 +118,7 @@ export function StatTable({
           <li
             key={row.key}
             style={grid}
-            className="relative mb-3 grid grid-cols-1 gap-y-1 rounded-lg border border-zinc-300 p-3 sm:mb-0 sm:grid-cols-[var(--cols)] sm:gap-x-3 sm:rounded-none sm:border-0 sm:border-b sm:py-2 dark:border-zinc-700"
+            className="relative mb-3 grid grid-cols-1 gap-y-1 border border-zinc-300 p-3 sm:mb-0 sm:grid-cols-[var(--cols)] sm:gap-x-3 sm:border-0 sm:border-b sm:py-2 dark:border-zinc-700"
           >
             <Lead row={row} />
             {row.metrics.map((m) => (

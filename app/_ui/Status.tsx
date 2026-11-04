@@ -14,7 +14,7 @@ const CHIP = {
   complete: { icon: "✓", tone: "border-emerald-600 text-emerald-800 dark:text-emerald-300" },
   running: { icon: "…", tone: "border-amber-600 text-amber-800 dark:text-amber-300" },
   partial: { icon: "◐", tone: "border-amber-600 text-amber-800 dark:text-amber-300" },
-  failed: { icon: "✕", tone: "border-red-600 text-red-800 dark:text-red-300" },
+  failed: { icon: "✗", tone: "border-red-600 text-red-800 dark:text-red-300" },
 } as const;
 
 const NOT_RUN = "border-zinc-400 text-zinc-600 dark:text-zinc-400";
@@ -25,7 +25,7 @@ function Chip({ phase, status }: { phase: "before" | "after"; status: PhaseStatu
   return (
     <li className="min-w-0">
       <span
-        className={`inline-flex min-h-8 items-center gap-1 rounded-full border px-3 text-sm ${style.tone}`}
+        className={`inline-flex min-h-8 items-center gap-1 rounded-xs border px-3 text-sm ${style.tone}`}
       >
         <span aria-hidden="true">{style.icon}</span>
         {phase}: {status ? status.status : "not run"}

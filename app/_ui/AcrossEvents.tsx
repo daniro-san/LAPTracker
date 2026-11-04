@@ -64,7 +64,7 @@ function toRow(unionId: number, r: HistoryRow, prevMembers: number | null): Stat
         {r.reference === "before" && (
           <abbr
             title="No usable after snapshot: showing the before snapshot"
-            className="ml-2 rounded border border-zinc-400 px-1 text-xs no-underline"
+            className="ml-2 rounded-xs border border-zinc-400 px-1 text-xs no-underline"
           >
             B
           </abbr>

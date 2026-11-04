@@ -109,7 +109,7 @@ export default async function AlliancePage({
   return (
     <>
       <SiteHeader events={events} currentId={eventId} />
-      <main className="mx-auto max-w-6xl px-4 py-4">
+      <main className="mx-auto max-w-[960px] px-4 py-4 sm:px-6">
         <Link
           href={eventId === events[0]?.id ? "/" : `/events/${eventId}`}
           className="flex min-h-11 items-center text-sm underline"

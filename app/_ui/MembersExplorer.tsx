@@ -29,7 +29,7 @@ const SORTS: { key: SortKey; label: string }[] = [
 ];
 
 const FIELD =
-  "min-h-11 w-full rounded-md border border-zinc-300 bg-white px-3 text-base dark:border-zinc-700 dark:bg-zinc-900";
+  "min-h-11 w-full rounded-xs border border-zinc-300 bg-white px-3 text-base dark:border-zinc-700 dark:bg-zinc-900";
 
 /** "50000000", "50M", "1.2b", "300k" → a number; null when empty or unreadable. */
 export function parseMight(text: string): number | null {

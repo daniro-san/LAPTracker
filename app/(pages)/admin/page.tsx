@@ -36,11 +36,11 @@ function Rehearsal({ r }: { r: RehearsalStatus | null }) {
       </ul>
       {r.verdict && (
         <>
-          <p className="font-semibold">{r.verdict.pass ? "✅ PASS" : "❌ FAIL"}</p>
+          <p className="font-semibold">{r.verdict.pass ? "✓ Pass" : "✗ Fail"}</p>
           <ul className="text-sm">
             {r.verdict.lines.map((l) => (
               <li key={l.text}>
-                {l.ok ? "✅" : "❌"} {l.text}
+                {l.ok ? "✓" : "✗"} {l.text}
               </li>
             ))}
           </ul>

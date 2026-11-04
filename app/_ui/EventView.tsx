@@ -61,7 +61,7 @@ function BoardSection({ detail, rows }: { detail: Detail; rows: ComparisonRow[] 
   const hasBoard = rows.some((r) => r.before?.powerBoard != null || r.after?.powerBoard != null);
   if (!hasBoard) return null;
   return (
-    <details className="mt-6 rounded-lg border border-zinc-300 px-3 dark:border-zinc-700">
+    <details className="mt-6 border border-zinc-300 px-3 dark:border-zinc-700">
       <summary className="flex min-h-11 cursor-pointer items-center font-medium">
         Board numbers (cross-check only)
       </summary>
@@ -105,7 +105,7 @@ export function EventView({
   return (
     <>
       <SiteHeader events={events} currentId={detail.id} />
-      <main className="mx-auto max-w-6xl px-4 py-4">
+      <main className="mx-auto max-w-[960px] px-4 py-4 sm:px-6">
         <h1 className="text-xl font-bold">{detail.name}</h1>
         <p className="mb-3 text-sm text-zinc-500 dark:text-zinc-400">
           {describeInstant(detail.eventAtUtc, getEnv())}

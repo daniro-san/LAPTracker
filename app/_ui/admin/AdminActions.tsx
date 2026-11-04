@@ -4,6 +4,7 @@
 // its cost, sends the PIN as x-edit-pin and shows the outcome in words, never as a raw error.
 import { useState } from "react";
 
+import { ConfirmSheet } from "./ConfirmSheet";
 import { PinSheet, savedPin } from "./PinSheet";
 
 interface Action {
@@ -39,6 +40,14 @@ export function AdminActions({ beforeAtText }: { beforeAtText: string }) {
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [pending, setPending] = useState<Action | null>(null);
+  const [asking, setAsking] = useState<{ text: string; resolve: (yes: boolean) => void } | null>(
+    null,
+  );
+  const ask = (text: string) => new Promise<boolean>((resolve) => setAsking({ text, resolve }));
+  const answer = (yes: boolean) => {
+    asking?.resolve(yes);
+    setAsking(null);
+  };
 
   async function send(action: Action, pin: string, force = false) {
     setBusy(action.id);
@@ -49,20 +58,20 @@ export function AdminActions({ beforeAtText }: { beforeAtText: string }) {
       const body = (await res.json().catch(() => ({}))) as Record<string, unknown>;
       if (
         body.code === "snapshot_complete" &&
-        confirm("This phase is already complete. Run it again?")
+        (await ask("This phase is already complete. Run it again?"))
       ) {
         return await send(action, pin, true);
       }
       setMessage(describe(res.status, body, beforeAtText));
     } catch {
-      setMessage("✕ Could not reach the server.");
+      setMessage("✗ Could not reach the server.");
     } finally {
       setBusy(null);
     }
   }
 
-  function start(action: Action) {
-    if (!confirm(action.confirm)) return;
+  async function start(action: Action) {
+    if (!(await ask(action.confirm))) return;
     const pin = savedPin();
     if (pin) void send(action, pin);
     else setPending(action);
@@ -76,8 +85,8 @@ export function AdminActions({ beforeAtText }: { beforeAtText: string }) {
             key={a.id}
             type="button"
             disabled={busy !== null}
-            onClick={() => start(a)}
-            className="min-h-11 rounded-md border border-zinc-400 px-4 font-semibold disabled:opacity-50"
+            onClick={() => void start(a)}
+            className="min-h-11 rounded-xs border border-zinc-400 px-4 font-semibold disabled:opacity-50"
           >
             {busy === a.id ? "Running…" : a.label}
           </button>
@@ -88,6 +97,7 @@ export function AdminActions({ beforeAtText }: { beforeAtText: string }) {
           {message}
         </p>
       )}
+      {asking && <ConfirmSheet text={asking.text} onAnswer={answer} />}
       {pending && (
         <PinSheet
           onUnlocked={(pin) => {
@@ -116,7 +126,7 @@ function describe(status: number, body: Record<string, unknown>, beforeAtText: s
   const code = typeof body.code === "string" ? body.code : null;
   if (code === "snapshot_not_due") return `Not due until ${beforeAtText}.`;
   if (code)
-    return `${status === 409 || status === 429 ? "" : "✕ "}${REFUSALS[code] ?? `Refused: ${code}.`}`;
+    return `${status === 409 || status === 429 ? "" : "✗ "}${REFUSALS[code] ?? `Refused: ${code}.`}`;
   if (status === 201) return "✓ Rehearsal created. The next ticks run it.";
   const failed = Array.isArray(body.failed) ? body.failed.length : 0;
   const stale = Array.isArray(body.stale) ? body.stale.length : 0;

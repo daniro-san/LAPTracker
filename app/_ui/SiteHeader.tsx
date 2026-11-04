@@ -19,11 +19,11 @@ function EventSelector({
   const current = events.find((e) => e.id === currentId);
   return (
     <details className="relative">
-      <summary className="flex min-h-11 cursor-pointer items-center gap-1 rounded-md border border-zinc-300 px-3 text-sm font-medium dark:border-zinc-700 [&::-webkit-details-marker]:hidden">
+      <summary className="flex min-h-11 cursor-pointer items-center gap-1 rounded-xs border border-zinc-300 px-3 text-sm font-medium dark:border-zinc-700 [&::-webkit-details-marker]:hidden">
         {current ? utcDayWithWeekday(current.eventAtUtc) : "Events"}{" "}
         <span aria-hidden="true">▾</span>
       </summary>
-      <ul className="absolute right-0 z-40 mt-1 max-h-[70vh] w-[min(18rem,calc(100vw-2rem))] overflow-y-auto rounded-md border border-zinc-300 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
+      <ul className="absolute right-0 z-40 mt-1 max-h-[70vh] w-[min(18rem,calc(100vw-2rem))] overflow-y-auto border border-zinc-300 bg-white dark:border-zinc-700 dark:bg-zinc-900">
         {events.map((e, i) => (
           <li key={e.id}>
             <Link
@@ -48,8 +48,8 @@ export function SiteHeader({
   currentId: number | null;
 }) {
   return (
-    <header className="sticky top-0 z-30 border-b border-zinc-300 bg-white/95 backdrop-blur dark:border-zinc-700 dark:bg-zinc-950/95">
-      <div className="mx-auto flex max-w-6xl items-center gap-2 px-4 py-1">
+    <header className="sticky top-0 z-30 border-b border-zinc-300 bg-white dark:border-zinc-700 dark:bg-zinc-950">
+      <div className="mx-auto flex max-w-[960px] items-center gap-2 px-4 py-1 sm:px-6">
         <Link href="/" className="flex min-h-11 items-center text-base font-bold">
           LAPTracker
         </Link>
