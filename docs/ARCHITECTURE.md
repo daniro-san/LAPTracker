@@ -30,9 +30,10 @@ No DI container, no base classes, no event bus, no generic repository. `Deps` is
 
 ## Deps
 
-The shape Session 2–4 implement. Names follow docs/GLOSSARY.md; the exact types are settled in Session 2 (sources) and Session 3 (repo).
+The shape Session 2–4 implement. Names follow docs/GLOSSARY.md; the source types were settled in Session 2 (lib/sources/types.ts); Repo is Session 3.
 
 ```ts
+// lib/sources/types.ts (Session 2) — the source of truth; this is a copy for orientation.
 type UnionId = number;
 type Uid = number;
 type Phase = "before" | "after";
@@ -40,8 +41,8 @@ type Phase = "before" | "after";
 interface MemberInput {
   uid: Uid;
   name: string;
-  power: number;
-  kills: number;
+  power: number | null; // null kept, summed as 0 (D15)
+  kills: number | null;
   lv: number | null;
 }
 
@@ -52,21 +53,24 @@ interface AllianceSnapshotInput {
   name: string;
   memberCount: number;
   totalPower: number;
+  totalKills: number; // sumKills(members)
   members: MemberInput[];
   serverRank: number | null;
   level: number | null;
   sourceUpdatedAt: Date | null;
-  cached: boolean | null;
+  cached: boolean | null; // null for internal
+  quota: Quota | null; // from that /v1 response; null for internal
   raw: unknown;
 }
 
 interface Quota {
   remaining: number;
   limit: number;
+  used: number;
 }
 
 interface RanksBoard {
-  pulledAt: Date;
+  pulledAt: Date; // older of the two boards
   power: Map<UnionId, number>;
   kills: Map<UnionId, number>;
 }
@@ -81,6 +85,9 @@ interface InternalSource {
   /** live: true rosters only; throws NotLiveError on the stub shape. */
   fetchAlliance(id: UnionId): Promise<AllianceSnapshotInput>;
 }
+
+// Errors (instanceof): QuotaExhaustedError (429), NotFoundError (404), NotLiveError (stub),
+// SchemaError { code: "v1.schema" | "internal.schema", paths }, UpstreamError { status }.
 
 interface Repo {
   // One plain function per operation the collector needs, grouped from lib/repo/<table>.ts. Defined in Session 3.
