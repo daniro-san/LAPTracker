@@ -605,8 +605,14 @@ No user accounts, no OAuth, no per-user permissions: a shared PIN plus rate limi
 
 ## 10. Open questions for the owner (answer before Phase 1)
 1. ~~Server number and alliances~~ — answered: 325, §7 list from the board; Session 0 verifies the ids.
+   Answered — see docs/handoff/00-prereqs.md
 2. ~~Game server timezone~~ — answered: UTC−2 fixed, `Etc/GMT+2` (2026-11-04).
+   Answered — see docs/handoff/00-prereqs.md
 3. ~~API key~~ — answered: exists.
+   Answered — see docs/handoff/00-prereqs.md
 4. ~~Lost-power breakdown~~ — answered 2026-11-04: no per-member breakdown; the card shows members ↑↓ with `+joined/−left`, might ↑↓ with %, kills with % and a member-loss note when negative (Phase 5).
+   Answered — see docs/handoff/00-prereqs.md
 5. ~~Maintainer~~ — notified 2026-11-04.
+   Answered — see docs/handoff/00-prereqs.md
 6. ~~Event window~~ — deferred by the owner 2026-11-04: ship with `SNAPSHOT_BEFORE=10:00` / `SNAPSHOT_AFTER=14:00`; the real window is unconfirmed, so the first real Saturday (Phase 8 runbook) is also the measurement — if the AFTER lands mid-event, move the env var and redeploy, no code change.
+   Answered — see docs/handoff/00-prereqs.md
