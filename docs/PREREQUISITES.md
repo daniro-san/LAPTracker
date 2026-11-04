@@ -97,6 +97,7 @@ Create these before the session that needs them. **Never paste any of them into 
 | Value | Where it lives | Needed by | How to get it |
 |---|---|---|---|
 | `LAP_API_KEY` | `.env.local`, Vercel | Session 0 | Already created. One key. |
+| `LAP_API_BASE_URL`, `LAP_SITE_BASE_URL` | `.env.local`, Vercel | Session 2 | Not secrets; defaults in code. Only set them if the tracker moves hosts or bumps `/v1`. |
 | Server timezone | Known | — | UTC−2 fixed (`Etc/GMT+2`), from the in-game clock on 2026-11-04. Session 0 re-checks once. |
 | `DATABASE_URL` | Vercel (from Neon), `.env.local` | Session 3 (local dev), Session 8 | Neon dashboard → connection string (pooled). |
 | `CRON_SECRET` | Vercel + GitHub repo secret | Session 8 | `openssl rand -hex 32` |
@@ -117,11 +118,13 @@ Create these before the session that needs them. **Never paste any of them into 
 
 | Before | You do |
 |---|---|
-| Session 0 | Revoke the test key, create the official one, put it in `.env.local` as `LAP_API_KEY`. Have the in-game server time on screen for the offset re-check. `fixtures/probe-*` and `fixtures/v1-*` committed. Delete `scripts/probe-refresh.sh`; keep `scripts/probe-v1.sh` (with the placeholder, not the key). |
+| Session 0 | Revoke the test key, create the official one, put it in `.env.local` as `LAP_API_KEY`. Have the in-game server time on screen for the offset re-check. `fixtures/probe-*` and `fixtures/v1-*` committed. Delete `scripts/probe-refresh.sh`; keep `scripts/probe-v1.sh` (with the placeholder, not the key). **GitHub, once (plan §11.6):** Settings → General: Pull Requests → only *Allow squash merging* (default message: PR title and description), *Automatically delete head branches*, *Allow auto-merge*. Settings → Rules → Rulesets → New branch ruleset: name `main`, target default branch, enforcement Active, **no bypass list**, rules: *Restrict deletions*, *Require linear history*, *Require a pull request before merging* (0 approvals), *Block force pushes*. Leave *Require status checks* for after Session 1. Settings → Code security: secret scanning + push protection on, Dependabot alerts + security updates on. |
+| After Session 1 | (Session 1 already exists on branch `claude/trusting-albattani-4s5ca3` with CI green — open its PR to `main`, read `docs/handoff/01-scaffold.md`, merge.) Then wait for CI to finish once on main and edit the `main` ruleset: *Require status checks to pass* → add `check` (it only appears in the picker after it has run). From here every PR needs green CI to merge. |
+| Every session | Read the handoff in the PR, merge (squash), delete nothing by hand (branches auto-delete). Start the next session from `main`. |
 | Session 2 | Nothing. (The one live smoke test costs 1 API call.) |
 | Session 3 | Optional: a local Neon branch or any Postgres for `pnpm db:push`. |
 | Session 7 | Review the `/brand` mock and say yes/no before step 2. |
-| Session 8 | Vercel project linked to the repo; Neon linked; both Discord webhooks; all env vars in Vercel; `APP_URL` + `CRON_SECRET` as GitHub secrets. |
+| Session 8 | Vercel project linked to the repo (production branch `main`, previews on); Neon linked, plus a Neon branch named `preview`; both Discord webhooks; env vars in Vercel **scoped**: Production = the real values; Preview = `DATABASE_URL` of the `preview` branch, a different `CRON_SECRET` and `EDIT_PIN`, no `NOTIFY_*`; Deployment Protection → Vercel Authentication for previews; `APP_URL` + `CRON_SECRET` (production) as GitHub secrets. |
 | Session 9 | Pick a weekday. Compare OGs' kill sum with the in-game alliance screen when asked. |
 | First Saturday | Confirm the Friday quota message arrived; watch the channel around SNAPSHOT_BEFORE and SNAPSHOT_AFTER server time (+ up to ~35 min of tick/Actions lag). Note when the KvK really starts and ends in-game: that settles the event-window decision (§5 item 2). |
 

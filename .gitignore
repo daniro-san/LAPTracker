@@ -2,6 +2,14 @@
 .env*
 !.env.example
 
+# dependencies and build output
+node_modules/
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
+coverage/
+
 # Claude Code local state
 .claude/worktrees/
 .claude/settings.local.json
