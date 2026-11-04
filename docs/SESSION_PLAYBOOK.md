@@ -1,6 +1,6 @@
 # Session Playbook — LAP Tracker
 
-Companion to `docs/IMPLEMENTATION_PLAN.md` and `docs/PREREQUISITES.md`. One Claude Code session per step. Each session reads the plan plus the handoff files from earlier sessions, does one phase, and writes its own handoff file. Nothing is carried between sessions through chat memory — only through files in the repo.
+Companion to `IMPLEMENTATION_PLAN.md` and `PREREQUISITES.md`. One Claude Code session per step. Each session reads the plan plus the handoff files from earlier sessions, does one phase, and writes its own handoff file. Nothing is carried between sessions through chat memory — only through files in the repo.
 
 Model and effort choices follow Anthropic's model-specific prompting guides as of 2026-11-04 (links in §B). Re-check them when a new model ships; effort levels are recalibrated between model generations.
 
@@ -8,18 +8,19 @@ Model and effort choices follow Anthropic's model-specific prompting guides as o
 
 ## A. How to use this file
 
-1. Start every session in the repo root with a clean context (`/clear`, or a new `claude` process).
+1. Start every session in the repo root with a clean context (`/clear`, or a new `claude` process). The three documents live in `docs/` in the repo (`docs/IMPLEMENTATION_PLAN.md`, `docs/SESSION_PLAYBOOK.md`, `docs/PREREQUISITES.md`); prompts name them without the prefix.
 2. Set the model and effort with `/model` (or `CLAUDE_CODE_EFFORT_LEVEL` in the environment). Levels: `low`, `medium`, `high`, `xhigh`, `max`; availability depends on the model. If a level listed here isn't offered, use the closest one below it.
 3. Where the session says **plan mode first**: `Shift+Tab` until the status bar shows plan mode (or `claude --permission-mode plan`), read the plan Claude proposes, approve, then let it implement.
 4. Paste the prompt block exactly. Replace `<...>` placeholders only where marked. The prompts use XML tags to separate the task, constraints and the definition of done — keep the tags; the models parse them better than prose.
 5. A session is done when its **Done when** list is satisfied and its handoff file exists.
 6. If a session goes off the rails after two corrections, `/clear` and re-run the same prompt with one extra sentence saying what went wrong. Don't keep correcting in a polluted context.
 7. `fable` not listed in `/model`? Use `opus` at `xhigh` for Session 5. Everything else is unchanged.
-8. **Each session re-plans the next one.** Before writing its handoff, a session re-reads the next session's prompt here and fills the handoff's `## Next` section (format below). Before you start session N, open `docs/handoff/<N-1>-*.md`, read `## Next`, and paste its `<adjustments>` block into the prompt right after `<task>`. Apply its model/effort recommendation only if you agree with the reason. Rules that keep this from drifting:
+8. **Branches and PRs, every session.** Nothing is committed to `main` (it's protected). Each session: `git switch -c session/NN-<slug>` from an up-to-date `main`, conventional commits as it goes, then `git push -u origin HEAD` and a PR titled with the string from its `<done_when>` (`gh pr create --fill` locally; `gh api repos/{owner}/{repo}/pulls -f title=... -f head=... -f base=main -F body=@docs/handoff/NN-*.md` in the cloud, where `gh pr` is rejected). The PR URL is the last line of the handoff. **You merge** (squash) after reading the handoff in the PR; then start the next session from `main`. Releases are tags (`gh release create vX.Y.Z --generate-notes`): `v0.1.0` in Session 8, `v1.0.0` in Session 9. Plan §11.6 has the whole flow.
+9. **Each session re-plans the next one.** Before writing its handoff, a session re-reads the next session's prompt here and fills the handoff's `## Next` section (format below). Before you start session N, open `docs/handoff/<N-1>-*.md`, read `## Next`, and paste its `<adjustments>` block into the prompt right after `<task>`. Apply its model/effort recommendation only if you agree with the reason. Rules that keep this from drifting:
    - A session may **add** an `<adjustments>` block; it never edits the original prompt text in this file. `<constraints>` and `<done_when>` are frozen; only you change them.
    - Model/effort recommendations are `keep`, `raise one level`, or `lower one level`, with a measurable reason (what was harder or easier than the plan assumed). "Use the best model" with no reason is not a recommendation.
    - Sessions 2–5 never go below the model/effort listed in §D, whatever a handoff says. That floor exists because those sessions hold the freshness guarantee.
-   - If a session finds the plan itself wrong (not just the next prompt), it says so under `## Next → Plan changes needed` and stops short of editing `docs/IMPLEMENTATION_PLAN.md`; you edit the plan.
+   - If a session finds the plan itself wrong (not just the next prompt), it says so under `## Next → Plan changes needed` and stops short of editing `IMPLEMENTATION_PLAN.md`; you edit the plan.
 
 ### Handoff contract
 
@@ -29,7 +30,7 @@ Every session writes `docs/handoff/NN-<name>.md` with exactly these sections:
 # NN — <name>
 ## Built            — files created/changed, one line each
 ## Decisions        — choices made that the plan left open, with the reason
-## Deviations       — anything done differently from docs/IMPLEMENTATION_PLAN.md, and why
+## Deviations       — anything done differently from IMPLEMENTATION_PLAN.md, and why
 ## Verified         — commands run and their actual output (tests, curl, build)
 ## Open issues      — what the next session must know; empty is a valid answer
 ## Next             — see format below
@@ -41,7 +42,7 @@ The `## Next` section has a fixed shape so the owner can act on it in two minute
 ## Next
 Session: <N+1 — name>
 Model / effort: keep | raise one level | lower one level — <one measurable reason, or "no signal">
-Owner must do first: <from docs/PREREQUISITES.md §6, or "nothing">
+Owner must do first: <from PREREQUISITES.md §6, or "nothing">
 Plan changes needed: <none | which section and why — do not edit the plan yourself>
 
 <adjustments>
@@ -62,12 +63,12 @@ Verified against https://code.claude.com/docs/en/claude-code-on-the-web.md and h
 
 | Local terminal | Cloud session | What to change |
 |---|---|---|
-| Your machine's network | **Trusted** level by default: package registries + GitHub only. The game API, Discord, Vercel and Neon are blocked. | Create a cloud environment with **Custom** network access; allowlist in `docs/PREREQUISITES.md` §3b. |
+| Your machine's network | **Trusted** level by default: package registries + GitHub only. The game API, Discord, Vercel and Neon are blocked. | Create a cloud environment with **Custom** network access; allowlist in `PREREQUISITES.md` §3b. |
 | `.env.local` | Doesn't exist (fresh clone; `.env*` is never uploaded). Environment variables set on the cloud environment are readable by the session. | API key → **network secret** for host `api.lastasylumtracker.com` (proxy injects `Authorization: Bearer`; the key never enters the VM). `DATABASE_URL`, `EDIT_PIN`, webhooks → environment variables. |
-| You run manual steps in a shell | No shell for you; Claude runs every command. | Everything in `docs/PREREQUISITES.md` §6 is done in the web dashboards (Vercel, Neon, GitHub). Claude only verifies with `curl` / `gh api`. |
+| You run manual steps in a shell | No shell for you; Claude runs every command. | Everything in `PREREQUISITES.md` §6 is done in the web dashboards (Vercel, Neon, GitHub). Claude only verifies with `curl` / `gh api`. |
 | `/model` and `/effort` open pickers | Argument form only: `/model sonnet`, `/effort high`. Plan mode from the permission-mode dropdown. | Nothing else. |
-| `gh` with your token | `gh` works through a proxy; REST subcommands (`gh api`, `gh workflow run`, `gh workflow list`) work; **GraphQL ones (`gh pr`, `gh issue`) are rejected**. Push to branches works; PR creation from the claude.ai UI. | Session 8/9 prompts already use `gh workflow run`. Create PRs from the UI if you use branches. |
-| Commits stay on disk | Each session is a fresh clone. | **Every session ends with `git push`**, or the next session never sees its handoff. Simplest for a solo repo: push to `main` directly. |
+| `gh` with your token | `gh` works through a proxy; REST subcommands (`gh api`, `gh workflow run`, `gh release create`) work; **GraphQL ones (`gh pr`, `gh issue`) are rejected**. Push to branches works. | PRs are opened with the REST call in §A.8 (or the **Create PR** button in the claude.ai session). |
+| Commits stay on disk | Each session is a fresh clone. | **Every session ends with `git push -u origin HEAD` + a PR**, or the next session never sees its handoff. `main` is protected; a direct push is rejected. |
 | `psql`/Postgres only if installed | PostgreSQL 16 is pre-installed (`service postgresql start`). | Session 3 can run `db:push` and tests against a local DB without touching Neon. |
 | Screenshots via a local browser | No browser; Playwright's download host isn't allowlisted by default. | Run Sessions 6 and 7 locally with `claude --teleport <session-id>`, or add Playwright's host to the allowlist, or have the session publish the page as an Artifact for your review. |
 | `AskUserQuestion` blocks until you answer | Same; the session idles and resumes when you answer, up to VM expiry. | Session 0's interview works; answer from phone or browser. |
@@ -82,18 +83,18 @@ Verified against https://code.claude.com/docs/en/desktop.md (first half of the p
 | `/model fable`, `/effort high` | Model picker and **Effort** in the row under the prompt box (`Cmd+Shift+I`, `Cmd+Shift+E`). Set both before the first message. |
 | `Shift+Tab` / `--permission-mode plan` | Permission-mode selector (`Cmd+Shift+M`) → **Plan**. `Shift+Tab` does nothing here. After approving the plan, switch to **Accept edits**. |
 | `/clear` | New session (`Cmd+N`). One session per playbook step, named after it (click the title to rename). |
-| `claude --cloud` | Environment selector → an environment under **Cloud** (set up per `docs/PREREQUISITES.md` §3b), or session menu → **Open in → Cloud** for a running local session. |
+| `claude --cloud` | Environment selector → an environment under **Cloud** (set up per `PREREQUISITES.md` §3b), or session menu → **Open in → Cloud** for a running local session. |
 | `claude --teleport` | Not needed. The cloud session pushes; you start a **Local** session in the same folder, `git pull`, and paste the next prompt. |
 | Your shell for manual steps | **Terminal** pane (`Ctrl+\``) in a local session shares the session's folder and environment. |
 | `.env.local` | Readable in **Local** sessions (it's your folder). Not in cloud sessions — use §3b. |
 | `/code-review` | Same command in the prompt box; findings arrive as a **Code review** card. |
 
-Recommended split in Desktop: Sessions 0, 6, 6b, 7 and 9 **Local** (they need `.env.local`, the Browser pane for screenshots, or your eyes on the result); Sessions 1–5b, 8 and 10 **Cloud** if you want to walk away. Mixing is fine as long as every session ends with a push.
+Recommended split in Desktop: Sessions 0, 6, 6b, 7 and 9 **Local** (they need `.env.local`, the Browser pane for screenshots, or your eyes on the result); Sessions 1–5b, 8 and 10 **Cloud** if you want to walk away. Mixing is fine as long as every session ends with a pushed branch and a PR, and you merge before pasting the next prompt.
 
 Prompt edits for cloud runs — only these three:
 1. Session 0, step 2: replace "load LAP_API_KEY from .env.local without printing it" with "The API key is injected by the environment's network secret; call the API with curl and no Authorization header. Confirm the first call returns 200 and a quota object; if it returns 401, stop and tell me the secret isn't attached."
 2. Session 2, live smoke test: the client sends `Authorization: Bearer $LAP_API_KEY`. Set `LAP_API_KEY=lap_cloud-placeholder` as an environment variable and let the proxy supply the real header. **Verify in Session 0 that the proxy overrides an existing Authorization header**; if it doesn't, run the smoke test locally instead and say so in the handoff.
-3. Every `<done_when>`: read "Commit: …" as "Commit and push: …".
+3. Every `<done_when>`: "PR: …" means the REST PR call from §A.8, since `gh pr` is rejected in the cloud.
 
 Everything else — handoff files, the `## Next` re-planning, CLAUDE.md rules, model/effort choices — is unchanged, because it lives in the repo, and the repo is what the cloud session clones.
 
@@ -157,6 +158,7 @@ Before you start, say in a line what you're about to do; brief updates while you
 
 ## Hard rules
 - English only in code, comments, UI copy, commit messages and docs.
+- Never commit to main. Work on `session/NN-<slug>` (or `fix/`, `chore/`), Conventional Commits, push the branch, open the PR titled as the session's done_when says, put the PR URL as the last line of the handoff, and stop: the owner merges.
 - Never print, log, commit or paste an API key, PIN, webhook URL or secret. Read them from .env.local or the environment only.
 - Never run anything that spends upstream API quota unless the session explicitly allows it. Never call the site's refresh endpoint or imitate the site (Origin/Referer/cookies): the maintainer closed it on purpose.
 - Stack: Next.js App Router, TypeScript, Tailwind, Drizzle + Neon, Vitest. Node 26 (`.nvmrc` = `26`), pnpm 12 (`packageManager`). Test: `pnpm test`. Typecheck: `pnpm typecheck`. All gates: `pnpm check`.
@@ -167,7 +169,7 @@ Before you start, say in a line what you're about to do; brief updates while you
 - Secrets are compared with timingSafeEqual; PIN and cron routes are rate-limited; responses never carry stack traces.
 - UI is mobile-first: designed at 360 px, cards below 640 px, nothing hover-only, touch targets ≥ 44 px, compact numbers; reads only through lib/queries; no charts in v1; player pages look like alliance pages.
 
-## Handoff (every session, last step before the commit)
+## Handoff (every session, last step before the PR)
 Write docs/handoff/NN-<name>.md with sections Built / Decisions / Deviations / Verified / Open issues / Next. Before writing `## Next`, re-read the NEXT session's prompt in docs/SESSION_PLAYBOOK.md and fill `## Next` in the exact shape given there: model/effort as keep / raise one / lower one with a measurable reason; what the owner must do first; whether the plan itself needs a change (say which section — do not edit docs/IMPLEMENTATION_PLAN.md or docs/SESSION_PLAYBOOK.md); and an `<adjustments>` block with additions only: facts you established that change what the next session should build, real numbers to replace the plan's estimates, things to skip because they're already done. If you also notice a prompt further ahead that your findings affect, add a second `<adjustments for="Session M">` block.
 ```
 
@@ -202,17 +204,17 @@ Sessions 2–5 hold the freshness guarantee (§3.7) and the source boundary (§3
 
 ```text
 <session>
-Session 0 of docs/SESSION_PLAYBOOK.md. Read docs/IMPLEMENTATION_PLAN.md in full (§2, §2b, §3.5, §3.7, §7, Phase 0), docs/SESSION_PLAYBOOK.md §C, and every file under fixtures/.
+Session 0 of SESSION_PLAYBOOK.md. Read IMPLEMENTATION_PLAN.md in full (§2, §2b, §3.5, §3.7, §7, Phase 0), SESSION_PLAYBOOK.md §C, and every file under fixtures/.
 </session>
 
 <task>
 The API experiments are done and documented in §2 and fixtures/. This session only closes the gaps and prepares the repo. No application code.
 
-1. Ask me for the in-game "server time" right now and compare it with `date -u`; it must be UTC−2 (plan §7). Then interview me with AskUserQuestion only for: whether both Discord webhooks exist; whether the maintainer got a heads-up.
+1. Ask me for the in-game "server time" right now and compare it with `date -u`; it must be UTC−2 (plan §7). Then interview me with AskUserQuestion only for: whether the admin Discord webhook exists (the public one and the maintainer heads-up are done).
 2. Resolve the 18 §7 alliances not yet in fixtures/ on /v1/alliances/{id} (curl, User-Agent, key from .env.local never printed): confirm name/abbr against the board, note rank.rank, save each response to fixtures/v1-ids/<id>.json. Stop and report if more than two fail.
-3. Write config/alliances.ts (20 verified entries), .env.example (every variable in §7 and docs/PREREQUISITES.md §4, no values), CLAUDE.md (the block in docs/SESSION_PLAYBOOK.md §C, verbatim), fixtures/README.md (what each folder is, when it was recorded, what it cost).
-4. docs/handoff/00-prereqs.md per the handoff contract: the §2 facts with their fixture file names as evidence, the 18 resolutions, the server-time → UTC conversion for Saturday 11:00 and 13:00 (UTC−2 → 13:00 and 15:00 UTC) with the two clock readings as evidence.
-5. Append "Answered — see docs/handoff/00-prereqs.md" under each §10 question in docs/IMPLEMENTATION_PLAN.md. Change nothing else in the plan.
+3. Write config/alliances.ts (20 verified entries), .env.example (every variable in §7 and PREREQUISITES.md §4, no values), CLAUDE.md (the block in SESSION_PLAYBOOK.md §C, verbatim), fixtures/README.md (what each folder is, when it was recorded, what it cost), `.nvmrc` containing `26` (plan §11.4), `.gitignore` (Next.js default plus `.env*` except `.env.example`), and `.github/PULL_REQUEST_TEMPLATE.md` with three headings: What / Verified / Handoff.
+4. docs/handoff/00-prereqs.md per the handoff contract: the §2 facts with their fixture file names as evidence, the 18 resolutions, the server-time → UTC conversion for the §7 defaults (SNAPSHOT_BEFORE 10:00 → 12:00 UTC, SNAPSHOT_AFTER 14:00 → 16:00 UTC, QUOTA_CHECK_AT Friday 20:00 → 22:00 UTC) with the two clock readings as evidence.
+5. Append "Answered — see docs/handoff/00-prereqs.md" under each §10 question in IMPLEMENTATION_PLAN.md. Change nothing else in the plan.
 </task>
 
 <constraints>
@@ -220,7 +222,7 @@ The API experiments are done and documented in §2 and fixtures/. This session o
 </constraints>
 
 <done_when>
-config/alliances.ts has 20 verified entries; fixtures/README.md, CLAUDE.md, .env.example exist; .env.local is gitignored; 00-prereqs.md written. Commit: "chore: session 0 — prerequisites".
+config/alliances.ts has 20 verified entries; fixtures/README.md, CLAUDE.md, .env.example, .nvmrc, .gitignore, PR template exist; `git check-ignore .env.local` prints it; 00-prereqs.md written. PR: "chore: session 0 — prerequisites" (branch session/00-prereqs; no CI exists yet, so the owner merges on reading).
 </done_when>
 ```
 
@@ -234,15 +236,15 @@ config/alliances.ts has 20 verified entries; fixtures/README.md, CLAUDE.md, .env
 
 ```text
 <session>
-Session 1 of docs/SESSION_PLAYBOOK.md. Read CLAUDE.md, docs/handoff/00-prereqs.md, docs/IMPLEMENTATION_PLAN.md §5, Phase 1, §11 and §12 in full.
+Session 1 of SESSION_PLAYBOOK.md. Read CLAUDE.md, docs/handoff/00-prereqs.md, IMPLEMENTATION_PLAN.md §5, Phase 1, §11 and §12 in full.
 </session>
 
 <task>
 Plan first. Then build, in this order:
 1. Scaffold: Next.js (stable), TypeScript strict (+ noUncheckedIndexedAccess, exactOptionalPropertyTypes), Tailwind, Vitest, Drizzle + @neondatabase/serverless, zod, fast-check. Nothing else unless §12.4's test is met and the reason is written in docs/DECISIONS.md. Keep config/alliances.ts, fixtures/, docs/, CLAUDE.md, .env.example untouched. Folder layout exactly as §11.1 (empty modules with a one-line header comment are fine).
 1b. Runtime pins from plan §11.4: `.nvmrc` = `26` (major only), `engines.node` = `">=22.0.0"`, `packageManager` = the pnpm 12 version you have (`pnpm -v`), `.npmrc` with `engine-strict=false`; `scripts/cloud-setup.sh` that resolves the newest 26.x from `nodejs.org/dist/index.json`, installs it into `/opt/node26`, prepends it to PATH in `~/.bashrc`, and installs pnpm 12 (the owner pastes it as the cloud environment's setup script — PREREQUISITES §3b). No Dockerfile, no devcontainer — the plan says why.
-2. Tooling from §11.2 and §11.4: ESLint (typescript-eslint strict, import/order, max-lines 300, max-lines-per-function 50, complexity 12), Prettier, `pnpm check`, lefthook pre-commit (prettier + eslint on staged, gitleaks protect), `.github/workflows/ci.yml` with pnpm/action-setup + setup-node (`node-version-file: .nvmrc`, `cache: pnpm`), `pnpm install --frozen-lockfile`, `pnpm check`, `pnpm audit --audit-level high`, actions pinned to SHAs, `permissions: contents: read`. `.github/dependabot.yml` for npm and github-actions, weekly, grouped minor/patch.
-3. Harness from §11.5: `.claude/settings.json` (hooks: PostToolUse Edit|Write → eslint --fix on the changed file; Stop → pnpm check; SessionStart → scripts/install_pkgs.sh cloud-aware; permissions allow/deny as §11.4), `.claude/rules/{collector,api-routes,tests}.md`, `.claude/skills/record-fixture/SKILL.md` (complete — it spends quota), `REVIEW.md` with the Session 5 checklist plus the §12.1 blocked-keys check.
+2. Tooling from §11.2 and §11.4: ESLint (typescript-eslint strict, import/order, max-lines 300, max-lines-per-function 50, complexity 12), Prettier, `pnpm check`, lefthook pre-commit (prettier + eslint on staged, `gitleaks git --pre-commit --staged` with a custom `lap_` rule), `.github/workflows/ci.yml` with pnpm/action-setup + setup-node (`node-version-file: .nvmrc`, `cache: pnpm`), `pnpm install --frozen-lockfile`, `pnpm check`, `pnpm audit --audit-level high`, actions pinned to SHAs, `permissions: contents: read`, job name `check` (the ruleset requires this exact name). `.github/dependabot.yml` for npm and github-actions, weekly, grouped minor/patch.
+3. Harness from §11.5: `.claude/settings.json` (hooks: PostToolUse Edit|Write → eslint --fix on the changed file; Stop → pnpm check; SessionStart → scripts/install_pkgs.sh cloud-aware; permissions allow/deny as §11.4, with `git push origin main` and `git push --force*` denied and `git push -u origin HEAD`, `gh pr *`, `gh api *` allowed), `.claude/rules/{collector,api-routes,tests}.md`, `.claude/skills/record-fixture/SKILL.md` (complete — it spends quota), `REVIEW.md` with the Session 5 checklist plus the §12.1 blocked-keys check.
 4. Security baseline from §12.3 and §12.5: security headers in next.config; `lib/env.ts` with zod validation of every variable in .env.example (fail fast); a `lib/redact.ts` helper the logger will use; a `BLOCKED_ROSTER_KEYS` constant in lib/queries with a test that no read model exports them.
 5. Docs: docs/ARCHITECTURE.md (§11.1 with the Deps interface in TypeScript), docs/GLOSSARY.md, docs/DECISIONS.md seeded from §3.1–§3.6 and the dependency list (one paragraph each, dated).
 6. lib/budget.ts with one exported pure function stub and one property test that passes trivially, so fast-check is proven wired. One placeholder route test. .gitignore covers .env*, node_modules, .next, .claude/worktrees.
@@ -261,7 +263,7 @@ Run `pnpm check` and `pnpm audit --audit-level high` clean. Confirm `node -v` pr
 </verify>
 
 <done_when>
-`pnpm check` passes; both hook checks demonstrated; all §11.5 files exist; docs/handoff/01-scaffold.md lists installed versions and the hook timing measured. Commit: "chore: session 1 — scaffold and harness".
+`pnpm check` passes; both hook checks demonstrated; all §11.5 files exist; docs/handoff/01-scaffold.md lists installed versions and the hook timing measured. PR: "chore: session 1 — scaffold and harness". This PR is the first one CI runs on; its handoff tells the owner to add `check` as a required status on the main ruleset right after merging (PREREQUISITES §6).
 </done_when>
 ```
 
@@ -269,11 +271,22 @@ Run `pnpm check` and `pnpm audit --audit-level high` clean. Confirm `node -v` pr
 
 ## Session 2 — Source adapters + tests
 
+**Owner-supplied `<adjustments>` (2026-11-04, after reviewing what Sessions 0 and 1 produced on the older prompts) — paste right after `</task>`, together with the block from `docs/handoff/01-scaffold.md`:**
+
+```text
+<adjustments>
+- Add LAP_API_BASE_URL and LAP_SITE_BASE_URL to .env.example and lib/env.ts with the plan §7 defaults; the adapters read base URLs only from lib/env (plan Phase 2, with the grep test).
+- Use the one live smoke call on FGH (67111128): it both proves the client and verifies the last unverified entry of config/alliances.ts (already swapped in on the Session 1 branch, commit a6c1249). If it returns 200, record it with the record-fixture skill and update the entry's comment with its /v1 rank; if it 502s again, leave the list as is and say so in the handoff.
+- members[].kills can be null (AFR fixture): keep null on the row, sum as 0, state it in DECISIONS (plan Phase 2).
+</adjustments>
+```
+
+
 **Model:** opus · **Effort:** medium · **Mode:** plan mode first
 
 ```text
 <session>
-Session 2 of docs/SESSION_PLAYBOOK.md. Read CLAUDE.md, docs/handoff/00 and 01, docs/IMPLEMENTATION_PLAN.md §2, §2b, §3.5, §3.7 and Phase 2.
+Session 2 of SESSION_PLAYBOOK.md. Read CLAUDE.md, docs/handoff/00 and 01, IMPLEMENTATION_PLAN.md §2, §2b, §3.5, §3.7 and Phase 2.
 </session>
 
 <task>
@@ -290,6 +303,7 @@ One opt-in live smoke test (LAP_LIVE_TEST=1) calling /v1/quota once; run it once
 - Branch on `response.status`, never `statusText`: on Node 26 `fetch` may negotiate HTTP/2 and `statusText` is empty there (plan §11.4).
 - No live calls in unit tests (CI, quota). The smoke test is the only live call this session: 1.
 - internal.ts must not contain any code path that writes to or refreshes the site; a reviewer will grep for it.
+- No upstream URL literal outside the defaults in lib/env.ts (LAP_API_BASE_URL, LAP_SITE_BASE_URL); write the test that greps for it (plan Phase 2). Each adapter validates the response with a zod schema of only the fields it reads; a schema failure is its own error class and run_logs code (`v1.schema`, `internal.schema`).
 </constraints>
 
 <verify>
@@ -297,7 +311,7 @@ Check each test against the behaviour it names; none may pass against an empty i
 </verify>
 
 <done_when>
-Unit tests pass offline; smoke test cost exactly 1 call; docs/handoff/02-sources.md written. Commit: "feat: session 2 — source adapters".
+Unit tests pass offline; smoke test cost exactly 1 call; docs/handoff/02-sources.md written. PR: "feat: session 2 — source adapters".
 </done_when>
 ```
 
@@ -309,7 +323,7 @@ Unit tests pass offline; smoke test cost exactly 1 call; docs/handoff/02-sources
 
 ```text
 <session>
-Session 3 of docs/SESSION_PLAYBOOK.md. Read CLAUDE.md, docs/handoff/00–02, docs/IMPLEMENTATION_PLAN.md §3.4, §3.5, §3.7, §6, Phase 3 and §11.1.
+Session 3 of SESSION_PLAYBOOK.md. Read CLAUDE.md, docs/handoff/00–02, IMPLEMENTATION_PLAN.md §3.4, §3.5, §3.7, §6, Phase 3 and §11.1.
 </session>
 
 <task>
@@ -334,7 +348,7 @@ Each test asserts the property in its name; the call counter is incremented in e
 </verify>
 
 <done_when>
-Every test named above exists and passes; migration generated; docs/handoff/03-collector.md lists the freshness tests. Commit: "feat: session 3 — schema, collector, freshness".
+Every test named above exists and passes; migration generated; docs/handoff/03-collector.md lists the freshness tests. PR: "feat: session 3 — schema, collector, freshness".
 </done_when>
 ```
 
@@ -346,7 +360,7 @@ Every test named above exists and passes; migration generated; docs/handoff/03-c
 
 ```text
 <session>
-Session 4 of docs/SESSION_PLAYBOOK.md. Read CLAUDE.md, docs/handoff/00–03, docs/IMPLEMENTATION_PLAN.md Phase 4, Phase 6 ("Notifications", "Observability", "Logging guarantees") and the Friday check in §3.4.
+Session 4 of SESSION_PLAYBOOK.md. Read CLAUDE.md, docs/handoff/00–03, IMPLEMENTATION_PLAN.md Phase 4, Phase 6 ("Notifications", "Observability", "Logging guarantees") and the Friday check in §3.4.
 </session>
 
 <task>
@@ -367,7 +381,7 @@ Trace every early return and thrown error in /api/snapshot and confirm shutdown(
 </verify>
 
 <done_when>
-Tests pass; `pnpm build` passes; docs/handoff/04-routes.md has a curl example per route. Commit: "feat: session 4 — routes, logger, notifications".
+Tests pass; `pnpm build` passes; docs/handoff/04-routes.md has a curl example per route. PR: "feat: session 4 — routes, logger, notifications".
 </done_when>
 ```
 
@@ -380,7 +394,7 @@ Tests pass; `pnpm build` passes; docs/handoff/04-routes.md has a curl example pe
 
 ```text
 <session>
-Session 5 of docs/SESSION_PLAYBOOK.md. You are a reviewer. Stay in plan mode; do not edit any file. Read CLAUDE.md, docs/IMPLEMENTATION_PLAN.md in full, docs/handoff/00–04, then the code under lib/, app/api/, drizzle/ and the tests.
+Session 5 of SESSION_PLAYBOOK.md. You are a reviewer. Stay in plan mode; do not edit any file. Read CLAUDE.md, IMPLEMENTATION_PLAN.md in full, docs/handoff/00–04, then the code under lib/, app/api/, drizzle/ and the tests.
 </session>
 
 <task>
@@ -417,7 +431,7 @@ Read the report yourself before Session 5b and decide which should-fix items you
 
 ```text
 <session>
-Session 5b of docs/SESSION_PLAYBOOK.md. Read CLAUDE.md, docs/IMPLEMENTATION_PLAN.md, docs/handoff/05-review.md and handoffs 02–04.
+Session 5b of SESSION_PLAYBOOK.md. Read CLAUDE.md, IMPLEMENTATION_PLAN.md, docs/handoff/05-review.md and handoffs 02–04.
 </session>
 
 <task>
@@ -429,7 +443,7 @@ Full test suite and build. For each Blocker, name the test that now covers it.
 </verify>
 
 <done_when>
-All Blockers closed with a test; suite green; docs/handoff/05b-fixes.md lists each finding and what changed. Commit: "fix: session 5b — address review findings".
+All Blockers closed with a test; suite green; docs/handoff/05b-fixes.md lists each finding and what changed. PR: "fix: session 5b — address review findings".
 </done_when>
 ```
 
@@ -441,7 +455,7 @@ All Blockers closed with a test; suite green; docs/handoff/05b-fixes.md lists ea
 
 ```text
 <session>
-Session 6 of docs/SESSION_PLAYBOOK.md. Read CLAUDE.md, docs/handoff/00 and 04, docs/IMPLEMENTATION_PLAN.md Phase 5, 5c, 5e and §3.8. Read the Phase 5b hard rules but do no branding yet.
+Session 6 of SESSION_PLAYBOOK.md. Read CLAUDE.md, docs/handoff/00 and 04, IMPLEMENTATION_PLAN.md Phase 5, 5c, 5e and §3.8. Read the Phase 5b hard rules but do no branding yet.
 </session>
 
 <task>
@@ -461,7 +475,7 @@ Build with plain Tailwind, no component library, server-rendered:
 </constraints>
 
 <done_when>
-Nine screenshots exist (main, alliance, admin at three widths); no horizontal scroll in any; Lighthouse mobile performance ≥ 90 on `/` (or the number and why); seed works from an empty DB; docs/handoff/06-ui.md written. Commit: "feat: session 6 — UI, mobile-first".
+Nine screenshots exist (main, alliance, admin at three widths); no horizontal scroll in any; Lighthouse mobile performance ≥ 90 on `/` (or the number and why); seed works from an empty DB; docs/handoff/06-ui.md written. PR: "feat: session 6 — UI, mobile-first". Put the Vercel preview URL of the PR in the handoff once Session 8 has linked Vercel (before that, screenshots are the review).
 </done_when>
 ```
 
@@ -473,7 +487,7 @@ Nine screenshots exist (main, alliance, admin at three widths); no horizontal sc
 
 ```text
 <session>
-Session 6b of docs/SESSION_PLAYBOOK.md. Read CLAUDE.md, docs/handoff/06-ui.md, docs/IMPLEMENTATION_PLAN.md Phase 5d, 5e, §3.8 and §12.1.
+Session 6b of SESSION_PLAYBOOK.md. Read CLAUDE.md, docs/handoff/06-ui.md, IMPLEMENTATION_PLAN.md Phase 5d, 5e, §3.8 and §12.1.
 </session>
 
 <task>
@@ -492,7 +506,7 @@ Using the StatTable and header patterns from Session 6, build:
 </constraints>
 
 <done_when>
-Both pages render from seed data; screenshots exist; the §12.1 test passes; docs/handoff/06b-players.md written. Commit: "feat: session 6b — player pages and search".
+Both pages render from seed data; screenshots exist; the §12.1 test passes; docs/handoff/06b-players.md written. PR: "feat: session 6b — player pages and search".
 </done_when>
 ```
 
@@ -505,7 +519,7 @@ If the `frontend-design` skill is available, open the prompt with "Use the front
 
 ```text
 <session>
-Session 7 of docs/SESSION_PLAYBOOK.md. Read CLAUDE.md, docs/handoff/06-ui.md and 06b-players.md, docs/IMPLEMENTATION_PLAN.md Phase 5b in full.
+Session 7 of SESSION_PLAYBOOK.md. Read CLAUDE.md, docs/handoff/06-ui.md and 06b-players.md, IMPLEMENTATION_PLAN.md Phase 5b in full.
 </session>
 
 <task>
@@ -530,29 +544,30 @@ Mock approved by me; pages re-screenshotted; no game assets in the repo. Commit 
 ## Session 8 — Deploy, GitHub Actions, env, webhooks
 
 **Model:** sonnet · **Effort:** medium · **Mode:** default
-**Before starting (you, by hand):** `docs/PREREQUISITES.md` §6, row "Session 8".
+**Before starting (you, by hand):** `PREREQUISITES.md` §6, row "Session 8".
 
 ```text
 <session>
-Session 8 of docs/SESSION_PLAYBOOK.md. Read CLAUDE.md, docs/handoff/00 and 04, docs/IMPLEMENTATION_PLAN.md Phase 6, §3.1 and the Friday check in §3.4.
+Session 8 of SESSION_PLAYBOOK.md. Read CLAUDE.md, docs/handoff/00 and 04, IMPLEMENTATION_PLAN.md Phase 6, §3.1 and the Friday check in §3.4.
 </session>
 
 <task>
 1. .github/workflows/tick.yml: `*/15 * * * 5,6,0` → one curl --fail --max-time 150 -X POST $APP_URL/api/tick with secrets.CRON_SECRET; workflow_dispatch with a `phase` input calling /api/snapshot directly. No times in YAML (§3.1). No retry actions.
-2. .github/workflows/keepalive.yml: monthly commit of a timestamp to .keepalive on main. `permissions: contents: write`, actions pinned to SHAs, no third-party "auto-commit" action — plain `git config/commit/push` in a run step. Test it once with `gh workflow run keepalive.yml` and show the resulting commit.
+2. .github/workflows/dependabot-automerge.yml (plan §11.6): Dependabot minor/patch only, `gh pr merge --auto --squash`, `permissions: contents: write, pull-requests: write`. Then .github/workflows/keepalive.yml: monthly commit of a timestamp to .keepalive on the `keepalive` branch (`git push --force origin HEAD:keepalive`; never main — it is protected and has no bypass). `permissions: contents: write`, actions pinned to SHAs, no third-party "auto-commit" action — plain `git config/commit/push` in a run step. Test it once with `gh workflow run keepalive.yml` and show the resulting commit on that branch.
+2b. Verify the SCM setup empirically and paste the output: `gh api repos/{owner}/{repo}/rules/branches/main` lists pull_request, required_status_checks (`check`), non_fast_forward and required_linear_history; `gh api repos/{owner}/{repo}` shows allow_squash_merge true, allow_merge_commit false, allow_rebase_merge false, delete_branch_on_merge true, allow_auto_merge true. Confirm in the Vercel dashboard (ask the owner, or `vercel env ls` if the CLI is linked) that DATABASE_URL, CRON_SECRET, EDIT_PIN differ between Production and Preview and that no NOTIFY_* exists in Preview; confirm the PR's preview URL asks for Vercel authentication.
 3. Verify the deployed app: curl $APP_URL for GET /api/events and GET /api/quota (1 upstream call — note it). Confirm the production function's maxDuration (120 s) is honoured on the Hobby plan; note the measured duration. If tables are missing, ask me before running db:push against production.
 4. `gh workflow run tick.yml` once outside any window and confirm a 204; then set QUOTA_CHECK_AT to a few minutes from now in Vercel, redeploy, run the tick again and confirm the admin Discord message; restore the value.
 5. README.md: deploy steps, changing the alliance list, changing snapshot times (env vars → redeploy), rotating the API key or PIN, running a snapshot by hand from /admin or GitHub.
 </task>
 
 <constraints>
-- GitHub disables schedules after 60 days without a commit on the default branch; the keepalive workflow is not optional.
+- GitHub disables schedules in a public repo after 60 days without repository activity; the keepalive workflow (on its own branch) plus Dependabot are that activity. Not optional.
 - The tick must be idempotent: prove with two back-to-back `gh workflow run` calls inside a window that only one snapshot row exists.
 - Secrets are read from `gh secret list` and the Vercel env list, never echoed.
 </constraints>
 
 <done_when>
-Both workflows validate; the manual Friday check produced a Discord message; README has the ops sections; docs/handoff/08-deploy.md written. Commit: "chore: session 8 — deploy and scheduling".
+Both workflows validate; the manual Friday check produced a Discord message; README has the ops sections; docs/handoff/08-deploy.md written. PR: "chore: session 8 — deploy and scheduling". After the owner merges and production deploys: `gh release create v0.1.0 --generate-notes --title "v0.1.0 — first production deploy"`.
 </done_when>
 ```
 
@@ -565,7 +580,7 @@ Both workflows validate; the manual Friday check produced a Discord message; REA
 
 ```text
 <session>
-Session 9 of docs/SESSION_PLAYBOOK.md — the dry run. Read CLAUDE.md, docs/handoff/00, 03, 04, 08, docs/IMPLEMENTATION_PLAN.md Phase 7 and §3.6. Today is a weekday; confirm with me before any call that spends quota.
+Session 9 of SESSION_PLAYBOOK.md — the dry run. Read CLAUDE.md, docs/handoff/00, 03, 04, 08, IMPLEMENTATION_PLAN.md Phase 7 and §3.6. Today is a weekday; confirm with me before any call that spends quota.
 </session>
 
 <task>
@@ -581,7 +596,7 @@ Session 9 of docs/SESSION_PLAYBOOK.md — the dry run. Read CLAUDE.md, docs/hand
 </constraints>
 
 <done_when>
-docs/handoff/09-dryrun.md has the numbers table, the kills comparison and the changes made; quota arithmetic reconciles exactly. Commit: "chore: session 9 — dry run results".
+docs/handoff/09-dryrun.md has the numbers table, the kills comparison and the changes made; quota arithmetic reconciles exactly. PR: "chore: session 9 — dry run results". After merge, if the quota arithmetic reconciled: `gh release create v1.0.0 --generate-notes --title "v1.0.0 — dry run reconciled"`.
 </done_when>
 ```
 
@@ -593,7 +608,7 @@ docs/handoff/09-dryrun.md has the numbers table, the kills comparison and the ch
 
 ```text
 <session>
-Session 10 of docs/SESSION_PLAYBOOK.md. The current date is <today>. Read CLAUDE.md, docs/IMPLEMENTATION_PLAN.md Phase 8, and every file in docs/handoff/.
+Session 10 of SESSION_PLAYBOOK.md. The current date is <today>. Read CLAUDE.md, IMPLEMENTATION_PLAN.md Phase 8, and every file in docs/handoff/.
 </session>
 
 <task>
@@ -606,7 +621,7 @@ Rewrite README.md for a non-developer alliance admin: what the tool does; the Sa
 </constraints>
 
 <done_when>
-README reads as an operator manual; CONTRIBUTING.md holds developer content; docs/handoff/10-docs.md written. Commit: "docs: session 10 — README and runbook".
+README reads as an operator manual; CONTRIBUTING.md holds developer content; docs/handoff/10-docs.md written. PR: "docs: session 10 — README and runbook".
 </done_when>
 ```
 
@@ -614,4 +629,4 @@ README reads as an operator manual; CONTRIBUTING.md holds developer content; doc
 
 ## After v1
 
-`docs/IMPLEMENTATION_PLAN.md §8b` (Discord `/ask` with LLM → query templates) gets its own playbook once a few Saturdays of real data exist. The questions people actually ask will change the templates; don't plan it before then.
+`IMPLEMENTATION_PLAN.md §8b` (Discord `/ask` with LLM → query templates) gets its own playbook once a few Saturdays of real data exist. The questions people actually ask will change the templates; don't plan it before then.
