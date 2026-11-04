@@ -1,6 +1,8 @@
 // register(): once per server instance at startup, fail fast on a bad environment (plan §11.2).
 // onRequestError(): errors outside a run go to app_errors (plan §6, Phase 6 "Observability").
-// Next keeps serving 500s if register() throws, so exit instead: a dead instance is louder than a broken one.
+// On a long-running server a `process.exit` would be louder than a throw, but on Vercel an invocation that
+// throws here fails the same way an exited one does, and Turbopack's Edge bundle flagged `process.exit`
+// (it is never reached there, but the static check cannot tell). So: log, then throw.
 import type { Instrumentation } from "next";
 
 export async function register(): Promise<void> {
@@ -10,7 +12,7 @@ export async function register(): Promise<void> {
     getEnv();
   } catch (error) {
     console.error(error instanceof Error ? error.message : error);
-    process.exit(1);
+    throw error;
   }
 }
 
