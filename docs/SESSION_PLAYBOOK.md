@@ -528,7 +528,7 @@ Session 7 of SESSION_PLAYBOOK.md. Read CLAUDE.md, docs/handoff/06-ui.md and 06b-
 <task>
 Step 1 — mock only. Create lib/brand/tokens.css (palette and type from Phase 5b), the Logo, LaceBorder and YarnCorner SVG components, and a static page /brand showing: logo at 24 px and 200 px, the palette, both typefaces, the lace border, the yarn corner, the wax-seal button, the three status-chip icons, one sample table row using the tokens; light and dark mode. Screenshots at 360 px and 1280 px → docs/screenshots/07-brand-*.png. Then STOP and ask me to review.
 
-Step 2 — only after I say yes, in this session: apply tokens and components to the Session 6 and 6b pages (main, alliance, player, search). Decoration in header, corners, borders and empty states only; the table stays plain and high-contrast. Favicon, opengraph-image and web manifest with 192/512 icons from the logo. Re-take the Session 6/6b screenshots at 360 and 1280.
+Step 2 — only after I say yes, in this session: apply tokens and components to the Session 6 and 6b pages (main, alliance, player, search). Decoration in header, corners, borders and empty states only; the table stays plain and high-contrast. Then the error pages from Phase 5b: app/not-found.tsx, app/error.tsx and app/global-error.tsx with one original inline-SVG illustration each, the Phase 5b copy, a single CSS keyframe animation per page that stops under prefers-reduced-motion, a Retry button on error.tsx calling reset(), and never an error message, digest or stack in the markup. Screenshot both at 360 px. Favicon, opengraph-image and web manifest with 192/512 icons from the logo. Re-take the Session 6/6b screenshots at 360 and 1280.
 </task>
 
 <constraints>
@@ -538,7 +538,7 @@ Step 2 — only after I say yes, in this session: apply tokens and components to
 </constraints>
 
 <done_when>
-Mock approved by me; pages re-screenshotted; no game assets in the repo. Commit after step 1 ("feat: brand mock") and step 2 ("feat: session 7 — branding applied"). docs/handoff/07-brand.md written.
+Mock approved by me; pages re-screenshotted; 404 and error pages exist with their screenshots and a test that error.tsx output contains none of the thrown error's text; no game assets in the repo. Commit after step 1 ("feat: brand mock") and step 2 ("feat: session 7 — branding applied"). docs/handoff/07-brand.md written.
 </done_when>
 ```
 
