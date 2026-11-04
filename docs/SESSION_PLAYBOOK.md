@@ -468,7 +468,7 @@ All Blockers closed with a test; suite green; docs/handoff/05b-fixes.md lists ea
 
 ```text
 <session>
-Session 6 of SESSION_PLAYBOOK.md. Read CLAUDE.md, docs/handoff/00 and 04, IMPLEMENTATION_PLAN.md Phase 5, 5c, 5e and §3.8. Read the Phase 5b hard rules but do no branding yet.
+Session 6 of SESSION_PLAYBOOK.md. Read docs/DESIGN.md §3–§5 and §9 first (plain styling now, but the component list, spacing and the never-list already apply). Read CLAUDE.md, docs/handoff/00 and 04, IMPLEMENTATION_PLAN.md Phase 5, 5c, 5e and §3.8. Read the Phase 5b hard rules but do no branding yet.
 </session>
 
 <task>
@@ -500,7 +500,7 @@ Nine screenshots exist (main, alliance, admin at three widths); no horizontal sc
 
 ```text
 <session>
-Session 6b of SESSION_PLAYBOOK.md. Read CLAUDE.md, docs/handoff/06-ui.md, IMPLEMENTATION_PLAN.md Phase 5d, 5e, §3.8 and §12.1.
+Session 6b of SESSION_PLAYBOOK.md. Read CLAUDE.md, docs/DESIGN.md §3–§5 and §9, docs/handoff/06-ui.md, IMPLEMENTATION_PLAN.md Phase 5d, 5e, §3.8 and §12.1.
 </session>
 
 <task>
@@ -532,11 +532,11 @@ If the `frontend-design` skill is available, open the prompt with "Use the front
 
 ```text
 <session>
-Session 7 of SESSION_PLAYBOOK.md. Read CLAUDE.md, docs/handoff/06-ui.md and 06b-players.md, IMPLEMENTATION_PLAN.md Phase 5b in full.
+Session 7 of SESSION_PLAYBOOK.md. Read CLAUDE.md, docs/DESIGN.md in full (the contract), docs/handoff/06-ui.md and 06b-players.md, IMPLEMENTATION_PLAN.md Phase 5b.
 </session>
 
 <task>
-Step 1 — mock only. Create lib/brand/tokens.css (palette and type from Phase 5b), the Logo, LaceBorder and YarnCorner SVG components, and a static page /brand showing: logo at 24 px and 200 px, the palette, both typefaces, the lace border, the yarn corner, the wax-seal button, the three status-chip icons, one sample table row using the tokens; light and dark mode. Screenshots at 360 px and 1280 px → docs/screenshots/07-brand-*.png. Then STOP and ask me to review.
+Step 1 — mock only. Create lib/brand/tokens.css (the §2–§4 tokens of docs/DESIGN.md, light and dark), the Logo, LaceBorder and YarnCorner SVG components, and a static page /brand showing: logo at 24 px and 200 px, the palette, both typefaces, the lace border, the yarn corner, the wax-seal button, the three status-chip icons, one sample table row using the tokens; light and dark mode. Screenshots at 360 px and 1280 px → docs/screenshots/07-brand-*.png. Then STOP and ask me to review.
 
 Step 2 — only after I say yes, in this session: apply tokens and components to the Session 6 and 6b pages (main, alliance, player, search). Decoration in header, corners, borders and empty states only; the table stays plain and high-contrast. Then the error pages from Phase 5b: app/not-found.tsx, app/error.tsx and app/global-error.tsx with one original inline-SVG illustration each, the Phase 5b copy, a single CSS keyframe animation per page that stops under prefers-reduced-motion, a Retry button on error.tsx calling reset(), and never an error message, digest or stack in the markup. Screenshot both at 360 px. Favicon, opengraph-image and web manifest with 192/512 icons from the logo. Re-take the Session 6/6b screenshots at 360 and 1280.
 </task>
@@ -545,6 +545,7 @@ Step 2 — only after I say yes, in this session: apply tokens and components to
 - Nothing from the game: no logo, art, fonts or screenshots. Original SVG only. The site is public and the game's assets are not ours.
 - Avoid these specific defaults: Inter/Roboto/system fonts for display text, purple gradients, pill-shaped buttons, numbered "01/02/03" section labels, italic accent words in headlines, generic card grids. The brief in Phase 5b says what to use instead.
 - The stop after step 1 is deliberate: a rejected mock costs minutes, a rejected full restyle costs the session.
+- docs/DESIGN.md §9 is a hard list; §10's colour-literal test and the screenshot set are part of done. If the owner changes a decision at the mock, edit DESIGN.md in the same commit as the tokens.
 </constraints>
 
 <done_when>
@@ -555,6 +556,17 @@ Mock approved by me; pages re-screenshotted; 404 and error pages exist with thei
 ---
 
 ## Session 8 — Deploy, GitHub Actions, env, webhooks
+
+**Owner-supplied `<adjustments>` (2026-11-04) — paste right after `</task>`, together with the block from `docs/handoff/07-brand.md`:**
+
+```text
+<adjustments>
+- Lint the dependency rule (plan §11.2; it was scheduled for Session 4 too late): add `import-x/no-restricted-paths` zones to eslint.config.mjs from docs/ARCHITECTURE.md — lib/compute, lib/budget, lib/schedule import nothing from `@/`; `lib/**` never imports `@/app/**`; `app/**` never imports `@/lib/sources/**` or `@/lib/repo/**`. If the current code violates a zone, that is a finding: list it in the handoff and fix only what is a one-line import move; otherwise narrow the zone and say so. Prove the rule with a scratch file `pnpm lint` rejects, then delete it.
+- Migrations on deploy (plan §3.2): add `db:migrate` (`drizzle-kit migrate`, reading DATABASE_URL_UNPOOLED), set Vercel's Build Command to `pnpm db:migrate && pnpm build` (ask the owner to do it in the dashboard, or `vercel project` settings via the CLI), add the drift gate to `pnpm check` (`db:generate` yields no new file; `drizzle-kit check` passes), and show the schema version (`drizzle.__drizzle_migrations`) on `/admin` and in the Friday message. First production deploy = first migration of Neon main; the PR's preview build = first migration of `preview`. Verify both by reading `__drizzle_migrations` on each branch (Neon MCP or `psql`) and paste the counts.
+- Plan §10b lists what Sessions 3–5b changed relative to the plan text; read it before the deploy checks. N10 (x-real-ip trust on Vercel) is yours to verify empirically: send a request with a forged `x-real-ip` to the deployed /api/snapshot and read which IP the limiter recorded.
+</adjustments>
+```
+
 
 **Model:** sonnet · **Effort:** medium · **Mode:** default
 **Before starting (you, by hand):** `PREREQUISITES.md` §6, row "Session 8".
