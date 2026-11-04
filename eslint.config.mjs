@@ -32,8 +32,11 @@ export default defineConfig(
         },
       ],
       "max-lines": ["error", { max: 300, skipBlankLines: true, skipComments: true }],
-      "max-lines-per-function": ["error", { max: 50, skipBlankLines: true, skipComments: true }],
+      // Length binds on long-but-linear code (orchestrators, JSX); tangling is what hurts readers and
+      // agents, and complexity + max-depth measure that. So length is loose, branching is tight.
+      "max-lines-per-function": ["error", { max: 80, skipBlankLines: true, skipComments: true }],
       complexity: ["error", 12],
+      "max-depth": ["error", 3],
       "@typescript-eslint/no-explicit-any": "error",
       "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
     },
