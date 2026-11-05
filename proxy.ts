@@ -1,5 +1,7 @@
 // Per-request CSP with a nonce: Next injects inline bootstrap scripts, so a static CSP would need
 // 'unsafe-inline' for scripts, which plan §12.3 rules out. API routes (JSON) and /img get a fixed deny-all CSP.
+// Vercel Web Analytics and Speed Insights (D36) need no extra source: a nonced Next chunk adds their script with
+// createElement, which 'strict-dynamic' trusts ('self' in browsers without it), and they send to our own origin.
 import { NextResponse, type NextRequest } from "next/server";
 
 const API_CSP = "default-src 'none'; frame-ancestors 'none'";
