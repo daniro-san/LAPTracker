@@ -31,4 +31,4 @@ Plan changes needed: none.
 - The seed has 20 alliances (126 alliance rows, 10,698 member rows per full seed); a preview page with #21 or #22 means the preview branch was not re-seeded.
 </adjustments>
 
-PR_URL
+https://github.com/daniro-san/LAPTracker/pull/112
