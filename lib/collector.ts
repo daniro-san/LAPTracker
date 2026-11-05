@@ -1,14 +1,12 @@
 // Domain: runSnapshot, freshness check, per-alliance fallback, resume logic (plan Phase 3).
 // Everything it touches comes in through Deps (plan §11.1); time comes from deps.now.
 import { requiredQuota } from "./budget";
-import { isFresh } from "./compute";
+import { dataRow, errorRow, failedList } from "./collector-rows";
 import type { Logger } from "./logger";
-import { trimRaw } from "./raw-json";
 import type { AllianceRow, MemberRow, Phase, Repo, SnapshotRow, SnapshotStatus } from "./repo";
 import { describe, httpStatusOf } from "./upstream-errors";
 import { ALLIANCES, SERVER } from "../config/alliances";
 import {
-  type AllianceSnapshotInput,
   type InternalSource,
   type Quota,
   QuotaExhaustedError,
@@ -18,8 +16,10 @@ import {
 
 /** 20 alliances × 3 retries × 2 phases (Logging guarantees). */
 export const MAX_UPSTREAM_CALLS = 120;
-export const FRESH_MAX_AGE_MS = 20 * 60_000;
+export { FRESH_MAX_AGE_MS } from "./collector-rows";
 export const RUN_STALE_AFTER_MS = 10 * 60_000;
+/** Measured from the start of the run; the route's maxDuration is 120 s (docs/DECISIONS.md D25). */
+export const RUN_DEADLINE_MS = 100_000;
 const CONCURRENCY = 4;
 
 export interface Deps {
@@ -54,6 +54,10 @@ class CallCapError extends Error {
   override name = "CallCapError";
 }
 
+class DeadlineError extends Error {
+  override name = "DeadlineError";
+}
+
 interface Run {
   deps: Deps;
   snapshotId: number;
@@ -65,11 +69,32 @@ interface Run {
   board: RanksBoard | null;
   abort: string | null;
   capped: boolean;
+  /** Aborts every in-flight /v1 call when the deadline is reached. */
+  controller: AbortController;
+  deadlineHit: boolean;
 }
+
+/** The first call closes the run's reads: nothing new starts, in-flight calls are cut. */
+function hitDeadline(run: Run) {
+  if (run.deadlineHit) return;
+  run.deadlineHit = true;
+  run.abort ??= "deadline";
+  void run.deps.logger.warn("run.deadline", {
+    deadline_ms: RUN_DEADLINE_MS,
+    calls_used: run.calls,
+  });
+  run.controller.abort();
+}
+
+/** INVARIANT run.deadline-100s: past this no read starts, the snapshot closes partial. */
+const pastDeadline = (run: Run) =>
+  run.deps.now().getTime() - run.startedAt.getTime() >= RUN_DEADLINE_MS;
 
 /** The one place an upstream call is counted. Passed to every /v1 call as its onAttempt hook. */
 function attemptHook(run: Run, unionId: number | null) {
   return (attempt: number) => {
+    // A retry that wakes up after the deadline is not sent and not counted.
+    if (run.deadlineHit) throw new DeadlineError("run deadline reached");
     // INVARIANT calls.max-upstream: every /v1 attempt, quota check and retries included.
     if (run.calls >= MAX_UPSTREAM_CALLS) throw new CallCapError("MAX_UPSTREAM_CALLS reached");
     run.calls++;
@@ -129,7 +154,7 @@ async function allianceIds(deps: Deps, eventId: number, phase: Phase): Promise<n
 async function checkQuota(run: Run, idCount: number): Promise<string | null> {
   const started = run.deps.now();
   try {
-    const quota = await run.deps.v1.fetchQuota(attemptHook(run, null));
+    const quota = await run.deps.v1.fetchQuota(attemptHook(run, null), run.controller.signal);
     await logV1Fetch(run, started, { endpoint: "quota", unionId: null }, { quota });
     run.quotaBefore = quota.remaining;
     noteQuota(run, quota.remaining);
@@ -155,66 +180,39 @@ async function fetchBoard(deps: Deps): Promise<RanksBoard | null> {
   }
 }
 
-function dataRow(run: Run, a: AllianceSnapshotInput, source: AllianceRow["source"]): AllianceRow {
-  return {
-    unionId: a.unionId,
-    tag: a.tag,
-    name: a.name,
-    memberCount: a.memberCount,
-    totalPower: a.totalPower,
-    // INVARIANT total-kills-is-roster-sum: the board number is stored beside it, never instead.
-    totalKills: a.totalKills,
-    serverRank: a.serverRank,
-    level: a.level,
-    badgeId: a.badgeId ?? null,
-    powerBoard: run.board?.power.get(a.unionId) ?? null,
-    killsBoard: run.board?.kills.get(a.unionId) ?? null,
-    source,
-    sourceUpdatedAt: a.sourceUpdatedAt,
-    cached: a.cached,
-    // INVARIANT freshness.20-min: judged against deps.now at the time the row is stored.
-    isFresh: isFresh(run.deps.now(), a.sourceUpdatedAt, FRESH_MAX_AGE_MS),
-    error: null,
-    raw: trimRaw(a.raw),
-  };
-}
-
-function errorRow(unionId: number, error: string): AllianceRow {
-  const label = ALLIANCES.find((a) => a.unionId === unionId);
-  return {
-    unionId,
-    tag: label?.tag ?? null,
-    name: label?.name ?? null,
-    memberCount: null,
-    totalPower: null,
-    totalKills: null,
-    serverRank: null,
-    level: null,
-    powerBoard: null,
-    killsBoard: null,
-    source: "v1",
-    sourceUpdatedAt: null,
-    cached: null,
-    isFresh: false,
-    error,
-    raw: null,
-  };
+/** After a /v1 failure: one internal read (§3.5), else a row carrying both errors. */
+async function fallbackRow(run: Run, unionId: number, v1Error: unknown) {
+  const { deps } = run;
+  try {
+    const a = await deps.internal.fetchAlliance(unionId);
+    await deps.logger.warn("internal.fallback", { union_id: unionId, v1_error: describe(v1Error) });
+    return { row: dataRow(run.board, deps.now(), a, "internal"), members: a.members };
+  } catch (fallbackError) {
+    const error = `v1 ${describe(v1Error)}; internal ${describe(fallbackError)}`;
+    return { row: errorRow(unionId, error), members: [] as MemberRow[] };
+  }
 }
 
 /** /v1 first; after its final failure one internal read (§3.5); else a row with the error. */
 async function collectOne(run: Run, unionId: number): Promise<void> {
   const { deps } = run;
   let row: AllianceRow;
-  let members: MemberRow[] = [];
+  let members: MemberRow[];
   const started = deps.now();
   const call = { endpoint: "alliance", unionId } as const;
   try {
-    const a = await deps.v1.fetchAlliance(unionId, attemptHook(run, unionId));
+    const a = await deps.v1.fetchAlliance(
+      unionId,
+      attemptHook(run, unionId),
+      run.controller.signal,
+    );
     await logV1Fetch(run, started, call, { cached: a.cached, quota: a.quota });
     noteQuota(run, a.quota?.remaining);
-    row = dataRow(run, a, "v1");
+    row = dataRow(run.board, deps.now(), a, "v1");
     members = a.members;
   } catch (e) {
+    // The run has closed: no fallback read, no row, no log line for a call the deadline cut.
+    if (run.deadlineHit) return;
     await logV1Fetch(run, started, call, { error: e });
     if (e instanceof CallCapError) run.capped = true;
     if (e instanceof QuotaExhaustedError || e instanceof CallCapError) {
@@ -222,15 +220,9 @@ async function collectOne(run: Run, unionId: number): Promise<void> {
       run.abort ??= run.capped ? "MAX_UPSTREAM_CALLS reached" : describe(e);
       return;
     }
-    try {
-      const a = await deps.internal.fetchAlliance(unionId);
-      await deps.logger.warn("internal.fallback", { union_id: unionId, v1_error: describe(e) });
-      row = dataRow(run, a, "internal");
-      members = a.members;
-    } catch (fallbackError) {
-      row = errorRow(unionId, `v1 ${describe(e)}; internal ${describe(fallbackError)}`);
-    }
+    ({ row, members } = await fallbackRow(run, unionId, e));
   }
+  if (run.deadlineHit) return;
   if (!row.isFresh && row.error === null) await deps.logger.warn("stale", { union_id: unionId });
   await deps.repo.insertAllianceRow(run.snapshotId, row, members);
 }
@@ -240,6 +232,7 @@ async function collectAll(run: Run, ids: number[]): Promise<void> {
   const worker = async () => {
     try {
       while (run.abort === null) {
+        if (pastDeadline(run)) return hitDeadline(run);
         const id = queue.shift();
         if (id === undefined) return;
         await collectOne(run, id);
@@ -259,9 +252,9 @@ async function finish(run: Run, ids: number[], phase: Phase, error: string | nul
   const ok = rows.filter((r) => r.error === null);
   // INVARIANT freshness.stale-is-partial: complete needs every alliance fresh and without error.
   const status =
-    run.capped || ok.length === 0
+    run.capped || (ok.length === 0 && !run.deadlineHit)
       ? "failed"
-      : ok.length === ids.length && ok.every((r) => r.isFresh)
+      : !run.deadlineHit && ok.length === ids.length && ok.every((r) => r.isFresh)
         ? "complete"
         : "partial";
   const finishedAt = run.deps.now();
@@ -286,19 +279,7 @@ async function finish(run: Run, ids: number[], phase: Phase, error: string | nul
     durationMs,
     error,
     stale: ok.filter((r) => !r.isFresh).map((r) => ({ unionId: r.unionId, tag: r.tag })),
-    failed: [
-      ...rows.flatMap((r) =>
-        r.error === null ? [] : [{ unionId: r.unionId, tag: r.tag, error: r.error }],
-      ),
-      // Alliances the run never reached (429, quota, cap): the admin needs them named to re-run.
-      ...ids
-        .filter((id) => !rows.some((r) => r.unionId === id))
-        .map((unionId) => ({
-          unionId,
-          tag: ALLIANCES.find((a) => a.unionId === unionId)?.tag ?? null,
-          error: `not fetched: ${error}`,
-        })),
-    ],
+    failed: failedList(rows, ids, error),
   } satisfies RunSummary;
 }
 
@@ -324,6 +305,8 @@ export async function runSnapshot(
     board: null,
     abort: null,
     capped: false,
+    controller: new AbortController(),
+    deadlineHit: false,
   };
   const ids = await allianceIds(deps, eventId, phase);
   await deps.logger.info("snapshot.start", { snapshot_id: snapshotId, alliances: ids.length });
@@ -332,16 +315,38 @@ export async function runSnapshot(
     return finish(run, ids, phase, "no alliance list on the event: BEFORE has not run");
   }
 
-  const quotaError = await checkQuota(run, ids.length);
-  if (quotaError) return finish(run, ids, phase, quotaError);
-
-  run.board = await fetchBoard(deps);
-  // INVARIANT run.resume-missing-only: a re-run fetches only alliances without a row.
-  const have = new Set((await deps.repo.listAllianceRows(snapshotId)).map((r) => r.unionId));
-  await collectAll(
-    run,
-    ids.filter((id) => !have.has(id)),
-  );
-  if (run.abort) await deps.logger.error("abort", { reason: run.abort, calls_used: run.calls });
-  return finish(run, ids, phase, run.abort);
+  // The deadline wins the race when a read hangs; the abandoned work is cut by the abort signal.
+  const work = (async () => {
+    const quotaError = await checkQuota(run, ids.length);
+    if (quotaError) return quotaError;
+    run.board = await fetchBoard(deps);
+    // INVARIANT run.resume-missing-only: a re-run fetches only alliances without a row.
+    const have = new Set((await deps.repo.listAllianceRows(snapshotId)).map((r) => r.unionId));
+    await collectAll(
+      run,
+      ids.filter((id) => !have.has(id)),
+    );
+    return run.abort;
+  })();
+  work.catch(() => {});
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const deadline = new Promise<void>((resolve) => {
+    const left = RUN_DEADLINE_MS - (deps.now().getTime() - run.startedAt.getTime());
+    timer = setTimeout(
+      () => {
+        hitDeadline(run);
+        resolve();
+      },
+      Math.max(0, left),
+    );
+  });
+  let error: string | null;
+  try {
+    error = (await Promise.race([work, deadline])) ?? run.abort;
+  } finally {
+    clearTimeout(timer);
+  }
+  if (error && !run.deadlineHit)
+    await deps.logger.error("abort", { reason: error, calls_used: run.calls });
+  return finish(run, ids, phase, error);
 }

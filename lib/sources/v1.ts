@@ -56,7 +56,11 @@ function retryDelayMs(attempt: number, retryAfter: string | null): number {
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-async function request(path: string, onAttempt?: OnAttempt): Promise<Response> {
+async function request(
+  path: string,
+  onAttempt?: OnAttempt,
+  signal?: AbortSignal,
+): Promise<Response> {
   const env = getSourceEnv();
   const headers = {
     Authorization: `Bearer ${env.LAP_API_KEY}`,
@@ -69,7 +73,9 @@ async function request(path: string, onAttempt?: OnAttempt): Promise<Response> {
     const response = await limited(() =>
       fetch(`${env.LAP_API_BASE_URL}${path}`, {
         headers,
-        signal: AbortSignal.timeout(TIMEOUT_MS),
+        signal: signal
+          ? AbortSignal.any([signal, AbortSignal.timeout(TIMEOUT_MS)])
+          : AbortSignal.timeout(TIMEOUT_MS),
       }),
     );
     // Branch on status only: statusText is empty over HTTP/2 on Node 26 (plan §11.4).
@@ -88,14 +94,15 @@ async function request(path: string, onAttempt?: OnAttempt): Promise<Response> {
 export async function fetchAlliance(
   id: UnionId,
   onAttempt?: OnAttempt,
+  signal?: AbortSignal,
 ): Promise<AllianceSnapshotInput> {
-  const response = await request(`/alliances/${id}`, onAttempt);
+  const response = await request(`/alliances/${id}`, onAttempt, signal);
   const { data, raw } = await readBody(response, allianceSchema, "v1.schema");
   return toSnapshotInput(data, { cached: data.cached, quota: data.quota, raw });
 }
 
-export async function fetchQuota(onAttempt?: OnAttempt): Promise<Quota> {
-  const response = await request("/quota", onAttempt);
+export async function fetchQuota(onAttempt?: OnAttempt, signal?: AbortSignal): Promise<Quota> {
+  const response = await request("/quota", onAttempt, signal);
   const { data } = await readBody(response, quotaResponseSchema, "v1.schema");
   return data.quota;
 }

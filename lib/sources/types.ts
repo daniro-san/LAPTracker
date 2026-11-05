@@ -55,8 +55,13 @@ export interface RanksBoard {
 export type OnAttempt = (attempt: number) => void;
 
 export interface V1Source {
-  fetchAlliance(id: UnionId, onAttempt?: OnAttempt): Promise<AllianceSnapshotInput>;
-  fetchQuota(onAttempt?: OnAttempt): Promise<Quota>;
+  /** `signal` cuts the call when it aborts (the run deadline), on top of TIMEOUT_MS. */
+  fetchAlliance(
+    id: UnionId,
+    onAttempt?: OnAttempt,
+    signal?: AbortSignal,
+  ): Promise<AllianceSnapshotInput>;
+  fetchQuota(onAttempt?: OnAttempt, signal?: AbortSignal): Promise<Quota>;
 }
 
 export interface InternalSource {
