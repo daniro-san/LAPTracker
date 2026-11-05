@@ -72,10 +72,23 @@ export async function getEventInfo(db: Db, eventId: number): Promise<EventInfo |
 }
 
 /** A public event with no schedule: both phase times are its creation time, so nothing is "not due". */
-export async function createManualEvent(db: Db, name: string, now: Date): Promise<EventInfo> {
+export async function createManualEvent(
+  db: Db,
+  name: string,
+  now: Date,
+  options: { visibility?: ManualVisibility; postPublic?: boolean } = {},
+): Promise<EventInfo> {
   const [row] = await db
     .insert(events)
-    .values({ name, eventAtUtc: now, beforeAt: now, afterAt: now, allianceIds: [], manual: true })
+    .values({
+      name,
+      eventAtUtc: now,
+      beforeAt: now,
+      afterAt: now,
+      allianceIds: [],
+      manual: true,
+      ...options,
+    })
     .returning(infoColumns);
   if (!row) throw new Error("manual event row missing after insert");
   return row;

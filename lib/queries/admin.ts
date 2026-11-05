@@ -13,7 +13,7 @@ export interface ManualEventStatus {
   visibility: "admin" | "standalone" | "history";
   postPublic: boolean;
   /** One entry per phase that has a snapshot; the name can be edited once there is one. */
-  phases: { phase: "before" | "after"; status: string }[];
+  phases: { phase: "before" | "after"; status: string; callsUsed: number }[];
 }
 
 /** The newest manual event (D28) and the state of its two phases; null when none was created. */
@@ -31,7 +31,7 @@ export async function latestManualEvent(db: Db): Promise<ManualEventStatus | nul
     .limit(1);
   if (!event) return null;
   const phases = await db
-    .select({ phase: snapshots.phase, status: snapshots.status })
+    .select({ phase: snapshots.phase, status: snapshots.status, callsUsed: snapshots.callsUsed })
     .from(snapshots)
     .where(eq(snapshots.eventId, event.id));
   return { ...event, phases };
