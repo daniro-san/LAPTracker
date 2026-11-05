@@ -171,4 +171,25 @@ describe("manual events (D28)", () => {
     expect(detail?.snapshots[0]?.alliances.length).toBeGreaterThan(0);
     expect(history).toEqual([]);
   });
+
+  it("leaves both rounds intact when the tick later runs Saturday, and Saturday compares with no demo", async () => {
+    const { ctx, clock } = testContext(db);
+    holder.ctx = ctx;
+    clock.now = new Date("2026-11-04T12:00:00Z");
+    const { event_id: id } = (await (await create()).json()) as { event_id: number };
+    await run(`phase=before&event=${id}`);
+    clock.now = new Date("2026-11-07T12:00:00Z"); // Saturday's before_at: the tick runs it
+
+    const res = await tick();
+
+    expect(res.status).toBe(200);
+    const rows = await db.select().from(snapshots);
+    expect(rows.map((r) => [r.eventId, r.phase, r.status]).sort()).toEqual([
+      [id, "before", "complete"],
+      [id + 1, "before", "complete"],
+    ]);
+    const history = await allianceHistory(db, 67111155);
+    expect(history.map((h) => h.eventId)).toEqual([id + 1]);
+    expect(history[0]?.previous).toBeNull();
+  });
 });

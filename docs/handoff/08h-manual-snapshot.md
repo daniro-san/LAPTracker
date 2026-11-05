@@ -10,7 +10,7 @@
 - `allianceHistory`, player history (`sightingsOf`) and `historyRanks` ignore manual events.
 - `/admin`: a "Manual event" card with a "Start a manual round" button, a rename field (after the first snapshot), the newest manual event's Before and After buttons, each phase's state, a link to the public page and the quota cost (about 21 of 1,000 calls).
 - `lib/queries/admin.ts` `latestManualEvent`; copy in `lib/copy-admin.ts`; D28 in `docs/DECISIONS.md`; a glossary row.
-- `app/api/manual-event/route.test.ts`: six tests (create and auth, rename rules, Before and After on different days with force and no public post, non-manual id refused, tick ignores it, history ignores it).
+- `app/api/manual-event/route.test.ts`: seven tests (create and auth, rename rules, Before and After on different days with force and no public post, non-manual id refused, tick ignores it, history ignores it).
 
 ## How to use it
 1. Merge into `dev`, release to production, and let the migration run (`pnpm db:migrate` as for earlier migrations).
@@ -29,11 +29,13 @@
 - Manual events are excluded from cross-event deltas, ranks and player history so Saturday is not compared with a demo.
 - Reading of "right away": the event page and selector show it as soon as a snapshot exists. The home page shows the newest event by date, which is Saturday's (empty) event until its first run, so the home page does not show the demo.
 
+- Confirmed: with a manual round and Saturday both present, nothing is overwritten. Each round is its own event row, each event has at most one snapshot per phase, and only `force=1` on the same phase of the same event replaces data. Saturday does not take the manual round as its previous event (D28, tested).
+
 ## Deviations
 - None from the task. The query exclusions touch three files beyond the minimum; without them Saturday's deltas would reference the demo.
 
 ## Verified
-- `pnpm check`: passes (prettier, eslint, tsc, 116 tests).
+- `pnpm check`: passes (prettier, eslint, tsc, 117 tests).
 - Tests run against PGlite with the fake upstream. Upstream API calls made: 0. Production not touched.
 - Not verified: the card in a browser at 360 px; the migration against Neon.
 
