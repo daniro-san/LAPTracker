@@ -40,7 +40,13 @@ export const adminCopy = {
   run: {
     title: "Run something now",
     event: "Current event: {event}",
-    costs: "Snapshot: about 21 calls, up to a minute. Rehearsal: about 45 calls over 50 minutes.",
+    costs: "Rehearsal: about 45 calls over 50 minutes.",
+    snapshots: {
+      title: "Snapshots",
+      before: "Record the numbers before the event. Use it if the scheduled run didn't happen.",
+      after: "Record the numbers after the event. Use it if the scheduled run didn't happen.",
+      cost: "Costs about 21 API calls. Normally the scheduler does this for you.",
+    },
     rehearse: "Rehearse",
     confirmRehearse: "Start a rehearsal? About 45 API calls over about 50 minutes.",
     confirmBefore: "Take the before snapshot now? About 21 API calls, up to a minute.",
