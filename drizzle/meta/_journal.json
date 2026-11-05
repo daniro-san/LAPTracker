@@ -43,6 +43,13 @@
       "when": 1793910498889,
       "tag": "0005_concerned_bloodstrike",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793914764490,
+      "tag": "0006_tranquil_black_bolt",
+      "breakpoints": true
     }
   ]
 }

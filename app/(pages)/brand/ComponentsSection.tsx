@@ -1,8 +1,12 @@
 // /brand "Components": every control and ornament the site uses, each with when to use it. The
 // fields are live but belong to no form; nothing here submits.
 import { Button } from "@/lib/brand/components/Button";
+import { CheckField } from "@/lib/brand/components/CheckField";
 import { Chip } from "@/lib/brand/components/Chip";
+import { FactList } from "@/lib/brand/components/FactList";
 import { LaceBorder } from "@/lib/brand/components/LaceBorder";
+import { Notice } from "@/lib/brand/components/Notice";
+import { RadioField } from "@/lib/brand/components/RadioField";
 import { SealButton } from "@/lib/brand/components/SealButton";
 import { DroppedStitch, Hourglass, StitchedCheck } from "@/lib/brand/components/StatusIcons";
 import { YarnCorner } from "@/lib/brand/components/YarnCorner";
@@ -94,10 +98,37 @@ export function ComponentsSection() {
         </Spec>
         <Fields />
         <Spec name={t.check.name} use={t.check.use}>
-          <label className="flex min-h-11 cursor-pointer items-center gap-3">
-            <input type="checkbox" defaultChecked className="drawn-check" />
-            {t.check.label}
-          </label>
+          <div className="flex w-full flex-col items-start gap-3">
+            <CheckField label={t.check.label} help={t.check.help} defaultChecked />
+            <CheckField variant="chip" label={t.check.chip} />
+          </div>
+        </Spec>
+        <Spec name={t.radio.name} use={t.radio.use}>
+          <fieldset className="flex w-full flex-col gap-2">
+            <legend className="mb-1 text-sm font-semibold">{t.radio.legend}</legend>
+            {t.radio.options.map(([label, help], i) => (
+              <RadioField
+                key={label}
+                name="brand-radio"
+                label={label}
+                help={help}
+                defaultChecked={i === 0}
+              />
+            ))}
+          </fieldset>
+        </Spec>
+        <Spec name={t.notice.name} use={t.notice.use}>
+          <div className="flex w-full flex-col gap-2">
+            <Notice tone="ok">{t.notice.ok}</Notice>
+            <Notice tone="busy">{t.notice.busy}</Notice>
+            <Notice tone="fail">{t.notice.fail}</Notice>
+            <Notice>{t.notice.info}</Notice>
+          </div>
+        </Spec>
+        <Spec name={t.facts.name} use={t.facts.use}>
+          <div className="w-full">
+            <FactList items={t.facts.items.map(([label, value]) => ({ label, value }))} />
+          </div>
         </Spec>
         <Ornaments />
       </div>

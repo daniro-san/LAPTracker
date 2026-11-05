@@ -6,6 +6,7 @@
 // page is still correct.
 import { useEffect, useState } from "react";
 
+import { CheckField } from "@/lib/brand/components/CheckField";
 import { copy } from "@/lib/copy";
 
 import { rowAnchor } from "./format";
@@ -35,18 +36,15 @@ export function MyAllianceToggle({ unionId }: { unionId: number }) {
   const [mine, setMine] = useState(false);
   useEffect(() => setMine(readMine() === unionId), [unionId]);
   return (
-    <label className="drawn-frame-soft inline-flex min-h-11 shrink-0 cursor-pointer items-center gap-2 px-3 text-body-sm font-medium text-plum transition-colors duration-150 hover:bg-plum/10 motion-reduce:transition-none">
-      <input
-        type="checkbox"
-        className="drawn-check size-[18px]"
-        checked={mine}
-        onChange={(e) => {
-          writeMine(e.target.checked ? unionId : null);
-          setMine(e.target.checked);
-        }}
-      />
-      {copy.ledger.myAlliance}
-    </label>
+    <CheckField
+      variant="chip"
+      label={copy.ledger.myAlliance}
+      checked={mine}
+      onChange={(e) => {
+        writeMine(e.target.checked ? unionId : null);
+        setMine(e.target.checked);
+      }}
+    />
   );
 }
 

@@ -65,3 +65,37 @@ export async function finishSnapshot(
     })
     .where(eq(snapshots.id, snapshotId));
 }
+
+/** A finished run of one phase, for the event's one Discord message (D31). */
+export interface PhaseReport {
+  phase: Phase;
+  snapshotId: number;
+  status: "complete" | "partial" | "failed";
+  startedAt: Date;
+  finishedAt: Date;
+  callsUsed: number;
+  quotaRemainingAfter: number | null;
+  durationMs: number;
+  error: string | null;
+}
+
+export async function listPhaseReports(db: Db, eventId: number): Promise<PhaseReport[]> {
+  const rows = await db.select().from(snapshots).where(eq(snapshots.eventId, eventId));
+  return rows.flatMap((r) =>
+    r.status === "running" || !r.finishedAt
+      ? []
+      : [
+          {
+            phase: r.phase,
+            snapshotId: r.id,
+            status: r.status,
+            startedAt: r.startedAt,
+            finishedAt: r.finishedAt,
+            callsUsed: r.callsUsed,
+            quotaRemainingAfter: r.quotaRemainingAfter,
+            durationMs: r.durationMs ?? 0,
+            error: r.error,
+          },
+        ],
+  );
+}

@@ -172,6 +172,26 @@ describe("admin messages", () => {
     expect(text).not.toMatch(/UTC/);
   });
 
+  it("names a manual round and leaves out the due line it has no schedule for", () => {
+    const text = adminSnapshotMessage(summary({ phase: "before" }), {
+      clock,
+      phase: "before",
+      runUrl: "https://lap.test/admin/runs/41",
+      scheduledAt: utc("12:00"),
+      startedAt: utc("16:01"),
+      finishedAt: utc("16:02"),
+      logWriteFailures: 0,
+      roundName: "Manual round 2026-11-07",
+    });
+    expect(text).toBe(
+      [
+        "✓ Manual round 2026-11-07 · Before snapshot: done · Sat, 11/07/2026, 14:02 server",
+        "21 calls · 779 requests left · 52.0 s",
+        "[Run 41 ↗](<https://lap.test/admin/runs/41>)",
+      ].join("\n"),
+    );
+  });
+
   it("lists the rehearsal verdict lines under ✓ Pass or ✗ Fail and the stamp", () => {
     const text = rehearsalVerdictMessage(
       {
@@ -234,6 +254,17 @@ describe("admin messages", () => {
   });
 });
 
+describe("manual round public message", () => {
+  it("says it is a manual round by name and keeps the rest of the template", () => {
+    const plain = publicSnapshotMessage(summary(), publicCtx());
+    const embed = publicSnapshotMessage(summary(), publicCtx({ roundName: "Demo round" }));
+    expect(embed.description).toBe(
+      `Manual round: Demo round. Not a Saturday event.\n${plain.description}`,
+    );
+    expect({ ...embed, description: plain.description }).toEqual(plain);
+  });
+});
+
 describe("payloads", () => {
   it("carry no webhook URL, PIN, blocked roster field or name override", async () => {
     const bodies: string[] = [];
@@ -259,5 +290,8 @@ describe("payloads", () => {
     expect(JSON.parse(bodies[1] ?? "{}")).toMatchObject({
       content: expect.stringMatching(/^\[rehearsal\] 🔒/),
     });
+
+    await notifier.admin("x", { manual: true });
+    expect(JSON.parse(bodies[2] ?? "{}")).toMatchObject({ content: "[manual] x" });
   });
 });

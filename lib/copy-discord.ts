@@ -6,12 +6,22 @@ export const discordCopy = {
     /** `✓ Last updated at Sat, Nov 7, 14:01 server` is copy.status.lastUpdated after the icon. */
     alliances: "{good}/{total} alliances",
     stale: "○ {n} stale: {list}",
+    /** First line of a manual round's public message (D28). */
+    manual: "Manual round: {name}. Not a Saturday event.",
+    /** The Before's line in the edited message, so the After shows the whole event. */
+    beforeDone: "Before snapshot done at {time}",
     might: "**Might ▲**",
     kills: "**Kills ▲**",
   },
   admin: {
     /** Rehearsal (is_test) messages start with this, as rehearsal runs are marked on /admin. */
     test: "[rehearsal]",
+    /** Manual rounds start with this, the same way. */
+    manual: "[manual]",
+    /** A manual round names itself in its run line and has no schedule, so no "due" line. */
+    /** First line of the event's one message (D31). */
+    eventHeader: "**{name}**",
+    manualRun: "{icon} {name} · {phase}: {state} · {at}",
     run: "{icon} {phase}: {state} · {at}",
     due: "due {at} · started {lag}",
     lag: "+{n} min",

@@ -205,6 +205,14 @@ Plan §12.4: `pnpm audit --audit-level high` fails CI; a moderate finding that c
 - **Rule:** cron `7,22,37,52 * * * *` (still every 15 minutes, still daily); the job prints the HTTP code and fails unless it is 2xx; `curl -sS` replaces the progress table. This replaces plan §3.1's `*/15` and Phase 6's "one `curl --fail`".
 - **Not proven:** that the new minutes fix the missing runs. If scheduled runs still do not appear, the next step is a second pinger (plan §3.1 notes the manual fallback) and a tick log in the database.
 
+## D30 — cron-job.org is the scheduler; GitHub's schedule is not relied on (2026-11-05, 08)
+
+- **Why:** `gh run list --workflow tick.yml --event schedule` has returned no run since `tick.yml` reached `main` (2026-11-05 10:05 UTC), including after the minute change in D26 and a release at 14:18 UTC; checked again at 18:37 UTC. Manual `workflow_dispatch` runs work. The cause was not found (GitHub does not say why a schedule is not started).
+- **Rule:** the job "Vercel Ticker" on cron-job.org sends `POST https://laptracker-inky.vercel.app/api/tick` with `Authorization: Bearer <CRON_SECRET>` every 15 minutes (30 s timeout, history kept, a notification after 2 failures). It is the scheduler. `tick.yml` stays for manual runs (`phase=tick|before|after`) and keeps its schedule as a second path; the tick is idempotent, so two callers do not duplicate a snapshot.
+- **Proof:** a rehearsal on 2026-11-05 (event 5) ran its Before at 20:30:15 UTC (due 20:26) and its After at 21:00:21 UTC (due 20:56), both `complete`, with no manual call. The job ran several times inside the Before window and there is one snapshot per phase.
+- **Cost:** `CRON_SECRET` lives in three places (Vercel Production, the GitHub secret, the cron-job.org header). A rotation must change all three and redeploy production; a mismatch makes the job fail with 401 (the app records the failed attempt in `auth_attempts`).
+- **Not done:** a tick log table (a heartbeat row per call) and an alert when no tick arrived for an hour; both stay suggestions.
+
 ## D27 — A banner says when the upstream is not answering (2026-11-05, 08g)
 
 - **Why:** on 2026-11-05 every alliance read returned 504 for about 17 hours and the pages showed old numbers with no reason.
@@ -254,3 +262,26 @@ Why: a release was three manual steps (PR, merge, `gh release create`) and the t
 - **Setting needed.** "Allow GitHub Actions to create and approve pull requests" must be on, or `gh pr create` fails with the `GITHUB_TOKEN`. `default_workflow_permissions` stays `read`; each workflow declares its own permissions.
 - **Required check.** A PR opened with `GITHUB_TOKEN` starts no new workflow runs, but a required status check is read from the head commit, and `ci` already ran on the push to `dev` (check run `check`, from github-actions, the integration the ruleset names). If the newest push to `dev` has no finished `check`, the release PR will wait on it.
 - **Limit.** Workflows run from the default branch, so Prepare release exists in the Actions tab only after a release carries it to `main`.
+
+## D30 — /admin "Run something now": one row of seals, a manual round options form (2026-11-05, 08k)
+
+Why: the owner found the run area cluttered, the visibility dropdown hard to read and the bare "run or cancel" confirmation before a round was created unhelpful.
+
+- **Layout.** Before, After and Rehearse are three columns on one row (360 px included), each with a one-line help and its cost. "Manual round" is its own row below.
+- **One options form, two places.** `RoundOptions` (name, visibility as three radio options with one line each, Discord post as a checkbox) is used by "Start a manual round" (opens inline under the button; "Create round" is the confirmation, so no separate confirm sheet) and by the round's card ("Change options", "Save changes"). Seals still ask for a confirmation that names the cost. Save sends only what changed: a rename (only after the Before ran, D28), then the settings, as two calls.
+- **API change (minimal).** `POST /api/manual-event` accepts an optional JSON body `{name?, visibility?, post_public?}` (same name rules as rename, same `admin_cannot_post` 409). With no body it behaves as before. Needed because the name and options are set before the round exists and a rename is refused until a snapshot exists.
+- **Round summary.** The card shows name, Before and After state, visibility, Discord and the API calls the round has used (sum of its snapshots' `calls_used`, read in `latestManualEvent`).
+- **Not built:** a modal for the form (inline keeps the round's options next to the button), deleting a round (D28).
+
+## D31 — Discord: one editable message per channel per event (2026-11-05)
+
+Why: the channels now carry several kinds of events (Saturday, rehearsal, manual round, D28), and two to three messages per channel per event was noise. The owner dropped the ping idea.
+
+- **One message per channel per event.** The Before posts it with `POST <webhook>?wait=true`, which returns the message; its `id` is stored on the event: `events.discord_public_message_id` and `events.discord_admin_message_id` (text, nullable, migration 0006). The After, and a rehearsal's verdict, edit it with `PATCH <webhook>/messages/<id>`. Admin and public are separate messages with separate ids.
+- **The edited message shows the event so far.** Public embed: the same status chip, counts and movers as before, plus a "Before snapshot done at …" line on the After (the colour bar still follows the latest run's state). Admin text: a bold event-name header (after the `[rehearsal]` / `[manual]` tag), then one block per phase run so far (the 07f run block, unchanged), then, for a rehearsal, the verdict block. The current phase's block has the full detail (failed and stale alliances); the other phase's block is rebuilt from its `snapshots` row and has none (its run page has them).
+- **Fallbacks, no extra machinery.** Nothing stored: post and store. PATCH answers 404 (message deleted): post a new message and store its id. Any other failed PATCH: keep the stored id and post nothing (a second message is what this removes); `notify.failed` logs the status only. `wait=true` returns no id: nothing is stored, the next phase posts again (today's behaviour) and `notify.no_message_id` is logged. The webhook URL is never logged, thrown or put in a message.
+- **Channels (owner, 2026-11-05).** The public channel (`laptracker-ledger`) is strictly one message per event. The admin channel keeps one editable message per event on the normal path, and a run that ends `partial` or `failed` also posts a new message of its own (that run's block under the event header), besides editing the event message. Why: an edit does not notify and has no link of its own, so a problem hidden in an edit is easy to miss; the event message stays the complete record. A rehearsal verdict that fails is inside the edited message only (not a run status).
+- **Same mechanism for every kind of event.** Saturday events, rehearsals (admin only) and manual rounds. A manual round with its public toggle off never touches the public channel (D28).
+- **No locking.** A Before and an After of one event never run at once (one claim per event and phase), so the read of the stored id and its write cannot race. Two forced re-runs of the same phase pressed together could, as they could already double-send.
+- **One-shot messages are unchanged:** Friday quota check, PIN lock, app errors and skipped rehearsals post a new message each (they belong to no event).
+- **Not verified against Discord:** edits through `message_reference` replies were not used (unverified for webhooks); threads are not possible in a plain text channel.

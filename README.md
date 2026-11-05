@@ -25,11 +25,22 @@ Production is Vercel (branch `main`), the database is Neon, and the scheduler is
 
 **Deploy.** Work lands on `dev` through squash-merged PRs. A release takes three clicks: Actions → **Prepare release** → Run workflow (pick patch, minor or major) opens the PR `dev → main` titled `release: vX.Y.Z` with generated notes; review it; **Merge** it with a merge commit. The tag and the GitHub Release then appear on their own (`release-publish`). The version is the latest `v*` tag plus the bump; `package.json` is not used. Vercel builds `main` as production; its build command (`vercel.json`) runs `pnpm db:migrate` first, so migrations apply on every deploy. Prepare release refuses when `dev` has nothing beyond `main` or a release PR is already open. If Prepare release is unavailable (for example before the first release that carries it), open the PR by hand and, after the merge, run `gh release create vX.Y.Z --target main --generate-notes`. Preview deployments (`dev`, PRs) use Preview-scoped env vars (own database branch, own secrets, no `NOTIFY_*`) and sit behind Vercel Authentication.
 
+**How to cut a release.**
+
+1. Wait until the last push to `dev` has a green `check` (Actions → ci).
+2. GitHub → Actions → **Prepare release** → **Run workflow**, pick `patch` (fixes), `minor` (features) or `major` (breaking), run it. It opens the PR `dev → main` titled `release: vX.Y.Z` with generated notes, and prints the PR link in the run summary. It stops with a message if `dev` has nothing new or a release PR is already open.
+3. Open the PR, read the notes, wait for `check` to be green, then **Merge** with **Create a merge commit** (the only method `main` allows).
+4. About 10 seconds later, `release-publish` creates the tag `vX.Y.Z` and the GitHub Release (Actions → release-publish; Releases page). Vercel deploys `main` and runs the migrations by itself.
+
+The next version is the latest `v*` tag plus the bump, so `package.json` is never edited. If the PR is wrong, close it and run Prepare release again. If the tag or release does not appear, run `gh release create vX.Y.Z --target main --generate-notes`. Why it works this way: [D29](docs/DECISIONS.md).
+
 **GitHub repository secrets.** `APP_URL` (the production origin, no trailing slash) and `CRON_SECRET` (must equal the Production value in Vercel).
+
+**Scheduler.** The job "Vercel Ticker" on cron-job.org calls `POST /api/tick` every 15 minutes with the header `Authorization: Bearer <CRON_SECRET>` (D30). GitHub's own schedule has never started a run in this repository, so it is not relied on. To check it, open the job's History on cron-job.org: each run should show `204 No Content` when nothing is due. A `401` means its `CRON_SECRET` differs from the one in Vercel Production.
 
 **Workflows.**
 
-- `tick.yml` calls `POST /api/tick` every 15 minutes. All scheduling decisions live in the app. Do not add retries.
+- `tick.yml` calls `POST /api/tick` on a schedule of its own and from Actions → tick → Run workflow. It fails on any non-2xx. All scheduling decisions live in the app. Do not add retries.
 - `keepalive.yml` pushes a timestamp to the `keepalive` branch monthly, so GitHub does not disable the schedule after 60 days without activity. Vercel never builds that branch.
 - `dependabot-automerge.yml` squash-merges Dependabot minor/patch PRs into `dev` once CI is green. Majors wait for a human.
 
@@ -37,7 +48,7 @@ Production is Vercel (branch `main`), the database is Neon, and the scheduler is
 
 **Change snapshot times.** Edit `SNAPSHOT_BEFORE`, `SNAPSHOT_AFTER`, `EVENT_TIME`, `SNAPSHOT_WINDOW_MIN` or `QUOTA_CHECK_AT` (server time) in Vercel's Production env vars, then redeploy. A Saturday row is created a day ahead and keeps its times, so a change applies from the next event row.
 
-**Rotate the API key or the PIN.** Change `LAP_API_KEY` or `EDIT_PIN` in Vercel Production, redeploy, and update the copy in `.env.local`. For `CRON_SECRET`, change it in Vercel **and** in the GitHub secret, then redeploy. Never paste any of them into a PR, issue or chat.
+**Rotate the API key or the PIN.** Change `LAP_API_KEY` or `EDIT_PIN` in Vercel Production, redeploy, and update the copy in `.env.local`. For `CRON_SECRET`, change it in Vercel, in the GitHub secret **and** in the cron-job.org job's header, then redeploy production. Never paste any of them into a PR, issue or chat.
 
 **Run a snapshot by hand.** On `/admin`, enter the PIN and use the Before or After seal (a confirm dialog opens). From GitHub: Actions → tick → Run workflow → pick `before` or `after`. Either spends about 21 API calls. A run that already completed is refused (409).
 

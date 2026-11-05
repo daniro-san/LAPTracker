@@ -24,20 +24,28 @@ export async function setEventAllianceIds(db: Db, eventId: number, ids: number[]
 /** What a run needs to know about its event. */
 export interface EventInfo {
   id: number;
+  /** `events.name`: a manual round's name goes in its Discord messages. */
+  name: string;
   isTest: boolean;
   /** D28: a manual event is run only by the admin buttons and has no schedule. */
   manual: boolean;
   /** Manual rounds: post the public Discord message when a run finishes. */
   postPublic: boolean;
+  /** D31: Discord's id of this event's message in each channel; null until the first post. */
+  discordPublicMessageId: string | null;
+  discordAdminMessageId: string | null;
   beforeAt: Date;
   afterAt: Date;
 }
 
 const infoColumns = {
   id: events.id,
+  name: events.name,
   isTest: events.isTest,
   manual: events.manual,
   postPublic: events.postPublic,
+  discordPublicMessageId: events.discordPublicMessageId,
+  discordAdminMessageId: events.discordAdminMessageId,
   beforeAt: events.beforeAt,
   afterAt: events.afterAt,
 };
@@ -72,10 +80,23 @@ export async function getEventInfo(db: Db, eventId: number): Promise<EventInfo |
 }
 
 /** A public event with no schedule: both phase times are its creation time, so nothing is "not due". */
-export async function createManualEvent(db: Db, name: string, now: Date): Promise<EventInfo> {
+export async function createManualEvent(
+  db: Db,
+  name: string,
+  now: Date,
+  options: { visibility?: ManualVisibility; postPublic?: boolean } = {},
+): Promise<EventInfo> {
   const [row] = await db
     .insert(events)
-    .values({ name, eventAtUtc: now, beforeAt: now, afterAt: now, allianceIds: [], manual: true })
+    .values({
+      name,
+      eventAtUtc: now,
+      beforeAt: now,
+      afterAt: now,
+      allianceIds: [],
+      manual: true,
+      ...options,
+    })
     .returning(infoColumns);
   if (!row) throw new Error("manual event row missing after insert");
   return row;
@@ -114,6 +135,22 @@ export async function renameManualEvent(
   if (!any) return "no-snapshot";
   await db.update(events).set({ name }).where(eq(events.id, eventId));
   return "ok";
+}
+
+export async function setDiscordMessageId(
+  db: Db,
+  eventId: number,
+  channel: "public" | "admin",
+  messageId: string,
+): Promise<void> {
+  await db
+    .update(events)
+    .set(
+      channel === "public"
+        ? { discordPublicMessageId: messageId }
+        : { discordAdminMessageId: messageId },
+    )
+    .where(eq(events.id, eventId));
 }
 
 export interface DuePhase {

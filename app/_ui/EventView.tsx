@@ -9,7 +9,13 @@ import type { getEventDetail, listEvents, Ranks, RosterChange } from "@/lib/quer
 import { nextEvent } from "@/lib/schedule";
 
 import { DetailTable, figureRows } from "./DetailLines";
-import { comparisonRows, nextUpdateAt, type AllianceCell, type ComparisonRow } from "./event-rows";
+import {
+  comparisonRows,
+  emptyLine,
+  nextUpdateAt,
+  type AllianceCell,
+  type ComparisonRow,
+} from "./event-rows";
 import { EventLabel } from "./EventLabel";
 import { ExactToggle } from "./ExactToggle";
 import { allianceLabel, rowAnchor, type Clock } from "./format";
@@ -134,6 +140,7 @@ export async function EventView({
             now,
           )}
           stale={rows.filter((r) => worstOf(fresh(r.before), fresh(r.after)) !== "fresh").length}
+          manual={detail.manual}
           clock={clock}
         />
         <Legend />
@@ -142,7 +149,7 @@ export async function EventView({
           leadLabel={copy.ledger.alliance}
           columns={[copy.ledger.might, copy.ledger.kills, copy.ledger.members]}
           rows={rows.map((r) => toStatRow(detail.id, r, names.get(r.unionId), clock))}
-          empty={copy.empty.kettle}
+          empty={emptyLine(detail.manual, detail.snapshots.length)}
         />
       </main>
       <SiteFooter />

@@ -5,6 +5,7 @@
 import type { RunSummary } from "./collector";
 import { delta as computeDelta } from "./compute";
 import { copy, fill } from "./copy";
+import { sendOrEdit as send } from "./discord-send";
 import type { Env } from "./env";
 import type { Verdict } from "./rehearsal";
 import type { Phase } from "./repo";
@@ -17,10 +18,18 @@ export interface Embed {
   color: number;
 }
 
+/**
+ * `messageId`: the id of this event's message in the channel (D31). With one the message is edited
+ * in place; without one, or when Discord no longer has it, a new message is posted. The result is
+ * the id to store, or null when Discord returned none (the next phase then posts again).
+ */
 export interface Notifier {
-  public(embed: Embed): Promise<void>;
-  /** `test`: an is_test event (plan Phase 6): the line starts with `[rehearsal]`. */
-  admin(content: string, options?: { test: boolean }): Promise<void>;
+  public(embed: Embed, messageId?: string | null): Promise<string | null>;
+  /** `test`: an is_test event (plan Phase 6): the line starts with `[rehearsal]`; `manual`: `[manual]`. */
+  admin(
+    content: string,
+    options?: { test?: boolean; manual?: boolean; messageId?: string | null },
+  ): Promise<string | null>;
 }
 
 type NotifyEnv = Pick<
@@ -29,26 +38,9 @@ type NotifyEnv = Pick<
 >;
 
 const DISCORD_MAX_CONTENT = 2000;
-const SEND_TIMEOUT_MS = 5_000;
 
 // No `username`: Discord shows the name and avatar the owner gave each webhook (owner, 2026-11-05).
 export function createNotifier(env: NotifyEnv, fetchFn: typeof fetch): Notifier {
-  async function send(url: string | undefined, body: object) {
-    if (!url) return;
-    try {
-      const res = await fetchFn(url, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(body),
-        signal: AbortSignal.timeout(SEND_TIMEOUT_MS),
-      });
-      if (!res.ok) console.error("notify.failed", { http_status: res.status });
-    } catch {
-      // Never the error itself: a fetch error can carry the webhook URL, which is a secret.
-      console.error("notify.failed", { http_status: null });
-    }
-  }
-
   const mention = env.NOTIFY_ADMIN_MENTION;
   const roleId = mention?.startsWith("role:") ? mention.slice("role:".length) : null;
   const userId = mention && !roleId ? mention : null;
@@ -61,16 +53,27 @@ export function createNotifier(env: NotifyEnv, fetchFn: typeof fetch): Notifier 
       : { parse: [] };
 
   return {
-    public: (embed) =>
-      send(env.NOTIFY_WEBHOOK_PUBLIC, { embeds: [embed], allowed_mentions: { parse: [] } }),
+    public: (embed, messageId) =>
+      send(
+        fetchFn,
+        env.NOTIFY_WEBHOOK_PUBLIC,
+        { embeds: [embed], allowed_mentions: { parse: [] } },
+        messageId,
+      ),
     admin: (content, options) =>
-      send(env.NOTIFY_WEBHOOK_ADMIN, {
-        content: `${prefix}${options?.test ? `${copy.discord.admin.test} ` : ""}${content}`.slice(
-          0,
-          DISCORD_MAX_CONTENT,
-        ),
-        allowed_mentions: adminMentions,
-      }),
+      send(
+        fetchFn,
+        env.NOTIFY_WEBHOOK_ADMIN,
+        {
+          content:
+            `${prefix}${options?.test ? `${copy.discord.admin.test} ` : options?.manual ? `${copy.discord.admin.manual} ` : ""}${content}`.slice(
+              0,
+              DISCORD_MAX_CONTENT,
+            ),
+          allowed_mentions: adminMentions,
+        },
+        options?.messageId,
+      ),
   };
 }
 
@@ -158,6 +161,10 @@ export interface PublicContext {
   /** This snapshot's rows, and the before snapshot's when this is the after one. */
   alliances: PublicAlliance[];
   before: PublicAlliance[] | null;
+  /** A manual round's name: the message says it is a manual round (D28). Null for a Saturday event. */
+  roundName?: string | null;
+  /** When the before snapshot finished, on the after message: it shows the whole event (D31). */
+  beforeAt?: Date | null;
 }
 
 const MOVERS = 3;
@@ -195,7 +202,8 @@ export function publicSnapshotMessage(summary: RunSummary, ctx: PublicContext): 
   // The page's status chip (app/_ui/Status.tsx): the icon says partial; the stale line names who.
   const chip = summary.status === "failed" ? copy.status.lastFailed : copy.status.lastUpdated;
   const title = `${STATE_ICON[summary.status]} ${fill(chip, { time: ctx.clock.at(ctx.finishedAt) })}`;
-  const lines: string[] = [];
+  const lines: string[] = ctx.roundName ? [fill(t.manual, { name: ctx.roundName })] : [];
+  if (ctx.beforeAt) lines.push(fill(t.beforeDone, { time: ctx.clock.at(ctx.beforeAt) }));
   if (summary.status !== "failed") {
     const bad = ctx.alliances.filter((a) => !usable(a));
     lines.push(
@@ -224,22 +232,30 @@ export interface AdminContext {
   startedAt: Date;
   finishedAt: Date;
   logWriteFailures: number;
+  /** A manual round's name: it has no schedule, so the "due" line is left out (D28). */
+  roundName?: string | null;
 }
 
 export function adminSnapshotMessage(summary: RunSummary, ctx: AdminContext): string {
   const t = copy.discord.admin;
   const lagMin = Math.round((ctx.startedAt.getTime() - ctx.scheduledAt.getTime()) / 60_000);
+  const manual = ctx.roundName != null;
   const lines = [
-    fill(t.run, {
+    fill(manual ? t.manualRun : t.run, {
       icon: STATE_ICON[summary.status],
+      name: ctx.roundName ?? "",
       phase: copy.admin.phase[ctx.phase],
       state: STATE_WORD[summary.status],
       at: ctx.clock.stamp(ctx.finishedAt),
     }),
-    fill(t.due, {
-      at: ctx.clock.stamp(ctx.scheduledAt),
-      lag: lagMin < 0 ? `${MINUS}${-lagMin} min` : fill(t.lag, { n: lagMin }),
-    }),
+    ...(manual
+      ? []
+      : [
+          fill(t.due, {
+            at: ctx.clock.stamp(ctx.scheduledAt),
+            lag: lagMin < 0 ? `${MINUS}${-lagMin} min` : fill(t.lag, { n: lagMin }),
+          }),
+        ]),
     fill(t.usage, {
       calls: summary.callsUsed,
       left: summary.quotaRemainingAfter ?? t.unknown,
@@ -256,6 +272,11 @@ export function adminSnapshotMessage(summary: RunSummary, ctx: AdminContext): st
   if (ctx.logWriteFailures > 0) lines.push(fill(t.logFailures, { n: ctx.logWriteFailures }));
   lines.push(fill(t.runLink, { id: summary.snapshotId, url: ctx.runUrl }));
   return lines.join("\n");
+}
+
+/** The event's one admin message (D31): its name, then a block per phase run so far, then the verdict. */
+export function adminEventMessage(name: string, blocks: string[]): string {
+  return [fill(copy.discord.admin.eventHeader, { name }), ...blocks].join("\n\n");
 }
 
 /** Plan §3.1: the verdict (the `[rehearsal]` prefix is the notifier's), one ✓/✗ line per check. */

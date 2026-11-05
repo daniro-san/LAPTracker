@@ -1,6 +1,6 @@
 // Read models for /admin (plan Phase 4): runs, a run's log timeline, grouped app errors and the
 // latest rehearsal. Never linked from public pages; the pages check the admin cookie first.
-import { asc, desc, eq, isNotNull } from "drizzle-orm";
+import { and, asc, desc, eq, gt, isNotNull } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { rehearsalVerdict, type Verdict } from "../rehearsal";
@@ -13,7 +13,7 @@ export interface ManualEventStatus {
   visibility: "admin" | "standalone" | "history";
   postPublic: boolean;
   /** One entry per phase that has a snapshot; the name can be edited once there is one. */
-  phases: { phase: "before" | "after"; status: string }[];
+  phases: { phase: "before" | "after"; status: string; callsUsed: number }[];
 }
 
 /** The newest manual event (D28) and the state of its two phases; null when none was created. */
@@ -31,10 +31,46 @@ export async function latestManualEvent(db: Db): Promise<ManualEventStatus | nul
     .limit(1);
   if (!event) return null;
   const phases = await db
-    .select({ phase: snapshots.phase, status: snapshots.status })
+    .select({ phase: snapshots.phase, status: snapshots.status, callsUsed: snapshots.callsUsed })
     .from(snapshots)
     .where(eq(snapshots.eventId, event.id));
   return { ...event, phases };
+}
+
+export interface RunningSnapshot {
+  id: number;
+  eventName: string;
+  manual: boolean;
+  isTest: boolean;
+  eventAtUtc: Date;
+  phase: "before" | "after";
+  startedAt: Date;
+}
+
+/** A row still `running` this long after it started is a crashed run, not a live one (D25: 100 s). */
+const LIVE_MS = 10 * 60_000;
+
+/** The snapshots running right now, whoever started them (the tick, a button, a rehearsal). */
+export async function runningSnapshots(db: Db, now: Date): Promise<RunningSnapshot[]> {
+  return db
+    .select({
+      id: snapshots.id,
+      eventName: events.name,
+      manual: events.manual,
+      isTest: events.isTest,
+      eventAtUtc: events.eventAtUtc,
+      phase: snapshots.phase,
+      startedAt: snapshots.startedAt,
+    })
+    .from(snapshots)
+    .innerJoin(events, eq(events.id, snapshots.eventId))
+    .where(
+      and(
+        eq(snapshots.status, "running"),
+        gt(snapshots.startedAt, new Date(now.getTime() - LIVE_MS)),
+      ),
+    )
+    .orderBy(asc(snapshots.startedAt));
 }
 
 export async function listRuns(db: Db, limit = 60) {
@@ -45,6 +81,7 @@ export async function listRuns(db: Db, limit = 60) {
       eventName: events.name,
       eventAtUtc: events.eventAtUtc,
       isTest: events.isTest,
+      manual: events.manual,
       phase: snapshots.phase,
       status: snapshots.status,
       startedAt: snapshots.startedAt,
@@ -78,6 +115,7 @@ export async function getRun(db: Db, snapshotId: number) {
       eventName: events.name,
       eventAtUtc: events.eventAtUtc,
       isTest: events.isTest,
+      manual: events.manual,
       phase: snapshots.phase,
       status: snapshots.status,
       startedAt: snapshots.startedAt,

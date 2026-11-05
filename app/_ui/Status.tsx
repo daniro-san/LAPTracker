@@ -66,16 +66,28 @@ function NextChip({ at, clock }: { at: Date | null; clock: Clock }) {
   );
 }
 
+/** A manual round (D28) is never run by the tick, so it names no next time. */
+function ByHandChip() {
+  return (
+    <Chip tone="muted" icon="○">
+      {copy.status.byHand}
+    </Chip>
+  );
+}
+
 export function StatusChips({
   phases,
   nextAt,
   stale,
+  manual = false,
   clock,
 }: {
   phases: PhaseStatus[];
   nextAt: Date | null;
   /** Rows marked stale or failed: shown as a seal `○ n` beside the time, never as the time's tone. */
   stale: number;
+  /** A manual round: "Run by hand by the admin" replaces "Next update at …". */
+  manual?: boolean;
   clock: Clock;
 }) {
   return (
@@ -92,7 +104,7 @@ export function StatusChips({
         </li>
       )}
       <li className="min-w-0">
-        <NextChip at={nextAt} clock={clock} />
+        {manual ? <ByHandChip /> : <NextChip at={nextAt} clock={clock} />}
       </li>
     </ul>
   );

@@ -35,6 +35,14 @@ const create = (pin = TEST_PIN) =>
       headers: { "x-real-ip": "198.51.100.1", "x-edit-pin": pin },
     }),
   );
+const createWith = (body: unknown) =>
+  manualRoute.POST(
+    new Request("https://laptracker.test/api/manual-event", {
+      method: "POST",
+      headers: { "x-real-ip": "198.51.100.1", "x-edit-pin": TEST_PIN },
+      body: JSON.stringify(body),
+    }),
+  );
 const rename = (event_id: number, name: unknown) =>
   renameRoute.POST(
     new Request("https://laptracker.test/api/manual-event/rename", {
@@ -87,6 +95,24 @@ describe("manual events (D28)", () => {
     const [row] = await db.select().from(events);
     expect(row).toMatchObject({ name: "Manual round 2026-11-05", manual: true, isTest: false });
     expect((await listEvents(db)).map((e) => e.name)).toEqual(["Manual round 2026-11-05"]);
+  });
+
+  it("creates a round with the options chosen in the form, and refuses an admin-only round that posts", async () => {
+    const { ctx, clock } = testContext(db);
+    holder.ctx = ctx;
+
+    const ok = await createWith({ name: " Dry run ", visibility: "history", post_public: true });
+    clock.now = new Date(clock.now.getTime() + 60_000); // event_at_utc is unique
+    const admin = await createWith({ visibility: "admin", post_public: false });
+    const conflict = await createWith({ visibility: "admin", post_public: true });
+    const bad = await createWith({ name: "", visibility: "everyone" });
+
+    expect([ok.status, admin.status, conflict.status, bad.status]).toEqual([201, 201, 409, 400]);
+    const rows = await db.select().from(events).orderBy(events.id);
+    expect(rows.map((r) => [r.name, r.visibility, r.postPublic])).toEqual([
+      ["Dry run", "history", true],
+      [expect.stringMatching(/^Manual round /), "admin", false],
+    ]);
   });
 
   it("renames a round only after a snapshot exists, and only to a plain 1-80 character name", async () => {
