@@ -63,7 +63,8 @@ interface Run {
   snapshotId: number;
   startedAt: Date;
   calls: number;
-  lowestRemaining: number | null;
+  /** The lowest quota remaining seen, and run.calls then: the calls after it returned no quota. */
+  lowest: { remaining: number | null; calls: number };
   /** The quota check's remaining: the run's starting point for the rehearsal's quota-drop check. */
   quotaBefore: number | null;
   board: RanksBoard | null;
@@ -122,9 +123,8 @@ async function logV1Fetch(
 }
 
 function noteQuota(run: Run, remaining: number | undefined) {
-  if (remaining === undefined) return;
-  run.lowestRemaining =
-    run.lowestRemaining === null ? remaining : Math.min(run.lowestRemaining, remaining);
+  if (remaining === undefined || remaining > (run.lowest.remaining ?? remaining)) return;
+  run.lowest = { remaining, calls: run.calls };
 }
 
 async function claim(deps: Deps, eventId: number, phase: Phase, force: boolean): Promise<number> {
@@ -264,7 +264,8 @@ async function finish(run: Run, ids: number[], phase: Phase, error: string | nul
     finishedAt,
     callsUsed: run.calls,
     quotaRemainingBefore: run.quotaBefore,
-    quotaRemainingAfter: run.lowestRemaining,
+    quotaRemainingAfter: run.lowest.remaining,
+    quotaUnseenCalls: run.calls - run.lowest.calls,
     boardPulledAt: run.board?.pulledAt ?? null,
     error,
     durationMs,
@@ -275,7 +276,7 @@ async function finish(run: Run, ids: number[], phase: Phase, error: string | nul
     phase,
     status,
     callsUsed: run.calls,
-    quotaRemainingAfter: run.lowestRemaining,
+    quotaRemainingAfter: run.lowest.remaining,
     durationMs,
     error,
     stale: ok.filter((r) => !r.isFresh).map((r) => ({ unionId: r.unionId, tag: r.tag })),
@@ -300,7 +301,7 @@ export async function runSnapshot(
     snapshotId,
     startedAt: deps.now(),
     calls: 0,
-    lowestRemaining: null,
+    lowest: { remaining: null, calls: 0 },
     quotaBefore: null,
     board: null,
     abort: null,

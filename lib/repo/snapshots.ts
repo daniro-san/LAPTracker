@@ -59,6 +59,7 @@ export async function finishSnapshot(
       callsUsed: sql`${snapshots.callsUsed} + ${result.callsUsed}`,
       quotaRemainingBefore: result.quotaRemainingBefore,
       quotaRemainingAfter: result.quotaRemainingAfter,
+      quotaUnseenCalls: result.quotaUnseenCalls,
       boardPulledAt: result.boardPulledAt,
       error: result.error,
       durationMs: result.durationMs,

@@ -72,6 +72,9 @@ export const snapshots = pgTable(
     // quota_remaining_after it gives the run's quota drop, which the rehearsal verdict checks.
     quotaRemainingBefore: integer("quota_remaining_before"),
     quotaRemainingAfter: integer("quota_remaining_after"),
+    // Attempts counted after the response that gave quota_remaining_after: they carried no quota
+    // object (a 5xx before the internal fallback), so the drop cannot show them.
+    quotaUnseenCalls: integer("quota_unseen_calls").notNull().default(0),
     boardPulledAt: tstz("board_pulled_at"),
     error: text("error"),
     durationMs: integer("duration_ms"),
