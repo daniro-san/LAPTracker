@@ -22,6 +22,8 @@ export interface StatMetric {
   /** The delta's percentage is relative to this; defaults to `from`. */
   base?: number | null;
   note?: string;
+  /** The change fell while members left: it carries the `*` mark the legend explains. */
+  memberMark?: boolean;
   /** Shown only in the row's Details panel, beside the before → after values. */
   detailNote?: string | undefined;
   /** A second change shown under the first, e.g. the change since the previous event. */
@@ -65,7 +67,7 @@ function MetricCell({ m }: { m: StatMetric }) {
         </span>
         {!m.noChange && (
           <span className="text-sm tabular-nums sm:block">
-            <Delta delta={m.delta} base={base} note={m.note} />
+            <Delta delta={m.delta} base={base} note={m.note} memberMark={m.memberMark === true} />
           </span>
         )}
         {m.vs && (

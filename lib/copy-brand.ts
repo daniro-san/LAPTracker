@@ -179,6 +179,11 @@ export const brandCopy = {
       partial: "partial",
       notYet: "not taken yet",
     },
+    memberMark: {
+      name: "Member mark",
+      use: "A footnote star after a falling Might or Kills change when members left; the legend item explains it. Never a sentence on the row.",
+      sample: "▼ −3.2M (−0.4%)",
+    },
     badge: {
       name: "Badge",
       label: "Test",

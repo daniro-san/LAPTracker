@@ -63,10 +63,16 @@ function rosterNote(change: RosterChange | undefined): string | undefined {
   return `${joinedText(change.joined)} · ${leftText(change.left)}`;
 }
 
-/** Kills only fall when people leave (plan Phase 5), so a negative kills delta names the loss. It sits in
- * the Details panel, not on the Kills row, where all three personas read it as a kills figure (7b). */
+/** A falling total with members gone: the cause the `*` mark and its legend item name. */
+export function fellWithLeavers(delta: number | null, left: number): boolean {
+  return delta !== null && delta < 0 && left > 0;
+}
+
+/** Kills only fall when people leave (plan Phase 5), so a negative kills delta names the loss. The words
+ * sit in the Details panel, not on the Kills row, where all three personas read them as a kills figure
+ * (7b); the row carries only the `*` mark. */
 function killNote(killsDelta: number | null, change: RosterChange | undefined) {
-  if (killsDelta === null || killsDelta >= 0 || !change || change.left === 0) return undefined;
+  if (!change || !fellWithLeavers(killsDelta, change.left)) return undefined;
   return membersLostText(change.left);
 }
 
@@ -86,10 +92,15 @@ function metricsFor(
 ): StatMetric[] {
   const d = computeDelta(pairOf(before), pairOf(after));
   const [b, a] = [figures(before), figures(after)];
+  const marked = (delta: number | undefined) => fellWithLeavers(delta ?? null, change?.left ?? 0);
   return [
-    metric(copy.ledger.might, b.power, a.power, d?.power ?? null),
+    {
+      ...metric(copy.ledger.might, b.power, a.power, d?.power ?? null),
+      memberMark: marked(d?.power),
+    },
     {
       ...metric(copy.ledger.kills, b.kills, a.kills, d?.kills ?? null),
+      memberMark: marked(d?.kills),
       detailNote: killNote(d?.kills ?? null, change),
     },
     metric(

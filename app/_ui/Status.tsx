@@ -6,7 +6,7 @@ import { Chip, type ChipTone } from "@/lib/brand/components/Chip";
 import { DroppedStitch, Hourglass, StitchedCheck } from "@/lib/brand/components/StatusIcons";
 import { copy, fill } from "@/lib/copy";
 
-import type { Clock } from "./format";
+import { MEMBER_MARK, type Clock } from "./format";
 
 export interface PhaseStatus {
   phase: "before" | "after";
@@ -171,8 +171,9 @@ export function SideHead({ s, clock }: { s: FreshState | null; clock: Clock }) {
   );
 }
 
-/** The one legend (DESIGN.md "One legend, once"), under the page title. */
-export function Legend() {
+/** The one legend (DESIGN.md "One legend, once"), under the page title. `memberMark`: the page shows a `*`
+ * on some change, so its item is listed; otherwise the legend does not grow for nothing. */
+export function Legend({ memberMark = false }: { memberMark?: boolean }) {
   const l = copy.legend;
   const items: [ReactNode, string, string][] = [
     ["▲", l.up, "text-yarn"],
@@ -181,6 +182,7 @@ export function Legend() {
     ["#", l.rank, "text-ink"],
     ["○", l.stale, "text-seal"],
     ["≈", l.rounded, "text-ink"],
+    ...(memberMark ? [[MEMBER_MARK, l.members, "text-ink"] as [ReactNode, string, string]] : []),
   ];
   return (
     <ul
