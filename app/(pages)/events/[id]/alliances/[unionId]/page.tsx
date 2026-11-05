@@ -1,5 +1,6 @@
 // `/events/[id]/alliances/[unionId]`: one alliance in one event, then across events (plan Phase 5c, 5e).
-// Same row shape as the main page: the totals card, then the members, then one row per event.
+// The totals as one summary band, then the members (same row shape as the main page), then one row
+// per event.
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cache } from "react";
@@ -13,10 +14,11 @@ import { requestClock } from "@/app/_ui/locale";
 import { memberViews } from "@/app/_ui/member-views";
 import { MembersExplorer } from "@/app/_ui/MembersExplorer";
 import { MyAllianceToggle } from "@/app/_ui/MyAlliance";
+import { Delta, Num, Rank } from "@/app/_ui/Num";
 import { AllianceBadge } from "@/app/_ui/Pictures";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
-import { LABEL, StatTable, type StatMetric } from "@/app/_ui/StatTable";
+import { LABEL, type StatMetric } from "@/app/_ui/StatTable";
 import { FreshDots, Legend, SideHead, type FreshState } from "@/app/_ui/Status";
 import { rankDelta, type NameHistoryEntry } from "@/lib/compute";
 import { copy } from "@/lib/copy";
@@ -75,7 +77,8 @@ function rankPairs(detail: Detail, ledger: Ledger, canMove: boolean) {
   };
 }
 
-function Totals({
+/** The alliance's totals as one band (no second title): three figures, then rank, marks and Details. */
+function Summary({
   detail,
   ledger,
   canDelta,
@@ -87,33 +90,50 @@ function Totals({
   clock: Clock;
 }) {
   const { before, after } = detail;
-  const now = after ?? before;
   const ranks = rankPairs(detail, ledger, canDelta);
-  const l = copy.ledger;
   const metrics = totalsMetrics(detail, canDelta);
   return (
-    <StatTable
-      leadLabel={l.alliance}
-      columns={[l.might, l.kills, l.members]}
-      rows={[
-        {
-          key: "totals",
-          rank: { n: ranks.might.after ?? ranks.might.before, move: ranks.might.move },
-          lead: allianceLabel(now?.tag ?? null, now?.name ?? null),
-          icon: <AllianceBadge badgeId={now?.badgeId} />,
-          metrics,
-          summary: <FreshDots before={fresh(before)} after={fresh(after)} />,
-          detail: (
-            <DetailTable
-              corner={copy.ledger.serverTime}
-              from={<SideHead s={fresh(before)} clock={clock} />}
-              to={<SideHead s={fresh(after)} clock={clock} />}
-              rows={figureRows(metrics, ranks, l.ranking)}
-            />
-          ),
-        },
-      ]}
-    />
+    <section aria-label={copy.ledger.alliance} className="border border-rule">
+      <dl className="grid grid-cols-3 divide-x divide-rule">
+        {metrics.map((m) => (
+          <div key={m.label} className="min-w-0 px-2 py-2 sm:px-4">
+            <dt className={LABEL}>{m.label}</dt>
+            <dd className="text-xl font-medium tabular-nums">
+              <Num n={m.value} />
+            </dd>
+            <dd className="text-sm tabular-nums">
+              <Delta delta={m.delta} base={m.base ?? null} stack />
+            </dd>
+          </div>
+        ))}
+      </dl>
+      <details className="group/more border-t border-rule px-2 sm:px-4">
+        <summary className="flex min-h-11 cursor-pointer items-center gap-3 text-sm [&::-webkit-details-marker]:hidden">
+          <span className="inline-flex items-baseline gap-2 text-base">
+            <span className={LABEL}>{copy.ledger.rank}</span>
+            <Rank n={ranks.might.after ?? ranks.might.before} move={ranks.might.move} />
+          </span>
+          <FreshDots before={fresh(before)} after={fresh(after)} />
+          <span className="drawn-frame-soft ml-auto inline-flex min-h-11 items-center gap-1 px-3 font-medium text-plum group-open/more:bg-plum/10">
+            {copy.ledger.details}
+            <span
+              aria-hidden="true"
+              className="transition-transform duration-150 group-open/more:rotate-180 motion-reduce:transition-none"
+            >
+              ▾
+            </span>
+          </span>
+        </summary>
+        <div className="border-t border-rule pb-2 pt-2 text-sm">
+          <DetailTable
+            corner={copy.ledger.serverTime}
+            from={<SideHead s={fresh(before)} clock={clock} />}
+            to={<SideHead s={fresh(after)} clock={clock} />}
+            rows={figureRows(metrics, ranks, copy.ledger.ranking)}
+          />
+        </div>
+      </details>
+    </section>
   );
 }
 
@@ -210,10 +230,16 @@ export default async function AlliancePage({ params }: { params: Params }) {
               {label}
             </h1>
           </div>
-          <ExactToggle />
+          <div className="flex flex-wrap gap-2">
+            <MyAllianceToggle unionId={unionId} />
+            <ExactToggle />
+          </div>
         </div>
-        <div className="mt-3 flex flex-wrap gap-2">
-          <MyAllianceToggle unionId={unionId} />
+        <Legend />
+        <NameTimeline names={names} clock={clock} />
+        <Summary detail={detail} ledger={ledger} canDelta={canDelta} clock={clock} />
+        <div className="mb-2 mt-8 flex flex-wrap items-center justify-between gap-x-3">
+          <h2 className="font-subhead text-display-md">{copy.ledger.members}</h2>
           {history.length > 0 && (
             <a
               href={`#${ACROSS_ID}`}
@@ -223,10 +249,6 @@ export default async function AlliancePage({ params }: { params: Params }) {
             </a>
           )}
         </div>
-        <Legend />
-        <NameTimeline names={names} clock={clock} />
-        <Totals detail={detail} ledger={ledger} canDelta={canDelta} clock={clock} />
-        <h2 className="mb-2 mt-8 font-subhead text-display-md">{copy.ledger.members}</h2>
         <MembersExplorer
           members={memberViews(detail.membersBefore, detail.membersAfter)}
           canDelta={canDelta}

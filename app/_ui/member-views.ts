@@ -1,9 +1,22 @@
 // Both rosters of an alliance merged by uid for the member table (plan Phase 5c), with each member's
-// ledger rank by might inside the alliance in each roster (Phase 5e).
+// ledger rank by might inside the alliance in each roster (Phase 5e), and the member filter's rules:
+// sort by one figure, a might range picked on the roster's own steps, a name search.
 import { rankBy, rosterDiff } from "@/lib/compute";
 import type { MemberRow } from "@/lib/queries";
 
-import type { MemberView } from "./MembersExplorer";
+type Stats = { power: number | null; kills: number | null; lv: number | null };
+
+export interface MemberView {
+  uid: number;
+  name: string;
+  hasAvatar: boolean;
+  wasName: string | null;
+  status: "joined" | "left" | "";
+  before: Stats | null;
+  after: Stats | null;
+  /** Ledger rank by might inside the alliance, in each roster. */
+  rank: { before: number | null; after: number | null };
+}
 
 const stat = (m: MemberRow | undefined) =>
   m ? { power: m.power, kills: m.kills, lv: m.lv } : null;
@@ -50,4 +63,67 @@ export function memberViews(before: MemberRow[], after: MemberRow[]): MemberView
       rank: rank(b.uid),
     })),
   ];
+}
+
+export type SortKey = "might" | "mightDelta" | "kills" | "killsDelta" | "lv" | "name";
+
+export interface MemberFilter {
+  sort: SortKey;
+  desc: boolean;
+  name: string;
+  /** Indexes into `mightSteps(members)`: the range's low and high ends. */
+  lo: number;
+  hi: number;
+}
+
+/** A member's might now: the after roster's, or the before roster's for one who left. */
+export const mightOf = (m: MemberView) => (m.after ?? m.before)?.power ?? 0;
+
+/** The roster's distinct might values, low to high: the stops of the might range. */
+export function mightSteps(members: MemberView[]): number[] {
+  return [...new Set(members.map(mightOf))].sort((a, b) => a - b);
+}
+
+const gap = (a: number | null | undefined, b: number | null | undefined) =>
+  a == null || b == null ? null : b - a;
+
+/** Changes exist only for members present in both rosters, and only when both snapshots are fresh. */
+export function change(
+  m: MemberView,
+  field: "power" | "kills" | "lv",
+  canDelta: boolean,
+): number | null {
+  return canDelta ? gap(m.before?.[field], m.after?.[field]) : null;
+}
+
+function sortValue(m: MemberView, key: SortKey, canDelta: boolean): number | string {
+  const now = m.after ?? m.before;
+  const values: Record<SortKey, number | string | null | undefined> = {
+    might: now?.power,
+    mightDelta: change(m, "power", canDelta),
+    kills: now?.kills,
+    killsDelta: change(m, "kills", canDelta),
+    lv: now?.lv,
+    name: m.name.toLowerCase(),
+  };
+  return values[key] ?? (key === "name" ? "" : Number.NEGATIVE_INFINITY);
+}
+
+/** The members the filter keeps, in its order. */
+export function filterMembers(
+  members: MemberView[],
+  f: MemberFilter,
+  steps: number[],
+  canDelta: boolean,
+): MemberView[] {
+  const [lo, hi] = [steps[f.lo] ?? -Infinity, steps[f.hi] ?? Infinity];
+  const text = f.name.trim().toLowerCase();
+  const sign = f.desc ? -1 : 1;
+  return members
+    .filter((m) => mightOf(m) >= lo && mightOf(m) <= hi && m.name.toLowerCase().includes(text))
+    .sort((a, b) => {
+      const x = sortValue(a, f.sort, canDelta);
+      const y = sortValue(b, f.sort, canDelta);
+      return x < y ? -sign : x > y ? sign : 0;
+    });
 }
