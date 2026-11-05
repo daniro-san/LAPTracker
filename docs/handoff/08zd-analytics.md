@@ -55,3 +55,5 @@ Plan changes needed: yes, in `docs/IMPLEMENTATION_PLAN.md` (not edited here): §
 - Session 9: once production runs a build made after Web Analytics and Speed Insights were enabled, open `/` and `/players?q=<a name>` on production with devtools: the two Vercel scripts load with 200 from a same-origin path, a POST to `/<seed>/view` returns 2xx, and the console shows no Content Security Policy violation. In the Vercel Web Analytics dashboard, `/players` appears without `?q=`.
 - Session 9: when checking the pages, expect no cookie set by Vercel's scripts (Application → Cookies lists the same cookies as before this change).
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/109
