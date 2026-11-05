@@ -42,3 +42,4 @@ Plan changes needed: none.
 - Run `gh` with `GH_TOKEN=$(gh auth token --user daniro-san)`; the default account cannot list secrets or open PRs.
 - tick.yml is dispatched with `gh workflow run tick.yml` (default phase=tick) or `-f phase=before|after`.
 </adjustments>
+https://github.com/daniro-san/LAPTracker/pull/76
