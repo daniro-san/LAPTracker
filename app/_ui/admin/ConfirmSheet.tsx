@@ -2,6 +2,7 @@
 
 // A confirmation in the bottom sheet (docs/DESIGN.md: bottom-sheet = PIN entry and confirmations).
 import { buttonClass } from "@/lib/brand/components/Button";
+import { copy } from "@/lib/copy";
 
 export function ConfirmSheet({
   text,
@@ -13,7 +14,7 @@ export function ConfirmSheet({
   return (
     <div
       role="alertdialog"
-      aria-label="Confirm"
+      aria-label={copy.admin.confirm.label}
       className="fixed inset-x-0 bottom-0 z-50 border-t border-rule bg-paper p-4 shadow-[0_-8px_24px_var(--sheet-shadow)]"
     >
       <div className="mx-auto flex max-w-md flex-col gap-3">
@@ -23,14 +24,14 @@ export function ConfirmSheet({
           onClick={() => onAnswer(true)}
           className={buttonClass("primary", "font-semibold")}
         >
-          Go ahead
+          {copy.admin.confirm.yes}
         </button>
         <button
           type="button"
           onClick={() => onAnswer(false)}
           className={buttonClass("secondary", "font-semibold")}
         >
-          Cancel
+          {copy.admin.confirm.no}
         </button>
       </div>
     </div>

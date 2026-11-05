@@ -5,6 +5,7 @@ import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { rosterDiff, seriesDeltas, type SeriesStep } from "../compute";
 import type { Db } from "../db";
 import { allianceSnapshots, events, memberSnapshots, snapshots } from "../schema";
+import { historyRanks, type Ranks } from "./ranks";
 
 export interface AllianceRow {
   id: number;
@@ -111,6 +112,8 @@ export interface HistoryRow {
   totalKills: number | null;
   level: number | null;
   serverRank: number | null;
+  /** Ledger ranks among every tracked alliance's reference row of the event. */
+  ledger: Ranks | null;
   isFresh: boolean;
   step: SeriesStep;
   /** Members who joined / left since the previous event's reference; null when either is stale. */
@@ -155,10 +158,13 @@ export async function allianceHistory(db: Db, unionId: number): Promise<HistoryR
     ([a], [b]) =>
       (meta.get(a)?.eventAtUtc.getTime() ?? 0) - (meta.get(b)?.eventAtUtc.getTime() ?? 0),
   );
-  const rosters = await membersOf(
-    db,
-    ordered.map(([, p]) => p.row.id),
-  );
+  const [rosters, ranks] = await Promise.all([
+    membersOf(
+      db,
+      ordered.map(([, p]) => p.row.id),
+    ),
+    historyRanks(db),
+  ]);
   const steps = seriesDeltas(
     ordered.map(([, { row }]) => ({
       isFresh: row.isFresh,
@@ -170,6 +176,7 @@ export async function allianceHistory(db: Db, unionId: number): Promise<HistoryR
       unionId,
     })),
   );
+  const ledgerOf = (eventId: number) => ranks.get(eventId)?.get(unionId) ?? null;
   return ordered.flatMap(([eventId, { reference, row }], i) => {
     const event = meta.get(eventId);
     if (!event) return [];
@@ -192,6 +199,7 @@ export async function allianceHistory(db: Db, unionId: number): Promise<HistoryR
         totalKills: row.totalKills,
         level: row.level,
         serverRank: row.serverRank,
+        ledger: ledgerOf(eventId),
         isFresh: row.isFresh,
         step: steps[i] as SeriesStep,
         joined: diff?.joined.length ?? null,

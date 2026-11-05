@@ -5,6 +5,7 @@
 import { useState } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
+import { copy, fill } from "@/lib/copy";
 
 import { ConfirmSheet } from "./ConfirmSheet";
 import { PinSheet, savedPin } from "./PinSheet";
@@ -16,25 +17,12 @@ interface Action {
   confirm: string;
 }
 
+const t = copy.admin.run;
+
 const ACTIONS: Action[] = [
-  {
-    id: "rehearse",
-    label: "Rehearse now",
-    url: "/api/rehearsal",
-    confirm: "Start a rehearsal? It uses about 45 API calls over about 50 minutes.",
-  },
-  {
-    id: "before",
-    label: "Run BEFORE now",
-    url: "/api/snapshot?phase=before",
-    confirm: "Run the BEFORE snapshot now? About 21 API calls, up to a minute.",
-  },
-  {
-    id: "after",
-    label: "Run AFTER now",
-    url: "/api/snapshot?phase=after",
-    confirm: "Run the AFTER snapshot now? About 21 API calls, up to a minute.",
-  },
+  { id: "rehearse", label: t.rehearse, url: "/api/rehearsal", confirm: t.confirmRehearse },
+  { id: "before", label: t.before, url: "/api/snapshot?phase=before", confirm: t.confirmBefore },
+  { id: "after", label: t.after, url: "/api/snapshot?phase=after", confirm: t.confirmAfter },
 ];
 
 /** `before` is the event's before_at, shown when the API says the phase is not due yet. */
@@ -58,15 +46,12 @@ export function AdminActions({ beforeAtText }: { beforeAtText: string }) {
       const url = force ? `${action.url}&force=1` : action.url;
       const res = await fetch(url, { method: "POST", headers: { "x-edit-pin": pin } });
       const body = (await res.json().catch(() => ({}))) as Record<string, unknown>;
-      if (
-        body.code === "snapshot_complete" &&
-        (await ask("This phase is already complete. Run it again?"))
-      ) {
+      if (body.code === "snapshot_complete" && (await ask(t.again))) {
         return await send(action, pin, true);
       }
       setMessage(describe(res.status, body, beforeAtText));
     } catch {
-      setMessage("✗ Could not reach the server.");
+      setMessage(t.offline);
     } finally {
       setBusy(null);
     }
@@ -90,7 +75,7 @@ export function AdminActions({ beforeAtText }: { beforeAtText: string }) {
             onClick={() => void start(a)}
             className={buttonClass("secondary", "font-semibold")}
           >
-            {busy === a.id ? "Running…" : a.label}
+            {busy === a.id ? t.running : a.label}
           </button>
         ))}
       </div>
@@ -113,24 +98,19 @@ export function AdminActions({ beforeAtText }: { beforeAtText: string }) {
   );
 }
 
-const REFUSALS: Record<string, string> = {
-  snapshot_running: "A run is already in progress.",
-  rehearsal_pending: "A rehearsal is already pending.",
-  rehearsal_event_day: "Not on the event day or the day after.",
-  rehearsal_before_real: "Too close to the real BEFORE (within 3 hours).",
-  rehearsal_real_running: "A real run is in progress.",
-  rate_limited: "Too many attempts. Wait a few minutes.",
-  pin_locked: "PIN entry is locked for an hour.",
-  unauthorized: "Wrong PIN. Reload and enter it again.",
-};
-
 function describe(status: number, body: Record<string, unknown>, beforeAtText: string): string {
   const code = typeof body.code === "string" ? body.code : null;
-  if (code === "snapshot_not_due") return `Not due until ${beforeAtText}.`;
+  if (code === "snapshot_not_due") return fill(t.notDue, { at: beforeAtText });
   if (code)
-    return `${status === 409 || status === 429 ? "" : "✗ "}${REFUSALS[code] ?? `Refused: ${code}.`}`;
-  if (status === 201) return "✓ Rehearsal created. The next ticks run it.";
-  const failed = Array.isArray(body.failed) ? body.failed.length : 0;
-  const stale = Array.isArray(body.stale) ? body.stale.length : 0;
-  return `✓ ${String(body.phase)} ${String(body.status)}: ${String(body.calls_used)} calls, ${stale} stale, ${failed} failed (not fetched included). Snapshot ${String(body.snapshot_id)}.`;
+    return `${status === 409 || status === 429 ? "" : "✗ "}${t.refusals[code] ?? fill(t.refused, { code })}`;
+  if (status === 201) return t.created;
+  const count = (v: unknown) => (Array.isArray(v) ? v.length : 0);
+  return fill(t.result, {
+    phase: String(body.phase),
+    status: String(body.status),
+    calls: String(body.calls_used),
+    stale: count(body.stale),
+    failed: count(body.failed),
+    id: String(body.snapshot_id),
+  });
 }

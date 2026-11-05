@@ -5,6 +5,8 @@ import {
   delta,
   type Measured,
   nameHistory,
+  rankBy,
+  rankDelta,
   rosterDiff,
   type SeriesRow,
   seriesDeltas,
@@ -136,5 +138,33 @@ describe("seriesDeltas", () => {
         }
       }),
     );
+  });
+});
+
+describe("rankBy", () => {
+  it("ranks highest first, shares a rank on ties and leaves missing values unranked", () => {
+    const ranks = rankBy([
+      ["a", 10],
+      ["b", 30],
+      ["c", 10],
+      ["d", null],
+      ["e", 5],
+    ]);
+    expect([...ranks].sort()).toEqual([
+      ["a", 2],
+      ["b", 1],
+      ["c", 2],
+      ["e", 4],
+    ]);
+  });
+});
+
+describe("rankDelta", () => {
+  it("counts places moved up as positive, down as negative, and is null without both ranks", () => {
+    expect(rankDelta(3, 1)).toBe(2);
+    expect(rankDelta(1, 4)).toBe(-3);
+    expect(rankDelta(2, 2)).toBe(0);
+    expect(rankDelta(null, 1)).toBeNull();
+    expect(rankDelta(1, undefined)).toBeNull();
   });
 });

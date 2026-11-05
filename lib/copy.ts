@@ -1,7 +1,12 @@
-// Every user-facing string added from Session 7 on (docs/DESIGN.md "Language-light rules"). Keys are
-// stable identifiers; values are the English text, so translation later is a file, not a refactor.
-// Session 7b moves the Session 6/6b strings here too.
-export const copy = {
+// Every user-facing string (docs/DESIGN.md "Language-light rules"). Keys are stable identifiers; values
+// are the English text, so translation later is a file, not a refactor. The /brand page's text and the
+// admin area's live in sibling files and are re-exported here, so there is one import path.
+// `{name}` is a placeholder filled by `fill()`; labels on public pages are at most two words. Symbols
+// (signs, arrows, `#`) stay in the components so the blank dictionary keeps them visible.
+import { adminCopy } from "./copy-admin";
+import { brandCopy } from "./copy-brand";
+
+const source = {
   site: {
     name: "OG's LAP Tracker",
     shortName: "LAP Tracker",
@@ -11,6 +16,86 @@ export const copy = {
     players: "Players",
     darkMode: "Dark mode",
     exactNumbers: "Exact numbers",
+    events: "Events",
+    latest: "latest",
+    breadcrumb: "Breadcrumb",
+    home: "Ledger",
+  },
+  /** The words of one data row, at every depth. */
+  ledger: {
+    rank: "Rank",
+    alliance: "Alliance",
+    member: "Member",
+    event: "Event",
+    might: "Might",
+    kills: "Kills",
+    members: "Members",
+    level: "Level",
+    server: "Server",
+    before: "Before",
+    after: "After",
+    details: "Details",
+    joined: "joined",
+    left: "left",
+    was: "was {name}",
+    since: "since {date}",
+    acrossEvents: "Across events",
+    showAll: "All events ({n})",
+    board: "Game board",
+    myAlliance: "My alliance",
+    names: "Names",
+    alliances: "Alliances",
+  },
+  /** Times are shown in server time, with this word after them. */
+  time: {
+    server: "server",
+  },
+  status: {
+    label: "Status",
+    lastUpdated: "Last updated: {state} at {time}",
+    done: "done",
+    partial: "partly done",
+    failed: "failed",
+    running: "Updating now",
+    none: "Not updated yet",
+    next: "Next update scheduled at {time}",
+  },
+  fresh: {
+    fresh: "Fresh",
+    stale: "Stale",
+    failed: "Failed",
+    missing: "No data",
+  },
+  legend: {
+    label: "Legend",
+    up: "Up",
+    down: "Down",
+    same: "Same",
+    fresh: "Fresh",
+    stale: "Stale",
+    rank: "Rank",
+    beforeOnly: "Before only",
+  },
+  members: {
+    search: "Member name",
+    min: "Min might",
+    max: "Max might",
+    sort: "Sort",
+    mightChange: "Might change",
+    killsChange: "Kills change",
+    name: "Name",
+    highFirst: "Highest first",
+    lowFirst: "Lowest first",
+    joined: "Joined",
+    left: "Left",
+  },
+  search: {
+    title: "Players",
+    placeholder: "Player name",
+    submit: "Search",
+    seen: "Seen",
+    limit: "First {n}",
+    noMatch: "No player by that name in the ledger.",
   },
   errors: {
     notFound: {
@@ -29,228 +114,52 @@ export const copy = {
   },
   empty: {
     kettle: "Nothing recorded yet. The kettle is on.",
+    noEvents: "No events in the ledger yet.",
+    noMembers: "Nobody here matches. Grandma checked twice.",
   },
-  brand: {
-    title: "Brand guidelines",
-    intro:
-      "How the Saturday Ledger looks, draws and speaks. Every piece on this page is the one the site uses.",
-    unit: "px",
-    do: "Do",
-    dont: "Don't",
-    nav: {
-      label: "Sections",
-      logo: "Logo",
-      colour: "Colour",
-      type: "Type",
-      drawing: "Drawing",
-      components: "Components",
-      voice: "Voice",
-    },
-    logo: {
-      title: "Logo",
-      lede: "A plague doctor in profile under a wide brim, a ball of yarn and two needles in the hatband. One colour, three cuts.",
-      line: {
-        name: "Line mark",
-        use: "The drawing itself: the header, the wax seal, app icons, the link preview.",
-      },
-      waxed: {
-        name: "Waxed mark",
-        use: "The line mark pressed into wax. Ivory in the header; red and gold are spare.",
-      },
-      tones: { paper: "Ivory", seal: "Red", yarn: "Gold" },
-      solid: {
-        name: "Solid mark",
-        use: "The favicon cut. Line detail blurs in a browser tab, so this one is filled.",
-      },
-      clearTitle: "Clear space",
-      clear:
-        "Keep a quarter of the mark's width empty on every side. In wax, the seal is the clear space.",
-      clearLabel: "¼",
-      minTitle: "Minimum sizes",
-      minLine: "Line mark: 24 px and up.",
-      minSolid: "Solid mark: 16 to 32 px, and only there.",
-      useTitle: "Correct and incorrect use",
-      dos: ["Plum on paper", "Paper on plum", "Ivory wax on the header"],
-      donts: ["Stretched", "Rotated", "In a colour that means something", "Line mark below 24 px"],
-    },
-    colour: {
-      title: "Colour",
-      lede: "Paper and ink carry the page. Plum, seal and yarn each mean one thing; nothing decorative uses them. Dark mode is the same ledger by lamplight: the values swap, the roles do not.",
-      light: "Light",
-      dark: "Dark",
-      names: {
-        paper: "Paper",
-        ink: "Ink",
-        plum: "Plum",
-        seal: "Seal",
-        yarn: "Yarn",
-        sage: "Sage",
-        rule: "Rule",
-      },
-      roles: {
-        paper: "The page",
-        ink: "All text; muted text is ink at 70 %",
-        plum: "Header, links, primary actions, focus rings",
-        seal: "Losses, errors, stale, the seal button",
-        yarn: "Gains, highlights",
-        sage: "Neutral badges: test, source, manual",
-        rule: "Borders and table rules",
-      },
-      rules: [
-        "Deltas are coloured by sign only: yarn up, seal down.",
-        "Colour never works alone: every state also has an arrow or icon and a word.",
-        "Text contrast 4.5:1 or more, large numerals 3:1, in both modes. Known exception: yarn text on paper and paper on sage in light mode (issue #25).",
-        "No gradients, glow or blur. The bottom sheet's shadow is the only shadow.",
-      ],
-    },
-    type: {
-      title: "Type",
-      lede: "Three families, each with one job. No fourth, no italics in headings, no all-caps display.",
-      specimen: "Aa",
-      faces: {
-        display: {
-          name: "Young Serif",
-          role: "Primary display: page titles, the wordmark, error lines. One weight, never below 20 px.",
-        },
-        subhead: {
-          name: "Alegreya Sans 700",
-          role: "Secondary display: section and card titles, the empty-state line.",
-        },
-        body: {
-          name: "Source Sans 3",
-          role: "Text, controls, labels and every number. Numerals are tabular and right-aligned.",
-        },
-      },
-      scaleTitle: "Scale",
-      scale: {
-        displayXl: {
-          sample: "Grandma wandered off.",
-          spec: "48 / 1.05 · Young Serif",
-          use: "Error-page line",
-        },
-        displayLg: { sample: "Saturday Ledger", spec: "32 / 1.1 · Young Serif", use: "Page title" },
-        displayMd: {
-          sample: "Gained and lost",
-          spec: "24 / 1.15 · Alegreya Sans 700",
-          use: "Section and header title",
-        },
-        displaySm: {
-          sample: "The kettle is on.",
-          spec: "20 / 1.2 · Alegreya Sans 700",
-          use: "Card title, empty-state line",
-        },
-        body: {
-          sample: "Might, kills and members, before and after.",
-          spec: "16 / 1.5 · Source Sans 3",
-          use: "Copy, buttons, inputs",
-        },
-        bodySm: {
-          sample: "Updated 16:01 server time.",
-          spec: "14 / 1.45 · Source Sans 3",
-          use: "Timeline lines, help text",
-        },
-        numeral: {
-          sample: "3,941,203,118",
-          spec: "16 / 1.3 · Source Sans 3 500, tabular",
-          use: "Every number in tables and cards",
-        },
-        label: {
-          sample: "Gained / Lost",
-          spec: "12 / 1.3 · Source Sans 3 600, tracked",
-          use: "Column headers, badges",
-        },
-      },
-    },
-    drawing: {
-      title: "Drawing style",
-      lede: "The confident nib. Everything drawn for the brand is drawn in one hand, so a new drawing sits in the same family. The full method is docs/brand/DRAWING.md.",
-      rules: [
-        "Lines are filled shapes that swell in the middle and taper to a point at both ends, like a dip pen.",
-        "Two weights: heavy outer contours, inner details about half as heavy.",
-        "Curves wobble slightly and leave a gap where the pen would lift. No perfect circles.",
-        "Texture is hatching: a few short tapered strokes, never a fill or a tone.",
-        "Small solid accents only: pupils, rivets, knobs. Large solid areas belong to the small mark cut.",
-        "One colour, no gradients, masks or text, under 4 KB per drawing.",
-        "Below 32 px the hand disappears: use a filled shape or a crisp geometric icon.",
-      ],
-      vignettes: "Vignettes",
-      yarn: "Yarn left behind · 404",
-      bottle: "Bottle broken in two · 500",
-      teacup: "Teacup · spare",
-      mascot: "The Granny Doctor",
-      mascotNote: "A supporting detail, never the focus.",
-      standing: "Standing · footer of error and player pages",
-      tea: "Tea · empty state",
-      ornaments: "Ornaments",
-      wax: "Wax · seals and the header mark",
-      hourglass: "Hourglass · running",
-    },
-    components: {
-      title: "Components",
-      lede: "The whole set. Anything else is a composition of these; a new piece needs a line in docs/DESIGN.md first.",
-      primary: {
-        name: "Primary button",
-        label: "Find a player",
-        use: "Plum face over pen hatching. The main action, one per view at most.",
-      },
-      secondary: {
-        name: "Secondary button",
-        label: "Cancel",
-        use: "Paper face in the drawn frame. Every other action.",
-      },
-      seal: { name: "Seal button", label: "Run now", use: "Confirm or destructive actions only." },
-      chips: {
-        name: "Chips",
-        use: "Snapshot status: colour, icon and word together. Ink done, plum running, seal partial or failed, muted not yet.",
-        before: "Before",
-        after: "After",
-        done: "done",
-        running: "running",
-        partial: "partial",
-        notYet: "not taken yet",
-      },
-      badge: {
-        name: "Badge",
-        label: "Test",
-        use: "Sage, for neutral facts: test data, source, manual.",
-      },
-      field: {
-        name: "Fields",
-        use: "Text fields and selects in the soft drawn frame, 44 px tall.",
-        label: "Player name",
-        select: "Sort by",
-        options: ["Might", "Kills", "Name"],
-      },
-      check: {
-        name: "Checkbox",
-        use: "A framed box that fills with the stitched check.",
-        label: "Exact numbers",
-      },
-      rule: {
-        name: "Drawn rule",
-        use: "Section dividers and the footer top. Tables keep plain 1 px rules.",
-      },
-      lace: { name: "Lace", use: "Under the header, and nowhere else." },
-      corner: {
-        name: "Yarn corner",
-        use: "One footer corner per page. The Granny Doctor takes it on error and player pages.",
-      },
-    },
-    voice: {
-      title: "Voice",
-      lede: "Short, dry, grandmotherly, English. The ledger belongs to the server and is kept by the Old Grandmas; another alliance reading it should feel invited, not visiting.",
-      rules: [
-        "Title and byline: Server 325 · Saturday Ledger, kept by the Old Grandmas.",
-        "Labels are the game's own words: Might, Kills, Members, Gained / Lost.",
-        "Sentences live in the margins: empty states, error pages, section titles, admin. Status is chips.",
-        "No exclamation marks, no emoji, no Oops, no Awesome.",
-      ],
-      samplesTitle: "In the ledger's words",
-      quota: "The ledger is closed for today (quota exhausted).",
-      pairs: [
-        { do: "Nothing recorded yet. The kettle is on.", dont: "Oops! No data yet!" },
-        { do: "Something cracked.", dont: "Awesome, an error occurred!" },
-      ],
-    },
-  },
+  admin: adminCopy,
+  brand: brandCopy,
 } as const;
+
+/** `fill("Last updated: {state}", { state: "done" })`; unknown placeholders stay as written. */
+export function fill(template: string, vars: Record<string, string | number>): string {
+  return template.replace(/\{(\w+)\}/g, (all, key: string) =>
+    key in vars ? String(vars[key]) : all,
+  );
+}
+
+/** Pseudo-localisation (plan Phase 5f): every character but spaces and `{placeholders}` becomes `░`. */
+export function blankCopy<T>(value: T): T {
+  if (typeof value === "string") {
+    return value
+      .split(/(\{\w+\})/)
+      .map((part) => (/^\{\w+\}$/.test(part) ? part : part.replace(/\S/g, "░")))
+      .join("") as T;
+  }
+  if (Array.isArray(value)) return value.map(blankCopy) as T;
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, blankCopy(v)])) as T;
+  }
+  return value;
+}
+
+/**
+ * The game's own English UI words (DESIGN.md "Numbers first"): members read Might, Kills, Members and
+ * Level in the game every day without reading English, so the blank dictionary keeps them.
+ */
+const GAME_TERMS = ["might", "kills", "members", "level"] as const;
+
+/** Every value blanked except the game's own terms. */
+export function blankDictionary<T extends { ledger: Record<(typeof GAME_TERMS)[number], string> }>(
+  dictionary: T,
+): T {
+  const blank = blankCopy(dictionary);
+  const kept = Object.fromEntries(GAME_TERMS.map((k) => [k, dictionary.ledger[k]]));
+  return { ...blank, ledger: { ...blank.ledger, ...kept } };
+}
+
+// The blank dictionary is for the ten-second test only: a dev-time switch, inert in production builds
+// (NODE_ENV is "production" there) and never set on Vercel. NEXT_PUBLIC_ so client components see it.
+const BLANK = process.env.NEXT_PUBLIC_BLANK_COPY === "1" && process.env.NODE_ENV !== "production";
+
+export const copy: typeof source = BLANK ? blankDictionary(source) : source;
