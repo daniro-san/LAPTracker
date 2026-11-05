@@ -216,3 +216,17 @@ Plan §12.4: `pnpm audit --audit-level high` fails CI; a moderate finding that c
 - **Shown:** one slim notice above the header of every page, with the newest time an alliance row was fresh with no error (`MAX(source_updated_at)`, server time). It has no controls and renders nothing when the rule is false or the read fails.
 - **Limits:** the state is that of the last attempt. Few attempts exist (two per event, plus manual runs), so the banner can lag a recovery until the next run and can miss an outage between runs.
 - **Not done:** a status page, an outage history, a live probe.
+
+## D28 — Manual events: a public event the owner runs by hand (2026-11-05, 08h)
+
+Why: the upstream was down for about 17 hours and the real Saturday event (id 2) has no snapshot yet. The owner needs real data on screen on a weekday, and later wants runs in other windows. `POST /api/snapshot` refuses any run before the event's `before_at` (`snapshot_not_due`), force included, and that guard stays: a weekday press on the Saturday event would store Saturday's phase with weekday data and the tick would skip the real run.
+
+- **A manual event is an `events` row with `manual = true`** (migration 0004), `is_test = false`, a name the owner types (1–80 characters), `event_at_utc = before_at = after_at = its creation time`. It is public like any event: `GET /api/events`, the event selector and `/events/[id]` serve it. The home page shows the newest event by `event_at_utc`, so while Saturday's event exists, a manual event is reached from the selector or by its link, not from the home page.
+- **Created** by `POST /api/manual-event` (JSON `{name}`, PIN only, same rate limiter as every PIN route) from the "Manual event" card on `/admin`. Several can exist; the card shows the newest.
+- **Run** by `POST /api/snapshot?phase=…&event=<id>` (the card's Before and After buttons). The route accepts an `event` only if that row is manual; any other id answers 404 `event_not_found`, so the Saturday guard cannot be bypassed. For a manual event `executeSnapshot` skips the not-due check.
+- **One snapshot per phase** is unchanged: a second press answers `snapshot_complete` and the button asks "Take it again?", then sends `force=1`, which replaces that phase's rows. To keep two runs, create a second manual event.
+- **The tick never runs it** (INVARIANT `tick.skips-manual`): `duePhases` filters `manual = false`. Its phase times equal its creation time only so that nothing about it is "not due"; they are not a schedule.
+- **It stays out of cross-event chains.** `allianceHistory`, `sightingsOf` (player history) and `historyRanks` filter `manual = false`, so Saturday's "since last event" deltas, ranks and player rows never compare against a demo. The event's own page, its alliance pages (`getAllianceDetail`), the name history and player search still include it.
+- **Discord:** a manual run never posts to the public channel (decided, not asked: a demo is not an announcement). The admin channel gets the usual run line, without the `[TEST]` prefix.
+- **Quota:** each snapshot costs about 21 calls of the 1,000 per UTC day; the card says so and the confirmation names the cost.
+- **Not built:** deleting a manual event from the UI (a manual delete must remove, in order, its run_logs, member rows, alliance rows, snapshots, then the event: the foreign keys do not cascade), a public flag toggle, a Discord toggle.

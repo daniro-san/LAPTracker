@@ -150,7 +150,13 @@ export async function allianceHistory(db: Db, unionId: number): Promise<HistoryR
     .from(allianceSnapshots)
     .innerJoin(snapshots, eq(snapshots.id, allianceSnapshots.snapshotId))
     .innerJoin(events, eq(events.id, snapshots.eventId))
-    .where(and(eq(allianceSnapshots.unionId, unionId), eq(events.isTest, false)))
+    .where(
+      and(
+        eq(allianceSnapshots.unionId, unionId),
+        eq(events.isTest, false),
+        eq(events.manual, false),
+      ),
+    )
     .orderBy(asc(events.eventAtUtc));
   const meta = new Map(found.map((r) => [r.eventId, r]));
   const picked = pickReferences(

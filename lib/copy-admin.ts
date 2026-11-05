@@ -61,6 +61,8 @@ export const adminCopy = {
       "✓ {phase} {status}: {calls} calls, {stale} stale, {failed} failed (not fetched included). Snapshot {id}.",
     refusals: {
       snapshot_running: "A run is already in progress.",
+      event_not_found: "That manual event no longer exists.",
+      bad_request: "Type a name of up to 80 characters.",
       rehearsal_pending: "A rehearsal is already pending.",
       rehearsal_event_day: "Not on the event day or the day after.",
       rehearsal_before_real: "Too close to the real before snapshot (within 3 hours).",
@@ -69,6 +71,25 @@ export const adminCopy = {
       pin_locked: "PIN entry is locked for an hour.",
       unauthorized: "Wrong PIN. Reload and enter it again.",
     } as Record<string, string>,
+  },
+  manual: {
+    title: "Manual event",
+    help: "A public event you run yourself, any day. It is not on a schedule and Discord is not told.",
+    cost: "Each snapshot costs about 21 of today's 1,000 API calls.",
+    namePlaceholder: "Name, for example Alliance leaders demo",
+    nameLabel: "Event name",
+    create: "Create manual event",
+    confirmCreate: "Create this event? It is public on the site as soon as a snapshot exists.",
+    none: "No manual event yet.",
+    current: "Current manual event: {name}",
+    phase: "{phase}: {state}",
+    notRun: "not run",
+    open: "Open on the site",
+    confirmBefore:
+      "Take the before snapshot of the manual event now? About 21 of today's 1,000 API calls, up to a minute.",
+    confirmAfter:
+      "Take the after snapshot of the manual event now? About 21 of today's 1,000 API calls, up to a minute.",
+    created: "✓ Manual event created. Take its snapshots below.",
   },
   rehearsal: {
     title: "Last rehearsal",

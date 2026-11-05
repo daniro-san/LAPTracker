@@ -94,7 +94,8 @@ async function notifyFinished(
   const notifier = createNotifier(ctx.env, ctx.fetch);
   const test = { test: req.event.isTest };
   // INVARIANT notify.test-events-admin-only
-  if (!req.event.isTest) {
+  // A manual event is public on the site but never announced on Discord (D28).
+  if (!req.event.isTest && !req.event.manual) {
     // getEventDetail reads real events only: the public message never sees a rehearsal.
     const detail = await getEventDetail(db, req.event.id).catch(() => null);
     const rowsOf = (phase: Phase) =>
@@ -135,13 +136,14 @@ async function notifyFinished(
 }
 
 /** Refused before the event's before_at, force included: a weekday press would otherwise store the
- * coming Saturday's phase with weekday data, and the tick would then skip the real run. */
+ * coming Saturday's phase with weekday data, and the tick would then skip the real run. A manual
+ * event has no schedule and the tick never runs it, so that risk does not exist for it (D28). */
 export async function executeSnapshot(
   ctx: AppContext,
   db: Db,
   req: RunRequest,
 ): Promise<RunOutcome> {
-  if (ctx.now() < req.event.beforeAt)
+  if (!req.event.manual && ctx.now() < req.event.beforeAt)
     return { ok: false, ...REFUSALS["not-due"], snapshotId: null };
   const repo = createRepo(db);
   let claimedId: number | null = null;

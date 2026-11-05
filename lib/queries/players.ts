@@ -137,7 +137,9 @@ async function sightingsOf(db: Db, uids: number[]): Promise<(Sighting & { uid: n
     .innerJoin(allianceSnapshots, eq(allianceSnapshots.id, memberSnapshots.allianceSnapshotId))
     .innerJoin(snapshots, eq(snapshots.id, allianceSnapshots.snapshotId))
     .innerJoin(events, eq(events.id, snapshots.eventId))
-    .where(and(inArray(memberSnapshots.uid, uids), eq(events.isTest, false)))
+    .where(
+      and(inArray(memberSnapshots.uid, uids), eq(events.isTest, false), eq(events.manual, false)),
+    )
     .orderBy(asc(events.eventAtUtc), sql`${snapshots.phase} desc`);
   return rows.map(({ mightRank, killsRank, ...r }) => ({
     ...r,
