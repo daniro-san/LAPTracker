@@ -56,6 +56,13 @@ export const adminCopy = {
     confirmBefore: "Take the before snapshot now? About 21 API calls, up to a minute.",
     confirmAfter: "Take the after snapshot now? About 21 API calls, up to a minute.",
     again: "This snapshot is already done. Take it again?",
+    live: {
+      title: "A run is in progress",
+      line: "{phase}, {event}. Started {at}.",
+      note: "It closes by itself within about 100 seconds. The buttons are off until it ends; this page checks every few seconds.",
+      finished: "{mark} {phase} of {event}: {state}.",
+      next: "Next scheduled run: {phase}, {at}.",
+    },
     running: "Running…",
     offline: "✗ Could not reach the server.",
     notDue: "Not due until {at}.",

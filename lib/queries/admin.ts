@@ -1,6 +1,6 @@
 // Read models for /admin (plan Phase 4): runs, a run's log timeline, grouped app errors and the
 // latest rehearsal. Never linked from public pages; the pages check the admin cookie first.
-import { asc, desc, eq, isNotNull } from "drizzle-orm";
+import { and, asc, desc, eq, gt, isNotNull } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { rehearsalVerdict, type Verdict } from "../rehearsal";
@@ -35,6 +35,42 @@ export async function latestManualEvent(db: Db): Promise<ManualEventStatus | nul
     .from(snapshots)
     .where(eq(snapshots.eventId, event.id));
   return { ...event, phases };
+}
+
+export interface RunningSnapshot {
+  id: number;
+  eventName: string;
+  manual: boolean;
+  isTest: boolean;
+  eventAtUtc: Date;
+  phase: "before" | "after";
+  startedAt: Date;
+}
+
+/** A row still `running` this long after it started is a crashed run, not a live one (D25: 100 s). */
+const LIVE_MS = 10 * 60_000;
+
+/** The snapshots running right now, whoever started them (the tick, a button, a rehearsal). */
+export async function runningSnapshots(db: Db, now: Date): Promise<RunningSnapshot[]> {
+  return db
+    .select({
+      id: snapshots.id,
+      eventName: events.name,
+      manual: events.manual,
+      isTest: events.isTest,
+      eventAtUtc: events.eventAtUtc,
+      phase: snapshots.phase,
+      startedAt: snapshots.startedAt,
+    })
+    .from(snapshots)
+    .innerJoin(events, eq(events.id, snapshots.eventId))
+    .where(
+      and(
+        eq(snapshots.status, "running"),
+        gt(snapshots.startedAt, new Date(now.getTime() - LIVE_MS)),
+      ),
+    )
+    .orderBy(asc(snapshots.startedAt));
 }
 
 export async function listRuns(db: Db, limit = 60) {

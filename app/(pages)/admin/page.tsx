@@ -6,6 +6,7 @@ import { AdminShell } from "@/app/_ui/admin/AdminShell";
 import { phaseWord, stateWord } from "@/app/_ui/admin/words";
 import type { Clock } from "@/app/_ui/format";
 import { requestClock, requestLocale } from "@/app/_ui/locale";
+import { FactList } from "@/lib/brand/components/FactList";
 import { copy, fill } from "@/lib/copy";
 import { getEnv, type Env } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
@@ -13,6 +14,8 @@ import {
   latestManualEvent,
   latestQuota,
   latestRehearsal,
+  listRuns,
+  runningSnapshots,
   type RehearsalStatus,
 } from "@/lib/queries/admin";
 import { currentEvent, lastOccurrence, nextEvent } from "@/lib/schedule";
@@ -20,15 +23,6 @@ import { currentEvent, lastOccurrence, nextEvent } from "@/lib/schedule";
 const t = copy.admin;
 
 const MUTED = "text-ink/70";
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex flex-col gap-0.5 border-b border-rule py-2 sm:flex-row sm:gap-4">
-      <dt className={`shrink-0 text-sm sm:w-48 ${MUTED}`}>{label}</dt>
-      <dd className="break-words">{value}</dd>
-    </div>
-  );
-}
 
 /** "every Friday, 20:00 server time" for each "fri 20:00" slot of a weekly env value. */
 async function weekly(slots: string, env: Env, clock: Clock): Promise<string> {
@@ -93,22 +87,76 @@ function Rehearsal({ r, clock }: { r: RehearsalStatus | null; clock: Clock }) {
   );
 }
 
+/** An event in words: a manual round by its name, a rehearsal tagged, a real event by its time. */
+function eventWord(
+  r: { manual: boolean; isTest: boolean; eventName: string; eventAtUtc: Date },
+  clock: Clock,
+): string {
+  return `${r.isTest ? `${t.runs.rehearsal} ` : ""}${r.manual ? r.eventName : clock.stamp(r.eventAtUtc)}`;
+}
+
+/** The effective schedule, as read from the environment: reference, not controls. */
+async function Schedule({
+  env,
+  next,
+  clock,
+}: {
+  env: Env;
+  next: ReturnType<typeof nextEvent>;
+  clock: Clock;
+}) {
+  const s = t.schedule;
+  return (
+    <>
+      <h2 className="mb-1 mt-10 font-subhead text-display-md font-semibold">{s.title}</h2>
+      <p className={`mb-2 text-sm ${MUTED}`}>{s.help}</p>
+      <FactList
+        items={[
+          { label: s.timeZone, value: env.SERVER_TZ },
+          { label: s.nextEvent, value: clock.stamp(next.eventAtUtc) },
+          { label: phaseWord("before"), value: clock.stamp(next.beforeAt) },
+          { label: phaseWord("after"), value: clock.stamp(next.afterAt) },
+          { label: s.grace, value: fill(s.graceValue, { min: env.SNAPSHOT_WINDOW_MIN }) },
+          { label: s.quotaCheck, value: await weekly(env.QUOTA_CHECK_AT, env, clock) },
+          {
+            label: s.rehearsals,
+            value:
+              env.REHEARSAL_AT === ""
+                ? s.rehearsalsOff
+                : fill(s.rehearsalsValue, {
+                    at: await weekly(env.REHEARSAL_AT, env, clock),
+                    keep: env.REHEARSAL_KEEP,
+                  }),
+          },
+        ]}
+      />
+    </>
+  );
+}
+
 export default async function AdminPage() {
   const env = getEnv();
   const now = new Date();
   const next = nextEvent(now, env);
   const current = currentEvent(now, env);
-  const [[rehearsal, quota, manual], clock] = await Promise.all([
+  const [[rehearsal, quota, manual, running, [lastRun]], clock] = await Promise.all([
     withPageDb((db) =>
       Promise.all([
         latestRehearsal(db, env.SNAPSHOT_WINDOW_MIN),
         latestQuota(db),
         latestManualEvent(db),
+        runningSnapshots(db, now),
+        listRuns(db, 1),
       ]),
     ),
     requestClock(),
   ]);
-  const s = t.schedule;
+  const nextRun = [
+    { phase: "before" as const, at: current.beforeAt },
+    { phase: "after" as const, at: current.afterAt },
+    { phase: "before" as const, at: next.beforeAt },
+    { phase: "after" as const, at: next.afterAt },
+  ].find((c) => c.at > now);
   return (
     <AdminShell title={t.title}>
       <h2 className="mb-1 font-subhead text-display-md font-semibold">{t.quota.title}</h2>
@@ -120,31 +168,29 @@ export default async function AdminPage() {
       <h2 className="mb-1 mt-10 font-subhead text-display-md font-semibold">{t.run.title}</h2>
       <p className={`text-sm ${MUTED}`}>{t.run.intro}</p>
       <p className="text-sm">{fill(t.run.event, { event: clock.stamp(current.eventAtUtc) })}</p>
-      <AdminActions beforeAtText={clock.stamp(current.beforeAt)} manual={manual} />
+      {nextRun && (
+        <p className="text-sm">
+          {fill(t.run.live.next, { phase: phaseWord(nextRun.phase), at: clock.stamp(nextRun.at) })}
+        </p>
+      )}
+      <AdminActions
+        beforeAtText={clock.stamp(current.beforeAt)}
+        manual={manual}
+        running={running.map((r) => ({
+          phase: phaseWord(r.phase),
+          event: eventWord(r, clock),
+          startedText: clock.stamp(r.startedAt),
+        }))}
+        latest={
+          lastRun
+            ? { event: eventWord(lastRun, clock), phase: lastRun.phase, status: lastRun.status }
+            : null
+        }
+      />
       <h2 className="mb-1 mt-10 font-subhead text-display-md font-semibold">{t.rehearsal.title}</h2>
       <p className={`mb-2 text-sm ${MUTED}`}>{t.rehearsal.help}</p>
       <Rehearsal r={rehearsal} clock={clock} />
-      <h2 className="mb-1 mt-10 font-subhead text-display-md font-semibold">{s.title}</h2>
-      <p className={`mb-2 text-sm ${MUTED}`}>{s.help}</p>
-      <dl>
-        <Row label={s.timeZone} value={env.SERVER_TZ} />
-        <Row label={s.nextEvent} value={clock.stamp(next.eventAtUtc)} />
-        <Row label={phaseWord("before")} value={clock.stamp(next.beforeAt)} />
-        <Row label={phaseWord("after")} value={clock.stamp(next.afterAt)} />
-        <Row label={s.grace} value={fill(s.graceValue, { min: env.SNAPSHOT_WINDOW_MIN })} />
-        <Row label={s.quotaCheck} value={await weekly(env.QUOTA_CHECK_AT, env, clock)} />
-        <Row
-          label={s.rehearsals}
-          value={
-            env.REHEARSAL_AT === ""
-              ? s.rehearsalsOff
-              : fill(s.rehearsalsValue, {
-                  at: await weekly(env.REHEARSAL_AT, env, clock),
-                  keep: env.REHEARSAL_KEEP,
-                })
-          }
-        />
-      </dl>
+      <Schedule env={env} next={next} clock={clock} />
     </AdminShell>
   );
 }
