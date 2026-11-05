@@ -4,6 +4,8 @@
 // its cost, sends the PIN as x-edit-pin and shows the outcome in words, never as a raw error.
 import { useState } from "react";
 
+import { buttonClass } from "@/lib/brand/components/Button";
+
 import { ConfirmSheet } from "./ConfirmSheet";
 import { PinSheet, savedPin } from "./PinSheet";
 
@@ -86,7 +88,7 @@ export function AdminActions({ beforeAtText }: { beforeAtText: string }) {
             type="button"
             disabled={busy !== null}
             onClick={() => void start(a)}
-            className="min-h-11 rounded-xs border border-zinc-400 px-4 font-semibold disabled:opacity-50"
+            className={buttonClass("secondary", "font-semibold")}
           >
             {busy === a.id ? "Running…" : a.label}
           </button>

@@ -4,6 +4,8 @@
 // min/max might inputs and a name filter. All data is already in the page; nothing is fetched.
 import { useMemo, useState } from "react";
 
+import { buttonClass } from "@/lib/brand/components/Button";
+
 import { StatTable, type StatMetric, type StatRow } from "./StatTable";
 
 type Stats = { power: number | null; kills: number | null; lv: number | null };
@@ -28,8 +30,7 @@ const SORTS: { key: SortKey; label: string }[] = [
   { key: "name", label: "Name" },
 ];
 
-const FIELD =
-  "min-h-11 w-full rounded-xs border border-zinc-300 bg-white px-3 text-base dark:border-zinc-700 dark:bg-zinc-900";
+const FIELD = "drawn-field min-h-11 w-full px-3 text-base";
 
 /** "50000000", "50M", "1.2b", "300k" → a number; null when empty or unreadable. */
 export function parseMight(text: string): number | null {
@@ -160,7 +161,7 @@ function Controls({ f, set }: { f: Filters; set: (patch: Partial<Filters>) => vo
       </select>
       <button
         type="button"
-        className={`${FIELD} font-medium`}
+        className={buttonClass("secondary")}
         onClick={() => set({ desc: !f.desc })}
       >
         {f.desc ? "Highest first" : "Lowest first"}
@@ -181,7 +182,7 @@ export function MembersExplorer({
   return (
     <div>
       <Controls f={f} set={(patch) => setF({ ...f, ...patch })} />
-      <p className="mb-2 text-sm text-zinc-500 dark:text-zinc-400">
+      <p className="mb-2 text-sm text-ink/70">
         Showing {rows.length} of {members.length} members
       </p>
       <StatTable

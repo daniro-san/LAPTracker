@@ -5,11 +5,12 @@ import { notFound } from "next/navigation";
 import { ExactToggle } from "@/app/_ui/ExactToggle";
 import { utcDay } from "@/app/_ui/format";
 import { PlayerAcrossEvents } from "@/app/_ui/PlayerAcrossEvents";
+import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { withPageDb } from "@/lib/page";
 import { listEvents, playerHistory, type PlayerHistory } from "@/lib/queries";
 
-const MUTED = "text-zinc-500 dark:text-zinc-400";
+const MUTED = "text-ink/70";
 
 function Timelines({ history }: { history: PlayerHistory }) {
   const { names, alliances } = history;
@@ -17,7 +18,7 @@ function Timelines({ history }: { history: PlayerHistory }) {
     <div className={`mb-3 text-sm ${MUTED}`}>
       {names.length > 1 && (
         <>
-          <h2 className="font-semibold">Names</h2>
+          <h2 className="font-subhead text-display-sm font-semibold">Names</h2>
           <ul className="mb-2">
             {names.map((n) => (
               <li key={n.name} className="break-words [overflow-wrap:anywhere]">
@@ -27,7 +28,7 @@ function Timelines({ history }: { history: PlayerHistory }) {
           </ul>
         </>
       )}
-      <h2 className="font-semibold">Alliances</h2>
+      <h2 className="font-subhead text-display-sm font-semibold">Alliances</h2>
       <ul>
         {alliances.map((a) => (
           <li key={`${a.unionId}|${a.firstSeen.getTime()}`}>
@@ -54,12 +55,17 @@ export default async function PlayerPage({ params }: { params: Promise<{ uid: st
   const { current } = history;
   return (
     <>
-      <SiteHeader events={events} currentId={null} />
+      <SiteHeader events={events} currentId={null} section="players" />
       <main className="mx-auto max-w-[960px] px-4 py-4 sm:px-6">
         <Link href="/players" className="flex min-h-11 items-center text-sm underline">
           ← Find a player
         </Link>
-        <h1 className="break-words text-xl font-bold [overflow-wrap:anywhere]">{current.name}</h1>
+        <div className="flex items-start justify-between gap-3">
+          <h1 className="min-w-0 break-words font-display text-display-lg font-semibold [overflow-wrap:anywhere]">
+            {current.name}
+          </h1>
+          <ExactToggle />
+        </div>
         <p className="mb-3">
           <Link
             href={`/events/${current.eventId}/alliances/${current.unionId}`}
@@ -69,9 +75,9 @@ export default async function PlayerPage({ params }: { params: Promise<{ uid: st
           </Link>
         </p>
         <Timelines history={history} />
-        <ExactToggle />
         <PlayerAcrossEvents rows={history.rows} />
       </main>
+      <SiteFooter ornament="granny" />
     </>
   );
 }

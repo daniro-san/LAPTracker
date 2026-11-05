@@ -7,9 +7,9 @@ import { withPageDb } from "@/lib/page";
 import { getRun } from "@/lib/queries/admin";
 
 const LEVEL = {
-  info: "text-zinc-600 dark:text-zinc-400",
-  warn: "text-amber-800 dark:text-amber-300",
-  error: "text-red-800 dark:text-red-300",
+  info: "text-ink/70",
+  warn: "text-plum",
+  error: "text-seal",
 } as const;
 
 /** The data fields that matter, as `key=value`; objects are skipped (the log carries counts and codes). */
@@ -35,15 +35,15 @@ export default async function RunPage({ params }: { params: Promise<{ id: string
         {run.isTest && "[rehearsal] "}
         {run.eventName} · {run.phase} · {run.status}
       </p>
-      <p className="mb-1 text-sm text-zinc-500 dark:text-zinc-400">
+      <p className="mb-1 text-sm text-ink/70">
         {utcStamp(run.startedAt)} · {run.callsUsed} calls
         {run.durationMs !== null && ` · ${(run.durationMs / 1000).toFixed(1)} s`}
       </p>
-      {run.error && <p className="mb-3 break-words text-red-800 dark:text-red-300">{run.error}</p>}
+      {run.error && <p className="mb-3 break-words text-seal">{run.error}</p>}
       <ol className="mt-3">
         {logs.map((l) => (
-          <li key={l.id} className="border-b border-zinc-200 py-2 text-sm dark:border-zinc-800">
-            <span className="tabular-nums text-zinc-500 dark:text-zinc-400">{time(l.at)}</span>{" "}
+          <li key={l.id} className="border-b border-rule py-2 text-sm">
+            <span className="tabular-nums text-ink/70">{time(l.at)}</span>{" "}
             <span className={`font-semibold uppercase ${LEVEL[l.level]}`}>{l.level}</span>{" "}
             <span className="font-mono">{l.code}</span>
             {l.unionId !== null && <span> · {tags.get(l.unionId) ?? l.unionId}</span>}
