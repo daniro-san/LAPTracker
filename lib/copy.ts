@@ -85,6 +85,7 @@ const source = {
     same: "Same",
     stale: "Stale",
     rank: "Rank",
+    rounded: "Rounded: tick Exact numbers for the full figure",
   },
   members: {
     search: "Member name",
