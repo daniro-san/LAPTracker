@@ -1,7 +1,8 @@
 "use client";
 
-// While a run is in progress /admin asks the server again every few seconds; when it ends, the outcome
-// is said once. Idle pages never poll.
+// /admin asks the server again every few seconds while a run is in progress and every 20 seconds when
+// idle (so a run the tick starts shows up by itself); when a run ends, the outcome is said once. A
+// hidden tab does not poll.
 import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 
@@ -12,6 +13,7 @@ import { RESULT_MARK } from "./outcome";
 import { phaseWord, stateWord } from "./words";
 
 export const POLL_MS = 4000;
+export const IDLE_POLL_MS = 20_000;
 
 export function useRunWatch(
   running: RunningView[],
@@ -33,10 +35,15 @@ export function useRunWatch(
         );
       }
       wasRunning.current = false;
-      return;
+    } else {
+      wasRunning.current = true;
     }
-    wasRunning.current = true;
-    const id = setInterval(() => router.refresh(), POLL_MS);
+    const id = setInterval(
+      () => {
+        if (!document.hidden) router.refresh();
+      },
+      running.length === 0 ? IDLE_POLL_MS : POLL_MS,
+    );
     return () => clearInterval(id);
   }, [running.length, latest, router, say]);
 }
