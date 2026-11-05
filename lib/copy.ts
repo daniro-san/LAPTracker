@@ -34,8 +34,8 @@ export const copy = {
     intro: "Mock for review. Nothing on this page reads the database.",
     mark: {
       title: "The mark",
-      large: "200 px",
-      small: "24 px, on paper and on plum",
+      large: "Line mark, 200 px: 96 px and up (brand sheet, link preview, app icons)",
+      small: "Solid mark, 32 and 24 px: header and favicon",
     },
     palette: {
       title: "Palette",
@@ -49,16 +49,33 @@ export const copy = {
         rule: "Rule — borders, table rules",
       },
     },
+    faces: {
+      title: "Typefaces",
+      primary: "Young Serif: page titles, wordmark, error lines",
+      secondary: "Alegreya Sans 700: section and card titles",
+      body: "Source Sans 3: body, labels and every number",
+      samples: [
+        "OG's LAP Tracker",
+        "Grandma wandered off.",
+        "Something cracked.",
+        "Saturday Ledger",
+      ],
+    },
     type: {
       title: "Type",
       displayLg: "Saturday Ledger",
       displayMd: "Gained and lost",
       displaySm: "Nothing recorded yet. The kettle is on.",
-      displayNote: "Cormorant Garamond 600 — 32 / 24 / 20 px",
+      displayNote: "Young Serif — 32 / 24 / 20 px",
       body: "Might, kills and members for the top alliances on server 325, before and after the event.",
       bodySm: "Updated 16:01 server time.",
       bodyNote: "Source Sans 3 — 16 / 14 px, numerals tabular",
       label: "Gained / Lost",
+    },
+    mascot: {
+      title: "The Granny Doctor",
+      standing: "Footer corner on the error and player pages",
+      tea: "Tea pose: the empty state",
     },
     ornaments: {
       title: "Ornaments",
@@ -70,7 +87,12 @@ export const copy = {
       seal: "Run now",
       sealNote: "Wax seal: confirm or destructive actions only",
       primary: "Find a player",
+      inked: "Primary: solid face over pen hatching; sinks into it on press",
+      secondary: "Cancel",
+      framed: "Secondary: paper face in the drawn frame",
       badge: "Test",
+      badgeNote: "Neutral badge",
+      waxTitle: "Wax tones: paper (header), seal (confirm), yarn (spare)",
     },
     status: {
       title: "Snapshot status",
@@ -79,6 +101,7 @@ export const copy = {
       running: "running",
       complete: "done",
       partial: "partial",
+      notYet: "not taken yet",
     },
     row: {
       title: "Ledger row",

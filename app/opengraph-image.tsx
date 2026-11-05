@@ -1,8 +1,8 @@
-// Link preview image (Phase 5b): the mark large, in paper on plum. No text: the preview's own title
+// Link preview image (Phase 5b): the line mark large, in paper on plum. No text: the preview's own title
 // carries the name, and the display serif is not available to the image renderer.
 import { ImageResponse } from "next/og";
 
-import { Mark } from "@/lib/brand/components/Logo";
+import { MarkLine } from "@/lib/brand/components/Logo";
 import { tokenColor } from "@/lib/brand/palette";
 import { copy } from "@/lib/copy";
 
@@ -23,7 +23,7 @@ export default function OpengraphImage() {
         color: tokenColor("paper"),
       }}
     >
-      <Mark size={440} />
+      <MarkLine size={440} />
     </div>,
     size,
   );

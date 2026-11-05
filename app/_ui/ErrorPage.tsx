@@ -3,6 +3,8 @@
 // viewer is never stranded. No hooks, so the client error boundaries can render it too.
 import type { ReactNode } from "react";
 
+import { buttonClass } from "@/lib/brand/components/Button";
+
 import { SiteFooter } from "./SiteFooter";
 import { SiteHeader } from "./SiteHeader";
 
@@ -35,12 +37,11 @@ export function ErrorPage({
           </div>
         </div>
       </main>
-      <SiteFooter corner={false} />
+      <SiteFooter ornament="granny" />
     </>
   );
 }
 
-export const primaryAction =
-  "inline-flex min-h-11 cursor-pointer items-center rounded-xs bg-plum px-4 text-body text-paper";
+export const primaryAction = buttonClass("primary");
 export const secondaryAction =
   "inline-flex min-h-11 items-center text-body text-plum underline underline-offset-4";

@@ -94,7 +94,7 @@ export function AcrossEvents({ unionId, history }: { unionId: number; history: H
   );
   return (
     <section className="mt-8">
-      <h2 className="mb-1 font-display text-display-md font-semibold">History across events</h2>
+      <h2 className="mb-1 font-subhead text-display-md font-semibold">History across events</h2>
       <p className="mb-3 text-sm text-ink/70">
         Each row shows how the alliance stood after that event, with the change since the event
         before. “B” means the after snapshot was missing, so the before snapshot is shown.

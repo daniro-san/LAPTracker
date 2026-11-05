@@ -3,21 +3,30 @@
 ## Built
 - `lib/brand/tokens.css`: DESIGN.md colours (light and dark), type scale (`display-xl` added), spacing, radius and the sheet shadow, mapped into the Tailwind theme. Dark follows the system unless `data-theme` on `<html>` says otherwise. It is the only file with colour literals.
 - `lib/brand/tokens.test.ts`: fails on any colour literal in `app/` or `lib/brand/components/`.
-- `lib/brand/fonts.ts`: Cormorant Garamond 600 and Source Sans 3 400/500/600 via `next/font/google`, on `<html>` in `app/layout.tsx`.
-- `lib/brand/components/`: `Logo` (mark + wordmark), `LaceBorder`, `YarnCorner`, `SealButton`, `StatusIcons` (hourglass, stitched check, dropped-stitch ladder), `ThemeSwitch`, `Vignettes` (yarn ball left behind, two-piece cracked bottle, teacup).
+- `lib/brand/fonts.ts`: Young Serif 400 (page titles, wordmark, error lines), Alegreya Sans 700 (section and card titles, `font-subhead`), Source Sans 3 400/500/600 (text and numbers) via `next/font/google`, on `<html>` in `app/layout.tsx`; synthetic bold off.
+- `lib/brand/components/` (the component set, every piece in one drawn hand, tokens only):
+  - `Logo`: `Mark` (solid, favicon), `MarkLine` (the line drawing, header/seal/large uses), `WaxedMark` (mark pressed into wax, header), `Logo` (waxed mark + wordmark).
+  - `Wax`: one wax drawing in three tones (`seal`, `paper`, `yarn`) with `WAX_INK` for what is pressed into it.
+  - `Button` / `buttonClass`: `primary` (`.ink-button`, plum face over pen hatching, sinks onto it on press) and `secondary` (`.drawn-frame .frame-button`, paper face in a two-stroke pen frame); `SealButton` for confirm/destructive (hover lifts and turns the stamp).
+  - `Chip`: status chip in the soft drawn frame, tones `ink`, `plum`, `seal`, `muted`.
+  - `LaceBorder` (ring-eyelet lace), `YarnCorner`, `StatusIcons` (hourglass redrawn; stitched check and ladder kept geometric), `ThemeSwitch`, `Vignettes` (yarn left behind, bottle broken in two, teacup), `Mascot` (`GrannyStanding`, `GrannyTea`).
+- `public/brand/frame.svg`, `frame-soft.svg`: the drawn frame as nine-slice masks (`-webkit-mask-box-image`; a 1 px border elsewhere).
+- `docs/brand/DRAWING.md`: the drawing method (tapered filled strokes on a Catmull-Rom centreline, width profile, weights, helpers, recipe, review checklist) so later drawings stay in the same hand.
 - `lib/brand/theme.ts` (reads the `theme` cookie) and `lib/brand/palette.ts` (reads light-mode token values out of `tokens.css` for the raster images and the manifest).
 - `lib/copy.ts`: created; holds every string added in this session (site name, byline, theme switch label, error pages, empty state, brand sheet).
-- `/brand`: static brand sheet (noindex): mark at 200 and 24 px, palette, both typefaces, lace border, yarn corner, seal button, status chips, one ledger row.
-- Applied to the Session 6/6b pages: plum header with the mark (32 px), wordmark from 640 px, Players link, event selector, theme switch and the lace border; display serif on every heading; every zinc/emerald/red/amber class mapped to tokens (admin pages included, colours only); status chips with the three stitched icons; `SiteFooter` with the byline and the page's one yarn corner; `EmptyState` (teacup + one display-sm line) on the no-events page and empty tables.
+- `/brand`: the living catalogue (noindex): the three typefaces in their roles, the line mark and the solid cut, the Granny Doctor, palette, type scale, lace and yarn corner, primary/secondary/seal buttons and the badge, the three wax tones, the four chip tones, one ledger row.
+- Applied to the Session 6/6b pages: plum header with the waxed line mark (40 px, ivory wax), wordmark from 640 px, Players link, event selector, theme switch and the lace border; display serif on every heading; every zinc/emerald/red/amber class mapped to tokens (admin pages included, colours only); status chips with the three stitched icons; `SiteFooter` with the byline and one corner ornament (yarn ball; the Granny Doctor on the error and player pages); `EmptyState` (the Granny Doctor with tea + one display-sm line) on the no-events page and empty tables; every plum button through `Button`/`buttonClass` (player search, error pages, admin sheets) and the status strip through `Chip`.
 - `app/not-found.tsx`, `app/error.tsx`, `app/global-error.tsx` on a shared `app/_ui/ErrorPage.tsx`: the message is set large (`display-xl`), the vignette is a small detail beside it, one keyframe loop each (`granny-sway` / `granny-rock` in `globals.css`, off under `prefers-reduced-motion`), Retry calls `reset()`, the error is never rendered.
 - `app/error.test.ts`: renders `error.tsx` with an error carrying a message, digest and stack and asserts none of that text is in the markup.
-- `app/icon.tsx` (32, 192, 512 px at `/icon/{size}`), `app/opengraph-image.tsx` (1200×630), `app/manifest.ts` (`/manifest.webmanifest`, icons 192/512).
+- `app/icon.tsx` (32 px solid mark; 192 and 512 px line mark; at `/icon/{size}`), `app/opengraph-image.tsx` (1200×630, line mark), `app/manifest.ts` (`/manifest.webmanifest`, icons 192/512).
 - `docs/brand/granny-doctor-bust.svg`: the bonnet bust drawn as a mark candidate, kept for a later mascot.
 - Screenshots: `docs/screenshots/07-brand-*`, `07-{main,alliance,player,search}-{360,1280}-{light,dark}`, `07-{404,500}-360-{light,dark}`.
 
 ## Decisions
 - Header controls (Players, event selector, theme switch) get a paper tint on hover, deeper while pressed or open; the selector arrow flips while open; the current event and the Players link on player pages carry `aria-current` and a tint (owner feedback: they looked tappable but did not respond).
 - Error pages: below 640 px the vignette sits above the headline (beside it, a 48 px word broke mid-word); the footer leaves out its yarn corner there, so the vignette is the page's one ornament.
+- Owner, at the review (2026-11-04), after the objects landed: the mark redrawn in the vignettes' line style and used everywhere but the favicon; the header mark pressed into ivory wax (red wax on plum lacked contrast); Young Serif primary and Alegreya Sans secondary display faces (Cormorant read thin); hatched primary buttons everywhere, made discreet (2 px); a drawn frame to tie secondary buttons and chips to the seal; the line-style Granny Doctor in the footer of the error and player pages and on the empty state; ring-eyelet lace; only the hourglass icon redrawn.
+- The primary button's press rule has the same specificity as its hover rule and comes after it; before that, holding the button kept the face lifted while the hatching moved, which read as the hatching coming forward.
 - Owner, at the mock (2026-11-04): mark B (plague doctor under a wide brim, yarn ball and needles in the hatband); colours kept as in the contract; a light/dark switch added; the mascot deferred in favour of objects; the 500 line "It's okay, grandma will clean it." DESIGN.md records each of these.
 - Theme choice lives in a `theme` cookie, so the server renders `data-theme` and the first paint is right without an inline script (the CSP forbids one). The switch draws both icons and CSS shows the right one, so it needs no server prop.
 - The Tailwind `dark:` variant is redefined in `globals.css` to follow `data-theme` first and the system second, so the Session 6 pages follow the switch too.
@@ -31,7 +40,9 @@
 ## Deviations
 - Components live in `lib/brand/components/` (DESIGN.md "Enforcement" names that folder), not `lib/brand/` as Phase 5b says.
 - Error-page headline uses a new `display-xl` (48 px) instead of `display-lg`: the owner asked for the message to be the focus. Added to DESIGN.md.
-- No mascot: two rounds of Granny Doctor poses (single colour, then 2.5D chibi) were rejected; the vignettes replace them (DESIGN.md "Mascot" says so).
+- The Granny Doctor is a supporting detail (footer corner, empty state), not the error-page focus: two rounds of poses (single colour, 2.5D chibi) were rejected before the line style; the error pages lead with the vignettes.
+- Three typefaces instead of DESIGN.md's original two: the owner asked for a primary and a secondary display face; DESIGN.md now says "no fourth".
+- The owner asked to "document it or make a skill" for the drawing style. `docs/brand/DRAWING.md` documents it. Committing the Python generator (under `.claude/skills/` and then under `docs/brand/drawing/`) was refused by the session's permission check, so the generator is not in the repo; the shipped SVG markup is.
 - 404 copy: "Back to the table" without the arrow from Phase 5b's sample copy (DESIGN.md "Do's and Don'ts" has no arrows in copy).
 - Admin pages got token colours only. The seal button is not on the admin Run/Rehearse actions: the task named main, alliance, player and search.
 - New screenshots are named `07-*`; the `06-*` / `06b-*` files are left as the before record. 390 px was not re-taken (the task asked for 360 and 1280).
@@ -46,6 +57,9 @@
 - Not verified: the error boundary in a real thrown render in the browser (covered by the unit test, not clicked); the reduced-motion switch-off by eye (the CSS rule is in place); a production build on Vercel.
 
 ## Open issues
+- The drawing generator (stdlib-only Python: the stroke engine and one function per drawing) exists only in this session's scratchpad. If the owner wants it in the repo or as a `.claude/skills/` skill, a session with that permission adds it next to `docs/brand/DRAWING.md` and checks it reproduces the shipped SVGs byte for byte.
+- The drawn frame needs `-webkit-mask-box-image` (Chrome, Safari, Edge); Firefox shows the plain 1 px border fallback.
+- The owner floated a brand-guidelines page like a client's (logo usage, clear space, colours with values, type, do/don't). `/brand` is its base; not built here.
 - Light-mode contrast: yarn text on paper 2.15:1 and paper on sage 3.46:1 are under DESIGN.md's 4.5:1 rule. The owner accepted it; tracked in #25.
 - Owner asked for per-viewer timezone and date-format settings: #26, #27.
 - Owner feedback at review for Session 7b: the main table looks cluttered; wants a simple card first and the full metrics on tap; "About this data" is hard to see; dates should be formatted and "(14:00 UTC)" dropped from the event line; quota line off the public page. Listed in the adjustments below.
@@ -67,6 +81,7 @@ Plan changes needed: yes, for alliance badges (owner decision, 2026-11-04). IMPL
 - Status chips already carry the stitched icons and a word; 7b only shortens the words.
 - `EmptyState` (`app/_ui/EmptyState.tsx`) and `SiteFooter` exist; reuse them.
 - Muted text is `text-ink/70`; delta colours are `text-yarn` / `text-seal`; links are `text-plum`.
+- Owner, at the Session 7 review: the text styles need more differentiation (weights, colours, rules or borders) so titles, labels, values, notes and metadata read apart. Define that hierarchy as part of 7b's row and card work, using the three faces (Young Serif page titles, Alegreya Sans section/card titles, Source Sans 3 text and numbers) and the existing tokens (`ink`, `ink/70`, `plum`, `rule`); record it in DESIGN.md "Typography".
 - Owner wants alliances written the way the game writes them: `[NSE] Natural Selection`, `[OGs] OldGrandmas` — tag in brackets, then the name, on one line. Use it on cards, rows, breadcrumbs and the player page.
 - Alliance badges: the owner allowed them (see this handoff's "Plan changes needed"). Build them in 7b only if the plan change is approved first; otherwise leave a square slot out and ship without.
 - The blank-dictionary mode replaces `lib/copy.ts` values; the brand sheet strings live under `copy.brand` and need no persona test.

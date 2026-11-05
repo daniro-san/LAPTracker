@@ -21,27 +21,27 @@ colors:
 
 typography:
   display-xl:
-    fontFamily: Cormorant Garamond
+    fontFamily: Young Serif
     fontSize: 48px
-    fontWeight: 600
+    fontWeight: 400
     lineHeight: 1.05
     letterSpacing: 0
   display-lg:
-    fontFamily: Cormorant Garamond
+    fontFamily: Young Serif
     fontSize: 32px
-    fontWeight: 600
+    fontWeight: 400
     lineHeight: 1.1
     letterSpacing: 0
   display-md:
-    fontFamily: Cormorant Garamond
+    fontFamily: Alegreya Sans
     fontSize: 24px
-    fontWeight: 600
+    fontWeight: 700
     lineHeight: 1.15
     letterSpacing: 0
   display-sm:
-    fontFamily: Cormorant Garamond
+    fontFamily: Alegreya Sans
     fontSize: 20px
-    fontWeight: 600
+    fontWeight: 700
     lineHeight: 1.2
     letterSpacing: 0
   body:
@@ -132,6 +132,15 @@ components:
     rounded: "{rounded.xs}"
     padding: "{spacing.sm} {spacing.md}"
     minHeight: 44px
+    ornament: hatched-shading
+  button-secondary:
+    backgroundColor: "{colors.paper}"
+    textColor: "{colors.plum}"
+    typography: "{typography.body}"
+    rounded: "{rounded.xs}"
+    padding: "{spacing.sm} {spacing.md}"
+    minHeight: 44px
+    ornament: drawn-frame
   input:
     backgroundColor: "{colors.paper}"
     textColor: "{colors.ink}"
@@ -190,13 +199,13 @@ Members of a game alliance on server 325 — Russia, Spain, Brazil, the United S
 
 ## Mascot: the Granny Doctor
 
-**Deferred (owner, Session 7 review, 2026-11-04).** Two rounds of poses (single-colour and 2.5D chibi) did not reach the bar of hand-drawn illustration, so the error pages and the empty state use her things instead of her: the yarn ball she left behind (404), a cracked apothecary bottle (500, "It's okay, grandma will clean it."), a cup of tea (empty). The character below stays the brief for a later illustrator.
+**As shipped (owner, Session 7 review, 2026-11-04).** She is drawn in the confident-nib line style (`docs/brand/DRAWING.md`) wearing the mark's wide brim: `GrannyStanding` sits small in the footer corner of the error pages and the player page; `GrannyTea` is the empty state. She is a supporting detail, never the focus. The error pages and the empty state lead with her things instead: the yarn ball she left behind (404) and an apothecary bottle broken in two (500, "It's okay, grandma will clean it."). Earlier chunky and 2.5D chibi poses were rejected; the bonnet bust below is a character reference only.
 
 An original character, ours: an old lady in a plague-doctor beak mask, bonnet or kerchief, a cane in one hand and a knitting bag in the other. Dignified, a little stern, funny because she is serious. A first bust of her (bonnet, ribbon bow, ruff), drawn as a candidate mark at the Session 7 mock and kept for the poses, is `docs/brand/granny-doctor-bust.svg`. Single-colour inline SVG, at most three poses (standing with the cane for the 404, dropping a bottle for the 500, pouring tea for the empty state). Game references are allowed as **allusions in copy** — the server number, "KvK", the game's terms — never as its art, characters or assets. Comic but serious: a joke a 40-year-old officer in Russia would also get, never a meme.
 
 ## Mark
 
-The logo mark (owner's pick at the Session 7 mock, 2026-11-04): a plague doctor in profile facing left — hooked, riveted beak, goggle eye, cowl — under a wide-brimmed hat, with a ball of yarn and two knitting needles tucked into the hatband where a feather would go. `lib/brand/components/Logo.tsx`, single colour, 32 px in the header, also the favicon and app icons.
+The logo mark (owner's pick at the Session 7 mock, 2026-11-04): a plague doctor in profile facing left — hooked, riveted beak, goggle eye, cowl — under a wide-brimmed hat, with a ball of yarn and two knitting needles tucked into the hatband where a feather would go. `lib/brand/components/Logo.tsx`, single colour, in two cuts: `MarkLine` (the confident-nib drawing) at 96 px and up — brand sheet, link preview, 192/512 px app icons — and the solid `Mark` for the favicon only (browser tabs blur the line detail). The header (32 px) and the wax seal use `MarkLine` too, by the owner's choice.
 
 ## Overview
 
@@ -205,7 +214,7 @@ A guild ledger, kept by hand, in a plague year. The page is aged paper; the ink 
 **Key characteristics**
 
 - Paper, not screen: flat `{colors.paper}` canvas, `{colors.rule}` hairlines, no gradients, no glow.
-- One display serif (Cormorant Garamond) for headings and the wordmark; one humanist sans (Source Sans 3) for everything else, numerals always `tabular-nums`.
+- Young Serif for page titles, the wordmark and error lines; Alegreya Sans 700 for section and card titles; Source Sans 3 for everything else, numerals always `tabular-nums`.
 - Colour means something: sign of a delta, a warning, a neutral badge. Decoration never uses the accent colours.
 - Square corners (`{rounded.none}`) on tables and cards, 2 px on controls; the one circle is the wax seal.
 - Mobile first: designed at 360 px, cards below 640 px, every target ≥ 44 px, nothing hover-only.
@@ -225,9 +234,10 @@ Rules: deltas are coloured by sign only; a colour that carries no meaning is not
 
 ## Typography
 
-- **Cormorant Garamond** (OFL, Google Fonts via `next/font/google`, `display: swap`) — headings, the wordmark, empty-state and error-page lines. Weight 600, never below 20 px.
+- **Young Serif** (OFL, Google Fonts via `next/font/google`, `display: swap`) — headings, the wordmark, empty-state and error-page lines. One weight (400) with solid, even strokes; synthetic bold is off (`font-synthesis-weight: none`). Never below 20 px. Chosen at the Session 7 review over Cormorant Garamond, whose hairline serifs read thin on phones.
+- **Alegreya Sans 700** (OFL, `next/font/google`) — secondary display: section titles (`{typography.display-md}`), card titles and the empty-state line (`{typography.display-sm}`). A calligraphic humanist sans whose pen-like strokes sit with the drawings.
 - **Source Sans 3** (OFL) — body, tables, controls. Numerals are `{typography.numeral}`: `font-variant-numeric: tabular-nums`, right-aligned, compact (`3.94B`, `+20.1M`) with the full value in a `title`/tap.
-- Two families, no third. No italics for emphasis in headings, no all-caps display; `{typography.label}` is the only tracked, uppercase style.
+- Three families, each with one job (owner, Session 7 review): Young Serif (primary display), Alegreya Sans (secondary display), Source Sans 3 (text and numbers). No fourth. No italics for emphasis in headings, no all-caps display; `{typography.label}` is the only tracked, uppercase style.
 
 | Token                     | Size | Weight | Use                                       |
 | ------------------------- | ---- | ------ | ----------------------------------------- |
@@ -254,7 +264,7 @@ Rules: deltas are coloured by sign only; a colour that carries no meaning is not
 | 0 — flat | 1 px `{colors.rule}` border, no shadow | Everything                      |
 | 1 — lift | `0 -8px 24px rgba(30, 26, 31, 0.18)`   | The bottom sheet (PIN, confirm) |
 
-Depth comes from the paper/plum contrast and hairlines, never from shadows or blur.
+Depth comes from the paper/plum contrast and hairlines, never from shadows or blur. The one drawn depth cue is the primary button's hatched shading: a pen-hatched block 2 px behind its solid face (`.ink-button` in `app/globals.css`), which the face slides into when pressed.
 
 ## Shapes
 
@@ -274,18 +284,20 @@ The whole list. Anything else is a composition of these; a new one needs a line 
 - **`theme-switch`** — one 44 px button in the header showing the current mode (sun / moon icon), `role="switch"`, accessible name "Dark mode". Sets `data-theme` on `<html>` and a one-year `theme` cookie (owner, 2026-11-04).
 - **`stat-table` / `stat-card`** — one `StatTable` component: table ≥ 640 px, cards below. Rows ≥ 44 px; numerals right-aligned.
 - **`delta-up` / `delta-down`** — `value · ±delta with arrow · ±%`; kills with the member-loss note when negative.
-- **`status-strip`** — two chips (`Before ✓ 12:01`, `After ◐ 16:01`) and the legend; replaces every status sentence.
+- **`status-strip`** — two `Chip`s (`lib/brand/components/Chip.tsx`: the soft drawn frame in the tone colour — ink done, plum running, seal partial/failed, muted not yet — with the icon and the word) (`Before ✓ 12:01`, `After ◐ 16:01`) and the legend; replaces every status sentence.
 - **`rank`** — `#n` beside the tag on cards and rows; language-free ordering.
 - **`badge`** — sage neutral chip: `[TEST]`, source, manual. Never red or yellow.
+- **`wax`** — one hand-drawn wax seal in three tones (`Wax`, `WaxedMark`): `seal` red for confirm/destructive, `paper` ivory for the header logo (the inverse of the plum bar, so it holds contrast in both themes), `yarn` gold spare. Each tone carries its own ink colour for what is pressed into it.
 - **`seal-button`** — the wax seal: destructive or confirming actions (Run now, Rehearse now). Circle, ≥ 44 px.
-- **`button-primary`** — plum, 2 px radius; one per view at most.
+- **`button-primary`** — plum, 2 px radius, hatched shading behind it (`.ink-button`); one per view at most. The face stays solid so the label keeps its contrast; on press it sinks the 2 px onto the hatching. `Button` / `buttonClass("primary")` in `lib/brand/components/Button.tsx`.
+- **`button-secondary`** — paper face, plum label, inside the drawn frame (a two-stroke pen box, `public/brand/frame.svg` as a nine-slice mask; a plain 1 px border where the browser lacks `-webkit-mask-box-image`). `Button variant="secondary"` / `buttonClass("secondary")`.
 - **`input`** — paper field with a rule border; PIN uses `inputmode="numeric"`.
 - **`bottom-sheet`** — PIN entry and confirmations on phones; the only shadow.
-- **`empty-state`** — teacup line drawing + one display-sm line ("Nothing recorded yet. The kettle is on.").
+- **`empty-state`** — the Granny Doctor with her tea (line drawing) + one display-sm line ("Nothing recorded yet. The kettle is on.").
 - **`timeline`** — `run_logs` rows: time, level, code, alliance tag, the data that matters.
 - **`error-page`** — 404 "Grandma wandered off." and 500 "Something cracked.": the line set large is the page; the Granny Doctor is a small detail beside it (owner, Session 7), one original inline SVG and one CSS keyframe loop each.
 
-Ornament budget: header lace border, one yarn corner per page, the seal buttons, empty states, error pages, favicon. Never behind numbers, inside cells, on cards, as backgrounds or dividers. Every ornament is an original single-colour inline SVG under 4 KB, `aria-hidden`. Nothing from the game.
+Ornament budget: header lace border, one footer corner per page (the yarn ball, or the Granny Doctor on the error and player pages), the seal buttons, the primary button's hatching, empty states, error pages, favicon. All of it is drawn in one hand: `docs/brand/DRAWING.md`. Never behind numbers, inside cells, on cards, as backgrounds or dividers. Every ornament is an original single-colour inline SVG under 4 KB, `aria-hidden`. Nothing from the game.
 
 ## Motion
 
@@ -308,7 +320,7 @@ Short, dry, grandmotherly, English. The ledger belongs to the server and is _kep
 
 ### Don't
 
-- Inter, Roboto or system-ui for display; a third typeface for anything.
+- Inter, Roboto or system-ui for display; a fourth typeface for anything.
 - Gradients, glassmorphism, blur, glow, `shadow-lg`, `rounded-2xl`, pill buttons.
 - Hero sections, three-column feature grids, numbered "01 / 02 / 03" labels, italic accent words.
 - Emoji or sparkles in UI copy; generic illustration packs; charts (v1 has none).

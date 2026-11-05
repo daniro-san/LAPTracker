@@ -124,7 +124,7 @@ export default async function AlliancePage({
         <NameTimeline names={names} />
         <ExactToggle />
         <Totals detail={detail} canDelta={canDelta} />
-        <h2 className="mb-2 mt-8 font-display text-display-md font-semibold">Members</h2>
+        <h2 className="mb-2 mt-8 font-subhead text-display-md font-semibold">Members</h2>
         <MembersExplorer
           members={memberViews(detail.membersBefore, detail.membersAfter)}
           canDelta={canDelta}

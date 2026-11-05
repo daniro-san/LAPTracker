@@ -5,6 +5,8 @@
 // send it as x-edit-pin; the server cookie only unlocks the admin pages.
 import { useState } from "react";
 
+import { buttonClass } from "@/lib/brand/components/Button";
+
 const KEY = "lap_pin";
 
 export function savedPin(): string | null {
@@ -62,7 +64,7 @@ export function PinSheet({ onUnlocked }: { onUnlocked: (pin: string) => void }) 
         <button
           type="submit"
           disabled={pin.length < 6 || state === "checking"}
-          className="min-h-11 rounded-xs bg-plum px-4 font-semibold text-paper disabled:opacity-50"
+          className={buttonClass("primary", "font-semibold")}
         >
           {state === "checking" ? "Checking…" : "Unlock"}
         </button>

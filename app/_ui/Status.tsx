@@ -2,6 +2,7 @@
 // colour is never the only cue.
 import type { ReactNode } from "react";
 
+import { Chip, type ChipTone } from "@/lib/brand/components/Chip";
 import { DroppedStitch, Hourglass, StitchedCheck } from "@/lib/brand/components/StatusIcons";
 
 import { relative, utcClock, utcStamp } from "./format";
@@ -14,11 +15,11 @@ export interface PhaseStatus {
   error?: string | null | undefined;
 }
 
-const CHIP: Record<PhaseStatus["status"], { icon: ReactNode; tone: string }> = {
-  complete: { icon: <StitchedCheck />, tone: "border-ink text-ink" },
-  running: { icon: <Hourglass />, tone: "border-plum text-plum" },
-  partial: { icon: <DroppedStitch />, tone: "border-seal text-seal" },
-  failed: { icon: "✗", tone: "border-seal text-seal" },
+const CHIP: Record<PhaseStatus["status"], { icon: ReactNode; tone: ChipTone }> = {
+  complete: { icon: <StitchedCheck />, tone: "ink" },
+  running: { icon: <Hourglass />, tone: "plum" },
+  partial: { icon: <DroppedStitch />, tone: "seal" },
+  failed: { icon: "✗", tone: "seal" },
 } as const;
 
 const PHASE = { before: "Before snapshot", after: "After snapshot" } as const;
@@ -28,22 +29,23 @@ const STATUS_WORD = {
   partial: "partly done",
   failed: "failed",
 } as const;
-const NOT_RUN = "border-ink/50 text-ink/70";
+const NOT_RUN: ChipTone = "muted";
 
-function Chip({ phase, status }: { phase: "before" | "after"; status: PhaseStatus | undefined }) {
+function PhaseChip({
+  phase,
+  status,
+}: {
+  phase: "before" | "after";
+  status: PhaseStatus | undefined;
+}) {
   const style = status ? CHIP[status.status] : { icon: "○", tone: NOT_RUN };
   const when = status ? utcClock(status.finishedAt ?? status.startedAt) : null;
   return (
     <li className="min-w-0">
-      <span
-        className={`inline-flex min-h-8 items-center gap-1 rounded-xs border px-3 text-sm ${style.tone}`}
-      >
-        <span aria-hidden="true" className="inline-flex">
-          {style.icon}
-        </span>
+      <Chip tone={style.tone} icon={style.icon}>
         {PHASE[phase]}: {status ? STATUS_WORD[status.status] : "not taken yet"}
         {when && ` at ${when}`}
-      </span>
+      </Chip>
       {status?.status === "failed" && status.error && (
         <p className="mt-1 break-words text-sm text-seal">{status.error}</p>
       )}
@@ -55,8 +57,8 @@ export function StatusChips({ phases }: { phases: PhaseStatus[] }) {
   return (
     <div>
       <ul className="flex flex-wrap items-start gap-2">
-        <Chip phase="before" status={phases.find((p) => p.phase === "before")} />
-        <Chip phase="after" status={phases.find((p) => p.phase === "after")} />
+        <PhaseChip phase="before" status={phases.find((p) => p.phase === "before")} />
+        <PhaseChip phase="after" status={phases.find((p) => p.phase === "after")} />
       </ul>
       {phases.some((p) => p.status === "partial") && (
         <p className="mt-2 text-sm text-ink/70">

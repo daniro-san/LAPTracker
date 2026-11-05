@@ -63,7 +63,8 @@
   --color-rule: var(--rule);
 
   /* Inline, so the next/font variables resolve on the element that carries lib/brand/fonts.ts's class. */
-  --font-display: var(--font-cormorant), Georgia, serif;
+  --font-display: var(--font-young-serif), Georgia, serif;
+  --font-subhead: var(--font-alegreya-sans), "Segoe UI", sans-serif;
   --font-body: var(--font-source-sans), "Segoe UI", sans-serif;
 
   --text-display-xl: 48px;

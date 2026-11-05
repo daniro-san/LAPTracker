@@ -5,7 +5,7 @@
 import Link from "next/link";
 
 import { LaceBorder } from "@/lib/brand/components/LaceBorder";
-import { Mark } from "@/lib/brand/components/Logo";
+import { WaxedMark } from "@/lib/brand/components/Logo";
 import { ThemeSwitch } from "@/lib/brand/components/ThemeSwitch";
 import { copy } from "@/lib/copy";
 
@@ -74,7 +74,7 @@ export function SiteHeader({
       <div className="bg-plum text-paper">
         <div className="mx-auto flex max-w-[960px] items-center justify-between gap-2 px-4 py-1 sm:px-6">
           <Link href="/" className="flex min-h-11 items-center gap-2">
-            <Mark size={32} />
+            <WaxedMark size={40} />
             <span className="sr-only font-display text-display-sm font-semibold sm:not-sr-only">
               {copy.site.name}
             </span>

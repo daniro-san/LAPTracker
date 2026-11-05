@@ -1,6 +1,8 @@
 "use client";
 
 // A confirmation in the bottom sheet (docs/DESIGN.md: bottom-sheet = PIN entry and confirmations).
+import { buttonClass } from "@/lib/brand/components/Button";
+
 export function ConfirmSheet({
   text,
   onAnswer,
@@ -19,14 +21,14 @@ export function ConfirmSheet({
         <button
           type="button"
           onClick={() => onAnswer(true)}
-          className="min-h-11 rounded-xs bg-plum px-4 font-semibold text-paper"
+          className={buttonClass("primary", "font-semibold")}
         >
           Go ahead
         </button>
         <button
           type="button"
           onClick={() => onAnswer(false)}
-          className="min-h-11 rounded-xs border border-plum px-4 font-semibold text-plum"
+          className={buttonClass("secondary", "font-semibold")}
         >
           Cancel
         </button>

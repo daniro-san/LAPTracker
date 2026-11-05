@@ -90,7 +90,7 @@ export function PlayerAcrossEvents({ rows }: { rows: PlayerEventRow[] }) {
   );
   return (
     <section className="mt-8">
-      <h2 className="mb-1 font-display text-display-md font-semibold">History across events</h2>
+      <h2 className="mb-1 font-subhead text-display-md font-semibold">History across events</h2>
       <p className="mb-3 text-sm text-ink/70">
         Each row shows the change during that event (before to after) and the change since the event
         before. “B” means the player was not on the after-event roster, so the before snapshot is

@@ -58,7 +58,7 @@ export default async function AdminPage() {
   const rehearsal = await withPageDb((db) => latestRehearsal(db, env.SNAPSHOT_WINDOW_MIN));
   return (
     <AdminShell title="Admin">
-      <h2 className="mb-1 font-display text-display-md font-semibold">When snapshots are taken</h2>
+      <h2 className="mb-1 font-subhead text-display-md font-semibold">When snapshots are taken</h2>
       <dl className="mb-6">
         <Row label="Server time zone" value={env.SERVER_TZ} />
         <Row label="Next event" value={describeInstant(next.eventAtUtc, env)} />
@@ -78,14 +78,14 @@ export default async function AdminPage() {
           }
         />
       </dl>
-      <h2 className="mb-2 font-display text-display-md font-semibold">Run something now</h2>
+      <h2 className="mb-2 font-subhead text-display-md font-semibold">Run something now</h2>
       <p className={`mb-3 text-sm ${MUTED}`}>
         Current event: {describeInstant(current.eventAtUtc, env)}. A snapshot uses about 21 API
         calls and takes up to a minute. A rehearsal is a fake event that tests the whole pipeline:
         about 45 calls over about 50 minutes.
       </p>
       <AdminActions beforeAtText={describeInstant(current.beforeAt, env)} />
-      <h2 className="mb-2 mt-8 font-display text-display-md font-semibold">Last rehearsal</h2>
+      <h2 className="mb-2 mt-8 font-subhead text-display-md font-semibold">Last rehearsal</h2>
       <Rehearsal r={rehearsal} />
     </AdminShell>
   );

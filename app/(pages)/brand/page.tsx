@@ -3,8 +3,11 @@
 import type { ReactNode } from "react";
 
 import { compact, percentText, signOf } from "@/app/_ui/format";
+import { Button } from "@/lib/brand/components/Button";
+import { Chip } from "@/lib/brand/components/Chip";
 import { LaceBorder } from "@/lib/brand/components/LaceBorder";
-import { Logo, Mark } from "@/lib/brand/components/Logo";
+import { Logo, Mark, MarkLine, WaxedMark } from "@/lib/brand/components/Logo";
+import { GrannyStanding, GrannyTea } from "@/lib/brand/components/Mascot";
 import { SealButton } from "@/lib/brand/components/SealButton";
 import { DroppedStitch, Hourglass, StitchedCheck } from "@/lib/brand/components/StatusIcons";
 import { ThemeSwitch } from "@/lib/brand/components/ThemeSwitch";
@@ -34,7 +37,7 @@ const SAMPLE = [
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="border-t border-rule py-8">
-      <h2 className="mb-4 font-display text-display-md font-semibold">{title}</h2>
+      <h2 className="mb-4 font-subhead text-display-md font-semibold">{title}</h2>
       {children}
     </section>
   );
@@ -45,29 +48,6 @@ function Swatch({ fill, label }: { fill: string; label: string }) {
     <li className="flex min-h-11 items-center gap-3">
       <span className={`size-11 shrink-0 border border-rule ${fill}`} />
       <span className="text-body-sm">{label}</span>
-    </li>
-  );
-}
-
-function Chip({
-  icon,
-  phase,
-  word,
-  tone,
-}: {
-  icon: ReactNode;
-  phase: string;
-  word: string;
-  tone: string;
-}) {
-  return (
-    <li
-      className={`inline-flex min-h-8 items-center gap-1.5 rounded-xs border px-3 text-body-sm ${tone}`}
-    >
-      {icon}
-      <span className="font-semibold">{phase}</span>
-      <span>{word}</span>
-      <span className="tabular-nums">16:01</span>
     </li>
   );
 }
@@ -117,19 +97,38 @@ function MarkSection() {
     <Section title={t.mark.title}>
       <div className="flex flex-wrap items-end gap-8">
         <figure className="text-plum">
-          <Mark size={200} />
-          <figcaption className="mt-2 text-body-sm text-ink">{t.mark.large}</figcaption>
+          <MarkLine size={200} />
+          <figcaption className="mt-2 max-w-60 text-body-sm text-ink">{t.mark.large}</figcaption>
         </figure>
         <figure>
           <div className="flex items-center gap-3">
             <span className="text-plum">
-              <Mark size={24} />
+              <Mark size={32} />
             </span>
             <span className="inline-grid size-11 place-items-center bg-plum text-paper">
               <Mark size={24} />
             </span>
           </div>
-          <figcaption className="mt-2 text-body-sm">{t.mark.small}</figcaption>
+          <figcaption className="mt-2 max-w-48 text-body-sm">{t.mark.small}</figcaption>
+        </figure>
+      </div>
+    </Section>
+  );
+}
+
+function MascotSection() {
+  return (
+    <Section title={t.mascot.title}>
+      <div className="flex flex-wrap items-end gap-8 text-plum">
+        <figure>
+          <GrannyStanding className="w-40" />
+          <figcaption className="mt-2 max-w-40 text-body-sm text-ink">
+            {t.mascot.standing}
+          </figcaption>
+        </figure>
+        <figure>
+          <GrannyTea className="w-56" />
+          <figcaption className="mt-2 text-body-sm text-ink">{t.mascot.tea}</figcaption>
         </figure>
       </div>
     </Section>
@@ -148,12 +147,39 @@ function PaletteSection() {
   );
 }
 
+function FacesSection() {
+  const roles = [
+    [t.faces.primary, "font-display"],
+    [t.faces.secondary, "font-subhead"],
+    [t.faces.body, "font-body"],
+  ] as const;
+  return (
+    <Section title={t.faces.title}>
+      <ul className="grid gap-x-8 gap-y-6 sm:grid-cols-3">
+        {roles.map(([label, face]) => (
+          <li key={label}>
+            <p className="mb-1 font-body text-body-sm">{label}</p>
+            {t.faces.samples.map((line, i) => (
+              <p
+                key={line}
+                className={`${face} ${i === 0 ? "text-display-lg" : "text-display-sm"} font-semibold`}
+              >
+                {line}
+              </p>
+            ))}
+          </li>
+        ))}
+      </ul>
+    </Section>
+  );
+}
+
 function TypeSection() {
   return (
     <Section title={t.type.title}>
       <p className="font-display text-display-lg font-semibold">{t.type.displayLg}</p>
-      <p className="font-display text-display-md font-semibold">{t.type.displayMd}</p>
-      <p className="font-display text-display-sm font-semibold">{t.type.displaySm}</p>
+      <p className="font-subhead text-display-md font-semibold">{t.type.displayMd}</p>
+      <p className="font-subhead text-display-sm font-semibold">{t.type.displaySm}</p>
       <p className="mt-1 mb-6 text-body-sm">{t.type.displayNote}</p>
       <p className="max-w-[65ch] text-body">{t.type.body}</p>
       <p className="text-body-sm">{t.type.bodySm}</p>
@@ -179,19 +205,33 @@ function OrnamentsSection() {
 function ControlsSection() {
   return (
     <Section title={t.controls.title}>
-      <div className="flex flex-wrap items-center gap-6">
+      <div className="flex flex-wrap items-start gap-8">
+        <figure className="flex flex-col items-start gap-3">
+          <Button>{t.controls.primary}</Button>
+          <figcaption className="max-w-48 text-body-sm">{t.controls.inked}</figcaption>
+        </figure>
+        <figure className="flex flex-col items-start gap-3">
+          <Button variant="secondary">{t.controls.secondary}</Button>
+          <figcaption className="max-w-48 text-body-sm">{t.controls.framed}</figcaption>
+        </figure>
         <figure className="flex flex-col items-center">
           <SealButton label={t.controls.seal} />
           <figcaption className="mt-2 max-w-40 text-center text-body-sm">
             {t.controls.sealNote}
           </figcaption>
         </figure>
-        <button type="button" className="min-h-11 rounded-xs bg-plum px-4 text-body text-paper">
-          {t.controls.primary}
-        </button>
-        <span className="rounded-xs bg-sage px-2 py-1 text-label font-semibold tracking-[0.04em] text-paper uppercase">
-          {t.controls.badge}
-        </span>
+        <figure className="flex flex-col items-start gap-3">
+          <span className="rounded-xs bg-sage px-2 py-1 text-label font-semibold tracking-[0.04em] text-paper uppercase">
+            {t.controls.badge}
+          </span>
+          <figcaption className="text-body-sm">{t.controls.badgeNote}</figcaption>
+        </figure>
+      </div>
+      <p className="mt-8 mb-3 text-body-sm">{t.controls.waxTitle}</p>
+      <div className="flex flex-wrap items-center gap-4 bg-plum p-4">
+        <WaxedMark size={56} tone="paper" />
+        <WaxedMark size={56} tone="seal" />
+        <WaxedMark size={56} tone="yarn" />
       </div>
     </Section>
   );
@@ -200,25 +240,27 @@ function ControlsSection() {
 function StatusSection() {
   return (
     <Section title={t.status.title}>
-      <ul className="flex flex-wrap gap-2">
-        <Chip
-          icon={<StitchedCheck />}
-          phase={t.status.before}
-          word={t.status.complete}
-          tone="border-ink"
-        />
-        <Chip
-          icon={<Hourglass />}
-          phase={t.status.after}
-          word={t.status.running}
-          tone="border-plum text-plum"
-        />
-        <Chip
-          icon={<DroppedStitch />}
-          phase={t.status.after}
-          word={t.status.partial}
-          tone="border-seal text-seal"
-        />
+      <ul className="flex flex-wrap gap-3">
+        <li>
+          <Chip tone="ink" icon={<StitchedCheck />}>
+            {t.status.before} {t.status.complete} 16:01
+          </Chip>
+        </li>
+        <li>
+          <Chip tone="plum" icon={<Hourglass />}>
+            {t.status.after} {t.status.running} 16:01
+          </Chip>
+        </li>
+        <li>
+          <Chip tone="seal" icon={<DroppedStitch />}>
+            {t.status.after} {t.status.partial} 16:01
+          </Chip>
+        </li>
+        <li>
+          <Chip tone="muted">
+            {t.status.after} {t.status.notYet}
+          </Chip>
+        </li>
       </ul>
     </Section>
   );
@@ -230,7 +272,7 @@ export default function BrandPage() {
       <header className="sticky top-0 z-30 text-plum">
         <div className="bg-plum text-paper">
           <div className="mx-auto flex max-w-[960px] items-center justify-between gap-2 px-4 py-1 sm:px-6">
-            <Logo name={copy.site.name} size={32} />
+            <Logo name={copy.site.name} />
             <ThemeSwitch label={copy.site.darkMode} />
           </div>
         </div>
@@ -239,7 +281,9 @@ export default function BrandPage() {
       <main className="mx-auto max-w-[960px] px-4 pt-6 pb-8 sm:px-6">
         <h1 className="font-display text-display-lg font-semibold">{t.title}</h1>
         <p className="mt-2 mb-6 text-body-sm">{t.intro}</p>
+        <FacesSection />
         <MarkSection />
+        <MascotSection />
         <PaletteSection />
         <TypeSection />
         <OrnamentsSection />

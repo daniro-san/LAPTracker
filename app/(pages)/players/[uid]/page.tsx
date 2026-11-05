@@ -18,7 +18,7 @@ function Timelines({ history }: { history: PlayerHistory }) {
     <div className={`mb-3 text-sm ${MUTED}`}>
       {names.length > 1 && (
         <>
-          <h2 className="font-display text-display-sm font-semibold">Names</h2>
+          <h2 className="font-subhead text-display-sm font-semibold">Names</h2>
           <ul className="mb-2">
             {names.map((n) => (
               <li key={n.name} className="break-words [overflow-wrap:anywhere]">
@@ -28,7 +28,7 @@ function Timelines({ history }: { history: PlayerHistory }) {
           </ul>
         </>
       )}
-      <h2 className="font-display text-display-sm font-semibold">Alliances</h2>
+      <h2 className="font-subhead text-display-sm font-semibold">Alliances</h2>
       <ul>
         {alliances.map((a) => (
           <li key={`${a.unionId}|${a.firstSeen.getTime()}`}>
@@ -75,7 +75,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ uid: st
         <ExactToggle />
         <PlayerAcrossEvents rows={history.rows} />
       </main>
-      <SiteFooter />
+      <SiteFooter ornament="granny" />
     </>
   );
 }

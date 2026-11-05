@@ -4,6 +4,7 @@ import Link from "next/link";
 import { utcDay } from "@/app/_ui/format";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
+import { buttonClass } from "@/lib/brand/components/Button";
 import { withPageDb } from "@/lib/page";
 import { listEvents } from "@/lib/queries";
 import { searchPlayers, SEARCH_LIMIT } from "@/lib/queries/players";
@@ -38,7 +39,7 @@ export default async function PlayersPage({
             aria-label="Player name"
             className="min-h-11 min-w-0 flex-1 rounded-xs border border-rule bg-paper px-3"
           />
-          <button type="submit" className="min-h-11 rounded-xs bg-plum px-4 font-medium text-paper">
+          <button type="submit" className={buttonClass("primary")}>
             Search
           </button>
         </form>

@@ -1,18 +1,23 @@
-// Page footer: the ledger's byline on the right, the page's one yarn corner (DESIGN.md ornament budget)
-// at the bottom left, out of the content's way. Error pages pass corner={false}: their vignette is
-// already the page's ornament.
+// Page footer: the ledger's byline on the right and one corner ornament at the bottom left, out of the
+// content's way (DESIGN.md ornament budget): the yarn ball by default, the Granny Doctor on the error
+// and player pages.
+import { GrannyStanding } from "@/lib/brand/components/Mascot";
 import { YarnCorner } from "@/lib/brand/components/YarnCorner";
 import { copy } from "@/lib/copy";
 
-export function SiteFooter({ corner = true }: { corner?: boolean }) {
+export function SiteFooter({ ornament = "yarn" }: { ornament?: "yarn" | "granny" }) {
   return (
     <footer
-      className={`relative mx-auto mt-8 max-w-[960px] px-4 text-plum sm:px-6 ${corner ? "h-28" : "pb-8"}`}
+      className={`relative mx-auto mt-8 max-w-[960px] px-4 text-plum sm:px-6 ${ornament === "granny" ? "h-36" : "h-28"}`}
     >
       <p className="text-right text-body-sm text-ink/70">
         {copy.site.ledger} · {copy.site.byline}
       </p>
-      {corner && <YarnCorner className="absolute bottom-2 left-0" />}
+      {ornament === "granny" ? (
+        <GrannyStanding className="absolute bottom-2 left-2 w-20" />
+      ) : (
+        <YarnCorner className="absolute bottom-2 left-0" />
+      )}
     </footer>
   );
 }
