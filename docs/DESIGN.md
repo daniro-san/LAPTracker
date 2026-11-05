@@ -286,6 +286,8 @@ The whole list. Anything else is a composition of these; a new one needs a line 
 - **`delta-up` / `delta-down`** — `value · ±delta with arrow · ±%`; kills with the member-loss note when negative.
 - **`status-strip`** — two `Chip`s (`lib/brand/components/Chip.tsx`: the soft drawn frame in the tone colour — ink done, plum running, seal partial/failed, muted not yet — with the icon and the word) (`Before ✓ 12:01`, `After ◐ 16:01`) and the legend; replaces every status sentence.
 - **`rank`** — `#n` beside the tag on cards and rows; language-free ordering.
+- **`alliance-badge`** — the alliance's own emblem (one of the game's ten presets, served by `/img/badge/[id]`) at 28 px beside the tag on rows and cards, 40 px beside the alliance page title. Without one: the drawn crocheted banner (`NoBadge`). `AllianceBadge` in `app/_ui/Pictures.tsx` (owner, 2026-11-05; DECISIONS D22).
+- **`avatar`** — the player's photo (served by `/img/avatar/[uid]`) in the soft drawn frame, square, 32 px on member rows and 56 px beside the player page title. Without one: the Granny Doctor in profile (`NoPhoto`). `PlayerAvatar` in `app/_ui/Pictures.tsx`. Photos and badges are content, not ornament, so they may sit on rows and cards; their placeholders go wherever they would.
 - **`badge`** — sage neutral chip: `[TEST]`, source, manual. Never red or yellow.
 - **`wax`** — one hand-drawn wax seal in three tones (`Wax`, `WaxedMark`): `seal` red for confirm/destructive, `paper` ivory for the header logo (the inverse of the plum bar, so it holds contrast in both themes), `yarn` gold spare. Each tone carries its own ink colour for what is pressed into it.
 - **`seal-button`** — the wax seal: destructive or confirming actions (Run now, Rehearse now). Circle, ≥ 44 px.

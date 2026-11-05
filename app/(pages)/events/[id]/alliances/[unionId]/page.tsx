@@ -7,6 +7,7 @@ import { ExactToggle } from "@/app/_ui/ExactToggle";
 import { utcDay } from "@/app/_ui/format";
 import { memberViews } from "@/app/_ui/member-views";
 import { MembersExplorer } from "@/app/_ui/MembersExplorer";
+import { AllianceBadge } from "@/app/_ui/Pictures";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { StatTable, type StatMetric } from "@/app/_ui/StatTable";
@@ -41,7 +42,15 @@ function totalsMetric(
   };
 }
 
-function Totals({ detail, canDelta }: { detail: Detail; canDelta: boolean }) {
+function Totals({
+  detail,
+  canDelta,
+  icon,
+}: {
+  detail: Detail;
+  canDelta: boolean;
+  icon: React.ReactNode;
+}) {
   const { before, after } = detail;
   const now = after ?? before;
   return (
@@ -52,6 +61,7 @@ function Totals({ detail, canDelta }: { detail: Detail; canDelta: boolean }) {
         {
           key: "totals",
           lead: now?.tag ?? "",
+          icon,
           sub: now?.name ?? "",
           summary: <FreshDots before={fresh(before)} after={fresh(after)} />,
           detail: <FreshnessDetail before={fresh(before)} after={fresh(after)} />,
@@ -106,6 +116,7 @@ export default async function AlliancePage({
   const { detail, events, history, names } = data;
   const { before, after } = detail;
   const now = after ?? before;
+  const badgeId = after?.badgeId ?? before?.badgeId;
   const canDelta = usable(before) && usable(after);
   const event = events.find((e) => e.id === eventId);
   return (
@@ -119,13 +130,16 @@ export default async function AlliancePage({
           ← Back to {event ? utcDay(event.eventAtUtc) : "Event"} event
         </Link>
         <div className="flex items-start justify-between gap-3">
-          <h1 className="min-w-0 break-words font-display text-display-lg font-semibold [overflow-wrap:anywhere]">
-            {title(now, p.unionId)}
-          </h1>
+          <div className="flex min-w-0 items-center gap-3">
+            <AllianceBadge badgeId={badgeId} size="md" />
+            <h1 className="min-w-0 break-words font-display text-display-lg font-semibold [overflow-wrap:anywhere]">
+              {title(now, p.unionId)}
+            </h1>
+          </div>
           <ExactToggle />
         </div>
         <NameTimeline names={names} />
-        <Totals detail={detail} canDelta={canDelta} />
+        <Totals detail={detail} canDelta={canDelta} icon={<AllianceBadge badgeId={badgeId} />} />
         <h2 className="mb-2 mt-8 font-subhead text-display-md font-semibold">Members</h2>
         <MembersExplorer
           members={memberViews(detail.membersBefore, detail.membersAfter)}

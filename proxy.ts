@@ -1,5 +1,5 @@
 // Per-request CSP with a nonce: Next injects inline bootstrap scripts, so a static CSP would need
-// 'unsafe-inline' for scripts, which plan §12.3 rules out. API routes are JSON and get a fixed deny-all CSP.
+// 'unsafe-inline' for scripts, which plan §12.3 rules out. API routes (JSON) and /img get a fixed deny-all CSP.
 import { NextResponse, type NextRequest } from "next/server";
 
 const API_CSP = "default-src 'none'; frame-ancestors 'none'";
@@ -20,7 +20,9 @@ export function pageCsp(nonce: string, dev: boolean): string {
 }
 
 export function proxy(request: NextRequest): NextResponse {
-  if (request.nextUrl.pathname.startsWith("/api/")) {
+  const { pathname } = request.nextUrl;
+  // Images from /img (D22) get the same deny-all CSP: nothing in them should ever run.
+  if (pathname.startsWith("/api/") || pathname.startsWith("/img/")) {
     const res = NextResponse.next();
     res.headers.set("Content-Security-Policy", API_CSP);
     return res;

@@ -1,6 +1,6 @@
 // Read models for the alliance page (plan Phase 5c, 5e). Served member fields: uid, name, power,
-// kills, lv only (§12.1); raw_json is never selected.
-import { and, asc, eq, inArray } from "drizzle-orm";
+// kills, lv only (§12.1), plus whether a photo exists (never its URL, D22); raw_json is never selected.
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 
 import { rosterDiff, seriesDeltas, type SeriesStep } from "../compute";
 import type { Db } from "../db";
@@ -11,6 +11,7 @@ export interface AllianceRow {
   phase: "before" | "after";
   tag: string | null;
   name: string | null;
+  badgeId: number | null;
   memberCount: number | null;
   totalPower: number | null;
   totalKills: number | null;
@@ -27,12 +28,15 @@ export interface MemberRow {
   power: number | null;
   kills: number | null;
   lv: number | null;
+  /** /img/avatar/[uid] has a photo to serve. */
+  hasAvatar: boolean;
 }
 
 const allianceColumns = {
   id: allianceSnapshots.id,
   tag: allianceSnapshots.tag,
   name: allianceSnapshots.name,
+  badgeId: allianceSnapshots.badgeId,
   memberCount: allianceSnapshots.memberCount,
   totalPower: allianceSnapshots.totalPower,
   totalKills: allianceSnapshots.totalKills,
@@ -58,6 +62,7 @@ async function membersOf(db: Db, allianceSnapshotIds: number[]) {
       power: memberSnapshots.power,
       kills: memberSnapshots.kills,
       lv: memberSnapshots.lv,
+      hasAvatar: sql<boolean>`${memberSnapshots.avatarUrl} is not null`,
     })
     .from(memberSnapshots)
     .where(inArray(memberSnapshots.allianceSnapshotId, allianceSnapshotIds));

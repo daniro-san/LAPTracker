@@ -89,6 +89,8 @@ export const allianceSnapshots = pgTable(
     totalKills: big("total_kills"),
     serverRank: integer("server_rank"),
     level: integer("level"),
+    // The emblem the leader picked (101–110 seen); the page shows it via /img/badge/[id] (D22).
+    badgeId: integer("badge_id"),
     powerBoard: big("power_board"),
     killsBoard: big("kills_board"),
     source: text("source", { enum: ["v1", "internal"] }).notNull(),
@@ -116,6 +118,8 @@ export const memberSnapshots = pgTable(
     power: big("power"),
     kills: big("kills"),
     lv: integer("lv"),
+    // Never returned by a query: /img/avatar/[uid] fetches it server-side (D22, plan §12.1).
+    avatarUrl: text("avatar_url"),
   },
   (t) => [
     unique("member_snapshots_alliance_uid_unique").on(t.allianceSnapshotId, t.uid),

@@ -17,6 +17,8 @@ const memberSchema = z.object({
   power: z.number().nullable(),
   kills: z.number().nullable(),
   lv: z.number().int().nullable(),
+  // Optional: a photo is cosmetic, so its absence never fails a run.
+  avatar_url: z.string().optional(),
 });
 
 export const rosterFields = {
@@ -26,6 +28,7 @@ export const rosterFields = {
   power: z.number(),
   member_count: z.number().int(),
   level: z.number().int().nullable(),
+  badge_id: z.number().int().nullable().optional(),
   rank: z.object({ rank: z.number().int() }).nullable(),
   updated_at: z.number().nullable(),
   members: z.array(memberSchema),
@@ -43,6 +46,7 @@ export function toSnapshotInput(
     power: m.power,
     kills: m.kills,
     lv: m.lv,
+    avatarUrl: m.avatar_url || null,
   }));
   return {
     unionId: roster.union_id,
@@ -55,6 +59,7 @@ export function toSnapshotInput(
     members,
     serverRank: roster.rank?.rank ?? null,
     level: roster.level,
+    badgeId: roster.badge_id ?? null,
     sourceUpdatedAt: roster.updated_at === null ? null : new Date(roster.updated_at * 1000),
     ...extra,
   };

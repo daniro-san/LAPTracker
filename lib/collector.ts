@@ -166,6 +166,7 @@ function dataRow(run: Run, a: AllianceSnapshotInput, source: AllianceRow["source
     totalKills: a.totalKills,
     serverRank: a.serverRank,
     level: a.level,
+    badgeId: a.badgeId ?? null,
     powerBoard: run.board?.power.get(a.unionId) ?? null,
     killsBoard: run.board?.kills.get(a.unionId) ?? null,
     source,

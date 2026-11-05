@@ -1,5 +1,5 @@
 // alliance_snapshots and their member_snapshots, which are only ever written together.
-import { eq, inArray } from "drizzle-orm";
+import { desc, eq, inArray } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { allianceSnapshots, memberSnapshots } from "../schema";
@@ -46,4 +46,15 @@ export async function clearAllianceRows(db: Db, snapshotId: number): Promise<voi
     await tx.delete(memberSnapshots).where(inArray(memberSnapshots.allianceSnapshotId, ids));
     await tx.delete(allianceSnapshots).where(eq(allianceSnapshots.snapshotId, snapshotId));
   });
+}
+
+/** The player's photo URL from their newest roster row; null when that row has none. Never served (D22). */
+export async function findAvatarUrl(db: Db, uid: number): Promise<string | null> {
+  const [row] = await db
+    .select({ avatarUrl: memberSnapshots.avatarUrl })
+    .from(memberSnapshots)
+    .where(eq(memberSnapshots.uid, uid))
+    .orderBy(desc(memberSnapshots.id))
+    .limit(1);
+  return row?.avatarUrl ?? null;
 }

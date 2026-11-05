@@ -54,6 +54,7 @@ async function allianceRows(db: Db, snapshotIds: number[]) {
       unionId: allianceSnapshots.unionId,
       tag: allianceSnapshots.tag,
       name: allianceSnapshots.name,
+      badgeId: allianceSnapshots.badgeId,
       memberCount: allianceSnapshots.memberCount,
       totalPower: allianceSnapshots.totalPower,
       totalKills: allianceSnapshots.totalKills,

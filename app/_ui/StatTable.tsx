@@ -24,6 +24,8 @@ export interface StatRow {
   key: string;
   href?: string;
   lead: ReactNode;
+  /** A badge or photo before the lead (app/_ui/Pictures.tsx). */
+  icon?: ReactNode;
   sub?: ReactNode;
   metrics: StatMetric[];
   /** Always visible inside the "tap for more" bar, e.g. freshness dots. */
@@ -63,6 +65,15 @@ function MetricCell({ m }: { m: StatMetric }) {
 }
 
 function Lead({ row }: { row: StatRow }) {
+  return (
+    <div className="flex min-w-0 items-start gap-2">
+      {row.icon}
+      <LeadText row={row} />
+    </div>
+  );
+}
+
+function LeadText({ row }: { row: StatRow }) {
   return (
     <div className="min-w-0 break-words [overflow-wrap:anywhere]">
       {row.href ? (

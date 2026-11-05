@@ -9,12 +9,14 @@ export interface BaseMember {
   power: number;
   kills: number;
   lv: number;
+  avatarUrl: string | null;
 }
 export interface BaseAlliance {
   unionId: number;
   tag: string;
   name: string;
   level: number;
+  badgeId: number | null;
   members: BaseMember[];
 }
 
@@ -37,12 +39,15 @@ export function loadBase(): BaseAlliance[] {
       tag: String(b.abbr),
       name: String(b.name),
       level: Number(b.level ?? 1),
+      badgeId: typeof b.badge_id === "number" ? b.badge_id : null,
       members: (b.members as Record<string, unknown>[]).map((m) => ({
         uid: Number(m.uid),
         name: String(m.nick_name),
         power: Number(m.power ?? 0),
         kills: Number(m.kills ?? 0),
         lv: Number(m.lv ?? 1),
+        // Every fifth member without a photo, so the drawn placeholder shows; fake on purpose.
+        avatarUrl: Number(m.uid) % 5 === 0 ? null : String(m.avatar_url ?? "") || null,
       })),
     }))
     .sort(

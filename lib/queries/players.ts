@@ -1,5 +1,6 @@
 // Read models for the player pages (plan Phase 5d, 5e). Served member fields: uid, name, power,
-// kills, lv only, plus the alliance tag and event dates (§12.1); raw_json is never selected.
+// kills, lv only, plus the alliance tag, badge and event dates (§12.1) and whether a photo exists
+// (never its URL, D22); raw_json is never selected.
 import { and, asc, desc, eq, ilike, inArray, max, sql } from "drizzle-orm";
 
 import {
@@ -24,12 +25,14 @@ interface Sighting {
   unionId: number;
   tag: string | null;
   allianceName: string | null;
+  badgeId: number | null;
   isFresh: boolean;
   sourceUpdatedAt: Date | null;
   name: string;
   power: number | null;
   kills: number | null;
   lv: number | null;
+  hasAvatar: boolean;
 }
 
 export interface PlayerFresh {
@@ -70,6 +73,7 @@ export interface AllianceStay {
   unionId: number;
   tag: string | null;
   name: string | null;
+  badgeId: number | null;
   firstSeen: Date;
   lastSeen: Date;
   /** The event of the last sighting, for the link to that alliance's page. */
@@ -78,7 +82,14 @@ export interface AllianceStay {
 
 export interface PlayerHistory {
   uid: number;
-  current: { name: string; unionId: number; tag: string | null; eventId: number };
+  current: {
+    name: string;
+    unionId: number;
+    tag: string | null;
+    badgeId: number | null;
+    eventId: number;
+    hasAvatar: boolean;
+  };
   /** Oldest first. */
   rows: PlayerEventRow[];
   names: NameHistoryEntry[];
@@ -93,12 +104,14 @@ const sightingColumns = {
   unionId: allianceSnapshots.unionId,
   tag: allianceSnapshots.tag,
   allianceName: allianceSnapshots.name,
+  badgeId: allianceSnapshots.badgeId,
   isFresh: allianceSnapshots.isFresh,
   sourceUpdatedAt: allianceSnapshots.sourceUpdatedAt,
   name: memberSnapshots.name,
   power: memberSnapshots.power,
   kills: memberSnapshots.kills,
   lv: memberSnapshots.lv,
+  hasAvatar: sql<boolean>`${memberSnapshots.avatarUrl} is not null`,
 };
 
 /** Every roster row of these uids in a real event, oldest first; test events are never part of it. */
@@ -187,6 +200,7 @@ function allianceStays(sightings: Sighting[]): AllianceStay[] {
       Object.assign(last, {
         tag: s.tag,
         name: s.allianceName,
+        badgeId: s.badgeId,
         lastSeen: s.eventAtUtc,
         lastEventId: s.eventId,
       });
@@ -195,6 +209,7 @@ function allianceStays(sightings: Sighting[]): AllianceStay[] {
         unionId: s.unionId,
         tag: s.tag,
         name: s.allianceName,
+        badgeId: s.badgeId,
         firstSeen: s.eventAtUtc,
         lastSeen: s.eventAtUtc,
         lastEventId: s.eventId,
@@ -220,7 +235,9 @@ export async function playerHistory(db: Db, uid: number): Promise<PlayerHistory 
       name: latest.name,
       unionId: latest.unionId,
       tag: latest.tag,
+      badgeId: latest.badgeId,
       eventId: latest.eventId,
+      hasAvatar: latest.hasAvatar,
     },
     rows: eventRows(sightings),
     names: nameHistory(sightedNames),

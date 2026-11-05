@@ -61,6 +61,7 @@ describe("GET /api/events/[id]", () => {
         totalKills: 1,
         serverRank: 2,
         level: 10,
+        badgeId: null,
         powerBoard: null,
         killsBoard: null,
         source: "v1",

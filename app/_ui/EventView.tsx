@@ -9,6 +9,7 @@ import { describeInstant } from "@/lib/schedule";
 import { comparisonRows, type AllianceCell, type ComparisonRow } from "./event-rows";
 import { ExactToggle } from "./ExactToggle";
 import { utcDay, utcStamp } from "./format";
+import { AllianceBadge } from "./Pictures";
 import { SiteFooter } from "./SiteFooter";
 import { SiteHeader } from "./SiteHeader";
 import { StatTable, type StatRow } from "./StatTable";
@@ -33,6 +34,7 @@ function toStatRow(
     key: String(r.unionId),
     href: `/events/${eventId}/alliances/${r.unionId}`,
     lead: r.tag,
+    icon: <AllianceBadge badgeId={r.after?.badgeId ?? r.before?.badgeId} />,
     sub: (
       <>
         {r.name}

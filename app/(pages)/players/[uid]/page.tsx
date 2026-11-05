@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { ExactToggle } from "@/app/_ui/ExactToggle";
 import { utcDay } from "@/app/_ui/format";
+import { AllianceBadge, PlayerAvatar } from "@/app/_ui/Pictures";
 import { PlayerAcrossEvents } from "@/app/_ui/PlayerAcrossEvents";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
@@ -31,11 +32,14 @@ function Timelines({ history }: { history: PlayerHistory }) {
       <h2 className="font-subhead text-display-sm font-semibold">Alliances</h2>
       <ul>
         {alliances.map((a) => (
-          <li key={`${a.unionId}|${a.firstSeen.getTime()}`}>
-            <Link href={`/events/${a.lastEventId}/alliances/${a.unionId}`} className="underline">
-              {a.tag} · {a.name}
-            </Link>{" "}
-            ({utcDay(a.firstSeen)} – {utcDay(a.lastSeen)})
+          <li key={`${a.unionId}|${a.firstSeen.getTime()}`} className="flex items-center gap-2">
+            <AllianceBadge badgeId={a.badgeId} />
+            <span>
+              <Link href={`/events/${a.lastEventId}/alliances/${a.unionId}`} className="underline">
+                {a.tag} · {a.name}
+              </Link>{" "}
+              ({utcDay(a.firstSeen)} – {utcDay(a.lastSeen)})
+            </span>
           </li>
         ))}
       </ul>
@@ -61,16 +65,20 @@ export default async function PlayerPage({ params }: { params: Promise<{ uid: st
           ← Find a player
         </Link>
         <div className="flex items-start justify-between gap-3">
-          <h1 className="min-w-0 break-words font-display text-display-lg font-semibold [overflow-wrap:anywhere]">
-            {current.name}
-          </h1>
+          <div className="flex min-w-0 items-center gap-3">
+            <PlayerAvatar uid={history.uid} hasAvatar={current.hasAvatar} size="lg" />
+            <h1 className="min-w-0 break-words font-display text-display-lg font-semibold [overflow-wrap:anywhere]">
+              {current.name}
+            </h1>
+          </div>
           <ExactToggle />
         </div>
         <p className="mb-3">
           <Link
             href={`/events/${current.eventId}/alliances/${current.unionId}`}
-            className="inline-flex min-h-11 items-center font-semibold underline"
+            className="inline-flex min-h-11 items-center gap-2 font-semibold underline"
           >
+            <AllianceBadge badgeId={current.badgeId} />
             {current.tag}
           </Link>
         </p>
