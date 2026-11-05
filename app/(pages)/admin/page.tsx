@@ -25,7 +25,7 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
-/** "every Friday, 20:00 server" for each "fri 20:00" slot of a weekly env value. */
+/** "every Friday, 20:00 server time" for each "fri 20:00" slot of a weekly env value. */
 async function weekly(slots: string, env: Env, clock: Clock): Promise<string> {
   const dayName = new Intl.DateTimeFormat(await requestLocale(), {
     weekday: "long",
@@ -36,7 +36,10 @@ async function weekly(slots: string, env: Env, clock: Clock): Promise<string> {
     .filter((slot) => slot.trim() !== "")
     .map((slot) => {
       const at = lastOccurrence(slot, new Date(), env);
-      return fill(t.schedule.weekly, { day: dayName.format(at), time: clock.time(at) });
+      return fill(t.schedule.weekly, {
+        day: dayName.format(at),
+        time: `${clock.hhmm(at)} ${copy.time.serverTime}`,
+      });
     })
     .join(" · ");
 }

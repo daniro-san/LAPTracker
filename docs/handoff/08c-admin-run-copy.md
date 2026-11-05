@@ -5,10 +5,12 @@
 - Helpers: Before "Record the numbers before the event. Use it if the scheduled run didn't happen."; After the same with "after".
 - `lib/copy-admin.ts`: new `run.snapshots` block (`title`, `before`, `after`, `cost`). `run.costs` now only states the rehearsal cost; the snapshot cost moved to `run.snapshots.cost`.
 - `app/_ui/admin/AdminActions.tsx`: `ACTIONS` split into `REHEARSE` and `SNAPSHOTS`; seal rendering moved into `ActionSeal` (the component hit the 80-line lint limit).
+- Owner follow-up: on `/admin`, times now end in "server time" instead of "server" (for example "Thu, 11/05/2026, 08:43 server time"). `Clock.stamp` in `app/_ui/format.ts` uses the new `copy.time.serverTime`. The schedule lines ("every Friday, 20:00 server time") build the time from `clock.hhmm` plus the same word.
 
 ## Decisions
 - Kept the existing "Before snapshot" / "After snapshot" accessible names, confirm dialogs, PIN flow and API calls unchanged. Seals stay 96 px, so touch targets are above 44 px; helpers are plain text, nothing hover-only.
 - Rows (seal + text) instead of a side-by-side pair, so the helper has room at 360 px.
+- `Clock.stamp` is called only by the admin pages. `Clock.time` and `Clock.at` are shared with the public pages, so they still say "server"; the schedule lines no longer use `time`. The Discord messages use their own clock in `lib/notify.ts`, so they still say "server".
 - The old `run.costs` line kept its rehearsal half, so that cost still shows.
 
 ## Deviations

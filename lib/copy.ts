@@ -49,6 +49,8 @@ const source = {
   /** Times are shown in server time, with this word after them. */
   time: {
     server: "server",
+    /** The admin area spells it out. */
+    serverTime: "server time",
   },
   status: {
     label: "Status",
