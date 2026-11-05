@@ -1,5 +1,6 @@
 # The Granny Doctor: standing() 160x200, tea() 160x120. Both poses share head().
 import math
+import lib
 from lib import *
 from lib import _nums, _fmt
 
@@ -8,6 +9,7 @@ def svgv(parts, h):
 
 def leaf(p, a, c, b, w):
     """Pointed-both-ends nib mark: centreline is the quadratic a-c-b, half-width w at the middle."""
+    w *= lib.GAIN
     dx, dy = b[0]-a[0], b[1]-a[1]; L = math.hypot(dx, dy) or 1
     nx, ny = -dy/L*2*w, dx/L*2*w
     u, v = (c[0]+nx, c[1]+ny), (c[0]-nx, c[1]-ny)
@@ -24,15 +26,17 @@ def dot(p, x, y, r):
 def line(d, w):
     return '<path fill="none" stroke="currentColor" stroke-width="%s" stroke-linecap="round" d="%s"/>' % (_fmt(w), d)
 
-def head(p, T=None):
-    """Hat, lace, beak mask, goggle; drawn into p (which may carry a scale T). Returns the needle d string."""
+def head(p, T=None, skip=()):
+    """Hat, lace, beak mask, goggle; drawn into p (which may carry a scale T). Returns the needle d string.
+    skip leaves out "brim", "beak" (with its rivets), "brow" or "pupil", for a pose that redraws them."""
     S = lambda pts, w, a=.2, b=.2, e=.12, k=1.0: stroke(p, pts, w, a, b, e, k=k)
     F = lambda a, c, b, w=.45: leaf(p, a, c, b, w)
     # hat: crown, dent, band, one brim swoop that curls under at the front
     S([(65, 47), (67, 29), (84, 19.5), (101, 27), (104, 46)], 1.3, .1, .1)
     F((77, 22.5), (84, 27), (91, 22.5), .5)
     F((65.5, 41.5), (85, 45), (103.5, 40.5), .75)
-    S([(138, 48), (100, 44.5), (58, 48.5), (30, 57.5), (40, 60.5), (84, 56)], 1.4, .06, .3)
+    if "brim" not in skip:
+        S([(138, 48), (100, 44.5), (58, 48.5), (30, 57.5), (40, 60.5), (84, 56)], 1.4, .06, .3)
     # yarn ball in the band
     S(arc(106, 37, 6, 6, 200, 500, 5), .8, .1, .15)
     F((101, 34), (107, 36), (110, 42), .4)
@@ -41,13 +45,16 @@ def head(p, T=None):
         y = 58 + i * 7.2
         F((99 - i * .8, y), (106 - i * 1.2, y + 3.6), (98.2 - i * 1.6, y + 7.2), .5)
     # beak (upper ridge to the hooked tip, back along the jaw) + rivets
-    S([(75, 60), (55, 65.5), (40, 78), (36.5, 86), (47, 82), (65, 80), (80, 88)], 1.3, .08, .3, k=.9)
-    for x, y in ((63, 66.5), (55.5, 69.5), (49, 74)):
-        dot(p, x, y, .9)
+    if "beak" not in skip:
+        S([(75, 60), (55, 65.5), (40, 78), (36.5, 86), (47, 82), (65, 80), (80, 88)], 1.3, .08, .3, k=.9)
+        for x, y in ((63, 66.5), (55.5, 69.5), (49, 74)):
+            dot(p, x, y, .9)
     # goggle eye, stern brow, pupil
     S(arc(81, 68, 5, 5, 140, 490, 6), 1.0, .05, .05, .5)
-    F((72.5, 62), (80, 59), (88.5, 63.5), .85)
-    blob(p, arc(79.8, 68.6, 1.5, 1.5, 0, 288, 5))
+    if "brow" not in skip:
+        F((72.5, 62), (80, 59), (88.5, 63.5), .85)
+    if "pupil" not in skip:
+        blob(p, arc(79.8, 68.6, 1.5, 1.5, 0, 288, 5))
     for x, y in ((121.5, 17.5), (127.5, 25.5)):
         dot(p, x, y, 1.7)
     q = Path(T)

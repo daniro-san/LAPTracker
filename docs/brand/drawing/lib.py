@@ -1,5 +1,9 @@
 import math
 
+# Nib gain: every stroke's width is multiplied by it. 1 for the shipped drawings; a drawing shown
+# smaller than its line weights allow (the Discord avatars) raises it while it draws.
+GAIN = 1.0
+
 def _fmt(v):
     v = round(v, 1)
     if v == 0:
@@ -97,7 +101,7 @@ def widths(pts, w, a=0.3, b=0.3, e=0.12, p=1.0):
 def stroke(path, pts, w=1.0, a=0.3, b=0.3, e=0.12, ws=None, k=1.0):
     """Tapered filled stroke along a Catmull-Rom centreline."""
     n = len(pts)
-    ws = ws or widths(pts, w, a, b, e)
+    ws = [x * GAIN for x in ws or widths(pts, w, a, b, e)]
     segs = catmull(pts, k=k)
     nrm = []
     for i in range(n):
@@ -137,6 +141,7 @@ def blob(path, pts, k=1.0):
 
 def ring(path, pts, w, k=1.0):
     """Closed outline of even width: outer blob plus reversed inner (hole)."""
+    w *= GAIN
     cx = sum(p[0] for p in pts)/len(pts); cy = sum(p[1] for p in pts)/len(pts)
     def scale(s):
         out = []
