@@ -72,3 +72,5 @@ Plan changes needed: IMPLEMENTATION_PLAN.md Phase 6 "Notifications" (the public 
 <adjustments for="Session 9">
 - Step 1 waits for `[rehearsal] ✓ Pass` / `[rehearsal] ✗ Fail`, not `[TEST] Rehearsal PASS/FAIL`.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/35
