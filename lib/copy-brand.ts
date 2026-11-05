@@ -231,6 +231,11 @@ export const brandCopy = {
         ["Discord post", "off"],
       ],
     },
+    runTrace: {
+      name: "Run trace",
+      use: "The run page's upstream calls: one line per call in the order they finished, its seconds, HTTP status, cached and retries, then a total. The slowest call says so in words. Cards on a phone, a table from 640 px.",
+      tags: ["OGs", "URSA"],
+    },
     rule: {
       name: "Drawn rule",
       use: "Section dividers and the footer top. Tables keep plain 1 px rules.",

@@ -2,8 +2,10 @@
 import Link from "next/link";
 
 import { AdminShell } from "@/app/_ui/admin/AdminShell";
-import { phaseWord, stateWord } from "@/app/_ui/admin/words";
+import { phaseWord, seconds, stateWord } from "@/app/_ui/admin/words";
 import { requestClock } from "@/app/_ui/locale";
+import { Chip } from "@/lib/brand/components/Chip";
+import { DroppedStitch } from "@/lib/brand/components/StatusIcons";
 import { copy, fill } from "@/lib/copy";
 import { withPageDb } from "@/lib/page";
 import { listRuns } from "@/lib/queries/admin";
@@ -26,18 +28,32 @@ export default async function RunsPage() {
                 {r.manual ? r.eventName : clock.stamp(r.eventAtUtc)}
               </span>
               <span className="block text-sm text-ink/70">
-                {fill(t.started, { at: clock.stamp(r.startedAt) })}
+                {[
+                  fill(t.started, { at: clock.stamp(r.startedAt) }),
+                  r.finishedAt && fill(t.finished, { at: clock.stamp(r.finishedAt) }),
+                  r.durationMs !== null && fill(t.seconds, { n: seconds(r.durationMs) }),
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
               </span>
               <span className="block text-sm text-ink/70">
                 {[
                   fill(t.calls, { n: r.callsUsed }),
                   r.quotaRemainingAfter !== null && fill(t.quotaLeft, { n: r.quotaRemainingAfter }),
-                  r.durationMs !== null && fill(t.seconds, { n: (r.durationMs / 1000).toFixed(1) }),
                 ]
                   .filter(Boolean)
                   .join(" · ")}
               </span>
-              {r.error && <span className="block break-words text-sm text-seal">{r.error}</span>}
+              {r.deadline && (
+                <span className="mt-1 block">
+                  <Chip tone="seal" icon={<DroppedStitch />}>
+                    {t.deadline}
+                  </Chip>
+                </span>
+              )}
+              {r.error && !r.deadline && (
+                <span className="block break-words text-sm text-seal">{r.error}</span>
+              )}
             </Link>
           </li>
         ))}

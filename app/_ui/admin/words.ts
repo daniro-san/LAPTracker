@@ -13,3 +13,6 @@ const STATE: Record<string, string> = {
 
 /** A snapshot's status column in words; an unknown value is shown as stored. */
 export const stateWord = (status: string): string => STATE[status] ?? status;
+
+/** A run duration in milliseconds as seconds with one decimal: 9_866 → "9.9". */
+export const seconds = (ms: number): string => (ms / 1000).toFixed(1);

@@ -3,7 +3,7 @@
 // with the word, no UTC twin.
 import { AdminActions } from "@/app/_ui/admin/AdminActions";
 import { AdminShell } from "@/app/_ui/admin/AdminShell";
-import { phaseWord, stateWord } from "@/app/_ui/admin/words";
+import { phaseWord, seconds, stateWord } from "@/app/_ui/admin/words";
 import type { Clock } from "@/app/_ui/format";
 import { requestClock, requestLocale } from "@/app/_ui/locale";
 import { FactList } from "@/lib/brand/components/FactList";
@@ -139,18 +139,22 @@ export default async function AdminPage() {
   const now = new Date();
   const next = nextEvent(now, env);
   const current = currentEvent(now, env);
-  const [[rehearsal, quota, manual, running, [lastRun]], clock] = await Promise.all([
+  const [[rehearsal, quota, manual, running, recent], clock] = await Promise.all([
     withPageDb((db) =>
       Promise.all([
         latestRehearsal(db, env.SNAPSHOT_WINDOW_MIN),
         latestQuota(db),
         latestManualEvent(db),
         runningSnapshots(db, now),
-        listRuns(db, 1),
+        listRuns(db, 10),
       ]),
     ),
     requestClock(),
   ]);
+  const lastRun = recent[0];
+  const durations = recent.flatMap((r) =>
+    r.durationMs === null ? [] : [fill(t.runs.seconds, { n: seconds(r.durationMs) })],
+  );
   const nextRun = [
     { phase: "before" as const, at: current.beforeAt },
     { phase: "after" as const, at: current.afterAt },
@@ -165,6 +169,11 @@ export default async function AdminPage() {
           ? fill(t.quota.left, { n: quota.remaining, at: clock.stamp(quota.at) })
           : t.quota.none}
       </p>
+      {durations.length > 0 && (
+        <p className={`text-sm tabular-nums ${MUTED}`}>
+          {fill(t.runs.recent, { n: durations.length, list: durations.join(" · ") })}
+        </p>
+      )}
       <h2 className="mb-1 mt-10 font-subhead text-display-md font-semibold">{t.run.title}</h2>
       <p className={`text-sm ${MUTED}`}>{t.run.intro}</p>
       <p className="text-sm">{fill(t.run.event, { event: clock.stamp(current.eventAtUtc) })}</p>
