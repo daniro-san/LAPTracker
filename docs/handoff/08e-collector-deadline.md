@@ -38,3 +38,5 @@ Plan changes needed: none.
 - Step 4 ("is maxDuration right"): the collector now stops at 100 s, so `maxDuration = 120` is the ceiling for the finalise work, not for the reads. Record the run's `duration_ms` against that 100 s deadline.
 - If a rehearsal run shows `error = "deadline"`, the upstream was slow, not the code: report it as an upstream finding.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/72
