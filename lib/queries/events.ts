@@ -60,6 +60,7 @@ async function allianceRows(db: Db, snapshotIds: number[]) {
       totalKills: allianceSnapshots.totalKills,
       powerBoard: allianceSnapshots.powerBoard,
       killsBoard: allianceSnapshots.killsBoard,
+      serverRank: allianceSnapshots.serverRank,
       source: allianceSnapshots.source,
       sourceUpdatedAt: allianceSnapshots.sourceUpdatedAt,
       cached: allianceSnapshots.cached,

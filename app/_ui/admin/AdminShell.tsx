@@ -3,13 +3,14 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { isAdmin } from "@/lib/admin-session";
+import { copy } from "@/lib/copy";
 
 import { PinGate } from "./PinGate";
 
 const NAV = [
-  { href: "/admin", label: "Overview" },
-  { href: "/admin/runs", label: "Snapshot runs" },
-  { href: "/admin/errors", label: "App errors" },
+  { href: "/admin", label: copy.admin.nav.overview },
+  { href: "/admin/runs", label: copy.admin.nav.runs },
+  { href: "/admin/errors", label: copy.admin.nav.errors },
 ];
 
 export async function AdminShell({ title, children }: { title: string; children: ReactNode }) {
@@ -19,7 +20,7 @@ export async function AdminShell({ title, children }: { title: string; children:
       <header className="sticky top-0 z-30 border-b border-rule bg-paper">
         <nav
           className="mx-auto flex max-w-[960px] items-center gap-1 px-2 sm:px-4"
-          aria-label="Admin"
+          aria-label={copy.admin.nav.label}
         >
           {NAV.map((n) => (
             <Link

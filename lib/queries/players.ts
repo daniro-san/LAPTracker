@@ -12,6 +12,7 @@ import {
 } from "../compute";
 import type { Db } from "../db";
 import { allianceSnapshots, events, memberSnapshots, snapshots } from "../schema";
+import type { Ranks } from "./ranks";
 
 export const SEARCH_LIMIT = 50;
 
@@ -33,6 +34,7 @@ interface Sighting {
   kills: number | null;
   lv: number | null;
   hasAvatar: boolean;
+  rank: Ranks;
 }
 
 export interface PlayerFresh {
@@ -53,6 +55,8 @@ export interface PlayerEventRow {
   power: number | null;
   kills: number | null;
   lv: number | null;
+  /** Ledger rank inside the alliance's roster at the reference snapshot (Phase 5e). */
+  rank: Ranks;
   /** The before-snapshot values and the in-event change; null unless both snapshots hold fresh data. */
   inEvent: {
     fromPower: number | null;
@@ -96,6 +100,15 @@ export interface PlayerHistory {
   alliances: AllianceStay[];
 }
 
+/** 1 + the roster-mates of the same alliance snapshot with a higher value; null without a value. */
+function peerRank(own: typeof memberSnapshots.power, column: "power" | "kills") {
+  return sql<
+    number | null
+  >`case when ${own} is null then null else (select count(*)::int + 1 from member_snapshots peer where peer.alliance_snapshot_id = ${memberSnapshots.allianceSnapshotId} and peer.${sql.raw(column)} > ${own}) end`.mapWith(
+    (v: unknown) => (v === null ? null : Number(v)),
+  );
+}
+
 const sightingColumns = {
   eventId: events.id,
   eventName: events.name,
@@ -112,11 +125,13 @@ const sightingColumns = {
   kills: memberSnapshots.kills,
   lv: memberSnapshots.lv,
   hasAvatar: sql<boolean>`${memberSnapshots.avatarUrl} is not null`,
+  mightRank: peerRank(memberSnapshots.power, "power"),
+  killsRank: peerRank(memberSnapshots.kills, "kills"),
 };
 
 /** Every roster row of these uids in a real event, oldest first; test events are never part of it. */
-function sightingsOf(db: Db, uids: number[]): Promise<(Sighting & { uid: number })[]> {
-  return db
+async function sightingsOf(db: Db, uids: number[]): Promise<(Sighting & { uid: number })[]> {
+  const rows = await db
     .select({ uid: memberSnapshots.uid, ...sightingColumns })
     .from(memberSnapshots)
     .innerJoin(allianceSnapshots, eq(allianceSnapshots.id, memberSnapshots.allianceSnapshotId))
@@ -124,6 +139,10 @@ function sightingsOf(db: Db, uids: number[]): Promise<(Sighting & { uid: number 
     .innerJoin(events, eq(events.id, snapshots.eventId))
     .where(and(inArray(memberSnapshots.uid, uids), eq(events.isTest, false)))
     .orderBy(asc(events.eventAtUtc), sql`${snapshots.phase} desc`);
+  return rows.map(({ mightRank, killsRank, ...r }) => ({
+    ...r,
+    rank: { might: mightRank, kills: killsRank },
+  }));
 }
 
 const freshOf = (s: Sighting | undefined): PlayerFresh | null =>
@@ -148,6 +167,7 @@ function eventRow(before: Sighting | undefined, after: Sighting | undefined): Pl
     power: ref.power,
     kills: ref.kills,
     lv: ref.lv,
+    rank: ref.rank,
     inEvent: both
       ? {
           fromPower: before.power,

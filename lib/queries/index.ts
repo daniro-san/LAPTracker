@@ -6,4 +6,5 @@ export { getEventDetail, listEvents, type EventSummary } from "./events";
 export { allianceNames } from "./names";
 export { playerHistory, searchPlayers } from "./players";
 export type { PlayerEventRow, PlayerHistory, PlayerMatch } from "./players";
+export { eventRanks, historyRanks, type Ranks } from "./ranks";
 export { rosterChanges, type RosterChange } from "./rosters";

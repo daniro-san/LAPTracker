@@ -1,18 +1,18 @@
-// Snapshot status chips and freshness dots (plan Phase 5). Every state has a symbol and a word:
-// colour is never the only cue.
+// The status strip, freshness marks and the legend (DESIGN.md `status-strip`, `legend`). Every state has
+// a symbol, a colour and a word: colour is never the only cue. Run errors and quota live on /admin.
 import type { ReactNode } from "react";
 
 import { Chip, type ChipTone } from "@/lib/brand/components/Chip";
 import { DroppedStitch, Hourglass, StitchedCheck } from "@/lib/brand/components/StatusIcons";
+import { copy, fill } from "@/lib/copy";
 
-import { utcStamp } from "./format";
+import type { Clock } from "./format";
 
 export interface PhaseStatus {
   phase: "before" | "after";
   status: "running" | "complete" | "partial" | "failed";
   startedAt: Date;
   finishedAt: Date | null;
-  error?: string | null | undefined;
 }
 
 const CHIP: Record<PhaseStatus["status"], { icon: ReactNode; tone: ChipTone }> = {
@@ -22,48 +22,59 @@ const CHIP: Record<PhaseStatus["status"], { icon: ReactNode; tone: ChipTone }> =
   failed: { icon: "✗", tone: "seal" },
 } as const;
 
-const STATUS_WORD = {
-  complete: "done",
-  partial: "partly done",
-  failed: "failed",
+const STATE_WORD = {
+  complete: copy.status.done,
+  partial: copy.status.partial,
+  failed: copy.status.failed,
 } as const;
 
 const finishedAt = (p: PhaseStatus) => p.finishedAt ?? p.startedAt;
 
 /** "Last updated: done at …", or "Updating now"; nothing yet: "Not updated yet". */
-function LastChip({ phases }: { phases: PhaseStatus[] }) {
+function LastChip({ phases, clock }: { phases: PhaseStatus[]; clock: Clock }) {
   const running = phases.find((p) => p.status === "running");
   if (running) {
     return (
       <Chip tone={CHIP.running.tone} icon={CHIP.running.icon}>
-        Updating now
+        {copy.status.running}
       </Chip>
     );
   }
   const last = phases
-    .filter((p): p is PhaseStatus & { status: keyof typeof STATUS_WORD } => p.status !== "running")
+    .filter((p): p is PhaseStatus & { status: keyof typeof STATE_WORD } => p.status !== "running")
     .sort((a, b) => finishedAt(b).getTime() - finishedAt(a).getTime())[0];
   if (!last) {
     return (
       <Chip tone="muted" icon="○">
-        Not updated yet
+        {copy.status.none}
       </Chip>
     );
   }
   return (
     <Chip tone={CHIP[last.status].tone} icon={CHIP[last.status].icon}>
-      Last updated: {STATUS_WORD[last.status]} at {utcStamp(finishedAt(last))}
+      {fill(copy.status.lastUpdated, {
+        state: STATE_WORD[last.status],
+        time: clock.at(finishedAt(last)),
+      })}
     </Chip>
   );
 }
 
 /** "Next update scheduled at …" while a phase is still to run; nothing once both have run. */
-function NextChip({ phases, at }: { phases: PhaseStatus[]; at: { before: Date; after: Date } }) {
+function NextChip({
+  phases,
+  at,
+  clock,
+}: {
+  phases: PhaseStatus[];
+  at: { before: Date; after: Date };
+  clock: Clock;
+}) {
   const next = (["before", "after"] as const).find((ph) => !phases.some((p) => p.phase === ph));
   if (!next) return null;
   return (
     <Chip tone="muted" icon="○">
-      Next update scheduled at {utcStamp(at[next])}
+      {fill(copy.status.next, { time: clock.at(at[next]) })}
     </Chip>
   );
 }
@@ -72,33 +83,22 @@ export function StatusChips({
   phases,
   beforeAt,
   afterAt,
+  clock,
 }: {
   phases: PhaseStatus[];
   beforeAt: Date;
   afterAt: Date;
+  clock: Clock;
 }) {
-  const failed = phases.filter((p) => p.status === "failed" && p.error);
   return (
-    <div>
-      <ul className="flex flex-wrap items-start gap-2">
-        <li className="min-w-0">
-          <LastChip phases={phases} />
-        </li>
-        <li className="min-w-0">
-          <NextChip phases={phases} at={{ before: beforeAt, after: afterAt }} />
-        </li>
-      </ul>
-      {failed.map((p) => (
-        <p key={p.phase} className="mt-1 break-words text-sm text-seal">
-          {p.error}
-        </p>
-      ))}
-      {phases.some((p) => p.status === "partial") && (
-        <p className="mt-2 text-sm text-ink/70">
-          Some alliances could not be refreshed, so their changes are not shown.
-        </p>
-      )}
-    </div>
+    <ul className="flex flex-wrap items-start gap-2" aria-label={copy.status.label}>
+      <li className="min-w-0">
+        <LastChip phases={phases} clock={clock} />
+      </li>
+      <li className="min-w-0">
+        <NextChip phases={phases} at={{ before: beforeAt, after: afterAt }} clock={clock} />
+      </li>
+    </ul>
   );
 }
 
@@ -108,9 +108,28 @@ export interface FreshState {
   failed: boolean;
 }
 
-const problem = (s: FreshState | null) => s !== null && (s.failed || !s.isFresh);
+type FreshWord = keyof typeof copy.fresh;
 
-/** One plain phrase: "Data up to date" or which snapshot has out-of-date data. Times are in the details. */
+const wordOf = (s: FreshState | null): FreshWord =>
+  !s ? "missing" : s.failed ? "failed" : s.isFresh ? "fresh" : "stale";
+
+const MARK: Record<FreshWord, { symbol: string; tone: string }> = {
+  fresh: { symbol: "●", tone: "text-ink" },
+  stale: { symbol: "○", tone: "text-seal" },
+  failed: { symbol: "✗", tone: "text-seal" },
+  missing: { symbol: "–", tone: "text-ink/70" },
+};
+
+function Mark({ word }: { word: FreshWord }) {
+  return (
+    <span className={`whitespace-nowrap font-medium ${MARK[word].tone}`}>
+      <span aria-hidden="true">{MARK[word].symbol} </span>
+      {copy.fresh[word]}
+    </span>
+  );
+}
+
+/** One mark for the row: Fresh when every snapshot side present is fresh, else the worst state. */
 export function FreshDots({
   before,
   after,
@@ -118,40 +137,68 @@ export function FreshDots({
   before: FreshState | null;
   after: FreshState | null;
 }) {
-  const bad = [problem(before) && "before", problem(after) && "after"].filter(Boolean);
-  if (bad.length === 0) {
-    return (
-      <span className="font-medium text-ink">
-        <span aria-hidden="true">● </span>Data up to date
-      </span>
-    );
-  }
-  return (
-    <span className="font-medium text-seal">
-      <span aria-hidden="true">○ </span>Out-of-date data in the {bad.join(" and ")} snapshot
-    </span>
-  );
+  const words = [before, after].filter((s) => s !== null).map(wordOf);
+  const worst = (["failed", "stale"] as const).find((w) => words.includes(w)) ?? "fresh";
+  return <Mark word={worst} />;
 }
 
+/** Before / After, each with its mark and the time of the data. */
 export function FreshnessDetail({
   before,
   after,
+  clock,
 }: {
   before: FreshState | null;
   after: FreshState | null;
+  clock: Clock;
 }) {
   const line = (label: string, s: FreshState | null) => (
-    <li>
-      {label}:{" "}
-      {!s
-        ? "no data"
-        : `${s.failed ? "could not be fetched" : s.isFresh ? "data was fresh" : "data was out of date, so changes are not shown"}${s.updatedAt ? ` (updated ${utcStamp(s.updatedAt)})` : ""}`}
+    <li className="flex flex-wrap items-baseline gap-x-2">
+      <span className="w-14 font-medium">{label}</span>
+      <Mark word={wordOf(s)} />
+      {s?.updatedAt && <span className="text-ink/70">{clock.at(s.updatedAt)}</span>}
     </li>
   );
   return (
     <ul>
-      {line("Before snapshot", before)}
-      {line("After snapshot", after)}
+      {line(copy.ledger.before, before)}
+      {line(copy.ledger.after, after)}
     </ul>
+  );
+}
+
+/** The one legend (DESIGN.md "One legend, once"), under the page title. */
+export function Legend({ beforeOnly = false }: { beforeOnly?: boolean }) {
+  const l = copy.legend;
+  const items: [ReactNode, string, string][] = [
+    ["▲", l.up, "text-yarn"],
+    ["▼", l.down, "text-seal"],
+    ["=", l.same, "text-ink/70"],
+    ["#", l.rank, "text-ink"],
+    ["●", l.fresh, "text-ink"],
+    ["○", l.stale, "text-seal"],
+  ];
+  if (beforeOnly) items.push([<BeforeMark key="b" />, l.beforeOnly, "text-ink"]);
+  return (
+    <ul
+      aria-label={l.label}
+      className="my-3 flex flex-wrap gap-x-4 gap-y-1 border-y border-rule py-2 text-xs text-ink/70"
+    >
+      {items.map(([symbol, word, tone], i) => (
+        <li key={i} className="inline-flex items-center gap-1">
+          <span aria-hidden="true" className={`font-semibold ${tone}`}>
+            {symbol}
+          </span>
+          {word}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** The `B` box: this event's figures come from the before snapshot (Phase 5e). The legend names it. */
+export function BeforeMark() {
+  return (
+    <span className="rounded-xs border border-ink/50 px-1 text-xs font-semibold text-ink">B</span>
   );
 }

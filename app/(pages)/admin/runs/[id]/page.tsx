@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { AdminShell } from "@/app/_ui/admin/AdminShell";
 import { utcStamp } from "@/app/_ui/format";
+import { copy, fill } from "@/lib/copy";
 import { withPageDb } from "@/lib/page";
 import { getRun } from "@/lib/queries/admin";
 
@@ -29,15 +30,17 @@ export default async function RunPage({ params }: { params: Promise<{ id: string
   const found = await withPageDb((db) => getRun(db, Number(raw)));
   if (!found) notFound();
   const { run, logs, tags } = found;
+  const t = copy.admin.runs;
   return (
-    <AdminShell title={`Run ${run.id}`}>
+    <AdminShell title={fill(t.run, { id: run.id })}>
       <p className="break-words">
-        {run.isTest && "[rehearsal] "}
+        {run.isTest && `${t.rehearsal} `}
         {run.eventName} · {run.phase} · {run.status}
       </p>
       <p className="mb-1 text-sm text-ink/70">
-        {utcStamp(run.startedAt)} · {run.callsUsed} calls
-        {run.durationMs !== null && ` · ${(run.durationMs / 1000).toFixed(1)} s`}
+        {utcStamp(run.startedAt)} · {fill(t.calls, { n: run.callsUsed })}
+        {run.durationMs !== null &&
+          ` · ${fill(t.seconds, { n: (run.durationMs / 1000).toFixed(1) })}`}
       </p>
       {run.error && <p className="mb-3 break-words text-seal">{run.error}</p>}
       <ol className="mt-3">
@@ -50,7 +53,7 @@ export default async function RunPage({ params }: { params: Promise<{ id: string
             <span className="block break-words font-mono text-xs">{fields(l.data)}</span>
           </li>
         ))}
-        {logs.length === 0 && <li>No log lines.</li>}
+        {logs.length === 0 && <li>{t.noLogs}</li>}
       </ol>
     </AdminShell>
   );

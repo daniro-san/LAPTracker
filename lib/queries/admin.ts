@@ -1,6 +1,6 @@
 // Read models for /admin (plan Phase 4): runs, a run's log timeline, grouped app errors and the
 // latest rehearsal. Never linked from public pages; the pages check the admin cookie first.
-import { asc, desc, eq } from "drizzle-orm";
+import { asc, desc, eq, isNotNull } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { rehearsalVerdict, type Verdict } from "../rehearsal";
@@ -19,12 +19,24 @@ export async function listRuns(db: Db, limit = 60) {
       startedAt: snapshots.startedAt,
       durationMs: snapshots.durationMs,
       callsUsed: snapshots.callsUsed,
+      quotaRemainingAfter: snapshots.quotaRemainingAfter,
       error: snapshots.error,
     })
     .from(snapshots)
     .innerJoin(events, eq(events.id, snapshots.eventId))
     .orderBy(desc(snapshots.startedAt))
     .limit(limit);
+}
+
+/** The data requests left after the newest run that reported them (moved off the public page, 7b). */
+export async function latestQuota(db: Db) {
+  const [row] = await db
+    .select({ remaining: snapshots.quotaRemainingAfter, at: snapshots.startedAt })
+    .from(snapshots)
+    .where(isNotNull(snapshots.quotaRemainingAfter))
+    .orderBy(desc(snapshots.startedAt))
+    .limit(1);
+  return row ?? null;
 }
 
 export async function getRun(db: Db, snapshotId: number) {

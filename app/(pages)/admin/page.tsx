@@ -1,10 +1,12 @@
-// /admin (plan Phase 4): the effective schedule, the rehearsal, the run buttons.
+// /admin (plan Phase 4): the effective schedule, the data requests left, the rehearsal, the run buttons.
+const t = copy.admin;
 import { AdminActions } from "@/app/_ui/admin/AdminActions";
 import { AdminShell } from "@/app/_ui/admin/AdminShell";
 import { utcStamp } from "@/app/_ui/format";
+import { copy, fill } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
-import { latestRehearsal, type RehearsalStatus } from "@/lib/queries/admin";
+import { latestQuota, latestRehearsal, type RehearsalStatus } from "@/lib/queries/admin";
 import { currentEvent, describeInstant, nextEvent } from "@/lib/schedule";
 
 const MUTED = "text-ink/70";
@@ -19,7 +21,7 @@ function Row({ label, value }: { label: string; value: string }) {
 }
 
 function Rehearsal({ r }: { r: RehearsalStatus | null }) {
-  if (!r) return <p className={MUTED}>No rehearsal yet. Use “Rehearse now” to run one.</p>;
+  if (!r) return <p className={MUTED}>{t.rehearsal.none}</p>;
   return (
     <div>
       <p className="break-words font-medium">{r.name}</p>
@@ -28,15 +30,18 @@ function Rehearsal({ r }: { r: RehearsalStatus | null }) {
           const p = r.phases.find((x) => x.phase === phase);
           return (
             <li key={phase}>
-              {phase}: {p ? `${p.status}${p.error ? ` (${p.error})` : ""}` : "not run"} · due{" "}
-              {utcStamp(phase === "before" ? r.beforeAt : r.afterAt)}
+              {fill(t.rehearsal.phase, {
+                phase,
+                state: p ? `${p.status}${p.error ? ` (${p.error})` : ""}` : t.rehearsal.notRun,
+                at: utcStamp(phase === "before" ? r.beforeAt : r.afterAt),
+              })}
             </li>
           );
         })}
       </ul>
       {r.verdict && (
         <>
-          <p className="font-semibold">{r.verdict.pass ? "✓ Pass" : "✗ Fail"}</p>
+          <p className="font-semibold">{r.verdict.pass ? t.rehearsal.pass : t.rehearsal.fail}</p>
           <ul className="text-sm">
             {r.verdict.lines.map((l) => (
               <li key={l.text}>
@@ -55,37 +60,41 @@ export default async function AdminPage() {
   const now = new Date();
   const next = nextEvent(now, env);
   const current = currentEvent(now, env);
-  const rehearsal = await withPageDb((db) => latestRehearsal(db, env.SNAPSHOT_WINDOW_MIN));
+  const [rehearsal, quota] = await withPageDb((db) =>
+    Promise.all([latestRehearsal(db, env.SNAPSHOT_WINDOW_MIN), latestQuota(db)]),
+  );
+  const s = t.schedule;
   return (
-    <AdminShell title="Admin">
-      <h2 className="mb-1 font-subhead text-display-md font-semibold">When snapshots are taken</h2>
+    <AdminShell title={t.title}>
+      <h2 className="mb-1 font-subhead text-display-md font-semibold">{s.title}</h2>
       <dl className="mb-6">
-        <Row label="Server time zone" value={env.SERVER_TZ} />
-        <Row label="Next event" value={describeInstant(next.eventAtUtc, env)} />
-        <Row label="Before snapshot due" value={describeInstant(next.beforeAt, env)} />
-        <Row label="After snapshot due" value={describeInstant(next.afterAt, env)} />
+        <Row label={s.timeZone} value={env.SERVER_TZ} />
+        <Row label={s.nextEvent} value={describeInstant(next.eventAtUtc, env)} />
+        <Row label={s.beforeDue} value={describeInstant(next.beforeAt, env)} />
+        <Row label={s.afterDue} value={describeInstant(next.afterAt, env)} />
+        <Row label={s.grace} value={fill(s.graceValue, { min: env.SNAPSHOT_WINDOW_MIN })} />
+        <Row label={s.quotaCheck} value={env.QUOTA_CHECK_AT} />
         <Row
-          label="Grace window"
-          value={`A snapshot may start up to ${env.SNAPSHOT_WINDOW_MIN} min after its due time`}
-        />
-        <Row label="Weekly API quota check" value={env.QUOTA_CHECK_AT} />
-        <Row
-          label="Rehearsals (test runs)"
+          label={s.rehearsals}
           value={
             env.REHEARSAL_AT === ""
-              ? "off"
-              : `${env.REHEARSAL_AT}, keeping the last ${env.REHEARSAL_KEEP}`
+              ? s.rehearsalsOff
+              : fill(s.rehearsalsValue, { at: env.REHEARSAL_AT, keep: env.REHEARSAL_KEEP })
           }
         />
       </dl>
-      <h2 className="mb-2 font-subhead text-display-md font-semibold">Run something now</h2>
+      <h2 className="mb-1 font-subhead text-display-md font-semibold">{t.quota.title}</h2>
+      <p className="mb-6">
+        {quota?.remaining != null
+          ? `${fill(t.quota.left, { n: quota.remaining })} (${utcStamp(quota.at)})`
+          : t.quota.none}
+      </p>
+      <h2 className="mb-2 font-subhead text-display-md font-semibold">{t.run.title}</h2>
       <p className={`mb-3 text-sm ${MUTED}`}>
-        Current event: {describeInstant(current.eventAtUtc, env)}. A snapshot uses about 21 API
-        calls and takes up to a minute. A rehearsal is a fake event that tests the whole pipeline:
-        about 45 calls over about 50 minutes.
+        {fill(t.run.intro, { event: describeInstant(current.eventAtUtc, env) })}
       </p>
       <AdminActions beforeAtText={describeInstant(current.beforeAt, env)} />
-      <h2 className="mb-2 mt-8 font-subhead text-display-md font-semibold">Last rehearsal</h2>
+      <h2 className="mb-2 mt-8 font-subhead text-display-md font-semibold">{t.rehearsal.title}</h2>
       <Rehearsal r={rehearsal} />
     </AdminShell>
   );

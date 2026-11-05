@@ -5,9 +5,11 @@
 import { useMemo, useState } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
+import { rankDelta } from "@/lib/compute";
+import { copy, fill } from "@/lib/copy";
 
 import { PlayerAvatar } from "./Pictures";
-import { StatTable, type StatMetric, type StatRow } from "./StatTable";
+import { LABEL, StatTable, type StatMetric, type StatRow } from "./StatTable";
 
 type Stats = { power: number | null; kills: number | null; lv: number | null };
 
@@ -19,18 +21,22 @@ export interface MemberView {
   status: "joined" | "left" | "";
   before: Stats | null;
   after: Stats | null;
+  /** Ledger rank by might inside the alliance, in each roster. */
+  rank: { before: number | null; after: number | null };
 }
 
 type SortKey = "might" | "mightDelta" | "kills" | "killsDelta" | "lv" | "name";
 
 const SORTS: { key: SortKey; label: string }[] = [
-  { key: "might", label: "Might" },
-  { key: "mightDelta", label: "Might change" },
-  { key: "kills", label: "Kills" },
-  { key: "killsDelta", label: "Kills change" },
-  { key: "lv", label: "Level" },
-  { key: "name", label: "Name" },
+  { key: "might", label: copy.ledger.might },
+  { key: "mightDelta", label: copy.members.mightChange },
+  { key: "kills", label: copy.ledger.kills },
+  { key: "killsDelta", label: copy.members.killsChange },
+  { key: "lv", label: copy.ledger.level },
+  { key: "name", label: copy.members.name },
 ];
+
+const STATUS = { joined: copy.members.joined, left: copy.members.left } as const;
 
 const FIELD = "drawn-field min-h-11 w-full px-3 text-base";
 
@@ -79,19 +85,23 @@ function toRow(m: MemberView, canDelta: boolean): StatRow {
   return {
     key: String(m.uid),
     href: `/players/${m.uid}`,
+    rank: {
+      n: m.rank.after ?? m.rank.before,
+      move: canDelta ? rankDelta(m.rank.before, m.rank.after) : null,
+    },
     lead: m.name,
     icon: <PlayerAvatar uid={m.uid} hasAvatar={m.hasAvatar} />,
     sub: (
       <>
-        {m.status && <span className="font-medium">{m.status}</span>}
+        {m.status && <span className="font-medium text-ink">{STATUS[m.status]}</span>}
         {m.status && m.wasName && " · "}
-        {m.wasName && `(was ${m.wasName})`}
+        {m.wasName && fill(copy.ledger.was, { name: m.wasName })}
       </>
     ),
     metrics: [
-      metric(m, "Might", "power", canDelta),
-      metric(m, "Kills", "kills", canDelta),
-      metric(m, "Level", "lv", canDelta),
+      metric(m, copy.ledger.might, "power", canDelta),
+      metric(m, copy.ledger.kills, "kills", canDelta),
+      metric(m, copy.ledger.level, "lv", canDelta),
     ],
   };
 }
@@ -129,36 +139,36 @@ function Controls({ f, set }: { f: Filters; set: (patch: Partial<Filters>) => vo
       <input
         className={`${FIELD} col-span-2 sm:col-span-1`}
         type="search"
-        placeholder="Search members by name"
-        aria-label="Search members by name"
+        placeholder={copy.members.search}
+        aria-label={copy.members.search}
         value={f.name}
         onChange={(e) => set({ name: e.target.value })}
       />
       <input
         className={FIELD}
         inputMode="numeric"
-        placeholder="Min might, e.g. 50M"
-        aria-label="Minimum might"
+        placeholder={copy.members.min}
+        aria-label={copy.members.min}
         value={f.min}
         onChange={(e) => set({ min: e.target.value })}
       />
       <input
         className={FIELD}
         inputMode="numeric"
-        placeholder="Max might"
-        aria-label="Maximum might"
+        placeholder={copy.members.max}
+        aria-label={copy.members.max}
         value={f.max}
         onChange={(e) => set({ max: e.target.value })}
       />
       <select
         className={FIELD}
-        aria-label="Sort by"
+        aria-label={copy.members.sort}
         value={f.sort}
         onChange={(e) => set({ sort: e.target.value as SortKey })}
       >
         {SORTS.map((s) => (
           <option key={s.key} value={s.key}>
-            Sort by {s.label}
+            {s.label}
           </option>
         ))}
       </select>
@@ -167,7 +177,7 @@ function Controls({ f, set }: { f: Filters; set: (patch: Partial<Filters>) => vo
         className={buttonClass("secondary")}
         onClick={() => set({ desc: !f.desc })}
       >
-        {f.desc ? "Highest first" : "Lowest first"}
+        {f.desc ? copy.members.highFirst : copy.members.lowFirst}
       </button>
     </div>
   );
@@ -185,14 +195,14 @@ export function MembersExplorer({
   return (
     <div>
       <Controls f={f} set={(patch) => setF({ ...f, ...patch })} />
-      <p className="mb-2 text-sm text-ink/70">
-        Showing {rows.length} of {members.length} members
+      <p className="mb-2 text-sm tabular-nums text-ink/70">
+        <span className={LABEL}>{copy.ledger.members}</span> {rows.length} / {members.length}
       </p>
       <StatTable
-        leadLabel="Member"
-        columns={["Might", "Kills", "Level"]}
+        leadLabel={copy.ledger.member}
+        columns={[copy.ledger.might, copy.ledger.kills, copy.ledger.level]}
         rows={rows}
-        empty="No members match your filters."
+        empty={copy.empty.noMembers}
       />
     </div>
   );

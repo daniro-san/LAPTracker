@@ -1,10 +1,13 @@
-// The main table's rows from the event read model (plan Phase 5): sorted by before.total_power,
-// each metric as value · delta · percent, kills with the member-loss note when negative.
-import { delta as computeDelta } from "@/lib/compute";
+// The main page's rows from the event read model (plan Phase 5, 5e): ordered strictly by ledger rank by
+// might, each metric as value · delta · percent, kills with the member-loss note when negative, and the
+// three ranks (might, kills, server) before → after.
+import { delta as computeDelta, rankDelta } from "@/lib/compute";
 import type { NameHistoryEntry } from "@/lib/compute";
-import type { getEventDetail } from "@/lib/queries";
-import type { RosterChange } from "@/lib/queries";
+import { copy } from "@/lib/copy";
+import type { getEventDetail, Ranks, RosterChange } from "@/lib/queries";
 
+import type { RankPair } from "./DetailLines";
+import { joinedText, leftText, membersLostText } from "./format";
 import type { StatMetric } from "./StatTable";
 
 type Detail = NonNullable<Awaited<ReturnType<typeof getEventDetail>>>;
@@ -19,6 +22,7 @@ export interface ComparisonRow {
   after: AllianceCell | undefined;
   metrics: StatMetric[];
   formerly: NameHistoryEntry | null;
+  ranks: { might: RankPair; kills: RankPair; server: RankPair };
 }
 
 /** The earlier entry of a name history that is not the current one (plan §3.8). */
@@ -28,9 +32,11 @@ export function formerlyOf(history: NameHistoryEntry[] | undefined): NameHistory
   return sorted[1] ?? null;
 }
 
+const usable = (cell: AllianceCell | undefined) => cell?.isFresh === true && !cell.failed;
+
 function pairOf(cell: AllianceCell | undefined) {
   return {
-    isFresh: cell?.isFresh === true && !cell.failed,
+    isFresh: usable(cell),
     totalPower: cell?.totalPower ?? null,
     totalKills: cell?.totalKills ?? null,
   };
@@ -49,16 +55,17 @@ function metric(
   return { label, value: after ?? before, delta, base: before, ...(note ? { note } : {}) };
 }
 
-/** `+3/−1`: who joined and left, shown only when someone did. */
+/** `+3 joined · −1 left`, only when people both joined and left: otherwise the change says it all. */
 function rosterNote(change: RosterChange | undefined): string | undefined {
-  if (!change || change.joined + change.left === 0) return undefined;
-  return `${change.joined} joined, ${change.left} left`;
+  if (!change || change.joined === 0 || change.left === 0) return undefined;
+  return `${joinedText(change.joined)} · ${leftText(change.left)}`;
 }
 
-/** Kills only fall when people leave (plan Phase 5), so a negative kills delta names the loss. */
+/** Kills only fall when people leave (plan Phase 5), so a negative kills delta names the loss. It sits in
+ * the Details panel, not on the Kills row, where all three personas read it as a kills figure (7b). */
 function killNote(killsDelta: number | null, change: RosterChange | undefined) {
   if (killsDelta === null || killsDelta >= 0 || !change || change.left === 0) return undefined;
-  return `${change.left} ${change.left === 1 ? "member" : "members"} left`;
+  return membersLostText(change.left);
 }
 
 /** The three compared numbers of one snapshot row; all null when the row is missing. */
@@ -78,23 +85,49 @@ function metricsFor(
   const d = computeDelta(pairOf(before), pairOf(after));
   const [b, a] = [figures(before), figures(after)];
   return [
+    metric(copy.ledger.might, b.power, a.power, d?.power ?? null),
+    {
+      ...metric(copy.ledger.kills, b.kills, a.kills, d?.kills ?? null),
+      detailNote: killNote(d?.kills ?? null, change),
+    },
     metric(
-      "Members",
+      copy.ledger.members,
       b.members,
       a.members,
       d ? gap(b.members, a.members) : null,
       d ? rosterNote(change) : undefined,
     ),
-    metric("Might", b.power, a.power, d?.power ?? null),
-    metric("Kills", b.kills, a.kills, d?.kills ?? null, killNote(d?.kills ?? null, change)),
   ];
 }
 
-/** One row per tracked alliance seen in either snapshot, biggest before.total_power first. */
+function rankPair(before: number | null, after: number | null, canMove: boolean): RankPair {
+  return { before, after, move: canMove ? rankDelta(before, after) : null };
+}
+
+function ranksFor(
+  b: AllianceCell | undefined,
+  a: AllianceCell | undefined,
+  ledger: Partial<Record<"before" | "after", Ranks>> = {},
+) {
+  const canMove = usable(b) && usable(a);
+  const pair = (key: keyof Ranks) =>
+    rankPair(ledger.before?.[key] ?? null, ledger.after?.[key] ?? null, canMove);
+  return {
+    might: pair("might"),
+    kills: pair("kills"),
+    server: rankPair(b?.serverRank ?? null, a?.serverRank ?? null, canMove),
+  };
+}
+
+/** The rank the page is ordered by: the latest snapshot that ranked the alliance. */
+export const currentRank = (r: RankPair): number | null => r.after ?? r.before;
+
+/** One row per alliance seen in either snapshot, by ledger rank by might (#1 first). */
 export function comparisonRows(
   snapshots: Snap[],
   changes: Map<number, RosterChange>,
   names: Map<number, NameHistoryEntry[]>,
+  ranks: Map<number, Partial<Record<"before" | "after", Ranks>>>,
 ): ComparisonRow[] {
   const before = snapshots.find((s) => s.phase === "before");
   const after = snapshots.find((s) => s.phase === "after");
@@ -112,8 +145,9 @@ export function comparisonRows(
       after: a,
       metrics: metricsFor(b, a, changes.get(unionId)),
       formerly: formerlyOf(names.get(unionId)),
+      ranks: ranksFor(b, a, ranks.get(unionId)),
     };
   });
-  const power = (r: ComparisonRow) => r.before?.totalPower ?? r.after?.totalPower ?? -1;
-  return rows.sort((x, y) => power(y) - power(x));
+  const order = (r: ComparisonRow) => currentRank(r.ranks.might) ?? Number.MAX_SAFE_INTEGER;
+  return rows.sort((x, y) => order(x) - order(y) || x.tag.localeCompare(y.tag));
 }

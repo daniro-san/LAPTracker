@@ -183,8 +183,8 @@ Members of a game alliance on server 325 — Russia, Spain, Brazil, the United S
 - **Numbers first, words second.** Every data row reads as `label · number · signed delta with arrow · percent`. The label is one word, the same word the game's own English UI uses (Might, Kills, Members), because the players already know those words in the game.
 - **Three channels for every state**, never one: colour **and** an arrow/sign **and** a short word. Green alone, an arrow alone or English alone is not enough. Colour-blind safe by construction.
 - **One legend, once.** A compact legend (arrow up/down, the freshness dot, `[TEST]`) sits under the header; nothing else explains itself in a sentence.
-- **Sentences only in the margins.** The grandma voice lives in empty states, error pages, section titles and the admin area. Status is chips (`Before ✓ 12:01` · `After ✓ 16:01`), not prose. A public page has no paragraph.
-- **Dates and numbers through `Intl`** with the browser's locale: `16:01` not `4:01 PM`, `3,94 B` for pt-BR, `3.94B` for en. Server time stays explicit (`16:01 server`); relative times (`4 days ago`) are secondary.
+- **Sentences only in the margins.** The grandma voice lives in empty states, error pages, section titles and the admin area. Status is chips, not prose: `Last updated: done at Oct 31, 14:01 server` and `Next update scheduled at …` (owner, 2026-11-05: these replace the earlier `Before ✓ 12:01` · `After ✓ 16:01` chips). A public page has no paragraph.
+- **Dates and numbers through `Intl`** with the request's `Accept-Language`: `16:01` not `4:01 PM`, `3,94 bi` for pt-BR, `3.94B` for en (the compact suffix is the locale's own). Every public time is server time and says so (`16:01 server`); no UTC twin (owner, 2026-11-05). Relative times (`4 days ago`) are secondary. Per-viewer time zone and date format are later work (#26, #27).
 - **Universal symbols where they are truly universal**: ▲ ▼ for change, a filled dot for fresh and an outlined one for stale, a magnifier for search, ✓ ✗ for done/failed. No icons that need a culture to read (no thumbs, no wink, no skull for kills — "Kills" is already the game's word).
 - **Every string in `lib/copy.ts`**, none in components, so translation later is a file, not a refactor. Keys are stable identifiers; the value is the English text.
 - **The ledger is for the whole server, not for OGs.** Other alliances in the top 10 will use it, so nothing is pinned: order is strictly by rank, and rank numbers (`#1 … #20`) are shown because they are language-free. A viewer may pick _their_ alliance once (tap the tag → "This is my alliance"); it is highlighted and gets a "jump to" control, remembered in `localStorage` for that browser only — a per-viewer convenience, never server state, and the page is correct without it.
@@ -192,7 +192,7 @@ Members of a game alliance on server 325 — Russia, Spain, Brazil, the United S
 ## Navigation and hierarchy
 
 - Header: wordmark · event selector · search · theme switch. Nothing else.
-- Main page, top to bottom: status strip (before/after chips, legend) → the ledger, by rank, with the viewer's chosen alliance highlighted if they picked one → nothing else. The run buttons live on `/admin`.
+- Main page, top to bottom: the title "Server 325 · Saturday Ledger" with the byline under the header (the 360 px header has no room for it) → the event's date and start time → status strip (last updated / next update chips) → legend → the ledger, by rank, with the viewer's chosen alliance highlighted if they picked one → nothing else. The run buttons live on `/admin`.
 - Every card and row is a link to the alliance page; the alliance page is members with the same row shape; the player page is the same shape over time. **One row shape, three depths** — learn it once.
 - Back is the browser's back; breadcrumbs only on alliance and player pages (`Ledger › OGs › Player`).
 - No modals except the bottom sheet for the PIN; no tooltips that carry information; nothing on hover only.
@@ -250,6 +250,19 @@ Rules: deltas are coloured by sign only; a colour that carries no meaning is not
 | `{typography.numeral}`    | 16px | 500    | Every number in tables and cards          |
 | `{typography.label}`      | 12px | 600    | Column headers, badges, small-caps notes  |
 
+**Hierarchy on a page (Session 7b, owner's review: titles, labels, values, notes and metadata must read apart).** Five levels, each with its own face, weight or colour, so they separate without words:
+
+| Level          | Style                                                                                    | Examples                                                               |
+| -------------- | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Page title     | Young Serif, `display-lg`, ink                                                           | "Server 325 · Saturday Ledger", `[OGs] OldGrandmas`, a player's name   |
+| Section / card | Alegreya Sans 700, `display-md` (section) or `display-sm` (card), plum when it is a link | "Saturday, October 31", "Members", `[NSE] Natural Selection` on a card |
+| Label          | `{typography.label}`: 12 px, 600, uppercase, tracked, ink/70                             | MIGHT, KILLS, MEMBERS, START, column headers                           |
+| Value          | Source Sans 3, 16 px, 500, tabular, ink; ranks `#n` 600                                  | `4.37B`, `#3`                                                          |
+| Change         | 14 px, 500, tabular, yarn / seal / ink/70 by sign, with arrow and sign                   | `▲ +85.8M (+2.0%)`, `▼ −2 · −2 left`, `▲1`                             |
+| Note, metadata | 12–14 px, 400, ink/70                                                                    | `Before 96.5M`, `Since previous ▲ …`, times, byline, breadcrumbs       |
+
+Rules separate levels where weight and colour are not enough: a hairline (`{colors.rule}`) under a card's title row, around the legend, and above the Details panel; the drawn rule under the page title band.
+
 ## Layout
 
 - **Spacing**: 4 · 8 · 12 · 16 · 24 · 32 · 48 (`{spacing.xxs}` … `{spacing.section}`). Page gutter `{spacing.md}` on phones, `{spacing.lg}` above 640 px.
@@ -282,10 +295,13 @@ The whole list. Anything else is a composition of these; a new one needs a line 
 
 - **`header`** — wordmark + lace border + event selector + theme switch. Plum field, paper text, sticky and compact on phones.
 - **`theme-switch`** — one 44 px button in the header showing the current mode (sun / moon icon), `role="switch"`, accessible name "Dark mode". Sets `data-theme` on `<html>` and a one-year `theme` cookie (owner, 2026-11-04).
-- **`stat-table` / `stat-card`** — one `StatTable` component: table ≥ 640 px, cards below. Rows ≥ 44 px; numerals right-aligned.
+- **`stat-table` / `stat-card`** — one `StatTable` component: table ≥ 640 px, cards below. Rows ≥ 44 px; numerals right-aligned. The card is simple — rank, picture, `[TAG] Name`, then Might, Kills, Members (or Level) with their change — and the full figures (ranks before → after, values before → after, freshness per snapshot, names) open under a framed "Details ▾" control (owner, 2026-11-05).
 - **`delta-up` / `delta-down`** — `value · ±delta with arrow · ±%`; kills with the member-loss note when negative.
-- **`status-strip`** — two `Chip`s (`lib/brand/components/Chip.tsx`: the soft drawn frame in the tone colour — ink done, plum running, seal partial/failed, muted not yet — with the icon and the word) (`Before ✓ 12:01`, `After ◐ 16:01`) and the legend; replaces every status sentence.
-- **`rank`** — `#n` beside the tag on cards and rows; language-free ordering.
+- **`status-strip`** — two `Chip`s (`lib/brand/components/Chip.tsx`: the soft drawn frame in the tone colour — ink done, plum running, seal partial/failed, muted not yet — with the icon and the word): `Last updated: <state> at <date, time> server` and `Next update scheduled at <date, time> server` (owner, 2026-11-05); replaces every status sentence. Quota and run errors are on `/admin`, never here.
+- **`legend`** — one line under the page title (`Legend` in `app/_ui/Status.tsx`): ▲ Up, ▼ Down, = Same, # Rank, ● Fresh, ○ Stale, and `B` Before only on pages that can show it. Nothing else explains a symbol.
+- **`rank`** — `#n` before the picture on every card and row, with its movement `▲k` / `▼k` / `=` / `—` (`Rank` in `app/_ui/Num.tsx`, `compute.rankDelta`); the Details panel shows `#a → #b` for might, kills and server rank.
+- **`breadcrumbs`** — alliance and player pages only: `Ledger · Sat, Oct 31 › [TAG] Name › Player` (`app/_ui/Breadcrumbs.tsx`); each crumb ≥ 44 px tall.
+- **`my-alliance`** — "My alliance": a framed checkbox beside "Exact numbers" on the alliance page, and on the main page a jump link to that row, which is tinted yarn (`app/_ui/MyAlliance.tsx`, `localStorage` only).
 - **`alliance-badge`** — the alliance's own emblem (one of the game's ten presets, served by `/img/badge/[id]`) at 28 px beside the tag on rows and cards, 40 px beside the alliance page title. Without one: the drawn crocheted banner (`NoBadge`). `AllianceBadge` in `app/_ui/Pictures.tsx` (owner, 2026-11-05; DECISIONS D22).
 - **`avatar`** — the player's photo (served by `/img/avatar/[uid]`) in the soft drawn frame, square, 32 px on member rows and 56 px beside the player page title. Without one: the Granny Doctor in profile (`NoPhoto`). `PlayerAvatar` in `app/_ui/Pictures.tsx`. Photos and badges are content, not ornament, so they may sit on rows and cards; their placeholders go wherever they would.
 - **`badge`** — sage neutral chip: `[TEST]`, source, manual. Never red or yellow.

@@ -6,6 +6,7 @@
 import { useState } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
+import { copy } from "@/lib/copy";
 
 const KEY = "lap_pin";
 
@@ -17,10 +18,9 @@ export function savedPin(): string | null {
   }
 }
 
-const MESSAGES: Record<number, string> = {
-  401: "Wrong PIN.",
-  429: "Too many attempts. Wait a few minutes.",
-};
+const t = copy.admin.pin;
+
+const MESSAGES: Record<number, string> = { 401: t.wrong, 429: t.tooMany };
 
 export function PinSheet({ onUnlocked }: { onUnlocked: (pin: string) => void }) {
   const [pin, setPin] = useState("");
@@ -33,7 +33,7 @@ export function PinSheet({ onUnlocked }: { onUnlocked: (pin: string) => void }) 
         method: "POST",
         headers: { "x-edit-pin": pin },
       });
-      if (!res.ok) return setState(MESSAGES[res.status] ?? "Could not check the PIN. Try again.");
+      if (!res.ok) return setState(MESSAGES[res.status] ?? t.failed);
       try {
         sessionStorage.setItem(KEY, pin);
       } catch {
@@ -41,14 +41,14 @@ export function PinSheet({ onUnlocked }: { onUnlocked: (pin: string) => void }) 
       }
       onUnlocked(pin);
     } catch {
-      setState("Could not reach the server. Try again.");
+      setState(t.offline);
     }
   }
   return (
     <div className="fixed inset-x-0 bottom-0 z-50 border-t border-rule bg-paper p-4 shadow-[0_-8px_24px_var(--sheet-shadow)]">
       <form onSubmit={submit} className="mx-auto flex max-w-md flex-col gap-3">
         <label htmlFor="pin" className="font-semibold">
-          Admin PIN
+          {t.label}
         </label>
         <input
           id="pin"
@@ -66,7 +66,7 @@ export function PinSheet({ onUnlocked }: { onUnlocked: (pin: string) => void }) 
           disabled={pin.length < 6 || state === "checking"}
           className={buttonClass("primary", "font-semibold")}
         >
-          {state === "checking" ? "Checking…" : "Unlock"}
+          {state === "checking" ? t.checking : t.unlock}
         </button>
         {state !== "idle" && state !== "checking" && (
           <p role="alert" className="text-sm text-seal">
