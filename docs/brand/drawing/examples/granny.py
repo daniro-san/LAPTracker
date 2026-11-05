@@ -117,3 +117,37 @@ def tea():
     S([(34, 77), (31, 69.5), (36, 62), (33, 54)], .5, .35, .45)
     S([(40.5, 76), (43.5, 67), (38.5, 58), (42, 49), (47, 46)], .62, .3, .35)
     return svg([el(h), el(p), line(nd, 1.1 * .85)])
+
+def ledger():
+    """Loading vignette for the player search: bent over the open ledger, magnifier in hand.
+    The magnifier (the data-anim path) tilts about the grip at (70, 101) so the lens runs down the rows."""
+    T = (.85, 137, -70.5)
+    h = Path(T)
+    nd = head(h, T)
+    p = Path()
+    S = lambda pts, w, a=.2, b=.2, e=.12, k=1.0: stroke(p, pts, w, a, b, e, k=k)
+    F = lambda a, c, b, w=.45: leaf(p, a, c, b, w)
+    # shawl over the hunched shoulder, cropped by the frame
+    S([(102, 57.5), (121, 62.5), (133, 77), (138, 98), (140, 120)], 1.15, .12, 0)
+    F((88.5, 65), (84, 80), (88, 94), .9)
+    F((89, 106), (88.5, 113), (91, 120), .8)
+    # forearm to the grip
+    F((88, 94), (80, 95.5), (72.5, 97.5), .85)
+    F((89, 106), (80, 105.5), (72.5, 104), .85)
+    # open ledger: page tops curling to the spine, side and front edges, spine, rows
+    S([(10, 91), (25, 88), (41, 91.5), (57, 88), (72, 91)], 1.1, .08, .08)
+    S([(10, 91), (6.5, 102), (3, 113)], 1.0, .1, .1)
+    S([(72, 91), (75.5, 102), (79, 113)], 1.0, .1, .1)
+    S([(3, 113), (22, 110.5), (41, 115), (60, 110.5), (79, 113)], 1.25, .08, .08)
+    F((41, 92.5), (41.8, 104), (41.5, 114), .5)
+    for i, y in enumerate((98, 104)):
+        F((10 - i * 2, y), (24, y - 1.2), (37, y + .6), .32)
+        F((46, y + .6), (59, y - 1.2), (72 + i * 2, y), .32)
+    q = Path()
+    # magnifier: lens rim, glint, handle, gloved hand round the grip
+    ring(q, arc(36, 88, 10.5, 10, 0, 324, 10, wob=[0, .02, -.01, .015, 0, -.02, .01, 0, .02, -.01]), .8)
+    leaf(q, (29.5, 87), (30.5, 82.5), (35, 80.5), .45)
+    stroke(q, [(45.5, 93), (57, 97), (68, 100.5)], 1.5, .05, .1, .9)
+    blob(q, [(63.5, 97.5), (69, 96), (73.5, 97.5), (74, 102.5), (69.5, 104.5), (64.5, 102)])
+    leaf(q, (61, 99.5), (64, 96.5), (68, 96.5), .5)
+    return svg([el(h), el(p), el(q, ' data-anim="scan"'), line(nd, 1.1 * .85)])

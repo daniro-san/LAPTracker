@@ -95,6 +95,7 @@ const source = {
     seen: "Seen",
     limit: "First {n}",
     noMatch: "No player by that name in the ledger.",
+    pending: "Grandma is leafing through the ledger…",
   },
   errors: {
     notFound: {

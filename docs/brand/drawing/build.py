@@ -40,6 +40,7 @@ DRAWINGS = {
     "no-badge": ornaments.no_badge,
     "granny-standing": granny.standing,
     "granny-tea": granny.tea,
+    "granny-ledger": granny.ledger,
     "frame": lambda: frame.frame(W * 0.9, W * 1.08),
     "frame-soft": lambda: frame.frame(W * K * 0.9, W * K * 1.08),
 }
