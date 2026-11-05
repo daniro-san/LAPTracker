@@ -35,3 +35,5 @@ Plan changes needed: none. §10b "Phase 6 observability, alert cadence" now desc
 - Skip: the app-error alert cadence (05-review N2) is fixed; Session 9 does not need to account for it.
 - If Session 9 sees an app error during the dry run, `/admin/errors` lists it and the admin channel gets one message per hour at most while errors continue, from one instance only.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/103
