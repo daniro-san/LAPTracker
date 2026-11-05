@@ -37,3 +37,5 @@ Plan changes needed: none. §10b "§3.1 verdict, quota line" describes the mitig
 - Session 9 step 2 ("Confirm calls_used equals the drop in /v1/quota"): the reconciliation is now `calls_used = (quota_remaining_before − quota_remaining_after + 1) + quota_unseen_calls`. Record `quota_unseen_calls` per phase in the numbers table; a non-zero value means the last `/v1` attempts failed with no quota body and the internal fallback filled the row.
 - Session 9: if the verdict reads `≠` with `quota_unseen_calls = 0`, check `run_logs` for a failing `/v1` attempt that overlapped another alliance's call (the concurrent-tail case above) before suspecting another user of the key.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/107
