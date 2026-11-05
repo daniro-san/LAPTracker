@@ -186,6 +186,16 @@ export const appErrors = pgTable(
   (t) => [index("app_errors_at_idx").on(t.at)],
 );
 
+/** The last app-error alert (plan §6 Observability): one row, claimed so one instance posts per hour. */
+export const appAlerts = pgTable(
+  "app_alerts",
+  {
+    id: integer("id").primaryKey(),
+    alertedAt: tstz("alerted_at").notNull(),
+  },
+  (t) => [check("app_alerts_single_row_check", sql`${t.id} = 1`)],
+);
+
 /**
  * One row per REHEARSAL_AT occurrence (plan §3.1): the first tick in the slot's window claims it,
  * so a slot creates at most one rehearsal, or is skipped once with one admin note.

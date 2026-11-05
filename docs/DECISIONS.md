@@ -301,6 +301,13 @@ Why: an alliance's Kills (and Might) total is the sum of its members, so it fall
 - **Details unchanged.** The "−N Members" note stays in Details. No number is computed differently.
 - **Alliance page leavers.** Counted from the two rosters (status `left`) only when both exist, the same rule as the member list (D32).
 
+## D34 — The dependency rule is linted; migration drift fails `pnpm check` (2026-11-05, 08s)
+
+- **Zones** (`import-x/no-restricted-paths` in `eslint.config.mjs`): `lib/compute.ts` and `lib/budget.ts` import nothing from the project; `lib/schedule.ts` imports only `lib/env.ts` (its `Env` type); `lib/**` and `config/**` never import `app/**`; `app/**` never imports `lib/sources/**`; `app/(pages)/**` and `app/_ui/**` never import `lib/repo/**`. Packages under `node_modules` stay allowed.
+- **Two zones narrower than plan §11.2.** `lib/schedule` may import `lib/env` (a type-only import it has always had). The `lib/repo` zone covers pages and UI only: ARCHITECTURE.md lets route handlers (`app/api`, `app/img`) use `lib/repo`, and five do. Pages and UI read through `lib/queries`.
+- **Resolver.** The rule skips any import it cannot resolve, and the default resolver resolves neither `.ts` nor the `@/` alias, so the zones passed silently without it (0 errors on 7 forbidden imports). `settings["import-x/resolver-next"]` uses the plugin's own `createNodeResolver` with the tsconfig paths. No new dependency.
+- **Drift gate** (`scripts/check-drift.ts`, last step of `pnpm check`, so CI runs it): `drizzle-kit generate` must write nothing under `drizzle/`, then `drizzle-kit check` must pass. If generate writes files, the script lists them, removes new files and restores changed ones, then fails, so a red check leaves no stray migration in a dev tree. No database connection.
+
 ## D35 — Static assets carry no CSP; the proxy matcher stays narrow (2026-11-05, 08t)
 
 Why: 07c (N6) measured that `/_next/static/*` responses have no `Content-Security-Policy` header, 12–15 files per page, locally and on Vercel, while every other response has one. The proxy matcher (`proxy.ts`) skips `_next/static`, `_next/image` and `favicon.ico`.

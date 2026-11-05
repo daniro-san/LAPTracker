@@ -1,8 +1,8 @@
 // app_errors table (plan §6): errors outside a run. The insert keeps the table at MAX_APP_ERRORS rows.
-import { desc, lt, max } from "drizzle-orm";
+import { desc, lt, lte } from "drizzle-orm";
 
 import type { Db } from "../db";
-import { appErrors } from "../schema";
+import { appAlerts, appErrors } from "../schema";
 
 export const MAX_APP_ERRORS = 500;
 
@@ -25,7 +25,20 @@ export async function insertAppError(db: Db, row: AppErrorRow): Promise<void> {
   if (oldestKept) await db.delete(appErrors).where(lt(appErrors.id, oldestKept.id));
 }
 
-export async function lastAppErrorAt(db: Db): Promise<Date | null> {
-  const [row] = await db.select({ at: max(appErrors.at) }).from(appErrors);
-  return row?.at ?? null;
+/**
+ * Claims the app-error alert: true for exactly one caller, and only when the last alert is at
+ * least gapMs before now (or there has been none). One statement, so two instances cannot both win.
+ */
+export async function claimAppErrorAlert(db: Db, now: Date, gapMs: number): Promise<boolean> {
+  // INVARIANT app-errors.alert-hourly
+  const rows = await db
+    .insert(appAlerts)
+    .values({ id: 1, alertedAt: now })
+    .onConflictDoUpdate({
+      target: appAlerts.id,
+      set: { alertedAt: now },
+      setWhere: lte(appAlerts.alertedAt, new Date(now.getTime() - gapMs)),
+    })
+    .returning({ id: appAlerts.id });
+  return rows.length > 0;
 }
