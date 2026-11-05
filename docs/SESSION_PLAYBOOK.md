@@ -177,6 +177,9 @@ Write docs/handoff/NN-<name>.md with sections Built / Decisions / Deviations / V
 
 ## D. Session map
 
+**Order of execution:** 0 → 1 → 2 → 3 → 4 → 5 → 5b → 6 → 6b → 7 → 7b → 8 → 9 → 10. A letter suffix is a session inserted after the numbered one (6b after 6, 7b after 7). "Phase 5e" and similar inside a prompt are **sections of IMPLEMENTATION_PLAN.md**, not sessions — the plan numbers its phases, this file numbers its sessions, and the two don't line up on purpose.
+
+
 | # | Session | Model | Effort | Mode | Reads | Writes |
 |---|---|---|---|---|---|---|
 | 0 | Prerequisites | sonnet | medium | default | plan §2, §7, Phase 0, fixtures/ | `00-prereqs.md`, `config/alliances.ts`, `fixtures/`, `CLAUDE.md`, `.env.example` |
@@ -188,7 +191,8 @@ Write docs/handoff/NN-<name>.md with sections Built / Decisions / Deviations / V
 | 5b | Fix review findings | opus | medium | default | 05 | `05b-fixes.md` |
 | 6 | UI: main table + alliance page, mobile-first | sonnet | medium | default | plan Phase 5/5c, 00, 04 | `app/*`, `StatTable`, `06-ui.md` |
 | 6b | Player pages + search | sonnet | medium | default | plan Phase 5d, 06 | `app/players/*`, `lib/queries/players.ts`, `06b-players.md` |
-| 7 | Branding | opus | medium | default | plan §5b, 06 | `lib/brand/*`, `/brand`, `07-brand.md` |
+| 7 | Branding + Granny Doctor | opus | medium | default | plan §5b, 06 | `lib/brand/*`, `/brand`, `07-brand.md` |
+| 7b | Usability + language-light pass | opus | medium | default | DESIGN.md, 06–07 handoffs | `lib/copy.ts`, page fixes, `07b-usability.md` |
 | 8 | Deploy, Actions, env, webhooks | sonnet | medium | default | plan, 00, 04 | `.github/workflows/*`, README, `08-deploy.md` |
 | 9 | Dry run against production | opus | high | default | plan §7, 08 | `09-dryrun.md` |
 | 10 | README + runbook polish | haiku | medium | default | all handoffs | README, CONTRIBUTING.md, `10-docs.md` |
@@ -545,6 +549,8 @@ Step 2 — only after I say yes, in this session: apply tokens and components to
 - Nothing from the game: no logo, art, fonts or screenshots. Original SVG only. The site is public and the game's assets are not ours.
 - Avoid these specific defaults: Inter/Roboto/system fonts for display text, purple gradients, pill-shaped buttons, numbered "01/02/03" section labels, italic accent words in headlines, generic card grids. The brief in Phase 5b says what to use instead.
 - The stop after step 1 is deliberate: a rejected mock costs minutes, a rejected full restyle costs the session.
+- The mascot is the Granny Doctor (DESIGN.md "Mascot"): an old lady plague doctor with a cane and a knitting bag, original, three poses at most. Comic but serious; game references only as allusions in copy.
+- Every string you add goes through lib/copy.ts (create it if Session 7b hasn't yet); no literals in components.
 - docs/DESIGN.md §9 is a hard list; §10's colour-literal test and the screenshot set are part of done. If the owner changes a decision at the mock, edit DESIGN.md in the same commit as the tokens.
 </constraints>
 
@@ -552,6 +558,40 @@ Step 2 — only after I say yes, in this session: apply tokens and components to
 Mock approved by me; pages re-screenshotted; 404 and error pages exist with their screenshots and a test that error.tsx output contains none of the thrown error's text; no game assets in the repo. Commit after step 1 ("feat: brand mock") and step 2 ("feat: session 7 — branding applied"). docs/handoff/07-brand.md written.
 </done_when>
 ```
+
+---
+
+## Session 7b — Usability and language-light pass
+
+**Model:** opus · **Effort:** medium · **Mode:** default
+**Before starting (you, by hand):** nothing. The persona test replaces the real-member test (plan Phase 5f).
+
+```text
+<session>
+Session 7b of SESSION_PLAYBOOK.md. Read CLAUDE.md, docs/DESIGN.md in full ("Who uses this", "Language-light rules", "Navigation and hierarchy" are the contract), IMPLEMENTATION_PLAN.md Phase 5f, docs/handoff/06-ui.md, 06b-players.md and 07-brand.md, and look at every screenshot in docs/screenshots/.
+</session>
+
+<task>
+1. Audit, then fix, every public page (main, alliance, player, search) against the language-light rules. Concretely: every sentence becomes a chip, a label or a number; one legend under the header; status strip with Before/After chips instead of prose; order strictly by rank (the page is for the whole server; other alliances will use it) with an optional per-viewer "this is my alliance" highlight + jump control kept in localStorage (try/catch, page correct without it); rank numbers; header title "Server 325 · Saturday Ledger" with the byline "kept by the Old Grandmas"; three channels per state (colour + arrow + word); Intl formatting for numbers, dates and times from the request's Accept-Language with server time explicit; labels ≤ 2 words, the game's own terms (Might, Kills, Members). Quota and sync details move to /admin.
+2. Move every user-facing string into lib/copy.ts (stable keys, English values, one module); components import from it. Add a test that greps app/ for JSX text nodes and string props longer than 2 words outside lib/copy.ts and fails on hits (allow numbers, punctuation and keys).
+3. Navigation: breadcrumbs on alliance and player pages, search in the header, one row shape at the three depths. No tooltip carries information that isn't also visible.
+3b. Rank movement (plan Phase 5e): `#n` beside every tag with `▲k` / `▼k` / `=` — before → after on the comparison page (ledger rank by might and by kills, server rank from the API), event over event on the alliance and player "Across events" rows. `compute.rankDelta` pure with a test; `—` when there is no previous value.
+4. The ten-second test without real members (plan Phase 5f): add a dev-only blank dictionary mode (every lib/copy.ts value replaced by `░` × its length; enabled only by an env var that is never set in Vercel) and screenshot main, alliance and player at 390 px with it. Then spawn three persona subagents (sonnet, fresh context each, no access to the repo or to this conversation): an alliance officer in Russia, a casual member in Spain, a player in Brazil on a slow phone. Give each only the blank screenshots and three tasks — find alliance NSE's kills change; which alliance lost the most members; when are the numbers from — and ask for the answer, the time they'd need, and where they hesitated. Record all three verbatim in the handoff; a wrong answer or a hesitation on a data row is a finding you fix in this session, then re-screenshot and re-run that persona. Keep the blank screenshots in docs/screenshots/ as the baseline.
+5. Screenshots at 360/390/1280, light and dark, for every page touched.
+</task>
+
+<constraints>
+- No translation yet: the fix for "I can't read this" is fewer words and better structure, not a dictionary.
+- No new components beyond DESIGN.md's list; status-strip, rank and legend are already on it.
+- Nothing from the game's assets. The tracker site is a reference for clarity only.
+</constraints>
+
+<done_when>
+Every public page passes the language-light rules; ranks and their movement show on cards, rows and across-events sections; lib/copy.ts holds all strings and the grep test passes; the blank-dictionary screenshots and the three persona reports are recorded with their fixes; screenshots attached; docs/handoff/07b-usability.md written. PR: "feat: session 7b — usability and language-light pass" (into dev).
+</done_when>
+```
+
+**Re-plan:** Session 8 is deploy; the only thing it needs from here is whether lib/copy.ts introduced a build step (it shouldn't).
 
 ---
 
