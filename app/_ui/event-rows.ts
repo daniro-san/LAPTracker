@@ -179,3 +179,9 @@ export function comparisonRows(
   const order = (r: ComparisonRow) => r.rank ?? Number.MAX_SAFE_INTEGER;
   return rows.sort((x, y) => order(x) - order(y) || x.tag.localeCompare(y.tag));
 }
+
+/** The table's empty line. A manual round (D28) is never run by the tick, so it never promises an automatic update. */
+export function emptyLine(manual: boolean, snapshots: number): string {
+  if (!manual) return copy.empty.kettle;
+  return snapshots === 0 ? copy.empty.manualNotRun : copy.empty.manualNoRows;
+}

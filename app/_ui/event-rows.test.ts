@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { Ranks } from "@/lib/queries";
 
-import { comparisonRows, nextUpdateAt, type Snap } from "./event-rows";
+import { comparisonRows, emptyLine, nextUpdateAt, type Snap } from "./event-rows";
 
 const cell = (unionId: number, tag: string, power: number, failed = false) => ({
   unionId,
@@ -60,5 +60,13 @@ describe("nextUpdateAt", () => {
     expect(nextUpdateAt([], event, scheduled, at("2026-11-02T00:00:00Z"))).toEqual(
       scheduled.beforeAt,
     );
+  });
+});
+
+describe("emptyLine", () => {
+  it("tells a manual round with snapshots but no rows that the admin runs it again, never that the kettle is on", () => {
+    expect(emptyLine(true, 1)).toBe("The run produced nothing. The admin runs it again by hand.");
+    expect(emptyLine(true, 0)).toContain("has not been run yet");
+    expect(emptyLine(false, 1)).toContain("kettle");
   });
 });

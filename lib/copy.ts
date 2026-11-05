@@ -131,6 +131,7 @@ const source = {
   empty: {
     kettle: "Nothing recorded yet. The kettle is on.",
     manualNotRun: "This round has not been run yet. The admin starts it by hand.",
+    manualNoRows: "The run produced nothing. The admin runs it again by hand.",
     noEvents: "No events in the ledger yet.",
     noMembers: "Nobody here matches. Grandma checked twice.",
   },
