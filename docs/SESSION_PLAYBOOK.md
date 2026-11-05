@@ -177,6 +177,9 @@ Write docs/handoff/NN-<name>.md with sections Built / Decisions / Deviations / V
 
 ## D. Session map
 
+**Order of execution:** 0 → 1 → 2 → 3 → 4 → 5 → 5b → 6 → 6b → 7 → 7b → 8 → 9 → 10. A letter suffix is a session inserted after the numbered one (6b after 6, 7b after 7). "Phase 5e" and similar inside a prompt are **sections of IMPLEMENTATION_PLAN.md**, not sessions — the plan numbers its phases, this file numbers its sessions, and the two don't line up on purpose.
+
+
 | # | Session | Model | Effort | Mode | Reads | Writes |
 |---|---|---|---|---|---|---|
 | 0 | Prerequisites | sonnet | medium | default | plan §2, §7, Phase 0, fixtures/ | `00-prereqs.md`, `config/alliances.ts`, `fixtures/`, `CLAUDE.md`, `.env.example` |
