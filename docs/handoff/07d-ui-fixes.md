@@ -85,15 +85,27 @@ Other files: `app/_ui/EventLead.tsx` (history row lead), `app/_ui/event-page.ts`
 ## Next
 
 Session: 8 — Deploy, GitHub Actions, env, webhooks
-Model / effort: keep (sonnet · medium) — no signal from this session about deploy work.
-Owner must do first: merge `session/07c-ui-review` (if not merged) and this PR into `dev`; PREREQUISITES.md §6 row "Session 8".
-Plan changes needed: none for Session 8. IMPLEMENTATION_PLAN.md Phase 5 still describes the `B` mark and the Before/After freshness lines; DESIGN.md now carries the 7d rules (not edited here).
+Model / effort: keep (sonnet · medium) — no signal from the 7-series sessions about deploy work.
+Owner must do first: merge `fix/sticky-table-headers` into `dev` (the last open UI change; #32, #35–#38 are merged); PREREQUISITES.md §6 row "Session 8".
+Plan changes needed: none for Session 8's tasks. Out of date, not edited here: IMPLEMENTATION_PLAN.md Phase 5 (the `B` mark, Before/After freshness lines, min/max might inputs on the alliance page), Phase 6 "Notifications" (`username`/`avatar_url` override, `[TEST]` prefix) and §3.1 (verdict as `[TEST] Rehearsal PASS/FAIL`). DESIGN.md and the 07d–07h handoffs carry the current rules.
+
+Consolidated on 2026-11-05 after #32 (7d), #35 (Discord templates), #36 (7h search loading), #37 (7g player page), #38 (7f alliance page) and `fix/sticky-table-headers`. Paste this block after `</task>` together with the owner's block in SESSION_PLAYBOOK.md; it replaces the per-session blocks in 07d, 07f, 07g and 07h, and the Session 8 block in `docs/handoff/07-brand.md`.
 
 <adjustments>
-- The admin button is now the wax seal "Rehearse" (accessible name "Rehearse"), not "Rehearse now"; the snapshot seals read "Before" / "After" with the names "Before snapshot" / "After snapshot". Step 4's "tap Rehearse now" means this seal.
-- Admin pages print dates in the viewer's locale and server time (`Sat, 11/07/2026, 12:00 server`), no UTC. Discord messages still print `… server (HH:MM UTC)` via `describeInstant`; compare against those, not the admin page, when checking `before_at` / `after_at` in UTC.
-- Rehearsal verdict lines changed wording: `data time moved forward for every alliance (n/n)` and `calls used = quota drop (…)` (were `updated_at advanced …` and `calls_used = …`). The `[TEST]` admin messages show the new words.
-- `/img/badge/*` and `/img/avatar/*` now redraw images through `next/og` on a cache miss. Badges are 80 × 80 PNG (≈ 7.8 KB); photos are redrawn only when that makes them smaller. Watch the first production cold requests for function duration if they look slow.
+- Skip 07-brand's webhook items: payloads carry no `username` or `avatar_url` (#35). Discord shows each webhook's own name ("KvK Scout" in #kvk-ledger, "LAP Tracker Admin" in #laptracker-admin) and the avatar set in Discord (Session 8b). Still check `/icon/192`, `/icon/512` and `/manifest.webmanifest` on the first Vercel preview (they read `lib/brand/tokens.css` with `fs` at build time).
+- Step 4 (rehearsal): on `/admin` the button is the wax seal "Rehearse" (not "Rehearse now"); the snapshot seals read "Before" / "After" (accessible names "Before snapshot" / "After snapshot"). Pressing a seal opens a confirm dialog; focus starts on Cancel.
+- Step 4 (messages): rehearsal admin messages start with `[rehearsal]`, not `[TEST]`; the verdict's first line is `[rehearsal] ✓ Pass · <date> server` or `[rehearsal] ✗ Fail · …`. Verdict lines read `data time moved forward for every alliance (n/n)` and `calls used = quota drop (…)`. Paste these where step 4 says "the two `[TEST]` admin messages and the verdict".
+- No surface prints UTC any more: `/admin`, the public pages and both Discord webhooks use server time (`Sat, 11/07/2026, 12:00 server` on /admin, in the viewer's locale). To check `before_at` / `after_at` in UTC, read the `events` table, not a message or page.
+- Public Discord message title = the page's status chip: `✓ Last updated at <date, time> server` (`⚠` when partial, `✗ Last update failed at …`), then `Next update at …`. The public page strip reads the same; "Next update" is the event's next snapshot while one is ahead, else the next one on the schedule (from `nextEvent`).
+- The Friday message lines are `✓ Weekly API quota check · …`, `✓|⚠ N requests left`, `✓|⚠ Database N MB`, `Before snapshot …`, `After snapshot …`. The schema-version line from the owner's adjustment goes into `quotaReportMessage` in `lib/notify.ts`, its words into `lib/copy-discord.ts`.
+- `/img/badge/*` and `/img/avatar/*` redraw images with `next/og` on a cache miss: badges 80 × 80 PNG (≈ 7.8 KB, from 33 KB); a photo is redrawn only when that makes it smaller. CDN-cached afterwards (`s-maxage`). If the first production requests to these routes look slow, note the function duration; do not change it in Session 8.
+- Smoke checks of the deployed pages should expect the current UI: no "Game board" section on `/`; Details opens a table (`Server time · 10:00 · → 14:00 · Change · Rank`, rows Might, Kills, Members, Ranking); at ≥ 640 px the column heads stay pinned under the header while scrolling; the alliance page shows a summary band, 20 member cards and "Show all (n)", with no min/max might inputs; the player page's history rows read `since 10:00` / `since <date>`; `/players` searches by client-side navigation with a drawn pending state after 300 ms (the header stays).
+- `<html lang>` follows `Accept-Language` and each page has its own `<title>` (`Sat, Oct 31 · OG's LAP Tracker`, `[TAG] Name · Sat, Oct 31 · …`, `<player> · …`). A Lighthouse SEO check on the production URL should show the per-page titles; preview deployments still score 54 by design (`x-robots-tag: noindex`).
+</adjustments>
+
+<adjustments for="Session 9">
+- Step 1 waits for `[rehearsal] ✓ Pass` / `[rehearsal] ✗ Fail`, not `[TEST] Rehearsal PASS/FAIL`.
+- Light-mode contrast (#25) is fixed in `dev` (yarn `#805c12`, sage `#586750`); the issue closes when the `dev → main` release merges (PR #32 says "Closes #25", and GitHub acts only on the default branch). Close it by hand if the release notes do not carry the line.
 </adjustments>
 
 https://github.com/daniro-san/LAPTracker/pull/32

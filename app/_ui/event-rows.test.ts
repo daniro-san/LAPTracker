@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { Ranks } from "@/lib/queries";
 
-import { comparisonRows, type Snap } from "./event-rows";
+import { comparisonRows, nextUpdateAt, type Snap } from "./event-rows";
 
 const cell = (unionId: number, tag: string, power: number, failed = false) => ({
   unionId,
@@ -39,5 +39,26 @@ describe("comparisonRows", () => {
       ["IMPA", null],
     ]);
     expect(rows[1]?.ranks.might.before).toBe(12);
+  });
+});
+
+describe("nextUpdateAt", () => {
+  const at = (iso: string) => new Date(iso);
+  const event = { beforeAt: at("2026-10-31T12:00:00Z"), afterAt: at("2026-10-31T16:00:00Z") };
+  const scheduled = { beforeAt: at("2026-11-07T12:00:00Z"), afterAt: at("2026-11-07T16:00:00Z") };
+
+  it("names this event's next snapshot while it is still ahead", () => {
+    expect(nextUpdateAt(["before"], event, scheduled, at("2026-10-31T13:00:00Z"))).toEqual(
+      event.afterAt,
+    );
+  });
+
+  it("names the schedule's next snapshot once this event's snapshots have run or are past", () => {
+    expect(nextUpdateAt(["before", "after"], event, scheduled, at("2026-11-02T00:00:00Z"))).toEqual(
+      scheduled.beforeAt,
+    );
+    expect(nextUpdateAt([], event, scheduled, at("2026-11-02T00:00:00Z"))).toEqual(
+      scheduled.beforeAt,
+    );
   });
 });

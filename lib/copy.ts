@@ -52,13 +52,14 @@ const source = {
   },
   status: {
     label: "Status",
-    lastUpdated: "Last updated: {state} at {time}",
+    lastUpdated: "Last updated at {time}",
+    lastFailed: "Last update failed at {time}",
     done: "done",
     partial: "partly done",
     failed: "failed",
     running: "Updating now",
     none: "Not updated yet",
-    next: "Next update scheduled at {time}",
+    next: "Next update at {time}",
     stale: "{n} stale",
   },
   fresh: {
@@ -127,7 +128,7 @@ const source = {
   discord: discordCopy,
 } as const;
 
-/** `fill("Last updated: {state}", { state: "done" })`; unknown placeholders stay as written. */
+/** `fill("Last updated at {time}", { time: "14:01" })`; unknown placeholders stay as written. */
 export function fill(template: string, vars: Record<string, string | number>): string {
   return template.replace(/\{(\w+)\}/g, (all, key: string) =>
     key in vars ? String(vars[key]) : all,

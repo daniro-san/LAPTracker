@@ -87,16 +87,16 @@ describe("public snapshot message", () => {
       }),
     );
     expect(embed).toEqual({
-      title: "✓ Last updated: done at Sat, Nov 7, 10:01 server",
+      title: "✓ Last updated at Sat, Nov 7, 10:01 server",
       url: "https://lap.test/events/9",
-      description: "4/4 alliances\nNext update scheduled at Sat, Nov 7, 14:00 server",
+      description: "4/4 alliances\nNext update at Sat, Nov 7, 14:00 server",
       color: 0x586750,
     });
   });
 
   it("after snapshot done: the top three gains in might and kills, signed, with percent", () => {
     const embed = publicSnapshotMessage(summary(), publicCtx());
-    expect(embed.title).toBe("✓ Last updated: done at Sat, Nov 7, 14:01 server");
+    expect(embed.title).toBe("✓ Last updated at Sat, Nov 7, 14:01 server");
     expect(embed.description).toBe(
       [
         "4/4 alliances",
@@ -118,7 +118,7 @@ describe("public snapshot message", () => {
       summary({ status: "partial", stale: [{ unionId: 1, tag: "OGs" }] }),
       publicCtx({ alliances: after }),
     );
-    expect(embed.title).toBe("⚠ Last updated: partly done at Sat, Nov 7, 14:01 server");
+    expect(embed.title).toBe("⚠ Last updated at Sat, Nov 7, 14:01 server");
     expect(embed.color).toBe(0x805c12);
     expect(embed.description?.split("\n").slice(0, 3)).toEqual([
       "3/4 alliances",
@@ -134,7 +134,7 @@ describe("public snapshot message", () => {
       publicCtx(),
     );
     expect(embed).toEqual({
-      title: "✗ Last updated: failed at Sat, Nov 7, 14:01 server",
+      title: "✗ Last update failed at Sat, Nov 7, 14:01 server",
       url: "https://lap.test/events/9",
       color: 0x8c2f2f,
     });
