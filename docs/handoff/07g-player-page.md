@@ -49,4 +49,4 @@ Plan changes needed: none.
 - Nothing in this session changes what Session 8 builds. The player page's history rows are now `history-row` in DESIGN.md; a smoke check of `/players/[uid]` should expect `since 10:00` / `since <date>` line heads and no `→` before the values on the card.
 </adjustments>
 
-PR: (added after opening)
+https://github.com/daniro-san/LAPTracker/pull/37
