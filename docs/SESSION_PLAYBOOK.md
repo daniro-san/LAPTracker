@@ -177,7 +177,7 @@ Write docs/handoff/NN-<name>.md with sections Built / Decisions / Deviations / V
 
 ## D. Session map
 
-**Order of execution:** 0 → 1 → 2 → 3 → 4 → 5 → 5b → 6 → 6b → 7 → 7b → 8 → 9 → 10. A letter suffix is a session inserted after the numbered one (6b after 6, 7b after 7). "Phase 5e" and similar inside a prompt are **sections of IMPLEMENTATION_PLAN.md**, not sessions — the plan numbers its phases, this file numbers its sessions, and the two don't line up on purpose.
+**Order of execution:** 0 → 1 → 2 → 3 → 4 → 5 → 5b → 6 → 6b → 7 → 7b → 7c → 7d → 8 → 9 → 10. If Friday's freeze is close, 7d is the session to defer (ship as v1.1 after the first Saturday), never 8 or 9. A letter suffix is a session inserted after the numbered one (6b after 6, 7b after 7). "Phase 5e" and similar inside a prompt are **sections of IMPLEMENTATION_PLAN.md**, not sessions — the plan numbers its phases, this file numbers its sessions, and the two don't line up on purpose.
 
 
 | # | Session | Model | Effort | Mode | Reads | Writes |
@@ -193,6 +193,8 @@ Write docs/handoff/NN-<name>.md with sections Built / Decisions / Deviations / V
 | 6b | Player pages + search | sonnet | medium | default | plan Phase 5d, 06 | `app/players/*`, `lib/queries/players.ts`, `06b-players.md` |
 | 7 | Branding + Granny Doctor | opus | medium | default | plan §5b, 06 | `lib/brand/*`, `/brand`, `07-brand.md` |
 | 7b | Usability + language-light pass | opus | medium | default | DESIGN.md, 06–07 handoffs | `lib/copy.ts`, page fixes, `07b-usability.md` |
+| 7c | UI review (read-only, adversarial) | fable | xhigh | plan mode, stays there | DESIGN.md, 06–07b handoffs, the staging URL | `07c-ui-review.md` |
+| 7d | Fix accepted UI findings | opus | medium | default | 07c | page fixes, `07d-ui-fixes.md` |
 | 8 | Deploy, Actions, env, webhooks | sonnet | medium | default | plan, 00, 04 | `.github/workflows/*`, README, `08-deploy.md` |
 | 9 | Dry run against production | opus | high | default | plan §7, 08 | `09-dryrun.md` |
 | 10 | README + runbook polish | haiku | medium | default | all handoffs | README, CONTRIBUTING.md, `10-docs.md` |
@@ -591,7 +593,70 @@ Every public page passes the language-light rules; ranks and their movement show
 </done_when>
 ```
 
-**Re-plan:** Session 8 is deploy; the only thing it needs from here is whether lib/copy.ts introduced a build step (it shouldn't).
+**Re-plan:** Session 7c reviews what 7 and 7b produced, read-only; its `## Next` is the curated list the owner decides on. 7b fixes only what its own contract and persona test name — taste and anything debatable go to 7c's list, not into 7b.
+
+---
+
+## Session 7c — UI review (read-only, adversarial)
+
+**Model:** fable · **Effort:** xhigh · **Mode:** plan mode, and it must **stay** there — this session changes nothing.
+(`fable` unavailable → `opus` at `xhigh`.)
+**Before starting (you, by hand):** merge 7b into `dev` so the `dev` staging URL shows the reviewed state; paste that URL into the prompt.
+
+```text
+<session>
+Session 7c of SESSION_PLAYBOOK.md. You are a reviewer. Stay in plan mode; do not edit any file. Read CLAUDE.md, docs/DESIGN.md in full, IMPLEMENTATION_PLAN.md Phase 5, 5b–5f and §12, docs/handoff/06-ui.md, 06b-players.md, 07-brand.md, 07b-usability.md, the code under app/ and lib/brand/, lib/copy.ts, and open the staging deployment at <dev preview URL> with Playwright (headless Chromium is installed).
+</session>
+
+<task>
+Review the UI against docs/DESIGN.md and the plan, not against taste. Every finding carries evidence: a screenshot path you captured, a measured number, or a file and line. Check specifically:
+- Language-light (DESIGN.md): render each public page with the blank-dictionary mode and attempt the three tasks yourself from the blank screenshots; any task that needs a word to answer is a finding. Count sentences on public pages (target: zero). Every state has colour + arrow + word?
+- Numbers: tabular-nums everywhere? Right-aligned? Compact with the full value reachable? Intl formatting with the request locale (test with Accept-Language ru, es, pt-BR)?
+- Ranks and movement present and correct against the seeded data (compute what the rank should be from the API fields and compare).
+- Mobile: at 360 px no horizontal scroll, no tap target under 44 px (measure with getBoundingClientRect), bottom sheet and PIN flow work with keyboard and screen reader labels.
+- Accessibility: run axe-core (pnpm dlx @axe-core/cli or an inline script) on every public page in both modes; contrast of every text/background pair in tokens.css computed, not eyeballed; focus visible on every interactive element; reduced-motion honoured.
+- DESIGN.md §9 never-list and the colour-literal test: grep for violations yourself.
+- Security surface of the UI (§12): no blocked roster key anywhere in HTML or JSON responses (fetch the pages and routes, grep); no secret in HTML, inline script or comment; CSP header present on every response; /admin noindex and in robots.txt; the PIN never in a URL or a log.
+- Copy: every string from lib/copy.ts; voice rules (no exclamation, no emoji, grandma only in margins); game references are allusions, never assets.
+- Brand: ornaments only in the allowed places; the Granny Doctor original (compare against nothing from the game); SVG sizes under 4 KB; fonts from next/font only.
+- Performance: Lighthouse mobile on / and an alliance page (numbers, not impressions); page weight per route.
+</task>
+
+<constraints>
+- A reviewer asked to find gaps will find some; rank by what a member on a phone would hit, and put taste under Notes. Report what is correct too, briefly, so the owner knows what was checked.
+- Remove all mannered prose from the report.
+</constraints>
+
+<done_when>
+docs/handoff/07c-ui-review.md with sections Blockers, Should-fix, Notes, "What I checked and found correct", each finding with its evidence, and a `## Next` whose `<adjustments>` block is the numbered list for the owner to accept or reject. Do not commit; the owner commits the report.
+</done_when>
+```
+
+Read the report yourself and decide which items go to 7d. If the freeze is close, Blockers go to 7d now and the rest ships as v1.1.
+
+---
+
+## Session 7d — Fix accepted UI findings
+
+**Model:** opus · **Effort:** medium · **Mode:** default
+
+```text
+<session>
+Session 7d of SESSION_PLAYBOOK.md. Read CLAUDE.md, docs/DESIGN.md, docs/handoff/07c-ui-review.md and handoffs 06–07b.
+</session>
+
+<task>
+Fix every Blocker. Fix these Should-fix items: <paste the numbers you accept, or "all">. Skip Notes unless trivial. For each fix: the screenshot or measurement that showed it, re-taken after the fix; a test where one can exist (contrast, tap size, blocked keys, copy module). No restyling beyond the findings; DESIGN.md changes only if a finding proves a rule wrong, in the same commit as the fix.
+</task>
+
+<verify>
+pnpm check; axe-core clean on every public page in both modes; the blank-dictionary screenshots re-taken; Lighthouse numbers before/after for the pages touched.
+</verify>
+
+<done_when>
+All accepted findings closed with evidence; suite green; docs/handoff/07d-ui-fixes.md lists each finding, what changed and the new measurement. PR: "fix: session 7d — UI review findings" (into dev).
+</done_when>
+```
 
 ---
 
