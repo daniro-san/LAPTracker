@@ -113,7 +113,8 @@ describe("POST /api/snapshot", () => {
   });
 
   it("finalises the snapshot as failed and settles its logs when the collector throws", async () => {
-    holder.ctx = testContext(db).ctx;
+    const { ctx, posts } = testContext(db);
+    holder.ctx = ctx;
     holder.crash = true;
 
     const res = await post(await importRoute(), { authorization: `Bearer ${TEST_CRON_SECRET}` });
@@ -127,6 +128,10 @@ describe("POST /api/snapshot", () => {
     expect(row?.error).not.toContain("boom");
     const codes = (await db.select({ code: runLogs.code }).from(runLogs)).map((l) => l.code);
     expect(codes.sort()).toEqual(["run.crashed", "snapshot.start", "v1.retry"]);
+    // The event's message, plus a message of its own for the failed run (D31).
+    const admin = posts.filter((p) => p.url === ADMIN_WEBHOOK).map((p) => p.content);
+    expect(admin).toHaveLength(2);
+    expect(admin.every((c) => c.includes("✗ Before snapshot: failed"))).toBe(true);
   });
 
   it("accepts only CRON_SECRET as a bearer and only EDIT_PIN as x-edit-pin", async () => {

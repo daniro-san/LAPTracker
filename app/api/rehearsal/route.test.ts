@@ -143,7 +143,7 @@ describe("POST /api/rehearsal", () => {
   });
 
   it("posts a rehearsal's run messages and verdict to the admin channel only, marked [rehearsal]", async () => {
-    const { ctx, clock, posts } = testContext(db);
+    const { ctx, clock, posts, edits } = testContext(db);
     holder.ctx = ctx;
     const T = new Date("2026-11-04T12:00:00Z");
     clock.now = T;
@@ -159,11 +159,16 @@ describe("POST /api/rehearsal", () => {
       .where(inArray(snapshots.eventId, [eventId]));
     expect(ran).toHaveLength(2);
     expect(posts.filter((p) => p.url === PUBLIC_WEBHOOK)).toEqual([]);
-    const admin = posts.filter((p) => p.url === ADMIN_WEBHOOK).map((p) => p.content);
-    expect(admin).toHaveLength(3); // BEFORE, AFTER, verdict
-    expect(admin.every((c) => c.startsWith("[rehearsal] "))).toBe(true);
-    expect(admin[2]).toMatch(/^\[rehearsal\] ✓ Pass|^\[rehearsal\] ✗ Fail/);
+    // One message: posted by the BEFORE, edited by the AFTER with the verdict at its end (D31).
+    expect(posts.filter((p) => p.url === ADMIN_WEBHOOK)).toHaveLength(1);
+    const edit = edits.filter((e) => e.url === ADMIN_WEBHOOK);
+    expect(edit).toHaveLength(1);
+    const text = edit[0]?.content ?? "";
+    expect(text.startsWith("[rehearsal] ")).toBe(true);
+    expect(text).toMatch(/Before snapshot[\s\S]*After snapshot[\s\S]*(✓ Pass|✗ Fail)/);
     const [event] = await db.select().from(events).where(eq(events.id, eventId));
     expect(event?.isTest).toBe(true);
+    expect(event?.discordAdminMessageId).toBe(edit[0]?.messageId);
+    expect(event?.discordPublicMessageId).toBeNull();
   });
 });
