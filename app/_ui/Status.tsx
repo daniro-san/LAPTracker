@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { Chip, type ChipTone } from "@/lib/brand/components/Chip";
 import { DroppedStitch, Hourglass, StitchedCheck } from "@/lib/brand/components/StatusIcons";
 
-import { relative, utcClock, utcStamp } from "./format";
+import { utcStamp } from "./format";
 
 export interface PhaseStatus {
   phase: "before" | "after";
@@ -22,44 +22,77 @@ const CHIP: Record<PhaseStatus["status"], { icon: ReactNode; tone: ChipTone }> =
   failed: { icon: "✗", tone: "seal" },
 } as const;
 
-const PHASE = { before: "Before snapshot", after: "After snapshot" } as const;
 const STATUS_WORD = {
   complete: "done",
-  running: "in progress",
   partial: "partly done",
   failed: "failed",
 } as const;
-const NOT_RUN: ChipTone = "muted";
 
-function PhaseChip({
-  phase,
-  status,
-}: {
-  phase: "before" | "after";
-  status: PhaseStatus | undefined;
-}) {
-  const style = status ? CHIP[status.status] : { icon: "○", tone: NOT_RUN };
-  const when = status ? utcClock(status.finishedAt ?? status.startedAt) : null;
-  return (
-    <li className="min-w-0">
-      <Chip tone={style.tone} icon={style.icon}>
-        {PHASE[phase]}: {status ? STATUS_WORD[status.status] : "not taken yet"}
-        {when && ` at ${when}`}
+const finishedAt = (p: PhaseStatus) => p.finishedAt ?? p.startedAt;
+
+/** "Last updated: done at …", or "Updating now"; nothing yet: "Not updated yet". */
+function LastChip({ phases }: { phases: PhaseStatus[] }) {
+  const running = phases.find((p) => p.status === "running");
+  if (running) {
+    return (
+      <Chip tone={CHIP.running.tone} icon={CHIP.running.icon}>
+        Updating now
       </Chip>
-      {status?.status === "failed" && status.error && (
-        <p className="mt-1 break-words text-sm text-seal">{status.error}</p>
-      )}
-    </li>
+    );
+  }
+  const last = phases
+    .filter((p): p is PhaseStatus & { status: keyof typeof STATUS_WORD } => p.status !== "running")
+    .sort((a, b) => finishedAt(b).getTime() - finishedAt(a).getTime())[0];
+  if (!last) {
+    return (
+      <Chip tone="muted" icon="○">
+        Not updated yet
+      </Chip>
+    );
+  }
+  return (
+    <Chip tone={CHIP[last.status].tone} icon={CHIP[last.status].icon}>
+      Last updated: {STATUS_WORD[last.status]} at {utcStamp(finishedAt(last))}
+    </Chip>
   );
 }
 
-export function StatusChips({ phases }: { phases: PhaseStatus[] }) {
+/** "Next update scheduled at …" while a phase is still to run; nothing once both have run. */
+function NextChip({ phases, at }: { phases: PhaseStatus[]; at: { before: Date; after: Date } }) {
+  const next = (["before", "after"] as const).find((ph) => !phases.some((p) => p.phase === ph));
+  if (!next) return null;
+  return (
+    <Chip tone="muted" icon="○">
+      Next update scheduled at {utcStamp(at[next])}
+    </Chip>
+  );
+}
+
+export function StatusChips({
+  phases,
+  beforeAt,
+  afterAt,
+}: {
+  phases: PhaseStatus[];
+  beforeAt: Date;
+  afterAt: Date;
+}) {
+  const failed = phases.filter((p) => p.status === "failed" && p.error);
   return (
     <div>
       <ul className="flex flex-wrap items-start gap-2">
-        <PhaseChip phase="before" status={phases.find((p) => p.phase === "before")} />
-        <PhaseChip phase="after" status={phases.find((p) => p.phase === "after")} />
+        <li className="min-w-0">
+          <LastChip phases={phases} />
+        </li>
+        <li className="min-w-0">
+          <NextChip phases={phases} at={{ before: beforeAt, after: afterAt }} />
+        </li>
       </ul>
+      {failed.map((p) => (
+        <p key={p.phase} className="mt-1 break-words text-sm text-seal">
+          {p.error}
+        </p>
+      ))}
       {phases.some((p) => p.status === "partial") && (
         <p className="mt-2 text-sm text-ink/70">
           Some alliances could not be refreshed, so their changes are not shown.
@@ -120,43 +153,5 @@ export function FreshnessDetail({
       {line("Before snapshot", before)}
       {line("After snapshot", after)}
     </ul>
-  );
-}
-
-const label = (p: "before" | "after") => (p === "before" ? "before-event" : "after-event");
-
-/** "Last sync: AFTER, 4 h ago" and "Next sync: none" (or the next due phase), in plain words. */
-export function SyncLines({
-  phases,
-  beforeAt,
-  afterAt,
-  now,
-}: {
-  phases: PhaseStatus[];
-  beforeAt: Date;
-  afterAt: Date;
-  now: Date;
-}) {
-  const running = phases.find((p) => p.status === "running");
-  const done = phases
-    .filter((p) => p.status !== "running")
-    .sort(
-      (a, b) => (b.finishedAt ?? b.startedAt).getTime() - (a.finishedAt ?? a.startedAt).getTime(),
-    );
-  const last = done[0];
-  const missing = (["before", "after"] as const).find((ph) => !phases.some((p) => p.phase === ph));
-  const due = missing === "before" ? beforeAt : afterAt;
-  return (
-    <p className="mb-3 text-sm text-ink/70">
-      {running
-        ? `Syncing now: ${label(running.phase)} snapshot.`
-        : last
-          ? `Last sync: ${label(last.phase)} snapshot, ${relative(now, last.finishedAt ?? last.startedAt)} (${utcStamp(last.finishedAt ?? last.startedAt)}).`
-          : "Last sync: none yet."}
-      <br />
-      {missing
-        ? `Next sync: ${label(missing)} snapshot, ${due > now ? "due" : "was due"} ${relative(now, due)} (${utcStamp(due)}).`
-        : "Next sync: none, this event is finished."}
-    </p>
   );
 }

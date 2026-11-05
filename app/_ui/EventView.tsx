@@ -13,7 +13,7 @@ import { AllianceBadge } from "./Pictures";
 import { SiteFooter } from "./SiteFooter";
 import { SiteHeader } from "./SiteHeader";
 import { StatTable, type StatRow } from "./StatTable";
-import { FreshDots, FreshnessDetail, StatusChips, SyncLines, type FreshState } from "./Status";
+import { FreshDots, FreshnessDetail, StatusChips, type FreshState } from "./Status";
 
 type Detail = NonNullable<Awaited<ReturnType<typeof getEventDetail>>>;
 type Events = Awaited<ReturnType<typeof listEvents>>;
@@ -119,14 +119,12 @@ export function EventView({
           Event starts {describeInstant(detail.eventAtUtc, getEnv())}
           {quota != null && ` · Data requests left today: ${quota}`}
         </p>
-        <SyncLines
-          phases={detail.snapshots}
-          beforeAt={detail.beforeAt}
-          afterAt={detail.afterAt}
-          now={new Date()}
-        />
         <div className="mb-4">
-          <StatusChips phases={detail.snapshots} />
+          <StatusChips
+            phases={detail.snapshots}
+            beforeAt={detail.beforeAt}
+            afterAt={detail.afterAt}
+          />
         </div>
         <StatTable
           leadLabel="Alliance"
