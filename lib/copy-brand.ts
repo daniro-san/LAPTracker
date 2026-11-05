@@ -192,9 +192,37 @@ export const brandCopy = {
       options: ["Might", "Kills", "Name"],
     },
     check: {
-      name: "Checkbox",
-      use: "A framed box that fills with the stitched check.",
-      label: "Exact numbers",
+      name: "Check field",
+      use: "A framed box that fills with the stitched check, its label and a line saying what ticking it changes. The row is for forms; the chip sits beside a page title.",
+      label: "Post to the public channel",
+      help: "Posts a message when a snapshot finishes.",
+      chip: "Exact numbers",
+    },
+    radio: {
+      name: "Radio field",
+      use: "One option of an exclusive choice, framed, with a line saying what it does. Use instead of a select when there are three options or fewer.",
+      legend: "Who can see it",
+      options: [
+        ["Only me", "Hidden from every public page."],
+        ["Public", "Anyone can open it."],
+      ],
+    },
+    notice: {
+      name: "Notice",
+      use: "What is happening or just happened, announced politely. Icon, colour and words together: ink done, plum running, seal failed.",
+      ok: "Saved.",
+      busy: "A run is in progress.",
+      fail: "Before snapshot failed.",
+      info: "Not due until Sat 10:00.",
+    },
+    facts: {
+      name: "Fact list",
+      use: "Label and value pairs, one per line, for a summary of settings or state.",
+      items: [
+        ["Name", "Manual round"],
+        ["Before snapshot", "done"],
+        ["Discord post", "off"],
+      ],
     },
     rule: {
       name: "Drawn rule",

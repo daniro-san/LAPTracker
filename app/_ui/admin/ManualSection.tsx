@@ -5,10 +5,11 @@
 import { useState } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
+import { FactList } from "@/lib/brand/components/FactList";
 import { copy } from "@/lib/copy";
 import type { ManualEventStatus } from "@/lib/queries/admin";
 
-import type { RoundChange, RoundOptions as Options } from "./AdminActions";
+import type { RoundChange, RoundOptions as Options } from "./actions";
 import { RoundOptions } from "./RoundOptions";
 import { stateWord } from "./words";
 
@@ -127,14 +128,18 @@ function RoundCard({
   return (
     <div className="mt-6">
       <h4 className="mb-1 font-subhead text-lg font-semibold">{s.title}</h4>
-      <dl className="mb-4">
-        <Line label={s.name} value={manual.name} />
-        <Line label={s.before} value={phase("before")} />
-        <Line label={s.after} value={phase("after")} />
-        <Line label={s.visibility} value={m.visibility[manual.visibility]} />
-        <Line label={s.discord} value={manual.postPublic ? s.on : s.off} />
-        <Line label={s.calls} value={String(calls)} />
-      </dl>
+      <div className="mb-4">
+        <FactList
+          items={[
+            { label: s.name, value: manual.name },
+            { label: s.before, value: phase("before") },
+            { label: s.after, value: phase("after") },
+            { label: s.visibility, value: m.visibility[manual.visibility] },
+            { label: s.discord, value: manual.postPublic ? s.on : s.off },
+            { label: s.calls, value: String(calls) },
+          ]}
+        />
+      </div>
       <ul className="mb-4 grid grid-cols-2 gap-2 sm:max-w-md sm:gap-6">{seals}</ul>
       <a href={`/events/${manual.id}`} className="inline-flex min-h-11 items-center underline">
         {m.open}
@@ -199,14 +204,5 @@ function EditRound({
         {busy === "manual-rename" || busy === "manual-settings" ? t.running : m.save}
       </button>
     </form>
-  );
-}
-
-function Line({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex gap-4 border-b border-rule py-2">
-      <dt className="w-36 shrink-0 text-sm text-ink/70 sm:w-48">{label}</dt>
-      <dd className="break-words">{value}</dd>
-    </div>
   );
 }

@@ -7,9 +7,8 @@
 import { useState } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
+import { Sheet } from "@/lib/brand/components/Sheet";
 import { copy } from "@/lib/copy";
-
-import { GATE_CARD, MODAL_CARD, SHEET, useSheet } from "./sheet";
 
 const KEY = "lap_pin";
 
@@ -35,7 +34,6 @@ export function PinSheet({
   onUnlocked: (pin: string) => void;
   onCancel?: () => void;
 }) {
-  const ref = useSheet(!gate);
   const [pin, setPin] = useState("");
   const [state, setState] = useState<"idle" | "checking" | string>("idle");
   async function submit(e: React.FormEvent) {
@@ -58,16 +56,11 @@ export function PinSheet({
     }
   }
   return (
-    <dialog
-      ref={ref}
-      open={gate || undefined}
-      aria-labelledby="pin-label"
-      {...(gate && { "aria-describedby": "pin-prompt" })}
-      onCancel={(e) => {
-        e.preventDefault();
-        onCancel?.();
-      }}
-      className={`${SHEET} ${gate ? GATE_CARD : MODAL_CARD}`}
+    <Sheet
+      gate={gate}
+      labelledBy="pin-label"
+      {...(gate && { describedBy: "pin-prompt" })}
+      {...(onCancel && { onCancel })}
     >
       <form onSubmit={submit} className="mx-auto flex max-w-md flex-col gap-3">
         <label id="pin-label" htmlFor="pin" className="font-semibold">
@@ -98,6 +91,6 @@ export function PinSheet({
           </p>
         )}
       </form>
-    </dialog>
+    </Sheet>
   );
 }

@@ -3,9 +3,11 @@
 // The manual round's options (D28), one form for creating a round and for editing it on its card: the
 // name, who can see it (three radio options, each with a line saying what it does) and the Discord
 // post (a checkbox, off and explained while the round is admin only).
+import { CheckField } from "@/lib/brand/components/CheckField";
+import { RadioField } from "@/lib/brand/components/RadioField";
 import { copy } from "@/lib/copy";
 
-import type { RoundOptions as Options } from "./AdminActions";
+import type { RoundOptions as Options } from "./actions";
 
 const m = copy.admin.manual;
 
@@ -48,45 +50,31 @@ export function RoundOptions({
       <fieldset className="flex flex-col gap-2">
         <legend className="mb-1 text-sm font-semibold">{m.visibilityLabel}</legend>
         {VISIBILITY.map((v) => (
-          <label
+          <RadioField
             key={v}
-            className="drawn-frame-soft flex min-h-11 cursor-pointer items-start gap-3 px-3 py-2"
-          >
-            <input
-              type="radio"
-              name={`${idPrefix}-visibility`}
-              value={v}
-              checked={value.visibility === v}
-              disabled={disabled}
-              onChange={() =>
-                onChange({
-                  ...value,
-                  visibility: v,
-                  postPublic: v === "admin" ? false : value.postPublic,
-                })
-              }
-              className="mt-0.5 size-6 shrink-0 accent-plum"
-            />
-            <span className="flex flex-col">
-              <span className="font-medium">{m.visibility[v]}</span>
-              <span className="text-sm text-ink/70">{m.visibilityHelp[v]}</span>
-            </span>
-          </label>
+            name={`${idPrefix}-visibility`}
+            value={v}
+            label={m.visibility[v]}
+            help={m.visibilityHelp[v]}
+            checked={value.visibility === v}
+            disabled={disabled}
+            onChange={() =>
+              onChange({
+                ...value,
+                visibility: v,
+                postPublic: v === "admin" ? false : value.postPublic,
+              })
+            }
+          />
         ))}
       </fieldset>
-      <label className="flex min-h-11 items-start gap-3">
-        <input
-          type="checkbox"
-          checked={value.postPublic}
-          disabled={disabled || adminOnly}
-          onChange={(e) => onChange({ ...value, postPublic: e.target.checked })}
-          className="drawn-check mt-1 size-[22px]"
-        />
-        <span className="flex flex-col">
-          <span className="font-medium">{m.postLabel}</span>
-          <span className="text-sm text-ink/70">{adminOnly ? m.postOff : m.postHelp}</span>
-        </span>
-      </label>
+      <CheckField
+        label={m.postLabel}
+        help={adminOnly ? m.postOff : m.postHelp}
+        checked={value.postPublic}
+        disabled={disabled || adminOnly}
+        onChange={(e) => onChange({ ...value, postPublic: e.target.checked })}
+      />
     </div>
   );
 }

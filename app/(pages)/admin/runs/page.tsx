@@ -13,27 +13,29 @@ export default async function RunsPage() {
   const t = copy.admin.runs;
   return (
     <AdminShell title={t.title}>
-      {runs.length === 0 && <p>{t.none}</p>}
+      {runs.length === 0 ? <p>{t.none}</p> : <p className="mb-2 text-sm text-ink/70">{t.help}</p>}
       <ul>
         {runs.map((r) => (
           <li key={r.id} className="border-b border-rule">
             <Link href={`/admin/runs/${r.id}`} className="block min-h-11 py-2">
-              <span className="font-semibold">
+              <span className="block break-words font-semibold">
                 {phaseWord(r.phase)} · {stateWord(r.status)}
-              </span>{" "}
-              <span className="text-sm text-ink/70">
-                {fill(t.started, { at: clock.stamp(r.startedAt) })}
-                {r.finishedAt && ` · ${fill(t.finished, { at: clock.stamp(r.finishedAt) })}`}
-                {" · "}
-                {fill(t.calls, { n: r.callsUsed })}
-                {r.quotaRemainingAfter !== null &&
-                  ` · ${fill(t.quotaLeft, { n: r.quotaRemainingAfter })}`}
-                {r.durationMs !== null &&
-                  ` · ${fill(t.seconds, { n: (r.durationMs / 1000).toFixed(1) })}`}
               </span>
               <span className="block break-words text-sm">
                 {r.isTest && `${t.rehearsal} `}
-                {clock.stamp(r.eventAtUtc)}
+                {r.manual ? r.eventName : clock.stamp(r.eventAtUtc)}
+              </span>
+              <span className="block text-sm text-ink/70">
+                {fill(t.started, { at: clock.stamp(r.startedAt) })}
+              </span>
+              <span className="block text-sm text-ink/70">
+                {[
+                  fill(t.calls, { n: r.callsUsed }),
+                  r.quotaRemainingAfter !== null && fill(t.quotaLeft, { n: r.quotaRemainingAfter }),
+                  r.durationMs !== null && fill(t.seconds, { n: (r.durationMs / 1000).toFixed(1) }),
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
               </span>
               {r.error && <span className="block break-words text-sm text-seal">{r.error}</span>}
             </Link>

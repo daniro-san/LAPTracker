@@ -3,9 +3,8 @@
 // A confirmation in the bottom sheet (docs/DESIGN.md: bottom-sheet = PIN entry and confirmations): a
 // modal alertdialog named by its question; focus starts on Cancel, Escape answers no (07c S6).
 import { buttonClass } from "@/lib/brand/components/Button";
+import { Sheet } from "@/lib/brand/components/Sheet";
 import { copy } from "@/lib/copy";
-
-import { MODAL_CARD, SHEET, useSheet } from "./sheet";
 
 export function ConfirmSheet({
   text,
@@ -14,18 +13,8 @@ export function ConfirmSheet({
   text: string;
   onAnswer: (yes: boolean) => void;
 }) {
-  const ref = useSheet(true);
   return (
-    <dialog
-      ref={ref}
-      role="alertdialog"
-      aria-labelledby="confirm-text"
-      onCancel={(e) => {
-        e.preventDefault();
-        onAnswer(false);
-      }}
-      className={`${SHEET} ${MODAL_CARD}`}
-    >
+    <Sheet role="alertdialog" labelledBy="confirm-text" onCancel={() => onAnswer(false)}>
       <div className="mx-auto flex max-w-md flex-col gap-3">
         <p id="confirm-text">{text}</p>
         <button
@@ -44,6 +33,6 @@ export function ConfirmSheet({
           {copy.admin.confirm.no}
         </button>
       </div>
-    </dialog>
+    </Sheet>
   );
 }
