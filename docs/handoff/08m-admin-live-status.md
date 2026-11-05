@@ -37,3 +37,5 @@ Plan change: none.
 <adjustments>
 - During the rehearsal the Rehearse seal and the other buttons are disabled with a "A run is in progress" notice; the notice appears after a reload if the tick started the phase.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/86
