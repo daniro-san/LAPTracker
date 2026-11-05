@@ -398,6 +398,15 @@ The reason every snapshot is kept forever is to see change over weeks. v1 shows 
 - Queries: `lib/queries/alliances.ts: allianceHistory(unionId)` and `lib/queries/players.ts: playerHistory(uid)`, one query each; the `uid` index and `(snapshot_id, union_id)` unique index cover them.
 - Show the last 12 events by default with "show all"; ≤ 26 rows in 6 months, no pagination.
 - Mobile: cards, one per event, three lines (identity changes, might/kills with both deltas, members/lv/rank). Same compact-number rules.
+- **Rank movement (owner, 2026-11-05):** every alliance carries two ranks and both move. *Server rank* is the game's own power ranking (`rank.rank` from `/v1`, stored as `server_rank`); *ledger rank* is the position among the tracked alliances, by might and by kills, computed from the snapshot. Show the rank next to the tag as `#n` and its movement as `▲2`, `▼1` or `=` — within the event (before → after) on the comparison page, and event over event in the "Across events" sections of alliance and player pages (players: ledger rank by might/kills inside their alliance). `compute.rankDelta(prev, curr)` is pure; a missing previous value shows `—`, never `▲` from nothing. Movement uses the same three channels as every other delta: colour, arrow, number.
+
+
+### Phase 5f — Usability and language-light UI (a MUST before the first Saturday)
+The alliance is multilingual (Russia, Spain, Brazil, the US, more); translation comes after Phase 8, but the pages must be usable **without** it now. docs/DESIGN.md "Who uses this" and "Language-light rules" are the contract; this phase applies them to the Session 6/6b pages and verifies them with real members:
+- every public-page sentence becomes a chip, a label or a number; one legend; own alliance pinned; ranks shown; `Intl` formatting; three channels per state (colour + arrow + word); strings moved to `lib/copy.ts` (i18n-ready: translation later is a file).
+- Navigation per DESIGN.md "Navigation and hierarchy": one row shape at three depths, breadcrumbs on deep pages, search in the header.
+- **The ten-second test:** the owner sends the preview link to three members who read little or no English (e.g. RU, ES, PT) with three tasks — *find your alliance's kills change; which alliance lost the most members; when are the numbers from* — and records answers and time in the handoff. Failures are findings, fixed in the same session.
+- Reference, not a template: lastasylumtracker.com's server page is friendlier than our Session 6 output (clear per-alliance cards, sorting). Borrow the clarity, not the look.
 
 ### Phase 5b — Branding: "Old Grandmas" × plague-era aesthetic
 The alliance running this is **Old Grandmas**. Visual identity = plague-doctor / apothecary era meets grandma crafts (knitting, crochet, yarn, doilies, tea). Tone: a serious tool with a wink, not a joke page.
@@ -412,6 +421,7 @@ The alliance running this is **Old Grandmas**. Visual identity = plague-doctor /
 **Direction (defaults — adjust after seeing a first render)**
 - *Palette:* aged parchment `#EFE6D3` background, ink `#1E1A1F` text, dark plum `#3B2436` header/accents, wax-seal red `#8C2F2F` for negative deltas / warnings, mustard yarn `#C9962B` for highlights / positive deltas, sage `#6F7F62` for the "manual" badge. Dark mode: swap parchment for a near-black plum, keep accents.
 - *Typography:* display serif with an old-print feel for headings (e.g. **Cormorant Garamond** or **IM Fell English**, Google Fonts/OFL); **Inter** or **Source Sans 3** for body/table with `font-variant-numeric: tabular-nums`.
+- *Mascot (owner, 2026-11-05):* the **Granny Doctor** — an old lady plague doctor with a cane and a knitting bag; original, single-colour SVG, three poses (404, 500, empty state). Game references stay allusions in copy (server, KvK, the game's terms), never its art. Comic but serious. docs/DESIGN.md has the rules.
 - *Logo:* wordmark "Old Grandmas" + a small original mark: a plague-doctor beak mask with **knitting needles crossed behind it** like crossed bones, a ball of yarn where a skull would sit. SVG, single colour, works at 24 px favicon size.
 - *Ornaments:* a thin crochet-lace border pattern (repeating SVG) along the header; a ball of yarn with a trailing thread in one page corner; the "Run snapshot" buttons styled as wax-seal stamps; empty states with a teacup ("Nothing recorded yet — put the kettle on"). Snapshot status chips get small icons: hourglass (running), stitched check (complete), dropped stitch (partial).
 - *Copy voice:* short, dry, slightly grandmotherly. E.g. page title "Old Grandmas — Saturday Ledger"; delta column header "Gained / Lost"; error toast "The ledger is closed for today (quota exhausted)."
@@ -639,6 +649,8 @@ The alliance roster includes `x`, `y` (map coordinates), `online`, `last_online_
 No user accounts, no OAuth, no per-user permissions: a shared PIN plus rate limiting is proportional to a guild tool whose worst case is a vandalised kill count. No WAF, no secrets manager, no SOC2 theatre. If the alliance ever stores anything private (Discord IDs for `/ask` in v2 is the first candidate), §12.1 gets a new row and §12.2 gets a real auth story.
 
 ## 9. Out of scope for v1 (do not build unless asked)
+
+- **Translation (i18n)**: after Phase 8. Prepared for now by `lib/copy.ts` (every string, stable keys) and `Intl` formatting; the later work is a dictionary per language and a switcher, not a refactor. Languages first in line: ru, es, pt-BR.
 - Multiple servers / multiple events on one page
 - Charts / sparklines (the across-events tables in Phase 5e carry the data; a line chart is a v2 layer on top)
 - Natural-language questions (§8b) — v2, after real data exists

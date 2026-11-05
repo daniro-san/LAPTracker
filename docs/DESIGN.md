@@ -159,6 +159,33 @@ components:
     ornament: illustration
 ---
 
+## Who uses this, and in what language
+
+Members of a game alliance on server 325 — Russia, Spain, Brazil, the United States and more — on phones, in a Discord thread, often during or right after the event. Most are not native English readers; some read no English at all. Translation is a later phase (after Phase 8); **being usable without it is a requirement now.** The test is literal: a member who speaks no English opens the page and, within ten seconds, finds their alliance, sees whether might and kills went up or down and by how much, and knows when the numbers are from.
+
+### Language-light rules
+
+- **Numbers first, words second.** Every data row reads as `label · number · signed delta with arrow · percent`. The label is one word, the same word the game's own English UI uses (Might, Kills, Members), because the players already know those words in the game.
+- **Three channels for every state**, never one: colour **and** an arrow/sign **and** a short word. Green alone, an arrow alone or English alone is not enough. Colour-blind safe by construction.
+- **One legend, once.** A compact legend (arrow up/down, the freshness dot, `[TEST]`) sits under the header; nothing else explains itself in a sentence.
+- **Sentences only in the margins.** The grandma voice lives in empty states, error pages, section titles and the admin area. Status is chips (`Before ✓ 12:01` · `After ✓ 16:01`), not prose. A public page has no paragraph.
+- **Dates and numbers through `Intl`** with the browser's locale: `16:01` not `4:01 PM`, `3,94 B` for pt-BR, `3.94B` for en. Server time stays explicit (`16:01 server`); relative times (`4 days ago`) are secondary.
+- **Universal symbols where they are truly universal**: ▲ ▼ for change, a filled dot for fresh and an outlined one for stale, a magnifier for search, ✓ ✗ for done/failed. No icons that need a culture to read (no thumbs, no wink, no skull for kills — "Kills" is already the game's word).
+- **Every string in `lib/copy.ts`**, none in components, so translation later is a file, not a refactor. Keys are stable identifiers; the value is the English text.
+- **Own alliance first.** OGs is highlighted and pinned at the top of the ledger; a "Jump to my alliance" control exists on long lists. Rank numbers (`#1 … #20`) are shown because they are language-free.
+
+## Navigation and hierarchy
+
+- Header: wordmark · event selector · search. Nothing else.
+- Main page, top to bottom: status strip (before/after chips, legend) → the ledger (own alliance pinned, then by might) → nothing else. The run buttons live on `/admin`.
+- Every card and row is a link to the alliance page; the alliance page is members with the same row shape; the player page is the same shape over time. **One row shape, three depths** — learn it once.
+- Back is the browser's back; breadcrumbs only on alliance and player pages (`Ledger › OGs › Player`).
+- No modals except the bottom sheet for the PIN; no tooltips that carry information; nothing on hover only.
+
+## Mascot: the Granny Doctor
+
+An original character, ours: an old lady in a plague-doctor beak mask, bonnet or kerchief, a cane in one hand and a knitting bag in the other. Dignified, a little stern, funny because she is serious. Single-colour inline SVG, at most three poses (standing with the cane for the 404, dropping a bottle for the 500, pouring tea for the empty state). Game references are allowed as **allusions in copy** — the server number, "KvK", the game's terms — never as its art, characters or assets. Comic but serious: a joke a 40-year-old officer in Russia would also get, never a meme.
+
 ## Overview
 
 A guild ledger, kept by hand, in a plague year. The page is aged paper; the ink is near-black; the header is dark plum; a wax-seal red marks losses and warnings; mustard yarn marks gains. Craft shows in the margins — a crochet lace border on the header, a ball of yarn in one corner, a teacup where there is nothing to show — and nowhere else. **The data table stays plain**: high contrast, tabular numerals, one-pixel rules, no texture behind a number. If an ornament ever competes with a number, the ornament goes.
@@ -233,6 +260,8 @@ The whole list. Anything else is a composition of these; a new one needs a line 
 - **`header`** — wordmark + lace border + event selector. Plum field, paper text, sticky and compact on phones.
 - **`stat-table` / `stat-card`** — one `StatTable` component: table ≥ 640 px, cards below. Rows ≥ 44 px; numerals right-aligned.
 - **`delta-up` / `delta-down`** — `value · ±delta with arrow · ±%`; kills with the member-loss note when negative.
+- **`status-strip`** — two chips (`Before ✓ 12:01`, `After ◐ 16:01`) and the legend; replaces every status sentence.
+- **`rank`** — `#n` beside the tag on cards and rows; language-free ordering.
 - **`badge`** — sage neutral chip: `[TEST]`, source, manual. Never red or yellow.
 - **`seal-button`** — the wax seal: destructive or confirming actions (Run now, Rehearse now). Circle, ≥ 44 px.
 - **`button-primary`** — plum, 2 px radius; one per view at most.
@@ -261,6 +290,7 @@ Short, dry, grandmotherly, English. Title "Old Grandmas — Saturday Ledger". Co
 - Put craft in the margins: header, corner, seals, empty states, error pages.
 - Design at 360 px first and screenshot 360 / 390 / 1280 in both modes.
 - Change this file in the same commit as the tokens when a decision changes.
+- Run the ten-second test with a real member who reads no English before calling a page done.
 
 ### Don't
 
@@ -268,6 +298,7 @@ Short, dry, grandmotherly, English. Title "Old Grandmas — Saturday Ledger". Co
 - Gradients, glassmorphism, blur, glow, `shadow-lg`, `rounded-2xl`, pill buttons.
 - Hero sections, three-column feature grids, numbered "01 / 02 / 03" labels, italic accent words.
 - Emoji or sparkles in UI copy; generic illustration packs; charts (v1 has none).
+- Paragraphs on public pages; status as prose; a label longer than two words; information that exists only in a tooltip or only in a colour.
 - A dark mode that is a different design; a component that exists only once and only here.
 
 ## Enforcement
