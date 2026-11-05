@@ -5,21 +5,12 @@ import { secretsOf, type AppContext } from "./app-context";
 import { RunRefusedError, runSnapshot, type RunSummary } from "./collector";
 import type { Db } from "./db";
 import { createRunLogger } from "./logger";
-import {
-  adminSnapshotMessage,
-  createNotifier,
-  discordClock,
-  publicSnapshotMessage,
-  quotaReportMessage,
-  rehearsalVerdictMessage,
-} from "./notify";
-import { getEventDetail } from "./queries";
-import { rehearsalVerdict } from "./rehearsal";
+import { quotaReportMessage, createNotifier, discordClock } from "./notify";
 import { createRepo, type Phase, type Repo } from "./repo";
 import { databaseSizeBytes } from "./repo/database";
 import type { EventInfo } from "./repo/events";
-import { loadVerdictInput } from "./repo/rehearsals";
 import { insertRunLog } from "./repo/run-logs";
+import { notifyFinished } from "./run-notify";
 import { nextEvent } from "./schedule";
 
 export type RunOutcome =
@@ -76,67 +67,6 @@ async function finaliseCrashed(
     console.error("snapshot.finalise_failed", { snapshot_id: snapshotId });
   }
   return summary;
-}
-
-/**
- * Sent only after the snapshot row is final. A test event (rehearsal) never reaches the public
- * channel, its admin lines start with [rehearsal], and its AFTER run is followed by the verdict.
- */
-async function notifyFinished(
-  ctx: AppContext,
-  db: Db,
-  req: RunRequest,
-  run: { summary: RunSummary; startedAt: Date; logWriteFailures: number },
-): Promise<void> {
-  const { summary } = run;
-  const clock = discordClock(ctx.env.SERVER_TZ);
-  const finishedAt = ctx.now();
-  const notifier = createNotifier(ctx.env, ctx.fetch);
-  const roundName = req.event.manual ? req.event.name : null;
-  const test = { test: req.event.isTest, manual: req.event.manual };
-  // INVARIANT notify.test-events-admin-only
-  // A manual round posts publicly only when its toggle is on (D28); the server never allows that
-  // together with "admin only", and getEventDetail also refuses an admin-only event.
-  if (!req.event.isTest && (!req.event.manual || req.event.postPublic)) {
-    // getEventDetail reads real events only: the public message never sees a rehearsal.
-    const detail = await getEventDetail(db, req.event.id).catch(() => null);
-    const rowsOf = (phase: Phase) =>
-      detail?.snapshots.find((s) => s.phase === phase)?.alliances ?? null;
-    await notifier.public(
-      publicSnapshotMessage(summary, {
-        clock,
-        eventUrl: `${req.origin}/events/${req.event.id}`,
-        finishedAt,
-        nextAt: req.phase === "before" && !req.event.manual ? req.event.afterAt : null,
-        alliances: rowsOf(req.phase) ?? [],
-        before: req.phase === "after" ? rowsOf("before") : null,
-        roundName,
-      }),
-    );
-  }
-  await notifier.admin(
-    adminSnapshotMessage(summary, {
-      clock,
-      phase: req.phase,
-      runUrl: `${req.origin}/admin/runs/${summary.snapshotId}`,
-      scheduledAt: req.phase === "before" ? req.event.beforeAt : req.event.afterAt,
-      startedAt: run.startedAt,
-      finishedAt,
-      logWriteFailures: run.logWriteFailures,
-      roundName,
-    }),
-    test,
-  );
-  if (req.event.isTest && req.phase === "after") {
-    const verdict = rehearsalVerdict(
-      await loadVerdictInput(db, req.event.id),
-      ctx.env.SNAPSHOT_WINDOW_MIN,
-    );
-    await notifier.admin(
-      rehearsalVerdictMessage(verdict, clock.stamp(finishedAt), `${req.origin}/admin/runs`),
-      test,
-    );
-  }
 }
 
 /** Refused before the event's before_at, force included: a weekday press would otherwise store the

@@ -31,6 +31,9 @@ export interface EventInfo {
   manual: boolean;
   /** Manual rounds: post the public Discord message when a run finishes. */
   postPublic: boolean;
+  /** D31: Discord's id of this event's message in each channel; null until the first post. */
+  discordPublicMessageId: string | null;
+  discordAdminMessageId: string | null;
   beforeAt: Date;
   afterAt: Date;
 }
@@ -41,6 +44,8 @@ const infoColumns = {
   isTest: events.isTest,
   manual: events.manual,
   postPublic: events.postPublic,
+  discordPublicMessageId: events.discordPublicMessageId,
+  discordAdminMessageId: events.discordAdminMessageId,
   beforeAt: events.beforeAt,
   afterAt: events.afterAt,
 };
@@ -130,6 +135,22 @@ export async function renameManualEvent(
   if (!any) return "no-snapshot";
   await db.update(events).set({ name }).where(eq(events.id, eventId));
   return "ok";
+}
+
+export async function setDiscordMessageId(
+  db: Db,
+  eventId: number,
+  channel: "public" | "admin",
+  messageId: string,
+): Promise<void> {
+  await db
+    .update(events)
+    .set(
+      channel === "public"
+        ? { discordPublicMessageId: messageId }
+        : { discordAdminMessageId: messageId },
+    )
+    .where(eq(events.id, eventId));
 }
 
 export interface DuePhase {

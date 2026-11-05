@@ -30,7 +30,11 @@ export const TEST_ENV = parseEnv({
 
 export function testContext(db: Db, env = TEST_ENV) {
   const clock = { now: T0 };
-  const posts: { url: string; content: string; body: Record<string, unknown> }[] = [];
+  type Sent = { url: string; content: string; body: Record<string, unknown> };
+  // A stand-in for Discord: POST ?wait=true creates a message and returns its id; PATCH edits one.
+  const posts: Sent[] = [];
+  const edits: (Sent & { messageId: string })[] = [];
+  const messages = new Set<string>();
   const v1 = fakeV1((id) => roster(id, ago(clock.now, minutes(1))));
   const ctx: AppContext = {
     env,
@@ -39,12 +43,22 @@ export function testContext(db: Db, env = TEST_ENV) {
     internal: fakeInternal(),
     fetch: async (input, init) => {
       const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
-      posts.push({ url: String(input), content: String(body.content ?? ""), body });
-      return new Response(null, { status: 204 });
+      const [url = "", query] = String(input).split("?");
+      const sent = { url, content: String(body.content ?? ""), body };
+      if (init?.method === "PATCH") {
+        const [hook = "", messageId = ""] = url.split("/messages/");
+        if (!messages.has(`${hook}/${messageId}`)) return new Response(null, { status: 404 });
+        edits.push({ ...sent, url: hook, messageId });
+        return Response.json({ id: messageId });
+      }
+      posts.push(sent);
+      const id = String(1000 + messages.size);
+      messages.add(`${url}/${id}`);
+      return query === "wait=true" ? Response.json({ id }) : new Response(null, { status: 204 });
     },
     openDb: () => ({ db, close: async () => {} }),
   };
-  return { ctx, clock, posts, v1 };
+  return { ctx, clock, posts, edits, v1 };
 }
 
 /** A request to a route with the given headers; x-real-ip defaults to one address. */
