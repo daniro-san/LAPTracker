@@ -25,6 +25,15 @@ Production is Vercel (branch `main`), the database is Neon, and the scheduler is
 
 **Deploy.** Work lands on `dev` through squash-merged PRs. A release takes three clicks: Actions → **Prepare release** → Run workflow (pick patch, minor or major) opens the PR `dev → main` titled `release: vX.Y.Z` with generated notes; review it; **Merge** it with a merge commit. The tag and the GitHub Release then appear on their own (`release-publish`). The version is the latest `v*` tag plus the bump; `package.json` is not used. Vercel builds `main` as production; its build command (`vercel.json`) runs `pnpm db:migrate` first, so migrations apply on every deploy. Prepare release refuses when `dev` has nothing beyond `main` or a release PR is already open. If Prepare release is unavailable (for example before the first release that carries it), open the PR by hand and, after the merge, run `gh release create vX.Y.Z --target main --generate-notes`. Preview deployments (`dev`, PRs) use Preview-scoped env vars (own database branch, own secrets, no `NOTIFY_*`) and sit behind Vercel Authentication.
 
+**How to cut a release.**
+
+1. Wait until the last push to `dev` has a green `check` (Actions → ci).
+2. GitHub → Actions → **Prepare release** → **Run workflow**, pick `patch` (fixes), `minor` (features) or `major` (breaking), run it. It opens the PR `dev → main` titled `release: vX.Y.Z` with generated notes, and prints the PR link in the run summary. It stops with a message if `dev` has nothing new or a release PR is already open.
+3. Open the PR, read the notes, wait for `check` to be green, then **Merge** with **Create a merge commit** (the only method `main` allows).
+4. About 10 seconds later, `release-publish` creates the tag `vX.Y.Z` and the GitHub Release (Actions → release-publish; Releases page). Vercel deploys `main` and runs the migrations by itself.
+
+The next version is the latest `v*` tag plus the bump, so `package.json` is never edited. If the PR is wrong, close it and run Prepare release again. If the tag or release does not appear, run `gh release create vX.Y.Z --target main --generate-notes`. Why it works this way: [D29](docs/DECISIONS.md).
+
 **GitHub repository secrets.** `APP_URL` (the production origin, no trailing slash) and `CRON_SECRET` (must equal the Production value in Vercel).
 
 **Workflows.**
