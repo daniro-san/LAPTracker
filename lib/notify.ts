@@ -123,6 +123,7 @@ const allianceLabel = (a: { unionId: number; tag: string | null; name?: string |
   [a.tag !== null ? `[${a.tag}]` : null, a.name].filter(Boolean).join(" ") || String(a.unionId);
 
 type State = RunSummary["status"];
+/** Run states in the admin message, the same words as /admin. */
 const STATE_WORD: Record<State, string> = {
   complete: copy.status.done,
   partial: copy.status.partial,
@@ -191,10 +192,9 @@ function moverBlock(ctx: PublicContext, heading: string, metric: "power" | "kill
 /** The public message: the status chip as the title, counts, the next update or the top gains. */
 export function publicSnapshotMessage(summary: RunSummary, ctx: PublicContext): Embed {
   const t = copy.discord.public;
-  const title = `${STATE_ICON[summary.status]} ${fill(copy.status.lastUpdated, {
-    state: STATE_WORD[summary.status],
-    time: ctx.clock.at(ctx.finishedAt),
-  })}`;
+  // The page's status chip (app/_ui/Status.tsx): the icon says partial; the stale line names who.
+  const chip = summary.status === "failed" ? copy.status.lastFailed : copy.status.lastUpdated;
+  const title = `${STATE_ICON[summary.status]} ${fill(chip, { time: ctx.clock.at(ctx.finishedAt) })}`;
   const lines: string[] = [];
   if (summary.status !== "failed") {
     const bad = ctx.alliances.filter((a) => !usable(a));

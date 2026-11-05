@@ -25,6 +25,10 @@ body:has(#full-numbers:checked) .num-f {
 }
 
 html {
+  /* Height of the sticky site header (app/_ui/SiteHeader.tsx) with its lace: sticky table heads sit under it. */
+  --site-header: 4rem;
+  /* How far the lace hangs below the plum bar, inside that height. */
+  --lace: 12px;
   color-scheme: light dark;
   /* Young Serif ships one weight; never let the browser fake a bold over it. */
   font-synthesis-weight: none;

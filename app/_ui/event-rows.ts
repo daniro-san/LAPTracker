@@ -129,6 +129,25 @@ function ranksFor(
 export const currentRank = (r: RankPair, afterRan: boolean): number | null =>
   afterRan ? r.after : r.before;
 
+/**
+ * When the page's numbers next change: this event's first snapshot that has not run, while its time is
+ * still ahead; otherwise the next snapshot on the schedule (`scheduled`, from lib/schedule nextEvent).
+ * So a finished or past event still says when the next update comes (owner, 2026-11-05).
+ */
+export function nextUpdateAt(
+  ran: ("before" | "after")[],
+  event: { beforeAt: Date; afterAt: Date },
+  scheduled: { beforeAt: Date; afterAt: Date },
+  now: Date,
+): Date | null {
+  const pending = (["before", "after"] as const)
+    .filter((ph) => !ran.includes(ph))
+    .map((ph) => (ph === "before" ? event.beforeAt : event.afterAt))
+    .find((at) => at > now);
+  if (pending) return pending;
+  return [scheduled.beforeAt, scheduled.afterAt].find((at) => at > now) ?? null;
+}
+
 /** One row per alliance seen in either snapshot, by ledger rank by might (#1 first, unranked last). */
 export function comparisonRows(
   snapshots: Snap[],

@@ -140,8 +140,11 @@ export function StatTable({
   } as CSSProperties;
   return (
     <div>
+      {/* At ≥ 640 px the column names stay in view under the site header while the rows scroll
+          (owner, 2026-11-05: "when I scroll down I can't see the headers"). It starts behind the
+          header's lace so rows do not show through the lace's gaps. Cards carry their own labels. */}
       <div
-        className={`hidden border-b border-rule px-3 pb-1 sm:grid sm:grid-cols-[var(--cols)] sm:gap-x-3 ${LABEL}`}
+        className={`sticky top-[calc(var(--site-header)-var(--lace))] z-20 hidden border-b border-rule bg-paper px-3 pb-1 pt-[calc(0.5rem+var(--lace))] sm:grid sm:grid-cols-[var(--cols)] sm:gap-x-3 ${LABEL}`}
         style={grid}
       >
         <span>{leadLabel}</span>

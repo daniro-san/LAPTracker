@@ -4,10 +4,12 @@
 // 2026-11-05): it is still collected as a cross-check but never feeds a number on the page.
 import type { NameHistoryEntry } from "@/lib/compute";
 import { copy, fill } from "@/lib/copy";
+import { getEnv } from "@/lib/env";
 import type { getEventDetail, listEvents, Ranks, RosterChange } from "@/lib/queries";
+import { nextEvent } from "@/lib/schedule";
 
 import { DetailTable, figureRows } from "./DetailLines";
-import { comparisonRows, type AllianceCell, type ComparisonRow } from "./event-rows";
+import { comparisonRows, nextUpdateAt, type AllianceCell, type ComparisonRow } from "./event-rows";
 import { ExactToggle } from "./ExactToggle";
 import { allianceLabel, rowAnchor, type Clock } from "./format";
 import { requestClock } from "./locale";
@@ -102,6 +104,7 @@ export async function EventView({
   ranks: Map<number, Partial<Record<"before" | "after", Ranks>>>;
 }) {
   const clock = await requestClock();
+  const now = new Date();
   const rows = comparisonRows(detail.snapshots, changes, names, ranks);
   return (
     <>
@@ -118,8 +121,12 @@ export async function EventView({
         </div>
         <StatusChips
           phases={detail.snapshots}
-          beforeAt={detail.beforeAt}
-          afterAt={detail.afterAt}
+          nextAt={nextUpdateAt(
+            detail.snapshots.map((s) => s.phase),
+            detail,
+            nextEvent(now, getEnv()),
+            now,
+          )}
           stale={rows.filter((r) => worstOf(fresh(r.before), fresh(r.after)) !== "fresh").length}
           clock={clock}
         />

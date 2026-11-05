@@ -3,7 +3,7 @@
 // Times are filled in already formatted, with the word "server" after them; no UTC.
 export const discordCopy = {
   public: {
-    /** `✓ Last updated: done at Sat, Nov 7, 14:01 server` is copy.status.lastUpdated after the icon. */
+    /** `✓ Last updated at Sat, Nov 7, 14:01 server` is copy.status.lastUpdated after the icon. */
     alliances: "{good}/{total} alliances",
     stale: "○ {n} stale: {list}",
     might: "**Might ▲**",

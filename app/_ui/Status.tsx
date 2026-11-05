@@ -24,15 +24,10 @@ const CHIP: Record<PhaseStatus["status"], { icon: ReactNode; tone: ChipTone }> =
   failed: { icon: "✗", tone: "ink" },
 } as const;
 
-const STATE_WORD = {
-  complete: copy.status.done,
-  partial: copy.status.partial,
-  failed: copy.status.failed,
-} as const;
-
 const finishedAt = (p: PhaseStatus) => p.finishedAt ?? p.startedAt;
 
-/** "Last updated: done at …", or "Updating now"; nothing yet: "Not updated yet". */
+/** "Last updated at …" (a partial run shows its icon and the stale count beside it), "Last update
+ * failed at …", "Updating now"; nothing yet: "Not updated yet" (owner, 2026-11-05). */
 function LastChip({ phases, clock }: { phases: PhaseStatus[]; clock: Clock }) {
   const running = phases.find((p) => p.status === "running");
   if (running) {
@@ -43,7 +38,7 @@ function LastChip({ phases, clock }: { phases: PhaseStatus[]; clock: Clock }) {
     );
   }
   const last = phases
-    .filter((p): p is PhaseStatus & { status: keyof typeof STATE_WORD } => p.status !== "running")
+    .filter((p) => p.status !== "running")
     .sort((a, b) => finishedAt(b).getTime() - finishedAt(a).getTime())[0];
   if (!last) {
     return (
@@ -54,43 +49,31 @@ function LastChip({ phases, clock }: { phases: PhaseStatus[]; clock: Clock }) {
   }
   return (
     <Chip tone={CHIP[last.status].tone} icon={CHIP[last.status].icon}>
-      {fill(copy.status.lastUpdated, {
-        state: STATE_WORD[last.status],
+      {fill(last.status === "failed" ? copy.status.lastFailed : copy.status.lastUpdated, {
         time: clock.at(finishedAt(last)),
       })}
     </Chip>
   );
 }
 
-/** "Next update scheduled at …" while a phase is still to run; nothing once both have run. */
-function NextChip({
-  phases,
-  at,
-  clock,
-}: {
-  phases: PhaseStatus[];
-  at: { before: Date; after: Date };
-  clock: Clock;
-}) {
-  const next = (["before", "after"] as const).find((ph) => !phases.some((p) => p.phase === ph));
-  if (!next) return null;
+/** "Next update at …": the next snapshot, of this event or of the schedule (app/_ui/event-rows.ts). */
+function NextChip({ at, clock }: { at: Date | null; clock: Clock }) {
+  if (!at) return null;
   return (
     <Chip tone="muted" icon="○">
-      {fill(copy.status.next, { time: clock.at(at[next]) })}
+      {fill(copy.status.next, { time: clock.at(at) })}
     </Chip>
   );
 }
 
 export function StatusChips({
   phases,
-  beforeAt,
-  afterAt,
+  nextAt,
   stale,
   clock,
 }: {
   phases: PhaseStatus[];
-  beforeAt: Date;
-  afterAt: Date;
+  nextAt: Date | null;
   /** Rows marked stale or failed: shown as a seal `○ n` beside the time, never as the time's tone. */
   stale: number;
   clock: Clock;
@@ -109,7 +92,7 @@ export function StatusChips({
         </li>
       )}
       <li className="min-w-0">
-        <NextChip phases={phases} at={{ before: beforeAt, after: afterAt }} clock={clock} />
+        <NextChip at={nextAt} clock={clock} />
       </li>
     </ul>
   );
