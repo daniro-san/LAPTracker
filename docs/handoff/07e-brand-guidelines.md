@@ -15,7 +15,7 @@
 
 ## Decisions
 - Indexing: the page stays `noindex` and is not linked from the site (owner, 2026-11-04).
-- Branch cut from `session/07-brand`, because PR #28 was still open (owner chose: build now, open the PR into `dev` after #28 is merged).
+- Branch first cut from `session/07-brand`, because PR #28 was still open (owner chose: build now, open the PR into `dev` after #28 is merged). #28 was merged during the session; the commit was rebased onto `dev` (`git rebase --onto origin/dev origin/session/07-brand`) and `pnpm check` re-run there.
 - Session label 7e: this session is not in the playbook map; 7b–7d are taken, so it takes the next free letter.
 - Clear space: a quarter of the mark's width on every side; in wax, the seal is the clear space. DESIGN.md defines no clear space; this is the value the page shows.
 - Minimum sizes: line mark ≥ 24 px and solid mark 16–32 px, as the task states.
@@ -40,12 +40,11 @@
 - DESIGN.md "Mark" says `MarkLine` is for "96 px and up"; the header uses it at 32 px (owner) and this page states ≥ 24 px (task). DESIGN.md also has no clear-space rule. The owner should record both in DESIGN.md "Mark" so the contract and the page agree.
 - DESIGN.md "Typography" table lists weight 600 for the four display steps; the front matter and the loaded fonts say 400 (Young Serif) and 700 (Alegreya Sans). Pre-existing; not changed here.
 - `lib/brand/tokens.css`: the `prefers-color-scheme: dark` block declares `--frame-field`, `--check-mark` and `--select-arrow` twice. Pre-existing and harmless (the second wins with the same value); not changed here.
-- PR not open yet: waiting for PR #28. After the owner merges #28: `git fetch && git rebase --onto origin/dev origin/session/07-brand session/07e-brand-guidelines`, `pnpm check`, force-push, open the PR into `dev`, and add its URL as the last line here.
 
 ## Next
 Session: 7b — Usability and language-light pass
 Model / effort: keep — no signal from this session; its work was page layout, not the language-light work 7b does.
-Owner must do first: merge PR #28 and then this session's PR into `dev`.
+Owner must do first: merge this session's PR into `dev`.
 Plan changes needed: none. DESIGN.md "Mark" needs the clear-space and minimum-size lines (see Open issues); that is DESIGN.md, not the plan.
 
 <adjustments>
