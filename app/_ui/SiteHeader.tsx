@@ -16,7 +16,8 @@ export interface SelectorEvent {
   eventAtUtc: Date;
 }
 
-/** Plum-header controls: a paper tint on hover, deeper while pressed or open, so they feel tappable. */
+/** Plum-header controls: in the soft drawn frame (paper ink), a paper tint on hover, deeper while
+ * pressed or open, so they feel tappable. */
 const CONTROL =
   "rounded-xs transition-colors duration-150 hover:bg-paper/15 active:bg-paper/25 motion-reduce:transition-none";
 
@@ -31,7 +32,7 @@ function EventSelector({
   return (
     <details className="group relative">
       <summary
-        className={`flex min-h-11 cursor-pointer items-center gap-1 border border-paper/50 px-3 text-sm font-medium group-open:bg-paper/20 [&::-webkit-details-marker]:hidden ${CONTROL}`}
+        className={`flex min-h-11 cursor-pointer items-center gap-1 px-3 text-sm drawn-frame-soft font-medium group-open:bg-paper/20 [&::-webkit-details-marker]:hidden ${CONTROL}`}
       >
         {current ? utcDayWithWeekday(current.eventAtUtc) : "Events"}{" "}
         <span
@@ -79,11 +80,11 @@ export function SiteHeader({
               {copy.site.name}
             </span>
           </Link>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
             <Link
               href="/players"
               aria-current={section === "players" ? "page" : undefined}
-              className={`flex min-h-11 items-center px-3 text-sm font-medium aria-[current=page]:bg-paper/20 ${CONTROL}`}
+              className={`drawn-frame-soft flex min-h-11 items-center px-3 text-sm font-medium aria-[current=page]:bg-paper/20 ${CONTROL}`}
             >
               {copy.site.players}
             </Link>

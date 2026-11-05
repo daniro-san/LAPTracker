@@ -36,6 +36,8 @@ DRAWINGS = {
     "icon-running": ornaments.icon_running,
     "icon-done": ornaments.icon_done,
     "icon-partial": ornaments.icon_partial,
+    "no-photo": ornaments.no_photo,
+    "no-badge": ornaments.no_badge,
     "granny-standing": granny.standing,
     "granny-tea": granny.tea,
     "frame": lambda: frame.frame(W * 0.9, W * 1.08),

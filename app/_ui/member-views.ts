@@ -14,6 +14,7 @@ export function memberViews(before: MemberRow[], after: MemberRow[]): MemberView
     ...diff.stayed.map(({ before: b, after: a }) => ({
       uid: a.uid,
       name: a.name,
+      hasAvatar: a.hasAvatar,
       wasName: b.name !== a.name ? b.name : null,
       status: "" as const,
       before: stat(b),
@@ -22,6 +23,7 @@ export function memberViews(before: MemberRow[], after: MemberRow[]): MemberView
     ...diff.joined.map((a) => ({
       uid: a.uid,
       name: a.name,
+      hasAvatar: a.hasAvatar,
       wasName: null,
       status: "joined" as const,
       before: null,
@@ -30,6 +32,7 @@ export function memberViews(before: MemberRow[], after: MemberRow[]): MemberView
     ...diff.left.map((b) => ({
       uid: b.uid,
       name: b.name,
+      hasAvatar: b.hasAvatar,
       wasName: null,
       status: "left" as const,
       before: stat(b),

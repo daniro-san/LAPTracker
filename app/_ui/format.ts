@@ -47,19 +47,3 @@ export const utcDay = (d: Date): string => utcDate.format(d);
 /** "Sat Nov 7" */
 export const utcDayWithWeekday = (d: Date): string =>
   `${utcWeekday.format(d)} ${utcDate.format(d)}`;
-
-/** "14:00 UTC" */
-export const utcClock = (d: Date): string => `${utcTime.format(d)} UTC`;
-
-/** "in 3 h", "12 min ago", "2 days ago": how far `at` is from `now`. */
-export function relative(now: Date, at: Date): string {
-  const min = Math.round((at.getTime() - now.getTime()) / 60_000);
-  const abs = Math.abs(min);
-  const span =
-    abs < 60
-      ? `${abs} min`
-      : abs < 2880
-        ? `${Math.round(abs / 60)} h`
-        : `${Math.round(abs / 1440)} days`;
-  return min >= 0 ? `in ${span}` : `${span} ago`;
-}

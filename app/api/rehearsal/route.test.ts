@@ -83,6 +83,7 @@ describe("POST /api/rehearsal", () => {
             totalKills: 1,
             serverRank: null,
             level: null,
+            badgeId: null,
             powerBoard: null,
             killsBoard: null,
             source: "v1",

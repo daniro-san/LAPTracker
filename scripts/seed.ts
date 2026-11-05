@@ -41,6 +41,7 @@ async function insertAlliance(
         power: m.power,
         kills: m.kills,
         lv: m.lv,
+        avatarUrl: m.avatarUrl,
       })),
     );
   }
@@ -62,6 +63,7 @@ function allianceValues(base: BaseAlliance[], i: number, { event, phase, at }: S
     rawJson: { seed: true },
     tag: r.tag,
     name: r.name,
+    badgeId: i === 4 ? null : a.badgeId, // alliance 4 without a badge; fake on purpose
   };
   if (event === 0 && phase === "after" && i === 11) {
     return { row: { ...common, isFresh: false, error: "503 after 3 retries" }, members: [] };

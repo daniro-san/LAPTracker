@@ -29,6 +29,8 @@ export interface AllianceRow {
   totalKills: number | null;
   serverRank: number | null;
   level: number | null;
+  /** Absent on an error row. */
+  badgeId?: number | null;
   powerBoard: number | null;
   killsBoard: number | null;
   source: "v1" | "internal";
@@ -45,6 +47,7 @@ export interface MemberRow {
   power: number | null;
   kills: number | null;
   lv: number | null;
+  avatarUrl?: string | null;
 }
 
 /** What the collector reads back to decide the status and the re-run set. */

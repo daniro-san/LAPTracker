@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
 
+import { PlayerAvatar } from "./Pictures";
 import { StatTable, type StatMetric, type StatRow } from "./StatTable";
 
 type Stats = { power: number | null; kills: number | null; lv: number | null };
@@ -13,6 +14,7 @@ type Stats = { power: number | null; kills: number | null; lv: number | null };
 export interface MemberView {
   uid: number;
   name: string;
+  hasAvatar: boolean;
   wasName: string | null;
   status: "joined" | "left" | "";
   before: Stats | null;
@@ -78,6 +80,7 @@ function toRow(m: MemberView, canDelta: boolean): StatRow {
     key: String(m.uid),
     href: `/players/${m.uid}`,
     lead: m.name,
+    icon: <PlayerAvatar uid={m.uid} hasAvatar={m.hasAvatar} />,
     sub: (
       <>
         {m.status && <span className="font-medium">{m.status}</span>}

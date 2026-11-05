@@ -130,3 +130,48 @@ def icon_partial():
 
 ITEMS = {"seal": seal, "yarn-corner": yarn_corner, "lace": lace, "lace-alt-dot": lace_b,
          "icon-running": icon_running, "icon-done": icon_done, "icon-partial": icon_partial}
+
+# ---------------- placeholders (28-56 px: filled shapes, the small-cut rule) ----------------
+def no_photo():
+    """A player without a photo: the Granny Doctor in profile, facing left like the mark (no hat, so it
+    never reads as the logo): bun with a knitting needle through it, beak mask with its seam, goggle and
+    strap, shoulders kept off the head by a gap."""
+    p = Path()
+    blob(p, arc(23.8, 8.4, 2.7, 2.5, 0, 300, 6, wob=[0, .04, -.03, .03, 0, -.03]))
+    stroke(p, [(20.6, 5), (24, 7.6), (28.2, 10.6)], .5, a=.05, b=.05, e=.42)
+    blob(p, arc(28.6, 10.9, .9, .9, 0, 300, 5))
+    blob(p, [(5.2, 30.8), (6.4, 26.8), (9.6, 23.6), (14, 21.8), (18, 21.4), (22.4, 22.4), (25.8, 25),
+             (27.6, 30.8), (16, 31)], k=.9)
+    blob(p, arc(14.7, 12.7, .8, .8, 0, 300, 5))
+    # beak: hooked tip, kept off the goggle; its seam cut out (evenodd)
+    b = Path()
+    blob(b, [(13, 10.4), (9.6, 11.4), (6.2, 13.4), (3.6, 15.8), (2.9, 17.8), (4.2, 18.1), (5.6, 17),
+             (9, 16.2), (12.6, 16.2)], k=.9)
+    stroke(b, [(12.2, 13.4), (9, 14), (6.2, 15.4)], .32, a=.3, b=.4, e=.1)
+    # head with the goggle and the strap cut out (evenodd)
+    h = Path()
+    blob(h, arc(18.2, 13.6, 6, 6.3, 0, 330, 8, wob=[0, .03, -.02, .02, .03, -.02, .02, -.03]))
+    blob(h, arc(14.9, 12.6, 2, 1.9, 0, 300, 6, wob=[0, .05, -.03, .04, 0, -.04]))
+    stroke(h, [(16.9, 12.2), (20, 11.6), (23.4, 12)], .4, a=.15, b=.3, e=.2)
+    return svg("0 0 32 32", el(p) + el(b, ' fill-rule="evenodd"') + el(h, ' fill-rule="evenodd"'))
+
+def no_badge():
+    """An alliance without a badge: a crocheted banner on its rod, scalloped hem with eyelets and picots,
+    a granny square where the emblem would be."""
+    p = Path()
+    stroke(p, [(3.6, 5.4), (16, 5), (28.4, 5.5)], 1.05, a=.06, b=.06, e=.7)
+    blob(p, arc(3.2, 5.4, 1.7, 1.8, 0, 300, 6))
+    blob(p, arc(28.8, 5.5, 1.7, 1.8, 0, 300, 6))
+    for x in (12.9, 19.1):
+        blob(p, arc(x, 25.1, .9, 1, 0, 300, 5))
+    blob(p, arc(16, 14.1, 1.25, 1.2, 0, 300, 6))
+    # cloth with the square's place cut out (evenodd, own path)
+    c = Path()
+    blob(c, [(7.6, 6.8), (16, 6.6), (24.4, 6.9), (24.2, 14), (24.5, 21.4), (16, 21.7), (7.5, 21.5), (7.8, 14)], k=.8)
+    blob(c, [(12.4, 10.6), (16, 10.4), (19.6, 10.7), (19.7, 14), (19.5, 17.6), (16, 17.8), (12.5, 17.5), (12.3, 14)], k=.6)
+    # hem: three scallops, each with its eyelet
+    h = Path()
+    for x in (10.2, 16, 21.8):
+        blob(h, [(x - 3, 20.6), (x + 3, 20.6), (x + 3.1, 22.9), (x + 1.9, 25.2), (x, 25.9), (x - 1.9, 25.2), (x - 3.1, 22.9)], k=.9)
+        blob(h, arc(x, 23, .95, .95, 0, 300, 5))
+    return svg("0 0 32 32", el(p) + el(c, ' fill-rule="evenodd"') + el(h, ' fill-rule="evenodd"'))

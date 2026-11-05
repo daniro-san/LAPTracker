@@ -145,6 +145,23 @@ body {
   .drawn-frame-soft::before {
     -webkit-mask-box-image: url("/brand/frame-soft.svg") 12 / 6px stretch;
   }
+  /* Cards below 640 px (StatTable, search results) wear the soft drawn frame too (owner, 2026-11-05);
+     the >= 640 px table keeps its plain 1 px rules. Without the mask the plain border stays. */
+  @media (max-width: 639.98px) {
+    @supports (-webkit-mask-box-image: none) {
+      .stat-card {
+        border-color: transparent;
+      }
+      .stat-card::before {
+        content: "";
+        position: absolute;
+        inset: -3px;
+        pointer-events: none;
+        background: currentColor;
+        -webkit-mask-box-image: url("/brand/frame-soft.svg") 12 / 6px stretch;
+      }
+    }
+  }
   @supports not (-webkit-mask-box-image: none) {
     .drawn-frame,
     .drawn-frame-soft {

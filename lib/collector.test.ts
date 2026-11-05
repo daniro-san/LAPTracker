@@ -45,7 +45,11 @@ describe("runSnapshot", () => {
       killsBoard: 700,
     });
     expect(first?.members).toHaveLength(3);
-    expect(first?.row.raw).toEqual({ union_id: FIRST, members: [{ uid: 1, x: 1 }] });
+    expect(first?.row.raw).toEqual({
+      union_id: FIRST,
+      badge_url: "u",
+      members: [{ uid: 1, avatar_url: "u", x: 1 }],
+    });
     expect(repo.tables.snapshots[0]?.result?.boardPulledAt).toEqual(ago(T0, minutes(240)));
     expect(repo.tables.snapshots[0]?.result?.quotaRemainingBefore).toBe(1000);
   });

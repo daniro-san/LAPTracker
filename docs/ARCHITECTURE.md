@@ -25,13 +25,15 @@ lib/route.ts, lib/app-context.ts, lib/app-errors.ts
                     the route shell (one DB per request, closed on every path; errors become a code),
                     the outside world in one object (env, clock, adapters, fetch, openDb), app_errors.
 config/alliances.ts the 20 tracked alliances, by union_id
+app/img/*           /img/badge/[id] and /img/avatar/[uid]: upstream images served from our origin (D22), via lib/images.ts.
+lib/images.ts       the two image sources (preset badge id, stored photo URL on its one host), capped fetch, cache headers.
 proxy.ts            per-request CSP nonce (Next 16's middleware); next.config.ts holds the static security headers
 instrumentation.ts  validates the environment once at server start
 ```
 
 ## Dependency rule
 
-- `app → lib/{route, auth, run, tick, rehearsal, schedule, queries, repo}`; `lib/run → lib/collector`.
+- `app → lib/{route, auth, run, tick, rehearsal, schedule, queries, repo, images}`; `lib/run → lib/collector`.
 - `lib/collector → lib/{compute, sources, repo, logger, notify}` **through the `Deps` object passed in**.
 - `lib/compute` and `lib/budget` import nothing from the project.
 - `lib/logger` imports only `lib/repo` and `lib/redact`.
