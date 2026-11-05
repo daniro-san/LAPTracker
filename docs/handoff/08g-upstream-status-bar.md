@@ -38,3 +38,4 @@ Plan changes needed: none.
 <adjustments>
 - After each rehearsal or real run in Session 9, check that the banner is absent on `/` when the run completed. Rehearsal snapshots are ignored by the banner on purpose, so a failing rehearsal will not show it.
 </adjustments>
+https://github.com/daniro-san/LAPTracker/pull/75
