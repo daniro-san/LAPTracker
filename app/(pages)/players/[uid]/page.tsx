@@ -8,18 +8,21 @@ import { Breadcrumbs } from "@/app/_ui/Breadcrumbs";
 import { ExactToggle } from "@/app/_ui/ExactToggle";
 import { allianceLabel, type Clock } from "@/app/_ui/format";
 import { requestClock } from "@/app/_ui/locale";
+import { Num } from "@/app/_ui/Num";
 import { AllianceBadge, PlayerAvatar } from "@/app/_ui/Pictures";
 import { PlayerAcrossEvents } from "@/app/_ui/PlayerAcrossEvents";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { LABEL } from "@/app/_ui/StatTable";
-import { Legend } from "@/app/_ui/Status";
-import { copy } from "@/lib/copy";
+import { FreshDots, Legend } from "@/app/_ui/Status";
+import { copy, fill } from "@/lib/copy";
 import { withPageDb } from "@/lib/page";
 import { listEvents, playerHistory, type PlayerHistory } from "@/lib/queries";
 
 function Timelines({ history, clock }: { history: PlayerHistory; clock: Clock }) {
   const { names, alliances } = history;
+  // One name and one alliance: the identity row already says it all.
+  if (names.length < 2 && alliances.length < 2) return null;
   const span = (a: { firstSeen: Date; lastSeen: Date }) =>
     `${clock.day(a.firstSeen)} – ${clock.day(a.lastSeen)}`;
   return (
@@ -37,10 +40,7 @@ function Timelines({ history, clock }: { history: PlayerHistory; clock: Clock })
         </div>
       )}
       <div>
-        {/* One alliance and one name: the line speaks for itself under the title (Session 7g). */}
-        {(alliances.length > 1 || names.length > 1) && (
-          <p className={LABEL}>{copy.ledger.alliances}</p>
-        )}
+        <p className={LABEL}>{copy.ledger.alliances}</p>
         <ul>
           {alliances.map((a) => (
             <li
@@ -60,6 +60,35 @@ function Timelines({ history, clock }: { history: PlayerHistory; clock: Clock })
         </ul>
       </div>
     </div>
+  );
+}
+
+/** The latest stored Might, Kills and Sanctuary level as one band (no second title), like the alliance page's. */
+function Summary({ current, clock }: { current: PlayerHistory["current"]; clock: Clock }) {
+  const l = copy.ledger;
+  const figures = [
+    { label: l.might, value: current.power },
+    { label: l.kills, value: current.kills },
+    { label: l.sanctuary, value: current.lv },
+  ];
+  const state = { isFresh: current.isFresh, updatedAt: current.updatedAt, failed: false };
+  return (
+    <section aria-label={l.player} className="border border-rule">
+      <dl className="grid grid-cols-3 divide-x divide-rule">
+        {figures.map((f) => (
+          <div key={f.label} className="min-w-0 px-2 py-2 sm:px-4">
+            <dt className={LABEL}>{f.label}</dt>
+            <dd className="text-xl font-medium tabular-nums">
+              <Num n={f.value} />
+            </dd>
+          </div>
+        ))}
+      </dl>
+      <p className="flex min-h-11 flex-wrap items-center gap-x-3 border-t border-rule px-2 text-sm text-ink/70 sm:px-4">
+        {current.updatedAt && fill(l.asOf, { time: clock.at(current.updatedAt) })}
+        <FreshDots before={null} after={state} />
+      </p>
+    </section>
   );
 }
 
@@ -116,14 +145,24 @@ export default async function PlayerPage({ params }: { params: Params }) {
         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
           <div className="flex min-w-0 items-center gap-3">
             <PlayerAvatar uid={history.uid} hasAvatar={current.hasAvatar} size="lg" />
-            <h1 className="min-w-0 break-words font-display text-display-lg leading-tight">
-              {current.name}
-            </h1>
+            <div className="min-w-0">
+              <h1 className="break-words font-display text-display-lg leading-tight">
+                {current.name}
+              </h1>
+              <Link
+                href={`/events/${current.eventId}/alliances/${current.unionId}`}
+                className="inline-flex min-h-11 items-center gap-2 font-medium text-plum hover:underline"
+              >
+                <AllianceBadge badgeId={current.badgeId} />
+                {allianceLabel(current.tag, allianceName)}
+              </Link>
+            </div>
           </div>
           <ExactToggle />
         </div>
         <Legend />
         <Timelines history={history} clock={clock} />
+        <Summary current={current} clock={clock} />
         <PlayerAcrossEvents
           rows={history.rows}
           clock={clock}
