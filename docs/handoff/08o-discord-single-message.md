@@ -44,3 +44,5 @@ Plan change: SESSION_PLAYBOOK.md Session 9 task 1 (the `[TEST] Rehearsal PASS/FA
 - Session 9 step 1: wait for the admin message to be edited (it gains the After block and the Pass/Fail verdict at its end) and paste that message. The edit does not notify.
 - Rehearsal admin text starts `[rehearsal] **<event name>**`, not `[TEST]`.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/88
