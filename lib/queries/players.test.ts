@@ -43,7 +43,7 @@ beforeAll(async () => {
       allianceSnapshotId: (alliance as { id: number }).id,
       uid: 7,
       name: phase === "before" ? "Nana" : "Nana Prime",
-      power: 10,
+      power: phase === "before" ? 10 : 12,
       kills: 5,
       lv: 3,
     });
@@ -64,5 +64,49 @@ describe("player read models (plan §12.1)", () => {
     const [match] = await searchPlayers(db, "NANA");
     expect(match?.name).toBe("Nana Prime");
     expect(await searchPlayers(db, "Nana%")).toEqual([]);
+  });
+
+  it("takes the summary figures from the newest sighting in a real event, not a rehearsal", async () => {
+    const at = new Date("2026-10-24T14:00:00Z");
+    const [rehearsal] = await db
+      .insert(events)
+      .values({
+        name: "Rehearsal",
+        isTest: true,
+        eventAtUtc: at,
+        allianceIds: [1],
+        beforeAt: at,
+        afterAt: at,
+      })
+      .returning({ id: events.id });
+    const [snap] = await db
+      .insert(snapshots)
+      .values({
+        eventId: (rehearsal as { id: number }).id,
+        phase: "after",
+        startedAt: at,
+        status: "complete",
+      })
+      .returning({ id: snapshots.id });
+    const [alliance] = await db
+      .insert(allianceSnapshots)
+      .values({
+        snapshotId: (snap as { id: number }).id,
+        unionId: 1,
+        source: "v1",
+        isFresh: true,
+        rawJson,
+      })
+      .returning({ id: allianceSnapshots.id });
+    await db.insert(memberSnapshots).values({
+      allianceSnapshotId: (alliance as { id: number }).id,
+      uid: 7,
+      name: "Nana",
+      power: 99,
+      kills: 99,
+      lv: 9,
+    });
+    const history = await playerHistory(db, 7);
+    expect(history?.current).toMatchObject({ power: 12, kills: 5, lv: 3, isFresh: true });
   });
 });

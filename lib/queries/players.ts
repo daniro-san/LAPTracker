@@ -94,6 +94,13 @@ export interface PlayerHistory {
     badgeId: number | null;
     eventId: number;
     hasAvatar: boolean;
+    /** The newest sighting in a chain event (D28): Might, Kills and Sanctuary level as stored then. */
+    power: number | null;
+    kills: number | null;
+    lv: number | null;
+    /** When the game's data was read for that sighting, and whether it was fresh. */
+    updatedAt: Date | null;
+    isFresh: boolean;
   };
   /** Oldest first. */
   rows: PlayerEventRow[];
@@ -259,6 +266,11 @@ export async function playerHistory(db: Db, uid: number): Promise<PlayerHistory 
       badgeId: latest.badgeId,
       eventId: latest.eventId,
       hasAvatar: latest.hasAvatar,
+      power: latest.power,
+      kills: latest.kills,
+      lv: latest.lv,
+      updatedAt: latest.sourceUpdatedAt,
+      isFresh: latest.isFresh,
     },
     rows: eventRows(sightings),
     names: nameHistory(sightedNames),
