@@ -12,16 +12,8 @@ export const copy = {
   brand: {
     title: "Brand sheet",
     intro: "Mock for review. Nothing on this page reads the database.",
-    options: {
-      title: "Mark options",
-      note: "Pick one; it replaces the mark below. 200 px, then 48 / 24 / 16 px on paper and on plum.",
-      bust: "A. Granny Doctor bust",
-      brim: "B. Wide brim, yarn in the hatband",
-      crest: "C. Crest with crossed needles",
-      yarnhead: "D. Yarn-ball head",
-    },
     mark: {
-      title: "The mark (first draft)",
+      title: "The mark",
       large: "200 px",
       small: "24 px, on paper and on plum",
     },
@@ -36,12 +28,6 @@ export const copy = {
         sage: "Sage — neutral badges",
         rule: "Rule — borders, table rules",
       },
-      proposal: "Proposed for light-mode text (contract value fails 4.5:1 on paper)",
-      proposalRoles: {
-        yarnDeep: "Yarn, deeper — 5.1:1",
-        sageDeep: "Sage, deeper — 5.0:1",
-      },
-      contrast: { yarn: "2.2:1 on paper", sage: "3.5:1 on paper" },
     },
     type: {
       title: "Type",

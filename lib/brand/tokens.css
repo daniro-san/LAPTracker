@@ -11,11 +11,6 @@
   --sage: #6f7f62;
   --rule: #d9cdb4;
 
-  /* Proposal shown on /brand for the owner's review: contract yarn is 2.15:1 and sage 3.46:1 on paper,
-     under DESIGN.md's 4.5:1 text rule. Promote or delete at review. */
-  --yarn-deep: #7a5a12;
-  --sage-deep: #56654b;
-
   --space-xxs: 4px;
   --space-xs: 8px;
   --space-sm: 12px;
@@ -42,8 +37,6 @@
     --yarn: #e0b04a;
     --sage: #93a585;
     --rule: #3a2f36;
-    --yarn-deep: #e0b04a;
-    --sage-deep: #93a585;
   }
 }
 :root[data-theme="dark"] {
@@ -54,8 +47,6 @@
   --yarn: #e0b04a;
   --sage: #93a585;
   --rule: #3a2f36;
-  --yarn-deep: #e0b04a;
-  --sage-deep: #93a585;
   color-scheme: dark;
 }
 :root[data-theme="light"] {
@@ -70,8 +61,6 @@
   --color-yarn: var(--yarn);
   --color-sage: var(--sage);
   --color-rule: var(--rule);
-  --color-yarn-deep: var(--yarn-deep);
-  --color-sage-deep: var(--sage-deep);
 
   /* Inline, so the next/font variables resolve on the element that carries lib/brand/fonts.ts's class. */
   --font-display: var(--font-cormorant), Georgia, serif;

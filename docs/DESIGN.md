@@ -184,7 +184,11 @@ Members of a game alliance on server 325 — Russia, Spain, Brazil, the United S
 
 ## Mascot: the Granny Doctor
 
-An original character, ours: an old lady in a plague-doctor beak mask, bonnet or kerchief, a cane in one hand and a knitting bag in the other. Dignified, a little stern, funny because she is serious. Single-colour inline SVG, at most three poses (standing with the cane for the 404, dropping a bottle for the 500, pouring tea for the empty state). Game references are allowed as **allusions in copy** — the server number, "KvK", the game's terms — never as its art, characters or assets. Comic but serious: a joke a 40-year-old officer in Russia would also get, never a meme.
+An original character, ours: an old lady in a plague-doctor beak mask, bonnet or kerchief, a cane in one hand and a knitting bag in the other. Dignified, a little stern, funny because she is serious. A first bust of her (bonnet, ribbon bow, ruff), drawn as a candidate mark at the Session 7 mock and kept for the poses, is `docs/brand/granny-doctor-bust.svg`. Single-colour inline SVG, at most three poses (standing with the cane for the 404, dropping a bottle for the 500, pouring tea for the empty state). Game references are allowed as **allusions in copy** — the server number, "KvK", the game's terms — never as its art, characters or assets. Comic but serious: a joke a 40-year-old officer in Russia would also get, never a meme.
+
+## Mark
+
+The logo mark (owner's pick at the Session 7 mock, 2026-11-04): a plague doctor in profile facing left — hooked, riveted beak, goggle eye, cowl — under a wide-brimmed hat, with a ball of yarn and two knitting needles tucked into the hatband where a feather would go. `lib/brand/components/Logo.tsx`, single colour, 32 px in the header, also the favicon and app icons.
 
 ## Overview
 
@@ -209,7 +213,7 @@ A guild ledger, kept by hand, in a plague year. The page is aged paper; the ink 
 - **Sage** (`{colors.sage}` — #6f7f62): neutral badges — `[TEST]`, "fallback source", "manual". Dark: `{colors.dark-sage}`.
 - **Rule** (`{colors.rule}` — #d9cdb4): borders and table rules. Dark: `{colors.dark-rule}`.
 
-Rules: deltas are coloured by sign only; a colour that carries no meaning is not used. Text contrast ≥ 4.5:1, large numerals ≥ 3:1, checked in both modes. No gradients anywhere.
+Rules: deltas are coloured by sign only; a colour that carries no meaning is not used. Text contrast ≥ 4.5:1, large numerals ≥ 3:1, checked in both modes. Known exception, accepted by the owner at the Session 7 mock (2026-11-04): in light mode yarn text on paper is 2.15:1 and paper on sage 3.46:1; the fix is tracked in [issue #25](https://github.com/daniro-san/LAPTracker/issues/25). No gradients anywhere.
 
 ## Typography
 
