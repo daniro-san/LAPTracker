@@ -34,3 +34,37 @@ html {
 body {
   overflow-wrap: break-word;
 }
+
+/* Error-page vignettes (DESIGN.md "Motion"): one small keyframe loop per page, about the pivot each
+   vignette sets inline; nothing moves under reduced motion. */
+@keyframes granny-sway {
+  from {
+    transform: rotate(-4deg);
+  }
+  to {
+    transform: rotate(4deg);
+  }
+}
+@keyframes granny-rock {
+  from {
+    transform: rotate(-5deg);
+  }
+  to {
+    transform: rotate(5deg);
+  }
+}
+[data-anim="sway"],
+[data-anim="rock"] {
+  transform-box: view-box;
+}
+[data-anim="sway"] {
+  animation: granny-sway 3s ease-in-out infinite alternate;
+}
+[data-anim="rock"] {
+  animation: granny-rock 2.5s ease-in-out infinite alternate;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-anim] {
+    animation: none;
+  }
+}

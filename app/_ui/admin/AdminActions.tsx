@@ -86,7 +86,7 @@ export function AdminActions({ beforeAtText }: { beforeAtText: string }) {
             type="button"
             disabled={busy !== null}
             onClick={() => void start(a)}
-            className="min-h-11 rounded-xs border border-zinc-400 px-4 font-semibold disabled:opacity-50"
+            className="min-h-11 rounded-xs border border-plum px-4 font-semibold text-plum disabled:opacity-50"
           >
             {busy === a.id ? "Running…" : a.label}
           </button>

@@ -1,6 +1,13 @@
-// Sticky compact header: home link, a link to player search, and the event selector. The selector
-// is a <details> list of links, so it needs no JavaScript and every target is ≥ 44 px.
+// Sticky compact header (DESIGN.md `header`): plum field with the mark and wordmark, a link to player
+// search, the event selector and the theme switch, and the lace border hanging below. The selector is
+// a <details> list of links, so it needs no JavaScript and every target is ≥ 44 px. Below 640 px the
+// wordmark is screen-reader only: the mark, three controls and the gutters fill 360 px.
 import Link from "next/link";
+
+import { LaceBorder } from "@/lib/brand/components/LaceBorder";
+import { Mark } from "@/lib/brand/components/Logo";
+import { ThemeSwitch } from "@/lib/brand/components/ThemeSwitch";
+import { copy } from "@/lib/copy";
 
 import { utcDayWithWeekday } from "./format";
 
@@ -8,6 +15,10 @@ export interface SelectorEvent {
   id: number;
   eventAtUtc: Date;
 }
+
+/** Plum-header controls: a paper tint on hover, deeper while pressed or open, so they feel tappable. */
+const CONTROL =
+  "rounded-xs transition-colors duration-150 hover:bg-paper/15 active:bg-paper/25 motion-reduce:transition-none";
 
 function EventSelector({
   events,
@@ -18,20 +29,28 @@ function EventSelector({
 }) {
   const current = events.find((e) => e.id === currentId);
   return (
-    <details className="relative">
-      <summary className="flex min-h-11 cursor-pointer items-center gap-1 rounded-xs border border-zinc-300 px-3 text-sm font-medium dark:border-zinc-700 [&::-webkit-details-marker]:hidden">
+    <details className="group relative">
+      <summary
+        className={`flex min-h-11 cursor-pointer items-center gap-1 border border-paper/50 px-3 text-sm font-medium group-open:bg-paper/20 [&::-webkit-details-marker]:hidden ${CONTROL}`}
+      >
         {current ? utcDayWithWeekday(current.eventAtUtc) : "Events"}{" "}
-        <span aria-hidden="true">▾</span>
+        <span
+          aria-hidden="true"
+          className="transition-transform duration-150 group-open:rotate-180 motion-reduce:transition-none"
+        >
+          ▾
+        </span>
       </summary>
-      <ul className="absolute right-0 z-40 mt-1 max-h-[70vh] w-[min(18rem,calc(100vw-2rem))] overflow-y-auto border border-zinc-300 bg-white dark:border-zinc-700 dark:bg-zinc-900">
+      <ul className="absolute right-0 z-40 mt-1 max-h-[70vh] w-[min(18rem,calc(100vw-2rem))] overflow-y-auto border border-rule bg-paper text-ink">
         {events.map((e, i) => (
           <li key={e.id}>
             <Link
               href={i === 0 ? "/" : `/events/${e.id}`}
-              className={`flex min-h-11 items-center px-3 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 ${e.id === currentId ? "font-semibold" : ""}`}
+              aria-current={e.id === currentId ? "page" : undefined}
+              className="flex min-h-11 items-center px-3 text-sm transition-colors duration-150 hover:bg-plum/15 aria-[current=page]:bg-plum/10 aria-[current=page]:font-semibold motion-reduce:transition-none"
             >
               {utcDayWithWeekday(e.eventAtUtc)}
-              {i === 0 && <span className="ml-2 text-xs text-zinc-500">latest</span>}
+              {i === 0 && <span className="ml-2 text-xs text-ink/70">latest</span>}
             </Link>
           </li>
         ))}
@@ -43,23 +62,37 @@ function EventSelector({
 export function SiteHeader({
   events,
   currentId,
+  section,
 }: {
   events: SelectorEvent[];
   currentId: number | null;
+  /** Marks the header link of the section the page belongs to. */
+  section?: "players";
 }) {
   return (
-    <header className="sticky top-0 z-30 border-b border-zinc-300 bg-white dark:border-zinc-700 dark:bg-zinc-950">
-      <div className="mx-auto flex max-w-[960px] items-center justify-between gap-2 px-4 py-1 sm:px-6">
-        <Link href="/" className="flex min-h-11 items-center text-base font-bold">
-          OG&apos;s LAP Tracker
-        </Link>
-        <div className="flex items-center gap-2">
-          <Link href="/players" className="flex min-h-11 items-center px-2 text-sm font-medium">
-            Players
+    <header className="sticky top-0 z-30 text-plum">
+      <div className="bg-plum text-paper">
+        <div className="mx-auto flex max-w-[960px] items-center justify-between gap-2 px-4 py-1 sm:px-6">
+          <Link href="/" className="flex min-h-11 items-center gap-2">
+            <Mark size={32} />
+            <span className="sr-only font-display text-display-sm font-semibold sm:not-sr-only">
+              {copy.site.name}
+            </span>
           </Link>
-          {events.length > 0 && <EventSelector events={events} currentId={currentId} />}
+          <div className="flex items-center gap-1">
+            <Link
+              href="/players"
+              aria-current={section === "players" ? "page" : undefined}
+              className={`flex min-h-11 items-center px-3 text-sm font-medium aria-[current=page]:bg-paper/20 ${CONTROL}`}
+            >
+              {copy.site.players}
+            </Link>
+            {events.length > 0 && <EventSelector events={events} currentId={currentId} />}
+            <ThemeSwitch label={copy.site.darkMode} />
+          </div>
         </div>
       </div>
+      <LaceBorder className="block" />
     </header>
   );
 }

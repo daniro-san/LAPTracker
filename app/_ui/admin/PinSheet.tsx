@@ -43,7 +43,7 @@ export function PinSheet({ onUnlocked }: { onUnlocked: (pin: string) => void }) 
     }
   }
   return (
-    <div className="fixed inset-x-0 bottom-0 z-50 border-t border-zinc-300 bg-white p-4 shadow-[0_-8px_24px_var(--sheet-shadow)] dark:border-zinc-700 dark:bg-zinc-900">
+    <div className="fixed inset-x-0 bottom-0 z-50 border-t border-rule bg-paper p-4 shadow-[0_-8px_24px_var(--sheet-shadow)]">
       <form onSubmit={submit} className="mx-auto flex max-w-md flex-col gap-3">
         <label htmlFor="pin" className="font-semibold">
           Admin PIN
@@ -57,17 +57,17 @@ export function PinSheet({ onUnlocked }: { onUnlocked: (pin: string) => void }) 
           maxLength={8}
           value={pin}
           onChange={(e) => setPin(e.target.value)}
-          className="min-h-11 rounded-xs border border-zinc-300 bg-white px-3 text-lg tracking-widest dark:border-zinc-700 dark:bg-zinc-950"
+          className="min-h-11 rounded-xs border border-rule bg-paper px-3 text-lg tracking-widest"
         />
         <button
           type="submit"
           disabled={pin.length < 6 || state === "checking"}
-          className="min-h-11 rounded-xs bg-zinc-900 px-4 font-semibold text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
+          className="min-h-11 rounded-xs bg-plum px-4 font-semibold text-paper disabled:opacity-50"
         >
           {state === "checking" ? "Checking…" : "Unlock"}
         </button>
         {state !== "idle" && state !== "checking" && (
-          <p role="alert" className="text-sm text-red-800 dark:text-red-300">
+          <p role="alert" className="text-sm text-seal">
             ✗ {state}
           </p>
         )}

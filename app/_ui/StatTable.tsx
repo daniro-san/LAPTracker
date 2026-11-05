@@ -4,6 +4,7 @@
 import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
 
+import { EmptyState } from "./EmptyState";
 import { Delta, Num } from "./Num";
 
 export interface StatMetric {
@@ -30,13 +31,15 @@ export interface StatRow {
   detail?: ReactNode;
 }
 
-const MUTED = "text-zinc-500 dark:text-zinc-400";
+const MUTED = "text-ink/70";
 
 function MetricCell({ m }: { m: StatMetric }) {
   const base = m.base ?? m.from ?? null;
   return (
     <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 sm:block sm:text-right">
-      <span className={`w-20 shrink-0 text-xs uppercase tracking-wide sm:hidden ${MUTED}`}>
+      <span
+        className={`w-20 shrink-0 text-label font-semibold uppercase tracking-[0.04em] sm:hidden ${MUTED}`}
+      >
         {m.label}
       </span>
       <span className="font-medium tabular-nums">
@@ -65,7 +68,7 @@ function Lead({ row }: { row: StatRow }) {
       {row.href ? (
         <Link
           href={row.href}
-          className="font-semibold after:absolute after:inset-0 after:content-[''] hover:underline focus-visible:underline"
+          className="font-semibold text-plum after:absolute after:inset-0 after:content-[''] hover:underline focus-visible:underline"
         >
           {row.lead}
         </Link>
@@ -101,15 +104,14 @@ export function StatTable({
   rows: StatRow[];
   empty?: ReactNode;
 }) {
-  if (rows.length === 0)
-    return <p className={`py-6 text-center ${MUTED}`}>{empty ?? "Nothing here."}</p>;
+  if (rows.length === 0) return <EmptyState>{empty ?? "Nothing here."}</EmptyState>;
   const grid = {
     "--cols": `minmax(0,2.4fr) repeat(${columns.length}, minmax(0,1fr))`,
   } as CSSProperties;
   return (
     <div>
       <div
-        className={`hidden border-b border-zinc-300 px-3 pb-1 text-xs uppercase tracking-wide sm:grid sm:grid-cols-[var(--cols)] sm:gap-x-3 dark:border-zinc-700 ${MUTED}`}
+        className={`hidden border-b border-rule px-3 pb-1 text-label font-semibold uppercase tracking-[0.04em] sm:grid sm:grid-cols-[var(--cols)] sm:gap-x-3 ${MUTED}`}
         style={grid}
         aria-hidden="true"
       >
@@ -125,7 +127,7 @@ export function StatTable({
           <li
             key={row.key}
             style={grid}
-            className="relative mb-3 grid grid-cols-1 gap-y-1 border border-zinc-300 p-3 sm:mb-0 sm:grid-cols-[var(--cols)] sm:gap-x-3 sm:border-0 sm:border-b sm:py-2 dark:border-zinc-700"
+            className="relative mb-3 grid grid-cols-1 gap-y-1 border border-rule p-3 sm:mb-0 sm:grid-cols-[var(--cols)] sm:gap-x-3 sm:border-0 sm:border-b sm:py-2"
           >
             <Lead row={row} />
             {row.metrics.map((m) => (

@@ -7,6 +7,7 @@ import { ExactToggle } from "@/app/_ui/ExactToggle";
 import { utcDay } from "@/app/_ui/format";
 import { memberViews } from "@/app/_ui/member-views";
 import { MembersExplorer } from "@/app/_ui/MembersExplorer";
+import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { StatTable, type StatMetric } from "@/app/_ui/StatTable";
 import { FreshDots, FreshnessDetail, type FreshState } from "@/app/_ui/Status";
@@ -68,7 +69,7 @@ function Totals({ detail, canDelta }: { detail: Detail; canDelta: boolean }) {
 function NameTimeline({ names }: { names: NameHistoryEntry[] }) {
   if (names.length < 2) return null;
   return (
-    <ul className="mb-3 text-sm text-zinc-500 dark:text-zinc-400">
+    <ul className="mb-3 text-sm text-ink/70">
       {names.map((n) => (
         <li key={`${n.tag}|${n.name}`}>
           {n.tag} · {n.name} ({utcDay(n.firstSeen)} – {utcDay(n.lastSeen)})
@@ -117,19 +118,20 @@ export default async function AlliancePage({
         >
           ← Back to {event ? utcDay(event.eventAtUtc) : "Event"} event
         </Link>
-        <h1 className="break-words text-xl font-bold [overflow-wrap:anywhere]">
+        <h1 className="break-words font-display text-display-lg font-semibold [overflow-wrap:anywhere]">
           {title(now, p.unionId)}
         </h1>
         <NameTimeline names={names} />
         <ExactToggle />
         <Totals detail={detail} canDelta={canDelta} />
-        <h2 className="mb-2 mt-8 text-lg font-bold">Members</h2>
+        <h2 className="mb-2 mt-8 font-display text-display-md font-semibold">Members</h2>
         <MembersExplorer
           members={memberViews(detail.membersBefore, detail.membersAfter)}
           canDelta={canDelta}
         />
         <AcrossEvents unionId={unionId} history={history} />
       </main>
+      <SiteFooter />
     </>
   );
 }

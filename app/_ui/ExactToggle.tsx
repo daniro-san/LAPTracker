@@ -3,16 +3,10 @@
 export function ExactToggle() {
   return (
     <label className="mb-3 flex min-h-11 cursor-pointer items-center gap-3">
-      <input
-        id="full-numbers"
-        type="checkbox"
-        className="size-5 accent-zinc-800 dark:accent-zinc-200"
-      />
+      <input id="full-numbers" type="checkbox" className="size-5 accent-plum" />
       <span>
         Show exact numbers
-        <span className="block text-sm text-zinc-500 dark:text-zinc-400">
-          Off: 3.94B. On: 3,938,123,456.
-        </span>
+        <span className="block text-sm text-ink/70">Off: 3.94B. On: 3,938,123,456.</span>
       </span>
     </label>
   );

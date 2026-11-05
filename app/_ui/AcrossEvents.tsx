@@ -63,7 +63,7 @@ function toRow(unionId: number, r: HistoryRow, prevMembers: number | null): Stat
         {r.reference === "before" && (
           <abbr
             title="No usable after snapshot: showing the before snapshot"
-            className="ml-2 rounded-xs border border-zinc-400 px-1 text-xs no-underline"
+            className="ml-2 rounded-xs border border-ink/50 px-1 text-xs no-underline"
           >
             B
           </abbr>
@@ -94,8 +94,8 @@ export function AcrossEvents({ unionId, history }: { unionId: number; history: H
   );
   return (
     <section className="mt-8">
-      <h2 className="mb-1 text-lg font-bold">History across events</h2>
-      <p className="mb-3 text-sm text-zinc-500 dark:text-zinc-400">
+      <h2 className="mb-1 font-display text-display-md font-semibold">History across events</h2>
+      <p className="mb-3 text-sm text-ink/70">
         Each row shows how the alliance stood after that event, with the change since the event
         before. “B” means the after snapshot was missing, so the before snapshot is shown.
       </p>

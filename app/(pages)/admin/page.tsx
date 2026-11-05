@@ -7,11 +7,11 @@ import { withPageDb } from "@/lib/page";
 import { latestRehearsal, type RehearsalStatus } from "@/lib/queries/admin";
 import { currentEvent, describeInstant, nextEvent } from "@/lib/schedule";
 
-const MUTED = "text-zinc-500 dark:text-zinc-400";
+const MUTED = "text-ink/70";
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex flex-col gap-0.5 border-b border-zinc-200 py-2 sm:flex-row sm:gap-4 dark:border-zinc-800">
+    <div className="flex flex-col gap-0.5 border-b border-rule py-2 sm:flex-row sm:gap-4">
       <dt className={`shrink-0 text-sm sm:w-48 ${MUTED}`}>{label}</dt>
       <dd className="break-words">{value}</dd>
     </div>
@@ -58,7 +58,7 @@ export default async function AdminPage() {
   const rehearsal = await withPageDb((db) => latestRehearsal(db, env.SNAPSHOT_WINDOW_MIN));
   return (
     <AdminShell title="Admin">
-      <h2 className="mb-1 text-lg font-bold">When snapshots are taken</h2>
+      <h2 className="mb-1 font-display text-display-md font-semibold">When snapshots are taken</h2>
       <dl className="mb-6">
         <Row label="Server time zone" value={env.SERVER_TZ} />
         <Row label="Next event" value={describeInstant(next.eventAtUtc, env)} />
@@ -78,14 +78,14 @@ export default async function AdminPage() {
           }
         />
       </dl>
-      <h2 className="mb-2 text-lg font-bold">Run something now</h2>
+      <h2 className="mb-2 font-display text-display-md font-semibold">Run something now</h2>
       <p className={`mb-3 text-sm ${MUTED}`}>
         Current event: {describeInstant(current.eventAtUtc, env)}. A snapshot uses about 21 API
         calls and takes up to a minute. A rehearsal is a fake event that tests the whole pipeline:
         about 45 calls over about 50 minutes.
       </p>
       <AdminActions beforeAtText={describeInstant(current.beforeAt, env)} />
-      <h2 className="mb-2 mt-8 text-lg font-bold">Last rehearsal</h2>
+      <h2 className="mb-2 mt-8 font-display text-display-md font-semibold">Last rehearsal</h2>
       <Rehearsal r={rehearsal} />
     </AdminShell>
   );

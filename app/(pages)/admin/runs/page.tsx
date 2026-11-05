@@ -13,12 +13,12 @@ export default async function RunsPage() {
       {runs.length === 0 && <p>No snapshot runs yet.</p>}
       <ul>
         {runs.map((r) => (
-          <li key={r.id} className="border-b border-zinc-200 dark:border-zinc-800">
+          <li key={r.id} className="border-b border-rule">
             <Link href={`/admin/runs/${r.id}`} className="block min-h-11 py-2">
               <span className="font-semibold">
                 {r.phase === "before" ? "Before" : "After"} snapshot · {r.status}
               </span>{" "}
-              <span className="text-sm text-zinc-500 dark:text-zinc-400">
+              <span className="text-sm text-ink/70">
                 {utcStamp(r.startedAt)} · {r.callsUsed} calls
                 {r.durationMs !== null && ` · ${(r.durationMs / 1000).toFixed(1)} s`}
               </span>
@@ -26,11 +26,7 @@ export default async function RunsPage() {
                 {r.isTest && "[rehearsal] "}
                 {r.eventName}
               </span>
-              {r.error && (
-                <span className="block break-words text-sm text-red-800 dark:text-red-300">
-                  {r.error}
-                </span>
-              )}
+              {r.error && <span className="block break-words text-sm text-seal">{r.error}</span>}
             </Link>
           </li>
         ))}

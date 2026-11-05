@@ -1,5 +1,9 @@
 // Snapshot status chips and freshness dots (plan Phase 5). Every state has a symbol and a word:
 // colour is never the only cue.
+import type { ReactNode } from "react";
+
+import { DroppedStitch, Hourglass, StitchedCheck } from "@/lib/brand/components/StatusIcons";
+
 import { relative, utcClock, utcStamp } from "./format";
 
 export interface PhaseStatus {
@@ -10,11 +14,11 @@ export interface PhaseStatus {
   error?: string | null | undefined;
 }
 
-const CHIP = {
-  complete: { icon: "✓", tone: "border-emerald-600 text-emerald-800 dark:text-emerald-300" },
-  running: { icon: "…", tone: "border-amber-600 text-amber-800 dark:text-amber-300" },
-  partial: { icon: "◐", tone: "border-amber-600 text-amber-800 dark:text-amber-300" },
-  failed: { icon: "✗", tone: "border-red-600 text-red-800 dark:text-red-300" },
+const CHIP: Record<PhaseStatus["status"], { icon: ReactNode; tone: string }> = {
+  complete: { icon: <StitchedCheck />, tone: "border-ink text-ink" },
+  running: { icon: <Hourglass />, tone: "border-plum text-plum" },
+  partial: { icon: <DroppedStitch />, tone: "border-seal text-seal" },
+  failed: { icon: "✗", tone: "border-seal text-seal" },
 } as const;
 
 const PHASE = { before: "Before snapshot", after: "After snapshot" } as const;
@@ -24,7 +28,7 @@ const STATUS_WORD = {
   partial: "partly done",
   failed: "failed",
 } as const;
-const NOT_RUN = "border-zinc-400 text-zinc-600 dark:text-zinc-400";
+const NOT_RUN = "border-ink/50 text-ink/70";
 
 function Chip({ phase, status }: { phase: "before" | "after"; status: PhaseStatus | undefined }) {
   const style = status ? CHIP[status.status] : { icon: "○", tone: NOT_RUN };
@@ -34,12 +38,14 @@ function Chip({ phase, status }: { phase: "before" | "after"; status: PhaseStatu
       <span
         className={`inline-flex min-h-8 items-center gap-1 rounded-xs border px-3 text-sm ${style.tone}`}
       >
-        <span aria-hidden="true">{style.icon}</span>
+        <span aria-hidden="true" className="inline-flex">
+          {style.icon}
+        </span>
         {PHASE[phase]}: {status ? STATUS_WORD[status.status] : "not taken yet"}
         {when && ` at ${when}`}
       </span>
       {status?.status === "failed" && status.error && (
-        <p className="mt-1 break-words text-sm text-red-800 dark:text-red-300">{status.error}</p>
+        <p className="mt-1 break-words text-sm text-seal">{status.error}</p>
       )}
     </li>
   );
@@ -53,7 +59,7 @@ export function StatusChips({ phases }: { phases: PhaseStatus[] }) {
         <Chip phase="after" status={phases.find((p) => p.phase === "after")} />
       </ul>
       {phases.some((p) => p.status === "partial") && (
-        <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+        <p className="mt-2 text-sm text-ink/70">
           Some alliances could not be refreshed, so their changes are not shown.
         </p>
       )}
@@ -80,13 +86,13 @@ export function FreshDots({
   const bad = [problem(before) && "before", problem(after) && "after"].filter(Boolean);
   if (bad.length === 0) {
     return (
-      <span className="font-medium text-emerald-700 dark:text-emerald-400">
+      <span className="font-medium text-ink">
         <span aria-hidden="true">● </span>Data up to date
       </span>
     );
   }
   return (
-    <span className="font-medium text-red-700 dark:text-red-400">
+    <span className="font-medium text-seal">
       <span aria-hidden="true">○ </span>Out-of-date data in the {bad.join(" and ")} snapshot
     </span>
   );
@@ -139,7 +145,7 @@ export function SyncLines({
   const missing = (["before", "after"] as const).find((ph) => !phases.some((p) => p.phase === ph));
   const due = missing === "before" ? beforeAt : afterAt;
   return (
-    <p className="mb-3 text-sm text-zinc-600 dark:text-zinc-400">
+    <p className="mb-3 text-sm text-ink/70">
       {running
         ? `Syncing now: ${label(running.phase)} snapshot.`
         : last

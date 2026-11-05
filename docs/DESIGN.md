@@ -20,6 +20,12 @@ colors:
   dark-rule: "#3a2f36"
 
 typography:
+  display-xl:
+    fontFamily: Cormorant Garamond
+    fontSize: 48px
+    fontWeight: 600
+    lineHeight: 1.05
+    letterSpacing: 0
   display-lg:
     fontFamily: Cormorant Garamond
     fontSize: 32px
@@ -154,7 +160,7 @@ components:
   error-page:
     backgroundColor: "{colors.paper}"
     textColor: "{colors.ink}"
-    typography: "{typography.display-lg}"
+    typography: "{typography.display-xl}"
     padding: "{spacing.section} {spacing.md}"
     ornament: illustration
 ---
@@ -183,6 +189,8 @@ Members of a game alliance on server 325 — Russia, Spain, Brazil, the United S
 - No modals except the bottom sheet for the PIN; no tooltips that carry information; nothing on hover only.
 
 ## Mascot: the Granny Doctor
+
+**Deferred (owner, Session 7 review, 2026-11-04).** Two rounds of poses (single-colour and 2.5D chibi) did not reach the bar of hand-drawn illustration, so the error pages and the empty state use her things instead of her: the yarn ball she left behind (404), a cracked apothecary bottle (500, "It's okay, grandma will clean it."), a cup of tea (empty). The character below stays the brief for a later illustrator.
 
 An original character, ours: an old lady in a plague-doctor beak mask, bonnet or kerchief, a cane in one hand and a knitting bag in the other. Dignified, a little stern, funny because she is serious. A first bust of her (bonnet, ribbon bow, ruff), drawn as a candidate mark at the Session 7 mock and kept for the poses, is `docs/brand/granny-doctor-bust.svg`. Single-colour inline SVG, at most three poses (standing with the cane for the 404, dropping a bottle for the 500, pouring tea for the empty state). Game references are allowed as **allusions in copy** — the server number, "KvK", the game's terms — never as its art, characters or assets. Comic but serious: a joke a 40-year-old officer in Russia would also get, never a meme.
 
@@ -221,15 +229,16 @@ Rules: deltas are coloured by sign only; a colour that carries no meaning is not
 - **Source Sans 3** (OFL) — body, tables, controls. Numerals are `{typography.numeral}`: `font-variant-numeric: tabular-nums`, right-aligned, compact (`3.94B`, `+20.1M`) with the full value in a `title`/tap.
 - Two families, no third. No italics for emphasis in headings, no all-caps display; `{typography.label}` is the only tracked, uppercase style.
 
-| Token                     | Size | Weight | Use                                      |
-| ------------------------- | ---- | ------ | ---------------------------------------- |
-| `{typography.display-lg}` | 32px | 600    | Page title, error-page line              |
-| `{typography.display-md}` | 24px | 600    | Section and header title                 |
-| `{typography.display-sm}` | 20px | 600    | Card title, empty-state line             |
-| `{typography.body}`       | 16px | 400    | Copy, buttons, inputs                    |
-| `{typography.body-sm}`    | 14px | 400    | Timeline lines, help text                |
-| `{typography.numeral}`    | 16px | 500    | Every number in tables and cards         |
-| `{typography.label}`      | 12px | 600    | Column headers, badges, small-caps notes |
+| Token                     | Size | Weight | Use                                       |
+| ------------------------- | ---- | ------ | ----------------------------------------- |
+| `{typography.display-xl}` | 48px | 600    | Error-page line (the message is the page) |
+| `{typography.display-lg}` | 32px | 600    | Page title                                |
+| `{typography.display-md}` | 24px | 600    | Section and header title                  |
+| `{typography.display-sm}` | 20px | 600    | Card title, empty-state line              |
+| `{typography.body}`       | 16px | 400    | Copy, buttons, inputs                     |
+| `{typography.body-sm}`    | 14px | 400    | Timeline lines, help text                 |
+| `{typography.numeral}`    | 16px | 500    | Every number in tables and cards          |
+| `{typography.label}`      | 12px | 600    | Column headers, badges, small-caps notes  |
 
 ## Layout
 
@@ -272,9 +281,9 @@ The whole list. Anything else is a composition of these; a new one needs a line 
 - **`button-primary`** — plum, 2 px radius; one per view at most.
 - **`input`** — paper field with a rule border; PIN uses `inputmode="numeric"`.
 - **`bottom-sheet`** — PIN entry and confirmations on phones; the only shadow.
-- **`empty-state`** — teacup illustration + one display-sm line ("Nothing recorded yet. The kettle is on.").
+- **`empty-state`** — teacup line drawing + one display-sm line ("Nothing recorded yet. The kettle is on.").
 - **`timeline`** — `run_logs` rows: time, level, code, alliance tag, the data that matters.
-- **`error-page`** — 404 "Grandma wandered off." and 500 "Something cracked.", each with one original inline SVG and one CSS keyframe loop.
+- **`error-page`** — 404 "Grandma wandered off." and 500 "Something cracked.": the line set large is the page; the Granny Doctor is a small detail beside it (owner, Session 7), one original inline SVG and one CSS keyframe loop each.
 
 Ornament budget: header lace border, one yarn corner per page, the seal buttons, empty states, error pages, favicon. Never behind numbers, inside cells, on cards, as backgrounds or dividers. Every ornament is an original single-colour inline SVG under 4 KB, `aria-hidden`. Nothing from the game.
 

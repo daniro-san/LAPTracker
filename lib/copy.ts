@@ -4,10 +4,30 @@
 export const copy = {
   site: {
     name: "OG's LAP Tracker",
+    shortName: "LAP Tracker",
+    description: "Saturday event snapshots for server 325 alliances.",
     byline: "kept by the Old Grandmas",
     ledger: "Server 325 · Saturday Ledger",
     players: "Players",
     darkMode: "Dark mode",
+  },
+  errors: {
+    notFound: {
+      code: "404",
+      title: "Grandma wandered off.",
+      body: "This page isn't in the ledger.",
+      back: "Back to the table",
+    },
+    server: {
+      code: "500",
+      title: "Something cracked.",
+      body: "It's okay, grandma will clean it.",
+      retry: "Try again",
+      back: "Back to the table",
+    },
+  },
+  empty: {
+    kettle: "Nothing recorded yet. The kettle is on.",
   },
   brand: {
     title: "Brand sheet",

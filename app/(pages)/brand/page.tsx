@@ -9,8 +9,6 @@ import { SealButton } from "@/lib/brand/components/SealButton";
 import { DroppedStitch, Hourglass, StitchedCheck } from "@/lib/brand/components/StatusIcons";
 import { ThemeSwitch } from "@/lib/brand/components/ThemeSwitch";
 import { YarnCorner } from "@/lib/brand/components/YarnCorner";
-import { fontVariables } from "@/lib/brand/fonts";
-import { readTheme } from "@/lib/brand/theme";
 import { copy } from "@/lib/copy";
 
 const t = copy.brand;
@@ -226,15 +224,14 @@ function StatusSection() {
   );
 }
 
-export default async function BrandPage() {
-  const theme = await readTheme();
+export default function BrandPage() {
   return (
-    <div className={`${fontVariables} min-h-screen bg-paper font-body text-ink`}>
+    <div className={"min-h-screen bg-paper font-body text-ink"}>
       <header className="sticky top-0 z-30 text-plum">
         <div className="bg-plum text-paper">
           <div className="mx-auto flex max-w-[960px] items-center justify-between gap-2 px-4 py-1 sm:px-6">
             <Logo name={copy.site.name} size={32} />
-            <ThemeSwitch initial={theme} label={copy.site.darkMode} />
+            <ThemeSwitch label={copy.site.darkMode} />
           </div>
         </div>
         <LaceBorder className="block" />

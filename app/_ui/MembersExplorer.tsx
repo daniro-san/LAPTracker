@@ -28,8 +28,7 @@ const SORTS: { key: SortKey; label: string }[] = [
   { key: "name", label: "Name" },
 ];
 
-const FIELD =
-  "min-h-11 w-full rounded-xs border border-zinc-300 bg-white px-3 text-base dark:border-zinc-700 dark:bg-zinc-900";
+const FIELD = "min-h-11 w-full rounded-xs border border-rule bg-paper px-3 text-base  ";
 
 /** "50000000", "50M", "1.2b", "300k" → a number; null when empty or unreadable. */
 export function parseMight(text: string): number | null {
@@ -181,7 +180,7 @@ export function MembersExplorer({
   return (
     <div>
       <Controls f={f} set={(patch) => setF({ ...f, ...patch })} />
-      <p className="mb-2 text-sm text-zinc-500 dark:text-zinc-400">
+      <p className="mb-2 text-sm text-ink/70">
         Showing {rows.length} of {members.length} members
       </p>
       <StatTable

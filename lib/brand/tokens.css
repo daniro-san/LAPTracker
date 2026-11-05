@@ -66,6 +66,8 @@
   --font-display: var(--font-cormorant), Georgia, serif;
   --font-body: var(--font-source-sans), "Segoe UI", sans-serif;
 
+  --text-display-xl: 48px;
+  --text-display-xl--line-height: 1.05;
   --text-display-lg: 32px;
   --text-display-lg--line-height: 1.1;
   --text-display-md: 24px;

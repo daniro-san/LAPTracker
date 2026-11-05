@@ -1,5 +1,7 @@
 "use client";
 // Light/dark switch (DESIGN.md `theme-switch`): one 44 px button showing the current mode's icon.
+// Both icons are rendered and CSS (the `dark:` variant) shows the right one, so the first paint is
+// correct without the server knowing the system setting.
 // Tapping it sets data-theme on <html> and remembers the choice in a cookie for a year.
 import { useSyncExternalStore } from "react";
 
@@ -47,8 +49,8 @@ const Moon = () => (
   </svg>
 );
 
-export function ThemeSwitch({ initial, label }: { initial: Theme | null; label: string }) {
-  const theme = useSyncExternalStore(subscribe, current, () => initial ?? "light");
+export function ThemeSwitch({ label }: { label: string }) {
+  const theme = useSyncExternalStore(subscribe, current, () => "light" as Theme);
   const dark = theme === "dark";
   const toggle = () => {
     const next = dark ? "light" : "dark";
@@ -63,9 +65,14 @@ export function ThemeSwitch({ initial, label }: { initial: Theme | null; label: 
       aria-checked={dark}
       aria-label={label}
       onClick={toggle}
-      className="grid size-11 shrink-0 cursor-pointer place-items-center rounded-xs"
+      className="grid size-11 shrink-0 cursor-pointer place-items-center rounded-xs transition-colors duration-150 hover:bg-paper/15 active:bg-paper/25 motion-reduce:transition-none"
     >
-      {dark ? <Moon /> : <Sun />}
+      <span className="dark:hidden">
+        <Sun />
+      </span>
+      <span className="hidden dark:inline">
+        <Moon />
+      </span>
     </button>
   );
 }
