@@ -47,3 +47,5 @@ Plan changes needed: none.
 <adjustments>
 - Session 9: when you look at an alliance page after the rehearsal or a public round, the "Across events ↓" link is in the title row (y ≈ 268 px at 360 px) and "Back up ↑" in the Across events heading returns to the title; nothing to check beyond that.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/110
