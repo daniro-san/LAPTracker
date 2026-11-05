@@ -84,6 +84,7 @@ export async function getEventDetail(db: Db, eventId: number) {
       beforeAt: events.beforeAt,
       afterAt: events.afterAt,
       isTest: events.isTest,
+      manual: events.manual,
     })
     .from(events)
     .where(and(eq(events.id, eventId), publicEvent));
