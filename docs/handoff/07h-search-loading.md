@@ -55,3 +55,5 @@ Plan changes needed: none.
 <adjustments>
 - `/players` search is now a client-side navigation with a 300 ms-delayed pending drawing (`app/_ui/PlayerSearch.tsx`); a smoke check of the deployed search should expect the page header to stay during the search, not a full reload.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/36
