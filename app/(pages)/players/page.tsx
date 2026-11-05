@@ -8,6 +8,7 @@ import { PlayerSearch } from "@/app/_ui/PlayerSearch";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { LABEL } from "@/app/_ui/StatTable";
+import { GrannyEmpty } from "@/lib/brand/components/Mascot";
 import { copy, fill } from "@/lib/copy";
 import { withPageDb } from "@/lib/page";
 import { listEvents } from "@/lib/queries";
@@ -38,7 +39,12 @@ export default async function PlayersPage({
         <h1 className="font-display text-display-lg leading-tight">{copy.search.title}</h1>
         <PlayerSearch q={q} maxLength={MAX_QUERY}>
           {q !== "" && matches.length === 0 && (
-            <p className="py-6 text-center font-subhead text-display-sm">{copy.search.noMatch}</p>
+            <div className="flex flex-col items-center py-8 text-center">
+              <GrannyEmpty className="w-40 text-plum" />
+              <p className="mt-3 max-w-[32ch] font-subhead text-display-sm font-semibold">
+                {copy.search.noMatch}
+              </p>
+            </div>
           )}
           <ul>
             {matches.map((m) => (

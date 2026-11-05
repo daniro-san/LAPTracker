@@ -44,6 +44,7 @@ DRAWINGS = {
     "granny-standing": granny.standing,
     "granny-tea": granny.tea,
     "granny-ledger": granny.ledger,
+    "granny-empty": granny.empty,
     "discord-scout": discord.scout,
     "discord-admin": discord.admin,
     "frame": lambda: frame.frame(W * 0.9, W * 1.08),
