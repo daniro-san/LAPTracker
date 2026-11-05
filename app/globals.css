@@ -55,9 +55,23 @@ body {
     transform: rotate(5deg);
   }
 }
+/* Search pending (DESIGN.md `search-pending`): the magnifier tilts about the grip, so the lens runs
+   down the ledger's rows. */
+@keyframes granny-scan {
+  from {
+    transform: rotate(3deg);
+  }
+  to {
+    transform: rotate(-9deg);
+  }
+}
 [data-anim="sway"],
-[data-anim="rock"] {
+[data-anim="rock"],
+[data-anim="scan"] {
   transform-box: view-box;
+}
+[data-anim="scan"] {
+  animation: granny-scan 1.5s ease-in-out infinite alternate;
 }
 [data-anim="sway"] {
   animation: granny-sway 3s ease-in-out infinite alternate;

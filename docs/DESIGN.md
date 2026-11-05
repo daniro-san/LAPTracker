@@ -317,14 +317,15 @@ The whole list. Anything else is a composition of these; a new one needs a line 
 - **`drawn-rule`** — a pen hairline that swells and thins (`<hr class="drawn-rule">`, `public/brand/rule.svg`) for section dividers and the footer top; the data table keeps plain 1 px rules.
 - **`bottom-sheet`** — PIN entry and confirmations on phones; the only shadow. A real `<dialog>`: modal when an action asks (focus moves in and returns, Escape cancels), and at ≥ 640 px a centred card; the `/admin` PIN gate is a card under the heading (Session 7d, 07c S3, S6).
 - **`empty-state`** — the Granny Doctor with her tea (line drawing) + one display-sm line ("Nothing recorded yet. The kettle is on.").
+- **`search-pending`** — while a player search runs longer than 300 ms, the results give way to the Granny Doctor bent over the open ledger with her magnifier (`GrannyLedger`) + one display-sm line ("Grandma is leafing through the ledger…") in a `role="status"` region; header, title and field stay (`PlayerSearch` in `app/_ui/PlayerSearch.tsx`, Session 7h). A quicker answer swaps the results with no drawing.
 - **`timeline`** — `run_logs` rows: time, level, code, alliance tag, the data that matters.
 - **`error-page`** — 404 "Grandma wandered off." and 500 "Something cracked.": the line set large is the page; the Granny Doctor is a small detail beside it (owner, Session 7), one original inline SVG and one CSS keyframe loop each.
 
-Ornament budget: header lace border, one footer corner per page (the yarn ball, or the Granny Doctor on the error and player pages), the seal buttons, the primary button's hatching, empty states, error pages, favicon. All of it is drawn in one hand: `docs/brand/DRAWING.md`. Never behind numbers, inside cells, on cards, as backgrounds or dividers. Every ornament is an original single-colour inline SVG under 4 KB (4,096 bytes as rendered into the page), `aria-hidden`. Nothing from the game.
+Ornament budget: header lace border, one footer corner per page (the yarn ball, or the Granny Doctor on the error and player pages), the seal buttons, the primary button's hatching, empty states, the search's pending state, error pages, favicon. All of it is drawn in one hand: `docs/brand/DRAWING.md`. Never behind numbers, inside cells, on cards, as backgrounds or dividers. Every ornament is an original single-colour inline SVG under 4 KB (4,096 bytes as rendered into the page), `aria-hidden`. Nothing from the game.
 
 ## Motion
 
-Only where it carries meaning or a smile: the error-page illustrations (one keyframe loop each, 2–4 s), the freshness dot while a run is live, the bottom sheet entering (200 ms ease-out). Everything stops under `prefers-reduced-motion: reduce`. No page-load animation, no parallax, no shimmer skeletons — a plain "Loading the ledger…" line.
+Only where it carries meaning or a smile: the error-page illustrations (one keyframe loop each, 2–4 s), the search's pending magnifier (one 3 s loop, shown only after 300 ms of waiting), the freshness dot while a run is live, the bottom sheet entering (200 ms ease-out). Everything stops under `prefers-reduced-motion: reduce`. No page-load animation, no parallax, no shimmer skeletons; a wait elsewhere is a plain "Loading the ledger…" line.
 
 ## Voice
 
