@@ -1,5 +1,7 @@
 // /brand "Components": every control and ornament the site uses, each with when to use it. The
 // fields are live but belong to no form; nothing here submits.
+import { MEMBER_MARK } from "@/app/_ui/format";
+import { MemberMark } from "@/app/_ui/Num";
 import { Button } from "@/lib/brand/components/Button";
 import { CheckField } from "@/lib/brand/components/CheckField";
 import { Chip } from "@/lib/brand/components/Chip";
@@ -91,6 +93,18 @@ export function ComponentsSection() {
         <div className="sm:col-span-2">
           <Chips />
         </div>
+        <Spec name={t.memberMark.name} use={t.memberMark.use}>
+          <span className="font-medium text-seal">
+            {t.memberMark.sample}
+            <MemberMark />
+          </span>
+          <span className="text-xs text-ink/70">
+            <span aria-hidden="true" className="font-semibold text-ink">
+              {MEMBER_MARK}{" "}
+            </span>
+            {copy.legend.members}
+          </span>
+        </Spec>
         <Spec name={t.badge.name} use={t.badge.use}>
           <span className="rounded-xs bg-sage px-2 py-1 text-label font-semibold tracking-[0.04em] text-paper uppercase">
             {t.badge.label}
