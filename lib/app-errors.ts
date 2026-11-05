@@ -2,7 +2,7 @@
 // onRequestError and from route handlers that caught one. Never stores err.message (plan §12.3).
 import type { AppContext } from "./app-context";
 import { appErrorMessage, createNotifier } from "./notify";
-import { insertAppError, lastAppErrorAt } from "./repo/app-errors";
+import { claimAppErrorAlert, insertAppError } from "./repo/app-errors";
 
 const MIN_INSERT_GAP_MS = 1_000;
 const ALERT_GAP_MS = 60 * 60_000;
@@ -29,10 +29,10 @@ export async function recordAppError(ctx: AppContext, entry: AppErrorEntry): Pro
   let opened: ReturnType<AppContext["openDb"]> | null = null;
   try {
     opened = ctx.openDb();
-    const last = await lastAppErrorAt(opened.db);
     await insertAppError(opened.db, { at: now, route: entry.route, digest: entry.digest, message });
-    // The first error in an hour pages the admins; the DB holds the last time, not this instance.
-    if (last === null || now.getTime() - last.getTime() >= ALERT_GAP_MS) {
+    // At most one alert per hour while errors continue; the DB holds the last alert time, and the
+    // claim decides which instance posts.
+    if (await claimAppErrorAlert(opened.db, now, ALERT_GAP_MS)) {
       await createNotifier(ctx.env, ctx.fetch).admin(
         appErrorMessage(entry.route, message, entry.digest),
       );
