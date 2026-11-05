@@ -92,7 +92,8 @@ async function notifyFinished(
   const clock = discordClock(ctx.env.SERVER_TZ);
   const finishedAt = ctx.now();
   const notifier = createNotifier(ctx.env, ctx.fetch);
-  const test = { test: req.event.isTest };
+  const roundName = req.event.manual ? req.event.name : null;
+  const test = { test: req.event.isTest, manual: req.event.manual };
   // INVARIANT notify.test-events-admin-only
   // A manual round posts publicly only when its toggle is on (D28); the server never allows that
   // together with "admin only", and getEventDetail also refuses an admin-only event.
@@ -109,6 +110,7 @@ async function notifyFinished(
         nextAt: req.phase === "before" && !req.event.manual ? req.event.afterAt : null,
         alliances: rowsOf(req.phase) ?? [],
         before: req.phase === "after" ? rowsOf("before") : null,
+        roundName,
       }),
     );
   }
@@ -121,6 +123,7 @@ async function notifyFinished(
       startedAt: run.startedAt,
       finishedAt,
       logWriteFailures: run.logWriteFailures,
+      roundName,
     }),
     test,
   );
