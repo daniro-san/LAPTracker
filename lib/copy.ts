@@ -63,6 +63,7 @@ const source = {
     running: "Updating now",
     none: "Not updated yet",
     next: "Next update at {time}",
+    byHand: "Run by hand by the admin",
     stale: "{n} stale",
   },
   /** The banner shown while the game's data service does not answer (DECISIONS D27). */
@@ -129,6 +130,7 @@ const source = {
   },
   empty: {
     kettle: "Nothing recorded yet. The kettle is on.",
+    manualNotRun: "This round has not been run yet. The admin starts it by hand.",
     noEvents: "No events in the ledger yet.",
     noMembers: "Nobody here matches. Grandma checked twice.",
   },
