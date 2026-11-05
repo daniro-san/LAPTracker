@@ -25,6 +25,8 @@ export interface AllianceRow {
   tag: string | null;
   name: string | null;
   memberCount: number | null;
+  /** Absent on an error row and on rows the internal source made. */
+  capacity?: number | null;
   totalPower: number | null;
   totalKills: number | null;
   serverRank: number | null;

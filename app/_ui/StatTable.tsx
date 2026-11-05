@@ -17,6 +17,8 @@ export interface StatMetric {
   /** The earlier value this one is compared with (before → after). */
   from?: number | null;
   delta: number | null;
+  /** There is nothing to compare with (one snapshot): no change line, not even `—`. */
+  noChange?: boolean;
   /** The delta's percentage is relative to this; defaults to `from`. */
   base?: number | null;
   note?: string;
@@ -31,8 +33,8 @@ export interface StatRow {
   href?: string;
   /** The element id, for "jump to my alliance". */
   anchor?: string;
-  /** `#n` and its movement (compute.rankDelta), before the picture. */
-  rank?: { n: number | null; move: number | null };
+  /** `#n` and its movement (compute.rankDelta), before the picture; no `move`: only `#n`. */
+  rank?: { n: number | null; move?: number | null };
   lead: ReactNode;
   /** A badge or photo before the lead (app/_ui/Pictures.tsx). */
   icon?: ReactNode;
@@ -61,9 +63,11 @@ function MetricCell({ m }: { m: StatMetric }) {
           )}
           <Num n={m.value} />
         </span>
-        <span className="text-sm tabular-nums sm:block">
-          <Delta delta={m.delta} base={base} note={m.note} />
-        </span>
+        {!m.noChange && (
+          <span className="text-sm tabular-nums sm:block">
+            <Delta delta={m.delta} base={base} note={m.note} />
+          </span>
+        )}
         {m.vs && (
           <span className={`basis-full text-xs tabular-nums ${MUTED} sm:block`}>
             {m.vs.label} <Delta delta={m.vs.delta} base={m.vs.base} />

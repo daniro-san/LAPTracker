@@ -46,26 +46,30 @@ const CHIP =
 
 type Field = "power" | "kills" | "lv";
 
-function metric(m: MemberView, label: string, field: Field, canDelta: boolean): StatMetric {
+/** `compared`: both rosters exist. Without it (the After has not run) there are no changes to show. */
+type Mode = { canDelta: boolean; compared: boolean };
+
+function metric(m: MemberView, label: string, field: Field, mode: Mode): StatMetric {
   const now = m.after ?? m.before;
-  const both = m.before !== null && m.after !== null;
+  const from = m.before && m.after && mode.canDelta ? { from: m.before[field] } : {};
   return {
     label,
     value: now?.[field] ?? null,
-    ...(both && canDelta ? { from: m.before?.[field] ?? null } : {}),
-    delta: change(m, field, canDelta),
+    ...from,
+    delta: change(m, field, mode.canDelta),
+    ...(mode.compared ? {} : { noChange: true }),
     base: field === "lv" ? null : (m.before?.[field] ?? null),
   };
 }
 
-function toRow(m: MemberView, canDelta: boolean): StatRow {
+function toRow(m: MemberView, mode: Mode): StatRow {
+  const n = m.rank.after ?? m.rank.before;
   return {
     key: String(m.uid),
     href: `/players/${m.uid}`,
-    rank: {
-      n: m.rank.after ?? m.rank.before,
-      move: canDelta ? rankDelta(m.rank.before, m.rank.after) : null,
-    },
+    rank: mode.compared
+      ? { n, move: mode.canDelta ? rankDelta(m.rank.before, m.rank.after) : null }
+      : { n },
     lead: m.name,
     icon: <PlayerAvatar uid={m.uid} hasAvatar={m.hasAvatar} />,
     sub: (
@@ -81,21 +85,31 @@ function toRow(m: MemberView, canDelta: boolean): StatRow {
       </>
     ),
     metrics: [
-      metric(m, copy.ledger.might, "power", canDelta),
-      metric(m, copy.ledger.kills, "kills", canDelta),
-      metric(m, copy.ledger.level, "lv", canDelta),
+      metric(m, copy.ledger.might, "power", mode),
+      metric(m, copy.ledger.kills, "kills", mode),
+      metric(m, copy.ledger.level, "lv", mode),
     ],
   };
 }
 
-function SortChips({ f, set }: { f: MemberFilter; set: (p: Partial<MemberFilter>) => void }) {
+const CHANGE_SORTS: SortKey[] = ["mightDelta", "killsDelta"];
+
+function SortChips({
+  f,
+  set,
+  compared,
+}: {
+  f: MemberFilter;
+  set: (p: Partial<MemberFilter>) => void;
+  compared: boolean;
+}) {
   return (
     <div
       role="group"
       aria-label={copy.members.sort}
       className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0"
     >
-      {SORTS.map((s) => {
+      {SORTS.filter((s) => compared || !CHANGE_SORTS.includes(s.key)).map((s) => {
         const on = f.sort === s.key;
         return (
           <button
@@ -208,12 +222,38 @@ function ActiveChips({
   );
 }
 
+/** `Members 97 / 100`: people in the alliance now over what it holds at most (no capacity: just the
+ * count). `shown`, only while a filter is on: how many of them the list keeps. */
+export function MemberCount({
+  count,
+  capacity,
+  shown,
+}: {
+  count: number;
+  capacity: number | null;
+  shown: number | null;
+}) {
+  return (
+    <p className="text-sm tabular-nums text-ink/70">
+      <span className={LABEL}>{copy.ledger.members}</span> {count}
+      {capacity !== null && ` / ${capacity}`}
+      {shown !== null && <span> · {fill(copy.members.shown, { n: String(shown) })}</span>}
+    </p>
+  );
+}
+
 export function MembersExplorer({
   members,
   canDelta,
+  compared,
+  capacity,
 }: {
   members: MemberView[];
   canDelta: boolean;
+  /** Both rosters exist; otherwise the list is the one roster there is, with no changes. */
+  compared: boolean;
+  /** The most members the alliance can hold, as the upstream reports it; null when not stored. */
+  capacity: number | null;
 }) {
   const steps = useMemo(() => mightSteps(members), [members]);
   const start: MemberFilter = { sort: "might", desc: true, name: "", lo: 0, hi: steps.length - 1 };
@@ -225,6 +265,8 @@ export function MembersExplorer({
   );
   const shown = all ? kept : kept.slice(0, TOP);
   const set = (patch: Partial<MemberFilter>) => setF({ ...f, ...patch });
+  const mode = { canDelta, compared };
+  const filtered = f.name.trim() !== "" || f.lo > 0 || f.hi < steps.length - 1;
   return (
     <div>
       <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:items-end">
@@ -237,20 +279,22 @@ export function MembersExplorer({
           onChange={(e) => set({ name: e.target.value })}
         />
         <div className="min-w-0 sm:order-last sm:col-span-2">
-          <SortChips f={f} set={set} />
+          <SortChips f={f} set={set} compared={compared} />
         </div>
         <MightRange f={f} steps={steps} set={set} />
       </div>
       <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-2">
-        <p className="text-sm tabular-nums text-ink/70">
-          <span className={LABEL}>{copy.ledger.members}</span> {kept.length} / {members.length}
-        </p>
+        <MemberCount
+          count={members.filter((m) => m.status !== "left").length}
+          capacity={capacity}
+          shown={filtered ? kept.length : null}
+        />
         <ActiveChips f={f} steps={steps} reset={() => setF(start)} set={set} />
       </div>
       <StatTable
         leadLabel={copy.ledger.member}
         columns={[copy.ledger.might, copy.ledger.kills, copy.ledger.level]}
-        rows={shown.map((m) => toRow(m, canDelta))}
+        rows={shown.map((m) => toRow(m, mode))}
         empty={copy.empty.noMembers}
       />
       {shown.length < kept.length && (

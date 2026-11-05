@@ -23,8 +23,36 @@ const stat = (m: MemberRow | undefined) =>
 
 const mightRanks = (roster: MemberRow[]) => rankBy(roster.map((m) => [m.uid, m.power] as const));
 
-/** Every member of either roster, matched by uid (§3.8): joined, left, or stayed (maybe renamed). */
+/** Both rosters hold members, so they can be compared. An empty one means its phase has not run (or failed). */
+export const canCompare = (before: MemberRow[], after: MemberRow[]) =>
+  before.length > 0 && after.length > 0;
+
+/** The one roster there is, as the current roster: no joined / left status and no earlier figures. */
+function singleRoster(roster: MemberRow[], side: "before" | "after"): MemberView[] {
+  const ranks = mightRanks(roster);
+  return roster.map((m) => ({
+    uid: m.uid,
+    name: m.name,
+    hasAvatar: m.hasAvatar,
+    wasName: null,
+    status: "" as const,
+    before: side === "before" ? stat(m) : null,
+    after: side === "after" ? stat(m) : null,
+    rank: {
+      before: side === "before" ? (ranks.get(m.uid) ?? null) : null,
+      after: side === "after" ? (ranks.get(m.uid) ?? null) : null,
+    },
+  }));
+}
+
+/**
+ * Every member of either roster, matched by uid (§3.8): joined, left, or stayed (maybe renamed).
+ * With only one roster (the After has not run) nothing is diffed: it is the current roster.
+ */
 export function memberViews(before: MemberRow[], after: MemberRow[]): MemberView[] {
+  if (!canCompare(before, after)) {
+    return after.length > 0 ? singleRoster(after, "after") : singleRoster(before, "before");
+  }
   const diff = rosterDiff(before, after);
   const [rankBefore, rankAfter] = [mightRanks(before), mightRanks(after)];
   const rank = (uid: number) => ({

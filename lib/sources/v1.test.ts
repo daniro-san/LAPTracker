@@ -65,6 +65,13 @@ describe("v1.fetchAlliance parsing", () => {
     expect((await fetchAlliance(67111155)).cached).toBe(true);
   });
 
+  it("reads the alliance capacity, and keeps null when the body has none", async () => {
+    mockFetch(respond(readFixture(OGS)));
+    expect((await fetchAlliance(67111155)).capacity).toBe(100);
+    mockFetch(respond(readFixture(OGS).replace('"capacity":100,', "")));
+    expect((await fetchAlliance(67111155)).capacity).toBeNull();
+  });
+
   it("throws SchemaError v1.schema with the path when a read field is renamed", async () => {
     mockFetch(respond(readFixture(OGS).replaceAll('"nick_name"', '"nickname"')));
     const error = await fetchAlliance(67111155).catch((e: unknown) => e);
