@@ -403,7 +403,7 @@ The reason every snapshot is kept forever is to see change over weeks. v1 shows 
 
 ### Phase 5f — Usability and language-light UI (a MUST before the first Saturday)
 The alliance is multilingual (Russia, Spain, Brazil, the US, more); translation comes after Phase 8, but the pages must be usable **without** it now. docs/DESIGN.md "Who uses this" and "Language-light rules" are the contract; this phase applies them to the Session 6/6b pages and verifies them with real members:
-- every public-page sentence becomes a chip, a label or a number; one legend; own alliance pinned; ranks shown; `Intl` formatting; three channels per state (colour + arrow + word); strings moved to `lib/copy.ts` (i18n-ready: translation later is a file).
+- every public-page sentence becomes a chip, a label or a number; one legend; order strictly by rank with a per-viewer "my alliance" highlight (localStorage, optional) because other top-10 alliances will use the page too; ranks shown; `Intl` formatting; three channels per state (colour + arrow + word); strings moved to `lib/copy.ts` (i18n-ready: translation later is a file).
 - Navigation per DESIGN.md "Navigation and hierarchy": one row shape at three depths, breadcrumbs on deep pages, search in the header.
 - **The ten-second test:** the owner sends the preview link to three members who read little or no English (e.g. RU, ES, PT) with three tasks — *find your alliance's kills change; which alliance lost the most members; when are the numbers from* — and records answers and time in the handoff. Failures are findings, fixed in the same session.
 - Reference, not a template: lastasylumtracker.com's server page is friendlier than our Session 6 output (clear per-alliance cards, sorting). Borrow the clarity, not the look.

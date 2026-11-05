@@ -172,12 +172,12 @@ Members of a game alliance on server 325 — Russia, Spain, Brazil, the United S
 - **Dates and numbers through `Intl`** with the browser's locale: `16:01` not `4:01 PM`, `3,94 B` for pt-BR, `3.94B` for en. Server time stays explicit (`16:01 server`); relative times (`4 days ago`) are secondary.
 - **Universal symbols where they are truly universal**: ▲ ▼ for change, a filled dot for fresh and an outlined one for stale, a magnifier for search, ✓ ✗ for done/failed. No icons that need a culture to read (no thumbs, no wink, no skull for kills — "Kills" is already the game's word).
 - **Every string in `lib/copy.ts`**, none in components, so translation later is a file, not a refactor. Keys are stable identifiers; the value is the English text.
-- **Own alliance first.** OGs is highlighted and pinned at the top of the ledger; a "Jump to my alliance" control exists on long lists. Rank numbers (`#1 … #20`) are shown because they are language-free.
+- **The ledger is for the whole server, not for OGs.** Other alliances in the top 10 will use it, so nothing is pinned: order is strictly by rank, and rank numbers (`#1 … #20`) are shown because they are language-free. A viewer may pick _their_ alliance once (tap the tag → "This is my alliance"); it is highlighted and gets a "jump to" control, remembered in `localStorage` for that browser only — a per-viewer convenience, never server state, and the page is correct without it.
 
 ## Navigation and hierarchy
 
 - Header: wordmark · event selector · search. Nothing else.
-- Main page, top to bottom: status strip (before/after chips, legend) → the ledger (own alliance pinned, then by might) → nothing else. The run buttons live on `/admin`.
+- Main page, top to bottom: status strip (before/after chips, legend) → the ledger, by rank, with the viewer's chosen alliance highlighted if they picked one → nothing else. The run buttons live on `/admin`.
 - Every card and row is a link to the alliance page; the alliance page is members with the same row shape; the player page is the same shape over time. **One row shape, three depths** — learn it once.
 - Back is the browser's back; breadcrumbs only on alliance and player pages (`Ledger › OGs › Player`).
 - No modals except the bottom sheet for the PIN; no tooltips that carry information; nothing on hover only.
@@ -279,7 +279,7 @@ Only where it carries meaning or a smile: the error-page illustrations (one keyf
 
 ## Voice
 
-Short, dry, grandmotherly, English. Title "Old Grandmas — Saturday Ledger". Columns "Might", "Kills", "Members", "Gained / Lost". States: "Nothing recorded yet. The kettle is on." · "The ledger is closed for today (quota exhausted)." · "Grandma wandered off." · "Something cracked." No exclamation marks, no emoji, no "Oops", no "Awesome".
+Short, dry, grandmotherly, English. The ledger belongs to the server and is _kept_ by the Old Grandmas — that is the branding's place: title "Server 325 · Saturday Ledger", byline "kept by the Old Grandmas" in the header and footer, the mascot in the margins. Another alliance reading it should feel invited, not visiting. Columns "Might", "Kills", "Members", "Gained / Lost". States: "Nothing recorded yet. The kettle is on." · "The ledger is closed for today (quota exhausted)." · "Grandma wandered off." · "Something cracked." No exclamation marks, no emoji, no "Oops", no "Awesome".
 
 ## Do's and Don'ts
 
