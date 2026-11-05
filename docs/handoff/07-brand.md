@@ -43,7 +43,7 @@
 - Error-page headline uses a new `display-xl` (48 px) instead of `display-lg`: the owner asked for the message to be the focus. Added to DESIGN.md.
 - The Granny Doctor is a supporting detail (footer corner, empty state), not the error-page focus: two rounds of poses (single colour, 2.5D chibi) were rejected before the line style; the error pages lead with the vignettes.
 - Three typefaces instead of DESIGN.md's original two: the owner asked for a primary and a secondary display face; DESIGN.md now says "no fourth".
-- The owner asked to "document it or make a skill" for the drawing style. `docs/brand/DRAWING.md` documents it. Committing the Python generator (under `.claude/skills/` and then under `docs/brand/drawing/`) was refused by the session's permission check, so the generator is not in the repo; the shipped SVG markup is.
+- The owner asked to "document it or make a skill" for the drawing style. `docs/brand/DRAWING.md` documents it and `docs/brand/drawing/` holds the generator (added with the owner's permission after the session's permission check first refused it). No skill yet.
 - 404 copy: "Back to the table" without the arrow from Phase 5b's sample copy (DESIGN.md "Do's and Don'ts" has no arrows in copy).
 - Admin pages got token colours only. The seal button is not on the admin Run/Rehearse actions: the task named main, alliance, player and search.
 - New screenshots are named `07-*`; the `06-*` / `06b-*` files are left as the before record. 390 px was not re-taken (the task asked for 360 and 1280).
@@ -58,8 +58,12 @@
 - Not verified: the error boundary in a real thrown render in the browser (covered by the unit test, not clicked); the reduced-motion switch-off by eye (the CSS rule is in place); a production build on Vercel.
 
 ## Open issues
-- The drawing generator (stdlib-only Python: the stroke engine and one function per drawing) exists only in this session's scratchpad. If the owner wants it in the repo or as a `.claude/skills/` skill, a session with that permission adds it next to `docs/brand/DRAWING.md` and checks it reproduces the shipped SVGs byte for byte.
+- The drawing generator is in `docs/brand/drawing/` (owner approved, 2026-11-04): `build.py` reproduces all 14 shipped drawings byte for byte. A project skill (`.claude/skills/`) that drives it from a prompt was not created: writing agent configuration needs the owner's explicit OK.
 - The drawn frame needs `-webkit-mask-box-image` (Chrome, Safari, Edge); Firefox shows the plain 1 px border fallback.
+- Player photos and alliance badges — what the API returns (checked in the recorded `/v1` fixtures, no new calls, 2026-11-04). The owner will use them if the API provides them:
+  - `members[].avatar_url`: present on all 2,129 recorded members; a non-empty URL on 1,080 (about half), all on `phs-image.globallap.com`; the rest are empty strings, so a fallback is needed. `members[].frame_url` is present and always empty.
+  - `badge_url`: present on all 24 alliance responses as a relative path, e.g. `/static/alliance/badge_110.png`, which resolves on the tracker site, not the `/v1` host. `badge_id` takes only the values 101–110, so badges are one of about ten preset emblems the leader picks. `server_badge_url` is the same `/static/kingdom/badge_1.png` everywhere.
+  - Today `lib/raw-json.ts` drops `badge_url`, `server_badge_url`, `avatar_url` and `frame_url` before storage (plan §196), so nothing is stored yet. Showing them needs: keep the fields, allow `phs-image.globallap.com` (and the badge host) in the page CSP or serve them through an app image route, the CLAUDE.md change for `avatar_url`, and a DECISIONS entry.
 - The owner floated a brand-guidelines page like a client's (logo usage, clear space, colours with values, type, do/don't). `/brand` is its base; not built here.
 - Light-mode contrast: yarn text on paper 2.15:1 and paper on sage 3.46:1 are under DESIGN.md's 4.5:1 rule. The owner accepted it; tracked in #25.
 - Owner asked for per-viewer timezone and date-format settings: #26, #27.

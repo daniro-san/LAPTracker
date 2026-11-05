@@ -42,4 +42,10 @@ A drawing is a short program. Its author places centreline points by hand and as
 
 The shipped SVG markup lives in `lib/brand/components/` (`Vignettes.tsx`, `Mascot.tsx`, `Logo.tsx` `MarkLine`, `SealButton.tsx`, `YarnCorner.tsx`, `LaceBorder.tsx`, `StatusIcons.tsx` `Hourglass`, `Wax.tsx`), plus the drawn frame for secondary buttons and chips in `public/brand/frame.svg` and `frame-soft.svg` (`fill="black"`, used as a nine-slice mask so CSS tints it; the straight edges keep an even width so they stretch). The bonnet bust kept from an earlier round is `docs/brand/granny-doctor-bust.svg` (old style, character reference only).
 
-The Python generator that produced them (the stroke engine plus one function per drawing, standard library only) was written during Session 7 and is not in the repository yet: committing it was held for the owner's approval. When it is added, it goes next to this file, and running it must reproduce the shipped SVGs byte for byte.
+The generator that produced them is in `docs/brand/drawing/` (standard library only):
+
+- `lib.py` — the nib engine: `stroke`, `blob`, `ring`, `arc`, `quad`, `catmull`, `widths`.
+- `examples/` — one module per family, one function per drawing: `objects.py` (vignettes), `mark.py` (line and small cuts), `ornaments.py` (seal, yarn corner, lace, icons), `granny.py` (both poses, sharing `head()`), `frame.py` (the nine-slice frame).
+- `build.py` — writes every drawing into a folder: `python3 -I docs/brand/drawing/build.py <out-dir>`. Its output is byte-identical to the shipped SVGs (checked at Session 7); to change a drawing, edit its function, rebuild, and paste the new markup into its component.
+
+To draw something new, add a function next to the closest example, add it to `DRAWINGS` in `build.py`, and follow the recipe above.
