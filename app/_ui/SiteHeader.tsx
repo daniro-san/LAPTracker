@@ -1,4 +1,4 @@
-// Sticky compact header: home link, and the event selector. The selector
+// Sticky compact header: home link, a link to player search, and the event selector. The selector
 // is a <details> list of links, so it needs no JavaScript and every target is ≥ 44 px.
 import Link from "next/link";
 
@@ -51,9 +51,14 @@ export function SiteHeader({
     <header className="sticky top-0 z-30 border-b border-zinc-300 bg-white dark:border-zinc-700 dark:bg-zinc-950">
       <div className="mx-auto flex max-w-[960px] items-center justify-between gap-2 px-4 py-1 sm:px-6">
         <Link href="/" className="flex min-h-11 items-center text-base font-bold">
-          LAPTracker
+          OG&apos;s LAP Tracker
         </Link>
-        {events.length > 0 && <EventSelector events={events} currentId={currentId} />}
+        <div className="flex items-center gap-2">
+          <Link href="/players" className="flex min-h-11 items-center px-2 text-sm font-medium">
+            Players
+          </Link>
+          {events.length > 0 && <EventSelector events={events} currentId={currentId} />}
+        </div>
       </div>
     </header>
   );
