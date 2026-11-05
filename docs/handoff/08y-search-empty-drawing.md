@@ -1,6 +1,6 @@
 # 08y — Illustration on the empty search (#71)
 
-Depends on #53 (`session/08x-search-pictures`): this branch is cut from it, so its diff includes #53's commit until that PR is merged.
+Depends on #53, PR https://github.com/daniro-san/LAPTracker/pull/111 (`session/08x-search-pictures`): this branch is cut from it, so its diff includes #53's commit until that PR is merged.
 
 ## Built
 - `docs/brand/drawing/examples/granny.py` `empty()`: a new Granny Doctor pose, viewBox 160 × 120. Same head placement and shawl as `ledger()`, but the brow is raised (the stern brow is skipped and redrawn higher), the forearm reaches out under the beak, the magnifier is held up high and empty over the left page, and a smaller open ledger sits at the bottom left with blank pages, a lifted page corner and a ribbon. Registered as `granny-empty` in `docs/brand/drawing/build.py`. 3,940 bytes as built.
