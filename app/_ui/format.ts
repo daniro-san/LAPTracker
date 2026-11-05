@@ -74,7 +74,7 @@ export interface Clock {
   hhmm: (d: Date) => string;
   /** "16:01 server" */
   time: (d: Date) => string;
-  /** "Oct 31, 16:01 server" */
+  /** "Oct 31, 16:01 server time": status chips and "as of" lines spell it out like the admin */
   at: (d: Date) => string;
   /** "Sat, 07/11/2026, 12:00 server time" in pt-BR: the full date for the admin area */
   stamp: (d: Date) => string;
@@ -102,7 +102,7 @@ export function makeClock(locale: string, timeZone: string): Clock {
     long: (d) => long.format(d),
     hhmm: (d) => hhmm.format(d),
     time,
-    at: (d) => `${day.format(d)}, ${time(d)}`,
+    at: (d) => `${day.format(d)}, ${hhmm.format(d)} ${copy.time.serverTime}`,
     stamp: (d) => `${full.format(d)} ${copy.time.serverTime}`,
   };
 }
