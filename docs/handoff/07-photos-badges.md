@@ -78,3 +78,5 @@ Plan changes needed: §196 (raw_json keeps `badge_url` and `members[].avatar_url
 - Full-page screenshots: drive Chrome over CDP (`Emulation.setDeviceMetricsOverride`, `Emulation.setEmulatedMedia` for dark); headless `--window-size=360` renders wider than 360 and `--force-dark-mode` does nothing here.
 - Seed: alliance WACK (67110992) has no badge (fake, for the placeholder); 1,048 of 2,129 member rows have no photo (real default heads), e.g. `/players/340243734853`.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/30
