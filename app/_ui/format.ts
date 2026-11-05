@@ -1,6 +1,6 @@
 // Number and time formatting shared by every page (DESIGN.md "Language-light rules"): `Intl` with the
 // request's locale (app/_ui/locale.ts), compact by default and exact on tap, times in server time with
-// the word "server" after them. The admin area keeps UTC (`utcStamp`).
+// the word "server" after them, in the admin area too (07c S3a).
 import { copy } from "@/lib/copy";
 
 const MINUS = "−";
@@ -67,10 +67,14 @@ export interface Clock {
   weekday: (d: Date) => string;
   /** "Saturday, October 31" */
   long: (d: Date) => string;
+  /** "16:01", for column heads that say "server" once */
+  hhmm: (d: Date) => string;
   /** "16:01 server" */
   time: (d: Date) => string;
   /** "Oct 31, 16:01 server" */
   at: (d: Date) => string;
+  /** "Sat, 07/11/2026, 12:00 server" in pt-BR: the full date for the admin area */
+  stamp: (d: Date) => string;
 }
 
 export function makeClock(locale: string, timeZone: string): Clock {
@@ -79,27 +83,23 @@ export function makeClock(locale: string, timeZone: string): Clock {
   const weekday = f({ weekday: "short", month: "short", day: "numeric" });
   const long = f({ weekday: "long", month: "long", day: "numeric" });
   const hhmm = f({ hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+  const full = f({
+    weekday: "short",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  });
   const time = (d: Date) => `${hhmm.format(d)} ${copy.time.server}`;
   return {
     day: (d) => day.format(d),
     weekday: (d) => weekday.format(d),
     long: (d) => long.format(d),
+    hhmm: (d) => hhmm.format(d),
     time,
     at: (d) => `${day.format(d)}, ${time(d)}`,
+    stamp: (d) => `${full.format(d)} ${copy.time.server}`,
   };
 }
-
-const utcDate = new Intl.DateTimeFormat("en-US", {
-  timeZone: "UTC",
-  month: "short",
-  day: "numeric",
-});
-const utcTime = new Intl.DateTimeFormat("en-GB", {
-  timeZone: "UTC",
-  hour: "2-digit",
-  minute: "2-digit",
-  hourCycle: "h23",
-});
-
-/** "Nov 7 14:00 UTC" (admin area). */
-export const utcStamp = (d: Date): string => `${utcDate.format(d)} ${utcTime.format(d)} UTC`;

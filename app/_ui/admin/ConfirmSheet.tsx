@@ -1,8 +1,11 @@
 "use client";
 
-// A confirmation in the bottom sheet (docs/DESIGN.md: bottom-sheet = PIN entry and confirmations).
+// A confirmation in the bottom sheet (docs/DESIGN.md: bottom-sheet = PIN entry and confirmations): a
+// modal alertdialog named by its question; focus starts on Cancel, Escape answers no (07c S6).
 import { buttonClass } from "@/lib/brand/components/Button";
 import { copy } from "@/lib/copy";
+
+import { MODAL_CARD, SHEET, useSheet } from "./sheet";
 
 export function ConfirmSheet({
   text,
@@ -11,14 +14,20 @@ export function ConfirmSheet({
   text: string;
   onAnswer: (yes: boolean) => void;
 }) {
+  const ref = useSheet(true);
   return (
-    <div
+    <dialog
+      ref={ref}
       role="alertdialog"
-      aria-label={copy.admin.confirm.label}
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-rule bg-paper p-4 shadow-[0_-8px_24px_var(--sheet-shadow)]"
+      aria-labelledby="confirm-text"
+      onCancel={(e) => {
+        e.preventDefault();
+        onAnswer(false);
+      }}
+      className={`${SHEET} ${MODAL_CARD}`}
     >
       <div className="mx-auto flex max-w-md flex-col gap-3">
-        <p>{text}</p>
+        <p id="confirm-text">{text}</p>
         <button
           type="button"
           onClick={() => onAnswer(true)}
@@ -28,12 +37,13 @@ export function ConfirmSheet({
         </button>
         <button
           type="button"
+          data-initial-focus
           onClick={() => onAnswer(false)}
           className={buttonClass("secondary", "font-semibold")}
         >
           {copy.admin.confirm.no}
         </button>
       </div>
-    </div>
+    </dialog>
   );
 }

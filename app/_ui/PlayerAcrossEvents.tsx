@@ -5,10 +5,11 @@ import { rankDelta } from "@/lib/compute";
 import { copy, fill } from "@/lib/copy";
 import type { PlayerEventRow } from "@/lib/queries";
 
-import { RankLine, type RankPair } from "./DetailLines";
+import { DetailTable, rankRow, type RankPair } from "./DetailLines";
+import { EventLead } from "./EventLead";
 import { allianceLabel, changeText, type Clock } from "./format";
 import { StatTable, type StatMetric, type StatRow } from "./StatTable";
-import { BeforeMark, FreshDots, FreshnessDetail } from "./Status";
+import { FreshDots, SideHead } from "./Status";
 
 const SHOWN = 12;
 
@@ -75,10 +76,11 @@ function toRow(r: PlayerEventRow, prev: PlayerEventRow | undefined, clock: Clock
     href: `/events/${r.eventId}/alliances/${r.unionId}`,
     rank: { n: ranks.might.after, move: ranks.might.move },
     lead: (
-      <span className="inline-flex items-center gap-2">
-        {clock.weekday(r.eventAtUtc)}
-        {r.reference === "before" && <BeforeMark />}
-      </span>
+      <EventLead
+        eventAt={r.eventAtUtc}
+        dataAt={(r.reference === "before" ? r.before : r.after)?.updatedAt ?? null}
+        clock={clock}
+      />
     ),
     sub: (
       <>
@@ -93,13 +95,17 @@ function toRow(r: PlayerEventRow, prev: PlayerEventRow | undefined, clock: Clock
     ],
     summary: <FreshDots {...fresh} />,
     detail: (
-      <div className="grid gap-3 sm:grid-cols-2">
-        <ul>
-          <RankLine label={l.might} pair={ranks.might} />
-          <RankLine label={l.kills} pair={ranks.kills} />
-        </ul>
-        <FreshnessDetail {...fresh} clock={clock} />
-      </div>
+      <>
+        <DetailTable
+          from={prev ? clock.day(prev.eventAtUtc) : "—"}
+          to={clock.day(r.eventAtUtc)}
+          rows={[rankRow(l.might, ranks.might), rankRow(l.kills, ranks.kills)]}
+        />
+        <p className="mt-2 text-xs text-ink/70 tabular-nums">
+          {clock.day(r.eventAtUtc)} · <SideHead s={fresh.before} clock={clock} /> →{" "}
+          <SideHead s={fresh.after} clock={clock} /> {copy.time.server}
+        </p>
+      </>
     ),
   };
 }

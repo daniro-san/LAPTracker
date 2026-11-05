@@ -1,7 +1,8 @@
 // Sticky compact header (DESIGN.md `header`): plum field with the mark and wordmark, player search (the
-// magnifier and the word), the event selector and the theme switch, and the lace border hanging below. The selector is
-// a <details> list of links, so it needs no JavaScript and every target is ≥ 44 px. Below 640 px the
-// wordmark is screen-reader only: the mark, three controls and the gutters fill 360 px.
+// magnifier and the word), the event selector and the theme switch, and the lace border hanging below.
+// The selector is a <details> list of links, so it works without JavaScript and every target is ≥ 44 px;
+// with it, Escape and a tap outside close it. Below 640 px the wordmark is screen-reader only: the mark,
+// three controls and the gutters fill 360 px.
 import Link from "next/link";
 
 import { LaceBorder } from "@/lib/brand/components/LaceBorder";
@@ -9,6 +10,7 @@ import { WaxedMark } from "@/lib/brand/components/Logo";
 import { ThemeSwitch } from "@/lib/brand/components/ThemeSwitch";
 import { copy } from "@/lib/copy";
 
+import { Disclosure } from "./Disclosure";
 import type { Clock } from "./format";
 
 export interface SelectorEvent {
@@ -32,7 +34,7 @@ function EventSelector({
 }) {
   const current = events.find((e) => e.id === currentId);
   return (
-    <details className="group relative">
+    <Disclosure label={copy.site.events} className="group relative">
       <summary
         className={`flex min-h-11 cursor-pointer items-center gap-1 px-3 text-sm drawn-frame-soft font-medium group-open:bg-paper/20 [&::-webkit-details-marker]:hidden ${CONTROL}`}
       >
@@ -58,7 +60,7 @@ function EventSelector({
           </li>
         ))}
       </ul>
-    </details>
+    </Disclosure>
   );
 }
 
@@ -89,7 +91,7 @@ export function SiteHeader({
     <header className="sticky top-0 z-30 text-plum">
       <div className="bg-plum text-paper">
         <div className="mx-auto flex max-w-[960px] items-center justify-between gap-2 px-4 py-1 sm:px-6">
-          <Link href="/" className="flex min-h-11 items-center gap-2">
+          <Link href="/" className="flex min-h-11 min-w-11 items-center justify-center gap-2">
             <WaxedMark size={40} />
             <span className="sr-only font-display text-display-sm font-semibold sm:not-sr-only">
               {copy.site.name}

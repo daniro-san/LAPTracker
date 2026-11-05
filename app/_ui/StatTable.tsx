@@ -50,7 +50,8 @@ function MetricCell({ m }: { m: StatMetric }) {
   const base = m.base ?? m.from ?? null;
   return (
     <div className="grid grid-cols-[5rem_minmax(0,1fr)] items-baseline gap-x-2 sm:block sm:text-right">
-      <span className={`${LABEL} sm:hidden`}>{m.label}</span>
+      {/* sr-only at ≥ 640 px, where the column header shows it: a screen reader still hears it (07c S4). */}
+      <span className={`${LABEL} sm:sr-only`}>{m.label}</span>
       <div className="flex flex-wrap items-baseline gap-x-2 sm:block">
         <span className="text-base font-medium tabular-nums">
           {m.from !== undefined && m.from !== null && m.from !== m.value && (
@@ -142,7 +143,6 @@ export function StatTable({
       <div
         className={`hidden border-b border-rule px-3 pb-1 sm:grid sm:grid-cols-[var(--cols)] sm:gap-x-3 ${LABEL}`}
         style={grid}
-        aria-hidden="true"
       >
         <span>{leadLabel}</span>
         {columns.map((c, i) => (

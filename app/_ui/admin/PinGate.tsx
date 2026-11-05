@@ -6,14 +6,17 @@ import { copy } from "@/lib/copy";
 
 import { PinSheet } from "./PinSheet";
 
-/** What /admin pages render without the session cookie: nothing but the PIN sheet. */
+/** What /admin pages show without the session cookie: the heading and the PIN form (a bottom sheet on
+ * phones, a card under the heading at ≥ 640 px). */
 export function PinGate() {
   const router = useRouter();
   return (
-    <main className="mx-auto max-w-md px-4 py-10">
-      <h1 className="font-display text-display-lg font-semibold">{copy.admin.title}</h1>
-      <p className="text-ink/70">{copy.admin.pin.prompt}</p>
-      <PinSheet onUnlocked={() => router.refresh()} />
-    </main>
+    <div className="mx-auto max-w-md sm:py-6">
+      <h1 className="font-display text-display-lg">{copy.admin.title}</h1>
+      <p id="pin-prompt" className="text-ink/70">
+        {copy.admin.pin.prompt}
+      </p>
+      <PinSheet gate onUnlocked={() => router.refresh()} />
+    </div>
   );
 }

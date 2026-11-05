@@ -15,11 +15,13 @@ export interface PhaseStatus {
   finishedAt: Date | null;
 }
 
+// The time chip stays ink in every finished state (07c B1: a red chip read as "do not trust this time");
+// what went wrong is the separate seal count of stale rows beside it.
 const CHIP: Record<PhaseStatus["status"], { icon: ReactNode; tone: ChipTone }> = {
   complete: { icon: <StitchedCheck />, tone: "ink" },
   running: { icon: <Hourglass />, tone: "plum" },
-  partial: { icon: <DroppedStitch />, tone: "seal" },
-  failed: { icon: "✗", tone: "seal" },
+  partial: { icon: <DroppedStitch />, tone: "ink" },
+  failed: { icon: "✗", tone: "ink" },
 } as const;
 
 const STATE_WORD = {
@@ -83,18 +85,29 @@ export function StatusChips({
   phases,
   beforeAt,
   afterAt,
+  stale,
   clock,
 }: {
   phases: PhaseStatus[];
   beforeAt: Date;
   afterAt: Date;
+  /** Rows marked stale or failed: shown as a seal `○ n` beside the time, never as the time's tone. */
+  stale: number;
   clock: Clock;
 }) {
   return (
-    <ul className="flex flex-wrap items-start gap-2" aria-label={copy.status.label}>
+    <ul className="flex flex-wrap items-center gap-2" aria-label={copy.status.label}>
       <li className="min-w-0">
         <LastChip phases={phases} clock={clock} />
       </li>
+      {stale > 0 && (
+        <li className="min-w-0 text-body-sm">
+          <span className="whitespace-nowrap font-medium text-seal">
+            <span aria-hidden="true">○ </span>
+            {fill(copy.status.stale, { n: stale })}
+          </span>
+        </li>
+      )}
       <li className="min-w-0">
         <NextChip phases={phases} at={{ before: beforeAt, after: afterAt }} clock={clock} />
       </li>
@@ -113,6 +126,12 @@ type FreshWord = keyof typeof copy.fresh;
 const wordOf = (s: FreshState | null): FreshWord =>
   !s ? "missing" : s.failed ? "failed" : s.isFresh ? "fresh" : "stale";
 
+/** The row's worst state over the snapshot sides present; "fresh" when nothing is wrong. */
+export function worstOf(before: FreshState | null, after: FreshState | null): FreshWord {
+  const words = [before, after].filter((s) => s !== null).map(wordOf);
+  return (["failed", "stale"] as const).find((w) => words.includes(w)) ?? "fresh";
+}
+
 const MARK: Record<FreshWord, { symbol: string; tone: string }> = {
   fresh: { symbol: "●", tone: "text-ink" },
   stale: { symbol: "○", tone: "text-seal" },
@@ -129,7 +148,7 @@ function Mark({ word }: { word: FreshWord }) {
   );
 }
 
-/** One mark for the row: Fresh when every snapshot side present is fresh, else the worst state. */
+/** The row's mark, only when something is wrong (07c S2: "Fresh" on history meant nothing). */
 export function FreshDots({
   before,
   after,
@@ -137,48 +156,36 @@ export function FreshDots({
   before: FreshState | null;
   after: FreshState | null;
 }) {
-  const words = [before, after].filter((s) => s !== null).map(wordOf);
-  const worst = (["failed", "stale"] as const).find((w) => words.includes(w)) ?? "fresh";
-  return <Mark word={worst} />;
+  const worst = worstOf(before, after);
+  return worst === "fresh" ? null : <Mark word={worst} />;
 }
 
-/** Before / After, each with its mark and the time of the data. */
-export function FreshnessDetail({
-  before,
-  after,
-  clock,
-}: {
-  before: FreshState | null;
-  after: FreshState | null;
-  clock: Clock;
-}) {
-  const line = (label: string, s: FreshState | null) => (
-    <li className="flex flex-wrap items-baseline gap-x-2">
-      <span className="w-14 font-medium">{label}</span>
-      <Mark word={wordOf(s)} />
-      {s?.updatedAt && <span className="text-ink/70">{clock.at(s.updatedAt)}</span>}
-    </li>
-  );
+/** One snapshot side as a column head: its time (`10:00`), with the mark only when it is not fresh. */
+export function SideHead({ s, clock }: { s: FreshState | null; clock: Clock }) {
+  const word = wordOf(s);
   return (
-    <ul>
-      {line(copy.ledger.before, before)}
-      {line(copy.ledger.after, after)}
-    </ul>
+    <span className="whitespace-nowrap">
+      {word !== "fresh" && (
+        <span className={MARK[word].tone}>
+          <span aria-hidden="true">{MARK[word].symbol} </span>
+          <span className="sr-only">{copy.fresh[word]} </span>
+        </span>
+      )}
+      {s?.updatedAt ? clock.hhmm(s.updatedAt) : null}
+    </span>
   );
 }
 
 /** The one legend (DESIGN.md "One legend, once"), under the page title. */
-export function Legend({ beforeOnly = false }: { beforeOnly?: boolean }) {
+export function Legend() {
   const l = copy.legend;
   const items: [ReactNode, string, string][] = [
     ["▲", l.up, "text-yarn"],
     ["▼", l.down, "text-seal"],
     ["=", l.same, "text-ink/70"],
     ["#", l.rank, "text-ink"],
-    ["●", l.fresh, "text-ink"],
     ["○", l.stale, "text-seal"],
   ];
-  if (beforeOnly) items.push([<BeforeMark key="b" />, l.beforeOnly, "text-ink"]);
   return (
     <ul
       aria-label={l.label}
@@ -193,12 +200,5 @@ export function Legend({ beforeOnly = false }: { beforeOnly?: boolean }) {
         </li>
       ))}
     </ul>
-  );
-}
-
-/** The `B` box: this event's figures come from the before snapshot (Phase 5e). The legend names it. */
-export function BeforeMark() {
-  return (
-    <span className="rounded-xs border border-ink/50 px-1 text-xs font-semibold text-ink">B</span>
   );
 }

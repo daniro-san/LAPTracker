@@ -2,13 +2,14 @@
 import Link from "next/link";
 
 import { AdminShell } from "@/app/_ui/admin/AdminShell";
-import { utcStamp } from "@/app/_ui/format";
+import { phaseWord, stateWord } from "@/app/_ui/admin/words";
+import { requestClock } from "@/app/_ui/locale";
 import { copy, fill } from "@/lib/copy";
 import { withPageDb } from "@/lib/page";
 import { listRuns } from "@/lib/queries/admin";
 
 export default async function RunsPage() {
-  const runs = await withPageDb((db) => listRuns(db));
+  const [runs, clock] = await Promise.all([withPageDb((db) => listRuns(db)), requestClock()]);
   const t = copy.admin.runs;
   return (
     <AdminShell title={t.title}>
@@ -18,10 +19,10 @@ export default async function RunsPage() {
           <li key={r.id} className="border-b border-rule">
             <Link href={`/admin/runs/${r.id}`} className="block min-h-11 py-2">
               <span className="font-semibold">
-                {r.phase === "before" ? t.before : t.after} · {r.status}
+                {phaseWord(r.phase)} · {stateWord(r.status)}
               </span>{" "}
               <span className="text-sm text-ink/70">
-                {utcStamp(r.startedAt)} · {fill(t.calls, { n: r.callsUsed })}
+                {clock.stamp(r.startedAt)} · {fill(t.calls, { n: r.callsUsed })}
                 {r.quotaRemainingAfter !== null &&
                   ` · ${fill(t.quotaLeft, { n: r.quotaRemainingAfter })}`}
                 {r.durationMs !== null &&
@@ -29,7 +30,7 @@ export default async function RunsPage() {
               </span>
               <span className="block break-words text-sm">
                 {r.isTest && `${t.rehearsal} `}
-                {r.eventName}
+                {clock.stamp(r.eventAtUtc)}
               </span>
               {r.error && <span className="block break-words text-sm text-seal">{r.error}</span>}
             </Link>

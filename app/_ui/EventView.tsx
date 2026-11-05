@@ -1,22 +1,22 @@
 // The comparison page for one event: `/` and `/events/[id]` render this (plan Phase 5, 5f). Top to
 // bottom: ledger title and byline, the event's date, the status strip and legend, then every alliance by
-// rank. Quota, run errors and the run buttons live on /admin.
+// rank. Quota, run errors and the run buttons live on /admin. The game's own board is not shown (owner,
+// 2026-11-05): it is still collected as a cross-check but never feeds a number on the page.
 import type { NameHistoryEntry } from "@/lib/compute";
 import { copy, fill } from "@/lib/copy";
 import type { getEventDetail, listEvents, Ranks, RosterChange } from "@/lib/queries";
 
-import { DetailLine, RankLine } from "./DetailLines";
-import { comparisonRows, currentRank, type AllianceCell, type ComparisonRow } from "./event-rows";
+import { DetailTable, figureRows } from "./DetailLines";
+import { comparisonRows, type AllianceCell, type ComparisonRow } from "./event-rows";
 import { ExactToggle } from "./ExactToggle";
 import { allianceLabel, rowAnchor, type Clock } from "./format";
 import { requestClock } from "./locale";
 import { MyAllianceJump } from "./MyAlliance";
-import { Num } from "./Num";
 import { AllianceBadge } from "./Pictures";
 import { SiteFooter } from "./SiteFooter";
 import { SiteHeader } from "./SiteHeader";
-import { LABEL, StatTable, type StatRow } from "./StatTable";
-import { FreshDots, FreshnessDetail, Legend, StatusChips, type FreshState } from "./Status";
+import { StatTable, type StatRow } from "./StatTable";
+import { FreshDots, Legend, SideHead, StatusChips, worstOf, type FreshState } from "./Status";
 
 type Detail = NonNullable<Awaited<ReturnType<typeof getEventDetail>>>;
 type Events = Awaited<ReturnType<typeof listEvents>>;
@@ -24,7 +24,8 @@ type Events = Awaited<ReturnType<typeof listEvents>>;
 const fresh = (c: AllianceCell | undefined): FreshState | null =>
   c ? { isFresh: c.isFresh, updatedAt: c.sourceUpdatedAt, failed: c.failed } : null;
 
-/** The full figures behind the simple card: ranks, before → after values, freshness, names. */
+/** The full figures behind the simple card (DESIGN.md `details-table`): one table whose heads are the two
+ * snapshot times, then the name history. */
 function RowDetail({
   r,
   history,
@@ -34,45 +35,24 @@ function RowDetail({
   history: NameHistoryEntry[] | undefined;
   clock: Clock;
 }) {
-  const l = copy.ledger;
   return (
-    <div className="grid gap-3 sm:grid-cols-3">
-      <div>
-        <p className={LABEL}>{l.rank}</p>
-        <ul>
-          <RankLine label={l.might} pair={r.ranks.might} />
-          <RankLine label={l.kills} pair={r.ranks.kills} />
-          <RankLine label={l.server} pair={r.ranks.server} />
-        </ul>
-      </div>
-      <div>
-        <p className={LABEL}>
-          {l.before} → {l.after}
-        </p>
-        <ul>
-          {r.metrics.map((m, i) => (
-            <DetailLine key={i} label={m.label}>
-              <span>
-                <Num n={m.base ?? null} /> → <Num n={m.value} />
-              </span>
-              {m.detailNote && <span className="text-seal">{m.detailNote}</span>}
-            </DetailLine>
+    <>
+      <DetailTable
+        corner={copy.ledger.serverTime}
+        from={<SideHead s={fresh(r.before)} clock={clock} />}
+        to={<SideHead s={fresh(r.after)} clock={clock} />}
+        rows={figureRows(r.metrics, r.ranks, copy.ledger.ranking)}
+      />
+      {history && history.length > 1 && (
+        <ul className="mt-2 text-ink/70">
+          {history.map((h) => (
+            <li key={`${h.tag}|${h.name}`}>
+              {allianceLabel(h.tag, h.name)} · {clock.day(h.firstSeen)} – {clock.day(h.lastSeen)}
+            </li>
           ))}
         </ul>
-      </div>
-      <div>
-        <FreshnessDetail before={fresh(r.before)} after={fresh(r.after)} clock={clock} />
-        {history && history.length > 1 && (
-          <ul className="mt-2 text-ink/70">
-            {history.map((h) => (
-              <li key={`${h.tag}|${h.name}`}>
-                {allianceLabel(h.tag, h.name)} · {clock.day(h.firstSeen)} – {clock.day(h.lastSeen)}
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    </div>
+      )}
+    </>
   );
 }
 
@@ -86,7 +66,7 @@ function toStatRow(
     key: String(r.unionId),
     anchor: rowAnchor(r.unionId),
     href: `/events/${eventId}/alliances/${r.unionId}`,
-    rank: { n: currentRank(r.ranks.might), move: r.ranks.might.move },
+    rank: { n: r.rank, move: r.rank === null ? null : r.ranks.might.move },
     lead: allianceLabel(r.tag, r.name),
     icon: <AllianceBadge badgeId={r.after?.badgeId ?? r.before?.badgeId} />,
     sub:
@@ -95,50 +75,6 @@ function toStatRow(
     summary: <FreshDots before={fresh(r.before)} after={fresh(r.after)} />,
     detail: <RowDetail r={r} history={history} clock={clock} />,
   };
-}
-
-/** The game's own ranking board: a cross-check, collapsed, never used in a change. */
-function BoardSection({
-  detail,
-  rows,
-  clock,
-}: {
-  detail: Detail;
-  rows: ComparisonRow[];
-  clock: Clock;
-}) {
-  const snap = detail.snapshots.find((s) => s.boardPulledAt) ?? null;
-  const hasBoard = rows.some((r) => r.before?.powerBoard != null || r.after?.powerBoard != null);
-  if (!hasBoard) return null;
-  return (
-    <details className="drawn-frame mt-6 px-3">
-      <summary className="flex min-h-11 cursor-pointer items-center font-medium">
-        {copy.ledger.board}
-      </summary>
-      {snap?.boardPulledAt && (
-        <p className="pb-1 text-sm text-ink/70">{clock.at(snap.boardPulledAt)}</p>
-      )}
-      <ul className="pb-2 text-sm tabular-nums">
-        <li className={`flex justify-between gap-3 ${LABEL}`}>
-          <span>{copy.ledger.alliance}</span>
-          <span>
-            {copy.ledger.might} · {copy.ledger.kills}
-          </span>
-        </li>
-        {rows.map((r) => {
-          const c = r.after ?? r.before;
-          return (
-            <li key={r.unionId} className="flex min-h-8 items-center justify-between gap-3">
-              <span>[{r.tag}]</span>
-              <span>
-                <Num n={c?.powerBoard ?? null} /> · <Num n={c?.killsBoard ?? null} />
-              </span>
-            </li>
-          );
-        })}
-      </ul>
-    </details>
-  );
 }
 
 /** "Server 325 · Saturday Ledger", "kept by the Old Grandmas": the page title, under the header. */
@@ -184,6 +120,7 @@ export async function EventView({
           phases={detail.snapshots}
           beforeAt={detail.beforeAt}
           afterAt={detail.afterAt}
+          stale={rows.filter((r) => worstOf(fresh(r.before), fresh(r.after)) !== "fresh").length}
           clock={clock}
         />
         <Legend />
@@ -194,7 +131,6 @@ export async function EventView({
           rows={rows.map((r) => toStatRow(detail.id, r, names.get(r.unionId), clock))}
           empty={copy.empty.kettle}
         />
-        <BoardSection detail={detail} rows={rows} clock={clock} />
       </main>
       <SiteFooter />
     </>

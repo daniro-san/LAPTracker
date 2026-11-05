@@ -13,6 +13,7 @@ export async function listRuns(db: Db, limit = 60) {
       id: snapshots.id,
       eventId: events.id,
       eventName: events.name,
+      eventAtUtc: events.eventAtUtc,
       isTest: events.isTest,
       phase: snapshots.phase,
       status: snapshots.status,
@@ -44,6 +45,7 @@ export async function getRun(db: Db, snapshotId: number) {
     .select({
       id: snapshots.id,
       eventName: events.name,
+      eventAtUtc: events.eventAtUtc,
       isTest: events.isTest,
       phase: snapshots.phase,
       status: snapshots.status,
@@ -105,6 +107,7 @@ export async function listErrorGroups(db: Db): Promise<ErrorGroup[]> {
 export interface RehearsalStatus {
   id: number;
   name: string;
+  eventAtUtc: Date;
   beforeAt: Date;
   afterAt: Date;
   phases: { phase: "before" | "after"; status: string; error: string | null }[];
@@ -117,6 +120,7 @@ export async function latestRehearsal(db: Db, windowMin: number): Promise<Rehear
     .select({
       id: events.id,
       name: events.name,
+      eventAtUtc: events.eventAtUtc,
       beforeAt: events.beforeAt,
       afterAt: events.afterAt,
     })

@@ -23,6 +23,8 @@ export interface ComparisonRow {
   metrics: StatMetric[];
   formerly: NameHistoryEntry | null;
   ranks: { might: RankPair; kills: RankPair; server: RankPair };
+  /** The rank the page shows and sorts by; null when the after snapshot ran without ranking it. */
+  rank: number | null;
 }
 
 /** The earlier entry of a name history that is not the current one (plan §3.8). */
@@ -119,10 +121,15 @@ function ranksFor(
   };
 }
 
-/** The rank the page is ordered by: the latest snapshot that ranked the alliance. */
-export const currentRank = (r: RankPair): number | null => r.after ?? r.before;
+/**
+ * The rank of the latest snapshot that ran: the after rank once the after snapshot exists, else the
+ * before rank. An alliance whose after fetch failed gets no rank rather than its old one, which another
+ * alliance may hold now (07c S8); its before rank stays in Details.
+ */
+export const currentRank = (r: RankPair, afterRan: boolean): number | null =>
+  afterRan ? r.after : r.before;
 
-/** One row per alliance seen in either snapshot, by ledger rank by might (#1 first). */
+/** One row per alliance seen in either snapshot, by ledger rank by might (#1 first, unranked last). */
 export function comparisonRows(
   snapshots: Snap[],
   changes: Map<number, RosterChange>,
@@ -137,6 +144,7 @@ export function comparisonRows(
   const rows = [...ids].map((unionId) => {
     const b = before?.alliances.find((a) => a.unionId === unionId);
     const a = after?.alliances.find((x) => x.unionId === unionId);
+    const rowRanks = ranksFor(b, a, ranks.get(unionId));
     return {
       unionId,
       tag: a?.tag ?? b?.tag ?? String(unionId),
@@ -145,9 +153,10 @@ export function comparisonRows(
       after: a,
       metrics: metricsFor(b, a, changes.get(unionId)),
       formerly: formerlyOf(names.get(unionId)),
-      ranks: ranksFor(b, a, ranks.get(unionId)),
+      ranks: rowRanks,
+      rank: currentRank(rowRanks.might, after !== undefined),
     };
   });
-  const order = (r: ComparisonRow) => currentRank(r.ranks.might) ?? Number.MAX_SAFE_INTEGER;
+  const order = (r: ComparisonRow) => r.rank ?? Number.MAX_SAFE_INTEGER;
   return rows.sort((x, y) => order(x) - order(y) || x.tag.localeCompare(y.tag));
 }

@@ -36,8 +36,8 @@ describe("rehearsalVerdict", () => {
     expect(verdict.lines.map((l) => l.text)).toEqual([
       "both snapshots complete",
       "every alliance fresh in both (before 3/3, after 3/3)",
-      "updated_at advanced for every alliance (3/3)",
-      "calls_used = quota drop (before 4 = 4, after 4 = 4)",
+      "data time moved forward for every alliance (3/3)",
+      "calls used = quota drop (before 4 = 4, after 4 = 4)",
       "each run under 120 s (before 15.0 s, after 15.0 s)",
       "started within 45 min of schedule (before +3 min, after +3 min)",
     ]);
@@ -53,7 +53,7 @@ describe("rehearsalVerdict", () => {
 
     expect(verdict.pass).toBe(false);
     expect(verdict.lines.filter((l) => !l.ok).map((l) => l.text)).toEqual([
-      "updated_at did not advance: A2",
+      "data time did not move forward: A2",
     ]);
   });
 
@@ -65,7 +65,7 @@ describe("rehearsalVerdict", () => {
 
     expect(verdict.pass).toBe(false);
     expect(verdict.lines.filter((l) => !l.ok).map((l) => l.text)).toEqual([
-      "calls_used ≠ quota drop: after 4 ≠ 6",
+      "calls used ≠ quota drop: after 4 ≠ 6",
     ]);
   });
 });

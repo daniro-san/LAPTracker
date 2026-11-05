@@ -9,7 +9,7 @@ const WAX: Record<WaxTone, string> = { seal: "text-seal", paper: "text-paper", y
 export const WAX_INK: Record<WaxTone, string> = {
   seal: "text-paper",
   paper: "text-plum",
-  yarn: "text-ink dark:text-paper",
+  yarn: "text-paper",
 };
 
 export function Wax({ tone = "seal", className = "" }: { tone?: WaxTone; className?: string }) {

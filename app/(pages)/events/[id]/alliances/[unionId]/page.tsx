@@ -1,22 +1,23 @@
 // `/events/[id]/alliances/[unionId]`: one alliance in one event, then across events (plan Phase 5c, 5e).
 // Same row shape as the main page: the totals card, then the members, then one row per event.
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { cache } from "react";
 
-import { AcrossEvents } from "@/app/_ui/AcrossEvents";
+import { ACROSS_ID, AcrossEvents } from "@/app/_ui/AcrossEvents";
 import { Breadcrumbs } from "@/app/_ui/Breadcrumbs";
-import { DetailLine, RankLine, type RankPair } from "@/app/_ui/DetailLines";
+import { DetailTable, figureRows, type RankPair } from "@/app/_ui/DetailLines";
 import { ExactToggle } from "@/app/_ui/ExactToggle";
 import { allianceLabel, type Clock } from "@/app/_ui/format";
 import { requestClock } from "@/app/_ui/locale";
 import { memberViews } from "@/app/_ui/member-views";
 import { MembersExplorer } from "@/app/_ui/MembersExplorer";
 import { MyAllianceToggle } from "@/app/_ui/MyAlliance";
-import { Num } from "@/app/_ui/Num";
 import { AllianceBadge } from "@/app/_ui/Pictures";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { LABEL, StatTable, type StatMetric } from "@/app/_ui/StatTable";
-import { FreshDots, FreshnessDetail, Legend, type FreshState } from "@/app/_ui/Status";
+import { FreshDots, Legend, SideHead, type FreshState } from "@/app/_ui/Status";
 import { rankDelta, type NameHistoryEntry } from "@/lib/compute";
 import { copy } from "@/lib/copy";
 import { withPageDb } from "@/lib/page";
@@ -103,23 +104,12 @@ function Totals({
           metrics,
           summary: <FreshDots before={fresh(before)} after={fresh(after)} />,
           detail: (
-            <div className="grid gap-3 sm:grid-cols-3">
-              <ul>
-                <RankLine label={l.might} pair={ranks.might} />
-                <RankLine label={l.kills} pair={ranks.kills} />
-                <RankLine label={l.server} pair={ranks.server} />
-              </ul>
-              <ul>
-                {metrics.map((m, i) => (
-                  <DetailLine key={i} label={m.label}>
-                    <span>
-                      <Num n={m.base ?? null} /> → <Num n={m.value} />
-                    </span>
-                  </DetailLine>
-                ))}
-              </ul>
-              <FreshnessDetail before={fresh(before)} after={fresh(after)} clock={clock} />
-            </div>
+            <DetailTable
+              corner={copy.ledger.serverTime}
+              from={<SideHead s={fresh(before)} clock={clock} />}
+              to={<SideHead s={fresh(after)} clock={clock} />}
+              rows={figureRows(metrics, ranks, l.ranking)}
+            />
           ),
         },
       ]}
@@ -143,8 +133,9 @@ function NameTimeline({ names, clock }: { names: NameHistoryEntry[]; clock: Cloc
   );
 }
 
-function loadAlliance(eventId: number, unionId: number) {
-  return withPageDb(async (db) => {
+/** Shared by the page and its <title> within one request. */
+const loadAlliance = cache((eventId: number, unionId: number) =>
+  withPageDb(async (db) => {
     const detail = await getAllianceDetail(db, eventId, unionId);
     if (!detail) return null;
     const [events, history, names, ranks] = await Promise.all([
@@ -154,7 +145,32 @@ function loadAlliance(eventId: number, unionId: number) {
       eventRanks(db, eventId),
     ]);
     return { detail, events, history, names: names.get(unionId) ?? [], ledger: ranks.get(unionId) };
-  });
+  }),
+);
+
+type Params = Promise<{ id: string; unionId: string }>;
+
+/** The two ids, or null when either is not a plain number. */
+async function idsOf(params: Params) {
+  const p = await params;
+  if (!/^\d{1,9}$/.test(p.id) || !/^\d{1,15}$/.test(p.unionId)) return null;
+  return { eventId: Number(p.id), unionId: Number(p.unionId) };
+}
+
+/** `[OGs] OldGrandmas · Sat, Oct 31 · OG's LAP Tracker`. */
+export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
+  const ids = await idsOf(params);
+  const data = ids && (await loadAlliance(ids.eventId, ids.unionId));
+  if (!data) return {};
+  const clock = await requestClock();
+  const now = data.detail.after ?? data.detail.before;
+  const event = data.events.find((e) => e.id === ids.eventId);
+  const parts = [
+    allianceLabel(now?.tag ?? String(ids.unionId), now?.name ?? null),
+    event && clock.weekday(event.eventAtUtc),
+    copy.site.name,
+  ];
+  return { title: parts.filter(Boolean).join(" · ") };
 }
 
 type Events = Awaited<ReturnType<typeof listEvents>>;
@@ -172,37 +188,42 @@ function crumbsFor(events: Events, eventId: number, label: string, clock: Clock)
   ];
 }
 
-export default async function AlliancePage({
-  params,
-}: {
-  params: Promise<{ id: string; unionId: string }>;
-}) {
-  const p = await params;
-  if (!/^\d{1,9}$/.test(p.id) || !/^\d{1,15}$/.test(p.unionId)) notFound();
-  const eventId = Number(p.id);
-  const unionId = Number(p.unionId);
+export default async function AlliancePage({ params }: { params: Params }) {
+  const ids = await idsOf(params);
+  if (!ids) notFound();
+  const { eventId, unionId } = ids;
   const [data, clock] = await Promise.all([loadAlliance(eventId, unionId), requestClock()]);
   if (!data) notFound();
   const { detail, events, history, names, ledger } = data;
   const now = detail.after ?? detail.before;
-  const label = allianceLabel(now?.tag ?? p.unionId, now?.name ?? null);
+  const label = allianceLabel(now?.tag ?? String(unionId), now?.name ?? null);
   const canDelta = usable(detail.before) && usable(detail.after);
   return (
     <>
       <SiteHeader events={events} currentId={eventId} clock={clock} />
       <main className="mx-auto max-w-[960px] px-4 py-4 sm:px-6">
         <Breadcrumbs crumbs={crumbsFor(events, eventId, label, clock)} />
-        <div className="flex min-w-0 items-center gap-3">
-          <AllianceBadge badgeId={now?.badgeId} size="md" />
-          <h1 className="min-w-0 break-words font-display text-display-lg leading-tight">
-            {label}
-          </h1>
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+          <div className="flex min-w-0 items-center gap-3">
+            <AllianceBadge badgeId={now?.badgeId} size="md" />
+            <h1 className="min-w-0 break-words font-display text-display-lg leading-tight">
+              {label}
+            </h1>
+          </div>
+          <ExactToggle />
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
-          <ExactToggle />
           <MyAllianceToggle unionId={unionId} />
+          {history.length > 0 && (
+            <a
+              href={`#${ACROSS_ID}`}
+              className="inline-flex min-h-11 items-center px-2 text-sm font-medium text-plum hover:underline"
+            >
+              {copy.ledger.acrossEvents} <span aria-hidden="true">&nbsp;↓</span>
+            </a>
+          )}
         </div>
-        <Legend beforeOnly />
+        <Legend />
         <NameTimeline names={names} clock={clock} />
         <Totals detail={detail} ledger={ledger} canDelta={canDelta} clock={clock} />
         <h2 className="mb-2 mt-8 font-subhead text-display-md">{copy.ledger.members}</h2>

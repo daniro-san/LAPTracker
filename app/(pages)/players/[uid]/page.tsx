@@ -1,6 +1,8 @@
 // `/players/[uid]`: one player across events, shaped like the alliance page (plan Phase 5d, 5e).
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { cache } from "react";
 
 import { Breadcrumbs } from "@/app/_ui/Breadcrumbs";
 import { ExactToggle } from "@/app/_ui/ExactToggle";
@@ -38,14 +40,17 @@ function Timelines({ history, clock }: { history: PlayerHistory; clock: Clock })
         <p className={LABEL}>{copy.ledger.alliances}</p>
         <ul>
           {alliances.map((a) => (
-            <li key={`${a.unionId}|${a.firstSeen.getTime()}`}>
+            <li
+              key={`${a.unionId}|${a.firstSeen.getTime()}`}
+              className="flex flex-wrap items-center gap-x-2"
+            >
               <Link
                 href={`/events/${a.lastEventId}/alliances/${a.unionId}`}
                 className="inline-flex min-h-11 items-center gap-2 font-medium text-plum hover:underline"
               >
                 <AllianceBadge badgeId={a.badgeId} />
                 {allianceLabel(a.tag, a.name)}
-              </Link>{" "}
+              </Link>
               <span className="text-ink/70">· {span(a)}</span>
             </li>
           ))}
@@ -55,16 +60,32 @@ function Timelines({ history, clock }: { history: PlayerHistory; clock: Clock })
   );
 }
 
-export default async function PlayerPage({ params }: { params: Promise<{ uid: string }> }) {
-  const p = await params;
-  if (!/^\d{1,15}$/.test(p.uid)) notFound();
-  const [data, clock] = await Promise.all([
-    withPageDb(async (db) => {
-      const history = await playerHistory(db, Number(p.uid));
-      return history && { history, events: await listEvents(db) };
-    }),
-    requestClock(),
-  ]);
+/** Shared by the page and its <title> within one request. */
+const loadPlayer = cache((uid: number) =>
+  withPageDb(async (db) => {
+    const history = await playerHistory(db, uid);
+    return history && { history, events: await listEvents(db) };
+  }),
+);
+
+type Params = Promise<{ uid: string }>;
+
+const uidOf = async (params: Params) => {
+  const { uid } = await params;
+  return /^\d{1,15}$/.test(uid) ? Number(uid) : null;
+};
+
+/** `Name · OG's LAP Tracker`. */
+export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
+  const uid = await uidOf(params);
+  const data = uid === null ? null : await loadPlayer(uid);
+  return data ? { title: `${data.history.current.name} · ${copy.site.name}` } : {};
+}
+
+export default async function PlayerPage({ params }: { params: Params }) {
+  const uid = await uidOf(params);
+  if (uid === null) notFound();
+  const [data, clock] = await Promise.all([loadPlayer(uid), requestClock()]);
   if (!data) notFound();
   const { history, events } = data;
   const { current } = history;
@@ -89,16 +110,16 @@ export default async function PlayerPage({ params }: { params: Promise<{ uid: st
             { key: "player", label: current.name },
           ]}
         />
-        <div className="flex min-w-0 items-center gap-3">
-          <PlayerAvatar uid={history.uid} hasAvatar={current.hasAvatar} size="lg" />
-          <h1 className="min-w-0 break-words font-display text-display-lg leading-tight">
-            {current.name}
-          </h1>
-        </div>
-        <div className="mt-3">
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+          <div className="flex min-w-0 items-center gap-3">
+            <PlayerAvatar uid={history.uid} hasAvatar={current.hasAvatar} size="lg" />
+            <h1 className="min-w-0 break-words font-display text-display-lg leading-tight">
+              {current.name}
+            </h1>
+          </div>
           <ExactToggle />
         </div>
-        <Legend beforeOnly />
+        <Legend />
         <Timelines history={history} clock={clock} />
         <PlayerAcrossEvents rows={history.rows} clock={clock} />
       </main>

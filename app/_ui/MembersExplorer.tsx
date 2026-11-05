@@ -36,7 +36,11 @@ const SORTS: { key: SortKey; label: string }[] = [
   { key: "name", label: copy.members.name },
 ];
 
-const STATUS = { joined: copy.members.joined, left: copy.members.left } as const;
+/** Joined / Left carry a sign and a colour as well as the word (07c S12; DESIGN.md three channels). */
+const STATUS = {
+  joined: { sign: "+", word: copy.members.joined, tone: "text-yarn" },
+  left: { sign: "−", word: copy.members.left, tone: "text-seal" },
+} as const;
 
 const FIELD = "drawn-field min-h-11 w-full px-3 text-base";
 
@@ -93,7 +97,12 @@ function toRow(m: MemberView, canDelta: boolean): StatRow {
     icon: <PlayerAvatar uid={m.uid} hasAvatar={m.hasAvatar} />,
     sub: (
       <>
-        {m.status && <span className="font-medium text-ink">{STATUS[m.status]}</span>}
+        {m.status && (
+          <span className={`font-medium ${STATUS[m.status].tone}`}>
+            <span aria-hidden="true">{STATUS[m.status].sign} </span>
+            {STATUS[m.status].word}
+          </span>
+        )}
         {m.status && m.wasName && " · "}
         {m.wasName && fill(copy.ledger.was, { name: m.wasName })}
       </>

@@ -8,8 +8,8 @@ colors:
   ink: "#1e1a1f"
   plum: "#3b2436"
   seal: "#8c2f2f"
-  yarn: "#c9962b"
-  sage: "#6f7f62"
+  yarn: "#805c12"
+  sage: "#586750"
   rule: "#d9cdb4"
   dark-paper: "#1a1418"
   dark-ink: "#eadfcb"
@@ -182,10 +182,12 @@ Members of a game alliance on server 325 — Russia, Spain, Brazil, the United S
 
 - **Numbers first, words second.** Every data row reads as `label · number · signed delta with arrow · percent`. The label is one word, the same word the game's own English UI uses (Might, Kills, Members), because the players already know those words in the game.
 - **Three channels for every state**, never one: colour **and** an arrow/sign **and** a short word. Green alone, an arrow alone or English alone is not enough. Colour-blind safe by construction.
-- **One legend, once.** A compact legend (arrow up/down, the freshness dot, `[TEST]`) sits under the header; nothing else explains itself in a sentence.
+- **One legend, once.** A compact legend (arrow up/down, the stale mark, `[TEST]`) sits under the header; nothing else explains itself in a sentence.
+- **A mark only when something is wrong** (Session 7d, 07c S2). Rows carry `○ Stale` or `✗ Failed` when their data is; good data carries no mark, so history rows do not repeat a word that means nothing weeks later.
+- **The game's four words stay in blank mode** (D23, 07c N1): Might, Kills, Members and Level are the labels members read in the game's own English UI, so the ten-second test keeps them; every other string is blanked.
 - **Sentences only in the margins.** The grandma voice lives in empty states, error pages, section titles and the admin area. Status is chips, not prose: `Last updated: done at Oct 31, 14:01 server` and `Next update scheduled at …` (owner, 2026-11-05: these replace the earlier `Before ✓ 12:01` · `After ✓ 16:01` chips). A public page has no paragraph.
 - **Dates and numbers through `Intl`** with the request's `Accept-Language`: `16:01` not `4:01 PM`, `3,94 bi` for pt-BR, `3.94B` for en (the compact suffix is the locale's own). Every public time is server time and says so (`16:01 server`); no UTC twin (owner, 2026-11-05). Relative times (`4 days ago`) are secondary. Per-viewer time zone and date format are later work (#26, #27).
-- **Universal symbols where they are truly universal**: ▲ ▼ for change, a filled dot for fresh and an outlined one for stale, a magnifier for search, ✓ ✗ for done/failed. No icons that need a culture to read (no thumbs, no wink, no skull for kills — "Kills" is already the game's word).
+- **Universal symbols where they are truly universal**: ▲ ▼ for change, an outlined dot for stale, a magnifier for search, ✓ ✗ for done/failed. No icons that need a culture to read (no thumbs, no wink, no skull for kills — "Kills" is already the game's word).
 - **Every string in `lib/copy.ts`**, none in components, so translation later is a file, not a refactor. Keys are stable identifiers; the value is the English text.
 - **The ledger is for the whole server, not for OGs.** Other alliances in the top 10 will use it, so nothing is pinned: order is strictly by rank, and rank numbers (`#1 … #20`) are shown because they are language-free. A viewer may pick _their_ alliance once (tap the tag → "This is my alliance"); it is highlighted and gets a "jump to" control, remembered in `localStorage` for that browser only — a per-viewer convenience, never server state, and the page is correct without it.
 
@@ -226,11 +228,11 @@ A guild ledger, kept by hand, in a plague year. The page is aged paper; the ink 
 - **Ink** (`{colors.ink}` — #1e1a1f): all text. Dark: `{colors.dark-ink}`.
 - **Plum** (`{colors.plum}` — #3b2436): header, links, primary actions, focus rings. Dark: `{colors.dark-plum}`.
 - **Seal** (`{colors.seal}` — #8c2f2f): negative deltas, errors, "stale", the seal button. Dark: `{colors.dark-seal}`.
-- **Yarn** (`{colors.yarn}` — #c9962b): positive deltas, highlights. Dark: `{colors.dark-yarn}`.
-- **Sage** (`{colors.sage}` — #6f7f62): neutral badges — `[TEST]`, "fallback source", "manual". Dark: `{colors.dark-sage}`.
+- **Yarn** (`{colors.yarn}` — #805c12): positive deltas, highlights. Dark: `{colors.dark-yarn}`.
+- **Sage** (`{colors.sage}` — #586750): neutral badges — `[TEST]`, "fallback source", "manual". Dark: `{colors.dark-sage}`.
 - **Rule** (`{colors.rule}` — #d9cdb4): borders and table rules. Dark: `{colors.dark-rule}`.
 
-Rules: deltas are coloured by sign only; a colour that carries no meaning is not used. Text contrast ≥ 4.5:1, large numerals ≥ 3:1, checked in both modes. Known exception, accepted by the owner at the Session 7 mock (2026-11-04): in light mode yarn text on paper is 2.15:1 and paper on sage 3.46:1; the fix is tracked in [issue #25](https://github.com/daniro-san/LAPTracker/issues/25). No gradients anywhere.
+Rules: deltas are coloured by sign only; a colour that carries no meaning is not used. Text contrast ≥ 4.5:1, large numerals ≥ 3:1, checked in both modes. Light yarn and sage were darkened on 2026-11-05 (Session 7c, [issue #25](https://github.com/daniro-san/LAPTracker/issues/25)): yarn on paper 4.90:1, paper on sage 4.88:1; before that they were 2.15:1 and 3.46:1. No gradients anywhere.
 
 ## Typography
 
@@ -295,29 +297,30 @@ The whole list. Anything else is a composition of these; a new one needs a line 
 
 - **`header`** — wordmark + lace border + event selector + theme switch. Plum field, paper text, sticky and compact on phones.
 - **`theme-switch`** — one 44 px button in the header showing the current mode (sun / moon icon), `role="switch"`, accessible name "Dark mode". Sets `data-theme` on `<html>` and a one-year `theme` cookie (owner, 2026-11-04).
-- **`stat-table` / `stat-card`** — one `StatTable` component: table ≥ 640 px, cards below. Rows ≥ 44 px; numerals right-aligned. The card is simple — rank, picture, `[TAG] Name`, then Might, Kills, Members (or Level) with their change — and the full figures (ranks before → after, values before → after, freshness per snapshot, names) open under a framed "Details ▾" control (owner, 2026-11-05).
+- **`stat-table` / `stat-card`** — one `StatTable` component: table ≥ 640 px, cards below. Rows ≥ 44 px; numerals right-aligned. The card is simple — rank, picture, `[TAG] Name`, then Might, Kills, Members (or Level) with their change — and the full figures open under a framed "Details ▾" control (owner, 2026-11-05). At ≥ 640 px each value keeps its label as screen-reader text.
+- **`details-table`** — what "Details" opens, the same at every depth (`DetailTable` in `app/_ui/DetailLines.tsx`, Session 7d, 07c B2): one small table, a row per figure (Might, Kills, Members, then Ranking — the game's server rank), the two moments as column heads — the snapshot times (`Server time` in the corner, `10:00`, `→ 14:00`, with `○`/`✗` beside a side that is stale or failed) or, on history rows, the two events' dates — then `Change` (no percent: the card has it) and `Rank`, the ledger rank `#n` with its move (owner, 2026-11-05: heads in words, "Ranking" for the server row). Tabular, right-aligned; notes in seal under the change.
 - **`delta-up` / `delta-down`** — `value · ±delta with arrow · ±%`; kills with the member-loss note when negative.
-- **`status-strip`** — two `Chip`s (`lib/brand/components/Chip.tsx`: the soft drawn frame in the tone colour — ink done, plum running, seal partial/failed, muted not yet — with the icon and the word): `Last updated: <state> at <date, time> server` and `Next update scheduled at <date, time> server` (owner, 2026-11-05); replaces every status sentence. Quota and run errors are on `/admin`, never here.
-- **`legend`** — one line under the page title (`Legend` in `app/_ui/Status.tsx`): ▲ Up, ▼ Down, = Same, # Rank, ● Fresh, ○ Stale, and `B` Before only on pages that can show it. Nothing else explains a symbol.
-- **`rank`** — `#n` before the picture on every card and row, with its movement `▲k` / `▼k` / `=` / `—` (`Rank` in `app/_ui/Num.tsx`, `compute.rankDelta`); the Details panel shows `#a → #b` for might, kills and server rank.
+- **`status-strip`** — two `Chip`s (`lib/brand/components/Chip.tsx`: the soft drawn frame in the tone colour — ink once a run has finished, whatever its state, plum running, muted not yet — with the icon and the word): `Last updated: <state> at <date, time> server` and `Next update scheduled at <date, time> server` (owner, 2026-11-05); replaces every status sentence. When rows are stale or failed, a separate seal `○ n stale` sits between them; the time chip itself is never red (Session 7d, 07c B1: a red chip made readers distrust the one time the page gives). Quota and run errors are on `/admin`, never here.
+- **`legend`** — one line under the page title (`Legend` in `app/_ui/Status.tsx`): ▲ Up, ▼ Down, = Same, # Rank, ○ Stale. Nothing else explains a symbol. History rows show the time their figures are from (`Sat, Oct 31  10:00 server`) instead of a `B` box (Session 7d, 07c S1).
+- **`rank`** — `#n` before the picture on every card and row, with its movement `▲k` / `▼k` / `=` / `—` (`Rank` in `app/_ui/Num.tsx`, `compute.rankDelta`); the Details table shows the might and kills rank and the server rank `#a → #b`. An alliance the after snapshot could not rank reads `#—` and sorts after the ranked ones; its earlier rank stays in Details (07c S8).
 - **`breadcrumbs`** — alliance and player pages only: `Ledger · Sat, Oct 31 › [TAG] Name › Player` (`app/_ui/Breadcrumbs.tsx`); each crumb ≥ 44 px tall.
 - **`my-alliance`** — "My alliance": a framed checkbox beside "Exact numbers" on the alliance page, and on the main page a jump link to that row, which is tinted yarn (`app/_ui/MyAlliance.tsx`, `localStorage` only).
 - **`alliance-badge`** — the alliance's own emblem (one of the game's ten presets, served by `/img/badge/[id]`) at 28 px beside the tag on rows and cards, 40 px beside the alliance page title. Without one: the drawn crocheted banner (`NoBadge`). `AllianceBadge` in `app/_ui/Pictures.tsx` (owner, 2026-11-05; DECISIONS D22).
 - **`avatar`** — the player's photo (served by `/img/avatar/[uid]`) in the soft drawn frame, square, 32 px on member rows and 56 px beside the player page title. Without one: the Granny Doctor in profile (`NoPhoto`). `PlayerAvatar` in `app/_ui/Pictures.tsx`. Photos and badges are content, not ornament, so they may sit on rows and cards; their placeholders go wherever they would.
 - **`badge`** — sage neutral chip: `[TEST]`, source, manual. Never red or yellow.
 - **`wax`** — one hand-drawn wax seal in three tones (`Wax`, `WaxedMark`): `seal` red for confirm/destructive, `paper` ivory for the header logo (the inverse of the plum bar, so it holds contrast in both themes), `yarn` gold spare. Each tone carries its own ink colour for what is pressed into it.
-- **`seal-button`** — the wax seal: destructive or confirming actions (Run now, Rehearse now). Circle, ≥ 44 px.
+- **`seal-button`** — the wax seal: destructive or confirming actions (`/admin`: Rehearse, Before snapshot, After snapshot). Circle, ≥ 44 px.
 - **`button-primary`** — plum, 2 px radius, hatched shading behind it (`.ink-button`); one per view at most. The face stays solid so the label keeps its contrast; on press it sinks the 2 px onto the hatching. `Button` / `buttonClass("primary")` in `lib/brand/components/Button.tsx`.
 - **`button-secondary`** — paper face, plum label, inside the drawn frame (a two-stroke pen box, `public/brand/frame.svg` as a nine-slice mask; a plain 1 px border where the browser lacks `-webkit-mask-box-image`). `Button variant="secondary"` / `buttonClass("secondary")`.
 - **`input`** — paper field inside the soft drawn frame (`.drawn-field`, also on `<select>` with a drawn arrow); PIN uses `inputmode="numeric"`. Checkboxes are `.drawn-check`: a framed box that fills with the stitched check. Frame, check and arrow are token data URIs in `tokens.css` (form controls take no pseudo-elements).
-- **`exact-toggle`** — "Exact numbers": a compact framed toggle beside the page title (`app/_ui/ExactToggle.tsx`).
+- **`exact-toggle`** — "Exact numbers": a compact framed toggle at the right of the page's title row on every page (`app/_ui/ExactToggle.tsx`; owner, 2026-11-05: the same place on every screen).
 - **`drawn-rule`** — a pen hairline that swells and thins (`<hr class="drawn-rule">`, `public/brand/rule.svg`) for section dividers and the footer top; the data table keeps plain 1 px rules.
-- **`bottom-sheet`** — PIN entry and confirmations on phones; the only shadow.
+- **`bottom-sheet`** — PIN entry and confirmations on phones; the only shadow. A real `<dialog>`: modal when an action asks (focus moves in and returns, Escape cancels), and at ≥ 640 px a centred card; the `/admin` PIN gate is a card under the heading (Session 7d, 07c S3, S6).
 - **`empty-state`** — the Granny Doctor with her tea (line drawing) + one display-sm line ("Nothing recorded yet. The kettle is on.").
 - **`timeline`** — `run_logs` rows: time, level, code, alliance tag, the data that matters.
 - **`error-page`** — 404 "Grandma wandered off." and 500 "Something cracked.": the line set large is the page; the Granny Doctor is a small detail beside it (owner, Session 7), one original inline SVG and one CSS keyframe loop each.
 
-Ornament budget: header lace border, one footer corner per page (the yarn ball, or the Granny Doctor on the error and player pages), the seal buttons, the primary button's hatching, empty states, error pages, favicon. All of it is drawn in one hand: `docs/brand/DRAWING.md`. Never behind numbers, inside cells, on cards, as backgrounds or dividers. Every ornament is an original single-colour inline SVG under 4 KB, `aria-hidden`. Nothing from the game.
+Ornament budget: header lace border, one footer corner per page (the yarn ball, or the Granny Doctor on the error and player pages), the seal buttons, the primary button's hatching, empty states, error pages, favicon. All of it is drawn in one hand: `docs/brand/DRAWING.md`. Never behind numbers, inside cells, on cards, as backgrounds or dividers. Every ornament is an original single-colour inline SVG under 4 KB (4,096 bytes as rendered into the page), `aria-hidden`. Nothing from the game.
 
 ## Motion
 
