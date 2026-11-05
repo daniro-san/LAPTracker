@@ -77,6 +77,8 @@ export async function getEventDetail(db: Db, eventId: number) {
       id: events.id,
       name: events.name,
       eventAtUtc: events.eventAtUtc,
+      beforeAt: events.beforeAt,
+      afterAt: events.afterAt,
       isTest: events.isTest,
     })
     .from(events)
@@ -89,6 +91,8 @@ export async function getEventDetail(db: Db, eventId: number) {
       quotaRemainingAfter: snapshots.quotaRemainingAfter,
       boardPulledAt: snapshots.boardPulledAt,
       durationMs: snapshots.durationMs,
+      // One line: codes and counts only (plan §6); the chips show it.
+      error: snapshots.error,
     })
     .from(snapshots)
     .where(eq(snapshots.eventId, eventId));
