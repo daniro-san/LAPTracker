@@ -3,6 +3,8 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { photoUrl } from "../lib/sources/shared";
+
 export interface BaseMember {
   uid: number;
   name: string;
@@ -46,8 +48,7 @@ export function loadBase(): BaseAlliance[] {
         power: Number(m.power ?? 0),
         kills: Number(m.kills ?? 0),
         lv: Number(m.lv ?? 1),
-        // Every fifth member without a photo, so the drawn placeholder shows; fake on purpose.
-        avatarUrl: Number(m.uid) % 5 === 0 ? null : String(m.avatar_url ?? "") || null,
+        avatarUrl: photoUrl(typeof m.avatar_url === "string" ? m.avatar_url : null),
       })),
     }))
     .sort(

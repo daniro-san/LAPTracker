@@ -1,10 +1,9 @@
 // Upstream images served from our own origin (DECISIONS D22), so the page CSP keeps img-src 'self'.
 // Never an open proxy: the upstream URL is built from a preset id or read from our own table,
 // and only these two hosts are fetched.
-import { USER_AGENT } from "./sources/shared";
+import { photoUrl, USER_AGENT } from "./sources/shared";
 
 const BADGE_IDS = { min: 101, max: 110 };
-const AVATAR_HOST = "phs-image.globallap.com";
 
 const TIMEOUT_MS = 5_000;
 /** Badges are ~33 KB; well under Vercel's 4.5 MB response limit. */
@@ -24,17 +23,8 @@ export function badgeSource(id: number, siteBaseUrl: string): string | null {
   return `${new URL(siteBaseUrl).origin}/static/alliance/badge_${id}.png`;
 }
 
-/** The stored photo URL, only when it is plain https on the photo host. */
-export function avatarSource(stored: string | null): string | null {
-  if (!stored) return null;
-  try {
-    const url = new URL(stored);
-    const plain = url.protocol === "https:" && url.port === "" && !url.username && !url.password;
-    return plain && url.hostname === AVATAR_HOST ? url.href : null;
-  } catch {
-    return null;
-  }
-}
+/** The stored photo URL, re-checked at serve time (rows may predate the adapter check). */
+export const avatarSource = (stored: string | null): string | null => photoUrl(stored);
 
 /** 404 with no body: every failure looks the same from outside. */
 export const notFoundImage = (): Response =>

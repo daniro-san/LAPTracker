@@ -7,6 +7,21 @@ import { type AllianceSnapshotInput, type Quota, SchemaError, type SchemaCode } 
 // INVARIANT user-agent-always: without it Cloudflare answers 403 before the key is checked (plan §2).
 export const USER_AGENT = "laptracker/1.0 (+https://github.com/daniro-san/LAPTracker)";
 
+/** Player photos live on this host; anything else (the game's default heads are relative paths) is no photo. */
+const PHOTO_HOST = "phs-image.globallap.com";
+
+/** The URL when it is a real photo: plain https on PHOTO_HOST, no port or credentials; else null (D22). */
+export function photoUrl(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  try {
+    const url = new URL(raw);
+    const plain = url.protocol === "https:" && url.port === "" && !url.username && !url.password;
+    return plain && url.hostname === PHOTO_HOST ? url.href : null;
+  } catch {
+    return null;
+  }
+}
+
 /** A /v1 read may be a live pull from the game (~2 s measured). */
 export const TIMEOUT_MS = 30_000;
 
@@ -46,7 +61,7 @@ export function toSnapshotInput(
     power: m.power,
     kills: m.kills,
     lv: m.lv,
-    avatarUrl: m.avatar_url || null,
+    avatarUrl: photoUrl(m.avatar_url),
   }));
   return {
     unionId: roster.union_id,
