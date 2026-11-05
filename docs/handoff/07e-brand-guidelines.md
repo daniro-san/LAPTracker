@@ -15,7 +15,7 @@
 
 ## Decisions
 - Indexing: the page stays `noindex` and is not linked from the site (owner, 2026-11-04).
-- Branch first cut from `session/07-brand`, because PR #28 was still open (owner chose: build now, open the PR into `dev` after #28 is merged). #28 was merged during the session; the commit was rebased onto `dev` (`git rebase --onto origin/dev origin/session/07-brand`) and `pnpm check` re-run there.
+- Branch first cut from `session/07-brand`, because PR #28 was still open (owner chose: build now, open the PR into `dev` after #28 is merged). #28 was merged during the session; the commit was rebased onto `dev` (`git rebase --onto origin/dev origin/session/07-brand`) and `pnpm check` re-run there. The force-push was refused by the session's permission check, so the rebased work is on `session/07e-brand-guidelines-dev` (owner's choice); `session/07e-brand-guidelines` on the remote is the stale pre-rebase copy and can be deleted.
 - Session label 7e: this session is not in the playbook map; 7b–7d are taken, so it takes the next free letter.
 - Clear space: a quarter of the mark's width on every side; in wax, the seal is the clear space. DESIGN.md defines no clear space; this is the value the page shows.
 - Minimum sizes: line mark ≥ 24 px and solid mark 16–32 px, as the task states.
@@ -53,3 +53,5 @@ Plan changes needed: none. DESIGN.md "Mark" needs the clear-space and minimum-si
 - The 7b grep test for string props longer than two words must skip `className`; `/brand` passes every text through `copy` already, and its only literals are sample times (`12:01`, `16:01`) and `--`/`·` punctuation.
 - `tokenColor(name, "dark")` exists in `lib/brand/palette.ts` if 7b needs a dark value outside CSS.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/29
