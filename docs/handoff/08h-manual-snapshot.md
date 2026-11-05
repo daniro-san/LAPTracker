@@ -1,7 +1,7 @@
 # 08h — Manual snapshot (manual rounds)
 
 ## Built
-- Migration `drizzle/0004_cynical_vapor.sql`: `events.manual boolean not null default false`.
+- Migrations `0004` (`events.manual`) and `0005` (`events.visibility`, `events.post_public`).
 - `lib/repo/events.ts`: `createManualEvent`, `getEventInfo`; `EventInfo.manual`; `duePhases` skips manual events.
 - `POST /api/manual-event` (no body, PIN only, 201 `{event_id}`): creates a round named `Manual round <date>`.
 - `POST /api/manual-event/rename` `{event_id, name}` (PIN only): allowed once the round has a snapshot; 1–80 characters, plain text.
@@ -52,7 +52,7 @@ On `/admin`, "Manual event", for the newest round, at any time, even after it ra
 - No delete for a manual event; a leftover demo stays public on the selector until removed in the database.
 - The home page never shows a manual round, by choice.
 - A failed manual run can raise the upstream banner (D27 counts public events).
-- The `ConfirmSheet` text for "Create" says the event is public once a snapshot exists; an empty event is also listed by `GET /api/events`.
+- A new round with no snapshot yet is already listed on the public selector (default visibility).
 
 ## Next
 Session: 9 — Dry run against production
