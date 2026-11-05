@@ -651,6 +651,9 @@ No user accounts, no OAuth, no per-user permissions: a shared PIN plus rate limi
 
 ## 9. Out of scope for v1 (do not build unless asked)
 
+**Tracking:** every post-v1 item below, every deferred finding from the handoffs and every open decision is a GitHub issue labelled `roadmap` with a milestone (`v1.0 — first Saturday`, `v1.1 — after the first Saturday`, `v2 — after a few Saturdays of data`): https://github.com/daniro-san/LAPTracker/issues?q=label%3Aroadmap. The issue tracks; this document specifies. A PR that finishes an item says `Closes #N`.
+
+
 - **Translation (i18n)**: after Phase 8. Prepared for now by `lib/copy.ts` (every string, stable keys) and `Intl` formatting; the later work is a dictionary per language and a switcher, not a refactor. Languages first in line: ru, es, pt-BR.
 - Multiple servers / multiple events on one page
 - Charts / sparklines (the across-events tables in Phase 5e carry the data; a line chart is a v2 layer on top)
