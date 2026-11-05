@@ -31,8 +31,10 @@
   --sheet-shadow: rgb(30 26 31 / 0.18);
 }
 
+/* Dark follows the system unless the viewer picked a theme with the header switch, which sets
+   data-theme on <html> (app/layout.tsx reads it from the `theme` cookie). */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --paper: #1a1418;
     --ink: #eadfcb;
     --plum: #b48ba6;
@@ -43,6 +45,21 @@
     --yarn-deep: #e0b04a;
     --sage-deep: #93a585;
   }
+}
+:root[data-theme="dark"] {
+  --paper: #1a1418;
+  --ink: #eadfcb;
+  --plum: #b48ba6;
+  --seal: #d46a6a;
+  --yarn: #e0b04a;
+  --sage: #93a585;
+  --rule: #3a2f36;
+  --yarn-deep: #e0b04a;
+  --sage-deep: #93a585;
+  color-scheme: dark;
+}
+:root[data-theme="light"] {
+  color-scheme: light;
 }
 
 @theme inline {

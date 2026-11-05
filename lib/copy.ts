@@ -7,12 +7,21 @@ export const copy = {
     byline: "kept by the Old Grandmas",
     ledger: "Server 325 · Saturday Ledger",
     players: "Players",
+    darkMode: "Dark mode",
   },
   brand: {
     title: "Brand sheet",
     intro: "Mock for review. Nothing on this page reads the database.",
+    options: {
+      title: "Mark options",
+      note: "Pick one; it replaces the mark below. 200 px, then 48 / 24 / 16 px on paper and on plum.",
+      bust: "A. Granny Doctor bust",
+      brim: "B. Wide brim, yarn in the hatband",
+      crest: "C. Crest with crossed needles",
+      yarnhead: "D. Yarn-ball head",
+    },
     mark: {
-      title: "The mark",
+      title: "The mark (first draft)",
       large: "200 px",
       small: "24 px, on paper and on plum",
     },

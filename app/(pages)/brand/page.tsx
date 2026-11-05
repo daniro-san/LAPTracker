@@ -5,10 +5,13 @@ import type { ReactNode } from "react";
 import { compact, percentText, signOf } from "@/app/_ui/format";
 import { LaceBorder } from "@/lib/brand/components/LaceBorder";
 import { Logo, Mark } from "@/lib/brand/components/Logo";
+import { BrimMark, BustMark, CrestMark, YarnheadMark } from "@/lib/brand/components/MarkOptions";
 import { SealButton } from "@/lib/brand/components/SealButton";
 import { DroppedStitch, Hourglass, StitchedCheck } from "@/lib/brand/components/StatusIcons";
+import { ThemeSwitch } from "@/lib/brand/components/ThemeSwitch";
 import { YarnCorner } from "@/lib/brand/components/YarnCorner";
 import { fontVariables } from "@/lib/brand/fonts";
+import { readTheme } from "@/lib/brand/theme";
 import { copy } from "@/lib/copy";
 
 const t = copy.brand;
@@ -109,6 +112,43 @@ function SampleRow() {
         ))}
       </div>
     </div>
+  );
+}
+
+const OPTIONS = [
+  [BustMark, t.options.bust],
+  [BrimMark, t.options.brim],
+  [CrestMark, t.options.crest],
+  [YarnheadMark, t.options.yarnhead],
+] as const;
+
+function OptionsSection() {
+  return (
+    <Section title={t.options.title}>
+      <p className="mb-6 text-body-sm">{t.options.note}</p>
+      <ul className="grid gap-8 sm:grid-cols-2">
+        {OPTIONS.map(([Option, label]) => (
+          <li key={label}>
+            <p className="mb-2 font-display text-display-sm font-semibold">{label}</p>
+            <div className="text-plum">
+              <Option size={200} />
+            </div>
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <span className="flex items-center gap-3 text-plum">
+                <Option size={48} />
+                <Option size={24} />
+                <Option size={16} />
+              </span>
+              <span className="flex items-center gap-3 bg-plum p-2 text-paper">
+                <Option size={48} />
+                <Option size={24} />
+                <Option size={16} />
+              </span>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </Section>
   );
 }
 
@@ -229,13 +269,15 @@ function StatusSection() {
   );
 }
 
-export default function BrandPage() {
+export default async function BrandPage() {
+  const theme = await readTheme();
   return (
     <div className={`${fontVariables} min-h-screen bg-paper font-body text-ink`}>
       <header className="sticky top-0 z-30 text-plum">
         <div className="bg-plum text-paper">
-          <div className="mx-auto flex max-w-[960px] items-center px-4 py-3 sm:px-6">
+          <div className="mx-auto flex max-w-[960px] items-center justify-between gap-2 px-4 py-1 sm:px-6">
             <Logo name={copy.site.name} />
+            <ThemeSwitch initial={theme} label={copy.site.darkMode} />
           </div>
         </div>
         <LaceBorder className="block" />
@@ -243,6 +285,7 @@ export default function BrandPage() {
       <main className="mx-auto max-w-[960px] px-4 pt-6 pb-8 sm:px-6">
         <h1 className="font-display text-display-lg font-semibold">{t.title}</h1>
         <p className="mt-2 mb-6 text-body-sm">{t.intro}</p>
+        <OptionsSection />
         <MarkSection />
         <PaletteSection />
         <TypeSection />

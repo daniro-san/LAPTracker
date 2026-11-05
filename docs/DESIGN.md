@@ -176,7 +176,7 @@ Members of a game alliance on server 325 — Russia, Spain, Brazil, the United S
 
 ## Navigation and hierarchy
 
-- Header: wordmark · event selector · search. Nothing else.
+- Header: wordmark · event selector · search · theme switch. Nothing else.
 - Main page, top to bottom: status strip (before/after chips, legend) → the ledger, by rank, with the viewer's chosen alliance highlighted if they picked one → nothing else. The run buttons live on `/admin`.
 - Every card and row is a link to the alliance page; the alliance page is members with the same row shape; the player page is the same shape over time. **One row shape, three depths** — learn it once.
 - Back is the browser's back; breadcrumbs only on alliance and player pages (`Ledger › OGs › Player`).
@@ -197,7 +197,7 @@ A guild ledger, kept by hand, in a plague year. The page is aged paper; the ink 
 - Colour means something: sign of a delta, a warning, a neutral badge. Decoration never uses the accent colours.
 - Square corners (`{rounded.none}`) on tables and cards, 2 px on controls; the one circle is the wax seal.
 - Mobile first: designed at 360 px, cards below 640 px, every target ≥ 44 px, nothing hover-only.
-- Dark mode is the same ledger by lamplight — swapped token values, nothing redesigned.
+- Dark mode is the same ledger by lamplight — swapped token values, nothing redesigned. It follows the system until the viewer taps the header theme switch; that choice is kept in a `theme` cookie (per browser, never server state) so the server renders the right mode on first paint.
 
 ## Colors
 
@@ -257,7 +257,8 @@ Paper does not have rounded corners.
 
 The whole list. Anything else is a composition of these; a new one needs a line here first.
 
-- **`header`** — wordmark + lace border + event selector. Plum field, paper text, sticky and compact on phones.
+- **`header`** — wordmark + lace border + event selector + theme switch. Plum field, paper text, sticky and compact on phones.
+- **`theme-switch`** — one 44 px button in the header showing the current mode (sun / moon icon), `role="switch"`, accessible name "Dark mode". Sets `data-theme` on `<html>` and a one-year `theme` cookie (owner, 2026-11-04).
 - **`stat-table` / `stat-card`** — one `StatTable` component: table ≥ 640 px, cards below. Rows ≥ 44 px; numerals right-aligned.
 - **`delta-up` / `delta-down`** — `value · ±delta with arrow · ±%`; kills with the member-loss note when negative.
 - **`status-strip`** — two chips (`Before ✓ 12:01`, `After ◐ 16:01`) and the legend; replaces every status sentence.

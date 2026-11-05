@@ -1,6 +1,18 @@
 @import "tailwindcss";
 @import "../lib/brand/tokens.css";
 
+/* `dark:` follows the header theme switch first, the system setting second (lib/brand/tokens.css). */
+@custom-variant dark {
+  &:where([data-theme="dark"], [data-theme="dark"] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not([data-theme="light"]), :root:not([data-theme="light"]) *) {
+      @slot;
+    }
+  }
+}
+
 /* "Exact numbers" switch (app/_ui/Num.tsx): CSS only, so it needs no JavaScript and works on touch. */
 .num-f {
   display: none;
