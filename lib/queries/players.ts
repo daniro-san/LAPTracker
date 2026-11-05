@@ -13,6 +13,7 @@ import {
 import type { Db } from "../db";
 import { allianceSnapshots, events, memberSnapshots, snapshots } from "../schema";
 import type { Ranks } from "./ranks";
+import { chainEvent, publicEvent } from "./visibility";
 
 export const SEARCH_LIMIT = 50;
 
@@ -137,9 +138,7 @@ async function sightingsOf(db: Db, uids: number[]): Promise<(Sighting & { uid: n
     .innerJoin(allianceSnapshots, eq(allianceSnapshots.id, memberSnapshots.allianceSnapshotId))
     .innerJoin(snapshots, eq(snapshots.id, allianceSnapshots.snapshotId))
     .innerJoin(events, eq(events.id, snapshots.eventId))
-    .where(
-      and(inArray(memberSnapshots.uid, uids), eq(events.isTest, false), eq(events.manual, false)),
-    )
+    .where(and(inArray(memberSnapshots.uid, uids), chainEvent))
     .orderBy(asc(events.eventAtUtc), sql`${snapshots.phase} desc`);
   return rows.map(({ mightRank, killsRank, ...r }) => ({
     ...r,
@@ -293,7 +292,7 @@ export async function searchPlayers(db: Db, q: string): Promise<PlayerMatch[]> {
     .innerJoin(allianceSnapshots, eq(allianceSnapshots.id, memberSnapshots.allianceSnapshotId))
     .innerJoin(snapshots, eq(snapshots.id, allianceSnapshots.snapshotId))
     .innerJoin(events, eq(events.id, snapshots.eventId))
-    .where(and(ilike(memberSnapshots.name, likePattern(text)), eq(events.isTest, false)))
+    .where(and(ilike(memberSnapshots.name, likePattern(text)), publicEvent))
     .groupBy(memberSnapshots.uid)
     .orderBy(desc(lastSeen), asc(memberSnapshots.uid))
     .limit(SEARCH_LIMIT);

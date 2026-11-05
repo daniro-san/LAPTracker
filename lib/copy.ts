@@ -19,6 +19,7 @@ const source = {
     exactNumbers: "Exact numbers",
     events: "Events",
     latest: "latest",
+    manualRound: "Manual round",
     breadcrumb: "Breadcrumb",
     home: "Ledger",
   },

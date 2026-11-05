@@ -4,6 +4,7 @@ import { and, desc, eq, isNull, max } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { allianceSnapshots, events, snapshots } from "../schema";
+import { publicEvent } from "./visibility";
 
 /** A run still `running` after this long was killed. Same figure as RUN_STALE_AFTER_MS (lib/collector.ts); queries do not import the collector. */
 const RUN_STALE_AFTER_MS = 10 * 60_000;
@@ -26,7 +27,7 @@ export async function getUpstreamStatus(db: Db, now: Date): Promise<UpstreamStat
     })
     .from(snapshots)
     .innerJoin(events, eq(events.id, snapshots.eventId))
-    .where(eq(events.isTest, false))
+    .where(publicEvent)
     .orderBy(desc(snapshots.startedAt))
     .limit(1);
   if (!latest || now.getTime() - latest.startedAt.getTime() > UPSTREAM_DOWN_WINDOW_MS) {
@@ -38,13 +39,7 @@ export async function getUpstreamStatus(db: Db, now: Date): Promise<UpstreamStat
     .from(allianceSnapshots)
     .innerJoin(snapshots, eq(snapshots.id, allianceSnapshots.snapshotId))
     .innerJoin(events, eq(events.id, snapshots.eventId))
-    .where(
-      and(
-        eq(events.isTest, false),
-        eq(allianceSnapshots.isFresh, true),
-        isNull(allianceSnapshots.error),
-      ),
-    );
+    .where(and(publicEvent, eq(allianceSnapshots.isFresh, true), isNull(allianceSnapshots.error)));
   return { down: true, lastFreshAt: fresh?.at ?? null };
 }
 

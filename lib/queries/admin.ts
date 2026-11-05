@@ -10,6 +10,8 @@ import { allianceSnapshots, appErrors, events, runLogs, snapshots } from "../sch
 export interface ManualEventStatus {
   id: number;
   name: string;
+  visibility: "admin" | "standalone" | "history";
+  postPublic: boolean;
   /** One entry per phase that has a snapshot; the name can be edited once there is one. */
   phases: { phase: "before" | "after"; status: string }[];
 }
@@ -17,7 +19,12 @@ export interface ManualEventStatus {
 /** The newest manual event (D28) and the state of its two phases; null when none was created. */
 export async function latestManualEvent(db: Db): Promise<ManualEventStatus | null> {
   const [event] = await db
-    .select({ id: events.id, name: events.name })
+    .select({
+      id: events.id,
+      name: events.name,
+      visibility: events.visibility,
+      postPublic: events.postPublic,
+    })
     .from(events)
     .where(eq(events.manual, true))
     .orderBy(desc(events.id))

@@ -9,7 +9,8 @@ import { rosterChanges, type RosterChange } from "./rosters";
 /** `eventId` null = the most recent event. Null result: no such (public) event. */
 export async function getEventPage(db: Db, eventId: number | null) {
   const events = await listEvents(db);
-  const id = eventId ?? events[0]?.id;
+  // The home page (no id) shows the newest real event, never a manual round (D28).
+  const id = eventId ?? (events.find((e) => !e.manual) ?? events[0])?.id;
   if (id === undefined) return { events, page: null };
   const detail = await getEventDetail(db, id);
   if (!detail) return { events, page: null };

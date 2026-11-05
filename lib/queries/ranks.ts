@@ -1,11 +1,12 @@
 // Ledger ranks (plan Phase 5e): an alliance's position among the tracked alliances by might and by kills,
 // per snapshot and per event. The server rank is the game's own (`server_rank`, from /v1). Ranking is
 // compute.rankBy; movement is compute.rankDelta in the page.
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 import { rankBy } from "../compute";
 import type { Db } from "../db";
 import { allianceSnapshots, events, snapshots } from "../schema";
+import { chainEvent } from "./visibility";
 
 export interface Ranks {
   might: number | null;
@@ -67,7 +68,7 @@ export async function historyRanks(db: Db): Promise<Map<number, Map<number, Rank
     .from(allianceSnapshots)
     .innerJoin(snapshots, eq(snapshots.id, allianceSnapshots.snapshotId))
     .innerJoin(events, eq(events.id, snapshots.eventId))
-    .where(and(eq(events.isTest, false), eq(events.manual, false)));
+    .where(chainEvent);
   const references = new Map<number, Map<number, (typeof rows)[number]>>();
   for (const r of rows) {
     if (r.error !== null || r.power === null) continue;
