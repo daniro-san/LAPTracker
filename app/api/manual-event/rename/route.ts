@@ -3,18 +3,14 @@
 import { z } from "zod";
 
 import { authorize } from "@/lib/auth";
+import { manualName } from "@/lib/manual-event-schema";
 import { renameManualEvent } from "@/lib/repo/events";
 import { errorResponse, withContext } from "@/lib/route";
 
 const body = z
   .object({
     event_id: z.number().int().positive(),
-    name: z
-      .string()
-      .trim()
-      .min(1)
-      .max(80)
-      .regex(/^[^\p{Cc}]+$/u),
+    name: manualName,
   })
   .strict();
 
