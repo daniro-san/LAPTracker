@@ -4,7 +4,8 @@ name: tick
 
 on:
   schedule:
-    - cron: "*/15 * * * *"
+    # Every 15 minutes, off the :00/:15/:30/:45 marks: GitHub delays or drops schedule events at peak minutes (D26).
+    - cron: "7,22,37,52 * * * *"
   workflow_dispatch:
     inputs:
       phase:
@@ -31,5 +32,7 @@ jobs:
           else
             path="/api/snapshot?phase=$PHASE"
           fi
-          curl --fail --max-time 150 -X POST -o /dev/null -w "$path -> HTTP %{http_code} in %{time_total}s\n" \
-            -H "Authorization: Bearer $CRON_SECRET" "$APP_URL$path"
+          code=$(curl -sS --max-time 150 -X POST -o /dev/null -w "%{http_code}" \
+            -H "Authorization: Bearer $CRON_SECRET" "$APP_URL$path") || { echo "$path -> curl failed"; exit 1; }
+          echo "$path -> HTTP $code"
+          case "$code" in 2??) ;; *) exit 1 ;; esac
