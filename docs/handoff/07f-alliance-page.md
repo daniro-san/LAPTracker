@@ -74,3 +74,5 @@ Plan changes needed: none for Session 8. IMPLEMENTATION_PLAN.md Phase 5c still d
 <adjustments>
 - The alliance page has no "Min might" / "Max might" inputs any more; if a check in Session 8 or 9 reads the alliance page, it shows 20 member cards and a "Show all (n)" button, not 100 cards.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/38
