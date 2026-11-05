@@ -41,3 +41,4 @@ Plan changes needed: IMPLEMENTATION_PLAN.md §11.6 and SESSION_PLAYBOOK.md item 
 <adjustments>
 - Releases are now cut with Actions → Prepare release; Session 10, if it needs a release, uses that after the first workflow-carrying release has been done by hand.
 </adjustments>
+https://github.com/daniro-san/LAPTracker/pull/79
