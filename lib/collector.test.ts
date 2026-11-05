@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { MAX_UPSTREAM_CALLS, runSnapshot } from "./collector";
+import { MAX_UPSTREAM_CALLS, RUN_DEADLINE_MS, runSnapshot } from "./collector";
 import {
   ago,
   EVENT_ID,
@@ -192,5 +192,52 @@ describe("runSnapshot", () => {
       duration_ms: 0,
       quota_remaining: 900,
     });
+  });
+});
+
+describe("runSnapshot deadline", () => {
+  afterEach(() => vi.useRealTimers());
+
+  const hangingV1 = () => {
+    const v1 = fakeV1(fresh);
+    v1.fetchAlliance = async (id, onAttempt) => {
+      onAttempt?.(0);
+      v1.calls.push(id);
+      return new Promise(() => {});
+    };
+    return v1;
+  };
+
+  it("closes partial at the deadline when every read hangs, counting calls and naming every alliance", async () => {
+    vi.useFakeTimers({ now: T0 });
+    const v1 = hangingV1();
+    const { deps, repo } = makeDeps(v1);
+    deps.now = () => new Date();
+    const lines: string[] = [];
+    deps.logger = { ...deps.logger, warn: async (code) => void lines.push(code) };
+
+    const run = runSnapshot(EVENT_ID, "before", deps);
+    await vi.advanceTimersByTimeAsync(RUN_DEADLINE_MS + 1_000);
+    const summary = await run;
+
+    expect(summary).toMatchObject({ status: "partial", error: "deadline", callsUsed: 5 });
+    expect(summary.durationMs).toBeLessThanOrEqual(RUN_DEADLINE_MS + 1_000);
+    expect(summary.durationMs).toBeGreaterThanOrEqual(RUN_DEADLINE_MS);
+    expect(summary.failed.map((f) => f.error)).toEqual(IDS.map(() => "not fetched: deadline"));
+    expect(summary.failed.map((f) => f.unionId)).toEqual(IDS);
+    expect(rowsOf(repo, summary.snapshotId)).toEqual([]);
+    expect(lines.filter((c) => c === "run.deadline")).toHaveLength(1);
+  });
+
+  it("leaves a run that finishes in time unchanged", async () => {
+    vi.useFakeTimers({ now: T0 });
+    const { deps } = makeDeps(fakeV1((id) => roster(id, ago(T0, minutes(2)))));
+    deps.now = () => new Date();
+
+    const summary = await runSnapshot(EVENT_ID, "before", deps);
+    await vi.advanceTimersByTimeAsync(RUN_DEADLINE_MS * 2);
+
+    expect(summary).toMatchObject({ status: "complete", callsUsed: IDS.length + 1, error: null });
+    expect(summary.failed).toEqual([]);
   });
 });
