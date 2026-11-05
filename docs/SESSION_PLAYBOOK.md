@@ -561,7 +561,7 @@ Mock approved by me; pages re-screenshotted; 404 and error pages exist with thei
 ## Session 7b — Usability and language-light pass
 
 **Model:** opus · **Effort:** medium · **Mode:** default
-**Before starting (you, by hand):** pick three alliance members who read little or no English (ideally RU, ES, PT) and tell them a link is coming; the session gives you the message to send.
+**Before starting (you, by hand):** nothing. The persona test replaces the real-member test (plan Phase 5f).
 
 ```text
 <session>
@@ -573,7 +573,7 @@ Session 7b of SESSION_PLAYBOOK.md. Read CLAUDE.md, docs/DESIGN.md in full ("Who 
 2. Move every user-facing string into lib/copy.ts (stable keys, English values, one module); components import from it. Add a test that greps app/ for JSX text nodes and string props longer than 2 words outside lib/copy.ts and fails on hits (allow numbers, punctuation and keys).
 3. Navigation: breadcrumbs on alliance and player pages, search in the header, one row shape at the three depths. No tooltip carries information that isn't also visible.
 3b. Rank movement (plan Phase 5e): `#n` beside every tag with `▲k` / `▼k` / `=` — before → after on the comparison page (ledger rank by might and by kills, server rank from the API), event over event on the alliance and player "Across events" rows. `compute.rankDelta` pure with a test; `—` when there is no previous value.
-4. Write the message for the owner to send to three members (in English; the owner translates if needed): the preview URL and three tasks — find your alliance's kills change; which alliance lost the most members; when are the numbers from. Wait for the owner's answers; record each member's language, answers, time and confusion in the handoff; fix what failed, in this session, and re-screenshot.
+4. The ten-second test without real members (plan Phase 5f): add a dev-only blank dictionary mode (every lib/copy.ts value replaced by `░` × its length; enabled only by an env var that is never set in Vercel) and screenshot main, alliance and player at 390 px with it. Then spawn three persona subagents (sonnet, fresh context each, no access to the repo or to this conversation): an alliance officer in Russia, a casual member in Spain, a player in Brazil on a slow phone. Give each only the blank screenshots and three tasks — find alliance NSE's kills change; which alliance lost the most members; when are the numbers from — and ask for the answer, the time they'd need, and where they hesitated. Record all three verbatim in the handoff; a wrong answer or a hesitation on a data row is a finding you fix in this session, then re-screenshot and re-run that persona. Keep the blank screenshots in docs/screenshots/ as the baseline.
 5. Screenshots at 360/390/1280, light and dark, for every page touched.
 </task>
 
@@ -584,7 +584,7 @@ Session 7b of SESSION_PLAYBOOK.md. Read CLAUDE.md, docs/DESIGN.md in full ("Who 
 </constraints>
 
 <done_when>
-Every public page passes the language-light rules; ranks and their movement show on cards, rows and across-events sections; lib/copy.ts holds all strings and the grep test passes; the three-member test is recorded with its fixes; screenshots attached; docs/handoff/07b-usability.md written. PR: "feat: session 7b — usability and language-light pass" (into dev).
+Every public page passes the language-light rules; ranks and their movement show on cards, rows and across-events sections; lib/copy.ts holds all strings and the grep test passes; the blank-dictionary screenshots and the three persona reports are recorded with their fixes; screenshots attached; docs/handoff/07b-usability.md written. PR: "feat: session 7b — usability and language-light pass" (into dev).
 </done_when>
 ```
 
