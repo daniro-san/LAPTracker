@@ -42,6 +42,8 @@ export const rosterFields = {
   name: z.string(),
   power: z.number(),
   member_count: z.number().int(),
+  // Optional: the internal source does not send it, and a missing one never fails a run.
+  capacity: z.number().int().nullable().optional(),
   level: z.number().int().nullable(),
   badge_id: z.number().int().nullable().optional(),
   rank: z.object({ rank: z.number().int() }).nullable(),
@@ -68,6 +70,7 @@ export function toSnapshotInput(
     tag: roster.abbr,
     name: roster.name,
     memberCount: roster.member_count,
+    capacity: roster.capacity ?? null,
     totalPower: roster.power,
     // INVARIANT total-kills-is-roster-sum
     totalKills: sumKills(members),

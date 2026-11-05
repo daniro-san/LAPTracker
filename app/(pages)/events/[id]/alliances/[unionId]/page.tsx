@@ -11,7 +11,7 @@ import { DetailTable, figureRows, type RankPair } from "@/app/_ui/DetailLines";
 import { ExactToggle } from "@/app/_ui/ExactToggle";
 import { allianceLabel, type Clock } from "@/app/_ui/format";
 import { requestClock } from "@/app/_ui/locale";
-import { memberViews } from "@/app/_ui/member-views";
+import { canCompare, memberViews } from "@/app/_ui/member-views";
 import { MembersExplorer } from "@/app/_ui/MembersExplorer";
 import { MyAllianceToggle } from "@/app/_ui/MyAlliance";
 import { Delta, Num, Rank } from "@/app/_ui/Num";
@@ -168,6 +168,18 @@ const loadAlliance = cache((eventId: number, unionId: number) =>
   }),
 );
 
+function MemberList({ detail, canDelta }: { detail: Detail; canDelta: boolean }) {
+  const { before, after, membersBefore, membersAfter } = detail;
+  return (
+    <MembersExplorer
+      members={memberViews(membersBefore, membersAfter)}
+      canDelta={canDelta}
+      compared={canCompare(membersBefore, membersAfter)}
+      capacity={after?.capacity ?? before?.capacity ?? null}
+    />
+  );
+}
+
 type Params = Promise<{ id: string; unionId: string }>;
 
 /** The two ids, or null when either is not a plain number. */
@@ -249,10 +261,7 @@ export default async function AlliancePage({ params }: { params: Params }) {
             </a>
           )}
         </div>
-        <MembersExplorer
-          members={memberViews(detail.membersBefore, detail.membersAfter)}
-          canDelta={canDelta}
-        />
+        <MemberList detail={detail} canDelta={canDelta} />
         <AcrossEvents unionId={unionId} history={history} clock={clock} />
       </main>
       <SiteFooter />

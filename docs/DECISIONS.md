@@ -285,3 +285,8 @@ Why: the channels now carry several kinds of events (Saturday, rehearsal, manual
 - **No locking.** A Before and an After of one event never run at once (one claim per event and phase), so the read of the stored id and its write cannot race. Two forced re-runs of the same phase pressed together could, as they could already double-send.
 - **One-shot messages are unchanged:** Friday quota check, PIN lock, app errors and skipped rehearsals post a new message each (they belong to no event).
 - **Not verified against Discord:** edits through `message_reference` replies were not used (unverified for webhooks); threads are not possible in a plain text channel.
+
+## D32 — Alliance capacity is stored; a one-roster member list is not diffed (2026-11-05)
+
+- `alliance_snapshots.capacity` (nullable integer, migration 0007) holds the `/v1` `capacity` field. The public pages show `members / capacity`, and only the plain count when it is null (old rows, internal source). It is an alliance field, not a roster field.
+- The member list compares the two rosters only when both are non-empty. Otherwise the non-empty one is the current roster, with no Joined / Left status and no change figures. Before this, a Before-only event listed every member as Left.

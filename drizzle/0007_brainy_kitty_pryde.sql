@@ -1,0 +1,1 @@
+ALTER TABLE "alliance_snapshots" ADD COLUMN "capacity" integer;

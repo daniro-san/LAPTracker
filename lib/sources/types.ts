@@ -25,6 +25,8 @@ export interface AllianceSnapshotInput {
   tag: string;
   name: string;
   memberCount: number;
+  /** The most members the alliance can hold; null when the source does not say. */
+  capacity?: number | null;
   totalPower: number;
   /** sum(members.kills), nulls as 0. INVARIANT total-kills-is-roster-sum */
   totalKills: number;

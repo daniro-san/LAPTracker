@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { filterMembers, mightSteps, type MemberFilter, type MemberView } from "./member-views";
+import {
+  canCompare,
+  filterMembers,
+  memberViews,
+  mightSteps,
+  type MemberFilter,
+  type MemberView,
+} from "./member-views";
 
 const member = (uid: number, name: string, before: number | null, after: number | null) =>
   ({
@@ -34,5 +41,34 @@ describe("filterMembers", () => {
   it("sorts by change with members without one last, flips on desc, and searches names", () => {
     expect(names({ sort: "mightDelta" })).toEqual(["Ann", "Bob", "Cid", "Dana"]);
     expect(names({ sort: "name", desc: false, name: "a" })).toEqual(["Ann", "Dana"]);
+  });
+});
+
+describe("memberViews", () => {
+  const row = (uid: number, name: string, power: number) => ({
+    uid,
+    name,
+    power,
+    kills: 1,
+    lv: 20,
+    hasAvatar: false,
+  });
+  const before = [row(1, "Ann", 50), row(2, "Bob", 90), row(4, "Dana", 70)];
+
+  it("shows the Before roster as the current roster, with no joined or left, while there is no After", () => {
+    const views = memberViews(before, []);
+    expect(views.map((m) => m.status)).toEqual(["", "", ""]);
+    expect(views.map((m) => m.rank.before)).toEqual([3, 1, 2]);
+    expect(canCompare(before, [])).toBe(false);
+  });
+
+  it("still marks joined and left when both rosters exist", () => {
+    const views = memberViews(before, [row(1, "Ann", 60), row(3, "Cid", 30)]);
+    expect(Object.fromEntries(views.map((m) => [m.name, m.status]))).toEqual({
+      Ann: "",
+      Cid: "joined",
+      Bob: "left",
+      Dana: "left",
+    });
   });
 });
