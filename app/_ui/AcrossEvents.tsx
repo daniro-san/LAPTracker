@@ -14,8 +14,10 @@ import { FreshDots } from "./Status";
 
 const SHOWN = 12;
 
-/** The section's id, for the jump link at the top of the alliance page (07c N5). */
+/** The section's id, for the jump link in the alliance page's title row (07c N5, #51). */
 export const ACROSS_ID = "across-events";
+/** The alliance page's title row, where the section's back link returns to (#51). */
+export const TITLE_ID = "alliance-title";
 
 /** The value before the delta, so the percentage is relative to the previous event. */
 const baseOf = (value: number | null, delta: number | null) =>
@@ -140,7 +142,15 @@ export function AcrossEvents({
   );
   return (
     <section id={ACROSS_ID} className="mt-8 scroll-mt-20">
-      <h2 className="mb-3 font-subhead text-display-md">{l.acrossEvents}</h2>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-x-3">
+        <h2 className="font-subhead text-display-md">{l.acrossEvents}</h2>
+        <a
+          href={`#${TITLE_ID}`}
+          className="inline-flex min-h-11 items-center px-2 text-sm font-medium text-plum hover:underline"
+        >
+          {l.toTop} <span aria-hidden="true">&nbsp;↑</span>
+        </a>
+      </div>
       {table(rows.slice(0, SHOWN))}
       {rows.length > SHOWN && (
         <details className="mt-3">

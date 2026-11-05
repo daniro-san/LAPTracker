@@ -197,6 +197,7 @@ Members of a game alliance on server 325 — Russia, Spain, Brazil, the United S
 - Main page, top to bottom: the title "Server 325 · Event Ledger" with the byline under the header (the 360 px header has no room for it) → the event's date and start time → status strip (last updated / next update chips) → legend → the ledger, by rank, with the viewer's chosen alliance highlighted if they picked one → nothing else. The run buttons live on `/admin`.
 - Every card and row is a link to the alliance page; the alliance page is members with the same row shape; the player page is the same shape over time. **One row shape, three depths** — learn it once.
 - Back is the browser's back; breadcrumbs only on alliance and player pages (`Ledger › OGs › Player`).
+- The alliance page's title row ends with "Across events ↓", a jump link to that section under the member list; the section's heading row has "Back up ↑" to the title row (issue #51). Both are ≥ 44 px; the jump link is left out when the section has no rows.
 - No modals except the bottom sheet for the PIN; no tooltips that carry information; nothing on hover only.
 
 ## Mascot: the Granny Doctor

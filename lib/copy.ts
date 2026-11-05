@@ -45,6 +45,7 @@ const source = {
     was: "was {name}",
     since: "since {date}",
     acrossEvents: "Across events",
+    toTop: "Back up",
     showAll: "All events ({n})",
     myAlliance: "My alliance",
     names: "Names",
