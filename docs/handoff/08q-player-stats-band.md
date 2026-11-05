@@ -38,3 +38,5 @@ Plan change: none.
 - Session 9 step 3: also open `/players/<uid>` for one rehearsed member after the Before run is public in history (a rehearsal is not, so use a Saturday or a manual round set to "public in history"); the band should show that snapshot's time. A rehearsal alone leaves the band on the previous real event.
 - If the owner still wants to settle the Intel-panel numbers, ask for the profile's uid first; our data does not contain 17555587096.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/97
