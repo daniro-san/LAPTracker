@@ -19,8 +19,8 @@ export interface Embed {
 
 export interface Notifier {
   public(embed: Embed): Promise<void>;
-  /** `test`: an is_test event (plan Phase 6): the line starts with `[rehearsal]`. */
-  admin(content: string, options?: { test: boolean }): Promise<void>;
+  /** `test`: an is_test event (plan Phase 6): the line starts with `[rehearsal]`; `manual`: `[manual]`. */
+  admin(content: string, options?: { test?: boolean; manual?: boolean }): Promise<void>;
 }
 
 type NotifyEnv = Pick<
@@ -65,10 +65,11 @@ export function createNotifier(env: NotifyEnv, fetchFn: typeof fetch): Notifier 
       send(env.NOTIFY_WEBHOOK_PUBLIC, { embeds: [embed], allowed_mentions: { parse: [] } }),
     admin: (content, options) =>
       send(env.NOTIFY_WEBHOOK_ADMIN, {
-        content: `${prefix}${options?.test ? `${copy.discord.admin.test} ` : ""}${content}`.slice(
-          0,
-          DISCORD_MAX_CONTENT,
-        ),
+        content:
+          `${prefix}${options?.test ? `${copy.discord.admin.test} ` : options?.manual ? `${copy.discord.admin.manual} ` : ""}${content}`.slice(
+            0,
+            DISCORD_MAX_CONTENT,
+          ),
         allowed_mentions: adminMentions,
       }),
   };
@@ -158,6 +159,8 @@ export interface PublicContext {
   /** This snapshot's rows, and the before snapshot's when this is the after one. */
   alliances: PublicAlliance[];
   before: PublicAlliance[] | null;
+  /** A manual round's name: the message says it is a manual round (D28). Null for a Saturday event. */
+  roundName?: string | null;
 }
 
 const MOVERS = 3;
@@ -195,7 +198,7 @@ export function publicSnapshotMessage(summary: RunSummary, ctx: PublicContext): 
   // The page's status chip (app/_ui/Status.tsx): the icon says partial; the stale line names who.
   const chip = summary.status === "failed" ? copy.status.lastFailed : copy.status.lastUpdated;
   const title = `${STATE_ICON[summary.status]} ${fill(chip, { time: ctx.clock.at(ctx.finishedAt) })}`;
-  const lines: string[] = [];
+  const lines: string[] = ctx.roundName ? [fill(t.manual, { name: ctx.roundName })] : [];
   if (summary.status !== "failed") {
     const bad = ctx.alliances.filter((a) => !usable(a));
     lines.push(
@@ -224,22 +227,30 @@ export interface AdminContext {
   startedAt: Date;
   finishedAt: Date;
   logWriteFailures: number;
+  /** A manual round's name: it has no schedule, so the "due" line is left out (D28). */
+  roundName?: string | null;
 }
 
 export function adminSnapshotMessage(summary: RunSummary, ctx: AdminContext): string {
   const t = copy.discord.admin;
   const lagMin = Math.round((ctx.startedAt.getTime() - ctx.scheduledAt.getTime()) / 60_000);
+  const manual = ctx.roundName != null;
   const lines = [
-    fill(t.run, {
+    fill(manual ? t.manualRun : t.run, {
       icon: STATE_ICON[summary.status],
+      name: ctx.roundName ?? "",
       phase: copy.admin.phase[ctx.phase],
       state: STATE_WORD[summary.status],
       at: ctx.clock.stamp(ctx.finishedAt),
     }),
-    fill(t.due, {
-      at: ctx.clock.stamp(ctx.scheduledAt),
-      lag: lagMin < 0 ? `${MINUS}${-lagMin} min` : fill(t.lag, { n: lagMin }),
-    }),
+    ...(manual
+      ? []
+      : [
+          fill(t.due, {
+            at: ctx.clock.stamp(ctx.scheduledAt),
+            lag: lagMin < 0 ? `${MINUS}${-lagMin} min` : fill(t.lag, { n: lagMin }),
+          }),
+        ]),
     fill(t.usage, {
       calls: summary.callsUsed,
       left: summary.quotaRemainingAfter ?? t.unknown,

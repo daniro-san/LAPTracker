@@ -24,6 +24,8 @@ export async function setEventAllianceIds(db: Db, eventId: number, ids: number[]
 /** What a run needs to know about its event. */
 export interface EventInfo {
   id: number;
+  /** `events.name`: a manual round's name goes in its Discord messages. */
+  name: string;
   isTest: boolean;
   /** D28: a manual event is run only by the admin buttons and has no schedule. */
   manual: boolean;
@@ -35,6 +37,7 @@ export interface EventInfo {
 
 const infoColumns = {
   id: events.id,
+  name: events.name,
   isTest: events.isTest,
   manual: events.manual,
   postPublic: events.postPublic,
