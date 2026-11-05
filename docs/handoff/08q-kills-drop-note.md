@@ -36,3 +36,4 @@ Plan change: none.
 - Session 9: after the After run, open the event page and an alliance page for any alliance whose Might or Kills fell; it should carry `*` after the change and the legend should list `* Includes member changes`. On a page with no falling total with leavers the legend must not list it. Check both at 360 px.
 </adjustments>
 
+https://github.com/daniro-san/LAPTracker/pull/98
