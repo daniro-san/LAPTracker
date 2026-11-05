@@ -31,3 +31,4 @@ Plan changes needed: §3.1 and Phase 6: cron minutes and the status check (D26).
 <adjustments>
 - The tick workflow's schedule is `7,22,37,52 * * * *`; a missing scheduled run means GitHub did not start it, so check Actions before the app.
 </adjustments>
+https://github.com/daniro-san/LAPTracker/pull/73
