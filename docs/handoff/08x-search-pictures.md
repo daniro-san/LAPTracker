@@ -29,3 +29,5 @@ Plan change: none.
 <adjustments>
 - Search rows now request `/img/avatar/[uid]` and `/img/badge/[id]` like roster rows: up to 50 photos per search page, each cached by the route's `Cache-Control`. Nothing for Session 9 to measure beyond what roster pages already cost.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/111
