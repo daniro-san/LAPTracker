@@ -48,3 +48,4 @@ Plan changes needed: §11.6 / Phase 6: `main` has no `required_linear_history` (
 - The Session 9 rehearsal is only meaningful once the Session 8 step 4 scheduler proof has passed.
 </adjustments>
 
+https://github.com/daniro-san/LAPTracker/pull/40
