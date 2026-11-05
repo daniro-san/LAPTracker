@@ -50,3 +50,5 @@ Plan changes needed: none.
 - Quota: each manual snapshot costs about 21 calls; count them when reconciling Session 9's arithmetic for today.
 - Manual events appear in `/admin/runs` as normal runs with the event's name.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/77
