@@ -18,6 +18,7 @@ export function dataRow(
     tag: a.tag,
     name: a.name,
     memberCount: a.memberCount,
+    capacity: a.capacity ?? null,
     totalPower: a.totalPower,
     // INVARIANT total-kills-is-roster-sum: the board number is stored beside it, never instead.
     totalKills: a.totalKills,

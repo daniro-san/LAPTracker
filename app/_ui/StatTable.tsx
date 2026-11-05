@@ -17,9 +17,13 @@ export interface StatMetric {
   /** The earlier value this one is compared with (before → after). */
   from?: number | null;
   delta: number | null;
+  /** There is nothing to compare with (one snapshot): no change line, not even `—`. */
+  noChange?: boolean;
   /** The delta's percentage is relative to this; defaults to `from`. */
   base?: number | null;
   note?: string;
+  /** The change fell while members left: it carries the `*` mark the legend explains. */
+  memberMark?: boolean;
   /** Shown only in the row's Details panel, beside the before → after values. */
   detailNote?: string | undefined;
   /** A second change shown under the first, e.g. the change since the previous event. */
@@ -29,10 +33,12 @@ export interface StatMetric {
 export interface StatRow {
   key: string;
   href?: string;
+  /** A pale background class that marks the row (the alliance leader and officers), beside its mark. */
+  tint?: string;
   /** The element id, for "jump to my alliance". */
   anchor?: string;
-  /** `#n` and its movement (compute.rankDelta), before the picture. */
-  rank?: { n: number | null; move: number | null };
+  /** `#n` and its movement (compute.rankDelta), before the picture; no `move`: only `#n`. */
+  rank?: { n: number | null; move?: number | null };
   lead: ReactNode;
   /** A badge or photo before the lead (app/_ui/Pictures.tsx). */
   icon?: ReactNode;
@@ -61,9 +67,11 @@ function MetricCell({ m }: { m: StatMetric }) {
           )}
           <Num n={m.value} />
         </span>
-        <span className="text-sm tabular-nums sm:block">
-          <Delta delta={m.delta} base={base} note={m.note} />
-        </span>
+        {!m.noChange && (
+          <span className="text-sm tabular-nums sm:block">
+            <Delta delta={m.delta} base={base} note={m.note} memberMark={m.memberMark === true} />
+          </span>
+        )}
         {m.vs && (
           <span className={`basis-full text-xs tabular-nums ${MUTED} sm:block`}>
             {m.vs.label} <Delta delta={m.vs.delta} base={m.vs.base} />
@@ -160,7 +168,7 @@ export function StatTable({
             key={row.key}
             id={row.anchor}
             style={grid}
-            className="stat-card relative mb-3 grid scroll-mt-20 grid-cols-1 gap-y-1.5 border border-rule p-3 data-[mine]:bg-yarn/15 sm:mb-0 sm:grid-cols-[var(--cols)] sm:gap-x-3 sm:border-0 sm:border-b sm:py-2"
+            className={`stat-card relative mb-3 grid scroll-mt-20 grid-cols-1 gap-y-1.5 border border-rule p-3 data-[mine]:bg-yarn/15 sm:mb-0 sm:grid-cols-[var(--cols)] sm:gap-x-3 sm:border-0 sm:border-b sm:py-2 ${row.tint ?? ""}`}
           >
             <Lead row={row} />
             {row.metrics.map((m, i) => (

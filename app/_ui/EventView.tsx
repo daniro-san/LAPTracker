@@ -86,7 +86,7 @@ function toStatRow(
   };
 }
 
-/** "Server 325 · Saturday Ledger", "kept by the Old Grandmas": the page title, under the header. */
+/** "Server 325 · Event Ledger", "kept by the Old Grandmas": the page title, under the header. */
 function TitleBand() {
   return (
     <div className="mb-3">
@@ -143,7 +143,7 @@ export async function EventView({
           manual={detail.manual}
           clock={clock}
         />
-        <Legend />
+        <Legend memberMark={rows.some((r) => r.metrics.some((m) => m.memberMark))} />
         <MyAllianceJump tags={Object.fromEntries(rows.map((r) => [r.unionId, r.tag]))} />
         <StatTable
           leadLabel={copy.ledger.alliance}

@@ -11,9 +11,9 @@ const source = {
   site: {
     name: "OG's LAP Tracker",
     shortName: "LAP Tracker",
-    description: "Saturday event snapshots for server 325 alliances.",
+    description: "Event snapshots for server 325 alliances.",
     byline: "kept by the Old Grandmas",
-    ledger: "Server 325 · Saturday Ledger",
+    ledger: "Server 325 · Event Ledger",
     players: "Players",
     darkMode: "Dark mode",
     exactNumbers: "Exact numbers",
@@ -33,6 +33,9 @@ const source = {
     kills: "Kills",
     members: "Members",
     level: "Level",
+    player: "Player",
+    sanctuary: "Sanctuary",
+    asOf: "As of {time}",
     details: "Details",
     change: "Change",
     serverTime: "Server time",
@@ -85,6 +88,9 @@ const source = {
     same: "Same",
     stale: "Stale",
     rank: "Rank",
+    rounded: "Rounded: tick Exact numbers for the full figure",
+    /** The footnote mark `*` on a falling Might or Kills change when members left. */
+    members: "Includes member changes",
   },
   members: {
     search: "Member name",
@@ -99,10 +105,17 @@ const source = {
     clear: "Clear",
     clearAll: "Clear all",
     showAll: "Show all ({n})",
+    /** Beside the member count while a filter is on. */
+    shown: "{n} shown",
     highFirst: "Highest first",
     lowFirst: "Lowest first",
     joined: "Joined",
     left: "Left",
+  },
+  /** The alliance's R5 and titled R4 officers: a section on the alliance page, a mark in the member list. */
+  leadership: {
+    title: "Leadership",
+    leader: "Leader",
   },
   search: {
     title: "Players",

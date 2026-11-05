@@ -12,6 +12,7 @@ import {
 } from "../compute";
 import type { Db } from "../db";
 import { allianceSnapshots, events, memberSnapshots, snapshots } from "../schema";
+import { rolesOf, type Role } from "./leadership";
 import type { Ranks } from "./ranks";
 import { chainEvent, publicEvent } from "./visibility";
 
@@ -20,6 +21,7 @@ export const SEARCH_LIMIT = 50;
 type Phase = "before" | "after";
 
 interface Sighting {
+  allianceSnapshotId: number;
   eventId: number;
   eventName: string;
   eventAtUtc: Date;
@@ -94,6 +96,15 @@ export interface PlayerHistory {
     badgeId: number | null;
     eventId: number;
     hasAvatar: boolean;
+    /** The newest sighting in a chain event (D28): Might, Kills and Sanctuary level as stored then. */
+    power: number | null;
+    kills: number | null;
+    lv: number | null;
+    /** When the game's data was read for that sighting, and whether it was fresh. */
+    updatedAt: Date | null;
+    isFresh: boolean;
+    /** R5 leader or titled R4 officer in that sighting's alliance read; null for any other rank or no rank data. */
+    role: Role | null;
   };
   /** Oldest first. */
   rows: PlayerEventRow[];
@@ -111,6 +122,7 @@ function peerRank(own: typeof memberSnapshots.power, column: "power" | "kills") 
 }
 
 const sightingColumns = {
+  allianceSnapshotId: memberSnapshots.allianceSnapshotId,
   eventId: events.id,
   eventName: events.name,
   eventAtUtc: events.eventAtUtc,
@@ -245,6 +257,7 @@ export async function playerHistory(db: Db, uid: number): Promise<PlayerHistory 
   const sightings = await sightingsOf(db, [uid]);
   const latest = sightings.at(-1);
   if (!latest) return null;
+  const roles = await rolesOf(db, [latest.allianceSnapshotId]);
   const sightedNames: NameSighting[] = sightings.map((s) => ({
     tag: "",
     name: s.name,
@@ -259,6 +272,12 @@ export async function playerHistory(db: Db, uid: number): Promise<PlayerHistory 
       badgeId: latest.badgeId,
       eventId: latest.eventId,
       hasAvatar: latest.hasAvatar,
+      power: latest.power,
+      kills: latest.kills,
+      lv: latest.lv,
+      updatedAt: latest.sourceUpdatedAt,
+      isFresh: latest.isFresh,
+      role: roles.get(latest.allianceSnapshotId)?.get(uid) ?? null,
     },
     rows: eventRows(sightings),
     names: nameHistory(sightedNames),

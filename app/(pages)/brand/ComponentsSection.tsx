@@ -1,5 +1,7 @@
 // /brand "Components": every control and ornament the site uses, each with when to use it. The
 // fields are live but belong to no form; nothing here submits.
+import { MEMBER_MARK } from "@/app/_ui/format";
+import { MemberMark } from "@/app/_ui/Num";
 import { Button } from "@/lib/brand/components/Button";
 import { CheckField } from "@/lib/brand/components/CheckField";
 import { Chip } from "@/lib/brand/components/Chip";
@@ -7,6 +9,7 @@ import { FactList } from "@/lib/brand/components/FactList";
 import { LaceBorder } from "@/lib/brand/components/LaceBorder";
 import { Notice } from "@/lib/brand/components/Notice";
 import { RadioField } from "@/lib/brand/components/RadioField";
+import { Crown, OfficerStar, RoleMark } from "@/lib/brand/components/RoleMark";
 import { SealButton } from "@/lib/brand/components/SealButton";
 import { DroppedStitch, Hourglass, StitchedCheck } from "@/lib/brand/components/StatusIcons";
 import { YarnCorner } from "@/lib/brand/components/YarnCorner";
@@ -62,6 +65,25 @@ function Ornaments() {
       <Spec name={t.rule.name} use={t.rule.use} plate="text-plum">
         <hr className="drawn-rule w-full" />
       </Spec>
+      <Spec name={t.roleMark.name} use={t.roleMark.use}>
+        <div className="flex w-full flex-col gap-2 text-sm">
+          <p className="flex items-center gap-2 bg-plum/10 px-2 py-1">
+            <RoleMark role={{ kind: "leader" }} />
+            {t.roleMark.leader}
+          </p>
+          <p className="flex items-center gap-2 bg-sage/10 px-2 py-1">
+            <RoleMark role={{ kind: "officer", title: t.roleMark.officer }} />
+            {t.roleMark.officer}
+          </p>
+        </div>
+      </Spec>
+      <Spec name={t.leadership.name} use={t.leadership.use}>
+        <p className="flex items-center gap-2 border border-rule px-3 py-2 text-sm">
+          <Crown className="size-4 text-plum" />
+          <OfficerStar className="size-4 text-sage" />
+          {copy.leadership.title}
+        </p>
+      </Spec>
       <Spec name={t.lace.name} use={t.lace.use} plate="text-plum">
         <div className="w-full">
           <div className="h-6 bg-plum" />
@@ -91,6 +113,18 @@ export function ComponentsSection() {
         <div className="sm:col-span-2">
           <Chips />
         </div>
+        <Spec name={t.memberMark.name} use={t.memberMark.use}>
+          <span className="font-medium text-seal">
+            {t.memberMark.sample}
+            <MemberMark />
+          </span>
+          <span className="text-xs text-ink/70">
+            <span aria-hidden="true" className="font-semibold text-ink">
+              {MEMBER_MARK}{" "}
+            </span>
+            {copy.legend.members}
+          </span>
+        </Spec>
         <Spec name={t.badge.name} use={t.badge.use}>
           <span className="rounded-xs bg-sage px-2 py-1 text-label font-semibold tracking-[0.04em] text-paper uppercase">
             {t.badge.label}

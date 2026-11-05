@@ -285,3 +285,18 @@ Why: the channels now carry several kinds of events (Saturday, rehearsal, manual
 - **No locking.** A Before and an After of one event never run at once (one claim per event and phase), so the read of the stored id and its write cannot race. Two forced re-runs of the same phase pressed together could, as they could already double-send.
 - **One-shot messages are unchanged:** Friday quota check, PIN lock, app errors and skipped rehearsals post a new message each (they belong to no event).
 - **Not verified against Discord:** edits through `message_reference` replies were not used (unverified for webhooks); threads are not possible in a plain text channel.
+
+## D32 — Alliance capacity is stored; a one-roster member list is not diffed (2026-11-05)
+
+- `alliance_snapshots.capacity` (nullable integer, migration 0007) holds the `/v1` `capacity` field. The public pages show `members / capacity`, and only the plain count when it is null (old rows, internal source). It is an alliance field, not a roster field.
+- The member list compares the two rosters only when both are non-empty. Otherwise the non-empty one is the current roster, with no Joined / Left status and no change figures. Before this, a Before-only event listed every member as Left.
+
+## D33 — A `*` on a falling total whose members left, with one legend item (2026-11-05)
+
+Why: an alliance's Kills (and Might) total is the sum of its members, so it falls when members leave. A tester read that as a bug. The note "−N Members" already sits in Details, but a note on the Kills row was read as a kills figure (7b), so the row itself needs something smaller than words.
+
+- **Mark.** `*` after the change (`▼ −3.2M (−0.4%) *`), when the delta is negative and at least one member left (`fellWithLeavers`, `app/_ui/event-rows.ts`). It applies to Might as well as Kills: the cause is the same and the check is the same function. "Includes member changes" stays true when the fall is partly something else.
+- **Not `±`.** `±` already means "change" on the site (`± Kills` sort chips) and beside a number reads as a margin of error. The asterisk is the language-free footnote sign.
+- **Legend.** One item, `* Includes member changes`, shown only when the page has at least one mark (`Legend memberMark`). Event page and alliance page; the player page has no alliance totals. Nothing hover-only: the legend is always visible; the mark carries the same words as screen-reader text.
+- **Details unchanged.** The "−N Members" note stays in Details. No number is computed differently.
+- **Alliance page leavers.** Counted from the two rosters (status `left`) only when both exist, the same rule as the member list (D32).

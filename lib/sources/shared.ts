@@ -34,6 +34,9 @@ const memberSchema = z.object({
   lv: z.number().int().nullable(),
   // Optional: a photo is cosmetic, so its absence never fails a run.
   avatar_url: z.string().optional(),
+  // Optional for the same reason: the leadership marks are cosmetic.
+  rank_code: z.number().int().optional(),
+  rank_label: z.string().optional(),
 });
 
 export const rosterFields = {
@@ -42,6 +45,8 @@ export const rosterFields = {
   name: z.string(),
   power: z.number(),
   member_count: z.number().int(),
+  // Optional: the internal source does not send it, and a missing one never fails a run.
+  capacity: z.number().int().nullable().optional(),
   level: z.number().int().nullable(),
   badge_id: z.number().int().nullable().optional(),
   rank: z.object({ rank: z.number().int() }).nullable(),
@@ -62,12 +67,15 @@ export function toSnapshotInput(
     kills: m.kills,
     lv: m.lv,
     avatarUrl: photoUrl(m.avatar_url),
+    rankCode: m.rank_code ?? null,
+    rankLabel: m.rank_label ?? null,
   }));
   return {
     unionId: roster.union_id,
     tag: roster.abbr,
     name: roster.name,
     memberCount: roster.member_count,
+    capacity: roster.capacity ?? null,
     totalPower: roster.power,
     // INVARIANT total-kills-is-roster-sum
     totalKills: sumKills(members),

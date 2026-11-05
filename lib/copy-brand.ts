@@ -3,7 +3,7 @@
 export const brandCopy = {
   title: "Brand guidelines",
   intro:
-    "How the Saturday Ledger looks, draws and speaks. Every piece on this page is the one the site uses.",
+    "How the Event Ledger looks, draws and speaks. Every piece on this page is the one the site uses.",
   unit: "px",
   do: "Do",
   dont: "Don't",
@@ -98,7 +98,7 @@ export const brandCopy = {
         spec: "48 / 1.05 · Young Serif",
         use: "Error-page line",
       },
-      displayLg: { sample: "Saturday Ledger", spec: "32 / 1.1 · Young Serif", use: "Page title" },
+      displayLg: { sample: "Event Ledger", spec: "32 / 1.1 · Young Serif", use: "Page title" },
       displayMd: {
         sample: "Gained and lost",
         spec: "24 / 1.15 · Alegreya Sans 700",
@@ -154,6 +154,8 @@ export const brandCopy = {
     ornaments: "Ornaments",
     wax: "Wax · seals and the header mark",
     hourglass: "Hourglass · running",
+    crown: "Crown · alliance leader (R5)",
+    officer: "Stitch star · titled officer (R4)",
   },
   components: {
     title: "Components",
@@ -178,6 +180,11 @@ export const brandCopy = {
       running: "running",
       partial: "partial",
       notYet: "not taken yet",
+    },
+    memberMark: {
+      name: "Member mark",
+      use: "A footnote star after a falling Might or Kills change when members left; the legend item explains it. Never a sentence on the row.",
+      sample: "▼ −3.2M (−0.4%)",
     },
     badge: {
       name: "Badge",
@@ -228,6 +235,16 @@ export const brandCopy = {
       name: "Drawn rule",
       use: "Section dividers and the footer top. Tables keep plain 1 px rules.",
     },
+    roleMark: {
+      name: "Role mark",
+      use: "Alliance roles, in the member list and on the player page. The crown is the R5 leader (plum), the stitch star a titled R4 officer (sage); a member row also takes the role's pale tint. Only these two ranks are marked. The word for the role is always in the text or read out, never colour alone.",
+      leader: "Leader",
+      officer: "Diplomat",
+    },
+    leadership: {
+      name: "Leadership section",
+      use: "Above the member list: the R5 leader, then each R4 with a title, as cards with photo, name, role, Might, Kills and Level. Whatever title the game gives is shown as it comes. Left out when the alliance has none.",
+    },
     lace: { name: "Lace", use: "Under the header, and nowhere else." },
     corner: {
       name: "Yarn corner",
@@ -238,7 +255,7 @@ export const brandCopy = {
     title: "Voice",
     lede: "Short, dry, grandmotherly, English. The ledger belongs to the server and is kept by the Old Grandmas; another alliance reading it should feel invited, not visiting.",
     rules: [
-      "Title and byline: Server 325 · Saturday Ledger, kept by the Old Grandmas.",
+      "Title and byline: Server 325 · Event Ledger, kept by the Old Grandmas.",
       "Labels are the game's own words: Might, Kills, Members, Gained / Lost.",
       "Sentences live in the margins: empty states, error pages, section titles, admin. Status is chips.",
       "No exclamation marks, no emoji, no Oops, no Awesome.",
