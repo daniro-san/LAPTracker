@@ -36,11 +36,14 @@ export function Delta({
   delta,
   base,
   note,
+  stack = false,
 }: {
   delta: number | null;
   /** The value the percentage is relative to. */
   base: number | null;
   note?: string | undefined;
+  /** Puts the percent on its own line below 640 px, for narrow columns. */
+  stack?: boolean;
 }) {
   const locale = useLocale();
   if (delta === null) return <span className={MUTED}>—</span>;
@@ -53,7 +56,10 @@ export function Delta({
         {delta !== 0 && signOf(delta)}
         <Num n={Math.abs(delta)} />
         {pct !== null && delta !== 0 && (
-          <span suppressHydrationWarning> ({percentText(pct, locale)})</span>
+          <span suppressHydrationWarning className={stack ? "block sm:inline" : undefined}>
+            {" "}
+            ({percentText(pct, locale)})
+          </span>
         )}
       </span>
       {note && <span className="font-normal"> · {note}</span>}
