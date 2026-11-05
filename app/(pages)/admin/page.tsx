@@ -133,8 +133,8 @@ export default async function AdminPage() {
           : t.quota.none}
       </p>
       <h2 className="mb-2 font-subhead text-display-md font-semibold">{t.run.title}</h2>
+      <p className={`text-sm ${MUTED}`}>{t.run.intro}</p>
       <p className="text-sm">{fill(t.run.event, { event: clock.stamp(current.eventAtUtc) })}</p>
-      <p className={`mb-3 text-sm ${MUTED}`}>{t.run.costs}</p>
       <AdminActions beforeAtText={clock.stamp(current.beforeAt)} manual={manual} />
       <h2 className="mb-2 mt-8 font-subhead text-display-md font-semibold">{t.rehearsal.title}</h2>
       <Rehearsal r={rehearsal} clock={clock} />

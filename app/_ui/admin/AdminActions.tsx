@@ -25,26 +25,23 @@ interface Action {
     | "manual-settings"
     | "manual-before"
     | "manual-after";
-  /** One line under a snapshot button. */
+  /** One line under a snapshot button, and what it costs. */
   help?: string;
+  cost?: string;
   /** On the seal; `name` is the accessible name when it differs. */
   label: string;
   name?: string;
   url: string;
-  confirm: string;
-  /** JSON sent with the request (the manual event's name). */
+  /** Asked before the call; none for a form the owner has just filled in. */
+  confirm?: string;
+  /** JSON sent with the request (the manual round's options). */
   body?: string;
+  /** Sent right after this one succeeds (a rename, then the settings). */
+  next?: Action;
 }
 
 const t = copy.admin.run;
 const m = copy.admin.manual;
-
-const REHEARSE: Action = {
-  id: "rehearse",
-  label: t.rehearse,
-  url: "/api/rehearsal",
-  confirm: t.confirmRehearse,
-};
 
 const SNAPSHOTS: Action[] = [
   {
@@ -52,6 +49,7 @@ const SNAPSHOTS: Action[] = [
     label: copy.admin.seal.before,
     name: phaseWord("before"),
     help: t.snapshots.before,
+    cost: t.snapshots.costOne,
     url: "/api/snapshot?phase=before",
     confirm: t.confirmBefore,
   },
@@ -60,8 +58,17 @@ const SNAPSHOTS: Action[] = [
     label: copy.admin.seal.after,
     name: phaseWord("after"),
     help: t.snapshots.after,
+    cost: t.snapshots.costOne,
     url: "/api/snapshot?phase=after",
     confirm: t.confirmAfter,
+  },
+  {
+    id: "rehearse",
+    label: t.rehearse,
+    help: t.snapshots.rehearse,
+    cost: t.snapshots.costRehearse,
+    url: "/api/rehearsal",
+    confirm: t.confirmRehearse,
   },
 ];
 
@@ -71,40 +78,64 @@ const manualSnapshots = (eventId: number): Action[] =>
     id: `manual-${phase}`,
     label: copy.admin.seal[phase],
     name: phaseWord(phase),
+    help: m.sealHelp[phase],
+    cost: t.snapshots.costOne,
     url: `/api/snapshot?phase=${phase}&event=${eventId}`,
     confirm: phase === "before" ? m.confirmBefore : m.confirmAfter,
   }));
 
-const CREATE: Action = {
+export interface RoundOptions {
+  name: string;
+  visibility: "admin" | "standalone" | "history";
+  postPublic: boolean;
+}
+
+/** The new round's options as the create call (D28): no confirmation, the form is the confirmation. */
+const createRound = (o: RoundOptions): Action => ({
   id: "manual-create",
   label: m.create,
   url: "/api/manual-event",
-  confirm: m.confirmCreate,
-};
+  body: JSON.stringify({
+    name: o.name,
+    visibility: o.visibility,
+    // "Only me" and a public Discord post cannot go together.
+    post_public: o.visibility === "admin" ? false : o.postPublic,
+  }),
+});
 
-export interface ManualChange {
+/** What the card's form changed: a rename (only after the Before ran) and/or the visibility and Discord setting. */
+export interface RoundChange {
   name?: string;
-  visibility?: string;
-  post_public?: boolean;
+  visibility?: RoundOptions["visibility"];
+  postPublic?: boolean;
 }
 
-/** One manual-round edit as an action: a rename or a visibility / Discord setting (D28). */
-const manualChange = (eventId: number, change: ManualChange): Action => {
-  const rename = change.name !== undefined;
-  const confirm = rename
-    ? m.confirmRename
-    : change.visibility
-      ? m.confirmVisibility
-      : m.confirmPost;
-  // "admin only" and a public Discord post cannot go together, so switching to it turns the post off.
-  const sent = change.visibility === "admin" ? { ...change, post_public: false } : change;
-  return {
-    id: rename ? "manual-rename" : "manual-settings",
-    label: m.rename,
-    url: rename ? "/api/manual-event/rename" : "/api/manual-event/settings",
-    confirm,
-    body: JSON.stringify({ event_id: eventId, ...sent }),
-  };
+const saveRound = (eventId: number, change: RoundChange): Action => {
+  const { name, visibility, postPublic } = change;
+  const settings: Action | undefined =
+    visibility === undefined && postPublic === undefined
+      ? undefined
+      : {
+          id: "manual-settings",
+          label: m.save,
+          url: "/api/manual-event/settings",
+          body: JSON.stringify({
+            event_id: eventId,
+            ...(visibility !== undefined && { visibility }),
+            ...(visibility === "admin"
+              ? { post_public: false }
+              : postPublic !== undefined && { post_public: postPublic }),
+          }),
+        };
+  return name === undefined
+    ? (settings as Action)
+    : {
+        id: "manual-rename",
+        label: m.save,
+        url: "/api/manual-event/rename",
+        body: JSON.stringify({ event_id: eventId, name }),
+        ...(settings && { next: settings }),
+      };
 };
 
 async function post(action: Action, pin: string, force: boolean) {
@@ -152,6 +183,7 @@ export function AdminActions({
       if (body.code === "snapshot_complete" && (await ask(t.again))) {
         return await send(action, pin, true);
       }
+      if (res.ok && action.next) return await send(action.next, pin);
       setMessage(describe(res.status, body, beforeAtText));
       router.refresh();
     } catch {
@@ -162,26 +194,27 @@ export function AdminActions({
   }
 
   async function start(action: Action) {
-    if (!(await ask(action.confirm))) return;
+    if (action.confirm && !(await ask(action.confirm))) return;
     const pin = savedPin();
     if (pin) void send(action, pin);
     else setPending(action);
   }
 
   const seal = (a: Action) => (
-    <ActionSeal key={a.id} action={a} busy={busy} onStart={() => void start(a)} />
+    <li key={a.id} className="flex">
+      <ActionSeal action={a} busy={busy} onStart={() => void start(a)} />
+    </li>
   );
 
   return (
     <div>
-      {seal(REHEARSE)}
-      <SnapshotsGroup seal={seal} />
+      <SnapshotsGroup seals={SNAPSHOTS.map(seal)} />
       <ManualSection
         manual={manual}
         busy={busy}
-        seals={manual && manualSnapshots(manual.id).map((a) => <li key={a.id}>{seal(a)}</li>)}
-        onCreate={() => void start(CREATE)}
-        onChange={(id, change) => void start(manualChange(id, change))}
+        seals={manual && manualSnapshots(manual.id).map(seal)}
+        onCreate={(options) => void start(createRound(options))}
+        onSave={(id, change) => void start(saveRound(id, change))}
       />
       {message && (
         <p role="status" className="mt-3 break-words text-sm">
@@ -203,21 +236,14 @@ export function AdminActions({
   );
 }
 
-function SnapshotsGroup({ seal }: { seal: (a: Action) => React.ReactNode }) {
+/** Before, After and Rehearse side by side, each with its own line and cost (one row at 360 px). */
+function SnapshotsGroup({ seals }: { seals: React.ReactNode }) {
   return (
-    <div role="group" aria-labelledby="snapshot-group" className="mt-6">
-      <h3 id="snapshot-group" className="mb-2 font-subhead text-lg font-semibold">
+    <div role="group" aria-labelledby="snapshot-group" className="mt-4">
+      <h3 id="snapshot-group" className="mb-3 font-subhead text-lg font-semibold">
         {t.snapshots.title}
       </h3>
-      <ul className="flex flex-col gap-4">
-        {SNAPSHOTS.map((a) => (
-          <li key={a.id} className="flex items-center gap-4">
-            {seal(a)}
-            <p className="text-sm">{a.help}</p>
-          </li>
-        ))}
-      </ul>
-      <p className="mt-3 text-sm text-ink/70">{t.snapshots.cost}</p>
+      <ul className="grid grid-cols-3 gap-2 sm:max-w-xl sm:gap-6">{seals}</ul>
     </div>
   );
 }
@@ -247,6 +273,7 @@ function describe(status: number, body: Record<string, unknown>, beforeAtText: s
   });
 }
 
+/** The wax seal with its one-line help and cost underneath, centred in its column. */
 function ActionSeal({
   action: a,
   busy,
@@ -257,12 +284,16 @@ function ActionSeal({
   onStart: () => void;
 }) {
   return (
-    <SealButton
-      label={busy === a.id ? t.running : a.label}
-      aria-label={busy === a.id ? undefined : a.name}
-      disabled={busy !== null}
-      onClick={onStart}
-      className="shrink-0 disabled:cursor-wait disabled:opacity-70"
-    />
+    <div className="flex flex-1 flex-col items-center gap-1 text-center">
+      <SealButton
+        label={busy === a.id ? t.running : a.label}
+        aria-label={busy === a.id ? undefined : a.name}
+        disabled={busy !== null}
+        onClick={onStart}
+        className="shrink-0 disabled:cursor-wait disabled:opacity-70"
+      />
+      {a.help && <p className="text-sm">{a.help}</p>}
+      {a.cost && <p className="mt-auto text-sm font-semibold text-plum">{a.cost}</p>}
+    </div>
   );
 }
