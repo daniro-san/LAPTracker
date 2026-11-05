@@ -144,6 +144,6 @@ describe("POST /api/tick", () => {
     ]);
     const notes = posts.filter((p) => p.url === ADMIN_WEBHOOK && p.content.includes("skipped"));
     expect(notes).toHaveLength(2);
-    expect(notes.every((n) => n.content.startsWith("[TEST] "))).toBe(true);
+    expect(notes.every((n) => n.content.startsWith("[rehearsal] "))).toBe(true);
   });
 });

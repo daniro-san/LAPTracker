@@ -142,7 +142,7 @@ describe("POST /api/rehearsal", () => {
     ]);
   });
 
-  it("posts a rehearsal's run messages and verdict to the admin channel only, marked [TEST]", async () => {
+  it("posts a rehearsal's run messages and verdict to the admin channel only, marked [rehearsal]", async () => {
     const { ctx, clock, posts } = testContext(db);
     holder.ctx = ctx;
     const T = new Date("2026-11-04T12:00:00Z");
@@ -161,8 +161,8 @@ describe("POST /api/rehearsal", () => {
     expect(posts.filter((p) => p.url === PUBLIC_WEBHOOK)).toEqual([]);
     const admin = posts.filter((p) => p.url === ADMIN_WEBHOOK).map((p) => p.content);
     expect(admin).toHaveLength(3); // BEFORE, AFTER, verdict
-    expect(admin.every((c) => c.startsWith("[TEST] "))).toBe(true);
-    expect(admin[2]).toMatch(/^\[TEST\] Rehearsal (PASS|FAIL) \(event \d+\)/);
+    expect(admin.every((c) => c.startsWith("[rehearsal] "))).toBe(true);
+    expect(admin[2]).toMatch(/^\[rehearsal\] ✓ Pass|^\[rehearsal\] ✗ Fail/);
     const [event] = await db.select().from(events).where(eq(events.id, eventId));
     expect(event?.isTest).toBe(true);
   });

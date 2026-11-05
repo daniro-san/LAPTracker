@@ -1,7 +1,7 @@
 // app_errors (plan §6, Phase 6 "Observability"): errors outside a run, from instrumentation.ts's
 // onRequestError and from route handlers that caught one. Never stores err.message (plan §12.3).
 import type { AppContext } from "./app-context";
-import { createNotifier } from "./notify";
+import { appErrorMessage, createNotifier } from "./notify";
 import { insertAppError, lastAppErrorAt } from "./repo/app-errors";
 
 const MIN_INSERT_GAP_MS = 1_000;
@@ -34,7 +34,7 @@ export async function recordAppError(ctx: AppContext, entry: AppErrorEntry): Pro
     // The first error in an hour pages the admins; the DB holds the last time, not this instance.
     if (last === null || now.getTime() - last.getTime() >= ALERT_GAP_MS) {
       await createNotifier(ctx.env, ctx.fetch).admin(
-        `🧯 app error on ${entry.route}: ${message}${entry.digest ? ` (digest ${entry.digest})` : ""}. See /admin/errors`,
+        appErrorMessage(entry.route, message, entry.digest),
       );
     }
   } catch {

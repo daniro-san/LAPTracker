@@ -5,7 +5,7 @@ import { createHash, timingSafeEqual } from "node:crypto";
 
 import type { AppContext } from "./app-context";
 import type { Db } from "./db";
-import { createNotifier } from "./notify";
+import { createNotifier, pinLockedMessage } from "./notify";
 import { currentCount, recordFailure, resetKey } from "./repo/auth-attempts";
 
 export const IP_LIMIT = 5;
@@ -74,9 +74,7 @@ export async function authorize(
   const global = await recordFailure(db, GLOBAL_KEY, GLOBAL_WINDOW_MS, now);
   // The upsert returns each count once, so exactly one request sees 20 and sends the alert.
   if (global === GLOBAL_LIMIT) {
-    await createNotifier(ctx.env, ctx.fetch).admin(
-      `🔒 PIN auth locked: ${GLOBAL_LIMIT} wrong PINs in the last hour. CRON_SECRET and workflow_dispatch still work.`,
-    );
+    await createNotifier(ctx.env, ctx.fetch).admin(pinLockedMessage(GLOBAL_LIMIT));
   }
   return unauthorized;
 }
