@@ -71,11 +71,12 @@ async function notifyPublic(db: Db, s: Shared) {
 }
 
 /** One block per phase run so far: the current one from this run, the other from its row. */
-function phaseBlocks(s: Shared): string[] {
+function phaseBlocks(s: Shared, only?: Phase): string[] {
   const { event, phase: current, origin } = s.req;
   const roundName = event.manual ? event.name : null;
   const scheduled = { before: event.beforeAt, after: event.afterAt };
-  return (["before", "after"] as const).flatMap((phase) => {
+  const phases = (["before", "after"] as const).filter((p) => !only || p === only);
+  return phases.flatMap((phase) => {
     const row = s.reports.find((r) => r.phase === phase);
     // The other phase's alliance lists live on its run page, so its block carries none.
     const mine = phase === current;
@@ -114,6 +115,14 @@ async function notifyAdmin(ctx: AppContext, db: Db, s: Shared) {
     messageId: event.discordAdminMessageId,
   });
   await storeId(db, s, "admin", id);
+  // An edit does not notify, so a run that ended partly or failed also posts a message of its own:
+  // problems are never hidden inside an edit, and this one can be linked to (D31).
+  if (s.run.summary.status !== "complete") {
+    await s.notifier.admin(adminEventMessage(event.name, phaseBlocks(s, phase)), {
+      test: event.isTest,
+      manual: event.manual,
+    });
+  }
 }
 
 /**

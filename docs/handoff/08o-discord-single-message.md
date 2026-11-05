@@ -17,6 +17,8 @@
 - Saturday events and manual rounds have the event name only in the admin header; the public embed keeps its title chip (no name line was added for Saturday events).
 - `NOTIFY_ADMIN_MENTION` is untouched; an edit never pings, a new post still can.
 
+- Owner refinement (relayed 2026-11-05): the admin channel also posts a separate new message for every run that ends partial or failed (`lib/run-notify.ts`), besides editing the event message. The public channel is unchanged. Recorded in D31.
+
 ## Deviations
 - None from the design. Files `lib/discord-send.ts` and `lib/run-notify.ts` exist only because ESLint's file-length and complexity limits failed on the grown code.
 
