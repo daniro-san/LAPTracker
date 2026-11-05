@@ -362,11 +362,12 @@ NOTES
 - DESIGN.md "Typography" table still lists weight 600 for the display steps (pre-existing, 07e noted it); the new hierarchy table beside it uses the loaded weights.
 - The seed has 22 alliances (fixtures hold 22 rosters), so ranks run to #22; the config tracks 20.
 - Each `next dev` creates `AGENTS.md` in the worktree; deleted, not committed.
+- **Branch:** `dev` on GitHub was rewritten while this session ran (same trees and messages, new SHAs: `e0f8613` → `9c9e153`), so the first push (`session/07b-usability`, `bac478d`) has no history in common with `dev`. The two commits were rebased onto the new `dev` (tree unchanged, `b05a2d8`); the force-push was refused by the session's permission check, so the PR is from `session/07b-usability-dev`. `session/07b-usability` on the remote is stale and can be deleted.
 
 ## Next
 Session: 7c — UI review (read-only, adversarial)
 Model / effort: keep (fable · xhigh, plan mode) — no signal against it; the review is measurement-heavy (axe, contrast, Lighthouse, blank-dictionary tasks), which this session did not do.
-Owner must do first: merge this PR into `dev` so the `dev` staging URL shows 7b; paste that URL into the 7c prompt. Nothing to seed: the preview branch already holds the seed this session used.
+Owner must do first: delete the stale remote branch `session/07b-usability` (see Open issues); merge this PR into `dev` so the `dev` staging URL shows 7b; paste that URL into the 7c prompt. Nothing to seed: the preview branch already holds the seed this session used.
 Plan changes needed: Phase 5 (main-page card bullet): the kills member-loss note now sits in the card's Details panel, not on the card (persona round 2). Phase 5f: the blank dictionary keeps the game's own four terms readable (Might, Kills, Members, Level). Phase 5 "Routes" header bullet: status chips are "Last updated / Next update" in server time and quota is on `/admin` (owner, 2026-11-05). Do not edit the plan here.
 
 <adjustments>
@@ -384,3 +385,5 @@ Plan changes needed: Phase 5 (main-page card bullet): the kills member-loss note
 - If 7c asks for a neutral time chip: the chip tone comes from `CHIP[status].tone` in `app/_ui/Status.tsx`; `Chip` is `lib/brand/components/Chip.tsx`. DESIGN.md's `status-strip` line defines the tones, so change it in the same commit.
 - Any new string goes to `lib/copy.ts` (or its sibling module), never with a sign or arrow in the value; React keys must not come from copy values (blank mode duplicates them).
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/31
