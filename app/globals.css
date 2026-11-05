@@ -230,6 +230,59 @@ body {
     background-image: var(--check-mark);
   }
 
+  /* Might range (alliance page members): two native range inputs laid over one track. Each input is
+     44 px tall and lets taps through except on its thumb, so both thumbs stay reachable by touch. */
+  .range-pair {
+    position: relative;
+    height: 44px;
+  }
+  .range-pair::before {
+    content: "";
+    position: absolute;
+    inset: 21px 11px auto;
+    height: 2px;
+    background: var(--rule);
+  }
+  .range-pair input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 44px;
+    margin: 0;
+    appearance: none;
+    background: transparent;
+    pointer-events: none;
+  }
+  .range-pair input::-webkit-slider-thumb {
+    appearance: none;
+    width: 22px;
+    height: 22px;
+    border: 2px solid var(--plum);
+    background: var(--paper);
+    pointer-events: auto;
+    cursor: pointer;
+  }
+  .range-pair input::-moz-range-thumb {
+    width: 22px;
+    height: 22px;
+    border: 2px solid var(--plum);
+    border-radius: 0;
+    background: var(--paper);
+    pointer-events: auto;
+    cursor: pointer;
+  }
+  .range-pair input:focus-visible {
+    outline: none;
+  }
+  .range-pair input:focus-visible::-webkit-slider-thumb {
+    outline: 2px solid var(--plum);
+    outline-offset: 2px;
+  }
+  .range-pair input:focus-visible::-moz-range-thumb {
+    outline: 2px solid var(--plum);
+    outline-offset: 2px;
+  }
+
   /* Drawn rule: a pen hairline that swells and thins, tinted by the text colour (public/brand/rule.svg).
      For section dividers; the data table keeps its plain 1 px rules. */
   hr.drawn-rule,

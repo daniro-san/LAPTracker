@@ -52,10 +52,14 @@ export function Delta({
         <span aria-hidden="true">{arrow(delta)} </span>
         {delta !== 0 && signOf(delta)}
         <Num n={Math.abs(delta)} />
-        {pct !== null && delta !== 0 && (
-          <span suppressHydrationWarning> ({percentText(pct, locale)})</span>
-        )}
       </span>
+      {/* The percent may wrap under the change in a narrow column (the alliance page summary). */}
+      {pct !== null && delta !== 0 && (
+        <span className="whitespace-nowrap" suppressHydrationWarning>
+          {" "}
+          ({percentText(pct, locale)})
+        </span>
+      )}
       {note && <span className="font-normal"> · {note}</span>}
     </span>
   );
