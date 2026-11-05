@@ -69,7 +69,7 @@ export const brandCopy = {
     rules: [
       "Deltas are coloured by sign only: yarn up, seal down.",
       "Colour never works alone: every state also has an arrow or icon and a word.",
-      "Text contrast 4.5:1 or more, large numerals 3:1, in both modes. Known exception: yarn text on paper and paper on sage in light mode (issue #25).",
+      "Text contrast 4.5:1 or more, large numerals 3:1, in both modes.",
       "No gradients, glow or blur. The bottom sheet's shadow is the only shadow.",
     ],
   },

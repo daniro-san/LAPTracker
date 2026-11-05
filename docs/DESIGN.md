@@ -8,8 +8,8 @@ colors:
   ink: "#1e1a1f"
   plum: "#3b2436"
   seal: "#8c2f2f"
-  yarn: "#c9962b"
-  sage: "#6f7f62"
+  yarn: "#805c12"
+  sage: "#586750"
   rule: "#d9cdb4"
   dark-paper: "#1a1418"
   dark-ink: "#eadfcb"
@@ -226,11 +226,11 @@ A guild ledger, kept by hand, in a plague year. The page is aged paper; the ink 
 - **Ink** (`{colors.ink}` — #1e1a1f): all text. Dark: `{colors.dark-ink}`.
 - **Plum** (`{colors.plum}` — #3b2436): header, links, primary actions, focus rings. Dark: `{colors.dark-plum}`.
 - **Seal** (`{colors.seal}` — #8c2f2f): negative deltas, errors, "stale", the seal button. Dark: `{colors.dark-seal}`.
-- **Yarn** (`{colors.yarn}` — #c9962b): positive deltas, highlights. Dark: `{colors.dark-yarn}`.
-- **Sage** (`{colors.sage}` — #6f7f62): neutral badges — `[TEST]`, "fallback source", "manual". Dark: `{colors.dark-sage}`.
+- **Yarn** (`{colors.yarn}` — #805c12): positive deltas, highlights. Dark: `{colors.dark-yarn}`.
+- **Sage** (`{colors.sage}` — #586750): neutral badges — `[TEST]`, "fallback source", "manual". Dark: `{colors.dark-sage}`.
 - **Rule** (`{colors.rule}` — #d9cdb4): borders and table rules. Dark: `{colors.dark-rule}`.
 
-Rules: deltas are coloured by sign only; a colour that carries no meaning is not used. Text contrast ≥ 4.5:1, large numerals ≥ 3:1, checked in both modes. Known exception, accepted by the owner at the Session 7 mock (2026-11-04): in light mode yarn text on paper is 2.15:1 and paper on sage 3.46:1; the fix is tracked in [issue #25](https://github.com/daniro-san/LAPTracker/issues/25). No gradients anywhere.
+Rules: deltas are coloured by sign only; a colour that carries no meaning is not used. Text contrast ≥ 4.5:1, large numerals ≥ 3:1, checked in both modes. Light yarn and sage were darkened on 2026-11-05 (Session 7c, [issue #25](https://github.com/daniro-san/LAPTracker/issues/25)): yarn on paper 4.90:1, paper on sage 4.88:1; before that they were 2.15:1 and 3.46:1. No gradients anywhere.
 
 ## Typography
 
