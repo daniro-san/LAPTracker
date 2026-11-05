@@ -68,3 +68,5 @@ Plan changes needed: none.
 - Session 9 step 2, "retries by status code": `v1.retry` lines do not store the status that caused the retry, so this needs the final `v1.fetch` status per alliance plus the retry count, or a Vercel runtime log. Do not expect it in `run_logs`.
 - The trace's total seconds is the sum of call times. Calls run four at a time, so compare the run line's duration, not the total, against `maxDuration`.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/108
