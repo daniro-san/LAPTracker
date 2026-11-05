@@ -29,4 +29,4 @@ Plan changes needed: none.
 - Plan §12.3 / 07c N6 are closed by D35: do not add a CSP to `/_next/static`. If a later session adds a Worker or a service worker, its script response needs its own CSP (D35 "Revisit").
 </adjustments>
 
-PR_URL
+https://github.com/daniro-san/LAPTracker/pull/105
