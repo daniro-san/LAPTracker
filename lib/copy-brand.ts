@@ -154,6 +154,8 @@ export const brandCopy = {
     ornaments: "Ornaments",
     wax: "Wax · seals and the header mark",
     hourglass: "Hourglass · running",
+    crown: "Crown · alliance leader (R5)",
+    officer: "Stitch star · titled officer (R4)",
   },
   components: {
     title: "Components",
@@ -227,6 +229,16 @@ export const brandCopy = {
     rule: {
       name: "Drawn rule",
       use: "Section dividers and the footer top. Tables keep plain 1 px rules.",
+    },
+    roleMark: {
+      name: "Role mark",
+      use: "Alliance roles, in the member list and on the player page. The crown is the R5 leader (plum), the stitch star a titled R4 officer (sage); a member row also takes the role's pale tint. Only these two ranks are marked. The word for the role is always in the text or read out, never colour alone.",
+      leader: "Leader",
+      officer: "Diplomat",
+    },
+    leadership: {
+      name: "Leadership section",
+      use: "Above the member list: the R5 leader, then each R4 with a title, as cards with photo, name, role, Might, Kills and Level. Whatever title the game gives is shown as it comes. Left out when the alliance has none.",
     },
     lace: { name: "Lace", use: "Under the header, and nowhere else." },
     corner: {

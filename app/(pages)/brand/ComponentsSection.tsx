@@ -7,6 +7,7 @@ import { FactList } from "@/lib/brand/components/FactList";
 import { LaceBorder } from "@/lib/brand/components/LaceBorder";
 import { Notice } from "@/lib/brand/components/Notice";
 import { RadioField } from "@/lib/brand/components/RadioField";
+import { Crown, OfficerStar, RoleMark } from "@/lib/brand/components/RoleMark";
 import { SealButton } from "@/lib/brand/components/SealButton";
 import { DroppedStitch, Hourglass, StitchedCheck } from "@/lib/brand/components/StatusIcons";
 import { YarnCorner } from "@/lib/brand/components/YarnCorner";
@@ -61,6 +62,25 @@ function Ornaments() {
     <>
       <Spec name={t.rule.name} use={t.rule.use} plate="text-plum">
         <hr className="drawn-rule w-full" />
+      </Spec>
+      <Spec name={t.roleMark.name} use={t.roleMark.use}>
+        <div className="flex w-full flex-col gap-2 text-sm">
+          <p className="flex items-center gap-2 bg-plum/10 px-2 py-1">
+            <RoleMark role={{ kind: "leader" }} />
+            {t.roleMark.leader}
+          </p>
+          <p className="flex items-center gap-2 bg-sage/10 px-2 py-1">
+            <RoleMark role={{ kind: "officer", title: t.roleMark.officer }} />
+            {t.roleMark.officer}
+          </p>
+        </div>
+      </Spec>
+      <Spec name={t.leadership.name} use={t.leadership.use}>
+        <p className="flex items-center gap-2 border border-rule px-3 py-2 text-sm">
+          <Crown className="size-4 text-plum" />
+          <OfficerStar className="size-4 text-sage" />
+          {copy.leadership.title}
+        </p>
       </Spec>
       <Spec name={t.lace.name} use={t.lace.use} plate="text-plum">
         <div className="w-full">

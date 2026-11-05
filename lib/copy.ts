@@ -110,6 +110,11 @@ const source = {
     joined: "Joined",
     left: "Left",
   },
+  /** The alliance's R5 and titled R4 officers: a section on the alliance page, a mark in the member list. */
+  leadership: {
+    title: "Leadership",
+    leader: "Leader",
+  },
   search: {
     title: "Players",
     placeholder: "Player name",

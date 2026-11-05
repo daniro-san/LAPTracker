@@ -12,6 +12,9 @@ export interface MemberInput {
   lv: number | null;
   /** The player's photo URL as sent upstream; null when empty. Served only via /img/avatar/[uid] (D22). */
   avatarUrl?: string | null;
+  /** /v1 `rank_code` (105 = R5, 104 = R4, ...) and `rank_label` ("R4 · Diplomat"); null when not sent. */
+  rankCode?: number | null;
+  rankLabel?: string | null;
 }
 
 export interface Quota {

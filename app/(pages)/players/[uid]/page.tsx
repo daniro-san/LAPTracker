@@ -15,6 +15,7 @@ import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { LABEL } from "@/app/_ui/StatTable";
 import { FreshDots, Legend } from "@/app/_ui/Status";
+import { RoleMark } from "@/lib/brand/components/RoleMark";
 import { copy, fill } from "@/lib/copy";
 import { withPageDb } from "@/lib/page";
 import { listEvents, playerHistory, type PlayerHistory } from "@/lib/queries";
@@ -156,6 +157,12 @@ export default async function PlayerPage({ params }: { params: Params }) {
                 <AllianceBadge badgeId={current.badgeId} />
                 {allianceLabel(current.tag, allianceName)}
               </Link>
+              {current.role && (
+                <p className="flex items-center gap-2 text-sm text-ink/70">
+                  <RoleMark role={current.role} />
+                  {current.role.kind === "officer" ? current.role.title : copy.leadership.leader}
+                </p>
+              )}
             </div>
           </div>
           <ExactToggle />

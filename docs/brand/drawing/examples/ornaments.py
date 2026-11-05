@@ -128,8 +128,24 @@ def icon_partial():
         stroke(p, [(6.3, y), (8, y+.4), (9.7, y)], .62, a=.3, b=.3, e=.45)
     return svg("0 0 16 16", el(p))
 
+def icon_crown():
+    """The alliance leader's mark: three points over a band, a bead on each tip (small cut, 16 px)."""
+    p = Path()
+    blob(p, [(2.1, 12.2), (1.7, 8.6), (1.3, 4.9), (3.6, 7.0), (5.7, 8.6), (8, 3.3), (10.3, 8.6), (12.4, 7.0), (14.7, 4.9), (14.3, 8.6), (13.9, 12.2), (8, 12.9)], k=.3)
+    stroke(p, [(2.4, 14.4), (8, 14.8), (13.6, 14.4)], .75, a=.15, b=.15, e=.45)
+    blob(p, arc(1.6, 4.1, .95, .9, 0, 300, 6))
+    blob(p, arc(8, 2.2, 1.05, 1.0, 0, 300, 6))
+    blob(p, arc(14.4, 4.1, .95, .9, 0, 300, 6))
+    return svg("0 0 16 16", el(p, ' fill-rule="evenodd"'))
+
+def icon_officer():
+    """A titled officer's mark: a four-point stitch star, smaller and plainer than the crown."""
+    p = Path()
+    blob(p, [(8, 1.6), (9.1, 6.2), (14.2, 8), (9.1, 9.8), (8, 14.4), (6.9, 9.8), (1.8, 8), (6.9, 6.2)], k=.28)
+    return svg("0 0 16 16", el(p))
+
 ITEMS = {"seal": seal, "yarn-corner": yarn_corner, "lace": lace, "lace-alt-dot": lace_b,
-         "icon-running": icon_running, "icon-done": icon_done, "icon-partial": icon_partial}
+         "icon-running": icon_running, "icon-crown": icon_crown, "icon-officer": icon_officer, "icon-done": icon_done, "icon-partial": icon_partial}
 
 # ---------------- placeholders (28-56 px: filled shapes, the small-cut rule) ----------------
 def no_photo():

@@ -50,6 +50,8 @@ export interface MemberRow {
   kills: number | null;
   lv: number | null;
   avatarUrl?: string | null;
+  rankCode?: number | null;
+  rankLabel?: string | null;
 }
 
 /** What the collector reads back to decide the status and the re-run set. */
