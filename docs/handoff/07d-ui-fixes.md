@@ -95,3 +95,5 @@ Plan changes needed: none for Session 8. IMPLEMENTATION_PLAN.md Phase 5 still de
 - Rehearsal verdict lines changed wording: `data time moved forward for every alliance (n/n)` and `calls used = quota drop (…)` (were `updated_at advanced …` and `calls_used = …`). The `[TEST]` admin messages show the new words.
 - `/img/badge/*` and `/img/avatar/*` now redraw images through `next/og` on a cache miss. Badges are 80 × 80 PNG (≈ 7.8 KB); photos are redrawn only when that makes them smaller. Watch the first production cold requests for function duration if they look slow.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/32
