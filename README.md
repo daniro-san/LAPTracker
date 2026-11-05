@@ -36,9 +36,11 @@ The next version is the latest `v*` tag plus the bump, so `package.json` is neve
 
 **GitHub repository secrets.** `APP_URL` (the production origin, no trailing slash) and `CRON_SECRET` (must equal the Production value in Vercel).
 
+**Scheduler.** The job "Vercel Ticker" on cron-job.org calls `POST /api/tick` every 15 minutes with the header `Authorization: Bearer <CRON_SECRET>` (D30). GitHub's own schedule has never started a run in this repository, so it is not relied on. To check it, open the job's History on cron-job.org: each run should show `204 No Content` when nothing is due. A `401` means its `CRON_SECRET` differs from the one in Vercel Production.
+
 **Workflows.**
 
-- `tick.yml` calls `POST /api/tick` every 15 minutes. All scheduling decisions live in the app. Do not add retries.
+- `tick.yml` calls `POST /api/tick` on a schedule of its own and from Actions → tick → Run workflow. It fails on any non-2xx. All scheduling decisions live in the app. Do not add retries.
 - `keepalive.yml` pushes a timestamp to the `keepalive` branch monthly, so GitHub does not disable the schedule after 60 days without activity. Vercel never builds that branch.
 - `dependabot-automerge.yml` squash-merges Dependabot minor/patch PRs into `dev` once CI is green. Majors wait for a human.
 
@@ -46,7 +48,7 @@ The next version is the latest `v*` tag plus the bump, so `package.json` is neve
 
 **Change snapshot times.** Edit `SNAPSHOT_BEFORE`, `SNAPSHOT_AFTER`, `EVENT_TIME`, `SNAPSHOT_WINDOW_MIN` or `QUOTA_CHECK_AT` (server time) in Vercel's Production env vars, then redeploy. A Saturday row is created a day ahead and keeps its times, so a change applies from the next event row.
 
-**Rotate the API key or the PIN.** Change `LAP_API_KEY` or `EDIT_PIN` in Vercel Production, redeploy, and update the copy in `.env.local`. For `CRON_SECRET`, change it in Vercel **and** in the GitHub secret, then redeploy. Never paste any of them into a PR, issue or chat.
+**Rotate the API key or the PIN.** Change `LAP_API_KEY` or `EDIT_PIN` in Vercel Production, redeploy, and update the copy in `.env.local`. For `CRON_SECRET`, change it in Vercel, in the GitHub secret **and** in the cron-job.org job's header, then redeploy production. Never paste any of them into a PR, issue or chat.
 
 **Run a snapshot by hand.** On `/admin`, enter the PIN and use the Before or After seal (a confirm dialog opens). From GitHub: Actions → tick → Run workflow → pick `before` or `after`. Either spends about 21 API calls. A run that already completed is refused (409).
 
