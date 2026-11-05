@@ -3,7 +3,7 @@
 import { and, eq, gt, isNull, lte, or } from "drizzle-orm";
 
 import type { Db } from "../db";
-import { events } from "../schema";
+import { events, snapshots } from "../schema";
 import type { EventRow, Phase } from "./index";
 import { findSnapshot } from "./snapshots";
 
@@ -74,6 +74,24 @@ export async function createManualEvent(db: Db, name: string, now: Date): Promis
     .returning(infoColumns);
   if (!row) throw new Error("manual event row missing after insert");
   return row;
+}
+
+/** Renames a manual event once a snapshot of it exists (D28); the result says why not otherwise. */
+export async function renameManualEvent(
+  db: Db,
+  eventId: number,
+  name: string,
+): Promise<"ok" | "not-found" | "no-snapshot"> {
+  const event = await getEventInfo(db, eventId);
+  if (!event?.manual) return "not-found";
+  const [any] = await db
+    .select({ id: snapshots.id })
+    .from(snapshots)
+    .where(eq(snapshots.eventId, eventId))
+    .limit(1);
+  if (!any) return "no-snapshot";
+  await db.update(events).set({ name }).where(eq(events.id, eventId));
+  return "ok";
 }
 
 export interface DuePhase {

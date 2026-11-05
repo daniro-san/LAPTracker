@@ -1,27 +1,30 @@
-# 08h — Manual snapshot
+# 08h — Manual snapshot (manual rounds)
 
 ## Built
 - Migration `drizzle/0004_cynical_vapor.sql`: `events.manual boolean not null default false`.
 - `lib/repo/events.ts`: `createManualEvent`, `getEventInfo`; `EventInfo.manual`; `duePhases` skips manual events.
-- `POST /api/manual-event` (`app/api/manual-event/route.ts`): JSON `{name}`, PIN only, 201 `{event_id}`.
+- `POST /api/manual-event` (no body, PIN only, 201 `{event_id}`): creates a round named `Manual round <date>`.
+- `POST /api/manual-event/rename` `{event_id, name}` (PIN only): allowed once the round has a snapshot; 1–80 characters, plain text.
 - `POST /api/snapshot` takes an optional `event=<id>`; the id must be a manual event, otherwise 404 `event_not_found`.
 - `lib/run.ts`: no not-due check for a manual event; no public Discord post for it.
 - `allianceHistory`, player history (`sightingsOf`) and `historyRanks` ignore manual events.
-- `/admin`: a "Manual event" card with a name field, a create button, the newest manual event's Before and After buttons, each phase's state, a link to the public page and the quota cost (about 21 of 1,000 calls).
+- `/admin`: a "Manual event" card with a "Start a manual round" button, a rename field (after the first snapshot), the newest manual event's Before and After buttons, each phase's state, a link to the public page and the quota cost (about 21 of 1,000 calls).
 - `lib/queries/admin.ts` `latestManualEvent`; copy in `lib/copy-admin.ts`; D28 in `docs/DECISIONS.md`; a glossary row.
-- `app/api/manual-event/route.test.ts`: five tests (create and auth, weekday run with force and no public post, non-manual id refused, tick ignores it, history ignores it).
+- `app/api/manual-event/route.test.ts`: six tests (create and auth, rename rules, Before and After on different days with force and no public post, non-manual id refused, tick ignores it, history ignores it).
 
 ## How to use it
 1. Merge into `dev`, release to production, and let the migration run (`pnpm db:migrate` as for earlier migrations).
-2. Open `/admin`, go to "Run something now", then "Manual event".
-3. Type a name (for example `Alliance leaders demo 2026-11-05`), press "Create manual event", confirm.
-4. Press "Before", confirm: about 21 API calls, up to a minute. Press "After" later, in any window you choose.
-5. "Open on the site" shows `/events/<id>`. The event is also in the event selector. A second press on a finished phase asks "Take it again?" and replaces that phase's rows.
-6. For another demo or another window, create another manual event.
+2. Open `/admin`, "Run something now", "Manual event". Press "Start a manual round", confirm. The round is named `Manual round <date>`.
+3. Press "Before", confirm (about 21 of the day's 1,000 API calls, up to a minute). Run it at the hour you want, for example 17:00 UTC-3.
+4. Now the "Round name" field appears. Type a name (for example `teste do danilo`) and press "Rename". The name shows in the event selector and on the event page.
+5. On another day, at any hour, press "After". Nothing links the two times. The tick never runs the round and a pending After never delays Saturday.
+6. "Open on the site" shows `/events/<id>`. Pressing a finished phase again asks "Take it again?" and replaces that phase. For a new round, press "Start a manual round" again.
 
 ## Decisions
 - A flag column, not "past phase times" alone: the tick would otherwise run a manual event inside its window. Details in D28.
 - The Saturday guard is untouched. The manual route accepts only manual events.
+- A round is created with a default name and renamed after its Before (owner, 2026-11-05); the earlier typed-name-at-creation design was dropped.
+- An open round does not block Saturday; no overlap guard was added (D28).
 - Discord: a manual run never posts publicly. It posts the normal admin line.
 - Manual events are excluded from cross-event deltas, ranks and player history so Saturday is not compared with a demo.
 - Reading of "right away": the event page and selector show it as soon as a snapshot exists. The home page shows the newest event by date, which is Saturday's (empty) event until its first run, so the home page does not show the demo.
@@ -30,7 +33,7 @@
 - None from the task. The query exclusions touch three files beyond the minimum; without them Saturday's deltas would reference the demo.
 
 ## Verified
-- `pnpm check`: passes (prettier, eslint, tsc, 115 tests).
+- `pnpm check`: passes (prettier, eslint, tsc, 116 tests).
 - Tests run against PGlite with the fake upstream. Upstream API calls made: 0. Production not touched.
 - Not verified: the card in a browser at 360 px; the migration against Neon.
 

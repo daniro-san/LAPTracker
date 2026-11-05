@@ -6,17 +6,24 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { buttonClass } from "@/lib/brand/components/Button";
 import { SealButton } from "@/lib/brand/components/SealButton";
 import { copy, fill } from "@/lib/copy";
 import type { ManualEventStatus } from "@/lib/queries/admin";
 
 import { ConfirmSheet } from "./ConfirmSheet";
+import { ManualSection } from "./ManualSection";
 import { PinSheet, savedPin } from "./PinSheet";
 import { phaseWord, stateWord } from "./words";
 
 interface Action {
-  id: "rehearse" | "before" | "after" | "manual-create" | "manual-before" | "manual-after";
+  id:
+    | "rehearse"
+    | "before"
+    | "after"
+    | "manual-create"
+    | "manual-rename"
+    | "manual-before"
+    | "manual-after";
   /** One line under a snapshot button. */
   help?: string;
   /** On the seal; `name` is the accessible name when it differs. */
@@ -67,12 +74,19 @@ const manualSnapshots = (eventId: number): Action[] =>
     confirm: phase === "before" ? m.confirmBefore : m.confirmAfter,
   }));
 
-const createAction = (name: string): Action => ({
+const CREATE: Action = {
   id: "manual-create",
   label: m.create,
   url: "/api/manual-event",
   confirm: m.confirmCreate,
-  body: JSON.stringify({ name }),
+};
+
+const renameAction = (eventId: number, name: string): Action => ({
+  id: "manual-rename",
+  label: m.rename,
+  url: "/api/manual-event/rename",
+  confirm: m.confirmRename,
+  body: JSON.stringify({ event_id: eventId, name }),
 });
 
 async function post(action: Action, pin: string, force: boolean) {
@@ -147,8 +161,9 @@ export function AdminActions({
       <ManualSection
         manual={manual}
         busy={busy}
-        seal={seal}
-        onCreate={(name) => void start(createAction(name))}
+        seals={manual && manualSnapshots(manual.id).map((a) => <li key={a.id}>{seal(a)}</li>)}
+        onCreate={() => void start(CREATE)}
+        onRename={(id, name) => void start(renameAction(id, name))}
       />
       {message && (
         <p role="status" className="mt-3 break-words text-sm">
@@ -189,92 +204,13 @@ function SnapshotsGroup({ seal }: { seal: (a: Action) => React.ReactNode }) {
   );
 }
 
-/** The manual event (D28): a name field, its cost, and Before/After buttons for the newest one. */
-function ManualSection({
-  manual,
-  busy,
-  seal,
-  onCreate,
-}: {
-  manual: ManualEventStatus | null;
-  busy: string | null;
-  seal: (a: Action) => React.ReactNode;
-  onCreate: (name: string) => void;
-}) {
-  const [name, setName] = useState("");
-  return (
-    <div role="group" aria-labelledby="manual-group" className="mt-8">
-      <h3 id="manual-group" className="mb-1 font-subhead text-lg font-semibold">
-        {m.title}
-      </h3>
-      <p className="mb-3 text-sm">{m.help}</p>
-      <form
-        className="flex flex-col gap-3"
-        onSubmit={(e) => {
-          e.preventDefault();
-          onCreate(name);
-        }}
-      >
-        <label htmlFor="manual-name" className="text-sm font-semibold">
-          {m.nameLabel}
-        </label>
-        <input
-          id="manual-name"
-          type="text"
-          maxLength={80}
-          autoComplete="off"
-          placeholder={m.namePlaceholder}
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="drawn-field min-h-11 px-3"
-        />
-        <button
-          type="submit"
-          disabled={name.trim() === "" || busy !== null}
-          className={buttonClass("secondary", "font-semibold")}
-        >
-          {busy === "manual-create" ? t.running : m.create}
-        </button>
-      </form>
-      <p className="mt-3 text-sm text-ink/70">{m.cost}</p>
-      {manual ? (
-        <div className="mt-4">
-          <p className="break-words font-medium">{fill(m.current, { name: manual.name })}</p>
-          <ul className="my-2 text-sm">
-            {(["before", "after"] as const).map((phase) => {
-              const p = manual.phases.find((x) => x.phase === phase);
-              return (
-                <li key={phase}>
-                  {fill(m.phase, {
-                    phase: phaseWord(phase),
-                    state: p ? stateWord(p.status) : m.notRun,
-                  })}
-                </li>
-              );
-            })}
-          </ul>
-          <ul className="mb-2 flex flex-col gap-4">
-            {manualSnapshots(manual.id).map((a) => (
-              <li key={a.id}>{seal(a)}</li>
-            ))}
-          </ul>
-          <a href={`/events/${manual.id}`} className="inline-flex min-h-11 items-center underline">
-            {m.open}
-          </a>
-        </div>
-      ) : (
-        <p className="mt-3 text-sm">{m.none}</p>
-      )}
-    </div>
-  );
-}
-
 function describe(status: number, body: Record<string, unknown>, beforeAtText: string): string {
   const code = typeof body.code === "string" ? body.code : null;
   if (code === "snapshot_not_due") return fill(t.notDue, { at: beforeAtText });
   if (code)
     return `${status === 409 || status === 429 ? "" : "✗ "}${t.refusals[code] ?? fill(t.refused, { code })}`;
   if (status === 201) return body.event_id === undefined ? t.created : m.created;
+  if (body.name !== undefined) return m.renamed;
   const count = (v: unknown) => (Array.isArray(v) ? v.length : 0);
   return fill(t.result, {
     phase: body.phase === "before" || body.phase === "after" ? phaseWord(body.phase) : "",

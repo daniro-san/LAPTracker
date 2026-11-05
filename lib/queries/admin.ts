@@ -10,6 +10,7 @@ import { allianceSnapshots, appErrors, events, runLogs, snapshots } from "../sch
 export interface ManualEventStatus {
   id: number;
   name: string;
+  /** One entry per phase that has a snapshot; the name can be edited once there is one. */
   phases: { phase: "before" | "after"; status: string }[];
 }
 

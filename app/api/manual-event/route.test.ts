@@ -22,15 +22,23 @@ vi.mock("@/lib/app-context", async (original) => ({
 }));
 
 const manualRoute = await import("./route");
+const renameRoute = await import("./rename/route");
 const snapshotRoute = await import("../snapshot/route");
 const tickRoute = await import("../tick/route");
 
-const create = (name: unknown, pin = TEST_PIN) =>
+const create = (pin = TEST_PIN) =>
   manualRoute.POST(
     new Request("https://laptracker.test/api/manual-event", {
       method: "POST",
       headers: { "x-real-ip": "198.51.100.1", "x-edit-pin": pin },
-      body: JSON.stringify({ name }),
+    }),
+  );
+const rename = (event_id: number, name: unknown) =>
+  renameRoute.POST(
+    new Request("https://laptracker.test/api/manual-event/rename", {
+      method: "POST",
+      headers: { "x-real-ip": "198.51.100.1", "x-edit-pin": TEST_PIN },
+      body: JSON.stringify({ event_id, name }),
     }),
   );
 const run = (query: string) =>
@@ -57,28 +65,48 @@ beforeEach(async () => {
 });
 
 describe("manual events (D28)", () => {
-  it("creates a public event from a typed name, and only for the PIN", async () => {
-    const { ctx } = testContext(db);
+  it("creates a public round with a default name, and only for the PIN", async () => {
+    const { ctx, clock } = testContext(db);
     holder.ctx = ctx;
+    clock.now = new Date("2026-11-05T17:00:00Z");
 
-    const refused = await create("Demo", "000000");
-    const empty = await create("   ");
-    const ok = await create("  Alliance leaders demo  ");
+    const refused = await create("000000");
+    const ok = await create();
 
-    expect([refused.status, empty.status, ok.status]).toEqual([401, 400, 201]);
+    expect([refused.status, ok.status]).toEqual([401, 201]);
     const [row] = await db.select().from(events);
-    expect(row).toMatchObject({ name: "Alliance leaders demo", manual: true, isTest: false });
-    expect((await listEvents(db)).map((e) => e.name)).toEqual(["Alliance leaders demo"]);
+    expect(row).toMatchObject({ name: "Manual round 2026-11-05", manual: true, isTest: false });
+    expect((await listEvents(db)).map((e) => e.name)).toEqual(["Manual round 2026-11-05"]);
   });
 
-  it("runs before and after on a weekday, re-runs only with force, and never posts to the public channel", async () => {
+  it("renames a round only after a snapshot exists, and only to a plain 1-80 character name", async () => {
+    const { ctx, clock } = testContext(db);
+    holder.ctx = ctx;
+    clock.now = new Date("2026-11-04T12:00:00Z");
+    const { event_id: id } = (await (await create()).json()) as { event_id: number };
+
+    const early = await rename(id, "teste do danilo");
+    await run(`phase=before&event=${id}`);
+    const bad = [await rename(id, ""), await rename(id, "x".repeat(81)), await rename(id, "a\nb")];
+    const ok = await rename(id, "  teste do danilo  ");
+    const missing = await rename(9999, "x");
+
+    expect(early.status).toBe(409);
+    expect(await early.json()).toEqual({ code: "rename_before_run" });
+    expect(bad.map((r) => r.status)).toEqual([400, 400, 400]);
+    expect(ok.status).toBe(200);
+    expect(missing.status).toBe(404);
+    expect((await listEvents(db)).map((e) => e.name)).toEqual(["teste do danilo"]);
+  });
+
+  it("runs before and after on different days, re-runs only with force, and never posts to the public channel", async () => {
     const { ctx, clock, posts } = testContext(db);
     holder.ctx = ctx;
     clock.now = new Date("2026-11-04T12:00:00Z"); // Wednesday: the Saturday guard would refuse
-    const { event_id: id } = (await (await create("Demo")).json()) as { event_id: number };
+    const { event_id: id } = (await (await create()).json()) as { event_id: number };
 
     const before = await run(`phase=before&event=${id}`);
-    clock.now = new Date(clock.now.getTime() + minutes(5));
+    clock.now = new Date(clock.now.getTime() + 22 * 60 * minutes(1)); // the next morning
     const after = await run(`phase=after&event=${id}`);
     const again = await run(`phase=after&event=${id}`);
     const forced = await run(`phase=after&event=${id}&force=1`);
@@ -121,7 +149,7 @@ describe("manual events (D28)", () => {
     const { ctx, clock, v1 } = testContext(db);
     holder.ctx = ctx;
     clock.now = new Date("2026-11-04T12:00:00Z");
-    await create("Demo"); // before_at = after_at = now: inside every tick window
+    await create(); // before_at = after_at = now: inside every tick window
 
     const res = await tick();
 
@@ -134,7 +162,7 @@ describe("manual events (D28)", () => {
     const { ctx, clock } = testContext(db);
     holder.ctx = ctx;
     clock.now = new Date("2026-11-04T12:00:00Z");
-    const { event_id: id } = (await (await create("Demo")).json()) as { event_id: number };
+    const { event_id: id } = (await (await create()).json()) as { event_id: number };
     await run(`phase=before&event=${id}`);
 
     const detail = await getEventDetail(db, id);
