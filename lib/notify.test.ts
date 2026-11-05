@@ -259,7 +259,7 @@ describe("manual round public message", () => {
     const plain = publicSnapshotMessage(summary(), publicCtx());
     const embed = publicSnapshotMessage(summary(), publicCtx({ roundName: "Demo round" }));
     expect(embed.description).toBe(
-      `Manual round: Demo round. Not a Saturday event.\n${plain.description}`,
+      `Manual round: Demo round. Taken by hand.\n${plain.description}`,
     );
     expect({ ...embed, description: plain.description }).toEqual(plain);
   });
