@@ -15,7 +15,7 @@
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "check": "prettier --check . && eslint . && tsc --noEmit && vitest run",
+    "check": "prettier --check . && eslint . && tsc --noEmit && vitest run && tsx scripts/check-drift.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/migrate.ts",
     "snapshot:dry": "tsx scripts/snapshot-dry.ts",
