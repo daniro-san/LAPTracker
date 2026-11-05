@@ -16,3 +16,6 @@ coverage/
 
 # OS
 .DS_Store
+
+# Python bytecode from docs/brand/drawing/build.py
+__pycache__/

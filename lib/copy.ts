@@ -1,0 +1,116 @@
+// Every user-facing string added from Session 7 on (docs/DESIGN.md "Language-light rules"). Keys are
+// stable identifiers; values are the English text, so translation later is a file, not a refactor.
+// Session 7b moves the Session 6/6b strings here too.
+export const copy = {
+  site: {
+    name: "OG's LAP Tracker",
+    shortName: "LAP Tracker",
+    description: "Saturday event snapshots for server 325 alliances.",
+    byline: "kept by the Old Grandmas",
+    ledger: "Server 325 · Saturday Ledger",
+    players: "Players",
+    darkMode: "Dark mode",
+    exactNumbers: "Exact numbers",
+  },
+  errors: {
+    notFound: {
+      code: "404",
+      title: "Grandma wandered off.",
+      body: "This page isn't in the ledger.",
+      back: "Back to the table",
+    },
+    server: {
+      code: "500",
+      title: "Something cracked.",
+      body: "It's okay, grandma will clean it.",
+      retry: "Try again",
+      back: "Back to the table",
+    },
+  },
+  empty: {
+    kettle: "Nothing recorded yet. The kettle is on.",
+  },
+  brand: {
+    title: "Brand sheet",
+    intro: "Mock for review. Nothing on this page reads the database.",
+    mark: {
+      title: "The mark",
+      large: "Line mark, 200 px: 96 px and up (brand sheet, link preview, app icons)",
+      small: "Solid mark, 32 and 24 px: header and favicon",
+    },
+    palette: {
+      title: "Palette",
+      roles: {
+        paper: "Paper — the page",
+        ink: "Ink — all text",
+        plum: "Plum — header, links, focus",
+        seal: "Seal — losses, errors, stale",
+        yarn: "Yarn — gains, highlights",
+        sage: "Sage — neutral badges",
+        rule: "Rule — borders, table rules",
+      },
+    },
+    faces: {
+      title: "Typefaces",
+      primary: "Young Serif: page titles, wordmark, error lines",
+      secondary: "Alegreya Sans 700: section and card titles",
+      body: "Source Sans 3: body, labels and every number",
+      samples: [
+        "OG's LAP Tracker",
+        "Grandma wandered off.",
+        "Something cracked.",
+        "Saturday Ledger",
+      ],
+    },
+    type: {
+      title: "Type",
+      displayLg: "Saturday Ledger",
+      displayMd: "Gained and lost",
+      displaySm: "Nothing recorded yet. The kettle is on.",
+      displayNote: "Young Serif — 32 / 24 / 20 px",
+      body: "Might, kills and members for the top alliances on server 325, before and after the event.",
+      bodySm: "Updated 16:01 server time.",
+      bodyNote: "Source Sans 3 — 16 / 14 px, numerals tabular",
+      label: "Gained / Lost",
+    },
+    mascot: {
+      title: "The Granny Doctor",
+      standing: "Footer corner on the error and player pages",
+      tea: "Tea pose: the empty state",
+    },
+    ornaments: {
+      title: "Ornaments",
+      lace: "Lace border, under the header",
+      corner: "Yarn corner, one per page (bottom left of this page)",
+    },
+    controls: {
+      title: "Controls",
+      seal: "Run now",
+      sealNote: "Wax seal: confirm or destructive actions only",
+      primary: "Find a player",
+      inked: "Primary: solid face over pen hatching; sinks into it on press",
+      secondary: "Cancel",
+      framed: "Secondary: paper face in the drawn frame",
+      badge: "Test",
+      badgeNote: "Neutral badge",
+      waxTitle: "Wax tones: paper (header), seal (confirm), yarn (spare)",
+    },
+    status: {
+      title: "Snapshot status",
+      before: "Before",
+      after: "After",
+      running: "running",
+      complete: "done",
+      partial: "partial",
+      notYet: "not taken yet",
+    },
+    row: {
+      title: "Ledger row",
+      lead: "Alliance",
+      might: "Might",
+      kills: "Kills",
+      members: "Members",
+      membersNote: "+2 / −3",
+    },
+  },
+} as const;

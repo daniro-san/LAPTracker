@@ -2,7 +2,9 @@
 import Link from "next/link";
 
 import { utcDay } from "@/app/_ui/format";
+import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
+import { buttonClass } from "@/lib/brand/components/Button";
 import { withPageDb } from "@/lib/page";
 import { listEvents } from "@/lib/queries";
 import { searchPlayers, SEARCH_LIMIT } from "@/lib/queries/players";
@@ -24,9 +26,9 @@ export default async function PlayersPage({
   }));
   return (
     <>
-      <SiteHeader events={events} currentId={null} />
+      <SiteHeader events={events} currentId={null} section="players" />
       <main className="mx-auto max-w-[960px] px-4 py-4 sm:px-6">
-        <h1 className="text-xl font-bold">Find a player</h1>
+        <h1 className="font-display text-display-lg font-semibold">Find a player</h1>
         <form action="/players" method="get" role="search" className="my-3 flex gap-2">
           <input
             type="search"
@@ -35,31 +37,19 @@ export default async function PlayersPage({
             maxLength={MAX_QUERY}
             placeholder="Player name, current or earlier"
             aria-label="Player name"
-            className="min-h-11 min-w-0 flex-1 rounded-xs border border-zinc-300 bg-white px-3 dark:border-zinc-700 dark:bg-zinc-900"
+            className="drawn-field min-h-11 min-w-0 flex-1 px-3"
           />
-          <button
-            type="submit"
-            className="min-h-11 rounded-xs border border-zinc-800 px-4 font-medium dark:border-zinc-200"
-          >
+          <button type="submit" className={buttonClass("primary")}>
             Search
           </button>
         </form>
-        {q === "" && (
-          <p className="text-zinc-500 dark:text-zinc-400">
-            Type part of a name. Earlier names match too.
-          </p>
-        )}
+        {q === "" && <p className="text-ink/70">Type part of a name. Earlier names match too.</p>}
         {q !== "" && matches.length === 0 && (
-          <p className="py-6 text-center text-zinc-500 dark:text-zinc-400">
-            No player matches “{q}”.
-          </p>
+          <p className="py-6 text-center text-ink/70">No player matches “{q}”.</p>
         )}
         <ul>
           {matches.map((m) => (
-            <li
-              key={m.uid}
-              className="relative mb-3 border border-zinc-300 p-3 dark:border-zinc-700"
-            >
+            <li key={m.uid} className="relative mb-3 border border-rule p-3">
               <Link
                 href={`/players/${m.uid}`}
                 className="break-words font-semibold [overflow-wrap:anywhere] after:absolute after:inset-0 after:content-[''] hover:underline focus-visible:underline"
@@ -67,23 +57,21 @@ export default async function PlayersPage({
                 {m.name}
               </Link>
               {m.matchedName && (
-                <span className="text-sm text-zinc-500 dark:text-zinc-400">
-                  {" "}
-                  (earlier name: {m.matchedName})
-                </span>
+                <span className="text-sm text-ink/70"> (earlier name: {m.matchedName})</span>
               )}
-              <div className="text-sm text-zinc-500 dark:text-zinc-400">
+              <div className="text-sm text-ink/70">
                 {m.tag} · {m.allianceName} · last seen {utcDay(m.lastSeen)}
               </div>
             </li>
           ))}
         </ul>
         {matches.length === SEARCH_LIMIT && (
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="text-sm text-ink/70">
             Showing the first {SEARCH_LIMIT} matches. Type more of the name to narrow it down.
           </p>
         )}
       </main>
+      <SiteFooter />
     </>
   );
 }

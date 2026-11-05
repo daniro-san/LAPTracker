@@ -3,7 +3,7 @@
 // touch and without JavaScript. Deltas carry a sign character and an arrow: colour is never the only cue.
 import { compact, exact, percent, percentText, signOf } from "./format";
 
-const MUTED = "text-zinc-500 dark:text-zinc-400";
+const MUTED = "text-ink/70";
 
 export function Num({ n }: { n: number | null }) {
   if (n === null) return <span className={MUTED}>—</span>;
@@ -16,8 +16,8 @@ export function Num({ n }: { n: number | null }) {
 }
 
 function tone(delta: number): string {
-  if (delta > 0) return "text-emerald-700 dark:text-emerald-400";
-  if (delta < 0) return "text-red-700 dark:text-red-400";
+  if (delta > 0) return "text-yarn";
+  if (delta < 0) return "text-seal";
   return MUTED;
 }
 

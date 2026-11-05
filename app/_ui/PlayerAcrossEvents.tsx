@@ -49,7 +49,7 @@ function toRow(r: PlayerEventRow): StatRow {
         {r.reference === "before" && (
           <abbr
             title="Not on the after-event roster: showing the before snapshot"
-            className="ml-2 rounded-xs border border-zinc-400 px-1 text-xs no-underline"
+            className="ml-2 rounded-xs border border-ink/50 px-1 text-xs no-underline"
           >
             B
           </abbr>
@@ -90,8 +90,8 @@ export function PlayerAcrossEvents({ rows }: { rows: PlayerEventRow[] }) {
   );
   return (
     <section className="mt-8">
-      <h2 className="mb-1 text-lg font-bold">History across events</h2>
-      <p className="mb-3 text-sm text-zinc-500 dark:text-zinc-400">
+      <h2 className="mb-1 font-subhead text-display-md font-semibold">History across events</h2>
+      <p className="mb-3 text-sm text-ink/70">
         Each row shows the change during that event (before to after) and the change since the event
         before. “B” means the player was not on the after-event roster, so the before snapshot is
         shown. Tap a row to open the alliance.

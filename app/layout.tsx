@@ -3,6 +3,9 @@ import type { Metadata } from "next";
 import { connection } from "next/server";
 import type { ReactNode } from "react";
 
+import { fontVariables } from "@/lib/brand/fonts";
+import { readTheme } from "@/lib/brand/theme";
+
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -12,11 +15,10 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   await connection();
+  const theme = await readTheme();
   return (
-    <html lang="en">
-      <body className="min-h-screen bg-white text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-100">
-        {children}
-      </body>
+    <html lang="en" data-theme={theme ?? undefined} className={fontVariables}>
+      <body className="min-h-screen bg-paper font-body text-ink antialiased">{children}</body>
     </html>
   );
 }
