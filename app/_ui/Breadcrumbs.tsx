@@ -13,7 +13,7 @@ export interface Crumb {
 
 export function Breadcrumbs({ crumbs }: { crumbs: Crumb[] }) {
   return (
-    <nav aria-label={copy.site.breadcrumb} className="mb-1 text-sm">
+    <nav aria-label={copy.site.breadcrumb} className="mb-1 text-base">
       <ol className="flex flex-wrap items-center gap-x-1">
         {crumbs.map((c, i) => (
           <li key={c.key} className="inline-flex min-w-0 items-center gap-1">
@@ -25,7 +25,7 @@ export function Breadcrumbs({ crumbs }: { crumbs: Crumb[] }) {
             {c.href ? (
               <Link
                 href={c.href}
-                className="inline-flex min-h-11 items-center gap-1.5 break-words font-medium text-plum underline-offset-2 hover:underline"
+                className="inline-flex min-h-11 min-w-11 items-center gap-1.5 break-words font-medium text-plum underline-offset-2 hover:underline"
               >
                 {c.label}
               </Link>

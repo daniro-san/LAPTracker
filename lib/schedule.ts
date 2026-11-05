@@ -132,7 +132,7 @@ export function nextEvent(now: Date, cfg: ScheduleConfig): ScheduledEvent {
 }
 
 /** The most recent occurrence of "<day> HH:MM" (server time) at or before `now`. */
-function lastOccurrence(slot: string, now: Date, cfg: ScheduleConfig): Date {
+export function lastOccurrence(slot: string, now: Date, cfg: ScheduleConfig): Date {
   const [dayName = "", time = "00:00"] = slot.trim().split(/\s+/);
   const weekday = WEEKDAYS.indexOf(dayName as (typeof WEEKDAYS)[number]);
   const local = wallClock(now, cfg.SERVER_TZ);

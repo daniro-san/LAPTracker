@@ -4,6 +4,11 @@ import { getAppContext } from "@/lib/app-context";
 import { AVATAR_CACHE, avatarSource, fetchImage, imageResponse, notFoundImage } from "@/lib/images";
 import { findAvatarUrl } from "@/lib/repo/alliance-snapshots";
 
+import { resizedResponse } from "../../resize";
+
+/** Twice the largest drawn photo (56 px beside the player page title). */
+const AVATAR_PX = 112;
+
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ uid: string }> },
@@ -15,7 +20,11 @@ export async function GET(
   try {
     const source = avatarSource(await findAvatarUrl(db, Number(uid)));
     const image = source ? await fetchImage(source, ctx.fetch) : null;
-    return image ? imageResponse(image, AVATAR_CACHE) : notFoundImage();
+    if (!image) return notFoundImage();
+    return (
+      (await resizedResponse(image, AVATAR_PX, "cover", AVATAR_CACHE)) ??
+      imageResponse(image, AVATAR_CACHE)
+    );
   } catch {
     return notFoundImage();
   } finally {

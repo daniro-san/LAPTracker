@@ -21,7 +21,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   await connection();
   const [theme, locale] = await Promise.all([readTheme(), requestLocale()]);
   return (
-    <html lang="en" data-theme={theme ?? undefined} className={fontVariables}>
+    <html lang={locale} data-theme={theme ?? undefined} className={fontVariables}>
       <body className="min-h-screen bg-paper font-body text-ink antialiased">
         <LocaleProvider locale={locale}>{children}</LocaleProvider>
       </body>

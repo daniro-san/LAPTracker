@@ -120,8 +120,8 @@ function advancedLine(before: VerdictPhase, after: VerdictPhase): VerdictLine {
   const named = [...stuck, ...missing].map(label);
   return line(
     named.length === 0,
-    `updated_at advanced for every alliance (${after.alliances.length}/${before.alliances.length})`,
-    `updated_at did not advance: ${named.join(", ")}`,
+    `data time moved forward for every alliance (${after.alliances.length}/${before.alliances.length})`,
+    `data time did not move forward: ${named.join(", ")}`,
   );
 }
 
@@ -180,8 +180,8 @@ export function rehearsalVerdict(input: VerdictInput, windowMin: number): Verdic
     advancedLine(before, after),
     line(
       quota.ok,
-      `calls_used = quota drop (${quota.all})`,
-      `calls_used ≠ quota drop: ${quota.bad}`,
+      `calls used = quota drop (${quota.all})`,
+      `calls used ≠ quota drop: ${quota.bad}`,
     ),
     line(fast.ok, `each run under 120 s (${fast.all})`, `over 120 s: ${fast.bad}`),
     line(

@@ -105,6 +105,8 @@ export interface HistoryRow {
   eventAtUtc: Date;
   /** `before` marks the fallback: the after snapshot is missing or has no data (Phase 5e). */
   reference: "before" | "after";
+  /** When the reference row's data was read upstream: the time its figures are from. */
+  updatedAt: Date | null;
   tag: string | null;
   name: string | null;
   memberCount: number | null;
@@ -192,6 +194,7 @@ export async function allianceHistory(db: Db, unionId: number): Promise<HistoryR
         eventName: event.eventName,
         eventAtUtc: event.eventAtUtc,
         reference,
+        updatedAt: row.sourceUpdatedAt,
         tag: row.tag,
         name: row.name,
         memberCount: row.memberCount,

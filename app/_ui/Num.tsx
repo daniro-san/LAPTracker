@@ -46,14 +46,17 @@ export function Delta({
   if (delta === null) return <span className={MUTED}>—</span>;
   const pct = percent(delta, base);
   return (
-    <span className={`whitespace-nowrap font-medium ${tone(delta)}`}>
-      <span aria-hidden="true">{arrow(delta)} </span>
-      {delta !== 0 && signOf(delta)}
-      <Num n={Math.abs(delta)} />
-      {pct !== null && delta !== 0 && (
-        <span suppressHydrationWarning> ({percentText(pct, locale)})</span>
-      )}
-      {note && <span className="whitespace-normal font-normal"> · {note}</span>}
+    <span className={`font-medium ${tone(delta)}`}>
+      {/* Only the change itself stays on one line; a note may wrap under it (07c S10). */}
+      <span className="whitespace-nowrap">
+        <span aria-hidden="true">{arrow(delta)} </span>
+        {delta !== 0 && signOf(delta)}
+        <Num n={Math.abs(delta)} />
+        {pct !== null && delta !== 0 && (
+          <span suppressHydrationWarning> ({percentText(pct, locale)})</span>
+        )}
+      </span>
+      {note && <span className="font-normal"> · {note}</span>}
     </span>
   );
 }

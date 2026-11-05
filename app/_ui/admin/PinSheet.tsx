@@ -1,12 +1,15 @@
 "use client";
 
-// The PIN pattern (plan Phase 5): a bottom sheet, `inputmode="numeric"`, asked once per session,
-// with a visible checking / failed state. The PIN lives in sessionStorage so the action buttons can
-// send it as x-edit-pin; the server cookie only unlocks the admin pages.
+// The PIN pattern (plan Phase 5): a bottom sheet (a <dialog>, app/_ui/admin/sheet.ts),
+// `inputmode="numeric"`, asked once per session, with a visible checking / failed state. The PIN lives in
+// sessionStorage so the action buttons can send it as x-edit-pin; the server cookie only unlocks the
+// admin pages.
 import { useState } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
 import { copy } from "@/lib/copy";
+
+import { GATE_CARD, MODAL_CARD, SHEET, useSheet } from "./sheet";
 
 const KEY = "lap_pin";
 
@@ -22,7 +25,17 @@ const t = copy.admin.pin;
 
 const MESSAGES: Record<number, string> = { 401: t.wrong, 429: t.tooMany };
 
-export function PinSheet({ onUnlocked }: { onUnlocked: (pin: string) => void }) {
+export function PinSheet({
+  gate = false,
+  onUnlocked,
+  onCancel,
+}: {
+  /** The /admin gate: the sheet is the page, open and non-modal. Otherwise an action asked for it. */
+  gate?: boolean;
+  onUnlocked: (pin: string) => void;
+  onCancel?: () => void;
+}) {
+  const ref = useSheet(!gate);
   const [pin, setPin] = useState("");
   const [state, setState] = useState<"idle" | "checking" | string>("idle");
   async function submit(e: React.FormEvent) {
@@ -45,9 +58,19 @@ export function PinSheet({ onUnlocked }: { onUnlocked: (pin: string) => void }) 
     }
   }
   return (
-    <div className="fixed inset-x-0 bottom-0 z-50 border-t border-rule bg-paper p-4 shadow-[0_-8px_24px_var(--sheet-shadow)]">
+    <dialog
+      ref={ref}
+      open={gate || undefined}
+      aria-labelledby="pin-label"
+      {...(gate && { "aria-describedby": "pin-prompt" })}
+      onCancel={(e) => {
+        e.preventDefault();
+        onCancel?.();
+      }}
+      className={`${SHEET} ${gate ? GATE_CARD : MODAL_CARD}`}
+    >
       <form onSubmit={submit} className="mx-auto flex max-w-md flex-col gap-3">
-        <label htmlFor="pin" className="font-semibold">
+        <label id="pin-label" htmlFor="pin" className="font-semibold">
           {t.label}
         </label>
         <input
@@ -55,6 +78,7 @@ export function PinSheet({ onUnlocked }: { onUnlocked: (pin: string) => void }) 
           type="password"
           inputMode="numeric"
           autoComplete="off"
+          autoFocus
           pattern="[0-9]*"
           maxLength={8}
           value={pin}
@@ -74,6 +98,6 @@ export function PinSheet({ onUnlocked }: { onUnlocked: (pin: string) => void }) 
           </p>
         )}
       </form>
-    </div>
+    </dialog>
   );
 }

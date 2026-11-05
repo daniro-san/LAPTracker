@@ -2,7 +2,8 @@
 import { notFound } from "next/navigation";
 
 import { AdminShell } from "@/app/_ui/admin/AdminShell";
-import { utcStamp } from "@/app/_ui/format";
+import { phaseWord, stateWord } from "@/app/_ui/admin/words";
+import { requestClock } from "@/app/_ui/locale";
 import { copy, fill } from "@/lib/copy";
 import { withPageDb } from "@/lib/page";
 import { getRun } from "@/lib/queries/admin";
@@ -27,7 +28,10 @@ const time = (d: Date) => d.toISOString().slice(11, 23);
 export default async function RunPage({ params }: { params: Promise<{ id: string }> }) {
   const raw = (await params).id;
   if (!/^\d{1,9}$/.test(raw)) notFound();
-  const found = await withPageDb((db) => getRun(db, Number(raw)));
+  const [found, clock] = await Promise.all([
+    withPageDb((db) => getRun(db, Number(raw))),
+    requestClock(),
+  ]);
   if (!found) notFound();
   const { run, logs, tags } = found;
   const t = copy.admin.runs;
@@ -35,10 +39,10 @@ export default async function RunPage({ params }: { params: Promise<{ id: string
     <AdminShell title={fill(t.run, { id: run.id })}>
       <p className="break-words">
         {run.isTest && `${t.rehearsal} `}
-        {run.eventName} · {run.phase} · {run.status}
+        {clock.stamp(run.eventAtUtc)} · {phaseWord(run.phase)} · {stateWord(run.status)}
       </p>
       <p className="mb-1 text-sm text-ink/70">
-        {utcStamp(run.startedAt)} · {fill(t.calls, { n: run.callsUsed })}
+        {clock.stamp(run.startedAt)} · {fill(t.calls, { n: run.callsUsed })}
         {run.durationMs !== null &&
           ` · ${fill(t.seconds, { n: (run.durationMs / 1000).toFixed(1) })}`}
       </p>
