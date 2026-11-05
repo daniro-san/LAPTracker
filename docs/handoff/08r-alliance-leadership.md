@@ -25,7 +25,7 @@
 - Branch is `session/08r-alliance-leadership` and the handoff `08r-…`, following the 08x series, since the task gave `NN`.
 
 ## Verified
-- `pnpm check` (Node 26.13.0): prettier, eslint, tsc clean; 149 passed, 1 skipped. (Under heavy machine load, several PGlite files hit the 10 s `beforeAll` timeout; the same files passed on re-run.)
+- `pnpm check` (Node 26.13.0): prettier, eslint, tsc clean; 151 passed, 1 skipped (after merging origin/dev with #98 and #99). (Under heavy machine load, several PGlite files hit the 10 s `beforeAll` timeout; the same files passed on re-run.)
 - Migration 0008 applied by the PGlite test helper (all DB tests run on it).
 - Browser (in-app browser, `next dev`) at 360 px, light only, on a temporary scratch page with synthetic members (deleted before commit): the four Leadership cards (leader with a long name wrapping, Diplomat, Recruiter, a leaver with `− Left` and last numbers) stack without overflow; the list rows show the crown or star after the name with the tint, and the unmarked row is unchanged.
 - Not seen: the real alliance page and player page with real rank data. The Neon database the local `.env.local` points at has no `rank_code` column yet and I did not migrate it; the old rows have no rank data anyway. Also not seen: 1280 px, dark mode, the player page role line, the `/brand` page. Read from code only.
