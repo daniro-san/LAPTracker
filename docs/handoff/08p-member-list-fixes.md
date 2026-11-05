@@ -39,3 +39,5 @@ Plan change: none.
 - After the Before run, open a manual or Saturday alliance page: the list should show all members with no Left marks and `Members n / 100`.
 </adjustments>
 
+
+https://github.com/daniro-san/LAPTracker/pull/96
