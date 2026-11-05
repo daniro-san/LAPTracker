@@ -180,6 +180,7 @@ export function Legend() {
     ["=", l.same, "text-ink/70"],
     ["#", l.rank, "text-ink"],
     ["○", l.stale, "text-seal"],
+    ["≈", l.rounded, "text-ink"],
   ];
   return (
     <ul
