@@ -33,7 +33,7 @@ instrumentation.ts  validates the environment once at server start
 
 ## Dependency rule
 
-- `app → lib/{route, auth, run, tick, rehearsal, schedule, queries, repo, images}`; `lib/run → lib/collector`.
+- `app → lib/{route, auth, run, tick, rehearsal, schedule, queries, repo, images}`; `lib/run → lib/{collector, queries}` (queries: the public Discord message's numbers).
 - `lib/collector → lib/{compute, sources, repo, logger, notify}` **through the `Deps` object passed in**.
 - `lib/compute` and `lib/budget` import nothing from the project.
 - `lib/logger` imports only `lib/repo` and `lib/redact`.

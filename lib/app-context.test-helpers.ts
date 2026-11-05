@@ -30,7 +30,7 @@ export const TEST_ENV = parseEnv({
 
 export function testContext(db: Db, env = TEST_ENV) {
   const clock = { now: T0 };
-  const posts: { url: string; content: string }[] = [];
+  const posts: { url: string; content: string; body: Record<string, unknown> }[] = [];
   const v1 = fakeV1((id) => roster(id, ago(clock.now, minutes(1))));
   const ctx: AppContext = {
     env,
@@ -38,8 +38,8 @@ export function testContext(db: Db, env = TEST_ENV) {
     v1,
     internal: fakeInternal(),
     fetch: async (input, init) => {
-      const body = JSON.parse(String(init?.body)) as { content: string };
-      posts.push({ url: String(input), content: body.content });
+      const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
+      posts.push({ url: String(input), content: String(body.content ?? ""), body });
       return new Response(null, { status: 204 });
     },
     openDb: () => ({ db, close: async () => {} }),

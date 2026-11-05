@@ -1,10 +1,11 @@
 // Every user-facing string (docs/DESIGN.md "Language-light rules"). Keys are stable identifiers; values
-// are the English text, so translation later is a file, not a refactor. The /brand page's text and the
-// admin area's live in sibling files and are re-exported here, so there is one import path.
+// are the English text, so translation later is a file, not a refactor. The /brand page's text, the
+// admin area's and the Discord messages' live in sibling files and are re-exported here, so there is one import path.
 // `{name}` is a placeholder filled by `fill()`; labels on public pages are at most two words. Symbols
 // (signs, arrows, `#`) stay in the components so the blank dictionary keeps them visible.
 import { adminCopy } from "./copy-admin";
 import { brandCopy } from "./copy-brand";
+import { discordCopy } from "./copy-discord";
 
 const source = {
   site: {
@@ -117,6 +118,7 @@ const source = {
   },
   admin: adminCopy,
   brand: brandCopy,
+  discord: discordCopy,
 } as const;
 
 /** `fill("Last updated: {state}", { state: "done" })`; unknown placeholders stay as written. */

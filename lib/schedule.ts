@@ -163,12 +163,3 @@ export function rehearsalSlotsDue(now: Date, cfg: ScheduleConfig): Date[] {
 export function serverWeekday(at: Date, cfg: Pick<ScheduleConfig, "SERVER_TZ">): number {
   return wallClock(at, cfg.SERVER_TZ).weekday;
 }
-
-/** "Sat 2026-11-07 10:00 server (12:00 UTC)", for admin messages. */
-export function describeInstant(at: Date, cfg: ScheduleConfig): string {
-  const w = wallClock(at, cfg.SERVER_TZ);
-  const hhmm = (h: number, m: number) =>
-    `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-  const day = WEEKDAY_NAMES[w.weekday]?.slice(0, 3);
-  return `${day} ${isoDate(w)} ${hhmm(w.hh, w.mm)} server (${hhmm(at.getUTCHours(), at.getUTCMinutes())} UTC)`;
-}

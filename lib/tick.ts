@@ -2,18 +2,12 @@
 // ahead; every event (Saturday or rehearsal) carries its own before_at/after_at; one action per tick.
 import type { AppContext } from "./app-context";
 import type { Db } from "./db";
-import { createNotifier } from "./notify";
+import { createNotifier, discordClock, rehearsalSkippedMessage } from "./notify";
 import { createRehearsal, type RehearsalResult } from "./rehearsal";
 import { claimQuotaCheck, duePhases, findOrCreateEvent } from "./repo/events";
 import { claimSlot, setSlotOutcome } from "./repo/rehearsals";
 import { executeSnapshot, quotaReport, type RunOutcome } from "./run";
-import {
-  describeInstant,
-  eventsToCreate,
-  nextEvent,
-  quotaCheckDue,
-  rehearsalSlotsDue,
-} from "./schedule";
+import { eventsToCreate, nextEvent, quotaCheckDue, rehearsalSlotsDue } from "./schedule";
 
 export type TickOutcome =
   | { kind: "idle" }
@@ -32,7 +26,7 @@ async function scheduledRehearsal(ctx: AppContext, db: Db, slotAt: Date): Promis
   );
   if (!result.ok) {
     await createNotifier(ctx.env, ctx.fetch).admin(
-      `Scheduled rehearsal (${describeInstant(slotAt, ctx.env)}) skipped: ${result.reason}.`,
+      rehearsalSkippedMessage(result.reason, discordClock(ctx.env.SERVER_TZ).stamp(slotAt)),
       { test: true },
     );
   }

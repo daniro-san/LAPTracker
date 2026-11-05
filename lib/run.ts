@@ -8,16 +8,19 @@ import { createRunLogger } from "./logger";
 import {
   adminSnapshotMessage,
   createNotifier,
+  discordClock,
   publicSnapshotMessage,
+  quotaReportMessage,
   rehearsalVerdictMessage,
 } from "./notify";
+import { getEventDetail } from "./queries";
 import { rehearsalVerdict } from "./rehearsal";
 import { createRepo, type Phase, type Repo } from "./repo";
 import { databaseSizeBytes } from "./repo/database";
 import type { EventInfo } from "./repo/events";
 import { loadVerdictInput } from "./repo/rehearsals";
 import { insertRunLog } from "./repo/run-logs";
-import { describeInstant, nextEvent, WEEKDAY_NAMES } from "./schedule";
+import { nextEvent } from "./schedule";
 
 export type RunOutcome =
   | { ok: true; summary: RunSummary }
@@ -77,7 +80,7 @@ async function finaliseCrashed(
 
 /**
  * Sent only after the snapshot row is final. A test event (rehearsal) never reaches the public
- * channel, its admin lines start with [TEST], and its AFTER run is followed by the verdict.
+ * channel, its admin lines start with [rehearsal], and its AFTER run is followed by the verdict.
  */
 async function notifyFinished(
   ctx: AppContext,
@@ -86,32 +89,46 @@ async function notifyFinished(
   run: { summary: RunSummary; startedAt: Date; logWriteFailures: number },
 ): Promise<void> {
   const { summary } = run;
-  const rows = await createRepo(db)
-    .listAllianceRows(summary.snapshotId)
-    .catch(() => []);
-  const scheduledAt = req.phase === "before" ? req.event.beforeAt : req.event.afterAt;
-  const context = {
-    weekdayName: WEEKDAY_NAMES[ctx.env.EVENT_WEEKDAY] ?? "Saturday",
-    allianceCount: rows.length,
-    tableUrl: `${req.origin}/`,
-    runUrl: `${req.origin}/admin/runs/${summary.snapshotId}`,
-    eventId: req.event.id,
-    logWriteFailures: run.logWriteFailures,
-    scheduled: describeInstant(scheduledAt, ctx.env),
-    started: describeInstant(run.startedAt, ctx.env),
-  };
+  const clock = discordClock(ctx.env.SERVER_TZ);
+  const finishedAt = ctx.now();
   const notifier = createNotifier(ctx.env, ctx.fetch);
   const test = { test: req.event.isTest };
   // INVARIANT notify.test-events-admin-only
-  if (!req.event.isTest) await notifier.public(publicSnapshotMessage(summary, context));
-  await notifier.admin(adminSnapshotMessage(summary, context), test);
+  if (!req.event.isTest) {
+    // getEventDetail reads real events only: the public message never sees a rehearsal.
+    const detail = await getEventDetail(db, req.event.id).catch(() => null);
+    const rowsOf = (phase: Phase) =>
+      detail?.snapshots.find((s) => s.phase === phase)?.alliances ?? null;
+    await notifier.public(
+      publicSnapshotMessage(summary, {
+        clock,
+        eventUrl: `${req.origin}/events/${req.event.id}`,
+        finishedAt,
+        nextAt: req.phase === "before" ? req.event.afterAt : null,
+        alliances: rowsOf(req.phase) ?? [],
+        before: req.phase === "after" ? rowsOf("before") : null,
+      }),
+    );
+  }
+  await notifier.admin(
+    adminSnapshotMessage(summary, {
+      clock,
+      phase: req.phase,
+      runUrl: `${req.origin}/admin/runs/${summary.snapshotId}`,
+      scheduledAt: req.phase === "before" ? req.event.beforeAt : req.event.afterAt,
+      startedAt: run.startedAt,
+      finishedAt,
+      logWriteFailures: run.logWriteFailures,
+    }),
+    test,
+  );
   if (req.event.isTest && req.phase === "after") {
     const verdict = rehearsalVerdict(
       await loadVerdictInput(db, req.event.id),
       ctx.env.SNAPSHOT_WINDOW_MIN,
     );
     await notifier.admin(
-      rehearsalVerdictMessage(verdict, req.event.id, `${req.origin}/admin/runs`),
+      rehearsalVerdictMessage(verdict, clock.stamp(finishedAt), `${req.origin}/admin/runs`),
       test,
     );
   }
@@ -176,7 +193,7 @@ export async function executeSnapshot(
 
 /** Plan §3.1: quota ⚠️ under 900, database ⚠️ over 700 MB. */
 export const QUOTA_WARN_BELOW = 900;
-const DB_WARN_ABOVE_BYTES = 700 * 1024 * 1024;
+const DB_WARN_ABOVE_MB = 700;
 
 /**
  * The Friday check: one /v1/quota call, the database size and the next snapshot times. Posts to the
@@ -195,12 +212,16 @@ export async function quotaReport(
   if (!options.always && !low) return { remaining, posted: false };
   const bytes = await databaseSizeBytes(db);
   const event = nextEvent(ctx.now(), ctx.env);
-  const lines = [
-    `${low ? "⚠️" : "✅"} quota remaining: ${remaining ?? "unavailable (the /v1/quota call failed)"}`,
-    `${bytes > DB_WARN_ABOVE_BYTES ? "⚠️" : "✅"} database size: ${(bytes / 1024 / 1024).toFixed(1)} MB`,
-    `next BEFORE: ${describeInstant(event.beforeAt, ctx.env)}`,
-    `next AFTER: ${describeInstant(event.afterAt, ctx.env)}`,
-  ];
-  await createNotifier(ctx.env, ctx.fetch).admin(lines.join("\n"));
+  const clock = discordClock(ctx.env.SERVER_TZ);
+  const message = quotaReportMessage({
+    at: clock.stamp(ctx.now()),
+    remaining,
+    warnBelow: QUOTA_WARN_BELOW,
+    databaseMb: bytes / 1024 / 1024,
+    warnAboveMb: DB_WARN_ABOVE_MB,
+    beforeAt: clock.stamp(event.beforeAt),
+    afterAt: clock.stamp(event.afterAt),
+  });
+  await createNotifier(ctx.env, ctx.fetch).admin(message);
   return { remaining, posted: true };
 }
