@@ -81,6 +81,8 @@ export const adminCopy = {
   runs: {
     title: "Snapshot runs",
     none: "No snapshot runs yet.",
+    started: "started {at}",
+    finished: "finished {at}",
     calls: "{n} calls",
     quotaLeft: "{n} requests left",
     seconds: "{n} s",
