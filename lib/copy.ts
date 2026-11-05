@@ -11,9 +11,9 @@ const source = {
   site: {
     name: "OG's LAP Tracker",
     shortName: "LAP Tracker",
-    description: "Saturday event snapshots for server 325 alliances.",
+    description: "Event snapshots for server 325 alliances.",
     byline: "kept by the Old Grandmas",
-    ledger: "Server 325 · Saturday Ledger",
+    ledger: "Server 325 · Event Ledger",
     players: "Players",
     darkMode: "Dark mode",
     exactNumbers: "Exact numbers",

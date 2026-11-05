@@ -3,7 +3,7 @@
 export const brandCopy = {
   title: "Brand guidelines",
   intro:
-    "How the Saturday Ledger looks, draws and speaks. Every piece on this page is the one the site uses.",
+    "How the Event Ledger looks, draws and speaks. Every piece on this page is the one the site uses.",
   unit: "px",
   do: "Do",
   dont: "Don't",
@@ -98,7 +98,7 @@ export const brandCopy = {
         spec: "48 / 1.05 · Young Serif",
         use: "Error-page line",
       },
-      displayLg: { sample: "Saturday Ledger", spec: "32 / 1.1 · Young Serif", use: "Page title" },
+      displayLg: { sample: "Event Ledger", spec: "32 / 1.1 · Young Serif", use: "Page title" },
       displayMd: {
         sample: "Gained and lost",
         spec: "24 / 1.15 · Alegreya Sans 700",
@@ -238,7 +238,7 @@ export const brandCopy = {
     title: "Voice",
     lede: "Short, dry, grandmotherly, English. The ledger belongs to the server and is kept by the Old Grandmas; another alliance reading it should feel invited, not visiting.",
     rules: [
-      "Title and byline: Server 325 · Saturday Ledger, kept by the Old Grandmas.",
+      "Title and byline: Server 325 · Event Ledger, kept by the Old Grandmas.",
       "Labels are the game's own words: Might, Kills, Members, Gained / Lost.",
       "Sentences live in the margins: empty states, error pages, section titles, admin. Status is chips.",
       "No exclamation marks, no emoji, no Oops, no Awesome.",

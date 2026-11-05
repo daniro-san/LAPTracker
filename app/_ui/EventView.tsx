@@ -86,7 +86,7 @@ function toStatRow(
   };
 }
 
-/** "Server 325 · Saturday Ledger", "kept by the Old Grandmas": the page title, under the header. */
+/** "Server 325 · Event Ledger", "kept by the Old Grandmas": the page title, under the header. */
 function TitleBand() {
   return (
     <div className="mb-3">
