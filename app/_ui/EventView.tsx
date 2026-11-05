@@ -134,6 +134,7 @@ export async function EventView({
             now,
           )}
           stale={rows.filter((r) => worstOf(fresh(r.before), fresh(r.after)) !== "fresh").length}
+          manual={detail.manual}
           clock={clock}
         />
         <Legend />
@@ -142,7 +143,11 @@ export async function EventView({
           leadLabel={copy.ledger.alliance}
           columns={[copy.ledger.might, copy.ledger.kills, copy.ledger.members]}
           rows={rows.map((r) => toStatRow(detail.id, r, names.get(r.unionId), clock))}
-          empty={copy.empty.kettle}
+          empty={
+            detail.manual && detail.snapshots.length === 0
+              ? copy.empty.manualNotRun
+              : copy.empty.kettle
+          }
         />
       </main>
       <SiteFooter />
