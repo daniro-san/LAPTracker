@@ -15,6 +15,8 @@ export interface StatMetric {
   /** The delta's percentage is relative to this; defaults to `from`. */
   base?: number | null;
   note?: string;
+  /** A second change shown under the first, e.g. the change since the previous event. */
+  vs?: { label: string; delta: number | null; base: number | null };
 }
 
 export interface StatRow {
@@ -43,6 +45,11 @@ function MetricCell({ m }: { m: StatMetric }) {
       <span className="tabular-nums text-sm sm:block">
         <Delta delta={m.delta} base={base} note={m.note} />
       </span>
+      {m.vs && (
+        <span className={`text-xs tabular-nums ${MUTED} sm:block`}>
+          {m.vs.label}: <Delta delta={m.vs.delta} base={m.vs.base} />
+        </span>
+      )}
       {m.from !== undefined && m.from !== null && m.from !== m.value && (
         <span className={`text-xs tabular-nums ${MUTED} sm:block`}>
           Before event: <Num n={m.from} />
