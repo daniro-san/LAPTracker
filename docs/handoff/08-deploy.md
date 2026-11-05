@@ -70,4 +70,4 @@ Plan changes needed: §3.1 and Phase 6: the scheduler is cron-job.org (D30), not
 - `/admin` refuses a Before for the Saturday event before its `before_at` (`snapshot_not_due`), force included. A manual round (D28) is the way to run on a weekday.
 </adjustments>
 
-https://github.com/daniro-san/LAPTracker/pull/40
+https://github.com/daniro-san/LAPTracker/pull/83
