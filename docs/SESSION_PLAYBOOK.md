@@ -177,7 +177,7 @@ Write docs/handoff/NN-<name>.md with sections Built / Decisions / Deviations / V
 
 ## D. Session map
 
-**Order of execution:** 0 → 1 → 2 → 3 → 4 → 5 → 5b → 6 → 6b → 7 → 7b → 7c → 7d → 8 → 9 → 10. If Friday's freeze is close, 7d is the session to defer (ship as v1.1 after the first Saturday), never 8 or 9. A letter suffix is a session inserted after the numbered one (6b after 6, 7b after 7). "Phase 5e" and similar inside a prompt are **sections of IMPLEMENTATION_PLAN.md**, not sessions — the plan numbers its phases, this file numbers its sessions, and the two don't line up on purpose.
+**Order of execution:** 0 → 1 → 2 → 3 → 4 → 5 → 5b → 6 → 6b → 7 → 7b → 7c → 7d → 8 → 8b → 9 → 10. If Friday's freeze is close, 7d is the session to defer (ship as v1.1 after the first Saturday), never 8 or 9. A letter suffix is a session inserted after the numbered one (6b after 6, 7b after 7). "Phase 5e" and similar inside a prompt are **sections of IMPLEMENTATION_PLAN.md**, not sessions — the plan numbers its phases, this file numbers its sessions, and the two don't line up on purpose.
 
 
 | # | Session | Model | Effort | Mode | Reads | Writes |
@@ -196,6 +196,7 @@ Write docs/handoff/NN-<name>.md with sections Built / Decisions / Deviations / V
 | 7c | UI review (read-only, adversarial) | fable | xhigh | plan mode, stays there | DESIGN.md, 06–07b handoffs, the staging URL | `07c-ui-review.md` |
 | 7d | Fix accepted UI findings | opus | medium | default | 07c | page fixes, `07d-ui-fixes.md` |
 | 8 | Deploy, Actions, env, webhooks | sonnet | medium | default | plan, 00, 04 | `.github/workflows/*`, README, `08-deploy.md` |
+| 8b | Discord webhook avatars (drawn) | opus | medium | default | DESIGN.md, docs/brand/DRAWING.md, 08 handoff | `docs/brand/discord/*.png`, `lib/notify.ts` (no username override), `08b-avatars.md` |
 | 9 | Dry run against production | opus | high | default | plan §7, 08 | `09-dryrun.md` |
 | 10 | README + runbook polish | haiku | medium | default | all handoffs | README, CONTRIBUTING.md, `10-docs.md` |
 
@@ -701,6 +702,39 @@ Session 8 of SESSION_PLAYBOOK.md. Read CLAUDE.md, docs/handoff/00 and 04, IMPLEM
 Both workflows validate; the manual Friday check produced a Discord message; README has the ops sections; docs/handoff/08-deploy.md written. PR: "chore: session 8 — deploy and scheduling" (into dev). `v0.1.0` is the first `dev → main` release PR (step 3) and is the first production deploy.
 </done_when>
 ```
+
+---
+
+## Session 8b — Discord webhook avatars
+
+**Model:** opus · **Effort:** medium · **Mode:** default
+**Before starting (you, by hand):** nothing. Afterwards you upload the two PNGs in Discord (webhook → avatar).
+
+```text
+<session>
+Session 8b of SESSION_PLAYBOOK.md. Use the hand-drawn-svg skill. Read CLAUDE.md, docs/DESIGN.md ("Mascot", ornament budget, colours), docs/brand/DRAWING.md, docs/brand/drawing/examples/granny.py and mark.py, lib/notify.ts, and docs/handoff/08-deploy.md.
+</session>
+
+<task>
+The two Discord webhooks are named by the owner — "KvK Scout" posts to the alliance channel, "LAP Tracker Admin" to the admin channel — and need avatars in the brand's hand.
+1. Draw two avatars with the skill, both from the Granny Doctor: KvK Scout = the bust with a spyglass (or a lantern) — she is watching the server; LAP Tracker Admin = the bust with a wax seal or a ledger under her arm — she keeps the books. Same line family as the shipped mark and bust; single colour; viewBox 100 × 100; the figure inside a centred circle of 80 % diameter because Discord crops avatars round.
+2. Rasterise each to PNG at 512 × 512 (Playwright headless Chromium: render the SVG on the paper colour, ink on paper — Discord shows avatars on its own dark chrome, so the paper disc is what makes them readable) into docs/brand/discord/kvk-scout.png and laptracker-admin.png, plus a 128 × 128 preview sheet of both on a dark background so the owner sees them as Discord will.
+3. lib/notify.ts: stop overriding `username` (and never set `avatar_url`): the names and avatars configured on the webhooks in Discord are what should show. Adjust the test that asserted the username.
+4. Show the owner the preview sheet; iterate until approved (the shipped drawings took 7–9 rounds; budget for it).
+</task>
+
+<constraints>
+- Nothing from the game. Original drawings only, in the DRAWING.md method (points by hand, engine renders); no raster paint, no AI image generation, no traced references.
+- The avatars are files for the owner to upload; the app does not serve them and does not need to.
+- No new dependency: Playwright/Chromium is already available for screenshots.
+</constraints>
+
+<done_when>
+Two approved PNGs in docs/brand/discord/ with their source functions registered in build.py (byte-for-byte reproducible), the dark preview sheet in docs/screenshots/, notify.ts sends no username/avatar, tests green, docs/handoff/08b-avatars.md written. PR: "feat: session 8b — Discord webhook avatars" (into dev).
+</done_when>
+```
+
+**Re-plan:** nothing downstream depends on this; Session 9's Discord checks just show the avatars the owner uploaded.
 
 ---
 
