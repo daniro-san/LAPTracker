@@ -52,3 +52,4 @@ Plan changes needed: none to IMPLEMENTATION_PLAN.md or SESSION_PLAYBOOK.md.
 - The header now holds the brand link, a "Players" link and the event selector; at 360 px they fit with about 40 px spare, so a longer wordmark or a logo image needs a check at that width.
 - Search results and player cards reuse the `StatTable` card classes (border, padding); the plain result list in `app/(pages)/players/page.tsx` copies them by hand.
 </adjustments>
+https://github.com/daniro-san/LAPTracker/pull/23
