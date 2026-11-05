@@ -37,7 +37,10 @@ function Timelines({ history, clock }: { history: PlayerHistory; clock: Clock })
         </div>
       )}
       <div>
-        <p className={LABEL}>{copy.ledger.alliances}</p>
+        {/* One alliance and one name: the line speaks for itself under the title (Session 7g). */}
+        {(alliances.length > 1 || names.length > 1) && (
+          <p className={LABEL}>{copy.ledger.alliances}</p>
+        )}
         <ul>
           {alliances.map((a) => (
             <li
@@ -121,7 +124,11 @@ export default async function PlayerPage({ params }: { params: Params }) {
         </div>
         <Legend />
         <Timelines history={history} clock={clock} />
-        <PlayerAcrossEvents rows={history.rows} clock={clock} />
+        <PlayerAcrossEvents
+          rows={history.rows}
+          clock={clock}
+          showAlliance={new Set(history.alliances.map((a) => a.unionId)).size > 1}
+        />
       </main>
       <SiteFooter ornament="granny" />
     </>

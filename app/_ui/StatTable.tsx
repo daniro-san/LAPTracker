@@ -100,7 +100,7 @@ function Lead({ row }: { row: StatRow }) {
   );
 }
 
-function MoreBar({ row }: { row: StatRow }) {
+export function MoreBar({ row }: { row: StatRow }) {
   if (!row.summary && !row.detail) return null;
   return (
     <details className="group/more relative z-10 col-span-full">

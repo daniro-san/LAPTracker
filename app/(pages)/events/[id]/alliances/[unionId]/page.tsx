@@ -102,7 +102,7 @@ function Summary({
               <Num n={m.value} />
             </dd>
             <dd className="text-sm tabular-nums">
-              <Delta delta={m.delta} base={m.base ?? null} />
+              <Delta delta={m.delta} base={m.base ?? null} stack />
             </dd>
           </div>
         ))}

@@ -1,6 +1,6 @@
 # 07f — Alliance page rework
 
-Branch `session/07f-alliance-page`, cut from `origin/dev` at `2dcd4f0` (PR #32 and #35 already merged). The mock was built on a worktree branch cut from `session/07d-ui-fixes`, shown to the owner as screenshots, approved on 2026-11-05 with one correction (label the rank), then replayed onto `dev` as one commit.
+Branch `session/07f-alliance-page`, cut from `origin/dev` at `2dcd4f0` (PR #32 and #35 already merged), with `origin/dev` merged in after #36 and #37 landed. The mock was built on a worktree branch cut from `session/07d-ui-fixes`, shown to the owner as screenshots, approved on 2026-11-05 with one correction (label the rank), then replayed onto `dev` as one commit.
 
 Owner's request (2026-11-05): "the alliance detail screen could be much nicer and present information in a more efficient way"; "the filters on the alliance page could be better for UX as well, it works but it's not very intuitive".
 
@@ -31,12 +31,12 @@ What changed:
 
 ## Deviations
 
-- Shared component touched: `Delta` in `app/_ui/Num.tsx`. The percent is now its own nowrap span after the change, so `(+2.0%)` can wrap under `▲ +72.9M` in a 104 px summary column; arrow, sign and number still stay on one line (07c S10). Page heights of `/` (5,430 / 5,304 / 2,930 px) and the player page (1,469 / 1,417 / 997 px) at 360 / 390 / 1280 are identical before and after. Left a note for the player-page session in the shared notes folder.
+- No shared component is changed in the end. The mock changed `Delta` (`app/_ui/Num.tsx`) so the percent could wrap under the change in a 104 px summary column; while this PR was open, #37 (player page) added `Delta`'s `stack` prop for the same need. The merge of `origin/dev` takes #37's `Num.tsx` and the summary band passes `stack`. Shared files this PR still edits additively: `app/globals.css` (`.range-pair`), `lib/copy.ts` (`copy.members`), `docs/DESIGN.md` (two component lines).
 - `dev` already has `docs/handoff/07f-discord-templates.md` from the Discord session; this file keeps the name the task gave it, so two handoffs share "07f".
 
 ## Verified
 
-- `pnpm check` on the `dev`-based branch → prettier, eslint, `tsc --noEmit` clean; `Test Files 25 passed | 1 skipped (26)`, `Tests 98 passed | 1 skipped (99)` (`dev` before this change: 96 passed; +2 member-views).
+- `pnpm check` on this branch after merging `origin/dev` (with #36 and #37) → prettier, eslint, `tsc --noEmit` clean; `Test Files 26 passed | 1 skipped (27)`, `Tests 99 passed | 1 skipped (100)` (+2 member-views). Measurements below were repeated on the merged build: alliance page unchanged; `/`, the player page and `/players?q=so` axe 0, overflow 0, no target under 44 px at 360 / 390 / 1280 in both modes.
 - `pnpm build` → compiled, all routes listed.
 - Playwright + axe-core 4.x, Chrome 157, local production builds against the Neon preview branch: before (`c0794ba`, :3201) and after (this branch, :3202), alliance page at 360 / 390 / 1280 × light / dark:
 
