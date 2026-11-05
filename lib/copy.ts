@@ -99,6 +99,8 @@ const source = {
     clear: "Clear",
     clearAll: "Clear all",
     showAll: "Show all ({n})",
+    /** Beside the member count while a filter is on. */
+    shown: "{n} shown",
     highFirst: "Highest first",
     lowFirst: "Lowest first",
     joined: "Joined",

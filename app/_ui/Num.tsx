@@ -78,14 +78,16 @@ export function RankMove({ move }: { move: number | null }) {
   );
 }
 
-/** `#3 ▲1`: the rank, language-free, and how it moved. */
-export function Rank({ n, move }: { n: number | null; move: number | null }) {
+/** `#3 ▲1`: the rank, language-free, and how it moved. No `move` at all: only the rank. */
+export function Rank({ n, move }: { n: number | null; move?: number | null | undefined }) {
   return (
     <span className="inline-flex items-baseline gap-1 tabular-nums">
       <span className="font-semibold text-ink">{n === null ? "#—" : `#${n}`}</span>
-      <span className="text-xs">
-        <RankMove move={move} />
-      </span>
+      {move !== undefined && (
+        <span className="text-xs">
+          <RankMove move={move} />
+        </span>
+      )}
     </span>
   );
 }

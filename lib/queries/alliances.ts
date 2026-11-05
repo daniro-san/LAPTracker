@@ -15,6 +15,8 @@ export interface AllianceRow {
   name: string | null;
   badgeId: number | null;
   memberCount: number | null;
+  /** The most members the alliance can hold; null on rows stored before the column existed. */
+  capacity: number | null;
   totalPower: number | null;
   totalKills: number | null;
   serverRank: number | null;
@@ -40,6 +42,7 @@ const allianceColumns = {
   name: allianceSnapshots.name,
   badgeId: allianceSnapshots.badgeId,
   memberCount: allianceSnapshots.memberCount,
+  capacity: allianceSnapshots.capacity,
   totalPower: allianceSnapshots.totalPower,
   totalKills: allianceSnapshots.totalKills,
   serverRank: allianceSnapshots.serverRank,

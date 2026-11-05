@@ -97,6 +97,9 @@ export const allianceSnapshots = pgTable(
     tag: text("tag"),
     name: text("name"),
     memberCount: integer("member_count"),
+    // The most members the alliance can hold, as /v1 reports it (100 today, the game may raise it);
+    // null on rows stored before this column existed and on rows from the internal source.
+    capacity: integer("capacity"),
     totalPower: big("total_power"),
     totalKills: big("total_kills"),
     serverRank: integer("server_rank"),
