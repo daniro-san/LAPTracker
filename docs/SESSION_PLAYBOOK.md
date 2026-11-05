@@ -794,4 +794,7 @@ README reads as an operator manual; CONTRIBUTING.md holds developer content; doc
 
 ## After v1
 
+The roadmap lives in GitHub issues labelled `roadmap` (milestones v1.0 / v1.1 / v2): https://github.com/daniro-san/LAPTracker/issues?q=label%3Aroadmap. Remaining sessions have an issue each (#45 8b, #46 lint zones + drift gate, #47 Session 9, #48 Session 10, #49 Friday gate, #50 event-window decision); a session's PR body says `Closes #N`.
+
+
 `IMPLEMENTATION_PLAN.md §8b` (Discord `/ask` with LLM → query templates) gets its own playbook once a few Saturdays of real data exist. The questions people actually ask will change the templates; don't plan it before then.

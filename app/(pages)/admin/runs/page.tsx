@@ -22,7 +22,10 @@ export default async function RunsPage() {
                 {phaseWord(r.phase)} · {stateWord(r.status)}
               </span>{" "}
               <span className="text-sm text-ink/70">
-                {clock.stamp(r.startedAt)} · {fill(t.calls, { n: r.callsUsed })}
+                {fill(t.started, { at: clock.stamp(r.startedAt) })}
+                {r.finishedAt && ` · ${fill(t.finished, { at: clock.stamp(r.finishedAt) })}`}
+                {" · "}
+                {fill(t.calls, { n: r.callsUsed })}
                 {r.quotaRemainingAfter !== null &&
                   ` · ${fill(t.quotaLeft, { n: r.quotaRemainingAfter })}`}
                 {r.durationMs !== null &&

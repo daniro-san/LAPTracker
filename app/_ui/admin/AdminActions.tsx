@@ -13,7 +13,9 @@ import { PinSheet, savedPin } from "./PinSheet";
 import { phaseWord, stateWord } from "./words";
 
 interface Action {
-  id: string;
+  id: "rehearse" | "before" | "after";
+  /** One line under a snapshot button. */
+  help?: string;
   /** On the seal; `name` is the accessible name when it differs. */
   label: string;
   name?: string;
@@ -23,12 +25,19 @@ interface Action {
 
 const t = copy.admin.run;
 
-const ACTIONS: Action[] = [
-  { id: "rehearse", label: t.rehearse, url: "/api/rehearsal", confirm: t.confirmRehearse },
+const REHEARSE: Action = {
+  id: "rehearse",
+  label: t.rehearse,
+  url: "/api/rehearsal",
+  confirm: t.confirmRehearse,
+};
+
+const SNAPSHOTS: Action[] = [
   {
     id: "before",
     label: copy.admin.seal.before,
     name: phaseWord("before"),
+    help: t.snapshots.before,
     url: "/api/snapshot?phase=before",
     confirm: t.confirmBefore,
   },
@@ -36,6 +45,7 @@ const ACTIONS: Action[] = [
     id: "after",
     label: copy.admin.seal.after,
     name: phaseWord("after"),
+    help: t.snapshots.after,
     url: "/api/snapshot?phase=after",
     confirm: t.confirmAfter,
   },
@@ -80,19 +90,26 @@ export function AdminActions({ beforeAtText }: { beforeAtText: string }) {
     else setPending(action);
   }
 
+  const seal = (a: Action) => (
+    <ActionSeal key={a.id} action={a} busy={busy} onStart={() => void start(a)} />
+  );
+
   return (
     <div>
-      <div className="flex flex-wrap gap-4">
-        {ACTIONS.map((a) => (
-          <SealButton
-            key={a.id}
-            label={busy === a.id ? t.running : a.label}
-            aria-label={busy === a.id ? undefined : a.name}
-            disabled={busy !== null}
-            onClick={() => void start(a)}
-            className="disabled:cursor-wait disabled:opacity-70"
-          />
-        ))}
+      {seal(REHEARSE)}
+      <div role="group" aria-labelledby="snapshot-group" className="mt-6">
+        <h3 id="snapshot-group" className="mb-2 font-subhead text-lg font-semibold">
+          {t.snapshots.title}
+        </h3>
+        <ul className="flex flex-col gap-4">
+          {SNAPSHOTS.map((a) => (
+            <li key={a.id} className="flex items-center gap-4">
+              {seal(a)}
+              <p className="text-sm">{a.help}</p>
+            </li>
+          ))}
+        </ul>
+        <p className="mt-3 text-sm text-ink/70">{t.snapshots.cost}</p>
       </div>
       {message && (
         <p role="status" className="mt-3 break-words text-sm">
@@ -129,4 +146,24 @@ function describe(status: number, body: Record<string, unknown>, beforeAtText: s
     failed: count(body.failed),
     id: String(body.snapshot_id),
   });
+}
+
+function ActionSeal({
+  action: a,
+  busy,
+  onStart,
+}: {
+  action: Action;
+  busy: string | null;
+  onStart: () => void;
+}) {
+  return (
+    <SealButton
+      label={busy === a.id ? t.running : a.label}
+      aria-label={busy === a.id ? undefined : a.name}
+      disabled={busy !== null}
+      onClick={onStart}
+      className="shrink-0 disabled:cursor-wait disabled:opacity-70"
+    />
+  );
 }

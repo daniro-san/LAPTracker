@@ -2,5 +2,18 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
   "buildCommand": "pnpm db:migrate && pnpm build",
-  "git": { "deploymentEnabled": { "keepalive": false } }
+  "git": {
+    "deploymentEnabled": {
+      "**": false,
+      "session/**": false,
+      "fix/**": false,
+      "chore/**": false,
+      "docs/**": false,
+      "claude/**": false,
+      "dependabot/**": false,
+      "keepalive": false,
+      "dev": true,
+      "main": true
+    }
+  }
 }

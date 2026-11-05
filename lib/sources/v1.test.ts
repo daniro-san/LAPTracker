@@ -147,6 +147,16 @@ describe("v1 requests", () => {
     expect(mock).toHaveBeenCalledTimes(2);
   });
 
+  it("sends a signal that aborts with the caller's signal, on top of the per-call timeout", async () => {
+    const mock = mockFetch(respond(readFixture(OGS)));
+    const controller = new AbortController();
+    await fetchAlliance(67111155, undefined, controller.signal);
+    const sent = (mock.mock.calls[0]?.[1] as RequestInit).signal as AbortSignal;
+    expect(sent.aborted).toBe(false);
+    controller.abort();
+    expect(sent.aborted).toBe(true);
+  });
+
   it("aborts on 429 with QuotaExhaustedError and no retry", async () => {
     const mock = mockFetch(respond("{}", 429), respond(readFixture(OGS)));
     await expect(fetchAlliance(67111155)).rejects.toBeInstanceOf(QuotaExhaustedError);
