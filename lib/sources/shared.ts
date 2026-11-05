@@ -34,6 +34,9 @@ const memberSchema = z.object({
   lv: z.number().int().nullable(),
   // Optional: a photo is cosmetic, so its absence never fails a run.
   avatar_url: z.string().optional(),
+  // Optional for the same reason: the leadership marks are cosmetic.
+  rank_code: z.number().int().optional(),
+  rank_label: z.string().optional(),
 });
 
 export const rosterFields = {
@@ -64,6 +67,8 @@ export function toSnapshotInput(
     kills: m.kills,
     lv: m.lv,
     avatarUrl: photoUrl(m.avatar_url),
+    rankCode: m.rank_code ?? null,
+    rankLabel: m.rank_label ?? null,
   }));
   return {
     unionId: roster.union_id,

@@ -33,6 +33,8 @@ export interface StatMetric {
 export interface StatRow {
   key: string;
   href?: string;
+  /** A pale background class that marks the row (the alliance leader and officers), beside its mark. */
+  tint?: string;
   /** The element id, for "jump to my alliance". */
   anchor?: string;
   /** `#n` and its movement (compute.rankDelta), before the picture; no `move`: only `#n`. */
@@ -166,7 +168,7 @@ export function StatTable({
             key={row.key}
             id={row.anchor}
             style={grid}
-            className="stat-card relative mb-3 grid scroll-mt-20 grid-cols-1 gap-y-1.5 border border-rule p-3 data-[mine]:bg-yarn/15 sm:mb-0 sm:grid-cols-[var(--cols)] sm:gap-x-3 sm:border-0 sm:border-b sm:py-2"
+            className={`stat-card relative mb-3 grid scroll-mt-20 grid-cols-1 gap-y-1.5 border border-rule p-3 data-[mine]:bg-yarn/15 sm:mb-0 sm:grid-cols-[var(--cols)] sm:gap-x-3 sm:border-0 sm:border-b sm:py-2 ${row.tint ?? ""}`}
           >
             <Lead row={row} />
             {row.metrics.map((m, i) => (

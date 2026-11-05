@@ -53,6 +53,18 @@ describe("v1.fetchAlliance parsing", () => {
     expect(a.totalKills).toBeGreaterThan(0);
   });
 
+  it("keeps each member's rank_code and rank_label, and null when the body sends none", async () => {
+    const body = JSON.parse(readFixture(OGS)) as { members: Record<string, unknown>[] };
+    const [first, second] = body.members as [Record<string, unknown>, Record<string, unknown>];
+    delete second.rank_code;
+    delete second.rank_label;
+    mockFetch(respond(JSON.stringify(body)));
+    const a = await fetchAlliance(67111155);
+    expect(a.members[0]).toMatchObject({ rankCode: first.rank_code, rankLabel: first.rank_label });
+    expect(a.members[1]).toMatchObject({ rankCode: null, rankLabel: null });
+    expect(a.members.some((m) => m.rankCode === 105 && m.rankLabel === "R5")).toBe(true);
+  });
+
   it("parses cached, sourceUpdatedAt, rank, level and quota from the alliance body", async () => {
     mockFetch(respond(readFixture(OGS)));
     const a = await fetchAlliance(67111155);

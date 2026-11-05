@@ -7,6 +7,7 @@
 import { useMemo, useState } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
+import { ROLE_TONE, RoleMark } from "@/lib/brand/components/RoleMark";
 import { rankDelta } from "@/lib/compute";
 import { copy, fill } from "@/lib/copy";
 
@@ -70,7 +71,18 @@ function toRow(m: MemberView, mode: Mode): StatRow {
     rank: mode.compared
       ? { n, move: mode.canDelta ? rankDelta(m.rank.before, m.rank.after) : null }
       : { n },
-    lead: m.name,
+    lead: m.role ? (
+      <>
+        {m.name} <RoleMark role={m.role} />
+        <span className="sr-only">
+          {" "}
+          {m.role.kind === "officer" ? m.role.title : copy.leadership.leader}
+        </span>
+      </>
+    ) : (
+      m.name
+    ),
+    ...(m.role ? { tint: ROLE_TONE[m.role.kind].tint } : {}),
     icon: <PlayerAvatar uid={m.uid} hasAvatar={m.hasAvatar} />,
     sub: (
       <>

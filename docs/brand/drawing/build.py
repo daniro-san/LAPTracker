@@ -35,6 +35,8 @@ DRAWINGS = {
     "lace": ornaments.lace,
     "lace-alt-dot": ornaments.lace_b,
     "icon-running": ornaments.icon_running,
+    "icon-crown": ornaments.icon_crown,
+    "icon-officer": ornaments.icon_officer,
     "icon-done": ornaments.icon_done,
     "icon-partial": ornaments.icon_partial,
     "no-photo": ornaments.no_photo,

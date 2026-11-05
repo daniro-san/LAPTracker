@@ -1,5 +1,6 @@
 // /brand "Drawing style": the confident-nib rules (docs/brand/DRAWING.md) with the drawings as examples.
 import { GrannyStanding, GrannyTea } from "@/lib/brand/components/Mascot";
+import { Crown, OfficerStar } from "@/lib/brand/components/RoleMark";
 import { Hourglass } from "@/lib/brand/components/StatusIcons";
 import { CrackedBottle, Teacup, YarnLeftBehind } from "@/lib/brand/components/Vignettes";
 import { Wax } from "@/lib/brand/components/Wax";
@@ -45,6 +46,12 @@ export function DrawingSection() {
           </Spec>
           <Spec name={t.hourglass} plate="text-plum [&_svg]:size-12">
             <Hourglass />
+          </Spec>
+          <Spec name={t.crown} plate="text-plum [&_svg]:size-12">
+            <Crown />
+          </Spec>
+          <Spec name={t.officer} plate="text-sage [&_svg]:size-12">
+            <OfficerStar />
           </Spec>
         </div>
       </Sub>

@@ -2,7 +2,7 @@
 // ledger rank by might inside the alliance in each roster (Phase 5e), and the member filter's rules:
 // sort by one figure, a might range picked on the roster's own steps, a name search.
 import { rankBy, rosterDiff } from "@/lib/compute";
-import type { MemberRow } from "@/lib/queries";
+import type { MemberRow, Role } from "@/lib/queries";
 
 type Stats = { power: number | null; kills: number | null; lv: number | null };
 
@@ -16,6 +16,8 @@ export interface MemberView {
   after: Stats | null;
   /** Ledger rank by might inside the alliance, in each roster. */
   rank: { before: number | null; after: number | null };
+  /** R5 leader or titled R4 officer, from the roster the member is shown from; null otherwise. */
+  role: Role | null;
 }
 
 const stat = (m: MemberRow | undefined) =>
@@ -38,6 +40,7 @@ function singleRoster(roster: MemberRow[], side: "before" | "after"): MemberView
     status: "" as const,
     before: side === "before" ? stat(m) : null,
     after: side === "after" ? stat(m) : null,
+    role: null,
     rank: {
       before: side === "before" ? (ranks.get(m.uid) ?? null) : null,
       after: side === "after" ? (ranks.get(m.uid) ?? null) : null,
@@ -69,6 +72,7 @@ export function memberViews(before: MemberRow[], after: MemberRow[]): MemberView
       before: stat(b),
       after: stat(a),
       rank: rank(a.uid),
+      role: null,
     })),
     ...diff.joined.map((a) => ({
       uid: a.uid,
@@ -79,6 +83,7 @@ export function memberViews(before: MemberRow[], after: MemberRow[]): MemberView
       before: null,
       after: stat(a),
       rank: rank(a.uid),
+      role: null,
     })),
     ...diff.left.map((b) => ({
       uid: b.uid,
@@ -89,8 +94,26 @@ export function memberViews(before: MemberRow[], after: MemberRow[]): MemberView
       before: stat(b),
       after: null,
       rank: rank(b.uid),
+      role: null,
     })),
   ];
+}
+
+type Roles = ReadonlyMap<number, Role>;
+
+/**
+ * Marks each member with the role of the roster they are shown from: the After's, or the Before's for
+ * someone who left (or when only the Before exists). A member demoted between the two is unmarked.
+ */
+export function withRoles(views: MemberView[], before: Roles, after: Roles): MemberView[] {
+  return views.map((m) => ({ ...m, role: (m.after ? after : before).get(m.uid) ?? null }));
+}
+
+/** The R5 leader first, then the titled officers by might, highest first. */
+export function leadership(views: MemberView[]): MemberView[] {
+  const leaders = views.filter((m) => m.role?.kind === "leader");
+  const officers = views.filter((m) => m.role?.kind === "officer");
+  return [...leaders, ...officers.sort((a, b) => mightOf(b) - mightOf(a))];
 }
 
 export type SortKey = "might" | "mightDelta" | "kills" | "killsDelta" | "lv" | "name";

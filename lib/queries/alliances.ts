@@ -5,6 +5,7 @@ import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { rosterDiff, seriesDeltas, type SeriesStep } from "../compute";
 import type { Db } from "../db";
 import { allianceSnapshots, events, memberSnapshots, snapshots } from "../schema";
+import { rolesOf, type Role } from "./leadership";
 import { historyRanks, type Ranks } from "./ranks";
 import { chainEvent, publicEvent } from "./visibility";
 
@@ -83,10 +84,12 @@ export async function getAllianceDetail(db: Db, eventId: number, unionId: number
     .where(and(eq(events.id, eventId), publicEvent, eq(allianceSnapshots.unionId, unionId)));
   if (rows.length === 0) return null;
   const alliances = rows.map(toRow);
-  const members = await membersOf(
-    db,
-    alliances.map((a) => a.id),
-  );
+  const ids = alliances.map((a) => a.id);
+  const [members, roles] = await Promise.all([membersOf(db, ids), rolesOf(db, ids)]);
+  const roleMapOf = (phase: "before" | "after") => {
+    const id = alliances.find((a) => a.phase === phase)?.id;
+    return (id === undefined ? undefined : roles.get(id)) ?? new Map<number, Role>();
+  };
   const rosterOf = (phase: "before" | "after"): MemberRow[] => {
     const id = alliances.find((a) => a.phase === phase)?.id;
     return members
@@ -98,6 +101,9 @@ export async function getAllianceDetail(db: Db, eventId: number, unionId: number
     after: alliances.find((a) => a.phase === "after") ?? null,
     membersBefore: rosterOf("before"),
     membersAfter: rosterOf("after"),
+    /** R5 and titled R4 members by uid, as each snapshot's alliance read lists them. */
+    rolesBefore: roleMapOf("before"),
+    rolesAfter: roleMapOf("after"),
   };
 }
 

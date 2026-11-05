@@ -11,8 +11,9 @@ import { DetailTable, figureRows, type RankPair } from "@/app/_ui/DetailLines";
 import { fellWithLeavers } from "@/app/_ui/event-rows";
 import { ExactToggle } from "@/app/_ui/ExactToggle";
 import { allianceLabel, type Clock } from "@/app/_ui/format";
+import { Leadership } from "@/app/_ui/Leadership";
 import { requestClock } from "@/app/_ui/locale";
-import { canCompare, memberViews } from "@/app/_ui/member-views";
+import { canCompare, leadership, memberViews, withRoles } from "@/app/_ui/member-views";
 import { MembersExplorer } from "@/app/_ui/MembersExplorer";
 import { MyAllianceToggle } from "@/app/_ui/MyAlliance";
 import { Delta, Num, Rank } from "@/app/_ui/Num";
@@ -173,11 +174,15 @@ const loadAlliance = cache((eventId: number, unionId: number) =>
   }),
 );
 
+function views({ membersBefore, membersAfter, rolesBefore, rolesAfter }: Detail) {
+  return withRoles(memberViews(membersBefore, membersAfter), rolesBefore, rolesAfter);
+}
+
 function MemberList({ detail, canDelta }: { detail: Detail; canDelta: boolean }) {
   const { before, after, membersBefore, membersAfter } = detail;
   return (
     <MembersExplorer
-      members={memberViews(membersBefore, membersAfter)}
+      members={views(detail)}
       canDelta={canDelta}
       compared={canCompare(membersBefore, membersAfter)}
       capacity={after?.capacity ?? before?.capacity ?? null}
@@ -266,6 +271,7 @@ export default async function AlliancePage({ params }: { params: Params }) {
           canDelta={canDelta}
           clock={clock}
         />
+        <Leadership members={leadership(views(detail))} />
         <div className="mb-2 mt-8 flex flex-wrap items-center justify-between gap-x-3">
           <h2 className="font-subhead text-display-md">{copy.ledger.members}</h2>
           {history.length > 0 && (
