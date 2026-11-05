@@ -9,6 +9,7 @@ import { copy } from "@/lib/copy";
 
 import { requestLocale } from "./_ui/locale";
 import { LocaleProvider } from "./_ui/LocaleProvider";
+import { UpstreamBanner } from "./_ui/UpstreamBanner";
 
 import "./globals.css";
 
@@ -23,7 +24,10 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   return (
     <html lang={locale} data-theme={theme ?? undefined} className={fontVariables}>
       <body className="min-h-screen bg-paper font-body text-ink antialiased">
-        <LocaleProvider locale={locale}>{children}</LocaleProvider>
+        <LocaleProvider locale={locale}>
+          <UpstreamBanner />
+          {children}
+        </LocaleProvider>
       </body>
     </html>
   );

@@ -204,3 +204,15 @@ Plan §12.4: `pnpm audit --audit-level high` fails CI; a moderate finding that c
 - **Why:** after `tick.yml` reached `main` at 10:05 UTC, GitHub started no scheduled run in the next two hours (slots 10:15 to 11:00 missing from the Actions history); only manual dispatches ran. GitHub documents that schedule events can be delayed or dropped under load, and that the start of the hour is the peak. Also, `curl --fail` treats a `308` as success, so a wrong `APP_URL` (`http://`) passed as a green run that did nothing.
 - **Rule:** cron `7,22,37,52 * * * *` (still every 15 minutes, still daily); the job prints the HTTP code and fails unless it is 2xx; `curl -sS` replaces the progress table. This replaces plan §3.1's `*/15` and Phase 6's "one `curl --fail`".
 - **Not proven:** that the new minutes fix the missing runs. If scheduled runs still do not appear, the next step is a second pinger (plan §3.1 notes the manual fallback) and a tick log in the database.
+
+## D27 — A banner says when the upstream is not answering (2026-11-05, 08g)
+
+- **Why:** on 2026-11-05 every alliance read returned 504 for about 17 hours and the pages showed old numbers with no reason.
+- **Rule** (`lib/queries/upstream-status.ts`, read only, from stored rows; the banner never calls the upstream and spends no quota). Take the newest snapshot of a public event (rehearsals excluded). The upstream is "not answering" when that snapshot started less than 24 hours ago and one of these holds:
+  1. it is `running` and started more than 10 minutes ago (the run lock's age, `RUN_STALE_AFTER_MS`): the run never closed;
+  2. it is `partial` or `failed` with `error = "deadline"` (D25);
+  3. it is `partial` or `failed` and at least half of its alliance rows carry `http 5xx`, `TimeoutError` or `AbortError`.
+- **Clears** when a newer snapshot completes or fails for another reason (404, quota, stale rows), or 24 hours after the failed attempt started.
+- **Shown:** one slim notice above the header of every page, with the newest time an alliance row was fresh with no error (`MAX(source_updated_at)`, server time). It has no controls and renders nothing when the rule is false or the read fails.
+- **Limits:** the state is that of the last attempt. Few attempts exist (two per event, plus manual runs), so the banner can lag a recovery until the next run and can miss an outage between runs.
+- **Not done:** a status page, an outage history, a live probe.

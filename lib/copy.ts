@@ -64,6 +64,12 @@ const source = {
     next: "Next update at {time}",
     stale: "{n} stale",
   },
+  /** The banner shown while the game's data service does not answer (DECISIONS D27). */
+  upstream: {
+    title: "Game data is delayed",
+    body: "The data service is not answering, so these numbers may be out of date.",
+    lastFresh: "Last fresh data at {time}",
+  },
   fresh: {
     fresh: "Fresh",
     stale: "Stale",
