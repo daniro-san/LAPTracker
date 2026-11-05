@@ -293,6 +293,10 @@ export interface PlayerMatch {
   unionId: number;
   tag: string | null;
   allianceName: string | null;
+  /** The alliance's preset badge (101–110) in the latest sighting; served by /img/badge/[id] (D22). */
+  badgeId: number | null;
+  /** A stored photo exists; served by /img/avatar/[uid], never as a URL (D22). */
+  hasAvatar: boolean;
   lastEventId: number;
   lastSeen: Date;
 }
@@ -329,6 +333,8 @@ export async function searchPlayers(db: Db, q: string): Promise<PlayerMatch[]> {
       unionId: latest.unionId,
       tag: latest.tag,
       allianceName: latest.allianceName,
+      badgeId: latest.badgeId,
+      hasAvatar: latest.hasAvatar,
       lastEventId: latest.eventId,
       lastSeen: latest.eventAtUtc,
     };

@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { allianceLabel } from "@/app/_ui/format";
 import { requestClock } from "@/app/_ui/locale";
+import { AllianceBadge, PlayerAvatar } from "@/app/_ui/Pictures";
 import { PlayerSearch } from "@/app/_ui/PlayerSearch";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
@@ -41,23 +42,30 @@ export default async function PlayersPage({
           )}
           <ul>
             {matches.map((m) => (
-              <li key={m.uid} className="stat-card relative mb-3 border border-rule p-3">
-                <Link
-                  href={`/players/${m.uid}`}
-                  className="break-words font-subhead text-display-sm leading-tight text-plum after:absolute after:inset-0 after:content-[''] hover:underline focus-visible:underline"
-                >
-                  {m.name}
-                </Link>
-                {m.matchedName && (
-                  <span className="block text-sm text-ink/70">
-                    {fill(copy.ledger.was, { name: m.matchedName })}
-                  </span>
-                )}
-                <div className="text-sm">
-                  {allianceLabel(m.tag, m.allianceName)}{" "}
-                  <span className="text-ink/70">
-                    · <span className={LABEL}>{copy.search.seen}</span> {clock.day(m.lastSeen)}
-                  </span>
+              <li
+                key={m.uid}
+                className="stat-card relative mb-3 flex items-center gap-2 border border-rule p-3"
+              >
+                <PlayerAvatar uid={m.uid} hasAvatar={m.hasAvatar} />
+                <div className="min-w-0 break-words">
+                  <Link
+                    href={`/players/${m.uid}`}
+                    className="font-subhead text-display-sm leading-tight text-plum after:absolute after:inset-0 after:content-[''] hover:underline focus-visible:underline"
+                  >
+                    {m.name}
+                  </Link>
+                  {m.matchedName && (
+                    <span className="block text-sm text-ink/70">
+                      {fill(copy.ledger.was, { name: m.matchedName })}
+                    </span>
+                  )}
+                  <div className="mt-1 flex flex-wrap items-center gap-x-2 text-sm">
+                    <AllianceBadge badgeId={m.badgeId} />
+                    {allianceLabel(m.tag, m.allianceName)}
+                    <span className="text-ink/70">
+                      · <span className={LABEL}>{copy.search.seen}</span> {clock.day(m.lastSeen)}
+                    </span>
+                  </div>
                 </div>
               </li>
             ))}
