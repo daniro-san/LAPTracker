@@ -43,7 +43,7 @@
 - Error-page headline uses a new `display-xl` (48 px) instead of `display-lg`: the owner asked for the message to be the focus. Added to DESIGN.md.
 - The Granny Doctor is a supporting detail (footer corner, empty state), not the error-page focus: two rounds of poses (single colour, 2.5D chibi) were rejected before the line style; the error pages lead with the vignettes.
 - Three typefaces instead of DESIGN.md's original two: the owner asked for a primary and a secondary display face; DESIGN.md now says "no fourth".
-- The owner asked to "document it or make a skill" for the drawing style. `docs/brand/DRAWING.md` documents it and `docs/brand/drawing/` holds the generator (added with the owner's permission after the session's permission check first refused it). No skill yet.
+- The owner asked to "document it or make a skill" for the drawing style. `docs/brand/DRAWING.md` documents it and `docs/brand/drawing/` holds the generator (added with the owner's permission after the session's permission check first refused it); `.claude/skills/hand-drawn-svg/` is the skill that uses it.
 - 404 copy: "Back to the table" without the arrow from Phase 5b's sample copy (DESIGN.md "Do's and Don'ts" has no arrows in copy).
 - Admin pages got token colours only. The seal button is not on the admin Run/Rehearse actions: the task named main, alliance, player and search.
 - New screenshots are named `07-*`; the `06-*` / `06b-*` files are left as the before record. 390 px was not re-taken (the task asked for 360 and 1280).
@@ -58,7 +58,7 @@
 - Not verified: the error boundary in a real thrown render in the browser (covered by the unit test, not clicked); the reduced-motion switch-off by eye (the CSS rule is in place); a production build on Vercel.
 
 ## Open issues
-- The drawing generator is in `docs/brand/drawing/` (owner approved, 2026-11-04): `build.py` reproduces all 14 shipped drawings byte for byte. A project skill (`.claude/skills/`) that drives it from a prompt was not created: writing agent configuration needs the owner's explicit OK.
+- The drawing generator is in `docs/brand/drawing/` (owner approved, 2026-11-04): `build.py` reproduces all 14 shipped drawings byte for byte. The project skill `.claude/skills/hand-drawn-svg/` (owner approved) drives it from a prompt: read the method, write a function, build into a scratch folder, preview beside the yarn ball with `preview.py`, critique, wire into a component.
 - The drawn frame needs `-webkit-mask-box-image` (Chrome, Safari, Edge); Firefox shows the plain 1 px border fallback.
 - Player photos and alliance badges — what the API returns (checked in the recorded `/v1` fixtures, no new calls, 2026-11-04). The owner will use them if the API provides them:
   - `members[].avatar_url`: present on all 2,129 recorded members; a non-empty URL on 1,080 (about half), all on `phs-image.globallap.com`; the rest are empty strings, so a fallback is needed. `members[].frame_url` is present and always empty.
