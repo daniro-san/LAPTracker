@@ -1,1 +1,24 @@
 @import "tailwindcss";
+
+/* "Exact numbers" switch (app/_ui/Num.tsx): CSS only, so it needs no JavaScript and works on touch. */
+.num-f {
+  display: none;
+}
+body:has(#full-numbers:checked) .num-c {
+  display: none;
+}
+body:has(#full-numbers:checked) .num-f {
+  display: inline;
+}
+
+html {
+  color-scheme: light dark;
+  --sheet-shadow: rgb(30 26 31 / 0.18);
+}
+:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+body {
+  overflow-wrap: break-word;
+}
