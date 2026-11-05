@@ -42,7 +42,10 @@ export default async function RunPage({ params }: { params: Promise<{ id: string
         {clock.stamp(run.eventAtUtc)} · {phaseWord(run.phase)} · {stateWord(run.status)}
       </p>
       <p className="mb-1 text-sm text-ink/70">
-        {clock.stamp(run.startedAt)} · {fill(t.calls, { n: run.callsUsed })}
+        {fill(t.started, { at: clock.stamp(run.startedAt) })}
+        {run.finishedAt && ` · ${fill(t.finished, { at: clock.stamp(run.finishedAt) })}`}
+        {" · "}
+        {fill(t.calls, { n: run.callsUsed })}
         {run.durationMs !== null &&
           ` · ${fill(t.seconds, { n: (run.durationMs / 1000).toFixed(1) })}`}
       </p>
