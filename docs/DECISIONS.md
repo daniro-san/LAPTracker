@@ -310,7 +310,7 @@ Why: an alliance's Kills (and Might) total is the sum of its members, so it fall
 
 ## D36 — Vercel Web Analytics and Speed Insights on production (2026-11-05, owner, issue #69)
 
-The owner asked to track page usage and events without identifying anyone. This supersedes plan §7 "No frontend tracking" for these two scripts only. §5's Hobby finding still holds: Web Analytics on Hobby has no custom events.
+The owner asked to track page usage and events without identifying anyone, then limited it to what Vercel's free (Hobby) plan offers: nothing from Pro. This supersedes plan §7 "No frontend tracking" for these two scripts only. §5's Hobby finding still holds: Web Analytics on Hobby has no custom events, so there are none (no `track()`, no own event counter).
 
 - **What.** `<Analytics />` (`@vercel/analytics/next`) and `<SpeedInsights />` (`@vercel/speed-insights/next`) in `app/_ui/VercelInsights.tsx`. `app/layout.tsx` renders them only when `VERCEL_ENV === "production"`, so previews (`preview`), `next dev`, `next start` and tests load nothing. In dev mode the packages would load `va.vercel-scripts.com`, which the CSP blocks.
 - **No typed text.** Both get `beforeSend`, which cuts the query string and hash from the URL (`/players?q=<name>#x` → `/players`). No `track()`, no `identify`, no cookie mode.
