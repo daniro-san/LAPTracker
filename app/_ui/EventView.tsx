@@ -63,7 +63,7 @@ function BoardSection({ detail, rows }: { detail: Detail; rows: ComparisonRow[] 
   const hasBoard = rows.some((r) => r.before?.powerBoard != null || r.after?.powerBoard != null);
   if (!hasBoard) return null;
   return (
-    <details className="mt-6 border border-rule px-3">
+    <details className="drawn-frame mt-6 px-3">
       <summary className="flex min-h-11 cursor-pointer items-center font-medium">
         Leaderboard numbers (for comparison only)
       </summary>
@@ -109,7 +109,10 @@ export function EventView({
     <>
       <SiteHeader events={events} currentId={detail.id} />
       <main className="mx-auto max-w-[960px] px-4 py-4 sm:px-6">
-        <h1 className="font-display text-display-lg font-semibold">{detail.name}</h1>
+        <div className="flex items-start justify-between gap-3">
+          <h1 className="min-w-0 font-display text-display-lg font-semibold">{detail.name}</h1>
+          <ExactToggle />
+        </div>
         <p className="mb-3 text-sm text-ink/70">
           Event starts {describeInstant(detail.eventAtUtc, getEnv())}
           {quota != null && ` · Data requests left today: ${quota}`}
@@ -123,7 +126,6 @@ export function EventView({
         <div className="mb-4">
           <StatusChips phases={detail.snapshots} />
         </div>
-        <ExactToggle />
         <StatTable
           leadLabel="Alliance"
           columns={["Members", "Might", "Kills"]}

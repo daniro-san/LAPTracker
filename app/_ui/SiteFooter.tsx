@@ -10,6 +10,7 @@ export function SiteFooter({ ornament = "yarn" }: { ornament?: "yarn" | "granny"
     <footer
       className={`relative mx-auto mt-8 max-w-[960px] px-4 text-plum sm:px-6 ${ornament === "granny" ? "h-36" : "h-28"}`}
     >
+      <hr className="drawn-rule mb-4 text-plum/40" />
       <p className="text-right text-body-sm text-ink/70">
         {copy.site.ledger} · {copy.site.byline}
       </p>

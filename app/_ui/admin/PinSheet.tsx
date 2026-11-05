@@ -59,7 +59,7 @@ export function PinSheet({ onUnlocked }: { onUnlocked: (pin: string) => void }) 
           maxLength={8}
           value={pin}
           onChange={(e) => setPin(e.target.value)}
-          className="min-h-11 rounded-xs border border-rule bg-paper px-3 text-lg tracking-widest"
+          className="drawn-field min-h-11 px-3 text-lg tracking-widest"
         />
         <button
           type="submit"

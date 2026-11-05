@@ -118,11 +118,13 @@ export default async function AlliancePage({
         >
           ← Back to {event ? utcDay(event.eventAtUtc) : "Event"} event
         </Link>
-        <h1 className="break-words font-display text-display-lg font-semibold [overflow-wrap:anywhere]">
-          {title(now, p.unionId)}
-        </h1>
+        <div className="flex items-start justify-between gap-3">
+          <h1 className="min-w-0 break-words font-display text-display-lg font-semibold [overflow-wrap:anywhere]">
+            {title(now, p.unionId)}
+          </h1>
+          <ExactToggle />
+        </div>
         <NameTimeline names={names} />
-        <ExactToggle />
         <Totals detail={detail} canDelta={canDelta} />
         <h2 className="mb-2 mt-8 font-subhead text-display-md font-semibold">Members</h2>
         <MembersExplorer

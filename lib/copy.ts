@@ -10,6 +10,7 @@ export const copy = {
     ledger: "Server 325 · Saturday Ledger",
     players: "Players",
     darkMode: "Dark mode",
+    exactNumbers: "Exact numbers",
   },
   errors: {
     notFound: {

@@ -291,7 +291,9 @@ The whole list. Anything else is a composition of these; a new one needs a line 
 - **`seal-button`** — the wax seal: destructive or confirming actions (Run now, Rehearse now). Circle, ≥ 44 px.
 - **`button-primary`** — plum, 2 px radius, hatched shading behind it (`.ink-button`); one per view at most. The face stays solid so the label keeps its contrast; on press it sinks the 2 px onto the hatching. `Button` / `buttonClass("primary")` in `lib/brand/components/Button.tsx`.
 - **`button-secondary`** — paper face, plum label, inside the drawn frame (a two-stroke pen box, `public/brand/frame.svg` as a nine-slice mask; a plain 1 px border where the browser lacks `-webkit-mask-box-image`). `Button variant="secondary"` / `buttonClass("secondary")`.
-- **`input`** — paper field with a rule border; PIN uses `inputmode="numeric"`.
+- **`input`** — paper field inside the soft drawn frame (`.drawn-field`, also on `<select>` with a drawn arrow); PIN uses `inputmode="numeric"`. Checkboxes are `.drawn-check`: a framed box that fills with the stitched check. Frame, check and arrow are token data URIs in `tokens.css` (form controls take no pseudo-elements).
+- **`exact-toggle`** — "Exact numbers": a compact framed toggle beside the page title (`app/_ui/ExactToggle.tsx`).
+- **`drawn-rule`** — a pen hairline that swells and thins (`<hr class="drawn-rule">`, `public/brand/rule.svg`) for section dividers and the footer top; the data table keeps plain 1 px rules.
 - **`bottom-sheet`** — PIN entry and confirmations on phones; the only shadow.
 - **`empty-state`** — the Granny Doctor with her tea (line drawing) + one display-sm line ("Nothing recorded yet. The kettle is on.").
 - **`timeline`** — `run_logs` rows: time, level, code, alliance tag, the data that matters.

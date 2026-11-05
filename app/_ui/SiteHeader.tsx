@@ -41,7 +41,7 @@ function EventSelector({
           ▾
         </span>
       </summary>
-      <ul className="absolute right-0 z-40 mt-1 max-h-[70vh] w-[min(18rem,calc(100vw-2rem))] overflow-y-auto border border-rule bg-paper text-ink">
+      <ul className="absolute right-0 z-40 mt-1 max-h-[70vh] w-[min(18rem,calc(100vw-2rem))] overflow-y-auto bg-paper p-1 text-ink drawn-frame before:inset-0">
         {events.map((e, i) => (
           <li key={e.id}>
             <Link

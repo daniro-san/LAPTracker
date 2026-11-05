@@ -37,7 +37,7 @@ export default async function PlayersPage({
             maxLength={MAX_QUERY}
             placeholder="Player name, current or earlier"
             aria-label="Player name"
-            className="min-h-11 min-w-0 flex-1 rounded-xs border border-rule bg-paper px-3"
+            className="drawn-field min-h-11 min-w-0 flex-1 px-3"
           />
           <button type="submit" className={buttonClass("primary")}>
             Search

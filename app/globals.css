@@ -71,105 +71,156 @@ body {
   }
 }
 
-/* Ink button (owner, Session 7: every primary button): a solid plum face with a pen-hatched block offset behind it, like
-   ink shading in the vignettes. The face is ::before and the hatching ::after, both inside the
-   button's own stacking context, so no page background can hide them. Hover lifts the face a pixel;
-   pressing sinks the face the full 2 px onto the hatching, which stays put and disappears under it. Text sits on solid plum, so contrast is
-   unchanged. */
-.ink-button {
-  position: relative;
-  isolation: isolate;
-  color: var(--paper);
-  transition: transform 120ms ease-out;
-}
-.ink-button::before,
-.ink-button::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  transition: transform 120ms ease-out;
-}
-.ink-button::before {
-  z-index: -1;
-  border-radius: var(--rounded-xs);
-  background: var(--plum);
-}
-.ink-button::after {
-  z-index: -2;
-  transform: translate(2px, 2px);
-  background: var(--plum);
-  mask: url("data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%2724%27%20height=%2724%27%3E%3Cpath%20d=%27M4%20-1L-1%204M28%20-1L-1%2028%27%20stroke=%27black%27%20stroke-width=%270.8%27%20stroke-linecap=%27round%27/%3E%3Cpath%20d=%27M11%20-1L-1%2011M35%20-1L-1%2035%27%20stroke=%27black%27%20stroke-width=%270.65%27%20stroke-linecap=%27round%27/%3E%3Cpath%20d=%27M18%20-1L-1%2018M42%20-1L-1%2042%27%20stroke=%27black%27%20stroke-width=%270.85%27%20stroke-linecap=%27round%27/%3E%3C/svg%3E")
-    repeat;
-}
-.ink-button:not(:disabled):hover {
-  transform: translate(-1px, -1px);
-}
-.ink-button:not(:disabled):hover::after {
-  transform: translate(3px, 3px);
-}
-/* Same specificity as the hover rule and after it, so pressing wins while the pointer is still over. */
-.ink-button:not(:disabled):active {
-  transform: translate(2px, 2px);
-}
-.ink-button:not(:disabled):active::after {
-  transform: translate(0, 0);
-}
-@media (prefers-reduced-motion: reduce) {
-  .ink-button,
+/* Component styles live in the components layer, so Tailwind utilities on an element can still
+   adjust them (an unlayered rule would beat every utility). */
+@layer components {
+  /* Ink button (owner, Session 7: every primary button): a solid plum face with a pen-hatched block offset behind it, like
+     ink shading in the vignettes. The face is ::before and the hatching ::after, both inside the
+     button's own stacking context, so no page background can hide them. Hover lifts the face a pixel;
+     pressing sinks the face the full 2 px onto the hatching, which stays put and disappears under it. Text sits on solid plum, so contrast is
+     unchanged. */
+  .ink-button {
+    position: relative;
+    isolation: isolate;
+    color: var(--paper);
+    transition: transform 120ms ease-out;
+  }
   .ink-button::before,
   .ink-button::after {
-    transition: none;
+    content: "";
+    position: absolute;
+    inset: 0;
+    transition: transform 120ms ease-out;
   }
-}
+  .ink-button::before {
+    z-index: -1;
+    border-radius: var(--rounded-xs);
+    background: var(--plum);
+  }
+  .ink-button::after {
+    z-index: -2;
+    transform: translate(2px, 2px);
+    background: var(--plum);
+    mask: url("data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%2724%27%20height=%2724%27%3E%3Cpath%20d=%27M4%20-1L-1%204M28%20-1L-1%2028%27%20stroke=%27black%27%20stroke-width=%270.8%27%20stroke-linecap=%27round%27/%3E%3Cpath%20d=%27M11%20-1L-1%2011M35%20-1L-1%2035%27%20stroke=%27black%27%20stroke-width=%270.65%27%20stroke-linecap=%27round%27/%3E%3Cpath%20d=%27M18%20-1L-1%2018M42%20-1L-1%2042%27%20stroke=%27black%27%20stroke-width=%270.85%27%20stroke-linecap=%27round%27/%3E%3C/svg%3E")
+      repeat;
+  }
+  .ink-button:not(:disabled):hover {
+    transform: translate(-1px, -1px);
+  }
+  .ink-button:not(:disabled):hover::after {
+    transform: translate(3px, 3px);
+  }
+  /* Same specificity as the hover rule and after it, so pressing wins while the pointer is still over. */
+  .ink-button:not(:disabled):active {
+    transform: translate(2px, 2px);
+  }
+  .ink-button:not(:disabled):active::after {
+    transform: translate(0, 0);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ink-button,
+    .ink-button::before,
+    .ink-button::after {
+      transition: none;
+    }
+  }
 
-/* Drawn frame (DESIGN.md "Drawing style"): a two-stroke pen box around secondary buttons and status
-   chips, from public/brand/frame*.svg used as a nine-slice mask, so it stretches to any width and takes
-   the element's text colour. Only -webkit-mask-box-image tints a nine-slice in Chrome and Safari;
-   elsewhere a plain 1 px border stands in. The tails reach 3 px outside the element. */
-.drawn-frame,
-.drawn-frame-soft {
-  position: relative;
-}
-.drawn-frame::before,
-.drawn-frame-soft::before {
-  content: "";
-  position: absolute;
-  inset: -3px;
-  pointer-events: none;
-  background: currentColor;
-  -webkit-mask-box-image: url("/brand/frame.svg") 12 / 6px stretch;
-}
-.drawn-frame-soft::before {
-  -webkit-mask-box-image: url("/brand/frame-soft.svg") 12 / 6px stretch;
-}
-@supports not (-webkit-mask-box-image: none) {
+  /* Drawn frame (DESIGN.md "Drawing style"): a two-stroke pen box around secondary buttons and status
+     chips, from public/brand/frame*.svg used as a nine-slice mask, so it stretches to any width and takes
+     the element's text colour. Only -webkit-mask-box-image tints a nine-slice in Chrome and Safari;
+     elsewhere a plain 1 px border stands in. The tails reach 3 px outside the element. */
   .drawn-frame,
   .drawn-frame-soft {
-    border: 1px solid currentColor;
+    position: relative;
   }
   .drawn-frame::before,
   .drawn-frame-soft::before {
-    display: none;
+    content: "";
+    position: absolute;
+    inset: -3px;
+    pointer-events: none;
+    background: currentColor;
+    -webkit-mask-box-image: url("/brand/frame.svg") 12 / 6px stretch;
   }
-}
+  .drawn-frame-soft::before {
+    -webkit-mask-box-image: url("/brand/frame-soft.svg") 12 / 6px stretch;
+  }
+  @supports not (-webkit-mask-box-image: none) {
+    .drawn-frame,
+    .drawn-frame-soft {
+      border: 1px solid currentColor;
+    }
+    .drawn-frame::before,
+    .drawn-frame-soft::before {
+      display: none;
+    }
+  }
 
-/* Secondary button: paper face in the drawn frame; a plum tint on hover, pushed 1 px on press. */
-.frame-button {
-  color: var(--plum);
-  background: var(--paper);
-  border-radius: var(--rounded-xs);
-  transition:
-    transform 120ms ease-out,
-    background-color 120ms ease-out;
-}
-.frame-button:not(:disabled):hover {
-  background: color-mix(in srgb, var(--plum) 10%, var(--paper));
-}
-.frame-button:not(:disabled):active {
-  transform: translate(1px, 1px);
-}
-@media (prefers-reduced-motion: reduce) {
+  /* Secondary button: paper face in the drawn frame; a plum tint on hover, pushed 1 px on press. */
   .frame-button {
-    transition: none;
+    color: var(--plum);
+    background: var(--paper);
+    border-radius: var(--rounded-xs);
+    transition:
+      transform 120ms ease-out,
+      background-color 120ms ease-out;
+  }
+  .frame-button:not(:disabled):hover {
+    background: color-mix(in srgb, var(--plum) 10%, var(--paper));
+  }
+  .frame-button:not(:disabled):active {
+    transform: translate(1px, 1px);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .frame-button {
+      transition: none;
+    }
+  }
+
+  /* Drawn form controls (owner, Session 7 review): text fields and selects inside the soft drawn frame,
+     a framed checkbox that fills with the stitched check. border-image works on form controls, which
+     cannot take pseudo-elements; the frame, check and arrow are token data URIs (lib/brand/tokens.css). */
+  .drawn-field {
+    border: 3px solid transparent;
+    border-image: var(--frame-field) 12 / 6px / 3px stretch;
+    border-radius: 0;
+    background-color: var(--paper);
+  }
+  select.drawn-field {
+    appearance: none;
+    padding-right: 2rem;
+    background-image: var(--select-arrow);
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 12px 8px;
+  }
+  .drawn-field:focus-visible,
+  .drawn-check:focus-visible {
+    outline: 2px solid var(--plum);
+    outline-offset: 5px;
+  }
+  .drawn-check {
+    appearance: none;
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    cursor: pointer;
+    border: 3px solid transparent;
+    border-image: var(--frame-field) 12 / 6px / 3px stretch;
+    background: var(--paper) center / 16px 16px no-repeat;
+  }
+  .drawn-check:checked {
+    background-image: var(--check-mark);
+  }
+
+  /* Drawn rule: a pen hairline that swells and thins, tinted by the text colour (public/brand/rule.svg).
+     For section dividers; the data table keeps its plain 1 px rules. */
+  hr.drawn-rule,
+  .drawn-rule {
+    height: 4px;
+    border: 0;
+    background: currentColor;
+    -webkit-mask: url("/brand/rule.svg") left center / 160px 4px repeat-x;
+    mask: url("/brand/rule.svg") left center / 160px 4px repeat-x;
   }
 }

@@ -60,9 +60,12 @@ export default async function PlayerPage({ params }: { params: Promise<{ uid: st
         <Link href="/players" className="flex min-h-11 items-center text-sm underline">
           ← Find a player
         </Link>
-        <h1 className="break-words font-display text-display-lg font-semibold [overflow-wrap:anywhere]">
-          {current.name}
-        </h1>
+        <div className="flex items-start justify-between gap-3">
+          <h1 className="min-w-0 break-words font-display text-display-lg font-semibold [overflow-wrap:anywhere]">
+            {current.name}
+          </h1>
+          <ExactToggle />
+        </div>
         <p className="mb-3">
           <Link
             href={`/events/${current.eventId}/alliances/${current.unionId}`}
@@ -72,7 +75,6 @@ export default async function PlayerPage({ params }: { params: Promise<{ uid: st
           </Link>
         </p>
         <Timelines history={history} />
-        <ExactToggle />
         <PlayerAcrossEvents rows={history.rows} />
       </main>
       <SiteFooter ornament="granny" />

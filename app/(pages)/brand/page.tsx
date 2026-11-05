@@ -36,7 +36,8 @@ const SAMPLE = [
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="border-t border-rule py-8">
+    <section className="py-8">
+      <hr className="drawn-rule mb-8 text-plum/40" />
       <h2 className="mb-4 font-subhead text-display-md font-semibold">{title}</h2>
       {children}
     </section>

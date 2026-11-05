@@ -4,6 +4,8 @@
 // min/max might inputs and a name filter. All data is already in the page; nothing is fetched.
 import { useMemo, useState } from "react";
 
+import { buttonClass } from "@/lib/brand/components/Button";
+
 import { StatTable, type StatMetric, type StatRow } from "./StatTable";
 
 type Stats = { power: number | null; kills: number | null; lv: number | null };
@@ -28,7 +30,7 @@ const SORTS: { key: SortKey; label: string }[] = [
   { key: "name", label: "Name" },
 ];
 
-const FIELD = "min-h-11 w-full rounded-xs border border-rule bg-paper px-3 text-base  ";
+const FIELD = "drawn-field min-h-11 w-full px-3 text-base";
 
 /** "50000000", "50M", "1.2b", "300k" → a number; null when empty or unreadable. */
 export function parseMight(text: string): number | null {
@@ -159,7 +161,7 @@ function Controls({ f, set }: { f: Filters; set: (patch: Partial<Filters>) => vo
       </select>
       <button
         type="button"
-        className={`${FIELD} font-medium`}
+        className={buttonClass("secondary")}
         onClick={() => set({ desc: !f.desc })}
       >
         {f.desc ? "Highest first" : "Lowest first"}

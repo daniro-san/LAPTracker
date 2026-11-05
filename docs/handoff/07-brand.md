@@ -11,6 +11,7 @@
   - `Chip`: status chip in the soft drawn frame, tones `ink`, `plum`, `seal`, `muted`.
   - `LaceBorder` (ring-eyelet lace), `YarnCorner`, `StatusIcons` (hourglass redrawn; stitched check and ladder kept geometric), `ThemeSwitch`, `Vignettes` (yarn left behind, bottle broken in two, teacup), `Mascot` (`GrannyStanding`, `GrannyTea`).
 - `public/brand/frame.svg`, `frame-soft.svg`: the drawn frame as nine-slice masks (`-webkit-mask-box-image`; a 1 px border elsewhere).
+- Form controls and rules in the same hand: `.drawn-field` (text fields, the sort select with a drawn arrow, the PIN field), `.drawn-check` (checkbox filling with the stitched check), `.drawn-rule` (`<hr>`, section dividers and footer top), the event panel in the drawn frame. The "Exact numbers" switch is a compact framed toggle beside each page title (it was a block with an explanatory sentence).
 - `docs/brand/DRAWING.md`: the drawing method (tapered filled strokes on a Catmull-Rom centreline, width profile, weights, helpers, recipe, review checklist) so later drawings stay in the same hand.
 - `lib/brand/theme.ts` (reads the `theme` cookie) and `lib/brand/palette.ts` (reads light-mode token values out of `tokens.css` for the raster images and the manifest).
 - `lib/copy.ts`: created; holds every string added in this session (site name, byline, theme switch label, error pages, empty state, brand sheet).
@@ -71,7 +72,7 @@
 Session: 7b — Usability and language-light pass
 Model / effort: keep (opus · medium). This session's escalations were all illustration quality, which 7b does not need; its work is structure and copy.
 Owner must do first: merge this PR into `dev`. Keep `.env.local` linked into the 7b worktree (`ln -s <main>/.env.local .env.local`) so `pnpm db:seed` and `next dev` reach the preview branch.
-Plan changes needed: yes, for alliance badges (owner decision, 2026-11-04). IMPLEMENTATION_PLAN.md §196 (`raw_json` drops `badge_url` and `server_badge_url`) must keep `badge_url` and the collector must store it; §12.3's page CSP (`img-src 'self' data: blob:` in `proxy.ts`) must allow the badge host, or the app serves badges through its own image route; docs/DECISIONS.md needs the entry. Not edited here (CLAUDE.md: the owner changes the plan). Player `avatar_url` stays forbidden (CLAUDE.md hard rule).
+Plan changes needed: yes, for alliance badges (owner decision, 2026-11-04). IMPLEMENTATION_PLAN.md §196 (`raw_json` drops `badge_url` and `server_badge_url`) must keep `badge_url` and the collector must store it; §12.3's page CSP (`img-src 'self' data: blob:` in `proxy.ts`) must allow the badge host, or the app serves badges through its own image route; docs/DECISIONS.md needs the entry. Not edited here (CLAUDE.md: the owner changes the plan). Also by owner decision (2026-11-04, the server agreed to share its data): player photos as on the reference tracker. `avatar_url` is on CLAUDE.md's hard-rule list ("never returned by any query, route, page, log or message") and must come off it first (owner edits CLAUDE.md), then the same three steps as badges: keep it in storage, allow its image host in the CSP (or proxy), and a DECISIONS entry.
 
 <adjustments>
 - `lib/copy.ts` exists with `site`, `errors`, `empty` and `brand` keys; move the Session 6/6b strings into it rather than creating a second module.
@@ -92,3 +93,5 @@ Plan changes needed: yes, for alliance badges (owner decision, 2026-11-04). IMPL
 - The site name is "OG's LAP Tracker"; the plan's webhook `username: "LAPTracker"` may want to match it (owner's call).
 - `app/icon.tsx`, `app/opengraph-image.tsx` and `app/manifest.ts` read `lib/brand/tokens.css` with `fs` at build time; check `/icon/192` and `/manifest.webmanifest` on the first Vercel preview.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/28
