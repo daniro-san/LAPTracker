@@ -49,7 +49,7 @@ export default async function PlayersPage({
         )}
         <ul>
           {matches.map((m) => (
-            <li key={m.uid} className="relative mb-3 border border-rule p-3">
+            <li key={m.uid} className="stat-card relative mb-3 border border-rule p-3">
               <Link
                 href={`/players/${m.uid}`}
                 className="break-words font-semibold [overflow-wrap:anywhere] after:absolute after:inset-0 after:content-[''] hover:underline focus-visible:underline"

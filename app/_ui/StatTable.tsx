@@ -138,7 +138,7 @@ export function StatTable({
           <li
             key={row.key}
             style={grid}
-            className="relative mb-3 grid grid-cols-1 gap-y-1 border border-rule p-3 sm:mb-0 sm:grid-cols-[var(--cols)] sm:gap-x-3 sm:border-0 sm:border-b sm:py-2"
+            className="stat-card relative mb-3 grid grid-cols-1 gap-y-1 border border-rule p-3 sm:mb-0 sm:grid-cols-[var(--cols)] sm:gap-x-3 sm:border-0 sm:border-b sm:py-2"
           >
             <Lead row={row} />
             {row.metrics.map((m) => (
