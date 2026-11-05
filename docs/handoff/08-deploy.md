@@ -64,7 +64,7 @@ Plan changes needed: §3.1 and Phase 6: the scheduler is cron-job.org (D30), not
 <adjustments>
 - Run `gh` with `GH_TOKEN=$(gh auth token --user daniro-san)`; the default account cannot list secrets or open PRs.
 - `tick.yml` is dispatched with `gh workflow run tick.yml` (default `phase=tick`) or `-f phase=before|after`.
-- A rehearsal already passed on 2026-11-05 (event 5, scheduled by cron-job.org): Before 20:30:15 and After 21:00:21 UTC, both `complete`, 20/20 fresh from `/v1`, 21 calls each, 10.9 s and 10.4 s, quota 948 then 927. Session 9 step 1 can reuse event 5's rows for the step 2 table; a second rehearsal is optional and costs about 42 calls.
+- A rehearsal already passed on 2026-11-05 (event 5, scheduled by cron-job.org): Before 20:30:15 and After 21:00:21 UTC, both `complete`, 20/20 fresh from `/v1`, 21 calls each, 10.9 s and 10.4 s, quota 948 then 927. The owner then cleared the production data tables (events, snapshots, alliance_snapshots, member_snapshots, run_logs, rehearsal_slots), so event 5's rows no longer exist. Session 9 step 1 needs a fresh rehearsal (about 42 calls); the numbers above are the only record of this one.
 - The ticks in the rehearsal started 4 minutes after each due time (cron-job.org every 15 minutes, jitter up to 20 s), inside the 45 minute window.
 - The upstream had a 17-hour 504 outage on 2026-11-05; the collector now closes a run as partial at 100 s (D25) and `/` shows a banner when the last run failed upstream (D27). Step 4's 503/504 count should read `run_logs` for the whole day, outage included.
 - `/admin` refuses a Before for the Saturday event before its `before_at` (`snapshot_not_due`), force included. A manual round (D28) is the way to run on a weekday.
