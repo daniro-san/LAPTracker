@@ -7,6 +7,7 @@ import type { RosterChange } from "@/lib/queries";
 import { describeInstant } from "@/lib/schedule";
 
 import { comparisonRows, type AllianceCell, type ComparisonRow } from "./event-rows";
+import { ExactToggle } from "./ExactToggle";
 import { utcDay, utcStamp } from "./format";
 import { SiteHeader } from "./SiteHeader";
 import { StatTable, type StatRow } from "./StatTable";
@@ -63,11 +64,12 @@ function BoardSection({ detail, rows }: { detail: Detail; rows: ComparisonRow[] 
   return (
     <details className="mt-6 border border-zinc-300 px-3 dark:border-zinc-700">
       <summary className="flex min-h-11 cursor-pointer items-center font-medium">
-        Board numbers (cross-check only)
+        Leaderboard numbers (for comparison only)
       </summary>
       <p className="pb-2 text-sm text-zinc-500 dark:text-zinc-400">
-        From the ranks board{snap?.boardPulledAt ? `, pulled ${utcStamp(snap.boardPulledAt)}` : ""}.
-        Never used in a delta.
+        Taken from the game's ranking board
+        {snap?.boardPulledAt ? `, pulled ${utcStamp(snap.boardPulledAt)}` : ""}. Shown for
+        comparison only; the changes above never use them.
       </p>
       <ul className="pb-2 text-sm">
         {rows.map((r) => {
@@ -108,8 +110,8 @@ export function EventView({
       <main className="mx-auto max-w-[960px] px-4 py-4 sm:px-6">
         <h1 className="text-xl font-bold">{detail.name}</h1>
         <p className="mb-3 text-sm text-zinc-500 dark:text-zinc-400">
-          {describeInstant(detail.eventAtUtc, getEnv())}
-          {quota != null && ` · API quota left ${quota}`}
+          Event starts {describeInstant(detail.eventAtUtc, getEnv())}
+          {quota != null && ` · Data requests left today: ${quota}`}
         </p>
         <SyncLines
           phases={detail.snapshots}
@@ -120,11 +122,12 @@ export function EventView({
         <div className="mb-4">
           <StatusChips phases={detail.snapshots} />
         </div>
+        <ExactToggle />
         <StatTable
           leadLabel="Alliance"
           columns={["Members", "Might", "Kills"]}
           rows={rows.map((r) => toStatRow(detail.id, r, names.get(r.unionId)))}
-          empty="No snapshot yet. The BEFORE snapshot is taken shortly before the event."
+          empty="Nothing here yet. The first snapshot is taken shortly before the event starts."
         />
         <BoardSection detail={detail} rows={rows} />
       </main>

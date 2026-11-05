@@ -1,11 +1,10 @@
-// "Across events" (plan Phase 5e): one card / row per event, newest first, each compared with the
+// "History across events" (plan Phase 5e): one card / row per event, newest first, each compared with the
 // previous event's reference value (the after snapshot; a `B` marks the before fallback).
 import type { HistoryRow } from "@/lib/queries";
 
 import { utcDay } from "./format";
 import { StatTable, type StatMetric, type StatRow } from "./StatTable";
 
-const MINUS = "−";
 const SHOWN = 12;
 
 /** The value before the delta, so the percentage is relative to the previous event. */
@@ -24,7 +23,7 @@ function metrics(r: HistoryRow, prevMembers: number | null): StatMetric[] {
       delta: memberDelta,
       base: prevMembers,
       ...(r.joined !== null && r.left !== null && r.joined + r.left > 0
-        ? { note: `+${r.joined}/${MINUS}${r.left}` }
+        ? { note: `${r.joined} joined, ${r.left} left` }
         : {}),
     },
     {
@@ -40,7 +39,7 @@ function metrics(r: HistoryRow, prevMembers: number | null): StatMetric[] {
       base: baseOf(r.totalKills, r.step.kills),
     },
     { label: "Level", value: r.level, delta: r.step.lv, base: null },
-    { label: "Rank", value: r.serverRank, delta: null },
+    { label: "Server rank", value: r.serverRank, delta: null },
   ];
 }
 
@@ -88,16 +87,17 @@ export function AcrossEvents({ unionId, history }: { unionId: number; history: H
   const table = (list: StatRow[]) => (
     <StatTable
       leadLabel="Event"
-      columns={["Members", "Might", "Kills", "Level", "Rank"]}
+      columns={["Members", "Might", "Kills", "Level", "Server rank"]}
       rows={list}
       empty="No events recorded."
     />
   );
   return (
     <section className="mt-8">
-      <h2 className="mb-1 text-lg font-bold">Across events</h2>
+      <h2 className="mb-1 text-lg font-bold">History across events</h2>
       <p className="mb-3 text-sm text-zinc-500 dark:text-zinc-400">
-        After snapshot of each event, changes against the event before. B = before snapshot used.
+        Each row shows how the alliance stood after that event, with the change since the event
+        before. “B” means the after snapshot was missing, so the before snapshot is shown.
       </p>
       {table(rows.slice(0, SHOWN))}
       {rows.length > SHOWN && (

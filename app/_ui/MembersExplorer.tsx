@@ -125,15 +125,15 @@ function Controls({ f, set }: { f: Filters; set: (patch: Partial<Filters>) => vo
       <input
         className={`${FIELD} col-span-2 sm:col-span-1`}
         type="search"
-        placeholder="Filter by name"
-        aria-label="Filter by name"
+        placeholder="Search members by name"
+        aria-label="Search members by name"
         value={f.name}
         onChange={(e) => set({ name: e.target.value })}
       />
       <input
         className={FIELD}
         inputMode="numeric"
-        placeholder="Min might"
+        placeholder="Min might, e.g. 50M"
         aria-label="Minimum might"
         value={f.min}
         onChange={(e) => set({ min: e.target.value })}
@@ -154,7 +154,7 @@ function Controls({ f, set }: { f: Filters; set: (patch: Partial<Filters>) => vo
       >
         {SORTS.map((s) => (
           <option key={s.key} value={s.key}>
-            Sort: {s.label}
+            Sort by {s.label}
           </option>
         ))}
       </select>
@@ -163,7 +163,7 @@ function Controls({ f, set }: { f: Filters; set: (patch: Partial<Filters>) => vo
         className={`${FIELD} font-medium`}
         onClick={() => set({ desc: !f.desc })}
       >
-        {f.desc ? "High → low" : "Low → high"}
+        {f.desc ? "Highest first" : "Lowest first"}
       </button>
     </div>
   );
@@ -182,13 +182,13 @@ export function MembersExplorer({
     <div>
       <Controls f={f} set={(patch) => setF({ ...f, ...patch })} />
       <p className="mb-2 text-sm text-zinc-500 dark:text-zinc-400">
-        {rows.length} of {members.length} members
+        Showing {rows.length} of {members.length} members
       </p>
       <StatTable
         leadLabel="Member"
         columns={["Might", "Kills", "Level"]}
         rows={rows}
-        empty="No member matches."
+        empty="No members match your filters."
       />
     </div>
   );

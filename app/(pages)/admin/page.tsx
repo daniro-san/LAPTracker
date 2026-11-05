@@ -19,7 +19,7 @@ function Row({ label, value }: { label: string; value: string }) {
 }
 
 function Rehearsal({ r }: { r: RehearsalStatus | null }) {
-  if (!r) return <p className={MUTED}>No rehearsal yet.</p>;
+  if (!r) return <p className={MUTED}>No rehearsal yet. Use “Rehearse now” to run one.</p>;
   return (
     <div>
       <p className="break-words font-medium">{r.name}</p>
@@ -58,24 +58,31 @@ export default async function AdminPage() {
   const rehearsal = await withPageDb((db) => latestRehearsal(db, env.SNAPSHOT_WINDOW_MIN));
   return (
     <AdminShell title="Admin">
-      <h2 className="mb-1 text-lg font-bold">Schedule</h2>
+      <h2 className="mb-1 text-lg font-bold">When snapshots are taken</h2>
       <dl className="mb-6">
         <Row label="Server time zone" value={env.SERVER_TZ} />
         <Row label="Next event" value={describeInstant(next.eventAtUtc, env)} />
-        <Row label="BEFORE due" value={describeInstant(next.beforeAt, env)} />
-        <Row label="AFTER due" value={describeInstant(next.afterAt, env)} />
-        <Row label="Window" value={`${env.SNAPSHOT_WINDOW_MIN} min after each due time`} />
-        <Row label="Friday quota check" value={env.QUOTA_CHECK_AT} />
+        <Row label="Before snapshot due" value={describeInstant(next.beforeAt, env)} />
+        <Row label="After snapshot due" value={describeInstant(next.afterAt, env)} />
         <Row
-          label="Rehearsals"
+          label="Grace window"
+          value={`A snapshot may start up to ${env.SNAPSHOT_WINDOW_MIN} min after its due time`}
+        />
+        <Row label="Weekly API quota check" value={env.QUOTA_CHECK_AT} />
+        <Row
+          label="Rehearsals (test runs)"
           value={
-            env.REHEARSAL_AT === "" ? "off" : `${env.REHEARSAL_AT} (keep ${env.REHEARSAL_KEEP})`
+            env.REHEARSAL_AT === ""
+              ? "off"
+              : `${env.REHEARSAL_AT}, keeping the last ${env.REHEARSAL_KEEP}`
           }
         />
       </dl>
-      <h2 className="mb-2 text-lg font-bold">Run now</h2>
+      <h2 className="mb-2 text-lg font-bold">Run something now</h2>
       <p className={`mb-3 text-sm ${MUTED}`}>
-        Current event: {describeInstant(current.eventAtUtc, env)}
+        Current event: {describeInstant(current.eventAtUtc, env)}. A snapshot uses about 21 API
+        calls and takes up to a minute. A rehearsal is a fake event that tests the whole pipeline:
+        about 45 calls over about 50 minutes.
       </p>
       <AdminActions beforeAtText={describeInstant(current.beforeAt, env)} />
       <h2 className="mb-2 mt-8 text-lg font-bold">Last rehearsal</h2>

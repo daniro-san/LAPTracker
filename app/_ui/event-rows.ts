@@ -21,8 +21,6 @@ export interface ComparisonRow {
   formerly: NameHistoryEntry | null;
 }
 
-const MINUS = "−";
-
 /** The earlier entry of a name history that is not the current one (plan §3.8). */
 export function formerlyOf(history: NameHistoryEntry[] | undefined): NameHistoryEntry | null {
   if (!history || history.length < 2) return null;
@@ -54,13 +52,13 @@ function metric(
 /** `+3/−1`: who joined and left, shown only when someone did. */
 function rosterNote(change: RosterChange | undefined): string | undefined {
   if (!change || change.joined + change.left === 0) return undefined;
-  return `+${change.joined}/${MINUS}${change.left}`;
+  return `${change.joined} joined, ${change.left} left`;
 }
 
 /** Kills only fall when people leave (plan Phase 5), so a negative kills delta names the loss. */
 function killNote(killsDelta: number | null, change: RosterChange | undefined) {
   if (killsDelta === null || killsDelta >= 0 || !change || change.left === 0) return undefined;
-  return `${MINUS}${change.left} ${change.left === 1 ? "member" : "members"}`;
+  return `${change.left} ${change.left === 1 ? "member" : "members"} left`;
 }
 
 /** The three compared numbers of one snapshot row; all null when the row is missing. */

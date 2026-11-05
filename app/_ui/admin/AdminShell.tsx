@@ -8,8 +8,8 @@ import { PinGate } from "./PinGate";
 
 const NAV = [
   { href: "/admin", label: "Overview" },
-  { href: "/admin/runs", label: "Runs" },
-  { href: "/admin/errors", label: "Errors" },
+  { href: "/admin/runs", label: "Snapshot runs" },
+  { href: "/admin/errors", label: "App errors" },
 ];
 
 export async function AdminShell({ title, children }: { title: string; children: ReactNode }) {

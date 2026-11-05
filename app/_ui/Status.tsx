@@ -17,6 +17,13 @@ const CHIP = {
   failed: { icon: "✗", tone: "border-red-600 text-red-800 dark:text-red-300" },
 } as const;
 
+const PHASE = { before: "Before snapshot", after: "After snapshot" } as const;
+const STATUS_WORD = {
+  complete: "done",
+  running: "in progress",
+  partial: "partly done",
+  failed: "failed",
+} as const;
 const NOT_RUN = "border-zinc-400 text-zinc-600 dark:text-zinc-400";
 
 function Chip({ phase, status }: { phase: "before" | "after"; status: PhaseStatus | undefined }) {
@@ -28,8 +35,8 @@ function Chip({ phase, status }: { phase: "before" | "after"; status: PhaseStatu
         className={`inline-flex min-h-8 items-center gap-1 rounded-xs border px-3 text-sm ${style.tone}`}
       >
         <span aria-hidden="true">{style.icon}</span>
-        {phase}: {status ? status.status : "not run"}
-        {when && ` ${when}`}
+        {PHASE[phase]}: {status ? STATUS_WORD[status.status] : "not taken yet"}
+        {when && ` at ${when}`}
       </span>
       {status?.status === "failed" && status.error && (
         <p className="mt-1 break-words text-sm text-red-800 dark:text-red-300">{status.error}</p>
@@ -40,10 +47,17 @@ function Chip({ phase, status }: { phase: "before" | "after"; status: PhaseStatu
 
 export function StatusChips({ phases }: { phases: PhaseStatus[] }) {
   return (
-    <ul className="flex flex-wrap items-start gap-2">
-      <Chip phase="before" status={phases.find((p) => p.phase === "before")} />
-      <Chip phase="after" status={phases.find((p) => p.phase === "after")} />
-    </ul>
+    <div>
+      <ul className="flex flex-wrap items-start gap-2">
+        <Chip phase="before" status={phases.find((p) => p.phase === "before")} />
+        <Chip phase="after" status={phases.find((p) => p.phase === "after")} />
+      </ul>
+      {phases.some((p) => p.status === "partial") && (
+        <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+          Some alliances could not be refreshed, so their changes are not shown.
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -53,20 +67,9 @@ export interface FreshState {
   failed: boolean;
 }
 
-function Dot({ label, state }: { label: string; state: FreshState | null }) {
-  const [icon, tone, word] = !state
-    ? ["–", "text-zinc-500", "no data"]
-    : state.failed || !state.isFresh
-      ? ["○", "text-red-700 dark:text-red-400", state.failed ? "failed" : "stale"]
-      : ["●", "text-emerald-700 dark:text-emerald-400", "fresh"];
-  return (
-    <span className={`whitespace-nowrap ${tone}`} aria-label={`${label}: ${word}`}>
-      {label} <span aria-hidden="true">{icon}</span>
-    </span>
-  );
-}
+const problem = (s: FreshState | null) => s !== null && (s.failed || !s.isFresh);
 
-/** B ● A ○ : before and after freshness, with the exact times in {@link FreshnessDetail}. */
+/** One plain phrase: "Data up to date" or which snapshot has out-of-date data. Times are in the details. */
 export function FreshDots({
   before,
   after,
@@ -74,10 +77,17 @@ export function FreshDots({
   before: FreshState | null;
   after: FreshState | null;
 }) {
+  const bad = [problem(before) && "before", problem(after) && "after"].filter(Boolean);
+  if (bad.length === 0) {
+    return (
+      <span className="font-medium text-emerald-700 dark:text-emerald-400">
+        <span aria-hidden="true">● </span>Data up to date
+      </span>
+    );
+  }
   return (
-    <span className="flex gap-3 font-medium">
-      <Dot label="B" state={before} />
-      <Dot label="A" state={after} />
+    <span className="font-medium text-red-700 dark:text-red-400">
+      <span aria-hidden="true">○ </span>Out-of-date data in the {bad.join(" and ")} snapshot
     </span>
   );
 }
@@ -94,18 +104,18 @@ export function FreshnessDetail({
       {label}:{" "}
       {!s
         ? "no data"
-        : `${s.failed ? "failed" : s.isFresh ? "fresh" : "stale"}${s.updatedAt ? `, roster updated ${utcStamp(s.updatedAt)}` : ""}`}
+        : `${s.failed ? "could not be fetched" : s.isFresh ? "data was fresh" : "data was out of date, so changes are not shown"}${s.updatedAt ? ` (updated ${utcStamp(s.updatedAt)})` : ""}`}
     </li>
   );
   return (
     <ul>
-      {line("Before", before)}
-      {line("After", after)}
+      {line("Before snapshot", before)}
+      {line("After snapshot", after)}
     </ul>
   );
 }
 
-const label = (p: "before" | "after") => (p === "before" ? "BEFORE" : "AFTER");
+const label = (p: "before" | "after") => (p === "before" ? "before-event" : "after-event");
 
 /** "Last sync: AFTER, 4 h ago" and "Next sync: none" (or the next due phase), in plain words. */
 export function SyncLines({
@@ -131,14 +141,14 @@ export function SyncLines({
   return (
     <p className="mb-3 text-sm text-zinc-600 dark:text-zinc-400">
       {running
-        ? `Syncing now: ${label(running.phase)}.`
+        ? `Syncing now: ${label(running.phase)} snapshot.`
         : last
-          ? `Last sync: ${label(last.phase)}, ${relative(now, last.finishedAt ?? last.startedAt)} (${utcStamp(last.finishedAt ?? last.startedAt)}), ${last.status}.`
+          ? `Last sync: ${label(last.phase)} snapshot, ${relative(now, last.finishedAt ?? last.startedAt)} (${utcStamp(last.finishedAt ?? last.startedAt)}).`
           : "Last sync: none yet."}
       <br />
       {missing
-        ? `Next sync: ${label(missing)}, ${due > now ? "due" : "was due"} ${relative(now, due)} (${utcStamp(due)}).`
-        : "Next sync: none, this event is done."}
+        ? `Next sync: ${label(missing)} snapshot, ${due > now ? "due" : "was due"} ${relative(now, due)} (${utcStamp(due)}).`
+        : "Next sync: none, this event is finished."}
     </p>
   );
 }

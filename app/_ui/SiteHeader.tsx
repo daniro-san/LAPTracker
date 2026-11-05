@@ -1,4 +1,4 @@
-// Sticky compact header: home link, the "Exact numbers" switch and the event selector. The selector
+// Sticky compact header: home link, and the event selector. The selector
 // is a <details> list of links, so it needs no JavaScript and every target is ≥ 44 px.
 import Link from "next/link";
 
@@ -49,18 +49,10 @@ export function SiteHeader({
 }) {
   return (
     <header className="sticky top-0 z-30 border-b border-zinc-300 bg-white dark:border-zinc-700 dark:bg-zinc-950">
-      <div className="mx-auto flex max-w-[960px] items-center gap-2 px-4 py-1 sm:px-6">
+      <div className="mx-auto flex max-w-[960px] items-center justify-between gap-2 px-4 py-1 sm:px-6">
         <Link href="/" className="flex min-h-11 items-center text-base font-bold">
           LAPTracker
         </Link>
-        <label className="ml-auto flex min-h-11 cursor-pointer items-center gap-2 text-sm">
-          <input
-            id="full-numbers"
-            type="checkbox"
-            className="size-5 accent-zinc-800 dark:accent-zinc-200"
-          />
-          Exact
-        </label>
         {events.length > 0 && <EventSelector events={events} currentId={currentId} />}
       </div>
     </header>

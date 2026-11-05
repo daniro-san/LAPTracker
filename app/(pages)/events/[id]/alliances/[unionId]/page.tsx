@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { AcrossEvents } from "@/app/_ui/AcrossEvents";
+import { ExactToggle } from "@/app/_ui/ExactToggle";
 import { utcDay } from "@/app/_ui/format";
 import { memberViews } from "@/app/_ui/member-views";
 import { MembersExplorer } from "@/app/_ui/MembersExplorer";
@@ -114,12 +115,13 @@ export default async function AlliancePage({
           href={eventId === events[0]?.id ? "/" : `/events/${eventId}`}
           className="flex min-h-11 items-center text-sm underline"
         >
-          ← {event ? utcDay(event.eventAtUtc) : "Event"} comparison
+          ← Back to {event ? utcDay(event.eventAtUtc) : "Event"} event
         </Link>
         <h1 className="break-words text-xl font-bold [overflow-wrap:anywhere]">
           {title(now, p.unionId)}
         </h1>
         <NameTimeline names={names} />
+        <ExactToggle />
         <Totals detail={detail} canDelta={canDelta} />
         <h2 className="mb-2 mt-8 text-lg font-bold">Members</h2>
         <MembersExplorer

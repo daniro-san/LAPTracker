@@ -45,7 +45,7 @@ function MetricCell({ m }: { m: StatMetric }) {
       </span>
       {m.from !== undefined && m.from !== null && m.from !== m.value && (
         <span className={`text-xs tabular-nums ${MUTED} sm:block`}>
-          was <Num n={m.from} />
+          Before event: <Num n={m.from} />
         </span>
       )}
     </div>
@@ -76,7 +76,7 @@ function MoreBar({ row }: { row: StatRow }) {
     <details className="relative z-10 col-span-full">
       <summary className="flex min-h-11 cursor-pointer items-center gap-3 text-sm [&::-webkit-details-marker]:hidden">
         {row.summary}
-        {row.detail && <span className={`ml-auto ${MUTED}`}>Details ▾</span>}
+        {row.detail && <span className={`ml-auto ${MUTED}`}>About this data ▾</span>}
       </summary>
       {row.detail && <div className="pb-2 text-sm">{row.detail}</div>}
     </details>

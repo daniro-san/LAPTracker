@@ -78,7 +78,7 @@ export function rosterAt(base: BaseAlliance[], index: number, event: number, pha
     kills: Math.round(m.kills * (0.86 + 0.03 * step + 0.01 * noise(m.uid, step + 9))),
   }));
   let { tag, name } = a;
-  if (index === 1 && event === 0) [tag, name] = ["WOL", "Wolves"]; // renamed alliance
+  if (index === 1 && event === 0) [tag, name] = ["OLD", "Seed Former Name"]; // renamed alliance; fake on purpose
   const last = event === 2 && phase === "after";
   if (index === 3 && last) members = members.slice(2); // two members leave: kills fall
   if (index === 5 && last) members = members.slice(1); // this one moves to alliance 6
