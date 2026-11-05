@@ -1,0 +1,1 @@
+ALTER TABLE "events" ADD COLUMN "manual" boolean DEFAULT false NOT NULL;

@@ -3,17 +3,27 @@
 // "Rehearse", "Before snapshot", "After snapshot" (plan Phase 4): wax-seal buttons (DESIGN.md
 // `seal-button`). Each asks for a confirmation that names its cost, sends the PIN as x-edit-pin and
 // shows the outcome in words, never as a raw error.
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { SealButton } from "@/lib/brand/components/SealButton";
 import { copy, fill } from "@/lib/copy";
+import type { ManualEventStatus } from "@/lib/queries/admin";
 
 import { ConfirmSheet } from "./ConfirmSheet";
+import { ManualSection } from "./ManualSection";
 import { PinSheet, savedPin } from "./PinSheet";
 import { phaseWord, stateWord } from "./words";
 
 interface Action {
-  id: "rehearse" | "before" | "after";
+  id:
+    | "rehearse"
+    | "before"
+    | "after"
+    | "manual-create"
+    | "manual-rename"
+    | "manual-before"
+    | "manual-after";
   /** One line under a snapshot button. */
   help?: string;
   /** On the seal; `name` is the accessible name when it differs. */
@@ -21,9 +31,12 @@ interface Action {
   name?: string;
   url: string;
   confirm: string;
+  /** JSON sent with the request (the manual event's name). */
+  body?: string;
 }
 
 const t = copy.admin.run;
+const m = copy.admin.manual;
 
 const REHEARSE: Action = {
   id: "rehearse",
@@ -51,8 +64,56 @@ const SNAPSHOTS: Action[] = [
   },
 ];
 
-/** `before` is the event's before_at, shown when the API says the phase is not due yet. */
-export function AdminActions({ beforeAtText }: { beforeAtText: string }) {
+/** The manual event's two snapshot buttons (D28): the same route, named by `event`. */
+const manualSnapshots = (eventId: number): Action[] =>
+  (["before", "after"] as const).map((phase) => ({
+    id: `manual-${phase}`,
+    label: copy.admin.seal[phase],
+    name: phaseWord(phase),
+    url: `/api/snapshot?phase=${phase}&event=${eventId}`,
+    confirm: phase === "before" ? m.confirmBefore : m.confirmAfter,
+  }));
+
+const CREATE: Action = {
+  id: "manual-create",
+  label: m.create,
+  url: "/api/manual-event",
+  confirm: m.confirmCreate,
+};
+
+const renameAction = (eventId: number, name: string): Action => ({
+  id: "manual-rename",
+  label: m.rename,
+  url: "/api/manual-event/rename",
+  confirm: m.confirmRename,
+  body: JSON.stringify({ event_id: eventId, name }),
+});
+
+async function post(action: Action, pin: string, force: boolean) {
+  const res = await fetch(force ? `${action.url}&force=1` : action.url, {
+    method: "POST",
+    headers: {
+      "x-edit-pin": pin,
+      ...(action.body !== undefined && { "content-type": "application/json" }),
+    },
+    body: action.body ?? null,
+  });
+  const body = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+  return { res, body };
+}
+
+/**
+ * `beforeAtText` is the event's before_at, shown when the API says the phase is not due yet.
+ * `manual` is the newest manual event, or null when none exists.
+ */
+export function AdminActions({
+  beforeAtText,
+  manual,
+}: {
+  beforeAtText: string;
+  manual: ManualEventStatus | null;
+}) {
+  const router = useRouter();
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [pending, setPending] = useState<Action | null>(null);
@@ -69,13 +130,12 @@ export function AdminActions({ beforeAtText }: { beforeAtText: string }) {
     setBusy(action.id);
     setMessage(null);
     try {
-      const url = force ? `${action.url}&force=1` : action.url;
-      const res = await fetch(url, { method: "POST", headers: { "x-edit-pin": pin } });
-      const body = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+      const { res, body } = await post(action, pin, force);
       if (body.code === "snapshot_complete" && (await ask(t.again))) {
         return await send(action, pin, true);
       }
       setMessage(describe(res.status, body, beforeAtText));
+      router.refresh();
     } catch {
       setMessage(t.offline);
     } finally {
@@ -97,20 +157,14 @@ export function AdminActions({ beforeAtText }: { beforeAtText: string }) {
   return (
     <div>
       {seal(REHEARSE)}
-      <div role="group" aria-labelledby="snapshot-group" className="mt-6">
-        <h3 id="snapshot-group" className="mb-2 font-subhead text-lg font-semibold">
-          {t.snapshots.title}
-        </h3>
-        <ul className="flex flex-col gap-4">
-          {SNAPSHOTS.map((a) => (
-            <li key={a.id} className="flex items-center gap-4">
-              {seal(a)}
-              <p className="text-sm">{a.help}</p>
-            </li>
-          ))}
-        </ul>
-        <p className="mt-3 text-sm text-ink/70">{t.snapshots.cost}</p>
-      </div>
+      <SnapshotsGroup seal={seal} />
+      <ManualSection
+        manual={manual}
+        busy={busy}
+        seals={manual && manualSnapshots(manual.id).map((a) => <li key={a.id}>{seal(a)}</li>)}
+        onCreate={() => void start(CREATE)}
+        onRename={(id, name) => void start(renameAction(id, name))}
+      />
       {message && (
         <p role="status" className="mt-3 break-words text-sm">
           {message}
@@ -131,12 +185,32 @@ export function AdminActions({ beforeAtText }: { beforeAtText: string }) {
   );
 }
 
+function SnapshotsGroup({ seal }: { seal: (a: Action) => React.ReactNode }) {
+  return (
+    <div role="group" aria-labelledby="snapshot-group" className="mt-6">
+      <h3 id="snapshot-group" className="mb-2 font-subhead text-lg font-semibold">
+        {t.snapshots.title}
+      </h3>
+      <ul className="flex flex-col gap-4">
+        {SNAPSHOTS.map((a) => (
+          <li key={a.id} className="flex items-center gap-4">
+            {seal(a)}
+            <p className="text-sm">{a.help}</p>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-3 text-sm text-ink/70">{t.snapshots.cost}</p>
+    </div>
+  );
+}
+
 function describe(status: number, body: Record<string, unknown>, beforeAtText: string): string {
   const code = typeof body.code === "string" ? body.code : null;
   if (code === "snapshot_not_due") return fill(t.notDue, { at: beforeAtText });
   if (code)
     return `${status === 409 || status === 429 ? "" : "✗ "}${t.refusals[code] ?? fill(t.refused, { code })}`;
-  if (status === 201) return t.created;
+  if (status === 201) return body.event_id === undefined ? t.created : m.created;
+  if (body.name !== undefined) return m.renamed;
   const count = (v: unknown) => (Array.isArray(v) ? v.length : 0);
   return fill(t.result, {
     phase: body.phase === "before" || body.phase === "after" ? phaseWord(body.phase) : "",
