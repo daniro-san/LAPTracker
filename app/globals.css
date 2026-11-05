@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "../lib/brand/tokens.css";
 
 /* "Exact numbers" switch (app/_ui/Num.tsx): CSS only, so it needs no JavaScript and works on touch. */
 .num-f {
@@ -13,7 +14,6 @@ body:has(#full-numbers:checked) .num-f {
 
 html {
   color-scheme: light dark;
-  --sheet-shadow: rgb(30 26 31 / 0.18);
 }
 :focus-visible {
   outline: 2px solid currentColor;
