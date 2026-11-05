@@ -31,3 +31,5 @@ Plan change: none.
 <adjustments>
 - A manual round's admin messages start with `[manual]` and show no "due ... started" line; do not read a missing due line as a bug when checking messages.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/87
