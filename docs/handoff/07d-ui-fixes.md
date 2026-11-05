@@ -33,6 +33,7 @@ Owner's mid-session requests (2026-11-05), done here because they were small:
 - Breadcrumbs `text-sm` → `text-base`.
 - "Exact numbers" at the right of the title row on every page (main, alliance, player). DESIGN.md `exact-toggle` updated.
 - Player page: each alliance and its dates on one centred line.
+- The "Game board" section is removed from the main page (`BoardSection` in `app/_ui/EventView.tsx`, `copy.ledger.board`). The collector still reads the board and stores `powerBoard` / `killsBoard` (D-records unchanged); only the page stops showing it. Checked on a local build: `/` and `/events/1` 200, no "Game board", 22 cards each.
 
 Other files: `app/_ui/EventLead.tsx` (history row lead), `app/_ui/event-page.ts` (cached event load + title), `lib/schedule.ts` (`lastOccurrence` exported), `lib/queries/admin.ts` (`eventAtUtc` on runs and the rehearsal). Screenshots: `docs/screenshots/07d-*` (49 files, 4.1 MB): pages at 360/1280 in both modes, the evidence segments, admin, blank tiles.
 
@@ -73,11 +74,10 @@ Other files: `app/_ui/EventLead.tsx` (history row lead), `app/_ui/event-page.ts`
 
 ## Open issues
 
-- Owner requests from this session not done here (each needs a mock and the owner's yes first):
+- Owner requests from this session, each started in its own session after this PR (mock first, owner's yes, then apply):
   1. A loading state for player search, a drawn and animated grandma piece made with the `hand-drawn-svg` skill.
   2. The alliance page member filters (name, min/max might, sort) are hard to understand.
   3. The alliance page could present its information more efficiently (layout rework).
-  4. The owner asked why the "Game board" section sits at the bottom of the main page. It is the game's own leaderboard (power and kills) from `lib/sources/internal.ts`, a cross-check that never feeds a change (plan Phase 5). Options: keep it, move it to `/admin`, or remove it. The owner decides.
 - Discord admin messages (`lib/run.ts`, `lib/tick.ts`) still use `describeInstant` with `(14:00 UTC)` and `next BEFORE` / `next AFTER`. 07c scoped S3 to the admin pages; aligning the messages is a follow-up.
 - `/events/1` shows `[OLD] Seed Former Name` with the sub-line `was [OLD] Seed Former Name`: the seed's name history makes the former name equal the current one on that event. This bug predates 7d and was not touched.
 - The 07c `B2` hairline "a rule above" the Details table is the card's existing `border-t`; nothing added.

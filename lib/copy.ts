@@ -41,7 +41,6 @@ const source = {
     since: "since {date}",
     acrossEvents: "Across events",
     showAll: "All events ({n})",
-    board: "Game board",
     myAlliance: "My alliance",
     names: "Names",
     alliances: "Alliances",
