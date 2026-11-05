@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 
-import { ACROSS_ID, AcrossEvents } from "@/app/_ui/AcrossEvents";
+import { ACROSS_ID, AcrossEvents, TITLE_ID } from "@/app/_ui/AcrossEvents";
 import { Breadcrumbs } from "@/app/_ui/Breadcrumbs";
 import { DetailTable, figureRows, type RankPair } from "@/app/_ui/DetailLines";
 import { fellWithLeavers } from "@/app/_ui/event-rows";
@@ -250,7 +250,10 @@ export default async function AlliancePage({ params }: { params: Params }) {
       <SiteHeader events={events} currentId={eventId} clock={clock} />
       <main className="mx-auto max-w-[960px] px-4 py-4 sm:px-6">
         <Breadcrumbs crumbs={crumbsFor(events, eventId, label, clock)} />
-        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+        <div
+          id={TITLE_ID}
+          className="flex scroll-mt-20 flex-wrap items-center justify-between gap-x-3 gap-y-2"
+        >
           <div className="flex min-w-0 items-center gap-3">
             <AllianceBadge badgeId={now?.badgeId} size="md" />
             <h1 className="min-w-0 break-words font-display text-display-lg leading-tight">
@@ -260,6 +263,14 @@ export default async function AlliancePage({ params }: { params: Params }) {
           <div className="flex flex-wrap gap-2">
             <MyAllianceToggle unionId={unionId} />
             <ExactToggle />
+            {history.length > 0 && (
+              <a
+                href={`#${ACROSS_ID}`}
+                className="inline-flex min-h-11 items-center px-2 text-sm font-medium text-plum hover:underline"
+              >
+                {copy.ledger.acrossEvents} <span aria-hidden="true">&nbsp;↓</span>
+              </a>
+            )}
           </div>
         </div>
         <Legend memberMark={metrics.some((m) => m.memberMark)} />
@@ -272,17 +283,7 @@ export default async function AlliancePage({ params }: { params: Params }) {
           clock={clock}
         />
         <Leadership members={leadership(views(detail))} />
-        <div className="mb-2 mt-8 flex flex-wrap items-center justify-between gap-x-3">
-          <h2 className="font-subhead text-display-md">{copy.ledger.members}</h2>
-          {history.length > 0 && (
-            <a
-              href={`#${ACROSS_ID}`}
-              className="inline-flex min-h-11 items-center px-2 text-sm font-medium text-plum hover:underline"
-            >
-              {copy.ledger.acrossEvents} <span aria-hidden="true">&nbsp;↓</span>
-            </a>
-          )}
-        </div>
+        <h2 className="mb-2 mt-8 font-subhead text-display-md">{copy.ledger.members}</h2>
         <MemberList detail={detail} canDelta={canDelta} />
         <AcrossEvents unionId={unionId} history={history} clock={clock} />
       </main>
