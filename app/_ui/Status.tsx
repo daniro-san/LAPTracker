@@ -1,6 +1,6 @@
 // Snapshot status chips and freshness dots (plan Phase 5). Every state has a symbol and a word:
 // colour is never the only cue.
-import { utcClock, utcStamp } from "./format";
+import { relative, utcClock, utcStamp } from "./format";
 
 export interface PhaseStatus {
   phase: "before" | "after";
@@ -102,5 +102,43 @@ export function FreshnessDetail({
       {line("Before", before)}
       {line("After", after)}
     </ul>
+  );
+}
+
+const label = (p: "before" | "after") => (p === "before" ? "BEFORE" : "AFTER");
+
+/** "Last sync: AFTER, 4 h ago" and "Next sync: none" (or the next due phase), in plain words. */
+export function SyncLines({
+  phases,
+  beforeAt,
+  afterAt,
+  now,
+}: {
+  phases: PhaseStatus[];
+  beforeAt: Date;
+  afterAt: Date;
+  now: Date;
+}) {
+  const running = phases.find((p) => p.status === "running");
+  const done = phases
+    .filter((p) => p.status !== "running")
+    .sort(
+      (a, b) => (b.finishedAt ?? b.startedAt).getTime() - (a.finishedAt ?? a.startedAt).getTime(),
+    );
+  const last = done[0];
+  const missing = (["before", "after"] as const).find((ph) => !phases.some((p) => p.phase === ph));
+  const due = missing === "before" ? beforeAt : afterAt;
+  return (
+    <p className="mb-3 text-sm text-zinc-600 dark:text-zinc-400">
+      {running
+        ? `Syncing now: ${label(running.phase)}.`
+        : last
+          ? `Last sync: ${label(last.phase)}, ${relative(now, last.finishedAt ?? last.startedAt)} (${utcStamp(last.finishedAt ?? last.startedAt)}), ${last.status}.`
+          : "Last sync: none yet."}
+      <br />
+      {missing
+        ? `Next sync: ${label(missing)}, ${due > now ? "due" : "was due"} ${relative(now, due)} (${utcStamp(due)}).`
+        : "Next sync: none, this event is done."}
+    </p>
   );
 }

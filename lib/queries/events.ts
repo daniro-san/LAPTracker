@@ -77,6 +77,8 @@ export async function getEventDetail(db: Db, eventId: number) {
       id: events.id,
       name: events.name,
       eventAtUtc: events.eventAtUtc,
+      beforeAt: events.beforeAt,
+      afterAt: events.afterAt,
       isTest: events.isTest,
     })
     .from(events)
