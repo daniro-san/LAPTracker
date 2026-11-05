@@ -1,7 +1,10 @@
-// Drizzle schema for plan §6 (events, snapshots, alliance_snapshots, member_snapshots).
-// Deviations from §6, both forced by other decisions:
+// Drizzle schema for plan §6.
+// Deviations from §6, each forced by another decision:
 // - member_snapshots.power/kills are nullable: a null from upstream stays null (DECISIONS D15).
 // - alliance_snapshots data columns are nullable for error rows, which have no data (owner, Session 3).
+// - events.event_at_utc is unique and events.quota_checked_at exists, so a double tick can create
+//   neither two events nor two Friday checks (Session 4, DECISIONS D20).
+// - snapshots.quota_remaining_before and rehearsal_slots serve the rehearsal (plan §3.1, D20).
 import { sql } from "drizzle-orm";
 import {
   bigint,
@@ -21,15 +24,25 @@ const tstz = (name: string) => timestamp(name, { withTimezone: true });
 // Ids and totals exceed 2^31 (uids ~4.6e11, power ~4e9) but stay far below 2^53.
 const big = (name: string) => bigint(name, { mode: "number" });
 
-export const events = pgTable("events", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  eventAtUtc: tstz("event_at_utc").notNull(),
-  // INVARIANT event.after-uses-event-copy: written by the BEFORE run, read by the AFTER run.
-  allianceIds: big("alliance_ids").array().notNull(),
-  isTest: boolean("is_test").notNull().default(false),
-  createdAt: tstz("created_at").notNull().defaultNow(),
-});
+export const events = pgTable(
+  "events",
+  {
+    id: serial("id").primaryKey(),
+    name: text("name").notNull(),
+    eventAtUtc: tstz("event_at_utc").notNull(),
+    // INVARIANT event.after-uses-event-copy: written by the BEFORE run, read by the AFTER run.
+    allianceIds: big("alliance_ids").array().notNull(),
+    isTest: boolean("is_test").notNull().default(false),
+    createdAt: tstz("created_at").notNull().defaultNow(),
+    // When each phase is due (plan §3.1). Saturdays: SNAPSHOT_BEFORE/AFTER in SERVER_TZ;
+    // rehearsals: created + 15 / + 45 min. The tick reads these, not the env.
+    beforeAt: tstz("before_at").notNull(),
+    afterAt: tstz("after_at").notNull(),
+    // INVARIANT tick.friday-check-once: claimed by a conditional update, like the run lock.
+    quotaCheckedAt: tstz("quota_checked_at"),
+  },
+  (t) => [unique("events_event_at_utc_unique").on(t.eventAtUtc)],
+);
 
 export const snapshots = pgTable(
   "snapshots",
@@ -43,6 +56,9 @@ export const snapshots = pgTable(
     finishedAt: tstz("finished_at"),
     status: text("status", { enum: ["running", "complete", "partial", "failed"] }).notNull(),
     callsUsed: integer("calls_used").notNull().default(0),
+    // The quota check's `remaining` (that response already counts its own call). With
+    // quota_remaining_after it gives the run's quota drop, which the rehearsal verdict checks.
+    quotaRemainingBefore: integer("quota_remaining_before"),
     quotaRemainingAfter: integer("quota_remaining_after"),
     boardPulledAt: tstz("board_pulled_at"),
     error: text("error"),
@@ -73,6 +89,8 @@ export const allianceSnapshots = pgTable(
     totalKills: big("total_kills"),
     serverRank: integer("server_rank"),
     level: integer("level"),
+    // The emblem the leader picked (101–110 seen); the page shows it via /img/badge/[id] (D22).
+    badgeId: integer("badge_id"),
     powerBoard: big("power_board"),
     killsBoard: big("kills_board"),
     source: text("source", { enum: ["v1", "internal"] }).notNull(),
@@ -100,9 +118,61 @@ export const memberSnapshots = pgTable(
     power: big("power"),
     kills: big("kills"),
     lv: integer("lv"),
+    // Never returned by a query: /img/avatar/[uid] fetches it server-side (D22, plan §12.1).
+    avatarUrl: text("avatar_url"),
   },
   (t) => [
     unique("member_snapshots_alliance_uid_unique").on(t.allianceSnapshotId, t.uid),
     index("member_snapshots_uid_idx").on(t.uid),
   ],
 );
+
+/** The "why" of every run (plan §6, Phase 6 "Observability"): counts and codes, never names. */
+export const runLogs = pgTable(
+  "run_logs",
+  {
+    id: serial("id").primaryKey(),
+    snapshotId: integer("snapshot_id")
+      .notNull()
+      .references(() => snapshots.id),
+    at: tstz("at").notNull(),
+    level: text("level", { enum: ["info", "warn", "error"] }).notNull(),
+    code: text("code").notNull(),
+    unionId: big("union_id"),
+    data: jsonb("data").notNull(),
+  },
+  (t) => [
+    index("run_logs_snapshot_id_idx").on(t.snapshotId),
+    check("run_logs_level_check", sql`${t.level} in ('info', 'warn', 'error')`),
+  ],
+);
+
+/** Rate limiter state (plan §12.2): keys 'ip:<addr>' and 'global'. Pruned on write. */
+export const authAttempts = pgTable("auth_attempts", {
+  key: text("key").primaryKey(),
+  count: integer("count").notNull(),
+  windowStart: tstz("window_start").notNull(),
+});
+
+/** Errors outside a run (plan §6). Capped at 500 rows by the insert. */
+export const appErrors = pgTable(
+  "app_errors",
+  {
+    id: serial("id").primaryKey(),
+    at: tstz("at").notNull(),
+    route: text("route").notNull(),
+    digest: text("digest"),
+    message: text("message").notNull(),
+  },
+  (t) => [index("app_errors_at_idx").on(t.at)],
+);
+
+/**
+ * One row per REHEARSAL_AT occurrence (plan §3.1): the first tick in the slot's window claims it,
+ * so a slot creates at most one rehearsal, or is skipped once with one admin note.
+ */
+export const rehearsalSlots = pgTable("rehearsal_slots", {
+  slotAt: tstz("slot_at").primaryKey(),
+  eventId: integer("event_id").references(() => events.id, { onDelete: "set null" }),
+  outcome: text("outcome").notNull(),
+});

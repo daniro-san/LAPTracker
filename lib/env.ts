@@ -34,6 +34,15 @@ export const envSchema = z.object({
   QUOTA_CHECK_AT: z
     .string()
     .regex(/^(mon|tue|wed|thu|fri|sat|sun) ([01]\d|2[0-3]):[0-5]\d$/, "expected e.g. 'fri 20:00'"),
+  // Weekly automatic rehearsals (plan §3.1): "fri 18:00" or "wed 18:00, fri 18:00"; empty = off.
+  REHEARSAL_AT: z
+    .string()
+    .regex(
+      /^((mon|tue|wed|thu|fri|sat|sun) ([01]\d|2[0-3]):[0-5]\d)?(\s*,\s*(mon|tue|wed|thu|fri|sat|sun) ([01]\d|2[0-3]):[0-5]\d)*$/,
+      "expected e.g. 'fri 18:00' or 'wed 18:00, fri 18:00', or empty",
+    )
+    .default("fri 18:00"),
+  REHEARSAL_KEEP: z.coerce.number().int().min(1).max(50).default(4),
   NOTIFY_WEBHOOK_PUBLIC: optional(discordWebhook),
   NOTIFY_WEBHOOK_ADMIN: optional(discordWebhook),
   NOTIFY_ADMIN_MENTION: optional(
@@ -44,9 +53,16 @@ export const envSchema = z.object({
 
 export type Env = z.infer<typeof envSchema>;
 
+/** Keys where an empty value is a setting ("off"), not "unset, use the default". */
+const EMPTY_MEANS_OFF = new Set(["REHEARSAL_AT"]);
+
 /** Empty strings count as unset, so `NOTIFY_WEBHOOK_PUBLIC=` in a .env file means "off". */
 const withoutEmpty = (source: Record<string, string | undefined>) =>
-  Object.fromEntries(Object.entries(source).filter(([, v]) => v !== undefined && v !== ""));
+  Object.fromEntries(
+    Object.entries(source).filter(
+      ([k, v]) => v !== undefined && (v !== "" || EMPTY_MEANS_OFF.has(k)),
+    ),
+  );
 
 function parseWith<T extends z.ZodType>(
   schema: T,

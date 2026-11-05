@@ -3,17 +3,16 @@
 import { requiredQuota } from "./budget";
 import { isFresh } from "./compute";
 import type { Logger } from "./logger";
+import { trimRaw } from "./raw-json";
 import type { AllianceRow, MemberRow, Phase, Repo, SnapshotRow, SnapshotStatus } from "./repo";
+import { describe, httpStatusOf } from "./upstream-errors";
 import { ALLIANCES, SERVER } from "../config/alliances";
 import {
   type AllianceSnapshotInput,
   type InternalSource,
-  NotFoundError,
-  NotLiveError,
+  type Quota,
   QuotaExhaustedError,
   type RanksBoard,
-  SchemaError,
-  UpstreamError,
   type V1Source,
 } from "./sources/types";
 
@@ -61,19 +60,11 @@ interface Run {
   startedAt: Date;
   calls: number;
   lowestRemaining: number | null;
+  /** The quota check's remaining: the run's starting point for the rehearsal's quota-drop check. */
+  quotaBefore: number | null;
   board: RanksBoard | null;
   abort: string | null;
   capped: boolean;
-}
-
-/** One line from our own error classes; never a third-party message. */
-function describe(e: unknown): string {
-  if (e instanceof UpstreamError) return `http ${e.status}`;
-  if (e instanceof NotFoundError) return "not found";
-  if (e instanceof NotLiveError) return "not live";
-  if (e instanceof SchemaError) return e.code;
-  if (e instanceof QuotaExhaustedError) return "quota exhausted (429)";
-  return e instanceof Error ? e.name : "unknown error";
 }
 
 /** The one place an upstream call is counted. Passed to every /v1 call as its onAttempt hook. */
@@ -84,6 +75,25 @@ function attemptHook(run: Run, unionId: number | null) {
     run.calls++;
     if (attempt > 0) void run.deps.logger.warn("v1.retry", { union_id: unionId, retry_n: attempt });
   };
+}
+
+/** One run_logs line per /v1 call (plan "Observability"); retries add their own v1.retry lines. */
+async function logV1Fetch(
+  run: Run,
+  started: Date,
+  call: { endpoint: "alliance" | "quota"; unionId: number | null },
+  result: { cached?: boolean | null; quota?: Quota | null; error?: unknown },
+): Promise<void> {
+  const e = result.error;
+  await run.deps.logger[e === undefined ? "info" : "warn"]("v1.fetch", {
+    endpoint: call.endpoint,
+    union_id: call.unionId,
+    http_status: httpStatusOf(e),
+    cached: result.cached ?? null,
+    duration_ms: run.deps.now().getTime() - started.getTime(),
+    quota_remaining: result.quota?.remaining ?? null,
+    ...(e === undefined ? {} : { error: describe(e) }),
+  });
 }
 
 function noteQuota(run: Run, remaining: number | undefined) {
@@ -117,8 +127,11 @@ async function allianceIds(deps: Deps, eventId: number, phase: Phase): Promise<n
 
 /** Returns an error line when the run must not fetch rosters, else null. */
 async function checkQuota(run: Run, idCount: number): Promise<string | null> {
+  const started = run.deps.now();
   try {
     const quota = await run.deps.v1.fetchQuota(attemptHook(run, null));
+    await logV1Fetch(run, started, { endpoint: "quota", unionId: null }, { quota });
+    run.quotaBefore = quota.remaining;
     noteQuota(run, quota.remaining);
     // INVARIANT budget.reserve-for-after
     const needed = requiredQuota(idCount);
@@ -126,6 +139,7 @@ async function checkQuota(run: Run, idCount: number): Promise<string | null> {
     await run.deps.logger.error("quota", { remaining: quota.remaining, required: needed });
     return `quota: remaining ${quota.remaining} < required ${needed}`;
   } catch (e) {
+    await logV1Fetch(run, started, { endpoint: "quota", unionId: null }, { error: e });
     await run.deps.logger.error("quota", { error: describe(e) });
     return `quota: ${describe(e)}`;
   }
@@ -141,27 +155,6 @@ async function fetchBoard(deps: Deps): Promise<RanksBoard | null> {
   }
 }
 
-/** §6: raw_json keeps the response minus bulk and free text. */
-function trimRaw(raw: unknown): unknown {
-  if (typeof raw !== "object" || raw === null) return raw;
-  const { badge_url, server_badge_url, bulletin, declaration, quota, ...rest } = raw as Record<
-    string,
-    unknown
-  >;
-  void [badge_url, server_badge_url, bulletin, declaration, quota];
-  if (!Array.isArray(rest.members)) return rest;
-  const members: unknown[] = rest.members;
-  return {
-    ...rest,
-    members: members.map((m) => {
-      if (typeof m !== "object" || m === null) return m;
-      const { avatar_url, frame_url, ...member } = m as Record<string, unknown>;
-      void [avatar_url, frame_url];
-      return member;
-    }),
-  };
-}
-
 function dataRow(run: Run, a: AllianceSnapshotInput, source: AllianceRow["source"]): AllianceRow {
   return {
     unionId: a.unionId,
@@ -173,6 +166,7 @@ function dataRow(run: Run, a: AllianceSnapshotInput, source: AllianceRow["source
     totalKills: a.totalKills,
     serverRank: a.serverRank,
     level: a.level,
+    badgeId: a.badgeId ?? null,
     powerBoard: run.board?.power.get(a.unionId) ?? null,
     killsBoard: run.board?.kills.get(a.unionId) ?? null,
     source,
@@ -212,12 +206,16 @@ async function collectOne(run: Run, unionId: number): Promise<void> {
   const { deps } = run;
   let row: AllianceRow;
   let members: MemberRow[] = [];
+  const started = deps.now();
+  const call = { endpoint: "alliance", unionId } as const;
   try {
     const a = await deps.v1.fetchAlliance(unionId, attemptHook(run, unionId));
+    await logV1Fetch(run, started, call, { cached: a.cached, quota: a.quota });
     noteQuota(run, a.quota?.remaining);
     row = dataRow(run, a, "v1");
     members = a.members;
   } catch (e) {
+    await logV1Fetch(run, started, call, { error: e });
     if (e instanceof CallCapError) run.capped = true;
     if (e instanceof QuotaExhaustedError || e instanceof CallCapError) {
       // INVARIANT quota-429-aborts: no fallback, no further fetches; rows so far are kept.
@@ -272,6 +270,7 @@ async function finish(run: Run, ids: number[], phase: Phase, error: string | nul
     status,
     finishedAt,
     callsUsed: run.calls,
+    quotaRemainingBefore: run.quotaBefore,
     quotaRemainingAfter: run.lowestRemaining,
     boardPulledAt: run.board?.pulledAt ?? null,
     error,
@@ -287,9 +286,19 @@ async function finish(run: Run, ids: number[], phase: Phase, error: string | nul
     durationMs,
     error,
     stale: ok.filter((r) => !r.isFresh).map((r) => ({ unionId: r.unionId, tag: r.tag })),
-    failed: rows.flatMap((r) =>
-      r.error === null ? [] : [{ unionId: r.unionId, tag: r.tag, error: r.error }],
-    ),
+    failed: [
+      ...rows.flatMap((r) =>
+        r.error === null ? [] : [{ unionId: r.unionId, tag: r.tag, error: r.error }],
+      ),
+      // Alliances the run never reached (429, quota, cap): the admin needs them named to re-run.
+      ...ids
+        .filter((id) => !rows.some((r) => r.unionId === id))
+        .map((unionId) => ({
+          unionId,
+          tag: ALLIANCES.find((a) => a.unionId === unionId)?.tag ?? null,
+          error: `not fetched: ${error}`,
+        })),
+    ],
   } satisfies RunSummary;
 }
 
@@ -311,12 +320,17 @@ export async function runSnapshot(
     startedAt: deps.now(),
     calls: 0,
     lowestRemaining: null,
+    quotaBefore: null,
     board: null,
     abort: null,
     capped: false,
   };
   const ids = await allianceIds(deps, eventId, phase);
   await deps.logger.info("snapshot.start", { snapshot_id: snapshotId, alliances: ids.length });
+  // The tick creates the event with an empty list; only BEFORE fills it. No list, no quota call.
+  if (ids.length === 0) {
+    return finish(run, ids, phase, "no alliance list on the event: BEFORE has not run");
+  }
 
   const quotaError = await checkQuota(run, ids.length);
   if (quotaError) return finish(run, ids, phase, quotaError);

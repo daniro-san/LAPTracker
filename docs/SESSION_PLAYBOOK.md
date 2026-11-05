@@ -177,6 +177,9 @@ Write docs/handoff/NN-<name>.md with sections Built / Decisions / Deviations / V
 
 ## D. Session map
 
+**Order of execution:** 0 → 1 → 2 → 3 → 4 → 5 → 5b → 6 → 6b → 7 → 7b → 7c → 7d → 8 → 8b → 9 → 10. If Friday's freeze is close, 7d is the session to defer (ship as v1.1 after the first Saturday), never 8 or 9. A letter suffix is a session inserted after the numbered one (6b after 6, 7b after 7). "Phase 5e" and similar inside a prompt are **sections of IMPLEMENTATION_PLAN.md**, not sessions — the plan numbers its phases, this file numbers its sessions, and the two don't line up on purpose.
+
+
 | # | Session | Model | Effort | Mode | Reads | Writes |
 |---|---|---|---|---|---|---|
 | 0 | Prerequisites | sonnet | medium | default | plan §2, §7, Phase 0, fixtures/ | `00-prereqs.md`, `config/alliances.ts`, `fixtures/`, `CLAUDE.md`, `.env.example` |
@@ -188,8 +191,12 @@ Write docs/handoff/NN-<name>.md with sections Built / Decisions / Deviations / V
 | 5b | Fix review findings | opus | medium | default | 05 | `05b-fixes.md` |
 | 6 | UI: main table + alliance page, mobile-first | sonnet | medium | default | plan Phase 5/5c, 00, 04 | `app/*`, `StatTable`, `06-ui.md` |
 | 6b | Player pages + search | sonnet | medium | default | plan Phase 5d, 06 | `app/players/*`, `lib/queries/players.ts`, `06b-players.md` |
-| 7 | Branding | opus | medium | default | plan §5b, 06 | `lib/brand/*`, `/brand`, `07-brand.md` |
+| 7 | Branding + Granny Doctor | opus | medium | default | plan §5b, 06 | `lib/brand/*`, `/brand`, `07-brand.md` |
+| 7b | Usability + language-light pass | opus | medium | default | DESIGN.md, 06–07 handoffs | `lib/copy.ts`, page fixes, `07b-usability.md` |
+| 7c | UI review (read-only, adversarial) | fable | xhigh | plan mode, stays there | DESIGN.md, 06–07b handoffs, the staging URL | `07c-ui-review.md` |
+| 7d | Fix accepted UI findings | opus | medium | default | 07c | page fixes, `07d-ui-fixes.md` |
 | 8 | Deploy, Actions, env, webhooks | sonnet | medium | default | plan, 00, 04 | `.github/workflows/*`, README, `08-deploy.md` |
+| 8b | Discord webhook avatars (drawn) | opus | medium | default | DESIGN.md, docs/brand/DRAWING.md, 08 handoff | `docs/brand/discord/*.png`, `lib/notify.ts` (no username override), `08b-avatars.md` |
 | 9 | Dry run against production | opus | high | default | plan §7, 08 | `09-dryrun.md` |
 | 10 | README + runbook polish | haiku | medium | default | all handoffs | README, CONTRIBUTING.md, `10-docs.md` |
 
@@ -243,7 +250,7 @@ Session 1 of SESSION_PLAYBOOK.md. Read CLAUDE.md, docs/handoff/00-prereqs.md, IM
 Plan first. Then build, in this order:
 1. Scaffold: Next.js (stable), TypeScript strict (+ noUncheckedIndexedAccess, exactOptionalPropertyTypes), Tailwind, Vitest, Drizzle + @neondatabase/serverless, zod, fast-check. Nothing else unless §12.4's test is met and the reason is written in docs/DECISIONS.md. Keep config/alliances.ts, fixtures/, docs/, CLAUDE.md, .env.example untouched. Folder layout exactly as §11.1 (empty modules with a one-line header comment are fine).
 1b. Runtime pins from plan §11.4: `.nvmrc` = `26` (major only), `engines.node` = `">=22.0.0"`, `packageManager` = the pnpm 12 version you have (`pnpm -v`), `.npmrc` with `engine-strict=false`; `scripts/cloud-setup.sh` that resolves the newest 26.x from `nodejs.org/dist/index.json`, installs it into `/opt/node26`, prepends it to PATH in `~/.bashrc`, and installs pnpm 12 (the owner pastes it as the cloud environment's setup script — PREREQUISITES §3b). No Dockerfile, no devcontainer — the plan says why.
-2. Tooling from §11.2 and §11.4: ESLint (typescript-eslint strict, import/order, max-lines 300, max-lines-per-function 50, complexity 12), Prettier, `pnpm check`, lefthook pre-commit (prettier + eslint on staged, `gitleaks git --pre-commit --staged` with a custom `lap_` rule), `.github/workflows/ci.yml` with pnpm/action-setup + setup-node (`node-version-file: .nvmrc`, `cache: pnpm`), `pnpm install --frozen-lockfile`, `pnpm check`, `pnpm audit --audit-level high`, actions pinned to SHAs, `permissions: contents: read`, job name `check` (the ruleset requires this exact name). `.github/dependabot.yml` for npm and github-actions, weekly, grouped minor/patch.
+2. Tooling from §11.2 and §11.4: ESLint (typescript-eslint strict, import/order, max-lines 300, max-lines-per-function 80, complexity 12, max-depth 3), Prettier, `pnpm check`, lefthook pre-commit (prettier + eslint on staged, `gitleaks git --pre-commit --staged` with a custom `lap_` rule), `.github/workflows/ci.yml` with pnpm/action-setup + setup-node (`node-version-file: .nvmrc`, `cache: pnpm`), `pnpm install --frozen-lockfile`, `pnpm check`, `pnpm audit --audit-level high`, actions pinned to SHAs, `permissions: contents: read`, job name `check` (the ruleset requires this exact name). `.github/dependabot.yml` for npm and github-actions, weekly, grouped minor/patch.
 3. Harness from §11.5: `.claude/settings.json` (hooks: PostToolUse Edit|Write → eslint --fix on the changed file; Stop → pnpm check; SessionStart → scripts/install_pkgs.sh cloud-aware; permissions allow/deny as §11.4, with `git push origin main`, `git push origin dev` and `git push --force*` denied and `git push -u origin HEAD`, `gh pr *`, `gh api *` allowed), `.claude/rules/{collector,api-routes,tests}.md`, `.claude/skills/record-fixture/SKILL.md` (complete — it spends quota), `REVIEW.md` with the Session 5 checklist plus the §12.1 blocked-keys check.
 4. Security baseline from §12.3 and §12.5: security headers in next.config; `lib/env.ts` with zod validation of every variable in .env.example (fail fast); a `lib/redact.ts` helper the logger will use; a `BLOCKED_ROSTER_KEYS` constant in lib/queries with a test that no read model exports them.
 5. Docs: docs/ARCHITECTURE.md (§11.1 with the Deps interface in TypeScript), docs/GLOSSARY.md, docs/DECISIONS.md seeded from §3.1–§3.6 and the dependency list (one paragraph each, dated).
@@ -357,6 +364,16 @@ Every test named above exists and passes; migration generated; docs/handoff/03-c
 
 ## Session 4 — Routes, logger, notifications
 
+**Owner-supplied `<adjustments>` (2026-11-04) — paste right after `</task>`, together with the block from `docs/handoff/03-*.md`:**
+
+```text
+<adjustments>
+- Lint the dependency rule (plan §11.2): add `import-x/no-restricted-paths` zones to eslint.config.mjs from docs/ARCHITECTURE.md — lib/compute, lib/budget, lib/schedule import nothing from `@/`; `lib/**` never imports `@/app/**`; `app/**` never imports `@/lib/sources/**` or `@/lib/repo/**`. Prove it with a scratch file containing a forbidden import that `pnpm lint` rejects, then delete the file and paste the output in the handoff.
+- max-lines-per-function is 80 and max-depth is 3 (PR "chore: lint limits"); don't split a function only to satisfy a counter — split along the architecture or leave it.
+</adjustments>
+```
+
+
 **Model:** opus · **Effort:** medium · **Mode:** plan mode first
 
 ```text
@@ -368,8 +385,10 @@ Session 4 of SESSION_PLAYBOOK.md. Read CLAUDE.md, docs/handoff/00–03, IMPLEMEN
 Plan first. Then:
 1. lib/logger.ts: implements the Logger interface from Session 3 by inserting into run_logs (plan §6, Phase 6); every method is one INSERT in try/catch, never throws, never recurses (imports only lib/repo and lib/redact); error-level lines are mirrored once to console.error; stops at MAX_RUN_LOG_LINES = 400 with a final `log.capped` line; every `data` object goes through redact() first. Plus instrumentation.ts with onRequestError → app_errors (1 insert/s per instance, table capped at 500 rows by the insert).
 2. lib/notify.ts: public and admin Discord senders with the exact templates from Phase 6; silent when unset; called only after the snapshot row is finalised.
-3. Routes: POST /api/tick (Bearer CRON_SECRET; the §3.1 decision with SERVER_TZ, SNAPSHOT_BEFORE/AFTER, SNAPSHOT_WINDOW_MIN, QUOTA_CHECK_AT from lib/env; at most one phase per call; 204 when nothing is due), POST /api/snapshot (phase, force; Bearer CRON_SECRET or x-edit-pin compared with timingSafeEqual; Postgres-backed rate limiter per §12.2 (auth_attempts table; per-IP 5/15 min, global lockout at 20/h; never module-scope state); run lock → 409 via a conditional update, not read-then-write; maxDuration = 120; try/catch that always finalises the snapshot row), GET /api/events, GET /api/events/[id] (read models only — §12.1 blocked keys never appear), GET /api/quota (numbers only), GET /api/quota/check (posts to the admin webhook if remaining < 900). zod on every body and query string. Error responses carry a code, never a message from a third-party error.
-4. Tests: tick runs BEFORE exactly once across three ticks inside the window and never outside it (deps.now injected); tick with both phases due runs only the earlier one; 409 on an active lock; the snapshot row is finalised when the collector throws; the logger stops at the 400th line and writes `log.capped`; a logger whose repo throws does not throw and the run completes; only CRON_SECRET and PIN are accepted on /api/snapshot; the rate limiter blocks the 6th attempt from one IP and the global lockout engages at 20 across IPs, with state read back from the DB (a fresh module import must still see the count); `GET /api/events/[id]` contains none of BLOCKED_ROSTER_KEYS; the logger redacts a value equal to EDIT_PIN.
+3. Routes: POST /api/tick (Bearer CRON_SECRET; event-driven per plan §3.1: create the coming Saturday's event row with before_at/after_at from SNAPSHOT_BEFORE/AFTER in SERVER_TZ when within a day of it; run the one phase whose [x_at, x_at + SNAPSHOT_WINDOW_MIN) window contains now and has no snapshot; after a test event's AFTER phase compute and post the rehearsal verdict; Friday check after QUOTA_CHECK_AT; 204 when nothing is due), POST /api/rehearsal (x-edit-pin; inserts an is_test event named `REHEARSAL <iso>` with before_at = now + 15 min, after_at = now + 45 min; 409 if one is pending or a §3.1 guard applies; the tick calls the same lib function for REHEARSAL_AT — weekly, comma-separated list, empty = off — and prunes rehearsals beyond REHEARSAL_KEEP), POST /api/snapshot (phase, force; Bearer CRON_SECRET or x-edit-pin compared with timingSafeEqual; Postgres-backed rate limiter per §12.2 (auth_attempts table; per-IP 5/15 min, global lockout at 20/h; never module-scope state); run lock → 409 via a conditional update, not read-then-write; maxDuration = 120; try/catch that always finalises the snapshot row), GET /api/events, GET /api/events/[id] (read models only — §12.1 blocked keys never appear), GET /api/quota (numbers only), GET /api/quota/check (posts to the admin webhook if remaining < 900). zod on every body and query string. Error responses carry a code, never a message from a third-party error.
+3b. Migration: `events.before_at`, `events.after_at` (timestamptz, not null) — Session 3's schema predates them; generate the Drizzle migration here and make the collector's event creation set them.
+3c. lib/notify.ts: `is_test` events never call the public webhook; admin messages for them are prefixed `[TEST]`; the rehearsal verdict message lists each check with ✅/❌ and the number behind it (plan §3.1).
+4. Tests: tick creates the Saturday event once and never twice; REHEARSAL_AT creates a rehearsal once per listed slot per week and never on EVENT_WEEKDAY or the day after; the guard refuses a rehearsal 3 h before a real before_at; REHEARSAL_KEEP prunes the oldest rehearsal and its rows; tick runs BEFORE exactly once across three ticks inside its window and never outside it (deps.now injected); a rehearsal event created at T runs BEFORE on the first tick ≥ T+15 and AFTER on the first tick ≥ T+45; the verdict is PASS on a mocked fresh pair and FAIL naming the alliance when one `source_updated_at` did not advance, and FAIL naming the number when calls_used ≠ the quota drop; test events post to admin only; tick with both phases due runs only the earlier one; 409 on an active lock; the snapshot row is finalised when the collector throws; the logger stops at the 400th line and writes `log.capped`; a logger whose repo throws does not throw and the run completes; only CRON_SECRET and PIN are accepted on /api/snapshot; the rate limiter blocks the 6th attempt from one IP and the global lockout engages at 20 across IPs, with state read back from the DB (a fresh module import must still see the count); `GET /api/events/[id]` contains none of BLOCKED_ROSTER_KEYS; the logger redacts a value equal to EDIT_PIN.
 </task>
 
 <constraints>
@@ -456,14 +475,14 @@ All Blockers closed with a test; suite green; docs/handoff/05b-fixes.md lists ea
 
 ```text
 <session>
-Session 6 of SESSION_PLAYBOOK.md. Read CLAUDE.md, docs/handoff/00 and 04, IMPLEMENTATION_PLAN.md Phase 5, 5c, 5e and §3.8. Read the Phase 5b hard rules but do no branding yet.
+Session 6 of SESSION_PLAYBOOK.md. Read docs/DESIGN.md §3–§5 and §9 first (plain styling now, but the component list, spacing and the never-list already apply). Read CLAUDE.md, docs/handoff/00 and 04, IMPLEMENTATION_PLAN.md Phase 5, 5c, 5e and §3.8. Read the Phase 5b hard rules but do no branding yet.
 </session>
 
 <task>
 Build with plain Tailwind, no component library, server-rendered:
 - A `StatTable` component with two layouts from one data shape: cards below 640 px, table at ≥ 640 px; compact numbers (3.94B / 34.2M) with full values on tap; signed, coloured deltas with a sign character; nothing hover-only.
 - `/` and `/events/[id]`: event selector in a sticky compact header, status chips, quota, the comparison table/cards sorted by before.total_power — each metric as value · signed delta with arrow · percent, kills with the member-loss note when negative (Phase 5) — with the "formerly …" badge from lib/queries/names.ts, freshness dots with updated_at on tap, board numbers in a collapsed section with pulled_at. No run buttons on public pages.
-- `/admin`: PIN gate (bottom sheet, `inputmode="numeric"`, once per session), noindex + robots Disallow, not linked from public pages; effective schedule in server time and UTC from lib/env; "Run BEFORE/AFTER now" (confirm: ~21 API calls, up to a minute); /admin/runs (list), /admin/runs/[id] (the run_logs timeline: time, level, code, alliance tag, the data fields that matter), /admin/errors (app_errors grouped by digest, newest first).
+- `/admin`: PIN gate (bottom sheet, `inputmode="numeric"`, once per session), noindex + robots Disallow, not linked from public pages; effective schedule in server time and UTC from lib/env plus the next event's before_at/after_at; **Rehearse now** (confirm: ~45 API calls over ~50 min; shows the pending rehearsal's phase status and the last verdict with its ✅/❌ lines); "Run BEFORE/AFTER now" for the current event (confirm: ~21 API calls, up to a minute); /admin/runs (list), /admin/runs/[id] (the run_logs timeline: time, level, code, alliance tag, the data fields that matter), /admin/errors (app_errors grouped by digest, newest first).
 - `/events/[id]/alliances/[unionId]`: header with the alliance name timeline; member StatTable with before/after/delta, joined/left from compute.rosterDiff, "(was X)" on renamed members, client-side sort, min/max might inputs, name filter; each member links to /players/[uid] (page comes in Session 6b — link may 404 for now). Below it, the "Across events" section from Phase 5e using lib/queries/alliances.ts allianceHistory and compute.seriesDeltas: one card/row per event, after-snapshot reference (B marker on fallback), name/tag changes, members with +joined/−left, might/kills/lv deltas vs previous event, server rank.
 - `pnpm db:seed`: three fake events from fixtures/ (include one renamed alliance, one renamed member, one member who changes alliance, and one stale row) so every state renders locally.
 - Screenshots at 360, 390 and 1280 px of both pages → docs/screenshots/06-*.png. Run Lighthouse (mobile) on `/` and record the performance score.
@@ -488,7 +507,7 @@ Nine screenshots exist (main, alliance, admin at three widths); no horizontal sc
 
 ```text
 <session>
-Session 6b of SESSION_PLAYBOOK.md. Read CLAUDE.md, docs/handoff/06-ui.md, IMPLEMENTATION_PLAN.md Phase 5d, 5e, §3.8 and §12.1.
+Session 6b of SESSION_PLAYBOOK.md. Read CLAUDE.md, docs/DESIGN.md §3–§5 and §9, docs/handoff/06-ui.md, IMPLEMENTATION_PLAN.md Phase 5d, 5e, §3.8 and §12.1.
 </session>
 
 <task>
@@ -520,29 +539,140 @@ If the `frontend-design` skill is available, open the prompt with "Use the front
 
 ```text
 <session>
-Session 7 of SESSION_PLAYBOOK.md. Read CLAUDE.md, docs/handoff/06-ui.md and 06b-players.md, IMPLEMENTATION_PLAN.md Phase 5b in full.
+Session 7 of SESSION_PLAYBOOK.md. Read CLAUDE.md, docs/DESIGN.md in full (the contract), docs/handoff/06-ui.md and 06b-players.md, IMPLEMENTATION_PLAN.md Phase 5b.
 </session>
 
 <task>
-Step 1 — mock only. Create lib/brand/tokens.css (palette and type from Phase 5b), the Logo, LaceBorder and YarnCorner SVG components, and a static page /brand showing: logo at 24 px and 200 px, the palette, both typefaces, the lace border, the yarn corner, the wax-seal button, the three status-chip icons, one sample table row using the tokens; light and dark mode. Screenshots at 360 px and 1280 px → docs/screenshots/07-brand-*.png. Then STOP and ask me to review.
+Step 1 — mock only. Create lib/brand/tokens.css (the §2–§4 tokens of docs/DESIGN.md, light and dark), the Logo, LaceBorder and YarnCorner SVG components, and a static page /brand showing: logo at 24 px and 200 px, the palette, both typefaces, the lace border, the yarn corner, the wax-seal button, the three status-chip icons, one sample table row using the tokens; light and dark mode. Screenshots at 360 px and 1280 px → docs/screenshots/07-brand-*.png. Then STOP and ask me to review.
 
-Step 2 — only after I say yes, in this session: apply tokens and components to the Session 6 and 6b pages (main, alliance, player, search). Decoration in header, corners, borders and empty states only; the table stays plain and high-contrast. Favicon, opengraph-image and web manifest with 192/512 icons from the logo. Re-take the Session 6/6b screenshots at 360 and 1280.
+Step 2 — only after I say yes, in this session: apply tokens and components to the Session 6 and 6b pages (main, alliance, player, search). Decoration in header, corners, borders and empty states only; the table stays plain and high-contrast. Then the error pages from Phase 5b: app/not-found.tsx, app/error.tsx and app/global-error.tsx with one original inline-SVG illustration each, the Phase 5b copy, a single CSS keyframe animation per page that stops under prefers-reduced-motion, a Retry button on error.tsx calling reset(), and never an error message, digest or stack in the markup. Screenshot both at 360 px. Favicon, opengraph-image and web manifest with 192/512 icons from the logo. Re-take the Session 6/6b screenshots at 360 and 1280.
 </task>
 
 <constraints>
 - Nothing from the game: no logo, art, fonts or screenshots. Original SVG only. The site is public and the game's assets are not ours.
 - Avoid these specific defaults: Inter/Roboto/system fonts for display text, purple gradients, pill-shaped buttons, numbered "01/02/03" section labels, italic accent words in headlines, generic card grids. The brief in Phase 5b says what to use instead.
 - The stop after step 1 is deliberate: a rejected mock costs minutes, a rejected full restyle costs the session.
+- The mascot is the Granny Doctor (DESIGN.md "Mascot"): an old lady plague doctor with a cane and a knitting bag, original, three poses at most. Comic but serious; game references only as allusions in copy.
+- Every string you add goes through lib/copy.ts (create it if Session 7b hasn't yet); no literals in components.
+- docs/DESIGN.md §9 is a hard list; §10's colour-literal test and the screenshot set are part of done. If the owner changes a decision at the mock, edit DESIGN.md in the same commit as the tokens.
 </constraints>
 
 <done_when>
-Mock approved by me; pages re-screenshotted; no game assets in the repo. Commit after step 1 ("feat: brand mock") and step 2 ("feat: session 7 — branding applied"). docs/handoff/07-brand.md written.
+Mock approved by me; pages re-screenshotted; 404 and error pages exist with their screenshots and a test that error.tsx output contains none of the thrown error's text; no game assets in the repo. Commit after step 1 ("feat: brand mock") and step 2 ("feat: session 7 — branding applied"). docs/handoff/07-brand.md written.
+</done_when>
+```
+
+---
+
+## Session 7b — Usability and language-light pass
+
+**Model:** opus · **Effort:** medium · **Mode:** default
+**Before starting (you, by hand):** nothing. The persona test replaces the real-member test (plan Phase 5f).
+
+```text
+<session>
+Session 7b of SESSION_PLAYBOOK.md. Read CLAUDE.md, docs/DESIGN.md in full ("Who uses this", "Language-light rules", "Navigation and hierarchy" are the contract), IMPLEMENTATION_PLAN.md Phase 5f, docs/handoff/06-ui.md, 06b-players.md and 07-brand.md, and look at every screenshot in docs/screenshots/.
+</session>
+
+<task>
+1. Audit, then fix, every public page (main, alliance, player, search) against the language-light rules. Concretely: every sentence becomes a chip, a label or a number; one legend under the header; status strip with Before/After chips instead of prose; order strictly by rank (the page is for the whole server; other alliances will use it) with an optional per-viewer "this is my alliance" highlight + jump control kept in localStorage (try/catch, page correct without it); rank numbers; header title "Server 325 · Saturday Ledger" with the byline "kept by the Old Grandmas"; three channels per state (colour + arrow + word); Intl formatting for numbers, dates and times from the request's Accept-Language with server time explicit; labels ≤ 2 words, the game's own terms (Might, Kills, Members). Quota and sync details move to /admin.
+2. Move every user-facing string into lib/copy.ts (stable keys, English values, one module); components import from it. Add a test that greps app/ for JSX text nodes and string props longer than 2 words outside lib/copy.ts and fails on hits (allow numbers, punctuation and keys).
+3. Navigation: breadcrumbs on alliance and player pages, search in the header, one row shape at the three depths. No tooltip carries information that isn't also visible.
+3b. Rank movement (plan Phase 5e): `#n` beside every tag with `▲k` / `▼k` / `=` — before → after on the comparison page (ledger rank by might and by kills, server rank from the API), event over event on the alliance and player "Across events" rows. `compute.rankDelta` pure with a test; `—` when there is no previous value.
+4. The ten-second test without real members (plan Phase 5f): add a dev-only blank dictionary mode (every lib/copy.ts value replaced by `░` × its length; enabled only by an env var that is never set in Vercel) and screenshot main, alliance and player at 390 px with it. Then spawn three persona subagents (sonnet, fresh context each, no access to the repo or to this conversation): an alliance officer in Russia, a casual member in Spain, a player in Brazil on a slow phone. Give each only the blank screenshots and three tasks — find alliance NSE's kills change; which alliance lost the most members; when are the numbers from — and ask for the answer, the time they'd need, and where they hesitated. Record all three verbatim in the handoff; a wrong answer or a hesitation on a data row is a finding you fix in this session, then re-screenshot and re-run that persona. Keep the blank screenshots in docs/screenshots/ as the baseline.
+5. Screenshots at 360/390/1280, light and dark, for every page touched.
+</task>
+
+<constraints>
+- No translation yet: the fix for "I can't read this" is fewer words and better structure, not a dictionary.
+- No new components beyond DESIGN.md's list; status-strip, rank and legend are already on it.
+- Nothing from the game's assets. The tracker site is a reference for clarity only.
+</constraints>
+
+<done_when>
+Every public page passes the language-light rules; ranks and their movement show on cards, rows and across-events sections; lib/copy.ts holds all strings and the grep test passes; the blank-dictionary screenshots and the three persona reports are recorded with their fixes; screenshots attached; docs/handoff/07b-usability.md written. PR: "feat: session 7b — usability and language-light pass" (into dev).
+</done_when>
+```
+
+**Re-plan:** Session 7c reviews what 7 and 7b produced, read-only; its `## Next` is the curated list the owner decides on. 7b fixes only what its own contract and persona test name — taste and anything debatable go to 7c's list, not into 7b.
+
+---
+
+## Session 7c — UI review (read-only, adversarial)
+
+**Model:** fable · **Effort:** xhigh · **Mode:** plan mode, and it must **stay** there — this session changes nothing.
+(`fable` unavailable → `opus` at `xhigh`.)
+**Before starting (you, by hand):** merge 7b into `dev` so the `dev` staging URL shows the reviewed state; paste that URL into the prompt.
+
+```text
+<session>
+Session 7c of SESSION_PLAYBOOK.md. You are a reviewer. Stay in plan mode; do not edit any file. Read CLAUDE.md, docs/DESIGN.md in full, IMPLEMENTATION_PLAN.md Phase 5, 5b–5f and §12, docs/handoff/06-ui.md, 06b-players.md, 07-brand.md, 07b-usability.md, the code under app/ and lib/brand/, lib/copy.ts, and open the staging deployment at <dev preview URL> with Playwright (headless Chromium is installed).
+</session>
+
+<task>
+Review the UI against docs/DESIGN.md and the plan, not against taste. Every finding carries evidence: a screenshot path you captured, a measured number, or a file and line. Check specifically:
+- Language-light (DESIGN.md): render each public page with the blank-dictionary mode and attempt the three tasks yourself from the blank screenshots; any task that needs a word to answer is a finding. Count sentences on public pages (target: zero). Every state has colour + arrow + word?
+- Numbers: tabular-nums everywhere? Right-aligned? Compact with the full value reachable? Intl formatting with the request locale (test with Accept-Language ru, es, pt-BR)?
+- Ranks and movement present and correct against the seeded data (compute what the rank should be from the API fields and compare).
+- Mobile: at 360 px no horizontal scroll, no tap target under 44 px (measure with getBoundingClientRect), bottom sheet and PIN flow work with keyboard and screen reader labels.
+- Accessibility: run axe-core (pnpm dlx @axe-core/cli or an inline script) on every public page in both modes; contrast of every text/background pair in tokens.css computed, not eyeballed; focus visible on every interactive element; reduced-motion honoured.
+- DESIGN.md §9 never-list and the colour-literal test: grep for violations yourself.
+- Security surface of the UI (§12): no blocked roster key anywhere in HTML or JSON responses (fetch the pages and routes, grep); no secret in HTML, inline script or comment; CSP header present on every response; /admin noindex and in robots.txt; the PIN never in a URL or a log.
+- Copy: every string from lib/copy.ts; voice rules (no exclamation, no emoji, grandma only in margins); game references are allusions, never assets.
+- Brand: ornaments only in the allowed places; the Granny Doctor original (compare against nothing from the game); SVG sizes under 4 KB; fonts from next/font only.
+- Performance: Lighthouse mobile on / and an alliance page (numbers, not impressions); page weight per route.
+</task>
+
+<constraints>
+- A reviewer asked to find gaps will find some; rank by what a member on a phone would hit, and put taste under Notes. Report what is correct too, briefly, so the owner knows what was checked.
+- Remove all mannered prose from the report.
+</constraints>
+
+<done_when>
+docs/handoff/07c-ui-review.md with sections Blockers, Should-fix, Notes, "What I checked and found correct", each finding with its evidence, and a `## Next` whose `<adjustments>` block is the numbered list for the owner to accept or reject. Do not commit; the owner commits the report.
+</done_when>
+```
+
+Read the report yourself and decide which items go to 7d. If the freeze is close, Blockers go to 7d now and the rest ships as v1.1.
+
+---
+
+## Session 7d — Fix accepted UI findings
+
+**Model:** opus · **Effort:** medium · **Mode:** default
+
+```text
+<session>
+Session 7d of SESSION_PLAYBOOK.md. Read CLAUDE.md, docs/DESIGN.md, docs/handoff/07c-ui-review.md and handoffs 06–07b.
+</session>
+
+<task>
+Fix every Blocker. Fix these Should-fix items: <paste the numbers you accept, or "all">. Skip Notes unless trivial. For each fix: the screenshot or measurement that showed it, re-taken after the fix; a test where one can exist (contrast, tap size, blocked keys, copy module). No restyling beyond the findings; DESIGN.md changes only if a finding proves a rule wrong, in the same commit as the fix.
+</task>
+
+<verify>
+pnpm check; axe-core clean on every public page in both modes; the blank-dictionary screenshots re-taken; Lighthouse numbers before/after for the pages touched.
+</verify>
+
+<done_when>
+All accepted findings closed with evidence; suite green; docs/handoff/07d-ui-fixes.md lists each finding, what changed and the new measurement. PR: "fix: session 7d — UI review findings" (into dev).
 </done_when>
 ```
 
 ---
 
 ## Session 8 — Deploy, GitHub Actions, env, webhooks
+
+**Owner-supplied `<adjustments>` (2026-11-04) — paste right after `</task>`, together with the block from `docs/handoff/07-brand.md`:**
+
+```text
+<adjustments>
+- Lint the dependency rule (plan §11.2; it was scheduled for Session 4 too late): add `import-x/no-restricted-paths` zones to eslint.config.mjs from docs/ARCHITECTURE.md — lib/compute, lib/budget, lib/schedule import nothing from `@/`; `lib/**` never imports `@/app/**`; `app/**` never imports `@/lib/sources/**` or `@/lib/repo/**`. If the current code violates a zone, that is a finding: list it in the handoff and fix only what is a one-line import move; otherwise narrow the zone and say so. Prove the rule with a scratch file `pnpm lint` rejects, then delete it.
+- Migrations on deploy (plan §3.2): add `db:migrate` (`drizzle-kit migrate`, reading DATABASE_URL_UNPOOLED), set Vercel's Build Command to `pnpm db:migrate && pnpm build` (ask the owner to do it in the dashboard, or `vercel project` settings via the CLI), add the drift gate to `pnpm check` (`db:generate` yields no new file; `drizzle-kit check` passes), and show the schema version (`drizzle.__drizzle_migrations`) on `/admin` and in the Friday message. First production deploy = first migration of Neon main; the PR's preview build = first migration of `preview`. Verify both by reading `__drizzle_migrations` on each branch (Neon MCP or `psql`) and paste the counts.
+- Plan §10b lists what Sessions 3–5b changed relative to the plan text; read it before the deploy checks. N10 (x-real-ip trust on Vercel) is yours to verify empirically: send a request with a forged `x-real-ip` to the deployed /api/snapshot and read which IP the limiter recorded.
+</adjustments>
+```
+
 
 **Model:** sonnet · **Effort:** medium · **Mode:** default
 **Before starting (you, by hand):** `PREREQUISITES.md` §6, row "Session 8".
@@ -553,12 +683,12 @@ Session 8 of SESSION_PLAYBOOK.md. Read CLAUDE.md, docs/handoff/00 and 04, IMPLEM
 </session>
 
 <task>
-1. .github/workflows/tick.yml: `*/15 * * * 5,6,0` → one curl --fail --max-time 150 -X POST $APP_URL/api/tick with secrets.CRON_SECRET; workflow_dispatch with a `phase` input calling /api/snapshot directly. No times in YAML (§3.1). No retry actions.
+1. .github/workflows/tick.yml: `*/15 * * * *` (daily, plan §3.1) → one curl --fail --max-time 150 -X POST $APP_URL/api/tick with secrets.CRON_SECRET; workflow_dispatch with a `phase` input calling /api/snapshot directly. No times in YAML (§3.1). No retry actions.
 2. .github/workflows/dependabot-automerge.yml (plan §11.6): Dependabot minor/patch only, `gh pr merge --auto --squash`, `permissions: contents: write, pull-requests: write`. Then .github/workflows/keepalive.yml: monthly commit of a timestamp to .keepalive on the `keepalive` branch (`git push --force origin HEAD:keepalive`; never dev or main — both are protected and have no bypass). `permissions: contents: write`, actions pinned to SHAs, no third-party "auto-commit" action — plain `git config/commit/push` in a run step. Add `"git": { "deploymentEnabled": { "keepalive": false } }` to the existing vercel.json so Vercel never builds that branch. Test it once with `gh workflow run keepalive.yml` and show the resulting commit on that branch, and that no Vercel deployment was created for it.
 2b. Verify the SCM setup empirically and paste the output: `gh api repos/{owner}/{repo}/rules/branches/main` lists pull_request, required_status_checks (`check`), non_fast_forward and required_linear_history; `gh api repos/{owner}/{repo}/rules/branches/dev` lists the same plus required_linear_history, and each branch's pull_request rule allows only its merge method (merge on main, squash on dev); `gh api repos/{owner}/{repo}` shows allow_squash_merge true, allow_merge_commit true, allow_rebase_merge false, delete_branch_on_merge true, allow_auto_merge true. `.github/dependabot.yml` has `target-branch: dev` for both ecosystems (add it if missing). Confirm in the Vercel dashboard (ask the owner, or `vercel env ls` if the CLI is linked) that DATABASE_URL, CRON_SECRET, EDIT_PIN differ between Production and Preview and that no NOTIFY_* exists in Preview; confirm the PR's preview URL asks for Vercel authentication.
 3. First release, after the owner has merged this session's PR into `dev` (as a follow-up message in this session, or the first thing in Session 9 — say which in the handoff): open the release PR `dev → main` titled `release: v0.1.0` with the generated notes as body (`gh api repos/{owner}/{repo}/releases/generate-notes -f tag_name=v0.1.0 -f target_commitish=dev` gives the text). The owner merges it with a **merge commit**; then `gh release create v0.1.0 --target main --generate-notes --title "v0.1.0 — first production deploy"`. Confirm Vercel produced a **production** deployment from the merge (Deployments → filter `main`); paste the deployment URL and the commit SHA.
 3b. Verify the deployed app: curl $APP_URL for GET /api/events and GET /api/quota (1 upstream call — note it). Confirm the production function's maxDuration (120 s) is honoured on the Hobby plan; note the measured duration. If tables are missing, ask me before running db:push against production.
-4. `gh workflow run tick.yml` once outside any window and confirm a 204; then set QUOTA_CHECK_AT to a few minutes from now in Vercel, redeploy, run the tick again and confirm the admin Discord message; restore the value.
+4. `gh workflow run tick.yml` once outside any window and confirm a 204. Then the end-to-end proof of the scheduler: ask the owner to tap **Rehearse now** on `/admin` (or `curl -X POST -H "x-edit-pin: …" $APP_URL/api/rehearsal` — the owner types the PIN, you never see it) and, without triggering anything by hand, watch the cron ticks run BEFORE within 15 min of before_at and AFTER within 15 min of after_at; paste the two `[TEST]` admin messages and the verdict. If the verdict is FAIL, that is the session's finding — fix only what the ❌ line names. Then set QUOTA_CHECK_AT to a few minutes from now in Vercel, redeploy, confirm the Friday message, restore the value.
 5. README.md: deploy steps, changing the alliance list, changing snapshot times (env vars → redeploy), rotating the API key or PIN, running a snapshot by hand from /admin or GitHub.
 </task>
 
@@ -575,6 +705,39 @@ Both workflows validate; the manual Friday check produced a Discord message; REA
 
 ---
 
+## Session 8b — Discord webhook avatars
+
+**Model:** opus · **Effort:** medium · **Mode:** default
+**Before starting (you, by hand):** nothing. Afterwards you upload the two PNGs in Discord (webhook → avatar).
+
+```text
+<session>
+Session 8b of SESSION_PLAYBOOK.md. Use the hand-drawn-svg skill. Read CLAUDE.md, docs/DESIGN.md ("Mascot", ornament budget, colours), docs/brand/DRAWING.md, docs/brand/drawing/examples/granny.py and mark.py, lib/notify.ts, and docs/handoff/08-deploy.md.
+</session>
+
+<task>
+The two Discord webhooks are named by the owner — "KvK Scout" posts to the alliance channel, "LAP Tracker Admin" to the admin channel — and need avatars in the brand's hand.
+1. Draw two avatars with the skill, both from the Granny Doctor: KvK Scout = the bust with a spyglass (or a lantern) — she is watching the server; LAP Tracker Admin = the bust with a wax seal or a ledger under her arm — she keeps the books. Same line family as the shipped mark and bust; single colour; viewBox 100 × 100; the figure inside a centred circle of 80 % diameter because Discord crops avatars round.
+2. Rasterise each to PNG at 512 × 512 (Playwright headless Chromium: render the SVG on the paper colour, ink on paper — Discord shows avatars on its own dark chrome, so the paper disc is what makes them readable) into docs/brand/discord/kvk-scout.png and laptracker-admin.png, plus a 128 × 128 preview sheet of both on a dark background so the owner sees them as Discord will.
+3. lib/notify.ts: stop overriding `username` (and never set `avatar_url`): the names and avatars configured on the webhooks in Discord are what should show. Adjust the test that asserted the username.
+4. Show the owner the preview sheet; iterate until approved (the shipped drawings took 7–9 rounds; budget for it).
+</task>
+
+<constraints>
+- Nothing from the game. Original drawings only, in the DRAWING.md method (points by hand, engine renders); no raster paint, no AI image generation, no traced references.
+- The avatars are files for the owner to upload; the app does not serve them and does not need to.
+- No new dependency: Playwright/Chromium is already available for screenshots.
+</constraints>
+
+<done_when>
+Two approved PNGs in docs/brand/discord/ with their source functions registered in build.py (byte-for-byte reproducible), the dark preview sheet in docs/screenshots/, notify.ts sends no username/avatar, tests green, docs/handoff/08b-avatars.md written. PR: "feat: session 8b — Discord webhook avatars" (into dev).
+</done_when>
+```
+
+**Re-plan:** nothing downstream depends on this; Session 9's Discord checks just show the avatars the owner uploaded.
+
+---
+
 ## Session 9 — Dry run against production
 
 **Model:** opus · **Effort:** high · **Mode:** default
@@ -586,11 +749,11 @@ Session 9 of SESSION_PLAYBOOK.md — the dry run. Read CLAUDE.md, docs/handoff/0
 </session>
 
 <task>
-1. Create a test event "DRY RUN <date>" (is_test=true) and trigger the BEFORE snapshot via workflow_dispatch (not /admin). Watch both Discord messages.
+1. Ask the owner to tap **Rehearse now** on `/admin` (an `is_test` event: admin webhook only). Do not trigger either phase by hand: the point is the cron path. Wait for the `[TEST] Rehearsal PASS/FAIL` message (~50 min; use the time to prepare the queries for step 2) and paste it.
 2. From the DB (snapshots, alliance_snapshots, run_logs) record in a table: wall-clock duration, calls_used, quota_remaining_after, retries by status code, and per alliance: seconds for the call, cached, age of source_updated_at, is_fresh, source. Confirm calls_used equals the drop in /v1/quota.
 3. Compare members.length vs member_count for all 20 alliances. Ask me to compare OGs total_kills with the in-game alliance screen; record the difference and whether the board number is closer.
 4. Decide from the numbers: did every /v1 read come back fresh? How long did pulls take vs the 2.4 s baseline, and did 503/504 appear? Is maxDuration right? Propose and implement only what the numbers justify, with a test; say what you did not change and why.
-5. Delete the test event's rows or flag it is_test=true (add the column if you choose the flag).
+5. Leave the test event in place (`is_test` keeps it off the public pages); it is the baseline the first Saturday is compared against.
 </task>
 
 <constraints>

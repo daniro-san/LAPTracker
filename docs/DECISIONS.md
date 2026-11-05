@@ -113,3 +113,81 @@ ESLint counts a `describe(() => { ... })` callback as one function, so any test 
 - **Status:** `failed` when the call cap was hit or no row holds data; `complete` when every alliance has a fresh row without error; `partial` otherwise, including a 429 mid-run.
 - **Unexpected errors** (repo, bugs) are not caught. They propagate, and the snapshot stays `running` for the caller (Session 4's route) to finalise. After 10 min it can be re-run without `force`.
 - **`quota_remaining_after`** is the lowest `remaining` seen in this run's `/v1` responses.
+
+## D19 — PGlite for DB-backed tests (2026-11-04, Session 4, owner's choice)
+
+Session 4's rate-limiter test has to read state back from a real database, and CI has no Postgres; the Neon driver cannot reach a plain Postgres without a WebSocket proxy. Added `@electric-sql/pglite` 0.5.14 (devDependency, exact pin), released 2026-10-31. 0.5.15 came out 2026-11-03, one day before this session, so the previous release was taken. 0 dependencies, no install scripts (`pnpm view @electric-sql/pglite scripts` lists only build/test scripts), 26 MB unpacked (the WASM build of Postgres). drizzle-orm 0.45.4 supports it (`drizzle-orm/pglite`, optional peer `>=0.2.0`). Tests open one in-process instance per file, migrate it from `drizzle/` and cast it to `Db`, as Session 3 did by hand with node-postgres. Alternatives rejected: `pg` plus a Postgres service in ci.yml (DB tests would be skipped or fail on a laptop without a running cluster), and the memory repo (cannot show that limiter state outlives a module). Cost measured: opening and migrating one instance takes ~4.0 s; `pnpm check` went from ~2.5–6.5 s to 17.2 s in the cloud container. It is the same Postgres engine, not Neon's server: driver-level behaviour (WebSocket pool, connection limits) is not covered.
+
+## D20 — Route details the plan left open (2026-11-04, Session 4)
+
+- **`GET /api/quota` and `GET /api/quota/check` require Bearer CRON_SECRET or the PIN**, with the same rate limiter as `/api/snapshot`. Plan Phase 4 lists no auth for them, but each request spends one `/v1` call, so an open route lets anyone drain the 1,000/day quota in a loop.
+- **Events:** `events.event_at_utc` is unique, and the event row is found-or-created by it (insert on conflict do nothing, then select). Without the constraint two concurrent ticks could create two events, and so two runs and twice the quota. `events.quota_checked_at` makes the Friday check exactly-once: a conditional update claims it, like the run lock.
+- **`test=1` on `/api/snapshot`** creates a new `is_test` event dated now (owner's choice), so the weekday dry run (Phase 7) cannot complete the coming Saturday's BEFORE. Test events notify both channels like any run (Session 9 watches both messages).
+- **The tick** runs the earliest due action (Friday check, BEFORE, AFTER) whose window `[at, at + SNAPSHOT_WINDOW_MIN)` holds now and that is not done yet: a snapshot row of any status, or `quota_checked_at` set. It never re-runs a phase that has a row; a failed or partial run is re-run by hand. The Friday check uses the same window as the snapshots.
+- **Finalising a crashed run:** the route wraps `repo.startSnapshot` to capture the id the claim returned, instead of `findSnapshot` afterwards, which could finalise another run's row if ours died before its claim. The row gets `status = failed`, 0 added calls (the real count died with the run) and the real duration.
+- **Logger:** a line is one INSERT; error lines are mirrored to `console.error`; the first failed insert of a run is mirrored once. The 400th line is written as `log.capped` and nothing after it, so a run has at most 400 rows. `shutdown()` only awaits inserts already in flight (the collector fires `v1.retry` without awaiting); nothing is buffered.
+- **Links in Discord messages** use the request's origin, so no new env var: the tick is called on `APP_URL`. `avatar_url` is left out until Phase 5b's PNG exists.
+- **Client IP** for the limiter is `x-real-ip`, else the first `x-forwarded-for` hop. That Vercel overwrites both was not verified (vercel.com was not reachable from the session). If a client could set them, the per-IP limit weakens; the global lockout does not.
+- **`v1.fetch`** lines record `http_status: 200` on success: the adapter returns only on 2xx and does not expose the status then.
+
+## D21 — Event-driven tick and rehearsals (2026-11-04, Session 4 follow-up; supersedes parts of D20)
+
+The Session 4 prompt was rewritten on `dev` (#11, #12) while the session ran; #13 was merged with the first version. This entry covers the follow-up that implements the rewrite.
+
+- **Supersedes D20's `test=1`:** that parameter is gone from `/api/snapshot`. A dry run is a rehearsal (`POST /api/rehearsal`).
+- **Supersedes D20's tick bullet:** phase times live on the event (`events.before_at`, `after_at`, NOT NULL; migration 0002). The tick does one thing per call, in this order:
+  - it creates the coming Saturday's row from the env, silently, from 24 h before BEFORE until AFTER's window closes;
+  - it runs the earliest phase of any event (Saturday or rehearsal) whose `[x_at, x_at + SNAPSHOT_WINDOW_MIN)` window holds now and that has no snapshot row of any status;
+  - otherwise it runs the Friday check, claimed on the coming Saturday's row;
+  - otherwise it runs a due `REHEARSAL_AT` slot.
+
+  A Saturday row's times are fixed when the row is created, so changing `SNAPSHOT_BEFORE` after that does not move that week's run.
+
+- **Credentials per route:**
+  - `/api/tick` accepts CRON_SECRET only;
+  - `/api/rehearsal` accepts the PIN only (plan Phase 4);
+  - the others accept either.
+- **`REHEARSAL_AT` slots are rows in `rehearsal_slots`.** The first tick in a slot's window claims it (insert on conflict do nothing), then creates the rehearsal, or records why it was skipped and posts one `[TEST]` admin note. So a slot runs at most once and a skip is announced once.
+  - An empty `REHEARSAL_AT` means off: `lib/env.ts` keeps that one key's empty value instead of applying the `fri 18:00` default.
+  - `REHEARSAL_KEEP` defaults to 4.
+- **Rehearsal guards** (button and schedule alike), in this order:
+  - neither now nor the rehearsal's AFTER (now + 45 min) may fall on `EVENT_WEEKDAY` or the day after;
+  - no real BEFORE in (now, now + 3 h], checked against both the DB rows and the env-computed coming Saturday;
+  - no real snapshot `running` and younger than 10 min;
+  - no pending rehearsal (AFTER window still open, AFTER not finished).
+
+  The pending check is read-then-insert, so two simultaneous button presses could create two rehearsals; a scheduled slot cannot race.
+
+- **A rehearsal's `event_at_utc`** is the midpoint between its phases (created + 30 min). It keeps the column unique.
+- **Retention:** creating a rehearsal deletes all but the newest `REHEARSAL_KEEP` test events, with their run_logs, member rows, alliance rows and snapshots, in one transaction. Slot rows stay, with `event_id` set to null.
+- **The verdict** is computed from the database (`loadVerdictInput` + `rehearsalVerdict`), so `/admin` can recompute it. It is posted after any test event's AFTER run. Its quota line uses `snapshots.quota_remaining_before` (new, migration 0002): the quota check's `remaining`. That response already counts its own call, so a run's quota drop is `before − after + 1`, and it has to equal `calls_used`. No AFTER run means no verdict; the missing message is the signal.
+- **Test events** never reach the public webhook. Their admin lines start with `[TEST]`. `GET /api/events` and `/api/events/[id]` don't serve them. Admin run messages now include "scheduled …, started …" (plan §3.1).
+
+## D22 — Player photos and alliance badges, served from our own origin (2026-11-05, owner)
+
+- **Owner decision** (2026-11-04): "lets go with the change on purpose, we will display player profile pictes and alliance badges", served "throug our own image route". The server's players agreed to share their data. This reverses plan §196 for `avatar_url` and `badge_url` and the CLAUDE.md hard rule that listed `avatar_url` as never returned (the owner asked the agent to edit that line, 2026-11-05).
+- **Storage:** `raw_json` keeps `badge_url` and `members[].avatar_url` (still drops `server_badge_url`, `frame_url`, bulletin, declaration, quota). New nullable columns (migration 0003): `alliance_snapshots.badge_id`, `member_snapshots.avatar_url`. Both sources read them as optional fields, so a missing photo or badge never fails a run.
+- **Never returned:** queries return `badgeId` and `hasAvatar`, never a URL. `avatar_url` stays in `BLOCKED_ROSTER_KEYS`.
+- **Own image routes, never an open proxy** (no URL parameter):
+  - `/img/badge/[id]`: only ids 101–110, fetched from the origin of `LAP_SITE_BASE_URL` (`/static/alliance/badge_<id>.png`, confirmed with one plain GET: 300×300 PNG, 33 KB). `Cache-Control: public, max-age=31536000, s-maxage=31536000, immutable`.
+  - `/img/avatar/[uid]`: the newest stored `avatar_url` for that uid, fetched only when it is plain `https` on `phs-image.globallap.com` (no port, no credentials). `Cache-Control: public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800`.
+  - Both: 5 s timeout, `redirect: "error"`, 1 MB cap, raster `image/*` only (no SVG), our User-Agent, no Origin/Referer/cookies. Any failure is a bodyless 404 (cached 5 min); nothing is logged, so no URL reaches a log. `proxy.ts` gives `/img/*` the same deny-all CSP as `/api/*`; the page CSP stays `img-src 'self' data: blob:` (plan §12.3 unchanged).
+- **Not `next/image` with `remotePatterns`:** it puts the upstream URL in the page (`/_next/image?url=…`), which the rule above forbids, and it spends Vercel image-optimisation quota on ~2,000 photos; our route serves the original bytes from the CDN cache instead.
+- **Placeholders:** without a photo, the Granny Doctor in profile (`NoPhoto`); without a badge, a crocheted banner (`NoBadge`). Both drawn with the `hand-drawn-svg` skill and approved by the owner (2026-11-05).
+
+## D23 — Language-light pages: copy, locale, server time, ranks (2026-11-05, Session 7b)
+
+- **One copy module:** every user-facing string is in `lib/copy.ts` under stable keys; `/brand` text is `lib/copy-brand.ts` and admin text `lib/copy-admin.ts`, re-exported as `copy.brand` and `copy.admin` (one import path; `copy.ts` stays under the 300-line limit). `{name}` placeholders are filled by `fill()`. Signs, arrows and `#` stay in components, never in copy. `lib/copy.test.ts` parses every `.tsx` under `app/` and fails on JSX text or a string prop (other than class names, ids, hrefs) of more than two words.
+- **Blank dictionary:** `NEXT_PUBLIC_BLANK_COPY=1` replaces every copy value with `░` per non-space character, placeholders kept, for the persona test. Read directly from `process.env` in `lib/copy.ts` (not `lib/env.ts`) because client components need it, which only a literal `process.env.NEXT_PUBLIC_*` reference gives. Inert when `NODE_ENV` is `production`. The four game terms (Might, Kills, Members, Level) stay readable in blank mode: DESIGN.md chooses them because players read them in the game's own English UI daily (persona round 1 showed that without them the rows are told apart only by magnitude).
+- **Locale:** `Intl` with the first `Accept-Language` tag Intl supports (`app/_ui/locale.ts`), `en` otherwise; numbers format on the client too, so the locale reaches client components through `LocaleProvider`. Compact suffixes are the locale's own (`3,94 bi` in pt-BR, not `3,94 B`).
+- **Server time only:** every public time is in `SERVER_TZ` with the word "server" after it; the status chips moved from UTC to server time so one page has one clock. `/admin` keeps UTC.
+- **Ranks:** ledger rank = competition ranking (`1, 2, 2, 4`) by `total_power` or `total_kills` among the alliance rows of one snapshot (comparison page) or among every alliance's reference row of one event (across events); a player's is among their alliance snapshot's roster. Movement (`compute.rankDelta`) is shown only when both sides are fresh and not failed (and, for players, in the same alliance), the same rule as every delta; otherwise `—`.
+- **Main page order:** strictly by the current ledger rank by might (after snapshot, else before), not by `before.total_power`.
+
+## D24 — Two moderate Dependabot alerts accepted as dev-only, dated exception (2026-11-05, owner)
+
+Plan §12.4: `pnpm audit --audit-level high` fails CI; a moderate finding that can't be fixed within a week gets a dated exception here, not a silent `--omit`.
+
+- **esbuild 0.18.20** (GHSA: dev server accepts cross-origin requests) — reaches the lockfile only through `drizzle-kit` → `@esbuild-kit/esm-loader` → `@esbuild-kit/core-utils` (both deprecated). The vulnerable code is esbuild's `serve` dev server; drizzle-kit uses esbuild only to transform `drizzle.config.ts` and never starts a server. Nothing of this reaches the Next bundle (devDependency). Patched esbuild (≥ 0.25) can't be forced in: `@esbuild-kit` is unmaintained and pins 0.18; an override would run untested esbuild APIs under drizzle-kit. **Resolves when drizzle-kit drops `@esbuild-kit`.**
+- **minimatch 10.2.6** (globparts DoS amplification) — reached through `@eslint/config-array`, `@typescript-eslint/typescript-estree` and `eslint-plugin-import-x`, all pinning `^10`; the patched line is `11.x`, a major those packages haven't adopted. The DoS needs attacker-controlled glob patterns; ours come from `eslint.config.mjs` and our own file paths. Dev-only. **Resolves when the three upstreams move to minimatch 11** (Dependabot's weekly grouped PR will carry it).
+- Action: dismiss both alerts in GitHub with reason _"Vulnerable code is not actually used"_ and this entry as the comment. Re-check at the first `v1.1` release: `pnpm why esbuild@0.18.20` and `pnpm why minimatch` should then be empty or point at updated parents. No `pnpm.overrides`.

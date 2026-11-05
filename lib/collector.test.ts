@@ -14,6 +14,7 @@ import {
   T0,
 } from "./collector.test-helpers";
 import { NotLiveError, QuotaExhaustedError, UpstreamError } from "./sources/types";
+import { ALLIANCES } from "../config/alliances";
 
 const fresh = (id: number) => roster(id, ago(T0, minutes(2)));
 const [FIRST, SECOND] = IDS as [number, number];
@@ -44,8 +45,13 @@ describe("runSnapshot", () => {
       killsBoard: 700,
     });
     expect(first?.members).toHaveLength(3);
-    expect(first?.row.raw).toEqual({ union_id: FIRST, members: [{ uid: 1, x: 1 }] });
+    expect(first?.row.raw).toEqual({
+      union_id: FIRST,
+      badge_url: "u",
+      members: [{ uid: 1, avatar_url: "u", x: 1 }],
+    });
     expect(repo.tables.snapshots[0]?.result?.boardPulledAt).toEqual(ago(T0, minutes(240)));
+    expect(repo.tables.snapshots[0]?.result?.quotaRemainingBefore).toBe(1000);
   });
 
   it("marks the snapshot partial and names the alliance when its roster updated_at is old", async () => {
@@ -105,6 +111,33 @@ describe("runSnapshot", () => {
     expect(rows).toHaveLength(v1.calls.length - 1);
     expect(v1.calls.length).toBeLessThan(IDS.length);
     expect(internal.calls).toEqual([]);
+    const missing = IDS.filter((id) => !rows.some((r) => r.unionId === id));
+    expect(missing.length).toBeGreaterThan(0);
+    expect(summary.stale).toEqual([]);
+    expect(summary.failed).toEqual(
+      missing.map((id) => ({
+        unionId: id,
+        tag: ALLIANCES.find((a) => a.unionId === id)?.tag,
+        error: "not fetched: quota exhausted (429)",
+      })),
+    );
+  });
+
+  it("fails an AFTER run on an event with no alliance list without a quota call", async () => {
+    const v1 = fakeV1(fresh);
+    const { deps, repo } = makeDeps(v1, fakeInternal(), []);
+
+    const summary = await runSnapshot(EVENT_ID, "after", deps);
+
+    expect(summary).toMatchObject({
+      status: "failed",
+      callsUsed: 0,
+      error: "no alliance list on the event: BEFORE has not run",
+    });
+    expect(v1.calls).toEqual([]);
+    expect(repo.tables.snapshots[0]?.result?.error).toBe(
+      "no alliance list on the event: BEFORE has not run",
+    );
   });
 
   it("aborts at MAX_UPSTREAM_CALLS even when every call succeeds", async () => {
@@ -129,5 +162,35 @@ describe("runSnapshot", () => {
     await expect(runSnapshot(EVENT_ID, "before", deps)).rejects.toThrow("db down");
 
     expect(await repo.findSnapshot(EVENT_ID, "before")).toMatchObject({ status: "running" });
+  });
+
+  it("writes one v1.fetch line per /v1 call with its status, cache flag and duration", async () => {
+    const v1 = fakeV1((id) => (id === FIRST ? new UpstreamError(503) : fresh(id)));
+    const lines: { code: string; data: Record<string, unknown> }[] = [];
+    const { deps } = makeDeps(v1);
+    const record = async (code: string, data: Record<string, unknown> = {}) => {
+      lines.push({ code, data });
+    };
+
+    const summary = await runSnapshot(EVENT_ID, "before", {
+      ...deps,
+      logger: { info: record, warn: record, error: record },
+    });
+
+    const fetches = lines.filter((l) => l.code === "v1.fetch");
+    expect(fetches).toHaveLength(summary.callsUsed);
+    expect(fetches.filter((l) => l.data.endpoint === "quota")).toHaveLength(1);
+    expect(fetches.find((l) => l.data.union_id === FIRST)?.data).toMatchObject({
+      endpoint: "alliance",
+      http_status: 503,
+    });
+    expect(fetches.find((l) => l.data.union_id === SECOND)?.data).toEqual({
+      endpoint: "alliance",
+      union_id: SECOND,
+      http_status: 200,
+      cached: false,
+      duration_ms: 0,
+      quota_remaining: 900,
+    });
   });
 });

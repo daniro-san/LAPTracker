@@ -1,9 +1,16 @@
-// Home: the most recent event's comparison table (Session 6). Placeholder for now.
-export default function HomePage() {
-  return (
-    <main className="mx-auto max-w-screen-sm p-4">
-      <h1 className="text-xl font-semibold">LAPTracker</h1>
-      <p>No events recorded yet.</p>
-    </main>
-  );
+// `/`: the most recent event's comparison (plan Phase 5).
+import type { Metadata } from "next";
+
+import { EmptyEvents } from "@/app/_ui/EmptyEvents";
+import { eventTitle, loadEventPage } from "@/app/_ui/event-page";
+import { EventView } from "@/app/_ui/EventView";
+
+export async function generateMetadata(): Promise<Metadata> {
+  return eventTitle(await loadEventPage(null));
+}
+
+export default async function HomePage() {
+  const { events, page } = await loadEventPage(null);
+  if (!page) return <EmptyEvents />;
+  return <EventView events={events} {...page} />;
 }

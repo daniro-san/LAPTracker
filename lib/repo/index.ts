@@ -29,6 +29,8 @@ export interface AllianceRow {
   totalKills: number | null;
   serverRank: number | null;
   level: number | null;
+  /** Absent on an error row. */
+  badgeId?: number | null;
   powerBoard: number | null;
   killsBoard: number | null;
   source: "v1" | "internal";
@@ -45,6 +47,7 @@ export interface MemberRow {
   power: number | null;
   kills: number | null;
   lv: number | null;
+  avatarUrl?: string | null;
 }
 
 /** What the collector reads back to decide the status and the re-run set. */
@@ -55,6 +58,8 @@ export interface SnapshotResult {
   finishedAt: Date;
   /** Added to the stored calls_used, so a re-run keeps the snapshot's whole quota cost. */
   callsUsed: number;
+  /** The quota check's `remaining`; null when the check failed. */
+  quotaRemainingBefore: number | null;
   quotaRemainingAfter: number | null;
   boardPulledAt: Date | null;
   error: string | null;

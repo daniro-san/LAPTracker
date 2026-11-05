@@ -8,25 +8,38 @@ app/(pages)/*       UI. Reads through lib/queries only.
 lib/collector.ts    domain: runSnapshot, freshness check, per-alliance fallback, resume logic.
 lib/compute.ts      pure functions only — sums, deltas, freshness predicate, roster diff; no IO, no Date.now() (passed in).
 lib/budget.ts       pure quota arithmetic (requiredQuota).
+lib/upstream-errors.ts, lib/raw-json.ts  the collector's error wording and raw_json trimming (split for size).
 lib/sources/*.ts    adapters: v1.ts (documented API, primary), internal.ts (site API: ranks board + live-roster fallback,
                     unofficial, read-only). One output type.
 lib/repo/*.ts       persistence: one module per table, plain functions over Drizzle.
 lib/queries/*.ts    read models for the UI (joins, sorting, name history). Never write. Never expose BLOCKED_ROSTER_KEYS.
 lib/logger.ts, lib/notify.ts, lib/env.ts, lib/redact.ts
+lib/schedule.ts     pure: SERVER_TZ ↔ UTC, Saturday events and their times, Friday-check and rehearsal slots.
+lib/tick.ts         the tick's decision: create the Saturday row, run the one due phase (from events.before_at/
+                    after_at), the Friday check, a REHEARSAL_AT slot.
+lib/rehearsal.ts    rehearsal creation (guards, retention) and the pure verdict.
+lib/auth.ts         Bearer CRON_SECRET / x-edit-pin in constant time; the Postgres-backed rate limiter.
+lib/run.ts          what a route runs: executeSnapshot (finalise + logger shutdown in finally, then notify)
+                    and quotaReport (the Friday check).
+lib/route.ts, lib/app-context.ts, lib/app-errors.ts
+                    the route shell (one DB per request, closed on every path; errors become a code),
+                    the outside world in one object (env, clock, adapters, fetch, openDb), app_errors.
 config/alliances.ts the 20 tracked alliances, by union_id
+app/img/*           /img/badge/[id] and /img/avatar/[uid]: upstream images served from our origin (D22), via lib/images.ts.
+lib/images.ts       the two image sources (preset badge id, stored photo URL on its one host), capped fetch, cache headers.
 proxy.ts            per-request CSP nonce (Next 16's middleware); next.config.ts holds the static security headers
 instrumentation.ts  validates the environment once at server start
 ```
 
 ## Dependency rule
 
-- `app → lib/{collector, queries, repo}`.
+- `app → lib/{route, auth, run, tick, rehearsal, schedule, queries, repo, images}`; `lib/run → lib/{collector, queries}` (queries: the public Discord message's numbers).
 - `lib/collector → lib/{compute, sources, repo, logger, notify}` **through the `Deps` object passed in**.
 - `lib/compute` and `lib/budget` import nothing from the project.
 - `lib/logger` imports only `lib/repo` and `lib/redact`.
 - Nothing in `lib/` imports from `app/`.
 
-No DI container, no base classes, no event bus, no generic repository. `Deps` is the one injection boundary, because it is the only place tests swap implementations.
+No DI container, no base classes, no event bus, no generic repository. `Deps` is the collector's injection boundary. Routes get theirs from `getAppContext()` in `lib/app-context.ts`, the one module route tests replace (`vi.mock`); a Next `route.ts` may export only handlers and segment config, so it cannot take arguments.
 
 ## Deps
 
@@ -115,14 +128,11 @@ interface Logger {
   error(code: string, data?: Record<string, unknown>): Promise<void>;
 }
 
-// Session 4. Not in Deps yet: runSnapshot returns a RunSummary (status, stale and failed alliances)
-// for the caller to pass on.
-interface Notify {
-  snapshotFinished(summary: {
-    snapshotId: number;
-    phase: Phase;
-    status: "complete" | "partial" | "failed";
-  }): Promise<void>;
+// Session 4: notify is not in Deps. runSnapshot returns a RunSummary; lib/run.ts sends it after
+// the row is final, through lib/notify.ts.
+interface Notifier {
+  public(content: string): Promise<void>; // alliance channel, plain language
+  admin(content: string): Promise<void>; // officers channel, technical, optional mention
 }
 
 interface Deps {

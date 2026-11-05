@@ -10,6 +10,8 @@ export interface MemberInput {
   power: number | null;
   kills: number | null;
   lv: number | null;
+  /** The player's photo URL as sent upstream; null when empty. Served only via /img/avatar/[uid] (D22). */
+  avatarUrl?: string | null;
 }
 
 export interface Quota {
@@ -29,6 +31,8 @@ export interface AllianceSnapshotInput {
   members: MemberInput[];
   serverRank: number | null;
   level: number | null;
+  /** One of the preset emblems (101–110 seen); served only via /img/badge/[id] (D22). */
+  badgeId?: number | null;
   sourceUpdatedAt: Date | null;
   /** null for the internal source, which has no cache flag. */
   cached: boolean | null;

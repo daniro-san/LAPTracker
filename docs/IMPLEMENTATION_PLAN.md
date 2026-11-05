@@ -53,11 +53,13 @@ Two numbers for the same thing, from different clocks: board `alliance_kills` fo
 ### 3.1 Scheduling — a dumb tick from GitHub Actions, times in env vars
 Vercel Hobby cron fires once a day at an imprecise minute, so it's out. GitHub Actions `schedule` on the public repo is free but lives in YAML, and the owner wants to change snapshot times without a commit. So:
 
-- **`.github/workflows/tick.yml`**: `*/15 * * * 5,6,0` (Fri–Sun in UTC, which covers any Saturday server time at UTC−2) → `POST $APP_URL/api/tick` with `Authorization: Bearer $CRON_SECRET`. One curl, no logic, never edited. ~290 jobs a week of ~20 s, free on a public repo.
-- **`POST /api/tick`** decides: compute now in `SERVER_TZ`; the current event is the Saturday whose `EVENT_TIME` is nearest; for each phase, if `now ∈ [SNAPSHOT_<PHASE>, SNAPSHOT_<PHASE> + SNAPSHOT_WINDOW_MIN)` and no snapshot exists for `(event, phase)`, run it. The `unique (event_id, phase)` constraint and the run lock make a double tick harmless. Outside the windows it returns `204` in milliseconds.
-- **Times are env vars** (`SNAPSHOT_BEFORE=10:00`, `SNAPSHOT_AFTER=14:00`, `EVENT_TIME=12:00`, all server time): change them in Vercel from a phone, redeploy, done. No YAML edit, no commit. `/admin` shows the effective schedule read-only. A DB-backed settings form is v2, only if env edits prove annoying.
+- **`.github/workflows/tick.yml`**: `*/15 * * * *` — every 15 minutes, **every day** → `POST $APP_URL/api/tick` with `Authorization: Bearer $CRON_SECRET`. One curl, no logic, never edited. ~96 jobs a day of ~10 s, free on a public repo. Daily rather than Fri–Sun because the same tick runs **rehearsals** on any weekday (below) and because a tick that answers `204` every 15 minutes is itself the liveness signal.
+- **`POST /api/tick`** is event-driven, one code path for Saturdays and rehearsals: (1) if the coming Saturday has no `events` row yet and `now` is within a day of it, create it with `before_at`/`after_at` computed from `SNAPSHOT_BEFORE`/`SNAPSHOT_AFTER` in `SERVER_TZ`; (2) for every event (real or `is_test`) with a phase whose `[x_at, x_at + SNAPSHOT_WINDOW_MIN)` window contains `now` and no snapshot for `(event, phase)`, run that phase — at most one per tick; (3) after the AFTER phase of an `is_test` event, compute the **rehearsal verdict** (below) and post it. The `unique (event_id, phase)` constraint and the run lock make a double tick harmless. Outside any window it returns `204` in milliseconds.
+- **Rehearsal = a test event with its own times.** `/admin` has one button, *Rehearse now*: it inserts an `is_test` event named `REHEARSAL <timestamp>` with `before_at = now + 15 min`, `after_at = now + 45 min`. Nothing else changes — no env edit, no redeploy, and the real cron ticks run it, so what is exercised is exactly the Saturday path: Actions → tick → window → collector → DB → notify. The AFTER phase sits ≥ 30 min after BEFORE, so every `/v1` read must come back with a newer `updated_at` (cache is 10 min) and a real delta. **Verdict** (posted as `[TEST] Rehearsal PASS/FAIL` to the admin webhook and shown on `/admin`): both snapshots `complete`; every alliance `is_fresh` in both; `after.source_updated_at > before.source_updated_at` for every alliance; `calls_used` of each run equals the drop in `quota_remaining` between its first and last response; each run under 120 s; both phases started within `SNAPSHOT_WINDOW_MIN` of their scheduled time (reports the lag). Any failed line names the alliance or the number. Test events never reach the public webhook or public pages (Phase 6).
+- **Saturday times are env vars** (`SNAPSHOT_BEFORE=10:00`, `SNAPSHOT_AFTER=14:00`, `EVENT_TIME=12:00`, all server time): change them in Vercel from a phone, redeploy, done. No YAML edit, no commit. `/admin` shows the effective schedule read-only and the next event's computed `before_at`/`after_at`. A DB-backed settings form is v2, only if env edits prove annoying; rehearsals don't need one because their times live on the event row.
 - Precision = Actions jitter (5–20 min at busy times) + the 15-min cadence: a 10:00 snapshot lands between 10:00 and ~10:35. Fine with hours of margin; stated in the admin message (`scheduled 10:00, ran 10:12`).
 - **`.github/workflows/keepalive.yml`** (monthly commit to a `keepalive` branch — `dev` and `main` are protected, §11.6) stays: GitHub disables schedules in a public repo after 60 days without repository activity.
+- **Scheduled rehearsal — nobody has to be present.** `REHEARSAL_AT` (default `fri 18:00`, server time; a comma-separated list is allowed, e.g. `wed 18:00, fri 18:00`; empty disables) makes the tick create the same `is_test` event the button creates, in the first tick after that time each week. It runs, the verdict lands in the admin channel ~50 min later, and the Friday message two hours later shows the quota after it. Guards, for both the button and the schedule: never on `EVENT_WEEKDAY` or the day after it, never within 3 h before a real event's `before_at` or while a real phase is running (`409` / skipped with an admin note), at most one pending rehearsal at a time. Retention: `REHEARSAL_KEEP=4` — older rehearsal events and their rows are deleted when a new one is created, so `/admin/runs` stays readable and nothing accumulates. Rehearsals never touch public pages or the public webhook, and their quota (~45 calls) resets at 00:00 UTC, before any Saturday run.
 - **Friday check** is a tick too: `/api/tick` runs it in the first tick after `QUOTA_CHECK_AT` (default Friday 20:00 server). It always posts to the admin webhook: quota `remaining` (⚠️ if `< 900`), database size via `pg_database_size()` (⚠️ above 700 MB), and the next BEFORE/AFTER in server time and UTC — so a silent week means the tick is dead, which is itself the signal.
 - Manual fallback: "Run BEFORE/AFTER now" on `/admin` (PIN). This is the real backup if Actions is late or down.
 
@@ -69,6 +71,13 @@ Every snapshot is stored forever; nothing is overwritten. Volume is tiny: 26 wee
 - **SQLite: not viable.** Vercel's filesystem is ephemeral — the file disappears on every deploy/cold start. Turso (hosted libSQL) would work, but it's one more vendor for no gain over Neon.
 - Avoid KV/Blob: the data is relational and edited row by row.
 - Store the **raw upstream responses** (`raw_json`) alongside the computed numbers, so that if the "might" or "kills" formula ever changes, history can be recomputed without spending quota.
+
+**Two databases, one schema — migrations run on deploy (owner's question, 2026-11-04).** Nothing keeps the Neon `main` and `preview` branches in step by itself; as shipped after Session 4 the migrations `drizzle/0000–0002` had been applied only to PGlite in tests. The rule, implemented in Session 8:
+- `pnpm db:migrate` = `drizzle-kit migrate` over `DATABASE_URL_UNPOOLED` (direct connection; that is why Preview has one too). Vercel's **Build Command** becomes `pnpm db:migrate && pnpm build`, so every deployment migrates *its own* database first: a PR or `dev` build migrates the `preview` branch, a `main` build migrates production. The two can only drift by one PR's worth, and a migration that fails fails the build — the deploy never runs code against a schema it doesn't have.
+- **Additive only (expand/contract):** a migration never drops or renames a column that the previous release still reads, because Instant Rollback puts the previous build back on the migrated schema and two PRs can share `preview`. Removal is a later release, after nothing reads the column.
+- **Drift gate in CI:** `pnpm db:generate` must produce no new file (schema.ts changed without a migration = red), and `drizzle-kit check` validates the migration journal. Both in `pnpm check`.
+- **Visible:** the Friday message and `/admin` show the production schema version (the newest row in `drizzle.__drizzle_migrations`); `/admin` on a preview shows the preview's. Same number = same schema.
+- Data is not synced, and shouldn't be: `preview` holds seed data. To look at real data in a preview, Neon's *Reset from parent* on the `preview` branch copies production in one click; the next deploy re-migrates if needed.
 
 ### 3.3 Edit protection
 Public page + editable fields with no protection = vandalism. v1: a single shared **PIN** (`EDIT_PIN` env var) required for the "run now" button. Checked server-side. Not real security; good enough for a guild tool.
@@ -147,7 +156,9 @@ events
   name           text            -- e.g. "Saturday Event 2026-11-08"
   event_at_utc   timestamptz     -- 12:00 server time converted to UTC
   alliance_ids   bigint[]        -- copied from config by the BEFORE run; the AFTER run uses exactly this
-  is_test        boolean default false
+  is_test        boolean default false   -- rehearsals and dry runs: admin webhook only, hidden from public pages
+  before_at      timestamptz     -- when the BEFORE phase is due (UTC); Saturdays: from SNAPSHOT_BEFORE in SERVER_TZ; rehearsals: now + 15 min
+  after_at       timestamptz     -- same for AFTER; rehearsals: now + 45 min
   created_at     timestamptz
 
 snapshots
@@ -276,6 +287,8 @@ SNAPSHOT_BEFORE=10:00          # server time; event window unconfirmed (§10 q6)
 SNAPSHOT_AFTER=14:00
 SNAPSHOT_WINDOW_MIN=45         # how long after the scheduled minute a tick may still start the snapshot
 QUOTA_CHECK_AT=fri 20:00       # server time
+REHEARSAL_AT=fri 18:00         # server time; weekly automatic rehearsal (§3.1); comma-separated list allowed; empty = off
+REHEARSAL_KEEP=4               # how many past rehearsals to keep
 NOTIFY_WEBHOOK_PUBLIC=https://discord.com/api/webhooks/...   # alliance channel
 NOTIFY_WEBHOOK_ADMIN=https://discord.com/api/webhooks/...    # private officers channel
 NOTIFY_ADMIN_MENTION=123456789012345678                       # optional; a Discord user id (digits only) or role:<id>; the app renders <@id> / <@&id> itself
@@ -329,9 +342,10 @@ runSnapshot(eventId, phase, deps):
 - Call counter in one place; `MAX_UPSTREAM_CALLS = 120` (20 × 3 retries × 2).
 
 ### Phase 4 — Routes
-- `POST /api/tick` — auth `Bearer CRON_SECRET`; the §3.1 decision; runs at most one phase per call; `204` when nothing is due. `maxDuration = 120`.
+- `POST /api/tick` — auth `Bearer CRON_SECRET`; the §3.1 decision (create the Saturday event if due, run the one phase whose window is open, post the rehearsal verdict after a test event's AFTER); `204` when nothing is due. `maxDuration = 120`.
+- `POST /api/rehearsal` — auth `x-edit-pin` (same limiter); inserts the `is_test` event with `before_at = now + 15 min`, `after_at = now + 45 min`; refuses (409) if a rehearsal is already pending or the §3.1 guards say no (event day, 3 h before a real BEFORE, real phase running). Called by the `/admin` button; the tick uses the same function for `REHEARSAL_AT`.
 - `POST /api/snapshot?phase=before|after&force=0|1` — auth `Bearer CRON_SECRET` or `x-edit-pin` (timingSafeEqual, rate-limited); run lock → 409; `maxDuration = 120`; no flush step — the logger writes synchronously to Postgres. Called by the tick and by `/admin`.
-- `/admin` (page, PIN gate, `<meta name="robots" content="noindex">`, listed in `robots.txt` Disallow, linked from nowhere public): effective schedule in server time and UTC, "Run BEFORE/AFTER now", the runs list (`/admin/runs`, each run's `run_logs` timeline at `/admin/runs/[id]`, app errors at `/admin/errors`). Obscurity is hygiene, not security; the PIN and rate limit are the control.
+- `/admin` (page, PIN gate, `<meta name="robots" content="noindex">`, listed in `robots.txt` Disallow, linked from nowhere public): effective schedule in server time and UTC with the next event's computed times, **Rehearse now** (with the pending rehearsal's progress and the last verdict), "Run BEFORE/AFTER now" for the current event, the runs list (`/admin/runs`, each run's `run_logs` timeline at `/admin/runs/[id]`, app errors at `/admin/errors`). Obscurity is hygiene, not security; the PIN and rate limit are the control.
 - `GET /api/events`, `GET /api/events/[id]` — read models only (§12.1).
 - `GET /api/quota` — numbers only (1 upstream call; UI warns).
 - `GET /api/quota/check` — Friday check.
@@ -384,9 +398,21 @@ The reason every snapshot is kept forever is to see change over weeks. v1 shows 
 - Queries: `lib/queries/alliances.ts: allianceHistory(unionId)` and `lib/queries/players.ts: playerHistory(uid)`, one query each; the `uid` index and `(snapshot_id, union_id)` unique index cover them.
 - Show the last 12 events by default with "show all"; ≤ 26 rows in 6 months, no pagination.
 - Mobile: cards, one per event, three lines (identity changes, might/kills with both deltas, members/lv/rank). Same compact-number rules.
+- **Rank movement (owner, 2026-11-05):** every alliance carries two ranks and both move. *Server rank* is the game's own power ranking (`rank.rank` from `/v1`, stored as `server_rank`); *ledger rank* is the position among the tracked alliances, by might and by kills, computed from the snapshot. Show the rank next to the tag as `#n` and its movement as `▲2`, `▼1` or `=` — within the event (before → after) on the comparison page, and event over event in the "Across events" sections of alliance and player pages (players: ledger rank by might/kills inside their alliance). `compute.rankDelta(prev, curr)` is pure; a missing previous value shows `—`, never `▲` from nothing. Movement uses the same three channels as every other delta: colour, arrow, number.
+
+
+### Phase 5f — Usability and language-light UI (a MUST before the first Saturday)
+The alliance is multilingual (Russia, Spain, Brazil, the US, more); translation comes after Phase 8, but the pages must be usable **without** it now. docs/DESIGN.md "Who uses this" and "Language-light rules" are the contract; this phase applies them to the Session 6/6b pages and verifies them with real members:
+- every public-page sentence becomes a chip, a label or a number; one legend; order strictly by rank with a per-viewer "my alliance" highlight (localStorage, optional) because other top-10 alliances will use the page too; ranks shown; `Intl` formatting; three channels per state (colour + arrow + word); strings moved to `lib/copy.ts` (i18n-ready: translation later is a file).
+- Navigation per DESIGN.md "Navigation and hierarchy": one row shape at three depths, breadcrumbs on deep pages, search in the header.
+- **The ten-second test, without real members (owner, 2026-11-05: no real test is possible):** a model can't "not read English", so the words are removed instead. Because every string goes through `lib/copy.ts`, the session renders the public pages with a **blank dictionary** (every value replaced by `░░░` of the same length — pseudo-localisation) and screenshots them at 390 px. Three persona subagents in fresh contexts (an officer in Russia, a casual member in Spain, a player in Brazil on a slow phone), each given only those blank screenshots and the three tasks — *find alliance X's kills change; which alliance lost the most members; when are the numbers from* — answer and say where they hesitated. Wrong answers are findings, fixed in the same session; the blank screenshots stay in `docs/screenshots/` as the baseline. Honest limit: this proves the structure carries the meaning without words; it does not prove real people like it. The first real feedback comes from the alliance after the first Saturday.
+- Reference, not a template: lastasylumtracker.com's server page is friendlier than our Session 6 output (clear per-alliance cards, sorting). Borrow the clarity, not the look.
+- **Review then fix, like the backend:** Session 7b applies the contract and its own persona findings; Session 7c (fable, read-only) reviews the result against DESIGN.md with measurements (axe-core, contrast, tap sizes, blank-dictionary tasks, blocked keys in HTML, CSP, Lighthouse) and returns a ranked list; the owner decides; Session 7d fixes the accepted items. The builder never grades its own taste.
 
 ### Phase 5b — Branding: "Old Grandmas" × plague-era aesthetic
 The alliance running this is **Old Grandmas**. Visual identity = plague-doctor / apothecary era meets grandma crafts (knitting, crochet, yarn, doilies, tea). Tone: a serious tool with a wink, not a joke page.
+
+**The contract is `docs/DESIGN.md`** (added 2026-11-04 at the owner's request, to keep generic "AI" styling out): tokens with roles, two typefaces, spacing/radius/surface rules, the closed component list, the ornament budget, motion and voice rules, a "never" list, and the enforcement tests. Every UI session reads it first; this section is the brief it was written from. The format follows the DESIGN.md convention that agent toolchains read (getdesign.md / awesome-design-md); the content is ours — a third party's design file (Discord's, say) would carry its look and its trademarks into a project that must own its visuals.
 
 **Hard rules**
 - **No assets from the game.** No logo, no character art, no screenshots, no fonts ripped from it. Everything is original SVG or open-licensed (OFL fonts, CC0 textures). Genre motifs (beaked mask silhouette, apothecary bottles, lanterns, wax seals, parchment) are fine; the game's specific designs are not.
@@ -396,9 +422,11 @@ The alliance running this is **Old Grandmas**. Visual identity = plague-doctor /
 **Direction (defaults — adjust after seeing a first render)**
 - *Palette:* aged parchment `#EFE6D3` background, ink `#1E1A1F` text, dark plum `#3B2436` header/accents, wax-seal red `#8C2F2F` for negative deltas / warnings, mustard yarn `#C9962B` for highlights / positive deltas, sage `#6F7F62` for the "manual" badge. Dark mode: swap parchment for a near-black plum, keep accents.
 - *Typography:* display serif with an old-print feel for headings (e.g. **Cormorant Garamond** or **IM Fell English**, Google Fonts/OFL); **Inter** or **Source Sans 3** for body/table with `font-variant-numeric: tabular-nums`.
+- *Mascot (owner, 2026-11-05):* the **Granny Doctor** — an old lady plague doctor with a cane and a knitting bag; original, single-colour SVG, three poses (404, 500, empty state). Game references stay allusions in copy (server, KvK, the game's terms), never its art. Comic but serious. docs/DESIGN.md has the rules.
 - *Logo:* wordmark "Old Grandmas" + a small original mark: a plague-doctor beak mask with **knitting needles crossed behind it** like crossed bones, a ball of yarn where a skull would sit. SVG, single colour, works at 24 px favicon size.
 - *Ornaments:* a thin crochet-lace border pattern (repeating SVG) along the header; a ball of yarn with a trailing thread in one page corner; the "Run snapshot" buttons styled as wax-seal stamps; empty states with a teacup ("Nothing recorded yet — put the kettle on"). Snapshot status chips get small icons: hourglass (running), stitched check (complete), dropped stitch (partial).
 - *Copy voice:* short, dry, slightly grandmotherly. E.g. page title "Old Grandmas — Saturday Ledger"; delta column header "Gained / Lost"; error toast "The ledger is closed for today (quota exhausted)."
+- *Error pages (owner's request, 2026-11-04):* `app/not-found.tsx` and `app/error.tsx` (plus `global-error.tsx`) get the same treatment as empty states — the one place the brand can be loud. 404: an original illustration of an empty walker (or a rocking chair with a half-finished scarf) and copy like **"404 — Grandma wandered off."** / "This page isn't in the ledger. Back to the table →". 500: a knocked-over apothecary bottle, **"Something cracked."** / "The grandmas have been told. Try again in a minute." with a Retry button that calls `reset()`. Motion: one small CSS keyframe loop on the inline SVG (a rocking chair rocking, a yarn ball unspooling, steam from a teacup) — a few KB, no Lottie, no video, no new dependency — and `@media (prefers-reduced-motion: reduce)` turns it off. Rules that still apply: `error.tsx` renders **no error message, stack or digest** (§12.3); it keeps the layout, so the user is never stranded; the pages read at 360 px like everything else.
 
 **Implementation**
 - `lib/brand/` with `tokens.css` (CSS variables), `Logo.tsx`, `LaceBorder.tsx`, `YarnCorner.tsx`, icon set as inline SVG. Tailwind theme reads the CSS variables.
@@ -408,7 +436,7 @@ The alliance running this is **Old Grandmas**. Visual identity = plague-doctor /
 
 ### Phase 6 — Scheduling + deploy
 - Vercel project, link Neon from Marketplace, set env vars, `drizzle-kit push`.
-- `.github/workflows/tick.yml`: `schedule: */15 * * * 5,6,0` → one `curl --fail --max-time 150 -X POST $APP_URL/api/tick` with `CRON_SECRET`; plus `workflow_dispatch` with a `phase` input that calls `/api/snapshot` directly for manual runs from the GitHub UI. `APP_URL` and `CRON_SECRET` as repository secrets. **Public repo: never commit `.env`, keys, or the PIN.** No times in YAML — they are env vars (§3.1).
+- `.github/workflows/tick.yml`: `schedule: */15 * * * *` (daily, §3.1) → one `curl --fail --max-time 150 -X POST $APP_URL/api/tick` with `CRON_SECRET`; plus `workflow_dispatch` with a `phase` input that calls `/api/snapshot` directly for manual runs from the GitHub UI. `APP_URL` and `CRON_SECRET` as repository secrets. **Public repo: never commit `.env`, keys, or the PIN.** No times in YAML — they are env vars (§3.1).
 - `.github/workflows/keepalive.yml`: monthly, commits a timestamp to `.keepalive` on the `keepalive` branch (force-updated; never `dev` or `main`, which are protected). Together with weekly Dependabot PRs this is the "repository activity" that keeps GitHub from disabling the schedule after 60 days. Not optional. `vercel.json` carries `git.deploymentEnabled: { keepalive: false }` so the monthly push never triggers a Vercel build. The Friday message (§3.1) is the detector if GitHub's definition of activity turns out narrower than this.
 - `.github/workflows/dependabot-automerge.yml` (Session 8, with the other workflows): on Dependabot PRs for minor/patch updates, `gh pr merge --auto --squash`; CI still has to pass. Majors are left for the owner.
 - Document in README how to change the alliance list (edit config → redeploy).
@@ -420,6 +448,7 @@ The alliance running this is **Old Grandmas**. Visual identity = plague-doctor /
   - `NOTIFY_WEBHOOK_ADMIN` (private officers channel). Technical: phase, status, calls used, quota remaining, duration, per-alliance failures with HTTP codes, link to `/admin/runs/[id]`. Prefixed with `<@id>` (or `<@&id>` for `role:<id>`) when `NOTIFY_ADMIN_MENTION` is set, with `allowed_mentions` restricted to that one id so no message can ever ping `@everyone`. The public message never mentions anyone.
   - Every message overrides `username: "LAPTracker"` and `avatar_url` (the branded PNG from Phase 5b, served from the app) in the payload, so the webhook's own name/avatar in Discord don't matter. Discord's limit is 30 requests/min per webhook; a run sends 2.
   - Both skip silently when unset. Send after the snapshot row is finalised, never before.
+  - **Test events** (`events.is_test = true`): the public webhook is **never** called; the admin message is prefixed `[TEST]`. Public pages don't list test events (`/admin` does). A rehearsal must look like Saturday to the admin and like nothing to the alliance.
 - **Observability: Postgres, not a third party.** Vercel Hobby keeps runtime logs for 1 hour and Observability data for 12 hours, has no error tracking, and its Web Analytics has no custom events — so "look at it later" cannot live on Vercel. It lives in two tables (§6):
   - *`run_logs`* — written by `lib/logger.ts` during a run: one line per upstream call (`endpoint, http_status, cached, retry_n, duration_ms, quota_remaining`) and per decision (fallback to internal, stale roster, quota abort, cap reached). `/admin/runs/[id]` renders them as a timeline. This is where an admin sees **why**, on a phone, forever.
   - *`app_errors`* — written by `instrumentation.ts` → `onRequestError` for anything outside a run (page render, route handler). `/admin/errors` lists them grouped by `digest`. Capped at 500 rows.
@@ -442,9 +471,15 @@ The alliance running this is **Old Grandmas**. Visual identity = plague-doctor /
 - Adjust concurrency / `maxDuration` from the measured numbers, not from guesses.
 - Delete the test event afterwards (or keep it flagged `is_test`).
 
+**Two rehearsals before the first Saturday, each with a different purpose** (quota: ~45 calls per BEFORE+AFTER pair, so both fit in one UTC day with the Saturday run):
+Both are the same button — **Rehearse now** on `/admin` (§3.1) — and take ~50 minutes from tap to verdict, hands off:
+1. **Dry run** (Session 9, as soon as production exists): tap it, wait for `[TEST] Rehearsal PASS`, then do the one check a machine can't: OGs `total_kills` vs the in-game alliance screen. Read the two runs' timelines on `/admin/runs/[id]` and the numbers table the session records. Fix what it finds, release again.
+2. **Final rehearsal** runs by itself: `REHEARSAL_AT=fri 18:00` (server; 17:00 Brasília) — before the 22:00 quota reset and before the 20:00 Friday message, which then reports the post-rehearsal quota. The owner's job is to read `[TEST] Rehearsal PASS` and then **freeze `main`** until after the event. Released something after 18:00 Friday? Tap **Rehearse now** before 22:00 server — the deploy is what changed.
+What the verdict cannot prove: that Saturday's *times* are right (the rehearsal uses its own); the Friday quota message's line "next BEFORE/AFTER at …" is the check for that. Quota: a rehearsal costs ~45 calls; two rehearsals plus Saturday fit in one UTC day with room.
+
 ### Phase 8 — Event-day runbook (goes in README)
 Everything below runs on its own; the human steps are only *checks*.
-1. Friday evening: the quota-check message arrives in the admin channel. Confirm the tick workflow is enabled on GitHub (Actions tab).
+1. Friday ~18:50 server: `[TEST] Rehearsal PASS` arrives on its own (`REHEARSAL_AT`). 20:00 server: the Friday message — quota, DB size, and *next BEFORE/AFTER at …*; those two times are the only thing the rehearsal didn't test. No releases to `main` after this; if one is unavoidable, tap **Rehearse now** before 22:00 server.
 2. Saturday at `SNAPSHOT_BEFORE` server time (default 10:00): the next tick runs `before` within ~35 min. Watch the Discord channel. On ⚠️/❌ (or nothing within 20 min — Actions can lag), open `/admin/runs` to see why, then press "Run BEFORE snapshot now" or re-run the workflow from GitHub (`workflow_dispatch`).
 3. At `SNAPSHOT_AFTER` (default 14:00): the tick runs `after`. Same check. To move either time: edit the env var in Vercel, redeploy.
 4. Note in-game when the KvK actually started and ended (server time). If `after` ran while it was still going, the delta is partial: move `SNAPSHOT_AFTER` past the end before next Saturday and write the window into §10 q6.
@@ -494,7 +529,8 @@ Dependency rule: `app → lib/{collector,queries,repo}`; `lib/collector → lib/
 - Boundaries validated with zod: `lib/env.ts` (fail fast at startup), upstream responses (`lib/sources/v1.ts` and `internal.ts` parse into typed objects; `raw_json` stores the trimmed response, §6), route bodies.
 - Errors are classes (`QuotaExhaustedError` etc.); callers match on `instanceof`, never on message strings.
 - Pure logic (budget math, delta computation, roster diff) lives in functions with no IO and is tested directly. IO lives at the edges.
-- Soft limits via ESLint: files ≤ 300 lines, functions ≤ 50 lines, cyclomatic complexity ≤ 12. Exceeding one is a signal to split, not a reason to disable the rule.
+- Limits via ESLint, chosen for what they measure: files ≤ 300 lines (a file the agent can read whole), functions ≤ 80 lines (long-but-linear code — an orchestrator, a JSX tree — is fine; splitting it to please a counter adds indirection, which is worse for a reader and for a model), cyclomatic complexity ≤ 12 and nesting ≤ 3 (tangling is what actually hurts; these bind on it). Tests are exempt from the function limit (a `describe` is N cases, not one function). Exceeding one is a signal to split along the architecture, not a reason to disable the rule.
+- The dependency rule in docs/ARCHITECTURE.md is **linted**, not remembered: `import-x/no-restricted-paths` zones — `lib/compute`, `lib/budget`, `lib/schedule` import nothing from the project; nothing under `lib/` imports `app/`; `app/` never imports `lib/sources` or `lib/repo` directly (routes go through `lib/run`/`lib/queries`). Added in Session 4 with a test that a forbidden import fails lint.
 - Names: **LAP** = Last Asylum Plague, the game (its key prefix is `lap_`); **the tracker** = lastasylumtracker.com, the third-party site and API we read; **LAPTracker** = this project. Never "LAT".
 - Naming follows `docs/GLOSSARY.md`: *might* (UI word) = `total_power` (API/DB word); *kills* = `total_kills` (roster sum) vs *board kills* = `kills_board`; *snapshot*, *phase*, *fresh*, *partial*, *stale*, *source* (`v1` | `internal`); *identity* = `union_id` / `uid`, *name* and *tag* are labels with a history. One name per concept, both in code and in prose, so an agent can grep.
 - Comments explain *why* (a quota rule, an upstream quirk), never *what*. Each invariant from §3.4, §3.7 and the "Logging guarantees" is referenced by name in a comment next to the code that enforces it, e.g. `// INVARIANT budget.reserve-for-after`.
@@ -598,7 +634,7 @@ The alliance roster includes `x`, `y` (map coordinates), `online`, `last_online_
 - `pnpm install --frozen-lockfile` only in CI and hooks. `pnpm audit --audit-level high` runs in CI and fails the build; a finding that can't be fixed within a week gets a dated exception in `DECISIONS.md`, not a silent `--omit`.
 - Dependabot enabled for the npm ecosystem (it covers pnpm lockfiles) and GitHub Actions, weekly, grouped minor/patch; majors handled by a session reading the changelog first.
 - GitHub Actions pinned to commit SHAs, `permissions:` set to the minimum per workflow (`contents: read` for CI and snapshots, `contents: write` only for keepalive).
-- Node **26** (Active LTS since Oct 2026; Vercel default `26.x`; 24/22 are Maintenance). `.nvmrc` holds the major only (`26`): nvm, fnm, asdf and `actions/setup-node` all resolve it to the newest installed/available 26.x, which is the same policy Vercel applies (majors pinned, patches rolled by the platform), so local, CI and production track the same line without a monthly bump. `engines.node: ">=22.0.0"` because Vercel resolves that range to the latest 26.x and Claude cloud sessions (Node 22 on PATH unless the setup script installs 26) can still install. CI runs on `.nvmrc`, so 26.x is what gates every merge. One file, no `.node-version` duplicate. Next.js stable channel. No pre-release packages.
+- Node **26** (Active LTS since Oct 2026; Vercel default `26.x`; 24/22 are Maintenance). `.nvmrc` holds the major only (`26`): nvm, fnm, asdf and `actions/setup-node` all resolve it to the newest installed/available 26.x, which is the same policy Vercel applies (majors pinned, patches rolled by the platform), so local, CI and production track the same line without a monthly bump. `engines.node: "26.x"` — Vercel maps it to the latest 26.x and, unlike an open range (`>=22`), never auto-upgrades the production runtime to a future major (Vercel warns about exactly that). Claude cloud sessions on Node 22 still install because `.npmrc` has `engine-strict=false` (a warning, not a failure) and the setup script installs 26 anyway. CI runs on `.nvmrc`, so 26.x is what gates every merge. One file, no `.node-version` duplicate. Next.js stable channel. No pre-release packages.
 - Node 26's `fetch` negotiates HTTP/2 and leaves `response.statusText` empty: adapters branch on `response.status` only. `VERCEL_FETCH_DISABLE_H2=1` is the documented opt-out if the upstream misbehaves over h2 (Session 9 checks the dry-run logs for it).
 - **pnpm 12**, pinned with `"packageManager": "pnpm@12.x.y"` in package.json (pnpm self-selects the pinned version). Vercel: `ENABLE_EXPERIMENTAL_COREPACK=1` env var so the build honours `packageManager`; Session 8 confirms the pnpm version in the build log. `pnpm install --frozen-lockfile` everywhere but a developer's first install.
 - No Dockerfile: nothing in this project builds or runs from one — Vercel builds from the repo, GitHub Actions uses `setup-node`, Claude cloud sessions use Anthropic's VM. A container would be a fourth environment to keep in sync. Reproducibility comes from `.nvmrc` + `packageManager` + the lockfile.
@@ -606,7 +642,7 @@ The alliance roster includes `x`, `y` (map coordinates), `online`, `last_online_
 
 ### 12.5 Platform
 - Vercel: env vars marked sensitive and scoped — Production values never reach Preview (§11.6: preview DB branch, own secrets, no webhooks); previews behind Vercel Deployment Protection. Function logs contain no secrets by construction (12.2).
-- Neon: the app's role can read/write the project's tables and nothing else; migrations run with a separate role from the session or CI, not from the app.
+- Neon: v1 runs migrations with the integration's role at build time (§3.2); a separate least-privilege role for the app is v2 — with one deployable and no user data it buys nothing yet.
 - `run_logs` / `app_errors`: carry `union_id`, `uid`, counts and codes — no names, no secrets (the logger passes every `data` object through `lib/redact.ts`).
 - GitHub: public repo; `main` and `dev` rulesets per §11.6 (PR + `check` + no force-push, no bypass actors, including for the Claude GitHub App — sessions push branches); secret scanning + push protection on; Dependabot alerts on; Actions `permissions` minimal per workflow.
 
@@ -614,12 +650,29 @@ The alliance roster includes `x`, `y` (map coordinates), `online`, `last_online_
 No user accounts, no OAuth, no per-user permissions: a shared PIN plus rate limiting is proportional to a guild tool whose worst case is a vandalised kill count. No WAF, no secrets manager, no SOC2 theatre. If the alliance ever stores anything private (Discord IDs for `/ask` in v2 is the first candidate), §12.1 gets a new row and §12.2 gets a real auth story.
 
 ## 9. Out of scope for v1 (do not build unless asked)
+
+- **Translation (i18n)**: after Phase 8. Prepared for now by `lib/copy.ts` (every string, stable keys) and `Intl` formatting; the later work is a dictionary per language and a switcher, not a refactor. Languages first in line: ru, es, pt-BR.
 - Multiple servers / multiple events on one page
 - Charts / sparklines (the across-events tables in Phase 5e carry the data; a line chart is a v2 layer on top)
 - Natural-language questions (§8b) — v2, after real data exists
 - Data pruning — never delete snapshots
 - Real authentication
 - Auto-discovery of the top 20 from the ranks board at run time (the list is config so before/after stay comparable; re-seeding it is a config change)
+
+## 10b. As shipped — corrections the sessions reported (Sessions 3–5b, 2026-11-04)
+Where the text above and the code disagree, the code is right and this list says how. Each item names the handoff that found it. Sections are not rewritten retroactively; a session that reads a section listed here reads this list too.
+
+- **§3.1 manual fallback** (05b): "Run BEFORE/AFTER now" is allowed only at or after the event's `before_at`; an earlier press answers `409 snapshot_not_due`.
+- **§3.1 verdict, quota line** (04): the drop is `first − last + 1` (the first response counts itself). (05, N1): if the run's last `/v1` attempts all fail and the internal fallback fills the row, those attempts carry no quota object and the line can read `calls_used ≠ drop` on a run that was fine; the verdict says "n `/v1` attempts returned no quota" when `run_logs` has a `v1.fetch` warn for the run. Rare; an exact count needs a column.
+- **§3.4 / Phase 3** (05b): AFTER on an event with no alliance list fails with "no alliance list on the event: BEFORE has not run" and makes no quota call. (03): the run claim happens before the quota call; `force` clears the rows (D18). An abort at `MAX_UPSTREAM_CALLS` is `failed`; a `429` mid-run is `partial` — the code follows the more specific section in each case.
+- **§4 / Phase 4** (04): the quota routes are authenticated like the others.
+- **§6** (03, 04): nullable as shipped — `alliance_snapshots.{tag,name,member_count,total_power,total_kills,raw_json}` on error rows, `member_snapshots.{power,kills}` (D15). Added: `events.unique(event_at_utc)`, `events.quota_checked_at`, `snapshots.quota_remaining_before`, and a `rehearsal_slots` table (the weekly `REHEARSAL_AT` bookkeeping).
+- **Phase 6 partial template** (05, N11 / 05b): alliances with no row at all are listed under `failed` as "not fetched: …", not as "came back with old data".
+- **Phase 6 observability, alert cadence** (05, N2): as shipped, the app-error alert fires after an hour *without* errors, not once per hour of continuing errors, and two instances can post at once. Accepted for v1; the fix is a claimed alert row like `claimQuotaCheck`.
+- **Phase 6 logging guarantees** (04): `RunLogger.shutdown()` exists but only awaits in-flight inserts; nothing is buffered. The "no flush" wording meant "no buffered transport".
+- **§11.3 integration tier** (03, 04): PGlite in tests, not the in-memory Repo.
+- **§11.2 dependency-rule lint** (owner): the `import-x/no-restricted-paths` zones were scheduled for Session 4 after it had started; they move to Session 8.
+- **§12.2 client IP** (05, N10): whether a client can spoof `x-real-ip` on Vercel is unverified; the per-IP limit may be weaker than stated, the global 20/h lockout is not. Session 8 checks.
 
 ## 10. Open questions for the owner (answer before Phase 1)
 1. ~~Server number and alliances~~ — answered: 325, §7 list from the board; Session 0 verifies the ids.

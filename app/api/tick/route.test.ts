@@ -1,11 +1,149 @@
-import { describe, expect, it } from "vitest";
+import { eq } from "drizzle-orm";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { POST } from "./route";
+import type { AppContext } from "@/lib/app-context";
+import {
+  ADMIN_WEBHOOK,
+  request,
+  TEST_CRON_SECRET,
+  TEST_ENV,
+  testContext,
+} from "@/lib/app-context.test-helpers";
+import { IDS } from "@/lib/collector.test-helpers";
+import type { Db } from "@/lib/db";
+import { openTestDb, truncateAll } from "@/lib/db.test-helpers";
+import { events, rehearsalSlots, snapshots } from "@/lib/schema";
 
-describe("POST /api/tick (placeholder)", () => {
-  it("answers 501 with a JSON body until Session 4 implements the tick", async () => {
-    const res = POST();
-    expect(res.status).toBe(501);
-    expect(await res.json()).toEqual({ error: "not implemented" });
+const holder = vi.hoisted(() => ({ ctx: null as AppContext | null }));
+vi.mock("@/lib/app-context", async (original) => ({
+  ...(await original<typeof import("@/lib/app-context")>()),
+  getAppContext: () => holder.ctx,
+}));
+
+const { POST } = await import("./route");
+
+const tick = () =>
+  POST(request("/api/tick", { headers: { authorization: `Bearer ${TEST_CRON_SECRET}` } }));
+
+let db: Db;
+beforeAll(async () => {
+  db = await openTestDb();
+}, 30_000);
+beforeEach(async () => {
+  await truncateAll(db);
+});
+
+describe("POST /api/tick", () => {
+  it("runs BEFORE exactly once across three ticks inside its window and never outside it", async () => {
+    // Server is UTC−2: BEFORE 10:00 server = 12:00 UTC, window 45 min → [12:00, 12:45) UTC.
+    const { ctx, clock, v1 } = testContext(db);
+    holder.ctx = ctx;
+    const statuses: [string, number][] = [];
+    for (const at of ["11:59", "12:05", "12:20", "12:40", "12:45", "13:30"]) {
+      clock.now = new Date(`2026-11-07T${at}:00Z`);
+      statuses.push([at, (await tick()).status]);
+    }
+
+    expect(statuses).toEqual([
+      ["11:59", 204],
+      ["12:05", 200],
+      ["12:20", 204],
+      ["12:40", 204],
+      ["12:45", 204],
+      ["13:30", 204],
+    ]);
+    const rows = await db
+      .select({ phase: snapshots.phase, status: snapshots.status })
+      .from(snapshots);
+    expect(rows).toEqual([{ phase: "before", status: "complete" }]);
+    expect(v1.calls).toHaveLength(IDS.length);
+  });
+
+  it("runs only the earlier phase when both phases are due in the same tick", async () => {
+    // AFTER at 10:30 server: at 10:35 server (12:35 UTC) both windows are open.
+    const { ctx, clock } = testContext(db, { ...TEST_ENV, SNAPSHOT_AFTER: "10:30" });
+    holder.ctx = ctx;
+    clock.now = new Date("2026-11-07T12:35:00Z");
+
+    const res = await tick();
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ phase: "before", status: "complete" });
+    const rows = await db.select({ phase: snapshots.phase }).from(snapshots);
+    expect(rows).toEqual([{ phase: "before" }]);
+  });
+
+  it("creates the coming Saturday's event once, a day ahead, with its phase times from the env", async () => {
+    const { ctx, clock } = testContext(db);
+    holder.ctx = ctx;
+    // Saturday 2026-11-07 BEFORE is 10:00 server = 12:00 UTC; a day ahead is Friday 12:00 UTC.
+    for (const at of [
+      "2026-11-06T11:45",
+      "2026-11-06T12:05",
+      "2026-11-06T12:20",
+      "2026-11-07T09:00",
+    ]) {
+      clock.now = new Date(`${at}:00Z`);
+      await tick();
+      if (at === "2026-11-06T11:45") expect(await db.select().from(events)).toEqual([]);
+    }
+
+    const rows = await db
+      .select({
+        name: events.name,
+        isTest: events.isTest,
+        eventAtUtc: events.eventAtUtc,
+        beforeAt: events.beforeAt,
+        afterAt: events.afterAt,
+      })
+      .from(events);
+    expect(rows).toEqual([
+      {
+        name: "Saturday Event 2026-11-07",
+        isTest: false,
+        eventAtUtc: new Date("2026-11-07T14:00:00Z"),
+        beforeAt: new Date("2026-11-07T12:00:00Z"),
+        afterAt: new Date("2026-11-07T16:00:00Z"),
+      },
+    ]);
+  });
+
+  it("creates a REHEARSAL_AT rehearsal once per slot per week, never on the event day or the day after", async () => {
+    const env = { ...TEST_ENV, REHEARSAL_AT: "wed 18:00, sat 18:00, sun 09:00" };
+    const { ctx, clock, posts } = testContext(db, env);
+    holder.ctx = ctx;
+    // Server time is UTC−2. Wed 18:05 twice, Sat 18:05, Sun 09:05, then next Wed 18:05.
+    const ticks = [
+      "2026-11-04T20:05",
+      "2026-11-04T20:10",
+      "2026-11-07T20:05",
+      "2026-11-08T11:05",
+      "2026-11-11T20:05",
+    ];
+    for (const at of ticks) {
+      clock.now = new Date(`${at}:00Z`);
+      await tick();
+    }
+
+    const rehearsals = await db
+      .select({ beforeAt: events.beforeAt })
+      .from(events)
+      .where(eq(events.isTest, true));
+    expect(rehearsals.map((r) => r.beforeAt)).toEqual([
+      new Date("2026-11-04T20:20:00Z"),
+      new Date("2026-11-11T20:20:00Z"),
+    ]);
+    const slots = await db
+      .select({ slotAt: rehearsalSlots.slotAt, outcome: rehearsalSlots.outcome })
+      .from(rehearsalSlots);
+    expect(slots).toEqual([
+      { slotAt: new Date("2026-11-04T20:00:00Z"), outcome: "created" },
+      { slotAt: new Date("2026-11-07T20:00:00Z"), outcome: "event-day" },
+      { slotAt: new Date("2026-11-08T11:00:00Z"), outcome: "event-day" },
+      { slotAt: new Date("2026-11-11T20:00:00Z"), outcome: "created" },
+    ]);
+    const notes = posts.filter((p) => p.url === ADMIN_WEBHOOK && p.content.includes("skipped"));
+    expect(notes).toHaveLength(2);
+    expect(notes.every((n) => n.content.startsWith("[rehearsal] "))).toBe(true);
   });
 });

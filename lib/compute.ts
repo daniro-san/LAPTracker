@@ -123,3 +123,25 @@ export function seriesDeltas(rows: readonly SeriesRow[]): SeriesStep[] {
     };
   });
 }
+
+/**
+ * Ledger rank (Phase 5e): position by value, highest first, as competition ranking (1, 2, 2, 4).
+ * Entries without a value get no rank.
+ */
+export function rankBy<K>(entries: readonly (readonly [K, number | null])[]): Map<K, number> {
+  const valued = entries.filter((e): e is readonly [K, number] => e[1] !== null);
+  return new Map(
+    valued.map(([key, value]) => [key, 1 + valued.filter(([, v]) => v > value).length]),
+  );
+}
+
+/**
+ * Places moved from `prev` to `curr`: positive means up (#3 → #1 is +2). Null when either rank is
+ * unknown, so the UI shows `—`, never a rise from nothing.
+ */
+export function rankDelta(
+  prev: number | null | undefined,
+  curr: number | null | undefined,
+): number | null {
+  return prev == null || curr == null ? null : prev - curr;
+}

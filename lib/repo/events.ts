@@ -1,9 +1,11 @@
-// events table.
-import { eq } from "drizzle-orm";
+// events table. An event carries its own phase times (before_at, after_at): Saturdays get them from
+// the env when the tick creates the row, rehearsals from the moment they are created (plan §3.1).
+import { and, eq, gt, isNull, lte, or } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { events } from "../schema";
-import type { EventRow } from "./index";
+import type { EventRow, Phase } from "./index";
+import { findSnapshot } from "./snapshots";
 
 export async function getEvent(db: Db, eventId: number): Promise<EventRow | null> {
   const [row] = await db
@@ -15,4 +17,84 @@ export async function getEvent(db: Db, eventId: number): Promise<EventRow | null
 
 export async function setEventAllianceIds(db: Db, eventId: number, ids: number[]): Promise<void> {
   await db.update(events).set({ allianceIds: ids }).where(eq(events.id, eventId));
+}
+
+/** What a run needs to know about its event. */
+export interface EventInfo {
+  id: number;
+  isTest: boolean;
+  beforeAt: Date;
+  afterAt: Date;
+}
+
+const infoColumns = {
+  id: events.id,
+  isTest: events.isTest,
+  beforeAt: events.beforeAt,
+  afterAt: events.afterAt,
+};
+
+export interface NewEvent {
+  name: string;
+  eventAtUtc: Date;
+  beforeAt: Date;
+  afterAt: Date;
+}
+
+/**
+ * The Saturday event at `eventAtUtc`, created on first use with no alliances (the BEFORE run copies
+ * them). Insert-or-nothing then select, so two concurrent ticks end up with the same row.
+ */
+export async function findOrCreateEvent(db: Db, event: NewEvent): Promise<EventInfo> {
+  await db
+    .insert(events)
+    .values({ ...event, allianceIds: [] })
+    .onConflictDoNothing({ target: events.eventAtUtc });
+  const [row] = await db
+    .select(infoColumns)
+    .from(events)
+    .where(eq(events.eventAtUtc, event.eventAtUtc));
+  if (!row) throw new Error("event row missing after insert");
+  return row;
+}
+
+export interface DuePhase {
+  event: EventInfo;
+  phase: Phase;
+  at: Date;
+}
+
+/**
+ * Phases of any event (Saturday or rehearsal) whose window [x_at, x_at + window) holds `now` and
+ * that have no snapshot row yet, earliest first. The tick runs only the first.
+ */
+export async function duePhases(db: Db, now: Date, windowMs: number): Promise<DuePhase[]> {
+  const opened = new Date(now.getTime() - windowMs);
+  const open = (col: typeof events.beforeAt) => and(lte(col, now), gt(col, opened));
+  const rows = await db
+    .select(infoColumns)
+    .from(events)
+    .where(or(open(events.beforeAt), open(events.afterAt)));
+  const candidates = rows.flatMap((event) =>
+    (["before", "after"] as const)
+      .map((phase) => ({ event, phase, at: phase === "before" ? event.beforeAt : event.afterAt }))
+      .filter(({ at }) => at <= now && at > opened),
+  );
+  const due: DuePhase[] = [];
+  for (const c of candidates) {
+    // INVARIANT tick.once-per-phase: the tick never re-runs a phase that has a snapshot row.
+    if (!(await findSnapshot(db, c.event.id, c.phase))) due.push(c);
+  }
+  return due.sort((a, b) => a.at.getTime() - b.at.getTime());
+}
+
+/** Claims the event's Friday check; true for exactly one caller. */
+export async function claimQuotaCheck(db: Db, eventId: number, at: Date): Promise<boolean> {
+  // INVARIANT tick.friday-check-once
+  const rows = await db
+    .update(events)
+    .set({ quotaCheckedAt: at })
+    .where(and(eq(events.id, eventId), isNull(events.quotaCheckedAt)))
+    .returning({ id: events.id });
+  return rows.length > 0;
 }
