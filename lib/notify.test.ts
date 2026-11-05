@@ -17,7 +17,7 @@ import {
 } from "./notify";
 import { BLOCKED_ROSTER_KEYS, findBlockedKeys } from "./queries";
 
-// TEST_ENV's SERVER_TZ is Etc/GMT+2: 16:01 UTC is 14:01 server.
+// TEST_ENV's SERVER_TZ is Etc/GMT+2: 16:01 UTC is 14:01 server time.
 const clock = discordClock(TEST_ENV.SERVER_TZ);
 const utc = (hhmm: string) => new Date(`2026-11-07T${hhmm}:00Z`);
 
@@ -87,16 +87,16 @@ describe("public snapshot message", () => {
       }),
     );
     expect(embed).toEqual({
-      title: "✓ Last updated at Sat, Nov 7, 10:01 server",
+      title: "✓ Last updated at Sat, Nov 7, 10:01 server time",
       url: "https://lap.test/events/9",
-      description: "4/4 alliances\nNext update at Sat, Nov 7, 14:00 server",
+      description: "4/4 alliances\nNext update at Sat, Nov 7, 14:00 server time",
       color: 0x586750,
     });
   });
 
   it("after snapshot done: the top three gains in might and kills, signed, with percent", () => {
     const embed = publicSnapshotMessage(summary(), publicCtx());
-    expect(embed.title).toBe("✓ Last updated at Sat, Nov 7, 14:01 server");
+    expect(embed.title).toBe("✓ Last updated at Sat, Nov 7, 14:01 server time");
     expect(embed.description).toBe(
       [
         "4/4 alliances",
@@ -118,7 +118,7 @@ describe("public snapshot message", () => {
       summary({ status: "partial", stale: [{ unionId: 1, tag: "OGs" }] }),
       publicCtx({ alliances: after }),
     );
-    expect(embed.title).toBe("⚠ Last updated at Sat, Nov 7, 14:01 server");
+    expect(embed.title).toBe("⚠ Last updated at Sat, Nov 7, 14:01 server time");
     expect(embed.color).toBe(0x805c12);
     expect(embed.description?.split("\n").slice(0, 3)).toEqual([
       "3/4 alliances",
@@ -134,7 +134,7 @@ describe("public snapshot message", () => {
       publicCtx(),
     );
     expect(embed).toEqual({
-      title: "✗ Last update failed at Sat, Nov 7, 14:01 server",
+      title: "✗ Last update failed at Sat, Nov 7, 14:01 server time",
       url: "https://lap.test/events/9",
       color: 0x8c2f2f,
     });
@@ -161,8 +161,8 @@ describe("admin messages", () => {
     );
     expect(text).toBe(
       [
-        "⚠ After snapshot: partly done · Sat, 11/07/2026, 14:02 server",
-        "due Sat, 11/07/2026, 14:00 server · started +1 min",
+        "⚠ After snapshot: partly done · Sat, 11/07/2026, 14:02 server time",
+        "due Sat, 11/07/2026, 14:00 server time · started +1 min",
         "21 calls · 779 requests left · 52.0 s",
         "✗ failed [IMPA]: upstream_timeout",
         "○ stale [URSA]",
@@ -185,7 +185,7 @@ describe("admin messages", () => {
     });
     expect(text).toBe(
       [
-        "✓ Manual round 2026-11-07 · Before snapshot: done · Sat, 11/07/2026, 14:02 server",
+        "✓ Manual round 2026-11-07 · Before snapshot: done · Sat, 11/07/2026, 14:02 server time",
         "21 calls · 779 requests left · 52.0 s",
         "[Run 41 ↗](<https://lap.test/admin/runs/41>)",
       ].join("\n"),
@@ -206,7 +206,7 @@ describe("admin messages", () => {
     );
     expect(text).toBe(
       [
-        "✗ Fail · Sat, 11/07/2026, 14:46 server",
+        "✗ Fail · Sat, 11/07/2026, 14:46 server time",
         "✓ both snapshots complete",
         "✗ late start: after +50 min",
         "[Runs ↗](<https://lap.test/admin/runs>)",
@@ -216,7 +216,7 @@ describe("admin messages", () => {
 
   it("names a skipped rehearsal's reason in /admin's refusal words", () => {
     expect(rehearsalSkippedMessage("event-day", clock.stamp(utc("20:00")))).toBe(
-      "skipped · Sat, 11/07/2026, 18:00 server: Not on the event day or the day after.",
+      "skipped · Sat, 11/07/2026, 18:00 server time: Not on the event day or the day after.",
     );
   });
 
@@ -232,11 +232,11 @@ describe("admin messages", () => {
     });
     expect(text).toBe(
       [
-        "✓ Weekly API quota check · Fri, 11/06/2026, 20:01 server",
+        "✓ Weekly API quota check · Fri, 11/06/2026, 20:01 server time",
         "⚠ 812 requests left (⚠ under 900)",
         "✓ Database 123.4 MB",
-        "Before snapshot Sat, 11/07/2026, 10:00 server",
-        "After snapshot Sat, 11/07/2026, 14:00 server",
+        "Before snapshot Sat, 11/07/2026, 10:00 server time",
+        "After snapshot Sat, 11/07/2026, 14:00 server time",
       ].join("\n"),
     );
   });

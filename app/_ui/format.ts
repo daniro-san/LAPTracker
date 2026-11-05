@@ -1,6 +1,6 @@
 // Number and time formatting shared by every page (DESIGN.md "Language-light rules"): `Intl` with the
 // request's locale (app/_ui/locale.ts), compact by default and exact on tap, times in server time with
-// the word "server" after them, in the admin area too (07c S3a).
+// the words "server time" after them, in the admin area too (07c S3a).
 import { copy } from "@/lib/copy";
 
 const MINUS = "−";
@@ -70,9 +70,9 @@ export interface Clock {
   weekday: (d: Date) => string;
   /** "Saturday, October 31" */
   long: (d: Date) => string;
-  /** "16:01", for column heads that say "server" once */
+  /** "16:01", for column heads that say "server time" once */
   hhmm: (d: Date) => string;
-  /** "16:01 server" */
+  /** "16:01 server time" */
   time: (d: Date) => string;
   /** "Oct 31, 16:01 server time": status chips and "as of" lines spell it out like the admin */
   at: (d: Date) => string;
@@ -95,7 +95,7 @@ export function makeClock(locale: string, timeZone: string): Clock {
     minute: "2-digit",
     hourCycle: "h23",
   });
-  const time = (d: Date) => `${hhmm.format(d)} ${copy.time.server}`;
+  const time = (d: Date) => `${hhmm.format(d)} ${copy.time.serverTime}`;
   return {
     day: (d) => day.format(d),
     weekday: (d) => weekday.format(d),
