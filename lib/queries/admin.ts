@@ -73,8 +73,11 @@ export async function runningSnapshots(db: Db, now: Date): Promise<RunningSnapsh
     .orderBy(asc(snapshots.startedAt));
 }
 
+/** D25: a run the 100 s deadline closed carries `error = "deadline"`. */
+const DEADLINE_ERROR = "deadline";
+
 export async function listRuns(db: Db, limit = 60) {
-  return db
+  const rows = await db
     .select({
       id: snapshots.id,
       eventId: events.id,
@@ -95,6 +98,7 @@ export async function listRuns(db: Db, limit = 60) {
     .innerJoin(events, eq(events.id, snapshots.eventId))
     .orderBy(desc(snapshots.startedAt))
     .limit(limit);
+  return rows.map((r) => ({ ...r, deadline: r.error === DEADLINE_ERROR }));
 }
 
 /** The data requests left after the newest run that reported them (moved off the public page, 7b). */
@@ -140,11 +144,94 @@ export async function getRun(db: Db, snapshotId: number) {
     .from(runLogs)
     .where(eq(runLogs.snapshotId, snapshotId))
     .orderBy(asc(runLogs.at), asc(runLogs.id));
-  const tags = await db
+  const tagRows = await db
     .select({ unionId: allianceSnapshots.unionId, tag: allianceSnapshots.tag })
     .from(allianceSnapshots)
     .where(eq(allianceSnapshots.snapshotId, snapshotId));
-  return { run, logs, tags: new Map(tags.map((t) => [t.unionId, t.tag])) };
+  const tags = new Map(tagRows.map((t) => [t.unionId, t.tag]));
+  return {
+    run: { ...run, deadline: run.error === DEADLINE_ERROR },
+    logs,
+    tags,
+    trace: runTrace(logs, tags, run.startedAt),
+  };
+}
+
+export interface TraceCall {
+  /** The `v1.fetch` line's id. */
+  id: number;
+  endpoint: "quota" | "alliance";
+  /** The alliance's tag (its union id when the run stored no tag); null for the quota call. */
+  alliance: string | null;
+  seconds: number | null;
+  httpStatus: number | null;
+  cached: boolean | null;
+  /** `v1.retry` lines for the same alliance; null for the quota call (its retries carry no id). */
+  retries: number | null;
+  slowest: boolean;
+}
+
+export interface RunTrace {
+  calls: TraceCall[];
+  total: { calls: number; seconds: number; retries: number };
+}
+
+interface TraceLog {
+  id: number;
+  at: Date;
+  code: string;
+  unionId: number | null;
+  data: unknown;
+}
+
+const num = (v: unknown): number | null => (typeof v === "number" ? v : null);
+
+/**
+ * One line per upstream call (`v1.fetch`) of the run's latest attempt, in time order. A forced re-run
+ * keeps the snapshot id, so lines from before `startedAt` belong to an earlier attempt and are left
+ * out. A call the deadline cut wrote no line (D25) and is not here.
+ */
+export function runTrace(
+  logs: readonly TraceLog[],
+  tags: ReadonlyMap<number, string | null>,
+  startedAt: Date,
+): RunTrace {
+  const own = logs.filter((l) => l.at >= startedAt);
+  const retries = new Map<number, number>();
+  for (const l of own) {
+    if (l.code === "v1.retry" && l.unionId !== null)
+      retries.set(l.unionId, (retries.get(l.unionId) ?? 0) + 1);
+  }
+  const calls: TraceCall[] = own
+    .filter((l) => l.code === "v1.fetch")
+    .map((l) => {
+      const d = (l.data ?? {}) as Record<string, unknown>;
+      const ms = num(d.duration_ms);
+      const quota = d.endpoint === "quota";
+      return {
+        id: l.id,
+        endpoint: quota ? "quota" : "alliance",
+        alliance: quota || l.unionId === null ? null : (tags.get(l.unionId) ?? String(l.unionId)),
+        seconds: ms === null ? null : ms / 1000,
+        httpStatus: num(d.http_status),
+        cached: typeof d.cached === "boolean" ? d.cached : null,
+        retries: quota || l.unionId === null ? null : (retries.get(l.unionId) ?? 0),
+        slowest: false,
+      };
+    });
+  const slowest = calls.reduce<TraceCall | null>(
+    (max, c) => (c.seconds !== null && (max === null || c.seconds > (max.seconds ?? 0)) ? c : max),
+    null,
+  );
+  if (slowest && calls.length > 1) slowest.slowest = true;
+  return {
+    calls,
+    total: {
+      calls: calls.length,
+      seconds: calls.reduce((sum, c) => sum + (c.seconds ?? 0), 0),
+      retries: calls.reduce((sum, c) => sum + (c.retries ?? 0), 0),
+    },
+  };
 }
 
 export interface ErrorGroup {

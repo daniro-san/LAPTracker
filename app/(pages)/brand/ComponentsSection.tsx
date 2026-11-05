@@ -1,5 +1,6 @@
 // /brand "Components": every control and ornament the site uses, each with when to use it. The
 // fields are live but belong to no form; nothing here submits.
+import { RunTrace } from "@/app/_ui/admin/RunTrace";
 import { MEMBER_MARK } from "@/app/_ui/format";
 import { MemberMark } from "@/app/_ui/Num";
 import { Button } from "@/lib/brand/components/Button";
@@ -54,6 +55,52 @@ function Fields() {
             <option key={o}>{o}</option>
           ))}
         </select>
+      </div>
+    </Spec>
+  );
+}
+
+/** A made-up three-call run: the quota check, a fast cached read and a slow read that was retried. */
+function Trace() {
+  const [a, b] = t.runTrace.tags;
+  const call = { cached: false, retries: 0, slowest: false, httpStatus: 200 };
+  return (
+    <Spec name={t.runTrace.name} use={t.runTrace.use}>
+      <div className="w-full">
+        <RunTrace
+          deadline={false}
+          trace={{
+            calls: [
+              {
+                ...call,
+                id: 1,
+                endpoint: "quota",
+                alliance: null,
+                seconds: 0.4,
+                retries: null,
+                cached: null,
+              },
+              {
+                ...call,
+                id: 2,
+                endpoint: "alliance",
+                alliance: a ?? null,
+                seconds: 1.9,
+                cached: true,
+              },
+              {
+                ...call,
+                id: 3,
+                endpoint: "alliance",
+                alliance: b ?? null,
+                seconds: 6.3,
+                retries: 1,
+                slowest: true,
+              },
+            ],
+            total: { calls: 3, seconds: 8.6, retries: 1 },
+          }}
+        />
       </div>
     </Spec>
   );
@@ -164,6 +211,9 @@ export function ComponentsSection() {
             <FactList items={t.facts.items.map(([label, value]) => ({ label, value }))} />
           </div>
         </Spec>
+        <div className="sm:col-span-3">
+          <Trace />
+        </div>
         <Ornaments />
       </div>
     </Section>
