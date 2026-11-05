@@ -7,7 +7,7 @@ export const discordCopy = {
     alliances: "{good}/{total} alliances",
     stale: "○ {n} stale: {list}",
     /** First line of a manual round's public message (D28). */
-    manual: "Manual round: {name}. Not a Saturday event.",
+    manual: "Manual round: {name}. Taken by hand.",
     /** The Before's line in the edited message, so the After shows the whole event. */
     beforeDone: "Before snapshot done at {time}",
     might: "**Might ▲**",

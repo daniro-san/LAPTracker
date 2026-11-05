@@ -143,7 +143,7 @@ export async function EventView({
           manual={detail.manual}
           clock={clock}
         />
-        <Legend />
+        <Legend memberMark={rows.some((r) => r.metrics.some((m) => m.memberMark))} />
         <MyAllianceJump tags={Object.fromEntries(rows.map((r) => [r.unionId, r.tag]))} />
         <StatTable
           leadLabel={copy.ledger.alliance}

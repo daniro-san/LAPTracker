@@ -89,6 +89,8 @@ const source = {
     stale: "Stale",
     rank: "Rank",
     rounded: "Rounded: tick Exact numbers for the full figure",
+    /** The footnote mark `*` on a falling Might or Kills change when members left. */
+    members: "Includes member changes",
   },
   members: {
     search: "Member name",

@@ -3,7 +3,9 @@
 // A number in two spellings: compact (3.94B) and exact (3,938,123,456), both in the viewer's locale. The
 // "Exact numbers" switch shows one or the other for the whole page with CSS only (globals.css). Every
 // change carries three channels (DESIGN.md): colour, an arrow and the signed number.
-import { compact, exact, percent, percentText, signOf } from "./format";
+import { copy } from "@/lib/copy";
+
+import { compact, exact, MEMBER_MARK, percent, percentText, signOf } from "./format";
 import { useLocale } from "./LocaleProvider";
 
 const MUTED = "text-ink/70";
@@ -31,12 +33,23 @@ function tone(delta: number): string {
 
 const arrow = (delta: number) => (delta > 0 ? "▲" : delta < 0 ? "▼" : "=");
 
+/** `*` after a change: the total fell while members left. The legend names it; a screen reader hears the words. */
+export function MemberMark() {
+  return (
+    <>
+      <span aria-hidden="true"> {MEMBER_MARK}</span>
+      <span className="sr-only"> {copy.legend.members}</span>
+    </>
+  );
+}
+
 /** `▲ +20.1M (+0.5%)`; `—` when there is no delta (a stale or missing side, or only one snapshot). */
 export function Delta({
   delta,
   base,
   note,
   stack = false,
+  memberMark = false,
 }: {
   delta: number | null;
   /** The value the percentage is relative to. */
@@ -44,6 +57,8 @@ export function Delta({
   note?: string | undefined;
   /** Puts the percent on its own line below 640 px, for narrow columns. */
   stack?: boolean;
+  /** Adds the `*` mark (the total fell and members left). */
+  memberMark?: boolean;
 }) {
   const locale = useLocale();
   if (delta === null) return <span className={MUTED}>—</span>;
@@ -61,6 +76,7 @@ export function Delta({
             ({percentText(pct, locale)})
           </span>
         )}
+        {memberMark && <MemberMark />}
       </span>
       {note && <span className="font-normal"> · {note}</span>}
     </span>

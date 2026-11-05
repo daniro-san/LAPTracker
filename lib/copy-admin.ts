@@ -106,8 +106,10 @@ export const adminCopy = {
     },
     visibilityHelp: {
       admin: "Hidden from every public page. Only you see it here.",
-      standalone: "Anyone can open it. Saturday's “since the last event” changes ignore it.",
-      history: "Anyone can open it. Saturday's “since the last event” changes compare against it.",
+      standalone:
+        "Anyone can open it. The “since the last event” changes of other events ignore it.",
+      history:
+        "Anyone can open it. The “since the last event” changes of later events compare against it.",
     },
     postLabel: "Post to the public Discord channel",
     postHelp: "Posts a message when a snapshot of this round finishes.",

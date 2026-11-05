@@ -5,6 +5,9 @@ import { copy } from "@/lib/copy";
 
 const MINUS = "−";
 
+/** The footnote mark on a falling total whose members left (DESIGN.md `member-mark`). */
+export const MEMBER_MARK = "*";
+
 const numberFormats = new Map<string, Intl.NumberFormat>();
 
 /** Intl formatters are costly to build; one per locale and style, reused across requests. */

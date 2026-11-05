@@ -18,6 +18,26 @@ const cell = (unionId: number, tag: string, power: number, failed = false) => ({
 const snap = (phase: "before" | "after", alliances: ReturnType<typeof cell>[]) =>
   ({ phase, alliances }) as unknown as Snap;
 
+const killsRow = (before: number, after: number, left: number) => {
+  const at = (phase: "before" | "after", kills: number) =>
+    snap(phase, [{ ...cell(1, "OGs", 10), totalKills: kills }]);
+  const rows = comparisonRows(
+    [at("before", before), at("after", after)],
+    new Map([[1, { joined: 0, left }]]),
+    new Map(),
+    new Map(),
+  );
+  return rows[0]?.metrics.find((m) => m.label === "Kills");
+};
+
+describe("member mark", () => {
+  it("marks a falling Kills total only when members left", () => {
+    expect(killsRow(100, 80, 2)?.memberMark).toBe(true);
+    expect(killsRow(100, 80, 0)?.memberMark).toBe(false);
+    expect(killsRow(100, 120, 2)?.memberMark).toBe(false);
+  });
+});
+
 describe("comparisonRows", () => {
   it("gives an alliance whose after fetch failed no rank and puts it after the ranked ones (07c S8)", () => {
     // Event 1 of the seed: IMPA (#12 before) fails after; PSY moves 13 → 12.

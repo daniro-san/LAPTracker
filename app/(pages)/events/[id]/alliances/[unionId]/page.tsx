@@ -8,6 +8,7 @@ import { cache } from "react";
 import { ACROSS_ID, AcrossEvents } from "@/app/_ui/AcrossEvents";
 import { Breadcrumbs } from "@/app/_ui/Breadcrumbs";
 import { DetailTable, figureRows, type RankPair } from "@/app/_ui/DetailLines";
+import { fellWithLeavers } from "@/app/_ui/event-rows";
 import { ExactToggle } from "@/app/_ui/ExactToggle";
 import { allianceLabel, type Clock } from "@/app/_ui/format";
 import { Leadership } from "@/app/_ui/Leadership";
@@ -46,21 +47,19 @@ function totalsMetric(
   before: number | null | undefined,
   after: number | null | undefined,
   canDelta: boolean,
+  left = 0,
 ): StatMetric {
   const [b, a] = [before ?? null, after ?? null];
-  return {
-    label,
-    value: a ?? b,
-    delta: canDelta && a !== null && b !== null ? a - b : null,
-    base: b,
-  };
+  const delta = canDelta && a !== null && b !== null ? a - b : null;
+  return { label, value: a ?? b, delta, base: b, memberMark: fellWithLeavers(delta, left) };
 }
 
-function totalsMetrics({ before, after }: Detail, canDelta: boolean): StatMetric[] {
+/** `left`: members of the Before roster gone from the After roster (0 when the rosters cannot be compared). */
+function totalsMetrics({ before, after }: Detail, canDelta: boolean, left: number): StatMetric[] {
   const l = copy.ledger;
   return [
-    totalsMetric(l.might, before?.totalPower, after?.totalPower, canDelta),
-    totalsMetric(l.kills, before?.totalKills, after?.totalKills, canDelta),
+    totalsMetric(l.might, before?.totalPower, after?.totalPower, canDelta, left),
+    totalsMetric(l.kills, before?.totalKills, after?.totalKills, canDelta, left),
     totalsMetric(l.members, before?.memberCount, after?.memberCount, canDelta),
   ];
 }
@@ -81,18 +80,19 @@ function rankPairs(detail: Detail, ledger: Ledger, canMove: boolean) {
 /** The alliance's totals as one band (no second title): three figures, then rank, marks and Details. */
 function Summary({
   detail,
+  metrics,
   ledger,
   canDelta,
   clock,
 }: {
   detail: Detail;
+  metrics: StatMetric[];
   ledger: Ledger;
   canDelta: boolean;
   clock: Clock;
 }) {
   const { before, after } = detail;
   const ranks = rankPairs(detail, ledger, canDelta);
-  const metrics = totalsMetrics(detail, canDelta);
   return (
     <section aria-label={copy.ledger.alliance} className="border border-rule">
       <dl className="grid grid-cols-3 divide-x divide-rule">
@@ -103,7 +103,12 @@ function Summary({
               <Num n={m.value} />
             </dd>
             <dd className="text-sm tabular-nums">
-              <Delta delta={m.delta} base={m.base ?? null} stack />
+              <Delta
+                delta={m.delta}
+                base={m.base ?? null}
+                stack
+                memberMark={m.memberMark === true}
+              />
             </dd>
           </div>
         ))}
@@ -235,6 +240,11 @@ export default async function AlliancePage({ params }: { params: Params }) {
   const now = detail.after ?? detail.before;
   const label = allianceLabel(now?.tag ?? String(unionId), now?.name ?? null);
   const canDelta = usable(detail.before) && usable(detail.after);
+  const left = canCompare(detail.membersBefore, detail.membersAfter)
+    ? memberViews(detail.membersBefore, detail.membersAfter).filter((m) => m.status === "left")
+        .length
+    : 0;
+  const metrics = totalsMetrics(detail, canDelta, left);
   return (
     <>
       <SiteHeader events={events} currentId={eventId} clock={clock} />
@@ -252,9 +262,15 @@ export default async function AlliancePage({ params }: { params: Params }) {
             <ExactToggle />
           </div>
         </div>
-        <Legend />
+        <Legend memberMark={metrics.some((m) => m.memberMark)} />
         <NameTimeline names={names} clock={clock} />
-        <Summary detail={detail} ledger={ledger} canDelta={canDelta} clock={clock} />
+        <Summary
+          detail={detail}
+          metrics={metrics}
+          ledger={ledger}
+          canDelta={canDelta}
+          clock={clock}
+        />
         <Leadership members={leadership(views(detail))} />
         <div className="mb-2 mt-8 flex flex-wrap items-center justify-between gap-x-3">
           <h2 className="font-subhead text-display-md">{copy.ledger.members}</h2>
