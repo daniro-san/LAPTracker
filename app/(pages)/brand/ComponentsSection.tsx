@@ -51,8 +51,8 @@ function Fields() {
           className="drawn-field min-h-11 w-full px-3"
         />
         <select aria-label={t.field.select} className="drawn-field min-h-11 w-full px-3">
-          {t.field.options.map((o) => (
-            <option key={o}>{o}</option>
+          {t.field.options.map((o, i) => (
+            <option key={i}>{o}</option>
           ))}
         </select>
       </div>
@@ -189,7 +189,7 @@ export function ComponentsSection() {
             <legend className="mb-1 text-sm font-semibold">{t.radio.legend}</legend>
             {t.radio.options.map(([label, help], i) => (
               <RadioField
-                key={label}
+                key={i}
                 name="brand-radio"
                 label={label}
                 help={help}
