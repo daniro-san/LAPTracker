@@ -1,6 +1,6 @@
 ---
 version: 1
-name: Old Grandmas — Saturday Ledger
+name: Old Grandmas — Event Ledger
 description: The design contract for every UI session of LAPTracker. A guild ledger kept by someone's grandmother in a plague year — paper, ink, a wax seal, a half-finished scarf on the chair. A serious tool with a wink; the numbers are the point, the craft lives in the margins.
 
 colors:
@@ -194,7 +194,7 @@ Members of a game alliance on server 325 — Russia, Spain, Brazil, the United S
 ## Navigation and hierarchy
 
 - Header: wordmark · event selector · search · theme switch. Nothing else.
-- Main page, top to bottom: the title "Server 325 · Saturday Ledger" with the byline under the header (the 360 px header has no room for it) → the event's date and start time → status strip (last updated / next update chips) → legend → the ledger, by rank, with the viewer's chosen alliance highlighted if they picked one → nothing else. The run buttons live on `/admin`.
+- Main page, top to bottom: the title "Server 325 · Event Ledger" with the byline under the header (the 360 px header has no room for it) → the event's date and start time → status strip (last updated / next update chips) → legend → the ledger, by rank, with the viewer's chosen alliance highlighted if they picked one → nothing else. The run buttons live on `/admin`.
 - Every card and row is a link to the alliance page; the alliance page is members with the same row shape; the player page is the same shape over time. **One row shape, three depths** — learn it once.
 - Back is the browser's back; breadcrumbs only on alliance and player pages (`Ledger › OGs › Player`).
 - No modals except the bottom sheet for the PIN; no tooltips that carry information; nothing on hover only.
@@ -256,7 +256,7 @@ Rules: deltas are coloured by sign only; a colour that carries no meaning is not
 
 | Level          | Style                                                                                    | Examples                                                               |
 | -------------- | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| Page title     | Young Serif, `display-lg`, ink                                                           | "Server 325 · Saturday Ledger", `[OGs] OldGrandmas`, a player's name   |
+| Page title     | Young Serif, `display-lg`, ink                                                           | "Server 325 · Event Ledger", `[OGs] OldGrandmas`, a player's name      |
 | Section / card | Alegreya Sans 700, `display-md` (section) or `display-sm` (card), plum when it is a link | "Saturday, October 31", "Members", `[NSE] Natural Selection` on a card |
 | Label          | `{typography.label}`: 12 px, 600, uppercase, tracked, ink/70                             | MIGHT, KILLS, MEMBERS, START, column headers                           |
 | Value          | Source Sans 3, 16 px, 500, tabular, ink; ranks `#n` 600                                  | `4.37B`, `#3`                                                          |
@@ -336,7 +336,7 @@ Only where it carries meaning or a smile: the error-page illustrations (one keyf
 
 ## Voice
 
-Short, dry, grandmotherly, English. The ledger belongs to the server and is _kept_ by the Old Grandmas — that is the branding's place: title "Server 325 · Saturday Ledger", byline "kept by the Old Grandmas" in the header and footer, the mascot in the margins. Another alliance reading it should feel invited, not visiting. Columns "Might", "Kills", "Members", "Gained / Lost". States: "Nothing recorded yet. The kettle is on." · "The ledger is closed for today (quota exhausted)." · "Grandma wandered off." · "Something cracked." No exclamation marks, no emoji, no "Oops", no "Awesome".
+Short, dry, grandmotherly, English. The ledger belongs to the server and is _kept_ by the Old Grandmas — that is the branding's place: title "Server 325 · Event Ledger", byline "kept by the Old Grandmas" in the header and footer, the mascot in the margins. Another alliance reading it should feel invited, not visiting. Columns "Might", "Kills", "Members", "Gained / Lost". States: "Nothing recorded yet. The kettle is on." · "The ledger is closed for today (quota exhausted)." · "Grandma wandered off." · "Something cracked." No exclamation marks, no emoji, no "Oops", no "Awesome".
 
 ## Do's and Don'ts
 
