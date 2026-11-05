@@ -37,3 +37,5 @@ Plan change: none.
 - The button is the third seal, labeled "Rehearse", in "Snapshots of the current event"; there is no "Rehearse now" label.
 - Rehearsal cost on the seal is "About 45 calls"; the manual round's cost note is in "Manual round".
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/82
