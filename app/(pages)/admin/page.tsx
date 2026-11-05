@@ -9,7 +9,12 @@ import { requestClock, requestLocale } from "@/app/_ui/locale";
 import { copy, fill } from "@/lib/copy";
 import { getEnv, type Env } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
-import { latestQuota, latestRehearsal, type RehearsalStatus } from "@/lib/queries/admin";
+import {
+  latestManualEvent,
+  latestQuota,
+  latestRehearsal,
+  type RehearsalStatus,
+} from "@/lib/queries/admin";
 import { currentEvent, lastOccurrence, nextEvent } from "@/lib/schedule";
 
 const t = copy.admin;
@@ -88,9 +93,13 @@ export default async function AdminPage() {
   const now = new Date();
   const next = nextEvent(now, env);
   const current = currentEvent(now, env);
-  const [[rehearsal, quota], clock] = await Promise.all([
+  const [[rehearsal, quota, manual], clock] = await Promise.all([
     withPageDb((db) =>
-      Promise.all([latestRehearsal(db, env.SNAPSHOT_WINDOW_MIN), latestQuota(db)]),
+      Promise.all([
+        latestRehearsal(db, env.SNAPSHOT_WINDOW_MIN),
+        latestQuota(db),
+        latestManualEvent(db),
+      ]),
     ),
     requestClock(),
   ]);
@@ -126,7 +135,7 @@ export default async function AdminPage() {
       <h2 className="mb-2 font-subhead text-display-md font-semibold">{t.run.title}</h2>
       <p className="text-sm">{fill(t.run.event, { event: clock.stamp(current.eventAtUtc) })}</p>
       <p className={`mb-3 text-sm ${MUTED}`}>{t.run.costs}</p>
-      <AdminActions beforeAtText={clock.stamp(current.beforeAt)} />
+      <AdminActions beforeAtText={clock.stamp(current.beforeAt)} manual={manual} />
       <h2 className="mb-2 mt-8 font-subhead text-display-md font-semibold">{t.rehearsal.title}</h2>
       <Rehearsal r={rehearsal} clock={clock} />
     </AdminShell>

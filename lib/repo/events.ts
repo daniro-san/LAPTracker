@@ -3,9 +3,11 @@
 import { and, eq, gt, isNull, lte, or } from "drizzle-orm";
 
 import type { Db } from "../db";
-import { events } from "../schema";
+import { events, snapshots } from "../schema";
 import type { EventRow, Phase } from "./index";
 import { findSnapshot } from "./snapshots";
+
+export type ManualVisibility = "admin" | "standalone" | "history";
 
 export async function getEvent(db: Db, eventId: number): Promise<EventRow | null> {
   const [row] = await db
@@ -23,6 +25,10 @@ export async function setEventAllianceIds(db: Db, eventId: number, ids: number[]
 export interface EventInfo {
   id: number;
   isTest: boolean;
+  /** D28: a manual event is run only by the admin buttons and has no schedule. */
+  manual: boolean;
+  /** Manual rounds: post the public Discord message when a run finishes. */
+  postPublic: boolean;
   beforeAt: Date;
   afterAt: Date;
 }
@@ -30,6 +36,8 @@ export interface EventInfo {
 const infoColumns = {
   id: events.id,
   isTest: events.isTest,
+  manual: events.manual,
+  postPublic: events.postPublic,
   beforeAt: events.beforeAt,
   afterAt: events.afterAt,
 };
@@ -58,6 +66,56 @@ export async function findOrCreateEvent(db: Db, event: NewEvent): Promise<EventI
   return row;
 }
 
+export async function getEventInfo(db: Db, eventId: number): Promise<EventInfo | null> {
+  const [row] = await db.select(infoColumns).from(events).where(eq(events.id, eventId));
+  return row ?? null;
+}
+
+/** A public event with no schedule: both phase times are its creation time, so nothing is "not due". */
+export async function createManualEvent(db: Db, name: string, now: Date): Promise<EventInfo> {
+  const [row] = await db
+    .insert(events)
+    .values({ name, eventAtUtc: now, beforeAt: now, afterAt: now, allianceIds: [], manual: true })
+    .returning(infoColumns);
+  if (!row) throw new Error("manual event row missing after insert");
+  return row;
+}
+
+/** D28 controls of a manual round. "admin" and a public Discord post cannot go together. */
+export async function setManualSettings(
+  db: Db,
+  eventId: number,
+  change: { visibility?: ManualVisibility; postPublic?: boolean },
+): Promise<"ok" | "not-found" | "admin-cannot-post"> {
+  const [row] = await db
+    .select({ visibility: events.visibility, postPublic: events.postPublic })
+    .from(events)
+    .where(and(eq(events.id, eventId), eq(events.manual, true)));
+  if (!row) return "not-found";
+  const next = { ...row, ...change };
+  if (next.visibility === "admin" && next.postPublic) return "admin-cannot-post";
+  await db.update(events).set(next).where(eq(events.id, eventId));
+  return "ok";
+}
+
+/** Renames a manual event once a snapshot of it exists (D28); the result says why not otherwise. */
+export async function renameManualEvent(
+  db: Db,
+  eventId: number,
+  name: string,
+): Promise<"ok" | "not-found" | "no-snapshot"> {
+  const event = await getEventInfo(db, eventId);
+  if (!event?.manual) return "not-found";
+  const [any] = await db
+    .select({ id: snapshots.id })
+    .from(snapshots)
+    .where(eq(snapshots.eventId, eventId))
+    .limit(1);
+  if (!any) return "no-snapshot";
+  await db.update(events).set({ name }).where(eq(events.id, eventId));
+  return "ok";
+}
+
 export interface DuePhase {
   event: EventInfo;
   phase: Phase;
@@ -74,7 +132,8 @@ export async function duePhases(db: Db, now: Date, windowMs: number): Promise<Du
   const rows = await db
     .select(infoColumns)
     .from(events)
-    .where(or(open(events.beforeAt), open(events.afterAt)));
+    // INVARIANT tick.skips-manual: a manual event is never run by the tick (D28).
+    .where(and(eq(events.manual, false), or(open(events.beforeAt), open(events.afterAt))));
   const candidates = rows.flatMap((event) =>
     (["before", "after"] as const)
       .map((phase) => ({ event, phase, at: phase === "before" ? event.beforeAt : event.afterAt }))

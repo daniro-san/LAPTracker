@@ -33,6 +33,15 @@ export const events = pgTable(
     // INVARIANT event.after-uses-event-copy: written by the BEFORE run, read by the AFTER run.
     allianceIds: big("alliance_ids").array().notNull(),
     isTest: boolean("is_test").notNull().default(false),
+    // D28: created from /admin, run only by its buttons; the tick and the delta chains skip it.
+    manual: boolean("manual").notNull().default(false),
+    // Manual rounds only (D28): "admin" never public, "standalone" public but outside the
+    // comparison chains, "history" public and part of them. Real events keep the default.
+    visibility: text("visibility", { enum: ["admin", "standalone", "history"] })
+      .notNull()
+      .default("standalone"),
+    // Manual rounds only: post the public Discord message when a run finishes.
+    postPublic: boolean("post_public").notNull().default(false),
     createdAt: tstz("created_at").notNull().defaultNow(),
     // When each phase is due (plan §3.1). Saturdays: SNAPSHOT_BEFORE/AFTER in SERVER_TZ;
     // rehearsals: created + 15 / + 45 min. The tick reads these, not the env.

@@ -6,6 +6,7 @@ import { rosterDiff, seriesDeltas, type SeriesStep } from "../compute";
 import type { Db } from "../db";
 import { allianceSnapshots, events, memberSnapshots, snapshots } from "../schema";
 import { historyRanks, type Ranks } from "./ranks";
+import { chainEvent, publicEvent } from "./visibility";
 
 export interface AllianceRow {
   id: number;
@@ -76,9 +77,7 @@ export async function getAllianceDetail(db: Db, eventId: number, unionId: number
     .from(allianceSnapshots)
     .innerJoin(snapshots, eq(snapshots.id, allianceSnapshots.snapshotId))
     .innerJoin(events, eq(events.id, snapshots.eventId))
-    .where(
-      and(eq(events.id, eventId), eq(events.isTest, false), eq(allianceSnapshots.unionId, unionId)),
-    );
+    .where(and(eq(events.id, eventId), publicEvent, eq(allianceSnapshots.unionId, unionId)));
   if (rows.length === 0) return null;
   const alliances = rows.map(toRow);
   const members = await membersOf(
@@ -150,7 +149,7 @@ export async function allianceHistory(db: Db, unionId: number): Promise<HistoryR
     .from(allianceSnapshots)
     .innerJoin(snapshots, eq(snapshots.id, allianceSnapshots.snapshotId))
     .innerJoin(events, eq(events.id, snapshots.eventId))
-    .where(and(eq(allianceSnapshots.unionId, unionId), eq(events.isTest, false)))
+    .where(and(eq(allianceSnapshots.unionId, unionId), chainEvent))
     .orderBy(asc(events.eventAtUtc));
   const meta = new Map(found.map((r) => [r.eventId, r]));
   const picked = pickReferences(

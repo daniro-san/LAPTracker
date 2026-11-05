@@ -7,6 +7,36 @@ import { rehearsalVerdict, type Verdict } from "../rehearsal";
 import { loadVerdictInput } from "../repo/rehearsals";
 import { allianceSnapshots, appErrors, events, runLogs, snapshots } from "../schema";
 
+export interface ManualEventStatus {
+  id: number;
+  name: string;
+  visibility: "admin" | "standalone" | "history";
+  postPublic: boolean;
+  /** One entry per phase that has a snapshot; the name can be edited once there is one. */
+  phases: { phase: "before" | "after"; status: string }[];
+}
+
+/** The newest manual event (D28) and the state of its two phases; null when none was created. */
+export async function latestManualEvent(db: Db): Promise<ManualEventStatus | null> {
+  const [event] = await db
+    .select({
+      id: events.id,
+      name: events.name,
+      visibility: events.visibility,
+      postPublic: events.postPublic,
+    })
+    .from(events)
+    .where(eq(events.manual, true))
+    .orderBy(desc(events.id))
+    .limit(1);
+  if (!event) return null;
+  const phases = await db
+    .select({ phase: snapshots.phase, status: snapshots.status })
+    .from(snapshots)
+    .where(eq(snapshots.eventId, event.id));
+  return { ...event, phases };
+}
+
 export async function listRuns(db: Db, limit = 60) {
   return db
     .select({

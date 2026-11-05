@@ -11,11 +11,11 @@ import { ThemeSwitch } from "@/lib/brand/components/ThemeSwitch";
 import { copy } from "@/lib/copy";
 
 import { Disclosure } from "./Disclosure";
+import { EventLabel, type LabeledEvent } from "./EventLabel";
 import type { Clock } from "./format";
 
-export interface SelectorEvent {
+export interface SelectorEvent extends LabeledEvent {
   id: number;
-  eventAtUtc: Date;
 }
 
 /** Plum-header controls: in the soft drawn frame (paper ink), a paper tint on hover, deeper while
@@ -38,7 +38,7 @@ function EventSelector({
       <summary
         className={`flex min-h-11 cursor-pointer items-center gap-1 px-3 text-sm drawn-frame-soft font-medium group-open:bg-paper/20 [&::-webkit-details-marker]:hidden ${CONTROL}`}
       >
-        {current ? clock.weekday(current.eventAtUtc) : copy.site.events}{" "}
+        {current ? <EventLabel event={current} clock={clock} /> : copy.site.events}{" "}
         <span
           aria-hidden="true"
           className="transition-transform duration-150 group-open:rotate-180 motion-reduce:transition-none"
@@ -54,7 +54,7 @@ function EventSelector({
               aria-current={e.id === currentId ? "page" : undefined}
               className="flex min-h-11 items-center px-3 text-sm transition-colors duration-150 hover:bg-plum/15 aria-[current=page]:bg-plum/10 aria-[current=page]:font-semibold motion-reduce:transition-none"
             >
-              {clock.weekday(e.eventAtUtc)}
+              <EventLabel event={e} clock={clock} />
               {i === 0 && <span className="ml-2 text-xs text-ink/70">{copy.site.latest}</span>}
             </Link>
           </li>

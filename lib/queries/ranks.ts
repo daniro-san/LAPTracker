@@ -6,6 +6,7 @@ import { eq } from "drizzle-orm";
 import { rankBy } from "../compute";
 import type { Db } from "../db";
 import { allianceSnapshots, events, snapshots } from "../schema";
+import { chainEvent } from "./visibility";
 
 export interface Ranks {
   might: number | null;
@@ -67,7 +68,7 @@ export async function historyRanks(db: Db): Promise<Map<number, Map<number, Rank
     .from(allianceSnapshots)
     .innerJoin(snapshots, eq(snapshots.id, allianceSnapshots.snapshotId))
     .innerJoin(events, eq(events.id, snapshots.eventId))
-    .where(eq(events.isTest, false));
+    .where(chainEvent);
   const references = new Map<number, Map<number, (typeof rows)[number]>>();
   for (const r of rows) {
     if (r.error !== null || r.power === null) continue;

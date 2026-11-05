@@ -19,6 +19,7 @@ const source = {
     exactNumbers: "Exact numbers",
     events: "Events",
     latest: "latest",
+    manualRound: "Manual round",
     breadcrumb: "Breadcrumb",
     home: "Ledger",
   },
@@ -63,6 +64,12 @@ const source = {
     none: "Not updated yet",
     next: "Next update at {time}",
     stale: "{n} stale",
+  },
+  /** The banner shown while the game's data service does not answer (DECISIONS D27). */
+  upstream: {
+    title: "Game data is delayed",
+    body: "The data service is not answering, so these numbers may be out of date.",
+    lastFresh: "Last fresh data at {time}",
   },
   fresh: {
     fresh: "Fresh",

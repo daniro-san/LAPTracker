@@ -14,6 +14,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path[:0] = [HERE, os.path.join(HERE, "examples")]
 
+import discord  # noqa: E402
 import frame  # noqa: E402
 import granny  # noqa: E402
 import mark  # noqa: E402
@@ -41,6 +42,8 @@ DRAWINGS = {
     "granny-standing": granny.standing,
     "granny-tea": granny.tea,
     "granny-ledger": granny.ledger,
+    "discord-scout": discord.scout,
+    "discord-admin": discord.admin,
     "frame": lambda: frame.frame(W * 0.9, W * 1.08),
     "frame-soft": lambda: frame.frame(W * K * 0.9, W * K * 1.08),
 }

@@ -61,6 +61,10 @@ export const adminCopy = {
       "✓ {phase} {status}: {calls} calls, {stale} stale, {failed} failed (not fetched included). Snapshot {id}.",
     refusals: {
       snapshot_running: "A run is already in progress.",
+      event_not_found: "That manual event no longer exists.",
+      bad_request: "Type a name of up to 80 characters.",
+      admin_cannot_post: "An admin-only round cannot post to the public channel.",
+      rename_before_run: "Take the before snapshot first, then rename.",
       rehearsal_pending: "A rehearsal is already pending.",
       rehearsal_event_day: "Not on the event day or the day after.",
       rehearsal_before_real: "Too close to the real before snapshot (within 3 hours).",
@@ -69,6 +73,42 @@ export const adminCopy = {
       pin_locked: "PIN entry is locked for an hour.",
       unauthorized: "Wrong PIN. Reload and enter it again.",
     } as Record<string, string>,
+  },
+  manual: {
+    title: "Manual event",
+    help: "A round you run yourself: a Before snapshot and an After snapshot, on any days and at any hours you choose. It is public on its own page by default, has no schedule and does not post to Discord unless you turn that on.",
+    cost: "Each snapshot costs about 21 of today's 1,000 API calls.",
+    nameLabel: "Round name",
+    create: "Start a manual round",
+    confirmCreate:
+      "Start a new manual round? It is public on the site as soon as a snapshot exists.",
+    rename: "Rename",
+    confirmRename: "Rename the round? The new name shows on the public pages.",
+    renameLater: "You can rename the round after its before snapshot has run.",
+    renamed: "✓ Round renamed.",
+    saved: "✓ Saved.",
+    visibilityLabel: "Who can see this round",
+    visibility: {
+      admin: "Only me (admin)",
+      standalone: "Public, on its own page",
+      history: "Public, and part of the history",
+    },
+    visibilityHelp:
+      "Part of the history means Saturday's “since the last event” changes compare against this round. Public on its own page does not.",
+    confirmVisibility: "Change who can see this round? It applies to the public pages at once.",
+    postLabel: "Post to the public Discord channel when a snapshot finishes",
+    postOff: "Not available while the round is only for admins.",
+    confirmPost: "Change the public Discord setting for this round?",
+    none: "No manual event yet.",
+    current: "Current manual event: {name}",
+    phase: "{phase}: {state}",
+    notRun: "not run",
+    open: "Open on the site",
+    confirmBefore:
+      "Take the before snapshot of the manual event now? About 21 of today's 1,000 API calls, up to a minute.",
+    confirmAfter:
+      "Take the after snapshot of the manual event now? About 21 of today's 1,000 API calls, up to a minute.",
+    created: "✓ Manual round started. Take its snapshots below.",
   },
   rehearsal: {
     title: "Last rehearsal",
