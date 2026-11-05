@@ -61,6 +61,7 @@ async function finaliseCrashed(
       ...summary,
       finishedAt,
       quotaRemainingBefore: null,
+      quotaUnseenCalls: 0,
       boardPulledAt: null,
     });
   } catch {

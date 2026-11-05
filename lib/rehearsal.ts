@@ -157,11 +157,18 @@ export function rehearsalVerdict(input: VerdictInput, windowMin: number): Verdic
     (p) => p.status === "complete",
     (p) => p.status,
   );
+  // Attempts after the last quota-bearing response are not in the drop; the run counts them.
+  const accounted = (p: VerdictPhase) => {
+    const spent = quotaSpent(p);
+    return spent === null ? null : spent + p.quotaUnseenCalls;
+  };
   const quota = perPhase(
     both,
-    (p) => quotaSpent(p) === p.callsUsed,
+    (p) => accounted(p) === p.callsUsed,
     (p) =>
-      `${p.callsUsed} ${quotaSpent(p) === p.callsUsed ? "=" : "≠"} ${quotaSpent(p) ?? "unknown"}`,
+      `${p.callsUsed} ${accounted(p) === p.callsUsed ? "=" : "≠"} ${quotaSpent(p) ?? "unknown"}${
+        p.quotaUnseenCalls > 0 ? ` + ${p.quotaUnseenCalls} without quota` : ""
+      }`,
   );
   const fast = perPhase(
     both,

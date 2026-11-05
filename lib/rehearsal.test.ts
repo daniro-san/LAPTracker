@@ -17,6 +17,7 @@ function phase(scheduledAt: Date, overrides: Partial<VerdictPhase> = {}): Verdic
     callsUsed: 4,
     quotaRemainingBefore: 900,
     quotaRemainingAfter: 897,
+    quotaUnseenCalls: 0,
     durationMs: 15_000,
     alliances: [1, 2, 3].map((unionId) => ({
       unionId,
@@ -67,5 +68,22 @@ describe("rehearsalVerdict", () => {
     expect(verdict.lines.filter((l) => !l.ok).map((l) => l.text)).toEqual([
       "calls used ≠ quota drop: after 4 ≠ 6",
     ]);
+  });
+
+  it("passes when calls_used equals the quota drop plus the attempts that returned no quota", () => {
+    // The last alliance's /v1 attempt failed (503, no quota) and the internal fallback filled it.
+    const after = phase(AFTER_AT, {
+      callsUsed: 21,
+      quotaRemainingBefore: 900,
+      quotaRemainingAfter: 881,
+      quotaUnseenCalls: 1,
+    });
+
+    const verdict = rehearsalVerdict({ before: phase(BEFORE_AT), after }, 45);
+
+    expect(verdict.pass).toBe(true);
+    expect(verdict.lines.map((l) => l.text)).toContain(
+      "calls used = quota drop (before 4 = 4, after 21 = 20 + 1 without quota)",
+    );
   });
 });

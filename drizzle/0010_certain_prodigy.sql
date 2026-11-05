@@ -1,0 +1,1 @@
+ALTER TABLE "snapshots" ADD COLUMN "quota_unseen_calls" integer DEFAULT 0 NOT NULL;

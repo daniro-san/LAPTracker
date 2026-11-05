@@ -65,6 +65,8 @@ export interface SnapshotResult {
   /** The quota check's `remaining`; null when the check failed. */
   quotaRemainingBefore: number | null;
   quotaRemainingAfter: number | null;
+  /** Attempts after the one that gave quotaRemainingAfter; overwritten like the quota columns. */
+  quotaUnseenCalls: number;
   boardPulledAt: Date | null;
   error: string | null;
   durationMs: number;
