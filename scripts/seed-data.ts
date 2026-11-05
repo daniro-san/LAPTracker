@@ -68,24 +68,43 @@ export interface Roster {
   members: BaseMember[];
 }
 
+/** A member's power and kills at a snapshot: drifting up with the step. */
+const drifted = (m: BaseMember, step: number): BaseMember => ({
+  ...m,
+  power: Math.round(m.power * (0.9 + 0.02 * step + 0.01 * noise(m.uid, step))),
+  kills: Math.round(m.kills * (0.86 + 0.03 * step + 0.01 * noise(m.uid, step + 9))),
+});
+
+/** The first member of alliance 5 moves to alliance 6 during event 1 and stays there. */
+function applyMove(
+  base: BaseAlliance[],
+  index: number,
+  members: BaseMember[],
+  moved: boolean,
+  step: number,
+): BaseMember[] {
+  if (!moved) return members;
+  if (index === 5) return members.slice(1);
+  if (index !== 6) return members;
+  return [...members, drifted((base[5] as BaseAlliance).members[0] as BaseMember, step)];
+}
+
 /** Members with power and kills drifting up per snapshot; the scripted changes are applied on top. */
 export function rosterAt(base: BaseAlliance[], index: number, event: number, phase: Phase): Roster {
   const a = base[index] as BaseAlliance;
   const step = phaseIndex(event, phase);
-  let members = a.members.map((m) => ({
-    ...m,
-    power: Math.round(m.power * (0.9 + 0.02 * step + 0.01 * noise(m.uid, step))),
-    kills: Math.round(m.kills * (0.86 + 0.03 * step + 0.01 * noise(m.uid, step + 9))),
-  }));
+  let members = a.members.map((m) => drifted(m, step));
   let { tag, name } = a;
   if (index === 1 && event === 0) [tag, name] = ["OLD", "Seed Former Name"]; // renamed alliance; fake on purpose
   const last = event === 2 && phase === "after";
   if (index === 3 && last) members = members.slice(2); // two members leave: kills fall
-  if (index === 5 && last) members = members.slice(1); // this one moves to alliance 6
-  if (index === 6 && last) {
-    const mover = (base[5] as BaseAlliance).members[0] as BaseMember;
-    members = [...members, { ...mover, power: mover.power, kills: mover.kills }];
-  }
+  members = applyMove(
+    base,
+    index,
+    members,
+    event === 2 || (event === 1 && phase === "after"),
+    step,
+  );
   if (index === 7 && last) {
     members = members.map((m, i) => (i === 3 ? { ...m, name: `${m.name} ★` } : m)); // renamed member
   }

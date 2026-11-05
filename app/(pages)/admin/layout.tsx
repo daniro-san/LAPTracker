@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 export const metadata: Metadata = {
-  title: "Admin · LAPTracker",
+  title: "Admin · OG's LAP Tracker",
   robots: { index: false, follow: false },
 };
 

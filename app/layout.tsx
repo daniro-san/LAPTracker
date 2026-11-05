@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "LAPTracker",
+  title: "OG's LAP Tracker",
   description: "Saturday event snapshots for server 325 alliances.",
 };
 
