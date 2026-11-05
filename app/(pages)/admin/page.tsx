@@ -53,10 +53,15 @@ function Rehearsal({ r, clock }: { r: RehearsalStatus | null; clock: Clock }) {
   if (!r) return <p className={MUTED}>{t.rehearsal.none}</p>;
   return (
     <div>
+      {r.verdict && (
+        <p className="text-lg font-semibold">
+          {r.verdict.pass ? t.rehearsal.pass : t.rehearsal.fail}
+        </p>
+      )}
       <p className="break-words font-medium">
         {t.runs.rehearsal} {clock.stamp(r.eventAtUtc)}
       </p>
-      <ul className="mb-2 text-sm">
+      <ul className="mb-3 text-sm">
         {(["before", "after"] as const).map((phase) => {
           const p = r.phases.find((x) => x.phase === phase);
           return (
@@ -74,10 +79,10 @@ function Rehearsal({ r, clock }: { r: RehearsalStatus | null; clock: Clock }) {
       </ul>
       {r.verdict && (
         <>
-          <p className="font-semibold">{r.verdict.pass ? t.rehearsal.pass : t.rehearsal.fail}</p>
+          <h3 className="mb-1 text-sm font-semibold">{t.rehearsal.checks}</h3>
           <ul className="text-sm">
             {r.verdict.lines.map((l) => (
-              <li key={l.text}>
+              <li key={l.text} className="border-b border-rule py-1">
                 {l.ok ? "✓" : "✗"} {l.text}
               </li>
             ))}
@@ -106,8 +111,22 @@ export default async function AdminPage() {
   const s = t.schedule;
   return (
     <AdminShell title={t.title}>
-      <h2 className="mb-1 font-subhead text-display-md font-semibold">{s.title}</h2>
-      <dl className="mb-6">
+      <h2 className="mb-1 font-subhead text-display-md font-semibold">{t.quota.title}</h2>
+      <p>
+        {quota?.remaining != null
+          ? fill(t.quota.left, { n: quota.remaining, at: clock.stamp(quota.at) })
+          : t.quota.none}
+      </p>
+      <h2 className="mb-1 mt-10 font-subhead text-display-md font-semibold">{t.run.title}</h2>
+      <p className={`text-sm ${MUTED}`}>{t.run.intro}</p>
+      <p className="text-sm">{fill(t.run.event, { event: clock.stamp(current.eventAtUtc) })}</p>
+      <AdminActions beforeAtText={clock.stamp(current.beforeAt)} manual={manual} />
+      <h2 className="mb-1 mt-10 font-subhead text-display-md font-semibold">{t.rehearsal.title}</h2>
+      <p className={`mb-2 text-sm ${MUTED}`}>{t.rehearsal.help}</p>
+      <Rehearsal r={rehearsal} clock={clock} />
+      <h2 className="mb-1 mt-10 font-subhead text-display-md font-semibold">{s.title}</h2>
+      <p className={`mb-2 text-sm ${MUTED}`}>{s.help}</p>
+      <dl>
         <Row label={s.timeZone} value={env.SERVER_TZ} />
         <Row label={s.nextEvent} value={clock.stamp(next.eventAtUtc)} />
         <Row label={phaseWord("before")} value={clock.stamp(next.beforeAt)} />
@@ -126,18 +145,6 @@ export default async function AdminPage() {
           }
         />
       </dl>
-      <h2 className="mb-1 font-subhead text-display-md font-semibold">{t.quota.title}</h2>
-      <p className="mb-6">
-        {quota?.remaining != null
-          ? `${fill(t.quota.left, { n: quota.remaining })} (${clock.stamp(quota.at)})`
-          : t.quota.none}
-      </p>
-      <h2 className="mb-2 font-subhead text-display-md font-semibold">{t.run.title}</h2>
-      <p className={`text-sm ${MUTED}`}>{t.run.intro}</p>
-      <p className="text-sm">{fill(t.run.event, { event: clock.stamp(current.eventAtUtc) })}</p>
-      <AdminActions beforeAtText={clock.stamp(current.beforeAt)} manual={manual} />
-      <h2 className="mb-2 mt-8 font-subhead text-display-md font-semibold">{t.rehearsal.title}</h2>
-      <Rehearsal r={rehearsal} clock={clock} />
     </AdminShell>
   );
 }

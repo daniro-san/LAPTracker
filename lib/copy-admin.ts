@@ -21,7 +21,8 @@ export const adminCopy = {
   /** Run states use the public pages' words (copy.status), plus the one only admin sees. */
   running: "running",
   schedule: {
-    title: "When snapshots are taken",
+    title: "Schedule",
+    help: "When the scheduler takes the real snapshots. Read-only: set in the environment.",
     timeZone: "Server time zone",
     nextEvent: "Next event",
     grace: "Grace window",
@@ -33,8 +34,8 @@ export const adminCopy = {
     rehearsalsValue: "{at} · keeping the last {keep}",
   },
   quota: {
-    title: "Data requests",
-    left: "Requests left today after the last run: {n}",
+    title: "API calls left today",
+    left: "{n} of 1,000 left after the last run ({at})",
     none: "No run has reported the quota yet.",
   },
   run: {
@@ -61,7 +62,7 @@ export const adminCopy = {
     refused: "Refused: {code}.",
     created: "✓ Rehearsal created. The next ticks run it.",
     result:
-      "✓ {phase} {status}: {calls} calls, {stale} stale, {failed} failed (not fetched included). Snapshot {id}.",
+      "{mark} {phase} {status}. API calls used: {calls}. Stale: {stale}. Failed: {failed}. Snapshot {id}.",
     refusals: {
       snapshot_running: "A run is already in progress.",
       event_not_found: "That manual event no longer exists.",
@@ -133,7 +134,9 @@ export const adminCopy = {
   rehearsal: {
     title: "Last rehearsal",
     none: "No rehearsal yet. Use “Rehearse” to run one.",
-    phase: "{phase}: {state} · due {at}",
+    help: "The result of the last practice run, so you can trust the real one.",
+    checks: "Checks",
+    phase: "{phase}: {state} (due {at})",
     notRun: "not run",
     pass: "✓ Pass",
     fail: "✗ Fail",
@@ -141,10 +144,11 @@ export const adminCopy = {
   runs: {
     title: "Snapshot runs",
     none: "No snapshot runs yet.",
+    help: "Newest first. Open a run to see its log.",
     started: "started {at}",
     finished: "finished {at}",
-    calls: "{n} calls",
-    quotaLeft: "{n} requests left",
+    calls: "API calls: {n}",
+    quotaLeft: "{n} left today",
     seconds: "{n} s",
     rehearsal: "[rehearsal]",
     run: "Run {id}",

@@ -208,6 +208,15 @@ export function AdminActions({
 
   return (
     <div>
+      {message && (
+        <p
+          ref={(el) => el?.scrollIntoView({ block: "nearest" })}
+          role="status"
+          className="drawn-frame-soft mt-3 break-words p-3"
+        >
+          {message}
+        </p>
+      )}
       <SnapshotsGroup seals={SNAPSHOTS.map(seal)} />
       <ManualSection
         manual={manual}
@@ -216,11 +225,6 @@ export function AdminActions({
         onCreate={(options) => void start(createRound(options))}
         onSave={(id, change) => void start(saveRound(id, change))}
       />
-      {message && (
-        <p role="status" className="mt-3 break-words text-sm">
-          {message}
-        </p>
-      )}
       {asking && <ConfirmSheet text={asking.text} onAnswer={answer} />}
       {pending && (
         <PinSheet
@@ -254,6 +258,8 @@ function manualOutcome(body: Record<string, unknown>): string | null {
   return body.name === undefined ? m.saved : m.renamed;
 }
 
+const RESULT_MARK: Record<string, string> = { complete: "✓", partial: "!" };
+
 function describe(status: number, body: Record<string, unknown>, beforeAtText: string): string {
   const code = typeof body.code === "string" ? body.code : null;
   if (code === "snapshot_not_due") return fill(t.notDue, { at: beforeAtText });
@@ -262,8 +268,14 @@ function describe(status: number, body: Record<string, unknown>, beforeAtText: s
   if (status === 201) return body.event_id === undefined ? t.created : m.created;
   const manual = manualOutcome(body);
   if (manual) return manual;
+  return snapshotResult(body);
+}
+
+/** The finished snapshot's outcome in words. */
+function snapshotResult(body: Record<string, unknown>): string {
   const count = (v: unknown) => (Array.isArray(v) ? v.length : 0);
   return fill(t.result, {
+    mark: RESULT_MARK[String(body.status)] ?? "✗",
     phase: body.phase === "before" || body.phase === "after" ? phaseWord(body.phase) : "",
     status: stateWord(String(body.status)),
     calls: String(body.calls_used),
