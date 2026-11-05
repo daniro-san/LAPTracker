@@ -32,3 +32,5 @@ Plan changes needed: none.
 - The Session 9 text says "tap **Rehearse now**"; the button is labelled "Rehearse" (accessible name unchanged by this PR).
 - Do not trigger either snapshot by hand in Session 9; the new helpers describe them as a fallback.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/43
