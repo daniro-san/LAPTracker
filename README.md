@@ -2,8 +2,6 @@
 
 Snapshots of the 20 top alliances on Last Asylum Plague server 325, taken 1 hour before and 1 hour after the weekly Saturday event: might and kills before, after and the delta. Every snapshot is kept forever. The data comes from the documented API of lastasylumtracker.com. Spec: [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md).
 
-Status: scaffold (Session 1 of [docs/SESSION_PLAYBOOK.md](docs/SESSION_PLAYBOOK.md)). Nothing collects data yet.
-
 ## Setup
 
 Requires Node 26 (`.nvmrc`) and pnpm 12 (pinned in `packageManager`). Accounts and secrets are in [docs/PREREQUISITES.md](docs/PREREQUISITES.md).
@@ -20,6 +18,30 @@ Pre-commit needs [gitleaks](https://github.com/gitleaks/gitleaks) on PATH (`brew
 ## Environment variables
 
 The app's variables are listed in [.env.example](.env.example) and validated by `lib/env.ts` when the server starts. A bad or missing value stops the server with the key names (never the values). Required: `LAP_API_KEY`, `DATABASE_URL`, `CRON_SECRET`, `EDIT_PIN`, and the schedule (`SERVER_TZ`, `EVENT_WEEKDAY`, `EVENT_TIME`, `SNAPSHOT_BEFORE`, `SNAPSHOT_AFTER`, `SNAPSHOT_WINDOW_MIN`, `QUOTA_CHECK_AT`). Optional: `NOTIFY_WEBHOOK_PUBLIC`, `NOTIFY_WEBHOOK_ADMIN`, `NOTIFY_ADMIN_MENTION`, and `LAP_LIVE_TEST` (opt-in live smoke test, not in .env.example). `APP_URL` and `ENABLE_EXPERIMENTAL_COREPACK` are deploy settings, not read by the app.
+
+## Deploy and operate
+
+Production is Vercel (branch `main`), the database is Neon, and the scheduler is GitHub Actions. Details: [plan §3.1 and §11.6](docs/IMPLEMENTATION_PLAN.md).
+
+**Deploy.** Work lands on `dev` through squash-merged PRs. A release is a PR `dev → main` titled `release: vX.Y.Z`, merged with a merge commit. Vercel builds `main` as production; its build command (`vercel.json`) runs `pnpm db:migrate` first, so migrations apply on every deploy. Tag the release: `gh release create vX.Y.Z --target main --generate-notes`. Preview deployments (`dev`, PRs) use Preview-scoped env vars (own database branch, own secrets, no `NOTIFY_*`) and sit behind Vercel Authentication.
+
+**GitHub repository secrets.** `APP_URL` (the production origin, no trailing slash) and `CRON_SECRET` (must equal the Production value in Vercel).
+
+**Workflows.**
+
+- `tick.yml` calls `POST /api/tick` every 15 minutes. All scheduling decisions live in the app. Do not add retries.
+- `keepalive.yml` pushes a timestamp to the `keepalive` branch monthly, so GitHub does not disable the schedule after 60 days without activity. Vercel never builds that branch.
+- `dependabot-automerge.yml` squash-merges Dependabot minor/patch PRs into `dev` once CI is green. Majors wait for a human.
+
+**Change the alliance list.** Edit `config/alliances.ts` and release. An event already created keeps its own copy of the list.
+
+**Change snapshot times.** Edit `SNAPSHOT_BEFORE`, `SNAPSHOT_AFTER`, `EVENT_TIME`, `SNAPSHOT_WINDOW_MIN` or `QUOTA_CHECK_AT` (server time) in Vercel's Production env vars, then redeploy. A Saturday row is created a day ahead and keeps its times, so a change applies from the next event row.
+
+**Rotate the API key or the PIN.** Change `LAP_API_KEY` or `EDIT_PIN` in Vercel Production, redeploy, and update the copy in `.env.local`. For `CRON_SECRET`, change it in Vercel **and** in the GitHub secret, then redeploy. Never paste any of them into a PR, issue or chat.
+
+**Run a snapshot by hand.** On `/admin`, enter the PIN and use the Before or After seal (a confirm dialog opens). From GitHub: Actions → tick → Run workflow → pick `before` or `after`. Either spends about 21 API calls. A run that already completed is refused (409).
+
+**Rehearse.** The Rehearse seal on `/admin` starts a test event (about 45 calls over about 50 minutes) that the normal ticks run; the verdict goes to the admin Discord channel. A rehearsal also runs by itself at `REHEARSAL_AT`.
 
 ## Scripts
 

@@ -1,0 +1,35 @@
+# The scheduler (plan §3.1): one curl every 15 minutes. All logic lives in /api/tick; no times here.
+# Manual run: phase "tick" calls /api/tick, "before" / "after" call /api/snapshot directly.
+name: tick
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+    inputs:
+      phase:
+        description: tick, or run a snapshot phase now
+        type: choice
+        options: [tick, before, after]
+        default: tick
+
+permissions: {}
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Call the app
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          PHASE: ${{ inputs.phase || 'tick' }}
+        run: |
+          if [ "$PHASE" = "tick" ]; then
+            path="/api/tick"
+          else
+            path="/api/snapshot?phase=$PHASE"
+          fi
+          curl --fail --max-time 150 -X POST -o /dev/null -w "$path -> HTTP %{http_code} in %{time_total}s\n" \
+            -H "Authorization: Bearer $CRON_SECRET" "$APP_URL$path"
