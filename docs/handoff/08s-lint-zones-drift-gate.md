@@ -70,4 +70,4 @@ Plan changes needed: none. (Plan §11.2 still says `lib/schedule` imports nothin
 - The dependency rule is linted (D34): a page or `app/_ui` file that needs data adds a function to `lib/queries`, not an import of `lib/repo`.
 </adjustments>
 
-PR_URL
+https://github.com/daniro-san/LAPTracker/pull/104
