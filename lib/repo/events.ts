@@ -7,6 +7,8 @@ import { events, snapshots } from "../schema";
 import type { EventRow, Phase } from "./index";
 import { findSnapshot } from "./snapshots";
 
+export type ManualVisibility = "admin" | "standalone" | "history";
+
 export async function getEvent(db: Db, eventId: number): Promise<EventRow | null> {
   const [row] = await db
     .select({ id: events.id, allianceIds: events.allianceIds })
@@ -25,6 +27,8 @@ export interface EventInfo {
   isTest: boolean;
   /** D28: a manual event is run only by the admin buttons and has no schedule. */
   manual: boolean;
+  /** Manual rounds: post the public Discord message when a run finishes. */
+  postPublic: boolean;
   beforeAt: Date;
   afterAt: Date;
 }
@@ -33,6 +37,7 @@ const infoColumns = {
   id: events.id,
   isTest: events.isTest,
   manual: events.manual,
+  postPublic: events.postPublic,
   beforeAt: events.beforeAt,
   afterAt: events.afterAt,
 };
@@ -74,6 +79,23 @@ export async function createManualEvent(db: Db, name: string, now: Date): Promis
     .returning(infoColumns);
   if (!row) throw new Error("manual event row missing after insert");
   return row;
+}
+
+/** D28 controls of a manual round. "admin" and a public Discord post cannot go together. */
+export async function setManualSettings(
+  db: Db,
+  eventId: number,
+  change: { visibility?: ManualVisibility; postPublic?: boolean },
+): Promise<"ok" | "not-found" | "admin-cannot-post"> {
+  const [row] = await db
+    .select({ visibility: events.visibility, postPublic: events.postPublic })
+    .from(events)
+    .where(and(eq(events.id, eventId), eq(events.manual, true)));
+  if (!row) return "not-found";
+  const next = { ...row, ...change };
+  if (next.visibility === "admin" && next.postPublic) return "admin-cannot-post";
+  await db.update(events).set(next).where(eq(events.id, eventId));
+  return "ok";
 }
 
 /** Renames a manual event once a snapshot of it exists (D28); the result says why not otherwise. */

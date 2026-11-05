@@ -5,6 +5,7 @@ import { and, asc, desc, eq, inArray } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { allianceSnapshots, events, snapshots } from "../schema";
+import { publicEvent } from "./visibility";
 
 const snapshotColumns = {
   id: snapshots.id,
@@ -22,9 +23,10 @@ export async function listEvents(db: Db) {
       name: events.name,
       eventAtUtc: events.eventAtUtc,
       isTest: events.isTest,
+      manual: events.manual,
     })
     .from(events)
-    .where(eq(events.isTest, false))
+    .where(publicEvent)
     .orderBy(desc(events.eventAtUtc));
   const phases = rows.length
     ? await db
@@ -84,7 +86,7 @@ export async function getEventDetail(db: Db, eventId: number) {
       isTest: events.isTest,
     })
     .from(events)
-    .where(and(eq(events.id, eventId), eq(events.isTest, false)));
+    .where(and(eq(events.id, eventId), publicEvent));
   if (!event) return null;
   const phases = await db
     .select({

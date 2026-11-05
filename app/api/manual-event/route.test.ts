@@ -12,7 +12,8 @@ import { minutes } from "@/lib/collector.test-helpers";
 import type { Db } from "@/lib/db";
 import { openTestDb, truncateAll } from "@/lib/db.test-helpers";
 import { getEventDetail, listEvents } from "@/lib/queries";
-import { allianceHistory } from "@/lib/queries/alliances";
+import { allianceHistory, getAllianceDetail } from "@/lib/queries/alliances";
+import { getEventPage } from "@/lib/queries/event-page";
 import { events, snapshots } from "@/lib/schema";
 
 const holder = vi.hoisted(() => ({ ctx: null as AppContext | null }));
@@ -22,6 +23,7 @@ vi.mock("@/lib/app-context", async (original) => ({
 }));
 
 const manualRoute = await import("./route");
+const settingsRoute = await import("./settings/route");
 const renameRoute = await import("./rename/route");
 const snapshotRoute = await import("../snapshot/route");
 const tickRoute = await import("../tick/route");
@@ -39,6 +41,14 @@ const rename = (event_id: number, name: unknown) =>
       method: "POST",
       headers: { "x-real-ip": "198.51.100.1", "x-edit-pin": TEST_PIN },
       body: JSON.stringify({ event_id, name }),
+    }),
+  );
+const settings = (event_id: number, change: Record<string, unknown>) =>
+  settingsRoute.POST(
+    new Request("https://laptracker.test/api/manual-event/settings", {
+      method: "POST",
+      headers: { "x-real-ip": "198.51.100.1", "x-edit-pin": TEST_PIN },
+      body: JSON.stringify({ event_id, ...change }),
     }),
   );
 const run = (query: string) =>
@@ -191,5 +201,60 @@ describe("manual events (D28)", () => {
     const history = await allianceHistory(db, 67111155);
     expect(history.map((h) => h.eventId)).toEqual([id + 1]);
     expect(history[0]?.previous).toBeNull();
+  });
+
+  it("shows a round by its visibility: admin only is hidden everywhere public, history joins Saturday's chain", async () => {
+    const { ctx, clock } = testContext(db);
+    holder.ctx = ctx;
+    clock.now = new Date("2026-11-04T12:00:00Z");
+    const { event_id: id } = (await (await create()).json()) as { event_id: number };
+    await run(`phase=before&event=${id}`);
+    clock.now = new Date("2026-11-07T12:00:00Z");
+    await tick(); // Saturday's BEFORE
+    const saturday = id + 1;
+    const view = async () => ({
+      listed: (await listEvents(db)).some((e) => e.id === id),
+      detail: (await getEventDetail(db, id)) !== null,
+      alliance: (await getAllianceDetail(db, id, 67111155)) !== null,
+      chain: (await allianceHistory(db, 67111155)).map((h) => h.eventId),
+      home: (await getEventPage(db, null)).page?.detail.id,
+    });
+
+    const states = [];
+    for (const visibility of ["admin", "standalone", "history"]) {
+      await settings(id, { visibility });
+      states.push(await view());
+    }
+
+    expect(states).toEqual([
+      { listed: false, detail: false, alliance: false, chain: [saturday], home: saturday },
+      { listed: true, detail: true, alliance: true, chain: [saturday], home: saturday },
+      { listed: true, detail: true, alliance: true, chain: [id, saturday], home: saturday },
+    ]);
+    const history = await allianceHistory(db, 67111155);
+    expect(history[1]?.previous).not.toBeNull();
+  });
+
+  it("posts the public message only when the round's toggle is on, and refuses admin only with it", async () => {
+    const { ctx, clock, posts } = testContext(db);
+    holder.ctx = ctx;
+    clock.now = new Date("2026-11-04T12:00:00Z");
+    const { event_id: id } = (await (await create()).json()) as { event_id: number };
+    const publicPosts = () => posts.filter((p) => p.url === PUBLIC_WEBHOOK).length;
+
+    await run(`phase=before&event=${id}`);
+    const off = publicPosts();
+    await settings(id, { post_public: true });
+    await run(`phase=after&event=${id}`);
+    const on = publicPosts();
+    const refused = await settings(id, { visibility: "admin" });
+    const switched = await settings(id, { visibility: "admin", post_public: false });
+    const stillRefused = await settings(id, { post_public: true });
+
+    expect([off, on]).toEqual([0, 1]);
+    expect(refused.status).toBe(409);
+    expect(await refused.json()).toEqual({ code: "admin_cannot_post" });
+    expect(switched.status).toBe(200);
+    expect(stillRefused.status).toBe(409);
   });
 });

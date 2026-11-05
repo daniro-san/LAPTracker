@@ -22,6 +22,7 @@ interface Action {
     | "after"
     | "manual-create"
     | "manual-rename"
+    | "manual-settings"
     | "manual-before"
     | "manual-after";
   /** One line under a snapshot button. */
@@ -81,13 +82,30 @@ const CREATE: Action = {
   confirm: m.confirmCreate,
 };
 
-const renameAction = (eventId: number, name: string): Action => ({
-  id: "manual-rename",
-  label: m.rename,
-  url: "/api/manual-event/rename",
-  confirm: m.confirmRename,
-  body: JSON.stringify({ event_id: eventId, name }),
-});
+export interface ManualChange {
+  name?: string;
+  visibility?: string;
+  post_public?: boolean;
+}
+
+/** One manual-round edit as an action: a rename or a visibility / Discord setting (D28). */
+const manualChange = (eventId: number, change: ManualChange): Action => {
+  const rename = change.name !== undefined;
+  const confirm = rename
+    ? m.confirmRename
+    : change.visibility
+      ? m.confirmVisibility
+      : m.confirmPost;
+  // "admin only" and a public Discord post cannot go together, so switching to it turns the post off.
+  const sent = change.visibility === "admin" ? { ...change, post_public: false } : change;
+  return {
+    id: rename ? "manual-rename" : "manual-settings",
+    label: m.rename,
+    url: rename ? "/api/manual-event/rename" : "/api/manual-event/settings",
+    confirm,
+    body: JSON.stringify({ event_id: eventId, ...sent }),
+  };
+};
 
 async function post(action: Action, pin: string, force: boolean) {
   const res = await fetch(force ? `${action.url}&force=1` : action.url, {
@@ -163,7 +181,7 @@ export function AdminActions({
         busy={busy}
         seals={manual && manualSnapshots(manual.id).map((a) => <li key={a.id}>{seal(a)}</li>)}
         onCreate={() => void start(CREATE)}
-        onRename={(id, name) => void start(renameAction(id, name))}
+        onChange={(id, change) => void start(manualChange(id, change))}
       />
       {message && (
         <p role="status" className="mt-3 break-words text-sm">
@@ -204,13 +222,20 @@ function SnapshotsGroup({ seal }: { seal: (a: Action) => React.ReactNode }) {
   );
 }
 
+/** The answer of a rename or settings call (it carries an event id and no snapshot id). */
+function manualOutcome(body: Record<string, unknown>): string | null {
+  if (body.event_id === undefined || body.snapshot_id !== undefined) return null;
+  return body.name === undefined ? m.saved : m.renamed;
+}
+
 function describe(status: number, body: Record<string, unknown>, beforeAtText: string): string {
   const code = typeof body.code === "string" ? body.code : null;
   if (code === "snapshot_not_due") return fill(t.notDue, { at: beforeAtText });
   if (code)
     return `${status === 409 || status === 429 ? "" : "✗ "}${t.refusals[code] ?? fill(t.refused, { code })}`;
   if (status === 201) return body.event_id === undefined ? t.created : m.created;
-  if (body.name !== undefined) return m.renamed;
+  const manual = manualOutcome(body);
+  if (manual) return manual;
   const count = (v: unknown) => (Array.isArray(v) ? v.length : 0);
   return fill(t.result, {
     phase: body.phase === "before" || body.phase === "after" ? phaseWord(body.phase) : "",

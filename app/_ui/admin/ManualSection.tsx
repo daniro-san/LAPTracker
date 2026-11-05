@@ -8,6 +8,7 @@ import { buttonClass } from "@/lib/brand/components/Button";
 import { copy, fill } from "@/lib/copy";
 import type { ManualEventStatus } from "@/lib/queries/admin";
 
+import type { ManualChange } from "./AdminActions";
 import { phaseWord, stateWord } from "./words";
 
 const t = copy.admin.run;
@@ -19,14 +20,14 @@ export function ManualSection({
   busy,
   seals,
   onCreate,
-  onRename,
+  onChange,
 }: {
   manual: ManualEventStatus | null;
   busy: string | null;
   /** The Before and After buttons, as list items. */
   seals: React.ReactNode;
   onCreate: () => void;
-  onRename: (eventId: number, name: string) => void;
+  onChange: (eventId: number, change: ManualChange) => void;
 }) {
   return (
     <div role="group" aria-labelledby="manual-group" className="mt-8">
@@ -61,10 +62,15 @@ export function ManualSection({
           </ul>
           <ul className="mb-2 flex flex-col gap-4">{seals}</ul>
           {manual.phases.length > 0 ? (
-            <RenameForm manual={manual} busy={busy} onRename={onRename} />
+            <RenameForm
+              manual={manual}
+              busy={busy}
+              onRename={(id, name) => onChange(id, { name })}
+            />
           ) : (
             <p className="mb-2 text-sm">{m.renameLater}</p>
           )}
+          <Controls manual={manual} busy={busy} onChange={onChange} />
           <a href={`/events/${manual.id}`} className="inline-flex min-h-11 items-center underline">
             {m.open}
           </a>
@@ -72,6 +78,49 @@ export function ManualSection({
       ) : (
         <p className="mt-3 text-sm">{m.none}</p>
       )}
+    </div>
+  );
+}
+
+function Controls({
+  manual,
+  busy,
+  onChange,
+}: {
+  manual: ManualEventStatus;
+  busy: string | null;
+  onChange: (eventId: number, change: ManualChange) => void;
+}) {
+  return (
+    <div className="mb-3 flex flex-col gap-2">
+      <label htmlFor="manual-visibility" className="text-sm font-semibold">
+        {m.visibilityLabel}
+      </label>
+      <select
+        id="manual-visibility"
+        value={manual.visibility}
+        disabled={busy !== null}
+        onChange={(e) => onChange(manual.id, { visibility: e.target.value })}
+        className="drawn-field min-h-11 px-3"
+      >
+        {(["admin", "standalone", "history"] as const).map((v) => (
+          <option key={v} value={v}>
+            {m.visibility[v]}
+          </option>
+        ))}
+      </select>
+      <p className="text-sm text-ink/70">{m.visibilityHelp}</p>
+      <label className="flex min-h-11 items-center gap-3 text-sm">
+        <input
+          type="checkbox"
+          checked={manual.postPublic}
+          disabled={busy !== null || manual.visibility === "admin"}
+          onChange={(e) => onChange(manual.id, { post_public: e.target.checked })}
+          className="size-6"
+        />
+        {m.postLabel}
+      </label>
+      {manual.visibility === "admin" && <p className="text-sm text-ink/70">{m.postOff}</p>}
     </div>
   );
 }
