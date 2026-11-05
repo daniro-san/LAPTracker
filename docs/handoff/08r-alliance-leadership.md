@@ -46,3 +46,5 @@ Plan changes needed: none.
 - Session 9: after the first snapshot stored with migration 0008, check on `/events/<id>/alliances/<unionId>` and `/players/<uid>` that the Leadership section and marks appear (one R5, titled R4s). A rehearsal is a test event and not public, so use the first real or a public manual round.
 - Session 9 step 3: also compare the number of R5 rows (expect 1) and titled R4 rows per alliance against the in-game alliance screen; the fixtures show up to 4 titled R4s of 5–8 R4s.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/100
