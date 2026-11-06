@@ -263,6 +263,29 @@ describe("manual round public message", () => {
     );
     expect({ ...embed, description: plain.description }).toEqual(plain);
   });
+
+  it("shows typed markdown, mentions and links literally in a round's name and an alliance's", () => {
+    const typed = "**Win** @everyone <@123> [click](https://x.test)";
+    const literal = "\\*\\*Win\\*\\* @\u200beveryone <@\u200b123\\> \\[click\\](https://x.test)";
+    const embed = publicSnapshotMessage(
+      summary({ status: "partial" }),
+      publicCtx({
+        roundName: typed,
+        alliances: [alliance(2, "NSE", "Natural Selection", 1, 1, { isFresh: false })],
+        before: null,
+      }),
+    );
+    expect(embed.description?.split("\n")).toEqual([
+      `Manual round: ${literal}. Taken by hand.`,
+      "0/1 alliances",
+      "○ 1 stale: [NSE] Natural Selection",
+    ]);
+    const stale = publicSnapshotMessage(
+      summary({ status: "partial" }),
+      publicCtx({ alliances: [alliance(5, "A_B", typed, 1, 1, { failed: true })], before: null }),
+    );
+    expect(stale.description).toContain(`○ 1 stale: [A\\_B] ${literal}`);
+  });
 });
 
 describe("payloads", () => {
