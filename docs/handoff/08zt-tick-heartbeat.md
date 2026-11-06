@@ -42,7 +42,7 @@
 - **No chip for a silent scheduler on /admin.** The decision asks for the time and the last outcomes. The Discord alert is what says "silent".
 
 ## Deviations
-- **The branch is cut from `session/08zs-data-correctness` (#150).** #150 is not merged, and this branch shares `lib/sources/v1.ts`, `lib/collector.ts` and `lib/queries/admin.ts` with it. #148 (#120) is merged into `dev`; `dev` (through `a613d14`) was merged into both branches. Until #150 merges, this PR's diff also shows #150's commit. The PR body says so. Merge #150 first.
+- **The branch was cut from `session/08zs-data-correctness` (#150)** while #150 was open. #148 and #150 are both merged into `dev` now (`63a426d`), and `dev` was merged into this branch, so the PR diff is #121 alone.
 
 ## Verified
 - `pnpm check` on Node 26.5.0 (see the PR body for the final run): prettier, eslint, tsc, vitest, `check-drift` (the drift gate generates nothing new: 0011 matches `lib/schema.ts`), `drizzle-kit check` and i18n-check.
@@ -66,7 +66,7 @@
 - **Each authorised tick costs two more small DB writes** (insert plus cap check, then the update). At 96 ticks a day this is negligible.
 
 ## Owner must do first
-1. Merge #150 first, then this PR.
+1. Merge this PR (#148 and #150 are already in `dev`).
 2. Release to `main` **after** the scheduled event of 2026-11-07. This PR carries migration 0011, and the #49 cutoff allows no migration before then. The Vercel build applies 0011.
 3. After the first tick has run on the release (check /admin "Last tick"), add a second job on cron-job.org:
    - Title: e.g. "Vercel Tick Watch"
