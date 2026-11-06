@@ -49,13 +49,17 @@ export type EventSummary = Awaited<ReturnType<typeof listEvents>>[number];
 
 /**
  * The event `/` shows, from `listEvents` (newest first; D28): the newest real event with a complete
- * snapshot, else the newest event of any kind with one, else the newest real event, else the newest.
- * An upcoming event the tick created a day ahead has no data yet, so it does not take the home page.
+ * Before, else the newest event of any kind with one, else the newest real event, else the newest.
+ * An upcoming event the tick created a day ahead has no Before yet, so it does not take the home page.
  */
 export function homeEvent<
-  E extends { manual: boolean; snapshots: Pick<EventSummary["snapshots"][number], "status">[] },
+  E extends {
+    manual: boolean;
+    snapshots: Pick<EventSummary["snapshots"][number], "phase" | "status">[];
+  },
 >(events: E[]): E | undefined {
-  const hasData = (e: E) => e.snapshots.some((s) => s.status === "complete");
+  const hasData = (e: E) =>
+    e.snapshots.some((s) => s.phase === "before" && s.status === "complete");
   return (
     events.find((e) => !e.manual && hasData(e)) ??
     events.find(hasData) ??
