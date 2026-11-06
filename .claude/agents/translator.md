@@ -21,7 +21,7 @@ The rules below already hold DESIGN.md's voice. Only if one is unclear, read the
 
 - **Translate only the keys you were given.** Do not touch any other key, `lib/copy.ts`, or another language's file.
 - **Placeholders exact.** Every `{name}` in the English appears unchanged in your text (same spelling, any position). Never translate or drop one.
-- **Game terms stay English:** Might, Kills, Members, Level, also inside labels (`± Might`, `Mín. Might`).
+- **Game terms: the game's word or English, never your own.** Might, Kills, Members and Level use the word in the glossary's "Game terms (from the game)" section, also inside labels (`± Мощь`, `최저 전투력`). Where that section lists no word for a term, keep the English (`± Might`, `Mín. Might`). Never translate one yourself or add a row to that section: only a source with the game's own text may (D52).
 - **Names stay:** "OG's LAP Tracker", "LAP Tracker", "Old Grandmas", "Server 325"'s number.
 - **Short.** A label (a key whose English is one or two words) stays at most two words. Where the language runs long, abbreviate the way its own apps do (`Мин.`, `máx.`). The page is 360 px wide.
 - **Counts** read `Label: {n}` (`Stale: {n}`), so no plural forms are needed.
