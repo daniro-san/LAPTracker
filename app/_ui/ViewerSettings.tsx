@@ -1,28 +1,30 @@
 "use client";
 
-// The header's settings menu (DESIGN.md `viewer-settings`, D38): a gear whose panel holds the theme and,
-// on public pages, the times (server time or the viewer's own zone) and the date order. Each choice is a
-// one-year cookie, like `theme`; the times and dates ones re-render the page on the server
-// (router.refresh()), where requestClock reads them. The panel is drawn only once it is opened, so the
-// browser-only values in it (its zone, the cookies) are never server-rendered and cannot mismatch.
+// The header's settings menu (DESIGN.md `viewer-settings`, D38, D39): a gear whose panel holds the theme
+// and, on public pages, the language, the times (server time or the viewer's own zone) and the date
+// order. Each choice is a one-year cookie, like `theme`; the language, times and dates ones re-render the
+// page on the server (router.refresh()), where requestCopy and requestClock read them. The panel is drawn
+// only once it is opened, so the browser-only values in it (its zone, the cookies, the root's lang) are
+// never server-rendered and cannot mismatch.
 import { useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
 
 import { Gear } from "@/lib/brand/components/Gear";
 import { RadioField } from "@/lib/brand/components/RadioField";
 import { Moon, setTheme, Sun, useTheme } from "@/lib/brand/components/ThemeSwitch";
-import { copy } from "@/lib/copy";
+import { en, LANGUAGES, type Language } from "@/lib/copy";
 
 import { Disclosure } from "./Disclosure";
 import {
   DATE_COOKIE,
   DATE_FORMATS,
+  LANG_COOKIE,
   makeClock,
   parseDateFormat,
   ZONE_COOKIE,
   type DateFormat,
 } from "./format";
-import { useLocale } from "./LocaleProvider";
+import { useCopy, useLocale } from "./LocaleProvider";
 import { LABEL } from "./StatTable";
 
 const YEAR = 31_536_000;
@@ -48,8 +50,6 @@ function writeCookie(name: string, value: string | null) {
 /** "America/Sao_Paulo" → "Sao Paulo": the zone's own city name, enough to confirm it. */
 const city = (zone: string) => (zone.split("/").pop() ?? zone).replaceAll("_", " ");
 
-const t = copy.settings;
-
 function Group({
   legend,
   columns,
@@ -67,9 +67,40 @@ function Group({
   );
 }
 
-function Panel({ times }: { times: boolean }) {
+/** A native list, each language named in its own language (D39), so a viewer finds theirs without
+ * reading English; with 18 languages, radios would push Theme, Times and Dates out of the panel. */
+function LanguagePicker({ legend }: { legend: string }) {
+  const router = useRouter();
+  // The page's language as the server chose it (cookie or Accept-Language): the root's lang attribute.
+  const [language, setLanguage] = useState(() => document.documentElement.lang);
+  const pick = (next: string) => {
+    setLanguage(next);
+    writeCookie(LANG_COOKIE, next);
+    router.refresh();
+  };
+  return (
+    <label className="grid gap-1">
+      <span className={LABEL}>{legend}</span>
+      <select
+        value={language}
+        onChange={(e) => pick(e.target.value)}
+        className="drawn-field min-h-11 w-full px-3"
+      >
+        {(Object.keys(LANGUAGES) as Language[]).map((id) => (
+          <option key={id} value={id} lang={id}>
+            {LANGUAGES[id]}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function Panel({ publicPage }: { publicPage: boolean }) {
   const router = useRouter();
   const locale = useLocale();
+  const requestCopy = useCopy();
+  const t = (publicPage ? requestCopy : en).settings;
   const theme = useTheme();
   const [zone, setZone] = useState(() => readCookie(ZONE_COOKIE) ?? null);
   const [date, setDate] = useState(() => parseDateFormat(readCookie(DATE_COOKIE)));
@@ -86,6 +117,7 @@ function Panel({ times }: { times: boolean }) {
   };
   return (
     <div className="absolute right-0 z-40 mt-1 grid max-h-[75vh] w-[min(20rem,calc(100vw-2rem))] gap-3 overflow-y-auto bg-paper p-3 text-ink drawn-frame before:inset-0">
+      {publicPage && <LanguagePicker legend={t.language} />}
       <Group legend={t.theme} columns={2}>
         {(["light", "dark"] as const).map((mode) => (
           <RadioField
@@ -102,7 +134,7 @@ function Panel({ times }: { times: boolean }) {
           />
         ))}
       </Group>
-      {times && (
+      {publicPage && (
         <>
           <Group legend={t.times}>
             <RadioField
@@ -143,8 +175,10 @@ function Panel({ times }: { times: boolean }) {
   );
 }
 
-export function ViewerSettings({ times = true }: { times?: boolean }) {
+export function ViewerSettings({ publicPage = true }: { publicPage?: boolean }) {
   const [open, setOpen] = useState(false);
+  const requestCopy = useCopy();
+  const copy = publicPage ? requestCopy : en;
   return (
     <Disclosure
       label={copy.site.settings}
@@ -155,7 +189,7 @@ export function ViewerSettings({ times = true }: { times?: boolean }) {
         <Gear />
         <span className="sr-only">{copy.site.settings}</span>
       </summary>
-      {open && <Panel times={times} />}
+      {open && <Panel publicPage={publicPage} />}
     </Disclosure>
   );
 }

@@ -4,19 +4,17 @@
 import Link from "next/link";
 
 import { RoleMark } from "@/lib/brand/components/RoleMark";
-import { copy } from "@/lib/copy";
 
+import { requestCopy } from "./locale";
 import type { MemberView } from "./member-views";
 import { Num } from "./Num";
 import { PlayerAvatar } from "./Pictures";
 import { LABEL } from "./StatTable";
 
-const roleWord = (m: MemberView) =>
-  m.role?.kind === "officer" ? m.role.title : copy.leadership.leader;
-
 /** Renders nothing when the alliance has no leader or titled officer on record. */
-export function Leadership({ members }: { members: MemberView[] }) {
+export async function Leadership({ members }: { members: MemberView[] }) {
   if (members.length === 0) return null;
+  const copy = await requestCopy();
   return (
     <section aria-labelledby="leadership" className="mt-8">
       <h2 id="leadership" className="mb-2 font-subhead text-display-md">
@@ -43,7 +41,9 @@ export function Leadership({ members }: { members: MemberView[] }) {
                   </Link>
                   <p className="flex flex-wrap items-center gap-x-2 text-sm text-ink/70">
                     {m.role && <RoleMark role={m.role} />}
-                    <span>{roleWord(m)}</span>
+                    <span>
+                      {m.role?.kind === "officer" ? m.role.title : copy.leadership.leader}
+                    </span>
                     {m.status === "left" && (
                       <span className="font-medium text-seal">
                         <span aria-hidden="true">− </span>

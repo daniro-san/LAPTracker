@@ -2,21 +2,24 @@
 import Link from "next/link";
 
 import { allianceLabel } from "@/app/_ui/format";
-import { requestClock } from "@/app/_ui/locale";
+import { requestClock, requestCopy } from "@/app/_ui/locale";
 import { AllianceBadge, PlayerAvatar } from "@/app/_ui/Pictures";
 import { PlayerSearch } from "@/app/_ui/PlayerSearch";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { LABEL } from "@/app/_ui/StatTable";
 import { GrannyEmpty } from "@/lib/brand/components/Mascot";
-import { copy, fill } from "@/lib/copy";
+import { fill } from "@/lib/copy";
 import { withPageDb } from "@/lib/page";
 import { listEvents } from "@/lib/queries";
 import { searchPlayers, SEARCH_LIMIT } from "@/lib/queries/players";
 
 const MAX_QUERY = 64;
 
-export const metadata = { title: `${copy.search.title} · ${copy.site.name}` };
+export async function generateMetadata() {
+  const copy = await requestCopy();
+  return { title: `${copy.search.title} · ${copy.site.name}` };
+}
 
 export default async function PlayersPage({
   searchParams,
@@ -25,16 +28,17 @@ export default async function PlayersPage({
 }) {
   const { q: raw } = await searchParams;
   const q = (Array.isArray(raw) ? raw[0] : raw)?.trim().slice(0, MAX_QUERY) ?? "";
-  const [{ events, matches }, clock] = await Promise.all([
+  const [{ events, matches }, clock, copy] = await Promise.all([
     withPageDb(async (db) => ({
       events: await listEvents(db),
       matches: await searchPlayers(db, q),
     })),
     requestClock(),
+    requestCopy(),
   ]);
   return (
     <>
-      <SiteHeader events={events} currentId={null} section="players" clock={clock} />
+      <SiteHeader events={events} currentId={null} section="players" clock={clock} copy={copy} />
       <main className="mx-auto max-w-[960px] px-4 py-4 sm:px-6">
         <h1 className="font-display text-display-lg leading-tight">{copy.search.title}</h1>
         <PlayerSearch q={q} maxLength={MAX_QUERY}>
@@ -81,7 +85,7 @@ export default async function PlayersPage({
           )}
         </PlayerSearch>
       </main>
-      <SiteFooter />
+      <SiteFooter copy={copy} />
     </>
   );
 }

@@ -8,7 +8,8 @@ import { type FormEvent, type ReactNode, useEffect, useState, useTransition } fr
 
 import { buttonClass } from "@/lib/brand/components/Button";
 import { GrannyLedger } from "@/lib/brand/components/Mascot";
-import { copy } from "@/lib/copy";
+
+import { useCopy } from "./LocaleProvider";
 
 const HOLD_MS = 300;
 
@@ -21,6 +22,7 @@ export function PlayerSearch({
   maxLength: number;
   children: ReactNode;
 }) {
+  const copy = useCopy();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   // Held back for HOLD_MS so a quick answer swaps the results without a flash of the drawing.

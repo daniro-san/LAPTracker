@@ -1,18 +1,18 @@
-import { copy } from "@/lib/copy";
-
 import { EmptyState } from "./EmptyState";
+import { requestCopy } from "./locale";
 import { SiteFooter } from "./SiteFooter";
 import { SiteHeader } from "./SiteHeader";
 
-export function EmptyEvents() {
+export async function EmptyEvents() {
+  const copy = await requestCopy();
   return (
     <>
-      <SiteHeader events={[]} currentId={null} />
+      <SiteHeader events={[]} currentId={null} copy={copy} />
       <main className="mx-auto max-w-[960px] px-4 py-10 sm:px-6 text-center">
         <h1 className="sr-only">{copy.site.name}</h1>
         <EmptyState>{copy.empty.kettle}</EmptyState>
       </main>
-      <SiteFooter />
+      <SiteFooter copy={copy} />
     </>
   );
 }

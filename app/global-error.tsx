@@ -1,14 +1,15 @@
 "use client";
 // Last-resort boundary for errors in the root layout itself: it replaces <html>, so it brings the
-// stylesheet and fonts back. Same page and same rule as error.tsx: the error is never rendered.
+// stylesheet and fonts back. Same page and same rule as error.tsx: the error is never rendered. It is
+// outside the request's language, so it stays English.
 import "./globals.css";
 
 import { ErrorPage, primaryAction } from "@/app/_ui/ErrorPage";
 import { CrackedBottle } from "@/lib/brand/components/Vignettes";
 import { fontVariables } from "@/lib/brand/fonts";
-import { copy } from "@/lib/copy";
+import { en } from "@/lib/copy";
 
-const t = copy.errors.server;
+const t = en.errors.server;
 
 export default function GlobalError({
   reset,
@@ -24,6 +25,7 @@ export default function GlobalError({
           title={t.title}
           body={t.body}
           art={<CrackedBottle />}
+          copy={en}
           actions={
             <button type="button" onClick={() => reset()} className={primaryAction}>
               {t.retry}

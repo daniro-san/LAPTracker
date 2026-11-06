@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { en } from "@/lib/copy";
 import type { Ranks } from "@/lib/queries";
 
 import { comparisonRows, emptyLine, nextUpdateAt, type Snap } from "./event-rows";
@@ -26,6 +27,7 @@ const killsRow = (before: number, after: number, left: number) => {
     new Map([[1, { joined: 0, left }]]),
     new Map(),
     new Map(),
+    en,
   );
   return rows[0]?.metrics.find((m) => m.label === "Kills");
 };
@@ -53,6 +55,7 @@ describe("comparisonRows", () => {
       new Map(),
       new Map(),
       ranks,
+      en,
     );
     expect(rows.map((r) => [r.tag, r.rank])).toEqual([
       ["PSY", 12],
@@ -85,8 +88,10 @@ describe("nextUpdateAt", () => {
 
 describe("emptyLine", () => {
   it("tells a manual round with snapshots but no rows that the admin runs it again, never that the kettle is on", () => {
-    expect(emptyLine(true, 1)).toBe("The run produced nothing. The admin runs it again by hand.");
-    expect(emptyLine(true, 0)).toContain("has not been run yet");
-    expect(emptyLine(false, 1)).toContain("kettle");
+    expect(emptyLine(true, 1, en)).toBe(
+      "The run produced nothing. The admin runs it again by hand.",
+    );
+    expect(emptyLine(true, 0, en)).toContain("has not been run yet");
+    expect(emptyLine(false, 1, en)).toContain("kettle");
   });
 });

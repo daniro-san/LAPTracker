@@ -8,12 +8,13 @@ import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
 
 import { rankDelta } from "@/lib/compute";
-import { copy, fill } from "@/lib/copy";
+import { fill, type Dictionary } from "@/lib/copy";
 import type { PlayerEventRow } from "@/lib/queries";
 
 import { DetailTable, type RankPair } from "./DetailLines";
 import { EmptyState } from "./EmptyState";
 import { allianceLabel, changeText, type Clock } from "./format";
+import { requestCopy } from "./locale";
 import { Delta, Num, Rank } from "./Num";
 import { LABEL, MoreBar } from "./StatTable";
 import { FreshDots, SideHead } from "./Status";
@@ -27,14 +28,14 @@ const GRID = {
 
 type Stat = "power" | "kills" | "lv";
 const STATS: Stat[] = ["power", "kills", "lv"];
-const LABELS = [copy.ledger.might, copy.ledger.kills, copy.ledger.level];
+const labelsOf = (copy: Dictionary) => [copy.ledger.might, copy.ledger.kills, copy.ledger.level];
 const FROM = { power: "fromPower", kills: "fromKills", lv: "fromLv" } as const;
 
 const baseOf = (value: number | null, delta: number | null) =>
   value !== null && delta !== null ? value - delta : null;
 
 /** `Name: Old → New`, `Alliance: [OLD] → [NEW]`, for what changed since the previous event. */
-function changes(r: PlayerEventRow): string | null {
+function changes(r: PlayerEventRow, copy: Dictionary): string | null {
   if (!r.previous) return null;
   const parts: string[] = [];
   if (r.step.changed.name) parts.push(changeText(copy.members.name, r.previous.name, r.name));
@@ -80,6 +81,7 @@ interface RowProps {
   prev: PlayerEventRow | undefined;
   clock: Clock;
   showAlliance: boolean;
+  copy: Dictionary;
 }
 
 const SPAN = { 1: "", 2: "sm:row-span-2", 3: "sm:row-span-3" } as const;
@@ -89,10 +91,11 @@ function RowLead({
   r,
   clock,
   showAlliance,
+  copy,
   rank,
   lines,
 }: RowProps & { rank: RankPair; lines: 1 | 2 | 3 }) {
-  const note = changes(r);
+  const note = changes(r, copy);
   return (
     <div
       className={`col-span-full mb-1 border-b border-rule pb-2 sm:col-span-1 sm:mb-0 sm:border-0 sm:pb-0 ${SPAN[lines]}`}
@@ -141,18 +144,24 @@ function ChangeLine({
 }
 
 /** Details: the before → after snapshot values with the in-event change and the in-alliance rank. */
-function rowDetail(r: PlayerEventRow, ranks: ReturnType<typeof rankPairs>, clock: Clock) {
+function rowDetail(
+  r: PlayerEventRow,
+  ranks: ReturnType<typeof rankPairs>,
+  clock: Clock,
+  copy: Dictionary,
+) {
   const fresh = freshOf(r);
+  const labels = labelsOf(copy);
   const rankOf = [ranks.might, ranks.kills];
   return (
     <DetailTable
       corner={clock.zone}
-      from={<SideHead s={fresh.before} clock={clock} />}
-      to={<SideHead s={fresh.after} clock={clock} />}
+      from={<SideHead s={fresh.before} clock={clock} copy={copy} />}
+      to={<SideHead s={fresh.after} clock={clock} copy={copy} />}
       rows={STATS.map((f, i) => {
         const rank = rankOf[i];
         return {
-          label: LABELS[i] as string,
+          label: labels[i] as string,
           from: <Num n={r.inEvent?.[FROM[f]] ?? null} />,
           to: <Num n={r[f]} />,
           change: <Delta delta={r.inEvent?.[f] ?? null} base={null} />,
@@ -164,7 +173,7 @@ function rowDetail(r: PlayerEventRow, ranks: ReturnType<typeof rankPairs>, clock
 }
 
 function EventRow(props: RowProps) {
-  const { r, prev, clock } = props;
+  const { r, prev, clock, copy } = props;
   const ranks = rankPairs(r, prev);
   const dataAt = (r.reference === "before" ? r.before : r.after)?.updatedAt ?? null;
   const beforeAt = r.inEvent ? (r.before?.updatedAt ?? null) : null;
@@ -177,7 +186,7 @@ function EventRow(props: RowProps) {
       <RowLead {...props} rank={ranks.might} lines={lines} />
       {/* Column heads inside the card below 640 px; the table header carries them above. */}
       <span className="sm:hidden" />
-      {LABELS.map((h) => (
+      {labelsOf(copy).map((h) => (
         <span key={h} className={`${LABEL} text-right sm:hidden`}>
           {h}
         </span>
@@ -209,15 +218,16 @@ function EventRow(props: RowProps) {
           key: String(r.eventId),
           lead: null,
           metrics: [],
-          summary: <FreshDots {...freshOf(r)} />,
-          detail: rowDetail(r, ranks, clock),
+          summary: <FreshDots {...freshOf(r)} copy={copy} />,
+          detail: rowDetail(r, ranks, clock, copy),
         }}
+        copy={copy}
       />
     </li>
   );
 }
 
-export function PlayerAcrossEvents({
+export async function PlayerAcrossEvents({
   rows,
   clock,
   showAlliance,
@@ -227,6 +237,7 @@ export function PlayerAcrossEvents({
   /** Name the alliance on each row only when the player has been in more than one. */
   showAlliance: boolean;
 }) {
+  const copy = await requestCopy();
   const l = copy.ledger;
   const newestFirst = rows
     .map((r, i) => (
@@ -236,6 +247,7 @@ export function PlayerAcrossEvents({
         prev={rows[i - 1]}
         clock={clock}
         showAlliance={showAlliance}
+        copy={copy}
       />
     ))
     .reverse();
@@ -245,7 +257,7 @@ export function PlayerAcrossEvents({
       style={GRID}
     >
       <span className="col-span-2">{l.event}</span>
-      {LABELS.map((c) => (
+      {labelsOf(copy).map((c) => (
         <span key={c} className="text-right">
           {c}
         </span>

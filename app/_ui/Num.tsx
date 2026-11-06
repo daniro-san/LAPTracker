@@ -3,10 +3,9 @@
 // A number in two spellings: compact (3.94B) and exact (3,938,123,456), both in the viewer's locale. The
 // "Exact numbers" switch shows one or the other for the whole page with CSS only (globals.css). Every
 // change carries three channels (DESIGN.md): colour, an arrow and the signed number.
-import { copy } from "@/lib/copy";
 
 import { compact, exact, MEMBER_MARK, percent, percentText, signOf } from "./format";
-import { useLocale } from "./LocaleProvider";
+import { useCopy, useLocale } from "./LocaleProvider";
 
 const MUTED = "text-ink/70";
 
@@ -35,6 +34,7 @@ const arrow = (delta: number) => (delta > 0 ? "▲" : delta < 0 ? "▼" : "=");
 
 /** `*` after a change: the total fell while members left. The legend names it; a screen reader hears the words. */
 export function MemberMark() {
+  const copy = useCopy();
   return (
     <>
       <span aria-hidden="true"> {MEMBER_MARK}</span>

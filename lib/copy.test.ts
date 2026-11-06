@@ -7,7 +7,24 @@ import { join, relative } from "node:path";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
 
-import { blankCopy, blankDictionary, copy, fill } from "./copy";
+import { blankCopy, blankDictionary, copy, en, fill } from "./copy";
+import { de } from "./copy.de";
+import { es } from "./copy.es";
+import { fr } from "./copy.fr";
+import { idID } from "./copy.id";
+import { itIT } from "./copy.it";
+import { ja } from "./copy.ja";
+import { ko } from "./copy.ko";
+import { nl } from "./copy.nl";
+import { pl } from "./copy.pl";
+import { ptBR } from "./copy.pt-BR";
+import { ru } from "./copy.ru";
+import { sv } from "./copy.sv";
+import { th } from "./copy.th";
+import { tr } from "./copy.tr";
+import { uk } from "./copy.uk";
+import { vi } from "./copy.vi";
+import { zhCN } from "./copy.zh-CN";
 
 const ROOT = join(import.meta.dirname, "..");
 
@@ -92,5 +109,38 @@ describe("copy", () => {
     expect([l.might, l.kills, l.members, l.level]).toEqual(["Might", "Kills", "Members", "Level"]);
     expect(l.details).toBe("░░░░░░░");
     expect(blank.status.running).toBe("░░░░░░░░ ░░░");
+  });
+});
+
+/** Every key path with its placeholders, sorted: `status.next {time}`. */
+function shape(value: unknown, path = ""): string[] {
+  if (typeof value === "string")
+    return [`${path} ${(value.match(/\{\w+\}/g) ?? []).sort().join("")}`];
+  return Object.entries(value as object).flatMap(([k, v]) => shape(v, path ? `${path}.${k}` : k));
+}
+
+describe("dictionaries", () => {
+  it.each([
+    ["es", es],
+    ["pt-BR", ptBR],
+    ["fr", fr],
+    ["de", de],
+    ["it", itIT],
+    ["nl", nl],
+    ["sv", sv],
+    ["pl", pl],
+    ["ru", ru],
+    ["uk", uk],
+    ["tr", tr],
+    ["zh-CN", zhCN],
+    ["ja", ja],
+    ["ko", ko],
+    ["id", idID],
+    ["vi", vi],
+    ["th", th],
+  ])("%s has the English keys and placeholders and keeps the game's own terms", (_, dictionary) => {
+    expect(shape(dictionary)).toEqual(shape(en));
+    const { might, kills, members, level } = dictionary.ledger;
+    expect([might, kills, members, level]).toEqual(["Might", "Kills", "Members", "Level"]);
   });
 });
