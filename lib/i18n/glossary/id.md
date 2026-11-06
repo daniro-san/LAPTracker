@@ -10,7 +10,7 @@ Words already used in `lib/i18n/id.ts`. Reuse them so the pages stay consistent;
 | Alliance                  | Aliansi                      | `ledger.alliance`                                         |
 | Member                    | Anggota                      | `ledger.member` — a player inside an alliance             |
 | Player                    | Pemain                       | `ledger.player`                                           |
-| Event                     | Event                        | `ledger.event` — a Saturday event                         |
+| Event                     | Event                        | `ledger.event` — a game event                             |
 | Rank                      | Peringkat                    | `ledger.rank` — the #n position                           |
 | Ranking                   | Peringkat server             | `ledger.ranking` — the game's server rank                 |
 | Sanctuary                 | Suaka                        | `ledger.sanctuary` — a player's building level            |

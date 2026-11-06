@@ -10,7 +10,7 @@ Words already used in `lib/i18n/ru.ts`. Reuse them so the pages stay consistent;
 | Alliance                  | Альянс                      | `ledger.alliance`                                         |
 | Member                    | Участник                    | `ledger.member` — a player inside an alliance             |
 | Player                    | Игрок                       | `ledger.player`                                           |
-| Event                     | Событие                     | `ledger.event` — a Saturday event                         |
+| Event                     | Событие                     | `ledger.event` — a game event                             |
 | Rank                      | Место                       | `ledger.rank` — the #n position                           |
 | Ranking                   | Рейтинг                     | `ledger.ranking` — the game's server rank                 |
 | Sanctuary                 | Святилище                   | `ledger.sanctuary` — a player's building level            |

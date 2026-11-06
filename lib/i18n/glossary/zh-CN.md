@@ -10,7 +10,7 @@ Words already used in `lib/i18n/zh-CN.ts`. Reuse them so the pages stay consiste
 | Alliance                  | 联盟                 | `ledger.alliance`                                         |
 | Member                    | 成员                 | `ledger.member` — a player inside an alliance             |
 | Player                    | 玩家                 | `ledger.player`                                           |
-| Event                     | 活动                 | `ledger.event` — a Saturday event                         |
+| Event                     | 活动                 | `ledger.event` — a game event                             |
 | Rank                      | 排名                 | `ledger.rank` — the #n position                           |
 | Ranking                   | 服务器排名           | `ledger.ranking` — the game's server rank                 |
 | Sanctuary                 | 圣所                 | `ledger.sanctuary` — a player's building level            |

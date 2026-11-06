@@ -46,7 +46,7 @@ export const events = pgTable(
     discordPublicMessageId: text("discord_public_message_id"),
     discordAdminMessageId: text("discord_admin_message_id"),
     createdAt: tstz("created_at").notNull().defaultNow(),
-    // When each phase is due (plan §3.1). Saturdays: SNAPSHOT_BEFORE/AFTER in SERVER_TZ;
+    // When each phase is due (plan §3.1). Scheduled events: SNAPSHOT_BEFORE/AFTER in SERVER_TZ;
     // rehearsals: created + 15 / + 45 min. The tick reads these, not the env.
     beforeAt: tstz("before_at").notNull(),
     afterAt: tstz("after_at").notNull(),

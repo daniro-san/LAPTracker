@@ -10,7 +10,7 @@ Words already used in `lib/i18n/pt-BR.ts`. Reuse them so the pages stay consiste
 | Alliance                  | Aliança                            | `ledger.alliance`                                         |
 | Member                    | Membro                             | `ledger.member` — a player inside an alliance             |
 | Player                    | Jogador                            | `ledger.player`                                           |
-| Event                     | Evento                             | `ledger.event` — a Saturday event                         |
+| Event                     | Evento                             | `ledger.event` — a game event                             |
 | Rank                      | Posição                            | `ledger.rank` — the #n position                           |
 | Ranking                   | Ranking                            | `ledger.ranking` — the game's server rank                 |
 | Sanctuary                 | Santuário                          | `ledger.sanctuary` — a player's building level            |

@@ -176,7 +176,7 @@ export interface PublicContext {
    */
   alliances: PublicAlliance[] | null;
   before: PublicAlliance[] | null;
-  /** A manual round's name: the message says it is a manual round (D28). Null for a Saturday event. */
+  /** A manual round's name: the message says it is a manual round (D28). Null for a scheduled event. */
   roundName?: string | null;
   /** When the before snapshot finished, on the after message: it shows the whole event (D31). */
   beforeAt?: Date | null;
