@@ -1,4 +1,5 @@
 // /brand "Drawing style": the confident-nib rules (docs/brand/DRAWING.md) with the drawings as examples.
+import { LiveCandle } from "@/lib/brand/components/LiveCandle";
 import { GrannyStanding, GrannyTea } from "@/lib/brand/components/Mascot";
 import { Crown, OfficerStar } from "@/lib/brand/components/RoleMark";
 import { Hourglass } from "@/lib/brand/components/StatusIcons";
@@ -52,6 +53,9 @@ export function DrawingSection() {
           </Spec>
           <Spec name={t.officer} plate="text-sage [&_svg]:size-12">
             <OfficerStar />
+          </Spec>
+          <Spec name={t.candle} plate="live-on text-plum">
+            <LiveCandle className="size-12" />
           </Spec>
         </div>
       </Sub>

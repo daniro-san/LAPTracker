@@ -119,14 +119,21 @@ export async function setManualSettings(
   return "ok";
 }
 
-/** Renames a manual event once a snapshot of it exists (D28); the result says why not otherwise. */
-export async function renameManualEvent(
+/**
+ * Renames a public event (D39): a scheduled event at any time its row exists, a manual round once a
+ * snapshot of it exists (D28). A rehearsal is never renamed. The result says why not otherwise.
+ */
+export async function renameEvent(
   db: Db,
   eventId: number,
   name: string,
 ): Promise<"ok" | "not-found" | "no-snapshot"> {
   const event = await getEventInfo(db, eventId);
-  if (!event?.manual) return "not-found";
+  if (!event || event.isTest) return "not-found";
+  if (!event.manual) {
+    await db.update(events).set({ name }).where(eq(events.id, eventId));
+    return "ok";
+  }
   const [any] = await db
     .select({ id: snapshots.id })
     .from(snapshots)

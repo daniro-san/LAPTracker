@@ -37,6 +37,7 @@ DRAWINGS = {
     "icon-running": ornaments.icon_running,
     "icon-crown": ornaments.icon_crown,
     "icon-officer": ornaments.icon_officer,
+    "icon-live": ornaments.icon_live,
     "icon-done": ornaments.icon_done,
     "icon-partial": ornaments.icon_partial,
     "no-photo": ornaments.no_photo,
