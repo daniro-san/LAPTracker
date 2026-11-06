@@ -2,13 +2,13 @@
 
 // The manual round (D28), under the three seals: the round's card says each phase's state and what to
 // press next (#91), shows its Before and After seals and the same options form to edit; "Start a manual
-// round" (free) opens the options inline under it. A done phase is a secondary "Record again", and a
-// round with both phases done reads as complete (issue 157).
+// round" (free) opens the options inline under it. While the round runs, a done phase is a secondary
+// "Record again" (issue 157). A round with both phases done is closed: one collapsed line with its name and
+// "Round complete" that opens to its phases and facts, read-only (owner, 2026-11-06, D55); the next round
+// starts with "Start a manual round".
 import { useState } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
-import { Chip } from "@/lib/brand/components/Chip";
-import { FactList } from "@/lib/brand/components/FactList";
 import { copy, fill } from "@/lib/copy";
 
 import {
@@ -19,21 +19,22 @@ import {
   type RoundOptions as Options,
   type RoundView,
 } from "./actions";
-import { CostTag, StateChip } from "./parts";
+import { CostTag } from "./parts";
+import { ClosedRound, RoundFacts } from "./RoundFacts";
 import { RoundOptions } from "./RoundOptions";
-import { phaseWord } from "./words";
 
 const t = copy.admin.run;
 const m = copy.admin.manual;
 
-/** What the section offers in each state (issue 157): a phase that is done is a secondary "Record again"
- * (only `complete` needs `force`, D28; a partial or failed phase keeps its seal as the next step), and
- * "Start a manual round" is the primary action when there is no round or the round is complete. */
+/** What the section offers in each state (issue 157, D55): while the round runs, a phase that is done is a
+ * secondary "Record again" (only `complete` needs `force`, D28; a partial or failed phase keeps its seal as
+ * the next step). A complete round is closed: nothing to record again or edit. "Start a manual round" is
+ * the primary action when there is no round or the round is complete. */
 export function roundPlan(manual: RoundView | null) {
   const done = (phase: "before" | "after") =>
     manual?.phases.some((p) => p.phase === phase && p.status === "complete") ?? false;
-  const again = { before: done("before"), after: done("after") };
-  const complete = again.before && again.after;
+  const complete = done("before") && done("after");
+  const again = { before: done("before") && !complete, after: done("after") && !complete };
   return { complete, again, create: !manual || complete ? "primary" : "secondary" } as const;
 }
 
@@ -61,7 +62,9 @@ export function ManualSection({
       </h3>
       <p className="text-body-sm text-ink/70">{m.help}</p>
       <p className="mb-3 text-body-sm text-ink/70">{m.cost}</p>
-      {manual ? (
+      {manual && plan.complete ? (
+        <ClosedRound manual={manual} />
+      ) : manual ? (
         <RoundCard
           manual={manual}
           plan={plan}
@@ -152,15 +155,6 @@ function CreateRound({
 
 const LABEL = "text-label font-semibold uppercase tracking-[0.04em] text-ink/70";
 
-/** A phase's state in words that say what to do next: "Not started: press Before", "Done 14:02". */
-function PhaseChip({ manual, phase }: { manual: RoundView; phase: "before" | "after" }) {
-  const row = manual.phases.find((x) => x.phase === phase);
-  if (!row) {
-    return <Chip tone="muted">{fill(m.phaseState.none, { seal: copy.admin.seal[phase] })}</Chip>;
-  }
-  return <StateChip status={row.status}>{row.text}</StateChip>;
-}
-
 /** A done phase, run again: muted, under its phase's name, with its cost (not the red seal). */
 function RecordAgain({
   action: a,
@@ -205,16 +199,8 @@ function RoundCard({
   onStart: (a: Action) => void;
   onSave: (eventId: number, change: RoundChange) => void;
 }) {
-  const s = m.summary;
   const open = (
-    <a
-      href={`/events/${manual.id}`}
-      className={
-        plan.complete
-          ? buttonClass("secondary", "mb-4 font-semibold")
-          : "inline-flex min-h-11 items-center underline"
-      }
-    >
+    <a href={`/events/${manual.id}`} className="inline-flex min-h-11 items-center underline">
       {m.open}
     </a>
   );
@@ -227,32 +213,11 @@ function RoundCard({
   });
   return (
     <div className="mb-4 border border-rule p-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <p className={LABEL}>{s.title}</p>
-        {plan.complete && <StateChip status="complete">{m.complete}</StateChip>}
-      </div>
+      <p className={LABEL}>{m.summary.title}</p>
       <p className="mb-1 break-words font-subhead text-display-sm">{manual.name}</p>
-      {(["before", "after"] as const).map((p) => (
-        <div
-          key={p}
-          className="flex flex-wrap items-center justify-between gap-2 border-b border-rule py-2"
-        >
-          <span className="font-medium">{phaseWord(p)}</span>
-          <PhaseChip manual={manual} phase={p} />
-        </div>
-      ))}
-      <div className="mb-4">
-        <FactList
-          items={[
-            { label: s.visibility, value: m.visibility[manual.visibility] },
-            { label: s.discord, value: manual.postPublic ? s.on : s.off },
-            { label: s.calls, value: String(manual.calls) },
-          ]}
-        />
-      </div>
-      {plan.complete && <div>{open}</div>}
+      <RoundFacts manual={manual} />
       <ul className="mb-4 grid grid-cols-2 gap-2 sm:max-w-md sm:gap-6">{snapshots}</ul>
-      {!plan.complete && open}
+      {open}
       <details className="mt-1">
         <summary className="inline-flex min-h-11 cursor-pointer items-center font-medium text-plum underline">
           {m.options}
