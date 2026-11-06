@@ -155,7 +155,8 @@ export const brandCopy = {
     wax: "Wax · seals and the header mark",
     hourglass: "Hourglass · running",
     crown: "Crown · alliance leader (R5)",
-    officer: "Stitch star · titled officer (R4)",
+    titles: "Dove, horn, crossed swords, eye · Diplomat, Recruiter, Militarist, Overseer (R4)",
+    officer: "Stitch star · officer with any other title (R4)",
     candle: "Chamberstick · admin live indicator",
   },
   components: {
@@ -262,9 +263,9 @@ export const brandCopy = {
     },
     roleMark: {
       name: "Role mark",
-      use: "Alliance roles, in the member list and on the player page. The crown is the R5 leader (plum), the stitch star a titled R4 officer (sage); a member row also takes the role's pale tint. Only these two ranks are marked. The word for the role is always in the text or read out, never colour alone.",
+      use: "Alliance roles, in the member list and on the player page. The crown is the R5 leader (plum). A titled R4 officer (sage) gets the drawing of the title: dove, horn, crossed swords or eye; any other title gets the stitch star. A member row also takes the role's pale tint. Only these two ranks are marked. The word for the role is always in the text or read out, never colour or shape alone.",
       leader: "Leader",
-      officer: "Diplomat",
+      officers: ["Diplomat", "Recruiter", "Militarist", "Overseer", "Any other title"],
     },
     leadership: {
       name: "Leadership section",

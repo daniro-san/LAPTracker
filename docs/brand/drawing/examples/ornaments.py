@@ -144,6 +144,61 @@ def icon_officer():
     blob(p, [(8, 1.6), (9.1, 6.2), (14.2, 8), (9.1, 9.8), (8, 14.4), (6.9, 9.8), (1.8, 8), (6.9, 6.2)], k=.28)
     return svg("0 0 16 16", el(p))
 
+def hole(path, pts, k=1.0):
+    """A cut-out: a closed shape wound clockwise, so under the default nonzero fill it subtracts from the
+    counter-clockwise blobs and strokes it sits on (they still merge where they overlap)."""
+    area = sum(pts[i][0]*pts[(i+1) % len(pts)][1] - pts[(i+1) % len(pts)][0]*pts[i][1] for i in range(len(pts)))
+    if area > 0: pts = list(reversed(pts))
+    segs = catmull(pts, closed=True, k=k)
+    path.M(segs[0][0])
+    for s in segs: path.C(s[1], s[2], s[3])
+    path.Z()
+
+# The four R4 title slots (DESIGN.md role-mark): same 16 px filled cut as the crown and the star.
+def icon_diplomat():
+    """Diplomat: a dove flying left, wing up, an olive leaf hanging from the beak."""
+    p = Path()
+    # body: beak, round head, breast, belly sweeping into a fanned tail
+    blob(p, [(1.2, 7.4), (2.6, 6.0), (4.3, 5.7), (6.6, 7.2), (9.6, 7.6), (12.6, 7.0), (15.0, 6.2), (14.4, 8.0),
+             (15.0, 9.6), (12.4, 9.8), (9.2, 11.2), (5.6, 11.0), (3.6, 9.2), (2.8, 7.9)], k=.75)
+    # wing raised and swept back, its tip split into two feathers
+    blob(p, [(5.6, 7.4), (6.4, 4.6), (8.2, 2.4), (10.6, 1.0), (10.0, 2.8), (12.6, 2.0), (11.6, 4.4), (10.0, 6.4), (8.2, 7.6)], k=.6)
+    hole(p, arc(3.6, 6.9, .42, .42, 0, 300, 6))
+    stroke(p, [(1.6, 7.9), (1.4, 9.6), (2.2, 11.6)], .55, a=.3, b=.45, e=.12)
+    return svg("0 0 16 16", el(p))
+
+def icon_recruiter():
+    """Recruiter: a calling horn, mouthpiece up at the left, curving down and out to a bell open to the right."""
+    p = Path()
+    stroke(p, [(1.8, 2.0), (2.4, 6.0), (4.6, 9.6), (8.4, 11.2), (11.8, 10.0)], ws=[.35, .75, 1.25, 1.8, 2.4])
+    blob(p, arc(13.2, 8.6, 1.9, 3.3, 0, 330, 8, rot=-38), k=.9)
+    hole(p, arc(13.5, 8.3, .8, 2.1, 0, 330, 8, rot=-38), k=.9)
+    # one band, cut as a slot, and the mouthpiece bead
+    hole(p, [(5.9, 9.0), (6.6, 9.4), (5.9, 12.0), (5.1, 11.6)], k=.5)
+    blob(p, arc(1.8, 1.6, .75, .7, 0, 300, 6))
+    return svg("0 0 16 16", el(p))
+
+def icon_militarist():
+    """Militarist (God of War in game): two swords crossed, hilts down, guards and pommels."""
+    p = Path()
+    for s in (1, -1):
+        X = lambda x: 8 + (x - 8) * s
+        stroke(p, [(X(3.6), 12.4), (X(8.4), 7.6), (X(13.6), 2.0)], ws=[.85, .8, .25])
+        stroke(p, [(X(1.4), 10.4), (X(3.4), 11.2), (X(4.8), 13.4)], .55, a=.2, b=.2, e=.4)
+        stroke(p, [(X(3.0), 13.0), (X(2.1), 13.9)], .55, a=.1, b=.1, e=.5)
+        blob(p, arc(X(1.6), 14.4, .85, .8, 0, 300, 6))
+    return svg("0 0 16 16", el(p))
+
+def icon_overseer():
+    """Overseer (Goddess in game): an open eye, almond lids, the iris filled, three lashes."""
+    p = Path()
+    blob(p, [(.9, 8.6), (4.2, 5.2), (8, 4.2), (11.8, 5.2), (15.1, 8.6), (11.8, 11.6), (8, 12.6), (4.2, 11.6)], k=.85)
+    hole(p, [(2.9, 8.6), (5.2, 6.6), (8, 6.0), (10.8, 6.6), (13.1, 8.6), (10.8, 10.4), (8, 10.9), (5.2, 10.4)], k=.85)
+    blob(p, arc(8, 8.5, 2.0, 2.0, 0, 315, 8, wob=[0, .04, -.03, .05, 0, -.04, .03, 0]))
+    for x0, x1, y1 in ((4.6, 3.6, 2.4), (8, 8, 1.4), (11.4, 12.4, 2.4)):
+        stroke(p, [(x0, 5.0), ((x0 + x1) / 2, 3.6), (x1, y1)], .38, a=.2, b=.45, e=.12)
+    return svg("0 0 16 16", el(p))
+
 def icon_live():
     """The /admin live mark: grandma's chamberstick, lit (small cut, 16-20 px). The flame and its glow
     ticks are two paths so CSS can sway the flame (pivot at the wick, 8 7.4) and flicker the ticks while a run
