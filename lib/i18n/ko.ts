@@ -1,6 +1,6 @@
 // The public pages in Korean (D48): `en`'s keys (lib/copy.ts); a missing key reads English, an extra one
 // fails tsc, a stale one fails scripts/i18n-check.ts (run the translate-copy skill). Might, Kills,
-// Members and Level stay English (D23).
+// Members and Level take the game's own word where the glossary sources one, else English (D52).
 import type { Translation } from "../copy";
 
 export const ko = {
@@ -26,9 +26,9 @@ export const ko = {
     alliance: "연맹",
     member: "멤버",
     event: "이벤트",
-    might: "Might",
-    kills: "Kills",
-    members: "Members",
+    might: "전투력",
+    kills: "처치",
+    members: "인원",
     level: "Level",
     player: "플레이어",
     sanctuary: "성소",
@@ -48,6 +48,7 @@ export const ko = {
     myAlliance: "내 연맹",
     names: "이름",
     alliances: "연맹",
+    movers: "변동 순위",
   },
   settings: {
     language: "언어",
@@ -101,12 +102,12 @@ export const ko = {
   members: {
     search: "멤버 이름",
     sort: "정렬",
-    mightChange: "± Might",
-    killsChange: "± Kills",
+    mightChange: "± 전투력",
+    killsChange: "± 처치",
     byName: "이름순",
     name: "이름",
-    low: "최저 Might",
-    high: "최고 Might",
+    low: "최저 전투력",
+    high: "최고 전투력",
     clear: "지우기",
     clearAll: "모두 지우기",
     showAll: "모두 보기 ({n})",

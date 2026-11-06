@@ -14,7 +14,6 @@ import { copy, fill } from "@/lib/copy";
 
 import {
   createRound,
-  manualSnapshots,
   post,
   renameEvent,
   saveRound,
@@ -57,7 +56,7 @@ export function AdminActions({
   const locked = running.length > 0;
   const off = busy ?? (locked ? "running" : null);
 
-  async function send(action: Action, pin: string, force = false) {
+  async function send(action: Action, pin: string, force = action.force === true) {
     setBusy(action.id);
     setMessage(null);
     try {
@@ -101,7 +100,8 @@ export function AdminActions({
       <ManualSection
         manual={manual}
         busy={off}
-        seals={manual && manualSnapshots(manual.id).map(seal)}
+        seal={seal}
+        onStart={(a) => void start(a)}
         onCreate={(options) => void start(createRound(options))}
         onSave={(id, change) => void start(saveRound(id, change))}
       />

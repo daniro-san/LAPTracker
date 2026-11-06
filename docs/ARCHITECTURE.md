@@ -14,8 +14,8 @@ lib/sources/*.ts    adapters: v1.ts (documented API, primary), internal.ts (site
 lib/repo/*.ts       persistence: one module per table, plain functions over Drizzle.
 lib/queries/*.ts    read models for the UI (joins, sorting, name history). Never write. Never expose BLOCKED_ROSTER_KEYS.
 lib/logger.ts, lib/notify.ts, lib/env.ts, lib/redact.ts
-lib/schedule.ts     pure: SERVER_TZ ↔ UTC, Saturday events and their times, Friday-check and rehearsal slots.
-lib/tick.ts         the tick's decision: create the Saturday row, run the one due phase (from events.before_at/
+lib/schedule.ts     pure: SERVER_TZ ↔ UTC, scheduled events and their times, Friday-check and rehearsal slots.
+lib/tick.ts         the tick's decision: create the scheduled event's row, run the one due phase (from events.before_at/
                     after_at), the Friday check, a REHEARSAL_AT slot.
 lib/rehearsal.ts    rehearsal creation (guards, retention) and the pure verdict.
 lib/auth.ts         Bearer CRON_SECRET / x-edit-pin in constant time; the Postgres-backed rate limiter.
@@ -89,7 +89,7 @@ interface RanksBoard {
 }
 
 /** Called before every /v1 attempt, retries included; the collector counts calls here (Session 3). */
-type OnAttempt = (attempt: number) => void;
+type OnAttempt = (attempt: number, status?: number | null) => void; // status: what caused this retry
 
 interface V1Source {
   fetchAlliance(id: UnionId, onAttempt?: OnAttempt): Promise<AllianceSnapshotInput>;

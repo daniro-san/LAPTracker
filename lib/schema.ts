@@ -46,7 +46,7 @@ export const events = pgTable(
     discordPublicMessageId: text("discord_public_message_id"),
     discordAdminMessageId: text("discord_admin_message_id"),
     createdAt: tstz("created_at").notNull().defaultNow(),
-    // When each phase is due (plan §3.1). Saturdays: SNAPSHOT_BEFORE/AFTER in SERVER_TZ;
+    // When each phase is due (plan §3.1). Scheduled events: SNAPSHOT_BEFORE/AFTER in SERVER_TZ;
     // rehearsals: created + 15 / + 45 min. The tick reads these, not the env.
     beforeAt: tstz("before_at").notNull(),
     afterAt: tstz("after_at").notNull(),
@@ -189,15 +189,21 @@ export const appErrors = pgTable(
   (t) => [index("app_errors_at_idx").on(t.at)],
 );
 
-/** The last app-error alert (plan §6 Observability): one row, claimed so one instance posts per hour. */
-export const appAlerts = pgTable(
-  "app_alerts",
-  {
-    id: integer("id").primaryKey(),
-    alertedAt: tstz("alerted_at").notNull(),
-  },
-  (t) => [check("app_alerts_single_row_check", sql`${t.id} = 1`)],
-);
+/** The last alert of each kind (plan §6 Observability; id 1 app error, id 2 tick silence, D45),
+ * claimed so one instance posts per hour. */
+export const appAlerts = pgTable("app_alerts", {
+  id: integer("id").primaryKey(),
+  alertedAt: tstz("alerted_at").notNull(),
+});
+
+/** One row per authorised tick (D45): written before the tick's work, so a killed function leaves
+ * a row with no finished_at. Capped at MAX_TICK_LOG rows (lib/repo/ticks.ts). */
+export const tickLog = pgTable("tick_log", {
+  id: serial("id").primaryKey(),
+  startedAt: tstz("started_at").notNull(),
+  finishedAt: tstz("finished_at"),
+  outcome: text("outcome"),
+});
 
 /**
  * One row per REHEARSAL_AT occurrence (plan §3.1): the first tick in the slot's window claims it,

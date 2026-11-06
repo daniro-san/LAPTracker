@@ -10,7 +10,7 @@ Words already used in `lib/i18n/id.ts`. Reuse them so the pages stay consistent;
 | Alliance                  | Aliansi                      | `ledger.alliance`                                         |
 | Member                    | Anggota                      | `ledger.member` — a player inside an alliance             |
 | Player                    | Pemain                       | `ledger.player`                                           |
-| Event                     | Event                        | `ledger.event` — a Saturday event                         |
+| Event                     | Event                        | `ledger.event` — a game event                             |
 | Rank                      | Peringkat                    | `ledger.rank` — the #n position                           |
 | Ranking                   | Peringkat server             | `ledger.ranking` — the game's server rank                 |
 | Sanctuary                 | Suaka                        | `ledger.sanctuary` — a player's building level            |
@@ -21,9 +21,16 @@ Words already used in `lib/i18n/id.ts`. Reuse them so the pages stay consistent;
 | your time                 | waktumu                      | `time.yourTime` — after a time, the viewer's zone         |
 | Exact numbers             | Angka pasti                  | `site.exactNumbers` — the toggle; legend.rounded names it |
 | Manual round              | Ronde manual                 | `site.manualRound` — an event the admin runs by hand      |
+| Movers                    | Pergerakan                   | `ledger.movers` — the event's biggest gains and losses    |
 | Leader                    | Pemimpin                     | `leadership.leader` — the R5                              |
 | Run by hand by the admin  | Dijalankan manual oleh admin | `status.byHand`                                           |
 | grandma                   | nenek                        | the voice in empty states and errors                      |
 
-- Might, Kills, Members and Level stay in English, also inside labels (`± Might`).
+- Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.
+
+## Game terms (from the game)
+
+The game's own word for each term, with the page that shows it in the game's text and the quote. A term not listed stays English. Add a row only with a source that carries the game's own text (datamined text or an in-game screenshot), never a guide's prose (D52).
+
+None sourced yet: Might, Kills, Members and Level stay English.

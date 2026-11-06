@@ -19,7 +19,7 @@ export async function generateMetadata({
 export default async function EventPage({ params }: { params: Promise<{ id: string }> }) {
   const id = idOf((await params).id);
   if (id === null) notFound();
-  const { events, page } = await loadEventPage(id);
+  const { events, homeId, page } = await loadEventPage(id);
   if (!page) notFound();
-  return <EventView events={events} {...page} />;
+  return <EventView events={events} homeId={homeId} {...page} />;
 }

@@ -1,6 +1,6 @@
 // The public pages in Russian (D48): `en`'s keys (lib/copy.ts); a missing key reads English, an extra one
 // fails tsc, a stale one fails scripts/i18n-check.ts (run the translate-copy skill). Might, Kills,
-// Members and Level stay English (D23).
+// Members and Level take the game's own word where the glossary sources one, else English (D52).
 import type { Translation } from "../copy";
 
 export const ru = {
@@ -26,9 +26,9 @@ export const ru = {
     alliance: "Альянс",
     member: "Участник",
     event: "Событие",
-    might: "Might",
-    kills: "Kills",
-    members: "Members",
+    might: "Мощь",
+    kills: "Убийства",
+    members: "Участники",
     level: "Level",
     player: "Игрок",
     sanctuary: "Святилище",
@@ -48,6 +48,7 @@ export const ru = {
     myAlliance: "Мой альянс",
     names: "Имена",
     alliances: "Альянсы",
+    movers: "Движение",
   },
   settings: {
     language: "Язык",
@@ -101,12 +102,12 @@ export const ru = {
   members: {
     search: "Имя участника",
     sort: "Сортировка",
-    mightChange: "± Might",
-    killsChange: "± Kills",
+    mightChange: "± Мощь",
+    killsChange: "± Убийства",
     byName: "А–Я",
     name: "Имя",
-    low: "Мин. Might",
-    high: "Макс. Might",
+    low: "Мин. мощь",
+    high: "Макс. мощь",
     clear: "Сбросить",
     clearAll: "Сбросить всё",
     showAll: "Показать всех ({n})",

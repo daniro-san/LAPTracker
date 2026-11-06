@@ -3,6 +3,7 @@
 import { z } from "zod";
 
 import { authorize } from "@/lib/auth";
+import { finishTick, startTick } from "@/lib/repo/ticks";
 import { errorResponse, parseQuery, withContext } from "@/lib/route";
 import { runResponse } from "@/lib/run-response";
 import { runTick } from "@/lib/tick";
@@ -16,7 +17,11 @@ export function POST(request: Request): Promise<Response> {
     const auth = await authorize(request.headers, db, ctx, { cron: true, pin: false });
     if (!auth.ok) return errorResponse(auth.status, auth.code);
     if (!parseQuery(request, noQuery)) return errorResponse(400, "bad_request");
+    // INVARIANT tick.heartbeat-after-auth: a 401 is not a heartbeat (D45); the row goes in before
+    // the work, so a killed function still leaves one, with no finished_at.
+    const heartbeat = await startTick(db, ctx.now());
     const tick = await runTick(ctx, db, new URL(request.url).origin);
+    await finishTick(db, heartbeat, ctx.now(), tick.kind);
     switch (tick.kind) {
       case "idle":
         return new Response(null, { status: 204 });

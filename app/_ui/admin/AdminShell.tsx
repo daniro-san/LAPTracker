@@ -29,7 +29,7 @@ export async function AdminShell({ title, children }: { title: string; children:
   return (
     // English whatever the viewer's language (D48): the lang attribute says so for this subtree.
     <div lang="en">
-      <SiteHeader events={[]} currentId={null} copy={copy} publicPage={false} />
+      <SiteHeader events={[]} currentId={null} homeId={null} copy={copy} publicPage={false} />
       <main className="mx-auto max-w-[960px] px-4 py-4 sm:px-6">
         {unlocked ? <Unlocked title={title}>{children}</Unlocked> : <PinGate />}
       </main>

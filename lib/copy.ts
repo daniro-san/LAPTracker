@@ -58,6 +58,8 @@ export const en = {
     myAlliance: "My alliance",
     names: "Names",
     alliances: "Alliances",
+    /** The event's biggest gains and losses (#70). */
+    movers: "Movers",
   },
   /** The header's settings menu (D38). */
   settings: {
@@ -252,8 +254,9 @@ export function blankCopy<T>(value: T): T {
 }
 
 /**
- * The game's own English UI words (DESIGN.md "Numbers first"): members read Might, Kills, Members and
- * Level in the game every day without reading English, so the blank dictionary keeps them.
+ * The game's own UI words (DESIGN.md "Numbers first"): members read Might, Kills, Members and Level in the
+ * game every day, so the blank dictionary keeps them. A language uses the game's word for them where its
+ * glossary sources one, else the English (D52).
  */
 const GAME_TERMS = ["might", "kills", "members", "level"] as const;
 

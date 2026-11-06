@@ -109,13 +109,23 @@ describe("translations", () => {
   const english = shape(en);
   it.each(Object.entries(TRANSLATIONS))(
     "%s keeps every placeholder and the game's own terms",
-    (_, translation) => {
+    (tag, translation) => {
       for (const [key, placeholders] of shape(translation)) {
         expect(`${key} ${placeholders}`).toBe(`${key} ${english.get(key)}`);
       }
+      // The game's own word from the glossary's "Game terms (from the game)" table, else English (D52).
+      const glossary = readFileSync(join(ROOT, "lib/i18n/glossary", `${tag}.md`), "utf8");
+      const sourced = new Map(
+        [
+          ...(glossary.split("## Game terms (from the game)")[1] ?? "").matchAll(
+            /^\|\s*(\w+)\s*\|([^|]+)\|/gm,
+          ),
+        ].map(([, english, word]) => [english, word?.trim()]),
+      );
       const l = translation.ledger ?? {};
       for (const term of ["might", "kills", "members", "level"] as const) {
-        if (l[term] !== undefined) expect(l[term]).toBe(en.ledger[term]);
+        if (l[term] !== undefined)
+          expect(l[term]).toBe(sourced.get(en.ledger[term]) ?? en.ledger[term]);
       }
     },
   );

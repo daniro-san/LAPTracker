@@ -164,6 +164,34 @@ describe("runSnapshot", () => {
     expect(await repo.findSnapshot(EVENT_ID, "before")).toMatchObject({ status: "running" });
   });
 
+  it("cuts the other reads when a worker throws, so no row lands after the run rejected", async () => {
+    let release = () => {};
+    const v1 = fakeV1(fresh);
+    v1.fetchAlliance = async (id, onAttempt, signal) => {
+      onAttempt?.(0);
+      v1.calls.push(id);
+      if (id !== SECOND) return fresh(id);
+      // A read still in flight when FIRST's insert throws: it answers after the run rejected.
+      return new Promise((resolve, reject) => {
+        release = () => resolve(fresh(id));
+        signal?.addEventListener("abort", () => reject(signal.reason));
+      });
+    };
+    const { deps, repo } = makeDeps(v1);
+    const insert = repo.insertAllianceRow;
+    repo.insertAllianceRow = async (snapshotId, row, members) => {
+      if (row.unionId === FIRST) throw new Error("db down");
+      return insert(snapshotId, row, members);
+    };
+
+    await expect(runSnapshot(EVENT_ID, "before", deps)).rejects.toThrow("db down");
+    const before = (await repo.findSnapshot(EVENT_ID, "before"))?.id ?? 0;
+    release();
+    await new Promise((resolve) => setImmediate(resolve));
+
+    expect(rowsOf(repo, before).map((r) => r.unionId)).not.toContain(SECOND);
+  });
+
   it("writes one v1.fetch line per /v1 call with its status, cache flag and duration", async () => {
     const v1 = fakeV1((id) => (id === FIRST ? new UpstreamError(503) : fresh(id)));
     const lines: { code: string; data: Record<string, unknown> }[] = [];
@@ -192,6 +220,25 @@ describe("runSnapshot", () => {
       duration_ms: 0,
       quota_remaining: 900,
     });
+  });
+
+  it("writes the status that caused each retry on its v1.retry line", async () => {
+    const v1 = fakeV1(fresh);
+    const fetchAlliance = v1.fetchAlliance;
+    v1.fetchAlliance = async (id, onAttempt, signal) => {
+      if (id === FIRST) onAttempt?.(1, 503);
+      return fetchAlliance(id, onAttempt, signal);
+    };
+    const retries: Record<string, unknown>[] = [];
+    const { deps } = makeDeps(v1);
+    deps.logger = {
+      ...deps.logger,
+      warn: async (code, data = {}) => void (code === "v1.retry" && retries.push(data)),
+    };
+
+    await runSnapshot(EVENT_ID, "before", deps);
+
+    expect(retries).toEqual([{ union_id: FIRST, retry_n: 1, http_status: 503 }]);
   });
 
   it("counts the /v1 attempts after the last quota-bearing response as unseen", async () => {

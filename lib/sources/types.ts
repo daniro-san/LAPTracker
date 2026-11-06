@@ -56,8 +56,9 @@ export interface RanksBoard {
 /**
  * Called before every /v1 request attempt, retries included (attempt 0 is the first). Each attempt
  * spends quota, so the collector counts calls here. If it throws, that attempt is not sent.
+ * `status` is the response that caused this retry; null on attempt 0.
  */
-export type OnAttempt = (attempt: number) => void;
+export type OnAttempt = (attempt: number, status?: number | null) => void;
 
 export interface V1Source {
   /** `signal` cuts the call when it aborts (the run deadline), on top of TIMEOUT_MS. */

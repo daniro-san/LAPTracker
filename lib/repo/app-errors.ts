@@ -25,15 +25,18 @@ export async function insertAppError(db: Db, row: AppErrorRow): Promise<void> {
   if (oldestKept) await db.delete(appErrors).where(lt(appErrors.id, oldestKept.id));
 }
 
+/** app_alerts ids: one row per kind of alert (D45). */
+export const APP_ERROR_ALERT = 1;
+export const TICK_SILENCE_ALERT = 2;
+
 /**
- * Claims the app-error alert: true for exactly one caller, and only when the last alert is at
- * least gapMs before now (or there has been none). One statement, so two instances cannot both win.
+ * Claims alert `id`: true for exactly one caller, and only when that alert last went out at least
+ * gapMs before now (or never). One statement, so two instances cannot both win.
  */
-export async function claimAppErrorAlert(db: Db, now: Date, gapMs: number): Promise<boolean> {
-  // INVARIANT app-errors.alert-hourly
+export async function claimAlert(db: Db, id: number, now: Date, gapMs: number): Promise<boolean> {
   const rows = await db
     .insert(appAlerts)
-    .values({ id: 1, alertedAt: now })
+    .values({ id, alertedAt: now })
     .onConflictDoUpdate({
       target: appAlerts.id,
       set: { alertedAt: now },
@@ -41,4 +44,9 @@ export async function claimAppErrorAlert(db: Db, now: Date, gapMs: number): Prom
     })
     .returning({ id: appAlerts.id });
   return rows.length > 0;
+}
+
+export function claimAppErrorAlert(db: Db, now: Date, gapMs: number): Promise<boolean> {
+  // INVARIANT app-errors.alert-hourly
+  return claimAlert(db, APP_ERROR_ALERT, now, gapMs);
 }

@@ -10,7 +10,7 @@ Words already used in `lib/i18n/nl.ts`. Reuse them so the pages stay consistent;
 | Alliance                  | Alliantie                        | `ledger.alliance`                                         |
 | Member                    | Lid                              | `ledger.member` — a player inside an alliance             |
 | Player                    | Speler                           | `ledger.player`                                           |
-| Event                     | Event                            | `ledger.event` — a Saturday event                         |
+| Event                     | Event                            | `ledger.event` — a game event                             |
 | Rank                      | Rang                             | `ledger.rank` — the #n position                           |
 | Ranking                   | Ranglijst                        | `ledger.ranking` — the game's server rank                 |
 | Sanctuary                 | Heiligdom                        | `ledger.sanctuary` — a player's building level            |
@@ -25,5 +25,11 @@ Words already used in `lib/i18n/nl.ts`. Reuse them so the pages stay consistent;
 | Run by hand by the admin  | De admin start het met de hand   | `status.byHand`                                           |
 | grandma                   | oma                              | the voice in empty states and errors                      |
 
-- Might, Kills, Members and Level stay in English, also inside labels (`± Might`).
+- Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.
+
+## Game terms (from the game)
+
+The game's own word for each term, with the page that shows it in the game's text and the quote. A term not listed stays English. Add a row only with a source that carries the game's own text (datamined text or an in-game screenshot), never a guide's prose (D52).
+
+None sourced yet: Might, Kills, Members and Level stay English.

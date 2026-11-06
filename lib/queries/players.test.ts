@@ -20,7 +20,13 @@ beforeAll(async () => {
   const at = new Date("2026-10-17T14:00:00Z");
   const [event] = await db
     .insert(events)
-    .values({ name: "Saturday", eventAtUtc: at, allianceIds: [1], beforeAt: at, afterAt: at })
+    .values({
+      name: "Saturday Event 2026-10-17",
+      eventAtUtc: at,
+      allianceIds: [1],
+      beforeAt: at,
+      afterAt: at,
+    })
     .returning({ id: events.id });
   for (const phase of ["before", "after"] as const) {
     const [snap] = await db

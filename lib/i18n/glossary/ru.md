@@ -10,7 +10,7 @@ Words already used in `lib/i18n/ru.ts`. Reuse them so the pages stay consistent;
 | Alliance                  | Альянс                      | `ledger.alliance`                                         |
 | Member                    | Участник                    | `ledger.member` — a player inside an alliance             |
 | Player                    | Игрок                       | `ledger.player`                                           |
-| Event                     | Событие                     | `ledger.event` — a Saturday event                         |
+| Event                     | Событие                     | `ledger.event` — a game event                             |
 | Rank                      | Место                       | `ledger.rank` — the #n position                           |
 | Ranking                   | Рейтинг                     | `ledger.ranking` — the game's server rank                 |
 | Sanctuary                 | Святилище                   | `ledger.sanctuary` — a player's building level            |
@@ -24,6 +24,19 @@ Words already used in `lib/i18n/ru.ts`. Reuse them so the pages stay consistent;
 | Leader                    | Лидер                       | `leadership.leader` — the R5                              |
 | Run by hand by the admin  | Админ запускает вручную     | `status.byHand`                                           |
 | grandma                   | бабушка                     | the voice in empty states and errors                      |
+| Movers                    | Движение                    | `ledger.movers` — the event's biggest gains and losses    |
 
-- Might, Kills, Members and Level stay in English, also inside labels (`± Might`).
+- Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.
+
+## Game terms (from the game)
+
+The game's own word for each term, with the page that shows it in the game's text and the quote. A term not listed stays English. Add a row only with a source that carries the game's own text (datamined text or an in-game screenshot), never a guide's prose (D52).
+
+| English | ru        | Source                                        | Quote                                                         |
+| ------- | --------- | --------------------------------------------- | ------------------------------------------------------------- |
+| Might   | Мощь      | https://lastasylum.gg/ru/events/alliance-duel | входящие в топ-32 по мощи на сервере                          |
+| Kills   | Убийства  | https://lastasylum.gg/ru/events/kingdom-war   | Повышайте свой рейтинг убийств и достигайте ступеней по очкам |
+| Members | Участники | https://lastasylum.gg/ru/events/alliance-duel | допускаются альянсы с более чем 20 участниками в воскресенье  |
+
+Nominative plural for the column headers (`Убийства`, `Участники`); lower case after an abbreviation (`Мин. мощь`). Level stays English: the game writes `ур.` before the number, not as a header.

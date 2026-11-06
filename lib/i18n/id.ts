@@ -1,6 +1,6 @@
 // The public pages in Indonesian (D48): `en`'s keys (lib/copy.ts); a missing key reads English, an extra one
 // fails tsc, a stale one fails scripts/i18n-check.ts (run the translate-copy skill). Might, Kills,
-// Members and Level stay English (D23).
+// Members and Level take the game's own word where the glossary sources one, else English (D52).
 import type { Translation } from "../copy";
 
 export const idID = {
@@ -48,6 +48,7 @@ export const idID = {
     myAlliance: "Aliansiku",
     names: "Nama",
     alliances: "Aliansi",
+    movers: "Pergerakan",
   },
   settings: {
     language: "Bahasa",

@@ -1,6 +1,6 @@
 // The public pages in Brazilian Portuguese (D48): `en`'s keys (lib/copy.ts); a missing key reads English,
 // an extra one fails tsc, a stale one fails scripts/i18n-check.ts (run the translate-copy skill). Might,
-// Kills, Members and Level stay English (D23).
+// Kills, Members and Level take the game's own word where the glossary sources one, else English (D52).
 import type { Translation } from "../copy";
 
 export const ptBR = {
@@ -48,6 +48,7 @@ export const ptBR = {
     myAlliance: "Minha aliança",
     names: "Nomes",
     alliances: "Alianças",
+    movers: "Maiores mudanças",
   },
   settings: {
     language: "Idioma",

@@ -18,6 +18,7 @@ import { DroppedStitch, Hourglass, StitchedCheck } from "@/lib/brand/components/
 import { YarnCorner } from "@/lib/brand/components/YarnCorner";
 import { copy, fill } from "@/lib/copy";
 
+import { MoversSample } from "./MoversSample";
 import { Section, Spec } from "./parts";
 
 const t = copy.brand.components;
@@ -129,7 +130,6 @@ function Trace() {
                 endpoint: "quota",
                 alliance: null,
                 seconds: 0.4,
-                retries: null,
                 cached: null,
               },
               {
@@ -184,6 +184,9 @@ function Ornaments() {
           <OfficerStar className="size-4 text-sage" />
           {copy.leadership.title}
         </p>
+      </Spec>
+      <Spec name={t.movers.name} use={t.movers.use}>
+        <MoversSample />
       </Spec>
       <Spec name={t.lace.name} use={t.lace.use} plate="text-plum">
         <div className="w-full">

@@ -3,7 +3,7 @@
 // send only after the snapshot row is final. Messages carry alliance tags and names, counts and links:
 // never member names, never secrets (plan §12.3). Text lives in lib/copy-discord.ts.
 import type { RunSummary } from "./collector";
-import { delta as computeDelta } from "./compute";
+import { topMovers } from "./compute";
 import { copy, fill } from "./copy";
 import { sendOrEdit as send } from "./discord-send";
 import type { Env } from "./env";
@@ -176,7 +176,7 @@ export interface PublicContext {
    */
   alliances: PublicAlliance[] | null;
   before: PublicAlliance[] | null;
-  /** A manual round's name: the message says it is a manual round (D28). Null for a Saturday event. */
+  /** A manual round's name: the message says it is a manual round (D28). Null for a scheduled event. */
   roundName?: string | null;
   /** When the before snapshot finished, on the after message: it shows the whole event (D31). */
   beforeAt?: Date | null;
@@ -188,21 +188,15 @@ const usable = (a: PublicAlliance) => a.isFresh && !a.failed;
 /** The top gains of one metric: `[OGs] OldGrandmas ▲ +85.8M (+2.0%)`. Alliances with bad data are out. */
 function movers(ctx: PublicContext, metric: "power" | "kills"): string[] {
   const before = new Map((ctx.before ?? []).map((a) => [a.unionId, a]));
-  const gains = (ctx.alliances ?? []).flatMap((a) => {
+  const side = (a: PublicAlliance) => ({ ...a, isFresh: usable(a) });
+  const rows = (ctx.alliances ?? []).map((a) => {
     const b = before.get(a.unionId);
-    if (!b || !usable(a) || !usable(b)) return [];
-    const d = computeDelta(b, a);
-    const base = metric === "power" ? b.totalPower : b.totalKills;
-    if (!d || d[metric] <= 0) return [];
-    return [{ a, gain: d[metric], base }];
+    return { a, before: b ? side(b) : null, after: side(a) };
   });
-  return gains
-    .sort((x, y) => y.gain - x.gain)
-    .slice(0, MOVERS)
-    .map(({ a, gain, base }) => {
-      const pct = base ? ` (${sign(gain)}${percentFormat.format(gain / base)})` : "";
-      return `${allianceLabel(a)} ▲ ${signedCompact(gain)}${pct}`;
-    });
+  return topMovers(rows, metric, MOVERS, "gain").map(({ row, delta, base }) => {
+    const pct = base ? ` (${sign(delta)}${percentFormat.format(delta / base)})` : "";
+    return `${allianceLabel(row.a)} ▲ ${signedCompact(delta)}${pct}`;
+  });
 }
 
 /** A heading and its top gains, or nothing when no alliance gained. */
@@ -355,4 +349,10 @@ export function appErrorMessage(route: string, message: string, digest: string |
     message,
     digest: digest ? fill(t.digest, { digest }) : "",
   });
+}
+
+/** The tick-silence alert (D45): minutes since the last tick and its time, or none recorded. */
+export function tickSilenceMessage(last: { min: number; at: string } | null): string {
+  const t = copy.discord.admin;
+  return last ? fill(t.tickSilence, last) : t.tickNone;
 }

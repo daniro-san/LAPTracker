@@ -15,6 +15,8 @@ import { Leadership } from "@/app/_ui/Leadership";
 import { requestClock, requestCopy } from "@/app/_ui/locale";
 import { canCompare, leadership, memberViews, withRoles } from "@/app/_ui/member-views";
 import { MembersExplorer } from "@/app/_ui/MembersExplorer";
+import { memberScope } from "@/app/_ui/mover-lists";
+import { Movers } from "@/app/_ui/Movers";
 import { MyAllianceToggle } from "@/app/_ui/MyAlliance";
 import { Delta, Num, Rank } from "@/app/_ui/Num";
 import { AllianceBadge } from "@/app/_ui/Pictures";
@@ -31,7 +33,9 @@ import {
   allianceNames,
   eventRanks,
   getAllianceDetail,
+  homeEvent,
   listEvents,
+  memberMovers,
 } from "@/lib/queries";
 
 const usable = (a: AllianceRow | null) => a !== null && a.isFresh && !a.failed;
@@ -185,7 +189,16 @@ const loadAlliance = cache((eventId: number, unionId: number) =>
       allianceNames(db, [unionId]),
       eventRanks(db, eventId),
     ]);
-    return { detail, events, history, names: names.get(unionId) ?? [], ledger: ranks.get(unionId) };
+    const phases = events.find((e) => e.id === eventId)?.snapshots ?? [];
+    return {
+      detail,
+      events,
+      homeId: homeEvent(events)?.id ?? null,
+      history,
+      names: names.get(unionId) ?? [],
+      ledger: ranks.get(unionId),
+      movers: await memberMovers(db, phases, unionId),
+    };
   }),
 );
 
@@ -238,7 +251,7 @@ function crumbsFor(events: Events, eventId: number, label: string, clock: Clock,
   return [
     {
       key: "ledger",
-      href: eventId === events[0]?.id ? "/" : `/events/${eventId}`,
+      href: eventId === homeEvent(events)?.id ? "/" : `/events/${eventId}`,
       label: event ? `${copy.site.home} · ${clock.weekday(event.eventAtUtc)}` : copy.site.home,
     },
     { key: "alliance", label },
@@ -255,7 +268,7 @@ export default async function AlliancePage({ params }: { params: Params }) {
     requestCopy(),
   ]);
   if (!data) notFound();
-  const { detail, events, history, names, ledger } = data;
+  const { detail, events, homeId, history, names, ledger, movers } = data;
   const now = detail.after ?? detail.before;
   const label = allianceLabel(now?.tag ?? String(unionId), now?.name ?? null);
   const canDelta = usable(detail.before) && usable(detail.after);
@@ -266,7 +279,7 @@ export default async function AlliancePage({ params }: { params: Params }) {
   const metrics = totalsMetrics(detail, canDelta, left, copy);
   return (
     <>
-      <SiteHeader events={events} currentId={eventId} clock={clock} copy={copy} />
+      <SiteHeader events={events} currentId={eventId} homeId={homeId} clock={clock} copy={copy} />
       <main className="mx-auto max-w-[960px] px-4 py-4 sm:px-6">
         <Breadcrumbs crumbs={crumbsFor(events, eventId, label, clock, copy)} />
         <div
@@ -303,6 +316,7 @@ export default async function AlliancePage({ params }: { params: Params }) {
           copy={copy}
         />
         <Leadership members={leadership(views(detail))} />
+        <Movers scopes={[memberScope(movers, null)]} />
         <h2 className="mb-2 mt-8 font-subhead text-display-md">{copy.ledger.members}</h2>
         <MemberList detail={detail} canDelta={canDelta} />
         <AcrossEvents unionId={unionId} history={history} clock={clock} />

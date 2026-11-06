@@ -2,10 +2,11 @@
 // latest rehearsal. Never linked from public pages; the pages check the admin cookie first.
 import { and, asc, desc, eq, gt, isNotNull } from "drizzle-orm";
 
+import { RUN_STALE_AFTER_MS } from "../compute";
 import type { Db } from "../db";
 import { rehearsalVerdict, type Verdict } from "../rehearsal";
 import { loadVerdictInput } from "../repo/rehearsals";
-import { allianceSnapshots, appErrors, events, runLogs, snapshots } from "../schema";
+import { allianceSnapshots, appErrors, events, runLogs, snapshots, tickLog } from "../schema";
 
 export interface ManualEventStatus {
   id: number;
@@ -72,8 +73,14 @@ export interface RunningSnapshot {
   startedAt: Date;
 }
 
-/** A row still `running` this long after it started is a crashed run, not a live one (D25: 100 s). */
-const LIVE_MS = 10 * 60_000;
+/** The newest ticks (D45), newest first: when each started and what it did (null: no end yet). */
+export async function recentTicks(db: Db, limit = 5) {
+  return db
+    .select({ startedAt: tickLog.startedAt, outcome: tickLog.outcome })
+    .from(tickLog)
+    .orderBy(desc(tickLog.id))
+    .limit(limit);
+}
 
 /** The snapshots running right now, whoever started them (the tick, a button, a rehearsal). */
 export async function runningSnapshots(db: Db, now: Date): Promise<RunningSnapshot[]> {
@@ -92,7 +99,7 @@ export async function runningSnapshots(db: Db, now: Date): Promise<RunningSnapsh
     .where(
       and(
         eq(snapshots.status, "running"),
-        gt(snapshots.startedAt, new Date(now.getTime() - LIVE_MS)),
+        gt(snapshots.startedAt, new Date(now.getTime() - RUN_STALE_AFTER_MS)),
       ),
     )
     .orderBy(asc(snapshots.startedAt));
@@ -191,8 +198,9 @@ export interface TraceCall {
   seconds: number | null;
   httpStatus: number | null;
   cached: boolean | null;
-  /** `v1.retry` lines for the same alliance; null for the quota call (its retries carry no id). */
-  retries: number | null;
+  /** `v1.retry` lines for the same alliance; for the quota call, the lines with no union id (one
+   * quota call per run). */
+  retries: number;
   slowest: boolean;
 }
 
@@ -222,10 +230,9 @@ export function runTrace(
   startedAt: Date,
 ): RunTrace {
   const own = logs.filter((l) => l.at >= startedAt);
-  const retries = new Map<number, number>();
+  const retries = new Map<number | null, number>();
   for (const l of own) {
-    if (l.code === "v1.retry" && l.unionId !== null)
-      retries.set(l.unionId, (retries.get(l.unionId) ?? 0) + 1);
+    if (l.code === "v1.retry") retries.set(l.unionId, (retries.get(l.unionId) ?? 0) + 1);
   }
   const calls: TraceCall[] = own
     .filter((l) => l.code === "v1.fetch")
@@ -240,7 +247,7 @@ export function runTrace(
         seconds: ms === null ? null : ms / 1000,
         httpStatus: num(d.http_status),
         cached: typeof d.cached === "boolean" ? d.cached : null,
-        retries: quota || l.unionId === null ? null : (retries.get(l.unionId) ?? 0),
+        retries: retries.get(quota ? null : l.unionId) ?? 0,
         slowest: false,
       };
     });
@@ -254,7 +261,7 @@ export function runTrace(
     total: {
       calls: calls.length,
       seconds: calls.reduce((sum, c) => sum + (c.seconds ?? 0), 0),
-      retries: calls.reduce((sum, c) => sum + (c.retries ?? 0), 0),
+      retries: calls.reduce((sum, c) => sum + c.retries, 0),
     },
   };
 }

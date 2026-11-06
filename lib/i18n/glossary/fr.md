@@ -10,7 +10,7 @@ Words already used in `lib/i18n/fr.ts`. Reuse them so the pages stay consistent;
 | Alliance                  | Alliance                              | `ledger.alliance`                                         |
 | Member                    | Membre                                | `ledger.member` — a player inside an alliance             |
 | Player                    | Joueur                                | `ledger.player`                                           |
-| Event                     | Événement                             | `ledger.event` — a Saturday event                         |
+| Event                     | Événement                             | `ledger.event` — a game event                             |
 | Rank                      | Rang                                  | `ledger.rank` — the #n position                           |
 | Ranking                   | Classement                            | `ledger.ranking` — the game's server rank                 |
 | Sanctuary                 | Sanctuaire                            | `ledger.sanctuary` — a player's building level            |
@@ -24,7 +24,14 @@ Words already used in `lib/i18n/fr.ts`. Reuse them so the pages stay consistent;
 | Leader                    | Chef                                  | `leadership.leader` — the R5                              |
 | Run by hand by the admin  | Lancé à la main par l’admin           | `status.byHand`                                           |
 | grandma                   | mamie                                 | the voice in empty states and errors                      |
+| Movers                    | Mouvements                            | `ledger.movers` — the biggest gains and losses per event  |
 
-- Might, Kills, Members and Level stay in English, also inside labels (`± Might`).
+- Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.
 - A non-breaking space (U+00A0) goes before `:`.
+
+## Game terms (from the game)
+
+The game's own word for each term, with the page that shows it in the game's text and the quote. A term not listed stays English. Add a row only with a source that carries the game's own text (datamined text or an in-game screenshot), never a guide's prose (D52).
+
+None sourced yet: Might, Kills, Members and Level stay English.

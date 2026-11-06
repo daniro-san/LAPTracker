@@ -1,6 +1,6 @@
 // The public pages in Vietnamese (D48): `en`'s keys (lib/copy.ts); a missing key reads English, an extra one
 // fails tsc, a stale one fails scripts/i18n-check.ts (run the translate-copy skill). Might, Kills,
-// Members and Level stay English (D23).
+// Members and Level take the game's own word where the glossary sources one, else English (D52).
 import type { Translation } from "../copy";
 
 export const vi = {
@@ -26,9 +26,9 @@ export const vi = {
     alliance: "Liên minh",
     member: "Thành viên",
     event: "Sự kiện",
-    might: "Might",
-    kills: "Kills",
-    members: "Members",
+    might: "Lực Chiến",
+    kills: "Tiêu diệt",
+    members: "Thành viên",
     level: "Level",
     player: "Người chơi",
     sanctuary: "Thánh địa",
@@ -48,6 +48,7 @@ export const vi = {
     myAlliance: "Liên minh của tôi",
     names: "Tên",
     alliances: "Liên minh",
+    movers: "Biến động",
   },
   settings: {
     language: "Ngôn ngữ",
@@ -101,12 +102,12 @@ export const vi = {
   members: {
     search: "Tên thành viên",
     sort: "Sắp xếp",
-    mightChange: "± Might",
-    killsChange: "± Kills",
+    mightChange: "± Lực Chiến",
+    killsChange: "± Tiêu diệt",
     byName: "A–Z",
     name: "Tên",
-    low: "Might thấp nhất",
-    high: "Might cao nhất",
+    low: "Lực Chiến thấp nhất",
+    high: "Lực Chiến cao nhất",
     clear: "Xóa",
     clearAll: "Xóa hết",
     showAll: "Xem tất cả ({n})",

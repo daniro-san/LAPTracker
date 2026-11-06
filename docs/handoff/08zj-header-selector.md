@@ -10,6 +10,7 @@
   - With no current event (the player page and /players) it reads "All events" (`copy.site.allEvents`) instead of "Events".
   - `whitespace-nowrap` keeps it to one line.
 - The selector's list: each row is the event's title. Under the title, in small text, are the ✎ mark, the date and "latest". An event with no title shows its date alone, plus "latest" on the newest one.
+- Below 420 px the header's search link is the magnifier alone, a 44 px square; its word stays for screen readers (`sr-only min-[420px]:not-sr-only`). This is the owner's choice after the merge with #136, recorded in D49.
 - `app/_ui/EventLabel.tsx`:
   - `eventTitle(e)` returns the event's name for a manual round or a renamed event. It returns null while a scheduled event keeps its generated name.
   - `EventLabel` renders the title, or else the weekday date.
@@ -59,16 +60,17 @@
 - Accessible name of the closed selector (text content including screen-reader text):
   - "Manual round: Manual round Nov 5 · retake after the reset, Thu, Nov 5 ▾"
   - "KvK 12-11, Sat, Oct 31 ▾"
+- After the merge with #136, real dictionaries, `lang` cookie, all 18 languages:
+  - Manual-round event page and player page at 320, 360 and 420 px, light.
+  - Manual-round, renamed and player pages at 360 px, dark.
+  - 162 captures. Header 64 px, one row, no control past the right edge, except the player page at 320 px in fr and pl (see Open issues).
+  - Before the magnifier-only change, the search word plus the selector needed up to 262 px where 216 px is left at 360 px (ja "All events" 46 px over).
 - `pnpm check`: green (prettier, eslint, tsc, 38 test files / 163 tests, drift check).
 
 ## Open issues
 
 - Pre-existing, not fixed, the owner was told: the selector's first row ("latest") links to `/`. `/` shows the newest scheduled event (D28), so when a manual round is the newest event, "latest" opens the scheduled event, not the round. Checked locally: `/` rendered "Saturday, October 31" while the round was newest. `crumbsFor` on the alliance page has the same `events[0]` → `/` rule.
-- Real dictionaries (#136) break "one row at 360 px" in some languages. Measured at 360 px: Players + selector need at most 216 px.
-  - Event page, manual round: pt-BR over by 26 px, ja by 24, vi by 31, ko by 2. The cause is the translated Players word plus the localized weekday date.
-  - Player page, "All events": es over by 34 px, pt-BR 30, fr 38, pl 36, tr 18, ja 46, vi 11, it 6.
-  - In ja and ko the squeezed Players link wraps inside its box.
-  - Not fixed here: it needs the owner's choice. Either Players shows the magnifier alone below 400 px, or the date drops the weekday below 400 px and the selector truncates as a last resort.
+- At 320 px the player page's "All events" still overflows its box in fr ("Tous les événements") and pl ("Wszystkie wydarzenia"). 360 px is the design width.
 - The ✎ mark is new and has no entry in the legend. DESIGN.md's legend lists arrows, the stale mark, the rounded mark and `[TEST]`.
 
 ## Next

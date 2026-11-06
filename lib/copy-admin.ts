@@ -39,6 +39,16 @@ export const adminCopy = {
     last: "Last result",
     noRun: "No run yet.",
     open: "Open this run",
+    tick: "Last tick",
+    noTick: "No tick recorded yet.",
+    tickNote: "Newest first: {list}",
+    tickOutcome: {
+      idle: "nothing due",
+      run: "snapshot",
+      "quota-check": "quota check",
+      rehearsal: "rehearsal",
+      none: "no end",
+    },
   },
   schedule: {
     title: "Schedule",
@@ -171,6 +181,12 @@ export const adminCopy = {
       before: "Record the numbers now.",
       after: "Record them again later.",
     },
+    /** A done phase (issue 157): a secondary control instead of the seal; one confirmation, then `force`. */
+    again: "Record again",
+    againName: "Record the {phase} again",
+    againConfirm:
+      "This replaces the {seal} snapshot from {at}. About 21 of today's 1,000 API calls, up to a minute.",
+    complete: "Round complete",
   },
   rehearsal: {
     title: "Last rehearsal",

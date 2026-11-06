@@ -1,6 +1,6 @@
 // The public pages in Simplified Chinese (D48): `en`'s keys (lib/copy.ts); a missing key reads English, an extra one
 // fails tsc, a stale one fails scripts/i18n-check.ts (run the translate-copy skill). Might, Kills,
-// Members and Level stay English (D23).
+// Members and Level take the game's own word where the glossary sources one, else English (D52).
 import type { Translation } from "../copy";
 
 export const zhCN = {
@@ -48,6 +48,7 @@ export const zhCN = {
     myAlliance: "我的联盟",
     names: "名称",
     alliances: "联盟",
+    movers: "涨跌榜",
   },
   settings: {
     language: "语言",

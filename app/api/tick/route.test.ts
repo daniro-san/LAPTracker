@@ -12,7 +12,7 @@ import {
 import { IDS } from "@/lib/collector.test-helpers";
 import type { Db } from "@/lib/db";
 import { openTestDb, truncateAll } from "@/lib/db.test-helpers";
-import { events, rehearsalSlots, snapshots } from "@/lib/schema";
+import { events, rehearsalSlots, snapshots, tickLog } from "@/lib/schema";
 
 const holder = vi.hoisted(() => ({ ctx: null as AppContext | null }));
 vi.mock("@/lib/app-context", async (original) => ({
@@ -59,6 +59,55 @@ describe("POST /api/tick", () => {
     expect(v1.calls).toHaveLength(IDS.length);
   });
 
+  it("writes a heartbeat row with its start, end and outcome", async () => {
+    const { ctx, clock } = testContext(db);
+    holder.ctx = ctx;
+    clock.now = new Date("2026-11-04T10:00:00Z");
+
+    expect((await tick()).status).toBe(204);
+
+    expect(await db.select().from(tickLog)).toEqual([
+      { id: 1, startedAt: clock.now, finishedAt: clock.now, outcome: "idle" },
+    ]);
+  });
+
+  it("writes no heartbeat row for a tick with the wrong secret", async () => {
+    holder.ctx = testContext(db).ctx;
+
+    const res = await POST(request("/api/tick", { headers: { authorization: "Bearer wrong" } }));
+
+    expect(res.status).toBe(401);
+    expect(await db.select().from(tickLog)).toEqual([]);
+  });
+
+  it("answers 204, not 409, to a tick that loses its phase to a concurrent caller", async () => {
+    const { ctx, clock } = testContext(db);
+    holder.ctx = ctx;
+    clock.now = new Date("2026-11-07T12:05:00Z");
+
+    const statuses = (await Promise.all([tick(), tick()])).map((r) => r.status).sort();
+
+    expect(statuses).toEqual([200, 204]);
+    expect(await db.select({ id: snapshots.id }).from(snapshots)).toHaveLength(1);
+  });
+
+  it("answers by 115 s from the run's start even when Discord never answers", async () => {
+    const { ctx, clock } = testContext(db);
+    holder.ctx = ctx;
+    clock.now = new Date("2026-11-07T12:05:00Z");
+    // The run has used 116 s by the time it reads the quota; then every webhook call hangs.
+    const fetchQuota = ctx.v1.fetchQuota;
+    ctx.v1.fetchQuota = async (...args) => {
+      clock.now = new Date(clock.now.getTime() + 116_000);
+      return fetchQuota(...args);
+    };
+    ctx.fetch = () => new Promise<Response>(() => {});
+
+    const res = await tick();
+
+    expect(res.status).toBe(200);
+  });
+
   it("runs only the earlier phase when both phases are due in the same tick", async () => {
     // AFTER at 10:30 server: at 10:35 server (12:35 UTC) both windows are open.
     const { ctx, clock } = testContext(db, { ...TEST_ENV, SNAPSHOT_AFTER: "10:30" });
@@ -73,7 +122,7 @@ describe("POST /api/tick", () => {
     expect(rows).toEqual([{ phase: "before" }]);
   });
 
-  it("creates the coming Saturday's event once, a day ahead, with its phase times from the env", async () => {
+  it("creates the coming scheduled event once, a day ahead, with its phase times from the env", async () => {
     const { ctx, clock } = testContext(db);
     holder.ctx = ctx;
     // Saturday 2026-11-07 BEFORE is 10:00 server = 12:00 UTC; a day ahead is Friday 12:00 UTC.

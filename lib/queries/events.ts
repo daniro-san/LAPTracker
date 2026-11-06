@@ -47,6 +47,23 @@ export async function listEvents(db: Db) {
 
 export type EventSummary = Awaited<ReturnType<typeof listEvents>>[number];
 
+/**
+ * The event `/` shows, from `listEvents` (newest first; D28): the newest real event with a complete
+ * snapshot, else the newest event of any kind with one, else the newest real event, else the newest.
+ * An upcoming event the tick created a day ahead has no data yet, so it does not take the home page.
+ */
+export function homeEvent<
+  E extends { manual: boolean; snapshots: Pick<EventSummary["snapshots"][number], "status">[] },
+>(events: E[]): E | undefined {
+  const hasData = (e: E) => e.snapshots.some((s) => s.status === "complete");
+  return (
+    events.find((e) => !e.manual && hasData(e)) ??
+    events.find(hasData) ??
+    events.find((e) => !e.manual) ??
+    events[0]
+  );
+}
+
 /** Served alliance fields: §12.1's list plus the row's source and whether it failed. */
 async function allianceRows(db: Db, snapshotIds: number[]) {
   if (snapshotIds.length === 0) return [];

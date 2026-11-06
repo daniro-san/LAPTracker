@@ -10,7 +10,7 @@ Words already used in `lib/i18n/vi.ts`. Reuse them so the pages stay consistent;
 | Alliance                  | Liên minh                | `ledger.alliance`                                         |
 | Member                    | Thành viên               | `ledger.member` — a player inside an alliance             |
 | Player                    | Người chơi               | `ledger.player`                                           |
-| Event                     | Sự kiện                  | `ledger.event` — a Saturday event                         |
+| Event                     | Sự kiện                  | `ledger.event` — a game event                             |
 | Rank                      | Hạng                     | `ledger.rank` — the #n position                           |
 | Ranking                   | Xếp hạng                 | `ledger.ranking` — the game's server rank                 |
 | Sanctuary                 | Thánh địa                | `ledger.sanctuary` — a player's building level            |
@@ -24,6 +24,19 @@ Words already used in `lib/i18n/vi.ts`. Reuse them so the pages stay consistent;
 | Leader                    | Thủ lĩnh                 | `leadership.leader` — the R5                              |
 | Run by hand by the admin  | Admin chạy thủ công      | `status.byHand`                                           |
 | grandma                   | bà                       | the voice in empty states and errors                      |
+| Movers                    | Biến động                | `ledger.movers` — the biggest gains and losses per event  |
 
-- Might, Kills, Members and Level stay in English, also inside labels (`± Might`).
+- Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.
+
+## Game terms (from the game)
+
+The game's own word for each term, with the page that shows it in the game's text and the quote. A term not listed stays English. Add a row only with a source that carries the game's own text (datamined text or an in-game screenshot), never a guide's prose (D52).
+
+| English | vi         | Source                                        | Quote                                                                     |
+| ------- | ---------- | --------------------------------------------- | ------------------------------------------------------------------------- |
+| Might   | Lực Chiến  | https://lastasylum.gg/vi/events/alliance-duel | công hội có hơn 20 thành viên vào Chủ Nhật và Lực Chiến đạt TOP32 máy chủ |
+| Kills   | Tiêu diệt  | https://lastasylum.gg/vi/events/kingdom-war   | bảng xếp hạng Điểm tiêu diệt kẻ thù sẽ bị khóa                            |
+| Members | Thành viên | https://lastasylum.gg/vi/research/alliance    | Tăng tốc độ thu thập Tài Nguyên của Thành viên Công Hội                   |
+
+Level stays English: the game writes a level as `Lv.` before the number (`Nhà Thờ Lv.14`); `cấp` appears only in prose. In the game an alliance is a guild (Công Hội); this file still says liên minh.

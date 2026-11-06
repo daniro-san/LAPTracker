@@ -58,6 +58,17 @@ describe("POST /api/rehearsal", () => {
     expect(outside.status).toBe(201);
   });
 
+  it("creates one rehearsal when two presses arrive at once; the other is refused as pending", async () => {
+    const { ctx, clock } = testContext(db);
+    holder.ctx = ctx;
+    clock.now = new Date("2026-11-04T12:00:00Z");
+
+    const statuses = (await Promise.all([rehearse(), rehearse()])).map((r) => r.status).sort();
+
+    expect(statuses).toEqual([201, 409]);
+    expect(await db.select().from(events).where(eq(events.isTest, true))).toHaveLength(1);
+  });
+
   it("keeps REHEARSAL_KEEP rehearsals and deletes the oldest with all its rows", async () => {
     const { ctx, clock } = testContext(db, { ...TEST_ENV, REHEARSAL_KEEP: 2 });
     holder.ctx = ctx;

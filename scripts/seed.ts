@@ -1,4 +1,4 @@
-// `pnpm db:seed`: three fake past Saturdays built from fixtures/ rosters, so every UI state renders
+// `pnpm db:seed`: three fake past scheduled events built from fixtures/ rosters, so every UI state renders
 // locally (plan Phase 5): a renamed alliance, a renamed member, a member who changes alliance, a
 // stale row, a failed row (the "B" fallback), shrinking kills, a rehearsal, run logs and app errors.
 // Refuses to touch a database that already has events; `--reset` empties the app's tables first.
@@ -19,7 +19,7 @@ import {
 } from "../lib/schema";
 
 const HOUR = 3_600_000;
-const SATURDAYS = ["2026-10-17", "2026-10-24", "2026-10-31"];
+const EVENT_DATES = ["2026-10-17", "2026-10-24", "2026-10-31"];
 
 async function insertAlliance(
   db: Db,
@@ -125,12 +125,12 @@ async function seedPhase(
 }
 
 async function seedEvent(db: Db, base: BaseAlliance[], event: number): Promise<void> {
-  const day = new Date(`${SATURDAYS[event]}T12:00:00Z`);
+  const day = new Date(`${EVENT_DATES[event]}T12:00:00Z`);
   const afterAt = new Date(day.getTime() + 4 * HOUR);
   const [ev] = await db
     .insert(events)
     .values({
-      name: `Seed Saturday Event ${SATURDAYS[event]}`,
+      name: `Seed Saturday Event ${EVENT_DATES[event]}`,
       eventAtUtc: new Date(day.getTime() + 2 * HOUR),
       allianceIds: base.map((a) => a.unionId),
       beforeAt: day,
