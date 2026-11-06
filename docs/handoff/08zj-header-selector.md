@@ -75,3 +75,5 @@ Plan changes needed: none.
 <adjustments>
 - A rehearsal is `is_test` and never public, so it never reaches the event selector. Public pages name a scheduled event by its date until it is renamed on /admin; a renamed one ("KvK 12-11") is shown by that name in the selector's list, the event heading and the player's "Across events" rows.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/138
