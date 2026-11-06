@@ -32,3 +32,5 @@ Session: none planned by this change; it rides in release v1.1.0 (PR 159, `dev â
 Model / effort: keep â€” a small query and header change.
 Owner must do first: merge this PR into `dev` before merging the v1.1.0 release PR.
 Plan changes needed: none.
+
+https://github.com/daniro-san/LAPTracker/pull/161
