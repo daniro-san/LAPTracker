@@ -1,6 +1,7 @@
 // Number and time formatting shared by every page (DESIGN.md "Language-light rules"): `Intl` with the
 // request's locale (app/_ui/locale.ts), compact by default and exact on tap, times in server time with
-// the words "server time" after them, in the admin area too (07c S3a).
+// the words "server time" after them, in the admin area too (07c S3a); public pages use the viewer's own
+// zone and date order when they chose them (D38).
 import { copy } from "@/lib/copy";
 
 const MINUS = "−";
@@ -62,7 +63,26 @@ export const changeText = (label: string, from: string, to: string) => `${label}
 /** The DOM id of an alliance's row on the main page ("jump to my alliance"). */
 export const rowAnchor = (unionId: number) => `alliance-${unionId}`;
 
-/** Dates and times for one request: the viewer's locale, the server's clock (DESIGN.md). */
+/** The viewer's settings (D38), one cookie each; no cookie = server time and the locale's own dates. */
+export const ZONE_COOKIE = "tz";
+export const DATE_COOKIE = "date";
+
+/** The date orders a viewer may pick (#27). Month names stay in the request's locale. */
+export const DATE_FORMATS = ["d-mmm", "mmm-d", "dd/mm", "dd.mm", "iso"] as const;
+export type DateFormat = (typeof DATE_FORMATS)[number];
+
+/** A `date` cookie value on the allow-list, else null (the locale's own order). */
+export const parseDateFormat = (value: string | undefined): DateFormat | null =>
+  (DATE_FORMATS as readonly string[]).includes(value ?? "") ? (value as DateFormat) : null;
+
+/** How the viewer reads times: `own` = in the zone their browser reported, followed by "your time". */
+export interface ClockView {
+  own: boolean;
+  date: DateFormat | null;
+}
+
+/** Dates and times for one request: the viewer's locale, the server's clock or the viewer's own
+ * (DESIGN.md). */
 export interface Clock {
   /** "Oct 31" */
   day: (d: Date) => string;
@@ -78,9 +98,15 @@ export interface Clock {
   at: (d: Date) => string;
   /** "Sat, 07/11/2026, 12:00 server time" in pt-BR: the full date for the admin area */
   stamp: (d: Date) => string;
+  /** "Server time" or "Your time": the corner of a table whose heads are bare times */
+  zone: string;
 }
 
-export function makeClock(locale: string, timeZone: string): Clock {
+export function makeClock(
+  locale: string,
+  timeZone: string,
+  view: ClockView = { own: false, date: null },
+): Clock {
   const f = (o: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat(locale, { timeZone, ...o });
   const day = f({ month: "short", day: "numeric" });
   const weekday = f({ weekday: "short", month: "short", day: "numeric" });
@@ -95,14 +121,45 @@ export function makeClock(locale: string, timeZone: string): Clock {
     minute: "2-digit",
     hourCycle: "h23",
   });
-  const time = (d: Date) => `${hhmm.format(d)} ${copy.time.serverTime}`;
+  const word = view.own ? copy.time.yourTime : copy.time.serverTime;
+  const ordered = view.date ? orderedDay(f, view.date) : null;
+  const dayText = ordered ? (d: Date) => ordered(d, "short") : (d: Date) => day.format(d);
+  const shortName = f({ weekday: "short" });
+  const longName = f({ weekday: "long" });
   return {
-    day: (d) => day.format(d),
-    weekday: (d) => weekday.format(d),
-    long: (d) => long.format(d),
+    day: dayText,
+    weekday: ordered
+      ? (d) => `${shortName.format(d)}, ${ordered(d, "short")}`
+      : (d) => weekday.format(d),
+    long: ordered ? (d) => `${longName.format(d)}, ${ordered(d, "long")}` : (d) => long.format(d),
     hhmm: (d) => hhmm.format(d),
-    time,
-    at: (d) => `${day.format(d)}, ${hhmm.format(d)} ${copy.time.serverTime}`,
-    stamp: (d) => `${full.format(d)} ${copy.time.serverTime}`,
+    time: (d) => `${hhmm.format(d)} ${word}`,
+    at: (d) => `${dayText(d)}, ${hhmm.format(d)} ${word}`,
+    stamp: (d) => `${full.format(d)} ${word}`,
+    zone: view.own ? copy.ledger.yourTime : copy.ledger.serverTime,
+  };
+}
+
+/** A day and month in the chosen order, built from the locale's own parts (`formatToParts`), so the
+ * month reads "out." in pt-BR and "окт." in ru. */
+function orderedDay(
+  f: (o: Intl.DateTimeFormatOptions) => Intl.DateTimeFormat,
+  date: DateFormat,
+): (d: Date, month: "short" | "long") => string {
+  const named = {
+    short: f({ day: "numeric", month: "short" }),
+    long: f({ day: "numeric", month: "long" }),
+  };
+  const numeric = f({ year: "numeric", month: "2-digit", day: "2-digit" });
+  const parts = (fmt: Intl.DateTimeFormat, d: Date) =>
+    Object.fromEntries(fmt.formatToParts(d).map((p) => [p.type, p.value]));
+  return (d, month) => {
+    if (date === "d-mmm" || date === "mmm-d") {
+      const p = parts(named[month], d);
+      return date === "d-mmm" ? `${p.day} ${p.month}` : `${p.month} ${p.day}`;
+    }
+    const p = parts(numeric, d);
+    if (date === "iso") return `${p.year}-${p.month}-${p.day}`;
+    return `${p.day}${date === "dd/mm" ? "/" : "."}${p.month}`;
   };
 }

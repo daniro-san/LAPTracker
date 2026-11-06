@@ -3,6 +3,7 @@
 import { RunTrace } from "@/app/_ui/admin/RunTrace";
 import { MEMBER_MARK } from "@/app/_ui/format";
 import { MemberMark } from "@/app/_ui/Num";
+import { ViewerSettings } from "@/app/_ui/ViewerSettings";
 import { Button } from "@/lib/brand/components/Button";
 import { CheckField } from "@/lib/brand/components/CheckField";
 import { Chip } from "@/lib/brand/components/Chip";
@@ -135,6 +136,11 @@ function Ornaments() {
         <div className="w-full">
           <div className="h-6 bg-plum" />
           <LaceBorder className="block" />
+        </div>
+      </Spec>
+      <Spec name={t.settings.name} use={t.settings.use}>
+        <div className="flex w-full justify-end bg-plum p-2 text-paper">
+          <ViewerSettings />
         </div>
       </Spec>
       <Spec name={t.corner.name} use={t.corner.use} plate="text-plum">

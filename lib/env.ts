@@ -4,7 +4,7 @@ import { z } from "zod";
 const hhmm = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "expected HH:MM");
 const optional = <T extends z.ZodType>(schema: T) => schema.optional();
 
-const isTimeZone = (tz: string): boolean => {
+export const isTimeZone = (tz: string): boolean => {
   try {
     new Intl.DateTimeFormat("en", { timeZone: tz });
     return true;

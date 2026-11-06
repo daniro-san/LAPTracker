@@ -132,7 +132,7 @@ function Summary({
         </summary>
         <div className="border-t border-rule pb-2 pt-2 text-sm">
           <DetailTable
-            corner={copy.ledger.serverTime}
+            corner={clock.zone}
             from={<SideHead s={fresh(before)} clock={clock} />}
             to={<SideHead s={fresh(after)} clock={clock} />}
             rows={figureRows(metrics, ranks, copy.ledger.ranking)}

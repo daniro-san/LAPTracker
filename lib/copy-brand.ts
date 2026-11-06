@@ -251,6 +251,10 @@ export const brandCopy = {
       use: "Above the member list: the R5 leader, then each R4 with a title, as cards with photo, name, role, Might, Kills and Level. Whatever title the game gives is shown as it comes. Left out when the alliance has none.",
     },
     lace: { name: "Lace", use: "Under the header, and nowhere else." },
+    settings: {
+      name: "Settings gear",
+      use: "The last control in the header, on every page. Its panel holds the theme, the times (server time or the viewer's own zone) and the date order; each choice is a cookie for that browser. On /admin it holds the theme only, because the admin area stays in server time.",
+    },
     corner: {
       name: "Yarn corner",
       use: "One footer corner per page. The Granny Doctor takes it on error and player pages.",

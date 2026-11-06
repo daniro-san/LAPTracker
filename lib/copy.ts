@@ -16,6 +16,7 @@ const source = {
     ledger: "Server 325 · Event Ledger",
     players: "Players",
     darkMode: "Dark mode",
+    settings: "Settings",
     exactNumbers: "Exact numbers",
     events: "Events",
     latest: "latest",
@@ -39,6 +40,7 @@ const source = {
     details: "Details",
     change: "Change",
     serverTime: "Server time",
+    yourTime: "Your time",
     ranking: "Ranking",
     joined: "joined",
     left: "left",
@@ -51,9 +53,21 @@ const source = {
     names: "Names",
     alliances: "Alliances",
   },
-  /** Times are shown in server time, with this word after them. */
+  /** The header's settings menu (D38). */
+  settings: {
+    theme: "Theme",
+    light: "Light",
+    dark: "Dark",
+    times: "Times",
+    serverTime: "Server time",
+    yourTime: "Your time",
+    dates: "Dates",
+    auto: "Auto",
+  },
+  /** Times are shown in server time, or in the viewer's own zone (D38), with these words after them. */
   time: {
     serverTime: "server time",
+    yourTime: "your time",
   },
   status: {
     label: "Status",

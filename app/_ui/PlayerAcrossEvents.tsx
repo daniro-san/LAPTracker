@@ -142,12 +142,11 @@ function ChangeLine({
 
 /** Details: the before → after snapshot values with the in-event change and the in-alliance rank. */
 function rowDetail(r: PlayerEventRow, ranks: ReturnType<typeof rankPairs>, clock: Clock) {
-  const l = copy.ledger;
   const fresh = freshOf(r);
   const rankOf = [ranks.might, ranks.kills];
   return (
     <DetailTable
-      corner={l.serverTime}
+      corner={clock.zone}
       from={<SideHead s={fresh.before} clock={clock} />}
       to={<SideHead s={fresh.after} clock={clock} />}
       rows={STATS.map((f, i) => {
