@@ -19,6 +19,8 @@ const source = {
     settings: "Settings",
     exactNumbers: "Exact numbers",
     events: "Events",
+    /** The closed event selector on pages that span every event (the player pages). */
+    allEvents: "All events",
     latest: "latest",
     manualRound: "Manual round",
     breadcrumb: "Breadcrumb",

@@ -16,7 +16,7 @@ import {
   type AllianceCell,
   type ComparisonRow,
 } from "./event-rows";
-import { EventLabel } from "./EventLabel";
+import { eventTitle, ManualMark } from "./EventLabel";
 import { ExactToggle } from "./ExactToggle";
 import { allianceLabel, rowAnchor, type Clock } from "./format";
 import { requestClock } from "./locale";
@@ -121,13 +121,14 @@ export async function EventView({
         <div className="mb-2 flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
           <div className="min-w-0">
             <h2 className="font-subhead text-display-md leading-tight">
-              {detail.manual ? (
-                <EventLabel event={detail} clock={clock} />
-              ) : (
-                clock.long(detail.eventAtUtc)
-              )}
+              {eventTitle(detail) ?? clock.long(detail.eventAtUtc)}
             </h2>
-            {detail.manual && <p className="text-sm">{clock.long(detail.eventAtUtc)}</p>}
+            {eventTitle(detail) && (
+              <p className="flex gap-1.5 text-sm">
+                {detail.manual && <ManualMark />}
+                {clock.long(detail.eventAtUtc)}
+              </p>
+            )}
           </div>
           <ExactToggle />
         </div>
