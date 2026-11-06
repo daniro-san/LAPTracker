@@ -47,3 +47,5 @@ Plan changes needed: none.
 - Game terms are sourced per language in `lib/i18n/glossary/<tag>.md` "Game terms (from the game)"; `lib/copy.test.ts` enforces them. A session that adds a language or a game word adds a row there with a source URL and quote, not just the dictionary value.
 - Already done: ko, vi, ru Might/Kills/Members. Level stays English by decision (D52), not by omission.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/160
