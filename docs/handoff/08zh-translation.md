@@ -63,9 +63,7 @@
 - **No first full Haiku run.** The 17 dictionaries were written by Opus in this session, and stamping them made them current. The demo below is the first Haiku run: 1 key × 17 languages.
 
 ## Verified
-- **`pnpm check`:** Prettier, ESLint, tsc, the drift gate and `i18n: 17 languages up to date with English` all pass.
-  - 38 test files: 36 passed, 1 skipped (pre-existing); 179 tests passed.
-  - Two PGlite suites (`players`, `running`) hit the 10 s `beforeAll` timeout at load average ~20 and pass on rerun. `dev` now has the fix for that (08zk), merged into this branch.
+- **`pnpm check`** on this branch merged with `dev` (which has the PGlite hook-timeout fix, 08zk): green. Prettier, ESLint, tsc, 38 test files (183 tests passed, 1 skipped, pre-existing), the drift gate and `i18n: 17 languages up to date with English`.
 - **The loop, run on 2026-11-05:**
   1. Changed `empty.noEvents` in `lib/copy.ts` from "No events in the ledger yet." to "The ledger has no events yet.".
   2. `tsx scripts/i18n-check.ts` exited 1: `i18n es: stale empty.noEvents` … for each of the 17 languages, then "i18n: 17 language(s) out of date with lib/copy.ts. Run the translate-copy skill (.claude/skills/translate-copy/SKILL.md)."
