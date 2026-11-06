@@ -13,8 +13,9 @@ Haiku runs this on purpose: it is cheap and the strings are short. If a language
 
 1. `lib/i18n/<tag>.ts`: the language's file. Match its tone and word choices.
 2. `lib/i18n/glossary/<tag>.md`: the words this language already uses. Reuse them.
-3. `lib/copy.ts`, the `en` object: the English source and the comments beside keys, which say where a string appears.
-4. `docs/DESIGN.md`, sections "Language-light rules" and "Voice".
+3. `lib/copy.ts`, the `en` object only (it ends at `} as const;`): the English source and the comments beside keys, which say where a string appears.
+
+The rules below already hold DESIGN.md's voice. Only if one is unclear, read the "Voice" section of `docs/DESIGN.md` (find it with Grep and read just that section: the file is long, and reading all of it is most of a run's cost).
 
 ## Rules
 
@@ -24,7 +25,7 @@ Haiku runs this on purpose: it is cheap and the strings are short. If a language
 - **Names stay:** "OG's LAP Tracker", "LAP Tracker", "Old Grandmas", "Server 325"'s number.
 - **Short.** A label (a key whose English is one or two words) stays at most two words. Where the language runs long, abbreviate the way its own apps do (`Мин.`, `máx.`). The page is 360 px wide.
 - **Counts** read `Label: {n}` (`Stale: {n}`), so no plural forms are needed.
-- **Voice:** short, dry, grandmotherly, the way players of the game talk. No exclamation marks, no emoji, no "Oops". Sentences end with a full stop as in the English.
+- **Voice:** short, dry, grandmotherly, the way players of the game talk. No exclamation marks, no emoji, no "Oops". A sentence ends with the language's own full stop where the English has one (none in Thai).
 - Use the language's own punctuation (French non-breaking space before `:`, full-width punctuation in Chinese and Japanese).
 - Keep the symbols in the English as they are (`·`, `–`, `…`, `±`).
 
