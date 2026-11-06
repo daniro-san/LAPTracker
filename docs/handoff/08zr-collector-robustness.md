@@ -79,3 +79,5 @@ Plan changes needed: §3.4/Phase 4 "Run lock … less than 10 min ago" (`docs/IM
 - `app/api/tick/route.test.ts` has two new tests: a concurrent tick pair answering `[200, 204]`, and a run capped at 115 s with a fetch that never answers. Both replace `ctx.fetch` or `ctx.v1` on a `testContext`; the heartbeat tests can follow the same pattern.
 - `executeSnapshot` answers by 115 s from the run's start (`NOTIFY_CAP_MS`), so a `tick_log` row's `finished_at` is set before the 120 s kill in every case except a hang in `finishSnapshot`.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/148
