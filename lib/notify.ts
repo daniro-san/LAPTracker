@@ -356,3 +356,9 @@ export function appErrorMessage(route: string, message: string, digest: string |
     digest: digest ? fill(t.digest, { digest }) : "",
   });
 }
+
+/** The tick-silence alert (D45): minutes since the last tick and its time, or none recorded. */
+export function tickSilenceMessage(last: { min: number; at: string } | null): string {
+  const t = copy.discord.admin;
+  return last ? fill(t.tickSilence, last) : t.tickNone;
+}

@@ -6,7 +6,7 @@ import { RUN_STALE_AFTER_MS } from "../compute";
 import type { Db } from "../db";
 import { rehearsalVerdict, type Verdict } from "../rehearsal";
 import { loadVerdictInput } from "../repo/rehearsals";
-import { allianceSnapshots, appErrors, events, runLogs, snapshots } from "../schema";
+import { allianceSnapshots, appErrors, events, runLogs, snapshots, tickLog } from "../schema";
 
 export interface ManualEventStatus {
   id: number;
@@ -71,6 +71,15 @@ export interface RunningSnapshot {
   eventAtUtc: Date;
   phase: "before" | "after";
   startedAt: Date;
+}
+
+/** The newest ticks (D45), newest first: when each started and what it did (null: no end yet). */
+export async function recentTicks(db: Db, limit = 5) {
+  return db
+    .select({ startedAt: tickLog.startedAt, outcome: tickLog.outcome })
+    .from(tickLog)
+    .orderBy(desc(tickLog.id))
+    .limit(limit);
 }
 
 /** The snapshots running right now, whoever started them (the tick, a button, a rehearsal). */
