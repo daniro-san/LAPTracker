@@ -9,7 +9,7 @@ import { Section, Spec, Sub, Verdict } from "./parts";
 
 const t = copy.brand.logo;
 const TONES: readonly WaxTone[] = ["paper", "seal", "yarn"];
-const LINE_SIZES = [24, 32, 48];
+const LINE_SIZES = [96, 128];
 const SOLID_SIZES = [16, 24, 32];
 
 function Sized({ size, children }: { size: number; children: ReactNode }) {
@@ -88,15 +88,15 @@ function ClearAndMinimum() {
   );
 }
 
-const TILE = "grid h-24 place-items-center overflow-hidden border border-rule";
+const TILE = "grid h-32 place-items-center overflow-hidden border border-rule";
 
 function Usage() {
   const dos = [
     <span key="0" className={`${TILE} text-plum`}>
-      <MarkLine size={56} />
+      <MarkLine size={96} />
     </span>,
     <span key="1" className={`${TILE} bg-plum text-paper`}>
-      <MarkLine size={56} />
+      <MarkLine size={96} />
     </span>,
     <span key="2" className={`${TILE} bg-plum`}>
       <WaxedMark size={56} tone="paper" />
@@ -104,13 +104,13 @@ function Usage() {
   ];
   const donts = [
     <span key="0" className={`${TILE} text-plum`}>
-      <MarkLine size={56} className="scale-x-150" />
+      <MarkLine size={96} className="scale-x-150" />
     </span>,
     <span key="1" className={`${TILE} text-plum`}>
-      <MarkLine size={56} className="-rotate-30" />
+      <MarkLine size={96} className="-rotate-30" />
     </span>,
     <span key="2" className={`${TILE} text-yarn`}>
-      <MarkLine size={56} />
+      <MarkLine size={96} />
     </span>,
     <span key="3" className={`${TILE} text-plum`}>
       <MarkLine size={14} />

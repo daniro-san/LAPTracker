@@ -263,7 +263,7 @@ Why: a release was three manual steps (PR, merge, `gh release create`) and the t
 - **Required check.** A PR opened with `GITHUB_TOKEN` starts no new workflow runs, but a required status check is read from the head commit, and `ci` already ran on the push to `dev` (check run `check`, from github-actions, the integration the ruleset names). If the newest push to `dev` has no finished `check`, the release PR will wait on it.
 - **Limit.** Workflows run from the default branch, so Prepare release exists in the Actions tab only after a release carries it to `main`.
 
-## D30 — /admin "Run something now": one row of seals, a manual round options form (2026-11-05, 08k)
+## D40 — /admin "Run something now": one row of seals, a manual round options form (2026-11-05, 08k) (numbered D30 by mistake until 2026-11-05)
 
 Why: the owner found the run area cluttered, the visibility dropdown hard to read and the bare "run or cancel" confirmation before a round was created unhelpful.
 
