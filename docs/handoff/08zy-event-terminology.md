@@ -52,3 +52,5 @@ Plan changes needed: `docs/SESSION_PLAYBOOK.md:780` (Session 10 prompt) says "th
 <adjustments for="#127 session 2 (DECISIONS split)">
 - D51 exists (event terminology, this PR). The split moves it like any other entry. `08zy` is taken by this handoff; use another letter.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/147
