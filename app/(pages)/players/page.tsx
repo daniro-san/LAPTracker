@@ -11,7 +11,7 @@ import { LABEL } from "@/app/_ui/StatTable";
 import { GrannyEmpty } from "@/lib/brand/components/Mascot";
 import { fill } from "@/lib/copy";
 import { withPageDb } from "@/lib/page";
-import { listEvents } from "@/lib/queries";
+import { homeEvent, listEvents } from "@/lib/queries";
 import { searchPlayers, SEARCH_LIMIT } from "@/lib/queries/players";
 
 const MAX_QUERY = 64;
@@ -38,7 +38,14 @@ export default async function PlayersPage({
   ]);
   return (
     <>
-      <SiteHeader events={events} currentId={null} section="players" clock={clock} copy={copy} />
+      <SiteHeader
+        events={events}
+        currentId={null}
+        homeId={homeEvent(events)?.id ?? null}
+        section="players"
+        clock={clock}
+        copy={copy}
+      />
       <main className="mx-auto max-w-[960px] px-4 py-4 sm:px-6">
         <h1 className="font-display text-display-lg leading-tight">{copy.search.title}</h1>
         <PlayerSearch q={q} maxLength={MAX_QUERY}>

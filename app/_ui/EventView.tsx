@@ -102,12 +102,14 @@ function TitleBand({ copy }: { copy: Dictionary }) {
 
 export async function EventView({
   events,
+  homeId,
   detail,
   changes,
   names,
   ranks,
 }: {
   events: Events;
+  homeId: number | null;
   detail: Detail;
   changes: Map<number, RosterChange>;
   names: Map<number, NameHistoryEntry[]>;
@@ -118,7 +120,7 @@ export async function EventView({
   const rows = comparisonRows(detail.snapshots, changes, names, ranks, copy);
   return (
     <>
-      <SiteHeader events={events} currentId={detail.id} clock={clock} copy={copy} />
+      <SiteHeader events={events} currentId={detail.id} homeId={homeId} clock={clock} copy={copy} />
       <main className="mx-auto max-w-[960px] px-4 py-4 sm:px-6">
         <TitleBand copy={copy} />
         <div className="mb-2 flex flex-wrap items-start justify-between gap-x-3 gap-y-2">

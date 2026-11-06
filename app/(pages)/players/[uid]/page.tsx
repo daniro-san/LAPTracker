@@ -18,7 +18,7 @@ import { FreshDots, Legend } from "@/app/_ui/Status";
 import { RoleMark } from "@/lib/brand/components/RoleMark";
 import { fill, type Dictionary } from "@/lib/copy";
 import { withPageDb } from "@/lib/page";
-import { listEvents, playerHistory, type PlayerHistory } from "@/lib/queries";
+import { homeEvent, listEvents, playerHistory, type PlayerHistory } from "@/lib/queries";
 
 function Timelines({
   history,
@@ -143,7 +143,14 @@ export default async function PlayerPage({ params }: { params: Params }) {
   const allianceName = history.alliances.at(-1)?.name ?? null;
   return (
     <>
-      <SiteHeader events={events} currentId={null} section="players" clock={clock} copy={copy} />
+      <SiteHeader
+        events={events}
+        currentId={null}
+        homeId={homeEvent(events)?.id ?? null}
+        section="players"
+        clock={clock}
+        copy={copy}
+      />
       <main className="mx-auto max-w-[960px] px-4 py-4 sm:px-6">
         <Breadcrumbs
           crumbs={[
