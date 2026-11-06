@@ -152,3 +152,49 @@ export function rankDelta(
 ): number | null {
   return prev == null || curr == null ? null : prev - curr;
 }
+
+export type MoverMetric = "power" | "kills";
+export type MoverDirection = "gain" | "loss";
+
+/** One alliance or member across an event's two snapshots; a side is null when it was not read. */
+export interface MoverInput {
+  before: Measured | null;
+  after: Measured | null;
+}
+
+export interface Mover<R> {
+  row: R;
+  /** Competition rank among every row that moved this way (1, 2, 2, 4). */
+  rank: number;
+  /** after − before: positive for a gain, negative for a loss. */
+  delta: number;
+  /** The before value, for the percent; null or 0 means no percent. */
+  base: number | null;
+}
+
+/**
+ * The `n` biggest gains or losses of one metric in an event (#70). A row with a missing, stale or
+ * failed side has no delta (INVARIANT freshness.no-stale-delta) and is not ranked; neither is a change
+ * of zero or of the other sign. Equal changes keep the input order and share a rank.
+ */
+export function topMovers<R extends MoverInput>(
+  rows: readonly R[],
+  metric: MoverMetric,
+  n: number,
+  direction: MoverDirection,
+): Mover<R>[] {
+  const sign = direction === "gain" ? 1 : -1;
+  const moved = rows
+    .flatMap((row) => {
+      if (!row.before || !row.after) return [];
+      const d = delta(row.before, row.after)?.[metric];
+      if (d === undefined || d * sign <= 0) return [];
+      const base = metric === "power" ? row.before.totalPower : row.before.totalKills;
+      return [{ row, delta: d, base }];
+    })
+    .sort((x, y) => (y.delta - x.delta) * sign);
+  return moved.slice(0, n).map((m) => ({
+    ...m,
+    rank: 1 + moved.filter((o) => (o.delta - m.delta) * sign > 0).length,
+  }));
+}

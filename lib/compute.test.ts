@@ -12,6 +12,7 @@ import {
   seriesDeltas,
   sumKills,
   sumPower,
+  topMovers,
 } from "./compute";
 
 const count = fc.option(fc.nat({ max: 2_000_000_000 }), { nil: null });
@@ -166,5 +167,60 @@ describe("rankDelta", () => {
     expect(rankDelta(2, 2)).toBe(0);
     expect(rankDelta(null, 1)).toBeNull();
     expect(rankDelta(1, undefined)).toBeNull();
+  });
+});
+
+describe("topMovers", () => {
+  const side = (power: number | null, kills: number | null, isFresh = true): Measured => ({
+    isFresh,
+    totalPower: power,
+    totalKills: kills,
+  });
+  const row = (id: string, before: Measured | null, after: Measured | null) => ({
+    id,
+    before,
+    after,
+  });
+  const rows = [
+    row("a", side(100, 10), side(150, 12)), // +50 power, +2 kills
+    row("b", side(200, 20), side(170, 20)), // −30
+    row("c", side(100, 5), side(150, 9)), // +50, tied with a
+    row("d", side(300, 1), side(310, 1)), // +10
+    row("e", side(100, 1), side(100, 1)), // no change
+  ];
+  const ids = (list: { row: { id: string } }[]) => list.map((m) => m.row.id);
+
+  it("ranks gains highest first; ties keep input order and share a rank", () => {
+    const top = topMovers(rows, "power", 3, "gain");
+    expect(ids(top)).toEqual(["a", "c", "d"]);
+    expect(top.map((m) => m.rank)).toEqual([1, 1, 3]);
+    expect(top[0]).toMatchObject({ delta: 50, base: 100 });
+  });
+
+  it("ranks losses most negative first and leaves out gains and zero changes", () => {
+    expect(topMovers(rows, "power", 5, "loss").map((m) => [m.row.id, m.delta])).toEqual([
+      ["b", -30],
+    ]);
+  });
+
+  it("ranks the metric asked for", () => {
+    expect(ids(topMovers(rows, "kills", 5, "gain"))).toEqual(["c", "a"]);
+  });
+
+  it("returns every mover when n is larger than the rows", () => {
+    expect(topMovers(rows, "power", 50, "gain")).toHaveLength(3);
+  });
+
+  it("leaves out a row with a missing, stale or null side", () => {
+    const bad = [
+      row("missing", null, side(900, 9)),
+      row("stale", side(1, 1, false), side(900, 9)),
+      row("null", side(null, null), side(900, 9)),
+    ];
+    expect(topMovers([...bad, ...rows], "power", 5, "gain").map((m) => m.row.id)).toEqual([
+      "a",
+      "c",
+      "d",
+    ]);
   });
 });

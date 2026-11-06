@@ -15,6 +15,8 @@ import { Leadership } from "@/app/_ui/Leadership";
 import { requestClock, requestCopy } from "@/app/_ui/locale";
 import { canCompare, leadership, memberViews, withRoles } from "@/app/_ui/member-views";
 import { MembersExplorer } from "@/app/_ui/MembersExplorer";
+import { memberScope } from "@/app/_ui/mover-lists";
+import { Movers } from "@/app/_ui/Movers";
 import { MyAllianceToggle } from "@/app/_ui/MyAlliance";
 import { Delta, Num, Rank } from "@/app/_ui/Num";
 import { AllianceBadge } from "@/app/_ui/Pictures";
@@ -33,6 +35,7 @@ import {
   getAllianceDetail,
   homeEvent,
   listEvents,
+  memberMovers,
 } from "@/lib/queries";
 
 const usable = (a: AllianceRow | null) => a !== null && a.isFresh && !a.failed;
@@ -186,6 +189,7 @@ const loadAlliance = cache((eventId: number, unionId: number) =>
       allianceNames(db, [unionId]),
       eventRanks(db, eventId),
     ]);
+    const phases = events.find((e) => e.id === eventId)?.snapshots ?? [];
     return {
       detail,
       events,
@@ -193,6 +197,7 @@ const loadAlliance = cache((eventId: number, unionId: number) =>
       history,
       names: names.get(unionId) ?? [],
       ledger: ranks.get(unionId),
+      movers: await memberMovers(db, phases, unionId),
     };
   }),
 );
@@ -263,7 +268,7 @@ export default async function AlliancePage({ params }: { params: Params }) {
     requestCopy(),
   ]);
   if (!data) notFound();
-  const { detail, events, homeId, history, names, ledger } = data;
+  const { detail, events, homeId, history, names, ledger, movers } = data;
   const now = detail.after ?? detail.before;
   const label = allianceLabel(now?.tag ?? String(unionId), now?.name ?? null);
   const canDelta = usable(detail.before) && usable(detail.after);
@@ -311,6 +316,7 @@ export default async function AlliancePage({ params }: { params: Params }) {
           copy={copy}
         />
         <Leadership members={leadership(views(detail))} />
+        <Movers scopes={[memberScope(movers, null)]} />
         <h2 className="mb-2 mt-8 font-subhead text-display-md">{copy.ledger.members}</h2>
         <MemberList detail={detail} canDelta={canDelta} />
         <AcrossEvents unionId={unionId} history={history} clock={clock} />

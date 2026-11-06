@@ -48,6 +48,7 @@ export const sv = {
     myAlliance: "Min allians",
     names: "Namn",
     alliances: "Allianser",
+    movers: "Största förändringar",
   },
   settings: {
     language: "Språk",

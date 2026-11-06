@@ -24,6 +24,7 @@ Words already used in `lib/i18n/ru.ts`. Reuse them so the pages stay consistent;
 | Leader                    | Лидер                       | `leadership.leader` — the R5                              |
 | Run by hand by the admin  | Админ запускает вручную     | `status.byHand`                                           |
 | grandma                   | бабушка                     | the voice in empty states and errors                      |
+| Movers                    | Движение                    | `ledger.movers` — the event's biggest gains and losses    |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

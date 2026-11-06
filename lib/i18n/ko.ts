@@ -48,6 +48,7 @@ export const ko = {
     myAlliance: "내 연맹",
     names: "이름",
     alliances: "연맹",
+    movers: "변동 순위",
   },
   settings: {
     language: "언어",

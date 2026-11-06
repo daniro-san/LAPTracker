@@ -48,6 +48,7 @@ export const th = {
     myAlliance: "พันธมิตรของฉัน",
     names: "ชื่อ",
     alliances: "พันธมิตร",
+    movers: "ความเคลื่อนไหว",
   },
   settings: {
     language: "ภาษา",
