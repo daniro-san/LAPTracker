@@ -109,3 +109,5 @@ Plan changes needed: none.
 <adjustments>
 - Closing keywords inside fenced code, inline code or `>` quote lines in a PR title or body no longer close issues when the PR merges into `dev`. A session that quotes an example closing keyword in its PR body or handoff should put it in code; a keyword in plain text still closes the issue.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/135
