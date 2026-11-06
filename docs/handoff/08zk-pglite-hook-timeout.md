@@ -46,3 +46,5 @@ Plan changes needed: none.
 - `pnpm check` took 121–166 s here with three other test runs going (load 36–69). A Stop hook failure on `Hook timed out` or `Test timed out` before this PR is in the main checkout is the known #124 noise, not a regression.
 - No test file sets its own hook or test timeout; a new PGlite test file needs none.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/137
