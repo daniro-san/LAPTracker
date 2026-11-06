@@ -48,6 +48,7 @@ export const ptBR = {
     myAlliance: "Minha aliança",
     names: "Nomes",
     alliances: "Alianças",
+    movers: "Maiores mudanças",
   },
   settings: {
     language: "Idioma",

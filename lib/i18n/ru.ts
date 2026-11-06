@@ -48,6 +48,7 @@ export const ru = {
     myAlliance: "Мой альянс",
     names: "Имена",
     alliances: "Альянсы",
+    movers: "Движение",
   },
   settings: {
     language: "Язык",

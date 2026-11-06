@@ -6,6 +6,7 @@ import type { NameHistoryEntry } from "@/lib/compute";
 import { fill, type Dictionary } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
 import type { getEventDetail, listEvents, Ranks, RosterChange } from "@/lib/queries";
+import type { getEventPage } from "@/lib/queries/event-page";
 import { nextEvent } from "@/lib/schedule";
 
 import { DetailTable, figureRows } from "./DetailLines";
@@ -20,6 +21,8 @@ import { eventTitle, ManualMark } from "./EventLabel";
 import { ExactToggle } from "./ExactToggle";
 import { allianceLabel, rowAnchor, type Clock } from "./format";
 import { requestClock, requestCopy } from "./locale";
+import { allianceScope, memberScope } from "./mover-lists";
+import { Movers } from "./Movers";
 import { MyAllianceJump } from "./MyAlliance";
 import { AllianceBadge } from "./Pictures";
 import { SiteFooter } from "./SiteFooter";
@@ -107,7 +110,9 @@ export async function EventView({
   changes,
   names,
   ranks,
+  movers,
 }: {
+  movers: NonNullable<Awaited<ReturnType<typeof getEventPage>>["page"]>["movers"];
   events: Events;
   homeId: number | null;
   detail: Detail;
@@ -158,6 +163,12 @@ export async function EventView({
           rows={rows.map((r) => toStatRow(detail.id, r, names.get(r.unionId), clock, copy))}
           empty={emptyLine(detail.manual, detail.snapshots.length, copy)}
           copy={copy}
+        />
+        <Movers
+          scopes={[
+            allianceScope(movers.alliances, detail.id, changes, copy),
+            memberScope(movers.members, copy.ledger.members),
+          ]}
         />
       </main>
       <SiteFooter copy={copy} />

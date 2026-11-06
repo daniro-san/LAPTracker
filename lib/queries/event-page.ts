@@ -24,7 +24,7 @@ export async function getEventPage(db: Db, eventId: number | null) {
     before && after
       ? rosterChanges(db, { before: before.id, after: after.id })
       : Promise.resolve(new Map<number, RosterChange>()),
-    before && after ? memberMovers(db, { before: before.id, after: after.id }) : null,
+    memberMovers(db, detail.snapshots),
   ]);
   const movers = {
     alliances: before && after ? allianceMovers(before.alliances, after.alliances) : null,

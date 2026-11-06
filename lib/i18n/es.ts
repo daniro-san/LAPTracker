@@ -48,6 +48,7 @@ export const es = {
     myAlliance: "Mi alianza",
     names: "Nombres",
     alliances: "Alianzas",
+    movers: "Movimientos",
   },
   settings: {
     language: "Idioma",
