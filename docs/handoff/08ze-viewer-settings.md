@@ -97,3 +97,5 @@ Plan changes needed: none.
 - The server side reads `lang` in `requestLocale` (`app/_ui/locale.ts`), so the Clock and number formats follow too.
 - Russian labels are longer: the panel is `min(20rem, 100vw − 2rem)` wide and the Times and Dates rows already wrap their help line.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/115
