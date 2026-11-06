@@ -13,6 +13,7 @@ import {
   sumKills,
   sumPower,
   topMovers,
+  topRankMovers,
 } from "./compute";
 
 const count = fc.option(fc.nat({ max: 2_000_000_000 }), { nil: null });
@@ -222,5 +223,47 @@ describe("topMovers", () => {
       "c",
       "d",
     ]);
+  });
+});
+
+describe("topRankMovers", () => {
+  const fresh: Measured = { isFresh: true, totalPower: 1, totalKills: 1 };
+  const stale: Measured = { ...fresh, isFresh: false };
+  const row = (id: string, before: number | null, after: number | null, side = fresh) => ({
+    id,
+    before: side,
+    after: fresh,
+    ledger: { before, after },
+  });
+  const rows = [
+    row("OGs", 1, 4), // ▼3
+    row("TMS", 4, 2), // ▲2
+    row("NSE", 5, 3), // ▲2, worse current rank than TMS
+    row("WACK", 2, 1), // ▲1
+    row("URSA", 3, 5), // ▼2
+    row("HELD", 6, 6),
+  ];
+  const ids = (list: { row: { id: string } }[]) => list.map((m) => m.row.id);
+
+  it("orders climbers by places moved, then the better current rank", () => {
+    const up = topRankMovers(rows, 3, "gain");
+    expect(ids(up)).toEqual(["TMS", "NSE", "WACK"]);
+    expect(up.map((m) => m.move)).toEqual([2, 2, 1]);
+  });
+
+  it("orders fallers by places lost and leaves out who held their place", () => {
+    expect(topRankMovers(rows, 5, "loss").map((m) => [m.row.id, m.move])).toEqual([
+      ["OGs", -3],
+      ["URSA", -2],
+    ]);
+  });
+
+  it("leaves out a row with a stale or missing side or an unknown rank", () => {
+    const bad = [
+      row("stale", 9, 1, stale),
+      { ...row("missing", 9, 1), before: null },
+      row("unranked", null, 1),
+    ];
+    expect(ids(topRankMovers([...bad, ...rows], 3, "gain"))).toEqual(["TMS", "NSE", "WACK"]);
   });
 });

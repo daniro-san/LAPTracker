@@ -199,6 +199,41 @@ def icon_overseer():
         stroke(p, [(x0, 5.0), ((x0 + x1) / 2, 3.6), (x1, y1)], .38, a=.2, b=.45, e=.12)
     return svg("0 0 16 16", el(p))
 
+# The Movers tabs (DESIGN.md movers): the same 16 px filled cut, one per figure.
+def icon_might():
+    """Might: a boxing glove, the round mitt over a thumb at the left, a cuff below with a lace."""
+    p = Path()
+    blob(p, [(8.8, 0.7), (12.6, 1.6), (14.8, 4.4), (14.9, 7.8), (13.6, 10.6), (11.0, 11.5), (6.4, 11.5),
+             (4.6, 10.6), (2.4, 9.6), (1.1, 7.4), (1.5, 5.0), (3.4, 4.6), (4.3, 2.6), (6.2, 1.1)], k=.85)
+    hole(p, [(3.9, 5.4), (5.2, 7.4), (5.6, 9.6), (5.0, 9.8), (4.5, 7.6), (3.4, 5.8)], k=.6)
+    blob(p, [(5.4, 12.3), (8.4, 12.1), (11.6, 12.3), (11.8, 15.3), (8.4, 15.6), (5.2, 15.3)], k=.5)
+    hole(p, [(8.0, 12.9), (8.8, 12.9), (8.7, 15.0), (8.1, 15.0)], k=.4)
+    return svg("0 0 16 16", el(p))
+
+def icon_kills():
+    """Kills: a skull, round cranium over a narrower jaw, two eyes, a nose and two tooth gaps."""
+    p = Path()
+    blob(p, arc(8, 7.2, 6.7, 6.4, 150, 390, 9, wob=[0, .02, -.02, .03, 0, -.03, .02, -.01, 0])
+         + [(12.6, 11.8), (11.4, 12.4), (11.2, 14.8), (8, 15.4), (4.8, 14.8), (4.6, 12.4), (3.4, 11.8)], k=.8)
+    hole(p, arc(5.5, 8.2, 1.7, 1.9, 0, 330, 7, wob=[0, .05, -.04, .06, 0, -.05, 0]))
+    hole(p, arc(10.5, 8.2, 1.7, 1.9, 0, 330, 7, wob=[0, -.04, .05, -.03, .04, 0, 0]))
+    hole(p, [(8, 10.2), (8.9, 11.9), (7.1, 11.9)], k=.4)
+    for x in (6.8, 9.2):
+        hole(p, [(x - .35, 13.0), (x + .35, 13.0), (x + .3, 15.6), (x - .3, 15.6)], k=.3)
+    return svg("0 0 16 16", el(p))
+
+def icon_rank():
+    """Rank: a trophy cup with two handles, a short stem and a stepped base."""
+    p = Path()
+    blob(p, [(3.4, 1.4), (8, 1.1), (12.6, 1.4), (12.3, 5.4), (10.8, 8.2), (8, 9.4), (5.2, 8.2), (3.7, 5.4)], k=.8)
+    for s in (1, -1):
+        X = lambda x: 8 + (x - 8) * s
+        stroke(p, [(X(3.6), 2.6), (X(1.2), 2.8), (X(1.0), 5.2), (X(2.6), 7.0), (X(5.0), 7.8)], ws=[.75, .8, .8, .7, .45])
+    blob(p, [(7.1, 9.0), (8.9, 9.0), (8.7, 11.6), (9.6, 12.4), (6.4, 12.4), (7.3, 11.6)], k=.6)
+    blob(p, [(4.2, 12.9), (8, 12.6), (11.8, 12.9), (12.4, 15.2), (8, 15.5), (3.6, 15.2)], k=.5)
+    hole(p, [(5.0, 2.8), (6.0, 2.8), (6.0, 5.6), (5.4, 5.8)], k=.5)
+    return svg("0 0 16 16", el(p))
+
 def icon_live():
     """The /admin live mark: grandma's chamberstick, lit (small cut, 16-20 px). The flame and its glow
     ticks are two paths so CSS can sway the flame (pivot at the wick, 8 7.4) and flicker the ticks while a run

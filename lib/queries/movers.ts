@@ -3,9 +3,17 @@
 // they are in (§12.1); raw_json and avatar_url are never selected.
 import { eq, inArray } from "drizzle-orm";
 
-import { topMovers, type Measured, type Mover, type MoverInput } from "../compute";
+import {
+  topMovers,
+  topRankMovers,
+  type Measured,
+  type Mover,
+  type MoverInput,
+  type RankMoverInput,
+} from "../compute";
 import type { Db } from "../db";
 import { allianceSnapshots, memberSnapshots } from "../schema";
+import type { Ranks } from "./ranks";
 
 /** Alliances per list, as in the Discord message; members per list (owner, 2026-11-05). */
 export const ALLIANCE_MOVERS = 3;
@@ -36,7 +44,7 @@ interface AllianceSide {
   failed: boolean;
 }
 
-export interface AllianceMover extends MoverInput {
+export interface AllianceMover extends RankMoverInput {
   unionId: number;
   tag: string | null;
   name: string | null;
@@ -50,11 +58,27 @@ const measured = (a: AllianceSide): Measured => ({
   totalKills: a.totalKills,
 });
 
-/** Alliance movers from the event detail's two snapshot rows; an alliance seen on one side only is out. */
+/** The ledger rank by might on each side; null where the snapshot did not rank the alliance. */
+const ledgerOf = (r: Partial<Record<"before" | "after", Ranks>> | undefined) => ({
+  before: r?.before?.might ?? null,
+  after: r?.after?.might ?? null,
+});
+
+export interface AllianceMoverLists extends MoverLists<AllianceMover> {
+  /** The biggest climbs and falls by ledger rank by might (D23), top 3 each. */
+  rankUp: { row: AllianceMover; move: number }[];
+  rankDown: { row: AllianceMover; move: number }[];
+}
+
+/**
+ * Alliance movers from the event detail's two snapshot rows and the event's ledger ranks
+ * (`eventRanks`); an alliance seen on one side only is out.
+ */
 export function allianceMovers(
   before: readonly AllianceSide[],
   after: readonly AllianceSide[],
-): MoverLists<AllianceMover> {
+  ranks: Map<number, Partial<Record<"before" | "after", Ranks>>>,
+): AllianceMoverLists {
   const was = new Map(before.map((a) => [a.unionId, a]));
   const rows = after.map((a) => {
     const b = was.get(a.unionId);
@@ -65,9 +89,14 @@ export function allianceMovers(
       badgeId: a.badgeId ?? b?.badgeId ?? null,
       before: b ? measured(b) : null,
       after: measured(a),
+      ledger: ledgerOf(ranks.get(a.unionId)),
     };
   });
-  return moverLists(rows, ALLIANCE_MOVERS);
+  return {
+    ...moverLists(rows, ALLIANCE_MOVERS),
+    rankUp: topRankMovers(rows, ALLIANCE_MOVERS, "gain"),
+    rankDown: topRankMovers(rows, ALLIANCE_MOVERS, "loss"),
+  };
 }
 
 export interface MemberMover extends MoverInput {
