@@ -44,3 +44,5 @@ Plan changes needed: none.
 - If a Discord public message shows the status line and the next-update line but no `N/N alliances` line, the event detail read failed. Look for `notify.detail_failed` with the event id in the Vercel runtime log. The data is still in the database; only the message went without numbers.
 - Typed text in Discord messages (manual round names, alliance tags and names) is now escaped. A name that shows backslashes or a zero-width space after an `@` in the raw message text is expected, not a bug. The generated event names (`Saturday Event YYYY-MM-DD`, `REHEARSAL <ISO time>`) have nothing to escape and show unchanged.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/134
