@@ -3,7 +3,7 @@ export { allianceHistory, getAllianceDetail } from "./alliances";
 export type { AllianceRow, HistoryRow, MemberRow } from "./alliances";
 export { BLOCKED_ROSTER_KEYS, findBlockedKeys } from "./blocked-keys";
 export { rolesOf, roleOf, type Role } from "./leadership";
-export { getEventDetail, listEvents, type EventSummary } from "./events";
+export { getEventDetail, homeEvent, listEvents, type EventSummary } from "./events";
 export { allianceNames } from "./names";
 export { playerHistory, searchPlayers } from "./players";
 export type { PlayerEventRow, PlayerHistory, PlayerMatch } from "./players";

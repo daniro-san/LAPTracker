@@ -1,4 +1,4 @@
-// `/`: the most recent event's comparison (plan Phase 5).
+// `/`: the home event's comparison (`homeEvent`: the newest event with data, D28; plan Phase 5).
 import type { Metadata } from "next";
 
 import { EmptyEvents } from "@/app/_ui/EmptyEvents";
@@ -10,7 +10,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function HomePage() {
-  const { events, page } = await loadEventPage(null);
+  const { events, homeId, page } = await loadEventPage(null);
   if (!page) return <EmptyEvents />;
-  return <EventView events={events} {...page} />;
+  return <EventView events={events} homeId={homeId} {...page} />;
 }

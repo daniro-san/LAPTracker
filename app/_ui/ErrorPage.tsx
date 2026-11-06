@@ -27,7 +27,7 @@ export function ErrorPage({
 }) {
   return (
     <>
-      <SiteHeader events={[]} currentId={null} copy={copy} />
+      <SiteHeader events={[]} currentId={null} homeId={null} copy={copy} />
       <main className="mx-auto max-w-[960px] px-4 pt-12 sm:px-6 sm:pt-20">
         <div className="flex flex-col gap-6 sm:flex-row-reverse sm:items-start sm:gap-10">
           <div className="w-32 shrink-0 text-plum sm:w-40 sm:pt-4">{art}</div>

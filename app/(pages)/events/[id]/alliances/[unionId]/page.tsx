@@ -31,6 +31,7 @@ import {
   allianceNames,
   eventRanks,
   getAllianceDetail,
+  homeEvent,
   listEvents,
 } from "@/lib/queries";
 
@@ -185,7 +186,14 @@ const loadAlliance = cache((eventId: number, unionId: number) =>
       allianceNames(db, [unionId]),
       eventRanks(db, eventId),
     ]);
-    return { detail, events, history, names: names.get(unionId) ?? [], ledger: ranks.get(unionId) };
+    return {
+      detail,
+      events,
+      homeId: homeEvent(events)?.id ?? null,
+      history,
+      names: names.get(unionId) ?? [],
+      ledger: ranks.get(unionId),
+    };
   }),
 );
 
@@ -238,7 +246,7 @@ function crumbsFor(events: Events, eventId: number, label: string, clock: Clock,
   return [
     {
       key: "ledger",
-      href: eventId === events[0]?.id ? "/" : `/events/${eventId}`,
+      href: eventId === homeEvent(events)?.id ? "/" : `/events/${eventId}`,
       label: event ? `${copy.site.home} · ${clock.weekday(event.eventAtUtc)}` : copy.site.home,
     },
     { key: "alliance", label },
@@ -255,7 +263,7 @@ export default async function AlliancePage({ params }: { params: Params }) {
     requestCopy(),
   ]);
   if (!data) notFound();
-  const { detail, events, history, names, ledger } = data;
+  const { detail, events, homeId, history, names, ledger } = data;
   const now = detail.after ?? detail.before;
   const label = allianceLabel(now?.tag ?? String(unionId), now?.name ?? null);
   const canDelta = usable(detail.before) && usable(detail.after);
@@ -266,7 +274,7 @@ export default async function AlliancePage({ params }: { params: Params }) {
   const metrics = totalsMetrics(detail, canDelta, left, copy);
   return (
     <>
-      <SiteHeader events={events} currentId={eventId} clock={clock} copy={copy} />
+      <SiteHeader events={events} currentId={eventId} homeId={homeId} clock={clock} copy={copy} />
       <main className="mx-auto max-w-[960px] px-4 py-4 sm:px-6">
         <Breadcrumbs crumbs={crumbsFor(events, eventId, label, clock, copy)} />
         <div

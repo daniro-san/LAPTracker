@@ -29,11 +29,13 @@ const CONTROL =
 function EventSelector({
   events,
   currentId,
+  homeId,
   clock,
   copy,
 }: {
   events: SelectorEvent[];
   currentId: number | null;
+  homeId: number | null;
   clock: Clock;
   copy: Dictionary;
 }) {
@@ -69,24 +71,25 @@ function EventSelector({
         </span>
       </summary>
       <ul className="absolute right-0 z-40 mt-1 max-h-[70vh] w-[min(18rem,calc(100vw-2rem))] overflow-y-auto bg-paper p-1 text-ink drawn-frame before:inset-0">
-        {events.map((e, i) => {
+        {events.map((e) => {
           const named = eventTitle(e);
+          const home = e.id === homeId;
           return (
             <li key={e.id}>
               <Link
-                href={i === 0 ? "/" : `/events/${e.id}`}
+                href={home ? "/" : `/events/${e.id}`}
                 aria-current={e.id === currentId ? "page" : undefined}
                 className="flex min-h-11 flex-col justify-center px-3 py-1 text-sm transition-colors duration-150 hover:bg-plum/15 aria-[current=page]:bg-plum/10 aria-[current=page]:font-semibold motion-reduce:transition-none"
               >
                 <span className="break-words">
                   <EventLabel event={e} clock={clock} />
                 </span>
-                {(named || i === 0) && (
+                {(named || home) && (
                   <span className="flex gap-1.5 text-xs font-normal text-ink/70">
                     {e.manual && <ManualMark copy={copy} />}
                     {named && clock.weekday(e.eventAtUtc)}
-                    {named && i === 0 && <span aria-hidden="true">·</span>}
-                    {i === 0 && copy.site.latest}
+                    {named && home && <span aria-hidden="true">·</span>}
+                    {home && copy.site.latest}
                   </span>
                 )}
               </Link>
@@ -111,6 +114,7 @@ function Magnifier() {
 export function SiteHeader({
   events,
   currentId,
+  homeId,
   section,
   clock,
   copy,
@@ -118,6 +122,8 @@ export function SiteHeader({
 }: {
   events: SelectorEvent[];
   currentId: number | null;
+  /** The event `/` shows (`homeEvent`, chosen on the server): marked latest and linked to `/`. */
+  homeId: number | null;
   /** Marks the header link of the section the page belongs to. */
   section?: "players";
   /** The request's clock (app/_ui/locale.ts) for the selector's dates; error pages have no events. */
@@ -147,7 +153,13 @@ export function SiteHeader({
               <span className="sr-only min-[420px]:not-sr-only">{copy.site.players}</span>
             </Link>
             {clock && events.length > 0 && (
-              <EventSelector events={events} currentId={currentId} clock={clock} copy={copy} />
+              <EventSelector
+                events={events}
+                currentId={currentId}
+                homeId={homeId}
+                clock={clock}
+                copy={copy}
+              />
             )}
             <ViewerSettings publicPage={publicPage} />
           </div>

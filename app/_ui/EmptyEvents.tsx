@@ -7,7 +7,7 @@ export async function EmptyEvents() {
   const copy = await requestCopy();
   return (
     <>
-      <SiteHeader events={[]} currentId={null} copy={copy} />
+      <SiteHeader events={[]} currentId={null} homeId={null} copy={copy} />
       <main className="mx-auto max-w-[960px] px-4 py-10 sm:px-6 text-center">
         <h1 className="sr-only">{copy.site.name}</h1>
         <EmptyState>{copy.empty.kettle}</EmptyState>
