@@ -56,3 +56,5 @@ Plan changes needed: none from this session.
 - `TraceCall.retries` is a `number` now. Any new /admin read that reuses `TraceCall` gets no null.
 - `lib/queries/admin.ts` imports `RUN_STALE_AFTER_MS` from `lib/compute.ts` (from #120). The tick read for #121 goes in the same file next to `runningSnapshots`.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/150
