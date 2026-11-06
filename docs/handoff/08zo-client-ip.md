@@ -50,3 +50,5 @@ Plan changes needed: §10b "§12.2 client IP (05, N10)" still says "unverified �
 - The per-IP PIN limit is verified on production (D42): a forged `x-real-ip` or `x-forwarded-for` does not change the `auth_attempts` key. Nothing to check about client IPs in the dry run.
 - The production database is Neon project `flat-dew-50243708`, branch `main` (`br-icy-sky-bbipw44y`); `.env.local` points at the `preview` branch. Read production numbers for step 2 through the Neon MCP on that branch.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/142
