@@ -7,9 +7,9 @@
 import { useEffect, useState } from "react";
 
 import { CheckField } from "@/lib/brand/components/CheckField";
-import { copy } from "@/lib/copy";
 
 import { rowAnchor } from "./format";
+import { useCopy } from "./LocaleProvider";
 
 const KEY = "lap.myAlliance";
 
@@ -33,6 +33,7 @@ function writeMine(unionId: number | null) {
 
 /** On the alliance page, beside "Exact numbers": a checkbox that marks this alliance as the viewer's. */
 export function MyAllianceToggle({ unionId }: { unionId: number }) {
+  const copy = useCopy();
   const [mine, setMine] = useState(false);
   useEffect(() => setMine(readMine() === unionId), [unionId]);
   return (
@@ -50,6 +51,7 @@ export function MyAllianceToggle({ unionId }: { unionId: number }) {
 
 /** On the main page: highlights the viewer's row and links to it; renders nothing when none is set. */
 export function MyAllianceJump({ tags }: { tags: Record<number, string> }) {
+  const copy = useCopy();
   const [mine, setMine] = useState<number | null>(null);
   useEffect(() => {
     const id = readMine();

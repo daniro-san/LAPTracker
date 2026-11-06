@@ -1,15 +1,18 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { ADMIN_WEBHOOK, PUBLIC_WEBHOOK, TEST_ENV } from "./app-context.test-helpers";
+import { ADMIN_WEBHOOK, PUBLIC_WEBHOOK, TEST_ENV, testContext } from "./app-context.test-helpers";
 import type { RunSummary } from "./collector";
+import type { Db } from "./db";
 import {
   adminEventMessage,
   adminSnapshotMessage,
   createNotifier,
   discordClock,
   publicSnapshotMessage,
+  type Embed,
   type PublicContext,
 } from "./notify";
+import { notifyFinished } from "./run-notify";
 
 const clock = discordClock(TEST_ENV.SERVER_TZ);
 const utc = (hhmm: string) => new Date(`2026-11-07T${hhmm}:00Z`);
@@ -146,5 +149,39 @@ describe("one message per channel per event (D31)", () => {
       "Before snapshot done at Sat, Nov 7, 10:01 server time",
       "1/1 alliances",
     ]);
+  });
+
+  it("leaves out the alliance count, stale and movers lines when the event detail cannot be read", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const down = {
+      select: () => {
+        throw new Error("database down");
+      },
+    } as unknown as Db;
+    const { ctx, posts } = testContext(down);
+    await notifyFinished(
+      ctx,
+      down,
+      {
+        event: {
+          id: 9,
+          name: "Saturday 2026-11-07",
+          isTest: false,
+          manual: false,
+          postPublic: false,
+          discordPublicMessageId: null,
+          discordAdminMessageId: null,
+          beforeAt: utc("12:00"),
+          afterAt: utc("16:00"),
+        },
+        phase: "before",
+        origin: "https://lap.test",
+      },
+      { summary: summary({ phase: "before" }), startedAt: utc("12:00"), logWriteFailures: 0 },
+    );
+    const [embed] = (posts.find((p) => p.url === PUBLIC_WEBHOOK)?.body.embeds ?? []) as Embed[];
+    expect(embed?.description).toBe("Next update at Sat, Nov 7, 14:00 server time");
+    expect(error).toHaveBeenCalledWith("notify.detail_failed", { event_id: 9 });
+    error.mockRestore();
   });
 });

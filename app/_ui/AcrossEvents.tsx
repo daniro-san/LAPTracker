@@ -3,12 +3,13 @@
 // the time its figures are from, so the fallback reads as `10:00` without a word (07c S1). The rank is
 // the ledger rank by might, moved event over event; kills and server ranks are under Details.
 import { rankDelta } from "@/lib/compute";
-import { copy, fill } from "@/lib/copy";
+import { fill, type Dictionary } from "@/lib/copy";
 import type { HistoryRow } from "@/lib/queries";
 
 import { DetailTable, rankRow, type RankPair } from "./DetailLines";
 import { EventLead } from "./EventLead";
 import { allianceLabel, changeText, joinedText, leftText, type Clock } from "./format";
+import { requestCopy } from "./locale";
 import { StatTable, type StatMetric, type StatRow } from "./StatTable";
 import { FreshDots } from "./Status";
 
@@ -23,12 +24,12 @@ export const TITLE_ID = "alliance-title";
 const baseOf = (value: number | null, delta: number | null) =>
   value !== null && delta !== null ? value - delta : null;
 
-function rosterNote(r: HistoryRow): Pick<StatMetric, "note"> {
+function rosterNote(r: HistoryRow, copy: Dictionary): Pick<StatMetric, "note"> {
   if (r.joined === null || r.left === null || r.joined === 0 || r.left === 0) return {};
-  return { note: `${joinedText(r.joined)} · ${leftText(r.left)}` };
+  return { note: `${joinedText(r.joined, copy)} · ${leftText(r.left, copy)}` };
 }
 
-function metrics(r: HistoryRow, prevMembers: number | null): StatMetric[] {
+function metrics(r: HistoryRow, prevMembers: number | null, copy: Dictionary): StatMetric[] {
   const l = copy.ledger;
   const memberDelta =
     r.isFresh && r.memberCount !== null && prevMembers !== null
@@ -52,14 +53,14 @@ function metrics(r: HistoryRow, prevMembers: number | null): StatMetric[] {
       value: r.memberCount,
       delta: memberDelta,
       base: prevMembers,
-      ...rosterNote(r),
+      ...rosterNote(r, copy),
     },
     { label: l.level, value: r.level, delta: r.step.lv, base: null },
   ];
 }
 
 /** `Alliance: OLD → NEW`, `Name: Old → New`, for each label that changed since the previous event. */
-function changes(r: HistoryRow): string | null {
+function changes(r: HistoryRow, copy: Dictionary): string | null {
   if (!r.previous) return null;
   const line = (label: string, from: string | null, to: string | null) =>
     changeText(label, from ?? "?", to ?? "?");
@@ -88,8 +89,9 @@ function toRow(
   r: HistoryRow,
   prev: HistoryRow | undefined,
   clock: Clock,
+  copy: Dictionary,
 ): StatRow {
-  const change = changes(r);
+  const change = changes(r, copy);
   const ranks = rankPairs(r, prev);
   const l = copy.ledger;
   return {
@@ -103,9 +105,13 @@ function toRow(
         {change && <span className="block text-xs">{change}</span>}
       </>
     ),
-    metrics: metrics(r, prev?.memberCount ?? null),
+    metrics: metrics(r, prev?.memberCount ?? null, copy),
     summary: (
-      <FreshDots before={null} after={{ isFresh: r.isFresh, updatedAt: null, failed: false }} />
+      <FreshDots
+        before={null}
+        after={{ isFresh: r.isFresh, updatedAt: null, failed: false }}
+        copy={copy}
+      />
     ),
     detail: (
       <DetailTable
@@ -121,7 +127,7 @@ function toRow(
   };
 }
 
-export function AcrossEvents({
+export async function AcrossEvents({
   unionId,
   history,
   clock,
@@ -130,7 +136,8 @@ export function AcrossEvents({
   history: HistoryRow[];
   clock: Clock;
 }) {
-  const rows = history.map((r, i) => toRow(unionId, r, history[i - 1], clock)).reverse();
+  const copy = await requestCopy();
+  const rows = history.map((r, i) => toRow(unionId, r, history[i - 1], clock, copy)).reverse();
   const l = copy.ledger;
   const table = (list: StatRow[]) => (
     <StatTable
@@ -138,6 +145,7 @@ export function AcrossEvents({
       columns={[l.might, l.kills, l.members, l.level]}
       rows={list}
       empty={copy.empty.noEvents}
+      copy={copy}
     />
   );
   return (

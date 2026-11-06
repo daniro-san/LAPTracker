@@ -170,10 +170,12 @@ function Ornaments() {
             <RoleMark role={{ kind: "leader" }} />
             {t.roleMark.leader}
           </p>
-          <p className="flex items-center gap-2 bg-sage/10 px-2 py-1">
-            <RoleMark role={{ kind: "officer", title: t.roleMark.officer }} />
-            {t.roleMark.officer}
-          </p>
+          {t.roleMark.officers.map((title) => (
+            <p key={title} className="flex items-center gap-2 bg-sage/10 px-2 py-1">
+              <RoleMark role={{ kind: "officer", title }} />
+              {title}
+            </p>
+          ))}
         </div>
       </Spec>
       <Spec name={t.leadership.name} use={t.leadership.use}>

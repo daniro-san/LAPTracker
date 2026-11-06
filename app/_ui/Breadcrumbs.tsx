@@ -3,7 +3,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import { copy } from "@/lib/copy";
+import { requestCopy } from "./locale";
 
 export interface Crumb {
   key: string;
@@ -11,7 +11,8 @@ export interface Crumb {
   label: ReactNode;
 }
 
-export function Breadcrumbs({ crumbs }: { crumbs: Crumb[] }) {
+export async function Breadcrumbs({ crumbs }: { crumbs: Crumb[] }) {
+  const copy = await requestCopy();
   return (
     <nav aria-label={copy.site.breadcrumb} className="mb-1 text-base">
       <ol className="flex flex-wrap items-center gap-x-1">

@@ -9,6 +9,7 @@ One name per concept, in code and in prose, so an agent can grep. UI word ↔ co
 | LAPTracker                | this project                                                                                                                                  | —                                        |
 | event                     | one weekly Saturday event (12:00 server time)                                                                                                 | `events`                                 |
 | manual event              | a public event the owner creates on /admin and runs by hand; no schedule, never run by the tick (D28)                                         | `events.manual`                          |
+| event title               | a manual event's name or a renamed event's; none while a scheduled event keeps its generated name, so pages show the date (D49)               | `eventTitle`, `isGeneratedName`          |
 | snapshot                  | one collection run for one event and phase                                                                                                    | `snapshots`                              |
 | phase                     | `before` or `after` the event                                                                                                                 | `phase`                                  |
 | might                     | total alliance power (UI word)                                                                                                                | `total_power` (API `power`)              |
@@ -32,3 +33,4 @@ One name per concept, in code and in prose, so an agent can grep. UI word ↔ co
 | server rank               | the game's own power ranking of the alliance on the server                                                                                    | `server_rank` (API `rank.rank`)          |
 | rank movement             | places moved between two ranks: `▲k` up, `▼k` down, `=` held, `—` unknown                                                                     | `compute.rankDelta`                      |
 | copy / blank dictionary   | every user-facing string, keyed; the blank dictionary replaces each value with `░` for the ten-second test                                    | `lib/copy.ts`, `NEXT_PUBLIC_BLANK_COPY`  |
+| dictionary / language     | the public pages' strings in one language (`en`, `lib/copy.<tag>.ts`), picked per request from the `lang` cookie or Accept-Language (D48)     | `requestCopy`, `useCopy`                 |

@@ -48,7 +48,10 @@ async function storeId(db: Db, shared: Shared, channel: "public" | "admin", id: 
 async function notifyPublic(db: Db, s: Shared) {
   const { event, phase, origin } = s.req;
   // getEventDetail reads real events only: the public message never sees a rehearsal.
-  const detail = await getEventDetail(db, event.id).catch(() => null);
+  const detail = await getEventDetail(db, event.id).catch(() => {
+    console.error("notify.detail_failed", { event_id: event.id });
+    return null;
+  });
   const rowsOf = (p: Phase) => detail?.snapshots.find((x) => x.phase === p)?.alliances ?? null;
   const roundName = event.manual ? event.name : null;
   const id = await s.notifier.public(
@@ -57,7 +60,7 @@ async function notifyPublic(db: Db, s: Shared) {
       eventUrl: `${origin}/events/${event.id}`,
       finishedAt: s.finishedAt,
       nextAt: phase === "before" && !event.manual ? event.afterAt : null,
-      alliances: rowsOf(phase) ?? [],
+      alliances: rowsOf(phase),
       before: phase === "after" ? rowsOf("before") : null,
       roundName,
       beforeAt:

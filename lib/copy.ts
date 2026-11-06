@@ -1,13 +1,17 @@
 // Every user-facing string (docs/DESIGN.md "Language-light rules"). Keys are stable identifiers; values
-// are the English text, so translation later is a file, not a refactor. The /brand page's text, the
-// admin area's and the Discord messages' live in sibling files and are re-exported here, so there is one import path.
+// are the English text. The public pages' strings (`en`) are also written in the languages of
+// `LANGUAGES`, one translation per file in lib/i18n/ (D48); a page reads its request's dictionary through
+// requestCopy or useCopy (app/_ui/locale.ts, LocaleProvider). The /brand page's text, the admin area's
+// and the Discord messages' stay English: they live in sibling files and are re-exported in `copy`, so
+// there is one import path.
 // `{name}` is a placeholder filled by `fill()`; labels on public pages are at most two words. Symbols
 // (signs, arrows, `#`) stay in the components so the blank dictionary keeps them visible.
 import { adminCopy } from "./copy-admin";
 import { brandCopy } from "./copy-brand";
 import { discordCopy } from "./copy-discord";
 
-const source = {
+/** The public pages' strings in English: the source every other language's dictionary follows. */
+export const en = {
   site: {
     name: "OG's LAP Tracker",
     shortName: "LAP Tracker",
@@ -19,6 +23,8 @@ const source = {
     settings: "Settings",
     exactNumbers: "Exact numbers",
     events: "Events",
+    /** The closed event selector on pages that span every event (the player pages). */
+    allEvents: "All events",
     latest: "latest",
     manualRound: "Manual round",
     breadcrumb: "Breadcrumb",
@@ -55,6 +61,7 @@ const source = {
   },
   /** The header's settings menu (D38). */
   settings: {
+    language: "Language",
     theme: "Theme",
     light: "Light",
     dark: "Dark",
@@ -161,6 +168,62 @@ const source = {
     noEvents: "No events in the ledger yet.",
     noMembers: "Nobody here matches. Grandma checked twice.",
   },
+} as const;
+
+/** A page's words: `en`'s keys, any text. */
+type Strings<T> = { readonly [K in keyof T]: T[K] extends string ? string : Strings<T[K]> };
+export type Dictionary = Strings<typeof en>;
+
+/** One language's file (lib/i18n/): any of `en`'s keys, so a key added in English reads English until it
+ * is translated (scripts/i18n-check.ts reports it); an extra or misspelt key fails tsc. */
+type Partly<T> = { readonly [K in keyof T]?: T[K] extends string ? string : Partly<T[K]> };
+export type Translation = Partly<typeof en>;
+
+type Tree = { readonly [key: string]: string | Tree };
+
+function overlay(base: Tree, over: Tree | undefined): Tree {
+  return Object.fromEntries(
+    Object.entries(base).map(([key, value]) => {
+      const mine = over?.[key];
+      if (typeof value === "string") return [key, typeof mine === "string" ? mine : value];
+      return [key, overlay(value, typeof mine === "object" ? mine : undefined)];
+    }),
+  );
+}
+
+/** A translation with every missing key filled from English. */
+export const withEnglish = (translation: Translation): Dictionary =>
+  overlay(en, translation as Tree) as unknown as Dictionary;
+
+/** The languages the public pages are written in (D48), in the switcher's order; the one registry. */
+export const LANGUAGES = [
+  "en",
+  "es",
+  "pt-BR",
+  "fr",
+  "de",
+  "it",
+  "nl",
+  "sv",
+  "pl",
+  "ru",
+  "uk",
+  "tr",
+  "zh-CN",
+  "ja",
+  "ko",
+  "id",
+  "vi",
+  "th",
+] as const;
+export type Language = (typeof LANGUAGES)[number];
+
+/** A `lang` cookie value on the list, else null. */
+export const parseLanguage = (value: string | undefined): Language | null =>
+  (LANGUAGES as readonly string[]).includes(value ?? "") ? (value as Language) : null;
+
+const source = {
+  ...en,
   admin: adminCopy,
   brand: brandCopy,
   discord: discordCopy,
@@ -205,6 +268,7 @@ export function blankDictionary<T extends { ledger: Record<(typeof GAME_TERMS)[n
 
 // The blank dictionary is for the ten-second test only: a dev-time switch, inert in production builds
 // (NODE_ENV is "production" there) and never set on Vercel. NEXT_PUBLIC_ so client components see it.
-const BLANK = process.env.NEXT_PUBLIC_BLANK_COPY === "1" && process.env.NODE_ENV !== "production";
+export const BLANK =
+  process.env.NEXT_PUBLIC_BLANK_COPY === "1" && process.env.NODE_ENV !== "production";
 
 export const copy: typeof source = BLANK ? blankDictionary(source) : source;

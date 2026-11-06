@@ -3,9 +3,15 @@
 // and player pages.
 import { GrannyStanding } from "@/lib/brand/components/Mascot";
 import { YarnCorner } from "@/lib/brand/components/YarnCorner";
-import { copy } from "@/lib/copy";
+import type { Dictionary } from "@/lib/copy";
 
-export function SiteFooter({ ornament = "yarn" }: { ornament?: "yarn" | "granny" }) {
+export function SiteFooter({
+  ornament = "yarn",
+  copy,
+}: {
+  ornament?: "yarn" | "granny";
+  copy: Dictionary;
+}) {
   return (
     <footer
       className={`relative mx-auto mt-8 max-w-[960px] px-4 text-plum sm:px-6 ${ornament === "granny" ? "h-36" : "h-28"}`}

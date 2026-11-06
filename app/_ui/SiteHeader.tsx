@@ -2,16 +2,17 @@
 // magnifier and the word), the event selector and the settings gear (theme, times, dates), and the lace
 // border hanging below.
 // The selector is a <details> list of links, so it works without JavaScript and every target is ≥ 44 px;
-// with it, Escape and a tap outside close it. Below 640 px the wordmark is screen-reader only: the mark,
-// three controls and the gutters fill 360 px.
+// with it, Escape and a tap outside close it. Closed, it shows the event's date only, so it stays one
+// line in any language (D49); its list and the page show the title. Below 640 px the wordmark is
+// screen-reader only: the mark, three controls and the gutters fill 360 px.
 import Link from "next/link";
 
 import { LaceBorder } from "@/lib/brand/components/LaceBorder";
 import { WaxedMark } from "@/lib/brand/components/Logo";
-import { copy } from "@/lib/copy";
+import type { Dictionary } from "@/lib/copy";
 
 import { Disclosure } from "./Disclosure";
-import { EventLabel, type LabeledEvent } from "./EventLabel";
+import { EventLabel, eventTitle, ManualMark, type LabeledEvent } from "./EventLabel";
 import type { Clock } from "./format";
 import { ViewerSettings } from "./ViewerSettings";
 
@@ -28,18 +29,37 @@ function EventSelector({
   events,
   currentId,
   clock,
+  copy,
 }: {
   events: SelectorEvent[];
   currentId: number | null;
   clock: Clock;
+  copy: Dictionary;
 }) {
   const current = events.find((e) => e.id === currentId);
+  const title = current && eventTitle(current);
   return (
     <Disclosure label={copy.site.events} className="group relative">
       <summary
-        className={`flex min-h-11 cursor-pointer items-center gap-1 px-3 text-sm drawn-frame-soft font-medium group-open:bg-paper/20 [&::-webkit-details-marker]:hidden ${CONTROL}`}
+        className={`flex min-h-11 cursor-pointer items-center gap-1 whitespace-nowrap px-3 text-sm drawn-frame-soft font-medium group-open:bg-paper/20 [&::-webkit-details-marker]:hidden ${CONTROL}`}
       >
-        {current ? <EventLabel event={current} clock={clock} /> : copy.site.events}{" "}
+        {current ? (
+          <>
+            {current.manual && <ManualMark copy={copy} />}
+            <span aria-hidden="true" className="hidden min-[360px]:inline">
+              {clock.weekday(current.eventAtUtc)}
+            </span>
+            <span aria-hidden="true" className="min-[360px]:hidden">
+              {clock.day(current.eventAtUtc)}
+            </span>
+            <span className="sr-only">
+              {title ? `${title}, ` : ""}
+              {clock.weekday(current.eventAtUtc)}
+            </span>
+          </>
+        ) : (
+          copy.site.allEvents
+        )}{" "}
         <span
           aria-hidden="true"
           className="transition-transform duration-150 group-open:rotate-180 motion-reduce:transition-none"
@@ -48,18 +68,30 @@ function EventSelector({
         </span>
       </summary>
       <ul className="absolute right-0 z-40 mt-1 max-h-[70vh] w-[min(18rem,calc(100vw-2rem))] overflow-y-auto bg-paper p-1 text-ink drawn-frame before:inset-0">
-        {events.map((e, i) => (
-          <li key={e.id}>
-            <Link
-              href={i === 0 ? "/" : `/events/${e.id}`}
-              aria-current={e.id === currentId ? "page" : undefined}
-              className="flex min-h-11 items-center px-3 text-sm transition-colors duration-150 hover:bg-plum/15 aria-[current=page]:bg-plum/10 aria-[current=page]:font-semibold motion-reduce:transition-none"
-            >
-              <EventLabel event={e} clock={clock} />
-              {i === 0 && <span className="ml-2 text-xs text-ink/70">{copy.site.latest}</span>}
-            </Link>
-          </li>
-        ))}
+        {events.map((e, i) => {
+          const named = eventTitle(e);
+          return (
+            <li key={e.id}>
+              <Link
+                href={i === 0 ? "/" : `/events/${e.id}`}
+                aria-current={e.id === currentId ? "page" : undefined}
+                className="flex min-h-11 flex-col justify-center px-3 py-1 text-sm transition-colors duration-150 hover:bg-plum/15 aria-[current=page]:bg-plum/10 aria-[current=page]:font-semibold motion-reduce:transition-none"
+              >
+                <span className="break-words">
+                  <EventLabel event={e} clock={clock} />
+                </span>
+                {(named || i === 0) && (
+                  <span className="flex gap-1.5 text-xs font-normal text-ink/70">
+                    {e.manual && <ManualMark copy={copy} />}
+                    {named && clock.weekday(e.eventAtUtc)}
+                    {named && i === 0 && <span aria-hidden="true">·</span>}
+                    {i === 0 && copy.site.latest}
+                  </span>
+                )}
+              </Link>
+            </li>
+          );
+        })}
       </ul>
     </Disclosure>
   );
@@ -80,7 +112,8 @@ export function SiteHeader({
   currentId,
   section,
   clock,
-  times = true,
+  copy,
+  publicPage = true,
 }: {
   events: SelectorEvent[];
   currentId: number | null;
@@ -88,8 +121,10 @@ export function SiteHeader({
   section?: "players";
   /** The request's clock (app/_ui/locale.ts) for the selector's dates; error pages have no events. */
   clock?: Clock;
-  /** The gear offers times and dates; /admin, which stays in server time, offers the theme only. */
-  times?: boolean;
+  /** The request's words (requestCopy); /admin passes the English `copy`. */
+  copy: Dictionary;
+  /** The gear offers language, times and dates; /admin, English and in server time, the theme only. */
+  publicPage?: boolean;
 }) {
   return (
     <header className="sticky top-0 z-30 text-plum">
@@ -111,9 +146,9 @@ export function SiteHeader({
               {copy.site.players}
             </Link>
             {clock && events.length > 0 && (
-              <EventSelector events={events} currentId={currentId} clock={clock} />
+              <EventSelector events={events} currentId={currentId} clock={clock} copy={copy} />
             )}
-            <ViewerSettings times={times} />
+            <ViewerSettings publicPage={publicPage} />
           </div>
         </div>
       </div>

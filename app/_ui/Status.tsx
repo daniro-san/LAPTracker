@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 
 import { Chip, type ChipTone } from "@/lib/brand/components/Chip";
 import { DroppedStitch, Hourglass, StitchedCheck } from "@/lib/brand/components/StatusIcons";
-import { copy, fill } from "@/lib/copy";
+import { fill, type Dictionary } from "@/lib/copy";
 
 import { MEMBER_MARK, type Clock } from "./format";
 
@@ -28,7 +28,15 @@ const finishedAt = (p: PhaseStatus) => p.finishedAt ?? p.startedAt;
 
 /** "Last updated at …" (a partial run shows its icon and the stale count beside it), "Last update
  * failed at …", "Updating now"; nothing yet: "Not updated yet" (owner, 2026-11-05). */
-function LastChip({ phases, clock }: { phases: PhaseStatus[]; clock: Clock }) {
+function LastChip({
+  phases,
+  clock,
+  copy,
+}: {
+  phases: PhaseStatus[];
+  clock: Clock;
+  copy: Dictionary;
+}) {
   const running = phases.find((p) => p.status === "running");
   if (running) {
     return (
@@ -57,7 +65,7 @@ function LastChip({ phases, clock }: { phases: PhaseStatus[]; clock: Clock }) {
 }
 
 /** "Next update at …": the next snapshot, of this event or of the schedule (app/_ui/event-rows.ts). */
-function NextChip({ at, clock }: { at: Date | null; clock: Clock }) {
+function NextChip({ at, clock, copy }: { at: Date | null; clock: Clock; copy: Dictionary }) {
   if (!at) return null;
   return (
     <Chip tone="muted" icon="○">
@@ -67,7 +75,7 @@ function NextChip({ at, clock }: { at: Date | null; clock: Clock }) {
 }
 
 /** A manual round (D28) is never run by the tick, so it names no next time. */
-function ByHandChip() {
+function ByHandChip({ copy }: { copy: Dictionary }) {
   return (
     <Chip tone="muted" icon="○">
       {copy.status.byHand}
@@ -81,6 +89,7 @@ export function StatusChips({
   stale,
   manual = false,
   clock,
+  copy,
 }: {
   phases: PhaseStatus[];
   nextAt: Date | null;
@@ -89,11 +98,12 @@ export function StatusChips({
   /** A manual round: "Run by hand by the admin" replaces "Next update at …". */
   manual?: boolean;
   clock: Clock;
+  copy: Dictionary;
 }) {
   return (
     <ul className="flex flex-wrap items-center gap-2" aria-label={copy.status.label}>
       <li className="min-w-0">
-        <LastChip phases={phases} clock={clock} />
+        <LastChip phases={phases} clock={clock} copy={copy} />
       </li>
       {stale > 0 && (
         <li className="min-w-0 text-body-sm">
@@ -104,7 +114,7 @@ export function StatusChips({
         </li>
       )}
       <li className="min-w-0">
-        {manual ? <ByHandChip /> : <NextChip at={nextAt} clock={clock} />}
+        {manual ? <ByHandChip copy={copy} /> : <NextChip at={nextAt} clock={clock} copy={copy} />}
       </li>
     </ul>
   );
@@ -116,7 +126,7 @@ export interface FreshState {
   failed: boolean;
 }
 
-type FreshWord = keyof typeof copy.fresh;
+type FreshWord = keyof Dictionary["fresh"];
 
 const wordOf = (s: FreshState | null): FreshWord =>
   !s ? "missing" : s.failed ? "failed" : s.isFresh ? "fresh" : "stale";
@@ -134,7 +144,7 @@ const MARK: Record<FreshWord, { symbol: string; tone: string }> = {
   missing: { symbol: "–", tone: "text-ink/70" },
 };
 
-function Mark({ word }: { word: FreshWord }) {
+function Mark({ word, copy }: { word: FreshWord; copy: Dictionary }) {
   return (
     <span className={`whitespace-nowrap font-medium ${MARK[word].tone}`}>
       <span aria-hidden="true">{MARK[word].symbol} </span>
@@ -147,16 +157,26 @@ function Mark({ word }: { word: FreshWord }) {
 export function FreshDots({
   before,
   after,
+  copy,
 }: {
   before: FreshState | null;
   after: FreshState | null;
+  copy: Dictionary;
 }) {
   const worst = worstOf(before, after);
-  return worst === "fresh" ? null : <Mark word={worst} />;
+  return worst === "fresh" ? null : <Mark word={worst} copy={copy} />;
 }
 
 /** One snapshot side as a column head: its time (`10:00`), with the mark only when it is not fresh. */
-export function SideHead({ s, clock }: { s: FreshState | null; clock: Clock }) {
+export function SideHead({
+  s,
+  clock,
+  copy,
+}: {
+  s: FreshState | null;
+  clock: Clock;
+  copy: Dictionary;
+}) {
   const word = wordOf(s);
   return (
     <span className="whitespace-nowrap">
@@ -173,7 +193,7 @@ export function SideHead({ s, clock }: { s: FreshState | null; clock: Clock }) {
 
 /** The one legend (DESIGN.md "One legend, once"), under the page title. `memberMark`: the page shows a `*`
  * on some change, so its item is listed; otherwise the legend does not grow for nothing. */
-export function Legend({ memberMark = false }: { memberMark?: boolean }) {
+export function Legend({ memberMark = false, copy }: { memberMark?: boolean; copy: Dictionary }) {
   const l = copy.legend;
   const items: [ReactNode, string, string][] = [
     ["▲", l.up, "text-yarn"],

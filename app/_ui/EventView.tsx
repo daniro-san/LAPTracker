@@ -3,7 +3,7 @@
 // rank. Quota, run errors and the run buttons live on /admin. The game's own board is not shown (owner,
 // 2026-11-05): it is still collected as a cross-check but never feeds a number on the page.
 import type { NameHistoryEntry } from "@/lib/compute";
-import { copy, fill } from "@/lib/copy";
+import { fill, type Dictionary } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
 import type { getEventDetail, listEvents, Ranks, RosterChange } from "@/lib/queries";
 import { nextEvent } from "@/lib/schedule";
@@ -16,10 +16,10 @@ import {
   type AllianceCell,
   type ComparisonRow,
 } from "./event-rows";
-import { EventLabel } from "./EventLabel";
+import { eventTitle, ManualMark } from "./EventLabel";
 import { ExactToggle } from "./ExactToggle";
 import { allianceLabel, rowAnchor, type Clock } from "./format";
-import { requestClock } from "./locale";
+import { requestClock, requestCopy } from "./locale";
 import { MyAllianceJump } from "./MyAlliance";
 import { AllianceBadge } from "./Pictures";
 import { SiteFooter } from "./SiteFooter";
@@ -39,17 +39,19 @@ function RowDetail({
   r,
   history,
   clock,
+  copy,
 }: {
   r: ComparisonRow;
   history: NameHistoryEntry[] | undefined;
   clock: Clock;
+  copy: Dictionary;
 }) {
   return (
     <>
       <DetailTable
         corner={clock.zone}
-        from={<SideHead s={fresh(r.before)} clock={clock} />}
-        to={<SideHead s={fresh(r.after)} clock={clock} />}
+        from={<SideHead s={fresh(r.before)} clock={clock} copy={copy} />}
+        to={<SideHead s={fresh(r.after)} clock={clock} copy={copy} />}
         rows={figureRows(r.metrics, r.ranks, copy.ledger.ranking)}
       />
       {history && history.length > 1 && (
@@ -70,6 +72,7 @@ function toStatRow(
   r: ComparisonRow,
   history: NameHistoryEntry[] | undefined,
   clock: Clock,
+  copy: Dictionary,
 ): StatRow {
   return {
     key: String(r.unionId),
@@ -81,13 +84,13 @@ function toStatRow(
     sub:
       r.formerly && fill(copy.ledger.was, { name: allianceLabel(r.formerly.tag, r.formerly.name) }),
     metrics: r.metrics,
-    summary: <FreshDots before={fresh(r.before)} after={fresh(r.after)} />,
-    detail: <RowDetail r={r} history={history} clock={clock} />,
+    summary: <FreshDots before={fresh(r.before)} after={fresh(r.after)} copy={copy} />,
+    detail: <RowDetail r={r} history={history} clock={clock} copy={copy} />,
   };
 }
 
 /** "Server 325 · Event Ledger", "kept by the Old Grandmas": the page title, under the header. */
-function TitleBand() {
+function TitleBand({ copy }: { copy: Dictionary }) {
   return (
     <div className="mb-3">
       <h1 className="font-display text-display-lg leading-tight">{copy.site.ledger}</h1>
@@ -110,24 +113,25 @@ export async function EventView({
   names: Map<number, NameHistoryEntry[]>;
   ranks: Map<number, Partial<Record<"before" | "after", Ranks>>>;
 }) {
-  const clock = await requestClock();
+  const [clock, copy] = await Promise.all([requestClock(), requestCopy()]);
   const now = new Date();
-  const rows = comparisonRows(detail.snapshots, changes, names, ranks);
+  const rows = comparisonRows(detail.snapshots, changes, names, ranks, copy);
   return (
     <>
-      <SiteHeader events={events} currentId={detail.id} clock={clock} />
+      <SiteHeader events={events} currentId={detail.id} clock={clock} copy={copy} />
       <main className="mx-auto max-w-[960px] px-4 py-4 sm:px-6">
-        <TitleBand />
+        <TitleBand copy={copy} />
         <div className="mb-2 flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
           <div className="min-w-0">
             <h2 className="font-subhead text-display-md leading-tight">
-              {detail.manual ? (
-                <EventLabel event={detail} clock={clock} />
-              ) : (
-                clock.long(detail.eventAtUtc)
-              )}
+              {eventTitle(detail) ?? clock.long(detail.eventAtUtc)}
             </h2>
-            {detail.manual && <p className="text-sm">{clock.long(detail.eventAtUtc)}</p>}
+            {eventTitle(detail) && (
+              <p className="flex gap-1.5 text-sm">
+                {detail.manual && <ManualMark copy={copy} />}
+                {clock.long(detail.eventAtUtc)}
+              </p>
+            )}
           </div>
           <ExactToggle />
         </div>
@@ -142,17 +146,19 @@ export async function EventView({
           stale={rows.filter((r) => worstOf(fresh(r.before), fresh(r.after)) !== "fresh").length}
           manual={detail.manual}
           clock={clock}
+          copy={copy}
         />
-        <Legend memberMark={rows.some((r) => r.metrics.some((m) => m.memberMark))} />
+        <Legend memberMark={rows.some((r) => r.metrics.some((m) => m.memberMark))} copy={copy} />
         <MyAllianceJump tags={Object.fromEntries(rows.map((r) => [r.unionId, r.tag]))} />
         <StatTable
           leadLabel={copy.ledger.alliance}
           columns={[copy.ledger.might, copy.ledger.kills, copy.ledger.members]}
-          rows={rows.map((r) => toStatRow(detail.id, r, names.get(r.unionId), clock))}
-          empty={emptyLine(detail.manual, detail.snapshots.length)}
+          rows={rows.map((r) => toStatRow(detail.id, r, names.get(r.unionId), clock, copy))}
+          empty={emptyLine(detail.manual, detail.snapshots.length, copy)}
+          copy={copy}
         />
       </main>
-      <SiteFooter />
+      <SiteFooter copy={copy} />
     </>
   );
 }
