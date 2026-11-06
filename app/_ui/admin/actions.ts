@@ -13,7 +13,8 @@ export interface Action {
     | "manual-rename"
     | "manual-settings"
     | "manual-before"
-    | "manual-after";
+    | "manual-after"
+    | "event-rename";
   /** One line under a snapshot button, and what it costs. */
   help?: string;
   cost?: string;
@@ -72,6 +73,33 @@ export const manualSnapshots = (eventId: number): Action[] =>
     url: `/api/snapshot?phase=${phase}&event=${eventId}`,
     confirm: phase === "before" ? m.confirmBefore : m.confirmAfter,
   }));
+
+/** Renames a scheduled event (D39); the form is the confirmation. Same route as a round's rename. */
+export const renameEvent = (eventId: number, name: string): Action => ({
+  id: "event-rename",
+  label: t.renameSave,
+  url: "/api/manual-event/rename",
+  body: JSON.stringify({ event_id: eventId, name }),
+});
+
+/** The newest manual round as /admin shows it: each phase that ran, with its state already in words. */
+export interface RoundView {
+  id: number;
+  name: string;
+  visibility: RoundOptions["visibility"];
+  postPublic: boolean;
+  calls: number;
+  phases: { phase: "before" | "after"; status: string; text: string }[];
+}
+
+/** The current scheduled event: its row (null until the scheduler makes it) and its time in words. */
+export interface CurrentEventView {
+  id: number | null;
+  name: string;
+  atText: string;
+  /** When its row appears, for the "rename later" line. */
+  rowFromText: string;
+}
 
 /** A snapshot running now, in words: "Before snapshot", the event, "Thu, 19:14 server time". */
 export interface RunningView {

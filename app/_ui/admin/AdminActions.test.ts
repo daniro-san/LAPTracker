@@ -8,7 +8,17 @@ const { AdminActions } = await import("./AdminActions");
 
 const render = (running: { phase: string; event: string; startedText: string }[]) =>
   renderToStaticMarkup(
-    createElement(AdminActions, { beforeAtText: "Sat 10:00", manual: null, running, latest: null }),
+    createElement(AdminActions, {
+      beforeAtText: "Sat 10:00",
+      current: {
+        id: null,
+        name: "Saturday Event 2026-11-07",
+        atText: "Sat 12:00",
+        rowFromText: "Fri 10:00",
+      },
+      manual: null,
+      running,
+    }),
   );
 
 describe("AdminActions while a run is in progress", () => {

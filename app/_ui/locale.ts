@@ -1,4 +1,4 @@
-// The viewer's language and locale, from the `lang` cookie and the request's Accept-Language (D39;
+// The viewer's language and locale, from the `lang` cookie and the request's Accept-Language (D40;
 // DESIGN.md: numbers and dates through Intl), and the request's Clock: in the viewer's own zone and date
 // order when their cookies say so (D38), else in server time. Server only; client components read the
 // locale and the dictionary through LocaleProvider.

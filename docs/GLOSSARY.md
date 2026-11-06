@@ -32,4 +32,4 @@ One name per concept, in code and in prose, so an agent can grep. UI word ↔ co
 | server rank               | the game's own power ranking of the alliance on the server                                                                                    | `server_rank` (API `rank.rank`)          |
 | rank movement             | places moved between two ranks: `▲k` up, `▼k` down, `=` held, `—` unknown                                                                     | `compute.rankDelta`                      |
 | copy / blank dictionary   | every user-facing string, keyed; the blank dictionary replaces each value with `░` for the ten-second test                                    | `lib/copy.ts`, `NEXT_PUBLIC_BLANK_COPY`  |
-| dictionary / language     | the public pages' strings in one language (`en`, `lib/copy.<tag>.ts`), picked per request from the `lang` cookie or Accept-Language (D39)     | `requestCopy`, `useCopy`                 |
+| dictionary / language     | the public pages' strings in one language (`en`, `lib/copy.<tag>.ts`), picked per request from the `lang` cookie or Accept-Language (D40)     | `requestCopy`, `useCopy`                 |

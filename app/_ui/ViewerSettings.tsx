@@ -1,6 +1,6 @@
 "use client";
 
-// The header's settings menu (DESIGN.md `viewer-settings`, D38, D39): a gear whose panel holds the theme
+// The header's settings menu (DESIGN.md `viewer-settings`, D38, D40): a gear whose panel holds the theme
 // and, on public pages, the language, the times (server time or the viewer's own zone) and the date
 // order. Each choice is a one-year cookie, like `theme`; the language, times and dates ones re-render the
 // page on the server (router.refresh()), where requestCopy and requestClock read them. The panel is drawn
@@ -67,7 +67,7 @@ function Group({
   );
 }
 
-/** A native list, each language named in its own language (D39), so a viewer finds theirs without
+/** A native list, each language named in its own language (D40), so a viewer finds theirs without
  * reading English; with 18 languages, radios would push Theme, Times and Dates out of the panel. */
 function LanguagePicker({ legend }: { legend: string }) {
   const router = useRouter();

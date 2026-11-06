@@ -284,3 +284,47 @@ describe("manual events (D28)", () => {
     expect(stillRefused.status).toBe(409);
   });
 });
+
+describe("renaming any public event (D39)", () => {
+  const saturday = (isTest = false) =>
+    db
+      .insert(events)
+      .values({
+        name: "Saturday Event 2026-11-07",
+        eventAtUtc: new Date("2026-11-07T14:00:00Z"),
+        beforeAt: new Date("2026-11-07T12:00:00Z"),
+        afterAt: new Date("2026-11-07T16:00:00Z"),
+        allianceIds: [],
+        isTest,
+      })
+      .returning({ id: events.id })
+      .then(([row]) => row?.id ?? 0);
+
+  it("renames a Saturday event before its Before ran, and the selector and GET /api/events show it", async () => {
+    holder.ctx = testContext(db).ctx;
+    const id = await saturday();
+
+    const ok = await rename(id, "  KvK 12-11 ");
+    const api = await import("../events/route").then((r) =>
+      r.GET(new Request("https://laptracker.test/api/events")),
+    );
+
+    expect(ok.status).toBe(200);
+    expect((await listEvents(db)).map((e) => e.name)).toEqual(["KvK 12-11"]);
+    expect(((await api.json()) as { events: { name: string }[] }).events[0]?.name).toBe(
+      "KvK 12-11",
+    );
+  });
+
+  it("never renames a rehearsal", async () => {
+    holder.ctx = testContext(db).ctx;
+    const id = await saturday(true);
+
+    const refused = await rename(id, "KvK 12-11");
+
+    expect(refused.status).toBe(404);
+    expect(await refused.json()).toEqual({ code: "event_not_found" });
+    const [row] = await db.select({ name: events.name }).from(events).where(eq(events.id, id));
+    expect(row?.name).toBe("Saturday Event 2026-11-07");
+  });
+});

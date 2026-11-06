@@ -1,4 +1,4 @@
-// The public pages in Turkish (D39): the same keys as `en` in lib/copy.ts, checked by `satisfies`.
+// The public pages in Turkish (D40): the same keys as `en` in lib/copy.ts, checked by `satisfies`.
 // Might, Kills, Members and Level stay English (D23); `{name}` placeholders match the English.
 import type { Dictionary } from "./copy";
 

@@ -13,7 +13,14 @@ export interface ManualEventStatus {
   visibility: "admin" | "standalone" | "history";
   postPublic: boolean;
   /** One entry per phase that has a snapshot; the name can be edited once there is one. */
-  phases: { phase: "before" | "after"; status: string; callsUsed: number }[];
+  phases: {
+    phase: "before" | "after";
+    status: string;
+    callsUsed: number;
+    startedAt: Date;
+    finishedAt: Date | null;
+    error: string | null;
+  }[];
 }
 
 /** The newest manual event (D28) and the state of its two phases; null when none was created. */
@@ -31,10 +38,28 @@ export async function latestManualEvent(db: Db): Promise<ManualEventStatus | nul
     .limit(1);
   if (!event) return null;
   const phases = await db
-    .select({ phase: snapshots.phase, status: snapshots.status, callsUsed: snapshots.callsUsed })
+    .select({
+      phase: snapshots.phase,
+      status: snapshots.status,
+      callsUsed: snapshots.callsUsed,
+      startedAt: snapshots.startedAt,
+      finishedAt: snapshots.finishedAt,
+      error: snapshots.error,
+    })
     .from(snapshots)
     .where(eq(snapshots.eventId, event.id));
   return { ...event, phases };
+}
+
+/** The scheduled event at this time, once the scheduler has made its row (a day before its Before). */
+export async function scheduledEvent(db: Db, eventAtUtc: Date) {
+  const [row] = await db
+    .select({ id: events.id, name: events.name })
+    .from(events)
+    .where(
+      and(eq(events.eventAtUtc, eventAtUtc), eq(events.manual, false), eq(events.isTest, false)),
+    );
+  return row ?? null;
 }
 
 export interface RunningSnapshot {

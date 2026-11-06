@@ -156,6 +156,7 @@ export const brandCopy = {
     hourglass: "Hourglass · running",
     crown: "Crown · alliance leader (R5)",
     officer: "Stitch star · titled officer (R4)",
+    candle: "Chamberstick · admin live indicator",
   },
   components: {
     title: "Components",
@@ -230,6 +231,25 @@ export const brandCopy = {
         ["Before snapshot", "done"],
         ["Discord post", "off"],
       ],
+    },
+    adminSection: {
+      name: "Admin section",
+      use: "Each /admin section in a flat 1 px frame: its title, a state chip or note on the right, one help line, then labelled facts. No shadow, no rounded corner.",
+      title: "Status",
+      value: "Halloween war · After snapshot",
+      state: "done 14:02",
+    },
+    live: {
+      name: "Live indicator",
+      use: "In the admin nav on every admin page: the candle sways and its glow flickers while a run is in progress, dimmed when idle, still under reduced motion. The word is always beside it; it is not a control.",
+    },
+    costTag: {
+      name: "Cost tag",
+      use: "Beside or under every admin action: what pressing it spends.",
+    },
+    phases: {
+      name: "Round phase states",
+      use: "Each phase of a manual round says what to do next: not started, running since, done, partly done, failed and why.",
     },
     runTrace: {
       name: "Run trace",

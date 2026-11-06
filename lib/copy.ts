@@ -1,6 +1,6 @@
 // Every user-facing string (docs/DESIGN.md "Language-light rules"). Keys are stable identifiers; values
 // are the English text. The public pages' strings (`en`) are also written in ru, es and pt-BR, one
-// dictionary per file beside this one (copy.ru.ts, …), each checked against `Dictionary` (D39); a page
+// dictionary per file beside this one (copy.ru.ts, …), each checked against `Dictionary` (D40); a page
 // reads its request's dictionary through requestCopy or useCopy (app/_ui/locale.ts, LocaleProvider).
 // The /brand page's text, the admin area's and the Discord messages' stay English: they live in sibling
 // files and are re-exported in `copy`, so there is one import path.
@@ -172,7 +172,7 @@ export const en = {
 type Strings<T> = { readonly [K in keyof T]: T[K] extends string ? string : Strings<T[K]> };
 export type Dictionary = Strings<typeof en>;
 
-/** The languages the public pages are written in (D39), each named in its own language. */
+/** The languages the public pages are written in (D40), each named in its own language. */
 export const LANGUAGES = {
   en: "English",
   es: "Español",

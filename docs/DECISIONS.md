@@ -346,7 +346,21 @@ Viewers on server 325 live from UTC−8 to UTC+10 and write dates in different o
 - **No hydration risk.** Every Clock call runs on the server. The panel, which reads the browser's zone and the cookies, renders only after it is opened.
 - **Known effect.** The event is Saturday 12:00 server time (14:00 UTC), so at UTC+10 and east of it the event's weekday reads Sunday in "Your time".
 
-## D39 — Public pages in 18 languages, chosen per request, without an i18n library (2026-11-05, owner, issue #60)
+## D37 — /admin: framed sections, status at a glance, one poller in the shell (2026-11-05, 08zb, owner-approved mock, issue #91)
+
+- **Why.** The owner found `/admin` flat: headings, facts and help at the same size and contrast, no state on the quota, actions mixed with facts, and a round card that said "not run" without saying what to press.
+- **Layout.** Four `admin-section` frames (flat 1 px rule, no shadow, no radius): Status (facts only: quota OK / Low under 900 / Unknown, what runs now, the next scheduled run, the last result with the last run durations), Run something now (every action, each with a `cost-tag`), Last rehearsal (verdict chip on the title row), Schedule (read-only). Group titles moved from the off-scale 18 px to `display-sm`. `/admin/runs`, `/admin/runs/[id]` and `/admin/errors` use the same frame; runs carry their state as a chip and are titled by their event's name.
+- **Live indicator.** A drawn chamberstick (`LiveCandle`, `icon_live`) in the admin nav on every admin page: the flame sways and the glow flickers while a run is in progress, dimmed with "Idle" otherwise, still under reduced motion; the word is always shown; not a control. The owner asked for the motion after round 1 (round 1 pulsed the whole flame).
+- **One poller, moved.** `useRunWatch` moved from `AdminActions` into `RunWatch`, rendered by `AdminShell` around every admin page (owner's answer, 2026-11-05). It is still the only poller (4 s running, 20 s idle, none in a hidden tab); `/admin` gets the "finished" line from it through context. The shell reads the running snapshots and the newest run itself, so `/admin` reads them twice per render.
+- **Round phases** say what to do next: "Not started: press Before", "Running since {time}", "Done {time}", "Partly done {time}", "Failed: {reason}"; `latestManualEvent` now returns each phase's start, finish and error.
+
+## D39 — Any public event can be renamed from /admin (2026-11-05, 08zb, issue #106)
+
+- **Rule.** `POST /api/manual-event/rename` (PIN only, the D28 name rules) renames any event that is not a rehearsal. A scheduled (Saturday) event can be renamed whenever its row exists, from a day before its Before (the tick makes it then), before any snapshot included: naming the coming event ahead ("KvK 12-11") is the use the owner showed in the approved mock. A manual round keeps D28: only after a snapshot exists (409 `rename_before_run`). A rehearsal answers 404 `event_not_found`.
+- **Where.** `/admin` "Run something now" shows the current event by name with Rename (free); before its row exists a line says when it can be renamed. A manual round is still renamed in its card's options.
+- **Path kept.** The route keeps its D28 path rather than a new one; `renameManualEvent` became `renameEvent`. Discord messages already sent keep the old name.
+
+## D40 — Public pages in 18 languages, chosen per request, without an i18n library (2026-11-05, owner, issue #60)
 
 Members play from Russia, Spain, Brazil, the US and elsewhere. The owner asked for translation in v1.1 rather than v2 (#60), then widened the list on 2026-11-05 to es, pt-BR, fr, de, it, nl, sv, pl, ru, uk, tr, zh-CN, ja, ko, id, vi and th, plus the English source.
 

@@ -1,17 +1,19 @@
 "use client";
 
-// The manual round (D28), on its own row under the three seals: "Start a manual round" opens the options
-// inline, the round's card shows its state, its Before and After seals and the same options form to edit.
+// The manual round (D28), under the three seals: the round's card says each phase's state and what to
+// press next (#91), shows its Before and After seals and the same options form to edit; "Start a manual
+// round" (free) opens the options inline under it.
 import { useState } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
+import { Chip } from "@/lib/brand/components/Chip";
 import { FactList } from "@/lib/brand/components/FactList";
-import { copy } from "@/lib/copy";
-import type { ManualEventStatus } from "@/lib/queries/admin";
+import { copy, fill } from "@/lib/copy";
 
-import type { RoundChange, RoundOptions as Options } from "./actions";
+import type { RoundChange, RoundOptions as Options, RoundView } from "./actions";
+import { CostTag, StateChip } from "./parts";
 import { RoundOptions } from "./RoundOptions";
-import { stateWord } from "./words";
+import { phaseWord } from "./words";
 
 const t = copy.admin.run;
 const m = copy.admin.manual;
@@ -23,7 +25,7 @@ export function ManualSection({
   onCreate,
   onSave,
 }: {
-  manual: ManualEventStatus | null;
+  manual: RoundView | null;
   busy: string | null;
   /** The round's Before and After seals, as list items. */
   seals: React.ReactNode;
@@ -32,17 +34,17 @@ export function ManualSection({
 }) {
   return (
     <div role="group" aria-labelledby="manual-group" className="mt-8 border-t border-rule pt-4">
-      <h3 id="manual-group" className="mb-1 font-subhead text-lg font-semibold">
+      <h3 id="manual-group" className="font-subhead text-display-sm">
         {m.title}
       </h3>
-      <p className="mb-3 text-sm">{m.help}</p>
-      <CreateRound busy={busy} onCreate={onCreate} />
-      <p className="mt-3 text-sm text-ink/70">{m.cost}</p>
+      <p className="text-body-sm text-ink/70">{m.help}</p>
+      <p className="mb-3 text-body-sm text-ink/70">{m.cost}</p>
       {manual ? (
         <RoundCard manual={manual} busy={busy} seals={seals} onSave={onSave} />
       ) : (
-        <p className="mt-4 text-sm">{m.none}</p>
+        <p className="mb-3">{m.none}</p>
       )}
+      <CreateRound busy={busy} onCreate={onCreate} />
     </div>
   );
 }
@@ -52,21 +54,24 @@ function CreateRound({ busy, onCreate }: { busy: string | null; onCreate: (o: Op
   const [options, setOptions] = useState<Options | null>(null);
   if (!options) {
     return (
-      <button
-        type="button"
-        disabled={busy !== null}
-        aria-expanded={false}
-        onClick={() =>
-          setOptions({
-            name: `Manual round ${new Date().toISOString().slice(0, 10)}`,
-            visibility: "standalone",
-            postPublic: false,
-          })
-        }
-        className={buttonClass("secondary", "font-semibold")}
-      >
-        {busy === "manual-create" ? t.running : m.create}
-      </button>
+      <div className="flex flex-wrap items-center gap-3">
+        <button
+          type="button"
+          disabled={busy !== null}
+          aria-expanded={false}
+          onClick={() =>
+            setOptions({
+              name: `Manual round ${new Date().toISOString().slice(0, 10)}`,
+              visibility: "standalone",
+              postPublic: false,
+            })
+          }
+          className={buttonClass("secondary", "font-semibold")}
+        >
+          {busy === "manual-create" ? t.running : m.create}
+        </button>
+        <CostTag>{t.free}</CostTag>
+      </div>
     );
   }
   return (
@@ -79,7 +84,7 @@ function CreateRound({ busy, onCreate }: { busy: string | null; onCreate: (o: Op
         setOptions(null);
       }}
     >
-      <h4 id="create-title" className="font-subhead text-lg font-semibold">
+      <h4 id="create-title" className="font-subhead text-display-sm">
         {m.createTitle}
       </h4>
       <RoundOptions
@@ -108,35 +113,48 @@ function CreateRound({ busy, onCreate }: { busy: string | null; onCreate: (o: Op
   );
 }
 
+const LABEL = "text-label font-semibold uppercase tracking-[0.04em] text-ink/70";
+
+/** A phase's state in words that say what to do next: "Not started: press Before", "Done 14:02". */
+function PhaseChip({ manual, phase }: { manual: RoundView; phase: "before" | "after" }) {
+  const row = manual.phases.find((x) => x.phase === phase);
+  if (!row) {
+    return <Chip tone="muted">{fill(m.phaseState.none, { seal: copy.admin.seal[phase] })}</Chip>;
+  }
+  return <StateChip status={row.status}>{row.text}</StateChip>;
+}
+
 function RoundCard({
   manual,
   busy,
   seals,
   onSave,
 }: {
-  manual: ManualEventStatus;
+  manual: RoundView;
   busy: string | null;
   seals: React.ReactNode;
   onSave: (eventId: number, change: RoundChange) => void;
 }) {
   const s = m.summary;
-  const phase = (p: "before" | "after") => {
-    const row = manual.phases.find((x) => x.phase === p);
-    return row ? stateWord(row.status) : m.notRun;
-  };
-  const calls = manual.phases.reduce((n, p) => n + p.callsUsed, 0);
   return (
-    <div className="mt-6">
-      <h4 className="mb-1 font-subhead text-lg font-semibold">{s.title}</h4>
+    <div className="mb-4 border border-rule p-4">
+      <p className={LABEL}>{s.title}</p>
+      <p className="mb-1 break-words font-subhead text-display-sm">{manual.name}</p>
+      {(["before", "after"] as const).map((p) => (
+        <div
+          key={p}
+          className="flex flex-wrap items-center justify-between gap-2 border-b border-rule py-2"
+        >
+          <span className="font-medium">{phaseWord(p)}</span>
+          <PhaseChip manual={manual} phase={p} />
+        </div>
+      ))}
       <div className="mb-4">
         <FactList
           items={[
-            { label: s.name, value: manual.name },
-            { label: s.before, value: phase("before") },
-            { label: s.after, value: phase("after") },
             { label: s.visibility, value: m.visibility[manual.visibility] },
             { label: s.discord, value: manual.postPublic ? s.on : s.off },
-            { label: s.calls, value: String(calls) },
+            { label: s.calls, value: String(manual.calls) },
           ]}
         />
       </div>
@@ -144,7 +162,7 @@ function RoundCard({
       <a href={`/events/${manual.id}`} className="inline-flex min-h-11 items-center underline">
         {m.open}
       </a>
-      <details className="mt-2">
+      <details className="mt-1">
         <summary className="inline-flex min-h-11 cursor-pointer items-center font-medium text-plum underline">
           {m.options}
         </summary>
@@ -165,7 +183,7 @@ function EditRound({
   busy,
   onSave,
 }: {
-  manual: ManualEventStatus;
+  manual: RoundView;
   busy: string | null;
   onSave: (eventId: number, change: RoundChange) => void;
 }) {
