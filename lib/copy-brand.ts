@@ -250,12 +250,6 @@ export const brandCopy = {
     phases: {
       name: "Round phase states",
       use: "Each phase of a manual round says what to do next: not started, running since, done, partly done, failed and why.",
-      items: [
-        ["none", "Not started: press Before"],
-        ["running", "Running since 14:01"],
-        ["complete", "Done 14:02"],
-        ["failed", "Failed: deadline"],
-      ],
     },
     runTrace: {
       name: "Run trace",

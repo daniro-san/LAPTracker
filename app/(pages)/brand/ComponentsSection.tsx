@@ -16,7 +16,7 @@ import { Crown, OfficerStar, RoleMark } from "@/lib/brand/components/RoleMark";
 import { SealButton } from "@/lib/brand/components/SealButton";
 import { DroppedStitch, Hourglass, StitchedCheck } from "@/lib/brand/components/StatusIcons";
 import { YarnCorner } from "@/lib/brand/components/YarnCorner";
-import { copy } from "@/lib/copy";
+import { copy, fill } from "@/lib/copy";
 
 import { Section, Spec } from "./parts";
 
@@ -62,6 +62,15 @@ function Fields() {
   );
 }
 
+const ps = copy.admin.manual.phaseState;
+/** Sample phase states for the specimen, built from the real copy with made-up times. */
+const PHASES = [
+  ["none", fill(ps.none, { seal: copy.admin.seal.before })],
+  ["running", fill(ps.running, { at: "14:01" })],
+  ["complete", fill(ps.complete, { at: "14:02" })],
+  ["failed", fill(ps.failed, { reason: "deadline" })],
+] as const;
+
 /** The /admin pieces from #91: a framed section with a fact, the live indicator, costs, phase states. */
 function Admin() {
   const a = t.adminSection;
@@ -92,7 +101,7 @@ function Admin() {
       </Spec>
       <div className="sm:col-span-2">
         <Spec name={t.phases.name} use={t.phases.use}>
-          {t.phases.items.map(([status, text], i) => (
+          {PHASES.map(([status, text], i) => (
             <StateChip key={i} status={status}>
               {text}
             </StateChip>

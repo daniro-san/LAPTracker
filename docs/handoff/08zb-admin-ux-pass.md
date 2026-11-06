@@ -62,7 +62,7 @@ Issue #91 (visual hierarchy and live status) and, at the owner's request during 
 - `AdminShell` reads the running snapshots and the newest run, so `/admin` reads them twice per render (the shell for the candle and poller, the page for the notice and Status). Small reads; not merged into one query.
 
 ## Verified
-- `pnpm check`: prettier, eslint, tsc, 157 tests passed (1 skipped), drift check clean.
+- `pnpm check` after rebasing on #115: prettier, eslint, tsc, 163 tests passed (1 skipped), drift check clean. The admin pages use #115's `requestServerClock` (/admin stays in server time).
 - Throwaway stack: local Postgres 18 on a scratchpad data directory through a WebSocket bridge, `next dev` under `env -i`, no real API key, upstream unroutable, no webhooks, made-up PIN in a scratchpad file. Migrations up to 0010 applied as SQL; seed plus hand-made rows for runs, logs, a manual round, app errors and the coming Saturday's row.
 - Playwright and system Chrome: `/admin`, `/admin/runs`, `/admin/runs/6`, `/admin/errors` and `/brand` at 360 and 1280 px, light and dark. Overflow 0 and axe 0 violations on all 20.
 - Live candle, by script:
