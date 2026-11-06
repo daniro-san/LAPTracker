@@ -93,3 +93,5 @@ Plan changes needed: none for Session 9. IMPLEMENTATION_PLAN.md §9 lists transl
 - The README should say that the gear's first control picks the page language (18 languages); the choice is a cookie in that browser. Discord messages and /admin stay English (D40). Might, Kills, Members and Level are English in every language.
 - Translations are in `lib/copy.<tag>.ts`; CONTRIBUTING.md should say that a new public string needs a key in `en` and in every dictionary (typecheck enforces it).
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/136
