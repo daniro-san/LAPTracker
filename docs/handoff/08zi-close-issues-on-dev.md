@@ -102,3 +102,4 @@ Plan changes needed: none.
 - From the next merge into `dev` on, `Closes #N` in a PR body closes issue #N; no session needs to close its issues by hand. Check the issue after the merge only if the `close-issues` run is red.
 </adjustments>
 
+https://github.com/daniro-san/LAPTracker/pull/116
