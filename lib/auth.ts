@@ -25,8 +25,8 @@ export function secretEquals(given: string, expected: string): boolean {
 }
 
 /**
- * Vercel sets x-real-ip / x-forwarded-for at its edge. Unverified in Session 4 (vercel.com was not
- * reachable); if a client could set them, only the per-IP limit weakens, not the global lockout.
+ * Vercel overwrites x-real-ip and x-forwarded-for at its edge, so a client cannot choose its key:
+ * verified on production on 2026-11-06 with forged headers on a no-PIN request (D42).
  */
 export function clientIp(headers: Headers): string {
   const real = headers.get("x-real-ip")?.trim();
