@@ -48,7 +48,7 @@ export const vi = {
     myAlliance: "Liên minh của tôi",
     names: "Tên",
     alliances: "Liên minh",
-    movers: "Biến động",
+    movers: "Bà để ý",
   },
   settings: {
     language: "Ngôn ngữ",

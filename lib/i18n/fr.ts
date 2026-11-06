@@ -48,7 +48,7 @@ export const fr = {
     myAlliance: "Mon alliance",
     names: "Noms",
     alliances: "Alliances",
-    movers: "Mouvements",
+    movers: "Mamie remarque",
   },
   settings: {
     language: "Langue",

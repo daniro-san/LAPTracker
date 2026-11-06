@@ -22,7 +22,7 @@ Words already used in `lib/i18n/zh-CN.ts`. Reuse them so the pages stay consiste
 | Exact numbers             | 精确数字             | `site.exactNumbers` — the toggle; legend.rounded names it   |
 | Manual round              | 手动轮次             | `site.manualRound` — an event the admin runs by hand        |
 | Leader                    | 盟主                 | `leadership.leader` — the R5                                |
-| Movers                    | 涨跌榜               | `ledger.movers` — section heading, biggest gains and losses |
+| Grandma noticed           | 奶奶注意到了         | `ledger.movers` — section heading, biggest gains and losses |
 | Run by hand by the admin  | 由管理员手动运行     | `status.byHand`                                             |
 | grandma                   | 奶奶                 | the voice in empty states and errors                        |
 
