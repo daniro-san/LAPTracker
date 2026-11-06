@@ -10,7 +10,7 @@ Words already used in `lib/i18n/nl.ts`. Reuse them so the pages stay consistent;
 | Alliance                  | Alliantie                        | `ledger.alliance`                                         |
 | Member                    | Lid                              | `ledger.member` — a player inside an alliance             |
 | Player                    | Speler                           | `ledger.player`                                           |
-| Event                     | Event                            | `ledger.event` — a Saturday event                         |
+| Event                     | Event                            | `ledger.event` — a game event                             |
 | Rank                      | Rang                             | `ledger.rank` — the #n position                           |
 | Ranking                   | Ranglijst                        | `ledger.ranking` — the game's server rank                 |
 | Sanctuary                 | Heiligdom                        | `ledger.sanctuary` — a player's building level            |

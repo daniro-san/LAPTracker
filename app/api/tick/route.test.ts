@@ -73,7 +73,7 @@ describe("POST /api/tick", () => {
     expect(rows).toEqual([{ phase: "before" }]);
   });
 
-  it("creates the coming Saturday's event once, a day ahead, with its phase times from the env", async () => {
+  it("creates the coming scheduled event once, a day ahead, with its phase times from the env", async () => {
     const { ctx, clock } = testContext(db);
     holder.ctx = ctx;
     // Saturday 2026-11-07 BEFORE is 10:00 server = 12:00 UTC; a day ahead is Friday 12:00 UTC.

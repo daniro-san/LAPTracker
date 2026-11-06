@@ -1,4 +1,4 @@
-// events table. An event carries its own phase times (before_at, after_at): Saturdays get them from
+// events table. An event carries its own phase times (before_at, after_at): scheduled events get them from
 // the env when the tick creates the row, rehearsals from the moment they are created (plan §3.1).
 import { and, eq, gt, isNull, lte, or } from "drizzle-orm";
 
@@ -58,7 +58,7 @@ export interface NewEvent {
 }
 
 /**
- * The Saturday event at `eventAtUtc`, created on first use with no alliances (the BEFORE run copies
+ * The scheduled event at `eventAtUtc`, created on first use with no alliances (the BEFORE run copies
  * them). Insert-or-nothing then select, so two concurrent ticks end up with the same row.
  */
 export async function findOrCreateEvent(db: Db, event: NewEvent): Promise<EventInfo> {
@@ -167,7 +167,7 @@ export interface DuePhase {
 }
 
 /**
- * Phases of any event (Saturday or rehearsal) whose window [x_at, x_at + window) holds `now` and
+ * Phases of any event (scheduled or rehearsal) whose window [x_at, x_at + window) holds `now` and
  * that have no snapshot row yet, earliest first. The tick runs only the first.
  */
 export async function duePhases(db: Db, now: Date, windowMs: number): Promise<DuePhase[]> {

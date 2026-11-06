@@ -10,7 +10,7 @@ Words already used in `lib/i18n/th.ts`. Reuse them so the pages stay consistent;
 | Alliance                  | พันธมิตร                      | `ledger.alliance`                                         |
 | Member                    | สมาชิก                        | `ledger.member` — a player inside an alliance             |
 | Player                    | ผู้เล่น                       | `ledger.player`                                           |
-| Event                     | กิจกรรม                       | `ledger.event` — a Saturday event                         |
+| Event                     | กิจกรรม                       | `ledger.event` — a game event                             |
 | Rank                      | อันดับ                        | `ledger.rank` — the #n position                           |
 | Ranking                   | อันดับเซิร์ฟเวอร์             | `ledger.ranking` — the game's server rank                 |
 | Sanctuary                 | วิหาร                         | `ledger.sanctuary` — a player's building level            |

@@ -24,7 +24,7 @@ async function addRun(
   const [event] = await db
     .insert(events)
     .values({
-      name: "Saturday",
+      name: "Scheduled event",
       eventAtUtc: at,
       allianceIds: [1],
       beforeAt: at,

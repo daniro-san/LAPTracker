@@ -1,17 +1,17 @@
 ---
 name: record-fixture
-description: Record a new upstream API response into fixtures/ (spends LAP API quota). Use only when a session explicitly needs a new or refreshed fixture, e.g. "record a fixture for alliance 67110584" or "re-record the ranks board". Never use from a test, never on Friday or Saturday.
+description: Record a new upstream API response into fixtures/ (spends LAP API quota). Use only when a session explicitly needs a new or refreshed fixture, e.g. "record a fixture for alliance 67110584" or "re-record the ranks board". Never use from a test, never on the event's weekday or the day before.
 ---
 
 # Record a fixture
 
-`fixtures/` is the contract with the upstream API (docs/IMPLEMENTATION_PLAN.md §11.3). This is the one procedure in the repo with a side effect: every `/v1` call spends 1 of 1,000 daily requests, including `/v1/quota`. Saturday's snapshots need ~55. Follow every step; skip none.
+`fixtures/` is the contract with the upstream API (docs/IMPLEMENTATION_PLAN.md §11.3). This is the one procedure in the repo with a side effect: every `/v1` call spends 1 of 1,000 daily requests, including `/v1/quota`. A scheduled event's snapshots need ~55. Follow every step; skip none.
 
 ## 1. Decide and state the cost before calling anything
 
 1. Name the exact endpoints and ids, and why an existing fixture can't serve. List existing ones: `ls fixtures/`.
 2. Cost = 1 (quota before) + 1 per `/v1` resource + 1 (quota after). The internal ranks board (`GET https://lastasylumtracker.com/api/servers/catalog/325/ranks`) costs 0 quota.
-3. Check the day in UTC **and** server time (UTC−2): `date -u`. If it is Friday or Saturday in either, stop and tell the owner. Those days belong to the event.
+3. Check the day in UTC **and** server time (UTC−2): `date -u`. If it is the event's weekday (`EVENT_WEEKDAY`, Saturday by default) or the day before in either, stop and tell the owner. Those days belong to the event.
 4. If the cost is above 5 calls, or the session prompt didn't explicitly allow quota use, ask the owner with the cost and wait for a yes.
 
 ## 2. Credentials, never printed
