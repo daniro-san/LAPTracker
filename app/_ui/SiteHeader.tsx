@@ -4,7 +4,8 @@
 // The selector is a <details> list of links, so it works without JavaScript and every target is ≥ 44 px;
 // with it, Escape and a tap outside close it. Closed, it shows the event's date only, so it stays one
 // line in any language (D49); its list and the page show the title. Below 640 px the wordmark is
-// screen-reader only: the mark, three controls and the gutters fill 360 px.
+// screen-reader only, and below 420 px so is the word next to the magnifier: in the longest languages
+// (ja, pt-BR, fr) the word and the selector need up to 262 px, and 360 px leaves them 216.
 import Link from "next/link";
 
 import { LaceBorder } from "@/lib/brand/components/LaceBorder";
@@ -140,10 +141,10 @@ export function SiteHeader({
             <Link
               href="/players"
               aria-current={section === "players" ? "page" : undefined}
-              className={`drawn-frame-soft flex min-h-11 items-center gap-1.5 px-3 text-sm font-medium aria-[current=page]:bg-paper/20 ${CONTROL}`}
+              className={`drawn-frame-soft flex min-h-11 min-w-11 items-center justify-center gap-1.5 whitespace-nowrap px-3 text-sm font-medium aria-[current=page]:bg-paper/20 ${CONTROL}`}
             >
               <Magnifier />
-              {copy.site.players}
+              <span className="sr-only min-[420px]:not-sr-only">{copy.site.players}</span>
             </Link>
             {clock && events.length > 0 && (
               <EventSelector events={events} currentId={currentId} clock={clock} copy={copy} />
