@@ -23,7 +23,7 @@ Base: `origin/dev` at 505979a (after session 9, #143). The first version of this
 - Every number and message in the README was checked against `origin/dev` source: `lib/copy-admin.ts`, `lib/copy-discord.ts`, `lib/notify.ts`, `lib/copy.ts`, `lib/run.ts` (900 and 700 thresholds), `lib/budget.ts`, `lib/collector.ts` (100 s deadline, 120-call cap), `lib/collector-rows.ts` (20 min), `lib/sources/v1.ts` (retries on 502/503/504, max 3), `lib/tick.ts`, `lib/rehearsal.ts`, `.github/workflows/tick.yml` (name `tick`, minutes 7, 22, 37, 52), `scripts/snapshot-dry.ts`, `scripts/seed.ts`.
 - Read in full this session: `09-dryrun.md`; decisions D37, D38, D39, D48, D49, D50 (headings and bodies); D42 (heading only, not relevant to the runbook); handoffs `08zb-admin-ux-pass`, `08w-verdict-quota-count`, `08v-app-error-alert-claim`, `08z-admin-run-trace`, plus the ones read in the earlier session (`08o`, `08h`, `08e`, `08g`, `08n`, `08q-kills-drop-note`, `08m-admin-live-status`, `00-prereqs`).
 - Not read: the other handoffs added after f592e9a (`08r`, `08s`, `08t`, `08u`, `08x`, `08y`, `08za`, `08zc`, `08zd`, `08ze`, `08zh`, `08zi`, `08zj`, `08zk`, `08zl`, `08zm`, `08zn`, `08zo`, `08zx`), and the older `01`–`07h` and most `08*`. They cover search, leadership, analytics, i18n, header and CSP; none changes a runbook fact that the grep found, but this is not the full read the session prompt asks for.
-- Check: `pnpm exec prettier --check README.md CONTRIBUTING.md` (result below). `docs/handoff/` is excluded by `.prettierignore`.
+- Check: `pnpm exec prettier --check README.md CONTRIBUTING.md`: pass. `docs/handoff/` is excluded by `.prettierignore`.
 - Not run: `pnpm check` in full. No code changed; CI runs it on the PR.
 
 ## Open issues
@@ -36,7 +36,7 @@ Base: `origin/dev` at 505979a (after session 9, #143). The first version of this
 ## Next
 Session: none numbered after 10 in `docs/SESSION_PLAYBOOK.md`. The open issues above are the candidates for a follow-up.
 Model / effort: not applicable.
-Owner must do first: decide open issue 1 (re-run behavior), since the README's ⚠ and ✗ guidance depends on it. Open the PR for this branch (see the closing message).
+Owner must do first: decide open issue 1 (re-run behavior), since the README's ⚠ and ✗ guidance depends on it. Merge the session 10 PR (link at the end of this file) once reviewed.
 Plan changes needed: §3.1 (Discord templates) and Phase 8 step 2 (re-run). Do not edit the plan from this session.
 
 <adjustments>

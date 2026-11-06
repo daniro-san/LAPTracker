@@ -21,14 +21,14 @@ Three places show the results:
 
 All times are **server time**, the clock the game shows. The times below are the documented setup. `/admin` → **Schedule** shows the times in use.
 
-| When (server time)         | What happens by itself                                                                                                             | What you do                                                               |
-| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| Friday 18:00               | A practice run (rehearsal) starts. Its verdict arrives in the admin channel about 50 minutes later.                                | Read the verdict. If it says ✗ Fail, tell the maintainer before Saturday. |
-| Friday 20:00               | The weekly check posts to the admin channel: requests left, database size, and the next Before and After times.                    | Check that the next times are right.                                      |
-| Friday 22:00               | The daily request count resets (midnight UTC).                                                                                     | Nothing.                                                                  |
-| Saturday 10:00             | The **Before** snapshot starts at the first scheduler check after this time. The checks run every 15 minutes, on the quarter hour. | Watch the admin channel. See the messages below.                          |
-| Saturday, during the event | Nothing.                                                                                                                           | Note in the game when the event starts and ends (server time).            |
-| Saturday 14:00             | The **After** snapshot starts the same way.                                                                                        | Watch the channel. Check that the event had ended before this time.       |
+| When (server time)         | What happens by itself                                                                                              | What you do                                                               |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| Friday 18:00               | A practice run (rehearsal) starts. Its verdict arrives in the admin channel about 50 minutes later.                 | Read the verdict. If it says ✗ Fail, tell the maintainer before Saturday. |
+| Friday 20:00               | The weekly check posts to the admin channel: requests left, database size, and the next Before and After times.     | Check that the next times are right.                                      |
+| Friday 22:00               | The daily request count resets (midnight UTC).                                                                      | Nothing.                                                                  |
+| Saturday 10:00             | The **Before** snapshot starts at the first scheduler check after this time. The scheduler checks every 15 minutes. | Watch the admin channel. See the messages below.                          |
+| Saturday, during the event | Nothing.                                                                                                            | Note in the game when the event starts and ends (server time).            |
+| Saturday 14:00             | The **After** snapshot starts the same way.                                                                         | Watch the channel. Check that the event had ended before this time.       |
 
 A snapshot starts at the first check after its due time, so it can start up to 15 minutes late. Saturday's times fall on the quarter hour, so they should start within seconds of their due time.
 
