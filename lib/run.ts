@@ -97,7 +97,7 @@ async function notifyWithinCap(
 }
 
 /** Refused before the event's before_at, force included: a weekday press would otherwise store the
- * coming Saturday's phase with weekday data, and the tick would then skip the real run. A manual
+ * coming scheduled event's phase with weekday data, and the tick would then skip the real run. A manual
  * event has no schedule and the tick never runs it, so that risk does not exist for it (D28). */
 export async function executeSnapshot(
   ctx: AppContext,

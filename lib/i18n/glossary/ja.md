@@ -10,7 +10,7 @@ Words already used in `lib/i18n/ja.ts`. Reuse them so the pages stay consistent;
 | Alliance                  | 同盟                      | `ledger.alliance`                                         |
 | Member                    | メンバー                  | `ledger.member` — a player inside an alliance             |
 | Player                    | プレイヤー                | `ledger.player`                                           |
-| Event                     | イベント                  | `ledger.event` — a Saturday event                         |
+| Event                     | イベント                  | `ledger.event` — a game event                             |
 | Rank                      | 順位                      | `ledger.rank` — the #n position                           |
 | Ranking                   | サーバー順位              | `ledger.ranking` — the game's server rank                 |
 | Sanctuary                 | 聖域                      | `ledger.sanctuary` — a player's building level            |

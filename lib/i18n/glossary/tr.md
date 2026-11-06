@@ -10,7 +10,7 @@ Words already used in `lib/i18n/tr.ts`. Reuse them so the pages stay consistent;
 | Alliance                  | İttifak                         | `ledger.alliance`                                         |
 | Member                    | Üye                             | `ledger.member` — a player inside an alliance             |
 | Player                    | Oyuncu                          | `ledger.player`                                           |
-| Event                     | Etkinlik                        | `ledger.event` — a Saturday event                         |
+| Event                     | Etkinlik                        | `ledger.event` — a game event                             |
 | Rank                      | Sıra                            | `ledger.rank` — the #n position                           |
 | Ranking                   | Sıralama                        | `ledger.ranking` — the game's server rank                 |
 | Sanctuary                 | Sığınak                         | `ledger.sanctuary` — a player's building level            |

@@ -1,4 +1,4 @@
-// Saturday times and weekly slots from the env (plan §3.1). Pure: `now` is passed in, times are server
+// Scheduled-event times and weekly slots from the env (plan §3.1). Pure: `now` is passed in, times are server
 // time (SERVER_TZ), every instant returned is UTC; works for any IANA zone, not only fixed offsets.
 // Which phase is due is not decided here: the tick reads before_at/after_at from the events rows.
 import type { Env } from "./env";
@@ -121,7 +121,7 @@ export function currentEvent(now: Date, cfg: ScheduleConfig): ScheduledEvent {
 const windowMs = (cfg: ScheduleConfig) => cfg.SNAPSHOT_WINDOW_MIN * 60_000;
 
 /**
- * The Saturday events that should have a row now: from a day before BEFORE until AFTER's window
+ * The scheduled events that should have a row now: from a day before BEFORE until AFTER's window
  * closes (plan §3.1 "create it when within a day of it"). Usually none, at most one.
  */
 export function eventsToCreate(now: Date, cfg: ScheduleConfig): ScheduledEvent[] {

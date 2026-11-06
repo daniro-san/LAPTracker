@@ -1,5 +1,5 @@
-// The scheduler's decision (plan §3.1), event-driven: Saturday rows are created from the env a day
-// ahead; every event (Saturday or rehearsal) carries its own before_at/after_at; one action per tick.
+// The scheduler's decision (plan §3.1), event-driven: scheduled events' rows are created from the env a
+// day ahead; every event (scheduled or rehearsal) carries its own before_at/after_at; one action per tick.
 import type { AppContext } from "./app-context";
 import type { Db } from "./db";
 import { createNotifier, discordClock, rehearsalSkippedMessage } from "./notify";
@@ -35,7 +35,7 @@ async function scheduledRehearsal(ctx: AppContext, db: Db, slotAt: Date): Promis
 
 export async function runTick(ctx: AppContext, db: Db, origin: string): Promise<TickOutcome> {
   const now = ctx.now();
-  // (1) The coming Saturday gets its row a day ahead, with its times fixed from the env then.
+  // (1) The coming scheduled event gets its row a day ahead, with its times fixed from the env then.
   for (const event of eventsToCreate(now, ctx.env)) await findOrCreateEvent(db, event);
 
   // (2) At most one phase per tick: the earliest open window without a snapshot row.
@@ -57,7 +57,7 @@ export async function runTick(ctx: AppContext, db: Db, origin: string): Promise<
     return { kind: "run", outcome };
   }
 
-  // (3) The Friday check, claimed on the coming Saturday's row so it runs once.
+  // (3) The Friday check, claimed on the coming scheduled event's row so it runs once.
   if (quotaCheckDue(now, ctx.env)) {
     const event = await findOrCreateEvent(db, nextEvent(now, ctx.env));
     if (await claimQuotaCheck(db, event.id, now)) {
