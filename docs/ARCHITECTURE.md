@@ -89,7 +89,7 @@ interface RanksBoard {
 }
 
 /** Called before every /v1 attempt, retries included; the collector counts calls here (Session 3). */
-type OnAttempt = (attempt: number) => void;
+type OnAttempt = (attempt: number, status?: number | null) => void; // status: what caused this retry
 
 interface V1Source {
   fetchAlliance(id: UnionId, onAttempt?: OnAttempt): Promise<AllianceSnapshotInput>;

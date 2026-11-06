@@ -9,6 +9,7 @@ export const BLOCKED_ROSTER_KEYS = [
   "daily_honor",
   "daily_tech",
   "avatar_url",
+  "active",
 ] as const;
 
 export type BlockedRosterKey = (typeof BLOCKED_ROSTER_KEYS)[number];

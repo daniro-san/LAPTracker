@@ -15,7 +15,6 @@ const DASH = "—";
 
 const secs = (n: number | null) => (n === null ? DASH : n.toFixed(1));
 const yesNo = (b: boolean | null) => (b === null ? DASH : b ? t.yes : t.no);
-const count = (n: number | null) => (n === null ? DASH : String(n));
 const callName = (c: TraceCall) => c.alliance ?? t.quota;
 
 function Http({ status }: { status: number | null }) {
@@ -30,7 +29,7 @@ function Card({ c }: { c: TraceCall }) {
     [t.heads.seconds, secs(c.seconds)],
     [t.heads.http, <Http key="h" status={c.httpStatus} />],
     [t.heads.cached, yesNo(c.cached)],
-    [t.heads.retries, count(c.retries)],
+    [t.heads.retries, c.retries],
   ];
   return (
     <li className="mb-2 border border-rule p-3">
@@ -102,7 +101,7 @@ function TraceTable({ calls, total, totalName }: Trace & { totalName: string }) 
               <Http status={c.httpStatus} />
             </td>
             <td className="pl-3 text-right">{yesNo(c.cached)}</td>
-            <td className="pl-3 text-right tabular-nums">{count(c.retries)}</td>
+            <td className="pl-3 text-right tabular-nums">{c.retries}</td>
           </tr>
         ))}
       </tbody>

@@ -150,13 +150,16 @@ describe("v1 requests", () => {
     expect(mock).toHaveBeenCalledTimes(4);
   });
 
-  it("reports every attempt to onAttempt before sending it, and sends nothing when it throws", async () => {
+  it("reports every attempt to onAttempt before sending it, with the status that caused a retry, and sends nothing when it throws", async () => {
     const mock = mockFetch(gateway(502), respond(readFixture(OGS)));
-    const attempts: number[] = [];
-    const done = fetchAlliance(67111155, (n) => attempts.push(n));
+    const attempts: [number, number | null][] = [];
+    const done = fetchAlliance(67111155, (n, status) => attempts.push([n, status ?? null]));
     await vi.runAllTimersAsync();
     await done;
-    expect(attempts).toEqual([0, 1]);
+    expect(attempts).toEqual([
+      [0, null],
+      [1, 502],
+    ]);
     expect(mock).toHaveBeenCalledTimes(2);
 
     const refused = fetchQuota(() => {

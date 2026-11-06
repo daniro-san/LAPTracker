@@ -189,8 +189,9 @@ export interface TraceCall {
   seconds: number | null;
   httpStatus: number | null;
   cached: boolean | null;
-  /** `v1.retry` lines for the same alliance; null for the quota call (its retries carry no id). */
-  retries: number | null;
+  /** `v1.retry` lines for the same alliance; for the quota call, the lines with no union id (one
+   * quota call per run). */
+  retries: number;
   slowest: boolean;
 }
 
@@ -220,10 +221,9 @@ export function runTrace(
   startedAt: Date,
 ): RunTrace {
   const own = logs.filter((l) => l.at >= startedAt);
-  const retries = new Map<number, number>();
+  const retries = new Map<number | null, number>();
   for (const l of own) {
-    if (l.code === "v1.retry" && l.unionId !== null)
-      retries.set(l.unionId, (retries.get(l.unionId) ?? 0) + 1);
+    if (l.code === "v1.retry") retries.set(l.unionId, (retries.get(l.unionId) ?? 0) + 1);
   }
   const calls: TraceCall[] = own
     .filter((l) => l.code === "v1.fetch")
@@ -238,7 +238,7 @@ export function runTrace(
         seconds: ms === null ? null : ms / 1000,
         httpStatus: num(d.http_status),
         cached: typeof d.cached === "boolean" ? d.cached : null,
-        retries: quota || l.unionId === null ? null : (retries.get(l.unionId) ?? 0),
+        retries: retries.get(quota ? null : l.unionId) ?? 0,
         slowest: false,
       };
     });
@@ -252,7 +252,7 @@ export function runTrace(
     total: {
       calls: calls.length,
       seconds: calls.reduce((sum, c) => sum + (c.seconds ?? 0), 0),
-      retries: calls.reduce((sum, c) => sum + (c.retries ?? 0), 0),
+      retries: calls.reduce((sum, c) => sum + c.retries, 0),
     },
   };
 }

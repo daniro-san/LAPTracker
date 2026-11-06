@@ -80,9 +80,10 @@ async function request(
     "User-Agent": USER_AGENT,
     Accept: "application/json",
   };
+  let previous: number | null = null;
   for (let attempt = 0; ; attempt++) {
     // INVARIANT calls.max-upstream: every attempt is reported before it is sent, retries included.
-    onAttempt?.(attempt);
+    onAttempt?.(attempt, previous);
     const response = await limited(() =>
       fetch(`${env.LAP_API_BASE_URL}${path}`, {
         headers,
@@ -100,6 +101,7 @@ async function request(
     if (status === 404) throw new NotFoundError(`404 on ${path}`);
     // INVARIANT retry-only-5xx-gateway: 502/503/504, max 3, backoff + jitter, Retry-After honoured.
     if (!RETRYABLE.has(status) || attempt >= MAX_RETRIES) throw new UpstreamError(status);
+    previous = status;
     await sleep(retryDelayMs(attempt, response.headers.get("retry-after")), signal);
   }
 }

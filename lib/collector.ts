@@ -93,13 +93,14 @@ const pastDeadline = (run: Run) =>
 
 /** The one place an upstream call is counted. Passed to every /v1 call as its onAttempt hook. */
 function attemptHook(run: Run, unionId: number | null) {
-  return (attempt: number) => {
+  return (attempt: number, status?: number | null) => {
     // A retry that wakes up after the deadline is not sent and not counted.
     if (run.deadlineHit) throw new DeadlineError("run deadline reached");
     // INVARIANT calls.max-upstream: every /v1 attempt, quota check and retries included.
     if (run.calls >= MAX_UPSTREAM_CALLS) throw new CallCapError("MAX_UPSTREAM_CALLS reached");
     run.calls++;
-    if (attempt > 0) void run.deps.logger.warn("v1.retry", { union_id: unionId, retry_n: attempt });
+    const retry = { union_id: unionId, retry_n: attempt, http_status: status ?? null };
+    if (attempt > 0) void run.deps.logger.warn("v1.retry", retry);
   };
 }
 
@@ -335,13 +336,7 @@ export async function runSnapshot(
   let timer: ReturnType<typeof setTimeout> | undefined;
   const deadline = new Promise<void>((resolve) => {
     const left = RUN_DEADLINE_MS - (deps.now().getTime() - run.startedAt.getTime());
-    timer = setTimeout(
-      () => {
-        hitDeadline(run);
-        resolve();
-      },
-      Math.max(0, left),
-    );
+    timer = setTimeout(() => resolve(hitDeadline(run)), Math.max(0, left));
   });
   let error: string | null;
   try {
