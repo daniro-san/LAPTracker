@@ -26,7 +26,7 @@ Three fixes, each with a test that failed before the fix, and one D44 line for e
 - **Room for the `v1.retry` change.** `lib/collector.ts` was at the 300-line `max-lines` limit. The deadline timer's callback became `setTimeout(() => resolve(hitDeadline(run)), …)`, which is the same behaviour in one line instead of six. The retry data object takes one line of its own.
 
 ## Deviations
-- **The PR depends on #148 (#120).** This branch is cut from `session/08zr-collector-robustness`, which is not merged, and both change `lib/collector.ts`, `lib/sources/v1.ts` and `lib/queries/admin.ts`. Until #148 merges, the PR diff includes #148's commits. The PR body says so.
+- **Cut from the #120 branch.** This branch was cut from `session/08zr-collector-robustness` while #148 (#120) was open, because both change `lib/collector.ts`, `lib/sources/v1.ts` and `lib/queries/admin.ts`. #148 has since been merged into `dev` (`a09dcad`), and `dev` was merged into this branch, so the PR diff is #123's own change.
 - **PR title.** The decision comment gives none; I used `fix: data correctness follow-ups (#123)`.
 
 ## Verified
@@ -48,7 +48,7 @@ Three fixes, each with a test that failed before the fix, and one D44 line for e
 ## Next
 Session: 08zt — tick heartbeat (#121), lane A, last
 Model / effort: keep. #123 needed no raise: three small fixes and the D lines, with no surprises.
-Owner must do first: nothing for #121 to start. #121 is cut from this branch while #148 and this PR are open. To merge in order: #148, then this PR, then #121.
+Owner must do first: nothing for #121 to start. #121 is cut from this branch, so merge this PR before #121.
 Plan changes needed: none from this session.
 
 <adjustments>
