@@ -52,3 +52,5 @@ Plan changes needed: none.
 <adjustments>
 - `/brand` passes axe at 390 and 1280 px, light and dark, and logs no blank-mode warning. Skip it in Session 9's checks.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/114
