@@ -176,6 +176,20 @@ describe("v1 requests", () => {
     expect(sent.aborted).toBe(true);
   });
 
+  it("stops waiting for a retry as soon as the caller's signal aborts, and sends no retry", async () => {
+    const mock = mockFetch(gateway(503, { "Retry-After": "30" }), respond(readFixture(OGS)));
+    const controller = new AbortController();
+    const done = fetchAlliance(67111155, undefined, controller.signal).catch((e: unknown) => e);
+    await vi.advanceTimersByTimeAsync(1_000);
+
+    controller.abort();
+    await vi.advanceTimersByTimeAsync(0);
+    const state = await Promise.race([done, Promise.resolve("waiting")]);
+
+    expect(state).toMatchObject({ name: "AbortError" });
+    expect(mock).toHaveBeenCalledTimes(1);
+  });
+
   it("aborts on 429 with QuotaExhaustedError and no retry", async () => {
     const mock = mockFetch(respond("{}", 429), respond(readFixture(OGS)));
     await expect(fetchAlliance(67111155)).rejects.toBeInstanceOf(QuotaExhaustedError);

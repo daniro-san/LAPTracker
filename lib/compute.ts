@@ -1,5 +1,12 @@
 // Pure functions only: sums, deltas, freshness predicate, roster diff. No IO, no Date.now() (passed in).
 
+/**
+ * The run lock (D43): a snapshot still `running` this long after it started was killed, and may be
+ * taken over. maxDuration is 120 s on both routes that run the collector, plus margin. The collector,
+ * the rehearsal guard, the upstream banner (D27 rule 1) and /admin's live list all read this one.
+ */
+export const RUN_STALE_AFTER_MS = 150_000;
+
 /** Roster kills. A member with `kills: null` counts as 0 (DECISIONS D15). */
 export function sumKills(members: readonly { kills: number | null }[]): number {
   return members.reduce((total, m) => total + (m.kills ?? 0), 0);

@@ -1,10 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { secretsOf } from "./app-context";
 import { TEST_ENV, TEST_PIN } from "./app-context.test-helpers";
 import { runSnapshot } from "./collector";
 import { ago, EVENT_ID, fakeV1, makeDeps, minutes, roster, T0 } from "./collector.test-helpers";
-import { createRunLogger, MAX_RUN_LOG_LINES } from "./logger";
+import { createRunLogger, LOG_SHUTDOWN_MS, MAX_RUN_LOG_LINES } from "./logger";
 import { REDACTED } from "./redact";
 import type { RunLogLine } from "./repo/run-logs";
 
@@ -47,6 +47,24 @@ describe("createRunLogger", () => {
 
     expect(summary.status).toBe("complete");
     expect(logger.stats().failedWrites).toBeGreaterThan(20);
+  });
+
+  it("stops waiting for inserts at the shutdown bound and counts the unsettled lines as failed writes", async () => {
+    vi.useFakeTimers();
+    const logger = createRunLogger(
+      { insertRunLog: () => new Promise<void>(() => {}) },
+      { snapshotId: () => 1, secrets: [], now: () => T0 },
+    );
+    void logger.info("v1.fetch");
+    void logger.warn("v1.retry");
+
+    const done = logger.shutdown().then(() => "settled");
+    await vi.advanceTimersByTimeAsync(LOG_SHUTDOWN_MS);
+    const state = await Promise.race([done, Promise.resolve("waiting")]);
+    vi.useRealTimers();
+
+    expect(state).toBe("settled");
+    expect(logger.stats().failedWrites).toBe(2);
   });
 
   it("redacts a value equal to EDIT_PIN wherever it appears in data", async () => {

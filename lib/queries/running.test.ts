@@ -26,10 +26,10 @@ async function add(minutesAgo: number, status: "running" | "complete", manual = 
 }
 
 describe("runningSnapshots", () => {
-  it("lists a live run, and ignores finished runs and a run abandoned for over 10 minutes", async () => {
+  it("lists a live run, and ignores finished runs and a run abandoned past the 150 s run lock", async () => {
     await add(1, "running", true);
     await add(2, "complete");
-    await add(30, "running");
+    await add(3, "running");
 
     const rows = await runningSnapshots(db, NOW);
 

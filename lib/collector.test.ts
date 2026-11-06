@@ -164,6 +164,34 @@ describe("runSnapshot", () => {
     expect(await repo.findSnapshot(EVENT_ID, "before")).toMatchObject({ status: "running" });
   });
 
+  it("cuts the other reads when a worker throws, so no row lands after the run rejected", async () => {
+    let release = () => {};
+    const v1 = fakeV1(fresh);
+    v1.fetchAlliance = async (id, onAttempt, signal) => {
+      onAttempt?.(0);
+      v1.calls.push(id);
+      if (id !== SECOND) return fresh(id);
+      // A read still in flight when FIRST's insert throws: it answers after the run rejected.
+      return new Promise((resolve, reject) => {
+        release = () => resolve(fresh(id));
+        signal?.addEventListener("abort", () => reject(signal.reason));
+      });
+    };
+    const { deps, repo } = makeDeps(v1);
+    const insert = repo.insertAllianceRow;
+    repo.insertAllianceRow = async (snapshotId, row, members) => {
+      if (row.unionId === FIRST) throw new Error("db down");
+      return insert(snapshotId, row, members);
+    };
+
+    await expect(runSnapshot(EVENT_ID, "before", deps)).rejects.toThrow("db down");
+    const before = (await repo.findSnapshot(EVENT_ID, "before"))?.id ?? 0;
+    release();
+    await new Promise((resolve) => setImmediate(resolve));
+
+    expect(rowsOf(repo, before).map((r) => r.unionId)).not.toContain(SECOND);
+  });
+
   it("writes one v1.fetch line per /v1 call with its status, cache flag and duration", async () => {
     const v1 = fakeV1((id) => (id === FIRST ? new UpstreamError(503) : fresh(id)));
     const lines: { code: string; data: Record<string, unknown> }[] = [];

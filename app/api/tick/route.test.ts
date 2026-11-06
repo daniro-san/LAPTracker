@@ -59,6 +59,34 @@ describe("POST /api/tick", () => {
     expect(v1.calls).toHaveLength(IDS.length);
   });
 
+  it("answers 204, not 409, to a tick that loses its phase to a concurrent caller", async () => {
+    const { ctx, clock } = testContext(db);
+    holder.ctx = ctx;
+    clock.now = new Date("2026-11-07T12:05:00Z");
+
+    const statuses = (await Promise.all([tick(), tick()])).map((r) => r.status).sort();
+
+    expect(statuses).toEqual([200, 204]);
+    expect(await db.select({ id: snapshots.id }).from(snapshots)).toHaveLength(1);
+  });
+
+  it("answers by 115 s from the run's start even when Discord never answers", async () => {
+    const { ctx, clock } = testContext(db);
+    holder.ctx = ctx;
+    clock.now = new Date("2026-11-07T12:05:00Z");
+    // The run has used 116 s by the time it reads the quota; then every webhook call hangs.
+    const fetchQuota = ctx.v1.fetchQuota;
+    ctx.v1.fetchQuota = async (...args) => {
+      clock.now = new Date(clock.now.getTime() + 116_000);
+      return fetchQuota(...args);
+    };
+    ctx.fetch = () => new Promise<Response>(() => {});
+
+    const res = await tick();
+
+    expect(res.status).toBe(200);
+  });
+
   it("runs only the earlier phase when both phases are due in the same tick", async () => {
     // AFTER at 10:30 server: at 10:35 server (12:35 UTC) both windows are open.
     const { ctx, clock } = testContext(db, { ...TEST_ENV, SNAPSHOT_AFTER: "10:30" });

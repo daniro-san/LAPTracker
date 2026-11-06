@@ -25,6 +25,9 @@ export interface RunRequest {
   origin: string;
 }
 
+/** maxDuration is 120 s: the response leaves by this long after the run's start (D43). */
+export const NOTIFY_CAP_MS = 115_000;
+
 /** Our own line for a run that threw; the collector never writes it. */
 const CRASH_ERROR = "unexpected error; see run_logs and the runtime log";
 
@@ -68,6 +71,29 @@ async function finaliseCrashed(
     console.error("snapshot.finalise_failed", { snapshot_id: snapshotId });
   }
   return summary;
+}
+
+/** INVARIANT run.answers-by-115s: notify gets what is left of NOTIFY_CAP_MS; past that it is cut,
+ * as Vercel would cut the whole function at 120 s, and the caller still gets its answer. */
+async function notifyWithinCap(
+  ctx: AppContext,
+  startedAt: Date,
+  snapshotId: number,
+  notified: Promise<void>,
+) {
+  const left = NOTIFY_CAP_MS - (ctx.now().getTime() - startedAt.getTime());
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const cap = new Promise<"cut">(
+    (resolve) => (timer = setTimeout(resolve, Math.max(0, left), "cut")),
+  );
+  try {
+    if ((await Promise.race([notified, cap])) === "cut") {
+      notified.catch(() => {});
+      console.error("notify.cut", { snapshot_id: snapshotId });
+    }
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 /** Refused before the event's before_at, force included: a weekday press would otherwise store the
@@ -116,11 +142,16 @@ export async function executeSnapshot(
       ? { ok: false, ...REFUSALS[refused.reason], snapshotId: null }
       : { ok: false, status: 500, code: "run_failed", snapshotId: null };
   }
-  await notifyFinished(ctx, db, req, {
-    summary,
-    startedAt: claimedAt,
-    logWriteFailures: logger.stats().failedWrites,
-  });
+  await notifyWithinCap(
+    ctx,
+    claimedAt,
+    summary.snapshotId,
+    notifyFinished(ctx, db, req, {
+      summary,
+      startedAt: claimedAt,
+      logWriteFailures: logger.stats().failedWrites,
+    }),
+  );
   // A refusal after the claim ('no-event') was finalised above and still answers as a refusal.
   if (refused) return { ok: false, ...REFUSALS[refused.reason], snapshotId: summary.snapshotId };
   return summary.error === CRASH_ERROR
