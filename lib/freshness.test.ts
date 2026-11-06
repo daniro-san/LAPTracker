@@ -66,7 +66,7 @@ describe("freshness", () => {
     expect(afterRun.status).toBe("partial");
   });
 
-  it("re-runs a snapshot left running for more than 10 minutes without force, and refuses one started less than 10 minutes ago", async () => {
+  it("re-runs a snapshot left running for more than 150 s without force, and refuses one started less than 150 s ago", async () => {
     const { deps, repo, clock } = makeDeps(fakeV1((id) => roster(id, ago(clock.now, 0))));
     const insert = repo.insertAllianceRow;
     repo.insertAllianceRow = async () => {
@@ -75,12 +75,12 @@ describe("freshness", () => {
     await expect(runSnapshot(EVENT_ID, "before", deps)).rejects.toThrow("db down");
     repo.insertAllianceRow = insert;
 
-    clock.now = new Date(T0.getTime() + minutes(9));
+    clock.now = new Date(T0.getTime() + 149_000);
     const refused = await runSnapshot(EVENT_ID, "before", deps).catch((e: unknown) => e);
     expect(refused).toBeInstanceOf(RunRefusedError);
     expect(refused).toMatchObject({ reason: "running" });
 
-    clock.now = new Date(T0.getTime() + minutes(10) + 1);
+    clock.now = new Date(T0.getTime() + 151_000);
     const summary = await runSnapshot(EVENT_ID, "before", deps);
     expect(summary.status).toBe("complete");
   });

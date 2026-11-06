@@ -2,6 +2,7 @@
 // Everything it touches comes in through Deps (plan §11.1); time comes from deps.now.
 import { requiredQuota } from "./budget";
 import { dataRow, errorRow, failedList } from "./collector-rows";
+import { RUN_STALE_AFTER_MS } from "./compute";
 import type { Logger } from "./logger";
 import type { AllianceRow, MemberRow, Phase, Repo, SnapshotRow, SnapshotStatus } from "./repo";
 import { describe, httpStatusOf } from "./upstream-errors";
@@ -17,7 +18,6 @@ import {
 /** 20 alliances × 3 retries × 2 phases (Logging guarantees). */
 export const MAX_UPSTREAM_CALLS = 120;
 export { FRESH_MAX_AGE_MS } from "./collector-rows";
-export const RUN_STALE_AFTER_MS = 10 * 60_000;
 /** Measured from the start of the run; the route's maxDuration is 120 s (docs/DECISIONS.md D25). */
 export const RUN_DEADLINE_MS = 100_000;
 const CONCURRENCY = 4;
@@ -131,7 +131,7 @@ async function claim(deps: Deps, eventId: number, phase: Phase, force: boolean):
   const existing: SnapshotRow | null = await deps.repo.findSnapshot(eventId, phase);
   const now = deps.now();
   if (existing?.status === "complete" && !force) throw new RunRefusedError("complete");
-  // INVARIANT run.stale-after-10-min: a run left at running this long may be taken over.
+  // INVARIANT run.stale-after-150s: a run left at running this long may be taken over.
   const live = now.getTime() - (existing?.startedAt.getTime() ?? 0) < RUN_STALE_AFTER_MS;
   if (existing?.status === "running" && live) throw new RunRefusedError("running");
   const id = await deps.repo.startSnapshot(eventId, phase, now, existing);
@@ -211,8 +211,8 @@ async function collectOne(run: Run, unionId: number): Promise<void> {
     row = dataRow(run.board, deps.now(), a, "v1");
     members = a.members;
   } catch (e) {
-    // The run has closed: no fallback read, no row, no log line for a call the deadline cut.
-    if (run.deadlineHit) return;
+    // The run has closed (deadline or a worker's throw): no fallback, no row, no log line.
+    if (run.controller.signal.aborted) return;
     await logV1Fetch(run, started, call, { error: e });
     if (e instanceof CallCapError) run.capped = true;
     if (e instanceof QuotaExhaustedError || e instanceof CallCapError) {
@@ -222,7 +222,7 @@ async function collectOne(run: Run, unionId: number): Promise<void> {
     }
     ({ row, members } = await fallbackRow(run, unionId, e));
   }
-  if (run.deadlineHit) return;
+  if (run.controller.signal.aborted) return;
   if (!row.isFresh && row.error === null) await deps.logger.warn("stale", { union_id: unionId });
   await deps.repo.insertAllianceRow(run.snapshotId, row, members);
 }
@@ -238,11 +238,13 @@ async function collectAll(run: Run, ids: number[]): Promise<void> {
         await collectOne(run, id);
       }
     } catch (e) {
-      run.abort ??= describe(e);
+      // INVARIANT run.no-row-after-throw: cut the other reads before the caller finalises the row.
+      run.controller.abort((run.abort ??= describe(e)));
       throw e;
     }
   };
-  await Promise.all(Array.from({ length: CONCURRENCY }, worker));
+  for (const s of await Promise.allSettled(Array.from({ length: CONCURRENCY }, worker)))
+    if (s.status === "rejected") throw s.reason;
 }
 
 async function finish(run: Run, ids: number[], phase: Phase, error: string | null) {

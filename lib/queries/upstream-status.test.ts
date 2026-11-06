@@ -85,7 +85,7 @@ describe("getUpstreamStatus (D27)", () => {
   });
 
   it("is down for a run still running past the run lock, not for one just started", async () => {
-    await addRun(5, { status: "running" });
+    await addRun(1, { status: "running" });
     expect(await getUpstreamStatus(db, NOW)).toEqual({ down: false });
     await truncateAll(db);
     await addRun(60, { status: "running" });

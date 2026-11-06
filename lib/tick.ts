@@ -47,6 +47,13 @@ export async function runTick(ctx: AppContext, db: Db, origin: string): Promise<
       force: false,
       origin,
     });
+    // Another caller took the phase between our read and our claim: it holds what the tick wanted,
+    // so this tick did nothing wrong and answers 204 (D43 amends D26).
+    if (
+      !outcome.ok &&
+      (outcome.code === "snapshot_running" || outcome.code === "snapshot_complete")
+    )
+      return { kind: "idle" };
     return { kind: "run", outcome };
   }
 

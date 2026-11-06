@@ -21,14 +21,17 @@ export const consoleLogger: Logger = {
 /** 20 alliances × 3 retries × a few lines, with margin. The 400th line is `log.capped`. */
 export const MAX_RUN_LOG_LINES = 400;
 
+/** How long shutdown() waits for inserts in flight; the run's finalise and notify come after it. */
+export const LOG_SHUTDOWN_MS = 3_000;
+
 export interface RunLogSink {
   insertRunLog(line: RunLogLine): Promise<void>;
 }
 
 export interface RunLogger extends Logger {
-  /** Inserts that threw, and lines not written (past the cap, or before the snapshot existed). */
+  /** Inserts that threw or were still in flight at shutdown, and lines not written (past the cap, or before the snapshot existed). */
   stats(): { failedWrites: number; droppedLines: number };
-  /** Awaits inserts still in flight (the collector fires `v1.retry` and forgets). Buffers nothing. */
+  /** Awaits inserts still in flight (the collector fires `v1.retry` and forgets), at most LOG_SHUTDOWN_MS. */
   shutdown(): Promise<void>;
 }
 
@@ -86,7 +89,12 @@ export function createRunLogger(sink: RunLogSink, options: RunLoggerOptions): Ru
     error: (code, data) => write("error", code, data),
     stats: () => ({ failedWrites, droppedLines }),
     shutdown: async () => {
-      await Promise.allSettled([...inFlight]);
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const bound = new Promise<void>((resolve) => (timer = setTimeout(resolve, LOG_SHUTDOWN_MS)));
+      await Promise.race([Promise.allSettled([...inFlight]), bound]);
+      clearTimeout(timer);
+      // INVARIANT logger.shutdown-bounded: a line still in flight now is not known to be written.
+      failedWrites += inFlight.size;
     },
   };
 }

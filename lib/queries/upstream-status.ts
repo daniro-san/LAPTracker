@@ -2,12 +2,10 @@
 // Reads the newest public snapshot and, for the "last fresh" time, the newest fresh alliance row.
 import { and, desc, eq, isNull, max } from "drizzle-orm";
 
+import { RUN_STALE_AFTER_MS } from "../compute";
 import type { Db } from "../db";
 import { allianceSnapshots, events, snapshots } from "../schema";
 import { publicEvent } from "./visibility";
-
-/** A run still `running` after this long was killed. Same figure as RUN_STALE_AFTER_MS (lib/collector.ts); queries do not import the collector. */
-const RUN_STALE_AFTER_MS = 10 * 60_000;
 
 /** A failed attempt stops counting after this long; the page's own stale marks speak after that. */
 export const UPSTREAM_DOWN_WINDOW_MS = 24 * 3_600_000;

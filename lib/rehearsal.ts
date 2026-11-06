@@ -1,6 +1,8 @@
 // Rehearsals (plan §3.1): a test event with its own phase times that the real cron ticks run, and
 // the verdict that says whether that run would have been a good scheduled event.
-import { RUN_STALE_AFTER_MS } from "./collector";
+import { sql } from "drizzle-orm";
+
+import { RUN_STALE_AFTER_MS } from "./compute";
 import type { Db } from "./db";
 import type { Env } from "./env";
 import type { Phase } from "./repo";
@@ -20,6 +22,8 @@ export const REHEARSAL_BEFORE_MS = 15 * MINUTE;
 export const REHEARSAL_AFTER_MS = 45 * MINUTE;
 /** Plan §3.1: never within 3 h before a real event's BEFORE. */
 export const REAL_BEFORE_GUARD_MS = 3 * 60 * MINUTE;
+/** pg_advisory_xact_lock key that serialises rehearsal creation (D43); the app's only advisory lock. */
+const REHEARSAL_CREATE_LOCK = 1;
 /** Plan §3.6: the function limit every run must stay under. */
 const MAX_RUN_MS = 120_000;
 
@@ -54,17 +58,25 @@ async function refusal(db: Db, now: Date, env: Env): Promise<RehearsalRefusal | 
  * keeps only the newest REHEARSAL_KEEP rehearsals. The /admin button and REHEARSAL_AT both use it.
  */
 export async function createRehearsal(db: Db, now: Date, env: Env): Promise<RehearsalResult> {
-  const reason = await refusal(db, now, env);
-  if (reason) return { ok: false, reason };
   const beforeAt = new Date(now.getTime() + REHEARSAL_BEFORE_MS);
   const afterAt = new Date(now.getTime() + REHEARSAL_AFTER_MS);
-  const eventId = await insertRehearsal(db, {
-    name: `REHEARSAL ${now.toISOString()}`,
-    // Between the phases, as a scheduled event's EVENT_TIME is; it also keeps event_at_utc unique.
-    eventAtUtc: new Date(now.getTime() + (REHEARSAL_BEFORE_MS + REHEARSAL_AFTER_MS) / 2),
-    beforeAt,
-    afterAt,
+  // INVARIANT rehearsal.one-pending: the guards and the insert run under one lock, so two presses
+  // at once cannot both pass the pending check; the second waits and then sees the first.
+  const created = await db.transaction(async (tx) => {
+    await tx.execute(sql`select pg_advisory_xact_lock(${REHEARSAL_CREATE_LOCK})`);
+    const reason = await refusal(tx, now, env);
+    if (reason) return { reason };
+    const eventId = await insertRehearsal(tx, {
+      name: `REHEARSAL ${now.toISOString()}`,
+      // Between the phases, as a scheduled event's EVENT_TIME is; it also keeps event_at_utc unique.
+      eventAtUtc: new Date(now.getTime() + (REHEARSAL_BEFORE_MS + REHEARSAL_AFTER_MS) / 2),
+      beforeAt,
+      afterAt,
+    });
+    return { eventId };
   });
+  if ("reason" in created) return { ok: false, reason: created.reason };
+  const { eventId } = created;
   // INVARIANT rehearsal.keep: older rehearsals and all their rows go when a new one is created.
   const pruned = await pruneRehearsals(db, env.REHEARSAL_KEEP);
   return { ok: true, eventId, beforeAt, afterAt, pruned };

@@ -2,6 +2,7 @@
 // latest rehearsal. Never linked from public pages; the pages check the admin cookie first.
 import { and, asc, desc, eq, gt, isNotNull } from "drizzle-orm";
 
+import { RUN_STALE_AFTER_MS } from "../compute";
 import type { Db } from "../db";
 import { rehearsalVerdict, type Verdict } from "../rehearsal";
 import { loadVerdictInput } from "../repo/rehearsals";
@@ -72,9 +73,6 @@ export interface RunningSnapshot {
   startedAt: Date;
 }
 
-/** A row still `running` this long after it started is a crashed run, not a live one (D25: 100 s). */
-const LIVE_MS = 10 * 60_000;
-
 /** The snapshots running right now, whoever started them (the tick, a button, a rehearsal). */
 export async function runningSnapshots(db: Db, now: Date): Promise<RunningSnapshot[]> {
   return db
@@ -92,7 +90,7 @@ export async function runningSnapshots(db: Db, now: Date): Promise<RunningSnapsh
     .where(
       and(
         eq(snapshots.status, "running"),
-        gt(snapshots.startedAt, new Date(now.getTime() - LIVE_MS)),
+        gt(snapshots.startedAt, new Date(now.getTime() - RUN_STALE_AFTER_MS)),
       ),
     )
     .orderBy(asc(snapshots.startedAt));
