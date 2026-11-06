@@ -26,3 +26,5 @@ Session: none planned by this change; it goes into release v1.1.0 (PR #159, `dev
 Model / effort: keep — a small admin layout change.
 Owner must do first: merge this PR into `dev` before the v1.1.0 cutoff (~21:00 server).
 Plan changes needed: none.
+
+https://github.com/daniro-san/LAPTracker/pull/167
