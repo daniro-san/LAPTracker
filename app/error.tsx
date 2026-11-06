@@ -4,10 +4,8 @@
 import Link from "next/link";
 
 import { ErrorPage, primaryAction, secondaryAction } from "@/app/_ui/ErrorPage";
+import { useCopy } from "@/app/_ui/LocaleProvider";
 import { CrackedBottle } from "@/lib/brand/components/Vignettes";
-import { copy } from "@/lib/copy";
-
-const t = copy.errors.server;
 
 export default function ErrorBoundary({
   reset,
@@ -15,12 +13,15 @@ export default function ErrorBoundary({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const copy = useCopy();
+  const t = copy.errors.server;
   return (
     <ErrorPage
       code={t.code}
       title={t.title}
       body={t.body}
       art={<CrackedBottle />}
+      copy={copy}
       actions={
         <>
           <button type="button" onClick={() => reset()} className={primaryAction}>

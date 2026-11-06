@@ -21,7 +21,7 @@ const NAV = ["logo", "colour", "type", "drawing", "components", "voice"] as cons
 
 export default function BrandPage() {
   return (
-    <div className="min-h-screen bg-paper font-body text-ink">
+    <div lang="en" className="min-h-screen bg-paper font-body text-ink">
       <header className="sticky top-0 z-30 text-plum">
         <div className="bg-plum text-paper">
           <div className="mx-auto flex max-w-[960px] items-center justify-between gap-2 px-4 py-1 sm:px-6">

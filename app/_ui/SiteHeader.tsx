@@ -8,7 +8,7 @@ import Link from "next/link";
 
 import { LaceBorder } from "@/lib/brand/components/LaceBorder";
 import { WaxedMark } from "@/lib/brand/components/Logo";
-import { copy } from "@/lib/copy";
+import type { Dictionary } from "@/lib/copy";
 
 import { Disclosure } from "./Disclosure";
 import { EventLabel, type LabeledEvent } from "./EventLabel";
@@ -28,10 +28,12 @@ function EventSelector({
   events,
   currentId,
   clock,
+  copy,
 }: {
   events: SelectorEvent[];
   currentId: number | null;
   clock: Clock;
+  copy: Dictionary;
 }) {
   const current = events.find((e) => e.id === currentId);
   return (
@@ -39,7 +41,7 @@ function EventSelector({
       <summary
         className={`flex min-h-11 cursor-pointer items-center gap-1 px-3 text-sm drawn-frame-soft font-medium group-open:bg-paper/20 [&::-webkit-details-marker]:hidden ${CONTROL}`}
       >
-        {current ? <EventLabel event={current} clock={clock} /> : copy.site.events}{" "}
+        {current ? <EventLabel event={current} clock={clock} copy={copy} /> : copy.site.events}{" "}
         <span
           aria-hidden="true"
           className="transition-transform duration-150 group-open:rotate-180 motion-reduce:transition-none"
@@ -55,7 +57,7 @@ function EventSelector({
               aria-current={e.id === currentId ? "page" : undefined}
               className="flex min-h-11 items-center px-3 text-sm transition-colors duration-150 hover:bg-plum/15 aria-[current=page]:bg-plum/10 aria-[current=page]:font-semibold motion-reduce:transition-none"
             >
-              <EventLabel event={e} clock={clock} />
+              <EventLabel event={e} clock={clock} copy={copy} />
               {i === 0 && <span className="ml-2 text-xs text-ink/70">{copy.site.latest}</span>}
             </Link>
           </li>
@@ -80,7 +82,8 @@ export function SiteHeader({
   currentId,
   section,
   clock,
-  times = true,
+  copy,
+  publicPage = true,
 }: {
   events: SelectorEvent[];
   currentId: number | null;
@@ -88,8 +91,10 @@ export function SiteHeader({
   section?: "players";
   /** The request's clock (app/_ui/locale.ts) for the selector's dates; error pages have no events. */
   clock?: Clock;
-  /** The gear offers times and dates; /admin, which stays in server time, offers the theme only. */
-  times?: boolean;
+  /** The request's words (requestCopy); /admin passes the English `copy`. */
+  copy: Dictionary;
+  /** The gear offers language, times and dates; /admin, English and in server time, the theme only. */
+  publicPage?: boolean;
 }) {
   return (
     <header className="sticky top-0 z-30 text-plum">
@@ -111,9 +116,9 @@ export function SiteHeader({
               {copy.site.players}
             </Link>
             {clock && events.length > 0 && (
-              <EventSelector events={events} currentId={currentId} clock={clock} />
+              <EventSelector events={events} currentId={currentId} clock={clock} copy={copy} />
             )}
-            <ViewerSettings times={times} />
+            <ViewerSettings publicPage={publicPage} />
           </div>
         </div>
       </div>

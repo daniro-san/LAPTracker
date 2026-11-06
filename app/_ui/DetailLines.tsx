@@ -4,8 +4,7 @@
 // Numerals tabular and right-aligned; notes in seal under the change. Language-free but for the labels.
 import type { ReactNode } from "react";
 
-import { copy } from "@/lib/copy";
-
+import { requestCopy } from "./locale";
 import { Delta, Num, Rank, RankMove } from "./Num";
 import type { StatMetric } from "./StatTable";
 
@@ -61,7 +60,7 @@ export function figureRows(
   ];
 }
 
-export function DetailTable({
+export async function DetailTable({
   corner,
   from,
   to,
@@ -73,6 +72,7 @@ export function DetailTable({
   to: ReactNode;
   rows: DetailRow[];
 }) {
+  const copy = await requestCopy();
   const hasRank = rows.some((r) => r.rank !== undefined);
   const cell = "py-1 pl-2 text-right align-top";
   return (

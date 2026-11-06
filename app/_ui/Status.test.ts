@@ -2,6 +2,8 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
+import { en } from "@/lib/copy";
+
 import type { Clock } from "./format";
 import { Legend, StatusChips } from "./Status";
 
@@ -14,6 +16,7 @@ const html = (manual: boolean) =>
       stale: 0,
       manual,
       clock,
+      copy: en,
     }),
   );
 
@@ -28,9 +31,11 @@ describe("StatusChips", () => {
 
 describe("Legend", () => {
   it("lists the member-change item only when the page shows the mark", () => {
-    expect(renderToStaticMarkup(createElement(Legend, { memberMark: true }))).toContain(
+    expect(renderToStaticMarkup(createElement(Legend, { memberMark: true, copy: en }))).toContain(
       "Includes member changes",
     );
-    expect(renderToStaticMarkup(createElement(Legend))).not.toContain("Includes member changes");
+    expect(renderToStaticMarkup(createElement(Legend, { copy: en }))).not.toContain(
+      "Includes member changes",
+    );
   });
 });

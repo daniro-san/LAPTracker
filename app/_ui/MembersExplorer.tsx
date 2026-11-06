@@ -9,10 +9,9 @@ import { useMemo, useState } from "react";
 import { buttonClass } from "@/lib/brand/components/Button";
 import { ROLE_TONE, RoleMark } from "@/lib/brand/components/RoleMark";
 import { rankDelta } from "@/lib/compute";
-import { copy, fill } from "@/lib/copy";
+import { fill, type Dictionary } from "@/lib/copy";
 
-import { compact } from "./format";
-import { useLocale } from "./LocaleProvider";
+import { useCopy } from "./LocaleProvider";
 import {
   change,
   filterMembers,
@@ -21,25 +20,27 @@ import {
   type MemberView,
   type SortKey,
 } from "./member-views";
+import { MightRange } from "./MightRange";
 import { Num } from "./Num";
 import { PlayerAvatar } from "./Pictures";
 import { LABEL, StatTable, type StatMetric, type StatRow } from "./StatTable";
 
 const TOP = 20;
 
-const SORTS: { key: SortKey; label: string }[] = [
-  { key: "might", label: copy.ledger.might },
-  { key: "mightDelta", label: copy.members.mightChange },
-  { key: "kills", label: copy.ledger.kills },
-  { key: "killsDelta", label: copy.members.killsChange },
-  { key: "lv", label: copy.ledger.level },
-  { key: "name", label: copy.members.byName },
+const SORTS: { key: SortKey; label: (copy: Dictionary) => string }[] = [
+  { key: "might", label: (c) => c.ledger.might },
+  { key: "mightDelta", label: (c) => c.members.mightChange },
+  { key: "kills", label: (c) => c.ledger.kills },
+  { key: "killsDelta", label: (c) => c.members.killsChange },
+  { key: "lv", label: (c) => c.ledger.level },
+  { key: "name", label: (c) => c.members.byName },
 ];
 
-/** Joined / Left carry a sign and a colour as well as the word (07c S12; DESIGN.md three channels). */
+/** Joined / Left carry a sign and a colour as well as the word `copy.members[status]` (07c S12; DESIGN.md
+ * three channels). */
 const STATUS = {
-  joined: { sign: "+", word: copy.members.joined, tone: "text-yarn" },
-  left: { sign: "−", word: copy.members.left, tone: "text-seal" },
+  joined: { sign: "+", tone: "text-yarn" },
+  left: { sign: "−", tone: "text-seal" },
 } as const;
 
 const CHIP =
@@ -63,7 +64,7 @@ function metric(m: MemberView, label: string, field: Field, mode: Mode): StatMet
   };
 }
 
-function toRow(m: MemberView, mode: Mode): StatRow {
+function toRow(m: MemberView, mode: Mode, copy: Dictionary): StatRow {
   const n = m.rank.after ?? m.rank.before;
   return {
     key: String(m.uid),
@@ -89,7 +90,7 @@ function toRow(m: MemberView, mode: Mode): StatRow {
         {m.status && (
           <span className={`font-medium ${STATUS[m.status].tone}`}>
             <span aria-hidden="true">{STATUS[m.status].sign} </span>
-            {STATUS[m.status].word}
+            {copy.members[m.status]}
           </span>
         )}
         {m.status && m.wasName && " · "}
@@ -115,6 +116,7 @@ function SortChips({
   set: (p: Partial<MemberFilter>) => void;
   compared: boolean;
 }) {
+  const copy = useCopy();
   return (
     <div
       role="group"
@@ -131,7 +133,7 @@ function SortChips({
             className={`${CHIP} ${on ? "bg-plum text-paper" : "text-plum hover:bg-plum/10"}`}
             onClick={() => set(on ? { desc: !f.desc } : { sort: s.key, desc: s.key !== "name" })}
           >
-            {s.label}
+            {s.label(copy)}
             {on && (
               <>
                 <span aria-hidden="true">{f.desc ? "↓" : "↑"}</span>
@@ -147,50 +149,6 @@ function SortChips({
   );
 }
 
-function MightRange({
-  f,
-  steps,
-  set,
-}: {
-  f: MemberFilter;
-  steps: number[];
-  set: (p: Partial<MemberFilter>) => void;
-}) {
-  const locale = useLocale();
-  const max = steps.length - 1;
-  const at = (i: number) => compact(steps[i] ?? 0, locale);
-  return (
-    <div>
-      <p className="flex items-baseline justify-between gap-2 text-sm tabular-nums">
-        <span className={LABEL}>{copy.ledger.might}</span>
-        <span className="font-medium">
-          <Num n={steps[f.lo] ?? null} /> – <Num n={steps[f.hi] ?? null} />
-        </span>
-      </p>
-      <div className="range-pair">
-        <input
-          type="range"
-          min={0}
-          max={max}
-          value={f.lo}
-          aria-label={copy.members.low}
-          aria-valuetext={at(f.lo)}
-          onChange={(e) => set({ lo: Math.min(Number(e.target.value), f.hi) })}
-        />
-        <input
-          type="range"
-          min={0}
-          max={max}
-          value={f.hi}
-          aria-label={copy.members.high}
-          aria-valuetext={at(f.hi)}
-          onChange={(e) => set({ hi: Math.max(Number(e.target.value), f.lo) })}
-        />
-      </div>
-    </div>
-  );
-}
-
 function ActiveChips({
   f,
   steps,
@@ -202,6 +160,7 @@ function ActiveChips({
   reset: () => void;
   set: (p: Partial<MemberFilter>) => void;
 }) {
+  const copy = useCopy();
   const ranged = f.lo > 0 || f.hi < steps.length - 1;
   const named = f.name.trim() !== "";
   if (!ranged && !named) return null;
@@ -245,6 +204,7 @@ export function MemberCount({
   capacity: number | null;
   shown: number | null;
 }) {
+  const copy = useCopy();
   return (
     <p className="text-sm tabular-nums text-ink/70">
       <span className={LABEL}>{copy.ledger.members}</span> {count}
@@ -267,6 +227,7 @@ export function MembersExplorer({
   /** The most members the alliance can hold, as the upstream reports it; null when not stored. */
   capacity: number | null;
 }) {
+  const copy = useCopy();
   const steps = useMemo(() => mightSteps(members), [members]);
   const start: MemberFilter = { sort: "might", desc: true, name: "", lo: 0, hi: steps.length - 1 };
   const [f, setF] = useState<MemberFilter>(start);
@@ -306,8 +267,9 @@ export function MembersExplorer({
       <StatTable
         leadLabel={copy.ledger.member}
         columns={[copy.ledger.might, copy.ledger.kills, copy.ledger.level]}
-        rows={shown.map((m) => toRow(m, mode))}
+        rows={shown.map((m) => toRow(m, mode, copy))}
         empty={copy.empty.noMembers}
+        copy={copy}
       />
       {shown.length < kept.length && (
         <button

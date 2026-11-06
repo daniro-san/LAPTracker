@@ -1,6 +1,6 @@
 // How an event is named in the selector and at the top of its page: a real event by its weekday, a
 // manual round (D28) by its name, as text, with a small "Manual round" tag.
-import { copy } from "@/lib/copy";
+import type { Dictionary } from "@/lib/copy";
 
 import type { Clock } from "./format";
 
@@ -10,7 +10,15 @@ export interface LabeledEvent {
   eventAtUtc: Date;
 }
 
-export function EventLabel({ event, clock }: { event: LabeledEvent; clock: Clock }) {
+export function EventLabel({
+  event,
+  clock,
+  copy,
+}: {
+  event: LabeledEvent;
+  clock: Clock;
+  copy: Dictionary;
+}) {
   if (!event.manual) return <>{clock.weekday(event.eventAtUtc)}</>;
   return (
     <>
