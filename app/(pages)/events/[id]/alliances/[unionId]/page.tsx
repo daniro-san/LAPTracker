@@ -12,7 +12,7 @@ import { fellWithLeavers } from "@/app/_ui/event-rows";
 import { ExactToggle } from "@/app/_ui/ExactToggle";
 import { allianceLabel, type Clock } from "@/app/_ui/format";
 import { Leadership } from "@/app/_ui/Leadership";
-import { requestClock } from "@/app/_ui/locale";
+import { requestClock, requestCopy } from "@/app/_ui/locale";
 import { canCompare, leadership, memberViews, withRoles } from "@/app/_ui/member-views";
 import { MembersExplorer } from "@/app/_ui/MembersExplorer";
 import { MyAllianceToggle } from "@/app/_ui/MyAlliance";
@@ -23,7 +23,7 @@ import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { LABEL, type StatMetric } from "@/app/_ui/StatTable";
 import { FreshDots, Legend, SideHead, type FreshState } from "@/app/_ui/Status";
 import { rankDelta, type NameHistoryEntry } from "@/lib/compute";
-import { copy } from "@/lib/copy";
+import type { Dictionary } from "@/lib/copy";
 import { withPageDb } from "@/lib/page";
 import type { AllianceRow, Ranks } from "@/lib/queries";
 import {
@@ -55,7 +55,12 @@ function totalsMetric(
 }
 
 /** `left`: members of the Before roster gone from the After roster (0 when the rosters cannot be compared). */
-function totalsMetrics({ before, after }: Detail, canDelta: boolean, left: number): StatMetric[] {
+function totalsMetrics(
+  { before, after }: Detail,
+  canDelta: boolean,
+  left: number,
+  copy: Dictionary,
+): StatMetric[] {
   const l = copy.ledger;
   return [
     totalsMetric(l.might, before?.totalPower, after?.totalPower, canDelta, left),
@@ -84,12 +89,14 @@ function Summary({
   ledger,
   canDelta,
   clock,
+  copy,
 }: {
   detail: Detail;
   metrics: StatMetric[];
   ledger: Ledger;
   canDelta: boolean;
   clock: Clock;
+  copy: Dictionary;
 }) {
   const { before, after } = detail;
   const ranks = rankPairs(detail, ledger, canDelta);
@@ -119,7 +126,7 @@ function Summary({
             <span className={LABEL}>{copy.ledger.rank}</span>
             <Rank n={ranks.might.after ?? ranks.might.before} move={ranks.might.move} />
           </span>
-          <FreshDots before={fresh(before)} after={fresh(after)} />
+          <FreshDots before={fresh(before)} after={fresh(after)} copy={copy} />
           <span className="drawn-frame-soft ml-auto inline-flex min-h-11 items-center gap-1 px-3 font-medium text-plum group-open/more:bg-plum/10">
             {copy.ledger.details}
             <span
@@ -133,8 +140,8 @@ function Summary({
         <div className="border-t border-rule pb-2 pt-2 text-sm">
           <DetailTable
             corner={clock.zone}
-            from={<SideHead s={fresh(before)} clock={clock} />}
-            to={<SideHead s={fresh(after)} clock={clock} />}
+            from={<SideHead s={fresh(before)} clock={clock} copy={copy} />}
+            to={<SideHead s={fresh(after)} clock={clock} copy={copy} />}
             rows={figureRows(metrics, ranks, copy.ledger.ranking)}
           />
         </div>
@@ -143,7 +150,15 @@ function Summary({
   );
 }
 
-function NameTimeline({ names, clock }: { names: NameHistoryEntry[]; clock: Clock }) {
+function NameTimeline({
+  names,
+  clock,
+  copy,
+}: {
+  names: NameHistoryEntry[];
+  clock: Clock;
+  copy: Dictionary;
+}) {
   if (names.length < 2) return null;
   return (
     <div className="mb-3 text-sm text-ink/70">
@@ -204,7 +219,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const ids = await idsOf(params);
   const data = ids && (await loadAlliance(ids.eventId, ids.unionId));
   if (!data) return {};
-  const clock = await requestClock();
+  const [clock, copy] = await Promise.all([requestClock(), requestCopy()]);
   const now = data.detail.after ?? data.detail.before;
   const event = data.events.find((e) => e.id === ids.eventId);
   const parts = [
@@ -218,7 +233,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 type Events = Awaited<ReturnType<typeof listEvents>>;
 
 /** `Ledger · Sat, Oct 31 › [TAG] Name`: back to the event, then this page. */
-function crumbsFor(events: Events, eventId: number, label: string, clock: Clock) {
+function crumbsFor(events: Events, eventId: number, label: string, clock: Clock, copy: Dictionary) {
   const event = events.find((e) => e.id === eventId);
   return [
     {
@@ -234,7 +249,11 @@ export default async function AlliancePage({ params }: { params: Params }) {
   const ids = await idsOf(params);
   if (!ids) notFound();
   const { eventId, unionId } = ids;
-  const [data, clock] = await Promise.all([loadAlliance(eventId, unionId), requestClock()]);
+  const [data, clock, copy] = await Promise.all([
+    loadAlliance(eventId, unionId),
+    requestClock(),
+    requestCopy(),
+  ]);
   if (!data) notFound();
   const { detail, events, history, names, ledger } = data;
   const now = detail.after ?? detail.before;
@@ -244,12 +263,12 @@ export default async function AlliancePage({ params }: { params: Params }) {
     ? memberViews(detail.membersBefore, detail.membersAfter).filter((m) => m.status === "left")
         .length
     : 0;
-  const metrics = totalsMetrics(detail, canDelta, left);
+  const metrics = totalsMetrics(detail, canDelta, left, copy);
   return (
     <>
-      <SiteHeader events={events} currentId={eventId} clock={clock} />
+      <SiteHeader events={events} currentId={eventId} clock={clock} copy={copy} />
       <main className="mx-auto max-w-[960px] px-4 py-4 sm:px-6">
-        <Breadcrumbs crumbs={crumbsFor(events, eventId, label, clock)} />
+        <Breadcrumbs crumbs={crumbsFor(events, eventId, label, clock, copy)} />
         <div
           id={TITLE_ID}
           className="flex scroll-mt-20 flex-wrap items-center justify-between gap-x-3 gap-y-2"
@@ -273,21 +292,22 @@ export default async function AlliancePage({ params }: { params: Params }) {
             )}
           </div>
         </div>
-        <Legend memberMark={metrics.some((m) => m.memberMark)} />
-        <NameTimeline names={names} clock={clock} />
+        <Legend memberMark={metrics.some((m) => m.memberMark)} copy={copy} />
+        <NameTimeline names={names} clock={clock} copy={copy} />
         <Summary
           detail={detail}
           metrics={metrics}
           ledger={ledger}
           canDelta={canDelta}
           clock={clock}
+          copy={copy}
         />
         <Leadership members={leadership(views(detail))} />
         <h2 className="mb-2 mt-8 font-subhead text-display-md">{copy.ledger.members}</h2>
         <MemberList detail={detail} canDelta={canDelta} />
         <AcrossEvents unionId={unionId} history={history} clock={clock} />
       </main>
-      <SiteFooter />
+      <SiteFooter copy={copy} />
     </>
   );
 }

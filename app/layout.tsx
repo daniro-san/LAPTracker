@@ -5,27 +5,30 @@ import type { ReactNode } from "react";
 
 import { fontVariables } from "@/lib/brand/fonts";
 import { readTheme } from "@/lib/brand/theme";
-import { copy } from "@/lib/copy";
 
-import { requestLocale } from "./_ui/locale";
+import { requestCopy, requestLanguage } from "./_ui/locale";
 import { LocaleProvider } from "./_ui/LocaleProvider";
 import { UpstreamBanner } from "./_ui/UpstreamBanner";
 import { VercelInsights } from "./_ui/VercelInsights";
 
 import "./globals.css";
 
-export const metadata: Metadata = {
-  title: copy.site.name,
-  description: copy.site.description,
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const copy = await requestCopy();
+  return { title: copy.site.name, description: copy.site.description };
+}
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   await connection();
-  const [theme, locale] = await Promise.all([readTheme(), requestLocale()]);
+  const [theme, { language, locale }, copy] = await Promise.all([
+    readTheme(),
+    requestLanguage(),
+    requestCopy(),
+  ]);
   return (
-    <html lang={locale} data-theme={theme ?? undefined} className={fontVariables}>
+    <html lang={language} data-theme={theme ?? undefined} className={fontVariables}>
       <body className="min-h-screen bg-paper font-body text-ink antialiased">
-        <LocaleProvider locale={locale}>
+        <LocaleProvider locale={locale} copy={copy}>
           <UpstreamBanner />
           {children}
         </LocaleProvider>

@@ -1,0 +1,29 @@
+# Glossary: nl
+
+Words already used in `lib/i18n/nl.ts`. Reuse them so the pages stay consistent; add a row when you coin a term another key will need again (translate-copy skill).
+
+| English                   | nl                               | Key and use                                               |
+| ------------------------- | -------------------------------- | --------------------------------------------------------- |
+| Server 325 · Event Ledger | Server 325 · Eventlogboek        | `site.ledger` — the page title                            |
+| Ledger                    | Logboek                          | `site.home` — the ledger, as a breadcrumb                 |
+| kept by the Old Grandmas  | bijgehouden door de Old Grandmas | `site.byline` — Old Grandmas stays a name                 |
+| Alliance                  | Alliantie                        | `ledger.alliance`                                         |
+| Member                    | Lid                              | `ledger.member` — a player inside an alliance             |
+| Player                    | Speler                           | `ledger.player`                                           |
+| Event                     | Event                            | `ledger.event` — a Saturday event                         |
+| Rank                      | Rang                             | `ledger.rank` — the #n position                           |
+| Ranking                   | Ranglijst                        | `ledger.ranking` — the game's server rank                 |
+| Sanctuary                 | Heiligdom                        | `ledger.sanctuary` — a player's building level            |
+| joined                    | erbij                            | `ledger.joined` — after +n                                |
+| left                      | weg                              | `ledger.left` — after −n                                  |
+| Stale                     | Verouderd                        | `fresh.stale` — data not fresh                            |
+| server time               | servertijd                       | `time.serverTime` — after a time: 14:01 …                 |
+| your time                 | jouw tijd                        | `time.yourTime` — after a time, the viewer's zone         |
+| Exact numbers             | Exacte getallen                  | `site.exactNumbers` — the toggle; legend.rounded names it |
+| Manual round              | Handmatige ronde                 | `site.manualRound` — an event the admin runs by hand      |
+| Leader                    | Leider                           | `leadership.leader` — the R5                              |
+| Run by hand by the admin  | De admin start het met de hand   | `status.byHand`                                           |
+| grandma                   | oma                              | the voice in empty states and errors                      |
+
+- Might, Kills, Members and Level stay in English, also inside labels (`± Might`).
+- Counts read `Label: {n}` so no plural forms are needed.

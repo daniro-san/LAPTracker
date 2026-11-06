@@ -6,7 +6,7 @@
 import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
 
-import { copy } from "@/lib/copy";
+import type { Dictionary } from "@/lib/copy";
 
 import { EmptyState } from "./EmptyState";
 import { Delta, Num, Rank } from "./Num";
@@ -108,7 +108,7 @@ function Lead({ row }: { row: StatRow }) {
   );
 }
 
-export function MoreBar({ row }: { row: StatRow }) {
+export function MoreBar({ row, copy }: { row: StatRow; copy: Dictionary }) {
   if (!row.summary && !row.detail) return null;
   return (
     <details className="group/more relative z-10 col-span-full">
@@ -136,11 +136,14 @@ export function StatTable({
   columns,
   rows,
   empty,
+  copy,
 }: {
   leadLabel: string;
   columns: string[];
   rows: StatRow[];
   empty?: ReactNode;
+  /** The request's words: the server's requestCopy or the client's useCopy. */
+  copy: Dictionary;
 }) {
   if (rows.length === 0) return <EmptyState>{empty ?? copy.empty.kettle}</EmptyState>;
   const grid = {
@@ -174,7 +177,7 @@ export function StatTable({
             {row.metrics.map((m, i) => (
               <MetricCell key={i} m={m} />
             ))}
-            <MoreBar row={row} />
+            <MoreBar row={row} copy={copy} />
           </li>
         ))}
       </ul>

@@ -15,10 +15,12 @@
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "check": "prettier --check . && eslint . && tsc --noEmit && vitest run && tsx scripts/check-drift.ts",
+    "check": "prettier --check . && eslint . && tsc --noEmit && vitest run && tsx scripts/check-drift.ts && tsx scripts/i18n-check.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/migrate.ts",
     "snapshot:dry": "tsx scripts/snapshot-dry.ts",
+    "i18n:todo": "tsx scripts/i18n-check.ts --todo",
+    "i18n:stamp": "tsx scripts/i18n-check.ts --stamp",
     "db:seed": "tsx --env-file-if-exists=.env.local scripts/seed.ts",
     "prepare": "lefthook install || true"
   },

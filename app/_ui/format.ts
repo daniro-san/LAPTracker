@@ -2,7 +2,7 @@
 // request's locale (app/_ui/locale.ts), compact by default and exact on tap, times in server time with
 // the words "server time" after them, in the admin area too (07c S3a); public pages use the viewer's own
 // zone and date order when they chose them (D38).
-import { copy } from "@/lib/copy";
+import { en, type Dictionary } from "@/lib/copy";
 
 const MINUS = "−";
 
@@ -52,10 +52,11 @@ export const allianceLabel = (tag: string | null, name: string | null): string =
   [tag !== null ? `[${tag}]` : null, name].filter(Boolean).join(" ");
 
 /** `+3 joined`, `−2 left`: the sign is a symbol, so it is not part of the copy. */
-export const joinedText = (n: number) => `+${n} ${copy.ledger.joined}`;
-export const leftText = (n: number) => `${MINUS}${n} ${copy.ledger.left}`;
+export const joinedText = (n: number, copy: Dictionary) => `+${n} ${copy.ledger.joined}`;
+export const leftText = (n: number, copy: Dictionary) => `${MINUS}${n} ${copy.ledger.left}`;
 /** `−2 Members`: the kills note names the loss in the game's own word (persona test, 7b). */
-export const membersLostText = (n: number) => `${MINUS}${n} ${copy.ledger.members}`;
+export const membersLostText = (n: number, copy: Dictionary) =>
+  `${MINUS}${n} ${copy.ledger.members}`;
 
 /** `Name: Old → New`. */
 export const changeText = (label: string, from: string, to: string) => `${label}: ${from} → ${to}`;
@@ -66,6 +67,8 @@ export const rowAnchor = (unionId: number) => `alliance-${unionId}`;
 /** The viewer's settings (D38), one cookie each; no cookie = server time and the locale's own dates. */
 export const ZONE_COOKIE = "tz";
 export const DATE_COOKIE = "date";
+/** The page's language (D48); no cookie = the browser's Accept-Language. */
+export const LANG_COOKIE = "lang";
 
 /** The date orders a viewer may pick (#27). Month names stay in the request's locale. */
 export const DATE_FORMATS = ["d-mmm", "mmm-d", "dd/mm", "dd.mm", "iso"] as const;
@@ -106,6 +109,7 @@ export function makeClock(
   locale: string,
   timeZone: string,
   view: ClockView = { own: false, date: null },
+  copy: Dictionary = en,
 ): Clock {
   const f = (o: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat(locale, { timeZone, ...o });
   const day = f({ month: "short", day: "numeric" });
