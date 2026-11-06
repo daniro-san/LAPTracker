@@ -2,10 +2,17 @@
 // day ahead; every event (scheduled or rehearsal) carries its own before_at/after_at; one action per tick.
 import type { AppContext } from "./app-context";
 import type { Db } from "./db";
-import { createNotifier, discordClock, rehearsalSkippedMessage } from "./notify";
+import {
+  createNotifier,
+  discordClock,
+  rehearsalSkippedMessage,
+  tickSilenceMessage,
+} from "./notify";
 import { createRehearsal, type RehearsalResult } from "./rehearsal";
+import { claimAlert, TICK_SILENCE_ALERT } from "./repo/app-errors";
 import { claimQuotaCheck, duePhases, findOrCreateEvent } from "./repo/events";
 import { claimSlot, setSlotOutcome } from "./repo/rehearsals";
+import { latestTickAt } from "./repo/ticks";
 import { executeSnapshot, quotaReport, type RunOutcome } from "./run";
 import { eventsToCreate, nextEvent, quotaCheckDue, rehearsalSlotsDue } from "./schedule";
 
@@ -72,4 +79,25 @@ export async function runTick(ctx: AppContext, db: Db, origin: string): Promise<
     if (await claimSlot(db, slotAt)) return scheduledRehearsal(ctx, db, slotAt);
   }
   return { kind: "idle" };
+}
+
+/** No tick for longer than this means the scheduler stopped (D45); also the alert's repeat gap. */
+export const TICK_SILENCE_MS = 60 * 60_000;
+
+/**
+ * The watcher's check (POST /api/tick/watch, D45): when the newest tick started more than
+ * TICK_SILENCE_MS ago, or none was ever recorded, one admin alert per silent hour. No quota.
+ */
+export async function watchTicks(ctx: AppContext, db: Db): Promise<boolean> {
+  const now = ctx.now();
+  const last = await latestTickAt(db);
+  if (last && now.getTime() - last.getTime() <= TICK_SILENCE_MS) return false;
+  // INVARIANT tick.silence-alert-hourly: the claim decides which call posts, once per hour.
+  if (!(await claimAlert(db, TICK_SILENCE_ALERT, now, TICK_SILENCE_MS))) return false;
+  const at = last && {
+    min: Math.floor((now.getTime() - last.getTime()) / 60_000),
+    at: discordClock(ctx.env.SERVER_TZ).stamp(last),
+  };
+  await createNotifier(ctx.env, ctx.fetch).admin(tickSilenceMessage(at));
+  return true;
 }

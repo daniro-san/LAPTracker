@@ -39,6 +39,16 @@ export const adminCopy = {
     last: "Last result",
     noRun: "No run yet.",
     open: "Open this run",
+    tick: "Last tick",
+    noTick: "No tick recorded yet.",
+    tickNote: "Newest first: {list}",
+    tickOutcome: {
+      idle: "nothing due",
+      run: "snapshot",
+      "quota-check": "quota check",
+      rehearsal: "rehearsal",
+      none: "no end",
+    },
   },
   schedule: {
     title: "Schedule",

@@ -29,6 +29,7 @@ import {
   latestQuota,
   latestRehearsal,
   listRuns,
+  recentTicks,
   runningSnapshots,
   scheduledEvent,
 } from "@/lib/queries/admin";
@@ -91,18 +92,37 @@ function QuotaFact({
 }
 
 type Run = Awaited<ReturnType<typeof listRuns>>[number];
+type Tick = Awaited<ReturnType<typeof recentTicks>>[number];
+
+/** The scheduler's heartbeat (D45): the newest tick in server time, and what the last few did. */
+function TickFact({ ticks, clock }: { ticks: Tick[]; clock: Clock }) {
+  const outcome = (o: string | null) =>
+    st.tickOutcome[(o ?? "none") as keyof typeof st.tickOutcome] ?? o;
+  return (
+    <Fact
+      label={st.tick}
+      value={ticks[0] ? clock.stamp(ticks[0].startedAt) : st.noTick}
+      note={
+        ticks.length > 0 &&
+        fill(st.tickNote, { list: ticks.map((k) => outcome(k.outcome)).join(" · ") })
+      }
+    />
+  );
+}
 
 function Status({
   quota,
   running,
   next,
   recent,
+  ticks,
   clock,
 }: {
   quota: { remaining: number | null; at: Date } | null;
   running: ReturnType<typeof watchViews>["running"];
   next: { phase: "before" | "after"; at: Date; event: string; eventAt: Date } | undefined;
   recent: Run[];
+  ticks: Tick[];
   clock: Clock;
 }) {
   const last = recent[0];
@@ -159,6 +179,7 @@ function Status({
             )
           }
         />
+        <TickFact ticks={ticks} clock={clock} />
       </div>
     </AdminSection>
   );
@@ -213,7 +234,7 @@ export default async function AdminPage() {
   const now = new Date();
   const next = nextEvent(now, env);
   const current = currentEvent(now, env);
-  const [[rehearsal, quota, manual, running, recent, row], clock] = await Promise.all([
+  const [[rehearsal, quota, manual, running, recent, row, ticks], clock] = await Promise.all([
     withPageDb((db) =>
       Promise.all([
         latestRehearsal(db, env.SNAPSHOT_WINDOW_MIN),
@@ -222,6 +243,7 @@ export default async function AdminPage() {
         runningSnapshots(db, now),
         listRuns(db, 10),
         scheduledEvent(db, current.eventAtUtc),
+        recentTicks(db),
       ]),
     ),
     requestServerClock(),
@@ -247,6 +269,7 @@ export default async function AdminPage() {
           }
         }
         recent={recent}
+        ticks={ticks}
         clock={clock}
       />
       <AdminSection id="run" title={t.run.title} help={t.run.intro}>
