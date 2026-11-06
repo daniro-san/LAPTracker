@@ -12,7 +12,7 @@ const round = (...phases: [phase: "before" | "after", status: string][]): RoundV
   phases: phases.map(([phase, status]) => ({ phase, status, text: "", at: "Nov 5, 20:01" })),
 });
 
-describe("roundPlan (issue 157)", () => {
+describe("roundPlan (issue 157, D55)", () => {
   it.each([
     [
       "with no round, starting one is the primary action",
@@ -25,9 +25,9 @@ describe("roundPlan (issue 157)", () => {
       { complete: false, again: { before: true, after: false }, create: "secondary" },
     ],
     [
-      "with both phases done, the round is complete, both are Record again and starting a round is primary",
+      "with both phases done, the round is complete and closed: nothing to record again, and starting a round is primary",
       round(["before", "complete"], ["after", "complete"]),
-      { complete: true, again: { before: true, after: true }, create: "primary" },
+      { complete: true, again: { before: false, after: false }, create: "primary" },
     ],
     [
       "a running phase keeps its seal",

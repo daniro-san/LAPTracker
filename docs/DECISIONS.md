@@ -471,3 +471,9 @@ Amends DESIGN.md's language-light rule "no icons that need a culture to read (no
 - **Marks.** A boxing glove for Might, a skull for Kills, a trophy for Rank: the brand's 16 px filled cut (`icon_might`, `icon_kills`, `icon_rank` in `docs/brand/drawing/examples/ornaments.py`; `lib/brand/components/MoverMarks.tsx`). A flexed arm was tried first and read as a sock at 16 px.
 - **The word stays.** Below 640 px a tab shows its mark and arrow, with the word as screen-reader text; the open tab's `WORD ▲` heads its panel, so the word is one tap away. From 640 px the word shows beside the mark. Section headings, legend and every other label keep the game's word.
 - **Only here.** Every other place still follows the no-culture-icon rule.
+
+## D55 — A complete manual round is closed (2026-11-06, owner, 08zzg)
+
+Amends issue 157's round card. Once both phases of a manual round are done, /admin shows it as one collapsed line (its name, "Round complete", ▾) that opens to its phases, facts and "Open on the site", read-only: no "Record again", no "Change options". To record again, the owner starts a new manual round. While a round is still running, "Record again" on a done phase and "Change options" stay as before.
+
+- **UI only.** The manual-snapshot route still accepts `force` on a complete phase (D28); the page just no longer offers it for a complete round.
