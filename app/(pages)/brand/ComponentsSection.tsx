@@ -129,7 +129,6 @@ function Trace() {
                 endpoint: "quota",
                 alliance: null,
                 seconds: 0.4,
-                retries: null,
                 cached: null,
               },
               {

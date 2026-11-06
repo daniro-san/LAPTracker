@@ -222,6 +222,25 @@ describe("runSnapshot", () => {
     });
   });
 
+  it("writes the status that caused each retry on its v1.retry line", async () => {
+    const v1 = fakeV1(fresh);
+    const fetchAlliance = v1.fetchAlliance;
+    v1.fetchAlliance = async (id, onAttempt, signal) => {
+      if (id === FIRST) onAttempt?.(1, 503);
+      return fetchAlliance(id, onAttempt, signal);
+    };
+    const retries: Record<string, unknown>[] = [];
+    const { deps } = makeDeps(v1);
+    deps.logger = {
+      ...deps.logger,
+      warn: async (code, data = {}) => void (code === "v1.retry" && retries.push(data)),
+    };
+
+    await runSnapshot(EVENT_ID, "before", deps);
+
+    expect(retries).toEqual([{ union_id: FIRST, retry_n: 1, http_status: 503 }]);
+  });
+
   it("counts the /v1 attempts after the last quota-bearing response as unseen", async () => {
     // One alliance, so the tail is sequential: the quota check is the last response with a quota
     // object, then 3 attempts fail with a 503 (no quota) and the internal fallback fills the row.
