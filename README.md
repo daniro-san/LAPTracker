@@ -1,80 +1,162 @@
-# LAPTracker
+# LAPTracker: admin guide
 
-Snapshots of the 20 top alliances on Last Asylum Plague server 325, taken 1 hour before and 1 hour after the weekly Saturday event: might and kills before, after and the delta. Every snapshot is kept forever. The data comes from the documented API of lastasylumtracker.com. Spec: [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md).
+This is the guide for the alliance admin. It covers what the tool does, what happens on a Saturday, what each Discord message means, and where to look when something is wrong. Developers and the maintainer: see [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Setup
+## What it does
 
-Requires Node 26 (`.nvmrc`) and pnpm 12 (pinned in `packageManager`). Accounts and secrets are in [docs/PREREQUISITES.md](docs/PREREQUISITES.md).
+LAPTracker records the Might and Kills of the 20 tracked alliances on server 325, twice for each Saturday event: once before the event (**Before**) and once after it (**After**). Every recording is kept, so you can compare any two events.
 
-```bash
-nvm use                 # reads .nvmrc → newest installed 26.x
-npm i -g pnpm@12
-pnpm install            # also installs the lefthook git hooks
-cp .env.example .env.local   # fill in; never commit it
-```
+- **Might** is the alliance's total power.
+- **Kills** is the total of its members' kills.
 
-Pre-commit needs [gitleaks](https://github.com/gitleaks/gitleaks) on PATH (`brew install gitleaks`). For cloud sessions (claude.ai/code), paste `scripts/cloud-setup.sh` as the environment's setup script. It installs Node 26, pnpm 12 and gitleaks.
+The numbers come from the game's data service (lastasylumtracker.com). Nobody types them in.
 
-## Environment variables
+Three places show the results:
 
-The app's variables are listed in [.env.example](.env.example) and validated by `lib/env.ts` when the server starts. A bad or missing value stops the server with the key names (never the values). Required: `LAP_API_KEY`, `DATABASE_URL`, `CRON_SECRET`, `EDIT_PIN`, and the schedule (`SERVER_TZ`, `EVENT_WEEKDAY`, `EVENT_TIME`, `SNAPSHOT_BEFORE`, `SNAPSHOT_AFTER`, `SNAPSHOT_WINDOW_MIN`, `QUOTA_CHECK_AT`). Optional: `NOTIFY_WEBHOOK_PUBLIC`, `NOTIFY_WEBHOOK_ADMIN`, `NOTIFY_ADMIN_MENTION`, and `LAP_LIVE_TEST` (opt-in live smoke test, not in .env.example). `APP_URL` and `ENABLE_EXPERIMENTAL_COREPACK` are deploy settings, not read by the app.
+- **The public site.** The front page shows the newest event's table. Each event has its own page, and each alliance and player has a page. Members can read the site in 18 languages. The gear icon in the header sets the language, the theme, whether times are shown in server time or the viewer's own time, and the date order.
+- **The public Discord channel.** One message per event, updated after the After snapshot.
+- **The admin Discord channel.** Detailed messages for each run, the weekly check, and problems. Admin pages and Discord messages stay in English, in server time.
 
-## Deploy and operate
+## The Saturday timeline
 
-Production is Vercel (branch `main`), the database is Neon, and the scheduler is GitHub Actions. Details: [plan §3.1 and §11.6](docs/IMPLEMENTATION_PLAN.md).
+All times are **server time**, the clock the game shows. The times below are the documented setup. `/admin` → **Schedule** shows the times in use.
 
-**Deploy.** Work lands on `dev` through squash-merged PRs. A release takes three clicks: Actions → **Prepare release** → Run workflow (pick patch, minor or major) opens the PR `dev → main` titled `release: vX.Y.Z` with generated notes; review it; **Merge** it with a merge commit. The tag and the GitHub Release then appear on their own (`release-publish`). The version is the latest `v*` tag plus the bump; `package.json` is not used. Vercel builds `main` as production; its build command (`vercel.json`) runs `pnpm db:migrate` first, so migrations apply on every deploy. Prepare release refuses when `dev` has nothing beyond `main` or a release PR is already open. If Prepare release is unavailable (for example before the first release that carries it), open the PR by hand and, after the merge, run `gh release create vX.Y.Z --target main --generate-notes`. Preview deployments (`dev`, PRs) use Preview-scoped env vars (own database branch, own secrets, no `NOTIFY_*`) and sit behind Vercel Authentication.
+| When (server time)         | What happens by itself                                                                                                             | What you do                                                               |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| Friday 18:00               | A practice run (rehearsal) starts. Its verdict arrives in the admin channel about 50 minutes later.                                | Read the verdict. If it says ✗ Fail, tell the maintainer before Saturday. |
+| Friday 20:00               | The weekly check posts to the admin channel: requests left, database size, and the next Before and After times.                    | Check that the next times are right.                                      |
+| Friday 22:00               | The daily request count resets (midnight UTC).                                                                                     | Nothing.                                                                  |
+| Saturday 10:00             | The **Before** snapshot starts at the first scheduler check after this time. The checks run every 15 minutes, on the quarter hour. | Watch the admin channel. See the messages below.                          |
+| Saturday, during the event | Nothing.                                                                                                                           | Note in the game when the event starts and ends (server time).            |
+| Saturday 14:00             | The **After** snapshot starts the same way.                                                                                        | Watch the channel. Check that the event had ended before this time.       |
 
-**How to cut a release.**
+A snapshot starts at the first check after its due time, so it can start up to 15 minutes late. Saturday's times fall on the quarter hour, so they should start within seconds of their due time.
 
-1. Wait until the last push to `dev` has a green `check` (Actions → ci).
-2. GitHub → Actions → **Prepare release** → **Run workflow**, pick `patch` (fixes), `minor` (features) or `major` (breaking), run it. It opens the PR `dev → main` titled `release: vX.Y.Z` with generated notes, and prints the PR link in the run summary. It stops with a message if `dev` has nothing new or a release PR is already open.
-3. Open the PR, read the notes, wait for `check` to be green, then **Merge** with **Create a merge commit** (the only method `main` allows).
-4. About 10 seconds later, `release-publish` creates the tag `vX.Y.Z` and the GitHub Release (Actions → release-publish; Releases page). Vercel deploys `main` and runs the migrations by itself.
+A snapshot takes about 10 seconds and uses 21 of the day's requests: one check and one for each alliance. On the practice run of 2026-11-05 (event 8) the two snapshots took 10.0 and 9.6 seconds and used 21 requests each, 42 for the practice run. Each alliance read took between 1.2 and 2.4 seconds.
 
-The next version is the latest `v*` tag plus the bump, so `package.json` is never edited. If the PR is wrong, close it and run Prepare release again. If the tag or release does not appear, run `gh release create vX.Y.Z --target main --generate-notes`. Why it works this way: [D29](docs/DECISIONS.md).
+## What the Discord messages mean
 
-**GitHub repository secrets.** `APP_URL` (the production origin, no trailing slash) and `CRON_SECRET` (must equal the Production value in Vercel).
+### Public channel
 
-**Scheduler.** The job "Vercel Ticker" on cron-job.org calls `POST /api/tick` every 15 minutes with the header `Authorization: Bearer <CRON_SECRET>` (D30). GitHub's own schedule has never started a run in this repository, so it is not relied on. To check it, open the job's History on cron-job.org: each run should show `204 No Content` when nothing is due. A `401` means its `CRON_SECRET` differs from the one in Vercel Production.
+| Message                                             | Meaning                                                                                              |
+| --------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| ✓ **Last updated at …**                             | The snapshot is complete. All 20 alliances have fresh numbers.                                       |
+| ⚠ **Last updated at …**, with a line `○ n stale: …` | Partly done. The named alliances have numbers but no change figure (see [stale](#what-stale-means)). |
+| ✗ **Last update failed at …**                       | Nothing was recorded. The admin channel says why.                                                    |
 
-**Workflows.**
+The rest of the message:
 
-- `tick.yml` calls `POST /api/tick` on a schedule of its own and from Actions → tick → Run workflow. It fails on any non-2xx. All scheduling decisions live in the app. Do not add retries.
-- `keepalive.yml` pushes a timestamp to the `keepalive` branch monthly, so GitHub does not disable the schedule after 60 days without activity. Vercel never builds that branch.
-- `dependabot-automerge.yml` squash-merges Dependabot minor/patch PRs into `dev` once CI is green. Majors wait for a human.
+- `Before snapshot done at …`: on the After message, so the whole event is in one place.
+- `n/20 alliances`: how many alliances have fresh numbers.
+- `Might ▲` and `Kills ▲`: the three biggest gains of the event.
+- `Next update at …`: when the next snapshot is due.
+- On a manual round, the first line is `Manual round: <name>. Not a Saturday event.`
 
-**Change the alliance list.** Edit `config/alliances.ts` and release. An event already created keeps its own copy of the list.
+### Admin channel
 
-**Change snapshot times.** Edit `SNAPSHOT_BEFORE`, `SNAPSHOT_AFTER`, `EVENT_TIME`, `SNAPSHOT_WINDOW_MIN` or `QUOTA_CHECK_AT` (server time) in Vercel's Production env vars, then redeploy. A Saturday row is created a day ahead and keeps its times, so a change applies from the next event row.
+| Message                                                    | Meaning                                                                                              |
+| ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `[rehearsal]` in front                                     | A practice run on a test event. Not shown publicly.                                                  |
+| `[manual]` in front                                        | A round you started by hand.                                                                         |
+| ✓ / ⚠ / ✗ **Before snapshot: done / partly done / failed** | The result of that snapshot.                                                                         |
+| `due Sat, 11/07/2026, 10:00 server time · started +4 min`  | When it was due and how late it started. A few minutes late is normal.                               |
+| `12 calls · 988 requests left · 10.9 s`                    | Requests used, requests left today, and how long it took.                                            |
+| `error: …`                                                 | The whole run failed or stopped early.                                                               |
+| `✗ failed [TAG] Name: …`                                   | One alliance could not be read.                                                                      |
+| `○ stale [TAG] Name`                                       | One alliance was read, but its data was not fresh.                                                   |
+| `run_logs write failures: n`                               | Some log lines of the run were not saved, so its run log is incomplete. Check `/admin/errors`.       |
+| `[Run 42 ↗]`                                               | Opens the run's page.                                                                                |
+| `✓ Pass` / `✗ Fail` with checks                            | The practice run's verdict, one line per check (listed below).                                       |
+| `skipped · …: reason`                                      | A scheduled practice run did not start. The reason follows.                                          |
+| `✓ Weekly API quota check`                                 | The Friday check. ⚠ next to the requests or the database size means it is low or large.              |
+| `🔒 PIN entry is locked`                                   | Too many wrong PINs. Wait an hour. Scheduled snapshots still run.                                    |
+| `✗ App error on …`                                         | A page or action broke. See `/admin/errors`. At most one such message an hour while errors continue. |
 
-**Rotate the API key or the PIN.** Change `LAP_API_KEY` or `EDIT_PIN` in Vercel Production, redeploy, and update the copy in `.env.local`. For `CRON_SECRET`, change it in Vercel, in the GitHub secret **and** in the cron-job.org job's header, then redeploy production. Never paste any of them into a PR, issue or chat.
+The practice run's verdict has six checks: both snapshots complete; every alliance fresh in both; the game's data moved forward for every alliance; the requests used equal the drop in the daily count; each run under 120 seconds; both snapshots started within 45 minutes of their due time.
 
-**Run a snapshot by hand.** On `/admin`, enter the PIN and use the Before or After seal (a confirm dialog opens). From GitHub: Actions → tick → Run workflow → pick `before` or `after`. Either spends about 21 API calls. A run that already completed is refused (409).
+### What to do on ⚠ or ✗
 
-**Rehearse.** The Rehearse seal on `/admin` starts a test event (about 45 calls over about 50 minutes) that the normal ticks run; the verdict goes to the admin Discord channel. A rehearsal also runs by itself at `REHEARSAL_AT`.
+**⚠ Partly done.** Some alliances are stale or failed. The admin message lists them. Usually nothing needs doing: the other alliances' numbers are fine, and the stale rows show no change. If the missing numbers matter, tell the maintainer. Pressing Before or After again does not fix failed alliances; it only fills in alliances the run never reached.
 
-## Scripts
+If the error line says **deadline**, the game's data service answered too slowly and the run stopped at 100 seconds. The public site shows a _Game data is delayed_ banner while this lasts. Wait, then press by hand.
 
-| Command                                  | Does                                                                                 |
-| ---------------------------------------- | ------------------------------------------------------------------------------------ |
-| `pnpm dev` / `pnpm build` / `pnpm start` | Next.js                                                                              |
-| `pnpm check`                             | all gates: `prettier --check`, `eslint`, `tsc --noEmit`, `vitest run` — CI runs this |
-| `pnpm test`                              | Vitest                                                                               |
-| `pnpm typecheck`                         | `tsc --noEmit`                                                                       |
-| `pnpm lint` / `pnpm format`              | ESLint / Prettier (write)                                                            |
+**✗ Failed.** Open the run in `/admin/runs` and read the `error` line:
 
-## How the harness works
+- **quota:** too few requests are left today. Do not press again. The count resets at midnight UTC.
+- **`MAX_UPSTREAM_CALLS reached`:** the run used its safety cap of 120 requests. Tell the maintainer.
+- **Anything else:** check the banner on the site. If the game data service is not answering, wait and try again later.
 
-The code is written mostly by Claude Code sessions with a human reviewing. Every check is a script, not a memory:
+A run that ends partly done or failed also posts its own new message in the admin channel, below the event's message. An edit does not notify anyone, so check the admin channel after each snapshot.
 
-- **CLAUDE.md** holds the standing rules every session reads. **`.claude/rules/*.md`** load only when an agent touches the matching paths (collector, API routes, tests).
-- **Hooks** (`.claude/settings.json`, committed, so they also run in cloud sessions):
-  - SessionStart → `scripts/install_pkgs.sh` installs deps when the lockfile changed and puts Node 26 on PATH in the cloud.
-  - Every Edit/Write → `eslint --fix` on that file; remaining errors go straight back to the agent.
-  - Stop → `pnpm check`; the turn can't end while it fails.
-- **Pre-commit** (lefthook): prettier and eslint on staged files, and gitleaks for secrets (the repo is public).
-- **CI** (`.github/workflows/ci.yml`): `pnpm check` and `pnpm audit --audit-level high` on every push and PR. Dependabot sends weekly grouped updates.
-- **Fixtures** are recorded only through the `record-fixture` skill (`.claude/skills/`), because it spends API quota.
-- **Review**: `/code-review` checks changes against [REVIEW.md](REVIEW.md).
-- **Docs**: [ARCHITECTURE](docs/ARCHITECTURE.md) (one dependency rule), [GLOSSARY](docs/GLOSSARY.md) (one word per concept), [DECISIONS](docs/DECISIONS.md) (append-only), and `docs/handoff/` (one file per session).
+If no message at all arrives within 20 minutes of a due time, open `/admin/runs`. If the run is not there, press the snapshot by hand (below). If it still does not run, tell the maintainer: the scheduler may have stopped.
+
+## What "stale" means
+
+The table compares Before and After for each alliance. An alliance is **fresh** when the game's data for it was updated within 20 minutes of the snapshot. Otherwise it is **stale**: the snapshot could not prove that the numbers are current.
+
+On the table:
+
+- **Fresh** rows have no mark. Their numbers and change are shown.
+- **○ Stale**: the numbers are shown, but the change is left blank. Do not compare a stale alliance with anything.
+- **✗ Failed**: the alliance could not be read at all.
+- **– No data**: nothing was recorded for this alliance.
+
+The stale and failed marks also appear on the time at the top of each column, so you can see which side of the event is affected.
+
+A snapshot with any stale or failed alliance is **partly done** (⚠), never complete (✓).
+
+## Running a snapshot by hand
+
+Use this when the scheduler did not run, or to record a Before snapshot early on a weekday.
+
+1. Open `/admin` and enter the admin PIN.
+2. Under **Run something now**, press **Before** or **After**.
+3. Read the confirmation (it names the cost) and confirm.
+4. The page shows **A run is in progress** and checks every few seconds. It closes within about 100 seconds. The result appears at the top: ✓ done, ⚠ partly done or ✗ failed, with the requests used, the stale count and the failed count.
+
+Things to know:
+
+- **The Saturday event refuses a snapshot before its due time** ("Not due until …"). That is deliberate. Weekday practice goes in a manual round (below).
+- **If that snapshot is already done**, the page asks _"This snapshot is already done. Take it again?"_ Say yes only if you mean to replace that phase's numbers.
+- **Manual round.** For a test on a weekday: **Start a manual round** on `/admin`. Give it a name, choose who can see it, and whether it posts to the public channel. Then press its Before and After buttons. A manual round has no schedule and does not affect Saturday's comparisons unless you choose "history".
+- **Rename.** **Rename** next to the current event on `/admin` changes its name on the public pages. You can rename the Saturday event from a day before its Before snapshot. Discord messages already sent keep the old name.
+- **Practice run.** **Rehearse** runs a practice event with the full checks. It costs about 45 requests and takes about 50 minutes.
+- **GitHub, if `/admin` is not reachable.** On the repository, open Actions → **tick** → **Run workflow**, and pick `before` or `after`.
+
+## Where to look when something breaks
+
+| Page               | What it shows                                                                                                                                                                                                                                                                                  |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/admin`           | Four sections. **Status**: the requests left (OK, Low under 900, or Unknown), what is running, the next scheduled run, and the last result. **Run something now**: the buttons, each with its cost. **Last rehearsal**: the verdict and its checks. **Schedule**: the times in use, read only. |
+| `/admin/runs`      | Every run, newest first, titled by its event's name. Practice runs are marked `[rehearsal]`. Each row shows start, finish, duration, requests used and requests left. A run that stopped at the deadline is marked.                                                                            |
+| `/admin/runs/[id]` | One run: an **Upstream calls** table (each request, its seconds, its HTTP status, whether it was cached and how many retries it needed), then the **Log**. Start here to find out why a run failed or was partial.                                                                             |
+| `/admin/errors`    | Problems on the site itself (a page or action that broke), grouped by message, with a count. "Nothing has broken" means there are none.                                                                                                                                                        |
+| The public banner  | _Game data is delayed_: the game's data service has not answered for the last attempt. The numbers may be out of date.                                                                                                                                                                         |
+
+The header of `/admin` shows a small candle: it is lit while a run is in progress.
+
+Read `/admin/runs` first, then the run's page, then `/admin/errors`. If the reason is still unclear, send the run's number (for example "Run 42") to the maintainer.
+
+## Requests: the daily quota rules
+
+- The game's data service allows **1,000 requests per day**. The day resets at midnight UTC, which is **22:00 on Friday** in server time.
+- **Every request counts**, including ones that fail. A snapshot uses 21 requests: one check and one for each of the 20 alliances.
+- **Retries** happen only for temporary errors (502, 503 and 504), up to three retries per request. One run may use at most 120 requests in total.
+- **A run refuses to start** if fewer than 50 requests are left. That leaves room for the other snapshot of the day.
+- **Too many requests (429)** stops the run at once. Tell the maintainer.
+- **The weekly check** on Friday at 20:00 warns when fewer than 900 requests are left. `/admin` shows the same warning under Status.
+- **Do not press repeatedly.** Each press spends requests. Wait for the message first.
+- **The Friday practice run** (about 45 requests, 18:00 server time) is spent before the midnight UTC reset, so it does not reduce Saturday's budget. The Saturday pair (42) fits easily in the day.
+- **If the count is lower than the admin channel expects**, someone else may be using the same key. Tell the maintainer.
+
+## Words used on the site
+
+- **Event**: one weekly Saturday event. It is named by its title, or by its date until the owner names it.
+- **Snapshot**: one recording of the 20 alliances, Before or After.
+- **Before, After**: the two snapshots of an event.
+- **Might**: an alliance's total power.
+- **Kills**: the total kills of its members.
+- **Delta** or **change**: the After number minus the Before number, for one alliance.
+- **\***, after a change: the total fell and at least one member left, so part of the fall comes from people leaving. It appears on Might and Kills.
+- **Fresh, stale**: see [What "stale" means](#what-stale-means).
+- **Manual round**: a round you run by hand, outside the Saturday schedule.
