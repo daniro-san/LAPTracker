@@ -2,8 +2,10 @@
 // only (globals.css), so it works on touch and without JavaScript. A compact framed toggle that sits
 // beside the page title.
 import { CheckField } from "@/lib/brand/components/CheckField";
-import { copy } from "@/lib/copy";
 
-export function ExactToggle() {
+import { requestCopy } from "./locale";
+
+export async function ExactToggle() {
+  const copy = await requestCopy();
   return <CheckField variant="chip" id="full-numbers" label={copy.site.exactNumbers} />;
 }

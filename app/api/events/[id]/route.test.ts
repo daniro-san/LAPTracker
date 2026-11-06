@@ -30,7 +30,7 @@ const roster = JSON.parse(
 let db: Db;
 beforeAll(async () => {
   db = await openTestDb();
-}, 30_000);
+});
 
 describe("GET /api/events/[id]", () => {
   it("serves an event with a stored roster and none of BLOCKED_ROSTER_KEYS", async () => {

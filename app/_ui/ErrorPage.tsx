@@ -4,6 +4,7 @@
 import type { ReactNode } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
+import type { Dictionary } from "@/lib/copy";
 
 import { SiteFooter } from "./SiteFooter";
 import { SiteHeader } from "./SiteHeader";
@@ -14,16 +15,19 @@ export function ErrorPage({
   body,
   art,
   actions,
+  copy,
 }: {
   code: string;
   title: string;
   body: string;
   art: ReactNode;
   actions: ReactNode;
+  /** The request's words, or English in global-error, which has no provider. */
+  copy: Dictionary;
 }) {
   return (
     <>
-      <SiteHeader events={[]} currentId={null} />
+      <SiteHeader events={[]} currentId={null} copy={copy} />
       <main className="mx-auto max-w-[960px] px-4 pt-12 sm:px-6 sm:pt-20">
         <div className="flex flex-col gap-6 sm:flex-row-reverse sm:items-start sm:gap-10">
           <div className="w-32 shrink-0 text-plum sm:w-40 sm:pt-4">{art}</div>
@@ -37,7 +41,7 @@ export function ErrorPage({
           </div>
         </div>
       </main>
-      <SiteFooter ornament="granny" />
+      <SiteFooter ornament="granny" copy={copy} />
     </>
   );
 }

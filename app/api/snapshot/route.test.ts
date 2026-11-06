@@ -65,7 +65,7 @@ const post = (
 let db: Db;
 beforeAll(async () => {
   db = await openTestDb();
-}, 30_000);
+});
 beforeEach(async () => {
   await truncateAll(db);
   holder.crash = false;

@@ -9,7 +9,7 @@ import Link from "next/link";
 
 import { LaceBorder } from "@/lib/brand/components/LaceBorder";
 import { WaxedMark } from "@/lib/brand/components/Logo";
-import { copy } from "@/lib/copy";
+import type { Dictionary } from "@/lib/copy";
 
 import { Disclosure } from "./Disclosure";
 import { EventLabel, eventTitle, ManualMark, type LabeledEvent } from "./EventLabel";
@@ -29,10 +29,12 @@ function EventSelector({
   events,
   currentId,
   clock,
+  copy,
 }: {
   events: SelectorEvent[];
   currentId: number | null;
   clock: Clock;
+  copy: Dictionary;
 }) {
   const current = events.find((e) => e.id === currentId);
   const title = current && eventTitle(current);
@@ -43,7 +45,7 @@ function EventSelector({
       >
         {current ? (
           <>
-            {current.manual && <ManualMark />}
+            {current.manual && <ManualMark copy={copy} />}
             <span aria-hidden="true" className="hidden min-[360px]:inline">
               {clock.weekday(current.eventAtUtc)}
             </span>
@@ -80,7 +82,7 @@ function EventSelector({
                 </span>
                 {(named || i === 0) && (
                   <span className="flex gap-1.5 text-xs font-normal text-ink/70">
-                    {e.manual && <ManualMark />}
+                    {e.manual && <ManualMark copy={copy} />}
                     {named && clock.weekday(e.eventAtUtc)}
                     {named && i === 0 && <span aria-hidden="true">·</span>}
                     {i === 0 && copy.site.latest}
@@ -110,7 +112,8 @@ export function SiteHeader({
   currentId,
   section,
   clock,
-  times = true,
+  copy,
+  publicPage = true,
 }: {
   events: SelectorEvent[];
   currentId: number | null;
@@ -118,8 +121,10 @@ export function SiteHeader({
   section?: "players";
   /** The request's clock (app/_ui/locale.ts) for the selector's dates; error pages have no events. */
   clock?: Clock;
-  /** The gear offers times and dates; /admin, which stays in server time, offers the theme only. */
-  times?: boolean;
+  /** The request's words (requestCopy); /admin passes the English `copy`. */
+  copy: Dictionary;
+  /** The gear offers language, times and dates; /admin, English and in server time, the theme only. */
+  publicPage?: boolean;
 }) {
   return (
     <header className="sticky top-0 z-30 text-plum">
@@ -141,9 +146,9 @@ export function SiteHeader({
               {copy.site.players}
             </Link>
             {clock && events.length > 0 && (
-              <EventSelector events={events} currentId={currentId} clock={clock} />
+              <EventSelector events={events} currentId={currentId} clock={clock} copy={copy} />
             )}
-            <ViewerSettings times={times} />
+            <ViewerSettings publicPage={publicPage} />
           </div>
         </div>
       </div>

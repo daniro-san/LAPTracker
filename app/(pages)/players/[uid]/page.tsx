@@ -7,7 +7,7 @@ import { cache } from "react";
 import { Breadcrumbs } from "@/app/_ui/Breadcrumbs";
 import { ExactToggle } from "@/app/_ui/ExactToggle";
 import { allianceLabel, type Clock } from "@/app/_ui/format";
-import { requestClock } from "@/app/_ui/locale";
+import { requestClock, requestCopy } from "@/app/_ui/locale";
 import { Num } from "@/app/_ui/Num";
 import { AllianceBadge, PlayerAvatar } from "@/app/_ui/Pictures";
 import { PlayerAcrossEvents } from "@/app/_ui/PlayerAcrossEvents";
@@ -16,11 +16,19 @@ import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { LABEL } from "@/app/_ui/StatTable";
 import { FreshDots, Legend } from "@/app/_ui/Status";
 import { RoleMark } from "@/lib/brand/components/RoleMark";
-import { copy, fill } from "@/lib/copy";
+import { fill, type Dictionary } from "@/lib/copy";
 import { withPageDb } from "@/lib/page";
 import { listEvents, playerHistory, type PlayerHistory } from "@/lib/queries";
 
-function Timelines({ history, clock }: { history: PlayerHistory; clock: Clock }) {
+function Timelines({
+  history,
+  clock,
+  copy,
+}: {
+  history: PlayerHistory;
+  clock: Clock;
+  copy: Dictionary;
+}) {
   const { names, alliances } = history;
   // One name and one alliance: the identity row already says it all.
   if (names.length < 2 && alliances.length < 2) return null;
@@ -65,7 +73,15 @@ function Timelines({ history, clock }: { history: PlayerHistory; clock: Clock })
 }
 
 /** The latest stored Might, Kills and Sanctuary level as one band (no second title), like the alliance page's. */
-function Summary({ current, clock }: { current: PlayerHistory["current"]; clock: Clock }) {
+function Summary({
+  current,
+  clock,
+  copy,
+}: {
+  current: PlayerHistory["current"];
+  clock: Clock;
+  copy: Dictionary;
+}) {
   const l = copy.ledger;
   const figures = [
     { label: l.might, value: current.power },
@@ -87,7 +103,7 @@ function Summary({ current, clock }: { current: PlayerHistory["current"]; clock:
       </dl>
       <p className="flex min-h-11 flex-wrap items-center gap-x-3 border-t border-rule px-2 text-sm text-ink/70 sm:px-4">
         {current.updatedAt && fill(l.asOf, { time: clock.at(current.updatedAt) })}
-        <FreshDots before={null} after={state} />
+        <FreshDots before={null} after={state} copy={copy} />
       </p>
     </section>
   );
@@ -112,20 +128,22 @@ const uidOf = async (params: Params) => {
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const uid = await uidOf(params);
   const data = uid === null ? null : await loadPlayer(uid);
-  return data ? { title: `${data.history.current.name} · ${copy.site.name}` } : {};
+  if (!data) return {};
+  const copy = await requestCopy();
+  return { title: `${data.history.current.name} · ${copy.site.name}` };
 }
 
 export default async function PlayerPage({ params }: { params: Params }) {
   const uid = await uidOf(params);
   if (uid === null) notFound();
-  const [data, clock] = await Promise.all([loadPlayer(uid), requestClock()]);
+  const [data, clock, copy] = await Promise.all([loadPlayer(uid), requestClock(), requestCopy()]);
   if (!data) notFound();
   const { history, events } = data;
   const { current } = history;
   const allianceName = history.alliances.at(-1)?.name ?? null;
   return (
     <>
-      <SiteHeader events={events} currentId={null} section="players" clock={clock} />
+      <SiteHeader events={events} currentId={null} section="players" clock={clock} copy={copy} />
       <main className="mx-auto max-w-[960px] px-4 py-4 sm:px-6">
         <Breadcrumbs
           crumbs={[
@@ -167,16 +185,16 @@ export default async function PlayerPage({ params }: { params: Params }) {
           </div>
           <ExactToggle />
         </div>
-        <Legend />
-        <Timelines history={history} clock={clock} />
-        <Summary current={current} clock={clock} />
+        <Legend copy={copy} />
+        <Timelines history={history} clock={clock} copy={copy} />
+        <Summary current={current} clock={clock} copy={copy} />
         <PlayerAcrossEvents
           rows={history.rows}
           clock={clock}
           showAlliance={new Set(history.alliances.map((a) => a.unionId)).size > 1}
         />
       </main>
-      <SiteFooter ornament="granny" />
+      <SiteFooter ornament="granny" copy={copy} />
     </>
   );
 }

@@ -34,6 +34,8 @@
 ## Deviations
 
 - At 320 px, "All events" in German ("Alle Ereignisse") and Russian ("Все события") overflows its box in the mock; English fits. 360 px (the design width) fits in all three. Shown to the owner before the choice.
+- Merge with dev after #136 (translation, D48): `EventLabel` no longer takes `copy`; `ManualMark` takes it as a prop.
+- `site.allEvents` was translated into the 17 languages by this session, not by the translate-copy skill's 17 Haiku subagents, because it is a single two-word key. Each translation reuses that language's own word for `site.events`. The keys were stamped with `pnpm i18n:stamp`, and `i18n-check` is clean.
 - The alliance page breadcrumb still reads `Ledger · Thu, Nov 5` (`crumbsFor` in `app/(pages)/events/[id]/alliances/[unionId]/page.tsx`). The task named `EventLabel` and the "Across events" rows, not the breadcrumb.
 
 ## Verified
@@ -62,7 +64,11 @@
 ## Open issues
 
 - Pre-existing, not fixed, the owner was told: the selector's first row ("latest") links to `/`. `/` shows the newest scheduled event (D28), so when a manual round is the newest event, "latest" opens the scheduled event, not the round. Checked locally: `/` rendered "Saturday, October 31" while the round was newest. `crumbsFor` on the alliance page has the same `events[0]` → `/` rule.
-- PR #136 (#60 translation) is open and also edits `lib/copy.ts`. The new `copy.site.allEvents` key needs a translation there, whichever PR merges second.
+- Real dictionaries (#136) break "one row at 360 px" in some languages. Measured at 360 px: Players + selector need at most 216 px.
+  - Event page, manual round: pt-BR over by 26 px, ja by 24, vi by 31, ko by 2. The cause is the translated Players word plus the localized weekday date.
+  - Player page, "All events": es over by 34 px, pt-BR 30, fr 38, pl 36, tr 18, ja 46, vi 11, it 6.
+  - In ja and ko the squeezed Players link wraps inside its box.
+  - Not fixed here: it needs the owner's choice. Either Players shows the magnifier alone below 400 px, or the date drops the weekday below 400 px and the selector truncates as a last resort.
 - The ✎ mark is new and has no entry in the legend. DESIGN.md's legend lists arrows, the stale mark, the rounded mark and `[TEST]`.
 
 ## Next

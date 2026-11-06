@@ -1,7 +1,7 @@
 // How an event is named (D49): by its title, i.e. a manual round's name (D28) or the name the owner gave
 // a scheduled event (D39), and by its weekday while a scheduled event keeps its generated name, which is
 // English and says no more than the date. A manual round also carries the ✎ mark.
-import { copy } from "@/lib/copy";
+import type { Dictionary } from "@/lib/copy";
 import { isGeneratedName } from "@/lib/schedule";
 
 import type { Clock } from "./format";
@@ -17,7 +17,7 @@ export const eventTitle = (e: { name: string; manual: boolean }) =>
   e.manual || !isGeneratedName(e.name) ? e.name : null;
 
 /** The manual round's mark: a pen to the eye, the words to a screen reader. */
-export function ManualMark() {
+export function ManualMark({ copy }: { copy: Dictionary }) {
   return (
     <>
       <span aria-hidden="true">✎</span>

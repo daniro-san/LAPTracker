@@ -27,7 +27,7 @@ const STORED = {
 let db: Db;
 beforeAll(async () => {
   db = await openTestDb();
-}, 30_000);
+});
 
 describe("GET /img/avatar/[uid]", () => {
   it("fetches a stored photo only from phs-image.globallap.com over plain https", async () => {

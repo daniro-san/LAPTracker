@@ -2,11 +2,10 @@
 import type { Metadata } from "next";
 import { cache } from "react";
 
-import { copy } from "@/lib/copy";
 import { withPageDb } from "@/lib/page";
 import { getEventPage } from "@/lib/queries/event-page";
 
-import { requestClock } from "./locale";
+import { requestClock, requestCopy } from "./locale";
 
 export const loadEventPage = cache((id: number | null) => withPageDb((db) => getEventPage(db, id)));
 
@@ -15,6 +14,6 @@ export async function eventTitle({
   page,
 }: Awaited<ReturnType<typeof loadEventPage>>): Promise<Metadata> {
   if (!page) return {};
-  const clock = await requestClock();
+  const [clock, copy] = await Promise.all([requestClock(), requestCopy()]);
   return { title: `${clock.weekday(page.detail.eventAtUtc)} · ${copy.site.name}` };
 }

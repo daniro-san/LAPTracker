@@ -1,6 +1,8 @@
 # Feature PRs merge into `dev`, and GitHub honours closing keywords only for PRs into the default branch (`main`).
 # When a PR merges into `dev`, this closes the same-repo issues its title or body names with a closing keyword.
 # No checkout: the title and body are read from the event file by jq and never reach the shell as code.
+# Text inside fenced code blocks, inline code and blockquote lines is ignored, so a PR body that quotes
+# an example closing keyword should put it in code.
 name: close-issues
 
 on:
@@ -27,10 +29,25 @@ jobs:
 
           say() { echo "$1"; echo "- $1" >> "$GITHUB_STEP_SUMMARY"; }
 
-          # close/closes/closed, fix/fixes/fixed, resolve/resolves/resolved, optional colon, then #N or owner/repo#N.
+          # First drop fenced code blocks (``` or ~~~, closed by a fence of the same character at least as long;
+          # an unclosed one runs to the end), blockquote lines ("> ...") and inline code spans.
+          # Then: close/closes/closed, fix/fixes/fixed, resolve/resolves/resolved, optional colon, then #N or owner/repo#N.
           # A bare "(#N)" has no keyword, so squash titles' PR refs do not match. Output: "N" or "other:owner/repo#N".
           refs=$(jq -r --arg repo "$GH_REPO" '
+            def prose:
+              reduce split("\n")[] as $l ({out: [], fence: null};
+                ($l | capture("^ {0,3}(?<f>`{3,}|~{3,})") // null) as $m
+                | if .fence == null then
+                    if $m then .fence = $m.f
+                    elif ($l | test("^ {0,3}>")) then .
+                    else .out += [$l] end
+                  elif $m and ($m.f[0:1] == .fence[0:1]) and ($m.f | length) >= (.fence | length)
+                    and ($l | test("^ {0,3}(`+|~+)[ \\t\\r]*$")) then .fence = null
+                  else . end)
+              | .out | join("\n")
+              | gsub("(?<t>`+)[\\s\\S]*?(?<!`)\\k<t>(?!`)"; "");
             (.pull_request.title // "") + "\n" + (.pull_request.body // "")
+            | prose
             | [scan("(?i)\\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?):?[ \\t]+([\\w.-]+/[\\w.-]+)?#([0-9]+)\\b")]
             | map(if .[0] == null or (.[0] | ascii_downcase) == ($repo | ascii_downcase)
                   then .[1] else "other:" + .[0] + "#" + .[1] end)

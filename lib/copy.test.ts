@@ -7,7 +7,8 @@ import { join, relative } from "node:path";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
 
-import { blankCopy, blankDictionary, copy, fill } from "./copy";
+import { blankCopy, blankDictionary, copy, en, fill } from "./copy";
+import { TRANSLATIONS } from "./i18n";
 
 const ROOT = join(import.meta.dirname, "..");
 
@@ -93,4 +94,29 @@ describe("copy", () => {
     expect(l.details).toBe("░░░░░░░");
     expect(blank.status.running).toBe("░░░░░░░░ ░░░");
   });
+});
+
+/** Every key path a translation has, with its placeholders, sorted: `status.next {time}`. */
+function shape(value: unknown, path = ""): Map<string, string> {
+  if (typeof value === "string")
+    return new Map([[path, (value.match(/\{\w+\}/g) ?? []).sort().join("")]]);
+  return new Map(
+    Object.entries(value as object).flatMap(([k, v]) => [...shape(v, path ? `${path}.${k}` : k)]),
+  );
+}
+
+describe("translations", () => {
+  const english = shape(en);
+  it.each(Object.entries(TRANSLATIONS))(
+    "%s keeps every placeholder and the game's own terms",
+    (_, translation) => {
+      for (const [key, placeholders] of shape(translation)) {
+        expect(`${key} ${placeholders}`).toBe(`${key} ${english.get(key)}`);
+      }
+      const l = translation.ledger ?? {};
+      for (const term of ["might", "kills", "members", "level"] as const) {
+        if (l[term] !== undefined) expect(l[term]).toBe(en.ledger[term]);
+      }
+    },
+  );
 });
