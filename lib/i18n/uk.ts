@@ -48,7 +48,7 @@ export const uk = {
     myAlliance: "Мій альянс",
     names: "Імена",
     alliances: "Альянси",
-    movers: "Найбільші зміни",
+    movers: "Бабуся помітила",
   },
   settings: {
     language: "Мова",

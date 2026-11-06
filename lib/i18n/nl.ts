@@ -48,7 +48,7 @@ export const nl = {
     myAlliance: "Mijn alliantie",
     names: "Namen",
     alliances: "Allianties",
-    movers: "Stijgers en dalers",
+    movers: "Oma merkte",
   },
   settings: {
     language: "Taal",

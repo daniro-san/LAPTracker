@@ -1,5 +1,6 @@
 // The Movers tabs' marks (DESIGN.md `movers`, D54): a boxing glove for Might, a skull for Kills, a trophy
-// for Rank. The 16 px filled cut of the brand's hand, drawn by `icon_might`, `icon_kills` and `icon_rank`
+// for Rank, plus the magnifying glass that leads the section heading. The 16 px filled cut of the brand's hand,
+// drawn by `icon_might`, `icon_kills`, `icon_rank` and `icon_look`
 // in docs/brand/drawing/examples/ornaments.py. Colour comes from the parent's text colour.
 
 /** Might: a boxing glove. */
@@ -25,6 +26,18 @@ export function RankMark({ className = "" }: { className?: string }) {
   return (
     <svg viewBox="0 0 16 16" className={className} fill="currentColor" aria-hidden="true">
       <path d="M3.4 1.4c.6-.6 3.4-.3 4.6-.3c1.2 0 4-.3 4.6.3c.6.6-.1 3.1-.3 4c-.2.9-.9 2.3-1.5 2.8c-.6.5-2.1 1.2-2.8 1.2c-.7 0-2.2-.7-2.8-1.2c-.6-.5-1.3-1.9-1.5-2.8c-.2-.9-.9-3.4-.3-4zm.3 1.9c-.4.1-1.5-.4-1.9.1c-.5.4-.3.8 0 1.5c.2.7.5 1.1 1.2 1.5c.6.4 1.7.8 2.1 1l-.2.8c-.4-.1-2-.2-2.7-.6c-.6-.4-1.7-1.4-2-2.1c-.2-.7 0-2.8.4-3.3c.5-.4 2.5-.3 2.9-.3zm8.8-1.4c.4 0 2.4-.1 2.9.3c.4.5.6 2.6.4 3.3c-.3.7-1.4 1.7-2 2.1c-.7.4-2.3.5-2.7.6l-.2-.8c.4-.2 1.5-.6 2.1-1c.7-.4 1-.8 1.2-1.5c.3-.7.5-1.1 0-1.5c-.4-.5-1.5 0-1.9-.1zm-5.4 7.1c.2-.3 1.6-.3 1.8 0c.2.3-.3 2.3-.2 2.6c.1.3 1.1.7.9.8c-.2.1-3 .1-3.2 0c-.2-.1.8-.5.9-.8c.1-.3-.4-2.3-.2-2.6zm-2.9 3.9c.4-.2 3.2-.3 3.8-.3c.6 0 3.4.1 3.8.3c.4.2.9 2.1.6 2.3c-.3.2-3.7.3-4.4.3c-.7 0-4.1-.1-4.4-.3c-.3-.2.2-2.1.6-2.3zm1.2-7.1c.1.2.6 0 .6-.2c0-.3.1-2.6 0-2.8c-.1-.2-1-.3-1 0c0 .2.3 2.8.4 3z" />
+    </svg>
+  );
+}
+
+/** The section heading: a magnifying glass, "look closely here". */
+export function LookMark({ className = "" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 16 16" className={className} fill="currentColor" aria-hidden="true">
+      <path
+        fillRule="evenodd"
+        d="M12.5 6.3c-.1 1-.3 3-1.1 3.9c-.8 1-2.3 1.5-3.6 1.9c-1.3.3-3 .6-4.1.1c-1.2-.5-2.3-1.8-2.9-3c-.5-1.1-.6-2.5-.4-3.8c.2-1.3.6-2.8 1.4-3.7c.9-.8 2.6-1.2 3.9-1.4c1.3-.1 2.9.1 4 .7c1 .6 2 2.3 2.5 3.2c.5.9.5 1.1.3 2.1zm-2.1-1.4c-.3-.7-1-1.8-1.7-2.3c-.7-.4-1.8-.4-2.8-.4c-.9.1-2.1.3-2.7.8c-.6.6-.8 1.8-.9 2.7c-.2.9-.2 1.9.2 2.7c.4.8 1.2 1.8 2 2.1c.8.3 2-.1 2.9-.3c.9-.2 2-.5 2.6-1.2c.5-.6.6-2 .7-2.7c0-.7 0-.8-.3-1.4zm.4 4.8c.4.3 1.9 1.1 2.7 1.9c.8.8 1.6 2.4 2 2.8l-1.2 1.2c-.4-.4-2-1.2-2.8-2c-.8-.8-1.6-2.3-1.9-2.7zm-7.3-3.5c.1-.3-.1-1.6.3-2.1c.3-.4 1.7-.5 1.9-.6l.2.2c-.3.2-.9.7-1.3 1.2c-.3.4-.8 1.1-.9 1.3z"
+      />
     </svg>
   );
 }

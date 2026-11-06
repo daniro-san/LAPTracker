@@ -8,7 +8,7 @@
 import Link from "next/link";
 import { useId, useRef, useState, type KeyboardEvent } from "react";
 
-import { KillsMark, MightMark, RankMark } from "@/lib/brand/components/MoverMarks";
+import { KillsMark, LookMark, MightMark, RankMark } from "@/lib/brand/components/MoverMarks";
 import type { Dictionary } from "@/lib/copy";
 
 import { useCopy } from "./LocaleProvider";
@@ -137,7 +137,8 @@ export function Movers({ scopes }: { scopes: MoverScope[] }) {
   );
   return (
     <section aria-labelledby={`${id}-h`} className="mt-8">
-      <h2 id={`${id}-h`} className="mb-2 font-subhead text-display-md">
+      <h2 id={`${id}-h`} className="mb-2 flex items-center gap-2 font-subhead text-display-md">
+        <LookMark className="size-6 shrink-0 text-plum" />
         {copy.ledger.movers}
       </h2>
       <div className="border border-rule">

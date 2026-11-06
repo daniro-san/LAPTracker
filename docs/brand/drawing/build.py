@@ -44,6 +44,7 @@ DRAWINGS = {
     "icon-might": ornaments.icon_might,
     "icon-kills": ornaments.icon_kills,
     "icon-rank": ornaments.icon_rank,
+    "icon-look": ornaments.icon_look,
     "icon-live": ornaments.icon_live,
     "icon-done": ornaments.icon_done,
     "icon-partial": ornaments.icon_partial,

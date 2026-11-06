@@ -234,6 +234,14 @@ def icon_rank():
     hole(p, [(5.0, 2.8), (6.0, 2.8), (6.0, 5.6), (5.4, 5.8)], k=.5)
     return svg("0 0 16 16", el(p))
 
+def icon_look():
+    """Movers heading: a magnifying glass, a lens ring with a glint, a handle running to the lower right."""
+    p = Path()
+    ring(p, arc(6.3, 6.3, 5.3, 5.2, 0, 340, 10, wob=[0, .05, -.04, .06, 0, -.05, .04, -.03, .02, 0]), .95)
+    stroke(p, [(10.2, 10.3), (12.5, 12.6), (14.9, 15.0)], 1.45, a=.05, b=.2, e=.9)
+    stroke(p, [(3.6, 6.2), (4.2, 4.5), (5.8, 3.6)], .55, a=.3, b=.5, e=.12)
+    return svg("0 0 16 16", el(p, ' fill-rule="evenodd"'))
+
 def icon_live():
     """The /admin live mark: grandma's chamberstick, lit (small cut, 16-20 px). The flame and its glow
     ticks are two paths so CSS can sway the flame (pivot at the wick, 8 7.4) and flicker the ticks while a run

@@ -48,7 +48,7 @@ export const tr = {
     myAlliance: "İttifakım",
     names: "İsimler",
     alliances: "İttifaklar",
-    movers: "Hareketler",
+    movers: "Nine sezdi",
   },
   settings: {
     language: "Dil",

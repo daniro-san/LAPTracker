@@ -59,7 +59,7 @@ export const en = {
     names: "Names",
     alliances: "Alliances",
     /** The event's biggest gains and losses (#70). */
-    movers: "Movers",
+    movers: "Grandma noticed",
   },
   /** The header's settings menu (D38). */
   settings: {

@@ -48,7 +48,7 @@ export const zhCN = {
     myAlliance: "我的联盟",
     names: "名称",
     alliances: "联盟",
-    movers: "涨跌榜",
+    movers: "奶奶注意到了",
   },
   settings: {
     language: "语言",

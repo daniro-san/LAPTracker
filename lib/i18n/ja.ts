@@ -48,7 +48,7 @@ export const ja = {
     myAlliance: "自分の同盟",
     names: "名前",
     alliances: "同盟",
-    movers: "変動",
+    movers: "おばあちゃんの気づき",
   },
   settings: {
     language: "言語",
