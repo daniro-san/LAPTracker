@@ -37,11 +37,12 @@ export const brandCopy = {
       "Keep a quarter of the mark's width empty on every side. In wax, the seal is the clear space.",
     clearLabel: "¼",
     minTitle: "Minimum sizes",
-    minLine: "Line mark: 24 px and up.",
+    minLine:
+      "Line mark: 96 px and up. The one exception is the mark pressed into wax: the header seal and the seal button.",
     minSolid: "Solid mark: 16 to 32 px, and only there.",
     useTitle: "Correct and incorrect use",
     dos: ["Plum on paper", "Paper on plum", "Ivory wax on the header"],
-    donts: ["Stretched", "Rotated", "In a colour that means something", "Line mark below 24 px"],
+    donts: ["Stretched", "Rotated", "In a colour that means something", "Line mark below 96 px"],
   },
   colour: {
     title: "Colour",

@@ -10,7 +10,7 @@ Words already used in `lib/i18n/ko.ts`. Reuse them so the pages stay consistent;
 | Alliance                  | 연맹                   | `ledger.alliance`                                         |
 | Member                    | 멤버                   | `ledger.member` — a player inside an alliance             |
 | Player                    | 플레이어               | `ledger.player`                                           |
-| Event                     | 이벤트                 | `ledger.event` — a Saturday event                         |
+| Event                     | 이벤트                 | `ledger.event` — a game event                             |
 | Rank                      | 순위                   | `ledger.rank` — the #n position                           |
 | Ranking                   | 서버 순위              | `ledger.ranking` — the game's server rank                 |
 | Sanctuary                 | 성소                   | `ledger.sanctuary` — a player's building level            |

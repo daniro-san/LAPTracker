@@ -20,7 +20,7 @@ Not needed: Supabase, cron-job.org, Sentry, New Relic, Vercel Pro.
 
 A webhook is not a bot and has no role: it is a URL, and **whoever has the URL can post to that channel**. Treat it like a password (Vercel env only, never in chat or the repo). Leaking one is cheap to fix: *Delete Webhook*, create a new one, replace the env var.
 
-1. **Public** — the channel the alliance reads. The one you already created (*Spidey Bot* in `#guides-and-beyond`) works, but consider a dedicated channel such as `#kvk-ledger` so Saturday tables don't get buried under guides. Rename it to `LAPTracker` (the app overrides name and avatar per message anyway). *Copy Webhook URL* → Vercel `NOTIFY_WEBHOOK_PUBLIC`.
+1. **Public** — the channel the alliance reads. The one you already created (*Spidey Bot* in `#guides-and-beyond`) works, but consider a dedicated channel such as `#kvk-ledger` so event tables don't get buried under guides. Rename it to `LAPTracker` (the app overrides name and avatar per message anyway). *Copy Webhook URL* → Vercel `NOTIFY_WEBHOOK_PUBLIC`.
 2. **Admin** — create a private channel (e.g. `#laptracker-admin`): in its permissions, deny *View Channel* to `@everyone` and allow it to your officer role or to the two or three people who should see failures. Then *Integrations → Webhooks → New Webhook* inside that channel. Visibility is governed by the channel, not by the webhook. → Vercel `NOTIFY_WEBHOOK_ADMIN`.
 3. **Optional ping** — to get a phone notification on ⚠️/❌: Discord *Settings → Advanced → Developer Mode*, then right-click your name → *Copy User ID*. Set `NOTIFY_ADMIN_MENTION=123456789012345678` in Vercel — digits only, no `<@ >`; the app builds the `<@id>` mention itself (for a role: `NOTIFY_ADMIN_MENTION=role:123456789012345678`). Without it, admin messages are silent posts.
 4. **Test from your Mac** (the URL is the secret, so do it yourself):
@@ -49,7 +49,7 @@ Windows: use WSL2; the playbook assumes a POSIX shell.
 
 ## 3. Claude Code configuration
 
-**Required MCP connectors: none.** Every session works with the shell, `curl`, `gh` and the files in the repo. That is deliberate — fewer moving parts, nothing to debug on a Saturday.
+**Required MCP connectors: none.** Every session works with the shell, `curl`, `gh` and the files in the repo. That is deliberate — fewer moving parts, nothing to debug on an event day.
 
 Optional, only if you already use them:
 - **Neon MCP** (added 2026-11-04) — inspect tables and branches during Sessions 3 and 9 without leaving the session; `psql` or Drizzle Studio (`pnpm drizzle-kit studio`) do the same.
@@ -111,7 +111,7 @@ Create these before the session that needs them. **Never paste any of them into 
 ## 5. Decisions to make before Session 0 (plan §10)
 
 1. ~~Maintainer heads-up~~ — done 2026-11-04.
-2. ~~Event window~~ — deferred 2026-11-04: going with 10:00 / 14:00, configurable via env vars; revisit after the first real Saturday.
+2. ~~Event window~~ — deferred 2026-11-04: going with 10:00 / 14:00, configurable via env vars; revisit after the first real scheduled event.
 2. Whether "might" should show roster churn (joined/left) — default **yes**, it's free (plan Phase 5c).
 3. The alliance channel language — stated: **English**.
 
@@ -125,17 +125,17 @@ Create these before the session that needs them. **Never paste any of them into 
 | Session 2 | Nothing. (The one live smoke test costs 1 API call.) |
 | Session 3 | Optional: a local Neon branch or any Postgres for `pnpm db:push`. |
 | Session 7 | Review the `/brand` mock and say yes/no before step 2. |
-| Session 7b | Nothing: the usability test runs with persona subagents on blank-dictionary screenshots (plan Phase 5f). Real feedback comes from the alliance after the first Saturday — keep a thread for it. |
+| Session 7b | Nothing: the usability test runs with persona subagents on blank-dictionary screenshots (plan Phase 5f). Real feedback comes from the alliance after the first scheduled event — keep a thread for it. |
 | Session 7c | Merge 7b into `dev`; paste the `dev` staging URL into the prompt. Afterwards read `docs/handoff/07c-ui-review.md` and pick the Should-fix numbers for 7d (Blockers are not optional). Commit the report yourself (the reviewer doesn't). |
-| Session 7d | The accepted list, pasted into the prompt. If Friday is close: Blockers only, the rest after the first Saturday. |
+| Session 7d | The accepted list, pasted into the prompt. If Friday is close: Blockers only, the rest after the first scheduled event. |
 | Session 8 (most of it can be done now) | **Vercel → project Settings:** *Build and Deployment* → Node.js Version **26.x**; *Environment Variables* → `ENABLE_EXPERIMENTAL_COREPACK=1` (all environments), the schedule variables from §4 (all environments), `LAP_API_KEY` (Production + Preview, mark *Sensitive*), `CRON_SECRET` and `EDIT_PIN` with **different values** in Production and Preview, `NOTIFY_WEBHOOK_PUBLIC` / `NOTIFY_WEBHOOK_ADMIN` / `NOTIFY_ADMIN_MENTION` **Production only**, `DATABASE_URL` Production = Neon main, Preview = Neon `preview` (after Session 3 created the schema on both); *Deployment Protection* → **Standard Protection** with **Vercel Authentication** (protects every preview and `dev`, leaves the production domain public). (No dashboard setting for the `keepalive` branch: Session 8 adds `git.deploymentEnabled: { "keepalive": false }` to the repo's `vercel.json`, so that branch never deploys.) **GitHub → Settings → Secrets and variables → Actions:** repository secrets `APP_URL` (the production domain, `https://…vercel.app`) and `CRON_SECRET` (the Production value). **Discord:** both webhooks (§1b). |
 | Session 8b | Approve the preview sheet. Then in Discord: channel → Integrations → Webhooks → each webhook → avatar → upload `docs/brand/discord/kvk-scout.png` / `laptracker-admin.png`. |
 | Session 9 | Pick a weekday. Compare OGs' kill sum with the in-game alliance screen when asked. |
 | Every Friday | Nothing to start: `REHEARSAL_AT=fri 18:00` runs the rehearsal by itself (17:00 Brasília; verdict ~17:50). Read `[TEST] Rehearsal PASS` and freeze `main`. 19:00 Brasília: the Friday message — check *next BEFORE/AFTER at …* says Saturday 10:00 / 14:00 server. Released something after the rehearsal? Tap **Rehearse now** before 21:00 Brasília. |
-| First Saturday | Confirm the Friday quota message arrived; watch the channel around SNAPSHOT_BEFORE and SNAPSHOT_AFTER server time (+ up to ~35 min of tick/Actions lag). Note when the KvK really starts and ends in-game: that settles the event-window decision (§5 item 2). |
+| First scheduled event | Confirm the Friday quota message arrived; watch the channel around SNAPSHOT_BEFORE and SNAPSHOT_AFTER server time (+ up to ~35 min of tick/Actions lag). Note when the KvK really starts and ends in-game: that settles the event-window decision (§5 item 2). |
 
 ## 7. Cost summary
 
 - Infrastructure: $0/month on the listed tiers (Vercel Hobby, Neon free, GitHub public repo).
-- Upstream API: $0; ~55 of 1,000 daily calls on Saturdays.
+- Upstream API: $0; ~55 of 1,000 daily calls on an event day.
 - Claude usage: Session 5 (Fable) is the expensive one; everything else is Sonnet/Opus at medium or high. Expect the whole v1 to fit comfortably in a normal monthly plan; the dry run (Session 9) and the review (Session 5) are the two to not rerun casually.

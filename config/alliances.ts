@@ -5,7 +5,7 @@
 // 2026-11-04 19:52 UTC, by the Session 2 smoke call at 20:23 UTC. Names are stored as the
 // API returns them and rendered as text.
 // Comments: board power rank · board kills rank · /v1 rank.rank at verification.
-// To change the list: edit here, redeploy. A change mid-Saturday does not affect the
+// To change the list: edit here, redeploy. A change mid-event does not affect the
 // running event, which uses its own copy (events.alliance_ids).
 
 export const SERVER = 325;

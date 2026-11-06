@@ -1,5 +1,5 @@
 // Rehearsals (plan §3.1): a test event with its own phase times that the real cron ticks run, and
-// the verdict that says whether that run would have been a good Saturday.
+// the verdict that says whether that run would have been a good scheduled event.
 import { RUN_STALE_AFTER_MS } from "./collector";
 import type { Db } from "./db";
 import type { Env } from "./env";
@@ -60,7 +60,7 @@ export async function createRehearsal(db: Db, now: Date, env: Env): Promise<Rehe
   const afterAt = new Date(now.getTime() + REHEARSAL_AFTER_MS);
   const eventId = await insertRehearsal(db, {
     name: `REHEARSAL ${now.toISOString()}`,
-    // Between the phases, as EVENT_TIME is on a Saturday; it also keeps event_at_utc unique.
+    // Between the phases, as a scheduled event's EVENT_TIME is; it also keeps event_at_utc unique.
     eventAtUtc: new Date(now.getTime() + (REHEARSAL_BEFORE_MS + REHEARSAL_AFTER_MS) / 2),
     beforeAt,
     afterAt,

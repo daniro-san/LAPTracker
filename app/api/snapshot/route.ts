@@ -1,6 +1,6 @@
 // POST /api/snapshot?phase=before|after&force=0|1[&event=<id>] — a run on demand for the current
-// Saturday, or for the manual event `event` (D28): /admin's run buttons (x-edit-pin) or
-// workflow_dispatch (Bearer CRON_SECRET). Any other event id is refused: the Saturday guard stays.
+// scheduled event, or for the manual event `event` (D28): /admin's run buttons (x-edit-pin) or
+// workflow_dispatch (Bearer CRON_SECRET). Any other event id is refused: the not-due guard stays.
 import { z } from "zod";
 
 import { authorize } from "@/lib/auth";

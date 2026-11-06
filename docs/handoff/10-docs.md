@@ -1,6 +1,6 @@
 # 10 — README and runbook
 
-Base: `origin/dev` at 505979a (after session 9, #143). The first version of this session (commit eab42f0, on branch `claude/readme-admin-runbook-bcfdc9`, based on f592e9a) was written before session 9 existed and was superseded; it was never pushed as a PR.
+Base: `origin/dev` at 505979a (after session 9, #143), merged with `origin/dev` at 5fd7fd8 (#147, scheduled event and manual event terms). The one conflict, in README.md, was resolved by keeping this rewrite; the terms follow `docs/GLOSSARY.md`, while the admin UI still says "Manual round". The first version of this session (commit eab42f0, on branch `claude/readme-admin-runbook-bcfdc9`, based on f592e9a) was written before session 9 existed and was superseded; it was never pushed as a PR.
 
 ## Built
 - `README.md` rewritten as the admin's operator guide. Sections: what it does; the Saturday timeline; the public and admin Discord messages and what to do on ⚠ and ✗; what "stale" means; running a snapshot by hand (`/admin` seals, manual round, rename, Rehearse, GitHub fallback); where to look (`/admin` with its four sections, `/admin/runs`, `/admin/runs/[id]`, `/admin/errors`, the public banner); the quota rules; a word list.

@@ -138,7 +138,7 @@ describe("manual events (D28)", () => {
   it("runs before and after on different days, re-runs only with force, and never posts to the public channel", async () => {
     const { ctx, clock, posts } = testContext(db);
     holder.ctx = ctx;
-    clock.now = new Date("2026-11-04T12:00:00Z"); // Wednesday: the Saturday guard would refuse
+    clock.now = new Date("2026-11-04T12:00:00Z"); // Wednesday: the not-due guard would refuse
     const { event_id: id } = (await (await create()).json()) as { event_id: number };
 
     const before = await run(`phase=before&event=${id}`);
@@ -159,14 +159,14 @@ describe("manual events (D28)", () => {
     expect(posts.some((p) => p.url === PUBLIC_WEBHOOK)).toBe(false);
   });
 
-  it("refuses an event id that is not manual, so the Saturday guard stays", async () => {
+  it("refuses an event id that is not manual, so the not-due guard stays", async () => {
     const { ctx, clock } = testContext(db);
     holder.ctx = ctx;
     clock.now = new Date("2026-11-04T12:00:00Z");
-    const [saturday] = await db
+    const [scheduled] = await db
       .insert(events)
       .values({
-        name: "Saturday",
+        name: "Saturday Event 2026-11-07",
         eventAtUtc: new Date("2026-11-07T14:00:00Z"),
         beforeAt: new Date("2026-11-07T12:00:00Z"),
         afterAt: new Date("2026-11-07T16:00:00Z"),
@@ -174,7 +174,7 @@ describe("manual events (D28)", () => {
       })
       .returning({ id: events.id });
 
-    const res = await run(`phase=before&event=${saturday?.id}&force=1`);
+    const res = await run(`phase=before&event=${scheduled?.id}&force=1`);
 
     expect(res.status).toBe(404);
     expect(await res.json()).toEqual({ code: "event_not_found" });
@@ -194,7 +194,7 @@ describe("manual events (D28)", () => {
     expect(v1.calls).toEqual([]);
   });
 
-  it("keeps a manual event out of an alliance's history, so Saturday's deltas skip it", async () => {
+  it("keeps a manual event out of an alliance's history, so a scheduled event's deltas skip it", async () => {
     const { ctx, clock } = testContext(db);
     holder.ctx = ctx;
     clock.now = new Date("2026-11-04T12:00:00Z");
@@ -208,13 +208,13 @@ describe("manual events (D28)", () => {
     expect(history).toEqual([]);
   });
 
-  it("leaves both rounds intact when the tick later runs Saturday, and Saturday compares with no demo", async () => {
+  it("leaves both rounds intact when the tick later runs the scheduled event, and it compares with no demo", async () => {
     const { ctx, clock } = testContext(db);
     holder.ctx = ctx;
     clock.now = new Date("2026-11-04T12:00:00Z");
     const { event_id: id } = (await (await create()).json()) as { event_id: number };
     await run(`phase=before&event=${id}`);
-    clock.now = new Date("2026-11-07T12:00:00Z"); // Saturday's before_at: the tick runs it
+    clock.now = new Date("2026-11-07T12:00:00Z"); // the scheduled event's before_at: the tick runs it
 
     const res = await tick();
 
@@ -229,15 +229,15 @@ describe("manual events (D28)", () => {
     expect(history[0]?.previous).toBeNull();
   });
 
-  it("shows a round by its visibility: admin only is hidden everywhere public, history joins Saturday's chain", async () => {
+  it("shows a round by its visibility: admin only is hidden everywhere public, history joins the scheduled event's chain", async () => {
     const { ctx, clock } = testContext(db);
     holder.ctx = ctx;
     clock.now = new Date("2026-11-04T12:00:00Z");
     const { event_id: id } = (await (await create()).json()) as { event_id: number };
     await run(`phase=before&event=${id}`);
     clock.now = new Date("2026-11-07T12:00:00Z");
-    await tick(); // Saturday's BEFORE
-    const saturday = id + 1;
+    await tick(); // the scheduled event's BEFORE
+    const scheduled = id + 1;
     const view = async () => ({
       listed: (await listEvents(db)).some((e) => e.id === id),
       detail: (await getEventDetail(db, id)) !== null,
@@ -253,9 +253,9 @@ describe("manual events (D28)", () => {
     }
 
     expect(states).toEqual([
-      { listed: false, detail: false, alliance: false, chain: [saturday], home: saturday },
-      { listed: true, detail: true, alliance: true, chain: [saturday], home: saturday },
-      { listed: true, detail: true, alliance: true, chain: [id, saturday], home: saturday },
+      { listed: false, detail: false, alliance: false, chain: [scheduled], home: scheduled },
+      { listed: true, detail: true, alliance: true, chain: [scheduled], home: scheduled },
+      { listed: true, detail: true, alliance: true, chain: [id, scheduled], home: scheduled },
     ]);
     const history = await allianceHistory(db, 67111155);
     expect(history[1]?.previous).not.toBeNull();
@@ -286,7 +286,7 @@ describe("manual events (D28)", () => {
 });
 
 describe("renaming any public event (D39)", () => {
-  const saturday = (isTest = false) =>
+  const scheduled = (isTest = false) =>
     db
       .insert(events)
       .values({
@@ -300,9 +300,9 @@ describe("renaming any public event (D39)", () => {
       .returning({ id: events.id })
       .then(([row]) => row?.id ?? 0);
 
-  it("renames a Saturday event before its Before ran, and the selector and GET /api/events show it", async () => {
+  it("renames a scheduled event before its Before ran, and the selector and GET /api/events show it", async () => {
     holder.ctx = testContext(db).ctx;
-    const id = await saturday();
+    const id = await scheduled();
 
     const ok = await rename(id, "  KvK 12-11 ");
     const api = await import("../events/route").then((r) =>
@@ -318,7 +318,7 @@ describe("renaming any public event (D39)", () => {
 
   it("never renames a rehearsal", async () => {
     holder.ctx = testContext(db).ctx;
-    const id = await saturday(true);
+    const id = await scheduled(true);
 
     const refused = await rename(id, "KvK 12-11");
 

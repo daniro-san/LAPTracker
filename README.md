@@ -151,7 +151,7 @@ Read `/admin/runs` first, then the run's page, then `/admin/errors`. If the reas
 
 ## Words used on the site
 
-- **Event**: one weekly Saturday event. It is named by its title, or by its date until the owner names it.
+- **Event**: one weekly event, a scheduled event normally on Saturday. It is named by its title, or by its date until the owner names it.
 - **Snapshot**: one recording of the 20 alliances, Before or After.
 - **Before, After**: the two snapshots of an event.
 - **Might**: an alliance's total power.

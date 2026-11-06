@@ -10,7 +10,7 @@ Words already used in `lib/i18n/vi.ts`. Reuse them so the pages stay consistent;
 | Alliance                  | Liên minh                | `ledger.alliance`                                         |
 | Member                    | Thành viên               | `ledger.member` — a player inside an alliance             |
 | Player                    | Người chơi               | `ledger.player`                                           |
-| Event                     | Sự kiện                  | `ledger.event` — a Saturday event                         |
+| Event                     | Sự kiện                  | `ledger.event` — a game event                             |
 | Rank                      | Hạng                     | `ledger.rank` — the #n position                           |
 | Ranking                   | Xếp hạng                 | `ledger.ranking` — the game's server rank                 |
 | Sanctuary                 | Thánh địa                | `ledger.sanctuary` — a player's building level            |

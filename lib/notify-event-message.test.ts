@@ -103,7 +103,7 @@ describe("one message per channel per event (D31)", () => {
     error.mockRestore();
   });
 
-  it("shows the whole Saturday event in the admin message: name, then a block per phase", () => {
+  it("shows the whole scheduled event in the admin message: name, then a block per phase", () => {
     const block = (phase: "before" | "after", at: string) =>
       adminSnapshotMessage(summary({ phase }), {
         clock,
@@ -114,12 +114,12 @@ describe("one message per channel per event (D31)", () => {
         finishedAt: utc(at),
         logWriteFailures: 0,
       });
-    const text = adminEventMessage("Saturday 2026-11-07", [
+    const text = adminEventMessage("Saturday Event 2026-11-07", [
       block("before", "12:01"),
       block("after", "16:01"),
     ]);
     expect(text.split("\n\n")).toEqual([
-      "**Saturday 2026-11-07**",
+      "**Saturday Event 2026-11-07**",
       expect.stringMatching(/^✓ Before snapshot: done/),
       expect.stringMatching(/^✓ After snapshot: done/),
     ]);
@@ -165,7 +165,7 @@ describe("one message per channel per event (D31)", () => {
       {
         event: {
           id: 9,
-          name: "Saturday 2026-11-07",
+          name: "Saturday Event 2026-11-07",
           isTest: false,
           manual: false,
           postPublic: false,
