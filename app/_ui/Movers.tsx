@@ -8,6 +8,7 @@
 import Link from "next/link";
 import { useId, useRef, useState, type KeyboardEvent } from "react";
 
+import { KillsMark, MightMark, RankMark } from "@/lib/brand/components/MoverMarks";
 import type { Dictionary } from "@/lib/copy";
 
 import { useCopy } from "./LocaleProvider";
@@ -41,12 +42,27 @@ function Row({ m }: { m: MoverItem }) {
   );
 }
 
-/** `MIGHT ▲`: the word as a label, the arrow in yarn or seal, the direction's word read out. */
-function Head({ word, up, copy }: { word: string; up: boolean | null; copy: Dictionary }) {
+const MARKS = { might: MightMark, kills: KillsMark, rank: RankMark };
+
+/** `MIGHT ▲`: the word as a label, the arrow in yarn or seal, the direction's word read out. With
+ * `mark`, the tab's drawing leads and the word shows from 640 px only (it is still read out below). */
+function Head({
+  word,
+  up,
+  copy,
+  mark,
+}: {
+  word: string;
+  up: boolean | null;
+  copy: Dictionary;
+  mark?: keyof typeof MARKS;
+}) {
   const arrows = up === null ? [true, false] : [up];
+  const Mark = mark && MARKS[mark];
   return (
     <>
-      <span className={LABEL}>{word}</span>
+      {Mark && <Mark className="size-5 shrink-0 text-ink/80" />}
+      <span className={`${LABEL} ${Mark ? "sr-only sm:not-sr-only" : ""}`}>{word}</span>
       {arrows.map((a) => (
         <span key={String(a)}>
           <span aria-hidden="true" className={a ? "text-yarn" : "text-seal"}>
@@ -147,7 +163,7 @@ export function Movers({ scopes }: { scopes: MoverScope[] }) {
               onKeyDown={(e) => onKey(e, i)}
               className="inline-flex min-h-11 flex-wrap items-center justify-center gap-x-1 border-r border-rule px-1 text-center last:border-r-0 aria-selected:bg-plum/10 aria-selected:shadow-[inset_0_-3px_0_var(--color-plum)]"
             >
-              <Head word={copy.ledger[t.word]} up={t.up} copy={copy} />
+              <Head word={copy.ledger[t.word]} up={t.up} copy={copy} mark={t.word} />
             </button>
           ))}
         </div>
@@ -157,6 +173,11 @@ export function Movers({ scopes }: { scopes: MoverScope[] }) {
           aria-labelledby={`${id}-${current?.key}`}
           className="grid gap-x-6 px-3 py-2 sm:grid-cols-2"
         >
+          {current && current.up !== null && (
+            <p className="flex items-baseline gap-1 pt-1 sm:hidden">
+              <Head word={copy.ledger[current.word]} up={current.up} copy={copy} />
+            </p>
+          )}
           {sections.map((s) => (
             <MoverList key={s.key} title={s.title} up={s.up} items={s.items} copy={copy} />
           ))}
