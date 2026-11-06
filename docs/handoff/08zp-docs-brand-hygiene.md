@@ -49,3 +49,5 @@ Plan changes needed: none required. Optional: `docs/IMPLEMENTATION_PLAN.md` §3.
 - D40 already exists in `docs/DECISIONS.md` (the 08k entry, with its "(numbered D30 by mistake until 2026-11-05)" note); carry the heading over as-is.
 - `08zy` is also used by the #130 event-terminology session; pick another handoff letter.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/146
