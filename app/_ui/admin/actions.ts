@@ -1,6 +1,6 @@
 // The /admin run buttons as data (plan Phase 4, D28): what each one calls, what it asks first and what
 // it sends. The component that presses them is AdminActions.
-import { copy } from "@/lib/copy";
+import { copy, fill } from "@/lib/copy";
 
 import { phaseWord } from "./words";
 
@@ -28,6 +28,8 @@ export interface Action {
   body?: string;
   /** Sent right after this one succeeds (a rename, then the settings). */
   next?: Action;
+  /** Sent with `force=1` from the first press: a done phase run again (D28, issue 157). */
+  force?: boolean;
 }
 
 const t = copy.admin.run;
@@ -74,6 +76,14 @@ export const manualSnapshots = (eventId: number): Action[] =>
     confirm: phase === "before" ? m.confirmBefore : m.confirmAfter,
   }));
 
+/** A done phase of the round run again (issue 157): its one confirmation names what it replaces (the done
+ * time) and the cost, then it sends `force`, which the route still requires for a re-run (D28). */
+export const recordAgain = (a: Action, at: string): Action => ({
+  ...a,
+  confirm: fill(m.againConfirm, { seal: a.label, at }),
+  force: true,
+});
+
 /** Renames a scheduled event (D39); the form is the confirmation. Same route as a round's rename. */
 export const renameEvent = (eventId: number, name: string): Action => ({
   id: "event-rename",
@@ -89,7 +99,8 @@ export interface RoundView {
   visibility: RoundOptions["visibility"];
   postPublic: boolean;
   calls: number;
-  phases: { phase: "before" | "after"; status: string; text: string }[];
+  /** `at`: when the phase finished (or started, while it runs), in words. */
+  phases: { phase: "before" | "after"; status: string; text: string; at: string }[];
 }
 
 /** The current scheduled event: its row (null until the scheduler makes it) and its time in words. */

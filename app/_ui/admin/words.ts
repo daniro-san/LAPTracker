@@ -61,11 +61,12 @@ export function watchViews(
 /** The newest manual round for its card: each phase's state in words with its time (#91 item 7). */
 export function roundView(manual: ManualEventStatus, clock: Clock): RoundView {
   const ps = copy.admin.manual.phaseState;
+  const at = (p: ManualEventStatus["phases"][number]): string =>
+    clock.at(p.status === "running" ? p.startedAt : (p.finishedAt ?? p.startedAt));
   const text = (p: ManualEventStatus["phases"][number]): string => {
-    if (p.status === "running") return fill(ps.running, { at: clock.at(p.startedAt) });
+    if (p.status === "running") return fill(ps.running, { at: at(p) });
     if (p.status === "failed") return fill(ps.failed, { reason: p.error ?? stateWord(p.status) });
-    const at = clock.at(p.finishedAt ?? p.startedAt);
-    return fill(p.status === "partial" ? ps.partial : ps.complete, { at });
+    return fill(p.status === "partial" ? ps.partial : ps.complete, { at: at(p) });
   };
   return {
     id: manual.id,
@@ -73,6 +74,11 @@ export function roundView(manual: ManualEventStatus, clock: Clock): RoundView {
     visibility: manual.visibility,
     postPublic: manual.postPublic,
     calls: manual.phases.reduce((n, p) => n + p.callsUsed, 0),
-    phases: manual.phases.map((p) => ({ phase: p.phase, status: p.status, text: text(p) })),
+    phases: manual.phases.map((p) => ({
+      phase: p.phase,
+      status: p.status,
+      text: text(p),
+      at: at(p),
+    })),
   };
 }
