@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { AdminShell } from "@/app/_ui/admin/AdminShell";
 import { RunTrace } from "@/app/_ui/admin/RunTrace";
 import { phaseWord, seconds, stateWord } from "@/app/_ui/admin/words";
-import { requestClock } from "@/app/_ui/locale";
+import { requestServerClock } from "@/app/_ui/locale";
 import { Chip } from "@/lib/brand/components/Chip";
 import { DroppedStitch } from "@/lib/brand/components/StatusIcons";
 import { copy, fill } from "@/lib/copy";
@@ -33,7 +33,7 @@ export default async function RunPage({ params }: { params: Promise<{ id: string
   if (!/^\d{1,9}$/.test(raw)) notFound();
   const [found, clock] = await Promise.all([
     withPageDb((db) => getRun(db, Number(raw))),
-    requestClock(),
+    requestServerClock(),
   ]);
   if (!found) notFound();
   const { run, logs, tags, trace } = found;

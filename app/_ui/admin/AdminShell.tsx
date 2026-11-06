@@ -21,7 +21,7 @@ export async function AdminShell({ title, children }: { title: string; children:
   const unlocked = await isAdmin();
   return (
     <>
-      <SiteHeader events={[]} currentId={null} />
+      <SiteHeader events={[]} currentId={null} times={false} />
       <main className="mx-auto max-w-[960px] px-4 py-4 sm:px-6">
         {unlocked ? (
           <>

@@ -5,7 +5,7 @@ import { AdminActions } from "@/app/_ui/admin/AdminActions";
 import { AdminShell } from "@/app/_ui/admin/AdminShell";
 import { phaseWord, seconds, stateWord } from "@/app/_ui/admin/words";
 import type { Clock } from "@/app/_ui/format";
-import { requestClock, requestLocale } from "@/app/_ui/locale";
+import { requestServerClock, requestLocale } from "@/app/_ui/locale";
 import { FactList } from "@/lib/brand/components/FactList";
 import { copy, fill } from "@/lib/copy";
 import { getEnv, type Env } from "@/lib/env";
@@ -149,7 +149,7 @@ export default async function AdminPage() {
         listRuns(db, 10),
       ]),
     ),
-    requestClock(),
+    requestServerClock(),
   ]);
   const lastRun = recent[0];
   const durations = recent.flatMap((r) =>

@@ -5,7 +5,7 @@
 // Tapping it sets data-theme on <html> and remembers the choice in a cookie for a year.
 import { useSyncExternalStore } from "react";
 
-type Theme = "light" | "dark";
+export type Theme = "light" | "dark";
 
 const darkQuery = () => window.matchMedia("(prefers-color-scheme: dark)");
 
@@ -36,28 +36,33 @@ const ICON = {
   "aria-hidden": true,
 } as const;
 
-const Sun = () => (
+export const Sun = () => (
   <svg {...ICON}>
     <circle cx="10" cy="10" r="3.75" />
     <path d="M10 1.5v2M10 16.5v2M1.5 10h2M16.5 10h2M4 4l1.4 1.4M14.6 14.6 16 16M4 16l1.4-1.4M14.6 5.4 16 4" />
   </svg>
 );
 
-const Moon = () => (
+export const Moon = () => (
   <svg {...ICON}>
     <path d="M16.5 12.5A7 7 0 0 1 7.5 3.5a7 7 0 1 0 9 9Z" />
   </svg>
 );
 
+/** The mode on screen: the viewer's choice, else the system's. */
+export const useTheme = (): Theme =>
+  useSyncExternalStore(subscribe, current, () => "light" as Theme);
+
+/** Puts the mode on <html> and keeps it in the `theme` cookie for a year. */
+export function setTheme(next: Theme) {
+  document.documentElement.dataset.theme = next;
+  document.cookie = `theme=${next}; path=/; max-age=31536000; samesite=lax`;
+  window.dispatchEvent(new Event("themechange"));
+}
+
 export function ThemeSwitch({ label }: { label: string }) {
-  const theme = useSyncExternalStore(subscribe, current, () => "light" as Theme);
-  const dark = theme === "dark";
-  const toggle = () => {
-    const next = dark ? "light" : "dark";
-    document.documentElement.dataset.theme = next;
-    document.cookie = `theme=${next}; path=/; max-age=31536000; samesite=lax`;
-    window.dispatchEvent(new Event("themechange"));
-  };
+  const dark = useTheme() === "dark";
+  const toggle = () => setTheme(dark ? "light" : "dark");
   return (
     <button
       type="button"

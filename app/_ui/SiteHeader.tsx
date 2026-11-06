@@ -1,5 +1,6 @@
 // Sticky compact header (DESIGN.md `header`): plum field with the mark and wordmark, player search (the
-// magnifier and the word), the event selector and the theme switch, and the lace border hanging below.
+// magnifier and the word), the event selector and the settings gear (theme, times, dates), and the lace
+// border hanging below.
 // The selector is a <details> list of links, so it works without JavaScript and every target is ≥ 44 px;
 // with it, Escape and a tap outside close it. Below 640 px the wordmark is screen-reader only: the mark,
 // three controls and the gutters fill 360 px.
@@ -7,12 +8,12 @@ import Link from "next/link";
 
 import { LaceBorder } from "@/lib/brand/components/LaceBorder";
 import { WaxedMark } from "@/lib/brand/components/Logo";
-import { ThemeSwitch } from "@/lib/brand/components/ThemeSwitch";
 import { copy } from "@/lib/copy";
 
 import { Disclosure } from "./Disclosure";
 import { EventLabel, type LabeledEvent } from "./EventLabel";
 import type { Clock } from "./format";
+import { ViewerSettings } from "./ViewerSettings";
 
 export interface SelectorEvent extends LabeledEvent {
   id: number;
@@ -79,6 +80,7 @@ export function SiteHeader({
   currentId,
   section,
   clock,
+  times = true,
 }: {
   events: SelectorEvent[];
   currentId: number | null;
@@ -86,6 +88,8 @@ export function SiteHeader({
   section?: "players";
   /** The request's clock (app/_ui/locale.ts) for the selector's dates; error pages have no events. */
   clock?: Clock;
+  /** The gear offers times and dates; /admin, which stays in server time, offers the theme only. */
+  times?: boolean;
 }) {
   return (
     <header className="sticky top-0 z-30 text-plum">
@@ -109,7 +113,7 @@ export function SiteHeader({
             {clock && events.length > 0 && (
               <EventSelector events={events} currentId={currentId} clock={clock} />
             )}
-            <ThemeSwitch label={copy.site.darkMode} />
+            <ViewerSettings times={times} />
           </div>
         </div>
       </div>

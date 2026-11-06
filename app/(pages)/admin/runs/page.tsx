@@ -3,7 +3,7 @@ import Link from "next/link";
 
 import { AdminShell } from "@/app/_ui/admin/AdminShell";
 import { phaseWord, seconds, stateWord } from "@/app/_ui/admin/words";
-import { requestClock } from "@/app/_ui/locale";
+import { requestServerClock } from "@/app/_ui/locale";
 import { Chip } from "@/lib/brand/components/Chip";
 import { DroppedStitch } from "@/lib/brand/components/StatusIcons";
 import { copy, fill } from "@/lib/copy";
@@ -11,7 +11,7 @@ import { withPageDb } from "@/lib/page";
 import { listRuns } from "@/lib/queries/admin";
 
 export default async function RunsPage() {
-  const [runs, clock] = await Promise.all([withPageDb((db) => listRuns(db)), requestClock()]);
+  const [runs, clock] = await Promise.all([withPageDb((db) => listRuns(db)), requestServerClock()]);
   const t = copy.admin.runs;
   return (
     <AdminShell title={t.title}>

@@ -47,7 +47,7 @@ function RowDetail({
   return (
     <>
       <DetailTable
-        corner={copy.ledger.serverTime}
+        corner={clock.zone}
         from={<SideHead s={fresh(r.before)} clock={clock} />}
         to={<SideHead s={fresh(r.after)} clock={clock} />}
         rows={figureRows(r.metrics, r.ranks, copy.ledger.ranking)}

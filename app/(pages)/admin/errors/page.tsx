@@ -1,6 +1,6 @@
 // /admin/errors: app_errors grouped by digest, newest first.
 import { AdminShell } from "@/app/_ui/admin/AdminShell";
-import { requestClock } from "@/app/_ui/locale";
+import { requestServerClock } from "@/app/_ui/locale";
 import { copy, fill } from "@/lib/copy";
 import { withPageDb } from "@/lib/page";
 import { listErrorGroups } from "@/lib/queries/admin";
@@ -8,7 +8,7 @@ import { listErrorGroups } from "@/lib/queries/admin";
 export default async function ErrorsPage() {
   const [groups, clock] = await Promise.all([
     withPageDb((db) => listErrorGroups(db)),
-    requestClock(),
+    requestServerClock(),
   ]);
   const t = copy.admin.errors;
   return (
