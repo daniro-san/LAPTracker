@@ -29,7 +29,7 @@
 - Playwright-core with system Chrome, per state at 360 px: no horizontal overflow; every button and link is 44 px tall (the seals are 96 px). Primary/secondary as listed in Built.
 - "Record again" with the route stubbed in the browser: one confirmation ("This replaces the Before snapshot from Nov 5, 20:01 server time. About 21 of today's 1,000 API calls, up to a minute."), then one request `?phase=before&event=…&force=1`, and no second question.
 - Screenshots: `docs/screenshots/08zza-{no-round,before-done,both-done,after-running}-{360,1280}-{light,dark}.png`, `08zza-again-confirm-360-{light,dark}.png`.
-- Cherry-pick: the code commit applies cleanly onto `origin/hotfix/v1.0.1-header`; see the result in the PR body. dev's change to `lib/copy-admin.ts` (the tick lines) and the hotfix's DESIGN.md hunk are far from this change's hunks.
+- Cherry-pick: the code commit (`ed388f0`) cherry-picks onto `origin/hotfix/v1.0.1-header` with no conflict, checked in a scratch worktree, where `tsc` is clean and the admin and brand tests pass (5 files, 10 tests). Nothing was pushed to that branch. dev's change to `lib/copy-admin.ts` (the tick lines) and the hotfix's DESIGN.md hunk are far from this change's hunks.
 
 ## Open issues
 - The After seal's help line "Record them again later." (existing copy) reads like a repeat even when the After has never run. Not changed: not in the issue.
@@ -40,3 +40,5 @@ Session: none planned by this change; the v1.1 lanes resume after the first Satu
 Model / effort: keep — a small UI change.
 Owner must do first: merge this PR into `dev`; to ship it before Saturday, cherry-pick this PR's first commit (the code commit; the second only adds the PR link here) onto `hotfix/v1.0.1-header` and release v1.0.1 from there.
 Plan changes needed: none.
+
+https://github.com/daniro-san/LAPTracker/pull/158
