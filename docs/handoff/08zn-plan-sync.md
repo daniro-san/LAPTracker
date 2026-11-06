@@ -51,3 +51,5 @@ Plan changes needed: none beyond this PR. The plan and playbook now carry the sh
 - The tick comes from cron-job.org (D30 (cron-job.org)); `tick.yml` scheduled runs may not appear in `gh run list --event schedule`, which is expected. For the scheduler proof, read the job's History on cron-job.org.
 - Releasing `v1.0.0` after this session: Actions → Prepare release with `major` (the latest tag is `v0.6.0`), merge the PR with a merge commit; `release-publish` tags it (D29). `gh release create` only if the tag does not appear.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/141
