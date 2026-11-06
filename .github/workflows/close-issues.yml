@@ -1,0 +1,77 @@
+# Feature PRs merge into `dev`, and GitHub honours closing keywords only for PRs into the default branch (`main`).
+# When a PR merges into `dev`, this closes the same-repo issues its title or body names with a closing keyword.
+# No checkout: the title and body are read from the event file by jq and never reach the shell as code.
+name: close-issues
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [dev]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  close:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+
+          say() { echo "$1"; echo "- $1" >> "$GITHUB_STEP_SUMMARY"; }
+
+          # close/closes/closed, fix/fixes/fixed, resolve/resolves/resolved, optional colon, then #N or owner/repo#N.
+          # A bare "(#N)" has no keyword, so squash titles' PR refs do not match. Output: "N" or "other:owner/repo#N".
+          refs=$(jq -r --arg repo "$GH_REPO" '
+            (.pull_request.title // "") + "\n" + (.pull_request.body // "")
+            | [scan("(?i)\\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?):?[ \\t]+([\\w.-]+/[\\w.-]+)?#([0-9]+)\\b")]
+            | map(if .[0] == null or (.[0] | ascii_downcase) == ($repo | ascii_downcase)
+                  then .[1] else "other:" + .[0] + "#" + .[1] end)
+            | unique | .[]' "$GITHUB_EVENT_PATH")
+
+          if [ -z "$refs" ]; then
+            say "PR #$PR names no issue with a closing keyword. Nothing to do."
+            exit 0
+          fi
+
+          comment="Closed by #$PR (merged into \`dev\`)"
+          failed=0
+          for ref in $refs; do
+            case "$ref" in
+              other:*) say "Skip ${ref#other:}: another repository."; continue ;;
+            esac
+            n=$ref
+
+            if ! info=$(gh api "repos/$GH_REPO/issues/$n" --jq '(if .pull_request then "pr" else "issue" end) + " " + .state' 2>&1); then
+              if [[ "$info" == *"Not Found"* ]]; then
+                say "Skip #$n: not found."
+              else
+                echo "::error::Could not read #$n: $info"
+                failed=1
+              fi
+              continue
+            fi
+            case "$info" in
+              "pr "*) say "Skip #$n: a pull request, not an issue."; continue ;;
+              "issue closed") say "Skip #$n: already closed."; continue ;;
+            esac
+
+            # A re-run after a failed close finds the issue open; do not comment twice.
+            existing=$(gh api --paginate "repos/$GH_REPO/issues/$n/comments" --jq '.[].body')
+            if grep -Fxq -- "$comment" <<< "$existing"; then
+              echo "#$n already has the comment."
+            else
+              gh issue comment "$n" --body "$comment"
+            fi
+            gh issue close "$n" --reason completed
+            say "Closed #$n."
+          done
+
+          exit "$failed"
