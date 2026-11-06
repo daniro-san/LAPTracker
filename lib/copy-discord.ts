@@ -1,9 +1,9 @@
 // The Discord messages' text (lib/notify.ts), re-exported as `copy.discord` from lib/copy.ts. Public
 // messages use the public pages' words (copy.status); admin messages use /admin's (copy.admin).
-// Times are filled in already formatted, with the word "server" after them; no UTC.
+// Times are filled in already formatted, with the words "server time" after them; no UTC.
 export const discordCopy = {
   public: {
-    /** `✓ Last updated at Sat, Nov 7, 14:01 server` is copy.status.lastUpdated after the icon. */
+    /** `✓ Last updated at Sat, Nov 7, 14:01 server time` is copy.status.lastUpdated after the icon. */
     alliances: "{good}/{total} alliances",
     stale: "○ {n} stale: {list}",
     /** First line of a manual round's public message (D28). */

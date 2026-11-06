@@ -144,6 +144,32 @@ def icon_officer():
     blob(p, [(8, 1.6), (9.1, 6.2), (14.2, 8), (9.1, 9.8), (8, 14.4), (6.9, 9.8), (1.8, 8), (6.9, 6.2)], k=.28)
     return svg("0 0 16 16", el(p))
 
+def icon_live():
+    """The /admin live mark: grandma's chamberstick, lit (small cut, 16-20 px). The flame and its glow
+    ticks are two paths so CSS can sway the flame (pivot at the wick, 8 7.4) and flicker the ticks while a run
+    is in progress."""
+    p = Path()
+    # wax body, melted down around the wick, a drip down the left
+    blob(p, [(5.7, 9.3), (7.0, 8.9), (7.7, 9.5), (8.5, 9.4), (9.4, 8.8), (10.3, 9.2), (10.1, 11.8), (10.3, 13.8),
+             (8, 14.1), (5.8, 13.9), (5.9, 12.3), (5.3, 11.7), (5.2, 10.4)], k=.8)
+    # saucer, and its ring handle on the right (a hole cut by evenodd)
+    stroke(p, [(2.7, 15.1), (7.4, 15.4), (12.5, 14.9)], .62, a=.12, b=.25, e=.42)
+    ring(p, arc(13.6, 13.6, 1.25, 1.1, 0, 300, 6, wob=[0, .06, -.04, .05, 0, -.05]), .32)
+    stroke(p, [(8.1, 9.3), (8.0, 8.3), (7.8, 7.6)], .3, a=.2, b=.4, e=.22)
+    f = Path()
+    # flame leaning a little, its tip curling, a small core cut out
+    blob(f, [(8.9, 0.8), (9.3, 2.2), (10.0, 3.6), (10.0, 5.3), (9.1, 6.6), (7.9, 7.0), (6.8, 6.5), (6.3, 5.2),
+             (6.8, 3.5), (8.0, 2.3)], k=.85)
+    blob(f, [(8.3, 4.9), (8.7, 5.6), (8.3, 6.2), (7.8, 5.9), (7.9, 5.3)], k=.8)
+    # glow ticks, their own path: they flicker while the flame sways
+    g = Path()
+    stroke(g, [(4.8, 3.6), (4.0, 2.8), (3.1, 2.3)], .42, a=.3, b=.5, e=.12)
+    stroke(g, [(11.4, 3.5), (12.2, 2.7), (13.1, 2.3)], .42, a=.3, b=.5, e=.12)
+    stroke(g, [(4.3, 6.0), (3.3, 5.8), (2.3, 5.9)], .4, a=.3, b=.5, e=.12)
+    stroke(g, [(11.9, 6.0), (12.9, 5.8), (13.9, 5.9)], .4, a=.3, b=.5, e=.12)
+    return svg("0 0 16 16", el(p, ' fill-rule="evenodd"') + el(f, ' fill-rule="evenodd" data-anim="flame"')
+               + el(g, ' data-anim="glow"'))
+
 ITEMS = {"seal": seal, "yarn-corner": yarn_corner, "lace": lace, "lace-alt-dot": lace_b,
          "icon-running": icon_running, "icon-crown": icon_crown, "icon-officer": icon_officer, "icon-done": icon_done, "icon-partial": icon_partial}
 

@@ -193,6 +193,26 @@ describe("runSnapshot", () => {
       quota_remaining: 900,
     });
   });
+
+  it("counts the /v1 attempts after the last quota-bearing response as unseen", async () => {
+    // One alliance, so the tail is sequential: the quota check is the last response with a quota
+    // object, then 3 attempts fail with a 503 (no quota) and the internal fallback fills the row.
+    const v1 = fakeV1(fresh);
+    v1.fetchAlliance = async (_id, onAttempt) => {
+      for (let n = 0; n < 3; n++) onAttempt?.(n);
+      throw new UpstreamError(503);
+    };
+    const { deps, repo } = makeDeps(v1, fakeInternal(fresh), [FIRST]);
+
+    const summary = await runSnapshot(EVENT_ID, "after", deps);
+
+    expect(summary).toMatchObject({ status: "complete", callsUsed: 4 });
+    expect(repo.tables.snapshots[0]?.result).toMatchObject({
+      quotaRemainingBefore: 1000,
+      quotaRemainingAfter: 1000,
+      quotaUnseenCalls: 3,
+    });
+  });
 });
 
 describe("runSnapshot deadline", () => {

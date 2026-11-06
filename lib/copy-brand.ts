@@ -156,6 +156,7 @@ export const brandCopy = {
     hourglass: "Hourglass · running",
     crown: "Crown · alliance leader (R5)",
     officer: "Stitch star · titled officer (R4)",
+    candle: "Chamberstick · admin live indicator",
   },
   components: {
     title: "Components",
@@ -231,6 +232,30 @@ export const brandCopy = {
         ["Discord post", "off"],
       ],
     },
+    adminSection: {
+      name: "Admin section",
+      use: "Each /admin section in a flat 1 px frame: its title, a state chip or note on the right, one help line, then labelled facts. No shadow, no rounded corner.",
+      title: "Status",
+      value: "Halloween war · After snapshot",
+      state: "done 14:02",
+    },
+    live: {
+      name: "Live indicator",
+      use: "In the admin nav on every admin page: the candle sways and its glow flickers while a run is in progress, dimmed when idle, still under reduced motion. The word is always beside it; it is not a control.",
+    },
+    costTag: {
+      name: "Cost tag",
+      use: "Beside or under every admin action: what pressing it spends.",
+    },
+    phases: {
+      name: "Round phase states",
+      use: "Each phase of a manual round says what to do next: not started, running since, done, partly done, failed and why.",
+    },
+    runTrace: {
+      name: "Run trace",
+      use: "The run page's upstream calls: one line per call in the order they finished, its seconds, HTTP status, cached and retries, then a total. The slowest call says so in words. Cards on a phone, a table from 640 px.",
+      tags: ["OGs", "URSA"],
+    },
     rule: {
       name: "Drawn rule",
       use: "Section dividers and the footer top. Tables keep plain 1 px rules.",
@@ -246,6 +271,10 @@ export const brandCopy = {
       use: "Above the member list: the R5 leader, then each R4 with a title, as cards with photo, name, role, Might, Kills and Level. Whatever title the game gives is shown as it comes. Left out when the alliance has none.",
     },
     lace: { name: "Lace", use: "Under the header, and nowhere else." },
+    settings: {
+      name: "Settings gear",
+      use: "The last control in the header, on every page. Its panel holds the theme, the times (server time or the viewer's own zone) and the date order; each choice is a cookie for that browser. On /admin it holds the theme only, because the admin area stays in server time.",
+    },
     corner: {
       name: "Yarn corner",
       use: "One footer corner per page. The Granny Doctor takes it on error and player pages.",

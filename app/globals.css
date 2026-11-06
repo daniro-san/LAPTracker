@@ -1,7 +1,7 @@
 @import "tailwindcss";
 @import "../lib/brand/tokens.css";
 
-/* `dark:` follows the header theme switch first, the system setting second (lib/brand/tokens.css). */
+/* `dark:` follows the viewer's theme choice (the settings gear, the `theme` cookie) first, the system setting second (lib/brand/tokens.css). */
 @custom-variant dark {
   &:where([data-theme="dark"], [data-theme="dark"] *) {
     @slot;
@@ -83,8 +83,46 @@ body {
 [data-anim="rock"] {
   animation: granny-rock 2.5s ease-in-out infinite alternate;
 }
+/* The /admin live candle (DESIGN.md `live-indicator`): while a run is in progress the flame sways from
+   the wick and the glow ticks flicker; idle, the ticks are hidden. Reduced motion keeps it lit, still. */
+@keyframes live-flame {
+  0% {
+    transform: rotate(-8deg) scaleY(0.94);
+  }
+  50% {
+    transform: rotate(3deg) scaleY(1.04);
+  }
+  100% {
+    transform: rotate(8deg) scaleY(0.97);
+  }
+}
+@keyframes live-glow {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  40% {
+    opacity: 0.15;
+  }
+  70% {
+    opacity: 0.7;
+  }
+}
+[data-anim="flame"] {
+  transform-box: view-box;
+}
+.live-on [data-anim="flame"] {
+  animation: live-flame 0.9s ease-in-out infinite alternate;
+}
+.live-on [data-anim="glow"] {
+  animation: live-glow 1.3s ease-in-out infinite;
+}
+.live-off [data-anim="glow"] {
+  opacity: 0;
+}
 @media (prefers-reduced-motion: reduce) {
-  [data-anim] {
+  [data-anim],
+  .live-on [data-anim] {
     animation: none;
   }
 }

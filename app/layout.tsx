@@ -10,6 +10,7 @@ import { copy } from "@/lib/copy";
 import { requestLocale } from "./_ui/locale";
 import { LocaleProvider } from "./_ui/LocaleProvider";
 import { UpstreamBanner } from "./_ui/UpstreamBanner";
+import { VercelInsights } from "./_ui/VercelInsights";
 
 import "./globals.css";
 
@@ -28,6 +29,8 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           <UpstreamBanner />
           {children}
         </LocaleProvider>
+        {/* Production deployment only: not previews, `next dev`, `next start` or tests (D36). */}
+        {process.env.VERCEL_ENV === "production" && <VercelInsights />}
       </body>
     </html>
   );

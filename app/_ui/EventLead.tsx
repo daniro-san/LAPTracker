@@ -1,5 +1,5 @@
 // The lead of a history row: the event's day, then the time its figures are from in muted text
-// (`Sat, Oct 31 · 14:00 server`). A before-fallback row reads `10:00` without needing a word (07c S1).
+// (`Sat, Oct 31 · 14:00 server time`). A before-fallback row reads `10:00` without needing a word (07c S1).
 import type { Clock } from "./format";
 
 export function EventLead({

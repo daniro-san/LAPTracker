@@ -1,7 +1,10 @@
 // /brand "Components": every control and ornament the site uses, each with when to use it. The
 // fields are live but belong to no form; nothing here submits.
+import { AdminSection, CostTag, Fact, LiveIndicator, StateChip } from "@/app/_ui/admin/parts";
+import { RunTrace } from "@/app/_ui/admin/RunTrace";
 import { MEMBER_MARK } from "@/app/_ui/format";
 import { MemberMark } from "@/app/_ui/Num";
+import { ViewerSettings } from "@/app/_ui/ViewerSettings";
 import { Button } from "@/lib/brand/components/Button";
 import { CheckField } from "@/lib/brand/components/CheckField";
 import { Chip } from "@/lib/brand/components/Chip";
@@ -13,7 +16,7 @@ import { Crown, OfficerStar, RoleMark } from "@/lib/brand/components/RoleMark";
 import { SealButton } from "@/lib/brand/components/SealButton";
 import { DroppedStitch, Hourglass, StitchedCheck } from "@/lib/brand/components/StatusIcons";
 import { YarnCorner } from "@/lib/brand/components/YarnCorner";
-import { copy } from "@/lib/copy";
+import { copy, fill } from "@/lib/copy";
 
 import { Section, Spec } from "./parts";
 
@@ -50,10 +53,106 @@ function Fields() {
           className="drawn-field min-h-11 w-full px-3"
         />
         <select aria-label={t.field.select} className="drawn-field min-h-11 w-full px-3">
-          {t.field.options.map((o) => (
-            <option key={o}>{o}</option>
+          {t.field.options.map((o, i) => (
+            <option key={i}>{o}</option>
           ))}
         </select>
+      </div>
+    </Spec>
+  );
+}
+
+const ps = copy.admin.manual.phaseState;
+/** Sample phase states for the specimen, built from the real copy with made-up times. */
+const PHASES = [
+  ["none", fill(ps.none, { seal: copy.admin.seal.before })],
+  ["running", fill(ps.running, { at: "14:01" })],
+  ["complete", fill(ps.complete, { at: "14:02" })],
+  ["failed", fill(ps.failed, { reason: "deadline" })],
+] as const;
+
+/** The /admin pieces from #91: a framed section with a fact, the live indicator, costs, phase states. */
+function Admin() {
+  const a = t.adminSection;
+  return (
+    <>
+      <div className="sm:col-span-2">
+        <Spec name={a.name} use={a.use}>
+          <div className="w-full">
+            <AdminSection id="brand-admin-section" title={a.title}>
+              <Fact
+                label={copy.admin.status.last}
+                value={a.value}
+                chip={<StateChip status="complete">{a.state}</StateChip>}
+              />
+            </AdminSection>
+          </div>
+        </Spec>
+      </div>
+      <Spec name={t.live.name} use={t.live.use}>
+        <div className="flex w-full flex-col">
+          <LiveIndicator on />
+          <LiveIndicator on={false} />
+        </div>
+      </Spec>
+      <Spec name={t.costTag.name} use={t.costTag.use}>
+        <CostTag>{copy.admin.run.snapshots.costOne}</CostTag>
+        <CostTag>{copy.admin.run.free}</CostTag>
+      </Spec>
+      <div className="sm:col-span-2">
+        <Spec name={t.phases.name} use={t.phases.use}>
+          {PHASES.map(([status, text], i) => (
+            <StateChip key={i} status={status}>
+              {text}
+            </StateChip>
+          ))}
+        </Spec>
+      </div>
+    </>
+  );
+}
+
+/** A made-up three-call run: the quota check, a fast cached read and a slow read that was retried. */
+function Trace() {
+  const [a, b] = t.runTrace.tags;
+  const call = { cached: false, retries: 0, slowest: false, httpStatus: 200 };
+  return (
+    <Spec name={t.runTrace.name} use={t.runTrace.use}>
+      <div className="w-full">
+        <RunTrace
+          deadline={false}
+          trace={{
+            calls: [
+              {
+                ...call,
+                id: 1,
+                endpoint: "quota",
+                alliance: null,
+                seconds: 0.4,
+                retries: null,
+                cached: null,
+              },
+              {
+                ...call,
+                id: 2,
+                endpoint: "alliance",
+                alliance: a ?? null,
+                seconds: 1.9,
+                cached: true,
+              },
+              {
+                ...call,
+                id: 3,
+                endpoint: "alliance",
+                alliance: b ?? null,
+                seconds: 6.3,
+                retries: 1,
+                slowest: true,
+              },
+            ],
+            total: { calls: 3, seconds: 8.6, retries: 1 },
+          }}
+        />
       </div>
     </Spec>
   );
@@ -88,6 +187,11 @@ function Ornaments() {
         <div className="w-full">
           <div className="h-6 bg-plum" />
           <LaceBorder className="block" />
+        </div>
+      </Spec>
+      <Spec name={t.settings.name} use={t.settings.use}>
+        <div className="flex w-full justify-end bg-plum p-2 text-paper">
+          <ViewerSettings />
         </div>
       </Spec>
       <Spec name={t.corner.name} use={t.corner.use} plate="text-plum">
@@ -142,7 +246,7 @@ export function ComponentsSection() {
             <legend className="mb-1 text-sm font-semibold">{t.radio.legend}</legend>
             {t.radio.options.map(([label, help], i) => (
               <RadioField
-                key={label}
+                key={i}
                 name="brand-radio"
                 label={label}
                 help={help}
@@ -164,6 +268,10 @@ export function ComponentsSection() {
             <FactList items={t.facts.items.map(([label, value]) => ({ label, value }))} />
           </div>
         </Spec>
+        <Admin />
+        <div className="sm:col-span-3">
+          <Trace />
+        </div>
         <Ornaments />
       </div>
     </Section>

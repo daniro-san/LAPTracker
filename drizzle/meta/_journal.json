@@ -64,6 +64,20 @@
       "when": 1793918542691,
       "tag": "0008_silly_peter_quill",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793920741403,
+      "tag": "0009_wide_wiccan",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1793921500957,
+      "tag": "0010_certain_prodigy",
+      "breakpoints": true
     }
   ]
 }

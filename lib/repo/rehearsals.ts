@@ -149,6 +149,8 @@ export interface VerdictPhase {
   callsUsed: number;
   quotaRemainingBefore: number | null;
   quotaRemainingAfter: number | null;
+  /** /v1 attempts after the last response that carried a quota object. */
+  quotaUnseenCalls: number;
   durationMs: number | null;
   alliances: VerdictAlliance[];
 }
@@ -180,6 +182,7 @@ export async function loadVerdictInput(db: Db, eventId: number): Promise<Verdict
       callsUsed: run.callsUsed,
       quotaRemainingBefore: run.quotaRemainingBefore,
       quotaRemainingAfter: run.quotaRemainingAfter,
+      quotaUnseenCalls: run.quotaUnseenCalls,
       durationMs: run.durationMs,
       alliances,
     };

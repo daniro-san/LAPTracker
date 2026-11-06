@@ -143,7 +143,7 @@ describe("one message per channel per event (D31)", () => {
     );
     expect(embed.description?.split("\n").slice(0, 3)).toEqual([
       "Manual round: Demo round. Taken by hand.",
-      "Before snapshot done at Sat, Nov 7, 10:01 server",
+      "Before snapshot done at Sat, Nov 7, 10:01 server time",
       "1/1 alliances",
     ]);
   });

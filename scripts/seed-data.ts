@@ -3,6 +3,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { ALLIANCES } from "../config/alliances";
 import { photoUrl } from "../lib/sources/shared";
 
 export interface BaseMember {
@@ -24,15 +25,21 @@ export interface BaseAlliance {
 
 const FIXTURES = join(import.meta.dirname, "../fixtures");
 
-/** Fixture rosters by union_id: fixtures/v1-ids/<id>.json, else the latest fixtures/v1-<ts>/alliance-<id>.json. */
+/**
+ * Fixture rosters of the tracked alliances (config/alliances.ts) by union_id: fixtures/v1-ids/<id>.json,
+ * else the latest fixtures/v1-<ts>/alliance-<id>.json. Bodies of untracked alliances (TRM, 404) stay in
+ * fixtures/ for the parser tests and are skipped here, so the seed ranks run to #20 as the config does.
+ */
 export function loadBase(): BaseAlliance[] {
+  const tracked = new Set<number>(ALLIANCES.map((a) => a.unionId));
   const bodies = new Map<number, Record<string, unknown>>();
   for (const dir of readdirSync(FIXTURES)
     .filter((d) => d.startsWith("v1-"))
     .sort()) {
     for (const file of readdirSync(join(FIXTURES, dir))) {
       const id = /^(?:alliance-)?(\d+)\.json$/.exec(file)?.[1];
-      if (id) bodies.set(Number(id), JSON.parse(readFileSync(join(FIXTURES, dir, file), "utf8")));
+      if (id && tracked.has(Number(id)))
+        bodies.set(Number(id), JSON.parse(readFileSync(join(FIXTURES, dir, file), "utf8")));
     }
   }
   return [...bodies]

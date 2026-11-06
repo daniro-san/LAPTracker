@@ -72,6 +72,9 @@ export const snapshots = pgTable(
     // quota_remaining_after it gives the run's quota drop, which the rehearsal verdict checks.
     quotaRemainingBefore: integer("quota_remaining_before"),
     quotaRemainingAfter: integer("quota_remaining_after"),
+    // Attempts counted after the response that gave quota_remaining_after: they carried no quota
+    // object (a 5xx before the internal fallback), so the drop cannot show them.
+    quotaUnseenCalls: integer("quota_unseen_calls").notNull().default(0),
     boardPulledAt: tstz("board_pulled_at"),
     error: text("error"),
     durationMs: integer("duration_ms"),
@@ -184,6 +187,16 @@ export const appErrors = pgTable(
     message: text("message").notNull(),
   },
   (t) => [index("app_errors_at_idx").on(t.at)],
+);
+
+/** The last app-error alert (plan §6 Observability): one row, claimed so one instance posts per hour. */
+export const appAlerts = pgTable(
+  "app_alerts",
+  {
+    id: integer("id").primaryKey(),
+    alertedAt: tstz("alerted_at").notNull(),
+  },
+  (t) => [check("app_alerts_single_row_check", sql`${t.id} = 1`)],
 );
 
 /**

@@ -96,9 +96,9 @@ const signedCompact = (n: number) =>
   `${sign(n)}${Math.abs(n) < 1000 ? Math.abs(n) : compactFormat.format(Math.abs(n))}`;
 
 export interface DiscordClock {
-  /** "Sat, Nov 7, 14:01 server": the public pages' date, with the weekday. */
+  /** "Sat, Nov 7, 14:01 server time": the public pages' date, with the weekday. */
   at: (d: Date) => string;
-  /** "Sat, 11/07/2026, 14:01 server": /admin's date. */
+  /** "Sat, 11/07/2026, 14:01 server time": /admin's date. */
   stamp: (d: Date) => string;
 }
 
@@ -116,8 +116,8 @@ export function discordClock(timeZone: string): DiscordClock {
     hourCycle: "h23",
   });
   return {
-    at: (d) => `${day.format(d)}, ${hhmm.format(d)} ${copy.time.server}`,
-    stamp: (d) => `${full.format(d)} ${copy.time.server}`,
+    at: (d) => `${day.format(d)}, ${hhmm.format(d)} ${copy.time.serverTime}`,
+    stamp: (d) => `${full.format(d)} ${copy.time.serverTime}`,
   };
 }
 

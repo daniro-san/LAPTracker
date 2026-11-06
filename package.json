@@ -15,7 +15,7 @@
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "check": "prettier --check . && eslint . && tsc --noEmit && vitest run",
+    "check": "prettier --check . && eslint . && tsc --noEmit && vitest run && tsx scripts/check-drift.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/migrate.ts",
     "snapshot:dry": "tsx scripts/snapshot-dry.ts",
@@ -24,6 +24,8 @@
   },
   "dependencies": {
     "@neondatabase/serverless": "1.2.0",
+    "@vercel/analytics": "2.0.1",
+    "@vercel/speed-insights": "2.0.0",
     "drizzle-orm": "0.45.4",
     "next": "16.4.5",
     "react": "19.3.1",

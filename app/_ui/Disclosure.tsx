@@ -2,16 +2,18 @@
 
 // A <details> menu that also closes on Escape (focus back on its summary) and on a tap outside it
 // (07c S12). Without JavaScript it is still a working <details>.
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode, type SyntheticEvent } from "react";
 
 export function Disclosure({
   label,
   className,
+  onToggle,
   children,
 }: {
   /** The accessible name of the group, e.g. "Events". */
   label: string;
   className?: string;
+  onToggle?: (e: SyntheticEvent<HTMLDetailsElement>) => void;
   children: ReactNode;
 }) {
   const ref = useRef<HTMLDetailsElement>(null);
@@ -34,7 +36,7 @@ export function Disclosure({
     };
   }, []);
   return (
-    <details ref={ref} aria-label={label} className={className}>
+    <details ref={ref} aria-label={label} className={className} onToggle={onToggle}>
       {children}
     </details>
   );

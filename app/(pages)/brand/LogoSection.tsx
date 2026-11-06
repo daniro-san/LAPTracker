@@ -120,7 +120,7 @@ function Usage() {
     <Sub title={t.useTitle}>
       <ul className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
         {dos.map((tile, i) => (
-          <li key={t.dos[i]} className="flex flex-col gap-2">
+          <li key={i} className="flex flex-col gap-2">
             {tile}
             <Verdict ok>{t.dos[i]}</Verdict>
           </li>
@@ -128,7 +128,7 @@ function Usage() {
       </ul>
       <ul className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         {donts.map((tile, i) => (
-          <li key={t.donts[i]} className="flex flex-col gap-2">
+          <li key={i} className="flex flex-col gap-2">
             {tile}
             <Verdict ok={false}>{t.donts[i]}</Verdict>
           </li>
