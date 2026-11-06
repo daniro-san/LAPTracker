@@ -15,6 +15,7 @@ export const fr = {
     settings: "Réglages",
     exactNumbers: "Chiffres exacts",
     events: "Événements",
+    allEvents: "Tous les événements",
     latest: "dernier",
     manualRound: "Manche manuelle",
     breadcrumb: "Fil d’Ariane",

@@ -15,6 +15,7 @@ export const de = {
     settings: "Einstellungen",
     exactNumbers: "Genaue Zahlen",
     events: "Events",
+    allEvents: "Alle Events",
     latest: "neuestes",
     manualRound: "Manuelle Runde",
     breadcrumb: "Navigationspfad",

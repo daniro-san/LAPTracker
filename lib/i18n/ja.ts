@@ -15,6 +15,7 @@ export const ja = {
     settings: "設定",
     exactNumbers: "正確な数値",
     events: "イベント",
+    allEvents: "すべてのイベント",
     latest: "最新",
     manualRound: "手動ラウンド",
     breadcrumb: "パンくずリスト",

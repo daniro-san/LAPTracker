@@ -15,6 +15,7 @@ export const th = {
     settings: "ตั้งค่า",
     exactNumbers: "ตัวเลขเต็ม",
     events: "กิจกรรม",
+    allEvents: "กิจกรรมทั้งหมด",
     latest: "ล่าสุด",
     manualRound: "รอบแมนนวล",
     breadcrumb: "เส้นทาง",

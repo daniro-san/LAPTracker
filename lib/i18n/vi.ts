@@ -15,6 +15,7 @@ export const vi = {
     settings: "Cài đặt",
     exactNumbers: "Số chính xác",
     events: "Sự kiện",
+    allEvents: "Tất cả sự kiện",
     latest: "mới nhất",
     manualRound: "Vòng thủ công",
     breadcrumb: "Đường dẫn",

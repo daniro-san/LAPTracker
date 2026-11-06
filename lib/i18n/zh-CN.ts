@@ -15,6 +15,7 @@ export const zhCN = {
     settings: "设置",
     exactNumbers: "精确数字",
     events: "活动",
+    allEvents: "全部活动",
     latest: "最新",
     manualRound: "手动轮次",
     breadcrumb: "导航路径",

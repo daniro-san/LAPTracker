@@ -15,6 +15,7 @@ export const tr = {
     settings: "Ayarlar",
     exactNumbers: "Tam sayılar",
     events: "Etkinlikler",
+    allEvents: "Tüm etkinlikler",
     latest: "en son",
     manualRound: "Elle tur",
     breadcrumb: "Konum",

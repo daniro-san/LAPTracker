@@ -15,6 +15,7 @@ export const uk = {
     settings: "Налаштування",
     exactNumbers: "Точні числа",
     events: "Події",
+    allEvents: "Усі події",
     latest: "остання",
     manualRound: "Ручний раунд",
     breadcrumb: "Навігація",

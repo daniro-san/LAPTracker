@@ -1,6 +1,8 @@
-// How an event is named in the selector and at the top of its page: a real event by its weekday, a
-// manual round (D28) by its name, as text, with a small "Manual round" tag.
+// How an event is named (D49): by its title, i.e. a manual round's name (D28) or the name the owner gave
+// a scheduled event (D39), and by its weekday while a scheduled event keeps its generated name, which is
+// English and says no more than the date. A manual round also carries the ✎ mark.
 import type { Dictionary } from "@/lib/copy";
+import { isGeneratedName } from "@/lib/schedule";
 
 import type { Clock } from "./format";
 
@@ -10,22 +12,20 @@ export interface LabeledEvent {
   eventAtUtc: Date;
 }
 
-export function EventLabel({
-  event,
-  clock,
-  copy,
-}: {
-  event: LabeledEvent;
-  clock: Clock;
-  copy: Dictionary;
-}) {
-  if (!event.manual) return <>{clock.weekday(event.eventAtUtc)}</>;
+/** The event's title, or null while it keeps its generated name. */
+export const eventTitle = (e: { name: string; manual: boolean }) =>
+  e.manual || !isGeneratedName(e.name) ? e.name : null;
+
+/** The manual round's mark: a pen to the eye, the words to a screen reader. */
+export function ManualMark({ copy }: { copy: Dictionary }) {
   return (
     <>
-      <span className="break-words">{event.name}</span>
-      <span className="ml-2 rounded-xs border border-current px-1.5 text-xs font-normal">
-        {copy.site.manualRound}
-      </span>
+      <span aria-hidden="true">✎</span>
+      <span className="sr-only">{copy.site.manualRound}: </span>
     </>
   );
+}
+
+export function EventLabel({ event, clock }: { event: LabeledEvent; clock: Clock }) {
+  return <>{eventTitle(event) ?? clock.weekday(event.eventAtUtc)}</>;
 }

@@ -15,6 +15,7 @@ export const ru = {
     settings: "Настройки",
     exactNumbers: "Точные числа",
     events: "События",
+    allEvents: "Все события",
     latest: "последнее",
     manualRound: "Ручной раунд",
     breadcrumb: "Навигация",

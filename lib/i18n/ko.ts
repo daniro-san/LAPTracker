@@ -15,6 +15,7 @@ export const ko = {
     settings: "설정",
     exactNumbers: "정확한 숫자",
     events: "이벤트",
+    allEvents: "모든 이벤트",
     latest: "최신",
     manualRound: "수동 라운드",
     breadcrumb: "경로",

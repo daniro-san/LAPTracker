@@ -15,6 +15,7 @@ export const ptBR = {
     settings: "Configurações",
     exactNumbers: "Números exatos",
     events: "Eventos",
+    allEvents: "Todos os eventos",
     latest: "último",
     manualRound: "Rodada manual",
     breadcrumb: "Navegação",

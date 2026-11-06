@@ -10,6 +10,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { rankDelta } from "@/lib/compute";
 import { fill, type Dictionary } from "@/lib/copy";
 import type { PlayerEventRow } from "@/lib/queries";
+import { isGeneratedName } from "@/lib/schedule";
 
 import { DetailTable, type RankPair } from "./DetailLines";
 import { EmptyState } from "./EmptyState";
@@ -96,6 +97,8 @@ function RowLead({
   lines,
 }: RowProps & { rank: RankPair; lines: 1 | 2 | 3 }) {
   const note = changes(r, copy);
+  // The event by its title (D49), its date under it; by its date while it keeps its generated name.
+  const title = isGeneratedName(r.eventName) ? null : r.eventName;
   return (
     <div
       className={`col-span-full mb-1 border-b border-rule pb-2 sm:col-span-1 sm:mb-0 sm:border-0 sm:pb-0 ${SPAN[lines]}`}
@@ -106,11 +109,12 @@ function RowLead({
         </span>
         <Link
           href={`/events/${r.eventId}/alliances/${r.unionId}`}
-          className="font-subhead text-display-sm leading-tight text-plum after:absolute after:inset-0 after:content-[''] hover:underline focus-visible:underline"
+          className="min-w-0 break-words font-subhead text-display-sm leading-tight text-plum after:absolute after:inset-0 after:content-[''] hover:underline focus-visible:underline"
         >
-          {clock.weekday(r.eventAtUtc)}
+          {title ?? clock.weekday(r.eventAtUtc)}
         </Link>
       </div>
+      {title && <div className={`text-sm ${MUTED}`}>{clock.weekday(r.eventAtUtc)}</div>}
       {(showAlliance || note) && (
         <div className={`mt-0.5 break-words text-sm ${MUTED}`}>
           {showAlliance && allianceLabel(r.tag, r.allianceName)}

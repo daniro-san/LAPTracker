@@ -15,6 +15,7 @@ export const sv = {
     settings: "Inställningar",
     exactNumbers: "Exakta tal",
     events: "Event",
+    allEvents: "Alla event",
     latest: "senaste",
     manualRound: "Manuell omgång",
     breadcrumb: "Sökväg",

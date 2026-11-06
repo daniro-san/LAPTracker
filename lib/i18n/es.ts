@@ -15,6 +15,7 @@ export const es = {
     settings: "Ajustes",
     exactNumbers: "Números exactos",
     events: "Eventos",
+    allEvents: "Todos los eventos",
     latest: "último",
     manualRound: "Ronda manual",
     breadcrumb: "Ruta",

@@ -15,6 +15,7 @@ export const itIT = {
     settings: "Impostazioni",
     exactNumbers: "Numeri esatti",
     events: "Eventi",
+    allEvents: "Tutti gli eventi",
     latest: "ultimo",
     manualRound: "Turno manuale",
     breadcrumb: "Percorso",

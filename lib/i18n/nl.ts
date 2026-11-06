@@ -15,6 +15,7 @@ export const nl = {
     settings: "Instellingen",
     exactNumbers: "Exacte getallen",
     events: "Events",
+    allEvents: "Alle events",
     latest: "nieuwste",
     manualRound: "Handmatige ronde",
     breadcrumb: "Kruimelpad",

@@ -15,6 +15,7 @@ export const idID = {
     settings: "Pengaturan",
     exactNumbers: "Angka pasti",
     events: "Event",
+    allEvents: "Semua event",
     latest: "terbaru",
     manualRound: "Ronde manual",
     breadcrumb: "Jejak",

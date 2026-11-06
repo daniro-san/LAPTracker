@@ -34,6 +34,12 @@ export const WEEKDAY_NAMES = [
 ];
 const DAY_MS = 86_400_000;
 
+// The name `eventOn` gives a scheduled event ("Saturday Event 2026-10-31"; the seed prefixes "Seed ").
+const GENERATED_NAME = new RegExp(`\\b(${WEEKDAY_NAMES.join("|")}) Event \\d{4}-\\d{2}-\\d{2}$`);
+
+/** True while a scheduled event keeps its generated name, i.e. the owner has not renamed it (D39). */
+export const isGeneratedName = (name: string) => GENERATED_NAME.test(name);
+
 interface WallClock {
   y: number;
   m: number;
