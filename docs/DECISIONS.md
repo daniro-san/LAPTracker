@@ -359,3 +359,10 @@ Viewers on server 325 live from UTC−8 to UTC+10 and write dates in different o
 - **Rule.** `POST /api/manual-event/rename` (PIN only, the D28 name rules) renames any event that is not a rehearsal. A scheduled (Saturday) event can be renamed whenever its row exists, from a day before its Before (the tick makes it then), before any snapshot included: naming the coming event ahead ("KvK 12-11") is the use the owner showed in the approved mock. A manual round keeps D28: only after a snapshot exists (409 `rename_before_run`). A rehearsal answers 404 `event_not_found`.
 - **Where.** `/admin` "Run something now" shows the current event by name with Rename (free); before its row exists a line says when it can be renamed. A manual round is still renamed in its card's options.
 - **Path kept.** The route keeps its D28 path rather than a new one; `renameManualEvent` became `renameEvent`. Discord messages already sent keep the old name.
+
+## D50 — An officer's mark comes from the title text, with the in-game names as aliases (2026-11-05, 08zx, owner)
+
+- **Rule.** A titled R4 gets the drawing of its title slot: Diplomat → dove, Recruiter → horn, Militarist → crossed swords, Overseer → eye (`officerMark` in `lib/brand/components/RoleMark.tsx`). The title is compared trimmed, lower-cased, inner spaces collapsed. Any other title keeps the stitch star; an untitled R4 still has no mark (`roleOf`).
+- **Why the text.** The data has no slot id: every R4 is `rank_code` 104 and the title is only the text after `R4 · ` in `rank_label`. All 26 recorded rosters use the same four English names, at most one of each per alliance, and no other title text.
+- **Aliases.** The owner calls two titles "Goddess" and "God of War". They are taken as the in-game names of the Overseer and Militarist slots (not confirmed), so `goddess` maps to the eye and `god of war` to the swords. If the site ever sends them, they get the right drawing; if the mapping is wrong, it is two lines in `BY_TITLE`.
+- **One tone.** All officers stay sage. Yarn and seal mean gain and loss and plum is the leader; the shape names the title, the word is always beside it or `sr-only`.
