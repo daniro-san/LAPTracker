@@ -45,3 +45,5 @@ Plan changes needed: none.
 - Session 9 step 3: when checking the Leadership section after the first real snapshot, each titled R4 should show its own drawing (Diplomat dove, Recruiter horn, Militarist swords, Overseer eye). A star on an officer means the site sent a title text other than those four; record the exact `rank_label`, because D50 maps by text.
 - Ask the owner which in-game title is "Goddess" and which is "God of War" while comparing with the in-game alliance screen; if they are not Overseer and Militarist, swap the two alias lines in `lib/brand/components/RoleMark.tsx` `BY_TITLE`.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/139
