@@ -137,3 +137,5 @@ Plan changes needed: §2 and §3.6 — "~2.3–2.6 s per read, ≈ 15 s per run"
 - Rehearsal event 8 is the baseline kept for the first Saturday (`is_test`, not on public pages).
 - The `/admin` "Last rehearsal" block shows six checks with ✓ and a Pass/Fail seal; the README can quote them from Verified above.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/143
