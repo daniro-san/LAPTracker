@@ -1,0 +1,129 @@
+// An event's movers (#70): the biggest gains and losses in might and kills, for alliances and for
+// members, ranked by compute.topMovers. Member fields served: uid, name, power, kills and the alliance
+// they are in (§12.1); raw_json and avatar_url are never selected.
+import { eq, inArray } from "drizzle-orm";
+
+import { topMovers, type Measured, type Mover, type MoverInput } from "../compute";
+import type { Db } from "../db";
+import { allianceSnapshots, memberSnapshots } from "../schema";
+
+/** Alliances per list, as in the Discord message; members per list (owner, 2026-11-05). */
+export const ALLIANCE_MOVERS = 3;
+export const MEMBER_MOVERS = 5;
+
+export interface MoverLists<R> {
+  mightGains: Mover<R>[];
+  mightLosses: Mover<R>[];
+  killsGains: Mover<R>[];
+}
+
+export function moverLists<R extends MoverInput>(rows: readonly R[], n: number): MoverLists<R> {
+  return {
+    mightGains: topMovers(rows, "power", n, "gain"),
+    mightLosses: topMovers(rows, "power", n, "loss"),
+    killsGains: topMovers(rows, "kills", n, "gain"),
+  };
+}
+
+interface AllianceSide {
+  unionId: number;
+  tag: string | null;
+  name: string | null;
+  badgeId: number | null;
+  totalPower: number | null;
+  totalKills: number | null;
+  isFresh: boolean;
+  failed: boolean;
+}
+
+export interface AllianceMover extends MoverInput {
+  unionId: number;
+  tag: string | null;
+  name: string | null;
+  badgeId: number | null;
+}
+
+/** A stale or failed side counts as unusable, as in the Discord movers. */
+const measured = (a: AllianceSide): Measured => ({
+  isFresh: a.isFresh && !a.failed,
+  totalPower: a.totalPower,
+  totalKills: a.totalKills,
+});
+
+/** Alliance movers from the event detail's two snapshot rows; an alliance seen on one side only is out. */
+export function allianceMovers(
+  before: readonly AllianceSide[],
+  after: readonly AllianceSide[],
+): MoverLists<AllianceMover> {
+  const was = new Map(before.map((a) => [a.unionId, a]));
+  const rows = after.map((a) => {
+    const b = was.get(a.unionId);
+    return {
+      unionId: a.unionId,
+      tag: a.tag ?? b?.tag ?? null,
+      name: a.name ?? b?.name ?? null,
+      badgeId: a.badgeId ?? b?.badgeId ?? null,
+      before: b ? measured(b) : null,
+      after: measured(a),
+    };
+  });
+  return moverLists(rows, ALLIANCE_MOVERS);
+}
+
+export interface MemberMover extends MoverInput {
+  uid: number;
+  name: string;
+  /** The alliance the member is in after the event: a switcher counts there (owner, 2026-11-05). */
+  unionId: number;
+  tag: string | null;
+}
+
+/**
+ * Member movers between two snapshots, keyed by uid across every tracked alliance. A member read on
+ * one side only is not ranked. `unionId` narrows the lists to one alliance's after roster.
+ */
+export async function memberMovers(
+  db: Db,
+  snapshotIds: { before: number; after: number },
+  unionId?: number,
+): Promise<MoverLists<MemberMover>> {
+  const rows = await db
+    .select({
+      snapshotId: allianceSnapshots.snapshotId,
+      unionId: allianceSnapshots.unionId,
+      tag: allianceSnapshots.tag,
+      isFresh: allianceSnapshots.isFresh,
+      error: allianceSnapshots.error,
+      uid: memberSnapshots.uid,
+      name: memberSnapshots.name,
+      power: memberSnapshots.power,
+      kills: memberSnapshots.kills,
+    })
+    .from(memberSnapshots)
+    .innerJoin(allianceSnapshots, eq(allianceSnapshots.id, memberSnapshots.allianceSnapshotId))
+    .where(inArray(allianceSnapshots.snapshotId, [snapshotIds.before, snapshotIds.after]));
+  const side = (r: (typeof rows)[number]): Measured => ({
+    isFresh: r.isFresh && r.error === null,
+    totalPower: r.power,
+    totalKills: r.kills,
+  });
+  const before = new Map(
+    rows.filter((r) => r.snapshotId === snapshotIds.before).map((r) => [r.uid, r]),
+  );
+  const members = rows
+    .filter((r) => r.snapshotId === snapshotIds.after)
+    .filter((r) => unionId === undefined || r.unionId === unionId)
+    .sort((x, y) => x.uid - y.uid)
+    .map((a) => {
+      const b = before.get(a.uid);
+      return {
+        uid: a.uid,
+        name: a.name,
+        unionId: a.unionId,
+        tag: a.tag,
+        before: b ? side(b) : null,
+        after: side(a),
+      };
+    });
+  return moverLists(members, MEMBER_MOVERS);
+}
