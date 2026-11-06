@@ -1,4 +1,4 @@
-// The run page's upstream calls (DESIGN.md `run-trace`, issue #94): one line per `v1.fetch` in the order
+// The run page's upstream calls (DESIGN.md `run-trace`, issue #94; framed as an `admin-section`, #91): one line per `v1.fetch` in the order
 // the calls finished, then a total. Cards below 640 px, a table above, like `stat-table`. The slowest
 // call carries a word, not only a colour. Read-only: nothing here is a control.
 import type { ReactNode } from "react";
@@ -7,6 +7,8 @@ import { LABEL } from "@/app/_ui/StatTable";
 import { Chip } from "@/lib/brand/components/Chip";
 import { copy, fill } from "@/lib/copy";
 import type { RunTrace as Trace, TraceCall } from "@/lib/queries/admin";
+
+import { AdminSection } from "./parts";
 
 const t = copy.admin.runs.trace;
 const DASH = "—";
@@ -122,21 +124,17 @@ function TraceTable({ calls, total, totalName }: Trace & { totalName: string }) 
 export function RunTrace({ trace, deadline }: { trace: Trace; deadline: boolean }) {
   const totalName = fill(t.total, { n: trace.total.calls });
   return (
-    <section aria-labelledby="run-trace" className="mt-6">
-      <h2 id="run-trace" className="mb-1 font-subhead text-display-md font-semibold">
-        {t.title}
-      </h2>
+    <AdminSection id="run-trace" title={t.title} {...(trace.calls.length > 0 && { help: t.help })}>
       {trace.calls.length === 0 ? (
-        <p className="text-sm text-ink/70">{t.none}</p>
+        <p className="text-body-sm text-ink/70">{t.none}</p>
       ) : (
         <>
-          <p className="mb-2 text-sm text-ink/70">{t.help}</p>
           <TraceCards {...trace} totalName={totalName} />
           <TraceTable {...trace} totalName={totalName} />
-          <p className="mt-2 text-sm text-ink/70">{t.overlap}</p>
+          <p className="mt-2 text-body-sm text-ink/70">{t.overlap}</p>
         </>
       )}
-      {deadline && <p className="mt-1 text-sm text-seal">{t.cut}</p>}
-    </section>
+      {deadline && <p className="mt-1 text-body-sm text-seal">{t.cut}</p>}
+    </AdminSection>
   );
 }

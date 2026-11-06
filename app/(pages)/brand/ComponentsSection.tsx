@@ -1,5 +1,6 @@
 // /brand "Components": every control and ornament the site uses, each with when to use it. The
 // fields are live but belong to no form; nothing here submits.
+import { AdminSection, CostTag, Fact, LiveIndicator, StateChip } from "@/app/_ui/admin/parts";
 import { RunTrace } from "@/app/_ui/admin/RunTrace";
 import { MEMBER_MARK } from "@/app/_ui/format";
 import { MemberMark } from "@/app/_ui/Num";
@@ -58,6 +59,47 @@ function Fields() {
         </select>
       </div>
     </Spec>
+  );
+}
+
+/** The /admin pieces from #91: a framed section with a fact, the live indicator, costs, phase states. */
+function Admin() {
+  const a = t.adminSection;
+  return (
+    <>
+      <div className="sm:col-span-2">
+        <Spec name={a.name} use={a.use}>
+          <div className="w-full">
+            <AdminSection id="brand-admin-section" title={a.title}>
+              <Fact
+                label={copy.admin.status.last}
+                value={a.value}
+                chip={<StateChip status="complete">{a.state}</StateChip>}
+              />
+            </AdminSection>
+          </div>
+        </Spec>
+      </div>
+      <Spec name={t.live.name} use={t.live.use}>
+        <div className="flex w-full flex-col">
+          <LiveIndicator on />
+          <LiveIndicator on={false} />
+        </div>
+      </Spec>
+      <Spec name={t.costTag.name} use={t.costTag.use}>
+        <CostTag>{copy.admin.run.snapshots.costOne}</CostTag>
+        <CostTag>{copy.admin.run.free}</CostTag>
+      </Spec>
+      <div className="sm:col-span-2">
+        <Spec name={t.phases.name} use={t.phases.use}>
+          {t.phases.items.map(([status, text], i) => (
+            <StateChip key={i} status={status}>
+              {text}
+            </StateChip>
+          ))}
+        </Spec>
+      </div>
+    </>
   );
 }
 
@@ -217,6 +259,7 @@ export function ComponentsSection() {
             <FactList items={t.facts.items.map(([label, value]) => ({ label, value }))} />
           </div>
         </Spec>
+        <Admin />
         <div className="sm:col-span-3">
           <Trace />
         </div>
