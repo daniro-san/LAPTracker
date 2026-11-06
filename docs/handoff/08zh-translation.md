@@ -20,13 +20,13 @@
   - `app/_ui/locale.test.ts`: language resolution (cookie, q order, unsupported first tag, pt-PT, zh-TW, en-GB locale, bad cookie).
   - `lib/copy.test.ts`: every dictionary has the English keys and placeholders and keeps Might, Kills, Members, Level.
   - Existing tests pass `en` where components now take `copy`.
-- Docs: D40 in DECISIONS.md; DESIGN.md `viewer-settings` and Voice; one GLOSSARY row.
+- Docs: D48 in DECISIONS.md; DESIGN.md `viewer-settings` and Voice; one GLOSSARY row.
 - Screenshots in `docs/screenshots/`:
   - `08zh-{event,alliance,player}-{en,es,pt-BR,ru}-360-{light,dark}.jpg`: full pages.
   - `08zh-{event,alliance,player,settings}-all-360-{light,dark}.jpg`: the top 780 px of each page in all 18 languages, 6 across.
 
 ## Decisions
-- D40: lane D took D37 and D39 while this session ran (merged from `dev`).
+- D48: lane D took D37 and D39 while this session ran (merged from `dev`).
 - Languages: the owner widened the list mid-session from ru, es, pt-BR to the 17 above. Right-to-left (ar, fa, he) stays out: about 25 physical left/right classes, arrows in 12 files and a font check. A separate issue.
 - Counts are written `Label: {n}` (`Устарело: 1`, `Desactualizados: 1`), so no language needs plural forms and there is still no i18n library.
 - The four game terms stay English in every language, including inside labels (`± Might`, `Мин. Might`, `Might mínimo`). "Sanctuary" is translated.
@@ -82,7 +82,7 @@
 Session: 9 — Dry run against production.
 Model / effort: keep — opus high. This change touches page words only; the collector, cron path, quota and Discord messages are unchanged.
 Owner must do first: get one native member per language to review the dictionaries (the files are `lib/copy.<tag>.ts`), then merge this PR into `dev`. No migration, no new environment variable.
-Plan changes needed: none for Session 9. IMPLEMENTATION_PLAN.md §9 lists translation as v2 (ru, es, pt-BR); it is now v1.1 with 17 languages (D40).
+Plan changes needed: none for Session 9. IMPLEMENTATION_PLAN.md §9 lists translation as v2 (ru, es, pt-BR); it is now v1.1 with 17 languages (D48).
 
 <adjustments>
 - If the owner's browser has a `lang` cookie or a non-English Accept-Language, public pages read in that language and numbers and dates follow it. Expected, not a dry-run bug. /admin, Discord messages and run logs are always English.
@@ -90,7 +90,7 @@ Plan changes needed: none for Session 9. IMPLEMENTATION_PLAN.md §9 lists transl
 </adjustments>
 
 <adjustments for="Session 10">
-- The README should say that the gear's first control picks the page language (18 languages); the choice is a cookie in that browser. Discord messages and /admin stay English (D40). Might, Kills, Members and Level are English in every language.
+- The README should say that the gear's first control picks the page language (18 languages); the choice is a cookie in that browser. Discord messages and /admin stay English (D48). Might, Kills, Members and Level are English in every language.
 - Translations are in `lib/copy.<tag>.ts`; CONTRIBUTING.md should say that a new public string needs a key in `en` and in every dictionary (typecheck enforces it).
 </adjustments>
 

@@ -1,9 +1,9 @@
 // Every user-facing string (docs/DESIGN.md "Language-light rules"). Keys are stable identifiers; values
-// are the English text. The public pages' strings (`en`) are also written in ru, es and pt-BR, one
-// dictionary per file beside this one (copy.ru.ts, …), each checked against `Dictionary` (D40); a page
-// reads its request's dictionary through requestCopy or useCopy (app/_ui/locale.ts, LocaleProvider).
-// The /brand page's text, the admin area's and the Discord messages' stay English: they live in sibling
-// files and are re-exported in `copy`, so there is one import path.
+// are the English text. The public pages' strings (`en`) are also written in the languages of
+// `LANGUAGES`, one translation per file in lib/i18n/ (D48); a page reads its request's dictionary through
+// requestCopy or useCopy (app/_ui/locale.ts, LocaleProvider). The /brand page's text, the admin area's
+// and the Discord messages' stay English: they live in sibling files and are re-exported in `copy`, so
+// there is one import path.
 // `{name}` is a placeholder filled by `fill()`; labels on public pages are at most two words. Symbols
 // (signs, arrows, `#`) stay in the components so the blank dictionary keeps them visible.
 import { adminCopy } from "./copy-admin";
@@ -168,36 +168,57 @@ export const en = {
   },
 } as const;
 
-/** The shape of every public dictionary: `en`'s keys, any text. A missing or extra key fails tsc. */
+/** A page's words: `en`'s keys, any text. */
 type Strings<T> = { readonly [K in keyof T]: T[K] extends string ? string : Strings<T[K]> };
 export type Dictionary = Strings<typeof en>;
 
-/** The languages the public pages are written in (D40), each named in its own language. */
-export const LANGUAGES = {
-  en: "English",
-  es: "Español",
-  "pt-BR": "Português",
-  fr: "Français",
-  de: "Deutsch",
-  it: "Italiano",
-  nl: "Nederlands",
-  sv: "Svenska",
-  pl: "Polski",
-  ru: "Русский",
-  uk: "Українська",
-  tr: "Türkçe",
-  "zh-CN": "简体中文",
-  ja: "日本語",
-  ko: "한국어",
-  id: "Bahasa Indonesia",
-  vi: "Tiếng Việt",
-  th: "ไทย",
-} as const;
-export type Language = keyof typeof LANGUAGES;
+/** One language's file (lib/i18n/): any of `en`'s keys, so a key added in English reads English until it
+ * is translated (scripts/i18n-check.ts reports it); an extra or misspelt key fails tsc. */
+type Partly<T> = { readonly [K in keyof T]?: T[K] extends string ? string : Partly<T[K]> };
+export type Translation = Partly<typeof en>;
+
+type Tree = { readonly [key: string]: string | Tree };
+
+function overlay(base: Tree, over: Tree | undefined): Tree {
+  return Object.fromEntries(
+    Object.entries(base).map(([key, value]) => {
+      const mine = over?.[key];
+      if (typeof value === "string") return [key, typeof mine === "string" ? mine : value];
+      return [key, overlay(value, typeof mine === "object" ? mine : undefined)];
+    }),
+  );
+}
+
+/** A translation with every missing key filled from English. */
+export const withEnglish = (translation: Translation): Dictionary =>
+  overlay(en, translation as Tree) as unknown as Dictionary;
+
+/** The languages the public pages are written in (D48), in the switcher's order; the one registry. */
+export const LANGUAGES = [
+  "en",
+  "es",
+  "pt-BR",
+  "fr",
+  "de",
+  "it",
+  "nl",
+  "sv",
+  "pl",
+  "ru",
+  "uk",
+  "tr",
+  "zh-CN",
+  "ja",
+  "ko",
+  "id",
+  "vi",
+  "th",
+] as const;
+export type Language = (typeof LANGUAGES)[number];
 
 /** A `lang` cookie value on the list, else null. */
 export const parseLanguage = (value: string | undefined): Language | null =>
-  value !== undefined && Object.hasOwn(LANGUAGES, value) ? (value as Language) : null;
+  (LANGUAGES as readonly string[]).includes(value ?? "") ? (value as Language) : null;
 
 const source = {
   ...en,

@@ -1,6 +1,6 @@
 "use client";
 
-// The header's settings menu (DESIGN.md `viewer-settings`, D38, D40): a gear whose panel holds the theme
+// The header's settings menu (DESIGN.md `viewer-settings`, D38, D48): a gear whose panel holds the theme
 // and, on public pages, the language, the times (server time or the viewer's own zone) and the date
 // order. Each choice is a one-year cookie, like `theme`; the language, times and dates ones re-render the
 // page on the server (router.refresh()), where requestCopy and requestClock read them. The panel is drawn
@@ -67,7 +67,14 @@ function Group({
   );
 }
 
-/** A native list, each language named in its own language (D40), so a viewer finds theirs without
+/** "Español", "Русский", "日本語": each language named in itself, by Intl (browser only: the panel is
+ * drawn after it opens). */
+function ownName(tag: Language): string {
+  const name = new Intl.DisplayNames([tag], { type: "language" }).of(tag) ?? tag;
+  return name.charAt(0).toLocaleUpperCase(tag) + name.slice(1);
+}
+
+/** A native list, each language named in its own language (D48), so a viewer finds theirs without
  * reading English; with 18 languages, radios would push Theme, Times and Dates out of the panel. */
 function LanguagePicker({ legend }: { legend: string }) {
   const router = useRouter();
@@ -86,9 +93,9 @@ function LanguagePicker({ legend }: { legend: string }) {
         onChange={(e) => pick(e.target.value)}
         className="drawn-field min-h-11 w-full px-3"
       >
-        {(Object.keys(LANGUAGES) as Language[]).map((id) => (
+        {LANGUAGES.map((id) => (
           <option key={id} value={id} lang={id}>
-            {LANGUAGES[id]}
+            {ownName(id)}
           </option>
         ))}
       </select>

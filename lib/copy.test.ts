@@ -8,23 +8,7 @@ import ts from "typescript";
 import { describe, expect, it } from "vitest";
 
 import { blankCopy, blankDictionary, copy, en, fill } from "./copy";
-import { de } from "./copy.de";
-import { es } from "./copy.es";
-import { fr } from "./copy.fr";
-import { idID } from "./copy.id";
-import { itIT } from "./copy.it";
-import { ja } from "./copy.ja";
-import { ko } from "./copy.ko";
-import { nl } from "./copy.nl";
-import { pl } from "./copy.pl";
-import { ptBR } from "./copy.pt-BR";
-import { ru } from "./copy.ru";
-import { sv } from "./copy.sv";
-import { th } from "./copy.th";
-import { tr } from "./copy.tr";
-import { uk } from "./copy.uk";
-import { vi } from "./copy.vi";
-import { zhCN } from "./copy.zh-CN";
+import { TRANSLATIONS } from "./i18n";
 
 const ROOT = join(import.meta.dirname, "..");
 
@@ -112,35 +96,27 @@ describe("copy", () => {
   });
 });
 
-/** Every key path with its placeholders, sorted: `status.next {time}`. */
-function shape(value: unknown, path = ""): string[] {
+/** Every key path a translation has, with its placeholders, sorted: `status.next {time}`. */
+function shape(value: unknown, path = ""): Map<string, string> {
   if (typeof value === "string")
-    return [`${path} ${(value.match(/\{\w+\}/g) ?? []).sort().join("")}`];
-  return Object.entries(value as object).flatMap(([k, v]) => shape(v, path ? `${path}.${k}` : k));
+    return new Map([[path, (value.match(/\{\w+\}/g) ?? []).sort().join("")]]);
+  return new Map(
+    Object.entries(value as object).flatMap(([k, v]) => [...shape(v, path ? `${path}.${k}` : k)]),
+  );
 }
 
-describe("dictionaries", () => {
-  it.each([
-    ["es", es],
-    ["pt-BR", ptBR],
-    ["fr", fr],
-    ["de", de],
-    ["it", itIT],
-    ["nl", nl],
-    ["sv", sv],
-    ["pl", pl],
-    ["ru", ru],
-    ["uk", uk],
-    ["tr", tr],
-    ["zh-CN", zhCN],
-    ["ja", ja],
-    ["ko", ko],
-    ["id", idID],
-    ["vi", vi],
-    ["th", th],
-  ])("%s has the English keys and placeholders and keeps the game's own terms", (_, dictionary) => {
-    expect(shape(dictionary)).toEqual(shape(en));
-    const { might, kills, members, level } = dictionary.ledger;
-    expect([might, kills, members, level]).toEqual(["Might", "Kills", "Members", "Level"]);
-  });
+describe("translations", () => {
+  const english = shape(en);
+  it.each(Object.entries(TRANSLATIONS))(
+    "%s keeps every placeholder and the game's own terms",
+    (_, translation) => {
+      for (const [key, placeholders] of shape(translation)) {
+        expect(`${key} ${placeholders}`).toBe(`${key} ${english.get(key)}`);
+      }
+      const l = translation.ledger ?? {};
+      for (const term of ["might", "kills", "members", "level"] as const) {
+        if (l[term] !== undefined) expect(l[term]).toBe(en.ledger[term]);
+      }
+    },
+  );
 });

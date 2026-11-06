@@ -67,7 +67,7 @@ export const rowAnchor = (unionId: number) => `alliance-${unionId}`;
 /** The viewer's settings (D38), one cookie each; no cookie = server time and the locale's own dates. */
 export const ZONE_COOKIE = "tz";
 export const DATE_COOKIE = "date";
-/** The page's language (D40); no cookie = the browser's Accept-Language. */
+/** The page's language (D48); no cookie = the browser's Accept-Language. */
 export const LANG_COOKIE = "lang";
 
 /** The date orders a viewer may pick (#27). Month names stay in the request's locale. */

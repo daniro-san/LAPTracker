@@ -1,4 +1,4 @@
-// The viewer's language and locale, from the `lang` cookie and the request's Accept-Language (D40;
+// The viewer's language and locale, from the `lang` cookie and the request's Accept-Language (D48;
 // DESIGN.md: numbers and dates through Intl), and the request's Clock: in the viewer's own zone and date
 // order when their cookies say so (D38), else in server time. Server only; client components read the
 // locale and the dictionary through LocaleProvider.
@@ -10,50 +10,20 @@ import {
   blankDictionary,
   en,
   parseLanguage,
+  withEnglish,
   type Dictionary,
   type Language,
 } from "@/lib/copy";
-import { de } from "@/lib/copy.de";
-import { es } from "@/lib/copy.es";
-import { fr } from "@/lib/copy.fr";
-import { idID } from "@/lib/copy.id";
-import { itIT } from "@/lib/copy.it";
-import { ja } from "@/lib/copy.ja";
-import { ko } from "@/lib/copy.ko";
-import { nl } from "@/lib/copy.nl";
-import { pl } from "@/lib/copy.pl";
-import { ptBR } from "@/lib/copy.pt-BR";
-import { ru } from "@/lib/copy.ru";
-import { sv } from "@/lib/copy.sv";
-import { th } from "@/lib/copy.th";
-import { tr } from "@/lib/copy.tr";
-import { uk } from "@/lib/copy.uk";
-import { vi } from "@/lib/copy.vi";
-import { zhCN } from "@/lib/copy.zh-CN";
 import { getEnv, isTimeZone } from "@/lib/env";
+import { TRANSLATIONS } from "@/lib/i18n";
 
 import { DATE_COOKIE, LANG_COOKIE, makeClock, parseDateFormat, ZONE_COOKIE } from "./format";
 
-const DICTIONARIES: Record<Language, Dictionary> = {
+/** Each language's words, missing keys filled from English once at start-up. */
+const DICTIONARIES = {
   en,
-  es,
-  "pt-BR": ptBR,
-  fr,
-  de,
-  it: itIT,
-  nl,
-  sv,
-  pl,
-  ru,
-  uk,
-  tr,
-  "zh-CN": zhCN,
-  ja,
-  ko,
-  id: idID,
-  vi,
-  th,
-};
+  ...Object.fromEntries(Object.entries(TRANSLATIONS).map(([tag, t]) => [tag, withEnglish(t)])),
+} as Record<Language, Dictionary>;
 
 /** Accept-Language tags by q, highest first, without `*` and q=0. */
 function tagsOf(header: string | null): string[] {
@@ -69,7 +39,7 @@ function tagsOf(header: string | null): string[] {
     .map((t) => t.tag);
 }
 
-/** The tag as Intl knows it: itIT, or null when Intl does not support it or it is not well formed. */
+/** The tag as Intl knows it, or null when Intl does not support it or it is not well formed. */
 function intlTag(tag: string): string | null {
   try {
     return Intl.NumberFormat.supportedLocalesOf(tag)[0] ?? null;
