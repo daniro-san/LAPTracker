@@ -37,7 +37,7 @@ const minutesAfter = (t: Date, n: number) => new Date(t.getTime() + n * 60_000);
 let db: Db;
 beforeAll(async () => {
   db = await openTestDb();
-}, 30_000);
+});
 beforeEach(async () => {
   await truncateAll(db);
 });
