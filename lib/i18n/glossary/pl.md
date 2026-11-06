@@ -22,7 +22,7 @@ Words already used in `lib/i18n/pl.ts`. Reuse them so the pages stay consistent;
 | Exact numbers             | Dokładne liczby               | `site.exactNumbers` — the toggle; legend.rounded names it |
 | Manual round              | Runda ręczna                  | `site.manualRound` — an event the admin runs by hand      |
 | Leader                    | Lider                         | `leadership.leader` — the R5                              |
-| Movers                    | Największe zmiany             | `ledger.movers` — the event's biggest gains and losses    |
+| Grandma noticed           | Babcia zauważyła              | `ledger.movers` — the event's biggest gains and losses    |
 | Run by hand by the admin  | Admin uruchamia ręcznie       | `status.byHand`                                           |
 | grandma                   | babcia                        | the voice in empty states and errors                      |
 

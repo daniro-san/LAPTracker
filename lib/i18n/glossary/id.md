@@ -21,7 +21,7 @@ Words already used in `lib/i18n/id.ts`. Reuse them so the pages stay consistent;
 | your time                 | waktumu                      | `time.yourTime` — after a time, the viewer's zone         |
 | Exact numbers             | Angka pasti                  | `site.exactNumbers` — the toggle; legend.rounded names it |
 | Manual round              | Ronde manual                 | `site.manualRound` — an event the admin runs by hand      |
-| Movers                    | Pergerakan                   | `ledger.movers` — the event's biggest gains and losses    |
+| Grandma noticed           | Nenek perhatikan             | `ledger.movers` — the event's biggest gains and losses    |
 | Leader                    | Pemimpin                     | `leadership.leader` — the R5                              |
 | Run by hand by the admin  | Dijalankan manual oleh admin | `status.byHand`                                           |
 | grandma                   | nenek                        | the voice in empty states and errors                      |

@@ -48,7 +48,7 @@ export const idID = {
     myAlliance: "Aliansiku",
     names: "Nama",
     alliances: "Aliansi",
-    movers: "Pergerakan",
+    movers: "Nenek perhatikan",
   },
   settings: {
     language: "Bahasa",

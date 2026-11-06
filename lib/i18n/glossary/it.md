@@ -23,7 +23,7 @@ Words already used in `lib/i18n/it.ts`. Reuse them so the pages stay consistent;
 | Manual round              | Turno manuale                | `site.manualRound` — an event the admin runs by hand      |
 | Leader                    | Capo                         | `leadership.leader` — the R5                              |
 | Run by hand by the admin  | Lo avvia l’admin a mano      | `status.byHand`                                           |
-| Movers                    | Movimenti                    | `ledger.movers` — the event's biggest gains and losses    |
+| Grandma noticed           | Nonna nota                   | `ledger.movers` — the event's biggest gains and losses    |
 | grandma                   | la nonna                     | the voice in empty states and errors                      |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).

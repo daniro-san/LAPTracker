@@ -48,7 +48,7 @@ export const itIT = {
     myAlliance: "La mia alleanza",
     names: "Nomi",
     alliances: "Alleanze",
-    movers: "Movimenti",
+    movers: "Nonna nota",
   },
   settings: {
     language: "Lingua",

@@ -48,7 +48,7 @@ export const pl = {
     myAlliance: "Mój sojusz",
     names: "Nazwy",
     alliances: "Sojusze",
-    movers: "Największe zmiany",
+    movers: "Babcia zauważyła",
   },
   settings: {
     language: "Język",

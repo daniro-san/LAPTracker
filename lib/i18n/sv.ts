@@ -48,7 +48,7 @@ export const sv = {
     myAlliance: "Min allians",
     names: "Namn",
     alliances: "Allianser",
-    movers: "Största förändringar",
+    movers: "Mormor märkte",
   },
   settings: {
     language: "Språk",
