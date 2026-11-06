@@ -1,6 +1,6 @@
 # 08za — /brand hygiene
 
-Issue #54 (07c N7, S5). This branch is cut from `session/08z-admin-run-trace` (PR #108) and depends on it.
+Issue #54 (07c N7, S5). This branch was cut from `session/08z-admin-run-trace` (PR #108). #108 is merged into `dev`, so this branch is now rebased on `dev` alone.
 
 ## Built
 - React keys from positions instead of copy text:
@@ -46,7 +46,7 @@ Issue #54 (07c N7, S5). This branch is cut from `session/08z-admin-run-trace` (P
 ## Next
 Session: 9 — Dry run against production.
 Model / effort: keep — opus high. This change touches only `/brand` keys and one DESIGN.md line.
-Owner must do first: merge PR #108 (08z), then this PR, into `dev`. No migration.
+Owner must do first: merge this PR into `dev` (#108 is already in). No migration. PR 08zb (#91) is stacked on this branch.
 Plan changes needed: none.
 
 <adjustments>
