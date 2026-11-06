@@ -89,3 +89,5 @@ Plan changes needed: none.
 - Session 9 step 2: each run's duration, calls and state are on `/admin/runs`. Per-call seconds, HTTP status and retries are on `/admin/runs/<id>` (08z).
 - Saturday events can now be renamed (D39). If the owner renames the event under test, `GET /api/events` and the selector show the new name; Discord messages already posted keep the old one.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/117
