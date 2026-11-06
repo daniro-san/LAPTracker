@@ -7,7 +7,7 @@ const t = copy.brand.components.movers;
 const item = (label: string, rank: number, delta: number, base: number) => ({
   key: label,
   href: "#components",
-  rank,
+  rank: { n: rank, move: delta < 0 ? -rank : rank },
   label,
   badgeId: null,
   delta,

@@ -14,6 +14,7 @@ export {
   allianceMovers,
   memberMovers,
   type AllianceMover,
+  type AllianceMoverLists,
   type MemberMover,
   type MoverLists,
 } from "./movers";

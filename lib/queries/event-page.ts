@@ -27,7 +27,7 @@ export async function getEventPage(db: Db, eventId: number | null) {
     memberMovers(db, detail.snapshots),
   ]);
   const movers = {
-    alliances: before && after ? allianceMovers(before.alliances, after.alliances) : null,
+    alliances: before && after ? allianceMovers(before.alliances, after.alliances, ranks) : null,
     members,
   };
   return { events, homeId, page: { detail, names, ranks, changes, movers } };
