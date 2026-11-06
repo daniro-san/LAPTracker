@@ -25,6 +25,12 @@ Words already used in `lib/i18n/zh-CN.ts`. Reuse them so the pages stay consiste
 | Run by hand by the admin  | 由管理员手动运行     | `status.byHand`                                           |
 | grandma                   | 奶奶                 | the voice in empty states and errors                      |
 
-- Might, Kills, Members and Level stay in English, also inside labels (`± Might`).
+- Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.
 - Full-width punctuation (：，（）).
+
+## Game terms (from the game)
+
+The game's own word for each term, with the page that shows it in the game's text and the quote. A term not listed stays English. Add a row only with a source that carries the game's own text (datamined text or an in-game screenshot), never a guide's prose (D52).
+
+None sourced yet: Might, Kills, Members and Level stay English.
