@@ -43,3 +43,5 @@ Plan changes needed: §3.1 (Discord templates) and Phase 8 step 2 (re-run). Do n
 - The README's ⚠ and ✗ guidance says pressing again does not fix failed alliances. If open issue 1 is fixed, change the two sentences in "What to do on ⚠ or ✗" and the "Running a snapshot by hand" section.
 - The scheduler timing sentence is from reasoning in 09, not a Saturday measurement. Check it against the first real Saturday's messages and adjust the README if the lag is different.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/149
