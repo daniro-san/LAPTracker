@@ -89,3 +89,5 @@ Plan changes needed: none. D45 supersedes D30's "Not done" line.
 - `CONTRIBUTING.md:51` (rotation): a `CRON_SECRET` rotation changes Vercel Production, the GitHub secret, and the header of **both** cron-job.org jobs.
 - README, the Discord messages list: "⚠ No tick for N min (last …)" means the scheduler stopped calling the app, or its secret is wrong. It repeats at most once an hour while ticks are missing. /admin → Status → "Last tick" shows the newest tick time and what the last five did.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/151
