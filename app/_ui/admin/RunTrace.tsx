@@ -37,8 +37,8 @@ function Card({ c }: { c: TraceCall }) {
         {c.slowest && <Slowest />}
       </p>
       <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1">
-        {values.map(([label, value]) => (
-          <div key={label} className="flex items-baseline justify-between gap-2">
+        {values.map(([label, value], i) => (
+          <div key={i} className="flex items-baseline justify-between gap-2">
             <dt className={LABEL}>{label}</dt>
             <dd className="tabular-nums">{value}</dd>
           </div>
@@ -79,8 +79,8 @@ function TraceTable({ calls, total, totalName }: Trace & { totalName: string }) 
           <th scope="col" className="py-2 pr-3 text-left">
             {t.heads.call}
           </th>
-          {[t.heads.seconds, t.heads.http, t.heads.cached, t.heads.retries].map((h) => (
-            <th key={h} scope="col" className="py-2 pl-3 text-right">
+          {[t.heads.seconds, t.heads.http, t.heads.cached, t.heads.retries].map((h, i) => (
+            <th key={i} scope="col" className="py-2 pl-3 text-right">
               {h}
             </th>
           ))}

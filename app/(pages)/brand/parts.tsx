@@ -60,8 +60,8 @@ export function Verdict({ ok, children }: { ok: boolean; children: ReactNode }) 
 export function Rules({ items }: { items: readonly string[] }) {
   return (
     <ul className="max-w-[60ch] list-disc space-y-2 pl-5 marker:text-plum">
-      {items.map((line) => (
-        <li key={line}>{line}</li>
+      {items.map((line, i) => (
+        <li key={i}>{line}</li>
       ))}
     </ul>
   );

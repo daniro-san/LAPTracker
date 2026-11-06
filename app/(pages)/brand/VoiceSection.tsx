@@ -18,16 +18,16 @@ export function VoiceSection() {
       <Rules items={t.rules} />
       <Sub title={t.samplesTitle}>
         <ul className="grid gap-3 sm:grid-cols-2">
-          {SAMPLES.map((line) => (
-            <li key={line} className="border border-rule p-4 font-subhead text-display-sm">
+          {SAMPLES.map((line, i) => (
+            <li key={i} className="border border-rule p-4 font-subhead text-display-sm">
               {line}
             </li>
           ))}
         </ul>
       </Sub>
       <ul className="mt-8 grid gap-6 sm:grid-cols-2">
-        {t.pairs.map((pair) => (
-          <li key={pair.do} className="flex flex-col gap-2">
+        {t.pairs.map((pair, i) => (
+          <li key={i} className="flex flex-col gap-2">
             <Verdict ok>{pair.do}</Verdict>
             <Verdict ok={false}>{pair.dont}</Verdict>
           </li>
