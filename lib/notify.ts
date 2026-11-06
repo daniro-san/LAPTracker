@@ -121,9 +121,21 @@ export function discordClock(timeZone: string): DiscordClock {
   };
 }
 
+/**
+ * Text people type (a round's name; an alliance's tag and name, typed in game) shows literally:
+ * Discord markdown is backslash-escaped and mentions get a zero-width space after the `@`.
+ */
+const escapeDiscord = (text: string) =>
+  text
+    .replace(/[\\*_~`|>[\]]/g, "\\$&")
+    .replace(/@(everyone|here)/g, "@\u200b$1")
+    .replace(/<@/g, "<@\u200b");
+
 /** `[NSE] Natural Selection`; the union id when the row has neither. */
 const allianceLabel = (a: { unionId: number; tag: string | null; name?: string | null }) =>
-  [a.tag !== null ? `[${a.tag}]` : null, a.name].filter(Boolean).join(" ") || String(a.unionId);
+  [a.tag !== null ? `[${escapeDiscord(a.tag)}]` : null, a.name && escapeDiscord(a.name)]
+    .filter(Boolean)
+    .join(" ") || String(a.unionId);
 
 type State = RunSummary["status"];
 /** Run states in the admin message, the same words as /admin. */
@@ -158,8 +170,11 @@ export interface PublicContext {
   finishedAt: Date;
   /** The after snapshot's due time when this was the before snapshot; null otherwise. */
   nextAt: Date | null;
-  /** This snapshot's rows, and the before snapshot's when this is the after one. */
-  alliances: PublicAlliance[];
+  /**
+   * This snapshot's rows, and the before snapshot's when this is the after one. Null when the event
+   * detail could not be read: the count, stale and movers lines are then left out, not zeros.
+   */
+  alliances: PublicAlliance[] | null;
   before: PublicAlliance[] | null;
   /** A manual round's name: the message says it is a manual round (D28). Null for a Saturday event. */
   roundName?: string | null;
@@ -173,7 +188,7 @@ const usable = (a: PublicAlliance) => a.isFresh && !a.failed;
 /** The top gains of one metric: `[OGs] OldGrandmas ▲ +85.8M (+2.0%)`. Alliances with bad data are out. */
 function movers(ctx: PublicContext, metric: "power" | "kills"): string[] {
   const before = new Map((ctx.before ?? []).map((a) => [a.unionId, a]));
-  const gains = ctx.alliances.flatMap((a) => {
+  const gains = (ctx.alliances ?? []).flatMap((a) => {
     const b = before.get(a.unionId);
     if (!b || !usable(a) || !usable(b)) return [];
     const d = computeDelta(b, a);
@@ -202,9 +217,11 @@ export function publicSnapshotMessage(summary: RunSummary, ctx: PublicContext): 
   // The page's status chip (app/_ui/Status.tsx): the icon says partial; the stale line names who.
   const chip = summary.status === "failed" ? copy.status.lastFailed : copy.status.lastUpdated;
   const title = `${STATE_ICON[summary.status]} ${fill(chip, { time: ctx.clock.at(ctx.finishedAt) })}`;
-  const lines: string[] = ctx.roundName ? [fill(t.manual, { name: ctx.roundName })] : [];
+  const lines: string[] = ctx.roundName
+    ? [fill(t.manual, { name: escapeDiscord(ctx.roundName) })]
+    : [];
   if (ctx.beforeAt) lines.push(fill(t.beforeDone, { time: ctx.clock.at(ctx.beforeAt) }));
-  if (summary.status !== "failed") {
+  if (summary.status !== "failed" && ctx.alliances) {
     const bad = ctx.alliances.filter((a) => !usable(a));
     lines.push(
       fill(t.alliances, { good: ctx.alliances.length - bad.length, total: ctx.alliances.length }),
@@ -243,7 +260,7 @@ export function adminSnapshotMessage(summary: RunSummary, ctx: AdminContext): st
   const lines = [
     fill(manual ? t.manualRun : t.run, {
       icon: STATE_ICON[summary.status],
-      name: ctx.roundName ?? "",
+      name: escapeDiscord(ctx.roundName ?? ""),
       phase: copy.admin.phase[ctx.phase],
       state: STATE_WORD[summary.status],
       at: ctx.clock.stamp(ctx.finishedAt),
@@ -276,7 +293,9 @@ export function adminSnapshotMessage(summary: RunSummary, ctx: AdminContext): st
 
 /** The event's one admin message (D31): its name, then a block per phase run so far, then the verdict. */
 export function adminEventMessage(name: string, blocks: string[]): string {
-  return [fill(copy.discord.admin.eventHeader, { name }), ...blocks].join("\n\n");
+  return [fill(copy.discord.admin.eventHeader, { name: escapeDiscord(name) }), ...blocks].join(
+    "\n\n",
+  );
 }
 
 /** Plan §3.1: the verdict (the `[rehearsal]` prefix is the notifier's), one ✓/✗ line per check. */
