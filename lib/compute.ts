@@ -198,3 +198,33 @@ export function topMovers<R extends MoverInput>(
     rank: 1 + moved.filter((o) => (o.delta - m.delta) * sign > 0).length,
   }));
 }
+
+/** An alliance's ledger rank by might in the event's two snapshots (D23). */
+export interface RankMoverInput extends MoverInput {
+  ledger: { before: number | null; after: number | null };
+}
+
+/**
+ * The `n` alliances that climbed (`gain`) or fell (`loss`) the most places by ledger rank (#70). Order:
+ * places moved, then the better current rank. A row with a missing, stale or failed side is not
+ * ranked, nor is one that held its place.
+ */
+export function topRankMovers<R extends RankMoverInput>(
+  rows: readonly R[],
+  n: number,
+  direction: MoverDirection,
+): { row: R; move: number }[] {
+  const sign = direction === "gain" ? 1 : -1;
+  return rows
+    .flatMap((row) => {
+      if (!row.before?.isFresh || !row.after?.isFresh) return [];
+      const move = rankDelta(row.ledger.before, row.ledger.after);
+      return move !== null && move * sign > 0 ? [{ row, move }] : [];
+    })
+    .sort(
+      (x, y) =>
+        (y.move - x.move) * sign ||
+        (x.row.ledger.after ?? Infinity) - (y.row.ledger.after ?? Infinity),
+    )
+    .slice(0, n);
+}
