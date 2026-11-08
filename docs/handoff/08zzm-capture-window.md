@@ -42,3 +42,5 @@ Plan changes needed: none.
 <adjustments for="Session 08zzh">
 - `CaptureWindow({ before, after, clock, copy })` in `app/_ui/Status.tsx` renders one window from one Before and one After `PhaseStatus`. With several windows or samples per event, render it once per window and pass that window's phases; the event page and alliance page call sites each pick `phase === "before" | "after"` from the event's snapshots today.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/187
