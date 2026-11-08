@@ -106,11 +106,11 @@ export const brandComponentsCopy = {
     name: "Role mark",
     use: "Alliance roles, in the member list and on the player page. The crown is the R5 leader (plum). A titled R4 officer (sage) gets the drawing of the title: dove, horn, crossed swords or eye; any other title gets the stitch star. A member row also takes the role's pale tint. Only these two ranks are marked. The word for the role is always in the text or read out, never colour or shape alone.",
     leader: "Leader",
-    officers: ["Diplomat", "Recruiter", "Militarist", "Overseer", "Any other title"],
+    officers: ["Diplomat", "Recruiter", "God of War", "Goddess", "Any other title"],
   },
   leadership: {
     name: "Leadership section",
-    use: "Above the member list: the R5 leader, then each R4 with a title, as cards with photo, name, role, Might, Kills and Level. Whatever title the game gives is shown as it comes. Left out when the alliance has none.",
+    use: "Above the member list: the R5 leader, then each R4 with a title, as cards with photo, name, role, Might, Kills and Level. The tracker's Militarist and Overseer read God of War and Goddess, the game's names; any other title is shown as it comes. Left out when the alliance has none.",
   },
   movers: {
     name: "Movers",

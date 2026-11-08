@@ -12,13 +12,20 @@ export type Role = { kind: "leader" } | { kind: "officer"; title: string };
 const LEADER = 105;
 const OFFICER = 104;
 const TITLE_PREFIX = /^R4\s*·\s*/;
+// The tracker's names for two R4 slots, shown by the game's names (owner, D56). Any other title, the
+// stored rank_label and raw_json stay as the tracker sends them.
+const GAME_TITLE = new Map([
+  ["militarist", "God of War"],
+  ["overseer", "Goddess"],
+]);
 
 /** The role a rank means; null for R1–R3 and for an R4 without a title. */
 export function roleOf(rankCode: number, rankLabel: string | null): Role | null {
   if (rankCode === LEADER) return { kind: "leader" };
   if (rankCode !== OFFICER) return null;
   const title = (rankLabel ?? "").replace(TITLE_PREFIX, "").trim();
-  return title !== "" && title !== "R4" ? { kind: "officer", title } : null;
+  if (title === "" || title === "R4") return null;
+  return { kind: "officer", title: GAME_TITLE.get(title.toLowerCase()) ?? title };
 }
 
 /** Roles by alliance snapshot id, then by member uid. A roster without rank data has no entry. */

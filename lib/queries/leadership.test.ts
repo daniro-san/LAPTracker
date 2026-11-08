@@ -94,6 +94,12 @@ describe("rolesOf", () => {
     );
   });
 
+  it("names the tracker's Militarist and Overseer by the game's names and passes other titles", () => {
+    expect(roleOf(104, "R4 · Militarist")).toEqual({ kind: "officer", title: "God of War" });
+    expect(roleOf(104, "R4 · overseer")).toEqual({ kind: "officer", title: "Goddess" });
+    expect(roleOf(104, "R4 · Quartermaster")).toEqual({ kind: "officer", title: "Quartermaster" });
+  });
+
   it("leaves an untitled R4 and lower ranks unmarked", () => {
     expect(roleOf(104, "R4")).toBeNull();
     expect(roleOf(103, "R3")).toBeNull();
