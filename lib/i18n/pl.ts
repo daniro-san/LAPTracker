@@ -77,6 +77,8 @@ export const pl = {
     next: "Następna aktualizacja: {time}",
     byHand: "Admin uruchamia ręcznie",
     stale: "Nieaktualne: {n}",
+    start: "Początek",
+    end: "Koniec",
   },
   upstream: {
     title: "Dane gry są opóźnione",

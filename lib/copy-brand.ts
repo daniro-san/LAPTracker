@@ -158,7 +158,7 @@ export const brandCopy = {
     wax: "Wax · seals and the header mark",
     hourglass: "Hourglass · running",
     crown: "Crown · alliance leader (R5)",
-    titles: "Dove, horn, crossed swords, eye · Diplomat, Recruiter, Militarist, Overseer (R4)",
+    titles: "Dove, horn, crossed swords, eye · Diplomat, Recruiter, God of War, Goddess (R4)",
     officer: "Stitch star · officer with any other title (R4)",
     candle: "Chamberstick · admin live indicator",
   },

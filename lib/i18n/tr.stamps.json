@@ -63,6 +63,8 @@
   "status.next": "bf405eeb",
   "status.byHand": "1a49c2f8",
   "status.stale": "e38c42b2",
+  "status.start": "e4bb9f1e",
+  "status.end": "f4db1e48",
   "upstream.title": "5aabd553",
   "upstream.body": "a1b85558",
   "upstream.lastFresh": "b83f68af",

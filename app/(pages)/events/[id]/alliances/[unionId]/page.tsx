@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 
-import { ACROSS_ID, AcrossEvents, TITLE_ID } from "@/app/_ui/AcrossEvents";
+import { ACROSS_ID, AcrossEvents, NameTimeline, TITLE_ID } from "@/app/_ui/AcrossEvents";
 import { Breadcrumbs } from "@/app/_ui/Breadcrumbs";
 import { DetailTable, figureRows, type RankPair } from "@/app/_ui/DetailLines";
 import { fellWithLeavers } from "@/app/_ui/event-rows";
@@ -23,8 +23,8 @@ import { AllianceBadge } from "@/app/_ui/Pictures";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { LABEL, type StatMetric } from "@/app/_ui/StatTable";
-import { FreshDots, Legend, SideHead, type FreshState } from "@/app/_ui/Status";
-import { rankDelta, type NameHistoryEntry } from "@/lib/compute";
+import { CaptureWindow, FreshDots, Legend, SideHead, type FreshState } from "@/app/_ui/Status";
+import { rankDelta } from "@/lib/compute";
 import type { Dictionary } from "@/lib/copy";
 import { withPageDb } from "@/lib/page";
 import type { AllianceRow, Ranks } from "@/lib/queries";
@@ -154,30 +154,6 @@ function Summary({
   );
 }
 
-function NameTimeline({
-  names,
-  clock,
-  copy,
-}: {
-  names: NameHistoryEntry[];
-  clock: Clock;
-  copy: Dictionary;
-}) {
-  if (names.length < 2) return null;
-  return (
-    <div className="mb-3 text-sm text-ink/70">
-      <p className={LABEL}>{copy.ledger.names}</p>
-      <ul>
-        {names.map((n) => (
-          <li key={`${n.tag}|${n.name}`}>
-            {allianceLabel(n.tag, n.name)} · {clock.day(n.firstSeen)} – {clock.day(n.lastSeen)}
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
 /** Shared by the page and its <title> within one request. */
 const loadAlliance = cache((eventId: number, unionId: number) =>
   withPageDb(async (db) => {
@@ -197,6 +173,7 @@ const loadAlliance = cache((eventId: number, unionId: number) =>
       history,
       names: names.get(unionId) ?? [],
       ledger: ranks.get(unionId),
+      phases,
       movers: await memberMovers(db, phases, unionId),
     };
   }),
@@ -268,7 +245,7 @@ export default async function AlliancePage({ params }: { params: Params }) {
     requestCopy(),
   ]);
   if (!data) notFound();
-  const { detail, events, homeId, history, names, ledger, movers } = data;
+  const { detail, events, homeId, history, names, ledger, phases, movers } = data;
   const now = detail.after ?? detail.before;
   const label = allianceLabel(now?.tag ?? String(unionId), now?.name ?? null);
   const canDelta = usable(detail.before) && usable(detail.after);
@@ -305,6 +282,12 @@ export default async function AlliancePage({ params }: { params: Params }) {
             )}
           </div>
         </div>
+        <CaptureWindow
+          before={phases.find((s) => s.phase === "before")}
+          after={phases.find((s) => s.phase === "after")}
+          clock={clock}
+          copy={copy}
+        />
         <Legend memberMark={metrics.some((m) => m.memberMark)} copy={copy} />
         <NameTimeline names={names} clock={clock} copy={copy} />
         <Summary
