@@ -2,7 +2,7 @@
 // with the previous event's reference value (the after snapshot, else the before fallback). Each row shows
 // the time its figures are from, so the fallback reads as `10:00` without a word (07c S1). The rank is
 // the ledger rank by might, moved event over event; kills and server ranks are under Details.
-import { rankDelta } from "@/lib/compute";
+import { rankDelta, type NameHistoryEntry } from "@/lib/compute";
 import { fill, type Dictionary } from "@/lib/copy";
 import type { HistoryRow } from "@/lib/queries";
 
@@ -10,7 +10,7 @@ import { DetailTable, rankRow, type RankPair } from "./DetailLines";
 import { EventLead } from "./EventLead";
 import { allianceLabel, changeText, joinedText, leftText, type Clock } from "./format";
 import { requestCopy } from "./locale";
-import { StatTable, type StatMetric, type StatRow } from "./StatTable";
+import { LABEL, StatTable, type StatMetric, type StatRow } from "./StatTable";
 import { FreshDots } from "./Status";
 
 const SHOWN = 12;
@@ -169,5 +169,30 @@ export async function AcrossEvents({
         </details>
       )}
     </section>
+  );
+}
+
+/** The alliance's names across events, only when it had more than one. */
+export function NameTimeline({
+  names,
+  clock,
+  copy,
+}: {
+  names: NameHistoryEntry[];
+  clock: Clock;
+  copy: Dictionary;
+}) {
+  if (names.length < 2) return null;
+  return (
+    <div className="mb-3 text-sm text-ink/70">
+      <p className={LABEL}>{copy.ledger.names}</p>
+      <ul>
+        {names.map((n) => (
+          <li key={`${n.tag}|${n.name}`}>
+            {allianceLabel(n.tag, n.name)} · {clock.day(n.firstSeen)} – {clock.day(n.lastSeen)}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

@@ -77,6 +77,8 @@ export const uk = {
     next: "Наступне оновлення: {time}",
     byHand: "Адмін запускає вручну",
     stale: "Застаріло: {n}",
+    before: "До",
+    after: "Після",
   },
   upstream: {
     title: "Дані гри затримуються",

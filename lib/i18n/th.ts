@@ -77,6 +77,8 @@ export const th = {
     next: "อัปเดตครั้งถัดไป {time}",
     byHand: "แอดมินรันเอง",
     stale: "ข้อมูลเก่า: {n}",
+    before: "ก่อน",
+    after: "หลัง",
   },
   upstream: {
     title: "ข้อมูลเกมล่าช้า",

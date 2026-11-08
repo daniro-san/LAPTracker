@@ -77,6 +77,8 @@ export const idID = {
     next: "Pembaruan berikutnya: {time}",
     byHand: "Dijalankan manual oleh admin",
     stale: "Usang: {n}",
+    before: "Sebelum",
+    after: "Sesudah",
   },
   upstream: {
     title: "Data game tertunda",

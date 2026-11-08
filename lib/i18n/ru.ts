@@ -77,6 +77,8 @@ export const ru = {
     next: "Следующее обновление: {time}",
     byHand: "Админ запускает вручную",
     stale: "Устарело: {n}",
+    before: "До",
+    after: "После",
   },
   upstream: {
     title: "Данные игры задерживаются",

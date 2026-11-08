@@ -77,6 +77,8 @@ export const ko = {
     next: "다음 업데이트: {time}",
     byHand: "관리자가 직접 실행",
     stale: "오래됨: {n}",
+    before: "이전",
+    after: "이후",
   },
   upstream: {
     title: "게임 데이터 지연",

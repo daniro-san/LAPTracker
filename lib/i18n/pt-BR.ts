@@ -77,6 +77,8 @@ export const ptBR = {
     next: "Próxima atualização: {time}",
     byHand: "Rodado à mão pelo admin",
     stale: "Desatualizados: {n}",
+    before: "Antes",
+    after: "Depois",
   },
   upstream: {
     title: "Dados do jogo atrasados",

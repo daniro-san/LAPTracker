@@ -120,6 +120,63 @@ export function StatusChips({
   );
 }
 
+/** One phase's side of the window: its time, its state's word while it has none, or `—` before it ran. */
+function sideValue(
+  p: PhaseStatus | undefined,
+  withDay: boolean,
+  last: boolean,
+  clock: Clock,
+  copy: Dictionary,
+) {
+  if (!p) return "—";
+  if (p.status === "running") return copy.status.running;
+  if (p.status === "failed") return copy.status.failed;
+  const d = finishedAt(p);
+  if (last) return withDay ? clock.at(d) : clock.time(d);
+  return withDay ? `${clock.day(d)}, ${clock.hhmm(d)}` : clock.hhmm(d);
+}
+
+const hasTime = (p: PhaseStatus | undefined): p is PhaseStatus =>
+  p !== undefined && (p.status === "complete" || p.status === "partial");
+
+/** The capture window (issue 180): `BEFORE 10:00 → AFTER 13:01 server time`, so a reader sees what span a
+ * change covers without opening Details. The day shows when the two times fall on different days; the
+ * clock's word follows the last time shown. One window per call: a page with several repeats it. */
+export function CaptureWindow({
+  before,
+  after,
+  clock,
+  copy,
+}: {
+  before: PhaseStatus | undefined;
+  after: PhaseStatus | undefined;
+  clock: Clock;
+  copy: Dictionary;
+}) {
+  const withDay =
+    hasTime(before) &&
+    hasTime(after) &&
+    clock.day(finishedAt(before)) !== clock.day(finishedAt(after));
+  const sides = [
+    [copy.status.before, before, !hasTime(after)],
+    [copy.status.after, after, true],
+  ] as const;
+  return (
+    <p className="mt-2 flex flex-wrap items-baseline gap-x-2 text-body-sm tabular-nums">
+      {sides.map(([label, p, last], i) => (
+        <span key={label} className="inline-flex items-baseline gap-x-2 whitespace-nowrap">
+          {i > 0 && " "}
+          {i > 0 && <span aria-hidden="true">→</span>}
+          <span className="text-label font-semibold uppercase tracking-[0.04em] text-ink/70">
+            {label}
+          </span>{" "}
+          {sideValue(p, withDay, last, clock, copy)}
+        </span>
+      ))}
+    </p>
+  );
+}
+
 export interface FreshState {
   isFresh: boolean;
   updatedAt: Date | null;

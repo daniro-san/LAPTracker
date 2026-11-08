@@ -77,6 +77,8 @@ export const vi = {
     next: "Lần cập nhật tới: {time}",
     byHand: "Admin chạy thủ công",
     stale: "Cũ: {n}",
+    before: "Trước",
+    after: "Sau",
   },
   upstream: {
     title: "Dữ liệu game bị chậm",

@@ -4,8 +4,8 @@ import { describe, expect, it } from "vitest";
 
 import { en } from "@/lib/copy";
 
-import type { Clock } from "./format";
-import { Legend, StatusChips } from "./Status";
+import { makeClock, type Clock } from "./format";
+import { CaptureWindow, Legend, StatusChips, type PhaseStatus } from "./Status";
 
 const clock = { at: () => "Nov 7, 10:00" } as unknown as Clock;
 const html = (manual: boolean) =>
@@ -26,6 +26,50 @@ describe("StatusChips", () => {
     const manual = html(true);
     expect(manual).toContain("Run by hand by the admin");
     expect(manual).not.toContain("Next update");
+  });
+});
+
+// Server time is UTC−2: 12:00Z reads 10:00, 15:01Z reads 13:01.
+const phase = (phase: PhaseStatus["phase"], status: PhaseStatus["status"], at: string) => ({
+  phase,
+  status,
+  startedAt: new Date(at),
+  finishedAt: status === "running" ? null : new Date(at),
+});
+const windowText = (before?: PhaseStatus, after?: PhaseStatus) =>
+  renderToStaticMarkup(
+    createElement(CaptureWindow, { before, after, clock: makeClock("en", "Etc/GMT+2"), copy: en }),
+  )
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+describe("CaptureWindow", () => {
+  it("shows when the Before and the After were taken, with the day only when they differ", () => {
+    expect(
+      windowText(
+        phase("before", "complete", "2026-11-07T12:00Z"),
+        phase("after", "partial", "2026-11-07T15:01Z"),
+      ),
+    ).toBe("Before 10:00 → After 13:01 server time");
+    expect(
+      windowText(
+        phase("before", "complete", "2026-11-07T01:00Z"),
+        phase("after", "complete", "2026-11-07T15:01Z"),
+      ),
+    ).toBe("Before Nov 6, 23:00 → After Nov 7, 13:01 server time");
+  });
+
+  it("shows a phase that has no time as its state's word, or — before it ran", () => {
+    expect(windowText(phase("before", "complete", "2026-11-07T12:00Z"))).toBe(
+      "Before 10:00 server time → After —",
+    );
+    expect(
+      windowText(
+        phase("before", "failed", "2026-11-07T12:00Z"),
+        phase("after", "running", "2026-11-07T15:00Z"),
+      ),
+    ).toBe("Before failed → After Updating now");
   });
 });
 

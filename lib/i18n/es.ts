@@ -77,6 +77,8 @@ export const es = {
     next: "Próxima actualización: {time}",
     byHand: "Lo lanza el admin a mano",
     stale: "Desactualizados: {n}",
+    before: "Antes",
+    after: "Después",
   },
   upstream: {
     title: "Datos del juego con retraso",
