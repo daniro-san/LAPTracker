@@ -89,7 +89,7 @@ export function nameHistory(rows: readonly NameSighting[]): NameHistoryEntry[] {
   return [...byPair.values()];
 }
 
-/** One event's reference value (Phase 5e): alliance rows use `lv` = level; players carry `unionId`. */
+/** One event's reference value (Phase 5e): `lv` is the player's level (alliance rows pass null, #181); players carry `unionId`. */
 export interface SeriesRow {
   isFresh: boolean;
   power: number | null;

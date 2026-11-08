@@ -55,7 +55,6 @@ function metrics(r: HistoryRow, prevMembers: number | null, copy: Dictionary): S
       base: prevMembers,
       ...rosterNote(r, copy),
     },
-    { label: l.level, value: r.level, delta: r.step.lv, base: null },
   ];
 }
 
@@ -142,7 +141,7 @@ export async function AcrossEvents({
   const table = (list: StatRow[]) => (
     <StatTable
       leadLabel={l.event}
-      columns={[l.might, l.kills, l.members, l.level]}
+      columns={[l.might, l.kills, l.members]}
       rows={list}
       empty={copy.empty.noEvents}
       copy={copy}

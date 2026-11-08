@@ -21,7 +21,6 @@ export interface AllianceRow {
   totalPower: number | null;
   totalKills: number | null;
   serverRank: number | null;
-  level: number | null;
   isFresh: boolean;
   sourceUpdatedAt: Date | null;
   failed: boolean;
@@ -47,7 +46,6 @@ const allianceColumns = {
   totalPower: allianceSnapshots.totalPower,
   totalKills: allianceSnapshots.totalKills,
   serverRank: allianceSnapshots.serverRank,
-  level: allianceSnapshots.level,
   isFresh: allianceSnapshots.isFresh,
   sourceUpdatedAt: allianceSnapshots.sourceUpdatedAt,
   error: allianceSnapshots.error,
@@ -120,7 +118,6 @@ export interface HistoryRow {
   memberCount: number | null;
   totalPower: number | null;
   totalKills: number | null;
-  level: number | null;
   serverRank: number | null;
   /** Ledger ranks among every tracked alliance's reference row of the event. */
   ledger: Ranks | null;
@@ -180,7 +177,7 @@ export async function allianceHistory(db: Db, unionId: number): Promise<HistoryR
       isFresh: row.isFresh,
       power: row.totalPower,
       kills: row.totalKills,
-      lv: row.level,
+      lv: null,
       name: row.name,
       tag: row.tag,
       unionId,
@@ -208,7 +205,6 @@ export async function allianceHistory(db: Db, unionId: number): Promise<HistoryR
         memberCount: row.memberCount,
         totalPower: row.totalPower,
         totalKills: row.totalKills,
-        level: row.level,
         serverRank: row.serverRank,
         ledger: ledgerOf(eventId),
         isFresh: row.isFresh,
