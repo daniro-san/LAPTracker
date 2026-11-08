@@ -147,3 +147,5 @@ The page renders from seed data at both widths and themes; the event page links 
 <adjustments for="#129 compare two players">
 - Use the same two-line card and the `?a=&b=` URL shape (`/players/compare?a=<uid>&b=<uid>`); do not merge it into the event compare page.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/186
