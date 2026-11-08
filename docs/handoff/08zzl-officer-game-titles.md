@@ -40,3 +40,5 @@ Plan changes needed: none.
 <adjustments>
 - Officer titles shown on any page are the game's names (D56). New code that shows a title must read it through `roleOf`, never from `rank_label` or `raw_json`.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/184
