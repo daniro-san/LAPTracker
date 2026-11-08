@@ -311,4 +311,4 @@ Build 1 of 3 for spike 08zzh, Option C — samples and windows: model, collector
 - Chart-free unless the owner reverses the rule (#62).
 </adjustments>
 
-PR_URL_PLACEHOLDER
+https://github.com/daniro-san/LAPTracker/pull/183
