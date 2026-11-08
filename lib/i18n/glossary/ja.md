@@ -23,6 +23,8 @@ Words already used in `lib/i18n/ja.ts`. Reuse them so the pages stay consistent;
 | Manual round              | 手動ラウンド              | `site.manualRound` — an event the admin runs by hand      |
 | Leader                    | 盟主                      | `leadership.leader` — the R5                              |
 | Run by hand by the admin  | 管理者が手動で実行        | `status.byHand`                                           |
+| Start                     | 開始                      | `status.start` — the capture window's opening time        |
+| End                       | 終了                      | `status.end` — the capture window's closing time          |
 | grandma                   | おばあちゃん              | the voice in empty states and errors                      |
 | Grandma noticed           | おばあちゃんの気づき      | `ledger.movers` — the biggest gains and losses per event  |
 

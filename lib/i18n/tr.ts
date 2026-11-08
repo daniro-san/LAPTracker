@@ -77,6 +77,8 @@ export const tr = {
     next: "Sonraki güncelleme: {time}",
     byHand: "Admin elle başlatır",
     stale: "Eskimiş: {n}",
+    start: "Başlangıç",
+    end: "Bitiş",
   },
   upstream: {
     title: "Oyun verileri gecikiyor",

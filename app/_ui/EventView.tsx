@@ -28,7 +28,15 @@ import { AllianceBadge } from "./Pictures";
 import { SiteFooter } from "./SiteFooter";
 import { SiteHeader } from "./SiteHeader";
 import { StatTable, type StatRow } from "./StatTable";
-import { FreshDots, Legend, SideHead, StatusChips, worstOf, type FreshState } from "./Status";
+import {
+  CaptureWindow,
+  FreshDots,
+  Legend,
+  SideHead,
+  StatusChips,
+  worstOf,
+  type FreshState,
+} from "./Status";
 
 type Detail = NonNullable<Awaited<ReturnType<typeof getEventDetail>>>;
 type Events = Awaited<ReturnType<typeof listEvents>>;
@@ -152,6 +160,12 @@ export async function EventView({
           )}
           stale={rows.filter((r) => worstOf(fresh(r.before), fresh(r.after)) !== "fresh").length}
           manual={detail.manual}
+          clock={clock}
+          copy={copy}
+        />
+        <CaptureWindow
+          before={detail.snapshots.find((s) => s.phase === "before")}
+          after={detail.snapshots.find((s) => s.phase === "after")}
           clock={clock}
           copy={copy}
         />

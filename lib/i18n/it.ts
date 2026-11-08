@@ -77,6 +77,8 @@ export const itIT = {
     next: "Prossimo aggiornamento: {time}",
     byHand: "Lo avvia l’admin a mano",
     stale: "Non aggiornati: {n}",
+    start: "Inizio",
+    end: "Fine",
   },
   upstream: {
     title: "Dati del gioco in ritardo",

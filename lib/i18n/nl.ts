@@ -77,6 +77,8 @@ export const nl = {
     next: "Volgende update: {time}",
     byHand: "De admin start het met de hand",
     stale: "Verouderd: {n}",
+    start: "Begin",
+    end: "Einde",
   },
   upstream: {
     title: "Spelgegevens vertraagd",

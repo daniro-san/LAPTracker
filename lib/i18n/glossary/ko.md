@@ -23,6 +23,8 @@ Words already used in `lib/i18n/ko.ts`. Reuse them so the pages stay consistent;
 | Manual round              | 수동 라운드            | `site.manualRound` — an event the admin runs by hand      |
 | Leader                    | 맹주                   | `leadership.leader` — the R5                              |
 | Run by hand by the admin  | 관리자가 직접 실행     | `status.byHand`                                           |
+| Start                     | 시작                   | `status.start` — the capture window's start label         |
+| End                       | 종료                   | `status.end` — the capture window's end label             |
 | grandma                   | 할머니                 | the voice in empty states and errors                      |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
