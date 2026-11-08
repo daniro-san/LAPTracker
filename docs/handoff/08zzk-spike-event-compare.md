@@ -8,6 +8,12 @@ Owner's request (2026-11-07, Portuguese): compare one event against another, to 
 
 ## Decisions
 
+### Owner's answers (2026-11-08, in chat, on PR #186)
+- **Option A**, built first: #189. **Option C** follows as its own session once A is merged: #191 (blocked by #189; the session prompt is in the issue).
+- **Server totals** sum only the alliances with usable data in both events.
+- **The members view** of one alliance (`&alliance=`) is part of the first build.
+- **Events of different kinds:** left open. Whether events get a kind at all is not decided (#175). Tracked in #190. Until then the page allows any two public events and does not group or filter by kind.
+
 ### 1. What exists, and what is missing for "event A vs event B"
 - **Alliance page, "Across events"** (`app/_ui/AcrossEvents.tsx`, data `allianceHistory` in `lib/queries/alliances.ts`): one row per event, newest first. Each row shows the event's **reference value** (after row, else before) for Might, Kills, Members, Level and the change **since the previous event's reference value** (`compute.seriesDeltas`). Ledger rank by might, moved event over event. It does **not** show the in-event change (after − before) at all.
 - **Player page, "Across events"** (`app/_ui/PlayerAcrossEvents.tsx`, `playerHistory`): the same rows, plus a line `since 10:00` with the in-event change (`inEvent`) and a line `since Oct 24` with the change vs the previous event.
@@ -104,7 +110,7 @@ All numbers from the Neon **preview** branch (seed: 3 public events Oct 17, 24, 
 ## Next
 Session: build of option A — next free session number, `session/<NN>-event-compare`.
 Model / effort: keep (opus · high) — one query module, one page and 18-language copy, the same size as 08zze Movers.
-Owner must do first: pick an option and answer the questions in the PR (default A, totals over the intersection, members view in the first build, mixed event kinds allowed). If 08zzh's event model is merged first, the build reads its figures; if not, it builds on before/after as written below.
+Owner must do first: merge this PR (the build reads this handoff as its spec). Answers already given (2026-11-08): A, totals over the intersection, members view included, kinds open in #190. Tracking issue for the build: #189; option C follows in #191. If 08zzh's event model is merged first, the build reads its figures; if not, it builds on before/after as written below.
 Plan changes needed: IMPLEMENTATION_PLAN.md Phase 5e or §"Not in v1" — add "event vs event" as a v1.x page (owner's call); no edit made here.
 
 ```text
@@ -132,7 +138,7 @@ Build the event-vs-event page (issue #177, option A):
 </constraints>
 
 <done_when>
-The page renders from seed data at both widths and themes; the event page links to it; pnpm check is green; docs/handoff/<NN>-event-compare.md written. PR: "feat(compare): event vs event page (#177)".
+The page renders from seed data at both widths and themes; the event page links to it; pnpm check is green; docs/handoff/<NN>-event-compare.md written. PR: "feat(compare): event vs event page (#177)", body `Closes #189`.
 </done_when>
 ```
 
@@ -142,6 +148,10 @@ The page renders from seed data at both widths and themes; the event page links 
 - `/events/compare` coexists with `/events/[id]` without any change to `[id]` (a static segment wins; `[id]` already 404s non-digits).
 - Reuse `MoreBar`, `DetailTable`, `Delta` (with `stack` and `memberMark`), `Rank`, `FreshDots`, `Legend`, `LABEL` and the `PlayerAcrossEvents` grid pattern (`--cols` custom property, lead spanning two rows from 640 px). In the prototype, a spacer cell between the two lines broke the ≥ 640 px grid: the lead's `sm:row-span-2` already fills that cell.
 - `next dev` with `LAP_API_BASE_URL`/`LAP_SITE_BASE_URL` at `127.0.0.1:9` shows broken badge images on existing pages; expected, not a bug in the new page.
+</adjustments>
+
+<adjustments for="#191 option C (after #189)">
+- The session prompt is in #191. `allianceHistory` already selects the before and after rows of every event and keeps one, so the in-event change needs no new query; `StatMetric.vs` in `app/_ui/StatTable.tsx` is rendered but unused today and fits the second change line.
 </adjustments>
 
 <adjustments for="#129 compare two players">
