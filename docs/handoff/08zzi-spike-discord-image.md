@@ -124,3 +124,5 @@ The After edit of a public event message carries the image; a failed render send
 - Badges: not in the spike. If the owner wants them, fetch with lib/images.ts fetchImage + badgeSource (D22 rules: 5 s, 1 MB cap, no redirect) and draw them as data URIs; at most 10 preset files.
 - A forced re-run keeps the same snapshot id (lib/repo/snapshots.ts), which does not matter for an attachment.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/182
