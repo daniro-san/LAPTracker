@@ -34,4 +34,4 @@ Model / effort: keep — a one-column removal.
 Owner must do first: merge this PR into `dev`. It touches no file that 08zzm (#180, event pages' status line) edits.
 Plan changes needed: none.
 
-https://github.com/daniro-san/LAPTracker/pull/PLACEHOLDER
+https://github.com/daniro-san/LAPTracker/pull/188
