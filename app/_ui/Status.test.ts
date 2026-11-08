@@ -51,25 +51,25 @@ describe("CaptureWindow", () => {
         phase("before", "complete", "2026-11-07T12:00Z"),
         phase("after", "partial", "2026-11-07T15:01Z"),
       ),
-    ).toBe("Before 10:00 → After 13:01 server time");
+    ).toBe("Start 10:00 → End 13:01 server time");
     expect(
       windowText(
         phase("before", "complete", "2026-11-07T01:00Z"),
         phase("after", "complete", "2026-11-07T15:01Z"),
       ),
-    ).toBe("Before Nov 6, 23:00 → After Nov 7, 13:01 server time");
+    ).toBe("Start Nov 6, 23:00 → End Nov 7, 13:01 server time");
   });
 
   it("shows a phase that has no time as its state's word, or — before it ran", () => {
     expect(windowText(phase("before", "complete", "2026-11-07T12:00Z"))).toBe(
-      "Before 10:00 server time → After —",
+      "Start 10:00 server time → End —",
     );
     expect(
       windowText(
         phase("before", "failed", "2026-11-07T12:00Z"),
         phase("after", "running", "2026-11-07T15:00Z"),
       ),
-    ).toBe("Before failed → After Updating now");
+    ).toBe("Start failed → End Updating now");
   });
 });
 

@@ -77,8 +77,8 @@ export const de = {
     next: "Nächstes Update: {time}",
     byHand: "Startet der Admin von Hand",
     stale: "Veraltet: {n}",
-    before: "Vorher",
-    after: "Nachher",
+    start: "Beginn",
+    end: "Ende",
   },
   upstream: {
     title: "Spieldaten verzögert",

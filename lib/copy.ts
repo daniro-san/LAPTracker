@@ -90,9 +90,10 @@ export const en = {
     next: "Next update at {time}",
     byHand: "Run by hand by the admin",
     stale: "{n} stale",
-    /** The capture window's labels (issue 180): `BEFORE 10:00 → AFTER 13:01 server time`. */
-    before: "Before",
-    after: "After",
+    /** The capture window's labels (issue 180): `START 10:00 → END 13:01 server time`, when the Before
+     * snapshot was taken and when the After was. */
+    start: "Start",
+    end: "End",
   },
   /** The banner shown while the game's data service does not answer (DECISIONS D27). */
   upstream: {

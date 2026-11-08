@@ -77,8 +77,8 @@ export const ja = {
     next: "次回更新：{time}",
     byHand: "管理者が手動で実行",
     stale: "古いデータ：{n}",
-    before: "前",
-    after: "後",
+    start: "開始",
+    end: "終了",
   },
   upstream: {
     title: "ゲームデータが遅れています",

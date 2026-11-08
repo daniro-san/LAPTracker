@@ -23,7 +23,6 @@ Words already used in `lib/i18n/nl.ts`. Reuse them so the pages stay consistent;
 | Manual round              | Handmatige ronde                 | `site.manualRound` — an event the admin runs by hand      |
 | Leader                    | Leider                           | `leadership.leader` — the R5                              |
 | Run by hand by the admin  | De admin start het met de hand   | `status.byHand`                                           |
-| Before / After            | Voor / Na                        | `status.before`, `status.after` — capture window labels   |
 | grandma                   | oma                              | the voice in empty states and errors                      |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).

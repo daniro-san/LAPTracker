@@ -77,8 +77,8 @@ export const fr = {
     next: "Prochaine mise à jour : {time}",
     byHand: "Lancé à la main par l’admin",
     stale: "Périmés : {n}",
-    before: "Avant",
-    after: "Après",
+    start: "Début",
+    end: "Fin",
   },
   upstream: {
     title: "Données du jeu en retard",

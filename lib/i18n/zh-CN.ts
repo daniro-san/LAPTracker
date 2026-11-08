@@ -77,8 +77,8 @@ export const zhCN = {
     next: "下次更新：{time}",
     byHand: "由管理员手动运行",
     stale: "已过期：{n}",
-    before: "之前",
-    after: "之后",
+    start: "开始",
+    end: "结束",
   },
   upstream: {
     title: "游戏数据延迟",

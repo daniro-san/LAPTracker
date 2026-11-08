@@ -77,8 +77,8 @@ export const sv = {
     next: "Nästa uppdatering: {time}",
     byHand: "Admin kör den för hand",
     stale: "Inaktuella: {n}",
-    before: "Före",
-    after: "Efter",
+    start: "Början",
+    end: "Slut",
   },
   upstream: {
     title: "Speldata är försenad",

@@ -25,8 +25,6 @@ Words already used in `lib/i18n/de.ts`. Reuse them so the pages stay consistent;
 | Run by hand by the admin  | Startet der Admin von Hand   | `status.byHand`                                           |
 | grandma                   | Oma                          | the voice in empty states and errors                      |
 | Grandma noticed           | Oma merkt's                  | `ledger.movers` — the event's biggest gains and losses    |
-| Before                    | Vorher                       | `status.before` — the capture window's start label        |
-| After                     | Nachher                      | `status.after` — the capture window's end label           |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

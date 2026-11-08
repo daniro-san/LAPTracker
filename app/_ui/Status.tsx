@@ -139,7 +139,7 @@ function sideValue(
 const hasTime = (p: PhaseStatus | undefined): p is PhaseStatus =>
   p !== undefined && (p.status === "complete" || p.status === "partial");
 
-/** The capture window (issue 180): `BEFORE 10:00 → AFTER 13:01 server time`, so a reader sees what span a
+/** The capture window (issue 180): `START 10:00 → END 13:01 server time` (the Before's time, then the After's), so a reader sees what span a
  * change covers without opening Details. The day shows when the two times fall on different days; the
  * clock's word follows the last time shown. One window per call: a page with several repeats it. */
 export function CaptureWindow({
@@ -158,8 +158,8 @@ export function CaptureWindow({
     hasTime(after) &&
     clock.day(finishedAt(before)) !== clock.day(finishedAt(after));
   const sides = [
-    [copy.status.before, before, !hasTime(after)],
-    [copy.status.after, after, true],
+    [copy.status.start, before, !hasTime(after)],
+    [copy.status.end, after, true],
   ] as const;
   return (
     <p className="mt-2 flex flex-wrap items-baseline gap-x-2 text-body-sm tabular-nums">
