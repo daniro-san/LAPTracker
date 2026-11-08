@@ -244,3 +244,5 @@ pnpm check green; the client run recorded; docs/handoff/NN-public-api-mcp.md wri
 - Measured sizes: get_alliance ≈ 65 KB with the text duplicate, search_players (50 hits) ≈ 30 KB, list_events ≈ 2.6 KB.
 - Do not install @modelcontextprotocol/inspector: it has a postinstall (D10).
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/185
