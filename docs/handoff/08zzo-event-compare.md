@@ -65,3 +65,5 @@ Plan changes needed: none.
 - After #188 the alliance "Across events" has three columns (Might, Kills, Members); Level is gone there. The new line has three cells.
 - The translator agents (Haiku) can hit the account's rate limit when 17 run at once: check each report came back, and look in `lib/i18n/<tag>.ts` for a language whose agent stopped before reporting (vi had finished its edits).
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/195
