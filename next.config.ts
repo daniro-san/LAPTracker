@@ -1,5 +1,8 @@
 // Security headers that don't vary per request (plan §12.3). The nonce-based CSP lives in proxy.ts.
+// `env` inlines the footer's build line at build time (D58).
 import type { NextConfig } from "next";
+
+import { buildLine } from "./lib/build-line";
 
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
@@ -14,6 +17,7 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  env: { BUILD_LINE: buildLine(process.env, new Date()) },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
