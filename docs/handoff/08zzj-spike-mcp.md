@@ -155,7 +155,12 @@ Cost at 10,000 calls a day (= 300,000 a month):
 | **Neon compute** | one query every 8.6 s keeps the compute up 24 h/day: 0.25 CU × 24 h = 6 CU-h a day → **100 CU-h are gone on day 17** and compute is suspended for the rest of the month (site and collector down). Any traffic with gaps under 5 min has this effect; evenly spread, that is ≥ 288 calls a day. | only CDN misses reach Neon: with `s-maxage=86400` on a closed event, at most one query per URL per day per region | Neon plans page; arithmetic |
 | Neon egress (5 GB) | not measured; if a query moves about half the response size (≈ 16 KB), that is ≈ 4.8 GB a month, right at the cap | negligible | estimate, labelled |
 
-The site's own traffic already uses part of the 100 CU-h. Its current monthly figure is on the Neon dashboard and was not read here.
+The site's own load today, from the owner's Neon dashboard screenshot (2026-11-08, project on the Free plan, 2 branches, default compute 0.25 CU, "Usage since Nov 4, 2026"):
+- **Compute: 10.23 CU-h.** Over ≈ 3.8 days since the project was created (2026-11-04 15:02 UTC) that is ≈ 2.7 CU-h a day, so the compute is up ≈ 45 % of the day (2.7 of a possible 6). At that rate that is ≈ 81 CU-h per 30 days, or ≈ 70 CU-h by 2026-11-30.
+- **Network transfer: 468.04 MB**, ≈ 123 MB a day, ≈ 3.7 GB per 30 days of the 5 GB.
+- **Storage: 37.43 MB** of 1 GB.
+
+These days include development load (seeding, sessions, preview builds and migrations, rehearsals), so a quiet month should be lower. Even so, the site alone already sits at ≈ 70–80 % of both Neon caps. The headroom for third-party traffic is ≈ 20–30 CU-h a month (80–120 h of 0.25 CU awake time), Uncached MCP traffic at 10k calls a day keeps the compute up 24 h. That adds ≈ 3.3 CU-h a day on top of the site's 2.7, so the headroom is gone in 6–9 days, and the month's total runs out on day 17 as in the table.
 
 **5. Dependency.**
 - Use `mcp-handler` 2.3.0 with `@modelcontextprotocol/server` 2.4.0: no install scripts, and 2 direct packages + 3 transitive (`core`, `chalk`, `commander`; `zod` is already ours). They serve both eras from one Web `Request → Response` handler.
@@ -197,18 +202,30 @@ The cache TTLs, applied to the response headers:
 
 The trade-off: a rename or a visibility switch (D28, D39) reaches cached copies only when the TTL runs out. In particular, a round switched to `admin` stays visible at the CDN for up to that long.
 
+## Owner answers (2026-11-08, in chat)
+
+1. **Who uses it:** this spike is for a decision. It may become a SaaS later, with other alliances, other servers, Discord bots and so on querying the MCP. Consequences:
+   - Vercel Hobby is "non-commercial, personal use only" (Hobby page), so a SaaS needs Vercel Pro and a paid Neon plan; prices were not checked.
+   - Other servers means a data-model change: `SERVER = 325` and the 20 alliances in `config/alliances.ts` are fixed today.
+   - Per-client keys would come back for a SaaS. A key in `Authorization` turns off the CDN cache, so it would have to be checked before the cache, for example in routing middleware. None of this is in the build below, and C does not block it: the `/api/public` paths and the `/mcp` tools stay the same.
+2. **Maintainer:** the owner will ask the six questions in section 6.
+3. **D22 consent covers every use, third-party bots included.** The owner also wants a fan-made disclaimer in the footer, "as all the other tools do", with this text: `Last Asylum Tracker is a fan-made community project for the Last Asylum Plague game. It is not an official 37Games or Eyu website, and it is not affiliated with Last Asylum Plague. Game names and artwork belong to their owners.` That is the upstream site's own footer, and it names that site ("Last Asylum Tracker"). On our pages the first words would need to be our product's name. The footer is public copy, so it goes through `lib/copy.ts` and the translate-copy skill (D48). It is a separate small change, not part of the build below. The MCP server's `instructions` and `openapi.json` `info.description` carry the same sentence with our name, in English.
+4. **Neon usage:** read from the dashboard; numbers in section 4.
+5. **Option C confirmed.**
+
 ## Open issues
 
 - **Pre-existing, not fixed:** `GET /api/events` and `GET /api/events/[id]` are public today, uncached (no `Cache-Control` anywhere under `app/api`), and `/api/events/[id]` returns `callsUsed`, `quotaRemainingAfter`, `durationMs`, `error`, `powerBoard`, `killsBoard`, `source` and `boardPulledAt`. Anyone can already loop on it against Neon. Follow-up: either the build's whitelist replaces it, or it gets the same headers and field trim.
-- D22's "the server's players agreed to share their data" was agreed for our pages. Whether it covers third-party bots is the owner's call.
+- The site alone is at ≈ 70–80 % of Neon Free's compute and transfer caps (section 4). That is independent of MCP, and caching the public pages would be its own follow-up.
+- The footer disclaimer (owner answer 3) is a separate change.
 - Vercel's docs do not say whether a WAF-blocked request counts as a function invocation.
 - How a visibility switch to `admin` should purge the CDN copy was not looked into (a cache purge API or a short TTL).
 
 ## Next
 
-Session: NN-public-api-mcp — public read API and `/mcp` (builds option C of #178). Only after the owner picks C and the maintainer has answered.
+Session: NN-public-api-mcp — public read API and `/mcp` (builds option C of #178; the owner confirmed C on 2026-11-08). Only after the maintainer has answered.
 Model / effort: raise one — it is a new unauthenticated public surface plus a new dependency on a protocol revision (2026-07-28) that the SDK's own `LATEST_PROTOCOL_VERSION` does not name yet.
-Owner must do first: ask the maintainer questions 1–6 (section 6) and paste the answers into the issue; confirm C, no auth, and the six tools; read this month's Neon CU-hours; add the WAF rule (IP, 60/60 s, 429) on `/api/public/` and `/mcp` after the deploy.
+Owner must do first: ask the maintainer questions 1–6 (section 6) and paste the answers into the issue; after the deploy, add the WAF rule (IP, 60/60 s, 429) on `/api/public/` and `/mcp`.
 Plan changes needed: docs/IMPLEMENTATION_PLAN.md §12 (Security) gains "public read API and MCP"; §11.1/docs/ARCHITECTURE.md gains `app/api/public/*`, `app/mcp`, and the whitelist module in the dependency rule. Do not edit them in the build without the owner.
 
 ```text
@@ -219,7 +236,7 @@ Session NN-public-api-mcp. Read CLAUDE.md, docs/handoff/00-prereqs.md, docs/hand
 <task>
 - lib/queries/public.ts: the whitelist read models for the six reads in the handoff's tools table, built on the existing queries. Dates as ISO, Maps as arrays, badgeId → `/img/badge/<id>`, hasAvatar → `/img/avatar/<uid>` or null. Never return callsUsed, quotaRemainingAfter, durationMs, error, isTest, powerBoard, killsBoard, source, boardPulledAt, raw_json or any BLOCKED_ROSTER_KEYS.
 - GET routes under app/api/public/ for the six reads (zod-strict query and params, `withContext`), each with `Cache-Control: public, s-maxage=86400, stale-while-revalidate=86400` for an event whose AFTER is complete or partial and older than 24 h, else `s-maxage=300`. public/openapi.json describing them.
-- app/mcp/route.ts with mcp-handler 2.3.0 on @modelcontextprotocol/server 2.4.0 (exact pins; record both in a DECISIONS entry with release date, size and install scripts, per D7). Six read-only tools (annotations as in the handoff) whose handlers fetch the matching /api/public URL on the request's origin and return its JSON as structuredContent plus one text block. Answer 403 when an Origin header is present and is not the app's own origin; GET answers 405.
+- app/mcp/route.ts with mcp-handler 2.3.0 on @modelcontextprotocol/server 2.4.0 (exact pins; record both in a DECISIONS entry with release date, size and install scripts, per D7). Six read-only tools (annotations as in the handoff) whose handlers fetch the matching /api/public URL on the request's origin and return its JSON as structuredContent plus one text block. Answer 403 when an Origin header is present and is not the app's own origin; GET answers 405. The server's `instructions` and openapi.json `info.description` carry the fan-made disclaimer from the handoff's "Owner answers" 3, with our product's name.
 - A DECISIONS entry: public API and MCP — fields, TTLs, no auth, the WAF rule as the rate limit and kill switch, the self-fetch, and why the Postgres limiter is not used.
 - Tests, one per stated behaviour: each public route and each tool output has zero findBlockedKeys hits and none of the dropped fields; a rehearsal and an `admin` round are not found; Cache-Control per case; a foreign Origin gets 403; an import-restriction lint stops app/api/public and app/mcp from importing lib/sources, lib/repo, lib/run or lib/collector.
 </task>
@@ -243,6 +260,8 @@ pnpm check green; the client run recorded; docs/handoff/NN-public-api-mcp.md wri
 - The prototype's way to run lib/queries outside Next: PGlite + `migrate` + `scripts/seed.ts` `seed(db)` gives 20 alliances × 3 events + 1 rehearsal (event 4) in a few seconds, with no Neon.
 - Measured sizes: get_alliance ≈ 65 KB with the text duplicate, search_players (50 hits) ≈ 30 KB, list_events ≈ 2.6 KB.
 - Do not install @modelcontextprotocol/inspector: it has a postinstall (D10).
+- Neon (owner's dashboard, 2026-11-08): 10.23 CU-h and 468 MB transfer in the ≈ 3.8 days since 2026-11-04, ≈ 81 CU-h and ≈ 3.7 GB per 30 days of the 100 CU-h / 5 GB caps, before any public API. The CDN TTLs are what keep the build inside the cap; do not shorten them without measuring.
+- The owner confirmed option C, no auth, and that D22 consent covers third-party bots (2026-11-08). A SaaS for other alliances and servers may come later; keep paths and tool names stable and add nothing for it now.
 </adjustments>
 
 https://github.com/daniro-san/LAPTracker/pull/185
