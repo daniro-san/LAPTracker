@@ -156,11 +156,11 @@ Cost at 10,000 calls a day (= 300,000 a month):
 | Neon egress (5 GB) | not measured; if a query moves about half the response size (≈ 16 KB), that is ≈ 4.8 GB a month, right at the cap | negligible | estimate, labelled |
 
 The site's own load today, from the owner's Neon dashboard screenshot (2026-11-08, project on the Free plan, 2 branches, default compute 0.25 CU, "Usage since Nov 4, 2026"):
-- **Compute: 10.23 CU-h.** Over ≈ 3.8 days since the project was created (2026-11-04 15:02 UTC) that is ≈ 2.7 CU-h a day, so the compute is up ≈ 45 % of the day (2.7 of a possible 6). At that rate that is ≈ 81 CU-h per 30 days, or ≈ 70 CU-h by 2026-11-30.
-- **Network transfer: 468.04 MB**, ≈ 123 MB a day, ≈ 3.7 GB per 30 days of the 5 GB.
+- **Compute: 10.23 CU-h.** From the project's creation (2026-11-04 15:02 UTC) to the screenshot (≈ 2026-11-09 01:00 UTC) is ≈ 4.4 days, so ≈ 2.3 CU-h a day: the compute is up ≈ 39 % of the day (2.3 of a possible 6). At that rate that is ≈ 69 CU-h per 30 days, or ≈ 61 CU-h by 2026-11-30.
+- **Network transfer: 468.04 MB**, ≈ 106 MB a day, ≈ 3.2 GB per 30 days of the 5 GB.
 - **Storage: 37.43 MB** of 1 GB.
 
-These days include development load (seeding, sessions, preview builds and migrations, rehearsals), so a quiet month should be lower. Even so, the site alone already sits at ≈ 70–80 % of both Neon caps. The headroom for third-party traffic is ≈ 20–30 CU-h a month (80–120 h of 0.25 CU awake time), Uncached MCP traffic at 10k calls a day keeps the compute up 24 h. That adds ≈ 3.3 CU-h a day on top of the site's 2.7, so the headroom is gone in 6–9 days, and the month's total runs out on day 17 as in the table.
+These days include development load (seeding, sessions, preview builds and migrations, rehearsals), so a quiet month should be lower. Even so, the site alone already sits at ≈ 60–70 % of both Neon caps. The headroom for third-party traffic is ≈ 30–40 CU-h a month (120–160 h of 0.25 CU awake time). Uncached MCP traffic at 10k calls a day keeps the compute up 24 h. That adds ≈ 3.7 CU-h a day on top of the site's 2.3, so the headroom is gone in 8–11 days, and the month's total runs out on day 17 as in the table.
 
 **5. Dependency.**
 - Use `mcp-handler` 2.3.0 with `@modelcontextprotocol/server` 2.4.0: no install scripts, and 2 direct packages + 3 transitive (`core`, `chalk`, `commander`; `zod` is already ours). They serve both eras from one Web `Request → Response` handler.
@@ -216,7 +216,7 @@ The trade-off: a rename or a visibility switch (D28, D39) reaches cached copies 
 ## Open issues
 
 - **Pre-existing, not fixed:** `GET /api/events` and `GET /api/events/[id]` are public today, uncached (no `Cache-Control` anywhere under `app/api`), and `/api/events/[id]` returns `callsUsed`, `quotaRemainingAfter`, `durationMs`, `error`, `powerBoard`, `killsBoard`, `source` and `boardPulledAt`. Anyone can already loop on it against Neon. Follow-up: either the build's whitelist replaces it, or it gets the same headers and field trim.
-- The site alone is at ≈ 70–80 % of Neon Free's compute and transfer caps (section 4). That is independent of MCP, and caching the public pages would be its own follow-up.
+- The site alone is at ≈ 60–70 % of Neon Free's compute and transfer caps (section 4). That is independent of MCP, and caching the public pages would be its own follow-up.
 - The footer disclaimer (owner answer 3) is a separate change.
 - Vercel's docs do not say whether a WAF-blocked request counts as a function invocation.
 - How a visibility switch to `admin` should purge the CDN copy was not looked into (a cache purge API or a short TTL).
@@ -260,7 +260,7 @@ pnpm check green; the client run recorded; docs/handoff/NN-public-api-mcp.md wri
 - The prototype's way to run lib/queries outside Next: PGlite + `migrate` + `scripts/seed.ts` `seed(db)` gives 20 alliances × 3 events + 1 rehearsal (event 4) in a few seconds, with no Neon.
 - Measured sizes: get_alliance ≈ 65 KB with the text duplicate, search_players (50 hits) ≈ 30 KB, list_events ≈ 2.6 KB.
 - Do not install @modelcontextprotocol/inspector: it has a postinstall (D10).
-- Neon (owner's dashboard, 2026-11-08): 10.23 CU-h and 468 MB transfer in the ≈ 3.8 days since 2026-11-04, ≈ 81 CU-h and ≈ 3.7 GB per 30 days of the 100 CU-h / 5 GB caps, before any public API. The CDN TTLs are what keep the build inside the cap; do not shorten them without measuring.
+- Neon (owner's dashboard, 2026-11-08): 10.23 CU-h and 468 MB transfer in the ≈ 4.4 days since 2026-11-04, ≈ 69 CU-h and ≈ 3.2 GB per 30 days of the 100 CU-h / 5 GB caps, before any public API. The CDN TTLs are what keep the build inside the cap; do not shorten them without measuring.
 - The owner confirmed option C, no auth, and that D22 consent covers third-party bots (2026-11-08). A SaaS for other alliances and servers may come later; keep paths and tool names stable and add nothing for it now.
 </adjustments>
 
