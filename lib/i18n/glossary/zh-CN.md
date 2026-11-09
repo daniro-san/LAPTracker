@@ -21,6 +21,7 @@ Words already used in `lib/i18n/zh-CN.ts`. Reuse them so the pages stay consiste
 | your time                 | 你的时间             | `time.yourTime` — after a time, the viewer's zone           |
 | Exact numbers             | 精确数字             | `site.exactNumbers` — the toggle; legend.rounded names it   |
 | Manual round              | 手动轮次             | `site.manualRound` — an event the admin runs by hand        |
+| Compare                   | 对比                 | `compare.title`, `compare.action` — two events side by side |
 | Leader                    | 盟主                 | `leadership.leader` — the R5                                |
 | Grandma noticed           | 奶奶注意到了         | `ledger.movers` — section heading, biggest gains and losses |
 | Run by hand by the admin  | 由管理员手动运行     | `status.byHand`                                             |
