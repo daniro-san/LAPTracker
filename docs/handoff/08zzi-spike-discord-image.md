@@ -146,3 +146,4 @@ The Before post and the After edit of a public event message each carry their im
 </adjustments>
 
 https://github.com/daniro-san/LAPTracker/pull/182
+https://github.com/daniro-san/LAPTracker/pull/194
