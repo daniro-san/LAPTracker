@@ -18,3 +18,12 @@ export {
   type MemberMover,
   type MoverLists,
 } from "./movers";
+export {
+  comparable,
+  compareEvents,
+  getComparePage,
+  type AllianceComparison,
+  type AllianceEventFigures,
+  type EventComparison,
+  type MemberComparison,
+} from "./compare";

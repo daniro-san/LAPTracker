@@ -22,6 +22,7 @@ Words already used in `lib/i18n/id.ts`. Reuse them so the pages stay consistent;
 | Exact numbers             | Angka pasti                  | `site.exactNumbers` — the toggle; legend.rounded names it |
 | Manual round              | Ronde manual                 | `site.manualRound` — an event the admin runs by hand      |
 | Grandma noticed           | Nenek perhatikan             | `ledger.movers` — the event's biggest gains and losses    |
+| Before / After            | Sebelum / Sesudah            | `compare.lead` — the two values of an event's change      |
 | Leader                    | Pemimpin                     | `leadership.leader` — the R5                              |
 | Run by hand by the admin  | Dijalankan manual oleh admin | `status.byHand`                                           |
 | grandma                   | nenek                        | the voice in empty states and errors                      |
