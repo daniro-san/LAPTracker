@@ -20,7 +20,7 @@
 - **Owner answers (2026-11-08, in chat).** (1) Option A. (2) An image on both phases if the edit can replace it, else on the After only. Discord's Edit Webhook Message lets a PATCH replace the attachment, so the build does both: the Before posts the Before image, and the After's edit replaces it with the After image. (3) Characters the loaded fonts do not cover (such as ꧁ ꧂) are left out of the image. (4) One test post to the admin webhook is allowed.
 
 ## Deviations
-- The task says to view the PNG "at the size Discord displays it". Discord's docs give no display size for embed images, and posting a test needs the owner's OK in chat, which this session did not have. The 260 px phone width is an estimate (see Verified). No message was posted to either webhook.
+- The task says to view the PNG "at the size Discord displays it". Discord's docs give no display size for embed images, and posting a test needs the owner's OK in chat. The 260 px phone width is an estimate (see Verified). After the owner's OK (2026-11-08) and once the owner had put `NOTIFY_WEBHOOK_ADMIN` in the main checkout's `.env.local`, one test message was posted to the **admin** webhook and edited once. Nothing was posted to the public webhook.
 
 ## Verified
 All timings are from a MacBook with an Apple M4, Node 26.5.0, `next/og` from next 16.4.5. Vercel was not measured. Each mockup was rendered 4 times in one fresh process. The first time includes the yoga/resvg WASM start and the font parse.
@@ -49,6 +49,18 @@ All timings are from a MacBook with an Apple M4, Node 26.5.0, `next/og` from nex
 - When a font fetch fails, `next/og` logs `Failed to load dynamic font for <the characters>` and draws a box. That log line carries alliance-name characters, nothing secret.
 - **WOFF subsets do not work.** The Google Fonts latin and cyrillic WOFF subsets add up to 139 KB, against 1.23 MB of TTF. But Satori kept only the first file of each family and weight, so Cyrillic was lost. The latin subset also lacks ğ, ○ and ▲▼, which then trigger a fetch (HTTP 400) and render as boxes. The build needs the full static TTFs: Young Serif Regular 107 KB, Alegreya Sans Bold 267 KB, Source Sans 3 Regular 431 KB and Semibold 426 KB, 1.23 MB in total. They come from `github.com/google/fonts` (ofl/youngserif, ofl/alegreyasans) and `github.com/adobe-fonts/source-sans` (release/TTF). All are OFL. Next's `next/font/google` serves WOFF2, which Satori cannot read.
 
+**Test post to the admin webhook** (2026-11-09; owner's OK in chat; scratchpad script with Node's own `fetch` and `FormData`; only status, ids and attachment facts printed, never the URL). The message content is `[spike 08zzi] Image test on seed data (Oct 31). Please ignore.` and it has no mention.
+
+| Step | Request | HTTP | Time | Sent | Discord's answer |
+|---|---|---|---|---|---|
+| 1 | `POST ?wait=true`, multipart: `payload_json` (embed `image.url = attachment://event-before.png`, `attachments: [{id: 0, filename}]`) + `files[0]` = Before PNG | 200 | 891 ms | 122,425 B | message id returned; `attachments: []`; `embeds[0].image` = https CDN URL, 720 × 964 |
+| 2 | `PATCH /messages/<id>`, the same shape with `event-after.png` = combined PNG | 200 | 724 ms | 144,724 B | same id; `attachments: []`; `embeds[0].image` 720 × 1180 |
+| 3 | `GET /messages/<id>` | 200 | — | — | 0 attachments, 1 embed, image file `event-after.png`, signed URL (`ex`, `is`, `hm`), `edited_timestamp` set |
+
+- A file referenced by `attachment://` in an embed is moved into the embed. The message's `attachments` list stays empty.
+- The PATCH with `attachments: [{id: 0, filename: "event-after.png"}]` replaced the image. The Before file is gone, and no second message was posted. **An image on both phases works with one editable message (D31).**
+- Each upload, about 120–145 KB, took 0.7–0.9 s from this Mac. `SEND_TIMEOUT_MS` (5 s) covers it.
+
 **Phone legibility.** The mockups were scaled with `sips --resampleWidth 260` and viewed at that size. The 260 px is an estimate, not a measurement: a 360 dp screen, minus Discord's avatar column and side margins, minus the embed's 4 px bar and its padding. At 260 px the combined image's body text is about 13.7 px and the header subtitle about 11 px, and both can be read. The 600 px layout's text is about 7 px and cannot. On a phone, tapping the image opens it full screen at 360 px.
 
 **Discord docs relied on** (read 2026-11-07; `discord.com/developers/docs/...` now redirects to `docs.discord.com/developers/...`):
@@ -61,7 +73,7 @@ All timings are from a MacBook with an Apple M4, Node 26.5.0, `next/og` from nex
 - Rate limits (https://docs.discord.com/developers/topics/rate-limits): each webhook is its own top-level resource. No webhook-specific number is stated.
 
 ## Open issues
-- **The real display size and look in Discord are unverified.** One test post to the **admin** webhook (multipart, the combined PNG) would settle the phone and desktop sizes. It needs the owner's OK in chat.
+- **The size at which Discord shows the image on a phone and on desktop has not been measured.** Discord's API answer gives the file size (720 × 1180), not the size on screen. The test message is in the admin channel. The owner's phone and desktop screenshots of it would settle the display size.
 - **꧁ ꧂ in BRAV's name render as a box.** The owner chose to leave such characters out of the image. The text embed still shows the name in full.
 - **Emoji in an alliance name makes the render depend on jsDelivr.** If that fetch fails the render throws. Any build must catch the error and send the text-only message. Today no tracked alliance has an emoji in its tag or name (`config/alliances.ts`), but names are typed in game and can change.
 - `app/opengraph-image.tsx` says "the display serif is not available to the image renderer". With committed TTFs it would be. This is a follow-up, not part of #172.
@@ -121,6 +133,7 @@ The Before post and the After edit of a public event message each carry their im
 ```
 
 <adjustments>
+- Proven on the admin webhook (2026-11-09): a multipart POST with `attachment://` puts the file in `embeds[0].image` and leaves `attachments` empty. A PATCH with `attachments: [{ id: 0, filename }]` plus the new `files[0]` replaces the image in the same message. Upload 0.7–0.9 s for 120–145 KB.
 - Measured on an M4 Mac (Vercel not measured): first render in a fresh process 0.14–0.9 s, warm 0.12–0.4 s; combined PNG 720 × 1180 = 141 KB (Discord's limit is 20 MiB per file).
 - Use full static TTFs, not Google's WOFF subsets: Satori keeps one file per family and weight, so a second subset file is ignored, and the latin subset lacks ğ ○ ▲ ▼.
 - Brand components render in next/og as they are (MarkLine, MightMark, KillsMark, LookMark, NoBadge) once the svg gets width and height. Each needs only width, height and style.color.
@@ -133,3 +146,4 @@ The Before post and the After edit of a public event message each carry their im
 </adjustments>
 
 https://github.com/daniro-san/LAPTracker/pull/182
+https://github.com/daniro-san/LAPTracker/pull/194
