@@ -7,6 +7,7 @@
 - `docs/screenshots/08zzi-movers-light.png` (720 × 996): "Grandma noticed": Might ▲, Might ▼, Kills ▲, top 3 each.
 - `docs/screenshots/08zzi-ledger-light-glyphs.png`: the ledger with six names swapped in to test glyphs: ꧁Black Raven꧂, Берсерк, 龍の会, ไทยพลัง, an emoji name, Ölüm Meleği.
 - `docs/screenshots/08zzi-combined-light-phone260.png`: the recommended image scaled to 260 px wide, which is the estimated phone display width (see Verified).
+- `docs/screenshots/08zzi-before-light.png` (720 × 964, 120 KB): the Before image. Ledger top 10 by Might with Members, and the After's due time in the header. Added after the owner chose images on both phases.
 - `docs/screenshots/08zzi-wide-ledger-phone260.png`: a first draft laid out at 600 px and scaled to 260 px. The text is about 7 px tall and cannot be read. This is why the mockups are laid out at 360 px.
 - This handoff. No production code, no migration, no dependency. The prototype scripts and the downloaded font files are in the scratchpad only.
 
@@ -16,6 +17,7 @@
 - **No member names in the image.** `lib/notify.ts` line 3 says messages carry alliance tags and names, counts and links, and never member names (plan §12.3). Member movers stay out of the image.
 - **Badges are the drawn `NoBadge` placeholder in the mockups.** Fetching the real preset badges (101–110) is a plain GET to the tracker site's `/static/alliance/` path. D22 allows that, but this spike made no outside call it did not need.
 - **English only** (D48): the image text uses the public pages' English words: "Might", "Kills", "Grandma noticed", "○ stale", "server time".
+- **Owner answers (2026-11-08, in chat).** (1) Option A. (2) An image on both phases if the edit can replace it, else on the After only. Discord's Edit Webhook Message lets a PATCH replace the attachment, so the build does both: the Before posts the Before image, and the After's edit replaces it with the After image. (3) Characters the loaded fonts do not cover (such as ꧁ ꧂) are left out of the image. (4) One test post to the admin webhook is allowed.
 
 ## Deviations
 - The task says to view the PNG "at the size Discord displays it". Discord's docs give no display size for embed images, and posting a test needs the owner's OK in chat, which this session did not have. The 260 px phone width is an estimate (see Verified). No message was posted to either webhook.
@@ -60,7 +62,7 @@ All timings are from a MacBook with an Apple M4, Node 26.5.0, `next/og` from nex
 
 ## Open issues
 - **The real display size and look in Discord are unverified.** One test post to the **admin** webhook (multipart, the combined PNG) would settle the phone and desktop sizes. It needs the owner's OK in chat.
-- **꧁ ꧂ in BRAV's name render as a box.** Options for the build: strip characters that none of the loaded fonts cover before rendering, or accept the box. Stripping changes the alliance's name as shown, so it is the owner's call. The text embed shows the name correctly either way.
+- **꧁ ꧂ in BRAV's name render as a box.** The owner chose to leave such characters out of the image. The text embed still shows the name in full.
 - **Emoji in an alliance name makes the render depend on jsDelivr.** If that fetch fails the render throws. Any build must catch the error and send the text-only message. Today no tracked alliance has an emoji in its tag or name (`config/alliances.ts`), but names are typed in game and can change.
 - `app/opengraph-image.tsx` says "the display serif is not available to the image renderer". With committed TTFs it would be. This is a follow-up, not part of #172.
 - The issue says the collector takes "≈ 40 s". `docs/handoff/09-dryrun.md` measured 10.0 s and 9.6 s of wall-clock for a whole run. Either way, the render's ~0.2–1 s fits easily inside `NOTIFY_CAP_MS` = 115 s (`lib/run.ts:29`).
@@ -81,14 +83,14 @@ All three spend **0 upstream quota calls**: the image is drawn from `getEventDet
 | Risks | The render throws on a failed emoji fetch: needs try/catch and a timeout, then the text-only send. A multipart PATCH 404 must re-post with the file (FormData can be re-sent). Unverified display size. | Media proxy caching is not documented: an edit may keep showing the old image even with `?v=`. Discord fetches the URL once at post time, so if the render is slow or fails, the embed has no image and nothing retries it (not documented). Preview deployments are behind Vercel SSO, so Discord can only fetch production. Anyone can call the route and make it render. | The owner's idea is not done. |
 | Bonus | — | The same route could later serve as the `/events/[id]` link preview. | — |
 
-**Recommendation: A.** The image is part of the message, so the edited message always shows the image from that moment (D31's "the edited message shows the event so far"). It depends on no undocumented proxy caching, adds no public route, and gets the same 404 and edit fallbacks that `sendOrEdit` already has. Use the combined layout (`08zzi-combined-light.png`), light tokens, on the After only; the Before message stays text.
+**Recommendation: A.** The image is part of the message, so the edited message always shows the image from that moment (D31's "the edited message shows the event so far"). It depends on no undocumented proxy caching, adds no public route, and gets the same 404 and edit fallbacks that `sendOrEdit` already has. Use light tokens on both phases. The Before message posts `08zzi-before-light.png`. The After's edit replaces that file with the combined layout (`08zzi-combined-light.png`). The owner chose A (2026-11-08).
 
 **Charts** are out of v1 by rule. A chart (for example each alliance's Might before and after as paired bars) would use the same renderer and layout width, at about the same cost as A. It needs an owner decision first and is not prototyped.
 
 ## Next
-Session: 08zzj — Discord event image (build of option A), only after the owner picks an option
+Session: 08zzj — Discord event image (build of option A, chosen by the owner 2026-11-08)
 Model / effort: keep — the spike measured every risky part (render time, size, fonts, glyphs, Discord's attachment rules). What is left is wiring and tests.
-Owner must do first: answer the questions in the PR (option A/B/C; image on the After only or on both phases; strip uncovered characters such as ꧁ ꧂ or accept a box). Allow one test post to the **admin** webhook, so the build can check the display size.
+Owner must do first: open an issue for the build. Put `NOTIFY_WEBHOOK_ADMIN` in the main checkout's `.env.local` if the build should post its own test to the admin channel; today only Vercel has it.
 Plan changes needed: none in docs/IMPLEMENTATION_PLAN.md. DESIGN.md "Fonts" and "Enforcement" (the image renderer reads committed TTFs) and a new DECISIONS entry are part of the build.
 
 **Model:** opus · **Effort:** medium · **Mode:** default
@@ -99,7 +101,10 @@ Session 08zzj of SESSION_PLAYBOOK.md. Read CLAUDE.md, docs/handoff/00-prereqs.md
 </session>
 
 <task>
-The public Discord event message's After edit carries a rendered PNG of the event: the layout of docs/screenshots/08zzi-combined-light.png (event header, ledger top 5 by Might with the Might change, Might ▲ and Kills ▲ top 3 from compute.topMovers), light tokens, laid out at 360 px and rendered at 720 px with next/og ImageResponse. The Before message stays text only.
+The public Discord event message carries a rendered PNG of the event, in light tokens, laid out at 360 px and rendered at 720 px with next/og ImageResponse.
+- The Before posts the layout of docs/screenshots/08zzi-before-light.png: ledger top 10 by Might, with Members, and the After's due time.
+- The After's edit replaces that file with the layout of docs/screenshots/08zzi-combined-light.png: event header, ledger top 5 by Might with the Might change, and Might ▲ and Kills ▲ top 3 from compute.topMovers.
+- Characters none of the loaded fonts cover (꧁ ꧂, emoji, CJK, Thai) are left out of the image's names (owner, 2026-11-08). The image then needs no font or emoji fetch at render time. The text embed keeps the full name.
 - Render in lib/ (no app/ import), from the getEventDetail rows notifyPublic already reads; alliance tags and names, numbers, no member names, no URL. Fonts: the four static OFL TTFs the spike lists (Young Serif Regular, Alegreya Sans Bold, Source Sans 3 Regular and Semibold) committed under lib/brand/fonts/ with OFL.txt; read once per instance.
 - lib/discord-send.ts: when a file is given, send multipart/form-data (files[0] + payload_json, no content-type header of our own) on POST and on PATCH; on PATCH send attachments: [{ id: 0, filename }] so the new file replaces the old one; the 404 re-post sends the file too. The embed's image.url is attachment://<filename>.
 - Failure: the render gets a time limit (2 s); a throw or a timeout logs notify.image_failed (no names, no URL) and the message goes out text only, exactly as today.
@@ -111,7 +116,7 @@ pnpm check. Tests, one per behaviour: the PNG's IHDR is 720 wide; multipart body
 </verify>
 
 <done_when>
-The After edit of a public event message carries the image; a failed render sends today's message; suite green; docs/handoff/08zzj-discord-image.md. PR: "feat(discord): the event report carries a rendered image (#<issue>)" (into dev).
+The Before post and the After edit of a public event message each carry their image, and the edit leaves one attachment. A failed render sends today's message. suite green; docs/handoff/08zzj-discord-image.md. PR: "feat(discord): the event report carries a rendered image (#<issue>)" (into dev).
 </done_when>
 ```
 
@@ -120,7 +125,9 @@ The After edit of a public event message carries the image; a failed render send
 - Use full static TTFs, not Google's WOFF subsets: Satori keeps one file per family and weight, so a second subset file is ignored, and the latin subset lacks ğ ○ ▲ ▼.
 - Brand components render in next/og as they are (MarkLine, MightMark, KillsMark, LookMark, NoBadge) once the svg gets width and height. Each needs only width, height and style.color.
 - next/og fetches Noto Sans (CJK, Thai) from fonts.googleapis.com and twemoji from jsDelivr when a name needs them. A failed emoji fetch throws, so the fallback is required, not optional. ꧁ ꧂ never render.
-- Rows with a fallback font are taller: give table rows a fixed height so a CJK name does not push the footer off the image.
+- Rows with a fallback font are taller. Once uncovered characters are left out, no row uses a fallback font. Keep a fixed row height anyway, so the footer never moves.
+- A name made only of uncovered characters (for example 龍の会) is empty once they are left out. Show the tag alone then, and the union id when the tag is empty too: the same order as `allianceLabel` in lib/notify.ts.
+- The Before image (docs/screenshots/08zzi-before-light.png) took 142–177 ms warm, 771 ms first, 120 KB.
 - Badges: not in the spike. If the owner wants them, fetch with lib/images.ts fetchImage + badgeSource (D22 rules: 5 s, 1 MB cap, no redirect) and draw them as data URIs; at most 10 preset files.
 - A forced re-run keeps the same snapshot id (lib/repo/snapshots.ts), which does not matter for an attachment.
 </adjustments>
