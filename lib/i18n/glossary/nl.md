@@ -24,6 +24,9 @@ Words already used in `lib/i18n/nl.ts`. Reuse them so the pages stay consistent;
 | Leader                    | Leider                           | `leadership.leader` — the R5                              |
 | Run by hand by the admin  | De admin start het met de hand   | `status.byHand`                                           |
 | grandma                   | oma                              | the voice in empty states and errors                      |
+| Before                    | Voor                             | `compare.lead` — the start value of a change              |
+| After                     | Na                               | `compare.lead` — the end value of a change                |
+| vs                        | tegen                            | `compare.versus` — between two event names                |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

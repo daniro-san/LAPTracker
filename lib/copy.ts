@@ -61,6 +61,27 @@ export const en = {
     /** The event's biggest gains and losses (#70). */
     movers: "Grandma noticed",
   },
+  /** Event vs event (D57, #177): two events' in-event changes side by side. */
+  compare: {
+    title: "Event vs event",
+    /** The page's <title> and the event page's link target name: `Oct 24 vs Oct 31`. */
+    versus: "{a} vs {b}",
+    /** The event page's link and the picker's button. */
+    action: "Compare",
+    first: "First event",
+    second: "Second event",
+    swap: "Swap the events",
+    /** Under the title: what each line's numbers are. */
+    lead: "Each line is the change during that event, from Before to After.",
+    allAlliances: "All alliances",
+    /** Under the totals: how many alliances they cover. */
+    counted: "{n} of {total} alliances, those with usable data in both events",
+    /** Details: the reference values from the first event to the second. */
+    between: "From one event to the other",
+    notIn: "not in alliance",
+    same: "Pick two different events.",
+    onlyOne: "There is only one event to compare so far.",
+  },
   /** The header's settings menu (D38). */
   settings: {
     language: "Language",

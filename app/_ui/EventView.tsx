@@ -9,6 +9,7 @@ import type { getEventDetail, listEvents, Ranks, RosterChange } from "@/lib/quer
 import type { getEventPage } from "@/lib/queries/event-page";
 import { nextEvent } from "@/lib/schedule";
 
+import { CompareLink } from "./ComparePicker";
 import { DetailTable, figureRows } from "./DetailLines";
 import {
   comparisonRows,
@@ -111,6 +112,24 @@ function TitleBand({ copy }: { copy: Dictionary }) {
   );
 }
 
+/** The title row's controls: "⇄ Compare" (D57) and Exact numbers. */
+function TitleActions({
+  events,
+  eventId,
+  copy,
+}: {
+  events: Events;
+  eventId: number;
+  copy: Dictionary;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <CompareLink events={events} eventId={eventId} copy={copy} />
+      <ExactToggle />
+    </div>
+  );
+}
+
 export async function EventView({
   events,
   homeId,
@@ -148,7 +167,7 @@ export async function EventView({
               </p>
             )}
           </div>
-          <ExactToggle />
+          <TitleActions events={events} eventId={detail.id} copy={copy} />
         </div>
         <StatusChips
           phases={detail.snapshots}

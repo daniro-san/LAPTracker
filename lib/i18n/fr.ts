@@ -50,6 +50,22 @@ export const fr = {
     alliances: "Alliances",
     movers: "Mamie remarque",
   },
+  compare: {
+    title: "Événement contre événement",
+    versus: "{a} vs {b}",
+    action: "Comparer",
+    first: "Premier événement",
+    second: "Deuxième événement",
+    swap: "Inverser les événements",
+    lead: "Chaque ligne est l’évolution pendant cet événement, d’Avant à Après.",
+    allAlliances: "Toutes alliances",
+    counted:
+      "{n} alliances sur {total}, celles dont les données sont utilisables dans les deux événements",
+    between: "D’un événement à l’autre",
+    notIn: "hors alliance",
+    same: "Choisissez deux événements différents.",
+    onlyOne: "Il n’y a pour l’instant qu’un seul événement à comparer.",
+  },
   settings: {
     language: "Langue",
     theme: "Thème",
