@@ -92,3 +92,5 @@ Plan changes needed: IMPLEMENTATION_PLAN.md ยง"Not in v1" or the After-v1 list โ
 - `dailyReadQuota(k, 20)` = `requiredQuota(k) + requiredQuota(20)` guards the daily read; a per-day rule for event samples should add the daily read's 1 + k calls (21) at 06:00 server.
 - `daily_rosters` uses the array layout 08zzh proposes for light samples. When reading `bigint[]` columns with nulls, select them as `::text[]`: Drizzle turns a null element into 0.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/206
