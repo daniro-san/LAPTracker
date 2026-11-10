@@ -82,7 +82,7 @@ export const brandCopy = {
     specimen: "Aa",
     faces: {
       display: {
-        name: "Young Serif",
+        name: "Alegreya 400",
         role: "Primary display: page titles, the wordmark, error lines. One weight, never below 20 px.",
       },
       subhead: {
@@ -98,10 +98,10 @@ export const brandCopy = {
     scale: {
       displayXl: {
         sample: "Grandma wandered off.",
-        spec: "48 / 1.05 · Young Serif",
+        spec: "48 / 1.05 · Alegreya 400",
         use: "Error-page line",
       },
-      displayLg: { sample: "Event Ledger", spec: "32 / 1.1 · Young Serif", use: "Page title" },
+      displayLg: { sample: "Event Ledger", spec: "32 / 1.1 · Alegreya 400", use: "Page title" },
       displayMd: {
         sample: "Grandma noticed",
         spec: "24 / 1.15 · Alegreya Sans 700",

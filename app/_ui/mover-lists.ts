@@ -42,6 +42,9 @@ export interface MoverScope {
   lists: Partial<Record<MoverKey, MoverItem[]>>;
 }
 
+/** The Movers section's anchor: the event page's "Grandma noticed ↓" jump link points here. */
+export const MOVERS_ID = "movers";
+
 /** The tabs, in order: the head's word, its arrow (null: both), and the lists it shows. */
 export const MOVER_TABS = [
   { key: "mightGains", word: "might", up: true, lists: ["mightGains"] },

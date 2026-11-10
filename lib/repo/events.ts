@@ -202,6 +202,23 @@ export async function claimQuotaCheck(db: Db, eventId: number, at: Date): Promis
   return rows.length > 0;
 }
 
+/** Both snapshots of the scheduled event at this time are complete (not partial, failed or missing). */
+export async function scheduledEventDone(db: Db, eventAtUtc: Date): Promise<boolean> {
+  const rows = await db
+    .select({ phase: snapshots.phase })
+    .from(events)
+    .innerJoin(snapshots, eq(snapshots.eventId, events.id))
+    .where(
+      and(
+        eq(events.eventAtUtc, eventAtUtc),
+        eq(events.manual, false),
+        eq(events.isTest, false),
+        eq(snapshots.status, "complete"),
+      ),
+    );
+  return new Set(rows.map((r) => r.phase)).size === 2;
+}
+
 /** A scheduled event (not a manual round, not a rehearsal) with its Before in [from, to) (D60). */
 export async function hasScheduledEvent(db: Db, from: Date, to: Date): Promise<boolean> {
   const [row] = await db

@@ -111,7 +111,12 @@ export const requestClock = cache(async () => {
   );
 });
 
-/** /admin: always server time, the zone the schedule is set in, and English words. */
-export const requestServerClock = cache(async () =>
-  makeClock(await requestLocale(), getEnv().SERVER_TZ),
-);
+/** /admin: always server time, the zone the schedule is set in, and English words; dates follow the
+ * viewer's `date` choice like the public pages (UX review S9). */
+export const requestServerClock = cache(async () => {
+  const [locale, jar] = await Promise.all([requestLocale(), cookies()]);
+  return makeClock(locale, getEnv().SERVER_TZ, {
+    own: false,
+    date: parseDateFormat(jar.get(DATE_COOKIE)?.value),
+  });
+});

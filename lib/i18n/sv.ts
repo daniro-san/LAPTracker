@@ -112,6 +112,7 @@ export const sv = {
     next: "Nästa uppdatering: {time}",
     byHand: "Admin kör den för hand",
     stale: "Inaktuella: {n}",
+    failedRows: "Misslyckade: {n}",
     start: "Början",
     end: "Slut",
   },
@@ -133,7 +134,7 @@ export const sv = {
     same: "Samma",
     stale: "Inaktuell",
     rank: "Placering",
-    rounded: "Avrundat: kryssa i Exakta tal för hela talet",
+    rounded: "Avrundat",
     members: "Inkluderar medlemsbyten",
   },
   members: {

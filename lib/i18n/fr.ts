@@ -113,6 +113,7 @@ export const fr = {
     next: "Prochaine mise à jour : {time}",
     byHand: "Lancé à la main par l’admin",
     stale: "Périmés : {n}",
+    failedRows: "Échecs : {n}",
     start: "Début",
     end: "Fin",
   },
@@ -134,7 +135,7 @@ export const fr = {
     same: "Stable",
     stale: "Périmé",
     rank: "Rang",
-    rounded: "Arrondi : cochez Chiffres exacts pour le nombre complet",
+    rounded: "Arrondi",
     members: "Inclut les changements de membres",
   },
   members: {

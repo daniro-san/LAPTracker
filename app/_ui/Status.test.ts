@@ -5,22 +5,32 @@ import { describe, expect, it } from "vitest";
 import { en } from "@/lib/copy";
 
 import { makeClock, type Clock } from "./format";
-import { CaptureWindow, Legend, StatusChips, type PhaseStatus } from "./Status";
+import { CaptureWindow, Legend, NextUpdate, StatusChips, type PhaseStatus } from "./Status";
 
 const clock = { at: () => "Nov 7, 10:00" } as unknown as Clock;
 const html = (manual: boolean) =>
   renderToStaticMarkup(
-    createElement(StatusChips, {
-      phases: [],
-      nextAt: new Date("2026-11-07T10:00:00Z"),
-      stale: 0,
+    createElement(NextUpdate, {
+      at: new Date("2026-11-07T10:00:00Z"),
       manual,
       clock,
       copy: en,
     }),
   );
+const counts = (stale: number, failed: number) =>
+  renderToStaticMarkup(createElement(StatusChips, { phases: [], stale, failed, clock, copy: en }));
 
 describe("StatusChips", () => {
+  it("counts stale and failed rows apart, each only when there are some", () => {
+    const text = counts(2, 1);
+    expect(text).toContain("2 stale");
+    expect(text).toContain("1 failed");
+    expect(counts(0, 0)).not.toMatch(/stale|failed/);
+    expect(counts(0, 3)).not.toContain("stale");
+  });
+});
+
+describe("NextUpdate", () => {
   it("says a manual round is run by hand instead of naming the next scheduled update", () => {
     expect(html(false)).toContain("Next update at Nov 7, 10:00");
     const manual = html(true);

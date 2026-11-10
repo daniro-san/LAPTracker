@@ -29,6 +29,23 @@ export default async function RunsPage() {
               href={`/admin/runs/${r.id}`}
               className="flex min-h-11 flex-col gap-1 p-3 sm:flex-row sm:items-center sm:gap-4 sm:px-0"
             >
+              <span className="flex flex-wrap items-center gap-x-3 gap-y-1 sm:order-last sm:flex-col sm:items-end">
+                <StateChip status={r.status}>{stateWord(r.status)}</StateChip>
+                {r.problems.map((p) => (
+                  <span
+                    key={p.unionId}
+                    className="whitespace-nowrap text-body-sm font-medium text-seal"
+                  >
+                    <span aria-hidden="true">{p.failed ? "✗" : "○"} </span>[{p.tag ?? p.unionId}]{" "}
+                    {p.failed ? t.problems.tag.failed : t.problems.tag.stale}
+                  </span>
+                ))}
+                {r.deadline && (
+                  <Chip tone="seal" icon={<DroppedStitch />}>
+                    {t.deadline}
+                  </Chip>
+                )}
+              </span>
               <span className="flex min-w-0 flex-col sm:w-72">
                 <span className="break-words font-semibold text-plum">
                   {eventWord(r, clock)} · {phaseWord(r.phase)}
@@ -56,14 +73,6 @@ export default async function RunsPage() {
                 </span>
                 {r.error && !r.deadline && (
                   <span className="block break-words text-seal">{r.error}</span>
-                )}
-              </span>
-              <span className="flex flex-wrap gap-2 sm:flex-col sm:items-end">
-                <StateChip status={r.status}>{stateWord(r.status)}</StateChip>
-                {r.deadline && (
-                  <Chip tone="seal" icon={<DroppedStitch />}>
-                    {t.deadline}
-                  </Chip>
                 )}
               </span>
             </Link>

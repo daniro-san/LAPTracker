@@ -26,6 +26,9 @@ export interface StatMetric {
   memberMark?: boolean;
   /** Shown only in the row's Details panel, beside the before → after values. */
   detailNote?: string | undefined;
+  /** The time these figures are from, shown where the change would be: a card whose After failed keeps
+   * its Before figures and says when they were taken (UX review S3). */
+  at?: string;
   /** A second change shown under the first, e.g. the change since the previous event. */
   vs?: { label: string; delta: number | null; base: number | null; memberMark?: boolean };
 }
@@ -52,10 +55,14 @@ export interface StatRow {
 const MUTED = "text-ink/70";
 export const LABEL = `text-label font-semibold uppercase tracking-[0.04em] ${MUTED}`;
 
-function MetricCell({ m }: { m: StatMetric }) {
+/** `shared`: the row's Details control sits on this metric's line below 640 px (see MoreBar), so the
+ * metric takes one of the card's two columns; otherwise it spans both. */
+function MetricCell({ m, shared }: { m: StatMetric; shared: boolean }) {
   const base = m.base ?? m.from ?? null;
   return (
-    <div className="grid grid-cols-[5rem_minmax(0,1fr)] items-baseline gap-x-2 sm:block sm:text-right">
+    <div
+      className={`grid grid-cols-[5rem_minmax(0,1fr)] items-baseline gap-x-2 sm:col-span-1 sm:block sm:text-right ${shared ? "" : "col-span-2"}`}
+    >
       {/* sr-only at ≥ 640 px, where the column header shows it: a screen reader still hears it (07c S4). */}
       <span className={`${LABEL} sm:sr-only`}>{m.label}</span>
       <div className="flex flex-wrap items-baseline gap-x-2 sm:block">
@@ -67,10 +74,14 @@ function MetricCell({ m }: { m: StatMetric }) {
           )}
           <Num n={m.value} />
         </span>
-        {!m.noChange && (
-          <span className="text-sm tabular-nums sm:block">
-            <Delta delta={m.delta} base={base} note={m.note} memberMark={m.memberMark === true} />
-          </span>
+        {m.at ? (
+          <span className={`text-sm tabular-nums sm:block ${MUTED}`}>{m.at}</span>
+        ) : (
+          !m.noChange && (
+            <span className="text-sm tabular-nums sm:block">
+              <Delta delta={m.delta} base={base} note={m.note} memberMark={m.memberMark === true} />
+            </span>
+          )
         )}
         {m.vs && (
           <span className={`basis-full text-xs tabular-nums ${MUTED} sm:block`}>
@@ -85,7 +96,7 @@ function MetricCell({ m }: { m: StatMetric }) {
 
 function Lead({ row }: { row: StatRow }) {
   return (
-    <div className="flex min-w-0 items-center gap-2 border-b border-rule pb-2 sm:border-0 sm:pb-0">
+    <div className="col-span-2 flex min-w-0 items-center gap-2 border-b border-rule pb-2 sm:col-span-1 sm:border-0 sm:pb-0">
       {row.rank && (
         <span className="w-14 shrink-0 text-base">
           <Rank n={row.rank.n} move={row.rank.move} />
@@ -109,15 +120,32 @@ function Lead({ row }: { row: StatRow }) {
   );
 }
 
-export function MoreBar({ row, copy }: { row: StatRow; copy: Dictionary }) {
+/** The Details control. `inline` (the StatTable rows): the control is a grid item of the row, a fifth
+ * column at ≥ 640 px and the Members line's second cell below it, and its panel spans the row (the
+ * `.stat-more` rules in app/globals.css; a browser without `::details-content` keeps it on its own line).
+ * The summary carries the row's name for screen readers (UX review S6). */
+export function MoreBar({
+  row,
+  copy,
+  inline = false,
+}: {
+  row: StatRow;
+  copy: Dictionary;
+  inline?: boolean;
+}) {
   if (!row.summary && !row.detail) return null;
   return (
-    <details className="group/more relative z-10 col-span-full">
-      <summary className="flex min-h-11 cursor-pointer items-center gap-3 text-sm [&::-webkit-details-marker]:hidden">
+    <details className={`group/more relative z-10 col-span-full ${inline ? "stat-more" : ""}`}>
+      <summary
+        className={`relative z-10 flex min-h-11 cursor-pointer items-center gap-3 text-sm [&::-webkit-details-marker]:hidden ${inline ? "justify-end sm:flex-col sm:items-end sm:justify-center sm:gap-0" : ""}`}
+      >
         {row.summary}
         {row.detail && (
           <span className="drawn-frame-soft ml-auto inline-flex min-h-11 items-center gap-1 px-3 font-medium text-plum group-open/more:bg-plum/10">
-            {copy.ledger.details}
+            <span>
+              {copy.ledger.details}
+              {row.lead && <span className="sr-only">, {row.lead}</span>}
+            </span>
             <span
               aria-hidden="true"
               className="transition-transform duration-150 group-open/more:rotate-180 motion-reduce:transition-none"
@@ -127,7 +155,11 @@ export function MoreBar({ row, copy }: { row: StatRow; copy: Dictionary }) {
           </span>
         )}
       </summary>
-      {row.detail && <div className="border-t border-rule pb-2 pt-2 text-sm">{row.detail}</div>}
+      {row.detail && (
+        <div className="stat-more-panel relative z-10 col-span-full border-t border-rule pb-2 pt-2 text-sm">
+          {row.detail}
+        </div>
+      )}
     </details>
   );
 }
@@ -147,8 +179,10 @@ export function StatTable({
   copy: Dictionary;
 }) {
   if (rows.length === 0) return <EmptyState>{empty ?? copy.empty.kettle}</EmptyState>;
+  // At ≥ 640 px a fifth, fixed column holds the Details control, so the header and every row align.
+  const more = rows.some((r) => r.summary || r.detail);
   const grid = {
-    "--cols": `minmax(0,2.4fr) repeat(${columns.length}, minmax(0,1fr))`,
+    "--cols": `minmax(0,2.4fr) repeat(${columns.length}, minmax(0,1fr))${more ? " 6.75rem" : ""}`,
   } as CSSProperties;
   return (
     <div>
@@ -176,9 +210,9 @@ export function StatTable({
           >
             <Lead row={row} />
             {row.metrics.map((m, i) => (
-              <MetricCell key={i} m={m} />
+              <MetricCell key={i} m={m} shared={i === row.metrics.length - 1 && more} />
             ))}
-            <MoreBar row={row} copy={copy} />
+            <MoreBar row={row} copy={copy} inline />
           </li>
         ))}
       </ul>

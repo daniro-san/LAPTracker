@@ -112,6 +112,7 @@ export const th = {
     next: "อัปเดตครั้งถัดไป {time}",
     byHand: "แอดมินรันเอง",
     stale: "ข้อมูลเก่า: {n}",
+    failedRows: "ล้มเหลว: {n}",
     start: "เริ่ม",
     end: "สิ้นสุด",
   },
@@ -133,7 +134,7 @@ export const th = {
     same: "เท่าเดิม",
     stale: "เก่า",
     rank: "อันดับ",
-    rounded: "ปัดเศษ: ติ๊ก ตัวเลขเต็ม เพื่อดูค่าเต็ม",
+    rounded: "ปัดเศษ",
     members: "รวมการเปลี่ยนสมาชิก",
   },
   members: {

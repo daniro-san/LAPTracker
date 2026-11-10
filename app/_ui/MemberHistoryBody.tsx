@@ -12,12 +12,15 @@ import type { HistoryCardBody } from "@/lib/queries";
 import { CopyRoster } from "./CopyRoster";
 import { useCopy } from "./LocaleProvider";
 import { parts, rosterTsv, type HistoryFilter } from "./member-history";
-import { Delta } from "./Num";
+import { Delta, Num } from "./Num";
 import { LABEL } from "./StatTable";
 
 const MUTED = "text-ink/70";
 const PLAYER =
-  "inline-flex min-h-11 min-w-0 items-center break-words font-medium text-plum hover:underline";
+  "inline-flex min-h-11 min-w-0 items-center font-medium text-plum [overflow-wrap:anywhere] hover:underline";
+/** Name, Kills, Might: the same tracks in the header and every row, so the columns line up. */
+const CHANGE_COLS =
+  "grid grid-cols-[minmax(0,1fr)_5rem_6rem] gap-x-2 sm:grid-cols-[minmax(0,1fr)_8rem_8rem]";
 /** Members whose figures changed, shown before "Show all". */
 const FIRST_CHANGES = 10;
 
@@ -36,25 +39,36 @@ function Group({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
+/** A figure with its change under it; the percent is against the value before (value − change). */
+function Figure({ value, change }: { value: number | null; change: number | null }) {
+  return (
+    <span className="text-right">
+      <span className="block">
+        <Num n={value} />
+      </span>
+      <span className="block text-xs">
+        <Delta
+          delta={change}
+          base={value === null || change === null ? null : value - change}
+          stack
+        />
+      </span>
+    </span>
+  );
+}
+
 function Changes({ body, copy }: { body: HistoryCardBody; copy: Dictionary }) {
   const row = (m: HistoryCardBody["changed"][number]) => (
-    <li
-      key={m.uid}
-      className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-3 text-sm tabular-nums"
-    >
+    <li key={m.uid} className={`${CHANGE_COLS} items-center text-sm tabular-nums`}>
       {player(m)}
-      <span className="text-right">
-        <Delta delta={m.killsChange} base={null} />
-      </span>
-      <span className="text-right">
-        <Delta delta={m.powerChange} base={null} />
-      </span>
+      <Figure value={m.kills} change={m.killsChange} />
+      <Figure value={m.power} change={m.powerChange} />
     </li>
   );
   const [first, rest] = [body.changed.slice(0, FIRST_CHANGES), body.changed.slice(FIRST_CHANGES)];
   return (
     <div className="border-t border-rule px-3 py-2">
-      <p className={`grid grid-cols-[minmax(0,1fr)_auto_auto] gap-x-3 ${LABEL}`}>
+      <p className={`${CHANGE_COLS} ${LABEL}`}>
         <span>{copy.ledger.member}</span>
         <span className="text-right">{copy.ledger.kills}</span>
         <span className="text-right">{copy.ledger.might}</span>

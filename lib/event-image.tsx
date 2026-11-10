@@ -59,7 +59,7 @@ const column = { display: "flex", flexDirection: "column" } as const;
 const colors = () => Object.fromEntries(TOKENS.map((t) => [t, tokenColor(t)])) as Colors;
 
 const FONT_FILES = [
-  ["Young Serif", "YoungSerif-Regular.ttf", 400],
+  ["Alegreya", "Alegreya-Regular.ttf", 400],
   ["Alegreya Sans", "AlegreyaSans-Bold.ttf", 700],
   ["Source Sans 3", "SourceSans3-Regular.ttf", 400],
   ["Source Sans 3", "SourceSans3-Semibold.ttf", 600],
@@ -134,7 +134,7 @@ function Header({ c, e }: { c: Colors; e: EventImageInput }) {
     >
       <MarkLine size={u(40)} />
       <div style={{ ...column, maxWidth: u(WIDTH - 2 * PAD - 50) }}>
-        <div style={{ ...line, fontFamily: "Young Serif", fontSize: u(24), lineHeight: 1.1 }}>
+        <div style={{ ...line, fontFamily: "Alegreya", fontSize: u(24), lineHeight: 1.1 }}>
           {title(e)}
         </div>
         <div style={{ ...line, fontFamily: "Source Sans 3", fontSize: u(15) }}>{subtitle(e)}</div>

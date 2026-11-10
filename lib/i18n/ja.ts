@@ -112,6 +112,7 @@ export const ja = {
     next: "次回更新：{time}",
     byHand: "管理者が手動で実行",
     stale: "古いデータ：{n}",
+    failedRows: "失敗：{n}",
     start: "開始",
     end: "終了",
   },
@@ -133,7 +134,7 @@ export const ja = {
     same: "変化なし",
     stale: "古い",
     rank: "順位",
-    rounded: "概数：全桁は「正確な数値」にチェック",
+    rounded: "概数",
     members: "メンバー変動を含む",
   },
   members: {

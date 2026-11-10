@@ -12,7 +12,13 @@ import { KillsMark, LookMark, MightMark, RankMark } from "@/lib/brand/components
 import type { Dictionary } from "@/lib/copy";
 
 import { useCopy } from "./LocaleProvider";
-import { MOVER_TABS, type MoverItem, type MoverScope, type MoverTab } from "./mover-lists";
+import {
+  MOVER_TABS,
+  MOVERS_ID,
+  type MoverItem,
+  type MoverScope,
+  type MoverTab,
+} from "./mover-lists";
 import { Delta, Rank } from "./Num";
 import { AllianceBadge } from "./Pictures";
 import { LABEL } from "./StatTable";
@@ -136,7 +142,7 @@ export function Movers({ scopes }: { scopes: MoverScope[] }) {
     }),
   );
   return (
-    <section aria-labelledby={`${id}-h`} className="mt-8">
+    <section id={MOVERS_ID} aria-labelledby={`${id}-h`} className="mt-8 scroll-mt-20">
       <h2 id={`${id}-h`} className="mb-2 flex items-center gap-2 font-subhead text-display-md">
         <LookMark className="size-6 shrink-0 text-plum" />
         {copy.ledger.movers}

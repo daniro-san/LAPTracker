@@ -1,5 +1,5 @@
-// Link preview image (Phase 5b): the line mark in paper on plum, with the product name under it in Young
-// Serif, read from the TTF in lib/brand/fonts/ (the renderer takes TTF, not next/font's WOFF2), as
+// Link preview image (Phase 5b): the line mark in paper on plum, with the product name under it in Alegreya
+// 400, read from the TTF in lib/brand/fonts/ (the renderer takes TTF, not next/font's WOFF2), as
 // lib/event-image.tsx does.
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -30,14 +30,14 @@ export default function OpengraphImage() {
       }}
     >
       <MarkLine size={340} />
-      <div style={{ fontFamily: "Young Serif", fontSize: 96, lineHeight: 1 }}>{copy.site.name}</div>
+      <div style={{ fontFamily: "Alegreya", fontSize: 96, lineHeight: 1 }}>{copy.site.name}</div>
     </div>,
     {
       ...size,
       fonts: [
         {
-          name: "Young Serif",
-          data: readFileSync(join(process.cwd(), "lib/brand/fonts/YoungSerif-Regular.ttf")),
+          name: "Alegreya",
+          data: readFileSync(join(process.cwd(), "lib/brand/fonts/Alegreya-Regular.ttf")),
           weight: 400,
           style: "normal",
         },

@@ -13,7 +13,8 @@ const render = (running: { phase: string; event: string; startedText: string }[]
       current: {
         id: null,
         name: "Saturday Event 2026-11-07",
-        atText: "Sat 12:00",
+        title: "Saturday Event",
+        stateText: "Sat 12:00 · in 3 days · Before not taken, After not taken",
         rowFromText: "Fri 10:00",
       },
       manual: null,

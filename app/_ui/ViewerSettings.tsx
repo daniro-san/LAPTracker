@@ -142,42 +142,40 @@ function Panel({ publicPage }: { publicPage: boolean }) {
         ))}
       </Group>
       {publicPage && (
-        <>
-          <Group legend={t.times}>
-            <RadioField
-              name="tz"
-              label={t.serverTime}
-              checked={zone === null}
-              onChange={() => pickZone(null)}
-            />
-            <RadioField
-              name="tz"
-              label={t.yourTime}
-              help={city(zone ?? browserZone)}
-              checked={zone !== null}
-              onChange={() => pickZone(browserZone)}
-            />
-          </Group>
-          <Group legend={t.dates} columns={2}>
-            <RadioField
-              name="date"
-              label={t.auto}
-              help={makeClock(locale, "UTC").day(SAMPLE)}
-              checked={date === null}
-              onChange={() => pickDate(null)}
-            />
-            {DATE_FORMATS.map((id) => (
-              <RadioField
-                key={id}
-                name="date"
-                label={makeClock(locale, "UTC", { own: false, date: id }).day(SAMPLE)}
-                checked={date === id}
-                onChange={() => pickDate(id)}
-              />
-            ))}
-          </Group>
-        </>
+        <Group legend={t.times}>
+          <RadioField
+            name="tz"
+            label={t.serverTime}
+            checked={zone === null}
+            onChange={() => pickZone(null)}
+          />
+          <RadioField
+            name="tz"
+            label={t.yourTime}
+            help={city(zone ?? browserZone)}
+            checked={zone !== null}
+            onChange={() => pickZone(browserZone)}
+          />
+        </Group>
       )}
+      <Group legend={t.dates} columns={2}>
+        <RadioField
+          name="date"
+          label={t.auto}
+          help={makeClock(locale, "UTC").day(SAMPLE)}
+          checked={date === null}
+          onChange={() => pickDate(null)}
+        />
+        {DATE_FORMATS.map((id) => (
+          <RadioField
+            key={id}
+            name="date"
+            label={makeClock(locale, "UTC", { own: false, date: id }).day(SAMPLE)}
+            checked={date === id}
+            onChange={() => pickDate(id)}
+          />
+        ))}
+      </Group>
     </div>
   );
 }
