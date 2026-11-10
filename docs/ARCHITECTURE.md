@@ -32,6 +32,7 @@ app/img/*           /img/badge/[id] and /img/avatar/[uid]: upstream images serve
 lib/images.ts       the two image sources (preset badge id, stored photo URL on its one host), capped fetch, cache headers.
 proxy.ts            per-request CSP nonce (Next 16's middleware); next.config.ts holds the static security headers
 instrumentation.ts  validates the environment once at server start
+lib/build-version.ts pure: the footer's live version from Vercel's git variables (D59); next.config.ts calls it once per build.
 ```
 
 ## Dependency rule
