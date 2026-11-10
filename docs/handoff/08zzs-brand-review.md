@@ -122,3 +122,5 @@ Plan changes needed: none in `docs/IMPLEMENTATION_PLAN.md`. `docs/DESIGN.md`: Ma
 - Measure after H3: the mark inside the seal at 1× on `08zzs-brand-detail-header-1x-360-{light,dark}.png`'s crop, and the brand page's "Do: Ivory wax on the header" tile in dark.
 - M1 needs no code: wording in DESIGN.md Overview and Colors.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/205
