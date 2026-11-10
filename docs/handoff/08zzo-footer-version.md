@@ -40,3 +40,5 @@ Session: none planned after this change in docs/SESSION_PLAYBOOK.md; it goes int
 Model / effort: keep — a small footer line.
 Owner must do first: merge this PR into `dev`. After the next release merge, check that the production footer reads `vX.Y.Z · <sha> · <date>` and the `dev` deploy reads `dev · <sha> · <date>`.
 Plan changes needed: none.
+
+https://github.com/daniro-san/LAPTracker/pull/200
