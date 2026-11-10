@@ -1,8 +1,9 @@
 "use client";
 
 // The Movers section (#70, D53): one framed card whose segmented tabs pick the lists (Might ▲, Might ▼,
-// Kills ▲, Rank ▲▼). An alliance line reads `#rank move · name · change`, a member line `#place · name ·
-// change`. The event page shows alliances and members side by side from 640 px, and the Rank tab the
+// Kills ▲, Rank ▲▼). An alliance line reads `#rank move · name · change`, a member line `place · name ·
+// change` (the place a plain numeral in the label style, so the two columns do not show the same `#`
+// twice). The event page shows alliances and members side by side from 640 px, and the Rank tab the
 // alliances that climbed and fell; the alliance page shows its members only, without a Rank tab. A list
 // with nobody in it reads `—`.
 import Link from "next/link";
@@ -30,9 +31,13 @@ function Row({ m }: { m: MoverItem }) {
         href={m.href}
         className="flex min-h-11 items-center gap-2 py-1 hover:bg-plum/5 focus-visible:bg-plum/5"
       >
-        <span className={`shrink-0 ${m.rank.move === undefined ? "w-7" : "w-16"}`}>
-          <Rank n={m.rank.n} move={m.rank.move} />
-        </span>
+        {m.rank.move === undefined ? (
+          <span className={`w-7 shrink-0 tabular-nums ${LABEL}`}>{m.rank.n ?? "—"}</span>
+        ) : (
+          <span className="w-16 shrink-0">
+            <Rank n={m.rank.n} move={m.rank.move} />
+          </span>
+        )}
         {m.badgeId !== undefined && <AllianceBadge badgeId={m.badgeId} />}
         <span className="flex min-w-0 flex-1 flex-wrap items-baseline justify-between gap-x-2">
           <span className="min-w-0 max-w-full truncate">
@@ -115,6 +120,15 @@ function MoverList({
   );
 }
 
+/** The tab a key moves to from tab `i` of `n`, or null when the key is not one of the tab keys. */
+function tabAfter(key: string, i: number, n: number): number | null {
+  if (key === "Home") return 0;
+  if (key === "End") return n - 1;
+  if (key === "ArrowRight") return (i + 1) % n;
+  if (key === "ArrowLeft") return (i - 1 + n) % n;
+  return null;
+}
+
 export function Movers({ scopes }: { scopes: MoverScope[] }) {
   const copy = useCopy();
   const id = useId();
@@ -122,13 +136,12 @@ export function Movers({ scopes }: { scopes: MoverScope[] }) {
   const [active, setActive] = useState<MoverTab>("mightGains");
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);
   const current = tabs.find((t) => t.key === active) ?? tabs[0];
-  /** Arrow keys move between the tabs (WAI-ARIA tabs pattern, automatic activation). */
+  /** Arrow keys, Home and End move between the tabs (WAI-ARIA tabs pattern, automatic activation). */
   const onKey = (e: KeyboardEvent, i: number) => {
-    const step = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
-    if (step === 0) return;
-    const next = (i + step + tabs.length) % tabs.length;
-    const tab = tabs[next];
-    if (!tab) return;
+    const next = tabAfter(e.key, i, tabs.length);
+    const tab = next === null ? undefined : tabs[next];
+    if (next === null || !tab) return;
+    e.preventDefault();
     setActive(tab.key);
     buttons.current[next]?.focus();
   };

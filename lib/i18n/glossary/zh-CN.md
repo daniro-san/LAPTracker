@@ -13,7 +13,6 @@ Words already used in `lib/i18n/zh-CN.ts`. Reuse them so the pages stay consiste
 | Event                     | 活动                 | `ledger.event` — a game event                               |
 | Rank                      | 排名                 | `ledger.rank` — the #n position                             |
 | Ranking                   | 服务器排名           | `ledger.ranking` — the game's server rank                   |
-| Sanctuary                 | 圣所                 | `ledger.sanctuary` — a player's building level              |
 | joined                    | 加入                 | `ledger.joined` — after +n                                  |
 | left                      | 离开                 | `ledger.left` — after −n                                    |
 | Stale                     | 过期                 | `fresh.stale` — data not fresh                              |

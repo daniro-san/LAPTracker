@@ -268,7 +268,7 @@ export default async function AlliancePage({ params }: { params: Params }) {
   return (
     <>
       <SiteHeader events={events} currentId={eventId} homeId={homeId} clock={clock} copy={copy} />
-      <main className="mx-auto max-w-[960px] px-4 py-4 sm:px-6">
+      <main id="main" className="scroll-mt-20 mx-auto max-w-[960px] px-4 py-4 sm:px-6">
         <Breadcrumbs crumbs={crumbsFor(events, eventId, label, clock, copy)} />
         <div
           id={TITLE_ID}

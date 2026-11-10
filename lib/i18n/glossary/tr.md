@@ -13,7 +13,6 @@ Words already used in `lib/i18n/tr.ts`. Reuse them so the pages stay consistent;
 | Event                     | Etkinlik                        | `ledger.event` — a game event                                     |
 | Rank                      | Sıra                            | `ledger.rank` — the #n position                                   |
 | Ranking                   | Sıralama                        | `ledger.ranking` — the game's server rank                         |
-| Sanctuary                 | Sığınak                         | `ledger.sanctuary` — a player's building level                    |
 | joined                    | katıldı                         | `ledger.joined` — after +n                                        |
 | left                      | ayrıldı                         | `ledger.left` — after −n                                          |
 | Stale                     | Eskimiş                         | `fresh.stale` — data not fresh                                    |

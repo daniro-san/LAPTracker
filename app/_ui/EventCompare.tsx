@@ -5,6 +5,7 @@
 import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
 
+import { changeDifference } from "@/lib/compute";
 import { fill, type Dictionary } from "@/lib/copy";
 import type { AllianceComparison, AllianceEventFigures, EventComparison } from "@/lib/queries";
 
@@ -12,15 +13,14 @@ import { compareHref } from "./ComparePicker";
 import { DetailTable } from "./DetailLines";
 import { joinedText, leftText, allianceLabel, type Clock } from "./format";
 import { Delta, Num, Rank } from "./Num";
-import { AllianceBadge, PlayerAvatar } from "./Pictures";
+import { AllianceBadge } from "./Pictures";
 import { LABEL, MoreBar } from "./StatTable";
 import { FreshDots, type FreshState } from "./Status";
 
-const MUTED = "text-ink/70";
-const NAME =
+export const MUTED = "text-ink/70";
+export const NAME =
   "min-w-0 break-words font-subhead text-display-sm leading-tight text-plum after:absolute after:inset-0 after:content-[''] hover:underline focus-visible:underline";
 type Event = EventComparison["a"];
-type Member = NonNullable<EventComparison["members"]>[number];
 
 /** ≥ 640 px: name · line head · one column per figure, shared by the header and every row. */
 const gridOf = (figures: number) =>
@@ -54,10 +54,13 @@ interface Line {
   key: string;
   head: ReactNode;
   cells: ReactNode[];
+  /** The difference line (UX review N8): set off by a hairline; `label` heads it on a row of its own
+   * below 640 px, where the head column has no room for two dates. */
+  label?: string;
 }
 
 /** One card / row: the name, column heads inside the card below 640 px, then one line per event. */
-function CompareCard({
+export function CompareCard({
   name,
   columns,
   lines,
@@ -82,22 +85,37 @@ function CompareCard({
           {h}
         </span>
       ))}
-      {lines.map((l) => (
-        <div key={l.key} className="contents">
-          <span className={`text-xs tabular-nums ${MUTED}`}>{l.head}</span>
-          {l.cells.map((c, i) => (
-            <span key={i} className="text-right text-sm tabular-nums">
-              {c}
+      {lines.map((l) => {
+        const rule = l.label ? "border-t border-rule pt-1" : "";
+        return (
+          <div key={l.key} className="contents">
+            {l.label && (
+              <span className={`col-span-full mt-1 text-xs sm:hidden ${MUTED} ${rule}`}>
+                {l.label}
+              </span>
+            )}
+            <span
+              className={`text-xs tabular-nums ${MUTED} ${l.label ? "sm:border-t sm:border-rule sm:pt-1" : ""}`}
+            >
+              {l.head}
             </span>
-          ))}
-        </div>
-      ))}
+            {l.cells.map((c, i) => (
+              <span
+                key={i}
+                className={`text-right text-sm tabular-nums ${l.label ? "sm:border-t sm:border-rule sm:pt-1" : ""}`}
+              >
+                {c}
+              </span>
+            ))}
+          </div>
+        );
+      })}
       {more}
     </li>
   );
 }
 
-const dash = (key: string) => (
+export const dash = (key: string) => (
   <span key={key} className={MUTED}>
     —
   </span>
@@ -125,6 +143,21 @@ function allianceCells(f: AllianceEventFigures | null): ReactNode[] {
     <Delta key="n" delta={f.members.change} base={null} />,
   ];
 }
+
+/** The difference line's cells: the second event's change minus the first's, `—` when either is missing. */
+export function differenceCells(pairs: [number | null | undefined, number | null | undefined][]) {
+  return pairs.map(([first, second], i) => {
+    const d = changeDifference(first, second);
+    return d ? <Delta key={i} delta={d.delta} base={d.base} stack /> : dash(String(i));
+  });
+}
+
+/** The difference line's words: `Oct 31 vs Oct 24`, the second event first. */
+export const versus = (data: EventComparison, clock: Clock, copy: Dictionary) =>
+  fill(copy.compare.versus, {
+    a: eventHead(data.b, data.a, clock),
+    b: eventHead(data.a, data.b, clock),
+  });
 
 /** The worst side of either event, as the row's one mark (only when something is wrong). */
 function worstMark(r: AllianceComparison, copy: Dictionary) {
@@ -214,11 +247,23 @@ export function AllianceCompareCard({
         </>
       }
       columns={[l.might, l.kills, l.members]}
-      lines={(["a", "b"] as const).map((k) => ({
-        key: k,
-        head: rankHead(eventHead(data[k], data[k === "a" ? "b" : "a"], clock), r[k]),
-        cells: allianceCells(r[k]),
-      }))}
+      lines={[
+        ...(["a", "b"] as const).map((k) => ({
+          key: k,
+          head: rankHead(eventHead(data[k], data[k === "a" ? "b" : "a"], clock), r[k]),
+          cells: allianceCells(r[k]),
+        })),
+        {
+          key: "diff",
+          label: versus(data, clock, copy),
+          head: <span className="hidden sm:inline">{versus(data, clock, copy)}</span>,
+          cells: differenceCells([
+            [r.a?.change?.power, r.b?.change?.power],
+            [r.a?.change?.kills, r.b?.change?.kills],
+            [r.a?.members.change, r.b?.members.change],
+          ]),
+        },
+      ]}
       more={
         <MoreBar
           row={{
@@ -232,97 +277,5 @@ export function AllianceCompareCard({
         />
       }
     />
-  );
-}
-
-export function MemberCompareCard({
-  m,
-  data,
-  clock,
-  copy,
-}: {
-  m: Member;
-  data: EventComparison;
-  clock: Clock;
-  copy: Dictionary;
-}) {
-  const cells = (s: Member["a"]): ReactNode[] =>
-    s
-      ? [
-          <Delta key="m" delta={s.change?.power ?? null} base={s.opening?.power ?? null} stack />,
-          <Delta key="k" delta={s.change?.kills ?? null} base={s.opening?.kills ?? null} stack />,
-        ]
-      : [
-          <span key="m" className={`text-xs ${MUTED}`}>
-            {copy.compare.notIn}
-          </span>,
-          <span key="k" />,
-        ];
-  return (
-    <CompareCard
-      name={
-        <>
-          <PlayerAvatar uid={m.uid} hasAvatar={m.hasAvatar} />
-          <Link href={`/players/${m.uid}`} className={NAME}>
-            {m.name}
-          </Link>
-          <span className={`ml-auto text-sm tabular-nums ${MUTED}`}>
-            <Num n={m.b?.power ?? m.a?.power ?? null} />
-          </span>
-        </>
-      }
-      columns={[copy.ledger.might, copy.ledger.kills]}
-      lines={(["a", "b"] as const).map((k) => ({
-        key: k,
-        head: (
-          <span className="font-medium text-ink">
-            {eventHead(data[k], data[k === "a" ? "b" : "a"], clock)}
-          </span>
-        ),
-        cells: cells(m[k]),
-      }))}
-    />
-  );
-}
-
-/** The server's totals: Might, Kills, Members changed during each event, over one set of alliances. */
-export function CompareTotals({
-  data,
-  clock,
-  copy,
-}: {
-  data: EventComparison;
-  clock: Clock;
-  copy: Dictionary;
-}) {
-  const t = data.totals;
-  const column = (label: string, pick: (s: typeof t.a) => [number, number | null]) => (
-    <div className="min-w-0">
-      <p className={LABEL}>{label}</p>
-      {(["a", "b"] as const).map((k) => {
-        const [d, base] = pick(t[k]);
-        return (
-          <p key={k} className="text-sm leading-snug">
-            <span className={`text-xs ${MUTED}`}>
-              {eventHead(data[k], data[k === "a" ? "b" : "a"], clock)}{" "}
-            </span>
-            {t.counted > 0 ? <Delta delta={d} base={base} stack /> : dash(k)}
-          </p>
-        );
-      })}
-    </div>
-  );
-  return (
-    <section className="mb-4 border-y border-rule py-3">
-      <h2 className="font-subhead text-display-sm">{copy.compare.allAlliances}</h2>
-      <div className="mt-2 grid grid-cols-3 gap-3">
-        {column(copy.ledger.might, (s) => [s.power, s.openingPower])}
-        {column(copy.ledger.kills, (s) => [s.kills, s.openingKills])}
-        {column(copy.ledger.members, (s) => [s.members, null])}
-      </div>
-      <p className={`mt-2 text-xs ${MUTED}`}>
-        {fill(copy.compare.counted, { n: t.counted, total: t.of })}
-      </p>
-    </section>
   );
 }

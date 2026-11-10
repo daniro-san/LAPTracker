@@ -13,7 +13,6 @@ Words already used in `lib/i18n/ja.ts`. Reuse them so the pages stay consistent;
 | Event                     | イベント                  | `ledger.event` — a game event                             |
 | Rank                      | 順位                      | `ledger.rank` — the #n position                           |
 | Ranking                   | サーバー順位              | `ledger.ranking` — the game's server rank                 |
-| Sanctuary                 | 聖域                      | `ledger.sanctuary` — a player's building level            |
 | joined                    | 加入                      | `ledger.joined` — after +n                                |
 | left                      | 脱退                      | `ledger.left` — after −n                                  |
 | Stale                     | 古い                      | `fresh.stale` — data not fresh                            |

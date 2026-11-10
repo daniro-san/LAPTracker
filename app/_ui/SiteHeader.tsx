@@ -137,6 +137,14 @@ export function SiteHeader({
 }) {
   return (
     <header className="sticky top-0 z-30 text-plum">
+      {publicPage && (
+        <a
+          href="#main"
+          className="drawn-frame-soft sr-only items-center bg-paper px-3 font-medium text-ink focus:not-sr-only focus:absolute focus:top-2 focus:left-3 focus:z-50 focus:flex focus:min-h-11 sm:focus:left-6"
+        >
+          {copy.site.skip}
+        </a>
+      )}
       <div className="bg-plum text-paper">
         <div className="mx-auto flex max-w-[960px] items-center justify-between gap-1 px-3 py-1 sm:gap-2 sm:px-6">
           <Link

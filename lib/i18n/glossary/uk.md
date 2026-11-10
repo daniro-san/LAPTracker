@@ -13,7 +13,6 @@ Words already used in `lib/i18n/uk.ts`. Reuse them so the pages stay consistent;
 | Event                     | Подія                     | `ledger.event` — a game event                                                      |
 | Rank                      | Місце                     | `ledger.rank` — the #n position                                                    |
 | Ranking                   | Рейтинг                   | `ledger.ranking` — the game's server rank                                          |
-| Sanctuary                 | Святилище                 | `ledger.sanctuary` — a player's building level                                     |
 | joined                    | прийшли                   | `ledger.joined` — after +n                                                         |
 | left                      | пішли                     | `ledger.left` — after −n                                                           |
 | Stale                     | Застарілі                 | `fresh.stale` — data not fresh                                                     |

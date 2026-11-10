@@ -13,7 +13,6 @@ Words already used in `lib/i18n/vi.ts`. Reuse them so the pages stay consistent;
 | Event                     | Sự kiện                  | `ledger.event` — a game event                             |
 | Rank                      | Hạng                     | `ledger.rank` — the #n position                           |
 | Ranking                   | Xếp hạng                 | `ledger.ranking` — the game's server rank                 |
-| Sanctuary                 | Thánh địa                | `ledger.sanctuary` — a player's building level            |
 | joined                    | vào                      | `ledger.joined` — after +n                                |
 | left                      | rời                      | `ledger.left` — after −n                                  |
 | Stale                     | Cũ                       | `fresh.stale` — data not fresh                            |

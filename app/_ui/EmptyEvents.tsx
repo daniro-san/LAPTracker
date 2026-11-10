@@ -8,7 +8,7 @@ export async function EmptyEvents() {
   return (
     <>
       <SiteHeader events={[]} currentId={null} homeId={null} copy={copy} />
-      <main className="mx-auto max-w-[960px] px-4 py-10 sm:px-6 text-center">
+      <main id="main" className="scroll-mt-20 mx-auto max-w-[960px] px-4 py-10 sm:px-6 text-center">
         <h1 className="sr-only">{copy.site.name}</h1>
         <EmptyState>{copy.empty.kettle}</EmptyState>
       </main>

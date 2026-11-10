@@ -3,11 +3,16 @@
 // stale row, a failed row (the "B" fallback), shrinking kills, a rehearsal, run logs and app errors.
 // Refuses to touch a database that already has events; `--reset` empties the app's tables first.
 // Never run it against production: it writes invented numbers (the events are named "Seed …").
+// `--with-states` (off by default) adds two more events so the states the three past ones cannot show can
+// be reviewed: a scheduled event a week from now with no snapshots (the empty ledger), and an event
+// whose After snapshot is `running` (the "Updating now" chip; it counts as running for 150 s after the
+// seed, then the page treats it as abandoned). Neither is part of the plain seed.
 import { pathToFileURL } from "node:url";
 
 import { sql } from "drizzle-orm";
 
 import { loadBase, rosterAt, type BaseAlliance, type BaseMember, type Phase } from "./seed-data";
+import { seedStates } from "./seed-states";
 import type { Db } from "../lib/db";
 import {
   allianceSnapshots,
@@ -242,7 +247,10 @@ async function seedRehearsal(db: Db, base: BaseAlliance[]): Promise<void> {
   }
 }
 
-export async function seed(db: Db, { reset = false }: { reset?: boolean } = {}): Promise<string> {
+export async function seed(
+  db: Db,
+  { reset = false, withStates = false }: { reset?: boolean; withStates?: boolean } = {},
+): Promise<string> {
   if (reset) {
     await db.execute(
       sql`truncate run_logs, member_snapshots, alliance_snapshots, snapshots, rehearsal_slots, events, auth_attempts, app_errors restart identity cascade`,
@@ -254,6 +262,10 @@ export async function seed(db: Db, { reset = false }: { reset?: boolean } = {}):
   const base = loadBase();
   for (const event of [0, 1, 2]) await seedEvent(db, base, event);
   await seedRehearsal(db, base);
+  if (withStates)
+    await seedStates(db, base, new Date(), (id, day) =>
+      seedPhase(db, base, id, { event: 1, phase: "before", at: day }),
+    );
   const when = new Date("2026-11-01T09:00:00Z");
   await db.insert(appErrors).values([
     { at: when, route: "/events/[id]", digest: "seed-1234", message: "render failed" },
@@ -270,7 +282,7 @@ export async function seed(db: Db, { reset = false }: { reset?: boolean } = {}):
       message: "route failed",
     },
   ]);
-  return `seeded ${base.length} alliances × 3 events, 1 rehearsal`;
+  return `seeded ${base.length} alliances × 3 events, 1 rehearsal${withStates ? ", an empty event and a running one" : ""}`;
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
@@ -282,7 +294,12 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const { openDb } = await import("../lib/db");
   const { db, close } = openDb(url);
   try {
-    console.log(await seed(db, { reset: process.argv.includes("--reset") }));
+    console.log(
+      await seed(db, {
+        reset: process.argv.includes("--reset"),
+        withStates: process.argv.includes("--with-states"),
+      }),
+    );
   } catch (e) {
     console.error(e instanceof Error ? e.message : "seed failed");
     process.exitCode = 1;

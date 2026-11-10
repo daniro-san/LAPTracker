@@ -13,7 +13,6 @@ Words already used in `lib/i18n/es.ts`. Reuse them so the pages stay consistent;
 | Event                     | Evento                             | `ledger.event` — a game event                             |
 | Rank                      | Puesto                             | `ledger.rank` — the #n position                           |
 | Ranking                   | Ranking                            | `ledger.ranking` — the game's server rank                 |
-| Sanctuary                 | Santuario                          | `ledger.sanctuary` — a player's building level            |
 | joined                    | entraron                           | `ledger.joined` — after +n                                |
 | left                      | salieron                           | `ledger.left` — after −n                                  |
 | Stale                     | Desactualizado                     | `fresh.stale` — data not fresh                            |

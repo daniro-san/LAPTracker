@@ -31,6 +31,11 @@ export const en = {
     manualRound: "Manual round",
     breadcrumb: "Breadcrumb",
     home: "Ledger",
+    /** The first Tab stop of every public page: jumps past the header to `main`. */
+    skip: "Skip to the ledger",
+    disclaimerShort: "Fan-made. Not affiliated with 37Games, Eyu or Last Asylum Plague.",
+    /** The footer's disclosure that opens the full `disclaimer`. */
+    disclaimerMore: "More",
   },
   /** The words of one data row, at every depth. */
   ledger: {
@@ -43,7 +48,6 @@ export const en = {
     members: "Members",
     level: "Level",
     player: "Player",
-    sanctuary: "Sanctuary",
     asOf: "As of {time}",
     details: "Details",
     change: "Change",
@@ -74,7 +78,7 @@ export const en = {
     second: "Second event",
     swap: "Swap the events",
     /** Under the title: what each line's numbers are. */
-    lead: "Each line is the change during that event, from Before to After.",
+    lead: "Each line is the change during that event, from Before to After. The last line is the second event's change minus the first's.",
     allAlliances: "All alliances",
     /** Under the totals: how many alliances they cover. */
     counted: "{n} of {total} alliances, those with usable data in both events",
