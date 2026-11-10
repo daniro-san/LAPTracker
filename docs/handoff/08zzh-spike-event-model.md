@@ -34,6 +34,11 @@ Second round (2026-11-09):
 13. **Quota:** the API's Patreon tier would give 2,000 calls a day; the project stays at 1,000 for now.
 14. **Storage idea from the owner:** store only what changed in the middle samples. It is measured and answered under #171 question 4: one row per alliance with arrays stores less and keeps reads simple.
 
+Third round (2026-11-10):
+
+15. **Alliance events and the numbers:** every alliance event changes might. Only Alliance Duel Raid also changes kills. Cheese Trap and Undead Siege change might only.
+16. **Discord, admin channel:** one edit at the end of each window, plus one message per window for a partial or failed sample. Confirmed.
+
 ## Decisions
 
 - **Terms used below.** They are proposed for docs/GLOSSARY.md in the build and are not added here.
@@ -366,7 +371,7 @@ The owner likes all six (owner answer 12). They are split over two builds so tha
 - **Until build 2 ships, every Saturday runs the env schedule.** Origin of Chaos on 2026-12-05 would get KvK's window (09:45–16:15), which covers window 2 and misses window 1. The owner can press a manual round at about 00:00 and 00:45 server for window 1 (42 calls), or accept the gap.
 - **Plan §6.1** storage numbers are low: member rows are 480 KB per sample, not 250 KB (measured above).
 - **Readers to rewrite.** `lib/queries` and the pages read phase strings in 32 non-test files (106 lines matching `"before"`/`"after"`, counted with grep). The build must keep their output the same for one-window events.
-- **Alliance events and kills.** It is not known whether Cheese Trap, Undead Siege or Alliance Duel Raid change `power` or `kills` in the API (for example, whether monster kills count). If they do not, tracking them shows no change. Owner question 1 asks; O3 below measures it for 2 calls per sample.
+- **Alliance events show might only, except Alliance Duel Raid** (owner answer 15). A Cheese Trap or Undead Siege event has no kills change. Its kills charts (V1, V2, V4, and V5's kills half) would be empty, so build 3 should show only might for an event whose kills change is 0 for every member. Whether the game's might change during these events shows in the API at 15-minute grain is not measured; the first scheduled alliance event shows it at 2 calls a sample.
 
 ## Options
 
@@ -385,11 +390,7 @@ The owner likes all six (owner answer 12). They are split over two builds so tha
 - KvK and Origin of Chaos never overlap. The only overlap left is an alliance event during KvK, where C would save 2 calls a sample. That does not pay for C's link table.
 - **Moving from B to C later is local,** because the build reads a window's samples through one query function (`windowSamples`) and nothing else joins `snapshots.window_id`. The build prompt makes that a constraint.
 
-**O3 (proposed, about 8 calls):** the next time the owner's alliance runs an alliance event, start a manual round with visibility "Admin only" just before it and press After just after it. Then run O1's query for that round. If kills or power changed for the members who took part, alliance events are worth a schedule.
-
-**Owner questions:**
-1. Do alliance events (Cheese Trap, Undead Siege, Alliance Duel Raid) change might or kills in the game's numbers? For example, do monster kills count in `kills`? O3 answers it if the owner does not know.
-2. Discord, admin channel: is one edit at the end of each window, plus one message per window for a partial or failed sample, right?
+**Owner questions:** none open. Every question is answered in "Owner answers" (1–16).
 
 ## Next
 
@@ -403,8 +404,7 @@ Model / effort: keep (opus, high). The change rewrites how 32 non-test files rea
 
 Owner must do first:
 - **Before Fri 2026-11-13 09:45 server (11:45 UTC), with no code change:** set `SNAPSHOT_BEFORE=09:45` and `SNAPSHOT_AFTER=16:15` in Vercel Production and redeploy. The tick fixes the times of 2026-11-14 (the cycle's first KvK) when it creates that row, 24 h before Before (D21). Quota is unchanged (42 calls).
-- Answer questions 1 and 2.
-- Run O1 (0 quota). On a KvK Saturday, run O2 (≈ 84 calls). At an alliance event, run O3 (≈ 8 calls).
+- Run O1 (0 quota). On a KvK Saturday, run O2 (≈ 84 calls).
 - Merge this PR.
 
 Plan changes needed:
@@ -470,6 +470,7 @@ Build 1 of 4 for spike 08zzh, Option B — samples and windows: model, collector
 - Compute on request; no precomputed table (measured 0.5–4.6 ms per query at a year of data on the array layout, PGlite).
 - DECISIONS: charts allowed (reverses the CLAUDE.md hard rule; closes #62) and a D7 row for `@observablehq/plot`.
 - Not in this build: a "no kills change" list (owner: left for the LLM agent, #61).
+- Alliance events: every one changes might; only Alliance Duel Raid changes kills (owner, 2026-11-10). For an event whose kills change is 0 for every member (Cheese Trap, Undead Siege), show the might charts and leave the kills charts out.
 </adjustments>
 
 <adjustments for="build 4 (Progress tab, V2–V4)">
