@@ -23,16 +23,16 @@ export const brandCopy = {
     lede: "A plague doctor in profile under a wide brim, a ball of yarn and two needles in the hatband. One colour, three cuts.",
     line: {
       name: "Line mark",
-      use: "The drawing itself: the header, the wax seal, app icons, the link preview.",
+      use: "The drawing itself: the seal button, app icons, the link preview.",
     },
     waxed: {
       name: "Waxed mark",
-      use: "The line mark pressed into wax. Ivory in the header; red and gold are spare.",
+      use: "The mark pressed into wax. Ivory in the header, with the solid cut; red and gold are spare.",
     },
     tones: { paper: "Ivory", seal: "Red", yarn: "Gold" },
     solid: {
       name: "Solid mark",
-      use: "The favicon cut. Line detail blurs in a browser tab, so this one is filled.",
+      use: "The cut for small sizes: the favicon and the header seal. Line detail blurs there, so this one is filled.",
     },
     clearTitle: "Clear space",
     clear:
@@ -40,7 +40,7 @@ export const brandCopy = {
     clearLabel: "¼",
     minTitle: "Minimum sizes",
     minLine:
-      "Line mark: 96 px and up. The one exception is the mark pressed into wax: the header seal and the seal button.",
+      "Line mark: 96 px and up. The one exception is the seal button, where the line mark is pressed into red wax at 24 px.",
     minSolid: "Solid mark: 16 to 32 px, and only there.",
     useTitle: "Correct and incorrect use",
     dos: ["Plum on paper", "Paper on plum", "Ivory wax on the header"],
@@ -103,7 +103,7 @@ export const brandCopy = {
       },
       displayLg: { sample: "Event Ledger", spec: "32 / 1.1 · Young Serif", use: "Page title" },
       displayMd: {
-        sample: "Gained and lost",
+        sample: "Grandma noticed",
         spec: "24 / 1.15 · Alegreya Sans 700",
         use: "Section and header title",
       },
@@ -128,7 +128,7 @@ export const brandCopy = {
         use: "Every number in tables and cards",
       },
       label: {
-        sample: "Gained / Lost",
+        sample: "Members",
         spec: "12 / 1.3 · Source Sans 3 600, tracked",
         use: "Column headers, badges",
       },
@@ -165,10 +165,10 @@ export const brandCopy = {
   components: brandComponentsCopy,
   voice: {
     title: "Voice",
-    lede: "Short, dry, grandmotherly, English. The ledger belongs to the server and is kept by the Old Grandmas; another alliance reading it should feel invited, not visiting.",
+    lede: "Short, dry, grandmotherly: written in English, read in 18 languages. The ledger belongs to the server and is kept by the Old Grandmas; another alliance reading it should feel invited, not visiting.",
     rules: [
       "Title and byline: Server 325 · Event Ledger, kept by the Old Grandmas.",
-      "Labels are the game's own words: Might, Kills, Members, Gained / Lost.",
+      "Labels are the game's own words: Might, Kills, Members.",
       "Sentences live in the margins: empty states, error pages, section titles, admin. Status is chips.",
       "No exclamation marks, no emoji, no Oops, no Awesome.",
     ],

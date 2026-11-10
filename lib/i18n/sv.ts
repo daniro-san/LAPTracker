@@ -5,11 +5,13 @@ import type { Translation } from "../copy";
 
 export const sv = {
   site: {
-    name: "OG's LAP Tracker",
-    shortName: "LAP Tracker",
+    name: "Eventlogg",
+    shortName: "Logg",
     description: "Ögonblicksbilder av eventen för allianserna på server 325.",
     byline: "förd av Old Grandmas",
     ledger: "Server 325 · Eventlogg",
+    disclaimer:
+      "Eventlogg är ett fanprojekt från gemenskapen för spelet Last Asylum Plague. Det är inte en officiell webbplats för 37Games eller Eyu, och det har ingen koppling till Last Asylum Plague. Spelnamn och konstverk tillhör sina ägare.",
     players: "Spelare",
     darkMode: "Mörkt läge",
     settings: "Inställningar",
@@ -64,6 +66,24 @@ export const sv = {
     notIn: "inte i allians",
     same: "Välj två olika event.",
     onlyOne: "Det finns bara ett event att jämföra än.",
+  },
+  history: {
+    title: "Medlemshistorik",
+    lead: "Varje kort jämför medlemslistan med den som lästes innan. Ändringar däremellan syns inte.",
+    daily: "Dagsavläsning",
+    since: "sedan {time}",
+    first: "Första avläsningen: inget att jämföra med än.",
+    noChange: "Inga medlemsändringar.",
+    renamed: "Namnbyte",
+    nowIn: "nu i {tag}",
+    show: "Visa",
+    all: "Alla",
+    older: "Äldre",
+    newest: "Nyast",
+    none: "Inget av det slaget på den här sidan.",
+    copy: "Kopiera till kalkylark",
+    copied: "Kopierat",
+    copyFailed: "Kopieringen misslyckades",
   },
   settings: {
     language: "Språk",
@@ -152,14 +172,14 @@ export const sv = {
       code: "404",
       title: "Mormor har gått vilse.",
       body: "Den här sidan finns inte i loggen.",
-      back: "Tillbaka till tabellen",
+      back: "Tillbaka till loggen",
     },
     server: {
       code: "500",
       title: "Något sprack.",
       body: "Ingen fara, mormor städar upp.",
       retry: "Försök igen",
-      back: "Tillbaka till tabellen",
+      back: "Tillbaka till loggen",
     },
   },
   empty: {

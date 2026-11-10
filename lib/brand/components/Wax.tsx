@@ -1,14 +1,19 @@
 // The hand-drawn wax seal (lumpy edge, drips, pressed ring), shared by the seal button and the waxed
-// mark. One drawing in three wax tones; `WAX_INK` is the colour for whatever is pressed into it, chosen
-// so it keeps its contrast in both themes. The parent places it.
+// mark. One drawing in three wax tones. Wax is pigment (DESIGN.md `wax`): the ivory and red tones and the
+// ink pressed into them (`WAX_INK`) are the same in light and dark (--wax-* in tokens.css); only the
+// yarn tone follows the theme. The parent places it.
 export type WaxTone = "seal" | "paper" | "yarn";
 
 /** seal: red, for confirm/destructive. paper: ivory, the inverse of the plum header. yarn: gold. */
-const WAX: Record<WaxTone, string> = { seal: "text-seal", paper: "text-paper", yarn: "text-yarn" };
+const WAX: Record<WaxTone, string> = {
+  seal: "text-wax-seal",
+  paper: "text-wax-paper",
+  yarn: "text-yarn",
+};
 
 export const WAX_INK: Record<WaxTone, string> = {
-  seal: "text-paper",
-  paper: "text-plum",
+  seal: "text-wax-ink-seal",
+  paper: "text-wax-ink-paper",
   yarn: "text-paper",
 };
 

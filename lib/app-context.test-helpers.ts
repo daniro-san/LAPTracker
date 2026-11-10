@@ -28,9 +28,22 @@ export const TEST_ENV = parseEnv({
   NOTIFY_WEBHOOK_PUBLIC: PUBLIC_WEBHOOK,
 });
 
+/** A webhook body as sent: JSON, or multipart `payload_json` with the picture as `files[0]` (D58). */
+function readMessage(raw: RequestInit["body"]) {
+  const form = raw instanceof FormData ? raw : null;
+  const body = JSON.parse(String(form ? form.get("payload_json") : raw)) as Record<string, unknown>;
+  const file = form?.get("files[0]");
+  return {
+    content: String(body.content ?? ""),
+    body,
+    file: file instanceof File ? file.name : null,
+  };
+}
+
 export function testContext(db: Db, env = TEST_ENV) {
   const clock = { now: T0 };
-  type Sent = { url: string; content: string; body: Record<string, unknown> };
+  /** `file`: the name of the picture sent with the message (D58), as multipart `files[0]`. */
+  type Sent = { url: string; content: string; body: Record<string, unknown>; file: string | null };
   // A stand-in for Discord: POST ?wait=true creates a message and returns its id; PATCH edits one.
   const posts: Sent[] = [];
   const edits: (Sent & { messageId: string })[] = [];
@@ -42,9 +55,8 @@ export function testContext(db: Db, env = TEST_ENV) {
     v1,
     internal: fakeInternal(),
     fetch: async (input, init) => {
-      const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
       const [url = "", query] = String(input).split("?");
-      const sent = { url, content: String(body.content ?? ""), body };
+      const sent = { url, ...readMessage(init?.body) };
       if (init?.method === "PATCH") {
         const [hook = "", messageId = ""] = url.split("/messages/");
         if (!messages.has(`${hook}/${messageId}`)) return new Response(null, { status: 404 });

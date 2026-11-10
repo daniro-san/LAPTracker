@@ -5,11 +5,13 @@ import type { Translation } from "../copy";
 
 export const ko = {
   site: {
-    name: "OG's LAP Tracker",
-    shortName: "LAP Tracker",
+    name: "이벤트 장부",
+    shortName: "장부",
     description: "서버 325 연맹 이벤트 스냅샷.",
     byline: "Old Grandmas가 기록",
     ledger: "서버 325 · 이벤트 장부",
+    disclaimer:
+      "이벤트 장부는 Last Asylum Plague 게임을 위한 팬이 만든 커뮤니티 프로젝트입니다. 37Games나 Eyu의 공식 사이트가 아니며, Last Asylum Plague와 제휴되어 있지 않습니다. 게임 이름과 아트워크는 각 소유자의 것입니다.",
     players: "플레이어",
     darkMode: "다크 모드",
     settings: "설정",
@@ -64,6 +66,24 @@ export const ko = {
     notIn: "연맹에 없음",
     same: "서로 다른 이벤트 두 개를 고르세요.",
     onlyOne: "아직 비교할 이벤트가 하나뿐입니다.",
+  },
+  history: {
+    title: "멤버 이력",
+    lead: "각 카드는 멤버 목록을 그 전에 읽은 목록과 비교합니다. 그 사이의 변화는 보이지 않아요.",
+    daily: "일일 읽기",
+    since: "{time} 이후",
+    first: "첫 읽기: 아직 비교할 게 없어요.",
+    noChange: "멤버 변동 없음.",
+    renamed: "이름 변경",
+    nowIn: "지금 {tag} 소속",
+    show: "보기",
+    all: "전체",
+    older: "이전",
+    newest: "최신",
+    none: "이 페이지에는 이런 항목이 없어요.",
+    copy: "스프레드시트용 복사",
+    copied: "복사됨",
+    copyFailed: "복사 실패",
   },
   settings: {
     language: "언어",
@@ -152,14 +172,14 @@ export const ko = {
       code: "404",
       title: "할머니가 길을 잃었어요.",
       body: "이 페이지는 장부에 없습니다.",
-      back: "표로 돌아가기",
+      back: "장부로 돌아가기",
     },
     server: {
       code: "500",
       title: "뭔가 금이 갔어요.",
       body: "괜찮아요, 할머니가 치울게요.",
       retry: "다시 시도",
-      back: "표로 돌아가기",
+      back: "장부로 돌아가기",
     },
   },
   empty: {

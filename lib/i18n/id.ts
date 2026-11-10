@@ -5,11 +5,13 @@ import type { Translation } from "../copy";
 
 export const idID = {
   site: {
-    name: "OG's LAP Tracker",
-    shortName: "LAP Tracker",
+    name: "Buku Event",
+    shortName: "Buku",
     description: "Cuplikan event aliansi server 325.",
     byline: "dicatat oleh Old Grandmas",
     ledger: "Server 325 · Buku Event",
+    disclaimer:
+      "Buku Event adalah proyek komunitas buatan penggemar untuk game Last Asylum Plague. Ini bukan situs resmi 37Games atau Eyu, dan tidak berafiliasi dengan Last Asylum Plague. Nama game dan karya seninya adalah milik pemiliknya masing-masing.",
     players: "Pemain",
     darkMode: "Mode gelap",
     settings: "Pengaturan",
@@ -64,6 +66,24 @@ export const idID = {
     notIn: "tidak di aliansi",
     same: "Pilih dua event yang berbeda.",
     onlyOne: "Baru ada satu event untuk dibandingkan.",
+  },
+  history: {
+    title: "Riwayat anggota",
+    lead: "Setiap kartu membandingkan daftar anggota dengan yang dibaca sebelumnya. Perubahan di antaranya tidak terlihat.",
+    daily: "Pembacaan harian",
+    since: "sejak {time}",
+    first: "Pembacaan pertama: belum ada yang dibandingkan.",
+    noChange: "Tidak ada perubahan anggota.",
+    renamed: "Ganti nama",
+    nowIn: "sekarang di {tag}",
+    show: "Tampilkan",
+    all: "Semua",
+    older: "Lebih lama",
+    newest: "Terbaru",
+    none: "Tidak ada yang seperti ini di halaman ini.",
+    copy: "Salin untuk spreadsheet",
+    copied: "Tersalin",
+    copyFailed: "Gagal menyalin",
   },
   settings: {
     language: "Bahasa",
@@ -152,14 +172,14 @@ export const idID = {
       code: "404",
       title: "Nenek tersesat.",
       body: "Halaman ini tidak ada di buku.",
-      back: "Kembali ke tabel",
+      back: "Kembali ke buku",
     },
     server: {
       code: "500",
       title: "Ada yang retak.",
       body: "Tidak apa-apa, nenek yang bereskan.",
       retry: "Coba lagi",
-      back: "Kembali ke tabel",
+      back: "Kembali ke buku",
     },
   },
   empty: {

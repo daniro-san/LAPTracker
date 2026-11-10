@@ -5,11 +5,13 @@ import type { Translation } from "../copy";
 
 export const itIT = {
   site: {
-    name: "OG's LAP Tracker",
-    shortName: "LAP Tracker",
+    name: "Registro eventi",
+    shortName: "Registro",
     description: "Istantanee degli eventi delle alleanze del server 325.",
     byline: "tenuto dalle Old Grandmas",
     ledger: "Server 325 · Registro eventi",
+    disclaimer:
+      "Registro eventi è un progetto di fan per la community del gioco Last Asylum Plague. Non è un sito ufficiale di 37Games o Eyu, né è affiliato a Last Asylum Plague. I nomi del gioco e le illustrazioni appartengono ai rispettivi proprietari.",
     players: "Giocatori",
     darkMode: "Modalità scura",
     settings: "Impostazioni",
@@ -64,6 +66,24 @@ export const itIT = {
     notIn: "non in alleanza",
     same: "Scegli due eventi diversi.",
     onlyOne: "Per ora c’è un solo evento da confrontare.",
+  },
+  history: {
+    title: "Storico dei membri",
+    lead: "Ogni scheda confronta l’elenco dei membri con quello letto in precedenza. I cambi intermedi non si vedono.",
+    daily: "Lettura giornaliera",
+    since: "da {time}",
+    first: "Prima lettura: ancora nulla da confrontare.",
+    noChange: "Nessun cambio di membri.",
+    renamed: "Rinominato",
+    nowIn: "ora in {tag}",
+    show: "Mostra",
+    all: "Tutti",
+    older: "Precedenti",
+    newest: "Più recenti",
+    none: "Nulla di questo tipo in questa pagina.",
+    copy: "Copia per foglio",
+    copied: "Copiato",
+    copyFailed: "Copia non riuscita",
   },
   settings: {
     language: "Lingua",
@@ -152,14 +172,14 @@ export const itIT = {
       code: "404",
       title: "La nonna si è persa.",
       body: "Questa pagina non è nel registro.",
-      back: "Torna alla tabella",
+      back: "Torna al registro",
     },
     server: {
       code: "500",
       title: "Si è crepato qualcosa.",
       body: "Tranquillo, la nonna pulisce.",
       retry: "Riprova",
-      back: "Torna alla tabella",
+      back: "Torna al registro",
     },
   },
   empty: {

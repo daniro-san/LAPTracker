@@ -5,11 +5,13 @@ import type { Translation } from "../copy";
 
 export const ja = {
   site: {
-    name: "OG's LAP Tracker",
-    shortName: "LAP Tracker",
+    name: "イベント台帳",
+    shortName: "台帳",
     description: "サーバー325の同盟イベントのスナップショット。",
     byline: "Old Grandmas が記録",
     ledger: "サーバー325・イベント台帳",
+    disclaimer:
+      "イベント台帳 は、Last Asylum Plague のファンが作った非公式のコミュニティプロジェクトです。37Games や Eyu の公式サイトではなく、Last Asylum Plague とも提携していません。ゲームの名称とアートワークは、それぞれの権利者に帰属します。",
     players: "プレイヤー",
     darkMode: "ダークモード",
     settings: "設定",
@@ -64,6 +66,24 @@ export const ja = {
     notIn: "同盟なし",
     same: "別々のイベントを2つ選んでください。",
     onlyOne: "比較できるイベントは、今のところ1つだけです。",
+  },
+  history: {
+    title: "メンバー履歴",
+    lead: "各カードは、その前に読んだメンバー一覧と比べたものです。その間の変化は見えません。",
+    daily: "毎日の読み取り",
+    since: "{time} から",
+    first: "初回の読み取り：比べる相手はまだありません。",
+    noChange: "メンバーの変動はありません。",
+    renamed: "改名",
+    nowIn: "現在 {tag}",
+    show: "表示",
+    all: "すべて",
+    older: "以前",
+    newest: "最新",
+    none: "このページには該当するものがありません。",
+    copy: "表計算用にコピー",
+    copied: "コピーしました",
+    copyFailed: "コピー失敗",
   },
   settings: {
     language: "言語",
@@ -152,14 +172,14 @@ export const ja = {
       code: "404",
       title: "おばあちゃんが迷子になりました。",
       body: "このページは台帳にありません。",
-      back: "表に戻る",
+      back: "台帳に戻る",
     },
     server: {
       code: "500",
       title: "何かが割れました。",
       body: "大丈夫、おばあちゃんが片付けます。",
       retry: "再試行",
-      back: "表に戻る",
+      back: "台帳に戻る",
     },
   },
   empty: {

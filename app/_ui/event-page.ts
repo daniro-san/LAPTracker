@@ -9,7 +9,7 @@ import { requestClock, requestCopy } from "./locale";
 
 export const loadEventPage = cache((id: number | null) => withPageDb((db) => getEventPage(db, id)));
 
-/** `Sat, Oct 31 · OG's LAP Tracker`: the event's day, so tabs and shared links tell events apart. */
+/** `Sat, Oct 31 · Event Ledger`: the event's day, so tabs and shared links tell events apart. */
 export async function eventTitle({
   page,
 }: Awaited<ReturnType<typeof loadEventPage>>): Promise<Metadata> {

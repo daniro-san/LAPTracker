@@ -5,11 +5,13 @@ import type { Translation } from "../copy";
 
 export const zhCN = {
   site: {
-    name: "OG's LAP Tracker",
-    shortName: "LAP Tracker",
+    name: "活动账本",
+    shortName: "账本",
     description: "325 服联盟活动快照。",
     byline: "由 Old Grandmas 记录",
     ledger: "325 服 · 活动账本",
+    disclaimer:
+      "活动账本 是为 Last Asylum Plague 制作的粉丝自制社区项目。它不是 37Games 或 Eyu 的官方网站，也与 Last Asylum Plague 没有关联。游戏名称与美术素材均属其各自的权利人。",
     players: "玩家",
     darkMode: "深色模式",
     settings: "设置",
@@ -64,6 +66,24 @@ export const zhCN = {
     notIn: "不在联盟",
     same: "请选择两个不同的活动。",
     onlyOne: "目前只有一个活动可以对比。",
+  },
+  history: {
+    title: "成员历史",
+    lead: "每张卡片将成员名单与此前读取的名单比较。两次读取之间的变动看不到。",
+    daily: "每日读取",
+    since: "自 {time}",
+    first: "首次读取：还没有可比对的内容。",
+    noChange: "没有成员变动。",
+    renamed: "改名",
+    nowIn: "现在在 {tag}",
+    show: "显示",
+    all: "全部",
+    older: "更早",
+    newest: "最新",
+    none: "本页没有这类内容。",
+    copy: "复制到表格",
+    copied: "已复制",
+    copyFailed: "复制失败",
   },
   settings: {
     language: "语言",
@@ -152,14 +172,14 @@ export const zhCN = {
       code: "404",
       title: "奶奶走丢了。",
       body: "账本里没有这一页。",
-      back: "返回表格",
+      back: "返回账本",
     },
     server: {
       code: "500",
       title: "有东西裂了。",
       body: "没关系，奶奶会收拾好。",
       retry: "重试",
-      back: "返回表格",
+      back: "返回账本",
     },
   },
   empty: {

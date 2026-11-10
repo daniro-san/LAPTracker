@@ -5,11 +5,13 @@ import type { Translation } from "../copy";
 
 export const es = {
   site: {
-    name: "OG's LAP Tracker",
-    shortName: "LAP Tracker",
+    name: "Registro de eventos",
+    shortName: "Registro",
     description: "Capturas de los eventos de las alianzas del servidor 325.",
     byline: "lo llevan las Old Grandmas",
     ledger: "Servidor 325 · Registro de eventos",
+    disclaimer:
+      "Registro de eventos es un proyecto comunitario hecho por fans para el juego Last Asylum Plague. No es una web oficial de 37Games ni de Eyu, y no está afiliado a Last Asylum Plague. Los nombres y las ilustraciones del juego pertenecen a sus dueños.",
     players: "Jugadores",
     darkMode: "Modo oscuro",
     settings: "Ajustes",
@@ -64,6 +66,24 @@ export const es = {
     notIn: "fuera de la alianza",
     same: "Elige dos eventos distintos.",
     onlyOne: "Por ahora solo hay un evento que comparar.",
+  },
+  history: {
+    title: "Historial de miembros",
+    lead: "Cada tarjeta compara la lista de miembros con la anterior. Los cambios entre una lectura y otra no se ven.",
+    daily: "Lectura diaria",
+    since: "desde {time}",
+    first: "Primera lectura: nada con qué comparar todavía.",
+    noChange: "Sin cambios de miembros.",
+    renamed: "Renombrado",
+    nowIn: "ahora en {tag}",
+    show: "Mostrar",
+    all: "Todos",
+    older: "Más antiguos",
+    newest: "Más recientes",
+    none: "Nada de este tipo en esta página.",
+    copy: "Copiar para hoja de cálculo",
+    copied: "Copiado",
+    copyFailed: "Error al copiar",
   },
   settings: {
     language: "Idioma",
@@ -152,14 +172,14 @@ export const es = {
       code: "404",
       title: "La abuela se fue de paseo.",
       body: "Esta página no está en el registro.",
-      back: "Volver a la tabla",
+      back: "Volver al registro",
     },
     server: {
       code: "500",
       title: "Algo se rompió.",
       body: "Tranquilo, la abuela lo limpia.",
       retry: "Reintentar",
-      back: "Volver a la tabla",
+      back: "Volver al registro",
     },
   },
   empty: {

@@ -5,11 +5,13 @@ import type { Translation } from "../copy";
 
 export const vi = {
   site: {
-    name: "OG's LAP Tracker",
-    shortName: "LAP Tracker",
+    name: "Sổ sự kiện",
+    shortName: "Sổ",
     description: "Ảnh chụp sự kiện của các liên minh máy chủ 325.",
     byline: "do Old Grandmas ghi chép",
     ledger: "Máy chủ 325 · Sổ sự kiện",
+    disclaimer:
+      "Sổ sự kiện là dự án cộng đồng do người hâm mộ làm, dành cho game Last Asylum Plague. Đây không phải trang web chính thức của 37Games hay Eyu, và không liên kết với Last Asylum Plague. Tên game và hình ảnh thuộc về chủ sở hữu của chúng.",
     players: "Người chơi",
     darkMode: "Chế độ tối",
     settings: "Cài đặt",
@@ -64,6 +66,24 @@ export const vi = {
     notIn: "Ngoài liên minh",
     same: "Chọn hai sự kiện khác nhau.",
     onlyOne: "Mới có một sự kiện để so sánh.",
+  },
+  history: {
+    title: "Lịch sử thành viên",
+    lead: "Mỗi thẻ so sánh danh sách thành viên với lần đọc trước đó. Thay đổi xảy ra giữa hai lần thì không được ghi nhận.",
+    daily: "Đọc hằng ngày",
+    since: "từ {time}",
+    first: "Lần đọc đầu tiên: chưa có gì để so sánh.",
+    noChange: "Không có thay đổi thành viên.",
+    renamed: "Đổi tên",
+    nowIn: "hiện ở {tag}",
+    show: "Hiện",
+    all: "Tất cả",
+    older: "Cũ hơn",
+    newest: "Mới nhất",
+    none: "Trang này không có mục nào loại này.",
+    copy: "Chép cho bảng tính",
+    copied: "Đã chép",
+    copyFailed: "Chép lỗi",
   },
   settings: {
     language: "Ngôn ngữ",
@@ -152,14 +172,14 @@ export const vi = {
       code: "404",
       title: "Bà đi lạc rồi.",
       body: "Trang này không có trong sổ.",
-      back: "Về bảng",
+      back: "Về sổ",
     },
     server: {
       code: "500",
       title: "Có gì đó bị nứt.",
       body: "Không sao, bà sẽ dọn.",
       retry: "Thử lại",
-      back: "Về bảng",
+      back: "Về sổ",
     },
   },
   empty: {

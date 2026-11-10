@@ -40,3 +40,7 @@ export const ALLIANCES = [
   { unionId: 67111040, tag: "AFR", name: "AllianceFr" }, // #19 · #15 · v1 #19 (board of 2026-11-04 16:41 UTC; replaced TRM, v1 #31)
   { unionId: 67111128, tag: "FGH", name: "MegaDeath" }, // #20 · #33 · v1 #20 (board of 16:41 UTC; replaced 404, v1 #21)
 ] as const satisfies readonly TrackedAlliance[];
+
+/** The alliances the tick reads once a day for member history (D60, issue 197). Default: every tracked one;
+ * `[67111155]` would read OGs only. */
+export const DAILY_ROSTER_IDS: readonly number[] = ALLIANCES.map((a) => a.unionId);

@@ -11,6 +11,13 @@
   --sage: #586750;
   --rule: #d9cdb4;
 
+  /* Wax is pigment, not a theme colour (DESIGN.md `wax`): the same ivory or red wax, with its pressed ink,
+     in light and in dark. Declared once, outside the theme blocks. */
+  --wax-paper: #efe6d3;
+  --wax-seal: #8c2f2f;
+  --wax-ink-paper: #3b2436;
+  --wax-ink-seal: #efe6d3;
+
   --space-xxs: 4px;
   --space-xs: 8px;
   --space-sm: 12px;
@@ -73,6 +80,10 @@
   --color-yarn: var(--yarn);
   --color-sage: var(--sage);
   --color-rule: var(--rule);
+  --color-wax-paper: var(--wax-paper);
+  --color-wax-seal: var(--wax-seal);
+  --color-wax-ink-paper: var(--wax-ink-paper);
+  --color-wax-ink-seal: var(--wax-ink-seal);
 
   /* Inline, so the next/font variables resolve on the element that carries lib/brand/fonts.ts's class. */
   --font-display: var(--font-young-serif), Georgia, serif;

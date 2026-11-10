@@ -124,7 +124,7 @@ const uidOf = async (params: Params) => {
   return /^\d{1,15}$/.test(uid) ? Number(uid) : null;
 };
 
-/** `Name · OG's LAP Tracker`. */
+/** `Name · Event Ledger`. */
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const uid = await uidOf(params);
   const data = uid === null ? null : await loadPlayer(uid);

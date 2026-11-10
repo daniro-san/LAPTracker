@@ -13,11 +13,13 @@ import { discordCopy } from "./copy-discord";
 /** The public pages' strings in English: the source every other language's dictionary follows. */
 export const en = {
   site: {
-    name: "OG's LAP Tracker",
-    shortName: "LAP Tracker",
+    name: "Event Ledger",
+    shortName: "Ledger",
     description: "Event snapshots for server 325 alliances.",
     byline: "kept by the Old Grandmas",
     ledger: "Server 325 · Event Ledger",
+    disclaimer:
+      "Event Ledger is a fan-made community project for the Last Asylum Plague game. It is not an official 37Games or Eyu website, and it is not affiliated with Last Asylum Plague. Game names and artwork belong to their owners.",
     players: "Players",
     darkMode: "Dark mode",
     settings: "Settings",
@@ -81,6 +83,32 @@ export const en = {
     notIn: "not in alliance",
     same: "Pick two different events.",
     onlyOne: "There is only one event to compare so far.",
+  },
+  /** Member history (D60, #197): an alliance's rosters over time, each compared with the one before. */
+  history: {
+    title: "Member history",
+    /** Under the title: what each card is. */
+    lead: "Each card compares the member list with the one read before it. Changes in between are not seen.",
+    /** A card's head for a roster from the once-a-day read. */
+    daily: "Daily read",
+    /** Under a card's head: `since Nov 8, 06:01 server time`. */
+    since: "since {time}",
+    first: "First reading: nothing to compare yet.",
+    noChange: "No member changes.",
+    renamed: "Renamed",
+    /** Beside a member who left, when they are now in another tracked alliance. */
+    nowIn: "now in {tag}",
+    /** The filter links' group label and its first link. */
+    show: "Show",
+    all: "All",
+    older: "Older",
+    newest: "Newest",
+    /** Nothing on this page matches the filter. */
+    none: "Nothing of this kind on this page.",
+    /** Copies the card's whole member list as tab-separated rows (name, might, kills). */
+    copy: "Copy for spreadsheet",
+    copied: "Copied",
+    copyFailed: "Copy failed",
   },
   /** The header's settings menu (D38). */
   settings: {
@@ -178,14 +206,14 @@ export const en = {
       code: "404",
       title: "Grandma wandered off.",
       body: "This page isn't in the ledger.",
-      back: "Back to the table",
+      back: "Back to the ledger",
     },
     server: {
       code: "500",
       title: "Something cracked.",
       body: "It's okay, grandma will clean it.",
       retry: "Try again",
-      back: "Back to the table",
+      back: "Back to the ledger",
     },
   },
   empty: {

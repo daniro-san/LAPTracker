@@ -5,18 +5,24 @@
 import type { RunSummary } from "./collector";
 import { topMovers } from "./compute";
 import { copy, fill } from "./copy";
+import type { DailyReadSummary } from "./daily-read";
+import { MINUS, percentFormat, sign, signedCompact, type DiscordClock } from "./discord-format";
 import { sendOrEdit as send } from "./discord-send";
 import type { Env } from "./env";
 import type { Verdict } from "./rehearsal";
 import type { Phase } from "./repo";
 
-/** A Discord embed: the colour bar is the state's third channel, beside the icon and the word. */
-export interface Embed {
+export { discordClock, type DiscordClock } from "./discord-format";
+
+/** The public message's parts: the status chip as the title, the lines under it, the event page. */
+export interface PublicMessage {
   title: string;
   url: string;
   description?: string;
-  color: number;
 }
+
+/** The event picture's file name in the message (D58). */
+export const EVENT_IMAGE_FILE = "event.png";
 
 /**
  * `messageId`: the id of this event's message in the channel (D31). With one the message is edited
@@ -24,7 +30,12 @@ export interface Embed {
  * the id to store, or null when Discord returned none (the next phase then posts again).
  */
 export interface Notifier {
-  public(embed: Embed, messageId?: string | null): Promise<string | null>;
+  /** `image`: the event's picture (D58), attached under the text; null sends the text alone. */
+  public(
+    message: PublicMessage,
+    messageId?: string | null,
+    image?: Uint8Array<ArrayBuffer> | null,
+  ): Promise<string | null>;
   /** `test`: an is_test event (plan Phase 6): the line starts with `[rehearsal]`; `manual`: `[manual]`. */
   admin(
     content: string,
@@ -53,12 +64,22 @@ export function createNotifier(env: NotifyEnv, fetchFn: typeof fetch): Notifier 
       : { parse: [] };
 
   return {
-    public: (embed, messageId) =>
+    // Plain text and the picture, no embed and so no frame around it (owner, 2026-11-09, D58). The
+    // empty lists clear what an earlier phase left: an old embed, or a picture this phase could not redraw.
+    public: (message, messageId, image) =>
       send(
         fetchFn,
         env.NOTIFY_WEBHOOK_PUBLIC,
-        { embeds: [embed], allowed_mentions: { parse: [] } },
+        {
+          content: publicText(message).slice(0, DISCORD_MAX_CONTENT),
+          embeds: [],
+          attachments: image
+            ? [{ id: 0, filename: EVENT_IMAGE_FILE, description: copy.discord.image.alt }]
+            : [],
+          allowed_mentions: { parse: [] },
+        },
         messageId,
+        image ? { name: EVENT_IMAGE_FILE, data: image } : undefined,
       ),
     admin: (content, options) =>
       send(
@@ -74,50 +95,6 @@ export function createNotifier(env: NotifyEnv, fetchFn: typeof fetch): Notifier 
         },
         options?.messageId,
       ),
-  };
-}
-
-// Discord has no viewer locale, so messages use one fixed English format, in server time.
-const MINUS = "−";
-const sign = (n: number) => (n > 0 ? "+" : n < 0 ? MINUS : "");
-const compactFormat = new Intl.NumberFormat("en-US", {
-  notation: "compact",
-  minimumSignificantDigits: 3,
-  maximumSignificantDigits: 3,
-});
-const percentFormat = new Intl.NumberFormat("en-US", {
-  style: "percent",
-  minimumFractionDigits: 1,
-  maximumFractionDigits: 1,
-});
-
-/** `+85.8M`, `−2`: compact above 1,000, signed with a real minus. */
-const signedCompact = (n: number) =>
-  `${sign(n)}${Math.abs(n) < 1000 ? Math.abs(n) : compactFormat.format(Math.abs(n))}`;
-
-export interface DiscordClock {
-  /** "Sat, Nov 7, 14:01 server time": the public pages' date, with the weekday. */
-  at: (d: Date) => string;
-  /** "Sat, 11/07/2026, 14:01 server time": /admin's date. */
-  stamp: (d: Date) => string;
-}
-
-export function discordClock(timeZone: string): DiscordClock {
-  const f = (o: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat("en-US", { timeZone, ...o });
-  const day = f({ weekday: "short", month: "short", day: "numeric" });
-  const hhmm = f({ hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
-  const full = f({
-    weekday: "short",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-  });
-  return {
-    at: (d) => `${day.format(d)}, ${hhmm.format(d)} ${copy.time.serverTime}`,
-    stamp: (d) => `${full.format(d)} ${copy.time.serverTime}`,
   };
 }
 
@@ -145,12 +122,6 @@ const STATE_WORD: Record<State, string> = {
   failed: copy.status.failed,
 };
 const STATE_ICON: Record<State, string> = { complete: "✓", partial: "⚠", failed: "✗" };
-/** DESIGN.md tokens: sage, yarn, seal. */
-const STATE_COLOR: Record<State, number> = {
-  complete: 0x586750,
-  partial: 0x805c12,
-  failed: 0x8c2f2f,
-};
 
 /** One alliance row of a snapshot, as lib/queries getEventDetail returns it. */
 export interface PublicAlliance {
@@ -180,20 +151,34 @@ export interface PublicContext {
   roundName?: string | null;
   /** When the before snapshot finished, on the after message: it shows the whole event (D31). */
   beforeAt?: Date | null;
+  /** The event picture goes with the text (D58): it shows the top gains, so the text leaves them out. */
+  image?: boolean;
 }
 
 const MOVERS = 3;
-const usable = (a: PublicAlliance) => a.isFresh && !a.failed;
+export const usable = (a: PublicAlliance) => a.isFresh && !a.failed;
 
-/** The top gains of one metric: `[OGs] OldGrandmas ▲ +85.8M (+2.0%)`. Alliances with bad data are out. */
-function movers(ctx: PublicContext, metric: "power" | "kills"): string[] {
-  const before = new Map((ctx.before ?? []).map((a) => [a.unionId, a]));
+/**
+ * The top gains of one metric, ranked by compute.topMovers (D53): an alliance with a stale, failed or
+ * missing side is out. The message's lines and the event picture both read this one ranking.
+ */
+export function topGains<A extends PublicAlliance>(
+  alliances: readonly A[],
+  before: readonly PublicAlliance[],
+  metric: "power" | "kills",
+) {
+  const was = new Map(before.map((a) => [a.unionId, a]));
   const side = (a: PublicAlliance) => ({ ...a, isFresh: usable(a) });
-  const rows = (ctx.alliances ?? []).map((a) => {
-    const b = before.get(a.unionId);
+  const rows = alliances.map((a) => {
+    const b = was.get(a.unionId);
     return { a, before: b ? side(b) : null, after: side(a) };
   });
-  return topMovers(rows, metric, MOVERS, "gain").map(({ row, delta, base }) => {
+  return topMovers(rows, metric, MOVERS, "gain");
+}
+
+/** The top gains of one metric: `[OGs] OldGrandmas ▲ +85.8M (+2.0%)`. */
+function movers(ctx: PublicContext, metric: "power" | "kills"): string[] {
+  return topGains(ctx.alliances ?? [], ctx.before ?? [], metric).map(({ row, delta, base }) => {
     const pct = base ? ` (${sign(delta)}${percentFormat.format(delta / base)})` : "";
     return `${allianceLabel(row.a)} ▲ ${signedCompact(delta)}${pct}`;
   });
@@ -206,7 +191,7 @@ function moverBlock(ctx: PublicContext, heading: string, metric: "power" | "kill
 }
 
 /** The public message: the status chip as the title, counts, the next update or the top gains. */
-export function publicSnapshotMessage(summary: RunSummary, ctx: PublicContext): Embed {
+export function publicSnapshotMessage(summary: RunSummary, ctx: PublicContext): PublicMessage {
   const t = copy.discord.public;
   // The page's status chip (app/_ui/Status.tsx): the icon says partial; the stale line names who.
   const chip = summary.status === "failed" ? copy.status.lastFailed : copy.status.lastUpdated;
@@ -223,7 +208,7 @@ export function publicSnapshotMessage(summary: RunSummary, ctx: PublicContext): 
     if (bad.length > 0) {
       lines.push(fill(t.stale, { n: bad.length, list: bad.map(allianceLabel).join(", ") }));
     }
-    if (ctx.before)
+    if (ctx.before && !ctx.image)
       lines.push(...moverBlock(ctx, t.might, "power"), ...moverBlock(ctx, t.kills, "kills"));
   }
   if (ctx.nextAt) lines.push(fill(copy.status.next, { time: ctx.clock.at(ctx.nextAt) }));
@@ -231,9 +216,18 @@ export function publicSnapshotMessage(summary: RunSummary, ctx: PublicContext): 
     title,
     url: ctx.eventUrl,
     ...(lines.length > 0 ? { description: lines.join("\n") } : {}),
-    color: STATE_COLOR[summary.status],
   };
 }
+
+/** The public message as Discord text: the bold title, its lines, then the event page's link. */
+const publicText = (m: PublicMessage) =>
+  [
+    fill(copy.discord.public.title, { title: m.title }),
+    m.description,
+    fill(copy.discord.public.eventLink, { url: m.url }),
+  ]
+    .filter(Boolean)
+    .join("\n");
 
 export interface AdminContext {
   clock: DiscordClock;
@@ -355,4 +349,24 @@ export function appErrorMessage(route: string, message: string, digest: string |
 export function tickSilenceMessage(last: { min: number; at: string } | null): string {
   const t = copy.discord.admin;
   return last ? fill(t.tickSilence, last) : t.tickNone;
+}
+
+/** The daily roster read fell short (D60): its state and calls, the error and each failed alliance. */
+export function dailyReadMessage(s: DailyReadSummary, at: string): string {
+  const t = copy.discord.admin;
+  const lines = [
+    fill(t.dailyRead, {
+      icon: STATE_ICON[s.status],
+      day: s.day,
+      state: STATE_WORD[s.status],
+      calls: s.callsUsed,
+      at,
+    }),
+  ];
+  if (s.error) lines.push(fill(t.error, { error: s.error }));
+  for (const f of s.failed)
+    lines.push(fill(t.failed, { alliance: allianceLabel(f), error: f.error }));
+  if (s.stale.length > 0)
+    lines.push(fill(t.stale, { list: s.stale.map(allianceLabel).join(", ") }));
+  return lines.join("\n");
 }

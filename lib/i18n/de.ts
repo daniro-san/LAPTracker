@@ -5,11 +5,13 @@ import type { Translation } from "../copy";
 
 export const de = {
   site: {
-    name: "OG's LAP Tracker",
-    shortName: "LAP Tracker",
+    name: "Event-Chronik",
+    shortName: "Chronik",
     description: "Event-Momentaufnahmen der Allianzen von Server 325.",
     byline: "geführt von den Old Grandmas",
     ledger: "Server 325 · Event-Chronik",
+    disclaimer:
+      "Event-Chronik ist ein Fan-Projekt der Community zum Spiel Last Asylum Plague. Es ist keine offizielle Website von 37Games oder Eyu und steht in keiner Verbindung zu Last Asylum Plague. Spielnamen und Grafiken gehören ihren Eigentümern.",
     players: "Spieler",
     darkMode: "Dunkler Modus",
     settings: "Einstellungen",
@@ -64,6 +66,24 @@ export const de = {
     notIn: "nicht in Allianz",
     same: "Wähle zwei verschiedene Events.",
     onlyOne: "Bisher gibt es nur ein Event zum Vergleichen.",
+  },
+  history: {
+    title: "Mitgliederverlauf",
+    lead: "Jede Karte vergleicht die Mitgliederliste mit der davor abgerufenen. Änderungen dazwischen bleiben unbemerkt.",
+    daily: "Tagesabruf",
+    since: "seit {time}",
+    first: "Erste Erfassung: noch nichts zum Vergleichen.",
+    noChange: "Keine Mitgliederwechsel.",
+    renamed: "Umbenannt",
+    nowIn: "jetzt in {tag}",
+    show: "Zeigen",
+    all: "Alle",
+    older: "Ältere",
+    newest: "Neueste",
+    none: "Auf dieser Seite gibt es davon nichts.",
+    copy: "Für Tabelle kopieren",
+    copied: "Kopiert",
+    copyFailed: "Kopieren fehlgeschlagen",
   },
   settings: {
     language: "Sprache",
@@ -152,14 +172,14 @@ export const de = {
       code: "404",
       title: "Oma hat sich verlaufen.",
       body: "Diese Seite steht nicht in der Chronik.",
-      back: "Zurück zur Tabelle",
+      back: "Zurück zur Chronik",
     },
     server: {
       code: "500",
       title: "Da ist was zersprungen.",
       body: "Halb so wild, Oma räumt das auf.",
       retry: "Nochmal",
-      back: "Zurück zur Tabelle",
+      back: "Zurück zur Chronik",
     },
   },
   empty: {

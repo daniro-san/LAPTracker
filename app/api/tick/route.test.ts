@@ -12,7 +12,7 @@ import {
 import { IDS } from "@/lib/collector.test-helpers";
 import type { Db } from "@/lib/db";
 import { openTestDb, truncateAll } from "@/lib/db.test-helpers";
-import { events, rehearsalSlots, snapshots, tickLog } from "@/lib/schema";
+import { dailyReads, dailyRosters, events, rehearsalSlots, snapshots, tickLog } from "@/lib/schema";
 
 const holder = vi.hoisted(() => ({ ctx: null as AppContext | null }));
 vi.mock("@/lib/app-context", async (original) => ({
@@ -194,5 +194,26 @@ describe("POST /api/tick", () => {
     const notes = posts.filter((p) => p.url === ADMIN_WEBHOOK && p.content.includes("skipped"));
     expect(notes).toHaveLength(2);
     expect(notes.every((n) => n.content.startsWith("[rehearsal] "))).toBe(true);
+  });
+
+  it("runs the daily roster read once on a day without a scheduled event, and not on the event's day", async () => {
+    // DAILY_ROSTER_AT 06:00 server = 08:00 UTC, window 45 min. Saturday 2026-11-07 is the event's day:
+    // that tick creates the event's row (a day ahead of its 10:00 Before) and reads no roster.
+    const { ctx, clock, v1 } = testContext(db);
+    holder.ctx = ctx;
+    const answers: unknown[] = [];
+    for (const at of ["2026-11-06T08:05", "2026-11-06T08:20", "2026-11-07T08:05"]) {
+      clock.now = new Date(`${at}:00Z`);
+      const res = await tick();
+      answers.push(res.status === 204 ? 204 : ((await res.json()) as { action?: string }).action);
+    }
+
+    expect(answers).toEqual(["daily-read", 204, 204]);
+    expect(
+      await db.select({ day: dailyReads.day, status: dailyReads.status }).from(dailyReads),
+    ).toEqual([{ day: "2026-11-06", status: "complete" }]);
+    expect(await db.select({ id: dailyRosters.id }).from(dailyRosters)).toHaveLength(IDS.length);
+    expect(await db.select({ id: events.id }).from(events)).toHaveLength(1);
+    expect(v1.calls).toHaveLength(IDS.length);
   });
 });

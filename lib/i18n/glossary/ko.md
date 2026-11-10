@@ -27,6 +27,8 @@ Words already used in `lib/i18n/ko.ts`. Reuse them so the pages stay consistent;
 | End                       | 종료                   | `status.end` — the capture window's end label               |
 | Compare                   | 비교                   | `compare.title`, `compare.action` — two events side by side |
 | grandma                   | 할머니                 | the voice in empty states and errors                        |
+| Member history            | 멤버 이력              | `history.title` — the alliance's rosters over time          |
+| Daily read                | 일일 읽기              | `history.daily` — a card's head for the once-a-day read     |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

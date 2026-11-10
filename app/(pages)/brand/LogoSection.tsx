@@ -32,7 +32,7 @@ function Cuts() {
       <Spec name={t.waxed.name} use={t.waxed.use} plate="bg-plum text-paper">
         {TONES.map((tone) => (
           <span key={tone} className="flex flex-col items-center gap-1">
-            <WaxedMark size={56} tone={tone} />
+            <WaxedMark size={56} tone={tone} solid={tone === "paper"} />
             <span className="text-body-sm">{t.tones[tone]}</span>
           </span>
         ))}
@@ -99,7 +99,7 @@ function Usage() {
       <MarkLine size={96} />
     </span>,
     <span key="2" className={`${TILE} bg-plum`}>
-      <WaxedMark size={56} tone="paper" />
+      <WaxedMark size={56} tone="paper" solid />
     </span>,
   ];
   const donts = [

@@ -12,6 +12,22 @@ export const discordCopy = {
     beforeDone: "Before snapshot done at {time}",
     might: "**Might ▲**",
     kills: "**Kills ▲**",
+    /** The message is plain text (D58): the status chip in bold, then the lines, then this link. */
+    title: "**{title}**",
+    eventLink: "[Event page ↗](<{url}>)",
+  },
+  /** The event picture under the public message (D58). */
+  image: {
+    /** The file's description: what a screen reader says for the picture. */
+    alt: "The event's ledger by Might and its top gains",
+    before: "Before {time}",
+    after: "After {time}",
+    afterDue: "After due {time}",
+    ledger: "Ledger · Might",
+    mightUp: "Might ▲",
+    killsUp: "Kills ▲",
+    stale: "○ stale",
+    footer: "{site} · Server {server} · times are server time",
   },
   admin: {
     /** Rehearsal (is_test) messages start with this, as rehearsal runs are marked on /admin. */
@@ -42,11 +58,13 @@ export const discordCopy = {
     database: "{icon} Database {mb} MB",
     databaseHigh: " (⚠ over {n} MB)",
     pinLocked:
-      "🔒 PIN entry is locked for an hour: {n} wrong PINs. The scheduled tick and workflow_dispatch still work.",
+      "Locked: PIN entry is off for an hour: {n} wrong PINs. The scheduled tick and workflow_dispatch still work.",
     appError: "✗ App error on {route}: {message}{digest} · /admin/errors",
     digest: " · digest {digest}",
     tickSilence:
       "⚠ No tick for {min} min (last {at}). Check the cron-job.org job and CRON_SECRET · /admin",
     tickNone: "⚠ No tick recorded yet. Check the cron-job.org job and CRON_SECRET · /admin",
+    /** The daily roster read (D60) posts only when it falls short. */
+    dailyRead: "{icon} Daily roster read {day}: {state} · {calls} calls · {at}",
   },
 };

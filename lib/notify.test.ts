@@ -90,7 +90,6 @@ describe("public snapshot message", () => {
       title: "✓ Last updated at Sat, Nov 7, 10:01 server time",
       url: "https://lap.test/events/9",
       description: "4/4 alliances\nNext update at Sat, Nov 7, 14:00 server time",
-      color: 0x586750,
     });
   });
 
@@ -119,7 +118,6 @@ describe("public snapshot message", () => {
       publicCtx({ alliances: after }),
     );
     expect(embed.title).toBe("⚠ Last updated at Sat, Nov 7, 14:01 server time");
-    expect(embed.color).toBe(0x805c12);
     expect(embed.description?.split("\n").slice(0, 3)).toEqual([
       "3/4 alliances",
       "○ 1 stale: [OGs] OldGrandmas",
@@ -136,7 +134,6 @@ describe("public snapshot message", () => {
     expect(embed).toEqual({
       title: "✗ Last update failed at Sat, Nov 7, 14:01 server time",
       url: "https://lap.test/events/9",
-      color: 0x8c2f2f,
     });
   });
 });
@@ -243,7 +240,7 @@ describe("admin messages", () => {
 
   it("says the PIN is locked and that the tick still works", () => {
     expect(pinLockedMessage(20)).toBe(
-      "🔒 PIN entry is locked for an hour: 20 wrong PINs. The scheduled tick and workflow_dispatch still work.",
+      "Locked: PIN entry is off for an hour: 20 wrong PINs. The scheduled tick and workflow_dispatch still work.",
     );
   });
 
@@ -311,7 +308,7 @@ describe("payloads", () => {
       for (const key of BLOCKED_ROSTER_KEYS) expect(body).not.toContain(`"${key}"`);
     }
     expect(JSON.parse(bodies[1] ?? "{}")).toMatchObject({
-      content: expect.stringMatching(/^\[rehearsal\] 🔒/),
+      content: expect.stringMatching(/^\[rehearsal\] Locked:/),
     });
 
     await notifier.admin("x", { manual: true });

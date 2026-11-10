@@ -16,6 +16,6 @@ export async function openTestDb(): Promise<Db> {
 
 export async function truncateAll(db: Db): Promise<void> {
   await db.execute(
-    sql`truncate run_logs, member_snapshots, alliance_snapshots, snapshots, events, auth_attempts, app_errors, app_alerts, tick_log restart identity cascade`,
+    sql`truncate daily_rosters, daily_reads, run_logs, member_snapshots, alliance_snapshots, snapshots, events, auth_attempts, app_errors, app_alerts, tick_log restart identity cascade`,
   );
 }

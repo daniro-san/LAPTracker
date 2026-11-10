@@ -3,6 +3,7 @@
 import type { AppContext } from "./app-context";
 import type { RunSummary } from "./collector";
 import type { Db } from "./db";
+import { eventImage } from "./event-image";
 import {
   adminEventMessage,
   adminSnapshotMessage,
@@ -53,22 +54,41 @@ async function notifyPublic(db: Db, s: Shared) {
     return null;
   });
   const rowsOf = (p: Phase) => detail?.snapshots.find((x) => x.phase === p)?.alliances ?? null;
-  const roundName = event.manual ? event.name : null;
+  const alliances = rowsOf(phase);
+  const before = phase === "after" ? rowsOf("before") : null;
+  const nextAt = phase === "before" && !event.manual ? event.afterAt : null;
+  const beforeAt =
+    phase === "after" ? (s.reports.find((r) => r.phase === "before")?.finishedAt ?? null) : null;
+  // The picture (D58) needs this phase's rows; a failed run or an unread detail sends the text alone.
+  const image =
+    alliances && alliances.length > 0 && s.run.summary.status !== "failed"
+      ? await eventImage({
+          eventId: event.id,
+          name: event.name,
+          manual: event.manual,
+          phase,
+          clock: s.clock,
+          at: s.finishedAt,
+          beforeAt,
+          nextAt,
+          alliances,
+          before: before ?? [],
+        })
+      : null;
   const id = await s.notifier.public(
     publicSnapshotMessage(s.run.summary, {
       clock: s.clock,
       eventUrl: `${origin}/events/${event.id}`,
       finishedAt: s.finishedAt,
-      nextAt: phase === "before" && !event.manual ? event.afterAt : null,
-      alliances: rowsOf(phase),
-      before: phase === "after" ? rowsOf("before") : null,
-      roundName,
-      beforeAt:
-        phase === "after"
-          ? (s.reports.find((r) => r.phase === "before")?.finishedAt ?? null)
-          : null,
+      nextAt,
+      alliances,
+      before,
+      roundName: event.manual ? event.name : null,
+      beforeAt,
+      image: image !== null,
     }),
     event.discordPublicMessageId,
+    image,
   );
   await storeId(db, s, "public", id);
 }

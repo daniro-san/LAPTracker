@@ -5,11 +5,13 @@ import type { Translation } from "../copy";
 
 export const fr = {
   site: {
-    name: "OG's LAP Tracker",
-    shortName: "LAP Tracker",
+    name: "Registre des événements",
+    shortName: "Registre",
     description: "Captures des événements des alliances du serveur 325.",
     byline: "tenu par les Old Grandmas",
     ledger: "Serveur 325 · Registre des événements",
+    disclaimer:
+      "Registre des événements est un projet communautaire de fans pour le jeu Last Asylum Plague. Ce n’est pas un site officiel de 37Games ou d’Eyu, et il n’est pas affilié à Last Asylum Plague. Les noms et illustrations du jeu appartiennent à leurs propriétaires.",
     players: "Joueurs",
     darkMode: "Mode sombre",
     settings: "Réglages",
@@ -65,6 +67,24 @@ export const fr = {
     notIn: "hors alliance",
     same: "Choisissez deux événements différents.",
     onlyOne: "Il n’y a pour l’instant qu’un seul événement à comparer.",
+  },
+  history: {
+    title: "Historique des membres",
+    lead: "Chaque carte compare la liste des membres à celle relevée juste avant. Les changements intervenus entre-temps ne sont pas vus.",
+    daily: "Relevé quotidien",
+    since: "depuis {time}",
+    first: "Premier relevé. Rien à comparer pour l’instant.",
+    noChange: "Aucun changement de membre.",
+    renamed: "Renommé",
+    nowIn: "désormais dans {tag}",
+    show: "Afficher",
+    all: "Tous",
+    older: "Plus anciens",
+    newest: "Plus récents",
+    none: "Rien de ce genre sur cette page.",
+    copy: "Copier pour tableur",
+    copied: "Copié",
+    copyFailed: "Échec de la copie",
   },
   settings: {
     language: "Langue",
@@ -153,14 +173,14 @@ export const fr = {
       code: "404",
       title: "Mamie s’est égarée.",
       body: "Cette page n’est pas dans le registre.",
-      back: "Retour au tableau",
+      back: "Retour au registre",
     },
     server: {
       code: "500",
       title: "Quelque chose s’est fêlé.",
       body: "Pas grave, mamie va nettoyer.",
       retry: "Réessayer",
-      back: "Retour au tableau",
+      back: "Retour au registre",
     },
   },
   empty: {

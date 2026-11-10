@@ -39,6 +39,13 @@ export function POST(request: Request): Promise<Response> {
           slot_at: tick.slotAt,
           ...(tick.result.ok ? { event_id: tick.result.eventId } : { skipped: tick.result.reason }),
         });
+      case "daily-read":
+        return Response.json({
+          action: "daily-read",
+          day: tick.summary.day,
+          status: tick.summary.status,
+          calls_used: tick.summary.callsUsed,
+        });
     }
   });
 }

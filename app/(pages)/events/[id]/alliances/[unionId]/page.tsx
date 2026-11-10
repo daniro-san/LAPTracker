@@ -2,10 +2,17 @@
 // The totals as one summary band, then the members (same row shape as the main page), then one row
 // per event.
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 
-import { ACROSS_ID, AcrossEvents, NameTimeline, TITLE_ID } from "@/app/_ui/AcrossEvents";
+import {
+  ACROSS_ID,
+  AcrossEvents,
+  inEventMarked,
+  NameTimeline,
+  TITLE_ID,
+} from "@/app/_ui/AcrossEvents";
 import { Breadcrumbs } from "@/app/_ui/Breadcrumbs";
 import { DetailTable, figureRows, type RankPair } from "@/app/_ui/DetailLines";
 import { fellWithLeavers } from "@/app/_ui/event-rows";
@@ -27,7 +34,7 @@ import { CaptureWindow, FreshDots, Legend, SideHead, type FreshState } from "@/a
 import { rankDelta } from "@/lib/compute";
 import type { Dictionary } from "@/lib/copy";
 import { withPageDb } from "@/lib/page";
-import type { AllianceRow, Ranks } from "@/lib/queries";
+import type { AllianceRow, HistoryRow, Ranks } from "@/lib/queries";
 import {
   allianceHistory,
   allianceNames,
@@ -57,6 +64,10 @@ function totalsMetric(
   const delta = canDelta && a !== null && b !== null ? a - b : null;
   return { label, value: a ?? b, delta, base: b, memberMark: fellWithLeavers(delta, left) };
 }
+
+/** The page shows a `*`: on the summary, or on a change inside an event under Across events. */
+const showsMemberMark = (metrics: StatMetric[], history: HistoryRow[]) =>
+  metrics.some((m) => m.memberMark) || inEventMarked(history);
 
 /** `left`: members of the Before roster gone from the After roster (0 when the rosters cannot be compared). */
 function totalsMetrics(
@@ -204,7 +215,7 @@ async function idsOf(params: Params) {
   return { eventId: Number(p.id), unionId: Number(p.unionId) };
 }
 
-/** `[OGs] OldGrandmas · Sat, Oct 31 · OG's LAP Tracker`. */
+/** `[OGs] OldGrandmas · Sat, Oct 31 · Event Ledger`. */
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const ids = await idsOf(params);
   const data = ids && (await loadAlliance(ids.eventId, ids.unionId));
@@ -280,6 +291,12 @@ export default async function AlliancePage({ params }: { params: Params }) {
                 {copy.ledger.acrossEvents} <span aria-hidden="true">&nbsp;↓</span>
               </a>
             )}
+            <Link
+              href={`/alliances/${unionId}/history`}
+              className="inline-flex min-h-11 items-center px-2 text-sm font-medium text-plum hover:underline"
+            >
+              {copy.history.title} <span aria-hidden="true">&nbsp;→</span>
+            </Link>
           </div>
         </div>
         <CaptureWindow
@@ -288,7 +305,7 @@ export default async function AlliancePage({ params }: { params: Params }) {
           clock={clock}
           copy={copy}
         />
-        <Legend memberMark={metrics.some((m) => m.memberMark)} copy={copy} />
+        <Legend memberMark={showsMemberMark(metrics, history)} copy={copy} />
         <NameTimeline names={names} clock={clock} copy={copy} />
         <Summary
           detail={detail}
