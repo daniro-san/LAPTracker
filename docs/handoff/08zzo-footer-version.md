@@ -8,10 +8,10 @@
 - `next.config.ts`: `env: { BUILD_VERSION: buildVersion(process.env) }`. Next replaces `process.env.BUILD_VERSION` with the string at build time.
 - `app/_ui/SiteFooter.tsx`: one line under the byline (`text-xs`, `text-ink/65`, right-aligned, tabular numerals). `SiteFooter` is rendered by every public page, the error and 404 pages and `AdminShell`, so no caller changed.
 - `lib/build-version.test.ts`: three tests, one each for main (release), dev and local.
-- docs/DECISIONS.md D58. docs/ARCHITECTURE.md: one line for `lib/build-version.ts`.
+- docs/DECISIONS.md D59. docs/ARCHITECTURE.md: one line for `lib/build-version.ts`.
 
 ## Decisions
-- D58. The version comes from `VERCEL_GIT_COMMIT_MESSAGE` on ref `main`. It uses the same `^release: vX.Y.Z` match as `release-publish.yml`. Tags were not used for two reasons: Vercel's clone is shallow, and `release-publish` creates the tag on the same push that starts the Vercel build, so the build would race the tag.
+- D59. The version comes from `VERCEL_GIT_COMMIT_MESSAGE` on ref `main`. It uses the same `^release: vX.Y.Z` match as `release-publish.yml`. Tags were not used for two reasons: Vercel's clone is shallow, and `release-publish` creates the tag on the same push that starts the Vercel build, so the build would race the tag.
 - I checked Vercel's system variables page (https://vercel.com/docs/environment-variables/system-environment-variables, updated 2026-07-15). `VERCEL_GIT_COMMIT_REF` and `_MESSAGE` are available at "Both build and runtime".
 - Owner, 2026-11-09, after the first two versions of this PR:
   - The version number alone is enough. The commit and the date are gone.

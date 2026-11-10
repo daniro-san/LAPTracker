@@ -1,4 +1,4 @@
-// The live version in the footer (D58). next.config.ts calls this once per build with Vercel's system
+// The live version in the footer (D59). next.config.ts calls this once per build with Vercel's system
 // variables and inlines the result as process.env.BUILD_VERSION: the release on a main deploy of a release
 // merge commit, else the branch (`dev`), and `local` outside Vercel.
 // The line release-publish.yml matches (D29): on any line, so GitHub's default merge message works too.

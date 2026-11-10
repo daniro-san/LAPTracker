@@ -1,5 +1,5 @@
 // Security headers that don't vary per request (plan §12.3). The nonce-based CSP lives in proxy.ts.
-// `env` inlines the footer's live version at build time (D58).
+// `env` inlines the footer's live version at build time (D59).
 import type { NextConfig } from "next";
 
 import { buildVersion } from "./lib/build-version";

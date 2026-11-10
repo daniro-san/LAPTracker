@@ -1,6 +1,6 @@
 // Page footer: the ledger's byline on the right and one corner ornament at the bottom left, out of the
 // content's way (DESIGN.md ornament budget): the yarn ball by default, the Granny Doctor on the error
-// and player pages. Under the byline, the live version (D58), inlined at build time by next.config.ts.
+// and player pages. Under the byline, the live version (D59), inlined at build time by next.config.ts.
 import { GrannyStanding } from "@/lib/brand/components/Mascot";
 import { YarnCorner } from "@/lib/brand/components/YarnCorner";
 import type { Dictionary } from "@/lib/copy";
