@@ -10,6 +10,8 @@ export const ja = {
     description: "サーバー325の同盟イベントのスナップショット。",
     byline: "Old Grandmas が記録",
     ledger: "サーバー325・イベント台帳",
+    disclaimer:
+      "OG's LAP event tracker は、Last Asylum Plague のファンが作った非公式のコミュニティプロジェクトです。37Games や Eyu の公式サイトではなく、Last Asylum Plague とも提携していません。ゲームの名称とアートワークは、それぞれの権利者に帰属します。",
     players: "プレイヤー",
     darkMode: "ダークモード",
     settings: "設定",

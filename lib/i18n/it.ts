@@ -10,6 +10,8 @@ export const itIT = {
     description: "Istantanee degli eventi delle alleanze del server 325.",
     byline: "tenuto dalle Old Grandmas",
     ledger: "Server 325 · Registro eventi",
+    disclaimer:
+      "OG's LAP event tracker è un progetto di fan per la community del gioco Last Asylum Plague. Non è un sito ufficiale di 37Games o Eyu, né è affiliato a Last Asylum Plague. I nomi del gioco e le illustrazioni appartengono ai rispettivi proprietari.",
     players: "Giocatori",
     darkMode: "Modalità scura",
     settings: "Impostazioni",
