@@ -58,7 +58,7 @@ export const discordCopy = {
     database: "{icon} Database {mb} MB",
     databaseHigh: " (⚠ over {n} MB)",
     pinLocked:
-      "🔒 PIN entry is locked for an hour: {n} wrong PINs. The scheduled tick and workflow_dispatch still work.",
+      "Locked: PIN entry is off for an hour: {n} wrong PINs. The scheduled tick and workflow_dispatch still work.",
     appError: "✗ App error on {route}: {message}{digest} · /admin/errors",
     digest: " · digest {digest}",
     tickSilence:

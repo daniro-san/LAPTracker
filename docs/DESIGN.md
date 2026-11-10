@@ -214,7 +214,7 @@ The logo mark (owner's pick at the Session 7 mock, 2026-11-04): a plague doctor 
 
 ## Overview
 
-A guild ledger, kept by hand, in a plague year. The page is aged paper; the ink is near-black; the header is dark plum; a wax-seal red marks losses and warnings; mustard yarn marks gains. Craft shows in the margins — a crochet lace border on the header, a ball of yarn in one corner, a teacup where there is nothing to show — and nowhere else. **The data table stays plain**: high contrast, tabular numerals, one-pixel rules, no texture behind a number. If an ornament ever competes with a number, the ornament goes.
+A guild ledger, kept by hand, in a plague year. The page is aged paper; the ink is near-black; the header is dark plum; a wax-seal red marks losses and warnings; yarn marks gains, bronze in daylight and gold by lamplight. Craft shows in the margins — a crochet lace border on the header, a ball of yarn in one corner, a teacup where there is nothing to show — and nowhere else. **The data table stays plain**: high contrast, tabular numerals, one-pixel rules, no texture behind a number. If an ornament ever competes with a number, the ornament goes.
 
 **Key characteristics**
 
@@ -231,7 +231,7 @@ A guild ledger, kept by hand, in a plague year. The page is aged paper; the ink 
 - **Ink** (`{colors.ink}` — #1e1a1f): all text. Dark: `{colors.dark-ink}`.
 - **Plum** (`{colors.plum}` — #3b2436): header, links, primary actions, focus rings. Dark: `{colors.dark-plum}`.
 - **Seal** (`{colors.seal}` — #8c2f2f): negative deltas, errors, "stale", the seal button. Dark: `{colors.dark-seal}`.
-- **Yarn** (`{colors.yarn}` — #805c12): positive deltas, highlights. Dark: `{colors.dark-yarn}`.
+- **Yarn** (`{colors.yarn}` — #805c12): positive deltas, highlights. Bronze in daylight, gold by lamplight (dark: `{colors.dark-yarn}`); a true mustard cannot reach 4.5:1 on paper, so the light value is kept for contrast and only the word changed (08zzt, #173 M1).
 - **Sage** (`{colors.sage}` — #586750): neutral badges — `[TEST]`, "fallback source", "manual". Dark: `{colors.dark-sage}`.
 - **Rule** (`{colors.rule}` — #d9cdb4): borders and table rules. Dark: `{colors.dark-rule}`.
 
