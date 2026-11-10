@@ -166,11 +166,17 @@ export function rehearsalSlotsDue(now: Date, cfg: ScheduleConfig): Date[] {
     .sort((a, b) => a.getTime() - b.getTime());
 }
 
-/** Today's daily read (D60) while `now` is in its window: the server date it belongs to, else null. */
-export function dailyReadDue(now: Date, cfg: ScheduleConfig): { day: string; at: Date } | null {
+/** Today's daily read (D60) while `now` is in its window: the server date it belongs to and that
+ * date's bounds as UTC instants, else null. */
+export function dailyReadDue(
+  now: Date,
+  cfg: ScheduleConfig,
+): { day: string; from: Date; to: Date } | null {
   const today = wallClock(now, cfg.SERVER_TZ);
   const at = zonedToUtc(today, cfg.DAILY_ROSTER_AT, cfg.SERVER_TZ);
-  return inWindow(now, at, cfg) ? { day: isoDate(today), at } : null;
+  if (!inWindow(now, at, cfg)) return null;
+  const from = zonedToUtc(today, "00:00", cfg.SERVER_TZ);
+  return { day: isoDate(today), from, to: zonedToUtc(addDays(today, 1), "00:00", cfg.SERVER_TZ) };
 }
 
 /** 0 = Sunday … 6 = Saturday, in server time. */

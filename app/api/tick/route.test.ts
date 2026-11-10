@@ -196,29 +196,24 @@ describe("POST /api/tick", () => {
     expect(notes.every((n) => n.content.startsWith("[rehearsal] "))).toBe(true);
   });
 
-  it("runs the daily roster read once per server day, only after a due phase and never as an event", async () => {
-    // DAILY_ROSTER_AT on BEFORE's time (10:00 server = 12:00 UTC): both are due at 12:05 UTC.
-    const { ctx, clock, v1 } = testContext(db, { ...TEST_ENV, DAILY_ROSTER_AT: "10:00" });
+  it("runs the daily roster read once on a day without a scheduled event, and not on the event's day", async () => {
+    // DAILY_ROSTER_AT 06:00 server = 08:00 UTC, window 45 min. Saturday 2026-11-07 is the event's day:
+    // that tick creates the event's row (a day ahead of its 10:00 Before) and reads no roster.
+    const { ctx, clock, v1 } = testContext(db);
     holder.ctx = ctx;
     const answers: unknown[] = [];
-    for (const at of ["12:05", "12:20", "12:35"]) {
-      clock.now = new Date(`2026-11-07T${at}:00Z`);
+    for (const at of ["2026-11-06T08:05", "2026-11-06T08:20", "2026-11-07T08:05"]) {
+      clock.now = new Date(`${at}:00Z`);
       const res = await tick();
-      answers.push(
-        res.status === 204
-          ? 204
-          : (({ action, phase }) => action ?? phase)(
-              (await res.json()) as { action?: string; phase?: string },
-            ),
-      );
+      answers.push(res.status === 204 ? 204 : ((await res.json()) as { action?: string }).action);
     }
 
-    expect(answers).toEqual(["before", "daily-read", 204]);
+    expect(answers).toEqual(["daily-read", 204, 204]);
     expect(
       await db.select({ day: dailyReads.day, status: dailyReads.status }).from(dailyReads),
-    ).toEqual([{ day: "2026-11-07", status: "complete" }]);
+    ).toEqual([{ day: "2026-11-06", status: "complete" }]);
     expect(await db.select({ id: dailyRosters.id }).from(dailyRosters)).toHaveLength(IDS.length);
     expect(await db.select({ id: events.id }).from(events)).toHaveLength(1);
-    expect(v1.calls).toHaveLength(2 * IDS.length);
+    expect(v1.calls).toHaveLength(IDS.length);
   });
 });

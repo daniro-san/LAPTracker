@@ -13,7 +13,7 @@ import {
 } from "./notify";
 import { createRehearsal, type RehearsalResult } from "./rehearsal";
 import { claimAlert, TICK_SILENCE_ALERT } from "./repo/app-errors";
-import { claimQuotaCheck, duePhases, findOrCreateEvent } from "./repo/events";
+import { claimQuotaCheck, duePhases, findOrCreateEvent, hasScheduledEvent } from "./repo/events";
 import { claimSlot, setSlotOutcome } from "./repo/rehearsals";
 import { latestTickAt } from "./repo/ticks";
 import { executeSnapshot, quotaReport, type RunOutcome } from "./run";
@@ -52,10 +52,13 @@ async function scheduledRehearsal(ctx: AppContext, db: Db, slotAt: Date): Promis
 }
 
 /** The day's roster read when its window holds `now` and no caller claimed the day yet; one admin
- * line when it falls short. */
+ * line when it falls short. Skipped on a scheduled event's day: its snapshots read the same rosters,
+ * and the member history uses them (D60). The event's row exists by then (step 1, a day ahead). */
 async function dailyRead(ctx: AppContext, db: Db, now: Date): Promise<TickOutcome | null> {
   const due = dailyReadDue(now, ctx.env);
-  const summary = due && (await runDailyRead(ctx, db, due.day, DAILY_ROSTER_IDS));
+  // INVARIANT daily-read.not-on-event-day
+  if (!due || (await hasScheduledEvent(db, due.from, due.to))) return null;
+  const summary = await runDailyRead(ctx, db, due.day, DAILY_ROSTER_IDS);
   if (!summary) return null;
   if (summary.status !== "complete") {
     const at = discordClock(ctx.env.SERVER_TZ).stamp(ctx.now());

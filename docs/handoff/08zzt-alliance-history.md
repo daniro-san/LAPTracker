@@ -17,6 +17,7 @@ Owner, 2026-11-10, on spike 08zzr (PR #203): "lets go with the option C, you can
 - `lib/env.ts` `DAILY_ROSTER_AT` (default `06:00` server); `lib/schedule.ts` `dailyReadDue`.
 - **`lib/tick.ts`:**
   - Step (5), last: the daily read, inside `[DAILY_ROSTER_AT, + SNAPSHOT_WINDOW_MIN)`.
+  - No read on a scheduled event's day (owner, 2026-11-10): `hasScheduledEvent` in `lib/repo/events.ts` finds a non-manual, non-test event whose Before falls on that server day. The event's snapshots cover that day in the history.
   - One admin Discord line when the read is not `complete` (`dailyReadMessage`, `copy.discord.admin.dailyRead`).
   - `/api/tick` answers `{action: "daily-read", day, status, calls_used}`.
 - **`lib/queries/member-history.ts` `memberHistory(db, unionId, { before, limit = 14 })`:**
@@ -35,7 +36,7 @@ Owner, 2026-11-10, on spike 08zzr (PR #203): "lets go with the option C, you can
 - Docs: D60 in DECISIONS.md; GLOSSARY ("daily read", "member history"); DESIGN.md (Navigation line, `member-history` component); ARCHITECTURE.md (`lib/daily-read.ts`, tick step); `.env.example` `DAILY_ROSTER_AT`.
 - Tests:
   - `lib/daily-read.test.ts`, 2 tests: a quota below the reserve makes no roster call; a failed alliance gives an error row, a partial read, and the day is read once.
-  - `app/api/tick/route.test.ts`, 1 test: the read waits behind a due BEFORE, runs once, and creates no event.
+  - `app/api/tick/route.test.ts`, 1 test: the read runs once on Friday 2026-11-06 (06:05 and 06:20 server) and not on Saturday 2026-11-07, the scheduled event's day; it creates no event of its own.
   - `lib/queries/member-history.test.ts`, 2 tests: joined, left with `nowIn`, renamed and changed, with a stale roster skipped; paging, and null for an unknown alliance.
 - Screenshots: `docs/screenshots/08zzt-alliance-history-{360,1280}-{light,dark}.png`, `08zzt-alliance-history-360-light-left.png` (the Left filter), `08zzt-alliance-link-360.png` (the link on the alliance page).
 
@@ -89,7 +90,7 @@ Plan changes needed: IMPLEMENTATION_PLAN.md ยง"Not in v1" or the After-v1 list โ
 
 <adjustments for="08zzh build (#171/#175/#176)">
 - The tick now ends with step (5), the daily roster read (`dailyRead` in `lib/tick.ts`), run only when nothing else is due. If more than one sample per tick is introduced, keep the daily read last.
-- `dailyReadQuota(k, 20)` = `requiredQuota(k) + requiredQuota(20)` guards the daily read; a per-day rule for event samples should add the daily read's 1 + k calls (21) at 06:00 server.
+- `dailyReadQuota(k, 20)` = `requiredQuota(k) + requiredQuota(20)` guards the daily read. It does not run on a scheduled event's day (`hasScheduledEvent`, a non-manual event whose Before is that server day), so a KvK Saturday spends nothing on it. If event schedules move to /admin, keep creating the event's row a day ahead, or the check misses it.
 - `daily_rosters` uses the array layout 08zzh proposes for light samples. When reading `bigint[]` columns with nulls, select them as `::text[]`: Drizzle turns a null element into 0.
 </adjustments>
 
