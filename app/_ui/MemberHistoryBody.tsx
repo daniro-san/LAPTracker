@@ -1,9 +1,8 @@
 "use client";
 
 // A member history card's contents (D60): the copy button, then who joined, who left (and where they are
-// now), who changed name, and whose kills or might changed. The open card gets its contents with the
-// page; a closed one fetches them the first time it is opened (LazyCardBody), so the page carries only
-// the cards' heads.
+// now), who changed name, and whose kills or might changed. A card fetches them the first time it is
+// opened (LazyCardBody), so the page carries only the cards' heads.
 import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
@@ -95,7 +94,7 @@ function LeftGroup({ body, copy }: { body: HistoryCardBody; copy: Dictionary }) 
 }
 
 /** `first`: the alliance's first stored roster, which has nothing to compare with. */
-export function CardBody({
+function CardBody({
   body,
   filter,
   first,

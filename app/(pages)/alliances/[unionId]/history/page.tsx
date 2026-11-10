@@ -1,7 +1,7 @@
 // `/alliances/[unionId]/history[?show=joined|left|renamed|kills][&before=<ISO time>]`: member history
 // (D60, issue 197). One card per stored roster (daily reads and public event snapshots), newest first, 14
-// a page; only the first card starts open and comes with its contents, the others load theirs when
-// opened. With a filter on, every card is diffed here to know which match. No event in the URL: the
+// a page; every card starts closed and loads its contents when opened. With a filter on, every card is
+// diffed here to know which match. No event in the URL: the
 // history belongs to none, so the header's selector reads "All events".
 // A union id with no usable roster is a 404.
 import type { Metadata } from "next";
@@ -22,27 +22,12 @@ import { SiteHeader } from "@/app/_ui/SiteHeader";
 import type { Dictionary } from "@/lib/copy";
 import type { Db } from "@/lib/db";
 import { withPageDb } from "@/lib/page";
-import {
-  homeEvent,
-  listEvents,
-  memberHistory,
-  memberHistoryIndex,
-  type HistoryCard,
-} from "@/lib/queries";
+import { homeEvent, listEvents, memberHistory, memberHistoryIndex } from "@/lib/queries";
 
 type Params = Promise<{ unionId: string }>;
 type Search = Promise<Record<string, string | string[] | undefined>>;
 
-const bodyOf = ({ roster, joined, left, renamed, changed }: HistoryCard) => ({
-  roster,
-  joined,
-  left,
-  renamed,
-  changed,
-});
-
-/** The cards' heads and the first card's contents. Unfiltered: the light index, plus one full card.
- * Filtered: every card diffed, to keep those that match. */
+/** The cards' heads. Unfiltered: the light index. Filtered: every card diffed, to keep those that match. */
 async function historyPage(
   db: Db,
   unionId: number,
@@ -61,15 +46,9 @@ async function historyPage(
       badgeId,
       older,
       entries: cards.map(({ at, event, since }) => ({ at, event, since })),
-      firstBody: cards[0] ? bodyOf(cards[0]) : null,
     };
   }
-  const [index, first] = await Promise.all([
-    memberHistoryIndex(db, unionId, { before }),
-    memberHistory(db, unionId, { before, limit: 1 }),
-  ]);
-  const card = first?.cards[0];
-  return index && { ...index, firstBody: card ? bodyOf(card) : null };
+  return memberHistoryIndex(db, unionId, { before });
 }
 
 const load = cache((unionId: number, before: number | null, show: HistoryFilter | null) =>
@@ -236,12 +215,11 @@ export default async function MemberHistoryPage({
           <EmptyState>{copy.history.none}</EmptyState>
         ) : (
           <ul>
-            {history.entries.map((e, i) => (
+            {history.entries.map((e) => (
               <HistoryCardView
                 key={e.at.toISOString()}
                 unionId={unionId}
                 entry={e}
-                body={i === 0 ? history.firstBody : null}
                 filter={show}
                 clock={clock}
                 copy={copy}

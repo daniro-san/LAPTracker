@@ -1,14 +1,14 @@
 // Member history (D60, issue 197): one collapsible card per stored roster, newest first. The head says when
-// the data was read (a daily read, or an event's Start or End) and since when the card counts. Only the
-// page's first card is open and comes with its contents; the others fetch theirs when opened
-// (MemberHistoryBody). Below 640 px and above, the same card.
+// the data was read (a daily read, or an event's Start or End) and since when the card counts. Every
+// card starts closed and fetches its contents when first opened (MemberHistoryBody). Below 640 px and
+// above, the same card.
 import { fill, type Dictionary } from "@/lib/copy";
-import type { HistoryCardBody, HistoryEntry } from "@/lib/queries";
+import type { HistoryEntry } from "@/lib/queries";
 
 import { EventLabel } from "./EventLabel";
 import { type Clock } from "./format";
 import type { HistoryFilter } from "./member-history";
-import { CardBody, LazyCardBody } from "./MemberHistoryBody";
+import { LazyCardBody } from "./MemberHistoryBody";
 
 const MUTED = "text-ink/70";
 
@@ -44,38 +44,30 @@ function CardHead({ entry, clock, copy }: { entry: HistoryEntry; clock: Clock; c
   );
 }
 
-/** A collapsible card (native `<details>`). `body` given: open, with its contents; null: closed, its
- * contents fetched on the first open. */
+/** A collapsible card (native `<details>`), closed; its contents are fetched on the first open. */
 export function HistoryCardView({
   unionId,
   entry,
-  body,
   filter,
   clock,
   copy,
 }: {
   unionId: number;
   entry: HistoryEntry;
-  body: HistoryCardBody | null;
   filter: HistoryFilter | null;
   clock: Clock;
   copy: Dictionary;
 }) {
-  const first = entry.since === null;
   return (
     <li className="mb-3 border border-rule">
-      <details open={body !== null} className="group/card">
+      <details className="group/card">
         <CardHead entry={entry} clock={clock} copy={copy} />
-        {body ? (
-          <CardBody body={body} filter={filter} first={first} />
-        ) : (
-          <LazyCardBody
-            unionId={unionId}
-            at={entry.at.toISOString()}
-            filter={filter}
-            first={first}
-          />
-        )}
+        <LazyCardBody
+          unionId={unionId}
+          at={entry.at.toISOString()}
+          filter={filter}
+          first={entry.since === null}
+        />
       </details>
     </li>
   );
