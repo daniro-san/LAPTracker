@@ -114,7 +114,7 @@ export const brandComponentsCopy = {
   },
   movers: {
     name: "Movers",
-    use: "The event's biggest gains and losses, under the ledger and on the alliance page between Leadership and the members. Three tabs, Might ▲, Might ▼ and Kills ▲, each a ranked list of #rank, name and change. An empty list reads —. No sentences.",
+    use: "The event's biggest gains and losses, under the ledger and on the alliance page between Leadership and the members. Four tabs, Might ▲, Might ▼, Kills ▲ and Rank ▲▼, each a ranked list of #rank, name and change. An empty list reads —. No sentences.",
     gains: ["[OGs] OldGrandmas", "[NSE] Natural Selection"],
     loss: "[URSA] Ursus Invictus",
   },

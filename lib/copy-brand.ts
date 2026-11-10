@@ -103,7 +103,7 @@ export const brandCopy = {
       },
       displayLg: { sample: "Event Ledger", spec: "32 / 1.1 · Young Serif", use: "Page title" },
       displayMd: {
-        sample: "Gained and lost",
+        sample: "Grandma noticed",
         spec: "24 / 1.15 · Alegreya Sans 700",
         use: "Section and header title",
       },
@@ -128,7 +128,7 @@ export const brandCopy = {
         use: "Every number in tables and cards",
       },
       label: {
-        sample: "Gained / Lost",
+        sample: "Members",
         spec: "12 / 1.3 · Source Sans 3 600, tracked",
         use: "Column headers, badges",
       },
@@ -165,10 +165,10 @@ export const brandCopy = {
   components: brandComponentsCopy,
   voice: {
     title: "Voice",
-    lede: "Short, dry, grandmotherly, English. The ledger belongs to the server and is kept by the Old Grandmas; another alliance reading it should feel invited, not visiting.",
+    lede: "Short, dry, grandmotherly: written in English, read in 18 languages. The ledger belongs to the server and is kept by the Old Grandmas; another alliance reading it should feel invited, not visiting.",
     rules: [
       "Title and byline: Server 325 · Event Ledger, kept by the Old Grandmas.",
-      "Labels are the game's own words: Might, Kills, Members, Gained / Lost.",
+      "Labels are the game's own words: Might, Kills, Members.",
       "Sentences live in the margins: empty states, error pages, section titles, admin. Status is chips.",
       "No exclamation marks, no emoji, no Oops, no Awesome.",
     ],
