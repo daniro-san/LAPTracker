@@ -244,3 +244,5 @@ The daily read runs from the tick in tests; the history page renders from seed d
 - The daily read uses the same member-array layout as the light samples (`member_uids`, `member_power`, `member_kills`, plus `member_names` here). Share one unnest-and-join-by-uid helper.
 - The daily read spends 1 + k calls at 06:00 server every day, Saturdays included. Count it in the per-day budget rule. A KvK Saturday becomes 567 + 21 = 588 calls.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/203
