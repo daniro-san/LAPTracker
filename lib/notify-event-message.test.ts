@@ -9,7 +9,6 @@ import {
   createNotifier,
   discordClock,
   publicSnapshotMessage,
-  type Embed,
   type PublicContext,
 } from "./notify";
 import { notifyFinished } from "./run-notify";
@@ -77,6 +76,61 @@ describe("one message per channel per event (D31)", () => {
     );
     expect(await notifier.admin("hello", { messageId: "555" })).toBe("777");
     expect(calls.map((c) => c.method)).toEqual(["PATCH", "POST"]);
+  });
+
+  describe("the public message's picture (D58)", () => {
+    const sent: { method: string; body: unknown }[] = [];
+    const notifier = (reply: (method: string) => Response) =>
+      createNotifier(TEST_ENV, async (_url, init) => {
+        sent.push({ method: String(init?.method), body: init?.body });
+        return reply(String(init?.method));
+      });
+    const png = new Uint8Array([137, 80, 78, 71]);
+    const payload = (i: number) =>
+      JSON.parse(String((sent[i]?.body as FormData).get("payload_json"))) as unknown;
+    const fileOf = (i: number) => (sent[i]?.body as FormData).get("files[0]") as File;
+
+    it("sends the text and the picture as one attachment, with no embed, so the edit replaces the earlier picture", async () => {
+      sent.length = 0;
+      const message = publicSnapshotMessage(summary(), publicCtx({ image: true }));
+      await notifier(() => Response.json({ id: "555" })).public(message, "555", png);
+      expect(sent[0]?.method).toBe("PATCH");
+      expect(payload(0)).toEqual({
+        content: [
+          "**✓ Last updated at Sat, Nov 7, 14:01 server time**",
+          "0/0 alliances",
+          "[Event page ↗](<https://lap.test/events/9>)",
+        ].join("\n"),
+        embeds: [],
+        attachments: [
+          {
+            id: 0,
+            filename: "event.png",
+            description: "The event's ledger by Might and its top gains",
+          },
+        ],
+        allowed_mentions: { parse: [] },
+      });
+      expect([fileOf(0).name, fileOf(0).size]).toEqual(["event.png", 4]);
+    });
+
+    it("sends the text alone as JSON and clears an earlier picture when there is none", async () => {
+      sent.length = 0;
+      const message = publicSnapshotMessage(summary(), publicCtx());
+      await notifier(() => Response.json({ id: "555" })).public(message, "555", null);
+      expect(typeof sent[0]?.body).toBe("string");
+      expect(JSON.parse(String(sent[0]?.body))).toMatchObject({ embeds: [], attachments: [] });
+    });
+
+    it("posts the picture again when the message to edit was deleted", async () => {
+      sent.length = 0;
+      const message = publicSnapshotMessage(summary(), publicCtx({ image: true }));
+      const reply = (m: string) =>
+        m === "PATCH" ? new Response(null, { status: 404 }) : Response.json({ id: "777" });
+      expect(await notifier(reply).public(message, "555", png)).toBe("777");
+      expect(sent.map((s) => s.method)).toEqual(["PATCH", "POST"]);
+      expect(fileOf(1).name).toBe("event.png");
+    });
   });
 
   it("keeps the stored id and does not post a second message when an edit fails otherwise", async () => {
@@ -179,8 +233,15 @@ describe("one message per channel per event (D31)", () => {
       },
       { summary: summary({ phase: "before" }), startedAt: utc("12:00"), logWriteFailures: 0 },
     );
-    const [embed] = (posts.find((p) => p.url === PUBLIC_WEBHOOK)?.body.embeds ?? []) as Embed[];
-    expect(embed?.description).toBe("Next update at Sat, Nov 7, 14:00 server time");
+    const sent = posts.find((p) => p.url === PUBLIC_WEBHOOK);
+    expect(sent?.content).toBe(
+      [
+        "**✓ Last updated at Sat, Nov 7, 10:00 server time**",
+        "Next update at Sat, Nov 7, 14:00 server time",
+        "[Event page ↗](<https://lap.test/events/9>)",
+      ].join("\n"),
+    );
+    expect(sent?.file).toBeNull();
     expect(error).toHaveBeenCalledWith("notify.detail_failed", { event_id: 9 });
     error.mockRestore();
   });
