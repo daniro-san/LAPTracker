@@ -5,8 +5,8 @@ import type { Translation } from "../copy";
 
 export const ptBR = {
   site: {
-    name: "OG's LAP Tracker",
-    shortName: "LAP Tracker",
+    name: "Registro de eventos",
+    shortName: "Registro",
     description: "Registros dos eventos das alianças do servidor 325.",
     byline: "mantido pelas Old Grandmas",
     ledger: "Servidor 325 · Registro de eventos",

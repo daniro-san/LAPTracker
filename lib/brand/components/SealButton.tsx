@@ -15,7 +15,7 @@ export function SealButton({
     <button
       type="button"
       {...rest}
-      className={`relative inline-grid size-24 shrink-0 cursor-pointer place-items-center rounded-full text-paper transition-transform duration-200 ease-out hover:-rotate-6 hover:scale-105 focus-visible:outline-plum active:scale-95 active:rotate-0 motion-reduce:transition-none ${className}`}
+      className={`relative inline-grid size-24 shrink-0 cursor-pointer place-items-center rounded-full text-wax-ink-seal transition-transform duration-200 ease-out hover:-rotate-6 hover:scale-105 focus-visible:outline-plum active:scale-95 active:rotate-0 motion-reduce:transition-none ${className}`}
     >
       <Wax tone="seal" className="absolute inset-0 size-full" />
       <span className="relative flex flex-col items-center gap-0.5">

@@ -5,8 +5,8 @@ import type { Translation } from "../copy";
 
 export const ja = {
   site: {
-    name: "OG's LAP Tracker",
-    shortName: "LAP Tracker",
+    name: "イベント台帳",
+    shortName: "台帳",
     description: "サーバー325の同盟イベントのスナップショット。",
     byline: "Old Grandmas が記録",
     ledger: "サーバー325・イベント台帳",

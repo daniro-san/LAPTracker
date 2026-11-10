@@ -13,8 +13,8 @@ import { discordCopy } from "./copy-discord";
 /** The public pages' strings in English: the source every other language's dictionary follows. */
 export const en = {
   site: {
-    name: "OG's LAP Tracker",
-    shortName: "LAP Tracker",
+    name: "Event Ledger",
+    shortName: "Ledger",
     description: "Event snapshots for server 325 alliances.",
     byline: "kept by the Old Grandmas",
     ledger: "Server 325 · Event Ledger",

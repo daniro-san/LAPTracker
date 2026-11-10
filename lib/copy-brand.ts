@@ -27,12 +27,12 @@ export const brandCopy = {
     },
     waxed: {
       name: "Waxed mark",
-      use: "The line mark pressed into wax. Ivory in the header; red and gold are spare.",
+      use: "The mark pressed into wax. Ivory in the header, with the solid cut; red and gold are spare.",
     },
     tones: { paper: "Ivory", seal: "Red", yarn: "Gold" },
     solid: {
       name: "Solid mark",
-      use: "The favicon cut. Line detail blurs in a browser tab, so this one is filled.",
+      use: "The cut for small sizes: the favicon and the header seal. Line detail blurs there, so this one is filled.",
     },
     clearTitle: "Clear space",
     clear:
@@ -40,7 +40,7 @@ export const brandCopy = {
     clearLabel: "¼",
     minTitle: "Minimum sizes",
     minLine:
-      "Line mark: 96 px and up. The one exception is the mark pressed into wax: the header seal and the seal button.",
+      "Line mark: 96 px and up. The one exception is the seal button, where the line mark is pressed into red wax at 24 px.",
     minSolid: "Solid mark: 16 to 32 px, and only there.",
     useTitle: "Correct and incorrect use",
     dos: ["Plum on paper", "Paper on plum", "Ivory wax on the header"],

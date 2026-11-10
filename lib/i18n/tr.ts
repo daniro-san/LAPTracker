@@ -5,8 +5,8 @@ import type { Translation } from "../copy";
 
 export const tr = {
   site: {
-    name: "OG's LAP Tracker",
-    shortName: "LAP Tracker",
+    name: "Etkinlik Defteri",
+    shortName: "Defter",
     description: "Sunucu 325 ittifaklarının etkinlik anlık görüntüleri.",
     byline: "Old Grandmas tarafından tutulur",
     ledger: "Sunucu 325 · Etkinlik Defteri",

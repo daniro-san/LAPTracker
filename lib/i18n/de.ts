@@ -5,8 +5,8 @@ import type { Translation } from "../copy";
 
 export const de = {
   site: {
-    name: "OG's LAP Tracker",
-    shortName: "LAP Tracker",
+    name: "Event-Chronik",
+    shortName: "Chronik",
     description: "Event-Momentaufnahmen der Allianzen von Server 325.",
     byline: "geführt von den Old Grandmas",
     ledger: "Server 325 · Event-Chronik",

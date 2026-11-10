@@ -5,8 +5,8 @@ import type { Translation } from "../copy";
 
 export const idID = {
   site: {
-    name: "OG's LAP Tracker",
-    shortName: "LAP Tracker",
+    name: "Buku Event",
+    shortName: "Buku",
     description: "Cuplikan event aliansi server 325.",
     byline: "dicatat oleh Old Grandmas",
     ledger: "Server 325 · Buku Event",

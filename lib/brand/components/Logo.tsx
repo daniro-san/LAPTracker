@@ -56,16 +56,27 @@ export function MarkLine({ size = 96, className }: { size?: number; className?: 
   );
 }
 
-/** The line mark pressed into a small wax seal: the header's logo. The wax is paper-coloured and the mark
- *  plum, the inverse of the plum bar, so it holds its contrast in both themes (red wax on plum did not). */
-export function WaxedMark({ size = 40, tone = "paper" }: { size?: number; tone?: WaxTone }) {
+/** The mark pressed into a small wax seal: the header's logo. The wax is ivory and the mark plum in both
+ *  themes (wax is pigment, DESIGN.md `wax`). */
+export function WaxedMark({
+  size = 40,
+  tone = "paper",
+  solid = false,
+}: {
+  size?: number;
+  tone?: WaxTone;
+  /** Press the solid cut, which holds up below 32 px (the header's 40 px seal), instead of the line drawing. */
+  solid?: boolean;
+}) {
+  const Cut = solid ? Mark : MarkLine;
+  const markSize = Math.round(size * (solid ? 0.6 : 0.5));
   return (
     <span
       className="relative inline-grid shrink-0 place-items-center"
       style={{ width: size, height: size }}
     >
       <Wax tone={tone} className="absolute inset-0 size-full" />
-      <MarkLine size={Math.round(size * 0.5)} className={`relative ${WAX_INK[tone]}`} />
+      <Cut size={markSize} className={`relative ${WAX_INK[tone]}`} />
     </span>
   );
 }

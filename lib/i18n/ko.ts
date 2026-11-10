@@ -5,8 +5,8 @@ import type { Translation } from "../copy";
 
 export const ko = {
   site: {
-    name: "OG's LAP Tracker",
-    shortName: "LAP Tracker",
+    name: "이벤트 장부",
+    shortName: "장부",
     description: "서버 325 연맹 이벤트 스냅샷.",
     byline: "Old Grandmas가 기록",
     ledger: "서버 325 · 이벤트 장부",

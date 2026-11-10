@@ -5,8 +5,8 @@ import type { Translation } from "../copy";
 
 export const th = {
   site: {
-    name: "OG's LAP Tracker",
-    shortName: "LAP Tracker",
+    name: "สมุดกิจกรรม",
+    shortName: "สมุด",
     description: "ภาพรวมกิจกรรมของพันธมิตรเซิร์ฟเวอร์ 325",
     byline: "บันทึกโดย Old Grandmas",
     ledger: "เซิร์ฟเวอร์ 325 · สมุดกิจกรรม",

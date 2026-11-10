@@ -5,8 +5,8 @@ import type { Translation } from "../copy";
 
 export const sv = {
   site: {
-    name: "OG's LAP Tracker",
-    shortName: "LAP Tracker",
+    name: "Eventlogg",
+    shortName: "Logg",
     description: "Ögonblicksbilder av eventen för allianserna på server 325.",
     byline: "förd av Old Grandmas",
     ledger: "Server 325 · Eventlogg",

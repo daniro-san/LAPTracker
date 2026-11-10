@@ -5,8 +5,8 @@ import type { Translation } from "../copy";
 
 export const vi = {
   site: {
-    name: "OG's LAP Tracker",
-    shortName: "LAP Tracker",
+    name: "Sổ sự kiện",
+    shortName: "Sổ",
     description: "Ảnh chụp sự kiện của các liên minh máy chủ 325.",
     byline: "do Old Grandmas ghi chép",
     ledger: "Máy chủ 325 · Sổ sự kiện",

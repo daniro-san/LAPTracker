@@ -5,8 +5,8 @@ import type { Translation } from "../copy";
 
 export const zhCN = {
   site: {
-    name: "OG's LAP Tracker",
-    shortName: "LAP Tracker",
+    name: "活动账本",
+    shortName: "账本",
     description: "325 服联盟活动快照。",
     byline: "由 Old Grandmas 记录",
     ledger: "325 服 · 活动账本",

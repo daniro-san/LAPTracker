@@ -5,8 +5,8 @@ import type { Translation } from "../copy";
 
 export const itIT = {
   site: {
-    name: "OG's LAP Tracker",
-    shortName: "LAP Tracker",
+    name: "Registro eventi",
+    shortName: "Registro",
     description: "Istantanee degli eventi delle alleanze del server 325.",
     byline: "tenuto dalle Old Grandmas",
     ledger: "Server 325 · Registro eventi",

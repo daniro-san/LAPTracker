@@ -3,9 +3,11 @@
 // border hanging below.
 // The selector is a <details> list of links, so it works without JavaScript and every target is ≥ 44 px;
 // with it, Escape and a tap outside close it. Closed, it shows the event's date only, so it stays one
-// line in any language (D49); its list and the page show the title. Below 640 px the wordmark is
-// screen-reader only, and below 420 px so is the word next to the magnifier: in the longest languages
-// (ja, pt-BR, fr) the word and the selector need up to 262 px, and 360 px leaves them 216.
+// line in any language (D49); its list and the page show the title. Below 640 px the wordmark is the
+// short name (one word, 18 px below 420 px, display-sm above) and the full name is screen-reader only.
+// Below 420 px the word next to the magnifier is screen-reader only too: in the longest languages
+// (ja, pt-BR, fr) the word and the selector need up to 262 px. At 360 px the seal, the wordmark and the
+// three controls fit in every language (the tightest is pt-BR, 3 px between the word and the search box).
 import Link from "next/link";
 
 import { LaceBorder } from "@/lib/brand/components/LaceBorder";
@@ -44,7 +46,7 @@ function EventSelector({
   return (
     <Disclosure label={copy.site.events} className="group relative">
       <summary
-        className={`flex min-h-11 cursor-pointer items-center gap-1 whitespace-nowrap px-3 text-sm drawn-frame-soft font-medium group-open:bg-paper/20 [&::-webkit-details-marker]:hidden ${CONTROL}`}
+        className={`flex min-h-11 cursor-pointer items-center gap-1 whitespace-nowrap px-2 text-sm drawn-frame-soft sm:px-3 font-medium group-open:bg-paper/20 [&::-webkit-details-marker]:hidden ${CONTROL}`}
       >
         {current ? (
           <>
@@ -136,14 +138,20 @@ export function SiteHeader({
   return (
     <header className="sticky top-0 z-30 text-plum">
       <div className="bg-plum text-paper">
-        <div className="mx-auto flex max-w-[960px] items-center justify-between gap-2 px-4 py-1 sm:px-6">
-          <Link href="/" className="flex min-h-11 min-w-11 items-center justify-center gap-2">
-            <WaxedMark size={40} />
-            <span className="sr-only font-display text-display-sm font-semibold sm:not-sr-only">
-              {copy.site.name}
+        <div className="mx-auto flex max-w-[960px] items-center justify-between gap-1 px-3 py-1 sm:gap-2 sm:px-6">
+          <Link
+            href="/"
+            className="flex min-h-11 min-w-11 items-center justify-center gap-1 min-[420px]:gap-1.5"
+          >
+            <WaxedMark size={40} solid />
+            <span className="font-display text-lg font-semibold tracking-tight min-[420px]:text-display-sm min-[420px]:tracking-normal">
+              <span aria-hidden="true" className="sm:hidden">
+                {copy.site.shortName}
+              </span>
+              <span className="sr-only sm:not-sr-only">{copy.site.name}</span>
             </span>
           </Link>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <Link
               href="/players"
               aria-current={section === "players" ? "page" : undefined}

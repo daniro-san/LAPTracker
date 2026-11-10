@@ -5,8 +5,8 @@ import type { Translation } from "../copy";
 
 export const ru = {
   site: {
-    name: "OG's LAP Tracker",
-    shortName: "LAP Tracker",
+    name: "Журнал событий",
+    shortName: "Журнал",
     description: "Снимки событий альянсов сервера 325.",
     byline: "ведут Old Grandmas",
     ledger: "Сервер 325 · Журнал событий",
