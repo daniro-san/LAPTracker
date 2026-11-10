@@ -1,12 +1,14 @@
 // "Across events" for an alliance (plan Phase 5e): one card / row per event, newest first, each compared
 // with the previous event's reference value (the after snapshot, else the before fallback). Each row shows
-// the time its figures are from, so the fallback reads as `10:00` without a word (07c S1). The rank is
+// the time its figures are from, so the fallback reads as `10:00` without a word (07c S1). Under each
+// change, `since 10:00` gives the change inside the event, as on the player page (issue 191). The rank is
 // the ledger rank by might, moved event over event; kills and server ranks are under Details.
 import { rankDelta, type NameHistoryEntry } from "@/lib/compute";
 import { fill, type Dictionary } from "@/lib/copy";
 import type { HistoryRow } from "@/lib/queries";
 
 import { DetailTable, rankRow, type RankPair } from "./DetailLines";
+import { fellWithLeavers } from "./event-rows";
 import { EventLead } from "./EventLead";
 import { allianceLabel, changeText, joinedText, leftText, type Clock } from "./format";
 import { requestCopy } from "./locale";
@@ -29,8 +31,43 @@ function rosterNote(r: HistoryRow, copy: Dictionary): Pick<StatMetric, "note"> {
   return { note: `${joinedText(r.joined, copy)} · ${leftText(r.left, copy)}` };
 }
 
-function metrics(r: HistoryRow, prevMembers: number | null, copy: Dictionary): StatMetric[] {
+/** The change inside the event (before → after) for one figure, under the change since the previous
+ * event; Might and Kills carry the `*` (D33) when they fell while members left. */
+function inEventLine(
+  r: HistoryRow,
+  figure: "power" | "kills" | "members",
+  clock: Clock,
+  copy: Dictionary,
+): Pick<StatMetric, "vs"> {
+  const e = r.inEvent;
+  if (!e) return {};
+  const delta = e[figure];
+  const base =
+    figure === "power"
+      ? e.fromPower
+      : figure === "kills"
+        ? e.fromKills
+        : baseOf(r.memberCount, delta);
+  const label = fill(copy.ledger.since, { date: e.fromAt ? clock.hhmm(e.fromAt) : "—" });
+  const memberMark = figure !== "members" && fellWithLeavers(delta, e.left);
+  return { vs: { label, delta, base, memberMark } };
+}
+
+/** A Might or Kills change inside an event carries the `*` (D33): the page's legend needs to know. */
+export const inEventMarked = (history: HistoryRow[]) =>
+  history.some(
+    ({ inEvent: e }) =>
+      e !== null && (fellWithLeavers(e.power, e.left) || fellWithLeavers(e.kills, e.left)),
+  );
+
+function metrics(
+  r: HistoryRow,
+  prevMembers: number | null,
+  clock: Clock,
+  copy: Dictionary,
+): StatMetric[] {
   const l = copy.ledger;
+  const vs = (figure: "power" | "kills" | "members") => inEventLine(r, figure, clock, copy);
   const memberDelta =
     r.isFresh && r.memberCount !== null && prevMembers !== null
       ? r.memberCount - prevMembers
@@ -41,12 +78,14 @@ function metrics(r: HistoryRow, prevMembers: number | null, copy: Dictionary): S
       value: r.totalPower,
       delta: r.step.power,
       base: baseOf(r.totalPower, r.step.power),
+      ...vs("power"),
     },
     {
       label: l.kills,
       value: r.totalKills,
       delta: r.step.kills,
       base: baseOf(r.totalKills, r.step.kills),
+      ...vs("kills"),
     },
     {
       label: l.members,
@@ -54,6 +93,7 @@ function metrics(r: HistoryRow, prevMembers: number | null, copy: Dictionary): S
       delta: memberDelta,
       base: prevMembers,
       ...rosterNote(r, copy),
+      ...vs("members"),
     },
   ];
 }
@@ -104,7 +144,7 @@ function toRow(
         {change && <span className="block text-xs">{change}</span>}
       </>
     ),
-    metrics: metrics(r, prev?.memberCount ?? null, copy),
+    metrics: metrics(r, prev?.memberCount ?? null, clock, copy),
     summary: (
       <FreshDots
         before={null}

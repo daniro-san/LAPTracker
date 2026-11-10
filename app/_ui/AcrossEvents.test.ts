@@ -33,6 +33,7 @@ const row: HistoryRow = {
   joined: null,
   left: null,
   previous: null,
+  inEvent: null,
 };
 
 describe("AcrossEvents", () => {

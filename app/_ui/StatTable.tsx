@@ -27,7 +27,7 @@ export interface StatMetric {
   /** Shown only in the row's Details panel, beside the before → after values. */
   detailNote?: string | undefined;
   /** A second change shown under the first, e.g. the change since the previous event. */
-  vs?: { label: string; delta: number | null; base: number | null };
+  vs?: { label: string; delta: number | null; base: number | null; memberMark?: boolean };
 }
 
 export interface StatRow {
@@ -74,7 +74,8 @@ function MetricCell({ m }: { m: StatMetric }) {
         )}
         {m.vs && (
           <span className={`basis-full text-xs tabular-nums ${MUTED} sm:block`}>
-            {m.vs.label} <Delta delta={m.vs.delta} base={m.vs.base} />
+            {m.vs.label}{" "}
+            <Delta delta={m.vs.delta} base={m.vs.base} memberMark={m.vs.memberMark === true} />
           </span>
         )}
       </div>
