@@ -308,7 +308,7 @@ describe("payloads", () => {
       for (const key of BLOCKED_ROSTER_KEYS) expect(body).not.toContain(`"${key}"`);
     }
     expect(JSON.parse(bodies[1] ?? "{}")).toMatchObject({
-      content: expect.stringMatching(/^\[rehearsal\] 🔒/),
+      content: expect.stringMatching(/^\[rehearsal\] Locked:/),
     });
 
     await notifier.admin("x", { manual: true });
