@@ -41,3 +41,5 @@ Plan changes needed: none. #199's prompt is in the issue, not docs/SESSION_PLAYB
 - 08zzp (#198, footer disclaimer) runs in parallel and adds a copy key. `origin/dev` had not moved when this PR was opened, so #199 should merge `origin/dev` before running translate-copy.
 - Put "issue 199", not "#199", in comments under `app/` and `lib/brand/components/`. `lib/brand/tokens.test.ts` reads `#199` as a colour literal.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/204
