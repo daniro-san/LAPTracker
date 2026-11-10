@@ -82,3 +82,5 @@ Plan changes needed: none in `docs/IMPLEMENTATION_PLAN.md`. `docs/DESIGN.md` was
 - Skip: N1 (resolved), the `ledger.sanctuary` key (removed), the README seed line (it is in CONTRIBUTING.md).
 </adjustments>
 
+
+https://github.com/daniro-san/LAPTracker/pull/213
