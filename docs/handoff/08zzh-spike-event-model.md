@@ -24,6 +24,16 @@
 6. **Charts:** wanted. Look at libraries that are simple, free, well maintained, customizable, good looking and reliable. Explore visualizations of event progress. The owner likes the "busiest interval" line.
 7. **The "no kills change" list:** not now. It is left for the LLM agent (#61).
 
+Second round (2026-11-09):
+
+8. **Cycle:** Saturday 2026-11-14 is the first KvK of a cycle, and the cycle is always 3 + 1. So 2026-11-07 was Origin of Chaos, and the next Origin of Chaos Saturdays are 2026-12-05 and 2027-01-02.
+9. **Origin of Chaos times:** unknown whether they move. They stay editable on /admin.
+10. **Alliance events:** each alliance picks its own time. This site is the owner's alliance's, so the owner either runs them by hand or sets them up on /admin at the time the alliance sets.
+11. **Discord, public channel:** post at the start and at the end only.
+12. **Charts:** Observable Plot. The owner likes all six options V1–V6.
+13. **Quota:** the API's Patreon tier would give 2,000 calls a day; the project stays at 1,000 for now.
+14. **Storage idea from the owner:** store only what changed in the middle samples. It is measured and answered under #171 question 4: one row per alliance with arrays stores less and keeps reads simple.
+
 ## Decisions
 
 - **Terms used below.** They are proposed for docs/GLOSSARY.md in the build and are not added here.
@@ -31,7 +41,7 @@
   - **window:** one stretch of game time an event covers, for example 10:00–16:00 server. An event has 1 to 4 windows.
   - **slot:** a 15-minute tick time (:00, :15, :30, :45) at which a sample is due.
   - **event schedule:** the /admin row that makes the tick create an event a day ahead. It replaces the env vars of D1.
-  - **light sample:** a sample in the middle of a window. Its alliance rows carry no `raw_json`, and its member rows carry no `avatar_url`, `rank_code` or `rank_label`. A light sample is kept; only those fields are not stored.
+  - **light sample:** a sample in the middle of a window. Each of its alliance rows carries the members as three arrays (`member_uids`, `member_power`, `member_kills`) instead of `member_snapshots` rows, and no `raw_json`. Names, levels, photos and ranks come from the window's first and last samples, which stay full. A light sample is kept; only the repeated fields are not stored.
 - **Recommended model (Option B): samples are owned by an event window.**
   - An event has N windows.
   - A window has a Before slot, an After slot, and samples every `cadence_min` (15, 30 or 60) between them.
@@ -40,7 +50,8 @@
   - Any two samples of one event form a #176 range.
   - The first version of this handoff recommended Option C, samples shared by overlapping events. The owner's answer 1 removes the overlap that justified C. See Options.
 - **KvK cadence: 15 minutes.** That is the floor the 15-minute tick and the 600 s upstream cache allow. The numbers for 10 minutes are under #171 question 3.
-- **Charts: Observable Plot is recommended** (section "Charts"). It needs a DECISIONS entry that reverses "no charts in v1" and a D7 dependency row.
+- **Charts: Observable Plot,** chosen by the owner (section "Charts"). It needs a DECISIONS entry that reverses "no charts in v1" and a D7 dependency row.
+- **Alliance events:** a schedule or a one-off event may name a subset of alliances, normally only the owner's. A sample then reads 1 + k alliances: 2 calls for one alliance.
 - The handoff file name follows the session prompt (`08zzh-spike-event-model.md`), not #171's body (`08zzh-spike-war-snapshots.md`).
 
 ## Deviations
@@ -74,8 +85,10 @@
 | Upstream cache | `cache_seconds: 600` in all 4 `/v1` fixtures. `cached: false` and `updated_at` = read time when reads are 666 s apart. | `fixtures/v1-20261104T154755Z`, `…155902Z` |
 | Weekday movement in 666 s (Wed 15:47 → 15:59 UTC) | OGs: power changed for 11 of 100 members, kills for 0 (Δ might −799,204). URSA: power for 18 of 95, kills for 0 (Δ might −302,544). | same fixtures, uid/power/kills only |
 | Full sample, stored | 752 KB in total. Alliance rows: 272 KB (`raw_json` is 646 KB as text and 159 KB after TOAST, 4.1×). Member rows with both indexes: 480 KB (1,739 members). | PGlite, `fixtures/v1-ids/` (20 bodies) |
-| Light sample, stored | ≈ 290 KB. Member rows with uid, power, kills and indexes: 272 KB (measured). Name and alliance rows without `raw_json`: ≈ 20 KB (estimated). | PGlite |
-| #176 queries at one year of data (52 events × 13 samples × 20 alliances × 87 members = 1,176,240 member rows) | One alliance's members over a range: 1.3 ms. Every member over a range (top 5): 2.5 ms. Per-interval table for one alliance: 0.2 ms. Per-interval table for one member: 1.0 ms. | PGlite, mean of 20 runs. Neon adds network time, not measured. |
+| One light sample in layout (a), measured alone (table pages not yet shared with other samples) | ≈ 290 KB. Member rows with uid, power, kills and indexes: 272 KB (measured). Name and alliance rows without `raw_json`: ≈ 20 KB (estimated). Superseded by the layout row below. | PGlite |
+| A light sample in three layouts (20 real rosters, 25 samples, size averaged per sample) | (a) one narrow row per member (uid, power, kills; key + uid index): 173 KB. (b) rows only for members whose power or kills changed, plus the uid list: 55 KB if 15 % changed, 112 KB if 50 %, 176 KB if 90 %. **(c) one row per alliance with uid/power/kills arrays: 43 KB, whatever changed.** | PGlite |
+| #176 queries on layout (c), one year (52 events × 25 samples × 20 alliances × 87 members) | one alliance's members over a range 1.4 ms; every member over a range (top 5) 4.6 ms; per-interval values for one member 0.5 ms | PGlite, mean of 20 runs |
+| #176 queries at one year of data with member rows (52 events × 13 samples × 20 alliances × 87 members = 1,176,240 member rows) | One alliance's members over a range: 1.3 ms. Every member over a range (top 5): 2.5 ms. Per-interval table for one alliance: 0.2 ms. Per-interval table for one member: 1.0 ms. | PGlite, mean of 20 runs. Neon adds network time, not measured. |
 | Chart libraries, min + gzip, React excluded | visx (shape, scale, axis, group) 23 KB · Chart.js (line, bar, tooltip) 56 KB · Observable Plot 94 KB · Recharts (line, bar, axes, tooltip) 106 KB · ECharts core (line, bar, SVG renderer) 182 KB | esbuild 0.25.12 `--bundle --minify`, gzip -9 |
 | Observable Plot under the site's CSP | All 6 gallery charts render with `script-src 'self' 'nonce-…'` (no `unsafe-eval`) and `style-src 'self' 'unsafe-inline'`, as in `proxy.ts`, with 0 console errors. | Playwright, gallery page with a CSP meta tag |
 | Mockups at 360 px | `document.documentElement.scrollWidth` = 360 on all three pages (no horizontal scroll). Selects, buttons and table links are `min-h-11` (44 px). | Playwright + Chrome |
@@ -134,23 +147,41 @@ group by b.tag order by kills_delta desc;
   - the cron-job.org job every 5 minutes (free; 0 quota);
   - consecutive reads of one alliance 600 ± 10 s apart, which is the upstream cache time. Some reads would come back `cached: true` with the previous body, which the freshness rule (20 min) would still call fresh.
   - It also costs 819 of 1,000 calls, which leaves 181. One outage sample costs up to 81.
+  - The Patreon tier's 2,000 calls (owner answer 13) would remove the quota limit, but not the 600 s cache limit.
 - 15 minutes gives a battle that ends in 30 minutes 2–3 samples.
 
 **4. Data model.** See Options. `unique (event_id, phase)` becomes `unique (window_id, slot_at)`, so a double tick still cannot take a slot twice (D1's guarantee is kept).
 
-Storage, keeping every sample (owner answer 5), middle samples light:
+**How to store the middle samples.** The owner asked about storing only what changed, leaving an unchanged member empty. Measured on 20 real rosters, per light sample:
+
+| Layout | Size | Reads |
+|---|---|---|
+| (a) one row per member (uid, power, kills) | 173 KB | a direct join of two samples |
+| (b) rows only for members whose power or kills changed | 55 KB if 15 % of members changed (the weekday measure), 112 KB if 50 %, 176 KB if 90 % | Every read must look back for each member's last stored value. An empty slot can mean "unchanged", "left the alliance" or "not read", so each sample also needs its member list. |
+| **(c) one row per alliance, members as three arrays (uid, power, kills)** | **43 KB, whatever changed** | `unnest` the two samples' arrays and join by uid: 0.5–4.6 ms at a year of data |
+
+- Layout (b) works, but it makes every read harder.
+- (b) saves space only when few members change. During a KvK battle most fighters change every 15 minutes, and that rate is not measured yet (O2).
+- **Layout (c) is recommended:** it is smaller than (b) even at 15 % changed, and reads stay a plain join.
+- The arrays go on the light sample's `alliance_snapshots` row, so no new table is needed.
+- The window's first and last samples stay full (`member_snapshots` rows with names, levels, photos and ranks, plus `raw_json`).
+
+Storage, keeping every sample (owner answer 5):
 
 | Plan | Per KvK Saturday | Per Origin of Chaos Saturday | Per year (13 cycles of 3 + 1) | Reaches the 700 MB warning (`DB_WARN_ABOVE_MB`) |
 |---|---|---|---|---|
 | Today (2 full samples a week) | 1.5 MB | 1.5 MB | 78 MB | not in practice |
-| **15 min, middle samples light** | 8.8 MB (2 full + 25 light) | 4.5 MB (4 full + 5 light) | ≈ 400 MB | ≈ 1.75 years (1 GB in ≈ 2.5 years) |
+| **15 min, middle samples as arrays (c)** | 2.7 MB (2 full + 25 × ≈ 50 KB) | 3.3 MB (4 full + 5 × ≈ 50 KB) | ≈ 150 MB | ≈ 4.7 years (1 GB in ≈ 6.7 years) |
+| 15 min, middle samples as member rows (a) | 6.0 MB | 3.9 MB | ≈ 285 MB | ≈ 2.5 years |
 | 15 min, every sample full | 20.3 MB | 6.8 MB | ≈ 880 MB | ≈ 10 months |
 
+- "≈ 50 KB" is 43 KB of arrays plus ≈ 5 KB of alliance rows without `raw_json` (estimated).
+- A full sample is counted at 752 KB, which was measured alone. Shared table pages make it somewhat smaller at volume, so these numbers are an upper bound.
 - Neon Free is 1 GB per project (docs/PREREQUISITES.md). Production's current size was not read; the Friday message shows it.
-- "Keep everything" therefore still needs light middle samples. Every sample is kept, and the dropped fields (`raw_json`, `avatar_url`, `rank_*`) are already in the window's first and last sample.
 - **Later strategy (documented, not built):** when the database passes 500 MB, choose one of:
-  - thin light samples older than N weeks to their alliance totals (≈ 5 KB each instead of 290 KB);
+  - thin light samples older than N weeks to their alliance totals (≈ 5 KB each);
   - move to Neon's paid plan.
+- Alliance events with one alliance add ≈ 2 KB per light sample and are not counted here.
 
 **5. Display.** See the section "Charts". The chart-free fallback is mocked in `08zzh-in-event-range-360-light.png`:
 - the "Busiest 15 min" line;
@@ -164,10 +195,10 @@ At 15 minutes the table has 26 rows (the mock shows it). With charts, the chart 
 - `online`, `last_online_at`, `active` and `daily_*` stay blocked keys.
 - Light samples store no `raw_json`, so mid-event samples do not even hold the blocked keys.
 
-**7. Discord.** Not answered yet (owner question 4). The recommendation is unchanged:
+**7. Discord.** Owner answer 11 settles the public channel:
 - Mid-event samples stay site-only.
-- The public message (D31) is posted at the event's first sample and edited at each window's After: KvK gets 1 edit, Origin of Chaos gets 2.
-- The admin message is edited at window ends with a count, for example "samples 19 of 27 complete".
+- The public message (D31) is posted at the event's first sample and edited once, at the event's last After. Origin of Chaos gets no edit between its two windows.
+- The admin message is edited at each window's end with a count, for example "samples 19 of 27 complete".
 - A partial or failed sample posts its own admin message (D31), at most one per window.
 - Why the admin message carries counts, not run blocks: an admin message with 27 run blocks would pass Discord's 2,000-character limit.
 
@@ -193,11 +224,14 @@ At 15 minutes the table has 26 rows (the mock shows it). With charts, the chart 
   - the date week 1 starts;
   - windows `[{start, end}]` in server time: 1–4 windows, no overlap, end after start, none across midnight (use two windows instead);
   - `cadence_min` 15/30/60;
-  - visibility public/admin, `post_public`, `active`.
+  - visibility public/admin, `post_public`, `active`;
+  - **alliances:** all tracked alliances (KvK, Origin of Chaos), or a subset, normally only the owner's alliance (alliance events, owner answer 10). A sample reads 1 + k alliances: 2 calls for one alliance.
+- **One-off events:** "Add one event" on /admin takes a date, its windows, cadence and alliances. It covers an alliance event whose time the alliance sets each time; a manual round (D28) stays the button for "now".
 - **Table `schedule_overrides (date, schedule_id null)`:** "this Saturday runs Origin of Chaos" or "nothing". The /admin section "Next Saturdays" shows the next 4 dates with a select each. When the game shifts the cycle by a week, the owner changes one date or moves the cycle start; the cycle itself stays. The Friday admin message names the event the tick will run next day, so a wrong cycle is seen a day ahead.
 - **Save validation** (a system boundary):
   - each schedule's samples × 21 must be ≤ 600 calls, with the number given on refusal. KvK at 15 min is 567.
-  - two schedules on the same date are refused (owner answer 1). Alliance events may change this later, see Options.
+  - two all-alliance schedules on the same date are refused (owner answer 1);
+  - an alliance event may share a date and slots with KvK. The tick then runs both samples at that slot, see #175 question 3.
 - **Edits apply to the next event the tick creates.** An event already created keeps its times, as D21 does today.
 - **Routine times** (`QUOTA_CHECK_AT`, `REHEARSAL_AT`) move to an /admin settings row, with the env values as defaults.
 - **Env keeps:** `SERVER_TZ`, `REHEARSAL_KEEP`, every secret, webhook and URL.
@@ -215,12 +249,24 @@ At 15 minutes the table has 26 rows (the mock shows it). With charts, the chart 
 | Origin of Chaos window 2, 12:30–13:00 | 14:30–15:00 | 12:15, 12:30, 12:45, 13:00, 13:15 |
 
 - A missed tick: a sample's due window is `[slot, next slot)`. A missed slot is taken at the next tick with its real read time, or it stays missing.
+- **More than one sample per tick.** Today a tick does one action. During KvK every tick has a KvK sample due, so an alliance event at the same time would never get its turn. The tick therefore runs every sample due at its slot, in event order, while less than 60 s have passed since it started:
+  - a KvK sample takes 10 s;
+  - a one-alliance sample takes ≈ 2 s;
+  - the 120 s `maxDuration` keeps 60 s of margin.
+  The Friday check and rehearsals stay one action, and only when no sample is due. This amends D21's "one thing per call".
 - **"Day ahead" creation (D21):** the tick creates the event 24 h before its first slot. For Origin of Chaos window 1 that is Fri 00:00 server. The event's date is the server date of its first window, and every slot is stored as a UTC instant. A Before that falls before midnight (for a window at 00:00) lands on the previous server day without special code.
 - **Rehearsal guard:** "never on `EVENT_WEEKDAY` or the day after" becomes "no slot of any event within 3 h after the rehearsal ends, none running". A Fri 18:00 server rehearsal ends at 18:45; Origin of Chaos window 1's first slot is Sat 00:00, 5 h 15 min later, so it passes.
 
-**4. Quota per day vs per event:** one event per Saturday, so the two are the same: at most 567 calls (KvK) or 189 (Origin of Chaos). The budget rule counts the window ends still due that UTC day.
+**4. Quota per day vs per event:**
+- There is one all-alliance event per Saturday: at most 567 calls (KvK) or 189 (Origin of Chaos).
+- An alliance event for one alliance adds 2 calls per sample. A 30-minute window at 15 minutes is 4 samples, 8 calls.
+- The budget rule counts the window ends of every event still due that UTC day.
 
-**5. Recurrence:** answered: a 4-week cycle, 3 KvK + 1 Origin of Chaos (owner answer 1). Which Saturday is week 1 is owner question 1.
+**5. Recurrence:** answered (owner answers 1 and 8).
+- A 4-week cycle: 3 KvK, then 1 Origin of Chaos.
+- Week 1 starts on Saturday 2026-11-14.
+- Origin of Chaos falls on 2026-12-05, 2027-01-02, and every 4 weeks after.
+- Whether Origin of Chaos's times move is unknown (owner answer 9). They are edited on its schedule.
 
 **6. Overlap with #171 and #176:** one model, Option B.
 
@@ -266,7 +312,7 @@ At 15 minutes the table has 26 rows (the mock shows it). With charts, the chart 
 - No precomputed per-interval deltas.
 - A sample does not change after its window's After, so pages of finished events could be cached later. That is not needed now.
 
-**5. Rules:** might and kills only; stale = no change. Light samples keep uid, name, power, kills and lv, which is everything a range needs.
+**5. Rules:** might and kills only; stale = no change. A light sample's arrays keep uid, power and kills, which is everything a range needs. Names come from the window's full samples by uid. A member who joined and left between them has no name there, so the read takes the newest `member_snapshots` name for that uid.
 
 ## Charts
 
@@ -281,13 +327,15 @@ At 15 minutes the table has 26 rows (the mock shows it). With charts, the chart 
 | V5 | My alliance: kills gained (up) and might change (down) per 15 min | When did my alliance fight and lose might? | alliance page; the same for one member on the player page |
 | V6 | Ledger rows with a might sparkline | How did might move through the event, row by row? | event page ledger |
 
-The recommended first set is V1 on the event page, V5 on the alliance and player pages, and V6 in the ledger. V2–V4 are richer and fit a "Progress" tab on the event page.
+The owner likes all six (owner answer 12). They are split over two builds so that each stays reviewable:
+- **Build 3:** V1 on the event page, V5 on the alliance and player pages, V6 in the ledger, and the range picker.
+- **Build 4:** V2, V3 and V4 in a "Progress" tab on the event page.
 
 **Libraries** (npm registry on 2026-11-08; sizes measured above):
 
 | Library | License | Version, last publish | Renders | Client cost (min+gzip) | Customizing | Notes |
 |---|---|---|---|---|---|---|
-| **Observable Plot (recommended)** | ISC | 0.6.19, 2026-11-05 | SVG; on the server through the `document` option (Plot docs), or in the browser | 0 KB when rendered on the server; 94 KB for an interactive chart in the browser | marks, scales, CSS classes; all 6 gallery charts in ≈ 80 lines | by the D3 authors at Observable; 3 dependencies (`d3`, `interval-tree-1d`, `isoformat`); no install scripts; renders under the site's CSP (measured). Pre-1.0, so a minor release may change the API: pin it. |
+| **Observable Plot (chosen by the owner)** | ISC | 0.6.19, 2026-11-05 | SVG; on the server through the `document` option (Plot docs), or in the browser | 0 KB when rendered on the server; 94 KB for an interactive chart in the browser | marks, scales, CSS classes; all 6 gallery charts in ≈ 80 lines | by the D3 authors at Observable; 3 dependencies (`d3`, `interval-tree-1d`, `isoformat`); no install scripts; renders under the site's CSP (measured). Pre-1.0, so a minor release may change the API: pin it. |
 | visx (Airbnb) | MIT | 4.0.0, 2026-06-11 | SVG React components, server components included | 23 KB (only what is used) | complete: every path is ours, so the brand's hand-drawn style is possible | low level: axes, scales and layout written per chart, several times Plot's code per chart |
 | Recharts | MIT | 3.10.1, 2026-11-03 | SVG, client components only (`"use client"`) | 106 KB | props and custom shapes; built-in tooltips and animation | most used React chart library; 11 dependencies; no heatmap |
 | Chart.js | MIT | 4.6.1, 2026-10-22 | canvas, client only | 56 KB | options object; canvas cannot read the CSS colour tokens, so dark mode needs JS | mature; chart text is not in the DOM (screen readers need the table) |
@@ -314,13 +362,11 @@ The recommended first set is V1 on the event page, V5 on the alliance and player
 
 ## Open issues
 
-- **2026-11-07's data.** If 2026-11-07 was an Origin of Chaos Saturday (owner question 1), its "Saturday Event 2026-11-07" ledger shows 10:00–14:00 server of an Origin of Chaos day. That covers window 2 and misses window 1. It can be renamed from /admin (D39).
+- **2026-11-07's data.** 2026-11-07 was an Origin of Chaos Saturday (owner answer 8). Its "Saturday Event 2026-11-07" ledger therefore shows 10:00–14:00 server of an Origin of Chaos day: it covers window 2 and misses window 1. The owner can rename it from /admin (D39), for example to "Origin of Chaos 2026-11-07".
+- **Until build 2 ships, every Saturday runs the env schedule.** Origin of Chaos on 2026-12-05 would get KvK's window (09:45–16:15), which covers window 2 and misses window 1. The owner can press a manual round at about 00:00 and 00:45 server for window 1 (42 calls), or accept the gap.
 - **Plan §6.1** storage numbers are low: member rows are 480 KB per sample, not 250 KB (measured above).
 - **Readers to rewrite.** `lib/queries` and the pages read phase strings in 32 non-test files (106 lines matching `"before"`/`"after"`, counted with grep). The build must keep their output the same for one-window events.
-- **Alliance events (Cheese Trap, Undead Siege, Alliance Duel Raid)** may not fit "one read of all 20 alliances":
-  - each alliance may run them at a different time;
-  - they may not change `power`/`kills` in the API (for example, if monster kills are not counted).
-  - A window with its own alliance list (a sample of k alliances costs 1 + k calls) would cover the first case. It is not part of this model until the owner answers question 3.
+- **Alliance events and kills.** It is not known whether Cheese Trap, Undead Siege or Alliance Duel Raid change `power` or `kills` in the API (for example, whether monster kills count). If they do not, tracking them shows no change. Owner question 1 asks; O3 below measures it for 2 calls per sample.
 
 ## Options
 
@@ -328,38 +374,37 @@ The recommended first set is V1 on the event page, V5 on the alliance and player
 |---|---|---|---|
 | Schema | `phase` gains `sample` + `slot_at`; `events.group_id`, `part_n`; `event_schedules` + overrides | `event_windows`; `snapshots.window_id`, `slot_at`; `unique (window_id, slot_at)`; `event_schedules` + overrides | as B, plus a link table `window_samples` and `unique (slot_at)` instead of `(window_id, slot_at)` |
 | Quota per Saturday | KvK 567, Origin of Chaos 189 | the same | the same; it saves calls only when two events want one slot, which does not happen (owner answer 1) |
-| Storage per year | ≈ 400 MB | ≈ 400 MB | ≈ 400 MB |
+| Storage per year (middle samples as arrays) | ≈ 150 MB | ≈ 150 MB | ≈ 150 MB |
 | Work | 3 build sessions. The before/after readers stay, and a group total is new code. | 3 build sessions. Every before/after reader becomes "first/last sample of the window". | B's work, plus a link table, and the claim per slot instead of per window |
 | New rules / decisions | group semantics; budget rule; schedules (replaces D1 and plan line 59); Discord per part | windows; the event's change = the sum of its windows' changes; budget rule; schedules and the 4-week cycle; Discord per window (amends D31); light samples (amends D2); charts | B's list, plus "a slot is one sample, linked to every window that needs it" |
-| Risks | Origin of Chaos shows as two events in the selector, the chains and Movers (the owner said "it is all one event") | Two events on one date would each read the slot, and the second would run a tick late. Save validation refuses two schedules on one date, which matches owner answer 1. | The extra table and claim exist for an overlap that does not occur. A forced re-run of a shared sample would change every event linked to it. |
+| Risks | Origin of Chaos shows as two events in the selector, the chains and Movers (the owner said "it is all one event") | An alliance event during KvK reads the owner's alliance twice at one slot (+2 calls). The tick runs both (#175 question 3). | The extra table and claim exist to save those 2 calls. A forced re-run of a shared sample would change every event linked to it. |
 
 **Recommendation: B.**
 - It is the direct step from today's `(event, phase)` to `(window, slot)`.
 - Origin of Chaos stays one event, and #176's ranges follow from it.
-- Without the KvK/Origin of Chaos overlap, C's link table buys nothing.
-- **If alliance events later overlap a KvK window, moving from B to C is local,** because the build reads a window's samples through one query function (`windowSamples`) and nothing else joins `snapshots.window_id`. The build prompt makes that a constraint.
+- KvK and Origin of Chaos never overlap. The only overlap left is an alliance event during KvK, where C would save 2 calls a sample. That does not pay for C's link table.
+- **Moving from B to C later is local,** because the build reads a window's samples through one query function (`windowSamples`) and nothing else joins `snapshots.window_id`. The build prompt makes that a constraint.
+
+**O3 (proposed, about 8 calls):** the next time the owner's alliance runs an alliance event, start a manual round with visibility "Admin only" just before it and press After just after it. Then run O1's query for that round. If kills or power changed for the members who took part, alliance events are worth a schedule.
 
 **Owner questions:**
-1. Which Saturday is week 1 of the cycle? Was 2026-11-07 the Origin of Chaos week, so that 11-14, 11-21 and 11-28 are KvK and 12-05 is Origin of Chaos? Is the cycle always exactly 3 + 1, or does the match phase sometimes add a week?
-2. Are Origin of Chaos's times fixed (00:10–00:40 and 12:30–13:00 server), or do they move?
-3. Alliance events (Cheese Trap, Undead Siege, Alliance Duel Raid):
-   - On which days and times do they run?
-   - Do all alliances run them at the same time, or does each alliance pick its own?
-   - Do they change might or kills in the game's numbers (are monster kills counted in `kills`)?
-4. Discord: is the public message edited only at each window's end, with no mid-event posts?
-5. Charts: Observable Plot (recommended), or visx for the hand-drawn brand style? Which of V1–V6 first? The recommendation is V1, V5, V6.
-6. Does the API's Patreon tier give more than 1,000 calls a day? Only a higher limit would make 10-minute samples safe.
+1. Do alliance events (Cheese Trap, Undead Siege, Alliance Duel Raid) change might or kills in the game's numbers? For example, do monster kills count in `kills`? O3 answers it if the owner does not know.
+2. Discord, admin channel: is one edit at the end of each window, plus one message per window for a partial or failed sample, right?
 
 ## Next
 
-Session: build 1 of 3 for Option B, "Samples and windows: model, collector, tick". It adds no /admin editor and no new UI section. Build 2 is the /admin event schedules and the 4-week cycle. Build 3 is the "During the event" UI with charts. Builds 2 and 3 depend only on build 1 and can run in either order.
+Session: build 1 of 4 for Option B, "Samples and windows: model, collector, tick". It adds no /admin editor and no new UI section.
+- Build 2 is the /admin event schedules, the 4-week cycle and one-off alliance events.
+- Build 3 is the "During the event" UI with charts V1, V5 and V6 and the range picker.
+- Build 4 is the "Progress" tab with V2, V3 and V4.
+- Builds 2 and 3 depend only on build 1 and can run in either order. Build 4 follows build 3.
 
 Model / effort: keep (opus, high). The change rewrites how 32 non-test files read phases and adds a migration with a backfill, the same weight as Sessions 3–4.
 
 Owner must do first:
-- **Before Fri 2026-11-13 09:45 server (11:45 UTC), with no code change:** set `SNAPSHOT_BEFORE=09:45` and `SNAPSHOT_AFTER=16:15` in Vercel Production and redeploy. The tick fixes the next Saturday's times when it creates that row, 24 h before Before (D21). Quota is unchanged (42 calls).
-- Answer questions 1, 4 and 5.
-- Run O1 (0 quota) and, on a KvK Saturday, O2 (≈ 84 calls).
+- **Before Fri 2026-11-13 09:45 server (11:45 UTC), with no code change:** set `SNAPSHOT_BEFORE=09:45` and `SNAPSHOT_AFTER=16:15` in Vercel Production and redeploy. The tick fixes the times of 2026-11-14 (the cycle's first KvK) when it creates that row, 24 h before Before (D21). Quota is unchanged (42 calls).
+- Answer questions 1 and 2.
+- Run O1 (0 quota). On a KvK Saturday, run O2 (≈ 84 calls). At an alliance event, run O3 (≈ 8 calls).
 - Merge this PR.
 
 Plan changes needed:
@@ -367,21 +412,21 @@ Plan changes needed:
 - §3.4 and §4: the budget rule per UTC day.
 - §6 (schema) and §6.1 (storage numbers).
 - §10 q6: KvK 12:00–16:00, fights from 10:00; window 10:00–16:00.
-- Lines 18, 381, 389, 392, 662: charts allowed, if the owner picks a library.
-- docs/SESSION_PLAYBOOK.md gets the three build sessions.
+- Lines 18, 381, 389, 392, 662: charts allowed with Observable Plot (owner answer 12).
+- docs/SESSION_PLAYBOOK.md gets the four build sessions.
 
 ```text
 <session>
-Build 1 of 3 for spike 08zzh, Option B — samples and windows: model, collector, tick. Read CLAUDE.md, docs/handoff/00-prereqs.md, docs/handoff/08zzh-spike-event-model.md (Owner answers, Options, #171 and #175 answers), D1, D2, D21, D28, D31, D43, D53 in docs/DECISIONS.md, and .claude/rules/collector.md. Spend no upstream quota: every check runs in PGlite tests.
+Build 1 of 4 for spike 08zzh, Option B — samples and windows: model, collector, tick. Read CLAUDE.md, docs/handoff/00-prereqs.md, docs/handoff/08zzh-spike-event-model.md (Owner answers, Options, #171 and #175 answers), D1, D2, D21, D28, D31, D43, D53 in docs/DECISIONS.md, and .claude/rules/collector.md. Spend no upstream quota: every check runs in PGlite tests.
 </session>
 
 <task>
-1. Migration: `event_windows` (event_id, n, start_at, end_at, before_at, after_at, cadence_min; unique (event_id, n)); `snapshots.window_id`, `snapshots.slot_at`, `snapshots.light`; `unique (window_id, slot_at)`. Backfill: one window per existing event (before_at/after_at from the event), its two snapshots moved onto it with slot_at = the event's before_at / after_at. Drop `snapshots_event_phase_unique` only after every reader uses windows.
-2. One query function, `windowSamples(db, windowId)`, is the only code that joins `snapshots.window_id`; every reader goes through it (so a later move to shared samples changes one function).
-3. Tick: for every open window, the due slot is the latest of before_at, every cadence_min after it, and after_at that is ≤ now and has no sample; take at most one sample per tick, earliest slot first. Manual rounds and rehearsals keep their buttons and get one window each.
-4. Collector: claim per (window, slot); middle samples are light (no raw_json, no avatar_url/rank fields). Budget: before any sample, remaining ≥ 25 × (1 + window ends still due this UTC day); a middle sample is skipped first. Name the invariant in a comment.
+1. Migration: `event_windows` (event_id, n, start_at, end_at, before_at, after_at, cadence_min; unique (event_id, n)); `snapshots.window_id`, `snapshots.slot_at`, `snapshots.light`; `unique (window_id, slot_at)`; `alliance_snapshots.member_uids`, `member_power`, `member_kills` (bigint[], null on full samples). Backfill: one window per existing event (before_at/after_at from the event), its two snapshots moved onto it with slot_at = the event's before_at / after_at. Drop `snapshots_event_phase_unique` only after every reader uses windows.
+2. One query function, `windowSamples(db, windowId)`, is the only code that joins `snapshots.window_id`; every reader goes through it (so a later move to shared samples changes one function). One function reads a light sample's members (unnest of the three arrays), so readers see the same member shape for full and light samples.
+3. Tick: for every open window, the due slots are before_at, every cadence_min after it, and after_at, ≤ now and without a sample. The tick runs every due sample in slot order while less than 60 s have passed since it started; the Friday check and rehearsals stay one action, only when no sample is due (amends D21). Manual rounds and rehearsals keep their buttons and get one window each.
+4. Collector: claim per (window, slot). A window's first and last samples are full, as today; middle samples are light: the members as three arrays on each alliance row, no member_snapshots rows, no raw_json. Budget: before any sample, remaining ≥ 25 × (1 + window ends still due this UTC day); a middle sample is skipped first. Name the invariant in a comment.
 5. Readers: "before"/"after" become the window's first/last sample; an event's change is the sum of its windows' changes, null if any is null; the across-events reference value is the last window's After, else the latest usable sample. One-window events render exactly as today (existing tests unchanged).
-6. Discord: the public and admin messages are edited at each window's After, not at middle samples; a partial or failed sample posts at most one admin message per window.
+6. Discord: the public message is posted at the event's first sample and edited once, at the event's last After (owner, 2026-11-09); the admin message is edited at each window's After; a partial or failed sample posts at most one admin message per window.
 7. Scheduled events still come from the env: one window whose Before and After slots are SNAPSHOT_BEFORE and SNAPSHOT_AFTER, samples every SAMPLE_EVERY_MIN (new env var, default 15) between them. The /admin editor is build 2.
 8. DECISIONS entries: samples and windows (supersedes D1's unique (event_id, phase)); the budget rule (amends budget.reserve-for-after); light samples (amends D2); Discord per window end (amends D31). GLOSSARY: sample, window, slot, light sample.
 </task>
@@ -393,30 +438,42 @@ Build 1 of 3 for spike 08zzh, Option B — samples and windows: model, collector
 </constraints>
 
 <done_when>
-`pnpm check` green; a PGlite test runs a KvK-shaped event (09:45–16:15, every 15 min: 27 samples) and a two-window event through the tick, and shows one sample per slot and the budget rule skipping a middle sample; docs/handoff/<NN>-samples-windows.md written. PR: "feat(events): samples and windows — model, collector, tick (#171 #175)" into dev.
+`pnpm check` green; a PGlite test runs a KvK-shaped event (09:45–16:15, every 15 min: 27 samples, 25 of them light) and a two-window event through the tick, and shows one sample per (window, slot), two events due at one slot both sampled by one tick, and the budget rule skipping a middle sample; docs/handoff/<NN>-samples-windows.md written. PR: "feat(events): samples and windows — model, collector, tick (#171 #175)" into dev.
 </done_when>
 ```
 
 <adjustments>
-- Real numbers to replace the plan's estimates: a full sample is 752 KB stored (raw_json 159 KB after 4.1× TOAST + member rows 480 KB with indexes); a light sample ≈ 290 KB; a sample is 21 calls and 9.6–10.0 s; ticks start 15–21 s after the slot.
+- Real numbers to replace the plan's estimates:
+  - a full sample is ≤ 752 KB stored (raw_json 159 KB after 4.1× TOAST + member rows 480 KB with indexes);
+  - a light sample (arrays) is ≈ 50 KB;
+  - a sample is 21 calls and 9.6–10.0 s;
+  - ticks start 15–21 s after the slot.
 - The preview DB holds only seed data (drift by construction); do not read upstream behaviour from it.
 - `cache_seconds` is 600 in every `/v1` body; never sample one alliance less than 15 min apart.
-- One event per Saturday (owner, 2026-11-08): KvK 27 samples, 567 calls; Origin of Chaos 9 samples, 189 calls.
+- One all-alliance event per Saturday (owner, 2026-11-08): KvK 27 samples, 567 calls; Origin of Chaos 9 samples, 189 calls. Week 1 of the cycle is 2026-11-14.
+- The quota stays at 1,000 calls a day, although the Patreon tier would give 2,000 (owner, 2026-11-09).
 </adjustments>
 
 <adjustments for="build 2 (/admin event schedules, #175)">
-- Tables `event_schedules` (with the 4-week cycle: length, weeks, start date) and `schedule_overrides (date, schedule_id null)`, as in this handoff's #175 answer 2; mock `docs/screenshots/08zzh-admin-event-editor-360-light.png`.
-- Save refuses a schedule over 600 calls, and two schedules on one date, with the number or the date.
+- Tables `event_schedules` (with the 4-week cycle: length, weeks, start date, plus an alliances subset) and `schedule_overrides (date, schedule_id null)`, as in this handoff's #175 answer 2; mock `docs/screenshots/08zzh-admin-event-editor-360-light.png`. Seed the cycle with week 1 = 2026-11-14: KvK weeks 1–3, Origin of Chaos week 4 (windows 00:10–00:40 and 12:30–13:00, editable: the owner does not know whether they move).
+- "Add one event" on /admin: date, windows, cadence, alliances. For alliance events the owner's alliance picks the time of; a one-alliance sample costs 2 calls.
+- Save refuses a schedule over 600 calls, and two all-alliance schedules on one date, with the number or the date.
 - The Friday admin message names the event the tick will run the next day.
 - The first tick with no schedule row creates one from EVENT_WEEKDAY/EVENT_TIME/SNAPSHOT_BEFORE/SNAPSHOT_AFTER.
 - Routine times (QUOTA_CHECK_AT, REHEARSAL_AT) move to an /admin settings row with the env as default. This closes #63.
 </adjustments>
 
-<adjustments for="build 3 (During the event UI and charts, #176)">
-- Only after the owner picks a library (question 5). Recommended: Observable Plot, rendered on the server; charts V1, V5, V6 from `docs/screenshots/08zzh-event-progress-options-360-light.png`; each chart's numbers in a table behind "Details".
+<adjustments for="build 3 (During the event UI and charts V1, V5, V6, #176)">
+- The owner picked Observable Plot (2026-11-09). Render on the server (the `document` option) where no tooltip is needed; pin the exact version (0.6.x is pre-1.0); measured 94 KB min+gzip if rendered in the browser; renders under the site's CSP with no eval.
+- Charts V1 (event pulse, with the "Busiest 15 min" line), V5 (my alliance; the same for one member on the player page) and V6 (ledger sparklines) from `docs/screenshots/08zzh-event-progress-options-360-light.png`; each chart's numbers in a table behind "Details".
 - Range picker and URL as in `docs/screenshots/08zzh-in-event-range-360-light.png`: From/To selects of existing samples, `?from=HH:MM&to=HH:MM`, tapping a bar or row sets the range.
-- Compute on request; no precomputed table (measured ≤ 2.5 ms per query at a year of data in PGlite).
-- DECISIONS: charts allowed (reverses the CLAUDE.md hard rule; closes #62) and a D7 row for the library.
+- Compute on request; no precomputed table (measured 0.5–4.6 ms per query at a year of data on the array layout, PGlite).
+- DECISIONS: charts allowed (reverses the CLAUDE.md hard rule; closes #62) and a D7 row for `@observablehq/plot`.
+- Not in this build: a "no kills change" list (owner: left for the LLM agent, #61).
+</adjustments>
+
+<adjustments for="build 4 (Progress tab, V2–V4)">
+- A "Progress" tab on the event page with V2 (kills race), V3 (rank race, step lines) and V4 (who fought when, heatmap), as drawn in `docs/screenshots/08zzh-event-progress-options-360-light.png`; each with its numbers in a table.
 </adjustments>
 
 https://github.com/daniro-san/LAPTracker/pull/183
