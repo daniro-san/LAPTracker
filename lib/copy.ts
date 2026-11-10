@@ -84,6 +84,32 @@ export const en = {
     same: "Pick two different events.",
     onlyOne: "There is only one event to compare so far.",
   },
+  /** Member history (D60, #197): an alliance's rosters over time, each compared with the one before. */
+  history: {
+    title: "Member history",
+    /** Under the title: what each card is. */
+    lead: "Each card compares the member list with the one read before it. Changes in between are not seen.",
+    /** A card's head for a roster from the once-a-day read. */
+    daily: "Daily read",
+    /** Under a card's head: `since Nov 8, 06:01 server time`. */
+    since: "since {time}",
+    first: "First reading: nothing to compare yet.",
+    noChange: "No member changes.",
+    renamed: "Renamed",
+    /** Beside a member who left, when they are now in another tracked alliance. */
+    nowIn: "now in {tag}",
+    /** The filter links' group label and its first link. */
+    show: "Show",
+    all: "All",
+    older: "Older",
+    newest: "Newest",
+    /** Nothing on this page matches the filter. */
+    none: "Nothing of this kind on this page.",
+    /** Copies the card's whole member list as tab-separated rows (name, might, kills). */
+    copy: "Copy for spreadsheet",
+    copied: "Copied",
+    copyFailed: "Copy failed",
+  },
   /** The header's settings menu (D38). */
   settings: {
     language: "Language",

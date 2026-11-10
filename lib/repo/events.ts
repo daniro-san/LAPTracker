@@ -1,6 +1,6 @@
 // events table. An event carries its own phase times (before_at, after_at): scheduled events get them from
 // the env when the tick creates the row, rehearsals from the moment they are created (plan §3.1).
-import { and, eq, gt, isNull, lte, or } from "drizzle-orm";
+import { and, eq, gt, gte, isNull, lt, lte, or } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { events, snapshots } from "../schema";
@@ -200,4 +200,21 @@ export async function claimQuotaCheck(db: Db, eventId: number, at: Date): Promis
     .where(and(eq(events.id, eventId), isNull(events.quotaCheckedAt)))
     .returning({ id: events.id });
   return rows.length > 0;
+}
+
+/** A scheduled event (not a manual round, not a rehearsal) with its Before in [from, to) (D60). */
+export async function hasScheduledEvent(db: Db, from: Date, to: Date): Promise<boolean> {
+  const [row] = await db
+    .select({ id: events.id })
+    .from(events)
+    .where(
+      and(
+        eq(events.manual, false),
+        eq(events.isTest, false),
+        gte(events.beforeAt, from),
+        lt(events.beforeAt, to),
+      ),
+    )
+    .limit(1);
+  return row !== undefined;
 }

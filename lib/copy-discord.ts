@@ -64,5 +64,7 @@ export const discordCopy = {
     tickSilence:
       "⚠ No tick for {min} min (last {at}). Check the cron-job.org job and CRON_SECRET · /admin",
     tickNone: "⚠ No tick recorded yet. Check the cron-job.org job and CRON_SECRET · /admin",
+    /** The daily roster read (D60) posts only when it falls short. */
+    dailyRead: "{icon} Daily roster read {day}: {state} · {calls} calls · {at}",
   },
 };

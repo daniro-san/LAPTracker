@@ -13,6 +13,7 @@ export type ScheduleConfig = Pick<
   | "SNAPSHOT_WINDOW_MIN"
   | "QUOTA_CHECK_AT"
   | "REHEARSAL_AT"
+  | "DAILY_ROSTER_AT"
 >;
 
 export interface ScheduledEvent {
@@ -163,6 +164,19 @@ export function rehearsalSlotsDue(now: Date, cfg: ScheduleConfig): Date[] {
     .map((slot) => lastOccurrence(slot, now, cfg))
     .filter((at) => inWindow(now, at, cfg))
     .sort((a, b) => a.getTime() - b.getTime());
+}
+
+/** Today's daily read (D60) while `now` is in its window: the server date it belongs to and that
+ * date's bounds as UTC instants, else null. */
+export function dailyReadDue(
+  now: Date,
+  cfg: ScheduleConfig,
+): { day: string; from: Date; to: Date } | null {
+  const today = wallClock(now, cfg.SERVER_TZ);
+  const at = zonedToUtc(today, cfg.DAILY_ROSTER_AT, cfg.SERVER_TZ);
+  if (!inWindow(now, at, cfg)) return null;
+  const from = zonedToUtc(today, "00:00", cfg.SERVER_TZ);
+  return { day: isoDate(today), from, to: zonedToUtc(addDays(today, 1), "00:00", cfg.SERVER_TZ) };
 }
 
 /** 0 = Sunday … 6 = Saturday, in server time. */
