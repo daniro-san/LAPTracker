@@ -1,6 +1,7 @@
 // `/alliances/[unionId]/history[?show=joined|left|renamed|kills][&before=<ISO time>]`: member history
 // (D60, issue 197). One card per stored roster (daily reads and public event snapshots), newest first, 14
-// a page. No event in the URL: the history belongs to none, so the header's selector reads "All events".
+// a page; only the first card starts open. No event in the URL: the history belongs to none, so the
+// header's selector reads "All events".
 // A union id with no usable roster is a 404.
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -193,11 +194,12 @@ export default async function MemberHistoryPage({
           <EmptyState>{copy.history.none}</EmptyState>
         ) : (
           <ul>
-            {cards.map((c) => (
+            {cards.map((c, i) => (
               <HistoryCardView
                 key={c.at.toISOString()}
                 card={c}
                 filter={show}
+                open={i === 0}
                 clock={clock}
                 copy={copy}
               />

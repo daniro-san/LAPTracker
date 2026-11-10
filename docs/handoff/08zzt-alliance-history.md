@@ -38,7 +38,7 @@ Owner, 2026-11-10, on spike 08zzr (PR #203): "lets go with the option C, you can
   - `lib/daily-read.test.ts`, 2 tests: a quota below the reserve makes no roster call; a failed alliance gives an error row, a partial read, and the day is read once.
   - `app/api/tick/route.test.ts`, 1 test: the read runs once on Friday 2026-11-06 (06:05 and 06:20 server) and not on Saturday 2026-11-07, the scheduled event's day; it creates no event of its own.
   - `lib/queries/member-history.test.ts`, 2 tests: joined, left with `nowIn`, renamed and changed, with a stale roster skipped; paging, and null for an unknown alliance.
-- Screenshots: `docs/screenshots/08zzt-alliance-history-{360,1280}-{light,dark}.png`, `08zzt-alliance-history-360-light-left.png` (the Left filter), `08zzt-alliance-link-360.png` (the link on the alliance page).
+- Screenshots: `docs/screenshots/08zzt-alliance-history-{360,1280}-{light,dark}.png`, `08zzt-alliance-history-360-light-full.png` (whole page: one card open, seven closed), `08zzt-alliance-history-360-light-left.png` (the Left filter), `08zzt-alliance-link-360.png` (the link on the alliance page).
 
 ## Decisions
 - **14 cards per page, not the spike's 30.** Each card carries its roster's spreadsheet text (≈ 3.5 KB per 100 members) for the copy button. 14 cards are ≈ 50 KB, 30 would be ≈ 105 KB on a phone.
@@ -47,6 +47,7 @@ Owner, 2026-11-10, on spike 08zzr (PR #203): "lets go with the option C, you can
 - **"now in [TAG]"** uses the member's newest sighting in any stored roster (daily or public event). It is shown only when that sighting is in another alliance. It is read from public rosters only, never from `joined_at`.
 - **Event cards are named** by the event's label (D49) and the capture-window words Start / End (`copy.status.start/end`), so no new phase words were needed.
 - **Cards list only members whose kills or might changed**, the first 10, then "Show all (n)" (a `<details>`, no JavaScript). The full roster goes only into the spreadsheet copy.
+- **Collapsible cards** (owner, 2026-11-10): each card is a native `<details>` (works without JavaScript). Only the first card on the page is open, i.e. the newest on the first page and, after "Older ↓", the newest of that page. The copy button moved from the head into the card body: a button inside `<summary>` would also toggle the card.
 - **No avatars on the cards**: names only, to keep 14 cards light. Names link to the player page.
 
 ## Deviations
@@ -66,6 +67,7 @@ Owner, 2026-11-10, on spike 08zzr (PR #203): "lets go with the option C, you can
   - The Nov 3 stale read is skipped, and the Nov 2 card reads "since Nov 1, 06:00 server time".
   - "Copy for spreadsheet" with clipboard permission granted: the button reads "Copied" and the clipboard holds 101 lines. The header is `Name\tMight\tKills`, then e.g. `Sashalom\t162567834\t1942393`, 3 fields per row.
   - `?show=left`: 1 card, with "now in [URSA]".
+  - Collapsible cards: 8 cards, 1 open at each width and theme; tapping the second card's head opens it (2 open); the head row is 81 px tall at 360 px.
   - The alliance page has the "Member history" link.
   - `/alliances/99/history`, `/alliances/abc/history` and `?before=nope` answer 404.
 - No upstream call, no `/api/quota`, no `/api/tick` against a deployment.

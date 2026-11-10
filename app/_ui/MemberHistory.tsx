@@ -99,11 +99,12 @@ const parts = (card: HistoryCard, filter: HistoryFilter | null) => ({
 export const matchesFilter = (card: HistoryCard, filter: HistoryFilter | null) =>
   filter === null || Object.values(parts(card, filter)).some(Boolean);
 
-/** When the data was read (a daily read, or an event's Start or End), since when, and the copy button. */
+/** The card's summary: when the data was read (a daily read, or an event's Start or End) and since when,
+ * with the ▾ that opens and closes it. The whole row is the 44 px control. */
 function CardHead({ card, clock, copy }: { card: HistoryCard; clock: Clock; copy: Dictionary }) {
   const h = copy.history;
   return (
-    <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-3 py-2">
+    <summary className="flex min-h-11 cursor-pointer items-center justify-between gap-3 px-3 py-2 [&::-webkit-details-marker]:hidden">
       <div className="min-w-0">
         <h2 className="font-subhead text-display-sm leading-tight">
           {card.event ? (
@@ -120,19 +121,48 @@ function CardHead({ card, clock, copy }: { card: HistoryCard; clock: Clock; copy
           {card.since && <> · {fill(h.since, { time: clock.at(card.since) })}</>}
         </p>
       </div>
-      <CopyRoster text={rosterTsv(card.roster, copy)} />
-    </div>
+      <span
+        aria-hidden="true"
+        className="text-plum transition-transform duration-150 group-open/card:rotate-180 motion-reduce:transition-none"
+      >
+        ▾
+      </span>
+    </summary>
   );
 }
 
+/** Left: `− Name · now in [TAG]`. */
+function LeftGroup({ card, copy }: { card: HistoryCard; copy: Dictionary }) {
+  return (
+    <Group label={copy.members.left}>
+      {card.left.map((m) => (
+        <li key={m.uid} className="inline-flex items-center gap-1">
+          <span aria-hidden="true" className="text-seal">
+            −
+          </span>
+          {player(m)}
+          {m.nowIn && (
+            <span className={`text-sm ${MUTED}`}>
+              · {fill(copy.history.nowIn, { tag: `[${m.nowIn.tag ?? m.nowIn.unionId}]` })}
+            </span>
+          )}
+        </li>
+      ))}
+    </Group>
+  );
+}
+
+/** A collapsible card (native `<details>`, no JavaScript); `open` for the page's newest card only. */
 export function HistoryCardView({
   card,
   filter,
+  open,
   clock,
   copy,
 }: {
   card: HistoryCard;
   filter: HistoryFilter | null;
+  open: boolean;
   clock: Clock;
   copy: Dictionary;
 }) {
@@ -141,54 +171,43 @@ export function HistoryCardView({
   const changes = card.joined.length + card.left.length + card.renamed.length + card.changed.length;
   return (
     <li className="mb-3 border border-rule">
-      <CardHead card={card} clock={clock} copy={copy} />
-      {card.since === null && (
-        <p className={`border-t border-rule px-3 py-2 text-sm ${MUTED}`}>{h.first}</p>
-      )}
-      {card.since !== null && changes === 0 && (
-        <p className={`border-t border-rule px-3 py-2 text-sm ${MUTED}`}>{h.noChange}</p>
-      )}
-      {show.joined && (
-        <Group label={copy.members.joined}>
-          {card.joined.map((m) => (
-            <li key={m.uid}>
-              <span aria-hidden="true" className="text-yarn">
-                +{" "}
-              </span>
-              {player(m)}
-            </li>
-          ))}
-        </Group>
-      )}
-      {show.left && (
-        <Group label={copy.members.left}>
-          {card.left.map((m) => (
-            <li key={m.uid} className="inline-flex items-center gap-1">
-              <span aria-hidden="true" className="text-seal">
-                −
-              </span>
-              {player(m)}
-              {m.nowIn && (
-                <span className={`text-sm ${MUTED}`}>
-                  · {fill(h.nowIn, { tag: `[${m.nowIn.tag ?? m.nowIn.unionId}]` })}
+      <details open={open} className="group/card">
+        <CardHead card={card} clock={clock} copy={copy} />
+        <div className="flex justify-end border-t border-rule px-3 py-2">
+          <CopyRoster text={rosterTsv(card.roster, copy)} />
+        </div>
+        {card.since === null && (
+          <p className={`border-t border-rule px-3 py-2 text-sm ${MUTED}`}>{h.first}</p>
+        )}
+        {card.since !== null && changes === 0 && (
+          <p className={`border-t border-rule px-3 py-2 text-sm ${MUTED}`}>{h.noChange}</p>
+        )}
+        {show.joined && (
+          <Group label={copy.members.joined}>
+            {card.joined.map((m) => (
+              <li key={m.uid}>
+                <span aria-hidden="true" className="text-yarn">
+                  +{" "}
                 </span>
-              )}
-            </li>
-          ))}
-        </Group>
-      )}
-      {show.renamed && (
-        <Group label={h.renamed}>
-          {card.renamed.map((r) => (
-            <li key={r.uid} className="inline-flex items-center gap-1">
-              <span className={MUTED}>{r.from}</span>
-              <span aria-hidden="true">→</span>
-              {player({ uid: r.uid, name: r.to })}
-            </li>
-          ))}
-        </Group>
-      )}
-      {show.changed && <Changes card={card} copy={copy} />}
+                {player(m)}
+              </li>
+            ))}
+          </Group>
+        )}
+        {show.left && <LeftGroup card={card} copy={copy} />}
+        {show.renamed && (
+          <Group label={h.renamed}>
+            {card.renamed.map((r) => (
+              <li key={r.uid} className="inline-flex items-center gap-1">
+                <span className={MUTED}>{r.from}</span>
+                <span aria-hidden="true">→</span>
+                {player({ uid: r.uid, name: r.to })}
+              </li>
+            ))}
+          </Group>
+        )}
+        {show.changed && <Changes card={card} copy={copy} />}
+      </details>
     </li>
   );
 }
