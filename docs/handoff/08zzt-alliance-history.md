@@ -37,7 +37,8 @@ Owner, 2026-11-10, on spike 08zzr (PR #203): "lets go with the option C, you can
 - Tests:
   - `lib/daily-read.test.ts`, 2 tests: a quota below the reserve makes no roster call; a failed alliance gives an error row, a partial read, and the day is read once.
   - `app/api/tick/route.test.ts`, 1 test: the read runs once on Friday 2026-11-06 (06:05 and 06:20 server) and not on Saturday 2026-11-07, the scheduled event's day; it creates no event of its own.
-  - `lib/queries/member-history.test.ts`, 2 tests: joined, left with `nowIn`, renamed and changed, with a stale roster skipped; paging, and null for an unknown alliance.
+  - `lib/queries/member-history.test.ts`, 3 tests: joined, left with `nowIn`, renamed and changed, with a stale roster skipped; paging, and null for an unknown alliance; the index gives the same heads and spans as the full history.
+  - `app/api/alliances/[unionId]/history/route.test.ts`, 1 test: the card read at `at` (joined and left against the previous roster, no blocked key), 404 for another time, 400 for a malformed one.
 - Screenshots: `docs/screenshots/08zzt-alliance-history-{360,1280}-{light,dark}.png`, `08zzt-alliance-history-360-light-full.png` (whole page: one card open, seven closed), `08zzt-alliance-history-360-light-left.png` (the Left filter), `08zzt-alliance-link-360.png` (the link on the alliance page).
 
 ## Decisions
@@ -47,6 +48,7 @@ Owner, 2026-11-10, on spike 08zzr (PR #203): "lets go with the option C, you can
 - **"now in [TAG]"** uses the member's newest sighting in any stored roster (daily or public event). It is shown only when that sighting is in another alliance. It is read from public rosters only, never from `joined_at`.
 - **Event cards are named** by the event's label (D49) and the capture-window words Start / End (`copy.status.start/end`), so no new phase words were needed.
 - **Cards list only members whose kills or might changed**, the first 10, then "Show all (n)" (a `<details>`, no JavaScript). The full roster goes only into the spreadsheet copy.
+- **Lazy contents** (owner, 2026-11-10): the page renders every card's head but only the open card's contents. Unfiltered, it reads `memberHistoryIndex` (heads only: no member lists, no member query) plus `memberHistory(limit 1)` for the open card. Opening a closed card calls `GET /api/alliances/[unionId]/history?at=<ISO time>` once (`memberHistoryCard`), which reuses `memberHistory` with `before = at + 1 ms, limit 1` and checks the time matches. The client part is `app/_ui/MemberHistoryBody.tsx` (`CardBody`, `LazyCardBody`: listens to its `<details>` `toggle`, fetches once, `…` while waiting, "Try again" (`copy.errors.server.retry`, no new strings) on failure). Filters and the spreadsheet text moved to `app/_ui/member-history.ts`, shared by server and client. With a filter on, the page still diffs every roster on the server to know which cards match; only the HTML stays light. The roster reads moved to `lib/queries/history-readings.ts` (file-size limit).
 - **Collapsible cards** (owner, 2026-11-10): each card is a native `<details>` (works without JavaScript). Only the first card on the page is open, i.e. the newest on the first page and, after "Older ↓", the newest of that page. The copy button moved from the head into the card body: a button inside `<summary>` would also toggle the card.
 - **No avatars on the cards**: names only, to keep 14 cards light. Names link to the player page.
 
@@ -56,7 +58,7 @@ Owner, 2026-11-10, on spike 08zzr (PR #203): "lets go with the option C, you can
 - **The spike prompt's filter links and cursor:** `?before=` takes an ISO time, not a day. Daily and event rosters share one timeline, and two can fall on one day.
 
 ## Verified
-- `pnpm check` green: prettier, eslint, tsc, vitest (51 files, 233 tests passed, 1 skipped), drift (12 tables, no changes), i18n (17 languages up to date).
+- `pnpm check` green: prettier, eslint, tsc, vitest (52 files, 235 tests passed, 1 skipped), drift (12 tables, no changes), i18n (17 languages up to date).
 - **Local stack** (throwaway, in the scratchpad):
   - Postgres 18 with `drizzle/0000`–`0012` applied by psql, behind a WebSocket→TCP bridge, plus a preload that sends the Neon driver's WebSocket to the bridge.
   - Data: `scripts/seed.ts`, then hand-written SQL rows: three daily reads after the Oct 31 seed event. Nov 1 has kills and might moves; Nov 2 has one leaver who appears in URSA, one newcomer and one rename; Nov 3 is stale.
@@ -67,6 +69,7 @@ Owner, 2026-11-10, on spike 08zzr (PR #203): "lets go with the option C, you can
   - The Nov 3 stale read is skipped, and the Nov 2 card reads "since Nov 1, 06:00 server time".
   - "Copy for spreadsheet" with clipboard permission granted: the button reads "Copied" and the clipboard holds 101 lines. The header is `Name\tMight\tKills`, then e.g. `Sashalom\t162567834\t1942393`, 3 fields per row.
   - `?show=left`: 1 card, with "now in [URSA]".
+  - Lazy contents: on load, 8 cards, 1 open, 8 player links on the page and no API call. Opening card 2 makes exactly one call (`?at=2026-11-01T08:00:25.000Z`) and adds its 25 changed members; closing and reopening it makes none; its copy button copies 101 lines. A forced 500 on card 3 shows "Try again", which then loads it. One card's JSON is 10.3 KB (uncompressed, `next dev`).
   - Collapsible cards: 8 cards, 1 open at each width and theme; tapping the second card's head opens it (2 open); the head row is 81 px tall at 360 px.
   - The alliance page has the "Member history" link.
   - `/alliances/99/history`, `/alliances/abc/history` and `?before=nope` answer 404.

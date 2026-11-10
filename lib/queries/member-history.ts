@@ -1,11 +1,19 @@
 // Member history (D60, issue 197): one alliance's rosters over time, from its daily reads and its public
 // event snapshots, each diffed against the previous usable one by uid (compute.rosterDiff). Served member
 // fields: uid, name, power, kills only; joined and left come from the diff, never from joined_at (§12.1).
-import { and, arrayOverlaps, desc, eq, gt, inArray, isNull, lt, sql } from "drizzle-orm";
+import { and, arrayOverlaps, desc, eq, inArray } from "drizzle-orm";
 
 import { rosterDiff } from "../compute";
 import type { Db } from "../db";
 import { allianceSnapshots, dailyRosters, events, memberSnapshots, snapshots } from "../schema";
+import {
+  dailyHead,
+  dailyReadings,
+  dailyUsable,
+  eventHeads,
+  eventReadings,
+  type Reading,
+} from "./history-readings";
 import { publicEvent } from "./visibility";
 
 export interface HistoryMember {
@@ -48,6 +56,25 @@ export interface HistoryCard {
   changed: HistoryChange[];
 }
 
+/** What a card holds under its head: loaded with the page for the open card, else on open (D60). */
+export type HistoryCardBody = Pick<
+  HistoryCard,
+  "roster" | "joined" | "left" | "renamed" | "changed"
+>;
+
+/** A card's head only: when, which event, since when. */
+export type HistoryEntry = Pick<HistoryCard, "at" | "event" | "since">;
+
+export interface MemberHistoryIndex {
+  unionId: number;
+  tag: string | null;
+  name: string | null;
+  badgeId: number | null;
+  /** Newest first. */
+  entries: HistoryEntry[];
+  older: Date | null;
+}
+
 export interface MemberHistory {
   unionId: number;
   tag: string | null;
@@ -59,122 +86,9 @@ export interface MemberHistory {
   older: Date | null;
 }
 
-interface Reading {
-  at: Date;
-  tag: string | null;
-  name: string | null;
-  badgeId: number | null;
-  event: HistoryEvent | null;
-  members: HistoryMember[];
-}
-
 /** after − before for one member's figure; null when either side is null (D15). */
 const change = (before: number | null, after: number | null) =>
   before === null || after === null ? null : after - before;
-
-const numbers = (values: (string | null)[]) => values.map((v) => (v === null ? null : Number(v)));
-
-/** Usable daily rosters (fresh, no error, not empty) older than `before` (null: all), newest first. */
-async function dailyReadings(db: Db, unionId: number, before: Date | null, n: number) {
-  const rows = await db
-    .select({
-      at: dailyRosters.sourceUpdatedAt,
-      tag: dailyRosters.tag,
-      name: dailyRosters.name,
-      badgeId: dailyRosters.badgeId,
-      uids: dailyRosters.memberUids,
-      names: dailyRosters.memberNames,
-      // As text: Drizzle reads a null bigint element as 0, and a null stays null (D15).
-      power: sql<(string | null)[]>`${dailyRosters.memberPower}::text[]`,
-      kills: sql<(string | null)[]>`${dailyRosters.memberKills}::text[]`,
-    })
-    .from(dailyRosters)
-    .where(
-      and(
-        eq(dailyRosters.unionId, unionId),
-        eq(dailyRosters.isFresh, true),
-        isNull(dailyRosters.error),
-        gt(dailyRosters.memberCount, 0),
-        before ? lt(dailyRosters.sourceUpdatedAt, before) : undefined,
-      ),
-    )
-    .orderBy(desc(dailyRosters.sourceUpdatedAt))
-    .limit(n);
-  return rows.map((r): Reading => {
-    const [power, kills] = [numbers(r.power), numbers(r.kills)];
-    return {
-      at: r.at as Date,
-      tag: r.tag,
-      name: r.name,
-      badgeId: r.badgeId,
-      event: null,
-      members: r.uids.map((uid, i) => ({
-        uid,
-        name: r.names[i] ?? "",
-        power: power[i] ?? null,
-        kills: kills[i] ?? null,
-      })),
-    };
-  });
-}
-
-/** Usable rosters of public event snapshots older than `before` (null: all), newest first. */
-async function eventReadings(db: Db, unionId: number, before: Date | null, n: number) {
-  const rows = await db
-    .select({
-      id: allianceSnapshots.id,
-      at: allianceSnapshots.sourceUpdatedAt,
-      tag: allianceSnapshots.tag,
-      name: allianceSnapshots.name,
-      badgeId: allianceSnapshots.badgeId,
-      event: {
-        id: events.id,
-        name: events.name,
-        manual: events.manual,
-        eventAtUtc: events.eventAtUtc,
-        phase: snapshots.phase,
-      },
-    })
-    .from(allianceSnapshots)
-    .innerJoin(snapshots, eq(snapshots.id, allianceSnapshots.snapshotId))
-    .innerJoin(events, eq(events.id, snapshots.eventId))
-    .where(
-      and(
-        eq(allianceSnapshots.unionId, unionId),
-        publicEvent,
-        eq(allianceSnapshots.isFresh, true),
-        isNull(allianceSnapshots.error),
-        before ? lt(allianceSnapshots.sourceUpdatedAt, before) : undefined,
-      ),
-    )
-    .orderBy(desc(allianceSnapshots.sourceUpdatedAt))
-    .limit(n);
-  const members =
-    rows.length === 0
-      ? []
-      : await db
-          .select({
-            id: memberSnapshots.allianceSnapshotId,
-            uid: memberSnapshots.uid,
-            name: memberSnapshots.name,
-            power: memberSnapshots.power,
-            kills: memberSnapshots.kills,
-          })
-          .from(memberSnapshots)
-          .where(
-            inArray(
-              memberSnapshots.allianceSnapshotId,
-              rows.map((r) => r.id),
-            ),
-          );
-  return rows
-    .map(({ id, ...r }): Reading => ({
-      ...r,
-      at: r.at as Date,
-      members: members.filter((m) => m.id === id).map(({ id: _, ...m }) => m),
-    }))
-    .filter((r) => r.members.length > 0);
-}
 
 /** Each leaver's newest sighting in any stored roster, when it is in another alliance (public data only). */
 async function whereNow(db: Db, unionId: number, uids: number[]) {
@@ -260,7 +174,7 @@ async function withNowIn(db: Db, unionId: number, cards: ReturnType<typeof card>
 }
 
 /** The alliance's tag, name and badge as the page's newest roster has them. */
-const headOf = (r: Reading | undefined) => ({
+const headOf = (r: Pick<Reading, "tag" | "name" | "badgeId"> | undefined) => ({
   tag: r?.tag ?? null,
   name: r?.name ?? null,
   badgeId: r?.badgeId ?? null,
@@ -292,4 +206,54 @@ export async function memberHistory(
     cards: await withNowIn(db, unionId, cards),
     older: readings.length > limit && last ? last.at : null,
   };
+}
+
+/**
+ * The heads of one page of member history, without member lists: the same rosters, order and paging
+ * as memberHistory, for a page whose cards load their contents on open. Null as memberHistory.
+ */
+export async function memberHistoryIndex(
+  db: Db,
+  unionId: number,
+  { before = null, limit = 14 }: { before?: Date | null; limit?: number } = {},
+): Promise<MemberHistoryIndex | null> {
+  const [daily, fromEvents] = await Promise.all([
+    db
+      .select(dailyHead)
+      .from(dailyRosters)
+      .where(dailyUsable(unionId, before))
+      .orderBy(desc(dailyRosters.sourceUpdatedAt))
+      .limit(limit + 1),
+    eventHeads(db, unionId, before, limit + 1),
+  ]);
+  const heads = [
+    ...daily.map((r) => ({ ...r, event: null })),
+    ...fromEvents.map(({ id: _, ...r }) => r),
+  ]
+    .map((r) => ({ ...r, at: r.at as Date }))
+    .sort((a, b) => b.at.getTime() - a.at.getTime())
+    .slice(0, limit + 1);
+  if (heads.length === 0 && !before) return null;
+  const shown = heads.slice(0, limit);
+  const last = shown.at(-1);
+  return {
+    unionId,
+    ...headOf(heads[0]),
+    entries: shown.map((h, i) => ({ at: h.at, event: h.event, since: heads[i + 1]?.at ?? null })),
+    older: heads.length > limit && last ? last.at : null,
+  };
+}
+
+/** The contents of the card read at `at` (the page loads them when a closed card opens), or null. */
+export async function memberHistoryCard(
+  db: Db,
+  unionId: number,
+  at: Date,
+): Promise<HistoryCardBody | null> {
+  // The newest card older than a millisecond after `at` is the one read at `at`, if one was.
+  const page = await memberHistory(db, unionId, { before: new Date(at.getTime() + 1), limit: 1 });
+  const card = page?.cards[0];
+  if (!card || card.at.getTime() !== at.getTime()) return null;
+  const { roster, joined, left, renamed, changed } = card;
+  return { roster, joined, left, renamed, changed };
 }

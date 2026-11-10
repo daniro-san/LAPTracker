@@ -3,7 +3,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import type { Db } from "../db";
 import { openTestDb } from "../db.test-helpers";
 import { dailyReads, dailyRosters } from "../schema";
-import { memberHistory } from "./member-history";
+import { memberHistory, memberHistoryIndex } from "./member-history";
 
 type Member = [uid: number, name: string, power: number | null, kills: number | null];
 
@@ -70,5 +70,15 @@ describe("memberHistory (D60)", () => {
     expect(older?.cards.map((c) => c.at)).toEqual([at("2026-11-08")]);
     expect(older?.older).toBeNull();
     expect(await memberHistory(db, 99)).toBeNull();
+  });
+
+  it("indexes the same cards, times and spans as the full history, without member lists", async () => {
+    const [index, full] = await Promise.all([memberHistoryIndex(db, 1), memberHistory(db, 1)]);
+
+    expect(index?.entries).toEqual(
+      full?.cards.map(({ at, event, since }) => ({ at, event, since })),
+    );
+    expect(index?.tag).toBe("OGs");
+    expect(await memberHistoryIndex(db, 99)).toBeNull();
   });
 });

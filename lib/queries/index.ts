@@ -6,7 +6,11 @@ export { rolesOf, roleOf, type Role } from "./leadership";
 export { getEventDetail, homeEvent, listEvents, type EventSummary } from "./events";
 export {
   memberHistory,
+  memberHistoryCard,
+  memberHistoryIndex,
   type HistoryCard,
+  type HistoryCardBody,
+  type HistoryEntry,
   type HistoryMember,
   type MemberHistory,
 } from "./member-history";

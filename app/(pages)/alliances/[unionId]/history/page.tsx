@@ -1,7 +1,8 @@
 // `/alliances/[unionId]/history[?show=joined|left|renamed|kills][&before=<ISO time>]`: member history
 // (D60, issue 197). One card per stored roster (daily reads and public event snapshots), newest first, 14
-// a page; only the first card starts open. No event in the URL: the history belongs to none, so the
-// header's selector reads "All events".
+// a page; only the first card starts open and comes with its contents, the others load theirs when
+// opened. With a filter on, every card is diffed here to know which match. No event in the URL: the
+// history belongs to none, so the header's selector reads "All events".
 // A union id with no usable roster is a 404.
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -13,26 +14,68 @@ import { EmptyState } from "@/app/_ui/EmptyState";
 import { ExactToggle } from "@/app/_ui/ExactToggle";
 import { allianceLabel } from "@/app/_ui/format";
 import { requestClock, requestCopy } from "@/app/_ui/locale";
-import {
-  HISTORY_FILTERS,
-  HistoryCardView,
-  matchesFilter,
-  type HistoryFilter,
-} from "@/app/_ui/MemberHistory";
+import { HISTORY_FILTERS, matchesFilter, type HistoryFilter } from "@/app/_ui/member-history";
+import { HistoryCardView } from "@/app/_ui/MemberHistory";
 import { AllianceBadge } from "@/app/_ui/Pictures";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
 import type { Dictionary } from "@/lib/copy";
+import type { Db } from "@/lib/db";
 import { withPageDb } from "@/lib/page";
-import { homeEvent, listEvents, memberHistory } from "@/lib/queries";
+import {
+  homeEvent,
+  listEvents,
+  memberHistory,
+  memberHistoryIndex,
+  type HistoryCard,
+} from "@/lib/queries";
 
 type Params = Promise<{ unionId: string }>;
 type Search = Promise<Record<string, string | string[] | undefined>>;
 
-const load = cache((unionId: number, before: number | null) =>
+const bodyOf = ({ roster, joined, left, renamed, changed }: HistoryCard) => ({
+  roster,
+  joined,
+  left,
+  renamed,
+  changed,
+});
+
+/** The cards' heads and the first card's contents. Unfiltered: the light index, plus one full card.
+ * Filtered: every card diffed, to keep those that match. */
+async function historyPage(
+  db: Db,
+  unionId: number,
+  before: Date | null,
+  show: HistoryFilter | null,
+) {
+  if (show) {
+    const full = await memberHistory(db, unionId, { before });
+    if (!full) return null;
+    const cards = full.cards.filter((c) => matchesFilter(c, show));
+    const { tag, name, badgeId, older } = full;
+    return {
+      unionId,
+      tag,
+      name,
+      badgeId,
+      older,
+      entries: cards.map(({ at, event, since }) => ({ at, event, since })),
+      firstBody: cards[0] ? bodyOf(cards[0]) : null,
+    };
+  }
+  const [index, first] = await Promise.all([
+    memberHistoryIndex(db, unionId, { before }),
+    memberHistory(db, unionId, { before, limit: 1 }),
+  ]);
+  const card = first?.cards[0];
+  return index && { ...index, firstBody: card ? bodyOf(card) : null };
+}
+
+const load = cache((unionId: number, before: number | null, show: HistoryFilter | null) =>
   withPageDb(async (db) => {
     const [history, events] = await Promise.all([
-      memberHistory(db, unionId, { before: before === null ? null : new Date(before) }),
+      historyPage(db, unionId, before === null ? null : new Date(before), show),
       listEvents(db),
     ]);
     return history && { history, events, homeId: homeEvent(events)?.id ?? null };
@@ -65,7 +108,7 @@ export async function generateMetadata({
   searchParams: Search;
 }): Promise<Metadata> {
   const inputs = await inputsOf(params, searchParams);
-  const data = inputs && (await load(inputs.unionId, inputs.before));
+  const data = inputs && (await load(inputs.unionId, inputs.before, inputs.show));
   if (!data) return {};
   const copy = await requestCopy();
   const { tag, name, unionId } = data.history;
@@ -157,7 +200,7 @@ export default async function MemberHistoryPage({
   const inputs = await inputsOf(params, searchParams);
   if (!inputs) notFound();
   const [data, clock, copy] = await Promise.all([
-    load(inputs.unionId, inputs.before),
+    load(inputs.unionId, inputs.before, inputs.show),
     requestClock(),
     requestCopy(),
   ]);
@@ -165,7 +208,6 @@ export default async function MemberHistoryPage({
   const { history, events, homeId } = data;
   const { unionId, show } = { ...inputs, unionId: history.unionId };
   const label = allianceLabel(history.tag ?? String(unionId), history.name);
-  const cards = history.cards.filter((c) => matchesFilter(c, show));
   return (
     <>
       <SiteHeader events={events} currentId={null} homeId={homeId} clock={clock} copy={copy} />
@@ -190,16 +232,17 @@ export default async function MemberHistoryPage({
         </div>
         <p className="mb-3 mt-1 text-body-sm text-ink/70">{copy.history.lead}</p>
         <Filters unionId={unionId} show={show} copy={copy} />
-        {cards.length === 0 ? (
+        {history.entries.length === 0 ? (
           <EmptyState>{copy.history.none}</EmptyState>
         ) : (
           <ul>
-            {cards.map((c, i) => (
+            {history.entries.map((e, i) => (
               <HistoryCardView
-                key={c.at.toISOString()}
-                card={c}
+                key={e.at.toISOString()}
+                unionId={unionId}
+                entry={e}
+                body={i === 0 ? history.firstBody : null}
                 filter={show}
-                open={i === 0}
                 clock={clock}
                 copy={copy}
               />
