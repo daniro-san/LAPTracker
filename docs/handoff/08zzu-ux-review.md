@@ -142,3 +142,5 @@ Plan changes needed: none in `docs/IMPLEMENTATION_PLAN.md` unless S8 changes the
 <adjustments for="the #173 fix session (08zzt)">
 - After the 360 px wordmark lands, re-measure the first card's top on `/` at 360 × 740 in en and ru (today 521 / 565 px); this review's S1 target (≤ 480 px) assumes the wordmark stays inside the header bar without making it taller.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/208
