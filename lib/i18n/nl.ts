@@ -10,6 +10,8 @@ export const nl = {
     description: "Momentopnamen van de events van de allianties op server 325.",
     byline: "bijgehouden door de Old Grandmas",
     ledger: "Server 325 · Eventlogboek",
+    disclaimer:
+      "OG's LAP event tracker is een door fans gemaakt gemeenschapsproject voor het spel Last Asylum Plague. Het is geen officiële website van 37Games of Eyu en heeft geen band met Last Asylum Plague. Spelnamen en illustraties behoren toe aan hun eigenaars.",
     players: "Spelers",
     darkMode: "Donkere modus",
     settings: "Instellingen",

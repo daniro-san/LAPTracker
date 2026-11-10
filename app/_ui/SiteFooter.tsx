@@ -14,11 +14,14 @@ export function SiteFooter({
 }) {
   return (
     <footer
-      className={`relative mx-auto mt-8 max-w-[960px] px-4 text-plum sm:px-6 ${ornament === "granny" ? "h-36" : "h-28"}`}
+      className={`relative mx-auto mt-8 max-w-[960px] px-4 text-plum sm:px-6 ${ornament === "granny" ? "min-h-36 pb-28 sm:pb-0" : "min-h-28 pb-20 sm:pb-0"}`}
     >
       <hr className="drawn-rule mb-4 text-plum/40" />
       <p className="text-right text-body-sm text-ink/70">
         {copy.site.ledger} · {copy.site.byline}
+      </p>
+      <p className="mt-1 ml-auto max-w-[60ch] text-right text-xs text-ink/65">
+        {copy.site.disclaimer}
       </p>
       <p className="mt-1 text-right text-xs text-ink/65 tabular-nums">
         {process.env.BUILD_VERSION}

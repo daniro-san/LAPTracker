@@ -10,6 +10,8 @@ export const zhCN = {
     description: "325 服联盟活动快照。",
     byline: "由 Old Grandmas 记录",
     ledger: "325 服 · 活动账本",
+    disclaimer:
+      "OG's LAP event tracker 是为 Last Asylum Plague 制作的粉丝自制社区项目。它不是 37Games 或 Eyu 的官方网站，也与 Last Asylum Plague 没有关联。游戏名称与美术素材均属其各自的权利人。",
     players: "玩家",
     darkMode: "深色模式",
     settings: "设置",

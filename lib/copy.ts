@@ -18,6 +18,8 @@ export const en = {
     description: "Event snapshots for server 325 alliances.",
     byline: "kept by the Old Grandmas",
     ledger: "Server 325 · Event Ledger",
+    disclaimer:
+      "OG's LAP event tracker is a fan-made community project for the Last Asylum Plague game. It is not an official 37Games or Eyu website, and it is not affiliated with Last Asylum Plague. Game names and artwork belong to their owners.",
     players: "Players",
     darkMode: "Dark mode",
     settings: "Settings",

@@ -10,6 +10,8 @@ export const th = {
     description: "ภาพรวมกิจกรรมของพันธมิตรเซิร์ฟเวอร์ 325",
     byline: "บันทึกโดย Old Grandmas",
     ledger: "เซิร์ฟเวอร์ 325 · สมุดกิจกรรม",
+    disclaimer:
+      "OG's LAP event tracker เป็นโปรเจกต์ชุมชนที่แฟนเกมทำขึ้นสำหรับเกม Last Asylum Plague ไม่ใช่เว็บไซต์อย่างเป็นทางการของ 37Games หรือ Eyu และไม่มีส่วนเกี่ยวข้องกับ Last Asylum Plague ชื่อเกมและงานภาพเป็นของเจ้าของ",
     players: "ผู้เล่น",
     darkMode: "โหมดมืด",
     settings: "ตั้งค่า",
