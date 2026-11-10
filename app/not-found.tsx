@@ -2,7 +2,7 @@
 import Link from "next/link";
 
 import { ErrorPage, primaryAction } from "@/app/_ui/ErrorPage";
-import { requestCopy } from "@/app/_ui/locale";
+import { requestClock, requestCopy } from "@/app/_ui/locale";
 import { YarnLeftBehind } from "@/lib/brand/components/Vignettes";
 
 export async function generateMetadata() {
@@ -11,7 +11,7 @@ export async function generateMetadata() {
 }
 
 export default async function NotFound() {
-  const copy = await requestCopy();
+  const [clock, copy] = await Promise.all([requestClock(), requestCopy()]);
   const t = copy.errors.notFound;
   return (
     <ErrorPage
@@ -19,6 +19,7 @@ export default async function NotFound() {
       title={t.title}
       body={t.body}
       art={<YarnLeftBehind />}
+      clock={clock}
       copy={copy}
       actions={
         <Link href="/" className={primaryAction}>

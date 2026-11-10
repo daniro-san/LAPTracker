@@ -1,10 +1,10 @@
 import { EmptyState } from "./EmptyState";
-import { requestCopy } from "./locale";
+import { requestClock, requestCopy } from "./locale";
 import { SiteFooter } from "./SiteFooter";
 import { SiteHeader } from "./SiteHeader";
 
 export async function EmptyEvents() {
-  const copy = await requestCopy();
+  const [clock, copy] = await Promise.all([requestClock(), requestCopy()]);
   return (
     <>
       <SiteHeader events={[]} currentId={null} homeId={null} copy={copy} />
@@ -12,7 +12,7 @@ export async function EmptyEvents() {
         <h1 className="sr-only">{copy.site.name}</h1>
         <EmptyState>{copy.empty.kettle}</EmptyState>
       </main>
-      <SiteFooter copy={copy} />
+      <SiteFooter clock={clock} copy={copy} />
     </>
   );
 }

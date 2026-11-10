@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 import { buttonClass } from "@/lib/brand/components/Button";
 import type { Dictionary } from "@/lib/copy";
 
+import type { Clock } from "./format";
 import { SiteFooter } from "./SiteFooter";
 import { SiteHeader } from "./SiteHeader";
 
@@ -15,6 +16,7 @@ export function ErrorPage({
   body,
   art,
   actions,
+  clock,
   copy,
 }: {
   code: string;
@@ -22,6 +24,8 @@ export function ErrorPage({
   body: string;
   art: ReactNode;
   actions: ReactNode;
+  /** The request's clock for the footer's build time; null in the client error boundaries. */
+  clock: Clock | null;
   /** The request's words, or English in global-error, which has no provider. */
   copy: Dictionary;
 }) {
@@ -41,7 +45,7 @@ export function ErrorPage({
           </div>
         </div>
       </main>
-      <SiteFooter ornament="granny" copy={copy} />
+      <SiteFooter ornament="granny" clock={clock} copy={copy} />
     </>
   );
 }

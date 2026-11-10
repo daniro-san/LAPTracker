@@ -204,7 +204,7 @@ export async function EventView({
           ]}
         />
       </main>
-      <SiteFooter copy={copy} />
+      <SiteFooter clock={clock} copy={copy} />
     </>
   );
 }

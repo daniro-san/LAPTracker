@@ -2,7 +2,7 @@
 // `env` inlines the footer's build line at build time (D58).
 import type { NextConfig } from "next";
 
-import { buildLine } from "./lib/build-line";
+import { buildInfo } from "./lib/build-line";
 
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
@@ -17,7 +17,7 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
-  env: { BUILD_LINE: buildLine(process.env, new Date()) },
+  env: buildInfo(process.env, new Date()),
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

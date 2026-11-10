@@ -25,7 +25,7 @@ const NAV = [
 ];
 
 export async function AdminShell({ title, children }: { title: string; children: ReactNode }) {
-  const unlocked = await isAdmin();
+  const [unlocked, clock] = await Promise.all([isAdmin(), requestServerClock()]);
   return (
     // English whatever the viewer's language (D48): the lang attribute says so for this subtree.
     <div lang="en">
@@ -33,7 +33,7 @@ export async function AdminShell({ title, children }: { title: string; children:
       <main className="mx-auto max-w-[960px] px-4 py-4 sm:px-6">
         {unlocked ? <Unlocked title={title}>{children}</Unlocked> : <PinGate />}
       </main>
-      <SiteFooter copy={copy} />
+      <SiteFooter clock={clock} copy={copy} />
     </div>
   );
 }
