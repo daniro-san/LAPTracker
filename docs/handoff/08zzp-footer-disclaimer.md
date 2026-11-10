@@ -32,3 +32,5 @@ Plan changes needed: none.
 <adjustments>
 - #178 (MCP server `instructions` and `openapi.json`) can reuse the English sentence from `en.site.disclaimer` in `lib/copy.ts` instead of a second copy.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/202
