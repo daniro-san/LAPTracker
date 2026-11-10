@@ -5,13 +5,13 @@ import type { Translation } from "../copy";
 
 export const tr = {
   site: {
-    name: "OG's LAP Tracker",
-    shortName: "LAP Tracker",
+    name: "Etkinlik Defteri",
+    shortName: "Defter",
     description: "Sunucu 325 ittifaklarının etkinlik anlık görüntüleri.",
     byline: "Old Grandmas tarafından tutulur",
     ledger: "Sunucu 325 · Etkinlik Defteri",
     disclaimer:
-      "OG's LAP event tracker, Last Asylum Plague oyunu için hayran yapımı bir topluluk projesidir. Resmî bir 37Games ya da Eyu’nun sitesi değildir ve Last Asylum Plague ile bağlantılı değildir. Oyun adları ve görseller sahiplerine aittir.",
+      "Etkinlik Defteri, Last Asylum Plague oyunu için hayran yapımı bir topluluk projesidir. Resmî bir 37Games ya da Eyu’nun sitesi değildir ve Last Asylum Plague ile bağlantılı değildir. Oyun adları ve görseller sahiplerine aittir.",
     players: "Oyuncular",
     darkMode: "Karanlık mod",
     settings: "Ayarlar",
@@ -172,14 +172,14 @@ export const tr = {
       code: "404",
       title: "Nine bir yerlere gitti.",
       body: "Bu sayfa defterde yok.",
-      back: "Tabloya dön",
+      back: "Deftere dön",
     },
     server: {
       code: "500",
       title: "Bir şey çatladı.",
       body: "Sorun değil, nine temizler.",
       retry: "Tekrar dene",
-      back: "Tabloya dön",
+      back: "Deftere dön",
     },
   },
   empty: {

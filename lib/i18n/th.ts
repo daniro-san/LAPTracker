@@ -5,13 +5,13 @@ import type { Translation } from "../copy";
 
 export const th = {
   site: {
-    name: "OG's LAP Tracker",
-    shortName: "LAP Tracker",
+    name: "สมุดกิจกรรม",
+    shortName: "สมุด",
     description: "ภาพรวมกิจกรรมของพันธมิตรเซิร์ฟเวอร์ 325",
     byline: "บันทึกโดย Old Grandmas",
     ledger: "เซิร์ฟเวอร์ 325 · สมุดกิจกรรม",
     disclaimer:
-      "OG's LAP event tracker เป็นโปรเจกต์ชุมชนที่แฟนเกมทำขึ้นสำหรับเกม Last Asylum Plague ไม่ใช่เว็บไซต์อย่างเป็นทางการของ 37Games หรือ Eyu และไม่มีส่วนเกี่ยวข้องกับ Last Asylum Plague ชื่อเกมและงานภาพเป็นของเจ้าของ",
+      "สมุดกิจกรรม เป็นโปรเจกต์ชุมชนที่แฟนเกมทำขึ้นสำหรับเกม Last Asylum Plague ไม่ใช่เว็บไซต์อย่างเป็นทางการของ 37Games หรือ Eyu และไม่มีส่วนเกี่ยวข้องกับ Last Asylum Plague ชื่อเกมและงานภาพเป็นของเจ้าของ",
     players: "ผู้เล่น",
     darkMode: "โหมดมืด",
     settings: "ตั้งค่า",
@@ -172,14 +172,14 @@ export const th = {
       code: "404",
       title: "คุณยายหลงทาง",
       body: "หน้านี้ไม่มีในสมุด",
-      back: "กลับไปที่ตาราง",
+      back: "กลับไปที่สมุด",
     },
     server: {
       code: "500",
       title: "มีบางอย่างร้าว",
       body: "ไม่เป็นไร คุณยายจะเก็บกวาดเอง",
       retry: "ลองอีกครั้ง",
-      back: "กลับไปที่ตาราง",
+      back: "กลับไปที่สมุด",
     },
   },
   empty: {

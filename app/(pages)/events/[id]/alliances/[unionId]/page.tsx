@@ -215,7 +215,7 @@ async function idsOf(params: Params) {
   return { eventId: Number(p.id), unionId: Number(p.unionId) };
 }
 
-/** `[OGs] OldGrandmas · Sat, Oct 31 · OG's LAP Tracker`. */
+/** `[OGs] OldGrandmas · Sat, Oct 31 · Event Ledger`. */
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const ids = await idsOf(params);
   const data = ids && (await loadAlliance(ids.eventId, ids.unionId));

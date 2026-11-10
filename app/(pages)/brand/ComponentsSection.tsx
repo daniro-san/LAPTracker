@@ -14,7 +14,12 @@ import { Notice } from "@/lib/brand/components/Notice";
 import { RadioField } from "@/lib/brand/components/RadioField";
 import { Crown, OfficerStar, RoleMark } from "@/lib/brand/components/RoleMark";
 import { SealButton } from "@/lib/brand/components/SealButton";
-import { DroppedStitch, Hourglass, StitchedCheck } from "@/lib/brand/components/StatusIcons";
+import {
+  DroppedStitch,
+  Hourglass,
+  HourglassOutline,
+  StitchedCheck,
+} from "@/lib/brand/components/StatusIcons";
 import { YarnCorner } from "@/lib/brand/components/YarnCorner";
 import { copy, fill } from "@/lib/copy";
 
@@ -36,7 +41,7 @@ function Chips() {
       <Chip tone="seal" icon={<DroppedStitch />}>
         {c.after} {c.partial} 16:01
       </Chip>
-      <Chip tone="muted">
+      <Chip tone="muted" icon={<HourglassOutline />}>
         {c.after} {c.notYet}
       </Chip>
     </Spec>

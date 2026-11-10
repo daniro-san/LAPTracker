@@ -211,7 +211,7 @@ describe("POST /api/snapshot", () => {
     expect(await correctPin.json()).toEqual({ code: "pin_locked" });
     expect(cron.status).toBe(200);
     const alerts = posts.filter(
-      (p) => p.url === ADMIN_WEBHOOK && p.content.includes("PIN entry is locked"),
+      (p) => p.url === ADMIN_WEBHOOK && p.content.includes("PIN entry is off"),
     );
     expect(alerts).toHaveLength(1);
   });

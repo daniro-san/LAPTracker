@@ -240,7 +240,7 @@ describe("admin messages", () => {
 
   it("says the PIN is locked and that the tick still works", () => {
     expect(pinLockedMessage(20)).toBe(
-      "🔒 PIN entry is locked for an hour: 20 wrong PINs. The scheduled tick and workflow_dispatch still work.",
+      "Locked: PIN entry is off for an hour: 20 wrong PINs. The scheduled tick and workflow_dispatch still work.",
     );
   });
 
@@ -308,7 +308,7 @@ describe("payloads", () => {
       for (const key of BLOCKED_ROSTER_KEYS) expect(body).not.toContain(`"${key}"`);
     }
     expect(JSON.parse(bodies[1] ?? "{}")).toMatchObject({
-      content: expect.stringMatching(/^\[rehearsal\] 🔒/),
+      content: expect.stringMatching(/^\[rehearsal\] Locked:/),
     });
 
     await notifier.admin("x", { manual: true });

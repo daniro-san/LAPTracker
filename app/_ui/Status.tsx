@@ -3,7 +3,12 @@
 import type { ReactNode } from "react";
 
 import { Chip, type ChipTone } from "@/lib/brand/components/Chip";
-import { DroppedStitch, Hourglass, StitchedCheck } from "@/lib/brand/components/StatusIcons";
+import {
+  DroppedStitch,
+  Hourglass,
+  HourglassOutline,
+  StitchedCheck,
+} from "@/lib/brand/components/StatusIcons";
 import { fill, type Dictionary } from "@/lib/copy";
 
 import { MEMBER_MARK, type Clock } from "./format";
@@ -50,7 +55,7 @@ function LastChip({
     .sort((a, b) => finishedAt(b).getTime() - finishedAt(a).getTime())[0];
   if (!last) {
     return (
-      <Chip tone="muted" icon="○">
+      <Chip tone="muted" icon={<HourglassOutline />}>
         {copy.status.none}
       </Chip>
     );
@@ -68,7 +73,7 @@ function LastChip({
 function NextChip({ at, clock, copy }: { at: Date | null; clock: Clock; copy: Dictionary }) {
   if (!at) return null;
   return (
-    <Chip tone="muted" icon="○">
+    <Chip tone="muted" icon={<HourglassOutline />}>
       {fill(copy.status.next, { time: clock.at(at) })}
     </Chip>
   );
@@ -77,7 +82,7 @@ function NextChip({ at, clock, copy }: { at: Date | null; clock: Clock; copy: Di
 /** A manual round (D28) is never run by the tick, so it names no next time. */
 function ByHandChip({ copy }: { copy: Dictionary }) {
   return (
-    <Chip tone="muted" icon="○">
+    <Chip tone="muted" icon={<HourglassOutline />}>
       {copy.status.byHand}
     </Chip>
   );

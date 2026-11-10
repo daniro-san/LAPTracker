@@ -13,13 +13,13 @@ import { discordCopy } from "./copy-discord";
 /** The public pages' strings in English: the source every other language's dictionary follows. */
 export const en = {
   site: {
-    name: "OG's LAP Tracker",
-    shortName: "LAP Tracker",
+    name: "Event Ledger",
+    shortName: "Ledger",
     description: "Event snapshots for server 325 alliances.",
     byline: "kept by the Old Grandmas",
     ledger: "Server 325 · Event Ledger",
     disclaimer:
-      "OG's LAP event tracker is a fan-made community project for the Last Asylum Plague game. It is not an official 37Games or Eyu website, and it is not affiliated with Last Asylum Plague. Game names and artwork belong to their owners.",
+      "Event Ledger is a fan-made community project for the Last Asylum Plague game. It is not an official 37Games or Eyu website, and it is not affiliated with Last Asylum Plague. Game names and artwork belong to their owners.",
     players: "Players",
     darkMode: "Dark mode",
     settings: "Settings",
@@ -206,14 +206,14 @@ export const en = {
       code: "404",
       title: "Grandma wandered off.",
       body: "This page isn't in the ledger.",
-      back: "Back to the table",
+      back: "Back to the ledger",
     },
     server: {
       code: "500",
       title: "Something cracked.",
       body: "It's okay, grandma will clean it.",
       retry: "Try again",
-      back: "Back to the table",
+      back: "Back to the ledger",
     },
   },
   empty: {

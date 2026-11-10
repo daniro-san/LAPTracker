@@ -5,13 +5,13 @@ import type { Translation } from "../copy";
 
 export const ko = {
   site: {
-    name: "OG's LAP Tracker",
-    shortName: "LAP Tracker",
+    name: "이벤트 장부",
+    shortName: "장부",
     description: "서버 325 연맹 이벤트 스냅샷.",
     byline: "Old Grandmas가 기록",
     ledger: "서버 325 · 이벤트 장부",
     disclaimer:
-      "OG's LAP event tracker는 Last Asylum Plague 게임을 위한 팬이 만든 커뮤니티 프로젝트입니다. 37Games나 Eyu의 공식 사이트가 아니며, Last Asylum Plague와 제휴되어 있지 않습니다. 게임 이름과 아트워크는 각 소유자의 것입니다.",
+      "이벤트 장부는 Last Asylum Plague 게임을 위한 팬이 만든 커뮤니티 프로젝트입니다. 37Games나 Eyu의 공식 사이트가 아니며, Last Asylum Plague와 제휴되어 있지 않습니다. 게임 이름과 아트워크는 각 소유자의 것입니다.",
     players: "플레이어",
     darkMode: "다크 모드",
     settings: "설정",
@@ -172,14 +172,14 @@ export const ko = {
       code: "404",
       title: "할머니가 길을 잃었어요.",
       body: "이 페이지는 장부에 없습니다.",
-      back: "표로 돌아가기",
+      back: "장부로 돌아가기",
     },
     server: {
       code: "500",
       title: "뭔가 금이 갔어요.",
       body: "괜찮아요, 할머니가 치울게요.",
       retry: "다시 시도",
-      back: "표로 돌아가기",
+      back: "장부로 돌아가기",
     },
   },
   empty: {

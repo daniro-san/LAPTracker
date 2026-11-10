@@ -5,13 +5,13 @@ import type { Translation } from "../copy";
 
 export const pl = {
   site: {
-    name: "OG's LAP Tracker",
-    shortName: "LAP Tracker",
+    name: "Księga wydarzeń",
+    shortName: "Księga",
     description: "Migawki wydarzeń sojuszy z serwera 325.",
     byline: "prowadzone przez Old Grandmas",
     ledger: "Serwer 325 · Księga wydarzeń",
     disclaimer:
-      "OG's LAP event tracker to fanowski projekt społeczności gry Last Asylum Plague. Nie jest oficjalną stroną 37Games ani Eyu i nie ma żadnych powiązań z Last Asylum Plague. Nazwy gier i grafiki należą do ich właścicieli.",
+      "Księga wydarzeń to fanowski projekt społeczności gry Last Asylum Plague. Nie jest oficjalną stroną 37Games ani Eyu i nie ma żadnych powiązań z Last Asylum Plague. Nazwy gier i grafiki należą do ich właścicieli.",
     players: "Gracze",
     darkMode: "Tryb ciemny",
     settings: "Ustawienia",
@@ -172,14 +172,14 @@ export const pl = {
       code: "404",
       title: "Babcia gdzieś poszła.",
       body: "Tej strony nie ma w księdze.",
-      back: "Wróć do tabeli",
+      back: "Wróć do księgi",
     },
     server: {
       code: "500",
       title: "Coś pękło.",
       body: "Spokojnie, babcia posprząta.",
       retry: "Spróbuj ponownie",
-      back: "Wróć do tabeli",
+      back: "Wróć do księgi",
     },
   },
   empty: {

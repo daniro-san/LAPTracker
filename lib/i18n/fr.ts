@@ -5,13 +5,13 @@ import type { Translation } from "../copy";
 
 export const fr = {
   site: {
-    name: "OG's LAP Tracker",
-    shortName: "LAP Tracker",
+    name: "Registre des événements",
+    shortName: "Registre",
     description: "Captures des événements des alliances du serveur 325.",
     byline: "tenu par les Old Grandmas",
     ledger: "Serveur 325 · Registre des événements",
     disclaimer:
-      "OG's LAP event tracker est un projet communautaire de fans pour le jeu Last Asylum Plague. Ce n’est pas un site officiel de 37Games ou d’Eyu, et il n’est pas affilié à Last Asylum Plague. Les noms et illustrations du jeu appartiennent à leurs propriétaires.",
+      "Registre des événements est un projet communautaire de fans pour le jeu Last Asylum Plague. Ce n’est pas un site officiel de 37Games ou d’Eyu, et il n’est pas affilié à Last Asylum Plague. Les noms et illustrations du jeu appartiennent à leurs propriétaires.",
     players: "Joueurs",
     darkMode: "Mode sombre",
     settings: "Réglages",
@@ -173,14 +173,14 @@ export const fr = {
       code: "404",
       title: "Mamie s’est égarée.",
       body: "Cette page n’est pas dans le registre.",
-      back: "Retour au tableau",
+      back: "Retour au registre",
     },
     server: {
       code: "500",
       title: "Quelque chose s’est fêlé.",
       body: "Pas grave, mamie va nettoyer.",
       retry: "Réessayer",
-      back: "Retour au tableau",
+      back: "Retour au registre",
     },
   },
   empty: {

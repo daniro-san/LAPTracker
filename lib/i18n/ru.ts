@@ -5,13 +5,13 @@ import type { Translation } from "../copy";
 
 export const ru = {
   site: {
-    name: "OG's LAP Tracker",
-    shortName: "LAP Tracker",
+    name: "Журнал событий",
+    shortName: "Журнал",
     description: "Снимки событий альянсов сервера 325.",
     byline: "ведут Old Grandmas",
     ledger: "Сервер 325 · Журнал событий",
     disclaimer:
-      "OG's LAP event tracker — фанатский проект сообщества для игры Last Asylum Plague. Это не официальный сайт 37Games или Eyu и не связан с Last Asylum Plague. Названия игр и иллюстрации принадлежат их владельцам.",
+      "Журнал событий — фанатский проект сообщества для игры Last Asylum Plague. Это не официальный сайт 37Games или Eyu и не связан с Last Asylum Plague. Названия игр и иллюстрации принадлежат их владельцам.",
     players: "Игроки",
     darkMode: "Тёмная тема",
     settings: "Настройки",
@@ -172,14 +172,14 @@ export const ru = {
       code: "404",
       title: "Бабушка куда-то ушла.",
       body: "Этой страницы нет в журнале.",
-      back: "Назад к таблице",
+      back: "Назад к журналу",
     },
     server: {
       code: "500",
       title: "Что-то треснуло.",
       body: "Ничего, бабушка всё уберёт.",
       retry: "Ещё раз",
-      back: "Назад к таблице",
+      back: "Назад к журналу",
     },
   },
   empty: {

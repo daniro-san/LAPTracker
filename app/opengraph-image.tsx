@@ -1,5 +1,9 @@
-// Link preview image (Phase 5b): the line mark large, in paper on plum. No text: the preview's own title
-// carries the name, and the display serif is not available to the image renderer.
+// Link preview image (Phase 5b): the line mark in paper on plum, with the product name under it in Young
+// Serif, read from the TTF in lib/brand/fonts/ (the renderer takes TTF, not next/font's WOFF2), as
+// lib/event-image.tsx does.
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
 import { ImageResponse } from "next/og";
 
 import { MarkLine } from "@/lib/brand/components/Logo";
@@ -17,14 +21,27 @@ export default function OpengraphImage() {
         width: "100%",
         height: "100%",
         display: "flex",
+        flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
+        gap: 24,
         background: tokenColor("plum"),
         color: tokenColor("paper"),
       }}
     >
-      <MarkLine size={440} />
+      <MarkLine size={340} />
+      <div style={{ fontFamily: "Young Serif", fontSize: 96, lineHeight: 1 }}>{copy.site.name}</div>
     </div>,
-    size,
+    {
+      ...size,
+      fonts: [
+        {
+          name: "Young Serif",
+          data: readFileSync(join(process.cwd(), "lib/brand/fonts/YoungSerif-Regular.ttf")),
+          weight: 400,
+          style: "normal",
+        },
+      ],
+    },
   );
 }

@@ -5,13 +5,13 @@ import type { Translation } from "../copy";
 
 export const vi = {
   site: {
-    name: "OG's LAP Tracker",
-    shortName: "LAP Tracker",
+    name: "Sổ sự kiện",
+    shortName: "Sổ",
     description: "Ảnh chụp sự kiện của các liên minh máy chủ 325.",
     byline: "do Old Grandmas ghi chép",
     ledger: "Máy chủ 325 · Sổ sự kiện",
     disclaimer:
-      "OG's LAP event tracker là dự án cộng đồng do người hâm mộ làm, dành cho game Last Asylum Plague. Đây không phải trang web chính thức của 37Games hay Eyu, và không liên kết với Last Asylum Plague. Tên game và hình ảnh thuộc về chủ sở hữu của chúng.",
+      "Sổ sự kiện là dự án cộng đồng do người hâm mộ làm, dành cho game Last Asylum Plague. Đây không phải trang web chính thức của 37Games hay Eyu, và không liên kết với Last Asylum Plague. Tên game và hình ảnh thuộc về chủ sở hữu của chúng.",
     players: "Người chơi",
     darkMode: "Chế độ tối",
     settings: "Cài đặt",
@@ -172,14 +172,14 @@ export const vi = {
       code: "404",
       title: "Bà đi lạc rồi.",
       body: "Trang này không có trong sổ.",
-      back: "Về bảng",
+      back: "Về sổ",
     },
     server: {
       code: "500",
       title: "Có gì đó bị nứt.",
       body: "Không sao, bà sẽ dọn.",
       retry: "Thử lại",
-      back: "Về bảng",
+      back: "Về sổ",
     },
   },
   empty: {

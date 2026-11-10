@@ -5,13 +5,13 @@ import type { Translation } from "../copy";
 
 export const ja = {
   site: {
-    name: "OG's LAP Tracker",
-    shortName: "LAP Tracker",
+    name: "イベント台帳",
+    shortName: "台帳",
     description: "サーバー325の同盟イベントのスナップショット。",
     byline: "Old Grandmas が記録",
     ledger: "サーバー325・イベント台帳",
     disclaimer:
-      "OG's LAP event tracker は、Last Asylum Plague のファンが作った非公式のコミュニティプロジェクトです。37Games や Eyu の公式サイトではなく、Last Asylum Plague とも提携していません。ゲームの名称とアートワークは、それぞれの権利者に帰属します。",
+      "イベント台帳 は、Last Asylum Plague のファンが作った非公式のコミュニティプロジェクトです。37Games や Eyu の公式サイトではなく、Last Asylum Plague とも提携していません。ゲームの名称とアートワークは、それぞれの権利者に帰属します。",
     players: "プレイヤー",
     darkMode: "ダークモード",
     settings: "設定",
@@ -172,14 +172,14 @@ export const ja = {
       code: "404",
       title: "おばあちゃんが迷子になりました。",
       body: "このページは台帳にありません。",
-      back: "表に戻る",
+      back: "台帳に戻る",
     },
     server: {
       code: "500",
       title: "何かが割れました。",
       body: "大丈夫、おばあちゃんが片付けます。",
       retry: "再試行",
-      back: "表に戻る",
+      back: "台帳に戻る",
     },
   },
   empty: {

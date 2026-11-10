@@ -5,13 +5,13 @@ import type { Translation } from "../copy";
 
 export const sv = {
   site: {
-    name: "OG's LAP Tracker",
-    shortName: "LAP Tracker",
+    name: "Eventlogg",
+    shortName: "Logg",
     description: "Ögonblicksbilder av eventen för allianserna på server 325.",
     byline: "förd av Old Grandmas",
     ledger: "Server 325 · Eventlogg",
     disclaimer:
-      "OG's LAP event tracker är ett fanprojekt från gemenskapen för spelet Last Asylum Plague. Det är inte en officiell webbplats för 37Games eller Eyu, och det har ingen koppling till Last Asylum Plague. Spelnamn och konstverk tillhör sina ägare.",
+      "Eventlogg är ett fanprojekt från gemenskapen för spelet Last Asylum Plague. Det är inte en officiell webbplats för 37Games eller Eyu, och det har ingen koppling till Last Asylum Plague. Spelnamn och konstverk tillhör sina ägare.",
     players: "Spelare",
     darkMode: "Mörkt läge",
     settings: "Inställningar",
@@ -172,14 +172,14 @@ export const sv = {
       code: "404",
       title: "Mormor har gått vilse.",
       body: "Den här sidan finns inte i loggen.",
-      back: "Tillbaka till tabellen",
+      back: "Tillbaka till loggen",
     },
     server: {
       code: "500",
       title: "Något sprack.",
       body: "Ingen fara, mormor städar upp.",
       retry: "Försök igen",
-      back: "Tillbaka till tabellen",
+      back: "Tillbaka till loggen",
     },
   },
   empty: {

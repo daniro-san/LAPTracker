@@ -5,13 +5,13 @@ import type { Translation } from "../copy";
 
 export const nl = {
   site: {
-    name: "OG's LAP Tracker",
-    shortName: "LAP Tracker",
+    name: "Eventlogboek",
+    shortName: "Logboek",
     description: "Momentopnamen van de events van de allianties op server 325.",
     byline: "bijgehouden door de Old Grandmas",
     ledger: "Server 325 · Eventlogboek",
     disclaimer:
-      "OG's LAP event tracker is een door fans gemaakt gemeenschapsproject voor het spel Last Asylum Plague. Het is geen officiële website van 37Games of Eyu en heeft geen band met Last Asylum Plague. Spelnamen en illustraties behoren toe aan hun eigenaars.",
+      "Eventlogboek is een door fans gemaakt gemeenschapsproject voor het spel Last Asylum Plague. Het is geen officiële website van 37Games of Eyu en heeft geen band met Last Asylum Plague. Spelnamen en illustraties behoren toe aan hun eigenaars.",
     players: "Spelers",
     darkMode: "Donkere modus",
     settings: "Instellingen",
@@ -172,14 +172,14 @@ export const nl = {
       code: "404",
       title: "Oma is afgedwaald.",
       body: "Deze pagina staat niet in het logboek.",
-      back: "Terug naar de tabel",
+      back: "Terug naar het logboek",
     },
     server: {
       code: "500",
       title: "Er is iets gebarsten.",
       body: "Geeft niks, oma ruimt het op.",
       retry: "Opnieuw",
-      back: "Terug naar de tabel",
+      back: "Terug naar het logboek",
     },
   },
   empty: {
