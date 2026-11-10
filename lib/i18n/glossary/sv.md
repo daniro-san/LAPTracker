@@ -24,6 +24,9 @@ Words already used in `lib/i18n/sv.ts`. Reuse them so the pages stay consistent;
 | Leader                    | Ledare                 | `leadership.leader` — the R5                              |
 | Run by hand by the admin  | Admin kör den för hand | `status.byHand`                                           |
 | grandma                   | mormor                 | the voice in empty states and errors                      |
+| Member history            | Medlemshistorik        | `history.title` — an alliance's rosters over time         |
+| Daily read                | Dagsavläsning          | `history.daily` — a card head for the once-a-day read     |
+| Renamed                   | Namnbyte               | `history.renamed` — a member whose name changed           |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

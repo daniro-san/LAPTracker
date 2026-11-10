@@ -4,6 +4,12 @@ export type { AllianceRow, HistoryRow, MemberRow } from "./alliances";
 export { BLOCKED_ROSTER_KEYS, findBlockedKeys } from "./blocked-keys";
 export { rolesOf, roleOf, type Role } from "./leadership";
 export { getEventDetail, homeEvent, listEvents, type EventSummary } from "./events";
+export {
+  memberHistory,
+  type HistoryCard,
+  type HistoryMember,
+  type MemberHistory,
+} from "./member-history";
 export { allianceNames } from "./names";
 export { playerHistory, searchPlayers } from "./players";
 export type { PlayerEventRow, PlayerHistory, PlayerMatch } from "./players";

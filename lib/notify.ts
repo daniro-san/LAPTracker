@@ -5,6 +5,7 @@
 import type { RunSummary } from "./collector";
 import { topMovers } from "./compute";
 import { copy, fill } from "./copy";
+import type { DailyReadSummary } from "./daily-read";
 import { MINUS, percentFormat, sign, signedCompact, type DiscordClock } from "./discord-format";
 import { sendOrEdit as send } from "./discord-send";
 import type { Env } from "./env";
@@ -348,4 +349,24 @@ export function appErrorMessage(route: string, message: string, digest: string |
 export function tickSilenceMessage(last: { min: number; at: string } | null): string {
   const t = copy.discord.admin;
   return last ? fill(t.tickSilence, last) : t.tickNone;
+}
+
+/** The daily roster read fell short (D60): its state and calls, the error and each failed alliance. */
+export function dailyReadMessage(s: DailyReadSummary, at: string): string {
+  const t = copy.discord.admin;
+  const lines = [
+    fill(t.dailyRead, {
+      icon: STATE_ICON[s.status],
+      day: s.day,
+      state: STATE_WORD[s.status],
+      calls: s.callsUsed,
+      at,
+    }),
+  ];
+  if (s.error) lines.push(fill(t.error, { error: s.error }));
+  for (const f of s.failed)
+    lines.push(fill(t.failed, { alliance: allianceLabel(f), error: f.error }));
+  if (s.stale.length > 0)
+    lines.push(fill(t.stale, { list: s.stale.map(allianceLabel).join(", ") }));
+  return lines.join("\n");
 }

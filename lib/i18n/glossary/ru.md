@@ -27,6 +27,8 @@ Words already used in `lib/i18n/ru.ts`. Reuse them so the pages stay consistent;
 | Grandma noticed           | Бабушка заметила            | `ledger.movers` — the event's biggest gains and losses      |
 | vs                        | против                      | `compare.title`, `compare.versus` — two events side by side |
 | Before / After            | До / После                  | `compare.lead` — the two ends of one event's change         |
+| Member history            | История участников          | `history.title` — the page title                            |
+| Daily read                | Ежедневное чтение           | `history.daily` — a card head for the once-a-day read       |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

@@ -10,6 +10,7 @@ import {
   bigint,
   boolean,
   check,
+  date,
   index,
   integer,
   jsonb,
@@ -214,3 +215,58 @@ export const rehearsalSlots = pgTable("rehearsal_slots", {
   eventId: integer("event_id").references(() => events.id, { onDelete: "set null" }),
   outcome: text("outcome").notNull(),
 });
+
+/**
+ * One row per server day: the tick's daily roster read (D60). The insert is the claim, so two ticks
+ * cannot both read; the row carries the outcome (run_logs needs a snapshot, which a daily read is not).
+ */
+export const dailyReads = pgTable(
+  "daily_reads",
+  {
+    day: date("day", { mode: "string" }).primaryKey(),
+    startedAt: tstz("started_at").notNull(),
+    finishedAt: tstz("finished_at"),
+    status: text("status", { enum: ["running", "complete", "partial", "failed"] }).notNull(),
+    callsUsed: integer("calls_used").notNull().default(0),
+    quotaRemainingBefore: integer("quota_remaining_before"),
+    error: text("error"),
+  },
+  (t) => [
+    check(
+      "daily_reads_status_check",
+      sql`${t.status} in ('running', 'complete', 'partial', 'failed')`,
+    ),
+  ],
+);
+
+/**
+ * One alliance's roster from a daily read (D60): the members as four parallel arrays (uid, name, power,
+ * kills; a null power or kills stays null, D15), no raw_json, so no blocked roster key is ever stored.
+ */
+export const dailyRosters = pgTable(
+  "daily_rosters",
+  {
+    id: serial("id").primaryKey(),
+    readDay: date("read_day", { mode: "string" })
+      .notNull()
+      .references(() => dailyReads.day),
+    unionId: big("union_id").notNull(),
+    tag: text("tag"),
+    name: text("name"),
+    memberCount: integer("member_count"),
+    totalPower: big("total_power"),
+    totalKills: big("total_kills"),
+    badgeId: integer("badge_id"),
+    sourceUpdatedAt: tstz("source_updated_at"),
+    isFresh: boolean("is_fresh").notNull(),
+    error: text("error"),
+    memberUids: big("member_uids").array().notNull(),
+    memberNames: text("member_names").array().notNull(),
+    memberPower: big("member_power").array().notNull(),
+    memberKills: big("member_kills").array().notNull(),
+  },
+  (t) => [
+    unique("daily_rosters_day_union_unique").on(t.readDay, t.unionId),
+    index("daily_rosters_union_idx").on(t.unionId),
+  ],
+);

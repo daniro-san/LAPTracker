@@ -1,9 +1,12 @@
 // The scheduler's decision (plan §3.1), event-driven: scheduled events' rows are created from the env a
 // day ahead; every event (scheduled or rehearsal) carries its own before_at/after_at; one action per tick.
+// The daily roster read (D60) comes last, when nothing else is due.
 import type { AppContext } from "./app-context";
+import { runDailyRead, type DailyReadSummary } from "./daily-read";
 import type { Db } from "./db";
 import {
   createNotifier,
+  dailyReadMessage,
   discordClock,
   rehearsalSkippedMessage,
   tickSilenceMessage,
@@ -14,13 +17,21 @@ import { claimQuotaCheck, duePhases, findOrCreateEvent } from "./repo/events";
 import { claimSlot, setSlotOutcome } from "./repo/rehearsals";
 import { latestTickAt } from "./repo/ticks";
 import { executeSnapshot, quotaReport, type RunOutcome } from "./run";
-import { eventsToCreate, nextEvent, quotaCheckDue, rehearsalSlotsDue } from "./schedule";
+import {
+  dailyReadDue,
+  eventsToCreate,
+  nextEvent,
+  quotaCheckDue,
+  rehearsalSlotsDue,
+} from "./schedule";
+import { DAILY_ROSTER_IDS } from "../config/alliances";
 
 export type TickOutcome =
   | { kind: "idle" }
   | { kind: "run"; outcome: RunOutcome }
   | { kind: "quota-check"; eventId: number; remaining: number | null }
-  | { kind: "rehearsal"; slotAt: Date; result: RehearsalResult };
+  | { kind: "rehearsal"; slotAt: Date; result: RehearsalResult }
+  | { kind: "daily-read"; summary: DailyReadSummary };
 
 /** A scheduled slot that may not run is skipped once, with one admin note (plan §3.1). */
 async function scheduledRehearsal(ctx: AppContext, db: Db, slotAt: Date): Promise<TickOutcome> {
@@ -38,6 +49,19 @@ async function scheduledRehearsal(ctx: AppContext, db: Db, slotAt: Date): Promis
     );
   }
   return { kind: "rehearsal", slotAt, result };
+}
+
+/** The day's roster read when its window holds `now` and no caller claimed the day yet; one admin
+ * line when it falls short. */
+async function dailyRead(ctx: AppContext, db: Db, now: Date): Promise<TickOutcome | null> {
+  const due = dailyReadDue(now, ctx.env);
+  const summary = due && (await runDailyRead(ctx, db, due.day, DAILY_ROSTER_IDS));
+  if (!summary) return null;
+  if (summary.status !== "complete") {
+    const at = discordClock(ctx.env.SERVER_TZ).stamp(ctx.now());
+    await createNotifier(ctx.env, ctx.fetch).admin(dailyReadMessage(summary, at));
+  }
+  return { kind: "daily-read", summary };
 }
 
 export async function runTick(ctx: AppContext, db: Db, origin: string): Promise<TickOutcome> {
@@ -78,7 +102,9 @@ export async function runTick(ctx: AppContext, db: Db, origin: string): Promise<
     // INVARIANT rehearsal.once-per-slot
     if (await claimSlot(db, slotAt)) return scheduledRehearsal(ctx, db, slotAt);
   }
-  return { kind: "idle" };
+
+  // (5) The daily roster read (D60): last, once per server day inside its window. Never an event.
+  return (await dailyRead(ctx, db, now)) ?? { kind: "idle" };
 }
 
 /** No tick for longer than this means the scheduler stopped (D45); also the alert's repeat gap. */

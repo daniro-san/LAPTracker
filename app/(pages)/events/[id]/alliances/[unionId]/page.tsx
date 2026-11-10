@@ -2,6 +2,7 @@
 // The totals as one summary band, then the members (same row shape as the main page), then one row
 // per event.
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 
@@ -290,6 +291,12 @@ export default async function AlliancePage({ params }: { params: Params }) {
                 {copy.ledger.acrossEvents} <span aria-hidden="true">&nbsp;↓</span>
               </a>
             )}
+            <Link
+              href={`/alliances/${unionId}/history`}
+              className="inline-flex min-h-11 items-center px-2 text-sm font-medium text-plum hover:underline"
+            >
+              {copy.history.title} <span aria-hidden="true">&nbsp;→</span>
+            </Link>
           </div>
         </div>
         <CaptureWindow

@@ -12,7 +12,7 @@ import {
 import { IDS } from "@/lib/collector.test-helpers";
 import type { Db } from "@/lib/db";
 import { openTestDb, truncateAll } from "@/lib/db.test-helpers";
-import { events, rehearsalSlots, snapshots, tickLog } from "@/lib/schema";
+import { dailyReads, dailyRosters, events, rehearsalSlots, snapshots, tickLog } from "@/lib/schema";
 
 const holder = vi.hoisted(() => ({ ctx: null as AppContext | null }));
 vi.mock("@/lib/app-context", async (original) => ({
@@ -194,5 +194,31 @@ describe("POST /api/tick", () => {
     const notes = posts.filter((p) => p.url === ADMIN_WEBHOOK && p.content.includes("skipped"));
     expect(notes).toHaveLength(2);
     expect(notes.every((n) => n.content.startsWith("[rehearsal] "))).toBe(true);
+  });
+
+  it("runs the daily roster read once per server day, only after a due phase and never as an event", async () => {
+    // DAILY_ROSTER_AT on BEFORE's time (10:00 server = 12:00 UTC): both are due at 12:05 UTC.
+    const { ctx, clock, v1 } = testContext(db, { ...TEST_ENV, DAILY_ROSTER_AT: "10:00" });
+    holder.ctx = ctx;
+    const answers: unknown[] = [];
+    for (const at of ["12:05", "12:20", "12:35"]) {
+      clock.now = new Date(`2026-11-07T${at}:00Z`);
+      const res = await tick();
+      answers.push(
+        res.status === 204
+          ? 204
+          : (({ action, phase }) => action ?? phase)(
+              (await res.json()) as { action?: string; phase?: string },
+            ),
+      );
+    }
+
+    expect(answers).toEqual(["before", "daily-read", 204]);
+    expect(
+      await db.select({ day: dailyReads.day, status: dailyReads.status }).from(dailyReads),
+    ).toEqual([{ day: "2026-11-07", status: "complete" }]);
+    expect(await db.select({ id: dailyRosters.id }).from(dailyRosters)).toHaveLength(IDS.length);
+    expect(await db.select({ id: events.id }).from(events)).toHaveLength(1);
+    expect(v1.calls).toHaveLength(2 * IDS.length);
   });
 });

@@ -19,7 +19,8 @@ lib/discord-send.ts, lib/discord-format.ts, lib/event-image.tsx
                     time formats, and the event picture drawn with next/og (D58).
 lib/schedule.ts     pure: SERVER_TZ ↔ UTC, scheduled events and their times, Friday-check and rehearsal slots.
 lib/tick.ts         the tick's decision: create the scheduled event's row, run the one due phase (from events.before_at/
-                    after_at), the Friday check, a REHEARSAL_AT slot.
+                    after_at), the Friday check, a REHEARSAL_AT slot, the daily roster read.
+lib/daily-read.ts   the daily roster read (D60): quota check, /v1 rosters as arrays into daily_rosters; not an event.
 lib/rehearsal.ts    rehearsal creation (guards, retention) and the pure verdict.
 lib/auth.ts         Bearer CRON_SECRET / x-edit-pin in constant time; the Postgres-backed rate limiter.
 lib/run.ts          what a route runs: executeSnapshot (finalise + logger shutdown in finally, then notify)
