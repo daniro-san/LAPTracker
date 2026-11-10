@@ -49,3 +49,5 @@ Plan changes needed: none.
 - The public Discord message is plain text with an optional picture (D58), not an embed. Any change to the public message edits `publicSnapshotMessage`/`publicText` in lib/notify.ts and, for the picture, lib/event-image.tsx.
 - The picture's fonts are read from lib/brand/fonts/ at runtime. Next's file tracing already includes them for /api/tick and /api/snapshot; a new route that sends the public message needs the same check in `.next/server/app/<route>/route.js.nft.json`.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/201
