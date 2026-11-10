@@ -90,3 +90,5 @@ Plan changes needed: `docs/IMPLEMENTATION_PLAN.md` §3.1, the target event rule:
 - New public string `status.failedRows`; `legend.rounded` is one word. A note that adds public strings needs the translate-copy skill again (the todo list is empty now).
 </adjustments>
 
+
+https://github.com/daniro-san/LAPTracker/pull/211
