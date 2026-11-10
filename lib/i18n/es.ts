@@ -112,6 +112,7 @@ export const es = {
     next: "Próxima actualización: {time}",
     byHand: "Lo lanza el admin a mano",
     stale: "Desactualizados: {n}",
+    failedRows: "Fallidos: {n}",
     start: "Inicio",
     end: "Fin",
   },
@@ -133,7 +134,7 @@ export const es = {
     same: "Igual",
     stale: "Desactualizado",
     rank: "Puesto",
-    rounded: "Redondeado: marca Números exactos para ver la cifra completa",
+    rounded: "Redondeado",
     members: "Incluye cambios de miembros",
   },
   members: {

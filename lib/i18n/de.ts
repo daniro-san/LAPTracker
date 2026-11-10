@@ -112,6 +112,7 @@ export const de = {
     next: "Nächstes Update: {time}",
     byHand: "Startet der Admin von Hand",
     stale: "Veraltet: {n}",
+    failedRows: "Fehlgeschlagen: {n}",
     start: "Beginn",
     end: "Ende",
   },
@@ -133,7 +134,7 @@ export const de = {
     same: "Gleich",
     stale: "Veraltet",
     rank: "Rang",
-    rounded: "Gerundet: Genaue Zahlen ankreuzen für die volle Zahl",
+    rounded: "Gerundet",
     members: "Inklusive Mitgliederwechsel",
   },
   members: {

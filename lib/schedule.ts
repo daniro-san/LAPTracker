@@ -119,6 +119,16 @@ export function currentEvent(now: Date, cfg: ScheduleConfig): ScheduledEvent {
   return eventsAround(now, cfg).reduce((best, e) => (distance(e) < distance(best) ? e : best));
 }
 
+/**
+ * The event "Run something now" and `/api/snapshot` act on: the nearest scheduled event while its two
+ * phases are not both complete; once the nearest one is complete, the next one (D55's closed-round idea
+ * for scheduled events). `nearestDone` is whether `currentEvent(now)` has both snapshots complete.
+ */
+export function targetEvent(now: Date, cfg: ScheduleConfig, nearestDone: boolean): ScheduledEvent {
+  const nearest = currentEvent(now, cfg);
+  return nearestDone ? (eventsAround(nearest.eventAtUtc, cfg)[2] as ScheduledEvent) : nearest;
+}
+
 const windowMs = (cfg: ScheduleConfig) => cfg.SNAPSHOT_WINDOW_MIN * 60_000;
 
 /**

@@ -139,6 +139,8 @@ export const en = {
     next: "Next update at {time}",
     byHand: "Run by hand by the admin",
     stale: "{n} stale",
+    /** Rows whose After failed, counted apart from the stale ones (`status.failed` is the phase's word). */
+    failedRows: "{n} failed",
     /** The capture window's labels (issue 180): `START 10:00 → END 13:01 server time`, when the Before
      * snapshot was taken and when the After was. */
     start: "Start",
@@ -163,7 +165,7 @@ export const en = {
     same: "Same",
     stale: "Stale",
     rank: "Rank",
-    rounded: "Rounded: tick Exact numbers for the full figure",
+    rounded: "Rounded",
     /** The footnote mark `*` on a falling Might or Kills change when members left. */
     members: "Includes member changes",
   },

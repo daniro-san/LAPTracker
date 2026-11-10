@@ -112,6 +112,7 @@ export const ptBR = {
     next: "Próxima atualização: {time}",
     byHand: "Rodado à mão pelo admin",
     stale: "Desatualizados: {n}",
+    failedRows: "Falhas: {n}",
     start: "Início",
     end: "Fim",
   },
@@ -133,7 +134,7 @@ export const ptBR = {
     same: "Igual",
     stale: "Desatualizado",
     rank: "Posição",
-    rounded: "Arredondado: marque Números exatos para ver o valor completo",
+    rounded: "Arredondado",
     members: "Inclui mudanças de membros",
   },
   members: {

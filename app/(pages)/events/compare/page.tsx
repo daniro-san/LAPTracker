@@ -18,12 +18,16 @@ import {
 import { ExactToggle } from "@/app/_ui/ExactToggle";
 import { allianceLabel, type Clock } from "@/app/_ui/format";
 import { requestClock, requestCopy } from "@/app/_ui/locale";
+import { ShowFirst } from "@/app/_ui/ShowFirst";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { Legend } from "@/app/_ui/Status";
 import { fill, type Dictionary } from "@/lib/copy";
 import { withPageDb } from "@/lib/page";
 import { getComparePage, type EventComparison } from "@/lib/queries";
+
+/** The members view lists this many by Might; "Show all" opens the rest, as the alliance page does. */
+const TOP_MEMBERS = 20;
 
 type Search = Promise<Record<string, string | string[] | undefined>>;
 
@@ -105,11 +109,11 @@ function Results({
         <section className="mt-6">
           <h2 className="mb-3 font-subhead text-display-md">{l.members}</h2>
           <CompareHeader lead={l.member} columns={[l.might, l.kills]} />
-          <ul>
+          <ShowFirst top={TOP_MEMBERS}>
             {c.members.map((m) => (
               <MemberCompareCard key={m.uid} m={m} data={c} clock={clock} copy={copy} />
             ))}
-          </ul>
+          </ShowFirst>
         </section>
       )}
     </>

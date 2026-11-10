@@ -109,6 +109,9 @@ function MoverList({
   );
 }
 
+/** The section's anchor: the event page's "Grandma noticed ↓" jump link points here. */
+export const MOVERS_ID = "movers";
+
 export function Movers({ scopes }: { scopes: MoverScope[] }) {
   const copy = useCopy();
   const id = useId();
@@ -136,7 +139,7 @@ export function Movers({ scopes }: { scopes: MoverScope[] }) {
     }),
   );
   return (
-    <section aria-labelledby={`${id}-h`} className="mt-8">
+    <section id={MOVERS_ID} aria-labelledby={`${id}-h`} className="mt-8 scroll-mt-20">
       <h2 id={`${id}-h`} className="mb-2 flex items-center gap-2 font-subhead text-display-md">
         <LookMark className="size-6 shrink-0 text-plum" />
         {copy.ledger.movers}

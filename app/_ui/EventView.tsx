@@ -23,7 +23,7 @@ import { ExactToggle } from "./ExactToggle";
 import { allianceLabel, rowAnchor, type Clock } from "./format";
 import { requestClock, requestCopy } from "./locale";
 import { allianceScope, memberScope } from "./mover-lists";
-import { Movers } from "./Movers";
+import { Movers, MOVERS_ID } from "./Movers";
 import { MyAllianceJump } from "./MyAlliance";
 import { AllianceBadge } from "./Pictures";
 import { SiteFooter } from "./SiteFooter";
@@ -33,6 +33,7 @@ import {
   CaptureWindow,
   FreshDots,
   Legend,
+  NextUpdate,
   SideHead,
   StatusChips,
   worstOf,
@@ -86,6 +87,9 @@ function toStatRow(
   clock: Clock,
   copy: Dictionary,
 ): StatRow {
+  // The After failed: the card keeps the Before figures and names their time instead of a bare `—`.
+  const beforeTime = r.after?.failed ? r.before?.sourceUpdatedAt : null;
+  const at = beforeTime ? clock.time(beforeTime) : null;
   return {
     key: String(r.unionId),
     anchor: rowAnchor(r.unionId),
@@ -95,7 +99,7 @@ function toStatRow(
     icon: <AllianceBadge badgeId={r.after?.badgeId ?? r.before?.badgeId} />,
     sub:
       r.formerly && fill(copy.ledger.was, { name: allianceLabel(r.formerly.tag, r.formerly.name) }),
-    metrics: r.metrics,
+    metrics: at ? r.metrics.map((m) => (m.value === null ? m : { ...m, at })) : r.metrics,
     summary: <FreshDots before={fresh(r.before)} after={fresh(r.after)} copy={copy} />,
     detail: <RowDetail r={r} history={history} clock={clock} copy={copy} />,
   };
@@ -130,6 +134,49 @@ function TitleActions({
   );
 }
 
+/** The status strip, the capture window and the jump link to Movers (UX review B1, S1, S3). */
+function TopStatus({
+  detail,
+  worst,
+  hasMovers,
+  clock,
+  copy,
+}: {
+  detail: Detail;
+  worst: string[];
+  hasMovers: boolean;
+  clock: Clock;
+  copy: Dictionary;
+}) {
+  return (
+    <>
+      <StatusChips
+        phases={detail.snapshots}
+        stale={worst.filter((w) => w === "stale").length}
+        failed={worst.filter((w) => w === "failed").length}
+        clock={clock}
+        copy={copy}
+      />
+      <div className="flex flex-wrap items-center justify-between gap-x-3">
+        <CaptureWindow
+          before={detail.snapshots.find((s) => s.phase === "before")}
+          after={detail.snapshots.find((s) => s.phase === "after")}
+          clock={clock}
+          copy={copy}
+        />
+        {hasMovers && (
+          <a
+            href={`#${MOVERS_ID}`}
+            className="ml-auto inline-flex min-h-11 items-center px-2 text-sm font-medium text-plum hover:underline"
+          >
+            {copy.ledger.movers} <span aria-hidden="true">&nbsp;↓</span>
+          </a>
+        )}
+      </div>
+    </>
+  );
+}
+
 export async function EventView({
   events,
   homeId,
@@ -150,6 +197,12 @@ export async function EventView({
   const [clock, copy] = await Promise.all([requestClock(), requestCopy()]);
   const now = new Date();
   const rows = comparisonRows(detail.snapshots, changes, names, ranks, copy);
+  const worst = rows.map((r) => worstOf(fresh(r.before), fresh(r.after)));
+  const moverScopes = [
+    allianceScope(movers.alliances, detail.id, changes, copy),
+    memberScope(movers.members, copy.ledger.members),
+  ];
+  const hasMovers = moverScopes.some((s) => Object.values(s.lists).some((l) => l && l.length > 0));
   return (
     <>
       <SiteHeader events={events} currentId={detail.id} homeId={homeId} clock={clock} copy={copy} />
@@ -169,25 +222,7 @@ export async function EventView({
           </div>
           <TitleActions events={events} eventId={detail.id} copy={copy} />
         </div>
-        <StatusChips
-          phases={detail.snapshots}
-          nextAt={nextUpdateAt(
-            detail.snapshots.map((s) => s.phase),
-            detail,
-            nextEvent(now, getEnv()),
-            now,
-          )}
-          stale={rows.filter((r) => worstOf(fresh(r.before), fresh(r.after)) !== "fresh").length}
-          manual={detail.manual}
-          clock={clock}
-          copy={copy}
-        />
-        <CaptureWindow
-          before={detail.snapshots.find((s) => s.phase === "before")}
-          after={detail.snapshots.find((s) => s.phase === "after")}
-          clock={clock}
-          copy={copy}
-        />
+        <TopStatus detail={detail} worst={worst} hasMovers={hasMovers} clock={clock} copy={copy} />
         <Legend memberMark={rows.some((r) => r.metrics.some((m) => m.memberMark))} copy={copy} />
         <MyAllianceJump tags={Object.fromEntries(rows.map((r) => [r.unionId, r.tag]))} />
         <StatTable
@@ -197,12 +232,18 @@ export async function EventView({
           empty={emptyLine(detail.manual, detail.snapshots.length, copy)}
           copy={copy}
         />
-        <Movers
-          scopes={[
-            allianceScope(movers.alliances, detail.id, changes, copy),
-            memberScope(movers.members, copy.ledger.members),
-          ]}
+        <NextUpdate
+          at={nextUpdateAt(
+            detail.snapshots.map((s) => s.phase),
+            detail,
+            nextEvent(now, getEnv()),
+            now,
+          )}
+          manual={detail.manual}
+          clock={clock}
+          copy={copy}
         />
+        <Movers scopes={moverScopes} />
       </main>
       <SiteFooter copy={copy} />
     </>

@@ -30,7 +30,7 @@ html {
   /* How far the lace hangs below the plum bar, inside that height. */
   --lace: 12px;
   color-scheme: light dark;
-  /* Young Serif ships one weight; never let the browser fake a bold over it. */
+  /* Alegreya is loaded at one weight; never let the browser fake a bold over it. */
   font-synthesis-weight: none;
 }
 :focus-visible {
@@ -216,6 +216,18 @@ body {
         background: currentColor;
         -webkit-mask-box-image: url("/brand/frame-soft.svg") 12 / 6px stretch;
       }
+    }
+  }
+  /* A row's Details control (MoreBar `inline`, app/_ui/StatTable.tsx) is a grid item of the row: the
+     details box and its content slot disappear, so the summary takes the row's next cell and the open
+     panel spans the row. A browser without `::details-content` keeps the control on its own line. */
+  @supports selector(::details-content) {
+    .stat-more,
+    .stat-more::details-content {
+      display: contents;
+    }
+    .stat-more:not([open]) > .stat-more-panel {
+      display: none;
     }
   }
   @supports not (-webkit-mask-box-image: none) {

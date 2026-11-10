@@ -1,6 +1,12 @@
+"use client";
+
 // Alliance badges and player photos (DESIGN.md `alliance-badge`, `avatar`; DECISIONS D22). Both load
 // from our own /img routes, lazily, with alt="" because the name is always printed beside them.
-// Without a photo or badge the drawn placeholder stands in (lib/brand/components/Placeholders.tsx).
+// Without a photo or badge, or when the image does not load (the route answers 404 when the upstream
+// picture cannot be fetched, D22), the drawn placeholder stands in (lib/brand/components/Placeholders.tsx),
+// never the browser's broken-image icon. A client component: only `onError` can tell.
+import { useState, type ReactNode } from "react";
+
 import { NoBadge, NoPhoto } from "@/lib/brand/components/Placeholders";
 
 const BADGE = { sm: 28, md: 40 } as const;
@@ -19,6 +25,38 @@ function Framed({ px, children }: { px: keyof typeof SIZE; children: React.React
   );
 }
 
+/** The image, or `fallback` once it has failed. An image that failed before hydration is caught by the
+ * ref check, because React never sees its `error` event. */
+function Picture({
+  src,
+  n,
+  className,
+  fallback,
+}: {
+  src: string;
+  n: number;
+  className: string;
+  fallback: ReactNode;
+}) {
+  const [failed, setFailed] = useState(false);
+  if (failed) return fallback;
+  return (
+    <img
+      ref={(el) => {
+        if (el?.complete && el.naturalWidth === 0) setFailed(true);
+      }}
+      src={src}
+      alt=""
+      width={n}
+      height={n}
+      loading="lazy"
+      decoding="async"
+      className={className}
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
 export function AllianceBadge({
   badgeId,
   size = "sm",
@@ -27,19 +65,17 @@ export function AllianceBadge({
   size?: keyof typeof BADGE;
 }) {
   const n = BADGE[size];
+  const noBadge = <NoBadge className="size-full p-px text-ink/45" />;
   return (
     <Framed px={n}>
       {badgeId == null ? (
-        <NoBadge className="size-full p-px text-ink/45" />
+        noBadge
       ) : (
-        <img
+        <Picture
           src={`/img/badge/${badgeId}`}
-          alt=""
-          width={n}
-          height={n}
-          loading="lazy"
-          decoding="async"
+          n={n}
           className="size-full object-contain p-px"
+          fallback={noBadge}
         />
       )}
     </Framed>
@@ -56,20 +92,18 @@ export function PlayerAvatar({
   size?: keyof typeof AVATAR;
 }) {
   const n = AVATAR[size];
+  const noPhoto = <NoPhoto className="size-full text-ink/45" />;
   return (
     <Framed px={n}>
       {hasAvatar ? (
-        <img
+        <Picture
           src={`/img/avatar/${uid}`}
-          alt=""
-          width={n}
-          height={n}
-          loading="lazy"
-          decoding="async"
+          n={n}
           className="size-full object-cover"
+          fallback={noPhoto}
         />
       ) : (
-        <NoPhoto className="size-full text-ink/45" />
+        noPhoto
       )}
     </Framed>
   );

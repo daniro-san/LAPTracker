@@ -112,6 +112,7 @@ export const vi = {
     next: "Lần cập nhật tới: {time}",
     byHand: "Admin chạy thủ công",
     stale: "Cũ: {n}",
+    failedRows: "Lỗi: {n}",
     start: "Bắt đầu",
     end: "Kết thúc",
   },
@@ -133,7 +134,7 @@ export const vi = {
     same: "Không đổi",
     stale: "Cũ",
     rank: "Hạng",
-    rounded: "Đã làm tròn: đánh dấu Số chính xác để xem số đầy đủ",
+    rounded: "Đã làm tròn",
     members: "Gồm thay đổi thành viên",
   },
   members: {

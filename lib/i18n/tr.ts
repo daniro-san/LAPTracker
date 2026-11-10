@@ -112,6 +112,7 @@ export const tr = {
     next: "Sonraki güncelleme: {time}",
     byHand: "Admin elle başlatır",
     stale: "Eskimiş: {n}",
+    failedRows: "Başarısız: {n}",
     start: "Başlangıç",
     end: "Bitiş",
   },
@@ -133,7 +134,7 @@ export const tr = {
     same: "Aynı",
     stale: "Eskimiş",
     rank: "Sıra",
-    rounded: "Yuvarlandı: tam değer için Tam sayılar’ı işaretle",
+    rounded: "Yuvarlandı",
     members: "Üye değişimleri dahil",
   },
   members: {
