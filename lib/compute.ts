@@ -153,6 +153,20 @@ export function rankDelta(
   return prev == null || curr == null ? null : prev - curr;
 }
 
+/**
+ * How much more one event's change was than another's: `second − first` (the event compare page's
+ * difference line, D57). `base` is the size of the first change, so the percent takes the difference's
+ * own sign whatever the first change's. Null when either change is unknown (INVARIANT
+ * freshness.no-stale-delta: a stale or failed side has none).
+ */
+export function changeDifference(
+  first: number | null | undefined,
+  second: number | null | undefined,
+): { delta: number; base: number } | null {
+  if (first == null || second == null) return null;
+  return { delta: second - first, base: Math.abs(first) };
+}
+
 export type MoverMetric = "power" | "kills";
 export type MoverDirection = "gain" | "loss";
 

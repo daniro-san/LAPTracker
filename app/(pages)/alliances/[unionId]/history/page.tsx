@@ -190,7 +190,7 @@ export default async function MemberHistoryPage({
   return (
     <>
       <SiteHeader events={events} currentId={null} homeId={homeId} clock={clock} copy={copy} />
-      <main className="mx-auto max-w-[960px] px-4 py-4 sm:px-6">
+      <main id="main" className="scroll-mt-20 mx-auto max-w-[960px] px-4 py-4 sm:px-6">
         <Breadcrumbs
           crumbs={[
             { key: "ledger", href: "/", label: copy.site.home },

@@ -31,7 +31,7 @@ export default function BrandPage() {
         </div>
         <LaceBorder className="block" />
       </header>
-      <main className="mx-auto max-w-[960px] px-4 pt-6 pb-8 sm:px-6">
+      <main id="main" className="scroll-mt-20 mx-auto max-w-[960px] px-4 pt-6 pb-8 sm:px-6">
         <h1 className="font-display text-display-lg">{t.title}</h1>
         <p className="mt-2 max-w-[60ch] text-ink/70">{t.intro}</p>
         <nav aria-label={t.nav.label} className="mt-6">

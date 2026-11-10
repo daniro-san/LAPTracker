@@ -1,6 +1,7 @@
 // Page footer: the ledger's byline on the right and one corner ornament at the bottom left, out of the
 // content's way (DESIGN.md ornament budget): the yarn ball by default, the Granny Doctor on the error
-// and player pages. Under the byline, the live version (D59), inlined at build time by next.config.ts.
+// and player pages. Under the byline, the disclaimer as one short line with the full text behind a
+// "More" disclosure (UX review N9), then the live version (D59), inlined at build time by next.config.ts.
 import { GrannyStanding } from "@/lib/brand/components/Mascot";
 import { YarnCorner } from "@/lib/brand/components/YarnCorner";
 import type { Dictionary } from "@/lib/copy";
@@ -21,8 +22,14 @@ export function SiteFooter({
         {copy.site.ledger} · {copy.site.byline}
       </p>
       <p className="mt-1 ml-auto max-w-[60ch] text-right text-xs text-ink/65">
-        {copy.site.disclaimer}
+        {copy.site.disclaimerShort}
       </p>
+      <details className="ml-auto max-w-[60ch] text-right text-xs text-ink/65">
+        <summary className="ml-auto flex min-h-11 w-fit min-w-11 cursor-pointer items-center justify-end underline underline-offset-2">
+          {copy.site.disclaimerMore}
+        </summary>
+        <p>{copy.site.disclaimer}</p>
+      </details>
       <p className="mt-1 text-right text-xs text-ink/65 tabular-nums">
         {process.env.BUILD_VERSION}
       </p>

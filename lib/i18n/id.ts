@@ -22,6 +22,10 @@ export const idID = {
     manualRound: "Ronde manual",
     breadcrumb: "Jejak",
     home: "Buku",
+    skip: "Lewati ke buku",
+    disclaimerShort:
+      "Buatan penggemar. Tidak berafiliasi dengan 37Games, Eyu, atau Last Asylum Plague.",
+    disclaimerMore: "Selengkapnya",
   },
   ledger: {
     rank: "Peringkat",
@@ -33,7 +37,6 @@ export const idID = {
     members: "Members",
     level: "Level",
     player: "Pemain",
-    sanctuary: "Suaka",
     asOf: "Data per {time}",
     details: "Detail",
     change: "Perubahan",
@@ -59,7 +62,7 @@ export const idID = {
     first: "Event pertama",
     second: "Event kedua",
     swap: "Tukar event",
-    lead: "Setiap baris adalah perubahan selama event itu, dari Sebelum ke Sesudah.",
+    lead: "Setiap baris adalah perubahan selama event itu, dari Sebelum ke Sesudah. Baris terakhir adalah perubahan event kedua dikurangi event pertama.",
     allAlliances: "Semua aliansi",
     counted: "{n} dari {total} aliansi, yang datanya bisa dipakai di kedua event",
     between: "Dari satu event ke event lain",

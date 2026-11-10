@@ -13,7 +13,6 @@ Words already used in `lib/i18n/id.ts`. Reuse them so the pages stay consistent;
 | Event                     | Event                        | `ledger.event` — a game event                                   |
 | Rank                      | Peringkat                    | `ledger.rank` — the #n position                                 |
 | Ranking                   | Peringkat server             | `ledger.ranking` — the game's server rank                       |
-| Sanctuary                 | Suaka                        | `ledger.sanctuary` — a player's building level                  |
 | joined                    | masuk                        | `ledger.joined` — after +n                                      |
 | left                      | keluar                       | `ledger.left` — after −n                                        |
 | Stale                     | Usang                        | `fresh.stale` — data not fresh                                  |

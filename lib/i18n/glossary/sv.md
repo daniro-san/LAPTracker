@@ -13,7 +13,6 @@ Words already used in `lib/i18n/sv.ts`. Reuse them so the pages stay consistent;
 | Event                     | Event                  | `ledger.event` — a game event                             |
 | Rank                      | Placering              | `ledger.rank` — the #n position                           |
 | Ranking                   | Rankning               | `ledger.ranking` — the game's server rank                 |
-| Sanctuary                 | Helgedom               | `ledger.sanctuary` — a player's building level            |
 | joined                    | gick med               | `ledger.joined` — after +n                                |
 | left                      | lämnade                | `ledger.left` — after −n                                  |
 | Stale                     | Inaktuell              | `fresh.stale` — data not fresh                            |

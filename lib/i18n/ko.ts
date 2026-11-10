@@ -22,6 +22,10 @@ export const ko = {
     manualRound: "수동 라운드",
     breadcrumb: "경로",
     home: "장부",
+    skip: "장부로 건너뛰기",
+    disclaimerShort:
+      "팬이 만든 사이트입니다. 37Games, Eyu, Last Asylum Plague와 제휴되어 있지 않습니다.",
+    disclaimerMore: "더 보기",
   },
   ledger: {
     rank: "순위",
@@ -33,7 +37,6 @@ export const ko = {
     members: "인원",
     level: "Level",
     player: "플레이어",
-    sanctuary: "성소",
     asOf: "{time} 기준",
     details: "자세히",
     change: "변화",
@@ -59,7 +62,7 @@ export const ko = {
     first: "첫 번째 이벤트",
     second: "두 번째 이벤트",
     swap: "이벤트 바꾸기",
-    lead: "각 줄은 그 이벤트 동안의 변화입니다. 이전부터 이후까지.",
+    lead: "각 줄은 그 이벤트 동안의 변화입니다. 이전부터 이후까지. 마지막 줄은 두 번째 이벤트의 변화에서 첫 번째 이벤트의 변화를 뺀 값입니다.",
     allAlliances: "전체 연맹",
     counted: "연맹 {total}개 중 {n}개, 두 이벤트 모두 쓸 수 있는 데이터가 있는 연맹",
     between: "한 이벤트에서 다른 이벤트까지",

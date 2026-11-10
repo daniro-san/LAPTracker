@@ -22,6 +22,9 @@ export const fr = {
     manualRound: "Manche manuelle",
     breadcrumb: "Fil d’Ariane",
     home: "Registre",
+    skip: "Aller au registre",
+    disclaimerShort: "Projet de fans. Non affilié à 37Games, Eyu ni Last Asylum Plague.",
+    disclaimerMore: "Plus",
   },
   ledger: {
     rank: "Rang",
@@ -33,7 +36,6 @@ export const fr = {
     members: "Members",
     level: "Level",
     player: "Joueur",
-    sanctuary: "Sanctuaire",
     asOf: "Données du {time}",
     details: "Détails",
     change: "Évolution",
@@ -59,7 +61,7 @@ export const fr = {
     first: "Premier événement",
     second: "Deuxième événement",
     swap: "Inverser les événements",
-    lead: "Chaque ligne est l’évolution pendant cet événement, d’Avant à Après.",
+    lead: "Chaque ligne est l’évolution pendant cet événement, d’Avant à Après. La dernière ligne est l’évolution du deuxième événement moins celle du premier.",
     allAlliances: "Toutes alliances",
     counted:
       "{n} alliances sur {total}, celles dont les données sont utilisables dans les deux événements",

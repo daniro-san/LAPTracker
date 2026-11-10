@@ -46,7 +46,7 @@ export default async function PlayersPage({
         clock={clock}
         copy={copy}
       />
-      <main className="mx-auto max-w-[960px] px-4 py-4 sm:px-6">
+      <main id="main" className="scroll-mt-20 mx-auto max-w-[960px] px-4 py-4 sm:px-6">
         <h1 className="font-display text-display-lg leading-tight">{copy.search.title}</h1>
         <PlayerSearch q={q} maxLength={MAX_QUERY}>
           {q !== "" && matches.length === 0 && (

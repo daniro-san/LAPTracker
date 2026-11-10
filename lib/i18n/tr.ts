@@ -22,6 +22,10 @@ export const tr = {
     manualRound: "Elle tur",
     breadcrumb: "Konum",
     home: "Defter",
+    skip: "Deftere atla",
+    disclaimerShort:
+      "Hayran yapımı. 37Games, Eyu ya da Last Asylum Plague ile bağlantılı değildir.",
+    disclaimerMore: "Devamı",
   },
   ledger: {
     rank: "Sıra",
@@ -33,7 +37,6 @@ export const tr = {
     members: "Members",
     level: "Level",
     player: "Oyuncu",
-    sanctuary: "Sığınak",
     asOf: "{time} itibarıyla",
     details: "Ayrıntılar",
     change: "Değişim",
@@ -59,7 +62,7 @@ export const tr = {
     first: "İlk etkinlik",
     second: "İkinci etkinlik",
     swap: "Etkinlikleri değiştir",
-    lead: "Her satır, o etkinlikteki değişimi Önce’den Sonra’ya gösterir.",
+    lead: "Her satır, o etkinlikteki değişimi Önce’den Sonra’ya gösterir. Son satır, ikinci etkinliğin değişiminden ilkinin değişimini çıkarır.",
     allAlliances: "Tüm ittifaklar",
     counted: "{total} ittifaktan {n} tanesi, iki etkinlikte de kullanılabilir verisi olanlar",
     between: "Bir etkinlikten diğerine",
