@@ -154,14 +154,14 @@ export const de = {
       code: "404",
       title: "Oma hat sich verlaufen.",
       body: "Diese Seite steht nicht in der Chronik.",
-      back: "Zurück zur Tabelle",
+      back: "Zurück zur Chronik",
     },
     server: {
       code: "500",
       title: "Da ist was zersprungen.",
       body: "Halb so wild, Oma räumt das auf.",
       retry: "Nochmal",
-      back: "Zurück zur Tabelle",
+      back: "Zurück zur Chronik",
     },
   },
   empty: {

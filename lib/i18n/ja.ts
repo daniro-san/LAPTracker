@@ -154,14 +154,14 @@ export const ja = {
       code: "404",
       title: "おばあちゃんが迷子になりました。",
       body: "このページは台帳にありません。",
-      back: "表に戻る",
+      back: "台帳に戻る",
     },
     server: {
       code: "500",
       title: "何かが割れました。",
       body: "大丈夫、おばあちゃんが片付けます。",
       retry: "再試行",
-      back: "表に戻る",
+      back: "台帳に戻る",
     },
   },
   empty: {

@@ -155,14 +155,14 @@ export const fr = {
       code: "404",
       title: "Mamie s’est égarée.",
       body: "Cette page n’est pas dans le registre.",
-      back: "Retour au tableau",
+      back: "Retour au registre",
     },
     server: {
       code: "500",
       title: "Quelque chose s’est fêlé.",
       body: "Pas grave, mamie va nettoyer.",
       retry: "Réessayer",
-      back: "Retour au tableau",
+      back: "Retour au registre",
     },
   },
   empty: {

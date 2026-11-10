@@ -154,14 +154,14 @@ export const zhCN = {
       code: "404",
       title: "奶奶走丢了。",
       body: "账本里没有这一页。",
-      back: "返回表格",
+      back: "返回账本",
     },
     server: {
       code: "500",
       title: "有东西裂了。",
       body: "没关系，奶奶会收拾好。",
       retry: "重试",
-      back: "返回表格",
+      back: "返回账本",
     },
   },
   empty: {

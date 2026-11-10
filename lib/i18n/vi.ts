@@ -154,14 +154,14 @@ export const vi = {
       code: "404",
       title: "Bà đi lạc rồi.",
       body: "Trang này không có trong sổ.",
-      back: "Về bảng",
+      back: "Về sổ",
     },
     server: {
       code: "500",
       title: "Có gì đó bị nứt.",
       body: "Không sao, bà sẽ dọn.",
       retry: "Thử lại",
-      back: "Về bảng",
+      back: "Về sổ",
     },
   },
   empty: {

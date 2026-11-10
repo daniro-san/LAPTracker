@@ -154,14 +154,14 @@ export const es = {
       code: "404",
       title: "La abuela se fue de paseo.",
       body: "Esta página no está en el registro.",
-      back: "Volver a la tabla",
+      back: "Volver al registro",
     },
     server: {
       code: "500",
       title: "Algo se rompió.",
       body: "Tranquilo, la abuela lo limpia.",
       retry: "Reintentar",
-      back: "Volver a la tabla",
+      back: "Volver al registro",
     },
   },
   empty: {

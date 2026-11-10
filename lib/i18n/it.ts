@@ -154,14 +154,14 @@ export const itIT = {
       code: "404",
       title: "La nonna si è persa.",
       body: "Questa pagina non è nel registro.",
-      back: "Torna alla tabella",
+      back: "Torna al registro",
     },
     server: {
       code: "500",
       title: "Si è crepato qualcosa.",
       body: "Tranquillo, la nonna pulisce.",
       retry: "Riprova",
-      back: "Torna alla tabella",
+      back: "Torna al registro",
     },
   },
   empty: {

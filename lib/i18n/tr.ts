@@ -154,14 +154,14 @@ export const tr = {
       code: "404",
       title: "Nine bir yerlere gitti.",
       body: "Bu sayfa defterde yok.",
-      back: "Tabloya dön",
+      back: "Deftere dön",
     },
     server: {
       code: "500",
       title: "Bir şey çatladı.",
       body: "Sorun değil, nine temizler.",
       retry: "Tekrar dene",
-      back: "Tabloya dön",
+      back: "Deftere dön",
     },
   },
   empty: {

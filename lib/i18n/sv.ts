@@ -154,14 +154,14 @@ export const sv = {
       code: "404",
       title: "Mormor har gått vilse.",
       body: "Den här sidan finns inte i loggen.",
-      back: "Tillbaka till tabellen",
+      back: "Tillbaka till loggen",
     },
     server: {
       code: "500",
       title: "Något sprack.",
       body: "Ingen fara, mormor städar upp.",
       retry: "Försök igen",
-      back: "Tillbaka till tabellen",
+      back: "Tillbaka till loggen",
     },
   },
   empty: {

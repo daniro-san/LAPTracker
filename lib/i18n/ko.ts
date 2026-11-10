@@ -154,14 +154,14 @@ export const ko = {
       code: "404",
       title: "할머니가 길을 잃었어요.",
       body: "이 페이지는 장부에 없습니다.",
-      back: "표로 돌아가기",
+      back: "장부로 돌아가기",
     },
     server: {
       code: "500",
       title: "뭔가 금이 갔어요.",
       body: "괜찮아요, 할머니가 치울게요.",
       retry: "다시 시도",
-      back: "표로 돌아가기",
+      back: "장부로 돌아가기",
     },
   },
   empty: {

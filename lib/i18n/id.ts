@@ -154,14 +154,14 @@ export const idID = {
       code: "404",
       title: "Nenek tersesat.",
       body: "Halaman ini tidak ada di buku.",
-      back: "Kembali ke tabel",
+      back: "Kembali ke buku",
     },
     server: {
       code: "500",
       title: "Ada yang retak.",
       body: "Tidak apa-apa, nenek yang bereskan.",
       retry: "Coba lagi",
-      back: "Kembali ke tabel",
+      back: "Kembali ke buku",
     },
   },
   empty: {

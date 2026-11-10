@@ -154,14 +154,14 @@ export const nl = {
       code: "404",
       title: "Oma is afgedwaald.",
       body: "Deze pagina staat niet in het logboek.",
-      back: "Terug naar de tabel",
+      back: "Terug naar het logboek",
     },
     server: {
       code: "500",
       title: "Er is iets gebarsten.",
       body: "Geeft niks, oma ruimt het op.",
       retry: "Opnieuw",
-      back: "Terug naar de tabel",
+      back: "Terug naar het logboek",
     },
   },
   empty: {

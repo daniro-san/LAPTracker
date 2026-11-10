@@ -180,14 +180,14 @@ export const en = {
       code: "404",
       title: "Grandma wandered off.",
       body: "This page isn't in the ledger.",
-      back: "Back to the table",
+      back: "Back to the ledger",
     },
     server: {
       code: "500",
       title: "Something cracked.",
       body: "It's okay, grandma will clean it.",
       retry: "Try again",
-      back: "Back to the table",
+      back: "Back to the ledger",
     },
   },
   empty: {

@@ -154,14 +154,14 @@ export const pl = {
       code: "404",
       title: "Babcia gdzieś poszła.",
       body: "Tej strony nie ma w księdze.",
-      back: "Wróć do tabeli",
+      back: "Wróć do księgi",
     },
     server: {
       code: "500",
       title: "Coś pękło.",
       body: "Spokojnie, babcia posprząta.",
       retry: "Spróbuj ponownie",
-      back: "Wróć do tabeli",
+      back: "Wróć do księgi",
     },
   },
   empty: {

@@ -154,14 +154,14 @@ export const ptBR = {
       code: "404",
       title: "A vovó saiu andando por aí.",
       body: "Esta página não está no registro.",
-      back: "Voltar à tabela",
+      back: "Voltar ao registro",
     },
     server: {
       code: "500",
       title: "Algo rachou.",
       body: "Tudo bem, a vovó limpa.",
       retry: "Tentar de novo",
-      back: "Voltar à tabela",
+      back: "Voltar ao registro",
     },
   },
   empty: {
