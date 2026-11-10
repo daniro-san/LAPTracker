@@ -11,7 +11,7 @@ export const de = {
     byline: "geführt von den Old Grandmas",
     ledger: "Server 325 · Event-Chronik",
     disclaimer:
-      "OG's LAP event tracker ist ein Fan-Projekt der Community zum Spiel Last Asylum Plague. Es ist keine offizielle Website von 37Games oder Eyu und steht in keiner Verbindung zu Last Asylum Plague. Spielnamen und Grafiken gehören ihren Eigentümern.",
+      "Event-Chronik ist ein Fan-Projekt der Community zum Spiel Last Asylum Plague. Es ist keine offizielle Website von 37Games oder Eyu und steht in keiner Verbindung zu Last Asylum Plague. Spielnamen und Grafiken gehören ihren Eigentümern.",
     players: "Spieler",
     darkMode: "Dunkler Modus",
     settings: "Einstellungen",

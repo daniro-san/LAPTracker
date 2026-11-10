@@ -11,7 +11,7 @@ export const tr = {
     byline: "Old Grandmas tarafından tutulur",
     ledger: "Sunucu 325 · Etkinlik Defteri",
     disclaimer:
-      "OG's LAP event tracker, Last Asylum Plague oyunu için hayran yapımı bir topluluk projesidir. Resmî bir 37Games ya da Eyu’nun sitesi değildir ve Last Asylum Plague ile bağlantılı değildir. Oyun adları ve görseller sahiplerine aittir.",
+      "Etkinlik Defteri, Last Asylum Plague oyunu için hayran yapımı bir topluluk projesidir. Resmî bir 37Games ya da Eyu’nun sitesi değildir ve Last Asylum Plague ile bağlantılı değildir. Oyun adları ve görseller sahiplerine aittir.",
     players: "Oyuncular",
     darkMode: "Karanlık mod",
     settings: "Ayarlar",

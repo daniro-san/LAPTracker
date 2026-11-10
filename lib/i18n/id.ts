@@ -11,7 +11,7 @@ export const idID = {
     byline: "dicatat oleh Old Grandmas",
     ledger: "Server 325 · Buku Event",
     disclaimer:
-      "OG's LAP event tracker adalah proyek komunitas buatan penggemar untuk game Last Asylum Plague. Ini bukan situs resmi 37Games atau Eyu, dan tidak berafiliasi dengan Last Asylum Plague. Nama game dan karya seninya adalah milik pemiliknya masing-masing.",
+      "Buku Event adalah proyek komunitas buatan penggemar untuk game Last Asylum Plague. Ini bukan situs resmi 37Games atau Eyu, dan tidak berafiliasi dengan Last Asylum Plague. Nama game dan karya seninya adalah milik pemiliknya masing-masing.",
     players: "Pemain",
     darkMode: "Mode gelap",
     settings: "Pengaturan",

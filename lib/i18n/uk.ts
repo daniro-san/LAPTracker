@@ -11,7 +11,7 @@ export const uk = {
     byline: "ведуть Old Grandmas",
     ledger: "Сервер 325 · Журнал подій",
     disclaimer:
-      "OG's LAP event tracker — фанатський громадський проєкт для гри Last Asylum Plague. Це не офіційний сайт 37Games чи Eyu і не пов'язаний з Last Asylum Plague. Назви ігор і їхні ілюстрації належать власникам.",
+      "Журнал подій — фанатський громадський проєкт для гри Last Asylum Plague. Це не офіційний сайт 37Games чи Eyu і не пов'язаний з Last Asylum Plague. Назви ігор і їхні ілюстрації належать власникам.",
     players: "Гравці",
     darkMode: "Темна тема",
     settings: "Налаштування",

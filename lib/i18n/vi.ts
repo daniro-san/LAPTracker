@@ -11,7 +11,7 @@ export const vi = {
     byline: "do Old Grandmas ghi chép",
     ledger: "Máy chủ 325 · Sổ sự kiện",
     disclaimer:
-      "OG's LAP event tracker là dự án cộng đồng do người hâm mộ làm, dành cho game Last Asylum Plague. Đây không phải trang web chính thức của 37Games hay Eyu, và không liên kết với Last Asylum Plague. Tên game và hình ảnh thuộc về chủ sở hữu của chúng.",
+      "Sổ sự kiện là dự án cộng đồng do người hâm mộ làm, dành cho game Last Asylum Plague. Đây không phải trang web chính thức của 37Games hay Eyu, và không liên kết với Last Asylum Plague. Tên game và hình ảnh thuộc về chủ sở hữu của chúng.",
     players: "Người chơi",
     darkMode: "Chế độ tối",
     settings: "Cài đặt",

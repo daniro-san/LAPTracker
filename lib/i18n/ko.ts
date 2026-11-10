@@ -11,7 +11,7 @@ export const ko = {
     byline: "Old Grandmas가 기록",
     ledger: "서버 325 · 이벤트 장부",
     disclaimer:
-      "OG's LAP event tracker는 Last Asylum Plague 게임을 위한 팬이 만든 커뮤니티 프로젝트입니다. 37Games나 Eyu의 공식 사이트가 아니며, Last Asylum Plague와 제휴되어 있지 않습니다. 게임 이름과 아트워크는 각 소유자의 것입니다.",
+      "이벤트 장부는 Last Asylum Plague 게임을 위한 팬이 만든 커뮤니티 프로젝트입니다. 37Games나 Eyu의 공식 사이트가 아니며, Last Asylum Plague와 제휴되어 있지 않습니다. 게임 이름과 아트워크는 각 소유자의 것입니다.",
     players: "플레이어",
     darkMode: "다크 모드",
     settings: "설정",

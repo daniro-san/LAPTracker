@@ -11,7 +11,7 @@ export const fr = {
     byline: "tenu par les Old Grandmas",
     ledger: "Serveur 325 · Registre des événements",
     disclaimer:
-      "OG's LAP event tracker est un projet communautaire de fans pour le jeu Last Asylum Plague. Ce n’est pas un site officiel de 37Games ou d’Eyu, et il n’est pas affilié à Last Asylum Plague. Les noms et illustrations du jeu appartiennent à leurs propriétaires.",
+      "Registre des événements est un projet communautaire de fans pour le jeu Last Asylum Plague. Ce n’est pas un site officiel de 37Games ou d’Eyu, et il n’est pas affilié à Last Asylum Plague. Les noms et illustrations du jeu appartiennent à leurs propriétaires.",
     players: "Joueurs",
     darkMode: "Mode sombre",
     settings: "Réglages",
