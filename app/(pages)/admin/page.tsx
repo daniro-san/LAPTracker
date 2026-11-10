@@ -14,6 +14,7 @@ import {
   roundView,
   seconds,
   stateWord,
+  currentView,
   watchViews,
 } from "@/app/_ui/admin/words";
 import type { Clock } from "@/app/_ui/format";
@@ -24,17 +25,10 @@ import { DroppedStitch, StitchedCheck } from "@/lib/brand/components/StatusIcons
 import { copy, fill } from "@/lib/copy";
 import { getEnv, type Env } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
-import {
-  latestManualEvent,
-  latestQuota,
-  latestRehearsal,
-  listRuns,
-  recentTicks,
-  runningSnapshots,
-  scheduledEvent,
-} from "@/lib/queries/admin";
+import { listRuns, recentTicks } from "@/lib/queries/admin";
+import { loadAdminPage } from "@/lib/queries/admin-page";
 import { QUOTA_WARN_BELOW } from "@/lib/run";
-import { currentEvent, lastOccurrence, nextEvent } from "@/lib/schedule";
+import { isGeneratedName, lastOccurrence, nextEvent } from "@/lib/schedule";
 
 const t = copy.admin;
 const st = t.status;
@@ -61,9 +55,11 @@ async function weekly(slots: string, env: Env, clock: Clock): Promise<string> {
 /** Quota: OK at 900 or more, Low under it (plan §3.1, the Friday warning), Unknown before any run. */
 function QuotaFact({
   quota,
+  now,
   clock,
 }: {
   quota: { remaining: number | null; at: Date } | null;
+  now: Date;
   clock: Clock;
 }) {
   const n = quota?.remaining ?? null;
@@ -73,6 +69,17 @@ function QuotaFact({
         label={st.quota}
         value={<Chip tone="muted">{st.quotaUnknown}</Chip>}
         note={st.quotaNone}
+      />
+    );
+  }
+  // The quota resets every UTC day: an older reading says when it is from and carries no verdict.
+  if (!quota || quota.at.toISOString().slice(0, 10) !== now.toISOString().slice(0, 10)) {
+    return (
+      <Fact
+        label={st.quota}
+        value={fill(st.quotaValue, { n })}
+        chip={<Chip tone="muted">{st.quotaOld}</Chip>}
+        note={quota && fill(st.quotaNoteOld, { at: clock.stamp(quota.at) })}
       />
     );
   }
@@ -116,9 +123,11 @@ function Status({
   next,
   recent,
   ticks,
+  now,
   clock,
 }: {
   quota: { remaining: number | null; at: Date } | null;
+  now: Date;
   running: ReturnType<typeof watchViews>["running"];
   next: { phase: "before" | "after"; at: Date; event: string; eventAt: Date } | undefined;
   recent: Run[];
@@ -132,7 +141,7 @@ function Status({
   return (
     <AdminSection id="status" title={st.title}>
       <div className="grid sm:grid-cols-2 sm:gap-x-6 sm:gap-y-5">
-        <QuotaFact quota={quota} clock={clock} />
+        <QuotaFact quota={quota} now={now} clock={clock} />
         <Fact
           label={st.running}
           value={
@@ -147,7 +156,11 @@ function Status({
           <Fact
             label={st.next}
             value={fill(st.nextValue, { phase: phaseWord(next.phase), at: clock.stamp(next.at) })}
-            note={fill(st.nextNote, { event: next.event, at: clock.stamp(next.eventAt) })}
+            note={
+              isGeneratedName(next.event)
+                ? fill(st.nextNoteDated, { at: clock.stamp(next.eventAt) })
+                : fill(st.nextNote, { event: next.event, at: clock.stamp(next.eventAt) })
+            }
           />
         )}
         <Fact
@@ -227,27 +240,12 @@ async function Schedule({
   );
 }
 
-const DAY_MS = 24 * 60 * 60_000;
-
 export default async function AdminPage() {
   const env = getEnv();
   const now = new Date();
   const next = nextEvent(now, env);
-  const current = currentEvent(now, env);
-  const [[rehearsal, quota, manual, running, recent, row, ticks], clock] = await Promise.all([
-    withPageDb((db) =>
-      Promise.all([
-        latestRehearsal(db, env.SNAPSHOT_WINDOW_MIN),
-        latestQuota(db),
-        latestManualEvent(db),
-        runningSnapshots(db, now),
-        listRuns(db, 10),
-        scheduledEvent(db, current.eventAtUtc),
-        recentTicks(db),
-      ]),
-    ),
-    requestServerClock(),
-  ]);
+  const [[current, rehearsal, quota, manual, running, recent, row, ticks], clock] =
+    await Promise.all([withPageDb((db) => loadAdminPage(db, now, env)), requestServerClock()]);
   const views = watchViews(running, recent[0], clock);
   const nextRun = [
     { phase: "before" as const, at: current.beforeAt, event: current },
@@ -270,17 +268,13 @@ export default async function AdminPage() {
         }
         recent={recent}
         ticks={ticks}
+        now={now}
         clock={clock}
       />
       <AdminSection id="run" title={t.run.title} help={t.run.intro}>
         <AdminActions
           beforeAtText={clock.stamp(current.beforeAt)}
-          current={{
-            id: row?.id ?? null,
-            name: row?.name ?? current.name,
-            atText: clock.stamp(current.eventAtUtc),
-            rowFromText: clock.stamp(new Date(current.beforeAt.getTime() - DAY_MS)),
-          }}
+          current={currentView(current, row, now, clock)}
           manual={manual && roundView(manual, clock)}
           running={views.running}
         />

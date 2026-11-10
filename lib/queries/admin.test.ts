@@ -1,6 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 
-import { runTrace } from "./admin";
+import type { Db } from "../db";
+import { openTestDb } from "../db.test-helpers";
+import { allianceSnapshots, events, snapshots } from "../schema";
+import { getRun, listRuns, runTrace } from "./admin";
 
 const START = new Date("2026-11-07T12:00:00Z");
 const at = (seconds: number) => new Date(START.getTime() + seconds * 1000);
@@ -22,5 +25,48 @@ describe("runTrace", () => {
       ["alliance", 1],
     ]);
     expect(trace.total.retries).toBe(3);
+  });
+});
+
+describe("runProblems", () => {
+  let db: Db;
+  let id: number;
+  beforeAll(async () => {
+    db = await openTestDb();
+    const [event] = await db
+      .insert(events)
+      .values({
+        name: "E",
+        eventAtUtc: START,
+        allianceIds: [1, 2, 3],
+        beforeAt: START,
+        afterAt: START,
+      })
+      .returning({ id: events.id });
+    const [snap] = await db
+      .insert(snapshots)
+      .values({
+        eventId: (event as { id: number }).id,
+        phase: "after",
+        startedAt: START,
+        status: "partial",
+      })
+      .returning({ id: snapshots.id });
+    id = (snap as { id: number }).id;
+    const row = { snapshotId: id, source: "v1" as const, rawJson: { members: [{ uid: 1, x: 1 }] } };
+    await db.insert(allianceSnapshots).values([
+      { ...row, unionId: 1, tag: "OK", isFresh: true },
+      { ...row, unionId: 2, tag: "OLD", name: "Old", isFresh: false },
+      { ...row, unionId: 3, tag: "BAD", isFresh: false, error: "HTTP 500" },
+    ]);
+  });
+
+  it("names the stale and the failed alliance of a run, and nothing else about them", async () => {
+    const found = await getRun(db, id);
+    expect(found?.problems).toEqual([
+      { snapshotId: id, unionId: 2, tag: "OLD", name: "Old", failed: false },
+      { snapshotId: id, unionId: 3, tag: "BAD", name: null, failed: true },
+    ]);
+    expect((await listRuns(db))[0]?.problems).toHaveLength(2);
   });
 });

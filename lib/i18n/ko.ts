@@ -112,6 +112,7 @@ export const ko = {
     next: "다음 업데이트: {time}",
     byHand: "관리자가 직접 실행",
     stale: "오래됨: {n}",
+    failedRows: "실패: {n}",
     start: "시작",
     end: "종료",
   },
@@ -133,7 +134,7 @@ export const ko = {
     same: "변동 없음",
     stale: "오래됨",
     rank: "순위",
-    rounded: "반올림됨: 전체 숫자는 ‘정확한 숫자’를 체크",
+    rounded: "반올림됨",
     members: "멤버 변동 포함",
   },
   members: {

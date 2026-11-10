@@ -112,6 +112,7 @@ export const idID = {
     next: "Pembaruan berikutnya: {time}",
     byHand: "Dijalankan manual oleh admin",
     stale: "Usang: {n}",
+    failedRows: "Gagal: {n}",
     start: "Awal",
     end: "Akhir",
   },
@@ -133,7 +134,7 @@ export const idID = {
     same: "Sama",
     stale: "Usang",
     rank: "Peringkat",
-    rounded: "Dibulatkan: centang Angka pasti untuk angka lengkap",
+    rounded: "Dibulatkan",
     members: "Termasuk perubahan anggota",
   },
   members: {

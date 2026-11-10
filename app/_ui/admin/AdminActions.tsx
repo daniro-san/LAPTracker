@@ -162,8 +162,8 @@ function CurrentEvent({
           <span id="current-event" className={LABEL}>
             {t.event}
           </span>
-          <p className="break-words font-subhead text-display-sm">{current.name}</p>
-          <p className="text-body-sm text-ink/70">{current.atText}</p>
+          <p className="break-words font-subhead text-display-sm">{current.title}</p>
+          <p className="text-body-sm text-ink/70">{current.stateText}</p>
         </div>
         {id !== null && name === null && (
           <>
@@ -180,7 +180,7 @@ function CurrentEvent({
           </>
         )}
       </div>
-      {id === null && (
+      {id === null && current.rowFromText !== null && (
         <p className="mt-1 text-body-sm text-ink/70">
           {fill(t.renameLater, { at: current.rowFromText })}
         </p>

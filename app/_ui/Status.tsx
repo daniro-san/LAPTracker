@@ -69,58 +69,65 @@ function LastChip({
   );
 }
 
-/** "Next update at …": the next snapshot, of this event or of the schedule (app/_ui/event-rows.ts). */
-function NextChip({ at, clock, copy }: { at: Date | null; clock: Clock; copy: Dictionary }) {
-  if (!at) return null;
-  return (
-    <Chip tone="muted" icon={<HourglassOutline />}>
-      {fill(copy.status.next, { time: clock.at(at) })}
-    </Chip>
-  );
-}
-
-/** A manual round (D28) is never run by the tick, so it names no next time. */
-function ByHandChip({ copy }: { copy: Dictionary }) {
-  return (
-    <Chip tone="muted" icon={<HourglassOutline />}>
-      {copy.status.byHand}
-    </Chip>
-  );
-}
-
-export function StatusChips({
-  phases,
-  nextAt,
-  stale,
+/** "Next update at …": the next snapshot, of this event or of the schedule (app/_ui/event-rows.ts).
+ * It sits under the ledger, where "when does this change" is asked. A manual round (D28) is never run
+ * by the tick, so it says "Run by hand by the admin" instead of a time. */
+export function NextUpdate({
+  at,
   manual = false,
   clock,
   copy,
 }: {
-  phases: PhaseStatus[];
-  nextAt: Date | null;
-  /** Rows marked stale or failed: shown as a seal `○ n` beside the time, never as the time's tone. */
-  stale: number;
-  /** A manual round: "Run by hand by the admin" replaces "Next update at …". */
+  at: Date | null;
   manual?: boolean;
   clock: Clock;
   copy: Dictionary;
 }) {
+  if (!manual && !at) return null;
   return (
-    <ul className="flex flex-wrap items-center gap-2" aria-label={copy.status.label}>
-      <li className="min-w-0">
+    <p className="mt-4">
+      <Chip tone="muted" icon={<HourglassOutline />}>
+        {manual ? copy.status.byHand : fill(copy.status.next, { time: clock.at(at as Date) })}
+      </Chip>
+    </p>
+  );
+}
+
+/** The last update's chip with the seal counts of stale and failed rows beside it, on one line while
+ * they fit; each count only when non-zero, never the time's tone. */
+export function StatusChips({
+  phases,
+  stale,
+  failed,
+  clock,
+  copy,
+}: {
+  phases: PhaseStatus[];
+  stale: number;
+  failed: number;
+  clock: Clock;
+  copy: Dictionary;
+}) {
+  const counts = [
+    [stale, "○", copy.status.stale],
+    [failed, "✗", copy.status.failedRows],
+  ] as const;
+  return (
+    <ul className="flex flex-wrap items-center gap-x-3 gap-y-1" aria-label={copy.status.label}>
+      <li className="min-w-0 flex-[1_1_12rem]">
         <LastChip phases={phases} clock={clock} copy={copy} />
       </li>
-      {stale > 0 && (
-        <li className="min-w-0 text-body-sm">
-          <span className="whitespace-nowrap font-medium text-seal">
-            <span aria-hidden="true">○ </span>
-            {fill(copy.status.stale, { n: stale })}
-          </span>
-        </li>
+      {counts.map(
+        ([n, symbol, text]) =>
+          n > 0 && (
+            <li key={symbol} className="shrink-0 text-body-sm">
+              <span className="whitespace-nowrap font-medium text-seal">
+                <span aria-hidden="true">{symbol} </span>
+                {fill(text, { n })}
+              </span>
+            </li>
+          ),
       )}
-      <li className="min-w-0">
-        {manual ? <ByHandChip copy={copy} /> : <NextChip at={nextAt} clock={clock} copy={copy} />}
-      </li>
     </ul>
   );
 }

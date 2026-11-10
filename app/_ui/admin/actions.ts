@@ -106,10 +106,14 @@ export interface RoundView {
 /** The current scheduled event: its row (null until the scheduler makes it) and its time in words. */
 export interface CurrentEventView {
   id: number | null;
+  /** The name, which Rename starts from. */
   name: string;
-  atText: string;
-  /** When its row appears, for the "rename later" line. */
-  rowFromText: string;
+  /** The heading: the name without a generated name's ISO date, which `stateText` carries. */
+  title: string;
+  /** Its date, age and the state of its two snapshots. */
+  stateText: string;
+  /** When its row appears, for the "rename later" line; null once that time has passed. */
+  rowFromText: string | null;
 }
 
 /** A snapshot running now, in words: "Before snapshot", the event, "Thu, 19:14 server time". */

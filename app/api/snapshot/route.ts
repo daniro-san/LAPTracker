@@ -1,14 +1,14 @@
-// POST /api/snapshot?phase=before|after&force=0|1[&event=<id>] — a run on demand for the current
-// scheduled event, or for the manual event `event` (D28): /admin's run buttons (x-edit-pin) or
+// POST /api/snapshot?phase=before|after&force=0|1[&event=<id>] — a run on demand for the target
+// scheduled event (lib/schedule.ts targetEvent), or for the manual event `event` (D28): /admin's run buttons (x-edit-pin) or
 // workflow_dispatch (Bearer CRON_SECRET). Any other event id is refused: the not-due guard stays.
 import { z } from "zod";
 
 import { authorize } from "@/lib/auth";
-import { findOrCreateEvent, getEventInfo } from "@/lib/repo/events";
+import { findOrCreateEvent, getEventInfo, scheduledEventDone } from "@/lib/repo/events";
 import { errorResponse, parseQuery, withContext } from "@/lib/route";
 import { executeSnapshot } from "@/lib/run";
 import { runResponse } from "@/lib/run-response";
-import { currentEvent } from "@/lib/schedule";
+import { currentEvent, targetEvent } from "@/lib/schedule";
 
 export const maxDuration = 120;
 
@@ -28,7 +28,9 @@ export function POST(request: Request): Promise<Response> {
     if (!q) return errorResponse(400, "bad_request");
     let event;
     if (q.event === undefined) {
-      event = await findOrCreateEvent(db, currentEvent(ctx.now(), ctx.env));
+      const now = ctx.now();
+      const done = await scheduledEventDone(db, currentEvent(now, ctx.env).eventAtUtc);
+      event = await findOrCreateEvent(db, targetEvent(now, ctx.env, done));
     } else {
       event = await getEventInfo(db, q.event);
       if (!event?.manual) return errorResponse(404, "event_not_found");

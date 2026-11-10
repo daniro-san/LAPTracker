@@ -112,6 +112,7 @@ export const zhCN = {
     next: "下次更新：{time}",
     byHand: "由管理员手动运行",
     stale: "已过期：{n}",
+    failedRows: "失败：{n}",
     start: "开始",
     end: "结束",
   },
@@ -133,7 +134,7 @@ export const zhCN = {
     same: "不变",
     stale: "过期",
     rank: "排名",
-    rounded: "已取整：勾选“精确数字”查看完整数值",
+    rounded: "已取整",
     members: "含成员变动",
   },
   members: {

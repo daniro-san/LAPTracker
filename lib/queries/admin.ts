@@ -5,6 +5,7 @@ import { and, asc, desc, eq, gt, isNotNull } from "drizzle-orm";
 import { RUN_STALE_AFTER_MS } from "../compute";
 import type { Db } from "../db";
 import { rehearsalVerdict, type Verdict } from "../rehearsal";
+import { runProblems } from "./run-problems";
 import { loadVerdictInput } from "../repo/rehearsals";
 import { allianceSnapshots, appErrors, events, runLogs, snapshots, tickLog } from "../schema";
 
@@ -50,17 +51,6 @@ export async function latestManualEvent(db: Db): Promise<ManualEventStatus | nul
     .from(snapshots)
     .where(eq(snapshots.eventId, event.id));
   return { ...event, phases };
-}
-
-/** The scheduled event at this time, once the scheduler has made its row (a day before its Before). */
-export async function scheduledEvent(db: Db, eventAtUtc: Date) {
-  const [row] = await db
-    .select({ id: events.id, name: events.name })
-    .from(events)
-    .where(
-      and(eq(events.eventAtUtc, eventAtUtc), eq(events.manual, false), eq(events.isTest, false)),
-    );
-  return row ?? null;
 }
 
 export interface RunningSnapshot {
@@ -130,7 +120,15 @@ export async function listRuns(db: Db, limit = 60) {
     .innerJoin(events, eq(events.id, snapshots.eventId))
     .orderBy(desc(snapshots.startedAt))
     .limit(limit);
-  return rows.map((r) => ({ ...r, deadline: r.error === DEADLINE_ERROR }));
+  const problems = await runProblems(
+    db,
+    rows.map((r) => r.id),
+  );
+  return rows.map((r) => ({
+    ...r,
+    deadline: r.error === DEADLINE_ERROR,
+    problems: problems.filter((p) => p.snapshotId === r.id),
+  }));
 }
 
 /** The data requests left after the newest run that reported them (moved off the public page, 7b). */
@@ -185,6 +183,7 @@ export async function getRun(db: Db, snapshotId: number) {
     run: { ...run, deadline: run.error === DEADLINE_ERROR },
     logs,
     tags,
+    problems: await runProblems(db, [snapshotId]),
     trace: runTrace(logs, tags, run.startedAt),
   };
 }

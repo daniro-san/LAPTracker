@@ -5,6 +5,7 @@ import { AdminShell } from "@/app/_ui/admin/AdminShell";
 import { AdminSection, StateChip } from "@/app/_ui/admin/parts";
 import { RunTrace } from "@/app/_ui/admin/RunTrace";
 import { eventWord, phaseWord, seconds, stateWord } from "@/app/_ui/admin/words";
+import { allianceLabel } from "@/app/_ui/format";
 import { requestServerClock } from "@/app/_ui/locale";
 import { Chip } from "@/lib/brand/components/Chip";
 import { FactList } from "@/lib/brand/components/FactList";
@@ -38,7 +39,7 @@ export default async function RunPage({ params }: { params: Promise<{ id: string
     requestServerClock(),
   ]);
   if (!found) notFound();
-  const { run, logs, tags, trace } = found;
+  const { run, logs, tags, trace, problems } = found;
   const t = copy.admin.runs;
   return (
     <AdminShell title={fill(t.run, { id: run.id })}>
@@ -69,6 +70,21 @@ export default async function RunPage({ params }: { params: Promise<{ id: string
         )}
         {run.error && !run.deadline && <p className="mt-3 break-words text-seal">{run.error}</p>}
       </AdminSection>
+      {problems.length > 0 && (
+        <AdminSection id="run-problems" title={t.problems.title}>
+          <ul>
+            {problems.map((p) => (
+              <li key={p.unionId} className="border-b border-rule py-2 text-body-sm last:border-0">
+                <span className="font-medium text-seal">
+                  <span aria-hidden="true">{p.failed ? "✗" : "○"} </span>
+                  {allianceLabel(p.tag, p.name) || String(p.unionId)}
+                </span>{" "}
+                · {p.failed ? t.problems.failed : t.problems.stale}
+              </li>
+            ))}
+          </ul>
+        </AdminSection>
+      )}
       <RunTrace trace={trace} deadline={run.deadline} />
       <AdminSection id="run-log" title={t.trace.log}>
         <ol>

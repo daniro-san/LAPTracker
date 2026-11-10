@@ -139,7 +139,9 @@ export function makeClock(
     hhmm: (d) => hhmm.format(d),
     time: (d) => `${hhmm.format(d)} ${word}`,
     at: (d) => `${dayText(d)}, ${hhmm.format(d)} ${word}`,
-    stamp: (d) => `${full.format(d)} ${word}`,
+    stamp: ordered
+      ? (d) => `${shortName.format(d)}, ${ordered(d, "full")}, ${hhmm.format(d)} ${word}`
+      : (d) => `${full.format(d)} ${word}`,
     zone: view.own ? copy.ledger.yourTime : copy.ledger.serverTime,
   };
 }
@@ -149,7 +151,7 @@ export function makeClock(
 function orderedDay(
   f: (o: Intl.DateTimeFormatOptions) => Intl.DateTimeFormat,
   date: DateFormat,
-): (d: Date, month: "short" | "long") => string {
+): (d: Date, month: "short" | "long" | "full") => string {
   const named = {
     short: f({ day: "numeric", month: "short" }),
     long: f({ day: "numeric", month: "long" }),
@@ -158,12 +160,17 @@ function orderedDay(
   const parts = (fmt: Intl.DateTimeFormat, d: Date) =>
     Object.fromEntries(fmt.formatToParts(d).map((p) => [p.type, p.value]));
   return (d, month) => {
+    const year = month === "full";
     if (date === "d-mmm" || date === "mmm-d") {
-      const p = parts(named[month], d);
-      return date === "d-mmm" ? `${p.day} ${p.month}` : `${p.month} ${p.day}`;
+      const p = parts(named[year ? "short" : month], d);
+      const y = year ? parts(numeric, d).year : "";
+      return date === "d-mmm"
+        ? `${p.day} ${p.month} ${y}`.trim()
+        : `${p.month} ${p.day} ${y}`.trim();
     }
     const p = parts(numeric, d);
     if (date === "iso") return `${p.year}-${p.month}-${p.day}`;
-    return `${p.day}${date === "dd/mm" ? "/" : "."}${p.month}`;
+    const sep = date === "dd/mm" ? "/" : ".";
+    return `${p.day}${sep}${p.month}${year ? `${sep}${p.year}` : ""}`;
   };
 }

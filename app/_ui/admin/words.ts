@@ -3,8 +3,9 @@
 import type { Clock } from "@/app/_ui/format";
 import { copy, fill } from "@/lib/copy";
 import type { ManualEventStatus } from "@/lib/queries/admin";
+import { isGeneratedName, type ScheduledEvent } from "@/lib/schedule";
 
-import type { RoundView } from "./actions";
+import type { CurrentEventView, RoundView } from "./actions";
 
 export const phaseWord = (phase: "before" | "after"): string => copy.admin.phase[phase];
 
@@ -26,7 +27,11 @@ export const seconds = (ms: number): string => (ms / 1000).toFixed(1);
 export const eventWord = (
   r: { isTest: boolean; eventName: string; eventAtUtc: Date },
   clock: Clock,
-): string => (r.isTest ? `${copy.admin.runs.rehearsal} ${clock.stamp(r.eventAtUtc)}` : r.eventName);
+): string => {
+  if (r.isTest) return `${copy.admin.runs.rehearsal} ${clock.stamp(r.eventAtUtc)}`;
+  // A generated name ("Saturday Event 2026-11-14") says its date once, in the viewer's order.
+  return isGeneratedName(r.eventName) ? clock.weekday(r.eventAtUtc) : r.eventName;
+};
 
 /** What AdminShell's poller and /admin's notice need about the runs in progress and the newest run. */
 export function watchViews(
@@ -80,5 +85,51 @@ export function roundView(manual: ManualEventStatus, clock: Clock): RoundView {
       text: text(p),
       at: at(p),
     })),
+  };
+}
+
+const DAY_MS = 24 * 60 * 60_000;
+const relative = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+
+/** "Sat 07/11 · 3 days ago · both snapshots done": the target event's date, age and the state of its
+ * two snapshots. */
+export function targetText(
+  eventAt: Date,
+  phases: { phase: "before" | "after"; status: string }[],
+  now: Date,
+  clock: Clock,
+): string {
+  const state = (p: "before" | "after") =>
+    fill(copy.admin.run.phaseState, {
+      phase: copy.admin.seal[p],
+      state: phases.find((x) => x.phase === p)?.status
+        ? stateWord(phases.find((x) => x.phase === p)?.status as string)
+        : copy.admin.run.notTaken,
+    });
+  const bothDone = (["before", "after"] as const).every(
+    (p) => phases.find((x) => x.phase === p)?.status === "complete",
+  );
+  return fill(copy.admin.run.target, {
+    date: clock.weekday(eventAt),
+    age: relative.format(Math.round((eventAt.getTime() - now.getTime()) / DAY_MS), "day"),
+    state: bothDone ? copy.admin.run.bothDone : `${state("before")}, ${state("after")}`,
+  });
+}
+
+/** The target event as `AdminActions` shows it. */
+export function currentView(
+  current: ScheduledEvent,
+  row: { id: number; name: string; phases: { phase: "before" | "after"; status: string }[] } | null,
+  now: Date,
+  clock: Clock,
+): CurrentEventView {
+  const name = row?.name ?? current.name;
+  const rowFrom = new Date(current.beforeAt.getTime() - DAY_MS);
+  return {
+    id: row?.id ?? null,
+    name,
+    title: name.replace(/ \d{4}-\d{2}-\d{2}$/, ""),
+    stateText: targetText(current.eventAtUtc, row?.phases ?? [], now, clock),
+    rowFromText: rowFrom > now ? clock.stamp(rowFrom) : null,
   };
 }

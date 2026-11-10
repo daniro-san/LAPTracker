@@ -112,6 +112,7 @@ export const pl = {
     next: "Następna aktualizacja: {time}",
     byHand: "Admin uruchamia ręcznie",
     stale: "Nieaktualne: {n}",
+    failedRows: "Błędy: {n}",
     start: "Początek",
     end: "Koniec",
   },
@@ -133,7 +134,7 @@ export const pl = {
     same: "Bez zmian",
     stale: "Nieaktualne",
     rank: "Miejsce",
-    rounded: "Zaokrąglone: zaznacz Dokładne liczby, aby zobaczyć pełną liczbę",
+    rounded: "Zaokrąglone",
     members: "Uwzględnia zmiany członków",
   },
   members: {

@@ -38,6 +38,14 @@ describe("makeClock", () => {
     expect(day("pt-BR", "mmm-d")).toBe("out. 31");
   });
 
+  it("writes the admin stamp in the chosen order, with the year", () => {
+    const stamp = (date: Parameters<typeof parseDateFormat>[0]) =>
+      makeClock("en", SERVER, { own: false, date: parseDateFormat(date) }).stamp(at);
+    expect(stamp("dd/mm")).toBe("Sat, 31/10/2026, 14:01 server time");
+    expect(stamp("d-mmm")).toBe("Sat, 31 Oct 2026, 14:01 server time");
+    expect(stamp(undefined)).toBe("Sat, 10/31/2026, 14:01 server time");
+  });
+
   it("puts the weekday before the chosen day in weekday, long and at", () => {
     const c = makeClock("en", SERVER, { own: false, date: "dd.mm" });
     expect([c.weekday(at), c.long(at), c.at(at)]).toEqual([

@@ -112,6 +112,7 @@ export const nl = {
     next: "Volgende update: {time}",
     byHand: "De admin start het met de hand",
     stale: "Verouderd: {n}",
+    failedRows: "Mislukt: {n}",
     start: "Begin",
     end: "Einde",
   },
@@ -133,7 +134,7 @@ export const nl = {
     same: "Gelijk",
     stale: "Verouderd",
     rank: "Rang",
-    rounded: "Afgerond: vink Exacte getallen aan voor het volle getal",
+    rounded: "Afgerond",
     members: "Inclusief ledenwissels",
   },
   members: {

@@ -30,12 +30,17 @@ export const adminCopy = {
     quotaLow: "Low · under {n}",
     quotaUnknown: "Unknown",
     quotaNote: "After the last run, {at}",
+    /** The reading is from an earlier UTC day, when the quota was another one (it resets every UTC day). */
+    quotaOld: "Not read today",
+    quotaNoteOld: "Last read after the run of {at}; today's first run reads it again.",
     quotaNone: "No run has reported it yet.",
     running: "Running now",
     nothing: "Nothing",
     next: "Next scheduled run",
     nextValue: "{phase} · {at}",
     nextNote: "{event} · event {at}",
+    /** The event keeps its generated name, so its date is the name. */
+    nextNoteDated: "Event {at}",
     last: "Last result",
     noRun: "No run yet.",
     open: "Open this run",
@@ -68,7 +73,12 @@ export const adminCopy = {
     title: "Run something now",
     intro:
       "The scheduler runs these for you. Every press spends API calls of the 1,000 a day; the cost is on each button.",
-    event: "Current event",
+    event: "Target event",
+    /** The event the buttons act on: the nearest one until both its snapshots are done, then the next. */
+    target: "{date} · {age} · {state}",
+    bothDone: "both snapshots done",
+    phaseState: "{phase} {state}",
+    notTaken: "not taken",
     eventAt: "{at}",
     rename: "Rename",
     renameTitle: "New name",
@@ -212,11 +222,18 @@ export const adminCopy = {
     duration: "Duration",
     callsLabel: "API calls",
     calls: "API calls: {n}",
-    quotaLeft: "{n} left today",
+    quotaLeft: "{n} left after this run",
     seconds: "{n} s",
     rehearsal: "[rehearsal]",
     run: "Run {id}",
     noLogs: "No log lines.",
+    /** Alliances of a run whose row was not fresh or failed (the public page marks them `○` and `✗`). */
+    problems: {
+      title: "Alliances that did not update",
+      stale: "stale: the game's data was old",
+      failed: "failed: no data",
+      tag: { stale: "stale", failed: "failed" },
+    },
     deadline: "Stopped at the 100 s deadline",
     recent: "Last {n} runs, newest first: {list}",
     trace: {

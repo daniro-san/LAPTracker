@@ -112,6 +112,7 @@ export const itIT = {
     next: "Prossimo aggiornamento: {time}",
     byHand: "Lo avvia l’admin a mano",
     stale: "Non aggiornati: {n}",
+    failedRows: "Falliti: {n}",
     start: "Inizio",
     end: "Fine",
   },
@@ -133,7 +134,7 @@ export const itIT = {
     same: "Uguale",
     stale: "Non aggiornato",
     rank: "Posizione",
-    rounded: "Arrotondato: spunta Numeri esatti per la cifra intera",
+    rounded: "Arrotondato",
     members: "Include cambi di membri",
   },
   members: {
