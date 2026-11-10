@@ -142,8 +142,10 @@ export function MoreBar({
         {row.summary}
         {row.detail && (
           <span className="drawn-frame-soft ml-auto inline-flex min-h-11 items-center gap-1 px-3 font-medium text-plum group-open/more:bg-plum/10">
-            {copy.ledger.details}
-            {row.lead && <span className="sr-only">, {row.lead}</span>}
+            <span>
+              {copy.ledger.details}
+              {row.lead && <span className="sr-only">, {row.lead}</span>}
+            </span>
             <span
               aria-hidden="true"
               className="transition-transform duration-150 group-open/more:rotate-180 motion-reduce:transition-none"

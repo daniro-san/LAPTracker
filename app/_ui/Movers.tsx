@@ -12,7 +12,13 @@ import { KillsMark, LookMark, MightMark, RankMark } from "@/lib/brand/components
 import type { Dictionary } from "@/lib/copy";
 
 import { useCopy } from "./LocaleProvider";
-import { MOVER_TABS, type MoverItem, type MoverScope, type MoverTab } from "./mover-lists";
+import {
+  MOVER_TABS,
+  MOVERS_ID,
+  type MoverItem,
+  type MoverScope,
+  type MoverTab,
+} from "./mover-lists";
 import { Delta, Rank } from "./Num";
 import { AllianceBadge } from "./Pictures";
 import { LABEL } from "./StatTable";
@@ -108,9 +114,6 @@ function MoverList({
     </div>
   );
 }
-
-/** The section's anchor: the event page's "Grandma noticed ↓" jump link points here. */
-export const MOVERS_ID = "movers";
 
 export function Movers({ scopes }: { scopes: MoverScope[] }) {
   const copy = useCopy();

@@ -22,8 +22,8 @@ import { eventTitle, ManualMark } from "./EventLabel";
 import { ExactToggle } from "./ExactToggle";
 import { allianceLabel, rowAnchor, type Clock } from "./format";
 import { requestClock, requestCopy } from "./locale";
-import { allianceScope, memberScope } from "./mover-lists";
-import { Movers, MOVERS_ID } from "./Movers";
+import { allianceScope, memberScope, MOVERS_ID } from "./mover-lists";
+import { Movers } from "./Movers";
 import { MyAllianceJump } from "./MyAlliance";
 import { AllianceBadge } from "./Pictures";
 import { SiteFooter } from "./SiteFooter";
@@ -157,7 +157,7 @@ function TopStatus({
         clock={clock}
         copy={copy}
       />
-      <div className="flex flex-wrap items-center justify-between gap-x-3">
+      <div className="-mb-2 flex flex-wrap items-center justify-between gap-x-3">
         <CaptureWindow
           before={detail.snapshots.find((s) => s.phase === "before")}
           after={detail.snapshots.find((s) => s.phase === "after")}
