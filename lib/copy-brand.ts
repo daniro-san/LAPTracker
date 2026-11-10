@@ -23,7 +23,7 @@ export const brandCopy = {
     lede: "A plague doctor in profile under a wide brim, a ball of yarn and two needles in the hatband. One colour, three cuts.",
     line: {
       name: "Line mark",
-      use: "The drawing itself: the header, the wax seal, app icons, the link preview.",
+      use: "The drawing itself: the seal button, app icons, the link preview.",
     },
     waxed: {
       name: "Waxed mark",
