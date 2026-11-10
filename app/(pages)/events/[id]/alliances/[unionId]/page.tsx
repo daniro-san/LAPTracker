@@ -304,7 +304,7 @@ export default async function AlliancePage({ params }: { params: Params }) {
         <MemberList detail={detail} canDelta={canDelta} />
         <AcrossEvents unionId={unionId} history={history} clock={clock} />
       </main>
-      <SiteFooter clock={clock} copy={copy} />
+      <SiteFooter copy={copy} />
     </>
   );
 }

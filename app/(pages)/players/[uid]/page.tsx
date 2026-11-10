@@ -201,7 +201,7 @@ export default async function PlayerPage({ params }: { params: Params }) {
           showAlliance={new Set(history.alliances.map((a) => a.unionId)).size > 1}
         />
       </main>
-      <SiteFooter ornament="granny" clock={clock} copy={copy} />
+      <SiteFooter ornament="granny" copy={copy} />
     </>
   );
 }

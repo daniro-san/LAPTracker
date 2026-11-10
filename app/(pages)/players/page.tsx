@@ -92,7 +92,7 @@ export default async function PlayersPage({
           )}
         </PlayerSearch>
       </main>
-      <SiteFooter clock={clock} copy={copy} />
+      <SiteFooter copy={copy} />
     </>
   );
 }

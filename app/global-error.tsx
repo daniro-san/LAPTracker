@@ -25,7 +25,6 @@ export default function GlobalError({
           title={t.title}
           body={t.body}
           art={<CrackedBottle />}
-          clock={null}
           copy={en}
           actions={
             <button type="button" onClick={() => reset()} className={primaryAction}>

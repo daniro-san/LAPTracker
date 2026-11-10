@@ -162,7 +162,7 @@ export default async function ComparePage({ searchParams }: { searchParams: Sear
         )}
         {c && <Results c={c} one={one !== undefined} clock={clock} copy={copy} />}
       </main>
-      <SiteFooter clock={clock} copy={copy} />
+      <SiteFooter copy={copy} />
     </>
   );
 }

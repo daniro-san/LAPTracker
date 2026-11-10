@@ -21,7 +21,6 @@ export default function ErrorBoundary({
       title={t.title}
       body={t.body}
       art={<CrackedBottle />}
-      clock={null}
       copy={copy}
       actions={
         <>
