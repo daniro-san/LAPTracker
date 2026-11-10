@@ -73,7 +73,7 @@ Owner must do first:
 2. To see the empty ledger and the "Updating now" chip on the preview, run `pnpm db:seed --reset --with-states` against the preview branch (the owner's command; it replaces the preview data with invented numbers). The chip shows for about two minutes after the seed.
 3. Say whether the N8 difference line is wanted on the member cards too, and whether the compare page needs a column head from 640 px.
 
-Plan changes needed: none in `docs/IMPLEMENTATION_PLAN.md`. `docs/DESIGN.md` was edited here for the notes. The 08zzv plan change (§3.1, target event) is still open.
+Plan changes needed: none in `docs/IMPLEMENTATION_PLAN.md`. `docs/DESIGN.md` was edited here for the notes. The 08zzv plan change (§3.1, target event) is recorded in this PR at the owner's request (2026-11-10), as the bullet "Which event a manual run targets".
 
 <adjustments>
 - Any later session that prints a date list or settings group should reuse the `select` pattern in `ViewerSettings.tsx` (two selects now).
