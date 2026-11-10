@@ -70,4 +70,4 @@ Plan changes needed: none in `docs/IMPLEMENTATION_PLAN.md`. DESIGN.md Typography
 - Reusable: `/brand` now has the unfilled hourglass, the solid-cut ivory seal and the fixed-wax seal button, for reference screenshots.
 </adjustments>
 
-PR_URL_PLACEHOLDER
+https://github.com/daniro-san/LAPTracker/pull/207
