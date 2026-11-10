@@ -206,7 +206,7 @@ export async function EventView({
   return (
     <>
       <SiteHeader events={events} currentId={detail.id} homeId={homeId} clock={clock} copy={copy} />
-      <main className="mx-auto max-w-[960px] px-4 py-4 sm:px-6">
+      <main id="main" className="scroll-mt-20 mx-auto max-w-[960px] px-4 py-4 sm:px-6">
         <TitleBand copy={copy} />
         <div className="mb-2 flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
           <div className="min-w-0">

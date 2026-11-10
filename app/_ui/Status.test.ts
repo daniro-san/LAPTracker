@@ -30,6 +30,18 @@ describe("StatusChips", () => {
   });
 });
 
+describe("StatusChips, running", () => {
+  it("shows the Updating now chip while a phase runs, and Not updated yet with no phase", () => {
+    const running = [phase("after", "running", "2026-11-07T15:00Z")];
+    const chip = (phases: PhaseStatus[]) =>
+      renderToStaticMarkup(
+        createElement(StatusChips, { phases, stale: 0, failed: 0, clock, copy: en }),
+      );
+    expect(chip(running)).toContain("Updating now");
+    expect(chip([])).toContain("Not updated yet");
+  });
+});
+
 describe("NextUpdate", () => {
   it("says a manual round is run by hand instead of naming the next scheduled update", () => {
     expect(html(false)).toContain("Next update at Nov 7, 10:00");

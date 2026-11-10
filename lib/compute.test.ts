@@ -2,6 +2,7 @@ import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
 import {
+  changeDifference,
   delta,
   type Measured,
   nameHistory,
@@ -168,6 +169,16 @@ describe("rankDelta", () => {
     expect(rankDelta(2, 2)).toBe(0);
     expect(rankDelta(null, 1)).toBeNull();
     expect(rankDelta(1, undefined)).toBeNull();
+  });
+});
+
+describe("changeDifference", () => {
+  it("subtracts the first event's change from the second's, on the first's size, and is null without both", () => {
+    expect(changeDifference(100, 130)).toEqual({ delta: 30, base: 100 });
+    expect(changeDifference(-100, -40)).toEqual({ delta: 60, base: 100 });
+    expect(changeDifference(0, 5)).toEqual({ delta: 5, base: 0 });
+    expect(changeDifference(null, 5)).toBeNull();
+    expect(changeDifference(5, undefined)).toBeNull();
   });
 });
 

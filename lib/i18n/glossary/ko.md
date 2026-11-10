@@ -13,7 +13,6 @@ Words already used in `lib/i18n/ko.ts`. Reuse them so the pages stay consistent;
 | Event                     | 이벤트                 | `ledger.event` — a game event                               |
 | Rank                      | 순위                   | `ledger.rank` — the #n position                             |
 | Ranking                   | 서버 순위              | `ledger.ranking` — the game's server rank                   |
-| Sanctuary                 | 성소                   | `ledger.sanctuary` — a player's building level              |
 | joined                    | 가입                   | `ledger.joined` — after +n                                  |
 | left                      | 탈퇴                   | `ledger.left` — after −n                                    |
 | Stale                     | 오래됨                 | `fresh.stale` — data not fresh                              |

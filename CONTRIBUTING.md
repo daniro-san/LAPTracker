@@ -52,16 +52,16 @@ The next version is the latest `v*` tag plus the bump, so `package.json` is neve
 
 ## Scripts
 
-| Command                                  | Does                                                                                                                                                                                            |
-| ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm dev` / `pnpm build` / `pnpm start` | Next.js                                                                                                                                                                                         |
-| `pnpm check`                             | all gates: `prettier --check`, `eslint`, `tsc --noEmit`, `vitest run`, `scripts/check-drift.ts` (migrations match the schema), `scripts/i18n-check.ts` (translations are current). CI runs this |
-| `pnpm test` / `pnpm typecheck`           | Vitest / `tsc --noEmit`                                                                                                                                                                         |
-| `pnpm lint` / `pnpm format`              | ESLint / Prettier (write)                                                                                                                                                                       |
-| `pnpm db:generate` / `pnpm db:migrate`   | Drizzle migration file from `lib/schema.ts` / apply migrations                                                                                                                                  |
-| `pnpm db:seed`                           | three invented past Saturdays from `fixtures/`, for local screens. Never against production; `--reset` empties the tables first                                                                 |
-| `pnpm snapshot:dry`                      | one snapshot (`--phase before\|after`) through the real adapters with fixtures served instead of the network. No database, no quota                                                             |
-| `pnpm i18n:todo` / `pnpm i18n:stamp`     | the translation work list as JSON / mark translated keys as current                                                                                                                             |
+| Command                                  | Does                                                                                                                                                                                                             |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm dev` / `pnpm build` / `pnpm start` | Next.js                                                                                                                                                                                                          |
+| `pnpm check`                             | all gates: `prettier --check`, `eslint`, `tsc --noEmit`, `vitest run`, `scripts/check-drift.ts` (migrations match the schema), `scripts/i18n-check.ts` (translations are current). CI runs this                  |
+| `pnpm test` / `pnpm typecheck`           | Vitest / `tsc --noEmit`                                                                                                                                                                                          |
+| `pnpm lint` / `pnpm format`              | ESLint / Prettier (write)                                                                                                                                                                                        |
+| `pnpm db:generate` / `pnpm db:migrate`   | Drizzle migration file from `lib/schema.ts` / apply migrations                                                                                                                                                   |
+| `pnpm db:seed`                           | three invented past Saturdays from `fixtures/`, for local screens. Never against production; `--reset` empties the tables first; `--with-states` adds an empty event a week ahead and one whose After is running |
+| `pnpm snapshot:dry`                      | one snapshot (`--phase before\|after`) through the real adapters with fixtures served instead of the network. No database, no quota                                                                              |
+| `pnpm i18n:todo` / `pnpm i18n:stamp`     | the translation work list as JSON / mark translated keys as current                                                                                                                                              |
 
 ## How the harness works
 

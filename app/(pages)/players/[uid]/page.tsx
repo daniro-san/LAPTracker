@@ -72,7 +72,7 @@ function Timelines({
   );
 }
 
-/** The latest stored Might, Kills and Sanctuary level as one band (no second title), like the alliance page's. */
+/** The latest stored Might, Kills and Level as one band (no second title), like the alliance page's. */
 function Summary({
   current,
   clock,
@@ -86,7 +86,7 @@ function Summary({
   const figures = [
     { label: l.might, value: current.power },
     { label: l.kills, value: current.kills },
-    { label: l.sanctuary, value: current.lv },
+    { label: l.level, value: current.lv },
   ];
   const state = { isFresh: current.isFresh, updatedAt: current.updatedAt, failed: false };
   return (
@@ -151,7 +151,7 @@ export default async function PlayerPage({ params }: { params: Params }) {
         clock={clock}
         copy={copy}
       />
-      <main className="mx-auto max-w-[960px] px-4 py-4 sm:px-6">
+      <main id="main" className="scroll-mt-20 mx-auto max-w-[960px] px-4 py-4 sm:px-6">
         <Breadcrumbs
           crumbs={[
             { key: "ledger", href: "/", label: copy.site.home },
@@ -165,7 +165,6 @@ export default async function PlayerPage({ params }: { params: Params }) {
                 </>
               ),
             },
-            { key: "player", label: current.name },
           ]}
         />
         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">

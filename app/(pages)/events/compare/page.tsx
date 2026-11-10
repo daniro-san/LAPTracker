@@ -7,17 +7,13 @@ import { cache } from "react";
 
 import { Breadcrumbs } from "@/app/_ui/Breadcrumbs";
 import { compareHref, ComparePicker } from "@/app/_ui/ComparePicker";
+import { CompareTotals } from "@/app/_ui/CompareTotals";
 import { EmptyState } from "@/app/_ui/EmptyState";
-import {
-  AllianceCompareCard,
-  CompareHeader,
-  CompareTotals,
-  eventHead,
-  MemberCompareCard,
-} from "@/app/_ui/EventCompare";
+import { AllianceCompareCard, CompareHeader, eventHead } from "@/app/_ui/EventCompare";
 import { ExactToggle } from "@/app/_ui/ExactToggle";
 import { allianceLabel, type Clock } from "@/app/_ui/format";
 import { requestClock, requestCopy } from "@/app/_ui/locale";
+import { MemberCompareCard } from "@/app/_ui/MemberCompare";
 import { ShowFirst } from "@/app/_ui/ShowFirst";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
@@ -135,7 +131,7 @@ export default async function ComparePage({ searchParams }: { searchParams: Sear
         clock={clock}
         copy={copy}
       />
-      <main className="mx-auto max-w-[960px] px-4 py-4 sm:px-6">
+      <main id="main" className="scroll-mt-20 mx-auto max-w-[960px] px-4 py-4 sm:px-6">
         {one && (
           <Breadcrumbs
             crumbs={[

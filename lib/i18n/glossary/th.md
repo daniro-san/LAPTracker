@@ -13,7 +13,6 @@ Words already used in `lib/i18n/th.ts`. Reuse them so the pages stay consistent;
 | Event                     | กิจกรรม                       | `ledger.event` — a game event                                |
 | Rank                      | อันดับ                        | `ledger.rank` — the #n position                              |
 | Ranking                   | อันดับเซิร์ฟเวอร์             | `ledger.ranking` — the game's server rank                    |
-| Sanctuary                 | วิหาร                         | `ledger.sanctuary` — a player's building level               |
 | joined                    | เข้า                          | `ledger.joined` — after +n                                   |
 | left                      | ออก                           | `ledger.left` — after −n                                     |
 | Stale                     | เก่า                          | `fresh.stale` — data not fresh                               |

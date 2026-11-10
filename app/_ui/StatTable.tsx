@@ -206,7 +206,7 @@ export function StatTable({
             key={row.key}
             id={row.anchor}
             style={grid}
-            className={`stat-card relative mb-3 grid scroll-mt-20 grid-cols-1 gap-y-1.5 border border-rule p-3 data-[mine]:bg-yarn/15 sm:mb-0 sm:grid-cols-[var(--cols)] sm:gap-x-3 sm:border-0 sm:border-b sm:py-2 ${row.tint ?? ""}`}
+            className={`stat-card relative mb-3 grid scroll-mt-20 grid-cols-1 gap-y-1.5 border border-rule p-3 data-[mine]:bg-yarn/5 data-[mine]:shadow-[inset_3px_0_0_var(--color-yarn)] sm:mb-0 sm:grid-cols-[var(--cols)] sm:gap-x-3 sm:border-0 sm:border-b sm:py-2 ${row.tint ?? ""}`}
           >
             <Lead row={row} />
             {row.metrics.map((m, i) => (

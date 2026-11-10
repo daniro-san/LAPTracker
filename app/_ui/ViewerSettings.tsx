@@ -2,7 +2,7 @@
 
 // The header's settings menu (DESIGN.md `viewer-settings`, D38, D48): a gear whose panel holds the theme
 // and, on public pages, the language, the times (server time or the viewer's own zone) and the date
-// order. Each choice is a one-year cookie, like `theme`; the language, times and dates ones re-render the
+// order (a native select like the language, each option its own sample). Each choice is a one-year cookie, like `theme`; the language, times and dates ones re-render the
 // page on the server (router.refresh()), where requestCopy and requestClock read them. The panel is drawn
 // only once it is opened, so the browser-only values in it (its zone, the cookies, the root's lang) are
 // never server-rendered and cannot mismatch.
@@ -158,24 +158,23 @@ function Panel({ publicPage }: { publicPage: boolean }) {
           />
         </Group>
       )}
-      <Group legend={t.dates} columns={2}>
-        <RadioField
-          name="date"
-          label={t.auto}
-          help={makeClock(locale, "UTC").day(SAMPLE)}
-          checked={date === null}
-          onChange={() => pickDate(null)}
-        />
-        {DATE_FORMATS.map((id) => (
-          <RadioField
-            key={id}
-            name="date"
-            label={makeClock(locale, "UTC", { own: false, date: id }).day(SAMPLE)}
-            checked={date === id}
-            onChange={() => pickDate(id)}
-          />
-        ))}
-      </Group>
+      <label className="grid gap-1">
+        <span className={LABEL}>{t.dates}</span>
+        <select
+          value={date ?? ""}
+          onChange={(e) => pickDate(parseDateFormat(e.target.value))}
+          className="drawn-field min-h-11 w-full px-3"
+        >
+          <option value="">
+            {t.auto} · {makeClock(locale, "UTC").day(SAMPLE)}
+          </option>
+          {DATE_FORMATS.map((id) => (
+            <option key={id} value={id}>
+              {makeClock(locale, "UTC", { own: false, date: id }).day(SAMPLE)}
+            </option>
+          ))}
+        </select>
+      </label>
     </div>
   );
 }

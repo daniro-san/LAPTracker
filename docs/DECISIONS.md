@@ -346,6 +346,7 @@ Viewers on server 325 live from UTC−8 to UTC+10 and write dates in different o
 - **Where it does not apply.** /admin uses `requestServerClock` (always server time, the zone its schedule is set in), and its gear shows the theme only. Discord messages (`lib/notify.ts`) keep their own server-time clock. The upstream banner in the root layout follows the viewer's setting on every page, /admin included.
 - **No hydration risk.** Every Clock call runs on the server. The panel, which reads the browser's zone and the cookies, renders only after it is opened.
 - **Amended 2026-11-10 (UX review S9).** /admin still shows server time only, but `requestServerClock` now reads the `date` cookie, and the admin gear shows the Dates group beside Theme (no Times, no Language). The bullet above ("its gear shows the theme only") is superseded for dates.
+- **Amended 2026-11-10 (UX review N2).** Dates is one native `select` like Language, not a group of radios: each option is its own sample on Oct 31 (Auto with the locale's own sample, then the five orders). Cookie name and values are unchanged. The panel has 6 framed controls instead of 11.
 - **Known effect.** The event is Saturday 12:00 server time (14:00 UTC), so at UTC+10 and east of it the event's weekday reads Sunday in "Your time".
 
 ## D37 — /admin: framed sections, status at a glance, one poller in the shell (2026-11-05, 08zb, owner-approved mock, issue #91)
@@ -498,6 +499,7 @@ The owner (2026-11-07): compare one event against another, to see how much might
 - **Kinds of event are open** (#190). Whether events get a kind is undecided (#175). Until then any two public events can be paired; nothing is grouped, filtered or normalised by kind. Percent of the Before value is the fairest figure the page prints.
 - **Header selector unchanged** (D49): the page has no current event, so the closed selector reads "All events". The event page's title row links here with "⇄ Compare" when two events have data.
 - **Event model** (spike 08zzh): the page reads only "Before, After, change" per event. If an event gets several windows, the event's single change is whatever that model defines as the event total.
+- **Amended 2026-11-10 (UX review N8).** Each card and the totals band gain a third line, the difference between the two events' changes (second minus first, percent of the first change's size; `compute.changeDifference`). The two stacked changes stay; the reader no longer has to subtract.
 
 ## D58 — The Discord event report carries a picture of the event (2026-11-09, owner, 08zzj, issue #172)
 
