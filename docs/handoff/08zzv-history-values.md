@@ -42,3 +42,4 @@ Plan changes needed: none in `docs/IMPLEMENTATION_PLAN.md`. `docs/DESIGN.md` `me
 - The history card's changed list now has its own grid (`CHANGE_COLS` in `app/_ui/MemberHistoryBody.tsx`). If S2 moves Details to a column in `StatTable`, leave this list alone.
 - Name links on the history cards use `[overflow-wrap:anywhere]` now; skip any long-name fix for them.
 </adjustments>
+https://github.com/daniro-san/LAPTracker/pull/212
