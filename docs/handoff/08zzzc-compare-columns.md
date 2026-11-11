@@ -46,3 +46,5 @@ Plan changes needed: none.
 - `CompareCard` row span follows `lines.length`; a new card with a different number of lines gets `sm:row-span-2` unless it has three.
 </adjustments>
 
+
+https://github.com/daniro-san/LAPTracker/pull/235
