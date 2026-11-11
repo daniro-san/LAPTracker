@@ -21,13 +21,45 @@
 - `docs/DESIGN.md` Components: the `button-secondary` line now names its hover and press looks. A new "Hover and press (issue 232)" entry states the rule (pointer cursor, hover and press state, default cursor when disabled), names the base rule, and lists which class each kind of control uses.
 - `docs/screenshots/08zzzb-*.png`: 27 Chrome captures at 1280 px, about 150 KB in total.
 
+Second part, after the owner's answer (2026-11-11): one link style, with hover and press.
+
+- `app/globals.css`: `.text-link`, next to `.text-button`.
+  - Rest: plum text with a 1 px underline, offset 3 px, in the text colour at 40 %. Visited looks the same.
+  - Hover, under `@media (hover: hover)`: the underline at full colour and 2 px.
+  - `.text-link-stretch::after` covers the whole card. It replaces the `after:absolute after:inset-0 after:content-['']` utilities on title links.
+  - Press: ink text, full-colour underline, and `position: relative; top: 1px`. The same press applies to `.text-button`. This rule is unlayered, at the end of the file, so it wins over a colour utility on the element. A stretched link stays `position: static` on press.
+  - `[data-state="hover" | "press"]` pins each state for /brand.
+- `lib/brand/components/TextLink.tsx` (new): wraps `next/link`. `stretch` makes the link cover its card.
+- Converted to `TextLink`:
+  - Breadcrumbs, the stretched titles in `StatTable`, `Leadership`, `PlayerAcrossEvents` and the player search results (`app/(pages)/players/page.tsx`).
+  - The player page's alliance links (2), the history pager links (2), the event alliance page's "History" link, the /admin last-run link, and the AdminShell nav.
+- `.text-link` class on in-page `#anchor` links and shared class constants:
+  - The `#anchor` links in `EventView`, `AcrossEvents` and the event alliance page.
+  - `EventCompare` `NAME` (stretched; `MemberCompare` uses it too), `PlayerCompare` `TITLE_LINK` and `MemberHistoryBody` `PLAYER`.
+  - `ErrorPage` `secondaryAction` and the ManualSection "Open" link.
+- Row and icon links now use `.tint-button`: the event list rows in the header menu, the wordmark (home) link, the Movers rows, the /admin runs rows, and the ⇄ swap link in `ComparePicker`. Their old `hover:bg-*` utilities are gone.
+- After this change no `hover:underline` is left in `app/` or `lib/`.
+- /brand "Hover and press" has a text-link row ("Player page") at rest, hover and press, and its caption covers links. Copy is in `lib/copy-brand-components.ts`.
+- `docs/DESIGN.md`:
+  - A new `text-link` component entry.
+  - The "Hover and press" entry now says every control, links included, has a hover and a press state.
+  - `.text-button` takes the link press.
+- `docs/screenshots/08zzzb-link-<kind>-{rest,hover,press}.png` for `breadcrumb`, `title-stretch`, `player-alliance`, `history-link`, `admin-nav` and `text-button`, plus a refreshed `08zzzb-brand-hover-and-press.png`.
+
 ## Decisions
 
 - Several controls the issue lists already used `buttonClass` on `dev`: ShowFirst, the MembersExplorer "Show all" button, PinSheet, ConfirmSheet, AdminActions, and ManualSection's sheet buttons. They already had the pointer cursor and the brand hover, so they did not change.
 - The tint uses `currentColor`. One class therefore serves plum-text chips on paper and paper-text header controls on plum, and the header looks the same as before (paper 10 % / 20 %, where it was `bg-paper/15` / `bg-paper/25`). On a Movers tab the tint is ink-coloured, because the tab text is ink.
 - Press on `.tint-button` is a deeper tint, not the 1 px push of `.frame-button`. A push would shift the Movers tab borders and the card heads.
 - Hover tints and underlines apply only under `@media (hover: hover)`. That matches Tailwind's `hover:` variant, which the header controls used before, so a tap on a phone leaves no tint. `.ink-button` and `.frame-button` keep their old unwrapped hover rules.
-- Text controls get an underline on hover and no separate press look, because they read as links. The issue asks for a press state only for "every control that looks like a button".
+- First part: text controls had a hover underline and no press look. The owner answered (2026-11-11) that link-like controls get a press state too, with one reusable link design. The second part does that.
+- Press colour is `--ink`. In light mode ink (#1e1a1f) is only a little darker than plum (#3b2436), so the visible press is mostly the 1 px drop and the full-colour underline. In dark mode ink (#eadfcb) is lighter than plum (#b48ba6), which raises the contrast.
+- The press shift is `position: relative; top: 1px`, not a transform. A transform does not move an inline link inside a sentence, such as a breadcrumb.
+- A stretched link (a title that covers its whole card) darkens on press but does not move. Moving it would make the link the containing block of its own `::after`, which would shrink the card's hit area under the pointer mid-press and could lose the click.
+- The press rule sits outside the CSS layers. Inside `@layer components` it would lose to utilities such as `text-plum` or `text-ink/80` that stay on some elements.
+- Whole-row links (event menu, Movers rows, /admin runs) and icon links (wordmark, ⇄) take `.tint-button`, not `.text-link`: they are not words in a line. The Movers rows were `hover:bg-plum/5`; their tint is now the ink text colour at 10 %.
+- The ManualSection "Open" link and the error page's secondary link were ink-coloured or underlined by hand. They now use the plum `text-link`, the one link look.
+- Title links in the ledger (alliance names), search results and leadership cards now carry the thin underline at rest. The owner asked for one link design everywhere, and an underline lets a link read as a link without colour.
 - `.text-button` underlines 2 px thick, so the footer "More" and the admin "Options" and "again", which are already underlined, still change on hover. Plain text links elsewhere keep `hover:underline`, which uses the font's default thickness.
 - Selects and their wrapping labels get the pointer cursor (item 1 of the issue) but no hover look. They are form fields, not button-like controls.
 - The ManualSection "again" button keeps `cursor-pointer` next to `disabled:cursor-wait`. The utility is needed so that the disabled state shows the wait cursor.
@@ -62,6 +94,15 @@
 - Hover captures, rest and hover for each kind (`docs/screenshots/08zzzb-<kind>-{rest,hover}.png`): `tint-copy-roster`, `tint-movers-tab`, `tint-members-chip`, `tint-members-chip-selected`, `tint-check-chip`, `tint-header-selector`, `details-summary`, `tint-card-head`, `text-summary`, `text-footer-more`, `primary`, `secondary`, `seal`. Also `08zzzb-brand-hover-and-press.png`.
 - Mobile at 360 px is unchanged. The script recorded every control's box (x, y, width, height) and the document height at 360 × 800 on this branch, then again with `dev`'s versions of the changed `app/` and `lib/` files checked out in the same worktree. Every page matched exactly ("differing 0", same `docHeight`) except `/brand`. /brand grows by the new "Hover and press" samples (docHeight 16693 → 17579; the controls after them move down). The 360 px run measured the history page with its cards closed.
 
+- Second part (one link style). Same local setup, recreated (Postgres on 54151, bridge on 54251, app on 3151 at `localhost`), with the same two daily reads. Then stopped and removed.
+  - `pnpm check`: exit 0. "All matched files use Prettier code style!", eslint and tsc clean, "Test Files 55 passed | 1 skipped (56)", "Tests 254 passed | 1 skipped (255)", "No schema changes, nothing to migrate", "i18n: 17 languages up to date with English". `origin/dev` had no new commits to merge. Every commit ran the lefthook pre-commit (secrets, prettier and eslint passed).
+  - Chrome 1280 px, on the same pages plus `/admin/runs`: every visible `a[href]`, button, summary, `[role=button]`, select and wrapping label, leaving out /brand's inert samples and the Next dev-tools button. For each one the script recorded its look class and `getComputedStyle(...).cursor`. It then compared colour, background, transform, `top`, and text-decoration line, thickness and colour at rest, on `hover()` and while the mouse is held down. The mouse is moved off before release, so nothing is clicked; no page navigated.
+  - Results:
+    - 408 controls, 256 of them links. Every link has a look class: 180 `text-link`, 76 `tint-button`. No link has none.
+    - Every enabled control shows `cursor: pointer`, a hover change and a press change. The exceptions are the six selects and labels with the cursor only, as in the first part; the four wax seals, which were hovered but not pressed; and the skip link, which cannot be hovered while screen-reader-only.
+    - By tag and look: `a:text-link` 180, `a:tint-button` 76, `summary:summary>tint-button` 50, `summary:tint-button` 39, `button:tint-button` 22, `summary:text-button` 12, `label:tint-button` 11, `button:ink-button` 5, `button:seal` 4, `button:frame-button` 3, `label:none` 3, `select:none` 3.
+  - 360 px: the box of every `a[href]`, button, summary, select and label and the document height, at 360 × 800, on this part's commit versus the commit before it. Every page matched exactly ("differing 0", same height), except /brand, which grows by the new link sample row and the longer caption (17579 → 17732 px).
+
 ## Open issues
 
 - Follow-up, not changed: `SealButton`'s hover and press transforms (Tailwind `hover:` and `active:`) still play on a disabled seal. Only the cursor is now default.
@@ -76,7 +117,11 @@ Owner must do first: merge this PR into `dev` (`Closes #232` closes the issue).
 Plan changes needed: none.
 
 <adjustments>
-- New interactive controls take their looks from the brand classes, not from `hover:` utilities: `buttonClass("primary" | "secondary")` for buttons and button-like links, `.tint-button` for chips, tabs, header controls and card-head summaries, `.text-button` for summaries or buttons that read as links. The pointer cursor comes from the base rule in `app/globals.css`; do not add `cursor-pointer`.
+- New interactive controls take their looks from the brand classes, not from `hover:` utilities:
+  - `buttonClass("primary" | "secondary")` for buttons and button-like links.
+  - `.tint-button` for chips, tabs, header controls, card-head summaries, and row or icon links.
+  - `.text-button` for summaries or buttons that read as links.
+  - `TextLink` (`lib/brand/components/TextLink.tsx`; `stretch` for a title that covers its card) or the `.text-link` class for every link that is words. Do not add `text-plum` or `underline` to a link by hand. The pointer cursor comes from the base rule in `app/globals.css`; do not add `cursor-pointer`.
 - A summary's framed Details control tints when the whole summary is hovered (`summary:hover > .tint-button`), so the control must stay a direct child of the `<summary>`.
 - Local captures: open the dev server at `localhost:<port>`, not `127.0.0.1`. With `127.0.0.1` the client does not hydrate and client-side controls (the PIN sheet) do nothing.
 - For member history captures, the seed leaves `daily_rosters` empty. Two `daily_reads` rows plus `daily_rosters` rows built from `alliance_snapshots` and `member_snapshots` are enough to get cards with "Copy for spreadsheet".
