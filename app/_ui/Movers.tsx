@@ -27,10 +27,7 @@ import { LABEL } from "./StatTable";
 function Row({ m }: { m: MoverItem }) {
   return (
     <li>
-      <Link
-        href={m.href}
-        className="flex min-h-11 items-center gap-2 py-1 hover:bg-plum/5 focus-visible:bg-plum/5"
-      >
+      <Link href={m.href} className="tint-button flex min-h-11 items-center gap-2 py-1">
         {m.rank.move === undefined ? (
           <span className={`w-7 shrink-0 tabular-nums ${LABEL}`}>{m.rank.n ?? "—"}</span>
         ) : (
@@ -181,7 +178,7 @@ export function Movers({ scopes }: { scopes: MoverScope[] }) {
               tabIndex={t.key === current?.key ? 0 : -1}
               onClick={() => setActive(t.key)}
               onKeyDown={(e) => onKey(e, i)}
-              className="inline-flex min-h-11 flex-wrap items-center justify-center gap-x-1 border-r border-rule px-1 text-center last:border-r-0 aria-selected:bg-plum/10 aria-selected:shadow-[inset_0_-3px_0_var(--color-plum)]"
+              className="tint-button inline-flex min-h-11 flex-wrap items-center justify-center gap-x-1 border-r border-rule px-1 text-center last:border-r-0 aria-selected:bg-plum/10 aria-selected:shadow-[inset_0_-3px_0_var(--color-plum)]"
             >
               <Head word={copy.ledger[t.word]} up={t.up} copy={copy} mark={t.word} />
             </button>

@@ -40,7 +40,7 @@ export default function BrandPage() {
               <li key={id}>
                 <a
                   href={`#${id}`}
-                  className="drawn-frame-soft inline-flex min-h-11 items-center px-3 text-plum hover:bg-plum/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-plum"
+                  className="drawn-frame-soft tint-button inline-flex min-h-11 items-center px-3 text-plum focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-plum"
                 >
                   {t.nav[id]}
                 </a>

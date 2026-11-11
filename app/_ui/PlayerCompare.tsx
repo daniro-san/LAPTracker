@@ -13,8 +13,7 @@ import { AllianceBadge, PlayerAvatar } from "./Pictures";
 
 type Player = PlayerComparison["player"];
 
-const TITLE_LINK =
-  "inline-flex min-h-11 min-w-11 items-center text-plum hover:underline focus-visible:underline";
+const TITLE_LINK = "text-link inline-flex min-h-11 min-w-11 items-center";
 const PLAIN_NAME = "min-w-0 break-words font-subhead text-display-sm leading-tight";
 
 /** The player's name, linked to the player page when one exists (a player seen only in a standalone

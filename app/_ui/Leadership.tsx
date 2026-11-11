@@ -2,9 +2,9 @@
 // in a centered row below (2×2 from 640 px, one row from 1024 px), as cards (photo, name, role, Might,
 // Kills, Level) that stack to one column on a phone. Each card is one link to the player page. The
 // member list below is not changed by it (DESIGN.md `leadership`).
-import Link from "next/link";
 
 import { RoleMark } from "@/lib/brand/components/RoleMark";
+import { TextLink } from "@/lib/brand/components/TextLink";
 
 import { requestCopy } from "./locale";
 import type { MemberView } from "./member-views";
@@ -70,12 +70,13 @@ function Card({
       <div className="flex min-w-0 items-center gap-3">
         <PlayerAvatar uid={m.uid} hasAvatar={m.hasAvatar} size="lg" />
         <div className="min-w-0 break-words">
-          <Link
+          <TextLink
+            stretch
             href={`/players/${m.uid}`}
-            className="inline-flex min-h-11 items-center font-subhead text-display-sm leading-tight text-plum after:absolute after:inset-0 after:content-[''] hover:underline focus-visible:underline"
+            className="inline-flex min-h-11 items-center font-subhead text-display-sm leading-tight"
           >
             {m.name}
-          </Link>
+          </TextLink>
           <p className="flex flex-wrap items-center gap-x-2 text-sm text-ink/70">
             {m.role && <RoleMark role={m.role} />}
             <span>{m.role?.kind === "officer" ? m.role.title : copy.leadership.leader}</span>

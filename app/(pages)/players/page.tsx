@@ -1,5 +1,4 @@
 // `/players?q=`: search by current or earlier name (plan Phase 5d, §3.8). Every match is listed.
-import Link from "next/link";
 
 import { allianceLabel } from "@/app/_ui/format";
 import { requestClock, requestCopy } from "@/app/_ui/locale";
@@ -9,6 +8,7 @@ import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { LABEL } from "@/app/_ui/StatTable";
 import { GrannyEmpty } from "@/lib/brand/components/Mascot";
+import { TextLink } from "@/lib/brand/components/TextLink";
 import { fill } from "@/lib/copy";
 import { withPageDb } from "@/lib/page";
 import { homeEvent, listEvents } from "@/lib/queries";
@@ -65,12 +65,13 @@ export default async function PlayersPage({
               >
                 <PlayerAvatar uid={m.uid} hasAvatar={m.hasAvatar} />
                 <div className="min-w-0 break-words">
-                  <Link
+                  <TextLink
+                    stretch
                     href={`/players/${m.uid}`}
-                    className="font-subhead text-display-sm leading-tight text-plum after:absolute after:inset-0 after:content-[''] hover:underline focus-visible:underline"
+                    className="font-subhead text-display-sm leading-tight"
                   >
                     {m.name}
-                  </Link>
+                  </TextLink>
                   {m.matchedName && (
                     <span className="block text-sm text-ink/70">
                       {fill(copy.ledger.was, { name: m.matchedName })}

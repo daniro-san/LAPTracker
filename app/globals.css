@@ -13,6 +13,18 @@
   }
 }
 
+/* Every enabled interactive control shows the pointer cursor (issue 232). Tailwind's preflight gives
+   <button> the default cursor; disabled controls keep it. */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  summary,
+  select:not(:disabled),
+  label:has(input:is([type="checkbox"], [type="radio"]):not(:disabled), select:not(:disabled)) {
+    cursor: pointer;
+  }
+}
+
 /* "Exact numbers" switch (app/_ui/Num.tsx): CSS only, so it needs no JavaScript and works on touch. */
 .num-f {
   display: none;
@@ -170,17 +182,22 @@ body {
     mask: url("data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%2724%27%20height=%2724%27%3E%3Cpath%20d=%27M4%20-1L-1%204M28%20-1L-1%2028%27%20stroke=%27black%27%20stroke-width=%270.8%27%20stroke-linecap=%27round%27/%3E%3Cpath%20d=%27M11%20-1L-1%2011M35%20-1L-1%2035%27%20stroke=%27black%27%20stroke-width=%270.65%27%20stroke-linecap=%27round%27/%3E%3Cpath%20d=%27M18%20-1L-1%2018M42%20-1L-1%2042%27%20stroke=%27black%27%20stroke-width=%270.85%27%20stroke-linecap=%27round%27/%3E%3C/svg%3E")
       repeat;
   }
-  .ink-button:not(:disabled):hover {
+  /* `data-state` pins a state for /brand's "Hover and press" samples (issue 232). */
+  .ink-button:not(:disabled):hover,
+  .ink-button[data-state="hover"] {
     transform: translate(-1px, -1px);
   }
-  .ink-button:not(:disabled):hover::after {
+  .ink-button:not(:disabled):hover::after,
+  .ink-button[data-state="hover"]::after {
     transform: translate(3px, 3px);
   }
   /* Same specificity as the hover rule and after it, so pressing wins while the pointer is still over. */
-  .ink-button:not(:disabled):active {
+  .ink-button:not(:disabled):active,
+  .ink-button[data-state="press"] {
     transform: translate(2px, 2px);
   }
-  .ink-button:not(:disabled):active::after {
+  .ink-button:not(:disabled):active::after,
+  .ink-button[data-state="press"]::after {
     transform: translate(0, 0);
   }
   @media (prefers-reduced-motion: reduce) {
@@ -270,15 +287,84 @@ body {
       transform 120ms ease-out,
       background-color 120ms ease-out;
   }
-  .frame-button:not(:disabled):hover {
+  .frame-button:not(:disabled):hover,
+  .frame-button[data-state="hover"] {
     background: color-mix(in srgb, var(--plum) 10%, var(--paper));
   }
-  .frame-button:not(:disabled):active {
+  .frame-button:not(:disabled):active,
+  .frame-button[data-state="press"] {
     transform: translate(1px, 1px);
   }
   @media (prefers-reduced-motion: reduce) {
     .frame-button {
       transition: none;
+    }
+  }
+
+  /* Controls too small or too plain for a full button (issue 232): chips, tabs, header controls, card
+     heads. A tint of the text colour laid over whatever background the control has (so it also shows on
+     a selected or open one), deeper while pressed. A summary's framed Details control tints when the
+     whole bar is hovered or pressed. Hover only where the device hovers, so a tap leaves no tint. */
+  .tint-button {
+    --tint: 0%;
+    background-image: linear-gradient(
+      color-mix(in srgb, currentColor var(--tint), transparent),
+      color-mix(in srgb, currentColor var(--tint), transparent)
+    );
+  }
+  .tint-button[data-state="hover"] {
+    --tint: 10%;
+  }
+  @media (hover: hover) {
+    .tint-button:not(:disabled):hover,
+    summary:hover > .tint-button {
+      --tint: 10%;
+    }
+  }
+  .tint-button:not(:disabled):active,
+  summary:active > .tint-button,
+  .tint-button[data-state="press"] {
+    --tint: 20%;
+  }
+  /* Text controls (a summary or button that reads as a link): underlined on hover, a thicker line if
+     it is already underlined; pressed like a text link (the unlayered rule at the end of this file). */
+  .text-button[data-state="hover"] {
+    text-decoration-line: underline;
+    text-decoration-thickness: 2px;
+  }
+  @media (hover: hover) {
+    .text-button:not(:disabled):hover {
+      text-decoration-line: underline;
+      text-decoration-thickness: 2px;
+    }
+  }
+
+  /* Text link (DESIGN.md `text-link`, owner 2026-11-11, issue 232): the one look for every link that is
+     words. At rest plum with a thin plum underline at 40 %, so it reads as a link without colour alone;
+     visited looks the same. Hover: the underline at full colour, 2 px. Press: ink and 1 px down, like
+     the buttons. `position: relative; top` because transforms do not move an inline link inside a
+     sentence. A stretched link (`.text-link-stretch`, `TextLink stretch`) covers its whole card with
+     ::after, so it is not moved on press: that would shrink the card's hit area under the pointer. */
+  .text-link {
+    color: var(--plum);
+    text-decoration-line: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+    text-decoration-color: color-mix(in srgb, currentColor 40%, transparent);
+  }
+  .text-link-stretch::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+  }
+  .text-link[data-state="hover"] {
+    text-decoration-color: currentColor;
+    text-decoration-thickness: 2px;
+  }
+  @media (hover: hover) {
+    .text-link:hover {
+      text-decoration-color: currentColor;
+      text-decoration-thickness: 2px;
     }
   }
 
@@ -381,4 +467,20 @@ body {
     -webkit-mask: url("/brand/rule.svg") left center / 160px 4px repeat-x;
     mask: url("/brand/rule.svg") left center / 160px 4px repeat-x;
   }
+}
+
+/* Press on a text link or text control (issue 232): ink and 1 px down. Outside the layers on purpose,
+   so it wins over a colour utility on the element (`text-plum`, `text-ink/80`) while pressed. */
+.text-link:active,
+.text-link[data-state="press"],
+.text-button:not(:disabled):active,
+.text-button[data-state="press"] {
+  position: relative;
+  top: 1px;
+  color: var(--ink);
+  text-decoration-color: currentColor;
+}
+.text-link-stretch:active,
+.text-link-stretch[data-state="press"] {
+  position: static;
 }

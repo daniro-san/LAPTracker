@@ -19,7 +19,7 @@ import { FreshDots, type FreshState } from "./Status";
 
 export const MUTED = "text-ink/70";
 export const NAME =
-  "min-w-0 break-words font-subhead text-display-sm leading-tight text-plum after:absolute after:inset-0 after:content-[''] hover:underline focus-visible:underline";
+  "text-link text-link-stretch min-w-0 break-words font-subhead text-display-sm leading-tight";
 type Event = EventComparison["a"];
 
 /** ≥ 640 px: name · line head · one column per figure, shared by the header and every row. */

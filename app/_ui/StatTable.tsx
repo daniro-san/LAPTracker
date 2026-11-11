@@ -3,9 +3,9 @@
 // a table row at ≥ 640 px. The card is simple — rank, name, three numbers with their change — and the
 // full figures open under "Details". Text hierarchy (DESIGN.md "Typography"): card title Alegreya Sans,
 // labels small caps in ink/70, values Source Sans 500, changes coloured, notes and metadata ink/70.
-import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
 
+import { TextLink } from "@/lib/brand/components/TextLink";
 import type { Dictionary } from "@/lib/copy";
 
 import { EmptyState } from "./EmptyState";
@@ -112,12 +112,9 @@ function Lead({ row }: { row: StatRow }) {
       )}
       <div className="min-w-0 break-words">
         {row.href ? (
-          <Link
-            href={row.href}
-            className="font-subhead text-display-sm leading-tight text-plum after:absolute after:inset-0 after:content-[''] hover:underline focus-visible:underline"
-          >
+          <TextLink stretch href={row.href} className="font-subhead text-display-sm leading-tight">
             {row.lead}
-          </Link>
+          </TextLink>
         ) : (
           <span className="font-subhead text-display-sm leading-tight">{row.lead}</span>
         )}
@@ -153,11 +150,11 @@ export function MoreBar({
   return (
     <details className={`group/more relative z-10 col-span-full ${box}`}>
       <summary
-        className={`details-bar relative z-10 flex min-h-11 cursor-pointer items-center gap-3 text-sm [&::-webkit-details-marker]:hidden ${bar}`}
+        className={`details-bar relative z-10 flex min-h-11 items-center gap-3 text-sm [&::-webkit-details-marker]:hidden ${bar}`}
       >
         {row.summary}
         {row.detail && (
-          <span className="drawn-frame-soft ml-auto inline-flex min-h-11 items-center gap-1 px-3 font-medium text-plum group-open/more:bg-plum/10">
+          <span className="drawn-frame-soft tint-button ml-auto inline-flex min-h-11 items-center gap-1 px-3 font-medium text-plum group-open/more:bg-plum/10">
             <span>
               {copy.ledger.details}
               {row.lead && <span className="sr-only">, {row.lead}</span>}

@@ -17,7 +17,7 @@ const MUTED = "text-ink/70";
 function CardHead({ entry, clock, copy }: { entry: HistoryEntry; clock: Clock; copy: Dictionary }) {
   const h = copy.history;
   return (
-    <summary className="flex min-h-11 cursor-pointer items-center justify-between gap-3 px-3 py-2 [&::-webkit-details-marker]:hidden">
+    <summary className="tint-button flex min-h-11 items-center justify-between gap-3 px-3 py-2 [&::-webkit-details-marker]:hidden">
       <div className="min-w-0">
         <h2 className="font-subhead text-display-sm leading-tight">
           {entry.event ? (

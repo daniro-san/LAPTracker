@@ -25,8 +25,7 @@ export interface SelectorEvent extends LabeledEvent {
 
 /** Plum-header controls: in the soft drawn frame (paper ink), a paper tint on hover, deeper while
  * pressed or open, so they feel tappable. */
-const CONTROL =
-  "rounded-xs transition-colors duration-150 hover:bg-paper/15 active:bg-paper/25 motion-reduce:transition-none";
+const CONTROL = "tint-button rounded-xs";
 
 function EventSelector({
   events,
@@ -46,7 +45,7 @@ function EventSelector({
   return (
     <Disclosure label={copy.site.events} className="group relative">
       <summary
-        className={`flex min-h-11 cursor-pointer items-center gap-1 whitespace-nowrap px-2 text-sm drawn-frame-soft sm:px-3 font-medium group-open:bg-paper/20 [&::-webkit-details-marker]:hidden ${CONTROL}`}
+        className={`flex min-h-11 items-center gap-1 whitespace-nowrap px-2 text-sm drawn-frame-soft sm:px-3 font-medium group-open:bg-paper/20 [&::-webkit-details-marker]:hidden ${CONTROL}`}
       >
         {current ? (
           <>
@@ -81,7 +80,7 @@ function EventSelector({
               <Link
                 href={home ? "/" : `/events/${e.id}`}
                 aria-current={e.id === currentId ? "page" : undefined}
-                className="flex min-h-11 flex-col justify-center px-3 py-1 text-sm transition-colors duration-150 hover:bg-plum/15 aria-[current=page]:bg-plum/10 aria-[current=page]:font-semibold motion-reduce:transition-none"
+                className="tint-button flex min-h-11 flex-col justify-center px-3 py-1 text-sm aria-[current=page]:bg-plum/10 aria-[current=page]:font-semibold"
               >
                 <span className="break-words">
                   <EventLabel event={e} clock={clock} />
@@ -140,7 +139,7 @@ export function SiteHeader({
       {publicPage && (
         <a
           href="#main"
-          className="drawn-frame-soft sr-only items-center bg-paper px-3 font-medium text-ink focus:not-sr-only focus:absolute focus:top-2 focus:left-3 focus:z-50 focus:flex focus:min-h-11 sm:focus:left-6"
+          className="drawn-frame-soft tint-button sr-only items-center bg-paper px-3 font-medium text-ink focus:not-sr-only focus:absolute focus:top-2 focus:left-3 focus:z-50 focus:flex focus:min-h-11 sm:focus:left-6"
         >
           {copy.site.skip}
         </a>
@@ -149,7 +148,7 @@ export function SiteHeader({
         <div className="mx-auto flex max-w-[960px] items-center justify-between gap-1 px-3 py-1 sm:gap-2 sm:px-6">
           <Link
             href="/"
-            className="flex min-h-11 min-w-11 items-center justify-center gap-1 min-[420px]:gap-1.5"
+            className="tint-button flex min-h-11 min-w-11 items-center justify-center gap-1 rounded-xs min-[420px]:gap-1.5"
           >
             <WaxedMark size={40} solid />
             <span className="font-display text-lg font-semibold tracking-tight min-[420px]:text-display-sm min-[420px]:tracking-normal">

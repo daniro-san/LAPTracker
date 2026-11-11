@@ -70,7 +70,7 @@ export function ThemeSwitch({ label }: { label: string }) {
       aria-checked={dark}
       aria-label={label}
       onClick={toggle}
-      className="drawn-frame-soft grid size-11 shrink-0 cursor-pointer place-items-center rounded-xs transition-colors duration-150 hover:bg-paper/15 active:bg-paper/25 motion-reduce:transition-none"
+      className="drawn-frame-soft tint-button grid size-11 shrink-0 place-items-center rounded-xs"
     >
       <span className="dark:hidden">
         <Sun />
