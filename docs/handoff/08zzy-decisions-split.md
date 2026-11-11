@@ -42,3 +42,5 @@ No session is queued behind this one; the playbook has no prompt after it.
 - Owner first: merge this PR before any session that adds a decision starts, then tell those sessions (issues 144, 190, spike builds) to write `docs/decisions/DNN-<slug>.md`, take the next free number (D61) and add one index line to `docs/decisions/README.md`.
 - Plan change: `docs/IMPLEMENTATION_PLAN.md` repo tree (line 582, the note on one file split at about 25 entries) is now out of date. Not edited, because the permission covers paths only.
 - `<adjustments>`: next free decision number is D61. A new decision touches only its own file and one line of the README index.
+
+https://github.com/daniro-san/LAPTracker/pull/224
