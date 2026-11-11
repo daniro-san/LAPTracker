@@ -81,3 +81,5 @@ Plan changes needed: none.
 - Local captures: open the dev server at `localhost:<port>`, not `127.0.0.1`. With `127.0.0.1` the client does not hydrate and client-side controls (the PIN sheet) do nothing.
 - For member history captures, the seed leaves `daily_rosters` empty. Two `daily_reads` rows plus `daily_rosters` rows built from `alliance_snapshots` and `member_snapshots` are enough to get cards with "Copy for spreadsheet".
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/237
