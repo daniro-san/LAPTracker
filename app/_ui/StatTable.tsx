@@ -94,15 +94,21 @@ function MetricCell({ m, shared }: { m: StatMetric; shared: boolean }) {
   );
 }
 
+/** The rank sits on the name's first baseline (issue 125); the picture is centred on that first line
+ * (a box one name line tall), so a one-line lead keeps rank, picture and name on one centre line. */
 function Lead({ row }: { row: StatRow }) {
   return (
-    <div className="col-span-2 flex min-w-0 items-center gap-2 border-b border-rule pb-2 sm:col-span-1 sm:border-0 sm:pb-0">
+    <div className="col-span-2 flex min-w-0 items-baseline gap-2 border-b border-rule pb-2 sm:col-span-1 sm:border-0 sm:pb-0">
       {row.rank && (
         <span className="w-14 shrink-0 text-base">
           <Rank n={row.rank.n} move={row.rank.move} />
         </span>
       )}
-      {row.icon}
+      {row.icon && (
+        <span className="flex h-[1lh] shrink-0 items-center self-start text-display-sm leading-tight">
+          {row.icon}
+        </span>
+      )}
       <div className="min-w-0 break-words">
         {row.href ? (
           <Link
@@ -123,6 +129,8 @@ function Lead({ row }: { row: StatRow }) {
 /** The Details control. `inline` (the StatTable rows): the control is a grid item of the row, a fifth
  * column at ≥ 640 px and the Members line's second cell below it, and its panel spans the row (the
  * `.stat-more` rules in app/globals.css; a browser without `::details-content` keeps it on its own line).
+ * `inline="sm"` (the player's history rows, issue 125): the same from 640 px only, in the row's last
+ * column on its first line; below 640 px the control keeps its own line.
  * The summary carries the row's name for screen readers (UX review S6). */
 export function MoreBar({
   row,
@@ -131,13 +139,20 @@ export function MoreBar({
 }: {
   row: StatRow;
   copy: Dictionary;
-  inline?: boolean;
+  inline?: boolean | "sm";
 }) {
   if (!row.summary && !row.detail) return null;
+  const column = "sm:flex-col sm:items-end sm:justify-center sm:gap-0";
+  const [box, bar] =
+    inline === "sm"
+      ? ["stat-more-sm", `sm:row-start-1 sm:[grid-column:-2/-1] ${column}`]
+      : inline
+        ? ["stat-more", `justify-end ${column}`]
+        : ["", ""];
   return (
-    <details className={`group/more relative z-10 col-span-full ${inline ? "stat-more" : ""}`}>
+    <details className={`group/more relative z-10 col-span-full ${box}`}>
       <summary
-        className={`relative z-10 flex min-h-11 cursor-pointer items-center gap-3 text-sm [&::-webkit-details-marker]:hidden ${inline ? "justify-end sm:flex-col sm:items-end sm:justify-center sm:gap-0" : ""}`}
+        className={`relative z-10 flex min-h-11 cursor-pointer items-center gap-3 text-sm [&::-webkit-details-marker]:hidden ${bar}`}
       >
         {row.summary}
         {row.detail && (

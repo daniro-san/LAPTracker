@@ -64,7 +64,7 @@ function RowDetail({
       <DetailTable
         corner={clock.zone}
         from={<SideHead s={fresh(r.before)} clock={clock} copy={copy} />}
-        to={<SideHead s={fresh(r.after)} clock={clock} copy={copy} />}
+        to={r.after ? <SideHead s={fresh(r.after)} clock={clock} copy={copy} /> : null}
         rows={figureRows(r.metrics, r.ranks, copy.ledger.ranking)}
       />
       {history && history.length > 1 && (

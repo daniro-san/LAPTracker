@@ -12,7 +12,7 @@ import { fill, type Dictionary } from "@/lib/copy";
 import type { PlayerEventRow } from "@/lib/queries";
 import { isGeneratedName } from "@/lib/schedule";
 
-import { DetailTable, type RankPair } from "./DetailLines";
+import { DetailTable, rankCell, type RankPair } from "./DetailLines";
 import { EmptyState } from "./EmptyState";
 import { allianceLabel, changeText, type Clock } from "./format";
 import { requestCopy } from "./locale";
@@ -22,9 +22,9 @@ import { FreshDots, SideHead } from "./Status";
 
 const SHOWN = 12;
 const MUTED = "text-ink/70";
-/** ≥ 640 px: event · line head · Might · Kills · Level, shared by the header and every row. */
+/** ≥ 640 px: event · line head · Might · Kills · Level · Details, shared by the header and every row. */
 const GRID = {
-  "--cols": "minmax(0,1.5fr) minmax(0,1fr) repeat(3,minmax(0,1fr))",
+  "--cols": "minmax(0,1.5fr) minmax(0,1fr) repeat(3,minmax(0,1fr)) 6.75rem",
 } as CSSProperties;
 
 type Stat = "power" | "kills" | "lv";
@@ -63,11 +63,12 @@ function rankPairs(r: PlayerEventRow, prev: PlayerEventRow | undefined) {
   return { might: pair("might"), kills: pair("kills") };
 }
 
-/** One line of the row: its head on the left, then a cell per figure, all on one baseline. */
+/** One line of the row: its head on the left, then a cell per figure, all on one baseline. At ≥ 640 px
+ * the head starts each line in column 2, so no line runs on into the Details column. */
 function Line({ head, cells }: { head: ReactNode; cells: ReactNode[] }) {
   return (
     <>
-      <span className={`text-xs tabular-nums ${MUTED}`}>{head}</span>
+      <span className={`text-xs tabular-nums sm:col-start-2 ${MUTED}`}>{head}</span>
       {cells.map((c, i) => (
         <span key={i} className="text-right tabular-nums">
           {c}
@@ -161,7 +162,7 @@ function rowDetail(
     <DetailTable
       corner={clock.zone}
       from={<SideHead s={fresh.before} clock={clock} copy={copy} />}
-      to={<SideHead s={fresh.after} clock={clock} copy={copy} />}
+      to={fresh.after && <SideHead s={fresh.after} clock={clock} copy={copy} />}
       rows={STATS.map((f, i) => {
         const rank = rankOf[i];
         return {
@@ -169,7 +170,7 @@ function rowDetail(
           from: <Num n={r.inEvent?.[FROM[f]] ?? null} />,
           to: <Num n={r[f]} />,
           change: <Delta delta={r.inEvent?.[f] ?? null} base={null} />,
-          ...(rank && { rank: <Rank n={rank.after} move={rank.move} /> }),
+          ...(rank && { rank: rankCell(rank) }),
         };
       })}
     />
@@ -226,6 +227,7 @@ function EventRow(props: RowProps) {
           detail: rowDetail(r, ranks, clock, copy),
         }}
         copy={copy}
+        inline="sm"
       />
     </li>
   );
