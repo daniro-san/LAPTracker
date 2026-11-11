@@ -42,6 +42,7 @@ The next version is the latest `v*` tag plus the bump, so `package.json` is neve
 
 - `tick.yml` calls `POST /api/tick` on its own schedule (minutes 7, 22, 37 and 52 of every hour, D26) and from Actions → tick → Run workflow, where `phase` is `tick`, `before` or `after`. It fails on any non-2xx. All scheduling decisions live in the app. Do not add retries.
 - `keepalive.yml` pushes a timestamp to the `keepalive` branch monthly, so GitHub does not disable the schedule after 60 days without activity. Vercel never builds that branch.
+- `smoke.yml` sends `GET /` and `GET /players` after Vercel reports a successful deploy of `main`'s head (`status` event, D46), and from Actions → smoke → Run workflow. It prints each HTTP code and fails on any non-2xx. It has no retries and no alert: look at the Actions tab after each release.
 - `dependabot-automerge.yml` squash-merges Dependabot minor/patch PRs into `dev` once CI is green. Majors wait for a human.
 
 **Change the alliance list.** Edit `config/alliances.ts` and release. An event already created keeps its own copy of the list.
