@@ -156,7 +156,7 @@ function Summary({
           <DetailTable
             corner={clock.zone}
             from={<SideHead s={fresh(before)} clock={clock} copy={copy} />}
-            to={<SideHead s={fresh(after)} clock={clock} copy={copy} />}
+            to={after && <SideHead s={fresh(after)} clock={clock} copy={copy} />}
             rows={figureRows(metrics, ranks, copy.ledger.ranking)}
           />
         </div>

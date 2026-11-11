@@ -79,8 +79,8 @@ export default async function PlayersPage({
                   <div className="mt-1 flex flex-wrap items-center gap-x-2 text-sm">
                     <AllianceBadge badgeId={m.badgeId} />
                     {allianceLabel(m.tag, m.allianceName)}
-                    <span className="text-ink/70">
-                      · <span className={LABEL}>{copy.search.seen}</span> {clock.day(m.lastSeen)}
+                    <span className="whitespace-nowrap text-ink/70">
+                      <span className={LABEL}>{copy.search.seen}</span> {clock.day(m.lastSeen)}
                     </span>
                   </div>
                 </div>
