@@ -22,7 +22,9 @@ const before = readTree(DIR);
 // No stdin and a time limit: a hang would stall the gate. Without a TTY, drizzle-kit 0.31.11 prints
 // "Error: Interactive prompts require a TTY" (a rename) and still exits 0, so stderr is read as well as
 // the exit status. A failed or timed-out run ends in the drift message below.
-const run = spawnSync("pnpm", ["exec", "drizzle-kit", "generate"], {
+// node runs drizzle-kit's bin itself: the timeout signals only the direct child, and through `pnpm exec`
+// the process that writes would outlive it.
+const run = spawnSync(process.execPath, ["node_modules/drizzle-kit/bin.cjs", "generate"], {
   stdio: ["ignore", "inherit", "pipe"],
   encoding: "utf8",
   timeout: 120_000,
