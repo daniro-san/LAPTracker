@@ -1,4 +1,4 @@
-// Upstream images served from our own origin (DECISIONS D22), so the page CSP keeps img-src 'self'.
+// Upstream images served from our own origin (docs/decisions/D22), so the page CSP keeps img-src 'self'.
 // Never an open proxy: the upstream URL is built from a preset id or read from our own table,
 // and only these two hosts are fetched.
 import { photoUrl, USER_AGENT } from "./sources/shared";

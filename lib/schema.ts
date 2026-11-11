@@ -1,9 +1,9 @@
 // Drizzle schema for plan §6.
 // Deviations from §6, each forced by another decision:
-// - member_snapshots.power/kills are nullable: a null from upstream stays null (DECISIONS D15).
+// - member_snapshots.power/kills are nullable: a null from upstream stays null (docs/decisions/D15).
 // - alliance_snapshots data columns are nullable for error rows, which have no data (owner, Session 3).
 // - events.event_at_utc is unique and events.quota_checked_at exists, so a double tick can create
-//   neither two events nor two Friday checks (Session 4, DECISIONS D20).
+//   neither two events nor two Friday checks (Session 4, docs/decisions/D20).
 // - snapshots.quota_remaining_before and rehearsal_slots serve the rehearsal (plan §3.1, D20).
 import { sql } from "drizzle-orm";
 import {

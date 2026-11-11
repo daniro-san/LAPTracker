@@ -66,7 +66,7 @@ Production is Vercel (branch `main`), the database is Neon, and the scheduler is
 3. Open the PR, read the notes, wait for `check` to be green, then **Merge** with **Create a merge commit** (the only method `main` allows).
 4. About 10 seconds later, `release-publish` creates the tag `vX.Y.Z` and the GitHub Release (Actions → release-publish; Releases page). Vercel deploys `main` and runs the migrations by itself.
 
-The next version is the latest `v*` tag plus the bump, so `package.json` is never edited. If the PR is wrong, close it and run Prepare release again. If the tag or release does not appear, run `gh release create vX.Y.Z --target main --generate-notes`. Why it works this way: [D29](docs/DECISIONS.md).
+The next version is the latest `v*` tag plus the bump, so `package.json` is never edited. If the PR is wrong, close it and run Prepare release again. If the tag or release does not appear, run `gh release create vX.Y.Z --target main --generate-notes`. Why it works this way: [D29](docs/decisions/D29-releases-prepare-release-opens-the-pr.md).
 
 **GitHub repository secrets.** `APP_URL` (the production origin, no trailing slash) and `CRON_SECRET` (must equal the Production value in Vercel).
 
@@ -117,4 +117,4 @@ The code is written mostly by Claude Code sessions with a human reviewing. Every
 - **Translations**: the public pages' English strings (`lib/copy.ts`) are translated into `lib/i18n/<language>.ts`. A missing key reads English. `pnpm check` reports stale or missing keys, and the `translate-copy` skill (`.claude/skills/translate-copy`) fills them with the `translator` agent (`.claude/agents/translator.md`).
 - **Fixtures** are recorded only through the `record-fixture` skill (`.claude/skills/`), because it spends API quota.
 - **Review**: `/code-review` checks changes against [REVIEW.md](REVIEW.md).
-- **Docs**: [ARCHITECTURE](docs/ARCHITECTURE.md) (one dependency rule), [GLOSSARY](docs/GLOSSARY.md) (one word per concept), [DECISIONS](docs/DECISIONS.md) (append-only), and `docs/handoff/` (one file per session).
+- **Docs**: [ARCHITECTURE](docs/ARCHITECTURE.md) (one dependency rule), [GLOSSARY](docs/GLOSSARY.md) (one word per concept), [decisions](docs/decisions/README.md) (append-only), and `docs/handoff/` (one file per session).

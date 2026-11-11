@@ -162,10 +162,10 @@ Before you start, say in a line what you're about to do; brief updates while you
 - Never print, log, commit or paste an API key, PIN, webhook URL or secret. Read them from .env.local or the environment only.
 - Never run anything that spends upstream API quota unless the session explicitly allows it. Never call the site's refresh endpoint or imitate the site (Origin/Referer/cookies): the maintainer closed it on purpose.
 - Stack: Next.js App Router, TypeScript, Tailwind, Drizzle + Neon, Vitest. Node 26 (`.nvmrc` = `26`), pnpm 12 (`packageManager`). Test: `pnpm test`. Typecheck: `pnpm typecheck`. All gates: `pnpm check`.
-- Architecture: docs/ARCHITECTURE.md (one dependency rule, one injection point). Words: docs/GLOSSARY.md — use its terms in code and prose. Decisions: docs/DECISIONS.md.
-- New dependency: only if the platform can't do it; note the reason, release date and install scripts in docs/DECISIONS.md.
+- Architecture: docs/ARCHITECTURE.md (one dependency rule, one injection point). Words: docs/GLOSSARY.md — use its terms in code and prose. Decisions: docs/decisions/README.md.
+- New dependency: only if the platform can't do it; note the reason, release date and install scripts in docs/decisions/.
 - Roster fields x, y, online, last_online_at, joined_at, daily_*, avatar_url stay in raw_json and are never returned by any query, route, page, log or message.
-- lib/sources/internal.ts is unofficial and read-only (ranks board + live-roster fallback). Never widen its use beyond what docs/DECISIONS.md records.
+- lib/sources/internal.ts is unofficial and read-only (ranks board + live-roster fallback). Never widen its use beyond what docs/decisions/ records.
 - Secrets are compared with timingSafeEqual; PIN and cron routes are rate-limited; responses never carry stack traces.
 - UI is mobile-first: designed at 360 px, cards below 640 px, nothing hover-only, touch targets ≥ 44 px, compact numbers; reads only through lib/queries; no charts in v1; player pages look like alliance pages.
 
@@ -248,12 +248,12 @@ Session 1 of SESSION_PLAYBOOK.md. Read CLAUDE.md, docs/handoff/00-prereqs.md, IM
 
 <task>
 Plan first. Then build, in this order:
-1. Scaffold: Next.js (stable), TypeScript strict (+ noUncheckedIndexedAccess, exactOptionalPropertyTypes), Tailwind, Vitest, Drizzle + @neondatabase/serverless, zod, fast-check. Nothing else unless §12.4's test is met and the reason is written in docs/DECISIONS.md. Keep config/alliances.ts, fixtures/, docs/, CLAUDE.md, .env.example untouched. Folder layout exactly as §11.1 (empty modules with a one-line header comment are fine).
+1. Scaffold: Next.js (stable), TypeScript strict (+ noUncheckedIndexedAccess, exactOptionalPropertyTypes), Tailwind, Vitest, Drizzle + @neondatabase/serverless, zod, fast-check. Nothing else unless §12.4's test is met and the reason is written in docs/decisions/. Keep config/alliances.ts, fixtures/, docs/, CLAUDE.md, .env.example untouched. Folder layout exactly as §11.1 (empty modules with a one-line header comment are fine).
 1b. Runtime pins from plan §11.4: `.nvmrc` = `26` (major only), `engines.node` = `">=22.0.0"`, `packageManager` = the pnpm 12 version you have (`pnpm -v`), `.npmrc` with `engine-strict=false`; `scripts/cloud-setup.sh` that resolves the newest 26.x from `nodejs.org/dist/index.json`, installs it into `/opt/node26`, prepends it to PATH in `~/.bashrc`, and installs pnpm 12 (the owner pastes it as the cloud environment's setup script — PREREQUISITES §3b). No Dockerfile, no devcontainer — the plan says why.
 2. Tooling from §11.2 and §11.4: ESLint (typescript-eslint strict, import/order, max-lines 300, max-lines-per-function 80, complexity 12, max-depth 3), Prettier, `pnpm check`, lefthook pre-commit (prettier + eslint on staged, `gitleaks git --pre-commit --staged` with a custom `lap_` rule), `.github/workflows/ci.yml` with pnpm/action-setup + setup-node (`node-version-file: .nvmrc`, `cache: pnpm`), `pnpm install --frozen-lockfile`, `pnpm check`, `pnpm audit --audit-level high`, actions pinned to SHAs, `permissions: contents: read`, job name `check` (the ruleset requires this exact name). `.github/dependabot.yml` for npm and github-actions, weekly, grouped minor/patch.
 3. Harness from §11.5: `.claude/settings.json` (hooks: PostToolUse Edit|Write → eslint --fix on the changed file; Stop → pnpm check; SessionStart → scripts/install_pkgs.sh cloud-aware; permissions allow/deny as §11.4, with `git push origin main`, `git push origin dev` and `git push --force*` denied and `git push -u origin HEAD`, `gh pr *`, `gh api *` allowed), `.claude/rules/{collector,api-routes,tests}.md`, `.claude/skills/record-fixture/SKILL.md` (complete — it spends quota), `REVIEW.md` with the Session 5 checklist plus the §12.1 blocked-keys check.
 4. Security baseline from §12.3 and §12.5: security headers in next.config; `lib/env.ts` with zod validation of every variable in .env.example (fail fast); a `lib/redact.ts` helper the logger will use; a `BLOCKED_ROSTER_KEYS` constant in lib/queries with a test that no read model exports them.
-5. Docs: docs/ARCHITECTURE.md (§11.1 with the Deps interface in TypeScript), docs/GLOSSARY.md, docs/DECISIONS.md seeded from §3.1–§3.6 and the dependency list (one paragraph each, dated).
+5. Docs: docs/ARCHITECTURE.md (§11.1 with the Deps interface in TypeScript), docs/GLOSSARY.md, docs/decisions/ seeded from §3.1–§3.6 and the dependency list (one paragraph each, dated).
 6. lib/budget.ts with one exported pure function stub and one property test that passes trivially, so fast-check is proven wired. One placeholder route test. .gitignore covers .env*, node_modules, .next, .claude/worktrees.
 7. README.md: what this is, setup, env vars, scripts, "how the harness works" — short.
 </task>
@@ -262,7 +262,7 @@ Plan first. Then build, in this order:
 - The tooling must pass on the scaffold itself before you commit; a gate that fails on an empty repo trains every later session to bypass it.
 - Hooks must be fast (< 10 s on a one-file edit). Measure and report the PostToolUse timing in the handoff.
 - No DI container, no base classes, no generic repository — §11.7 lists what not to add. If a lint rule needs disabling for the scaffold, that is a signal the rule is wrong for this repo; change the rule, don't add disable comments.
-- For every dependency you add, run `pnpm view <pkg> time.modified scripts` and note the date and any install scripts in docs/DECISIONS.md. A package untouched for a year or with a binary-downloading postinstall needs a stated reason.
+- For every dependency you add, run `pnpm view <pkg> time.modified scripts` and note the date and any install scripts in docs/decisions/. A package untouched for a year or with a binary-downloading postinstall needs a stated reason.
 </constraints>
 
 <verify>

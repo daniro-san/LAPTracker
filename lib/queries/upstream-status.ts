@@ -1,4 +1,4 @@
-// Is the upstream answering? Derived only from rows we already store (DECISIONS D27); never calls it.
+// Is the upstream answering? Derived only from rows we already store (docs/decisions/D27); never calls it.
 // Reads the newest public snapshot and, for the "last fresh" time, the newest fresh alliance row.
 import { and, desc, eq, isNull, max } from "drizzle-orm";
 

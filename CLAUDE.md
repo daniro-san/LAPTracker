@@ -24,10 +24,10 @@ Before you start, say in a line what you're about to do; brief updates while you
 - Never print, log, commit or paste an API key, PIN, webhook URL or secret. Read them from .env.local or the environment only.
 - Never run anything that spends upstream API quota unless the session explicitly allows it. Never call the site's refresh endpoint or imitate the site (Origin/Referer/cookies): the maintainer closed it on purpose.
 - Stack: Next.js App Router, TypeScript, Tailwind, Drizzle + Neon, Vitest. Node 26 (`.nvmrc` = `26`), pnpm 12 (`packageManager`). Test: `pnpm test`. Typecheck: `pnpm typecheck`. All gates: `pnpm check`.
-- Architecture: docs/ARCHITECTURE.md (one dependency rule, one injection point). Words: docs/GLOSSARY.md — use its terms in code and prose. Decisions: docs/DECISIONS.md.
-- New dependency: only if the platform can't do it; note the reason, release date and install scripts in docs/DECISIONS.md.
-- Roster fields x, y, online, last_online_at, joined_at, daily_*, active stay in raw_json and are never returned by any query, route, page, log or message. avatar_url is stored but never returned or logged either: the photo reaches pages only as the image /img/avatar/[uid] serves; badges (badge_id 101–110) only via /img/badge/[id] (docs/DECISIONS.md D22).
-- lib/sources/internal.ts is unofficial and read-only (ranks board + live-roster fallback). Never widen its use beyond what docs/DECISIONS.md records.
+- Architecture: docs/ARCHITECTURE.md (one dependency rule, one injection point). Words: docs/GLOSSARY.md — use its terms in code and prose. Decisions: docs/decisions/README.md.
+- New dependency: only if the platform can't do it; note the reason, release date and install scripts in docs/decisions/.
+- Roster fields x, y, online, last_online_at, joined_at, daily_*, active stay in raw_json and are never returned by any query, route, page, log or message. avatar_url is stored but never returned or logged either: the photo reaches pages only as the image /img/avatar/[uid] serves; badges (badge_id 101–110) only via /img/badge/[id] (docs/decisions/D22).
+- lib/sources/internal.ts is unofficial and read-only (ranks board + live-roster fallback). Never widen its use beyond what docs/decisions/ records.
 - Secrets are compared with timingSafeEqual; PIN and cron routes are rate-limited; responses never carry stack traces.
 - UI is mobile-first: designed at 360 px, cards below 640 px, nothing hover-only, touch targets ≥ 44 px, compact numbers; reads only through lib/queries; no charts in v1; player pages look like alliance pages.
 

@@ -6,7 +6,7 @@ export type Uid = number;
 export interface MemberInput {
   uid: Uid;
   name: string;
-  /** null when the upstream sends null; kept on the row, summed as 0 (DECISIONS D15). */
+  /** null when the upstream sends null; kept on the row, summed as 0 (docs/decisions/D15). */
   power: number | null;
   kills: number | null;
   lv: number | null;

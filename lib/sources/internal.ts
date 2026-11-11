@@ -1,5 +1,5 @@
 // The site's internal API (plan §2b, §3.5): UNOFFICIAL and READ-ONLY. Two uses only, recorded in
-// docs/DECISIONS.md: the ranks board (a cross-check, never in a delta) and the live: true roster as a
+// docs/decisions/: the ranks board (a cross-check, never in a delta) and the live: true roster as a
 // per-alliance fallback when /v1 fails. The site's refresh endpoint answers 403 "Refresh only from the
 // site": the maintainer closed it on purpose. This file has no refresh function and must never get
 // one, and it never sends Origin, Referer or cookies. GET only.
