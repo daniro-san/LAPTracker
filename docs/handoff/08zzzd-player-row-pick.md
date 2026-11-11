@@ -44,3 +44,5 @@ Plan changes needed: none.
 - One shared rule for two roster rows of one player in one snapshot: `pickRosterRow` / `pickRosterRows` in `lib/compute.ts`. New queries that read a player's roster rows should use these functions and not pick rows again on their own.
 - `sightingsOf` in `lib/queries/players.ts` now returns at most one row per uid and snapshot. players.ts is at 300 counted lines (the ESLint `max-lines` limit), so new player-page code has to go in another file.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/236
