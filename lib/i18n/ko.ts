@@ -67,6 +67,7 @@ export const ko = {
     counted: "연맹 {total}개 중 {n}개, 두 이벤트 모두 쓸 수 있는 데이터가 있는 연맹",
     between: "한 이벤트에서 다른 이벤트까지",
     notIn: "연맹에 없음",
+    notTracked: "추적 중인 연맹에 없음",
     same: "서로 다른 이벤트 두 개를 고르세요.",
     onlyOne: "아직 비교할 이벤트가 하나뿐입니다.",
   },

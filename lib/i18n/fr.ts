@@ -67,6 +67,7 @@ export const fr = {
       "{n} alliances sur {total}, celles dont les données sont utilisables dans les deux événements",
     between: "D’un événement à l’autre",
     notIn: "hors alliance",
+    notTracked: "hors des alliances suivies",
     same: "Choisissez deux événements différents.",
     onlyOne: "Il n’y a pour l’instant qu’un seul événement à comparer.",
   },

@@ -66,6 +66,7 @@ export const ptBR = {
     counted: "{n} de {total} alianças, as que têm dados úteis nos dois eventos",
     between: "De um evento ao outro",
     notIn: "Fora da aliança",
+    notTracked: "Em nenhuma aliança acompanhada",
     same: "Escolha dois eventos diferentes.",
     onlyOne: "Só há um evento para comparar por enquanto.",
   },

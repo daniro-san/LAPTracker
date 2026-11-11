@@ -8,6 +8,7 @@ Words already used in `lib/i18n/ko.ts`. Reuse them so the pages stay consistent;
 | Ledger                    | 장부                   | `site.home` — the ledger, as a breadcrumb                   |
 | kept by the Old Grandmas  | Old Grandmas가 기록    | `site.byline` — Old Grandmas stays a name                   |
 | Alliance                  | 연맹                   | `ledger.alliance`                                           |
+| not in a tracked alliance | 추적 중인 연맹에 없음  | `compare.notTracked` — player view                          |
 | Member                    | 멤버                   | `ledger.member` — a player inside an alliance               |
 | Player                    | 플레이어               | `ledger.player`                                             |
 | Event                     | 이벤트                 | `ledger.event` — a game event                               |

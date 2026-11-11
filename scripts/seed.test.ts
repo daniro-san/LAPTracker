@@ -23,7 +23,9 @@ const states = async () => {
   };
 };
 
-describe("seed --with-states", () => {
+// Each body runs a whole seed on PGlite, far heavier than the bodies the global testTimeout was sized
+// on (#124): 15.0 s in a full `pnpm check` on a 10-core Mac at load average 36-44 (2026-11-11); 4x that.
+describe("seed --with-states", { timeout: 60_000 }, () => {
   it("adds an event a week ahead with no snapshots and an event whose After is running", async () => {
     await seed(db, { withStates: true });
     const { empty, running } = await states();

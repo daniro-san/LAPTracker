@@ -8,6 +8,7 @@ Words already used in `lib/i18n/th.ts`. Reuse them so the pages stay consistent;
 | Ledger                    | สมุด                          | `site.home` — the ledger, as a breadcrumb                    |
 | kept by the Old Grandmas  | บันทึกโดย Old Grandmas        | `site.byline` — Old Grandmas stays a name                    |
 | Alliance                  | พันธมิตร                      | `ledger.alliance`                                            |
+| not in a tracked alliance | ไม่อยู่ในพันธมิตรที่ติดตาม    | `compare.notTracked` — player view                           |
 | Member                    | สมาชิก                        | `ledger.member` — a player inside an alliance                |
 | Player                    | ผู้เล่น                       | `ledger.player`                                              |
 | Event                     | กิจกรรม                       | `ledger.event` — a game event                                |

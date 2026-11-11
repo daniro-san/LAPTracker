@@ -22,6 +22,12 @@
     "i18n:todo": "tsx scripts/i18n-check.ts --todo",
     "i18n:stamp": "tsx scripts/i18n-check.ts --stamp",
     "db:seed": "tsx --env-file-if-exists=.env.local scripts/seed.ts",
+    "db:local:start": "node --env-file-if-exists=.env.local scripts/db-local.mjs start",
+    "db:local:stop": "node --env-file-if-exists=.env.local scripts/db-local.mjs stop",
+    "db:local:migrate": "node --env-file-if-exists=.env.local scripts/db-local.mjs migrate",
+    "db:local:bridge": "node --env-file-if-exists=.env.local scripts/db-local-bridge.mjs",
+    "db:local:seed": "node --env-file-if-exists=.env.local scripts/db-local.mjs check && tsx --env-file-if-exists=.env.local --import ./scripts/db-local-preload.mjs scripts/seed.ts",
+    "dev:local": "NODE_OPTIONS='--import ./scripts/db-local-preload.mjs' next dev",
     "prepare": "lefthook install || true"
   },
   "dependencies": {
@@ -52,6 +58,7 @@
     "tsx": "4.23.15",
     "typescript": "6.0.3",
     "typescript-eslint": "8.72.1",
-    "vitest": "5.1.0"
+    "vitest": "5.1.0",
+    "ws": "8.22.1"
   }
 }

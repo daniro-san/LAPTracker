@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { cache } from "react";
 
 import { Breadcrumbs } from "@/app/_ui/Breadcrumbs";
+import { PlayerCompareLink } from "@/app/_ui/ComparePicker";
 import { ExactToggle } from "@/app/_ui/ExactToggle";
 import { allianceLabel, type Clock } from "@/app/_ui/format";
 import { requestClock, requestCopy } from "@/app/_ui/locale";
@@ -189,7 +190,14 @@ export default async function PlayerPage({ params }: { params: Params }) {
               )}
             </div>
           </div>
-          <ExactToggle />
+          <div className="flex flex-wrap items-center gap-2">
+            <PlayerCompareLink
+              eventIds={history.rows.map((r) => r.eventId)}
+              uid={uid}
+              copy={copy}
+            />
+            <ExactToggle />
+          </div>
         </div>
         <Legend copy={copy} />
         <Timelines history={history} clock={clock} copy={copy} />

@@ -8,6 +8,7 @@ Words already used in `lib/i18n/de.ts`. Reuse them so the pages stay consistent;
 | Ledger                    | Chronik                      | `site.home` — the ledger, as a breadcrumb                     |
 | kept by the Old Grandmas  | geführt von den Old Grandmas | `site.byline` — Old Grandmas stays a name                     |
 | Alliance                  | Allianz                      | `ledger.alliance`                                             |
+| not in a tracked alliance | in keiner erfassten Allianz  | `compare.notTracked` — player view                            |
 | Member                    | Mitglied                     | `ledger.member` — a player inside an alliance                 |
 | Player                    | Spieler                      | `ledger.player`                                               |
 | Event                     | Event                        | `ledger.event` — a game event                                 |

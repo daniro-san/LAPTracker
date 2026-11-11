@@ -57,9 +57,13 @@ interface Line {
   /** The difference line (UX review N8): set off by a hairline; `label` heads it on a row of its own
    * below 640 px, where the head column has no room for two dates. */
   label?: string;
+  /** Below 640 px a row of its own above the line (the player's alliance, issue 199); the head column
+   * has no room for it there. From 640 px the caller puts it in `head`. */
+  above?: ReactNode;
 }
 
-/** One card / row: the name, column heads inside the card below 640 px, then one line per event. */
+/** One card / row: the name, column heads inside the card below 640 px, then one line per event.
+ * From 640 px the name cell spans every line (issue 233), so each line starts in the head column. */
 export function CompareCard({
   name,
   columns,
@@ -76,7 +80,9 @@ export function CompareCard({
       style={gridOf(columns.length)}
       className={`stat-card relative mb-3 grid items-baseline gap-x-3 gap-y-1 border border-rule p-3 sm:mb-0 sm:grid-cols-[var(--cols)] sm:border-0 sm:border-b sm:py-2 ${columns.length === 3 ? "grid-cols-[auto_repeat(3,minmax(0,1fr))]" : "grid-cols-[auto_repeat(2,minmax(0,1fr))]"}`}
     >
-      <div className="col-span-full mb-1 flex items-center gap-2 border-b border-rule pb-2 sm:col-span-1 sm:row-span-2 sm:mb-0 sm:border-0 sm:pb-0">
+      <div
+        className={`col-span-full mb-1 flex items-center gap-2 border-b border-rule pb-2 sm:col-span-1 sm:mb-0 sm:border-0 sm:pb-0 ${lines.length === 3 ? "sm:row-span-3" : "sm:row-span-2"}`}
+      >
         {name}
       </div>
       <span className="sm:hidden" />
@@ -89,6 +95,11 @@ export function CompareCard({
         const rule = l.label ? "border-t border-rule pt-1" : "";
         return (
           <div key={l.key} className="contents">
+            {l.above && (
+              <span className="col-span-full mt-1 flex min-w-0 items-center gap-2 text-sm sm:hidden">
+                {l.above}
+              </span>
+            )}
             {l.label && (
               <span className={`col-span-full mt-1 text-xs sm:hidden ${MUTED} ${rule}`}>
                 {l.label}
@@ -153,7 +164,7 @@ export function differenceCells(pairs: [number | null | undefined, number | null
 }
 
 /** The difference line's words: `Oct 31 vs Oct 24`, the second event first. */
-export const versus = (data: EventComparison, clock: Clock, copy: Dictionary) =>
+export const versus = (data: Pick<EventComparison, "a" | "b">, clock: Clock, copy: Dictionary) =>
   fill(copy.compare.versus, {
     a: eventHead(data.b, data.a, clock),
     b: eventHead(data.a, data.b, clock),

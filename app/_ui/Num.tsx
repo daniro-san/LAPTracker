@@ -55,8 +55,8 @@ export function Delta({
   /** The value the percentage is relative to. */
   base: number | null;
   note?: string | undefined;
-  /** Puts the percent on its own line below 640 px, for narrow columns. */
-  stack?: boolean;
+  /** Puts the percent on its own line below 640 px, for narrow columns; `"md"`: below 768 px. */
+  stack?: boolean | "md";
   /** Adds the `*` mark (the total fell and members left). */
   memberMark?: boolean;
 }) {
@@ -71,7 +71,10 @@ export function Delta({
         {delta !== 0 && signOf(delta)}
         <Num n={Math.abs(delta)} />
         {pct !== null && delta !== 0 && (
-          <span suppressHydrationWarning className={stack ? "block sm:inline" : undefined}>
+          <span
+            suppressHydrationWarning
+            className={stack === "md" ? "block md:inline" : stack ? "block sm:inline" : undefined}
+          >
             {" "}
             ({percentText(pct, locale)})
           </span>

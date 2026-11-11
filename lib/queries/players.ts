@@ -113,7 +113,7 @@ export interface PlayerHistory {
 }
 
 /** 1 + the roster-mates of the same alliance snapshot with a higher value; null without a value. */
-function peerRank(own: typeof memberSnapshots.power, column: "power" | "kills") {
+export function peerRank(own: typeof memberSnapshots.power, column: "power" | "kills") {
   return sql<
     number | null
   >`case when ${own} is null then null else (select count(*)::int + 1 from member_snapshots peer where peer.alliance_snapshot_id = ${memberSnapshots.allianceSnapshotId} and peer.${sql.raw(column)} > ${own}) end`.mapWith(

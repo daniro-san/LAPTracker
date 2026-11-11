@@ -19,6 +19,7 @@ import {
 } from "@/app/_ui/admin/words";
 import type { Clock } from "@/app/_ui/format";
 import { requestServerClock, requestLocale } from "@/app/_ui/locale";
+import { isAdmin } from "@/lib/admin-session";
 import { Chip } from "@/lib/brand/components/Chip";
 import { FactList } from "@/lib/brand/components/FactList";
 import { DroppedStitch, StitchedCheck } from "@/lib/brand/components/StatusIcons";
@@ -241,6 +242,8 @@ async function Schedule({
 }
 
 export default async function AdminPage() {
+  // Session first (issue 218): locked, the PIN card and no database read.
+  if (!(await isAdmin())) return <AdminShell title={t.title} />;
   const env = getEnv();
   const now = new Date();
   const next = nextEvent(now, env);

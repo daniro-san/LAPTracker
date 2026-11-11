@@ -37,6 +37,16 @@ html {
   outline: 2px solid currentColor;
   outline-offset: 2px;
 }
+/* A Details bar (`details-bar`: MoreBar, the alliance Summary band): the keyboard ring goes round the
+   framed Details control only, never the whole bar, also when a key press follows a click or a tap
+   (issue 125). Other summaries with a framed child (the closed round on /admin) keep the global ring. */
+summary.details-bar:focus-visible:has(> .drawn-frame-soft) {
+  outline: none;
+}
+summary.details-bar:focus-visible > .drawn-frame-soft {
+  outline: 2px solid var(--plum);
+  outline-offset: 2px;
+}
 body {
   overflow-wrap: break-word;
 }
@@ -228,6 +238,16 @@ body {
     }
     .stat-more:not([open]) > .stat-more-panel {
       display: none;
+    }
+    /* MoreBar `inline="sm"` (player history rows): the same from 640 px only. */
+    @media (min-width: 640px) {
+      .stat-more-sm,
+      .stat-more-sm::details-content {
+        display: contents;
+      }
+      .stat-more-sm:not([open]) > .stat-more-panel {
+        display: none;
+      }
     }
   }
   @supports not (-webkit-mask-box-image: none) {

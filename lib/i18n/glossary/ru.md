@@ -8,6 +8,7 @@ Words already used in `lib/i18n/ru.ts`. Reuse them so the pages stay consistent;
 | Ledger                    | Журнал                      | `site.home` — the ledger, as a breadcrumb                   |
 | kept by the Old Grandmas  | ведут Old Grandmas          | `site.byline` — Old Grandmas stays a name                   |
 | Alliance                  | Альянс                      | `ledger.alliance`                                           |
+| not in a tracked alliance | не в отслеживаемом альянсе  | `compare.notTracked` — player view                          |
 | Member                    | Участник                    | `ledger.member` — a player inside an alliance               |
 | Player                    | Игрок                       | `ledger.player`                                             |
 | Event                     | Событие                     | `ledger.event` — a game event                               |
