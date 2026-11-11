@@ -1,9 +1,9 @@
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
-import { seed } from "./seed";
 import type { Db } from "../lib/db";
 import { openTestDb, truncateAll } from "../lib/db.test-helpers";
 import { events, snapshots } from "../lib/schema";
+import { seed } from "./seed";
 
 let db: Db;
 beforeAll(async () => {

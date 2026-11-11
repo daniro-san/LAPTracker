@@ -5,9 +5,9 @@ import { and, asc, desc, eq, gt, isNotNull } from "drizzle-orm";
 import { RUN_STALE_AFTER_MS } from "../compute";
 import type { Db } from "../db";
 import { rehearsalVerdict, type Verdict } from "../rehearsal";
-import { runProblems } from "./run-problems";
 import { loadVerdictInput } from "../repo/rehearsals";
 import { allianceSnapshots, appErrors, events, runLogs, snapshots, tickLog } from "../schema";
+import { runProblems } from "./run-problems";
 
 export interface ManualEventStatus {
   id: number;
