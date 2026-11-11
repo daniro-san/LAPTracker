@@ -15,11 +15,17 @@
 - The trigger is not the one in the decision of 2026-11-06 (`deployment_status`, `/events`). The owner changed it on issue 128 on 2026-11-11: `on: status`, `/players`, plus `workflow_dispatch`. D46 records why.
 
 ## Verified
-- YAML parse, PyYAML: `['status', 'workflow_dispatch'] github.event_name == 'workflow_dispatch' || (github.event.context == 'Vercel' && github.event.state == 'success' && github.event.sha == github.sha)`. Ruby `YAML.load_file(".github/workflows/smoke.yml").keys` printed `["name", true, "permissions", "jobs"]` (`on` reads as `true` in YAML 1.1; GitHub reads it as `on`).
-- Shell step extracted from the YAML and run against a throwaway `python3 -m http.server` on port 3128 (stopped afterwards; a curl to 3128 now fails):
-  - `/` 200 and `/players` 200: `/ -> HTTP 200`, `/players -> HTTP 200`, exit 0.
-  - `/` 200 and `/players` 404: `/ -> HTTP 200`, `/players -> HTTP 404`, exit 1.
-  - nothing listening (port 3199): `/ -> curl failed`, `/players -> curl failed`, exit 1.
+- YAML parse with two parsers, run from the repo root:
+  - `ruby -ryaml -e 'p YAML.load_file(".github/workflows/smoke.yml").keys'` printed `["name", true, "permissions", "jobs"]` (`on` reads as `true` in YAML 1.1; GitHub reads it as `on`).
+  - `python3.14 -c 'import yaml; d = yaml.safe_load(open(".github/workflows/smoke.yml")); print(list(d[True]), d["jobs"]["smoke"]["if"])'` printed `['status', 'workflow_dispatch'] github.event_name == 'workflow_dispatch' || (github.event.context == 'Vercel' && github.event.state == 'success' && github.event.sha == github.sha)`. PyYAML 6.0.3; on this Mac only `python3.14` has it.
+- Shell step extracted from the YAML and run against a throwaway local server on port 3128. `$T` stands for an empty scratch directory outside the repo:
+  - Extract: `ruby -ryaml -e 'print YAML.load_file(".github/workflows/smoke.yml")["jobs"]["smoke"]["steps"][0]["run"]' > $T/step.sh`.
+  - Server: `mkdir $T/srv; echo ok > $T/srv/index.html; echo ok > $T/srv/players`, then `python3 -m http.server 3128 --bind 127.0.0.1 --directory $T/srv`.
+  - Each case: `APP_URL=http://127.0.0.1:3128 bash -e $T/step.sh; echo "exit $?"`.
+  - `/` 200 and `/players` 200: `/ -> HTTP 200`, `/players -> HTTP 200`, `exit 0`.
+  - `/` 200 and `/players` 404 (after `rm $T/srv/players`): `/ -> HTTP 200`, `/players -> HTTP 404`, `exit 1`.
+  - Nothing listening (the same command with `APP_URL=http://127.0.0.1:3199`): `/ -> curl failed`, `/players -> curl failed`, `exit 1`. Before each of the two lines curl prints `curl: (7) Failed to connect to 127.0.0.1 port 3199 after 0 ms: Couldn't connect to server`.
+  - The server was stopped afterwards: `lsof -nP -iTCP:3128 -sTCP:LISTEN` prints nothing.
 - `pnpm check`: exit 0; Test Files 54 passed | 1 skipped; Tests 246 passed | 1 skipped; drift "Everything's fine"; i18n "17 languages up to date with English".
 - Not verified: the `if:` expression and the `status` payload fields (`context`, `state`, `sha`) were not run on GitHub. No workflow linter is installed. The workflow runs only from the default branch, so the first real run is the next production deploy after a release carries it to `main`. Nothing was run against production.
 
@@ -32,7 +38,7 @@
 
 ## Next
 Session: 08zzy-decisions-split (issue 127)
-Model / effort: keep (sonnet · medium) — this session needed no more than that and the split is a mechanical move of text.
+Model / effort: keep (sonnet · medium) — no signal; this session changed 4 files and no app code (a 31-line workflow, 9 added lines in two docs, this handoff).
 Owner must do first: merge this PR and 08zv (D47) into `dev`, and make sure no other open PR edits docs/DECISIONS.md.
 Plan changes needed: none
 
