@@ -5,6 +5,7 @@ import { and, asc, desc, eq, ilike, inArray, max, sql } from "drizzle-orm";
 
 import {
   nameHistory,
+  pickRosterRows,
   seriesDeltas,
   type NameHistoryEntry,
   type NameSighting,
@@ -142,7 +143,8 @@ const sightingColumns = {
   killsRank: peerRank(memberSnapshots.kills, "kills"),
 };
 
-/** Every roster row of these uids in a real event, oldest first; test events are never part of it. */
+/** One roster row per uid and snapshot of a real event, oldest first; test events are never part of it.
+ * Two rows in one snapshot: compute.pickRosterRow, as the compare page picks (issue 234). */
 async function sightingsOf(db: Db, uids: number[]): Promise<(Sighting & { uid: number })[]> {
   const rows = await db
     .select({ uid: memberSnapshots.uid, ...sightingColumns })
@@ -151,8 +153,10 @@ async function sightingsOf(db: Db, uids: number[]): Promise<(Sighting & { uid: n
     .innerJoin(snapshots, eq(snapshots.id, allianceSnapshots.snapshotId))
     .innerJoin(events, eq(events.id, snapshots.eventId))
     .where(and(inArray(memberSnapshots.uid, uids), chainEvent))
-    .orderBy(asc(events.eventAtUtc), sql`${snapshots.phase} desc`);
-  return rows.map(({ mightRank, killsRank, ...r }) => ({
+    .orderBy(asc(events.eventAtUtc), sql`${snapshots.phase} desc`, desc(allianceSnapshots.id));
+  // A snapshot is one event and phase (snapshots_event_phase_unique). A failed alliance row is stored
+  // stale with no roster (collector-rows errorRow), so a roster row's read is usable when fresh.
+  return pickRosterRows(rows, (r) => r.isFresh).map(({ mightRank, killsRank, ...r }) => ({
     ...r,
     rank: { might: mightRank, kills: killsRank },
   }));
