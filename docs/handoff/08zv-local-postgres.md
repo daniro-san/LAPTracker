@@ -68,3 +68,5 @@ Plan changes needed: none.
 - CONTRIBUTING.md Setup now names D47 ("Local database (no Docker, D47)"); a link to a split decisions file would need to point there.
 - A local database for checking a change: `pnpm db:local:start`, `pnpm db:local:migrate`, `pnpm db:local:bridge`, `pnpm db:local:seed --with-states`, `pnpm dev:local` (CONTRIBUTING.md Setup). Needs Postgres server binaries on PATH; on this Mac `/opt/homebrew/opt/postgresql@18/bin`, not `/opt/homebrew/bin/initdb` (libpq, no server).
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/221
