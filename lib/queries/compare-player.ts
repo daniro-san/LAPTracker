@@ -3,7 +3,7 @@
 // photo exists (never its URL, D22); raw_json and avatar_url are never selected.
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 
-import { delta, type Measured } from "../compute";
+import { delta, pickRosterRow, type Measured } from "../compute";
 import type { Db } from "../db";
 import { allianceSnapshots, events, memberSnapshots, snapshots } from "../schema";
 import { comparePicks, eventOf, sidesOf, usable, type Detail } from "./compare";
@@ -69,15 +69,15 @@ async function hasPlayerPage(db: Db, uid: number) {
   return row !== undefined;
 }
 
-/** The player's before and after rows in one event, and the reference (after, else before). A stale
- * alliance read can still list a player who is in another alliance's roster of the same snapshot:
- * the row in a usable alliance row wins, else the newest alliance row (rowsOf's order). */
+/** The player's before and after rows in one event, and the reference (after, else before). Two rows
+ * in one snapshot: compute.pickRosterRow, as the player page picks (rowsOf's order is newest first). */
 function phasesOf(detail: Detail, rows: PlayerRow[]) {
   const { before, after, row } = sidesOf(detail);
-  const pick = (s: typeof before) => {
-    const own = rows.filter((r) => r.snapshotId === s?.id);
-    return own.find((r) => usable(row(s, r.unionId))) ?? own[0];
-  };
+  const pick = (s: typeof before) =>
+    pickRosterRow(
+      rows.filter((r) => r.snapshotId === s?.id),
+      (r) => usable(row(s, r.unionId)),
+    );
   const [mb, ma] = [pick(before), pick(after)];
   return { before, after, row, mb, ma, ref: ma ?? mb };
 }

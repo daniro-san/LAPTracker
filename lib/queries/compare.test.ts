@@ -6,6 +6,7 @@ import { allianceSnapshots, events, memberSnapshots, snapshots } from "../schema
 import { findBlockedKeys } from "./blocked-keys";
 import { compareEvents, getComparePage } from "./compare";
 import { comparePlayer } from "./compare-player";
+import { playerHistory } from "./players";
 
 type Member = { uid: number; power: number; kills: number };
 type Row = { unionId: number; fresh: boolean; members: Member[] };
@@ -147,5 +148,27 @@ describe("comparePlayer (issue 199)", () => {
     });
     expect(c?.player.a?.opening).toEqual({ power: 100, kills: 10 });
     expect(findBlockedKeys(c)).toEqual([]);
+  });
+
+  it("shows the fresh alliance's row over a newer stale read of the old one, on both pages", async () => {
+    const moved = 340000000032;
+    // Alliance 1's stale read still lists the player; it is stored after alliance 2's fresh roster.
+    const eventE = await seedEvent("2026-10-03", {
+      before: [
+        { unionId: 2, fresh: true, members: [m(moved, 80, 8)] },
+        { unionId: 1, fresh: false, members: [m(moved, 70, 7)] },
+      ],
+      after: [
+        { unionId: 2, fresh: true, members: [m(moved, 85, 9)] },
+        { unionId: 1, fresh: false, members: [m(moved, 70, 7)] },
+      ],
+    });
+    const c = await comparePlayer(db, eventC, eventE, moved);
+    const history = await playerHistory(db, moved);
+    expect(c?.player.b).toMatchObject({ unionId: 2, power: 85, change: { power: 5, kills: 1 } });
+    expect(history?.current).toMatchObject({ unionId: 2, power: 85, isFresh: true });
+    expect(history?.rows).toMatchObject([
+      { unionId: 2, power: 85, inEvent: { power: 5, kills: 1 }, before: { isFresh: true } },
+    ]);
   });
 });
