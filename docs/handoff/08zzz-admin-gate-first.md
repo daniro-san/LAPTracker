@@ -44,3 +44,5 @@ Plan changes needed: none.
 - Every `/admin` page checks `isAdmin()` before any database read; a new admin page must start with the same line (`if (!(await isAdmin())) return <AdminShell title={…} />;`), and `AdminShell` accepts no children for that case.
 - `app/(pages)/admin/gate.test.ts` is the first page test: it mocks `next/headers`, `next/navigation`, `@/lib/env` and `@/lib/app-context`, then calls the page function directly. Later page tests can reuse that pattern.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/220
