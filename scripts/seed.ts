@@ -47,6 +47,8 @@ async function insertAlliance(
         kills: m.kills,
         lv: m.lv,
         avatarUrl: m.avatarUrl,
+        rankCode: m.rankCode,
+        rankLabel: m.rankLabel,
       })),
     );
   }
