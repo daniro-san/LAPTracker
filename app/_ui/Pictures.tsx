@@ -1,6 +1,6 @@
 "use client";
 
-// Alliance badges and player photos (DESIGN.md `alliance-badge`, `avatar`; DECISIONS D22). Both load
+// Alliance badges and player photos (DESIGN.md `alliance-badge`, `avatar`; docs/decisions/D22). Both load
 // from our own /img routes, lazily, with alt="" because the name is always printed beside them.
 // Without a photo or badge, or when the image does not load (the route answers 404 when the upstream
 // picture cannot be fetched, D22), the drawn placeholder stands in (lib/brand/components/Placeholders.tsx),

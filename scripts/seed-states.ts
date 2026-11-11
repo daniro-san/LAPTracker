@@ -1,7 +1,7 @@
 // `--with-states` of scripts/seed.ts: the two states the three past events cannot show.
-import type { BaseAlliance } from "./seed-data";
 import type { Db } from "../lib/db";
 import { events, snapshots } from "../lib/schema";
+import type { BaseAlliance } from "./seed-data";
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;

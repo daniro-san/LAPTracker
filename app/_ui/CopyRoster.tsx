@@ -26,7 +26,7 @@ export function CopyRoster({ text }: { text: string }) {
             () => done("failed"),
           )
       }
-      className="drawn-frame-soft inline-flex min-h-11 items-center gap-1 px-3 text-sm font-medium text-plum"
+      className="drawn-frame-soft tint-button inline-flex min-h-11 items-center gap-1 px-3 text-sm font-medium text-plum"
     >
       <span aria-hidden="true">⧉</span>
       <span aria-live="polite">

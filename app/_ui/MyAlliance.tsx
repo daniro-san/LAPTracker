@@ -67,7 +67,7 @@ export function MyAllianceJump({ tags }: { tags: Record<number, string> }) {
   return (
     <a
       href={`#${rowAnchor(mine)}`}
-      className="drawn-frame-soft mb-3 inline-flex min-h-11 items-center gap-2 bg-yarn/15 px-3 text-body-sm font-medium text-plum"
+      className="drawn-frame-soft tint-button mb-3 inline-flex min-h-11 items-center gap-2 bg-yarn/15 px-3 text-body-sm font-medium text-plum"
     >
       <span aria-hidden="true">↓</span>
       {copy.ledger.myAlliance}

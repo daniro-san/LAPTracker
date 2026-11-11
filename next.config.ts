@@ -17,6 +17,8 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Without this, `next dev` writes AGENTS.md into the repo (issue 126).
+  agentRules: false,
   env: { BUILD_VERSION: buildVersion(process.env) },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];

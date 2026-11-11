@@ -64,7 +64,7 @@ function RowDetail({
       <DetailTable
         corner={clock.zone}
         from={<SideHead s={fresh(r.before)} clock={clock} copy={copy} />}
-        to={<SideHead s={fresh(r.after)} clock={clock} copy={copy} />}
+        to={r.after ? <SideHead s={fresh(r.after)} clock={clock} copy={copy} /> : null}
         rows={figureRows(r.metrics, r.ranks, copy.ledger.ranking)}
       />
       {history && history.length > 1 && (
@@ -167,7 +167,7 @@ function TopStatus({
         {hasMovers && (
           <a
             href={`#${MOVERS_ID}`}
-            className="ml-auto inline-flex min-h-11 items-center px-2 text-sm font-medium text-plum hover:underline"
+            className="text-link ml-auto inline-flex min-h-11 items-center px-2 text-sm font-medium"
           >
             {copy.ledger.movers} <span aria-hidden="true">&nbsp;↓</span>
           </a>

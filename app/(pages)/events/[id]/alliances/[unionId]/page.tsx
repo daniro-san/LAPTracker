@@ -2,7 +2,6 @@
 // The totals as one summary band, then the members (same row shape as the main page), then one row
 // per event.
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 
@@ -31,6 +30,7 @@ import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { LABEL, type StatMetric } from "@/app/_ui/StatTable";
 import { CaptureWindow, FreshDots, Legend, SideHead, type FreshState } from "@/app/_ui/Status";
+import { TextLink } from "@/lib/brand/components/TextLink";
 import { rankDelta } from "@/lib/compute";
 import type { Dictionary } from "@/lib/copy";
 import { withPageDb } from "@/lib/page";
@@ -136,13 +136,13 @@ function Summary({
         ))}
       </dl>
       <details className="group/more border-t border-rule px-2 sm:px-4">
-        <summary className="flex min-h-11 cursor-pointer items-center gap-3 text-sm [&::-webkit-details-marker]:hidden">
+        <summary className="details-bar flex min-h-11 items-center gap-3 text-sm [&::-webkit-details-marker]:hidden">
           <span className="inline-flex items-baseline gap-2 text-base">
             <span className={LABEL}>{copy.ledger.rank}</span>
             <Rank n={ranks.might.after ?? ranks.might.before} move={ranks.might.move} />
           </span>
           <FreshDots before={fresh(before)} after={fresh(after)} copy={copy} />
-          <span className="drawn-frame-soft ml-auto inline-flex min-h-11 items-center gap-1 px-3 font-medium text-plum group-open/more:bg-plum/10">
+          <span className="drawn-frame-soft tint-button ml-auto inline-flex min-h-11 items-center gap-1 px-3 font-medium text-plum group-open/more:bg-plum/10">
             {copy.ledger.details}
             <span
               aria-hidden="true"
@@ -156,7 +156,7 @@ function Summary({
           <DetailTable
             corner={clock.zone}
             from={<SideHead s={fresh(before)} clock={clock} copy={copy} />}
-            to={<SideHead s={fresh(after)} clock={clock} copy={copy} />}
+            to={after && <SideHead s={fresh(after)} clock={clock} copy={copy} />}
             rows={figureRows(metrics, ranks, copy.ledger.ranking)}
           />
         </div>
@@ -286,17 +286,17 @@ export default async function AlliancePage({ params }: { params: Params }) {
             {history.length > 0 && (
               <a
                 href={`#${ACROSS_ID}`}
-                className="inline-flex min-h-11 items-center px-2 text-sm font-medium text-plum hover:underline"
+                className="text-link inline-flex min-h-11 items-center px-2 text-sm font-medium"
               >
                 {copy.ledger.acrossEvents} <span aria-hidden="true">&nbsp;↓</span>
               </a>
             )}
-            <Link
+            <TextLink
               href={`/alliances/${unionId}/history`}
-              className="inline-flex min-h-11 items-center px-2 text-sm font-medium text-plum hover:underline"
+              className="inline-flex min-h-11 items-center px-2 text-sm font-medium"
             >
               {copy.history.title} <span aria-hidden="true">&nbsp;→</span>
-            </Link>
+            </TextLink>
           </div>
         </div>
         <CaptureWindow

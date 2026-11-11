@@ -66,6 +66,7 @@ export const pl = {
     counted: "{n} z {total} sojuszy, tych z danymi do użytku w obu wydarzeniach",
     between: "Od jednego wydarzenia do drugiego",
     notIn: "poza sojuszem",
+    notTracked: "poza śledzonymi sojuszami",
     same: "Wybierz dwa różne wydarzenia.",
     onlyOne: "Na razie jest tylko jedno wydarzenie do porównania.",
   },

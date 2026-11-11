@@ -1,4 +1,4 @@
-// A slim notice above the page while the upstream does not answer (DECISIONS D27). Renders nothing when
+// A slim notice above the page while the upstream does not answer (docs/decisions/D27). Renders nothing when
 // all is well and when the status cannot be read; it has no controls, so there is nothing to dismiss.
 import { DroppedStitch } from "@/lib/brand/components/StatusIcons";
 import { fill } from "@/lib/copy";

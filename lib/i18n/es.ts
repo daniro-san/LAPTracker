@@ -66,6 +66,7 @@ export const es = {
     counted: "{n} de {total} alianzas, las que tienen datos útiles en ambos eventos",
     between: "De un evento al otro",
     notIn: "fuera de la alianza",
+    notTracked: "en ninguna alianza seguida",
     same: "Elige dos eventos distintos.",
     onlyOne: "Por ahora solo hay un evento que comparar.",
   },

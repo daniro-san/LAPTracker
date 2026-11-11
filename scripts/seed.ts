@@ -11,8 +11,6 @@ import { pathToFileURL } from "node:url";
 
 import { sql } from "drizzle-orm";
 
-import { loadBase, rosterAt, type BaseAlliance, type BaseMember, type Phase } from "./seed-data";
-import { seedStates } from "./seed-states";
 import type { Db } from "../lib/db";
 import {
   allianceSnapshots,
@@ -22,6 +20,8 @@ import {
   runLogs,
   snapshots,
 } from "../lib/schema";
+import { loadBase, rosterAt, type BaseAlliance, type BaseMember, type Phase } from "./seed-data";
+import { seedStates } from "./seed-states";
 
 const HOUR = 3_600_000;
 const EVENT_DATES = ["2026-10-17", "2026-10-24", "2026-10-31"];
@@ -47,6 +47,8 @@ async function insertAlliance(
         kills: m.kills,
         lv: m.lv,
         avatarUrl: m.avatarUrl,
+        rankCode: m.rankCode,
+        rankLabel: m.rankLabel,
       })),
     );
   }

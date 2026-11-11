@@ -1,0 +1,6 @@
+## D51 — Event, scheduled event, manual event: the domain terms; "Saturday" names only the weekday (2026-11-06, owner, 08zy, issue #130)
+
+- **Why.** The owner (2026-11-05): "Saturday event" must not be the project's business term. The game event is an **event**; that the schedule falls on Saturday is a setting (`EVENT_WEEKDAY`), and "Saturday Event 2026-11-07" is only that event's default title, which the owner can rename (D39).
+- **Terms.** An **event** is one game event, either a **scheduled event** (the tick creates it a day ahead on `EVENT_WEEKDAY`, Saturday by default, at `EVENT_TIME`) or a **manual event** (D28, called "manual round" there). Rehearsals are test events (`is_test`). docs/GLOSSARY.md has the rows; docs, code comments, identifiers, test names and copy use these words.
+- **"Saturday" stays** only for the weekday itself: the `EVENT_WEEKDAY` setting and its default, weekday and date formatting, the default title `<Weekday> Event <date>` (`eventOn`, `isGeneratedName`) and the stored titles it produced (no migration), and test fixtures that are such titles.
+- **Earlier entries.** This file is append-only, so D1–D50 are not edited. Where they say "Saturday", "a Saturday row" or "the coming Saturday" for the event rather than the weekday, read "scheduled event".

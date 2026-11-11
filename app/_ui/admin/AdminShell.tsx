@@ -1,14 +1,16 @@
 // Frame for every /admin page: the site's own header, lace and footer like every other page (07c S3c),
 // the admin nav under the header with the live candle, and the PIN card until the session cookie exists.
 // The header has no event selector here: admin pages are not about one event. RunWatch, the area's one
-// poller (#91), wraps the page so the candle is current on every admin page.
-import Link from "next/link";
+// poller (#91), wraps the page so the candle is current on every admin page. Each page checks
+// isAdmin() itself before it reads the database (issue 218) and, when locked, renders this shell with
+// no children: the PIN card.
 import type { ReactNode } from "react";
 
 import { requestServerClock } from "@/app/_ui/locale";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { isAdmin } from "@/lib/admin-session";
+import { TextLink } from "@/lib/brand/components/TextLink";
 import { copy } from "@/lib/copy";
 import { withPageDb } from "@/lib/page";
 import { listRuns, runningSnapshots } from "@/lib/queries/admin";
@@ -24,7 +26,7 @@ const NAV = [
   { href: "/admin/errors", label: copy.admin.nav.errors },
 ];
 
-export async function AdminShell({ title, children }: { title: string; children: ReactNode }) {
+export async function AdminShell({ title, children }: { title: string; children?: ReactNode }) {
   const unlocked = await isAdmin();
   return (
     // English whatever the viewer's language (D48): the lang attribute says so for this subtree.
@@ -38,7 +40,7 @@ export async function AdminShell({ title, children }: { title: string; children:
   );
 }
 
-async function Unlocked({ title, children }: { title: string; children: ReactNode }) {
+async function Unlocked({ title, children }: { title: string; children?: ReactNode }) {
   const now = new Date();
   const [[running, [last]], clock] = await Promise.all([
     withPageDb((db) => Promise.all([runningSnapshots(db, now), listRuns(db, 1)])),
@@ -52,13 +54,13 @@ async function Unlocked({ title, children }: { title: string; children: ReactNod
         className="mb-3 flex flex-wrap items-center gap-x-1 border-b border-rule"
       >
         {NAV.map((n) => (
-          <Link
+          <TextLink
             key={n.href}
             href={n.href}
-            className="flex min-h-11 items-center px-3 text-sm font-medium text-plum hover:underline"
+            className="flex min-h-11 items-center px-3 text-sm font-medium"
           >
             {n.label}
-          </Link>
+          </TextLink>
         ))}
         <LiveIndicator on={running.length > 0} />
       </nav>

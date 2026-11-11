@@ -66,6 +66,7 @@ export const ja = {
     counted: "{total}同盟中{n}、両イベントで使えるデータがあるもの",
     between: "1つ目から2つ目まで",
     notIn: "同盟なし",
+    notTracked: "追跡中の同盟なし",
     same: "別々のイベントを2つ選んでください。",
     onlyOne: "比較できるイベントは、今のところ1つだけです。",
   },

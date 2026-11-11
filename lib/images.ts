@@ -1,4 +1,4 @@
-// Upstream images served from our own origin (DECISIONS D22), so the page CSP keeps img-src 'self'.
+// Upstream images served from our own origin (docs/decisions/D22), so the page CSP keeps img-src 'self'.
 // Never an open proxy: the upstream URL is built from a preset id or read from our own table,
 // and only these two hosts are fetched.
 import { photoUrl, USER_AGENT } from "./sources/shared";
@@ -30,11 +30,19 @@ export const avatarSource = (stored: string | null): string | null => photoUrl(s
 export const notFoundImage = (): Response =>
   new Response(null, { status: 404, headers: { "Cache-Control": "public, max-age=300" } });
 
-/** Fetch an image with a timeout, no redirects, a size cap and a raster type; null on any failure. */
+type Image = { body: Uint8Array<ArrayBuffer>; type: string };
+/** Why a fetch failed: the HTTP status, or the error's class name. Never the URL or a message. */
+export type ImageFailure = { http_status: number } | { error: string };
+
+/** One warn line for a failed upstream fetch (issue 126); a missing photo or bad id is not one. */
+export const logImageFailure = (route: string, id: string, failure: ImageFailure) =>
+  console.warn("image.fetch_failed", { route, id, ...failure });
+
+/** Fetch an image with a timeout, no redirects, a size cap and a raster type; the reason on any failure. */
 export async function fetchImage(
   url: string,
   doFetch: typeof fetch,
-): Promise<{ body: Uint8Array<ArrayBuffer>; type: string } | null> {
+): Promise<Image | ImageFailure> {
   try {
     const response = await doFetch(url, {
       headers: { "User-Agent": USER_AGENT, Accept: "image/*" },
@@ -42,17 +50,24 @@ export async function fetchImage(
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
     const type = response.headers.get("content-type")?.split(";")[0]?.trim().toLowerCase() ?? "";
-    const declared = Number(response.headers.get("content-length") ?? 0);
-    if (!response.ok || !TYPES.has(type) || declared > MAX_BYTES || !response.body) {
+    if (!response.ok || !acceptable(response, type)) {
       await response.body?.cancel();
-      return null;
+      return response.ok ? UNUSABLE : { http_status: response.status };
     }
-    const body = await readCapped(response.body);
-    return body && { body, type };
-  } catch {
-    return null;
+    const body = await readCapped(response.body as ReadableStream<Uint8Array>);
+    return body ? { body, type } : UNUSABLE;
+  } catch (error) {
+    return { error: className(error) };
   }
 }
+
+const acceptable = (response: Response, type: string) =>
+  TYPES.has(type) &&
+  Number(response.headers.get("content-length") ?? 0) <= MAX_BYTES &&
+  !!response.body;
+const UNUSABLE: ImageFailure = { error: "UnusableImage" };
+const className = (error: unknown) =>
+  error instanceof Error ? error.constructor.name : typeof error;
 
 /** The whole stream, or null once it passes MAX_BYTES (a missing or false content-length). */
 async function readCapped(

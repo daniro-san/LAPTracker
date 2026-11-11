@@ -52,5 +52,5 @@ To draw something new, add a function next to the closest example, add it to `DR
 
 Two switches for drawings shown at another size or in another pose:
 
-- **`GAIN`** (`lib.py`) multiplies every stroke, ring and leaf width. It is 1.0 for every shipped drawing. A drawing shown below the size its line weights were set for raises it while it draws and sets it back to 1.0 after: the Discord avatars (`examples/discord.py`, 40 px, below the 96 px the vignette weights assume) draw with 1.4, because at 1.0 their lines broke up.
+- **`GAIN`** (`lib.py`) multiplies every stroke, ring and leaf width. It is 1.0 for every shipped drawing. A drawing shown below the size its line weights were set for raises it while it draws and sets it back to 1.0 after: the Discord avatars (`examples/discord.py`, 40 px, below the 96 px the vignette weights assume) draw with 1.4, because at 1.0 their lines broke up. The Discord avatar render inputs: each SVG at 512 x 512, deviceScaleFactor 1, background `#efe6d3`, ink `#1e1a1f` (`docs/handoff/08b-avatars.md`).
 - **`head(p, T, skip=…)`** (`examples/granny.py`) leaves out `"brim"`, `"beak"` (with its rivets), `"brow"` or `"pupil"`, so a pose can redraw that part itself.

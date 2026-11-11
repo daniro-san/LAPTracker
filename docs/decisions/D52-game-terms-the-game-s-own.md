@@ -1,0 +1,10 @@
+## D52 — Game terms: the game's own word in each language, English where it is unknown (2026-11-06, owner, 08zzb, issue #153)
+
+Amends D23 and D48 ("Might, Kills, Members and Level stay English in every language"). Members read these four words in their game's own language, not in English, so each language shows the game's word where a source with the game's own text gives it.
+
+- **Source rule.** A word is used only when its source carries the game's own text: datamined game text (lastasylum.gg serves it in en, ru, ko, vi and zh-TW) or an in-game screenshot. A guide's or shop's prose, a store review or a translator's choice is not a source. Research: issue #153 comment 6676547046.
+- **Used.** ko: Might 전투력, Kills 처치, Members 인원 (the event rules' count word; 길드원 is a person). vi: Might Lực Chiến, Kills Tiêu diệt, Members Thành viên. ru: Might Мощь, Kills Убийства, Members Участники, nominative plural for headers and lower case after an abbreviation (`Мин. мощь`). The same word goes inside labels (`± 전투력`, `Lực Chiến thấp nhất`).
+- **English.** Level in every language: the game writes a level as a prefix before the number (`Lv.10`, `ур.10`), not as a header, and no sourced header word exists. All four terms in ja (its only sources are a fan guide's prose and an ad listing) and in the other 13 languages (no source; sv, pl and uk are not game languages at all).
+- **Where the words live.** `lib/i18n/glossary/<tag>.md`, section "Game terms (from the game)": English, word, source URL, quote. The translations test (`lib/copy.test.ts`) fails when a dictionary's `ledger.might`/`kills`/`members`/`level` differs from that table, or from English where the table has no row. The translator agent uses the table's word or English and never adds a row.
+- **Blank mode.** The blank dictionary keeps the four terms of the page's language readable, as before.
+- **Not done.** The game calls an alliance a guild in ko (길드) and vi (Công Hội); the dictionaries still say 연맹 and liên minh. Korean particles change with the word's last syllable, so it is a retranslation of those strings, not a swap.

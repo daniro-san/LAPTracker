@@ -19,6 +19,7 @@ import { HistoryCardView } from "@/app/_ui/MemberHistory";
 import { AllianceBadge } from "@/app/_ui/Pictures";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
+import { TextLink } from "@/lib/brand/components/TextLink";
 import type { Dictionary } from "@/lib/copy";
 import type { Db } from "@/lib/db";
 import { withPageDb } from "@/lib/page";
@@ -115,7 +116,7 @@ function Filters({
       <Link
         href={href(unionId, key)}
         aria-current={show === key ? "page" : undefined}
-        className="drawn-frame-soft inline-flex min-h-11 items-center px-3 text-sm font-medium text-plum aria-[current=page]:bg-plum/10"
+        className="drawn-frame-soft tint-button inline-flex min-h-11 items-center px-3 text-sm font-medium text-plum aria-[current=page]:bg-plum/10"
       >
         {label}
       </Link>
@@ -148,22 +149,22 @@ function Pager({
   return (
     <nav className="mt-4 flex flex-wrap justify-between gap-2">
       {paged && (
-        <Link
+        <TextLink
           href={href(unionId, show)}
-          className="inline-flex min-h-11 items-center px-2 text-sm font-medium text-plum hover:underline"
+          className="inline-flex min-h-11 items-center px-2 text-sm font-medium"
         >
           <span aria-hidden="true">↑&nbsp;</span>
           {copy.history.newest}
-        </Link>
+        </TextLink>
       )}
       {older && (
-        <Link
+        <TextLink
           href={href(unionId, show, older)}
-          className="ml-auto inline-flex min-h-11 items-center px-2 text-sm font-medium text-plum hover:underline"
+          className="ml-auto inline-flex min-h-11 items-center px-2 text-sm font-medium"
         >
           {copy.history.older}
           <span aria-hidden="true">&nbsp;↓</span>
-        </Link>
+        </TextLink>
       )}
     </nav>
   );

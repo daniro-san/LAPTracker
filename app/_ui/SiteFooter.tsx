@@ -25,7 +25,7 @@ export function SiteFooter({
         {copy.site.disclaimerShort}
       </p>
       <details className="ml-auto max-w-[60ch] text-right text-xs text-ink/65">
-        <summary className="ml-auto flex min-h-11 w-fit min-w-11 cursor-pointer items-center justify-end underline underline-offset-2">
+        <summary className="text-button ml-auto flex min-h-11 w-fit min-w-11 items-center justify-end underline underline-offset-2">
           {copy.site.disclaimerMore}
         </summary>
         <p>{copy.site.disclaimer}</p>

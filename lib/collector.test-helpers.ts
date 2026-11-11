@@ -1,8 +1,8 @@
 // Test-only fakes for the collector's Deps: v1 and internal sources, a settable clock, a silent logger.
+import { ALLIANCES } from "../config/alliances";
 import type { Deps } from "./collector";
 import { sumKills, sumPower } from "./compute";
 import type { Logger } from "./logger";
-import { ALLIANCES } from "../config/alliances";
 import { createMemoryRepo } from "./repo/memory";
 import {
   type AllianceSnapshotInput,

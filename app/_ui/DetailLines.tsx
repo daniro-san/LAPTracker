@@ -16,6 +16,14 @@ export interface RankPair {
 
 export const rankText = (n: number | null) => (n === null ? "—" : `#${n}`);
 
+/** The rank column's cell: `#4 ▲1`, or one muted `—` without a rank (not `#— —`, issue 125). */
+export const rankCell = (pair: RankPair) =>
+  pair.after === null ? (
+    <span className="text-ink/70">—</span>
+  ) : (
+    <Rank n={pair.after} move={pair.move} />
+  );
+
 export interface DetailRow {
   label: string;
   from: ReactNode;
@@ -53,7 +61,7 @@ export function figureRows(
         to: <Num n={m.value} />,
         change: <Delta delta={m.delta} base={null} />,
         note: m.detailNote,
-        ...(rank && { rank: <Rank n={rank.after} move={rank.move} /> }),
+        ...(rank && { rank: rankCell(rank) }),
       };
     }),
     rankRow(serverLabel, ranks.server),
@@ -69,7 +77,8 @@ export async function DetailTable({
   /** Names what the heads are, e.g. "server" for snapshot times. */
   corner?: ReactNode;
   from: ReactNode;
-  to: ReactNode;
+  /** null: there is no After; its head reads `—`, with no arrow (issue 125). */
+  to: ReactNode | null;
   rows: DetailRow[];
 }) {
   const copy = await requestCopy();
@@ -86,8 +95,17 @@ export async function DetailTable({
             {from}
           </th>
           <th scope="col" className={`${cell} font-medium`}>
-            <span aria-hidden="true">→ </span>
-            {to}
+            {to === null ? (
+              <>
+                <span aria-hidden="true">—</span>
+                <span className="sr-only">{copy.fresh.missing}</span>
+              </>
+            ) : (
+              <>
+                <span aria-hidden="true">→ </span>
+                {to}
+              </>
+            )}
           </th>
           <th scope="col" className={`${cell} font-medium`}>
             {copy.ledger.change}

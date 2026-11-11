@@ -67,6 +67,7 @@ export const tr = {
     counted: "{total} ittifaktan {n} tanesi, iki etkinlikte de kullanılabilir verisi olanlar",
     between: "Bir etkinlikten diğerine",
     notIn: "ittifakta değil",
+    notTracked: "takip edilen ittifakta değil",
     same: "İki farklı etkinlik seç.",
     onlyOne: "Şimdilik karşılaştırılacak tek etkinlik var.",
   },

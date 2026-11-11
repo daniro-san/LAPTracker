@@ -2,7 +2,6 @@
 // scheduled run, the last result); "Run something now" holds every action with its cost; the last
 // rehearsal; the schedule as read-only reference. Dates through the request's clock like the public
 // pages (07c S3a): the viewer's locale, server time with the word, no UTC twin.
-import Link from "next/link";
 
 import { AdminActions } from "@/app/_ui/admin/AdminActions";
 import { AdminShell } from "@/app/_ui/admin/AdminShell";
@@ -19,9 +18,11 @@ import {
 } from "@/app/_ui/admin/words";
 import type { Clock } from "@/app/_ui/format";
 import { requestServerClock, requestLocale } from "@/app/_ui/locale";
+import { isAdmin } from "@/lib/admin-session";
 import { Chip } from "@/lib/brand/components/Chip";
 import { FactList } from "@/lib/brand/components/FactList";
 import { DroppedStitch, StitchedCheck } from "@/lib/brand/components/StatusIcons";
+import { TextLink } from "@/lib/brand/components/TextLink";
 import { copy, fill } from "@/lib/copy";
 import { getEnv, type Env } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
@@ -177,12 +178,12 @@ function Status({
           note={
             last && (
               <>
-                <Link
+                <TextLink
                   href={`/admin/runs/${last.id}`}
-                  className="inline-flex min-h-11 items-center text-plum underline"
+                  className="inline-flex min-h-11 items-center"
                 >
                   {st.open}
-                </Link>
+                </TextLink>
                 {durations.length > 0 && (
                   <span className="block tabular-nums">
                     {fill(t.runs.recent, { n: durations.length, list: durations.join(" · ") })}
@@ -241,6 +242,8 @@ async function Schedule({
 }
 
 export default async function AdminPage() {
+  // Session first (issue 218): locked, the PIN card and no database read.
+  if (!(await isAdmin())) return <AdminShell title={t.title} />;
   const env = getEnv();
   const now = new Date();
   const next = nextEvent(now, env);

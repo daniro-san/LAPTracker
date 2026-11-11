@@ -1,10 +1,10 @@
 // `/players/[uid]`: one player across events, shaped like the alliance page (plan Phase 5d, 5e).
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 
 import { Breadcrumbs } from "@/app/_ui/Breadcrumbs";
+import { PlayerCompareLink } from "@/app/_ui/ComparePicker";
 import { ExactToggle } from "@/app/_ui/ExactToggle";
 import { allianceLabel, type Clock } from "@/app/_ui/format";
 import { requestClock, requestCopy } from "@/app/_ui/locale";
@@ -16,6 +16,7 @@ import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { LABEL } from "@/app/_ui/StatTable";
 import { FreshDots, Legend } from "@/app/_ui/Status";
 import { RoleMark } from "@/lib/brand/components/RoleMark";
+import { TextLink } from "@/lib/brand/components/TextLink";
 import { fill, type Dictionary } from "@/lib/copy";
 import { withPageDb } from "@/lib/page";
 import { homeEvent, listEvents, playerHistory, type PlayerHistory } from "@/lib/queries";
@@ -56,13 +57,13 @@ function Timelines({
               key={`${a.unionId}|${a.firstSeen.getTime()}`}
               className="flex flex-wrap items-center gap-x-2"
             >
-              <Link
+              <TextLink
                 href={`/events/${a.lastEventId}/alliances/${a.unionId}`}
-                className="inline-flex min-h-11 items-center gap-2 font-medium text-plum hover:underline"
+                className="inline-flex min-h-11 items-center gap-2 font-medium"
               >
                 <AllianceBadge badgeId={a.badgeId} />
                 {allianceLabel(a.tag, a.name)}
-              </Link>
+              </TextLink>
               <span className="text-ink/70">· {span(a)}</span>
             </li>
           ))}
@@ -174,13 +175,13 @@ export default async function PlayerPage({ params }: { params: Params }) {
               <h1 className="break-words font-display text-display-lg leading-tight">
                 {current.name}
               </h1>
-              <Link
+              <TextLink
                 href={`/events/${current.eventId}/alliances/${current.unionId}`}
-                className="inline-flex min-h-11 items-center gap-2 font-medium text-plum hover:underline"
+                className="inline-flex min-h-11 items-center gap-2 font-medium"
               >
                 <AllianceBadge badgeId={current.badgeId} />
                 {allianceLabel(current.tag, allianceName)}
-              </Link>
+              </TextLink>
               {current.role && (
                 <p className="flex items-center gap-2 text-sm text-ink/70">
                   <RoleMark role={current.role} />
@@ -189,7 +190,14 @@ export default async function PlayerPage({ params }: { params: Params }) {
               )}
             </div>
           </div>
-          <ExactToggle />
+          <div className="flex flex-wrap items-center gap-2">
+            <PlayerCompareLink
+              eventIds={history.rows.map((r) => r.eventId)}
+              uid={uid}
+              copy={copy}
+            />
+            <ExactToggle />
+          </div>
         </div>
         <Legend copy={copy} />
         <Timelines history={history} clock={clock} copy={copy} />

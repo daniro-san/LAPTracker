@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { en } from "@/lib/copy";
 import type { Ranks } from "@/lib/queries";
 
-import { comparisonRows, emptyLine, nextUpdateAt, type Snap } from "./event-rows";
+import { comparisonRows, emptyLine, formerlyOf, nextUpdateAt, type Snap } from "./event-rows";
 
 const cell = (unionId: number, tag: string, power: number, failed = false) => ({
   unionId,
@@ -93,5 +93,23 @@ describe("emptyLine", () => {
     );
     expect(emptyLine(true, 0, en)).toContain("has not been run yet");
     expect(emptyLine(false, 1, en)).toContain("kettle");
+  });
+});
+
+describe("formerlyOf", () => {
+  const at = (day: number) => new Date(Date.UTC(2026, 9, day));
+  const entry = (tag: string, name: string, day: number) => ({
+    tag,
+    name,
+    firstSeen: at(day),
+    lastSeen: at(day + 1),
+  });
+  const history = [entry("A", "One", 1), entry("B", "Two", 10), entry("C", "Three", 20)];
+
+  it("returns the newest name before the one the row shows, and null for the first name", () => {
+    expect(formerlyOf(history, "C", "Three")?.name).toBe("Two");
+    expect(formerlyOf(history, "B", "Two")?.name).toBe("One");
+    expect(formerlyOf(history, "A", "One")).toBeNull();
+    expect(formerlyOf(undefined, "A", "One")).toBeNull();
   });
 });

@@ -1,0 +1,31 @@
+# Post-deploy smoke check (D46): after Vercel reports a successful deploy of main's head, GET / and /players.
+# Vercel posts a commit status (context "Vercel"), not a GitHub Deployment, so the trigger is `status`.
+# For a status run GITHUB_SHA is the default branch's last commit, so the sha test is true only for main's head.
+# A failure is a red run; there is no retry and no alert. Only pages that render with no parameters are called.
+name: smoke
+
+on:
+  status:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  smoke:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.context == 'Vercel' && github.event.state == 'success' && github.event.sha == github.sha)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Get the pages
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+        run: |
+          failed=0
+          for path in / /players; do
+            code=$(curl -sS --max-time 30 -o /dev/null -w "%{http_code}" "$APP_URL$path") || { echo "$path -> curl failed"; failed=1; continue; }
+            echo "$path -> HTTP $code"
+            case "$code" in 2??) ;; *) failed=1 ;; esac
+          done
+          exit $failed

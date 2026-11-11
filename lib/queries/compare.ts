@@ -10,7 +10,7 @@ import { allianceSnapshots, memberSnapshots } from "../schema";
 import { getEventDetail, homeEvent, listEvents, type EventSummary } from "./events";
 import { eventRanks, type Ranks } from "./ranks";
 
-type Detail = NonNullable<Awaited<ReturnType<typeof getEventDetail>>>;
+export type Detail = NonNullable<Awaited<ReturnType<typeof getEventDetail>>>;
 type Snapshot = Detail["snapshots"][number];
 type Side = Snapshot["alliances"][number];
 type Change = { power: number; kills: number };
@@ -68,7 +68,7 @@ interface RosterRow {
   hasAvatar: boolean;
 }
 
-const usable = (s: Side | undefined) => s !== undefined && !s.failed && s.isFresh;
+export const usable = (s: Side | undefined) => s !== undefined && !s.failed && s.isFresh;
 const measured = (s: Side): Measured => ({
   isFresh: usable(s),
   totalPower: s.totalPower,
@@ -76,7 +76,7 @@ const measured = (s: Side): Measured => ({
 });
 
 /** The event's two snapshots and each alliance's row in them. */
-function sidesOf(detail: Detail) {
+export function sidesOf(detail: Detail) {
   const before = detail.snapshots.find((s) => s.phase === "before");
   const after = detail.snapshots.find((s) => s.phase === "after");
   const row = (s: Snapshot | undefined, unionId: number) =>
@@ -238,6 +238,12 @@ async function rostersOf(db: Db, snapshotIds: number[], unionId?: number): Promi
     .where(unionId === undefined ? where : and(where, eq(allianceSnapshots.unionId, unionId)));
 }
 
+/** An event as the page shows it: its snapshots without their alliance rows. */
+export const eventOf = ({ snapshots, ...e }: Detail) => ({
+  ...e,
+  snapshots: snapshots.map(({ alliances: _, ...s }) => s),
+});
+
 const rankOrder = (r: AllianceComparison) => r.b?.rank.n ?? r.a?.rank.n ?? Infinity;
 
 /** Two public events compared; `unionId` narrows to one alliance and adds its members. Null: an id is
@@ -272,13 +278,9 @@ export async function compareEvents(db: Db, aId: number, bId: number, unionId?: 
     })
     .sort((x, y) => rankOrder(x) - rankOrder(y) || x.unionId - y.unionId);
   if (unionId !== undefined && alliances.length === 0) return null;
-  const event = ({ snapshots, ...e }: Detail) => ({
-    ...e,
-    snapshots: snapshots.map(({ alliances: _, ...s }) => s),
-  });
   return {
-    a: event(a),
-    b: event(b),
+    a: eventOf(a),
+    b: eventOf(b),
     alliances,
     totals: compareTotals(alliances),
     members: unionId === undefined ? null : membersOf(a, b, rosters, unionId),
@@ -291,15 +293,9 @@ export type EventComparison = NonNullable<Awaited<ReturnType<typeof compareEvent
 export const comparable = (e: Pick<EventSummary, "snapshots">) =>
   e.snapshots.some((s) => s.status === "complete" || s.status === "partial");
 
-/**
- * The compare page's data (D57): the events it can pick, then A and B — B defaults to the home event,
- * A to the newest event with data before B. `comparison` is null when A and B are the same or there is
- * no A; `found` is false when an id given is not a public event (or the alliance is in neither).
- */
-export async function getComparePage(
-  db: Db,
-  ids: { a: number | null; b: number | null; unionId: number | null },
-) {
+/** The events the picker can pick, then A and B: B defaults to the home event, A to the newest event
+ * with data before B. Shared by the alliance view and the player view (issue 199). */
+export async function comparePicks(db: Db, ids: { a: number | null; b: number | null }) {
   const events = await listEvents(db);
   const homeId = homeEvent(events)?.id ?? null;
   const b = ids.b ?? homeId;
@@ -308,7 +304,19 @@ export async function getComparePage(
   const a = ids.a ?? older[0]?.id ?? null;
   /** The picker's options: every comparable event, plus A and B if they were given without data. */
   const choices = events.filter((e) => comparable(e) || e.id === a || e.id === b);
-  const base = { events, homeId, choices, a, b };
+  return { events, homeId, choices, a, b };
+}
+
+/**
+ * The compare page's data (D57). `comparison` is null when A and B are the same or there is no A;
+ * `found` is false when an id given is not a public event (or the alliance is in neither).
+ */
+export async function getComparePage(
+  db: Db,
+  ids: { a: number | null; b: number | null; unionId: number | null },
+) {
+  const base = await comparePicks(db, ids);
+  const { a, b } = base;
   if (a === null || b === null || a === b) return { ...base, found: true, comparison: null };
   const comparison = await compareEvents(db, a, b, ids.unionId ?? undefined);
   return { ...base, found: comparison !== null, comparison };

@@ -66,6 +66,7 @@ export const zhCN = {
     counted: "{total} 个联盟中的 {n} 个，仅含两次活动都有可用数据的联盟",
     between: "从一次活动到另一次",
     notIn: "不在联盟",
+    notTracked: "不在追踪的联盟中",
     same: "请选择两个不同的活动。",
     onlyOne: "目前只有一个活动可以对比。",
   },

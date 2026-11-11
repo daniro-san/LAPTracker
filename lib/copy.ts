@@ -85,6 +85,8 @@ export const en = {
     /** Details: the reference values from the first event to the second. */
     between: "From one event to the other",
     notIn: "not in alliance",
+    /** The player view (issue 199): no tracked alliance's roster of that event holds the player. */
+    notTracked: "not in a tracked alliance",
     same: "Pick two different events.",
     onlyOne: "There is only one event to compare so far.",
   },
@@ -150,7 +152,7 @@ export const en = {
     start: "Start",
     end: "End",
   },
-  /** The banner shown while the game's data service does not answer (DECISIONS D27). */
+  /** The banner shown while the game's data service does not answer (docs/decisions/D27). */
   upstream: {
     title: "Game data is delayed",
     body: "The data service is not answering, so these numbers may be out of date.",

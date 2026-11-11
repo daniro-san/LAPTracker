@@ -4,15 +4,15 @@
 // before snapshot (`since 10:00`) and the change since the previous event (`since Oct 24`) — so the two
 // changes read apart (07c N2). The rank is the player's ledger rank by might inside their alliance,
 // moved event over event while they stay in it.
-import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
 
+import { TextLink } from "@/lib/brand/components/TextLink";
 import { rankDelta } from "@/lib/compute";
 import { fill, type Dictionary } from "@/lib/copy";
 import type { PlayerEventRow } from "@/lib/queries";
 import { isGeneratedName } from "@/lib/schedule";
 
-import { DetailTable, type RankPair } from "./DetailLines";
+import { DetailTable, rankCell, type RankPair } from "./DetailLines";
 import { EmptyState } from "./EmptyState";
 import { allianceLabel, changeText, type Clock } from "./format";
 import { requestCopy } from "./locale";
@@ -22,9 +22,9 @@ import { FreshDots, SideHead } from "./Status";
 
 const SHOWN = 12;
 const MUTED = "text-ink/70";
-/** ≥ 640 px: event · line head · Might · Kills · Level, shared by the header and every row. */
+/** ≥ 640 px: event · line head · Might · Kills · Level · Details, shared by the header and every row. */
 const GRID = {
-  "--cols": "minmax(0,1.5fr) minmax(0,1fr) repeat(3,minmax(0,1fr))",
+  "--cols": "minmax(0,1.5fr) minmax(0,1fr) repeat(3,minmax(0,1fr)) 6.75rem",
 } as CSSProperties;
 
 type Stat = "power" | "kills" | "lv";
@@ -63,11 +63,12 @@ function rankPairs(r: PlayerEventRow, prev: PlayerEventRow | undefined) {
   return { might: pair("might"), kills: pair("kills") };
 }
 
-/** One line of the row: its head on the left, then a cell per figure, all on one baseline. */
+/** One line of the row: its head on the left, then a cell per figure, all on one baseline. At ≥ 640 px
+ * the head starts each line in column 2, so no line runs on into the Details column. */
 function Line({ head, cells }: { head: ReactNode; cells: ReactNode[] }) {
   return (
     <>
-      <span className={`text-xs tabular-nums ${MUTED}`}>{head}</span>
+      <span className={`text-xs tabular-nums sm:col-start-2 ${MUTED}`}>{head}</span>
       {cells.map((c, i) => (
         <span key={i} className="text-right tabular-nums">
           {c}
@@ -107,12 +108,13 @@ function RowLead({
         <span className="text-base">
           <Rank n={rank.after} move={rank.move} />
         </span>
-        <Link
+        <TextLink
+          stretch
           href={`/events/${r.eventId}/alliances/${r.unionId}`}
-          className="min-w-0 break-words font-subhead text-display-sm leading-tight text-plum after:absolute after:inset-0 after:content-[''] hover:underline focus-visible:underline"
+          className="min-w-0 break-words font-subhead text-display-sm leading-tight"
         >
           {title ?? clock.weekday(r.eventAtUtc)}
-        </Link>
+        </TextLink>
       </div>
       {title && <div className={`text-sm ${MUTED}`}>{clock.weekday(r.eventAtUtc)}</div>}
       {(showAlliance || note) && (
@@ -125,7 +127,8 @@ function RowLead({
   );
 }
 
-/** A line of changes: `delta(f)` per figure, the percent relative to `base(f)` (none for Level). */
+/** A line of changes: `delta(f)` per figure, the percent relative to `base(f)` (none for Level). The
+ * percent stays under the change up to 768 px: the Details column leaves the figures about 73 px at 640. */
 function ChangeLine({
   head,
   delta,
@@ -140,7 +143,7 @@ function ChangeLine({
       head={head}
       cells={STATS.map((f) => (
         <span key={f} className="text-sm">
-          <Delta delta={delta(f)} base={f === "lv" ? null : base(f)} stack />
+          <Delta delta={delta(f)} base={f === "lv" ? null : base(f)} stack="md" />
         </span>
       ))}
     />
@@ -161,7 +164,7 @@ function rowDetail(
     <DetailTable
       corner={clock.zone}
       from={<SideHead s={fresh.before} clock={clock} copy={copy} />}
-      to={<SideHead s={fresh.after} clock={clock} copy={copy} />}
+      to={fresh.after && <SideHead s={fresh.after} clock={clock} copy={copy} />}
       rows={STATS.map((f, i) => {
         const rank = rankOf[i];
         return {
@@ -169,7 +172,7 @@ function rowDetail(
           from: <Num n={r.inEvent?.[FROM[f]] ?? null} />,
           to: <Num n={r[f]} />,
           change: <Delta delta={r.inEvent?.[f] ?? null} base={null} />,
-          ...(rank && { rank: <Rank n={rank.after} move={rank.move} /> }),
+          ...(rank && { rank: rankCell(rank) }),
         };
       })}
     />
@@ -226,6 +229,7 @@ function EventRow(props: RowProps) {
           detail: rowDetail(r, ranks, clock, copy),
         }}
         copy={copy}
+        inline="sm"
       />
     </li>
   );
@@ -276,7 +280,7 @@ export async function PlayerAcrossEvents({
       <ul>{newestFirst.slice(0, SHOWN)}</ul>
       {newestFirst.length > SHOWN && (
         <details className="mt-3">
-          <summary className="flex min-h-11 cursor-pointer items-center font-medium text-plum">
+          <summary className="text-button flex min-h-11 items-center font-medium text-plum">
             {fill(l.showAll, { n: newestFirst.length })}
           </summary>
           <ul>{newestFirst.slice(SHOWN)}</ul>

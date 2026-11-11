@@ -1,7 +1,8 @@
 // Breadcrumbs on the alliance and player pages only (DESIGN.md "Navigation and hierarchy"):
 // `Ledger › [OGs] OldGrandmas › Player`. The last crumb is the page itself and is not a link.
-import Link from "next/link";
 import type { ReactNode } from "react";
+
+import { TextLink } from "@/lib/brand/components/TextLink";
 
 import { requestCopy } from "./locale";
 
@@ -15,25 +16,26 @@ export async function Breadcrumbs({ crumbs }: { crumbs: Crumb[] }) {
   const copy = await requestCopy();
   return (
     <nav aria-label={copy.site.breadcrumb} className="mb-1 text-base">
-      <ol className="flex flex-wrap items-center gap-x-1">
+      {/* Inline text, so a long alliance name breaks inside the name (issue 125). Lines are 44 px and
+          each link is padded to fill its line, as min-height does not apply to inline boxes. The side
+          padding with an equal negative margin keeps a short crumb ("Sổ", "台帳") 44 px wide. */}
+      <ol className="leading-11">
         {crumbs.map((c, i) => (
-          <li key={c.key} className="inline-flex min-w-0 items-center gap-1">
+          <li key={c.key} className="inline">
             {i > 0 && (
-              <span aria-hidden="true" className="text-ink/50">
+              <span aria-hidden="true" className="mx-1 text-ink/50">
                 ›
               </span>
             )}
             {c.href ? (
-              <Link
+              <TextLink
                 href={c.href}
-                className="inline-flex min-h-11 min-w-11 items-center gap-1.5 break-words font-medium text-plum underline-offset-2 hover:underline"
+                className="-mx-3.5 px-3.5 py-3 font-medium *:mr-1.5 *:align-middle"
               >
                 {c.label}
-              </Link>
+              </TextLink>
             ) : (
-              <span aria-current="page" className="inline-flex min-h-11 items-center break-words">
-                {c.label}
-              </span>
+              <span aria-current="page">{c.label}</span>
             )}
           </li>
         ))}

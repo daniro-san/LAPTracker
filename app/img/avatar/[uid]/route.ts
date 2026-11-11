@@ -1,7 +1,14 @@
 // GET /img/avatar/[uid]: the player's photo, looked up in our own roster rows and fetched only from
 // the photo host. The upstream URL never leaves the server (D22).
 import { getAppContext } from "@/lib/app-context";
-import { AVATAR_CACHE, avatarSource, fetchImage, imageResponse, notFoundImage } from "@/lib/images";
+import {
+  AVATAR_CACHE,
+  avatarSource,
+  fetchImage,
+  imageResponse,
+  logImageFailure,
+  notFoundImage,
+} from "@/lib/images";
 import { findAvatarUrl } from "@/lib/repo/alliance-snapshots";
 
 import { resizedResponse } from "../../resize";
@@ -19,8 +26,12 @@ export async function GET(
   const { db, close } = ctx.openDb();
   try {
     const source = avatarSource(await findAvatarUrl(db, Number(uid)));
-    const image = source ? await fetchImage(source, ctx.fetch) : null;
-    if (!image) return notFoundImage();
+    if (!source) return notFoundImage();
+    const image = await fetchImage(source, ctx.fetch);
+    if (!("body" in image)) {
+      logImageFailure("/img/avatar", uid, image);
+      return notFoundImage();
+    }
     return (
       (await resizedResponse(image, AVATAR_PX, "cover", AVATAR_CACHE)) ??
       imageResponse(image, AVATAR_CACHE)

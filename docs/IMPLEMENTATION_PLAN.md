@@ -578,7 +578,7 @@ REVIEW.md                      the Session 5 invariant checklist; the built-in /
 docs/
   ARCHITECTURE.md              §11.1 as-is plus the Deps interface in TypeScript; one page
   GLOSSARY.md                  one line per domain term, UI word ↔ code word
-  DECISIONS.md                 one paragraph per decision from §3.x, dated, append-only; a reversal is a new entry that names the one it supersedes.
+  decisions/                   one file per decision from §3.x, dated, append-only; a reversal is a new entry that names the one it supersedes.
                                One file, not an ADR folder: at ~10–15 decisions a single grep-able file beats N files plus an index. Its header says so and sets the trigger to split (> ~25 entries, or decisions proposed by people other than the owner via PR).
   handoff/                     per-session handoffs
 ```
@@ -634,8 +634,8 @@ The alliance roster includes `x`, `y` (map coordinates), `online`, `last_online_
 - Discord messages contain alliance tags, counts and a link — never member names, never numbers that identify a person.
 
 ### 12.4 Dependencies and supply chain
-- Policy: few dependencies, each actively maintained, each pinned by the lockfile. Prefer the platform (`fetch`, `crypto`, `URL`) over a package. New dependency = a line in `docs/DECISIONS.md` saying why the platform wasn't enough.
-- `pnpm install --frozen-lockfile` only in CI and hooks. `pnpm audit --audit-level high` runs in CI and fails the build; a finding that can't be fixed within a week gets a dated exception in `DECISIONS.md`, not a silent `--omit`.
+- Policy: few dependencies, each actively maintained, each pinned by the lockfile. Prefer the platform (`fetch`, `crypto`, `URL`) over a package. New dependency = a file in `docs/decisions/` saying why the platform wasn't enough.
+- `pnpm install --frozen-lockfile` only in CI and hooks. `pnpm audit --audit-level high` runs in CI and fails the build; a finding that can't be fixed within a week gets a dated exception in `docs/decisions/`, not a silent `--omit`.
 - Dependabot enabled for the npm ecosystem (it covers pnpm lockfiles) and GitHub Actions, weekly, grouped minor/patch; majors handled by a session reading the changelog first.
 - GitHub Actions pinned to commit SHAs, `permissions:` set to the minimum per workflow (`contents: read` for CI and snapshots, `contents: write` only for keepalive).
 - Node **26** (Active LTS since Oct 2026; Vercel default `26.x`; 24/22 are Maintenance). `.nvmrc` holds the major only (`26`): nvm, fnm, asdf and `actions/setup-node` all resolve it to the newest installed/available 26.x, which is the same policy Vercel applies (majors pinned, patches rolled by the platform), so local, CI and production track the same line without a monthly bump. `engines.node: "26.x"` — Vercel maps it to the latest 26.x and, unlike an open range (`>=22`), never auto-upgrades the production runtime to a future major (Vercel warns about exactly that). Claude cloud sessions on Node 22 still install because `.npmrc` has `engine-strict=false` (a warning, not a failure) and the setup script installs 26 anyway. CI runs on `.nvmrc`, so 26.x is what gates every merge. One file, no `.node-version` duplicate. Next.js stable channel. No pre-release packages.

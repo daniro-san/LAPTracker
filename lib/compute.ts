@@ -7,12 +7,12 @@
  */
 export const RUN_STALE_AFTER_MS = 150_000;
 
-/** Roster kills. A member with `kills: null` counts as 0 (DECISIONS D15). */
+/** Roster kills. A member with `kills: null` counts as 0 (docs/decisions/D15). */
 export function sumKills(members: readonly { kills: number | null }[]): number {
   return members.reduce((total, m) => total + (m.kills ?? 0), 0);
 }
 
-/** Roster power, nulls as 0 (DECISIONS D15). The /v1 `power` field equals this in every fixture. */
+/** Roster power, nulls as 0 (docs/decisions/D15). The /v1 `power` field equals this in every fixture. */
 export function sumPower(members: readonly { power: number | null }[]): number {
   return members.reduce((total, m) => total + (m.power ?? 0), 0);
 }
@@ -20,6 +20,34 @@ export function sumPower(members: readonly { power: number | null }[]): number {
 /** INVARIANT freshness.20-min (§3.7): fresh when `now − updatedAt ≤ maxAgeMs`; unknown is stale. */
 export function isFresh(now: Date, updatedAt: Date | null, maxAgeMs: number): boolean {
   return updatedAt !== null && now.getTime() - updatedAt.getTime() <= maxAgeMs;
+}
+
+/**
+ * One player's roster row in one snapshot (issue 234). A stale read of an old alliance can still list
+ * a player the fresh roster of a new alliance holds too: the row of a usable alliance read (fresh, not
+ * failed) wins, else the newest. `newestFirst` holds that player's rows of one snapshot, newest first.
+ */
+export function pickRosterRow<T>(
+  newestFirst: readonly T[],
+  usable: (row: T) => boolean,
+): T | undefined {
+  return newestFirst.find(usable) ?? newestFirst[0];
+}
+
+/**
+ * pickRosterRow for each player (uid) and snapshot (event and phase) in `rows`, in first-seen order.
+ * Rows of one player and snapshot must come newest first.
+ */
+export function pickRosterRows<T extends { uid: number; eventId: number; phase: string }>(
+  rows: readonly T[],
+  usable: (row: T) => boolean,
+): T[] {
+  const groups = new Map<string, T[]>();
+  for (const row of rows) {
+    const key = `${row.uid}:${row.eventId}:${row.phase}`;
+    groups.set(key, [...(groups.get(key) ?? []), row]);
+  }
+  return [...groups.values()].map((own) => pickRosterRow(own, usable) as T);
 }
 
 export interface Measured {

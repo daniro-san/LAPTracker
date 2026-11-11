@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { ALLIANCES } from "../config/alliances";
 import { MAX_UPSTREAM_CALLS, RUN_DEADLINE_MS, runSnapshot } from "./collector";
 import {
   ago,
@@ -14,7 +15,6 @@ import {
   T0,
 } from "./collector.test-helpers";
 import { NotLiveError, QuotaExhaustedError, UpstreamError } from "./sources/types";
-import { ALLIANCES } from "../config/alliances";
 
 const fresh = (id: number) => roster(id, ago(T0, minutes(2)));
 const [FIRST, SECOND] = IDS as [number, number];

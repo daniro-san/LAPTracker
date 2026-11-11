@@ -12,7 +12,7 @@ export function RadioField({
   help?: ReactNode;
 } & Omit<InputHTMLAttributes<HTMLInputElement>, "type" | "className">) {
   return (
-    <label className="drawn-frame-soft flex min-h-11 cursor-pointer items-start gap-3 px-3 py-2">
+    <label className="drawn-frame-soft tint-button flex min-h-11 items-start gap-3 px-3 py-2">
       <input type="radio" className="mt-0.5 size-6 shrink-0 accent-plum" {...input} />
       <span className="flex flex-col">
         <span className="font-medium">{label}</span>
