@@ -66,6 +66,7 @@ export const itIT = {
     counted: "{n} su {total} alleanze, quelle con dati validi in entrambi gli eventi",
     between: "Da un evento all’altro",
     notIn: "non in alleanza",
+    notTracked: "in nessuna alleanza seguita",
     same: "Scegli due eventi diversi.",
     onlyOne: "Per ora c’è un solo evento da confrontare.",
   },

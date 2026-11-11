@@ -66,6 +66,7 @@ export const vi = {
     counted: "{n} trong {total} liên minh có dữ liệu dùng được ở cả hai sự kiện",
     between: "Từ sự kiện này đến sự kiện kia",
     notIn: "Ngoài liên minh",
+    notTracked: "Ngoài các liên minh theo dõi",
     same: "Chọn hai sự kiện khác nhau.",
     onlyOne: "Mới có một sự kiện để so sánh.",
   },

@@ -67,6 +67,7 @@ export const idID = {
     counted: "{n} dari {total} aliansi, yang datanya bisa dipakai di kedua event",
     between: "Dari satu event ke event lain",
     notIn: "tidak di aliansi",
+    notTracked: "tidak di aliansi yang dilacak",
     same: "Pilih dua event yang berbeda.",
     onlyOne: "Baru ada satu event untuk dibandingkan.",
   },
