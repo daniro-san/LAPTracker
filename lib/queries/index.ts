@@ -37,3 +37,8 @@ export {
   type EventComparison,
   type MemberComparison,
 } from "./compare";
+export {
+  getComparePlayerPage,
+  type PlayerComparison,
+  type PlayerEventFigures,
+} from "./compare-player";

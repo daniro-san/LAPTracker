@@ -66,6 +66,7 @@ export const sv = {
     counted: "{n} av {total} allianser, de med användbara data i båda eventen",
     between: "Från ett event till det andra",
     notIn: "inte i allians",
+    notTracked: "inte i en bevakad allians",
     same: "Välj två olika event.",
     onlyOne: "Det finns bara ett event att jämföra än.",
   },

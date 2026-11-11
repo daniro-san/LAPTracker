@@ -8,6 +8,7 @@ Words already used in `lib/i18n/tr.ts`. Reuse them so the pages stay consistent;
 | Ledger                    | Defter                          | `site.home` — the ledger, as a breadcrumb                         |
 | kept by the Old Grandmas  | Old Grandmas tarafından tutulur | `site.byline` — Old Grandmas stays a name                         |
 | Alliance                  | İttifak                         | `ledger.alliance`                                                 |
+| not in a tracked alliance | takip edilen ittifakta değil    | `compare.notTracked` — player view                                |
 | Member                    | Üye                             | `ledger.member` — a player inside an alliance                     |
 | Player                    | Oyuncu                          | `ledger.player`                                                   |
 | Event                     | Etkinlik                        | `ledger.event` — a game event                                     |

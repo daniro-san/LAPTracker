@@ -66,6 +66,7 @@ export const nl = {
     counted: "{n} van {total} allianties, die in beide events bruikbare gegevens hebben",
     between: "Van het ene event naar het andere",
     notIn: "niet in alliantie",
+    notTracked: "in geen gevolgde alliantie",
     same: "Kies twee verschillende events.",
     onlyOne: "Er is nog maar één event om te vergelijken.",
   },

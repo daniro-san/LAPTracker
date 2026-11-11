@@ -8,6 +8,7 @@ Words already used in `lib/i18n/zh-CN.ts`. Reuse them so the pages stay consiste
 | Ledger                    | 账本                 | `site.home` — the ledger, as a breadcrumb                   |
 | kept by the Old Grandmas  | 由 Old Grandmas 记录 | `site.byline` — Old Grandmas stays a name                   |
 | Alliance                  | 联盟                 | `ledger.alliance`                                           |
+| not in a tracked alliance | 不在追踪的联盟中     | `compare.notTracked` — player view                          |
 | Member                    | 成员                 | `ledger.member` — a player inside an alliance               |
 | Player                    | 玩家                 | `ledger.player`                                             |
 | Event                     | 活动                 | `ledger.event` — a game event                               |

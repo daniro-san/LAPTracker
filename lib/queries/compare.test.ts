@@ -5,6 +5,7 @@ import { openTestDb } from "../db.test-helpers";
 import { allianceSnapshots, events, memberSnapshots, snapshots } from "../schema";
 import { findBlockedKeys } from "./blocked-keys";
 import { compareEvents, getComparePage } from "./compare";
+import { comparePlayer } from "./compare-player";
 
 type Member = { uid: number; power: number; kills: number };
 type Row = { unionId: number; fresh: boolean; members: Member[] };
@@ -115,5 +116,36 @@ describe("compareEvents (D57)", () => {
     const page = await getComparePage(db, { a: null, b: null, unionId: null });
     expect([page.a, page.b]).toEqual([eventA, eventB]);
     expect(page.comparison).not.toBeNull();
+  });
+});
+
+describe("comparePlayer (issue 199)", () => {
+  const uid = 340000000031;
+  let eventC: number;
+  let eventD: number;
+
+  beforeAll(async () => {
+    // Dated before A and B, so the tests above keep their events. The player is in alliance 1 in C
+    // (second by might) and in alliance 2 in D (first).
+    eventC = await seedEvent("2026-10-10", {
+      before: [{ unionId: 1, fresh: true, members: [m(uid, 100, 10), m(41, 200, 20)] }],
+      after: [{ unionId: 1, fresh: true, members: [m(uid, 110, 12), m(41, 200, 20)] }],
+    });
+    eventD = await seedEvent("2026-10-17", {
+      before: [{ unionId: 2, fresh: true, members: [m(uid, 120, 12), m(51, 50, 5)] }],
+      after: [{ unionId: 2, fresh: true, members: [m(uid, 125, 15), m(51, 50, 5)] }],
+    });
+  });
+
+  it("reads a player who changed alliance in each event's own alliance, with no blocked key", async () => {
+    const c = await comparePlayer(db, eventC, eventD, uid);
+    expect(c?.player).toMatchObject({
+      name: `P${uid}`,
+      hasPage: true,
+      a: { unionId: 1, tag: "T1", rank: 2, power: 110, change: { power: 10, kills: 2 } },
+      b: { unionId: 2, tag: "T2", rank: 1, power: 125, change: { power: 5, kills: 3 } },
+    });
+    expect(c?.player.a?.opening).toEqual({ power: 100, kills: 10 });
+    expect(findBlockedKeys(c)).toEqual([]);
   });
 });
