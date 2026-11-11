@@ -56,3 +56,5 @@ Plan changes needed: none.
 - Every summary whose direct child is `.drawn-frame-soft` puts its keyboard ring on that child (`app/globals.css`, top).
 - Playwright's Firefox does not launch on this Mac ("Could not find profile folder"). Plan Firefox checks on another machine or by the owner.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/225
