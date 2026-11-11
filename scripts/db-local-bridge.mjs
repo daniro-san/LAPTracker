@@ -9,13 +9,21 @@ import { localDatabaseUrl } from "./db-local.mjs";
 
 const url = localDatabaseUrl(process.env.DATABASE_URL);
 if (!url) {
-  console.error("db:local: DATABASE_URL must be set and its host must be localhost or 127.0.0.1");
+  console.error(
+    "db:local: DATABASE_URL must be postgres://user:password@localhost[:port]/database (or 127.0.0.1), with no host, hostaddr or service parameter",
+  );
   process.exit(2);
 }
 const pgPort = Number(url.port || 5432);
 const port = Number(process.env.DB_LOCAL_BRIDGE_PORT || 54321);
 
-const server = new WebSocketServer({ host: "127.0.0.1", port });
+// Refuse an upgrade that carries an Origin header: every browser sends one, so a web page cannot reach
+// the database through the bridge. Node's WebSocket (the driver in tsx and in `next dev`) sends none.
+const server = new WebSocketServer({
+  host: "127.0.0.1",
+  port,
+  verifyClient: ({ origin }) => origin === undefined,
+});
 server.on("connection", (ws) => {
   const tcp = connect(pgPort, "127.0.0.1");
   ws.on("message", (data) => tcp.write(data));

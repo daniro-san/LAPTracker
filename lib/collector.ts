@@ -1,12 +1,11 @@
 // Domain: runSnapshot, freshness check, per-alliance fallback, resume logic (plan Phase 3).
 // Everything it touches comes in through Deps (plan §11.1); time comes from deps.now.
+import { ALLIANCES, SERVER } from "../config/alliances";
 import { requiredQuota } from "./budget";
 import { dataRow, errorRow, failedList } from "./collector-rows";
 import { RUN_STALE_AFTER_MS } from "./compute";
 import type { Logger } from "./logger";
 import type { AllianceRow, MemberRow, Phase, Repo, SnapshotRow, SnapshotStatus } from "./repo";
-import { describe, httpStatusOf } from "./upstream-errors";
-import { ALLIANCES, SERVER } from "../config/alliances";
 import {
   type InternalSource,
   type Quota,
@@ -14,6 +13,7 @@ import {
   type RanksBoard,
   type V1Source,
 } from "./sources/types";
+import { describe, httpStatusOf } from "./upstream-errors";
 
 /** 20 alliances × 3 retries × 2 phases (Logging guarantees). */
 export const MAX_UPSTREAM_CALLS = 120;

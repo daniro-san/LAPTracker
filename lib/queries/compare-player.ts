@@ -1,9 +1,9 @@
 // Event vs event for one player (issue 199, D57): the player in two public events, each read in the
 // alliance that held them then. Member fields served: uid, name, power, kills (§12.1) and whether a
 // photo exists (never its URL, D22); raw_json and avatar_url are never selected.
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 
-import { delta, type Measured } from "../compute";
+import { delta, pickRosterRow, type Measured } from "../compute";
 import type { Db } from "../db";
 import { allianceSnapshots, events, memberSnapshots, snapshots } from "../schema";
 import { comparePicks, eventOf, sidesOf, usable, type Detail } from "./compare";
@@ -52,7 +52,8 @@ async function rowsOf(db: Db, uid: number, snapshotIds: number[]): Promise<Playe
     })
     .from(memberSnapshots)
     .innerJoin(allianceSnapshots, eq(allianceSnapshots.id, memberSnapshots.allianceSnapshotId))
-    .where(and(eq(memberSnapshots.uid, uid), inArray(allianceSnapshots.snapshotId, snapshotIds)));
+    .where(and(eq(memberSnapshots.uid, uid), inArray(allianceSnapshots.snapshotId, snapshotIds)))
+    .orderBy(desc(allianceSnapshots.id));
 }
 
 /** Whether /players/[uid] exists: the player is in a chain event's roster (a standalone round has none). */
@@ -68,11 +69,16 @@ async function hasPlayerPage(db: Db, uid: number) {
   return row !== undefined;
 }
 
-/** The player's before and after rows in one event, and the reference (after, else before). */
+/** The player's before and after rows in one event, and the reference (after, else before). Two rows
+ * in one snapshot: compute.pickRosterRow, as the player page picks (rowsOf's order is newest first). */
 function phasesOf(detail: Detail, rows: PlayerRow[]) {
   const { before, after, row } = sidesOf(detail);
-  const mb = rows.find((r) => r.snapshotId === before?.id);
-  const ma = rows.find((r) => r.snapshotId === after?.id);
+  const pick = (s: typeof before) =>
+    pickRosterRow(
+      rows.filter((r) => r.snapshotId === s?.id),
+      (r) => usable(row(s, r.unionId)),
+    );
+  const [mb, ma] = [pick(before), pick(after)];
   return { before, after, row, mb, ma, ref: ma ?? mb };
 }
 

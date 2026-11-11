@@ -1,9 +1,9 @@
 // Domain: the rows the collector stores per alliance (data from a source, or an error placeholder).
+import { ALLIANCES } from "../config/alliances";
 import { isFresh } from "./compute";
 import { trimRaw } from "./raw-json";
 import type { AllianceRow, AllianceRowStatus } from "./repo";
 import type { AllianceSnapshotInput, RanksBoard } from "./sources/types";
-import { ALLIANCES } from "../config/alliances";
 
 export const FRESH_MAX_AGE_MS = 20 * 60_000;
 
