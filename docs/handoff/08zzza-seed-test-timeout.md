@@ -37,3 +37,5 @@ Plan changes needed: none.
 <adjustments>
 - A test whose body runs `seed()` needs its own timeout: the global 10 s does not cover a whole seed under load.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/226
