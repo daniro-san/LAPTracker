@@ -47,5 +47,4 @@ export function ErrorPage({
 }
 
 export const primaryAction = buttonClass("primary");
-export const secondaryAction =
-  "inline-flex min-h-11 items-center text-body text-plum underline underline-offset-4";
+export const secondaryAction = "text-link inline-flex min-h-11 items-center text-body";

@@ -27,10 +27,7 @@ import { LABEL } from "./StatTable";
 function Row({ m }: { m: MoverItem }) {
   return (
     <li>
-      <Link
-        href={m.href}
-        className="flex min-h-11 items-center gap-2 py-1 hover:bg-plum/5 focus-visible:bg-plum/5"
-      >
+      <Link href={m.href} className="tint-button flex min-h-11 items-center gap-2 py-1">
         {m.rank.move === undefined ? (
           <span className={`w-7 shrink-0 tabular-nums ${LABEL}`}>{m.rank.n ?? "—"}</span>
         ) : (

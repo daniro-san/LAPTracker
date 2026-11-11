@@ -193,7 +193,7 @@ export async function AcrossEvents({
         <h2 className="font-subhead text-display-md">{l.acrossEvents}</h2>
         <a
           href={`#${TITLE_ID}`}
-          className="inline-flex min-h-11 items-center px-2 text-sm font-medium text-plum hover:underline"
+          className="text-link inline-flex min-h-11 items-center px-2 text-sm font-medium"
         >
           {l.toTop} <span aria-hidden="true">&nbsp;↑</span>
         </a>

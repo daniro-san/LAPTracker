@@ -200,7 +200,7 @@ function RoundCard({
   onSave: (eventId: number, change: RoundChange) => void;
 }) {
   const open = (
-    <a href={`/events/${manual.id}`} className="inline-flex min-h-11 items-center underline">
+    <a href={`/events/${manual.id}`} className="text-link inline-flex min-h-11 items-center">
       {m.open}
     </a>
   );

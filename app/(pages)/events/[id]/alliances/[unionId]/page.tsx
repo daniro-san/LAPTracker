@@ -2,7 +2,6 @@
 // The totals as one summary band, then the members (same row shape as the main page), then one row
 // per event.
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 
@@ -31,6 +30,7 @@ import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { LABEL, type StatMetric } from "@/app/_ui/StatTable";
 import { CaptureWindow, FreshDots, Legend, SideHead, type FreshState } from "@/app/_ui/Status";
+import { TextLink } from "@/lib/brand/components/TextLink";
 import { rankDelta } from "@/lib/compute";
 import type { Dictionary } from "@/lib/copy";
 import { withPageDb } from "@/lib/page";
@@ -286,17 +286,17 @@ export default async function AlliancePage({ params }: { params: Params }) {
             {history.length > 0 && (
               <a
                 href={`#${ACROSS_ID}`}
-                className="inline-flex min-h-11 items-center px-2 text-sm font-medium text-plum hover:underline"
+                className="text-link inline-flex min-h-11 items-center px-2 text-sm font-medium"
               >
                 {copy.ledger.acrossEvents} <span aria-hidden="true">&nbsp;↓</span>
               </a>
             )}
-            <Link
+            <TextLink
               href={`/alliances/${unionId}/history`}
-              className="inline-flex min-h-11 items-center px-2 text-sm font-medium text-plum hover:underline"
+              className="inline-flex min-h-11 items-center px-2 text-sm font-medium"
             >
               {copy.history.title} <span aria-hidden="true">&nbsp;→</span>
-            </Link>
+            </TextLink>
           </div>
         </div>
         <CaptureWindow

@@ -17,7 +17,7 @@ import { LABEL } from "./StatTable";
 
 const MUTED = "text-ink/70";
 const PLAYER =
-  "inline-flex min-h-11 min-w-0 items-center font-medium text-plum [overflow-wrap:anywhere] hover:underline";
+  "text-link inline-flex min-h-11 min-w-0 items-center font-medium [overflow-wrap:anywhere]";
 /** Name, Kills, Might: the same tracks in the header and every row, so the columns line up. */
 const CHANGE_COLS =
   "grid grid-cols-[minmax(0,1fr)_5rem_6rem] gap-x-2 sm:grid-cols-[minmax(0,1fr)_8rem_8rem]";

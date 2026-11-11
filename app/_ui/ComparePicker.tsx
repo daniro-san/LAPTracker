@@ -98,7 +98,7 @@ export function ComparePicker({
       <Link
         href={compareHref(b, a, unionId, uid)}
         aria-label={c.swap}
-        className="inline-flex min-h-11 min-w-11 items-center justify-center font-medium text-plum"
+        className="tint-button inline-flex min-h-11 min-w-11 items-center justify-center font-medium text-plum"
       >
         <span aria-hidden="true">⇄</span>
       </Link>

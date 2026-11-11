@@ -327,7 +327,7 @@ body {
     --tint: 20%;
   }
   /* Text controls (a summary or button that reads as a link): underlined on hover, a thicker line if
-     it is already underlined. */
+     it is already underlined; pressed like a text link (the unlayered rule at the end of this file). */
   .text-button[data-state="hover"] {
     text-decoration-line: underline;
     text-decoration-thickness: 2px;
@@ -335,6 +335,35 @@ body {
   @media (hover: hover) {
     .text-button:not(:disabled):hover {
       text-decoration-line: underline;
+      text-decoration-thickness: 2px;
+    }
+  }
+
+  /* Text link (DESIGN.md `text-link`, owner 2026-11-11, issue 232): the one look for every link that is
+     words. At rest plum with a thin plum underline at 40 %, so it reads as a link without colour alone;
+     visited looks the same. Hover: the underline at full colour, 2 px. Press: ink and 1 px down, like
+     the buttons. `position: relative; top` because transforms do not move an inline link inside a
+     sentence. A stretched link (`.text-link-stretch`, `TextLink stretch`) covers its whole card with
+     ::after, so it is not moved on press: that would shrink the card's hit area under the pointer. */
+  .text-link {
+    color: var(--plum);
+    text-decoration-line: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+    text-decoration-color: color-mix(in srgb, currentColor 40%, transparent);
+  }
+  .text-link-stretch::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+  }
+  .text-link[data-state="hover"] {
+    text-decoration-color: currentColor;
+    text-decoration-thickness: 2px;
+  }
+  @media (hover: hover) {
+    .text-link:hover {
+      text-decoration-color: currentColor;
       text-decoration-thickness: 2px;
     }
   }
@@ -438,4 +467,20 @@ body {
     -webkit-mask: url("/brand/rule.svg") left center / 160px 4px repeat-x;
     mask: url("/brand/rule.svg") left center / 160px 4px repeat-x;
   }
+}
+
+/* Press on a text link or text control (issue 232): ink and 1 px down. Outside the layers on purpose,
+   so it wins over a colour utility on the element (`text-plum`, `text-ink/80`) while pressed. */
+.text-link:active,
+.text-link[data-state="press"],
+.text-button:not(:disabled):active,
+.text-button[data-state="press"] {
+  position: relative;
+  top: 1px;
+  color: var(--ink);
+  text-decoration-color: currentColor;
+}
+.text-link-stretch:active,
+.text-link-stretch[data-state="press"] {
+  position: static;
 }

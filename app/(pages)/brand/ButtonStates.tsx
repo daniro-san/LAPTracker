@@ -36,6 +36,12 @@ export function ButtonStates() {
               >
                 {s.text}
               </span>
+              <span
+                data-state={pin}
+                className="text-link inline-flex min-h-11 items-center font-medium"
+              >
+                {s.link}
+              </span>
             </div>
           </div>
         );

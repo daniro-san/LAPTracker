@@ -167,7 +167,7 @@ function TopStatus({
         {hasMovers && (
           <a
             href={`#${MOVERS_ID}`}
-            className="ml-auto inline-flex min-h-11 items-center px-2 text-sm font-medium text-plum hover:underline"
+            className="text-link ml-auto inline-flex min-h-11 items-center px-2 text-sm font-medium"
           >
             {copy.ledger.movers} <span aria-hidden="true">&nbsp;↓</span>
           </a>

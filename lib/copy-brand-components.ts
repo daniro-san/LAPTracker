@@ -16,12 +16,13 @@ export const brandComponentsCopy = {
   seal: { name: "Seal button", label: "Run now", use: "Confirm or destructive actions only." },
   states: {
     name: "Hover and press",
-    use: "Every control shows the pointer cursor and a hover look; buttons and chips also a press look. Chips, tabs and header controls take a tint of their text colour; text controls underline. Hover never carries information.",
+    use: "Every control and link shows the pointer cursor, a hover look and a press look. Chips, tabs, header controls and row links take a tint of their text colour. Text links are plum with a thin underline that turns full and thick on hover; links and text controls go ink and down 1 px on press. Hover never carries information.",
     rest: "Rest",
     hover: "Hover",
     press: "Press",
     chip: "Chip",
     text: "Show all",
+    link: "Player page",
   },
   chips: {
     name: "Chips",

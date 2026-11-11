@@ -4,9 +4,9 @@
 // before snapshot (`since 10:00`) and the change since the previous event (`since Oct 24`) — so the two
 // changes read apart (07c N2). The rank is the player's ledger rank by might inside their alliance,
 // moved event over event while they stay in it.
-import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
 
+import { TextLink } from "@/lib/brand/components/TextLink";
 import { rankDelta } from "@/lib/compute";
 import { fill, type Dictionary } from "@/lib/copy";
 import type { PlayerEventRow } from "@/lib/queries";
@@ -108,12 +108,13 @@ function RowLead({
         <span className="text-base">
           <Rank n={rank.after} move={rank.move} />
         </span>
-        <Link
+        <TextLink
+          stretch
           href={`/events/${r.eventId}/alliances/${r.unionId}`}
-          className="min-w-0 break-words font-subhead text-display-sm leading-tight text-plum after:absolute after:inset-0 after:content-[''] hover:underline focus-visible:underline"
+          className="min-w-0 break-words font-subhead text-display-sm leading-tight"
         >
           {title ?? clock.weekday(r.eventAtUtc)}
-        </Link>
+        </TextLink>
       </div>
       {title && <div className={`text-sm ${MUTED}`}>{clock.weekday(r.eventAtUtc)}</div>}
       {(showAlliance || note) && (

@@ -30,7 +30,7 @@ export default async function RunsPage() {
           <li key={r.id} className="border border-rule sm:border-0 sm:border-b sm:last:border-0">
             <Link
               href={`/admin/runs/${r.id}`}
-              className="flex min-h-11 flex-col gap-1 p-3 sm:flex-row sm:items-center sm:gap-4 sm:px-0"
+              className="tint-button flex min-h-11 flex-col gap-1 p-3 sm:flex-row sm:items-center sm:gap-4 sm:px-0"
             >
               <span className="flex flex-wrap items-center gap-x-3 gap-y-1 sm:order-last sm:flex-col sm:items-end">
                 <StateChip status={r.status}>{stateWord(r.status)}</StateChip>

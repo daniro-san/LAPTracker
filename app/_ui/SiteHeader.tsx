@@ -80,7 +80,7 @@ function EventSelector({
               <Link
                 href={home ? "/" : `/events/${e.id}`}
                 aria-current={e.id === currentId ? "page" : undefined}
-                className="flex min-h-11 flex-col justify-center px-3 py-1 text-sm transition-colors duration-150 hover:bg-plum/15 aria-[current=page]:bg-plum/10 aria-[current=page]:font-semibold motion-reduce:transition-none"
+                className="tint-button flex min-h-11 flex-col justify-center px-3 py-1 text-sm aria-[current=page]:bg-plum/10 aria-[current=page]:font-semibold"
               >
                 <span className="break-words">
                   <EventLabel event={e} clock={clock} />
@@ -148,7 +148,7 @@ export function SiteHeader({
         <div className="mx-auto flex max-w-[960px] items-center justify-between gap-1 px-3 py-1 sm:gap-2 sm:px-6">
           <Link
             href="/"
-            className="flex min-h-11 min-w-11 items-center justify-center gap-1 min-[420px]:gap-1.5"
+            className="tint-button flex min-h-11 min-w-11 items-center justify-center gap-1 rounded-xs min-[420px]:gap-1.5"
           >
             <WaxedMark size={40} solid />
             <span className="font-display text-lg font-semibold tracking-tight min-[420px]:text-display-sm min-[420px]:tracking-normal">

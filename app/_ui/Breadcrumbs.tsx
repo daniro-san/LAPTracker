@@ -1,7 +1,8 @@
 // Breadcrumbs on the alliance and player pages only (DESIGN.md "Navigation and hierarchy"):
 // `Ledger › [OGs] OldGrandmas › Player`. The last crumb is the page itself and is not a link.
-import Link from "next/link";
 import type { ReactNode } from "react";
+
+import { TextLink } from "@/lib/brand/components/TextLink";
 
 import { requestCopy } from "./locale";
 
@@ -27,12 +28,12 @@ export async function Breadcrumbs({ crumbs }: { crumbs: Crumb[] }) {
               </span>
             )}
             {c.href ? (
-              <Link
+              <TextLink
                 href={c.href}
-                className="-mx-3.5 px-3.5 py-3 font-medium text-plum underline-offset-2 *:mr-1.5 *:align-middle hover:underline"
+                className="-mx-3.5 px-3.5 py-3 font-medium *:mr-1.5 *:align-middle"
               >
                 {c.label}
-              </Link>
+              </TextLink>
             ) : (
               <span aria-current="page">{c.label}</span>
             )}

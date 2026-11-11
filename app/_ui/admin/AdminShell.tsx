@@ -4,13 +4,13 @@
 // poller (#91), wraps the page so the candle is current on every admin page. Each page checks
 // isAdmin() itself before it reads the database (issue 218) and, when locked, renders this shell with
 // no children: the PIN card.
-import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { requestServerClock } from "@/app/_ui/locale";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { isAdmin } from "@/lib/admin-session";
+import { TextLink } from "@/lib/brand/components/TextLink";
 import { copy } from "@/lib/copy";
 import { withPageDb } from "@/lib/page";
 import { listRuns, runningSnapshots } from "@/lib/queries/admin";
@@ -54,13 +54,13 @@ async function Unlocked({ title, children }: { title: string; children?: ReactNo
         className="mb-3 flex flex-wrap items-center gap-x-1 border-b border-rule"
       >
         {NAV.map((n) => (
-          <Link
+          <TextLink
             key={n.href}
             href={n.href}
-            className="flex min-h-11 items-center px-3 text-sm font-medium text-plum hover:underline"
+            className="flex min-h-11 items-center px-3 text-sm font-medium"
           >
             {n.label}
-          </Link>
+          </TextLink>
         ))}
         <LiveIndicator on={running.length > 0} />
       </nav>
