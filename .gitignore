@@ -10,6 +10,9 @@ next-env.d.ts
 *.tsbuildinfo
 coverage/
 
+# local Postgres cluster (pnpm db:local:start)
+.pglocal/
+
 # Claude Code local state
 .claude/worktrees/
 .claude/settings.local.json
