@@ -7,6 +7,7 @@ import { RunTrace } from "@/app/_ui/admin/RunTrace";
 import { eventWord, phaseWord, seconds, stateWord } from "@/app/_ui/admin/words";
 import { allianceLabel } from "@/app/_ui/format";
 import { requestServerClock } from "@/app/_ui/locale";
+import { isAdmin } from "@/lib/admin-session";
 import { Chip } from "@/lib/brand/components/Chip";
 import { FactList } from "@/lib/brand/components/FactList";
 import { DroppedStitch } from "@/lib/brand/components/StatusIcons";
@@ -32,6 +33,9 @@ function fields(data: unknown): string {
 const time = (d: Date) => d.toISOString().slice(11, 23);
 
 export default async function RunPage({ params }: { params: Promise<{ id: string }> }) {
+  const t = copy.admin.runs;
+  // Session first (issue 218): locked, the PIN card whatever the id, and no database read.
+  if (!(await isAdmin())) return <AdminShell title={t.title} />;
   const raw = (await params).id;
   if (!/^\d{1,9}$/.test(raw)) notFound();
   const [found, clock] = await Promise.all([
@@ -40,7 +44,6 @@ export default async function RunPage({ params }: { params: Promise<{ id: string
   ]);
   if (!found) notFound();
   const { run, logs, tags, trace, problems } = found;
-  const t = copy.admin.runs;
   return (
     <AdminShell title={fill(t.run, { id: run.id })}>
       <AdminSection

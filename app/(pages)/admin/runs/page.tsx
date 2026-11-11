@@ -6,6 +6,7 @@ import { AdminShell } from "@/app/_ui/admin/AdminShell";
 import { StateChip } from "@/app/_ui/admin/parts";
 import { eventWord, phaseWord, seconds, stateWord } from "@/app/_ui/admin/words";
 import { requestServerClock } from "@/app/_ui/locale";
+import { isAdmin } from "@/lib/admin-session";
 import { Chip } from "@/lib/brand/components/Chip";
 import { DroppedStitch } from "@/lib/brand/components/StatusIcons";
 import { copy, fill } from "@/lib/copy";
@@ -13,8 +14,10 @@ import { withPageDb } from "@/lib/page";
 import { listRuns } from "@/lib/queries/admin";
 
 export default async function RunsPage() {
-  const [runs, clock] = await Promise.all([withPageDb((db) => listRuns(db)), requestServerClock()]);
   const t = copy.admin.runs;
+  // Session first (issue 218): locked, the PIN card and no database read.
+  if (!(await isAdmin())) return <AdminShell title={t.title} />;
+  const [runs, clock] = await Promise.all([withPageDb((db) => listRuns(db)), requestServerClock()]);
   return (
     <AdminShell title={t.title}>
       {runs.length === 0 ? (
