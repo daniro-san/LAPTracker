@@ -1,0 +1,7 @@
+## D30 — cron-job.org is the scheduler; GitHub's schedule is not relied on (2026-11-05, 08)
+
+- **Why:** `gh run list --workflow tick.yml --event schedule` has returned no run since `tick.yml` reached `main` (2026-11-05 10:05 UTC), including after the minute change in D26 and a release at 14:18 UTC; checked again at 18:37 UTC. Manual `workflow_dispatch` runs work. The cause was not found (GitHub does not say why a schedule is not started).
+- **Rule:** the job "Vercel Ticker" on cron-job.org sends `POST https://laptracker-inky.vercel.app/api/tick` with `Authorization: Bearer <CRON_SECRET>` every 15 minutes (30 s timeout, history kept, a notification after 2 failures). It is the scheduler. `tick.yml` stays for manual runs (`phase=tick|before|after`) and keeps its schedule as a second path; the tick is idempotent, so two callers do not duplicate a snapshot.
+- **Proof:** a rehearsal on 2026-11-05 (event 5) ran its Before at 20:30:15 UTC (due 20:26) and its After at 21:00:21 UTC (due 20:56), both `complete`, with no manual call. The job ran several times inside the Before window and there is one snapshot per phase.
+- **Cost:** `CRON_SECRET` lives in three places (Vercel Production, the GitHub secret, the cron-job.org header). A rotation must change all three and redeploy production; a mismatch makes the job fail with 401 (the app records the failed attempt in `auth_attempts`).
+- **Not done:** a tick log table (a heartbeat row per call) and an alert when no tick arrived for an hour; both stay suggestions.

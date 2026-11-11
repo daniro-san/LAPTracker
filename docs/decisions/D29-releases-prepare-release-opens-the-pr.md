@@ -1,0 +1,12 @@
+## D29 — Releases: Prepare release opens the PR, the merge stays manual, publishing is automatic (2026-11-05, 08j)
+
+Why: a release was three manual steps (PR, merge, `gh release create`) and the tag was easy to forget. The owner wants to choose when to release and to merge by hand, and everything else to follow.
+
+- **Two workflows, not one.** `release-prepare` (`workflow_dispatch`, input `bump`) opens the PR `dev → main` titled `release: vX.Y.Z` with the generated notes. `release-publish` (push to `main`) tags the merge commit and creates the GitHub Release. They are separate because a merge happens between them, and a workflow cannot wait for a human without holding a runner; a `push` to `main` is the event that says the merge happened.
+- **The merge stays manual.** The `main` ruleset allows only merge commits and requires `check`. Prepare release never pushes to `main` or `dev` and never merges; the owner reads the notes and the diff, then merges. Auto-merge is not enabled.
+- **Version source is the latest `v*` tag.** `package.json` stays at 0.1.0 and is not touched: bumping it would need a commit on `dev` per release (a second PR, or a push to a protected branch), and nothing reads it. Only strict `vX.Y.Z` tags count, sorted by version (so `v0.10.0` is above `v0.2.10`).
+- **Publish trigger.** The merge commit's title is the PR title (`merge_commit_title = PR_TITLE`), so it starts with `release: v`. The step matches `^release: vX.Y.Z` on any line, so GitHub's default merge message (title on line 3) also works. It is idempotent: if the tag exists it does nothing, and a failed lookup other than 404 fails the run. The tag points at the pushed commit SHA, not at the moving `main`.
+- **No deploy logic.** Vercel deploys `main` and runs `pnpm db:migrate` in its build (`vercel.json`).
+- **Setting needed.** "Allow GitHub Actions to create and approve pull requests" must be on, or `gh pr create` fails with the `GITHUB_TOKEN`. `default_workflow_permissions` stays `read`; each workflow declares its own permissions.
+- **Required check.** A PR opened with `GITHUB_TOKEN` starts no new workflow runs, but a required status check is read from the head commit, and `ci` already ran on the push to `dev` (check run `check`, from github-actions, the integration the ruleset names). If the newest push to `dev` has no finished `check`, the release PR will wait on it.
+- **Limit.** Workflows run from the default branch, so Prepare release exists in the Actions tab only after a release carries it to `main`.

@@ -1,0 +1,11 @@
+## D44 — Data correctness: retry status and quota-call retries in the trace, `active` blocked; five limits accepted (2026-11-06, 08zs, owner, issue #123)
+
+- **Fixed: `v1.retry` carries the status.** `OnAttempt` takes the status of the response that caused the retry (`lib/sources/types.ts`; null on the first attempt). `lib/sources/v1.ts` passes it, and the collector writes it as `http_status` on the `v1.retry` line.
+- **Fixed: quota-call retries are counted.** `runTrace` (`lib/queries/admin.ts`) counts `v1.retry` lines with no union id on the quota row (a run makes one quota call) and in the total. `TraceCall.retries` is now always a number. The quota row on the run page shows it instead of a dash.
+- **Fixed: `active` is a blocked roster key.** `BLOCKED_ROSTER_KEYS` (`lib/queries/blocked-keys.ts`) lists `active`, as plan §12.1 already did. It stays in `raw_json` and no read model, route, page, log or message returns it. The owner adds it to the CLAUDE.md hard-rule list.
+- **Accepted: internal-fallback rows stay in deltas (N9), with no UI mark.** Amends D5's "No number in a delta depends on an undocumented endpoint": a delta may use an internal-fallback roster (`source = internal`), which the collector accepts only when it is `live: true` and has the same member data as `/v1`.
+- **Accepted: re-run rows hours apart (N8).** Each side's head shows its own data time (`app/_ui/EventView.tsx`, the alliance page, `app/_ui/Status.tsx`). The caveat: the head shows hh:mm with no day, so a re-run on another day reads like the same day.
+- **Accepted: `hasAvatar` and the avatar route can disagree.** `hasAvatar` comes from the shown roster row, and `/img/avatar/[uid]` serves the newest row's photo. They differ only when a player removes their photo between snapshots; the route does not fall back to a photo the player removed.
+- **Accepted: `calls_used` on re-runs.** `calls_used` is the phase's total spend across attempts, and the quota fields describe the last attempt, so the rehearsal verdict's quota line holds only for a single-attempt phase. A fix would need a per-attempt column and a migration.
+- **Accepted: the banner's query cost is not measured by a session.** The owner reads TTFB in Speed Insights (D36) after a release.
+- **Accepted: the banner shows only the last attempt.** Already recorded in D27 "Limits".

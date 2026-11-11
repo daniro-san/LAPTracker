@@ -18,7 +18,7 @@ import {
 /** 20 alliances × 3 retries × 2 phases (Logging guarantees). */
 export const MAX_UPSTREAM_CALLS = 120;
 export { FRESH_MAX_AGE_MS } from "./collector-rows";
-/** Measured from the start of the run; the route's maxDuration is 120 s (docs/DECISIONS.md D25). */
+/** Measured from the start of the run; the route's maxDuration is 120 s (docs/decisions/D25). */
 export const RUN_DEADLINE_MS = 100_000;
 const CONCURRENCY = 4;
 

@@ -1,0 +1,10 @@
+## D45 — Tick heartbeat: a tick log, a watch route and one alert per silent hour (2026-11-06, 08zt, owner, issue #121)
+
+Supersedes D30's "Not done" line (a tick log table and a no-tick alert), which this entry builds.
+
+- **Log.** `tick_log` (`started_at`, `finished_at` null, `outcome` null; migration 0011). `POST /api/tick` writes the row after `authorize` and the query check pass and **before** `runTick`, so a function that is killed still leaves a row with no `finished_at`; after `runTick` it sets `finished_at` and the outcome (`idle`, `run`, `quota-check`, `rehearsal`). A tick that lost its phase to another caller is `idle` (D43). The insert keeps the newest 700 rows (about 7 days at 96 a day), like `app_errors`.
+- **401 is not a heartbeat.** A tick with the wrong `CRON_SECRET` writes no row, so a secret left behind by a rotation (D30) also ends in the silence alert. `auth_attempts` already records the 401s.
+- **Watcher.** `POST /api/tick/watch` (cron auth, the same limiter as the tick) reads the newest `tick_log.started_at`. When it is more than 60 min old, or no row exists, it claims alert id 2 and posts one admin message: "⚠ No tick for {min} min (last {at}) …", or "⚠ No tick recorded yet …". It takes no snapshot, spends no quota and answers 204. A second cron-job.org job calls it every 15 min.
+- **Cadence.** One alert per silent hour, the same claim as the app-error alert (#103): `app_alerts` loses its `id = 1` CHECK and holds one row per kind (id 1 app error, id 2 tick silence). `claimAlert(db, id, now, gapMs)` in `lib/repo/app-errors.ts` is the one statement; `claimAppErrorAlert` calls it with id 1 and behaves as before.
+- **/admin** shows the last tick's start in server time under Status, and the outcomes of the last five ticks, newest first.
+- **Accepted:** a cron-job.org-wide outage stops both jobs, so no alert fires; cron-job.org emails on its own failures (D30's job notifies after 2 failures). The first watch call after the release that applies 0011 alerts "No tick recorded yet" if no tick has run since; the owner adds the watch job after the first tick row exists.

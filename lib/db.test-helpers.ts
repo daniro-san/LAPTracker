@@ -1,5 +1,5 @@
 // Test-only: a real Postgres (PGlite, in-process WASM) migrated from drizzle/, cast to Db as the
-// Neon driver's type (DECISIONS D19). One instance per test file; truncate between tests.
+// Neon driver's type (docs/decisions/D19). One instance per test file; truncate between tests.
 import { PGlite } from "@electric-sql/pglite";
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/pglite";

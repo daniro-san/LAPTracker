@@ -49,7 +49,7 @@ export default defineConfig(
       "max-depth": ["error", 3],
       "@typescript-eslint/no-explicit-any": "error",
       "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
-      // The dependency rule of docs/ARCHITECTURE.md, linted (plan §11.2, DECISIONS D34).
+      // The dependency rule of docs/ARCHITECTURE.md, linted (plan §11.2, docs/decisions/D34).
       "import-x/no-restricted-paths": [
         "error",
         {

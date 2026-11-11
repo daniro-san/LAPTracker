@@ -152,7 +152,7 @@ export const en = {
     start: "Start",
     end: "End",
   },
-  /** The banner shown while the game's data service does not answer (DECISIONS D27). */
+  /** The banner shown while the game's data service does not answer (docs/decisions/D27). */
   upstream: {
     title: "Game data is delayed",
     body: "The data service is not answering, so these numbers may be out of date.",

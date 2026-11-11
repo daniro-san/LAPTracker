@@ -7,12 +7,12 @@
  */
 export const RUN_STALE_AFTER_MS = 150_000;
 
-/** Roster kills. A member with `kills: null` counts as 0 (DECISIONS D15). */
+/** Roster kills. A member with `kills: null` counts as 0 (docs/decisions/D15). */
 export function sumKills(members: readonly { kills: number | null }[]): number {
   return members.reduce((total, m) => total + (m.kills ?? 0), 0);
 }
 
-/** Roster power, nulls as 0 (DECISIONS D15). The /v1 `power` field equals this in every fixture. */
+/** Roster power, nulls as 0 (docs/decisions/D15). The /v1 `power` field equals this in every fixture. */
 export function sumPower(members: readonly { power: number | null }[]): number {
   return members.reduce((total, m) => total + (m.power ?? 0), 0);
 }
