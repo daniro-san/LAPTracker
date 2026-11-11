@@ -1,6 +1,7 @@
 // The scheduler's decision (plan §3.1), event-driven: scheduled events' rows are created from the env a
 // day ahead; every event (scheduled or rehearsal) carries its own before_at/after_at; one action per tick.
 // The daily roster read (D60) comes last, when nothing else is due.
+import { DAILY_ROSTER_IDS } from "../config/alliances";
 import type { AppContext } from "./app-context";
 import { runDailyRead, type DailyReadSummary } from "./daily-read";
 import type { Db } from "./db";
@@ -24,7 +25,6 @@ import {
   quotaCheckDue,
   rehearsalSlotsDue,
 } from "./schedule";
-import { DAILY_ROSTER_IDS } from "../config/alliances";
 
 export type TickOutcome =
   | { kind: "idle" }

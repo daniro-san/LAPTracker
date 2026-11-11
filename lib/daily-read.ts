@@ -2,6 +2,7 @@
 // each roster as uid/name/power/kills arrays, for the member history page. It is not an event: no events
 // row, no snapshot, no Discord message beyond one admin line when it falls short. No internal fallback
 // (D5 covers event snapshots only): a missed alliance is a gap in the history.
+import { ALLIANCES } from "../config/alliances";
 import { dailyReadQuota } from "./budget";
 import { MAX_UPSTREAM_CALLS, RUN_DEADLINE_MS } from "./collector";
 import { FRESH_MAX_AGE_MS } from "./collector-rows";
@@ -16,7 +17,6 @@ import {
 } from "./repo/daily-reads";
 import { QuotaExhaustedError, type AllianceSnapshotInput, type V1Source } from "./sources/types";
 import { describe } from "./upstream-errors";
-import { ALLIANCES } from "../config/alliances";
 
 const CONCURRENCY = 4;
 
