@@ -83,3 +83,5 @@ Plan changes needed: none.
 - The hosted data has exactly one player in two alliances across events (uid 339985801541) and no player missing from an event, so a capture of "not in a tracked alliance" needs seeded data or a manual round.
 - The player page's title row now holds two controls (`PlayerCompareLink`, `ExactToggle`).
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/222
