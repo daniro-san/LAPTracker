@@ -76,7 +76,7 @@ function Changes({ body, copy }: { body: HistoryCardBody; copy: Dictionary }) {
       <ul>{first.map(row)}</ul>
       {rest.length > 0 && (
         <details>
-          <summary className="inline-flex min-h-11 cursor-pointer items-center text-sm font-medium text-plum">
+          <summary className="text-button inline-flex min-h-11 items-center text-sm font-medium text-plum">
             {fill(copy.members.showAll, { n: body.changed.length })}
           </summary>
           <ul>{rest.map(row)}</ul>
@@ -217,7 +217,7 @@ export function LazyCardBody({
               setLoad({ kind: "waiting" });
               setAttempt((n) => n + 1);
             }}
-            className="drawn-frame-soft inline-flex min-h-11 items-center px-3 text-sm font-medium text-plum"
+            className="drawn-frame-soft tint-button inline-flex min-h-11 items-center px-3 text-sm font-medium text-plum"
           >
             {copy.errors.server.retry}
           </button>

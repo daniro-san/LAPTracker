@@ -201,7 +201,7 @@ export async function AcrossEvents({
       {table(rows.slice(0, SHOWN))}
       {rows.length > SHOWN && (
         <details className="mt-3">
-          <summary className="flex min-h-11 cursor-pointer items-center font-medium text-plum">
+          <summary className="text-button flex min-h-11 items-center font-medium text-plum">
             {fill(l.showAll, { n: rows.length })}
           </summary>
           {table(rows.slice(SHOWN))}

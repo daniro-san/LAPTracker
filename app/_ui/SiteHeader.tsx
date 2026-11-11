@@ -25,8 +25,7 @@ export interface SelectorEvent extends LabeledEvent {
 
 /** Plum-header controls: in the soft drawn frame (paper ink), a paper tint on hover, deeper while
  * pressed or open, so they feel tappable. */
-const CONTROL =
-  "rounded-xs transition-colors duration-150 hover:bg-paper/15 active:bg-paper/25 motion-reduce:transition-none";
+const CONTROL = "tint-button rounded-xs";
 
 function EventSelector({
   events,
@@ -46,7 +45,7 @@ function EventSelector({
   return (
     <Disclosure label={copy.site.events} className="group relative">
       <summary
-        className={`flex min-h-11 cursor-pointer items-center gap-1 whitespace-nowrap px-2 text-sm drawn-frame-soft sm:px-3 font-medium group-open:bg-paper/20 [&::-webkit-details-marker]:hidden ${CONTROL}`}
+        className={`flex min-h-11 items-center gap-1 whitespace-nowrap px-2 text-sm drawn-frame-soft sm:px-3 font-medium group-open:bg-paper/20 [&::-webkit-details-marker]:hidden ${CONTROL}`}
       >
         {current ? (
           <>

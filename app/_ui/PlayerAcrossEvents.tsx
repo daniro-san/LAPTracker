@@ -278,7 +278,7 @@ export async function PlayerAcrossEvents({
       <ul>{newestFirst.slice(0, SHOWN)}</ul>
       {newestFirst.length > SHOWN && (
         <details className="mt-3">
-          <summary className="flex min-h-11 cursor-pointer items-center font-medium text-plum">
+          <summary className="text-button flex min-h-11 items-center font-medium text-plum">
             {fill(l.showAll, { n: newestFirst.length })}
           </summary>
           <ul>{newestFirst.slice(SHOWN)}</ul>

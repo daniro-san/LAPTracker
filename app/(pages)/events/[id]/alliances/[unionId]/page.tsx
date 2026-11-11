@@ -136,13 +136,13 @@ function Summary({
         ))}
       </dl>
       <details className="group/more border-t border-rule px-2 sm:px-4">
-        <summary className="flex min-h-11 cursor-pointer items-center gap-3 text-sm [&::-webkit-details-marker]:hidden">
+        <summary className="flex min-h-11 items-center gap-3 text-sm [&::-webkit-details-marker]:hidden">
           <span className="inline-flex items-baseline gap-2 text-base">
             <span className={LABEL}>{copy.ledger.rank}</span>
             <Rank n={ranks.might.after ?? ranks.might.before} move={ranks.might.move} />
           </span>
           <FreshDots before={fresh(before)} after={fresh(after)} copy={copy} />
-          <span className="drawn-frame-soft ml-auto inline-flex min-h-11 items-center gap-1 px-3 font-medium text-plum group-open/more:bg-plum/10">
+          <span className="drawn-frame-soft tint-button ml-auto inline-flex min-h-11 items-center gap-1 px-3 font-medium text-plum group-open/more:bg-plum/10">
             {copy.ledger.details}
             <span
               aria-hidden="true"

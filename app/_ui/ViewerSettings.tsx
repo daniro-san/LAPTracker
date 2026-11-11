@@ -189,7 +189,7 @@ export function ViewerSettings({ publicPage = true }: { publicPage?: boolean }) 
       className="group relative"
       onToggle={(e) => setOpen(e.currentTarget.open)}
     >
-      <summary className="drawn-frame-soft grid size-11 cursor-pointer place-items-center rounded-xs transition-colors duration-150 group-open:bg-paper/20 hover:bg-paper/15 active:bg-paper/25 motion-reduce:transition-none [&::-webkit-details-marker]:hidden">
+      <summary className="drawn-frame-soft tint-button grid size-11 place-items-center rounded-xs group-open:bg-paper/20 [&::-webkit-details-marker]:hidden">
         <Gear />
         <span className="sr-only">{copy.site.settings}</span>
       </summary>

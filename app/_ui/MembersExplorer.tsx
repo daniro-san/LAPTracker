@@ -44,7 +44,7 @@ const STATUS = {
 } as const;
 
 const CHIP =
-  "drawn-frame-soft inline-flex min-h-11 shrink-0 items-center gap-1 px-3 text-body-sm font-medium";
+  "drawn-frame-soft tint-button inline-flex min-h-11 shrink-0 items-center gap-1 px-3 text-body-sm font-medium";
 
 type Field = "power" | "kills" | "lv";
 
@@ -130,7 +130,7 @@ function SortChips({
             key={s.key}
             type="button"
             aria-pressed={on}
-            className={`${CHIP} ${on ? "bg-plum text-paper" : "text-plum hover:bg-plum/10"}`}
+            className={`${CHIP} ${on ? "bg-plum text-paper" : "text-plum"}`}
             onClick={() => set(on ? { desc: !f.desc } : { sort: s.key, desc: s.key !== "name" })}
           >
             {s.label(copy)}
@@ -164,7 +164,7 @@ function ActiveChips({
   const ranged = f.lo > 0 || f.hi < steps.length - 1;
   const named = f.name.trim() !== "";
   if (!ranged && !named) return null;
-  const chip = `${CHIP} text-plum hover:bg-plum/10`;
+  const chip = `${CHIP} text-plum`;
   return (
     <div className="flex flex-wrap gap-2">
       {named && (

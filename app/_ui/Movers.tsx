@@ -181,7 +181,7 @@ export function Movers({ scopes }: { scopes: MoverScope[] }) {
               tabIndex={t.key === current?.key ? 0 : -1}
               onClick={() => setActive(t.key)}
               onKeyDown={(e) => onKey(e, i)}
-              className="inline-flex min-h-11 flex-wrap items-center justify-center gap-x-1 border-r border-rule px-1 text-center last:border-r-0 aria-selected:bg-plum/10 aria-selected:shadow-[inset_0_-3px_0_var(--color-plum)]"
+              className="tint-button inline-flex min-h-11 flex-wrap items-center justify-center gap-x-1 border-r border-rule px-1 text-center last:border-r-0 aria-selected:bg-plum/10 aria-selected:shadow-[inset_0_-3px_0_var(--color-plum)]"
             >
               <Head word={copy.ledger[t.word]} up={t.up} copy={copy} mark={t.word} />
             </button>

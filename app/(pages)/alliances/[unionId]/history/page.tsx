@@ -115,7 +115,7 @@ function Filters({
       <Link
         href={href(unionId, key)}
         aria-current={show === key ? "page" : undefined}
-        className="drawn-frame-soft inline-flex min-h-11 items-center px-3 text-sm font-medium text-plum aria-[current=page]:bg-plum/10"
+        className="drawn-frame-soft tint-button inline-flex min-h-11 items-center px-3 text-sm font-medium text-plum aria-[current=page]:bg-plum/10"
       >
         {label}
       </Link>

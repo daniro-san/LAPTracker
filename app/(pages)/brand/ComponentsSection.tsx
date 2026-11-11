@@ -23,6 +23,7 @@ import {
 import { YarnCorner } from "@/lib/brand/components/YarnCorner";
 import { copy, fill } from "@/lib/copy";
 
+import { ButtonStates } from "./ButtonStates";
 import { MoversSample } from "./MoversSample";
 import { Section, Spec } from "./parts";
 
@@ -224,6 +225,9 @@ export function ComponentsSection() {
         <Spec name={t.seal.name} use={t.seal.use}>
           <SealButton label={t.seal.label} />
         </Spec>
+        <div className="sm:col-span-3">
+          <ButtonStates />
+        </div>
         <div className="sm:col-span-2">
           <Chips />
         </div>

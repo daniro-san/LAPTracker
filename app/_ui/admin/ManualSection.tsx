@@ -173,7 +173,7 @@ function RecordAgain({
         disabled={busy !== null}
         aria-label={busy === a.id ? undefined : fill(m.againName, { phase: a.name ?? a.label })}
         onClick={onStart}
-        className="inline-flex min-h-11 cursor-pointer items-center px-2 font-medium text-ink/80 underline disabled:cursor-wait disabled:opacity-70"
+        className="text-button inline-flex min-h-11 cursor-pointer items-center px-2 font-medium text-ink/80 underline disabled:cursor-wait disabled:opacity-70"
       >
         {busy === a.id ? t.running : m.again}
       </button>
@@ -219,7 +219,7 @@ function RoundCard({
       <ul className="mb-4 grid grid-cols-2 gap-2 sm:max-w-md sm:gap-6">{snapshots}</ul>
       {open}
       <details className="mt-1">
-        <summary className="inline-flex min-h-11 cursor-pointer items-center font-medium text-plum underline">
+        <summary className="text-button inline-flex min-h-11 items-center font-medium text-plum underline">
           {m.options}
         </summary>
         <EditRound

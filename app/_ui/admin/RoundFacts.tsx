@@ -52,7 +52,7 @@ export function RoundFacts({ manual }: { manual: RoundView }) {
 export function ClosedRound({ manual }: { manual: RoundView }) {
   return (
     <details className="group/round mb-4 border border-rule">
-      <summary className="flex min-h-11 cursor-pointer flex-wrap items-center gap-2 px-4 py-2 [&::-webkit-details-marker]:hidden">
+      <summary className="tint-button flex min-h-11 flex-wrap items-center gap-2 px-4 py-2 [&::-webkit-details-marker]:hidden">
         <span className="min-w-0 break-words font-subhead text-display-sm">{manual.name}</span>
         <StateChip status="complete">{m.complete}</StateChip>
         <span

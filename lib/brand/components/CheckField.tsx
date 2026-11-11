@@ -18,7 +18,7 @@ export function CheckField({
 } & Omit<InputHTMLAttributes<HTMLInputElement>, "type" | "className">) {
   if (variant === "chip") {
     return (
-      <label className="drawn-frame-soft inline-flex min-h-11 shrink-0 cursor-pointer items-center gap-2 px-3 text-body-sm font-medium text-plum transition-colors duration-150 hover:bg-plum/10 motion-reduce:transition-none">
+      <label className="drawn-frame-soft tint-button inline-flex min-h-11 shrink-0 items-center gap-2 px-3 text-body-sm font-medium text-plum">
         <input type="checkbox" className="drawn-check size-[18px]" {...input} />
         {label}
       </label>

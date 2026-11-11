@@ -152,11 +152,11 @@ export function MoreBar({
   return (
     <details className={`group/more relative z-10 col-span-full ${box}`}>
       <summary
-        className={`relative z-10 flex min-h-11 cursor-pointer items-center gap-3 text-sm [&::-webkit-details-marker]:hidden ${bar}`}
+        className={`relative z-10 flex min-h-11 items-center gap-3 text-sm [&::-webkit-details-marker]:hidden ${bar}`}
       >
         {row.summary}
         {row.detail && (
-          <span className="drawn-frame-soft ml-auto inline-flex min-h-11 items-center gap-1 px-3 font-medium text-plum group-open/more:bg-plum/10">
+          <span className="drawn-frame-soft tint-button ml-auto inline-flex min-h-11 items-center gap-1 px-3 font-medium text-plum group-open/more:bg-plum/10">
             <span>
               {copy.ledger.details}
               {row.lead && <span className="sr-only">, {row.lead}</span>}
