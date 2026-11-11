@@ -139,7 +139,7 @@ export function SiteHeader({
       {publicPage && (
         <a
           href="#main"
-          className="drawn-frame-soft sr-only items-center bg-paper px-3 font-medium text-ink focus:not-sr-only focus:absolute focus:top-2 focus:left-3 focus:z-50 focus:flex focus:min-h-11 sm:focus:left-6"
+          className="drawn-frame-soft tint-button sr-only items-center bg-paper px-3 font-medium text-ink focus:not-sr-only focus:absolute focus:top-2 focus:left-3 focus:z-50 focus:flex focus:min-h-11 sm:focus:left-6"
         >
           {copy.site.skip}
         </a>
