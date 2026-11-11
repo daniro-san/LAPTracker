@@ -14,16 +14,16 @@ Issue 233.
 - None.
 
 ## Verified
-Local Postgres (ports 54152 / 54252), seed with `--with-states`, `pnpm dev:local -p 3152`, Chrome through playwright-core. Page: `/events/compare?a=2&b=3` with no filter (alliance), `&alliance=67109944` (member), `&player=340024664389` (player). x ranges in px, `left-right`:
+Local Postgres (ports 54152 / 54252), seed with `--with-states`, `pnpm dev:local -p 3152`, Chrome through playwright-core. Page: `/events/compare?a=2&b=3` with no filter (alliance card, first `li`), `&alliance=67109944` (member card, second `li`, after the alliance's own card), `&player=340024664389` (player). x ranges in px, `left-right`:
 
 1280 px, before (difference line):
 - alliance: label 196-450, Might 462-573 (head Might is 585-743), Kills 585-743, Members 755-914 (head Members is 926-1084); nothing sits under the Members head.
-- member: same as alliance.
+- member (first member card on the `&alliance=` page, 2 figures): label 196-513, Might diff 525-664 (head Might is 676-874), Kills diff 676-874 (head Kills is 886-1084).
 - player: label 196-513, Might diff 525-664 (head Might is 676-874), Kills diff 676-874 (head Kills is 886-1084).
 
 1280 px, after (difference line):
 - alliance: label 462-573, Might 585-743, Kills 755-914, Members 926-1084. Heads: Might 585-743, Kills 755-914, Members 926-1084.
-- member: identical to alliance.
+- member: label 525-664, Might 676-874, Kills 886-1084. Heads: Might 676-874, Kills 886-1084.
 - player: label 525-664, Might 676-874, Kills 886-1084. Heads: Might 676-874, Kills 886-1084.
 
 360 px: the x ranges of every cell of all three cards are identical before and after (for example the player difference row, 73-196 and 208-331).
