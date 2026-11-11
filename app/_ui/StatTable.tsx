@@ -95,7 +95,8 @@ function MetricCell({ m, shared }: { m: StatMetric; shared: boolean }) {
 }
 
 /** The rank sits on the name's first baseline (issue 125); the picture is centred on that first line
- * (a box one name line tall), so a one-line lead keeps rank, picture and name on one centre line. */
+ * (a box one name line tall), so a one-line lead keeps rank, picture and name on one centre line. The
+ * picture overflows that box, so the row sets its own 44 px minimum (StatTable's `sm:min-h-11`). */
 function Lead({ row }: { row: StatRow }) {
   return (
     <div className="col-span-2 flex min-w-0 items-baseline gap-2 border-b border-rule pb-2 sm:col-span-1 sm:border-0 sm:pb-0">
@@ -152,7 +153,7 @@ export function MoreBar({
   return (
     <details className={`group/more relative z-10 col-span-full ${box}`}>
       <summary
-        className={`relative z-10 flex min-h-11 cursor-pointer items-center gap-3 text-sm [&::-webkit-details-marker]:hidden ${bar}`}
+        className={`details-bar relative z-10 flex min-h-11 cursor-pointer items-center gap-3 text-sm [&::-webkit-details-marker]:hidden ${bar}`}
       >
         {row.summary}
         {row.detail && (
@@ -221,7 +222,7 @@ export function StatTable({
             key={row.key}
             id={row.anchor}
             style={grid}
-            className={`stat-card relative mb-3 grid scroll-mt-20 grid-cols-1 gap-y-1.5 border border-rule p-3 data-[mine]:bg-yarn/5 data-[mine]:shadow-[inset_3px_0_0_var(--color-yarn)] sm:mb-0 sm:grid-cols-[var(--cols)] sm:gap-x-3 sm:border-0 sm:border-b sm:py-2 ${row.tint ?? ""}`}
+            className={`stat-card relative mb-3 grid scroll-mt-20 grid-cols-1 gap-y-1.5 border border-rule p-3 data-[mine]:bg-yarn/5 data-[mine]:shadow-[inset_3px_0_0_var(--color-yarn)] sm:mb-0 sm:min-h-11 sm:grid-cols-[var(--cols)] sm:content-center sm:gap-x-3 sm:border-0 sm:border-b sm:py-2 ${row.tint ?? ""}`}
           >
             <Lead row={row} />
             {row.metrics.map((m, i) => (
