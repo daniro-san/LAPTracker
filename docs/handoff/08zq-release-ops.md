@@ -42,3 +42,5 @@ Plan changes needed: none
 - 08zv appends D47 at the end of docs/DECISIONS.md; both must be on `dev` before the split starts (D46, D47).
 - smoke.yml and the CONTRIBUTING.md Workflows bullet cite "D46"; keep the reference valid in the split.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/219
