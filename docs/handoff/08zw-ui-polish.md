@@ -38,6 +38,7 @@ DESIGN.md: updated the lines for focus ring, `stat-table`, `history-row`, `detai
 ## Open issues
 
 - Item 5 is not verified in a real Firefox (see Deviations). Before merging, open any page with a framed button in Firefox. If no frame appears around "Details ▾" or the header buttons, restore the 1 px border fallback. The removed rules were `.drawn-frame, .drawn-frame-soft { border: 1px solid currentColor }` and `::before { display: none }` under `@supports not (-webkit-mask-box-image: none)`.
+  - Resolved 2026-11-11, after the merge: Firefox still could not start on this Mac, even outside the command sandbox (same "Could not find profile folder"), so the owner chose the 1 px border fallback. A follow-up PR restored those rules and removed the eight-layer mask block, its two comments and the DESIGN.md wording. Item 5 ends in the accepted fallback, as the owner's decision on issue 125 allowed. `08zw-frame-nineslice-chrome-sim-360.png` now shows code that is no longer on `dev`.
 - Firefox cannot start on this Mac until `~/Library/Application Support/Firefox` can be created. That folder is under macOS privacy protection.
 - Follow-up, not changed: the row lead of an unranked alliance with no move reads `#— —` (Rank plus RankMove) outside Details.
 - Follow-up, not changed: with only a Before, the After column of the Details table repeats the Before figures (`app/_ui/event-rows.ts:57`).

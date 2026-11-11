@@ -193,8 +193,7 @@ body {
   /* Drawn frame (DESIGN.md "Drawing style"): a two-stroke pen box around secondary buttons and status
      chips, from public/brand/frame*.svg used as a nine-slice mask, so it stretches to any width and takes
      the element's text colour. Only -webkit-mask-box-image tints a nine-slice in Chrome and Safari;
-     elsewhere (Firefox) eight standard mask layers draw the same nine-slice (below). The tails reach 3 px
-     outside the element. */
+     elsewhere a plain 1 px border stands in. The tails reach 3 px outside the element. */
   .drawn-frame,
   .drawn-frame-soft {
     position: relative;
@@ -212,7 +211,7 @@ body {
     -webkit-mask-box-image: url("/brand/frame-soft.svg") 12 / 6px stretch;
   }
   /* Cards below 640 px (StatTable, search results) wear the soft drawn frame too (owner, 2026-11-05);
-     the >= 640 px table keeps its plain 1 px rules. Without -webkit-mask-box-image, see the block below. */
+     the >= 640 px table keeps its plain 1 px rules. Without the mask the plain border stays. */
   @media (max-width: 639.98px) {
     @supports (-webkit-mask-box-image: none) {
       .stat-card {
@@ -250,67 +249,14 @@ body {
       }
     }
   }
-  /* Firefox has no mask-border (issue 125): the same nine-slice from eight standard mask layers, each a
-     piece of the frame file cut out with an SVG view fragment: four 12-unit corners drawn at 6 px, and
-     four edges stretched between them. */
   @supports not (-webkit-mask-box-image: none) {
+    .drawn-frame,
+    .drawn-frame-soft {
+      border: 1px solid currentColor;
+    }
     .drawn-frame::before,
-    .drawn-frame-soft::before,
-    .stat-card::before {
-      mask-position:
-        left top,
-        right top,
-        left bottom,
-        right bottom,
-        6px top,
-        6px bottom,
-        left 6px,
-        right 6px;
-      mask-size:
-        6px 6px,
-        6px 6px,
-        6px 6px,
-        6px 6px,
-        calc(100% - 12px) 6px,
-        calc(100% - 12px) 6px,
-        6px calc(100% - 12px),
-        6px calc(100% - 12px);
-      mask-repeat: no-repeat;
-    }
-    .drawn-frame::before {
-      mask-image:
-        url("/brand/frame.svg#svgView(viewBox(0,0,12,12))"),
-        url("/brand/frame.svg#svgView(viewBox(36,0,12,12))"),
-        url("/brand/frame.svg#svgView(viewBox(0,36,12,12))"),
-        url("/brand/frame.svg#svgView(viewBox(36,36,12,12))"),
-        url("/brand/frame.svg#svgView(viewBox(12,0,24,12);preserveAspectRatio(none))"),
-        url("/brand/frame.svg#svgView(viewBox(12,36,24,12);preserveAspectRatio(none))"),
-        url("/brand/frame.svg#svgView(viewBox(0,12,12,24);preserveAspectRatio(none))"),
-        url("/brand/frame.svg#svgView(viewBox(36,12,12,24);preserveAspectRatio(none))");
-    }
-    .drawn-frame-soft::before,
-    .stat-card::before {
-      mask-image:
-        url("/brand/frame-soft.svg#svgView(viewBox(0,0,12,12))"),
-        url("/brand/frame-soft.svg#svgView(viewBox(36,0,12,12))"),
-        url("/brand/frame-soft.svg#svgView(viewBox(0,36,12,12))"),
-        url("/brand/frame-soft.svg#svgView(viewBox(36,36,12,12))"),
-        url("/brand/frame-soft.svg#svgView(viewBox(12,0,24,12);preserveAspectRatio(none))"),
-        url("/brand/frame-soft.svg#svgView(viewBox(12,36,24,12);preserveAspectRatio(none))"),
-        url("/brand/frame-soft.svg#svgView(viewBox(0,12,12,24);preserveAspectRatio(none))"),
-        url("/brand/frame-soft.svg#svgView(viewBox(36,12,12,24);preserveAspectRatio(none))");
-    }
-    @media (max-width: 639.98px) {
-      .stat-card {
-        border-color: transparent;
-      }
-      .stat-card::before {
-        content: "";
-        position: absolute;
-        inset: -3px;
-        pointer-events: none;
-        background: currentColor;
-      }
+    .drawn-frame-soft::before {
+      display: none;
     }
   }
 
