@@ -70,3 +70,5 @@ Plan changes needed: none in `docs/IMPLEMENTATION_PLAN.md`. `docs/DECISIONS.md` 
 - `next dev` with only the Neon variables set logs `Invalid environment` for `SERVER_TZ`, `EVENT_WEEKDAY`, `EVENT_TIME`, `SNAPSHOT_BEFORE` and the rest of the schedule variables, so the CONTRIBUTING placeholders must include those (a working set is in `lib/app-context.test-helpers.ts`, `TEST_ENV`).
 - Both image routes now log `image.fetch_failed` on a failed upstream fetch. With the upstream base URLs pointed at `127.0.0.1:9`, a local page that shows a badge or photo will log these lines; that is expected, not a bug.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/216
