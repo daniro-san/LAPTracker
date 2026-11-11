@@ -136,7 +136,7 @@ function Summary({
         ))}
       </dl>
       <details className="group/more border-t border-rule px-2 sm:px-4">
-        <summary className="flex min-h-11 cursor-pointer items-center gap-3 text-sm [&::-webkit-details-marker]:hidden">
+        <summary className="details-bar flex min-h-11 cursor-pointer items-center gap-3 text-sm [&::-webkit-details-marker]:hidden">
           <span className="inline-flex items-baseline gap-2 text-base">
             <span className={LABEL}>{copy.ledger.rank}</span>
             <Rank n={ranks.might.after ?? ranks.might.before} move={ranks.might.move} />

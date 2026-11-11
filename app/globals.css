@@ -37,12 +37,13 @@ html {
   outline: 2px solid currentColor;
   outline-offset: 2px;
 }
-/* A Details bar (MoreBar, the alliance Summary band): the keyboard ring goes round the framed Details
-   control only, never the whole bar, also when a key press follows a click or a tap (issue 125). */
-summary:focus-visible:has(> .drawn-frame-soft) {
+/* A Details bar (`details-bar`: MoreBar, the alliance Summary band): the keyboard ring goes round the
+   framed Details control only, never the whole bar, also when a key press follows a click or a tap
+   (issue 125). Other summaries with a framed child (the closed round on /admin) keep the global ring. */
+summary.details-bar:focus-visible:has(> .drawn-frame-soft) {
   outline: none;
 }
-summary:focus-visible > .drawn-frame-soft {
+summary.details-bar:focus-visible > .drawn-frame-soft {
   outline: 2px solid var(--plum);
   outline-offset: 2px;
 }

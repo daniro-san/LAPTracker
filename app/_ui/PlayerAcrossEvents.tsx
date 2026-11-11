@@ -126,7 +126,8 @@ function RowLead({
   );
 }
 
-/** A line of changes: `delta(f)` per figure, the percent relative to `base(f)` (none for Level). */
+/** A line of changes: `delta(f)` per figure, the percent relative to `base(f)` (none for Level). The
+ * percent stays under the change up to 768 px: the Details column leaves the figures about 73 px at 640. */
 function ChangeLine({
   head,
   delta,
@@ -141,7 +142,7 @@ function ChangeLine({
       head={head}
       cells={STATS.map((f) => (
         <span key={f} className="text-sm">
-          <Delta delta={delta(f)} base={f === "lv" ? null : base(f)} stack />
+          <Delta delta={delta(f)} base={f === "lv" ? null : base(f)} stack="md" />
         </span>
       ))}
     />

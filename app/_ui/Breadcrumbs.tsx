@@ -16,7 +16,8 @@ export async function Breadcrumbs({ crumbs }: { crumbs: Crumb[] }) {
   return (
     <nav aria-label={copy.site.breadcrumb} className="mb-1 text-base">
       {/* Inline text, so a long alliance name breaks inside the name (issue 125). Lines are 44 px and
-          each link is padded to fill its line, as min-height does not apply to inline boxes. */}
+          each link is padded to fill its line, as min-height does not apply to inline boxes. The side
+          padding with an equal negative margin keeps a short crumb ("Sổ", "台帳") 44 px wide. */}
       <ol className="leading-11">
         {crumbs.map((c, i) => (
           <li key={c.key} className="inline">
@@ -28,7 +29,7 @@ export async function Breadcrumbs({ crumbs }: { crumbs: Crumb[] }) {
             {c.href ? (
               <Link
                 href={c.href}
-                className="py-3 font-medium text-plum underline-offset-2 *:mr-1.5 *:align-middle hover:underline"
+                className="-mx-3.5 px-3.5 py-3 font-medium text-plum underline-offset-2 *:mr-1.5 *:align-middle hover:underline"
               >
                 {c.label}
               </Link>
