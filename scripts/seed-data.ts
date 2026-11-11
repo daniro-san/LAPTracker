@@ -13,6 +13,8 @@ export interface BaseMember {
   kills: number;
   lv: number;
   avatarUrl: string | null;
+  rankCode: number | null;
+  rankLabel: string | null;
 }
 export interface BaseAlliance {
   unionId: number;
@@ -56,6 +58,8 @@ export function loadBase(): BaseAlliance[] {
         kills: Number(m.kills ?? 0),
         lv: Number(m.lv ?? 1),
         avatarUrl: photoUrl(typeof m.avatar_url === "string" ? m.avatar_url : null),
+        rankCode: typeof m.rank_code === "number" ? m.rank_code : null,
+        rankLabel: typeof m.rank_label === "string" ? m.rank_label : null,
       })),
     }))
     .sort(

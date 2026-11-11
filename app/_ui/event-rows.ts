@@ -27,11 +27,17 @@ export interface ComparisonRow {
   rank: number | null;
 }
 
-/** The earlier entry of a name history that is not the current one (plan §3.8). */
-export function formerlyOf(history: NameHistoryEntry[] | undefined): NameHistoryEntry | null {
-  if (!history || history.length < 2) return null;
-  const sorted = [...history].sort((a, b) => b.lastSeen.getTime() - a.lastSeen.getTime());
-  return sorted[1] ?? null;
+/** The newest name seen before the one the row shows (plan §3.8); null for the alliance's first name. */
+export function formerlyOf(
+  history: NameHistoryEntry[] | undefined,
+  tag: string,
+  name: string,
+): NameHistoryEntry | null {
+  const byFirstSeen = [...(history ?? [])].sort(
+    (a, b) => a.firstSeen.getTime() - b.firstSeen.getTime(),
+  );
+  const shown = byFirstSeen.findIndex((e) => e.tag === tag && e.name === name);
+  return shown > 0 ? (byFirstSeen[shown - 1] ?? null) : null;
 }
 
 const usable = (cell: AllianceCell | undefined) => cell?.isFresh === true && !cell.failed;
@@ -177,14 +183,16 @@ export function comparisonRows(
     const b = before?.alliances.find((a) => a.unionId === unionId);
     const a = after?.alliances.find((x) => x.unionId === unionId);
     const rowRanks = ranksFor(b, a, ranks.get(unionId));
+    const tag = a?.tag ?? b?.tag ?? String(unionId);
+    const name = a?.name ?? b?.name ?? "";
     return {
       unionId,
-      tag: a?.tag ?? b?.tag ?? String(unionId),
-      name: a?.name ?? b?.name ?? "",
+      tag,
+      name,
       before: b,
       after: a,
       metrics: metricsFor(b, a, changes.get(unionId), copy),
-      formerly: formerlyOf(names.get(unionId)),
+      formerly: formerlyOf(names.get(unionId), tag, name),
       ranks: rowRanks,
       rank: currentRank(rowRanks.might, after !== undefined),
     };
