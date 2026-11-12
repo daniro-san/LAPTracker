@@ -39,10 +39,10 @@ export const adminCopy = {
     quotaOk: "OK",
     quotaLow: "Low · under {n}",
     quotaUnknown: "Unknown",
-    quotaNote: "After the last run, {at}",
+    quotaNote: "Last read {at}",
     /** The reading is from an earlier UTC day, when the quota was another one (it resets every UTC day). */
     quotaOld: "Not read today",
-    quotaNoteOld: "Last read after the run of {at}; today's first run reads it again.",
+    quotaNoteOld: "Last read {at}; today's first run reads it again.",
     quotaNone: "No run has reported it yet.",
     running: "Running now",
     nothing: "Nothing",

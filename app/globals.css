@@ -304,27 +304,38 @@ body {
   /* Controls too small or too plain for a full button (issue 232): chips, tabs, header controls, card
      heads. A tint of the text colour laid over whatever background the control has (so it also shows on
      a selected or open one), deeper while pressed. A summary's framed Details control tints when the
-     whole bar is hovered or pressed. Hover only where the device hovers, so a tap leaves no tint. */
+     whole bar is hovered or pressed. Hover only where the device hovers, so a tap leaves no tint.
+     The tint is an ::after layer of currentColor at a low opacity, behind the content (isolation), and
+     nothing at rest (owner, 2026-11-12): the earlier color-mix(currentColor var(--tint), transparent)
+     background painted solid text-coloured boxes in iOS WebKit (Safari, Brave). ::before stays free for
+     the drawn frame. */
   .tint-button {
-    --tint: 0%;
-    background-image: linear-gradient(
-      color-mix(in srgb, currentColor var(--tint), transparent),
-      color-mix(in srgb, currentColor var(--tint), transparent)
-    );
+    position: relative;
+    isolation: isolate;
   }
-  .tint-button[data-state="hover"] {
-    --tint: 10%;
+  .tint-button::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    border-radius: inherit;
+    background-color: currentColor;
+    opacity: 0;
+  }
+  .tint-button[data-state="hover"]::after {
+    opacity: 0.1;
   }
   @media (hover: hover) {
-    .tint-button:not(:disabled):hover,
-    summary:hover > .tint-button {
-      --tint: 10%;
+    .tint-button:not(:disabled):hover::after,
+    summary:hover > .tint-button::after {
+      opacity: 0.1;
     }
   }
-  .tint-button:not(:disabled):active,
-  summary:active > .tint-button,
-  .tint-button[data-state="press"] {
-    --tint: 20%;
+  .tint-button:not(:disabled):active::after,
+  summary:active > .tint-button::after,
+  .tint-button[data-state="press"]::after {
+    opacity: 0.2;
   }
   /* Text controls (a summary or button that reads as a link): underlined on hover, a thicker line if
      it is already underlined; pressed like a text link (the unlayered rule at the end of this file). */
