@@ -4,10 +4,18 @@ import { guideCopy } from "./copy-guide";
 
 export const adminCopy = {
   title: "Admin",
-  nav: { label: "Admin", overview: "Overview", runs: "Runs", errors: "App errors" },
+  nav: {
+    label: "Admin",
+    overview: "Overview",
+    runs: "Runs",
+    errors: "App errors",
+    logout: "Log out",
+  },
   pin: {
     label: "Admin PIN",
     prompt: "Enter the admin PIN to see this page.",
+    changed: "The admin PIN has changed. Enter the new PIN to see this page.",
+    expired: "Your admin session has ended. Enter the PIN to see this page.",
     unlock: "Unlock",
     checking: "Checking…",
     wrong: "Wrong PIN.",
@@ -139,7 +147,7 @@ export const adminCopy = {
       daily_read_not_retryable: "Today's roster read has not failed, or is already running again.",
       rate_limited: "Too many attempts. Wait a few minutes.",
       pin_locked: "PIN entry is locked for an hour.",
-      unauthorized: "Wrong PIN. Reload and enter it again.",
+      unauthorized: "Wrong PIN, or the PIN has changed. Press again to enter it.",
     } as Record<string, string>,
   },
   manual: {

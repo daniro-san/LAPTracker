@@ -113,7 +113,7 @@ A snapshot with any stale or failed alliance is **partly done** (⚠), never com
 
 Use this when the scheduler did not run, or to record a Before snapshot early on a weekday.
 
-1. Open `/admin` and enter the admin PIN.
+1. Open `/admin` and enter the admin PIN. The session lasts 7 days; **Log out** in the admin menu ends it sooner. When the PIN has been changed, every open `/admin` page logs itself out within about 20 seconds of the new PIN going live (the next deployment), with "The admin PIN has changed. Enter the new PIN to see this page."; enter the new one.
 2. Under **Run something now**, press **Before** or **After**.
 3. Read the confirmation (it names the cost) and confirm.
 4. The page shows **A run is in progress** and checks every few seconds. It closes within about 100 seconds. The result appears at the top: ✓ done, ⚠ partly done or ✗ failed, with the requests used, the stale count and the failed count.

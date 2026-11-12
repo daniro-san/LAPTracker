@@ -20,6 +20,15 @@ export function savedPin(): string | null {
   }
 }
 
+/** Drops the saved PIN: the server refused it (401), or the pages locked again (the PIN changed). */
+export function forgetPin(): void {
+  try {
+    sessionStorage.removeItem(KEY);
+  } catch {
+    // Private mode: nothing was saved.
+  }
+}
+
 const t = copy.admin.pin;
 
 const MESSAGES: Record<number, string> = { 401: t.wrong, 429: t.tooMany };
