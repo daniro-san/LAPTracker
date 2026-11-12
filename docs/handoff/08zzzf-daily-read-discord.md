@@ -51,3 +51,5 @@ Plan changes needed: none.
 - The daily read's admin message lives in `lib/notify-daily.ts`; `lib/notify.ts` is at the 300-line limit, so new message builders should go in their own file and import `allianceLabel`, `STATE_WORD`, `STATE_ICON` from `notify.ts`.
 - `tsconfig.json` `lib` is ES2023: `Map.groupBy` / `Object.groupBy` do not type-check.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/240
