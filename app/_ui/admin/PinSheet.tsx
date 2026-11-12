@@ -1,7 +1,7 @@
 "use client";
 
-// The PIN pattern (plan Phase 5): a bottom sheet (a <dialog>, app/_ui/admin/sheet.ts),
-// `inputmode="numeric"`, asked once per session, with a visible checking / failed state. The PIN lives in
+// The PIN pattern (plan Phase 5): a bottom sheet (a <dialog>, app/_ui/admin/sheet.ts), a text field
+// (letters, digits and symbols, D3 amendment), asked once per session, with a visible checking / failed state. The PIN lives in
 // sessionStorage so the action buttons can send it as x-edit-pin; the server cookie only unlocks the
 // admin pages.
 import { useState } from "react";
@@ -69,11 +69,12 @@ export function PinSheet({
         <input
           id="pin"
           type="password"
-          inputMode="numeric"
           autoComplete="off"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
           autoFocus
-          pattern="[0-9]*"
-          maxLength={8}
+          maxLength={64}
           value={pin}
           onChange={(e) => setPin(e.target.value)}
           className="drawn-field min-h-11 px-3 text-lg tracking-widest"
