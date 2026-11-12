@@ -181,3 +181,7 @@ export function dailyView(
     daily?.status === "running" && now.getTime() - daily.startedAt.getTime() >= RUN_STALE_AFTER_MS;
   return stuck ? { text: fill(d.stuck, { at: clock.stamp(daily.startedAt) }) } : null;
 }
+
+/** A daily read's day ("2026-11-12") as an instant inside that date, for the clock's day formats. Noon
+ * UTC is that date in every zone from UTC−11 to UTC+11, which covers the server and the admins. */
+export const readDayDate = (day: string): Date => new Date(`${day}T12:00:00Z`);

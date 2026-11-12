@@ -36,8 +36,10 @@ export interface RunLogger extends Logger {
 }
 
 export interface RunLoggerOptions {
-  /** The claimed snapshot; null until the run has claimed one. */
-  snapshotId: () => number | null;
+  /** The claimed snapshot; null until the run has claimed one. Omitted for a daily read. */
+  snapshotId?: () => number | null;
+  /** The daily roster read's day (D60), for a logger that writes a daily read's lines. */
+  readDay?: string;
   secrets: readonly string[];
   now: () => Date;
 }
@@ -49,14 +51,16 @@ export function createRunLogger(sink: RunLogSink, options: RunLoggerOptions): Ru
   const inFlight = new Set<Promise<void>>();
 
   async function insert(level: RunLogLine["level"], code: string, data: LogData): Promise<void> {
-    const snapshotId = options.snapshotId();
-    if (snapshotId === null) {
+    const snapshotId = options.snapshotId?.() ?? null;
+    const readDay = options.readDay ?? null;
+    if (snapshotId === null && readDay === null) {
       droppedLines++;
       return;
     }
     const unionId = typeof data.union_id === "number" ? data.union_id : null;
     try {
-      await sink.insertRunLog({ snapshotId, at: options.now(), level, code, unionId, data });
+      const line = { snapshotId, readDay, at: options.now(), level, code, unionId, data };
+      await sink.insertRunLog(line);
     } catch {
       // Mirrored once per run, without the error: a dead database must not flood the runtime log.
       if (failedWrites++ === 0) console.error("log.write_failed", { code });

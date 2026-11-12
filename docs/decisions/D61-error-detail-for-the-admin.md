@@ -11,7 +11,7 @@ Why: the owner saw `✗ failed [NSE]: v1 TimeoutError` and `✗ App error on /ad
 - **What it means, what to do** (`lib/error-guide.ts`, text in `lib/copy-guide.ts`). The one-line error text is matched to an entry: timeout, network, gateway 5xx, quota 429, the quota rule, key refused 401/403, not found, other HTTP, schema, not fetched, deadline, call cap, page/route failure, unknown.
 - **Where it shows:**
   - `/admin/errors`: each group has its entry and a closed **Details** (message, cause, where).
-  - `/admin/runs`: a daily read lists its stop reason and its failed alliances by reason, each reason with its entry, each alliance with its own **Details**.
+  - A daily read's page (`/admin/runs/daily/[day]`, D60): its stop reason and its failed alliances by reason, each reason with its entry, each alliance with its own **Details**.
   - The run page: a failed `v1.fetch` log line has its entry and **Details**.
   - The daily read's admin message: under each `✗ reason (n): …` line, a `↳ meaning action` line.
 - **Size:** body 1,000 characters, message 500, 12 frames, a fixed header list. Rows recorded before this change have no detail and show only the one-line text.

@@ -1,5 +1,5 @@
-// /admin/runs rows: a snapshot run (opens its page) and a daily roster read (D60: no run page, its
-// problems and error are all it has), with the All / Events / Daily reads filter above them.
+// /admin/runs rows: a snapshot run and a daily roster read (D60), each opening its own page, with the
+// All / Events / Daily reads filter above them. The daily read's failures by reason are on its page.
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -12,7 +12,7 @@ import type { listDailyReads } from "@/lib/queries/daily-runs";
 
 import { GuideNote, UpstreamDetails } from "./ErrorDetail";
 import { StateChip } from "./parts";
-import { eventWord, phaseWord, seconds, stateWord } from "./words";
+import { eventWord, phaseWord, readDayDate, seconds, stateWord } from "./words";
 
 const t = copy.admin.runs;
 
@@ -132,14 +132,15 @@ export function SnapshotRunRow({ r, clock }: { r: SnapshotRun; clock: Clock }) {
   );
 }
 
-/** The read's stop reason and its failed alliances by reason, each with what it means (D61). */
-function DailyFailures({ r }: { r: DailyRun }) {
+/** The read's stop reason and its failed alliances by reason, each with what it means (D61); on the
+ * daily read's page. */
+export function DailyFailures({ r }: { r: DailyRun }) {
   const byError = new Map<string, DailyRun["problems"]>();
   for (const p of r.problems)
     if (p.error) byError.set(p.error, [...(byError.get(p.error) ?? []), p]);
   if (!r.error && byError.size === 0) return null;
   return (
-    <ul className="flex flex-col gap-3 px-3 pb-3 sm:px-0">
+    <ul className="flex flex-col gap-3">
       {r.error && (
         <li>
           <p className="break-words font-semibold text-seal">
@@ -170,21 +171,12 @@ function DailyFailures({ r }: { r: DailyRun }) {
   );
 }
 
-/** Not a link: a daily read has no run page (D60 keeps no log for it). */
+/** Opens the daily read's page (/admin/runs/daily/[day]), as a snapshot row opens its run page. */
 export function DailyRunRow({ r, clock }: { r: DailyRun; clock: Clock }) {
   return (
-    <>
-      <DailyRow r={r} clock={clock} />
-      <DailyFailures r={r} />
-    </>
-  );
-}
-
-function DailyRow({ r, clock }: { r: DailyRun; clock: Clock }) {
-  return (
-    <div className={ROW}>
+    <Link href={`/admin/runs/daily/${r.day}`} className={`tint-button ${ROW}`}>
       <Flags status={r.status} problems={r.problems} deadline={r.deadline} />
-      <Title note={clock.weekday(r.startedAt)}>{t.daily}</Title>
+      <Title note={clock.weekday(readDayDate(r.day))}>{t.daily}</Title>
       <Facts
         r={r}
         quota={
@@ -192,6 +184,6 @@ function DailyRow({ r, clock }: { r: DailyRun; clock: Clock }) {
         }
         clock={clock}
       />
-    </div>
+    </Link>
   );
 }
