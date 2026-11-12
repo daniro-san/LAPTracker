@@ -1,11 +1,15 @@
 // The daily roster reads (D60) as /admin/runs lists them, next to the snapshot runs: one entry per
-// server day, with the alliances that failed or were stale. Only identity and the two flags are read
-// from daily_rosters, never the member arrays.
+// server day, with the alliances that failed or were stale and, for a failure, its error and what the
+// upstream answered (D61). Never the member arrays.
 import { and, asc, desc, eq, inArray, isNotNull, or, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { dailyReads, dailyRosters } from "../schema";
+import type { UpstreamDetail } from "../sources/types";
 import { DEADLINE_ERROR } from "./admin";
+
+/** For /admin's error details: app/ cannot import lib/sources (docs/ARCHITECTURE.md). */
+export type { UpstreamDetail };
 
 export async function listDailyReads(db: Db, limit = 60) {
   const rows = await db
@@ -31,6 +35,8 @@ export async function listDailyReads(db: Db, limit = 60) {
             unionId: dailyRosters.unionId,
             tag: dailyRosters.tag,
             failed: sql<boolean>`${dailyRosters.error} is not null`,
+            error: dailyRosters.error,
+            errorDetail: sql<UpstreamDetail | null>`${dailyRosters.errorDetail}`,
           })
           .from(dailyRosters)
           .where(

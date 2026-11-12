@@ -5,10 +5,12 @@ export const REDACTED = "[redacted]";
 
 const SECRET_KEYS = new Set(["authorization", "x-edit-pin", "cookie", "set-cookie", "x-api-key"]);
 const LAP_KEY_PATTERN = /lap_[A-Za-z0-9_-]{8,}/g;
+// A database URL carries its password; a driver error can quote one that is not the configured value.
+const DB_URL_PATTERN = /postgres(?:ql)?:\/\/[^\s"'`]+/g;
 const MIN_SECRET_LENGTH = 6; // EDIT_PIN is 6+ characters (D3); shorter values would mask ordinary words.
 
 function scrubString(value: string, secrets: readonly string[]): string {
-  let out = value.replace(LAP_KEY_PATTERN, REDACTED);
+  let out = value.replace(LAP_KEY_PATTERN, REDACTED).replace(DB_URL_PATTERN, REDACTED);
   for (const secret of secrets) {
     if (secret.length >= MIN_SECRET_LENGTH) out = out.split(secret).join(REDACTED);
   }

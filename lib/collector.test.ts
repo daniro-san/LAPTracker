@@ -192,8 +192,9 @@ describe("runSnapshot", () => {
     expect(rowsOf(repo, before).map((r) => r.unionId)).not.toContain(SECOND);
   });
 
-  it("writes one v1.fetch line per /v1 call with its status, cache flag and duration", async () => {
-    const v1 = fakeV1((id) => (id === FIRST ? new UpstreamError(503) : fresh(id)));
+  it("writes one v1.fetch line per /v1 call with its status, cache flag and duration, and the upstream detail of a failure", async () => {
+    const detail = { path: `/alliances/${FIRST}`, status: 503, body: "upstream busy" };
+    const v1 = fakeV1((id) => (id === FIRST ? new UpstreamError(503, detail) : fresh(id)));
     const lines: { code: string; data: Record<string, unknown> }[] = [];
     const { deps } = makeDeps(v1);
     const record = async (code: string, data: Record<string, unknown> = {}) => {
@@ -211,6 +212,8 @@ describe("runSnapshot", () => {
     expect(fetches.find((l) => l.data.union_id === FIRST)?.data).toMatchObject({
       endpoint: "alliance",
       http_status: 503,
+      error: "http 503",
+      detail,
     });
     expect(fetches.find((l) => l.data.union_id === SECOND)?.data).toEqual({
       endpoint: "alliance",

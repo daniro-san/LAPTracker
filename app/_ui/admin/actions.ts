@@ -2,6 +2,7 @@
 // it sends. The component that presses them is AdminActions.
 import { copy, fill } from "@/lib/copy";
 
+import { forgetPin } from "./PinSheet";
 import { phaseWord } from "./words";
 
 export interface Action {
@@ -212,5 +213,8 @@ export async function post(action: Action, pin: string, force: boolean) {
     body: action.body ?? null,
   });
   const body = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+  // A refused PIN is never sent again: the next press asks for it, and the page reload that follows
+  // every press shows the PIN card when the session ended too (the PIN changed).
+  if (res.status === 401) forgetPin();
   return { res, body };
 }

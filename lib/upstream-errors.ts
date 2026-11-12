@@ -1,6 +1,7 @@
 // How the collector names upstream failures in rows, logs and messages: our own words from our own
 // error classes, never a third-party message (plan §12.3). Split from lib/collector.ts for its size.
 import {
+  type UpstreamDetail,
   NotFoundError,
   NotLiveError,
   QuotaExhaustedError,
@@ -24,4 +25,10 @@ export function httpStatusOf(e: unknown): number | null {
   if (e instanceof UpstreamError) return e.status;
   if (e instanceof QuotaExhaustedError) return 429;
   return e instanceof NotFoundError ? 404 : null;
+}
+
+/** What the upstream answered for a failed call (D61), for /admin; null when the error carries none. */
+export function upstreamDetail(e: unknown): UpstreamDetail | null {
+  if (!(e instanceof Error) || !("detail" in e)) return null;
+  return (e.detail as UpstreamDetail | undefined) ?? null;
 }

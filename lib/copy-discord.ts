@@ -68,6 +68,8 @@ export const discordCopy = {
     dailyRead: "{icon} Daily roster read {day}: {state} · {calls} calls · {at}",
     /** Alliances that share one reason, on one line: "✗ v1 TimeoutError (12): [NSE], [URSA], …". */
     dailyFailed: "✗ {error} ({n}): {list}",
+    /** Under each failure line: what it means and what to do (D61, copy.admin.guide). */
+    dailyWhy: "↳ {meaning} {action}",
     /** A failed day can be retried on /admin; a partial one only looked at. */
     dailyRetry: "[Retry on /admin ↗](<{url}>)",
     dailyRuns: "[Daily reads ↗](<{url}>)",

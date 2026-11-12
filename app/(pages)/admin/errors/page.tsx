@@ -1,6 +1,7 @@
 // /admin/errors: app_errors grouped by digest, newest first (#91: framed like the runs list, the count
 // as a seal chip).
 import { AdminShell } from "@/app/_ui/admin/AdminShell";
+import { AppErrorDetails, GuideNote } from "@/app/_ui/admin/ErrorDetail";
 import { requestServerClock } from "@/app/_ui/locale";
 import { isAdmin } from "@/lib/admin-session";
 import { Chip } from "@/lib/brand/components/Chip";
@@ -42,6 +43,8 @@ export default async function ErrorsPage() {
                 .filter(Boolean)
                 .join(" · ")}
             </p>
+            <GuideNote error={g.message} />
+            {g.detail && <AppErrorDetails detail={g.detail} />}
           </li>
         ))}
       </ul>

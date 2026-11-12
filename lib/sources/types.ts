@@ -78,13 +78,39 @@ export interface InternalSource {
 
 export type SchemaCode = "v1.schema" | "internal.schema";
 
+/**
+ * What the upstream answered, for /admin only (D61): the request path, and for an HTTP error its status,
+ * a few headers and the start of its body; for a request that got no answer, the timeout or the cause.
+ * Redacted (no key, no secret) before it is built; never shown on a public page or in an API response.
+ */
+export interface UpstreamDetail {
+  path: string;
+  status?: number;
+  headers?: Record<string, string>;
+  body?: string;
+  timeoutMs?: number;
+  cause?: string;
+}
+
 /** 429: the daily quota is spent. The run aborts; never retried. */
 export class QuotaExhaustedError extends Error {
   override name = "QuotaExhaustedError";
+  constructor(
+    message: string,
+    readonly detail?: UpstreamDetail,
+  ) {
+    super(message);
+  }
 }
 
 export class NotFoundError extends Error {
   override name = "NotFoundError";
+  constructor(
+    message: string,
+    readonly detail?: UpstreamDetail,
+  ) {
+    super(message);
+  }
 }
 
 /** The internal API returned the live: false stub, which is never used (plan §3.5). */
@@ -106,7 +132,26 @@ export class SchemaError extends Error {
 /** Any other non-2xx, or 502/503/504 after the last retry. */
 export class UpstreamError extends Error {
   override name = "UpstreamError";
-  constructor(readonly status: number) {
+  constructor(
+    readonly status: number,
+    readonly detail?: UpstreamDetail,
+  ) {
     super(`upstream status ${status}`);
+  }
+}
+
+/**
+ * The request got no HTTP answer: the per-call timeout, or a network failure (DNS, TLS, reset). It keeps
+ * the cause's name ("TimeoutError", "TypeError"), so the run's one-line error and the upstream banner's
+ * rule (D27) read the same as before; `detail` adds the path and the cause for /admin.
+ */
+export class RequestError extends Error {
+  override name: string;
+  constructor(
+    cause: unknown,
+    readonly detail: UpstreamDetail,
+  ) {
+    super(cause instanceof Error ? cause.message : String(cause), { cause });
+    this.name = cause instanceof Error ? cause.name : "Error";
   }
 }
