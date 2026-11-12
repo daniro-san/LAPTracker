@@ -35,3 +35,5 @@ Plan changes needed: none. The plan's line "A re-run fetches only alliances with
 <adjustments>
 - A non-forced snapshot re-run now deletes the failed rows before reading. Code that keeps state on error rows across runs must not rely on them surviving a re-run.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/249
