@@ -102,7 +102,7 @@ Create these before the session that needs them. **Never paste any of them into 
 | Server timezone | Known | — | UTC−2 fixed (`Etc/GMT+2`), from the in-game clock on 2026-11-04. Session 0 re-checks once. |
 | `DATABASE_URL` | Vercel (from Neon), `.env.local` | Session 3 (local dev), Session 8 | Neon dashboard → connection string (pooled). |
 | `CRON_SECRET` | Vercel + GitHub repo secret | Session 8 | `openssl rand -hex 32` |
-| `EDIT_PIN` | Vercel | Session 8 | 6–8 digits you'll share with alliance admins (6 is the minimum the limiter math assumes, plan §12.2). |
+| `EDIT_PIN` | Vercel | Session 8 | 6–64 visible ASCII characters, no spaces (digits, letters or symbols, e.g. `openssl rand -base64 6`), shared with alliance admins. 6 is the minimum the limiter math assumes (plan §12.2); D3 amendment. |
 | `NOTIFY_WEBHOOK_PUBLIC`, `NOTIFY_WEBHOOK_ADMIN`, `NOTIFY_ADMIN_MENTION` (optional) | Vercel | Session 8 | §1b. |
 | `APP_URL` | GitHub repo secret | Session 8 | The Vercel production URL. |
 | `SERVER_TZ`, `EVENT_WEEKDAY`, `EVENT_TIME`, `SNAPSHOT_BEFORE`, `SNAPSHOT_AFTER`, `SNAPSHOT_WINDOW_MIN`, `QUOTA_CHECK_AT`, `REHEARSAL_AT`, `REHEARSAL_KEEP` | Vercel, `.env.local` | Session 8 | Server time. Change snapshot times here, redeploy — no commit (plan §3.1). |

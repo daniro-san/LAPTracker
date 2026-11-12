@@ -5,7 +5,7 @@ export const REDACTED = "[redacted]";
 
 const SECRET_KEYS = new Set(["authorization", "x-edit-pin", "cookie", "set-cookie", "x-api-key"]);
 const LAP_KEY_PATTERN = /lap_[A-Za-z0-9_-]{8,}/g;
-const MIN_SECRET_LENGTH = 6; // EDIT_PIN is 6-8 digits; shorter values would mask ordinary numbers.
+const MIN_SECRET_LENGTH = 6; // EDIT_PIN is 6+ characters (D3); shorter values would mask ordinary words.
 
 function scrubString(value: string, secrets: readonly string[]): string {
   let out = value.replace(LAP_KEY_PATTERN, REDACTED);

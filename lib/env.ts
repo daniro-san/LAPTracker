@@ -24,7 +24,11 @@ export const envSchema = z.object({
   LAP_SITE_BASE_URL: z.url().default("https://lastasylumtracker.com/api"),
   DATABASE_URL: z.string().regex(/^postgres(ql)?:\/\//, "expected a postgres:// URL"),
   CRON_SECRET: z.string().min(32, "expected 32+ characters"),
-  EDIT_PIN: z.string().regex(/^\d{6,8}$/, "expected 6-8 digits"),
+  // Any visible ASCII, no spaces (D3 amendment): digits, letters, or an `openssl rand -base64` value. It
+  // travels in the x-edit-pin header, so it stays ASCII; 6 is the minimum the limiter math assumes.
+  EDIT_PIN: z
+    .string()
+    .regex(/^[\x21-\x7E]{6,64}$/, "expected 6-64 visible ASCII characters, no spaces"),
   SERVER_TZ: z.string().refine(isTimeZone, "expected an IANA time zone"),
   EVENT_WEEKDAY: z.coerce.number().int().min(0).max(6),
   EVENT_TIME: hhmm,
