@@ -5,7 +5,6 @@
 import type { RunSummary } from "./collector";
 import { topMovers } from "./compute";
 import { copy, fill } from "./copy";
-import type { DailyReadSummary } from "./daily-read";
 import { MINUS, percentFormat, sign, signedCompact, type DiscordClock } from "./discord-format";
 import { sendOrEdit as send } from "./discord-send";
 import type { Env } from "./env";
@@ -109,19 +108,19 @@ const escapeDiscord = (text: string) =>
     .replace(/<@/g, "<@\u200b");
 
 /** `[NSE] Natural Selection`; the union id when the row has neither. */
-const allianceLabel = (a: { unionId: number; tag: string | null; name?: string | null }) =>
+export const allianceLabel = (a: { unionId: number; tag: string | null; name?: string | null }) =>
   [a.tag !== null ? `[${escapeDiscord(a.tag)}]` : null, a.name && escapeDiscord(a.name)]
     .filter(Boolean)
     .join(" ") || String(a.unionId);
 
 type State = RunSummary["status"];
 /** Run states in the admin message, the same words as /admin. */
-const STATE_WORD: Record<State, string> = {
+export const STATE_WORD: Record<State, string> = {
   complete: copy.status.done,
   partial: copy.status.partial,
   failed: copy.status.failed,
 };
-const STATE_ICON: Record<State, string> = { complete: "✓", partial: "⚠", failed: "✗" };
+export const STATE_ICON: Record<State, string> = { complete: "✓", partial: "⚠", failed: "✗" };
 
 /** One alliance row of a snapshot, as lib/queries getEventDetail returns it. */
 export interface PublicAlliance {
@@ -349,24 +348,4 @@ export function appErrorMessage(route: string, message: string, digest: string |
 export function tickSilenceMessage(last: { min: number; at: string } | null): string {
   const t = copy.discord.admin;
   return last ? fill(t.tickSilence, last) : t.tickNone;
-}
-
-/** The daily roster read fell short (D60): its state and calls, the error and each failed alliance. */
-export function dailyReadMessage(s: DailyReadSummary, at: string): string {
-  const t = copy.discord.admin;
-  const lines = [
-    fill(t.dailyRead, {
-      icon: STATE_ICON[s.status],
-      day: s.day,
-      state: STATE_WORD[s.status],
-      calls: s.callsUsed,
-      at,
-    }),
-  ];
-  if (s.error) lines.push(fill(t.error, { error: s.error }));
-  for (const f of s.failed)
-    lines.push(fill(t.failed, { alliance: allianceLabel(f), error: f.error }));
-  if (s.stale.length > 0)
-    lines.push(fill(t.stale, { list: s.stale.map(allianceLabel).join(", ") }));
-  return lines.join("\n");
 }
