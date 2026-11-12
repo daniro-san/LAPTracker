@@ -14,7 +14,7 @@ import {
   T0,
 } from "./collector.test-helpers";
 import { delta } from "./compute";
-import { QuotaExhaustedError } from "./sources/types";
+import { QuotaExhaustedError, UpstreamError } from "./sources/types";
 
 const [STALE_ID, EDGE_ID] = IDS as [number, number];
 
@@ -103,6 +103,31 @@ describe("freshness", () => {
 
     expect([...v1.calls].sort()).toEqual(IDS.filter((id) => !kept.includes(id)).sort());
     expect(rowsOf(repo, second.snapshotId)).toHaveLength(IDS.length);
+    expect(second.status).toBe("complete");
+  });
+
+  it("re-runs read the failed alliances again and keep the rows already read (D62)", async () => {
+    let down = true;
+    const v1 = fakeV1((id) =>
+      down && id === STALE_ID ? new UpstreamError(504) : roster(id, ago(T0, 0)),
+    );
+    const { deps, repo } = makeDeps(v1);
+
+    const first = await runSnapshot(EVENT_ID, "before", deps);
+    const before = rowsOf(repo, first.snapshotId);
+    expect(first.status).toBe("partial");
+    expect(before.find((r) => r.unionId === STALE_ID)?.error).not.toBeNull();
+
+    down = false;
+    v1.calls.length = 0;
+    const second = await runSnapshot(EVENT_ID, "before", deps);
+    const after = rowsOf(repo, second.snapshotId);
+
+    expect(v1.calls).toEqual([STALE_ID]);
+    expect(after).toHaveLength(IDS.length);
+    expect(after.find((r) => r.unionId === STALE_ID)?.error).toBeNull();
+    const others = (rows: typeof after) => rows.filter((r) => r.unionId !== STALE_ID);
+    expect(others(after)).toEqual(others(before));
     expect(second.status).toBe("complete");
   });
 });

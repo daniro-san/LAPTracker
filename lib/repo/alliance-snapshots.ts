@@ -1,5 +1,5 @@
 // alliance_snapshots and their member_snapshots, which are only ever written together.
-import { desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { allianceSnapshots, memberSnapshots } from "../schema";
@@ -57,4 +57,18 @@ export async function findAvatarUrl(db: Db, uid: number): Promise<string | null>
     .orderBy(desc(memberSnapshots.id))
     .limit(1);
   return row?.avatarUrl ?? null;
+}
+
+/** A re-run without force (D62): the rows whose read failed go, so the run reads those alliances again;
+ * the rows that were read stay. Error rows have no members; the delete covers them anyway. */
+export async function clearFailedAllianceRows(db: Db, snapshotId: number): Promise<void> {
+  const failed = and(
+    eq(allianceSnapshots.snapshotId, snapshotId),
+    isNotNull(allianceSnapshots.error),
+  );
+  await db.transaction(async (tx) => {
+    const ids = tx.select({ id: allianceSnapshots.id }).from(allianceSnapshots).where(failed);
+    await tx.delete(memberSnapshots).where(inArray(memberSnapshots.allianceSnapshotId, ids));
+    await tx.delete(allianceSnapshots).where(failed);
+  });
 }
