@@ -49,3 +49,5 @@ Plan changes needed: none.
 - `DELETE /api/admin/session` ends a session; a future "Log out" button can call it too.
 - A new client-side place that saves the PIN must also clear it in `forgetPin()` (`app/_ui/admin/PinSheet.tsx`), or a changed PIN leaves it behind.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/247
