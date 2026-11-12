@@ -2,11 +2,18 @@
 // lib/copy.ts. Sentences are allowed here (DESIGN.md: the grandma voice lives in the admin area).
 export const adminCopy = {
   title: "Admin",
-  nav: { label: "Admin", overview: "Overview", runs: "Runs", errors: "App errors" },
+  nav: {
+    label: "Admin",
+    overview: "Overview",
+    runs: "Runs",
+    errors: "App errors",
+    logout: "Log out",
+  },
   pin: {
     label: "Admin PIN",
     prompt: "Enter the admin PIN to see this page.",
     changed: "The admin PIN has changed. Enter the new PIN to see this page.",
+    expired: "Your admin session has ended. Enter the PIN to see this page.",
     unlock: "Unlock",
     checking: "Checking…",
     wrong: "Wrong PIN.",

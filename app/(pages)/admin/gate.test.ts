@@ -77,7 +77,7 @@ describe("/admin pages, locked", () => {
 describe("/admin pages, unlocked", () => {
   it("/admin/runs/<unknown id> still calls notFound", async () => {
     holder.ctx = testContext(await openTestDb()).ctx;
-    holder.cookie = adminToken(TEST_ENV);
+    holder.cookie = adminToken(TEST_ENV, new Date());
     await expect(run("999999")).rejects.toThrow("NEXT_NOT_FOUND");
     expect(notFound).toHaveBeenCalledOnce();
   });

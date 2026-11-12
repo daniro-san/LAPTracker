@@ -9,14 +9,14 @@ import type { ReactNode } from "react";
 import { requestServerClock } from "@/app/_ui/locale";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
-import { hasStaleAdminCookie, isAdmin } from "@/lib/admin-session";
+import { adminSession } from "@/lib/admin-session";
 import { TextLink } from "@/lib/brand/components/TextLink";
 import { copy } from "@/lib/copy";
 import { withPageDb } from "@/lib/page";
 import { listRuns, runningSnapshots } from "@/lib/queries/admin";
 import { listDailyReads } from "@/lib/queries/daily-runs";
 
-import { PinGate } from "./PinGate";
+import { LogoutButton, PinGate } from "./PinGate";
 import { LiveNow, RunWatch } from "./RunWatch";
 import { watchViews } from "./words";
 
@@ -27,16 +27,16 @@ const NAV = [
 ];
 
 export async function AdminShell({ title, children }: { title: string; children?: ReactNode }) {
-  const unlocked = await isAdmin();
+  const session = await adminSession();
   return (
     // English whatever the viewer's language (D48): the lang attribute says so for this subtree.
     <div lang="en">
       <SiteHeader events={[]} currentId={null} homeId={null} copy={copy} publicPage={false} />
       <main className="mx-auto max-w-[960px] px-4 py-4 sm:px-6">
-        {unlocked ? (
+        {session === "valid" ? (
           <Unlocked title={title}>{children}</Unlocked>
         ) : (
-          <PinGate stale={await hasStaleAdminCookie()} />
+          <PinGate ended={session === "none" ? null : session} />
         )}
       </main>
       <SiteFooter copy={copy} />
@@ -69,6 +69,7 @@ async function Unlocked({ title, children }: { title: string; children?: ReactNo
           </TextLink>
         ))}
         <LiveNow on={views.running.length > 0} />
+        <LogoutButton />
       </nav>
       <h1 className="mb-3 font-display text-display-lg">{title}</h1>
       {children}
