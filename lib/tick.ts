@@ -2,7 +2,7 @@
 // day ahead; every event (scheduled or rehearsal) carries its own before_at/after_at; one action per tick.
 // The daily roster read (D60) comes last, when nothing else is due.
 import { DAILY_ROSTER_IDS } from "../config/alliances";
-import type { AppContext } from "./app-context";
+import { secretsOf, type AppContext } from "./app-context";
 import { runDailyRead, type DailyReadSummary } from "./daily-read";
 import type { Db } from "./db";
 import {
@@ -63,7 +63,8 @@ async function dailyRead(
   const due = dailyReadDue(now, ctx.env);
   // INVARIANT daily-read.not-on-event-day
   if (!due || (await hasScheduledEvent(db, due.from, due.to))) return null;
-  const summary = await runDailyRead(ctx, db, due.day, DAILY_ROSTER_IDS);
+  const deps = { v1: ctx.v1, now: ctx.now, secrets: secretsOf(ctx.env) };
+  const summary = await runDailyRead(deps, db, due.day, DAILY_ROSTER_IDS);
   if (!summary) return null;
   if (summary.status !== "complete") {
     const at = discordClock(ctx.env.SERVER_TZ).stamp(ctx.now());

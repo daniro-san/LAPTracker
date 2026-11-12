@@ -40,6 +40,7 @@ const { default: AdminPage } = await import("./page");
 const { default: RunsPage } = await import("./runs/page");
 const { default: ErrorsPage } = await import("./errors/page");
 const { default: RunPage } = await import("./runs/[id]/page");
+const { default: DailyRunPage } = await import("./runs/daily/[day]/page");
 
 const run = (id: string) => RunPage({ params: Promise.resolve({ id }) });
 const openDb = vi.fn(() => {
@@ -59,6 +60,10 @@ describe("/admin pages, locked", () => {
     ["/admin/runs", () => RunsPage({ searchParams: Promise.resolve({}) })],
     ["/admin/errors", () => ErrorsPage()],
     ["/admin/runs/1", () => run("1")],
+    [
+      "/admin/runs/daily/2026-11-12",
+      () => DailyRunPage({ params: Promise.resolve({ day: "2026-11-12" }) }),
+    ],
   ])("%s renders the shell with no children and opens no database connection", async (_, page) => {
     holder.cookie = "not-the-token";
     const el = await page();

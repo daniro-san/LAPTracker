@@ -155,9 +155,9 @@ export const runLogs = pgTable(
   "run_logs",
   {
     id: serial("id").primaryKey(),
-    snapshotId: integer("snapshot_id")
-      .notNull()
-      .references(() => snapshots.id),
+    /** The run a line belongs to: a snapshot, or a daily roster read (`read_day`, D60), never both. */
+    snapshotId: integer("snapshot_id").references(() => snapshots.id),
+    readDay: date("read_day", { mode: "string" }).references(() => dailyReads.day),
     at: tstz("at").notNull(),
     level: text("level", { enum: ["info", "warn", "error"] }).notNull(),
     code: text("code").notNull(),
@@ -166,7 +166,9 @@ export const runLogs = pgTable(
   },
   (t) => [
     index("run_logs_snapshot_id_idx").on(t.snapshotId),
+    index("run_logs_read_day_idx").on(t.readDay),
     check("run_logs_level_check", sql`${t.level} in ('info', 'warn', 'error')`),
+    check("run_logs_one_owner_check", sql`(${t.snapshotId} is null) <> (${t.readDay} is null)`),
   ],
 );
 
