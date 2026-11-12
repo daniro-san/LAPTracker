@@ -74,3 +74,5 @@ Plan changes needed: `docs/IMPLEMENTATION_PLAN.md` §12.3 (the "error fields …
 - `guideFor` keys on the one-line error text. A new error text needs a row in `RULES` (`lib/error-guide.ts`) and an entry in `lib/copy-guide.ts`, or it shows "No explanation for this error yet".
 - `app/` reads `UpstreamDetail` from `lib/queries/daily-runs.ts`, not from `lib/sources` (import zone).
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/246
