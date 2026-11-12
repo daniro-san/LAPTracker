@@ -20,3 +20,10 @@ export async function isAdmin(): Promise<boolean> {
   const given = (await cookies()).get(ADMIN_COOKIE)?.value;
   return given !== undefined && secretEquals(given, adminToken(getEnv()));
 }
+
+/** A session cookie that no longer opens the pages: EDIT_PIN (or CRON_SECRET) changed after it was set.
+ * The PIN card then deletes it and says the PIN changed. */
+export async function hasStaleAdminCookie(): Promise<boolean> {
+  const given = (await cookies()).get(ADMIN_COOKIE)?.value;
+  return given !== undefined && !secretEquals(given, adminToken(getEnv()));
+}

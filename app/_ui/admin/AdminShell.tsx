@@ -9,7 +9,7 @@ import type { ReactNode } from "react";
 import { requestServerClock } from "@/app/_ui/locale";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
-import { isAdmin } from "@/lib/admin-session";
+import { hasStaleAdminCookie, isAdmin } from "@/lib/admin-session";
 import { TextLink } from "@/lib/brand/components/TextLink";
 import { copy } from "@/lib/copy";
 import { withPageDb } from "@/lib/page";
@@ -33,7 +33,11 @@ export async function AdminShell({ title, children }: { title: string; children?
     <div lang="en">
       <SiteHeader events={[]} currentId={null} homeId={null} copy={copy} publicPage={false} />
       <main className="mx-auto max-w-[960px] px-4 py-4 sm:px-6">
-        {unlocked ? <Unlocked title={title}>{children}</Unlocked> : <PinGate />}
+        {unlocked ? (
+          <Unlocked title={title}>{children}</Unlocked>
+        ) : (
+          <PinGate stale={await hasStaleAdminCookie()} />
+        )}
       </main>
       <SiteFooter copy={copy} />
     </div>
