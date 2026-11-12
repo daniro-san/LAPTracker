@@ -68,8 +68,11 @@ async function Unlocked({ title, children }: { title: string; children?: ReactNo
             {n.label}
           </TextLink>
         ))}
-        <LiveNow on={views.running.length > 0} />
-        <LogoutButton />
+        {/* One group: it wraps as a unit, so Log out does not jump when the candle's word changes. */}
+        <div className="ml-auto flex items-center">
+          <LiveNow on={views.running.length > 0} />
+          <LogoutButton />
+        </div>
       </nav>
       <h1 className="mb-3 font-display text-display-lg">{title}</h1>
       {children}

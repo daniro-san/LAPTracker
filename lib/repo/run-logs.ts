@@ -2,8 +2,10 @@
 import type { Db } from "../db";
 import { runLogs } from "../schema";
 
+/** A line belongs to a snapshot run or to a daily roster read (D60), never both. */
 export interface RunLogLine {
-  snapshotId: number;
+  snapshotId: number | null;
+  readDay?: string | null;
   at: Date;
   level: "info" | "warn" | "error";
   code: string;

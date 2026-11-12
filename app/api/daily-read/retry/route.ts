@@ -5,6 +5,7 @@
 import { z } from "zod";
 
 import { DAILY_ROSTER_IDS } from "@/config/alliances";
+import { secretsOf } from "@/lib/app-context";
 import { authorize } from "@/lib/auth";
 import { retryDailyRead } from "@/lib/daily-read";
 import { errorResponse, parseQuery, withContext } from "@/lib/route";
@@ -19,7 +20,8 @@ export function POST(request: Request): Promise<Response> {
     const auth = await authorize(request.headers, db, ctx, { cron: false, pin: true });
     if (!auth.ok) return errorResponse(auth.status, auth.code);
     if (!parseQuery(request, noQuery)) return errorResponse(400, "bad_request");
-    const summary = await retryDailyRead(ctx, db, serverDay(ctx.now(), ctx.env), DAILY_ROSTER_IDS);
+    const deps = { v1: ctx.v1, now: ctx.now, secrets: secretsOf(ctx.env) };
+    const summary = await retryDailyRead(deps, db, serverDay(ctx.now(), ctx.env), DAILY_ROSTER_IDS);
     if (!summary) return errorResponse(409, "daily_read_not_retryable");
     return Response.json({
       day: summary.day,
