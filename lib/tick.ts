@@ -7,11 +7,11 @@ import { runDailyRead, type DailyReadSummary } from "./daily-read";
 import type { Db } from "./db";
 import {
   createNotifier,
-  dailyReadMessage,
   discordClock,
   rehearsalSkippedMessage,
   tickSilenceMessage,
 } from "./notify";
+import { dailyReadMessage } from "./notify-daily";
 import { createRehearsal, type RehearsalResult } from "./rehearsal";
 import { claimAlert, TICK_SILENCE_ALERT } from "./repo/app-errors";
 import { claimQuotaCheck, duePhases, findOrCreateEvent, hasScheduledEvent } from "./repo/events";
@@ -54,7 +54,12 @@ async function scheduledRehearsal(ctx: AppContext, db: Db, slotAt: Date): Promis
 /** The day's roster read when its window holds `now` and no caller claimed the day yet; one admin
  * line when it falls short. Skipped on a scheduled event's day: its snapshots read the same rosters,
  * and the member history uses them (D60). The event's row exists by then (step 1, a day ahead). */
-async function dailyRead(ctx: AppContext, db: Db, now: Date): Promise<TickOutcome | null> {
+async function dailyRead(
+  ctx: AppContext,
+  db: Db,
+  now: Date,
+  origin: string,
+): Promise<TickOutcome | null> {
   const due = dailyReadDue(now, ctx.env);
   // INVARIANT daily-read.not-on-event-day
   if (!due || (await hasScheduledEvent(db, due.from, due.to))) return null;
@@ -62,7 +67,7 @@ async function dailyRead(ctx: AppContext, db: Db, now: Date): Promise<TickOutcom
   if (!summary) return null;
   if (summary.status !== "complete") {
     const at = discordClock(ctx.env.SERVER_TZ).stamp(ctx.now());
-    await createNotifier(ctx.env, ctx.fetch).admin(dailyReadMessage(summary, at));
+    await createNotifier(ctx.env, ctx.fetch).admin(dailyReadMessage(summary, at, origin));
   }
   return { kind: "daily-read", summary };
 }
@@ -107,7 +112,7 @@ export async function runTick(ctx: AppContext, db: Db, origin: string): Promise<
   }
 
   // (5) The daily roster read (D60): last, once per server day inside its window. Never an event.
-  return (await dailyRead(ctx, db, now)) ?? { kind: "idle" };
+  return (await dailyRead(ctx, db, now, origin)) ?? { kind: "idle" };
 }
 
 /** No tick for longer than this means the scheduler stopped (D45); also the alert's repeat gap. */
