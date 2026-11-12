@@ -54,3 +54,5 @@ Plan changes needed: none.
 - `daily_reads.calls_used` is now the day's total across attempts, because `finishDailyRead` adds to the stored value.
 - `AdminActions` is at 80 counted lines (the function limit). New `/admin` actions should go in their own component file, like `DailyRetry.tsx` and `ManualSection.tsx`.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/239
