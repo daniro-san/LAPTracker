@@ -30,7 +30,7 @@ import { ManualSection } from "./ManualSection";
 import { describe, Result, RunningNotice } from "./outcome";
 import { CostTag } from "./parts";
 import { PinSheet, savedPin } from "./PinSheet";
-import { useRunFinished } from "./RunWatch";
+import { useBusy, useRunFinished } from "./RunWatch";
 
 const t = copy.admin.run;
 
@@ -55,7 +55,7 @@ export function AdminActions({
 }) {
   const router = useRouter();
   const [message, setMessage] = useResult();
-  const [busy, setBusy] = useState<string | null>(null);
+  const [busy, setBusy] = useBusy();
   const [pending, setPending] = useState<Action | null>(null);
   const { asking, ask, answer } = useAsk();
   const off = busy ?? (running.length > 0 ? "running" : null);

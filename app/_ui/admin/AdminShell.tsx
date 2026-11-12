@@ -14,10 +14,10 @@ import { TextLink } from "@/lib/brand/components/TextLink";
 import { copy } from "@/lib/copy";
 import { withPageDb } from "@/lib/page";
 import { listRuns, runningSnapshots } from "@/lib/queries/admin";
+import { listDailyReads } from "@/lib/queries/daily-runs";
 
-import { LiveIndicator } from "./parts";
 import { PinGate } from "./PinGate";
-import { RunWatch } from "./RunWatch";
+import { LiveNow, RunWatch } from "./RunWatch";
 import { watchViews } from "./words";
 
 const NAV = [
@@ -42,11 +42,13 @@ export async function AdminShell({ title, children }: { title: string; children?
 
 async function Unlocked({ title, children }: { title: string; children?: ReactNode }) {
   const now = new Date();
-  const [[running, [last]], clock] = await Promise.all([
-    withPageDb((db) => Promise.all([runningSnapshots(db, now), listRuns(db, 1)])),
+  const [[running, [last], [daily]], clock] = await Promise.all([
+    withPageDb((db) =>
+      Promise.all([runningSnapshots(db, now), listRuns(db, 1), listDailyReads(db, 1)]),
+    ),
     requestServerClock(),
   ]);
-  const views = watchViews(running, last, clock);
+  const views = watchViews(running, last, daily, now, clock);
   return (
     <RunWatch running={views.running} latest={views.latest}>
       <nav
@@ -62,7 +64,7 @@ async function Unlocked({ title, children }: { title: string; children?: ReactNo
             {n.label}
           </TextLink>
         ))}
-        <LiveIndicator on={running.length > 0} />
+        <LiveNow on={views.running.length > 0} />
       </nav>
       <h1 className="mb-3 font-display text-display-lg">{title}</h1>
       {children}
