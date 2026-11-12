@@ -50,3 +50,5 @@ Plan changes needed: `docs/IMPLEMENTATION_PLAN.md` §3.3 and §12.2 say the PIN 
 - `EDIT_PIN` is 6–64 visible ASCII characters (D3 amendment), not 6–8 digits. Tests and fixtures that build an env can keep digit PINs.
 - A production env change only takes effect on the next deployment, and a value `lib/env.ts` rejects takes the whole site down on that deployment. Before changing a production env value, check it against `envSchema`.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/244
