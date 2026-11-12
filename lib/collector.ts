@@ -138,7 +138,10 @@ async function claim(deps: Deps, eventId: number, phase: Phase, force: boolean):
   if (existing?.status === "running" && live) throw new RunRefusedError("running");
   const id = await deps.repo.startSnapshot(eventId, phase, now, existing);
   if (id === null) throw new RunRefusedError("running");
-  if (force && existing) await deps.repo.clearAllianceRows(id);
+  // A forced run reads the whole snapshot again. Any other re-run (partial, failed, or left running)
+  // drops only the failed rows, so it reads those alliances again and keeps the ones it has (D62).
+  if (existing)
+    await (force ? deps.repo.clearAllianceRows(id) : deps.repo.clearFailedAllianceRows(id));
   return id;
 }
 
@@ -325,7 +328,8 @@ export async function runSnapshot(
     const quotaError = await checkQuota(run, ids.length);
     if (quotaError) return quotaError;
     run.board = await fetchBoard(deps);
-    // INVARIANT run.resume-missing-only: a re-run fetches only alliances without a row.
+    // INVARIANT run.resume-missing-only: a re-run fetches only alliances without a row; the failed
+    // rows were dropped at the claim (D62), so that is every alliance not read yet.
     const have = new Set((await deps.repo.listAllianceRows(snapshotId)).map((r) => r.unionId));
     await collectAll(
       run,

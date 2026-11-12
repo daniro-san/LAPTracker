@@ -80,7 +80,7 @@ The practice run's verdict has six checks: both snapshots complete; every allian
 
 ### What to do on ⚠ or ✗
 
-**⚠ Partly done.** Some alliances are stale or failed. The admin message lists them. Usually nothing needs doing: the other alliances' numbers are fine, and the stale rows show no change. If the missing numbers matter, tell the maintainer. Pressing Before or After again does not fix failed alliances; it only fills in alliances the run never reached.
+**⚠ Partly done.** Some alliances are stale or failed. The admin message lists them. Usually nothing needs doing: the other alliances' numbers are fine, and the stale rows show no change. If the missing numbers matter, tell the maintainer. Pressing Before or After again reads the failed alliances again, and the ones the run never reached; the alliances already read are kept as they are. It costs about one request per alliance it reads, plus one.
 
 If the error line says **deadline**, the game's data service answered too slowly and the run stopped at 100 seconds. The public site shows a _Game data is delayed_ banner while this lasts. Wait, then press by hand.
 

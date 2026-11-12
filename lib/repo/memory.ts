@@ -71,6 +71,10 @@ export function createMemoryRepo(seedEvents: EventRow[] = []): Repo & { tables: 
     clearAllianceRows: async (id) => {
       tables.rows.delete(id);
     },
+    clearFailedAllianceRows: async (id) => {
+      const kept = rowsOf(id).filter(({ row }) => row.error === null);
+      tables.rows.set(id, kept);
+    },
     listAllianceRows: async (id) =>
       rowsOf(id).map(({ row }) => ({
         unionId: row.unionId,
