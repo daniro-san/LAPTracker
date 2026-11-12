@@ -13,7 +13,7 @@ import {
   type RanksBoard,
   type V1Source,
 } from "./sources/types";
-import { describe, httpStatusOf } from "./upstream-errors";
+import { describe, httpStatusOf, upstreamDetail } from "./upstream-errors";
 
 /** 20 alliances × 3 retries × 2 phases (Logging guarantees). */
 export const MAX_UPSTREAM_CALLS = 120;
@@ -119,7 +119,8 @@ async function logV1Fetch(
     cached: result.cached ?? null,
     duration_ms: run.deps.now().getTime() - started.getTime(),
     quota_remaining: result.quota?.remaining ?? null,
-    ...(e === undefined ? {} : { error: describe(e) }),
+    // D61: what the upstream answered (status, headers, body start, or the timeout), for the run page.
+    ...(e === undefined ? {} : { error: describe(e), detail: upstreamDetail(e) }),
   });
 }
 

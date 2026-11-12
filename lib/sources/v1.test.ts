@@ -8,7 +8,13 @@ import {
   stubSourceEnv,
   v1AllianceFixtures,
 } from "./test-helpers";
-import { NotFoundError, QuotaExhaustedError, SchemaError, UpstreamError } from "./types";
+import {
+  NotFoundError,
+  QuotaExhaustedError,
+  RequestError,
+  SchemaError,
+  UpstreamError,
+} from "./types";
 import { fetchAlliance, fetchQuota } from "./v1";
 
 const OGS = "v1-20261104T155902Z/alliance-67111155.json";
@@ -167,6 +173,44 @@ describe("v1 requests", () => {
     });
     await expect(refused).rejects.toThrow("cap");
     expect(mock).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps the path, the status, the useful headers and the body's start on the final error, with any key removed", async () => {
+    const page = `<html>504 Gateway Time-out lap_${"k".repeat(24)} ${"y".repeat(2000)}</html>`;
+    const answer = () =>
+      respond(page, 504, { "cf-ray": "8a1b-GRU", "content-type": "text/html", "x-other": "x" });
+    mockFetch(answer(), answer(), answer(), answer());
+    const done = fetchAlliance(67111155).catch((e: unknown) => e);
+    await vi.runAllTimersAsync();
+    const { detail } = (await done) as UpstreamError;
+
+    expect(detail).toMatchObject({
+      path: "/alliances/67111155",
+      status: 504,
+      headers: { "cf-ray": "8a1b-GRU", "content-type": "text/html" },
+    });
+    expect(detail?.headers).not.toHaveProperty("x-other");
+    expect(detail?.body?.startsWith("<html>504 Gateway Time-out [redacted] yyy")).toBe(true);
+    expect(detail?.body?.length).toBeLessThanOrEqual(1000);
+  });
+
+  it("turns a call with no answer into an error that keeps its name, with the path and the timeout", async () => {
+    const timeout = new DOMException("The operation was aborted due to timeout", "TimeoutError");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => Promise.reject(timeout)),
+    );
+    const error = await fetchAlliance(67111155).catch((e: unknown) => e);
+
+    expect(error).toBeInstanceOf(RequestError);
+    expect(error).toMatchObject({
+      name: "TimeoutError",
+      detail: {
+        path: "/alliances/67111155",
+        timeoutMs: 30_000,
+        cause: "TimeoutError: The operation was aborted due to timeout",
+      },
+    });
   });
 
   it("sends a signal that aborts with the caller's signal, on top of the per-call timeout", async () => {

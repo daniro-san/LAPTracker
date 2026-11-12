@@ -1,5 +1,7 @@
 // The admin area's text (app/(pages)/admin/*, app/_ui/admin/*), re-exported as `copy.admin` from
 // lib/copy.ts. Sentences are allowed here (DESIGN.md: the grandma voice lives in the admin area).
+import { guideCopy } from "./copy-guide";
+
 export const adminCopy = {
   title: "Admin",
   nav: { label: "Admin", overview: "Overview", runs: "Runs", errors: "App errors" },
@@ -230,6 +232,7 @@ export const adminCopy = {
     filters: { all: "All", events: "Events", daily: "Daily reads" },
     daily: "Daily roster read",
     quotaBefore: "{n} left before this read",
+    stopped: "Stopped: {error}",
     started: "started {at}",
     finished: "finished {at}",
     event: "Event",
@@ -281,4 +284,5 @@ export const adminCopy = {
     digest: "digest {digest}",
     count: "{n}×",
   },
+  guide: guideCopy,
 };

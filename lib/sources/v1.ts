@@ -3,6 +3,7 @@
 import { z } from "zod";
 
 import { getSourceEnv } from "../env";
+import { redact } from "../redact";
 import { readBody, rosterFields, TIMEOUT_MS, toSnapshotInput, USER_AGENT } from "./shared";
 import {
   type AllianceSnapshotInput,
@@ -10,7 +11,9 @@ import {
   type OnAttempt,
   type Quota,
   QuotaExhaustedError,
+  RequestError,
   type UnionId,
+  type UpstreamDetail,
   UpstreamError,
 } from "./types";
 
@@ -21,6 +24,9 @@ const JITTER_MS = 250;
 /** A Retry-After above this is clamped, so one header cannot outlast the route's maxDuration. */
 const MAX_RETRY_AFTER_MS = 30_000;
 const RETRYABLE = new Set([502, 503, 504]);
+/** What an error answer keeps for /admin (D61): these headers and the body's first characters. */
+const DETAIL_HEADERS = ["retry-after", "content-type", "date", "server", "cf-ray", "x-request-id"];
+const DETAIL_BODY_CHARS = 1000;
 
 const quotaSchema = z.object({
   limit: z.number().int(),
@@ -69,6 +75,44 @@ const sleep = (ms: number, signal?: AbortSignal) =>
     );
   });
 
+/** An HTTP error answer as /admin shows it: path, status, the headers that help, the body's start. */
+async function httpDetail(path: string, response: Response): Promise<UpstreamDetail> {
+  const body = await response.text().catch(() => "");
+  const headers = Object.fromEntries(
+    DETAIL_HEADERS.flatMap((h) => {
+      const value = response.headers.get(h);
+      return value === null ? [] : [[h, value]];
+    }),
+  );
+  const detail = { path, status: response.status, headers, body: body.slice(0, DETAIL_BODY_CHARS) };
+  return redact(detail) as UpstreamDetail;
+}
+
+/** A request with no HTTP answer, as /admin shows it: the path, the timeout or the network cause. */
+function noAnswerDetail(path: string, e: unknown): UpstreamDetail {
+  const inner = e instanceof Error && e.cause instanceof Error ? e.cause : e;
+  const cause = inner instanceof Error ? `${inner.name}: ${inner.message}` : String(inner);
+  const timeout = e instanceof Error && e.name === "TimeoutError";
+  return redact({ path, ...(timeout && { timeoutMs: TIMEOUT_MS }), cause }) as UpstreamDetail;
+}
+
+/** The error a non-2xx answer ends the call with, or null when the call is tried again. */
+async function answerError(
+  path: string,
+  response: Response,
+  attempt: number,
+): Promise<Error | null> {
+  const { status } = response;
+  // INVARIANT quota-429-aborts: never retried.
+  if (status === 429)
+    return new QuotaExhaustedError(`429 on ${path}`, await httpDetail(path, response));
+  if (status === 404) return new NotFoundError(`404 on ${path}`, await httpDetail(path, response));
+  // INVARIANT retry-only-5xx-gateway: 502/503/504, max 3, backoff + jitter, Retry-After honoured.
+  if (!RETRYABLE.has(status) || attempt >= MAX_RETRIES)
+    return new UpstreamError(status, await httpDetail(path, response));
+  return null;
+}
+
 async function request(
   path: string,
   onAttempt?: OnAttempt,
@@ -84,24 +128,27 @@ async function request(
   for (let attempt = 0; ; attempt++) {
     // INVARIANT calls.max-upstream: every attempt is reported before it is sent, retries included.
     onAttempt?.(attempt, previous);
-    const response = await limited(() =>
-      fetch(`${env.LAP_API_BASE_URL}${path}`, {
-        headers,
-        signal: signal
-          ? AbortSignal.any([signal, AbortSignal.timeout(TIMEOUT_MS)])
-          : AbortSignal.timeout(TIMEOUT_MS),
-      }),
-    );
+    let response: Response;
+    try {
+      response = await limited(() =>
+        fetch(`${env.LAP_API_BASE_URL}${path}`, {
+          headers,
+          signal: signal
+            ? AbortSignal.any([signal, AbortSignal.timeout(TIMEOUT_MS)])
+            : AbortSignal.timeout(TIMEOUT_MS),
+        }),
+      );
+    } catch (e) {
+      // The caller's signal (the run deadline) ends the call on purpose; anything else got no answer.
+      if (signal?.aborted) throw e;
+      throw new RequestError(e, noAnswerDetail(path, e));
+    }
     // Branch on status only: statusText is empty over HTTP/2 on Node 26 (plan §11.4).
-    const { status } = response;
-    if (status >= 200 && status < 300) return response;
+    if (response.status >= 200 && response.status < 300) return response;
+    const error = await answerError(path, response, attempt);
+    if (error) throw error;
     await response.body?.cancel();
-    // INVARIANT quota-429-aborts: never retried.
-    if (status === 429) throw new QuotaExhaustedError(`429 on ${path}`);
-    if (status === 404) throw new NotFoundError(`404 on ${path}`);
-    // INVARIANT retry-only-5xx-gateway: 502/503/504, max 3, backoff + jitter, Retry-After honoured.
-    if (!RETRYABLE.has(status) || attempt >= MAX_RETRIES) throw new UpstreamError(status);
-    previous = status;
+    previous = response.status;
     await sleep(retryDelayMs(attempt, response.headers.get("retry-after")), signal);
   }
 }

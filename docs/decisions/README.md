@@ -74,3 +74,4 @@ The header text above is the old file's, kept as it was. The split it describes 
 - [D58 — The Discord event report carries a picture of the event (2026-11-09, owner, 08zzj, issue #172)](D58-the-discord-event-report-carries-a.md)
 - [D59 — The footer shows the live version, read at build time (2026-11-09, owner, 08zzo, issue #193)](D59-the-footer-shows-the-live-version.md)
 - [D60 — Member history: a daily roster read and a page per alliance (2026-11-10, owner, 08zzt, issue #197)](D60-member-history-a-daily-roster-read.md)
+- [D61 — Error detail for the admin: what came back, what it means, what to do (2026-11-12, owner, 08zzzi)](D61-error-detail-for-the-admin.md)

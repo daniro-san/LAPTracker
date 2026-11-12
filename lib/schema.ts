@@ -186,6 +186,8 @@ export const appErrors = pgTable(
     route: text("route").notNull(),
     digest: text("digest"),
     message: text("message").notNull(),
+    /** D61: the error's name, message, stack start and cause, redacted; shown on /admin/errors only. */
+    detail: jsonb("detail"),
   },
   (t) => [index("app_errors_at_idx").on(t.at)],
 );
@@ -260,6 +262,8 @@ export const dailyRosters = pgTable(
     sourceUpdatedAt: tstz("source_updated_at"),
     isFresh: boolean("is_fresh").notNull(),
     error: text("error"),
+    /** D61: what the upstream answered for a failed alliance (UpstreamDetail), redacted; /admin only. */
+    errorDetail: jsonb("error_detail"),
     memberUids: big("member_uids").array().notNull(),
     memberNames: text("member_names").array().notNull(),
     memberPower: big("member_power").array().notNull(),

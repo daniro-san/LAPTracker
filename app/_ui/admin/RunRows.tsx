@@ -10,6 +10,7 @@ import { copy, fill } from "@/lib/copy";
 import type { listRuns } from "@/lib/queries/admin";
 import type { listDailyReads } from "@/lib/queries/daily-runs";
 
+import { GuideNote, UpstreamDetails } from "./ErrorDetail";
 import { StateChip } from "./parts";
 import { eventWord, phaseWord, seconds, stateWord } from "./words";
 
@@ -131,8 +132,55 @@ export function SnapshotRunRow({ r, clock }: { r: SnapshotRun; clock: Clock }) {
   );
 }
 
+/** The read's stop reason and its failed alliances by reason, each with what it means (D61). */
+function DailyFailures({ r }: { r: DailyRun }) {
+  const byError = new Map<string, DailyRun["problems"]>();
+  for (const p of r.problems)
+    if (p.error) byError.set(p.error, [...(byError.get(p.error) ?? []), p]);
+  if (!r.error && byError.size === 0) return null;
+  return (
+    <ul className="flex flex-col gap-3 px-3 pb-3 sm:px-0">
+      {r.error && (
+        <li>
+          <p className="break-words font-semibold text-seal">
+            {fill(t.stopped, { error: r.error })}
+          </p>
+          <GuideNote error={r.error} />
+        </li>
+      )}
+      {[...byError].map(([error, ps]) => (
+        <li key={error}>
+          <p className="break-words font-semibold text-seal">
+            ✗ {error} ({ps.length})
+          </p>
+          <GuideNote error={error} />
+          {ps.map(
+            (p) =>
+              p.errorDetail && (
+                <UpstreamDetails
+                  key={p.unionId}
+                  detail={p.errorDetail}
+                  label={`[${p.tag ?? p.unionId}]`}
+                />
+              ),
+          )}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 /** Not a link: a daily read has no run page (D60 keeps no log for it). */
 export function DailyRunRow({ r, clock }: { r: DailyRun; clock: Clock }) {
+  return (
+    <>
+      <DailyRow r={r} clock={clock} />
+      <DailyFailures r={r} />
+    </>
+  );
+}
+
+function DailyRow({ r, clock }: { r: DailyRun; clock: Clock }) {
   return (
     <div className={ROW}>
       <Flags status={r.status} problems={r.problems} deadline={r.deadline} />

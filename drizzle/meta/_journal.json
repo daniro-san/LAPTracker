@@ -92,6 +92,13 @@
       "when": 1794324015956,
       "tag": "0012_young_mephisto",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1794495996206,
+      "tag": "0013_clumsy_mandarin",
+      "breakpoints": true
     }
   ]
 }

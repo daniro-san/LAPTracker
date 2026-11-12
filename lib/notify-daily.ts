@@ -3,6 +3,7 @@
 // what can be done: Retry on /admin for a failed day, the daily reads list for a partial one.
 import { copy, fill } from "./copy";
 import type { DailyReadSummary } from "./daily-read";
+import { guideFor } from "./error-guide";
 import { allianceLabel, STATE_ICON, STATE_WORD } from "./notify";
 
 export function dailyReadMessage(s: DailyReadSummary, at: string, origin: string): string {
@@ -22,6 +23,7 @@ export function dailyReadMessage(s: DailyReadSummary, at: string, origin: string
     const group = s.failed.filter((f) => f.error === error);
     lines.push(
       fill(t.dailyFailed, { error, n: group.length, list: group.map(allianceLabel).join(", ") }),
+      fill(t.dailyWhy, { ...guideFor(error) }),
     );
   }
   if (s.stale.length > 0)
