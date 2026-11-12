@@ -5,14 +5,14 @@
 import { ALLIANCES } from "../config/alliances";
 import { dailyReadQuota } from "./budget";
 import { MAX_UPSTREAM_CALLS, RUN_DEADLINE_MS } from "./collector";
-import { FRESH_MAX_AGE_MS } from "./collector-rows";
-import { isFresh } from "./compute";
+import { failedList, FRESH_MAX_AGE_MS } from "./collector-rows";
+import { isFresh, RUN_STALE_AFTER_MS } from "./compute";
 import type { Db } from "./db";
 import {
   claimDailyRead,
   finishDailyRead,
   insertDailyRoster,
-  reclaimFailedDailyRead,
+  reclaimDailyRead,
   type DailyReadStatus,
   type NewDailyRoster,
 } from "./repo/daily-reads";
@@ -148,15 +148,19 @@ export async function runDailyRead(
   return readDay(deps, db, day, ids);
 }
 
-/** /admin's retry of a `failed` day: the same read, claimed only from `failed`. Null when the day has
- * no read or its read did not fail (running, complete, partial), or another press took it first. */
+/** /admin's retry: the same read again for a day that failed, or that was left `running` past
+ * RUN_STALE_AFTER_MS (the function was killed). Null for any other day (no read, running, complete,
+ * partial) or when another press took it first. */
 export async function retryDailyRead(
   deps: Deps,
   db: Db,
   day: string,
   ids: readonly number[],
 ): Promise<DailyReadSummary | null> {
-  if (!(await reclaimFailedDailyRead(db, day, deps.now()))) return null;
+  const now = deps.now();
+  // INVARIANT run.stale-after-150s: the snapshots' rule for a killed run.
+  const staleBefore = new Date(now.getTime() - RUN_STALE_AFTER_MS);
+  if (!(await reclaimDailyRead(db, day, now, staleBefore))) return null;
   return readDay(deps, db, day, ids);
 }
 
@@ -191,8 +195,17 @@ async function readDay(
     quotaRemainingBefore: read.remaining,
     error,
   });
-  const failed = rows.flatMap((r) =>
-    r.error ? [{ unionId: r.unionId, tag: r.tag ?? null, error: r.error }] : [],
+  // Error rows, then the alliances the read never reached (deadline, 429, call cap, quota rule),
+  // named as the collector names them, so the admin line accounts for every alliance.
+  const failed = failedList(
+    rows.map((r) => ({
+      unionId: r.unionId,
+      tag: r.tag ?? null,
+      isFresh: r.isFresh,
+      error: r.error ?? null,
+    })),
+    [...ids],
+    error,
   );
   return {
     day,

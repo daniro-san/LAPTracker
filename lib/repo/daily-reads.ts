@@ -1,5 +1,5 @@
 // daily_reads and daily_rosters (D60): the tick's once-a-day roster read for member history.
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, lt, or, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { dailyReads, dailyRosters } from "../schema";
@@ -17,17 +17,27 @@ export async function claimDailyRead(db: Db, day: string, startedAt: Date): Prom
   return rows.length > 0;
 }
 
-/** /admin's retry: takes a `failed` day back to `running` for exactly one caller, and clears that
- * day's error rows so the new read can store its own. A failed read has no data rows to lose. */
-export async function reclaimFailedDailyRead(
+/** /admin's retry: takes a `failed` day, or one left `running` since before `staleBefore` (the read was
+ * killed), back to `running` for exactly one caller. Then it clears that day's rows so the new read can
+ * store its own: a failed read has only error rows, and a killed one may have stored part of its rows. */
+export async function reclaimDailyRead(
   db: Db,
   day: string,
   startedAt: Date,
+  staleBefore: Date,
 ): Promise<boolean> {
   const rows = await db
     .update(dailyReads)
     .set({ startedAt, finishedAt: null, status: "running", error: null })
-    .where(and(eq(dailyReads.day, day), eq(dailyReads.status, "failed")))
+    .where(
+      and(
+        eq(dailyReads.day, day),
+        or(
+          eq(dailyReads.status, "failed"),
+          and(eq(dailyReads.status, "running"), lt(dailyReads.startedAt, staleBefore)),
+        ),
+      ),
+    )
     .returning({ day: dailyReads.day });
   if (rows.length === 0) return false;
   await db.delete(dailyRosters).where(eq(dailyRosters.readDay, day));
@@ -39,6 +49,7 @@ export async function getDailyRead(db: Db, day: string) {
   const [row] = await db
     .select({
       status: dailyReads.status,
+      startedAt: dailyReads.startedAt,
       finishedAt: dailyReads.finishedAt,
       callsUsed: dailyReads.callsUsed,
       error: dailyReads.error,

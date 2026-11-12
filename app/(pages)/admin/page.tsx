@@ -14,6 +14,7 @@ import {
   seconds,
   stateWord,
   currentView,
+  dailyView,
   watchViews,
 } from "@/app/_ui/admin/words";
 import type { Clock } from "@/app/_ui/format";
@@ -279,17 +280,7 @@ export default async function AdminPage() {
           beforeAtText={clock.stamp(current.beforeAt)}
           current={currentView(current, row, now, clock)}
           manual={manual && roundView(manual, clock)}
-          daily={
-            daily?.status === "failed"
-              ? {
-                  text: fill(t.run.daily.failed, {
-                    at: daily.finishedAt ? clock.stamp(daily.finishedAt) : "",
-                    error: daily.error ?? stateWord(daily.status),
-                    calls: daily.callsUsed,
-                  }),
-                }
-              : null
-          }
+          daily={dailyView(daily, now, clock)}
           running={views.running}
         />
       </AdminSection>

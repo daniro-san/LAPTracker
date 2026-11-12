@@ -2,7 +2,7 @@
 // lib/copy.ts. Sentences are allowed here (DESIGN.md: the grandma voice lives in the admin area).
 export const adminCopy = {
   title: "Admin",
-  nav: { label: "Admin", overview: "Overview", runs: "Snapshot runs", errors: "App errors" },
+  nav: { label: "Admin", overview: "Overview", runs: "Runs", errors: "App errors" },
   pin: {
     label: "Admin PIN",
     prompt: "Enter the admin PIN to see this page.",
@@ -99,6 +99,7 @@ export const adminCopy = {
     daily: {
       title: "Daily roster read",
       failed: "Today's read failed at {at}: {error}. API calls used today: {calls}.",
+      stuck: "Today's read started at {at} and never finished.",
       retry: "Retry",
       cost: "≈ 21 calls",
       confirm: "Read every roster again now? About 21 API calls, up to 100 seconds.",
@@ -133,7 +134,7 @@ export const adminCopy = {
       rehearsal_event_day: "Not on the event day or the day after.",
       rehearsal_before_real: "Too close to the real before snapshot (within 3 hours).",
       rehearsal_real_running: "A real run is in progress.",
-      daily_read_not_failed: "Today's roster read has not failed, or is already running again.",
+      daily_read_not_retryable: "Today's roster read has not failed, or is already running again.",
       rate_limited: "Too many attempts. Wait a few minutes.",
       pin_locked: "PIN entry is locked for an hour.",
       unauthorized: "Wrong PIN. Reload and enter it again.",
@@ -221,9 +222,14 @@ export const adminCopy = {
     verdict: { pass: "Pass", fail: "Fail" },
   },
   runs: {
-    title: "Snapshot runs",
-    none: "No snapshot runs yet.",
-    help: "Newest first. Open a run to see its calls and its log.",
+    title: "Runs",
+    none: "No runs yet.",
+    noneShown: "No runs of this kind yet.",
+    help: "Newest first. Open a snapshot run to see its calls and its log. Daily roster reads keep no log.",
+    show: "Show",
+    filters: { all: "All", events: "Events", daily: "Daily reads" },
+    daily: "Daily roster read",
+    quotaBefore: "{n} left before this read",
     started: "started {at}",
     finished: "finished {at}",
     event: "Event",
