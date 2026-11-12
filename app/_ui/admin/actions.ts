@@ -14,7 +14,8 @@ export interface Action {
     | "manual-settings"
     | "manual-before"
     | "manual-after"
-    | "event-rename";
+    | "event-rename"
+    | "daily-retry";
   /** One line under a snapshot button, and what it costs. */
   help?: string;
   cost?: string;
@@ -63,6 +64,20 @@ export const SNAPSHOTS: Action[] = [
     confirm: t.confirmRehearse,
   },
 ];
+
+/** Today's failed daily roster read, read again (D60 amendment). */
+export const DAILY_RETRY: Action = {
+  id: "daily-retry",
+  label: t.daily.retry,
+  cost: t.daily.cost,
+  url: "/api/daily-read/retry",
+  confirm: t.daily.confirm,
+};
+
+/** Today's daily read when it failed, in words, for the Retry card; null hides the card. */
+export interface DailyFailedView {
+  text: string;
+}
 
 /** The manual event's two snapshot buttons (D28): the same route, named by `event`. */
 export const manualSnapshots = (eventId: number): Action[] =>

@@ -20,10 +20,12 @@ import {
   SNAPSHOTS,
   type Action,
   type CurrentEventView,
+  type DailyFailedView,
   type RoundView,
   type RunningView,
 } from "./actions";
 import { ConfirmSheet } from "./ConfirmSheet";
+import { DailyRetry } from "./DailyRetry";
 import { ManualSection } from "./ManualSection";
 import { describe, Result, RunningNotice } from "./outcome";
 import { CostTag } from "./parts";
@@ -35,16 +37,19 @@ const t = copy.admin.run;
 /**
  * `beforeAtText` is the event's before_at, shown when the API says the phase is not due yet.
  * `manual` is the newest manual round, or null when none exists.
+ * `daily` is today's daily roster read when it failed, else null.
  */
 export function AdminActions({
   beforeAtText,
   current,
   manual,
+  daily,
   running,
 }: {
   beforeAtText: string;
   current: CurrentEventView;
   manual: RoundView | null;
+  daily: DailyFailedView | null;
   /** Snapshots running now, as words (phase, event, start time); empty when idle. */
   running: RunningView[];
 }) {
@@ -53,8 +58,7 @@ export function AdminActions({
   const [busy, setBusy] = useState<string | null>(null);
   const [pending, setPending] = useState<Action | null>(null);
   const { asking, ask, answer } = useAsk();
-  const locked = running.length > 0;
-  const off = busy ?? (locked ? "running" : null);
+  const off = busy ?? (running.length > 0 ? "running" : null);
 
   async function send(action: Action, pin: string, force = action.force === true) {
     setBusy(action.id);
@@ -89,7 +93,7 @@ export function AdminActions({
 
   return (
     <div>
-      {locked && <RunningNotice running={running} />}
+      {running.length > 0 && <RunningNotice running={running} />}
       {message && <Result message={message} />}
       <CurrentEvent
         current={current}
@@ -97,6 +101,7 @@ export function AdminActions({
         onRename={(id, name) => void start(renameEvent(id, name))}
       />
       <ul className="mt-4 grid grid-cols-3 gap-2 sm:max-w-xl sm:gap-6">{SNAPSHOTS.map(seal)}</ul>
+      {daily && <DailyRetry daily={daily} busy={busy} off={off} onStart={start} />}
       <ManualSection
         manual={manual}
         busy={off}

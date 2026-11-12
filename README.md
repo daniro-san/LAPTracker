@@ -54,23 +54,26 @@ The rest of the message:
 
 ### Admin channel
 
-| Message                                                    | Meaning                                                                                              |
-| ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `[rehearsal]` in front                                     | A practice run on a test event. Not shown publicly.                                                  |
-| `[manual]` in front                                        | A round you started by hand.                                                                         |
-| ✓ / ⚠ / ✗ **Before snapshot: done / partly done / failed** | The result of that snapshot.                                                                         |
-| `due Sat, 11/07/2026, 10:00 server time · started +4 min`  | When it was due and how late it started. A few minutes late is normal.                               |
-| `12 calls · 988 requests left · 10.9 s`                    | Requests used, requests left today, and how long it took.                                            |
-| `error: …`                                                 | The whole run failed or stopped early.                                                               |
-| `✗ failed [TAG] Name: …`                                   | One alliance could not be read.                                                                      |
-| `○ stale [TAG] Name`                                       | One alliance was read, but its data was not fresh.                                                   |
-| `run_logs write failures: n`                               | Some log lines of the run were not saved, so its run log is incomplete. Check `/admin/errors`.       |
-| `[Run 42 ↗]`                                               | Opens the run's page.                                                                                |
-| `✓ Pass` / `✗ Fail` with checks                            | The practice run's verdict, one line per check (listed below).                                       |
-| `skipped · …: reason`                                      | A scheduled practice run did not start. The reason follows.                                          |
-| `✓ Weekly API quota check`                                 | The Friday check. ⚠ next to the requests or the database size means it is low or large.              |
-| `🔒 PIN entry is locked`                                   | Too many wrong PINs. Wait an hour. Scheduled snapshots still run.                                    |
-| `✗ App error on …`                                         | A page or action broke. See `/admin/errors`. At most one such message an hour while errors continue. |
+| Message                                                      | Meaning                                                                                                                     |
+| ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| `[rehearsal]` in front                                       | A practice run on a test event. Not shown publicly.                                                                         |
+| `[manual]` in front                                          | A round you started by hand.                                                                                                |
+| ✓ / ⚠ / ✗ **Before snapshot: done / partly done / failed**   | The result of that snapshot.                                                                                                |
+| `due Sat, 11/07/2026, 10:00 server time · started +4 min`    | When it was due and how late it started. A few minutes late is normal.                                                      |
+| `12 calls · 988 requests left · 10.9 s`                      | Requests used, requests left today, and how long it took.                                                                   |
+| `error: …`                                                   | The whole run failed or stopped early.                                                                                      |
+| `✗ failed [TAG] Name: …`                                     | One alliance could not be read.                                                                                             |
+| `○ stale [TAG] Name`                                         | One alliance was read, but its data was not fresh.                                                                          |
+| `run_logs write failures: n`                                 | Some log lines of the run were not saved, so its run log is incomplete. Check `/admin/errors`.                              |
+| `[Run 42 ↗]`                                                 | Opens the run's page.                                                                                                       |
+| `✓ Pass` / `✗ Fail` with checks                              | The practice run's verdict, one line per check (listed below).                                                              |
+| `skipped · …: reason`                                        | A scheduled practice run did not start. The reason follows.                                                                 |
+| `✓ Weekly API quota check`                                   | The Friday check. ⚠ next to the requests or the database size means it is low or large.                                     |
+| `🔒 PIN entry is locked`                                     | Too many wrong PINs. Wait an hour. Scheduled snapshots still run.                                                           |
+| `✗ App error on …`                                           | A page or action broke. See `/admin/errors`. At most one such message an hour while errors continue.                        |
+| ✗ / ⚠ **Daily roster read 2026-11-12: failed / partly done** | The 06:00 roster read for member history fell short. Not sent when it is done.                                              |
+| `✗ v1 TimeoutError (12): [NSE], …`                           | The alliances that were not read, one line per reason. `not fetched: deadline` means the read stopped before reaching them. |
+| `[Retry on /admin ↗]` / `[Daily reads ↗]`                    | A failed day: open `/admin` and press **Retry**. A partly done day: see it in the runs list.                                |
 
 The practice run's verdict has six checks: both snapshots complete; every alliance fresh in both; the game's data moved forward for every alliance; the requests used equal the drop in the daily count; each run under 120 seconds; both snapshots started within 45 minutes of their due time.
 
@@ -120,18 +123,19 @@ Things to know:
 - **If that snapshot is already done**, the page asks _"This snapshot is already done. Take it again?"_ Say yes only if you mean to replace that phase's numbers.
 - **Manual round.** For a test on a weekday: **Start a manual round** on `/admin`. Give it a name, choose who can see it, and whether it posts to the public channel. Then press its Before and After buttons. A manual round has no schedule and does not affect Saturday's comparisons unless you choose "history".
 - **Rename.** **Rename** next to the current event on `/admin` changes its name on the public pages. You can rename the Saturday event from a day before its Before snapshot. Discord messages already sent keep the old name.
+- **Daily roster read failed.** When today's 06:00 read failed (for example the game's data service timed out), `/admin` shows it under **Run something now** with a **Retry** button. It reads every roster again and costs about 21 requests. It only appears while today's read is failed, or when it started and never finished.
 - **Practice run.** **Rehearse** runs a practice event with the full checks. It costs about 45 requests and takes about 50 minutes.
 - **GitHub, if `/admin` is not reachable.** On the repository, open Actions → **tick** → **Run workflow**, and pick `before` or `after`.
 
 ## Where to look when something breaks
 
-| Page               | What it shows                                                                                                                                                                                                                                                                                  |
-| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/admin`           | Four sections. **Status**: the requests left (OK, Low under 900, or Unknown), what is running, the next scheduled run, and the last result. **Run something now**: the buttons, each with its cost. **Last rehearsal**: the verdict and its checks. **Schedule**: the times in use, read only. |
-| `/admin/runs`      | Every run, newest first, titled by its event's name. Practice runs are marked `[rehearsal]`. Each row shows start, finish, duration, requests used and requests left. A run that stopped at the deadline is marked.                                                                            |
-| `/admin/runs/[id]` | One run: an **Upstream calls** table (each request, its seconds, its HTTP status, whether it was cached and how many retries it needed), then the **Log**. Start here to find out why a run failed or was partial.                                                                             |
-| `/admin/errors`    | Problems on the site itself (a page or action that broke), grouped by message, with a count. "Nothing has broken" means there are none.                                                                                                                                                        |
-| The public banner  | _Game data is delayed_: the game's data service has not answered for the last attempt. The numbers may be out of date.                                                                                                                                                                         |
+| Page               | What it shows                                                                                                                                                                                                                                                                                                                                                                                                     |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/admin`           | Four sections. **Status**: the requests left (OK, Low under 900, or Unknown), what is running, the next scheduled run, and the last result. **Run something now**: the buttons, each with its cost. **Last rehearsal**: the verdict and its checks. **Schedule**: the times in use, read only.                                                                                                                    |
+| `/admin/runs`      | Every snapshot run and every daily roster read, newest first. A snapshot run is titled by its event's name; practice runs are marked `[rehearsal]`. Each row shows start, finish, duration, requests used and requests left. A run that stopped at the deadline is marked. **All**, **Events** and **Daily reads** filter the list. A daily read has no page of its own: its row names the alliances that failed. |
+| `/admin/runs/[id]` | One run: an **Upstream calls** table (each request, its seconds, its HTTP status, whether it was cached and how many retries it needed), then the **Log**. Start here to find out why a run failed or was partial.                                                                                                                                                                                                |
+| `/admin/errors`    | Problems on the site itself (a page or action that broke), grouped by message, with a count. "Nothing has broken" means there are none.                                                                                                                                                                                                                                                                           |
+| The public banner  | _Game data is delayed_: the game's data service has not answered for the last attempt. The numbers may be out of date.                                                                                                                                                                                                                                                                                            |
 
 The header of `/admin` shows a small candle: it is lit while a run is in progress.
 

@@ -3,8 +3,9 @@ import { and, eq } from "drizzle-orm";
 
 import type { Db } from "../db";
 import type { Env } from "../env";
+import { getDailyRead } from "../repo/daily-reads";
 import { scheduledEventDone } from "../repo/events";
-import { currentEvent, targetEvent } from "../schedule";
+import { currentEvent, serverDay, targetEvent } from "../schedule";
 import { events, snapshots } from "../schema";
 import {
   latestManualEvent,
@@ -46,6 +47,7 @@ export async function loadAdminPage(db: Db, now: Date, env: Env) {
       listRuns(db, 10),
       scheduledEvent(db, target.eventAtUtc),
       recentTicks(db),
+      getDailyRead(db, serverDay(now, env)),
     ])),
   ] as const;
 }

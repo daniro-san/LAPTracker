@@ -66,5 +66,10 @@ export const discordCopy = {
     tickNone: "⚠ No tick recorded yet. Check the cron-job.org job and CRON_SECRET · /admin",
     /** The daily roster read (D60) posts only when it falls short. */
     dailyRead: "{icon} Daily roster read {day}: {state} · {calls} calls · {at}",
+    /** Alliances that share one reason, on one line: "✗ v1 TimeoutError (12): [NSE], [URSA], …". */
+    dailyFailed: "✗ {error} ({n}): {list}",
+    /** A failed day can be retried on /admin; a partial one only looked at. */
+    dailyRetry: "[Retry on /admin ↗](<{url}>)",
+    dailyRuns: "[Daily reads ↗](<{url}>)",
   },
 };
