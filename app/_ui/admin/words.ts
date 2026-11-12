@@ -34,7 +34,9 @@ export const eventWord = (
   return isGeneratedName(r.eventName) ? clock.weekday(r.eventAtUtc) : r.eventName;
 };
 
-/** What AdminShell's poller and /admin's notice need about the runs in progress and the newest run. */
+/** What AdminShell's poller and /admin's notice need about the runs in progress and the newest run.
+ * `daily` is the newest daily roster read (D60): it counts as running like a snapshot does (until
+ * RUN_STALE_AFTER_MS), and it is the newest run when it started after the last snapshot. */
 export function watchViews(
   running: readonly {
     phase: "before" | "after";
@@ -50,17 +52,34 @@ export function watchViews(
         isTest: boolean;
         eventName: string;
         eventAtUtc: Date;
+        startedAt: Date;
       }
     | undefined,
+  daily: { status: string; startedAt: Date } | null | undefined,
+  now: Date,
   clock: Clock,
 ) {
+  const views = running.map((r) => ({
+    phase: phaseWord(r.phase),
+    event: eventWord(r, clock),
+    startedText: clock.stamp(r.startedAt),
+  }));
+  const dailyWord = copy.admin.runs.daily;
+  // INVARIANT run.stale-after-150s: a read left running longer was killed, as for a snapshot.
+  if (daily?.status === "running" && now.getTime() - daily.startedAt.getTime() < RUN_STALE_AFTER_MS)
+    views.push({
+      phase: dailyWord,
+      event: clock.weekday(daily.startedAt),
+      startedText: clock.stamp(daily.startedAt),
+    });
+  const dailyLatest = daily && (!last || daily.startedAt > last.startedAt);
   return {
-    running: running.map((r) => ({
-      phase: phaseWord(r.phase),
-      event: eventWord(r, clock),
-      startedText: clock.stamp(r.startedAt),
-    })),
-    latest: last ? { event: eventWord(last, clock), phase: last.phase, status: last.status } : null,
+    running: views,
+    latest: dailyLatest
+      ? { event: clock.weekday(daily.startedAt), phase: dailyWord, status: daily.status }
+      : last
+        ? { event: eventWord(last, clock), phase: phaseWord(last.phase), status: last.status }
+        : null,
   };
 }
 

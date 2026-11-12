@@ -10,14 +10,15 @@ import { copy, fill } from "@/lib/copy";
 
 import type { RunningView } from "./actions";
 import { RESULT_MARK } from "./outcome";
-import { phaseWord, stateWord } from "./words";
+import { stateWord } from "./words";
 
 export const POLL_MS = 4000;
 export const IDLE_POLL_MS = 20_000;
 
 export function useRunWatch(
   running: RunningView[],
-  latest: { event: string; phase: "before" | "after"; status: string } | null,
+  /** The newest run, its phase already in words ("Before snapshot", "Daily roster read"). */
+  latest: { event: string; phase: string; status: string } | null,
   say: (message: string) => void,
 ) {
   const router = useRouter();
@@ -28,7 +29,7 @@ export function useRunWatch(
         say(
           fill(copy.admin.run.live.finished, {
             mark: RESULT_MARK[latest.status] ?? "✗",
-            phase: phaseWord(latest.phase),
+            phase: latest.phase,
             event: latest.event,
             state: stateWord(latest.status),
           }),
