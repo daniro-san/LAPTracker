@@ -1,7 +1,12 @@
 // Persistence: one module per table, plain functions over Drizzle. No generic repository (plan §11.1).
 // `Repo` is the collector's view of them (Deps.repo); lib/repo/memory.ts implements it for tests.
 import type { Db } from "../db";
-import { clearAllianceRows, insertAllianceRow, listAllianceRows } from "./alliance-snapshots";
+import {
+  clearAllianceRows,
+  clearFailedAllianceRows,
+  insertAllianceRow,
+  listAllianceRows,
+} from "./alliance-snapshots";
 import { getEvent, setEventAllianceIds } from "./events";
 import { findSnapshot, finishSnapshot, startSnapshot } from "./snapshots";
 
@@ -87,6 +92,8 @@ export interface Repo {
     expected: SnapshotRow | null,
   ): Promise<number | null>;
   clearAllianceRows(snapshotId: number): Promise<void>;
+  /** The rows with an error only (D62): a re-run reads those alliances again. */
+  clearFailedAllianceRows(snapshotId: number): Promise<void>;
   listAllianceRows(snapshotId: number): Promise<AllianceRowStatus[]>;
   /** The row and its members in one transaction. */
   insertAllianceRow(snapshotId: number, row: AllianceRow, members: MemberRow[]): Promise<void>;
@@ -101,6 +108,7 @@ export function createRepo(db: Db): Repo {
     startSnapshot: (eventId, phase, startedAt, expected) =>
       startSnapshot(db, eventId, phase, startedAt, expected),
     clearAllianceRows: (id) => clearAllianceRows(db, id),
+    clearFailedAllianceRows: (id) => clearFailedAllianceRows(db, id),
     listAllianceRows: (id) => listAllianceRows(db, id),
     insertAllianceRow: (id, row, members) => insertAllianceRow(db, id, row, members),
     finishSnapshot: (id, result) => finishSnapshot(db, id, result),
