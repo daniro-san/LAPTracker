@@ -63,3 +63,5 @@ Plan changes needed: none.
 - `run_logs` rows belong to a snapshot or a daily read (`read_day`), never both. A query on `run_logs` by snapshot must keep filtering on `snapshot_id`.
 - A new run kind can log through `createRunLogger` with its own owner column and reuse `runTrace` and `RunLog` if it writes the collector's codes.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/251
