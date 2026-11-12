@@ -55,3 +55,5 @@ Plan changes needed: none.
 - `.tint-button` uses `::after` for its tint. Do not combine it with a class that needs `::after` (`ink-button`, `text-link-stretch`).
 - Avoid `color-mix()` with `currentColor` in backgrounds: it was the one construct behind the blank boxes on iOS.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/252
