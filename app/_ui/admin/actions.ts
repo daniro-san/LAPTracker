@@ -65,6 +65,16 @@ export const SNAPSHOTS: Action[] = [
   },
 ];
 
+/** The presses that run a read now (snapshots, the daily retry): the header's candle is lit while one
+ * waits for its answer, before the poller sees the run. */
+export const RUN_ACTIONS: ReadonlySet<string> = new Set<Action["id"]>([
+  "before",
+  "after",
+  "manual-before",
+  "manual-after",
+  "daily-retry",
+]);
+
 /** Today's failed daily roster read, read again (D60 amendment). */
 export const DAILY_RETRY: Action = {
   id: "daily-retry",

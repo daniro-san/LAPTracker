@@ -250,7 +250,7 @@ export default async function AdminPage() {
   const next = nextEvent(now, env);
   const [[current, rehearsal, quota, manual, running, recent, row, ticks, daily], clock] =
     await Promise.all([withPageDb((db) => loadAdminPage(db, now, env)), requestServerClock()]);
-  const views = watchViews(running, recent[0], clock);
+  const views = watchViews(running, recent[0], daily, now, clock);
   const nextRun = [
     { phase: "before" as const, at: current.beforeAt, event: current },
     { phase: "after" as const, at: current.afterAt, event: current },
