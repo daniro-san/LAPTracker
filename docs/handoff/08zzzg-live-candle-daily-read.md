@@ -53,3 +53,5 @@ Plan changes needed: none.
 - "Is anything running" on the admin pages is `watchViews(...).running`: snapshots plus the newest daily read. A new kind of run must be added there, not only to its own page.
 - A new `/admin` button that runs a read must add its action id to `RUN_ACTIONS` in `app/_ui/admin/actions.ts`, or the candle stays off until the next poll.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/242
