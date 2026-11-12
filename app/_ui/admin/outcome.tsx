@@ -27,14 +27,27 @@ export function describe(
   if (code)
     return `${status === 409 || status === 429 ? "" : "✗ "}${t.refusals[code] ?? fill(t.refused, { code })}`;
   if (status === 201) return body.event_id === undefined ? t.created : m.created;
+  if (body.day !== undefined) return dailyResult(body);
   const manual = manualOutcome(body);
   if (manual) return manual;
   return snapshotResult(body);
 }
 
+const count = (v: unknown) => (Array.isArray(v) ? v.length : 0);
+
+/** The retried daily read's outcome in words. */
+function dailyResult(body: Record<string, unknown>): string {
+  return fill(t.daily.result, {
+    mark: RESULT_MARK[String(body.status)] ?? "✗",
+    status: stateWord(String(body.status)),
+    calls: String(body.calls_used),
+    stale: count(body.stale),
+    failed: count(body.failed),
+  });
+}
+
 /** The finished snapshot's outcome in words. */
 function snapshotResult(body: Record<string, unknown>): string {
-  const count = (v: unknown) => (Array.isArray(v) ? v.length : 0);
   return fill(t.result, {
     mark: RESULT_MARK[String(body.status)] ?? "✗",
     phase: body.phase === "before" || body.phase === "after" ? phaseWord(body.phase) : "",

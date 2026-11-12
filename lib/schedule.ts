@@ -189,6 +189,10 @@ export function dailyReadDue(
   return { day: isoDate(today), from, to: zonedToUtc(addDays(today, 1), "00:00", cfg.SERVER_TZ) };
 }
 
+/** The server date `now` falls on, as a daily read's `day` ("2026-11-12"). */
+export const serverDay = (now: Date, cfg: Pick<ScheduleConfig, "SERVER_TZ">) =>
+  isoDate(wallClock(now, cfg.SERVER_TZ));
+
 /** 0 = Sunday … 6 = Saturday, in server time. */
 export function serverWeekday(at: Date, cfg: Pick<ScheduleConfig, "SERVER_TZ">): number {
   return wallClock(at, cfg.SERVER_TZ).weekday;

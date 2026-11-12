@@ -96,6 +96,15 @@ export const adminCopy = {
       costRehearse: "≈ 45 calls",
     },
     rehearse: "Rehearse",
+    daily: {
+      title: "Daily roster read",
+      failed: "Today's read failed at {at}: {error}. API calls used today: {calls}.",
+      retry: "Retry",
+      cost: "≈ 21 calls",
+      confirm: "Read every roster again now? About 21 API calls, up to 100 seconds.",
+      result:
+        "{mark} Daily roster read {status}. API calls used: {calls}. Stale: {stale}. Failed: {failed}.",
+    },
     confirmRehearse: "Start a rehearsal? About 45 API calls over about 50 minutes.",
     confirmBefore: "Take the before snapshot now? About 21 API calls, up to a minute.",
     confirmAfter: "Take the after snapshot now? About 21 API calls, up to a minute.",
@@ -124,6 +133,7 @@ export const adminCopy = {
       rehearsal_event_day: "Not on the event day or the day after.",
       rehearsal_before_real: "Too close to the real before snapshot (within 3 hours).",
       rehearsal_real_running: "A real run is in progress.",
+      daily_read_not_failed: "Today's roster read has not failed, or is already running again.",
       rate_limited: "Too many attempts. Wait a few minutes.",
       pin_locked: "PIN entry is locked for an hour.",
       unauthorized: "Wrong PIN. Reload and enter it again.",

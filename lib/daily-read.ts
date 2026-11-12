@@ -12,6 +12,7 @@ import {
   claimDailyRead,
   finishDailyRead,
   insertDailyRoster,
+  reclaimFailedDailyRead,
   type DailyReadStatus,
   type NewDailyRoster,
 } from "./repo/daily-reads";
@@ -67,8 +68,10 @@ const errorRow = (unionId: number, error: string): NewDailyRoster => ({
   memberKills: [],
 });
 
+type Deps = { v1: V1Source; now: () => Date };
+
 interface Read {
-  deps: { v1: V1Source; now: () => Date };
+  deps: Deps;
   controller: AbortController;
   calls: number;
   abort: string | null;
@@ -136,12 +139,33 @@ async function withDeadline(read: Read, work: Promise<string | null>): Promise<s
  * bounded like an event snapshot: MAX_UPSTREAM_CALLS, the 100 s deadline, a 429 stops it.
  */
 export async function runDailyRead(
-  deps: { v1: V1Source; now: () => Date },
+  deps: Deps,
   db: Db,
   day: string,
   ids: readonly number[],
 ): Promise<DailyReadSummary | null> {
   if (!(await claimDailyRead(db, day, deps.now()))) return null;
+  return readDay(deps, db, day, ids);
+}
+
+/** /admin's retry of a `failed` day: the same read, claimed only from `failed`. Null when the day has
+ * no read or its read did not fail (running, complete, partial), or another press took it first. */
+export async function retryDailyRead(
+  deps: Deps,
+  db: Db,
+  day: string,
+  ids: readonly number[],
+): Promise<DailyReadSummary | null> {
+  if (!(await reclaimFailedDailyRead(db, day, deps.now()))) return null;
+  return readDay(deps, db, day, ids);
+}
+
+async function readDay(
+  deps: Deps,
+  db: Db,
+  day: string,
+  ids: readonly number[],
+): Promise<DailyReadSummary> {
   const read: Read = {
     deps,
     controller: new AbortController(),

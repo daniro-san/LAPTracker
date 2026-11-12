@@ -247,7 +247,7 @@ export default async function AdminPage() {
   const env = getEnv();
   const now = new Date();
   const next = nextEvent(now, env);
-  const [[current, rehearsal, quota, manual, running, recent, row, ticks], clock] =
+  const [[current, rehearsal, quota, manual, running, recent, row, ticks, daily], clock] =
     await Promise.all([withPageDb((db) => loadAdminPage(db, now, env)), requestServerClock()]);
   const views = watchViews(running, recent[0], clock);
   const nextRun = [
@@ -279,6 +279,17 @@ export default async function AdminPage() {
           beforeAtText={clock.stamp(current.beforeAt)}
           current={currentView(current, row, now, clock)}
           manual={manual && roundView(manual, clock)}
+          daily={
+            daily?.status === "failed"
+              ? {
+                  text: fill(t.run.daily.failed, {
+                    at: daily.finishedAt ? clock.stamp(daily.finishedAt) : "",
+                    error: daily.error ?? stateWord(daily.status),
+                    calls: daily.callsUsed,
+                  }),
+                }
+              : null
+          }
           running={views.running}
         />
       </AdminSection>
