@@ -34,7 +34,7 @@ Owner requests, 2026-11-12. That day's 06:00 daily roster read closed `failed`: 
 - **No Discord line for a retry.** The owner pressed the button and sees the outcome on the page. The tick's read still sends its admin line.
 - **`calls_used` is the day's total** across attempts.
 - **Unreached alliances get no row**, as in the collector. They appear only in the summary (Discord line and retry answer). On `/admin/runs` a deadline read shows its stored failed alliances and the deadline chip.
-- **Filter default is All**, and **rehearsals and manual rounds are under Events**. Assumption: these were the suggestions in chat, and the owner's reply ("do the 2 follow-ups in this same PR") did not change them. The page loads 60 of each kind and keeps the newest 60, so All is not short of either kind.
+- **Filter default is All**, and **rehearsals and manual rounds are under Events** (owner confirmed both, 2026-11-12). The page loads 60 of each kind and keeps the newest 60, so All is not short of either kind.
 - **Daily row date** is `clock.weekday(startedAt)`: a read always starts on its own server day.
 - `AdminActions` was at the 80-line function limit. The Retry block went into its own file, like `ManualSection`, and `locked` was inlined to stay under the limit.
 
