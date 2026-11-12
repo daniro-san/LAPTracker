@@ -2,6 +2,7 @@
 // latest rehearsal. Never linked from public pages; the pages check the admin cookie first.
 import { and, asc, desc, eq, gt, isNotNull } from "drizzle-orm";
 
+import type { AppErrorDetail } from "../app-errors";
 import { RUN_STALE_AFTER_MS } from "../compute";
 import type { Db } from "../db";
 import { rehearsalVerdict, type Verdict } from "../rehearsal";
@@ -270,6 +271,8 @@ export interface ErrorGroup {
   digest: string | null;
   route: string;
   message: string;
+  /** The newest row's detail (D61); null for rows recorded before it existed. */
+  detail: AppErrorDetail | null;
   count: number;
   firstAt: Date;
   lastAt: Date;
@@ -283,7 +286,8 @@ export async function listErrorGroups(db: Db): Promise<ErrorGroup[]> {
     const key = r.digest ?? `${r.route}\n${r.message}`;
     const group = groups.get(key);
     if (!group) {
-      groups.set(key, { key, ...r, count: 1, firstAt: r.at, lastAt: r.at });
+      const detail = r.detail as AppErrorDetail | null;
+      groups.set(key, { key, ...r, detail, count: 1, firstAt: r.at, lastAt: r.at });
       continue;
     }
     group.count += 1;

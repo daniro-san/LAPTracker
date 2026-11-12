@@ -2,6 +2,7 @@
 import { notFound } from "next/navigation";
 
 import { AdminShell } from "@/app/_ui/admin/AdminShell";
+import { GuideNote, UpstreamDetails } from "@/app/_ui/admin/ErrorDetail";
 import { AdminSection, StateChip } from "@/app/_ui/admin/parts";
 import { RunTrace } from "@/app/_ui/admin/RunTrace";
 import { eventWord, phaseWord, seconds, stateWord } from "@/app/_ui/admin/words";
@@ -14,6 +15,7 @@ import { DroppedStitch } from "@/lib/brand/components/StatusIcons";
 import { copy, fill } from "@/lib/copy";
 import { withPageDb } from "@/lib/page";
 import { getRun } from "@/lib/queries/admin";
+import type { UpstreamDetail } from "@/lib/queries/daily-runs";
 
 const LEVEL = {
   info: "text-ink/70",
@@ -89,20 +91,40 @@ export default async function RunPage({ params }: { params: Promise<{ id: string
         </AdminSection>
       )}
       <RunTrace trace={trace} deadline={run.deadline} />
-      <AdminSection id="run-log" title={t.trace.log}>
-        <ol>
-          {logs.map((l) => (
+      <RunLog logs={logs} tags={tags} />
+    </AdminShell>
+  );
+}
+
+type Run = NonNullable<Awaited<ReturnType<typeof getRun>>>;
+
+/** The run's log lines, oldest first; a failed call's line adds what it means and the upstream's answer. */
+function RunLog({ logs, tags }: Pick<Run, "logs" | "tags">) {
+  const t = copy.admin.runs;
+  return (
+    <AdminSection id="run-log" title={t.trace.log}>
+      <ol>
+        {logs.map((l) => {
+          // D61: a failed call's line carries what the upstream answered.
+          const { error, detail } = l.data as { error?: string; detail?: UpstreamDetail | null };
+          return (
             <li key={l.id} className="border-b border-rule py-2 text-body-sm last:border-0">
               <span className="tabular-nums text-ink/70">{time(l.at)}</span>{" "}
               <span className={`font-semibold uppercase ${LEVEL[l.level]}`}>{l.level}</span>{" "}
               <span className="font-mono">{l.code}</span>
               {l.unionId !== null && <span> · {tags.get(l.unionId) ?? l.unionId}</span>}
               <span className="block break-words font-mono text-xs">{fields(l.data)}</span>
+              {error && detail && (
+                <>
+                  <GuideNote error={error} />
+                  <UpstreamDetails detail={detail} />
+                </>
+              )}
             </li>
-          ))}
-          {logs.length === 0 && <li>{t.noLogs}</li>}
-        </ol>
-      </AdminSection>
-    </AdminShell>
+          );
+        })}
+        {logs.length === 0 && <li>{t.noLogs}</li>}
+      </ol>
+    </AdminSection>
   );
 }

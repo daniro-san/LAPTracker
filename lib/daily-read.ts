@@ -17,7 +17,7 @@ import {
   type NewDailyRoster,
 } from "./repo/daily-reads";
 import { QuotaExhaustedError, type AllianceSnapshotInput, type V1Source } from "./sources/types";
-import { describe } from "./upstream-errors";
+import { describe, upstreamDetail } from "./upstream-errors";
 
 const CONCURRENCY = 4;
 
@@ -57,11 +57,13 @@ function dataRow(a: AllianceSnapshotInput, now: Date): NewDailyRoster {
   };
 }
 
-const errorRow = (unionId: number, error: string): NewDailyRoster => ({
+/** `e` is the failure itself: its upstream detail (D61) goes on the row for /admin/runs. */
+const errorRow = (unionId: number, error: string, e: unknown): NewDailyRoster => ({
   unionId,
   tag: tagOf(unionId),
   isFresh: false,
   error,
+  errorDetail: upstreamDetail(e),
   memberUids: [],
   memberNames: [],
   memberPower: [],
@@ -109,7 +111,7 @@ async function readRosters(read: Read, ids: readonly number[]): Promise<string |
           read.abort ??= describe(e);
           return;
         }
-        read.rows.push(errorRow(id, `v1 ${describe(e)}`));
+        read.rows.push(errorRow(id, `v1 ${describe(e)}`, e));
       }
     }
   };

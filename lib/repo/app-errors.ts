@@ -11,6 +11,8 @@ export interface AppErrorRow {
   route: string;
   digest: string | null;
   message: string;
+  /** D61: AppErrorDetail (lib/app-errors.ts), already redacted. */
+  detail?: unknown;
 }
 
 export async function insertAppError(db: Db, row: AppErrorRow): Promise<void> {
