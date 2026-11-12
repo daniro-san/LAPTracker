@@ -56,7 +56,7 @@ beforeEach(() => {
 describe("/admin pages, locked", () => {
   it.each([
     ["/admin", () => AdminPage()],
-    ["/admin/runs", () => RunsPage()],
+    ["/admin/runs", () => RunsPage({ searchParams: Promise.resolve({}) })],
     ["/admin/errors", () => ErrorsPage()],
     ["/admin/runs/1", () => run("1")],
   ])("%s renders the shell with no children and opens no database connection", async (_, page) => {

@@ -14,6 +14,7 @@ import {
   seconds,
   stateWord,
   currentView,
+  dailyView,
   watchViews,
 } from "@/app/_ui/admin/words";
 import type { Clock } from "@/app/_ui/format";
@@ -247,7 +248,7 @@ export default async function AdminPage() {
   const env = getEnv();
   const now = new Date();
   const next = nextEvent(now, env);
-  const [[current, rehearsal, quota, manual, running, recent, row, ticks], clock] =
+  const [[current, rehearsal, quota, manual, running, recent, row, ticks, daily], clock] =
     await Promise.all([withPageDb((db) => loadAdminPage(db, now, env)), requestServerClock()]);
   const views = watchViews(running, recent[0], clock);
   const nextRun = [
@@ -279,6 +280,7 @@ export default async function AdminPage() {
           beforeAtText={clock.stamp(current.beforeAt)}
           current={currentView(current, row, now, clock)}
           manual={manual && roundView(manual, clock)}
+          daily={dailyView(daily, now, clock)}
           running={views.running}
         />
       </AdminSection>

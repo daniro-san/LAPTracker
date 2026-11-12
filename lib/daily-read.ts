@@ -5,13 +5,14 @@
 import { ALLIANCES } from "../config/alliances";
 import { dailyReadQuota } from "./budget";
 import { MAX_UPSTREAM_CALLS, RUN_DEADLINE_MS } from "./collector";
-import { FRESH_MAX_AGE_MS } from "./collector-rows";
-import { isFresh } from "./compute";
+import { failedList, FRESH_MAX_AGE_MS } from "./collector-rows";
+import { isFresh, RUN_STALE_AFTER_MS } from "./compute";
 import type { Db } from "./db";
 import {
   claimDailyRead,
   finishDailyRead,
   insertDailyRoster,
+  reclaimDailyRead,
   type DailyReadStatus,
   type NewDailyRoster,
 } from "./repo/daily-reads";
@@ -67,8 +68,10 @@ const errorRow = (unionId: number, error: string): NewDailyRoster => ({
   memberKills: [],
 });
 
+type Deps = { v1: V1Source; now: () => Date };
+
 interface Read {
-  deps: { v1: V1Source; now: () => Date };
+  deps: Deps;
   controller: AbortController;
   calls: number;
   abort: string | null;
@@ -136,12 +139,37 @@ async function withDeadline(read: Read, work: Promise<string | null>): Promise<s
  * bounded like an event snapshot: MAX_UPSTREAM_CALLS, the 100 s deadline, a 429 stops it.
  */
 export async function runDailyRead(
-  deps: { v1: V1Source; now: () => Date },
+  deps: Deps,
   db: Db,
   day: string,
   ids: readonly number[],
 ): Promise<DailyReadSummary | null> {
   if (!(await claimDailyRead(db, day, deps.now()))) return null;
+  return readDay(deps, db, day, ids);
+}
+
+/** /admin's retry: the same read again for a day that failed, or that was left `running` past
+ * RUN_STALE_AFTER_MS (the function was killed). Null for any other day (no read, running, complete,
+ * partial) or when another press took it first. */
+export async function retryDailyRead(
+  deps: Deps,
+  db: Db,
+  day: string,
+  ids: readonly number[],
+): Promise<DailyReadSummary | null> {
+  const now = deps.now();
+  // INVARIANT run.stale-after-150s: the snapshots' rule for a killed run.
+  const staleBefore = new Date(now.getTime() - RUN_STALE_AFTER_MS);
+  if (!(await reclaimDailyRead(db, day, now, staleBefore))) return null;
+  return readDay(deps, db, day, ids);
+}
+
+async function readDay(
+  deps: Deps,
+  db: Db,
+  day: string,
+  ids: readonly number[],
+): Promise<DailyReadSummary> {
   const read: Read = {
     deps,
     controller: new AbortController(),
@@ -167,8 +195,17 @@ export async function runDailyRead(
     quotaRemainingBefore: read.remaining,
     error,
   });
-  const failed = rows.flatMap((r) =>
-    r.error ? [{ unionId: r.unionId, tag: r.tag ?? null, error: r.error }] : [],
+  // Error rows, then the alliances the read never reached (deadline, 429, call cap, quota rule),
+  // named as the collector names them, so the admin line accounts for every alliance.
+  const failed = failedList(
+    rows.map((r) => ({
+      unionId: r.unionId,
+      tag: r.tag ?? null,
+      isFresh: r.isFresh,
+      error: r.error ?? null,
+    })),
+    [...ids],
+    error,
   );
   return {
     day,

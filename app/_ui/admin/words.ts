@@ -1,11 +1,12 @@
 // The admin area names snapshots and run states with one set of words, the public pages' where they
 // exist (07c S1, S3b): "Before snapshot", "done", "partly done", "failed".
 import type { Clock } from "@/app/_ui/format";
+import { RUN_STALE_AFTER_MS } from "@/lib/compute";
 import { copy, fill } from "@/lib/copy";
 import type { ManualEventStatus } from "@/lib/queries/admin";
 import { isGeneratedName, type ScheduledEvent } from "@/lib/schedule";
 
-import type { CurrentEventView, RoundView } from "./actions";
+import type { CurrentEventView, DailyFailedView, RoundView } from "./actions";
 
 export const phaseWord = (phase: "before" | "after"): string => copy.admin.phase[phase];
 
@@ -132,4 +133,32 @@ export function currentView(
     stateText: targetText(current.eventAtUtc, row?.phases ?? [], now, clock),
     rowFromText: rowFrom > now ? clock.stamp(rowFrom) : null,
   };
+}
+
+/** Today's daily read for the Retry card when it can be retried: it failed, or it was left `running`
+ * past RUN_STALE_AFTER_MS (the function was killed). Null otherwise, which hides the card. */
+export function dailyView(
+  daily: {
+    status: string;
+    startedAt: Date;
+    finishedAt: Date | null;
+    callsUsed: number;
+    error: string | null;
+  } | null,
+  now: Date,
+  clock: Clock,
+): DailyFailedView | null {
+  const d = copy.admin.run.daily;
+  if (daily?.status === "failed") {
+    return {
+      text: fill(d.failed, {
+        at: daily.finishedAt ? clock.stamp(daily.finishedAt) : "",
+        error: daily.error ?? stateWord(daily.status),
+        calls: daily.callsUsed,
+      }),
+    };
+  }
+  const stuck =
+    daily?.status === "running" && now.getTime() - daily.startedAt.getTime() >= RUN_STALE_AFTER_MS;
+  return stuck ? { text: fill(d.stuck, { at: clock.stamp(daily.startedAt) }) } : null;
 }

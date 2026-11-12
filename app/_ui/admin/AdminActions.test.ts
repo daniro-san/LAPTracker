@@ -18,6 +18,7 @@ const render = (running: { phase: string; event: string; startedText: string }[]
         rowFromText: "Fri 10:00",
       },
       manual: null,
+      daily: null,
       running,
     }),
   );

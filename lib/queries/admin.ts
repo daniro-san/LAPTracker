@@ -96,7 +96,7 @@ export async function runningSnapshots(db: Db, now: Date): Promise<RunningSnapsh
 }
 
 /** D25: a run the 100 s deadline closed carries `error = "deadline"`. */
-const DEADLINE_ERROR = "deadline";
+export const DEADLINE_ERROR = "deadline";
 
 export async function listRuns(db: Db, limit = 60) {
   const rows = await db
