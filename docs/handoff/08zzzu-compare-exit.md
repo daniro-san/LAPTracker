@@ -39,3 +39,5 @@ Plan changes needed: none.
 <adjustments>
 - `ActionLink({ href, icon, label })` in `app/_ui/ComparePicker.tsx` is the framed title-row link ("⇄ Compare", "✕ Stop comparing").
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/265
