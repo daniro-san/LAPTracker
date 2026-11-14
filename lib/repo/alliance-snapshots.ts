@@ -60,11 +60,16 @@ export async function findAvatarUrl(db: Db, uid: number): Promise<string | null>
 }
 
 /** A re-run without force (D62): the rows whose read failed go, so the run reads those alliances again;
- * the rows that were read stay. Error rows have no members; the delete covers them anyway. */
-export async function clearFailedAllianceRows(db: Db, snapshotId: number): Promise<void> {
+ * with `stale` (D63) the stale rows go too (an error row is never fresh). The rest stay. Error rows have
+ * no members; the delete covers them anyway. */
+export async function clearFailedAllianceRows(
+  db: Db,
+  snapshotId: number,
+  stale: boolean,
+): Promise<void> {
   const failed = and(
     eq(allianceSnapshots.snapshotId, snapshotId),
-    isNotNull(allianceSnapshots.error),
+    stale ? eq(allianceSnapshots.isFresh, false) : isNotNull(allianceSnapshots.error),
   );
   await db.transaction(async (tx) => {
     const ids = tx.select({ id: allianceSnapshots.id }).from(allianceSnapshots).where(failed);

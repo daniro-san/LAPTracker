@@ -1,6 +1,8 @@
-// POST /api/snapshot?phase=before|after&force=0|1[&event=<id>] — a run on demand for the target
+// POST /api/snapshot?phase=before|after&force=0|1[&stale=0|1][&event=<id>] — a run on demand for the target
 // scheduled event (lib/schedule.ts targetEvent), or for the manual event `event` (D28): /admin's run buttons (x-edit-pin) or
 // workflow_dispatch (Bearer CRON_SECRET). Any other event id is refused: the not-due guard stays.
+// Without `stale`, a re-run of a snapshot with stale rows answers 409 snapshot_stale with their count;
+// `stale=1` reads them again, `stale=0` keeps them (D63).
 import { z } from "zod";
 
 import { authorize } from "@/lib/auth";
@@ -16,6 +18,7 @@ const query = z
   .object({
     phase: z.enum(["before", "after"]),
     force: z.enum(["0", "1"]).default("0"),
+    stale: z.enum(["0", "1"]).optional(),
     event: z.coerce.number().int().positive().optional(),
   })
   .strict();
@@ -39,6 +42,7 @@ export function POST(request: Request): Promise<Response> {
       event,
       phase: q.phase,
       force: q.force === "1",
+      stale: q.stale === undefined ? undefined : q.stale === "1",
       origin: new URL(request.url).origin,
     });
     return runResponse(outcome);

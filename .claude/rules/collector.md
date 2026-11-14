@@ -20,7 +20,7 @@ Invariants (docs/IMPLEMENTATION_PLAN.md §3.4, §3.7, Phase 3, "Logging guarante
 - [ ] `total_kills = sum(members.kills)`; board numbers are cross-checks and never enter a delta.
 - [ ] Retry only 502/503/504 (max 3, backoff + jitter, honour Retry-After). 429 aborts the run.
 - [ ] Every upstream call (quota checks and retries included) counts toward `MAX_UPSTREAM_CALLS = 120`.
-- [ ] A re-run fetches only alliances without a row for that snapshot. A re-run without force first drops the snapshot's failed rows (D62), so it reads those again; a forced re-run drops every row.
+- [ ] A re-run fetches only alliances without a row for that snapshot. A re-run without force first drops the snapshot's failed rows (D62), so it reads those again; a forced re-run drops every row. A re-run with stale rows is refused until the caller passes `stale` (D63); `stale: true` also drops the stale rows.
 - [ ] Adapters branch on `response.status`, never `statusText` (empty over HTTP/2 on Node 26).
 - [ ] `User-Agent: laptracker/1.0 (+https://github.com/daniro-san/LAPTracker)` on every request.
 

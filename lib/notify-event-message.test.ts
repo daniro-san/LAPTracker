@@ -225,6 +225,7 @@ describe("one message per channel per event (D31)", () => {
           postPublic: false,
           discordPublicMessageId: null,
           discordAdminMessageId: null,
+          eventAtUtc: utc("14:00"),
           beforeAt: utc("12:00"),
           afterAt: utc("16:00"),
         },

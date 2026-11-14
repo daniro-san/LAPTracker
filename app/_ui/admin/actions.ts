@@ -203,8 +203,10 @@ export const saveRound = (eventId: number, change: RoundChange): Action => {
       };
 };
 
-export async function post(action: Action, pin: string, force: boolean) {
-  const res = await fetch(force ? `${action.url}&force=1` : action.url, {
+/** `stale`: read a partial snapshot's stale rows again (D63), sent after the owner said yes. */
+export async function post(action: Action, pin: string, force: boolean, stale = false) {
+  const url = `${action.url}${force ? "&force=1" : ""}${stale ? "&stale=1" : ""}`;
+  const res = await fetch(url, {
     method: "POST",
     headers: {
       "x-edit-pin": pin,
