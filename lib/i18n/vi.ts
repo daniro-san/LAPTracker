@@ -61,7 +61,7 @@ export const vi = {
     first: "Sự kiện đầu",
     second: "Sự kiện sau",
     swap: "Đổi chỗ hai sự kiện",
-    lead: "Mỗi dòng là thay đổi trong sự kiện đó, từ Trước đến Sau. Dòng cuối là thay đổi của sự kiện sau trừ thay đổi của sự kiện đầu.",
+    lead: "Mỗi dòng là thay đổi trong sự kiện đó, từ Bắt đầu đến Kết thúc. Dòng cuối là thay đổi của sự kiện sau trừ thay đổi của sự kiện đầu.",
     allAlliances: "Tất cả liên minh",
     counted: "{n} trong {total} liên minh có dữ liệu dùng được ở cả hai sự kiện",
     between: "Từ sự kiện này đến sự kiện kia",

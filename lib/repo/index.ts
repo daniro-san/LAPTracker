@@ -55,6 +55,7 @@ export interface MemberRow {
   kills: number | null;
   lv: number | null;
   avatarUrl?: string | null;
+  frameId?: number | null;
   rankCode?: number | null;
   rankLabel?: string | null;
 }

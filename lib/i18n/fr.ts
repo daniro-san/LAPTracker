@@ -61,7 +61,7 @@ export const fr = {
     first: "Premier événement",
     second: "Deuxième événement",
     swap: "Inverser les événements",
-    lead: "Chaque ligne est l’évolution pendant cet événement, d’Avant à Après. La dernière ligne est l’évolution du deuxième événement moins celle du premier.",
+    lead: "Chaque ligne est l’évolution pendant cet événement, de Début à Fin. La dernière ligne est l’évolution du deuxième événement moins celle du premier.",
     allAlliances: "Toutes alliances",
     counted:
       "{n} alliances sur {total}, celles dont les données sont utilisables dans les deux événements",

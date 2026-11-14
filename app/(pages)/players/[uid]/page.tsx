@@ -11,6 +11,7 @@ import { requestClock, requestCopy } from "@/app/_ui/locale";
 import { Num } from "@/app/_ui/Num";
 import { AllianceBadge, PlayerAvatar } from "@/app/_ui/Pictures";
 import { PlayerAcrossEvents } from "@/app/_ui/PlayerAcrossEvents";
+import { previewImage } from "@/app/_ui/preview";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { LABEL } from "@/app/_ui/StatTable";
@@ -131,7 +132,11 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const data = uid === null ? null : await loadPlayer(uid);
   if (!data) return {};
   const copy = await requestCopy();
-  return { title: `${data.history.current.name} · ${copy.site.name}` };
+  const { name, hasAvatar } = data.history.current;
+  return {
+    title: `${name} · ${copy.site.name}`,
+    ...(hasAvatar && previewImage(`/img/preview/player/${data.history.uid}`, name)),
+  };
 }
 
 export default async function PlayerPage({ params }: { params: Params }) {
@@ -170,7 +175,7 @@ export default async function PlayerPage({ params }: { params: Params }) {
         />
         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
           <div className="flex min-w-0 items-center gap-3">
-            <PlayerAvatar uid={history.uid} hasAvatar={current.hasAvatar} size="lg" />
+            <PlayerAvatar uid={history.uid} photo={current} size="lg" />
             <div className="min-w-0">
               <h1 className="break-words font-display text-display-lg leading-tight">
                 {current.name}

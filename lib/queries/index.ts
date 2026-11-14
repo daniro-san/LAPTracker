@@ -16,6 +16,7 @@ export {
 } from "./member-history";
 export { allianceNames } from "./names";
 export { playerHistory, searchPlayers } from "./players";
+export type { Photo } from "./photo";
 export type { PlayerEventRow, PlayerHistory, PlayerMatch } from "./players";
 export { eventRanks, historyRanks, type Ranks } from "./ranks";
 export { getUpstreamStatus, type UpstreamStatus } from "./upstream-status";

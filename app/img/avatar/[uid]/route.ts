@@ -9,7 +9,7 @@ import {
   logImageFailure,
   notFoundImage,
 } from "@/lib/images";
-import { findAvatarUrl } from "@/lib/repo/alliance-snapshots";
+import { findPhoto } from "@/lib/repo/alliance-snapshots";
 
 import { resizedResponse } from "../../resize";
 
@@ -25,7 +25,7 @@ export async function GET(
   const ctx = getAppContext();
   const { db, close } = ctx.openDb();
   try {
-    const source = avatarSource(await findAvatarUrl(db, Number(uid)));
+    const source = avatarSource((await findPhoto(db, Number(uid))).avatarUrl);
     if (!source) return notFoundImage();
     const image = await fetchImage(source, ctx.fetch);
     if (!("body" in image)) {

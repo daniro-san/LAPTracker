@@ -2,8 +2,9 @@
 import { and, desc, eq, inArray, isNotNull } from "drizzle-orm";
 
 import type { Db } from "../db";
-import { allianceSnapshots, memberSnapshots } from "../schema";
+import { allianceSnapshots, memberSnapshots, playerFrames } from "../schema";
 import type { AllianceRow, AllianceRowStatus, MemberRow } from "./index";
+import { recordFrames } from "./player-frames";
 
 export async function listAllianceRows(db: Db, snapshotId: number): Promise<AllianceRowStatus[]> {
   return db
@@ -33,6 +34,7 @@ export async function insertAllianceRow(
     await tx
       .insert(memberSnapshots)
       .values(members.map((m) => ({ ...m, allianceSnapshotId: inserted.id })));
+    await recordFrames(tx, members, row.sourceUpdatedAt);
   });
 }
 
@@ -48,15 +50,20 @@ export async function clearAllianceRows(db: Db, snapshotId: number): Promise<voi
   });
 }
 
-/** The player's photo URL from their newest roster row; null when that row has none. Never served (D22). */
-export async function findAvatarUrl(db: Db, uid: number): Promise<string | null> {
+/** The player's photo URL from their newest roster row and their current frame; nulls when there is none.
+ * The URL is never served (D22, D65). */
+export async function findPhoto(
+  db: Db,
+  uid: number,
+): Promise<{ avatarUrl: string | null; frameId: number | null }> {
   const [row] = await db
-    .select({ avatarUrl: memberSnapshots.avatarUrl })
+    .select({ avatarUrl: memberSnapshots.avatarUrl, frameId: playerFrames.frameId })
     .from(memberSnapshots)
+    .leftJoin(playerFrames, eq(playerFrames.uid, memberSnapshots.uid))
     .where(eq(memberSnapshots.uid, uid))
     .orderBy(desc(memberSnapshots.id))
     .limit(1);
-  return row?.avatarUrl ?? null;
+  return row ?? { avatarUrl: null, frameId: null };
 }
 
 /** A re-run without force (D62): the rows whose read failed go, so the run reads those alliances again;

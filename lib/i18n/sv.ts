@@ -61,7 +61,7 @@ export const sv = {
     first: "Första eventet",
     second: "Andra eventet",
     swap: "Byt plats på eventen",
-    lead: "Varje rad är förändringen under eventet, från Före till Efter. Den sista raden är andra eventets förändring minus det första eventets.",
+    lead: "Varje rad är förändringen under eventet, från Början till Slut. Den sista raden är andra eventets förändring minus det första eventets.",
     allAlliances: "Alla allianser",
     counted: "{n} av {total} allianser, de med användbara data i båda eventen",
     between: "Från ett event till det andra",

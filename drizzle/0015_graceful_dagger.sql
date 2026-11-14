@@ -1,0 +1,1 @@
+ALTER TABLE "member_snapshots" ADD COLUMN "frame_id" integer;

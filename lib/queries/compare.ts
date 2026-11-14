@@ -2,12 +2,13 @@
 // alliance, per member. Each event gives, per alliance or member, its in-event change (compute.delta:
 // none when a side is missing, stale or failed) and its reference value (after, else before). Member
 // fields served: uid, name, power, kills (§12.1); raw_json and avatar_url are never selected.
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 
 import { delta, rankDelta, rosterDiff, type Measured } from "../compute";
 import type { Db } from "../db";
 import { allianceSnapshots, memberSnapshots } from "../schema";
 import { getEventDetail, homeEvent, listEvents, type EventSummary } from "./events";
+import { type Photo, photoColumns } from "./photo";
 import { eventRanks, type Ranks } from "./ranks";
 
 export type Detail = NonNullable<Awaited<ReturnType<typeof getEventDetail>>>;
@@ -48,24 +49,21 @@ export interface AllianceComparison {
   between: { joined: number; left: number } | null;
 }
 
-export interface MemberComparison {
+export interface MemberComparison extends Photo {
   uid: number;
   name: string;
-  /** /img/avatar/[uid] has a photo to serve (never its URL, D22). */
-  hasAvatar: boolean;
   /** Null: the member is in neither of the alliance's rosters of that event. */
   a: { power: number | null; change: Change | null; opening: Change | null } | null;
   b: { power: number | null; change: Change | null; opening: Change | null } | null;
 }
 
-interface RosterRow {
+interface RosterRow extends Photo {
   snapshotId: number;
   unionId: number;
   uid: number;
   name: string;
   power: number | null;
   kills: number | null;
-  hasAvatar: boolean;
 }
 
 export const usable = (s: Side | undefined) => s !== undefined && !s.failed && s.isFresh;
@@ -192,10 +190,11 @@ function membersOf(a: Detail, b: Detail, rosters: RosterRow[], unionId: number) 
   const latest = new Map<number, RosterRow>();
   for (const r of rosters) if (!latest.has(r.uid) || inB.has(r.snapshotId)) latest.set(r.uid, r);
   return [...latest.values()]
-    .map(({ uid, name, hasAvatar }): MemberComparison => ({
+    .map(({ uid, name, hasAvatar, frameId }): MemberComparison => ({
       uid,
       name,
       hasAvatar,
+      frameId,
       a: memberSide(a, rosters, unionId, uid),
       b: memberSide(b, rosters, unionId, uid),
     }))
@@ -231,7 +230,7 @@ async function rostersOf(db: Db, snapshotIds: number[], unionId?: number): Promi
       name: memberSnapshots.name,
       power: memberSnapshots.power,
       kills: memberSnapshots.kills,
-      hasAvatar: sql<boolean>`${memberSnapshots.avatarUrl} is not null`,
+      ...photoColumns,
     })
     .from(memberSnapshots)
     .innerJoin(allianceSnapshots, eq(allianceSnapshots.id, memberSnapshots.allianceSnapshotId))

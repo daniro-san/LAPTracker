@@ -10,6 +10,15 @@ export const USER_AGENT = "laptracker/1.0 (+https://github.com/daniro-san/LAPTra
 /** Player photos live on this host; anything else (the game's default heads are relative paths) is no photo. */
 const PHOTO_HOST = "phs-image.globallap.com";
 
+/** The game's avatar frames: `/static/frames/frame_<id>.png`, relative to the tracker site (D65). */
+const FRAME_PATH = /^\/static\/frames\/frame_(\d{1,9})\.png$/;
+
+/** The frame's id when the value is a frame file's path; else null. Only the id is stored (D65). */
+export function frameId(raw: string | null | undefined): number | null {
+  const id = raw ? FRAME_PATH.exec(raw)?.[1] : undefined;
+  return id === undefined ? null : Number(id);
+}
+
 /** The URL when it is a real photo: plain https on PHOTO_HOST, no port or credentials; else null (D22). */
 export function photoUrl(raw: string | null | undefined): string | null {
   if (!raw) return null;
@@ -34,6 +43,8 @@ const memberSchema = z.object({
   lv: z.number().int().nullable(),
   // Optional: a photo is cosmetic, so its absence never fails a run.
   avatar_url: z.string().optional(),
+  // Optional for the same reason: the frame around the photo is cosmetic (D65).
+  frame_url: z.string().optional(),
   // Optional for the same reason: the leadership marks are cosmetic.
   rank_code: z.number().int().optional(),
   rank_label: z.string().optional(),
@@ -67,6 +78,7 @@ export function toSnapshotInput(
     kills: m.kills,
     lv: m.lv,
     avatarUrl: photoUrl(m.avatar_url),
+    frameId: frameId(m.frame_url),
     rankCode: m.rank_code ?? null,
     rankLabel: m.rank_label ?? null,
   }));

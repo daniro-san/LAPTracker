@@ -12,6 +12,8 @@ const MAX_BYTES = 1024 * 1024;
 const TYPES = new Set(["image/png", "image/jpeg", "image/webp", "image/gif", "image/avif"]);
 
 export const BADGE_CACHE = "public, max-age=31536000, s-maxage=31536000, immutable";
+/** A frame id names one picture for good, like a badge id (D65). */
+export const FRAME_CACHE = BADGE_CACHE;
 export const AVATAR_CACHE = "public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800";
 
 /**
@@ -23,6 +25,16 @@ export function badgeSource(id: number, siteBaseUrl: string): string | null {
   return `${new URL(siteBaseUrl).origin}/static/alliance/badge_${id}.png`;
 }
 
+/**
+ * An avatar frame's file on the tracker site's origin (D65), for any positive id: frames come and go with
+ * the game, so there is no fixed list. Checked 2026-11-14 with one plain GET for each of the six ids seen
+ * (5001, 5007–5010, 5026): 190 × 190 PNGs with alpha, 5–24 KB, the photo's hole the middle 120 × 120.
+ */
+export function frameSource(id: number, siteBaseUrl: string): string | null {
+  if (!Number.isSafeInteger(id) || id < 1) return null;
+  return `${new URL(siteBaseUrl).origin}/static/frames/frame_${id}.png`;
+}
+
 /** The stored photo URL, re-checked at serve time (rows may predate the adapter check). */
 export const avatarSource = (stored: string | null): string | null => photoUrl(stored);
 
@@ -30,7 +42,7 @@ export const avatarSource = (stored: string | null): string | null => photoUrl(s
 export const notFoundImage = (): Response =>
   new Response(null, { status: 404, headers: { "Cache-Control": "public, max-age=300" } });
 
-type Image = { body: Uint8Array<ArrayBuffer>; type: string };
+export type Image = { body: Uint8Array<ArrayBuffer>; type: string };
 /** Why a fetch failed: the HTTP status, or the error's class name. Never the URL or a message. */
 export type ImageFailure = { http_status: number } | { error: string };
 

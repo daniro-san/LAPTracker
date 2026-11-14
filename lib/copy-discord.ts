@@ -8,8 +8,9 @@ export const discordCopy = {
     stale: "○ {n} stale: {list}",
     /** First line of a manual round's public message (D28). */
     manual: "Manual round: {name}. Taken by hand.",
-    /** The Before's line in the edited message, so the After shows the whole event. */
-    beforeDone: "Before snapshot done at {time}",
+    /** The Before's time in the edited message, so the After shows the whole event; the page's word
+     * for it (copy.status.start, issue 180). */
+    start: "Start {time}",
     might: "**Might ▲**",
     kills: "**Kills ▲**",
     /** The message is plain text (D58): the status chip in bold, then the lines, then this link. */
@@ -20,9 +21,10 @@ export const discordCopy = {
   image: {
     /** The file's description: what a screen reader says for the picture. */
     alt: "The event's ledger by Might and its top gains",
-    before: "Before {time}",
-    after: "After {time}",
-    afterDue: "After due {time}",
+    /** The capture window in the page's words (copy.status.start / end, issue 180). */
+    start: "Start {time}",
+    end: "End {time}",
+    endDue: "End due {time}",
     ledger: "Ledger · Might",
     mightUp: "Might ▲",
     killsUp: "Kills ▲",

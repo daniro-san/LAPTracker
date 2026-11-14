@@ -8,6 +8,7 @@
 import { useState, type ReactNode } from "react";
 
 import { NoBadge, NoPhoto } from "@/lib/brand/components/Placeholders";
+import type { Photo } from "@/lib/queries";
 
 const BADGE = { sm: 28, md: 40 } as const;
 const AVATAR = { sm: 32, lg: 56 } as const;
@@ -82,29 +83,50 @@ export function AllianceBadge({
   );
 }
 
+/** The game's frame around the photo (D65). The photo sits in the frame's hole, the middle 120 × 120 of
+ * the 190 × 190 frame. Small: the box is 190/120 of the 32 px photo, so the photo keeps its size. Large:
+ * 80 px (a 50 px photo), not 89, so a long name beside it still fits one line at 360 px. */
+const IN_FRAME = {
+  sm: { px: 51, box: "size-[51px]" },
+  lg: { px: 80, box: "size-20" },
+} as const;
+
 export function PlayerAvatar({
   uid,
-  hasAvatar,
+  photo: { hasAvatar, frameId },
   size = "sm",
 }: {
   uid: number;
-  hasAvatar: boolean;
+  /** A frameId of null keeps the drawn frame (rows stored before frames). */
+  photo: Photo;
   size?: keyof typeof AVATAR;
 }) {
   const n = AVATAR[size];
   const noPhoto = <NoPhoto className="size-full text-ink/45" />;
+  const picture = hasAvatar ? (
+    <Picture
+      src={`/img/avatar/${uid}`}
+      n={n}
+      className="size-full object-cover"
+      fallback={noPhoto}
+    />
+  ) : (
+    noPhoto
+  );
+  if (frameId === null) return <Framed px={n}>{picture}</Framed>;
+  const framed = IN_FRAME[size];
   return (
-    <Framed px={n}>
-      {hasAvatar ? (
-        <Picture
-          src={`/img/avatar/${uid}`}
-          n={n}
-          className="size-full object-cover"
-          fallback={noPhoto}
-        />
-      ) : (
-        noPhoto
-      )}
-    </Framed>
+    <span className={`relative inline-flex shrink-0 ${framed.box}`} aria-hidden="true">
+      <span className="absolute inset-[18.4%] flex overflow-hidden rounded-[3px] bg-paper">
+        {picture}
+      </span>
+      {/* A frame that fails to load leaves the photo alone, never a broken-image icon. */}
+      <Picture
+        src={`/img/frame/${frameId}`}
+        n={framed.px}
+        className="absolute inset-0 size-full"
+        fallback={null}
+      />
+    </span>
   );
 }

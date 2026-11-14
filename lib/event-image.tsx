@@ -100,13 +100,10 @@ function subtitle(e: EventImageInput) {
   const time = (d: Date) => e.clock.time(d);
   const parts =
     e.phase === "before"
-      ? [
-          fill(t.before, { time: time(e.at) }),
-          e.nextAt && fill(t.afterDue, { time: time(e.nextAt) }),
-        ]
+      ? [fill(t.start, { time: time(e.at) }), e.nextAt && fill(t.endDue, { time: time(e.nextAt) })]
       : [
-          e.beforeAt && fill(t.before, { time: time(e.beforeAt) }),
-          fill(t.after, { time: time(e.at) }),
+          e.beforeAt && fill(t.start, { time: time(e.beforeAt) }),
+          fill(t.end, { time: time(e.at) }),
         ];
   return [e.clock.day(e.at), ...parts].filter(Boolean).join(" · ");
 }

@@ -63,7 +63,7 @@ export default async function PlayersPage({
                 key={m.uid}
                 className="stat-card relative mb-3 flex items-center gap-2 border border-rule p-3"
               >
-                <PlayerAvatar uid={m.uid} hasAvatar={m.hasAvatar} />
+                <PlayerAvatar uid={m.uid} photo={m} />
                 <div className="min-w-0 break-words">
                   <TextLink
                     stretch

@@ -26,7 +26,7 @@ Words already used in `lib/i18n/ru.ts`. Reuse them so the pages stay consistent;
 | grandma                   | бабушка                     | the voice in empty states and errors                        |
 | Grandma noticed           | Бабушка заметила            | `ledger.movers` — the event's biggest gains and losses      |
 | vs                        | против                      | `compare.title`, `compare.versus` — two events side by side |
-| Before / After            | До / После                  | `compare.lead` — the two ends of one event's change         |
+| Start / End               | Начало / Конец              | `status.start` / `status.end`, `compare.lead`               |
 | Member history            | История участников          | `history.title` — the page title                            |
 | Daily read                | Ежедневное чтение           | `history.daily` — a card head for the once-a-day read       |
 

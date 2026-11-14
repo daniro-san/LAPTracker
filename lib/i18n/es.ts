@@ -61,7 +61,7 @@ export const es = {
     first: "Primer evento",
     second: "Segundo evento",
     swap: "Intercambiar los eventos",
-    lead: "Cada línea es el cambio durante ese evento, de antes a después. La última línea es el cambio del segundo evento menos el del primero.",
+    lead: "Cada línea es el cambio durante ese evento, de Inicio a Fin. La última línea es el cambio del segundo evento menos el del primero.",
     allAlliances: "Todas las alianzas",
     counted: "{n} de {total} alianzas, las que tienen datos útiles en ambos eventos",
     between: "De un evento al otro",
