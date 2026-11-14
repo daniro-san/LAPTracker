@@ -44,3 +44,5 @@ Plan changes needed: none.
 - `POST /api/snapshot` without `stale` on a snapshot with stale rows answers 409 `snapshot_stale` with `stale_count`. Any new caller of the route must send `stale=0` or `stale=1`, or handle that answer.
 - `EventInfo` now has `eventAtUtc`; code that builds an `EventInfo` by hand (tests) must set it.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/254
