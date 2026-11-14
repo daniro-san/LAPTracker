@@ -20,14 +20,18 @@ Owner request, 2026-11-14 (Saturday, event day), pointing at the upstream docs' 
 - `age_seconds` and `refreshing` are not parsed. With `fresh=1` the answer is live (`age_seconds` 0), and `updated_at` still drives the freshness rule.
 
 ## Deviations
-- Not checked against the live upstream: that spends quota, and the session did not allow it. The parameter and its behaviour come from the upstream docs (read in full on 2026-11-14).
+- None.
 
 ## Verified
+- Live check, approved by the owner in chat: 2 quota requests, 2026-11-14 ~12:38 UTC, alliance 67111155 (OGs). The key was read from `.env.local` and not printed.
+  - Without `fresh`: 200 in 825 ms, `X-Cache: hit`, `cached: true`, `age_seconds: 3135`, `updated_at` 52.3 min old, which is stale by our 20-minute rule.
+  - With `?fresh=1`: 200 in 849 ms, `X-Cache: live`, `cached: false`, `age_seconds: 0`, `updated_at` 0.0 min old.
+  - Both answers had `cache_seconds: 3600` and 100 members. Quota remaining went 936 → 935.
 - The new test passes. With the old path restored it fails, along with the three updated assertions (4 failed). Restored: 21 passed in `v1.test.ts`.
 - `pnpm check`: prettier, eslint, typecheck, 261 tests passed (1 skipped), drift check, i18n. No upstream call; nothing written to Neon.
 
 ## Open issues
-- Live latency on a busy game is not measured. The run trace (`v1.fetch` seconds) on the next run shows it.
+- Live latency under load (20 alliances, 4 in flight, on event day) is not measured; one live read took 849 ms. The next run's trace (`v1.fetch` seconds) shows it.
 
 ## Next
 
