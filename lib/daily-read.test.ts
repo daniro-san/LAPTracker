@@ -4,7 +4,7 @@ import { ago, fakeV1, IDS, minutes, roster, T0 } from "./collector.test-helpers"
 import { runDailyRead } from "./daily-read";
 import type { Db } from "./db";
 import { openTestDb, truncateAll } from "./db.test-helpers";
-import { dailyReads, dailyRosters } from "./schema";
+import { dailyReads, dailyRosters, playerFrames } from "./schema";
 import { UpstreamError } from "./sources/types";
 
 let db: Db;
@@ -54,5 +54,23 @@ describe("runDailyRead (D60)", () => {
     expect(await db.select({ status: dailyReads.status }).from(dailyReads)).toEqual([
       { status: "partial" },
     ]);
+  });
+
+  it("keeps each member's frame as the player's current one, unless a newer read already set it (D65)", async () => {
+    const [id = 0] = IDS;
+    const read = async (day: string, at: Date, frameId: number) => {
+      const r = roster(id, at);
+      const members = r.members.map((m) => ({ ...m, frameId }));
+      await runDailyRead(deps(fakeV1(() => ({ ...r, members }))), db, day, [id]);
+    };
+    const frames = async () =>
+      (await db.select().from(playerFrames).orderBy(playerFrames.uid)).map((f) => f.frameId);
+
+    await read("2026-11-10", ago(T0, minutes(30)), 5001);
+    expect(await frames()).toEqual([5001, 5001, 5001]);
+    await read("2026-11-11", ago(T0, minutes(1)), 5010);
+    expect(await frames()).toEqual([5010, 5010, 5010]);
+    await read("2026-11-12", ago(T0, minutes(60)), 5026);
+    expect(await frames()).toEqual([5010, 5010, 5010]);
   });
 });
