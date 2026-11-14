@@ -48,15 +48,19 @@ export async function clearAllianceRows(db: Db, snapshotId: number): Promise<voi
   });
 }
 
-/** The player's photo URL from their newest roster row; null when that row has none. Never served (D22). */
-export async function findAvatarUrl(db: Db, uid: number): Promise<string | null> {
+/** The player's photo URL and frame from their newest roster row; nulls when that row has none. The URL
+ * is never served (D22, D65). */
+export async function findPhoto(
+  db: Db,
+  uid: number,
+): Promise<{ avatarUrl: string | null; frameId: number | null }> {
   const [row] = await db
-    .select({ avatarUrl: memberSnapshots.avatarUrl })
+    .select({ avatarUrl: memberSnapshots.avatarUrl, frameId: memberSnapshots.frameId })
     .from(memberSnapshots)
     .where(eq(memberSnapshots.uid, uid))
     .orderBy(desc(memberSnapshots.id))
     .limit(1);
-  return row?.avatarUrl ?? null;
+  return row ?? { avatarUrl: null, frameId: null };
 }
 
 /** A re-run without force (D62): the rows whose read failed go, so the run reads those alliances again;

@@ -135,7 +135,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const { name, hasAvatar } = data.history.current;
   return {
     title: `${name} · ${copy.site.name}`,
-    ...(hasAvatar && previewImage(`/img/avatar/${data.history.uid}`, name)),
+    ...(hasAvatar && previewImage(`/img/preview/player/${data.history.uid}`, name)),
   };
 }
 
