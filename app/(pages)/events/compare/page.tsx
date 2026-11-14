@@ -4,10 +4,10 @@
 // 404. With both `alliance` and `player`, the player view is shown and `alliance` is ignored.
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { cache } from "react";
+import { cache, type ReactNode } from "react";
 
 import { Breadcrumbs } from "@/app/_ui/Breadcrumbs";
-import { compareHref, ComparePicker } from "@/app/_ui/ComparePicker";
+import { compareHref, ComparePicker, StopCompareLink } from "@/app/_ui/ComparePicker";
 import { CompareTotals } from "@/app/_ui/CompareTotals";
 import { EmptyState } from "@/app/_ui/EmptyState";
 import { AllianceCompareCard, CompareHeader, eventHead } from "@/app/_ui/EventCompare";
@@ -166,10 +166,12 @@ function PlayerResults({
 function TitleRow({
   one,
   player,
+  stop,
   copy,
 }: {
   one: AllianceComparison | undefined;
   player: PlayerComparison | null;
+  stop: ReactNode;
   copy: Dictionary;
 }) {
   return (
@@ -181,7 +183,10 @@ function TitleRow({
           {one ? allianceLabel(one.tag, one.name) : copy.compare.title}
         </h1>
       )}
-      <ExactToggle />
+      <div className="flex flex-wrap items-center gap-2">
+        {stop}
+        <ExactToggle />
+      </div>
     </div>
   );
 }
@@ -210,7 +215,12 @@ export default async function ComparePage({ searchParams }: { searchParams: Sear
             ]}
           />
         )}
-        <TitleRow one={one} player={player} copy={copy} />
+        <TitleRow
+          one={one}
+          player={player}
+          stop={<StopCompareLink a={page.a} b={page.b} alliance={one} uid={page.uid} copy={copy} />}
+          copy={copy}
+        />
         <p className="mb-3 text-body-sm text-ink/70">{copy.compare.lead}</p>
         <ComparePicker
           choices={page.choices}

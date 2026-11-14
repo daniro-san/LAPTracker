@@ -58,6 +58,7 @@ export const ptBR = {
     title: "Evento contra evento",
     versus: "{a} vs {b}",
     action: "Comparar",
+    stop: "Parar de comparar",
     first: "Primeiro evento",
     second: "Segundo evento",
     swap: "Trocar os eventos",

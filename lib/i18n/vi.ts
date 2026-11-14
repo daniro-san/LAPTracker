@@ -58,6 +58,7 @@ export const vi = {
     title: "Sự kiện so với sự kiện",
     versus: "{a} vs {b}",
     action: "So sánh",
+    stop: "Thoát so sánh",
     first: "Sự kiện đầu",
     second: "Sự kiện sau",
     swap: "Đổi chỗ hai sự kiện",
