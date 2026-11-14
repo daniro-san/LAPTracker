@@ -20,14 +20,22 @@ Owner request, 2026-11-14 (Saturday, event day), pointing at the upstream docs' 
 - `age_seconds` and `refreshing` are not parsed. With `fresh=1` the answer is live (`age_seconds` 0), and `updated_at` still drives the freshness rule.
 
 ## Deviations
-- Not checked against the live upstream: that spends quota, and the session did not allow it. The parameter and its behaviour come from the upstream docs (read in full on 2026-11-14).
+- None. The PR was merged before the live checks below were added; this follow-up records them.
 
 ## Verified
+- Live check, approved by the owner in chat, 2026-11-14 ~12:38 UTC, alliance 67111155 (OGs), 2 quota requests. The key was read from `.env.local` and never printed.
+  - Without `fresh`: 200 in 825 ms, `X-Cache: hit`, `cached: true`, `age_seconds: 3135`, `updated_at` 52.3 min old, which is stale by our 20-minute rule.
+  - With `?fresh=1`: 200 in 849 ms, `X-Cache: live`, `cached: false`, `age_seconds: 0`, `updated_at` 0.0 min old.
+  - Both answers had `cache_seconds: 3600`.
+- A full live read with this code, requested by the owner, ~12:39 UTC: `runDailyRead` with the real `/v1` source over all 20 alliances. It wrote to the local Postgres only (D47; the script refused a non-local host), as day 2026-11-14. It cost 23 requests (quota 935 → 912).
+  - Result: `complete`, 20 of 20 fresh (the oldest 0.7 min), none failed, 35.3 s wall time.
+  - 18 alliances answered live in 0.64–1.21 s.
+  - TmS and WACK first got a 502 ("the profile could not be prepared"), each about 30 s after the request. The retry got 200, at about 34 s in total. Those two set the wall time and the 2 extra requests.
 - The new test passes. With the old path restored it fails, along with the three updated assertions (4 failed). Restored: 21 passed in `v1.test.ts`.
 - `pnpm check`: prettier, eslint, typecheck, 261 tests passed (1 skipped), drift check, i18n. No upstream call; nothing written to Neon.
 
 ## Open issues
-- Live latency on a busy game is not measured. The run trace (`v1.fetch` seconds) on the next run shows it.
+- **A live lookup can take about 30 s before it fails.** TmS and WACK each got their 502 about 30 s after the request; `TIMEOUT_MS` is 30 s. Had either taken a little longer, the call would have ended as `TimeoutError`, which is not retried (only 502/503/504 are). The alliance would then go to the internal fallback (snapshots) or get an error row (daily read). Watch the `v1.fetch` seconds of the next runs; if such cases show up, consider a slightly longer timeout for live reads, or one retry on a timeout.
 
 ## Next
 
