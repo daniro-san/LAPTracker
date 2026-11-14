@@ -42,3 +42,5 @@ Plan changes needed: none.
 - `PlayerAvatar` takes `photo: Photo` (`{ hasAvatar, frameId }`) from `lib/queries`; queries add `...photoColumns` to a member select instead of writing `hasAvatar` by hand.
 - `member_snapshots.frame_id` exists from migration 0015; `/img/frame/[id]` serves any numeric frame id.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/261
