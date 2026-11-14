@@ -50,3 +50,5 @@ Plan changes needed: none.
 <adjustments>
 - A player's frame is `player_frames.frame_id` (current, from any read); `member_snapshots.frame_id` is history only. Write frames with `recordFrames()` wherever a new roster read is stored.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/263
