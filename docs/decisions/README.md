@@ -77,3 +77,4 @@ The header text above is the old file's, kept as it was. The split it describes 
 - [D61 — Error detail for the admin: what came back, what it means, what to do (2026-11-12, owner, 08zzzi)](D61-error-detail-for-the-admin.md)
 - [D62 — A re-run reads the failed alliances again (2026-11-12, owner, 08zzzk)](D62-a-re-run-reads-the-failed-alliances-again.md)
 - [D63 — Stale rows can be read again, on request (2026-11-14, owner, 08zzzn)](D63-stale-rows-can-be-read-again.md)
+- [D64 — Alliance reads ask for a live lookup (`?fresh=1`) (2026-11-14, owner, 08zzzo)](D64-alliance-reads-ask-for-a-live-lookup.md)

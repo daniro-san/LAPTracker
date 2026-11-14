@@ -25,7 +25,15 @@ const JITTER_MS = 250;
 const MAX_RETRY_AFTER_MS = 30_000;
 const RETRYABLE = new Set([502, 503, 504]);
 /** What an error answer keeps for /admin (D61): these headers and the body's first characters. */
-const DETAIL_HEADERS = ["retry-after", "content-type", "date", "server", "cf-ray", "x-request-id"];
+const DETAIL_HEADERS = [
+  "retry-after",
+  "content-type",
+  "date",
+  "server",
+  "cf-ray",
+  "x-request-id",
+  "x-cache",
+];
 const DETAIL_BODY_CHARS = 1000;
 
 const quotaSchema = z.object({
@@ -158,7 +166,9 @@ export async function fetchAlliance(
   onAttempt?: OnAttempt,
   signal?: AbortSignal,
 ): Promise<AllianceSnapshotInput> {
-  const response = await request(`/alliances/${id}`, onAttempt, signal);
+  // D64: a live game lookup, not the API's cached copy. Its cache keeps a copy up to 60 minutes, past
+  // our 20-minute freshness rule; a live read costs the same request and takes about 1-2 s.
+  const response = await request(`/alliances/${id}?fresh=1`, onAttempt, signal);
   const { data, raw } = await readBody(response, allianceSchema, "v1.schema");
   return toSnapshotInput(data, { cached: data.cached, quota: data.quota, raw });
 }

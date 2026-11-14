@@ -108,6 +108,23 @@ describe("v1.fetchQuota", () => {
 });
 
 describe("v1 requests", () => {
+  it("asks for a live game lookup (fresh=1) on every alliance read, retries included, never on the quota call (D64)", async () => {
+    const mock = mockFetch(
+      gateway(503),
+      respond(readFixture(OGS)),
+      respond('{"quota":{"limit":1000,"used":1,"remaining":999}}'),
+    );
+    const done = fetchAlliance(67111155);
+    await vi.runAllTimersAsync();
+    await done;
+    await fetchQuota();
+    expect(mock.mock.calls.map((c) => String(c[0]))).toEqual([
+      "https://v1.test/v1/alliances/67111155?fresh=1",
+      "https://v1.test/v1/alliances/67111155?fresh=1",
+      "https://v1.test/v1/quota",
+    ]);
+  });
+
   it("sends Authorization and User-Agent on every attempt, retries included", async () => {
     const mock = mockFetch(gateway(503), respond(readFixture(OGS)));
     const done = fetchAlliance(67111155);
@@ -120,7 +137,7 @@ describe("v1 requests", () => {
         "laptracker/1.0 (+https://github.com/daniro-san/LAPTracker)",
       );
     }
-    expect(String(mock.mock.calls[0]?.[0])).toBe("https://v1.test/v1/alliances/67111155");
+    expect(String(mock.mock.calls[0]?.[0])).toBe("https://v1.test/v1/alliances/67111155?fresh=1");
   });
 
   it("retries 503 and 502 with 1 s then 2 s backoff and then succeeds", async () => {
@@ -185,7 +202,7 @@ describe("v1 requests", () => {
     const { detail } = (await done) as UpstreamError;
 
     expect(detail).toMatchObject({
-      path: "/alliances/67111155",
+      path: "/alliances/67111155?fresh=1",
       status: 504,
       headers: { "cf-ray": "8a1b-GRU", "content-type": "text/html" },
     });
@@ -206,7 +223,7 @@ describe("v1 requests", () => {
     expect(error).toMatchObject({
       name: "TimeoutError",
       detail: {
-        path: "/alliances/67111155",
+        path: "/alliances/67111155?fresh=1",
         timeoutMs: 30_000,
         cause: "TimeoutError: The operation was aborted due to timeout",
       },
