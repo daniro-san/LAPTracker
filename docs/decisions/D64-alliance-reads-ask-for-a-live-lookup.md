@@ -1,0 +1,8 @@
+## D64 — Alliance reads ask for a live lookup (`?fresh=1`) (2026-11-14, owner, 08zzzo)
+
+Why: on 2026-11-14 the Before snapshot came back with all 20 alliances stale (D63). The upstream now keeps its cached copy of an alliance for up to 60 minutes (`cache_seconds`; it was 600 s when the fixtures were recorded on 2026-11-04). It returns that copy at once, and refreshes it in the background only after 60 minutes. Our freshness rule (`is_fresh = now − updated_at ≤ 20 min`, plan §3.7) marks any copy older than 20 minutes stale, so a cached answer is often stale by our rule. The upstream docs (https://api.lastasylumtracker.com/docs, "Freshness"): "Add `?fresh=1` to wait for a live game lookup instead … It is slower, usually one to two seconds, and counts as one request like any other."
+
+- **What changes.** `fetchAlliance` in `lib/sources/v1.ts` requests `/alliances/{id}?fresh=1`, retries included, for event snapshots and the daily roster read. `/v1/quota` is unchanged. The freshness rule, the retry policy (502/503/504, 3 retries), `TIMEOUT_MS` (30 s), the 100 s deadline, the call cap and the internal fallback (D5) are unchanged.
+- **Cost:** the same, one request per read. **Time:** about 1–2 s per read (upstream docs), so about 10 s for 20 alliances at 4 in flight.
+- **If the live lookup is slow or fails:** the upstream answers 504 ("the request took too long") or 503. These get the usual retries, then the internal fallback for snapshots or an error row for the daily read. A cached copy is not used as a fallback: it would most likely be stale by our rule anyway.
+- **`X-Cache`** (`hit`, `stale`, `miss`, `live`) is kept in a failed call's detail (D61), so /admin shows whether an answer was live.
