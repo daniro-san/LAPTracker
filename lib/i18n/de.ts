@@ -58,6 +58,7 @@ export const de = {
     title: "Event gegen Event",
     versus: "{a} vs {b}",
     action: "Vergleichen",
+    stop: "Vergleich beenden",
     first: "Erstes Event",
     second: "Zweites Event",
     swap: "Events tauschen",

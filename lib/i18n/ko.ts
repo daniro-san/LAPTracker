@@ -59,6 +59,7 @@ export const ko = {
     title: "이벤트 비교",
     versus: "{a} 대 {b}",
     action: "비교",
+    stop: "비교 중지",
     first: "첫 번째 이벤트",
     second: "두 번째 이벤트",
     swap: "이벤트 바꾸기",

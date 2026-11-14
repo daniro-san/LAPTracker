@@ -58,6 +58,7 @@ export const sv = {
     title: "Event mot event",
     versus: "{a} mot {b}",
     action: "Jämför",
+    stop: "Sluta jämföra",
     first: "Första eventet",
     second: "Andra eventet",
     swap: "Byt plats på eventen",

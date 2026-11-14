@@ -6,7 +6,7 @@ import Link from "next/link";
 
 import { buttonClass } from "@/lib/brand/components/Button";
 import type { Dictionary } from "@/lib/copy";
-import { comparable, type EventSummary } from "@/lib/queries";
+import { type AllianceComparison, comparable, type EventSummary } from "@/lib/queries";
 
 import { eventTitle, type LabeledEvent } from "./EventLabel";
 import type { Clock } from "./format";
@@ -123,7 +123,7 @@ export function CompareLink({
   copy: Dictionary;
 }) {
   if (events.filter(comparable).length < 2) return null;
-  return <CompareButton href={compareHref(null, eventId)} copy={copy} />;
+  return <ActionLink href={compareHref(null, eventId)} icon="⇄" label={copy.compare.action} />;
 }
 
 /** The player page's "⇄ Compare" (issue 199): the player's two newest events; only when there are two. */
@@ -139,17 +139,46 @@ export function PlayerCompareLink({
 }) {
   const [a, b] = eventIds.slice(-2);
   if (a === undefined || b === undefined) return null;
-  return <CompareButton href={compareHref(a, b, null, uid)} copy={copy} />;
+  return <ActionLink href={compareHref(a, b, null, uid)} icon="⇄" label={copy.compare.action} />;
 }
 
-function CompareButton({ href, copy }: { href: string; copy: Dictionary }) {
+/**
+ * The compare page's "✕ Stop comparing": back to the page the comparison was opened from. The player
+ * page; else the alliance's page in event B (A when B has no row for it); else event B; home without one.
+ */
+export function StopCompareLink({
+  a,
+  b,
+  alliance,
+  uid,
+  copy,
+}: {
+  a: number | null;
+  b: number | null;
+  alliance: Pick<AllianceComparison, "unionId" | "b"> | undefined;
+  uid: number | null;
+  copy: Dictionary;
+}) {
+  const event = alliance && !alliance.b ? a : b;
+  const href =
+    uid !== null
+      ? `/players/${uid}`
+      : event === null
+        ? "/"
+        : alliance
+          ? `/events/${event}/alliances/${alliance.unionId}`
+          : `/events/${event}`;
+  return <ActionLink href={href} icon="✕" label={copy.compare.stop} />;
+}
+
+function ActionLink({ href, icon, label }: { href: string; icon: string; label: string }) {
   return (
     <Link
       href={href}
       className="drawn-frame-soft tint-button inline-flex min-h-11 items-center gap-1.5 px-3 text-sm font-medium text-plum"
     >
-      <span aria-hidden="true">⇄</span>
-      {copy.compare.action}
+      <span aria-hidden="true">{icon}</span>
+      {label}
     </Link>
   );
 }

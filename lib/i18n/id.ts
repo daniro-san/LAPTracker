@@ -59,6 +59,7 @@ export const idID = {
     title: "Event vs event",
     versus: "{a} vs {b}",
     action: "Bandingkan",
+    stop: "Berhenti membandingkan",
     first: "Event pertama",
     second: "Event kedua",
     swap: "Tukar event",
