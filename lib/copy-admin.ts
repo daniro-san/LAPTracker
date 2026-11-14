@@ -120,6 +120,8 @@ export const adminCopy = {
     confirmBefore: "Take the before snapshot now? About 21 API calls, up to a minute.",
     confirmAfter: "Take the after snapshot now? About 21 API calls, up to a minute.",
     again: "This snapshot is already done. Take it again?",
+    staleAgain:
+      "{count} alliances in this snapshot are stale. Read them again? About {calls} API calls. Alliances that failed are read again too.",
     live: {
       title: "A run is in progress",
       line: "{phase}, {event}. Started {at}.",
@@ -136,6 +138,8 @@ export const adminCopy = {
       "{mark} {phase} {status}. API calls used: {calls}. Stale: {stale}. Failed: {failed}. Snapshot {id}.",
     refusals: {
       snapshot_running: "A run is already in progress.",
+      event_started:
+        "The event has started: a before snapshot read now would count the event's own kills.",
       event_not_found: "That manual event no longer exists.",
       bad_request: "Type a name of up to 80 characters.",
       admin_cannot_post: "An admin-only round cannot post to the public channel.",

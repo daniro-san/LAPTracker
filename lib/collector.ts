@@ -2,10 +2,10 @@
 // Everything it touches comes in through Deps (plan §11.1); time comes from deps.now.
 import { ALLIANCES, SERVER } from "../config/alliances";
 import { requiredQuota } from "./budget";
+import { claim, RunRefusedError } from "./collector-claim";
 import { dataRow, errorRow, failedList } from "./collector-rows";
-import { RUN_STALE_AFTER_MS } from "./compute";
 import type { Logger } from "./logger";
-import type { AllianceRow, MemberRow, Phase, Repo, SnapshotRow, SnapshotStatus } from "./repo";
+import type { AllianceRow, MemberRow, Phase, Repo, SnapshotStatus } from "./repo";
 import {
   type InternalSource,
   type Quota,
@@ -18,6 +18,7 @@ import { describe, httpStatusOf, upstreamDetail } from "./upstream-errors";
 /** 20 alliances × 3 retries × 2 phases (Logging guarantees). */
 export const MAX_UPSTREAM_CALLS = 120;
 export { FRESH_MAX_AGE_MS } from "./collector-rows";
+export { RunRefusedError } from "./collector-claim";
 /** Measured from the start of the run; the route's maxDuration is 120 s (docs/decisions/D25). */
 export const RUN_DEADLINE_MS = 100_000;
 const CONCURRENCY = 4;
@@ -40,14 +41,6 @@ export interface RunSummary {
   error: string | null;
   stale: { unionId: number; tag: string | null }[];
   failed: { unionId: number; tag: string | null; error: string }[];
-}
-
-/** The run did not start: the snapshot is complete (pass force) or another run holds it. */
-export class RunRefusedError extends Error {
-  override name = "RunRefusedError";
-  constructor(readonly reason: "complete" | "running" | "no-event") {
-    super(`snapshot run refused: ${reason}`);
-  }
 }
 
 class CallCapError extends Error {
@@ -127,22 +120,6 @@ async function logV1Fetch(
 function noteQuota(run: Run, remaining: number | undefined) {
   if (remaining === undefined || remaining > (run.lowest.remaining ?? remaining)) return;
   run.lowest = { remaining, calls: run.calls };
-}
-
-async function claim(deps: Deps, eventId: number, phase: Phase, force: boolean): Promise<number> {
-  const existing: SnapshotRow | null = await deps.repo.findSnapshot(eventId, phase);
-  const now = deps.now();
-  if (existing?.status === "complete" && !force) throw new RunRefusedError("complete");
-  // INVARIANT run.stale-after-150s: a run left at running this long may be taken over.
-  const live = now.getTime() - (existing?.startedAt.getTime() ?? 0) < RUN_STALE_AFTER_MS;
-  if (existing?.status === "running" && live) throw new RunRefusedError("running");
-  const id = await deps.repo.startSnapshot(eventId, phase, now, existing);
-  if (id === null) throw new RunRefusedError("running");
-  // A forced run reads the whole snapshot again. Any other re-run (partial, failed, or left running)
-  // drops only the failed rows, so it reads those alliances again and keeps the ones it has (D62).
-  if (existing)
-    await (force ? deps.repo.clearAllianceRows(id) : deps.repo.clearFailedAllianceRows(id));
-  return id;
 }
 
 async function allianceIds(deps: Deps, eventId: number, phase: Phase): Promise<number[]> {
@@ -300,9 +277,12 @@ export async function runSnapshot(
   eventId: number,
   phase: Phase,
   deps: Deps,
-  options: { force?: boolean } = {},
+  options: { force?: boolean; stale?: boolean | undefined } = {},
 ): Promise<RunSummary> {
-  const snapshotId = await claim(deps, eventId, phase, options.force ?? false);
+  const snapshotId = await claim(deps, eventId, phase, {
+    force: options.force ?? false,
+    stale: options.stale,
+  });
   const run: Run = {
     deps,
     snapshotId,

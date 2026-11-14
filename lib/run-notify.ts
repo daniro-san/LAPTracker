@@ -139,8 +139,10 @@ async function notifyAdmin(ctx: AppContext, db: Db, s: Shared) {
   });
   await storeId(db, s, "admin", id);
   // An edit does not notify, so a run that ended partly or failed also posts a message of its own:
-  // problems are never hidden inside an edit, and this one can be linked to (D31).
-  if (s.run.summary.status !== "complete") {
+  // problems are never hidden inside an edit, and this one can be linked to (D31). When the event's
+  // message was just posted (the first phase, or the old one was gone), it already notified: no copy.
+  const posted = id !== null && id !== event.discordAdminMessageId;
+  if (s.run.summary.status !== "complete" && !posted) {
     await s.notifier.admin(adminEventMessage(event.name, phaseBlocks(s, phase)), {
       test: event.isTest,
       manual: event.manual,

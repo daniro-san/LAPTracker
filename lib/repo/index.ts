@@ -92,8 +92,8 @@ export interface Repo {
     expected: SnapshotRow | null,
   ): Promise<number | null>;
   clearAllianceRows(snapshotId: number): Promise<void>;
-  /** The rows with an error only (D62): a re-run reads those alliances again. */
-  clearFailedAllianceRows(snapshotId: number): Promise<void>;
+  /** The rows with an error (D62), and with `stale` every stale row too (D63): a re-run reads them again. */
+  clearFailedAllianceRows(snapshotId: number, stale: boolean): Promise<void>;
   listAllianceRows(snapshotId: number): Promise<AllianceRowStatus[]>;
   /** The row and its members in one transaction. */
   insertAllianceRow(snapshotId: number, row: AllianceRow, members: MemberRow[]): Promise<void>;
@@ -108,7 +108,7 @@ export function createRepo(db: Db): Repo {
     startSnapshot: (eventId, phase, startedAt, expected) =>
       startSnapshot(db, eventId, phase, startedAt, expected),
     clearAllianceRows: (id) => clearAllianceRows(db, id),
-    clearFailedAllianceRows: (id) => clearFailedAllianceRows(db, id),
+    clearFailedAllianceRows: (id, stale) => clearFailedAllianceRows(db, id, stale),
     listAllianceRows: (id) => listAllianceRows(db, id),
     insertAllianceRow: (id, row, members) => insertAllianceRow(db, id, row, members),
     finishSnapshot: (id, result) => finishSnapshot(db, id, result),
