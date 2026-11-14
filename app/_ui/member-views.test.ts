@@ -16,6 +16,7 @@ const member = (uid: number, name: string, before: number | null, after: number 
     uid,
     name,
     hasAvatar: false,
+    frameId: null,
     wasName: null,
     status: before === null ? "joined" : after === null ? "left" : "",
     before: before === null ? null : { power: before, kills: before / 10, lv: 20 },
@@ -55,6 +56,7 @@ describe("memberViews", () => {
     kills: 1,
     lv: 20,
     hasAvatar: false,
+    frameId: null,
   });
   const before = [row(1, "Ann", 50), row(2, "Bob", 90), row(4, "Dana", 70)];
 
@@ -81,6 +83,7 @@ describe("leadership", () => {
     uid,
     name: `M${uid}`,
     hasAvatar: false,
+    frameId: null,
     power,
     kills: 1,
     lv: 1,

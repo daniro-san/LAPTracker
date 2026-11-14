@@ -10,6 +10,7 @@ export interface MemberView {
   uid: number;
   name: string;
   hasAvatar: boolean;
+  frameId: number | null;
   wasName: string | null;
   status: "joined" | "left" | "";
   before: Stats | null;
@@ -36,6 +37,7 @@ function singleRoster(roster: MemberRow[], side: "before" | "after"): MemberView
     uid: m.uid,
     name: m.name,
     hasAvatar: m.hasAvatar,
+    frameId: m.frameId,
     wasName: null,
     status: "" as const,
     before: side === "before" ? stat(m) : null,
@@ -67,6 +69,7 @@ export function memberViews(before: MemberRow[], after: MemberRow[]): MemberView
       uid: a.uid,
       name: a.name,
       hasAvatar: a.hasAvatar,
+      frameId: a.frameId,
       wasName: b.name !== a.name ? b.name : null,
       status: "" as const,
       before: stat(b),
@@ -78,6 +81,7 @@ export function memberViews(before: MemberRow[], after: MemberRow[]): MemberView
       uid: a.uid,
       name: a.name,
       hasAvatar: a.hasAvatar,
+      frameId: a.frameId,
       wasName: null,
       status: "joined" as const,
       before: null,
@@ -89,6 +93,7 @@ export function memberViews(before: MemberRow[], after: MemberRow[]): MemberView
       uid: b.uid,
       name: b.name,
       hasAvatar: b.hasAvatar,
+      frameId: b.frameId,
       wasName: null,
       status: "left" as const,
       before: stat(b),

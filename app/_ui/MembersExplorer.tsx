@@ -84,7 +84,7 @@ function toRow(m: MemberView, mode: Mode, copy: Dictionary): StatRow {
       m.name
     ),
     ...(m.role ? { tint: ROLE_TONE[m.role.kind].tint } : {}),
-    icon: <PlayerAvatar uid={m.uid} hasAvatar={m.hasAvatar} />,
+    icon: <PlayerAvatar uid={m.uid} photo={m} />,
     sub: (
       <>
         {m.status && (
