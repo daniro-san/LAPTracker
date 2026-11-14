@@ -17,6 +17,7 @@ import { requestClock, requestCopy } from "@/app/_ui/locale";
 import { HISTORY_FILTERS, matchesFilter, type HistoryFilter } from "@/app/_ui/member-history";
 import { HistoryCardView } from "@/app/_ui/MemberHistory";
 import { AllianceBadge } from "@/app/_ui/Pictures";
+import { previewImage } from "@/app/_ui/preview";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { TextLink } from "@/lib/brand/components/TextLink";
@@ -91,9 +92,12 @@ export async function generateMetadata({
   const data = inputs && (await load(inputs.unionId, inputs.before, inputs.show));
   if (!data) return {};
   const copy = await requestCopy();
-  const { tag, name, unionId } = data.history;
+  const { tag, name, unionId, badgeId } = data.history;
   const label = allianceLabel(tag ?? String(unionId), name);
-  return { title: `${label} · ${copy.history.title} · ${copy.site.name}` };
+  return {
+    title: `${label} · ${copy.history.title} · ${copy.site.name}`,
+    ...(badgeId != null && previewImage(`/img/badge/${badgeId}`, label)),
+  };
 }
 
 function Filters({
