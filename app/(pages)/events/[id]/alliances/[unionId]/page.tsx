@@ -26,6 +26,7 @@ import { Movers } from "@/app/_ui/Movers";
 import { MyAllianceToggle } from "@/app/_ui/MyAlliance";
 import { Delta, Num, Rank } from "@/app/_ui/Num";
 import { AllianceBadge } from "@/app/_ui/Pictures";
+import { previewImage } from "@/app/_ui/preview";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { LABEL, type StatMetric } from "@/app/_ui/StatTable";
@@ -223,12 +224,12 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const [clock, copy] = await Promise.all([requestClock(), requestCopy()]);
   const now = data.detail.after ?? data.detail.before;
   const event = data.events.find((e) => e.id === ids.eventId);
-  const parts = [
-    allianceLabel(now?.tag ?? String(ids.unionId), now?.name ?? null),
-    event && clock.weekday(event.eventAtUtc),
-    copy.site.name,
-  ];
-  return { title: parts.filter(Boolean).join(" · ") };
+  const label = allianceLabel(now?.tag ?? String(ids.unionId), now?.name ?? null);
+  const parts = [label, event && clock.weekday(event.eventAtUtc), copy.site.name];
+  return {
+    title: parts.filter(Boolean).join(" · "),
+    ...(now?.badgeId != null && previewImage(`/img/badge/${now.badgeId}`, label)),
+  };
 }
 
 type Events = Awaited<ReturnType<typeof listEvents>>;

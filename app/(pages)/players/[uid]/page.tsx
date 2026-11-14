@@ -11,6 +11,7 @@ import { requestClock, requestCopy } from "@/app/_ui/locale";
 import { Num } from "@/app/_ui/Num";
 import { AllianceBadge, PlayerAvatar } from "@/app/_ui/Pictures";
 import { PlayerAcrossEvents } from "@/app/_ui/PlayerAcrossEvents";
+import { previewImage } from "@/app/_ui/preview";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { LABEL } from "@/app/_ui/StatTable";
@@ -131,7 +132,11 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const data = uid === null ? null : await loadPlayer(uid);
   if (!data) return {};
   const copy = await requestCopy();
-  return { title: `${data.history.current.name} · ${copy.site.name}` };
+  const { name, hasAvatar } = data.history.current;
+  return {
+    title: `${name} · ${copy.site.name}`,
+    ...(hasAvatar && previewImage(`/img/avatar/${data.history.uid}`, name)),
+  };
 }
 
 export default async function PlayerPage({ params }: { params: Params }) {
