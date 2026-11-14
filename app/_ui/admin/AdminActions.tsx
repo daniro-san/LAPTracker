@@ -60,14 +60,14 @@ export function AdminActions({
   const { asking, ask, answer } = useAsk();
   const off = busy ?? (running.length > 0 ? "running" : null);
 
-  async function send(action: Action, pin: string, force = action.force === true) {
+  async function send(action: Action, pin: string, force = action.force === true, stale = false) {
     setBusy(action.id);
     setMessage(null);
     try {
-      const { res, body } = await post(action, pin, force);
-      if (body.code === "snapshot_complete" && (await ask(t.again))) {
-        return await send(action, pin, true);
-      }
+      const { res, body } = await post(action, pin, force, stale);
+      const again = await askAgain(body, ask);
+      if (again === "stop") return;
+      if (again) return await send(action, pin, again.force, again.stale);
       if (res.ok && action.next) return await send(action.next, pin);
       setMessage(describe(res.status, body, beforeAtText));
       router.refresh();
@@ -136,6 +136,22 @@ function useResult() {
 }
 
 /** A yes/no question in the confirm sheet, answered through a promise. */
+/** The question a refused press asks before it is sent again: a done snapshot taken again with force
+ * (D28), or a snapshot's stale rows read again, which costs a request each plus the quota check (D63).
+ * The flags to send on yes; "stop" on no to the stale question; null when there is nothing to ask. */
+async function askAgain(
+  body: Record<string, unknown>,
+  ask: (text: string) => Promise<boolean>,
+): Promise<{ force: boolean; stale: boolean } | "stop" | null> {
+  if (body.code === "snapshot_complete") {
+    return (await ask(t.again)) ? { force: true, stale: false } : null;
+  }
+  if (body.code !== "snapshot_stale") return null;
+  const count = Number(body.stale_count);
+  const yes = await ask(fill(t.staleAgain, { count, calls: count + 1 }));
+  return yes ? { force: false, stale: true } : "stop";
+}
+
 function useAsk() {
   const [asking, setAsking] = useState<{ text: string; resolve: (yes: boolean) => void } | null>(
     null,

@@ -4,7 +4,11 @@ import type { RunOutcome } from "./run";
 export function runResponse(outcome: RunOutcome): Response {
   if (!outcome.ok) {
     return Response.json(
-      { code: outcome.code, snapshot_id: outcome.snapshotId },
+      {
+        code: outcome.code,
+        snapshot_id: outcome.snapshotId,
+        ...(outcome.staleCount !== undefined && { stale_count: outcome.staleCount }),
+      },
       { status: outcome.status },
     );
   }

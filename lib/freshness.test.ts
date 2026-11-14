@@ -130,4 +130,28 @@ describe("freshness", () => {
     expect(others(after)).toEqual(others(before));
     expect(second.status).toBe("complete");
   });
+
+  it("re-runs ask before reading stale rows again, and with stale read only those (D63)", async () => {
+    let old = true;
+    const v1 = fakeV1((id) => roster(id, ago(T0, old && id === STALE_ID ? minutes(30) : 0)));
+    const { deps, repo } = makeDeps(v1);
+    const first = await runSnapshot(EVENT_ID, "before", deps);
+    const before = rowsOf(repo, first.snapshotId);
+    expect(first.status).toBe("partial");
+
+    old = false;
+    v1.calls.length = 0;
+    const asked = await runSnapshot(EVENT_ID, "before", deps).catch((e: unknown) => e);
+    expect(asked).toBeInstanceOf(RunRefusedError);
+    expect(asked).toMatchObject({ reason: "stale", staleCount: 1 });
+    expect(v1.calls).toEqual([]);
+
+    const second = await runSnapshot(EVENT_ID, "before", deps, { stale: true });
+    const after = rowsOf(repo, second.snapshotId);
+    expect(v1.calls).toEqual([STALE_ID]);
+    expect(after.find((r) => r.unionId === STALE_ID)?.isFresh).toBe(true);
+    const others = (rows: typeof after) => rows.filter((r) => r.unionId !== STALE_ID);
+    expect(others(after)).toEqual(others(before));
+    expect(second.status).toBe("complete");
+  });
 });

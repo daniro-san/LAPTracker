@@ -34,6 +34,8 @@ export interface EventInfo {
   /** D31: Discord's id of this event's message in each channel; null until the first post. */
   discordPublicMessageId: string | null;
   discordAdminMessageId: string | null;
+  /** When the event starts: a scheduled Before is not read again past it (D63). */
+  eventAtUtc: Date;
   beforeAt: Date;
   afterAt: Date;
 }
@@ -46,6 +48,7 @@ const infoColumns = {
   postPublic: events.postPublic,
   discordPublicMessageId: events.discordPublicMessageId,
   discordAdminMessageId: events.discordAdminMessageId,
+  eventAtUtc: events.eventAtUtc,
   beforeAt: events.beforeAt,
   afterAt: events.afterAt,
 };

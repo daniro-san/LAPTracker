@@ -9,6 +9,7 @@ lib/collector.ts    domain: runSnapshot, freshness check, per-alliance fallback,
 lib/compute.ts      pure functions only — sums, deltas, freshness predicate, roster diff; no IO, no Date.now() (passed in).
 lib/budget.ts       pure quota arithmetic (requiredQuota).
 lib/upstream-errors.ts, lib/raw-json.ts  the collector's error wording and raw_json trimming (split for size).
+lib/collector-claim.ts  the collector's claim on a snapshot row and which rows a re-run drops (D62, D63; split for size).
 lib/sources/*.ts    adapters: v1.ts (documented API, primary), internal.ts (site API: ranks board + live-roster fallback,
                     unofficial, read-only). One output type.
 lib/repo/*.ts       persistence: one module per table, plain functions over Drizzle.
