@@ -175,7 +175,7 @@ export default async function PlayerPage({ params }: { params: Params }) {
         />
         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
           <div className="flex min-w-0 items-center gap-3">
-            <PlayerAvatar uid={history.uid} hasAvatar={current.hasAvatar} size="lg" />
+            <PlayerAvatar uid={history.uid} photo={current} size="lg" />
             <div className="min-w-0">
               <h1 className="break-words font-display text-display-lg leading-tight">
                 {current.name}

@@ -47,7 +47,7 @@ export function MemberCompareCard({
     <CompareCard
       name={
         <>
-          <PlayerAvatar uid={m.uid} hasAvatar={m.hasAvatar} />
+          <PlayerAvatar uid={m.uid} photo={m} />
           <Link href={`/players/${m.uid}`} className={NAME}>
             {m.name}
           </Link>

@@ -47,6 +47,7 @@ async function insertAlliance(
         kills: m.kills,
         lv: m.lv,
         avatarUrl: m.avatarUrl,
+        frameId: m.frameId,
         rankCode: m.rankCode,
         rankLabel: m.rankLabel,
       })),

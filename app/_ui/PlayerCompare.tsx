@@ -32,7 +32,7 @@ function PlayerName({ p, link, plain }: { p: Player; link: string; plain: string
 export function PlayerCompareTitle({ p }: { p: Player }) {
   return (
     <div className="flex min-w-0 items-center gap-3">
-      <PlayerAvatar uid={p.uid} hasAvatar={p.hasAvatar} size="lg" />
+      <PlayerAvatar uid={p.uid} photo={p} size="lg" />
       <h1 className="min-w-0 break-words font-display text-display-lg leading-tight">
         <PlayerName p={p} link={TITLE_LINK} plain="" />
       </h1>
@@ -88,7 +88,7 @@ export function PlayerCompareCard({
     <CompareCard
       name={
         <>
-          <PlayerAvatar uid={p.uid} hasAvatar={p.hasAvatar} />
+          <PlayerAvatar uid={p.uid} photo={p} />
           <PlayerName p={p} link={NAME} plain={PLAIN_NAME} />
           <span className={`ml-auto text-sm tabular-nums ${MUTED}`}>
             <Num n={p.b?.power ?? p.a?.power ?? null} />

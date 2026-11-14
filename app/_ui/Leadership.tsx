@@ -68,7 +68,7 @@ function Card({
   return (
     <li className={`relative flex min-w-0 flex-col gap-2 border border-rule p-3 ${width}`}>
       <div className="flex min-w-0 items-center gap-3">
-        <PlayerAvatar uid={m.uid} hasAvatar={m.hasAvatar} size="lg" />
+        <PlayerAvatar uid={m.uid} photo={m} size="lg" />
         <div className="min-w-0 break-words">
           <TextLink
             stretch

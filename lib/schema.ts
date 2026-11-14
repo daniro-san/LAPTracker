@@ -139,6 +139,9 @@ export const memberSnapshots = pgTable(
     lv: integer("lv"),
     // Never returned by a query: /img/avatar/[uid] fetches it server-side (D22, plan §12.1).
     avatarUrl: text("avatar_url"),
+    // The avatar frame the player wore (5001 is the game's plain one); the page shows it via
+    // /img/frame/[id] (D65). Null on rows stored before the column.
+    frameId: integer("frame_id"),
     // The member's rank as /v1 reports it (105 = R5, 104 = R4, 103..101 = R3..R1) and its label
     // ("R4 · Diplomat"); null on rows stored before these columns and on rows from the internal source.
     rankCode: integer("rank_code"),

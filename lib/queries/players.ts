@@ -14,6 +14,7 @@ import {
 import type { Db } from "../db";
 import { allianceSnapshots, events, memberSnapshots, snapshots } from "../schema";
 import { rolesOf, type Role } from "./leadership";
+import { type Photo, photoColumns } from "./photo";
 import type { Ranks } from "./ranks";
 import { chainEvent, publicEvent } from "./visibility";
 
@@ -21,7 +22,7 @@ export const SEARCH_LIMIT = 50;
 
 type Phase = "before" | "after";
 
-interface Sighting {
+interface Sighting extends Photo {
   allianceSnapshotId: number;
   eventId: number;
   eventName: string;
@@ -37,7 +38,6 @@ interface Sighting {
   power: number | null;
   kills: number | null;
   lv: number | null;
-  hasAvatar: boolean;
   rank: Ranks;
 }
 
@@ -90,13 +90,12 @@ export interface AllianceStay {
 
 export interface PlayerHistory {
   uid: number;
-  current: {
+  current: Photo & {
     name: string;
     unionId: number;
     tag: string | null;
     badgeId: number | null;
     eventId: number;
-    hasAvatar: boolean;
     /** The newest sighting in a chain event (D28): Might, Kills and Sanctuary level as stored then. */
     power: number | null;
     kills: number | null;
@@ -138,7 +137,7 @@ const sightingColumns = {
   power: memberSnapshots.power,
   kills: memberSnapshots.kills,
   lv: memberSnapshots.lv,
-  hasAvatar: sql<boolean>`${memberSnapshots.avatarUrl} is not null`,
+  ...photoColumns,
   mightRank: peerRank(memberSnapshots.power, "power"),
   killsRank: peerRank(memberSnapshots.kills, "kills"),
 };
@@ -276,6 +275,7 @@ export async function playerHistory(db: Db, uid: number): Promise<PlayerHistory 
       badgeId: latest.badgeId,
       eventId: latest.eventId,
       hasAvatar: latest.hasAvatar,
+      frameId: latest.frameId,
       power: latest.power,
       kills: latest.kills,
       lv: latest.lv,
@@ -289,7 +289,7 @@ export async function playerHistory(db: Db, uid: number): Promise<PlayerHistory 
   };
 }
 
-export interface PlayerMatch {
+export interface PlayerMatch extends Photo {
   uid: number;
   name: string;
   /** The older name that matched when the current one does not. */
@@ -299,8 +299,6 @@ export interface PlayerMatch {
   allianceName: string | null;
   /** The alliance's preset badge (101–110) in the latest sighting; served by /img/badge/[id] (D22). */
   badgeId: number | null;
-  /** A stored photo exists; served by /img/avatar/[uid], never as a URL (D22). */
-  hasAvatar: boolean;
   lastEventId: number;
   lastSeen: Date;
 }
@@ -339,6 +337,7 @@ export async function searchPlayers(db: Db, q: string): Promise<PlayerMatch[]> {
       allianceName: latest.allianceName,
       badgeId: latest.badgeId,
       hasAvatar: latest.hasAvatar,
+      frameId: latest.frameId,
       lastEventId: latest.eventId,
       lastSeen: latest.eventAtUtc,
     };

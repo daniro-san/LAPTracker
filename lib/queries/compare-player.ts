@@ -1,13 +1,14 @@
 // Event vs event for one player (issue 199, D57): the player in two public events, each read in the
 // alliance that held them then. Member fields served: uid, name, power, kills (§12.1) and whether a
 // photo exists (never its URL, D22); raw_json and avatar_url are never selected.
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 
 import { delta, pickRosterRow, type Measured } from "../compute";
 import type { Db } from "../db";
 import { allianceSnapshots, events, memberSnapshots, snapshots } from "../schema";
 import { comparePicks, eventOf, sidesOf, usable, type Detail } from "./compare";
 import { getEventDetail } from "./events";
+import { type Photo, photoColumns } from "./photo";
 import { peerRank } from "./players";
 import { chainEvent } from "./visibility";
 
@@ -28,13 +29,12 @@ export interface PlayerEventFigures {
   opening: { power: number | null; kills: number | null } | null;
 }
 
-interface PlayerRow {
+interface PlayerRow extends Photo {
   snapshotId: number;
   unionId: number;
   name: string;
   power: number | null;
   kills: number | null;
-  hasAvatar: boolean;
   rank: number | null;
 }
 
@@ -47,7 +47,7 @@ async function rowsOf(db: Db, uid: number, snapshotIds: number[]): Promise<Playe
       name: memberSnapshots.name,
       power: memberSnapshots.power,
       kills: memberSnapshots.kills,
-      hasAvatar: sql<boolean>`${memberSnapshots.avatarUrl} is not null`,
+      ...photoColumns,
       rank: peerRank(memberSnapshots.power, "power"),
     })
     .from(memberSnapshots)
@@ -121,6 +121,7 @@ export async function comparePlayer(db: Db, aId: number, bId: number, uid: numbe
       uid,
       name: named.name,
       hasAvatar: named.hasAvatar,
+      frameId: named.frameId,
       hasPage,
       a: playerSide(a, rows),
       b: playerSide(b, rows),

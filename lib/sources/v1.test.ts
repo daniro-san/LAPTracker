@@ -71,6 +71,19 @@ describe("v1.fetchAlliance parsing", () => {
     expect(a.members.some((m) => m.rankCode === 105 && m.rankLabel === "R5")).toBe(true);
   });
 
+  it("keeps only each member's frame id from frame_url, and null when it is missing or not a frame file (D65)", async () => {
+    const body = JSON.parse(readFixture(OGS)) as { members: Record<string, unknown>[] };
+    const [first, second, third] = body.members as Record<string, unknown>[];
+    expect(first?.frame_url).toMatch(/^\/static\/frames\/frame_\d+\.png$/);
+    delete second?.frame_url;
+    if (third) third.frame_url = "https://elsewhere.test/static/frames/frame_5001.png";
+    mockFetch(respond(JSON.stringify(body)));
+    const a = await fetchAlliance(67111155);
+    expect(a.members[0]?.frameId).toBe(Number(/(\d+)\.png$/.exec(String(first?.frame_url))?.[1]));
+    expect(a.members[1]?.frameId).toBeNull();
+    expect(a.members[2]?.frameId).toBeNull();
+  });
+
   it("parses cached, sourceUpdatedAt, rank, level and quota from the alliance body", async () => {
     mockFetch(respond(readFixture(OGS)));
     const a = await fetchAlliance(67111155);
