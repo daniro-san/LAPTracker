@@ -35,3 +35,5 @@ Plan changes needed: none.
 <adjustments>
 - Discord copy keys for the capture window are `copy.discord.public.start` and `copy.discord.image.start` / `end` / `endDue`; `beforeDone`, `image.before`, `image.after` and `image.afterDue` no longer exist.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/259
