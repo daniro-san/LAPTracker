@@ -36,3 +36,5 @@ Plan changes needed: none.
 <adjustments>
 - `findPhoto(db, uid)` in `lib/repo/alliance-snapshots.ts` replaces `findAvatarUrl` and returns `{ avatarUrl, frameId }` of the newest row.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/262
