@@ -39,3 +39,5 @@ Plan changes needed: plan §2 lists `GET /v1/alliances/{id}`; it should mention 
 <adjustments>
 - Every `/v1` alliance read is live (`?fresh=1`). A stale row now means the game itself had not updated the alliance within 20 minutes, not that the API's cache was old.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/256
