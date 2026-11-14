@@ -40,3 +40,5 @@ Plan changes needed: none.
 <adjustments>
 - Pages declare their own link preview with `previewImage()` from `app/_ui/preview.ts`; the root `app/opengraph-image.tsx` stays the fallback.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/260
