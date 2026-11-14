@@ -153,6 +153,17 @@ export const memberSnapshots = pgTable(
   ],
 );
 
+/**
+ * Each player's current avatar frame (D65): the frame from their newest read, whether an event snapshot or
+ * the daily read, so a frame the player changes shows within a day. One row per player.
+ */
+export const playerFrames = pgTable("player_frames", {
+  uid: big("uid").primaryKey(),
+  frameId: integer("frame_id").notNull(),
+  /** The upstream `updated_at` of the read the frame came from; a write only replaces an older one. */
+  seenAt: tstz("seen_at").notNull(),
+});
+
 /** The "why" of every run (plan §6, Phase 6 "Observability"): counts and codes, never names. */
 export const runLogs = pgTable(
   "run_logs",

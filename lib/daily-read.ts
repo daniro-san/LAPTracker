@@ -18,6 +18,7 @@ import {
   type DailyReadStatus,
   type NewDailyRoster,
 } from "./repo/daily-reads";
+import { recordFrames } from "./repo/player-frames";
 import { insertRunLog } from "./repo/run-logs";
 import { QuotaExhaustedError, type AllianceSnapshotInput, type V1Source } from "./sources/types";
 import { describe, httpStatusOf, upstreamDetail } from "./upstream-errors";
@@ -84,6 +85,8 @@ interface Read {
   abort: string | null;
   remaining: number | null;
   rows: NewDailyRoster[];
+  /** Each read roster's members and upstream time, for the players' current frames (D65). */
+  frames: { members: AllianceSnapshotInput["members"]; seenAt: Date | null }[];
 }
 
 /** INVARIANT calls.max-upstream: every /v1 attempt, quota check and retries included. */
@@ -126,6 +129,7 @@ async function readOne(read: Read, id: number): Promise<void> {
     const row = dataRow(a, now());
     if (!row.isFresh) await read.log.warn("stale", { union_id: id });
     read.rows.push(row);
+    read.frames.push({ members: a.members, seenAt: a.sourceUpdatedAt });
   } catch (e) {
     if (read.controller.signal.aborted) return;
     await logFetch(read, started, call, { error: e });
@@ -236,12 +240,14 @@ async function readDay(
     abort: null,
     remaining: null,
     rows: [],
+    frames: [],
   };
   const error = await withDeadline(read, readRosters(read, ids));
   if (error === "deadline") await log.warn("run.deadline", { calls_used: read.calls });
   else if (error && !error.startsWith("quota")) await log.error("abort", { reason: error });
   const rows = [...read.rows];
   for (const row of rows) await insertDailyRoster(db, day, row);
+  for (const f of read.frames) await recordFrames(db, f.members, f.seenAt);
   const ok = rows.filter((r) => r.error === null);
   const status: DailyReadStatus =
     ok.length === 0
