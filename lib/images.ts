@@ -42,7 +42,7 @@ export const avatarSource = (stored: string | null): string | null => photoUrl(s
 export const notFoundImage = (): Response =>
   new Response(null, { status: 404, headers: { "Cache-Control": "public, max-age=300" } });
 
-type Image = { body: Uint8Array<ArrayBuffer>; type: string };
+export type Image = { body: Uint8Array<ArrayBuffer>; type: string };
 /** Why a fetch failed: the HTTP status, or the error's class name. Never the URL or a message. */
 export type ImageFailure = { http_status: number } | { error: string };
 
