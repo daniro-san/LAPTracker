@@ -62,7 +62,7 @@ export const tr = {
     first: "İlk etkinlik",
     second: "İkinci etkinlik",
     swap: "Etkinlikleri değiştir",
-    lead: "Her satır, o etkinlikteki değişimi Önce’den Sonra’ya gösterir. Son satır, ikinci etkinliğin değişiminden ilkinin değişimini çıkarır.",
+    lead: "Her satır, o etkinlikteki değişimi Başlangıç’tan Bitiş’e gösterir. Son satır, ikinci etkinliğin değişiminden ilkinin değişimini çıkarır.",
     allAlliances: "Tüm ittifaklar",
     counted: "{total} ittifaktan {n} tanesi, iki etkinlikte de kullanılabilir verisi olanlar",
     between: "Bir etkinlikten diğerine",

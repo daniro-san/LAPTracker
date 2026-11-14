@@ -61,7 +61,7 @@ export const ptBR = {
     first: "Primeiro evento",
     second: "Segundo evento",
     swap: "Trocar os eventos",
-    lead: "Cada linha é a mudança durante aquele evento, de Antes a Depois. A última linha é a mudança do segundo evento menos a do primeiro.",
+    lead: "Cada linha é a mudança durante aquele evento, de Início a Fim. A última linha é a mudança do segundo evento menos a do primeiro.",
     allAlliances: "Geral",
     counted: "{n} de {total} alianças, as que têm dados úteis nos dois eventos",
     between: "De um evento ao outro",

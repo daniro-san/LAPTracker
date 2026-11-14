@@ -61,7 +61,7 @@ export const nl = {
     first: "Eerste event",
     second: "Tweede event",
     swap: "Verwissel de events",
-    lead: "Elke regel is de verandering tijdens dat event, van Voor naar Na. De laatste regel is de verandering van het tweede event min die van het eerste.",
+    lead: "Elke regel is de verandering tijdens dat event, van Begin naar Einde. De laatste regel is de verandering van het tweede event min die van het eerste.",
     allAlliances: "Alle allianties",
     counted: "{n} van {total} allianties, die in beide events bruikbare gegevens hebben",
     between: "Van het ene event naar het andere",

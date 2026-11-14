@@ -61,7 +61,7 @@ export const de = {
     first: "Erstes Event",
     second: "Zweites Event",
     swap: "Events tauschen",
-    lead: "Jede Zeile zeigt die Änderung während des Events, von Vorher bis Nachher. Die letzte Zeile ist die Änderung des zweiten Events minus die des ersten.",
+    lead: "Jede Zeile zeigt die Änderung während des Events, von Beginn bis Ende. Die letzte Zeile ist die Änderung des zweiten Events minus die des ersten.",
     allAlliances: "Alle Allianzen",
     counted: "{n} von {total} Allianzen, nur die mit brauchbaren Daten in beiden Events",
     between: "Vom einen Event zum anderen",

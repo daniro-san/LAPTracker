@@ -24,7 +24,7 @@ Words already used in `lib/i18n/uk.ts`. Reuse them so the pages stay consistent;
 | Leader                    | Лідер                       | `leadership.leader` — the R5                                                       |
 | Run by hand by the admin  | Адмін запускає вручну       | `status.byHand`                                                                    |
 | grandma                   | бабуся                      | the voice in empty states and errors                                               |
-| Before / After            | До / Після                  | `compare.lead` — the two columns of a change                                       |
+| Start / End               | Початок / Кінець            | `status.start` / `status.end`, `compare.lead`                                      |
 | vs                        | проти                       | `compare.versus` — "{a} проти {b}"                                                 |
 | read (a roster snapshot)  | знімок                      | `history.lead`, `history.daily`, `history.first` — a member list taken at one time |
 

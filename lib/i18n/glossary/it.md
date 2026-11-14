@@ -24,7 +24,7 @@ Words already used in `lib/i18n/it.ts`. Reuse them so the pages stay consistent;
 | Leader                    | Capo                         | `leadership.leader` — the R5                              |
 | Run by hand by the admin  | Lo avvia l’admin a mano      | `status.byHand`                                           |
 | Grandma noticed           | Nonna nota                   | `ledger.movers` — the event's biggest gains and losses    |
-| Before / After            | Prima / Dopo                 | `compare.lead` — the two snapshots of one event           |
+| Start / End               | Inizio / Fine                | `status.start` / `status.end`, `compare.lead`             |
 | grandma                   | la nonna                     | the voice in empty states and errors                      |
 | Daily read                | Lettura giornaliera          | `history.daily` — a roster read once a day                |
 
