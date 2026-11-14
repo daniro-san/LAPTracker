@@ -58,6 +58,7 @@ export const nl = {
     title: "Event tegen event",
     versus: "{a} tegen {b}",
     action: "Vergelijk",
+    stop: "Stop met vergelijken",
     first: "Eerste event",
     second: "Tweede event",
     swap: "Verwissel de events",

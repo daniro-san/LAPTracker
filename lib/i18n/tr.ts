@@ -59,6 +59,7 @@ export const tr = {
     title: "Etkinlik karşılaştırma",
     versus: "{a} vs {b}",
     action: "Karşılaştır",
+    stop: "Karşılaştırmayı bitir",
     first: "İlk etkinlik",
     second: "İkinci etkinlik",
     swap: "Etkinlikleri değiştir",

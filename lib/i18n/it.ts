@@ -58,6 +58,7 @@ export const itIT = {
     title: "Confronto tra eventi",
     versus: "{a} vs {b}",
     action: "Confronta",
+    stop: "Esci dal confronto",
     first: "Primo evento",
     second: "Secondo evento",
     swap: "Scambia gli eventi",

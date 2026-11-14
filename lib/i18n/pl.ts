@@ -58,6 +58,7 @@ export const pl = {
     title: "Wydarzenie vs wydarzenie",
     versus: "{a} vs {b}",
     action: "Porównaj",
+    stop: "Zakończ porównanie",
     first: "Pierwsze wydarzenie",
     second: "Drugie wydarzenie",
     swap: "Zamień miejscami",

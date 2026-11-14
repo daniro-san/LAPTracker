@@ -58,6 +58,7 @@ export const ja = {
     title: "イベント比較",
     versus: "{a} 対 {b}",
     action: "比較",
+    stop: "比較をやめる",
     first: "1つ目のイベント",
     second: "2つ目のイベント",
     swap: "イベントを入れ替える",

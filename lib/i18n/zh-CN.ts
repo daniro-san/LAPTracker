@@ -58,6 +58,7 @@ export const zhCN = {
     title: "活动对比",
     versus: "{a} 对 {b}",
     action: "对比",
+    stop: "停止对比",
     first: "第一个活动",
     second: "第二个活动",
     swap: "互换两个活动",

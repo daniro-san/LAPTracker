@@ -74,6 +74,8 @@ export const en = {
     versus: "{a} vs {b}",
     /** The event page's link and the picker's button. */
     action: "Compare",
+    /** The compare page's way out: back to the event, alliance or player the comparison was opened from. */
+    stop: "Stop comparing",
     first: "First event",
     second: "Second event",
     swap: "Swap the events",
