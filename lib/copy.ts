@@ -78,7 +78,7 @@ export const en = {
     second: "Second event",
     swap: "Swap the events",
     /** Under the title: what each line's numbers are. */
-    lead: "Each line is the change during that event, from Before to After. The last line is the second event's change minus the first's.",
+    lead: "Each line is the change during that event, from Start to End. The last line is the second event's change minus the first's.",
     allAlliances: "All alliances",
     /** Under the totals: how many alliances they cover. */
     counted: "{n} of {total} alliances, those with usable data in both events",

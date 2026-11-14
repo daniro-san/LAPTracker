@@ -61,7 +61,7 @@ export const pl = {
     first: "Pierwsze wydarzenie",
     second: "Drugie wydarzenie",
     swap: "Zamień miejscami",
-    lead: "Każda linia to zmiana w trakcie wydarzenia, od Przed do Po. Ostatnia linia to zmiana drugiego wydarzenia minus zmiana pierwszego.",
+    lead: "Każda linia to zmiana w trakcie wydarzenia, od Początku do Końca. Ostatnia linia to zmiana drugiego wydarzenia minus zmiana pierwszego.",
     allAlliances: "Wszystkie sojusze",
     counted: "{n} z {total} sojuszy, tych z danymi do użytku w obu wydarzeniach",
     between: "Od jednego wydarzenia do drugiego",

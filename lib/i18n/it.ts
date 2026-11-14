@@ -61,7 +61,7 @@ export const itIT = {
     first: "Primo evento",
     second: "Secondo evento",
     swap: "Scambia gli eventi",
-    lead: "Ogni riga è la variazione durante quell’evento, da Prima a Dopo. L’ultima riga è la variazione del secondo evento meno quella del primo.",
+    lead: "Ogni riga è la variazione durante quell’evento, da Inizio a Fine. L’ultima riga è la variazione del secondo evento meno quella del primo.",
     allAlliances: "Ogni alleanza",
     counted: "{n} su {total} alleanze, quelle con dati validi in entrambi gli eventi",
     between: "Da un evento all’altro",

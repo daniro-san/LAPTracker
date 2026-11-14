@@ -25,7 +25,7 @@ Words already used in `lib/i18n/pl.ts`. Reuse them so the pages stay consistent;
 | Grandma noticed           | Babcia zauważyła              | `ledger.movers` — the event's biggest gains and losses    |
 | Run by hand by the admin  | Admin uruchamia ręcznie       | `status.byHand`                                           |
 | grandma                   | babcia                        | the voice in empty states and errors                      |
-| Before / After            | Przed / Po                    | `compare.lead` — the two sides of an event's change       |
+| Start / End               | Początek / Koniec             | `status.start` / `status.end`, `compare.lead`             |
 | Member history            | Historia członków             | `history.title` — the alliance's rosters over time        |
 | Daily read                | Odczyt dzienny                | `history.daily` — a card's head for the once-a-day read   |
 

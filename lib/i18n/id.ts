@@ -62,7 +62,7 @@ export const idID = {
     first: "Event pertama",
     second: "Event kedua",
     swap: "Tukar event",
-    lead: "Setiap baris adalah perubahan selama event itu, dari Sebelum ke Sesudah. Baris terakhir adalah perubahan event kedua dikurangi event pertama.",
+    lead: "Setiap baris adalah perubahan selama event itu, dari Awal ke Akhir. Baris terakhir adalah perubahan event kedua dikurangi event pertama.",
     allAlliances: "Semua aliansi",
     counted: "{n} dari {total} aliansi, yang datanya bisa dipakai di kedua event",
     between: "Dari satu event ke event lain",

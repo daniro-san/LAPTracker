@@ -198,7 +198,7 @@ export function publicSnapshotMessage(summary: RunSummary, ctx: PublicContext): 
   const lines: string[] = ctx.roundName
     ? [fill(t.manual, { name: escapeDiscord(ctx.roundName) })]
     : [];
-  if (ctx.beforeAt) lines.push(fill(t.beforeDone, { time: ctx.clock.at(ctx.beforeAt) }));
+  if (ctx.beforeAt) lines.push(fill(t.start, { time: ctx.clock.at(ctx.beforeAt) }));
   if (summary.status !== "failed" && ctx.alliances) {
     const bad = ctx.alliances.filter((a) => !usable(a));
     lines.push(
