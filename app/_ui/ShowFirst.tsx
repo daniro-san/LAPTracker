@@ -10,8 +10,21 @@ import { fill } from "@/lib/copy";
 
 import { useCopy } from "./LocaleProvider";
 
-export function ShowFirst({ top, children }: { top: number; children: ReactNode }) {
+/** The "Show all (n)" button under a shortened list. */
+export function ShowAllButton({ n, onClick }: { n: number; onClick: () => void }) {
   const copy = useCopy();
+  return (
+    <button
+      type="button"
+      className={`${buttonClass("secondary")} mt-3 w-full sm:w-auto`}
+      onClick={onClick}
+    >
+      {fill(copy.members.showAll, { n: String(n) })}
+    </button>
+  );
+}
+
+export function ShowFirst({ top, children }: { top: number; children: ReactNode }) {
   const [all, setAll] = useState(false);
   const items = Children.toArray(children);
   const shown = all ? items : items.slice(0, top);
@@ -19,13 +32,7 @@ export function ShowFirst({ top, children }: { top: number; children: ReactNode 
     <>
       <ul>{shown}</ul>
       {shown.length < items.length && (
-        <button
-          type="button"
-          className={`${buttonClass("secondary")} mt-3 w-full sm:w-auto`}
-          onClick={() => setAll(true)}
-        >
-          {fill(copy.members.showAll, { n: String(items.length) })}
-        </button>
+        <ShowAllButton n={items.length} onClick={() => setAll(true)} />
       )}
     </>
   );

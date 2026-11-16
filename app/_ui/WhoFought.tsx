@@ -9,7 +9,6 @@
 import Link from "next/link";
 import { useState } from "react";
 
-import { buttonClass } from "@/lib/brand/components/Button";
 import { TURNOUT_MIN_GAINERS, TURNOUT_TOP } from "@/lib/compute";
 import { fill } from "@/lib/copy";
 import type { AllianceTurnout, TurnoutLists } from "@/lib/queries";
@@ -18,6 +17,7 @@ import { allianceLabel, shareText } from "./format";
 import { useCopy, useLocale } from "./LocaleProvider";
 import { useMyAlliance } from "./MyAlliance";
 import { AllianceBadge } from "./Pictures";
+import { ShowAllButton } from "./ShowFirst";
 import { LABEL } from "./StatTable";
 
 interface Entry {
@@ -32,6 +32,15 @@ interface Entry {
 
 /** Rows shown before "Show all": the first ones, and the viewer's own wherever it is. */
 const SHOWN = 5;
+
+/** The rows a list shows: all when expanded, else the first SHOWN and the viewer's own wherever it is. */
+export function visibleEntries<E extends { t: { unionId: number } }>(
+  entries: E[],
+  mine: number | null,
+  all: boolean,
+): E[] {
+  return all ? entries : entries.filter(({ t }, i) => i < SHOWN || t.unionId === mine);
+}
 
 function BarList({
   title,
@@ -48,7 +57,7 @@ function BarList({
 }) {
   const copy = useCopy();
   const [all, setAll] = useState(false);
-  const shown = all ? entries : entries.filter(({ t }, i) => i < SHOWN || t.unionId === mine);
+  const shown = visibleEntries(entries, mine, all);
   return (
     <div className="min-w-0">
       <h3 className={`mt-1 flex min-h-11 items-center ${LABEL}`}>{title}</h3>
@@ -88,13 +97,7 @@ function BarList({
         ))}
       </ol>
       {shown.length < entries.length && (
-        <button
-          type="button"
-          className={`${buttonClass("secondary")} mt-3 w-full sm:w-auto`}
-          onClick={() => setAll(true)}
-        >
-          {fill(copy.members.showAll, { n: String(entries.length) })}
-        </button>
+        <ShowAllButton n={entries.length} onClick={() => setAll(true)} />
       )}
     </div>
   );
