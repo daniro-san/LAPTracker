@@ -39,6 +39,7 @@ vi.mock("next/navigation", async (original) => ({
 const { default: AdminPage } = await import("./page");
 const { default: RunsPage } = await import("./runs/page");
 const { default: ErrorsPage } = await import("./errors/page");
+const { default: MembersPage } = await import("./members/page");
 const { default: RunPage } = await import("./runs/[id]/page");
 const { default: DailyRunPage } = await import("./runs/daily/[day]/page");
 
@@ -59,6 +60,7 @@ describe("/admin pages, locked", () => {
     ["/admin", () => AdminPage()],
     ["/admin/runs", () => RunsPage({ searchParams: Promise.resolve({}) })],
     ["/admin/errors", () => ErrorsPage()],
+    ["/admin/members", () => MembersPage({ searchParams: Promise.resolve({}) })],
     ["/admin/runs/1", () => run("1")],
     [
       "/admin/runs/daily/2026-11-12",

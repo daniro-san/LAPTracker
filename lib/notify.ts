@@ -313,6 +313,8 @@ export interface QuotaReport {
   warnAboveMb: number;
   beforeAt: string;
   afterAt: string;
+  /** The site's own alliance's might lists (D70): counts and the page's link, never names. Omitted while not ready. */
+  might?: { days: number; unchanged: number; pct: number; lost: number; url: string } | undefined;
 }
 
 /** The Friday check: requests left, database size, the coming snapshots. */
@@ -328,6 +330,17 @@ export function quotaReportMessage(r: QuotaReport): string {
         (low ? fill(t.quotaLow, { n: r.warnBelow }) : ""),
     fill(t.database, { icon: high ? "⚠" : "✓", mb: r.databaseMb.toFixed(1) }) +
       (high ? fill(t.databaseHigh, { n: r.warnAboveMb }) : ""),
+    ...(r.might
+      ? [
+          fill(t.mightLine, {
+            days: r.might.days,
+            unchanged: r.might.unchanged,
+            pct: r.might.pct,
+            lost: r.might.lost,
+            url: r.might.url,
+          }),
+        ]
+      : []),
     `${copy.admin.phase.before} ${r.beforeAt}`,
     `${copy.admin.phase.after} ${r.afterAt}`,
   ].join("\n");
