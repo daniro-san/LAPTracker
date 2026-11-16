@@ -81,3 +81,4 @@ The header text above is the old file's, kept as it was. The split it describes 
 - [D65 — Avatar frames: an id per member row, one picture per frame (2026-11-14, owner, 08zzzr)](D65-avatar-frames-stored-as-an-id.md)
 - [D66 — A player's current frame, from any read (2026-11-14, owner, 08zzzt)](D66-a-players-current-frame-from-any-read.md)
 - [D67 — A partly done daily read can be retried, and a retry keeps the rosters already read (2026-11-16, owner, 08zzzw)](D67-a-partly-done-daily-read-can-be-retried.md)
+- [D71 — A private workspace per alliance: Discord sign-in, every roster field for its own leadership (2026-11-16, owner, 11a, issue #303)](D71-a-private-workspace-per-alliance.md)
