@@ -24,3 +24,5 @@ Closes #313.
 None queued.
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+https://github.com/daniro-san/LAPTracker/pull/316
