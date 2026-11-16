@@ -64,6 +64,33 @@ describe("the event picture (D58)", () => {
     expect(downloads).toEqual([]);
   });
 
+  it("adds the turnout block to the End's picture only, 211 px (2×: 422) taller, with no network", async () => {
+    vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("no network"));
+    const t = (unionId: number, gainers: number) => ({
+      unionId,
+      tag: `T${unionId}`,
+      name: null,
+      badgeId: null,
+      n: 100,
+      gainers,
+      gained: 10,
+      top: 5,
+    });
+    const rows = [t(1, 54), t(2, 48), t(3, 41), t(4, 33), t(5, 12)];
+    const turnout = { withKills: rows, topShare: rows };
+    // IHDR: the height is the big-endian word at byte 20.
+    const height = async (e: EventImageInput) => {
+      const png = await eventImage(e);
+      return png && new DataView(png.buffer).getUint32(20);
+    };
+    const without = await height(input());
+    // Section 36 + 4 rows of 35 + the concentration line 35, drawn at 2×.
+    expect(await height(input({ turnout }))).toBe((without ?? 0) + 2 * 211);
+    expect(await height(input({ turnout: null }))).toBe(without);
+    const before = input({ phase: "before", alliances: BEFORE, before: [], beforeAt: null });
+    expect(await height({ ...before, turnout })).toBe(await height(before));
+  });
+
   it("gives null and logs no name when the picture cannot be drawn", async () => {
     const error = vi.spyOn(console, "error").mockImplementation(() => {});
     const clock = {
