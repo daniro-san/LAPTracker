@@ -45,3 +45,5 @@ Plan changes needed: none to `docs/IMPLEMENTATION_PLAN.md`.
 </adjustments>
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+https://github.com/daniro-san/LAPTracker/pull/309
