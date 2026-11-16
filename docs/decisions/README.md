@@ -94,3 +94,4 @@ The header text above is the old file's, kept as it was. The split it describes 
 - [D78 — Compact numbers use K, M, B, T in every language and browser (2026-11-16, owner, issue #325)](D78-compact-numbers-use-k-m-b-t-everywhere.md)
 - [D79 — The event page's live reads are shared between viewers in Next's data cache, tagged by event (2026-11-16, owner, 08zzzzj, issue #327)](D79-event-page-reads-shared-in-the-data-cache.md)
 - [D80 — Member facts: one version per field write, combined notes and languages, a sheet import that only fills empty fields, and a roster before the first end-of-day read (2026-11-16, 11f, issue #297)](D80-member-facts-field-versions-and-the-sheet-import.md)
+- [D83 — Kill share vs might share: a public section on the event page, alliance-level only, a ratio only from 3 events (2026-11-16, owner, 08zzzzk, issue #280)](D83-kill-share-vs-might-share.md)
