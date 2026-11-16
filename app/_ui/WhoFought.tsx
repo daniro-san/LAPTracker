@@ -126,7 +126,7 @@ export function WhoFought({ eventId, lists }: { eventId: number; lists: TurnoutL
   return (
     <section aria-labelledby="who-fought-h" className="mt-8">
       <h2 id="who-fought-h" className="font-subhead text-display-md">
-        {l.fought}
+        {lists.soFar ? l.foughtSoFar : l.fought}
       </h2>
       <p className="mb-2 text-body-sm text-ink/70">{l.foughtHelp}</p>
       <div className="grid gap-x-6 border border-rule px-3 py-2 lg:grid-cols-2">

@@ -29,9 +29,11 @@ Words already used in `lib/i18n/fr.ts`. Reuse them so the pages stay consistent;
 | End                       | Fin                                   | `status.end` — when the capture window ended                                                                                         |
 | Start / End               | Début / Fin                           | `status.start` / `status.end`, `compare.lead`                                                                                        |
 | Reading                   | relevé                                | `history.lead`, `history.first`, `history.daily` — one member list read; a card compares two                                         |
+| Live                      | En direct                             | `ledger.live` — the live section's label while an event runs                                                                         |
 | War turnout               | Participation                         | `ledger.fought` — the event page's section title: how many took part in the event                                                    |
 | gainers                   | gagnants                              | `ledger.topShareHelp`, `ledger.fewGainers` — a member whose Kills rose in the event; the short tag `few gainers` is `gagnants rares` |
 | Support player            | joueur de soutien                     | `ledger.foughtHelp` — a player who gains no kills                                                                                    |
+| Peak                      | pic                                   | `ledger.liveLast` — the highest reading in the last span                                                                             |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

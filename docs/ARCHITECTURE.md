@@ -25,6 +25,9 @@ lib/private/*.ts    the workspace (D71): requireWorkspace and its branded Worksp
                     (the first-use steps as data); their table reads are in lib/repo/workspace-rosters.ts.
 lib/queries/*.ts    read models for the UI (joins, sorting, name history). Never write. Never expose BLOCKED_ROSTER_KEYS.
                     lib/queries/samples.ts: `eventSamples`, an event's Start, samples and End (D69).
+                    lib/queries/live.ts: `eventProgress`, the event page's live section (alliance totals per reading, D69).
+lib/live.ts         pure: the live section's arithmetic: standings, kills per reading interval, the busiest 30 minutes,
+                    when the page looks again (D69).
 lib/logger.ts, lib/notify.ts, lib/env.ts, lib/redact.ts
 lib/discord-send.ts, lib/discord-format.ts, lib/event-image.tsx
                     the webhook transport (JSON, or multipart with a picture), the messages' number and
@@ -46,6 +49,8 @@ lib/images.ts       the two image sources (preset badge id, stored photo URL on 
 proxy.ts            per-request CSP nonce (Next 16's middleware); next.config.ts holds the static security headers
 instrumentation.ts  validates the environment once at server start
 lib/build-version.ts pure: the footer's live version from Vercel's git variables (D59); next.config.ts calls it once per build.
+lib/screenshot/     the screenshot reader (D74): pure parsers over OCR text lines (alliance duel, donation, secret operations, pasted text),
+                    nameKey and matchName (candidates passed in), and one IO module, read-screenshot.ts (Tesseract.js, committed English data). No DB access.
 ```
 
 ## Dependency rule
@@ -54,6 +59,7 @@ lib/build-version.ts pure: the footer's live version from Vercel's git variables
 - `lib/collector → lib/{compute, sources, repo, logger, notify}` **through the `Deps` object passed in**.
 - `lib/compute` and `lib/budget` import nothing from the project.
 - `lib/logger` imports only `lib/repo` and `lib/redact`.
+- `lib/screenshot` imports nothing from the project.
 - Nothing in `lib/` imports from `app/`.
 - Only `app/(private)` imports `lib/private` (an allowlist zone: every other module is fenced out by default). `app/(private)` does not import `lib/repo`. `lib/private` imports neither `lib/notify*` nor `lib/discord-*` (D71).
 

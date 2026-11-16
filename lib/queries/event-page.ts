@@ -7,7 +7,7 @@ import { allianceMovers, memberMovers } from "./movers";
 import { allianceNames } from "./names";
 import { eventRanks } from "./ranks";
 import { rosterChanges, type RosterChange } from "./rosters";
-import { memberTurnout } from "./turnout";
+import { memberTurnout, memberTurnoutSoFar } from "./turnout";
 
 /** `eventId` null = the home page's event (`homeEvent`). Null page: no such (public) event. */
 export async function getEventPage(db: Db, eventId: number | null) {
@@ -27,7 +27,12 @@ export async function getEventPage(db: Db, eventId: number | null) {
       ? rosterChanges(db, { before: before.id, after: after.id })
       : Promise.resolve(new Map<number, RosterChange>()),
     memberMovers(db, detail.snapshots),
-    memberTurnout(db, detail.snapshots),
+    // No End yet: the figures are as of each alliance's latest sample (#307).
+    after
+      ? memberTurnout(db, detail.snapshots)
+      : before
+        ? memberTurnoutSoFar(db, id, before.id)
+        : null,
   ]);
   const movers = {
     alliances: before && after ? allianceMovers(before.alliances, after.alliances, ranks) : null,

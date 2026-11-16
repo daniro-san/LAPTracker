@@ -5,12 +5,20 @@
 import type { NameHistoryEntry } from "@/lib/compute";
 import { fill, type Dictionary } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
-import type { getEventDetail, listEvents, Ranks, RosterChange, TurnoutLists } from "@/lib/queries";
+import type {
+  EventProgress,
+  getEventDetail,
+  listEvents,
+  Ranks,
+  RosterChange,
+  TurnoutLists,
+} from "@/lib/queries";
 import type { getEventPage } from "@/lib/queries/event-page";
 import { nextEvent } from "@/lib/schedule";
 
 import { CompareLink } from "./ComparePicker";
 import { DetailTable, figureRows } from "./DetailLines";
+import { loadProgress } from "./event-page";
 import {
   comparisonRows,
   emptyLine,
@@ -21,26 +29,20 @@ import {
 import { eventTitle, ManualMark } from "./EventLabel";
 import { ExactToggle } from "./ExactToggle";
 import { allianceLabel, rowAnchor, type Clock } from "./format";
-import { requestClock, requestCopy } from "./locale";
-import { allianceScope, memberScope, MOVERS_ID } from "./mover-lists";
+import { LiveSections, LiveStrip } from "./LiveProgress";
+import { requestClock, requestCopy, requestLocale } from "./locale";
+import { allianceScope, memberScope } from "./mover-lists";
 import { Movers } from "./Movers";
 import { MyAllianceJump } from "./MyAlliance";
 import { AllianceBadge } from "./Pictures";
 import { SiteFooter } from "./SiteFooter";
 import { SiteHeader } from "./SiteHeader";
 import { StatTable, type StatRow } from "./StatTable";
-import {
-  CaptureWindow,
-  FreshDots,
-  Legend,
-  NextUpdate,
-  SideHead,
-  StatusChips,
-  worstOf,
-  type FreshState,
-} from "./Status";
+import { FreshDots, Legend, NextUpdate, SideHead, worstOf, type FreshState } from "./Status";
+import { TopStatus } from "./TopStatus";
 import { WhoFought } from "./WhoFought";
 
+type Movers = NonNullable<Awaited<ReturnType<typeof getEventPage>>["page"]>["movers"];
 type Detail = NonNullable<Awaited<ReturnType<typeof getEventDetail>>>;
 type Events = Awaited<ReturnType<typeof listEvents>>;
 
@@ -135,47 +137,52 @@ function TitleActions({
   );
 }
 
-/** The status strip, the capture window and the jump link to Movers (UX review B1, S1, S3). */
-function TopStatus({
+/** The event's date (and name) with the compare and exact-numbers controls. */
+function EventHead({
   detail,
-  worst,
-  hasMovers,
+  events,
   clock,
   copy,
 }: {
   detail: Detail;
-  worst: string[];
-  hasMovers: boolean;
+  events: Events;
   clock: Clock;
   copy: Dictionary;
 }) {
   return (
-    <>
-      <StatusChips
-        phases={detail.snapshots}
-        stale={worst.filter((w) => w === "stale").length}
-        failed={worst.filter((w) => w === "failed").length}
-        clock={clock}
-        copy={copy}
-      />
-      <div className="-mb-2 flex flex-wrap items-center justify-between gap-x-3">
-        <CaptureWindow
-          before={detail.snapshots.find((s) => s.phase === "before")}
-          after={detail.snapshots.find((s) => s.phase === "after")}
-          clock={clock}
-          copy={copy}
-        />
-        {hasMovers && (
-          <a
-            href={`#${MOVERS_ID}`}
-            className="text-link ml-auto inline-flex min-h-11 items-center px-2 text-sm font-medium"
-          >
-            {copy.ledger.movers} <span aria-hidden="true">&nbsp;↓</span>
-          </a>
+    <div className="mb-2 flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
+      <div className="min-w-0">
+        <h2 className="font-subhead text-display-md leading-tight">
+          {eventTitle(detail) ?? clock.long(detail.eventAtUtc)}
+        </h2>
+        {eventTitle(detail) && (
+          <p className="flex gap-1.5 text-sm">
+            {detail.manual && <ManualMark copy={copy} />}
+            {clock.long(detail.eventAtUtc)}
+          </p>
         )}
       </div>
-    </>
+      <TitleActions events={events} eventId={detail.id} copy={copy} />
+    </div>
   );
+}
+
+function moverScopesOf(
+  movers: Movers,
+  eventId: number,
+  changes: Map<number, RosterChange>,
+  copy: Dictionary,
+) {
+  return [
+    allianceScope(movers.alliances, eventId, changes, copy),
+    memberScope(movers.members, copy.ledger.members),
+  ];
+}
+
+/** When the End ran; null until it has. */
+function endTime(detail: Detail): Date | null {
+  const end = detail.snapshots.find((s) => s.phase === "after");
+  return end ? (end.finishedAt ?? end.startedAt) : null;
 }
 
 export async function EventView({
@@ -187,9 +194,12 @@ export async function EventView({
   ranks,
   movers,
   turnout,
+  progress: loaded,
 }: {
-  movers: NonNullable<Awaited<ReturnType<typeof getEventPage>>["page"]>["movers"];
+  movers: Movers;
   turnout: TurnoutLists | null;
+  /** The live section's data when the page already read it beside the event page; else it is read here. */
+  progress?: EventProgress | null;
   events: Events;
   homeId: number | null;
   detail: Detail;
@@ -197,37 +207,37 @@ export async function EventView({
   names: Map<number, NameHistoryEntry[]>;
   ranks: Map<number, Partial<Record<"before" | "after", Ranks>>>;
 }) {
-  const [clock, copy] = await Promise.all([requestClock(), requestCopy()]);
   const now = new Date();
+  const [clock, copy, locale, progress] = await Promise.all([
+    requestClock(),
+    requestCopy(),
+    requestLocale(),
+    loaded === undefined ? loadProgress(detail.id, now) : loaded,
+  ]);
   const rows = comparisonRows(detail.snapshots, changes, names, ranks, copy);
   const worst = rows.map((r) => worstOf(fresh(r.before), fresh(r.after)));
-  const moverScopes = [
-    allianceScope(movers.alliances, detail.id, changes, copy),
-    memberScope(movers.members, copy.ledger.members),
-  ];
+  const moverScopes = moverScopesOf(movers, detail.id, changes, copy);
+  const liveProps = { eventId: detail.id, rows, endAt: endTime(detail), clock, copy, locale };
   const hasMovers = moverScopes.some((s) => Object.values(s.lists).some((l) => l && l.length > 0));
   return (
     <>
       <SiteHeader events={events} currentId={detail.id} homeId={homeId} clock={clock} copy={copy} />
       <main id="main" className="scroll-mt-20 mx-auto max-w-[960px] px-4 py-4 sm:px-6">
         <TitleBand copy={copy} />
-        <div className="mb-2 flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
-          <div className="min-w-0">
-            <h2 className="font-subhead text-display-md leading-tight">
-              {eventTitle(detail) ?? clock.long(detail.eventAtUtc)}
-            </h2>
-            {eventTitle(detail) && (
-              <p className="flex gap-1.5 text-sm">
-                {detail.manual && <ManualMark copy={copy} />}
-                {clock.long(detail.eventAtUtc)}
-              </p>
-            )}
-          </div>
-          <TitleActions events={events} eventId={detail.id} copy={copy} />
-        </div>
-        <TopStatus detail={detail} worst={worst} hasMovers={hasMovers} clock={clock} copy={copy} />
+        <EventHead detail={detail} events={events} clock={clock} copy={copy} />
+        {progress && <LiveStrip {...liveProps} progress={progress} />}
+        <TopStatus
+          detail={detail}
+          worst={worst}
+          hasMovers={hasMovers}
+          live={progress?.live === true}
+          hasDuring={progress !== null && !progress.live && progress.readings > 0}
+          clock={clock}
+          copy={copy}
+        />
         <Legend memberMark={rows.some((r) => r.metrics.some((m) => m.memberMark))} copy={copy} />
         <MyAllianceJump tags={Object.fromEntries(rows.map((r) => [r.unionId, r.tag]))} />
+        {progress && <LiveSections {...liveProps} progress={progress} placement="above" />}
         <StatTable
           leadLabel={copy.ledger.alliance}
           columns={[copy.ledger.might, copy.ledger.kills, copy.ledger.members]}
@@ -247,6 +257,7 @@ export async function EventView({
           copy={copy}
         />
         <Movers scopes={moverScopes} />
+        {progress && <LiveSections {...liveProps} progress={progress} placement="below" />}
         {turnout && <WhoFought eventId={detail.id} lists={turnout} />}
       </main>
       <SiteFooter copy={copy} />

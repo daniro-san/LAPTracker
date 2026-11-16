@@ -27,6 +27,8 @@ Words already used in `lib/i18n/id.ts`. Reuse them so the pages stay consistent;
 | Run by hand by the admin  | Dijalankan manual oleh admin  | `status.byHand`                                                      |
 | grandma                   | nenek                         | the voice in empty states and errors                                 |
 | Member history            | Riwayat anggota               | `history.title` — the page title and its link on the event page      |
+| Standings                 | Klasemen                      | `ledger.liveStandings` — the live kills-gained table                 |
+| Kills gained              | Kills didapat                 | `ledger.liveKillsGained`, `ledger.livePulseHelp` — after a count     |
 | Support player            | pemain support                | `ledger.foughtHelp` — a player who gains no Kills                    |
 | Gainer (Kills rose)       | Members dengan kenaikan Kills | `ledger.fewGainers`, `ledger.topShareHelp` — member whose Kills rose |
 
