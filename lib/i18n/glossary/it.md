@@ -2,64 +2,96 @@
 
 Words already used in `lib/i18n/it.ts`. Reuse them so the pages stay consistent; add a row when you coin a term another key will need again (translate-copy skill).
 
-| English                   | it                           | Key and use                                                                                                             |
-| ------------------------- | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| Server 325 · Event Ledger | Server 325 · Registro eventi | `site.ledger` — the page title                                                                                          |
-| Ledger                    | Registro                     | `site.home` — the ledger, as a breadcrumb                                                                               |
-| kept by the Old Grandmas  | tenuto dalle Old Grandmas    | `site.byline` — Old Grandmas stays a name                                                                               |
-| Alliance                  | Alleanza                     | `ledger.alliance`                                                                                                       |
-| not in a tracked alliance | in nessuna alleanza seguita  | `compare.notTracked` — player view                                                                                      |
-| Member                    | Membro                       | `ledger.member` — a player inside an alliance                                                                           |
-| Player                    | Giocatore                    | `ledger.player`                                                                                                         |
-| Event                     | Evento                       | `ledger.event` — a game event                                                                                           |
-| Rank                      | Posizione                    | `ledger.rank` — the #n position                                                                                         |
-| Ranking                   | Classifica                   | `ledger.ranking` — the game's server rank                                                                               |
-| joined                    | entrati                      | `ledger.joined` — after +n                                                                                              |
-| left                      | usciti                       | `ledger.left` — after −n                                                                                                |
-| Stale                     | Non aggiornato               | `fresh.stale` — data not fresh                                                                                          |
-| server time               | ora del server               | `time.serverTime` — after a time: 14:01 …                                                                               |
-| your time                 | la tua ora                   | `time.yourTime` — after a time, the viewer's zone                                                                       |
-| Exact numbers             | Numeri esatti                | `site.exactNumbers` — the toggle; legend.rounded names it                                                               |
-| Manual round              | Turno manuale                | `site.manualRound` — an event the admin runs by hand                                                                    |
-| Leader                    | Capo                         | `leadership.leader` — the R5                                                                                            |
-| Run by hand by the admin  | Lo avvia l’admin a mano      | `status.byHand`                                                                                                         |
-| Grandma noticed           | Nonna nota                   | `ledger.movers` — the event's biggest gains and losses                                                                  |
-| Start / End               | Inizio / Fine                | `status.start` / `status.end`, `compare.lead`                                                                           |
-| grandma                   | la nonna                     | the voice in empty states and errors                                                                                    |
-| Daily read                | Lettura giornaliera          | `history.daily` — a roster read once a day                                                                              |
-| Daily progress            | Progresso giornaliero        | `ledger.progress` — a player's daily readings                                                                           |
-| Middle member (median)    | Membro di mezzo              | `ledger.progressMedian` — the median member                                                                             |
-| English                   | it                           | Key and use                                                                                                             |
-| ------------------------- | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| Server 325 · Event Ledger | Server 325 · Registro eventi | `site.ledger` — the page title                                                                                          |
-| Ledger                    | Registro                     | `site.home` — the ledger, as a breadcrumb                                                                               |
-| kept by the Old Grandmas  | tenuto dalle Old Grandmas    | `site.byline` — Old Grandmas stays a name                                                                               |
-| Alliance                  | Alleanza                     | `ledger.alliance`                                                                                                       |
-| not in a tracked alliance | in nessuna alleanza seguita  | `compare.notTracked` — player view                                                                                      |
-| Member                    | Membro                       | `ledger.member` — a player inside an alliance                                                                           |
-| Player                    | Giocatore                    | `ledger.player`                                                                                                         |
-| Event                     | Evento                       | `ledger.event` — a game event                                                                                           |
-| Rank                      | Posizione                    | `ledger.rank` — the #n position                                                                                         |
-| Ranking                   | Classifica                   | `ledger.ranking` — the game's server rank                                                                               |
-| joined                    | entrati                      | `ledger.joined` — after +n                                                                                              |
-| left                      | usciti                       | `ledger.left` — after −n                                                                                                |
-| Stale                     | Non aggiornato               | `fresh.stale` — data not fresh                                                                                          |
-| server time               | ora del server               | `time.serverTime` — after a time: 14:01 …                                                                               |
-| your time                 | la tua ora                   | `time.yourTime` — after a time, the viewer's zone                                                                       |
-| Exact numbers             | Numeri esatti                | `site.exactNumbers` — the toggle; legend.rounded names it                                                               |
-| Manual round              | Turno manuale                | `site.manualRound` — an event the admin runs by hand                                                                    |
-| Leader                    | Capo                         | `leadership.leader` — the R5                                                                                            |
-| Run by hand by the admin  | Lo avvia l’admin a mano      | `status.byHand`                                                                                                         |
-| Grandma noticed           | Nonna nota                   | `ledger.movers` — the event's biggest gains and losses                                                                  |
-| Start / End               | Inizio / Fine                | `status.start` / `status.end`, `compare.lead`                                                                           |
-| grandma                   | la nonna                     | the voice in empty states and errors                                                                                    |
-| Daily read                | Lettura giornaliera          | `history.daily` — a roster read once a day                                                                              |
-| Live                      | Live                         | `ledger.live` — the live strip and section                                                                              |
-| Standings                 | Graduatoria                  | `ledger.liveStandings` — the in-event table                                                                             |
-| Server pulse              | Ritmo server                 | `ledger.livePulse` — the kills per interval                                                                             |
-| reading                   | lettura                      | `ledger.liveFirst`, `ledger.liveOverdue`, `ledger.liveDone`, `ledger.liveNoReadings` — one poll of the game's standings |
-| Kills gained              | Kills guadagnati             | `ledger.liveKillsGained` — a column header                                                                              |
-| Gainers                   | guadagni                     | `ledger.fewGainers`, `ledger.topShareHelp` — members whose Kills rose; `ledger.withKills` says "Kills guadagnate"       |
+| English                   | it                              | Key and use                                                                                                                      |
+| ------------------------- | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Server 325 · Event Ledger | Server 325 · Registro eventi    | `site.ledger` — the page title                                                                                                   |
+| Ledger                    | Registro                        | `site.home` — the ledger, as a breadcrumb                                                                                        |
+| kept by the Old Grandmas  | tenuto dalle Old Grandmas       | `site.byline` — Old Grandmas stays a name                                                                                        |
+| Alliance                  | Alleanza                        | `ledger.alliance`                                                                                                                |
+| not in a tracked alliance | in nessuna alleanza seguita     | `compare.notTracked` — player view                                                                                               |
+| Member                    | Membro                          | `ledger.member` — a player inside an alliance                                                                                    |
+| Player                    | Giocatore                       | `ledger.player`                                                                                                                  |
+| Event                     | Evento                          | `ledger.event` — a game event                                                                                                    |
+| Rank                      | Posizione                       | `ledger.rank` — the #n position                                                                                                  |
+| Ranking                   | Classifica                      | `ledger.ranking` — the game's server rank                                                                                        |
+| joined                    | entrati                         | `ledger.joined` — after +n                                                                                                       |
+| left                      | usciti                          | `ledger.left` — after −n                                                                                                         |
+| Stale                     | Non aggiornato                  | `fresh.stale` — data not fresh                                                                                                   |
+| server time               | ora del server                  | `time.serverTime` — after a time: 14:01 …                                                                                        |
+| your time                 | la tua ora                      | `time.yourTime` — after a time, the viewer's zone                                                                                |
+| Exact numbers             | Numeri esatti                   | `site.exactNumbers` — the toggle; legend.rounded names it                                                                        |
+| Manual round              | Turno manuale                   | `site.manualRound` — an event the admin runs by hand                                                                             |
+| Leader                    | Capo                            | `leadership.leader` — the R5                                                                                                     |
+| Run by hand by the admin  | Lo avvia l’admin a mano         | `status.byHand`                                                                                                                  |
+| Grandma noticed           | Nonna nota                      | `ledger.movers` — the event's biggest gains and losses                                                                           |
+| Start / End               | Inizio / Fine                   | `status.start` / `status.end`, `compare.lead`                                                                                    |
+| grandma                   | la nonna                        | the voice in empty states and errors                                                                                             |
+| Daily read                | Lettura giornaliera             | `history.daily` — a roster read once a day                                                                                       |
+| Live                      | Live                            | `ledger.live` — the live strip and section                                                                                       |
+| Standings                 | Graduatoria                     | `ledger.liveStandings` — the in-event table                                                                                      |
+| Server pulse              | Ritmo server                    | `ledger.livePulse` — the kills per interval                                                                                      |
+| reading                   | lettura                         | `ledger.liveFirst`, `ledger.liveOverdue`, `ledger.liveDone`, `ledger.liveNoReadings` — one poll of the game's standings          |
+| Kills gained              | Kills guadagnati                | `ledger.liveKillsGained` — a column header                                                                                       |
+| Gainers                   | guadagni                        | `ledger.fewGainers`, `ledger.topShareHelp` — members whose Kills rose; `ledger.withKills` says "Kills guadagnate"                |
+| Kill share / might share  | quota di Kills / quota di Might | `ledger.carried*` — an alliance's share of the kills gained / share of might at Start; "quota Kills" and "quota Might" in labels |
+| English                   | it                              | Key and use                                                                                                                      |
+| ------------------------- | ----------------------------    | -----------------------------------------------------------------------------------------------------------------------          |
+| Server 325 · Event Ledger | Server 325 · Registro eventi    | `site.ledger` — the page title                                                                                                   |
+| Ledger                    | Registro                        | `site.home` — the ledger, as a breadcrumb                                                                                        |
+| kept by the Old Grandmas  | tenuto dalle Old Grandmas       | `site.byline` — Old Grandmas stays a name                                                                                        |
+| Alliance                  | Alleanza                        | `ledger.alliance`                                                                                                                |
+| not in a tracked alliance | in nessuna alleanza seguita     | `compare.notTracked` — player view                                                                                               |
+| Member                    | Membro                          | `ledger.member` — a player inside an alliance                                                                                    |
+| Player                    | Giocatore                       | `ledger.player`                                                                                                                  |
+| Event                     | Evento                          | `ledger.event` — a game event                                                                                                    |
+| Rank                      | Posizione                       | `ledger.rank` — the #n position                                                                                                  |
+| Ranking                   | Classifica                      | `ledger.ranking` — the game's server rank                                                                                        |
+| joined                    | entrati                         | `ledger.joined` — after +n                                                                                                       |
+| left                      | usciti                          | `ledger.left` — after −n                                                                                                         |
+| Stale                     | Non aggiornato                  | `fresh.stale` — data not fresh                                                                                                   |
+| server time               | ora del server                  | `time.serverTime` — after a time: 14:01 …                                                                                        |
+| your time                 | la tua ora                      | `time.yourTime` — after a time, the viewer's zone                                                                                |
+| Exact numbers             | Numeri esatti                   | `site.exactNumbers` — the toggle; legend.rounded names it                                                                        |
+| Manual round              | Turno manuale                   | `site.manualRound` — an event the admin runs by hand                                                                             |
+| Leader                    | Capo                            | `leadership.leader` — the R5                                                                                                     |
+| Run by hand by the admin  | Lo avvia l’admin a mano         | `status.byHand`                                                                                                                  |
+| Grandma noticed           | Nonna nota                      | `ledger.movers` — the event's biggest gains and losses                                                                           |
+| Start / End               | Inizio / Fine                   | `status.start` / `status.end`, `compare.lead`                                                                                    |
+| grandma                   | la nonna                        | the voice in empty states and errors                                                                                             |
+| Daily read                | Lettura giornaliera             | `history.daily` — a roster read once a day                                                                                       |
+| Daily progress            | Progresso giornaliero           | `ledger.progress` — a player's daily readings                                                                                    |
+| Middle member (median)    | Membro di mezzo                 | `ledger.progressMedian` — the median member                                                                                      |
+| English                   | it                              | Key and use                                                                                                                      |
+| ------------------------- | ----------------------------    | -----------------------------------------------------------------------------------------------------------------------          |
+| Server 325 · Event Ledger | Server 325 · Registro eventi    | `site.ledger` — the page title                                                                                                   |
+| Ledger                    | Registro                        | `site.home` — the ledger, as a breadcrumb                                                                                        |
+| kept by the Old Grandmas  | tenuto dalle Old Grandmas       | `site.byline` — Old Grandmas stays a name                                                                                        |
+| Alliance                  | Alleanza                        | `ledger.alliance`                                                                                                                |
+| not in a tracked alliance | in nessuna alleanza seguita     | `compare.notTracked` — player view                                                                                               |
+| Member                    | Membro                          | `ledger.member` — a player inside an alliance                                                                                    |
+| Player                    | Giocatore                       | `ledger.player`                                                                                                                  |
+| Event                     | Evento                          | `ledger.event` — a game event                                                                                                    |
+| Rank                      | Posizione                       | `ledger.rank` — the #n position                                                                                                  |
+| Ranking                   | Classifica                      | `ledger.ranking` — the game's server rank                                                                                        |
+| joined                    | entrati                         | `ledger.joined` — after +n                                                                                                       |
+| left                      | usciti                          | `ledger.left` — after −n                                                                                                         |
+| Stale                     | Non aggiornato                  | `fresh.stale` — data not fresh                                                                                                   |
+| server time               | ora del server                  | `time.serverTime` — after a time: 14:01 …                                                                                        |
+| your time                 | la tua ora                      | `time.yourTime` — after a time, the viewer's zone                                                                                |
+| Exact numbers             | Numeri esatti                   | `site.exactNumbers` — the toggle; legend.rounded names it                                                                        |
+| Manual round              | Turno manuale                   | `site.manualRound` — an event the admin runs by hand                                                                             |
+| Leader                    | Capo                            | `leadership.leader` — the R5                                                                                                     |
+| Run by hand by the admin  | Lo avvia l’admin a mano         | `status.byHand`                                                                                                                  |
+| Grandma noticed           | Nonna nota                      | `ledger.movers` — the event's biggest gains and losses                                                                           |
+| Start / End               | Inizio / Fine                   | `status.start` / `status.end`, `compare.lead`                                                                                    |
+| grandma                   | la nonna                        | the voice in empty states and errors                                                                                             |
+| Daily read                | Lettura giornaliera             | `history.daily` — a roster read once a day                                                                                       |
+| Live                      | Live                            | `ledger.live` — the live strip and section                                                                                       |
+| Standings                 | Graduatoria                     | `ledger.liveStandings` — the in-event table                                                                                      |
+| Server pulse              | Ritmo server                    | `ledger.livePulse` — the kills per interval                                                                                      |
+| reading                   | lettura                         | `ledger.liveFirst`, `ledger.liveOverdue`, `ledger.liveDone`, `ledger.liveNoReadings` — one poll of the game's standings          |
+| Kills gained              | Kills guadagnati                | `ledger.liveKillsGained` — a column header                                                                                       |
+| Gainers                   | guadagni                        | `ledger.fewGainers`, `ledger.topShareHelp` — members whose Kills rose; `ledger.withKills` says "Kills guadagnate"                |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

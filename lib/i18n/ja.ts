@@ -93,6 +93,19 @@ export const ja = {
       "同盟の Kills のうち、Kills を最も多く得た Members 5人の割合。高いほど、少数の人が支えていたことを示します。",
     topBasis: "{n}人中上位{top}",
     fewGainers: "少人数",
+    carried: "Kills の割合 対 Might の割合",
+    carriedHelp:
+      "各同盟の、開始から終了までに得た Kills の割合を、開始時の Might の割合と並べて示します。防衛役と支援役のプレイヤーは Kills を得ません。",
+    carriedShown: "Kills の割合が Might の割合を最も上回る同盟と、あなたの同盟。",
+    carriedTotal: "全{n}同盟：獲得 Kills {kills}、開始時の Might {might}",
+    carriedMightMark: "開始時の Might の割合",
+    carriedKillsMark: "獲得 Kills の割合",
+    carriedShares: "Might {might} · Kills {kills}",
+    carriedTurnout: "Kills を得た {share}",
+    carriedSpread: "{n} イベントで {low}–{high}",
+    carriedRatioHelp:
+      "× は Kills の割合を Might の割合で割った値です。3 イベント以上では範囲とともに表示します。それより前は、割合の差をパーセントポイントで示します。",
+    carriedPoints: "pt",
   },
   compare: {
     title: "イベント比較",
