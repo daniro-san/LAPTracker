@@ -78,4 +78,4 @@ Plan changes needed: none.
 - The window build (D69) must keep the `progress` / `progress-done` key choice in `loadProgress` in step with whatever marks an event finished (today: an `after` row in the event detail).
 </adjustments>
 
-PR: (pending)
+https://github.com/daniro-san/LAPTracker/pull/330
