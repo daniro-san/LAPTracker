@@ -193,6 +193,15 @@ The workspace is an alliance's private area, the Officers' Desk, at `/w/<address
 - **"Sign-in is not set up yet"**: `DISCORD_CLIENT_ID` or `DISCORD_CLIENT_SECRET` is missing in Vercel, or the deploy after adding them has not happened.
 - **Discord says "Invalid OAuth2 redirect_uri"**: the redirect in step 2 differs from the address the site is on. It must match exactly, including `https` and `/api/w/auth/callback`.
 
+## Analytics, session replay and errors (PostHog)
+
+Production sends page views, a few workspace events, browser errors and session replays to PostHog's US cloud (decision D77). Vercel Web Analytics and Speed Insights (D36) keep running beside it.
+
+- **On or off.** It runs only on the production deployment, and only when the Vercel variable `POSTHOG_KEY` (the PostHog project API key) is set. Previews, `pnpm dev` and tests send nothing. To turn it off, remove `POSTHOG_KEY` in Vercel and redeploy.
+- **What is recorded.** Every page. Public pages are replayed in one page load of four, with their text readable. The workspace (`/w/...`) and `/admin` are always replayed, with every text, image and form field hidden. Every typed value is hidden everywhere. No cookie, no storage, no IP, no names of the people who sign in.
+- **Where to look.** https://us.posthog.com, project 741657: **Web analytics** for page views, **Session replay** for recordings (filter by the `area` property: `public`, `workspace` or `admin`), **Error tracking** for browser errors. Server errors stay in `/admin` → App errors.
+- **Free plan.** 1M events, 5,000 recordings and 100,000 errors a month. Past a limit PostHog stops collecting until the next month; the site is not affected.
+
 ## Words used on the site
 
 - **Event**: one weekly event, a scheduled event normally on Saturday. It is named by its title, or by its date until the owner names it.
