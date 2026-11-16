@@ -64,12 +64,10 @@ export function MyAllianceJump({ tags }: { tags: Record<number, string> }) {
     const id = readMine();
     const row = id === null ? null : document.getElementById(rowAnchor(id));
     if (id === null || !row || !(id in tags)) return;
-    // The ledger row, and the same alliance in the live section's list (StatRow.liveUnion).
-    const marked = [row, ...document.querySelectorAll<HTMLElement>(`[data-live-union="${id}"]`)];
-    for (const el of marked) el.dataset.mine = "";
+    row.dataset.mine = "";
     setMine(id);
     return () => {
-      for (const el of marked) delete el.dataset.mine;
+      delete row.dataset.mine;
     };
   }, [tags]);
   if (mine === null) return null;

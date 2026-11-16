@@ -81,6 +81,7 @@ The header text above is the old file's, kept as it was. The split it describes 
 - [D65 — Avatar frames: an id per member row, one picture per frame (2026-11-14, owner, 08zzzr)](D65-avatar-frames-stored-as-an-id.md)
 - [D66 — A player's current frame, from any read (2026-11-14, owner, 08zzzt)](D66-a-players-current-frame-from-any-read.md)
 - [D67 — A partly done daily read can be retried, and a retry keeps the rosters already read (2026-11-16, owner, 08zzzw)](D67-a-partly-done-daily-read-can-be-retried.md)
+- [D68 — Charts are hand-built inline SVG server components, labels in HTML, no chart library (2026-11-16, owner, 08zzzx, issue #270)](D68-charts-are-hand-built-inline-svg.md)
 - [D69 — Event samples: a reading every 15 minutes between an event's Start and End (2026-11-16, owner, 08zzzza, issue #279)](D69-event-samples.md)
 - [D70 — Might unchanged: an officer view on /admin/members and a count in the Friday message (2026-11-16, owner, 08zzzzb)](D70-might-unchanged-officer-view.md)
 - [D71 — A private workspace per alliance: Discord sign-in, every roster field for its own leadership (2026-11-16, owner, 11a, issue #303)](D71-a-private-workspace-per-alliance.md)
