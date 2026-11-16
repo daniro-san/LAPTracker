@@ -4,7 +4,7 @@
 // across the daily reads and the public event snapshots wins, the daily read on a tie. Fields read: an
 // alliance's tag, name, badge, capacity and might, and each member's uid and power. No member name, kills
 // or blocked roster key is selected, and nothing per member is returned.
-import { and, desc, eq, gt, inArray, isNotNull, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm";
 
 import { ALLIANCES } from "../../config/alliances";
 import { sumPower } from "../compute";
@@ -12,9 +12,9 @@ import type { Db } from "../db";
 import { mergedCapacity, simulateMerge, type MergeResult } from "../merge";
 import { allianceSnapshots, dailyRosters, events, memberSnapshots, snapshots } from "../schema";
 import { listEvents } from "./events";
-import { numbers } from "./history-readings";
+import { dailyFit, eventFit, numbers } from "./history-readings";
 import { memberTurnout } from "./turnout";
-import { phaseSnapshot, publicEvent } from "./visibility";
+import { publicEvent } from "./visibility";
 
 export interface MergeAlliance {
   unionId: number;
@@ -83,13 +83,7 @@ async function newestHeads(db: Db, ids: number[]): Promise<Map<number, Head>> {
       })
       .from(dailyRosters)
       .where(
-        and(
-          inArray(dailyRosters.unionId, ids),
-          eq(dailyRosters.isFresh, true),
-          isNull(dailyRosters.error),
-          gt(dailyRosters.memberCount, 0),
-          isNotNull(dailyRosters.sourceUpdatedAt),
-        ),
+        and(inArray(dailyRosters.unionId, ids), dailyFit, isNotNull(dailyRosters.sourceUpdatedAt)),
       )
       .orderBy(dailyRosters.unionId, desc(dailyRosters.sourceUpdatedAt)),
     db
@@ -109,12 +103,7 @@ async function newestHeads(db: Db, ids: number[]): Promise<Map<number, Head>> {
       .where(
         and(
           inArray(allianceSnapshots.unionId, ids),
-          publicEvent,
-          // A sample (D69) has no member rows.
-          phaseSnapshot,
-          eq(allianceSnapshots.isFresh, true),
-          isNull(allianceSnapshots.error),
-          gt(allianceSnapshots.memberCount, 0),
+          eventFit,
           isNotNull(allianceSnapshots.sourceUpdatedAt),
         ),
       )

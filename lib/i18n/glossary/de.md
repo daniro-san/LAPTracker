@@ -27,6 +27,8 @@ Words already used in `lib/i18n/de.ts`. Reuse them so the pages stay consistent;
 | Grandma noticed           | Oma merkt's                  | `ledger.movers` — the event's biggest gains and losses                       |
 | Start / End               | Beginn / Ende                | `status.start` / `status.end`, `compare.lead`                                |
 | Member history            | Mitgliederverlauf            | `history.title` — the page, its nav tab and the alliance link                |
+| Daily progress            | Tägliche Entwicklung         | `ledger.progress` — the player page's section heading                        |
+| reading                   | Erfassung                    | `history.first`, `ledger.progressEmpty` — one stored read                    |
 | reading                   | Messung                      | `ledger.liveReadings`, `ledger.liveNoReading`                                |
 | busiest                   | Aktivste                     | `ledger.liveBusiest`, `ledger.liveBusiestDone`                               |
 | War turnout               | Beteiligung am Krieg         | `ledger.fought` — the event page's kills section title                       |
