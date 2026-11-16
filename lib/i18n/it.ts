@@ -87,6 +87,19 @@ export const itIT = {
       "Quota delle Kills dell’alleanza fatte dai 5 membri con più Kills guadagnate. Più è alta, meno giocatori la portano avanti.",
     topBasis: "{top} di {n}",
     fewGainers: "pochi guadagni",
+    carried: "Quota Kills vs quota Might",
+    carriedHelp:
+      "Per ogni alleanza, la quota delle Kills guadagnate da Inizio a Fine, accanto alla sua quota di Might a Inizio. I difensori e i giocatori di supporto non guadagnano Kills.",
+    carriedShown: "Le alleanze con la quota di Kills più sopra la quota di Might, e la tua.",
+    carriedTotal: "Tutte le {n} alleanze: {kills} Kills guadagnate, {might} di Might a Inizio",
+    carriedMightMark: "Quota di Might a Inizio",
+    carriedKillsMark: "Quota di Kills guadagnate",
+    carriedShares: "Might {might} · Kills {kills}",
+    carriedTurnout: "{share} con Kills",
+    carriedSpread: "{low}–{high} su {n} eventi",
+    carriedRatioHelp:
+      "× è la quota di Kills divisa per la quota di Might. Si mostra da 3 eventi, con il suo intervallo; prima, la differenza in punti percentuali.",
+    carriedPoints: "pp",
   },
   compare: {
     title: "Confronto tra eventi",

@@ -87,6 +87,19 @@ export const sv = {
       "Andelen av alliansens Kills som de 5 största vinnarna gjorde. Högre betyder att färre spelare bar den.",
     topBasis: "{top} av {n}",
     fewGainers: "få vinnare",
+    carried: "Kills-andel mot Might-andel",
+    carriedHelp:
+      "Varje allians andel av Kills vunna från Början till Slut, bredvid dess andel av Might vid Början. Försvarare och supportspelare vinner inga Kills.",
+    carriedShown: "Allianserna vars Kills-andel ligger längst över deras Might-andel, och din.",
+    carriedTotal: "Alla {n} allianser: {kills} Kills vunna, {might} Might vid Början",
+    carriedMightMark: "Might-andel vid Början",
+    carriedKillsMark: "Kills-andel vunnen",
+    carriedShares: "Might {might} · Kills {kills}",
+    carriedTurnout: "{share} med Kills",
+    carriedSpread: "{low}–{high} över {n} event",
+    carriedRatioHelp:
+      "× är Kills-andelen delat med Might-andelen. Den visas från 3 event, med spann; före det visas avståndet i %-enh.",
+    carriedPoints: "%-enh.",
   },
   compare: {
     title: "Event mot event",

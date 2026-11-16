@@ -86,6 +86,19 @@ export const ko = {
       "연맹 처치 중 처치가 가장 많이 늘어난 5명이 올린 몫입니다. 높을수록 적은 인원이 연맹을 떠받쳤다는 뜻입니다.",
     topBasis: "{n}명 중 상위 {top}명",
     fewGainers: "인원 적음",
+    carried: "처치 몫 대 전투력 몫",
+    carriedHelp:
+      "시작부터 종료까지 획득한 처치 중 각 연맹의 몫과, 시작 때 전투력 중 몫입니다. 수비와 지원 플레이어는 처치가 늘지 않습니다.",
+    carriedShown: "처치 몫이 전투력 몫보다 가장 크게 앞서는 연맹들과 내 연맹.",
+    carriedTotal: "전체 {n}개 연맹: 획득 처치 {kills}, 시작 때 전투력 {might}",
+    carriedMightMark: "시작 때 전투력 몫",
+    carriedKillsMark: "획득 처치 몫",
+    carriedShares: "전투력 {might} · 처치 {kills}",
+    carriedTurnout: "처치가 늘어난 인원 {share}",
+    carriedSpread: "{n}개 이벤트, {low}–{high}",
+    carriedRatioHelp:
+      "×는 처치 몫을 전투력 몫으로 나눈 값입니다. 3개 이벤트부터 범위와 함께 보이고, 그 전에는 %p 차이로 보입니다.",
+    carriedPoints: "%p",
   },
   compare: {
     title: "이벤트 비교",

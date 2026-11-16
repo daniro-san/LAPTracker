@@ -1,7 +1,8 @@
 // Everything the comparison page reads, in one call per page (plan Phase 5): the event, the
-// selector's events, joined/left counts per alliance, ledger ranks, who gained kills and every alliance's
+// selector's events, joined/left counts per alliance, ledger ranks, who gained kills, kill share vs might share and every alliance's
 // name history.
 import type { Db } from "../db";
+import { whoCarried } from "./carried";
 import { getEventDetail, homeEvent, listEvents } from "./events";
 import { allianceMovers, memberMovers } from "./movers";
 import { allianceNames } from "./names";
@@ -50,9 +51,10 @@ export async function getEventPage(
     memberMovers(db, detail.snapshots),
     turnoutOf(db, id, detail.snapshots, shared),
   ]);
+  const carried = await whoCarried(db, detail, turnout);
   const movers = {
     alliances: before && after ? allianceMovers(before.alliances, after.alliances, ranks) : null,
     members,
   };
-  return { events, homeId, page: { detail, names, ranks, changes, movers, turnout } };
+  return { events, homeId, page: { detail, names, ranks, changes, movers, turnout, carried } };
 }

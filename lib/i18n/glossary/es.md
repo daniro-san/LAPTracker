@@ -27,6 +27,9 @@ Words already used in `lib/i18n/es.ts`. Reuse them so the pages stay consistent;
 | reading                   | lectura                            | `ledger.liveReadings`, `liveNoReading`, `liveStandingsDone` — one pull of the game's data |
 | War turnout               | Participación bélica               | `ledger.fought` — the war-event section title                                             |
 | Support players           | Jugadores de apoyo                 | `ledger.foughtHelp` — support players gain no Kills                                       |
+| kill share                | parte de Kills                     | `ledger.carried` and its rows — the share of the alliance's kills gained                  |
+| might share               | parte de Might                     | `ledger.carried` and its rows — the share of the might at Start                           |
+| percentage points (pts)   | pp                                 | `ledger.carriedPoints` — after a gap: +6.1 pp                                             |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

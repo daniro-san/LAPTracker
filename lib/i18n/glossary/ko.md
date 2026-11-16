@@ -34,6 +34,7 @@ Words already used in `lib/i18n/ko.ts`. Reuse them so the pages stay consistent;
 | Gainers                   | 처치가 늘어난 인원     | `ledger.withKills`, `ledger.topShare*`, `ledger.fewGainers` — members whose Kills rose             |
 | peak                      | 최고                   | `ledger.liveLast` — the highest figure in the window                                               |
 | Last (a time window)      | 최근                   | `ledger.liveLast` — the last N minutes; 마지막 stays the last reading (`ledger.liveStandingsDone`) |
+| Kill share vs might share | 처치 몫 대 전투력 몫   | `ledger.carried*` — each alliance's kill share against its might share                             |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.
