@@ -1,11 +1,17 @@
 "use client";
 
-// "Who fought" (issue 271): two lists of the alliances, each row one alliance with a bar and its figure as
+// "War turnout" (issue 271): two lists of the alliances, each row one alliance with a bar and its figure as
 // text. The first is the share of members with kills gained, the second the top 5's share of the kills
-// gained (concentration). Bars are plain boxes: neutral for every alliance, yarn for the viewer's own
-// (the ledger's highlight). No member is named; a row links to the alliance's event page.
+// gained (concentration), ranked for alliances with enough gainers and followed by the rest, muted. Bars
+// are plain boxes: neutral for every alliance, yarn for the viewer's own (the ledger's highlight, with a
+// "My alliance" chip). Each list shows its first 5 rows and the viewer's own, the rest behind "Show all".
+// No member is named; a row links to the alliance's event page.
 import Link from "next/link";
+import { useState } from "react";
 
+import { buttonClass } from "@/lib/brand/components/Button";
+import { TURNOUT_MIN_GAINERS, TURNOUT_TOP } from "@/lib/compute";
+import { fill } from "@/lib/copy";
 import type { AllianceTurnout, TurnoutLists } from "@/lib/queries";
 
 import { allianceLabel, shareText } from "./format";
@@ -20,28 +26,39 @@ interface Entry {
   ratio: number;
   /** The figure as text. */
   figure: string;
+  /** Listed after the ranked rows, in muted text. */
+  muted: boolean;
 }
+
+/** Rows shown before "Show all": the first ones, and the viewer's own wherever it is. */
+const SHOWN = 5;
 
 function BarList({
   title,
+  help,
   entries,
   eventId,
   mine,
 }: {
   title: string;
+  help?: string;
   entries: Entry[];
   eventId: number;
   mine: number | null;
 }) {
+  const copy = useCopy();
+  const [all, setAll] = useState(false);
+  const shown = all ? entries : entries.filter(({ t }, i) => i < SHOWN || t.unionId === mine);
   return (
-    <div>
+    <div className="min-w-0">
       <h3 className={`mt-1 flex min-h-11 items-center ${LABEL}`}>{title}</h3>
+      {help && <p className="mb-1 text-body-sm text-ink/70">{help}</p>}
       <ol className="divide-y divide-rule">
-        {entries.map(({ t, ratio, figure }) => (
+        {shown.map(({ t, ratio, figure, muted }) => (
           <li
             key={t.unionId}
             data-mine={t.unionId === mine ? "" : undefined}
-            className="data-[mine]:bg-yarn/5 data-[mine]:shadow-[inset_3px_0_0_var(--color-yarn)]"
+            className={`data-[mine]:bg-yarn/5 data-[mine]:shadow-[inset_3px_0_0_var(--color-yarn)] ${muted ? "text-ink/70" : ""}`}
           >
             <Link
               href={`/events/${eventId}/alliances/${t.unionId}`}
@@ -52,6 +69,11 @@ function BarList({
                 <span className="min-w-0 flex-1 truncate">{allianceLabel(t.tag, t.name)}</span>
                 <span className="shrink-0 text-sm tabular-nums">{figure}</span>
               </span>
+              {t.unionId === mine && (
+                <span className="mt-0.5 block text-xs font-medium text-yarn">
+                  {copy.ledger.myAlliance}
+                </span>
+              )}
               <span aria-hidden="true" className="mt-1 block h-2 bg-rule">
                 <span
                   className={`block h-full ${t.unionId === mine ? "bg-yarn" : "bg-ink/60"}`}
@@ -62,6 +84,15 @@ function BarList({
           </li>
         ))}
       </ol>
+      {shown.length < entries.length && (
+        <button
+          type="button"
+          className={`${buttonClass("secondary")} mt-3 w-full sm:w-auto`}
+          onClick={() => setAll(true)}
+        >
+          {fill(copy.members.showAll, { n: String(entries.length) })}
+        </button>
+      )}
     </div>
   );
 }
@@ -70,36 +101,34 @@ export function WhoFought({ eventId, lists }: { eventId: number; lists: TurnoutL
   const copy = useCopy();
   const locale = useLocale();
   const mine = useMyAlliance();
-  const entries = (
-    alliances: readonly AllianceTurnout[],
-    ratio: (t: AllianceTurnout) => number,
-    figure: (t: AllianceTurnout, share: string) => string,
-  ): Entry[] =>
-    alliances.map((t) => ({ t, ratio: ratio(t), figure: figure(t, shareText(ratio(t), locale)) }));
+  const l = copy.ledger;
+  const withKills = lists.withKills.map((t): Entry => {
+    const ratio = t.gainers / t.n;
+    return {
+      t,
+      ratio,
+      figure: `${shareText(ratio, locale)} · ${t.gainers}/${t.n}`,
+      muted: false,
+    };
+  });
+  const topShare = lists.topShare.map((t): Entry => {
+    const ratio = t.top / t.gained;
+    const few = t.gainers < TURNOUT_MIN_GAINERS;
+    const basis = few ? l.fewGainers : fill(l.topBasis, { top: TURNOUT_TOP, n: t.gainers });
+    return { t, ratio, figure: `${shareText(ratio, locale)} · ${basis}`, muted: few };
+  });
   return (
     <section aria-labelledby="who-fought-h" className="mt-8">
       <h2 id="who-fought-h" className="font-subhead text-display-md">
-        {copy.ledger.fought}
+        {l.fought}
       </h2>
-      <p className="mb-2 text-body-sm text-ink/70">{copy.ledger.foughtHelp}</p>
-      <div className="grid gap-x-6 border border-rule px-3 py-2 sm:grid-cols-2">
+      <p className="mb-2 text-body-sm text-ink/70">{l.foughtHelp}</p>
+      <div className="grid gap-x-6 border border-rule px-3 py-2 lg:grid-cols-2">
+        <BarList title={l.withKills} entries={withKills} eventId={eventId} mine={mine} />
         <BarList
-          title={copy.ledger.withKills}
-          entries={entries(
-            lists.withKills,
-            (t) => t.gainers / t.n,
-            (t, share) => `${share} · ${t.gainers}/${t.n}`,
-          )}
-          eventId={eventId}
-          mine={mine}
-        />
-        <BarList
-          title={copy.ledger.topShare}
-          entries={entries(
-            lists.topShare,
-            (t) => t.top / t.gained,
-            (_, share) => share,
-          )}
+          title={l.topShare}
+          help={l.topShareHelp}
+          entries={topShare}
           eventId={eventId}
           mine={mine}
         />

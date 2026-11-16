@@ -198,6 +198,9 @@ export function changeDifference(
 /** How many of an alliance's biggest kills gains the concentration figure adds up (#271). */
 export const TURNOUT_TOP = 5;
 
+/** The top-5 share is ranked only for alliances with this many gainers; with fewer it is near 100 % by arithmetic. */
+export const TURNOUT_MIN_GAINERS = 10;
+
 export interface KillsTurnout {
   /** Members in both rosters, matched by uid. */
   n: number;

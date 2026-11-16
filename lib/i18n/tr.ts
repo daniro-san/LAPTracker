@@ -58,7 +58,11 @@ export const tr = {
     foughtHelp:
       "Başlangıç’ta ve Bitiş’te ittifakta olan Members. Destek oyuncuları Kills kazanmaz.",
     withKills: "Kills kazanan Members",
-    topShare: "İlk 5’in Kills payı",
+    topShare: "İlk 5 Members’in Kills’i",
+    topShareHelp:
+      "İttifakın Kills’inin, en çok Kills kazanan 5 Members tarafından yapılan payı. Yüksek olması, daha az oyuncunun taşıdığı anlamına gelir.",
+    topBasis: "{n} içinden {top}",
+    fewGainers: "az kazanan",
   },
   compare: {
     title: "Etkinlik karşılaştırma",
