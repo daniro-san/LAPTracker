@@ -48,3 +48,22 @@ Plan changes needed: none (the issue holds the picker's design; this repo's plan
 - Fixtures and seed: `scripts/seed-samples.ts` takes an event index (1 or 2); `scripts/seed.ts` samples every event from index 1.
 - `lib/copy-live.ts` is the place for new public copy; it is spread into `ledger`.
 </adjustments>
+
+## UX review (2026-11-16)
+Measured on the local seed (two sampled events, one older unsampled), Chrome at 360, 390, 412, 600, 768, 810, 820, 1024, 1180 and 1280, light and dark; WebKit at 390 (dark) and 820 (light); German and Russian at 360.
+- `document.documentElement.scrollWidth` equals the viewport width on the fight clock, compare (sampled and disabled) and event pages at every width above.
+- Fight clock strip: 15 columns, 19.5 px each at 360, 21.5 at 390, 22.9 at 412, 35 to 58 px from 600 up. Hour labels, the outline and the 6 % minimum bar are legible at 360. The seed has no "no update" slot, so the dashed stub was checked in the code only.
+- Tap targets on the fight clock page: every link and button is at least 44 px (the row link has `min-h-11`; Details is 44 px). On the compare page, the `<select>` fields measure 44 px in WebKit (`.drawn-field`). The alliance name links on the compare and event pages measure 24 to 25 px high; they are older code, not this PR.
+- Contrast of the disabled row's reason text (ink at 70 % on the page): 5.7:1 light, 7.2:1 dark.
+- No truncation and no clipping in German or Russian at 360 (the Russian title wraps to two lines).
+- Fixed:
+  - Compare page, disabled state: the reason said "Event B has no readings" without saying which event B is. It now reads "Event B (Oct 17) has no ...", with the same date format as the A/B labels. `comparePulseOffA` and `comparePulseOffB` take `{when}`; 17 languages updated and stamped (the translator subagents work in the main checkout, so the 34 strings were edited by hand in this worktree: the existing wording plus `({when})` after the event designator).
+  - Fight clock page: a sampled row did not look like a link. The row now shows "During the event ›" under the date (existing copy, previously screen-reader only).
+- Left:
+  - The lead paragraph is four lines at 360 (five in Russian), so the first chart starts at about 620 px of the first screen. Shortening it needs a copy change in 17 languages; left as is.
+  - The disabled reason on the compare page does not say when the section turns on; the fight clock rows do ("they start with the event of ..."). Adding it needs the first sampled event's date in `ComparePulse`.
+  - Alliance name links at 24 to 25 px on the compare and event pages (older code).
+- Screenshots: the six `08zzzzn-*-360.png` files are replaced; `08zzzzn-fight-clock-light-390.png` (Chrome) and `08zzzzn-fight-clock-light-820.png` (WebKit) are new.
+- Merge of origin/dev (#338) resolved: stamps and glossaries kept from both sides, `pnpm check` green after it.
+
+https://github.com/daniro-san/LAPTracker/pull/343
