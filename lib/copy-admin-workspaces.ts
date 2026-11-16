@@ -3,7 +3,6 @@ export const workspacesAdminCopy = {
   title: "Workspaces",
   help: "An alliance's private Officers' Desk at /w/<address>. Its leadership signs in with Discord: a leadership role in the alliance's server, or a place on the allowlist.",
   none: "No workspace yet.",
-  address: "Address",
   alliance: "Alliance",
   guild: "Discord server id",
   roles: "Leadership role ids",

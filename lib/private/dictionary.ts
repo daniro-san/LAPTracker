@@ -128,7 +128,12 @@ export const WORKSPACE_DICTIONARIES: Record<WorkspaceLanguage, WorkspaceDictiona
   fr,
 };
 
-const BASE: Record<string, WorkspaceLanguage> = { en: "en", pt: "pt-BR", fr: "fr" };
+/** A Map, not an object: a header tag such as `constructor` or `__proto__` must find nothing. */
+const BASE = new Map<string, WorkspaceLanguage>([
+  ["en", "en"],
+  ["pt", "pt-BR"],
+  ["fr", "fr"],
+]);
 
 /** The switch's cookie, else the first Accept-Language tag in one of the three, else English. */
 export function pickWorkspaceLanguage(
@@ -138,7 +143,7 @@ export function pickWorkspaceLanguage(
   if (WORKSPACE_LANGUAGES.includes(cookie as WorkspaceLanguage)) return cookie as WorkspaceLanguage;
   const tags = (acceptLanguage ?? "").split(",").map((t) => t.split(";")[0]?.trim().toLowerCase());
   for (const tag of tags) {
-    const language = BASE[tag?.split("-")[0] ?? ""];
+    const language = BASE.get(tag?.split("-")[0] ?? "");
     if (language) return language;
   }
   return "en";

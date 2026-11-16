@@ -3,7 +3,7 @@
 import { z } from "zod";
 
 import { authorize } from "@/lib/auth";
-import { allowUser } from "@/lib/repo/workspaces";
+import { allowUserUntil } from "@/lib/repo/workspaces";
 import { errorResponse, withContext } from "@/lib/route";
 
 const body = z
@@ -20,10 +20,9 @@ export function POST(request: Request): Promise<Response> {
     if (!auth.ok) return errorResponse(auth.status, auth.code);
     const parsed = body.safeParse(await request.json().catch(() => null));
     if (!parsed.success) return errorResponse(400, "bad_request");
-    const expiresAt = new Date(`${parsed.data.expires_on}T23:59:59.999Z`);
-    if (expiresAt.getTime() <= ctx.now().getTime()) return errorResponse(400, "expiry_past");
-    const { workspace_id, discord_user_id } = parsed.data;
-    const result = await allowUser(db, workspace_id, discord_user_id, expiresAt, "admin");
+    const { workspace_id, discord_user_id, expires_on } = parsed.data;
+    const result = await allowUserUntil(db, workspace_id, discord_user_id, expires_on, ctx.now());
+    if (result === "expiry_past") return errorResponse(400, "expiry_past");
     if (result === "not_found") return errorResponse(404, "workspace_not_found");
     return Response.json({ ok: true });
   });

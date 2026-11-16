@@ -60,7 +60,20 @@ export type DiscordMember =
     }
   | { ok: false; code: "discord_token" | "discord_user" | "discord_member" };
 
-/** The code exchange, then who the account is and its roles in `guildId`. */
+const NOT_FOUND = Symbol("404");
+
+/** A 2xx answer's JSON; NOT_FOUND for a 404; null for any other status, a timeout or a network error. */
+async function readJson(fetcher: typeof fetch, url: string, init: RequestInit): Promise<unknown> {
+  try {
+    const res = await fetcher(url, { ...init, signal: AbortSignal.timeout(TIMEOUT_MS) });
+    if (res.status === 404) return NOT_FOUND;
+    return res.ok ? await res.json() : null;
+  } catch {
+    return null;
+  }
+}
+
+/** The code exchange, then who the account is and its roles in `guildId`. Each step has its own code. */
 export async function readMember(
   fetcher: typeof fetch,
   config: DiscordConfig,
@@ -69,38 +82,34 @@ export async function readMember(
   guildId: string,
 ): Promise<DiscordMember> {
   const basic = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString("base64");
-  const tokenRes = await fetcher(`${config.baseUrl}/oauth2/token`, {
-    method: "POST",
-    headers: {
-      authorization: `Basic ${basic}`,
-      "content-type": "application/x-www-form-urlencoded",
-    },
-    body: new URLSearchParams({
-      grant_type: "authorization_code",
-      code,
-      redirect_uri: redirectUri,
+  const token = tokenSchema.safeParse(
+    await readJson(fetcher, `${config.baseUrl}/oauth2/token`, {
+      method: "POST",
+      headers: {
+        authorization: `Basic ${basic}`,
+        "content-type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        grant_type: "authorization_code",
+        code,
+        redirect_uri: redirectUri,
+      }),
     }),
-    signal: AbortSignal.timeout(TIMEOUT_MS),
-  });
-  const token = tokenSchema.safeParse(tokenRes.ok ? await tokenRes.json() : null);
+  );
   if (!token.success) return { ok: false, code: "discord_token" };
 
   const get = (path: string) =>
-    fetcher(`${config.baseUrl}${path}`, {
+    readJson(fetcher, `${config.baseUrl}${path}`, {
       headers: { authorization: `Bearer ${token.data.access_token}` },
-      signal: AbortSignal.timeout(TIMEOUT_MS),
     });
-  const userRes = await get("/users/@me");
-  const user = userSchema.safeParse(userRes.ok ? await userRes.json() : null);
+  const user = userSchema.safeParse(await get("/users/@me"));
   if (!user.success) return { ok: false, code: "discord_user" };
 
-  const memberRes = await get(`/users/@me/guilds/${encodeURIComponent(guildId)}/member`);
+  const body = await get(`/users/@me/guilds/${encodeURIComponent(guildId)}/member`);
   const name = user.data.global_name ?? user.data.username;
   // Discord answers 404 (Unknown Guild) when the account is not in the server.
-  if (memberRes.status === 404) {
-    return { ok: true, userId: user.data.id, displayName: name, roles: null };
-  }
-  const member = memberSchema.safeParse(memberRes.ok ? await memberRes.json() : null);
+  if (body === NOT_FOUND) return { ok: true, userId: user.data.id, displayName: name, roles: null };
+  const member = memberSchema.safeParse(body);
   if (!member.success) return { ok: false, code: "discord_member" };
   return {
     ok: true,

@@ -4,17 +4,21 @@
 // read, and a session made when a role is a leadership role or the account is on the allowlist.
 import { randomBytes } from "node:crypto";
 
-import { and, eq } from "drizzle-orm";
-
 import { IP_LIMIT, IP_WINDOW_MS, secretEquals } from "../auth";
 import type { Db } from "../db";
 import type { Env } from "../env";
 import { currentCount, recordFailure } from "../repo/auth-attempts";
-import { findWorkspaceBySlug, WORKSPACE_SLUG, type WorkspaceRow } from "../repo/workspaces";
-import { workspaceUsers } from "../schema";
+import {
+  findWorkspaceBySlug,
+  findWorkspaceUser,
+  recordSignIn,
+  WORKSPACE_SLUG,
+  type WorkspaceRow,
+  type WorkspaceUserRow,
+} from "../repo/workspaces";
 import { authorizeUrl, discordConfig, readMember, type DiscordMember } from "./discord";
 import { privateLog } from "./log";
-import { cookieAttributes, createSession, sessionCookie } from "./session";
+import { cookieAttributes, createSession } from "./session";
 
 export const STATE_COOKIE = "__Host-lap_ws_state";
 export const STATE_MS = 10 * 60_000;
@@ -93,7 +97,7 @@ export async function finishSignIn(db: Db, deps: SignInDeps, input: CallbackInpu
     code,
     `${input.origin}${CALLBACK_PATH}`,
     workspace.discordGuildId,
-  ).catch((): DiscordMember => ({ ok: false, code: "discord_token" }));
+  );
   if (!member.ok) {
     privateLog(`w.${member.code}`, { workspace: workspace.id });
     return go(`/w/${slug}?e=discord`);
@@ -106,7 +110,7 @@ export type NoAccess = "not_member" | "no_role" | "allowlist_expired" | "blocked
 
 /** null: let in, through a leadership role or an allowlist entry that has not expired. */
 function refusalOf(
-  known: typeof workspaceUsers.$inferSelect | undefined,
+  known: WorkspaceUserRow | null,
   viaRole: boolean,
   notMember: boolean,
   now: Date,
@@ -126,11 +130,7 @@ async function admit(
   member: Extract<DiscordMember, { ok: true }>,
   now: Date,
 ): Promise<Step> {
-  const where = and(
-    eq(workspaceUsers.workspaceId, workspace.id),
-    eq(workspaceUsers.discordUserId, member.userId),
-  );
-  const [known] = await db.select().from(workspaceUsers).where(where);
+  const known = await findWorkspaceUser(db, workspace.id, member.userId);
   const viaRole = member.roles?.some((r) => workspace.leaderRoleIds.includes(r)) ?? false;
   const refusal = refusalOf(known, viaRole, member.roles === null, now);
   if (refusal) {
@@ -138,21 +138,10 @@ async function admit(
     return go(`/w/${workspace.slug}/no-access?why=${refusal}`);
   }
   // Only people who get in are stored: a refused account leaves no row.
-  const [user] = await db
-    .insert(workspaceUsers)
-    .values({
-      workspaceId: workspace.id,
-      discordUserId: member.userId,
-      displayName: member.displayName,
-      lastLoginAt: now,
-    })
-    .onConflictDoUpdate({
-      target: [workspaceUsers.workspaceId, workspaceUsers.discordUserId],
-      set: { displayName: member.displayName, lastLoginAt: now },
-    })
-    .returning({ id: workspaceUsers.id });
-  if (!user) throw new Error("workspace user upsert returned no row");
-  const token = await createSession(db, workspace.id, user.id, now);
+  const userId = await recordSignIn(db, workspace.id, member.userId, member.displayName, now);
+  // INVARIANT workspace.allowlist-cap: let in only by the allowlist, the session ends with the entry.
+  const endsBy = viaRole ? null : (known?.allowlistExpiresAt ?? null);
+  const { cookie } = await createSession(db, workspace.id, userId, now, endsBy);
   privateLog("w.sign_in", { workspace: workspace.id, via_role: viaRole ? 1 : 0 });
-  return go(`/w/${workspace.slug}`, [clearState, sessionCookie(token)]);
+  return go(`/w/${workspace.slug}`, [clearState, cookie]);
 }

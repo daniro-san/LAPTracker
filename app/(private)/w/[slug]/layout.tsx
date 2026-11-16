@@ -7,6 +7,8 @@ export const metadata: Metadata = {
   title: "Officers’ Desk",
   description: "Private.",
   robots: { index: false, follow: false },
+  // No preview card: these drop the root opengraph-image, so /w pages carry no og: or twitter: tag
+  // (checked in the rendered head of a production build, D73).
   openGraph: null,
   twitter: null,
 };

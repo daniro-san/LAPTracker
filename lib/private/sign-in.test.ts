@@ -7,13 +7,14 @@ import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
 import {
   allowUser,
+  allowUserUntil,
   findWorkspaceBySlug,
   saveWorkspace,
   signOutWorkspace,
 } from "../repo/workspaces";
 import { authAttempts, workspaceSessions, workspaceUsers } from "../schema";
 import { requireWorkspace, signOut, type CookieReader } from "./access";
-import { revokeSession, SESSION_COOKIE, SESSION_MS } from "./session";
+import { hashToken, revokeSession, SESSION_COOKIE, SESSION_MS } from "./session";
 import { finishSignIn, startSignIn, STATE_COOKIE, type Step } from "./sign-in";
 
 const ORIGIN = "https://laptracker.test";
@@ -183,22 +184,84 @@ describe("workspace sign-in (D71)", () => {
     }
   });
 
-  it("keeps two workspaces apart: neither one's allowlist, sessions nor sign-out reach the other", async () => {
-    await allowUser(
+  it("ends a session let in only by the allowlist when the entry ends, before 24 hours", async () => {
+    const entryEnds = new Date(T0.getTime() + 2 * 3_600_000);
+    await allowUser(db, await workspaceId("ogs"), MEMBER_ID, entryEnds, "admin");
+    const { step, token } = await signIn("ogs", "member");
+    const cookie = step.kind === "redirect" ? step.cookies.join(" ") : "";
+    expect(cookie).toContain(`${SESSION_COOKIE}=${token}; Path=/; Max-Age=7200;`);
+    const after = new Date(entryEnds.getTime() + 1);
+    expect(await requireWorkspace(db, "ogs", jar(token), after)).toEqual({
+      ok: false,
+      reason: "expired",
+    });
+  });
+
+  it("deletes sessions past their end when a new session is made", async () => {
+    await signIn("ogs", "officer");
+    const { token } = await signIn("ogs", "officer", new Date(T0.getTime() + SESSION_MS));
+    const rows = await db.select().from(workspaceSessions);
+    expect(rows.map((r) => r.tokenHash)).toEqual([hashToken(token ?? "")]);
+  });
+});
+
+describe("two workspaces stay apart (D71)", () => {
+  const allowInOgs = async () =>
+    allowUser(
       db,
       await workspaceId("ogs"),
       MEMBER_ID,
       new Date(T0.getTime() + 86_400_000),
       "admin",
     );
+
+  it("does not let an account in through another workspace's allowlist", async () => {
+    await allowInOgs();
     expect(location((await signIn("nse", "member")).step)).toBe("/w/nse/no-access?why=no_role");
-    const { token } = await signIn("ogs", "member");
-    // Signing out, or revoking, under the other workspace leaves this session alone.
+  });
+
+  it("does not end a session when it signs out under another workspace's slug", async () => {
+    const { token } = await signIn("ogs", "officer");
     expect(await signOut(db, "nse", jar(token), T0)).toBe(false);
-    await revokeSession(db, await workspaceId("nse"), token ?? "");
-    await signOutWorkspace(db, await workspaceId("nse"));
     expect((await requireWorkspace(db, "ogs", jar(token), T0)).ok).toBe(true);
+  });
+
+  it("does not end a session when another workspace revokes its token", async () => {
+    const { token } = await signIn("ogs", "officer");
+    await revokeSession(db, await workspaceId("nse"), token ?? "");
+    expect((await requireWorkspace(db, "ogs", jar(token), T0)).ok).toBe(true);
+  });
+
+  it("does not end a workspace's sessions when another workspace signs out everyone", async () => {
+    const { token } = await signIn("ogs", "officer");
+    expect(await signOutWorkspace(db, await workspaceId("nse"))).toBe(0);
+    expect((await requireWorkspace(db, "ogs", jar(token), T0)).ok).toBe(true);
+  });
+
+  it("stores a person only under the workspace they signed in to", async () => {
+    await signIn("ogs", "officer");
     const rows = await db.select().from(workspaceUsers);
     expect(rows.map((r) => r.workspaceId)).toEqual([await workspaceId("ogs")]);
+  });
+});
+
+describe("the /admin allowlist entry (D73)", () => {
+  it("lets the account in until the end of the chosen day, UTC", async () => {
+    const id = await workspaceId("ogs");
+    expect(await allowUserUntil(db, id, MEMBER_ID, "2026-11-30", T0)).toBe("ok");
+    const [row] = await db.select().from(workspaceUsers);
+    expect(row?.allowlistExpiresAt?.toISOString()).toBe("2026-11-30T23:59:59.999Z");
+    expect(row?.allowlistAddedBy).toBe("admin");
+  });
+
+  it("refuses a day that is already over", async () => {
+    const yesterday = new Date(T0.getTime() - 86_400_000).toISOString().slice(0, 10);
+    expect(await allowUserUntil(db, await workspaceId("ogs"), MEMBER_ID, yesterday, T0)).toBe(
+      "expiry_past",
+    );
+  });
+
+  it("refuses a workspace that does not exist", async () => {
+    expect(await allowUserUntil(db, 999, MEMBER_ID, "2099-01-01", T0)).toBe("not_found");
   });
 });

@@ -10,14 +10,15 @@ Closes #295. Part 1 of #305 (the workspace dictionary) and part 1 of #312 (the R
   - Foreign keys cascade on delete. `truncateAll` (test helper) truncates the three tables.
 - **`lib/private/`**:
   - `access.ts`: `requireWorkspace(db, slug, cookies, now)` returns a branded `WorkspaceAccess` (workspace id, union id, slug, user) or a refusal: `no_workspace`, `signed_out`, `other_workspace`, `expired` (the row is deleted), `blocked`. Also `signOut`.
-  - `session.ts`: a 32-byte random token in `__Host-lap_ws` (HttpOnly, Secure, SameSite=Lax, 24 h); only its sha256 is stored. `revokeSession` deletes one session, only inside its own workspace.
+  - `session.ts`: a 32-byte random token in `__Host-lap_ws` (HttpOnly, Secure, SameSite=Lax); only its sha256 is stored. A session lasts 24 h; for an account let in only through the allowlist, it ends with the allowlist entry if that comes first. Making a session deletes every session already past its end. `revokeSession` deletes one session, only inside its own workspace.
+  - The table reads and writes (`findWorkspaceUser`, `recordSignIn`, `insertSession`, `findSession`, `deleteSession`, `allowUserUntil`) are in `lib/repo/workspaces.ts`. Who gets in and the `WorkspaceAccess` brand stay in `lib/private`.
   - `sign-in.ts`: `startSignIn` puts the state (`<slug>.<random>`) in `__Host-lap_ws_state` (10 min). `finishSignIn` does the rest:
     - a rate-limit check on `w:ip:<address>`;
     - the state compared with `secretEquals`; a mismatch is counted and gets 400 `bad_state`;
     - the code exchange and the member read;
     - access through a leadership role, or an allowlist entry that has not expired;
     - a `workspace_users` upsert and a session only on success.
-  - `discord.ts`: the authorize URL (`prompt=consent`, or `prompt=none` when silent), the token exchange (HTTP Basic), `GET /users/@me`, `GET /users/@me/guilds/{id}/member` (404 = not in the server). Responses are parsed with zod. The base comes from `DISCORD_API_BASE_URL`.
+  - `discord.ts`: the authorize URL (`prompt=consent`, or `prompt=none` when silent), the token exchange (HTTP Basic), `GET /users/@me`, `GET /users/@me/guilds/{id}/member` (404 = not in the server). Responses are parsed with zod. A failed status, a timeout or a network error at each step gets that step's own code: `w.discord_token`, `w.discord_user` or `w.discord_member`. The base comes from `DISCORD_API_BASE_URL`.
   - `http.ts`: `NO_STORE`, the same-origin JSON check (Origin = app origin, Sec-Fetch-Site same-origin when sent, `application/json`), 303 redirects with cookies, a request cookie reader.
   - `log.ts`: `privateLog(code, numbers)`.
   - `dictionary.ts`: typed `en` / `pt-BR` / `fr`, the `lap_ws_lang` cookie, `pickWorkspaceLanguage`.
@@ -60,10 +61,23 @@ Closes #295. Part 1 of #305 (the workspace dictionary) and part 1 of #312 (the R
 - **Session length.** Issue #295 says 7 days; D71 (newer) says 24 h. Built 24 h.
 - **"OGs seeded".** Issue #295 asks for it, but nothing is seeded: the owner registers OGs on the /admin card (D73), because server and role ids are data, not code. The e2e registered it that way.
 - **Sign-in lead.** The sign-in page does not name the alliance: the refusal carries no workspace data before sign-in.
-- **Page Cache-Control.** `proxy.ts` sets `private, no-store` on `/w/...`, but Next replaces a page's `Cache-Control` with its own for a dynamic render. In `next dev` that is `no-store`. Route handlers keep `private, no-store`. A production build was not run here.
+- **The upstream banner reads before the access check** (recorded in D73). The root layout's `UpstreamBanner` reads the public upstream status from the database on every page, `/w/...` included, before the page's own check. It reads only public data. Keeping `/w` out of it would need separate root layouts.
+- **Changed after the review of #322:**
+  1. `pickWorkspaceLanguage` uses a Map. An `Accept-Language` of `constructor` or `__proto__` used to return an inherited property, and the page answered 500.
+  2. A session of an account let in only through the allowlist ends with the allowlist entry.
+  3. Expired session rows are deleted when a session is made.
+  4. `requireWorkspace` reads the workspace and the session at once, with the same refusal order.
+  5. The allowlist's end-of-day and not-in-the-past rules moved to `allowUserUntil` (lib/repo); the route only maps its results.
+  6. The isolation test became five sentence-named tests.
+  7. `/w` has no link preview (verified, see Verified).
+  8. A new `http.test.ts` covers the same-origin check.
+  9. New `pickWorkspaceLanguage` tests.
+  10. The table queries moved into `lib/repo/workspaces.ts`, which removed the duplicate upsert and delete.
+  11. The page Cache-Control was checked in a production build (see Verified).
+  - Also: the unused `address` copy key is gone; the Discord steps after the token exchange log their own codes; D73 names the fence test's exemptions and limit, and records that "sign out everyone" and the allowlist expiry are the only revocations for now.
 
 ## Verified
-- `pnpm check` green after merging `origin/dev` (with #314 and #292): prettier, eslint, tsc, vitest (72 files passed, 1 skipped; 342 tests passed, 1 skipped), drift gate ("Everything's fine"), i18n (17 languages up to date).
+- `pnpm check` green after merging `origin/dev` (with #314 and #292): prettier, eslint, tsc, vitest (73 files passed, 1 skipped; 362 tests passed, 1 skipped; after the review fixes, on `dev` at 5353a5f), drift gate ("Everything's fine"), i18n (17 languages up to date).
 - New tests in `lib/private/sign-in.test.ts` (PGlite, stubbed fetch), one per behaviour:
   - a leadership role gets in;
   - an unexpired allowlist entry gets in; an expired one is refused;
@@ -72,8 +86,11 @@ Closes #295. Part 1 of #305 (the workspace dictionary) and part 1 of #312 (the R
   - a session older than 24 h is refused as `expired`;
   - workspace A's session is refused under B's slug;
   - "sign out everyone" ends both sessions;
-  - two tenants: A's allowlist does not open B, and a sign-out or revoke under B leaves A's session.
-- Also `dictionary.test.ts` (same keys, no empty value) and `roster-fields.test.ts`. The roster-field test was seen failing with a probe `app/zz-probe.ts` reading `daily_tech`; the probe was then deleted.
+  - an allowlist-only session ends with its entry (cookie `Max-Age=7200` for an entry 2 h away; refused 1 ms after). This test fails when the cap is removed;
+  - a new session deletes sessions past their end;
+  - two tenants, one test each: A's allowlist does not open B; a sign-out under B's slug, a revoke by B, and B's "sign out everyone" each leave A's session; a person is stored only under the workspace they signed in to;
+  - the /admin allowlist entry: until 23:59:59.999 UTC of the day, `expiry_past` for a day already over, `not_found` for a missing workspace.
+- Also `dictionary.test.ts` (same keys, no empty value; six `pickWorkspaceLanguage` cases, `__proto__` included), `http.test.ts` (one pass, four refusals) and `roster-fields.test.ts`. The roster-field test was seen failing with a probe `app/zz-probe.ts` reading `daily_tech`; the probe was then deleted.
 - **Fence proof.** `pnpm exec eslint` rejected six scratch files, each with its zone's message:
   - `lib/queries/` → `lib/private`;
   - a new top-level `lib/` module → `lib/private`;
@@ -96,7 +113,10 @@ Closes #295. Part 1 of #305 (the workspace dictionary) and part 1 of #312 (the R
     - Sign out showed the sign-in again;
     - the no-role user got `no-access?why=no_role` (PT and EN), and no `workspace_users` row was written;
     - a forged state got 400 and one `w:ip:` attempt.
-  - The one check that did not pass: the shell page's header was `no-store`, not `private, no-store` (see Deviations).
+  - The one check that did not pass: under `next dev` the shell page's header was `no-store`, not `private, no-store`.
+- **Production build** (`pnpm build` + `next start`, local database):
+  - `/w/ogs` and `/w/ogs/no-access` answered `cache-control: private, no-store`, so the proxy's header holds in production. `/` answered Next's own `private, no-cache, no-store, max-age=0, must-revalidate`.
+  - The rendered head of `/w/ogs` has `<title>Officers’ Desk</title>` and no `og:` or `twitter:` tag. `/` carries the root `og:image`.
 - Screenshots in `docs/screenshots/`:
   - `11c-sign-in-360.png`, `11c-home-360.png` (light, 360 px);
   - `11c-home-fr-dark-390.png` (FR, dark, 390 px);
@@ -104,13 +124,12 @@ Closes #295. Part 1 of #305 (the workspace dictionary) and part 1 of #312 (the R
   - `11c-admin-workspaces.png` (/admin card, 390 px).
 
 ## Open issues
-1. **Root layout read on /w pages.** The root layout's `UpstreamBanner` reads the public upstream status from the database on every page, `/w/...` included, before the page's access check. It reads nothing private. Moving `/w` out of the root layout needs separate root layouts: not done.
-2. **The root `opengraph-image`.** The public site card may still apply to `/w/...`. It is the public card, with no workspace data.
-3. **`blocked` has no writer.** It is checked at sign-in and on every request, but neither /admin nor the workspace can set it yet.
-4. **No allowlist removal.** The /admin card can add an entry or move its date, not remove one (set a past date instead).
-5. **One session cookie per browser.** Signing in to a second workspace replaces the first one's session cookie.
-6. **`prompt=none` against the real Discord is unverified.** Only the stub was used. If the real Discord shows its consent screen for `prompt=none`, the officer taps Authorize once a day.
-7. **Migration number.** The orchestrator renumbers `0019_furry_fabian_cortez` if another migration merges into `dev` first.
+1. **Root layout read on /w pages.** The upstream banner reads public data before the access check (Deviations, D73). Moving `/w` out of the root layout needs separate root layouts: not done.
+2. **`blocked` has no writer.** It is checked at sign-in and on every request, but neither /admin nor the workspace can set it yet. "Sign out everyone" and the allowlist expiry are the only revocations for now (D73).
+3. **No allowlist removal.** The /admin card can add an entry or move its date, not remove one. The /admin route refuses a past date, so an entry ends only on its date.
+4. **One session cookie per browser.** Signing in to a second workspace replaces the first one's session cookie.
+5. **`prompt=none` against the real Discord is unverified.** Only the stub was used. If the real Discord shows its consent screen for `prompt=none`, the officer taps Authorize once a day.
+6. **Migration number.** The orchestrator renumbers `0019_furry_fabian_cortez` if another migration merges into `dev` first.
 
 ## Next
 Session: #296 — Workspace: Members tab with API data and weekly donations.
@@ -124,6 +143,8 @@ Plan changes needed: none.
 - Words: add keys to `lib/private/dictionary.ts` in all three languages; the parity test fails otherwise. French needs a no-break space before `:` `?` `!`. Strings for #296 are in the scratchpad's `copy/strings.json` (`members.*`, `title.members`).
 - Logging in lib/private: `privateLog(code, numbers)` only.
 - The roster-field fence test allows `lib/private/**`. Read `daily_rosters.raw_json` (D72) only there.
+- D71's two-tenant test for a player who moved from one alliance to another (the old alliance sees them only up to the move) must ship with the first private roster query, in #296. 11c has no roster query, so its isolation tests cover only users and sessions.
+- Table reads and writes for the workspace go in `lib/repo/workspaces.ts` (or a new `lib/repo/*` module), never directly in `lib/private`. `lib/private` keeps the policy and the `WorkspaceAccess` brand.
 - D75 applies to every workspace screen (#296, #298, #300):
   - missing data shows "—" and is never 0, never counted;
   - real signals (offline proxy: `active` and `daily_tech` unchanged across 2 end-of-day reads, ignoring the Monday reset; might not growing; zero KvK kills with no away note) are shown as "Check in" reasons with their evidence;
