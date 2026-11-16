@@ -4,7 +4,7 @@
 import { fill, type Dictionary } from "@/lib/copy";
 import type { EventProgress } from "@/lib/queries";
 
-import { shareText, type Clock } from "./format";
+import { compact, shareText, type Clock } from "./format";
 import { Num } from "./Num";
 import { LABEL, MoreBar } from "./StatTable";
 
@@ -30,13 +30,13 @@ function Bars({ progress, clock, copy }: { progress: Progress; clock: Clock; cop
           >
             {s.kills !== null && s.state === "moved" ? (
               <div
-                className={`w-full rounded-t-sm ${inBusiest ? "bg-plum" : "bg-plum/45"}`}
+                className={`w-full rounded-t-sm ${inBusiest ? "bg-plum" : "bg-plum/60"}`}
                 style={{ height: barHeight(Math.max(0, s.kills), most) }}
               />
             ) : s.state === "still" ? (
-              <div className="h-1.5 w-full rounded-sm border border-dashed border-ink/60" />
+              <div className="h-2 w-full rounded-sm border border-dashed border-ink/60" />
             ) : (
-              <div className="h-px w-full bg-ink/30" />
+              <div className="h-px w-full bg-ink/50" />
             )}
             <span className="sr-only">
               {span(s.from, s.to)}:{" "}
@@ -58,19 +58,19 @@ function PulseLegend({ pulse, copy }: { pulse: Progress["pulse"]; copy: Dictiona
   const hasMissing = pulse.some((s) => s.state === "missing");
   return (
     (hasStill || hasMissing) && (
-      <p className="mt-1 flex flex-wrap gap-x-4 text-body-sm text-ink/70">
+      <p className="mt-1 flex flex-wrap gap-x-4 text-sm text-ink/70">
         {hasStill && (
           <span className="inline-flex items-center gap-1.5">
             <span
               aria-hidden="true"
-              className="inline-block h-1.5 w-4 rounded-sm border border-dashed border-ink/60"
+              className="inline-block h-2 w-4 rounded-sm border border-dashed border-ink/60"
             />
             {copy.ledger.liveNoUpdate}
           </span>
         )}
         {hasMissing && (
           <span className="inline-flex items-center gap-1.5">
-            <span aria-hidden="true" className="inline-block h-px w-4 bg-ink/30" />
+            <span aria-hidden="true" className="inline-block h-px w-4 bg-ink/50" />
             {copy.ledger.liveNoReading}
           </span>
         )}
@@ -105,12 +105,28 @@ export function Pulse({
       <p className="text-body-sm text-ink/70">
         {fill(copy.ledger.livePulseHelp, { n: alliances, min: progress.everyMin })}
       </p>
-      {busiest && (
+      {busiest ? (
         <p className="mt-2 font-medium tabular-nums">
           {fill(progress.live ? copy.ledger.liveBusiest : copy.ledger.liveBusiestDone, {
             from: clock.hhmm(busiest.from),
             to: clock.time(busiest.to),
             share: shareText(busiest.share, locale),
+          })}
+        </p>
+      ) : (
+        // Too few intervals to name a busiest span: the total is the honest figure.
+        progress.live && (
+          <p className="mt-2 font-medium tabular-nums">
+            {fill(copy.ledger.liveKillsSoFar, { kills: compact(progress.killsTotal, locale) })}
+          </p>
+        )
+      )}
+      {busiest && progress.live && last.kills !== null && (
+        <p className="text-body-sm tabular-nums text-ink/70">
+          {fill(copy.ledger.liveLast, {
+            min: progress.everyMin,
+            last: compact(last.kills, locale),
+            peak: compact(Math.max(...pulse.map((s) => s.kills ?? 0)), locale),
           })}
         </p>
       )}

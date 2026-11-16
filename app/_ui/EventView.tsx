@@ -22,7 +22,7 @@ import {
 import { eventTitle, ManualMark } from "./EventLabel";
 import { ExactToggle } from "./ExactToggle";
 import { allianceLabel, rowAnchor, type Clock } from "./format";
-import { LiveSections, LiveStrip } from "./LiveProgress";
+import { LIVE_DURING_ID, LiveSections, LiveStrip } from "./LiveProgress";
 import { requestClock, requestCopy, requestLocale } from "./locale";
 import { allianceScope, memberScope, MOVERS_ID } from "./mover-lists";
 import { Movers } from "./Movers";
@@ -142,21 +142,29 @@ function TopStatus({
   detail,
   worst,
   hasMovers,
+  live,
+  hasDuring,
   clock,
   copy,
 }: {
   detail: Detail;
   worst: string[];
   hasMovers: boolean;
+  /** The event is running: no "Last updated" chip, and the End shows when it is due. */
+  live: boolean;
+  /** The finished event's "During the event" section exists: a jump link to it. */
+  hasDuring: boolean;
   clock: Clock;
   copy: Dictionary;
 }) {
+  const jump = "text-link inline-flex min-h-11 items-center px-2 text-sm font-medium";
   return (
     <>
       <StatusChips
         phases={detail.snapshots}
         stale={worst.filter((w) => w === "stale").length}
         failed={worst.filter((w) => w === "failed").length}
+        live={live}
         clock={clock}
         copy={copy}
       />
@@ -164,16 +172,23 @@ function TopStatus({
         <CaptureWindow
           before={detail.snapshots.find((s) => s.phase === "before")}
           after={detail.snapshots.find((s) => s.phase === "after")}
+          endDue={live ? detail.afterAt : null}
           clock={clock}
           copy={copy}
         />
-        {hasMovers && (
-          <a
-            href={`#${MOVERS_ID}`}
-            className="text-link ml-auto inline-flex min-h-11 items-center px-2 text-sm font-medium"
-          >
-            {copy.ledger.movers} <span aria-hidden="true">&nbsp;↓</span>
-          </a>
+        {(hasMovers || hasDuring) && (
+          <div className="ml-auto flex flex-wrap justify-end">
+            {hasDuring && (
+              <a href={`#${LIVE_DURING_ID}`} className={jump}>
+                {copy.ledger.liveDuring} <span aria-hidden="true">&nbsp;↓</span>
+              </a>
+            )}
+            {hasMovers && (
+              <a href={`#${MOVERS_ID}`} className={jump}>
+                {copy.ledger.movers} <span aria-hidden="true">&nbsp;↓</span>
+              </a>
+            )}
+          </div>
         )}
       </div>
     </>
@@ -210,6 +225,12 @@ function EventHead({
   );
 }
 
+/** When the End ran; null until it has. */
+function endTime(detail: Detail): Date | null {
+  const end = detail.snapshots.find((s) => s.phase === "after");
+  return end ? (end.finishedAt ?? end.startedAt) : null;
+}
+
 export async function EventView({
   events,
   homeId,
@@ -242,7 +263,7 @@ export async function EventView({
     allianceScope(movers.alliances, detail.id, changes, copy),
     memberScope(movers.members, copy.ledger.members),
   ];
-  const liveProps = { eventId: detail.id, rows, clock, copy, locale };
+  const liveProps = { eventId: detail.id, rows, endAt: endTime(detail), clock, copy, locale };
   const hasMovers = moverScopes.some((s) => Object.values(s.lists).some((l) => l && l.length > 0));
   return (
     <>
@@ -250,8 +271,16 @@ export async function EventView({
       <main id="main" className="scroll-mt-20 mx-auto max-w-[960px] px-4 py-4 sm:px-6">
         <TitleBand copy={copy} />
         <EventHead detail={detail} events={events} clock={clock} copy={copy} />
-        {progress && <LiveStrip progress={progress} clock={clock} copy={copy} />}
-        <TopStatus detail={detail} worst={worst} hasMovers={hasMovers} clock={clock} copy={copy} />
+        {progress && <LiveStrip {...liveProps} progress={progress} />}
+        <TopStatus
+          detail={detail}
+          worst={worst}
+          hasMovers={hasMovers}
+          live={progress?.live === true}
+          hasDuring={progress !== null && !progress.live && progress.readings > 0}
+          clock={clock}
+          copy={copy}
+        />
         <Legend memberMark={rows.some((r) => r.metrics.some((m) => m.memberMark))} copy={copy} />
         <MyAllianceJump tags={Object.fromEntries(rows.map((r) => [r.unionId, r.tag]))} />
         {progress && <LiveSections {...liveProps} progress={progress} placement="above" />}

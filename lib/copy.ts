@@ -82,6 +82,15 @@ export const en = {
     liveNoReading: "No reading",
     liveInterval: "Interval",
     liveKillsGained: "Kills gained",
+    /** The strip from the Start until the first reading. */
+    liveFirst: "Start {start} · first reading {next}",
+    liveNoReadings: "No readings yet",
+    /** After the strip's next reading while the slot's sample is more than 3 minutes late. */
+    liveOverdue: "(reading due {time})",
+    /** `{kills}`: the top three alliances with their gains, or the total until the busiest span is named. */
+    liveKillsSoFar: "Kills so far: {kills}",
+    liveLast: "Last {min} min: {last} (peak {peak})",
+    liveDone: "Change since Start at the {time} reading. The ledger above uses the End at {end}.",
     /** The event page's section on kills gained by members (#271); no figure is about one person. */
     fought: "War turnout",
     /** Under the section's title: what the figures count. */
@@ -185,6 +194,8 @@ export const en = {
      * snapshot was taken and when the After was. */
     start: "Start",
     end: "End",
+    /** The End's side of the capture window while the event runs: `END after 16:31 server time`. */
+    endAfter: "after {time}",
   },
   /** The banner shown while the game's data service does not answer (docs/decisions/D27). */
   upstream: {

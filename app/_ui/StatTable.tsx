@@ -42,6 +42,8 @@ export interface StatRow {
   anchor?: string;
   /** The alliance this row is about, in a list that is not the ledger: it is highlighted when it is the viewer's (`MyAllianceJump`). */
   liveUnion?: number;
+  /** This row is the viewer's alliance (a list that is shortened and cannot wait for `MyAllianceJump`). */
+  mine?: boolean;
   /** `#n` and its movement (compute.rankDelta), before the picture; no `move`: only `#n`. */
   rank?: { n: number | null; move?: number | null };
   lead: ReactNode;
@@ -221,6 +223,7 @@ export function StatTable({
             key={row.key}
             id={row.anchor}
             data-live-union={row.liveUnion}
+            data-mine={row.mine ? "" : undefined}
             style={grid}
             className={`stat-card relative mb-3 grid scroll-mt-20 grid-cols-1 gap-y-1.5 border border-rule p-3 data-[mine]:bg-yarn/5 data-[mine]:shadow-[inset_3px_0_0_var(--color-yarn)] sm:mb-0 sm:min-h-11 sm:grid-cols-[var(--cols)] sm:content-center sm:gap-x-3 sm:border-0 sm:border-b sm:py-2 ${row.tint ?? ""}`}
           >
