@@ -24,7 +24,7 @@ Words already used in `lib/i18n/zh-CN.ts`. Reuse them so the pages stay consiste
 | Compare                   | 对比                 | `compare.title`, `compare.action` — two events side by side |
 | Leader                    | 盟主                 | `leadership.leader` — the R5                                |
 | Grandma noticed           | 奶奶注意到了         | `ledger.movers` — section heading, biggest gains and losses |
-| Who fought                | 参战情况             | `ledger.fought` — section heading, members in both reads    |
+| War turnout               | 参战人数             | `ledger.fought` — section heading, how many took part       |
 | Support players           | 辅助玩家             | `ledger.foughtHelp` — support roles gain no kills           |
 | Run by hand by the admin  | 由管理员手动运行     | `status.byHand`                                             |
 | grandma                   | 奶奶                 | the voice in empty states and errors                        |

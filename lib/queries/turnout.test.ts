@@ -127,4 +127,21 @@ describe("memberTurnout (#271)", () => {
     });
     expect(await memberTurnout(db, snaps)).toBeNull();
   });
+
+  it("ranks the top-5 share of alliances with 10 gainers or more before the rest", async () => {
+    const many = Array.from({ length: 12 }, (_, i) => i + 1);
+    const snaps = await seedEvent({
+      before: [
+        { unionId: 1, members: many.map((uid) => m(uid, 0)) },
+        { unionId: 2, members: [m(41, 0), m(42, 0)] },
+      ],
+      // Alliance 1 gains evenly (5 of 12 = 42 %); alliance 2 has two gainers (100 %).
+      after: [
+        { unionId: 1, members: many.map((uid) => m(uid, 10)) },
+        { unionId: 2, members: [m(41, 9), m(42, 1)] },
+      ],
+    });
+    const lists = await memberTurnout(db, snaps);
+    expect(lists?.topShare.map((t) => t.unionId)).toEqual([1, 2]);
+  });
 });
