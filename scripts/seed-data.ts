@@ -87,12 +87,23 @@ export interface Roster {
   members: BaseMember[];
 }
 
-/** A member's power and kills at a snapshot: drifting up with the step. */
-const drifted = (m: BaseMember, step: number): BaseMember => ({
-  ...m,
-  power: Math.round(m.power * (0.9 + 0.02 * step + 0.01 * noise(m.uid, step))),
-  kills: Math.round(m.kills * (0.86 + 0.03 * step + 0.01 * noise(m.uid, step + 9))),
-});
+/** War costs might: an End reading (an odd step) is this share of the same step's drifted power. */
+const WAR_LOSS = 0.95;
+
+/**
+ * A member's power and kills at a snapshot. Power drifts up with the step and drops at an End reading.
+ * Kills only move at an event (as the real ones do): an End reading's kills stay until the next Start's.
+ */
+const drifted = (m: BaseMember, step: number): BaseMember => {
+  const killStep = Math.ceil(step / 2);
+  return {
+    ...m,
+    power: Math.round(
+      m.power * (0.9 + 0.02 * step + 0.01 * noise(m.uid, step)) * (step % 2 ? WAR_LOSS : 1),
+    ),
+    kills: Math.round(m.kills * (0.86 + 0.03 * killStep + 0.01 * noise(m.uid, killStep + 9))),
+  };
+};
 
 /** The first member of alliance 5 moves to alliance 6 during event 1 and stays there. */
 function applyMove(

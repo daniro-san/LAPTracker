@@ -11,6 +11,7 @@ import { requestClock, requestCopy } from "@/app/_ui/locale";
 import { Num } from "@/app/_ui/Num";
 import { AllianceBadge, PlayerAvatar } from "@/app/_ui/Pictures";
 import { PlayerAcrossEvents } from "@/app/_ui/PlayerAcrossEvents";
+import { PlayerProgress } from "@/app/_ui/PlayerProgress";
 import { previewImage } from "@/app/_ui/preview";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
@@ -20,7 +21,13 @@ import { RoleMark } from "@/lib/brand/components/RoleMark";
 import { TextLink } from "@/lib/brand/components/TextLink";
 import { fill, type Dictionary } from "@/lib/copy";
 import { withPageDb } from "@/lib/page";
-import { homeEvent, listEvents, playerHistory, type PlayerHistory } from "@/lib/queries";
+import {
+  homeEvent,
+  listEvents,
+  playerHistory,
+  playerProgress,
+  type PlayerHistory,
+} from "@/lib/queries";
 
 function Timelines({
   history,
@@ -115,7 +122,9 @@ function Summary({
 const loadPlayer = cache((uid: number) =>
   withPageDb(async (db) => {
     const history = await playerHistory(db, uid);
-    return history && { history, events: await listEvents(db) };
+    if (!history) return null;
+    const [events, progress] = await Promise.all([listEvents(db), playerProgress(db, uid)]);
+    return { history, events, progress };
   }),
 );
 
@@ -144,7 +153,7 @@ export default async function PlayerPage({ params }: { params: Params }) {
   if (uid === null) notFound();
   const [data, clock, copy] = await Promise.all([loadPlayer(uid), requestClock(), requestCopy()]);
   if (!data) notFound();
-  const { history, events } = data;
+  const { history, events, progress } = data;
   const { current } = history;
   const allianceName = history.alliances.at(-1)?.name ?? null;
   return (
@@ -207,6 +216,7 @@ export default async function PlayerPage({ params }: { params: Params }) {
         <Legend copy={copy} />
         <Timelines history={history} clock={clock} copy={copy} />
         <Summary current={current} clock={clock} copy={copy} />
+        <PlayerProgress progress={progress} clock={clock} />
         <PlayerAcrossEvents
           rows={history.rows}
           clock={clock}
