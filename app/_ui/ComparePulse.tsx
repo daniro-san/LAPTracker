@@ -11,6 +11,7 @@ import { eventHead } from "./EventCompare";
 import type { Clock } from "./format";
 import { PulseLegend } from "./LivePulse";
 import { busiestText, mostShare, PulseDetails, PulseStrip } from "./PulseStrip";
+import { LABEL } from "./StatTable";
 
 type Side = "a" | "b";
 const LETTER: Record<Side, string> = { a: "A", b: "B" };
@@ -61,8 +62,9 @@ export function ComparePulse({
     <section aria-labelledby="compare-pulse" className="mb-4 border-y border-rule py-3">
       <Heading text={l.livePulse} />
       <p className="text-body-sm text-ink/70">
-        {fill(l.comparePulseHelp, { min: everyMin, span })} · {clock.zone}
+        {fill(l.comparePulseHelp, { min: everyMin, span })}
       </p>
+      <p className={`mt-1 ${LABEL}`}>{clock.zone}</p>
       <div className="mt-3 grid gap-4">
         {sides.map((k) => (
           <div key={k}>
