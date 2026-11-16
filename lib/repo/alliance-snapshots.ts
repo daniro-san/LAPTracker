@@ -2,7 +2,7 @@
 import { and, desc, eq, inArray, isNotNull } from "drizzle-orm";
 
 import type { Db } from "../db";
-import { allianceSnapshots, memberSnapshots, playerFrames } from "../schema";
+import { allianceSnapshots, memberSnapshots, playerFrames, snapshots } from "../schema";
 import type { AllianceRow, AllianceRowStatus, MemberRow } from "./index";
 import { recordFrames } from "./player-frames";
 
@@ -16,6 +16,22 @@ export async function listAllianceRows(db: Db, snapshotId: number): Promise<Alli
     })
     .from(allianceSnapshots)
     .where(eq(allianceSnapshots.snapshotId, snapshotId));
+}
+
+/** The alliances with an error row in any sample of the event (D69): one query over the sample rows. */
+export async function failedSampleUnionIds(db: Db, eventId: number): Promise<number[]> {
+  const rows = await db
+    .selectDistinct({ unionId: allianceSnapshots.unionId })
+    .from(allianceSnapshots)
+    .innerJoin(snapshots, eq(snapshots.id, allianceSnapshots.snapshotId))
+    .where(
+      and(
+        eq(snapshots.eventId, eventId),
+        eq(snapshots.phase, "sample"),
+        isNotNull(allianceSnapshots.error),
+      ),
+    );
+  return rows.map((r) => r.unionId);
 }
 
 export async function insertAllianceRow(

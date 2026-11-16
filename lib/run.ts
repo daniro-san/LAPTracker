@@ -36,6 +36,9 @@ export interface RunRequest {
 
 /** maxDuration is 120 s: the response leaves by this long after the run's start (D43). */
 export const NOTIFY_CAP_MS = 115_000;
+/** A sample's tick must answer before cron-job.org abandons the call at 30 s (D30, D69): 25 s of reads
+ * (SAMPLE_DEADLINE_MS) leave a few seconds for the row's close and the one admin message. */
+export const SAMPLE_NOTIFY_CAP_MS = 28_000;
 
 /** Our own line for a run that threw; the collector never writes it. */
 const CRASH_ERROR = "unexpected error; see run_logs and the runtime log";
@@ -85,15 +88,17 @@ async function finaliseCrashed(
   return summary;
 }
 
-/** INVARIANT run.answers-by-115s: notify gets what is left of NOTIFY_CAP_MS; past that it is cut,
- * as Vercel would cut the whole function at 120 s, and the caller still gets its answer. */
+/** INVARIANT run.answers-by-115s: notify gets what is left of NOTIFY_CAP_MS (SAMPLE_NOTIFY_CAP_MS for a
+ * sample); past that it is cut, as Vercel would cut the whole function at 120 s, and the caller still gets
+ * its answer. */
 async function notifyWithinCap(
   ctx: AppContext,
   startedAt: Date,
   snapshotId: number,
   notified: Promise<void>,
+  capMs = NOTIFY_CAP_MS,
 ) {
-  const left = NOTIFY_CAP_MS - (ctx.now().getTime() - startedAt.getTime());
+  const left = capMs - (ctx.now().getTime() - startedAt.getTime());
   let timer: ReturnType<typeof setTimeout> | undefined;
   const cap = new Promise<"cut">(
     (resolve) => (timer = setTimeout(resolve, Math.max(0, left), "cut")),
@@ -250,6 +255,7 @@ export async function executeSample(
       startedAt: c.claimedAt,
       logWriteFailures: c.failedWrites,
     }),
+    SAMPLE_NOTIFY_CAP_MS,
   );
   return outcomeOf({ ...c, summary });
 }
