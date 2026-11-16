@@ -56,3 +56,32 @@ Plan changes needed: none to `docs/IMPLEMENTATION_PLAN.md`.
 - Copy for this page is `lib/copy-balance.ts`; a new key there needs the translate-copy skill (27 keys today).
 - Event rosters were left out on purpose (D85); do not add them without a rule for the event-day gap.
 </adjustments>
+
+## UX review (2026-11-16)
+
+Measured with local seed data (20 alliances, 12 daily reads, `Ünbelievably Long Allianz Nam` / `TmSLONG`), Chrome at 360, 390, 412, 600, 768, 810, 820, 1024, 1180 and 1280 in light and dark, with blocs empty, half full (4 + 4) and full (10 + 10); WebKit at 390 dark and 820 light; German and Russian at 360.
+- `document.documentElement.scrollWidth` equals the viewport width in all 60 Chrome runs.
+- No tap target under 44 × 44 px except the 18 px "Exact numbers" checkbox, whose label is 44 px high. The A and B links are 44 × 44 px at every width. The "% Server balance" link on the home page is 130 × 44 px (en), 132 (de), 139 (ru), with no overflow.
+- Contrast: bloc text on plum 11.4:1 (light) and 6.2:1 (dark); on yarn 4.9:1 and 9.1:1; the grey "not in a bloc" boxes are 3.6:1 and 1.9:1 (light) against the paper. Plum against yarn is 2.3:1 light and 1.5:1 dark.
+- Trend with fewer than 2 reads: the heading, the help line and "Not enough daily reads yet to draw a trend." show, with no empty chart.
+
+Fixed:
+1. The sticky bloc line was half hidden under the header lace and unreadable (WebKit 390 dark and Chrome 360). A missing space in `pt-[calc(0.25rem+var(--lace))]text-sm` dropped both classes.
+2. A long alliance name was cut with "…" in the list (`truncate`); it wraps now.
+3. The sticky line now begins with "Hypothetical" (existing key), so a screenshot of the list alone is not read as a statement.
+4. From 640 px each row is one line (name, share, might, A and B); before, the name and the share sat at opposite ends of a 960 px row with the taps on a second line.
+5. German "Stand 30. Okt.." had a doubled full stop; the page collapses `..` at the end of the basis line.
+
+Left:
+- "Server might" is the total of the tracked alliances; the line above the bar says "20 tracked alliances", but the label itself does not. Changing it needs a copy decision and 17 translations (owner decision below).
+- The lead sentence and the bloc cards say "of the server's might" for the same reason.
+- The un-blocced grey boxes (ink at 30 % and 55 %) are under 3:1 against the paper in light mode. They carry no information: the shares are in the list, and the boxes have a paper-coloured separator.
+- Bloc colours plum and yarn are 1.5:1 apart in dark mode; the letter A or B and the check mark are the cue, as designed.
+- German shows "Might" and "Members" in the bloc card (`ledger.might`, `ledger.members`), which are not part of this page's copy.
+- The seed trend is flat (22.2 %), so the line's shape on real data is still unseen.
+
+Screenshots at 360 light, 360 dark and 1280 light were replaced (blocs A and B set, the long name in bloc B).
+
+Merge of `origin/dev` conflicted in `app/_ui/format.ts` (`sharePreciseText` was added by #338 as well; the `share1` format from dev is kept), the glossaries, stamps, `lib/queries/index.ts` and the decisions README (both sides kept). The plain `i18n-check` reported 17 languages up to date, so no stamping was needed.
+
+https://github.com/daniro-san/LAPTracker/pull/342
