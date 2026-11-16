@@ -62,6 +62,8 @@ Words already used in `lib/i18n/ko.ts`. Reuse them so the pages stay consistent;
 | Gainers                   | 처치가 늘어난 인원     | `ledger.withKills`, `ledger.topShare*`, `ledger.fewGainers` — members whose Kills rose             |
 | peak                      | 최고                   | `ledger.liveLast` — the highest figure in the window                                               |
 | Last (a time window)      | 최근                   | `ledger.liveLast` — the last N minutes; 마지막 stays the last reading (`ledger.liveStandingsDone`) |
+| Server fight clock        | 서버 전투 시계         | `ledger.fightClock`, `ledger.fightClockLink` — events side by side on the server clock             |
+| Outlined                  | 테두리                 | `ledger.fightClockOutline`, `ledger.comparePulseHelp` — the busiest minutes of each event          |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

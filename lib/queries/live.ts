@@ -85,6 +85,22 @@ function readSlices(rows: readonly ProgressRow[]) {
   return slices;
 }
 
+/** The Start (undefined when it has no usable alliance) and the samples in time order: the readings every
+ * per-slot figure is taken from (`serverPulse`, `standings`, and the cross-event views of D86). */
+export function readingsOf(rows: readonly ProgressRow[]): {
+  start: Slice | undefined;
+  samples: Slice[];
+} {
+  const slices = readSlices(rows);
+  const phaseOf = new Map(rows.map((r) => [r.snapshotId, r.phase]));
+  const start = [...slices].find(([id]) => phaseOf.get(id) === "before")?.[1];
+  const samples = [...slices]
+    .filter(([id]) => phaseOf.get(id) === "sample")
+    .map(([, slice]) => slice)
+    .sort((a, b) => a.at.getTime() - b.at.getTime());
+  return { start, samples };
+}
+
 /** The public event's Start and sample rows (alliance totals) and its End's bare row; none when it is not
  * public. Nothing here depends on `now`, so the event cache can share it between requests. */
 export async function progressRows(db: Db, eventId: number): Promise<ProgressRow[]> {
@@ -135,13 +151,7 @@ export function eventProgressOf(
 ): EventProgress | null {
   const first = rows[0];
   if (!first) return null;
-  const slices = readSlices(rows);
-  const phaseOf = new Map(rows.map((r) => [r.snapshotId, r.phase]));
-  const start = [...slices].find(([id]) => phaseOf.get(id) === "before")?.[1];
-  const samples = [...slices]
-    .filter(([id]) => phaseOf.get(id) === "sample")
-    .map(([, slice]) => slice)
-    .sort((a, b) => a.at.getTime() - b.at.getTime());
+  const { start, samples } = readingsOf(rows);
   const latest = samples.at(-1);
   if (!start) return null;
   const startDone = rows.some((r) => r.phase === "before" && r.status !== "running");

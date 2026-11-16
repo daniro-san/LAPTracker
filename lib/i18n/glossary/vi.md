@@ -57,6 +57,8 @@ Words already used in `lib/i18n/vi.ts`. Reuse them so the pages stay consistent;
 | reading                   | lần đọc                      | `ledger.liveReadings`, `ledger.liveNoReading` — one poll of the game's standings |
 | kills gained              | tiêu diệt tăng               | `ledger.withKills`, `ledger.topShare` — the event page's kills lists             |
 | peak                      | đỉnh                         | `ledger.liveLast` — the highest value in the span                                |
+| Server fight clock        | Đồng hồ giao tranh máy chủ   | `ledger.fightClock` — the section heading and its link                           |
+| Share of the kills        | Phần Tiêu diệt               | `ledger.fightClockShare`, `ledger.comparePulseHelp` — an event's share of kills  |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

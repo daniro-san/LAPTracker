@@ -82,6 +82,28 @@ export const idID = {
     liveKillsSoFar: "Kills sejauh ini: {kills}",
     liveLast: "{min} menit terakhir: {last} (puncak {peak})",
     liveDone: "Perubahan sejak Awal pada pembacaan {time}. Buku di atas memakai Akhir pada {end}.",
+    fightClock: "Jam perang server",
+    fightClockLead:
+      "Kapan server berperang, event demi event. Tiap kotak adalah satu slot {min} menit dan tingginya adalah bagian Kills event itu yang didapat di slot tersebut. Slot sejajar dengan waktu server, jadi pukul 12 siang tetap pukul 12 siang di setiap baris.",
+    fightClockLink: "Bandingkan dengan event lain di jam perang server",
+    fightClockShare: "Bagian Kills",
+    fightClockOutline: "Diberi garis: {span} menit paling ramai di tiap event",
+    fightClockNoBusiest: "Pembacaan terlalu sedikit untuk menentukan {span} menit paling ramai",
+    fightClockOffSince: "Belum ada pembacaan {min} menit untuk event ini (mulai dari event {date})",
+    fightClockOffNext:
+      "Belum ada pembacaan {min} menit untuk event ini (mulai dari event berikutnya)",
+    fightClockOffMissed: "Tidak ada pembacaan {min} menit yang diambil untuk event ini",
+    fightClockOffWaiting: "Pembacaan {min} menit masuk selama event ini berjalan",
+    fightClockNone:
+      "Pembacaan {min} menit tiap event akan digambar di sini, mulai dari event berikutnya.",
+    comparePulseHelp:
+      "Bagian Kills tiap event yang didapat tiap {min} menit, sejajar dengan waktu server. {span} menit paling ramai diberi garis.",
+    comparePulseOffA:
+      "Event A belum punya pembacaan {min} menit, jadi denyut kedua event tidak bisa dibandingkan",
+    comparePulseOffB:
+      "Event B belum punya pembacaan {min} menit, jadi denyut kedua event tidak bisa dibandingkan",
+    comparePulseOffBoth:
+      "Kedua event belum punya pembacaan {min} menit, jadi denyutnya tidak bisa dibandingkan",
     fought: "Partisipasi perang",
     foughtSoFar: "Partisipasi perang sejauh ini",
     foughtHelp:

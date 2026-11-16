@@ -83,6 +83,29 @@ export const tr = {
     liveLast: "Son {min} dk: {last} (zirve {peak})",
     liveDone:
       "{time} okumasına göre Başlangıç’tan beri değişim. Yukarıdaki defter {end} itibarıyla Bitiş’i kullanır.",
+    fightClock: "Sunucu savaş saati",
+    fightClockLead:
+      "Sunucu, her etkinlikte ne zaman savaştı. Her kutu bir {min} dakikalık dilimdir; yüksekliği, etkinlikte o dilimde kazanılan Kills’in payıdır. Dilimler sunucu saatine göre dizilir, böylece öğle her satırda aynı hizaya gelir.",
+    fightClockLink: "Diğer etkinliklerle sunucu savaş saatinde karşılaştır",
+    fightClockShare: "Kills payı",
+    fightClockOutline: "Çerçeveli: her etkinliğin en yoğun {span} dakikası",
+    fightClockNoBusiest: "En yoğun {span} dakikayı belirlemek için okuma çok az",
+    fightClockOffSince:
+      "Bu etkinlik için {min} dakikalık okuma yok ({date} tarihli etkinlikle başlarlar)",
+    fightClockOffNext:
+      "Bu etkinlik için {min} dakikalık okuma yok (bir sonraki etkinlikle başlarlar)",
+    fightClockOffMissed: "Bu etkinlik için {min} dakikalık okuma alınmadı",
+    fightClockOffWaiting: "{min} dakikalık okumalar bu etkinlik sürerken gelir",
+    fightClockNone:
+      "Her etkinliğin {min} dakikalık okumaları, bir sonraki etkinlikle başlayarak burada çizilir.",
+    comparePulseHelp:
+      "Her etkinlikte her {min} dakikada kazanılan Kills’in payı, sunucu saatine göre hizalı. En yoğun {span} dakika çerçevelidir.",
+    comparePulseOffA:
+      "A etkinliğinde {min} dakikalık okuma yok, bu yüzden iki etkinliğin nabızları karşılaştırılamaz",
+    comparePulseOffB:
+      "B etkinliğinde {min} dakikalık okuma yok, bu yüzden iki etkinliğin nabızları karşılaştırılamaz",
+    comparePulseOffBoth:
+      "İki etkinliğin de {min} dakikalık okuması yok, bu yüzden nabızları karşılaştırılamaz",
     fought: "Savaşa katılım",
     foughtSoFar: "Şimdiye kadar savaşa katılım",
     foughtHelp:

@@ -17,6 +17,7 @@ import type { Dictionary } from "@/lib/copy";
 import { Disclosure } from "./Disclosure";
 import { EventLabel, eventTitle, ManualMark, type LabeledEvent } from "./EventLabel";
 import type { Clock } from "./format";
+import { FIGHT_CLOCK_PATH } from "./PulseStrip";
 import { ViewerSettings } from "./ViewerSettings";
 
 export interface SelectorEvent extends LabeledEvent {
@@ -26,6 +27,20 @@ export interface SelectorEvent extends LabeledEvent {
 /** Plum-header controls: in the soft drawn frame (paper ink), a paper tint on hover, deeper while
  * pressed or open, so they feel tappable. */
 const CONTROL = "tint-button rounded-xs";
+
+/** The first item of the Events list: the server fight clock, across events (D86). */
+function FightClockItem({ copy }: { copy: Dictionary }) {
+  return (
+    <li className="border-b border-rule">
+      <Link
+        href={FIGHT_CLOCK_PATH}
+        className="tint-button flex min-h-11 items-center px-3 py-1 text-sm font-medium"
+      >
+        {copy.ledger.fightClock}
+      </Link>
+    </li>
+  );
+}
 
 function EventSelector({
   events,
@@ -72,6 +87,7 @@ function EventSelector({
         </span>
       </summary>
       <ul className="absolute right-0 z-40 mt-1 max-h-[70vh] w-[min(18rem,calc(100vw-2rem))] overflow-y-auto bg-paper p-1 text-ink drawn-frame before:inset-0">
+        <FightClockItem copy={copy} />
         {events.map((e) => {
           const named = eventTitle(e);
           const home = e.id === homeId;

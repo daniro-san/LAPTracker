@@ -26,6 +26,16 @@ export {
 export { allianceNames } from "./names";
 export { eventSamples, type EventReading, type SampleAlliance, type SampleMember } from "./samples";
 export { eventProgress, type EventProgress } from "./live";
+export {
+  eventPulses,
+  getFightClock,
+  isDone,
+  sampledEventIds,
+  type EventPulse,
+  type FightClockEvent,
+  type PulseOptions,
+  type RowsOf,
+} from "./fight-clock";
 export { playerHistory, searchPlayers } from "./players";
 export type { Photo } from "./photo";
 export type { PlayerEventRow, PlayerHistory, PlayerMatch } from "./players";

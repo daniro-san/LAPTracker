@@ -63,6 +63,8 @@ Words already used in `lib/i18n/ru.ts`. Reuse them so the pages stay consistent;
 | Top 5                     | Топ-5                       | `ledger.topShare` — the 5 biggest gainers in an alliance                                    |
 | War turnout               | Участие                     | `ledger.fought` — the event page's kills section title                                      |
 | Gainers                   | растущие                    | `ledger.topShareHelp`, `ledger.fewGainers` — a member whose Kills rose in the event         |
+| Server fight clock        | Хронология боёв сервера     | `ledger.fightClock*`, `ledger.comparePulse*` — events side by side on the server clock      |
+| Outlined                  | обведено                    | `ledger.fightClockOutline`, `ledger.comparePulseHelp` — the busiest minutes of each event   |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

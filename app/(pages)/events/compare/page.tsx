@@ -8,12 +8,14 @@ import { cache, type ReactNode } from "react";
 
 import { Breadcrumbs } from "@/app/_ui/Breadcrumbs";
 import { compareHref, ComparePicker, StopCompareLink } from "@/app/_ui/ComparePicker";
+import { ComparePulse } from "@/app/_ui/ComparePulse";
 import { CompareTotals } from "@/app/_ui/CompareTotals";
 import { EmptyState } from "@/app/_ui/EmptyState";
+import { loadComparePulses } from "@/app/_ui/event-page";
 import { AllianceCompareCard, CompareHeader, eventHead } from "@/app/_ui/EventCompare";
 import { ExactToggle } from "@/app/_ui/ExactToggle";
 import { allianceLabel, type Clock } from "@/app/_ui/format";
-import { requestClock, requestCopy } from "@/app/_ui/locale";
+import { requestClock, requestCopy, requestLocale } from "@/app/_ui/locale";
 import { MemberCompareCard } from "@/app/_ui/MemberCompare";
 import { PlayerCompareCard, PlayerCompareTitle } from "@/app/_ui/PlayerCompare";
 import { ShowFirst } from "@/app/_ui/ShowFirst";
@@ -99,11 +101,14 @@ const anyMemberMark = (c: EventComparison) =>
 function Results({
   c,
   one,
+  pulse,
   clock,
   copy,
 }: {
   c: EventComparison;
   one: boolean;
+  /** The server pulse (D86): the list view only. */
+  pulse: ReactNode;
   clock: Clock;
   copy: Dictionary;
 }) {
@@ -112,6 +117,7 @@ function Results({
     <>
       <Legend memberMark={anyMemberMark(c)} copy={copy} />
       {!one && <CompareTotals data={c} clock={clock} copy={copy} />}
+      {!one && pulse}
       <CompareHeader lead={l.alliance} columns={[l.might, l.kills, l.members]} />
       <ul>
         {c.alliances.map((r) => (
@@ -137,6 +143,32 @@ function Results({
         </section>
       )}
     </>
+  );
+}
+
+/** The server pulse of the two events (D86): its rows are read through the shared event cache. */
+async function PulseSection({
+  c,
+  clock,
+  copy,
+  locale,
+}: {
+  c: EventComparison;
+  clock: Clock;
+  copy: Dictionary;
+  locale: string;
+}) {
+  const done = (e: EventComparison["a"]) => e.snapshots.some((s) => s.phase === "after");
+  const { pulses, everyMin } = await loadComparePulses(c.a.id, done(c.a), c.b.id, done(c.b));
+  return (
+    <ComparePulse
+      data={c}
+      pulses={pulses}
+      everyMin={everyMin}
+      clock={clock}
+      copy={copy}
+      locale={locale}
+    />
   );
 }
 
@@ -194,7 +226,7 @@ function TitleRow({
 export default async function ComparePage({ searchParams }: { searchParams: Search }) {
   const page = await read(searchParams);
   if (!page) notFound();
-  const [clock, copy] = await Promise.all([requestClock(), requestCopy()]);
+  const [clock, copy, locale] = await Promise.all([requestClock(), requestCopy(), requestLocale()]);
   const { comparison: c, player, unionId } = page;
   const one = unionId !== null ? c?.alliances[0] : undefined;
   return (
@@ -236,7 +268,17 @@ export default async function ComparePage({ searchParams }: { searchParams: Sear
             {page.a !== null && page.a === page.b ? copy.compare.same : copy.compare.onlyOne}
           </EmptyState>
         )}
-        {c && <Results c={c} one={one !== undefined} clock={clock} copy={copy} />}
+        {c && (
+          <Results
+            c={c}
+            one={one !== undefined}
+            pulse={
+              unionId === null && <PulseSection c={c} clock={clock} copy={copy} locale={locale} />
+            }
+            clock={clock}
+            copy={copy}
+          />
+        )}
         {player && <PlayerResults p={player} clock={clock} copy={copy} />}
       </main>
       <SiteFooter copy={copy} />

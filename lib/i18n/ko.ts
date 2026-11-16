@@ -82,6 +82,25 @@ export const ko = {
     liveKillsSoFar: "지금까지 처치: {kills}",
     liveLast: "최근 {min}분: {last} (최고 {peak})",
     liveDone: "{time} 읽기 기준 시작 이후 변화입니다. 위 장부는 {end} 종료 때 값을 씁니다.",
+    fightClock: "서버 전투 시계",
+    fightClockLead:
+      "서버가 이벤트마다 언제 싸웠는지 보여 줍니다. 칸 하나는 {min}분 구간이고, 높이는 이벤트 전체 획득 처치 중 그 구간에서 얻은 몫입니다. 구간은 서버 시계에 맞춰 나뉘므로 모든 줄에서 같은 자리는 같은 서버 시각입니다.",
+    fightClockLink: "서버 전투 시계에서 다른 이벤트와 비교",
+    fightClockShare: "처치 몫",
+    fightClockOutline: "테두리: 이벤트마다 가장 바빴던 {span}분",
+    fightClockNoBusiest: "가장 바빴던 {span}분을 가리기엔 기록이 너무 적어요.",
+    fightClockOffSince: "이 이벤트에는 {min}분 기록이 없어요 ({date} 이벤트부터 있어요)",
+    fightClockOffNext: "이 이벤트에는 {min}분 기록이 없어요 (다음 이벤트부터 있어요)",
+    fightClockOffMissed: "이 이벤트에는 {min}분 기록을 하지 않았어요.",
+    fightClockOffWaiting: "{min}분 기록은 이 이벤트가 진행되는 동안 들어와요.",
+    fightClockNone: "이벤트마다 {min}분 기록이 여기에 그려져요. 다음 이벤트부터 시작해요.",
+    comparePulseHelp:
+      "서버 시계에 맞춰, 이벤트마다 {min}분 구간에서 얻은 처치 몫이에요. 가장 바빴던 {span}분은 테두리로 표시돼요.",
+    comparePulseOffA:
+      "첫 번째 이벤트에는 {min}분 기록이 없어서 두 이벤트의 흐름을 비교할 수 없어요.",
+    comparePulseOffB:
+      "두 번째 이벤트에는 {min}분 기록이 없어서 두 이벤트의 흐름을 비교할 수 없어요.",
+    comparePulseOffBoth: "두 이벤트 모두 {min}분 기록이 없어서 흐름을 비교할 수 없어요.",
     fought: "전투 참여",
     foughtSoFar: "지금까지 전투 참여",
     foughtHelp: "시작과 종료 때 모두 연맹에 있던 인원입니다. 지원 플레이어는 처치가 늘지 않습니다.",

@@ -27,6 +27,7 @@ Words already used in `lib/i18n/pt-BR.ts`. Reuse them so the pages stay consiste
 | read (one roster read)    | leitura                            | `history.lead`, `history.daily`, `history.first` — a read of the member list        |
 | chart                     | gráfico                            | `ledger.chart`, `ledger.progressEmpty` — a player's progress graph                  |
 | median                    | do meio                            | `ledger.progressMedian` — "Membro do meio de {tag}", the middle member              |
+| fight clock               | relógio de lutas                   | `ledger.fightClock`, `ledger.fightClockLink` — the server's events on one clock     |
 | English                   | pt-BR                              | Key and use                                                                         |
 | ------------------------- | ---------------------------------- | ----------------------------------------------------------------------------------- |
 | Server 325 · Event Ledger | Servidor 325 · Registro de eventos | `site.ledger` — the page title                                                      |

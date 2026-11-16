@@ -1,4 +1,4 @@
-// The seed's sampled event (D69, issue 307): a reading every 15 minutes between the Start (12:00Z) and the
+// The seed's sampled events (D69, issue 307; the one before the latest too, D86): a reading every 15 minutes between the Start (12:00Z) and the
 // End (16:00Z) of the latest seed event, shaped like a KvK: about an hour of heavy fighting from 14:00Z (12:00
 // server), losses of ~3.5 B of might across the server, kills moving in steps, might moving at every reading
 // for most members. Each alliance's numbers update every 10-13 minutes (measured 2026-11-16), so a 15-minute
@@ -6,20 +6,24 @@
 // A local in-progress variant: delete the event's After and shift its times (see the 08zzzze handoff).
 import type { Db } from "../lib/db";
 import { allianceSnapshots, snapshots } from "../lib/schema";
-import { rosterAt, noise, type BaseAlliance } from "./seed-data";
+import { rosterAt, noise, type BaseAlliance, type Roster } from "./seed-data";
 
 const MIN = 60_000;
 const EVERY = 15;
-/** Share of each 15 minutes' change that falls in each slot, 12:15Z..15:45Z: quiet, heavy 14:15-15:00Z, tail. */
-const WEIGHTS = [1, 1, 1, 1, 2, 2, 3, 8, 14, 18, 20, 14, 6, 4, 2];
+/** Share of each 15 minutes' change that falls in each slot, 12:15Z..15:45Z, by seed event: the latest is
+ * quiet, then heavy 14:15-15:00Z, then a tail; the one before fought earlier and shorter (13:00-13:45Z). */
+const PROFILES: Record<number, number[]> = {
+  1: [1, 2, 6, 14, 20, 16, 8, 4, 2, 1, 1, 1, 1, 1, 1],
+  2: [1, 1, 1, 1, 2, 2, 3, 8, 14, 18, 20, 14, 6, 4, 2],
+};
 const MIGHT_LOSS = 3.5e9;
 
 /** Cumulative share of the whole change `minute` minutes after the Start (linear inside a slot). */
-function shareAt(minute: number): number {
-  const total = WEIGHTS.reduce((a, b) => a + b, 0);
-  const slot = Math.min(Math.floor(minute / EVERY), WEIGHTS.length);
-  const done = WEIGHTS.slice(0, slot).reduce((a, b) => a + b, 0);
-  const inside = slot < WEIGHTS.length ? (WEIGHTS[slot] as number) * ((minute % EVERY) / EVERY) : 0;
+function shareAt(weights: number[], minute: number): number {
+  const total = weights.reduce((a, b) => a + b, 0);
+  const slot = Math.min(Math.floor(minute / EVERY), weights.length);
+  const done = weights.slice(0, slot).reduce((a, b) => a + b, 0);
+  const inside = slot < weights.length ? (weights[slot] as number) * ((minute % EVERY) / EVERY) : 0;
   return (done + inside) / total;
 }
 
@@ -29,15 +33,36 @@ const updateAt = (index: number, minute: number) => {
   return Math.max(0, Math.floor((minute - offset) / period) * period + offset);
 };
 
+/** One sample's row, taken a few seconds after its slot. */
+async function insertSample(db: Db, eventId: number, slot: number, partial: boolean) {
+  const [row] = await db
+    .insert(snapshots)
+    .values({
+      eventId,
+      phase: "sample",
+      slotAt: new Date(slot),
+      startedAt: new Date(slot + 20_000),
+      finishedAt: new Date(slot + 62_000),
+      status: partial ? "partial" : "complete",
+      callsUsed: 21,
+      durationMs: 42_000,
+    })
+    .returning({ id: snapshots.id });
+  return (row as { id: number }).id;
+}
+
 export async function seedSamples(
   db: Db,
   base: BaseAlliance[],
   eventId: number,
   start: Date,
   end: Date,
+  event = 2,
 ): Promise<number> {
-  const before = base.map((_, i) => rosterAt(base, i, 2, "before"));
-  const after = base.map((_, i) => rosterAt(base, i, 2, "after"));
+  const weights = PROFILES[event] as number[];
+  const [before, after] = (["before", "after"] as const).map((phase) =>
+    base.map((_, i) => rosterAt(base, i, event, phase)),
+  ) as [Roster[], Roster[]];
   const serverPower = before.reduce((s, r) => s + r.members.reduce((t, m) => t + m.power, 0), 0);
   const lossShare = MIGHT_LOSS / serverPower;
   let taken = 0;
@@ -47,21 +72,10 @@ export async function seedSamples(
     slot += EVERY * MIN
   ) {
     const minute = (slot - start.getTime()) / MIN;
-    const last = slot + EVERY * MIN >= end.getTime();
-    const [snap] = await db
-      .insert(snapshots)
-      .values({
-        eventId,
-        phase: "sample",
-        slotAt: new Date(slot),
-        startedAt: new Date(slot + 20_000),
-        finishedAt: new Date(slot + 62_000),
-        status: last ? "partial" : "complete",
-        callsUsed: 21,
-        durationMs: 42_000,
-      })
-      .returning({ id: snapshots.id });
-    const snapshotId = (snap as { id: number }).id;
+    const last =
+      event === 2 && // only the latest event ends with a stale and a failed alliance
+      slot + EVERY * MIN >= end.getTime();
+    const snapshotId = await insertSample(db, eventId, slot, last);
     const rows = base.flatMap((a, i): (typeof allianceSnapshots.$inferInsert)[] => {
       const [b, f] = [before[i], after[i]];
       if (!b || !f) return [];
@@ -73,7 +87,7 @@ export async function seedSamples(
         source: "v1" as const,
       };
       if (last && i === 11) return [{ ...common, isFresh: false, error: "v1 503 after 3 retries" }];
-      const share = shareAt(updateAt(i, minute));
+      const share = shareAt(weights, updateAt(i, minute));
       const kills = new Map(f.members.map((m) => [m.uid, m.kills]));
       const members = b.members.map((m) => {
         const gain = Math.max(0, (kills.get(m.uid) ?? m.kills) - m.kills) * 12; // a KvK's kills, not a day's
