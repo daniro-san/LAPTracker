@@ -5,7 +5,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { parseAllianceDuelRanking } from "./parse-alliance-duel";
-import { parseDonationRanking } from "./parse-donation";
+import { parseRanking } from "./parse-ranking";
 import { parseSecretOpsReport } from "./parse-secret-ops";
 import { openScreenshotReader, type ScreenshotReader } from "./read-screenshot";
 import { recorded, screenshot } from "./test-helpers";
@@ -46,7 +46,7 @@ describe.skipIf(process.env.OCR_TEST !== "1")("screenshot OCR (OCR_TEST=1)", () 
       const name = "22-donation-weekly";
       const lines = await reader.read(screenshot(name));
       expect(sameLines(lines, recorded(name))).toBeGreaterThanOrEqual(SAME_LINES);
-      expect(parseDonationRanking(lines)).toEqual(parseDonationRanking(recorded(name)));
+      expect(parseRanking(lines)).toEqual(parseRanking(recorded(name)));
     },
     SLOW,
   );

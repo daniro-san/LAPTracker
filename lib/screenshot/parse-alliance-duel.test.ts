@@ -12,10 +12,10 @@ describe("parseAllianceDuelRanking", () => {
       174488831, 97060474, 90772562, 87244291, 84302976, 81352526, 77384266, 77185919,
     ]);
     expect(rows.slice(1).map((r) => r.name)).toEqual([
-      "KasoarsThorne",
-      "zsu78HUN",
+      "Thome",
+      "Zsu78HUN",
       "Lordanirosan",
-      "Vins",
+      "viris",
       "SnowPug",
       "helloallyou",
       "Kilare",
@@ -66,12 +66,31 @@ describe("parseAllianceDuelRanking", () => {
     expect(rows.map((r) => r.flags)).toEqual([[], [], [], [], [], ["order"], [], []]);
   });
 
-  it("flags a rank the picture reads differently from the row's place", () => {
-    // The OCR read the 21 of the fifth row of this page as a 2.
-    const rows = parseAllianceDuelRanking(recorded("29-alliance-duel-weekly-mine"), weekly);
-    expect(rows[4]).toMatchObject({ rank: 21, flags: ["rank", "gap"] });
-    // The sequence breaks at the misread rank and again at the row after it.
-    expect(rows.filter((r) => r.flags.length > 0).map((r) => r.rank)).toEqual([21, 22]);
+  it("flags a rank the picture reads differently, and keeps the ranks around it", () => {
+    // The OCR read the 31 of the seventh row of this page as a 3.
+    const rows = parseAllianceDuelRanking(recorded("30-alliance-duel-weekly-mine"), weekly);
+    expect(rows[6]).toMatchObject({ rank: 31, flags: ["rank"] });
+    expect(rows.map((r) => r.rank)).toEqual([25, 26, 27, 28, 29, 30, 31, 32]);
+  });
+
+  it("reads a phone picture's rows, medal rows and the day tab included, and drops the pinned own row", () => {
+    const rows = parseAllianceDuelRanking(recorded("99-alliance-duel-daily-phone"), weekly);
+    expect(rows.map((r) => [r.rank, r.points])).toEqual([
+      [1, 22961474],
+      [2, 18345893],
+      [3, 14800884],
+      [4, 12401468],
+      [5, 11146597],
+      [6, 10850521],
+      [7, 10167223],
+    ]);
+  });
+
+  it("drops the pinned row under a full page even when its rank was not read", () => {
+    // Picture 98: eight rows, then the uploader's row 76 whose rank the OCR lost.
+    const rows = parseAllianceDuelRanking(recorded("98-alliance-duel-weekly-phone"), weekly);
+    expect(rows).toHaveLength(8);
+    expect(rows.some((r) => r.points === 2479687)).toBe(false);
   });
 
   it("returns a row whose number was not read with null points and the flag", () => {
