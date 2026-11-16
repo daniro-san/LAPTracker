@@ -271,16 +271,21 @@ export async function renderEventImage(e: EventImageInput): Promise<Uint8Array<A
   return new Uint8Array(await new ImageResponse(picture, size).arrayBuffer());
 }
 
-/** The picture, or null when it failed or took longer than RENDER_LIMIT_MS: the message then goes as text. */
-export async function eventImage(e: EventImageInput): Promise<Uint8Array<ArrayBuffer> | null> {
+/**
+ * The picture, or null when it failed or took longer than `limitMs` (RENDER_LIMIT_MS in production):
+ * the message then goes as text. Tests that check the drawing pass a longer limit, so a loaded machine
+ * does not turn a slow render into a missing picture (issue 313).
+ */
+export async function eventImage(
+  e: EventImageInput,
+  { limitMs = RENDER_LIMIT_MS }: { limitMs?: number } = {},
+): Promise<Uint8Array<ArrayBuffer> | null> {
   const failed = (reason: string) => {
     console.error("notify.image_failed", { event_id: e.eventId, reason });
     return null;
   };
   let timer: ReturnType<typeof setTimeout> | undefined;
-  const late = new Promise<"late">(
-    (resolve) => (timer = setTimeout(resolve, RENDER_LIMIT_MS, "late")),
-  );
+  const late = new Promise<"late">((resolve) => (timer = setTimeout(resolve, limitMs, "late")));
   const drawn = renderEventImage(e).catch((err: unknown) =>
     failed(err instanceof Error ? err.name : "unknown"),
   );
