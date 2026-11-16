@@ -7,6 +7,9 @@
  */
 export const RUN_STALE_AFTER_MS = 150_000;
 
+/** Measured from the start of the run; the route's maxDuration is 120 s (docs/decisions/D25). */
+export const RUN_DEADLINE_MS = 100_000;
+
 /** Roster kills. A member with `kills: null` counts as 0 (docs/decisions/D15). */
 export function sumKills(members: readonly { kills: number | null }[]): number {
   return members.reduce((total, m) => total + (m.kills ?? 0), 0);

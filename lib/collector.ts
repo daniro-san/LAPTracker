@@ -4,6 +4,7 @@ import { ALLIANCES, SERVER } from "../config/alliances";
 import { requiredQuota } from "./budget";
 import { claim, RunRefusedError } from "./collector-claim";
 import { dataRow, errorRow, failedList } from "./collector-rows";
+import { RUN_DEADLINE_MS } from "./compute";
 import type { Logger } from "./logger";
 import type { AllianceRow, MemberRow, Phase, Repo, SnapshotStatus } from "./repo";
 import {
@@ -19,8 +20,8 @@ import { describe, httpStatusOf, upstreamDetail } from "./upstream-errors";
 export const MAX_UPSTREAM_CALLS = 120;
 export { FRESH_MAX_AGE_MS } from "./collector-rows";
 export { RunRefusedError } from "./collector-claim";
-/** Measured from the start of the run; the route's maxDuration is 120 s (docs/decisions/D25). */
-export const RUN_DEADLINE_MS = 100_000;
+/** Measured from the start of the run (docs/decisions/D25); defined in lib/compute so pages can read it. */
+export { RUN_DEADLINE_MS };
 const CONCURRENCY = 4;
 
 export interface Deps {

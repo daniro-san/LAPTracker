@@ -25,6 +25,7 @@ import { FactList } from "@/lib/brand/components/FactList";
 import { DroppedStitch, StitchedCheck } from "@/lib/brand/components/StatusIcons";
 import { TextLink } from "@/lib/brand/components/TextLink";
 import { copy, fill } from "@/lib/copy";
+import { dailyReadEndsInDay } from "@/lib/daily-read";
 import { getEnv, type Env } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
 import { listRuns, recentTicks } from "@/lib/queries/admin";
@@ -280,7 +281,10 @@ export default async function AdminPage() {
           beforeAtText={clock.stamp(current.beforeAt)}
           current={currentView(current, row, now, clock)}
           manual={manual && roundView(manual, clock)}
-          daily={dailyView(daily, now, clock)}
+          daily={
+            // No Retry that could run past the server reset (D72): the route refuses it too.
+            dailyReadEndsInDay(now, env) ? dailyView(daily, now, clock) : null
+          }
           running={views.running}
         />
       </AdminSection>
