@@ -41,11 +41,12 @@ export function ComparePulse({
   const [a, b] = [pulses.a.clock, pulses.b.clock];
   if (!a || !b) {
     const off = !a && !b ? l.comparePulseOffBoth : !a ? l.comparePulseOffA : l.comparePulseOffB;
+    const when = eventHead(!a ? data.a : data.b, !a ? data.b : data.a, clock);
     return (
       <section aria-labelledby="compare-pulse" className="mb-4 border-y border-rule py-3">
         <Heading text={l.livePulse} />
         <p className="mt-2 rounded-sm border border-dashed border-rule px-3 py-2 text-body-sm text-ink/70">
-          {fill(off, { min: everyMin })}
+          {fill(off, { min: everyMin, when })}
         </p>
       </section>
     );

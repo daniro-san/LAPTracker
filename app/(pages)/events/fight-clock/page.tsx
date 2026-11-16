@@ -99,7 +99,7 @@ function SampledRow({
         className="tint-button block min-h-11 px-1 py-1"
       >
         <Heading event={event} clock={clock} />
-        <span className="sr-only">, {copy.ledger.liveDuring}</span>
+        <span className="mb-1 block text-body-sm text-ink/70">{copy.ledger.liveDuring} ›</span>
         <span className="mb-2 block text-body-sm tabular-nums">
           {busiestText(own, everyMin, clock, copy, locale)}
         </span>

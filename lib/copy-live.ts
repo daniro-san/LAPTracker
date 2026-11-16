@@ -49,9 +49,9 @@ export const liveCopy = {
   comparePulseHelp:
     "Share of each event's kills gained in each {min} minutes, lined up on the server clock. The busiest {span} minutes are outlined.",
   comparePulseOffA:
-    "Event A has no {min}-minute readings, so the two events' pulses cannot be compared",
+    "Event A ({when}) has no {min}-minute readings, so the two events' pulses cannot be compared",
   comparePulseOffB:
-    "Event B has no {min}-minute readings, so the two events' pulses cannot be compared",
+    "Event B ({when}) has no {min}-minute readings, so the two events' pulses cannot be compared",
   comparePulseOffBoth:
     "Neither event has {min}-minute readings, so their pulses cannot be compared",
 };
