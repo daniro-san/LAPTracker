@@ -1,6 +1,6 @@
-# chore — PostHog: analytics, session replay and client errors (D77)
+# 11m — PostHog: analytics, session replay and client errors (D77)
 
-Closes #326. Decision D77. Owner changes during the session (2026-11-16): US region instead of EU; PostHog on every page with session replay everywhere and masking per area, instead of replay only on `/w` and nothing on `/admin`; the key is the Vercel variable `POSTHOG_KEY`, read on the server, instead of `NEXT_PUBLIC_POSTHOG_KEY`.
+Part of #326: the four events whose UI is not on `dev` yet are wired by the Members PR (#329). Decision D77. Owner changes during the session (2026-11-16): US region instead of EU; PostHog on every page with session replay everywhere and masking per area, instead of replay only on `/w` and nothing on `/admin`; the key is the Vercel variable `POSTHOG_KEY`, read on the server, instead of `NEXT_PUBLIC_POSTHOG_KEY`.
 
 ## Built
 - **Dependency:** `posthog-js` 1.444.4, pinned exactly (released 2026-11-02, no install scripts). `pnpm-workspace.yaml` denies the postinstall of its dependency `core-js` (a funding banner, D10).
@@ -12,20 +12,24 @@ Closes #326. Decision D77. Owner changes during the session (2026-11-16): US reg
     - It sets `area` (`public` / `workspace` / `admin`) and `workspace` (the slug) from the event's own path.
     - It replaces exception messages with `[masked]` on `/w` and `/admin`.
     - It also holds `MASK_CLASS` (`ph-mask`).
-  - `events.ts`: the closed list of six custom events with closed-list properties, `track()`, `SIGNED_IN_HASH`. It does not import posthog-js; calls wait for PostHog to load and do nothing when it never loads.
+  - `events.ts`: the closed list of six custom events with closed-list properties, `track()`, `SIGNED_IN_HASH`, and `analyticsKey(env)` (the key when `VERCEL_ENV` is `production` and `POSTHOG_KEY` is set, used by the layout and the sign-in). It does not import posthog-js; calls wait for PostHog to load and do nothing when it never loads or fails to load.
   - `posthog.ts`:
     - `startPostHog(key)`: the SDK config. `no-external` build, memory persistence, no person profiles, no device model, no campaign parameters, no URL hashes, autocapture ignored on `/admin` and `/w`, exception autocapture without console errors, no heatmaps, dead clicks, performance, flags, surveys, tours or conversations, and the replay masking.
     - `followPath`: starts and stops replay by area (public 25 %, `/w` and `/admin` always). It imports the recorder chunk the first time a page is recorded.
   - `ingest.ts`: the `/ingest` forwarding (body, content type and encoding, PostHog's query string, our origin; nothing else).
+    - Only the paths the SDK uses: `POST /e/`, `/i/v0/e/` (the events endpoint PostHog's remote config can name), `/s/`, and `GET /array/<key>/config`. Anything else answers 404 without a request to PostHog.
+    - A body over 1 MB (`content-length`, then the bytes read) answers 413.
+    - The remote config keeps PostHog's `cache-control`, or `public, s-maxage=300` when it has none; ingestion answers `no-store`.
 - **`app/ingest/[...path]/route.ts`**: GET and POST, both `forwardToPostHog`.
 - **`app/_ui/PostHogAnalytics.tsx`**:
-  - started during its first render, which comes before any component's effect;
+  - the SDK chunk is requested after the window `load` event, in a `requestIdleCallback` (3 s timeout; a `setTimeout` where it does not exist); a failed import leaves tracking a no-op, with no unhandled rejection;
+  - `loadAnalytics` is registered during its first render, which comes before any component's effect, so a sign-in or language event made before the SDK arrives waits for it;
   - follows `usePathname()` for replay;
   - counts `ws_sign_in_completed` once per page load from the `#signed-in` fragment, then removes it with `history.replaceState(null, …)`.
-- **`app/layout.tsx`**: reads `POSTHOG_KEY` on the server and renders `<PostHogAnalytics apiKey=…>` only when `VERCEL_ENV === "production"` and the key is set.
+- **`app/layout.tsx`**: reads `POSTHOG_KEY` on the server (`analyticsKey(process.env)`) and renders `<PostHogAnalytics apiKey=…>` only when `VERCEL_ENV === "production"` and the key is set. `lib/env.ts` has both names, optional.
 - **Masked areas:** `app/(private)/w/[slug]/layout.tsx` and `app/(pages)/admin/layout.tsx` wrap their pages in `<div className="ph-mask">`.
 - **Wired events:**
-  - `lib/private/sign-in.ts` redirects a successful sign-in to `/w/<slug>#signed-in` (tests updated);
+  - `lib/private/sign-in.ts` redirects a successful sign-in to `/w/<slug>#signed-in` only when analytics is on, else to `/w/<slug>` as before;
   - `app/(private)/_ui/LanguageSwitch.tsx` sends `ws_language_switched` when the language changes.
 - **`proxy.ts`:**
   - `/ingest/*` gets the deny-all CSP, as `/api/*` and `/img/*` do;
@@ -33,6 +37,8 @@ Closes #326. Decision D77. Owner changes during the session (2026-11-16): US reg
 - **Tests:**
   - `lib/analytics/sanitise.test.ts` (3);
   - `lib/analytics/events.test.ts` (1, type-level, checked by `tsc`);
+  - `lib/analytics/ingest.test.ts` (1): the allowlist and the cap, with `fetch` mocked;
+  - `lib/private/sign-in.test.ts`: one new test, the fragment only with analytics on (a preview with the key gets none);
   - `lib/private/roster-fields.test.ts` now asserts that the analytics files are in its scan.
 - **Docs:** D77 and its index line, a README section "Analytics, session replay and errors (PostHog)", `docs/ARCHITECTURE.md` (the `lib/analytics` and `app/ingest` layers, the dependency rule), `.env.example` (`POSTHOG_KEY`).
 
@@ -43,8 +49,9 @@ Closes #326. Decision D77. Owner changes during the session (2026-11-16): US reg
 - **Our own sampling.** Public sessions are sampled in the browser (`PUBLIC_REPLAY_SAMPLE = 0.25`, once per page load), and `startSessionRecording(true)` overrides PostHog's own sampling. A sampled-out public visitor never downloads the recorder, and `/w` and `/admin` are always recorded.
 - **`area` and `workspace` are set in `before_send` from each event's path**, not with `register()`. A registered property is updated in an effect, after the history-change page view of a client-side navigation is sent.
 - **Exception messages on `/w` and `/admin` are replaced whole.** A coordinate-pair or timestamp pattern would miss a value printed any other way and does not catch names. The type and stack frames stay. Public messages keep their text, with URLs cut. Public pages never receive the blocked roster fields.
-- **Autocapture is off on `/w` and `/admin`** (`url_ignorelist`). The custom events cover the workspace, and `/admin` gets page views, exceptions and replay, as the owner listed.
-- **Sign-in event.** A `#signed-in` fragment on the callback's success redirect is read by the browser, never by a server. The daily silent re-authorisation (`prompt=none`) goes through the same redirect, so it counts as a sign-in too. The callback does not know whether a sign-in was silent.
+- **Click autocapture on public pages is intended.** It feeds PostHog's click heatmaps, and the clicked text there is public game data. It is off on `/w` and `/admin` (`url_ignorelist`): the custom events cover the workspace, and `/admin` gets page views, exceptions and replay, as the owner listed.
+- **The SDK loads after the page** (review of #332): after `load` and an idle moment, so it never delays the page. The first page view is sent when it starts, with the URL of that moment.
+- **Sign-in event.** A `#signed-in` fragment on the callback's success redirect, only when analytics is on, is read by the browser, never by a server. The daily silent re-authorisation (`prompt=none`) goes through the same redirect, so it counts as a sign-in too. The callback does not know whether a sign-in was silent.
 - **Filter names** for `ws_filter_used` come from issue #296: `new`, `low_donations`, `missing_data`, `away`, `r4_plus`. The first-use and copy events have no properties.
 
 ## Deviations
@@ -56,7 +63,11 @@ Closes #326. Decision D77. Owner changes during the session (2026-11-16): US reg
 - `save_campaign_params: false` does not stop posthog-js from sending `$session_entry_utm_*` and click ids read from the entry URL. The sanitiser drops them (found by the local check, which entered with `?utm_source=x`).
 
 ## Verified
+- Checks (a)–(f) were run manually with a Playwright harness against a local production build; the evidence is outside the repo, and `pnpm check` covers only the sanitiser, the type test and the fence test, plus (since the review of #332) the `/ingest` allowlist and cap and the sign-in fragment.
 - `pnpm check` exit 0 (load average 30–40): prettier, eslint, tsc, vitest 76 files passed and 1 skipped, 369 tests passed and 1 skipped, no timeout; drift gate "Everything's fine"; i18n "17 languages up to date".
+- **After the review of #332**, on a new production build with the deferred SDK load, the harness ran again: (a)–(f) pass (evidence in `posthog-evidence/rerun-review-332/`).
+  - The harness's `/admin` pages now stay 16 s each. The SDK starts after `load` and an idle moment, the fixture's 5 s minimum duration counts from there, and a replay batch sent at unload goes out as a beacon, which Playwright does not intercept.
+  - The proxy on that build: an unknown path and `/ingest/static/recorder.js` answer 404, a 1.1 MB body 413, the remote config `cache-control: public, s-maxage=300`, an event `no-store`.
 - Probes, each reverted:
   - with `MemberFilter = string`, `tsc` fails `events.test.ts` twice (the `expectTypeOf` assertion and an unused `@ts-expect-error`);
   - a scratch `lib/analytics/zz-probe.ts` reading `daily_tech` fails `roster-fields.test.ts` with `lib/analytics/zz-probe.ts: daily_tech`.
@@ -94,7 +105,7 @@ Closes #326. Decision D77. Owner changes during the session (2026-11-16): US reg
 - PostHog's free allowances read with the PostHog docs search on 2026-11-16: 1M events, 5K recordings, 100K exceptions; over a limit, ingestion drops.
 
 ## Open issues
-1. **Members tab (#296), first-use cards (#312):** `ws_copy_spreadsheet`, `ws_filter_used`, `ws_first_use_done` and `ws_first_use_skipped` are exported from `lib/analytics/events.ts`. Their UI does not exist on `dev`, so they are not wired.
+1. **Members tab (#296), first-use cards (#312):** `ws_copy_spreadsheet`, `ws_filter_used`, `ws_first_use_done` and `ws_first_use_skipped` are exported from `lib/analytics/events.ts`. Their UI does not exist on `dev`, so they are not wired here; the Members PR (#329) wires them after this merges.
 2. **"Unique visitors" counts page loads.** With memory persistence, every full page load gets a new random id, so PostHog's visitor counts mean page loads.
 3. **No location data.** PostHog receives Vercel's address, so its GeoIP shows Vercel's region, not the visitor's country.
 4. **Function invocations.** Every PostHog request is one Vercel function invocation (Hobby: 1M a month, shared with the crons and pages). Not measured on production.
@@ -102,7 +113,7 @@ Closes #326. Decision D77. Owner changes during the session (2026-11-16): US reg
 6. **A privacy note in the footer** is an open option in D77, not built.
 7. **Bundle cost.** The SDK chunk is about 125 KB gzip (`dist/module.no-external.js` measured with `gzip -9`), loaded on every production page. The recorder, about 68 KB more, loads only on recorded pages.
 8. **Four transitive packages are younger than two weeks** (`@posthog/core` 1.68.0, `@posthog/types` 1.425.1, `@posthog/browser-common` 0.10.8, `dompurify` 3.4.18). The browser does not run them: the posthog-js dist files are self-contained. The build uses them for types only.
-9. **Not committed:** a route test of the `/ingest` proxy (no cookie, no IP forwarded). It was checked by hand (Verified). It could be a test if the owner wants one.
+9. **Replay batches over 1 MB** (compressed) are refused with 413. The recorder flushes at about 0.9 MB before compression; the largest whole run in the local check compressed to 158 KB.
 
 ## Next
 Session: #296 — Workspace: Members tab with API data and weekly donations.
