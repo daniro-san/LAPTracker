@@ -213,4 +213,4 @@ Plan changes needed: none. The workspace track lives in issues #293–#321, not 
 - The how-to page is done: `/w/<slug>/how-to`. Done_when "one officer per language finishes the cards on a phone" is still open.
 </adjustments>
 
-PR: (added by the orchestrator)
+https://github.com/daniro-san/LAPTracker/pull/329
