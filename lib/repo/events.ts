@@ -1,11 +1,11 @@
 // events table. An event carries its own phase times (before_at, after_at): scheduled events get them from
 // the env when the tick creates the row, rehearsals from the moment they are created (plan §3.1).
-import { and, asc, eq, gt, gte, isNull, lt, lte, ne, or } from "drizzle-orm";
+import { and, asc, eq, gt, gte, isNull, lt, lte, or } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { events, snapshots } from "../schema";
 import type { EventRow, Phase } from "./index";
-import { findSnapshot } from "./snapshots";
+import { findSnapshot, phaseSnapshot } from "./snapshots";
 
 export type ManualVisibility = "admin" | "standalone" | "history";
 
@@ -251,7 +251,7 @@ export async function scheduledEventDone(db: Db, eventAtUtc: Date): Promise<bool
         eq(events.isTest, false),
         eq(snapshots.status, "complete"),
         // Its Before and After: a complete sample (D69) is not one of the two.
-        ne(snapshots.phase, "sample"),
+        phaseSnapshot,
       ),
     );
   return new Set(rows.map((r) => r.phase)).size === 2;

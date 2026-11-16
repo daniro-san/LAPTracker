@@ -3,7 +3,16 @@ import { and, eq, inArray, ne, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { snapshots } from "../schema";
-import type { Phase, SnapshotResult, SnapshotRow } from "./index";
+import type { Phase, SnapshotPhase, SnapshotResult, SnapshotRow } from "./index";
+
+// INVARIANT queries.phases-not-samples (D69): the one SQL predicate for "an event's Before or After, not a
+// sample". Every reader of the two phases uses it (lib/queries/visibility.ts re-exports it); `isSample` is
+// the same test on a row already in memory.
+export const phaseSnapshot = ne(snapshots.phase, "sample");
+
+export function isSample(phase: SnapshotPhase): phase is "sample" {
+  return phase === "sample";
+}
 
 export async function findSnapshot(
   db: Db,
@@ -129,7 +138,7 @@ export async function listPhaseReports(db: Db, eventId: number): Promise<PhaseRe
   const rows = await db.select().from(snapshots).where(eq(snapshots.eventId, eventId));
   return rows.flatMap((r) =>
     // A sample is not a phase: the event's message keeps its Before and After blocks only (D69).
-    r.phase === "sample" || r.status === "running" || !r.finishedAt
+    isSample(r.phase) || r.status === "running" || !r.finishedAt
       ? []
       : [
           {

@@ -6,7 +6,7 @@ import { and, eq } from "drizzle-orm";
 import { rankBy } from "../compute";
 import type { Db } from "../db";
 import { allianceSnapshots, events, snapshots } from "../schema";
-import { chainEvent, phaseSnapshot } from "./visibility";
+import { chainEvent, phaseColumn, phaseSnapshot } from "./visibility";
 
 export interface Ranks {
   might: number | null;
@@ -31,7 +31,7 @@ function rankGroup(rows: Ranked[]): Map<number, Ranks> {
 }
 
 const rankColumns = {
-  phase: snapshots.phase,
+  phase: phaseColumn,
   unionId: allianceSnapshots.unionId,
   power: allianceSnapshots.totalPower,
   kills: allianceSnapshots.totalKills,
@@ -46,7 +46,7 @@ export async function eventRanks(
     .select(rankColumns)
     .from(allianceSnapshots)
     .innerJoin(snapshots, eq(snapshots.id, allianceSnapshots.snapshotId))
-    .where(eq(snapshots.eventId, eventId));
+    .where(and(eq(snapshots.eventId, eventId), phaseSnapshot));
   const out = new Map<number, Partial<Record<Phase, Ranks>>>();
   for (const phase of ["before", "after"] as const) {
     const ranked = rankGroup(

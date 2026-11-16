@@ -5,6 +5,7 @@ import { and, eq, inArray, isNull, ne, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
 import type { SnapshotPhase } from "../repo";
+import { isSample } from "../repo/snapshots";
 import { allianceSnapshots, events, memberSnapshots, snapshots } from "../schema";
 import { publicEvent } from "./visibility";
 
@@ -98,7 +99,7 @@ export async function eventSamples(db: Db, eventId: number): Promise<EventReadin
     snaps.map((s) => s.id),
   );
   // Start and End keep their members as rows; a sample's are the arrays on its alliance row.
-  const phaseIds = new Set(snaps.filter((s) => s.phase !== "sample").map((s) => s.id));
+  const phaseIds = new Set(snaps.filter((s) => !isSample(s.phase)).map((s) => s.id));
   const memberRows = await phaseMembers(
     db,
     rows.filter((r) => phaseIds.has(r.snapshotId)).map((r) => r.id),

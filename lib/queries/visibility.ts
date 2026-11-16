@@ -9,8 +9,9 @@ import { events, snapshots } from "../schema";
 
 // INVARIANT queries.phases-not-samples: a read of an event's Before and After keeps its samples (D69) out,
 // so every page, route and message built on them reads exactly as before samples existed. Only
-// `eventSamples` (lib/queries/samples.ts) and the admin run lists read samples.
-export const phaseSnapshot = ne(snapshots.phase, "sample");
+// `eventSamples` (lib/queries/samples.ts) and the admin run lists read samples. The predicate is defined
+// once, in lib/repo/snapshots.ts, because lib/repo readers need it too.
+export { phaseSnapshot } from "../repo/snapshots";
 
 /** `snapshots.phase` typed as the two phases, for a select filtered with `phaseSnapshot`. */
 export const phaseColumn = sql<Phase>`${snapshots.phase}`;
