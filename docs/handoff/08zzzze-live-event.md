@@ -86,6 +86,28 @@ Plan changes needed: none in this PR. In the charts sketch of `08zzzza`'s Next, 
 - The window build must keep `nextReading` (`lib/live.ts`) and `eventProgress` working: they read the End's existence from `snapshots.phase = 'after'` and the Start from `phase = 'before'`; with windows, both move to the window's first and last samples.
 </adjustments>
 
+## UX review fixes (2026-11-16)
+
+Branch `fix/08zzzze-live-ux`, on top of `session/08zzzze-live-event` with `session/08zzzza-event-samples` (035de41) and `origin/dev` (#318) merged. Both merges left a duplicate `shareText` in `app/_ui/format.ts` and duplicated tables in 12 `lib/i18n/glossary/*.md`; both were fixed.
+
+- B1: `busiestSpan(slots, total)` divides by the kills gained since Start (sum of the standings' changes, `EventProgress.killsTotal`), not by the sum of the compared intervals. The share is capped at 100%. One test in `lib/live.test.ts` with a missing interval. Checked on a local database with a missing reading: 30.25 M of 72.63 M = 42%, as shown.
+- S1: while live there is no "Last updated" chip (`StatusChips` `live`); the capture window shows `END after 16:30 server time` instead of `END —` (`CaptureWindow` `endDue`, key `status.endAfter`). After the End the chip is back. The "Start 12:31 · End not yet" fallback was not built: the End's due time is always known.
+- S2: the strip shows from the Start: "Live · Start 15:37 · first reading 15:45 server time" and "No readings yet" (keys `ledger.liveFirst`, `ledger.liveNoReadings`). `eventProgress` returns progress for a live event with no sample (`latestAt` null, `startAt` added); the pulse and standings render only when `readings > 0`. `LiveRefresh` still arms at the next slot + 60 s (same `nextReading`).
+- S3: the busiest line needs 4 compared intervals (`BUSIEST_MIN_INTERVALS` in `lib/live.ts`, applied in `lib/queries/live.ts`, so the underline also waits). Before that, while live: "Kills so far: <compact total>".
+- S4: ordinary bars `bg-plum/60`: measured 3.66:1 light, 3.01:1 dark. Hairline `bg-ink/50`, not the `/45` asked for: `/45` measures 2.75:1 light; `/50` measures 3.15:1 light and 4.30:1 dark. Busiest pair stays full plum (11.35 and 6.21). Dark ordinary bars pass by 0.01.
+- S5: after the End the standings help reads "Change since Start at the {time} reading. The ledger above uses the End at {end}." (key `ledger.liveDone`). When the End never ran (window passed) the standings keep the live help.
+- S6: "During the event ↓" jump link beside "Grandma noticed ↓" (same classes, 44 px high), target `#live-during`; shown only when the finished event has a reading. Checked at 360: the link is 44 px high and the jump lands on the section.
+- S7: `overdueSlot` in `lib/live.ts`: the current slot, when after the latest sample (or the Start), before the End's slot and more than 3 minutes old. The strip appends "(reading due 16:15)" (key `ledger.liveOverdue`). Checked with a local database 20 minutes behind: "updated 16:00 · next 16:30 server time (reading due 16:15)".
+- N1: live standings show the top 5 and the viewer's own alliance with "Show all (20)": new client component `app/_ui/LiveStandings.tsx` reuses `visibleEntries` and `ShowAllButton`. `StatRow` got `mine`, so the viewer's row is marked even when it renders after `MyAllianceJump` ran.
+- N2: each standings card starts with its rank "#1" (position in the full standings; "#—" for an alliance with no change).
+- N3: under the busiest line, while live: "Last 15 min: 1.64M (peak 16.6M)" (key `ledger.liveLast`; the peak is the largest single interval).
+- N4: the first interval starts at the Start's own time (finished time, else started time), not the scheduled one: the axis reads 12:31, as the Start does.
+- N5: stub `h-2` (bars and legend), legend `text-sm`.
+- Takeaway: the strip has "Kills so far: NSE +13.4M · OGs +9.11M · TmS +8.24M" (top 3 by kills gained, tag and compact signed gain; key `ledger.liveKillsSoFar`, shared with S3's total). Compact figures use 3 significant digits, so the examples read `+9.11M` and not `+9.1M`. At 360 it wraps to two lines.
+- Copy: 7 new keys (`ledger.liveFirst`, `liveNoReadings`, `liveOverdue`, `liveKillsSoFar`, `liveLast`, `liveDone`, `status.endAfter`), translated to 17 languages with the translate-copy skill and stamped. `lib/copy.ts` was at the 300-line limit; `liveDone` is short enough to stay on one line.
+- Verified: `pnpm check` green (335 tests passed, 1 skipped; the i18n gate says 17 languages up to date). Local database from the seed on a scratch Postgres cluster (`lt_seed`, scratch copy `lt_run`; the `lap` database was not touched). States early (Start only), few (2 readings), live, live with a gap (sample 10 copied from 9, sample 14 missing), finished, and live with a late reading. Chromium and WebKit, light and dark, at 360 and 768: no horizontal overflow in any of the 40 captures. Screenshots: `docs/screenshots/08zzzze-live-360.png`, `08zzzze-early-360.png`, `08zzzze-finished-360.png`, `08zzzze-live-768.png`, `08zzzze-live-360-webkit-dark.png` (replaces the 390 one).
+- Not done / follow-ups: the strip and the capture window both show the Start time while live (S1 asked for both). An event whose End never ran after the window shows the finished layout with "Last updated" and "During the event"; not changed.
+
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
 https://github.com/daniro-san/LAPTracker/pull/319
