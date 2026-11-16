@@ -49,3 +49,5 @@ Plan changes needed: none.
 - `mightUnchanged(db, unionId)` in `lib/queries/might-unchanged.ts` is the one read for both lists; reuse it for any later Discord count or export. Thresholds are the exported constants.
 - Admin Discord copy is English only (D48): the line is `copy.discord.admin.mightLine`.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/289
