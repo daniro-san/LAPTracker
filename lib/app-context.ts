@@ -35,5 +35,6 @@ export function secretsOf(env: Env): string[] {
     env.LAP_API_KEY,
     env.NOTIFY_WEBHOOK_PUBLIC,
     env.NOTIFY_WEBHOOK_ADMIN,
+    env.DISCORD_CLIENT_SECRET,
   ].filter((s): s is string => s !== undefined);
 }

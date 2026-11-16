@@ -65,6 +65,11 @@ export const envSchema = z.object({
     z.string().regex(/^(role:)?\d{17,20}$/, "expected <id> or role:<id>"),
   ),
   LAP_LIVE_TEST: optional(z.enum(["0", "1"])),
+  // The workspace's Discord sign-in (D71). Optional: without them the app starts and /w/[slug] says
+  // sign-in is not set up. The base URL is overridable so tests and the local e2e reach a stub (D73).
+  DISCORD_CLIENT_ID: optional(z.string().regex(/^\d{17,20}$/, "expected a Discord application id")),
+  DISCORD_CLIENT_SECRET: optional(z.string().min(16, "expected 16+ characters")),
+  DISCORD_API_BASE_URL: z.url().default("https://discord.com/api"),
 });
 
 export type Env = z.infer<typeof envSchema>;

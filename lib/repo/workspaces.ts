@@ -1,0 +1,165 @@
+// workspaces, workspace_users and workspace_sessions (D71): what /admin writes, and the plain reads and
+// writes lib/private builds on. Who gets in, and the WorkspaceAccess brand, stay in lib/private.
+import { and, eq, lte, ne } from "drizzle-orm";
+
+import type { Db } from "../db";
+import { workspaces, workspaceSessions, workspaceUsers } from "../schema";
+
+export type WorkspaceRow = typeof workspaces.$inferSelect;
+
+/** A workspace's address, /w/<slug>: lowercase letters, digits and dashes; "auth" is the callback's. */
+export const WORKSPACE_SLUG = /^(?!auth$)[a-z0-9][a-z0-9-]{1,31}$/;
+
+export async function findWorkspaceBySlug(db: Db, slug: string): Promise<WorkspaceRow | null> {
+  const [row] = await db.select().from(workspaces).where(eq(workspaces.slug, slug));
+  return row ?? null;
+}
+
+export interface WorkspaceInput {
+  unionId: number;
+  slug: string;
+  discordGuildId: string;
+  leaderRoleIds: string[];
+}
+
+/** One workspace per alliance: a second save for the same union id edits it. */
+export async function saveWorkspace(db: Db, input: WorkspaceInput): Promise<"ok" | "slug_taken"> {
+  const [taken] = await db
+    .select({ id: workspaces.id })
+    .from(workspaces)
+    .where(and(eq(workspaces.slug, input.slug), ne(workspaces.unionId, input.unionId)));
+  if (taken) return "slug_taken";
+  const { slug, discordGuildId, leaderRoleIds } = input;
+  await db.insert(workspaces).values(input).onConflictDoUpdate({
+    target: workspaces.unionId,
+    set: { slug, discordGuildId, leaderRoleIds },
+  });
+  return "ok";
+}
+
+/**
+ * /admin's allowlist entry: the account is let in until the end of `expiresOn` (a YYYY-MM-DD day, UTC).
+ * A day already over is refused.
+ */
+export async function allowUserUntil(
+  db: Db,
+  workspaceId: number,
+  discordUserId: string,
+  expiresOn: string,
+  now: Date,
+): Promise<"ok" | "not_found" | "expiry_past"> {
+  const expiresAt = new Date(`${expiresOn}T23:59:59.999Z`);
+  if (expiresAt.getTime() <= now.getTime()) return "expiry_past";
+  return allowUser(db, workspaceId, discordUserId, expiresAt, "admin");
+}
+
+/** Puts a Discord account on the allowlist until `expiresAt`, or moves its expiry. */
+export async function allowUser(
+  db: Db,
+  workspaceId: number,
+  discordUserId: string,
+  expiresAt: Date,
+  addedBy: string,
+): Promise<"ok" | "not_found"> {
+  const [ws] = await db
+    .select({ id: workspaces.id })
+    .from(workspaces)
+    .where(eq(workspaces.id, workspaceId));
+  if (!ws) return "not_found";
+  const entry = { allowlisted: true, allowlistAddedBy: addedBy, allowlistExpiresAt: expiresAt };
+  await db
+    .insert(workspaceUsers)
+    .values({ workspaceId, discordUserId, ...entry })
+    .onConflictDoUpdate({
+      target: [workspaceUsers.workspaceId, workspaceUsers.discordUserId],
+      set: entry,
+    });
+  return "ok";
+}
+
+export type WorkspaceUserRow = typeof workspaceUsers.$inferSelect;
+
+export async function findWorkspaceUser(
+  db: Db,
+  workspaceId: number,
+  discordUserId: string,
+): Promise<WorkspaceUserRow | null> {
+  const [row] = await db
+    .select()
+    .from(workspaceUsers)
+    .where(
+      and(
+        eq(workspaceUsers.workspaceId, workspaceId),
+        eq(workspaceUsers.discordUserId, discordUserId),
+      ),
+    );
+  return row ?? null;
+}
+
+/** A successful sign-in: the person's row with their current name; returns its id. */
+export async function recordSignIn(
+  db: Db,
+  workspaceId: number,
+  discordUserId: string,
+  displayName: string,
+  now: Date,
+): Promise<number> {
+  const [user] = await db
+    .insert(workspaceUsers)
+    .values({ workspaceId, discordUserId, displayName, lastLoginAt: now })
+    .onConflictDoUpdate({
+      target: [workspaceUsers.workspaceId, workspaceUsers.discordUserId],
+      set: { displayName, lastLoginAt: now },
+    })
+    .returning({ id: workspaceUsers.id });
+  if (!user) throw new Error("workspace user upsert returned no row");
+  return user.id;
+}
+
+/** Stores a session; sessions already past their end, of any workspace, are deleted first. */
+export async function insertSession(
+  db: Db,
+  row: typeof workspaceSessions.$inferInsert,
+  now: Date,
+): Promise<void> {
+  await db.delete(workspaceSessions).where(lte(workspaceSessions.expiresAt, now));
+  await db.insert(workspaceSessions).values(row);
+}
+
+/** The session with this token hash and its person, whatever its workspace. */
+export async function findSession(db: Db, tokenHash: string) {
+  const [row] = await db
+    .select({
+      tokenHash: workspaceSessions.tokenHash,
+      workspaceId: workspaceSessions.workspaceId,
+      expiresAt: workspaceSessions.expiresAt,
+      userId: workspaceUsers.id,
+      displayName: workspaceUsers.displayName,
+      blocked: workspaceUsers.blocked,
+    })
+    .from(workspaceSessions)
+    .innerJoin(workspaceUsers, eq(workspaceUsers.id, workspaceSessions.workspaceUserId))
+    .where(eq(workspaceSessions.tokenHash, tokenHash));
+  return row ?? null;
+}
+
+/** Ends one session, only inside its own workspace. */
+export async function deleteSession(db: Db, workspaceId: number, tokenHash: string): Promise<void> {
+  await db
+    .delete(workspaceSessions)
+    .where(
+      and(
+        eq(workspaceSessions.tokenHash, tokenHash),
+        eq(workspaceSessions.workspaceId, workspaceId),
+      ),
+    );
+}
+
+/** "Sign out everyone in this workspace": every session of the workspace ends now. */
+export async function signOutWorkspace(db: Db, workspaceId: number): Promise<number> {
+  const gone = await db
+    .delete(workspaceSessions)
+    .where(eq(workspaceSessions.workspaceId, workspaceId))
+    .returning({ hash: workspaceSessions.tokenHash });
+  return gone.length;
+}
