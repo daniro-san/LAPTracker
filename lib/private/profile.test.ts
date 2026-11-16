@@ -40,6 +40,7 @@ async function roster(unionId: number, day: string, names: Record<number, string
     memberNames: uids.map((u) => names[u] ?? ""),
     memberPower: uids.map(() => 1000),
     memberKills: uids.map(() => 0),
+    rawJson: { members: uids.map((uid) => ({ uid, rank_code: 103, rank_label: "R3" })) },
   });
 }
 
@@ -77,7 +78,8 @@ describe('"This is me", between two workspaces (D71)', () => {
     const ogs = await signedIn("ogs", "Kasoar");
     // The nickname is one part of the joined game name: the matcher's one match (D74).
     const view = await profileView(db, ogs);
-    expect(view.suggestions).toEqual([{ uid: 11, name: "Kasoar•Thorne" }]);
+    // Each candidate carries its rank and might, to tell look-alike names apart.
+    expect(view.suggestions).toEqual([{ uid: 11, name: "Kasoar•Thorne", rank: "R3", might: 1000 }]);
     // The search's roster is OGs' own: NSE's player is not in it.
     expect(view.roster.map((p) => p.uid)).toEqual([11, 12]);
     // NSE's player is not in OGs' roster.

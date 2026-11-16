@@ -12,7 +12,7 @@ export interface FirstUseStep {
 }
 
 export const FIRST_USE_STEPS: readonly FirstUseStep[] = [
-  { title: "intro.1.title", body: ["intro.1.body"], visual: "only" },
+  { title: "intro.1.title", body: ["intro.1.body", "intro.1.settings"], visual: "only" },
   { title: "intro.2.title", body: ["intro.2.body", "intro.2.more"], visual: "sources" },
   {
     title: "intro.3.title",

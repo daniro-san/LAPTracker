@@ -12,7 +12,7 @@ import { Gear } from "@/lib/brand/components/Gear";
 import { RadioField } from "@/lib/brand/components/RadioField";
 import { Sheet } from "@/lib/brand/components/Sheet";
 import { Moon, setTheme, Sun, useThemeChoice } from "@/lib/brand/components/ThemeSwitch";
-import type { WorkspaceDictionary } from "@/lib/private/dictionary";
+import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import type { Profile } from "@/lib/private/profile";
 
 import { Me } from "./ThisIsMe";
@@ -42,12 +42,11 @@ async function call(slug: string, body?: object): Promise<Profile | string> {
 function NameForm(props: {
   t: Words;
   name: string;
-  max: number;
   busy: boolean;
   note: string;
   onSave: (name: string) => void;
 }) {
-  const { t, max, busy, note, onSave } = props;
+  const { t, busy, note, onSave } = props;
   const [draft, setDraft] = useState(props.name);
   useEffect(() => setDraft(props.name), [props.name]);
   const submit = (e: FormEvent) => {
@@ -67,7 +66,6 @@ function NameForm(props: {
           id="profile-name"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          maxLength={max}
           autoComplete="nickname"
           aria-describedby="profile-name-help profile-name-note"
           className="drawn-field min-h-11 min-w-0 flex-1 px-3"
@@ -121,11 +119,11 @@ type Write =
 function Settings(props: {
   slug: string;
   t: Words;
+  language: WorkspaceLanguage;
   name: string;
-  max: number;
   onClose: () => void;
 }) {
-  const { slug, t, max, onClose } = props;
+  const { slug, t, language, onClose } = props;
   const router = useRouter();
   const [me, setMe] = useState<Profile | "loading" | "failed">("loading");
   const [busy, setBusy] = useState(false);
@@ -163,7 +161,6 @@ function Settings(props: {
       <NameForm
         t={t}
         name={typeof me === "string" ? props.name : me.name}
-        max={max}
         busy={busy}
         note={note?.at === "name" ? note.text : ""}
         onSave={(name) => void write({ action: "rename", name })}
@@ -175,6 +172,7 @@ function Settings(props: {
         <p className="text-body-sm text-ink/70">{t["profile.me.lead"]}</p>
         <Me
           t={t}
+          language={language}
           me={me}
           busy={busy}
           onLink={(uid) =>
@@ -198,13 +196,13 @@ function Settings(props: {
 export function ProfileSheet(props: {
   slug: string;
   t: Words;
+  language: WorkspaceLanguage;
   /** The name the header shows. */
   name: string;
   /** "Signed in as …", made on the server. */
   label: string;
-  max: number;
 }) {
-  const { slug, t, name, label, max } = props;
+  const { slug, t, language, name, label } = props;
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -215,14 +213,23 @@ export function ProfileSheet(props: {
         onClick={() => setOpen(true)}
         className="flex min-h-11 min-w-0 items-center gap-2 text-left"
       >
-        <span className="shrink-0">
-          <Gear />
-        </span>
         <span className="min-w-0 truncate underline decoration-dotted underline-offset-4">
           {label}
         </span>
+        {/* The tap cue: the settings gear after the name. */}
+        <span className="shrink-0">
+          <Gear />
+        </span>
       </button>
-      {open && <Settings slug={slug} t={t} name={name} max={max} onClose={() => setOpen(false)} />}
+      {open && (
+        <Settings
+          slug={slug}
+          t={t}
+          language={language}
+          name={name}
+          onClose={() => setOpen(false)}
+        />
+      )}
     </>
   );
 }

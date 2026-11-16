@@ -1,13 +1,14 @@
 // The officer's own profile (issue 334): the name the desk shows, and "This is me", the officer's player in
-// the workspace's own alliance (D71: union_id = access.unionId). Only the members' uids and names are read.
+// the workspace's own alliance (D71: union_id = access.unionId). Only each member's uid, name, might and rank are read.
 // Nothing here is logged or sent to analytics.
 import type { Db } from "../db";
-import { latestRosterNames } from "../repo/workspace-rosters";
+import { latestRoster, type RosterEntry } from "../repo/workspace-rosters";
 import { updateWorkspaceUser } from "../repo/workspaces";
 import { matchName } from "../screenshot/match-name";
 import type { WorkspaceAccess } from "./access";
+import { rankOf } from "./members";
 
-export const NAME_MAX = 32;
+const NAME_MAX = 32;
 
 /** The name without surrounding spaces, when it has 1 to NAME_MAX characters; null otherwise. */
 export function cleanName(raw: string): string | null {
@@ -19,7 +20,17 @@ export function cleanName(raw: string): string | null {
 export interface Player {
   uid: number;
   name: string;
+  /** As the game shows it ("R4 · Goddess"), so look-alike names can be told apart; null when unknown. */
+  rank: string | null;
+  might: number | null;
 }
+
+const playerOf = (e: RosterEntry): Player => ({
+  uid: e.uid,
+  name: e.name,
+  rank: rankOf(e),
+  might: e.might,
+});
 
 export interface Profile {
   name: string;
@@ -27,7 +38,7 @@ export interface Profile {
   player: { uid: number; name: string | null } | null;
   /** Players of the alliance whose name is like the officer's, while none is linked. */
   suggestions: Player[];
-  /** The alliance's newest roster, uid and name, for the search; empty once a player is linked. */
+  /** The alliance's newest roster, for the search; empty once a player is linked. */
   roster: Player[];
 }
 
@@ -38,7 +49,8 @@ function suggestionsFor(name: string, roster: Player[]): Player[] {
     roster.map((p) => ({ uid: p.uid, names: [p.name] })),
   );
   if (match.status === "matched") return roster.filter((p) => p.uid === match.uid).slice(0, 1);
-  if (match.status === "unsure") return match.suggestions.map(({ uid, name }) => ({ uid, name }));
+  if (match.status === "unsure")
+    return match.suggestions.flatMap((s) => roster.filter((p) => p.uid === s.uid).slice(0, 1));
   return [];
 }
 
@@ -48,7 +60,7 @@ async function profileOf(
   name: string,
   playerUid: number | null,
 ): Promise<Profile> {
-  const roster = await latestRosterNames(db, access.unionId);
+  const roster = (await latestRoster(db, access.unionId)).map(playerOf);
   if (playerUid === null)
     return { name, player: null, suggestions: suggestionsFor(name, roster), roster };
   const listed = roster.find((p) => p.uid === playerUid);
@@ -81,11 +93,15 @@ export async function linkPlayer(
   access: WorkspaceAccess,
   uid: number,
 ): Promise<Profile | "not_in_alliance"> {
-  const roster = await latestRosterNames(db, access.unionId);
-  const player = roster.find((p) => p.uid === uid);
+  const player = (await latestRoster(db, access.unionId)).find((p) => p.uid === uid);
   if (!player) return "not_in_alliance";
   await updateWorkspaceUser(db, access.workspaceId, access.user.id, { playerUid: uid });
-  return { name: access.user.displayName ?? "", player, suggestions: [], roster: [] };
+  return {
+    name: access.user.displayName ?? "",
+    player: { uid, name: player.name },
+    suggestions: [],
+    roster: [],
+  };
 }
 
 export async function unlinkPlayer(db: Db, access: WorkspaceAccess): Promise<Profile> {

@@ -14,7 +14,6 @@ import {
   type WorkspaceDictionary,
   type WorkspaceLanguage,
 } from "@/lib/private/dictionary";
-import { NAME_MAX } from "@/lib/private/profile";
 
 import { FirstUse } from "./FirstUse";
 import { LanguageSwitch } from "./LanguageSwitch";
@@ -118,7 +117,7 @@ export async function Frame({
           {tabs && <FirstUse t={t} seen={seen} />}
           <LanguageSwitch current={language} label={t["lang.aria"]} />
           {account && (
-            <div className="flex basis-full flex-wrap items-center justify-between gap-x-2 border-t border-wax-paper/25 pt-1 text-body-sm">
+            <div className="flex min-w-0 basis-full items-center justify-between gap-x-2 border-t border-wax-paper/25 pt-1 text-body-sm">
               {account}
             </div>
           )}
@@ -151,9 +150,9 @@ export function SignedInFrame({
       <ProfileSheet
         slug={access.slug}
         t={t}
+        language={language}
         name={name}
         label={fill(t["shell.signedIn"], { name })}
-        max={NAME_MAX}
       />
       <SignOutButton slug={access.slug} label={t["shell.signOut"]} />
     </>
