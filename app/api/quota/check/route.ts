@@ -13,6 +13,8 @@ export function GET(request: Request): Promise<Response> {
     const auth = await authorize(request.headers, db, ctx, { cron: true, pin: true });
     if (!auth.ok) return errorResponse(auth.status, auth.code);
     if (!parseQuery(request, noQuery)) return errorResponse(400, "bad_request");
-    return Response.json(await quotaReport(ctx, db, { always: false }));
+    return Response.json(
+      await quotaReport(ctx, db, { always: false, origin: new URL(request.url).origin }),
+    );
   });
 }

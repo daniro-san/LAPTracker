@@ -57,6 +57,9 @@ export const discordCopy = {
     quotaLeft: "{icon} {n} requests left",
     quotaUnavailable: "⚠ requests left: unknown (the quota call failed)",
     quotaLow: " (⚠ under {n})",
+    /** The weekly check's line for the site's own alliance (D70): counts and a link, never names. */
+    mightLine:
+      "Might unchanged ≥ {days} days: {unchanged} · Lost might ≥ {pct} %: {lost} — [Members ↗](<{url}>)",
     database: "{icon} Database {mb} MB",
     databaseHigh: " (⚠ over {n} MB)",
     pinLocked:
