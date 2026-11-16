@@ -6,9 +6,11 @@ import type { AppErrorDetail } from "../app-errors";
 import { RUN_STALE_AFTER_MS } from "../compute";
 import type { Db } from "../db";
 import { rehearsalVerdict, type Verdict } from "../rehearsal";
+import type { SnapshotPhase } from "../repo";
 import { loadVerdictInput } from "../repo/rehearsals";
 import { allianceSnapshots, appErrors, events, runLogs, snapshots, tickLog } from "../schema";
 import { runProblems } from "./run-problems";
+import { phaseColumn, phaseSnapshot } from "./visibility";
 
 export interface ManualEventStatus {
   id: number;
@@ -42,7 +44,7 @@ export async function latestManualEvent(db: Db): Promise<ManualEventStatus | nul
   if (!event) return null;
   const phases = await db
     .select({
-      phase: snapshots.phase,
+      phase: phaseColumn,
       status: snapshots.status,
       callsUsed: snapshots.callsUsed,
       startedAt: snapshots.startedAt,
@@ -50,7 +52,7 @@ export async function latestManualEvent(db: Db): Promise<ManualEventStatus | nul
       error: snapshots.error,
     })
     .from(snapshots)
-    .where(eq(snapshots.eventId, event.id));
+    .where(and(eq(snapshots.eventId, event.id), phaseSnapshot));
   return { ...event, phases };
 }
 
@@ -60,7 +62,9 @@ export interface RunningSnapshot {
   manual: boolean;
   isTest: boolean;
   eventAtUtc: Date;
-  phase: "before" | "after";
+  phase: SnapshotPhase;
+  /** A sample's slot (D69); null on a Before or an After. */
+  slotAt: Date | null;
   startedAt: Date;
 }
 
@@ -83,6 +87,7 @@ export async function runningSnapshots(db: Db, now: Date): Promise<RunningSnapsh
       isTest: events.isTest,
       eventAtUtc: events.eventAtUtc,
       phase: snapshots.phase,
+      slotAt: snapshots.slotAt,
       startedAt: snapshots.startedAt,
     })
     .from(snapshots)
@@ -109,6 +114,7 @@ export async function listRuns(db: Db, limit = 60) {
       isTest: events.isTest,
       manual: events.manual,
       phase: snapshots.phase,
+      slotAt: snapshots.slotAt,
       status: snapshots.status,
       startedAt: snapshots.startedAt,
       finishedAt: snapshots.finishedAt,
@@ -142,6 +148,7 @@ export async function getRun(db: Db, snapshotId: number) {
       isTest: events.isTest,
       manual: events.manual,
       phase: snapshots.phase,
+      slotAt: snapshots.slotAt,
       status: snapshots.status,
       startedAt: snapshots.startedAt,
       finishedAt: snapshots.finishedAt,
@@ -312,9 +319,9 @@ export async function latestRehearsal(db: Db, windowMin: number): Promise<Rehear
     .limit(1);
   if (!event) return null;
   const phases = await db
-    .select({ phase: snapshots.phase, status: snapshots.status, error: snapshots.error })
+    .select({ phase: phaseColumn, status: snapshots.status, error: snapshots.error })
     .from(snapshots)
-    .where(eq(snapshots.eventId, event.id));
+    .where(and(eq(snapshots.eventId, event.id), phaseSnapshot));
   const done = phases.length === 2 && phases.every((p) => p.status !== "running");
   const verdict = done ? rehearsalVerdict(await loadVerdictInput(db, event.id), windowMin) : null;
   return { ...event, phases, verdict };

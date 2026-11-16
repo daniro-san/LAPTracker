@@ -42,4 +42,12 @@ describe("parseEnv", () => {
     })();
     expect(message).not.toContain(secret);
   });
+
+  it("reads SAMPLE_EVERY_MIN as 15 by default, accepts 0 (off) and 15, and rejects what is off the hour's grid", () => {
+    expect(parseEnv(valid).SAMPLE_EVERY_MIN).toBe(15);
+    expect(parseEnv({ ...valid, SAMPLE_EVERY_MIN: "15" }).SAMPLE_EVERY_MIN).toBe(15);
+    expect(parseEnv({ ...valid, SAMPLE_EVERY_MIN: "0" }).SAMPLE_EVERY_MIN).toBe(0);
+    expect(() => parseEnv({ ...valid, SAMPLE_EVERY_MIN: "7" })).toThrow(/SAMPLE_EVERY_MIN/);
+    expect(() => parseEnv({ ...valid, SAMPLE_EVERY_MIN: "61" })).toThrow(/SAMPLE_EVERY_MIN/);
+  });
 });

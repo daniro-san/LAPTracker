@@ -2,11 +2,13 @@
 // Every call spends 1 of 1,000 daily requests, retries and /v1/quota included.
 import { z } from "zod";
 
+import { MAX_RETRIES } from "../budget";
 import { getSourceEnv } from "../env";
 import { redact } from "../redact";
 import { readBody, rosterFields, TIMEOUT_MS, toSnapshotInput, USER_AGENT } from "./shared";
 import {
   type AllianceSnapshotInput,
+  type CallOptions,
   NotFoundError,
   type OnAttempt,
   type Quota,
@@ -18,7 +20,6 @@ import {
 } from "./types";
 
 const MAX_IN_FLIGHT = 4;
-const MAX_RETRIES = 3;
 const BACKOFF_MS = [1000, 2000, 4000] as const;
 const JITTER_MS = 250;
 /** A Retry-After above this is clamped, so one header cannot outlast the route's maxDuration. */
@@ -97,11 +98,11 @@ async function httpDetail(path: string, response: Response): Promise<UpstreamDet
 }
 
 /** A request with no HTTP answer, as /admin shows it: the path, the timeout or the network cause. */
-function noAnswerDetail(path: string, e: unknown): UpstreamDetail {
+function noAnswerDetail(path: string, e: unknown, timeoutMs: number): UpstreamDetail {
   const inner = e instanceof Error && e.cause instanceof Error ? e.cause : e;
   const cause = inner instanceof Error ? `${inner.name}: ${inner.message}` : String(inner);
   const timeout = e instanceof Error && e.name === "TimeoutError";
-  return redact({ path, ...(timeout && { timeoutMs: TIMEOUT_MS }), cause }) as UpstreamDetail;
+  return redact({ path, ...(timeout && { timeoutMs }), cause }) as UpstreamDetail;
 }
 
 /** The error a non-2xx answer ends the call with, or null when the call is tried again. */
@@ -109,6 +110,7 @@ async function answerError(
   path: string,
   response: Response,
   attempt: number,
+  maxRetries: number,
 ): Promise<Error | null> {
   const { status } = response;
   // INVARIANT quota-429-aborts: never retried.
@@ -116,16 +118,24 @@ async function answerError(
     return new QuotaExhaustedError(`429 on ${path}`, await httpDetail(path, response));
   if (status === 404) return new NotFoundError(`404 on ${path}`, await httpDetail(path, response));
   // INVARIANT retry-only-5xx-gateway: 502/503/504, max 3, backoff + jitter, Retry-After honoured.
-  if (!RETRYABLE.has(status) || attempt >= MAX_RETRIES)
+  if (!RETRYABLE.has(status) || attempt >= maxRetries)
     return new UpstreamError(status, await httpDetail(path, response));
   return null;
 }
 
+/** A call's own timeout and retry count, else the adapter's. */
+const withDefaults = (o: CallOptions) => ({
+  timeoutMs: o.timeoutMs ?? TIMEOUT_MS,
+  maxRetries: o.maxRetries ?? MAX_RETRIES,
+});
+
 async function request(
   path: string,
-  onAttempt?: OnAttempt,
-  signal?: AbortSignal,
+  onAttempt: OnAttempt | undefined,
+  signal: AbortSignal | undefined,
+  options: CallOptions = {},
 ): Promise<Response> {
+  const { timeoutMs, maxRetries } = withDefaults(options);
   const env = getSourceEnv();
   const headers = {
     Authorization: `Bearer ${env.LAP_API_KEY}`,
@@ -142,18 +152,18 @@ async function request(
         fetch(`${env.LAP_API_BASE_URL}${path}`, {
           headers,
           signal: signal
-            ? AbortSignal.any([signal, AbortSignal.timeout(TIMEOUT_MS)])
-            : AbortSignal.timeout(TIMEOUT_MS),
+            ? AbortSignal.any([signal, AbortSignal.timeout(timeoutMs)])
+            : AbortSignal.timeout(timeoutMs),
         }),
       );
     } catch (e) {
       // The caller's signal (the run deadline) ends the call on purpose; anything else got no answer.
       if (signal?.aborted) throw e;
-      throw new RequestError(e, noAnswerDetail(path, e));
+      throw new RequestError(e, noAnswerDetail(path, e, timeoutMs));
     }
     // Branch on status only: statusText is empty over HTTP/2 on Node 26 (plan §11.4).
     if (response.status >= 200 && response.status < 300) return response;
-    const error = await answerError(path, response, attempt);
+    const error = await answerError(path, response, attempt, maxRetries);
     if (error) throw error;
     await response.body?.cancel();
     previous = response.status;
@@ -165,16 +175,21 @@ export async function fetchAlliance(
   id: UnionId,
   onAttempt?: OnAttempt,
   signal?: AbortSignal,
+  options?: CallOptions,
 ): Promise<AllianceSnapshotInput> {
   // D64: a live game lookup, not the API's cached copy. Its cache keeps a copy up to 60 minutes, past
   // our 20-minute freshness rule; a live read costs the same request and takes about 1-2 s.
-  const response = await request(`/alliances/${id}?fresh=1`, onAttempt, signal);
+  const response = await request(`/alliances/${id}?fresh=1`, onAttempt, signal, options);
   const { data, raw } = await readBody(response, allianceSchema, "v1.schema");
   return toSnapshotInput(data, { cached: data.cached, quota: data.quota, raw });
 }
 
-export async function fetchQuota(onAttempt?: OnAttempt, signal?: AbortSignal): Promise<Quota> {
-  const response = await request("/quota", onAttempt, signal);
+export async function fetchQuota(
+  onAttempt?: OnAttempt,
+  signal?: AbortSignal,
+  options?: CallOptions,
+): Promise<Quota> {
+  const response = await request("/quota", onAttempt, signal, options);
   const { data } = await readBody(response, quotaResponseSchema, "v1.schema");
   return data.quota;
 }

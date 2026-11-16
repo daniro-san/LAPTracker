@@ -4,13 +4,17 @@ import type { Db } from "../db";
 import {
   clearAllianceRows,
   clearFailedAllianceRows,
+  failedSampleUnionIds,
   insertAllianceRow,
+  insertSampleRow,
   listAllianceRows,
 } from "./alliance-snapshots";
 import { getEvent, setEventAllianceIds } from "./events";
-import { findSnapshot, finishSnapshot, startSnapshot } from "./snapshots";
+import { findSnapshot, finishSnapshot, startSample, startSnapshot } from "./snapshots";
 
 export type Phase = "before" | "after";
+/** A snapshots row's phase: a Before, an After, or a sample between them (D69). */
+export type SnapshotPhase = Phase | "sample";
 export type SnapshotStatus = "running" | "complete" | "partial" | "failed";
 
 export interface EventRow {
@@ -92,12 +96,18 @@ export interface Repo {
     startedAt: Date,
     expected: SnapshotRow | null,
   ): Promise<number | null>;
+  /** A sample's claim (D69): inserts a running row for (event, slot), or null when the slot is taken. */
+  startSample(eventId: number, slotAt: Date, startedAt: Date): Promise<number | null>;
+  /** The alliances whose read failed in any sample of the event (D69). */
+  failedSampleUnionIds(eventId: number): Promise<number[]>;
   clearAllianceRows(snapshotId: number): Promise<void>;
   /** The rows with an error (D62), and with `stale` every stale row too (D63): a re-run reads them again. */
   clearFailedAllianceRows(snapshotId: number, stale: boolean): Promise<void>;
   listAllianceRows(snapshotId: number): Promise<AllianceRowStatus[]>;
   /** The row and its members in one transaction. */
   insertAllianceRow(snapshotId: number, row: AllianceRow, members: MemberRow[]): Promise<void>;
+  /** A sample's row (D69): the members as arrays on the row, no member rows, no raw_json. */
+  insertSampleRow(snapshotId: number, row: AllianceRow, members: MemberRow[]): Promise<void>;
   finishSnapshot(snapshotId: number, result: SnapshotResult): Promise<void>;
 }
 
@@ -108,10 +118,13 @@ export function createRepo(db: Db): Repo {
     findSnapshot: (eventId, phase) => findSnapshot(db, eventId, phase),
     startSnapshot: (eventId, phase, startedAt, expected) =>
       startSnapshot(db, eventId, phase, startedAt, expected),
+    startSample: (eventId, slotAt, startedAt) => startSample(db, eventId, slotAt, startedAt),
+    failedSampleUnionIds: (eventId) => failedSampleUnionIds(db, eventId),
     clearAllianceRows: (id) => clearAllianceRows(db, id),
     clearFailedAllianceRows: (id, stale) => clearFailedAllianceRows(db, id, stale),
     listAllianceRows: (id) => listAllianceRows(db, id),
     insertAllianceRow: (id, row, members) => insertAllianceRow(db, id, row, members),
+    insertSampleRow: (id, row, members) => insertSampleRow(db, id, row, members),
     finishSnapshot: (id, result) => finishSnapshot(db, id, result),
   };
 }

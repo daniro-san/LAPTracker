@@ -1,5 +1,6 @@
 // The scheduler's decision (plan §3.1), event-driven: scheduled events' rows are created from the env a
 // day ahead; every event (scheduled or rehearsal) carries its own before_at/after_at; one action per tick.
+// Between an event's Before and After, a sample every SAMPLE_EVERY_MIN (D69), only when no phase is due.
 // The daily roster read (D60) comes last, when nothing else is due.
 import { DAILY_ROSTER_IDS } from "../config/alliances";
 import { secretsOf, type AppContext } from "./app-context";
@@ -15,10 +16,10 @@ import {
 import { dailyReadMessage } from "./notify-daily";
 import { createRehearsal, type RehearsalResult } from "./rehearsal";
 import { claimAlert, TICK_SILENCE_ALERT } from "./repo/app-errors";
-import { claimQuotaCheck, duePhases, findOrCreateEvent } from "./repo/events";
+import { claimQuotaCheck, duePhases, dueSample, findOrCreateEvent } from "./repo/events";
 import { claimSlot, setSlotOutcome } from "./repo/rehearsals";
 import { latestTickAt } from "./repo/ticks";
-import { executeSnapshot, quotaReport, type RunOutcome } from "./run";
+import { executeSample, executeSnapshot, quotaReport, type RunOutcome } from "./run";
 import {
   dailyReadDue,
   endsInServerDay,
@@ -26,11 +27,13 @@ import {
   nextEvent,
   quotaCheckDue,
   rehearsalSlotsDue,
+  slotOf,
 } from "./schedule";
 
 export type TickOutcome =
   | { kind: "idle" }
   | { kind: "run"; outcome: RunOutcome }
+  | { kind: "sample"; slotAt: Date; outcome: RunOutcome }
   | { kind: "quota-check"; eventId: number; remaining: number | null }
   | { kind: "rehearsal"; slotAt: Date; result: RehearsalResult }
   | { kind: "daily-read"; summary: DailyReadSummary };
@@ -77,6 +80,24 @@ async function dailyRead(
   return { kind: "daily-read", summary };
 }
 
+/** The due sample of the slot holding now (D69), or null: a slot no tick took is not caught up.
+ * SAMPLE_EVERY_MIN=0 is off. */
+async function sample(
+  ctx: AppContext,
+  db: Db,
+  now: Date,
+  origin: string,
+): Promise<TickOutcome | null> {
+  if (ctx.env.SAMPLE_EVERY_MIN === 0) return null;
+  const slotAt = slotOf(now, ctx.env.SAMPLE_EVERY_MIN);
+  const event = await dueSample(db, slotAt);
+  if (!event) return null;
+  const outcome = await executeSample(ctx, db, { event, slotAt, origin });
+  // INVARIANT sample.once-per-slot: another caller took this slot first, which is what the tick wanted.
+  if (!outcome.ok && outcome.code === "sample_taken") return { kind: "idle" };
+  return { kind: "sample", slotAt, outcome };
+}
+
 export async function runTick(ctx: AppContext, db: Db, origin: string): Promise<TickOutcome> {
   const now = ctx.now();
   // (1) The coming scheduled event gets its row a day ahead, with its times fixed from the env then.
@@ -100,6 +121,10 @@ export async function runTick(ctx: AppContext, db: Db, origin: string): Promise<
       return { kind: "idle" };
     return { kind: "run", outcome };
   }
+
+  // (2b) A sample (D69): only on a tick that runs no phase, so Before and After always come first.
+  const sampled = await sample(ctx, db, now, origin);
+  if (sampled) return sampled;
 
   // (3) The Friday check, claimed on the coming scheduled event's row so it runs once.
   if (quotaCheckDue(now, ctx.env)) {

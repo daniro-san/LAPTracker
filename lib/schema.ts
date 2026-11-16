@@ -19,6 +19,7 @@ import {
   text,
   timestamp,
   unique,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 const tstz = (name: string) => timestamp(name, { withTimezone: true });
@@ -64,7 +65,10 @@ export const snapshots = pgTable(
     eventId: integer("event_id")
       .notNull()
       .references(() => events.id),
-    phase: text("phase", { enum: ["before", "after"] }).notNull(),
+    // "sample": a reading between an event's Before and After, one per slot (D69).
+    phase: text("phase", { enum: ["before", "after", "sample"] }).notNull(),
+    /** A sample's slot (D69): the grid instant it was due at, UTC. Null on a Before or an After. */
+    slotAt: tstz("slot_at"),
     startedAt: tstz("started_at").notNull(),
     finishedAt: tstz("finished_at"),
     status: text("status", { enum: ["running", "complete", "partial", "failed"] }).notNull(),
@@ -81,8 +85,15 @@ export const snapshots = pgTable(
     durationMs: integer("duration_ms"),
   },
   (t) => [
-    unique("snapshots_event_phase_unique").on(t.eventId, t.phase),
-    check("snapshots_phase_check", sql`${t.phase} in ('before', 'after')`),
+    // D1's guarantee, kept for samples (D69): one Before and one After per event, one sample per slot.
+    uniqueIndex("snapshots_event_phase_unique")
+      .on(t.eventId, t.phase)
+      .where(sql`${t.phase} <> 'sample'`),
+    uniqueIndex("snapshots_event_slot_unique")
+      .on(t.eventId, t.slotAt)
+      .where(sql`${t.phase} = 'sample'`),
+    check("snapshots_phase_check", sql`${t.phase} in ('before', 'after', 'sample')`),
+    check("snapshots_slot_check", sql`(${t.phase} = 'sample') = (${t.slotAt} is not null)`),
     check(
       "snapshots_status_check",
       sql`${t.status} in ('running', 'complete', 'partial', 'failed')`,
@@ -118,6 +129,12 @@ export const allianceSnapshots = pgTable(
     isFresh: boolean("is_fresh").notNull(),
     error: text("error"),
     rawJson: jsonb("raw_json"),
+    // A sample's members (D69) as D60's parallel arrays; a null power or kills stays null (D15). Null on
+    // Before and After rows, which keep member_snapshots and raw_json.
+    memberUids: big("member_uids").array(),
+    memberNames: text("member_names").array(),
+    memberPower: big("member_power").array(),
+    memberKills: big("member_kills").array(),
   },
   (t) => [
     unique("alliance_snapshots_snapshot_union_unique").on(t.snapshotId, t.unionId),

@@ -7,25 +7,28 @@ app/api/*           thin HTTP handlers: auth → parse → call lib → respond.
 app/(pages)/*       UI. Reads through lib/queries only.
 lib/collector.ts    domain: runSnapshot, freshness check, per-alliance fallback, resume logic.
 lib/compute.ts      pure functions only — sums, deltas, freshness predicate, roster diff; no IO, no Date.now() (passed in).
-lib/budget.ts       pure quota arithmetic (requiredQuota).
+lib/budget.ts       pure quota arithmetic (requiredQuota, sampleQuota) and `MAX_RETRIES`, the one retry count that lib/sources/v1.ts imports.
 lib/upstream-errors.ts, lib/raw-json.ts  the collector's error wording and raw_json trimming (split for size).
 lib/collector-claim.ts  the collector's claim on a snapshot row and which rows a re-run drops (D62, D63; split for size).
+lib/collector-sample.ts  a sample's call timeout, run deadline and no-retry rule (`callOptions`, D69; split for size).
+lib/collector-log.ts  the collector's one run_logs line per /v1 call (split for size).
 lib/sources/*.ts    adapters: v1.ts (documented API, primary), internal.ts (site API: ranks board + live-roster fallback,
                     unofficial, read-only). One output type.
 lib/repo/*.ts       persistence: one module per table, plain functions over Drizzle.
 lib/queries/*.ts    read models for the UI (joins, sorting, name history). Never write. Never expose BLOCKED_ROSTER_KEYS.
+                    lib/queries/samples.ts: `eventSamples`, an event's Start, samples and End (D69).
 lib/logger.ts, lib/notify.ts, lib/env.ts, lib/redact.ts
 lib/discord-send.ts, lib/discord-format.ts, lib/event-image.tsx
                     the webhook transport (JSON, or multipart with a picture), the messages' number and
                     time formats, and the event picture drawn with next/og (D58).
 lib/schedule.ts     pure: SERVER_TZ ↔ UTC, scheduled events and their times, Friday-check and rehearsal slots.
 lib/tick.ts         the tick's decision: create the scheduled event's row, run the one due phase (from events.before_at/
-                    after_at), the Friday check, a REHEARSAL_AT slot, the daily roster read.
+                    after_at), a due sample (D69), the Friday check, a REHEARSAL_AT slot, the daily roster read.
 lib/daily-read.ts   the daily roster read (D60, D72): quota check, /v1 rosters as arrays (and raw_json) into daily_rosters; not an event.
 lib/rehearsal.ts    rehearsal creation (guards, retention) and the pure verdict.
 lib/auth.ts         Bearer CRON_SECRET / x-edit-pin in constant time; the Postgres-backed rate limiter.
-lib/run.ts          what a route runs: executeSnapshot (finalise + logger shutdown in finally, then notify)
-                    and quotaReport (the Friday check).
+lib/run.ts          what a route runs: executeSnapshot and the tick's executeSample (D69) (finalise + logger
+                    shutdown in finally, then notify) and quotaReport (the Friday check).
 lib/route.ts, lib/app-context.ts, lib/app-errors.ts
                     the route shell (one DB per request, closed on every path; errors become a code),
                     the outside world in one object (env, clock, adapters, fetch, openDb), app_errors.

@@ -47,6 +47,14 @@ export const envSchema = z.object({
     )
     .default("fri 18:00"),
   REHEARSAL_KEEP: z.coerce.number().int().min(1).max(50).default(4),
+  // Minutes between an event's samples (D69), on a grid from the hour (15: :00, :15, :30, :45); 0 = off.
+  SAMPLE_EVERY_MIN: z.coerce
+    .number()
+    .int()
+    .min(0)
+    .max(60)
+    .refine((n) => n === 0 || 60 % n === 0, "expected 0 or a divisor of 60")
+    .default(15),
   // The daily roster read for member history (D60), server time, every day. 23:30: the 23:37 tick reads
   // the day's counters (daily_tech) before the 00:00 reset, and the 23:52 tick re-reads the alliances
   // that fell short (D72).
