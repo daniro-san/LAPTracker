@@ -1,6 +1,6 @@
 # 11m — PostHog: analytics, session replay and client errors (D77)
 
-Part of #326: the four events whose UI is not on `dev` yet are wired by the Members PR (#329). Decision D77. Owner changes during the session (2026-11-16): US region instead of EU; PostHog on every page with session replay everywhere and masking per area, instead of replay only on `/w` and nothing on `/admin`; the key is the Vercel variable `POSTHOG_KEY`, read on the server, instead of `NEXT_PUBLIC_POSTHOG_KEY`.
+Part of #326. The four events whose UI came with the Members PR (#329) are wired here, after merging `dev` (a814344). Decision D77. Owner changes during the session (2026-11-16): US region instead of EU; PostHog on every page with session replay everywhere and masking per area, instead of replay only on `/w` and nothing on `/admin`; the key is the Vercel variable `POSTHOG_KEY`, read on the server, instead of `NEXT_PUBLIC_POSTHOG_KEY`.
 
 ## Built
 - **Dependency:** `posthog-js` 1.444.4, pinned exactly (released 2026-11-02, no install scripts). `pnpm-workspace.yaml` denies the postinstall of its dependency `core-js` (a funding banner, D10).
@@ -30,7 +30,10 @@ Part of #326: the four events whose UI is not on `dev` yet are wired by the Memb
 - **Masked areas:** `app/(private)/w/[slug]/layout.tsx` and `app/(pages)/admin/layout.tsx` wrap their pages in `<div className="ph-mask">`.
 - **Wired events:**
   - `lib/private/sign-in.ts` redirects a successful sign-in to `/w/<slug>#signed-in` only when analytics is on, else to `/w/<slug>` as before;
-  - `app/(private)/_ui/LanguageSwitch.tsx` sends `ws_language_switched` when the language changes.
+  - `app/(private)/_ui/LanguageSwitch.tsx` sends `ws_language_switched` when the language changes;
+  - `app/(private)/_ui/FirstUse.tsx` sends `ws_first_use_done` (Start on the last card) or `ws_first_use_skipped` (Skip, Escape), not after "?" → Replay;
+  - `app/(private)/_ui/CopyButton.tsx` takes an optional `event`; the Members tab's copy passes `ws_copy_spreadsheet` (the how-to's address copy sends nothing);
+  - `app/(private)/_ui/FilterChip.tsx`: the Members tab's filter links send `ws_filter_used` with the filter's id on click, before the link navigates.
 - **`proxy.ts`:**
   - `/ingest/*` gets the deny-all CSP, as `/api/*` and `/img/*` do;
   - the trailing-slash 308 is kept for every path but `/ingest/` (`next.config.ts` sets `skipTrailingSlashRedirect`).
@@ -52,7 +55,7 @@ Part of #326: the four events whose UI is not on `dev` yet are wired by the Memb
 - **Click autocapture on public pages is intended.** It feeds PostHog's click heatmaps, and the clicked text there is public game data. It is off on `/w` and `/admin` (`url_ignorelist`): the custom events cover the workspace, and `/admin` gets page views, exceptions and replay, as the owner listed.
 - **The SDK loads after the page** (review of #332): after `load` and an idle moment, so it never delays the page. The first page view is sent when it starts, with the URL of that moment.
 - **Sign-in event.** A `#signed-in` fragment on the callback's success redirect, only when analytics is on, is read by the browser, never by a server. The daily silent re-authorisation (`prompt=none`) goes through the same redirect, so it counts as a sign-in too. The callback does not know whether a sign-in was silent.
-- **Filter names** for `ws_filter_used` come from issue #296: `new`, `low_donations`, `missing_data`, `away`, `r4_plus`. The first-use and copy events have no properties.
+- **Filter names** for `ws_filter_used` are the Members tab's own ids (`MEMBER_FILTERS`, #329): `all`, `new`, `checkin`, `missing`, `r4`. `lib/analytics` may not import `lib/private`, so the union is repeated in `events.ts`; `FilterChip` passes the private type to it, so `tsc` fails if a filter is added on one side only. The first-use and copy events have no properties.
 
 ## Deviations
 - The brief said Next rewrites and `persistence: 'memory'` + `ip: false`. Rewrites were replaced by a route handler (see Decisions). posthog-js 1.444.4 logs that `ip` "has NO EFFECT AT ALL". The IP is kept out by the proxy and by the project's IP anonymization.
@@ -64,7 +67,14 @@ Part of #326: the four events whose UI is not on `dev` yet are wired by the Memb
 
 ## Verified
 - Checks (a)–(f) were run manually with a Playwright harness against a local production build; the evidence is outside the repo, and `pnpm check` covers only the sanitiser, the type test and the fence test, plus (since the review of #332) the `/ingest` allowlist and cap and the sign-in fragment.
-- `pnpm check` exit 0 (load average 30–40): prettier, eslint, tsc, vitest 76 files passed and 1 skipped, 369 tests passed and 1 skipped, no timeout; drift gate "Everything's fine"; i18n "17 languages up to date".
+- `pnpm check` exit 0 after merging `dev` and wiring the events: prettier, eslint, tsc, vitest 94 files passed and 2 skipped, 479 tests passed and 4 skipped, no timeout; drift gate and i18n clean. (Before the review: 76 files, 369 tests.)
+- **The four wired events on `/w/ogs/members`** (production build, a local end-of-day read for OGs with one injected member, "Kvothe Ashbringer" at x 4719, y 8263, donating 98765; evidence `posthog-evidence/rerun-review-332/members-*`):
+  - `ws_sign_in_completed`, `ws_first_use_done` and `ws_copy_spreadsheet` were intercepted in the browser;
+  - "?" → Replay → Skip sent nothing;
+  - `ws_filter_used {filter: "checkin"}` left as an unload beacon (the chip is a plain link). It reached the real `/ingest` route and was forwarded with `content-type` and `origin` only;
+  - replay: 3,053 nodes under `ph-mask`, 0 unmasked text or attributes, no input event (the search field is blocked);
+  - the member's name, coordinates and donation, the officer's name and the tab's words are absent from every payload; no URL carries `?f=` or `?q=`;
+  - no CSP message, and no PostHog cookie or storage.
 - **After the review of #332**, on a new production build with the deferred SDK load, the harness ran again: (a)–(f) pass (evidence in `posthog-evidence/rerun-review-332/`).
   - The harness's `/admin` pages now stay 16 s each. The SDK starts after `load` and an idle moment, the fixture's 5 s minimum duration counts from there, and a replay batch sent at unload goes out as a beacon, which Playwright does not intercept.
   - The proxy on that build: an unknown path and `/ingest/static/recorder.js` answer 404, a 1.1 MB body 413, the remote config `cache-control: public, s-maxage=300`, an event `no-store`.
@@ -105,7 +115,7 @@ Part of #326: the four events whose UI is not on `dev` yet are wired by the Memb
 - PostHog's free allowances read with the PostHog docs search on 2026-11-16: 1M events, 5K recordings, 100K exceptions; over a limit, ingestion drops.
 
 ## Open issues
-1. **Members tab (#296), first-use cards (#312):** `ws_copy_spreadsheet`, `ws_filter_used`, `ws_first_use_done` and `ws_first_use_skipped` are exported from `lib/analytics/events.ts`. Their UI does not exist on `dev`, so they are not wired here; the Members PR (#329) wires them after this merges.
+1. **An event in a page's first seconds can be lost.** The SDK loads after `load` and an idle moment. A filter chip is a plain link, so a chip clicked before the SDK arrives navigates away with the event still waiting.
 2. **"Unique visitors" counts page loads.** With memory persistence, every full page load gets a new random id, so PostHog's visitor counts mean page loads.
 3. **No location data.** PostHog receives Vercel's address, so its GeoIP shows Vercel's region, not the visitor's country.
 4. **Function invocations.** Every PostHog request is one Vercel function invocation (Hobby: 1M a month, shared with the crons and pages). Not measured on production.
@@ -116,19 +126,15 @@ Part of #326: the four events whose UI is not on `dev` yet are wired by the Memb
 9. **Replay batches over 1 MB** (compressed) are refused with 413. The recorder flushes at about 0.9 MB before compression; the largest whole run in the local check compressed to 158 KB.
 
 ## Next
-Session: #296 — Workspace: Members tab with API data and weekly donations.
-Model / effort: keep — this change adds no data model and no upstream call; the Members session's size is unchanged.
+Session: the next workspace issue after #296 (the Members tab, merged as #329).
+Model / effort: keep — this change adds no data model and no upstream call.
 Owner must do first: merge this PR into `dev`. Optional: PostHog → Session replay → Minimum duration 5 s.
 Plan changes needed: none in the plan sections the next session reads. §5 and §7's "no third-party observability" lines are superseded by D36 and D77 (not edited here).
 
 <adjustments>
-- Analytics: call `track("ws_copy_spreadsheet")` on the copy button and `track("ws_filter_used", { filter })` on each filter (`new`, `low_donations`, `missing_data`, `away`, `r4_plus`), from `@/lib/analytics/events`. If a filter name changes, change the `MemberFilter` union too; `events.test.ts` keeps properties to closed lists.
+- Analytics: the six events are wired. A new Members filter needs its id in `MemberFilter` (`lib/analytics/events.ts`) too; `tsc` fails otherwise. A new event goes into `AnalyticsEvents` with closed-list properties only (`events.test.ts`).
 - Replay: every page under `/w/[slug]` is masked by the layout's `ph-mask` wrapper, with no work in the page. Keep member values inside the page tree: a portal to `document.body` would leave the masked area.
 - Exceptions on `/w` are sent with the message replaced by `[masked]`, so a thrown error that names a member is safe. Do not log member values to the console: console capture is off, but other tools read it.
-</adjustments>
-
-<adjustments for="Session #312">
-- Call `track("ws_first_use_done")` when an officer finishes the cards and `track("ws_first_use_skipped")` when they skip them (no properties).
 </adjustments>
 
 https://github.com/daniro-san/LAPTracker/pull/332
