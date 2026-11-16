@@ -64,6 +64,7 @@ Words already used in `lib/i18n/fr.ts`. Reuse them so the pages stay consistent;
 | Peak                      | pic                                   | `ledger.liveLast` — the highest reading in the last span                                                                             |
 | cap                       | plafond                               | `merge.cap`, `merge.over`, `merge.withinCap` — an alliance's member limit, `plafond {cap}`                                           |
 | Merge                     | fusion                                | `merge.title`, `merge.link` — two alliances as one, simulated only                                                                   |
+| Kill share / might share  | part des Kills / part du Might        | `ledger.carried*` — an alliance's share of the kills gained, and of the might at Start; `pts` is the percentage-point abbreviation   |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

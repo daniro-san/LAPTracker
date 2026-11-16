@@ -94,6 +94,20 @@ export const idID = {
       "Bagian Kills aliansi yang dibuat 5 Members dengan kenaikan Kills terbesar. Makin tinggi, makin sedikit pemain yang memikulnya.",
     topBasis: "{top} dari {n}",
     fewGainers: "sedikit kenaikan",
+    carried: "Bagian Kills vs bagian Might",
+    carriedHelp:
+      "Bagian tiap aliansi dari Kills didapat dari Awal ke Akhir, di samping bagiannya dari Might di Awal. Pemain bertahan dan pemain support tidak mendapat Kills.",
+    carriedShown:
+      "Aliansi dengan bagian Kills paling jauh di atas bagian Might-nya, dan aliansimu.",
+    carriedTotal: "Semua {n} aliansi: {kills} Kills didapat, {might} Might di Awal",
+    carriedMightMark: "Bagian Might di Awal",
+    carriedKillsMark: "Bagian Kills didapat",
+    carriedShares: "Might {might} · Kills {kills}",
+    carriedTurnout: "{share} dengan Kills",
+    carriedSpread: "{low}–{high} dari {n} event",
+    carriedRatioHelp:
+      "× adalah bagian Kills dibagi bagian Might. Ditampilkan mulai dari 3 event, dengan rentangnya; sebelum itu, selisihnya dalam pts.",
+    carriedPoints: "pts",
   },
   compare: {
     title: "Event vs event",

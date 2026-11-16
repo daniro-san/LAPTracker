@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { LANGUAGES } from "@/lib/copy";
 
-import { compact, makeClock, parseDateFormat } from "./format";
+import { compact, makeClock, parseDateFormat, pointsText } from "./format";
 
 // Saturday 14:01 server time (UTC−2): 19:01 in Moscow, 09:01 in Los Angeles.
 const at = new Date("2026-10-31T16:01:00Z");
@@ -68,6 +68,17 @@ describe("parseDateFormat", () => {
     expect(parseDateFormat(undefined)).toBeNull();
     expect(parseDateFormat("yyyy")).toBeNull();
     expect(parseDateFormat("toString")).toBeNull();
+  });
+});
+
+describe("pointsText", () => {
+  it("signs a gap in points: plus above, minus below, and no sign when it rounds to zero", () => {
+    expect([0.061, -0.004, 0, -0.0004].map((gap) => pointsText(gap, "en"))).toEqual([
+      "+6.1",
+      "−0.4",
+      "0.0",
+      "0.0",
+    ]);
   });
 });
 

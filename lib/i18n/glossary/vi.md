@@ -59,6 +59,9 @@ Words already used in `lib/i18n/vi.ts`. Reuse them so the pages stay consistent;
 | peak                      | đỉnh                         | `ledger.liveLast` — the highest value in the span                                |
 | Merge                     | Sáp nhập                     | `merge.*` — the merge simulator and its link                                     |
 | cap                       | giới hạn                     | `merge.cap`, `merge.over`, `merge.capAssumed` — the member cap                   |
+| kill share                | phần tiêu diệt               | `ledger.carried`, `ledger.carriedHelp` — an alliance's share of the kills gained |
+| might share               | phần Lực Chiến               | `ledger.carriedMightMark` — an alliance's share of the might at Start            |
+| pts (percentage points)   | điểm %                       | `ledger.carriedPoints` — after a gap, `+6.1 điểm %`                              |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

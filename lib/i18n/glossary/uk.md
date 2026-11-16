@@ -35,6 +35,8 @@ Words already used in `lib/i18n/uk.ts`. Reuse them so the pages stay consistent;
 | gainer                              | учасник з приростом         | `ledger.topShareHelp`, `ledger.fewGainers` — members whose Kills rose                                              |
 | Merge                               | злиття                      | `merge.*` — the alliance merge simulator (`merge.title`, `merge.link`)                                             |
 | cap (member cap)                    | ліміт                       | `merge.cap`, `merge.over`, `merge.rule` — "ліміт {cap}"; the Members limit of an alliance                          |
+| kill share / might share            | частка Kills / частка Might | `ledger.carried`, `ledger.carriedKillsMark` — an alliance's share of kills gained / of might at Start              |
+| pts (percentage points)             | в. п.                       | `ledger.carriedPoints` — after a gap, `+6.1 в. п.`                                                                 |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

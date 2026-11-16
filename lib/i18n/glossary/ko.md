@@ -64,6 +64,7 @@ Words already used in `lib/i18n/ko.ts`. Reuse them so the pages stay consistent;
 | Last (a time window)      | 최근                   | `ledger.liveLast` — the last N minutes; 마지막 stays the last reading (`ledger.liveStandingsDone`) |
 | Merge                     | 합병                   | `merge.title`, `merge.link` — two alliances counted as one                                         |
 | Cap                       | 상한                   | `merge.cap`, `merge.over`, `merge.answer*`, `merge.capAssumed` — an alliance's member limit        |
+| Kill share vs might share | 처치 몫 대 전투력 몫   | `ledger.carried*` — each alliance's kill share against its might share                             |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.
