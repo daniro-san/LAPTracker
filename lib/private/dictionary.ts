@@ -6,10 +6,6 @@ import { pt } from "./dictionary.pt-BR";
 
 export const WORKSPACE_LANGUAGES = ["en", "pt-BR", "fr"] as const;
 export type WorkspaceLanguage = (typeof WORKSPACE_LANGUAGES)[number];
-/** Written by the EN · PT · FR switch; read on the server. */
-export const WORKSPACE_LANG_COOKIE = "lap_ws_lang";
-/** Written when an officer skips or finishes the first-use cards (#312), so they open by themselves once. */
-export const WORKSPACE_INTRO_COOKIE = "lap_ws_intro";
 
 const en = {
   "app.name": "Officers’ Desk",
@@ -18,7 +14,6 @@ const en = {
   "tab.members": "Members",
   "tab.mark": "Roll call",
   "tab.days": "Calendar",
-  "tab.review": "Follow-up",
   "tab.soon": "Soon",
   "lang.aria": "Language",
   "signin.title": "Sign in",
@@ -49,9 +44,6 @@ const en = {
   "home.open": "Open Members",
   "shell.help": "How this works",
   "signin.howto": "How to put it on your phone",
-  "members.lead":
-    "From the game, read each night just before the server resets. Last read: {when}.",
-  "members.week": "Week {from} – {to}. A week here runs from Monday to Sunday, like the game’s.",
   "members.none":
     "No end-of-day read yet. Members show up here after the first one, just before the server resets.",
   "thanks.head": "Thank you this week",
@@ -71,10 +63,6 @@ const en = {
   "members.copy": "Copy for spreadsheet",
   "members.copied": "Copied",
   "members.copyFailed": "Could not copy",
-  "members.checkinHelp":
-    "Check in shows what we saw, so you can have a friendly word. Nothing is sent to anyone, and the app never removes anybody.",
-  "members.nodataHelp":
-    "— means no data: that day was not read, or the game did not say. It never counts against anyone.",
   "members.new": "New",
   "members.firstSeen": "first seen {date}",
   "members.meta.level": "Sanctuary {n}",
@@ -90,12 +78,8 @@ const en = {
   "nodata.might": "might",
   "nodata.sanctuary": "Sanctuary",
   "nodata.activity": "activity",
-  "nodata.donations": "donations on {n} days",
   "status.fine": "Fine",
   "status.checkin": "Check in",
-  "reason.idle":
-    "activity {activity} and donations {donated} unchanged for {n} days ({r} end-of-day reads in a row)",
-  "reason.might": "might unchanged for {n} days",
   "reason.kvk": "no kills gained in Kingdom War (KvK) on {date}",
   "sheet.name": "Name",
   "sheet.rank": "Rank",
@@ -132,8 +116,6 @@ const en = {
   "intro.3.title": "What to do each week",
   "intro.3.body":
     "Open Members. Start with the thank-you list. Then look at anyone marked Check in: what we saw is written under the name.",
-  "intro.3.more":
-    "You decide what to do. Nothing is sent to anyone, and — (no data) never counts against anyone.",
   "intro.4.title": "Your language",
   "intro.4.body":
     "Tap EN, PT or FR at the top. The page changes at once, and this phone remembers it.",
@@ -143,20 +125,49 @@ const en = {
   "src.officer": "typed by an officer",
   "howto.title": "How to open the Officers’ Desk",
   "howto.lead": "For the alliance’s R4 and R5. Pin this page in your Discord.",
-  "howto.address": "1. Open this address in your phone’s browser",
-  "howto.signin": "2. Sign in with Discord",
   "howto.signin.body":
     "Tap “Sign in with Discord”. Discord asks whether LAPTracker may see your name and your roles in the alliance’s server: tap Authorize. If the page then says No access, ask an R5 for the leadership role.",
-  "howto.iphone": "3. iPhone: add it to the home screen",
   "howto.iphone.body":
     "In Safari, tap Share (the square with an arrow), then Add to Home Screen, then Add.",
-  "howto.android": "4. Android: add it to the home screen",
   "howto.android.body":
     "In Chrome, tap ⋮ at the top right, then Add to Home screen (or Install app), then Add.",
   "howto.after":
     "From then on, tap the icon like any app. You stay signed in for a day; after that, Discord checks your role again.",
   "howto.open": "Open the Officers’ Desk",
   "time.server": "{time} server time",
+  "tab.review": "Follow-up",
+  "members.lead": "From the game, read each night just before the server resets.",
+  "members.lastRead": "Last read: {when}",
+  "members.week": "Week: {from} – {to}",
+  "members.weekHelp": "A week here runs from Monday to Sunday, like the game’s.",
+  "members.legend": "Check in shows what we saw. — means no data.",
+  "members.more": "More",
+  "members.checkinHelp":
+    "Check in shows what we saw, so you can have a friendly word. You decide what to do; nothing is sent or changed by itself.",
+  "members.nodataHelp": "— means no data. It is left out of every count.",
+  "members.checkinCount.one": "{n} person to check in with",
+  "members.checkinCount.other": "{n} people to check in with",
+  "members.checkinNone": "Everyone looks fine this week.",
+  "members.search.go": "Search",
+  "reason.might.one": "might unchanged for {n} day",
+  "reason.might.other": "might unchanged for {n} days",
+  "reason.idle.one":
+    "activity {activity} and donations {donated} unchanged for {n} day ({r} end-of-day reads in a row)",
+  "reason.idle.other":
+    "activity {activity} and donations {donated} unchanged for {n} days ({r} end-of-day reads in a row)",
+  "nodata.donations.one": "donations on {n} day",
+  "nodata.donations.other": "donations on {n} days",
+  "intro.3.more":
+    "You decide what to do; nothing is sent or changed by itself. — means no data, and it is left out of every count.",
+  "howto.address": "1. Open this address",
+  "howto.where": "Open it in Safari or Chrome, not inside Discord.",
+  "howto.copy": "Copy the address",
+  "howto.copied": "Copied",
+  "howto.copyFailed": "Could not copy",
+  "howto.signin": "2. Sign in with Discord",
+  "howto.home": "3. Add it to the home screen",
+  "howto.iphone": "On iPhone",
+  "howto.android": "On Android",
 } as const;
 
 export type WorkspaceKey = keyof typeof en;

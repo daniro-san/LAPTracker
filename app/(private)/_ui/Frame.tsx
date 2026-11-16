@@ -7,11 +7,10 @@ import type { ReactNode } from "react";
 import { ALLIANCES } from "@/config/alliances";
 import { fill } from "@/lib/copy";
 import type { WorkspaceAccess } from "@/lib/private/access";
+import { WORKSPACE_INTRO_COOKIE, WORKSPACE_LANG_COOKIE } from "@/lib/private/cookies";
 import {
   pickWorkspaceLanguage,
   WORKSPACE_DICTIONARIES,
-  WORKSPACE_INTRO_COOKIE,
-  WORKSPACE_LANG_COOKIE,
   type WorkspaceDictionary,
   type WorkspaceLanguage,
 } from "@/lib/private/dictionary";
@@ -64,6 +63,9 @@ function Tabs({ t, slug, current }: { t: WorkspaceDictionary; slug: string; curr
                   className={`${box} border-t-[3px] border-transparent text-ink/55`}
                 >
                   {inside}
+                  <span aria-hidden="true" className="text-[11px] leading-none">
+                    {t["tab.soon"].toLowerCase()}
+                  </span>
                 </span>
               ) : (
                 <a

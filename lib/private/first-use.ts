@@ -28,9 +28,9 @@ export const FIRST_USE_STEPS: readonly FirstUseStep[] = [
   },
 ];
 
-/** The labels a number carries, by where it comes from. */
-export const SOURCE_KEYS = [
-  "src.game",
-  "src.photo",
-  "src.officer",
-] as const satisfies WorkspaceKey[];
+/** Where a number comes from, and the label it carries. */
+export const SOURCES = [
+  { source: "game", key: "src.game" },
+  { source: "photo", key: "src.photo" },
+  { source: "officer", key: "src.officer" },
+] as const satisfies readonly { source: string; key: WorkspaceKey }[];

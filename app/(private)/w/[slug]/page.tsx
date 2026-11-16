@@ -1,7 +1,7 @@
 // /w/[slug]: the access check first, then either the sign-in, or the signed-in shell with Home. A session
 // older than 24 hours goes through Discord again without a click (prompt=none, D71).
 import { cookies } from "next/headers";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 
 import { buttonClass } from "@/lib/brand/components/Button";
 import { withPageDb } from "@/lib/page";
@@ -10,6 +10,7 @@ import type { WorkspaceDictionary } from "@/lib/private/dictionary";
 import { SLUG } from "@/lib/private/sign-in";
 
 import { Frame, SignedInFrame, workspaceWords } from "../../_ui/Frame";
+import { refuse } from "../../_ui/refuse";
 
 const ERRORS = ["denied", "discord", "not_configured"] as const;
 type SignInError = (typeof ERRORS)[number];
@@ -33,7 +34,7 @@ function SignIn({ slug, t, error }: { slug: string; t: WorkspaceDictionary; erro
       <p className="mt-2">
         <a
           href={`/w/${slug}/how-to`}
-          className="inline-flex min-h-11 items-center font-semibold underline underline-offset-4"
+          className="inline-flex min-h-11 items-center py-2 font-semibold underline underline-offset-4"
         >
           {t["signin.howto"]}
         </a>
@@ -71,9 +72,7 @@ export default async function WorkspacePage({
   const jar = await cookies();
   // INVARIANT workspace.access-first: nothing private is read before this check.
   const access = await withPageDb((db) => requireWorkspace(db, slug, jar, new Date()));
-  if (!access.ok && access.reason === "no_workspace") notFound();
-  if (!access.ok && access.reason === "expired") redirect(`/api/w/${slug}/login?silent=1`);
-  if (!access.ok && access.reason === "blocked") redirect(`/w/${slug}/no-access?why=blocked`);
+  if (!access.ok) refuse(slug, access.reason);
   const { language, t } = await workspaceWords();
   if (!access.ok) {
     const e = (await searchParams).e;

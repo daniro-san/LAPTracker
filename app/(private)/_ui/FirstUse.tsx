@@ -8,16 +8,19 @@ import { useState } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
 import { Sheet } from "@/lib/brand/components/Sheet";
-import { WORKSPACE_INTRO_COOKIE, type WorkspaceDictionary } from "@/lib/private/dictionary";
-import { FIRST_USE_STEPS, SOURCE_KEYS, type FirstUseStep } from "@/lib/private/first-use";
+import { WORKSPACE_INTRO_COOKIE } from "@/lib/private/cookies";
+import type { WorkspaceDictionary } from "@/lib/private/dictionary";
+import { FIRST_USE_STEPS, SOURCES, type FirstUseStep } from "@/lib/private/first-use";
+
+import { SourceBadge } from "./SourceBadge";
 
 function Visual({ step, t, howTo }: { step: FirstUseStep; t: WorkspaceDictionary; howTo: string }) {
   if (step.visual === "sources")
     return (
       <ul className="mt-3 flex flex-wrap gap-2">
-        {SOURCE_KEYS.map((k) => (
-          <li key={k} className="border border-rule px-3 py-1 text-body-sm font-semibold">
-            {t[k]}
+        {SOURCES.map(({ source, key }) => (
+          <li key={key}>
+            <SourceBadge source={source} label={t[key]} />
           </li>
         ))}
       </ul>
@@ -26,7 +29,7 @@ function Visual({ step, t, howTo }: { step: FirstUseStep; t: WorkspaceDictionary
     return (
       <a
         href={howTo}
-        className="mt-2 inline-flex min-h-11 items-center font-semibold underline underline-offset-4"
+        className="mt-2 inline-flex min-h-11 items-center py-2 font-semibold underline underline-offset-4"
       >
         {t["signin.howto"]}
       </a>
@@ -76,7 +79,7 @@ export function FirstUse({
               <button
                 type="button"
                 onClick={close}
-                className="min-h-11 px-2 font-semibold underline underline-offset-4"
+                className="min-h-11 px-2 py-2 font-semibold underline underline-offset-4"
               >
                 {t["intro.skip"]}
               </button>

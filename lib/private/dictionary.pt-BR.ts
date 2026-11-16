@@ -9,7 +9,6 @@ export const pt: WorkspaceDictionary = {
   "tab.members": "Membros",
   "tab.mark": "Chamada",
   "tab.days": "Agenda",
-  "tab.review": "Atenção",
   "tab.soon": "Em breve",
   "lang.aria": "Idioma",
   "signin.title": "Entrar",
@@ -41,9 +40,6 @@ export const pt: WorkspaceDictionary = {
   "home.open": "Abrir Membros",
   "shell.help": "Como funciona",
   "signin.howto": "Como colocar no seu celular",
-  "members.lead":
-    "Do jogo, lido toda noite pouco antes de o servidor virar o dia. Última leitura: {when}.",
-  "members.week": "Semana {from} – {to}. Aqui a semana vai de segunda a domingo, como a do jogo.",
   "members.none":
     "Ainda não houve leitura de fim de dia. Os membros aparecem aqui depois da primeira, pouco antes de o servidor virar o dia.",
   "thanks.head": "Obrigado por esta semana",
@@ -63,10 +59,6 @@ export const pt: WorkspaceDictionary = {
   "members.copy": "Copiar para planilha",
   "members.copied": "Copiado",
   "members.copyFailed": "Não deu para copiar",
-  "members.checkinHelp":
-    "Ver como está mostra o que vimos, para você puxar uma conversa amiga. Nada é enviado a ninguém, e o app nunca tira ninguém da aliança.",
-  "members.nodataHelp":
-    "— quer dizer sem dados: aquele dia não foi lido, ou o jogo não informou. Isso nunca conta contra ninguém.",
   "members.new": "Novo",
   "members.firstSeen": "visto pela primeira vez em {date}",
   "members.meta.level": "Sanctuary {n}",
@@ -82,12 +74,8 @@ export const pt: WorkspaceDictionary = {
   "nodata.might": "might",
   "nodata.sanctuary": "Sanctuary",
   "nodata.activity": "atividade",
-  "nodata.donations": "doações em {n} dias",
   "status.fine": "Tudo bem",
   "status.checkin": "Ver como está",
-  "reason.idle":
-    "atividade {activity} e doações {donated} sem mudança há {n} dias ({r} leituras de fim de dia seguidas)",
-  "reason.might": "might igual há {n} dias",
   "reason.kvk": "nenhum kill ganho na Kingdom War (KvK) em {date}",
   "sheet.name": "Nome",
   "sheet.rank": "Cargo",
@@ -124,8 +112,6 @@ export const pt: WorkspaceDictionary = {
   "intro.3.title": "O que fazer toda semana",
   "intro.3.body":
     "Abra Membros. Comece pela lista de agradecimentos. Depois olhe quem está com Ver como está: o que vimos aparece embaixo do nome.",
-  "intro.3.more":
-    "Quem decide o que fazer é você. Nada é enviado a ninguém, e — (sem dados) nunca conta contra ninguém.",
   "intro.4.title": "Seu idioma",
   "intro.4.body":
     "Toque em EN, PT ou FR no alto. A página muda na hora, e este celular guarda a escolha.",
@@ -135,18 +121,47 @@ export const pt: WorkspaceDictionary = {
   "src.officer": "digitado por um oficial",
   "howto.title": "Como abrir a Mesa dos oficiais",
   "howto.lead": "Para os R4 e R5 da aliança. Fixe esta página no seu Discord.",
-  "howto.address": "1. Abra este endereço no navegador do celular",
-  "howto.signin": "2. Entre com o Discord",
   "howto.signin.body":
     "Toque em “Entrar com o Discord”. O Discord pergunta se o LAPTracker pode ver seu nome e seus cargos no servidor da aliança: toque em Autorizar. Se a página disser Sem acesso, peça a um R5 o cargo da liderança.",
-  "howto.iphone": "3. iPhone: coloque na tela de início",
   "howto.iphone.body":
     "No Safari, toque em Compartilhar (o quadrado com uma seta), depois em Adicionar à Tela de Início e em Adicionar.",
-  "howto.android": "4. Android: coloque na tela inicial",
   "howto.android.body":
     "No Chrome, toque em ⋮ no canto de cima, depois em Adicionar à tela inicial (ou Instalar app) e em Adicionar.",
   "howto.after":
     "Daí em diante, toque no ícone como em qualquer app. Você fica conectado por um dia; depois disso, o Discord confere seu cargo de novo.",
   "howto.open": "Abrir a Mesa dos oficiais",
   "time.server": "{time} hora do servidor",
+  "tab.review": "Acompanhar",
+  "members.lead": "Do jogo, lido toda noite pouco antes de o servidor virar o dia.",
+  "members.lastRead": "Última leitura: {when}",
+  "members.week": "Semana: {from} – {to}",
+  "members.weekHelp": "Aqui a semana vai de segunda a domingo, como a do jogo.",
+  "members.legend": "Ver como está mostra o que vimos. — quer dizer sem dados.",
+  "members.more": "Mais",
+  "members.checkinHelp":
+    "Ver como está mostra o que vimos, para você puxar uma conversa amiga. Você decide o que fazer; nada é enviado nem muda sozinho.",
+  "members.nodataHelp": "— quer dizer sem dados. Fica fora de toda conta.",
+  "members.checkinCount.one": "{n} pessoa para ver como está",
+  "members.checkinCount.other": "{n} pessoas para ver como estão",
+  "members.checkinNone": "Todo mundo parece bem esta semana.",
+  "members.search.go": "Buscar",
+  "reason.might.one": "might igual há {n} dia",
+  "reason.might.other": "might igual há {n} dias",
+  "reason.idle.one":
+    "atividade {activity} e doações {donated} sem mudança há {n} dia ({r} leituras de fim de dia seguidas)",
+  "reason.idle.other":
+    "atividade {activity} e doações {donated} sem mudança há {n} dias ({r} leituras de fim de dia seguidas)",
+  "nodata.donations.one": "doações em {n} dia",
+  "nodata.donations.other": "doações em {n} dias",
+  "intro.3.more":
+    "Você decide o que fazer; nada é enviado nem muda sozinho. — quer dizer sem dados, e fica fora de toda conta.",
+  "howto.address": "1. Abra este endereço",
+  "howto.where": "Abra no Safari ou no Chrome, não dentro do Discord.",
+  "howto.copy": "Copiar o endereço",
+  "howto.copied": "Copiado",
+  "howto.copyFailed": "Não deu para copiar",
+  "howto.signin": "2. Entre com o Discord",
+  "howto.home": "3. Coloque na tela inicial",
+  "howto.iphone": "No iPhone",
+  "howto.android": "No Android",
 };

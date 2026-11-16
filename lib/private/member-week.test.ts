@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
 
 import type { RosterMember, RosterRead } from "../repo/workspace-rosters";
-import { gameWeek, idleRun, isNewMember, topOf, weekDonations, weekTotal } from "./member-week";
+import {
+  gameWeek,
+  idleRun,
+  isNewMember,
+  missingOf,
+  topOf,
+  weekDonations,
+  weekTotal,
+} from "./member-week";
 
 const member = (uid: number, fields: Partial<RosterMember> = {}): RosterMember => ({
   uid,
@@ -71,6 +79,15 @@ describe("the offline proxy (D75)", () => {
     // One unchanged day is not enough, and a day with no read ends the run.
     expect(idleRun(reads.slice(2), 1)).toBeNull();
     expect(idleRun([reads[0], reads[1], reads[3]] as RosterRead[], 1)).toBeNull();
+  });
+});
+
+describe("missing data", () => {
+  it("lists what the newest read did not tell, and the days of the week so far with no donations", () => {
+    expect(missingOf(member(1), [100, 200, "later"])).toEqual({ fields: [], days: 0 });
+    expect(
+      missingOf(member(2, { power: null, lv: null, active: null }), [null, 200, null, "later"]),
+    ).toEqual({ fields: ["might", "sanctuary", "activity", "donations"], days: 2 });
   });
 });
 

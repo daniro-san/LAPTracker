@@ -15,9 +15,11 @@ import {
 } from "../repo/workspace-rosters";
 import type { WorkspaceAccess } from "./access";
 import {
+  DAY_MS,
   gameWeek,
   idleRun,
   isNewMember,
+  KVK_REASON_ON,
   missingOf,
   topOf,
   weekDonations,
@@ -32,7 +34,6 @@ import {
 const LOOKBACK_READS = 15;
 /** A scheduled event (the Saturday KvK) counts for its "no kills gained" reason for this long. */
 const KVK_DAYS = 7;
-const DAY_MS = 86_400_000;
 
 /** A "Check in" reason and its evidence (D75). */
 export type Reason =
@@ -72,14 +73,14 @@ export interface MembersView {
 }
 
 /** The rank as the game shows it, with an R4's title by the game's name (D56). */
-function rankOf(m: RosterMember): string | null {
+export function rankOf(m: Pick<RosterMember, "rankCode" | "rankLabel">): string | null {
   if (m.rankCode === null || m.rankCode < 101 || m.rankCode > 105) return m.rankLabel;
   const role = roleOf(m.rankCode, m.rankLabel);
   return role?.kind === "officer" ? `R4 · ${role.title}` : `R${m.rankCode - 100}`;
 }
 
 /** Kills gained in the event: null when either side is unknown or the member was not in both rosters. */
-function killsGained(event: EventKills | null, uid: number): number | null {
+export function killsGained(event: EventKills | null, uid: number): number | null {
   const [before, after] = [event?.before.get(uid), event?.after.get(uid)];
   return before === undefined || after === undefined || before === null || after === null
     ? null
@@ -130,9 +131,11 @@ function rowOf(m: RosterMember, week: string[], s: Signals): MemberRow {
   };
 }
 
-/** R5 first, then R4 … R1, then by might; a member without a rank or might last. */
-const byRankThenMight = (a: MemberRow, b: MemberRow) =>
-  (b.rankCode ?? 0) - (a.rankCode ?? 0) || (b.might ?? -1) - (a.might ?? -1);
+/** Check in first; then R5, R4 … R1, then by might; a member without a rank or might last. */
+const order = (a: MemberRow, b: MemberRow) =>
+  Number(b.reasons.length > 0) - Number(a.reasons.length > 0) ||
+  (b.rankCode ?? 0) - (a.rankCode ?? 0) ||
+  (b.might ?? -1) - (a.might ?? -1);
 
 /** The Members tab of the workspace's own alliance, as of `now`. */
 export async function membersView(
@@ -145,7 +148,9 @@ export async function membersView(
     endOfDayReads(db, unionId, LOOKBACK_READS),
     firstSeenDays(db, unionId),
     mightUnchanged(db, unionId),
-    scheduledEventKills(db, unionId, new Date(now.getTime() - KVK_DAYS * DAY_MS)),
+    KVK_REASON_ON
+      ? scheduledEventKills(db, unionId, new Date(now.getTime() - KVK_DAYS * DAY_MS))
+      : null,
   ]);
   const newest = reads.at(-1);
   if (!newest) return { readAt: null, week: [], members: [], thanks: { donors: [], activity: [] } };
@@ -157,7 +162,7 @@ export async function membersView(
     unchanged: new Map(might.unchanged.map((u) => [u.uid, u.days])),
     event,
   };
-  const members = newest.members.map((m) => rowOf(m, week, signals)).sort(byRankThenMight);
+  const members = newest.members.map((m) => rowOf(m, week, signals)).sort(order);
   return {
     readAt: newest.at,
     week,

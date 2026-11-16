@@ -9,7 +9,6 @@ export const fr: WorkspaceDictionary = {
   "tab.members": "Membres",
   "tab.mark": "Appel",
   "tab.days": "Agenda",
-  "tab.review": "À suivre",
   "tab.soon": "Bientôt",
   "lang.aria": "Langue",
   "signin.title": "Connexion",
@@ -41,10 +40,6 @@ export const fr: WorkspaceDictionary = {
   "home.open": "Ouvrir Membres",
   "shell.help": "Comment ça marche",
   "signin.howto": "Comment l’avoir sur votre téléphone",
-  "members.lead":
-    "Du jeu, relevé chaque nuit juste avant le changement de jour du serveur. Dernier relevé : {when}.",
-  "members.week":
-    "Semaine {from} – {to}. Ici, la semaine va du lundi au dimanche, comme dans le jeu.",
   "members.none":
     "Pas encore de relevé de fin de journée. Les membres apparaissent ici après le premier, juste avant le changement de jour du serveur.",
   "thanks.head": "Merci pour cette semaine",
@@ -64,10 +59,6 @@ export const fr: WorkspaceDictionary = {
   "members.copy": "Copier pour un tableur",
   "members.copied": "Copié",
   "members.copyFailed": "Copie impossible",
-  "members.checkinHelp":
-    "Prendre des nouvelles montre ce que nous avons vu, pour un mot amical. Rien n’est envoyé à personne, et l’appli ne retire jamais personne.",
-  "members.nodataHelp":
-    "— veut dire pas de données : ce jour n’a pas été relevé, ou le jeu ne l’a pas dit. Cela ne compte jamais contre personne.",
   "members.new": "Nouveau",
   "members.firstSeen": "vu pour la première fois le {date}",
   "members.meta.level": "Sanctuary {n}",
@@ -83,12 +74,8 @@ export const fr: WorkspaceDictionary = {
   "nodata.might": "might",
   "nodata.sanctuary": "Sanctuary",
   "nodata.activity": "activité",
-  "nodata.donations": "dons sur {n} jours",
   "status.fine": "Bien",
   "status.checkin": "Prendre des nouvelles",
-  "reason.idle":
-    "activité {activity} et dons {donated} inchangés depuis {n} jours ({r} relevés de fin de journée d’affilée)",
-  "reason.might": "might inchangé depuis {n} jours",
   "reason.kvk": "aucun kill gagné en Kingdom War (KvK) le {date}",
   "sheet.name": "Nom",
   "sheet.rank": "Rang",
@@ -125,8 +112,6 @@ export const fr: WorkspaceDictionary = {
   "intro.3.title": "Que faire chaque semaine",
   "intro.3.body":
     "Ouvrez Membres. Commencez par la liste des remerciements. Puis regardez les personnes marquées Prendre des nouvelles : ce que nous avons vu est écrit sous le nom.",
-  "intro.3.more":
-    "C’est vous qui décidez. Rien n’est envoyé à personne, et — (pas de données) ne compte jamais contre personne.",
   "intro.4.title": "Votre langue",
   "intro.4.body":
     "Touchez EN, PT ou FR en haut. La page change tout de suite, et ce téléphone s’en souvient.",
@@ -136,18 +121,48 @@ export const fr: WorkspaceDictionary = {
   "src.officer": "saisi par un officier",
   "howto.title": "Comment ouvrir le Bureau des officiers",
   "howto.lead": "Pour les R4 et R5 de l’alliance. Épinglez cette page sur votre Discord.",
-  "howto.address": "1. Ouvrez cette adresse dans le navigateur du téléphone",
-  "howto.signin": "2. Connectez-vous avec Discord",
   "howto.signin.body":
     "Touchez « Se connecter avec Discord ». Discord demande si LAPTracker peut voir votre nom et vos rôles sur le serveur de l’alliance : touchez Autoriser. Si la page affiche Pas d’accès, demandez le rôle de direction à un R5.",
-  "howto.iphone": "3. iPhone : ajoutez-la à l’écran d’accueil",
   "howto.iphone.body":
     "Dans Safari, touchez Partager (le carré avec une flèche), puis Sur l’écran d’accueil, puis Ajouter.",
-  "howto.android": "4. Android : ajoutez-la à l’écran d’accueil",
   "howto.android.body":
     "Dans Chrome, touchez ⋮ en haut à droite, puis Ajouter à l’écran d’accueil (ou Installer l’application), puis Ajouter.",
   "howto.after":
     "Ensuite, touchez l’icône comme pour n’importe quelle appli. Vous restez connecté une journée ; ensuite, Discord vérifie à nouveau votre rôle.",
   "howto.open": "Ouvrir le Bureau des officiers",
   "time.server": "{time} heure serveur",
+  "tab.review": "À suivre",
+  "members.lead": "Du jeu, relevé chaque nuit juste avant le changement de jour du serveur.",
+  "members.lastRead": "Dernier relevé : {when}",
+  "members.week": "Semaine : {from} – {to}",
+  "members.weekHelp": "Ici, la semaine va du lundi au dimanche, comme dans le jeu.",
+  "members.legend":
+    "Prendre des nouvelles montre ce que nous avons vu. — veut dire pas de données.",
+  "members.more": "Plus",
+  "members.checkinHelp":
+    "Prendre des nouvelles montre ce que nous avons vu, pour un mot amical. Vous décidez quoi faire ; rien n’est envoyé ni modifié tout seul.",
+  "members.nodataHelp": "— veut dire pas de données ; elles n’entrent dans aucun calcul.",
+  "members.checkinCount.one": "{n} personne à qui prendre des nouvelles",
+  "members.checkinCount.other": "{n} personnes à qui prendre des nouvelles",
+  "members.checkinNone": "Tout le monde a l’air bien cette semaine.",
+  "members.search.go": "Chercher",
+  "reason.might.one": "might inchangé depuis {n} jour",
+  "reason.might.other": "might inchangé depuis {n} jours",
+  "reason.idle.one":
+    "activité {activity} et dons {donated} inchangés depuis {n} jour ({r} relevés de fin de journée d’affilée)",
+  "reason.idle.other":
+    "activité {activity} et dons {donated} inchangés depuis {n} jours ({r} relevés de fin de journée d’affilée)",
+  "nodata.donations.one": "dons sur {n} jour",
+  "nodata.donations.other": "dons sur {n} jours",
+  "intro.3.more":
+    "C’est vous qui décidez ; rien n’est envoyé ni modifié tout seul. — veut dire pas de données, et elles n’entrent dans aucun calcul.",
+  "howto.address": "1. Ouvrez cette adresse",
+  "howto.where": "Ouvrez-la dans Safari ou Chrome, pas dans Discord.",
+  "howto.copy": "Copier l’adresse",
+  "howto.copied": "Copié",
+  "howto.copyFailed": "Copie impossible",
+  "howto.signin": "2. Connectez-vous avec Discord",
+  "howto.home": "3. Ajoutez-la à l’écran d’accueil",
+  "howto.iphone": "Sur iPhone",
+  "howto.android": "Sur Android",
 };

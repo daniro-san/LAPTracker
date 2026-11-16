@@ -2,6 +2,7 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
+import { scheduledEventKills } from "../repo/workspace-rosters";
 import { findWorkspaceBySlug, recordSignIn, saveWorkspace } from "../repo/workspaces";
 import {
   allianceSnapshots,
@@ -12,7 +13,8 @@ import {
   snapshots,
 } from "../schema";
 import { requireWorkspace, type WorkspaceAccess } from "./access";
-import { membersView } from "./members";
+import { KVK_REASON_ON } from "./member-week";
+import { killsGained, membersView, rankOf } from "./members";
 import { createSession } from "./session";
 
 const OGS = 67111155;
@@ -44,8 +46,9 @@ async function signedIn(slug: string): Promise<WorkspaceAccess> {
   return access;
 }
 
-/** One alliance's end-of-day read on server day `day` (D72): the member arrays and raw_json. */
-async function endOfDay(unionId: number, day: string, members: Members) {
+/** One alliance's end-of-day read on server day `day` (D72): the member arrays and raw_json, plus
+ * `extra` raw members as the upstream might send them. */
+async function endOfDay(unionId: number, day: string, members: Members, extra: object[] = []) {
   const uids = Object.keys(members).map(Number);
   const at = new Date(`${day}T23:37:00-02:00`);
   await db
@@ -63,17 +66,20 @@ async function endOfDay(unionId: number, day: string, members: Members) {
     memberPower: uids.map((u) => members[u]?.power ?? 1000),
     memberKills: uids.map(() => 0),
     rawJson: {
-      members: uids.map((uid) => ({
-        uid,
-        nick_name: `P${uid}`,
-        power: members[uid]?.power ?? 1000,
-        lv: 25,
-        rank_code: 103,
-        rank_label: "R3",
-        daily_tech: members[uid]?.tech ?? null,
-        active: members[uid]?.active ?? 10 + Number(day.slice(8)),
-        avatar_url: "https://phs-image.globallap.com/a.png",
-      })),
+      members: [
+        ...uids.map((uid) => ({
+          uid,
+          nick_name: `P${uid}`,
+          power: members[uid]?.power ?? 1000,
+          lv: 25,
+          rank_code: 103,
+          rank_label: "R3",
+          daily_tech: members[uid]?.tech ?? null,
+          active: members[uid]?.active ?? 10 + Number(day.slice(8)),
+          avatar_url: "https://phs-image.globallap.com/a.png",
+        })),
+        ...extra,
+      ],
     },
   });
 }
@@ -145,17 +151,18 @@ async function kvk(kills: Record<number, [number | null, number | null]>) {
 }
 
 describe("Check in reasons (D75)", () => {
-  it("gives a member with no kills gained in the week's scheduled event a reason with its date", async () => {
+  it("finds who gained no kills in the week's scheduled event, and holds that reason until away notes exist", async () => {
     await endOfDay(OGS, dayOf(5), { 1: { tech: 5 }, 2: { tech: 5 }, 3: { tech: 5 } });
     await kvk({ 1: [100, 100], 2: [100, 150], 3: [null, 100] });
 
+    const event = await scheduledEventKills(db, OGS, new Date(NOW.getTime() - 7 * 86_400_000));
     const view = await membersView(db, await signedIn("ogs"), NOW);
 
-    const reasons = new Map(view.members.map((m) => [m.uid, m.reasons]));
-    expect(reasons.get(1)).toEqual([{ kind: "kvk", at: new Date("2026-11-14T14:00:00Z") }]);
-    // Kills gained, and kills unknown at the Start (which never counts), give no reason.
-    expect(reasons.get(2)).toEqual([]);
-    expect(reasons.get(3)).toEqual([]);
+    expect(event?.at).toEqual(new Date("2026-11-14T14:00:00Z"));
+    // Kills gained, and kills unknown at the Start (which never counts), are not "no kills gained".
+    expect([1, 2, 3].map((uid) => killsGained(event, uid))).toEqual([0, 50, null]);
+    expect(KVK_REASON_ON).toBe(false);
+    expect(view.members.flatMap((m) => m.reasons)).toEqual([]);
   });
 
   it("lists D70's might unchanged as a reason, and a member whose might grew as fine", async () => {
@@ -168,5 +175,23 @@ describe("Check in reasons (D75)", () => {
     const reasons = new Map(view.members.map((m) => [m.uid, m.reasons]));
     expect(reasons.get(1)).toEqual([{ kind: "might", days: 15 }]);
     expect(reasons.get(2)).toEqual([]);
+  });
+});
+
+describe("the roster read", () => {
+  it("leaves out a member the upstream sent without a uid, instead of listing a member 0", async () => {
+    await endOfDay(OGS, dayOf(0), { 1: { tech: 5 } }, [{ nick_name: "Ghost" }, { uid: null }]);
+
+    const view = await membersView(db, await signedIn("ogs"), NOW);
+
+    expect(view.members.map((m) => m.uid)).toEqual([1]);
+  });
+
+  it("shows an R4's title by the game's name, and other ranks as R1 … R5", () => {
+    expect(rankOf({ rankCode: 104, rankLabel: "R4 · Overseer" })).toBe("R4 · Goddess");
+    expect(rankOf({ rankCode: 104, rankLabel: "R4 · Diplomat" })).toBe("R4 · Diplomat");
+    expect(rankOf({ rankCode: 104, rankLabel: "R4" })).toBe("R4");
+    expect(rankOf({ rankCode: 105, rankLabel: "R5" })).toBe("R5");
+    expect(rankOf({ rankCode: null, rankLabel: null })).toBeNull();
   });
 });

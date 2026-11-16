@@ -67,9 +67,12 @@ function time(v: unknown): Date | null {
   return at && Number.isFinite(at.getTime()) && (v as number | string) !== "" ? at : null;
 }
 
-function member(m: RawMember): RosterMember {
+/** A roster member, or null when the upstream sent no usable uid (it would read as a member 0). */
+function member(m: RawMember): RosterMember | null {
+  const uid = num(m.uid);
+  if (uid === null || !Number.isSafeInteger(uid)) return null;
   return {
-    uid: Number(m.uid),
+    uid,
     name: typeof m.nick_name === "string" ? m.nick_name : "",
     power: num(m.power),
     lv: num(m.lv),
@@ -105,11 +108,15 @@ export async function endOfDayReads(db: Db, unionId: number, n: number): Promise
   return rows.reverse().map((r) => ({
     day: r.day,
     at: r.at as Date,
-    members: r.members.map(member).filter((m) => Number.isSafeInteger(m.uid)),
+    members: r.members.map(member).filter((m) => m !== null),
   }));
 }
 
-/** Per uid, the server day of the alliance's oldest usable daily roster that lists it. */
+/**
+ * Per uid, the server day of the alliance's oldest usable daily roster that lists it. It reads every
+ * roster the alliance has, which grows by one per day (about 100 uids each): bound it or keep the result
+ * if it shows up in timings.
+ */
 export async function firstSeenDays(db: Db, unionId: number): Promise<Map<number, string>> {
   const result = await db.execute<{ uid: string; first: string }>(sql`
     select u.uid::text as uid, min(r.read_day)::text as first

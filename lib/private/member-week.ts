@@ -1,16 +1,24 @@
 // The Members tab's arithmetic (issue #296, D75), pure: the game week of an alliance's end-of-day reads,
 // each member's donations per server day and the week's total, the offline proxy, who is new, what is
 // missing, and the week's thanks. Data that was not captured is null: shown as "—", never 0, never counted.
+import { NEW_MEMBER_DAYS } from "../queries/might-unchanged";
 import type { RosterMember, RosterRead } from "../repo/workspace-rosters";
 
-/** A member first seen in the alliance less than this many days before the newest read is new (D70's 14). */
-export const NEW_MEMBER_DAYS = 14;
-/** Day-to-day steps with activity and donations unchanged before the offline proxy is a reason (D75). */
+/**
+ * Day-to-day steps with activity and donations unchanged before the offline proxy is a reason (D75):
+ * 2 steps are 3 consecutive end-of-day reads, 2 full days, the owner's "offline for more than 2 days".
+ */
 export const IDLE_STEPS = 2;
 /** Names in each thanks list. */
 export const THANKS_SIZE = 3;
+/**
+ * D75's "zero kills in a KvK with no away note recorded" is held: away notes arrive with #297/#298, and
+ * without them about 46 of OGs' 101 members would carry it (KvK 2026-11-14, #271). The read and the
+ * test stay; `membersView` adds the reason only when this is true.
+ */
+export const KVK_REASON_ON: boolean = false;
 
-const DAY_MS = 86_400_000;
+export const DAY_MS = 86_400_000;
 const dayMs = (day: string) => Date.parse(`${day}T00:00:00Z`);
 const isoDay = (ms: number) => new Date(ms).toISOString().slice(0, 10);
 export const nextDay = (day: string) => isoDay(dayMs(day) + DAY_MS);
