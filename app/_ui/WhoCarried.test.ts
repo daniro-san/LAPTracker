@@ -41,6 +41,9 @@ describe("WhoCarried", () => {
     it("shows the first 5 rows above their might share, and never a row below it", () => {
       expect(ids(visibleRows(rows, null))).toEqual([1, 2, 3, 4, 5]);
     });
+    it("shows every row in the same order once expanded", () => {
+      expect(ids(visibleRows(rows, null, true))).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    });
     it("adds the viewer's own alliance wherever it is", () => {
       expect(ids(visibleRows(rows, 9))).toEqual([1, 2, 3, 4, 5, 9]);
     });

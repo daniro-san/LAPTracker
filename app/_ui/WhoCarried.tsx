@@ -3,10 +3,11 @@
 // "Kill share vs might share" (issue 280, D83): one row per alliance with two marks on one percent axis,
 // a square for its share of the might at Start and a round one for its share of the kills gained, joined
 // by a line. Rows come biggest gap first. Only the first TOP rows whose kill share is above their might
-// share are shown, and the viewer's own wherever it is: there is no bottom list and no "Show all". The
+// share are shown, and the viewer's own wherever it is, until "Show all (n)" opens every row (owner, D83). The
 // ratio is shown only for an alliance with enough events, with its range; otherwise the gap in points.
 // Marks and the line are plain HTML boxes (D68); every figure is also text. No member is named.
 import Link from "next/link";
+import { useState } from "react";
 
 import { fill } from "@/lib/copy";
 import type { Carried, CarriedRow } from "@/lib/queries";
@@ -22,13 +23,15 @@ import {
 import { useCopy, useLocale } from "./LocaleProvider";
 import { useMyAlliance } from "./MyAlliance";
 import { AllianceBadge } from "./Pictures";
+import { ShowAllButton } from "./ShowFirst";
 import { LABEL } from "./StatTable";
 
 /** Rows shown besides the viewer's own. */
 const TOP = 5;
 
-/** The rows shown: the first TOP with a kill share above the might share, and the viewer's own. */
-export function visibleRows(rows: CarriedRow[], mine: number | null): CarriedRow[] {
+/** The rows shown: all of them once expanded (owner, D83), else the first TOP above the might share and the viewer's own. */
+export function visibleRows(rows: CarriedRow[], mine: number | null, all = false): CarriedRow[] {
+  if (all) return rows;
   const above = rows.filter((r) => r.killShare > r.mightShare).slice(0, TOP);
   const own = rows.find((r) => r.unionId === mine);
   return own && !above.includes(own) ? [...above, own] : above;
@@ -115,7 +118,8 @@ export function WhoCarried({ eventId, carried }: { eventId: number; carried: Car
   const locale = useLocale();
   const mine = useMyAlliance();
   const l = copy.ledger;
-  const shown = visibleRows(carried.rows, mine);
+  const [all, setAll] = useState(false);
+  const shown = visibleRows(carried.rows, mine, all);
   // One axis for every row: from 0 to the largest share among the rows shown.
   const axis = Math.max(...shown.flatMap((r) => [r.mightShare, r.killShare]), 0.01);
   const { totals } = carried;
@@ -134,7 +138,7 @@ export function WhoCarried({ eventId, carried }: { eventId: number; carried: Car
             might: compact(totals.might, locale),
           })}
         </p>
-        <p className="mt-1 text-body-sm text-ink/70">{l.carriedShown}</p>
+        {!all && <p className="mt-1 text-body-sm text-ink/70">{l.carriedShown}</p>}
         <p className={`mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 ${LABEL}`}>
           <span className="flex items-center gap-1.5">
             <span aria-hidden="true" className="size-3 border-2 border-ink bg-paper" />
@@ -157,6 +161,9 @@ export function WhoCarried({ eventId, carried }: { eventId: number; carried: Car
             <Row key={r.unionId} r={r} eventId={eventId} axis={axis} mine={r.unionId === mine} />
           ))}
         </ol>
+        {shown.length < carried.rows.length && (
+          <ShowAllButton n={carried.rows.length} onClick={() => setAll(true)} />
+        )}
       </div>
     </section>
   );

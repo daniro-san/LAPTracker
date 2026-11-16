@@ -11,7 +11,7 @@ Refs #280. Decision: D83.
 - **Decision** `docs/decisions/D83-kill-share-vs-might-share.md` and its README line.
 
 ## Decisions
-- **No "Show all".** The issue's placement note suggests the WhoFought pattern; the binding "no bottom list" review rule wins, because an expanded list sorted by the gap ends with the lowest kill shares. The section shows the first 5 rows with a kill share above the might share, plus the viewer's own row.
+- **Superseded 2026-11-16 (owner): "Show all (n)" was added, see "UX review" below.** Original text: **No "Show all".** The issue's placement note suggests the WhoFought pattern; the binding "no bottom list" review rule wins, because an expanded list sorted by the gap ends with the lowest kill shares. The section shows the first 5 rows with a kill share above the might share, plus the viewer's own row.
 - **Shares are over the alliances with a usable Start and End.** An alliance with a stale or failed side has no figure and is not in the totals, so the shares add up to 100 % of the same set.
 - **"Kingdom" is the tracked alliances.** The total line says `All {n} alliances: {kills} kills gained, {might} might at Start`.
 - **A KvK is any event of `chainEvent`** (the schema has no event kind). The ratio needs 3 ratios counting this event; earlier events count whether or not they have samples. The range is over those ratios (`1.8×–2.9× over 4 events`). Up to 12 earlier events are read.
@@ -21,7 +21,7 @@ Refs #280. Decision: D83.
 - **Translations**: 17 languages, at most 3 translators at a time. The first run of `vi` and `th` read stale todo files from the shared scratch folder and wrote a `merge` section; those two files were restored from git and translated again.
 
 ## Deviations
-- No "Show all" (see Decisions). Not pushed and no PR opened (the sandbox blocks `git push`); the orchestrator does it. The PR URL line is left out.
+- No "Show all" (superseded, see Decisions). Not pushed and no PR opened (the sandbox blocks `git push`); the orchestrator does it. The PR URL line is left out.
 
 ## Verified
 - `pnpm check`: prettier, eslint, tsc, vitest (97 files passed, 2 skipped), drift and i18n ("17 languages up to date with English") green.
@@ -29,6 +29,12 @@ Refs #280. Decision: D83.
 - Chrome, light and dark, at 360, 390, 412, 640 and 1280 px: the page's `scrollWidth` equals its width at every size; the section's right edge is 344 px at 360 and 396 px at 412.
 - Screenshots: `docs/screenshots/08zzzzk-who-carried-360-light.png`, `-360-dark.png`, `-1280-light.png`, `-1280-dark.png`.
 - Not run: 390 and 412 px visual review beyond the overflow measure; WebKit; a real KvK's numbers (the seed is synthetic, so the 11.2× style ratios in the screenshots are not real).
+
+## UX review (2026-11-16)
+Measured (Chrome, light and dark, 360, 390, 412, 600, 768, 810, 820, 1024, 1180, 1280; WebKit 390 and 820, light and dark; German and Russian at 360): `scrollWidth` equals the viewport width everywhere, with the list collapsed and expanded; no tap target under 44 px (rows are 44 px or more, "Show all" is a `buttonClass` button); no text under 4.5:1 (computed against the real background, ink/70 text included); no figure clipped. The only clipped text is a long alliance name (`[TmSLONG] Ünbelievably Long Allianz Nam`) at 360 to 412 px and `[IMPA] IMPERIUM AETERNUM` in German at 360 px: both end in an ellipsis after the tag, as in War turnout. The section has no `<select>`.
+Fixed: owner decision 2026-11-16, "Show all (n)" opens every alliance with a figure in the same order (D83 amendment); the "furthest above their might share" line is hidden once the list is open because it no longer describes the rows; one test for the expanded order.
+Left: (1) rows with a ratio and rows with `pts` share a list (open issue 2, owner decision). (2) One large alliance sets the axis, so the others sit near the left end; the figures are text, so nothing is lost. (3) The first phone screen reads title, two help lines, then data; a one-sentence takeaway above the rows would need new copy in 17 languages. (4) At 820 px and wider the rows are full width with 12 px text; the same as War turnout.
+Reader's 3-second takeaway: before and after, "each alliance's kills against its might, one row each, the first one with 5.9x" (the data, not a sentence). Wording has no blame words in English, German or Russian.
 
 ## Open issues
 1. **The ratio's range is over 12 earlier events at most**, and a Start that did not match the battle window still yields a ratio for that event. The range shows the spread but does not exclude such an event.
