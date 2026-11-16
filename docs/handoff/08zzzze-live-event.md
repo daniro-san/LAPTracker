@@ -87,3 +87,5 @@ Plan changes needed: none in this PR. In the charts sketch of `08zzzza`'s Next, 
 </adjustments>
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+https://github.com/daniro-san/LAPTracker/pull/319
