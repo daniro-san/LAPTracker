@@ -66,6 +66,15 @@ export const en = {
     alliances: "Alliances",
     /** The event's biggest gains and losses (#70). */
     movers: "Grandma noticed",
+    /** The event page's section on kills gained by members (#271); no figure is about one person. */
+    fought: "Who fought",
+    /** Under the section's title: what the figures count. */
+    foughtHelp:
+      "Members who were in the alliance at Start and at End. Support players gain no kills.",
+    /** The first list: members with kills gained, as a share of the members in both reads. */
+    withKills: "Members with kills gained",
+    /** The second list: the alliance's five biggest kills gains, as a share of all its kills gained. */
+    topShare: "Top 5's share of kills",
   },
   /** Event vs event (D57, #177): two events' in-event changes side by side. */
   compare: {

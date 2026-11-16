@@ -53,6 +53,11 @@ export const es = {
     names: "Nombres",
     alliances: "Alianzas",
     movers: "Abuela notó",
+    fought: "Quién peleó",
+    foughtHelp:
+      "Members que estaban en la alianza al Inicio y al Fin. Los jugadores de apoyo no suman Kills.",
+    withKills: "Members que sumaron Kills",
+    topShare: "Parte del Top 5 en Kills",
   },
   compare: {
     title: "Evento contra evento",

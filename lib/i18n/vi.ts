@@ -53,6 +53,11 @@ export const vi = {
     names: "Tên",
     alliances: "Liên minh",
     movers: "Bà để ý",
+    fought: "Ai tham chiến",
+    foughtHelp:
+      "Thành viên đã ở trong liên minh lúc Bắt đầu và lúc Kết thúc. Vai hỗ trợ không tăng tiêu diệt.",
+    withKills: "Thành viên có tiêu diệt tăng",
+    topShare: "Tỷ lệ tiêu diệt của Top 5",
   },
   compare: {
     title: "Sự kiện so với sự kiện",

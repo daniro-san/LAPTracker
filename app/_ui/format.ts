@@ -12,7 +12,10 @@ export const MEMBER_MARK = "*";
 const numberFormats = new Map<string, Intl.NumberFormat>();
 
 /** Intl formatters are costly to build; one per locale and style, reused across requests. */
-function numberFormat(locale: string, style: "compact" | "exact" | "percent"): Intl.NumberFormat {
+function numberFormat(
+  locale: string,
+  style: "compact" | "exact" | "percent" | "share",
+): Intl.NumberFormat {
   const key = `${locale}|${style}`;
   let format = numberFormats.get(key);
   if (!format) {
@@ -20,6 +23,7 @@ function numberFormat(locale: string, style: "compact" | "exact" | "percent"): I
       compact: { notation: "compact", minimumSignificantDigits: 3, maximumSignificantDigits: 3 },
       exact: { maximumFractionDigits: 0 },
       percent: { style: "percent", minimumFractionDigits: 1, maximumFractionDigits: 1 },
+      share: { style: "percent", maximumFractionDigits: 0 },
     };
     format = new Intl.NumberFormat(locale, options[style]);
     numberFormats.set(key, format);
@@ -46,6 +50,10 @@ export function percent(delta: number | null, base: number | null): number | nul
 
 export const percentText = (p: number, locale: string): string =>
   `${signOf(p)}${numberFormat(locale, "percent").format(Math.abs(p) / 100)}`;
+
+/** A share of a whole (0 to 1) as a whole percent: `54%`, never signed. */
+export const shareText = (ratio: number, locale: string): string =>
+  numberFormat(locale, "share").format(ratio);
 
 /** `[NSE] Natural Selection`: the game's own way of writing an alliance. */
 export const allianceLabel = (tag: string | null, name: string | null): string =>

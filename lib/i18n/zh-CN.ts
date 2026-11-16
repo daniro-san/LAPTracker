@@ -53,6 +53,10 @@ export const zhCN = {
     names: "名称",
     alliances: "联盟",
     movers: "奶奶注意到了",
+    fought: "参战情况",
+    foughtHelp: "开始和结束时都在联盟中的 Members。辅助玩家不获得 Kills。",
+    withKills: "获得 Kills 的 Members",
+    topShare: "前 5 名的 Kills 占比",
   },
   compare: {
     title: "活动对比",

@@ -54,6 +54,11 @@ export const idID = {
     names: "Nama",
     alliances: "Aliansi",
     movers: "Nenek perhatikan",
+    fought: "Ikut bertarung",
+    foughtHelp:
+      "Members yang ada di aliansi di Awal dan di Akhir. Pemain support tidak mendapat Kills.",
+    withKills: "Members dengan Kills yang didapat",
+    topShare: "Bagian Top 5 dari Kills",
   },
   compare: {
     title: "Event vs event",

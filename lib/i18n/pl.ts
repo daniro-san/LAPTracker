@@ -53,6 +53,11 @@ export const pl = {
     names: "Nazwy",
     alliances: "Sojusze",
     movers: "Babcia zauważyła",
+    fought: "Kto walczył",
+    foughtHelp:
+      "Members, którzy byli w sojuszu na Początku i na Końcu. Gracze wsparcia nie zdobywają Kills.",
+    withKills: "Members ze zdobytymi Kills",
+    topShare: "Udział Top 5 w Kills",
   },
   compare: {
     title: "Wydarzenie vs wydarzenie",

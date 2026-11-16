@@ -26,6 +26,8 @@ Words already used in `lib/i18n/nl.ts`. Reuse them so the pages stay consistent;
 | grandma                   | oma                              | the voice in empty states and errors                      |
 | Start / End               | Begin / Einde                    | `status.start` / `status.end`, `compare.lead`             |
 | vs                        | tegen                            | `compare.versus` — between two event names                |
+| Who fought                | Wie vochten                      | `ledger.fought` — the event page's section title          |
+| Support player            | support-speler                   | `ledger.foughtHelp` — a player who gains no kills         |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

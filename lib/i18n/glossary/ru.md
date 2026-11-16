@@ -29,6 +29,7 @@ Words already used in `lib/i18n/ru.ts`. Reuse them so the pages stay consistent;
 | Start / End               | Начало / Конец              | `status.start` / `status.end`, `compare.lead`               |
 | Member history            | История участников          | `history.title` — the page title                            |
 | Daily read                | Ежедневное чтение           | `history.daily` — a card head for the once-a-day read       |
+| Top 5                     | Топ-5                       | `ledger.topShare` — the five biggest gains in an alliance   |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.
