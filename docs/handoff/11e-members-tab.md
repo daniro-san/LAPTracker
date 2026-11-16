@@ -136,12 +136,15 @@ Closes #296. Part 2 of #312: the first-use cards, in the format the persona pane
 
 ## Verified
 - **lv = Sanctuary**: on 2026-11-16 the OGs sheet's Sanctuary column equalled the API `lv` for 30 members. For the other 50 the API was 1–2 levels higher, never lower, because the sheet was stale (orchestrator's sheet analysis).
-- **`pnpm check` green** after merging `origin/dev` at d9c2cc3 (D78):
+- **`pnpm check` green** after merging `origin/dev` at 2041dd1 (D78, D79):
   - prettier, eslint, tsc;
-  - vitest: **90 files passed, 2 skipped; 471 tests passed, 4 skipped**;
+  - vitest: **91 files passed, 2 skipped; 473 tests passed, 4 skipped**;
   - drift gate: "Everything's fine";
   - i18n: 17 languages up to date.
-  - Earlier rounds: 77 files and 372 tests passed before the first merge; 88 files and 461 tests passed after it.
+  - Earlier rounds:
+    - 77 files and 372 tests passed before the first merge;
+    - 88 files and 461 tests after it;
+    - 90 files and 471 tests after the D78 merge.
 - Tests, one per behaviour:
   - **week sum** on a synthetic week: the previous Sunday is not counted; a null day and a day without a read are `null`; later days are `"later"`; the total is 650;
   - **offline proxy**: 3 unchanged reads across Monday's reset give `{ days: 3 }`. There is no reason when the member was active on Monday, when Monday's value is unknown, after one day, or across a missing day;
