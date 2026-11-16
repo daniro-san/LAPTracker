@@ -93,6 +93,20 @@ export const vi = {
       "Phần tiêu diệt của liên minh do 5 thành viên có tiêu diệt tăng nhiều nhất làm ra. Càng cao thì càng ít người gánh.",
     topBasis: "{top} trong {n}",
     fewGainers: "ít tăng",
+    carried: "Phần tiêu diệt so với Lực Chiến",
+    carriedHelp:
+      "Phần tiêu diệt tăng của mỗi liên minh từ Bắt đầu đến Kết thúc, đặt cạnh phần Lực Chiến của liên minh đó lúc Bắt đầu. Vai phòng thủ và vai hỗ trợ không tăng tiêu diệt.",
+    carriedShown:
+      "Các liên minh có phần tiêu diệt vượt xa phần Lực Chiến nhất, và liên minh của bạn.",
+    carriedTotal: "Cả {n} liên minh: {kills} tiêu diệt tăng, {might} Lực Chiến lúc Bắt đầu",
+    carriedMightMark: "Phần Lực Chiến lúc Bắt đầu",
+    carriedKillsMark: "Phần tiêu diệt tăng",
+    carriedShares: "Lực Chiến {might} · Tiêu diệt {kills}",
+    carriedTurnout: "{share} có tiêu diệt tăng",
+    carriedSpread: "{low}–{high} qua {n} sự kiện",
+    carriedRatioHelp:
+      "× là phần tiêu diệt chia cho phần Lực Chiến. Hiển thị từ 3 sự kiện, kèm khoảng; trước đó, hiển thị chênh lệch theo điểm %.",
+    carriedPoints: "điểm %",
   },
   compare: {
     title: "Sự kiện so với sự kiện",

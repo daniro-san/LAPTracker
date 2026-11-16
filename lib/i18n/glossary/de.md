@@ -2,40 +2,72 @@
 
 Words already used in `lib/i18n/de.ts`. Reuse them so the pages stay consistent; add a row when you coin a term another key will need again (translate-copy skill).
 
-| English                   | de                           | Key and use                                                   |
-| ------------------------- | ---------------------------- | ------------------------------------------------------------- |
-| Server 325 · Event Ledger | Server 325 · Event-Chronik   | `site.ledger` — the page title                                |
-| Ledger                    | Chronik                      | `site.home` — the ledger, as a breadcrumb                     |
-| kept by the Old Grandmas  | geführt von den Old Grandmas | `site.byline` — Old Grandmas stays a name                     |
-| Alliance                  | Allianz                      | `ledger.alliance`                                             |
-| not in a tracked alliance | in keiner erfassten Allianz  | `compare.notTracked` — player view                            |
-| Member                    | Mitglied                     | `ledger.member` — a player inside an alliance                 |
-| Player                    | Spieler                      | `ledger.player`                                               |
-| Event                     | Event                        | `ledger.event` — a game event                                 |
-| Rank                      | Rang                         | `ledger.rank` — the #n position                               |
-| Ranking                   | Rangliste                    | `ledger.ranking` — the game's server rank                     |
-| joined                    | beigetreten                  | `ledger.joined` — after +n                                    |
-| left                      | ausgetreten                  | `ledger.left` — after −n                                      |
-| Stale                     | Veraltet                     | `fresh.stale` — data not fresh                                |
-| server time               | Serverzeit                   | `time.serverTime` — after a time: 14:01 …                     |
-| your time                 | deine Zeit                   | `time.yourTime` — after a time, the viewer's zone             |
-| Exact numbers             | Genaue Zahlen                | `site.exactNumbers` — the toggle; legend.rounded names it     |
-| Manual round              | Manuelle Runde               | `site.manualRound` — an event the admin runs by hand          |
-| Leader                    | Anführer                     | `leadership.leader` — the R5                                  |
-| Run by hand by the admin  | Startet der Admin von Hand   | `status.byHand`                                               |
-| grandma                   | Oma                          | the voice in empty states and errors                          |
-| Grandma noticed           | Oma merkt's                  | `ledger.movers` — the event's biggest gains and losses        |
-| Start / End               | Beginn / Ende                | `status.start` / `status.end`, `compare.lead`                 |
-| Member history            | Mitgliederverlauf            | `history.title` — the page, its nav tab and the alliance link |
-| Daily progress            | Tägliche Entwicklung         | `ledger.progress` — the player page's section heading         |
-| reading                   | Erfassung                    | `history.first`, `ledger.progressEmpty` — one stored read     |
-| reading                   | Messung                      | `ledger.liveReadings`, `ledger.liveNoReading`                 |
-| busiest                   | Aktivste                     | `ledger.liveBusiest`, `ledger.liveBusiestDone`                |
-| War turnout               | Beteiligung am Krieg         | `ledger.fought` — the event page's kills section title        |
-| gainers                   | Zuwächser                    | `ledger.fewGainers` — a member whose Kills rose               |
-| Support player            | Support-Spieler              | `ledger.foughtHelp` — a player who gains no kills             |
-| Bloc                      | Block                        | `balance.bloc` — a hypothetical group of alliances, A or B    |
-| Server might              | Server-Might                 | `balance.total`, `balance.shares` — Might stays English       |
+| English                   | de                           | Key and use                                                                            |
+| ------------------------- | ---------------------------- | -------------------------------------------------------------------------------------- |
+| Server 325 · Event Ledger | Server 325 · Event-Chronik   | `site.ledger` — the page title                                                         |
+| Ledger                    | Chronik                      | `site.home` — the ledger, as a breadcrumb                                              |
+| kept by the Old Grandmas  | geführt von den Old Grandmas | `site.byline` — Old Grandmas stays a name                                              |
+| Alliance                  | Allianz                      | `ledger.alliance`                                                                      |
+| not in a tracked alliance | in keiner erfassten Allianz  | `compare.notTracked` — player view                                                     |
+| Member                    | Mitglied                     | `ledger.member` — a player inside an alliance                                          |
+| Player                    | Spieler                      | `ledger.player`                                                                        |
+| Event                     | Event                        | `ledger.event` — a game event                                                          |
+| Rank                      | Rang                         | `ledger.rank` — the #n position                                                        |
+| Ranking                   | Rangliste                    | `ledger.ranking` — the game's server rank                                              |
+| joined                    | beigetreten                  | `ledger.joined` — after +n                                                             |
+| left                      | ausgetreten                  | `ledger.left` — after −n                                                               |
+| Stale                     | Veraltet                     | `fresh.stale` — data not fresh                                                         |
+| server time               | Serverzeit                   | `time.serverTime` — after a time: 14:01 …                                              |
+| your time                 | deine Zeit                   | `time.yourTime` — after a time, the viewer's zone                                      |
+| Exact numbers             | Genaue Zahlen                | `site.exactNumbers` — the toggle; legend.rounded names it                              |
+| Manual round              | Manuelle Runde               | `site.manualRound` — an event the admin runs by hand                                   |
+| Leader                    | Anführer                     | `leadership.leader` — the R5                                                           |
+| Run by hand by the admin  | Startet der Admin von Hand   | `status.byHand`                                                                        |
+| grandma                   | Oma                          | the voice in empty states and errors                                                   |
+| Grandma noticed           | Oma merkt's                  | `ledger.movers` — the event's biggest gains and losses                                 |
+| Start / End               | Beginn / Ende                | `status.start` / `status.end`, `compare.lead`                                          |
+| Member history            | Mitgliederverlauf            | `history.title` — the page, its nav tab and the alliance link                          |
+| reading                   | Messung                      | `ledger.liveReadings`, `ledger.liveNoReading`                                          |
+| busiest                   | Aktivste                     | `ledger.liveBusiest`, `ledger.liveBusiestDone`                                         |
+| War turnout               | Beteiligung am Krieg         | `ledger.fought` — the event page's kills section title                                 |
+| gainers                   | Zuwächser                    | `ledger.fewGainers` — a member whose Kills rose                                        |
+| Support player            | Support-Spieler              | `ledger.foughtHelp` — a player who gains no kills                                      |
+| kill share / might share  | Kills-Anteil / Might-Anteil  | `ledger.carried*` — an alliance's share of the kills gained, and of the might at Start |
+| percentage points (pts)   | %-Pkt.                       | `ledger.carriedPoints` — after a gap: +6,1 %-Pkt.                                      |
+| English                   | de                           | Key and use                                                                            |
+| ------------------------- | ---------------------------- | -------------------------------------------------------------                          |
+| Server 325 · Event Ledger | Server 325 · Event-Chronik   | `site.ledger` — the page title                                                         |
+| Ledger                    | Chronik                      | `site.home` — the ledger, as a breadcrumb                                              |
+| kept by the Old Grandmas  | geführt von den Old Grandmas | `site.byline` — Old Grandmas stays a name                                              |
+| Alliance                  | Allianz                      | `ledger.alliance`                                                                      |
+| not in a tracked alliance | in keiner erfassten Allianz  | `compare.notTracked` — player view                                                     |
+| Member                    | Mitglied                     | `ledger.member` — a player inside an alliance                                          |
+| Player                    | Spieler                      | `ledger.player`                                                                        |
+| Event                     | Event                        | `ledger.event` — a game event                                                          |
+| Rank                      | Rang                         | `ledger.rank` — the #n position                                                        |
+| Ranking                   | Rangliste                    | `ledger.ranking` — the game's server rank                                              |
+| joined                    | beigetreten                  | `ledger.joined` — after +n                                                             |
+| left                      | ausgetreten                  | `ledger.left` — after −n                                                               |
+| Stale                     | Veraltet                     | `fresh.stale` — data not fresh                                                         |
+| server time               | Serverzeit                   | `time.serverTime` — after a time: 14:01 …                                              |
+| your time                 | deine Zeit                   | `time.yourTime` — after a time, the viewer's zone                                      |
+| Exact numbers             | Genaue Zahlen                | `site.exactNumbers` — the toggle; legend.rounded names it                              |
+| Manual round              | Manuelle Runde               | `site.manualRound` — an event the admin runs by hand                                   |
+| Leader                    | Anführer                     | `leadership.leader` — the R5                                                           |
+| Run by hand by the admin  | Startet der Admin von Hand   | `status.byHand`                                                                        |
+| grandma                   | Oma                          | the voice in empty states and errors                                                   |
+| Grandma noticed           | Oma merkt's                  | `ledger.movers` — the event's biggest gains and losses                                 |
+| Start / End               | Beginn / Ende                | `status.start` / `status.end`, `compare.lead`                                          |
+| Member history            | Mitgliederverlauf            | `history.title` — the page, its nav tab and the alliance link                          |
+| Daily progress            | Tägliche Entwicklung         | `ledger.progress` — the player page's section heading                                  |
+| reading                   | Erfassung                    | `history.first`, `ledger.progressEmpty` — one stored read                              |
+| reading                   | Messung                      | `ledger.liveReadings`, `ledger.liveNoReading`                                          |
+| busiest                   | Aktivste                     | `ledger.liveBusiest`, `ledger.liveBusiestDone`                                         |
+| War turnout               | Beteiligung am Krieg         | `ledger.fought` — the event page's kills section title                                 |
+| gainers                   | Zuwächser                    | `ledger.fewGainers` — a member whose Kills rose                                        |
+| Support player            | Support-Spieler              | `ledger.foughtHelp` — a player who gains no kills                                      |
+| Bloc                      | Block                        | `balance.bloc` — a hypothetical group of alliances, A or B                             |
+| Server might              | Server-Might                 | `balance.total`, `balance.shares` — Might stays English                                |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

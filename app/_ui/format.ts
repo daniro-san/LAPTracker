@@ -13,7 +13,10 @@ export const MEMBER_MARK = "*";
 const numberFormats = new Map<string, Intl.NumberFormat>();
 
 /** Intl formatters are costly to build; one per locale and style, reused across requests. */
-function numberFormat(locale: string, style: "exact" | "percent" | "share"): Intl.NumberFormat {
+function numberFormat(
+  locale: string,
+  style: "exact" | "percent" | "share" | "share1" | "ratio",
+): Intl.NumberFormat {
   const key = `${locale}|${style}`;
   let format = numberFormats.get(key);
   if (!format) {
@@ -21,6 +24,8 @@ function numberFormat(locale: string, style: "exact" | "percent" | "share"): Int
       exact: { maximumFractionDigits: 0 },
       percent: { style: "percent", minimumFractionDigits: 1, maximumFractionDigits: 1 },
       share: { style: "percent", maximumFractionDigits: 0 },
+      share1: { style: "percent", minimumFractionDigits: 1, maximumFractionDigits: 1 },
+      ratio: { minimumFractionDigits: 1, maximumFractionDigits: 1 },
     };
     format = new Intl.NumberFormat(locale, options[style]);
     numberFormats.set(key, format);
@@ -51,9 +56,19 @@ export function percent(delta: number | null, base: number | null): number | nul
 export const shareText = (share: number, locale: string): string =>
   numberFormat(locale, "share").format(share);
 
-/** A share of a whole, 0..1, to one decimal: `8.7%` (en), `8,7 %` (de). */
+/** A share with one decimal (`4.1%`): the shares of a whole kingdom are small. */
 export const sharePreciseText = (share: number, locale: string): string =>
-  numberFormat(locale, "percent").format(share);
+  numberFormat(locale, "share1").format(share);
+
+/** `2.5×`: one number as a multiple of another. */
+export const ratioText = (ratio: number, locale: string): string =>
+  `${numberFormat(locale, "ratio").format(ratio)}×`;
+
+/** A signed gap in percentage points between two shares (0 to 1): `+6.1`, `−0.4`. */
+export const pointsText = (gap: number, locale: string): string => {
+  const points = Math.round(gap * 1000) / 10;
+  return `${signOf(points)}${numberFormat(locale, "ratio").format(Math.abs(points))}`;
+};
 
 export const percentText = (p: number, locale: string): string =>
   `${signOf(p)}${numberFormat(locale, "percent").format(Math.abs(p) / 100)}`;

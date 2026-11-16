@@ -62,9 +62,7 @@ Words already used in `lib/i18n/ko.ts`. Reuse them so the pages stay consistent;
 | Gainers                   | 처치가 늘어난 인원     | `ledger.withKills`, `ledger.topShare*`, `ledger.fewGainers` — members whose Kills rose             |
 | peak                      | 최고                   | `ledger.liveLast` — the highest figure in the window                                               |
 | Last (a time window)      | 최근                   | `ledger.liveLast` — the last N minutes; 마지막 stays the last reading (`ledger.liveStandingsDone`) |
-| Bloc                      | 블록                   | `balance.bloc` — a hypothetical group of alliances in the bloc builder                             |
-| Share (of server might)   | 점유율                 | `balance.shares` — an alliance's part of the server's Might; `balance.trend*` reuse it             |
-| Hypothetical              | 가상                   | `balance.hypothetical` — the bloc builder's label; `balance.description` says 가상의               |
+| Kill share vs might share | 처치 몫 대 전투력 몫   | `ledger.carried*` — each alliance's kill share against its might share                             |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.
@@ -73,10 +71,11 @@ Words already used in `lib/i18n/ko.ts`. Reuse them so the pages stay consistent;
 
 The game's own word for each term, with the page that shows it in the game's text and the quote. A term not listed stays English. Add a row only with a source that carries the game's own text (datamined text or an in-game screenshot), never a guide's prose (D52).
 
-| English | ko     | Source                                        | Quote                                                                                                   |
-| ------- | ------ | --------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| Might   | 전투력 | https://lastasylum.gg/ko/events/alliance-duel | 일요일 길드 인원이 20명을 초과하고, 길드 전투력이 서버 32위 안에 드는 길드만 매칭에 참여할 수 있습니다. |
-| Kills   | 처치   | https://lastasylum.gg/ko/events/kingdom-war   | 적 처치 랭킹을 올리고 목표 포인트를 달성하면 목표 보물상자 보상을 획득합니다.                           |
-| Members | 인원   | https://lastasylum.gg/ko/events/alliance-duel | 일요일 길드 인원이 20명을 초과하고, …                                                                   |
+| English | ko     | Source                                                                 | Quote                                                                                                   |
+| ------- | ------ | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| Might   | 전투력 | https://lastasylum.gg/ko/events/alliance-duel                          | 일요일 길드 인원이 20명을 초과하고, 길드 전투력이 서버 32위 안에 드는 길드만 매칭에 참여할 수 있습니다. |
+| Kills   | 처치   | https://lastasylum.gg/ko/events/kingdom-war                            | 적 처치 랭킹을 올리고 목표 포인트를 달성하면 목표 보물상자 보상을 획득합니다.                           |
+| Members | 인원   | https://lastasylum.gg/ko/events/alliance-duel                          | 일요일 길드 인원이 20명을 초과하고, …                                                                   |
+| Bloc    | 블록   | `balance.bloc` — a hypothetical group of alliances in the bloc builder |
 
 Level stays English: the game writes a level as `Lv.` before the number (`성당 Lv.10+`), and `레벨` appears only as the pass level. In the game an alliance is a guild (길드); this file still says 연맹.

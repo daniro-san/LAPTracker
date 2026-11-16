@@ -5,7 +5,14 @@
 import type { NameHistoryEntry } from "@/lib/compute";
 import { fill, type Dictionary } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
-import type { getEventDetail, listEvents, Ranks, RosterChange, TurnoutLists } from "@/lib/queries";
+import type {
+  Carried,
+  getEventDetail,
+  listEvents,
+  Ranks,
+  RosterChange,
+  TurnoutLists,
+} from "@/lib/queries";
 import type { getEventPage } from "@/lib/queries/event-page";
 import { nextEvent } from "@/lib/schedule";
 
@@ -33,6 +40,7 @@ import { SiteHeader } from "./SiteHeader";
 import { StatTable, type StatRow } from "./StatTable";
 import { FreshDots, Legend, NextUpdate, SideHead, worstOf, type FreshState } from "./Status";
 import { TopStatus } from "./TopStatus";
+import { WhoCarried } from "./WhoCarried";
 import { WhoFought } from "./WhoFought";
 
 type Movers = NonNullable<Awaited<ReturnType<typeof getEventPage>>["page"]>["movers"];
@@ -188,9 +196,11 @@ export async function EventView({
   ranks,
   movers,
   turnout,
+  carried,
 }: {
   movers: Movers;
   turnout: TurnoutLists | null;
+  carried: Carried | null;
   events: Events;
   homeId: number | null;
   detail: Detail;
@@ -250,6 +260,7 @@ export async function EventView({
         <Movers scopes={moverScopes} />
         {progress && <LiveSections {...liveProps} progress={progress} placement="below" />}
         {turnout && <WhoFought eventId={detail.id} lists={turnout} />}
+        {carried && <WhoCarried eventId={detail.id} carried={carried} />}
       </main>
       <SiteFooter copy={copy} />
     </>

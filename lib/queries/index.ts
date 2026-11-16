@@ -24,6 +24,7 @@ export {
   type UnchangedRow,
 } from "./might-unchanged";
 export { BALANCE_DAYS, powerBalance, type PowerBalance } from "./balance";
+export { whoCarried, type Carried, type CarriedRow } from "./carried";
 export { allianceNames } from "./names";
 export { eventSamples, type EventReading, type SampleAlliance, type SampleMember } from "./samples";
 export { eventProgress, type EventProgress } from "./live";

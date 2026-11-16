@@ -93,6 +93,19 @@ export const uk = {
       "Частка Kills альянсу від 5 учасників з найбільшим приростом. Чим вище, тим менше гравців тягнули його.",
     topBasis: "{top} із {n}",
     fewGainers: "мало приростів",
+    carried: "Частка Kills проти частки Might",
+    carriedHelp:
+      "Частка кожного альянсу в набраних Kills від «Початку» до «Кінця» і його частка в Might на «Початку». Захисники та гравці підтримки Kills не набирають.",
+    carriedShown: "Альянси, у яких частка Kills найбільше перевищує частку Might, і ваш.",
+    carriedTotal: "Усі альянси ({n}): набрано {kills} Kills, {might} Might на «Початку»",
+    carriedMightMark: "Частка Might на «Початку»",
+    carriedKillsMark: "Частка набраних Kills",
+    carriedShares: "Might {might} · Kills {kills}",
+    carriedTurnout: "{share} з Kills",
+    carriedSpread: "{low}–{high} за {n} подіями",
+    carriedRatioHelp:
+      "× — це частка Kills, поділена на частку Might. Показується від 3 подій, з діапазоном; до цього — різниця у відсоткових пунктах.",
+    carriedPoints: "в. п.",
   },
   compare: {
     title: "Подія проти події",

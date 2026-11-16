@@ -58,13 +58,11 @@ Words already used in `lib/i18n/id.ts`. Reuse them so the pages stay consistent;
 | Kills gained              | Kills didapat                 | `ledger.liveKillsGained`, `ledger.livePulseHelp` — after a count                     |
 | Support player            | pemain support                | `ledger.foughtHelp` — a player who gains no Kills                                    |
 | Gainer (Kills rose)       | Members dengan kenaikan Kills | `ledger.fewGainers`, `ledger.topShareHelp` — member whose Kills rose                 |
-| Server balance            | Keseimbangan server           | `balance.title` — the balance page                                                   |
+| Kill share / Might share  | Bagian Kills / Bagian Might   | `ledger.carried*` — an alliance's share of Kills gained / of Might                   |
+| Defender                  | pemain bertahan               | `ledger.carriedHelp` — a player who gains no Kills, like a support                   |
 | Bloc                      | Blok                          | `balance.bloc`, `balance.addTo`, `balance.clear` — a hypothetical group of alliances |
 | Bloc builder              | Penyusun blok                 | `balance.builder` — the page's try-a-bloc tool                                       |
-| Hypothetical              | Hipotetis                     | `balance.hypothetical` — the bloc builder's tag                                      |
 | Server might              | Might server                  | `balance.total`, `balance.shares` — Might stays English                              |
-| Share of server might     | Porsi Might server            | `balance.shares`, `balance.bar` — an alliance's part of the server's Might           |
-| Top {n} share             | Porsi {n} teratas             | `balance.trendLabel`, `balance.trend` — the n greatest alliances' part               |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.
