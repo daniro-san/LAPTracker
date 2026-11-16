@@ -7,7 +7,7 @@ Closes #282.
 - `lib/merge.ts`: pure `simulateMerge` and `mergedCapacity`. `lib/merge.test.ts` holds one property test (within-cap might never exceeds the total; left out = max(0, total − cap); within + left out = members) and three example tests.
 - `lib/queries/merge.ts`: `mergePage(db, pair)`. Reads each tracked alliance's newest usable roster (`dailyFit` and `eventFit` from `history-readings.ts`), the stored capacity, each side's roster (uid and power only) and `memberTurnout` for the latest events. `lib/queries/merge.test.ts` has four PGlite tests.
 - `app/_ui/MergePicker.tsx`, `app/_ui/MergeSimulator.tsx`, `app/(pages)/alliances/merge/page.tsx`; `app/_ui/AllianceLinks.tsx` holds the alliance page's History link and the new "Simulate a merge" link (opens with `a` set).
-- Words in `lib/copy-merge.ts` (27 keys), translated in the 16 other languages; glossaries got "merge" and "cap" rows.
+- Words in `lib/copy-merge.ts` (27 keys), translated in the 17 other languages; glossaries got "merge" and "cap" rows.
 - `docs/decisions/D84-merge-simulator-against-the-member-cap.md` and its README line.
 
 ## Decisions
@@ -16,11 +16,11 @@ Closes #282.
 - Turnout: for each side, the newest of the last 3 events with a Start and an End in which it has a figure.
 - Alliance page link lives in `AllianceLinks.tsx` because the page was at the 300-line lint limit.
 - An unknown or non-tracked id in the URL is a 404; a missing one shows the picker.
-- `lib/copy.ts` was at the line limit, so `en.merge` comes from `lib/copy-merge.ts`. After merging dev, `copy-live.ts` was already there and both are kept. `lib/copy-blank.ts` (the blank-dictionary helpers, re-exported from `lib/copy.ts`) was added in the first pass; it is unchanged code moved out, and may no longer be needed after dev's split.
+- `lib/copy.ts` was at the line limit, so `en.merge` comes from `lib/copy-merge.ts`. After merging dev, `copy-live.ts` was already there and both are kept. A first pass also moved the blank-dictionary helpers to `lib/copy-blank.ts`; after dev's `copy-live.ts` and `copy-war.ts` splits it was not needed, and the review fixes moved them back.
 
 ## Deviations
-- None from the issue. `lib/copy-blank.ts` is a move forced by the line limit (see Decisions).
-- Not pushed and no PR opened (the sandbox blocks `git push`); the orchestrator does both. The PR URL line is left out.
+- None from the issue.
+- The build agent could not push (sandbox); the orchestrator pushed the branch and opened the PR, whose URL is the last line.
 
 ## Verified
 - `pnpm check`: prettier, eslint, tsc, vitest, drift and i18n ("17 languages up to date with English") green after merging origin/dev.
@@ -39,18 +39,26 @@ Reader's 3-second takeaway: before and after, "this pair would be #1 with everyo
 1. The "larger of the two caps" rule: owner confirmed 2026-11-16 (D84). Closed.
 2. Ranks use rosters read at different times when one alliance's daily read failed. The "as of" line shows it; no warning is drawn.
 3. The native selects cut a long alliance name at 360 px (the option list shows it whole).
-4. The `lib/copy-blank.ts` move could be reverted if dev's `copy-live.ts` split leaves `lib/copy.ts` under the limit without it.
+4. (Done in the review fixes: the `lib/copy-blank.ts` move is reverted.)
 5. The war turnout line is the share of members with kills gained in the latest event; it says nothing for an alliance that was not in that event's two rosters ("no war turnout yet").
 
 ## Next
 Session: none queued in `docs/SESSION_PLAYBOOK.md` after Session 10.
 Model / effort: keep. The work was routine; the only snags were the line limits and the merge with dev.
-Owner must do first: merge this PR into `dev`; answer open issue 1 (which cap applies).
+Owner must do first: nothing; the cap rule was confirmed on 2026-11-16.
 Plan changes needed: none to `docs/IMPLEMENTATION_PLAN.md`.
 
 <adjustments>
 - The alliance page's links now live in `app/_ui/AllianceLinks.tsx`; add a new link there, not in the page.
 - `mergePage` returns aggregates only; a follow-up that needs member rows must add its own read.
 </adjustments>
+
+## Review fixes (2026-11-16, /pr-review standard)
+
+- Turnout: the newest event is read first, and the older ones (up to 2) only when an alliance has no figure there, together. The page's own event list is passed into `mergePage`, so it is read once.
+- `storedCapacities` skips a row with no `source_updated_at`: in a descending order Postgres sorts NULLs first, so such a row would have set the cap.
+- `badgeId` and `MergeTurnout.eventId` are no longer read or returned (nothing used them); the pure input type in `lib/merge.ts` is `MergeRoster`, so `MergeSide` names only the query's type.
+- `lib/copy-blank.ts` is gone: `lib/copy.ts` is dev's plus the `merge` key and its import.
+- Not changed: the two test findings on `mergeHref` and `mergeAnswer` were refuted by the verifier (CLAUDE.md adds tests where the task asks).
 
 https://github.com/daniro-san/LAPTracker/pull/339

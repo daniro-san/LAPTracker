@@ -2,7 +2,7 @@
 // usable roster each, the stored capacity, and each one's latest KvK turnout; for the others, their might.
 // A usable roster is fresh, has no error and is not empty (as member history reads, D60); the newest one
 // across the daily reads and the public event snapshots wins, the daily read on a tie. Fields read: an
-// alliance's tag, name, badge, capacity and might, and each member's uid and power. No member name, kills
+// alliance's tag, name, capacity and might, and each member's uid and power. No member name, kills
 // or blocked roster key is selected, and nothing per member is returned.
 import { and, desc, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm";
 
@@ -20,7 +20,6 @@ export interface MergeAlliance {
   unionId: number;
   tag: string | null;
   name: string | null;
-  badgeId: number | null;
   /** When the roster this figure comes from was read. */
   at: Date;
   /** Might: the roster's total power; null when the row has none. */
@@ -30,7 +29,6 @@ export interface MergeAlliance {
 
 /** The latest event in which the alliance had a Start and an End roster. */
 export interface MergeTurnout {
-  eventId: number;
   eventAt: Date;
   /** Members in both rosters, and how many of them gained kills. */
   n: number;
@@ -52,11 +50,10 @@ export interface MergePage {
 type Head = MergeAlliance & { source: "daily" | "event"; rowId: number };
 
 /** The head without the row it came from. */
-const shown = ({ unionId, tag, name, badgeId, at, power, members }: Head): MergeAlliance => ({
+const shown = ({ unionId, tag, name, at, power, members }: Head): MergeAlliance => ({
   unionId,
   tag,
   name,
-  badgeId,
   at,
   power,
   members,
@@ -76,7 +73,6 @@ async function newestHeads(db: Db, ids: number[]): Promise<Map<number, Head>> {
         unionId: dailyRosters.unionId,
         tag: dailyRosters.tag,
         name: dailyRosters.name,
-        badgeId: dailyRosters.badgeId,
         at: dailyRosters.sourceUpdatedAt,
         power: dailyRosters.totalPower,
         members: dailyRosters.memberCount,
@@ -92,7 +88,6 @@ async function newestHeads(db: Db, ids: number[]): Promise<Map<number, Head>> {
         unionId: allianceSnapshots.unionId,
         tag: allianceSnapshots.tag,
         name: allianceSnapshots.name,
-        badgeId: allianceSnapshots.badgeId,
         at: allianceSnapshots.sourceUpdatedAt,
         power: allianceSnapshots.totalPower,
         members: allianceSnapshots.memberCount,
@@ -142,6 +137,8 @@ async function storedCapacities(db: Db, ids: number[]): Promise<Map<number, numb
         publicEvent,
         isNotNull(allianceSnapshots.capacity),
         isNull(allianceSnapshots.error),
+        // A row with no time would sort first (NULLs first in a descending order) and win over newer ones.
+        isNotNull(allianceSnapshots.sourceUpdatedAt),
       ),
     )
     .orderBy(allianceSnapshots.unionId, desc(allianceSnapshots.sourceUpdatedAt));
@@ -168,25 +165,33 @@ async function rosterOf(db: Db, head: Head) {
     .where(eq(memberSnapshots.allianceSnapshotId, head.rowId));
 }
 
-/** The latest turnout of each alliance in `ids`, from the newest events that have a Start and an End. */
-async function latestTurnouts(db: Db, ids: number[]): Promise<Map<number, MergeTurnout>> {
+type Events = Awaited<ReturnType<typeof listEvents>>;
+
+/**
+ * The latest turnout of each alliance in `ids`, from the newest events that have a Start and an End. The
+ * newest event is read first; only when an alliance has no figure there are the next ones read, together.
+ */
+async function latestTurnouts(
+  db: Db,
+  ids: number[],
+  events: Events | PromiseLike<Events>,
+): Promise<Map<number, MergeTurnout>> {
   const found = new Map<number, MergeTurnout>();
-  const withBoth = (await listEvents(db)).filter((e) =>
+  const withBoth = (await events).filter((e) =>
     (["before", "after"] as const).every((p) => e.snapshots.some((s) => s.phase === p)),
   );
-  for (const event of withBoth.slice(0, TURNOUT_EVENTS)) {
-    const lists = await memberTurnout(db, event.snapshots);
+  const keep = (event: Events[number], lists: Awaited<ReturnType<typeof memberTurnout>>) => {
     for (const t of lists?.withKills ?? []) {
       if (ids.includes(t.unionId) && !found.has(t.unionId)) {
-        found.set(t.unionId, {
-          eventId: event.id,
-          eventAt: event.eventAtUtc,
-          n: t.n,
-          gainers: t.gainers,
-        });
+        found.set(t.unionId, { eventAt: event.eventAtUtc, n: t.n, gainers: t.gainers });
       }
     }
-    if (ids.every((id) => found.has(id))) break;
+  };
+  const [newest, ...older] = withBoth.slice(0, TURNOUT_EVENTS);
+  if (newest) keep(newest, await memberTurnout(db, newest.snapshots));
+  if (older.length > 0 && !ids.every((id) => found.has(id))) {
+    const lists = await Promise.all(older.map((e) => memberTurnout(db, e.snapshots)));
+    older.forEach((event, i) => keep(event, lists[i] ?? null));
   }
   return found;
 }
@@ -194,12 +199,14 @@ async function latestTurnouts(db: Db, ids: number[]): Promise<Map<number, MergeT
 /**
  * The simulator's page data. `pair` is the two chosen union ids; null gives only the choices. A chosen id
  * with no usable roster among the tracked alliances yields `merge: null` too, and the caller checks the
- * ids against `alliances`. `tracked` defaults to the tracked list; tests pass their own.
+ * ids against `alliances`. `tracked` defaults to the tracked list; tests pass their own. `events` is the
+ * page's own event list (or its read on its way), so the list is not read twice.
  */
 export async function mergePage(
   db: Db,
   pair: readonly [number, number] | null,
   tracked: readonly number[] = TRACKED,
+  events?: Events | PromiseLike<Events>,
 ): Promise<MergePage> {
   const heads = await newestHeads(db, [...tracked]);
   const alliances = [...heads.values()]
@@ -212,7 +219,7 @@ export async function mergePage(
     rosterOf(db, headA),
     rosterOf(db, headB),
     storedCapacities(db, [idA as number, idB as number]),
-    latestTurnouts(db, [idA as number, idB as number]),
+    latestTurnouts(db, [idA as number, idB as number], events ?? listEvents(db)),
   ]);
   const side = (head: Head, roster: { power: number | null }[]): MergeSide => {
     return {

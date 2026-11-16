@@ -10,7 +10,7 @@ export interface MergeMember {
   power: number | null;
 }
 
-export interface MergeSide {
+export interface MergeRoster {
   unionId: number;
   members: readonly MergeMember[];
 }
@@ -47,8 +47,8 @@ export const mergedCapacity = (a: number | null, b: number | null): number =>
  * merged alliance is placed among them by might, once with all members and once within the cap.
  */
 export function simulateMerge(
-  a: MergeSide,
-  b: MergeSide,
+  a: MergeRoster,
+  b: MergeRoster,
   capacity: number,
   others: readonly { unionId: number; power: number | null }[],
 ): MergeResult {

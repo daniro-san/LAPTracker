@@ -28,9 +28,11 @@ const idOf = (raw: string | string[] | undefined) => {
 
 const load = cache((a: number | null, b: number | null) =>
   withPageDb(async (db) => {
+    // One read of the event list, shared by the header and the turnout figures.
+    const eventsRead = listEvents(db);
     const [page, events] = await Promise.all([
-      mergePage(db, a !== null && b !== null ? [a, b] : null),
-      listEvents(db),
+      mergePage(db, a !== null && b !== null ? [a, b] : null, undefined, eventsRead),
+      eventsRead,
     ]);
     return { page, events, homeId: homeEvent(events)?.id ?? null };
   }),
