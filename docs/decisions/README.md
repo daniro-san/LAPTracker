@@ -90,3 +90,4 @@ The header text above is the old file's, kept as it was. The split it describes 
 - [D74 — Screenshot reader: free OCR with Tesseract.js, English data committed, no image library (2026-11-16, owner, 11d, issue #299)](D74-screenshot-reader-free-ocr-with-tesseract-js.md)
 - [D75 — The workspace is for people, never punitive (2026-11-16, owner principle, 11c)](D75-the-workspace-is-for-people-never-punitive.md)
 - [D76 — Which roster keys may be served: daily_tech, daily_honor and active unblocked; presence and coordinates blocked and neutralised in fixtures (2026-11-16, owner, issue #308)](D76-roster-keys-unblocked-and-neutralised-fixtures.md)
+- [D78 — Compact numbers use K, M, B, T in every language and browser (2026-11-16, owner, issue #325)](D78-compact-numbers-use-k-m-b-t-everywhere.md)
