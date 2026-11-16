@@ -1,0 +1,86 @@
+import { describe, expect, it } from "vitest";
+
+import { WORKSPACE_DICTIONARIES } from "./dictionary";
+import type { MemberRow } from "./members";
+import { sheetHeader, sheetRow, type Formats } from "./members-sheet";
+
+const t = WORKSPACE_DICTIONARIES.en;
+const f: Formats = { date: (at) => String(at), number: String };
+const week = [
+  "2026-11-09",
+  "2026-11-10",
+  "2026-11-11",
+  "2026-11-12",
+  "2026-11-13",
+  "2026-11-14",
+  "2026-11-15",
+];
+
+describe("Copy for spreadsheet (D71)", () => {
+  it("copies the member's columns and leaves out the map position, online time and photo", () => {
+    const m: MemberRow = {
+      uid: 7,
+      name: "=Marigold",
+      rank: "R4 · Goddess",
+      rankCode: 104,
+      might: 61_234_567,
+      sanctuary: 29,
+      activity: 214,
+      honor: 300,
+      donations: [5150, null, 4000, "later", "later", "later", "later"],
+      weekTotal: 9150,
+      joinedAt: null,
+      lastOnlineAt: new Date("2026-11-15T20:00:00Z"),
+      mapX: 4321,
+      mapY: 8765,
+      seenSince: "2026-11-02",
+      isNew: false,
+      reasons: [{ kind: "might", days: 9 }],
+      missing: ["donations"],
+      missingDays: 1,
+    };
+
+    const header = sheetHeader(week, t).split("\t");
+    const row = sheetRow(m, t, f).split("\t");
+
+    expect(header).toEqual([
+      "Name",
+      "Rank",
+      "Might",
+      "Sanctuary",
+      "Mon 9",
+      "Tue 10",
+      "Wed 11",
+      "Thu 12",
+      "Fri 13",
+      "Sat 14",
+      "Sun 15",
+      "Week total",
+      "Activity this week",
+      "Day’s honor",
+      "Joined",
+      "Seen since",
+      "Status",
+    ]);
+    expect(row).toEqual([
+      "'=Marigold",
+      "R4 · Goddess",
+      "61234567",
+      "29",
+      "5150",
+      "",
+      "4000",
+      "",
+      "",
+      "",
+      "",
+      "9150",
+      "214",
+      "300",
+      "",
+      "2026-11-02",
+      "Check in: might unchanged for 9 days",
+    ]);
+    expect(row.join("\t")).not.toMatch(/4321|8765|2026-11-15/);
+  });
+});

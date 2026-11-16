@@ -1,10 +1,15 @@
 // The workspace's own words in English, Brazilian Portuguese and French (D71, issue #305): separate from
 // lib/copy.ts, so the public pages' i18n check and payload do not change. Names and game terms stay as the
 // officers write them (naming.md). French puts a no-break space before : ? and !.
+import { fr } from "./dictionary.fr";
+import { pt } from "./dictionary.pt-BR";
+
 export const WORKSPACE_LANGUAGES = ["en", "pt-BR", "fr"] as const;
 export type WorkspaceLanguage = (typeof WORKSPACE_LANGUAGES)[number];
 /** Written by the EN · PT · FR switch; read on the server. */
 export const WORKSPACE_LANG_COOKIE = "lap_ws_lang";
+/** Written when an officer skips or finishes the first-use cards (#312), so they open by themselves once. */
+export const WORKSPACE_INTRO_COOKIE = "lap_ws_intro";
 
 const en = {
   "app.name": "Officers’ Desk",
@@ -40,87 +45,122 @@ const en = {
   "home.title": "This week",
   "home.empty": "Nothing here yet. The kettle is on.",
   "home.next":
-    "Coming next: the Members tab, with every member’s might, donations and activity from the game.",
+    "The Members tab is ready: every member’s might, donations and activity, from the game.",
+  "home.open": "Open Members",
+  "shell.help": "How this works",
+  "signin.howto": "How to put it on your phone",
+  "members.lead":
+    "From the game, read each night just before the server resets. Last read: {when}.",
+  "members.week": "Week {from} – {to}. A week here runs from Monday to Sunday, like the game’s.",
+  "members.none":
+    "No end-of-day read yet. Members show up here after the first one, just before the server resets.",
+  "thanks.head": "Thank you this week",
+  "thanks.intro": "A few names stood out. Thank you.",
+  "thanks.donors": "Top donors",
+  "thanks.activity": "Most active",
+  "members.search.ph": "Name (no emoji needed)",
+  "members.search.aria": "Search members",
+  "members.filter.aria": "Filter",
+  "members.filter.all": "All",
+  "members.filter.new": "New",
+  "members.filter.checkin": "Check in",
+  "members.filter.missing": "Missing info",
+  "members.filter.r4": "R4 and R5",
+  "members.count": "{n} of {total} members",
+  "members.empty": "Nobody here matches. Grandma checked twice.",
+  "members.copy": "Copy for spreadsheet",
+  "members.copied": "Copied",
+  "members.copyFailed": "Could not copy",
+  "members.checkinHelp":
+    "Check in shows what we saw, so you can have a friendly word. Nothing is sent to anyone, and the app never removes anybody.",
+  "members.nodataHelp":
+    "— means no data: that day was not read, or the game did not say. It never counts against anyone.",
+  "members.new": "New",
+  "members.firstSeen": "first seen {date}",
+  "members.meta.level": "Sanctuary {n}",
+  "members.meta.might": "Might {v}",
+  "members.meta.don": "Donations {v}",
+  "members.meta.act": "Activity {v}",
+  "members.details": "Details",
+  "members.detailsOf": "Details, {name}",
+  "members.don.head": "Donations this week · total {total}",
+  "members.don.later": "not read yet",
+  "members.don.none": "no data",
+  "members.nodata": "No data: {list}",
+  "nodata.might": "might",
+  "nodata.sanctuary": "Sanctuary",
+  "nodata.activity": "activity",
+  "nodata.donations": "donations on {n} days",
+  "status.fine": "Fine",
+  "status.checkin": "Check in",
+  "reason.idle":
+    "activity {activity} and donations {donated} unchanged for {n} days ({r} end-of-day reads in a row)",
+  "reason.might": "might unchanged for {n} days",
+  "reason.kvk": "no kills gained in Kingdom War (KvK) on {date}",
+  "sheet.name": "Name",
+  "sheet.rank": "Rank",
+  "sheet.might": "Might",
+  "sheet.sanctuary": "Sanctuary",
+  "sheet.total": "Week total",
+  "sheet.activity": "Activity this week",
+  "sheet.honor": "Day’s honor",
+  "sheet.joined": "Joined",
+  "sheet.seen": "Seen since",
+  "sheet.status": "Status",
+  "sheet.lastOnline": "Last online",
+  "sheet.map": "Map position",
+  "sheet.mapValue": "X {x} · Y {y}",
+  "day.mon": "Mon",
+  "day.tue": "Tue",
+  "day.wed": "Wed",
+  "day.thu": "Thu",
+  "day.fri": "Fri",
+  "day.sat": "Sat",
+  "day.sun": "Sun",
+  "intro.step": "{n} of {total}",
+  "intro.skip": "Skip",
+  "intro.next": "Next",
+  "intro.back": "Back",
+  "intro.done": "Start",
+  "intro.1.title": "Welcome to the Officers’ Desk",
+  "intro.1.body":
+    "A private page for the alliance’s R4 and R5. It fills in what the spreadsheets asked for: who is in the alliance, their might, donations and activity. Only the leadership can open it.",
+  "intro.2.title": "Where the numbers come from",
+  "intro.2.body": "A small label next to a number says where it comes from:",
+  "intro.2.more":
+    "Today everything is from the game, read every night just before the server resets. Photos and officers’ answers come later.",
+  "intro.3.title": "What to do each week",
+  "intro.3.body":
+    "Open Members. Start with the thank-you list. Then look at anyone marked Check in: what we saw is written under the name.",
+  "intro.3.more":
+    "You decide what to do. Nothing is sent to anyone, and — (no data) never counts against anyone.",
+  "intro.4.title": "Your language",
+  "intro.4.body":
+    "Tap EN, PT or FR at the top. The page changes at once, and this phone remembers it.",
+  "intro.4.more": "Tap ? at the top to see these cards again.",
+  "src.game": "from the game",
+  "src.photo": "from a photo",
+  "src.officer": "typed by an officer",
+  "howto.title": "How to open the Officers’ Desk",
+  "howto.lead": "For the alliance’s R4 and R5. Pin this page in your Discord.",
+  "howto.address": "1. Open this address in your phone’s browser",
+  "howto.signin": "2. Sign in with Discord",
+  "howto.signin.body":
+    "Tap “Sign in with Discord”. Discord asks whether LAPTracker may see your name and your roles in the alliance’s server: tap Authorize. If the page then says No access, ask an R5 for the leadership role.",
+  "howto.iphone": "3. iPhone: add it to the home screen",
+  "howto.iphone.body":
+    "In Safari, tap Share (the square with an arrow), then Add to Home Screen, then Add.",
+  "howto.android": "4. Android: add it to the home screen",
+  "howto.android.body":
+    "In Chrome, tap ⋮ at the top right, then Add to Home screen (or Install app), then Add.",
+  "howto.after":
+    "From then on, tap the icon like any app. You stay signed in for a day; after that, Discord checks your role again.",
+  "howto.open": "Open the Officers’ Desk",
+  "time.server": "{time} server time",
 } as const;
 
 export type WorkspaceKey = keyof typeof en;
 export type WorkspaceDictionary = Record<WorkspaceKey, string>;
-
-const pt: WorkspaceDictionary = {
-  "app.name": "Mesa dos oficiais",
-  "tab.aria": "Seções",
-  "tab.home": "Início",
-  "tab.members": "Membros",
-  "tab.mark": "Chamada",
-  "tab.days": "Agenda",
-  "tab.review": "Atenção",
-  "tab.soon": "Em breve",
-  "lang.aria": "Idioma",
-  "signin.title": "Entrar",
-  "signin.lead":
-    "Para a liderança da aliança: entre com a conta do Discord que você usa no servidor da aliança.",
-  "signin.button": "Entrar com o Discord",
-  "signin.note":
-    "O Discord nos informa seu nome e seus cargos nesse servidor. Nada mais, e nada é publicado.",
-  "signin.e.denied": "O Discord não confirmou a entrada. Tente de novo.",
-  "signin.e.discord": "O Discord não respondeu. Tente de novo em um minuto.",
-  "signin.e.not_configured":
-    "A entrada ainda não está configurada. O dono do site precisa concluir isso primeiro.",
-  "noaccess.title": "Sem acesso",
-  "noaccess.not_member":
-    "Esta conta do Discord não está no servidor da aliança. Entre no servidor ou use a conta que você usa lá.",
-  "noaccess.no_role":
-    "Esta conta do Discord não tem um cargo de liderança no servidor da aliança. Peça a um R5 que lhe dê o cargo e entre de novo.",
-  "noaccess.allowlist_expired":
-    "Seu acesso era por tempo limitado, e esse tempo acabou. Peça ao dono do site que o prolongue.",
-  "noaccess.blocked": "Esta conta foi removida deste espaço.",
-  "noaccess.retry": "Entrar de novo",
-  "noaccess.public": "Ir para o Registro de eventos público",
-  "shell.signedIn": "Conectado como {name}",
-  "shell.signOut": "Sair",
-  "home.title": "Esta semana",
-  "home.empty": "Nada aqui ainda. A chaleira está no fogo.",
-  "home.next":
-    "A seguir: a aba Membros, com o might, as doações e a atividade de cada membro, vindos do jogo.",
-};
-
-const fr: WorkspaceDictionary = {
-  "app.name": "Bureau des officiers",
-  "tab.aria": "Sections",
-  "tab.home": "Accueil",
-  "tab.members": "Membres",
-  "tab.mark": "Appel",
-  "tab.days": "Agenda",
-  "tab.review": "À suivre",
-  "tab.soon": "Bientôt",
-  "lang.aria": "Langue",
-  "signin.title": "Connexion",
-  "signin.lead":
-    "Pour la direction de l’alliance : connectez-vous avec le compte Discord que vous utilisez sur le serveur de l’alliance.",
-  "signin.button": "Se connecter avec Discord",
-  "signin.note":
-    "Discord nous donne votre nom et vos rôles sur ce serveur. Rien d’autre, et rien n’est publié.",
-  "signin.e.denied": "Discord n’a pas confirmé la connexion. Réessayez.",
-  "signin.e.discord": "Discord n’a pas répondu. Réessayez dans une minute.",
-  "signin.e.not_configured":
-    "La connexion n’est pas encore configurée. Le propriétaire du site doit d’abord la terminer.",
-  "noaccess.title": "Pas d’accès",
-  "noaccess.not_member":
-    "Ce compte Discord n’est pas sur le serveur Discord de l’alliance. Rejoignez le serveur, ou connectez-vous avec le compte que vous y utilisez.",
-  "noaccess.no_role":
-    "Ce compte Discord n’a pas de rôle de direction sur le serveur de l’alliance. Demandez le rôle à un R5, puis reconnectez-vous.",
-  "noaccess.allowlist_expired":
-    "Votre accès était limité dans le temps, et ce temps est écoulé. Demandez au propriétaire du site de le prolonger.",
-  "noaccess.blocked": "Ce compte a été retiré de cet espace.",
-  "noaccess.retry": "Se reconnecter",
-  "noaccess.public": "Aller au Registre des événements public",
-  "shell.signedIn": "Connecté en tant que {name}",
-  "shell.signOut": "Se déconnecter",
-  "home.title": "Cette semaine",
-  "home.empty": "Rien ici pour l’instant. La bouilloire est sur le feu.",
-  "home.next":
-    "Ensuite : l’onglet Membres, avec la might, les dons et l’activité de chaque membre, venus du jeu.",
-};
 
 export const WORKSPACE_DICTIONARIES: Record<WorkspaceLanguage, WorkspaceDictionary> = {
   en,

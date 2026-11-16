@@ -18,7 +18,7 @@ export function LanguageSwitch({ current, label }: { current: WorkspaceLanguage;
     router.refresh();
   };
   return (
-    <div role="group" aria-label={label} className="flex items-center">
+    <div role="group" aria-label={label} data-tour="language" className="flex items-center">
       {CHOICES.map((c, i) => (
         <span key={c.id} className="flex items-center">
           {i > 0 && <span aria-hidden="true">·</span>}

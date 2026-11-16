@@ -20,6 +20,9 @@ lib/repo/*.ts       persistence: one module per table, plain functions over Driz
 lib/private/*.ts    the workspace (D71): requireWorkspace and its branded WorkspaceAccess, sessions, the Discord
                     sign-in, its own log (a code and numbers) and its en/pt-BR/fr dictionary. The only code
                     outside lib/repo that may read the blocked roster keys, for its own alliance's rows.
+                    members.ts (the Members tab's read), member-week.ts (its pure week arithmetic and
+                    D75's signals), members-sheet.ts (reasons and "copy for spreadsheet"), first-use.ts
+                    (the first-use steps as data); their table reads are in lib/repo/workspace-rosters.ts.
 lib/queries/*.ts    read models for the UI (joins, sorting, name history). Never write. Never expose BLOCKED_ROSTER_KEYS.
                     lib/queries/samples.ts: `eventSamples`, an event's Start, samples and End (D69).
 lib/logger.ts, lib/notify.ts, lib/env.ts, lib/redact.ts
