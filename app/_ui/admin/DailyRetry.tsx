@@ -1,5 +1,6 @@
-// Today's failed daily roster read on /admin and its Retry with the cost (D60 amendment). Shown only
-// while today's read is `failed`; the press goes through AdminActions' confirm and PIN flow.
+// Today's daily roster read on /admin when it fell short, and its Retry with the cost (D60, D67). Shown
+// only while today's read is `failed`, `partial` or left running by a killed function; the press goes
+// through AdminActions' confirm and PIN flow.
 import { buttonClass } from "@/lib/brand/components/Button";
 import { copy } from "@/lib/copy";
 

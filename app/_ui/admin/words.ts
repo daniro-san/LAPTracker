@@ -154,8 +154,9 @@ export function currentView(
   };
 }
 
-/** Today's daily read for the Retry card when it can be retried: it failed, or it was left `running`
- * past RUN_STALE_AFTER_MS (the function was killed). Null otherwise, which hides the card. */
+/** Today's daily read for the Retry card when it can be retried (D67): it fell short (failed or partly
+ * done), or it was left `running` past RUN_STALE_AFTER_MS (the function was killed). Null otherwise,
+ * which hides the card. */
 export function dailyView(
   daily: {
     status: string;
@@ -168,9 +169,9 @@ export function dailyView(
   clock: Clock,
 ): DailyFailedView | null {
   const d = copy.admin.run.daily;
-  if (daily?.status === "failed") {
+  if (daily?.status === "failed" || daily?.status === "partial") {
     return {
-      text: fill(d.failed, {
+      text: fill(d[daily.status], {
         at: daily.finishedAt ? clock.stamp(daily.finishedAt) : "",
         error: daily.error ?? stateWord(daily.status),
         calls: daily.callsUsed,

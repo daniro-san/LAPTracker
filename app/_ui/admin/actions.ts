@@ -76,7 +76,7 @@ export const RUN_ACTIONS: ReadonlySet<string> = new Set<Action["id"]>([
   "daily-retry",
 ]);
 
-/** Today's failed daily roster read, read again (D60 amendment). */
+/** Today's daily roster read that fell short, read again (D60, D67). */
 export const DAILY_RETRY: Action = {
   id: "daily-retry",
   label: t.daily.retry,
@@ -85,7 +85,8 @@ export const DAILY_RETRY: Action = {
   confirm: t.daily.confirm,
 };
 
-/** Today's daily read when it failed, in words, for the Retry card; null hides the card. */
+/** Today's daily read when it fell short (failed or partly done), in words, for the Retry card; null
+ * hides the card. */
 export interface DailyFailedView {
   text: string;
 }

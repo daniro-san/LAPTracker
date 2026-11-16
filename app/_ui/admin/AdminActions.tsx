@@ -37,7 +37,7 @@ const t = copy.admin.run;
 /**
  * `beforeAtText` is the event's before_at, shown when the API says the phase is not due yet.
  * `manual` is the newest manual round, or null when none exists.
- * `daily` is today's daily roster read when it failed, else null.
+ * `daily` is today's daily roster read when it fell short (failed or partly done), else null.
  */
 export function AdminActions({
   beforeAtText,

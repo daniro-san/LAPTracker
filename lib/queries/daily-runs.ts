@@ -2,9 +2,10 @@
 // server day, with the alliances that failed or were stale and, for a failure, its error and what the
 // upstream answered (D61). One read's page adds its run_logs lines and its upstream calls. Never the
 // member arrays.
-import { and, asc, desc, eq, inArray, isNotNull, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNotNull, lt, or, sql } from "drizzle-orm";
 
 import { ALLIANCES } from "../../config/alliances";
+import { FRESH_MAX_AGE_MS } from "../collector-rows";
 import type { Db } from "../db";
 import { dailyReads, dailyRosters, runLogs } from "../schema";
 import type { UpstreamDetail } from "../sources/types";
@@ -23,7 +24,9 @@ const readFields = {
   error: dailyReads.error,
 };
 
-/** The failed or stale alliances of these days: identity, the flag, the error and its detail. */
+/** The failed or stale alliances of these days: identity, the flag, the error and its detail. Stale
+ * includes a roster a retry kept from an earlier read, once it is more than 20 minutes older than the
+ * start of the day's latest read (D67), as the read's own outcome counts it. */
 function problemsOf(db: Db, days: string[]) {
   return db
     .select({
@@ -35,10 +38,18 @@ function problemsOf(db: Db, days: string[]) {
       errorDetail: sql<UpstreamDetail | null>`${dailyRosters.errorDetail}`,
     })
     .from(dailyRosters)
+    .innerJoin(dailyReads, eq(dailyReads.day, dailyRosters.readDay))
     .where(
       and(
         inArray(dailyRosters.readDay, days),
-        or(eq(dailyRosters.isFresh, false), isNotNull(dailyRosters.error)),
+        or(
+          eq(dailyRosters.isFresh, false),
+          isNotNull(dailyRosters.error),
+          lt(
+            dailyRosters.sourceUpdatedAt,
+            sql`${dailyReads.startedAt} - make_interval(secs => ${FRESH_MAX_AGE_MS / 1000})`,
+          ),
+        ),
       ),
     )
     .orderBy(asc(dailyRosters.unionId));

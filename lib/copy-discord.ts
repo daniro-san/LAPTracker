@@ -72,7 +72,7 @@ export const discordCopy = {
     dailyFailed: "✗ {error} ({n}): {list}",
     /** Under each failure line: what it means and what to do (D61, copy.admin.guide). */
     dailyWhy: "↳ {meaning} {action}",
-    /** A failed day can be retried on /admin; a partial one only looked at. */
+    /** A day that fell short can be retried on /admin (D67); a partial one also links the reads list. */
     dailyRetry: "[Retry on /admin ↗](<{url}>)",
     dailyRuns: "[Daily reads ↗](<{url}>)",
   },

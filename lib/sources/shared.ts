@@ -41,13 +41,14 @@ const memberSchema = z.object({
   power: z.number().nullable(),
   kills: z.number().nullable(),
   lv: z.number().int().nullable(),
-  // Optional: a photo is cosmetic, so its absence never fails a run.
-  avatar_url: z.string().optional(),
-  // Optional for the same reason: the frame around the photo is cosmetic (D65).
-  frame_url: z.string().optional(),
-  // Optional for the same reason: the leadership marks are cosmetic.
-  rank_code: z.number().int().optional(),
-  rank_label: z.string().optional(),
+  // Absent or null: a photo is cosmetic, so a missing one never fails a run.
+  avatar_url: z.string().nullish(),
+  // The same rule: the frame around the photo is cosmetic (D65).
+  frame_url: z.string().nullish(),
+  // The same rule: the leadership marks are cosmetic. Since 2026-11-16 the upstream sends
+  // `rank_code: null` and `rank_label: ""` for a member the game's roster did not list.
+  rank_code: z.number().int().nullish(),
+  rank_label: z.string().nullish(),
 });
 
 export const rosterFields = {
