@@ -1,6 +1,6 @@
 # 08zzzzj — Live event page follow-ups (#327)
 
-Closes #327.
+Refs #327 (item 4, the Neon compute and transfer comparison, stays open until after the KvK of 2026-11-21).
 
 Branch `session/08zzzzj-live-followups`, cut from `origin/dev` at 75174b4 (#319 merged). The PR targets dev.
 
@@ -77,5 +77,13 @@ Plan changes needed: none.
 - Measured: 12 statements per event-page load before this change; on a cache hit, 8 for a live event and 11 for a finished one. Caching the rest of `getEventPage` is the next saving.
 - The window build (D69) must keep the `progress` / `progress-done` key choice in `loadProgress` in step with whatever marks an event finished (today: an `after` row in the event detail).
 </adjustments>
+
+## Review fixes (2026-11-16)
+
+- `/pr-review` (standard depth) found 3 warnings and 1 suggestion; none is blocking.
+- Fixed: the shared turnout-so-far read used the request's connection. Next re-reads an expired entry in the background, after `withPageDb` may have closed that connection. `getEventPage`'s `shared` now hands `load` a connection, and the page passes `() => withPageDb(load)`, as `loadProgress` already did. D79 states the rule.
+- Fixed: the PR and this handoff said `Closes #327`, but item 4 (the Neon compute and transfer comparison) waits for the KvK of 2026-11-21. Both now say `Refs #327`, so the issue stays open.
+- Left: the rename and settings routes' `invalidate` calls have no test. CLAUDE.md adds tests only where the task asks for them. Privacy is not at stake: the page passes `publicEvent` before it reads the cache.
+- Left: `eventProgress` (`lib/queries/live.ts`) now has only test callers. It is still the one call that reads and computes an event's progress, and dropping it would move the same two lines into the test file.
 
 https://github.com/daniro-san/LAPTracker/pull/330

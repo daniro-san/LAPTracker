@@ -11,11 +11,14 @@ import { eventProgressOf, progressRows } from "@/lib/queries/live";
 
 import { requestClock, requestCopy } from "./locale";
 
-// The turnout so far is read only while the event has no End: a live event's entry.
+// The turnout so far is read only while the event has no End: a live event's entry. Its read opens its own
+// connection, because Next can run it in the background after this request's connection is closed.
 export const loadEventPage = cache((id: number | null) =>
   withPageDb((db) =>
     getEventPage(db, id, (eventId, load) =>
-      getAppContext().eventCache.read(eventId, "turnout-so-far", LIVE_MAX_AGE_S, load),
+      getAppContext().eventCache.read(eventId, "turnout-so-far", LIVE_MAX_AGE_S, () =>
+        withPageDb(load),
+      ),
     ),
   ),
 );

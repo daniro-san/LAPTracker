@@ -9,8 +9,9 @@ import { eventRanks } from "./ranks";
 import { rosterChanges, type RosterChange } from "./rosters";
 import { memberTurnout, memberTurnoutSoFar } from "./turnout";
 
-/** A read shared between requests for one event (the page passes the event cache, issue 327). */
-type Shared = <T>(eventId: number, load: () => Promise<T>) => Promise<T>;
+/** A read shared between requests for one event (the page passes the event cache, issue 327). `load` gets
+ * the connection to read with: a shared read can run after this request's connection is closed. */
+type Shared = <T>(eventId: number, load: (db: Db) => Promise<T>) => Promise<T>;
 
 type Phases = NonNullable<Awaited<ReturnType<typeof getEventDetail>>>;
 
@@ -19,7 +20,7 @@ type Phases = NonNullable<Awaited<ReturnType<typeof getEventDetail>>>;
 function turnoutOf(db: Db, id: number, snapshots: Phases["snapshots"], shared: Shared) {
   const before = snapshots.find((s) => s.phase === "before");
   if (snapshots.some((s) => s.phase === "after")) return memberTurnout(db, snapshots);
-  return before ? shared(id, () => memberTurnoutSoFar(db, id, before.id)) : null;
+  return before ? shared(id, (read) => memberTurnoutSoFar(read, id, before.id)) : null;
 }
 
 /**
@@ -29,7 +30,7 @@ function turnoutOf(db: Db, id: number, snapshots: Phases["snapshots"], shared: S
 export async function getEventPage(
   db: Db,
   eventId: number | null,
-  shared: Shared = (_id, load) => load(),
+  shared: Shared = (_id, load) => load(db),
 ) {
   const events = await listEvents(db);
   const homeId = homeEvent(events)?.id ?? null;
