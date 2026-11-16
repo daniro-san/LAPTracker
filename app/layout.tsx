@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { connection } from "next/server";
 import type { ReactNode } from "react";
 
+import { analyticsKey } from "@/lib/analytics/events";
 import { fontVariables } from "@/lib/brand/fonts";
 import { readTheme } from "@/lib/brand/theme";
 
@@ -28,7 +29,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   ]);
   const production = process.env.VERCEL_ENV === "production";
   // PostHog (D77): production only, like D36, and only once the owner has set the key.
-  const posthogKey = production ? process.env.POSTHOG_KEY : undefined;
+  const posthogKey = analyticsKey(process.env);
   return (
     <html lang={language} data-theme={theme ?? undefined} className={fontVariables}>
       <body className="min-h-screen bg-paper font-body text-ink antialiased">

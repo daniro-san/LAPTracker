@@ -1,6 +1,6 @@
 // The custom events (D77): a closed list of names, and properties that are only closed lists of words, so no
 // roster value, name or typed text can ride along (events.test.ts proves it at type level). Until PostHog has
-// loaded, calls wait for it; when it never loads (previews, `next dev`, tests) they do nothing. This module
+// loaded, calls wait for it; when it never loads (previews, `next dev`, tests) or fails to, they do nothing. This module
 // does not import posthog-js, so a page that only tracks never downloads it by itself.
 import type { PostHog } from "posthog-js";
 
@@ -21,18 +21,33 @@ export interface AnalyticsEvents {
 }
 export type AnalyticsEvent = keyof AnalyticsEvents;
 
-/** The URL fragment the sign-in callback adds after a successful sign-in (lib/private/sign-in.ts). */
+/** The URL fragment the sign-in callback adds after a successful sign-in, when analytics is on. */
 export const SIGNED_IN_HASH = "#signed-in";
 
-let client: PostHog | Promise<PostHog> | null = null;
+/** The PostHog key when analytics is on: the production deployment, with POSTHOG_KEY set (D77). */
+export function analyticsKey(env: {
+  VERCEL_ENV?: string | undefined;
+  POSTHOG_KEY?: string | undefined;
+  [name: string]: unknown;
+}): string | undefined {
+  return env.VERCEL_ENV === "production" && env.POSTHOG_KEY ? env.POSTHOG_KEY : undefined;
+}
 
-/** Called once, by app/_ui/PostHogAnalytics.tsx, before any component can track. */
+let started = false;
+let client: PostHog | Promise<PostHog | null> | null = null;
+
+/** Called by app/_ui/PostHogAnalytics.tsx; only the first call loads. A failed load leaves tracking a no-op. */
 export function loadAnalytics(load: () => Promise<PostHog>): void {
-  client ??= load().then((ph) => (client = ph));
+  if (started) return;
+  started = true;
+  client = load().then(
+    (ph) => (client = ph),
+    () => (client = null),
+  );
 }
 
 export function withPostHog(use: (ph: PostHog) => void): void {
-  if (client instanceof Promise) void client.then(use);
+  if (client instanceof Promise) void client.then((ph) => ph && use(ph));
   else if (client) use(client);
 }
 
