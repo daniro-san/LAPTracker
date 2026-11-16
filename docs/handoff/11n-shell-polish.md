@@ -163,4 +163,4 @@ Plan changes needed: none.
 - Migration: this branch is `0020_workspace_user_profile`. A branch made before it regenerates its own migration on top (Deviations, "Migration number").
 </adjustments>
 
-PR: (added by the orchestrator)
+https://github.com/daniro-san/LAPTracker/pull/341
