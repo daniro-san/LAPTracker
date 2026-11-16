@@ -21,6 +21,14 @@ const zones = [
     message: "lib/screenshot imports nothing from the project, and nothing from the database.",
   },
   {
+    // D81: what goes to Groq is built from the officer's text alone, so no roster field can reach a request.
+    target: "./lib/ai",
+    from: ".",
+    except: ["./node_modules", "./lib/ai"],
+    message:
+      "lib/ai imports nothing from the project: a request carries only the officer's text (D81).",
+  },
+  {
     target: "./lib/schedule.ts",
     from: ".",
     except: ["./node_modules", "./lib/env.ts"],

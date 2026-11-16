@@ -21,6 +21,8 @@ export interface AnalyticsEvents {
   ws_copy_spreadsheet: NoProperties;
   ws_filter_used: { filter: MemberFilter };
   ws_language_switched: { language: AnalyticsLanguage };
+  /** A notice's Translate filled drafts (D81); nothing about the text. */
+  ws_notice_translated: NoProperties;
 }
 export type AnalyticsEvent = keyof AnalyticsEvents;
 

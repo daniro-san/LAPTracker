@@ -1,6 +1,7 @@
 // The workspace dictionary in French (D71), split from dictionary.ts for its size; the keys follow `en`.
 // French puts a no-break space before : ? and !, and inside « ».
 import type { WorkspaceDictionary } from "./dictionary";
+import { noticesFr } from "./dictionary.notices";
 
 export const fr: WorkspaceDictionary = {
   "app.name": "Bureau des officiers",
@@ -164,4 +165,5 @@ export const fr: WorkspaceDictionary = {
     "Dans Safari, touchez l’icône de partage (un carré avec une flèche vers le haut). Dans la liste, touchez l’élément avec un + dans un carré, puis confirmez.",
   "howto.android.body":
     "Dans Chrome, touchez ⋮ en haut à droite. Dans le menu, touchez l’élément qui ajoute la page à l’écran d’accueil (un téléphone avec une flèche), puis confirmez.",
+  ...noticesFr,
 };

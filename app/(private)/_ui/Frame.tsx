@@ -1,5 +1,5 @@
 // The workspace frame (D71, brand proposal): the burgundy header with the workspace name, the "?" that
-// opens the first-use cards (issue 312) and EN · PT · FR, the page, and, once signed in, the five bottom
+// opens the first-use cards (issue 312) and EN · PT · FR, the page, and, once signed in, the six bottom
 // tabs. Designed at 360 px; every control is 44 px or more.
 import { cookies, headers } from "next/headers";
 import type { ReactNode } from "react";
@@ -33,9 +33,13 @@ export async function workspaceWords(): Promise<{
   return { language, t: WORKSPACE_DICTIONARIES[language] };
 }
 
-const TABS: TabId[] = ["home", "members", "mark", "days", "review"];
+const TABS: TabId[] = ["home", "members", "mark", "days", "notices", "review"];
 /** The tabs that exist so far; the other three come with their own issues and are shown as "soon". */
-const PATHS: Partial<Record<TabId, string>> = { home: "", members: "/members" };
+const PATHS: Partial<Record<TabId, string>> = {
+  home: "",
+  members: "/members",
+  notices: "/notices",
+};
 
 function Tabs({ t, slug, current }: { t: WorkspaceDictionary; slug: string; current: TabId }) {
   return (
@@ -43,13 +47,17 @@ function Tabs({ t, slug, current }: { t: WorkspaceDictionary; slug: string; curr
       aria-label={t["tab.aria"]}
       className="fixed inset-x-0 bottom-0 z-10 border-t border-rule bg-paper pb-[env(safe-area-inset-bottom)]"
     >
-      <ul className="mx-auto grid max-w-[640px] grid-cols-5">
+      <ul className="mx-auto grid max-w-[640px] grid-cols-6">
         {TABS.map((id) => {
           const label = t[`tab.${id}`];
           const inside = (
             <>
               <TabIcon id={id} />
-              <span className="text-[13px] leading-tight">{label}</span>
+              {/* Six tabs leave 60 px each at 360 px: a long word ("Acompanhar") breaks, hyphenated
+                  where the browser knows the language, instead of running past the screen. */}
+              <span className="max-w-full text-[13px] leading-tight hyphens-auto [overflow-wrap:anywhere]">
+                {label}
+              </span>
             </>
           );
           const box = "flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 text-center";
