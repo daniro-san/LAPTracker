@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { ago, fakeV1, IDS, minutes, roster, T0 } from "./collector.test-helpers";
-import { runDailyRead } from "./daily-read";
+import { autoRetryDailyRead, runDailyRead } from "./daily-read";
 import type { Db } from "./db";
 import { openTestDb, truncateAll } from "./db.test-helpers";
 import { BLOCKED_ROSTER_KEYS, findBlockedKeys, memberHistoryCard } from "./queries";
@@ -98,5 +98,54 @@ describe("runDailyRead (D60)", () => {
     const card = await memberHistoryCard(db, id, at);
     expect(card?.roster).toHaveLength(3);
     expect(findBlockedKeys(card)).toEqual([]);
+  });
+});
+
+describe("autoRetryDailyRead (D72)", () => {
+  const [kept = 0, bad = 0] = IDS;
+  const day = "2026-11-10";
+  /** The read at `T0` (23:37) fails `bad` and keeps `kept`'s roster, 15 minutes old then. */
+  async function shortRead(badFailsAfter: boolean) {
+    const clock = { now: T0 };
+    const v1 = fakeV1((id) =>
+      id === kept
+        ? roster(id, ago(T0, minutes(15)))
+        : clock.now === T0 || badFailsAfter
+          ? new UpstreamError(503)
+          : roster(id, ago(clock.now, minutes(1))),
+    );
+    const d = { v1, now: () => clock.now };
+    expect(await runDailyRead(d, db, day, [kept, bad])).toMatchObject({ status: "partial" });
+    return { clock, v1, d };
+  }
+
+  it("judges the rosters it kept against the start of the read it completes, not its own", async () => {
+    const { clock, v1, d } = await shortRead(false);
+    clock.now = new Date(T0.getTime() + minutes(15));
+
+    const summary = await autoRetryDailyRead(d, db, day, [kept, bad]);
+
+    expect(v1.calls.slice(-1)).toEqual([bad]);
+    expect(summary).toMatchObject({ status: "complete", stale: [], failed: [] });
+  });
+
+  it("runs once per day: a second automatic retry after one is recorded reads nothing", async () => {
+    const { clock, v1, d } = await shortRead(true);
+    clock.now = new Date(T0.getTime() + minutes(15));
+    expect(await autoRetryDailyRead(d, db, day, [kept, bad])).toMatchObject({ status: "partial" });
+    const calls = v1.calls.length;
+    clock.now = new Date(T0.getTime() + minutes(30));
+
+    expect(await autoRetryDailyRead(d, db, day, [kept, bad])).toBeNull();
+    expect(v1.calls).toHaveLength(calls);
+  });
+
+  it("reads nothing less than 10 minutes after the read started", async () => {
+    const { clock, v1, d } = await shortRead(true);
+    const calls = v1.calls.length;
+    clock.now = new Date(T0.getTime() + minutes(9));
+
+    expect(await autoRetryDailyRead(d, db, day, [kept, bad])).toBeNull();
+    expect(v1.calls).toHaveLength(calls);
   });
 });

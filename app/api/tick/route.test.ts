@@ -198,11 +198,11 @@ describe("POST /api/tick", () => {
     expect(notes.every((n) => n.content.startsWith("[rehearsal] "))).toBe(true);
   });
 
-  it("reads at 23:37 on the event's day, re-reads only what fell short at 23:52, and never after midnight", async () => {
-    // DAILY_ROSTER_AT 23:30 server = 01:30 UTC the next day (D72). Saturday 2026-11-07 is the event's
-    // day: its Before runs; the 23:37 read fails one alliance and the 23:52 tick re-reads only that one.
-    // A Retry at 23:58:30 could run past 00:00 and is refused. Sunday's read is complete, so its 23:52
-    // tick reads nothing. Monday's two ticks are missed: Tue 00:07 (inside 23:30 + 45 min) reads nothing.
+  // DAILY_ROSTER_AT 23:30 server = 01:30 UTC the next day, window 45 min (D72). Saturday 2026-11-07 is the
+  // event's day.
+  /** A tick at `iso` (UTC), with the first alliance's read failing when `fail`: its answer (the phase,
+   * "<day> <status>" for a daily read, or 204) and the alliances it read. */
+  function dailyTicks() {
     const { ctx, clock } = testContext(db);
     holder.ctx = ctx;
     const [bad = 0] = IDS;
@@ -211,48 +211,72 @@ describe("POST /api/tick", () => {
       failing && id === bad ? new Error("down") : roster(id, ago(clock.now, minutes(1))),
     );
     ctx.v1 = v1;
-    const answers: unknown[] = [];
-    const calls: number[][] = [];
-    for (const [at, fail] of [
-      ["2026-11-07T12:05", false],
-      ["2026-11-08T01:37", true],
-      ["2026-11-08T01:52", false],
-      ["2026-11-09T01:37", false],
-      ["2026-11-09T01:52", false],
-      ["2026-11-10T02:07", false],
-    ] as const) {
-      [clock.now, failing] = [new Date(`${at}:00Z`), fail];
+    const at = async (iso: string, fail = false) => {
+      [clock.now, failing] = [new Date(`${iso}:00Z`), fail];
       const from = v1.calls.length;
       const res = await tick();
       const body = res.status === 204 ? null : ((await res.json()) as Record<string, unknown>);
-      answers.push(body ? (body.phase ?? `${String(body.day)} ${String(body.status)}`) : 204);
-      calls.push(v1.calls.slice(from));
-    }
+      const answer = body ? (body.phase ?? `${String(body.day)} ${String(body.status)}`) : 204;
+      return { answer, calls: v1.calls.slice(from) };
+    };
+    return { at, bad, clock };
+  }
+  const days = () => db.select({ day: dailyReads.day, status: dailyReads.status }).from(dailyReads);
+  const rosterRows = async () =>
+    (await db.select({ id: dailyRosters.id }).from(dailyRosters)).length;
 
+  it("reads every roster at 23:37 on the event's day, after its Before, and closes partial when one fails", async () => {
+    const { at } = dailyTicks();
+
+    const before = await at("2026-11-07T12:05");
+    const read = await at("2026-11-08T01:37", true);
+
+    expect([before.answer, read.answer]).toEqual(["before", "2026-11-07 partial"]);
+    expect([before.calls, read.calls].map((c) => c.length)).toEqual([IDS.length, IDS.length]);
+  });
+
+  it("re-reads at 23:52 only the alliance the 23:37 read left without a roster, and completes the day", async () => {
+    const { at, bad } = dailyTicks();
+    await at("2026-11-07T12:05");
+    await at("2026-11-08T01:37", true);
+
+    const retry = await at("2026-11-08T01:52");
+
+    expect(retry).toEqual({ answer: "2026-11-07 complete", calls: [bad] });
+    expect(await days()).toEqual([{ day: "2026-11-07", status: "complete" }]);
+    expect(await rosterRows()).toBe(IDS.length);
+  });
+
+  it("refuses a Retry at 23:58:30, which could run past the server day's end", async () => {
+    const { at, clock } = dailyTicks();
+    await at("2026-11-08T01:37", true);
     clock.now = new Date("2026-11-08T01:58:30Z");
+
     const late = await retry(
       request("/api/daily-read/retry", { headers: { "x-edit-pin": TEST_PIN } }),
     );
 
-    expect(answers).toEqual([
-      "before",
-      "2026-11-07 partial",
-      "2026-11-07 complete",
-      "2026-11-08 complete",
-      204,
-      204,
-    ]);
-    expect(calls[2]).toEqual([bad]);
     expect([late.status, await late.json()]).toEqual([409, { code: "daily_read_too_late" }]);
-    expect(
-      await db.select({ day: dailyReads.day, status: dailyReads.status }).from(dailyReads),
-    ).toEqual([
-      { day: "2026-11-07", status: "complete" },
-      { day: "2026-11-08", status: "complete" },
-    ]);
-    expect(await db.select({ id: dailyRosters.id }).from(dailyRosters)).toHaveLength(
-      2 * IDS.length,
-    );
-    expect(v1.calls).toHaveLength(3 * IDS.length + 1);
+    expect(await days()).toEqual([{ day: "2026-11-07", status: "partial" }]);
+  });
+
+  it("reads nothing at 23:52 when the 23:37 read was complete", async () => {
+    const { at } = dailyTicks();
+
+    const read = await at("2026-11-09T01:37");
+    const later = await at("2026-11-09T01:52");
+
+    expect([read.answer, later.answer]).toEqual(["2026-11-08 complete", 204]);
+    expect([read.calls.length, later.calls]).toEqual([IDS.length, []]);
+    expect(await days()).toEqual([{ day: "2026-11-08", status: "complete" }]);
+    expect(await rosterRows()).toBe(IDS.length);
+  });
+
+  it("reads nothing after the server midnight when the day's ticks inside its window were missed", async () => {
+    const { at } = dailyTicks();
+
+    // Tue 00:07 server is inside Monday's 23:30 + 45 min window, but on Tuesday.
+    expect(await at("2026-11-10T02:07")).toEqual({ answer: 204, calls: [] });
+    expect(await days()).toEqual([]);
   });
 });

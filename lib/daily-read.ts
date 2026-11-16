@@ -17,6 +17,7 @@ import {
   claimDailyRead,
   dailyRosterStates,
   finishDailyRead,
+  getDailyRead,
   reclaimDailyRead,
   storeDailyRoster,
   type DailyReadStatus,
@@ -24,6 +25,7 @@ import {
 } from "./repo/daily-reads";
 import { recordFrames } from "./repo/player-frames";
 import { insertRunLog } from "./repo/run-logs";
+import { endsInServerDay, serverDay, type ScheduleConfig } from "./schedule";
 import { QuotaExhaustedError, type AllianceSnapshotInput, type V1Source } from "./sources/types";
 import { describe, httpStatusOf, upstreamDetail } from "./upstream-errors";
 
@@ -212,16 +214,26 @@ export async function runDailyRead(
   return readDay(deps, db, day, ids, now, { toRead: ids, code: "daily.start" });
 }
 
-/** /admin's retry (D67): the same read again, every roster, for a day that fell short (`failed` or
- * `partial`) or was left `running` past RUN_STALE_AFTER_MS (the function was killed). Null for any other
- * day (no read, running, complete) or when another press took it first. */
+/** A daily read, or /admin's Retry of it, may start at `now`: a run of up to RUN_DEADLINE_MS ends inside
+ * now's server day (D72). */
+export const dailyReadEndsInDay = (now: Date, cfg: Pick<ScheduleConfig, "SERVER_TZ">) =>
+  endsInServerDay(now, RUN_DEADLINE_MS, cfg);
+
+/** /admin's retry (D67): the same read again, every roster, of today's server day when it fell short
+ * (`failed` or `partial`) or was left `running` past RUN_STALE_AFTER_MS (the function was killed).
+ * "too-late" when a read started now could run past the server day's end (D72); null for any other day
+ * (no read, running, complete) or when another press took it first. */
 export async function retryDailyRead(
   deps: Deps,
   db: Db,
-  day: string,
+  cfg: Pick<ScheduleConfig, "SERVER_TZ">,
   ids: readonly number[],
-): Promise<DailyReadSummary | null> {
+): Promise<DailyReadSummary | "too-late" | null> {
   const now = deps.now();
+  // INVARIANT daily-read.ends-before-midnight: a Retry that could run past 00:00 would store rosters
+  // read after the reset under the day before; the day keeps its gap instead (D72).
+  if (!dailyReadEndsInDay(now, cfg)) return "too-late";
+  const day = serverDay(now, cfg);
   // INVARIANT run.stale-after-150s: the snapshots' rule for a killed run.
   const staleBefore = new Date(now.getTime() - RUN_STALE_AFTER_MS);
   if (!(await reclaimDailyRead(db, day, now, staleBefore))) return null;
@@ -248,22 +260,34 @@ export async function autoRetryDailyRead(
   );
   const missing = ids.filter((id) => !read.has(id));
   if (missing.length === 0) return null;
+  // The claim moves started_at to the retry; the rosters it keeps are judged against the read it completes.
+  const before = await getDailyRead(db, day);
+  if (!before) return null;
   const now = deps.now();
   const startedBefore = new Date(now.getTime() - AUTO_RETRY_AFTER_MS);
   if (!(await claimAutoRetry(db, day, now, startedBefore))) return null;
-  return readDay(deps, db, day, ids, now, { toRead: missing, code: "daily.auto-retry" });
+  return readDay(deps, db, day, ids, now, {
+    toRead: missing,
+    code: "daily.auto-retry",
+    keptJudgedAt: before.startedAt,
+  });
 }
 
 /** `startedAt` is this read's start as the claim stored it. `ids` are the day's alliances, which the
  * outcome is judged on; `toRead` the ones this attempt reads: all of them, or for the tick's automatic
- * retry only the ones without a roster (D72); `code` names the attempt's first log line. */
+ * retry only the ones without a roster (D72); `code` names the attempt's first log line;
+ * `keptJudgedAt`, the automatic retry's only, is the start of the read it completes. */
 async function readDay(
   deps: Deps,
   db: Db,
   day: string,
   ids: readonly number[],
   startedAt: Date,
-  attempt: { toRead: readonly number[]; code: "daily.start" | "daily.auto-retry" },
+  attempt: {
+    toRead: readonly number[];
+    code: "daily.start" | "daily.auto-retry";
+    keptJudgedAt?: Date;
+  },
 ): Promise<DailyReadSummary> {
   const log = createRunLogger(
     { insertRunLog: (line) => insertRunLog(db, line) },
@@ -289,9 +313,12 @@ async function readDay(
   const rows = await dailyRosterStates(db, day);
   const ok = rows.filter((r) => r.error === null);
   // INVARIANT freshness.20-min, for the day: a roster kept from an earlier read is stale in the day's
-  // outcome once it is more than 20 minutes older than this read's start. Its stored `is_fresh` stays.
+  // outcome once it is more than 20 minutes older than this read's start, or, for the tick's automatic
+  // retry, than the start of the read it completes (D72): the retry reads only the missing rosters, so
+  // the 15 minutes between the two ticks must not age the ones it kept. Its stored `is_fresh` stays.
+  const judgedAt = attempt.keptJudgedAt ?? startedAt;
   const stale = ok.filter(
-    (r) => !r.isFresh || !isFresh(startedAt, r.sourceUpdatedAt, FRESH_MAX_AGE_MS),
+    (r) => !r.isFresh || !isFresh(judgedAt, r.sourceUpdatedAt, FRESH_MAX_AGE_MS),
   );
   const status: DailyReadStatus =
     ok.length === 0

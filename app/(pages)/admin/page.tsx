@@ -24,14 +24,14 @@ import { Chip } from "@/lib/brand/components/Chip";
 import { FactList } from "@/lib/brand/components/FactList";
 import { DroppedStitch, StitchedCheck } from "@/lib/brand/components/StatusIcons";
 import { TextLink } from "@/lib/brand/components/TextLink";
-import { RUN_DEADLINE_MS } from "@/lib/compute";
 import { copy, fill } from "@/lib/copy";
+import { dailyReadEndsInDay } from "@/lib/daily-read";
 import { getEnv, type Env } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
 import { listRuns, recentTicks } from "@/lib/queries/admin";
 import { loadAdminPage } from "@/lib/queries/admin-page";
 import { QUOTA_WARN_BELOW } from "@/lib/run";
-import { endsInServerDay, isGeneratedName, lastOccurrence, nextEvent } from "@/lib/schedule";
+import { isGeneratedName, lastOccurrence, nextEvent } from "@/lib/schedule";
 
 const t = copy.admin;
 const st = t.status;
@@ -283,7 +283,7 @@ export default async function AdminPage() {
           manual={manual && roundView(manual, clock)}
           daily={
             // No Retry that could run past the server reset (D72): the route refuses it too.
-            endsInServerDay(now, RUN_DEADLINE_MS, env) ? dailyView(daily, now, clock) : null
+            dailyReadEndsInDay(now, env) ? dailyView(daily, now, clock) : null
           }
           running={views.running}
         />
