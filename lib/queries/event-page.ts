@@ -42,16 +42,17 @@ export async function getEventPage(
   const before = detail.snapshots.find((s) => s.phase === "before");
   const after = detail.snapshots.find((s) => s.phase === "after");
   const unionIds = [...new Set(detail.snapshots.flatMap((s) => s.alliances.map((a) => a.unionId)))];
-  const [names, ranks, changes, members, turnout] = await Promise.all([
+  const turnoutRead = Promise.resolve(turnoutOf(db, id, detail.snapshots, shared));
+  const [names, ranks, changes, members, turnout, carried] = await Promise.all([
     allianceNames(db, unionIds),
     eventRanks(db, id),
     before && after
       ? rosterChanges(db, { before: before.id, after: after.id })
       : Promise.resolve(new Map<number, RosterChange>()),
     memberMovers(db, detail.snapshots),
-    turnoutOf(db, id, detail.snapshots, shared),
+    turnoutRead,
+    whoCarried(db, detail, turnoutRead),
   ]);
-  const carried = await whoCarried(db, detail, turnout);
   const movers = {
     alliances: before && after ? allianceMovers(before.alliances, after.alliances, ranks) : null,
     members,

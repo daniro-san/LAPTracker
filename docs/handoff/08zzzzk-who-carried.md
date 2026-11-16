@@ -21,7 +21,7 @@ Refs #280. Decision: D83.
 - **Translations**: 17 languages, at most 3 translators at a time. The first run of `vi` and `th` read stale todo files from the shared scratch folder and wrote a `merge` section; those two files were restored from git and translated again.
 
 ## Deviations
-- No "Show all" (superseded, see Decisions). Not pushed and no PR opened (the sandbox blocks `git push`); the orchestrator does it. The PR URL line is left out.
+- No "Show all" at first (superseded, see Decisions). The build agent could not push (sandbox); the orchestrator pushed the branch and opened the PR, whose URL is the last line.
 
 ## Verified
 - `pnpm check`: prettier, eslint, tsc, vitest (97 files passed, 2 skipped), drift and i18n ("17 languages up to date with English") green.
@@ -45,7 +45,7 @@ Reader's 3-second takeaway: before and after, "each alliance's kills against its
 ## Next
 Session: none queued in `docs/SESSION_PLAYBOOK.md` after Session 10; follow-ups #276 (the Discord End picture may carry these figures).
 Model / effort: keep. The work needed no more reasoning than the war turnout did; two translator runs needed a redo because of stale scratch files, not model quality.
-Owner must do first: merge this PR into `dev`; decide open issue 2 (gap in points for every row until 3 events for all) and whether a "Show all" is wanted despite the no-bottom-list rule.
+Owner must do first: merge this PR into `dev`; decide open issue 2 (gap in points for every row until 3 events for all).
 Plan changes needed: none to `docs/IMPLEMENTATION_PLAN.md`.
 
 <adjustments>
@@ -53,5 +53,11 @@ Plan changes needed: none to `docs/IMPLEMENTATION_PLAN.md`.
 - `lib/copy.ts` is at the lint limit: new public `ledger` keys go in `lib/copy-war.ts` (spread into `ledger`) or a similar spread file.
 - The scratch folder is shared between sessions: write translator todo files to a new, empty folder, never `todo-<tag>.json` in a folder that already has some.
 </adjustments>
+
+## Review fixes (2026-11-16, /pr-review standard)
+
+- `getEventPage` starts `whoCarried` inside its `Promise.all`: the earlier events' ratios are read beside the other reads, and `whoCarried` takes the turnout lists or their read still on its way. It waited for all of them before.
+- Test: `pointsText` signs a gap with plus, minus, or no sign when it rounds to zero (`app/_ui/format.test.ts`).
+- `WhoCarried`'s line width uses its own `at` helper; the handoff's stale Deviations and Owner lines are corrected.
 
 https://github.com/daniro-san/LAPTracker/pull/338

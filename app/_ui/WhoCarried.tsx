@@ -80,7 +80,7 @@ function Row({
           <span className="absolute inset-x-0 top-1/2 h-px bg-rule" />
           <span
             className="absolute top-1/2 h-0.5 -translate-y-1/2 bg-ink/40"
-            style={{ left: at(lo, axis), width: `${Math.round(((hi - lo) / axis) * 1000) / 10}%` }}
+            style={{ left: at(lo, axis), width: at(hi - lo, axis) }}
           />
           <span
             className="absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 border-2 border-ink bg-paper"

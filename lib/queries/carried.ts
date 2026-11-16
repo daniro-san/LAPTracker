@@ -109,12 +109,13 @@ async function earlierRatios(db: Db, before: Date): Promise<Map<number, number[]
 /**
  * The section's figures for an event; null until it has both a Start and an End, and when no alliance with
  * a usable Start and End gained kills. An alliance whose Start or End row is stale or failed has no figure
- * (INVARIANT freshness.no-stale-delta) and is not in the totals. `turnout` is the event's #271 lists.
+ * (INVARIANT freshness.no-stale-delta) and is not in the totals. `turnout` is the event's #271 lists, or
+ * their read still on its way: the earlier events are read meanwhile, since they do not depend on it.
  */
 export async function whoCarried(
   db: Db,
   detail: Detail,
-  turnout: TurnoutLists | null,
+  turnout: TurnoutLists | null | PromiseLike<TurnoutLists | null>,
 ): Promise<Carried | null> {
   const before = detail.snapshots.find((s) => s.phase === "before");
   const after = detail.snapshots.find((s) => s.phase === "after");
@@ -122,9 +123,9 @@ export async function whoCarried(
   const inputs = inputsOf(before.alliances, after.alliances);
   const shares = carriedShares(inputs);
   if (shares.length === 0) return null;
-  const earlier = await earlierRatios(db, detail.eventAtUtc);
+  const [earlier, lists] = await Promise.all([earlierRatios(db, detail.eventAtUtc), turnout]);
   const names = new Map(after.alliances.map((a) => [a.unionId, a]));
-  const turnoutOf = new Map(turnout?.withKills.map((t) => [t.unionId, t]));
+  const turnoutOf = new Map(lists?.withKills.map((t) => [t.unionId, t]));
   const rows = shares.map((s: CarriedShare): CarriedRow => {
     const a = names.get(s.key) as Side;
     const own = [...(earlier.get(s.key) ?? []), ...(s.ratio === null ? [] : [s.ratio])];
