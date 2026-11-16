@@ -221,6 +221,48 @@ The trade-off: a rename or a visibility switch (D28, D39) reaches cached copies 
 - Vercel's docs do not say whether a WAF-blocked request counts as a function invocation.
 - How a visibility switch to `admin` should purge the CDN copy was not looked into (a cache purge API or a short TTL).
 
+## Review (2026-11-16)
+
+Re-checked against dev `1649afe` by running things, not by reading.
+- I rebuilt the prototype in a scratchpad: mcp-handler, PGlite with `seed(db)`, 3 tools over `lib/queries`.
+- I called it from a real client (Claude Code 2.1.322, `claude -p --mcp-config … --strict-mcp-config --allowedTools "mcp__laptracker__*"`).
+- I sent 4 GETs to production. Nothing went to the upstream.
+
+**What holds:**
+- Both eras work.
+  - Modern requests: `server/discover`, `tools/list`, `tools/call`, with no `initialize`.
+  - Legacy `initialize` 2025-11-25 answers over SSE.
+- `GET` and `DELETE` answer 405. A foreign `Origin` gets 403.
+- Privacy:
+  - `findBlockedKeys` finds 0 hits in 51 outputs.
+  - A planted-key control is caught in all 21 files.
+  - The `avatar_url|raw_json|last_online|joined_at|daily_` grep finds 0.
+- Visibility: the rehearsal and an `admin` round are hidden from every tool.
+- The Neon arithmetic is internally consistent.
+
+**What changed or was wrong:**
+- **Pins.**
+  - mcp-handler 2.3.1 (2026-11-05) and 2.4.0 (2026-11-12) are out. 2.4.0 adds optional OTel peers and grows from 243 KB to 423 KB.
+  - Under D19 (the newest is days old, so take the one before it) the pin is 2.3.1.
+  - `@modelcontextprotocol/server` 2.4.0 is still the latest.
+- **Origin check.** No hand-written check is needed. `@modelcontextprotocol/server` exports `originValidationResponse` and `localhostAllowedOrigins`. `Origin: null` also gets 403.
+- **Whitelist.**
+  - Production `/api/events/[id]` also returns `cached` on rows; drop it too.
+  - `level` was removed from `AllianceRow` (08zzn).
+  - `frameId` (D65, D66) is new: map it to `/img/frame/<id>` or drop it.
+  - Decide whether the member history card (D60) and the compare reads (D57) are tools.
+- **Cache precedent.** "No `Cache-Control` anywhere under `app/api`" is no longer true. `app/api/alliances/[unionId]/history/route.ts` sends `public, s-maxage=300`, and production shows MISS, then HIT. That is option C's caching, already working.
+- **Disclaimer.** #198 shipped (PR #202). The text is `en.site.disclaimer`, which now starts "Event Ledger is a fan-made…", and `site.name` is "Event Ledger" (#207). The build reuses `en.site.disclaimer` and does not keep a second copy.
+- **Decisions paths.** Decisions are now `docs/decisions/DNN-*.md`. A new one is a new file (after D68) plus its line in the index.
+- **Neon baseline.** The 2026-11-08 numbers predate the daily read (D60) and the re-reads (D62–D67). Read the dashboard again before trusting the headroom.
+- **The pre-existing open issue** (public `/api/events` uncached, with internal fields) is now issue #272, fixed on its own in session 08zzzz.
+
+**Product fit, 2026-11-16.**
+- The owner's focus is visualizations for players and alliances (daily and event progress, comparison, decisions).
+- A persona panel of 6 rated the MCP/API at a mean of 2.3 of 5. Only the officer persona wanted it, for a bot that posts a list to the officer channel.
+- The maintainer's answers (section 6) are not recorded on #178 yet.
+- Recommendation: merge this file as the decision record. Build option C only after the maintainer answers and the visualization issues (#270–#276) ship.
+
 ## Next
 
 Session: NN-public-api-mcp — public read API and `/mcp` (builds option C of #178; the owner confirmed C on 2026-11-08). Only after the maintainer has answered.
@@ -262,6 +304,20 @@ pnpm check green; the client run recorded; docs/handoff/NN-public-api-mcp.md wri
 - Do not install @modelcontextprotocol/inspector: it has a postinstall (D10).
 - Neon (owner's dashboard, 2026-11-08): 10.23 CU-h and 468 MB transfer in the ≈ 4.4 days since 2026-11-04, ≈ 69 CU-h and ≈ 3.2 GB per 30 days of the 100 CU-h / 5 GB caps, before any public API. The CDN TTLs are what keep the build inside the cap; do not shorten them without measuring.
 - The owner confirmed option C, no auth, and that D22 consent covers third-party bots (2026-11-08). A SaaS for other alliances and servers may come later; keep paths and tool names stable and add nothing for it now.
+</adjustments>
+
+<adjustments for="NN-public-api-mcp (review 2026-11-16)">
+- Read the section "Review (2026-11-16)" above first.
+- Pin mcp-handler 2.3.1, or 2.4.0 once it has aged. Keep `@modelcontextprotocol/server` 2.4.0.
+- Use the SDK's `originValidationResponse` and `localhostAllowedOrigins` with the app's own origin. Do not write the check by hand.
+- Whitelist:
+  - also drop `cached`;
+  - `frameId` becomes `/img/frame/<id>` or is dropped;
+  - `level` no longer exists.
+- Decision references point at `docs/decisions/DNN-*.md`. The new decision is a new file.
+- The instructions and the OpenAPI description reuse `en.site.disclaimer` ("Event Ledger is a fan-made…").
+- `GET /api/events` and `/api/events/[id]` were trimmed and cached by #272. Build the public routes on that state, not on the one this handoff describes.
+- Modern-era test requests need the full `_meta` envelope, `clientCapabilities` included; without it the answer is 400 (-32602).
 </adjustments>
 
 https://github.com/daniro-san/LAPTracker/pull/185
