@@ -26,6 +26,11 @@ lib/private/*.ts    the workspace (D71): requireWorkspace and its branded Worksp
                     reasons and "copy for spreadsheet"), first-use.ts (the first-use cards as data),
                     cookies.ts (the two cookie names, apart from the dictionaries, for client components);
                     their table reads are in lib/repo/workspace-rosters.ts.
+                    The Calendar tab (issue 300): calendar.ts (reads and the field-level writes with their
+                    version check), calendar-model.ts (pure: kinds, input schemas, which change fits which kind,
+                    the weekly layout), calendar-time.ts (pure, browser-safe: server days, ST and the viewer's
+                    clock), calendar-words.ts (titles, dates, the 409 sentence), dictionary.calendar*.ts (its
+                    words); its tables are in lib/schema-calendar.ts, its reads and writes in lib/repo/calendar.ts.
 lib/queries/*.ts    read models for the UI (joins, sorting, name history). Never write. Never expose BLOCKED_ROSTER_KEYS.
                     lib/queries/samples.ts: `eventSamples`, an event's Start, samples and End (D69).
                     lib/queries/live.ts: `eventProgress`, the event page's live section (alliance totals per reading, D69):
