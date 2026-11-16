@@ -134,6 +134,13 @@
       "when": 1794853448414,
       "tag": "0018_nosy_loki",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1794853943064,
+      "tag": "0019_furry_fabian_cortez",
+      "breakpoints": true
     }
   ]
 }

@@ -312,3 +312,55 @@ export const dailyRosters = pgTable(
     index("daily_rosters_union_idx").on(t.unionId),
   ],
 );
+
+/**
+ * A workspace (D71): the private area of one alliance. The Discord server and the leadership role ids
+ * live here, so a new alliance needs no deploy; the owner registers one on /admin.
+ */
+export const workspaces = pgTable("workspaces", {
+  id: serial("id").primaryKey(),
+  slug: text("slug").notNull().unique(),
+  unionId: big("union_id").notNull().unique(),
+  discordGuildId: text("discord_guild_id").notNull(),
+  leaderRoleIds: text("leader_role_ids").array().notNull(),
+  createdAt: tstz("created_at").notNull().defaultNow(),
+});
+
+/**
+ * The people of one workspace (D71): a row is written when someone signs in, or when the owner puts a
+ * Discord account on the allowlist (with who added it and until when).
+ */
+export const workspaceUsers = pgTable(
+  "workspace_users",
+  {
+    id: serial("id").primaryKey(),
+    workspaceId: integer("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    discordUserId: text("discord_user_id").notNull(),
+    displayName: text("display_name"),
+    allowlisted: boolean("allowlisted").notNull().default(false),
+    allowlistAddedBy: text("allowlist_added_by"),
+    allowlistExpiresAt: tstz("allowlist_expires_at"),
+    blocked: boolean("blocked").notNull().default(false),
+    lastLoginAt: tstz("last_login_at"),
+  },
+  (t) => [unique("workspace_users_workspace_discord_unique").on(t.workspaceId, t.discordUserId)],
+);
+
+/** Signed-in sessions (D71): only the token's sha256 is stored; each belongs to one workspace, 24 h. */
+export const workspaceSessions = pgTable(
+  "workspace_sessions",
+  {
+    tokenHash: text("token_hash").primaryKey(),
+    workspaceId: integer("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    workspaceUserId: integer("workspace_user_id")
+      .notNull()
+      .references(() => workspaceUsers.id, { onDelete: "cascade" }),
+    createdAt: tstz("created_at").notNull(),
+    expiresAt: tstz("expires_at").notNull(),
+  },
+  (t) => [index("workspace_sessions_workspace_idx").on(t.workspaceId)],
+);
