@@ -1,11 +1,13 @@
 // Everything the comparison page reads, in one call per page (plan Phase 5): the event, the
-// selector's events, joined/left counts per alliance, ledger ranks and every alliance's name history.
+// selector's events, joined/left counts per alliance, ledger ranks, who gained kills and every alliance's
+// name history.
 import type { Db } from "../db";
 import { getEventDetail, homeEvent, listEvents } from "./events";
 import { allianceMovers, memberMovers } from "./movers";
 import { allianceNames } from "./names";
 import { eventRanks } from "./ranks";
 import { rosterChanges, type RosterChange } from "./rosters";
+import { memberTurnout } from "./turnout";
 
 /** `eventId` null = the home page's event (`homeEvent`). Null page: no such (public) event. */
 export async function getEventPage(db: Db, eventId: number | null) {
@@ -18,17 +20,18 @@ export async function getEventPage(db: Db, eventId: number | null) {
   const before = detail.snapshots.find((s) => s.phase === "before");
   const after = detail.snapshots.find((s) => s.phase === "after");
   const unionIds = [...new Set(detail.snapshots.flatMap((s) => s.alliances.map((a) => a.unionId)))];
-  const [names, ranks, changes, members] = await Promise.all([
+  const [names, ranks, changes, members, turnout] = await Promise.all([
     allianceNames(db, unionIds),
     eventRanks(db, id),
     before && after
       ? rosterChanges(db, { before: before.id, after: after.id })
       : Promise.resolve(new Map<number, RosterChange>()),
     memberMovers(db, detail.snapshots),
+    memberTurnout(db, detail.snapshots),
   ]);
   const movers = {
     alliances: before && after ? allianceMovers(before.alliances, after.alliances, ranks) : null,
     members,
   };
-  return { events, homeId, page: { detail, names, ranks, changes, movers } };
+  return { events, homeId, page: { detail, names, ranks, changes, movers, turnout } };
 }

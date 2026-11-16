@@ -27,6 +27,10 @@ Words already used in `lib/i18n/uk.ts`. Reuse them so the pages stay consistent;
 | Start / End               | Початок / Кінець            | `status.start` / `status.end`, `compare.lead`                                      |
 | vs                        | проти                       | `compare.versus` — "{a} проти {b}"                                                 |
 | read (a roster snapshot)  | знімок                      | `history.lead`, `history.daily`, `history.first` — a member list taken at one time |
+| War turnout               | Участь у війні              | `ledger.fought` — section title; neutral, names no person                          |
+| Support players           | гравці підтримки            | `ledger.foughtHelp` — players who gain no kills                                    |
+| Top 5                     | топ-5                       | `ledger.topShare` — the five biggest kills gains                                   |
+| gainer                    | учасник з приростом         | `ledger.topShareHelp`, `ledger.fewGainers` — members whose Kills rose              |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

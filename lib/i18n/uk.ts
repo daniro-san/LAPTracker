@@ -53,6 +53,15 @@ export const uk = {
     names: "Імена",
     alliances: "Альянси",
     movers: "Бабуся помітила",
+    fought: "Участь у війні",
+    foughtHelp:
+      "Members, які були в альянсі на початку і в кінці. Гравці підтримки не набирають Kills.",
+    withKills: "Members, що набрали Kills",
+    topShare: "Kills від топ-5 учасників",
+    topShareHelp:
+      "Частка Kills альянсу від 5 учасників з найбільшим приростом. Чим вище, тим менше гравців тягнули його.",
+    topBasis: "{top} із {n}",
+    fewGainers: "мало приростів",
   },
   compare: {
     title: "Подія проти події",

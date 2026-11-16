@@ -1,11 +1,13 @@
 // Runs a snapshot for a route (plan Phase 4) and the Friday quota report (plan §3.1). The finally
 // block exists because a serverless function is frozen once it returns: the snapshot row must be
 // final and the logger's inserts settled before the response leaves, on every path.
+import { OWN_ALLIANCE_ID } from "../config/alliances";
 import { secretsOf, type AppContext } from "./app-context";
 import { RunRefusedError, runSample, runSnapshot, type Deps, type RunSummary } from "./collector";
 import type { Db } from "./db";
 import { createRunLogger } from "./logger";
 import { quotaReportMessage, createNotifier, discordClock } from "./notify";
+import { LOST_MIGHT_PCT, MIN_DAILY_READS, mightUnchanged } from "./queries";
 import { createRepo, type Phase, type Repo, type SnapshotPhase } from "./repo";
 import { databaseSizeBytes } from "./repo/database";
 import type { EventInfo } from "./repo/events";
@@ -271,7 +273,7 @@ const DB_WARN_ABOVE_MB = 700;
 export async function quotaReport(
   ctx: AppContext,
   db: Db,
-  options: { always: boolean },
+  options: { always: boolean; origin: string },
 ): Promise<{ remaining: number | null; posted: boolean }> {
   const remaining = await ctx.v1.fetchQuota().then(
     (q) => q.remaining,
@@ -282,6 +284,8 @@ export async function quotaReport(
   const bytes = await databaseSizeBytes(db);
   const event = nextEvent(ctx.now(), ctx.env);
   const clock = discordClock(ctx.env.SERVER_TZ);
+  // The site's own alliance's might lists (D70): counts only, left out until it has the daily reads.
+  const might = await mightUnchanged(db, OWN_ALLIANCE_ID);
   const message = quotaReportMessage({
     at: clock.stamp(ctx.now()),
     remaining,
@@ -290,6 +294,15 @@ export async function quotaReport(
     warnAboveMb: DB_WARN_ABOVE_MB,
     beforeAt: clock.stamp(event.beforeAt),
     afterAt: clock.stamp(event.afterAt),
+    might: might.ready
+      ? {
+          days: MIN_DAILY_READS,
+          unchanged: might.unchanged.length,
+          pct: LOST_MIGHT_PCT,
+          lost: might.lost.length,
+          url: `${options.origin}/admin/members`,
+        }
+      : undefined,
   });
   await createNotifier(ctx.env, ctx.fetch).admin(message);
   return { remaining, posted: true };

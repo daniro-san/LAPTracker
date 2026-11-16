@@ -53,6 +53,15 @@ export const ptBR = {
     names: "Nomes",
     alliances: "Alianças",
     movers: "Vovó reparou",
+    fought: "Participação",
+    foughtHelp:
+      "Members que estavam na aliança no Início e no Fim. Jogadores de suporte não ganham kills.",
+    withKills: "Members com kills ganhos",
+    topShare: "Kills dos Top 5 Members",
+    topShareHelp:
+      "Fatia dos Kills da aliança feita pelos 5 maiores ganhadores. Quanto maior, menos jogadores carregaram a aliança.",
+    topBasis: "{top} de {n}",
+    fewGainers: "poucos ganhadores",
   },
   compare: {
     title: "Evento contra evento",

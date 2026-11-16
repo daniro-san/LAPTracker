@@ -53,6 +53,14 @@ export const ja = {
     names: "名前",
     alliances: "同盟",
     movers: "おばあちゃんの気づき",
+    fought: "参戦状況",
+    foughtHelp: "開始と終了の両方で同盟にいた Members。支援役のプレイヤーは Kills を得ません。",
+    withKills: "Kills を得た Members",
+    topShare: "上位5人の Kills",
+    topShareHelp:
+      "同盟の Kills のうち、Kills を最も多く得た Members 5人の割合。高いほど、少数の人が支えていたことを示します。",
+    topBasis: "{n}人中上位{top}",
+    fewGainers: "少人数",
   },
   compare: {
     title: "イベント比較",

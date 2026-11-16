@@ -54,6 +54,14 @@ export const ko = {
     names: "이름",
     alliances: "연맹",
     movers: "할머니 눈길",
+    fought: "전투 참여",
+    foughtHelp: "시작과 종료 때 모두 연맹에 있던 인원입니다. 지원 플레이어는 처치가 늘지 않습니다.",
+    withKills: "처치가 늘어난 인원",
+    topShare: "상위 5명의 처치",
+    topShareHelp:
+      "연맹 처치 중 처치가 가장 많이 늘어난 5명이 올린 몫입니다. 높을수록 적은 인원이 연맹을 떠받쳤다는 뜻입니다.",
+    topBasis: "{n}명 중 상위 {top}명",
+    fewGainers: "인원 적음",
   },
   compare: {
     title: "이벤트 비교",

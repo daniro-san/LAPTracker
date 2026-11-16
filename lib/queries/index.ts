@@ -14,6 +14,15 @@ export {
   type HistoryMember,
   type MemberHistory,
 } from "./member-history";
+export {
+  LOST_MIGHT_PCT,
+  MIN_DAILY_READS,
+  NEW_MEMBER_DAYS,
+  mightUnchanged,
+  type LostRow,
+  type MightUnchanged,
+  type UnchangedRow,
+} from "./might-unchanged";
 export { allianceNames } from "./names";
 export { eventSamples, type EventReading, type SampleAlliance, type SampleMember } from "./samples";
 export { playerHistory, searchPlayers } from "./players";
@@ -30,6 +39,7 @@ export {
   type MemberMover,
   type MoverLists,
 } from "./movers";
+export { memberTurnout, type AllianceTurnout, type TurnoutLists } from "./turnout";
 export {
   comparable,
   compareEvents,
