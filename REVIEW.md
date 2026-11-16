@@ -32,7 +32,7 @@ Read by `/code-review` on every change that touches `lib/` or `app/api/`. Review
 
 ## Blocked roster keys (plan §12.1)
 
-- [ ] No query in `lib/queries`, route, page, `run_logs` line or Discord message reads or returns `BLOCKED_ROSTER_KEYS` (`x`, `y`, `online`, `last_online_at`, `joined_at`, `daily_honor`, `daily_tech`, `avatar_url`). They live only in `raw_json`.
+- [ ] No query in `lib/queries`, route, page, `run_logs` line or Discord message reads or returns `BLOCKED_ROSTER_KEYS` (`x`, `y`, `online`, `last_online_at`, `joined_at`, `daily_honor`, `daily_tech`, `avatar_url`). They live only in `raw_json`; the one exception is `lib/private`, for its own alliance's workspace (D71).
 - [ ] `lib/queries/blocked-keys.test.ts` still scans every read-model file, and the route test for `GET /api/events/[id]` runs `findBlockedKeys` on the real response body.
 - [ ] Player pages expose only name, uid, alliance tag, power, kills, lv and event dates.
 
