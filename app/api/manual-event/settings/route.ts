@@ -29,6 +29,8 @@ export function POST(request: Request): Promise<Response> {
     });
     if (result === "not-found") return errorResponse(404, "event_not_found");
     if (result === "admin-cannot-post") return errorResponse(409, "admin_cannot_post");
+    // Visibility decides whether the event's progress is public (`publicEvent`).
+    ctx.eventCache.invalidate(id);
     return Response.json({ event_id: id });
   });
 }

@@ -62,8 +62,8 @@ export const ru = {
     liveStandingsHelp: "Изменение с «Начала», сначала больше всего убийств",
     livePulse: "Пульс сервера",
     livePulseHelp: "Убийства, набранные {n} альянсами за каждые {min} мин.",
-    liveBusiest: "Пик за 30 минут пока: {from}–{to} · {share} от всех убийств",
-    liveBusiestDone: "Пик за 30 минут: {from}–{to} · {share} от всех убийств",
+    liveBusiest: "Пик за {span} минут пока: {from}–{to} · {share} от всех убийств",
+    liveBusiestDone: "Пик за {span} минут: {from}–{to} · {share} от всех убийств",
     liveNoUpdate: "От игры обновлений нет",
     liveNoReading: "Чтения нет",
     liveInterval: "Интервал",
@@ -78,6 +78,8 @@ export const ru = {
     foughtSoFar: "Участие пока",
     foughtHelp:
       "Участники, которые были в альянсе в начале и в конце. Игроки поддержки убийств не получают.",
+    foughtSoFarHelp:
+      "Участники, которые были в альянсе в начале и при его последнем чтении. Игроки поддержки убийств не получают.",
     withKills: "Участники с ростом убийств",
     topShare: "Убийства от топ-5 участников",
     topShareHelp:

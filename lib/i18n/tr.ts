@@ -63,8 +63,8 @@ export const tr = {
     liveStandingsHelp: "Başlangıç’tan beri değişim, önce en çok Kills kazanan",
     livePulse: "Sunucu nabzı",
     livePulseHelp: "Her {min} dakikada {n} ittifakın kazandığı Kills",
-    liveBusiest: "Şimdiye kadarki en yoğun 30 dakika: {from}–{to} · Kills payı {share}",
-    liveBusiestDone: "En yoğun 30 dakika: {from}–{to} · Kills payı {share}",
+    liveBusiest: "Şimdiye kadarki en yoğun {span} dakika: {from}–{to} · Kills payı {share}",
+    liveBusiestDone: "En yoğun {span} dakika: {from}–{to} · Kills payı {share}",
     liveNoUpdate: "Oyundan güncelleme yok",
     liveNoReading: "Okuma yok",
     liveInterval: "Aralık",
@@ -80,6 +80,8 @@ export const tr = {
     foughtSoFar: "Şimdiye kadar savaşa katılım",
     foughtHelp:
       "Başlangıç’ta ve Bitiş’te ittifakta olan Members. Destek oyuncuları Kills kazanmaz.",
+    foughtSoFarHelp:
+      "Başlangıç’ta ve son okumasında ittifakta olan Members. Destek oyuncuları Kills kazanmaz.",
     withKills: "Kills kazanan Members",
     topShare: "İlk 5 Members’in Kills’i",
     topShareHelp:

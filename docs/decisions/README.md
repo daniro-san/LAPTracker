@@ -91,3 +91,4 @@ The header text above is the old file's, kept as it was. The split it describes 
 - [D75 — The workspace is for people, never punitive (2026-11-16, owner principle, 11c)](D75-the-workspace-is-for-people-never-punitive.md)
 - [D76 — Which roster keys may be served: daily_tech, daily_honor and active unblocked; presence and coordinates blocked and neutralised in fixtures (2026-11-16, owner, issue #308)](D76-roster-keys-unblocked-and-neutralised-fixtures.md)
 - [D78 — Compact numbers use K, M, B, T in every language and browser (2026-11-16, owner, issue #325)](D78-compact-numbers-use-k-m-b-t-everywhere.md)
+- [D79 — The event page's live reads are shared between viewers in Next's data cache, tagged by event (2026-11-16, owner, 08zzzzj, issue #327)](D79-event-page-reads-shared-in-the-data-cache.md)

@@ -62,8 +62,8 @@ export const itIT = {
     liveStandingsHelp: "Variazione da Inizio, prima chi ha guadagnato più Kills",
     livePulse: "Ritmo server",
     livePulseHelp: "Kills guadagnati da {n} alleanze ogni {min} minuti",
-    liveBusiest: "I 30 minuti più intensi finora: {from}–{to} · {share} dei Kills",
-    liveBusiestDone: "I 30 minuti più intensi: {from}–{to} · {share} dei Kills",
+    liveBusiest: "I {span} minuti più intensi finora: {from}–{to} · {share} dei Kills",
+    liveBusiestDone: "I {span} minuti più intensi: {from}–{to} · {share} dei Kills",
     liveNoUpdate: "Nessun aggiornamento dal gioco",
     liveNoReading: "Nessuna lettura",
     liveInterval: "Intervallo",
@@ -79,6 +79,8 @@ export const itIT = {
     foughtSoFar: "Partecipazione finora",
     foughtHelp:
       "I Members presenti nell’alleanza a Inizio e a Fine. I giocatori di supporto non guadagnano Kills.",
+    foughtSoFarHelp:
+      "I Members presenti nell’alleanza a Inizio e alla sua ultima lettura. I giocatori di supporto non guadagnano Kills.",
     withKills: "Members con Kills guadagnate",
     topShare: "Kills dai primi 5 membri",
     topShareHelp:

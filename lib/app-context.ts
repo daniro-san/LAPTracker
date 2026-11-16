@@ -2,6 +2,7 @@
 // the clock, the adapters and Neon; route tests replace this module (vi.mock) with fakes and PGlite.
 import { openDb, type Db } from "./db";
 import { getEnv, type Env } from "./env";
+import { nextEventCache, type EventCache } from "./event-cache";
 import { internal, v1 } from "./sources";
 import type { InternalSource, V1Source } from "./sources/types";
 
@@ -13,6 +14,8 @@ export interface AppContext {
   /** For Discord webhooks. */
   fetch: typeof fetch;
   openDb: () => { db: Db; close: () => Promise<void> };
+  /** The event page's shared cache; a write that changes an event invalidates it (issue 327). */
+  eventCache: EventCache;
 }
 
 export function getAppContext(): AppContext {
@@ -23,6 +26,7 @@ export function getAppContext(): AppContext {
     internal,
     fetch: (input, init) => fetch(input, init),
     openDb: () => openDb(),
+    eventCache: nextEventCache,
   };
 }
 
