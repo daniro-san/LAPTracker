@@ -93,6 +93,20 @@ export const pl = {
       "Udział 5 największych zdobywców w Kills sojuszu. Im wyższy udział, tym mniej graczy niosło sojusz.",
     topBasis: "{top} z {n}",
     fewGainers: "mało zdobywców",
+    carried: "Udział w Kills vs udział w Might",
+    carriedHelp:
+      "Udział każdego sojuszu w zdobytych Kills od Początku do Końca, obok jego udziału w Might na Początku. Obrońcy i gracze wsparcia nie zdobywają Kills.",
+    carriedShown:
+      "Sojusze, których udział w Kills najbardziej przewyższa udział w Might, oraz twój.",
+    carriedTotal: "Razem ({n}): {kills} zdobytych Kills, {might} Might na Początku",
+    carriedMightMark: "Udział w Might na Początku",
+    carriedKillsMark: "Udział w zdobytych Kills",
+    carriedShares: "Might {might} · Kills {kills}",
+    carriedTurnout: "{share} ze zdobytymi Kills",
+    carriedSpread: "{low}–{high} · wydarzeń: {n}",
+    carriedRatioHelp:
+      "× to udział w Kills podzielony przez udział w Might. Pokazuje się od 3 wydarzeń, z zakresem; wcześniej jako różnica w punktach procentowych.",
+    carriedPoints: "pkt proc.",
   },
   compare: {
     title: "Wydarzenie vs wydarzenie",

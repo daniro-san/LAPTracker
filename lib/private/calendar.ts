@@ -14,7 +14,7 @@ import {
   updateEntry,
   updateWeekRow,
 } from "../repo/calendar";
-import { latestRosterNames } from "../repo/workspace-rosters";
+import { latestRoster } from "../repo/workspace-rosters";
 import type { FieldEdits } from "../schema";
 import type { WorkspaceAccess } from "./access";
 import {
@@ -43,9 +43,13 @@ export async function calendarDays(
   return layOut(entries, rows, from, to);
 }
 
-/** The newest roster's members, for the caravan picker; only the workspace's own alliance. */
-export const pickableMembers = (db: Db, access: WorkspaceAccess) =>
-  latestRosterNames(db, access.unionId);
+/** The newest roster's members, uid and name only, for the caravan picker; only the workspace's own alliance. */
+export async function pickableMembers(
+  db: Db,
+  access: WorkspaceAccess,
+): Promise<{ uid: number; name: string }[]> {
+  return (await latestRoster(db, access.unionId)).map(({ uid, name }) => ({ uid, name }));
+}
 
 export async function createEntry(
   db: Db,
@@ -170,7 +174,7 @@ export async function editEntry(
   }
   const picks = changes.some((c) => c.field === "coach" || c.field === "second");
   const names = picks
-    ? new Map((await latestRosterNames(db, access.unionId)).map((m) => [m.uid, m.name]))
+    ? new Map((await pickableMembers(db, access)).map((m) => [m.uid, m.name]))
     : new Map<number, string>();
   const result = await db.transaction(async (tx) => {
     const entry = await findEntry(tx, access.workspaceId, id, true);

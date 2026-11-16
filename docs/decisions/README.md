@@ -93,3 +93,5 @@ The header text above is the old file's, kept as it was. The split it describes 
 - [D77 — PostHog on production: page views, typed events, client errors and session replay on every page, masked per area (2026-11-16, owner, issue #326)](D77-posthog-analytics-replay-and-errors.md)
 - [D78 — Compact numbers use K, M, B, T in every language and browser (2026-11-16, owner, issue #325)](D78-compact-numbers-use-k-m-b-t-everywhere.md)
 - [D79 — The event page's live reads are shared between viewers in Next's data cache, tagged by event (2026-11-16, owner, 08zzzzj, issue #327)](D79-event-page-reads-shared-in-the-data-cache.md)
+- [D83 — Kill share vs might share: a public section on the event page, alliance-level only, a ratio only from 3 events (2026-11-16, owner, 08zzzzk, issue #280)](D83-kill-share-vs-might-share.md)
+- [D87 — The officer's profile: a chosen display name, "This is me" and the theme in the workspace (2026-11-16, owner, 11n, issue #334)](D87-officer-profile-display-name-and-player-link.md)

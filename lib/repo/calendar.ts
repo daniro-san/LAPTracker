@@ -1,6 +1,6 @@
 // calendar_entries and calendar_occurrences (issue 300): plain reads and writes, each inside one workspace.
 // What a change means, its version check and its words stay in lib/private.
-import { and, eq, gte, inArray, isNull, lte, notInArray, or } from "drizzle-orm";
+import { and, eq, gte, inArray, isNull, lte, notInArray, or, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { calendarEntries, calendarOccurrences, workspaceUsers } from "../schema";
@@ -148,7 +148,7 @@ export async function deleteEntry(db: Db, workspaceId: number, id: number): Prom
     .where(and(eq(calendarEntries.workspaceId, workspaceId), eq(calendarEntries.id, id)));
 }
 
-/** The shown name of each of these officers of the workspace. */
+/** The shown name of each of these officers of the workspace: the chosen one, else the Discord one. */
 export async function officerNames(
   db: Db,
   workspaceId: number,
@@ -156,7 +156,12 @@ export async function officerNames(
 ): Promise<Map<number, string>> {
   if (ids.length === 0) return new Map();
   const rows = await db
-    .select({ id: workspaceUsers.id, name: workspaceUsers.displayName })
+    .select({
+      id: workspaceUsers.id,
+      name: sql<
+        string | null
+      >`coalesce(${workspaceUsers.chosenName}, ${workspaceUsers.displayName})`,
+    })
     .from(workspaceUsers)
     .where(and(eq(workspaceUsers.workspaceId, workspaceId), inArray(workspaceUsers.id, ids)));
   return new Map(rows.flatMap((r) => (r.name ? [[r.id, r.name] as const] : [])));
