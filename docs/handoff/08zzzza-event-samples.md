@@ -162,4 +162,14 @@ Applied from the review of PR 292.
 6. Tick test for the lost claim: `dueSample` is queued to report a slot free that another caller has already taken (a pass-through `vi.mock` of `lib/repo/events`); the tick answers idle.
 7. The retry count has one definition, `MAX_RETRIES` in `lib/budget.ts`, and `lib/sources/v1.ts` imports it; `ATTEMPTS_PER_READ = MAX_RETRIES + 1`. The review asked for the reverse direction (export from `v1.ts`, derive in `budget.ts`). That would make `lib/budget.ts` import from `lib/sources`, which docs/ARCHITECTURE.md forbids ("`lib/compute` and `lib/budget` import nothing from the project"), so the constant lives in `budget.ts`. `lib/budget.test.ts` references it and `lib/sources/v1.test.ts` still pins 4 attempts.
 
+## Saturday hardening (2026-11-16)
+
+For the KvK of Saturday 2026-11-21 (D69 has an amended bullet).
+
+1. A sample has a 12 s timeout per call (`SAMPLE_CALL_TIMEOUT_MS`) and a 25 s run deadline (`SAMPLE_DEADLINE_MS`), so the tick answers before cron-job.org's 30 s. Alliances not read by the deadline are named in the summary and the sample closes partial; no error row is stored for them, as in a phase. The admin message is cut at 28 s (`SAMPLE_NOTIFY_CAP_MS`).
+2. An alliance that failed in an earlier sample of the event is read once, with no retries, in later samples of that event.
+3. `sampleQuota` is unchanged (131 for 20 alliances).
+4. Release rule: release migration 0017 only at a day and time when no Before, After or manual round can be claimed. The old code's `onConflictDoNothing({ target: [eventId, phase] })` cannot match the new partial index, so between the build's migrate step and the new deployment taking traffic, or after a rollback, a claim would fail.
+5. Release rule: never roll back production below migration 0017.
+
 https://github.com/daniro-san/LAPTracker/pull/292
