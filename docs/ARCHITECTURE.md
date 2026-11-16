@@ -22,9 +22,12 @@ lib/private/*.ts    the workspace (D71): requireWorkspace and its branded Worksp
                     outside lib/repo that may read the blocked roster keys, for its own alliance's rows.
 lib/queries/*.ts    read models for the UI (joins, sorting, name history). Never write. Never expose BLOCKED_ROSTER_KEYS.
                     lib/queries/samples.ts: `eventSamples`, an event's Start, samples and End (D69).
-                    lib/queries/live.ts: `eventProgress`, the event page's live section (alliance totals per reading, D69).
-lib/live.ts         pure: the live section's arithmetic: standings, kills per reading interval, the busiest 30 minutes,
+                    lib/queries/live.ts: `eventProgress`, the event page's live section (alliance totals per reading, D69):
+                    `progressRows` (the database, cacheable) and `eventProgressOf` (pure, per request, takes `now`).
+lib/live.ts         pure: the live section's arithmetic: standings, kills per reading interval, the busiest two intervals,
                     when the page looks again (D69).
+lib/event-cache.ts  the event page's shared cache (D79): one event's database rows for every viewer, tagged by event id
+                    (Next's unstable_cache and revalidateTag); reached only through AppContext.eventCache.
 lib/logger.ts, lib/notify.ts, lib/env.ts, lib/redact.ts
 lib/discord-send.ts, lib/discord-format.ts, lib/event-image.tsx
                     the webhook transport (JSON, or multipart with a picture), the messages' number and
@@ -39,7 +42,7 @@ lib/run.ts          what a route runs: executeSnapshot and the tick's executeSam
                     shutdown in finally, then notify) and quotaReport (the Friday check).
 lib/route.ts, lib/app-context.ts, lib/app-errors.ts
                     the route shell (one DB per request, closed on every path; errors become a code),
-                    the outside world in one object (env, clock, adapters, fetch, openDb), app_errors.
+                    the outside world in one object (env, clock, adapters, fetch, openDb, eventCache), app_errors.
 config/alliances.ts the 20 tracked alliances, by union_id
 app/img/*           /img/badge/[id] and /img/avatar/[uid]: upstream images served from our origin (D22), via lib/images.ts.
 lib/images.ts       the two image sources (preset badge id, stored photo URL on its one host), capped fetch, cache headers.
