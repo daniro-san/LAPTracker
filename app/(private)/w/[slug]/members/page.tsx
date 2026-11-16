@@ -23,12 +23,13 @@ import { plural, sheetHeader, sheetRow } from "@/lib/private/members-sheet";
 import { SLUG } from "@/lib/private/sign-in";
 
 import { CopyButton } from "../../../_ui/CopyButton";
+import { editorWords } from "../../../_ui/facts-form";
 import { FilterChip } from "../../../_ui/FilterChip";
 import { SignedInFrame, workspaceWords } from "../../../_ui/Frame";
 import { cardData, type CardFormats } from "../../../_ui/member-card-data";
-import { MemberCards } from "../../../_ui/MemberCards";
+import { MemberCards, type EditorContext } from "../../../_ui/MemberCards";
+import { MembersSource } from "../../../_ui/MembersSource";
 import { refuse } from "../../../_ui/refuse";
-import { SourceBadge } from "../../../_ui/SourceBadge";
 
 /** Server days as dates in the officer's language; instants in server time (help.servertime). */
 function formats(
@@ -52,6 +53,7 @@ function formats(
     time: (at) => `${instant.format(at)} ${hhmm.format(at)}`,
     language,
     zone,
+    now: new Date(),
   };
 }
 
@@ -166,10 +168,11 @@ export default async function MembersPage({
   if (!SLUG.test(slug)) notFound();
   const jar = await cookies();
   const now = new Date();
+  const env = getEnv();
   // INVARIANT workspace.access-first: nothing private is read before this check.
   const { access, view } = await withPageDb(async (db) => {
     const access = await requireWorkspace(db, slug, jar, now);
-    return { access, view: access.ok ? await membersView(db, access, now) : null };
+    return { access, view: access.ok ? await membersView(db, access, now, env.SERVER_TZ) : null };
   });
   if (!access.ok) {
     refuse(slug, access.reason);
@@ -180,7 +183,14 @@ export default async function MembersPage({
   const filter = pickFilter(search.f);
   const query = (typeof search.q === "string" ? search.q : "").trim().slice(0, 64);
   const { language, t } = await workspaceWords();
-  const f = formats(language, getEnv().SERVER_TZ);
+  const f = formats(language, env.SERVER_TZ);
+  const editor = {
+    slug,
+    words: editorWords(t),
+    language,
+    serverZone: env.SERVER_TZ,
+    used: view.zones,
+  };
   return (
     <SignedInFrame access={access} language={language} t={t} current="members">
       <h1 className="font-display text-display-lg">{t["tab.members"]}</h1>
@@ -195,8 +205,18 @@ export default async function MembersPage({
           filter={filter}
           query={query}
           readAt={f.time(view.readAt)}
+          readHour={env.DAILY_ROSTER_AT}
+          editor={editor}
         />
       )}
+      <p className="mt-6">
+        <a
+          href={`/w/${slug}/import`}
+          className="inline-flex min-h-11 items-center text-body-sm font-semibold text-plum underline underline-offset-4"
+        >
+          {t["members.import"]}
+        </a>
+      </p>
     </SignedInFrame>
   );
 }
@@ -209,6 +229,8 @@ function Body(props: {
   filter: MemberFilter;
   query: string;
   readAt: string;
+  readHour: string;
+  editor: EditorContext;
 }) {
   const { slug, view, t, f, filter, query } = props;
   const shown = {
@@ -220,13 +242,7 @@ function Body(props: {
   const [from, to] = [view.week[0] ?? "", view.week[6] ?? ""];
   return (
     <>
-      <p className="mt-2 flex flex-wrap items-center gap-x-2 text-body-sm text-ink/80">
-        <span>{t["members.lead"]}</span>
-        <SourceBadge source="game" label={t["src.game"]} />
-      </p>
-      <p className="mt-1 text-body-sm text-ink/80">
-        {fill(t["members.lastRead"], { when: fill(t["time.server"], { time: props.readAt }) })}
-      </p>
+      <MembersSource t={t} early={view.early} readAt={props.readAt} readHour={props.readHour} />
       <p className="mt-1 text-body-sm text-ink/80">
         {fill(t["members.week"], { from: f.date(from), to: f.date(to) })}
       </p>
@@ -265,6 +281,7 @@ function Body(props: {
         <MemberCards
           cards={visible.map((m) => cardData(m, view.week, t, f, shown))}
           details={{ open: t["members.details"], of: t["members.detailsOf"] }}
+          editor={props.editor}
         />
       )}
     </>

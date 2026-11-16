@@ -23,6 +23,10 @@ const row = (rankCode: number | null): MemberRow => ({
   reasons: [],
   missing: [],
   missingDays: 0,
+  facts: {},
+  officerStatus: null,
+  awayUntil: null,
+  early: false,
 });
 
 describe("the R4 and R5 filter", () => {

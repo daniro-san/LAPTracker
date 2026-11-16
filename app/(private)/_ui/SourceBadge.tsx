@@ -1,6 +1,13 @@
-// Where a number comes from (issue 312, prototype v5): from the game, from a photo, or typed by an
-// officer. A small framed word in the source's tone, the same on the Members page and in the first-use steps.
-const TONE = { game: "text-sage", photo: "text-yarn", officer: "text-plum" } as const;
+// Where a number comes from (issue 312, prototype v5): from the game, from a photo, typed by an officer,
+// and for member facts (issue 297) from a message or from the sheet. A small framed word in the source's
+// tone, the same on the Members page and in the first-use steps.
+const TONE = {
+  game: "text-sage",
+  photo: "text-yarn",
+  officer: "text-plum",
+  message: "text-burgundy",
+  sheet: "text-ink/75",
+} as const;
 
 export function SourceBadge({ source, label }: { source: keyof typeof TONE; label: string }) {
   return (

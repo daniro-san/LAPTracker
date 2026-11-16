@@ -2,7 +2,7 @@
 // member fields the workspace shows, the day each member was first seen, and its newest scheduled event's
 // kills. Each function takes the alliance; lib/private passes its WorkspaceAccess's own union id, so a
 // player who moved is seen by the old alliance only in the rosters from before the move. avatar_url and
-// frame_url are never selected.
+// frame_url are never selected. The newest roster of any kind is in workspace-any-roster.ts.
 import { and, desc, eq, gte, inArray, isNotNull, isNull, gt, ne, sql } from "drizzle-orm";
 
 import type { Db } from "../db";

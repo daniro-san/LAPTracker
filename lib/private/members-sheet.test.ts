@@ -36,6 +36,10 @@ const m: MemberRow = {
   reasons: [{ kind: "might", days: 9 }],
   missing: ["donations"],
   missingDays: 1,
+  facts: {},
+  officerStatus: null,
+  awayUntil: null,
+  early: false,
 };
 
 describe("Copy for spreadsheet (D71)", () => {
@@ -97,7 +101,7 @@ describe("Check in reasons (D75)", () => {
     const idle = { kind: "idle", days: 2, activity: 87, donated: 0 } as const;
 
     expect(reasonText(idle, t, f)).toBe(
-      "activity 87 and donations 0 unchanged for 2 days (3 end-of-day reads in a row)",
+      "activity 87 and donations 0 unchanged for 2 days (3 end-of-day reads in a row), no away note",
     );
   });
 });

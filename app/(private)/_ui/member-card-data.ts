@@ -3,8 +3,16 @@
 // is "—", never 0.
 import { fill } from "@/lib/copy";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
+import {
+  FACT_FIELDS,
+  type FactField,
+  type FactSource,
+  type FactValues,
+  type MemberFacts,
+} from "@/lib/private/fact-fields";
 import type { MemberRow } from "@/lib/private/members";
 import {
+  breakText,
   dayLabel,
   missingText,
   reasonText,
@@ -12,10 +20,21 @@ import {
   type Formats,
   type Status,
 } from "@/lib/private/members-sheet";
+import { offsetLabel, offsetMinutes } from "@/lib/private/time-zones";
 
 export interface CardFormats extends Formats {
   /** 61.2M, 61,2M (D78). */
   compact: (n: number) => string;
+  /** When the page is made: a time zone's offset is shown as of now. */
+  now: Date;
+}
+
+/** One member fact as the opened card shows it, with where it came from. */
+export interface FactLine {
+  field: FactField;
+  label: string;
+  value: string;
+  source: FactSource | null;
 }
 
 export interface CardData {
@@ -31,6 +50,9 @@ export interface CardData {
   donationsHead: string;
   days: { weekday: string; day: string; value: string; said: string; none: boolean }[];
   details: { label: string; value: string }[];
+  factLines: FactLine[];
+  /** The member facts as stored, with their versions, for the editor. */
+  stored: MemberFacts;
 }
 
 const NONE = "—";
@@ -38,8 +60,15 @@ const or = (v: number | null, as: (n: number) => string) => (v === null ? NONE :
 
 function statusParts(m: MemberRow, t: WorkspaceDictionary, f: Formats) {
   const status = statusOf(m);
-  if (status === "checkin")
-    return { status, label: t["status.checkin"], lines: m.reasons.map((r) => reasonText(r, t, f)) };
+  if (status === "checkin" || status === "help") {
+    const label = t[status === "help" ? "status.help" : "status.checkin"];
+    return { status, label, lines: m.reasons.map((r) => reasonText(r, t, f)) };
+  }
+  if (status === "break") {
+    const note = m.facts.away?.value?.text;
+    return { status, label: breakText(m, t, f), lines: note ? [note] : [] };
+  }
+  if (status === "none") return { status, label: "", lines: [] };
   if (status === "new") {
     const seen = m.seenSince ? [fill(t["members.firstSeen"], { date: f.date(m.seenSince) })] : [];
     return { status, label: t["members.new"], lines: seen };
@@ -72,6 +101,47 @@ function detailsOf(m: MemberRow, t: WorkspaceDictionary, f: Formats, shown: Show
   ];
 }
 
+/** Each fact's value in the officer's language. */
+const SHOW: {
+  [F in FactField]: (v: FactValues[F], t: WorkspaceDictionary, f: CardFormats) => string;
+} = {
+  squadMight: (v, _t, f) => f.compact(v),
+  adTech: (v, _t, f) =>
+    new Intl.NumberFormat(f.language, { style: "percent", maximumFractionDigits: 1 }).format(
+      v / 100,
+    ),
+  troopTier: (v) => `T${v}`,
+  timeZone: (v, _t, f) => `${v.replaceAll("_", " ")} · ${offsetLabel(offsetMinutes(v, f.now))}`,
+  languages: (v, _t, f) => {
+    const names = new Intl.DisplayNames([f.language], { type: "language" });
+    return v.map((code) => names.of(code) ?? code).join(", ");
+  },
+  status: (v, t) => t[v === "help" ? "status.help" : "status.break"],
+  away: (v, t, f) =>
+    [v.text, v.until ? fill(t["facts.until"], { date: f.date(v.until) }) : ""]
+      .filter(Boolean)
+      .join(" · ") || NONE,
+  notes: (v) => v,
+};
+
+function factLines(m: MemberRow, t: WorkspaceDictionary, f: CardFormats): FactLine[] {
+  return FACT_FIELDS.map(<F extends FactField>(field: F) => {
+    const value = m.facts[field]?.value as FactValues[F] | null | undefined;
+    const show = SHOW[field] as (
+      v: FactValues[F],
+      t: WorkspaceDictionary,
+      f: CardFormats,
+    ) => string;
+    const known = value !== null && value !== undefined;
+    return {
+      field,
+      label: t[`facts.${field}`],
+      value: known ? show(value, t, f) : NONE,
+      source: known ? (m.facts[field]?.source ?? null) : null,
+    };
+  });
+}
+
 export function cardData(
   m: MemberRow,
   week: string[],
@@ -102,5 +172,7 @@ export function cardData(
       return { weekday, day, value, said: `${weekday} ${day}: ${said}`, none: v === null };
     }),
     details: detailsOf(m, t, f, shown),
+    factLines: factLines(m, t, f),
+    stored: m.facts,
   };
 }
