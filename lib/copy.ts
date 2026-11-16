@@ -9,6 +9,7 @@
 import { adminCopy } from "./copy-admin";
 import { brandCopy } from "./copy-brand";
 import { discordCopy } from "./copy-discord";
+import { liveCopy } from "./copy-live";
 
 /** The public pages' strings in English: the source every other language's dictionary follows. */
 export const en = {
@@ -66,32 +67,21 @@ export const en = {
     alliances: "Alliances",
     /** The event's biggest gains and losses (#70). */
     movers: "Grandma noticed",
-    /** The live event section (issue 307): the strip while the event runs, then the section's words. */
-    live: "Live",
-    liveUpdate: "updated {updated} · next {next}",
-    liveReadings: "{n} readings so far",
-    liveStandings: "Standings so far",
-    liveStandingsDone: "At the last reading",
-    liveDuring: "During the event",
-    liveStandingsHelp: "Change since Start, most kills gained first",
-    livePulse: "Server pulse",
-    livePulseHelp: "Kills gained by {n} alliances in each {min} minutes",
-    /** `{span}`: two reading intervals, in minutes (30 at the 15-minute cadence). */
-    liveBusiest: "Busiest {span} minutes so far: {from}–{to} · {share} of the kills",
-    liveBusiestDone: "Busiest {span} minutes: {from}–{to} · {share} of the kills",
-    liveNoUpdate: "No update from the game",
-    liveNoReading: "No reading",
-    liveInterval: "Interval",
-    liveKillsGained: "Kills gained",
-    /** The strip from the Start until the first reading. */
-    liveFirst: "Start {start} · first reading {next}",
-    liveNoReadings: "No readings yet",
-    /** After the strip's next reading while the slot's sample is more than 3 minutes late. */
-    liveOverdue: "(reading due {time})",
-    /** `{kills}`: the top three alliances with their gains, or the total until the busiest span is named. */
-    liveKillsSoFar: "Kills so far: {kills}",
-    liveLast: "Last {min} min: {last} (peak {peak})",
-    liveDone: "Change since Start at the {time} reading. The ledger above uses the End at {end}.",
+    /** The player page's section of every reading (#270): daily reads and events' Start and End. */
+    progress: "Daily progress",
+    /** Its summary line, the player's might change in percent: `You: +4.1% since Nov 9.` */
+    progressMight: "You: {change} since {date}.",
+    /** After it, when both readings are of one alliance: the change of that alliance's middle member (the median). */
+    progressMedian: "Middle member of {tag}: {percent}.",
+    /** Under the might chart: what the event marks are, and the Start date of each. */
+    progressEvents: "Event (Start to End): {dates}",
+    /** Under the might chart. */
+    progressWar: "Might often drops in war events. That is expected.",
+    /** Fewer than two readings: no chart yet. */
+    progressEmpty: "Not enough readings yet for a chart.",
+    /** A chart's accessible name: `Might: 1.02B on Nov 9, 1.10B on Nov 16`. */
+    chart: "{label}: {first} on {from}, {last} on {to}",
+    ...liveCopy,
     /** The event page's section on kills gained by members (#271); no figure is about one person. */
     fought: "War turnout",
     /** The title while the event has no End: the figures are as of each alliance's latest sample. */
