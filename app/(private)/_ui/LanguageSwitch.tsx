@@ -3,7 +3,8 @@
 // EN · PT · FR (D71): a one-year cookie, then the server renders the page again in that language.
 import { useRouter } from "next/navigation";
 
-import { WORKSPACE_LANG_COOKIE, type WorkspaceLanguage } from "@/lib/private/dictionary";
+import { WORKSPACE_LANG_COOKIE } from "@/lib/private/cookies";
+import type { WorkspaceLanguage } from "@/lib/private/dictionary";
 
 const CHOICES: { id: WorkspaceLanguage; short: string; name: string }[] = [
   { id: "en", short: "EN", name: "English" },
