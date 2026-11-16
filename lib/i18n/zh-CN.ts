@@ -68,6 +68,13 @@ export const zhCN = {
     liveNoReading: "没有读取",
     liveInterval: "间隔",
     liveKillsGained: "获得的 Kills",
+    fought: "参战人数",
+    foughtHelp: "开始和结束时都在联盟中的 Members。辅助玩家不获得 Kills。",
+    withKills: "获得 Kills 的 Members",
+    topShare: "前 5 名 Members 的 Kills",
+    topShareHelp: "联盟的 Kills 中，由涨幅最大的 5 人贡献的比例。比例越高，说明扛事的人越少。",
+    topBasis: "前 {top} / 共 {n}",
+    fewGainers: "上涨人数少",
   },
   compare: {
     title: "活动对比",

@@ -55,6 +55,10 @@ export const shareText = (share: number, locale: string): string =>
 export const percentText = (p: number, locale: string): string =>
   `${signOf(p)}${numberFormat(locale, "percent").format(Math.abs(p) / 100)}`;
 
+/** A share of a whole (0 to 1) as a whole percent: `54%`, never signed. */
+export const shareText = (ratio: number, locale: string): string =>
+  numberFormat(locale, "share").format(ratio);
+
 /** `[NSE] Natural Selection`: the game's own way of writing an alliance. */
 export const allianceLabel = (tag: string | null, name: string | null): string =>
   [tag !== null ? `[${tag}]` : null, name].filter(Boolean).join(" ");

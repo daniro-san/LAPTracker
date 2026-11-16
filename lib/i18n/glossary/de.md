@@ -29,6 +29,9 @@ Words already used in `lib/i18n/de.ts`. Reuse them so the pages stay consistent;
 | Member history            | Mitgliederverlauf            | `history.title` — the page, its nav tab and the alliance link |
 | reading                   | Messung                      | `ledger.liveReadings`, `ledger.liveNoReading`                 |
 | busiest                   | Aktivste                     | `ledger.liveBusiest`, `ledger.liveBusiestDone`                |
+| War turnout               | Beteiligung am Krieg         | `ledger.fought` — the event page's kills section title        |
+| gainers                   | Zuwächser                    | `ledger.fewGainers` — a member whose Kills rose               |
+| Support player            | Support-Spieler              | `ledger.foughtHelp` — a player who gains no kills             |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

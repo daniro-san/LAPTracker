@@ -68,6 +68,15 @@ export const itIT = {
     liveNoReading: "Nessuna lettura",
     liveInterval: "Intervallo",
     liveKillsGained: "Kills guadagnati",
+    fought: "Partecipazione",
+    foughtHelp:
+      "I Members presenti nell’alleanza a Inizio e a Fine. I giocatori di supporto non guadagnano Kills.",
+    withKills: "Members con Kills guadagnate",
+    topShare: "Kills dai primi 5 membri",
+    topShareHelp:
+      "Quota delle Kills dell’alleanza fatte dai 5 membri con più Kills guadagnate. Più è alta, meno giocatori la portano avanti.",
+    topBasis: "{top} di {n}",
+    fewGainers: "pochi guadagni",
   },
   compare: {
     title: "Confronto tra eventi",

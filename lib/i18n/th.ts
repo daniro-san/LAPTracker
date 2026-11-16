@@ -68,6 +68,14 @@ export const th = {
     liveNoReading: "ไม่มีการอ่าน",
     liveInterval: "ช่วงเวลา",
     liveKillsGained: "Kills ที่เพิ่ม",
+    fought: "ผู้ร่วมศึก",
+    foughtHelp: "สมาชิกที่อยู่ในพันธมิตรทั้งตอนเริ่มและตอนสิ้นสุด สายซัพพอร์ตไม่เพิ่ม Kills",
+    withKills: "Members ที่ได้ Kills เพิ่ม",
+    topShare: "Kills จากสมาชิก Top 5",
+    topShareHelp:
+      "ส่วนแบ่ง Kills ของพันธมิตรที่มาจาก 5 Members ที่ได้ Kills เพิ่มมากที่สุด ยิ่งสูง แปลว่ามีผู้เล่นไม่กี่คนที่แบกไว้",
+    topBasis: "{top} จาก {n}",
+    fewGainers: "ผู้ได้เพิ่มน้อย",
   },
   compare: {
     title: "กิจกรรม เทียบ กิจกรรม",

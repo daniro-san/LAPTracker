@@ -31,12 +31,20 @@ vi.mock("./repo/events", async (importOriginal) => {
   return { ...actual, dueSample: vi.fn(actual.dueSample) };
 });
 
+// The picture (D58) is drawn by a real renderer that takes seconds under load and is dropped after 3 s, which
+// would make two runs of one event differ. These tests are not about the picture.
+vi.mock("./event-image", () => ({ eventImage: async () => new Uint8Array([1]) }));
+
 const KVK = { ...TEST_ENV, SNAPSHOT_AFTER: "16:15", SAMPLE_EVERY_MIN: 15 };
 /** The same shape over one hour (After 11:00 server): three samples, for the tests that read the pages. */
 const SHORT = { ...KVK, SNAPSHOT_AFTER: "11:00" };
 const ORIGIN = "https://laptracker.test";
-/** A whole event is 26 collector runs on PGlite: 5–20 s, more under the full suite's parallel load. */
+/** A tick is a collector run of 20 alliances on PGlite: about 0.1 s alone (26 ticks, 2 s), 10 to 20 times that
+ * at load average 40. A test of a few ticks gets 30 s; the one that takes a sample per slot across the whole
+ * event gets 60 s. */
+const FEW_TICKS_MS = 30_000;
 const FULL_EVENT_MS = 60_000;
+vi.setConfig({ testTimeout: FEW_TICKS_MS });
 const utc = (hhmm: string, day = "2026-11-07") => new Date(`${day}T${hhmm}:00Z`);
 /** Every 15 minutes from `from` to `to`, both included ("12:00" … "18:15"). */
 const grid = (from: string, to: string) => {
@@ -256,6 +264,21 @@ describe("event samples through the tick (D69)", () => {
       ],
     });
     expect(readings[0]?.alliances.find((a) => a.unionId === first)?.roster).toHaveLength(3);
+  });
+
+  it("returns the same readings with empty rosters from eventSamples when rosters is false", async () => {
+    const t = testContext(db, SHORT);
+    await tickAt(t, grid("12:00", "13:00"));
+
+    const full = (await eventSamples(db, 1)) ?? [];
+    const totals = (await eventSamples(db, 1, { rosters: false })) ?? [];
+    expect(full.every((r) => r.alliances.every((a) => a.roster.length === 3))).toBe(true);
+    expect(totals).toEqual(
+      full.map((r) => ({
+        ...r,
+        alliances: r.alliances.map((a) => ({ ...a, roster: [] })),
+      })),
+    );
   });
 
   it("leaves a running sample and a failed alliance row out of eventSamples, and returns null for a rehearsal or an admin-only event", async () => {

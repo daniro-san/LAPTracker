@@ -1,11 +1,13 @@
 // Runs a snapshot for a route (plan Phase 4) and the Friday quota report (plan §3.1). The finally
 // block exists because a serverless function is frozen once it returns: the snapshot row must be
 // final and the logger's inserts settled before the response leaves, on every path.
+import { OWN_ALLIANCE_ID } from "../config/alliances";
 import { secretsOf, type AppContext } from "./app-context";
 import { RunRefusedError, runSample, runSnapshot, type Deps, type RunSummary } from "./collector";
 import type { Db } from "./db";
 import { createRunLogger } from "./logger";
 import { quotaReportMessage, createNotifier, discordClock } from "./notify";
+import { LOST_MIGHT_PCT, MIN_DAILY_READS, mightUnchanged } from "./queries";
 import { createRepo, type Phase, type Repo, type SnapshotPhase } from "./repo";
 import { databaseSizeBytes } from "./repo/database";
 import type { EventInfo } from "./repo/events";
@@ -36,6 +38,9 @@ export interface RunRequest {
 
 /** maxDuration is 120 s: the response leaves by this long after the run's start (D43). */
 export const NOTIFY_CAP_MS = 115_000;
+/** A sample's tick must answer before cron-job.org abandons the call at 30 s (D30, D69): 25 s of reads
+ * (SAMPLE_DEADLINE_MS) leave a few seconds for the row's close and the one admin message. */
+export const SAMPLE_NOTIFY_CAP_MS = 28_000;
 
 /** Our own line for a run that threw; the collector never writes it. */
 const CRASH_ERROR = "unexpected error; see run_logs and the runtime log";
@@ -85,15 +90,17 @@ async function finaliseCrashed(
   return summary;
 }
 
-/** INVARIANT run.answers-by-115s: notify gets what is left of NOTIFY_CAP_MS; past that it is cut,
- * as Vercel would cut the whole function at 120 s, and the caller still gets its answer. */
+/** INVARIANT run.answers-by-115s: notify gets what is left of NOTIFY_CAP_MS (SAMPLE_NOTIFY_CAP_MS for a
+ * sample); past that it is cut, as Vercel would cut the whole function at 120 s, and the caller still gets
+ * its answer. */
 async function notifyWithinCap(
   ctx: AppContext,
   startedAt: Date,
   snapshotId: number,
   notified: Promise<void>,
+  capMs = NOTIFY_CAP_MS,
 ) {
-  const left = NOTIFY_CAP_MS - (ctx.now().getTime() - startedAt.getTime());
+  const left = capMs - (ctx.now().getTime() - startedAt.getTime());
   let timer: ReturnType<typeof setTimeout> | undefined;
   const cap = new Promise<"cut">(
     (resolve) => (timer = setTimeout(resolve, Math.max(0, left), "cut")),
@@ -250,6 +257,7 @@ export async function executeSample(
       startedAt: c.claimedAt,
       logWriteFailures: c.failedWrites,
     }),
+    SAMPLE_NOTIFY_CAP_MS,
   );
   return outcomeOf({ ...c, summary });
 }
@@ -265,7 +273,7 @@ const DB_WARN_ABOVE_MB = 700;
 export async function quotaReport(
   ctx: AppContext,
   db: Db,
-  options: { always: boolean },
+  options: { always: boolean; origin: string },
 ): Promise<{ remaining: number | null; posted: boolean }> {
   const remaining = await ctx.v1.fetchQuota().then(
     (q) => q.remaining,
@@ -276,6 +284,8 @@ export async function quotaReport(
   const bytes = await databaseSizeBytes(db);
   const event = nextEvent(ctx.now(), ctx.env);
   const clock = discordClock(ctx.env.SERVER_TZ);
+  // The site's own alliance's might lists (D70): counts only, left out until it has the daily reads.
+  const might = await mightUnchanged(db, OWN_ALLIANCE_ID);
   const message = quotaReportMessage({
     at: clock.stamp(ctx.now()),
     remaining,
@@ -284,6 +294,15 @@ export async function quotaReport(
     warnAboveMb: DB_WARN_ABOVE_MB,
     beforeAt: clock.stamp(event.beforeAt),
     afterAt: clock.stamp(event.afterAt),
+    might: might.ready
+      ? {
+          days: MIN_DAILY_READS,
+          unchanged: might.unchanged.length,
+          pct: LOST_MIGHT_PCT,
+          lost: might.lost.length,
+          url: `${options.origin}/admin/members`,
+        }
+      : undefined,
   });
   await createNotifier(ctx.env, ctx.fetch).admin(message);
   return { remaining, posted: true };

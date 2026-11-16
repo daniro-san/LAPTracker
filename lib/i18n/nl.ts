@@ -68,6 +68,15 @@ export const nl = {
     liveNoReading: "Geen meting",
     liveInterval: "Interval",
     liveKillsGained: "Kills gewonnen",
+    fought: "Oorlogsopkomst",
+    foughtHelp:
+      "Leden die bij Begin én bij Einde in de alliantie waren. Support-spelers krijgen geen Kills.",
+    withKills: "Members met behaalde Kills",
+    topShare: "Kills van de top 5 leden",
+    topShareHelp:
+      "Aandeel van de Kills van de alliantie dat de 5 grootste stijgers haalden. Hoe hoger, hoe minder spelers het hebben gedragen.",
+    topBasis: "{top} van {n}",
+    fewGainers: "weinig stijgers",
   },
   compare: {
     title: "Event tegen event",

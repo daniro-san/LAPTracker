@@ -71,6 +71,14 @@ export function createMemoryRepo(seedEvents: EventRow[] = []): Repo & { tables: 
     },
     startSnapshot: async (eventId, phase, startedAt, expected) =>
       claim(tables, { eventId, phase, startedAt }, expected),
+    failedSampleUnionIds: async (eventId) => [
+      ...new Set(
+        tables.snapshots
+          .filter((s) => s.eventId === eventId && s.phase === "sample")
+          .flatMap((s) => rowsOf(s.id).filter((r) => r.row.error !== null))
+          .map((r) => r.row.unionId),
+      ),
+    ],
     clearAllianceRows: async (id) => {
       tables.rows.delete(id);
     },

@@ -4,6 +4,7 @@ import type { Db } from "../db";
 import {
   clearAllianceRows,
   clearFailedAllianceRows,
+  failedSampleUnionIds,
   insertAllianceRow,
   insertSampleRow,
   listAllianceRows,
@@ -97,6 +98,8 @@ export interface Repo {
   ): Promise<number | null>;
   /** A sample's claim (D69): inserts a running row for (event, slot), or null when the slot is taken. */
   startSample(eventId: number, slotAt: Date, startedAt: Date): Promise<number | null>;
+  /** The alliances whose read failed in any sample of the event (D69). */
+  failedSampleUnionIds(eventId: number): Promise<number[]>;
   clearAllianceRows(snapshotId: number): Promise<void>;
   /** The rows with an error (D62), and with `stale` every stale row too (D63): a re-run reads them again. */
   clearFailedAllianceRows(snapshotId: number, stale: boolean): Promise<void>;
@@ -116,6 +119,7 @@ export function createRepo(db: Db): Repo {
     startSnapshot: (eventId, phase, startedAt, expected) =>
       startSnapshot(db, eventId, phase, startedAt, expected),
     startSample: (eventId, slotAt, startedAt) => startSample(db, eventId, slotAt, startedAt),
+    failedSampleUnionIds: (eventId) => failedSampleUnionIds(db, eventId),
     clearAllianceRows: (id) => clearAllianceRows(db, id),
     clearFailedAllianceRows: (id, stale) => clearFailedAllianceRows(db, id, stale),
     listAllianceRows: (id) => listAllianceRows(db, id),

@@ -22,6 +22,13 @@ function readMine(): number | null {
   }
 }
 
+/** The viewer's alliance, read after mount so the server and first client render agree. */
+export function useMyAlliance(): number | null {
+  const [mine, setMine] = useState<number | null>(null);
+  useEffect(() => setMine(readMine()), []);
+  return mine;
+}
+
 function writeMine(unionId: number | null) {
   try {
     if (unionId === null) localStorage.removeItem(KEY);

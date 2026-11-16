@@ -13,6 +13,8 @@ export const discordCopy = {
     start: "Start {time}",
     might: "**Might ▲**",
     kills: "**Kills ▲**",
+    /** The leading alliance by members with kills gained (#271): the picture's first figure, in the text too. */
+    turnout: "Most members with kills gained: {alliance} {share}",
     /** The message is plain text (D58): the status chip in bold, then the lines, then this link. */
     title: "**{title}**",
     eventLink: "[Event page ↗](<{url}>)",
@@ -20,7 +22,7 @@ export const discordCopy = {
   /** The event picture under the public message (D58). */
   image: {
     /** The file's description: what a screen reader says for the picture. */
-    alt: "The event's ledger by Might and its top gains",
+    alt: "The event's ledger by Might, its top gains and the members with kills gained",
     /** The capture window in the page's words (copy.status.start / end, issue 180). */
     start: "Start {time}",
     end: "End {time}",
@@ -28,6 +30,9 @@ export const discordCopy = {
     ledger: "Ledger · Might",
     mightUp: "Might ▲",
     killsUp: "Kills ▲",
+    turnout: "Members with kills gained",
+    /** One line under the bars: the alliance whose top 5 made the largest share of its kills gained. */
+    topShare: "Highest top 5's share of kills",
     stale: "○ stale",
     footer: "{site} · Server {server} · times are server time",
   },
@@ -59,6 +64,9 @@ export const discordCopy = {
     quotaLeft: "{icon} {n} requests left",
     quotaUnavailable: "⚠ requests left: unknown (the quota call failed)",
     quotaLow: " (⚠ under {n})",
+    /** The weekly check's line for the site's own alliance (D70): counts and a link, never names. */
+    mightLine:
+      "Might unchanged ≥ {days} daily reads: {unchanged} · Lost might ≥ {pct} %: {lost} — [Members ↗](<{url}>)",
     database: "{icon} Database {mb} MB",
     databaseHigh: " (⚠ over {n} MB)",
     pinLocked:

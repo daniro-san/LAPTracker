@@ -68,6 +68,15 @@ export const pl = {
     liveNoReading: "Brak odczytu",
     liveInterval: "Odstęp",
     liveKillsGained: "Zdobyte Kills",
+    fought: "Frekwencja wojny",
+    foughtHelp:
+      "Members, którzy byli w sojuszu na Początku i na Końcu. Gracze wsparcia nie zdobywają Kills.",
+    withKills: "Members ze zdobytymi Kills",
+    topShare: "Kills od 5 najlepszych członków",
+    topShareHelp:
+      "Udział 5 największych zdobywców w Kills sojuszu. Im wyższy udział, tym mniej graczy niosło sojusz.",
+    topBasis: "{top} z {n}",
+    fewGainers: "mało zdobywców",
   },
   compare: {
     title: "Wydarzenie vs wydarzenie",

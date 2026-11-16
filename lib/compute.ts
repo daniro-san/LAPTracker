@@ -195,6 +195,47 @@ export function changeDifference(
   return { delta: second - first, base: Math.abs(first) };
 }
 
+/** How many of an alliance's biggest kills gains the concentration figure adds up (#271). */
+export const TURNOUT_TOP = 5;
+
+/** The top-5 share is ranked only for alliances with this many gainers; with fewer it is near 100 % by arithmetic. */
+export const TURNOUT_MIN_GAINERS = 10;
+
+export interface KillsTurnout {
+  /** Members in both rosters, matched by uid. */
+  n: number;
+  /** Of those, the members whose kills rose. */
+  gainers: number;
+  /** The kills those members gained, together. */
+  gained: number;
+  /** The kills the `TURNOUT_TOP` biggest gains made up. */
+  top: number;
+}
+
+/**
+ * Who gained kills in one alliance between two rosters (#271). Only members in both count; a member in
+ * one roster is a join or a leave. A kills of null counts as 0 (D15). A fall in kills is not a gain.
+ * The caller decides that both rosters are usable (INVARIANT freshness.no-stale-delta).
+ */
+export function killsTurnout(
+  before: readonly { uid: number; kills: number | null }[],
+  after: readonly { uid: number; kills: number | null }[],
+): KillsTurnout {
+  const was = new Map(before.map((m) => [m.uid, m.kills ?? 0]));
+  const stayed = after.flatMap((m) => {
+    const b = was.get(m.uid);
+    return b === undefined ? [] : [(m.kills ?? 0) - b];
+  });
+  const gains = stayed.filter((g) => g > 0).sort((x, y) => y - x);
+  const sum = (xs: readonly number[]) => xs.reduce((t, g) => t + g, 0);
+  return {
+    n: stayed.length,
+    gainers: gains.length,
+    gained: sum(gains),
+    top: sum(gains.slice(0, TURNOUT_TOP)),
+  };
+}
+
 export type MoverMetric = "power" | "kills";
 export type MoverDirection = "gain" | "loss";
 

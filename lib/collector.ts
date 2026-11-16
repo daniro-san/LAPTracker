@@ -3,17 +3,18 @@
 import { ALLIANCES, SERVER } from "../config/alliances";
 import { requiredQuota, sampleQuota } from "./budget";
 import { claim, RunRefusedError } from "./collector-claim";
+import { logV1Fetch } from "./collector-log";
 import { dataRow, errorRow, failedList } from "./collector-rows";
+import { callOptions, SAMPLE_DEADLINE_MS } from "./collector-sample";
 import type { Logger } from "./logger";
 import type { AllianceRow, MemberRow, Phase, Repo, SnapshotPhase, SnapshotStatus } from "./repo";
 import {
   type InternalSource,
-  type Quota,
   QuotaExhaustedError,
   type RanksBoard,
   type V1Source,
 } from "./sources/types";
-import { describe, httpStatusOf, upstreamDetail } from "./upstream-errors";
+import { describe } from "./upstream-errors";
 
 /** 20 alliances × 3 retries × 2 phases (Logging guarantees). */
 export const MAX_UPSTREAM_CALLS = 120;
@@ -56,6 +57,10 @@ interface Run {
   snapshotId: number;
   /** A sample (D69): no ranks board, no internal fallback, members stored as arrays. */
   sample: boolean;
+  /** Measured from `startedAt`: RUN_DEADLINE_MS, or SAMPLE_DEADLINE_MS for a sample. */
+  deadlineMs: number;
+  /** A sample's alliances that failed in an earlier sample of the event: one attempt each (D69). */
+  noRetry: Set<number>;
   startedAt: Date;
   calls: number;
   /** The lowest quota remaining seen, and run.calls then: the calls after it returned no quota. */
@@ -76,15 +81,15 @@ function hitDeadline(run: Run) {
   run.deadlineHit = true;
   run.abort ??= "deadline";
   void run.deps.logger.warn("run.deadline", {
-    deadline_ms: RUN_DEADLINE_MS,
+    deadline_ms: run.deadlineMs,
     calls_used: run.calls,
   });
   run.controller.abort();
 }
 
-/** INVARIANT run.deadline-100s: past this no read starts, the snapshot closes partial. */
+/** INVARIANT run.deadline-100s: past this no read starts, the snapshot closes partial (25 s for a sample). */
 const pastDeadline = (run: Run) =>
-  run.deps.now().getTime() - run.startedAt.getTime() >= RUN_DEADLINE_MS;
+  run.deps.now().getTime() - run.startedAt.getTime() >= run.deadlineMs;
 
 /** The one place an upstream call is counted. Passed to every /v1 call as its onAttempt hook. */
 function attemptHook(run: Run, unionId: number | null) {
@@ -97,26 +102,6 @@ function attemptHook(run: Run, unionId: number | null) {
     const retry = { union_id: unionId, retry_n: attempt, http_status: status ?? null };
     if (attempt > 0) void run.deps.logger.warn("v1.retry", retry);
   };
-}
-
-/** One run_logs line per /v1 call (plan "Observability"); retries add their own v1.retry lines. */
-async function logV1Fetch(
-  run: Run,
-  started: Date,
-  call: { endpoint: "alliance" | "quota"; unionId: number | null },
-  result: { cached?: boolean | null; quota?: Quota | null; error?: unknown },
-): Promise<void> {
-  const e = result.error;
-  await run.deps.logger[e === undefined ? "info" : "warn"]("v1.fetch", {
-    endpoint: call.endpoint,
-    union_id: call.unionId,
-    http_status: httpStatusOf(e),
-    cached: result.cached ?? null,
-    duration_ms: run.deps.now().getTime() - started.getTime(),
-    quota_remaining: result.quota?.remaining ?? null,
-    // D61: what the upstream answered (status, headers, body start, or the timeout), for the run page.
-    ...(e === undefined ? {} : { error: describe(e), detail: upstreamDetail(e) }),
-  });
 }
 
 function noteQuota(run: Run, remaining: number | undefined) {
@@ -138,7 +123,11 @@ async function allianceIds(deps: Deps, eventId: number, phase: SnapshotPhase): P
 async function checkQuota(run: Run, idCount: number): Promise<string | null> {
   const started = run.deps.now();
   try {
-    const quota = await run.deps.v1.fetchQuota(attemptHook(run, null), run.controller.signal);
+    const quota = await run.deps.v1.fetchQuota(
+      attemptHook(run, null),
+      run.controller.signal,
+      callOptions(run, null),
+    );
     await logV1Fetch(run, started, { endpoint: "quota", unionId: null }, { quota });
     run.quotaBefore = quota.remaining;
     noteQuota(run, quota.remaining);
@@ -191,6 +180,7 @@ async function collectOne(run: Run, unionId: number): Promise<void> {
       unionId,
       attemptHook(run, unionId),
       run.controller.signal,
+      callOptions(run, unionId),
     );
     await logV1Fetch(run, started, call, { cached: a.cached, quota: a.quota });
     noteQuota(run, a.quota?.remaining);
@@ -301,6 +291,7 @@ export async function runSample(eventId: number, slotAt: Date, deps: Deps): Prom
   const snapshotId = await deps.repo.startSample(eventId, slotAt, deps.now());
   if (snapshotId === null) throw new RunRefusedError("taken");
   const run = newRun(deps, snapshotId, true);
+  run.noRetry = new Set(await deps.repo.failedSampleUnionIds(eventId));
   return collectRun(run, await allianceIds(deps, eventId, "sample"), "sample");
 }
 
@@ -309,6 +300,8 @@ function newRun(deps: Deps, snapshotId: number, sample: boolean): Run {
     deps,
     snapshotId,
     sample,
+    deadlineMs: sample ? SAMPLE_DEADLINE_MS : RUN_DEADLINE_MS,
+    noRetry: new Set(),
     startedAt: deps.now(),
     calls: 0,
     lowest: { remaining: null, calls: 0 },
@@ -348,7 +341,7 @@ async function collectRun(run: Run, ids: number[], phase: SnapshotPhase): Promis
   work.catch(() => {});
   let timer: ReturnType<typeof setTimeout> | undefined;
   const deadline = new Promise<void>((resolve) => {
-    const left = RUN_DEADLINE_MS - (deps.now().getTime() - run.startedAt.getTime());
+    const left = run.deadlineMs - (deps.now().getTime() - run.startedAt.getTime());
     timer = setTimeout(() => resolve(hitDeadline(run)), Math.max(0, left));
   });
   let error: string | null;
