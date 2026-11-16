@@ -5,7 +5,7 @@ import { requiredQuota, sampleQuota } from "./budget";
 import { claim, RunRefusedError } from "./collector-claim";
 import { logV1Fetch } from "./collector-log";
 import { dataRow, errorRow, failedList } from "./collector-rows";
-import { callOptions, SAMPLE_CALL_TIMEOUT_MS, SAMPLE_DEADLINE_MS } from "./collector-sample";
+import { callOptions, SAMPLE_DEADLINE_MS } from "./collector-sample";
 import type { Logger } from "./logger";
 import type { AllianceRow, MemberRow, Phase, Repo, SnapshotPhase, SnapshotStatus } from "./repo";
 import {
@@ -22,7 +22,6 @@ export { FRESH_MAX_AGE_MS } from "./collector-rows";
 export { RunRefusedError } from "./collector-claim";
 /** Measured from the start of the run; the route's maxDuration is 120 s (docs/decisions/D25). */
 export const RUN_DEADLINE_MS = 100_000;
-export { SAMPLE_CALL_TIMEOUT_MS, SAMPLE_DEADLINE_MS };
 const CONCURRENCY = 4;
 
 export interface Deps {

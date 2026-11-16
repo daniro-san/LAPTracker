@@ -91,7 +91,7 @@ The owner wants heatmaps of the busiest moments of an event. Build 1 of spike #1
    - If the row already exists with other times, they do not move with the env.
 2. **Expected quota for Saturday 2026-11-21 (one UTC day):**
    - 26 reads (Before, 24 samples, After) × 21 calls = 546 calls, or × 23 = 598 calls with two 502 retries per read (the measured 21–23); the daily read is skipped on that day.
-   - Each read takes up to 35 s, which is under the 100 s deadline and the 15-minute tick, so one read per tick.
+   - A sample's call times out at 12 s (`SAMPLE_CALL_TIMEOUT_MS`) and its run ends at 25 s (`SAMPLE_DEADLINE_MS`), under cron-job.org's 30 s and the 15-minute tick, so one sample per tick. A live read took about 1.5 s when measured on 2026-11-16.
    - In an outage a sample can cost up to 81 calls. The budget rule skips samples once `remaining < 131`, which keeps 50 for the After.
    - Friday's rehearsal (18:00 server) now takes 1–2 samples: +21–42 calls on Friday.
 3. **After the parallel #270 PR (`session/08zzzx-player-daily-progress`) merges:**
