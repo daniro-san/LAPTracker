@@ -1,5 +1,5 @@
 // The notices library's tables (issue 304, D81), apart from lib/schema.ts for its size. drizzle.config.ts lists
-// both files; migration 0021 creates these two tables.
+// both files; migration 0020 creates these two tables.
 import { sql } from "drizzle-orm";
 import { check, index, integer, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
 
