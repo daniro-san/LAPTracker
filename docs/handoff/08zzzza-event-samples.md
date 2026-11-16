@@ -15,7 +15,7 @@ The owner wants heatmaps of the busiest moments of an event. Build 1 of spike #1
   - a slot no tick took is not caught up; manual rounds get no samples;
   - `/api/tick` answers a sample like a run (`runResponse`).
 - **Collector** (`lib/collector.ts`):
-  - `runSample(eventId, slotAt, deps)` claims the slot with one insert (`startSample`), reads the event's stored alliance list, and goes through the same quota check, `/v1` reads, retries, deadline and call cap as a phase;
+  - `runSample(eventId, slotAt, deps)` claims the slot with one insert (`startSample`), reads the event's stored alliance list, and goes through the same quota check, `/v1` reads and call cap as a phase, with its own limits (Saturday hardening below: 12 s per call, a 25 s deadline, one read with no retries for an alliance that already failed in a sample of the event);
   - a sample reads no ranks board and uses no internal fallback: a failed alliance gets an error row `v1 <error>`;
   - rows are stored by `insertSampleRow`: members as arrays, `raw_json` null, no `member_snapshots`.
 - **Budget** (`lib/budget.ts` `sampleQuota`, INVARIANT `budget.samples-yield-to-after`): `requiredQuota(n) + 1 + 4n`, which is 131 calls for 20 alliances.
@@ -34,7 +34,7 @@ The owner wants heatmaps of the busiest moments of an event. Build 1 of spike #1
   - `runWord` in `app/_ui/admin/words.ts` names a sample "Sample 10:15" in the run list, on the run page, in the live candle and in the "last run" fact. No new UI section.
 - **Read model** `eventSamples(db, eventId)` (`lib/queries/samples.ts`, exported from `lib/queries`). It returns a public event's Start, samples and End in time order, each alliance with read time, fresh flag, might, kills, members and roster `{uid, might, kills}`. No page uses it yet.
 - **Tests:**
-  - `lib/samples.test.ts`: 8 PGlite tests through `runTick`;
+  - `lib/samples.test.ts` and `lib/samples-hardening.test.ts`: PGlite tests through `runTick` (8 at first; 15 after the review rounds below);
   - `lib/budget.test.ts`: a property test and the 131 figure for `sampleQuota`.
 - **Docs:**
   - `docs/decisions/D69-event-samples.md` and its line in the index;
@@ -181,5 +181,12 @@ For the KvK of Saturday 2026-11-21 (D69 has an amended bullet).
 5. `eventSamples(db, eventId, { rosters: false })` returns the alliance totals with empty rosters and reads neither the member arrays nor the member rows; the default is unchanged.
 6. Docs: the stale 35 s / 100 s bullet (Open issue 2) and D69's Collector line now state 12 s per call and a 25 s deadline; `docs/ARCHITECTURE.md` lists `lib/collector-sample.ts`, `lib/collector-log.ts`, `lib/queries/samples.ts` and `MAX_RETRIES`; the unused re-export of the two sample constants is removed from `lib/collector.ts`.
 7. `pnpm check` on this branch: one failure, `app/(pages)/admin/gate.test.ts` "/admin/runs/<unknown id> still calls notFound" (10 s timeout, 12 to 14 s inside the full suite, 1 s alone). It fails the same way on head 764cd36 and does not touch samples. Follow-up, not fixed here.
+
+## Review fixes, round 4 (2026-11-16)
+
+1. `numbers` (a `text[]` of bigints as numbers) has one definition, exported from `lib/queries/history-readings.ts` and imported by `lib/queries/samples.ts`; it now takes a null array as empty.
+2. Test for "a slot no tick took is not caught up" (`lib/samples-hardening.test.ts`): ticks at 12:00 and 12:50 leave the Before and one sample, at 12:45, with no 12:15 or 12:30 row.
+3. The Built section now states a sample's own limits, and the test count; the Verified section above keeps the first session's numbers.
+4. `pnpm check` on this head, after merging current dev: green; vitest `Test Files 69 passed | 1 skipped (70)`, `Tests 318 passed | 1 skipped (319)`. The `/admin` gate-test timeout from round 3 is gone (fixed on dev by #315).
 
 https://github.com/daniro-san/LAPTracker/pull/292
