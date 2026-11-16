@@ -392,6 +392,50 @@ The owner likes all six (owner answer 12). They are split over two builds so tha
 
 **Owner questions:** none open. Every question is answered in "Owner answers" (1–16).
 
+## Review (2026-11-16)
+
+Re-checked against dev `1649afe` by running things, not by reading. The runs: PGlite with `drizzle/` and `seed(db)`; next/og with sharp and with resvg; `npm view`; the live site's own API (no upstream call, no quota). The model (Option B) stands. The items below are stale or wrong and are corrected in the `<adjustments>` blocks after this section.
+
+**Charts: superseded by D68 (issue #270).**
+- Observable Plot does not render in Node without a DOM. `Plot.plot()` throws `Cannot read properties of undefined (reading 'documentElement')`. It needs linkedom 0.18.15 (+20 packages, +4.9 MB) or jsdom 31.0.1 (+28 packages, +18.9 MB). With linkedom it renders a 20 × 27 line chart in 1.1 ms once warm. "0 KB when rendered on the server" therefore needs a second dependency, which this handoff does not name.
+- The Discord picture (D58, next/og) does not work with Plot. Satori refuses SVG `<text>`. Plot's SVG passed as an `<img>` renders blank on resvg without `xmlns`; with `xmlns` it renders without labels and with solid black grid lines. A hand-built SVG with HTML labels renders on both sharp and resvg (85 KB and 76 KB PNG).
+- Decision D68 (session 08zzzx, #270): charts are hand-built inline SVG server components, no chart library, labels in HTML. One component draws on the pages and in the Discord picture. This matches #62's constraint ("inline SVG in the brand's hand, no chart library"). Builds 3 and 4 use D68's components, not Plot.
+- Persona panel (6 personas, 2026-11-16, with V1–V6 and the range mock):
+  - V1 (pulse) and V5 (my alliance) were rated useful by the fighter and the officer.
+  - V3 is mostly empty at 360 px, and V4's cells are too small to tap.
+  - The range page reads as heavy on tables.
+  - Build 4 waits until V1 and V5 are in use.
+
+**Model and collector (build 1): corrections.**
+- **Upstream cache.** It is now 3600 s, and reads use `?fresh=1` (D64). The cadence is limited only by the 15-minute tick and the quota. "15 minutes is the floor because of the 600 s cache" and "never sample one alliance less than 15 min apart" no longer hold.
+- **Sample time.**
+  - The 2026-11-14 Before took 5.4 s for 21 calls (cached, all stale; 08zzzn).
+  - With `fresh=1`, one read takes 0.64–1.21 s.
+  - A full read took 35.3 s for 23 calls, because two alliances got 502 (08zzzo).
+  - So a KvK can cost up to about 621 calls, not 567, and a 60 s tick budget fits one all-alliance sample, not two.
+- **Light samples duplicate D60.** `daily_rosters` already stores `member_uids`, `member_names`, `member_power` and `member_kills`. The writer is `dataRow` in `lib/daily-read.ts`; the reader is the `::text[]` cast in `lib/queries/history-readings.ts`. Reuse that shape and keep the names: 63.4 KB per sample with names vs 42.9 KB without (PGlite, 20 rosters, 25 samples). Keeping names removes the "newest name by uid" lookup.
+- **Readers.**
+  - Lines with quoted phase strings: 37 non-test files and 130 lines, up from 32 and 106 (`git grep -n -e '"before"' -e '"after"' HEAD -- 'app/*.ts' 'app/*.tsx' 'lib/*.ts' 'lib/*.tsx' 'config/*.ts' 'scripts/*.ts' | grep -v '\.test\.'`).
+  - Readers with no quoted string:
+    - member history `eventHeads`: a light sample has no `member_snapshots`, so it would show as a card with 0 members;
+    - compare (D57);
+    - event-image (D58);
+    - player frames (D66);
+    - the D63 stale re-read, which cuts off at `event_at_utc` and deletes member rows.
+- **Budget.**
+  - `dailyReadQuota` reserves `requiredQuota(20)` = 50 calls for a two-phase event, so it must be restated under the per-window rule.
+  - A weekday alliance event would trigger the event-day skip (`lib/tick.ts`) and skip the daily read for all 20 alliances.
+  - The tick's list of actions in build 1 leaves out the daily read.
+- **Discord.** Since D58 the message is plain text plus `event.png`. Build 1 must say what the picture shows for a two-window event.
+- **Paths and numbers.**
+  - Decisions are now `docs/decisions/DNN-*.md`. A new decision is a new file plus a line in the index, so there is no "D7 row".
+  - The plan lines are now 18, 382, 390, 393 and 663.
+  - The next migration is 0017.
+  - Recharts 3.10.1 was published 2026-07-25 (2026-11-03 is a canary).
+- **Owner step.** The step due before 2026-11-13 has expired: KvK 2026-11-14 ran Start 10:47 and End 15:11 server, with no env change. O1's query runs on the current schema (PGlite, seed event 3: 19 rows, 6.7 ms); point it at event 129 (2026-11-14). O2 moves to 2026-11-21 or 2026-11-28.
+
+**Order against the owner's goal of 2026-11-16.** The goal is daily and event progress for players and alliances, comparison between alliances, and support for decisions. The daily-progress data already exists (D60), so #270 (player daily progress), #271 (who fought in an event, from Start and End) and #274 (standing over time) ship first. Build 1 remains the way to show progress inside an event.
+
 ## Next
 
 Session: build 1 of 4 for Option B, "Samples and windows: model, collector, tick". It adds no /admin editor and no new UI section.
@@ -475,6 +519,21 @@ Build 1 of 4 for spike 08zzh, Option B — samples and windows: model, collector
 
 <adjustments for="build 4 (Progress tab, V2–V4)">
 - A "Progress" tab on the event page with V2 (kills race), V3 (rank race, step lines) and V4 (who fought when, heatmap), as drawn in `docs/screenshots/08zzh-event-progress-options-360-light.png`; each with its numbers in a table.
+</adjustments>
+
+<adjustments for="build 1 (review 2026-11-16)">
+- Read the section "Review (2026-11-16)" above. It replaces this handoff's 600 s cache reasoning, the 9.6–10 s sample time, the 32/106 reader count and the `docs/DECISIONS.md` paths.
+- Middle samples reuse D60's array shape with names (`member_uids`, `member_names`, `member_power`, `member_kills`), the `dataRow` writer and the `::text[]` reader. No "newest name by uid" lookup.
+- Readers to move to windows, besides the quoted-string grep (37 files): member history `eventHeads` (a light sample must not show as a 0-member card), compare (D57), event-image (D58), player frames (D66), the D63 stale re-read cut-off.
+- Budget: restate `dailyReadQuota` (`budget.daily-keeps-event-reserve`) under the per-window rule; count a full read at up to 23 calls and 35 s; the tick runs at most one all-alliance sample per tick.
+- The tick's actions include the daily read (D60, D67). An alliance event (build 2) must not trigger the daily read's event-day skip for all 20 alliances.
+- Discord (D58): say what the picture shows for each window of a two-window event, or that only the event's last End posts a picture.
+- New decisions are new files under docs/decisions/ (next free number after D68). Migration 0017 or later.
+</adjustments>
+
+<adjustments for="builds 3 and 4 (review 2026-11-16)">
+- Charts use D68's hand-built SVG components (#270), not Observable Plot. Do not add `@observablehq/plot`, linkedom or jsdom.
+- Build 3: V1 and V5 first. Build 4 (V2–V4) waits until V1 and V5 are in use; at 360 px V3 is mostly empty and V4's cells are under 44 px.
 </adjustments>
 
 https://github.com/daniro-san/LAPTracker/pull/183
