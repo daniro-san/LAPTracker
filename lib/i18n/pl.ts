@@ -75,6 +75,7 @@ export const pl = {
     liveLast: "Ostatnie {min} min: {last} (szczyt {peak})",
     liveDone: "Zmiana od Początku przy odczycie {time}. Księga powyżej korzysta z Końca o {end}.",
     fought: "Frekwencja wojny",
+    foughtSoFar: "Frekwencja wojny dotąd",
     foughtHelp:
       "Members, którzy byli w sojuszu na Początku i na Końcu. Gracze wsparcia nie zdobywają Kills.",
     withKills: "Members ze zdobytymi Kills",

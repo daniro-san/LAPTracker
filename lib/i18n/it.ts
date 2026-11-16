@@ -76,6 +76,7 @@ export const itIT = {
     liveDone:
       "Variazione da Inizio alla lettura delle {time}. Il registro sopra usa la Fine alle {end}.",
     fought: "Partecipazione",
+    foughtSoFar: "Partecipazione finora",
     foughtHelp:
       "I Members presenti nell’alleanza a Inizio e a Fine. I giocatori di supporto non guadagnano Kills.",
     withKills: "Members con Kills guadagnate",

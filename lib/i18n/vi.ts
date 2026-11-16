@@ -75,6 +75,7 @@ export const vi = {
     liveLast: "{min} phút gần nhất: {last} (đỉnh {peak})",
     liveDone: "Thay đổi từ Bắt đầu tại lần đọc {time}. Bảng trên dùng Kết thúc lúc {end}.",
     fought: "Tham chiến",
+    foughtSoFar: "Tham chiến đến nay",
     foughtHelp:
       "Thành viên đã ở trong liên minh lúc Bắt đầu và lúc Kết thúc. Vai hỗ trợ không tăng tiêu diệt.",
     withKills: "Thành viên có tiêu diệt tăng",

@@ -75,6 +75,7 @@ export const ptBR = {
     liveLast: "Últimos {min} min: {last} (pico {peak})",
     liveDone: "Mudança desde o Início, na leitura de {time}. O registro acima usa o Fim às {end}.",
     fought: "Participação",
+    foughtSoFar: "Participação até agora",
     foughtHelp:
       "Members que estavam na aliança no Início e no Fim. Jogadores de suporte não ganham kills.",
     withKills: "Members com kills ganhos",

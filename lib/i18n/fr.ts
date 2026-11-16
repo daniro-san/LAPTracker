@@ -76,6 +76,7 @@ export const fr = {
     liveDone:
       "Évolution depuis Début, au relevé de {time}. Le registre ci-dessus utilise la Fin à {end}.",
     fought: "Participation",
+    foughtSoFar: "Participation pour l’instant",
     foughtHelp:
       "Membres qui étaient dans l’alliance au Début et à la Fin. Les joueurs de soutien ne gagnent pas de Kills.",
     withKills: "Membres ayant gagné des Kills",

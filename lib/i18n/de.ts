@@ -76,6 +76,7 @@ export const de = {
     liveDone:
       "Änderung seit Beginn bei der Messung um {time}. Die Tabelle oben rechnet mit dem Ende um {end}.",
     fought: "Beteiligung am Krieg",
+    foughtSoFar: "Beteiligung am Krieg bisher",
     foughtHelp:
       "Members, die bei Beginn und bei Ende in der Allianz waren. Support-Spieler sammeln keine Kills.",
     withKills: "Members mit gewonnenen Kills",

@@ -75,6 +75,7 @@ export const th = {
     liveLast: "{min} นาทีล่าสุด: {last} (จุดสูงสุด {peak})",
     liveDone: "การเปลี่ยนแปลงจากเริ่มถึงการอ่านตอน {time} สมุดด้านบนใช้ตอนสิ้นสุด {end}",
     fought: "ผู้ร่วมศึก",
+    foughtSoFar: "ผู้ร่วมศึกจนถึงตอนนี้",
     foughtHelp: "สมาชิกที่อยู่ในพันธมิตรทั้งตอนเริ่มและตอนสิ้นสุด สายซัพพอร์ตไม่เพิ่ม Kills",
     withKills: "Members ที่ได้ Kills เพิ่ม",
     topShare: "Kills จากสมาชิก Top 5",

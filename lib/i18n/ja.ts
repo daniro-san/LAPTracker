@@ -76,6 +76,7 @@ export const ja = {
     liveDone:
       "開始からの変化は {time} の読み取り時点のものです。上の台帳は終了時点（{end}）の値を使っています。",
     fought: "参戦状況",
+    foughtSoFar: "ここまでの参戦状況",
     foughtHelp: "開始と終了の両方で同盟にいた Members。支援役のプレイヤーは Kills を得ません。",
     withKills: "Kills を得た Members",
     topShare: "上位5人の Kills",

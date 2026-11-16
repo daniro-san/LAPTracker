@@ -76,6 +76,7 @@ export const es = {
     liveDone:
       "Cambio desde Inicio en la lectura de {time}. El registro de arriba usa el Fin de {end}.",
     fought: "Participación bélica",
+    foughtSoFar: "Participación bélica hasta ahora",
     foughtHelp:
       "Members que estaban en la alianza al Inicio y al Fin. Los jugadores de apoyo no suman Kills.",
     withKills: "Members que sumaron Kills",

@@ -75,6 +75,7 @@ export const zhCN = {
     liveLast: "最近 {min} 分钟：{last}（峰值 {peak}）",
     liveDone: "自开始以来的变化，截至 {time} 的读取。上方账本使用 {end} 的结束数据。",
     fought: "参战人数",
+    foughtSoFar: "目前参战人数",
     foughtHelp: "开始和结束时都在联盟中的 Members。辅助玩家不获得 Kills。",
     withKills: "获得 Kills 的 Members",
     topShare: "前 5 名 Members 的 Kills",

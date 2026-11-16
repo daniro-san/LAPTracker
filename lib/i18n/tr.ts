@@ -77,6 +77,7 @@ export const tr = {
     liveDone:
       "{time} okumasına göre Başlangıç’tan beri değişim. Yukarıdaki defter {end} itibarıyla Bitiş’i kullanır.",
     fought: "Savaşa katılım",
+    foughtSoFar: "Şimdiye kadar savaşa katılım",
     foughtHelp:
       "Başlangıç’ta ve Bitiş’te ittifakta olan Members. Destek oyuncuları Kills kazanmaz.",
     withKills: "Kills kazanan Members",

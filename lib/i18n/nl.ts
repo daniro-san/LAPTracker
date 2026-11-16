@@ -76,6 +76,7 @@ export const nl = {
     liveDone:
       "Verschil sinds Begin bij de meting van {time}. Het logboek hierboven gebruikt het Einde om {end}.",
     fought: "Oorlogsopkomst",
+    foughtSoFar: "Oorlogsopkomst tot nu toe",
     foughtHelp:
       "Leden die bij Begin én bij Einde in de alliantie waren. Support-spelers krijgen geen Kills.",
     withKills: "Members met behaalde Kills",

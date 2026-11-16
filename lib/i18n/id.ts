@@ -76,6 +76,7 @@ export const idID = {
     liveLast: "{min} menit terakhir: {last} (puncak {peak})",
     liveDone: "Perubahan sejak Awal pada pembacaan {time}. Buku di atas memakai Akhir pada {end}.",
     fought: "Partisipasi perang",
+    foughtSoFar: "Partisipasi perang sejauh ini",
     foughtHelp:
       "Members yang ada di aliansi di Awal dan di Akhir. Pemain support tidak mendapat Kills.",
     withKills: "Members dengan Kills yang didapat",

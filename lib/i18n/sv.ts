@@ -76,6 +76,7 @@ export const sv = {
     liveDone:
       "Förändring sedan Början vid avläsningen {time}. Loggen ovan använder Slut vid {end}.",
     fought: "Krigsdeltagande",
+    foughtSoFar: "Krigsdeltagande hittills",
     foughtHelp:
       "Members som fanns i alliansen vid Början och vid Slut. Supportspelare får inga Kills.",
     withKills: "Members som fick Kills",

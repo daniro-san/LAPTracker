@@ -76,6 +76,7 @@ export const ko = {
     liveLast: "최근 {min}분: {last} (최고 {peak})",
     liveDone: "{time} 읽기 기준 시작 이후 변화입니다. 위 장부는 {end} 종료 때 값을 씁니다.",
     fought: "전투 참여",
+    foughtSoFar: "지금까지 전투 참여",
     foughtHelp: "시작과 종료 때 모두 연맹에 있던 인원입니다. 지원 플레이어는 처치가 늘지 않습니다.",
     withKills: "처치가 늘어난 인원",
     topShare: "상위 5명의 처치",

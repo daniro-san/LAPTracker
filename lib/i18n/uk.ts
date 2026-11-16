@@ -75,6 +75,7 @@ export const uk = {
     liveLast: "Останні {min} хв: {last} (пік {peak})",
     liveDone: "Зміна від «Початку» на знімку {time}. Журнал вище використовує «Кінець» {end}.",
     fought: "Участь у війні",
+    foughtSoFar: "Участь у війні поки що",
     foughtHelp:
       "Members, які були в альянсі на початку і в кінці. Гравці підтримки не набирають Kills.",
     withKills: "Members, що набрали Kills",
