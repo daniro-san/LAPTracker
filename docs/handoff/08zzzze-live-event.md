@@ -37,7 +37,7 @@ This branch is stacked on PR #292 (`session/08zzzza-event-samples`, event sample
 - **Seed:** the plain seed now samples its latest event, so the preview and local runs show the finished variant. The live variant is made locally (below), not by a seed flag.
 
 ## Deviations
-- **"Who fought" becomes "so far" until the End** (issue text): not done. `WhoFought.tsx` does not exist on this branch (a parallel session is adding and changing it); nothing here touches it.
+- **"Who fought" becomes "so far" until the End** (issue text): not done in the first pass, because the page had no `WhoFought.tsx` on this branch then. Done in "Review fixes (2026-11-16)" below.
 - **"Next slot + 60 s"** is refined as described in Decisions.
 - **Busiest "15 minutes" in the task is "30 minutes"** and the not-updated interval is shown as such, as the coordinator's message required.
 - **Extra edits outside the new files:** `StatTable.tsx` (`liveUnion`), `MyAlliance.tsx` (highlight in the live list), `format.ts` (`shareText`), `scripts/seed-data.ts` (`export` on `noise`), `app/_ui/EventView.tsx`, `app/_ui/event-page.ts`.
@@ -68,7 +68,7 @@ This branch is stacked on PR #292 (`session/08zzzza-event-samples`, event sample
 5. **Long page while live:** 20 alliance cards sit above the 20 ledger cards on a phone. A "Show all" list (`ShowFirst`) cannot wrap `StatTable` as it is.
 6. **Pre-existing:** `pnpm db:local:seed --reset` fails on a fresh local database (`truncate … rehearsal_slots` names a table that does not exist). Run without `--reset` on an empty database. Not fixed here.
 7. **Pre-existing:** the full `vitest` run is not reliable under a load average above about 20: default concurrency and a 10 s timeout fail different tests each run.
-8. **"Who fought" until the End** (issue #307) is left for after the parallel session that owns `WhoFought.tsx` merges; it can read `eventProgress` standings.
+8. **"Who fought" until the End** (issue #307): done in "Review fixes (2026-11-16)" below (`memberTurnoutSoFar`).
 
 ## Next
 Session: none queued in `docs/SESSION_PLAYBOOK.md` after this one (`08zzzza`'s handoff lists two prompt sketches: the charts and the window build). Reading both with this change in mind:
@@ -107,6 +107,28 @@ Branch `fix/08zzzze-live-ux`, on top of `session/08zzzze-live-event` with `sessi
 - Copy: 7 new keys (`ledger.liveFirst`, `liveNoReadings`, `liveOverdue`, `liveKillsSoFar`, `liveLast`, `liveDone`, `status.endAfter`), translated to 17 languages with the translate-copy skill and stamped. `lib/copy.ts` was at the 300-line limit; `liveDone` is short enough to stay on one line.
 - Verified: `pnpm check` green (335 tests passed, 1 skipped; the i18n gate says 17 languages up to date). Local database from the seed on a scratch Postgres cluster (`lt_seed`, scratch copy `lt_run`; the `lap` database was not touched). States early (Start only), few (2 readings), live, live with a gap (sample 10 copied from 9, sample 14 missing), finished, and live with a late reading. Chromium and WebKit, light and dark, at 360 and 768: no horizontal overflow in any of the 40 captures. Screenshots: `docs/screenshots/08zzzze-live-360.png`, `08zzzze-early-360.png`, `08zzzze-finished-360.png`, `08zzzze-live-768.png`, `08zzzze-live-360-webkit-dark.png` (replaces the 390 one).
 - Not done / follow-ups: the strip and the capture window both show the Start time while live (S1 asked for both). An event whose End never ran after the window shows the finished layout with "Last updated" and "During the event"; not changed.
+
+## Review fixes (2026-11-16)
+
+Work on top of 905b43f (samples #292 final, D72 merged). Items in the order of the review.
+
+1. `LiveRefresh` (`app/_ui/LiveRefresh.tsx`): takes `renderedAt` (the server's render time, `EventProgress.asOf`) beside `at`, waits `at − renderedAt` on the server's clock (at least 1 s), and has both in the effect dependencies. Every render re-arms; a client clock that is ahead no longer fires early and stops. A render that is already past `at` retries after 1 s, not in a tight loop. Not exercised end to end (the wait is up to 15 minutes); the logic is in the effect only.
+2. `serverPulse` (`lib/live.ts`): a gap of two or more cadences, counted by rounding the gap to whole cadences, gives that many `missing` slots, the first starting at the earlier reading and the last ending at the later one. An off-grid Start (12:01) with 12:15 missing and a sample at 12:30 gives 12:01–12:16 and 12:16–12:30. A gap that rounds to one cadence is compared as before. One test.
+3. `standings` (`lib/live.ts`): each alliance's change is at its newest fresh sample (`Standing.at` is that sample's time). The card says "Last updated at 16:45 server time" (existing key `status.lastUpdated`) when that reading is older than the newest one. Two existing assertions changed (stale at the newest reading now gives the older change); one test added for an alliance with no usable sample.
+4. "Who fought" while live (`lib/queries/turnout.ts`): `memberTurnoutSoFar(db, eventId, startId)` compares the Start's member rows with each alliance's newest usable sample's `member_uids`/`member_kills`. It selects those arrays for one alliance row per alliance (about 20 rows), never all samples'. The list building is shared with `memberTurnout` (`turnoutLists`). `getEventPage` uses it while there is no End snapshot; with an End the behaviour is as before. `TurnoutLists.soFar` (optional) switches the title to the new key `ledger.foughtSoFar` ("War turnout so far"). The help line under it still says "at Start and at End" (only the title was to change). One test. The two handoff lines that said `WhoFought.tsx` does not exist are corrected.
+5. `LiveSections`: while live the wrapper has `mb-6`, so "Show all (20)" no longer touches the first ledger card.
+6. D68: copied from `origin/session/08zzzx-player-daily-progress` (#288): `docs/decisions/D68-charts-are-hand-built-inline-svg.md` byte for byte; the README line; the CLAUDE.md UI line; the two DESIGN.md lines (`line-chart` and `player-progress`). The DESIGN.md hunk and the two README/CLAUDE.md lines were taken from that branch's diff against dev; the README line sits after D67 as there. The `player-progress` line describes a component that is not on this branch; it was taken so the two branches merge without a conflict. The `LivePulse` header cites D68 and says its bars are HTML boxes, not SVG (D68's form is a line chart): a departure from D68's "what a chart is" that the owner can accept or ask to redraw.
+7. `MyAlliance.tsx` is back to the dev version; `StatRow.liveUnion` and `data-live-union` are gone. `LiveStandings` marks its own rows with `StatRow.mine`.
+8. `eventProgress` stays its own reader: `eventSamples(db, id, { rosters: false })` drops running snapshots, takes the Start's time from the schedule (the first interval and the strip use the Start's own time) and does not tell an End that is running or failed from none. One comment in `lib/queries/live.ts` says so; the INVARIANT comment in `lib/queries/visibility.ts` now names `eventProgress` and `memberTurnoutSoFar`.
+9. `lib/queries/live.test.ts`: a live event with no sample yet (non-null, `latestAt` null, 0 readings, empty standings and pulse) and busiest null below 4 compared intervals.
+10. `app/(pages)/events/[id]/page.tsx` reads `loadProgress` and `loadEventPage` in one `Promise.all` and passes `progress` to `EventView`; the home page still reads it inside `EventView` (an undefined `progress` prop means "read it here").
+11. The top-3 line joins each tag and its figure with a no-break space. The chip's "(reading due 17:15)" is a block of its own under the times, so it never splits "server time".
+
+Lint limits made three splits: `TopStatus` moved from `EventView.tsx` to `app/_ui/TopStatus.tsx`, `standingNote` and `metric` moved out of `Standings`, and `lib/copy.ts` (at its 300-line limit) lost three lines by writing `time` on one line, to fit `foughtSoFar`.
+
+WebKit lowercase compact units: not caused by this PR. WebKit in Playwright reports `navigator.language` `en-GB` (`navigator.languages` `["en-GB"]`, Chromium `en-US`). `pickLanguage` (`app/_ui/locale.ts`) keeps the viewer's own tag for the language ("en-GB keeps `31 Oct`"), so every number goes through `Intl.NumberFormat("en-GB", { notation: "compact" })`, whose CLDR short forms are `k`, `m`, `bn` (Node 26: `60.1m`, `4.29bn`, `271k`; en-US and en-AU give `M`, `B`, `K`). It affects every page and every compact figure for a viewer whose Accept-Language is en-GB, including the ledger cards on dev. `compact()` in `app/_ui/format.ts` was not changed. Follow-up: decide whether English readers should always get `K/M/B`.
+
+Verified: `pnpm check` green: 71 test files passed, 1 skipped; 350 tests passed, 1 skipped; i18n "17 languages up to date with English". Local scratch cluster (`lt_seed`, copy `lt_run`; dropped after): states early, live (one stale and one failed alliance in the newest reading), late, finished; Chromium and WebKit, light and dark, 360 and 768: no horizontal overflow. Screenshots replaced: `docs/screenshots/08zzzze-live-360.png`, `08zzzze-finished-360.png`, `08zzzze-early-360.png`, `08zzzze-live-360-webkit-dark.png`.
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
