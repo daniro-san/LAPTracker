@@ -35,4 +35,4 @@ Closes #308.
 ## Next
 None queued. No session prompt in `docs/SESSION_PLAYBOOK.md` follows this change, and the plan needs no change.
 
-PR: (pending)
+https://github.com/daniro-san/LAPTracker/pull/324
