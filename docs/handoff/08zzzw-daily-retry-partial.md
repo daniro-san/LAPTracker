@@ -56,3 +56,5 @@ Plan changes needed: none.
 - Local browser checks: open the dev server as `http://localhost:<port>`, not `127.0.0.1`; on `127.0.0.1` Next's dev scripts are refused and the PIN form does not submit.
 - `/opt/homebrew/bin/pg_ctl` is libpq's and cannot start a cluster; put `/opt/homebrew/opt/postgresql@18/bin` first on `PATH` for `db:local:*`.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/268
