@@ -1,7 +1,7 @@
 // Event samples (D69) through the tick on PGlite: a KvK-shaped Saturday, Before 10:00 and After 16:15
 // server (12:00 and 18:15 UTC), a sample every 15 minutes between them.
-import { asc, eq, inArray, isNotNull } from "drizzle-orm";
-import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { and, asc, eq, inArray, isNotNull } from "drizzle-orm";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ADMIN_WEBHOOK, PUBLIC_WEBHOOK, TEST_ENV, testContext } from "./app-context.test-helpers";
 import { sampleQuota } from "./budget";
@@ -15,11 +15,21 @@ import {
   memberHistoryIndex,
   playerHistory,
 } from "./queries";
+import { latestRehearsal } from "./queries/admin";
 import { getEventPage } from "./queries/event-page";
-import { createManualEvent } from "./repo/events";
+import { createRehearsal } from "./rehearsal";
+import { createManualEvent, dueSample } from "./repo/events";
+import { startSample } from "./repo/snapshots";
 import { executeSnapshot } from "./run";
-import { allianceSnapshots, memberSnapshots, runLogs, snapshots } from "./schema";
+import { allianceSnapshots, events, memberSnapshots, runLogs, snapshots } from "./schema";
 import { runTick, type TickOutcome } from "./tick";
+
+// Passes through, except where a test queues an answer: it makes the tick see a slot as free that another
+// caller has just taken.
+vi.mock("./repo/events", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./repo/events")>();
+  return { ...actual, dueSample: vi.fn(actual.dueSample) };
+});
 
 const KVK = { ...TEST_ENV, SNAPSHOT_AFTER: "16:15", SAMPLE_EVERY_MIN: 15 };
 /** The same shape over one hour (After 11:00 server): three samples, for the tests that read the pages. */
@@ -246,5 +256,72 @@ describe("event samples through the tick (D69)", () => {
       ],
     });
     expect(readings[0]?.alliances.find((a) => a.unionId === first)?.roster).toHaveLength(3);
+  });
+
+  it("leaves a running sample and a failed alliance row out of eventSamples, and returns null for a rehearsal or an admin-only event", async () => {
+    const t = testContext(db, SHORT);
+    await tickAt(t, grid("12:00", "13:00"));
+    const samples = (await rowsByPhase()).filter((r) => r.phase === "sample");
+    const [running, failed] = samples.map((r) => r.id);
+    await db
+      .update(snapshots)
+      .set({ status: "running" })
+      .where(eq(snapshots.id, running as number));
+    await db
+      .update(allianceSnapshots)
+      .set({ error: "timeout" })
+      .where(
+        and(
+          eq(allianceSnapshots.snapshotId, failed as number),
+          eq(allianceSnapshots.unionId, IDS[0] as number),
+        ),
+      );
+
+    const readings = (await eventSamples(db, 1)) ?? [];
+    expect(readings.map((r) => r.at.toISOString().slice(11, 16))).toEqual([
+      "12:00",
+      "12:30",
+      "12:45",
+      "13:00",
+    ]);
+    const unionIds = (kind: number) => readings[kind]?.alliances.map((a) => a.unionId);
+    expect(unionIds(1)).toEqual((unionIds(2) ?? []).filter((id) => id !== IDS[0]));
+
+    await db.update(events).set({ visibility: "admin" }).where(eq(events.id, 1));
+    expect(await eventSamples(db, 1)).toBeNull();
+    await db.update(events).set({ visibility: "standalone", isTest: true }).where(eq(events.id, 1));
+    expect(await eventSamples(db, 1)).toBeNull();
+  });
+
+  it("samples a rehearsal between its Before and After, and the rehearsal verdict ignores the sample", async () => {
+    const t = testContext(db, KVK);
+    const day = "2026-11-04";
+    t.clock.now = utc("14:50", day);
+    // Before 15:05, After 15:35 (UTC): the 15:15 and 15:30 slots fall between them.
+    const made = await createRehearsal(db, t.clock.now, t.ctx.env);
+    expect(made.ok).toBe(true);
+    const kinds = await tickAt(t, ["15:05", "15:15", "15:35"], day);
+
+    expect(kinds.map(([, k]) => k)).toEqual(["run", "sample", "run"]);
+    expect((await rowsByPhase()).map((r) => r.phase)).toEqual(["before", "sample", "after"]);
+    const shown = await latestRehearsal(db, t.ctx.env.SNAPSHOT_WINDOW_MIN);
+    expect(shown?.phases.map((p) => p.phase).sort()).toEqual(["after", "before"]);
+    expect(shown?.verdict).not.toBeNull();
+    await deleteSamples();
+    expect(await latestRehearsal(db, t.ctx.env.SNAPSHOT_WINDOW_MIN)).toEqual(shown);
+  });
+
+  it("answers idle when another caller takes the slot between the tick's lookup and its claim", async () => {
+    const t = testContext(db, KVK);
+    await tickAt(t, ["12:00"]);
+    t.clock.now = new Date(utc("12:15").getTime() + 20_000);
+    const event = await dueSample(db, utc("12:15"));
+    expect(event).not.toBeNull();
+    // The other caller's claim lands after the tick's lookup found the slot free.
+    await startSample(db, (event as { id: number }).id, utc("12:15"), t.clock.now);
+    vi.mocked(dueSample).mockResolvedValueOnce(event);
+
+    expect((await runTick(t.ctx, db, ORIGIN)).kind).toBe("idle");
+    expect((await rowsByPhase()).map((r) => r.phase)).toEqual(["before", "sample"]);
   });
 });
