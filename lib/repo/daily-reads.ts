@@ -83,6 +83,7 @@ export function dailyRosterStates(db: Db, day: string) {
       tag: dailyRosters.tag,
       isFresh: dailyRosters.isFresh,
       error: dailyRosters.error,
+      sourceUpdatedAt: dailyRosters.sourceUpdatedAt,
     })
     .from(dailyRosters)
     .where(eq(dailyRosters.readDay, day));
