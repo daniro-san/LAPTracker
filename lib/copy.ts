@@ -7,6 +7,7 @@
 // `{name}` is a placeholder filled by `fill()`; labels on public pages are at most two words. Symbols
 // (signs, arrows, `#`) stay in the components so the blank dictionary keeps them visible.
 import { adminCopy } from "./copy-admin";
+import { balanceCopy } from "./copy-balance";
 import { brandCopy } from "./copy-brand";
 import { discordCopy } from "./copy-discord";
 import { liveCopy } from "./copy-live";
@@ -129,6 +130,8 @@ export const en = {
     same: "Pick two different events.",
     onlyOne: "There is only one event to compare so far.",
   },
+  /** The server balance page (D85, #283). */
+  balance: balanceCopy,
   /** Member history (D60, #197): an alliance's rosters over time, each compared with the one before. */
   history: {
     title: "Member history",

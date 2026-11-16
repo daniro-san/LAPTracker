@@ -60,6 +60,8 @@ Words already used in `lib/i18n/it.ts`. Reuse them so the pages stay consistent;
 | reading                   | lettura                      | `ledger.liveFirst`, `ledger.liveOverdue`, `ledger.liveDone`, `ledger.liveNoReadings` — one poll of the game's standings |
 | Kills gained              | Kills guadagnati             | `ledger.liveKillsGained` — a column header                                                                              |
 | Gainers                   | guadagni                     | `ledger.fewGainers`, `ledger.topShareHelp` — members whose Kills rose; `ledger.withKills` says "Kills guadagnate"       |
+| Server might              | Might totale                 | `balance.total` — label; prose says "del Might del server" (`balance.blocShare`, `balance.lead`)                        |
+| Bloc                      | Blocco                       | `balance.bloc`, `balance.noBloc`, `balance.addTo` — a hypothetical group of alliances on the balance page               |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

@@ -33,6 +33,9 @@ Words already used in `lib/i18n/uk.ts`. Reuse them so the pages stay consistent;
 | Support players                     | гравці підтримки            | `ledger.foughtHelp` — players who gain no kills                                                                    |
 | Top 5                               | топ-5                       | `ledger.topShare` — the five biggest kills gains                                                                   |
 | gainer                              | учасник з приростом         | `ledger.topShareHelp`, `ledger.fewGainers` — members whose Kills rose                                              |
+| Bloc                                | блок                        | `balance.bloc`, `balance.builder`, `balance.addTo` — a hypothetical group of alliances on the balance page         |
+| Share (of might)                    | частка                      | `balance.shares`, `balance.trend`, `balance.blocShare` — an alliance's or bloc's part of the server's Might        |
+| Hypothetical                        | гіпотетично                 | `balance.hypothetical` — the bloc builder's label                                                                  |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

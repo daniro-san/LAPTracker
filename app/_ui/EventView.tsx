@@ -9,7 +9,7 @@ import type { getEventDetail, listEvents, Ranks, RosterChange, TurnoutLists } fr
 import type { getEventPage } from "@/lib/queries/event-page";
 import { nextEvent } from "@/lib/schedule";
 
-import { CompareLink } from "./ComparePicker";
+import { BalanceLink, CompareLink } from "./ComparePicker";
 import { DetailTable, figureRows } from "./DetailLines";
 import { loadProgress } from "./event-page";
 import {
@@ -125,6 +125,7 @@ function TitleActions({
   return (
     <div className="flex flex-wrap items-center gap-2">
       <CompareLink events={events} eventId={eventId} copy={copy} />
+      <BalanceLink copy={copy} />
       <ExactToggle />
     </div>
   );

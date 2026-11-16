@@ -62,6 +62,9 @@ Words already used in `lib/i18n/ko.ts`. Reuse them so the pages stay consistent;
 | Gainers                   | 처치가 늘어난 인원     | `ledger.withKills`, `ledger.topShare*`, `ledger.fewGainers` — members whose Kills rose             |
 | peak                      | 최고                   | `ledger.liveLast` — the highest figure in the window                                               |
 | Last (a time window)      | 최근                   | `ledger.liveLast` — the last N minutes; 마지막 stays the last reading (`ledger.liveStandingsDone`) |
+| Bloc                      | 블록                   | `balance.bloc` — a hypothetical group of alliances in the bloc builder                             |
+| Share (of server might)   | 점유율                 | `balance.shares` — an alliance's part of the server's Might; `balance.trend*` reuse it             |
+| Hypothetical              | 가상                   | `balance.hypothetical` — the bloc builder's label; `balance.description` says 가상의               |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

@@ -51,6 +51,10 @@ export function percent(delta: number | null, base: number | null): number | nul
 export const shareText = (share: number, locale: string): string =>
   numberFormat(locale, "share").format(share);
 
+/** A share of a whole, 0..1, to one decimal: `8.7%` (en), `8,7 %` (de). */
+export const sharePreciseText = (share: number, locale: string): string =>
+  numberFormat(locale, "percent").format(share);
+
 export const percentText = (p: number, locale: string): string =>
   `${signOf(p)}${numberFormat(locale, "percent").format(Math.abs(p) / 100)}`;
 

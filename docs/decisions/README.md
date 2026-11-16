@@ -93,3 +93,4 @@ The header text above is the old file's, kept as it was. The split it describes 
 - [D77 — PostHog on production: page views, typed events, client errors and session replay on every page, masked per area (2026-11-16, owner, issue #326)](D77-posthog-analytics-replay-and-errors.md)
 - [D78 — Compact numbers use K, M, B, T in every language and browser (2026-11-16, owner, issue #325)](D78-compact-numbers-use-k-m-b-t-everywhere.md)
 - [D79 — The event page's live reads are shared between viewers in Next's data cache, tagged by event (2026-11-16, owner, 08zzzzj, issue #327)](D79-event-page-reads-shared-in-the-data-cache.md)
+- [D85 — Server power balance: a public page of alliance-level shares, a hypothetical bloc builder and the top 3's share over time (2026-11-16, owner, 08zzzzm, issue #283)](D85-server-power-balance-and-a-hypothetical-bloc-builder.md)

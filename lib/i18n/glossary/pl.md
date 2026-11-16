@@ -60,6 +60,10 @@ Words already used in `lib/i18n/pl.ts`. Reuse them so the pages stay consistent;
 | War turnout               | Frekwencja wojny              | `ledger.fought` — who took part in the war event                       |
 | gainer                    | zdobywca                      | `ledger.topShareHelp`, `ledger.fewGainers` — a member whose Kills rose |
 | peak                      | szczyt                        | `ledger.liveLast` — the highest interval in the last span              |
+| Bloc                      | Blok                          | `balance.bloc`, `balance.addTo` — a hypothetical group of alliances    |
+| Bloc builder              | Kreator bloków                | `balance.builder` — the page's hypothetical bloc tool                  |
+| Share of server might     | Udział w Might serwera        | `balance.shares`, `balance.bar` — an alliance's share of the server    |
+| Hypothetical              | Hipotetyczny                  | `balance.hypothetical` — the bloc builder's tag                        |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

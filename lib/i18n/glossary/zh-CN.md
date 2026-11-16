@@ -27,6 +27,9 @@ Words already used in `lib/i18n/zh-CN.ts`. Reuse them so the pages stay consiste
 | Run by hand by the admin  | 由管理员手动运行     | `status.byHand`                                                              |
 | grandma                   | 奶奶                 | the voice in empty states and errors                                         |
 | Chart                     | 图表                 | `ledger.progressEmpty`, `ledger.chart` — the might chart and its empty state |
+| Server balance            | 服务器均势           | `balance.title` — the balance page                                           |
+| Bloc                      | 阵营                 | `balance.bloc`, `balance.blocAlliances` — a hypothetical group of alliances  |
+| Bloc builder              | 阵营试算             | `balance.builder` — the page's try-a-bloc tool                               |
 | English                   | zh-CN                | Key and use                                                                  |
 | ------------------------- | -------------------- | -----------------------------------------------------------                  |
 | Server 325 · Event Ledger | 325 服 · 活动账本    | `site.ledger` — the page title                                               |

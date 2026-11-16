@@ -23,6 +23,7 @@ export {
   type MightUnchanged,
   type UnchangedRow,
 } from "./might-unchanged";
+export { BALANCE_DAYS, powerBalance, type PowerBalance } from "./balance";
 export { allianceNames } from "./names";
 export { eventSamples, type EventReading, type SampleAlliance, type SampleMember } from "./samples";
 export { eventProgress, type EventProgress } from "./live";
