@@ -1,6 +1,6 @@
 # 11i — Notices library with Translate and Improve writing (Groq, D81)
 
-Issues #304 (notices library) and #305 (translation of officer-written text, Improve writing). Rules applied: D71, D73, D75, D77, issue 293's write rule. Decision D81. Branch `session/11i-notices` from `dev` (b860720), merged with `origin/dev` at 56c534e.
+Issues #304 (notices library) and #305 (translation of officer-written text, Improve writing). Rules applied: D71, D73, D75, D77, issue 293's write rule. Decision D81. Branch `session/11i-notices` from `dev` (b860720), merged with `origin/dev` at 61eb192 (11n, #341).
 
 ## Built
 - **`/w/[slug]/notices`**, the library (`app/(private)/w/[slug]/notices/page.tsx`):
@@ -35,7 +35,7 @@ Issues #304 (notices library) and #305 (translation of officer-written text, Imp
   - A translation takes its source's revision; a translation of a text that changed since gets 0, so it is behind at once.
   - Saving a language that was behind, or empty, by hand catches it up (`basis = newest`).
   - A language is out of date when its basis is below the newest written language's.
-- **Tables** (migration **0020**, `lib/schema-notices.ts`, listed in `drizzle.config.ts` beside `lib/schema.ts`):
+- **Tables** (migration **0021_notices**, `lib/schema-notices.ts`, listed in `drizzle.config.ts` beside `lib/schema.ts`):
   - `notices`: id, workspace_id, created_by/at, updated_by/at;
   - `notice_edits`: id (= version), notice_id, workspace_id, field (check: title, en, pt-BR, fr, for_members, ends_on), value, basis, edited_by/at.
   - Users are `on delete set null`; workspaces cascade.
@@ -69,7 +69,7 @@ Issues #304 (notices library) and #305 (translation of officer-written text, Imp
 - **The draft route sits under `/notices`, but nothing in it is notice-specific** (text in, drafts out). The officer notes of #297 can call it as it is.
 
 ## Deviations
-- The brief asked for migration 0021; the coordinator then asked for the next free number on `dev` at the final merge. `dev` ended at 0019, so this is **0020** (`0020_notices`, journal idx 20, snapshot `prevId` = 0019's id), regenerated with drizzle-kit. The SQL is identical to the 0021 the e2e ran on.
+- **The migration is `0021_notices`** (journal idx 21, snapshot `prevId` = the id of dev's `0020_workspace_user_profile`), regenerated with `pnpm db:generate` after #341 (11n) took 0020 and was merged into this branch (61eb192). On the way it was briefly `0020_notices`. The SQL is identical every time.
 - Not in the brief, added:
   - `plainText` (see Decisions);
   - "Keep as is";
@@ -81,12 +81,12 @@ Issues #304 (notices library) and #305 (translation of officer-written text, Imp
 - The per-tab tip is the Notices page's lead line. No line was added to the "?" sheet (11e's adjustment): the brief did not list it.
 
 ## Verified
-- **`pnpm check` exit 0** after merging `origin/dev` (56c534e) and renumbering the migration:
+- **`pnpm check` exit 0** after merging `origin/dev` at 61eb192 (11n) and regenerating the migration as `0021_notices`:
   - prettier, eslint, tsc;
-  - vitest: **100 files passed, 2 skipped; 507 tests passed, 4 skipped**; no timeout;
+  - vitest: **106 files passed, 2 skipped; 526 tests passed, 4 skipped**; no timeout;
   - drift gate: "Everything's fine";
   - i18n: 17 languages up to date.
-  - Before the merge: 97 files and 491 tests passed.
+  - Earlier rounds: 97 files and 491 tests before any merge; 100 files and 507 tests after merging 56c534e.
 - **Groq model ids**: `GET /openai/v1/models` on 2026-11-16 listed `openai/gpt-oss-120b` and `qwen/qwen3.8-27b`, both active.
 - **Probes**, each reverted: a scratch `lib/ai/zz-probe.ts` reading `daily_tech` and importing `lib/private/notice-rules`:
   - `roster-fields.test.ts` failed with `lib/ai/zz-probe.ts: daily_tech`;
@@ -109,7 +109,13 @@ Issues #304 (notices library) and #305 (translation of officer-written text, Imp
     - no sideways scroll on list, notice and editor at 360 and 1280, light and dark, EN and PT, and FR at 360; every target at 360 is 44 px or more (a checkbox measured by its label); the tab labels fit in EN, PT and FR.
   - **Without the key** (the same build on 3242 with `GROQ_API_KEY=`): the editor says "not set up", Translate and Improve writing are disabled, and the draft route answers 503 `not_set_up`. 4 of 4 checks passed.
   - The server log held only `{"code":"notices.translate.ok","ms":1077}`, `{"code":"notices.improve.ok","ms":959}` and the like, never text.
-  - **Groq use** in this session: 1 models list, and 15 chat requests over three full e2e runs (fallbacks, if any, are not counted separately). In the last run the server timed four draft calls at 654–1,077 ms each; the first was EN→PT and FR in parallel, at 1,077 ms.
+  - **Groq use** in this session: 1 models list, and 17 chat requests over three full e2e runs and the smoke below (fallbacks, if any, are not counted separately). In the last run the server timed four draft calls at 654–1,077 ms each; the first was EN→PT and FR in parallel, at 1,077 ms.
+- **Smoke after merging 11n** (61eb192), on a production build and a fresh local database where all 22 migrations applied in order (`0020_workspace_user_profile`, then `0021_notices`). 8 of 8 checks passed:
+  - the Notices tab is still a link in 11n's shell;
+  - write a notice, then Translate EN→PT/FR with the real key (1.8 s, two requests), which kept the names and 18:00;
+  - Save: three languages, none out of date;
+  - Copy FR copies the French; no sideways scroll at 360 px.
+  - The French answer joined two paragraphs into one: another answer the officer reviews.
 - **The invented e2e notice, translated by the real Groq in the final run** (EN source: "Hi OGs! KvK starts Saturday at 12:00 ST. … Thank you all, see you on the battlefield!"):
   - EN→PT: "Oi OGs! KvK começa sábado às 12:00 ST. / 1. Bubble up antes das 11:50 ST se você não estiver em um rally. / 2. Squad 1 fica em casa para reforçar as torres da Royal City. / 3. Rallies: siga [OGs]Mudkip e [OGs]Floki no AC. / 4. Guarde seu Elixir e pelo menos 3h de speedups para o contra-ataque. / Dúvidas? Pergunte a qualquer R4 ou R5. Obrigado a todos, nos vemos no campo de batalha!"
   - EN→FR: "Salut OGs ! KvK commence samedi à 12:00 ST. / 1. Bubble up avant 11:50 ST si vous n’êtes pas en rally. / 2. Squad 1 reste à la maison pour renforcer les tourelles du Royal City. / 3. Rallies : suivez [OGs]Mudkip et [OGs]Floki dans Alliance Chat (AC). / 4. Gardez votre Elixir et au moins 3 h de speedups pour la contre-attaque. / Des questions ? Demandez à n’importe quel R4 ou R5. Merci à tous, à bientôt sur le champ de bataille!"
@@ -135,13 +141,13 @@ Issues #304 (notices library) and #305 (translation of officer-written text, Imp
 6. **The game's own character count is unknown** (graphemes here).
 7. **Notices cannot be deleted** (not asked).
 8. **A fallback to the second model is not logged on its own**, only the outcome.
-9. `lib/schema.ts` is at 296 of 300 counted lines. A new table belongs in its own schema module listed in `drizzle.config.ts` (the `lib/schema-notices.ts` pattern).
+9. `lib/schema.ts` is at about 278 of 300 counted lines. A new table belongs in its own schema module listed in `drizzle.config.ts` (the `lib/schema-notices.ts` pattern).
 
 ## Next
 Session: #300 — Workspace: Days tab with the event calendar and caravan picks (the last thing #331's members' board waits for).
 Model / effort: keep — no signal. The session fit one build pass plus two e2e rounds; the failures were layout and model-output quirks, found by the e2e.
 Owner must do first:
-1. Merge this PR into `dev`. The migration is 0020; if 11n or 11f land a 0020 first, this one is renumbered (regenerate with `pnpm db:generate` after dropping it, as done here).
+1. Merge this PR into `dev`. The migration is `0021_notices`; if 11f lands a 0021 first, this one is renumbered again (drop it and its journal entry, merge `dev`, `pnpm db:generate`, as done here).
 2. Optional, recommended: Groq console → Data Controls → **Zero Data Retention** on, so no 30-day abuse logs of officer text are kept (D81).
 3. Check that `GROQ_API_KEY` is set in Vercel Production and Preview (the #305 comment says it is).
 4. For #304's done_when: an officer enters the three current notices on `/w/ogs/notices`, translates, reviews, and pastes each language into the game from a phone.
@@ -150,7 +156,7 @@ Plan changes needed: none. The workspace track lives in issues #293–#331, not 
 <adjustments>
 - The save pattern for any workspace record (issue 293): `writeNotice(db, target, decide)` in `lib/repo/notices.ts` locks the row, reads the newest value per field (`DISTINCT ON`), and lets a pure `decide` refuse or write. `planSave` in `lib/private/notice-rules.ts` is the version check; `route.test.ts` beside the notices route is the two-officer test template. Calendar entries can copy all three.
 - The tab bar has six columns (`Frame.tsx` `TABS`, `PATHS`). The Calendar tab only needs `PATHS.days`. Labels may hyphenate at 360 px.
-- New tables go in their own schema module, listed in `drizzle.config.ts` (`lib/schema.ts` is at 296 of 300 lines). New words go in their own dictionary module, spread into the three dictionaries (`dictionary.notices.ts`).
+- New tables go in their own schema module, listed in `drizzle.config.ts` (`lib/schema.ts` is at about 278 of 300 counted lines). New words go in their own dictionary module, spread into the three dictionaries (`dictionary.notices.ts`).
 - Translate for any officer text: `POST /api/w/[slug]/notices/draft` takes `{kind: "translate", from, to, text}` and returns drafts. `AppContext.ai` is null without the key; pages pass `getAppContext().ai !== null` to disable the buttons.
 - `for_members` in the calendar should match the notices: a value "true"/"false", off by default.
 </adjustments>
