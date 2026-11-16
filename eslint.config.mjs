@@ -15,6 +15,12 @@ const zones = [
     message: "lib/compute and lib/budget are pure: they import nothing from the project.",
   },
   {
+    target: "./lib/screenshot",
+    from: ".",
+    except: ["./node_modules", "./lib/screenshot"],
+    message: "lib/screenshot imports nothing from the project, and nothing from the database.",
+  },
+  {
     target: "./lib/schedule.ts",
     from: ".",
     except: ["./node_modules", "./lib/env.ts"],
