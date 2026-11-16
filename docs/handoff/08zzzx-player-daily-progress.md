@@ -65,3 +65,5 @@ Prompt sketch for #276 (chart in the Discord picture): "Draw a might line inside
 </adjustments>
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+https://github.com/daniro-san/LAPTracker/pull/288
