@@ -67,7 +67,7 @@ function BlocStrip({
 }) {
   if (blocs.a.length + blocs.b.length === 0) return null;
   return (
-    <p className="sticky top-[calc(var(--site-header)-var(--lace))] z-20 flex flex-wrap gap-x-4 border-b border-rule bg-paper pb-1 pt-[calc(0.25rem+var(--lace))]text-sm font-medium tabular-nums">
+    <p className="sticky top-[calc(var(--site-header)-var(--lace))] z-20 flex flex-wrap gap-x-4 border-b border-rule bg-paper pb-1 pt-[calc(0.25rem+var(--lace))] text-sm font-medium tabular-nums">
       {(["a", "b"] as const).map((s) => (
         <span key={s} className="flex items-center gap-1.5">
           <span aria-hidden="true" className={`inline-block size-3 ${BLOC_FILL[s]}`} />
@@ -117,7 +117,7 @@ export function BalanceRows({
             >
               <div className="flex items-center gap-2">
                 <AllianceBadge badgeId={a.badgeId} />
-                <span className="min-w-0 flex-1 truncate">
+                <span className="min-w-0 flex-1 break-words">
                   {allianceLabel(a.tag ?? String(a.unionId), a.name)}
                 </span>
                 <span className="shrink-0 font-medium tabular-nums">
