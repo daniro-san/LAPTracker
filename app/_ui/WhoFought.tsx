@@ -75,10 +75,13 @@ function BarList({
                 </span>
               )}
               <span aria-hidden="true" className="mt-1 block h-2 bg-rule">
-                <span
-                  className={`block h-full ${t.unionId === mine ? "bg-yarn" : "bg-ink/60"}`}
-                  style={{ width: `${Math.round(ratio * 1000) / 10}%` }}
-                />
+                {/* A share of a few gainers is not a measure: a full bar would read as a strong result. */}
+                {!muted && (
+                  <span
+                    className={`block h-full ${t.unionId === mine ? "bg-yarn" : "bg-ink/60"}`}
+                    style={{ width: `${Math.round(ratio * 1000) / 10}%` }}
+                  />
+                )}
               </span>
             </Link>
           </li>
