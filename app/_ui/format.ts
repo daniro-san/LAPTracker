@@ -2,6 +2,7 @@
 // request's locale (app/_ui/locale.ts), compact by default and exact on tap, times in server time with
 // the words "server time" after them, in the admin area too (07c S3a); public pages use the viewer's own
 // zone and date order when they chose them (D38).
+import { compactLarge } from "@/lib/compact";
 import { en, type Dictionary } from "@/lib/copy";
 
 const MINUS = "−";
@@ -12,15 +13,11 @@ export const MEMBER_MARK = "*";
 const numberFormats = new Map<string, Intl.NumberFormat>();
 
 /** Intl formatters are costly to build; one per locale and style, reused across requests. */
-function numberFormat(
-  locale: string,
-  style: "compact" | "exact" | "percent" | "share",
-): Intl.NumberFormat {
+function numberFormat(locale: string, style: "exact" | "percent" | "share"): Intl.NumberFormat {
   const key = `${locale}|${style}`;
   let format = numberFormats.get(key);
   if (!format) {
     const options: Record<typeof style, Intl.NumberFormatOptions> = {
-      compact: { notation: "compact", minimumSignificantDigits: 3, maximumSignificantDigits: 3 },
       exact: { maximumFractionDigits: 0 },
       percent: { style: "percent", minimumFractionDigits: 1, maximumFractionDigits: 1 },
       share: { style: "percent", maximumFractionDigits: 0 },
@@ -31,10 +28,12 @@ function numberFormat(
   return format;
 }
 
-/** 3.94B (en), 3,94 bi (pt-BR), 3,94 млрд (ru); below 1,000 the plain integer. Always unsigned. */
+/** 3.94B (en), 3,94B (pt-BR), 3,94B (ru): K, M, B, T in every language (D78); below 1,000 the plain
+ * integer. Always unsigned. */
 export function compact(n: number, locale: string): string {
-  const abs = Math.abs(n);
-  return numberFormat(locale, abs < 1000 ? "exact" : "compact").format(abs);
+  return Math.abs(n) < 1000
+    ? numberFormat(locale, "exact").format(Math.abs(n))
+    : compactLarge(n, locale);
 }
 
 export const exact = (n: number, locale: string): string =>

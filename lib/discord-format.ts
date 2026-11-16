@@ -1,14 +1,10 @@
 // The Discord messages' formats (lib/notify.ts) and the event picture's (lib/event-image.tsx). Discord
 // has no viewer locale, so they use one fixed English format, in server time.
+import { compactLarge } from "./compact";
 import { copy } from "./copy";
 
 export const MINUS = "−";
 export const sign = (n: number) => (n > 0 ? "+" : n < 0 ? MINUS : "");
-const compactFormat = new Intl.NumberFormat("en-US", {
-  notation: "compact",
-  minimumSignificantDigits: 3,
-  maximumSignificantDigits: 3,
-});
 export const percentFormat = new Intl.NumberFormat("en-US", {
   style: "percent",
   minimumFractionDigits: 1,
@@ -17,7 +13,7 @@ export const percentFormat = new Intl.NumberFormat("en-US", {
 
 /** `85.8M`, `2`: the size of a number, compact above 1,000, without its sign. */
 export const compact = (n: number) =>
-  Math.abs(n) < 1000 ? String(Math.abs(n)) : compactFormat.format(Math.abs(n));
+  Math.abs(n) < 1000 ? String(Math.abs(n)) : compactLarge(n, "en-US");
 
 /** `+85.8M`, `−2`: compact above 1,000, signed with a real minus. */
 export const signedCompact = (n: number) => `${sign(n)}${compact(n)}`;
