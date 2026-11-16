@@ -146,4 +146,4 @@ Plan changes needed: none.
 - Part 1 is done: README "Workspace setup", with both callback URLs and OGs' server and role ids as the example. Part 2 (officers' first-use cards) ships with #296.
 </adjustments>
 
-PR: (added by the orchestrator)
+https://github.com/daniro-san/LAPTracker/pull/322
