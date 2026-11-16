@@ -62,8 +62,8 @@ export const de = {
     liveStandingsHelp: "Änderung seit Beginn, die meisten Kills zuerst",
     livePulse: "Server-Puls",
     livePulseHelp: "Von {n} Allianzen gewonnene Kills in jeweils {min} Minuten",
-    liveBusiest: "Aktivste 30 Minuten bisher: {from}–{to} · {share} aller Kills",
-    liveBusiestDone: "Aktivste 30 Minuten: {from}–{to} · {share} aller Kills",
+    liveBusiest: "Aktivste {span} Minuten bisher: {from}–{to} · {share} aller Kills",
+    liveBusiestDone: "Aktivste {span} Minuten: {from}–{to} · {share} aller Kills",
     liveNoUpdate: "Kein Update vom Spiel",
     liveNoReading: "Keine Messung",
     liveInterval: "Intervall",
@@ -79,6 +79,8 @@ export const de = {
     foughtSoFar: "Beteiligung am Krieg bisher",
     foughtHelp:
       "Members, die bei Beginn und bei Ende in der Allianz waren. Support-Spieler sammeln keine Kills.",
+    foughtSoFarHelp:
+      "Members, die bei Beginn und bei ihrer letzten Messung in der Allianz waren. Support-Spieler sammeln keine Kills.",
     withKills: "Members mit gewonnenen Kills",
     topShare: "Kills der Top 5 Members",
     topShareHelp:

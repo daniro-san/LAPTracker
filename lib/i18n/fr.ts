@@ -62,8 +62,8 @@ export const fr = {
     liveStandingsHelp: "Évolution depuis Début, plus de Kills gagnés d’abord",
     livePulse: "Rythme serveur",
     livePulseHelp: "Kills gagnés par {n} alliances, par tranches de {min} minutes",
-    liveBusiest: "30 minutes les plus actives pour l’instant, {from}–{to} · {share} des Kills",
-    liveBusiestDone: "30 minutes les plus actives, {from}–{to} · {share} des Kills",
+    liveBusiest: "{span} minutes les plus actives pour l’instant, {from}–{to} · {share} des Kills",
+    liveBusiestDone: "{span} minutes les plus actives, {from}–{to} · {share} des Kills",
     liveNoUpdate: "Aucune mise à jour du jeu",
     liveNoReading: "Aucun relevé",
     liveInterval: "Intervalle",
@@ -79,6 +79,8 @@ export const fr = {
     foughtSoFar: "Participation pour l’instant",
     foughtHelp:
       "Membres qui étaient dans l’alliance au Début et à la Fin. Les joueurs de soutien ne gagnent pas de Kills.",
+    foughtSoFarHelp:
+      "Membres qui étaient dans l’alliance au Début et à son dernier relevé. Les joueurs de soutien ne gagnent pas de Kills.",
     withKills: "Membres ayant gagné des Kills",
     topShare: "Kills des 5 Membres en tête",
     topShareHelp:

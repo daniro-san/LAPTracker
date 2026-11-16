@@ -1,4 +1,4 @@
-// The server pulse (issue 307): kills gained per reading interval as HTML/CSS bars, the busiest 30 minutes
+// The server pulse (issue 307): kills gained per reading interval as HTML/CSS bars, the busiest two intervals
 // underlined and named in text, the numbers in a Details table. The game moves an alliance's numbers every
 // 10-13 minutes, so an interval can hold no update: it shows as a hollow stub, never as a quiet zero.
 // A chart under D68 (docs/decisions/D68-charts-are-hand-built-inline-svg.md): hand-built, no chart library,
@@ -17,7 +17,7 @@ const barHeight = (kills: number, most: number) =>
   `${Math.max(6, Math.round((kills / most) * 100))}%`;
 
 /** One bar per interval: a filled bar for a gain, a hollow stub when the game sent no update, a hairline
- * when nothing could be compared; the busiest 30 minutes are underlined. */
+ * when nothing could be compared; the busiest two intervals are underlined. */
 function Bars({ progress, clock, copy }: { progress: Progress; clock: Clock; copy: Dictionary }) {
   const { pulse, busiest } = progress;
   const most = Math.max(1, ...pulse.map((s) => s.kills ?? 0));
@@ -82,7 +82,7 @@ function PulseLegend({ pulse, copy }: { pulse: Progress["pulse"]; copy: Dictiona
   );
 }
 
-/** Kills gained per interval as bars, the busiest 30 minutes underlined and named, the numbers under Details. */
+/** Kills gained per interval as bars, the busiest two intervals underlined and named, the numbers under Details. */
 export function Pulse({
   progress,
   clock,
@@ -111,6 +111,7 @@ export function Pulse({
       {busiest ? (
         <p className="mt-2 font-medium tabular-nums">
           {fill(progress.live ? copy.ledger.liveBusiest : copy.ledger.liveBusiestDone, {
+            span: 2 * progress.everyMin,
             from: clock.hhmm(busiest.from),
             to: clock.time(busiest.to),
             share: shareText(busiest.share, locale),

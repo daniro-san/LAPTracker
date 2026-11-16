@@ -62,8 +62,8 @@ export const sv = {
     liveStandingsHelp: "Förändring sedan Början, flest Kills först",
     livePulse: "Serverpuls",
     livePulseHelp: "Kills som {n} allianser fått under varje {min} minuter",
-    liveBusiest: "Mest aktiva 30 minuterna hittills: {from}–{to} · {share} av Kills",
-    liveBusiestDone: "Mest aktiva 30 minuterna: {from}–{to} · {share} av Kills",
+    liveBusiest: "Mest aktiva {span} minuterna hittills: {from}–{to} · {share} av Kills",
+    liveBusiestDone: "Mest aktiva {span} minuterna: {from}–{to} · {share} av Kills",
     liveNoUpdate: "Ingen uppdatering från spelet",
     liveNoReading: "Ingen avläsning",
     liveInterval: "Intervall",
@@ -79,6 +79,8 @@ export const sv = {
     foughtSoFar: "Krigsdeltagande hittills",
     foughtHelp:
       "Members som fanns i alliansen vid Början och vid Slut. Supportspelare får inga Kills.",
+    foughtSoFarHelp:
+      "Members som fanns i alliansen vid Början och vid dess senaste avläsning. Supportspelare får inga Kills.",
     withKills: "Members som fick Kills",
     topShare: "Kills från topp 5-medlemmarna",
     topShareHelp:

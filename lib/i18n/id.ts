@@ -63,8 +63,8 @@ export const idID = {
     liveStandingsHelp: "Perubahan sejak Awal, Kills terbanyak dulu",
     livePulse: "Denyut server",
     livePulseHelp: "Kills didapat {n} aliansi tiap {min} menit",
-    liveBusiest: "30 menit paling ramai sejauh ini: {from}–{to} · {share} dari Kills",
-    liveBusiestDone: "30 menit paling ramai: {from}–{to} · {share} dari Kills",
+    liveBusiest: "{span} menit paling ramai sejauh ini: {from}–{to} · {share} dari Kills",
+    liveBusiestDone: "{span} menit paling ramai: {from}–{to} · {share} dari Kills",
     liveNoUpdate: "Tidak ada pembaruan dari game",
     liveNoReading: "Belum ada pembacaan",
     liveInterval: "Interval",
@@ -79,6 +79,8 @@ export const idID = {
     foughtSoFar: "Partisipasi perang sejauh ini",
     foughtHelp:
       "Members yang ada di aliansi di Awal dan di Akhir. Pemain support tidak mendapat Kills.",
+    foughtSoFarHelp:
+      "Members yang ada di aliansi di Awal dan di pembacaan terbarunya. Pemain support tidak mendapat Kills.",
     withKills: "Members dengan Kills yang didapat",
     topShare: "Kills dari 5 Members teratas",
     topShareHelp:

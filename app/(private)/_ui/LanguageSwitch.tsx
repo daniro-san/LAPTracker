@@ -4,7 +4,8 @@
 import { useRouter } from "next/navigation";
 
 import { track } from "@/lib/analytics/events";
-import { WORKSPACE_LANG_COOKIE, type WorkspaceLanguage } from "@/lib/private/dictionary";
+import { WORKSPACE_LANG_COOKIE } from "@/lib/private/cookies";
+import type { WorkspaceLanguage } from "@/lib/private/dictionary";
 
 const CHOICES: { id: WorkspaceLanguage; short: string; name: string }[] = [
   { id: "en", short: "EN", name: "English" },

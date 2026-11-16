@@ -1,8 +1,8 @@
 // Pure arithmetic for the live event section (issue 307): each alliance's change since Start, the server's
-// kills per reading interval, the busiest 30 minutes, and when the page should look again. Readings are
+// kills per reading interval, the busiest two intervals, and when the page should look again. Readings are
 // alliance totals only (no rosters). The game moves an alliance's numbers in steps of about 10-13 minutes
-// (measured 2026-11-16), so a 15-minute interval holds 0, 1 or 2 game updates: the section reads
-// cumulative changes, and the busiest span is two intervals.
+// (measured 2026-11-16), so an interval at the default 15-minute cadence holds 0, 1 or 2 game updates: the
+// section reads cumulative changes, and the busiest span is two intervals (`2 × SAMPLE_EVERY_MIN` minutes).
 import { delta, type Measured } from "./compute";
 import { slotOf } from "./schedule";
 
@@ -137,9 +137,9 @@ export interface Busiest {
 }
 
 /**
- * The two consecutive intervals with the most kills (a rolling 30 minutes at the 15-minute cadence, which
- * holds the same number of game updates whatever the phase). Needs both intervals compared and a gain;
- * null otherwise. The first such span wins a tie. `total` is all the kills gained since Start (the
+ * The two consecutive intervals with the most kills: a rolling `2 × SAMPLE_EVERY_MIN` minutes (30 at the
+ * default 15-minute cadence), which holds about the same number of game updates whatever the phase. Needs
+ * both intervals compared and a gain; null otherwise. The first such span wins a tie. `total` is all the kills gained since Start (the
  * standings' sum), not the sum of the compared intervals: a missed reading must not inflate the share.
  */
 export function busiestSpan(slots: readonly PulseSlot[], total: number): Busiest | null {

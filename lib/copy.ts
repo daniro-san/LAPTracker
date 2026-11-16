@@ -76,8 +76,9 @@ export const en = {
     liveStandingsHelp: "Change since Start, most kills gained first",
     livePulse: "Server pulse",
     livePulseHelp: "Kills gained by {n} alliances in each {min} minutes",
-    liveBusiest: "Busiest 30 minutes so far: {from}–{to} · {share} of the kills",
-    liveBusiestDone: "Busiest 30 minutes: {from}–{to} · {share} of the kills",
+    /** `{span}`: two reading intervals, in minutes (30 at the 15-minute cadence). */
+    liveBusiest: "Busiest {span} minutes so far: {from}–{to} · {share} of the kills",
+    liveBusiestDone: "Busiest {span} minutes: {from}–{to} · {share} of the kills",
     liveNoUpdate: "No update from the game",
     liveNoReading: "No reading",
     liveInterval: "Interval",
@@ -98,6 +99,9 @@ export const en = {
     /** Under the section's title: what the figures count. */
     foughtHelp:
       "Members who were in the alliance at Start and at End. Support players gain no kills.",
+    /** The help line while the title is `foughtSoFar`: there is no End yet. */
+    foughtSoFarHelp:
+      "Members who were in the alliance at Start and at its latest reading. Support players gain no kills.",
     /** The first list: members with kills gained, as a share of the members in both reads. */
     withKills: "Members with kills gained",
     /** The second list: the alliance's five biggest kills gains, as a share of all its kills gained. */
