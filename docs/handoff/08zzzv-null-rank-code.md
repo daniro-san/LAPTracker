@@ -54,3 +54,5 @@ Plan changes needed: §2 — a member row can carry `rank_code: null` with the k
 - The `record-fixture` loop must not use a variable named `path` in zsh.
 - A partly done daily read cannot be read again from `/admin`.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/267
