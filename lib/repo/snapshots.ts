@@ -1,5 +1,5 @@
 // snapshots table. The claim is one conditional statement, never read-then-write.
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, inArray, ne, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { snapshots } from "../schema";
@@ -30,7 +30,11 @@ export async function startSnapshot(
       ? await db
           .insert(snapshots)
           .values({ eventId, phase, startedAt, status: "running" })
-          .onConflictDoNothing({ target: [snapshots.eventId, snapshots.phase] })
+          // The partial unique index of Before and After (D69): its predicate selects it.
+          .onConflictDoNothing({
+            target: [snapshots.eventId, snapshots.phase],
+            where: sql`${snapshots.phase} <> 'sample'`,
+          })
           .returning({ id: snapshots.id })
       : await db
           .update(snapshots)
@@ -44,6 +48,47 @@ export async function startSnapshot(
           )
           .returning({ id: snapshots.id });
   return rows[0]?.id ?? null;
+}
+
+/** INVARIANT sample.once-per-slot (D69): the insert is the claim, so two ticks in one slot cannot both
+ * take it, and a taken slot is never taken again (no re-run, no catch-up). */
+export async function startSample(
+  db: Db,
+  eventId: number,
+  slotAt: Date,
+  startedAt: Date,
+): Promise<number | null> {
+  const rows = await db
+    .insert(snapshots)
+    .values({ eventId, phase: "sample", slotAt, startedAt, status: "running" })
+    .onConflictDoNothing({
+      target: [snapshots.eventId, snapshots.slotAt],
+      where: sql`${snapshots.phase} = 'sample'`,
+    })
+    .returning({ id: snapshots.id });
+  return rows[0]?.id ?? null;
+}
+
+/** Another sample of the event, not `snapshotId`, ended partial or failed: its admin message was the
+ * event's one sample message (D69). */
+export async function otherShortSample(
+  db: Db,
+  eventId: number,
+  snapshotId: number,
+): Promise<boolean> {
+  const [row] = await db
+    .select({ id: snapshots.id })
+    .from(snapshots)
+    .where(
+      and(
+        eq(snapshots.eventId, eventId),
+        eq(snapshots.phase, "sample"),
+        ne(snapshots.id, snapshotId),
+        inArray(snapshots.status, ["partial", "failed"]),
+      ),
+    )
+    .limit(1);
+  return row !== undefined;
 }
 
 export async function finishSnapshot(
@@ -83,7 +128,8 @@ export interface PhaseReport {
 export async function listPhaseReports(db: Db, eventId: number): Promise<PhaseReport[]> {
   const rows = await db.select().from(snapshots).where(eq(snapshots.eventId, eventId));
   return rows.flatMap((r) =>
-    r.status === "running" || !r.finishedAt
+    // A sample is not a phase: the event's message keeps its Before and After blocks only (D69).
+    r.phase === "sample" || r.status === "running" || !r.finishedAt
       ? []
       : [
           {

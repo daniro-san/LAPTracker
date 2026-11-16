@@ -165,6 +165,8 @@ export async function loadVerdictInput(db: Db, eventId: number): Promise<Verdict
   const runs = await db.select().from(snapshots).where(eq(snapshots.eventId, eventId));
   const input: VerdictInput = { before: null, after: null };
   for (const run of runs) {
+    // The verdict checks the Before and the After; the rehearsal's samples (D69) are not phases.
+    if (run.phase === "sample") continue;
     const alliances = await db
       .select({
         unionId: allianceSnapshots.unionId,

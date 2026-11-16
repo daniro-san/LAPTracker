@@ -120,6 +120,13 @@
       "when": 1794695722098,
       "tag": "0016_young_major_mapleleaf",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1794843666321,
+      "tag": "0017_aromatic_sprite",
+      "breakpoints": true
     }
   ]
 }

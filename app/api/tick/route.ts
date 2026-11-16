@@ -26,6 +26,7 @@ export function POST(request: Request): Promise<Response> {
       case "idle":
         return new Response(null, { status: 204 });
       case "run":
+      case "sample":
         return runResponse(tick.outcome);
       case "quota-check":
         return Response.json({

@@ -2,15 +2,15 @@
 // block exists because a serverless function is frozen once it returns: the snapshot row must be
 // final and the logger's inserts settled before the response leaves, on every path.
 import { secretsOf, type AppContext } from "./app-context";
-import { RunRefusedError, runSnapshot, type RunSummary } from "./collector";
+import { RunRefusedError, runSample, runSnapshot, type Deps, type RunSummary } from "./collector";
 import type { Db } from "./db";
 import { createRunLogger } from "./logger";
 import { quotaReportMessage, createNotifier, discordClock } from "./notify";
-import { createRepo, type Phase, type Repo } from "./repo";
+import { createRepo, type Phase, type Repo, type SnapshotPhase } from "./repo";
 import { databaseSizeBytes } from "./repo/database";
 import type { EventInfo } from "./repo/events";
 import { insertRunLog } from "./repo/run-logs";
-import { notifyFinished } from "./run-notify";
+import { notifyFinished, notifySample } from "./run-notify";
 import { nextEvent } from "./schedule";
 
 export type RunOutcome =
@@ -47,6 +47,7 @@ const REFUSALS = {
   "not-due": { status: 409, code: "snapshot_not_due" },
   stale: { status: 409, code: "snapshot_stale" },
   "event-started": { status: 409, code: "event_started" },
+  taken: { status: 409, code: "sample_taken" },
 } as const;
 
 /** The collector threw past its own handling: the claimed row is closed as failed, with 0 calls
@@ -54,14 +55,14 @@ const REFUSALS = {
 async function finaliseCrashed(
   repo: Repo,
   claim: { id: number; startedAt: Date },
-  req: RunRequest,
+  phase: SnapshotPhase,
   ctx: AppContext,
 ) {
   const finishedAt = ctx.now();
   const snapshotId = claim.id;
   const summary: RunSummary = {
     snapshotId,
-    phase: req.phase,
+    phase,
     status: "failed",
     callsUsed: 0,
     quotaRemainingAfter: null,
@@ -131,23 +132,34 @@ function gate(
   return req.stale ? { refused: "event-started" } : { stale: false };
 }
 
-export async function executeSnapshot(
+/** A run that claimed its row, or why it did not; what the notify step needs. */
+interface Collected {
+  summary: RunSummary | null;
+  refused: RunRefusedError | null;
+  claimedAt: Date;
+  failedWrites: number;
+}
+
+/** The collector's run under its logger. The claim is watched, so the row it took (exactly ours, never
+ * another run's) is final and the logger settled on every path before the caller notifies. */
+async function collect(
   ctx: AppContext,
   db: Db,
-  req: RunRequest,
-): Promise<RunOutcome> {
-  const gated = gate(ctx.now(), req);
-  if ("refused" in gated) return { ok: false, ...REFUSALS[gated.refused], snapshotId: null };
-  const { stale } = gated;
+  phase: SnapshotPhase,
+  start: (deps: Deps) => Promise<RunSummary>,
+): Promise<Collected> {
   const repo = createRepo(db);
   let claimedId: number | null = null;
   let claimedAt = ctx.now();
-  // The id the collector's compare-and-set claim returned: exactly our row, never another run's.
   const claiming: Repo = {
     ...repo,
-    startSnapshot: async (eventId, phase, startedAt, expected) => {
+    startSnapshot: async (eventId, p, startedAt, expected) => {
       claimedAt = startedAt;
-      return (claimedId = await repo.startSnapshot(eventId, phase, startedAt, expected));
+      return (claimedId = await repo.startSnapshot(eventId, p, startedAt, expected));
+    },
+    startSample: async (eventId, slotAt, startedAt) => {
+      claimedAt = startedAt;
+      return (claimedId = await repo.startSample(eventId, slotAt, startedAt));
     },
   };
   const logger = createRunLogger(
@@ -158,38 +170,88 @@ export async function executeSnapshot(
   let summary: RunSummary | null = null;
   let refused: RunRefusedError | null = null;
   try {
-    summary = await runSnapshot(req.event.id, req.phase, deps, { force: req.force, stale });
+    summary = await start(deps);
   } catch (e) {
     if (e instanceof RunRefusedError) refused = e;
     else await logger.error("run.crashed", { error: e instanceof Error ? e.name : "unknown" });
   } finally {
     // INVARIANT run.finalised-in-finally: a claimed row never stays `running` past the response.
     if (summary === null && claimedId !== null) {
-      summary = await finaliseCrashed(repo, { id: claimedId, startedAt: claimedAt }, req, ctx);
+      summary = await finaliseCrashed(repo, { id: claimedId, startedAt: claimedAt }, phase, ctx);
     }
     await logger.shutdown();
   }
-  if (summary === null) {
-    // Nothing was claimed: either refused, or the run died before its claim (e.g. the DB is down).
-    return refused
-      ? refusal(refused, null)
-      : { ok: false, status: 500, code: "run_failed", snapshotId: null };
-  }
+  return { summary, refused, claimedAt, failedWrites: logger.stats().failedWrites };
+}
+
+/** The outcome of a collected run whose notify step has run. */
+function outcomeOf(c: Collected & { summary: RunSummary }): RunOutcome {
+  // A refusal after the claim ('no-event') was finalised above and still answers as a refusal.
+  if (c.refused) return refusal(c.refused, c.summary.snapshotId);
+  return c.summary.error === CRASH_ERROR
+    ? { ok: false, status: 500, code: "run_failed", snapshotId: c.summary.snapshotId }
+    : { ok: true, summary: c.summary };
+}
+
+/** Nothing was claimed: either refused, or the run died before its claim (e.g. the DB is down). */
+const unclaimed = (refused: RunRefusedError | null): RunOutcome =>
+  refused
+    ? refusal(refused, null)
+    : { ok: false, status: 500, code: "run_failed", snapshotId: null };
+
+export async function executeSnapshot(
+  ctx: AppContext,
+  db: Db,
+  req: RunRequest,
+): Promise<RunOutcome> {
+  const gated = gate(ctx.now(), req);
+  if ("refused" in gated) return { ok: false, ...REFUSALS[gated.refused], snapshotId: null };
+  const { stale } = gated;
+  const c = await collect(ctx, db, req.phase, (deps) =>
+    runSnapshot(req.event.id, req.phase, deps, { force: req.force, stale }),
+  );
+  const { summary } = c;
+  if (summary === null) return unclaimed(c.refused);
   await notifyWithinCap(
     ctx,
-    claimedAt,
+    c.claimedAt,
     summary.snapshotId,
     notifyFinished(ctx, db, req, {
       summary,
-      startedAt: claimedAt,
-      logWriteFailures: logger.stats().failedWrites,
+      startedAt: c.claimedAt,
+      logWriteFailures: c.failedWrites,
     }),
   );
-  // A refusal after the claim ('no-event') was finalised above and still answers as a refusal.
-  if (refused) return refusal(refused, summary.snapshotId);
-  return summary.error === CRASH_ERROR
-    ? { ok: false, status: 500, code: "run_failed", snapshotId: summary.snapshotId }
-    : { ok: true, summary };
+  return outcomeOf({ ...c, summary });
+}
+
+export interface SampleRequest {
+  event: EventInfo;
+  /** The slot the sample is taken for (D69). */
+  slotAt: Date;
+  origin: string;
+}
+
+/** The tick's sample (D69): the collector's sample run, then at most one admin message per event. */
+export async function executeSample(
+  ctx: AppContext,
+  db: Db,
+  req: SampleRequest,
+): Promise<RunOutcome> {
+  const c = await collect(ctx, db, "sample", (deps) => runSample(req.event.id, req.slotAt, deps));
+  const { summary } = c;
+  if (summary === null) return unclaimed(c.refused);
+  await notifyWithinCap(
+    ctx,
+    c.claimedAt,
+    summary.snapshotId,
+    notifySample(ctx, db, req, {
+      summary,
+      startedAt: c.claimedAt,
+      logWriteFailures: c.failedWrites,
+    }),
+  );
+  return outcomeOf({ ...c, summary });
 }
 
 /** Plan §3.1: quota ⚠️ under 900, database ⚠️ over 700 MB. */

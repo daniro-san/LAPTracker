@@ -24,6 +24,9 @@ export const TEST_ENV = parseEnv({
   SNAPSHOT_AFTER: "14:00",
   SNAPSHOT_WINDOW_MIN: "45",
   QUOTA_CHECK_AT: "fri 20:00",
+  // Samples off (D69): tests that tick through an event see only its phases; lib/samples.test.ts turns
+  // them on.
+  SAMPLE_EVERY_MIN: "0",
   NOTIFY_WEBHOOK_ADMIN: ADMIN_WEBHOOK,
   NOTIFY_WEBHOOK_PUBLIC: PUBLIC_WEBHOOK,
 });

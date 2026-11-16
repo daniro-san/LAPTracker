@@ -11,6 +11,20 @@ export function requiredQuota(allianceCount: number): number {
   return 2 * (allianceCount + RESERVE_CALLS);
 }
 
+/** A read's attempts at most: the first call and 3 retries on 502/503/504 (lib/sources/v1.ts). */
+const ATTEMPTS_PER_READ = 4;
+
+/**
+ * Minimum `remaining` before a sample of `allianceCount` alliances (D69): the After's reserve
+ * (`requiredQuota`) plus the sample's own worst case, its quota call and every read retried to the
+ * limit (81 calls for 20). A sample that cannot leave the After its reserve is skipped, so the middle
+ * samples always give way before the After could be starved.
+ * INVARIANT budget.samples-yield-to-after
+ */
+export function sampleQuota(allianceCount: number): number {
+  return requiredQuota(allianceCount) + 1 + ATTEMPTS_PER_READ * allianceCount;
+}
+
 /**
  * Minimum `remaining` before a daily read of `alliances` rosters (D60): its own reserve plus a whole
  * event run's, so a daily read never takes the quota a scheduled event needs that UTC day.

@@ -12,7 +12,7 @@ import type { listDailyReads } from "@/lib/queries/daily-runs";
 
 import { GuideNote, UpstreamDetails } from "./ErrorDetail";
 import { StateChip } from "./parts";
-import { eventWord, phaseWord, readDayDate, seconds, stateWord } from "./words";
+import { eventWord, readDayDate, runWord, seconds, stateWord } from "./words";
 
 const t = copy.admin.runs;
 
@@ -121,7 +121,7 @@ export function SnapshotRunRow({ r, clock }: { r: SnapshotRun; clock: Clock }) {
     <Link href={`/admin/runs/${r.id}`} className={`tint-button ${ROW}`}>
       <Flags status={r.status} problems={r.problems} deadline={r.deadline} />
       <Title note={clock.stamp(r.eventAtUtc)}>
-        {eventWord(r, clock)} · {phaseWord(r.phase)}
+        {eventWord(r, clock)} · {runWord(r, clock)}
       </Title>
       <Facts
         r={r}

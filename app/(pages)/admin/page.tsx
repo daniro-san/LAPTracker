@@ -10,6 +10,7 @@ import { Rehearsal } from "@/app/_ui/admin/Rehearsal";
 import {
   eventWord,
   phaseWord,
+  runWord,
   roundView,
   seconds,
   stateWord,
@@ -167,7 +168,7 @@ function Status({
         )}
         <Fact
           label={st.last}
-          value={last ? `${eventWord(last, clock)} · ${phaseWord(last.phase)}` : st.noRun}
+          value={last ? `${eventWord(last, clock)} · ${runWord(last, clock)}` : st.noRun}
           chip={
             last && (
               <StateChip status={last.status}>

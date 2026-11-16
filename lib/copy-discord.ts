@@ -50,6 +50,8 @@ export const discordCopy = {
     stale: "○ stale {list}",
     logFailures: "run_logs write failures: {n}",
     runLink: "[Run {id} ↗](<{url}>)",
+    /** A sample that fell short posts once per event (D69): later ones show on /admin/runs only. */
+    sampleOnce: "Later samples of this event that fall short are not posted: [Runs ↗](<{url}>)",
     verdict: "{icon} · {at}",
     runsLink: "[Runs ↗](<{url}>)",
     skipped: "skipped · {at}: {reason}",

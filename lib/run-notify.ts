@@ -2,6 +2,7 @@
 // first phase and edited by the next, so each message shows the event so far.
 import type { AppContext } from "./app-context";
 import type { RunSummary } from "./collector";
+import { copy, fill } from "./copy";
 import type { Db } from "./db";
 import { eventImage } from "./event-image";
 import {
@@ -19,7 +20,7 @@ import { rehearsalVerdict } from "./rehearsal";
 import type { Phase } from "./repo";
 import { setDiscordMessageId, type EventInfo } from "./repo/events";
 import { loadVerdictInput } from "./repo/rehearsals";
-import { listPhaseReports, type PhaseReport } from "./repo/snapshots";
+import { listPhaseReports, otherShortSample, type PhaseReport } from "./repo/snapshots";
 
 interface Request {
   event: EventInfo;
@@ -148,6 +149,39 @@ async function notifyAdmin(ctx: AppContext, db: Db, s: Shared) {
       manual: event.manual,
     });
   }
+}
+
+/**
+ * A sample's Discord rule (D69): nothing public; on the admin channel, the first sample of the event that
+ * ends partial or failed posts one message of its own, and later ones post nothing (their runs are on
+ * /admin/runs), so a long outage is one message per event, never one per sample. The event's own message
+ * (D31) is not edited: it keeps its Before and After blocks.
+ */
+export async function notifySample(
+  ctx: AppContext,
+  db: Db,
+  req: { event: EventInfo; slotAt: Date; origin: string },
+  run: Run,
+): Promise<void> {
+  const { summary } = run;
+  if (summary.status === "complete") return;
+  // INVARIANT notify.sample-once-per-event
+  if (await otherShortSample(db, req.event.id, summary.snapshotId)) return;
+  const clock = discordClock(ctx.env.SERVER_TZ);
+  const block = adminSnapshotMessage(summary, {
+    clock,
+    phase: "sample",
+    runUrl: `${req.origin}/admin/runs/${summary.snapshotId}`,
+    scheduledAt: req.slotAt,
+    startedAt: run.startedAt,
+    finishedAt: ctx.now(),
+    logWriteFailures: run.logWriteFailures,
+  });
+  const once = fill(copy.discord.admin.sampleOnce, { url: `${req.origin}/admin/runs` });
+  await createNotifier(ctx.env, ctx.fetch).admin(
+    adminEventMessage(req.event.name, [`${block}\n${once}`]),
+    { test: req.event.isTest },
+  );
 }
 
 /**

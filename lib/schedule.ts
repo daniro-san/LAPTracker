@@ -189,6 +189,14 @@ export function dailyReadDue(
   return { day: isoDate(today), from, to: zonedToUtc(addDays(today, 1), "00:00", cfg.SERVER_TZ) };
 }
 
+/** The sample slot holding `at` (D69): `at` floored to the SAMPLE_EVERY_MIN grid, which starts on the hour
+ * because the cadence divides 60 (15: :00, :15, :30, :45). The server is a whole-hour offset from UTC, so
+ * the grid reads the same in server time. */
+export function slotOf(at: Date, everyMin: number): Date {
+  const ms = everyMin * 60_000;
+  return new Date(Math.floor(at.getTime() / ms) * ms);
+}
+
 /** The server date `now` falls on, as a daily read's `day` ("2026-11-12"). */
 export const serverDay = (now: Date, cfg: Pick<ScheduleConfig, "SERVER_TZ">) =>
   isoDate(wallClock(now, cfg.SERVER_TZ));

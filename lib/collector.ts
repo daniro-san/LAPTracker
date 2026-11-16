@@ -1,11 +1,11 @@
 // Domain: runSnapshot, freshness check, per-alliance fallback, resume logic (plan Phase 3).
 // Everything it touches comes in through Deps (plan §11.1); time comes from deps.now.
 import { ALLIANCES, SERVER } from "../config/alliances";
-import { requiredQuota } from "./budget";
+import { requiredQuota, sampleQuota } from "./budget";
 import { claim, RunRefusedError } from "./collector-claim";
 import { dataRow, errorRow, failedList } from "./collector-rows";
 import type { Logger } from "./logger";
-import type { AllianceRow, MemberRow, Phase, Repo, SnapshotStatus } from "./repo";
+import type { AllianceRow, MemberRow, Phase, Repo, SnapshotPhase, SnapshotStatus } from "./repo";
 import {
   type InternalSource,
   type Quota,
@@ -33,7 +33,7 @@ export interface Deps {
 
 export interface RunSummary {
   snapshotId: number;
-  phase: Phase;
+  phase: SnapshotPhase;
   status: Exclude<SnapshotStatus, "running">;
   callsUsed: number;
   quotaRemainingAfter: number | null;
@@ -54,6 +54,8 @@ class DeadlineError extends Error {
 interface Run {
   deps: Deps;
   snapshotId: number;
+  /** A sample (D69): no ranks board, no internal fallback, members stored as arrays. */
+  sample: boolean;
   startedAt: Date;
   calls: number;
   /** The lowest quota remaining seen, and run.calls then: the calls after it returned no quota. */
@@ -122,11 +124,11 @@ function noteQuota(run: Run, remaining: number | undefined) {
   run.lowest = { remaining, calls: run.calls };
 }
 
-async function allianceIds(deps: Deps, eventId: number, phase: Phase): Promise<number[]> {
+async function allianceIds(deps: Deps, eventId: number, phase: SnapshotPhase): Promise<number[]> {
   const event = await deps.repo.getEvent(eventId);
   if (!event) throw new RunRefusedError("no-event");
-  // INVARIANT event.after-uses-event-copy: BEFORE copies the config; AFTER never reads it.
-  if (phase === "after") return event.allianceIds;
+  // INVARIANT event.after-uses-event-copy: BEFORE copies the config; AFTER and a sample never read it.
+  if (phase !== "before") return event.allianceIds;
   const ids = ALLIANCES.map((a) => a.unionId);
   await deps.repo.setEventAllianceIds(eventId, ids);
   return ids;
@@ -140,8 +142,8 @@ async function checkQuota(run: Run, idCount: number): Promise<string | null> {
     await logV1Fetch(run, started, { endpoint: "quota", unionId: null }, { quota });
     run.quotaBefore = quota.remaining;
     noteQuota(run, quota.remaining);
-    // INVARIANT budget.reserve-for-after
-    const needed = requiredQuota(idCount);
+    // INVARIANT budget.reserve-for-after; for a sample, INVARIANT budget.samples-yield-to-after (D69)
+    const needed = run.sample ? sampleQuota(idCount) : requiredQuota(idCount);
     if (quota.remaining >= needed) return null;
     await run.deps.logger.error("quota", { remaining: quota.remaining, required: needed });
     return `quota: remaining ${quota.remaining} < required ${needed}`;
@@ -162,9 +164,11 @@ async function fetchBoard(deps: Deps): Promise<RanksBoard | null> {
   }
 }
 
-/** After a /v1 failure: one internal read (§3.5), else a row carrying both errors. */
+/** After a /v1 failure: one internal read (§3.5), else a row carrying both errors. D5's fallback covers
+ * Before and After only: a sample's failed alliance gets an error row (D69). */
 async function fallbackRow(run: Run, unionId: number, v1Error: unknown) {
   const { deps } = run;
+  if (run.sample) return { row: errorRow(unionId, `v1 ${describe(v1Error)}`), members: [] };
   try {
     const a = await deps.internal.fetchAlliance(unionId);
     await deps.logger.warn("internal.fallback", { union_id: unionId, v1_error: describe(v1Error) });
@@ -206,8 +210,14 @@ async function collectOne(run: Run, unionId: number): Promise<void> {
   }
   if (run.controller.signal.aborted) return;
   if (!row.isFresh && row.error === null) await deps.logger.warn("stale", { union_id: unionId });
-  await deps.repo.insertAllianceRow(run.snapshotId, row, members);
+  await store(run, row, members);
 }
+
+/** A Before or After row with its member rows; a sample's row with its members as arrays (D69). */
+const store = (run: Run, row: AllianceRow, members: MemberRow[]) =>
+  run.sample
+    ? run.deps.repo.insertSampleRow(run.snapshotId, row, members)
+    : run.deps.repo.insertAllianceRow(run.snapshotId, row, members);
 
 async function collectAll(run: Run, ids: number[]): Promise<void> {
   const queue = [...ids];
@@ -229,7 +239,7 @@ async function collectAll(run: Run, ids: number[]): Promise<void> {
     if (s.status === "rejected") throw s.reason;
 }
 
-async function finish(run: Run, ids: number[], phase: Phase, error: string | null) {
+async function finish(run: Run, ids: number[], phase: SnapshotPhase, error: string | null) {
   const rows = (await run.deps.repo.listAllianceRows(run.snapshotId)).filter((r) =>
     ids.includes(r.unionId),
   );
@@ -279,13 +289,26 @@ export async function runSnapshot(
   deps: Deps,
   options: { force?: boolean; stale?: boolean | undefined } = {},
 ): Promise<RunSummary> {
-  const snapshotId = await claim(deps, eventId, phase, {
-    force: options.force ?? false,
-    stale: options.stale,
-  });
-  const run: Run = {
+  const { force = false, stale } = options;
+  const snapshotId = await claim(deps, eventId, phase, { force, stale });
+  const run = newRun(deps, snapshotId, false);
+  return collectRun(run, await allianceIds(deps, eventId, phase), phase);
+}
+
+/** Collect the event's sample at `slotAt` (D69): a phase's /v1 path, the sample's budget rule, no ranks
+ * board, no internal fallback. Refused ("taken") when the slot already has a row. */
+export async function runSample(eventId: number, slotAt: Date, deps: Deps): Promise<RunSummary> {
+  const snapshotId = await deps.repo.startSample(eventId, slotAt, deps.now());
+  if (snapshotId === null) throw new RunRefusedError("taken");
+  const run = newRun(deps, snapshotId, true);
+  return collectRun(run, await allianceIds(deps, eventId, "sample"), "sample");
+}
+
+function newRun(deps: Deps, snapshotId: number, sample: boolean): Run {
+  return {
     deps,
     snapshotId,
+    sample,
     startedAt: deps.now(),
     calls: 0,
     lowest: { remaining: null, calls: 0 },
@@ -296,7 +319,11 @@ export async function runSnapshot(
     controller: new AbortController(),
     deadlineHit: false,
   };
-  const ids = await allianceIds(deps, eventId, phase);
+}
+
+/** The claimed run's reads: the quota check, the rosters, under the deadline; then the row's outcome. */
+async function collectRun(run: Run, ids: number[], phase: SnapshotPhase): Promise<RunSummary> {
+  const { deps, snapshotId } = run;
   await deps.logger.info("snapshot.start", { snapshot_id: snapshotId, alliances: ids.length });
   // The tick creates the event with an empty list; only BEFORE fills it. No list, no quota call.
   if (ids.length === 0) {
@@ -307,7 +334,8 @@ export async function runSnapshot(
   const work = (async () => {
     const quotaError = await checkQuota(run, ids.length);
     if (quotaError) return quotaError;
-    run.board = await fetchBoard(deps);
+    // The ranks board (internal API) cross-checks a Before and an After only, never a sample (D5, D69).
+    if (!run.sample) run.board = await fetchBoard(deps);
     // INVARIANT run.resume-missing-only: a re-run fetches only alliances without a row; the failed
     // rows were dropped at the claim (D62), so that is every alliance not read yet.
     const have = new Set((await deps.repo.listAllianceRows(snapshotId)).map((r) => r.unionId));

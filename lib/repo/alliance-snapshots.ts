@@ -38,6 +38,26 @@ export async function insertAllianceRow(
   });
 }
 
+/** A sample's row (D69): the members as D60's parallel arrays (a null power or kills stays null, D15), no
+ * member_snapshots rows and no raw_json, so a sample never stores a blocked roster key. An error row has
+ * no arrays. */
+export async function insertSampleRow(
+  db: Db,
+  snapshotId: number,
+  row: AllianceRow,
+  members: MemberRow[],
+): Promise<void> {
+  const arrays = row.error === null && {
+    memberUids: members.map((m) => m.uid),
+    memberNames: members.map((m) => m.name),
+    // Drizzle types the elements as numbers; a null stays null in the array.
+    memberPower: members.map((m) => m.power) as number[],
+    memberKills: members.map((m) => m.kills) as number[],
+  };
+  // `row.raw` names no column, so the insert drops it; raw_json stays null.
+  await db.insert(allianceSnapshots).values({ ...row, snapshotId, rawJson: null, ...arrays });
+}
+
 /** Used only by a forced re-run, which collects the whole snapshot again. */
 export async function clearAllianceRows(db: Db, snapshotId: number): Promise<void> {
   await db.transaction(async (tx) => {

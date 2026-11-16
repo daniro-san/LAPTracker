@@ -9,7 +9,7 @@ import { MINUS, percentFormat, sign, signedCompact, type DiscordClock } from "./
 import { sendOrEdit as send } from "./discord-send";
 import type { Env } from "./env";
 import type { Verdict } from "./rehearsal";
-import type { Phase } from "./repo";
+import type { SnapshotPhase } from "./repo";
 
 export { discordClock, type DiscordClock } from "./discord-format";
 
@@ -230,7 +230,8 @@ const publicText = (m: PublicMessage) =>
 
 export interface AdminContext {
   clock: DiscordClock;
-  phase: Phase;
+  /** A sample (D69) is named by its slot, which is its `scheduledAt`. */
+  phase: SnapshotPhase;
   runUrl: string;
   scheduledAt: Date;
   startedAt: Date;
@@ -248,7 +249,10 @@ export function adminSnapshotMessage(summary: RunSummary, ctx: AdminContext): st
     fill(manual ? t.manualRun : t.run, {
       icon: STATE_ICON[summary.status],
       name: escapeDiscord(ctx.roundName ?? ""),
-      phase: copy.admin.phase[ctx.phase],
+      phase:
+        ctx.phase === "sample"
+          ? fill(copy.admin.sample, { at: ctx.clock.time(ctx.scheduledAt) })
+          : copy.admin.phase[ctx.phase],
       state: STATE_WORD[summary.status],
       at: ctx.clock.stamp(ctx.finishedAt),
     }),

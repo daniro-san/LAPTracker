@@ -14,6 +14,7 @@ import {
   recentTicks,
   runningSnapshots,
 } from "./admin";
+import { phaseColumn, phaseSnapshot } from "./visibility";
 
 /** The scheduled event at this time, once the scheduler has made its row (a day before its Before),
  * with the status of each snapshot it has. */
@@ -26,9 +27,9 @@ export async function scheduledEvent(db: Db, eventAtUtc: Date) {
     );
   if (!row) return null;
   const phases = await db
-    .select({ phase: snapshots.phase, status: snapshots.status })
+    .select({ phase: phaseColumn, status: snapshots.status })
     .from(snapshots)
-    .where(eq(snapshots.eventId, row.id));
+    .where(and(eq(snapshots.eventId, row.id), phaseSnapshot));
   return { ...row, phases };
 }
 

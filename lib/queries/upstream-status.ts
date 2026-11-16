@@ -5,7 +5,7 @@ import { and, desc, eq, isNull, max } from "drizzle-orm";
 import { RUN_STALE_AFTER_MS } from "../compute";
 import type { Db } from "../db";
 import { allianceSnapshots, events, snapshots } from "../schema";
-import { publicEvent } from "./visibility";
+import { phaseSnapshot, publicEvent } from "./visibility";
 
 /** A failed attempt stops counting after this long; the page's own stale marks speak after that. */
 export const UPSTREAM_DOWN_WINDOW_MS = 24 * 3_600_000;
@@ -25,7 +25,7 @@ export async function getUpstreamStatus(db: Db, now: Date): Promise<UpstreamStat
     })
     .from(snapshots)
     .innerJoin(events, eq(events.id, snapshots.eventId))
-    .where(publicEvent)
+    .where(and(publicEvent, phaseSnapshot))
     .orderBy(desc(snapshots.startedAt))
     .limit(1);
   if (!latest || now.getTime() - latest.startedAt.getTime() > UPSTREAM_DOWN_WINDOW_MS) {
@@ -37,7 +37,14 @@ export async function getUpstreamStatus(db: Db, now: Date): Promise<UpstreamStat
     .from(allianceSnapshots)
     .innerJoin(snapshots, eq(snapshots.id, allianceSnapshots.snapshotId))
     .innerJoin(events, eq(events.id, snapshots.eventId))
-    .where(and(publicEvent, eq(allianceSnapshots.isFresh, true), isNull(allianceSnapshots.error)));
+    .where(
+      and(
+        publicEvent,
+        phaseSnapshot,
+        eq(allianceSnapshots.isFresh, true),
+        isNull(allianceSnapshots.error),
+      ),
+    );
   return { down: true, lastFreshAt: fresh?.at ?? null };
 }
 

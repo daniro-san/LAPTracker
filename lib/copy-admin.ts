@@ -26,6 +26,8 @@ export const adminCopy = {
   confirm: { label: "Confirm", yes: "Go ahead", no: "Cancel" },
   /** The two snapshots, named the same on every admin page and button (07c S1). */
   phase: { before: "Before snapshot", after: "After snapshot" },
+  /** A sample between them (D69), named by its slot's time. */
+  sample: "Sample {at}",
   /** The same snapshots on the 96 px wax seal, where two words do not fit; the button's name is `phase`. */
   seal: { before: "Before", after: "After" },
   /** Run states use the public pages' words (copy.status), plus the one only admin sees. */
