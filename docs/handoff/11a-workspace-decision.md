@@ -58,4 +58,4 @@ Plan changes needed: §12.1, §12.2 and §12.6 (Open issues 2 to 4). Do not edit
 - Decision numbers D68, D69 and D70 belong to open branches 08zzzx, 08zzzza and 08zzzzb; D72 is the end-of-day read.
 </adjustments>
 
-PR: (added by the orchestrator)
+https://github.com/daniro-san/LAPTracker/pull/310
