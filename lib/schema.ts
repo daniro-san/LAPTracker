@@ -259,7 +259,9 @@ export const dailyReads = pgTable(
 
 /**
  * One alliance's roster from a daily read (D60): the members as four parallel arrays (uid, name, power,
- * kills; a null power or kills stays null, D15), no raw_json, so no blocked roster key is ever stored.
+ * kills; a null power or kills stays null, D15) that the member history reads, and the trimmed response
+ * in raw_json (D72), which keeps every roster field (daily_tech among them) and which no read model,
+ * route, page, log or message selects. Error rows and rows from before D72 have none.
  */
 export const dailyRosters = pgTable(
   "daily_rosters",
@@ -284,6 +286,7 @@ export const dailyRosters = pgTable(
     memberNames: text("member_names").array().notNull(),
     memberPower: big("member_power").array().notNull(),
     memberKills: big("member_kills").array().notNull(),
+    rawJson: jsonb("raw_json"),
   },
   (t) => [
     unique("daily_rosters_day_union_unique").on(t.readDay, t.unionId),

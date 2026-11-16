@@ -3,6 +3,7 @@
 // The daily roster read (D60) comes last, when nothing else is due.
 import { DAILY_ROSTER_IDS } from "../config/alliances";
 import { secretsOf, type AppContext } from "./app-context";
+import { RUN_DEADLINE_MS } from "./collector";
 import { runDailyRead, type DailyReadSummary } from "./daily-read";
 import type { Db } from "./db";
 import {
@@ -14,7 +15,7 @@ import {
 import { dailyReadMessage } from "./notify-daily";
 import { createRehearsal, type RehearsalResult } from "./rehearsal";
 import { claimAlert, TICK_SILENCE_ALERT } from "./repo/app-errors";
-import { claimQuotaCheck, duePhases, findOrCreateEvent, hasScheduledEvent } from "./repo/events";
+import { claimQuotaCheck, duePhases, findOrCreateEvent } from "./repo/events";
 import { claimSlot, setSlotOutcome } from "./repo/rehearsals";
 import { latestTickAt } from "./repo/ticks";
 import { executeSnapshot, quotaReport, type RunOutcome } from "./run";
@@ -52,8 +53,7 @@ async function scheduledRehearsal(ctx: AppContext, db: Db, slotAt: Date): Promis
 }
 
 /** The day's roster read when its window holds `now` and no caller claimed the day yet; one admin
- * line when it falls short. Skipped on a scheduled event's day: its snapshots read the same rosters,
- * and the member history uses them (D60). The event's row exists by then (step 1, a day ahead). */
+ * line when it falls short. It runs on a scheduled event's day too (D72 supersedes D60's skip). */
 async function dailyRead(
   ctx: AppContext,
   db: Db,
@@ -61,8 +61,9 @@ async function dailyRead(
   origin: string,
 ): Promise<TickOutcome | null> {
   const due = dailyReadDue(now, ctx.env);
-  // INVARIANT daily-read.not-on-event-day
-  if (!due || (await hasScheduledEvent(db, due.from, due.to))) return null;
+  // INVARIANT daily-read.ends-before-midnight: a read that could outlive its deadline past the server
+  // day's end would store rosters read after the 00:00 reset under the day before (D72).
+  if (!due || now.getTime() + RUN_DEADLINE_MS > due.to.getTime()) return null;
   const deps = { v1: ctx.v1, now: ctx.now, secrets: secretsOf(ctx.env) };
   const summary = await runDailyRead(deps, db, due.day, DAILY_ROSTER_IDS);
   if (!summary) return null;

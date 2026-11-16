@@ -47,8 +47,9 @@ export const envSchema = z.object({
     )
     .default("fri 18:00"),
   REHEARSAL_KEEP: z.coerce.number().int().min(1).max(50).default(4),
-  // The daily roster read for member history (D60), server time, every day.
-  DAILY_ROSTER_AT: hhmm.default("06:00"),
+  // The daily roster read for member history (D60), server time, every day. 23:45: the 23:52 tick, the
+  // server day's last, reads the day's counters (daily_tech) before the 00:00 reset (D72).
+  DAILY_ROSTER_AT: hhmm.default("23:45"),
   NOTIFY_WEBHOOK_PUBLIC: optional(discordWebhook),
   NOTIFY_WEBHOOK_ADMIN: optional(discordWebhook),
   NOTIFY_ADMIN_MENTION: optional(

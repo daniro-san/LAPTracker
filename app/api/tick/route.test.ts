@@ -196,24 +196,25 @@ describe("POST /api/tick", () => {
     expect(notes.every((n) => n.content.startsWith("[rehearsal] "))).toBe(true);
   });
 
-  it("runs the daily roster read once on a day without a scheduled event, and not on the event's day", async () => {
-    // DAILY_ROSTER_AT 06:00 server = 08:00 UTC, window 45 min. Saturday 2026-11-07 is the event's day:
-    // that tick creates the event's row (a day ahead of its 10:00 Before) and reads no roster.
+  it("runs the daily roster read at the end of the event's day, and never for a day after its midnight", async () => {
+    // DAILY_ROSTER_AT 23:45 server = 01:45 UTC the next day (D72). Saturday 2026-11-07 is the event's
+    // day: its Before runs, then its 23:52 tick reads the rosters. Sunday's 23:52 tick is missed: the
+    // first tick after Sunday's midnight (Mon 00:07, still inside 23:45 + 45 min) reads nothing.
     const { ctx, clock, v1 } = testContext(db);
     holder.ctx = ctx;
     const answers: unknown[] = [];
-    for (const at of ["2026-11-06T08:05", "2026-11-06T08:20", "2026-11-07T08:05"]) {
+    for (const at of ["2026-11-07T12:05", "2026-11-08T01:52", "2026-11-09T02:07"]) {
       clock.now = new Date(`${at}:00Z`);
       const res = await tick();
-      answers.push(res.status === 204 ? 204 : ((await res.json()) as { action?: string }).action);
+      const body = res.status === 204 ? null : ((await res.json()) as Record<string, unknown>);
+      answers.push(body ? (body.action ?? body.phase) : 204);
     }
 
-    expect(answers).toEqual(["daily-read", 204, 204]);
+    expect(answers).toEqual(["before", "daily-read", 204]);
     expect(
       await db.select({ day: dailyReads.day, status: dailyReads.status }).from(dailyReads),
-    ).toEqual([{ day: "2026-11-06", status: "complete" }]);
+    ).toEqual([{ day: "2026-11-07", status: "complete" }]);
     expect(await db.select({ id: dailyRosters.id }).from(dailyRosters)).toHaveLength(IDS.length);
-    expect(await db.select({ id: events.id }).from(events)).toHaveLength(1);
-    expect(v1.calls).toHaveLength(IDS.length);
+    expect(v1.calls).toHaveLength(2 * IDS.length);
   });
 });

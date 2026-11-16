@@ -21,14 +21,15 @@ Three places show the results:
 
 All times are **server time**, the clock the game shows. The times below are the documented setup. `/admin` → **Schedule** shows the times in use.
 
-| When (server time)         | What happens by itself                                                                                              | What you do                                                               |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| Friday 18:00               | A practice run (rehearsal) starts. Its verdict arrives in the admin channel about 50 minutes later.                 | Read the verdict. If it says ✗ Fail, tell the maintainer before Saturday. |
-| Friday 20:00               | The weekly check posts to the admin channel: requests left, database size, and the next Before and After times.     | Check that the next times are right.                                      |
-| Friday 22:00               | The daily request count resets (midnight UTC).                                                                      | Nothing.                                                                  |
-| Saturday 10:00             | The **Before** snapshot starts at the first scheduler check after this time. The scheduler checks every 15 minutes. | Watch the admin channel. See the messages below.                          |
-| Saturday, during the event | Nothing.                                                                                                            | Note in the game when the event starts and ends (server time).            |
-| Saturday 14:00             | The **After** snapshot starts the same way.                                                                         | Watch the channel. Check that the event had ended before this time.       |
+| When (server time)         | What happens by itself                                                                                              | What you do                                                                       |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| Friday 18:00               | A practice run (rehearsal) starts. Its verdict arrives in the admin channel about 50 minutes later.                 | Read the verdict. If it says ✗ Fail, tell the maintainer before Saturday.         |
+| Friday 20:00               | The weekly check posts to the admin channel: requests left, database size, and the next Before and After times.     | Check that the next times are right.                                              |
+| Friday 22:00               | The daily request count resets (midnight UTC).                                                                      | Nothing.                                                                          |
+| Saturday 10:00             | The **Before** snapshot starts at the first scheduler check after this time. The scheduler checks every 15 minutes. | Watch the admin channel. See the messages below.                                  |
+| Saturday, during the event | Nothing.                                                                                                            | Note in the game when the event starts and ends (server time).                    |
+| Saturday 14:00             | The **After** snapshot starts the same way.                                                                         | Watch the channel. Check that the event had ended before this time.               |
+| Every day 23:52            | The daily roster read for member history (21 requests), Saturdays too, before the game's daily counters reset.      | Only if the admin channel says it fell short: **Retry** on `/admin` before 23:58. |
 
 A snapshot starts at the first check after its due time, so it can start up to 15 minutes late. Saturday's times fall on the quarter hour, so they should start within seconds of their due time.
 
@@ -71,7 +72,7 @@ The rest of the message:
 | `✓ Weekly API quota check`                                   | The Friday check. ⚠ next to the requests or the database size means it is low or large.                                                                                 |
 | `🔒 PIN entry is locked`                                     | Too many wrong PINs. Wait an hour. Scheduled snapshots still run.                                                                                                       |
 | `✗ App error on …`                                           | A page or action broke; after `—`, the first line of the error's own message. See `/admin/errors` for the rest. At most one such message an hour while errors continue. |
-| ✗ / ⚠ **Daily roster read 2026-11-12: failed / partly done** | The 06:00 roster read for member history fell short. Not sent when it is done.                                                                                          |
+| ✗ / ⚠ **Daily roster read 2026-11-12: failed / partly done** | The end-of-day roster read for member history (23:52) fell short. Not sent when it is done.                                                                             |
 | `✗ v1 TimeoutError (12): [NSE], …`                           | The alliances that were not read, one line per reason. `not fetched: deadline` means the read stopped before reaching them.                                             |
 | `↳ …`                                                        | Under each reason: what it means and what to do.                                                                                                                        |
 | `[Retry on /admin ↗]` / `[Daily reads ↗]`                    | Open `/admin` and press **Retry**. A partly done day also links the runs list, to see what failed.                                                                      |
@@ -124,7 +125,7 @@ Things to know:
 - **If that snapshot is already done**, the page asks _"This snapshot is already done. Take it again?"_ Say yes only if you mean to replace that phase's numbers.
 - **Manual round.** For a test on a weekday: **Start a manual round** on `/admin`. Give it a name, choose who can see it, and whether it posts to the public channel. Then press its Before and After buttons. A manual round has no schedule and does not affect Saturday's comparisons unless you choose "history".
 - **Rename.** **Rename** next to the current event on `/admin` changes its name on the public pages. You can rename the Saturday event from a day before its Before snapshot. Discord messages already sent keep the old name.
-- **Daily roster read fell short.** When today's 06:00 read failed or closed partly done (for example the game's data service timed out for some alliances), `/admin` shows it under **Run something now** with a **Retry** button. It reads every roster again and costs about 21 requests. A roster already read today is replaced only by a new read that worked; if one could not be read again, it stays, the day stays partly done with that alliance marked stale, and **Retry** stays. It only appears while today's read is failed or partly done, or when it started and never finished; a past day cannot be read again.
+- **Daily roster read fell short.** When today's read (23:52 server time) failed or closed partly done (for example the game's data service timed out for some alliances), `/admin` shows it under **Run something now** with a **Retry** button. It reads every roster again and costs about 21 requests. A roster already read today is replaced only by a new read that worked; if one could not be read again, it stays, the day stays partly done with that alliance marked stale, and **Retry** stays. It only appears while today's read is failed or partly done, or when it started and never finished; a past day cannot be read again. Because the read runs at 23:52, press **Retry** before 23:58: at 00:00 server time the day ends, the card goes away, and that day stays without a roster.
 - **Practice run.** **Rehearse** runs a practice event with the full checks. It costs about 45 requests and takes about 50 minutes.
 - **GitHub, if `/admin` is not reachable.** On the repository, open Actions → **tick** → **Run workflow**, and pick `before` or `after`.
 
@@ -153,6 +154,7 @@ Read `/admin/runs` first, then the run's page, then `/admin/errors`. If the reas
 - **The weekly check** on Friday at 20:00 warns when fewer than 900 requests are left. `/admin` shows the same warning under Status.
 - **Do not press repeatedly.** Each press spends requests. Wait for the message first.
 - **The Friday practice run** (about 45 requests, 18:00 server time) is spent before the midnight UTC reset, so it does not reduce Saturday's budget. The Saturday pair (42) fits easily in the day.
+- **The daily roster read** (21 requests at 23:52 server time) falls after the midnight UTC reset, so it counts on the next UTC day: Friday's read is spent from Saturday's count. It starts only if at least 100 requests are left, so the Saturday snapshots keep theirs.
 - **If the count is lower than the admin channel expects**, someone else may be using the same key. Tell the maintainer.
 
 ## Words used on the site

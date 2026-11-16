@@ -1,9 +1,14 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
+import { eq } from "drizzle-orm";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { ago, fakeV1, IDS, minutes, roster, T0 } from "./collector.test-helpers";
 import { runDailyRead } from "./daily-read";
 import type { Db } from "./db";
 import { openTestDb, truncateAll } from "./db.test-helpers";
+import { BLOCKED_ROSTER_KEYS, findBlockedKeys, memberHistoryCard } from "./queries";
 import { dailyReads, dailyRosters, playerFrames } from "./schema";
 import { UpstreamError } from "./sources/types";
 
@@ -72,5 +77,26 @@ describe("runDailyRead (D60)", () => {
     expect(await frames()).toEqual([5010, 5010, 5010]);
     await read("2026-11-12", ago(T0, minutes(60)), 5026);
     expect(await frames()).toEqual([5010, 5010, 5010]);
+  });
+  it("keeps every roster field in raw_json, and the member history card serves none of the blocked keys (D72)", async () => {
+    const [id = 0] = IDS;
+    const raw: unknown = JSON.parse(
+      readFileSync(
+        join(import.meta.dirname, "../fixtures/v1-20261116T105019Z/alliance-67111155.json"),
+        "utf8",
+      ),
+    );
+    const at = ago(T0, minutes(1));
+    await runDailyRead(deps(fakeV1(() => roster(id, at, { raw }))), db, "2026-11-10", [id]);
+
+    const [row] = await db
+      .select({ rawJson: dailyRosters.rawJson })
+      .from(dailyRosters)
+      .where(eq(dailyRosters.unionId, id));
+    const stored = new Set(findBlockedKeys(row?.rawJson).map((p) => p.split(".").at(-1)));
+    for (const key of BLOCKED_ROSTER_KEYS) expect(stored).toContain(key);
+    const card = await memberHistoryCard(db, id, at);
+    expect(card?.roster).toHaveLength(3);
+    expect(findBlockedKeys(card)).toEqual([]);
   });
 });
