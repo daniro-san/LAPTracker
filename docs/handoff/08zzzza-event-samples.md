@@ -172,4 +172,14 @@ For the KvK of Saturday 2026-11-21 (D69 has an amended bullet).
 4. Release rule: release migration 0017 only at a day and time when no Before, After or manual round can be claimed. The old code's `onConflictDoNothing({ target: [eventId, phase] })` cannot match the new partial index, so between the build's migrate step and the new deployment taking traffic, or after a rollback, a claim would fail.
 5. Release rule: never roll back production below migration 0017.
 
+## Review fixes, round 3 (2026-11-16)
+
+1. The `run.crashed` TypeError in `lib/samples-hardening.test.ts` was a test artefact. Cause: under load the first hardening test passed its 10 s timeout while its ticks kept running on the shared database. The next test's `beforeEach` (`truncateAll`) then removed the event, so `dueSample` returned null, and the test's cast `event as NonNullable<...>` passed null to `executeSample`. `runSample(req.event.id, ...)` threw `TypeError: Cannot read properties of null (reading 'id')`, which `collect` logs as `run.crashed` and answers as `{ ok: false, status: 500 }` with no claimed row. Reproduced by giving the first test a 5 ms timeout. Production cannot reach it: the tick calls `executeSample` only with the event `dueSample` returned in the same tick. The test now throws at the missing event, and has a 30 s timeout.
+2. The heavy samples tests were slow because the Before and After ticks drew the event picture (D58, `RENDER_LIMIT_MS` 3 s) with the real renderer, and a render over 3 s sent the message without the picture, which can make two runs of one event differ. `lib/samples.test.ts` and `lib/samples-hardening.test.ts` now stub `eventImage`. The 26-tick KvK test keeps its 15-minute shape. Measured while another suite runs: 26 ticks 0.8 s, every other test under 0.4 s, down from 10 to 64 s. Timeouts: 30 s per test, 60 s for the 26-tick test.
+3. `runWord` has a test (`app/_ui/admin/words.test.ts`): "Sample 10:15", "Before snapshot", "After snapshot".
+4. `SAMPLE_EVERY_MIN` has a test in `lib/env.test.ts`: default 15, 15 and 0 parse, 7 and 61 are rejected.
+5. `eventSamples(db, eventId, { rosters: false })` returns the alliance totals with empty rosters and reads neither the member arrays nor the member rows; the default is unchanged.
+6. Docs: the stale 35 s / 100 s bullet (Open issue 2) and D69's Collector line now state 12 s per call and a 25 s deadline; `docs/ARCHITECTURE.md` lists `lib/collector-sample.ts`, `lib/collector-log.ts`, `lib/queries/samples.ts` and `MAX_RETRIES`; the unused re-export of the two sample constants is removed from `lib/collector.ts`.
+7. `pnpm check` on this branch: one failure, `app/(pages)/admin/gate.test.ts` "/admin/runs/<unknown id> still calls notFound" (10 s timeout, 12 to 14 s inside the full suite, 1 s alone). It fails the same way on head 764cd36 and does not touch samples. Follow-up, not fixed here.
+
 https://github.com/daniro-san/LAPTracker/pull/292
