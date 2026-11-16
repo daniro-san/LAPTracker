@@ -54,6 +54,11 @@ export default async function BalancePage({ searchParams }: { searchParams: Sear
   const total = alliances.reduce((a, r) => a + r.might, 0);
   const newest = new Date(Math.max(...alliances.map((a) => a.at.getTime())));
   const b = copy.balance;
+  // A date that ends in a full stop (German "30. Okt.") must not double the sentence's.
+  const basis = fill(b.basis, { n: alliances.length, date: clock.day(newest) }).replace(
+    /\.\.$/,
+    ".",
+  );
   return (
     <>
       <SiteHeader events={events} currentId={null} homeId={homeId} clock={clock} copy={copy} />
@@ -86,7 +91,7 @@ export default async function BalancePage({ searchParams }: { searchParams: Sear
               })}
             </p>
             <p className="text-body-sm text-ink/70">
-              {b.includes} {fill(b.basis, { n: alliances.length, date: clock.day(newest) })}
+              {b.includes} {basis}
             </p>
             <StackedBar
               alliances={alliances}

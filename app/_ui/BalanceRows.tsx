@@ -68,6 +68,9 @@ function BlocStrip({
   if (blocs.a.length + blocs.b.length === 0) return null;
   return (
     <p className="sticky top-[calc(var(--site-header)-var(--lace))] z-20 flex flex-wrap gap-x-4 border-b border-rule bg-paper pb-1 pt-[calc(0.25rem+var(--lace))] text-sm font-medium tabular-nums">
+      <span className="text-xs font-medium uppercase tracking-[0.04em] text-ink/70">
+        {copy.balance.hypothetical}
+      </span>
       {(["a", "b"] as const).map((s) => (
         <span key={s} className="flex items-center gap-1.5">
           <span aria-hidden="true" className={`inline-block size-3 ${BLOC_FILL[s]}`} />
@@ -113,9 +116,9 @@ export function BalanceRows({
               key={a.unionId}
               id={rowAnchor(a.unionId)}
               data-bloc={side ?? undefined}
-              className="scroll-mt-32 px-1 py-1.5 data-[bloc=a]:bg-plum/10 data-[bloc=b]:bg-yarn/10"
+              className="scroll-mt-32 px-1 py-1.5 data-[bloc=a]:bg-plum/10 data-[bloc=b]:bg-yarn/10 sm:flex sm:items-center sm:gap-6"
             >
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 sm:flex-1">
                 <AllianceBadge badgeId={a.badgeId} />
                 <span className="min-w-0 flex-1 break-words">
                   {allianceLabel(a.tag ?? String(a.unionId), a.name)}
@@ -124,7 +127,7 @@ export function BalanceRows({
                   {sharePreciseText(a.might / total, locale)}
                 </span>
               </div>
-              <div className="mt-1 flex items-center justify-between gap-2">
+              <div className="mt-1 flex items-center justify-between gap-2 sm:mt-0 sm:w-56">
                 <p className={`min-w-0 text-sm tabular-nums ${MUTED}`}>
                   <Num n={a.might} />
                   {older && <> · {fill(copy.balance.asOf, { date: clock.day(a.at) })}</>}
