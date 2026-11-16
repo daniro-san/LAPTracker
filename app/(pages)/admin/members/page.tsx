@@ -1,5 +1,5 @@
 // /admin/members: the officer view of might that has not moved (D70, issue 273). One alliance at a time
-// (the site's own by default, `?alliance=<union_id>` for another tracked one), two lists from its usable
+// (the site's own by default; another tracked id in `?alliance=` lists nobody, D76), two lists from its usable
 // rosters: might unchanged for N days, and lost might. Names and figures from rosters only; neutral words.
 import type { ReactNode } from "react";
 
@@ -166,6 +166,20 @@ export default async function MembersPage({
   const sp = await searchParams;
   const known = ALLIANCES.find((a) => String(a.unionId) === sp.alliance);
   const unionId = known?.unionId ?? OWN_ALLIANCE_ID;
+  if (unionId !== OWN_ALLIANCE_ID) {
+    // Members are listed for the site's own alliance only (D76): no database read for another one.
+    return (
+      <AdminShell title={t.title}>
+        <AdminSection
+          id="scope"
+          title={allianceLabel(known?.tag ?? null, known?.name ?? null)}
+          help={t.ownOnly}
+        >
+          <Picker unionId={unionId} />
+        </AdminSection>
+      </AdminShell>
+    );
+  }
   const [view, clock] = await Promise.all([
     withPageDb((db) => mightUnchanged(db, unionId)),
     requestServerClock(),

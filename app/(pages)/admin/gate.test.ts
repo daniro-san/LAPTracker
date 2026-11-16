@@ -3,9 +3,11 @@ import { notFound } from "next/navigation";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AdminShell } from "@/app/_ui/admin/AdminShell";
+import { ALLIANCES, OWN_ALLIANCE_ID } from "@/config/alliances";
 import { adminToken } from "@/lib/admin-session";
 import type { AppContext } from "@/lib/app-context";
 import { TEST_ENV, testContext } from "@/lib/app-context.test-helpers";
+import { copy } from "@/lib/copy";
 import type { Db } from "@/lib/db";
 import { openTestDb } from "@/lib/db.test-helpers";
 import type { Env } from "@/lib/env";
@@ -88,6 +90,18 @@ describe("/admin pages, unlocked", () => {
   let db: Db;
   beforeAll(async () => {
     db = await openTestDb();
+  });
+
+  it("/admin/members lists members for the own alliance only: another tracked id reads no database", async () => {
+    holder.ctx = { ...testContext(db).ctx, openDb };
+    holder.cookie = adminToken(TEST_ENV, new Date());
+    const other =
+      ALLIANCES.find((a) => a.unionId !== OWN_ALLIANCE_ID) ?? expect.fail("no other alliance");
+    const el = await MembersPage({
+      searchParams: Promise.resolve({ alliance: String(other.unionId) }),
+    });
+    expect(openDb).not.toHaveBeenCalled();
+    expect(JSON.stringify(el)).toContain(copy.admin.members.ownOnly);
   });
 
   it("/admin/runs/<unknown id> still calls notFound", async () => {
