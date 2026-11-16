@@ -34,6 +34,8 @@ Words already used in `lib/i18n/sv.ts`. Reuse them so the pages stay consistent;
 | War turnout               | Krigsdeltagande           | `ledger.fought` — the event section title                 |
 | gainers                   | vinnare                   | `topShareHelp`, `fewGainers` — members whose Kills rose   |
 | peak                      | topp                      | `ledger.liveLast` — the top interval in the window        |
+| cap                       | tak                       | `merge.cap`, `merge.over`, `merge.rule` — the member cap  |
+| merge                     | sammanslagning            | `merge.link`, `merge.title` — two alliances as one        |
 | Kill share                | Kills-andel               | `ledger.carried` — an alliance's share of kills gained    |
 | Might share               | Might-andel               | `ledger.carried` — an alliance's share of might at Start  |
 | pts (percentage points)   | %-enh.                    | `ledger.carriedPoints` — after a gap: `+6.1 %-enh.`       |

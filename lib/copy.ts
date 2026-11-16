@@ -10,6 +10,7 @@ import { adminCopy } from "./copy-admin";
 import { brandCopy } from "./copy-brand";
 import { discordCopy } from "./copy-discord";
 import { liveCopy } from "./copy-live";
+import { mergeCopy } from "./copy-merge";
 import { warCopy } from "./copy-war";
 
 /** The public pages' strings in English: the source every other language's dictionary follows. */
@@ -110,6 +111,8 @@ export const en = {
     same: "Pick two different events.",
     onlyOne: "There is only one event to compare so far.",
   },
+  /** The merge simulator (D84, #282): two alliances as one against the member cap; see lib/copy-merge.ts. */
+  merge: mergeCopy,
   /** Member history (D60, #197): an alliance's rosters over time, each compared with the one before. */
   history: {
     title: "Member history",
