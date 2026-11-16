@@ -32,6 +32,8 @@ Words already used in `lib/i18n/ja.ts`. Reuse them so the pages stay consistent;
 | Live                      | ライブ                    | `ledger.live` — the live event section and its strip                                   |
 | War turnout               | 参戦状況                  | `ledger.fought` — the event's section: how many took part                              |
 | Reading                   | 読み取り                  | `ledger.liveFirst`, `liveOverdue`, `liveDone` — one read of the game's standings, live |
+| Merge                     | 合併                      | `merge.title`, `merge.link` — two alliances as one                                     |
+| Cap (member cap)          | 上限                      | `merge.cap`, `merge.over`, `merge.answer` — the member limit of an alliance            |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

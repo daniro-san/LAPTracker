@@ -33,6 +33,9 @@ Words already used in `lib/i18n/it.ts`. Reuse them so the pages stay consistent;
 | reading                   | lettura                      | `ledger.liveFirst`, `ledger.liveOverdue`, `ledger.liveDone`, `ledger.liveNoReadings` — one poll of the game's standings |
 | Kills gained              | Kills guadagnati             | `ledger.liveKillsGained` — a column header                                                                              |
 | Gainers                   | guadagni                     | `ledger.fewGainers`, `ledger.topShareHelp` — members whose Kills rose; `ledger.withKills` says "Kills guadagnate"       |
+| Merge                     | Fusione                      | `merge.title`, `merge.lead`, `merge.link` — two alliances as one                                                        |
+| Cap                       | limite                       | `merge.cap`, `merge.over`, `merge.answer` — the member cap; "entro il limite" is within the cap                         |
+| Together                  | Insieme                      | `merge.together`, `merge.answer` — the two alliances combined                                                           |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

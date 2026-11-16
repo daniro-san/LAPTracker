@@ -30,6 +30,8 @@ Words already used in `lib/i18n/zh-CN.ts`. Reuse them so the pages stay consiste
 | grandma                   | 奶奶                 | the voice in empty states and errors                        |
 | Live                      | 实时                 | `ledger.live` — the live event strip and section            |
 | reading                   | 读取                 | `ledger.liveReadings` — one pull of the game's standings    |
+| Merge                     | 合并                 | `merge.*` — two alliances as one (merge simulator)          |
+| Cap (member cap)          | 上限                 | `merge.cap`, `merge.over` — the member limit of an alliance |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

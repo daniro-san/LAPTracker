@@ -27,6 +27,7 @@ Words already used in `lib/i18n/pt-BR.ts`. Reuse them so the pages stay consiste
 | read (one roster read)    | leitura                            | `history.lead`, `history.daily`, `history.first` — a read of the member list        |
 | Live                      | Ao vivo                            | `ledger.live` — the live event's label                                              |
 | gainer (Kills rose)       | ganhador                           | `ledger.topShareHelp`, `ledger.fewGainers` — a member whose Kills rose in the event |
+| cap (member cap)          | limite                             | `merge.cap`, `merge.over`, `merge.answer` — an alliance's member limit              |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

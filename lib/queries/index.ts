@@ -60,3 +60,10 @@ export {
   type PlayerComparison,
   type PlayerEventFigures,
 } from "./compare-player";
+export {
+  mergePage,
+  type MergeAlliance,
+  type MergePage,
+  type MergeSide,
+  type MergeTurnout,
+} from "./merge";

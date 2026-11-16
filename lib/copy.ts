@@ -7,8 +7,10 @@
 // `{name}` is a placeholder filled by `fill()`; labels on public pages are at most two words. Symbols
 // (signs, arrows, `#`) stay in the components so the blank dictionary keeps them visible.
 import { adminCopy } from "./copy-admin";
+import { blankDictionary } from "./copy-blank";
 import { brandCopy } from "./copy-brand";
 import { discordCopy } from "./copy-discord";
+import { mergeCopy } from "./copy-merge";
 
 /** The public pages' strings in English: the source every other language's dictionary follows. */
 export const en = {
@@ -139,6 +141,8 @@ export const en = {
     same: "Pick two different events.",
     onlyOne: "There is only one event to compare so far.",
   },
+  /** The merge simulator (D84, #282): two alliances as one against the member cap; see lib/copy-merge.ts. */
+  merge: mergeCopy,
   /** Member history (D60, #197): an alliance's rosters over time, each compared with the one before. */
   history: {
     title: "Member history",
@@ -347,36 +351,7 @@ export function fill(template: string, vars: Record<string, string | number>): s
   );
 }
 
-/** Pseudo-localisation (plan Phase 5f): every character but spaces and `{placeholders}` becomes `░`. */
-export function blankCopy<T>(value: T): T {
-  if (typeof value === "string") {
-    return value
-      .split(/(\{\w+\})/)
-      .map((part) => (/^\{\w+\}$/.test(part) ? part : part.replace(/\S/g, "░")))
-      .join("") as T;
-  }
-  if (Array.isArray(value)) return value.map(blankCopy) as T;
-  if (value && typeof value === "object") {
-    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, blankCopy(v)])) as T;
-  }
-  return value;
-}
-
-/**
- * The game's own UI words (DESIGN.md "Numbers first"): members read Might, Kills, Members and Level in the
- * game every day, so the blank dictionary keeps them. A language uses the game's word for them where its
- * glossary sources one, else the English (D52).
- */
-const GAME_TERMS = ["might", "kills", "members", "level"] as const;
-
-/** Every value blanked except the game's own terms. */
-export function blankDictionary<T extends { ledger: Record<(typeof GAME_TERMS)[number], string> }>(
-  dictionary: T,
-): T {
-  const blank = blankCopy(dictionary);
-  const kept = Object.fromEntries(GAME_TERMS.map((k) => [k, dictionary.ledger[k]]));
-  return { ...blank, ledger: { ...blank.ledger, ...kept } };
-}
+export { blankCopy, blankDictionary } from "./copy-blank";
 
 // The blank dictionary is for the ten-second test only: a dev-time switch, inert in production builds
 // (NODE_ENV is "production" there) and never set on Vercel. NEXT_PUBLIC_ so client components see it.

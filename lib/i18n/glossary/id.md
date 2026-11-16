@@ -31,6 +31,8 @@ Words already used in `lib/i18n/id.ts`. Reuse them so the pages stay consistent;
 | Kills gained              | Kills didapat                 | `ledger.liveKillsGained`, `ledger.livePulseHelp` — after a count     |
 | Support player            | pemain support                | `ledger.foughtHelp` — a player who gains no Kills                    |
 | Gainer (Kills rose)       | Members dengan kenaikan Kills | `ledger.fewGainers`, `ledger.topShareHelp` — member whose Kills rose |
+| Merge                     | merge                         | `merge.title`, `merge.link` — the merge simulator (kept English)     |
+| Cap                       | batas                         | `merge.cap`, `merge.over`, `merge.rule` — the member cap             |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

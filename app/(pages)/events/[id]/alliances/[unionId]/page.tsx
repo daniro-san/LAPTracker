@@ -12,6 +12,7 @@ import {
   NameTimeline,
   TITLE_ID,
 } from "@/app/_ui/AcrossEvents";
+import { AllianceLinks } from "@/app/_ui/AllianceLinks";
 import { Breadcrumbs } from "@/app/_ui/Breadcrumbs";
 import { DetailTable, figureRows, type RankPair } from "@/app/_ui/DetailLines";
 import { fellWithLeavers } from "@/app/_ui/event-rows";
@@ -31,7 +32,6 @@ import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { LABEL, type StatMetric } from "@/app/_ui/StatTable";
 import { CaptureWindow, FreshDots, Legend, SideHead, type FreshState } from "@/app/_ui/Status";
-import { TextLink } from "@/lib/brand/components/TextLink";
 import { rankDelta } from "@/lib/compute";
 import type { Dictionary } from "@/lib/copy";
 import { withPageDb } from "@/lib/page";
@@ -292,12 +292,7 @@ export default async function AlliancePage({ params }: { params: Params }) {
                 {copy.ledger.acrossEvents} <span aria-hidden="true">&nbsp;↓</span>
               </a>
             )}
-            <TextLink
-              href={`/alliances/${unionId}/history`}
-              className="inline-flex min-h-11 items-center px-2 text-sm font-medium"
-            >
-              {copy.history.title} <span aria-hidden="true">&nbsp;→</span>
-            </TextLink>
+            <AllianceLinks unionId={unionId} copy={copy} />
           </div>
         </div>
         <CaptureWindow

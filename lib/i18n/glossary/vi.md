@@ -30,6 +30,8 @@ Words already used in `lib/i18n/vi.ts`. Reuse them so the pages stay consistent;
 | reading                   | lần đọc                      | `ledger.liveReadings`, `ledger.liveNoReading` — one poll of the game's standings |
 | kills gained              | tiêu diệt tăng               | `ledger.withKills`, `ledger.topShare` — the event page's kills lists             |
 | peak                      | đỉnh                         | `ledger.liveLast` — the highest value in the span                                |
+| Merge                     | Sáp nhập                     | `merge.*` — the merge simulator and its link                                     |
+| cap                       | giới hạn                     | `merge.cap`, `merge.over`, `merge.capAssumed` — the member cap                   |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

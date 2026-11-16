@@ -33,6 +33,8 @@ Words already used in `lib/i18n/pl.ts`. Reuse them so the pages stay consistent;
 | War turnout               | Frekwencja wojny              | `ledger.fought` — who took part in the war event                       |
 | gainer                    | zdobywca                      | `ledger.topShareHelp`, `ledger.fewGainers` — a member whose Kills rose |
 | peak                      | szczyt                        | `ledger.liveLast` — the highest interval in the last span              |
+| Merge                     | Scalenie                      | `merge.*` — two alliances as one                                       |
+| cap                       | limit                         | `merge.cap`, `merge.over`, `merge.rule` — the member cap               |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

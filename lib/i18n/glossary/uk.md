@@ -33,6 +33,8 @@ Words already used in `lib/i18n/uk.ts`. Reuse them so the pages stay consistent;
 | Support players                     | гравці підтримки            | `ledger.foughtHelp` — players who gain no kills                                                                    |
 | Top 5                               | топ-5                       | `ledger.topShare` — the five biggest kills gains                                                                   |
 | gainer                              | учасник з приростом         | `ledger.topShareHelp`, `ledger.fewGainers` — members whose Kills rose                                              |
+| Merge                               | злиття                      | `merge.*` — the alliance merge simulator (`merge.title`, `merge.link`)                                             |
+| cap (member cap)                    | ліміт                       | `merge.cap`, `merge.over`, `merge.rule` — "ліміт {cap}"; the Members limit of an alliance                          |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.
