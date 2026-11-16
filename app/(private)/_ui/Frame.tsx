@@ -71,7 +71,6 @@ function Tabs({ t, slug, current }: { t: WorkspaceDictionary; slug: string; curr
                 <a
                   href={`/w/${slug}${path}`}
                   aria-current={id === current ? "page" : undefined}
-                  data-tour={`${id}-tab`}
                   className={`${box} border-t-[3px] ${
                     id === current ? "border-plum font-semibold text-plum" : "border-transparent"
                   }`}
@@ -114,7 +113,7 @@ export async function Frame({
             <p className="font-display text-display-sm">{t["app.name"]}</p>
             {subtitle && <p className="text-body-sm opacity-90">{subtitle}</p>}
           </div>
-          {tabs && <FirstUse t={t} seen={seen} howTo={`/w/${tabs.slug}/how-to`} />}
+          {tabs && <FirstUse t={t} seen={seen} />}
           <LanguageSwitch current={language} label={t["lang.aria"]} />
           {account && (
             <div className="flex basis-full flex-wrap items-center justify-between gap-x-2 border-t border-wax-paper/25 pt-1 text-body-sm">

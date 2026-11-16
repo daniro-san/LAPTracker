@@ -103,30 +103,13 @@ export const pt: WorkspaceDictionary = {
   "intro.back": "Voltar",
   "intro.done": "Começar",
   "intro.1.title": "Boas-vindas à Mesa dos oficiais",
-  "intro.1.body":
-    "Uma página privada para os R4 e R5 da aliança. Ela já preenche o que as planilhas pediam: quem está na aliança, o might, as doações e a atividade de cada um. Só a liderança consegue abrir.",
   "intro.2.title": "De onde vêm os números",
   "intro.2.body": "Uma etiqueta pequena ao lado de um número diz de onde ele vem:",
-  "intro.2.more":
-    "Por enquanto tudo vem do jogo, lido toda noite pouco antes de o servidor virar o dia. Fotos e respostas dos oficiais vêm depois.",
-  "intro.3.title": "O que fazer toda semana",
-  "intro.3.body":
-    "Abra Membros. Comece pela lista de agradecimentos. Depois olhe quem está com Ver como está: o que vimos aparece embaixo do nome.",
-  "intro.4.title": "Seu idioma",
-  "intro.4.body":
-    "Toque em EN, PT ou FR no alto. A página muda na hora, e este celular guarda a escolha.",
-  "intro.4.more": "Toque em ? no alto para ver estes cartões de novo.",
   "src.game": "do jogo",
   "src.photo": "de uma foto",
   "src.officer": "digitado por um oficial",
   "howto.title": "Como abrir a Mesa dos oficiais",
   "howto.lead": "Para os R4 e R5 da aliança. Fixe esta página no seu Discord.",
-  "howto.signin.body":
-    "Toque em “Entrar com o Discord”. O Discord pergunta se o LAPTracker pode ver seu nome e seus cargos no servidor da aliança: toque em Autorizar. Se a página disser Sem acesso, peça a um R5 o cargo da liderança.",
-  "howto.iphone.body":
-    "No Safari, toque em Compartilhar (o quadrado com uma seta), depois em Adicionar à Tela de Início e em Adicionar.",
-  "howto.android.body":
-    "No Chrome, toque em ⋮ no canto de cima, depois em Adicionar à tela inicial (ou Instalar app) e em Adicionar.",
   "howto.after":
     "Daí em diante, toque no ícone como em qualquer app. Você fica conectado por um dia; depois disso, o Discord confere seu cargo de novo.",
   "howto.open": "Abrir a Mesa dos oficiais",
@@ -153,8 +136,6 @@ export const pt: WorkspaceDictionary = {
     "atividade {activity} e doações {donated} sem mudança há {n} dias ({r} leituras de fim de dia seguidas)",
   "nodata.donations.one": "doações em {n} dia",
   "nodata.donations.other": "doações em {n} dias",
-  "intro.3.more":
-    "Você decide o que fazer; nada é enviado nem muda sozinho. — quer dizer sem dados, e fica fora de toda conta.",
   "howto.address": "1. Abra este endereço",
   "howto.where": "Abra no Safari ou no Chrome, não dentro do Discord.",
   "howto.copy": "Copiar o endereço",
@@ -164,4 +145,22 @@ export const pt: WorkspaceDictionary = {
   "howto.home": "3. Coloque na tela inicial",
   "howto.iphone": "No iPhone",
   "howto.android": "No Android",
+  "intro.1.body":
+    "O espaço da liderança para a aliança: quem está nela, o might, as doações e a atividade de cada um, preenchidos a partir do jogo. Substitui as planilhas.",
+  "intro.only": "Só R4 · R5",
+  "intro.2.more": "— quer dizer sem dados, e fica fora de toda conta.",
+  "intro.3.title": "Toda semana",
+  "intro.3.body":
+    "Abra Membros. Comece pela lista de agradecimentos e depois olhe quem está com Ver como está: o que vimos aparece embaixo do nome.",
+  "intro.3.more": "Quem decide o que fazer é você; nada é enviado sozinho.",
+  "intro.3.last": "Toque em EN · PT · FR para trocar o idioma. Toque em ? para ver isto de novo.",
+  "intro.replay": "Ver de novo",
+  "intro.close": "Fechar",
+  "howto.signin.body":
+    "Toque em “Entrar com o Discord”. O Discord pergunta se o LAPTracker pode ver seu nome e seus cargos no servidor da aliança: toque em Autorizar.",
+  "howto.help": "Não consegue entrar? Peça ajuda a um R5 no Discord.",
+  "howto.iphone.body":
+    "No Safari, toque no ícone de compartilhar (um quadrado com uma seta para cima). Na lista, toque no item com um + dentro de um quadrado e confirme.",
+  "howto.android.body":
+    "No Chrome, toque em ⋮ no canto de cima. No menu, toque no item que coloca a página na tela inicial (um celular com uma seta) e confirme.",
 };

@@ -49,6 +49,7 @@ export default async function HowToPage({ params }: { params: Promise<{ slug: st
         <p className="mt-2">{t["howto.where"]}</p>
         <h2 className={h2}>{t["howto.signin"]}</h2>
         <p className="mt-2">{t["howto.signin.body"]}</p>
+        <p className="mt-2 font-semibold">{t["howto.help"]}</p>
         <h2 className={h2}>{t["howto.home"]}</h2>
         <h3 className="mt-3 font-semibold">{t["howto.iphone"]}</h3>
         <p className="mt-1">{t["howto.iphone.body"]}</p>

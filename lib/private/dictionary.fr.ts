@@ -103,30 +103,13 @@ export const fr: WorkspaceDictionary = {
   "intro.back": "Retour",
   "intro.done": "Commencer",
   "intro.1.title": "Bienvenue au Bureau des officiers",
-  "intro.1.body":
-    "Une page privée pour les R4 et R5 de l’alliance. Elle remplit pour vous ce que demandaient les tableurs : qui est dans l’alliance, sa might, ses dons et son activité. Seule la direction peut l’ouvrir.",
   "intro.2.title": "D’où viennent les chiffres",
   "intro.2.body": "Une petite étiquette à côté d’un chiffre dit d’où il vient :",
-  "intro.2.more":
-    "Pour l’instant, tout vient du jeu, relevé chaque nuit juste avant le changement de jour du serveur. Les photos et les réponses des officiers viendront ensuite.",
-  "intro.3.title": "Que faire chaque semaine",
-  "intro.3.body":
-    "Ouvrez Membres. Commencez par la liste des remerciements. Puis regardez les personnes marquées Prendre des nouvelles : ce que nous avons vu est écrit sous le nom.",
-  "intro.4.title": "Votre langue",
-  "intro.4.body":
-    "Touchez EN, PT ou FR en haut. La page change tout de suite, et ce téléphone s’en souvient.",
-  "intro.4.more": "Touchez ? en haut pour revoir ces cartes.",
   "src.game": "du jeu",
   "src.photo": "d’une photo",
   "src.officer": "saisi par un officier",
   "howto.title": "Comment ouvrir le Bureau des officiers",
   "howto.lead": "Pour les R4 et R5 de l’alliance. Épinglez cette page sur votre Discord.",
-  "howto.signin.body":
-    "Touchez « Se connecter avec Discord ». Discord demande si LAPTracker peut voir votre nom et vos rôles sur le serveur de l’alliance : touchez Autoriser. Si la page affiche Pas d’accès, demandez le rôle de direction à un R5.",
-  "howto.iphone.body":
-    "Dans Safari, touchez Partager (le carré avec une flèche), puis Sur l’écran d’accueil, puis Ajouter.",
-  "howto.android.body":
-    "Dans Chrome, touchez ⋮ en haut à droite, puis Ajouter à l’écran d’accueil (ou Installer l’application), puis Ajouter.",
   "howto.after":
     "Ensuite, touchez l’icône comme pour n’importe quelle appli. Vous restez connecté une journée ; ensuite, Discord vérifie à nouveau votre rôle.",
   "howto.open": "Ouvrir le Bureau des officiers",
@@ -154,8 +137,6 @@ export const fr: WorkspaceDictionary = {
     "activité {activity} et dons {donated} inchangés depuis {n} jours ({r} relevés de fin de journée d’affilée)",
   "nodata.donations.one": "dons sur {n} jour",
   "nodata.donations.other": "dons sur {n} jours",
-  "intro.3.more":
-    "C’est vous qui décidez ; rien n’est envoyé ni modifié tout seul. — veut dire pas de données, et elles n’entrent dans aucun calcul.",
   "howto.address": "1. Ouvrez cette adresse",
   "howto.where": "Ouvrez-la dans Safari ou Chrome, pas dans Discord.",
   "howto.copy": "Copier l’adresse",
@@ -165,4 +146,22 @@ export const fr: WorkspaceDictionary = {
   "howto.home": "3. Ajoutez-la à l’écran d’accueil",
   "howto.iphone": "Sur iPhone",
   "howto.android": "Sur Android",
+  "intro.1.body":
+    "L’espace de la direction pour l’alliance : qui en fait partie, sa might, ses dons et son activité, remplis depuis le jeu. Il remplace les tableurs.",
+  "intro.only": "R4 · R5 uniquement",
+  "intro.2.more": "— veut dire pas de données ; elles n’entrent dans aucun calcul.",
+  "intro.3.title": "Chaque semaine",
+  "intro.3.body":
+    "Ouvrez Membres. Commencez par la liste des remerciements, puis regardez les personnes marquées Prendre des nouvelles : ce que nous avons vu est écrit sous le nom.",
+  "intro.3.more": "C’est vous qui décidez ; rien n’est envoyé tout seul.",
+  "intro.3.last": "Touchez EN · PT · FR pour changer de langue. Touchez ? pour revoir ceci.",
+  "intro.replay": "Revoir",
+  "intro.close": "Fermer",
+  "howto.signin.body":
+    "Touchez « Se connecter avec Discord ». Discord demande si LAPTracker peut voir votre nom et vos rôles sur le serveur de l’alliance : touchez Autoriser.",
+  "howto.help": "Vous n’arrivez pas à entrer ? Demandez à un R5 sur Discord.",
+  "howto.iphone.body":
+    "Dans Safari, touchez l’icône de partage (un carré avec une flèche vers le haut). Dans la liste, touchez l’élément avec un + dans un carré, puis confirmez.",
+  "howto.android.body":
+    "Dans Chrome, touchez ⋮ en haut à droite. Dans le menu, touchez l’élément qui ajoute la page à l’écran d’accueil (un téléphone avec une flèche), puis confirmez.",
 };

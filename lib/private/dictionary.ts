@@ -107,30 +107,13 @@ const en = {
   "intro.back": "Back",
   "intro.done": "Start",
   "intro.1.title": "Welcome to the Officers’ Desk",
-  "intro.1.body":
-    "A private page for the alliance’s R4 and R5. It fills in what the spreadsheets asked for: who is in the alliance, their might, donations and activity. Only the leadership can open it.",
   "intro.2.title": "Where the numbers come from",
   "intro.2.body": "A small label next to a number says where it comes from:",
-  "intro.2.more":
-    "Today everything is from the game, read every night just before the server resets. Photos and officers’ answers come later.",
-  "intro.3.title": "What to do each week",
-  "intro.3.body":
-    "Open Members. Start with the thank-you list. Then look at anyone marked Check in: what we saw is written under the name.",
-  "intro.4.title": "Your language",
-  "intro.4.body":
-    "Tap EN, PT or FR at the top. The page changes at once, and this phone remembers it.",
-  "intro.4.more": "Tap ? at the top to see these cards again.",
   "src.game": "from the game",
   "src.photo": "from a photo",
   "src.officer": "typed by an officer",
   "howto.title": "How to open the Officers’ Desk",
   "howto.lead": "For the alliance’s R4 and R5. Pin this page in your Discord.",
-  "howto.signin.body":
-    "Tap “Sign in with Discord”. Discord asks whether LAPTracker may see your name and your roles in the alliance’s server: tap Authorize. If the page then says No access, ask an R5 for the leadership role.",
-  "howto.iphone.body":
-    "In Safari, tap Share (the square with an arrow), then Add to Home Screen, then Add.",
-  "howto.android.body":
-    "In Chrome, tap ⋮ at the top right, then Add to Home screen (or Install app), then Add.",
   "howto.after":
     "From then on, tap the icon like any app. You stay signed in for a day; after that, Discord checks your role again.",
   "howto.open": "Open the Officers’ Desk",
@@ -157,8 +140,6 @@ const en = {
     "activity {activity} and donations {donated} unchanged for {n} days ({r} end-of-day reads in a row)",
   "nodata.donations.one": "donations on {n} day",
   "nodata.donations.other": "donations on {n} days",
-  "intro.3.more":
-    "You decide what to do; nothing is sent or changed by itself. — means no data, and it is left out of every count.",
   "howto.address": "1. Open this address",
   "howto.where": "Open it in Safari or Chrome, not inside Discord.",
   "howto.copy": "Copy the address",
@@ -168,6 +149,24 @@ const en = {
   "howto.home": "3. Add it to the home screen",
   "howto.iphone": "On iPhone",
   "howto.android": "On Android",
+  "intro.1.body":
+    "The leadership’s own place for the alliance: who is in it, their might, donations and activity, filled in from the game. It replaces the spreadsheets.",
+  "intro.only": "R4 · R5 only",
+  "intro.2.more": "— means no data, and it is left out of every count.",
+  "intro.3.title": "Each week",
+  "intro.3.body":
+    "Open Members. Start with the thank-you list, then look at anyone marked Check in: what we saw is written under the name.",
+  "intro.3.more": "You decide what to do; nothing is sent by itself.",
+  "intro.3.last": "Tap EN · PT · FR to switch. Tap ? to see this again.",
+  "intro.replay": "Replay",
+  "intro.close": "Close",
+  "howto.signin.body":
+    "Tap “Sign in with Discord”. Discord asks whether LAPTracker may see your name and your roles in the alliance’s server: tap Authorize.",
+  "howto.help": "Can’t get in? Ask an R5 on Discord.",
+  "howto.iphone.body":
+    "In Safari, tap the Share icon (a square with an arrow pointing up). In the list, tap the item with a + in a square, then confirm.",
+  "howto.android.body":
+    "In Chrome, tap ⋮ at the top right. In the menu, tap the item that adds the page to your home screen (a phone with an arrow), then confirm.",
 } as const;
 
 export type WorkspaceKey = keyof typeof en;
