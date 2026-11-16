@@ -29,6 +29,7 @@ Words already used in `lib/i18n/fr.ts`. Reuse them so the pages stay consistent;
 | End                       | Fin                                   | `status.end` — when the capture window ended                                                 |
 | Start / End               | Début / Fin                           | `status.start` / `status.end`, `compare.lead`                                                |
 | Reading                   | relevé                                | `history.lead`, `history.first`, `history.daily` — one member list read; a card compares two |
+| Middle member (median)    | Membre du milieu                      | `ledger.progressMedian` — the median member of an alliance, its change in percent            |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

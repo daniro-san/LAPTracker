@@ -68,10 +68,12 @@ export const en = {
     movers: "Grandma noticed",
     /** The player page's section of every reading (#270): daily reads and events' Start and End. */
     progress: "Daily progress",
-    /** Its summary line: `Might +12.3M (+4.1%) since Nov 9.` */
-    progressMight: "Might {change} since {date}.",
-    /** After it, when both readings are of one alliance: that alliance's median member's change. */
-    progressMedian: "Median member of {tag}: {percent}.",
+    /** Its summary line, the player's might change in percent: `You: +4.1% since Nov 9.` */
+    progressMight: "You: {change} since {date}.",
+    /** After it, when both readings are of one alliance: the change of that alliance's middle member (the median). */
+    progressMedian: "Middle member of {tag}: {percent}.",
+    /** Under the might chart: what the event marks are, and the Start date of each. */
+    progressEvents: "Event (Start to End): {dates}",
     /** Under the might chart. */
     progressWar: "Might often drops in war events. That is expected.",
     /** Fewer than two readings: no chart yet. */

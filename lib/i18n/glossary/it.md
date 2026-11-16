@@ -28,6 +28,7 @@ Words already used in `lib/i18n/it.ts`. Reuse them so the pages stay consistent;
 | grandma                   | la nonna                     | the voice in empty states and errors                      |
 | Daily read                | Lettura giornaliera          | `history.daily` — a roster read once a day                |
 | Daily progress            | Progresso giornaliero        | `ledger.progress` — a player's daily readings             |
+| Middle member (median)    | Membro di mezzo              | `ledger.progressMedian` — the median member               |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

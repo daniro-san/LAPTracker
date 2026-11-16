@@ -66,4 +66,16 @@ Prompt sketch for #276 (chart in the Discord picture): "Draw a might line inside
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
+
+## UX review fixes (2026-11-16)
+- **Value range**: at least 5 % of the highest value, centred on the data and never below 0. Kills 3,000,000 to 3,000,002 draw flat; a series of 0 draws on the bottom edge. The highest and lowest labels sit at the height of their values; equal texts give one label; two labels closer than a text line are moved apart. The label column is `w-14`, so the Might and Kills charts line up (checked with "75,3 Mio." in de).
+- **Event marks**: an HTML band behind the SVG, at least 6 px wide, `bg-ink/50` (3.1:1 light, 4.3:1 dark against the paper; the line over it is 4.4:1 and 3.2:1). An event wider than 40 % of the chart (two readings) is a tick at each end instead of a band. The key is `ledger.progressEvents`: `Event (Start to End): Oct 17, Oct 24, Oct 31` (the latest 6 Start dates) with a swatch shaped like the mark.
+- **Dots**: every reading up to 30 readings, above that only event readings.
+- **Dates**: first and last label add the time when they fall on the same day (new `time` prop).
+- **Summary**: `You: +3.9% since Oct 24. Middle member of [OGs]: +4.1%.` The player's change is the percent (the amount only when the first might is 0). A date that ends with "." no longer doubles the sentence's full stop (de, pt-BR and others): `summaryText` collapses a final `..`. Translated by translate-copy (3 keys, 17 languages, batches of 3). tr and zh-CN kept the old word "Might" and were corrected by hand.
+- **Seed**: `scripts/seed-daily.ts` keeps kills at the End reading's value; might still drifts. `scripts/seed-data.ts` changed too, because the event readings come from it: an End reading's might is 95 % of the drifted figure, and kills only step up at an event (End kills equal the next Start's). Event pages in the seed now show war losses and kills gained only during events.
+- **D68** has an amendment bullet with what Satori needs (measured); the Discord variant is not built.
+- **Tests**: 7 in `LineChart.test.ts` (flat range, one label, dots limit, same-day time, mark width and ticks, plus the two kept), 2 in `PlayerProgress.test.ts` (summary, doubled full stop).
+- **Verified**: 360, 390 and 412 px, light and dark, Chrome, no horizontal scroll, with players of 2, 18 and 60 readings and a 0-kills player (a synthetic series added to the local database only); WebKit at 390 dark. The three screenshots are replaced (same names, the seeded xCage, 18 readings).
+
 https://github.com/daniro-san/LAPTracker/pull/288

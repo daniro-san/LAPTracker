@@ -26,7 +26,7 @@ Words already used in `lib/i18n/pt-BR.ts`. Reuse them so the pages stay consiste
 | grandma                   | a vovó                             | the voice in empty states and errors                                         |
 | read (one roster read)    | leitura                            | `history.lead`, `history.daily`, `history.first` — a read of the member list |
 | chart                     | gráfico                            | `ledger.chart`, `ledger.progressEmpty` — a player's progress graph           |
-| median                    | mediano                            | `ledger.progressMedian` — "Membro mediano de {tag}", the middle member       |
+| median                    | do meio                            | `ledger.progressMedian` — "Membro do meio de {tag}", the middle member       |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

@@ -15,13 +15,18 @@ import { LABEL, MoreBar } from "./StatTable";
 
 const MUTED = "text-ink/70";
 
-/** `Might +120M (+4.1%) since Nov 9. Median member of [OGs]: +3.2%.` */
-function summaryText(p: Progress, clock: Clock, locale: string, copy: Dictionary) {
+/** `You: +4.1% since Nov 9. Middle member of [OGs]: +3.2%.` */
+export function summaryText(p: Progress, clock: Clock, locale: string, copy: Dictionary) {
   const s = p.summary;
   if (!s) return null;
   const pct = percent(s.power, s.from.power);
-  const change = `${signOf(s.power)}${compact(s.power, locale)}${pct === null ? "" : ` (${percentText(pct, locale)})`}`;
-  const might = fill(copy.ledger.progressMight, { change, date: clock.day(s.from.at) });
+  const change =
+    pct === null ? `${signOf(s.power)}${compact(s.power, locale)}` : percentText(pct, locale);
+  // A short date can end with a full stop ("24. Okt."): the sentence's own full stop would double it.
+  const might = fill(copy.ledger.progressMight, { change, date: clock.day(s.from.at) }).replace(
+    /\.\.$/,
+    ".",
+  );
   const median =
     s.alliance &&
     fill(copy.ledger.progressMedian, {
@@ -45,7 +50,7 @@ function bandsOf(readings: ProgressReading[]) {
 const pointsOf = (readings: ProgressReading[], key: "power" | "kills") =>
   readings.flatMap((r) => {
     const value = r[key];
-    return value === null ? [] : [{ at: r.at, value }];
+    return value === null ? [] : [{ at: r.at, value, mark: r.event !== null }];
   });
 
 function Kind({ r, clock, copy }: { r: ProgressReading; clock: Clock; copy: Dictionary }) {
@@ -124,7 +129,18 @@ export async function PlayerProgress({ progress, clock }: { progress: Progress; 
   const l = copy.ledger;
   const { readings } = progress;
   const bands = bandsOf(readings);
-  const chart = { bands, date: clock.day, value: (n: number) => compact(n, locale), copy };
+  const chart = {
+    bands,
+    date: clock.day,
+    time: clock.hhmm,
+    value: (n: number) => compact(n, locale),
+    copy,
+  };
+  // The latest events only: a year of weekly events would not fit a line.
+  const eventDates = bands
+    .slice(-6)
+    .map((b) => clock.day(b.from).replace(/ /g, "\u00a0"))
+    .join(", ");
   return (
     <section className="mt-8">
       <h2 className="mb-3 font-subhead text-display-md">{l.progress}</h2>
@@ -137,9 +153,9 @@ export async function PlayerProgress({ progress, clock }: { progress: Progress; 
           <LineChart points={pointsOf(readings, "power")} label={l.might} {...chart} />
           <p className={`mt-2 flex flex-wrap items-center gap-x-3 text-sm ${MUTED}`}>
             {bands.length > 0 && (
-              <span className="inline-flex items-center gap-1">
-                <span aria-hidden="true" className="inline-block size-3 bg-rule" />
-                {l.event}
+              <span className="inline-flex items-center gap-2">
+                <span aria-hidden="true" className="inline-block h-3 w-1.5 shrink-0 bg-ink/50" />
+                {fill(l.progressEvents, { dates: eventDates })}
               </span>
             )}
             <span>{l.progressWar}</span>

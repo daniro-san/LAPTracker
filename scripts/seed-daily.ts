@@ -1,7 +1,8 @@
 // Daily roster reads for scripts/seed.ts (D60): one a day from Sunday to Friday after each of the first
 // two seeded Saturdays, so the player page's Daily progress and the member history show daily readings.
-// Each member's figures move part of the way from one event's End to the next event's Start, so
-// reseeding gives the same numbers.
+// Might drifts part of the way from one event's End to the next event's Start; kills stay where the End
+// reading left them (the real ones are unchanged day to day and move at events). Reseeding gives the same
+// numbers.
 import type { Db } from "../lib/db";
 import { dailyReads, dailyRosters } from "../lib/schema";
 import { rosterAt, type BaseAlliance } from "./seed-data";
@@ -12,14 +13,14 @@ const WEEKS = [
   { event: 1, sunday: "2026-10-25" },
 ];
 
-/** Alliance `i`'s roster `share` of the way from event `event`'s End to event `event + 1`'s Start. */
+/** Alliance `i`'s roster, its might `share` of the way from event `event`'s End to event `event + 1`'s Start. */
 function rosterRow(base: BaseAlliance[], i: number, event: number, share: number) {
   const from = rosterAt(base, i, event, "after");
   const next = new Map(rosterAt(base, i, event + 1, "before").members.map((m) => [m.uid, m]));
   const step = (a: number, b: number) => Math.round(a + (b - a) * share);
   const members = from.members.map((m) => {
     const to = next.get(m.uid) ?? m;
-    return { ...m, power: step(m.power, to.power), kills: step(m.kills, to.kills) };
+    return { ...m, power: step(m.power, to.power) };
   });
   const a = base[i] as BaseAlliance;
   return {

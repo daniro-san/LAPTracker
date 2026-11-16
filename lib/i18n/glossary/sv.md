@@ -27,6 +27,7 @@ Words already used in `lib/i18n/sv.ts`. Reuse them so the pages stay consistent;
 | Member history            | Medlemshistorik           | `history.title` — an alliance's rosters over time         |
 | Daily read                | Dagsavläsning             | `history.daily` — a card head for the once-a-day read     |
 | Renamed                   | Namnbyte                  | `history.renamed` — a member whose name changed           |
+| Middle member             | Mittenmedlem              | `ledger.progressMedian` — an alliance's median member     |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.
