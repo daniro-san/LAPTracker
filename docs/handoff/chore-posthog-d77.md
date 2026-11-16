@@ -120,4 +120,4 @@ Plan changes needed: none in the plan sections the next session reads. ยง5 and ย
 - Call `track("ws_first_use_done")` when an officer finishes the cards and `track("ws_first_use_skipped")` when they skip them (no properties).
 </adjustments>
 
-PR: (added by the orchestrator)
+https://github.com/daniro-san/LAPTracker/pull/332
