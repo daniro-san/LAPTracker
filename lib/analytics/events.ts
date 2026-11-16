@@ -6,8 +6,11 @@ import type { PostHog } from "posthog-js";
 
 /** The workspace languages (D71); the same three as lib/private/dictionary.ts, which this module may not import. */
 export type AnalyticsLanguage = "en" | "pt-BR" | "fr";
-/** The Members tab filters of issue #296. */
-export type MemberFilter = "new" | "low_donations" | "missing_data" | "away" | "r4_plus";
+/**
+ * The Members tab's filters (`MEMBER_FILTERS` in lib/private/members-list.ts, which this module may not import).
+ * FilterChip passes that type here, so `tsc` fails if a filter is added there and not here.
+ */
+export type MemberFilter = "all" | "new" | "checkin" | "missing" | "r4";
 
 type NoProperties = Record<string, never>;
 

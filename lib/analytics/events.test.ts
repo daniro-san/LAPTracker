@@ -14,7 +14,7 @@ describe("custom events (D77)", () => {
     expectTypeOf<number extends PropertyValue ? true : false>().toEqualTypeOf<false>();
     expectTypeOf<PropertyValue>().toExtend<string | boolean>();
     // Not loaded in tests, so these calls send nothing; tsc checks them.
-    track("ws_filter_used", { filter: "low_donations" });
+    track("ws_filter_used", { filter: "checkin" });
     // @ts-expect-error a free string is not a filter
     track("ws_filter_used", { filter: "Ana" as string });
     // @ts-expect-error no event outside the closed list

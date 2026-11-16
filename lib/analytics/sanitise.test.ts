@@ -15,9 +15,13 @@ describe("PostHog before_send (D77)", () => {
           $referrer: "https://discord.com/channels/1?x=2",
           $initial_current_url: `${HOST}/events/compare?a=1&b=2`,
           $prev_pageview_pathname: "/players?q=Ana",
+          $session_entry_url: `${HOST}/w/ogs/members?f=checkin&q=Ana`,
           $external_click_url: "https://example.com/p?ref=Ana",
           $elements_chain: 'a:attr__href="/players?q=Ana"href="/players?q=Ana"nth-child="1"',
-          $elements: [{ tag_name: "a", attr__href: "/events/compare?a=1#b" }],
+          $elements: [
+            { tag_name: "a", attr__href: "/events/compare?a=1#b" },
+            { tag_name: "a", attr__href: "/w/ogs/members?f=r4&q=Ana" },
+          ],
           $el_text: "Compare",
           $session_entry_utm_source: "discord",
           $session_entry_gclid: "abc",
@@ -33,9 +37,13 @@ describe("PostHog before_send (D77)", () => {
       $referrer: "https://discord.com/channels/1",
       $initial_current_url: `${HOST}/events/compare`,
       $prev_pageview_pathname: "/players",
+      $session_entry_url: `${HOST}/w/ogs/members`,
       $external_click_url: "https://example.com/p",
       $elements_chain: 'a:attr__href="/players"href="/players"nth-child="1"',
-      $elements: [{ tag_name: "a", attr__href: "/events/compare" }],
+      $elements: [
+        { tag_name: "a", attr__href: "/events/compare" },
+        { tag_name: "a", attr__href: "/w/ogs/members" },
+      ],
       $el_text: "Compare",
     });
     expect(out.properties).not.toHaveProperty("$session_entry_utm_source");
