@@ -6,7 +6,7 @@ Closes #273.
 - **Read model** `mightUnchanged(db, unionId)` in `lib/queries/might-unchanged.ts`, exported from `lib/queries/index.ts` with `MIN_DAILY_READS` (7), `NEW_MEMBER_DAYS` (14) and `LOST_MIGHT_PCT` (5). It merges the alliance's usable daily rosters (newest 60) and public event rosters (newest 30) with the `history-readings.ts` helpers and returns `ready`, `dailyReads`, `period` (from, to, daily, events), `members` (n in the newest read), `unchanged` rows and `lost` rows. A row holds uid, name, might and the figure, plus the kills change.
 - **Page** `/admin/members` (`app/(pages)/admin/members/page.tsx`), linked as "Members" in the admin nav (`AdminShell`). Session check first, no database read when locked. Alliance select (GET form, default `OWN_ALLIANCE_ID`, `?alliance=<union_id>` for any tracked alliance), the period and n, the help line, the two lists in `AdminSection` frames (cards below 640 px, ruled rows above), and the not-ready chip "Not enough history yet: x of 7 daily reads".
 - **Config** `OWN_ALLIANCE_ID = 67111155` in `config/alliances.ts` (no earlier constant named the own alliance).
-- **Friday message**: `quotaReport` (`lib/run.ts`) takes `origin` and adds the line `Might unchanged ≥ 7 days: N · Lost might ≥ 5 %: M — [Members ↗](<origin/admin/members>)` to the weekly check; left out until the own alliance is ready. `lib/tick.ts` and `GET /api/quota/check` pass the origin. The text is `copy.discord.admin.mightLine`.
+- **Friday message**: `quotaReport` (`lib/run.ts`) takes `origin` and adds the line `Might unchanged ≥ 7 daily reads: N · Lost might ≥ 5 %: M — [Members ↗](<origin/admin/members>)` to the weekly check; left out until the own alliance is ready. `lib/tick.ts` and `GET /api/quota/check` pass the origin. The text is `copy.discord.admin.mightLine`.
 - **Copy**: `lib/copy-members.ts` (`copy.admin.members`, split from `lib/copy-admin.ts` for the 300-line limit); `nav.members`.
 - **Tests**: `lib/queries/might-unchanged.test.ts` (5: run listed with N and kills, event reading breaks a run, first seen under 14 days left out, not ready under 7 daily reads, 5 % threshold), `lib/quota-report.test.ts` (2: counts and link with no name, omitted while not ready), one row added to the locked-pages list in `app/(pages)/admin/gate.test.ts`.
 - **Docs**: D70 and its index line; README admin guide (the `/admin/members` row, the weekly check row); screenshot `docs/screenshots/08zzzzb-might-unchanged-360.png`.
@@ -15,7 +15,7 @@ Closes #273.
 - **The run extends back past 7 reads.** A member is listed when the might was identical in a run of readings ending at the newest one that holds at least 7 daily reads; N is the whole run, not capped at 7. Reading "identical over the last ≥ 7 daily reads" as a minimum, not a fixed window.
 - **Lost might uses the newest 7 daily reads as its span** (the 7th newest daily reading to the newest reading), so the page's period and the lost list agree. The 14-day rule is not applied to it: the member must be in both readings.
 - **A member missing from a reading, or with an unknown might, ends the run.**
-- **N = days between the run's first and last reading, rounded**, as the task says. Seven daily reads one day apart span 6 days, so a run of exactly 7 reads shows "6 days" while the page says "for at least 7 days" (see Open issues 1).
+- **N = days between the run's first and last reading, rounded**, as the task says. Seven daily reads one day apart span 6 days, so a run of exactly 7 reads shows "6 days"; the page and the Friday line name the threshold as "7 daily reads" (changed in review).
 - **Own alliance constant** is in `config/alliances.ts`; an `?alliance=` value that is not a tracked id falls back to it.
 - **Lookback**: newest 60 daily reads and 30 event rosters. A member unchanged for longer than the lookback shows the lookback's length.
 - **The Friday line is computed only when the check posts** (always on the tick; on `/api/quota/check` only when the quota is low), so the route does not read rosters when it posts nothing.
@@ -33,7 +33,7 @@ Closes #273.
 - The local database and dev server were stopped; no AGENTS.md was left in the tree.
 
 ## Open issues
-1. **"At least 7 days" vs 7 daily reads.** The owner's threshold is 7 daily reads, which cover 6 days; the help line and the Friday line say "7 days" (wording from the issue). If exactness matters, change the line to "7 daily reads" or require 8 reads.
+1. **Resolved in review:** the help line, the list title and the Friday line now say "7 daily reads", the owner's threshold, instead of "7 days".
 2. **The first list stays empty until about 2026-11-19.** Members present in the alliance's oldest reading count as first seen then, and the history starts 2026-11-05, so the 14-day rule is met on 2026-11-19. The not-ready chip goes when the 7th daily read exists (5 by 2026-11-16, per the issue, so about 2026-11-18).
 3. **Event rosters in the same span as daily reads are only in the run when they are public** (`publicEvent`); admin-only manual rounds and rehearsals are ignored, as in the member history.
 4. **The page has no link to a player's page**; rows are text. Not asked.
