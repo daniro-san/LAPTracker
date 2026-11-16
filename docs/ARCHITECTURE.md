@@ -22,6 +22,9 @@ lib/private/*.ts    the workspace (D71): requireWorkspace and its branded Worksp
                     outside lib/repo that may read the blocked roster keys, for its own alliance's rows.
 lib/queries/*.ts    read models for the UI (joins, sorting, name history). Never write. Never expose BLOCKED_ROSTER_KEYS.
                     lib/queries/samples.ts: `eventSamples`, an event's Start, samples and End (D69).
+                    lib/queries/live.ts: `eventProgress`, the event page's live section (alliance totals per reading, D69).
+lib/live.ts         pure: the live section's arithmetic: standings, kills per reading interval, the busiest 30 minutes,
+                    when the page looks again (D69).
 lib/logger.ts, lib/notify.ts, lib/env.ts, lib/redact.ts
 lib/discord-send.ts, lib/discord-format.ts, lib/event-image.tsx
                     the webhook transport (JSON, or multipart with a picture), the messages' number and

@@ -9,7 +9,9 @@ import { events, snapshots } from "../schema";
 
 // INVARIANT queries.phases-not-samples: a read of an event's Before and After keeps its samples (D69) out,
 // so every page, route and message built on them reads exactly as before samples existed. Only
-// `eventSamples` (lib/queries/samples.ts) and the admin run lists read samples. The predicate is defined
+// `eventSamples` (lib/queries/samples.ts), `eventProgress` (lib/queries/live.ts: alliance totals),
+// `memberTurnoutSoFar` (lib/queries/turnout.ts: each alliance's newest sample's member arrays) and the
+// admin run lists read samples. The predicate is defined
 // once, in lib/repo/snapshots.ts, because lib/repo readers need it too.
 export { phaseSnapshot } from "../repo/snapshots";
 
