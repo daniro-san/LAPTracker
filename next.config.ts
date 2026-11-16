@@ -19,6 +19,8 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   // Without this, `next dev` writes AGENTS.md into the repo (issue 126).
   agentRules: false,
+  // PostHog's paths end in a slash (/ingest/e/, D77); proxy.ts keeps the slash redirect for every other path.
+  skipTrailingSlashRedirect: true,
   env: { BUILD_VERSION: buildVersion(process.env) },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];

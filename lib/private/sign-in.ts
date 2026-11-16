@@ -4,6 +4,7 @@
 // read, and a session made when a role is a leadership role or the account is on the allowlist.
 import { randomBytes } from "node:crypto";
 
+import { SIGNED_IN_HASH } from "../analytics/events";
 import { IP_LIMIT, IP_WINDOW_MS, secretEquals } from "../auth";
 import type { Db } from "../db";
 import type { Env } from "../env";
@@ -143,5 +144,6 @@ async function admit(
   const endsBy = viaRole ? null : (known?.allowlistExpiresAt ?? null);
   const { cookie } = await createSession(db, workspace.id, userId, now, endsBy);
   privateLog("w.sign_in", { workspace: workspace.id, via_role: viaRole ? 1 : 0 });
-  return go(`/w/${workspace.slug}`, [clearState, cookie]);
+  // The fragment never reaches a server; the page counts the sign-in from it and removes it (D77).
+  return go(`/w/${workspace.slug}${SIGNED_IN_HASH}`, [clearState, cookie]);
 }

@@ -100,7 +100,7 @@ const workspaceId = async (slug: string) => (await findWorkspaceBySlug(db, slug)
 describe("workspace sign-in (D71)", () => {
   it("lets in an account with a leadership role and opens the workspace with its session", async () => {
     const { step, token } = await signIn("ogs", "officer");
-    expect(location(step)).toBe("/w/ogs");
+    expect(location(step)).toBe("/w/ogs#signed-in");
     const access = await requireWorkspace(db, "ogs", jar(token), T0);
     expect(access.ok && access.user.displayName).toBe("Nick");
   });
@@ -114,7 +114,7 @@ describe("workspace sign-in (D71)", () => {
       "admin",
     );
     const { step, token } = await signIn("ogs", "member");
-    expect(location(step)).toBe("/w/ogs");
+    expect(location(step)).toBe("/w/ogs#signed-in");
     expect((await requireWorkspace(db, "ogs", jar(token), T0)).ok).toBe(true);
   });
 

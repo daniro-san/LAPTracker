@@ -3,6 +3,8 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
+import { MASK_CLASS } from "@/lib/analytics/sanitise";
+
 export const metadata: Metadata = {
   title: "Officers’ Desk",
   description: "Private.",
@@ -14,5 +16,6 @@ export const metadata: Metadata = {
 };
 
 export default function WorkspaceLayout({ children }: { children: ReactNode }) {
-  return children;
+  // Session replay masks every text, attribute, image and field under this class (D77).
+  return <div className={MASK_CLASS}>{children}</div>;
 }
