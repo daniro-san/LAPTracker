@@ -44,4 +44,4 @@ Plan changes needed: none. `docs/IMPLEMENTATION_PLAN.md` and `docs/SESSION_PLAYB
 - Locale-suffix strings (`3,94 bi`, `3,94 млрд`) are no longer expected in any test, screenshot or copy; use `3,94B`.
 </adjustments>
 
-PR: (pending)
+https://github.com/daniro-san/LAPTracker/pull/328
