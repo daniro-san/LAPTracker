@@ -121,6 +121,12 @@ describe("nextReading", () => {
     ).toEqual(at("12:45"));
   });
 
+  it("moves to the next slot as soon as the current slot's sample is stored", () => {
+    const next = nextReading(new Date(at("12:30").getTime() + 50_000), 15, after, at("12:30"));
+    expect(next?.at).toEqual(at("12:45"));
+    expect(next?.refreshAt).toEqual(new Date(at("12:45").getTime() + MIN));
+  });
+
   it("keeps waiting for a slot whose sample is missing until 3 minutes, then moves to the next slot", () => {
     const slot = at("12:30").getTime();
     const late = nextReading(new Date(slot + 61_000), 15, after, at("12:15"));

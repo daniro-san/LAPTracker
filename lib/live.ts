@@ -171,9 +171,11 @@ export function nextReading(
 ): { at: Date; refreshAt: Date } | null {
   if (everyMin <= 0 || now.getTime() >= afterAt.getTime() + END_WAIT_MS) return null;
   const slot = slotOf(now, everyMin).getTime();
-  const late = slot > sinceAt.getTime() && now.getTime() < slot + OVERDUE_MS;
+  // A slot whose sample is already stored needs no wait: look at the next one.
+  const sampled = slot <= sinceAt.getTime();
+  const late = !sampled && now.getTime() < slot + OVERDUE_MS;
   const [at, wait]: [number, number] =
-    slot + SAMPLE_WAIT_MS > now.getTime()
+    !sampled && slot + SAMPLE_WAIT_MS > now.getTime()
       ? [slot, SAMPLE_WAIT_MS]
       : late
         ? [slot, OVERDUE_MS]
