@@ -48,6 +48,6 @@ Plan changes needed: none to `docs/IMPLEMENTATION_PLAN.md`.
 
 ## Review fixes (2026-11-16)
 
-- The row selection of a list is the pure `visibleEntries` in `app/_ui/WhoFought.tsx` (tested), and the "Show all (n)" button is the shared `ShowAllButton` in `app/_ui/ShowFirst.tsx`, used by `ShowFirst` and `WhoFought`; rendered output is unchanged.
+- The row selection of a list is the pure `visibleEntries` in `app/_ui/WhoFought.tsx` (tested), and the "Show all (n)" button is the shared `ShowAllButton` in `app/_ui/ShowFirst.tsx`, used by `ShowFirst`, `WhoFought` and `MembersExplorer`; rendered output is unchanged.
 
 https://github.com/daniro-san/LAPTracker/pull/309
