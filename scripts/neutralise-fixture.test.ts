@@ -17,9 +17,9 @@ describe("neutraliseFixture", () => {
   });
 
   it("leaves key-like text inside a string value alone, escaped quotes included", () => {
-    const real = String.raw`{"note":"moved "x": 5 and "online":true","x":9}`;
-    expect(neutraliseFixture(real)).toBe(
-      String.raw`{"note":"moved "x": 5 and "online":true","x":0}`,
-    );
+    // An odd number of escaped quotes: a reader that ignores escapes loses its place and leaves the real x as it was.
+    const real = String.raw`{"note":"a 6\" sign reads \"x\": 1","x":9}`;
+    expect(JSON.parse(real)).toEqual({ note: 'a 6" sign reads "x": 1', x: 9 });
+    expect(neutraliseFixture(real)).toBe(String.raw`{"note":"a 6\" sign reads \"x\": 1","x":0}`);
   });
 });
