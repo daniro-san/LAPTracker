@@ -2,7 +2,9 @@
 # esbuild: postinstall only verifies its platform binary, which pnpm already installs as an optional dependency.
 # lefthook: postinstall runs `lefthook install`; the `prepare` script does that instead.
 # core-js (a posthog-js dependency, D77): postinstall only prints a funding banner; posthog-js ships its own bundle.
+# tesseract.js: postinstall only prints an opencollective donation notice (`|| true`) (D74).
 allowBuilds:
   core-js: false
   esbuild: false
   lefthook: false
+  tesseract.js: false

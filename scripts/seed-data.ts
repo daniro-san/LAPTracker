@@ -71,7 +71,7 @@ export function loadBase(): BaseAlliance[] {
 }
 
 /** A stable number in [0, 1) from integers, so reseeding gives the same data. */
-function noise(...parts: number[]): number {
+export function noise(...parts: number[]): number {
   let h = 2166136261;
   for (const p of parts) h = Math.imul(h ^ (p % 2 ** 31), 16777619) ^ (p / 2 ** 31);
   h = Math.imul(h ^ (h >>> 15), 2246822507);

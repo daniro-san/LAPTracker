@@ -94,17 +94,20 @@ export function NextUpdate({
 }
 
 /** The last update's chip with the seal counts of stale and failed rows beside it, on one line while
- * they fit; each count only when non-zero, never the time's tone. */
+ * they fit; each count only when non-zero, never the time's tone. While the event runs (`live`) there is
+ * no chip: the live strip and the capture window say what is current (UX review S1). */
 export function StatusChips({
   phases,
   stale,
   failed,
+  live = false,
   clock,
   copy,
 }: {
   phases: PhaseStatus[];
   stale: number;
   failed: number;
+  live?: boolean;
   clock: Clock;
   copy: Dictionary;
 }) {
@@ -112,11 +115,14 @@ export function StatusChips({
     [stale, "○", copy.status.stale],
     [failed, "✗", copy.status.failedRows],
   ] as const;
+  if (live && stale === 0 && failed === 0) return null;
   return (
     <ul className="flex flex-wrap items-center gap-x-3 gap-y-1" aria-label={copy.status.label}>
-      <li className="min-w-0 flex-[1_1_12rem]">
-        <LastChip phases={phases} clock={clock} copy={copy} />
-      </li>
+      {!live && (
+        <li className="min-w-0 flex-[1_1_12rem]">
+          <LastChip phases={phases} clock={clock} copy={copy} />
+        </li>
+      )}
       {counts.map(
         ([n, symbol, text]) =>
           n > 0 && (
@@ -157,11 +163,14 @@ const hasTime = (p: PhaseStatus | undefined): p is PhaseStatus =>
 export function CaptureWindow({
   before,
   after,
+  endDue,
   clock,
   copy,
 }: {
   before: PhaseStatus | undefined;
   after: PhaseStatus | undefined;
+  /** While the event runs: when the End is due, shown as `END after 16:31` instead of `END —`. */
+  endDue?: Date | null;
   clock: Clock;
   copy: Dictionary;
 }) {
@@ -182,7 +191,9 @@ export function CaptureWindow({
           <span className="text-label font-semibold uppercase tracking-[0.04em] text-ink/70">
             {label}
           </span>{" "}
-          {sideValue(p, withDay, last, clock, copy)}
+          {!p && last && endDue
+            ? fill(copy.status.endAfter, { time: clock.time(endDue) })
+            : sideValue(p, withDay, last, clock, copy)}
         </span>
       ))}
     </p>

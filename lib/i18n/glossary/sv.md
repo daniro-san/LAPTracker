@@ -27,8 +27,12 @@ Words already used in `lib/i18n/sv.ts`. Reuse them so the pages stay consistent;
 | Member history            | Medlemshistorik           | `history.title` — an alliance's rosters over time         |
 | Daily read                | Dagsavläsning             | `history.daily` — a card head for the once-a-day read     |
 | Renamed                   | Namnbyte                  | `history.renamed` — a member whose name changed           |
+| Reading (live)            | avläsning                 | `ledger.liveReadings` — one snapshot of the live event    |
+| Standings                 | Ställningen               | `ledger.liveStandings` — the live ranking so far          |
+| Server pulse              | Serverpuls                | `ledger.livePulse` — kills per interval, all alliances    |
 | War turnout               | Krigsdeltagande           | `ledger.fought` — the event section title                 |
 | gainers                   | vinnare                   | `topShareHelp`, `fewGainers` — members whose Kills rose   |
+| peak                      | topp                      | `ledger.liveLast` — the top interval in the window        |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

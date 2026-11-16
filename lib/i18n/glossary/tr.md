@@ -16,7 +16,6 @@ Words already used in `lib/i18n/tr.ts`. Reuse them so the pages stay consistent;
 | Ranking                   | Sıralama                        | `ledger.ranking` — the game's server rank                                              |
 | joined                    | katıldı                         | `ledger.joined` — after +n                                                             |
 | left                      | ayrıldı                         | `ledger.left` — after −n                                                               |
-| gainer                    | Kills kazanan Members           | `ledger.withKills`, `ledger.topShare`, `ledger.fewGainers` — a member whose Kills rose |
 | Stale                     | Eskimiş                         | `fresh.stale` — data not fresh                                                         |
 | server time               | sunucu saati                    | `time.serverTime` — after a time: 14:01 …                                              |
 | your time                 | senin saatin                    | `time.yourTime` — after a time, the viewer's zone                                      |
@@ -25,7 +24,13 @@ Words already used in `lib/i18n/tr.ts`. Reuse them so the pages stay consistent;
 | Leader                    | Lider                           | `leadership.leader` — the R5                                                           |
 | Start / End               | Başlangıç / Bitiş               | `status.start` / `status.end`, `compare.lead`                                          |
 | Run by hand by the admin  | Admin elle başlatır             | `status.byHand`                                                                        |
+| Live                      | Canlı                           | `ledger.live` — the live event strip and section                                       |
+| reading                   | okuma                           | `ledger.liveReadings`, `ledger.liveNoReading` — one update of the event                |
+| Standings                 | Şimdiye kadarki durum           | `ledger.liveStandings` — not the game's Ranking (Sıralama)                             |
+| peak                      | zirve                           | `ledger.liveLast` — the highest reading in the last minutes                            |
+| min (in a stat line)      | dk                              | `ledger.liveLast` — sentences spell out dakika (`ledger.livePulseHelp`)                |
 | grandma                   | nine                            | the voice in empty states and errors                                                   |
+| gainer                    | Kills kazanan Members           | `ledger.withKills`, `ledger.topShare`, `ledger.fewGainers` — a member whose Kills rose |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.
