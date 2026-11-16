@@ -15,4 +15,11 @@ describe("neutraliseFixture", () => {
     const keys = (text: string) => [...text.matchAll(/"([a-z_]+)":/g)].map((m) => m[1]);
     expect(keys(neutral)).toEqual(keys(real));
   });
+
+  it("leaves key-like text inside a string value alone, escaped quotes included", () => {
+    const real = String.raw`{"note":"moved "x": 5 and "online":true","x":9}`;
+    expect(neutraliseFixture(real)).toBe(
+      String.raw`{"note":"moved "x": 5 and "online":true","x":0}`,
+    );
+  });
 });
