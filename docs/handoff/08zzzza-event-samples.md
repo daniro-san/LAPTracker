@@ -149,3 +149,5 @@ Event windows (spike #183 build 1b, amends D69). Read CLAUDE.md, D1, D21, D31, D
 - Real numbers: a KvK with Before 10:00 and After 16:15 is 26 reads, 546–598 calls; `sampleQuota(20)` = 131.
 - Skip: the spike's O2 observation (manual rounds every 15 minutes on a KvK). Samples now collect that data on their own.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/292
