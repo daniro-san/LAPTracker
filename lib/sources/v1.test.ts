@@ -19,6 +19,8 @@ import { fetchAlliance, fetchQuota } from "./v1";
 
 const OGS = "v1-20261104T155902Z/alliance-67111155.json";
 const AFR = "v1-ids/67111040.json";
+/** Recorded 2026-11-16 with `?fresh=1`: one member has `rank_code: null`. */
+const OGS_NULL_RANK = "v1-20261116T105019Z/alliance-67111155.json";
 const gateway = (status: number, headers: Record<string, string> = {}) =>
   respond(`error code: ${status}`, status, headers);
 
@@ -38,7 +40,7 @@ afterEach(() => {
 describe("v1.fetchAlliance parsing", () => {
   it("parses every recorded /v1 body with totalKills equal to the member sum, nulls as 0", async () => {
     const files = v1AllianceFixtures();
-    expect(files.length).toBe(24);
+    expect(files.length).toBe(27);
     for (const file of files) {
       const body = readFixture(file);
       const raw = JSON.parse(body) as { members: RawMember[]; power: number; union_id: number };
@@ -69,6 +71,18 @@ describe("v1.fetchAlliance parsing", () => {
     expect(a.members[0]).toMatchObject({ rankCode: first.rank_code, rankLabel: first.rank_label });
     expect(a.members[1]).toMatchObject({ rankCode: null, rankLabel: null });
     expect(a.members.some((m) => m.rankCode === 105 && m.rankLabel === "R5")).toBe(true);
+  });
+
+  it("reads a member whose rank_code, rank_label, photo or frame is null instead of failing the read", async () => {
+    const body = JSON.parse(readFixture(OGS_NULL_RANK)) as { members: Record<string, unknown>[] };
+    const unlisted = body.members.findIndex((m) => m.rank_code === null);
+    expect(unlisted).toBeGreaterThan(0);
+    Object.assign(body.members[0] ?? {}, { avatar_url: null, frame_url: null, rank_label: null });
+    mockFetch(respond(JSON.stringify(body)));
+    const a = await fetchAlliance(67111155);
+    expect(a.members).toHaveLength(body.members.length);
+    expect(a.members[unlisted]).toMatchObject({ uid: body.members[unlisted]?.uid, rankCode: null });
+    expect(a.members[0]).toMatchObject({ avatarUrl: null, frameId: null, rankLabel: null });
   });
 
   it("keeps only each member's frame id from frame_url, and null when it is missing or not a frame file (D65)", async () => {
