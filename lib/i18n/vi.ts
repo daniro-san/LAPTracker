@@ -68,6 +68,12 @@ export const vi = {
     liveNoReading: "Chưa đọc",
     liveInterval: "Chu kỳ",
     liveKillsGained: "Tiêu diệt tăng",
+    liveFirst: "Bắt đầu {start} · lần đọc đầu {next}",
+    liveNoReadings: "Chưa có lần đọc nào",
+    liveOverdue: "(lần đọc đến hạn {time})",
+    liveKillsSoFar: "Tiêu diệt đến nay: {kills}",
+    liveLast: "{min} phút gần nhất: {last} (đỉnh {peak})",
+    liveDone: "Thay đổi từ Bắt đầu tại lần đọc {time}. Bảng trên dùng Kết thúc lúc {end}.",
     fought: "Tham chiến",
     foughtHelp:
       "Thành viên đã ở trong liên minh lúc Bắt đầu và lúc Kết thúc. Vai hỗ trợ không tăng tiêu diệt.",
@@ -143,6 +149,7 @@ export const vi = {
     failedRows: "Lỗi: {n}",
     start: "Bắt đầu",
     end: "Kết thúc",
+    endAfter: "sau {time}",
   },
   upstream: {
     title: "Dữ liệu game bị chậm",

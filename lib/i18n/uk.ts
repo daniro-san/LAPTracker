@@ -68,6 +68,12 @@ export const uk = {
     liveNoReading: "Знімка немає",
     liveInterval: "Інтервал",
     liveKillsGained: "Набрано Kills",
+    liveFirst: "Початок {start} · перший знімок {next}",
+    liveNoReadings: "Знімків ще немає",
+    liveOverdue: "(знімок мав бути {time})",
+    liveKillsSoFar: "Kills поки що: {kills}",
+    liveLast: "Останні {min} хв: {last} (пік {peak})",
+    liveDone: "Зміна від «Початку» на знімку {time}. Журнал вище використовує «Кінець» {end}.",
     fought: "Участь у війні",
     foughtHelp:
       "Members, які були в альянсі на початку і в кінці. Гравці підтримки не набирають Kills.",
@@ -143,6 +149,7 @@ export const uk = {
     failedRows: "Збій: {n}",
     start: "Початок",
     end: "Кінець",
+    endAfter: "після {time}",
   },
   upstream: {
     title: "Дані гри затримуються",

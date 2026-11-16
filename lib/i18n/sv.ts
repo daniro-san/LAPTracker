@@ -68,6 +68,13 @@ export const sv = {
     liveNoReading: "Ingen avläsning",
     liveInterval: "Intervall",
     liveKillsGained: "Kills vunna",
+    liveFirst: "Början {start} · första avläsningen {next}",
+    liveNoReadings: "Inga avläsningar än",
+    liveOverdue: "(avläsning väntas {time})",
+    liveKillsSoFar: "Kills hittills: {kills}",
+    liveLast: "Senaste {min} min: {last} (topp {peak})",
+    liveDone:
+      "Förändring sedan Början vid avläsningen {time}. Loggen ovan använder Slut vid {end}.",
     fought: "Krigsdeltagande",
     foughtHelp:
       "Members som fanns i alliansen vid Början och vid Slut. Supportspelare får inga Kills.",
@@ -143,6 +150,7 @@ export const sv = {
     failedRows: "Misslyckade: {n}",
     start: "Början",
     end: "Slut",
+    endAfter: "efter {time}",
   },
   upstream: {
     title: "Speldata är försenad",

@@ -68,6 +68,13 @@ export const ja = {
     liveNoReading: "読み取りなし",
     liveInterval: "間隔",
     liveKillsGained: "獲得 Kills",
+    liveFirst: "開始 {start} · 最初の読み取り {next}",
+    liveNoReadings: "まだ読み取りなし",
+    liveOverdue: "（読み取り予定 {time}）",
+    liveKillsSoFar: "ここまでの Kills：{kills}",
+    liveLast: "直近{min}分：{last}（ピーク {peak}）",
+    liveDone:
+      "開始からの変化は {time} の読み取り時点のものです。上の台帳は終了時点（{end}）の値を使っています。",
     fought: "参戦状況",
     foughtHelp: "開始と終了の両方で同盟にいた Members。支援役のプレイヤーは Kills を得ません。",
     withKills: "Kills を得た Members",
@@ -142,6 +149,7 @@ export const ja = {
     failedRows: "失敗：{n}",
     start: "開始",
     end: "終了",
+    endAfter: "{time} 以降",
   },
   upstream: {
     title: "ゲームデータが遅れています",

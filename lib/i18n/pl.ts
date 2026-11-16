@@ -68,6 +68,12 @@ export const pl = {
     liveNoReading: "Brak odczytu",
     liveInterval: "Odstęp",
     liveKillsGained: "Zdobyte Kills",
+    liveFirst: "Początek {start} · pierwszy odczyt {next}",
+    liveNoReadings: "Brak odczytów",
+    liveOverdue: "(odczyt miał być {time})",
+    liveKillsSoFar: "Kills dotąd: {kills}",
+    liveLast: "Ostatnie {min} min: {last} (szczyt {peak})",
+    liveDone: "Zmiana od Początku przy odczycie {time}. Księga powyżej korzysta z Końca o {end}.",
     fought: "Frekwencja wojny",
     foughtHelp:
       "Members, którzy byli w sojuszu na Początku i na Końcu. Gracze wsparcia nie zdobywają Kills.",
@@ -143,6 +149,7 @@ export const pl = {
     failedRows: "Błędy: {n}",
     start: "Początek",
     end: "Koniec",
+    endAfter: "po {time}",
   },
   upstream: {
     title: "Dane gry są opóźnione",

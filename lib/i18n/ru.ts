@@ -68,6 +68,12 @@ export const ru = {
     liveNoReading: "Чтения нет",
     liveInterval: "Интервал",
     liveKillsGained: "Набрано убийств",
+    liveFirst: "Начало {start} · первое чтение {next}",
+    liveNoReadings: "Чтений пока нет",
+    liveOverdue: "(чтение ожидалось в {time})",
+    liveKillsSoFar: "Убийства пока: {kills}",
+    liveLast: "За {min} мин: {last} (пик {peak})",
+    liveDone: "Изменение с «Начала» на чтении в {time}. Журнал выше использует «Конец» в {end}.",
     fought: "Участие",
     foughtHelp:
       "Участники, которые были в альянсе в начале и в конце. Игроки поддержки убийств не получают.",
@@ -143,6 +149,7 @@ export const ru = {
     failedRows: "Сбой: {n}",
     start: "Начало",
     end: "Конец",
+    endAfter: "после {time}",
   },
   upstream: {
     title: "Данные игры задерживаются",

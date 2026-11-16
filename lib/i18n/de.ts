@@ -68,6 +68,13 @@ export const de = {
     liveNoReading: "Keine Messung",
     liveInterval: "Intervall",
     liveKillsGained: "Gewonnene Kills",
+    liveFirst: "Beginn {start} · erste Messung {next}",
+    liveNoReadings: "Noch keine Messungen",
+    liveOverdue: "(Messung um {time} fällig)",
+    liveKillsSoFar: "Kills bisher: {kills}",
+    liveLast: "Letzte {min} Min.: {last} (Spitze {peak})",
+    liveDone:
+      "Änderung seit Beginn bei der Messung um {time}. Die Tabelle oben rechnet mit dem Ende um {end}.",
     fought: "Beteiligung am Krieg",
     foughtHelp:
       "Members, die bei Beginn und bei Ende in der Allianz waren. Support-Spieler sammeln keine Kills.",
@@ -143,6 +150,7 @@ export const de = {
     failedRows: "Fehlgeschlagen: {n}",
     start: "Beginn",
     end: "Ende",
+    endAfter: "nach {time}",
   },
   upstream: {
     title: "Spieldaten verzögert",

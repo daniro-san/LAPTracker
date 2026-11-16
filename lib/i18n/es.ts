@@ -68,6 +68,13 @@ export const es = {
     liveNoReading: "Sin lectura",
     liveInterval: "Intervalo",
     liveKillsGained: "Kills ganados",
+    liveFirst: "Inicio {start} · primera lectura {next}",
+    liveNoReadings: "Aún no hay lecturas",
+    liveOverdue: "(lectura prevista {time})",
+    liveKillsSoFar: "Kills hasta ahora: {kills}",
+    liveLast: "Últimos {min} min: {last} (pico {peak})",
+    liveDone:
+      "Cambio desde Inicio en la lectura de {time}. El registro de arriba usa el Fin de {end}.",
     fought: "Participación bélica",
     foughtHelp:
       "Members que estaban en la alianza al Inicio y al Fin. Los jugadores de apoyo no suman Kills.",
@@ -143,6 +150,7 @@ export const es = {
     failedRows: "Fallidos: {n}",
     start: "Inicio",
     end: "Fin",
+    endAfter: "después de {time}",
   },
   upstream: {
     title: "Datos del juego con retraso",

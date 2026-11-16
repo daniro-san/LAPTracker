@@ -68,6 +68,12 @@ export const ptBR = {
     liveNoReading: "Sem leitura",
     liveInterval: "Intervalo",
     liveKillsGained: "Kills ganhos",
+    liveFirst: "Início {start} · primeira leitura {next}",
+    liveNoReadings: "Nenhuma leitura ainda",
+    liveOverdue: "(leitura prevista para {time})",
+    liveKillsSoFar: "Kills até agora: {kills}",
+    liveLast: "Últimos {min} min: {last} (pico {peak})",
+    liveDone: "Mudança desde o Início, na leitura de {time}. O registro acima usa o Fim às {end}.",
     fought: "Participação",
     foughtHelp:
       "Members que estavam na aliança no Início e no Fim. Jogadores de suporte não ganham kills.",
@@ -143,6 +149,7 @@ export const ptBR = {
     failedRows: "Falhas: {n}",
     start: "Início",
     end: "Fim",
+    endAfter: "após {time}",
   },
   upstream: {
     title: "Dados do jogo atrasados",

@@ -69,6 +69,13 @@ export const tr = {
     liveNoReading: "Okuma yok",
     liveInterval: "Aralık",
     liveKillsGained: "Kazanılan Kills",
+    liveFirst: "Başlangıç {start} · ilk okuma {next}",
+    liveNoReadings: "Henüz okuma yok",
+    liveOverdue: "(okuma {time} bekleniyordu)",
+    liveKillsSoFar: "Şimdiye kadar Kills: {kills}",
+    liveLast: "Son {min} dk: {last} (zirve {peak})",
+    liveDone:
+      "{time} okumasına göre Başlangıç’tan beri değişim. Yukarıdaki defter {end} itibarıyla Bitiş’i kullanır.",
     fought: "Savaşa katılım",
     foughtHelp:
       "Başlangıç’ta ve Bitiş’te ittifakta olan Members. Destek oyuncuları Kills kazanmaz.",
@@ -144,6 +151,7 @@ export const tr = {
     failedRows: "Başarısız: {n}",
     start: "Başlangıç",
     end: "Bitiş",
+    endAfter: "{time} sonrası",
   },
   upstream: {
     title: "Oyun verileri gecikiyor",

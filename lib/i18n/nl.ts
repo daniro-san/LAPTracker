@@ -68,6 +68,13 @@ export const nl = {
     liveNoReading: "Geen meting",
     liveInterval: "Interval",
     liveKillsGained: "Kills gewonnen",
+    liveFirst: "Begin {start} · eerste meting {next}",
+    liveNoReadings: "Nog geen metingen",
+    liveOverdue: "(meting verwacht {time})",
+    liveKillsSoFar: "Kills tot nu toe: {kills}",
+    liveLast: "Laatste {min} min: {last} (piek {peak})",
+    liveDone:
+      "Verschil sinds Begin bij de meting van {time}. Het logboek hierboven gebruikt het Einde om {end}.",
     fought: "Oorlogsopkomst",
     foughtHelp:
       "Leden die bij Begin én bij Einde in de alliantie waren. Support-spelers krijgen geen Kills.",
@@ -143,6 +150,7 @@ export const nl = {
     failedRows: "Mislukt: {n}",
     start: "Begin",
     end: "Einde",
+    endAfter: "na {time}",
   },
   upstream: {
     title: "Spelgegevens vertraagd",

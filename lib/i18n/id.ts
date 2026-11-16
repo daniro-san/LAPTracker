@@ -69,6 +69,12 @@ export const idID = {
     liveNoReading: "Belum ada pembacaan",
     liveInterval: "Interval",
     liveKillsGained: "Kills didapat",
+    liveFirst: "Awal {start} · pembacaan pertama {next}",
+    liveNoReadings: "Belum ada pembacaan",
+    liveOverdue: "(pembacaan seharusnya {time})",
+    liveKillsSoFar: "Kills sejauh ini: {kills}",
+    liveLast: "{min} menit terakhir: {last} (puncak {peak})",
+    liveDone: "Perubahan sejak Awal pada pembacaan {time}. Buku di atas memakai Akhir pada {end}.",
     fought: "Partisipasi perang",
     foughtHelp:
       "Members yang ada di aliansi di Awal dan di Akhir. Pemain support tidak mendapat Kills.",
@@ -144,6 +150,7 @@ export const idID = {
     failedRows: "Gagal: {n}",
     start: "Awal",
     end: "Akhir",
+    endAfter: "setelah {time}",
   },
   upstream: {
     title: "Data game tertunda",

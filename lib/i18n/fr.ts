@@ -68,6 +68,13 @@ export const fr = {
     liveNoReading: "Aucun relevé",
     liveInterval: "Intervalle",
     liveKillsGained: "Kills gagnés",
+    liveFirst: "Début {start} · premier relevé {next}",
+    liveNoReadings: "Aucun relevé pour l’instant",
+    liveOverdue: "(relevé attendu {time})",
+    liveKillsSoFar: "Kills pour l’instant : {kills}",
+    liveLast: "Dernières {min} min : {last} (pic {peak})",
+    liveDone:
+      "Évolution depuis Début, au relevé de {time}. Le registre ci-dessus utilise la Fin à {end}.",
     fought: "Participation",
     foughtHelp:
       "Membres qui étaient dans l’alliance au Début et à la Fin. Les joueurs de soutien ne gagnent pas de Kills.",
@@ -144,6 +151,7 @@ export const fr = {
     failedRows: "Échecs : {n}",
     start: "Début",
     end: "Fin",
+    endAfter: "après {time}",
   },
   upstream: {
     title: "Données du jeu en retard",

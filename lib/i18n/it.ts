@@ -68,6 +68,13 @@ export const itIT = {
     liveNoReading: "Nessuna lettura",
     liveInterval: "Intervallo",
     liveKillsGained: "Kills guadagnati",
+    liveFirst: "Inizio {start} · prima lettura {next}",
+    liveNoReadings: "Ancora nessuna lettura",
+    liveOverdue: "(lettura prevista {time})",
+    liveKillsSoFar: "Kills finora: {kills}",
+    liveLast: "Ultimi {min} min: {last} (picco {peak})",
+    liveDone:
+      "Variazione da Inizio alla lettura delle {time}. Il registro sopra usa la Fine alle {end}.",
     fought: "Partecipazione",
     foughtHelp:
       "I Members presenti nell’alleanza a Inizio e a Fine. I giocatori di supporto non guadagnano Kills.",
@@ -143,6 +150,7 @@ export const itIT = {
     failedRows: "Falliti: {n}",
     start: "Inizio",
     end: "Fine",
+    endAfter: "dopo {time}",
   },
   upstream: {
     title: "Dati del gioco in ritardo",
