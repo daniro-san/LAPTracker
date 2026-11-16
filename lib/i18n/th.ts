@@ -62,8 +62,8 @@ export const th = {
     liveStandingsHelp: "การเปลี่ยนแปลงจากเริ่ม เรียงจาก Kills ที่เพิ่มมากสุดก่อน",
     livePulse: "ชีพจรเซิร์ฟเวอร์",
     livePulseHelp: "พันธมิตร {n} แห่งได้ Kills เพิ่มในทุก {min} นาที",
-    liveBusiest: "ช่วง 30 นาทีที่คึกที่สุดจนถึงตอนนี้: {from}–{to} · {share} ของ Kills",
-    liveBusiestDone: "ช่วง 30 นาทีที่คึกที่สุด: {from}–{to} · {share} ของ Kills",
+    liveBusiest: "ช่วง {span} นาทีที่คึกที่สุดจนถึงตอนนี้: {from}–{to} · {share} ของ Kills",
+    liveBusiestDone: "ช่วง {span} นาทีที่คึกที่สุด: {from}–{to} · {share} ของ Kills",
     liveNoUpdate: "เกมไม่ส่งการอัปเดตมา",
     liveNoReading: "ไม่มีการอ่าน",
     liveInterval: "ช่วงเวลา",
@@ -77,6 +77,8 @@ export const th = {
     fought: "ผู้ร่วมศึก",
     foughtSoFar: "ผู้ร่วมศึกจนถึงตอนนี้",
     foughtHelp: "สมาชิกที่อยู่ในพันธมิตรทั้งตอนเริ่มและตอนสิ้นสุด สายซัพพอร์ตไม่เพิ่ม Kills",
+    foughtSoFarHelp:
+      "สมาชิกที่อยู่ในพันธมิตรทั้งตอนเริ่มและตอนอ่านล่าสุด สายซัพพอร์ตไม่เพิ่ม Kills",
     withKills: "Members ที่ได้ Kills เพิ่ม",
     topShare: "Kills จากสมาชิก Top 5",
     topShareHelp:

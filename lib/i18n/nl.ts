@@ -62,8 +62,8 @@ export const nl = {
     liveStandingsHelp: "Verschil sinds Begin, de meeste kills gewonnen eerst",
     livePulse: "Serverpuls",
     livePulseHelp: "Kills gewonnen door {n} allianties in elke {min} minuten",
-    liveBusiest: "Drukste 30 minuten tot nu toe: {from}–{to} · {share} van de kills",
-    liveBusiestDone: "Drukste 30 minuten: {from}–{to} · {share} van de kills",
+    liveBusiest: "Drukste {span} minuten tot nu toe: {from}–{to} · {share} van de kills",
+    liveBusiestDone: "Drukste {span} minuten: {from}–{to} · {share} van de kills",
     liveNoUpdate: "Geen update van het spel",
     liveNoReading: "Geen meting",
     liveInterval: "Interval",
@@ -79,6 +79,8 @@ export const nl = {
     foughtSoFar: "Oorlogsopkomst tot nu toe",
     foughtHelp:
       "Leden die bij Begin én bij Einde in de alliantie waren. Support-spelers krijgen geen Kills.",
+    foughtSoFarHelp:
+      "Leden die bij Begin én bij de laatste meting in de alliantie waren. Support-spelers krijgen geen Kills.",
     withKills: "Members met behaalde Kills",
     topShare: "Kills van de top 5 leden",
     topShareHelp:

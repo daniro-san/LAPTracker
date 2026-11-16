@@ -63,8 +63,8 @@ export const ko = {
     liveStandingsHelp: "시작 이후 변화, 처치 획득이 많은 순",
     livePulse: "서버 흐름",
     livePulseHelp: "{min}분마다 {n}개 연맹이 획득한 처치",
-    liveBusiest: "지금까지 가장 바쁜 30분: {from}–{to} · 처치의 {share}",
-    liveBusiestDone: "가장 바쁜 30분: {from}–{to} · 처치의 {share}",
+    liveBusiest: "지금까지 가장 바쁜 {span}분: {from}–{to} · 처치의 {share}",
+    liveBusiestDone: "가장 바쁜 {span}분: {from}–{to} · 처치의 {share}",
     liveNoUpdate: "게임에서 온 업데이트 없음",
     liveNoReading: "읽기 없음",
     liveInterval: "간격",
@@ -78,6 +78,8 @@ export const ko = {
     fought: "전투 참여",
     foughtSoFar: "지금까지 전투 참여",
     foughtHelp: "시작과 종료 때 모두 연맹에 있던 인원입니다. 지원 플레이어는 처치가 늘지 않습니다.",
+    foughtSoFarHelp:
+      "시작 때와 최근 읽기 때 모두 연맹에 있던 인원입니다. 지원 플레이어는 처치가 늘지 않습니다.",
     withKills: "처치가 늘어난 인원",
     topShare: "상위 5명의 처치",
     topShareHelp:

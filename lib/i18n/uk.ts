@@ -62,8 +62,8 @@ export const uk = {
     liveStandingsHelp: "Зміна від «Початку», спершу більше Kills",
     livePulse: "Пульс сервера",
     livePulseHelp: "Набрані Kills альянсами ({n}) за кожні {min} хв",
-    liveBusiest: "Найжвавіші 30 хв поки що: {from}–{to} · {share} від усіх Kills",
-    liveBusiestDone: "Найжвавіші 30 хв: {from}–{to} · {share} від усіх Kills",
+    liveBusiest: "Найжвавіші {span} хв поки що: {from}–{to} · {share} від усіх Kills",
+    liveBusiestDone: "Найжвавіші {span} хв: {from}–{to} · {share} від усіх Kills",
     liveNoUpdate: "Оновлень від гри немає",
     liveNoReading: "Знімка немає",
     liveInterval: "Інтервал",
@@ -78,6 +78,8 @@ export const uk = {
     foughtSoFar: "Участь у війні поки що",
     foughtHelp:
       "Members, які були в альянсі на початку і в кінці. Гравці підтримки не набирають Kills.",
+    foughtSoFarHelp:
+      "Members, які були в альянсі на початку і на його останньому знімку. Гравці підтримки не набирають Kills.",
     withKills: "Members, що набрали Kills",
     topShare: "Kills від топ-5 учасників",
     topShareHelp:

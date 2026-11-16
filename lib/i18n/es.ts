@@ -62,8 +62,8 @@ export const es = {
     liveStandingsHelp: "Cambio desde Inicio, de más Kills ganados a menos",
     livePulse: "Pulso del servidor",
     livePulseHelp: "Kills ganados por {n} alianzas en cada {min} minutos",
-    liveBusiest: "Los 30 minutos más intensos hasta ahora: {from}–{to} · {share} de los Kills",
-    liveBusiestDone: "Los 30 minutos más intensos: {from}–{to} · {share} de los Kills",
+    liveBusiest: "Los {span} minutos más intensos hasta ahora: {from}–{to} · {share} de los Kills",
+    liveBusiestDone: "Los {span} minutos más intensos: {from}–{to} · {share} de los Kills",
     liveNoUpdate: "Sin actualización del juego",
     liveNoReading: "Sin lectura",
     liveInterval: "Intervalo",
@@ -79,6 +79,8 @@ export const es = {
     foughtSoFar: "Participación bélica hasta ahora",
     foughtHelp:
       "Members que estaban en la alianza al Inicio y al Fin. Los jugadores de apoyo no suman Kills.",
+    foughtSoFarHelp:
+      "Members que estaban en la alianza al Inicio y en su última lectura. Los jugadores de apoyo no suman Kills.",
     withKills: "Members que sumaron Kills",
     topShare: "Kills de los 5 mejores Members",
     topShareHelp:
