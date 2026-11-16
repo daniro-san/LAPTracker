@@ -74,7 +74,7 @@ The rest of the message:
 | ✗ / ⚠ **Daily roster read 2026-11-12: failed / partly done** | The 06:00 roster read for member history fell short. Not sent when it is done.                                                                                          |
 | `✗ v1 TimeoutError (12): [NSE], …`                           | The alliances that were not read, one line per reason. `not fetched: deadline` means the read stopped before reaching them.                                             |
 | `↳ …`                                                        | Under each reason: what it means and what to do.                                                                                                                        |
-| `[Retry on /admin ↗]` / `[Daily reads ↗]`                    | A failed day: open `/admin` and press **Retry**. A partly done day: see it in the runs list.                                                                            |
+| `[Retry on /admin ↗]` / `[Daily reads ↗]`                    | Open `/admin` and press **Retry**. A partly done day also links the runs list, to see what failed.                                                                      |
 
 The practice run's verdict has six checks: both snapshots complete; every alliance fresh in both; the game's data moved forward for every alliance; the requests used equal the drop in the daily count; each run under 120 seconds; both snapshots started within 45 minutes of their due time.
 
@@ -124,7 +124,7 @@ Things to know:
 - **If that snapshot is already done**, the page asks _"This snapshot is already done. Take it again?"_ Say yes only if you mean to replace that phase's numbers.
 - **Manual round.** For a test on a weekday: **Start a manual round** on `/admin`. Give it a name, choose who can see it, and whether it posts to the public channel. Then press its Before and After buttons. A manual round has no schedule and does not affect Saturday's comparisons unless you choose "history".
 - **Rename.** **Rename** next to the current event on `/admin` changes its name on the public pages. You can rename the Saturday event from a day before its Before snapshot. Discord messages already sent keep the old name.
-- **Daily roster read failed.** When today's 06:00 read failed (for example the game's data service timed out), `/admin` shows it under **Run something now** with a **Retry** button. It reads every roster again and costs about 21 requests. It only appears while today's read is failed, or when it started and never finished.
+- **Daily roster read fell short.** When today's 06:00 read failed or closed partly done (for example the game's data service timed out for some alliances), `/admin` shows it under **Run something now** with a **Retry** button. It reads every roster again and costs about 21 requests. A roster already read today is replaced only by a new read that worked. It only appears while today's read is failed or partly done, or when it started and never finished; a past day cannot be read again.
 - **Practice run.** **Rehearse** runs a practice event with the full checks. It costs about 45 requests and takes about 50 minutes.
 - **GitHub, if `/admin` is not reachable.** On the repository, open Actions → **tick** → **Run workflow**, and pick `before` or `after`.
 

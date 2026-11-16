@@ -109,10 +109,13 @@ export const adminCopy = {
     daily: {
       title: "Daily roster read",
       failed: "Today's read failed at {at}: {error}. API calls used today: {calls}.",
+      partial:
+        "Today's read closed partly done at {at}: some rosters failed, were stale or were not reached. API calls used today: {calls}.",
       stuck: "Today's read started at {at} and never finished.",
       retry: "Retry",
       cost: "≈ 21 calls",
-      confirm: "Read every roster again now? About 21 API calls, up to 100 seconds.",
+      confirm:
+        "Read every roster again now? About 21 API calls, up to 100 seconds. A roster already read today stays if its new read fails.",
       result:
         "{mark} Daily roster read {status}. API calls used: {calls}. Stale: {stale}. Failed: {failed}.",
     },
@@ -148,7 +151,8 @@ export const adminCopy = {
       rehearsal_event_day: "Not on the event day or the day after.",
       rehearsal_before_real: "Too close to the real before snapshot (within 3 hours).",
       rehearsal_real_running: "A real run is in progress.",
-      daily_read_not_retryable: "Today's roster read has not failed, or is already running again.",
+      daily_read_not_retryable:
+        "Today's roster read is complete, has not started, or is already running again.",
       rate_limited: "Too many attempts. Wait a few minutes.",
       pin_locked: "PIN entry is locked for an hour.",
       unauthorized: "Wrong PIN, or the PIN has changed. Press again to enter it.",

@@ -12,9 +12,10 @@ import type { Db } from "./db";
 import { createRunLogger, type RunLogger } from "./logger";
 import {
   claimDailyRead,
+  dailyRosterStates,
   finishDailyRead,
-  insertDailyRoster,
   reclaimDailyRead,
+  storeDailyRoster,
   type DailyReadStatus,
   type NewDailyRoster,
 } from "./repo/daily-reads";
@@ -205,9 +206,9 @@ export async function runDailyRead(
   return readDay(deps, db, day, ids);
 }
 
-/** /admin's retry: the same read again for a day that failed, or that was left `running` past
- * RUN_STALE_AFTER_MS (the function was killed). Null for any other day (no read, running, complete,
- * partial) or when another press took it first. */
+/** /admin's retry (D67): the same read again, every roster, for a day that fell short (`failed` or
+ * `partial`) or was left `running` past RUN_STALE_AFTER_MS (the function was killed). Null for any other
+ * day (no read, running, complete) or when another press took it first. */
 export async function retryDailyRead(
   deps: Deps,
   db: Db,
@@ -245,9 +246,10 @@ async function readDay(
   const error = await withDeadline(read, readRosters(read, ids));
   if (error === "deadline") await log.warn("run.deadline", { calls_used: read.calls });
   else if (error && !error.startsWith("quota")) await log.error("abort", { reason: error });
-  const rows = [...read.rows];
-  for (const row of rows) await insertDailyRoster(db, day, row);
+  for (const row of [...read.rows]) await storeDailyRoster(db, day, row);
   for (const f of read.frames) await recordFrames(db, f.members, f.seenAt);
+  // The day's rows, not this attempt's: after a retry they include the rosters it kept (D67).
+  const rows = await dailyRosterStates(db, day);
   const ok = rows.filter((r) => r.error === null);
   const status: DailyReadStatus =
     ok.length === 0
@@ -266,22 +268,13 @@ async function readDay(
   await log.shutdown();
   // Error rows, then the alliances the read never reached (deadline, 429, call cap, quota rule),
   // named as the collector names them, so the admin line accounts for every alliance.
-  const failed = failedList(
-    rows.map((r) => ({
-      unionId: r.unionId,
-      tag: r.tag ?? null,
-      isFresh: r.isFresh,
-      error: r.error ?? null,
-    })),
-    [...ids],
-    error,
-  );
+  const failed = failedList(rows, [...ids], error);
   return {
     day,
     status,
     callsUsed: read.calls,
     error,
     failed,
-    stale: ok.filter((r) => !r.isFresh).map((r) => ({ unionId: r.unionId, tag: r.tag ?? null })),
+    stale: ok.filter((r) => !r.isFresh).map((r) => ({ unionId: r.unionId, tag: r.tag })),
   };
 }
