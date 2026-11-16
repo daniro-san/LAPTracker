@@ -106,4 +106,4 @@ Plan changes needed: none.
 - The `/v1` stand-in must send `updated_at` as epoch seconds (a number); an ISO string fails `v1.schema`. For clock-driven runs, stamp it with the script's clock or every roster is stale.
 </adjustments>
 
-PR: (added by the orchestrator)
+https://github.com/daniro-san/LAPTracker/pull/314
