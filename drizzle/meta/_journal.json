@@ -141,13 +141,6 @@
       "when": 1794853943064,
       "tag": "0019_furry_fabian_cortez",
       "breakpoints": true
-    },
-    {
-      "idx": 20,
-      "version": "7",
-      "when": 1794869994643,
-      "tag": "0020_notices",
-      "breakpoints": true
     }
   ]
 }
