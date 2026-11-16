@@ -11,6 +11,10 @@ const MINUTE = 60_000;
 export const SAMPLE_WAIT_MS = MINUTE;
 /** How long after an event's End is due the page looks once more for it. */
 export const END_WAIT_MS = 2 * MINUTE;
+/** The busiest span is named only once this many intervals were compared: before that it is noise. */
+export const BUSIEST_MIN_INTERVALS = 4;
+/** A slot's sample that is still missing this long after the slot is called overdue. */
+export const OVERDUE_MS = 3 * MINUTE;
 
 /** One reading: its time and every alliance that was read (a failed alliance is absent). */
 export interface Slice {
@@ -117,7 +121,7 @@ export interface Busiest {
   from: Date;
   to: Date;
   kills: number;
-  /** This span's kills over all the kills gained in the compared intervals, 0..1. */
+  /** This span's kills over all the kills gained since Start, 0..1. */
   share: number;
   /** Index of its first interval in the pulse. */
   index: number;
@@ -126,17 +130,17 @@ export interface Busiest {
 /**
  * The two consecutive intervals with the most kills (a rolling 30 minutes at the 15-minute cadence, which
  * holds the same number of game updates whatever the phase). Needs both intervals compared and a gain;
- * null otherwise. The first such span wins a tie.
+ * null otherwise. The first such span wins a tie. `total` is all the kills gained since Start (the
+ * standings' sum), not the sum of the compared intervals: a missed reading must not inflate the share.
  */
-export function busiestSpan(slots: readonly PulseSlot[]): Busiest | null {
-  const total = slots.reduce((sum, s) => sum + (s.kills ?? 0), 0);
+export function busiestSpan(slots: readonly PulseSlot[], total: number): Busiest | null {
   let best: Busiest | null = null;
   for (let i = 0; i + 1 < slots.length; i++) {
     const [a, b] = [slots[i] as PulseSlot, slots[i + 1] as PulseSlot];
     if (a.kills === null || b.kills === null) continue;
     const kills = a.kills + b.kills;
     if (kills > 0 && total > 0 && (!best || kills > best.kills))
-      best = { from: a.from, to: b.to, kills, share: kills / total, index: i };
+      best = { from: a.from, to: b.to, kills, share: Math.min(1, kills / total), index: i };
   }
   return best;
 }
@@ -158,4 +162,23 @@ export function nextReading(
   if (at >= slotOf(afterAt, everyMin).getTime())
     return { at: afterAt, refreshAt: new Date(afterAt.getTime() + END_WAIT_MS) };
   return { at: new Date(at), refreshAt: new Date(at + SAMPLE_WAIT_MS) };
+}
+
+/**
+ * The slot whose sample is overdue: the current slot when it is after `sinceAt` (the latest sample, or the
+ * Start), before the End's own slot, and began more than `OVERDUE_MS` ago; otherwise null.
+ */
+export function overdueSlot(
+  now: Date,
+  everyMin: number,
+  sinceAt: Date,
+  afterAt: Date,
+): Date | null {
+  if (everyMin <= 0) return null;
+  const slot = slotOf(now, everyMin);
+  const due =
+    slot.getTime() > sinceAt.getTime() &&
+    slot.getTime() < slotOf(afterAt, everyMin).getTime() &&
+    now.getTime() - slot.getTime() > OVERDUE_MS;
+  return due ? slot : null;
 }

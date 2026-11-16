@@ -67,7 +67,7 @@ describe("serverPulse and busiestSpan", () => {
   });
 
   it("names the two consecutive intervals with most kills and their share of all kills", () => {
-    expect(busiestSpan(pulse)).toMatchObject({
+    expect(busiestSpan(pulse, 75)).toMatchObject({
       from: at("12:15"),
       to: at("12:45"),
       kills: 60,
@@ -76,9 +76,14 @@ describe("serverPulse and busiestSpan", () => {
     });
   });
 
+  it("divides by all the kills gained since Start, so a missed reading does not inflate the share", () => {
+    // 13:00 was not read: the intervals hold 75 of the 90 kills gained (50 + 40 at 13:15, from 0 at Start).
+    expect(busiestSpan(pulse, 90)?.share).toBe(60 / 90);
+  });
+
   it("names none before there are two compared intervals with a gain", () => {
-    expect(busiestSpan(pulse.slice(0, 1))).toBeNull();
-    expect(busiestSpan(pulse.slice(3))).toBeNull();
+    expect(busiestSpan(pulse.slice(0, 1), 75)).toBeNull();
+    expect(busiestSpan(pulse.slice(3), 75)).toBeNull();
   });
 });
 

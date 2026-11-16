@@ -7,12 +7,15 @@ import { and, asc, eq, isNull, ne } from "drizzle-orm";
 import type { Measured } from "../compute";
 import type { Db } from "../db";
 import {
+  BUSIEST_MIN_INTERVALS,
   busiestSpan,
   nextReading,
+  overdueSlot,
   serverPulse,
   standings,
   type Busiest,
   type PulseSlot,
+  type Slice,
   type Standing,
 } from "../live";
 import { allianceSnapshots, events, snapshots } from "../schema";
@@ -23,12 +26,19 @@ export interface EventProgress {
   live: boolean;
   /** Samples taken so far. */
   readings: number;
-  /** The latest sample's time. */
-  latestAt: Date;
+  /** The Start's time. */
+  startAt: Date;
+  /** The latest sample's time; null before the first reading. */
+  latestAt: Date | null;
   /** Live only: the next reading and when the page should look again. */
   next: { at: Date; refreshAt: Date } | null;
+  /** Live only: the slot whose sample is more than 3 minutes late. */
+  overdue: Date | null;
   standings: Standing[];
+  /** Kills gained since Start at the latest reading, over the alliances with a change. */
+  killsTotal: number;
   pulse: PulseSlot[];
+  /** Null before 4 intervals are compared. */
   busiest: Busiest | null;
   /** The interval between samples, in minutes. */
   everyMin: number;
@@ -39,7 +49,8 @@ type Row = {
   phase: "before" | "after" | "sample";
   status: string;
   slotAt: Date | null;
-  beforeAt: Date;
+  startedAt: Date;
+  finishedAt: Date | null;
   unionId: number | null;
   isFresh: boolean | null;
   totalPower: number | null;
@@ -51,7 +62,7 @@ function readSlices(rows: Row[]) {
   const slices = new Map<number, { at: Date; alliances: Map<number, Measured> }>();
   for (const r of rows) {
     if (r.phase === "after" || r.status === "running" || r.unionId === null) continue;
-    const at = r.phase === "before" ? r.beforeAt : (r.slotAt as Date);
+    const at = r.phase === "before" ? (r.finishedAt ?? r.startedAt) : (r.slotAt as Date);
     const slice = slices.get(r.snapshotId) ?? { at, alliances: new Map() };
     slice.alliances.set(r.unionId, {
       isFresh: r.isFresh === true,
@@ -64,7 +75,8 @@ function readSlices(rows: Row[]) {
 }
 
 /**
- * The public event's progress; null when it is not public, has no usable Start or no usable sample.
+ * The public event's progress; null when it is not public, has no usable Start, or has no sample and is
+ * not live (a live event with no sample yet still has progress: the strip).
  * `everyMin` is `SAMPLE_EVERY_MIN` (0 = off: nothing is live).
  */
 export async function eventProgress(
@@ -78,7 +90,8 @@ export async function eventProgress(
       phase: snapshots.phase,
       status: snapshots.status,
       slotAt: snapshots.slotAt,
-      beforeAt: events.beforeAt,
+      startedAt: snapshots.startedAt,
+      finishedAt: snapshots.finishedAt,
       afterAt: events.afterAt,
       unionId: allianceSnapshots.unionId,
       isFresh: allianceSnapshots.isFresh,
@@ -108,19 +121,38 @@ export async function eventProgress(
     .map(([, slice]) => slice)
     .sort((a, b) => a.at.getTime() - b.at.getTime());
   const latest = samples.at(-1);
-  if (!start || !latest) return null;
+  if (!start) return null;
   const startDone = rows.some((r) => r.phase === "before" && r.status !== "running");
   const ended = rows.some((r) => r.phase === "after");
   const next = startDone && !ended ? nextReading(now, everyMin, first.afterAt) : null;
+  // Nothing to show before the first reading unless the event is live (the strip says when it comes).
+  if (!latest && !next) return null;
+  return progressOf(start, samples, next, { now, everyMin, afterAt: first.afterAt });
+}
+
+/** The figures of the readings so far; the pulse and the standings are empty before the first one. */
+function progressOf(
+  start: Slice,
+  samples: Slice[],
+  next: EventProgress["next"],
+  { now, everyMin, afterAt }: { now: Date; everyMin: number; afterAt: Date },
+): EventProgress {
+  const latest = samples.at(-1);
   const pulse = serverPulse([start, ...samples], everyMin * 60_000);
+  const rank = latest ? standings(start, samples) : [];
+  const killsTotal = rank.reduce((sum, s) => sum + (s.change?.kills ?? 0), 0);
+  const compared = pulse.filter((s) => s.kills !== null).length;
   return {
     live: next !== null,
     readings: samples.length,
-    latestAt: latest.at,
+    startAt: start.at,
+    latestAt: latest?.at ?? null,
     next,
-    standings: standings(start, samples),
+    overdue: next ? overdueSlot(now, everyMin, latest?.at ?? start.at, afterAt) : null,
+    standings: rank,
+    killsTotal,
     pulse,
-    busiest: busiestSpan(pulse),
+    busiest: compared >= BUSIEST_MIN_INTERVALS ? busiestSpan(pulse, killsTotal) : null,
     everyMin,
   };
 }
