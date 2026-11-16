@@ -100,6 +100,8 @@ Words already used in `lib/i18n/de.ts`. Reuse them so the pages stay consistent;
 | War turnout               | Beteiligung am Krieg         | `ledger.fought` — the event page's kills section title                                 |
 | gainers                   | Zuwächser                    | `ledger.fewGainers` — a member whose Kills rose                                        |
 | Support player            | Support-Spieler              | `ledger.foughtHelp` — a player who gains no kills                                      |
+| Bloc                      | Block                        | `balance.bloc` — a hypothetical group of alliances, A or B                             |
+| Server might              | Server-Might                 | `balance.total`, `balance.shares` — Might stays English                                |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

@@ -163,6 +163,7 @@ Words already used in `lib/i18n/th.ts`. Reuse them so the pages stay consistent;
 | Support (a player's role)           | ซัพพอร์ต                      | `ledger.foughtHelp` — a support player gains no Kills                                                     |
 | gainer (a member whose Kills rose)  | Members ที่ได้ Kills เพิ่ม    | `ledger.withKills`, `ledger.topShareHelp`; `ledger.fewGainers` uses the short form `ผู้ได้เพิ่มน้อย`      |
 | peak (busiest interval in a window) | จุดสูงสุด                     | `ledger.liveLast` — the largest Kills gain in one interval of the last minutes                            |
+| Bloc (a group of alliances)         | กลุ่ม                         | `balance.bloc`, `balance.addTo`, `balance.clear` — the bloc builder                                       |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

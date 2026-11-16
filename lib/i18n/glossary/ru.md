@@ -75,10 +75,11 @@ Words already used in `lib/i18n/ru.ts`. Reuse them so the pages stay consistent;
 
 The game's own word for each term, with the page that shows it in the game's text and the quote. A term not listed stays English. Add a row only with a source that carries the game's own text (datamined text or an in-game screenshot), never a guide's prose (D52).
 
-| English | ru        | Source                                        | Quote                                                         |
-| ------- | --------- | --------------------------------------------- | ------------------------------------------------------------- |
-| Might   | Мощь      | https://lastasylum.gg/ru/events/alliance-duel | входящие в топ-32 по мощи на сервере                          |
-| Kills   | Убийства  | https://lastasylum.gg/ru/events/kingdom-war   | Повышайте свой рейтинг убийств и достигайте ступеней по очкам |
-| Members | Участники | https://lastasylum.gg/ru/events/alliance-duel | допускаются альянсы с более чем 20 участниками в воскресенье  |
+| English | ru        | Source                                                                                | Quote                                                         |
+| ------- | --------- | ------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| Might   | Мощь      | https://lastasylum.gg/ru/events/alliance-duel                                         | входящие в топ-32 по мощи на сервере                          |
+| Kills   | Убийства  | https://lastasylum.gg/ru/events/kingdom-war                                           | Повышайте свой рейтинг убийств и достигайте ступеней по очкам |
+| Members | Участники | https://lastasylum.gg/ru/events/alliance-duel                                         | допускаются альянсы с более чем 20 участниками в воскресенье  |
+| Bloc    | Блок      | `balance.bloc`, `balance.noBloc`, `balance.clear` — a hypothetical group of alliances |
 
 Nominative plural for the column headers (`Убийства`, `Участники`); lower case after an abbreviation (`Мин. мощь`). Level stays English: the game writes `ур.` before the number, not as a header.
