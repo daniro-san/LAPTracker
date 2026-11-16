@@ -1,5 +1,5 @@
 // daily_reads and daily_rosters (D60): the tick's once-a-day roster read for member history.
-import { and, eq, lt, or, sql } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, lt, or, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { dailyReads, dailyRosters } from "../schema";
@@ -17,9 +17,9 @@ export async function claimDailyRead(db: Db, day: string, startedAt: Date): Prom
   return rows.length > 0;
 }
 
-/** /admin's retry: takes a `failed` day, or one left `running` since before `staleBefore` (the read was
- * killed), back to `running` for exactly one caller. Then it clears that day's rows so the new read can
- * store its own: a failed read has only error rows, and a killed one may have stored part of its rows. */
+/** /admin's retry (D67): takes a day that fell short (`failed` or `partial`), or one left `running`
+ * since before `staleBefore` (the read was killed), back to `running` for exactly one caller. Then it
+ * drops that day's error rows, so the new read can store its own. The rosters already read stay. */
 export async function reclaimDailyRead(
   db: Db,
   day: string,
@@ -33,14 +33,16 @@ export async function reclaimDailyRead(
       and(
         eq(dailyReads.day, day),
         or(
-          eq(dailyReads.status, "failed"),
+          inArray(dailyReads.status, ["failed", "partial"]),
           and(eq(dailyReads.status, "running"), lt(dailyReads.startedAt, staleBefore)),
         ),
       ),
     )
     .returning({ day: dailyReads.day });
   if (rows.length === 0) return false;
-  await db.delete(dailyRosters).where(eq(dailyRosters.readDay, day));
+  await db
+    .delete(dailyRosters)
+    .where(and(eq(dailyRosters.readDay, day), isNotNull(dailyRosters.error)));
   return true;
 }
 
@@ -59,8 +61,32 @@ export async function getDailyRead(db: Db, day: string) {
   return row ?? null;
 }
 
-export async function insertDailyRoster(db: Db, day: string, row: NewDailyRoster): Promise<void> {
-  await db.insert(dailyRosters).values({ ...row, readDay: day });
+/**
+ * Stores one alliance's row of the day. On a retry a roster that was read replaces the day's earlier
+ * one. INVARIANT daily-read.retry-keeps-rosters: an error row never replaces a roster the day has.
+ */
+export async function storeDailyRoster(db: Db, day: string, row: NewDailyRoster): Promise<void> {
+  const insert = db.insert(dailyRosters).values({ ...row, readDay: day });
+  if (typeof row.error === "string") await insert.onConflictDoNothing();
+  else
+    await insert.onConflictDoUpdate({
+      target: [dailyRosters.readDay, dailyRosters.unionId],
+      set: row,
+    });
+}
+
+/** Every row the day has now, for the read's outcome: after a retry that includes the rosters it kept. */
+export function dailyRosterStates(db: Db, day: string) {
+  return db
+    .select({
+      unionId: dailyRosters.unionId,
+      tag: dailyRosters.tag,
+      isFresh: dailyRosters.isFresh,
+      error: dailyRosters.error,
+      sourceUpdatedAt: dailyRosters.sourceUpdatedAt,
+    })
+    .from(dailyRosters)
+    .where(eq(dailyRosters.readDay, day));
 }
 
 export async function finishDailyRead(

@@ -1,7 +1,7 @@
-// POST /api/daily-read/retry — /admin's "Retry" on today's daily roster read (D60 amendment): the same
-// read as the tick's, run again once per press, only while today's read is `failed` or was left
-// `running` by a killed function. PIN only, same rate limiter. The answer is the read's outcome; no
-// Discord line, the owner sees it on the page.
+// POST /api/daily-read/retry — /admin's "Retry" on today's daily roster read (D60, D67): the same read
+// as the tick's, every roster, run again once per press, only while today's read is `failed`, `partial`
+// or was left `running` by a killed function. PIN only, same rate limiter. The answer is the read's
+// outcome; no Discord line, the owner sees it on the page.
 import { z } from "zod";
 
 import { DAILY_ROSTER_IDS } from "@/config/alliances";

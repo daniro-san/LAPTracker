@@ -1,6 +1,6 @@
 // The daily roster read's admin line (D60): posted by the tick only when the read falls short. Failed
 // alliances are grouped by reason, so a whole-day outage stays a few lines, and the last line links to
-// what can be done: Retry on /admin for a failed day, the daily reads list for a partial one.
+// what can be done: Retry on /admin (D67), and for a partial day the daily reads list as well.
 import { copy, fill } from "./copy";
 import type { DailyReadSummary } from "./daily-read";
 import { guideFor } from "./error-guide";
@@ -28,10 +28,8 @@ export function dailyReadMessage(s: DailyReadSummary, at: string, origin: string
   }
   if (s.stale.length > 0)
     lines.push(fill(t.stale, { list: s.stale.map(allianceLabel).join(", ") }));
-  lines.push(
-    s.status === "failed"
-      ? fill(t.dailyRetry, { url: `${origin}/admin` })
-      : fill(t.dailyRuns, { url: `${origin}/admin/runs?show=daily` }),
-  );
+  const retry = fill(t.dailyRetry, { url: `${origin}/admin` });
+  const runs = fill(t.dailyRuns, { url: `${origin}/admin/runs?show=daily` });
+  lines.push(s.status === "failed" ? retry : `${retry} · ${runs}`);
   return lines.join("\n");
 }
