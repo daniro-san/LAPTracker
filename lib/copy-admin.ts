@@ -1,6 +1,8 @@
 // The admin area's text (app/(pages)/admin/*, app/_ui/admin/*), re-exported as `copy.admin` from
 // lib/copy.ts. Sentences are allowed here (DESIGN.md: the grandma voice lives in the admin area).
+import { workspacesAdminCopy } from "./copy-admin-workspaces";
 import { guideCopy } from "./copy-guide";
+import { membersCopy } from "./copy-members";
 
 export const adminCopy = {
   title: "Admin",
@@ -9,6 +11,7 @@ export const adminCopy = {
     overview: "Overview",
     runs: "Runs",
     errors: "App errors",
+    members: "Members",
     logout: "Log out",
   },
   pin: {
@@ -26,6 +29,8 @@ export const adminCopy = {
   confirm: { label: "Confirm", yes: "Go ahead", no: "Cancel" },
   /** The two snapshots, named the same on every admin page and button (07c S1). */
   phase: { before: "Before snapshot", after: "After snapshot" },
+  /** A sample between them (D69), named by its slot's time. */
+  sample: "Sample {at}",
   /** The same snapshots on the 96 px wax seal, where two words do not fit; the button's name is `phase`. */
   seal: { before: "Before", after: "After" },
   /** Run states use the public pages' words (copy.status), plus the one only admin sees. */
@@ -151,6 +156,7 @@ export const adminCopy = {
       rehearsal_event_day: "Not on the event day or the day after.",
       rehearsal_before_real: "Too close to the real before snapshot (within 3 hours).",
       rehearsal_real_running: "A real run is in progress.",
+      daily_read_too_late: "Too close to the server reset (00:00). This day keeps its gap.",
       daily_read_not_retryable:
         "Today's roster read is complete, has not started, or is already running again.",
       rate_limited: "Too many attempts. Wait a few minutes.",
@@ -302,5 +308,8 @@ export const adminCopy = {
     digest: "digest {digest}",
     count: "{n}×",
   },
+  /** /admin/members, the officer view of might that has not moved (D70). */
+  members: membersCopy,
   guide: guideCopy,
+  workspaces: workspacesAdminCopy,
 };

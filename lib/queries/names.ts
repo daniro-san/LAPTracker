@@ -4,7 +4,7 @@ import { and, eq, inArray, isNotNull } from "drizzle-orm";
 import { nameHistory, type NameHistoryEntry, type NameSighting } from "../compute";
 import type { Db } from "../db";
 import { allianceSnapshots, events, snapshots } from "../schema";
-import { publicEvent } from "./visibility";
+import { phaseSnapshot, publicEvent } from "./visibility";
 
 /** Distinct (tag, name) pairs per alliance, oldest first. Test events are not part of the history. */
 export async function allianceNames(
@@ -26,6 +26,7 @@ export async function allianceNames(
       and(
         inArray(allianceSnapshots.unionId, unionIds),
         publicEvent,
+        phaseSnapshot,
         isNotNull(allianceSnapshots.tag),
         isNotNull(allianceSnapshots.name),
       ),

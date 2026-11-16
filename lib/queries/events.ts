@@ -5,12 +5,12 @@ import { and, asc, desc, eq, inArray } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { allianceSnapshots, events, snapshots } from "../schema";
-import { publicEvent } from "./visibility";
+import { phaseColumn, phaseSnapshot, publicEvent } from "./visibility";
 
 const snapshotColumns = {
   id: snapshots.id,
   eventId: snapshots.eventId,
-  phase: snapshots.phase,
+  phase: phaseColumn,
   status: snapshots.status,
   startedAt: snapshots.startedAt,
   finishedAt: snapshots.finishedAt,
@@ -33,9 +33,12 @@ export async function listEvents(db: Db) {
         .select(snapshotColumns)
         .from(snapshots)
         .where(
-          inArray(
-            snapshots.eventId,
-            rows.map((e) => e.id),
+          and(
+            inArray(
+              snapshots.eventId,
+              rows.map((e) => e.id),
+            ),
+            phaseSnapshot,
           ),
         )
     : [];
@@ -117,7 +120,7 @@ export async function getEventDetail(db: Db, eventId: number) {
       error: snapshots.error,
     })
     .from(snapshots)
-    .where(eq(snapshots.eventId, eventId));
+    .where(and(eq(snapshots.eventId, eventId), phaseSnapshot));
   const rows = await allianceRows(
     db,
     phases.map((s) => s.id),

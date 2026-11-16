@@ -2,7 +2,7 @@
 import { and, desc, eq, inArray, isNotNull } from "drizzle-orm";
 
 import type { Db } from "../db";
-import { allianceSnapshots, memberSnapshots, playerFrames } from "../schema";
+import { allianceSnapshots, memberSnapshots, playerFrames, snapshots } from "../schema";
 import type { AllianceRow, AllianceRowStatus, MemberRow } from "./index";
 import { recordFrames } from "./player-frames";
 
@@ -16,6 +16,22 @@ export async function listAllianceRows(db: Db, snapshotId: number): Promise<Alli
     })
     .from(allianceSnapshots)
     .where(eq(allianceSnapshots.snapshotId, snapshotId));
+}
+
+/** The alliances with an error row in any sample of the event (D69): one query over the sample rows. */
+export async function failedSampleUnionIds(db: Db, eventId: number): Promise<number[]> {
+  const rows = await db
+    .selectDistinct({ unionId: allianceSnapshots.unionId })
+    .from(allianceSnapshots)
+    .innerJoin(snapshots, eq(snapshots.id, allianceSnapshots.snapshotId))
+    .where(
+      and(
+        eq(snapshots.eventId, eventId),
+        eq(snapshots.phase, "sample"),
+        isNotNull(allianceSnapshots.error),
+      ),
+    );
+  return rows.map((r) => r.unionId);
 }
 
 export async function insertAllianceRow(
@@ -36,6 +52,26 @@ export async function insertAllianceRow(
       .values(members.map((m) => ({ ...m, allianceSnapshotId: inserted.id })));
     await recordFrames(tx, members, row.sourceUpdatedAt);
   });
+}
+
+/** A sample's row (D69): the members as D60's parallel arrays (a null power or kills stays null, D15), no
+ * member_snapshots rows and no raw_json, so a sample never stores a blocked roster key. An error row has
+ * no arrays. */
+export async function insertSampleRow(
+  db: Db,
+  snapshotId: number,
+  row: AllianceRow,
+  members: MemberRow[],
+): Promise<void> {
+  const arrays = row.error === null && {
+    memberUids: members.map((m) => m.uid),
+    memberNames: members.map((m) => m.name),
+    // Drizzle types the elements as numbers; a null stays null in the array.
+    memberPower: members.map((m) => m.power) as number[],
+    memberKills: members.map((m) => m.kills) as number[],
+  };
+  // `row.raw` names no column, so the insert drops it; raw_json stays null.
+  await db.insert(allianceSnapshots).values({ ...row, snapshotId, rawJson: null, ...arrays });
 }
 
 /** Used only by a forced re-run, which collects the whole snapshot again. */

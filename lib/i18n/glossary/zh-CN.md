@@ -24,8 +24,12 @@ Words already used in `lib/i18n/zh-CN.ts`. Reuse them so the pages stay consiste
 | Compare                   | 对比                 | `compare.title`, `compare.action` — two events side by side |
 | Leader                    | 盟主                 | `leadership.leader` — the R5                                |
 | Grandma noticed           | 奶奶注意到了         | `ledger.movers` — section heading, biggest gains and losses |
+| War turnout               | 参战人数             | `ledger.fought` — section heading, how many took part       |
+| Support players           | 辅助玩家             | `ledger.foughtHelp` — support roles gain no kills           |
 | Run by hand by the admin  | 由管理员手动运行     | `status.byHand`                                             |
 | grandma                   | 奶奶                 | the voice in empty states and errors                        |
+| Live                      | 实时                 | `ledger.live` — the live event strip and section            |
+| reading                   | 读取                 | `ledger.liveReadings` — one pull of the game's standings    |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

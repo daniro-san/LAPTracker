@@ -6,13 +6,16 @@ import type {
   MemberRow,
   Phase,
   Repo,
+  SnapshotPhase,
   SnapshotResult,
   SnapshotRow,
 } from "./index";
 
 interface StoredSnapshot extends SnapshotRow {
   eventId: number;
-  phase: Phase;
+  phase: SnapshotPhase;
+  /** A sample's slot (D69). */
+  slotAt?: Date;
   result: SnapshotResult | null;
   callsUsed: number;
 }
@@ -68,6 +71,14 @@ export function createMemoryRepo(seedEvents: EventRow[] = []): Repo & { tables: 
     },
     startSnapshot: async (eventId, phase, startedAt, expected) =>
       claim(tables, { eventId, phase, startedAt }, expected),
+    failedSampleUnionIds: async (eventId) => [
+      ...new Set(
+        tables.snapshots
+          .filter((s) => s.eventId === eventId && s.phase === "sample")
+          .flatMap((s) => rowsOf(s.id).filter((r) => r.row.error !== null))
+          .map((r) => r.row.unionId),
+      ),
+    ],
     clearAllianceRows: async (id) => {
       tables.rows.delete(id);
     },
@@ -82,6 +93,20 @@ export function createMemoryRepo(seedEvents: EventRow[] = []): Repo & { tables: 
         isFresh: row.isFresh,
         error: row.error,
       })),
+    startSample: async (eventId, slotAt, startedAt) => {
+      const taken = tables.snapshots.some(
+        (x) => x.eventId === eventId && x.slotAt?.getTime() === slotAt.getTime(),
+      );
+      if (taken) return null;
+      const id = tables.snapshots.length + 1;
+      const s = { id, eventId, phase: "sample", slotAt, startedAt, status: "running" } as const;
+      tables.snapshots.push({ ...s, result: null, callsUsed: 0 });
+      return id;
+    },
+    // The arrays are a storage form: the memory repo keeps the members as given, without raw.
+    insertSampleRow: async (id, row, members) => {
+      tables.rows.set(id, [...rowsOf(id), { row: { ...row, raw: null }, members }]);
+    },
     insertAllianceRow: async (id, row, members) => {
       if (rowsOf(id).some((r) => r.row.unionId === row.unionId)) {
         throw new Error(`duplicate (snapshot_id, union_id) = (${id}, ${row.unionId})`);

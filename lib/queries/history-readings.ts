@@ -6,7 +6,7 @@ import { and, desc, eq, gt, inArray, isNull, lt, sql } from "drizzle-orm";
 import type { Db } from "../db";
 import { allianceSnapshots, dailyRosters, events, memberSnapshots, snapshots } from "../schema";
 import type { HistoryEvent, HistoryMember } from "./member-history";
-import { publicEvent } from "./visibility";
+import { phaseColumn, phaseSnapshot, publicEvent } from "./visibility";
 
 export interface Reading {
   at: Date;
@@ -17,7 +17,9 @@ export interface Reading {
   members: HistoryMember[];
 }
 
-const numbers = (values: (string | null)[]) => values.map((v) => (v === null ? null : Number(v)));
+/** A text[] of bigints as numbers, null kept as null; a null array is empty. */
+export const numbers = (values: (string | null)[] | null) =>
+  (values ?? []).map((v) => (v === null ? null : Number(v)));
 
 /** A usable roster: fresh, no error, not empty; older than `before` when given. */
 export const dailyUsable = (unionId: number, before: Date | null) =>
@@ -33,6 +35,8 @@ const eventUsable = (unionId: number, before: Date | null) =>
   and(
     eq(allianceSnapshots.unionId, unionId),
     publicEvent,
+    // A sample (D69) has no member rows: it would read as a roster of 0 members.
+    phaseSnapshot,
     eq(allianceSnapshots.isFresh, true),
     isNull(allianceSnapshots.error),
     gt(allianceSnapshots.memberCount, 0),
@@ -56,7 +60,7 @@ const eventHead = {
     name: events.name,
     manual: events.manual,
     eventAtUtc: events.eventAtUtc,
-    phase: snapshots.phase,
+    phase: phaseColumn,
   },
 };
 

@@ -3,12 +3,18 @@
 import type { Clock } from "@/app/_ui/format";
 import { RUN_STALE_AFTER_MS } from "@/lib/compute";
 import { copy, fill } from "@/lib/copy";
-import type { ManualEventStatus } from "@/lib/queries/admin";
+import type { ManualEventStatus, RunningSnapshot } from "@/lib/queries/admin";
 import { isGeneratedName, type ScheduledEvent } from "@/lib/schedule";
 
 import type { CurrentEventView, DailyFailedView, RoundView } from "./actions";
 
 export const phaseWord = (phase: "before" | "after"): string => copy.admin.phase[phase];
+
+/** A run's snapshot in words: its phase, or a sample by its slot's time ("Sample 10:15", D69). */
+export const runWord = (r: Pick<RunningSnapshot, "phase" | "slotAt">, clock: Clock): string =>
+  r.phase === "sample"
+    ? fill(copy.admin.sample, { at: r.slotAt ? clock.hhmm(r.slotAt) : "" })
+    : phaseWord(r.phase);
 
 const STATE: Record<string, string> = {
   complete: copy.status.done,
@@ -39,7 +45,8 @@ export const eventWord = (
  * RUN_STALE_AFTER_MS), and it is the newest run when it started after the last snapshot. */
 export function watchViews(
   running: readonly {
-    phase: "before" | "after";
+    phase: RunningSnapshot["phase"];
+    slotAt: Date | null;
     isTest: boolean;
     eventName: string;
     eventAtUtc: Date;
@@ -47,7 +54,8 @@ export function watchViews(
   }[],
   last:
     | {
-        phase: "before" | "after";
+        phase: RunningSnapshot["phase"];
+        slotAt: Date | null;
         status: string;
         isTest: boolean;
         eventName: string;
@@ -60,7 +68,7 @@ export function watchViews(
   clock: Clock,
 ) {
   const views = running.map((r) => ({
-    phase: phaseWord(r.phase),
+    phase: runWord(r, clock),
     event: eventWord(r, clock),
     startedText: clock.stamp(r.startedAt),
   }));
@@ -78,7 +86,7 @@ export function watchViews(
     latest: dailyLatest
       ? { event: clock.weekday(daily.startedAt), phase: dailyWord, status: daily.status }
       : last
-        ? { event: eventWord(last, clock), phase: phaseWord(last.phase), status: last.status }
+        ? { event: eventWord(last, clock), phase: runWord(last, clock), status: last.status }
         : null,
   };
 }

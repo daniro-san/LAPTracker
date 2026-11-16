@@ -10,6 +10,7 @@ import { Rehearsal } from "@/app/_ui/admin/Rehearsal";
 import {
   eventWord,
   phaseWord,
+  runWord,
   roundView,
   seconds,
   stateWord,
@@ -17,6 +18,7 @@ import {
   dailyView,
   watchViews,
 } from "@/app/_ui/admin/words";
+import { Workspaces } from "@/app/_ui/admin/Workspaces";
 import type { Clock } from "@/app/_ui/format";
 import { requestServerClock, requestLocale } from "@/app/_ui/locale";
 import { isAdmin } from "@/lib/admin-session";
@@ -25,6 +27,7 @@ import { FactList } from "@/lib/brand/components/FactList";
 import { DroppedStitch, StitchedCheck } from "@/lib/brand/components/StatusIcons";
 import { TextLink } from "@/lib/brand/components/TextLink";
 import { copy, fill } from "@/lib/copy";
+import { dailyReadEndsInDay } from "@/lib/daily-read";
 import { getEnv, type Env } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
 import { listRuns, recentTicks } from "@/lib/queries/admin";
@@ -167,7 +170,7 @@ function Status({
         )}
         <Fact
           label={st.last}
-          value={last ? `${eventWord(last, clock)} · ${phaseWord(last.phase)}` : st.noRun}
+          value={last ? `${eventWord(last, clock)} · ${runWord(last, clock)}` : st.noRun}
           chip={
             last && (
               <StateChip status={last.status}>
@@ -280,12 +283,16 @@ export default async function AdminPage() {
           beforeAtText={clock.stamp(current.beforeAt)}
           current={currentView(current, row, now, clock)}
           manual={manual && roundView(manual, clock)}
-          daily={dailyView(daily, now, clock)}
+          daily={
+            // No Retry that could run past the server reset (D72): the route refuses it too.
+            dailyReadEndsInDay(now, env) ? dailyView(daily, now, clock) : null
+          }
           running={views.running}
         />
       </AdminSection>
       <Rehearsal r={rehearsal} clock={clock} />
       <Schedule env={env} next={next} clock={clock} />
+      <Workspaces now={now} />
     </AdminShell>
   );
 }

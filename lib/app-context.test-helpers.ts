@@ -4,6 +4,7 @@ import type { AppContext } from "./app-context";
 import { ago, fakeInternal, fakeV1, minutes, roster, T0 } from "./collector.test-helpers";
 import type { Db } from "./db";
 import { parseEnv } from "./env";
+import type { EventCache } from "./event-cache";
 
 export const TEST_PIN = "482913";
 export const TEST_CRON_SECRET = "test".repeat(10); // 40 chars, low entropy: not key-shaped
@@ -24,6 +25,9 @@ export const TEST_ENV = parseEnv({
   SNAPSHOT_AFTER: "14:00",
   SNAPSHOT_WINDOW_MIN: "45",
   QUOTA_CHECK_AT: "fri 20:00",
+  // Samples off (D69): tests that tick through an event see only its phases; lib/samples.test.ts turns
+  // them on.
+  SAMPLE_EVERY_MIN: "0",
   NOTIFY_WEBHOOK_ADMIN: ADMIN_WEBHOOK,
   NOTIFY_WEBHOOK_PUBLIC: PUBLIC_WEBHOOK,
 });
@@ -37,6 +41,25 @@ function readMessage(raw: RequestInit["body"]) {
     content: String(body.content ?? ""),
     body,
     file: file instanceof File ? file.name : null,
+  };
+}
+
+/** Next's event cache (lib/event-cache.ts) in memory: values go through JSON as there; nothing expires. */
+export function memoryEventCache(): EventCache {
+  const values = new Map<string, Promise<unknown>>();
+  return {
+    read<T>(eventId: number, name: string, _maxAgeS: number, load: () => Promise<T>) {
+      const key = `${eventId}:${name}`;
+      if (!values.has(key))
+        values.set(
+          key,
+          load().then((v) => JSON.parse(JSON.stringify(v ?? null))),
+        );
+      return values.get(key) as Promise<T>;
+    },
+    invalidate(eventId: number) {
+      for (const key of values.keys()) if (key.startsWith(`${eventId}:`)) values.delete(key);
+    },
   };
 }
 
@@ -69,6 +92,7 @@ export function testContext(db: Db, env = TEST_ENV) {
       return query === "wait=true" ? Response.json({ id }) : new Response(null, { status: 204 });
     },
     openDb: () => ({ db, close: async () => {} }),
+    eventCache: memoryEventCache(),
   };
   return { ctx, clock, posts, edits, v1 };
 }

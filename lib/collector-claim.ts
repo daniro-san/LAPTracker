@@ -4,11 +4,12 @@ import { RUN_STALE_AFTER_MS } from "./compute";
 import type { Phase, Repo, SnapshotRow } from "./repo";
 
 /** The run did not start: the snapshot is complete (pass force), another run holds it, or it has
- * stale rows and the caller has not said whether to read them again (D63). */
+ * stale rows and the caller has not said whether to read them again (D63), or a sample's slot already
+ * has its row ("taken", D69). */
 export class RunRefusedError extends Error {
   override name = "RunRefusedError";
   constructor(
-    readonly reason: "complete" | "running" | "no-event" | "stale",
+    readonly reason: "complete" | "running" | "no-event" | "stale" | "taken",
     /** For "stale": how many rows are stale. */
     readonly staleCount?: number,
   ) {

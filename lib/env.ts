@@ -47,14 +47,29 @@ export const envSchema = z.object({
     )
     .default("fri 18:00"),
   REHEARSAL_KEEP: z.coerce.number().int().min(1).max(50).default(4),
-  // The daily roster read for member history (D60), server time, every day.
-  DAILY_ROSTER_AT: hhmm.default("06:00"),
+  // Minutes between an event's samples (D69), on a grid from the hour (15: :00, :15, :30, :45); 0 = off.
+  SAMPLE_EVERY_MIN: z.coerce
+    .number()
+    .int()
+    .min(0)
+    .max(60)
+    .refine((n) => n === 0 || 60 % n === 0, "expected 0 or a divisor of 60")
+    .default(15),
+  // The daily roster read for member history (D60), server time, every day. 23:30: the 23:37 tick reads
+  // the day's counters (daily_tech) before the 00:00 reset, and the 23:52 tick re-reads the alliances
+  // that fell short (D72).
+  DAILY_ROSTER_AT: hhmm.default("23:30"),
   NOTIFY_WEBHOOK_PUBLIC: optional(discordWebhook),
   NOTIFY_WEBHOOK_ADMIN: optional(discordWebhook),
   NOTIFY_ADMIN_MENTION: optional(
     z.string().regex(/^(role:)?\d{17,20}$/, "expected <id> or role:<id>"),
   ),
   LAP_LIVE_TEST: optional(z.enum(["0", "1"])),
+  // The workspace's Discord sign-in (D71). Optional: without them the app starts and /w/[slug] says
+  // sign-in is not set up. The base URL is overridable so tests and the local e2e reach a stub (D73).
+  DISCORD_CLIENT_ID: optional(z.string().regex(/^\d{17,20}$/, "expected a Discord application id")),
+  DISCORD_CLIENT_SECRET: optional(z.string().min(16, "expected 16+ characters")),
+  DISCORD_API_BASE_URL: z.url().default("https://discord.com/api"),
 });
 
 export type Env = z.infer<typeof envSchema>;
