@@ -130,7 +130,8 @@ export async function eventProgress(
   if (!start) return null;
   const startDone = rows.some((r) => r.phase === "before" && r.status !== "running");
   const ended = rows.some((r) => r.phase === "after");
-  const next = startDone && !ended ? nextReading(now, everyMin, first.afterAt) : null;
+  const next =
+    startDone && !ended ? nextReading(now, everyMin, first.afterAt, latest?.at ?? start.at) : null;
   // Nothing to show before the first reading unless the event is live (the strip says when it comes).
   if (!latest && !next) return null;
   return progressOf(start, samples, next, { now, everyMin, afterAt: first.afterAt });

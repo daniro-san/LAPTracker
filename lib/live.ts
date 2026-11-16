@@ -157,20 +157,30 @@ export function busiestSpan(slots: readonly PulseSlot[], total: number): Busiest
 /**
  * The next reading the page waits for and when to look again, or null once the event's End has had its
  * time (`END_WAIT_MS` after `afterAt`) or there are no samples (`everyMin` 0). A slot's sample is expected
- * `SAMPLE_WAIT_MS` after the slot, so the slot holding `now` still counts for its first minute. A slot
- * that holds no sample (the End's own slot or later) is replaced by the End.
+ * `SAMPLE_WAIT_MS` after the slot, so the slot holding `now` still counts for its first minute. When that
+ * slot has no sample by then (`sinceAt`, the latest sample's or the Start's time, is before it) the page
+ * keeps waiting for it until `OVERDUE_MS`, so a tick that lands late does not leave the viewer a whole
+ * slot behind, and the refresh then names the reading as due. A slot that holds no sample (the End's own
+ * slot or later) is replaced by the End.
  */
 export function nextReading(
   now: Date,
   everyMin: number,
   afterAt: Date,
+  sinceAt: Date,
 ): { at: Date; refreshAt: Date } | null {
   if (everyMin <= 0 || now.getTime() >= afterAt.getTime() + END_WAIT_MS) return null;
   const slot = slotOf(now, everyMin).getTime();
-  const at = slot + SAMPLE_WAIT_MS > now.getTime() ? slot : slot + everyMin * MINUTE;
+  const late = slot > sinceAt.getTime() && now.getTime() < slot + OVERDUE_MS;
+  const [at, wait]: [number, number] =
+    slot + SAMPLE_WAIT_MS > now.getTime()
+      ? [slot, SAMPLE_WAIT_MS]
+      : late
+        ? [slot, OVERDUE_MS]
+        : [slot + everyMin * MINUTE, SAMPLE_WAIT_MS];
   if (at >= slotOf(afterAt, everyMin).getTime())
     return { at: afterAt, refreshAt: new Date(afterAt.getTime() + END_WAIT_MS) };
-  return { at: new Date(at), refreshAt: new Date(at + SAMPLE_WAIT_MS) };
+  return { at: new Date(at), refreshAt: new Date(at + wait) };
 }
 
 /**

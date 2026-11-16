@@ -94,8 +94,9 @@ export async function memberTurnoutSoFar(
   eventId: number,
   startId: number,
 ): Promise<TurnoutLists | null> {
-  const candidates = await db
-    .select({
+  // One row per alliance, in SQL: its newest usable sample.
+  const newest = await db
+    .selectDistinctOn([allianceSnapshots.unionId], {
       id: allianceSnapshots.id,
       unionId: allianceSnapshots.unionId,
       tag: allianceSnapshots.tag,
@@ -113,10 +114,8 @@ export async function memberTurnoutSoFar(
         isNull(allianceSnapshots.error),
       ),
     )
-    .orderBy(desc(snapshots.slotAt));
-  const newest = new Map<number, (typeof candidates)[number]>();
-  for (const c of candidates) if (!newest.has(c.unionId)) newest.set(c.unionId, c);
-  if (newest.size === 0) return null;
+    .orderBy(allianceSnapshots.unionId, desc(snapshots.slotAt));
+  if (newest.length === 0) return null;
   const [arrays, startRows] = await Promise.all([
     db
       .select({
@@ -129,7 +128,7 @@ export async function memberTurnoutSoFar(
       .where(
         inArray(
           allianceSnapshots.id,
-          [...newest.values()].map((c) => c.id),
+          newest.map((c) => c.id),
         ),
       ),
     db
@@ -148,7 +147,7 @@ export async function memberTurnoutSoFar(
         ),
       ),
   ]);
-  const all = [...newest.values()].flatMap(({ id, unionId, tag, name, badgeId }) => {
+  const all = newest.flatMap(({ id, unionId, tag, name, badgeId }) => {
     const row = arrays.find((a) => a.id === id);
     const kills = numbers(row?.kills ?? null);
     const sample = (row?.uids ?? []).map((uid, i) => ({ uid, kills: kills[i] ?? null }));

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { Measured } from "./compute";
-import { busiestSpan, nextReading, serverPulse, standings, type Slice } from "./live";
+import { busiestSpan, nextReading, overdueSlot, serverPulse, standings, type Slice } from "./live";
 
 const MIN = 60_000;
 const at = (hhmm: string) => new Date(`2026-11-21T${hhmm}:00Z`);
@@ -109,23 +109,46 @@ describe("nextReading", () => {
   const after = at("18:00");
 
   it("inside a slot, waits for the next slot and looks a minute later", () => {
-    const next = nextReading(at("12:40"), 15, after);
+    const next = nextReading(at("12:40"), 15, after, at("12:30"));
     expect(next?.at).toEqual(at("12:45"));
     expect(next?.refreshAt).toEqual(new Date(at("12:45").getTime() + MIN));
   });
 
   it("at a slot boundary, still waits for that slot's own sample", () => {
-    expect(nextReading(at("12:30"), 15, after)?.at).toEqual(at("12:30"));
-    expect(nextReading(new Date(at("12:30").getTime() + 61_000), 15, after)?.at).toEqual(
-      at("12:45"),
-    );
+    expect(nextReading(at("12:30"), 15, after, at("12:15"))?.at).toEqual(at("12:30"));
+    expect(
+      nextReading(new Date(at("12:30").getTime() + 61_000), 15, after, at("12:30"))?.at,
+    ).toEqual(at("12:45"));
+  });
+
+  it("keeps waiting for a slot whose sample is missing until 3 minutes, then moves to the next slot", () => {
+    const slot = at("12:30").getTime();
+    const late = nextReading(new Date(slot + 61_000), 15, after, at("12:15"));
+    expect(late?.at).toEqual(at("12:30"));
+    expect(late?.refreshAt).toEqual(new Date(slot + 3 * MIN));
+    // The refresh lands just after the 3 minutes: the slot is overdue, the page looks at the next one.
+    const now = new Date(slot + 3 * MIN + 1000);
+    expect(nextReading(now, 15, after, at("12:15"))?.at).toEqual(at("12:45"));
+    expect(overdueSlot(now, 15, at("12:15"), after)).toEqual(at("12:30"));
   });
 
   it("waits for the End instead of a slot that holds no sample, and stops after the End", () => {
-    const end = nextReading(at("17:50"), 15, after);
+    const end = nextReading(at("17:50"), 15, after, at("17:30"));
     expect(end?.at).toEqual(after);
     expect(end?.refreshAt).toEqual(at("18:02"));
-    expect(nextReading(at("18:02"), 15, after)).toBeNull();
-    expect(nextReading(at("12:00"), 0, after)).toBeNull();
+    expect(nextReading(at("18:02"), 15, after, at("17:45"))).toBeNull();
+    expect(nextReading(at("12:00"), 0, after, at("12:00"))).toBeNull();
+  });
+});
+
+describe("overdueSlot", () => {
+  const after = at("18:00");
+
+  it("names the current slot only after it is more than 3 minutes old and has no sample", () => {
+    const slot = at("12:30").getTime();
+    expect(overdueSlot(new Date(slot + 3 * MIN), 15, at("12:15"), after)).toBeNull();
+    expect(overdueSlot(new Date(slot + 3 * MIN + 1), 15, at("12:15"), after)).toEqual(at("12:30"));
+    expect(overdueSlot(new Date(slot + 4 * MIN), 15, at("12:30"), after)).toBeNull();
+    expect(overdueSlot(new Date(slot + 4 * MIN), 0, at("12:15"), after)).toBeNull();
   });
 });
