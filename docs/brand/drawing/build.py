@@ -48,6 +48,7 @@ DRAWINGS = {
     "icon-live": ornaments.icon_live,
     "icon-done": ornaments.icon_done,
     "icon-partial": ornaments.icon_partial,
+    "icon-help": ornaments.icon_help,
     "no-photo": ornaments.no_photo,
     "no-badge": ornaments.no_badge,
     "granny-standing": granny.standing,

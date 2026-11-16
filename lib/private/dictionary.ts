@@ -151,13 +151,15 @@ const en = {
   "howto.android": "On Android",
   "intro.1.body":
     "The leadership’s own place for the alliance: who is in it, their might, donations and activity, filled in from the game. It replaces the spreadsheets.",
+  "intro.1.settings": "Tap your name at the top for your settings.",
   "intro.only": "R4 · R5 only",
   "intro.2.more": "— means no data, and it is left out of every count.",
   "intro.3.title": "Each week",
-  "intro.3.body":
-    "Open Members. Start with the thank-you list, then look at anyone marked Check in: what we saw is written under the name.",
-  "intro.3.more": "You decide what to do; nothing is sent by itself.",
-  "intro.3.last": "Tap EN · PT · FR to switch. Tap ? to see this again.",
+  "intro.3.body": "Open Members and start at the top: thank the people who carried the week.",
+  "intro.3.more":
+    "Then look at anyone marked Check in. The reason is right under the name, and a quick message in game usually sorts it out.",
+  "intro.3.note": "The app never messages anyone. The talking is up to you.",
+  "intro.3.last": "EN · PT · FR at the top switches language. ? brings these cards back.",
   "intro.replay": "Replay",
   "intro.close": "Close",
   "howto.signin.body":
@@ -167,6 +169,31 @@ const en = {
     "In Safari, tap the Share icon (a square with an arrow pointing up). In the list, tap the item with a + in a square, then confirm.",
   "howto.android.body":
     "In Chrome, tap ⋮ at the top right. In the menu, tap the item that adds the page to your home screen (a phone with an arrow), then confirm.",
+  "profile.title": "Your settings",
+  "profile.name": "Your name",
+  "profile.nameHelp": "Shown at the top of the desk (up to 32 characters).",
+  "profile.save": "Save",
+  "profile.saved": "Saved.",
+  "profile.invalid": "Write 1 to 32 characters.",
+  "profile.failed": "Could not save. Try again.",
+  "profile.loadFailed": "Could not load this. Close and try again.",
+  "profile.me": "This is me",
+  "profile.me.lead": "Optional: tell the desk which player in the alliance is you.",
+  "profile.me.loading": "Looking for your name in the alliance…",
+  "profile.me.linked": "In the game, you are {name}.",
+  "profile.me.gone": "Your player is no longer in the alliance.",
+  "profile.me.unlink": "This isn’t me",
+  "profile.me.undo": "You can remove this link any time.",
+  "profile.me.ask": "Is this you?",
+  "profile.me.confirm": "That’s me",
+  "profile.me.none":
+    "We couldn’t find a player with a name like yours. Search for your name below.",
+  "profile.me.find": "Search the alliance",
+  "profile.me.noResult": "No one in the alliance has a name like that.",
+  "profile.theme": "Theme",
+  "profile.theme.light": "Light",
+  "profile.theme.dark": "Dark",
+  "profile.theme.system": "Same as this device",
 } as const;
 
 export type WorkspaceKey = keyof typeof en;

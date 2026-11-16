@@ -268,6 +268,17 @@ def icon_live():
     return svg("0 0 16 16", el(p, ' fill-rule="evenodd"') + el(f, ' fill-rule="evenodd" data-anim="flame"')
                + el(g, ' data-anim="glow"'))
 
+def icon_help():
+    """The workspace header's help (issue 334): a ring with its pen lift at the upper left, around a question
+    mark and its dot. Shown at 22 px on the burgundy header, beside EN · PT · FR."""
+    p = Path()
+    stroke(p, arc(8, 8.1, 6.5, 6.4, 290, 590, 12, wob=[0, 0, .025, -.02, .03, 0, -.025, .02, -.015, .02, 0, 0]),
+           .66, a=.1, b=.18, e=.18)
+    stroke(p, [(5.4, 6.1), (5.9, 4.4), (7.6, 3.6), (9.7, 4.0), (10.6, 5.6), (9.9, 7.3), (8.4, 8.4), (8.05, 10.0)],
+           .85, a=.1, b=.28, e=.32)
+    blob(p, arc(8.05, 12.2, 1.0, .94, 0, 300, 6))
+    return svg("0 0 16 16", el(p))
+
 ITEMS = {"seal": seal, "yarn-corner": yarn_corner, "lace": lace, "lace-alt-dot": lace_b,
          "icon-running": icon_running, "icon-crown": icon_crown, "icon-officer": icon_officer, "icon-done": icon_done, "icon-partial": icon_partial}
 

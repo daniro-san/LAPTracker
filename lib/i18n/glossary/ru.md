@@ -63,6 +63,8 @@ Words already used in `lib/i18n/ru.ts`. Reuse them so the pages stay consistent;
 | Top 5                     | Топ-5                       | `ledger.topShare` — the 5 biggest gainers in an alliance                                    |
 | War turnout               | Участие                     | `ledger.fought` — the event page's kills section title                                      |
 | Gainers                   | растущие                    | `ledger.topShareHelp`, `ledger.fewGainers` — a member whose Kills rose in the event         |
+| Member cap                | лимит                       | `merge.cap`, `merge.over`, `merge.answer` — the most members an alliance may hold           |
+| Merge                     | слияние                     | `merge.link`, `merge.lead` — two alliances counted as one                                   |
 | Kill share / might share  | доля убийств / доля мощи    | `ledger.carried*` — an alliance's share of Kills gained, and of Might at Start              |
 | pts (percentage points)   | п.п.                        | `ledger.carriedPoints`, `ledger.carriedRatioHelp` — the gap between two shares              |
 

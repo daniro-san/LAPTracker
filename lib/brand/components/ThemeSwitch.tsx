@@ -53,10 +53,23 @@ export const Moon = () => (
 export const useTheme = (): Theme =>
   useSyncExternalStore(subscribe, current, () => "light" as Theme);
 
-/** Puts the mode on <html> and keeps it in the `theme` cookie for a year. */
-export function setTheme(next: Theme) {
-  document.documentElement.dataset.theme = next;
-  document.cookie = `theme=${next}; path=/; max-age=31536000; samesite=lax`;
+/** The viewer's choice: light, dark, or null to follow the system (no cookie). */
+const chosen = (): Theme | null => {
+  const set = document.documentElement.dataset.theme;
+  return set === "light" || set === "dark" ? set : null;
+};
+export const useThemeChoice = (): Theme | null =>
+  useSyncExternalStore(subscribe, chosen, () => null);
+
+/** Puts the mode on <html> and keeps it in the `theme` cookie for a year; null follows the system again. */
+export function setTheme(next: Theme | null) {
+  if (next === null) {
+    delete document.documentElement.dataset.theme;
+    document.cookie = "theme=; path=/; max-age=0; samesite=lax";
+  } else {
+    document.documentElement.dataset.theme = next;
+    document.cookie = `theme=${next}; path=/; max-age=31536000; samesite=lax`;
+  }
   window.dispatchEvent(new Event("themechange"));
 }
 
