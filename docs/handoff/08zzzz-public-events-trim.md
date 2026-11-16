@@ -28,3 +28,5 @@ None.
 none queued
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+https://github.com/daniro-san/LAPTracker/pull/277
