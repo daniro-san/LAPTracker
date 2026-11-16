@@ -22,6 +22,9 @@ export const compact = (n: number) =>
 /** `+85.8M`, `−2`: compact above 1,000, signed with a real minus. */
 export const signedCompact = (n: number) => `${sign(n)}${compact(n)}`;
 
+/** `54 %`: a share as a whole percent, with a space as the issue writes it. */
+export const shareText = (part: number, whole: number) => `${Math.round((part / whole) * 100)} %`;
+
 export interface DiscordClock {
   /** "Sat, Nov 7, 14:01 server time": the public pages' date, with the weekday. */
   at: (d: Date) => string;
