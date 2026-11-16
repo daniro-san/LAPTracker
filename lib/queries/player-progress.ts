@@ -133,7 +133,8 @@ async function summaryOf(db: Db, readings: ProgressReading[]): Promise<ProgressS
     to && (readings.findLast((r) => r.at.getTime() <= to.at.getTime() - WEEK_MS) ?? readings[0]);
   if (!to || !from || from === to || from.power === null || to.power === null) return null;
   const same = from.unionId === to.unionId;
-  const median = same ? medianPercent(await rosterOf(db, from), await rosterOf(db, to)) : null;
+  const rosters = same ? await Promise.all([rosterOf(db, from), rosterOf(db, to)]) : null;
+  const median = rosters && medianPercent(rosters[0], rosters[1]);
   return {
     from,
     to,

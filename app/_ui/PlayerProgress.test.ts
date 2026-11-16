@@ -23,6 +23,21 @@ describe("summaryText", () => {
     );
   });
 
+  it("states only the player's change when there is no alliance median or no tag to name it by", () => {
+    for (const alliance of [null, { tag: null, medianPercent: 4.1 }]) {
+      const p = { ...progress, summary: { ...progress.summary, alliance } } as PlayerProgress;
+      expect(summaryText(p, clock("Oct 24"), "en", en)).toBe("You: +4.0% since Oct 24.");
+    }
+  });
+
+  it("states the change as an amount when the older might is 0", () => {
+    const p = {
+      ...progress,
+      summary: { ...progress.summary, from: { power: 0 }, power: 4_000_000, alliance: null },
+    } as unknown as PlayerProgress;
+    expect(summaryText(p, clock("Oct 24"), "en", en)).toBe("You: +4.00M since Oct 24.");
+  });
+
   it("does not double the full stop when the date ends with one", () => {
     const copy = { ...en, ledger: { ...en.ledger, progressMight: "Du: {change} seit {date}." } };
     expect(summaryText(progress, clock("24. Okt."), "en", copy)).toMatch(

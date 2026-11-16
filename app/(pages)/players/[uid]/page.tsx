@@ -122,13 +122,9 @@ function Summary({
 const loadPlayer = cache((uid: number) =>
   withPageDb(async (db) => {
     const history = await playerHistory(db, uid);
-    return (
-      history && {
-        history,
-        events: await listEvents(db),
-        progress: await playerProgress(db, uid),
-      }
-    );
+    if (!history) return null;
+    const [events, progress] = await Promise.all([listEvents(db), playerProgress(db, uid)]);
+    return { history, events, progress };
   }),
 );
 

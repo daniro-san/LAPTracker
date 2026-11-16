@@ -27,8 +27,9 @@ export function summaryText(p: Progress, clock: Clock, locale: string, copy: Dic
     /\.\.$/,
     ".",
   );
+  // No tag to name the alliance by: the sentence would read "Middle member of : …", so it is left out.
   const median =
-    s.alliance &&
+    s.alliance?.tag &&
     fill(copy.ledger.progressMedian, {
       tag: allianceLabel(s.alliance.tag, null),
       percent: percentText(s.alliance.medianPercent, locale),

@@ -16,12 +16,18 @@ type Member = [uid: number, power: number];
 
 const at = (day: string, time = "08:01") => new Date(`${day}T${time}:00Z`);
 
-async function daily(db: Db, day: string, members: Member[], isFresh = true) {
+async function daily(
+  db: Db,
+  day: string,
+  members: Member[],
+  isFresh = true,
+  [unionId, tag]: [number, string] = [1, "OGs"],
+) {
   await db.insert(dailyReads).values({ day, startedAt: at(day), status: "complete" });
   await db.insert(dailyRosters).values({
     readDay: day,
-    unionId: 1,
-    tag: "OGs",
+    unionId,
+    tag,
     memberCount: members.length,
     sourceUpdatedAt: at(day),
     isFresh,
@@ -102,6 +108,19 @@ beforeAll(async () => {
     [8, 210],
     [9, 52],
   ]);
+  // The summary's edge cases: player 20 moves from TRI to TmS; player 30 has two readings 2 days apart.
+  await daily(
+    db,
+    "2026-10-20",
+    [
+      [20, 50],
+      [30, 60],
+    ],
+    true,
+    [2, "TRI"],
+  );
+  await daily(db, "2026-10-22", [[30, 66]], true, [2, "TRI"]);
+  await daily(db, "2026-10-28", [[20, 55]], true, [3, "TmS"]);
 });
 
 describe("playerProgress (issue 270)", () => {
@@ -131,5 +150,23 @@ describe("playerProgress (issue 270)", () => {
     // Members in both rosters: +120 %, +5 %, +4 %.
     expect(summary?.alliance).toEqual({ unionId: 1, tag: "OGs", medianPercent: 5 });
     expect((await playerProgress(db, 404)).summary).toBeNull();
+  });
+
+  it("leaves out the alliance median when the two readings are of different alliances", async () => {
+    const { summary } = await playerProgress(db, 20);
+
+    expect([summary?.from.at, summary?.to.at, summary?.power]).toEqual([
+      at("2026-10-20"),
+      at("2026-10-28"),
+      5,
+    ]);
+    expect(summary?.alliance).toBeNull();
+  });
+
+  it("compares with the oldest reading when none is 7 days older", async () => {
+    const { summary } = await playerProgress(db, 30);
+
+    expect(summary?.from.at).toEqual(at("2026-10-20"));
+    expect(summary?.alliance).toEqual({ unionId: 2, tag: "TRI", medianPercent: 10 });
   });
 });
