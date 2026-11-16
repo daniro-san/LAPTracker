@@ -53,3 +53,5 @@ Plan changes needed: none to `docs/IMPLEMENTATION_PLAN.md`.
 - `lib/copy.ts` is at the lint limit: new public `ledger` keys go in `lib/copy-war.ts` (spread into `ledger`) or a similar spread file.
 - The scratch folder is shared between sessions: write translator todo files to a new, empty folder, never `todo-<tag>.json` in a folder that already has some.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/338
