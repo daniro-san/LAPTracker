@@ -1,6 +1,8 @@
+import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
-import { targetEvent, type ScheduleConfig } from "./schedule";
+import { RUN_DEADLINE_MS } from "./compute";
+import { endsInServerDay, slotOf, targetEvent, type ScheduleConfig } from "./schedule";
 
 // Saturdays at 12:00 server time (UTC−2), so Saturday 2026-11-07 is 14:00Z.
 const cfg: ScheduleConfig = {
@@ -29,5 +31,35 @@ describe("targetEvent", () => {
 
   it("is the past Saturday on a Tuesday when its After is missing", () => {
     expect(day("2026-11-10T12:00:00Z")).toBe("Saturday Event 2026-11-07");
+  });
+});
+
+describe("slotOf", () => {
+  const cadences = Array.from({ length: 60 }, (_, i) => i + 1).filter((n) => 60 % n === 0);
+
+  it("is a grid instant at most the time and less than one cadence before it, for any cadence that divides 60", () => {
+    fc.assert(
+      fc.property(
+        fc.integer({ min: Date.UTC(2020, 0, 1), max: Date.UTC(2040, 0, 1) }),
+        fc.constantFrom(...cadences),
+        (ms, n) => {
+          const at = new Date(ms);
+          const slot = slotOf(at, n);
+          expect(slot.getUTCMinutes() % n).toBe(0);
+          expect(slot.getUTCSeconds()).toBe(0);
+          expect(slot.getUTCMilliseconds()).toBe(0);
+          expect(slot.getTime()).toBeLessThanOrEqual(ms);
+          expect(slot.getTime()).toBeGreaterThan(ms - n * 60_000);
+        },
+      ),
+    );
+  });
+});
+
+describe("endsInServerDay", () => {
+  it("is true for a 100 s run that starts at 23:58:20 server time and false one second later", () => {
+    // 23:58:20 server (UTC−2) is 01:58:20 UTC; 100 s later is exactly 00:00:00 server.
+    expect(endsInServerDay(new Date("2026-11-08T01:58:20Z"), RUN_DEADLINE_MS, cfg)).toBe(true);
+    expect(endsInServerDay(new Date("2026-11-08T01:58:21Z"), RUN_DEADLINE_MS, cfg)).toBe(false);
   });
 });

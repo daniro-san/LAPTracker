@@ -78,4 +78,11 @@ Prompt sketch for #276 (chart in the Discord picture): "Draw a might line inside
 - **Tests**: 7 in `LineChart.test.ts` (flat range, one label, dots limit, same-day time, mark width and ticks, plus the two kept), 2 in `PlayerProgress.test.ts` (summary, doubled full stop).
 - **Verified**: 360, 390 and 412 px, light and dark, Chrome, no horizontal scroll, with players of 2, 18 and 60 readings and a 0-kills player (a synthetic series added to the local database only); WebKit at 390 dark. The three screenshots are replaced (same names, the seeded xCage, 18 readings).
 
+## Merge with dev (2026-11-16)
+
+- `dev` (v5.7.0 and later) merged in. The conflicts were additions on both sides: lib/copy.ts, the 17 `lib/i18n/<tag>.ts` and `.stamps.json`, and the glossaries kept both sides; CLAUDE.md, DESIGN.md, D68 and the decision index took `dev`'s text, which already says charts may also be HTML bars.
+- `eventFit` (`lib/queries/history-readings.ts`) now includes `phaseSnapshot`. A sample (D69) has no member rows, so neither member history nor the daily progress chart reads one as a roster.
+- `lib/copy.ts` passed the 300-line limit after the merge. The live event keys (#307) moved to `lib/copy-live.ts` and are spread into `ledger`. The keys and the English are unchanged; the i18n check still reports all 17 languages up to date.
+- `pnpm check` after the merge: 97 test files, 491 tests passed; i18n up to date.
+
 https://github.com/daniro-san/LAPTracker/pull/288

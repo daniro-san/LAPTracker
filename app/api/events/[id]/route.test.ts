@@ -33,7 +33,14 @@ beforeAll(async () => {
 });
 
 describe("GET /api/events/[id]", () => {
-  it("serves an event with a stored roster and none of BLOCKED_ROSTER_KEYS", async () => {
+  const get = (eventId: number) =>
+    GET(request(`/api/events/${eventId}`, { method: "GET" }), {
+      params: Promise.resolve({ id: String(eventId) }),
+    });
+
+  let seeded: Promise<number> | undefined;
+  const seedEvent = () => (seeded ??= seed());
+  async function seed() {
     holder.ctx = testContext(db).ctx;
     const repo = createRepo(db);
     const { id: eventId } = await findOrCreateEvent(db, {
@@ -77,13 +84,46 @@ describe("GET /api/events/[id]", () => {
     const stored = new Set(findBlockedKeys(roster).map((p) => p.split(".").at(-1)));
     expect([...BLOCKED_ROSTER_KEYS].every((k) => stored.has(k))).toBe(true);
 
-    const res = await GET(request(`/api/events/${eventId}`, { method: "GET" }), {
-      params: Promise.resolve({ id: String(eventId) }),
-    });
+    return eventId;
+  }
+
+  it("serves an event with a stored roster and none of BLOCKED_ROSTER_KEYS", async () => {
+    const res = await get(await seedEvent());
 
     expect(res.status).toBe(200);
     const body: unknown = await res.json();
     expect(JSON.stringify(body)).toContain(String(roster.power));
     expect(findBlockedKeys(body)).toEqual([]);
+  });
+
+  it("drops run bookkeeping, isTest and the board numbers", async () => {
+    const body = (await (await get(await seedEvent())).json()) as {
+      event: { snapshots: { alliances: object[] }[] };
+    };
+
+    const served = JSON.stringify(body);
+    for (const key of [
+      "callsUsed",
+      "quotaRemainingAfter",
+      "durationMs",
+      "boardPulledAt",
+      "isTest",
+      "powerBoard",
+      "killsBoard",
+      "source",
+      "cached",
+    ])
+      expect(served).not.toContain(`"${key}":`);
+    expect(served).not.toContain('"error":');
+    expect(body.event.snapshots[0]?.alliances).toHaveLength(1);
+  });
+
+  it("sends a 5-minute shared cache header on 200 only", async () => {
+    const ok = await get(await seedEvent());
+    const missing = await get(999_999);
+
+    expect(ok.headers.get("Cache-Control")).toBe("public, s-maxage=300");
+    expect(missing.status).toBe(404);
+    expect(missing.headers.get("Cache-Control") ?? "").not.toContain("s-maxage");
   });
 });

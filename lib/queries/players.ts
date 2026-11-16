@@ -16,7 +16,7 @@ import { allianceSnapshots, events, memberSnapshots, snapshots } from "../schema
 import { rolesOf, type Role } from "./leadership";
 import { type Photo, photoColumns } from "./photo";
 import type { Ranks } from "./ranks";
-import { chainEvent, publicEvent } from "./visibility";
+import { chainEvent, phaseColumn, publicEvent } from "./visibility";
 
 export const SEARCH_LIMIT = 50;
 
@@ -126,7 +126,7 @@ const sightingColumns = {
   eventId: events.id,
   eventName: events.name,
   eventAtUtc: events.eventAtUtc,
-  phase: snapshots.phase,
+  phase: phaseColumn,
   unionId: allianceSnapshots.unionId,
   tag: allianceSnapshots.tag,
   allianceName: allianceSnapshots.name,

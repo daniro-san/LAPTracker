@@ -3,11 +3,13 @@ import type { Metadata } from "next";
 import { connection } from "next/server";
 import type { ReactNode } from "react";
 
+import { analyticsKey } from "@/lib/analytics/events";
 import { fontVariables } from "@/lib/brand/fonts";
 import { readTheme } from "@/lib/brand/theme";
 
 import { requestCopy, requestLanguage } from "./_ui/locale";
 import { LocaleProvider } from "./_ui/LocaleProvider";
+import { PostHogAnalytics } from "./_ui/PostHogAnalytics";
 import { UpstreamBanner } from "./_ui/UpstreamBanner";
 import { VercelInsights } from "./_ui/VercelInsights";
 
@@ -25,6 +27,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     requestLanguage(),
     requestCopy(),
   ]);
+  const production = process.env.VERCEL_ENV === "production";
+  // PostHog (D77): production only, like D36, and only once the owner has set the key.
+  const posthogKey = analyticsKey(process.env);
   return (
     <html lang={language} data-theme={theme ?? undefined} className={fontVariables}>
       <body className="min-h-screen bg-paper font-body text-ink antialiased">
@@ -33,7 +38,8 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           {children}
         </LocaleProvider>
         {/* Production deployment only: not previews, `next dev`, `next start` or tests (D36). */}
-        {process.env.VERCEL_ENV === "production" && <VercelInsights />}
+        {production && <VercelInsights />}
+        {posthogKey && <PostHogAnalytics apiKey={posthogKey} />}
       </body>
     </html>
   );

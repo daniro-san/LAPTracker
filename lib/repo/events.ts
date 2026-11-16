@@ -1,11 +1,11 @@
 // events table. An event carries its own phase times (before_at, after_at): scheduled events get them from
 // the env when the tick creates the row, rehearsals from the moment they are created (plan §3.1).
-import { and, eq, gt, gte, isNull, lt, lte, or } from "drizzle-orm";
+import { and, asc, eq, gt, isNull, lt, lte, or } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { events, snapshots } from "../schema";
 import type { EventRow, Phase } from "./index";
-import { findSnapshot } from "./snapshots";
+import { findSnapshot, phaseSnapshot } from "./snapshots";
 
 export type ManualVisibility = "admin" | "standalone" | "history";
 
@@ -194,6 +194,39 @@ export async function duePhases(db: Db, now: Date, windowMs: number): Promise<Du
   return due.sort((a, b) => a.at.getTime() - b.at.getTime());
 }
 
+/**
+ * The event to sample at `slotAt` (D69), or null. A scheduled event or a rehearsal (never a manual round)
+ * whose slot lies strictly after its Before's slot and strictly before its after_at, whose Before has
+ * finished, which has no After row yet, and which has no sample at this slot. The caller passes the slot
+ * that holds now, so a missed slot is never caught up. Earliest Before first; the tick runs one.
+ */
+export async function dueSample(db: Db, slotAt: Date): Promise<EventInfo | null> {
+  // slotAt is on the grid, so "before_at < slotAt" is "the Before's slot is earlier than this one".
+  const rows = await db
+    .select(infoColumns)
+    .from(events)
+    // INVARIANT tick.skips-manual: a manual round gets no samples (D28).
+    .where(and(eq(events.manual, false), lt(events.beforeAt, slotAt), gt(events.afterAt, slotAt)))
+    .orderBy(asc(events.beforeAt));
+  for (const event of rows) {
+    const start = await findSnapshot(db, event.id, "before");
+    if (!start || start.status === "running") continue;
+    if (await findSnapshot(db, event.id, "after")) continue;
+    const [taken] = await db
+      .select({ id: snapshots.id })
+      .from(snapshots)
+      .where(
+        and(
+          eq(snapshots.eventId, event.id),
+          eq(snapshots.phase, "sample"),
+          eq(snapshots.slotAt, slotAt),
+        ),
+      );
+    if (!taken) return event;
+  }
+  return null;
+}
+
 /** Claims the event's Friday check; true for exactly one caller. */
 export async function claimQuotaCheck(db: Db, eventId: number, at: Date): Promise<boolean> {
   // INVARIANT tick.friday-check-once
@@ -217,24 +250,9 @@ export async function scheduledEventDone(db: Db, eventAtUtc: Date): Promise<bool
         eq(events.manual, false),
         eq(events.isTest, false),
         eq(snapshots.status, "complete"),
+        // Its Before and After: a complete sample (D69) is not one of the two.
+        phaseSnapshot,
       ),
     );
   return new Set(rows.map((r) => r.phase)).size === 2;
-}
-
-/** A scheduled event (not a manual round, not a rehearsal) with its Before in [from, to) (D60). */
-export async function hasScheduledEvent(db: Db, from: Date, to: Date): Promise<boolean> {
-  const [row] = await db
-    .select({ id: events.id })
-    .from(events)
-    .where(
-      and(
-        eq(events.manual, false),
-        eq(events.isTest, false),
-        gte(events.beforeAt, from),
-        lt(events.beforeAt, to),
-      ),
-    )
-    .limit(1);
-  return row !== undefined;
 }

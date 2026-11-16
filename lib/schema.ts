@@ -19,6 +19,7 @@ import {
   text,
   timestamp,
   unique,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 const tstz = (name: string) => timestamp(name, { withTimezone: true });
@@ -64,7 +65,10 @@ export const snapshots = pgTable(
     eventId: integer("event_id")
       .notNull()
       .references(() => events.id),
-    phase: text("phase", { enum: ["before", "after"] }).notNull(),
+    // "sample": a reading between an event's Before and After, one per slot (D69).
+    phase: text("phase", { enum: ["before", "after", "sample"] }).notNull(),
+    /** A sample's slot (D69): the grid instant it was due at, UTC. Null on a Before or an After. */
+    slotAt: tstz("slot_at"),
     startedAt: tstz("started_at").notNull(),
     finishedAt: tstz("finished_at"),
     status: text("status", { enum: ["running", "complete", "partial", "failed"] }).notNull(),
@@ -81,8 +85,15 @@ export const snapshots = pgTable(
     durationMs: integer("duration_ms"),
   },
   (t) => [
-    unique("snapshots_event_phase_unique").on(t.eventId, t.phase),
-    check("snapshots_phase_check", sql`${t.phase} in ('before', 'after')`),
+    // D1's guarantee, kept for samples (D69): one Before and one After per event, one sample per slot.
+    uniqueIndex("snapshots_event_phase_unique")
+      .on(t.eventId, t.phase)
+      .where(sql`${t.phase} <> 'sample'`),
+    uniqueIndex("snapshots_event_slot_unique")
+      .on(t.eventId, t.slotAt)
+      .where(sql`${t.phase} = 'sample'`),
+    check("snapshots_phase_check", sql`${t.phase} in ('before', 'after', 'sample')`),
+    check("snapshots_slot_check", sql`(${t.phase} = 'sample') = (${t.slotAt} is not null)`),
     check(
       "snapshots_status_check",
       sql`${t.status} in ('running', 'complete', 'partial', 'failed')`,
@@ -118,6 +129,12 @@ export const allianceSnapshots = pgTable(
     isFresh: boolean("is_fresh").notNull(),
     error: text("error"),
     rawJson: jsonb("raw_json"),
+    // A sample's members (D69) as D60's parallel arrays; a null power or kills stays null (D15). Null on
+    // Before and After rows, which keep member_snapshots and raw_json.
+    memberUids: big("member_uids").array(),
+    memberNames: text("member_names").array(),
+    memberPower: big("member_power").array(),
+    memberKills: big("member_kills").array(),
   },
   (t) => [
     unique("alliance_snapshots_snapshot_union_unique").on(t.snapshotId, t.unionId),
@@ -248,6 +265,8 @@ export const dailyReads = pgTable(
     callsUsed: integer("calls_used").notNull().default(0),
     quotaRemainingBefore: integer("quota_remaining_before"),
     error: text("error"),
+    /** D72: when the tick's automatic retry took this day; at most one per day. */
+    autoRetryAt: tstz("auto_retry_at"),
   },
   (t) => [
     check(
@@ -259,7 +278,9 @@ export const dailyReads = pgTable(
 
 /**
  * One alliance's roster from a daily read (D60): the members as four parallel arrays (uid, name, power,
- * kills; a null power or kills stays null, D15), no raw_json, so no blocked roster key is ever stored.
+ * kills; a null power or kills stays null, D15) that the member history reads, and the trimmed response
+ * in raw_json (D72), which keeps every roster field (daily_tech among them) and which no read model,
+ * route, page, log or message selects. Error rows and rows from before D72 have none.
  */
 export const dailyRosters = pgTable(
   "daily_rosters",
@@ -284,9 +305,62 @@ export const dailyRosters = pgTable(
     memberNames: text("member_names").array().notNull(),
     memberPower: big("member_power").array().notNull(),
     memberKills: big("member_kills").array().notNull(),
+    rawJson: jsonb("raw_json"),
   },
   (t) => [
     unique("daily_rosters_day_union_unique").on(t.readDay, t.unionId),
     index("daily_rosters_union_idx").on(t.unionId),
   ],
+);
+
+/**
+ * A workspace (D71): the private area of one alliance. The Discord server and the leadership role ids
+ * live here, so a new alliance needs no deploy; the owner registers one on /admin.
+ */
+export const workspaces = pgTable("workspaces", {
+  id: serial("id").primaryKey(),
+  slug: text("slug").notNull().unique(),
+  unionId: big("union_id").notNull().unique(),
+  discordGuildId: text("discord_guild_id").notNull(),
+  leaderRoleIds: text("leader_role_ids").array().notNull(),
+  createdAt: tstz("created_at").notNull().defaultNow(),
+});
+
+/**
+ * The people of one workspace (D71): a row is written when someone signs in, or when the owner puts a
+ * Discord account on the allowlist (with who added it and until when).
+ */
+export const workspaceUsers = pgTable(
+  "workspace_users",
+  {
+    id: serial("id").primaryKey(),
+    workspaceId: integer("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    discordUserId: text("discord_user_id").notNull(),
+    displayName: text("display_name"),
+    allowlisted: boolean("allowlisted").notNull().default(false),
+    allowlistAddedBy: text("allowlist_added_by"),
+    allowlistExpiresAt: tstz("allowlist_expires_at"),
+    blocked: boolean("blocked").notNull().default(false),
+    lastLoginAt: tstz("last_login_at"),
+  },
+  (t) => [unique("workspace_users_workspace_discord_unique").on(t.workspaceId, t.discordUserId)],
+);
+
+/** Signed-in sessions (D71): only the token's sha256 is stored; each belongs to one workspace, 24 h. */
+export const workspaceSessions = pgTable(
+  "workspace_sessions",
+  {
+    tokenHash: text("token_hash").primaryKey(),
+    workspaceId: integer("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    workspaceUserId: integer("workspace_user_id")
+      .notNull()
+      .references(() => workspaceUsers.id, { onDelete: "cascade" }),
+    createdAt: tstz("created_at").notNull(),
+    expiresAt: tstz("expires_at").notNull(),
+  },
+  (t) => [index("workspace_sessions_workspace_idx").on(t.workspaceId)],
 );

@@ -1,8 +1,54 @@
 // Flat config. Rules from docs/IMPLEMENTATION_PLAN.md §11.2: limits are signals to split, never disable them inline.
+import { readdirSync } from "node:fs";
+
 import js from "@eslint/js";
 import { defineConfig } from "eslint/config";
 import { createNodeResolver, importX } from "eslint-plugin-import-x";
 import tseslint from "typescript-eslint";
+
+// The dependency rule of docs/ARCHITECTURE.md, linted (plan §11.2, docs/decisions/D34).
+const zones = [
+  {
+    target: ["./lib/compute.ts", "./lib/budget.ts"],
+    from: ".",
+    except: ["./node_modules"],
+    message: "lib/compute and lib/budget are pure: they import nothing from the project.",
+  },
+  {
+    target: "./lib/screenshot",
+    from: ".",
+    except: ["./node_modules", "./lib/screenshot"],
+    message: "lib/screenshot imports nothing from the project, and nothing from the database.",
+  },
+  {
+    target: "./lib/schedule.ts",
+    from: ".",
+    except: ["./node_modules", "./lib/env.ts"],
+    message: "lib/schedule is pure: it imports only the Env type from lib/env.",
+  },
+  {
+    target: ["./lib", "./config"],
+    from: "./app",
+    message: "Nothing in lib/ or config/ imports from app/.",
+  },
+  {
+    target: "./app",
+    from: "./lib/sources",
+    message: "app/ reaches upstream only through lib/run, lib/tick or lib/rehearsal.",
+  },
+  {
+    target: ["./app/(pages)", "./app/_ui", "./app/(private)"],
+    from: "./lib/repo",
+    message:
+      "Pages and UI read through lib/queries, the workspace through lib/private (D71); only route handlers use lib/repo.",
+  },
+];
+const restrict = (extra) => ["error", { zones: [...zones, ...extra] }];
+const PRIVATE = ["app/(private)/**", "lib/private/**"];
+// D71: lib/private logs only through its own code-and-numbers wrapper and sends no Discord message.
+const NOTIFY_AND_DISCORD = readdirSync(`${import.meta.dirname}/lib`)
+  .filter((f) => /^(notify|discord-).*\.tsx?$/.test(f) && !f.endsWith(".test.ts"))
+  .map((f) => `./lib/${f}`);
 
 export default defineConfig(
   // .claude/worktrees: agent worktrees inside the main checkout carry their own config and node_modules.
@@ -49,41 +95,35 @@ export default defineConfig(
       "max-depth": ["error", 3],
       "@typescript-eslint/no-explicit-any": "error",
       "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
-      // The dependency rule of docs/ARCHITECTURE.md, linted (plan §11.2, docs/decisions/D34).
-      "import-x/no-restricted-paths": [
-        "error",
+      "import-x/no-restricted-paths": restrict([]),
+    },
+  },
+  {
+    // D71, an allowlist: every module outside app/(private) and lib/private is fenced out of lib/private,
+    // so a module added later is fenced out by default.
+    files: ["**/*.{ts,tsx,mjs}"],
+    ignores: PRIVATE,
+    rules: {
+      "import-x/no-restricted-paths": restrict([
         {
-          zones: [
-            {
-              target: ["./lib/compute.ts", "./lib/budget.ts"],
-              from: ".",
-              except: ["./node_modules"],
-              message: "lib/compute and lib/budget are pure: they import nothing from the project.",
-            },
-            {
-              target: "./lib/schedule.ts",
-              from: ".",
-              except: ["./node_modules", "./lib/env.ts"],
-              message: "lib/schedule is pure: it imports only the Env type from lib/env.",
-            },
-            {
-              target: ["./lib", "./config"],
-              from: "./app",
-              message: "Nothing in lib/ or config/ imports from app/.",
-            },
-            {
-              target: "./app",
-              from: "./lib/sources",
-              message: "app/ reaches upstream only through lib/run, lib/tick or lib/rehearsal.",
-            },
-            {
-              target: ["./app/(pages)", "./app/_ui"],
-              from: "./lib/repo",
-              message: "Pages and UI read through lib/queries; only route handlers use lib/repo.",
-            },
-          ],
+          target: ".",
+          from: "./lib/private",
+          message: "Only app/(private) imports lib/private (D71).",
         },
-      ],
+      ]),
+    },
+  },
+  {
+    files: ["lib/private/**"],
+    rules: {
+      "import-x/no-restricted-paths": restrict([
+        {
+          target: "./lib/private",
+          from: NOTIFY_AND_DISCORD,
+          message:
+            "lib/private logs through lib/private/log.ts and sends no Discord message (D71).",
+        },
+      ]),
     },
   },
   {

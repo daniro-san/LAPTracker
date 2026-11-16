@@ -1,6 +1,9 @@
+import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
-import { makeClock, parseDateFormat } from "./format";
+import { LANGUAGES } from "@/lib/copy";
+
+import { compact, makeClock, parseDateFormat } from "./format";
 
 // Saturday 14:01 server time (UTC−2): 19:01 in Moscow, 09:01 in Los Angeles.
 const at = new Date("2026-10-31T16:01:00Z");
@@ -65,5 +68,30 @@ describe("parseDateFormat", () => {
     expect(parseDateFormat(undefined)).toBeNull();
     expect(parseDateFormat("yyyy")).toBeNull();
     expect(parseDateFormat("toString")).toBeNull();
+  });
+});
+
+describe("compact", () => {
+  it("ends in K, M, B or T and has no other letters, for any number of 1,000 or more in every language", () => {
+    fc.assert(
+      fc.property(
+        fc.constantFrom(...LANGUAGES, "en-GB", "pt-PT", "es-MX"),
+        fc.integer({ min: 1000, max: 999_999_999_999_999 }),
+        (locale, n) => {
+          const text = compact(n, locale);
+          expect(text).toMatch(/[KMBT]$/);
+          expect(text.slice(0, -1)).not.toMatch(/\p{L}/u);
+        },
+      ),
+    );
+  });
+
+  it("reads 4,29B in pt-BR, 1.00M at 999,950, and K/M/B in ja and zh-CN", () => {
+    expect(compact(4_290_000_000, "pt-BR")).toBe("4,29B");
+    expect(compact(999_950, "en-GB")).toBe("1.00M");
+    expect(compact(60_100_000, "en-GB")).toBe("60.1M");
+    expect(compact(150_000_000, "ja")).toBe("150M");
+    expect(compact(150_000_000, "zh-CN")).toBe("150M");
+    expect(compact(999, "en")).toBe("999");
   });
 });

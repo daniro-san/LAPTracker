@@ -8,7 +8,7 @@ import { allianceSnapshots, events, memberSnapshots, snapshots } from "../schema
 import { rolesOf, type Role } from "./leadership";
 import { type Photo, photoColumns } from "./photo";
 import { historyRanks, type Ranks } from "./ranks";
-import { chainEvent, publicEvent } from "./visibility";
+import { chainEvent, phaseColumn, phaseSnapshot, publicEvent } from "./visibility";
 
 export interface AllianceRow {
   id: number;
@@ -74,11 +74,18 @@ async function membersOf(db: Db, allianceSnapshotIds: number[]) {
 /** One alliance in one event: its before and after rows and both rosters. Null for a test event. */
 export async function getAllianceDetail(db: Db, eventId: number, unionId: number) {
   const rows = await db
-    .select({ ...allianceColumns, phase: snapshots.phase })
+    .select({ ...allianceColumns, phase: phaseColumn })
     .from(allianceSnapshots)
     .innerJoin(snapshots, eq(snapshots.id, allianceSnapshots.snapshotId))
     .innerJoin(events, eq(events.id, snapshots.eventId))
-    .where(and(eq(events.id, eventId), publicEvent, eq(allianceSnapshots.unionId, unionId)));
+    .where(
+      and(
+        eq(events.id, eventId),
+        publicEvent,
+        phaseSnapshot,
+        eq(allianceSnapshots.unionId, unionId),
+      ),
+    );
   if (rows.length === 0) return null;
   const alliances = rows.map(toRow);
   const ids = alliances.map((a) => a.id);
@@ -197,7 +204,7 @@ export async function allianceHistory(db: Db, unionId: number): Promise<HistoryR
   const found = await db
     .select({
       ...allianceColumns,
-      phase: snapshots.phase,
+      phase: phaseColumn,
       eventId: events.id,
       eventName: events.name,
       eventAtUtc: events.eventAtUtc,
@@ -205,7 +212,7 @@ export async function allianceHistory(db: Db, unionId: number): Promise<HistoryR
     .from(allianceSnapshots)
     .innerJoin(snapshots, eq(snapshots.id, allianceSnapshots.snapshotId))
     .innerJoin(events, eq(events.id, snapshots.eventId))
-    .where(and(eq(allianceSnapshots.unionId, unionId), chainEvent))
+    .where(and(eq(allianceSnapshots.unionId, unionId), chainEvent, phaseSnapshot))
     .orderBy(asc(events.eventAtUtc));
   const meta = new Map(found.map((r) => [r.eventId, r]));
   const rows = found.map((r) => ({ eventId: r.eventId, phase: r.phase, row: toRow(r) }));

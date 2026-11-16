@@ -2,6 +2,7 @@
 // first phase and edited by the next, so each message shows the event so far.
 import type { AppContext } from "./app-context";
 import type { RunSummary } from "./collector";
+import { copy, fill } from "./copy";
 import type { Db } from "./db";
 import { eventImage } from "./event-image";
 import {
@@ -14,12 +15,12 @@ import {
   type DiscordClock,
   type Notifier,
 } from "./notify";
-import { getEventDetail } from "./queries";
+import { getEventDetail, memberTurnout } from "./queries";
 import { rehearsalVerdict } from "./rehearsal";
 import type { Phase } from "./repo";
 import { setDiscordMessageId, type EventInfo } from "./repo/events";
 import { loadVerdictInput } from "./repo/rehearsals";
-import { listPhaseReports, type PhaseReport } from "./repo/snapshots";
+import { listPhaseReports, otherShortSample, type PhaseReport } from "./repo/snapshots";
 
 interface Request {
   event: EventInfo;
@@ -46,6 +47,20 @@ async function storeId(db: Db, shared: Shared, channel: "public" | "admin", id: 
   if (id && id !== old) await setDiscordMessageId(db, event.id, channel, id).catch(() => undefined);
 }
 
+/** The End's turnout (#271), read once for the picture and the text; null for the Start, an unread detail or a failed read. */
+async function endTurnout(
+  db: Db,
+  eventId: number,
+  phase: Phase,
+  detail: { snapshots: Parameters<typeof memberTurnout>[1] } | null,
+) {
+  if (phase !== "after" || !detail) return null;
+  return memberTurnout(db, detail.snapshots).catch(() => {
+    console.error("notify.turnout_failed", { event_id: eventId });
+    return null;
+  });
+}
+
 async function notifyPublic(db: Db, s: Shared) {
   const { event, phase, origin } = s.req;
   // getEventDetail reads real events only: the public message never sees a rehearsal.
@@ -59,6 +74,7 @@ async function notifyPublic(db: Db, s: Shared) {
   const nextAt = phase === "before" && !event.manual ? event.afterAt : null;
   const beforeAt =
     phase === "after" ? (s.reports.find((r) => r.phase === "before")?.finishedAt ?? null) : null;
+  const turnout = await endTurnout(db, event.id, phase, detail);
   // The picture (D58) needs this phase's rows; a failed run or an unread detail sends the text alone.
   const image =
     alliances && alliances.length > 0 && s.run.summary.status !== "failed"
@@ -73,6 +89,7 @@ async function notifyPublic(db: Db, s: Shared) {
           nextAt,
           alliances,
           before: before ?? [],
+          turnout,
         })
       : null;
   const id = await s.notifier.public(
@@ -86,6 +103,7 @@ async function notifyPublic(db: Db, s: Shared) {
       roundName: event.manual ? event.name : null,
       beforeAt,
       image: image !== null,
+      turnout,
     }),
     event.discordPublicMessageId,
     image,
@@ -148,6 +166,39 @@ async function notifyAdmin(ctx: AppContext, db: Db, s: Shared) {
       manual: event.manual,
     });
   }
+}
+
+/**
+ * A sample's Discord rule (D69): nothing public; on the admin channel, the first sample of the event that
+ * ends partial or failed posts one message of its own, and later ones post nothing (their runs are on
+ * /admin/runs), so a long outage is one message per event, never one per sample. The event's own message
+ * (D31) is not edited: it keeps its Before and After blocks.
+ */
+export async function notifySample(
+  ctx: AppContext,
+  db: Db,
+  req: { event: EventInfo; slotAt: Date; origin: string },
+  run: Run,
+): Promise<void> {
+  const { summary } = run;
+  if (summary.status === "complete") return;
+  // INVARIANT notify.sample-once-per-event
+  if (await otherShortSample(db, req.event.id, summary.snapshotId)) return;
+  const clock = discordClock(ctx.env.SERVER_TZ);
+  const block = adminSnapshotMessage(summary, {
+    clock,
+    phase: "sample",
+    runUrl: `${req.origin}/admin/runs/${summary.snapshotId}`,
+    scheduledAt: req.slotAt,
+    startedAt: run.startedAt,
+    finishedAt: ctx.now(),
+    logWriteFailures: run.logWriteFailures,
+  });
+  const once = fill(copy.discord.admin.sampleOnce, { url: `${req.origin}/admin/runs` });
+  await createNotifier(ctx.env, ctx.fetch).admin(
+    adminEventMessage(req.event.name, [`${block}\n${once}`]),
+    { test: req.event.isTest },
+  );
 }
 
 /**

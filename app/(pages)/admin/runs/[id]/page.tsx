@@ -5,7 +5,7 @@ import { AdminShell } from "@/app/_ui/admin/AdminShell";
 import { AdminSection, StateChip } from "@/app/_ui/admin/parts";
 import { RunLog } from "@/app/_ui/admin/RunLog";
 import { RunTrace } from "@/app/_ui/admin/RunTrace";
-import { eventWord, phaseWord, seconds, stateWord } from "@/app/_ui/admin/words";
+import { eventWord, runWord, seconds, stateWord } from "@/app/_ui/admin/words";
 import { allianceLabel } from "@/app/_ui/format";
 import { requestServerClock } from "@/app/_ui/locale";
 import { isAdmin } from "@/lib/admin-session";
@@ -32,7 +32,7 @@ export default async function RunPage({ params }: { params: Promise<{ id: string
     <AdminShell title={fill(t.run, { id: run.id })}>
       <AdminSection
         id="run-summary"
-        title={`${eventWord(run, clock)} · ${phaseWord(run.phase)}`}
+        title={`${eventWord(run, clock)} · ${runWord(run, clock)}`}
         aside={<StateChip status={run.status}>{stateWord(run.status)}</StateChip>}
       >
         <FactList

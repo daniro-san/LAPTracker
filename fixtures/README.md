@@ -5,6 +5,12 @@ upstream API and the bodies for parser tests. Adding one spends quota or touches
 deliberate act, never a side effect of a test. Bodies include roster fields that are never served
 (plan §12.1); tests may read them, nothing else may.
 
+Since 2026-11-16 (D76, issue #308) the values of `x`, `y`, `online`, `last_online_at` and `joined_at` are neutral in every
+JSON fixture: numbers `0`, booleans `false`, strings empty, `null` stays `null`, at every depth. The keys stay, so parsers and
+blocked-key tests keep their shape. The repository is public and those keys hold players' map coordinates and presence. Fixtures
+recorded before that date were scrubbed in place (history was not rewritten); new ones go through
+`scripts/neutralise-fixture.ts` in the record-fixture skill.
+
 Recorded on 2026-11-04 (Wednesday) unless the row gives another date. Quota is per account per UTC day (1,000; `quota.used` in each body).
 
 | Folder | What | Recorded (UTC) | Cost |
@@ -20,5 +26,7 @@ Recorded on 2026-11-04 (Wednesday) unless the row gives another date. Quota is p
 | `v1-ids/67111128.json` | `GET /v1/alliances/67111128` (FGH, MegaDeath), the Session 2 live smoke test (`lib/sources/v1.live.test.ts`) through the real client: `200`, `rank.rank` 20, `cached: false`, 67 members, two with `kills: null`. Saved as `JSON.stringify` of the parsed body (byte-identical to the original for all 23 earlier `/v1` bodies, measured) | 20:23 | 1 call (`used` 57 → 58) |
 | `ranks-325-20261104T201831Z/ranks.json` | Internal ranks board, `GET /api/servers/catalog/325/ranks` (User-Agent only, no key, no Origin/Referer/cookies): `boards[]` incl. `alliance_power` (98 rows) and `alliance_kills` (97 rows), `score` as a digit string, `pulled_at` 16:41:48 UTC; top-level `cached: true, stale: false` | 20:18 | 0 quota (internal) |
 | `v1-20261116T105019Z/` | Documented API on 2026-11-16 (Monday), after that day's daily roster read failed with `v1.schema` for 7 alliances: `GET /v1/quota`, `GET /v1/alliances/{id}?fresh=1` for OGs (67111155), FGH (67111128) and AFR (67111040), `GET /v1/quota`. All `200`, `cached: false`, `X-Cache: live`, `cache_seconds` 3600; new top-level keys `age_seconds` and `refreshing`. 1, 3 and 6 members have `rank_code: null`, `rank_label: ""` and the extra keys `player_id`, `level`, `sid`. `power` equals the power sum of the other members, and `member_count` counts all of them (OGs: 101 with `capacity` 100) | 2026-11-16 10:50 | 5 calls (`used` 22 → 26) |
+
+`screenshots/` is not upstream data: game screenshots and the OCR text read from them, for `lib/screenshot` (D74). It has its own README. No quota, no site call.
 
 The internal refresh endpoint is closed to us on purpose (plan §3.5). No fixture will ever be recorded from it again.

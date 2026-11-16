@@ -6,7 +6,6 @@
 // TOP members show; "Show all" opens the rest. All data is already in the page; nothing is fetched.
 import { useMemo, useState } from "react";
 
-import { buttonClass } from "@/lib/brand/components/Button";
 import { ROLE_TONE, RoleMark } from "@/lib/brand/components/RoleMark";
 import { rankDelta } from "@/lib/compute";
 import { fill, type Dictionary } from "@/lib/copy";
@@ -23,6 +22,7 @@ import {
 import { MightRange } from "./MightRange";
 import { Num } from "./Num";
 import { PlayerAvatar } from "./Pictures";
+import { ShowAllButton } from "./ShowFirst";
 import { LABEL, StatTable, type StatMetric, type StatRow } from "./StatTable";
 
 const TOP = 20;
@@ -271,15 +271,7 @@ export function MembersExplorer({
         empty={copy.empty.noMembers}
         copy={copy}
       />
-      {shown.length < kept.length && (
-        <button
-          type="button"
-          className={`${buttonClass("secondary")} mt-3 w-full sm:w-auto`}
-          onClick={() => setAll(true)}
-        >
-          {fill(copy.members.showAll, { n: String(kept.length) })}
-        </button>
-      )}
+      {shown.length < kept.length && <ShowAllButton n={kept.length} onClick={() => setAll(true)} />}
     </div>
   );
 }

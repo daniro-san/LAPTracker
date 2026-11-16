@@ -23,6 +23,7 @@ import {
 } from "../lib/schema";
 import { seedDaily } from "./seed-daily";
 import { loadBase, rosterAt, type BaseAlliance, type BaseMember, type Phase } from "./seed-data";
+import { seedSamples } from "./seed-samples";
 import { seedStates } from "./seed-states";
 
 const HOUR = 3_600_000;
@@ -150,6 +151,8 @@ async function seedEvent(db: Db, base: BaseAlliance[], event: number): Promise<v
   const eventId = (ev as { id: number }).id;
   await seedPhase(db, base, eventId, { event, phase: "before", at: day });
   await seedPhase(db, base, eventId, { event, phase: "after", at: afterAt });
+  // The latest event is sampled like a KvK (D69), so the event page's live section has data.
+  if (event === 2) await seedSamples(db, base, eventId, day, afterAt);
 }
 
 async function seedRunLogs(db: Db, snapshotId: number, base: BaseAlliance[]): Promise<void> {

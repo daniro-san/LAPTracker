@@ -27,27 +27,37 @@ description: Record a new upstream API response into fixtures/ (spends LAP API q
 ```bash
 UA="laptracker/1.0 (+https://github.com/daniro-san/LAPTracker)"
 API="https://api.lastasylumtracker.com/v1"
+RAW=$(mktemp)
 # One line per call: <path under /v1> <output file>. Positional shell parameters are avoided on
 # purpose: the skill loader substitutes them with the skill's arguments.
+# The body lands in a temp file outside the repo; the neutraliser writes it to its fixtures path.
 while read -r path out; do
   code=$(curl -sS -A "$UA" -H "Authorization: Bearer $LAP_API_KEY" -H 'Accept: application/json' \
-    --max-time 60 -o "$out" -w '%{http_code} %{time_total}s' "$API/$path")
+    --max-time 60 -o "$RAW" -w '%{http_code} %{time_total}s' "$API/$path")
   echo "$path -> $code"
+  # Deny by default: only an explicit /tmp path gets the raw body; every other path is neutralised.
+  case "$out" in
+    /tmp/*) cp "$RAW" "$out" ;;
+    *) pnpm -s tsx scripts/neutralise-fixture.ts < "$RAW" > "$out" ;;
+  esac
   case "$code" in 401* | 403* | 429*) echo STOP; break ;; esac
 done <<'CALLS'
 quota            /tmp/quota-before.json
 alliances/<id>   fixtures/v1-ids/<id>.json
 quota            /tmp/quota-after.json
 CALLS
+rm "$RAW"
 ```
 
+- **Neutralise before the body reaches `fixtures/`.** The repository is public (D76). `scripts/neutralise-fixture.ts` sets `x`, `y`, `online`, `last_online_at` and `joined_at` to a neutral value of the same type (numbers 0, booleans false, strings empty, null stays null) at every depth (rosters, members, player responses) and keeps the keys and every other byte. The internal ranks board and any other body go through it too. Never write a raw body to a path under `fixtures/`, and never commit one.
 - Alliance bodies go in `fixtures/v1-ids/<id>.json` (Session 0's layout); other kinds in `fixtures/<kind>-<utc timestamp>/`. Quota bodies are only for the count and need not be kept (every response carries `quota`).
-- Save the response body exactly as returned. No pretty-printing, no trimming: tests must see what the parsers will see. (The DB trims `raw_json`; fixtures don't.)
+- Save the response body as returned, apart from the five neutralised values. No pretty-printing, no trimming: tests must see what the parsers will see. (The DB trims `raw_json`; fixtures don't.)
 - Stop at the first `401`, `403` or `429`. Don't retry `429`. Retry `502/503/504` at most once, after 5 s.
 - Never call `POST /api/alliances/{id}/refresh` or any refresh endpoint. Never send `Origin`, `Referer` or cookies to `lastasylumtracker.com`. The maintainer closed that on purpose.
 
 ## 4. Check before keeping
 
+- No non-neutral value is left: `grep -rhoE '"(x|y)": ?-?[0-9.]*[1-9][0-9.]*|"online": ?true|"(last_online_at|joined_at)": ?("[^"]+"|-?[0-9.]*[1-9][0-9.]*)' "$DIR" | wc -l` must print `0`.
 - `grep -rl 'lap_' "$DIR"` must print nothing. A response that echoes the key is deleted, not committed.
 - Every file parses: `for f in "$DIR"/*.json; do node -e 'JSON.parse(require("fs").readFileSync(process.argv[1],"utf8"))' "$f" || echo "BAD $f"; done`
 - Calls actually spent = `quota-after.used - quota-before.used + 1` (the before call counts itself). `502`s count. If it differs from your step-1 estimate, say so.

@@ -21,5 +21,6 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
   if (id === null) notFound();
   const { events, homeId, page } = await loadEventPage(id);
   if (!page) notFound();
+  // EventView reads the live section: which cache entry it uses depends on the page's End (issue 327).
   return <EventView events={events} homeId={homeId} {...page} />;
 }

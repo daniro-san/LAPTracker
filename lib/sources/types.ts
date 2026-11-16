@@ -63,14 +63,23 @@ export interface RanksBoard {
  */
 export type OnAttempt = (attempt: number, status?: number | null) => void;
 
+/** Per-call limits that replace the adapter's defaults (a sample, D69). */
+export interface CallOptions {
+  /** Replaces TIMEOUT_MS for each attempt of the call. */
+  timeoutMs?: number | undefined;
+  /** Replaces MAX_RETRIES: 0 sends the call once. */
+  maxRetries?: number | undefined;
+}
+
 export interface V1Source {
   /** `signal` cuts the call when it aborts (the run deadline), on top of TIMEOUT_MS. */
   fetchAlliance(
     id: UnionId,
     onAttempt?: OnAttempt,
     signal?: AbortSignal,
+    options?: CallOptions,
   ): Promise<AllianceSnapshotInput>;
-  fetchQuota(onAttempt?: OnAttempt, signal?: AbortSignal): Promise<Quota>;
+  fetchQuota(onAttempt?: OnAttempt, signal?: AbortSignal, options?: CallOptions): Promise<Quota>;
 }
 
 export interface InternalSource {
