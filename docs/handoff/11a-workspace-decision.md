@@ -3,8 +3,8 @@
 Base: `origin/dev` at f80bcd6 (release v5.6.0). Docs only; no code, no migration, no API call.
 
 ## Built
-- `docs/decisions/D71-a-private-workspace-per-alliance.md` and its line in `docs/decisions/README.md` (after D67; D68–D70 belong to open branches).
-- `CLAUDE.md`: one sentence added to the hard-rule bullet on roster fields. Code in `lib/private` may return those fields (never `avatar_url`) only to pages and handlers under `app/(private)/w/[slug]`, after `requireWorkspace`, for rows of that workspace's own alliance. They never go to logs, `run_logs`, `app_errors`, Discord messages, copies or exports, AI or translation requests, or a shared cache. Nothing else in the file changed.
+- `docs/decisions/D71-a-private-workspace-per-alliance.md` and its line in `docs/decisions/README.md` (after D70, merged in #289; D68 and D69 belong to open branches).
+- `CLAUDE.md`: one sentence added to the hard-rule bullet on roster fields. Code in `lib/private` may return those fields (never `avatar_url`) only to pages and handlers under `app/(private)/w/[slug]` and `app/(private)/api/w/[slug]`, after `requireWorkspace`, for rows of that workspace's own alliance. They never go to logs, `run_logs`, `app_errors`, Discord messages, AI or translation requests or a shared cache, and copies and exports also leave out `x`, `y`, `online` and `last_online_at`. `REVIEW.md`, `.claude/rules/api-routes.md` and the glossary's `blocked roster keys` row carry the same exception. Nothing else in the file changed.
 - `docs/GLOSSARY.md`: row `workspace`, with `workspaces`, `lib/private`, `/w/[slug]`.
 - This handoff.
 
@@ -26,7 +26,7 @@ Base: `origin/dev` at f80bcd6 (release v5.6.0). Docs only; no code, no migration
 - The CLAUDE.md sentence names `avatar_url` as still never returned, because the task says the photo reaches pages only through `/img/avatar` (D22).
 
 ## Deviations
-- None from the task. The task asked for D71 "about the length of D60 or D67"; D71 has 15 bullets, between the two.
+- D71 is longer than the task asked ("about the length of D60 or D67"): 17 bullets, against 14 for D60 and 7 for D67. The owner's later answers (languages, one level of access, regular members, notices) and the adversarial review each added a point.
 
 ## Verified
 - `pnpm check` green after the last edit: prettier, eslint, tsc, vitest (277 passed, 1 skipped), drift, i18n (17 languages). Prettier left the glossary table widths unchanged.
@@ -41,6 +41,7 @@ Base: `origin/dev` at f80bcd6 (release v5.6.0). Docs only; no code, no migration
 5. **Translation service.** D71 leaves it open; it is decided with the screenshot import (#299, an external processor through the AI Gateway). Whatever is chosen receives officer-written text, so it falls under the retention and privacy question in 1.
 6. **Regular members.** Any page, link or form for non-leadership members needs its own decision. #301 waits for it; #296 to #300 are leadership-only work.
 7. **Plan §12.1 also says** the player pages follow the same list. That stays true for public pages; a workspace player view is a later session's design.
+8. **`docs/SESSION_PLAYBOOK.md`** (the Session C block, about line 167) repeats the old roster-field rule without the `lib/private` exception. Not edited from a session.
 
 ## Next
 Session: none queued in `docs/SESSION_PLAYBOOK.md`. The next work is issue #294 (end-of-day daily read, D72), then issue #295 (Discord sign-in).
@@ -55,7 +56,7 @@ Plan changes needed: §12.1, §12.2 and §12.6 (Open issues 2 to 4). Do not edit
 - Skip #301 (member self-report link): deferred by the owner. Build no member-facing page, link or token in #295 to #300; every workspace route requires a leadership sign-in, and all leaders see all of it, so no per-person permission model is needed.
 - Private code goes in top-level `lib/private/`, not `lib/queries/private/`: `lib/queries/blocked-keys.test.ts` scans `lib/queries` non-recursively.
 - No new dependency for sign-in: two `fetch` calls, `node:crypto` and `secretEquals` (`lib/auth.ts`).
-- Decision numbers D68, D69 and D70 belong to open branches 08zzzx, 08zzzza and 08zzzzb; D72 is the end-of-day read.
+- Decision numbers D68 and D69 belong to open branches 08zzzx and 08zzzza; D70 is merged (#289); D72 is the end-of-day read.
 </adjustments>
 
 https://github.com/daniro-san/LAPTracker/pull/310
