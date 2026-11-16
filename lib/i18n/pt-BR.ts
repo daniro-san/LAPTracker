@@ -53,6 +53,11 @@ export const ptBR = {
     names: "Nomes",
     alliances: "Alianças",
     movers: "Vovó reparou",
+    fought: "Quem lutou",
+    foughtHelp:
+      "Members que estavam na aliança no Início e no Fim. Jogadores de suporte não ganham kills.",
+    withKills: "Members com kills ganhos",
+    topShare: "Fatia do Top 5 em kills",
   },
   compare: {
     title: "Evento contra evento",

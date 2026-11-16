@@ -5,7 +5,7 @@
 import type { NameHistoryEntry } from "@/lib/compute";
 import { fill, type Dictionary } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
-import type { getEventDetail, listEvents, Ranks, RosterChange } from "@/lib/queries";
+import type { getEventDetail, listEvents, Ranks, RosterChange, TurnoutLists } from "@/lib/queries";
 import type { getEventPage } from "@/lib/queries/event-page";
 import { nextEvent } from "@/lib/schedule";
 
@@ -39,6 +39,7 @@ import {
   worstOf,
   type FreshState,
 } from "./Status";
+import { WhoFought } from "./WhoFought";
 
 type Detail = NonNullable<Awaited<ReturnType<typeof getEventDetail>>>;
 type Events = Awaited<ReturnType<typeof listEvents>>;
@@ -185,8 +186,10 @@ export async function EventView({
   names,
   ranks,
   movers,
+  turnout,
 }: {
   movers: NonNullable<Awaited<ReturnType<typeof getEventPage>>["page"]>["movers"];
+  turnout: TurnoutLists | null;
   events: Events;
   homeId: number | null;
   detail: Detail;
@@ -244,6 +247,7 @@ export async function EventView({
           copy={copy}
         />
         <Movers scopes={moverScopes} />
+        {turnout && <WhoFought eventId={detail.id} lists={turnout} />}
       </main>
       <SiteFooter copy={copy} />
     </>

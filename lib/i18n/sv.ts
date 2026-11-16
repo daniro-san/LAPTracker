@@ -53,6 +53,11 @@ export const sv = {
     names: "Namn",
     alliances: "Allianser",
     movers: "Mormor märkte",
+    fought: "Vem deltog",
+    foughtHelp:
+      "Members som fanns i alliansen vid Början och vid Slut. Supportspelare får inga Kills.",
+    withKills: "Members som fick Kills",
+    topShare: "Topp 5:s andel av Kills",
   },
   compare: {
     title: "Event mot event",

@@ -53,6 +53,10 @@ export const th = {
     names: "ชื่อ",
     alliances: "พันธมิตร",
     movers: "คุณยายสังเกตเห็น",
+    fought: "ร่วมรบ",
+    foughtHelp: "สมาชิกที่อยู่ในพันธมิตรทั้งตอนเริ่มและตอนสิ้นสุด สายซัพพอร์ตไม่เพิ่ม Kills",
+    withKills: "Members ที่ได้ Kills เพิ่ม",
+    topShare: "ส่วนแบ่ง Kills ของ Top 5",
   },
   compare: {
     title: "กิจกรรม เทียบ กิจกรรม",

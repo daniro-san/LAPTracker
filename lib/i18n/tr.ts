@@ -54,6 +54,11 @@ export const tr = {
     names: "İsimler",
     alliances: "İttifaklar",
     movers: "Nine sezdi",
+    fought: "Savaşa katılım",
+    foughtHelp:
+      "Başlangıç’ta ve Bitiş’te ittifakta olan Members. Destek oyuncuları Kills kazanmaz.",
+    withKills: "Kills kazanan Members",
+    topShare: "İlk 5’in Kills payı",
   },
   compare: {
     title: "Etkinlik karşılaştırma",

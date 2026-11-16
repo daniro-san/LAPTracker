@@ -53,6 +53,11 @@ export const fr = {
     names: "Noms",
     alliances: "Alliances",
     movers: "Mamie remarque",
+    fought: "Combattants",
+    foughtHelp:
+      "Membres qui étaient dans l’alliance au Début et à la Fin. Les joueurs de soutien ne gagnent pas de Kills.",
+    withKills: "Membres ayant gagné des Kills",
+    topShare: "Part des Kills du Top 5",
   },
   compare: {
     title: "Événement contre événement",

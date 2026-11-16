@@ -53,6 +53,11 @@ export const itIT = {
     names: "Nomi",
     alliances: "Alleanze",
     movers: "Nonna nota",
+    fought: "Combattenti",
+    foughtHelp:
+      "I Members presenti nell’alleanza a Inizio e a Fine. I giocatori di supporto non guadagnano Kills.",
+    withKills: "Members con Kills guadagnate",
+    topShare: "Quota di Kills dei primi 5",
   },
   compare: {
     title: "Confronto tra eventi",

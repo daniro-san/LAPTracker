@@ -29,6 +29,8 @@ Words already used in `lib/i18n/fr.ts`. Reuse them so the pages stay consistent;
 | End                       | Fin                                   | `status.end` — when the capture window ended                                                 |
 | Start / End               | Début / Fin                           | `status.start` / `status.end`, `compare.lead`                                                |
 | Reading                   | relevé                                | `history.lead`, `history.first`, `history.daily` — one member list read; a card compares two |
+| Who fought                | Combattants                           | `ledger.fought` — the event page's kills section title                                       |
+| Support player            | joueur de soutien                     | `ledger.foughtHelp` — a player who gains no kills                                            |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

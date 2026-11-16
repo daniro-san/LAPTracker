@@ -53,6 +53,11 @@ export const nl = {
     names: "Namen",
     alliances: "Allianties",
     movers: "Oma merkte",
+    fought: "Wie vochten",
+    foughtHelp:
+      "Leden die bij Begin én bij Einde in de alliantie waren. Support-spelers krijgen geen Kills.",
+    withKills: "Members met behaalde Kills",
+    topShare: "Aandeel van de Top 5 in de Kills",
   },
   compare: {
     title: "Event tegen event",
