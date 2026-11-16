@@ -59,3 +59,5 @@ Plan changes needed: none to `docs/IMPLEMENTATION_PLAN.md`; DESIGN.md "Navigatio
 - Discord copy is English only (D48): put the words in `lib/copy-discord.ts`, not in `lib/copy.ts`.
 - Prompt sketch for #276: "Add the two figures to the Discord End picture. Read `memberTurnout` for the event's snapshots, show the top 3 alliances of each list as `[TAG] 54% · 54/100` and `[TAG] 98%`, no member names, hide the block when it returns null. Draw it with the picture's existing rows (`lib/event-image.tsx`); words in `lib/copy-discord.ts`; test the null case and one list."
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/278
