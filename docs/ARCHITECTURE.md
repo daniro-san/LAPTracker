@@ -22,8 +22,10 @@ lib/private/*.ts    the workspace (D71): requireWorkspace and its branded Worksp
                     sign-in, its own log (a code and numbers) and its en/pt-BR/fr dictionary. The only code
                     outside lib/repo that may read the blocked roster keys, for its own alliance's rows.
                     members.ts (the Members tab's read), member-week.ts (its pure week arithmetic and
-                    D75's signals), members-sheet.ts (reasons and "copy for spreadsheet"), first-use.ts
-                    (the first-use steps as data); their table reads are in lib/repo/workspace-rosters.ts.
+                    D75's signals), members-list.ts (filters and search), members-sheet.ts (status,
+                    reasons and "copy for spreadsheet"), first-use.ts (the first-use cards as data),
+                    cookies.ts (the two cookie names, apart from the dictionaries, for client components);
+                    their table reads are in lib/repo/workspace-rosters.ts.
 lib/queries/*.ts    read models for the UI (joins, sorting, name history). Never write. Never expose BLOCKED_ROSTER_KEYS.
                     lib/queries/samples.ts: `eventSamples`, an event's Start, samples and End (D69).
                     lib/queries/live.ts: `eventProgress`, the event page's live section (alliance totals per reading, D69).

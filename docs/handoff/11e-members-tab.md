@@ -1,216 +1,287 @@
-# 11e — Members tab and the officers' first-use shell
+# 11e — Members tab and the officers' first-use cards
 
-Closes #296. Part 2 of #312 (the first-use shell and the how-to page; the format of the first-use steps waits for a persona review). Rules applied: D71, D72, D75, D70, D56, D22, D76.
+Closes #296. Part 2 of #312: the first-use cards, in the format the persona panel chose (recorded on #312), and the how-to page. Rules applied: D71, D72, D75, D70, D56, D22, D76, D78. Revised after the review of PR #329: code review items A1–A10, the UX review's should-fix list B1–B12, and the cheap suggestions.
 
 ## Built
-- **`/w/[slug]/members`** (`app/(private)/w/[slug]/members/page.tsx`): `requireWorkspace` first inside `withPageDb`, then `membersView`. A refused visitor goes to the 404, the silent Discord re-authorisation, `no-access?why=blocked` or the sign-in.
-  - Header lines: "From the game, read each night just before the server resets. Last read: <day> <hh:mm> server time." and the week shown, Monday to Sunday.
-  - **Thanks first**: "Thank you this week", top 3 donors (week total) and top 3 most active (weekly activity). New members are left out. The section is hidden when both lists are empty.
-  - Two help lines: what Check in means (nothing is sent, the app removes nobody), and "— means no data … It never counts against anyone."
-  - Then a name search, the filter chips **All · New · Check in · Missing info · R4 and R5**, the count ("9 of 101 members"), **Copy for spreadsheet**, and one card per member: one column below 640 px, two columns from 640 px.
-- **The card** (`app/(private)/_ui/MemberCard.tsx`), a native `<details>`, so it works without JavaScript and nothing is hover-only:
+- **`/w/[slug]/members`** (`app/(private)/w/[slug]/members/page.tsx`):
+  - `requireWorkspace` runs first, inside `withPageDb`, then `membersView`.
+  - A refused visitor goes through `refuse(slug, reason)` (`app/(private)/_ui/refuse.ts`, shared with `/w/[slug]`): a 404, the silent Discord re-authorisation, or `no-access?why=blocked`. A visitor who is signed out goes to the sign-in.
+  - Header:
+    - "From the game, read each night just before the server resets." with a **"from the game" source badge** (`SourceBadge.tsx`);
+    - "Last read: <day> <hh:mm> server time";
+    - "Week: <Mon> – <Sun>".
+    - No date ends a sentence, so PT and FR never print "nov..".
+  - **Thanks first**: "Thank you this week", the top 3 donors (week total) and the top 3 most active (weekly activity), one name per line with the number on the right. New members are left out. The section is hidden when both lists are empty.
+  - **"N people to check in with"**: a link to `?f=checkin`, in the singular or plural form (`Intl.PluralRules`). It reads "Everyone looks fine this week." when nobody has a reason.
+  - **One short legend line** ("Check in shows what we saw. — means no data.") and a **"More"** that unfolds three lines:
+    - what Check in means: "You decide what to do; nothing is sent or changed by itself.";
+    - "— means no data. It is left out of every count.";
+    - the Monday-to-Sunday week.
+  - **The filters and the search run on the server**:
+    - a GET form with `?q=` (accents and case folded) and a Search button;
+    - the chips are links with `?f=`: **All · New · Check in · Missing info · R4 and R5**, each with its count ("Check in 4"). They wrap into rows, with no hidden overflow, and the open one has `aria-current`.
+  - Then the count ("9 of 101 members"), **Copy for spreadsheet** (the members shown, made on the server), and the cards: one column below 640 px, two from 640 px. **In every filter, Check in cards come first**, then R5 … R1, then might.
+- **The card**: `member-card-data.ts` makes each card's words on the server: every number and date, in the officer's language. `MemberCards.tsx` (client) lays them out, so the card markup is sent once. Each card is a native `<details>`; nothing is hover-only.
   - The summary shows:
-    - the name (`translate="no"`), a "New" tag, and the rank as the game shows it ("R4 · Goddess", using D56's `roleOf`);
-    - Sanctuary, Might (compact), the week's donations (compact) and the activity;
-    - "first seen <date>" for a new member;
-    - the status: **Fine**, or **Check in** with each reason and its evidence;
-    - "No data: …" when something is missing;
+    - the name and the rank as the game shows it ("R4 · Goddess", D56's `roleOf`), both `translate="no"`;
+    - Sanctuary, Might, Donations and Activity, each as one unbroken item that wraps whole. Compact numbers use D78's shared formatter: "64.4M", "64,4M".
+    - **one status**, in this order of precedence:
+      - **Check in** (yarn) with each reason and its evidence;
+      - **New** with "first seen <date>";
+      - **No data: …** listing what is missing;
+      - **Fine** (muted, no colour).
+
+      So "Fine" and "No data" never appear together.
     - "Details ▾", whose screen-reader name is "Details, <name>".
-  - The details show:
-    - donations per server day, Mon … Sun, as exact numbers: "—" for no data, blank for a day not read yet, and the week's exact total;
-    - the activity this week and the day's honor (`daily_honor`);
-    - Joined (`joined_at`), Seen since (first daily roster that lists the member), Last online (`last_online_at`) and the map position (`x`, `y`).
+  - The details are drawn only when the card is opened:
+    - the donations per server day, Mon … Sun, as exact numbers. Each cell holds three lines: weekday, day, value. "—" is no data and a blank cell is not read yet. The cells are equal in height in every language;
+    - the week's exact total, the activity, and the day's honor (`daily_honor`);
+    - Seen since and the map position (`x`, `y`);
+    - Joined (`joined_at`) and Last online (`last_online_at`), only while at least one member has a value. The game has sent both as null for everyone since 2026-11-16.
   - `online` is not shown (D71: hidden while the API leaves it empty). `avatar_url` is never selected.
-- **The list** (`app/(private)/_ui/MembersList.tsx`, client):
-  - Search folds case and accents.
-  - The filters act on server-made flags.
-  - A filtered-out card is `hidden`, so an open card stays open.
-  - Copy puts the header and the line of every card shown on the clipboard. The lines are made on the server.
 - **The read** (`lib/private/members.ts`, `membersView(db, access, now)`): every read is filtered by `access.unionId`.
-  - Rows come from the newest end-of-day read with `raw_json`.
-  - Check-in reasons, each with its evidence:
-    - **offline proxy**: `idleRun`;
-    - **might unchanged**: D70's `mightUnchanged(db, unionId).unchanged`, reused as is;
-    - **no kills gained in KvK**: the newest public scheduled event in the last 7 days whose Start and End rows are fresh and not failed, for members whose kills are known on both sides and did not rise.
-- **Pure arithmetic** (`lib/private/member-week.ts`): `gameWeek`, `weekDonations`, `weekTotal`, `idleRun`, `isNewMember`, `missingOf`, `topOf`.
-- **Copy for spreadsheet** (`lib/private/members-sheet.ts`): 17 columns: Name, Rank, Might, Sanctuary, the 7 days, Week total, Activity this week, Day's honor, Joined, Seen since, Status (with the reasons).
-  - Numbers are plain integers, and a cell with no data is empty, as in the member-history copy.
+  - The rows come from the newest end-of-day read with `raw_json`.
+  - Check-in reasons:
+    - **offline proxy**: `idleRun`, at 2 full days (3 end-of-day reads);
+    - **might unchanged**: D70's `mightUnchanged(db, unionId).unchanged`.
+  - **The KvK reason is held** (`KVK_REASON_ON = false` in `member-week.ts`). The read (`scheduledEventKills`), `killsGained` and their test stay; `membersView` neither reads the event nor adds the reason until away notes exist (#297/#298).
+- **Pure modules**:
+  - `lib/private/member-week.ts`: `gameWeek`, `weekDonations`, `weekTotal`, `idleRun`, `isNewMember` (`NEW_MEMBER_DAYS` imported from D70's module), `missingOf`, `topOf`, the one `DAY_MS`;
+  - `lib/private/members-list.ts`: `MEMBER_FILTERS`, `filtersOf`, `pickFilter`, `keepMembers`, `filterCounts`, `fold`;
+  - `lib/private/members-sheet.ts`: `statusOf`, `statusText`, `missingText`, `reasonText`, `plural`, one `dayLabel` for the card and the sheet header, `sheetHeader`, `sheetRow`.
+- **Copy for spreadsheet**: 17 columns: Name, Rank, Might, Sanctuary, the 7 days, Week total, Activity this week, Day's honor, Joined, Seen since, Status (with the reasons).
+  - Numbers are plain integers; a cell with no data is empty, as in the member-history copy.
   - A name that starts with `= + − @` gets a leading apostrophe.
+  - **Joined is the server day** (SERVER_TZ, `serverDay`), as on the card.
   - Left out: map position, online, last online, the photo (D71).
 - **Table reads** (`lib/repo/workspace-rosters.ts`):
-  - `endOfDayReads`: usable daily rosters with `raw_json`, members projected in SQL to the 13 keys the tab uses, so `avatar_url` and `frame_url` never leave the database;
-  - `firstSeenDays`: `unnest(member_uids)`, min `read_day` per uid;
+  - `endOfDayReads`: members projected in SQL to the 13 keys the tab uses. **A member without a numeric uid is dropped**, not read as member 0;
+  - `firstSeenDays`: its comment notes the growth, one roster per day;
   - `scheduledEventKills`.
-- **Tabs**: Home and Members are links (`/w/<slug>`, `/w/<slug>/members`), and the open one has `aria-current="page"`. Roll call, Calendar and Follow-up stay "Soon". The shell moved into `SignedInFrame` (`Frame.tsx`), which both pages use. Home's placeholder now says the Members tab is ready and links to it.
-- **First-use shell** (issue #312 part 2, coordinator's instruction of this session: shell only, format pending):
-  - The steps are data: `lib/private/first-use.ts` `FIRST_USE_STEPS`. Each step has a title, paragraphs, an optional visual slot (`"sources"`, `"how-to"`) and an optional coach-mark target (`[data-tour="members-tab"]`, `[data-tour="language"]`, both present in the shell).
-  - There are four steps:
-    1. what this is;
-    2. where the numbers come from (from the game / from a photo / typed by an officer);
-    3. what to do each week;
-    4. how to switch language, with the link to the how-to page.
-  - `FirstUse.tsx` shows them as plain cards in the existing `Sheet`:
-    - it opens by itself while the `lap_ws_intro` cookie is absent (one year, per browser, no migration);
-    - Skip on steps 1–3, Back and Next, then Start on step 4;
-    - Escape closes it;
-    - the "?" in the header reopens it on every signed-in screen.
-- **How-to page** `/w/[slug]/how-to`: the page the leadership pins in Discord. It shows:
-  - the address (from the request's host, so production shows `https://laptracker-inky.vercel.app/w/ogs`);
-  - signing in with Discord;
-  - adding the page to the home screen on iPhone (Safari) and Android (Chrome);
-  - an "Open the Officers' Desk" button.
+- **Cookies** (`lib/private/cookies.ts`): `WORKSPACE_LANG_COOKIE` and `WORKSPACE_INTRO_COOKIE`. No client component imports the dictionary module any more; `LanguageSwitch`, `FirstUse` and `first-use.ts` take only its types.
+- **Copy button** (`CopyButton.tsx`, client): used by Members and the how-to page. Its 2.5 s timer is kept in a ref, cleared before a new one and on unmount.
+- **Tabs**: Home and Members are links, and the open one has `aria-current="page"`. Roll call, Calendar and Follow-up are faded and say "soon" under the label. PT's Follow-up is now **"Acompanhar"**. `SignedInFrame` (`Frame.tsx`) is the signed-in shell for both pages. Home's placeholder links to Members.
+- **First-use cards** (issue #312 part 2, the persona panel's format A, trimmed): three static cards. They are data, in `FIRST_USE_STEPS` (`lib/private/first-use.ts`): a title, paragraphs, and an optional visual (`"only"`, `"sources"`).
+  1. **"Welcome to the Officers' Desk"**: the leadership's own place, filled in from the game, which replaces the spreadsheets. It carries an **"R4 · R5 only"** badge.
+  2. **"Where the numbers come from"**: the three source labels, drawn as the badges the Members page shows, and "— means no data, and it is left out of every count."
+  3. **"Each week"**: open Members, start with the thanks, look at Check in. "You decide what to do; nothing is sent by itself." It ends with "Tap EN · PT · FR to switch. Tap ? to see this again."
 
-  It reads nothing, so it opens before sign-in. It is linked from the sign-in page and from step 4.
-- **Words**: 97 new keys (28 → 125 per language) in en, pt-BR and fr, and `home.next` rewritten, French with a no-break space before `: ? !` and inside « ». The dictionary reached 472 lines (the limit is 300), so pt-BR and fr moved to `lib/private/dictionary.pt-BR.ts` and `dictionary.fr.ts`. The parity test is unchanged and passes.
+  `FirstUse.tsx`:
+  - **The first visit** shows the blocking sheet (`Sheet`), one card at a time, while the `lap_ws_intro` cookie is absent. Skip (cards 1–2), Start (card 3) and Escape all close it and set the cookie. Back and Next move between cards.
+  - **"?"** opens the same three cards together in a **bottom sheet that does not block the page**:
+    - it is a `role="dialog"` with `aria-modal="false"`, no backdrop, at most 55 % of the screen high, and scrolls;
+    - **Replay** walks the cards again from card 1, and Close or Escape closes it;
+    - the page behind stays usable: the language switch works and the sheet follows the language.
+  - Every control is at least 44 px tall (`min-h-11` and padding).
+  - No motion, no coach marks, no per-tab tips. The panel dropped them, and they are not built.
+- **How-to page** `/w/[slug]/how-to` (reads nothing, opens before sign-in). It has three steps:
+  1. open the address: a tap-to-open link, a **Copy the address** button, and "Open it in Safari or Chrome, not inside Discord.";
+  2. sign in with Discord, then **"Can't get in? Ask an R5 on Discord."**;
+  3. add it to the home screen. **On iPhone**: the Share icon (a square with an arrow pointing up), then the item with a + in a square. **On Android**: ⋮, then the item with a phone and an arrow. The steps name the icons, not the menu items, because the localized menu names are unverified.
+
+  Then an "Open the Officers' Desk" button. The address comes from the request's Host and `x-forwarded-proto`. The login route builds Discord's redirect address from the same headers (`new URL(request.url).origin`).
+- **Words**:
+  - 115 new keys (28 → 143 per language) in en, pt-BR and fr;
+  - `home.next` and `tab.review` (pt) rewritten;
+  - plural forms (`.one` / `.other`) for the might and offline reasons, missing donation days and the check-in count;
+  - French has a no-break space before `: ? !` and inside « ».
+  - pt-BR and fr are in `dictionary.pt-BR.ts` and `dictionary.fr.ts`; `dictionary.ts` holds en and the types.
+- **D75**: the offline proxy now reads "unchanged over 2 full days, i.e. across 3 consecutive end-of-day reads", with the amendment noted.
 - `docs/ARCHITECTURE.md`: the new `lib/private` modules and `lib/repo/workspace-rosters.ts`.
 - Tests:
-  - `lib/private/member-week.test.ts` (3 tests);
-  - `lib/private/members.test.ts` (PGlite, 3 tests);
-  - `lib/private/members-sheet.test.ts` (1 test).
+  - `member-week.test.ts`: 4 tests;
+  - `members.test.ts` (PGlite): 5 tests;
+  - `members-sheet.test.ts`: 3 tests;
+  - `members-list.test.ts`: 1 test.
 
 ## Decisions
-- **Game week = Monday to Sunday, server days.** Weekly activity resets on Monday (D75: "ignoring the Monday reset"), and prototype v5 says "A week here runs from Monday to Sunday, like the game's". The copywriter's older `help.week` (Tuesday to Monday) was not used.
-- **The week shown is the game week of the newest end-of-day read.** On Monday before 23:37 server time that is last week, complete, which is when officers do the weekly check. After Monday's read it moves to the new week. Days after the newest read are blank ("not read yet"), not "—".
-- **An end-of-day read** is a usable daily roster (fresh, no error, not empty) that has `raw_json`. Rosters from before D72 have none and are used only for "first seen" and D70.
-- **Offline proxy: 2 days, i.e. 3 consecutive end-of-day reads** in which `active` and `daily_tech` did not change.
-  - On a Monday the activity is compared with 0 (the reset).
-  - A null on either side, or a server day without a read, ends the run (missing data never counts).
-  - This is the conservative reading of "unchanged across 2 consecutive end-of-day reads", chosen to approximate D75's "offline for more than 2 days". One read pair (1 day) would also fit the words. It is one constant, `IDLE_STEPS` in `member-week.ts`.
-  - Evidence text: "activity 87 and donations 0 unchanged for 2 days (3 end-of-day reads in a row)".
-- **New member**: first seen in the alliance after its oldest usable daily roster, and less than 14 days (D70's `NEW_MEMBER_DAYS`) before the newest read.
-  - A member already in the oldest roster predates the records and is not new. Otherwise, in the first two weeks of records, everyone would be new.
-  - New members are left out of the thanks (a comparison). The reasons still apply to them, because none of the three is a comparison; D70's own 14-day rule still keeps them out of "might unchanged".
-- **KvK reason (D75 c) is built**, because dev has #271's data: per-member kills in each event's Start and End rosters.
-  - "KvK" = the newest public **scheduled** event (`manual = false`) of the last 7 days. The Saturday scheduled event is the Kingdom War (#271 measured "KvK 2026-11-14" on it).
-  - Unknown kills on either side never count.
-  - The reason does not say "no away note": away notes do not exist until #297/#298.
-- **Rank** reads "R4 · <title>" with the game's titles (D56's `roleOf`): "R4 · Goddess" for Overseer, "R4 · God of War" for Militarist.
-- **Numbers**: compact on the card and in the thanks (the site's rule); exact in the opened details (the site's "exact on tap") and in the copy.
-- **Map position is shown** in the details: D71 lists `x` and `y` for the workspace. The scrubbed fixtures make it "X 0 · Y 0" in the screenshots.
-- **The how-to is an in-app page, not a docs file.** The issue asks for a one-page how-to per language that the leadership pins in Discord. A docs file would break CLAUDE.md's "English only in docs". The workspace's UI copy is trilingual by D71, so `/w/<slug>/how-to` serves each reader in their language, and one pinned link serves all three.
-- **"Seen" for the first-use steps is a cookie** (`lap_ws_intro=1`, one year, not HttpOnly, no data in it), as the brief preferred. It is per browser, not per officer.
-- `raw_json` is projected in SQL (`jsonb_build_object` over the 13 keys), so `lib/private` never holds `avatar_url`. The test checks that the view's JSON has no "avatar".
+- **Game week = Monday to Sunday, server days.** Weekly activity resets on Monday (D75: "ignoring the Monday reset"), and prototype v5 says "A week here runs from Monday to Sunday, like the game's".
+- **The week shown is the game week of the newest end-of-day read.** On Monday before 23:37 server time that is last week, complete, which is when officers do the weekly check. Days after the newest read are blank ("not read yet"), not "—".
+- **An end-of-day read** is a usable daily roster (fresh, no error, not empty) with `raw_json`. Rosters from before D72 count only for "first seen" and D70.
+- **Offline proxy: 2 full days = 3 consecutive end-of-day reads** with `active` and `daily_tech` unchanged (`IDLE_STEPS = 2`), the owner's "offline for more than 2 days". D75 now says so.
+  - On a Monday the activity is compared with 0.
+  - A null, or a day without a read, ends the run.
+  - Evidence: "activity 87 and donations 0 unchanged for 2 days (3 end-of-day reads in a row)".
+- **New member**: first seen after the alliance's oldest usable daily roster, and less than D70's `NEW_MEMBER_DAYS` (14, imported) before the newest read. A member in the oldest roster predates the records.
+  - New members are left out of the thanks.
+  - The reasons still apply to them, because neither is a comparison; D70 keeps them out of "might unchanged".
+- **One status per card**: Check in, else New, else No data, else Fine. "No data" names the missing fields and the days without donations. It explains the "—" in the card and why the member is in "Missing info".
+- **Check in first in every list.** It is one stable order, so the cards do not move between filters.
+- **Server-side filters and search** (`?f=`, `?q=`), as the review recommended. They work without JavaScript, and "N people to check in with" is a plain link. The counts on the chips ignore the search.
+- **Card markup sent once.** In the App Router, everything a server component renders appears twice in the response: as HTML and again in the inlined RSC payload. Server-rendered cards would therefore still ship twice. Instead:
+  - the server sends each card's words as data;
+  - a client list renders the summary, which appears in the HTML only;
+  - the client list draws the details only when a card is opened.
+- **Numbers**: compact on the card and in the thanks, with D78's shared formatter (`app/_ui/format.ts` `compact`). D78 puts no space before the unit, so PT shows "64,4M" and "25,7K". Exact numbers appear in the opened details and in the copy.
+- **Rank** reads "R4 · <title>" with the game's titles: "R4 · Goddess" for Overseer, "R4 · God of War" for Militarist.
+- **Map position is shown** in the details (D71 lists `x`, `y`). The scrubbed fixtures make it "X 0 · Y 0" in the screenshots.
+- **The how-to is an in-app page, not a docs file.** Docs are English-only by CLAUDE.md, while the workspace copy is trilingual by D71. One pinned link serves each reader in their language.
+- **"Seen" for the first-use steps is a cookie** (`lap_ws_intro=1`, one year, per browser).
+- `raw_json` is projected in SQL, so `lib/private` never holds `avatar_url`.
 
 ## Deviations
-- **No "Low donations" filter** (#296 lists it). D75 and the owner: donations are never punitive. Not built, and no median or "typical week" is shown.
-- **No "Away" filter** (#296 lists it). Away notes arrive with #297 (`member_facts`); the filter waits for them.
-- The issue's "missing data" filter uses the copywriter's label "Missing info" ("Faltam dados", "Infos manquantes").
-- **Statuses**: only the computed Fine and Check in. On a break and Needs help are officer-set and arrive with #297.
-- **A name search** was added. It is in the approved prototype v5, not in #296's list.
-- **Thanks**: top donors and most active only. D75's "most improved" and event MVPs are not built; event results do not exist yet.
-- **First-use**: on the coordinator's instruction, a data-driven shell with plain cards, no visual polish and no motion. The format (static cards, cards with motion, coach marks, per-tab tips, or a mix) is pending a persona review.
-- **An expired session on `/members`** re-authorises silently and lands on `/w/<slug>` (Home), not back on Members. The login route has no return path.
-- Copy for spreadsheet leaves a no-data cell empty, as `rosterTsv` does, rather than writing "—". `SUM` in a spreadsheet then skips it without a text value.
+- **The KvK "no kills gained" reason is held.** D75 asks for "zero kills in a KvK with no away note recorded", and away notes do not exist until #297/#298. With KvK 2026-11-14's figures (#271: 54 % of OGs gained kills), about 46 of 101 members would get Check in. The code and its test stay behind `KVK_REASON_ON`; switch it on together with the away-note check.
+- **No "Low donations" filter** (#296 lists it). D75 and the owner say donations are never punitive. No median or "typical week" is shown either.
+- **No "Away" filter** (#296 lists it). It waits for away notes (#297, `member_facts`).
+- The issue's "missing data" filter uses the copywriter's label "Missing info".
+- **Statuses**: computed only. Check in and Fine are D75's; New and No data are display states. On a break and Needs help are officer-set and arrive with #297.
+- **A name search** was added. It is in the approved prototype v5.
+- **Thanks**: top donors and most active only. "Most improved" and event MVPs are not built.
+- **First-use**: three cards instead of the four the issue lists: the persona panel folded the language card into card 3's last line. The setup steps (address, sign-in, home screen) live on the how-to page, not in the cards.
+- **Analytics events are not wired.** PR #332 (PostHog, D77) was still open: `ws_first_use_done`, `ws_first_use_skipped`, `ws_copy_spreadsheet` and `ws_filter_used` are left for the coordinator to wire after both merge. The places are listed under Next.
+- **An expired session on `/members`** re-authorises and lands on Home; the login route has no return path.
+- Copy for spreadsheet leaves no-data cells empty (as `rosterTsv` does), not "—".
+- **D78 has no space before the unit**, so PT and FR show "25,3K", not the "25,3 K" in the UX review's example. The review asked for the shared formatter, and this is its output.
+- A card's details need JavaScript (they are drawn on open). The summary, the filters, the search and the copy text are server-made.
 
 ## Verified
-- `pnpm check` green after merging `origin/dev` (df42b74 → 75174b4: #323, #324, #319):
+- **lv = Sanctuary**: on 2026-11-16 the OGs sheet's Sanctuary column equalled the API `lv` for 30 members. For the other 50 the API was 1–2 levels higher, never lower, because the sheet was stale (orchestrator's sheet analysis).
+- **`pnpm check` green** after merging `origin/dev` at d9c2cc3 (D78):
   - prettier, eslint, tsc;
-  - vitest: 88 files passed, 2 skipped; 461 tests passed, 4 skipped;
+  - vitest: **90 files passed, 2 skipped; 471 tests passed, 4 skipped**;
   - drift gate: "Everything's fine";
   - i18n: 17 languages up to date.
-  - Before the merge: 77 files, 372 tests passed.
-- New tests (one per behaviour):
-  - **week sum on a synthetic week**: Sunday of the week before is not counted; a null day and a day with no read are `null`; days after the newest read are `"later"`; total 650 of 100 + 250 + 300; no known day gives `null`;
-  - **offline proxy**: 3 unchanged reads across Monday's reset give `{ days: 3, activity: 0, donated: 0 }`. No reason when the member was active on Monday, when Monday's activity is unknown, after only one unchanged day, or across a missing day;
-  - **new members** and thanks: the rule's three cases; a new member and a zero value are left out of the thanks;
-  - **two tenants, a player who moved (D71)**:
-    - player 900 donates in OGs on Monday and Tuesday; OGs sees 500 and 600;
-    - after the move, OGs no longer lists them;
-    - NSE sees `[—, —, 700, 800, later, later, later]`, total 1,500, seen since Wednesday, New;
-    - the view's JSON has no "avatar";
-  - **KvK**: kills 100 → 100 gives the reason with the event's time; a gain, or an unknown Start, gives none;
-  - **might**: 16 daily reads with the same might give D70's "might unchanged for 15 days"; growing might gives none;
-  - **copy**: the exact 17 headers and cells; the formula-safe name; the map position (4321, 8765) and the last-online date are absent.
-- The roster-field fence test caught a literal `"active"` in the page; it was renamed to `activity`. The token test reads `#3xx` in `app/` comments as a hex colour, so comments say "issue 312".
-- **Local e2e**:
-  - Setup:
-    - `pnpm db:local:start` (port 54327) and the bridge (54328);
-    - a worktree-only `.env.local`: random secrets that were never printed, upstream base URLs pointed at a dead local port, `DISCORD_API_BASE_URL` at the stub;
-    - 11c's Discord stub on 54377;
-    - Playwright-core with system Chrome on `http://localhost`. No upstream call and no Discord call.
-  - The seed (`scratchpad/11e/seed.mjs`):
-    - the OGs workspace;
-    - 17 OGs daily rosters built from the scrubbed fixture `fixtures/v1-20261116T105019Z/alliance-67111155.json`: 8 without `raw_json` (10-30 … 11-06) and 9 end-of-day reads (11-07 … 11-15);
-    - a Saturday 2026-11-14 event with Start and End rosters.
-    - The week's counters (`daily_tech`, `active`, might growth, kills gained) are synthetic and deterministic, so that every state shows. Three members first appear on 11-10; two stop moving from Friday 13; two keep the same might; six gain no kills.
-  - The run, against a production build (`next build` + `next start`) of the merged tree, passed all 35 checks:
-    - signed out, `/w/ogs/members` showed the sign-in;
-    - the first-use steps opened by themselves after sign-in, each said "n of 4", and Start closed them and set `lap_ws_intro=1`;
-    - after a reload they stayed closed; "?" opened them again, and Skip closed them;
-    - the Members tab link carried `aria-current="page"`, and Home was a link;
-    - no sideways scroll at 360, 640 and 1280 px, in light and dark;
-    - every control in main, the header and the tabs measured at least 44 × 44 px at 360 px;
-    - none of "flagged", "warned", "violation" or "to remove" appeared in the page;
-    - the thanks came before the list;
-    - Copy for spreadsheet with "R4 and R5" on gave a header and 9 lines of 17 columns, with no map position, last online or photo;
-    - the how-to page opened signed out and showed the address.
-  - Counts with the seed:
-    - All 101;
-    - New 3;
-    - Check in 10: 6 with no kills gained, 2 with might unchanged for 16 days, and 2 with "activity 87 and donations 0 unchanged for 2 days (3 end-of-day reads in a row)" and the same for activity 69;
-    - Missing info 32;
-    - R4 and R5: 9.
-  - Seed members whose `active` was null in the fixture were left out of the offline proxy, as the rule says. The seed was changed once to pick two members with a known activity.
-  - Screenshots in `<scratchpad>/11e-shots/` (not committed):
-    - members at 360, 640 and 1280 px, light and dark;
-    - an opened Check-in card, the New filter;
-    - PT and FR at 360 px, full page;
-    - first-use steps 1–4 at 360 px light, step 2 dark, step 1 at 1280 px, PT and FR;
-    - the how-to page in en, pt-BR and fr.
-- **Production build timing** (local database, 101 members, machine load average 30–40, five loads after sign-in):
-  - first byte 53–69 ms; page loaded in 119–156 ms (one later run 202–440 ms);
+  - Earlier rounds: 77 files and 372 tests passed before the first merge; 88 files and 461 tests passed after it.
+- Tests, one per behaviour:
+  - **week sum** on a synthetic week: the previous Sunday is not counted; a null day and a day without a read are `null`; later days are `"later"`; the total is 650;
+  - **offline proxy**: 3 unchanged reads across Monday's reset give `{ days: 3 }`. There is no reason when the member was active on Monday, when Monday's value is unknown, after one day, or across a missing day;
+  - **`missingOf`**: nothing missing; null might, Sanctuary and activity with two days without donations give all four fields and 2 days;
+  - **new members and the thanks**;
+  - **two tenants, a player who moved (D71)**: OGs sees days 1–2 only, NSE sees days 3–4 only, and the view holds no "avatar";
+  - **KvK, held**: `scheduledEventKills` finds Saturday's event; `killsGained` gives 0, 50 and unknown for the three members; `KVK_REASON_ON` is false and `membersView` gives no reason;
+  - **might unchanged**: 16 daily reads give D70's "15 days";
+  - **a member without a uid** (missing, or null) is left out instead of becoming member 0;
+  - **R4 title**: "R4 · Overseer" reads "R4 · Goddess", "R4 · Diplomat" stays, a bare R4 reads "R4", R5 reads "R5", and no rank is null;
+  - **the R4 and R5 filter** keeps 105 and 104, and neither 103 nor a member without a rank;
+  - **copy**: the 17 headers and cells, the formula-safe name, no map position or last-online date;
+  - **Joined in the copy**: 01:30 UTC on the 10th is the server day 2026-11-09;
+  - **the idle reason text**: "activity 87 and donations 0 unchanged for 2 days (3 end-of-day reads in a row)".
+- **Local e2e** against a production build (`next build` + `next start`) of this tree. Setup:
+  - the local database (54327) and its bridge (54328);
+  - a worktree-only `.env.local`: random secrets, never printed; upstream pointed at a dead local port;
+  - 11c's Discord stub (54377);
+  - Playwright-core and system Chrome on `http://localhost`;
+  - no upstream call and no Discord call.
+
+  The seed (`scratchpad/11e/seed.mjs`) builds 17 OGs daily rosters from the scrubbed fixture `fixtures/v1-20261116T105019Z/alliance-67111155.json`: 8 without `raw_json` and 9 end-of-day reads. It also adds a Saturday event, and synthetic week counters so that every state shows.
+
+  **All 66 checks passed**:
+  - sign-in and the first-use cards:
+    - signed out, `/members` shows the sign-in;
+    - each of the 3 cards says "n of 3" and the panel's words: "R4 · R5 only"; the source badge and "— means no data"; "nothing is sent by itself" and the EN · PT · FR / ? line;
+    - every control on each card is at least 44 × 44 px;
+    - Start sets the cookie, the cards stay closed after a reload, and Escape on a first visit closes them and sets the cookie;
+    - "?" shows the three cards in one sheet with `aria-modal="false"` and no open modal dialog;
+    - with that sheet open, the header's language switch works and the sheet turns Portuguese;
+    - Replay starts at "1 of 3", and Skip closes;
+    - in PT and FR, no card has "..";
+  - the three faded tabs say "soon"; Members has `aria-current`;
+  - layout:
+    - no sideways scroll at 360, 640 and 1280 px, in light and dark, and in PT and FR;
+    - every control in main, the header and the tabs is at least 44 px at 360 px;
+  - words:
+    - none of "flagged", "warned", "violation", "to remove", "never removes" or "never counts";
+    - the source badge is present;
+    - no ".." in EN, PT or FR, and no "1 days";
+    - PT and FR show "M" and "K" (D78);
+  - order and status:
+    - the thanks come before the list;
+    - the chips carry counts and wrap with nothing hidden;
+    - no card shows Fine and No data together;
+    - the first card in All is a Check in card;
+  - links and forms:
+    - the check-in line opens `?f=checkin`;
+    - every chip opens its filter;
+    - the search form finds "ladyli" (1 of 101);
+  - copy: with R4 and R5 on, it holds a header and 9 lines of 17 columns, with no map position, online or photo;
+  - card details: not drawn before opening; the 7 day cells have one height in EN, PT and FR;
+  - how-to page:
+    - the address as a link, a Copy button, and "not inside Discord";
+    - "Can't get in? Ask an R5 on Discord.";
+    - the three steps with iPhone and Android, naming the Share icon and ⋮, and not "Add to Home Screen";
+    - every control at least 44 px.
+
+  Counts with the seed:
+  - All 101 · New 3 · Check in 4 · Missing info 32 · R4 and R5 9;
+  - Check in 4: 2 with might unchanged for 16 days, and 2 with activity and donations unchanged for 2 days. The KvK reason is held.
+- **Page size**, Members with All on, signed in, production build:
+  - **raw HTML 347,883 bytes** (before: 1,112,453): gzip 39,892 (before 60,343), brotli 27,681–27,719 (before about 36,500);
   - `cache-control: private, no-store`;
-  - the HTML is 1,112,453 bytes: 60,343 gzip, about 36,500 brotli (see Open issues).
-  - Under `next dev` with the same load, the same page took 5–30 s.
-- **done_when** ("the week's donation totals match the in-game Donation → Weekly ranking for ≥ 90 % of members") is **not measurable before the release**. The end-of-day reads that keep `daily_tech` (D72) are not in production. No stored data holds per-member `daily_tech` for the week of pictures 22–25, and the production history API returns only uid, name, power and kills. So the OCR text of pictures 22–25 (29 members, ranks 71–100) has nothing to be compared with. The measurement after the release is under Next.
+  - first byte 35–62 ms and load 125–199 ms at a machine load average of about 20. A run at a load of 45–50 gave first bytes of 233–1,003 ms for the same page, so the spread follows the machine's load.
+- **Screenshots** (not committed) in `/private/tmp/claude-502/-Users-danilordasilva-orca-workspaces-LAPTracker-unicornfish/147759e3-1cdb-4ccd-b74a-1001498a1e18/scratchpad/11e-shots/v2/`:
+  - members at 360, 640 and 1280 px, light and dark;
+  - an opened Check in card, light and dark;
+  - PT and FR at 360 px, with full-page captures;
+  - first-use cards 1–3 at 360 px in EN, PT and FR, card 2 in dark, card 1 at 1280 px;
+  - the "?" sheet at 360 px light and dark, at 1280 px, and in PT and FR;
+  - the how-to page in en, pt-BR and fr.
+- **done_when** ("the week's donation totals match the in-game Donation → Weekly ranking for ≥ 90 % of members") **cannot be measured before the release**:
+  - The end-of-day reads that keep `daily_tech` (D72) are not in production.
+  - No stored data holds per-member `daily_tech` for the week of pictures 22–25, and the production history API returns only uid, name, power and kills.
+  - So the OCR text of pictures 22–25 has nothing to be compared with. How to measure after the release is under Next.
 
 ## Open issues
-1. **The first-use format is pending the persona review** (static cards, motion, coach-mark tour, per-tab tips, or a mix). The steps are data, and the two `data-tour` targets exist. Only `FirstUse.tsx` changes with the format.
-2. **The KvK reason may list many members.** On KvK 2026-11-14, #271 measured that 54 % of OGs' members gained kills. With the same data, about 46 of 101 members would carry "no kills gained in Kingdom War". Support and farm players are among them, and nobody can be marked away until #298. The owner may want it shown only with an away-note check (#298), or with a minimum.
-3. **Away notes do not exist yet.** D75 leaves away members out of comparisons and says "no away note" in the reasons; both wait for `member_facts` (#297, #298).
-4. **The week's total misses each day's donations between the 23:37 read and the 00:00 reset** (D72's accepted cost). Exact equality with the game's weekly ranking can fail for members who donate in those 23 minutes. See Next for how to measure.
-5. **The unit of `daily_tech`** ("tech points donated today") is assumed equal to the weekly ranking's "Contribution". Both are multiples of 50, and the daily maximum (6,100) times 7 is about the weekly maximum (36,850). The first comparison confirms or refutes it.
-6. **`daily_honor`**'s meaning is not documented (the brief: "max 1,000, a cap?"). It is shown as "Day's honor" from the newest read.
-7. **Expired session → Home.** The silent re-authorisation returns to `/w/<slug>`, not to the page that asked for it. A `return` parameter on the login route would fix it.
-8. **The first-use cookie is per browser**: an officer on a second phone sees the steps again.
-9. **Search** matches the name as typed, without case or accents. #297's `nameKey()` (emoji, decorations, confusables) would make "no emoji needed" true for decorated names.
-10. **Page weight.** The Members HTML is 1.1 MB raw for 101 members (60 KB gzip, 37 KB brotli). Most of it is the 101 cards, sent twice: as HTML and again in the RSC payload, because they are children of the client list. If phones on slow networks feel it, the cards could render closed, with the details fetched on open. Not changed here.
-11. **`next dev` is slow on this page under load**: 5–30 s at a load average of 30–58. The production build answers in about 60 ms, and the two main queries take 0.10–0.29 s in psql under the same load, so this is the dev server's cost.
+1. **Per-tab one-line tips** (the panel's format D) come with Calendar (#300) and Notices (#304), not before. #312's done_when, "one officer per language finishes the cards on a phone without asking anyone", is for the owner to check after the release.
+2. **Away notes** (#297, #298) unlock three things:
+   - the held KvK reason (switch `KVK_REASON_ON`);
+   - "no away note" in the reasons;
+   - leaving away members out of the thanks.
+3. **The week's total misses the donations made between the 23:37 read and the 00:00 reset** (D72's accepted cost).
+4. **The unit of `daily_tech`** is assumed equal to the weekly ranking's "Contribution". Both are multiples of 50; the first comparison confirms or refutes it.
+5. **`daily_honor`**'s meaning is not documented; it is shown as "Day's honor".
+6. **An expired session lands on Home**, not on the page that asked for it.
+7. **The first-use cookie is per browser.**
+8. **Search** folds case and accents only. #297's `nameKey()` would cover emoji, decorations and confusables.
+9. **`firstSeenDays` reads every roster of the alliance** on each request, about 100 uids per day of history. Bound it or keep the result if it shows in timings.
+10. **Not built (UX review nice-to-haves):**
+    - denser one-line cards;
+    - 3 columns or a table at 1280 px;
+    - a thanks row that is not volume-based (might gained, event results).
+11. **`next dev` is slow on this page under load** (5–30 s); the production build is not.
+12. **The how-to address** shows `laptracker-inky.vercel.app` in production only if Vercel passes that Host, as the sign-in's redirect address already requires. It has not been checked on a deployment: Vercel previews are SSO-only, and nothing is deployed from this branch.
 
 ## Next
 Session: #297 (11f) — Workspace: one-time import of the OGs spreadsheets with name to player-id matching, `member_facts`, and the all-IANA time-zone picker.
-Model / effort: keep — no signal. This session's scope fit one pass. The only rework was mechanical: two lint limits (the 300-line file limit split the dictionary; complexity 12 split the page's refusal) and two fence tests.
+Model / effort: keep — no signal. The review round was mechanical; the one design change (server-side filters, cards as data) fit one pass.
 Owner must do first:
-1. Release `dev` to production, so the end-of-day reads (D72) start keeping `daily_tech` and `active`. The Members tab is empty ("No end-of-day read yet") until the first 23:37 read after the release.
-2. For #296's done_when: after the first full game week of end-of-day reads (Monday to Sunday), take the in-game Donation → Weekly pictures on Sunday between 23:37 and 23:59 server time. Compare each member's week total on `/w/ogs/members` (opened details, exact) with the picture. A member matches when the totals are equal, or when the tab's total is lower only by donations made after 23:37.
-3. Decide open issue 2: keep the KvK reason as is, or show it only once away notes exist.
+1. Release `dev` to production, so the end-of-day reads (D72) start keeping `daily_tech` and `active`. The Members tab reads "No end-of-day read yet" until the first 23:37 read after the release.
+2. For #296's done_when:
+   - after the first full game week of end-of-day reads (Monday to Sunday), take the in-game Donation → Weekly pictures on Sunday between 23:37 and 23:59 server time;
+   - compare each member's week total on `/w/ogs/members` (opened details, exact) with the picture;
+   - a member matches when the totals are equal, or when the tab's total is lower only by donations made after 23:37.
+3. Decide when the held KvK reason comes back: with the away-note check of #298, or with a minimum.
+4. After the release, check #312's done_when: one officer per language finishes the cards on a phone.
 
 Plan changes needed: none. The workspace track lives in issues #293–#321, not in docs/IMPLEMENTATION_PLAN.md.
 
 <adjustments>
 - `member_facts` (#297) plugs into the Members tab at four places:
   1. `MemberRow` and `rowOf` in `lib/private/members.ts`;
-  2. `filtersOf` in `app/(private)/w/[slug]/members/page.tsx`, for the "Away" filter: the copywriter's `members.filter.away` is "Away" / "Ausentes" / "Absents";
-  3. the card and `statusText`, for the officer-set statuses: prototype keys `status.break` "On a break" / "Em pausa" / "En pause" and `status.help` "Needs help" / "Precisa de ajuda" / "Besoin d'aide";
-  4. `sheetRow` and `sheetHeader`, for new spreadsheet columns. `members-sheet.test.ts` fixes the 17 columns; update it on purpose.
+  2. `MEMBER_FILTERS` and `filtersOf` in `lib/private/members-list.ts`, for the "Away" filter. The copywriter's `members.filter.away` is "Away" / "Ausentes" / "Absents". The chips, counts and links follow by themselves;
+  3. `statusOf` and `statusText` in `lib/private/members-sheet.ts`, for the officer-set statuses. The prototype keys are `status.break` ("On a break" / "Em pausa" / "En pause") and `status.help` ("Needs help" / "Precisa de ajuda" / "Besoin d'aide"). The card's tone map is in `MemberCards.tsx`;
+  4. `sheetRow` and `sheetHeader`, for new spreadsheet columns. `members-sheet.test.ts` fixes the 17 columns.
 - D75 work that waits for away dates:
-  - leave away members out of `topOf` (thanks);
-  - add "no away note" to `reason.idle` and `reason.kvk` in all three dictionaries;
-  - skip the KvK reason for a member away on the event's day.
-- `nameKey()` can replace the Members search's `fold` in `app/(private)/_ui/MembersList.tsx`.
-- Two-tenant test pattern: `signedIn(slug)` and `endOfDay(unionId, day, members)` in `lib/private/members.test.ts` make a real session and a D72 roster with `raw_json`.
-- Fences met in this session:
-  - `lib/private/roster-fields.test.ts` refuses the literals `"x"`, `"y"` and `"active"` anywhere in `app/`: name things `activity`, `mapX`;
-  - `lib/brand/tokens.test.ts` refuses `#` and 3–6 hex digits in `app/`, comments included: write "issue 312", not the hash form.
-- The workspace dictionary is now three files: `dictionary.ts` (en, types, cookies), `dictionary.pt-BR.ts` and `dictionary.fr.ts`. `dictionary.ts` is 190 lines of the 300 allowed (125 English keys); a further split by screen may be needed.
+  - turn on `KVK_REASON_ON` in `lib/private/member-week.ts`, with a check that the member has no away note on the event's day;
+  - add "no away note" to `reason.idle.*` and `reason.kvk` in all three dictionaries;
+  - leave away members out of `topOf`.
+- `nameKey()` can replace `fold` in `lib/private/members-list.ts` (the server-side search).
+- Card words are made on the server in `app/(private)/_ui/member-card-data.ts`. A new card line belongs there, with its dictionary keys, and `MemberCards.tsx` only lays it out. Keep numbers and dates out of the client, to avoid hydration differences between Node's and Chrome's `Intl`.
+- Counted phrases use `plural(t, key, n, f)` with `.one` / `.other` keys.
+- Two-tenant test pattern: `signedIn(slug)` and `endOfDay(unionId, day, members, extra)` in `lib/private/members.test.ts`.
+- Fences:
+  - `lib/private/roster-fields.test.ts` refuses the literals `"x"`, `"y"` and `"active"` anywhere in `app/`;
+  - `lib/brand/tokens.test.ts` refuses `#` followed by 3–6 hex digits in `app/` comments: write "issue 312".
+- The cookie names are in `lib/private/cookies.ts`. Client components import only types from the dictionary module.
+- `dictionary.ts` is 200 lines of the 300 allowed (143 English keys).
 - No migration was added; dev ends at 0019.
-- Table reads for the workspace's roster data are in `lib/repo/workspace-rosters.ts`, which takes a union id; `lib/private` passes `access.unionId`.
+- Analytics (after PR #332, D77, merges): the four events go in these places:
+  - `ws_first_use_done` and `ws_first_use_skipped`: in `Cards` in `app/(private)/_ui/FirstUse.tsx`. Start calls `onClose` from the last card; Skip and Escape call it from the others.
+  - `ws_copy_spreadsheet`: in `CopyButton.tsx`, on success, from the Members page only (the how-to page uses the same button).
+  - `ws_filter_used`: the chips are server links (`?f=`), so log it where the page reads `pickFilter(search.f)` or from a click on the chip.
 </adjustments>
 
-<adjustments for="Session #312 (first-use format)">
-- The shell is in place: `lib/private/first-use.ts` (`FIRST_USE_STEPS`: title, body keys, `visual`, `target`), `app/(private)/_ui/FirstUse.tsx`, the `lap_ws_intro` cookie, the "?" in the header, and the `intro.*` keys in all three languages.
-- Coach-mark targets exist: `[data-tour="members-tab"]` on the tab link and `[data-tour="language"]` on the switch.
-- The how-to page is done: `/w/<slug>/how-to`. Done_when "one officer per language finishes the cards on a phone" is still open.
+<adjustments for="Session #300 and Session #304 (per-tab tips)">
+- The persona panel (#312) chose one-line per-tab tips for Calendar and Notices only, shipped with those tabs. Add them as data beside `FIRST_USE_STEPS` (`lib/private/first-use.ts`), and add a line to the "?" sheet in `FirstUse.tsx`. There are no coach marks: the panel dropped them.
 </adjustments>
 
 https://github.com/daniro-san/LAPTracker/pull/329
