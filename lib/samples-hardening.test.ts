@@ -1,4 +1,5 @@
 // Hardening of the event samples for their first real run (D69, amended 2026-11-16) on PGlite.
+import { asc } from "drizzle-orm";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { testContext, TEST_ENV } from "./app-context.test-helpers";
@@ -8,6 +9,7 @@ import { openTestDb, truncateAll } from "./db.test-helpers";
 import { failedSampleUnionIds } from "./repo/alliance-snapshots";
 import { dueSample } from "./repo/events";
 import { executeSample, SAMPLE_NOTIFY_CAP_MS } from "./run";
+import { snapshots } from "./schema";
 import { runTick } from "./tick";
 
 // The Before's picture (D58) is drawn by a real renderer that takes seconds under load; not what these tests are about.
@@ -78,5 +80,18 @@ describe("event sample hardening (D69)", () => {
     });
 
     expect(outcome).toMatchObject({ ok: true, summary: { status: "partial" } });
+  });
+
+  it("samples only the slot holding now after a gap, never the slots no tick took", async () => {
+    await tickAt(testContext(db, KVK), ["12:00", "12:50"]);
+
+    const rows = await db
+      .select({ phase: snapshots.phase, slotAt: snapshots.slotAt })
+      .from(snapshots)
+      .orderBy(asc(snapshots.id));
+    expect(rows.map((r) => [r.phase, r.slotAt?.toISOString().slice(11, 16) ?? null])).toEqual([
+      ["before", null],
+      ["sample", "12:45"],
+    ]);
   });
 });

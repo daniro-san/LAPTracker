@@ -7,6 +7,7 @@ import type { Db } from "../db";
 import type { SnapshotPhase } from "../repo";
 import { isSample } from "../repo/snapshots";
 import { allianceSnapshots, events, memberSnapshots, snapshots } from "../schema";
+import { numbers } from "./history-readings";
 import { publicEvent } from "./visibility";
 
 export interface SampleMember {
@@ -36,9 +37,6 @@ export interface EventReading {
 }
 
 const ORDER: Record<SnapshotPhase, number> = { before: 0, sample: 1, after: 2 };
-
-const numbers = (values: (string | null)[] | null) =>
-  (values ?? []).map((v) => (v === null ? null : Number(v)));
 
 interface UsableRow {
   id: number;

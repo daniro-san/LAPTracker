@@ -6,6 +6,7 @@ import { claim, RunRefusedError } from "./collector-claim";
 import { logV1Fetch } from "./collector-log";
 import { dataRow, errorRow, failedList } from "./collector-rows";
 import { callOptions, SAMPLE_DEADLINE_MS } from "./collector-sample";
+import { RUN_DEADLINE_MS } from "./compute";
 import type { Logger } from "./logger";
 import type { AllianceRow, MemberRow, Phase, Repo, SnapshotPhase, SnapshotStatus } from "./repo";
 import {
@@ -20,8 +21,8 @@ import { describe } from "./upstream-errors";
 export const MAX_UPSTREAM_CALLS = 120;
 export { FRESH_MAX_AGE_MS } from "./collector-rows";
 export { RunRefusedError } from "./collector-claim";
-/** Measured from the start of the run; the route's maxDuration is 120 s (docs/decisions/D25). */
-export const RUN_DEADLINE_MS = 100_000;
+/** Measured from the start of the run (docs/decisions/D25); defined in lib/compute so pages can read it. */
+export { RUN_DEADLINE_MS };
 const CONCURRENCY = 4;
 
 export interface Deps {

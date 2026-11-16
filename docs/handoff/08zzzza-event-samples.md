@@ -3,7 +3,7 @@
 The owner wants heatmaps of the busiest moments of an event. Build 1 of spike #183 (windows, schedules, every reader moved to windows) is too large before the KvK of Saturday 2026-11-21, so this build only adds samples between an event's Before and After. Before and After are stored and read exactly as before.
 
 ## Built
-- **Migration 0017** (`drizzle/0017_aromatic_sprite.sql`):
+- **Migration 0018** (`drizzle/0018_nosy_loki.sql`):
   - `snapshots.phase` accepts `sample`;
   - new column `snapshots.slot_at`, with a check that it is set exactly on samples;
   - `snapshots_event_phase_unique` becomes a partial unique index `(event_id, phase) where phase <> 'sample'`;
@@ -15,7 +15,7 @@ The owner wants heatmaps of the busiest moments of an event. Build 1 of spike #1
   - a slot no tick took is not caught up; manual rounds get no samples;
   - `/api/tick` answers a sample like a run (`runResponse`).
 - **Collector** (`lib/collector.ts`):
-  - `runSample(eventId, slotAt, deps)` claims the slot with one insert (`startSample`), reads the event's stored alliance list, and goes through the same quota check, `/v1` reads, retries, deadline and call cap as a phase;
+  - `runSample(eventId, slotAt, deps)` claims the slot with one insert (`startSample`), reads the event's stored alliance list, and goes through the same quota check, `/v1` reads and call cap as a phase, with its own limits (Saturday hardening below: 12 s per call, a 25 s deadline, one read with no retries for an alliance that already failed in a sample of the event);
   - a sample reads no ranks board and uses no internal fallback: a failed alliance gets an error row `v1 <error>`;
   - rows are stored by `insertSampleRow`: members as arrays, `raw_json` null, no `member_snapshots`.
 - **Budget** (`lib/budget.ts` `sampleQuota`, INVARIANT `budget.samples-yield-to-after`): `requiredQuota(n) + 1 + 4n`, which is 131 calls for 20 alliances.
@@ -34,7 +34,7 @@ The owner wants heatmaps of the busiest moments of an event. Build 1 of spike #1
   - `runWord` in `app/_ui/admin/words.ts` names a sample "Sample 10:15" in the run list, on the run page, in the live candle and in the "last run" fact. No new UI section.
 - **Read model** `eventSamples(db, eventId)` (`lib/queries/samples.ts`, exported from `lib/queries`). It returns a public event's Start, samples and End in time order, each alliance with read time, fresh flag, might, kills, members and roster `{uid, might, kills}`. No page uses it yet.
 - **Tests:**
-  - `lib/samples.test.ts`: 8 PGlite tests through `runTick`;
+  - `lib/samples.test.ts` and `lib/samples-hardening.test.ts`: PGlite tests through `runTick` (8 at first; 15 after the review rounds below);
   - `lib/budget.test.ts`: a property test and the 131 figure for `sampleQuota`.
 - **Docs:**
   - `docs/decisions/D69-event-samples.md` and its line in the index;
@@ -66,7 +66,7 @@ The owner wants heatmaps of the busiest moments of an event. Build 1 of spike #1
 - `pnpm check` green:
   - prettier, eslint, tsc;
   - vitest: `Test Files 60 passed | 1 skipped (61)`, `Tests 280 passed | 1 skipped (281)`;
-  - drift (migration 0017 matches the schema);
+  - drift (migration 0018 matches the schema);
   - `i18n: 17 languages up to date with English`.
 - `lib/samples.test.ts` (PGlite). The KvK-shaped Saturday is SNAPSHOT_BEFORE 10:00, SNAPSHOT_AFTER 16:15, every 15 min, ticks 20 s after each slot:
   - Ticks 12:00…18:15 UTC with a second tick at 13:05: Before at 12:00 and After at 18:15 (the only `run` ticks); 24 samples at 12:15…18:00 UTC (10:15…16:00 server); the 13:05 tick is `idle`, so one sample per slot.
@@ -85,12 +85,12 @@ The owner wants heatmaps of the busiest moments of an event. Build 1 of spike #1
 
 ## Open issues
 1. **Owner, before Friday 2026-11-20 12:00 UTC (10:00 server)**, which is when the tick creates Saturday's event row and fixes its times (D21):
-   - Merge and release this PR. The release must apply migration 0017.
+   - Merge and release this PR. The release must apply migration 0018.
    - In Vercel Production, set `SNAPSHOT_BEFORE=10:00` and `SNAPSHOT_AFTER=16:15`, then redeploy. The Start is then at 10:00, samples run 10:15…16:00 server, and the End is at 16:15. `SNAPSHOT_BEFORE=09:45` adds one sample (+21–23 calls).
    - `SAMPLE_EVERY_MIN` can stay unset (default 15); `0` turns samples off.
    - If the row already exists with other times, they do not move with the env.
 2. **Expected quota for Saturday 2026-11-21 (one UTC day):**
-   - 26 reads (Before, 24 samples, After) × 21 calls = 546 calls, or × 23 = 598 calls with two 502 retries per read (the measured 21–23); the daily read is skipped on that day.
+   - 26 reads (Before, 24 samples, After) × 21 calls = 546 calls, or × 23 = 598 calls with two 502 retries per read (the measured 21–23); the daily read (D72: 23:30 server, 01:30 UTC) falls on the next UTC day.
    - A sample's call times out at 12 s (`SAMPLE_CALL_TIMEOUT_MS`) and its run ends at 25 s (`SAMPLE_DEADLINE_MS`), under cron-job.org's 30 s and the 15-minute tick, so one sample per tick. A live read took about 1.5 s when measured on 2026-11-16.
    - In an outage a sample can cost up to 81 calls. The budget rule skips samples once `remaining < 131`, which keeps 50 for the After.
    - Friday's rehearsal (18:00 server) now takes 1–2 samples: +21–42 calls on Friday.
@@ -169,8 +169,8 @@ For the KvK of Saturday 2026-11-21 (D69 has an amended bullet).
 1. A sample has a 12 s timeout per call (`SAMPLE_CALL_TIMEOUT_MS`) and a 25 s run deadline (`SAMPLE_DEADLINE_MS`), so the tick answers before cron-job.org's 30 s. Alliances not read by the deadline are named in the summary and the sample closes partial; no error row is stored for them, as in a phase. The admin message is cut at 28 s (`SAMPLE_NOTIFY_CAP_MS`).
 2. An alliance that failed in an earlier sample of the event is read once, with no retries, in later samples of that event.
 3. `sampleQuota` is unchanged (131 for 20 alliances).
-4. Release rule: release migration 0017 only at a day and time when no Before, After or manual round can be claimed. The old code's `onConflictDoNothing({ target: [eventId, phase] })` cannot match the new partial index, so between the build's migrate step and the new deployment taking traffic, or after a rollback, a claim would fail.
-5. Release rule: never roll back production below migration 0017.
+4. Release rule: release migration 0018 only at a day and time when no Before, After or manual round can be claimed. The old code's `onConflictDoNothing({ target: [eventId, phase] })` cannot match the new partial index, so between the build's migrate step and the new deployment taking traffic, or after a rollback, a claim would fail.
+5. Release rule: never roll back production below migration 0018.
 
 ## Review fixes, round 3 (2026-11-16)
 
@@ -181,5 +181,12 @@ For the KvK of Saturday 2026-11-21 (D69 has an amended bullet).
 5. `eventSamples(db, eventId, { rosters: false })` returns the alliance totals with empty rosters and reads neither the member arrays nor the member rows; the default is unchanged.
 6. Docs: the stale 35 s / 100 s bullet (Open issue 2) and D69's Collector line now state 12 s per call and a 25 s deadline; `docs/ARCHITECTURE.md` lists `lib/collector-sample.ts`, `lib/collector-log.ts`, `lib/queries/samples.ts` and `MAX_RETRIES`; the unused re-export of the two sample constants is removed from `lib/collector.ts`.
 7. `pnpm check` on this branch: one failure, `app/(pages)/admin/gate.test.ts` "/admin/runs/<unknown id> still calls notFound" (10 s timeout, 12 to 14 s inside the full suite, 1 s alone). It fails the same way on head 764cd36 and does not touch samples. Follow-up, not fixed here.
+
+## Review fixes, round 4 (2026-11-16)
+
+1. `numbers` (a `text[]` of bigints as numbers) has one definition, exported from `lib/queries/history-readings.ts` and imported by `lib/queries/samples.ts`; it now takes a null array as empty.
+2. Test for "a slot no tick took is not caught up" (`lib/samples-hardening.test.ts`): ticks at 12:00 and 12:50 leave the Before and one sample, at 12:45, with no 12:15 or 12:30 row.
+3. The Built section now states a sample's own limits, and the test count; the Verified section above keeps the first session's numbers.
+4. `pnpm check` on this head, after merging current dev: green; vitest `Test Files 69 passed | 1 skipped (70)`, `Tests 318 passed | 1 skipped (319)`. The `/admin` gate-test timeout from round 3 is gone (fixed on dev by #315).
 
 https://github.com/daniro-san/LAPTracker/pull/292

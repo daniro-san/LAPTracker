@@ -1,5 +1,6 @@
-// The daily roster read (D60, issue 197): once a day the tick reads DAILY_ROSTER_IDS through /v1 and stores
-// each roster as uid/name/power/kills arrays, for the member history page. It is not an event: no events
+// The daily roster read (D60, issue 197): once a day, at the end of the server day (D72), the tick reads
+// DAILY_ROSTER_IDS through /v1 and stores each roster as uid/name/power/kills arrays, for the member history
+// page, plus the trimmed response in raw_json, which no read model selects. It is not an event: no events
 // row, no snapshot, no Discord message beyond one admin line when it falls short. No internal fallback
 // (D5 covers event snapshots only): a missed alliance is a gap in the history. It writes run_logs lines
 // under its day (`read_day`) with the collector's codes, so /admin/runs/daily/[day] shows its calls.
@@ -10,10 +11,13 @@ import { failedList, FRESH_MAX_AGE_MS } from "./collector-rows";
 import { isFresh, RUN_STALE_AFTER_MS } from "./compute";
 import type { Db } from "./db";
 import { createRunLogger, type RunLogger } from "./logger";
+import { trimRaw } from "./raw-json";
 import {
+  claimAutoRetry,
   claimDailyRead,
   dailyRosterStates,
   finishDailyRead,
+  getDailyRead,
   reclaimDailyRead,
   storeDailyRoster,
   type DailyReadStatus,
@@ -21,6 +25,7 @@ import {
 } from "./repo/daily-reads";
 import { recordFrames } from "./repo/player-frames";
 import { insertRunLog } from "./repo/run-logs";
+import { endsInServerDay, serverDay, type ScheduleConfig } from "./schedule";
 import { QuotaExhaustedError, type AllianceSnapshotInput, type V1Source } from "./sources/types";
 import { describe, httpStatusOf, upstreamDetail } from "./upstream-errors";
 
@@ -59,6 +64,8 @@ function dataRow(a: AllianceSnapshotInput, now: Date): NewDailyRoster {
     // Arrays keep a null power or kills as null (D15); Drizzle types the elements as numbers.
     memberPower: a.members.map((m) => m.power) as number[],
     memberKills: a.members.map((m) => m.kills) as number[],
+    // Every roster field, as event snapshots keep it (plan §6); never selected by a read model (D72).
+    rawJson: trimRaw(a.raw),
   };
 }
 
@@ -204,38 +211,89 @@ export async function runDailyRead(
 ): Promise<DailyReadSummary | null> {
   const now = deps.now();
   if (!(await claimDailyRead(db, day, now))) return null;
-  return readDay(deps, db, day, ids, now);
+  return readDay(deps, db, day, ids, now, { toRead: ids, code: "daily.start" });
 }
 
-/** /admin's retry (D67): the same read again, every roster, for a day that fell short (`failed` or
- * `partial`) or was left `running` past RUN_STALE_AFTER_MS (the function was killed). Null for any other
- * day (no read, running, complete) or when another press took it first. */
+/** A daily read, or /admin's Retry of it, may start at `now`: a run of up to RUN_DEADLINE_MS ends inside
+ * now's server day (D72). */
+export const dailyReadEndsInDay = (now: Date, cfg: Pick<ScheduleConfig, "SERVER_TZ">) =>
+  endsInServerDay(now, RUN_DEADLINE_MS, cfg);
+
+/** /admin's retry (D67): the same read again, every roster, of today's server day when it fell short
+ * (`failed` or `partial`) or was left `running` past RUN_STALE_AFTER_MS (the function was killed).
+ * "too-late" when a read started now could run past the server day's end (D72); null for any other day
+ * (no read, running, complete) or when another press took it first. */
 export async function retryDailyRead(
+  deps: Deps,
+  db: Db,
+  cfg: Pick<ScheduleConfig, "SERVER_TZ">,
+  ids: readonly number[],
+): Promise<DailyReadSummary | "too-late" | null> {
+  const now = deps.now();
+  // INVARIANT daily-read.ends-before-midnight: a Retry that could run past 00:00 would store rosters
+  // read after the reset under the day before; the day keeps its gap instead (D72).
+  if (!dailyReadEndsInDay(now, cfg)) return "too-late";
+  const day = serverDay(now, cfg);
+  // INVARIANT run.stale-after-150s: the snapshots' rule for a killed run.
+  const staleBefore = new Date(now.getTime() - RUN_STALE_AFTER_MS);
+  if (!(await reclaimDailyRead(db, day, now, staleBefore))) return null;
+  return readDay(deps, db, day, ids, now, { toRead: ids, code: "daily.start" });
+}
+
+/** A later tick, not a second caller of the same one: ticks are 15 minutes apart (D26). */
+const AUTO_RETRY_AFTER_MS = 10 * 60_000;
+
+/**
+ * The tick's automatic retry (D72): on a later tick of the same server day, a read that fell short
+ * (`failed` or `partial`) reads again only the alliances with no roster for the day, once per day. Null
+ * when the day has a roster of every alliance (a `complete` day included), was retried automatically
+ * already, is running, or read too recently.
+ */
+export async function autoRetryDailyRead(
   deps: Deps,
   db: Db,
   day: string,
   ids: readonly number[],
 ): Promise<DailyReadSummary | null> {
+  const read = new Set(
+    (await dailyRosterStates(db, day)).filter((r) => r.error === null).map((r) => r.unionId),
+  );
+  const missing = ids.filter((id) => !read.has(id));
+  if (missing.length === 0) return null;
+  // The claim moves started_at to the retry; the rosters it keeps are judged against the read it completes.
+  const before = await getDailyRead(db, day);
+  if (!before) return null;
   const now = deps.now();
-  // INVARIANT run.stale-after-150s: the snapshots' rule for a killed run.
-  const staleBefore = new Date(now.getTime() - RUN_STALE_AFTER_MS);
-  if (!(await reclaimDailyRead(db, day, now, staleBefore))) return null;
-  return readDay(deps, db, day, ids, now);
+  const startedBefore = new Date(now.getTime() - AUTO_RETRY_AFTER_MS);
+  if (!(await claimAutoRetry(db, day, now, startedBefore))) return null;
+  return readDay(deps, db, day, ids, now, {
+    toRead: missing,
+    code: "daily.auto-retry",
+    keptJudgedAt: before.startedAt,
+  });
 }
 
-/** `startedAt` is this read's start as the claim stored it. */
+/** `startedAt` is this read's start as the claim stored it. `ids` are the day's alliances, which the
+ * outcome is judged on; `toRead` the ones this attempt reads: all of them, or for the tick's automatic
+ * retry only the ones without a roster (D72); `code` names the attempt's first log line;
+ * `keptJudgedAt`, the automatic retry's only, is the start of the read it completes. */
 async function readDay(
   deps: Deps,
   db: Db,
   day: string,
   ids: readonly number[],
   startedAt: Date,
+  attempt: {
+    toRead: readonly number[];
+    code: "daily.start" | "daily.auto-retry";
+    keptJudgedAt?: Date;
+  },
 ): Promise<DailyReadSummary> {
   const log = createRunLogger(
     { insertRunLog: (line) => insertRunLog(db, line) },
     { readDay: day, secrets: deps.secrets ?? [], now: deps.now },
   );
-  await log.info("daily.start", { alliances: ids.length });
+  await log.info(attempt.code, { alliances: attempt.toRead.length });
   const read: Read = {
     deps,
     log,
@@ -246,7 +304,7 @@ async function readDay(
     rows: [],
     frames: [],
   };
-  const error = await withDeadline(read, readRosters(read, ids));
+  const error = await withDeadline(read, readRosters(read, attempt.toRead));
   if (error === "deadline") await log.warn("run.deadline", { calls_used: read.calls });
   else if (error && !error.startsWith("quota")) await log.error("abort", { reason: error });
   for (const row of [...read.rows]) await storeDailyRoster(db, day, row);
@@ -255,9 +313,12 @@ async function readDay(
   const rows = await dailyRosterStates(db, day);
   const ok = rows.filter((r) => r.error === null);
   // INVARIANT freshness.20-min, for the day: a roster kept from an earlier read is stale in the day's
-  // outcome once it is more than 20 minutes older than this read's start. Its stored `is_fresh` stays.
+  // outcome once it is more than 20 minutes older than this read's start, or, for the tick's automatic
+  // retry, than the start of the read it completes (D72): the retry reads only the missing rosters, so
+  // the 15 minutes between the two ticks must not age the ones it kept. Its stored `is_fresh` stays.
+  const judgedAt = attempt.keptJudgedAt ?? startedAt;
   const stale = ok.filter(
-    (r) => !r.isFresh || !isFresh(startedAt, r.sourceUpdatedAt, FRESH_MAX_AGE_MS),
+    (r) => !r.isFresh || !isFresh(judgedAt, r.sourceUpdatedAt, FRESH_MAX_AGE_MS),
   );
   const status: DailyReadStatus =
     ok.length === 0

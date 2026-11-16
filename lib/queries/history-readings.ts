@@ -17,7 +17,9 @@ export interface Reading {
   members: HistoryMember[];
 }
 
-const numbers = (values: (string | null)[]) => values.map((v) => (v === null ? null : Number(v)));
+/** A text[] of bigints as numbers, null kept as null; a null array is empty. */
+export const numbers = (values: (string | null)[] | null) =>
+  (values ?? []).map((v) => (v === null ? null : Number(v)));
 
 /** A usable roster: fresh, no error, not empty; older than `before` when given. */
 export const dailyUsable = (unionId: number, before: Date | null) =>
