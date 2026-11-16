@@ -26,6 +26,7 @@ Words already used in `lib/i18n/nl.ts`. Reuse them so the pages stay consistent;
 | grandma                   | oma                              | the voice in empty states and errors                      |
 | Start / End               | Begin / Einde                    | `status.start` / `status.end`, `compare.lead`             |
 | vs                        | tegen                            | `compare.versus` — between two event names                |
+| chart                     | grafiek                          | `ledger.chart`, `ledger.progressEmpty` — the might chart  |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

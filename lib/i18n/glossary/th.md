@@ -29,6 +29,8 @@ Words already used in `lib/i18n/th.ts`. Reuse them so the pages stay consistent;
 | End (of a window)         | สิ้นสุด                       | `status.end` — when the capture window ended                 |
 | Compare                   | เทียบ                         | `compare.action`, `compare.versus` — event vs event          |
 | Daily read                | อ่านรายวัน                    | `history.daily` — a card head for the once-a-day roster read |
+| Daily progress            | ความคืบหน้ารายวัน             | `ledger.progress` — the player page's section heading        |
+| Median                    | มัธยฐาน                       | `ledger.progressMedian` — the alliance's median member       |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

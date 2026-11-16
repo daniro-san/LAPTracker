@@ -53,6 +53,12 @@ export const es = {
     names: "Nombres",
     alliances: "Alianzas",
     movers: "Abuela notó",
+    progress: "Progreso diario",
+    progressMight: "Might {change} desde {date}.",
+    progressMedian: "Miembro mediano de {tag}: {percent}.",
+    progressWar: "Might suele bajar en los eventos de guerra. Es lo esperado.",
+    progressEmpty: "Todavía no hay suficientes lecturas para un gráfico.",
+    chart: "{label}: {first} el {from}, {last} el {to}",
   },
   compare: {
     title: "Evento contra evento",

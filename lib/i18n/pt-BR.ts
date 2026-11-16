@@ -53,6 +53,12 @@ export const ptBR = {
     names: "Nomes",
     alliances: "Alianças",
     movers: "Vovó reparou",
+    progress: "Progresso diário",
+    progressMight: "Might {change} desde {date}.",
+    progressMedian: "Membro mediano de {tag}: {percent}.",
+    progressWar: "O Might costuma cair em eventos de guerra. Isso é esperado.",
+    progressEmpty: "Ainda não há leituras suficientes para um gráfico.",
+    chart: "{label}: {first} em {from}, {last} em {to}",
   },
   compare: {
     title: "Evento contra evento",

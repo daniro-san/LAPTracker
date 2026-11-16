@@ -54,6 +54,12 @@ export const ko = {
     names: "이름",
     alliances: "연맹",
     movers: "할머니 눈길",
+    progress: "일일 추이",
+    progressMight: "{date} 이후 전투력 {change}.",
+    progressMedian: "{tag} 중간 멤버: {percent}.",
+    progressWar: "전쟁 이벤트에서는 전투력이 자주 떨어져요. 그건 정상이에요.",
+    progressEmpty: "차트를 그리기엔 아직 기록이 부족해요.",
+    chart: "{label}: {first} ({from}), {last} ({to})",
   },
   compare: {
     title: "이벤트 비교",

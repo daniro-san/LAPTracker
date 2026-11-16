@@ -53,6 +53,12 @@ export const ja = {
     names: "名前",
     alliances: "同盟",
     movers: "おばあちゃんの気づき",
+    progress: "毎日の推移",
+    progressMight: "{date} から Might {change}。",
+    progressMedian: "{tag} の中央値メンバー：{percent}。",
+    progressWar: "戦争イベントでは Might がよく下がります。それで普通です。",
+    progressEmpty: "グラフにはまだ読み取りが足りません。",
+    chart: "{label}：{from}に{first}、{to}に{last}",
   },
   compare: {
     title: "イベント比較",

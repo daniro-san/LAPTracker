@@ -53,6 +53,12 @@ export const nl = {
     names: "Namen",
     alliances: "Allianties",
     movers: "Oma merkte",
+    progress: "Dagelijkse voortgang",
+    progressMight: "Might {change} sinds {date}.",
+    progressMedian: "Mediaan lid van {tag}: {percent}.",
+    progressWar: "Might daalt vaak bij oorlogsevents. Dat is normaal.",
+    progressEmpty: "Nog niet genoeg metingen voor een grafiek.",
+    chart: "{label}: {first} op {from}, {last} op {to}",
   },
   compare: {
     title: "Event tegen event",

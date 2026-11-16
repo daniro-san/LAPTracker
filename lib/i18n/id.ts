@@ -54,6 +54,12 @@ export const idID = {
     names: "Nama",
     alliances: "Aliansi",
     movers: "Nenek perhatikan",
+    progress: "Progres harian",
+    progressMight: "Might {change} sejak {date}.",
+    progressMedian: "Anggota median {tag}: {percent}.",
+    progressWar: "Might sering turun di event perang. Itu wajar.",
+    progressEmpty: "Belum cukup pembacaan untuk grafik.",
+    chart: "{label}: {first} pada {from}, {last} pada {to}",
   },
   compare: {
     title: "Event vs event",

@@ -53,6 +53,12 @@ export const zhCN = {
     names: "名称",
     alliances: "联盟",
     movers: "奶奶注意到了",
+    progress: "每日进度",
+    progressMight: "自 {date} 以来，Might {change}。",
+    progressMedian: "{tag} 的中位成员：{percent}。",
+    progressWar: "战争活动中 Might 常会下降。这很正常。",
+    progressEmpty: "读取还不够多，暂时画不出图表。",
+    chart: "{label}：{from} {first}，{to} {last}",
   },
   compare: {
     title: "活动对比",

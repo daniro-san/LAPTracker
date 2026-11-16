@@ -66,6 +66,18 @@ export const en = {
     alliances: "Alliances",
     /** The event's biggest gains and losses (#70). */
     movers: "Grandma noticed",
+    /** The player page's section of every reading (#270): daily reads and events' Start and End. */
+    progress: "Daily progress",
+    /** Its summary line: `Might +12.3M (+4.1%) since Nov 9.` */
+    progressMight: "Might {change} since {date}.",
+    /** After it, when both readings are of one alliance: that alliance's median member's change. */
+    progressMedian: "Median member of {tag}: {percent}.",
+    /** Under the might chart. */
+    progressWar: "Might often drops in war events. That is expected.",
+    /** Fewer than two readings: no chart yet. */
+    progressEmpty: "Not enough readings yet for a chart.",
+    /** A chart's accessible name: `Might: 1.02B on Nov 9, 1.10B on Nov 16`. */
+    chart: "{label}: {first} on {from}, {last} on {to}",
   },
   /** Event vs event (D57, #177): two events' in-event changes side by side. */
   compare: {

@@ -53,6 +53,12 @@ export const th = {
     names: "ชื่อ",
     alliances: "พันธมิตร",
     movers: "คุณยายสังเกตเห็น",
+    progress: "ความคืบหน้ารายวัน",
+    progressMight: "Might {change} ตั้งแต่ {date}",
+    progressMedian: "สมาชิกมัธยฐานของ {tag}: {percent}",
+    progressWar: "Might มักลดลงในกิจกรรมสงคราม เป็นเรื่องปกติ",
+    progressEmpty: "ยังมีการอ่านไม่พอสำหรับกราฟ",
+    chart: "{label}: {first} วันที่ {from}, {last} วันที่ {to}",
   },
   compare: {
     title: "กิจกรรม เทียบ กิจกรรม",

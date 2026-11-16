@@ -53,6 +53,12 @@ export const itIT = {
     names: "Nomi",
     alliances: "Alleanze",
     movers: "Nonna nota",
+    progress: "Progresso giornaliero",
+    progressMight: "Might {change} da {date}.",
+    progressMedian: "Membro mediano di {tag}: {percent}.",
+    progressWar: "Il Might spesso cala negli eventi di guerra. È previsto.",
+    progressEmpty: "Ancora poche letture per un grafico.",
+    chart: "{label}: {first} il {from}, {last} il {to}",
   },
   compare: {
     title: "Confronto tra eventi",

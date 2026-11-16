@@ -27,6 +27,7 @@ Words already used in `lib/i18n/id.ts`. Reuse them so the pages stay consistent;
 | Run by hand by the admin  | Dijalankan manual oleh admin  | `status.byHand`                                                 |
 | grandma                   | nenek                         | the voice in empty states and errors                            |
 | Member history            | Riwayat anggota               | `history.title` — the page title and its link on the event page |
+| Daily progress            | Progres harian                | `ledger.progress` — the player page's section heading           |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

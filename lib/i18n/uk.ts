@@ -53,6 +53,12 @@ export const uk = {
     names: "Імена",
     alliances: "Альянси",
     movers: "Бабуся помітила",
+    progress: "Щоденний прогрес",
+    progressMight: "Might {change} з {date}.",
+    progressMedian: "Медіана учасників {tag}: {percent}.",
+    progressWar: "Might часто падає під час бойових подій. Так і має бути.",
+    progressEmpty: "Для графіка ще замало знімків.",
+    chart: "{label}: {first} на {from}, {last} на {to}",
   },
   compare: {
     title: "Подія проти події",

@@ -53,6 +53,12 @@ export const ru = {
     names: "Имена",
     alliances: "Альянсы",
     movers: "Бабушка заметила",
+    progress: "Ежедневный прогресс",
+    progressMight: "Мощь {change} с {date}.",
+    progressMedian: "Медианный участник {tag}: {percent}.",
+    progressWar: "Мощь часто падает в военных событиях. Так и должно быть.",
+    progressEmpty: "Для графика пока мало чтений.",
+    chart: "{label}: {first} на {from}, {last} на {to}",
   },
   compare: {
     title: "Событие против события",

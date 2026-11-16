@@ -53,6 +53,12 @@ export const sv = {
     names: "Namn",
     alliances: "Allianser",
     movers: "Mormor märkte",
+    progress: "Dagsutveckling",
+    progressMight: "Might {change} sedan {date}.",
+    progressMedian: "Medianmedlem i {tag}: {percent}.",
+    progressWar: "Might brukar sjunka i krigsevent. Det är normalt.",
+    progressEmpty: "Inte tillräckligt med avläsningar för ett diagram än.",
+    chart: "{label}: {first} den {from}, {last} den {to}",
   },
   compare: {
     title: "Event mot event",

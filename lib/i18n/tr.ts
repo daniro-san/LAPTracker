@@ -54,6 +54,12 @@ export const tr = {
     names: "İsimler",
     alliances: "İttifaklar",
     movers: "Nine sezdi",
+    progress: "Günlük ilerleme",
+    progressMight: "{date} sonrası Might {change}.",
+    progressMedian: "{tag} medyan üyesi: {percent}.",
+    progressWar: "Savaş etkinliklerinde Might çoğu zaman düşer. Bu beklenen bir durum.",
+    progressEmpty: "Grafik için henüz yeterli okuma yok.",
+    chart: "{label}: {from} itibarıyla {first}, {to} itibarıyla {last}",
   },
   compare: {
     title: "Etkinlik karşılaştırma",

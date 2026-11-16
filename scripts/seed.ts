@@ -1,6 +1,7 @@
 // `pnpm db:seed`: three fake past scheduled events built from fixtures/ rosters, so every UI state renders
 // locally (plan Phase 5): a renamed alliance, a renamed member, a member who changes alliance, a
-// stale row, a failed row (the "B" fallback), shrinking kills, a rehearsal, run logs and app errors.
+// stale row, a failed row (the "B" fallback), shrinking kills, a rehearsal, run logs and app errors,
+// plus daily roster reads between the events (scripts/seed-daily.ts).
 // Refuses to touch a database that already has events; `--reset` empties the app's tables first.
 // Never run it against production: it writes invented numbers (the events are named "Seed …").
 // `--with-states` (off by default) adds two more events so the states the three past ones cannot show can
@@ -20,6 +21,7 @@ import {
   runLogs,
   snapshots,
 } from "../lib/schema";
+import { seedDaily } from "./seed-daily";
 import { loadBase, rosterAt, type BaseAlliance, type BaseMember, type Phase } from "./seed-data";
 import { seedStates } from "./seed-states";
 
@@ -256,7 +258,7 @@ export async function seed(
 ): Promise<string> {
   if (reset) {
     await db.execute(
-      sql`truncate run_logs, member_snapshots, alliance_snapshots, snapshots, rehearsal_slots, events, auth_attempts, app_errors restart identity cascade`,
+      sql`truncate daily_rosters, daily_reads, run_logs, member_snapshots, alliance_snapshots, snapshots, rehearsal_slots, events, auth_attempts, app_errors restart identity cascade`,
     );
   }
   const existing = await db.select({ id: events.id }).from(events).limit(1);
@@ -264,6 +266,7 @@ export async function seed(
     throw new Error("the database already has events; pass --reset to empty it first");
   const base = loadBase();
   for (const event of [0, 1, 2]) await seedEvent(db, base, event);
+  await seedDaily(db, base);
   await seedRehearsal(db, base);
   if (withStates)
     await seedStates(db, base, new Date(), (id, day) =>
@@ -285,7 +288,7 @@ export async function seed(
       message: "route failed",
     },
   ]);
-  return `seeded ${base.length} alliances × 3 events, 1 rehearsal${withStates ? ", an empty event and a running one" : ""}`;
+  return `seeded ${base.length} alliances × 3 events and 12 daily reads, 1 rehearsal${withStates ? ", an empty event and a running one" : ""}`;
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

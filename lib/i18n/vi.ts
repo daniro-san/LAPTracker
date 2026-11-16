@@ -53,6 +53,12 @@ export const vi = {
     names: "Tên",
     alliances: "Liên minh",
     movers: "Bà để ý",
+    progress: "Tiến độ hằng ngày",
+    progressMight: "Lực Chiến {change} từ {date}.",
+    progressMedian: "Thành viên trung vị của {tag}: {percent}.",
+    progressWar: "Lực Chiến thường giảm trong các sự kiện chiến tranh. Chuyện đó là bình thường.",
+    progressEmpty: "Chưa đủ lần đọc để vẽ biểu đồ.",
+    chart: "{label}: {first} vào {from}, {last} vào {to}",
   },
   compare: {
     title: "Sự kiện so với sự kiện",

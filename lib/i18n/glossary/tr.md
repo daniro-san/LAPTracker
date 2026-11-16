@@ -25,6 +25,8 @@ Words already used in `lib/i18n/tr.ts`. Reuse them so the pages stay consistent;
 | Start / End               | Başlangıç / Bitiş               | `status.start` / `status.end`, `compare.lead`             |
 | Run by hand by the admin  | Admin elle başlatır             | `status.byHand`                                           |
 | grandma                   | nine                            | the voice in empty states and errors                      |
+| Daily progress            | Günlük ilerleme                 | `ledger.progress` — the player page's section heading     |
+| Median                    | Medyan                          | `ledger.progressMedian` — the median member's change      |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.
