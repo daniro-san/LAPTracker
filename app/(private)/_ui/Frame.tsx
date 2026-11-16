@@ -34,8 +34,8 @@ export async function workspaceWords(): Promise<{
 }
 
 const TABS: TabId[] = ["home", "members", "mark", "days", "review"];
-/** The tabs that exist so far; the other three come with their own issues and are shown as "soon". */
-const PATHS: Partial<Record<TabId, string>> = { home: "", members: "/members" };
+/** The tabs that exist so far; the others come with their own issues and are shown as "soon". */
+const PATHS: Partial<Record<TabId, string>> = { home: "", members: "/members", days: "/calendar" };
 
 function Tabs({ t, slug, current }: { t: WorkspaceDictionary; slug: string; current: TabId }) {
   return (

@@ -1,8 +1,10 @@
 // The workspace dictionary in Brazilian Portuguese (D71), split from dictionary.ts for its size; the keys
 // follow `en`.
 import type { WorkspaceDictionary } from "./dictionary";
+import { calendarPt } from "./dictionary.calendar.pt-BR";
 
 export const pt: WorkspaceDictionary = {
+  ...calendarPt,
   "app.name": "Mesa dos oficiais",
   "tab.aria": "Seções",
   "tab.home": "Início",

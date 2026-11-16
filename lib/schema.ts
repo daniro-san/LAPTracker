@@ -364,3 +364,6 @@ export const workspaceSessions = pgTable(
   },
   (t) => [index("workspace_sessions_workspace_idx").on(t.workspaceId)],
 );
+
+// The workspace calendar (issue 300), in its own file for size.
+export * from "./schema-calendar";
