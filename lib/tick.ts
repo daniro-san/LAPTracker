@@ -3,8 +3,8 @@
 // The daily roster read (D60) comes last, when nothing else is due.
 import { DAILY_ROSTER_IDS } from "../config/alliances";
 import { secretsOf, type AppContext } from "./app-context";
-import { RUN_DEADLINE_MS } from "./collector";
-import { runDailyRead, type DailyReadSummary } from "./daily-read";
+import { RUN_DEADLINE_MS } from "./compute";
+import { autoRetryDailyRead, runDailyRead, type DailyReadSummary } from "./daily-read";
 import type { Db } from "./db";
 import {
   createNotifier,
@@ -21,6 +21,7 @@ import { latestTickAt } from "./repo/ticks";
 import { executeSnapshot, quotaReport, type RunOutcome } from "./run";
 import {
   dailyReadDue,
+  endsInServerDay,
   eventsToCreate,
   nextEvent,
   quotaCheckDue,
@@ -52,8 +53,9 @@ async function scheduledRehearsal(ctx: AppContext, db: Db, slotAt: Date): Promis
   return { kind: "rehearsal", slotAt, result };
 }
 
-/** The day's roster read when its window holds `now` and no caller claimed the day yet; one admin
- * line when it falls short. It runs on a scheduled event's day too (D72 supersedes D60's skip). */
+/** The day's roster read when its window holds `now` and no caller claimed the day yet; on a later tick
+ * in the window, once, the alliances it left without a roster (D72). One admin line when it falls
+ * short. It runs on a scheduled event's day too (D72 supersedes D60's skip). */
 async function dailyRead(
   ctx: AppContext,
   db: Db,
@@ -61,11 +63,12 @@ async function dailyRead(
   origin: string,
 ): Promise<TickOutcome | null> {
   const due = dailyReadDue(now, ctx.env);
-  // INVARIANT daily-read.ends-before-midnight: a read that could outlive its deadline past the server
-  // day's end would store rosters read after the 00:00 reset under the day before (D72).
-  if (!due || now.getTime() + RUN_DEADLINE_MS > due.to.getTime()) return null;
+  // INVARIANT daily-read.ends-before-midnight
+  if (!due || !endsInServerDay(now, RUN_DEADLINE_MS, ctx.env)) return null;
   const deps = { v1: ctx.v1, now: ctx.now, secrets: secretsOf(ctx.env) };
-  const summary = await runDailyRead(deps, db, due.day, DAILY_ROSTER_IDS);
+  const summary =
+    (await runDailyRead(deps, db, due.day, DAILY_ROSTER_IDS)) ??
+    (await autoRetryDailyRead(deps, db, due.day, DAILY_ROSTER_IDS));
   if (!summary) return null;
   if (summary.status !== "complete") {
     const at = discordClock(ctx.env.SERVER_TZ).stamp(ctx.now());
@@ -113,7 +116,8 @@ export async function runTick(ctx: AppContext, db: Db, origin: string): Promise<
     if (await claimSlot(db, slotAt)) return scheduledRehearsal(ctx, db, slotAt);
   }
 
-  // (5) The daily roster read (D60): last, once per server day inside its window. Never an event.
+  // (5) The daily roster read (D60): last, once per server day inside its window, plus at most one
+  // automatic retry of what fell short (D72). Never an event.
   return (await dailyRead(ctx, db, now, origin)) ?? { kind: "idle" };
 }
 

@@ -1,5 +1,5 @@
 {
-  "id": "99b60713-e099-4945-a072-8851b9c19115",
+  "id": "c57ea4da-6f81-40a3-8907-13071b872081",
   "prevId": "6b078a66-574f-4b63-a33f-67ab5e149ebb",
   "version": "7",
   "dialect": "postgresql",
@@ -330,6 +330,12 @@
         "error": {
           "name": "error",
           "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "auto_retry_at": {
+          "name": "auto_retry_at",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
         }

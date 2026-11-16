@@ -1,5 +1,5 @@
 // daily_reads and daily_rosters (D60): the tick's once-a-day roster read for member history.
-import { and, eq, inArray, isNotNull, lt, or, sql } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, isNull, lt, or, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { dailyReads, dailyRosters } from "../schema";
@@ -40,11 +40,39 @@ export async function reclaimDailyRead(
     )
     .returning({ day: dailyReads.day });
   if (rows.length === 0) return false;
-  await db
-    .delete(dailyRosters)
-    .where(and(eq(dailyRosters.readDay, day), isNotNull(dailyRosters.error)));
+  await dropErrorRows(db, day);
   return true;
 }
+
+/** The tick's automatic retry (D72): takes a day that fell short (`failed` or `partial`) back to
+ * `running` for exactly one caller, once per day, and only when its read started before
+ * `startedBefore` (a later tick, not a second caller of the same tick). Then it drops the day's error
+ * rows, as the admin's retry does. */
+export async function claimAutoRetry(
+  db: Db,
+  day: string,
+  startedAt: Date,
+  startedBefore: Date,
+): Promise<boolean> {
+  const rows = await db
+    .update(dailyReads)
+    .set({ startedAt, finishedAt: null, status: "running", error: null, autoRetryAt: startedAt })
+    .where(
+      and(
+        eq(dailyReads.day, day),
+        inArray(dailyReads.status, ["failed", "partial"]),
+        isNull(dailyReads.autoRetryAt),
+        lt(dailyReads.startedAt, startedBefore),
+      ),
+    )
+    .returning({ day: dailyReads.day });
+  if (rows.length === 0) return false;
+  await dropErrorRows(db, day);
+  return true;
+}
+
+const dropErrorRows = (db: Db, day: string) =>
+  db.delete(dailyRosters).where(and(eq(dailyRosters.readDay, day), isNotNull(dailyRosters.error)));
 
 /** Today's read for /admin, or null when none was claimed. */
 export async function getDailyRead(db: Db, day: string) {

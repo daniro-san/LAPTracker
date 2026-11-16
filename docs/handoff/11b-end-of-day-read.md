@@ -1,59 +1,95 @@
 # 11b — The daily read at the end of the server day, with every roster field (D72)
 
-Closes #294. Owner answer 3 of the workspace design (2026-11-16): no extra read; move the daily read from the morning to the end of the server day, before the reset, and keep every roster field.
+Closes #294. Owner answer 3 of the workspace design (2026-11-16): no extra read on a normal day; read near the end of the server day, before the reset, and keep every roster field. Two owner decisions came in during the session (2026-11-16): refuse a Retry that could run past midnight, and read at 23:37 with one automatic retry at 23:52.
 
 ## Built
-- **End of the server day.** `DAILY_ROSTER_AT` defaults to `23:45` (`lib/env.ts`); the 23:52 tick, the last of the server day, runs the read.
-- **Never after midnight** (INVARIANT `daily-read.ends-before-midnight`, `lib/tick.ts`):
-  - `dailyReadDue` (`lib/schedule.ts`) looks only at today's server date, so a tick at 00:07 never reads the day before. It now returns `{ day, to }`; `from` was only used by the event-day skip.
-  - The tick does not start the read when `now + RUN_DEADLINE_MS` (100 s) is past the end of the server day (after 23:58:20).
-- **Event days.** The skip on a scheduled event's day is removed, and `hasScheduledEvent` (`lib/repo/events.ts`, its only caller was the skip) with it.
-- **Every roster field.** `daily_rosters.raw_json` (jsonb, nullable), migration `drizzle/0017_silent_umar.sql` from `pnpm db:generate`. `lib/daily-read.ts` stores `trimRaw(a.raw)` per roster read. Error rows and older rows stay null. D67's retry upsert (`set: row`) replaces `raw_json` with the roster it replaces.
-- **Privacy.** Every select from `daily_rosters` already listed its columns (`lib/queries/daily-runs.ts`, `lib/queries/history-readings.ts`, `lib/queries/member-history.ts`, `lib/repo/daily-reads.ts`). No `select()` without columns exists outside tests. Nothing selects `raw_json`.
-- **Tests** (two):
-  - `lib/daily-read.test.ts`: a daily read of a roster whose raw is the OGs fixture `v1-20261116T105019Z/alliance-67111155.json` stores `raw_json` with every `BLOCKED_ROSTER_KEYS` key (`daily_tech` among them), and `memberHistoryCard` (the query behind `GET /api/alliances/[unionId]/history?at=`) for that roster returns none.
-  - `app/api/tick/route.test.ts`: replaces the old "not on the event's day" test. Saturday 2026-11-07: the Before runs at 12:05Z; the tick at Sat 23:52 server time runs the daily read for 2026-11-07. Sunday's 23:52 tick is missed, and the tick at Mon 00:07 server time (still inside 23:45 + 45 min) reads nothing.
-- **Docs.** D72 and its index line; README (Saturday timeline row "Every day 23:52", the admin Discord row, "Daily roster read fell short", the quota rules); `.env.example`; GLOSSARY "daily read"; ARCHITECTURE `lib/daily-read.ts` line. D60 and D67 not edited.
+- **Timing.** `DAILY_ROSTER_AT` defaults to `23:30` (`lib/env.ts`): the 23:37 tick reads. Donations made between 23:37 and 00:00 are not captured (accepted by the owner).
+- **Automatic retry at 23:52** (`autoRetryDailyRead` in `lib/daily-read.ts`, `claimAutoRetry` in `lib/repo/daily-reads.ts`). When a later tick of the same server day finds today's read `failed` or `partial`, it:
+  - reads only the alliances with no roster for the day, after the quota check, with the D67 upsert;
+  - judges the day's outcome on every alliance;
+  - never touches a day that has a roster of every alliance (`complete` included);
+  - runs at most once per day, through `daily_reads.auto_retry_at`, set by a conditional update;
+  - also needs the read to have started at least 10 minutes earlier (`AUTO_RETRY_AFTER_MS`), so a second pinger in the 23:37 minute does not retry at once;
+  - logs `daily.auto-retry` instead of `daily.start`, and moves `started_at`, so the day's page shows its calls as the latest attempt.
+- **Never past midnight** (INVARIANT `daily-read.ends-before-midnight`):
+  - `dailyReadDue` (`lib/schedule.ts`) looks only at today's server date, so a tick at 00:07 never reads the day before. It now returns `{ day }`.
+  - One pure function, `endsInServerDay(now, RUN_DEADLINE_MS, cfg)` (`lib/schedule.ts`), is used by the tick (read and automatic retry), `POST /api/daily-read/retry` and the `/admin` page. Nothing starts after 23:58:20.
+  - The retry route answers 409 `daily_read_too_late`, shown on `/admin` as "Too close to the server reset (00:00). This day keeps its gap." (`lib/copy-admin.ts`).
+  - The `/admin` Retry card is hidden in those last 100 s.
+  - `RUN_DEADLINE_MS` moved to `lib/compute.ts` (pure) so the page can read it; `lib/collector.ts` re-exports it.
+- **Event days.** The skip on a scheduled event's day is removed, and `hasScheduledEvent` (`lib/repo/events.ts`) with it.
+- **Every roster field, all 20 alliances.**
+  - Migration `drizzle/0017_first_victor_mancha.sql` adds `daily_rosters.raw_json` (jsonb, nullable) and `daily_reads.auto_retry_at` (timestamptz, nullable). It was generated by `pnpm db:generate` and replaces the first commit's `0017_silent_umar`.
+  - `lib/daily-read.ts` stores `trimRaw(a.raw)` per roster read; error rows and older rows stay null.
+  - Both retries replace `raw_json` with the roster (`set: row`).
+- **Privacy.** Every select from `daily_rosters` already listed its columns (`lib/queries/daily-runs.ts`, `lib/queries/history-readings.ts`, `lib/queries/member-history.ts`, `lib/repo/daily-reads.ts`). Nothing selects `raw_json`.
+- **Tests** (no new file):
+  - `lib/daily-read.test.ts`: a daily read of a roster whose raw is the OGs fixture `v1-20261116T105019Z/alliance-67111155.json` stores `raw_json` with every `BLOCKED_ROSTER_KEYS` key, and `memberHistoryCard` (the query behind `GET /api/alliances/[unionId]/history?at=`) returns none.
+  - `app/api/tick/route.test.ts` (replaces the old "not on the event's day" test). Saturday 2026-11-07 is the event's day:
+    - the Before runs;
+    - the 23:37 read fails one alliance (`partial`);
+    - the 23:52 tick re-reads only that one (`complete`);
+    - a Retry at 23:58:30 gets 409 `daily_read_too_late`;
+    - Sunday's 23:37 read is complete and its 23:52 tick does nothing;
+    - with Monday's two ticks missed, Tue 00:07 reads nothing.
+- **Docs.**
+  - D72 and its index line.
+  - README: the Saturday timeline row, the admin Discord row, "Daily roster read fell short", the quota rules.
+  - `.env.example`, GLOSSARY "daily read", the ARCHITECTURE `lib/daily-read.ts` line.
+  - D60 and D67 not edited.
 
 ## Decisions
-- **23:45, not 23:30.** With 23:45 the only tick in the window is 23:52, which reads 23 h 52 min of the day. With 23:30 the 23:37 tick would read and miss the last 23 minutes every day, in exchange for a second chance at 23:52. The brief asked for the last tick. Cost: a dropped 23:52 tick (D26) is a gap for that day.
-- **The midnight guard is in the tick, not in `lib/schedule.ts`.** `RUN_DEADLINE_MS` lives in `lib/collector.ts`; `lib/schedule.ts` stays pure and free of collector imports.
-- **The event-day skip goes.** No reason to keep it was found. The event's phases are at 10:00 and 14:00 server time, and their windows close by 14:45. Their rosters are read hours before the day ends, so they do not hold the day's counters.
-- **Quota rule checked, unchanged.** 23:52 server time = 01:52 UTC on the next UTC day. Friday's read is spent from Saturday's UTC count: 21 + 42 for the Before and After = 63 of 1,000. `dailyReadQuota` still requires 100 left before the read, which keeps a full event run's reserve. The Friday check (22:00 UTC Friday) sees the same spend as before.
+- **10 minutes between the read and its automatic retry.** Two pingers can call the 23:37 tick (D43). Without a gap, the second call could retry seconds after a read that fell short. 10 minutes is less than the 15 between ticks, so 23:52 qualifies.
+- **The automatic retry reads only alliances without a roster.** A stale roster is a roster (D62). A day that is partial only because of a stale roster is not retried automatically and stays retriable by hand.
+- **The retry's `daily.auto-retry` line replaces `daily.start` for that attempt.** `runTrace` already splits attempts by `daily_reads.started_at`, which the claim moves, so the "Upstream calls" table shows the retry's calls.
+- **One migration, not two.** The branch is not pushed, so `0017` was regenerated with both columns instead of adding `0018`.
+- **Quota rule checked, unchanged.** 23:37 server time = 01:37 UTC on the next UTC day. Friday's read is spent from Saturday's UTC count: 21 (+ 1 + k on a bad day) next to the event's 42. `dailyReadQuota(k, 20)` still keeps a full event run's reserve.
 - **Owner facts, recorded in D72:**
-  - Vercel production has no `DAILY_ROSTER_AT` variable, so the new default applies on deploy.
+  - Vercel production has no `DAILY_ROSTER_AT` variable, so the default applies on deploy.
   - The game's daily donation counter resets at exactly 00:00 server time (UTC−2).
+  - All 20 alliances get their fields stored, and one alliance's fields are never shown to another.
 
 ## Deviations
-- The e2e "tick right after midnight" step ran `runTick` from a tsx script with the clock set, not through `next dev`: the dev server uses the real clock. The script used the same code, the same local database and the same fixture server. See Verified.
+- The clock-dependent e2e steps ran `runTick` from a tsx script with the clock set, not through `next dev`, which uses the real clock. The script used the same code, a local database and the fixture stand-in.
+- The `next dev` e2e (raw_json stored, page and route bodies) ran on the first commit's code (23:45 default). The storage and read paths are unchanged since. The second commit's behaviour was checked with the clock script below.
 
 ## Verified
-- `pnpm check` green: prettier, eslint, tsc, vitest (60 files passed, 1 skipped; 278 tests passed, 1 skipped), drift gate ("Everything's fine"), i18n.
-- **Local e2e, no upstream call.** Local Postgres (D47, new cluster in the worktree, migrations 0000–0017). A local stand-in for `/v1` served `fixtures/v1-20261116T105019Z` and `fixtures/v1-ids` with `updated_at` = now. `next dev` (`dev:local`) ran with a local-only `.env.local` (placeholder key, no webhooks) and `DAILY_ROSTER_AT` set 5 minutes back (14:28 server).
-  - `POST /api/tick` → `{"action":"daily-read","day":"2026-11-16","status":"partial","calls_used":21}`; the stand-in counted 21 calls. The read was partial because URSA (67110320) has no fixture in those folders.
-  - Stored rows: 19 rosters with `raw_json` not null and `raw_json->'members'->0 ? 'daily_tech'` true; URSA's error row (`v1 not found`) has `raw_json` null.
-  - `GET /alliances/67111155/history`: 200, 102,269 bytes. `GET /api/alliances/67111155/history?at=2026-11-16T16:33:56.789Z`: 200, 7,338 bytes. The card's keys are `roster, joined, left, renamed, changed, uid, name, power, kills`. In both bodies, grep finds 0 matches for `last_online_at|joined_at|daily_honor|daily_tech|avatar_url|raw_json|rawJson` and 0 matches for any blocked key as a quoted JSON key (`"x"`, `"y"`, `"online"`, `"active"` and the rest).
-  - `POST /api/daily-read/retry` on that partial day: the OGs `raw_json->>'updated_at'` changed from `1794846836.789` to `1794846915.274`, so the upsert replaced it. 20 rows, 19 with `raw_json`.
-  - `runTick` with the clock set, `DAILY_ROSTER_AT=23:45`:
-    - `2026-11-18T02:07Z` (Wed 00:07 server; Tuesday's 23:52 tick missed) → `idle`;
-    - `2026-11-19T01:58:30Z` (Wed 23:58:30; the read could outlive midnight) → `idle`;
-    - `2026-11-19T01:52Z` (Wed 23:52) → `daily-read 2026-11-18`;
-    - `2026-11-19T02:07Z` (Thu 00:07) → `idle`.
-    - `daily_reads` then holds 2026-11-16 and 2026-11-18 only; the stand-in counted 42 calls in all.
-- **`raw_json` size** (same local database):
+- `pnpm check` green: prettier, eslint, tsc, vitest (60 files passed, 1 skipped; 278 tests passed, 1 skipped), drift gate, i18n. Two earlier runs, at a machine load average near 40, failed only `app/(pages)/admin/gate.test.ts` on its 10 s timeout (1.3 s alone; it opens a fresh PGlite with every migration).
+- **Local e2e, no upstream call.** Setup:
+  - local Postgres (D47, new cluster in the worktree);
+  - a local stand-in for `/v1` serving `fixtures/v1-20261116T105019Z` and `fixtures/v1-ids` (`updated_at` = the run's clock), plus URSA from `fixtures/v1-20261104T155902Z` only while a flag file exists;
+  - a local-only `.env.local` (placeholder key, no webhooks).
+- First commit, `next dev` with `DAILY_ROSTER_AT` 5 minutes back:
+  - `POST /api/tick` → `{"action":"daily-read","day":"2026-11-16","status":"partial","calls_used":21}` (URSA not served);
+  - 19 rosters have `raw_json` containing `daily_tech`; URSA's error row has null;
+  - `GET /alliances/67111155/history` (200, 102,269 bytes) and `GET /api/alliances/67111155/history?at=2026-11-16T16:33:56.789Z` (200, 7,338 bytes): 0 grep matches for `last_online_at|joined_at|daily_honor|daily_tech|avatar_url|raw_json|rawJson`, and 0 for any blocked key as a quoted JSON key;
+  - `POST /api/daily-read/retry` replaced OGs' `raw_json` (`updated_at` 1794846836.789 → 1794846915.274).
+- Second commit, `runTick` with the clock set and default `DAILY_ROSTER_AT` (23:30), on a fresh database with migration `0017_first_victor_mancha`:
+
+  | Tick (UTC)        | Server time       | Result                                                  | Upstream calls |
+  | ----------------- | ----------------- | ------------------------------------------------------- | -------------- |
+  | 2026-11-19T01:37Z | Wed 23:37         | `daily-read 2026-11-18 partial`, failed: URSA           | 21             |
+  | 2026-11-19T01:52Z | Wed 23:52         | `daily-read 2026-11-18 complete` (URSA flag on)         | 2 (quota, URSA) |
+  | 2026-11-20T01:37Z | Thu 23:37         | `daily-read 2026-11-19 complete`                        | 21             |
+  | 2026-11-20T01:52Z | Thu 23:52, day complete | `idle`                                            | 0              |
+  | 2026-11-20T02:07Z | Fri 00:07         | `idle`                                                  | 0              |
+
+  - `daily_reads` for 2026-11-18: `complete`, `calls_used` 23, `auto_retry_at` set; 2026-11-19: `auto_retry_at` null.
+  - Both days have 20 rosters with `raw_json` and `daily_tech`.
+  - The 2026-11-18 log reads `daily.start 20`, `daily.finish partial`, `daily.auto-retry 1`, `v1.fetch quota`, `v1.fetch union=67110320`, `daily.finish complete`.
+- An earlier clock run (first commit's guard) showed `idle` at Wed 23:58:30. The retry route's 409 at 23:58:30 is covered by the tick test.
+- **`raw_json` size:**
   - OGs (101 members): `pg_column_size(raw_json)` = **9,305 bytes per day**; as text, 38,885 bytes.
-  - The 19 rosters: average 8,309, largest 10,076, total 157,879 bytes.
-  - A year for 20 alliances: 20 × 8,309 × 365 ≈ **61 MB**, or ≈ 68 MB at OGs' size. The member arrays add ≈ 2.7 KB per roster, ≈ 20 MB a year.
+  - 19 rosters: average 8,309, largest 10,076.
+  - A year for 20 alliances: 20 × 8,309 × 365 ≈ **61 MB**, or ≈ 68 MB at OGs' size, plus ≈ 20 MB for the member arrays.
 
 ## Open issues
-1. **A read that falls short at 23:52 has about 6 minutes to be retried.** The read finishes at about 23:52:10 (up to 23:53:40) and the admin line arrives then. D67's Retry works only for today's server day.
-   - At 00:00 `/admin` shows the new day, the Retry card is gone, the retry route answers 409, and the day that fell short keeps its gap.
-   - The admin line's `[Retry on /admin ↗]` link is then out of date.
-   - The retry route has no midnight guard: a Retry pressed after 23:58:20 can read rosters after the 00:00 reset and store them under the day before. A guard like the tick's (`now + RUN_DEADLINE_MS > end of day` → refuse) would fix it. Not built (not asked).
-2. **No automatic retry.** One option: `DAILY_ROSTER_AT=23:30` with an automatic retry at 23:52 when the 23:37 read fell short. Each attempt costs about 21 calls, spent only on a day that fell short, and every read would then miss the last 23 minutes. A retry inside 23:52–23:58 would need a tick that does not exist. Needs the owner's decision.
-3. **One tick, one chance.** A dropped 23:52 tick (GitHub cron, D26), or any other action due at 23:52 (a phase, the Friday check, a rehearsal slot moved there), leaves the day with no read. Nothing is due then with the documented settings.
-4. **Size on Neon is not measured.** 9,305 bytes is the local Postgres 18 compressed size; Neon's may differ a little.
-5. **Migration number.** D68–D70 are on open branches. If one of them adds a migration, `0017` here will collide, and the later branch must regenerate its migration after the other merges.
+1. **If both ticks are lost, or both reads fall short and nobody retries before 23:58:20, the day keeps its gap.** A past day is never read again (D67).
+2. **No Discord line when the automatic retry fixes the day.** The admin gets the 23:37 "partly done" line (with `[Retry on /admin ↗]`) and nothing more when 23:52 completes the day. A line is sent only if the retry still falls short.
+3. **A stale roster is not retried automatically.** A day that is `partial` only because of a stale roster stays `partial` after 23:52.
+4. **One action per tick.** Any other action due at 23:37 or 23:52 (a phase, the Friday check, a rehearsal slot moved there) takes that tick. Nothing is due then with the documented settings.
+5. **Size on Neon is not measured.** 9,305 bytes is the local Postgres 18 compressed size.
+6. **Migration number.** D68–D70 are on open branches. If one adds a migration, `0017` here collides, and the later branch must regenerate its migration.
 
 ## Next
 Session: #295 — workspace sign-in (Discord OAuth), after D71 (#303) is merged.
@@ -62,12 +98,12 @@ Owner must do first: merge D71 (#303), then this PR; nothing in Vercel (no `DAIL
 Plan changes needed: none.
 
 <adjustments>
-- `daily_rosters.raw_json` (jsonb, nullable, migration 0017) holds `trimRaw` of each daily roster from this release on: every member field, `daily_tech`, `daily_honor` and `active` included. Rows before the release and error rows have null. No read model selects it; the workspace (D71) must read it only from `lib/private/`.
-- The daily read runs at 23:52 server time, so each day's `daily_tech` covers 23 h 52 min of the server day (the counter resets at 00:00 server time, owner fact). Event days (Saturdays) have a daily roster too.
+- `daily_rosters.raw_json` (jsonb, nullable, migration 0017) holds `trimRaw` of each daily roster for all 20 alliances from this release on: every member field, `daily_tech`, `daily_honor` and `active` included. Rows before the release and error rows have null. No read model selects it; the workspace (D71) must read it only from `lib/private/`, and only the workspace's own alliance.
+- Each day's `daily_tech` covers 23 h 37 min of the server day (read at 23:37; the counter resets at 00:00 server time, owner fact). On a bad day some alliances are read at 23:52. Event days (Saturdays) have a daily roster too.
 - A day's `raw_json` for 20 alliances is about 166 KB (≈ 8.3 KB per roster, 9.3 KB for OGs); a year is about 61 MB.
-- `hasScheduledEvent` is gone from `lib/repo/events.ts`; `dailyReadDue` returns `{ day, to }`.
+- `hasScheduledEvent` is gone from `lib/repo/events.ts`. `dailyReadDue` returns `{ day }`. `endsInServerDay` (`lib/schedule.ts`) is the midnight guard. `RUN_DEADLINE_MS` now lives in `lib/compute.ts`. `daily_reads.auto_retry_at` marks the day's automatic retry.
 - Local e2e: `initdb` cannot read `/dev/stdin` in the agent sandbox. Run `initdb -D .pglocal -U postgres --pwfile=<file> --auth=password -E UTF8` by hand, append `listen_addresses = '127.0.0.1'` and `unix_socket_directories = ''` to `.pglocal/postgresql.conf`, then `pnpm db:local:start`. The main checkout's `.env.local` points at Neon: write a local-only one in the worktree.
-- The `/v1` stand-in must send `updated_at` as epoch seconds (a number); an ISO string fails `v1.schema`.
+- The `/v1` stand-in must send `updated_at` as epoch seconds (a number); an ISO string fails `v1.schema`. For clock-driven runs, stamp it with the script's clock or every roster is stale.
 </adjustments>
 
 PR: (added by the orchestrator)

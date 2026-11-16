@@ -248,6 +248,8 @@ export const dailyReads = pgTable(
     callsUsed: integer("calls_used").notNull().default(0),
     quotaRemainingBefore: integer("quota_remaining_before"),
     error: text("error"),
+    /** D72: when the tick's automatic retry took this day; at most one per day. */
+    autoRetryAt: tstz("auto_retry_at"),
   },
   (t) => [
     check(

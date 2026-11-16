@@ -7,9 +7,10 @@ import {
   request,
   TEST_CRON_SECRET,
   TEST_ENV,
+  TEST_PIN,
   testContext,
 } from "@/lib/app-context.test-helpers";
-import { IDS } from "@/lib/collector.test-helpers";
+import { ago, fakeV1, IDS, minutes, roster } from "@/lib/collector.test-helpers";
 import type { Db } from "@/lib/db";
 import { openTestDb, truncateAll } from "@/lib/db.test-helpers";
 import { dailyReads, dailyRosters, events, rehearsalSlots, snapshots, tickLog } from "@/lib/schema";
@@ -21,6 +22,7 @@ vi.mock("@/lib/app-context", async (original) => ({
 }));
 
 const { POST } = await import("./route");
+const { POST: retry } = await import("../daily-read/retry/route");
 
 const tick = () =>
   POST(request("/api/tick", { headers: { authorization: `Bearer ${TEST_CRON_SECRET}` } }));
@@ -196,25 +198,61 @@ describe("POST /api/tick", () => {
     expect(notes.every((n) => n.content.startsWith("[rehearsal] "))).toBe(true);
   });
 
-  it("runs the daily roster read at the end of the event's day, and never for a day after its midnight", async () => {
-    // DAILY_ROSTER_AT 23:45 server = 01:45 UTC the next day (D72). Saturday 2026-11-07 is the event's
-    // day: its Before runs, then its 23:52 tick reads the rosters. Sunday's 23:52 tick is missed: the
-    // first tick after Sunday's midnight (Mon 00:07, still inside 23:45 + 45 min) reads nothing.
-    const { ctx, clock, v1 } = testContext(db);
+  it("reads at 23:37 on the event's day, re-reads only what fell short at 23:52, and never after midnight", async () => {
+    // DAILY_ROSTER_AT 23:30 server = 01:30 UTC the next day (D72). Saturday 2026-11-07 is the event's
+    // day: its Before runs; the 23:37 read fails one alliance and the 23:52 tick re-reads only that one.
+    // A Retry at 23:58:30 could run past 00:00 and is refused. Sunday's read is complete, so its 23:52
+    // tick reads nothing. Monday's two ticks are missed: Tue 00:07 (inside 23:30 + 45 min) reads nothing.
+    const { ctx, clock } = testContext(db);
     holder.ctx = ctx;
+    const [bad = 0] = IDS;
+    let failing = false;
+    const v1 = fakeV1((id) =>
+      failing && id === bad ? new Error("down") : roster(id, ago(clock.now, minutes(1))),
+    );
+    ctx.v1 = v1;
     const answers: unknown[] = [];
-    for (const at of ["2026-11-07T12:05", "2026-11-08T01:52", "2026-11-09T02:07"]) {
-      clock.now = new Date(`${at}:00Z`);
+    const calls: number[][] = [];
+    for (const [at, fail] of [
+      ["2026-11-07T12:05", false],
+      ["2026-11-08T01:37", true],
+      ["2026-11-08T01:52", false],
+      ["2026-11-09T01:37", false],
+      ["2026-11-09T01:52", false],
+      ["2026-11-10T02:07", false],
+    ] as const) {
+      [clock.now, failing] = [new Date(`${at}:00Z`), fail];
+      const from = v1.calls.length;
       const res = await tick();
       const body = res.status === 204 ? null : ((await res.json()) as Record<string, unknown>);
-      answers.push(body ? (body.action ?? body.phase) : 204);
+      answers.push(body ? (body.phase ?? `${String(body.day)} ${String(body.status)}`) : 204);
+      calls.push(v1.calls.slice(from));
     }
 
-    expect(answers).toEqual(["before", "daily-read", 204]);
+    clock.now = new Date("2026-11-08T01:58:30Z");
+    const late = await retry(
+      request("/api/daily-read/retry", { headers: { "x-edit-pin": TEST_PIN } }),
+    );
+
+    expect(answers).toEqual([
+      "before",
+      "2026-11-07 partial",
+      "2026-11-07 complete",
+      "2026-11-08 complete",
+      204,
+      204,
+    ]);
+    expect(calls[2]).toEqual([bad]);
+    expect([late.status, await late.json()]).toEqual([409, { code: "daily_read_too_late" }]);
     expect(
       await db.select({ day: dailyReads.day, status: dailyReads.status }).from(dailyReads),
-    ).toEqual([{ day: "2026-11-07", status: "complete" }]);
-    expect(await db.select({ id: dailyRosters.id }).from(dailyRosters)).toHaveLength(IDS.length);
-    expect(v1.calls).toHaveLength(2 * IDS.length);
+    ).toEqual([
+      { day: "2026-11-07", status: "complete" },
+      { day: "2026-11-08", status: "complete" },
+    ]);
+    expect(await db.select({ id: dailyRosters.id }).from(dailyRosters)).toHaveLength(
+      2 * IDS.length,
+    );
+    expect(v1.calls).toHaveLength(3 * IDS.length + 1);
   });
 });

@@ -151,6 +151,7 @@ export const adminCopy = {
       rehearsal_event_day: "Not on the event day or the day after.",
       rehearsal_before_real: "Too close to the real before snapshot (within 3 hours).",
       rehearsal_real_running: "A real run is in progress.",
+      daily_read_too_late: "Too close to the server reset (00:00). This day keeps its gap.",
       daily_read_not_retryable:
         "Today's roster read is complete, has not started, or is already running again.",
       rate_limited: "Too many attempts. Wait a few minutes.",

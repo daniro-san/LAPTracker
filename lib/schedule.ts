@@ -176,14 +176,27 @@ export function rehearsalSlotsDue(now: Date, cfg: ScheduleConfig): Date[] {
     .sort((a, b) => a.getTime() - b.getTime());
 }
 
-/** Today's daily read (D60) while `now` is in its window: the server date it belongs to and the UTC
- * instant that date ends, else null. Only today's DAILY_ROSTER_AT is looked at, so a window that runs
- * past server midnight never gives the day before a late read (D72). */
-export function dailyReadDue(now: Date, cfg: ScheduleConfig): { day: string; to: Date } | null {
+/** Today's daily read (D60) while `now` is in its window: the server date it belongs to, else null. Only
+ * today's DAILY_ROSTER_AT is looked at, so a window that runs past server midnight never gives the day
+ * before a late read (D72). */
+export function dailyReadDue(now: Date, cfg: ScheduleConfig): { day: string } | null {
   const today = wallClock(now, cfg.SERVER_TZ);
   const at = zonedToUtc(today, cfg.DAILY_ROSTER_AT, cfg.SERVER_TZ);
-  if (!inWindow(now, at, cfg)) return null;
-  return { day: isoDate(today), to: zonedToUtc(addDays(today, 1), "00:00", cfg.SERVER_TZ) };
+  return inWindow(now, at, cfg) ? { day: isoDate(today) } : null;
+}
+
+/**
+ * True when a run of up to `runMs` that starts at `now` ends inside now's server day. The tick's daily
+ * read and /admin's Retry start only then, so no roster read after the 00:00 reset is stored under the
+ * day before (D72). INVARIANT daily-read.ends-before-midnight
+ */
+export function endsInServerDay(
+  now: Date,
+  runMs: number,
+  cfg: Pick<ScheduleConfig, "SERVER_TZ">,
+): boolean {
+  const end = zonedToUtc(addDays(wallClock(now, cfg.SERVER_TZ), 1), "00:00", cfg.SERVER_TZ);
+  return now.getTime() + runMs <= end.getTime();
 }
 
 /** The server date `now` falls on, as a daily read's `day` ("2026-11-12"). */

@@ -1,1 +1,0 @@
-ALTER TABLE "daily_rosters" ADD COLUMN "raw_json" jsonb;

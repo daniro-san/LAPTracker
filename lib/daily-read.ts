@@ -13,6 +13,7 @@ import type { Db } from "./db";
 import { createRunLogger, type RunLogger } from "./logger";
 import { trimRaw } from "./raw-json";
 import {
+  claimAutoRetry,
   claimDailyRead,
   dailyRosterStates,
   finishDailyRead,
@@ -208,7 +209,7 @@ export async function runDailyRead(
 ): Promise<DailyReadSummary | null> {
   const now = deps.now();
   if (!(await claimDailyRead(db, day, now))) return null;
-  return readDay(deps, db, day, ids, now);
+  return readDay(deps, db, day, ids, now, { toRead: ids, code: "daily.start" });
 }
 
 /** /admin's retry (D67): the same read again, every roster, for a day that fell short (`failed` or
@@ -224,22 +225,51 @@ export async function retryDailyRead(
   // INVARIANT run.stale-after-150s: the snapshots' rule for a killed run.
   const staleBefore = new Date(now.getTime() - RUN_STALE_AFTER_MS);
   if (!(await reclaimDailyRead(db, day, now, staleBefore))) return null;
-  return readDay(deps, db, day, ids, now);
+  return readDay(deps, db, day, ids, now, { toRead: ids, code: "daily.start" });
 }
 
-/** `startedAt` is this read's start as the claim stored it. */
+/** A later tick, not a second caller of the same one: ticks are 15 minutes apart (D26). */
+const AUTO_RETRY_AFTER_MS = 10 * 60_000;
+
+/**
+ * The tick's automatic retry (D72): on a later tick of the same server day, a read that fell short
+ * (`failed` or `partial`) reads again only the alliances with no roster for the day, once per day. Null
+ * when the day has a roster of every alliance (a `complete` day included), was retried automatically
+ * already, is running, or read too recently.
+ */
+export async function autoRetryDailyRead(
+  deps: Deps,
+  db: Db,
+  day: string,
+  ids: readonly number[],
+): Promise<DailyReadSummary | null> {
+  const read = new Set(
+    (await dailyRosterStates(db, day)).filter((r) => r.error === null).map((r) => r.unionId),
+  );
+  const missing = ids.filter((id) => !read.has(id));
+  if (missing.length === 0) return null;
+  const now = deps.now();
+  const startedBefore = new Date(now.getTime() - AUTO_RETRY_AFTER_MS);
+  if (!(await claimAutoRetry(db, day, now, startedBefore))) return null;
+  return readDay(deps, db, day, ids, now, { toRead: missing, code: "daily.auto-retry" });
+}
+
+/** `startedAt` is this read's start as the claim stored it. `ids` are the day's alliances, which the
+ * outcome is judged on; `toRead` the ones this attempt reads: all of them, or for the tick's automatic
+ * retry only the ones without a roster (D72); `code` names the attempt's first log line. */
 async function readDay(
   deps: Deps,
   db: Db,
   day: string,
   ids: readonly number[],
   startedAt: Date,
+  attempt: { toRead: readonly number[]; code: "daily.start" | "daily.auto-retry" },
 ): Promise<DailyReadSummary> {
   const log = createRunLogger(
     { insertRunLog: (line) => insertRunLog(db, line) },
     { readDay: day, secrets: deps.secrets ?? [], now: deps.now },
   );
-  await log.info("daily.start", { alliances: ids.length });
+  await log.info(attempt.code, { alliances: attempt.toRead.length });
   const read: Read = {
     deps,
     log,
@@ -250,7 +280,7 @@ async function readDay(
     rows: [],
     frames: [],
   };
-  const error = await withDeadline(read, readRosters(read, ids));
+  const error = await withDeadline(read, readRosters(read, attempt.toRead));
   if (error === "deadline") await log.warn("run.deadline", { calls_used: read.calls });
   else if (error && !error.startsWith("quota")) await log.error("abort", { reason: error });
   for (const row of [...read.rows]) await storeDailyRoster(db, day, row);
