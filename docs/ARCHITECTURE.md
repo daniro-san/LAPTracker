@@ -5,6 +5,8 @@ One dependency rule and one injection point. Source: docs/IMPLEMENTATION_PLAN.md
 ```
 app/api/*           thin HTTP handlers: auth → parse → call lib → respond. No logic.
 app/(pages)/*       UI. Reads through lib/queries only.
+app/(private)/*     the workspace (D71): pages under w/[slug], handlers under api/w (one fixed callback, D73).
+                    Reaches data only through lib/private, after requireWorkspace.
 lib/collector.ts    domain: runSnapshot, freshness check, per-alliance fallback, resume logic.
 lib/compute.ts      pure functions only — sums, deltas, freshness predicate, roster diff; no IO, no Date.now() (passed in).
 lib/budget.ts       pure quota arithmetic (requiredQuota, sampleQuota) and `MAX_RETRIES`, the one retry count that lib/sources/v1.ts imports.
@@ -15,6 +17,9 @@ lib/collector-log.ts  the collector's one run_logs line per /v1 call (split for 
 lib/sources/*.ts    adapters: v1.ts (documented API, primary), internal.ts (site API: ranks board + live-roster fallback,
                     unofficial, read-only). One output type.
 lib/repo/*.ts       persistence: one module per table, plain functions over Drizzle.
+lib/private/*.ts    the workspace (D71): requireWorkspace and its branded WorkspaceAccess, sessions, the Discord
+                    sign-in, its own log (a code and numbers) and its en/pt-BR/fr dictionary. The only code
+                    outside lib/repo that may read the blocked roster keys, for its own alliance's rows.
 lib/queries/*.ts    read models for the UI (joins, sorting, name history). Never write. Never expose BLOCKED_ROSTER_KEYS.
                     lib/queries/samples.ts: `eventSamples`, an event's Start, samples and End (D69).
 lib/logger.ts, lib/notify.ts, lib/env.ts, lib/redact.ts
@@ -47,6 +52,7 @@ lib/build-version.ts pure: the footer's live version from Vercel's git variables
 - `lib/compute` and `lib/budget` import nothing from the project.
 - `lib/logger` imports only `lib/repo` and `lib/redact`.
 - Nothing in `lib/` imports from `app/`.
+- Only `app/(private)` imports `lib/private` (an allowlist zone: every other module is fenced out by default). `app/(private)` does not import `lib/repo`. `lib/private` imports neither `lib/notify*` nor `lib/discord-*` (D71).
 
 No DI container, no base classes, no event bus, no generic repository. `Deps` is the collector's injection boundary. Routes get theirs from `getAppContext()` in `lib/app-context.ts`, the one module route tests replace (`vi.mock`); a Next `route.ts` may export only handlers and segment config, so it cannot take arguments.
 

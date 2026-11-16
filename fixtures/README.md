@@ -5,6 +5,12 @@ upstream API and the bodies for parser tests. Adding one spends quota or touches
 deliberate act, never a side effect of a test. Bodies include roster fields that are never served
 (plan §12.1); tests may read them, nothing else may.
 
+Since 2026-11-16 (D76, issue #308) the values of `x`, `y`, `online`, `last_online_at` and `joined_at` are neutral in every
+JSON fixture: numbers `0`, booleans `false`, strings empty, `null` stays `null`, at every depth. The keys stay, so parsers and
+blocked-key tests keep their shape. The repository is public and those keys hold players' map coordinates and presence. Fixtures
+recorded before that date were scrubbed in place (history was not rewritten); new ones go through
+`scripts/neutralise-fixture.ts` in the record-fixture skill.
+
 Recorded on 2026-11-04 (Wednesday) unless the row gives another date. Quota is per account per UTC day (1,000; `quota.used` in each body).
 
 | Folder | What | Recorded (UTC) | Cost |

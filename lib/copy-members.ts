@@ -10,9 +10,10 @@ export const membersCopy = {
   periodNote: "{reads} reads ({daily} daily, {events} at events) · {n} members in the newest read",
   notReady: "Not enough history yet: {have} of {need} daily reads.",
   none: "Nobody on this list.",
+  ownOnly: "Only your own alliance lists members. Pick it to see its list.",
   unchangedTitle: "Might unchanged across {days} daily reads or more",
   unchangedHelp:
-    "Might was the same in every read of the run. Members first seen in this alliance less than {new} days ago are left out.",
+    "Might was the same in every read of the run. Members first seen in this alliance less than {new} days ago are left out. Not listed ≠ active: the signal catches about 23 % of the members who stop playing, so someone who is not listed may still have stopped.",
   unchangedFor: "unchanged for {n} days",
   lostTitle: "Lost might",
   lostHelp:
