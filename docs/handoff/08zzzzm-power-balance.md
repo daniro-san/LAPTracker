@@ -29,7 +29,7 @@ Refs #283.
 
 ## Deviations
 - The page is not behind the header's links. The task allowed "header or the alliance pages"; the title row of the home and event pages was used instead.
-- Not pushed and no PR opened (the worktree sandbox blocks `git push`); the orchestrator does it. The PR URL line is left out.
+- The build agent could not push (sandbox); the orchestrator pushed the branch and opened the PR, whose URL is the last line.
 
 ## Verified
 - `pnpm check`: prettier, eslint, tsc, vitest (508 passed), drift and i18n ("17 languages up to date with English") green.
@@ -83,5 +83,13 @@ Left:
 Screenshots at 360 light, 360 dark and 1280 light were replaced (blocs A and B set, the long name in bloc B).
 
 Merge of `origin/dev` conflicted in `app/_ui/format.ts` (`sharePreciseText` was added by #338 as well; the `share1` format from dev is kept), the glossaries, stamps, `lib/queries/index.ts` and the decisions README (both sides kept). The plain `i18n-check` reported 17 languages up to date, so no stamping was needed.
+
+## Review fixes (2026-11-16, /pr-review standard)
+
+- With no daily read the page showed its empty state only in theory: the "as of" date was computed first from no reads (an Invalid Date that `Intl` refuses). It is now computed only when there is a read.
+- The page reads the event list and the balance together (`Promise.all`).
+- The lead's round-up is `greatestShareUp` in `lib/balance.ts`, tested: an exact whole percent stays as it is (7 % is 7.000000000000001 in floating point and printed 8 % before), and the result is never below the greatest share nor a whole point above it.
+- D88 (in the merge with dev): `max-lines` is off for the translation files `lib/i18n/<tag>.ts`; the merge simulator and this page together put 16 of them past 300 lines.
+- Left for the owner: "Server might" and "of the server's might" mean the tracked alliances' total (the line under the lead says "20 tracked alliances").
 
 https://github.com/daniro-san/LAPTracker/pull/342

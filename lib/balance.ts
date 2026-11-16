@@ -24,6 +24,18 @@ export function shares(mights: number[]): number[] {
   return mights.map((m) => (total > 0 ? m / total : 0));
 }
 
+/**
+ * The greatest share rounded up to a whole percent, so "no alliance holds more than {max}" stays true (D85).
+ * A share that is already a whole percent stays as it is: 7 % in floating point is 7.000000000000001.
+ */
+export function greatestShareUp(mights: number[]): number {
+  const total = sum(mights);
+  if (total <= 0) return 0;
+  const percent = (Math.max(...mights) / total) * 100;
+  const whole = Math.round(percent);
+  return (Math.abs(percent - whole) < 1e-9 ? whole : Math.ceil(percent)) / 100;
+}
+
 /** The share of the `n` greatest mights. */
 export function topShare(mights: number[], n = TOP_N): number {
   const total = sum(mights);

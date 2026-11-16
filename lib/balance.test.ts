@@ -5,6 +5,7 @@ import {
   blocFigures,
   blocQuery,
   concentration,
+  greatestShareUp,
   parseBlocs,
   shares,
   tap,
@@ -35,6 +36,29 @@ describe("shares", () => {
         if (ms.some((m) => m > 0)) expect(s.reduce((a, b) => a + b, 0)).toBeCloseTo(1, 9);
         else expect(s.every((x) => x === 0)).toBe(true);
         expect(s.every((x) => x >= 0 && x <= 1)).toBe(true);
+      }),
+    );
+  });
+});
+
+describe("greatestShareUp", () => {
+  it("rounds the greatest share up to a whole percent, and keeps an exact one", () => {
+    // Greatest 87 of 1000 (8.7 %), and greatest 7 of 100 (exactly 7 %).
+    const upTo9 = [...Array<number>(11).fill(87), 43];
+    const exact7 = [...Array<number>(14).fill(7), 2];
+    expect([greatestShareUp(upTo9), greatestShareUp(exact7), greatestShareUp([0, 0])]).toEqual([
+      0.09, 0.07, 0,
+    ]);
+  });
+
+  it("is never below the greatest share and never a whole point above it", () => {
+    fc.assert(
+      fc.property(mights, (ms) => {
+        if (!ms.some((m) => m > 0)) return;
+        const greatest = Math.max(...shares(ms));
+        const up = greatestShareUp(ms);
+        expect(up + 1e-12).toBeGreaterThanOrEqual(greatest);
+        expect(up - greatest).toBeLessThan(0.01);
       }),
     );
   });

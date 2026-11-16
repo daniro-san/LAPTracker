@@ -14,7 +14,7 @@ import { shareText } from "@/app/_ui/format";
 import { requestClock, requestCopy, requestLocale } from "@/app/_ui/locale";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
-import { parseBlocs, TOP_N, topShare } from "@/lib/balance";
+import { greatestShareUp, parseBlocs, TOP_N, topShare } from "@/lib/balance";
 import { fill } from "@/lib/copy";
 import { withPageDb } from "@/lib/page";
 import { homeEvent, listEvents, powerBalance } from "@/lib/queries";
@@ -43,22 +43,21 @@ export default async function BalancePage({ searchParams }: { searchParams: Sear
     requestCopy(),
     requestLocale(),
   ]);
-  const { events, balance } = await withPageDb(async (db) => ({
-    events: await listEvents(db),
-    balance: await powerBalance(db, new Date()),
-  }));
+  const [events, balance] = await withPageDb((db) =>
+    Promise.all([listEvents(db), powerBalance(db, new Date())]),
+  );
   const { alliances, trend } = balance;
   const homeId = homeEvent(events)?.id ?? null;
   const known = new Set(alliances.map((a) => a.unionId));
   const blocs = parseBlocs(first(sp.a), first(sp.b), known);
   const total = alliances.reduce((a, r) => a + r.might, 0);
-  const newest = new Date(Math.max(...alliances.map((a) => a.at.getTime())));
   const b = copy.balance;
+  // Only with a read: the newest of no reads is no date (and `Intl` refuses an Invalid Date).
+  const newest =
+    alliances.length > 0 ? new Date(Math.max(...alliances.map((a) => a.at.getTime()))) : null;
   // A date that ends in a full stop (German "30. Okt.") must not double the sentence's.
-  const basis = fill(b.basis, { n: alliances.length, date: clock.day(newest) }).replace(
-    /\.\.$/,
-    ".",
-  );
+  const basis =
+    newest && fill(b.basis, { n: alliances.length, date: clock.day(newest) }).replace(/\.\.$/, ".");
   return (
     <>
       <SiteHeader events={events} currentId={null} homeId={homeId} clock={clock} copy={copy} />
@@ -69,7 +68,7 @@ export default async function BalancePage({ searchParams }: { searchParams: Sear
             { key: "balance", label: b.title },
           ]}
         />
-        {alliances.length === 0 || total <= 0 ? (
+        {!newest || total <= 0 ? (
           <EmptyState>{b.none}</EmptyState>
         ) : (
           <>
@@ -81,11 +80,7 @@ export default async function BalancePage({ searchParams }: { searchParams: Sear
             </div>
             <p className="mt-1 text-lg">
               {fill(b.lead, {
-                // Rounded up, so "no alliance holds more than" stays true.
-                max: shareText(
-                  Math.ceil((Math.max(...alliances.map((a) => a.might)) / total) * 100) / 100,
-                  locale,
-                ),
+                max: shareText(greatestShareUp(alliances.map((a) => a.might)), locale),
                 n: TOP_N,
                 top: shareText(topShare(alliances.map((a) => a.might)), locale),
               })}
