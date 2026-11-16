@@ -97,9 +97,9 @@ export const ptBR = {
     comparePulseHelp:
       "Fatia dos kills ganhos por cada evento a cada {min} minutos, alinhada à hora do servidor. Os {span} minutos mais movimentados têm contorno.",
     comparePulseOffA:
-      "O evento A não tem leituras de {min} minutos, então os pulsos dos dois eventos não podem ser comparados",
+      "O evento A ({when}) não tem leituras de {min} minutos, então os pulsos dos dois eventos não podem ser comparados",
     comparePulseOffB:
-      "O evento B não tem leituras de {min} minutos, então os pulsos dos dois eventos não podem ser comparados",
+      "O evento B ({when}) não tem leituras de {min} minutos, então os pulsos dos dois eventos não podem ser comparados",
     comparePulseOffBoth:
       "Nenhum dos dois eventos tem leituras de {min} minutos, então os pulsos não podem ser comparados",
     fought: "Participação",
@@ -114,6 +114,19 @@ export const ptBR = {
       "Fatia dos Kills da aliança feita pelos 5 maiores ganhadores. Quanto maior, menos jogadores carregaram a aliança.",
     topBasis: "{top} de {n}",
     fewGainers: "poucos ganhadores",
+    carried: "Fatia de kills vs fatia de might",
+    carriedHelp:
+      "A fatia de cada aliança nos kills ganhos do Início ao Fim, ao lado da fatia do might no Início. Defensores e jogadores de suporte não ganham kills.",
+    carriedShown: "As alianças cuja fatia de kills fica mais acima da fatia de might, e a sua.",
+    carriedTotal: "Todas as {n} alianças: {kills} kills ganhos, {might} de might no Início",
+    carriedMightMark: "Fatia do might no Início",
+    carriedKillsMark: "Fatia dos kills ganhos",
+    carriedShares: "Might {might} · Kills {kills}",
+    carriedTurnout: "{share} com kills",
+    carriedSpread: "{low}–{high} em {n} eventos",
+    carriedRatioHelp:
+      "× é a fatia de kills dividida pela fatia de might. Aparece a partir de 3 eventos, com a faixa; antes disso, a diferença em pontos percentuais.",
+    carriedPoints: "pts",
   },
   compare: {
     title: "Evento contra evento",

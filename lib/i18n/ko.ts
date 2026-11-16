@@ -97,9 +97,9 @@ export const ko = {
     comparePulseHelp:
       "서버 시계에 맞춰, 이벤트마다 {min}분 구간에서 얻은 처치 몫이에요. 가장 바빴던 {span}분은 테두리로 표시돼요.",
     comparePulseOffA:
-      "첫 번째 이벤트에는 {min}분 기록이 없어서 두 이벤트의 흐름을 비교할 수 없어요.",
+      "첫 번째 이벤트 ({when})에는 {min}분 기록이 없어서 두 이벤트의 흐름을 비교할 수 없어요.",
     comparePulseOffB:
-      "두 번째 이벤트에는 {min}분 기록이 없어서 두 이벤트의 흐름을 비교할 수 없어요.",
+      "두 번째 이벤트 ({when})에는 {min}분 기록이 없어서 두 이벤트의 흐름을 비교할 수 없어요.",
     comparePulseOffBoth: "두 이벤트 모두 {min}분 기록이 없어서 흐름을 비교할 수 없어요.",
     fought: "전투 참여",
     foughtSoFar: "지금까지 전투 참여",
@@ -112,6 +112,19 @@ export const ko = {
       "연맹 처치 중 처치가 가장 많이 늘어난 5명이 올린 몫입니다. 높을수록 적은 인원이 연맹을 떠받쳤다는 뜻입니다.",
     topBasis: "{n}명 중 상위 {top}명",
     fewGainers: "인원 적음",
+    carried: "처치 몫 대 전투력 몫",
+    carriedHelp:
+      "시작부터 종료까지 획득한 처치 중 각 연맹의 몫과, 시작 때 전투력 중 몫입니다. 수비와 지원 플레이어는 처치가 늘지 않습니다.",
+    carriedShown: "처치 몫이 전투력 몫보다 가장 크게 앞서는 연맹들과 내 연맹.",
+    carriedTotal: "전체 {n}개 연맹: 획득 처치 {kills}, 시작 때 전투력 {might}",
+    carriedMightMark: "시작 때 전투력 몫",
+    carriedKillsMark: "획득 처치 몫",
+    carriedShares: "전투력 {might} · 처치 {kills}",
+    carriedTurnout: "처치가 늘어난 인원 {share}",
+    carriedSpread: "{n}개 이벤트, {low}–{high}",
+    carriedRatioHelp:
+      "×는 처치 몫을 전투력 몫으로 나눈 값입니다. 3개 이벤트부터 범위와 함께 보이고, 그 전에는 %p 차이로 보입니다.",
+    carriedPoints: "%p",
   },
   compare: {
     title: "이벤트 비교",

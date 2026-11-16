@@ -101,9 +101,9 @@ export const fr = {
     comparePulseHelp:
       "Part des Kills gagnés par chaque événement dans chaque tranche de {min} minutes, alignée sur l’heure serveur. Les {span} minutes les plus actives sont en contour.",
     comparePulseOffA:
-      "Le premier événement n’a pas de relevés de {min} minutes, les rythmes des deux événements ne peuvent donc pas être comparés",
+      "Le premier événement ({when}) n’a pas de relevés de {min} minutes, les rythmes des deux événements ne peuvent donc pas être comparés",
     comparePulseOffB:
-      "Le deuxième événement n’a pas de relevés de {min} minutes, les rythmes des deux événements ne peuvent donc pas être comparés",
+      "Le deuxième événement ({when}) n’a pas de relevés de {min} minutes, les rythmes des deux événements ne peuvent donc pas être comparés",
     comparePulseOffBoth:
       "Aucun des deux événements n’a de relevés de {min} minutes : leurs rythmes ne peuvent pas être comparés",
     fought: "Participation",
@@ -118,6 +118,20 @@ export const fr = {
       "Part des Kills de l’alliance faits par ses 5 plus gros gagnants. Plus elle est élevée, moins l’alliance dépend de quelques joueurs.",
     topBasis: "{top} sur {n}",
     fewGainers: "gagnants rares",
+    carried: "Part des Kills contre part du Might",
+    carriedHelp:
+      "Part de chaque alliance dans les Kills gagnés de Début à Fin, à côté de sa part du Might au Début. Les défenseurs et les joueurs de soutien ne gagnent pas de Kills.",
+    carriedShown:
+      "Les alliances dont la part de Kills dépasse le plus leur part de Might, et la vôtre.",
+    carriedTotal: "Toutes les {n} alliances : {kills} Kills gagnés, {might} de Might au Début",
+    carriedMightMark: "Part du Might au Début",
+    carriedKillsMark: "Part des Kills gagnés",
+    carriedShares: "Might {might} · Kills {kills}",
+    carriedTurnout: "{share} ont gagné des Kills",
+    carriedSpread: "{low}–{high} sur {n} événements",
+    carriedRatioHelp:
+      "× est la part des Kills divisée par la part du Might. Elle s’affiche à partir de 3 événements, avec sa fourchette ; avant, l’écart en pts.",
+    carriedPoints: "pts",
   },
   compare: {
     title: "Événement contre événement",

@@ -101,9 +101,9 @@ export const tr = {
     comparePulseHelp:
       "Her etkinlikte her {min} dakikada kazanılan Kills’in payı, sunucu saatine göre hizalı. En yoğun {span} dakika çerçevelidir.",
     comparePulseOffA:
-      "A etkinliğinde {min} dakikalık okuma yok, bu yüzden iki etkinliğin nabızları karşılaştırılamaz",
+      "A etkinliğinde ({when}) {min} dakikalık okuma yok, bu yüzden iki etkinliğin nabızları karşılaştırılamaz",
     comparePulseOffB:
-      "B etkinliğinde {min} dakikalık okuma yok, bu yüzden iki etkinliğin nabızları karşılaştırılamaz",
+      "B etkinliğinde ({when}) {min} dakikalık okuma yok, bu yüzden iki etkinliğin nabızları karşılaştırılamaz",
     comparePulseOffBoth:
       "İki etkinliğin de {min} dakikalık okuması yok, bu yüzden nabızları karşılaştırılamaz",
     fought: "Savaşa katılım",
@@ -118,6 +118,19 @@ export const tr = {
       "İttifakın Kills’inin, en çok Kills kazanan 5 Members tarafından yapılan payı. Yüksek olması, daha az oyuncunun taşıdığı anlamına gelir.",
     topBasis: "{n} içinden {top}",
     fewGainers: "az kazanan",
+    carried: "Kills payı ile Might payı",
+    carriedHelp:
+      "Her ittifakın Başlangıç’tan Bitiş’e kazandığı Kills payı, Başlangıç’taki Might payının yanında. Savunucular ve destek oyuncuları Kills kazanmaz.",
+    carriedShown: "Kills payı Might payının en çok üstünde olan ittifaklar ve senin ittifakın.",
+    carriedTotal: "Tüm {n} ittifak: {kills} Kills kazanıldı, Başlangıç’ta {might} Might",
+    carriedMightMark: "Başlangıç’taki Might payı",
+    carriedKillsMark: "Kazanılan Kills payı",
+    carriedShares: "Might {might} · Kills {kills}",
+    carriedTurnout: "Kills kazanan {share}",
+    carriedSpread: "{low}–{high}, {n} etkinlik üzerinden",
+    carriedRatioHelp:
+      "× Kills payının Might payına bölümüdür. 3 etkinlikten itibaren aralığıyla gösterilir; ondan önce yüzde puan farkı gösterilir.",
+    carriedPoints: "yp",
   },
   compare: {
     title: "Etkinlik karşılaştırma",

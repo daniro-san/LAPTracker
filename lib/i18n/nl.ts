@@ -112,11 +112,25 @@ export const nl = {
     comparePulseHelp:
       "Aandeel van de gewonnen Kills van elk event per {min} minuten, gelijk met de servertijd. De drukste {span} minuten zijn omlijnd.",
     comparePulseOffA:
-      "Event A heeft geen metingen van {min} minuten, dus de pulsen van de twee events kunnen niet vergeleken worden",
+      "Event A ({when}) heeft geen metingen van {min} minuten, dus de pulsen van de twee events kunnen niet vergeleken worden",
     comparePulseOffB:
-      "Event B heeft geen metingen van {min} minuten, dus de pulsen van de twee events kunnen niet vergeleken worden",
+      "Event B ({when}) heeft geen metingen van {min} minuten, dus de pulsen van de twee events kunnen niet vergeleken worden",
     comparePulseOffBoth:
       "Geen van beide events heeft metingen van {min} minuten, dus hun pulsen kunnen niet vergeleken worden",
+    carried: "Aandeel Kills tegen aandeel Might",
+    carriedHelp:
+      "Het aandeel van elke alliantie in de Kills die tussen Begin en Einde zijn gewonnen, naast haar aandeel in de Might bij Begin. Verdedigers en support-spelers winnen geen Kills.",
+    carriedShown:
+      "De allianties waarvan het aandeel Kills het verst boven het aandeel Might ligt, en de jouwe.",
+    carriedTotal: "Alle {n} allianties: {kills} Kills gewonnen, {might} Might bij Begin",
+    carriedMightMark: "Aandeel Might bij Begin",
+    carriedKillsMark: "Aandeel Kills gewonnen",
+    carriedShares: "Might {might} · Kills {kills}",
+    carriedTurnout: "{share} met Kills",
+    carriedSpread: "{low}–{high} over {n} events",
+    carriedRatioHelp:
+      "× is het aandeel Kills gedeeld door het aandeel Might. Het wordt vanaf 3 events getoond, met de bandbreedte; daarvoor het verschil in procentpunten.",
+    carriedPoints: "%-pt",
   },
   compare: {
     title: "Event tegen event",

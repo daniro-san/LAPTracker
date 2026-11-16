@@ -63,8 +63,8 @@ Words already used in `lib/i18n/ru.ts`. Reuse them so the pages stay consistent;
 | Top 5                     | Топ-5                       | `ledger.topShare` — the 5 biggest gainers in an alliance                                    |
 | War turnout               | Участие                     | `ledger.fought` — the event page's kills section title                                      |
 | Gainers                   | растущие                    | `ledger.topShareHelp`, `ledger.fewGainers` — a member whose Kills rose in the event         |
-| Server fight clock        | Хронология боёв сервера     | `ledger.fightClock*`, `ledger.comparePulse*` — events side by side on the server clock      |
-| Outlined                  | обведено                    | `ledger.fightClockOutline`, `ledger.comparePulseHelp` — the busiest minutes of each event   |
+| Kill share / might share  | доля убийств / доля мощи    | `ledger.carried*` — an alliance's share of Kills gained, and of Might at Start              |
+| pts (percentage points)   | п.п.                        | `ledger.carriedPoints`, `ledger.carriedRatioHelp` — the gap between two shares              |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.
@@ -73,10 +73,12 @@ Words already used in `lib/i18n/ru.ts`. Reuse them so the pages stay consistent;
 
 The game's own word for each term, with the page that shows it in the game's text and the quote. A term not listed stays English. Add a row only with a source that carries the game's own text (datamined text or an in-game screenshot), never a guide's prose (D52).
 
-| English | ru        | Source                                        | Quote                                                         |
-| ------- | --------- | --------------------------------------------- | ------------------------------------------------------------- |
-| Might   | Мощь      | https://lastasylum.gg/ru/events/alliance-duel | входящие в топ-32 по мощи на сервере                          |
-| Kills   | Убийства  | https://lastasylum.gg/ru/events/kingdom-war   | Повышайте свой рейтинг убийств и достигайте ступеней по очкам |
-| Members | Участники | https://lastasylum.gg/ru/events/alliance-duel | допускаются альянсы с более чем 20 участниками в воскресенье  |
+| English            | ru                      | Source                                                                                    | Quote                                                         |
+| ------------------ | ----------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| Might              | Мощь                    | https://lastasylum.gg/ru/events/alliance-duel                                             | входящие в топ-32 по мощи на сервере                          |
+| Kills              | Убийства                | https://lastasylum.gg/ru/events/kingdom-war                                               | Повышайте свой рейтинг убийств и достигайте ступеней по очкам |
+| Members            | Участники               | https://lastasylum.gg/ru/events/alliance-duel                                             | допускаются альянсы с более чем 20 участниками в воскресенье  |
+| Server fight clock | Хронология боёв сервера | `ledger.fightClock*`, `ledger.comparePulse*` — events side by side on the server clock    |
+| Outlined           | обведено                | `ledger.fightClockOutline`, `ledger.comparePulseHelp` — the busiest minutes of each event |
 
 Nominative plural for the column headers (`Убийства`, `Участники`); lower case after an abbreviation (`Мин. мощь`). Level stays English: the game writes `ур.` before the number, not as a header.

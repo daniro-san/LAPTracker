@@ -100,9 +100,9 @@ export const de = {
     comparePulseHelp:
       "Anteil der gewonnenen Kills jedes Events in jeweils {min} Minuten, auf die Serverzeit ausgerichtet. Die aktivsten {span} Minuten sind umrandet.",
     comparePulseOffA:
-      "Event A hat keine {min}-Minuten-Messungen, daher lassen sich die Pulse der beiden Events nicht vergleichen",
+      "Event A ({when}) hat keine {min}-Minuten-Messungen, daher lassen sich die Pulse der beiden Events nicht vergleichen",
     comparePulseOffB:
-      "Event B hat keine {min}-Minuten-Messungen, daher lassen sich die Pulse der beiden Events nicht vergleichen",
+      "Event B ({when}) hat keine {min}-Minuten-Messungen, daher lassen sich die Pulse der beiden Events nicht vergleichen",
     comparePulseOffBoth:
       "Keines der beiden Events hat {min}-Minuten-Messungen, daher lassen sich ihre Pulse nicht vergleichen",
     fought: "Beteiligung am Krieg",
@@ -117,6 +117,20 @@ export const de = {
       "Anteil an den Kills der Allianz, den ihre 5 größten Zuwächser erzielt haben. Je höher der Anteil, desto weniger Spieler haben die Allianz getragen.",
     topBasis: "{top} von {n}",
     fewGainers: "wenige Zuwächser",
+    carried: "Kills-Anteil gegen Might-Anteil",
+    carriedHelp:
+      "Der Anteil jeder Allianz an den von Beginn bis Ende gewonnenen Kills, neben ihrem Anteil am Might bei Beginn. Verteidiger und Support-Spieler gewinnen keine Kills.",
+    carriedShown:
+      "Die Allianzen, deren Kills-Anteil am weitesten über ihrem Might-Anteil liegt, und deine Allianz.",
+    carriedTotal: "Alle {n} Allianzen: {kills} Kills gewonnen, {might} Might bei Beginn",
+    carriedMightMark: "Might-Anteil bei Beginn",
+    carriedKillsMark: "Kills-Anteil gewonnen",
+    carriedShares: "Might {might} · Kills {kills}",
+    carriedTurnout: "{share} mit gewonnenen Kills",
+    carriedSpread: "{low}–{high} über {n} Events",
+    carriedRatioHelp:
+      "× ist der Kills-Anteil geteilt durch den Might-Anteil. Er wird ab 3 Events mit seiner Spanne gezeigt; davor der Abstand in Prozentpunkten.",
+    carriedPoints: "%-Pkt.",
   },
   compare: {
     title: "Event gegen Event",

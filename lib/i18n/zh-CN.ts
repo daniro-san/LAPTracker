@@ -95,8 +95,8 @@ export const zhCN = {
     fightClockNone: "每场活动的 {min} 分钟读取都会画在这里，从下一场活动开始。",
     comparePulseHelp:
       "每场活动在每 {min} 分钟内获得的 Kills 占比，按服务器时间对齐。最热闹的 {span} 分钟加了描边。",
-    comparePulseOffA: "活动 A 没有 {min} 分钟的读取，无法比较两场活动的脉搏",
-    comparePulseOffB: "活动 B 没有 {min} 分钟的读取，无法比较两场活动的脉搏",
+    comparePulseOffA: "活动 A（{when}） 没有 {min} 分钟的读取，无法比较两场活动的脉搏",
+    comparePulseOffB: "活动 B（{when}） 没有 {min} 分钟的读取，无法比较两场活动的脉搏",
     comparePulseOffBoth: "两场活动都没有 {min} 分钟的读取，无法比较它们的脉搏",
     fought: "参战人数",
     foughtSoFar: "目前参战人数",
@@ -107,6 +107,19 @@ export const zhCN = {
     topShareHelp: "联盟的 Kills 中，由涨幅最大的 5 人贡献的比例。比例越高，说明扛事的人越少。",
     topBasis: "前 {top} / 共 {n}",
     fewGainers: "上涨人数少",
+    carried: "Kills 占比 对 Might 占比",
+    carriedHelp:
+      "每个联盟在开始到结束之间获得的 Kills 占比，与其在开始时的 Might 占比并列。防守玩家和辅助玩家不获得 Kills。",
+    carriedShown: "Kills 占比比 Might 占比高出最多的联盟，以及你的联盟。",
+    carriedTotal: "全部 {n} 个联盟：共获得 {kills} Kills，开始时 Might 共 {might}。",
+    carriedMightMark: "开始时的 Might 占比",
+    carriedKillsMark: "获得的 Kills 占比",
+    carriedShares: "Might {might} · Kills {kills}",
+    carriedTurnout: "{share} 的 Members 获得 Kills",
+    carriedSpread: "{low}–{high}，共 {n} 次活动",
+    carriedRatioHelp:
+      "× 为 Kills 占比除以 Might 占比。从 3 次活动起显示，并附范围；在此之前显示百分点差距。",
+    carriedPoints: "pts",
   },
   compare: {
     title: "活动对比",

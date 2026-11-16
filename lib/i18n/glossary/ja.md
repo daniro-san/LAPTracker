@@ -60,6 +60,9 @@ Words already used in `lib/i18n/ja.ts`. Reuse them so the pages stay consistent;
 | Live                      | ライブ                    | `ledger.live` — the live event section and its strip                                                           |
 | War turnout               | 参戦状況                  | `ledger.fought` — the event's section: how many took part                                                      |
 | Reading                   | 読み取り                  | `ledger.liveFirst`, `liveOverdue`, `liveDone` — one read of the game's standings, live                         |
+| Kill share                | Kills の割合              | `ledger.carried`, `carriedKillsMark` — the share of kills gained                                               |
+| Might share               | Might の割合              | `ledger.carried`, `carriedMightMark` — the share of might at Start                                             |
+| pts (percentage points)   | pt                        | `ledger.carriedPoints` — a gap after the sign, `+6.1 pt`                                                       |
 | Server fight clock        | サーバーの戦闘時計        | `ledger.fightClock`, `ledger.fightClockLink`, `ledger.comparePulse*` — events side by side on the server clock |
 | Outlined                  | 囲み線                    | `ledger.fightClockOutline`, `ledger.comparePulseHelp` — the busiest minutes of each event                      |
 
