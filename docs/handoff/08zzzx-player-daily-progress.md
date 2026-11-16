@@ -85,4 +85,11 @@ Prompt sketch for #276 (chart in the Discord picture): "Draw a might line inside
 - `lib/copy.ts` passed the 300-line limit after the merge. The live event keys (#307) moved to `lib/copy-live.ts` and are spread into `ledger`. The keys and the English are unchanged; the i18n check still reports all 17 languages up to date.
 - `pnpm check` after the merge: 97 test files, 491 tests passed; i18n up to date.
 
+## Review fixes (2026-11-16, /pr-review standard)
+
+- `loadPlayer` (`app/(pages)/players/[uid]/page.tsx`) reads `listEvents` and `playerProgress` together, and `summaryOf` reads its two rosters together (`Promise.all`); they ran one after the other.
+- The summary leaves out the alliance median when the alliance has no tag, instead of printing "Middle member of : …".
+- Tests: the summary across two alliances has no median, the fallback to the oldest reading when none is 7 days older, and the summary sentence without a median and as an amount when the older might is 0. Each fails when its rule is undone.
+- Left: the read has no window and `daily_rosters.member_uids` no index (open issues 3 and 4). At about 7,300 rows a year this is cheap; an index needs a migration, and another session is adding migration 0020. The event-reading branch of the summary still has no test.
+
 https://github.com/daniro-san/LAPTracker/pull/288
