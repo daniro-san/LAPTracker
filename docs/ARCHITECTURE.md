@@ -15,6 +15,7 @@ lib/sources/*.ts    adapters: v1.ts (documented API, primary), internal.ts (site
 lib/repo/*.ts       persistence: one module per table, plain functions over Drizzle.
 lib/queries/*.ts    read models for the UI (joins, sorting, name history). Never write. Never expose BLOCKED_ROSTER_KEYS.
 lib/logger.ts, lib/notify.ts, lib/env.ts, lib/redact.ts
+lib/notify-alerts.ts the admin channel's stand-alone alerts (Friday check, PIN lock, app error, tick silence); split from lib/notify.ts for size, re-exported by it.
 lib/discord-send.ts, lib/discord-format.ts, lib/event-image.tsx
                     the webhook transport (JSON, or multipart with a picture), the messages' number and
                     time formats, and the event picture drawn with next/og (D58).
