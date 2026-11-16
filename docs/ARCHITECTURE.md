@@ -9,6 +9,7 @@ app/(private)/*     the workspace (D71): pages under w/[slug], handlers under ap
                     Reaches data only through lib/private, after requireWorkspace.
 lib/collector.ts    domain: runSnapshot, freshness check, per-alliance fallback, resume logic.
 lib/compute.ts      pure functions only — sums, deltas, freshness predicate, roster diff; no IO, no Date.now() (passed in).
+lib/compact.ts      pure: the one compact-number format, K/M/B/T in every language (D78); app/_ui/format.ts and lib/discord-format.ts call it.
 lib/budget.ts       pure quota arithmetic (requiredQuota, sampleQuota) and `MAX_RETRIES`, the one retry count that lib/sources/v1.ts imports.
 lib/upstream-errors.ts, lib/raw-json.ts  the collector's error wording and raw_json trimming (split for size).
 lib/collector-claim.ts  the collector's claim on a snapshot row and which rows a re-run drops (D62, D63; split for size).
@@ -54,7 +55,7 @@ lib/screenshot/     the screenshot reader (D74): pure parsers over OCR text line
 
 - `app → lib/{route, auth, run, tick, rehearsal, schedule, queries, repo, images}`; `lib/run → lib/{collector, queries}` (queries: the public Discord message's numbers).
 - `lib/collector → lib/{compute, sources, repo, logger, notify}` **through the `Deps` object passed in**.
-- `lib/compute` and `lib/budget` import nothing from the project.
+- `lib/compute`, `lib/budget` and `lib/compact` import nothing from the project.
 - `lib/logger` imports only `lib/repo` and `lib/redact`.
 - `lib/screenshot` imports nothing from the project.
 - Nothing in `lib/` imports from `app/`.
