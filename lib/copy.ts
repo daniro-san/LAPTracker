@@ -93,6 +93,8 @@ export const en = {
     liveDone: "Change since Start at the {time} reading. The ledger above uses the End at {end}.",
     /** The event page's section on kills gained by members (#271); no figure is about one person. */
     fought: "War turnout",
+    /** The title while the event has no End: the figures are as of each alliance's latest sample. */
+    foughtSoFar: "War turnout so far",
     /** Under the section's title: what the figures count. */
     foughtHelp:
       "Members who were in the alliance at Start and at End. Support players gain no kills.",
@@ -172,10 +174,7 @@ export const en = {
     auto: "Auto",
   },
   /** Times are shown in server time, or in the viewer's own zone (D38), with these words after them. */
-  time: {
-    serverTime: "server time",
-    yourTime: "your time",
-  },
+  time: { serverTime: "server time", yourTime: "your time" },
   status: {
     label: "Status",
     lastUpdated: "Last updated at {time}",

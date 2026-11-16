@@ -4,7 +4,7 @@ import type { Db } from "../db";
 import { openTestDb } from "../db.test-helpers";
 import { allianceSnapshots, events, memberSnapshots, snapshots } from "../schema";
 import { findBlockedKeys } from "./blocked-keys";
-import { memberTurnout } from "./turnout";
+import { memberTurnout, memberTurnoutSoFar } from "./turnout";
 
 type Member = { uid: number; kills: number | null };
 type Row = { unionId: number; fresh?: boolean; members: Member[] };
@@ -143,5 +143,81 @@ describe("memberTurnout (#271)", () => {
     });
     const lists = await memberTurnout(db, snaps);
     expect(lists?.topShare.map((t) => t.unionId)).toEqual([1, 2]);
+  });
+});
+
+describe("memberTurnoutSoFar (#307)", () => {
+  it("compares the Start roster with each alliance's newest usable sample, not a stale or older one", async () => {
+    const at = new Date(Date.UTC(2026, 11, 1, 12));
+    const [event] = await db
+      .insert(events)
+      .values({ name: "Live", eventAtUtc: at, allianceIds: [1], beforeAt: at, afterAt: at })
+      .returning({ id: events.id });
+    const eventId = (event as { id: number }).id;
+    const snap = async (phase: "before" | "sample", slot: number | null) => {
+      const [row] = await db
+        .insert(snapshots)
+        .values({
+          eventId,
+          phase,
+          startedAt: at,
+          status: "complete",
+          slotAt: slot === null ? null : new Date(at.getTime() + slot * 60_000),
+        })
+        .returning({ id: snapshots.id });
+      return (row as { id: number }).id;
+    };
+    const start = await snap("before", null);
+    for (const unionId of [1, 2]) {
+      const [a] = await db
+        .insert(allianceSnapshots)
+        .values({
+          snapshotId: start,
+          unionId,
+          tag: `T${unionId}`,
+          source: "v1",
+          isFresh: true,
+          rawJson: {},
+        })
+        .returning({ id: allianceSnapshots.id });
+      await db.insert(memberSnapshots).values(
+        [1, 2].map((uid) => ({
+          allianceSnapshotId: (a as { id: number }).id,
+          uid,
+          name: `P${uid}`,
+          lv: 1,
+          power: 1,
+          kills: 10,
+        })),
+      );
+    }
+    const sample = async (slot: number, rows: [number, number[], boolean][]) => {
+      const id = await snap("sample", slot);
+      for (const [unionId, kills, isFresh] of rows)
+        await db.insert(allianceSnapshots).values({
+          snapshotId: id,
+          unionId,
+          tag: `T${unionId}`,
+          source: "v1",
+          isFresh,
+          rawJson: {},
+          memberUids: [1, 2],
+          memberKills: kills,
+        });
+    };
+    await sample(15, [
+      [1, [20, 10], true],
+      [2, [30, 10], true],
+    ]);
+    // Alliance 1 gains 5 more by the newest sample; alliance 2 is stale in it, so its 15-minute figures stand.
+    await sample(30, [
+      [1, [25, 10], true],
+      [2, [90, 10], false],
+    ]);
+    const lists = await memberTurnoutSoFar(db, eventId, start);
+    expect(lists?.soFar).toBe(true);
+    const by = (id: number) => lists?.withKills.find((t) => t.unionId === id);
+    expect(by(1)).toMatchObject({ n: 2, gainers: 1, gained: 15 });
+    expect(by(2)).toMatchObject({ n: 2, gainers: 1, gained: 20 });
   });
 });

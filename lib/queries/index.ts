@@ -40,7 +40,12 @@ export {
   type MemberMover,
   type MoverLists,
 } from "./movers";
-export { memberTurnout, type AllianceTurnout, type TurnoutLists } from "./turnout";
+export {
+  memberTurnout,
+  memberTurnoutSoFar,
+  type AllianceTurnout,
+  type TurnoutLists,
+} from "./turnout";
 export {
   comparable,
   compareEvents,
