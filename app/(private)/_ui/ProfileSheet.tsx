@@ -1,0 +1,289 @@
+"use client";
+
+// The header's "Signed in as …" (issue 334) opens the officer's own settings: the name the desk shows,
+// "This is me" (their player in the alliance, suggested by the name matcher, D74) and the theme (the public
+// site's `theme` cookie, so one choice applies everywhere). The profile is read when the sheet opens.
+// Nothing in it is logged or tracked; /w is masked in session replay (D77).
+import { useRouter } from "next/navigation";
+import { useEffect, useState, type FormEvent } from "react";
+
+import { buttonClass } from "@/lib/brand/components/Button";
+import { Gear } from "@/lib/brand/components/Gear";
+import { RadioField } from "@/lib/brand/components/RadioField";
+import { Sheet } from "@/lib/brand/components/Sheet";
+import { Moon, setTheme, Sun, useThemeChoice } from "@/lib/brand/components/ThemeSwitch";
+import type { WorkspaceDictionary } from "@/lib/private/dictionary";
+import type { Profile } from "@/lib/private/profile";
+
+type Words = WorkspaceDictionary;
+
+/** The profile route: the profile as it now stands, or an error code ("failed" for anything unexpected). */
+async function call(slug: string, body?: object): Promise<Profile | string> {
+  try {
+    const res = await fetch(
+      `/api/w/${slug}/profile`,
+      body === undefined
+        ? { cache: "no-store" }
+        : {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(body),
+          },
+    );
+    const data = (await res.json()) as Profile | { code?: string };
+    return res.ok ? (data as Profile) : ((data as { code?: string }).code ?? "failed");
+  } catch {
+    return "failed";
+  }
+}
+
+function NameForm(props: {
+  t: Words;
+  name: string;
+  max: number;
+  busy: boolean;
+  note: string;
+  onSave: (name: string) => void;
+}) {
+  const { t, max, busy, note, onSave } = props;
+  const [draft, setDraft] = useState(props.name);
+  useEffect(() => setDraft(props.name), [props.name]);
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    onSave(draft);
+  };
+  return (
+    <form onSubmit={submit} className="mt-4">
+      <label htmlFor="profile-name" className="font-semibold">
+        {t["profile.name"]}
+      </label>
+      <p id="profile-name-help" className="text-body-sm text-ink/70">
+        {t["profile.nameHelp"]}
+      </p>
+      <div className="mt-2 flex gap-2">
+        <input
+          id="profile-name"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          maxLength={max}
+          autoComplete="nickname"
+          aria-describedby="profile-name-help profile-name-note"
+          className="drawn-field min-h-11 min-w-0 flex-1 px-3"
+        />
+        <button type="submit" disabled={busy} className={buttonClass("secondary")}>
+          {t["profile.save"]}
+        </button>
+      </div>
+      <p id="profile-name-note" role="status" className="mt-1 min-h-6 text-body-sm">
+        {note}
+      </p>
+    </form>
+  );
+}
+
+/** "This is me": the linked player and Remove the link, or the matcher's suggestions to confirm. */
+function Me(props: {
+  t: Words;
+  me: Profile | "loading" | "failed";
+  busy: boolean;
+  onLink: (uid: number | null) => void;
+}) {
+  const { t, me, busy, onLink } = props;
+  if (me === "loading") return <p className="mt-2 text-body-sm">{t["profile.me.loading"]}</p>;
+  if (me === "failed") return <p className="mt-2 text-body-sm">{t["profile.loadFailed"]}</p>;
+  if (me.player) {
+    const [before, after] = t["profile.me.linked"].split("{name}");
+    return (
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+        <p className="min-w-0">
+          {me.player.name === null ? (
+            t["profile.me.gone"]
+          ) : (
+            <>
+              {before}
+              <b translate="no">{me.player.name}</b>
+              {after}
+            </>
+          )}
+        </p>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => onLink(null)}
+          className={buttonClass("secondary")}
+        >
+          {t["profile.me.unlink"]}
+        </button>
+      </div>
+    );
+  }
+  if (me.suggestions.length === 0)
+    return <p className="mt-2 text-body-sm">{t["profile.me.none"]}</p>;
+  return (
+    <>
+      <p className="mt-2">{t["profile.me.ask"]}</p>
+      <ul className="mt-1 grid gap-1.5">
+        {me.suggestions.map((p) => (
+          <li key={p.uid} className="flex items-center justify-between gap-3">
+            <span translate="no" className="min-w-0 truncate font-semibold">
+              {p.name}
+            </span>
+            <button
+              type="button"
+              disabled={busy}
+              aria-label={`${p.name} · ${t["profile.me.confirm"]}`}
+              onClick={() => onLink(p.uid)}
+              className={buttonClass("secondary")}
+            >
+              {t["profile.me.confirm"]}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+}
+
+/** Light, dark, or the device's own setting (no cookie). */
+function ThemeChoice({ t }: { t: Words }) {
+  const choice = useThemeChoice();
+  const options = [
+    { mode: null, label: t["profile.theme.system"], wide: true },
+    { mode: "light", label: t["profile.theme.light"], icon: <Sun /> },
+    { mode: "dark", label: t["profile.theme.dark"], icon: <Moon /> },
+  ] as const;
+  return (
+    <div className="mt-4 border-t border-rule pt-4">
+      <fieldset className="grid grid-cols-2 gap-1.5">
+        <legend className="mb-1 font-semibold">{t["profile.theme"]}</legend>
+        {options.map((o) => (
+          <div key={o.mode ?? "system"} className={"wide" in o ? "col-span-2" : undefined}>
+            <RadioField
+              name="ws-theme"
+              checked={choice === o.mode}
+              onChange={() => setTheme(o.mode)}
+              label={
+                <span className="inline-flex items-center gap-1.5">
+                  {"icon" in o && o.icon}
+                  {o.label}
+                </span>
+              }
+            />
+          </div>
+        ))}
+      </fieldset>
+    </div>
+  );
+}
+
+type Write =
+  { action: "rename"; name: string } | { action: "link"; uid: number } | { action: "unlink" };
+
+function Settings(props: {
+  slug: string;
+  t: Words;
+  name: string;
+  max: number;
+  onClose: () => void;
+}) {
+  const { slug, t, max, onClose } = props;
+  const router = useRouter();
+  const [me, setMe] = useState<Profile | "loading" | "failed">("loading");
+  const [busy, setBusy] = useState(false);
+  /** The last write's outcome, shown under the part it came from. */
+  const [note, setNote] = useState<{ at: "name" | "me"; text: string } | null>(null);
+  useEffect(() => {
+    void call(slug).then((r) => setMe(typeof r === "string" ? "failed" : r));
+  }, [slug]);
+  const write = async (body: Write) => {
+    const at = body.action === "rename" ? "name" : "me";
+    setBusy(true);
+    const r = await call(slug, body);
+    setBusy(false);
+    if (r === "signed_out") router.refresh();
+    if (typeof r === "string") {
+      setNote({ at, text: t[r === "invalid_name" ? "profile.invalid" : "profile.failed"] });
+      return;
+    }
+    setMe(r);
+    setNote(at === "name" ? { at, text: t["profile.saved"] } : null);
+    // The header shows the new name once the server renders the page again.
+    if (at === "name") router.refresh();
+  };
+  return (
+    <Sheet labelledBy="profile-title" onCancel={onClose}>
+      {/* Focus starts on the title: on a phone, a focused field would raise the keyboard. */}
+      <h2
+        id="profile-title"
+        tabIndex={-1}
+        data-initial-focus
+        className="font-display text-display-md"
+      >
+        {t["profile.title"]}
+      </h2>
+      <NameForm
+        t={t}
+        name={typeof me === "string" ? props.name : me.name}
+        max={max}
+        busy={busy}
+        note={note?.at === "name" ? note.text : ""}
+        onSave={(name) => void write({ action: "rename", name })}
+      />
+      <section aria-labelledby="profile-me" className="mt-3 border-t border-rule pt-4">
+        <h3 id="profile-me" className="font-semibold">
+          {t["profile.me"]}
+        </h3>
+        <p className="text-body-sm text-ink/70">{t["profile.me.lead"]}</p>
+        <Me
+          t={t}
+          me={me}
+          busy={busy}
+          onLink={(uid) =>
+            void write(uid === null ? { action: "unlink" } : { action: "link", uid })
+          }
+        />
+        {note?.at === "me" && (
+          <p role="status" className="mt-1 text-body-sm">
+            {note.text}
+          </p>
+        )}
+      </section>
+      <ThemeChoice t={t} />
+      <button type="button" onClick={onClose} className={buttonClass("primary", "mt-6 w-full")}>
+        {t["intro.close"]}
+      </button>
+    </Sheet>
+  );
+}
+
+export function ProfileSheet(props: {
+  slug: string;
+  t: Words;
+  /** The name the header shows. */
+  name: string;
+  /** "Signed in as …", made on the server. */
+  label: string;
+  max: number;
+}) {
+  const { slug, t, name, label, max } = props;
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button
+        type="button"
+        aria-haspopup="dialog"
+        aria-label={`${label} · ${t["profile.title"]}`}
+        onClick={() => setOpen(true)}
+        className="flex min-h-11 min-w-0 items-center gap-2 text-left"
+      >
+        <span className="shrink-0">
+          <Gear />
+        </span>
+        <span className="min-w-0 truncate underline decoration-dotted underline-offset-4">
+          {label}
+        </span>
+      </button>
+      {open && <Settings slug={slug} t={t} name={name} max={max} onClose={() => setOpen(false)} />}
+    </>
+  );
+}

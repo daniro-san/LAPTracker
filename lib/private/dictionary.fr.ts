@@ -152,9 +152,11 @@ export const fr: WorkspaceDictionary = {
   "intro.2.more": "— veut dire pas de données ; elles n’entrent dans aucun calcul.",
   "intro.3.title": "Chaque semaine",
   "intro.3.body":
-    "Ouvrez Membres. Commencez par la liste des remerciements, puis regardez les personnes marquées Prendre des nouvelles : ce que nous avons vu est écrit sous le nom.",
-  "intro.3.more": "C’est vous qui décidez ; rien n’est envoyé tout seul.",
-  "intro.3.last": "Touchez EN · PT · FR pour changer de langue. Touchez ? pour revoir ceci.",
+    "Ouvrez Membres et commencez par le haut : remerciez ceux qui ont le plus aidé cette semaine.",
+  "intro.3.more":
+    "Regardez ensuite qui est marqué Prendre des nouvelles. La raison est juste sous le nom, et un petit message en jeu suffit souvent.",
+  "intro.3.note": "L’appli n’écrit à personne à votre place : c’est vous qui discutez.",
+  "intro.3.last": "EN · PT · FR en haut change la langue. Le ? fait revenir ces cartes.",
   "intro.replay": "Revoir",
   "intro.close": "Fermer",
   "howto.signin.body":
@@ -164,4 +166,26 @@ export const fr: WorkspaceDictionary = {
     "Dans Safari, touchez l’icône de partage (un carré avec une flèche vers le haut). Dans la liste, touchez l’élément avec un + dans un carré, puis confirmez.",
   "howto.android.body":
     "Dans Chrome, touchez ⋮ en haut à droite. Dans le menu, touchez l’élément qui ajoute la page à l’écran d’accueil (un téléphone avec une flèche), puis confirmez.",
+  "profile.title": "Vos réglages",
+  "profile.name": "Votre nom",
+  "profile.nameHelp": "Affiché en haut du bureau. De 1 à 32 caractères.",
+  "profile.save": "Enregistrer",
+  "profile.saved": "Enregistré.",
+  "profile.invalid": "Écrivez de 1 à 32 caractères.",
+  "profile.failed": "Impossible d’enregistrer. Réessayez.",
+  "profile.loadFailed": "Impossible de charger. Fermez et réessayez.",
+  "profile.me": "C’est moi",
+  "profile.me.lead": "Facultatif : dites au bureau quel joueur de l’alliance vous êtes.",
+  "profile.me.loading": "Recherche de votre nom dans l’alliance…",
+  "profile.me.linked": "Dans le jeu, vous êtes {name}.",
+  "profile.me.gone": "Votre joueur n’est pas dans le dernier relevé de l’alliance.",
+  "profile.me.unlink": "Retirer le lien",
+  "profile.me.ask": "Est-ce vous ?",
+  "profile.me.confirm": "C’est moi",
+  "profile.me.none":
+    "Aucun joueur du dernier relevé de l’alliance n’a un nom proche du vôtre. Mettez ci-dessus votre nom dans le jeu pour voir une suggestion.",
+  "profile.theme": "Thème",
+  "profile.theme.light": "Clair",
+  "profile.theme.dark": "Sombre",
+  "profile.theme.system": "Comme l’appareil",
 };

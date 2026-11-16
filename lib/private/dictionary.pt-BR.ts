@@ -148,12 +148,13 @@ export const pt: WorkspaceDictionary = {
   "intro.1.body":
     "O espaço da liderança para a aliança: quem está nela, o might, as doações e a atividade de cada um, preenchidos a partir do jogo. Substitui as planilhas.",
   "intro.only": "Só R4 · R5",
-  "intro.2.more": "— quer dizer sem dados, e fica fora de toda conta.",
+  "intro.2.more": "— quer dizer sem dados, e não entra em nenhuma conta.",
   "intro.3.title": "Toda semana",
-  "intro.3.body":
-    "Abra Membros. Comece pela lista de agradecimentos e depois olhe quem está com Ver como está: o que vimos aparece embaixo do nome.",
-  "intro.3.more": "Quem decide o que fazer é você; nada é enviado sozinho.",
-  "intro.3.last": "Toque em EN · PT · FR para trocar o idioma. Toque em ? para ver isto de novo.",
+  "intro.3.body": "Abra Membros e comece pelo topo: agradeça quem mais ajudou na semana.",
+  "intro.3.more":
+    "Depois veja quem está com Ver como está. O motivo aparece logo abaixo do nome, e quase sempre uma mensagem no jogo resolve.",
+  "intro.3.note": "O app não manda mensagem pra ninguém: quem conversa é você.",
+  "intro.3.last": "EN · PT · FR no topo muda o idioma. O ? mostra estes cartões de novo.",
   "intro.replay": "Ver de novo",
   "intro.close": "Fechar",
   "howto.signin.body":
@@ -163,4 +164,26 @@ export const pt: WorkspaceDictionary = {
     "No Safari, toque no ícone de compartilhar (um quadrado com uma seta para cima). Na lista, toque no item com um + dentro de um quadrado e confirme.",
   "howto.android.body":
     "No Chrome, toque em ⋮ no canto de cima. No menu, toque no item que coloca a página na tela inicial (um celular com uma seta) e confirme.",
+  "profile.title": "Suas configurações",
+  "profile.name": "Seu nome",
+  "profile.nameHelp": "Aparece no topo da mesa. De 1 a 32 caracteres.",
+  "profile.save": "Salvar",
+  "profile.saved": "Salvo.",
+  "profile.invalid": "Escreva de 1 a 32 caracteres.",
+  "profile.failed": "Não foi possível salvar. Tente de novo.",
+  "profile.loadFailed": "Não foi possível carregar. Feche e tente de novo.",
+  "profile.me": "Este sou eu",
+  "profile.me.lead": "Opcional: diga à mesa qual jogador da aliança é você.",
+  "profile.me.loading": "Procurando seu nome na aliança…",
+  "profile.me.linked": "No jogo, você é {name}.",
+  "profile.me.gone": "Seu jogador não está na leitura mais recente da aliança.",
+  "profile.me.unlink": "Remover o vínculo",
+  "profile.me.ask": "É você?",
+  "profile.me.confirm": "Sou eu",
+  "profile.me.none":
+    "Nenhum jogador na leitura mais recente da aliança tem um nome parecido com o seu. Coloque acima o seu nome no jogo para ver uma sugestão.",
+  "profile.theme": "Tema",
+  "profile.theme.light": "Claro",
+  "profile.theme.dark": "Escuro",
+  "profile.theme.system": "Igual ao aparelho",
 };

@@ -184,3 +184,17 @@ export async function scheduledEventKills(
     new Map(kills.filter((k) => k.id === id).map((k) => [k.uid, k.kills]));
   return { at: event.at, before: byUid(before.id), after: byUid(after.id) };
 }
+
+/** The uid and name of each member of the alliance's newest usable daily roster (D60); empty before one. */
+export async function latestRosterNames(
+  db: Db,
+  unionId: number,
+): Promise<{ uid: number; name: string }[]> {
+  const [row] = await db
+    .select({ uids: dailyRosters.memberUids, names: dailyRosters.memberNames })
+    .from(dailyRosters)
+    .where(usable(unionId))
+    .orderBy(desc(dailyRosters.readDay))
+    .limit(1);
+  return (row?.uids ?? []).map((uid, i) => ({ uid, name: row?.names[i] ?? "" }));
+}

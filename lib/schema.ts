@@ -344,6 +344,10 @@ export const workspaceUsers = pgTable(
     allowlistExpiresAt: tstz("allowlist_expires_at"),
     blocked: boolean("blocked").notNull().default(false),
     lastLoginAt: tstz("last_login_at"),
+    /** The name the officer chose in the profile sheet; null shows display_name (from Discord). */
+    chosenName: text("chosen_name"),
+    /** "This is me": the officer's player in the workspace's own alliance; null when not linked. */
+    playerUid: big("player_uid"),
   },
   (t) => [unique("workspace_users_workspace_discord_unique").on(t.workspaceId, t.discordUserId)],
 );

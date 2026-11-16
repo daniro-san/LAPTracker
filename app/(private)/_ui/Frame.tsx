@@ -14,9 +14,11 @@ import {
   type WorkspaceDictionary,
   type WorkspaceLanguage,
 } from "@/lib/private/dictionary";
+import { NAME_MAX } from "@/lib/private/profile";
 
 import { FirstUse } from "./FirstUse";
 import { LanguageSwitch } from "./LanguageSwitch";
+import { ProfileSheet } from "./ProfileSheet";
 import { SignOutButton } from "./SignOutButton";
 import { TabIcon, type TabId } from "./TabIcon";
 
@@ -143,11 +145,16 @@ export function SignedInFrame({
   children: ReactNode;
 }) {
   const alliance = ALLIANCES.find((a) => a.unionId === access.unionId);
+  const name = access.user.displayName ?? "";
   const account = (
     <>
-      <span className="min-w-0 truncate">
-        {fill(t["shell.signedIn"], { name: access.user.displayName ?? "" })}
-      </span>
+      <ProfileSheet
+        slug={access.slug}
+        t={t}
+        name={name}
+        label={fill(t["shell.signedIn"], { name })}
+        max={NAME_MAX}
+      />
       <SignOutButton slug={access.slug} label={t["shell.signOut"]} />
     </>
   );

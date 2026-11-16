@@ -14,7 +14,10 @@ export interface FirstUseStep {
 export const FIRST_USE_STEPS: readonly FirstUseStep[] = [
   { title: "intro.1.title", body: ["intro.1.body"], visual: "only" },
   { title: "intro.2.title", body: ["intro.2.body", "intro.2.more"], visual: "sources" },
-  { title: "intro.3.title", body: ["intro.3.body", "intro.3.more", "intro.3.last"] },
+  {
+    title: "intro.3.title",
+    body: ["intro.3.body", "intro.3.more", "intro.3.note", "intro.3.last"],
+  },
 ];
 
 /** Where a number comes from, and the label it carries. */
