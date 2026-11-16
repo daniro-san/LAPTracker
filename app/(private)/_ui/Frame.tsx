@@ -17,6 +17,7 @@ import {
 
 import { FirstUse } from "./FirstUse";
 import { LanguageSwitch } from "./LanguageSwitch";
+import { ProfileSheet } from "./ProfileSheet";
 import { SignOutButton } from "./SignOutButton";
 import { TabIcon, type TabId } from "./TabIcon";
 
@@ -124,7 +125,7 @@ export async function Frame({
           {tabs && <FirstUse t={t} seen={seen} />}
           <LanguageSwitch current={language} label={t["lang.aria"]} />
           {account && (
-            <div className="flex basis-full flex-wrap items-center justify-between gap-x-2 border-t border-wax-paper/25 pt-1 text-body-sm">
+            <div className="flex min-w-0 basis-full items-center justify-between gap-x-2 border-t border-wax-paper/25 pt-1 text-body-sm">
               {account}
             </div>
           )}
@@ -151,11 +152,16 @@ export function SignedInFrame({
   children: ReactNode;
 }) {
   const alliance = ALLIANCES.find((a) => a.unionId === access.unionId);
+  const name = access.user.displayName ?? "";
   const account = (
     <>
-      <span className="min-w-0 truncate">
-        {fill(t["shell.signedIn"], { name: access.user.displayName ?? "" })}
-      </span>
+      <ProfileSheet
+        slug={access.slug}
+        t={t}
+        language={language}
+        name={name}
+        label={fill(t["shell.signedIn"], { name })}
+      />
       <SignOutButton slug={access.slug} label={t["shell.signOut"]} />
     </>
   );

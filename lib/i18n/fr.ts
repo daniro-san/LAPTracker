@@ -94,6 +94,20 @@ export const fr = {
       "Part des Kills de l’alliance faits par ses 5 plus gros gagnants. Plus elle est élevée, moins l’alliance dépend de quelques joueurs.",
     topBasis: "{top} sur {n}",
     fewGainers: "gagnants rares",
+    carried: "Part des Kills contre part du Might",
+    carriedHelp:
+      "Part de chaque alliance dans les Kills gagnés de Début à Fin, à côté de sa part du Might au Début. Les défenseurs et les joueurs de soutien ne gagnent pas de Kills.",
+    carriedShown:
+      "Les alliances dont la part de Kills dépasse le plus leur part de Might, et la vôtre.",
+    carriedTotal: "Toutes les {n} alliances : {kills} Kills gagnés, {might} de Might au Début",
+    carriedMightMark: "Part du Might au Début",
+    carriedKillsMark: "Part des Kills gagnés",
+    carriedShares: "Might {might} · Kills {kills}",
+    carriedTurnout: "{share} ont gagné des Kills",
+    carriedSpread: "{low}–{high} sur {n} événements",
+    carriedRatioHelp:
+      "× est la part des Kills divisée par la part du Might. Elle s’affiche à partir de 3 événements, avec sa fourchette ; avant, l’écart en pts.",
+    carriedPoints: "pts",
   },
   compare: {
     title: "Événement contre événement",

@@ -7,6 +7,7 @@ import { Fragment, useEffect, useRef, useState } from "react";
 
 import { track } from "@/lib/analytics/events";
 import { buttonClass } from "@/lib/brand/components/Button";
+import { HelpMark } from "@/lib/brand/components/HelpMark";
 import { Sheet } from "@/lib/brand/components/Sheet";
 import { WORKSPACE_INTRO_COOKIE } from "@/lib/private/cookies";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
@@ -169,9 +170,9 @@ export function FirstUse({
         aria-label={t["shell.help"]}
         aria-expanded={mode === "help"}
         onClick={() => setMode(mode === "help" ? "closed" : "help")}
-        className="min-h-11 min-w-11 rounded-xs border border-wax-paper/50 text-lg font-semibold"
+        className="grid min-h-11 min-w-11 place-items-center"
       >
-        ?
+        <HelpMark className="size-[22px]" />
       </button>
       {mode === "cards" && <Cards t={t} onClose={finish} />}
       {mode === "help" && (

@@ -92,6 +92,19 @@ export const th = {
       "ส่วนแบ่ง Kills ของพันธมิตรที่มาจาก 5 Members ที่ได้ Kills เพิ่มมากที่สุด ยิ่งสูง แปลว่ามีผู้เล่นไม่กี่คนที่แบกไว้",
     topBasis: "{top} จาก {n}",
     fewGainers: "ผู้ได้เพิ่มน้อย",
+    carried: "สัดส่วน Kills เทียบ สัดส่วน Might",
+    carriedHelp:
+      "สัดส่วนของ Kills ที่แต่ละพันธมิตรได้เพิ่มจากเริ่มถึงสิ้นสุด เทียบกับสัดส่วนของ Might ตอนเริ่ม สายตั้งรับและสายซัพพอร์ตไม่เพิ่ม Kills",
+    carriedShown: "พันธมิตรที่สัดส่วน Kills สูงกว่าสัดส่วน Might มากที่สุด และพันธมิตรของคุณ",
+    carriedTotal: "รวม {n} พันธมิตร: Kills ที่เพิ่ม {kills}, Might ตอนเริ่ม {might}",
+    carriedMightMark: "สัดส่วน Might ตอนเริ่ม",
+    carriedKillsMark: "สัดส่วน Kills ที่เพิ่ม",
+    carriedShares: "Might {might} · Kills {kills}",
+    carriedTurnout: "{share} ได้ Kills เพิ่ม",
+    carriedSpread: "{low}–{high} จาก {n} กิจกรรม",
+    carriedRatioHelp:
+      "× คือสัดส่วน Kills หารด้วยสัดส่วน Might แสดงเมื่อมีอย่างน้อย 3 กิจกรรม พร้อมช่วงค่า ก่อนหน้านั้นแสดงส่วนต่างเป็น pts",
+    carriedPoints: "pts",
   },
   compare: {
     title: "กิจกรรม เทียบ กิจกรรม",

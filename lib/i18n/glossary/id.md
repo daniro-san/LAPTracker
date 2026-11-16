@@ -58,6 +58,8 @@ Words already used in `lib/i18n/id.ts`. Reuse them so the pages stay consistent;
 | Kills gained              | Kills didapat                 | `ledger.liveKillsGained`, `ledger.livePulseHelp` — after a count     |
 | Support player            | pemain support                | `ledger.foughtHelp` — a player who gains no Kills                    |
 | Gainer (Kills rose)       | Members dengan kenaikan Kills | `ledger.fewGainers`, `ledger.topShareHelp` — member whose Kills rose |
+| Kill share / Might share  | Bagian Kills / Bagian Might   | `ledger.carried*` — an alliance's share of Kills gained / of Might   |
+| Defender                  | pemain bertahan               | `ledger.carriedHelp` — a player who gains no Kills, like a support   |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.
