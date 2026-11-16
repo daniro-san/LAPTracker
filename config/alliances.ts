@@ -46,5 +46,5 @@ export const ALLIANCES = [
 export const DAILY_ROSTER_IDS: readonly number[] = ALLIANCES.map((a) => a.unionId);
 
 /** The site's own alliance (OGs): the one the officer view of unchanged might (D70) and the Friday admin
- * message look at first. `?alliance=` on /admin/members picks any other tracked one. */
+ * message look at first. /admin/members lists members only for this alliance; another tracked id lists none (D76). */
 export const OWN_ALLIANCE_ID = 67111155;

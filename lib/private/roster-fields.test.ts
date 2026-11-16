@@ -18,6 +18,8 @@ const ALLOWED = [
   /^lib\/collector[\w-]*\.ts$/,
   /^lib\/raw-json\.ts$/,
   /^lib\/queries\/blocked-keys\.ts$/,
+  // The fixture neutraliser names the keys only to overwrite them before a body is written (D76).
+  /^scripts\/neutralise-fixture\.ts$/,
 ];
 
 function sources(dir: string): string[] {
