@@ -4,16 +4,25 @@ Base: `origin/dev` at f80bcd6 (release v5.6.0). Docs only; no code, no migration
 
 ## Built
 - `docs/decisions/D71-a-private-workspace-per-alliance.md` and its line in `docs/decisions/README.md` (after D67; D68–D70 belong to open branches).
-- `CLAUDE.md`: one sentence added to the hard-rule bullet on roster fields. Code under `lib/private/` may return those fields, never `avatar_url`, to its own alliance's workspace (D71). Nothing else in the file changed.
+- `CLAUDE.md`: one sentence added to the hard-rule bullet on roster fields. Code in `lib/private` may return those fields (never `avatar_url`) only to pages and handlers under `app/(private)/w/[slug]`, after `requireWorkspace`, for rows of that workspace's own alliance. They never go to logs, `run_logs`, `app_errors`, Discord messages, copies or exports, AI or translation requests, or a shared cache. Nothing else in the file changed.
 - `docs/GLOSSARY.md`: row `workspace`, with `workspaces`, `lib/private`, `/w/[slug]`.
 - This handoff.
 
 ## Decisions
-- D71 is written from the owner's answers and the architect's design (2026-11-16). It covers: sign-in (Discord OAuth, scopes `identify guilds.members.read`, role check through `GET /users/@me/guilds/{guild_id}/member`, no bot, no new dependency); sessions (sha256 of a 32-byte token in `workspace_sessions`, 7 days); CSRF rules for writes; tenancy (`workspace_id NOT NULL`, branded `WorkspaceAccess`, a two-tenant PGlite test); the fence (`lib/private/`, an `import-x/no-restricted-paths` zone); other alliances (the owner registers a workspace on `/admin`; later an R5 proves ownership through the in-game declaration, issue #302); what the workspace shows; the languages (`en`, `pt-BR` and `fr` first; officer text machine-translated, original one tap away, an officer can correct it); leadership only, including the notices library; one level of access for R5 and R4 (no per-person permissions); regular members out of scope; what it supersedes; what new data is stored; where the data comes from (D72, issue #294).
+- D71 is written from the owner's answers and the architect's design (2026-11-16). It covers: sign-in (Discord OAuth, scopes `identify guilds.members.read`, role check through `GET /users/@me/guilds/{guild_id}/member`, no bot, no new dependency); sessions (sha256 of a 32-byte token in `workspace_sessions`, at most 24 hours, bound to one workspace, silent Discord re-authorisation to re-check the role); CSRF rules for writes; tenancy (`workspace_id NOT NULL`, branded `WorkspaceAccess`, a two-tenant PGlite test); the fence (`lib/private/`, an `import-x/no-restricted-paths` zone); other alliances (the owner registers a workspace on `/admin`; later an R5 proves ownership through the in-game declaration, issue #302); what the workspace shows; the languages (`en`, `pt-BR` and `fr` first, in a workspace dictionary separate from `lib/copy.ts`; officer text has a Translate action with names masked, the glossary sent and the result cached); leadership only, including the notices library; one level of access for R5 and R4 (no per-person permissions); regular members out of scope; what it supersedes; what new data is stored; where the data comes from (D72, issue #294).
 - The decision says the same `1 + k` calls of the daily read (D60) read the rosters whole, so no call is added. It leaves the storage shape to D72.
 - `BLOCKED_ROSTER_KEYS` is unchanged, as the task says. The code fence, not the key list, separates the workspace from public paths.
 - Regular members' access is not designed in D71. Issue #301 (self-report link) is deferred until a later decision.
 - The owner's "pt" is written as `pt-BR`, the tag in `LANGUAGES` (D48).
+- An adversarial review of the plan (2026-11-16) changed D71 before the PR:
+  - Sessions last 24 hours, not 7 days, so a removed officer loses access within a day.
+  - Sessions are bound to one workspace, `/admin` can sign everyone out, and allowlist rows expire.
+  - Shared roster tables are read by `lib/private` only for the workspace's own alliance, and the two-tenant test covers a player who moved.
+  - The fence works both ways: `lib/private` cannot import `lib/notify*` or `lib/discord-*`, and private responses are `no-store` with static metadata.
+  - The fields show "when the API returns them": `joined_at` and `last_online_at` were null for every member on 2026-11-16 and `online` was never true.
+  - Exports leave out coordinates and online data.
+  - The CLAUDE.md sentence names where the fields may and may not go.
+- Owner answers to the review (2026-11-16): Discord two-step verification is not required, and full rosters are kept for all 20 alliances.
 - The CLAUDE.md sentence names `avatar_url` as still never returned, because the task says the photo reaches pages only through `/img/avatar` (D22).
 
 ## Deviations
@@ -42,7 +51,7 @@ Plan changes needed: §12.1, §12.2 and §12.6 (Open issues 2 to 4). Do not edit
 <adjustments>
 - #294 moves the daily read to the end of the server day. D60's `DAILY_ROSTER_AT` default is `06:00` server time and its window is `[DAILY_ROSTER_AT, + SNAPSHOT_WINDOW_MIN)`; the "not on a scheduled event's day" rule and D67's retry rule (today's server day only) were written for a morning read, so check both against the new time.
 - `daily_rosters` stores four parallel arrays and no `raw_json` (D60). The workspace fields (`daily_tech`, `daily_honor`, `active`, `joined_at`, `online`, `last_online_at`, `x`, `y`) need a place in D72; they must not go into any table that `lib/queries` reads.
-- The workspace is not English-only (D71). Its strings go through the public dictionaries (D48), so `pnpm check`'s i18n step and the `translate-copy` skill apply to them; `en`, `pt-BR` and `fr` are required first. Translating officer-written text and its correction by an officer need a table and a service that #295 and #299 do not yet design.
+- The workspace is not English-only (D71). Its strings live in a workspace dictionary of their own (`en`, `pt-BR`, `fr`), not in `lib/copy.ts`: putting them there would make the public i18n check demand 17 more languages and would ship workspace text with every public page (the root layout loads the whole dictionary). Translating officer-written text needs a cache table and a service that #295 and #299 do not yet design.
 - Skip #301 (member self-report link): deferred by the owner. Build no member-facing page, link or token in #295 to #300; every workspace route requires a leadership sign-in, and all leaders see all of it, so no per-person permission model is needed.
 - Private code goes in top-level `lib/private/`, not `lib/queries/private/`: `lib/queries/blocked-keys.test.ts` scans `lib/queries` non-recursively.
 - No new dependency for sign-in: two `fetch` calls, `node:crypto` and `secretEquals` (`lib/auth.ts`).
