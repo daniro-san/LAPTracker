@@ -185,7 +185,9 @@ const en = {
   "profile.me.ask": "Is this you?",
   "profile.me.confirm": "That’s me",
   "profile.me.none":
-    "No player in the alliance’s newest read has a name like yours. Set your name above to your name in the game to see a suggestion.",
+    "No player in the alliance’s newest read has a name like yours. Search for your name below.",
+  "profile.me.find": "Search the alliance",
+  "profile.me.noResult": "No name in the alliance’s newest read matches.",
   "profile.theme": "Theme",
   "profile.theme.light": "Light",
   "profile.theme.dark": "Dark",

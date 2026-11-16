@@ -15,6 +15,8 @@ import { Moon, setTheme, Sun, useThemeChoice } from "@/lib/brand/components/Them
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
 import type { Profile } from "@/lib/private/profile";
 
+import { Me } from "./ThisIsMe";
+
 type Words = WorkspaceDictionary;
 
 /** The profile route: the profile as it now stands, or an error code ("failed" for anything unexpected). */
@@ -78,69 +80,6 @@ function NameForm(props: {
         {note}
       </p>
     </form>
-  );
-}
-
-/** "This is me": the linked player and Remove the link, or the matcher's suggestions to confirm. */
-function Me(props: {
-  t: Words;
-  me: Profile | "loading" | "failed";
-  busy: boolean;
-  onLink: (uid: number | null) => void;
-}) {
-  const { t, me, busy, onLink } = props;
-  if (me === "loading") return <p className="mt-2 text-body-sm">{t["profile.me.loading"]}</p>;
-  if (me === "failed") return <p className="mt-2 text-body-sm">{t["profile.loadFailed"]}</p>;
-  if (me.player) {
-    const [before, after] = t["profile.me.linked"].split("{name}");
-    return (
-      <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-        <p className="min-w-0">
-          {me.player.name === null ? (
-            t["profile.me.gone"]
-          ) : (
-            <>
-              {before}
-              <b translate="no">{me.player.name}</b>
-              {after}
-            </>
-          )}
-        </p>
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => onLink(null)}
-          className={buttonClass("secondary")}
-        >
-          {t["profile.me.unlink"]}
-        </button>
-      </div>
-    );
-  }
-  if (me.suggestions.length === 0)
-    return <p className="mt-2 text-body-sm">{t["profile.me.none"]}</p>;
-  return (
-    <>
-      <p className="mt-2">{t["profile.me.ask"]}</p>
-      <ul className="mt-1 grid gap-1.5">
-        {me.suggestions.map((p) => (
-          <li key={p.uid} className="flex items-center justify-between gap-3">
-            <span translate="no" className="min-w-0 truncate font-semibold">
-              {p.name}
-            </span>
-            <button
-              type="button"
-              disabled={busy}
-              aria-label={`${p.name} · ${t["profile.me.confirm"]}`}
-              onClick={() => onLink(p.uid)}
-              className={buttonClass("secondary")}
-            >
-              {t["profile.me.confirm"]}
-            </button>
-          </li>
-        ))}
-      </ul>
-    </>
   );
 }
 

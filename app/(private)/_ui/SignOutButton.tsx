@@ -25,7 +25,7 @@ export function SignOutButton({ slug, label }: { slug: string; label: string }) 
       type="button"
       onClick={() => void signOut()}
       disabled={busy}
-      className="min-h-11 px-2 text-body-sm font-semibold underline underline-offset-4 disabled:opacity-60"
+      className="min-h-11 min-w-11 px-2 text-body-sm font-semibold underline underline-offset-4 disabled:opacity-60"
     >
       {label}
     </button>

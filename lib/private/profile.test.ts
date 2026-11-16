@@ -76,7 +76,10 @@ describe('"This is me", between two workspaces (D71)', () => {
   it("suggests and links a player of the workspace's own alliance only, and unlinks", async () => {
     const ogs = await signedIn("ogs", "Kasoar");
     // The nickname is one part of the joined game name: the matcher's one match (D74).
-    expect((await profileView(db, ogs)).suggestions).toEqual([{ uid: 11, name: "Kasoar•Thorne" }]);
+    const view = await profileView(db, ogs);
+    expect(view.suggestions).toEqual([{ uid: 11, name: "Kasoar•Thorne" }]);
+    // The search's roster is OGs' own: NSE's player is not in it.
+    expect(view.roster.map((p) => p.uid)).toEqual([11, 12]);
     // NSE's player is not in OGs' roster.
     expect(await linkPlayer(db, ogs, 21)).toBe("not_in_alliance");
     expect(await linkPlayer(db, ogs, 11)).toMatchObject({

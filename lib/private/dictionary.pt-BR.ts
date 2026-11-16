@@ -181,7 +181,9 @@ export const pt: WorkspaceDictionary = {
   "profile.me.ask": "É você?",
   "profile.me.confirm": "Sou eu",
   "profile.me.none":
-    "Nenhum jogador na leitura mais recente da aliança tem um nome parecido com o seu. Coloque acima o seu nome no jogo para ver uma sugestão.",
+    "Nenhum jogador na leitura mais recente da aliança tem um nome parecido com o seu. Procure seu nome abaixo.",
+  "profile.me.find": "Procurar na aliança",
+  "profile.me.noResult": "Nenhum nome da leitura mais recente da aliança combina.",
   "profile.theme": "Tema",
   "profile.theme.light": "Claro",
   "profile.theme.dark": "Escuro",

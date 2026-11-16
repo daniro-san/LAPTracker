@@ -3,7 +3,7 @@
 Closes #334 (owner feedback after the first real sign-in on production, approved recommendations). Decision: D73 amended with one dated line; no new decision.
 
 ## Built
-- **Schema** (`lib/schema.ts`, migration `drizzle/0022_workspace_user_profile.sql`, journal idx 22): two nullable columns on `workspace_users`:
+- **Schema** (`lib/schema.ts`, migration `drizzle/0020_workspace_user_profile.sql`, journal idx 20, the next on `dev`): two nullable columns on `workspace_users`:
   - `chosen_name text`: the name the officer chose; null shows `display_name`;
   - `player_uid bigint`: "This is me"; null when not linked.
 - **`lib/repo`**:
@@ -19,6 +19,8 @@ Closes #334 (owner feedback after the first real sign-in on production, approved
     - `linkPlayer`: only a uid in the newest roster of `access.unionId`, else `"not_in_alliance"`;
     - `unlinkPlayer`.
     - Suggestions: `matchName` (D74) on the shown name over that roster's current names. A `matched` result gives one player, `unsure` gives up to three, `none` gives an empty list.
+    - While no player is linked, the profile also carries `roster`: that roster's uids and names, for the search. Once linked, it is empty.
+  - `roster-search.ts`: `searchRoster(query, roster)` keeps the members whose name key (`nameKey`, D74) contains the query's key, in roster order, at most 6 (`SEARCH_ROWS`). It imports only `name-key`, so the sheet runs it in the browser.
 - **Route** `app/(private)/api/w/[slug]/profile/route.ts`:
   - `GET` returns the profile;
   - `POST` takes `{action:"rename",name}`, `{action:"link",uid}` or `{action:"unlink"}`. It is a write: same origin, JSON only (403 otherwise), and the body is parsed with zod.
@@ -26,17 +28,22 @@ Closes #334 (owner feedback after the first real sign-in on production, approved
 - **Header** (`app/(private)/_ui/Frame.tsx`, two small edits in `SignedInFrame`):
   - "Signed in as <name>" is now a button with the brand gear. It opens `ProfileSheet` ("Your settings"), a modal `Sheet`:
     - **Your name**: a field with Save; the note "Saved." or "Write 1 to 32 characters.";
-    - **This is me**: "Is this you?" with a "That's me" button per suggestion. Once linked: "In the game, you are <name>." with "Remove the link". When nothing matches, a line says to set the name to the game name;
+    - **This is me** (`app/(private)/_ui/ThisIsMe.tsx`, split from the sheet for its size):
+      - "Is this you?" with a "That's me" button per suggestion;
+      - when nothing matches, "Search for your name below.";
+      - while not linked, a "Search the alliance" field. It filters the roster as the officer types, and each row has its own "That's me". A query with no hit shows "No name in the alliance's newest read matches.";
+      - once linked, "In the game, you are <name>." with "Remove the link".
+      - Linking from the search goes through the same `linkPlayer`, so it has the same scoping and refusal;
     - **Theme**: Same as this device / Light / Dark;
     - **Close**.
   - The sheet opens focused on its title, so a phone does not raise the keyboard. The profile is read when the sheet opens, not on every page.
-  - Sign out stays in the header, unchanged.
+  - Sign out stays in the header. `SignOutButton.tsx` gained `min-w-11`: PT "Sair" was 39.75 px wide and is now 44 px (orchestrator's follow-up).
 - **Theme** (`lib/brand/components/ThemeSwitch.tsx`): `setTheme(null)` removes `data-theme` and the `theme` cookie (follow the system); `useThemeChoice()` reads the choice. The desk writes the public site's `theme` cookie, and the root layout already renders `data-theme` from it on the server, so one choice applies to the desk and the public site with no flash.
 - **Help mark**:
   - Drawn per the `hand-drawn-svg` skill: `icon_help` in `docs/brand/drawing/examples/ornaments.py`, registered as `icon-help` in `build.py`. It is a ring with a pen lift at the upper left, around a question mark and its dot: 16 × 16 viewBox, 908 bytes, single colour. `build.py` reproduces it byte for byte.
   - Component: `lib/brand/components/HelpMark.tsx`.
   - `FirstUse.tsx`: the bordered "?" square became the mark at 22 px in a 44 × 44 button. Its aria-label (`shell.help`) and its PostHog behaviour are unchanged.
-- **Words**: 21 keys under `profile.*` in EN, PT-BR and FR. French has U+00A0 before `:` and `?`. The parity test passes.
+- **Words**: 23 keys under `profile.*` in EN, PT-BR and FR. French has U+00A0 before `:` and `?`. The parity test passes.
 - **First-use card 3 rewritten** (orchestrator's addition: the owner found it robotic):
   - `intro.3.body`, `intro.3.more` and `intro.3.last` have the new text in all three languages, and the titles are unchanged;
   - a new key `intro.3.note` holds the second sentence ("The app never messages anyone. The talking is up to you."), because each key renders as one paragraph. `lib/private/first-use.ts` lists it in step 3;
@@ -48,7 +55,8 @@ Closes #334 (owner feedback after the first real sign-in on production, approved
   - `lib/private/profile.test.ts`: three tests:
     1. the validation;
     2. the header name, kept by the next sign-in;
-    3. link and unlink between two workspaces.
+    3. link and unlink between two workspaces. It also checks that the roster sent for the search holds OGs' players only;
+  - `lib/private/roster-search.test.ts`: the search folds case, accents and decoration, and returns at most 6 rows.
 
 ## Decisions
 - **D73 amended** (dated line), not a new number:
@@ -62,11 +70,12 @@ Closes #334 (owner feedback after the first real sign-in on production, approved
 
 ## Deviations
 - **The nick fallback was already built.** 11c's `readMember` already took `nick`, then `global_name`, then `username`. This session only adds the test. The owner's header showed his username, so at that sign-in his account must have had no nickname in the OGs server and no global display name. This could not be checked against the real Discord: the e2e uses the stub only.
-- **Migration number.** Built as `0022` with journal `idx: 22` (this branch has no 0020 or 0021), as the brief asked. `drizzle-kit check` and the drift gate pass, and `db:local:migrate` applied it.
+- **Migration number.** First built as `0022`, as the brief asked. On the orchestrator's follow-up, this branch merged `origin/dev` (56c534e, still at 0019, clean merge) and goes first, so the migration was regenerated as **`0020_workspace_user_profile`** (journal idx 20; its snapshot's `prevId` is 0019's id). `drizzle-kit check` and the drift gate pass. `db:local:migrate` applied 0020 to a local database at 0019.
+  - **For 11f and 11i:** this branch takes 0020. Each regenerates its migration on top after this merges: drop your own migration file, its `meta/NNNN_snapshot.json` and its journal entry, merge `dev`, then run `pnpm db:generate --name <yours>`. It becomes 0021, then 0022, chained to 0020.
 - **`lib/brand/components/ThemeSwitch.tsx` changed** (shared with the public site): `setTheme` accepts null, and a new hook was added. The public `ViewerSettings` is unchanged.
 
 ## Verified
-- **`pnpm check` exits 0**: prettier, eslint, tsc; vitest **96 files passed, 2 skipped; 483 tests passed, 4 skipped**; drift gate "Everything's fine"; i18n "17 languages up to date". No test timed out.
+- **`pnpm check` exits 0** after merging `dev` and the follow-ups: prettier, eslint, tsc; vitest **100 files passed, 2 skipped; 500 tests passed, 4 skipped**; drift gate "Everything's fine"; i18n "17 languages up to date". No test timed out. Before the merge it was 96 files and 483 tests.
 - **Local e2e** against a production build (`pnpm build` + `next start` on :3147).
   - Setup:
     - db:local on 54357, with its bridge on 54358;
@@ -74,7 +83,7 @@ Closes #334 (owner feedback after the first real sign-in on production, approved
     - the seed: the OGs and NSE workspaces, OGs' newest roster with the 101 uids and names of the scrubbed fixture, and an NSE roster with one player;
     - playwright-core with system Chrome.
   - No upstream call, no real Discord call, no `/api/quota`.
-  - **45 of 49 checks passed.** The 4 that failed are one existing problem: in PT, the header's "Sair" is 39.75 px wide (Open issues 1).
+  - **45 of 49 checks passed.** The 4 that failed were one existing problem: in PT, the header's "Sair" was 39.75 px wide. It is fixed in the follow-up, and the follow-up e2e below passes.
   - Passed:
     - the header shows "Signed in as DucktorJones 🦆"; `display_name` holds the nick;
     - the account without a nick shows "Zed";
@@ -108,27 +117,36 @@ Closes #334 (owner feedback after the first real sign-in on production, approved
   - Card 3 has four paragraphs, and none of the old words remain.
   - PT card 2 shows the new no-data line.
   - No sideways scroll.
+- **Follow-up e2e**, on a production build after merging `dev` and applying 0020: **22 of 22 checks passed**.
+  - Every header control is at least 44 px at 360 and 1280, light and dark, in EN, PT and FR. PT "Sair" is 44 × 44.
+  - The search, as Zed (no nickname, no suggestion):
+    - the sheet says "Search for your name below.";
+    - "LADYLI" finds LadyLi-rosan, and "vins" finds Vińs;
+    - "nseonly" (NSE's player) shows the no-match line;
+    - "e" shows 6 rows;
+    - "Vińs · That's me" stores uid 341057265989;
+    - the route still refuses NSE's player with 400 `not_in_alliance`;
+    - the PT label "Procurar na aliança" finds Vińs.
 - **Screenshots** (not committed) in `/private/tmp/claude-502/-Users-danilordasilva-orca-workspaces-LAPTracker-unicornfish/147759e3-1cdb-4ccd-b74a-1001498a1e18/scratchpad/11n-shots/`:
   - `home-{360,1280}-{light,dark}-{en,pt-BR}.png`;
   - `profile-{360,1280}-{light,dark}-{en,pt-BR}.png`, the sheet with the link in place;
   - `help-360-{light,dark}-{en,pt-BR}.png`;
   - `profile-suggest-360-light-en.png`, `profile-linked-360-{light,dark}-en.png`, `profile-none-360-light-en.png`;
-  - `card3-360-{light,dark}-en.png`, `card3-360-{light,dark}-pt-BR.png`, `card3-360-light-fr.png`, `card2-360-light-pt-BR.png`.
+  - `card3-360-{light,dark}-en.png`, `card3-360-{light,dark}-pt-BR.png`, `card3-360-light-fr.png`, `card2-360-light-pt-BR.png`;
+  - `search-360-light-en.png`, `search-360-dark-pt-BR.png`, `signout-360-{light,dark}-pt-BR.png`.
 - **Help mark drafts**: two kinds (a filled disc and a ring), then three rings, all on the burgundy header at 18–24 px in light and dark. The disc read heavier than the EN · PT · FR text, and the first rings' pen-lift end curled inward. The ring with its lift at the upper left was kept.
 
 ## Open issues
-1. **PT "Sair" is 39.75 px wide** (an existing problem, not changed here): `SignOutButton.tsx` has `min-h-11` but no `min-w-11`. One class fixes it.
-2. **No way to pick a player when the matcher finds none**, other than setting the name to the game name. A roster search in the sheet was not built.
-3. **A linked player who leaves the alliance** shows "Your player is not in the alliance's newest read" until the officer removes the link. Nothing unlinks by itself.
-4. **The public settings panel** (`ViewerSettings`) offers Light and Dark only. "Same as this device" can only be chosen in the desk.
-5. **`access.user.playerUid` is not used yet.** It is there for showing "you" on lists later.
-6. **The modal sheet's backdrop lightens the header in dark mode** (`backdrop:bg-ink/20`, and ink is light in dark). This is the shared `Sheet` style, not changed here.
-7. **Retention** of `chosen_name` and `player_uid` follows D71's open retention question.
-8. **Merge order.** If 11f (0020) and 11i (0021) merge first, regenerate this migration on top: drop `0022_workspace_user_profile.sql`, `meta/0022_snapshot.json` and its journal entry, then run `pnpm db:generate --name workspace_user_profile`. The snapshot's `prevId` must chain to 0021.
+1. **A linked player who leaves the alliance** shows "Your player is not in the alliance's newest read" until the officer removes the link. Nothing unlinks by itself.
+2. **The public settings panel** (`ViewerSettings`) offers Light and Dark only. "Same as this device" can only be chosen in the desk.
+3. **`access.user.playerUid` is not used yet.** It is there for showing "you" on lists later.
+4. **The modal sheet's backdrop lightens the header in dark mode** (`backdrop:bg-ink/20`, and ink is light in dark). This is the shared `Sheet` style, not changed here.
+5. **Retention** of `chosen_name` and `player_uid` follows D71's open retention question.
+6. **The search reads current names only.** Name history (#297) is not searched, so an officer who renamed in the game since the newest read finds only the new name.
 
 ## Next
 Session: the next workspace issue the orchestrator picks (#293–#321). The workspace track has no prompt in `docs/SESSION_PLAYBOOK.md`.
-Model / effort: keep — no signal. The work fit one pass; the only surprise was the PT sign-out width, which was there before this session.
+Model / effort: keep — no signal. The work fit one pass, plus one round of orchestrator follow-ups (card 3 words, the sign-out width, the search and the migration number).
 Owner must do first: nothing. After the release, sign in once on production and check that the header shows the server nickname.
 Plan changes needed: none.
 
@@ -139,10 +157,10 @@ Plan changes needed: none.
 - Theme: `setTheme(null)` and `useThemeChoice()` are in `lib/brand/components/ThemeSwitch.tsx`.
 - Roster names: `latestRosterNames(db, unionId)` in `lib/repo/workspace-rosters.ts` returns the newest roster's uids and names without touching `raw_json`.
 - Help mark: `HelpMark` (`lib/brand/components/HelpMark.tsx`), drawn by `icon_help`.
-- `dictionary.ts` is now 223 lines (300 allowed).
+- `dictionary.ts` is now 225 lines (300 allowed).
 - First-use card 3 has four paragraphs: `intro.3.body`, `.more`, `.note` and `.last`.
-- Migration: this branch adds `0022_workspace_user_profile` (Open issues 8).
-- Before a new header control: PT "Sair" is under 44 px wide (Open issues 1).
+- Name search: `searchRoster` (`lib/private/roster-search.ts`) is the browser-safe roster filter on name keys. Reuse it for any client-side name filter.
+- Migration: this branch is `0020_workspace_user_profile`. A branch made before it regenerates its own migration on top (Deviations, "Migration number").
 </adjustments>
 
 PR: (added by the orchestrator)

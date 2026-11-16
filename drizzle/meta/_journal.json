@@ -143,10 +143,10 @@
       "breakpoints": true
     },
     {
-      "idx": 22,
+      "idx": 20,
       "version": "7",
-      "when": 1794868343592,
-      "tag": "0022_workspace_user_profile",
+      "when": 1794869639274,
+      "tag": "0020_workspace_user_profile",
       "breakpoints": true
     }
   ]

@@ -27,6 +27,8 @@ export interface Profile {
   player: { uid: number; name: string | null } | null;
   /** Players of the alliance whose name is like the officer's, while none is linked. */
   suggestions: Player[];
+  /** The alliance's newest roster, uid and name, for the search; empty once a player is linked. */
+  roster: Player[];
 }
 
 /** The matcher's answer for `name` (D74): its one match, its suggestions, or none. */
@@ -47,9 +49,15 @@ async function profileOf(
   playerUid: number | null,
 ): Promise<Profile> {
   const roster = await latestRosterNames(db, access.unionId);
-  if (playerUid === null) return { name, player: null, suggestions: suggestionsFor(name, roster) };
+  if (playerUid === null)
+    return { name, player: null, suggestions: suggestionsFor(name, roster), roster };
   const listed = roster.find((p) => p.uid === playerUid);
-  return { name, player: { uid: playerUid, name: listed?.name ?? null }, suggestions: [] };
+  return {
+    name,
+    player: { uid: playerUid, name: listed?.name ?? null },
+    suggestions: [],
+    roster: [],
+  };
 }
 
 export function profileView(db: Db, access: WorkspaceAccess): Promise<Profile> {
@@ -77,7 +85,7 @@ export async function linkPlayer(
   const player = roster.find((p) => p.uid === uid);
   if (!player) return "not_in_alliance";
   await updateWorkspaceUser(db, access.workspaceId, access.user.id, { playerUid: uid });
-  return { name: access.user.displayName ?? "", player, suggestions: [] };
+  return { name: access.user.displayName ?? "", player, suggestions: [], roster: [] };
 }
 
 export async function unlinkPlayer(db: Db, access: WorkspaceAccess): Promise<Profile> {

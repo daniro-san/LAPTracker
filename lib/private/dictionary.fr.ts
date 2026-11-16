@@ -183,7 +183,9 @@ export const fr: WorkspaceDictionary = {
   "profile.me.ask": "Est-ce vous ?",
   "profile.me.confirm": "C’est moi",
   "profile.me.none":
-    "Aucun joueur du dernier relevé de l’alliance n’a un nom proche du vôtre. Mettez ci-dessus votre nom dans le jeu pour voir une suggestion.",
+    "Aucun joueur du dernier relevé de l’alliance n’a un nom proche du vôtre. Cherchez votre nom ci-dessous.",
+  "profile.me.find": "Chercher dans l’alliance",
+  "profile.me.noResult": "Aucun nom du dernier relevé de l’alliance ne correspond.",
   "profile.theme": "Thème",
   "profile.theme.light": "Clair",
   "profile.theme.dark": "Sombre",
