@@ -34,6 +34,60 @@ Words already used in `lib/i18n/tr.ts`. Reuse them so the pages stay consistent;
 | kill share                | Kills payı                      | `ledger.carried`, `ledger.carriedHelp`, `ledger.carriedKillsMark`, `ledger.liveBusiest` — an alliance's share of the kills gained |
 | might share               | Might payı                      | `ledger.carried`, `ledger.carriedMightMark` — an alliance's share of the might at Start                                           |
 | percentage points         | yp                              | `ledger.carriedPoints` — after a gap, `+6.1 yp`; prose says yüzde puan (`ledger.carriedRatioHelp`)                                |
+| English                   | tr                              | Key and use                                                                                                                       |
+| ------------------------- | ------------------------------- | --------------------------------------------------------------------------------------                                            |
+| Server 325 · Event Ledger | Sunucu 325 · Etkinlik Defteri   | `site.ledger` — the page title                                                                                                    |
+| Ledger                    | Defter                          | `site.home` — the ledger, as a breadcrumb                                                                                         |
+| kept by the Old Grandmas  | Old Grandmas tarafından tutulur | `site.byline` — Old Grandmas stays a name                                                                                         |
+| Alliance                  | İttifak                         | `ledger.alliance`                                                                                                                 |
+| not in a tracked alliance | takip edilen ittifakta değil    | `compare.notTracked` — player view                                                                                                |
+| Member                    | Üye                             | `ledger.member` — a player inside an alliance                                                                                     |
+| Player                    | Oyuncu                          | `ledger.player`                                                                                                                   |
+| Event                     | Etkinlik                        | `ledger.event` — a game event                                                                                                     |
+| Rank                      | Sıra                            | `ledger.rank` — the #n position                                                                                                   |
+| Ranking                   | Sıralama                        | `ledger.ranking` — the game's server rank                                                                                         |
+| joined                    | katıldı                         | `ledger.joined` — after +n                                                                                                        |
+| left                      | ayrıldı                         | `ledger.left` — after −n                                                                                                          |
+| Stale                     | Eskimiş                         | `fresh.stale` — data not fresh                                                                                                    |
+| server time               | sunucu saati                    | `time.serverTime` — after a time: 14:01 …                                                                                         |
+| your time                 | senin saatin                    | `time.yourTime` — after a time, the viewer's zone                                                                                 |
+| Exact numbers             | Tam sayılar                     | `site.exactNumbers` — the toggle; legend.rounded names it                                                                         |
+| Manual round              | Elle tur                        | `site.manualRound` — an event the admin runs by hand                                                                              |
+| Leader                    | Lider                           | `leadership.leader` — the R5                                                                                                      |
+| Start / End               | Başlangıç / Bitiş               | `status.start` / `status.end`, `compare.lead`                                                                                     |
+| Run by hand by the admin  | Admin elle başlatır             | `status.byHand`                                                                                                                   |
+| grandma                   | nine                            | the voice in empty states and errors                                                                                              |
+| Daily progress            | Günlük ilerleme                 | `ledger.progress` — the player page's section heading                                                                             |
+| Median                    | Ortadaki üye                    | `ledger.progressMedian` — the middle member's change                                                                              |
+| English                   | tr                              | Key and use                                                                                                                       |
+| ------------------------- | ------------------------------- | --------------------------------------------------------------------------------------                                            |
+| Server 325 · Event Ledger | Sunucu 325 · Etkinlik Defteri   | `site.ledger` — the page title                                                                                                    |
+| Ledger                    | Defter                          | `site.home` — the ledger, as a breadcrumb                                                                                         |
+| kept by the Old Grandmas  | Old Grandmas tarafından tutulur | `site.byline` — Old Grandmas stays a name                                                                                         |
+| Alliance                  | İttifak                         | `ledger.alliance`                                                                                                                 |
+| not in a tracked alliance | takip edilen ittifakta değil    | `compare.notTracked` — player view                                                                                                |
+| Member                    | Üye                             | `ledger.member` — a player inside an alliance                                                                                     |
+| Player                    | Oyuncu                          | `ledger.player`                                                                                                                   |
+| Event                     | Etkinlik                        | `ledger.event` — a game event                                                                                                     |
+| Rank                      | Sıra                            | `ledger.rank` — the #n position                                                                                                   |
+| Ranking                   | Sıralama                        | `ledger.ranking` — the game's server rank                                                                                         |
+| joined                    | katıldı                         | `ledger.joined` — after +n                                                                                                        |
+| left                      | ayrıldı                         | `ledger.left` — after −n                                                                                                          |
+| Stale                     | Eskimiş                         | `fresh.stale` — data not fresh                                                                                                    |
+| server time               | sunucu saati                    | `time.serverTime` — after a time: 14:01 …                                                                                         |
+| your time                 | senin saatin                    | `time.yourTime` — after a time, the viewer's zone                                                                                 |
+| Exact numbers             | Tam sayılar                     | `site.exactNumbers` — the toggle; legend.rounded names it                                                                         |
+| Manual round              | Elle tur                        | `site.manualRound` — an event the admin runs by hand                                                                              |
+| Leader                    | Lider                           | `leadership.leader` — the R5                                                                                                      |
+| Start / End               | Başlangıç / Bitiş               | `status.start` / `status.end`, `compare.lead`                                                                                     |
+| Run by hand by the admin  | Admin elle başlatır             | `status.byHand`                                                                                                                   |
+| Live                      | Canlı                           | `ledger.live` — the live event strip and section                                                                                  |
+| reading                   | okuma                           | `ledger.liveReadings`, `ledger.liveNoReading` — one update of the event                                                           |
+| Standings                 | Şimdiye kadarki durum           | `ledger.liveStandings` — not the game's Ranking (Sıralama)                                                                        |
+| peak                      | zirve                           | `ledger.liveLast` — the highest reading in the last minutes                                                                       |
+| min (in a stat line)      | dk                              | `ledger.liveLast` — sentences spell out dakika (`ledger.livePulseHelp`)                                                           |
+| grandma                   | nine                            | the voice in empty states and errors                                                                                              |
+| gainer                    | Kills kazanan Members           | `ledger.withKills`, `ledger.topShare`, `ledger.fewGainers` — a member whose Kills rose                                            |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

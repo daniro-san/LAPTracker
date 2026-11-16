@@ -27,6 +27,7 @@ Words already used in `lib/i18n/sv.ts`. Reuse them so the pages stay consistent;
 | Member history            | Medlemshistorik           | `history.title` — an alliance's rosters over time         |
 | Daily read                | Dagsavläsning             | `history.daily` — a card head for the once-a-day read     |
 | Renamed                   | Namnbyte                  | `history.renamed` — a member whose name changed           |
+| Middle member             | Mittenmedlem              | `ledger.progressMedian` — an alliance's median member     |
 | Reading (live)            | avläsning                 | `ledger.liveReadings` — one snapshot of the live event    |
 | Standings                 | Ställningen               | `ledger.liveStandings` — the live ranking so far          |
 | Server pulse              | Serverpuls                | `ledger.livePulse` — kills per interval, all alliances    |
