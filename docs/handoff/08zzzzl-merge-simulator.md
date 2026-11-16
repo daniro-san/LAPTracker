@@ -28,8 +28,15 @@ Closes #282.
 - Screenshots: `docs/screenshots/08zzzzl-merge-360-light.png`, `docs/screenshots/08zzzzl-merge-360-dark.png`, `docs/screenshots/08zzzzl-merge-1280-light.png`.
 - Not run: real production numbers (the local seed has 98 members per alliance and no stored capacity, so the shown cap is the assumed 100).
 
+## UX review (2026-11-16)
+Measured (Chrome, light and dark, 360, 390, 412, 600, 768, 810, 820, 1024, 1180, 1280; WebKit 390 and 820, light and dark; German and Russian at 360; the picker alone, the same alliance twice, and the alliance page's link): `scrollWidth` equals the viewport width everywhere; both selects are 44 px tall in Chrome and WebKit (`drawn-field`); the "Simulate a merge" link is 44 px tall; no text under 4.5:1 apart from the breadcrumb separator "›" (3.16:1 in light), which belongs to the shared Breadcrumbs component and is decorative; no figure clipped; long names wrap in the bars and do not overflow. The "Exact numbers" checkbox is 18 px inside its 44 px label, as on other pages.
+Fixed: (1) blocker at 360 to 639 px: the two selects sat side by side, each about 125 px wide, so a name showed as `[TmSLONG] Ün` and the arrow overlapped the text; now below 640 px the selects stack (A over B, the swap link beside them) and each shows about 21 characters of the name, and the select keeps its arrow padding (`pl-3 pr-8` instead of `px-3`, which had overridden the right padding). Screenshots replaced.
+Left: (1) The 3-second sentence is the two ranks ("Together: #1 with everyone, #1 within the cap of 100"); the member count against the cap is the first chart under it. Putting the count in the sentence needs new copy in 17 languages. (2) With no stored cap the page says "so 100 is assumed" in the help line under the sentence; it is not repeated in the bars. (3) A single roster's age differs between the two sides; each "as of" is listed at the bottom. (4) The breadcrumb separator contrast is a shared component (follow-up). Wording has no blame words, the chip "Simulation, not a plan" is under the title, and the page names no member.
+Owner decision 2026-11-16: the merged cap stays the larger of the two stored capacities (D84).
+Reader's 3-second takeaway: before and after, "this pair would be #1 with everyone and #1 within the cap"; before the fix the reader could not tell at 360 px which alliances were chosen, now the picker shows both names.
+
 ## Open issues
-1. The "larger of the two caps" rule is my reading; the owner may prefer the smaller one or the sum. It is one line in `mergedCapacity`.
+1. The "larger of the two caps" rule: owner confirmed 2026-11-16 (D84). Closed.
 2. Ranks use rosters read at different times when one alliance's daily read failed. The "as of" line shows it; no warning is drawn.
 3. The native selects cut a long alliance name at 360 px (the option list shows it whole).
 4. The `lib/copy-blank.ts` move could be reverted if dev's `copy-live.ts` split leaves `lib/copy.ts` under the limit without it.
@@ -45,3 +52,5 @@ Plan changes needed: none to `docs/IMPLEMENTATION_PLAN.md`.
 - The alliance page's links now live in `app/_ui/AllianceLinks.tsx`; add a new link there, not in the page.
 - `mergePage` returns aggregates only; a follow-up that needs member rows must add its own read.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/339

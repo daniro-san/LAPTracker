@@ -1,5 +1,5 @@
 // The merge simulator's picker (D84, issue 282): a plain GET form, as the compare page's is (D57), so the URL holds
-// the two alliances, it works without JavaScript and can be shared. The swap link flips A and B.
+// the two alliances, it works without JavaScript and can be shared. The swap link flips A and B. Below 640 px the two selects stack, so each shows a whole name.
 import Link from "next/link";
 
 import { buttonClass } from "@/lib/brand/components/Button";
@@ -43,7 +43,7 @@ function AllianceSelect({
       <select
         name={name}
         defaultValue={value ?? ""}
-        className="drawn-field min-h-11 w-full min-w-0 px-3 text-base"
+        className="drawn-field min-h-11 w-full min-w-0 pl-3 pr-8 text-base"
       >
         <option value="">{placeholder}</option>
         {choices.map((c) => (
@@ -72,7 +72,7 @@ export function MergePicker({
     <form
       method="get"
       action={MERGE_PATH}
-      className="mb-4 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-2 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto]"
+      className="mb-4 grid grid-cols-[minmax(0,1fr)_auto] items-end gap-2 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto]"
     >
       <AllianceSelect
         name="a"
@@ -85,7 +85,7 @@ export function MergePicker({
       <Link
         href={mergeHref(b, a)}
         aria-label={m.swap}
-        className="tint-button inline-flex min-h-11 min-w-11 items-center justify-center font-medium text-plum"
+        className="tint-button inline-flex row-span-2 self-center sm:row-span-1 sm:self-end min-h-11 min-w-11 items-center justify-center font-medium text-plum"
       >
         <span aria-hidden="true">⇄</span>
       </Link>
