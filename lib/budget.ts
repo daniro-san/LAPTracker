@@ -11,8 +11,11 @@ export function requiredQuota(allianceCount: number): number {
   return 2 * (allianceCount + RESERVE_CALLS);
 }
 
-/** A read's attempts at most: the first call and 3 retries on 502/503/504 (lib/sources/v1.ts). */
-const ATTEMPTS_PER_READ = 4;
+/** Retries after a 502/503/504 (lib/sources/v1.ts reads it from here, so the sample's worst case follows). */
+export const MAX_RETRIES = 3;
+
+/** A read's attempts at most: the first call and its retries. */
+const ATTEMPTS_PER_READ = MAX_RETRIES + 1;
 
 /**
  * Minimum `remaining` before a sample of `allianceCount` alliances (D69): the After's reserve

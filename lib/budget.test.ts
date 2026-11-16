@@ -1,7 +1,7 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
-import { requiredQuota, sampleQuota } from "./budget";
+import { MAX_RETRIES, requiredQuota, sampleQuota } from "./budget";
 
 describe("requiredQuota", () => {
   it("covers one fetch per alliance for both phases plus the reserve, for any alliance count", () => {
@@ -22,8 +22,10 @@ describe("sampleQuota", () => {
   it("leaves the After its reserve after a sample's worst case, for any alliance count", () => {
     fc.assert(
       fc.property(fc.nat({ max: 1000 }), (n) => {
-        // Worst case: the quota call and every read retried 3 times.
-        expect(sampleQuota(n) - (1 + 4 * n)).toBeGreaterThanOrEqual(requiredQuota(n));
+        // Worst case: the quota call and every read retried to the limit.
+        expect(sampleQuota(n) - (1 + (MAX_RETRIES + 1) * n)).toBeGreaterThanOrEqual(
+          requiredQuota(n),
+        );
       }),
     );
   });

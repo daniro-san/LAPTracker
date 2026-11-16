@@ -2,6 +2,7 @@
 // Every call spends 1 of 1,000 daily requests, retries and /v1/quota included.
 import { z } from "zod";
 
+import { MAX_RETRIES } from "../budget";
 import { getSourceEnv } from "../env";
 import { redact } from "../redact";
 import { readBody, rosterFields, TIMEOUT_MS, toSnapshotInput, USER_AGENT } from "./shared";
@@ -18,7 +19,6 @@ import {
 } from "./types";
 
 const MAX_IN_FLIGHT = 4;
-const MAX_RETRIES = 3;
 const BACKOFF_MS = [1000, 2000, 4000] as const;
 const JITTER_MS = 250;
 /** A Retry-After above this is clamped, so one header cannot outlast the route's maxDuration. */
