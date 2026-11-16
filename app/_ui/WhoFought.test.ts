@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import type { AllianceTurnout } from "@/lib/queries";
 
-import { WhoFought } from "./WhoFought";
+import { visibleEntries, WhoFought } from "./WhoFought";
 
 const alliance = (unionId: number, gainers: number, over: Partial<AllianceTurnout> = {}) => ({
   unionId,
@@ -41,5 +41,23 @@ describe("WhoFought", () => {
     expect(html).toContain("90% · 5 of 47");
     expect(html).toContain("90% · few gainers");
     expect(html.match(/text-ink\/70"><a/g)).toHaveLength(1);
+  });
+
+  describe("visibleEntries", () => {
+    const rows = Array.from({ length: 8 }, (_, i) => ({ t: { unionId: i + 1 } }));
+    const ids = (r: typeof rows) => r.map(({ t }) => t.unionId);
+
+    it("shows the first 5 when the viewer's alliance is among them", () => {
+      expect(ids(visibleEntries(rows, 3, false))).toEqual([1, 2, 3, 4, 5]);
+    });
+    it("adds the viewer's alliance in place when it is outside the first 5", () => {
+      expect(ids(visibleEntries(rows, 7, false))).toEqual([1, 2, 3, 4, 5, 7]);
+    });
+    it("shows the first 5 when there is no own alliance", () => {
+      expect(ids(visibleEntries(rows, null, false))).toEqual([1, 2, 3, 4, 5]);
+    });
+    it("shows every row when expanded", () => {
+      expect(visibleEntries(rows, 7, true)).toHaveLength(8);
+    });
   });
 });

@@ -55,8 +55,10 @@ export const envSchema = z.object({
     .max(60)
     .refine((n) => n === 0 || 60 % n === 0, "expected 0 or a divisor of 60")
     .default(15),
-  // The daily roster read for member history (D60), server time, every day.
-  DAILY_ROSTER_AT: hhmm.default("06:00"),
+  // The daily roster read for member history (D60), server time, every day. 23:30: the 23:37 tick reads
+  // the day's counters (daily_tech) before the 00:00 reset, and the 23:52 tick re-reads the alliances
+  // that fell short (D72).
+  DAILY_ROSTER_AT: hhmm.default("23:30"),
   NOTIFY_WEBHOOK_PUBLIC: optional(discordWebhook),
   NOTIFY_WEBHOOK_ADMIN: optional(discordWebhook),
   NOTIFY_ADMIN_MENTION: optional(

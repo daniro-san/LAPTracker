@@ -1,5 +1,5 @@
 {
-  "id": "53294440-6824-4166-a1c7-494b05abd616",
+  "id": "c57ea4da-6f81-40a3-8907-13071b872081",
   "prevId": "6b078a66-574f-4b63-a33f-67ab5e149ebb",
   "version": "7",
   "dialect": "postgresql",
@@ -125,30 +125,6 @@
         "raw_json": {
           "name": "raw_json",
           "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "member_uids": {
-          "name": "member_uids",
-          "type": "bigint[]",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "member_names": {
-          "name": "member_names",
-          "type": "text[]",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "member_power": {
-          "name": "member_power",
-          "type": "bigint[]",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "member_kills": {
-          "name": "member_kills",
-          "type": "bigint[]",
           "primaryKey": false,
           "notNull": false
         }
@@ -356,6 +332,12 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "auto_retry_at": {
+          "name": "auto_retry_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
@@ -476,6 +458,12 @@
           "type": "bigint[]",
           "primaryKey": false,
           "notNull": true
+        },
+        "raw_json": {
+          "name": "raw_json",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -979,12 +967,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "slot_at": {
-          "name": "slot_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
         "started_at": {
           "name": "started_at",
           "type": "timestamp with time zone",
@@ -1048,52 +1030,7 @@
           "notNull": false
         }
       },
-      "indexes": {
-        "snapshots_event_phase_unique": {
-          "name": "snapshots_event_phase_unique",
-          "columns": [
-            {
-              "expression": "event_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "phase",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "where": "\"snapshots\".\"phase\" <> 'sample'",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "snapshots_event_slot_unique": {
-          "name": "snapshots_event_slot_unique",
-          "columns": [
-            {
-              "expression": "event_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "slot_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "where": "\"snapshots\".\"phase\" = 'sample'",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
+      "indexes": {},
       "foreignKeys": {
         "snapshots_event_id_events_id_fk": {
           "name": "snapshots_event_id_events_id_fk",
@@ -1110,16 +1047,21 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "snapshots_event_phase_unique": {
+          "name": "snapshots_event_phase_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "event_id",
+            "phase"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {
         "snapshots_phase_check": {
           "name": "snapshots_phase_check",
-          "value": "\"snapshots\".\"phase\" in ('before', 'after', 'sample')"
-        },
-        "snapshots_slot_check": {
-          "name": "snapshots_slot_check",
-          "value": "(\"snapshots\".\"phase\" = 'sample') = (\"snapshots\".\"slot_at\" is not null)"
+          "value": "\"snapshots\".\"phase\" in ('before', 'after')"
         },
         "snapshots_status_check": {
           "name": "snapshots_status_check",
