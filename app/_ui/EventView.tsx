@@ -11,6 +11,7 @@ import { nextEvent } from "@/lib/schedule";
 
 import { CompareLink } from "./ComparePicker";
 import { DetailTable, figureRows } from "./DetailLines";
+import { loadProgress } from "./event-page";
 import {
   comparisonRows,
   emptyLine,
@@ -21,7 +22,8 @@ import {
 import { eventTitle, ManualMark } from "./EventLabel";
 import { ExactToggle } from "./ExactToggle";
 import { allianceLabel, rowAnchor, type Clock } from "./format";
-import { requestClock, requestCopy } from "./locale";
+import { LiveSections, LiveStrip } from "./LiveProgress";
+import { requestClock, requestCopy, requestLocale } from "./locale";
 import { allianceScope, memberScope, MOVERS_ID } from "./mover-lists";
 import { Movers } from "./Movers";
 import { MyAllianceJump } from "./MyAlliance";
@@ -177,6 +179,36 @@ function TopStatus({
   );
 }
 
+/** The event's date (and name) with the compare and exact-numbers controls. */
+function EventHead({
+  detail,
+  events,
+  clock,
+  copy,
+}: {
+  detail: Detail;
+  events: Events;
+  clock: Clock;
+  copy: Dictionary;
+}) {
+  return (
+    <div className="mb-2 flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
+      <div className="min-w-0">
+        <h2 className="font-subhead text-display-md leading-tight">
+          {eventTitle(detail) ?? clock.long(detail.eventAtUtc)}
+        </h2>
+        {eventTitle(detail) && (
+          <p className="flex gap-1.5 text-sm">
+            {detail.manual && <ManualMark copy={copy} />}
+            {clock.long(detail.eventAtUtc)}
+          </p>
+        )}
+      </div>
+      <TitleActions events={events} eventId={detail.id} copy={copy} />
+    </div>
+  );
+}
+
 export async function EventView({
   events,
   homeId,
@@ -194,37 +226,32 @@ export async function EventView({
   names: Map<number, NameHistoryEntry[]>;
   ranks: Map<number, Partial<Record<"before" | "after", Ranks>>>;
 }) {
-  const [clock, copy] = await Promise.all([requestClock(), requestCopy()]);
   const now = new Date();
+  const [clock, copy, locale, progress] = await Promise.all([
+    requestClock(),
+    requestCopy(),
+    requestLocale(),
+    loadProgress(detail.id, now),
+  ]);
   const rows = comparisonRows(detail.snapshots, changes, names, ranks, copy);
   const worst = rows.map((r) => worstOf(fresh(r.before), fresh(r.after)));
   const moverScopes = [
     allianceScope(movers.alliances, detail.id, changes, copy),
     memberScope(movers.members, copy.ledger.members),
   ];
+  const liveProps = { eventId: detail.id, rows, clock, copy, locale };
   const hasMovers = moverScopes.some((s) => Object.values(s.lists).some((l) => l && l.length > 0));
   return (
     <>
       <SiteHeader events={events} currentId={detail.id} homeId={homeId} clock={clock} copy={copy} />
       <main id="main" className="scroll-mt-20 mx-auto max-w-[960px] px-4 py-4 sm:px-6">
         <TitleBand copy={copy} />
-        <div className="mb-2 flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
-          <div className="min-w-0">
-            <h2 className="font-subhead text-display-md leading-tight">
-              {eventTitle(detail) ?? clock.long(detail.eventAtUtc)}
-            </h2>
-            {eventTitle(detail) && (
-              <p className="flex gap-1.5 text-sm">
-                {detail.manual && <ManualMark copy={copy} />}
-                {clock.long(detail.eventAtUtc)}
-              </p>
-            )}
-          </div>
-          <TitleActions events={events} eventId={detail.id} copy={copy} />
-        </div>
+        <EventHead detail={detail} events={events} clock={clock} copy={copy} />
+        {progress && <LiveStrip progress={progress} clock={clock} copy={copy} />}
         <TopStatus detail={detail} worst={worst} hasMovers={hasMovers} clock={clock} copy={copy} />
         <Legend memberMark={rows.some((r) => r.metrics.some((m) => m.memberMark))} copy={copy} />
         <MyAllianceJump tags={Object.fromEntries(rows.map((r) => [r.unionId, r.tag]))} />
+        {progress && <LiveSections {...liveProps} progress={progress} placement="above" />}
         <StatTable
           leadLabel={copy.ledger.alliance}
           columns={[copy.ledger.might, copy.ledger.kills, copy.ledger.members]}
@@ -244,6 +271,7 @@ export async function EventView({
           copy={copy}
         />
         <Movers scopes={moverScopes} />
+        {progress && <LiveSections {...liveProps} progress={progress} placement="below" />}
       </main>
       <SiteFooter copy={copy} />
     </>

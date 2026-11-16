@@ -27,6 +27,10 @@ Words already used in `lib/i18n/it.ts`. Reuse them so the pages stay consistent;
 | Start / End               | Inizio / Fine                | `status.start` / `status.end`, `compare.lead`             |
 | grandma                   | la nonna                     | the voice in empty states and errors                      |
 | Daily read                | Lettura giornaliera          | `history.daily` — a roster read once a day                |
+| Live                      | Live                         | `ledger.live` — the live strip and section                |
+| Standings                 | Graduatoria                  | `ledger.liveStandings` — the in-event table               |
+| Server pulse              | Ritmo server                 | `ledger.livePulse` — the kills per interval               |
+| Kills gained              | Kills guadagnati             | `ledger.liveKillsGained` — a column header                |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

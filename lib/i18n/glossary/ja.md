@@ -29,6 +29,7 @@ Words already used in `lib/i18n/ja.ts`. Reuse them so the pages stay consistent;
 | Grandma noticed           | おばあちゃんの気づき      | `ledger.movers` — the biggest gains and losses per event  |
 | Renamed                   | 改名                      | `history.renamed` — a member's name changed               |
 | Daily read                | 毎日の読み取り            | `history.daily` — the once-a-day roster read              |
+| Live                      | ライブ                    | `ledger.live` — the live event section and its strip      |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

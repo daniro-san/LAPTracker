@@ -66,6 +66,22 @@ export const en = {
     alliances: "Alliances",
     /** The event's biggest gains and losses (#70). */
     movers: "Grandma noticed",
+    /** The live event section (issue 307): the strip while the event runs, then the section's words. */
+    live: "Live",
+    liveUpdate: "updated {updated} · next {next}",
+    liveReadings: "{n} readings so far",
+    liveStandings: "Standings so far",
+    liveStandingsDone: "At the last reading",
+    liveDuring: "During the event",
+    liveStandingsHelp: "Change since Start, most kills gained first",
+    livePulse: "Server pulse",
+    livePulseHelp: "Kills gained by {n} alliances in each {min} minutes",
+    liveBusiest: "Busiest 30 minutes so far: {from}–{to} · {share} of the kills",
+    liveBusiestDone: "Busiest 30 minutes: {from}–{to} · {share} of the kills",
+    liveNoUpdate: "No update from the game",
+    liveNoReading: "No reading",
+    liveInterval: "Interval",
+    liveKillsGained: "Kills gained",
   },
   /** Event vs event (D57, #177): two events' in-event changes side by side. */
   compare: {
