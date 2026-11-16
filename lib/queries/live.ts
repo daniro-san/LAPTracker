@@ -50,13 +50,16 @@ export interface EventProgress {
   everyMin: number;
 }
 
-type Row = {
+/** One alliance row of a reading (or one bare row of an End), as the event cache keeps it (issue 327):
+ * times are epoch milliseconds, so a row survives JSON. */
+export type ProgressRow = {
   snapshotId: number;
   phase: "before" | "after" | "sample";
   status: string;
-  slotAt: Date | null;
-  startedAt: Date;
-  finishedAt: Date | null;
+  slotAt: number | null;
+  startedAt: number;
+  finishedAt: number | null;
+  afterAt: number;
   unionId: number | null;
   isFresh: boolean | null;
   totalPower: number | null;
@@ -64,11 +67,13 @@ type Row = {
 };
 
 /** The readings of Start and samples by snapshot: their time and every alliance read. */
-function readSlices(rows: Row[]) {
+function readSlices(rows: readonly ProgressRow[]) {
   const slices = new Map<number, { at: Date; alliances: Map<number, Measured> }>();
   for (const r of rows) {
     if (r.phase === "after" || r.status === "running" || r.unionId === null) continue;
-    const at = r.phase === "before" ? (r.finishedAt ?? r.startedAt) : (r.slotAt as Date);
+    const at = new Date(
+      r.phase === "before" ? (r.finishedAt ?? r.startedAt) : (r.slotAt as number),
+    );
     const slice = slices.get(r.snapshotId) ?? { at, alliances: new Map() };
     slice.alliances.set(r.unionId, {
       isFresh: r.isFresh === true,
@@ -80,16 +85,9 @@ function readSlices(rows: Row[]) {
   return slices;
 }
 
-/**
- * The public event's progress; null when it is not public, has no usable Start, or has no sample and is
- * not live (a live event with no sample yet still has progress: the strip).
- * `everyMin` is `SAMPLE_EVERY_MIN` (0 = off: nothing is live).
- */
-export async function eventProgress(
-  db: Db,
-  eventId: number,
-  { now, everyMin }: { now: Date; everyMin: number },
-): Promise<EventProgress | null> {
+/** The public event's Start and sample rows (alliance totals) and its End's bare row; none when it is not
+ * public. Nothing here depends on `now`, so the event cache can share it between requests. */
+export async function progressRows(db: Db, eventId: number): Promise<ProgressRow[]> {
   const rows = await db
     .select({
       snapshotId: snapshots.id,
@@ -117,6 +115,24 @@ export async function eventProgress(
     )
     .where(and(eq(events.id, eventId), publicEvent))
     .orderBy(asc(snapshots.slotAt), asc(allianceSnapshots.unionId));
+  return rows.map((r) => ({
+    ...r,
+    slotAt: r.slotAt?.getTime() ?? null,
+    startedAt: r.startedAt.getTime(),
+    finishedAt: r.finishedAt?.getTime() ?? null,
+    afterAt: r.afterAt.getTime(),
+  }));
+}
+
+/**
+ * The public event's progress from its rows (`progressRows`), as of `now`; null when it is not public, has
+ * no usable Start, or has no sample and is not live (a live event with no sample yet still has progress:
+ * the strip). `everyMin` is `SAMPLE_EVERY_MIN` (0 = off: nothing is live).
+ */
+export function eventProgressOf(
+  rows: readonly ProgressRow[],
+  { now, everyMin }: { now: Date; everyMin: number },
+): EventProgress | null {
   const first = rows[0];
   if (!first) return null;
   const slices = readSlices(rows);
@@ -130,11 +146,21 @@ export async function eventProgress(
   if (!start) return null;
   const startDone = rows.some((r) => r.phase === "before" && r.status !== "running");
   const ended = rows.some((r) => r.phase === "after");
+  const afterAt = new Date(first.afterAt);
   const next =
-    startDone && !ended ? nextReading(now, everyMin, first.afterAt, latest?.at ?? start.at) : null;
+    startDone && !ended ? nextReading(now, everyMin, afterAt, latest?.at ?? start.at) : null;
   // Nothing to show before the first reading unless the event is live (the strip says when it comes).
   if (!latest && !next) return null;
-  return progressOf(start, samples, next, { now, everyMin, afterAt: first.afterAt });
+  return progressOf(start, samples, next, { now, everyMin, afterAt });
+}
+
+/** `eventProgressOf` over a fresh read of the rows. */
+export async function eventProgress(
+  db: Db,
+  eventId: number,
+  options: { now: Date; everyMin: number },
+): Promise<EventProgress | null> {
+  return eventProgressOf(await progressRows(db, eventId), options);
 }
 
 /** The figures of the readings so far; the pulse and the standings are empty before the first one. */

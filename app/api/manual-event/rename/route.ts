@@ -24,6 +24,7 @@ export function POST(request: Request): Promise<Response> {
     const result = await renameEvent(db, parsed.data.event_id, parsed.data.name);
     if (result === "not-found") return errorResponse(404, "event_not_found");
     if (result === "no-snapshot") return errorResponse(409, "rename_before_run");
+    ctx.eventCache.invalidate(parsed.data.event_id);
     return Response.json({ event_id: parsed.data.event_id, name: parsed.data.name });
   });
 }

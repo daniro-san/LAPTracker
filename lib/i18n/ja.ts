@@ -62,8 +62,8 @@ export const ja = {
     liveStandingsHelp: "開始からの変化、Kills 増加の多い順",
     livePulse: "サーバーの動き",
     livePulseHelp: "{min}分ごとに{n}同盟が獲得した Kills",
-    liveBusiest: "ここまでで最も忙しかった30分：{from}–{to} · Kills 全体の{share}",
-    liveBusiestDone: "最も忙しかった30分：{from}–{to} · Kills 全体の{share}",
+    liveBusiest: "ここまでで最も忙しかった{span}分：{from}–{to} · Kills 全体の{share}",
+    liveBusiestDone: "最も忙しかった{span}分：{from}–{to} · Kills 全体の{share}",
     liveNoUpdate: "ゲームからの更新なし",
     liveNoReading: "読み取りなし",
     liveInterval: "間隔",
@@ -78,6 +78,8 @@ export const ja = {
     fought: "参戦状況",
     foughtSoFar: "ここまでの参戦状況",
     foughtHelp: "開始と終了の両方で同盟にいた Members。支援役のプレイヤーは Kills を得ません。",
+    foughtSoFarHelp:
+      "開始時と最新の読み取り時の両方で同盟にいた Members。支援役のプレイヤーは Kills を得ません。",
     withKills: "Kills を得た Members",
     topShare: "上位5人の Kills",
     topShareHelp:

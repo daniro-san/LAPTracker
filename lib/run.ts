@@ -148,11 +148,12 @@ interface Collected {
 }
 
 /** The collector's run under its logger. The claim is watched, so the row it took (exactly ours, never
- * another run's) is final and the logger settled on every path before the caller notifies. */
+ * another run's) is final and the logger settled on every path before the caller notifies. A run that
+ * claimed a row changed the event's readings, so the event's shared page data is dropped (issue 327). */
 async function collect(
   ctx: AppContext,
   db: Db,
-  phase: SnapshotPhase,
+  { eventId, phase }: { eventId: number; phase: SnapshotPhase },
   start: (deps: Deps) => Promise<RunSummary>,
 ): Promise<Collected> {
   const repo = createRepo(db);
@@ -187,6 +188,8 @@ async function collect(
       summary = await finaliseCrashed(repo, { id: claimedId, startedAt: claimedAt }, phase, ctx);
     }
     await logger.shutdown();
+    // INVARIANT cache.write-invalidates-event (D79): the row is final here, so the next page read sees it.
+    if (claimedId !== null) ctx.eventCache.invalidate(eventId);
   }
   return { summary, refused, claimedAt, failedWrites: logger.stats().failedWrites };
 }
@@ -214,7 +217,7 @@ export async function executeSnapshot(
   const gated = gate(ctx.now(), req);
   if ("refused" in gated) return { ok: false, ...REFUSALS[gated.refused], snapshotId: null };
   const { stale } = gated;
-  const c = await collect(ctx, db, req.phase, (deps) =>
+  const c = await collect(ctx, db, { eventId: req.event.id, phase: req.phase }, (deps) =>
     runSnapshot(req.event.id, req.phase, deps, { force: req.force, stale }),
   );
   const { summary } = c;
@@ -245,7 +248,9 @@ export async function executeSample(
   db: Db,
   req: SampleRequest,
 ): Promise<RunOutcome> {
-  const c = await collect(ctx, db, "sample", (deps) => runSample(req.event.id, req.slotAt, deps));
+  const c = await collect(ctx, db, { eventId: req.event.id, phase: "sample" }, (deps) =>
+    runSample(req.event.id, req.slotAt, deps),
+  );
   const { summary } = c;
   if (summary === null) return unclaimed(c.refused);
   await notifyWithinCap(

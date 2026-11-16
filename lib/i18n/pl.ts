@@ -62,8 +62,8 @@ export const pl = {
     liveStandingsHelp: "Zmiana od Początku, najpierw największy przyrost Kills",
     livePulse: "Puls serwera",
     livePulseHelp: "Przyrost Kills sojuszy ({n}) w każdych {min} minutach",
-    liveBusiest: "Najaktywniejsze 30 minut dotąd: {from}–{to} · {share} wszystkich Kills",
-    liveBusiestDone: "Najaktywniejsze 30 minut: {from}–{to} · {share} wszystkich Kills",
+    liveBusiest: "Najaktywniejsze {span} minut dotąd: {from}–{to} · {share} wszystkich Kills",
+    liveBusiestDone: "Najaktywniejsze {span} minut: {from}–{to} · {share} wszystkich Kills",
     liveNoUpdate: "Brak aktualizacji z gry",
     liveNoReading: "Brak odczytu",
     liveInterval: "Odstęp",
@@ -78,6 +78,8 @@ export const pl = {
     foughtSoFar: "Frekwencja wojny dotąd",
     foughtHelp:
       "Members, którzy byli w sojuszu na Początku i na Końcu. Gracze wsparcia nie zdobywają Kills.",
+    foughtSoFarHelp:
+      "Members, którzy byli w sojuszu na Początku i w jego ostatnim odczycie. Gracze wsparcia nie zdobywają Kills.",
     withKills: "Members ze zdobytymi Kills",
     topShare: "Kills od 5 najlepszych członków",
     topShareHelp:

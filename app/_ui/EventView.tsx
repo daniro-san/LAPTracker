@@ -5,14 +5,7 @@
 import type { NameHistoryEntry } from "@/lib/compute";
 import { fill, type Dictionary } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
-import type {
-  EventProgress,
-  getEventDetail,
-  listEvents,
-  Ranks,
-  RosterChange,
-  TurnoutLists,
-} from "@/lib/queries";
+import type { getEventDetail, listEvents, Ranks, RosterChange, TurnoutLists } from "@/lib/queries";
 import type { getEventPage } from "@/lib/queries/event-page";
 import { nextEvent } from "@/lib/schedule";
 
@@ -194,12 +187,9 @@ export async function EventView({
   ranks,
   movers,
   turnout,
-  progress: loaded,
 }: {
   movers: Movers;
   turnout: TurnoutLists | null;
-  /** The live section's data when the page already read it beside the event page; else it is read here. */
-  progress?: EventProgress | null;
   events: Events;
   homeId: number | null;
   detail: Detail;
@@ -212,7 +202,7 @@ export async function EventView({
     requestClock(),
     requestCopy(),
     requestLocale(),
-    loaded === undefined ? loadProgress(detail.id, now) : loaded,
+    loadProgress(detail, now),
   ]);
   const rows = comparisonRows(detail.snapshots, changes, names, ranks, copy);
   const worst = rows.map((r) => worstOf(fresh(r.before), fresh(r.after)));

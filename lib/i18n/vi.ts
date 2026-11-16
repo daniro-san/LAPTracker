@@ -62,8 +62,8 @@ export const vi = {
     liveStandingsHelp: "Thay đổi từ Bắt đầu, tiêu diệt tăng nhiều nhất lên trước",
     livePulse: "Nhịp máy chủ",
     livePulseHelp: "{n} liên minh tăng tiêu diệt trong mỗi {min} phút",
-    liveBusiest: "30 phút sôi động nhất đến nay: {from}–{to} · {share} tổng tiêu diệt",
-    liveBusiestDone: "30 phút sôi động nhất: {from}–{to} · {share} tổng tiêu diệt",
+    liveBusiest: "{span} phút sôi động nhất đến nay: {from}–{to} · {share} tổng tiêu diệt",
+    liveBusiestDone: "{span} phút sôi động nhất: {from}–{to} · {share} tổng tiêu diệt",
     liveNoUpdate: "Game chưa gửi cập nhật",
     liveNoReading: "Chưa đọc",
     liveInterval: "Chu kỳ",
@@ -78,6 +78,8 @@ export const vi = {
     foughtSoFar: "Tham chiến đến nay",
     foughtHelp:
       "Thành viên đã ở trong liên minh lúc Bắt đầu và lúc Kết thúc. Vai hỗ trợ không tăng tiêu diệt.",
+    foughtSoFarHelp:
+      "Thành viên đã ở trong liên minh lúc Bắt đầu và ở lần đọc gần nhất. Vai hỗ trợ không tăng tiêu diệt.",
     withKills: "Thành viên có tiêu diệt tăng",
     topShare: "Tiêu diệt của Top 5 thành viên",
     topShareHelp:

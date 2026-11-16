@@ -62,8 +62,8 @@ export const ptBR = {
     liveStandingsHelp: "Mudança desde o Início, mais kills ganhos primeiro",
     livePulse: "Pulso geral",
     livePulseHelp: "kills ganhos por {n} alianças a cada {min} minutos",
-    liveBusiest: "Os 30 minutos mais movimentados até agora: {from}–{to} · {share} dos kills",
-    liveBusiestDone: "Os 30 minutos mais movimentados: {from}–{to} · {share} dos kills",
+    liveBusiest: "Os {span} minutos mais movimentados até agora: {from}–{to} · {share} dos kills",
+    liveBusiestDone: "Os {span} minutos mais movimentados: {from}–{to} · {share} dos kills",
     liveNoUpdate: "Sem atualização do jogo",
     liveNoReading: "Sem leitura",
     liveInterval: "Intervalo",
@@ -78,6 +78,8 @@ export const ptBR = {
     foughtSoFar: "Participação até agora",
     foughtHelp:
       "Members que estavam na aliança no Início e no Fim. Jogadores de suporte não ganham kills.",
+    foughtSoFarHelp:
+      "Members que estavam na aliança no Início e na sua leitura mais recente. Jogadores de suporte não ganham kills.",
     withKills: "Members com kills ganhos",
     topShare: "Kills dos Top 5 Members",
     topShareHelp:

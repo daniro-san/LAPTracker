@@ -9,8 +9,29 @@ import { eventRanks } from "./ranks";
 import { rosterChanges, type RosterChange } from "./rosters";
 import { memberTurnout, memberTurnoutSoFar } from "./turnout";
 
-/** `eventId` null = the home page's event (`homeEvent`). Null page: no such (public) event. */
-export async function getEventPage(db: Db, eventId: number | null) {
+/** A read shared between requests for one event (the page passes the event cache, issue 327). `load` gets
+ * the connection to read with: a shared read can run after this request's connection is closed. */
+type Shared = <T>(eventId: number, load: (db: Db) => Promise<T>) => Promise<T>;
+
+type Phases = NonNullable<Awaited<ReturnType<typeof getEventDetail>>>;
+
+/** Who gained kills: Start against End, or while there is no End, against each alliance's latest sample
+ * (#307), shared between requests. */
+function turnoutOf(db: Db, id: number, snapshots: Phases["snapshots"], shared: Shared) {
+  const before = snapshots.find((s) => s.phase === "before");
+  if (snapshots.some((s) => s.phase === "after")) return memberTurnout(db, snapshots);
+  return before ? shared(id, (read) => memberTurnoutSoFar(read, id, before.id)) : null;
+}
+
+/**
+ * `eventId` null = the home page's event (`homeEvent`). Null page: no such (public) event. `shared` keeps
+ * the turnout so far (no End yet) for every viewer; by default it reads every time.
+ */
+export async function getEventPage(
+  db: Db,
+  eventId: number | null,
+  shared: Shared = (_id, load) => load(db),
+) {
   const events = await listEvents(db);
   const homeId = homeEvent(events)?.id ?? null;
   const id = eventId ?? homeId;
@@ -27,12 +48,7 @@ export async function getEventPage(db: Db, eventId: number | null) {
       ? rosterChanges(db, { before: before.id, after: after.id })
       : Promise.resolve(new Map<number, RosterChange>()),
     memberMovers(db, detail.snapshots),
-    // No End yet: the figures are as of each alliance's latest sample (#307).
-    after
-      ? memberTurnout(db, detail.snapshots)
-      : before
-        ? memberTurnoutSoFar(db, id, before.id)
-        : null,
+    turnoutOf(db, id, detail.snapshots, shared),
   ]);
   const movers = {
     alliances: before && after ? allianceMovers(before.alliances, after.alliances, ranks) : null,
