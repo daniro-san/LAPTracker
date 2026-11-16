@@ -11,7 +11,12 @@ export type WorkspaceAccess = {
   readonly workspaceId: number;
   readonly unionId: number;
   readonly slug: string;
-  readonly user: { readonly id: number; readonly displayName: string | null };
+  /** displayName: the name the officer chose, else the one from Discord. playerUid: "This is me" (issue 334). */
+  readonly user: {
+    readonly id: number;
+    readonly displayName: string | null;
+    readonly playerUid: number | null;
+  };
   readonly [accessBrand]: true;
 };
 
@@ -57,7 +62,11 @@ export async function requireWorkspace(
     workspaceId: workspace.id,
     unionId: workspace.unionId,
     slug: workspace.slug,
-    user: { id: session.userId, displayName: session.displayName },
+    user: {
+      id: session.userId,
+      displayName: session.chosenName ?? session.displayName,
+      playerUid: session.playerUid,
+    },
   } as WorkspaceAccess;
 }
 
