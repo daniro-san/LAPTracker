@@ -35,9 +35,10 @@ while read -r path out; do
   code=$(curl -sS -A "$UA" -H "Authorization: Bearer $LAP_API_KEY" -H 'Accept: application/json' \
     --max-time 60 -o "$RAW" -w '%{http_code} %{time_total}s' "$API/$path")
   echo "$path -> $code"
+  # Deny by default: only an explicit /tmp path gets the raw body; every other path is neutralised.
   case "$out" in
-    fixtures/*) pnpm -s tsx scripts/neutralise-fixture.ts < "$RAW" > "$out" ;;
-    *) cp "$RAW" "$out" ;;
+    /tmp/*) cp "$RAW" "$out" ;;
+    *) pnpm -s tsx scripts/neutralise-fixture.ts < "$RAW" > "$out" ;;
   esac
   case "$code" in 401* | 403* | 429*) echo STOP; break ;; esac
 done <<'CALLS'
