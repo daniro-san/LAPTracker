@@ -3,6 +3,7 @@
 // EN · PT · FR (D71): a one-year cookie, then the server renders the page again in that language.
 import { useRouter } from "next/navigation";
 
+import { track } from "@/lib/analytics/events";
 import { WORKSPACE_LANG_COOKIE } from "@/lib/private/cookies";
 import type { WorkspaceLanguage } from "@/lib/private/dictionary";
 
@@ -15,6 +16,7 @@ const CHOICES: { id: WorkspaceLanguage; short: string; name: string }[] = [
 export function LanguageSwitch({ current, label }: { current: WorkspaceLanguage; label: string }) {
   const router = useRouter();
   const pick = (id: WorkspaceLanguage) => {
+    if (id !== current) track("ws_language_switched", { language: id });
     document.cookie = `${WORKSPACE_LANG_COOKIE}=${id}; path=/; max-age=31536000; samesite=lax`;
     router.refresh();
   };

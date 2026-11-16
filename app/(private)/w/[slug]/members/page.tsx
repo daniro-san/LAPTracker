@@ -23,6 +23,7 @@ import { plural, sheetHeader, sheetRow } from "@/lib/private/members-sheet";
 import { SLUG } from "@/lib/private/sign-in";
 
 import { CopyButton } from "../../../_ui/CopyButton";
+import { FilterChip } from "../../../_ui/FilterChip";
 import { SignedInFrame, workspaceWords } from "../../../_ui/Frame";
 import { cardData, type CardFormats } from "../../../_ui/member-card-data";
 import { MemberCards } from "../../../_ui/MemberCards";
@@ -135,16 +136,17 @@ function Controls(props: {
         <ul className="flex flex-wrap gap-2">
           {MEMBER_FILTERS.map((id) => (
             <li key={id}>
-              <a
+              <FilterChip
+                filter={id}
                 href={listHref(slug, id, query)}
-                aria-current={id === filter ? "true" : undefined}
+                current={id === filter}
                 className={`inline-flex min-h-11 items-center gap-1.5 border px-3 text-body-sm font-medium whitespace-nowrap ${
                   id === filter ? "border-plum bg-plum text-paper" : "border-rule"
                 }`}
               >
                 {t[`members.filter.${id}`]}
                 <span className="tabular-nums">{counts[id]}</span>
-              </a>
+              </FilterChip>
             </li>
           ))}
         </ul>
@@ -248,6 +250,7 @@ function Body(props: {
           {fill(t["members.count"], { n: visible.length, total: view.members.length })}
         </p>
         <CopyButton
+          event="ws_copy_spreadsheet"
           text={[sheetHeader(view.week, t), ...visible.map((m) => sheetRow(m, t, f))].join("\n")}
           labels={{
             copy: t["members.copy"],
