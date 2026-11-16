@@ -144,10 +144,22 @@ Event windows (spike #183 build 1b, amends D69). Read CLAUDE.md, D1, D21, D31, D
 
 <adjustments>
 - Samples exist from build 1a (D69): `snapshots.phase = 'sample'`, `slot_at`, member arrays on `alliance_snapshots`. The window build keeps that storage and adds `window_id`. Every sample already has its event and slot, so the backfill does not need to compute them.
-- Every reader of Before/After already goes through `phaseSnapshot` / `phaseColumn` (`lib/queries/visibility.ts`). Grep those two names to find the readers the window build must move.
+- Every reader of Before/After already goes through `phaseSnapshot` (defined in `lib/repo/snapshots.ts`, re-exported by `lib/queries/visibility.ts`) / `phaseColumn` (`lib/queries/visibility.ts`), or `isSample` for rows in memory. Grep those names to find the readers the window build must move.
 - `eventSamples` is the one read model for charts. It returns Start, samples and End with rosters `{uid, might, kills}`; names come from the Start/End member rows.
 - Real numbers: a KvK with Before 10:00 and After 16:15 is 26 reads, 546–598 calls; `sampleQuota(20)` = 131.
 - Skip: the spike's O2 observation (manual rounds every 15 minutes on a KvK). Samples now collect that data on their own.
 </adjustments>
+
+## Review fixes (2026-11-16)
+
+Applied from the review of PR 292.
+
+1. `eventRanks` filters with `phaseSnapshot` in SQL and selects `phaseColumn`; the event-page test that compares pages with and without samples covers its output.
+2. `eventSamples` test: a running sample and a failed alliance row are absent; a rehearsal and an admin-only event return null.
+3. Rehearsal test through the tick: a sample row exists between its Before and After; `latestRehearsal` shows two phases and the same verdict with the sample deleted.
+4. The not-a-sample predicate is defined once as `phaseSnapshot` in `lib/repo/snapshots.ts`; `lib/queries/visibility.ts` re-exports it; `scheduledEventDone` uses it. `isSample(phase)` replaces the in-memory comparisons (`loadVerdictInput`, `listPhaseReports`, `eventSamples`). D69 has an amended bullet.
+5. Property test for `slotOf` in `lib/schedule.test.ts`: for every cadence that divides 60, the slot is on the grid, at most the input, and less than one cadence before it.
+6. Tick test for the lost claim: `dueSample` is queued to report a slot free that another caller has already taken (a pass-through `vi.mock` of `lib/repo/events`); the tick answers idle.
+7. The retry count has one definition, `MAX_RETRIES` in `lib/budget.ts`, and `lib/sources/v1.ts` imports it; `ATTEMPTS_PER_READ = MAX_RETRIES + 1`. The review asked for the reverse direction (export from `v1.ts`, derive in `budget.ts`). That would make `lib/budget.ts` import from `lib/sources`, which docs/ARCHITECTURE.md forbids ("`lib/compute` and `lib/budget` import nothing from the project"), so the constant lives in `budget.ts`. `lib/budget.test.ts` references it and `lib/sources/v1.test.ts` still pins 4 attempts.
 
 https://github.com/daniro-san/LAPTracker/pull/292
