@@ -5,7 +5,7 @@ const TONE = {
   game: "text-sage",
   photo: "text-yarn",
   officer: "text-plum",
-  message: "text-burgundy",
+  message: "text-yarn",
   sheet: "text-ink/75",
 } as const;
 

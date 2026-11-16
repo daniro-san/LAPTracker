@@ -143,10 +143,15 @@ function useSave(props: EditorProps, f: ReturnType<typeof useForm>) {
     if (!res || (res.status !== 200 && res.status !== 409)) return setState("failed");
     const { results } = (await res.json()) as { results: Result[] };
     const kept = results.filter((r) => r.status !== "conflict");
-    f.setStored((s) => ({
-      ...s,
+    const next: MemberFacts = {
+      ...f.stored,
       ...Object.fromEntries(kept.map(({ field, status: _, ...fact }) => [field, fact])),
-    }));
+    };
+    f.setStored(next);
+    // A combined note or language list replaces what this officer typed, so a second Save keeps both.
+    const merged = kept.filter((r) => r.status === "merged");
+    const inputs = merged.map((r) => inputsOf(r.field, next, props.language));
+    f.setForm((form) => Object.assign({ ...form }, ...inputs));
     setSavedAny(savedAny || kept.length > 0);
     track("ws_facts_saved");
     if (res.status === 200) {
@@ -214,23 +219,33 @@ export function FactsEditor(props: EditorProps) {
         conflictOf={conflictOf}
       />
       {s.state === "failed" && (
-        <p role="alert" className="mt-2 text-burgundy">
+        <p role="alert" className="mt-2 text-seal">
           {words["facts.failed"]}
         </p>
       )}
-      <div className="sticky bottom-0 mt-3 flex gap-3 border-t border-rule bg-paper pt-3">
-        <button type="button" onClick={s.close} className={buttonClass("secondary", "flex-1")}>
-          {words["facts.cancel"]}
-        </button>
-        <button
-          type="button"
-          {...(props.mode === "edit" && { "data-initial-focus": true })}
-          disabled={s.state === "saving" || s.conflicts.length > 0}
-          onClick={() => void s.save()}
-          className={buttonClass("primary", "flex-1")}
-        >
-          {words["facts.save"]}
-        </button>
+      <div className="sticky -bottom-4 -mb-4 mt-3 border-t border-rule bg-paper pt-3 pb-4 sm:-bottom-6 sm:-mb-6 sm:pb-6">
+        {/* Save waits for an answer to each newer value: say which fields, wherever the officer scrolled. */}
+        {s.conflicts.length > 0 && (
+          <p aria-live="polite" className="mb-2 text-body-sm">
+            {say(words["facts.conflict"], {
+              value: s.conflicts.map((c) => words[`facts.${c.field}`]).join(", "),
+            })}
+          </p>
+        )}
+        <div className="flex gap-3">
+          <button type="button" onClick={s.close} className={buttonClass("secondary", "flex-1")}>
+            {words["facts.cancel"]}
+          </button>
+          <button
+            type="button"
+            {...(props.mode === "edit" && { "data-initial-focus": true })}
+            disabled={s.state === "saving" || s.conflicts.length > 0}
+            onClick={() => void s.save()}
+            className={buttonClass("primary", "flex-1")}
+          >
+            {words["facts.save"]}
+          </button>
+        </div>
       </div>
     </Sheet>
   );

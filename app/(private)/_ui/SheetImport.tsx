@@ -298,7 +298,7 @@ export function SheetImport({ slug, words }: { slug: string; words: ImportWords 
         {words["import.check"]}
       </button>
       {problem && (
-        <p role="alert" className="mt-2 text-burgundy">
+        <p role="alert" className="mt-2 text-seal">
           {words[problem === "noName" ? "import.noName" : "import.failed"]}
         </p>
       )}

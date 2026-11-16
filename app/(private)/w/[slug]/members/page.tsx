@@ -247,7 +247,8 @@ function Body(props: {
         {fill(t["members.week"], { from: f.date(from), to: f.date(to) })}
       </p>
       <Thanks view={view} t={t} f={f} />
-      <p className="mt-3">
+      {/* Before the first end-of-day read nothing is computed, so nothing is said about check-ins. */}
+      <p className={view.early ? "hidden" : "mt-3"}>
         {counts.checkin === 0 ? (
           t["members.checkinNone"]
         ) : (

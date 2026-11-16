@@ -46,7 +46,7 @@ function Row(props: FieldsProps & { field: FactField; children: ReactNode }) {
       </div>
       {props.children}
       {props.invalid.includes(field) && field === "squadMight" && (
-        <p className="mt-1 text-body-sm text-burgundy">{words["facts.mightHint"]}</p>
+        <p className="mt-1 text-body-sm text-seal">{words["facts.mightHint"]}</p>
       )}
       {props.conflictOf(field)}
     </div>
@@ -211,7 +211,7 @@ function Notes(p: FieldsProps) {
             type="date"
             value={form.awayUntil}
             onChange={(e) => edit("away", { awayUntil: e.target.value })}
-            className={`${INPUT} mt-1 max-w-56`}
+            className={`${INPUT} mt-1 block max-w-56`}
           />
         </label>
       </Row>

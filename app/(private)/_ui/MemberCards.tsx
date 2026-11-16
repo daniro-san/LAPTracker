@@ -14,7 +14,7 @@ import type { CardData } from "./member-card-data";
 import { SourceBadge } from "./SourceBadge";
 
 const STATUS_TONE = {
-  help: "font-semibold text-burgundy",
+  help: "font-semibold text-yarn",
   break: "font-semibold text-sage",
   checkin: "font-semibold text-yarn",
   new: "font-semibold text-plum",
