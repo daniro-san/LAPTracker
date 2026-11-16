@@ -1,6 +1,8 @@
 # Install scripts are denied explicitly (docs/decisions/D10).
 # esbuild: postinstall only verifies its platform binary, which pnpm already installs as an optional dependency.
 # lefthook: postinstall runs `lefthook install`; the `prepare` script does that instead.
+# tesseract.js: postinstall only prints an opencollective donation notice (`|| true`) (D74).
 allowBuilds:
   esbuild: false
   lefthook: false
+  tesseract.js: false
