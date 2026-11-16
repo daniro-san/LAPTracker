@@ -16,18 +16,25 @@ const slice = (hhmm: string, alliances: Record<number, Measured>): Slice => ({
 });
 
 describe("standings", () => {
-  it("gives each alliance's change since Start at the latest reading, none for a stale one, most kills first", () => {
+  it("gives each alliance's change since Start at its latest usable sample, and that sample's time", () => {
     const start = slice("12:00", { 1: m(100), 2: m(100), 3: m(100) });
     const out = standings(start, [
       slice("12:15", { 1: m(110), 2: m(150), 3: m(120) }),
       slice("12:30", { 1: m(130, 900), 2: m(200, 1000, false), 3: m(125) }),
     ]);
-    expect(out.map((s) => [s.unionId, s.change])).toEqual([
-      [1, { power: -100, kills: 30 }],
-      [3, { power: 0, kills: 25 }],
-      [2, null],
+    // Alliance 2 is stale at 12:30: its figures are from 12:15, the others' from 12:30.
+    expect(out.map((s) => [s.unionId, s.change, s.at])).toEqual([
+      [2, { power: 0, kills: 50 }, at("12:15")],
+      [1, { power: -100, kills: 30 }, at("12:30")],
+      [3, { power: 0, kills: 25 }, at("12:30")],
     ]);
-    expect(out[0]?.at).toEqual(at("12:30"));
+  });
+
+  it("gives no change to an alliance with no usable sample, and keeps the newest sample's time", () => {
+    const out = standings(slice("12:00", { 1: m(100) }), [
+      slice("12:15", { 1: m(120, 1000, false) }),
+    ]);
+    expect(out[0]).toMatchObject({ change: null, at: at("12:15") });
   });
 
   it("gives no change to an alliance missing from the latest reading", () => {
@@ -64,6 +71,17 @@ describe("serverPulse and busiestSpan", () => {
       15 * MIN,
     );
     expect(stale[0]).toMatchObject({ kills: 10, alliances: 1 });
+  });
+
+  it("covers an off-grid Start and a missing first sample with slots from the Start to the next sample", () => {
+    const gap = serverPulse(
+      [slice("12:01", { 1: m(0) }), slice("12:30", { 1: m(10) })], // 12:15 was not read
+      15 * MIN,
+    );
+    expect(gap.map((s) => [s.state, s.from, s.to])).toEqual([
+      ["missing", at("12:01"), at("12:16")],
+      ["missing", at("12:16"), at("12:30")],
+    ]);
   });
 
   it("names the two consecutive intervals with most kills and their share of all kills", () => {

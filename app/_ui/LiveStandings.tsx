@@ -14,10 +14,10 @@ export function LiveStandings({ rows }: { rows: StatRow[] }) {
   const copy = useCopy();
   const mine = useMyAlliance();
   const [all, setAll] = useState(false);
-  const entries = rows.map((row) => ({ t: { unionId: row.liveUnion ?? 0 }, row }));
+  const entries = rows.map((row) => ({ t: { unionId: Number(row.key) }, row }));
   const shown = visibleEntries(entries, mine, all).map(({ row }) => ({
     ...row,
-    mine: row.liveUnion === mine,
+    mine: Number(row.key) === mine,
   }));
   return (
     <>

@@ -28,8 +28,9 @@ function topThree(progress: Progress, rows: ComparisonRow[], locale: string): st
     .flatMap((s) => {
       const tag = named.get(s.unionId);
       const kills = s.change?.kills ?? 0;
+      // A no-break space keeps a tag with its figure when the line wraps.
       return tag !== undefined && kills > 0
-        ? [`${tag} ${signOf(kills)}${compact(kills, locale)}`]
+        ? [`${tag}\u00a0${signOf(kills)}${compact(kills, locale)}`]
         : [];
     })
     .slice(0, 3)
@@ -67,18 +68,26 @@ export function LiveStrip({
         >
           <span className="font-semibold">{copy.ledger.live}</span>
           <span aria-hidden="true">·</span>
-          {progress.latestAt
-            ? fill(copy.ledger.liveUpdate, { updated: clock.hhmm(progress.latestAt), next })
-            : fill(copy.ledger.liveFirst, { start: clock.hhmm(progress.startAt), next })}
-          {progress.overdue &&
-            ` ${fill(copy.ledger.liveOverdue, { time: clock.hhmm(progress.overdue) })}`}
+          <span>
+            {progress.latestAt
+              ? fill(copy.ledger.liveUpdate, { updated: clock.hhmm(progress.latestAt), next })
+              : fill(copy.ledger.liveFirst, { start: clock.hhmm(progress.startAt), next })}
+            {progress.overdue && (
+              <span className="block">
+                {fill(copy.ledger.liveOverdue, { time: clock.hhmm(progress.overdue) })}
+              </span>
+            )}
+          </span>
         </Chip>
         <span className="text-body-sm text-ink/70">
           {progress.readings > 0
             ? fill(copy.ledger.liveReadings, { n: progress.readings })
             : copy.ledger.liveNoReadings}
         </span>
-        <LiveRefresh at={progress.next.refreshAt.toISOString()} />
+        <LiveRefresh
+          at={progress.next.refreshAt.toISOString()}
+          renderedAt={progress.asOf.toISOString()}
+        />
       </div>
       {top && (
         <p className="mt-2 font-medium tabular-nums">
@@ -89,7 +98,31 @@ export function LiveStrip({
   );
 }
 
-/** Each alliance's might and kills since Start at the latest reading, most kills gained first. */
+type StandingOf = Progress["standings"][number];
+
+/** The card's sub line. No change: the alliance was not read, or a side was stale, said in words. A change
+ * from an older reading than the newest one says which reading it is from. */
+function standingNote(
+  s: StandingOf,
+  latestAt: Date | null,
+  clock: Clock,
+  copy: Dictionary,
+): string | null {
+  if (!s.change) return s.latest === s.start ? copy.fresh.missing : `○ ${copy.fresh.stale}`;
+  return s.at && latestAt && s.at < latestAt
+    ? fill(copy.status.lastUpdated, { time: clock.time(s.at) })
+    : null;
+}
+
+const metric = (label: string, from: number | null, value: number | null, d: number | null) => ({
+  label,
+  value,
+  from,
+  base: from,
+  delta: d,
+});
+
+/** Each alliance's might and kills since Start at its latest usable reading, most kills gained first. */
 function Standings({
   progress,
   eventId,
@@ -109,33 +142,14 @@ function Standings({
   const statRows = progress.standings.flatMap((s, i): StatRow[] => {
     const r = named.get(s.unionId);
     if (!r) return [];
-    // No change: the alliance was not read in the latest reading, or a side was stale. Said in words.
-    const note = s.change
-      ? null
-      : s.latest === s.start
-        ? copy.fresh.missing
-        : `○ ${copy.fresh.stale}`;
-    const metric = (
-      label: string,
-      from: number | null,
-      value: number | null,
-      d: number | null,
-    ) => ({
-      label,
-      value,
-      from,
-      base: from,
-      delta: d,
-    });
     return [
       {
         key: String(s.unionId),
-        liveUnion: s.unionId,
         href: `/events/${eventId}/alliances/${s.unionId}`,
         rank: { n: s.change ? i + 1 : null },
         lead: allianceLabel(r.tag, r.name),
         icon: <AllianceBadge badgeId={r.after?.badgeId ?? r.before?.badgeId} />,
-        sub: note,
+        sub: standingNote(s, progress.latestAt, clock, copy),
         metrics: [
           metric(
             copy.ledger.kills,
@@ -197,7 +211,10 @@ export function LiveSections({
 }) {
   if (progress.live !== (placement === "above") || progress.readings === 0) return null;
   return (
-    <div id={progress.live ? undefined : LIVE_DURING_ID} className="mt-6 scroll-mt-20">
+    <div
+      id={progress.live ? undefined : LIVE_DURING_ID}
+      className={`mt-6 scroll-mt-20 ${progress.live ? "mb-6" : ""}`}
+    >
       {!progress.live && (
         <h2 className="mb-3 font-subhead text-display-md leading-tight">
           {copy.ledger.liveDuring}

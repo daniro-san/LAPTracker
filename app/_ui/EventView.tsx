@@ -5,7 +5,14 @@
 import type { NameHistoryEntry } from "@/lib/compute";
 import { fill, type Dictionary } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
-import type { getEventDetail, listEvents, Ranks, RosterChange, TurnoutLists } from "@/lib/queries";
+import type {
+  EventProgress,
+  getEventDetail,
+  listEvents,
+  Ranks,
+  RosterChange,
+  TurnoutLists,
+} from "@/lib/queries";
 import type { getEventPage } from "@/lib/queries/event-page";
 import { nextEvent } from "@/lib/schedule";
 
@@ -22,27 +29,20 @@ import {
 import { eventTitle, ManualMark } from "./EventLabel";
 import { ExactToggle } from "./ExactToggle";
 import { allianceLabel, rowAnchor, type Clock } from "./format";
-import { LIVE_DURING_ID, LiveSections, LiveStrip } from "./LiveProgress";
+import { LiveSections, LiveStrip } from "./LiveProgress";
 import { requestClock, requestCopy, requestLocale } from "./locale";
-import { allianceScope, memberScope, MOVERS_ID } from "./mover-lists";
+import { allianceScope, memberScope } from "./mover-lists";
 import { Movers } from "./Movers";
 import { MyAllianceJump } from "./MyAlliance";
 import { AllianceBadge } from "./Pictures";
 import { SiteFooter } from "./SiteFooter";
 import { SiteHeader } from "./SiteHeader";
 import { StatTable, type StatRow } from "./StatTable";
-import {
-  CaptureWindow,
-  FreshDots,
-  Legend,
-  NextUpdate,
-  SideHead,
-  StatusChips,
-  worstOf,
-  type FreshState,
-} from "./Status";
+import { FreshDots, Legend, NextUpdate, SideHead, worstOf, type FreshState } from "./Status";
+import { TopStatus } from "./TopStatus";
 import { WhoFought } from "./WhoFought";
 
+type Movers = NonNullable<Awaited<ReturnType<typeof getEventPage>>["page"]>["movers"];
 type Detail = NonNullable<Awaited<ReturnType<typeof getEventDetail>>>;
 type Events = Awaited<ReturnType<typeof listEvents>>;
 
@@ -137,64 +137,6 @@ function TitleActions({
   );
 }
 
-/** The status strip, the capture window and the jump link to Movers (UX review B1, S1, S3). */
-function TopStatus({
-  detail,
-  worst,
-  hasMovers,
-  live,
-  hasDuring,
-  clock,
-  copy,
-}: {
-  detail: Detail;
-  worst: string[];
-  hasMovers: boolean;
-  /** The event is running: no "Last updated" chip, and the End shows when it is due. */
-  live: boolean;
-  /** The finished event's "During the event" section exists: a jump link to it. */
-  hasDuring: boolean;
-  clock: Clock;
-  copy: Dictionary;
-}) {
-  const jump = "text-link inline-flex min-h-11 items-center px-2 text-sm font-medium";
-  return (
-    <>
-      <StatusChips
-        phases={detail.snapshots}
-        stale={worst.filter((w) => w === "stale").length}
-        failed={worst.filter((w) => w === "failed").length}
-        live={live}
-        clock={clock}
-        copy={copy}
-      />
-      <div className="-mb-2 flex flex-wrap items-center justify-between gap-x-3">
-        <CaptureWindow
-          before={detail.snapshots.find((s) => s.phase === "before")}
-          after={detail.snapshots.find((s) => s.phase === "after")}
-          endDue={live ? detail.afterAt : null}
-          clock={clock}
-          copy={copy}
-        />
-        {(hasMovers || hasDuring) && (
-          <div className="ml-auto flex flex-wrap justify-end">
-            {hasDuring && (
-              <a href={`#${LIVE_DURING_ID}`} className={jump}>
-                {copy.ledger.liveDuring} <span aria-hidden="true">&nbsp;↓</span>
-              </a>
-            )}
-            {hasMovers && (
-              <a href={`#${MOVERS_ID}`} className={jump}>
-                {copy.ledger.movers} <span aria-hidden="true">&nbsp;↓</span>
-              </a>
-            )}
-          </div>
-        )}
-      </div>
-    </>
-  );
-}
-
 /** The event's date (and name) with the compare and exact-numbers controls. */
 function EventHead({
   detail,
@@ -225,6 +167,18 @@ function EventHead({
   );
 }
 
+function moverScopesOf(
+  movers: Movers,
+  eventId: number,
+  changes: Map<number, RosterChange>,
+  copy: Dictionary,
+) {
+  return [
+    allianceScope(movers.alliances, eventId, changes, copy),
+    memberScope(movers.members, copy.ledger.members),
+  ];
+}
+
 /** When the End ran; null until it has. */
 function endTime(detail: Detail): Date | null {
   const end = detail.snapshots.find((s) => s.phase === "after");
@@ -240,9 +194,12 @@ export async function EventView({
   ranks,
   movers,
   turnout,
+  progress: loaded,
 }: {
-  movers: NonNullable<Awaited<ReturnType<typeof getEventPage>>["page"]>["movers"];
+  movers: Movers;
   turnout: TurnoutLists | null;
+  /** The live section's data when the page already read it beside the event page; else it is read here. */
+  progress?: EventProgress | null;
   events: Events;
   homeId: number | null;
   detail: Detail;
@@ -255,14 +212,11 @@ export async function EventView({
     requestClock(),
     requestCopy(),
     requestLocale(),
-    loadProgress(detail.id, now),
+    loaded === undefined ? loadProgress(detail.id, now) : loaded,
   ]);
   const rows = comparisonRows(detail.snapshots, changes, names, ranks, copy);
   const worst = rows.map((r) => worstOf(fresh(r.before), fresh(r.after)));
-  const moverScopes = [
-    allianceScope(movers.alliances, detail.id, changes, copy),
-    memberScope(movers.members, copy.ledger.members),
-  ];
+  const moverScopes = moverScopesOf(movers, detail.id, changes, copy);
   const liveProps = { eventId: detail.id, rows, endAt: endTime(detail), clock, copy, locale };
   const hasMovers = moverScopes.some((s) => Object.values(s.lists).some((l) => l && l.length > 0));
   return (

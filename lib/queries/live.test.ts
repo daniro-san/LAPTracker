@@ -84,12 +84,32 @@ describe("eventProgress", () => {
     expect(p?.readings).toBe(1);
   });
 
+  it("is live from the Start with no sample yet: the strip's data, nothing else", async () => {
+    const id = await seedEvent([], false);
+    const p = await eventProgress(db, id, { now: at("12:10"), ...EVERY });
+    expect(p).toMatchObject({ live: true, readings: 0, latestAt: null, startAt: at("12:00") });
+    expect(p?.next?.at).toEqual(at("12:15"));
+    expect([p?.standings, p?.pulse]).toEqual([[], []]);
+  });
+
+  it("names no busiest span before 4 intervals are compared", async () => {
+    const three = await seedEvent(
+      [
+        ["12:15", 130],
+        ["12:30", 160],
+        ["12:45", 200],
+      ],
+      false,
+    );
+    expect((await eventProgress(db, three, { now: at("12:50"), ...EVERY }))?.busiest).toBeNull();
+  });
+
   it("is null without samples", async () => {
     const id = await seedEvent([], true);
     expect(await eventProgress(db, id, { now: at("16:30"), ...EVERY })).toBeNull();
   });
 
-  it("gives no change for an alliance whose latest reading is stale", async () => {
+  it("gives an alliance whose latest reading is stale the change at its latest usable sample", async () => {
     const id = await seedEvent(
       [
         ["12:15", 130],
@@ -98,6 +118,6 @@ describe("eventProgress", () => {
       false,
     );
     const p = await eventProgress(db, id, { now: at("12:40"), ...EVERY });
-    expect(p?.standings[0]?.change).toBeNull();
+    expect(p?.standings[0]).toMatchObject({ change: { power: 0, kills: 30 }, at: at("12:15") });
   });
 });

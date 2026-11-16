@@ -2,6 +2,10 @@
 // latest and next reading, each alliance's change since Start and the server's kills per interval. One
 // select of alliance totals per reading (Start and samples: ≈ 20 alliances × ≤ 26 readings); the members'
 // arrays are never read, so a page view moves kilobytes, not the ≈ 1.6 MB an `eventSamples` call would.
+// It is its own reader, not `eventSamples(db, id, { rosters: false })`, because that returns neither the
+// Start's finished time (the strip and the first interval start there), nor a Start still running, nor an
+// End that exists but is running or failed (the page is not live then): it drops running snapshots and
+// takes the Start's and End's times from the schedule. See the INVARIANT in lib/queries/visibility.ts.
 import { and, asc, eq, isNull, ne } from "drizzle-orm";
 
 import type { Measured } from "../compute";
@@ -26,6 +30,8 @@ export interface EventProgress {
   live: boolean;
   /** Samples taken so far. */
   readings: number;
+  /** The server time this was read at: the live refresh waits from it (`LiveRefresh`). */
+  asOf: Date;
   /** The Start's time. */
   startAt: Date;
   /** The latest sample's time; null before the first reading. */
@@ -145,6 +151,7 @@ function progressOf(
   return {
     live: next !== null,
     readings: samples.length,
+    asOf: now,
     startAt: start.at,
     latestAt: latest?.at ?? null,
     next,

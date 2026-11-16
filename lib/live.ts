@@ -24,27 +24,32 @@ export interface Slice {
 
 export interface Standing {
   unionId: number;
-  /** The latest reading's time; null when there is none yet. */
+  /** The time of the reading `latest` is from: the alliance's latest usable sample, which is older than the
+   * newest reading when the alliance was stale or not read in it; null when there is no sample yet. */
   at: Date | null;
   start: Measured;
   latest: Measured;
-  /** Latest minus Start; null when either is stale, or the alliance was not read in the latest reading. */
+  /** Latest usable sample minus Start; null when no sample of the alliance is usable, or the Start is stale. */
   change: { power: number; kills: number } | null;
 }
 
 /**
- * Every alliance of the Start with its change since Start at the latest reading in `samples`.
+ * Every alliance of the Start with its change since Start at its latest usable sample in `samples` (issue
+ * 307: "at its latest usable sample"): the newest sample in which the alliance was read and fresh. With
+ * none, `latest` is the newest sample's stale figures, or the Start's when it was not read at all.
  * INVARIANT freshness.no-stale-delta: a stale or missing side gives no change. Most kills gained first,
  * no change last, then by id.
  */
 export function standings(start: Slice, samples: readonly Slice[]): Standing[] {
-  const latestSlice = samples.at(-1);
+  const newest = samples.at(-1);
   return [...start.alliances]
     .map(([unionId, from]): Standing => {
-      const to = latestSlice?.alliances.get(unionId);
+      const usable = samples.findLast((s) => s.alliances.get(unionId)?.isFresh);
+      const slice = usable ?? newest;
+      const to = slice?.alliances.get(unionId);
       return {
         unionId,
-        at: latestSlice?.at ?? null,
+        at: slice?.at ?? null,
         start: from,
         latest: to ?? from,
         change: to ? delta(from, to) : null,
@@ -82,7 +87,7 @@ const missing = (from: number, to: number): PulseSlot => ({
 /**
  * Kills gained per reading interval across the alliances, between consecutive readings of each alliance
  * (`readings`: the Start, then the samples in time order). An alliance that is stale in either reading is
- * left out of that interval. A span longer than `everyMs` (a reading is missing) gives `missing` intervals.
+ * left out of that interval. A gap of two or more cadences (a reading is missing) gives `missing` intervals.
  */
 export function serverPulse(readings: readonly Slice[], everyMs: number): PulseSlot[] {
   const slots: PulseSlot[] = [];
@@ -90,8 +95,12 @@ export function serverPulse(readings: readonly Slice[], everyMs: number): PulseS
   for (let i = 1; i < readings.length; i++) {
     const [prev, cur] = [readings[i - 1] as Slice, readings[i] as Slice];
     const [from, to] = [prev.at.getTime(), cur.at.getTime()];
-    if (to - from > everyMs) {
-      for (let t = from + everyMs; t <= to; t += everyMs) slots.push(missing(t - everyMs, t));
+    // A reading is missing when the gap holds two or more cadences. The Start is off the grid (12:01), so
+    // the gap is rounded to whole cadences: the first slot starts at `from` and the last ends at `to`.
+    const gaps = Math.round((to - from) / everyMs);
+    if (gaps > 1) {
+      const edge = (k: number) => (k === gaps ? to : from + k * everyMs);
+      for (let k = 0; k < gaps; k++) slots.push(missing(edge(k), edge(k + 1)));
       continue;
     }
     let [kills, alliances, changed] = [0, 0, false];
