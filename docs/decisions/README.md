@@ -85,3 +85,5 @@ The header text above is the old file's, kept as it was. The split it describes 
 - [D70 — Might unchanged: an officer view on /admin/members and a count in the Friday message (2026-11-16, owner, 08zzzzb)](D70-might-unchanged-officer-view.md)
 - [D71 — A private workspace per alliance: Discord sign-in, every roster field for its own leadership (2026-11-16, owner, 11a, issue #303)](D71-a-private-workspace-per-alliance.md)
 - [D72 — The daily read runs at the end of the server day and keeps every roster field (2026-11-16, owner, 11b, issue #294)](D72-the-daily-read-runs-at-the-end-of-the-server-day.md)
+- [D73 — Workspace sign-in: the choices D71 left open (2026-11-16, 11c, issue #295)](D73-workspace-sign-in-implementation-choices.md)
+- [D75 — The workspace is for people, never punitive (2026-11-16, owner principle, 11c)](D75-the-workspace-is-for-people-never-punitive.md)

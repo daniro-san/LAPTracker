@@ -22,6 +22,15 @@ export function pageCsp(nonce: string, dev: boolean): string {
 }
 
 export function proxy(request: NextRequest): NextResponse {
+  const res = respond(request);
+  // The workspace (D71): no shared or browser cache keeps a private page or answer.
+  if (/^\/(api\/)?w\//.test(request.nextUrl.pathname)) {
+    res.headers.set("Cache-Control", "private, no-store");
+  }
+  return res;
+}
+
+function respond(request: NextRequest): NextResponse {
   const { pathname } = request.nextUrl;
   // Images from /img (D22) get the same deny-all CSP: nothing in them should ever run.
   if (pathname.startsWith("/api/") || pathname.startsWith("/img/")) {

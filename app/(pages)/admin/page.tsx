@@ -18,6 +18,7 @@ import {
   dailyView,
   watchViews,
 } from "@/app/_ui/admin/words";
+import { Workspaces } from "@/app/_ui/admin/Workspaces";
 import type { Clock } from "@/app/_ui/format";
 import { requestServerClock, requestLocale } from "@/app/_ui/locale";
 import { isAdmin } from "@/lib/admin-session";
@@ -291,6 +292,7 @@ export default async function AdminPage() {
       </AdminSection>
       <Rehearsal r={rehearsal} clock={clock} />
       <Schedule env={env} next={next} clock={clock} />
+      <Workspaces now={now} />
     </AdminShell>
   );
 }

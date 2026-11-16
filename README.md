@@ -158,6 +158,41 @@ Read `/admin/runs` first, then the run's page, then `/admin/errors`. If the reas
 - **The daily roster read** (21 requests at 23:37 server time; on a bad day the 23:52 retry adds one request plus one per missing alliance) falls after the midnight UTC reset, so it counts on the next UTC day: Friday's read is spent from Saturday's count. It starts only if enough requests are left to keep a whole snapshot's reserve, so the Saturday snapshots keep theirs.
 - **If the count is lower than the admin channel expects**, someone else may be using the same key. Tell the maintainer.
 
+## Workspace setup
+
+The workspace is an alliance's private area, the Officers' Desk, at `/w/<address>` (decisions D71 and D73). The alliance's leadership signs in with Discord. Do these steps once. They need no deploy, except setting the two values in step 3.
+
+1. **Create the Discord application.** Go to https://discord.com/developers/applications, sign in with your Discord account, press **New Application** and name it `LAPTracker`.
+2. **OAuth2 settings.** In the application, open **OAuth2**. Under **Redirects**, add these two addresses exactly as written and press **Save Changes**:
+   - `https://laptracker-inky.vercel.app/api/w/auth/callback` (production);
+   - `http://localhost:3000/api/w/auth/callback` (your computer, with `pnpm dev`).
+
+   Sign-in asks Discord for two scopes, `identify` and `guilds.members.read`: the person's name, and their roles in the alliance's server. There is no bot. Do not add a bot or bot permissions.
+
+3. **The two values in Vercel.** On the same **OAuth2** page, copy the **Client ID**, then press **Reset Secret** and copy the **Client Secret**. In Vercel, open the project, then **Settings → Environment Variables**, and add them for **Production**:
+   - `DISCORD_CLIENT_ID`: the Client ID (a number of 17 to 20 digits);
+   - `DISCORD_CLIENT_SECRET`: the Client Secret.
+
+   Redeploy so they take effect. The secret goes only into Vercel (and your own `.env.local` for local work). Never paste it in Discord, an issue or a chat. Without these two values the site still works, and **Sign in with Discord** on `/w/<address>` answers that sign-in is not set up yet.
+
+4. **The alliance's Discord server id and leadership role ids.** In Discord, turn on **User Settings → Advanced → Developer Mode**. Then:
+   - right-click the alliance's server icon → **Copy Server ID**;
+   - open **Server Settings → Roles**, right-click each leadership role (for OGs: R4 and R5, or one role that both have) → **Copy Role ID**.
+
+   If you do not administer the server, ask whoever does to send you these numbers. They are not secret. For OGs: server `1544808864262914060`, role "Mesa dos oficiais" `1571951836724990113`.
+
+5. **Register the workspace on `/admin`.** Unlock `/admin` with the PIN. In **Workspaces → Add or edit a workspace**, pick the alliance (OGs), paste the server id and the role ids (several are separated by commas), type the address `ogs`, and press **Save workspace**. Saving again for the same alliance edits it.
+6. **The address officers use:** `https://laptracker-inky.vercel.app/w/ogs`. To put it on a phone's home screen: on iPhone, open it in Safari, press **Share → Add to Home Screen**; on Android, open it in Chrome, press **⋮ → Add to Home screen**.
+7. **Local work.** Put `DISCORD_CLIENT_ID` and `DISCORD_CLIENT_SECRET` in `.env.local`, run `pnpm dev` on port 3000, and register the workspace on your local `/admin` the same way.
+
+**Troubleshooting**
+
+- **"No access"** says why. "Not in the alliance's Discord server": the person signed in with another Discord account, or has not joined the server. "No leadership role": give them the role in Discord, then they sign in again. "Access was for a limited time": their allowlist date has passed.
+- **Someone without the role needs access** (for example a helper for a week): on `/admin`, **Workspaces → Add to the allowlist**, pick the workspace, paste their Discord user id (right-click their name in Discord → **Copy User ID**) and a date. They are let in until the end of that date (UTC).
+- **Sign everyone out** (a role was removed, or a phone was lost): on `/admin`, **Workspaces → Sign out everyone in this workspace**. Each officer signs in with Discord again. A session also ends by itself after 24 hours; Discord then checks the role again without asking the officer anything.
+- **"Sign-in is not set up yet"**: `DISCORD_CLIENT_ID` or `DISCORD_CLIENT_SECRET` is missing in Vercel, or the deploy after adding them has not happened.
+- **Discord says "Invalid OAuth2 redirect_uri"**: the redirect in step 2 differs from the address the site is on. It must match exactly, including `https` and `/api/w/auth/callback`.
+
 ## Words used on the site
 
 - **Event**: one weekly event, a scheduled event normally on Saturday. It is named by its title, or by its date until the owner names it.
