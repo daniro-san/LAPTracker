@@ -14,7 +14,7 @@ import {
   type DiscordClock,
   type Notifier,
 } from "./notify";
-import { getEventDetail } from "./queries";
+import { getEventDetail, memberTurnout } from "./queries";
 import { rehearsalVerdict } from "./rehearsal";
 import type { Phase } from "./repo";
 import { setDiscordMessageId, type EventInfo } from "./repo/events";
@@ -46,6 +46,20 @@ async function storeId(db: Db, shared: Shared, channel: "public" | "admin", id: 
   if (id && id !== old) await setDiscordMessageId(db, event.id, channel, id).catch(() => undefined);
 }
 
+/** The End's turnout (#271), read once for the picture and the text; null for the Start, an unread detail or a failed read. */
+async function endTurnout(
+  db: Db,
+  eventId: number,
+  phase: Phase,
+  detail: { snapshots: Parameters<typeof memberTurnout>[1] } | null,
+) {
+  if (phase !== "after" || !detail) return null;
+  return memberTurnout(db, detail.snapshots).catch(() => {
+    console.error("notify.turnout_failed", { event_id: eventId });
+    return null;
+  });
+}
+
 async function notifyPublic(db: Db, s: Shared) {
   const { event, phase, origin } = s.req;
   // getEventDetail reads real events only: the public message never sees a rehearsal.
@@ -59,6 +73,7 @@ async function notifyPublic(db: Db, s: Shared) {
   const nextAt = phase === "before" && !event.manual ? event.afterAt : null;
   const beforeAt =
     phase === "after" ? (s.reports.find((r) => r.phase === "before")?.finishedAt ?? null) : null;
+  const turnout = await endTurnout(db, event.id, phase, detail);
   // The picture (D58) needs this phase's rows; a failed run or an unread detail sends the text alone.
   const image =
     alliances && alliances.length > 0 && s.run.summary.status !== "failed"
@@ -73,6 +88,7 @@ async function notifyPublic(db: Db, s: Shared) {
           nextAt,
           alliances,
           before: before ?? [],
+          turnout,
         })
       : null;
   const id = await s.notifier.public(
@@ -86,6 +102,7 @@ async function notifyPublic(db: Db, s: Shared) {
       roundName: event.manual ? event.name : null,
       beforeAt,
       image: image !== null,
+      turnout,
     }),
     event.discordPublicMessageId,
     image,

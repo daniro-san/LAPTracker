@@ -7,18 +7,22 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { ImageResponse } from "next/og";
-import { cloneElement, type ReactElement } from "react";
 
 import { SERVER } from "../config/alliances";
 import { MarkLine } from "./brand/components/Logo";
 import { KillsMark, MightMark } from "./brand/components/MoverMarks";
-import { tokenColor, TOKENS, type Token } from "./brand/palette";
+import { tokenColor, TOKENS } from "./brand/palette";
 import { delta } from "./compute";
 import { copy, fill } from "./copy";
 import { compact, signedCompact, type DiscordClock } from "./discord-format";
+import { drawable, label, ROW, Section, SECTION, u, type Colors } from "./event-image-parts";
+import { turnoutBlock } from "./event-image-turnout";
 import { topGains, usable, type PublicAlliance } from "./notify";
+import type { TurnoutLists } from "./queries";
 import type { Phase } from "./repo";
 import { isGeneratedName } from "./schedule";
+
+export { drawable };
 
 export interface ImageAlliance extends PublicAlliance {
   memberCount: number | null;
@@ -38,23 +42,20 @@ export interface EventImageInput {
   /** This phase's rows, and the Before's on the After's picture. */
   alliances: ImageAlliance[];
   before: PublicAlliance[];
+  /** The After's members with kills gained per alliance (#271); null or left out draws no block. */
+  turnout?: TurnoutLists | null;
 }
 
 // Layout in CSS px at 1×; every box has a fixed height, so the picture's height is their sum.
-const U = 2;
-const u = (n: number) => n * U;
 const WIDTH = 360;
 const PAD = 14;
 const HEADER = 66;
-const SECTION = 36;
-const ROW = 35;
 const FOOT = 34;
 const END = 10;
 const LEDGER: Record<Phase, number> = { before: 10, after: 5 };
 /** A picture that is not drawn by then is dropped and the message goes as text (D58). */
 const RENDER_LIMIT_MS = 3_000;
 
-type Colors = Record<Token, string>;
 const column = { display: "flex", flexDirection: "column" } as const;
 const colors = () => Object.fromEntries(TOKENS.map((t) => [t, tokenColor(t)])) as Colors;
 
@@ -72,21 +73,6 @@ const loadFonts = () =>
     style: "normal" as const,
     data: readFileSync(join(process.cwd(), "lib/brand/fonts", file)),
   })));
-
-/**
- * Only what the loaded fonts draw (owner, 2026-11-09): other scripts (꧁ ꧂, CJK, Thai), emoji and their
- * joiners are left out, so the renderer never fetches a font or an emoji. The text keeps the full name.
- */
-const UNDRAWN =
-  /[^\p{Script=Latin}\p{Script=Greek}\p{Script=Cyrillic}\p{Script=Common}\p{Script=Inherited}]|\p{Extended_Pictographic}|\p{Emoji_Modifier}|\p{Regional_Indicator}|\u200d|\ufe0f|\u20e3/gu;
-export const drawable = (text: string) => text.replace(UNDRAWN, "").replace(/\s+/g, " ").trim();
-
-/** The tag and the name as drawn; the union id when nothing of either can be drawn. */
-function label(a: PublicAlliance) {
-  const tag = drawable(a.tag ?? "");
-  const name = drawable(a.name ?? "");
-  return { tag, name: tag || name ? name : String(a.unionId) };
-}
 
 /** A scheduled event's generated name without its date (the date is under it); any other as typed. */
 function title(e: Pick<EventImageInput, "name" | "manual">) {
@@ -107,13 +93,6 @@ function subtitle(e: EventImageInput) {
         ];
   return [e.clock.day(e.at), ...parts].filter(Boolean).join(" · ");
 }
-
-const mark = (el: ReactElement, color: string) =>
-  cloneElement(el as ReactElement<Record<string, unknown>>, {
-    width: u(18),
-    height: u(18),
-    style: { color },
-  });
 
 function Header({ c, e }: { c: Colors; e: EventImageInput }) {
   const line = { overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" } as const;
@@ -136,36 +115,6 @@ function Header({ c, e }: { c: Colors; e: EventImageInput }) {
         </div>
         <div style={{ ...line, fontFamily: "Source Sans 3", fontSize: u(15) }}>{subtitle(e)}</div>
       </div>
-    </div>
-  );
-}
-
-function Section({
-  c,
-  icon,
-  color,
-  text,
-}: {
-  c: Colors;
-  icon: ReactElement;
-  color: string;
-  text: string;
-}) {
-  return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: u(6),
-        height: u(SECTION),
-        fontFamily: "Alegreya Sans",
-        fontWeight: 700,
-        fontSize: u(21),
-        color: c.ink,
-      }}
-    >
-      {mark(icon, color)}
-      <span>{text}</span>
     </div>
   );
 }
@@ -283,6 +232,11 @@ function body(e: EventImageInput, c: Colors) {
       }
       height += SECTION + gains.length * ROW;
     }
+  }
+  if (e.phase === "after" && e.turnout) {
+    const block = turnoutBlock(e.turnout, c);
+    parts.push(...block.parts);
+    height += block.height;
   }
   return { parts, height };
 }

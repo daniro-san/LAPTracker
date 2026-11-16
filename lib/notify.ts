@@ -5,9 +5,17 @@
 import type { RunSummary } from "./collector";
 import { topMovers } from "./compute";
 import { copy, fill } from "./copy";
-import { MINUS, percentFormat, sign, signedCompact, type DiscordClock } from "./discord-format";
+import {
+  MINUS,
+  percentFormat,
+  shareText,
+  sign,
+  signedCompact,
+  type DiscordClock,
+} from "./discord-format";
 import { sendOrEdit as send } from "./discord-send";
 import type { Env } from "./env";
+import type { TurnoutLists } from "./queries";
 import type { Verdict } from "./rehearsal";
 import type { Phase } from "./repo";
 
@@ -152,6 +160,8 @@ export interface PublicContext {
   beforeAt?: Date | null;
   /** The event picture goes with the text (D58): it shows the top gains, so the text leaves them out. */
   image?: boolean;
+  /** The After's members-with-kills-gained lists (#271); null or left out when the event has none. */
+  turnout?: TurnoutLists | null;
 }
 
 const MOVERS = 3;
@@ -189,6 +199,18 @@ function moverBlock(ctx: PublicContext, heading: string, metric: "power" | "kill
   return top.length > 0 ? [heading, ...top] : [];
 }
 
+/** The leading alliance by members with kills gained (#271), or nothing when the event has no turnout. */
+function turnoutLine(ctx: PublicContext): string[] {
+  const lead = ctx.turnout?.withKills[0];
+  if (!lead) return [];
+  return [
+    fill(copy.discord.public.turnout, {
+      alliance: allianceLabel({ unionId: lead.unionId, tag: lead.tag }),
+      share: shareText(lead.gainers, lead.n),
+    }),
+  ];
+}
+
 /** The public message: the status chip as the title, counts, the next update or the top gains. */
 export function publicSnapshotMessage(summary: RunSummary, ctx: PublicContext): PublicMessage {
   const t = copy.discord.public;
@@ -207,6 +229,7 @@ export function publicSnapshotMessage(summary: RunSummary, ctx: PublicContext): 
     if (bad.length > 0) {
       lines.push(fill(t.stale, { n: bad.length, list: bad.map(allianceLabel).join(", ") }));
     }
+    lines.push(...turnoutLine(ctx));
     if (ctx.before && !ctx.image)
       lines.push(...moverBlock(ctx, t.might, "power"), ...moverBlock(ctx, t.kills, "kills"));
   }
