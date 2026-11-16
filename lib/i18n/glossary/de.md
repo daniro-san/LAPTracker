@@ -27,7 +27,8 @@ Words already used in `lib/i18n/de.ts`. Reuse them so the pages stay consistent;
 | Grandma noticed           | Oma merkt's                  | `ledger.movers` — the event's biggest gains and losses        |
 | Start / End               | Beginn / Ende                | `status.start` / `status.end`, `compare.lead`                 |
 | Member history            | Mitgliederverlauf            | `history.title` — the page, its nav tab and the alliance link |
-| Who fought                | Wer kämpfte                  | `ledger.fought` — the event page's kills section title        |
+| War turnout               | Beteiligung am Krieg         | `ledger.fought` — the event page's kills section title        |
+| gainers                   | Zuwächser                    | `ledger.fewGainers` — a member whose Kills rose               |
 | Support player            | Support-Spieler              | `ledger.foughtHelp` — a player who gains no kills             |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).

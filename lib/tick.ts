@@ -105,7 +105,7 @@ export async function runTick(ctx: AppContext, db: Db, origin: string): Promise<
   if (quotaCheckDue(now, ctx.env)) {
     const event = await findOrCreateEvent(db, nextEvent(now, ctx.env));
     if (await claimQuotaCheck(db, event.id, now)) {
-      const report = await quotaReport(ctx, db, { always: true });
+      const report = await quotaReport(ctx, db, { always: true, origin });
       return { kind: "quota-check", eventId: event.id, remaining: report.remaining };
     }
   }

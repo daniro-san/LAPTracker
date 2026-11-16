@@ -3,7 +3,7 @@
 // alliance's tag, name and badge, and each member's uid and kills; nothing per member is returned.
 import { eq, inArray } from "drizzle-orm";
 
-import { killsTurnout, type KillsTurnout } from "../compute";
+import { killsTurnout, TURNOUT_MIN_GAINERS, type KillsTurnout } from "../compute";
 import type { Db } from "../db";
 import { allianceSnapshots, memberSnapshots } from "../schema";
 
@@ -17,7 +17,10 @@ export interface AllianceTurnout extends KillsTurnout {
 export interface TurnoutLists {
   /** Alliances by the share of their members who gained kills. */
   withKills: AllianceTurnout[];
-  /** Alliances that gained kills, by the top 5's share of those kills. */
+  /**
+   * Alliances that gained kills, by the top 5's share of those kills: first those with at least
+   * `TURNOUT_MIN_GAINERS` gainers, then the rest, each part in that order.
+   */
   topShare: AllianceTurnout[];
 }
 
@@ -63,8 +66,10 @@ export async function memberTurnout(
     return figures.n === 0 ? [] : [{ ...figures, unionId, tag, name, badgeId }];
   });
   if (!all.some((t) => t.gainers > 0)) return null;
+  const share = all.filter((t) => t.gained > 0).sort(byFigure((t) => t.top / t.gained));
+  const ranked = (t: AllianceTurnout) => t.gainers >= TURNOUT_MIN_GAINERS;
   return {
     withKills: [...all].sort(byFigure((t) => t.gainers / t.n)),
-    topShare: all.filter((t) => t.gained > 0).sort(byFigure((t) => t.top / t.gained)),
+    topShare: [...share.filter(ranked), ...share.filter((t) => !ranked(t))],
   };
 }

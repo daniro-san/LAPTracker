@@ -1,6 +1,7 @@
 // The admin area's text (app/(pages)/admin/*, app/_ui/admin/*), re-exported as `copy.admin` from
 // lib/copy.ts. Sentences are allowed here (DESIGN.md: the grandma voice lives in the admin area).
 import { guideCopy } from "./copy-guide";
+import { membersCopy } from "./copy-members";
 
 export const adminCopy = {
   title: "Admin",
@@ -9,6 +10,7 @@ export const adminCopy = {
     overview: "Overview",
     runs: "Runs",
     errors: "App errors",
+    members: "Members",
     logout: "Log out",
   },
   pin: {
@@ -303,5 +305,7 @@ export const adminCopy = {
     digest: "digest {digest}",
     count: "{n}×",
   },
+  /** /admin/members, the officer view of might that has not moved (D70). */
+  members: membersCopy,
   guide: guideCopy,
 };

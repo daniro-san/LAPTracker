@@ -11,6 +11,7 @@ import {
   publicSnapshotMessage,
   type PublicContext,
 } from "./notify";
+import type { TurnoutLists } from "./queries";
 import { notifyFinished } from "./run-notify";
 
 const clock = discordClock(TEST_ENV.SERVER_TZ);
@@ -106,7 +107,8 @@ describe("one message per channel per event (D31)", () => {
           {
             id: 0,
             filename: "event.png",
-            description: "The event's ledger by Might and its top gains",
+            description:
+              "The event's ledger by Might, its top gains and the members with kills gained",
           },
         ],
         allowed_mentions: { parse: [] },
@@ -203,6 +205,26 @@ describe("one message per channel per event (D31)", () => {
       "Start Sat, Nov 7, 10:01 server time",
       "1/1 alliances",
     ]);
+  });
+
+  it("leads with the alliance that has the most members with kills gained, with its figure", () => {
+    const lead = {
+      unionId: 1,
+      tag: "OGs",
+      name: "OldGrandmas",
+      badgeId: null,
+      n: 100,
+      gainers: 54,
+      gained: 9,
+      top: 3,
+    };
+    const text = (turnout: TurnoutLists | null) =>
+      publicSnapshotMessage(summary(), publicCtx({ turnout, image: true })).description;
+    expect(text({ withKills: [lead], topShare: [lead] })?.split("\n")).toEqual([
+      "0/0 alliances",
+      "Most members with kills gained: [OGs] 54 %",
+    ]);
+    expect(text(null)).toBe("0/0 alliances");
   });
 
   it("leaves out the alliance count, stale and movers lines when the event detail cannot be read", async () => {
