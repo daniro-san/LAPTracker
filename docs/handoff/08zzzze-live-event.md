@@ -2,7 +2,7 @@
 
 Closes #307.
 
-This branch is stacked on PR #292 (`session/08zzzza-event-samples`, event samples, not yet merged). Merge #292 first; this PR's base is that branch until then.
+PR #292 (event samples, D69) is merged into dev, and this branch has dev merged in. This PR targets dev.
 
 ## Built
 - **Pure arithmetic** `lib/live.ts` (test `lib/live.test.ts`):
@@ -16,23 +16,23 @@ This branch is stacked on PR #292 (`session/08zzzza-event-samples`, event sample
   - `app/_ui/LivePulse.tsx`: `Pulse` with HTML/CSS bars (no library), the busiest 30 minutes underlined and named in text ("Busiest 30 minutes so far: 13:45–14:15 server time · 42% of the kills"), a legend for the hollow stub ("No update from the game") and the hairline ("No reading") only when such intervals exist, and a Details disclosure (`MoreBar`, the details-bar pattern) with the table interval / kills gained / alliances.
   - `app/_ui/LiveRefresh.tsx`: client component, one `router.refresh()` at `refreshAt` (an ISO time from the server). It re-arms when the page comes back with a new time, holds no timer while `document.hidden`, refreshes once on return if the time passed, and is not rendered when the event is not live.
   - Placement: live = strip under the event title, then pulse and standings above the ledger. Finished = one "During the event" section below Movers, with "At the last reading" for the standings. Events without samples render as before.
-  - `EventView.tsx` loads the progress through `loadProgress` (`app/_ui/event-page.ts`, per request, not cached, because it depends on `now`); `getEventPage` is unchanged, so the samples test that compares pages with and without samples still holds. `EventHead` was split out of `EventView` for the lint length limit.
-  - `StatRow.liveUnion` (`StatTable.tsx`) and a change in `MyAllianceJump` (`MyAlliance.tsx`): the viewer's own alliance is also highlighted (`data-mine`) in the live standings.
+  - `EventView.tsx` takes the progress as a prop from `app/(pages)/events/[id]/page.tsx`, which reads it with `loadProgress` (`app/_ui/event-page.ts`, per request, not cached, because it depends on `now`) in one `Promise.all` with `loadEventPage`; the home page reads it inside `EventView`. `getEventPage` now also calls `memberTurnoutSoFar` while the event has no End (see Review fixes). `EventHead` and `TopStatus` were split out of `EventView` for the lint length limit.
+  - `StatRow.mine` (`StatTable.tsx`): `LiveStandings` marks the viewer's own alliance in the live standings itself. `MyAlliance.tsx` is as on dev; there is no `liveUnion`.
   - `shareText` in `format.ts`: a whole-number percent in the viewer's locale.
 - **Copy:** 15 keys in the `ledger` block of `lib/copy.ts` (`live`, `liveUpdate`, `liveReadings`, `liveStandings`, `liveStandingsDone`, `liveDuring`, `liveStandingsHelp`, `livePulse`, `livePulseHelp`, `liveBusiest`, `liveBusiestDone`, `liveNoUpdate`, `liveNoReading`, `liveInterval`, `liveKillsGained`), translated into 16 languages with the translate-copy skill (3 translators at a time), stamped; glossaries gained rows.
 - **Seed:** `scripts/seed-samples.ts`, called from `scripts/seed.ts` for the latest seed event (Saturday 2026-10-31, Start 12:00Z, End 16:00Z): 15 samples (12:15Z–15:45Z). Heavy fighting 14:15Z–15:00Z (12:15–13:00 server); about 3.5 B of might lost across the 20 alliances; kills move in steps and each alliance updates every 10 to 13 minutes (so an interval holds 0, 1 or 2 updates); might moves at every reading for most members; the last sample has one stale alliance and one failed. Deterministic (`noise` is now exported from `seed-data.ts`).
-- **Screenshots** in `docs/screenshots/`: `08zzzze-live-360.png` (Chrome, light), `08zzzze-live-390-webkit-dark.png`, `08zzzze-finished-360.png`, `08zzzze-live-768.png`.
+- **Screenshots** in `docs/screenshots/`: `08zzzze-live-360.png` and `08zzzze-early-360.png` and `08zzzze-finished-360.png` (Chrome, light), `08zzzze-live-360-webkit-dark.png`, `08zzzze-live-768.png`.
 
 ## Decisions
 - **No `eventSamples` for the page** (coordinator review, 2026-11-16): its rosters are about 63 KB per reading, about 1.6 MB per view for 26 readings, and the page refreshes once per slot per viewer. `eventProgress` reads alliance totals only. `eventSamples` is unchanged and still the read model for member-level charts.
 - **Cumulative since Start for the standings; the busiest span is two intervals** (coordinator review): the game updates an alliance's numbers every 10 to 13 minutes (measured 2026-11-16), so a 15-minute interval holds 0, 1 or 2 updates and a single interval's bar can alternate high and low without any change in play. An interval where no compared alliance changed is a hollow stub with the words "No update from the game" (legend and Details table), not a bar of 0. An interval with no reading is a hairline with "No reading".
-- **An alliance's change is read at the latest sample only.** If that sample has no usable row for it (failed) or is stale, it shows no change and a word ("No data", "○ Stale"); an older fresh sample is not substituted.
+- **An alliance's change is read at its newest fresh sample.** If the newest sample has no usable row for it (failed or stale), the figures are from its latest earlier fresh sample and the card says that reading's time ("Last updated at 16:45 server time"). With no usable sample at all it shows no change and a word ("No data", "○ Stale").
 - **A sample counts only if it has at least one usable alliance and is not `running`.** A missing reading makes its interval `missing`; a gap longer than one interval gives one `missing` interval per slot.
-- **Live means:** the Start's snapshot is not `running`, the End has no row at all (a running End counts as run), and now is before the End plus 2 minutes. After that the strip and the refresh stop even if the End never came.
+- **Live means:** the Start's snapshot is not `running`, the End has no row at all (a running End counts as run), and now is before the End plus 2 minutes. After that the strip and the refresh stop even if the End never came. A slot whose sample is missing keeps the page on that slot until 3 minutes after it, then moves to the next slot.
 - **Next reading:** the slot holding `now` still counts for its first 60 seconds (its sample is expected 60 s after the slot), so a viewer who opens the page at 12:30:10 is told "next 12:30" and refreshes at 12:31:00, not at 12:46. This differs from the issue's "next slot + 1 minute" only in that first minute. A slot at or after the End's own slot has no sample, so the next reading is the End, and the refresh is at the End + 2 minutes.
 - **Placement above the ledger while live**, because the ledger shows only Start figures until the End; below Movers when finished, because the End's ledger is then the main story.
 - **"Readings so far" is the number of samples** (the Start is not counted).
-- **The strip and sections need at least one usable sample.** In the first 15 minutes after the Start the page looks as before.
+- **The strip shows from the Start; the sections need at least one usable sample.** Before the first reading the strip says `Start 15:37 · first reading 15:45` and `No readings yet`; the pulse and the standings appear with the first sample.
 - **Hardening in `serverPulse`:** `everyMs <= 0` returns no intervals, so a past event stays readable when `SAMPLE_EVERY_MIN` is later set to 0 (the pulse is then empty and the standings still show).
 - **Seed:** the plain seed now samples its latest event, so the preview and local runs show the finished variant. The live variant is made locally (below), not by a seed flag.
 
@@ -129,6 +129,26 @@ Lint limits made three splits: `TopStatus` moved from `EventView.tsx` to `app/_u
 WebKit lowercase compact units: not caused by this PR. WebKit in Playwright reports `navigator.language` `en-GB` (`navigator.languages` `["en-GB"]`, Chromium `en-US`). `pickLanguage` (`app/_ui/locale.ts`) keeps the viewer's own tag for the language ("en-GB keeps `31 Oct`"), so every number goes through `Intl.NumberFormat("en-GB", { notation: "compact" })`, whose CLDR short forms are `k`, `m`, `bn` (Node 26: `60.1m`, `4.29bn`, `271k`; en-US and en-AU give `M`, `B`, `K`). It affects every page and every compact figure for a viewer whose Accept-Language is en-GB, including the ledger cards on dev. `compact()` in `app/_ui/format.ts` was not changed. Follow-up: decide whether English readers should always get `K/M/B`.
 
 Verified: `pnpm check` green: 71 test files passed, 1 skipped; 350 tests passed, 1 skipped; i18n "17 languages up to date with English". Local scratch cluster (`lt_seed`, copy `lt_run`; dropped after): states early, live (one stale and one failed alliance in the newest reading), late, finished; Chromium and WebKit, light and dark, 360 and 768: no horizontal overflow. Screenshots replaced: `docs/screenshots/08zzzze-live-360.png`, `08zzzze-finished-360.png`, `08zzzze-early-360.png`, `08zzzze-live-360-webkit-dark.png`.
+
+## Review fixes, round 2 (2026-11-16)
+
+Work on top of cb6f64b (dev with #292, #324 and #322 merged).
+
+Changed:
+1. `nextReading` (`lib/live.ts`) takes the latest sample's time (or the Start's) as a fourth argument. When the slot holding `now` has no sample after its first minute, `at` stays on that slot and `refreshAt` is slot + 3 minutes (`OVERDUE_MS`), while `now` is before that. After that it falls back to the next slot as before. A tick that lands late no longer leaves the viewer 15 minutes behind, and the refresh at slot + 3 minutes shows "(reading due …)". One test; the existing `nextReading` tests pass the sample time.
+2. `overdueSlot` test: exactly 3 minutes gives null, 3 minutes and 1 ms gives the slot, a sampled slot gives null, `everyMin` 0 gives null.
+3. `memberTurnoutSoFar` (`lib/queries/turnout.ts`) selects one row per alliance in SQL (`selectDistinctOn` on `union_id`, ordered by `union_id`, then `slot_at` descending), not every fresh sample row.
+4. D68 got the amendment line from the coordinator, as its last line; every other D68 byte is as on #288. The `CLAUDE.md` UI bullet reads "hand-built inline SVG or HTML bars". The `LivePulse` header comment cites the amendment.
+5. `docs/DESIGN.md`: `live-strip` and `server-pulse` entries after `player-progress`. The `line-chart` and `player-progress` lines from #288 are unchanged.
+6. `docs/ARCHITECTURE.md`: one line each for `lib/queries/live.ts` (under `lib/queries/samples.ts`) and `lib/live.ts`.
+7. Handoff lines 5, 19, 20, 24, 29, 31 and 35 now state the final behaviour.
+
+Decided, not done:
+- The `line-chart` and `player-progress` DESIGN lines from #288 stay on this branch. Reason: the text is identical to #288's, so #288 merges without a conflict on those lines. `player-progress` describes a component that is not on this branch.
+- "Busiest 30 minutes" is hardcoded in `ledger.liveBusiest` and `ledger.liveBusiestDone`. Reason: the production cadence is 15 minutes (two intervals), and a `{min}` placeholder means translating 17 languages again. Follow-up.
+- The help line under "War turnout so far" still says "at Start and at End". Reason: the review asked for the title only. Follow-up.
+- The type name `Movers` in `EventView.tsx` is unchanged. Reason: it is a local alias of an existing type and renaming it gains nothing.
+- Caching a finished event's progress is not done. Reason: a finished event's progress does not change, but the page is read per request today and there is no cache layer for the event page. Follow-up.
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 

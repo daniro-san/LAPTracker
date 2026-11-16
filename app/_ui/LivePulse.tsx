@@ -2,8 +2,8 @@
 // underlined and named in text, the numbers in a Details table. The game moves an alliance's numbers every
 // 10-13 minutes, so an interval can hold no update: it shows as a hollow stub, never as a quiet zero.
 // A chart under D68 (docs/decisions/D68-charts-are-hand-built-inline-svg.md): hand-built, no chart library,
-// labels in HTML, numbers beside it (the Details table). Its bars are HTML boxes, not SVG shapes (D68 is
-// written for a line); a bar chart needs no stretched drawing.
+// labels in HTML, numbers beside it (the Details table). Its bars are HTML boxes, which D68 allows by its
+// amendment of 2026-11-16 (PR 319); a line chart stays SVG.
 import { fill, type Dictionary } from "@/lib/copy";
 import type { EventProgress } from "@/lib/queries";
 
