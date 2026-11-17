@@ -7,11 +7,7 @@ import { track } from "@/lib/analytics/events";
 import { WORKSPACE_LANG_COOKIE } from "@/lib/private/cookies";
 import type { WorkspaceLanguage } from "@/lib/private/dictionary";
 
-const CHOICES: { id: WorkspaceLanguage; short: string; name: string }[] = [
-  { id: "en", short: "EN", name: "English" },
-  { id: "pt-BR", short: "PT", name: "Português" },
-  { id: "fr", short: "FR", name: "Français" },
-];
+import { LANGUAGE_CHOICES as CHOICES } from "./languages";
 
 export function LanguageSwitch({ current, label }: { current: WorkspaceLanguage; label: string }) {
   const router = useRouter();

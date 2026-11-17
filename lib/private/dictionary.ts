@@ -2,6 +2,8 @@
 // lib/copy.ts, so the public pages' i18n check and payload do not change. Names and game terms stay as the
 // officers write them (naming.md). French puts a no-break space before : ? and !.
 import { fr } from "./dictionary.fr";
+import { importEn } from "./dictionary.import";
+import { noticesEn } from "./dictionary.notices";
 import { pt } from "./dictionary.pt-BR";
 import { theftsEn } from "./dictionary.thefts";
 
@@ -170,6 +172,59 @@ const en = {
     "In Safari, tap the Share icon (a square with an arrow pointing up). In the list, tap the item with a + in a square, then confirm.",
   "howto.android.body":
     "In Chrome, tap ⋮ at the top right. In the menu, tap the item that adds the page to your home screen (a phone with an arrow), then confirm.",
+  "status.break": "On a break",
+  "status.breakUntil": "On a break until {date}",
+  "status.help": "Needs help",
+  "members.early":
+    "Roster from {when} · donations and activity come with the first end-of-day read, after {time} server time.",
+  "members.import": "Import the old spreadsheets",
+  "src.message": "from a message",
+  "src.sheet": "from the sheet",
+  "facts.head": "Member facts",
+  "facts.squadMight": "Main squad",
+  "facts.adTech": "AD Tech",
+  "facts.troopTier": "Troops",
+  "facts.timeZone": "Time zone",
+  "facts.languages": "Languages",
+  "facts.status": "Status",
+  "facts.away": "Away",
+  "facts.notes": "Notes",
+  "facts.until": "until {date}",
+  "facts.edit": "Edit facts",
+  "facts.paste": "Paste what they told you",
+  "facts.title": "Facts: {name}",
+  "facts.save": "Save",
+  "facts.cancel": "Cancel",
+  "facts.failed": "Could not save. Try again.",
+  "facts.computed": "Automatic (now: {status})",
+  "facts.awayText": "What they said",
+  "facts.awayDay": "Last day away",
+  "facts.mightHint": "9.9M or 9,900,000",
+  "facts.theirs": "Keep {theirs}",
+  "facts.mine": "Use {mine}",
+  "paste.help":
+    "Paste the chat here, then tap Fill the fields. Nothing is saved until you tap Save.",
+  "paste.read": "Fill the fields",
+  "paste.nothing": "Nothing found. Type the values below.",
+  "paste.zones": "Other matches",
+  "tz.choose": "Choose",
+  "tz.search": "City, country, PST, ST +3…",
+  "tz.searchAria": "Search time zones",
+  "tz.theirTime": "Their time now",
+  "tz.st": "ST is server time ({offset}).",
+  "tz.more": "{n} more: keep typing.",
+  "tz.none": "No time zone matches.",
+  "tz.now": "now {time}",
+  "facts.conflictBar":
+    "Another officer changed {field} while you were editing. Answer under {field}, then Save.",
+  "facts.conflictField": "Another officer saved {theirs}. You typed {mine}.",
+  "facts.mergedLine": "Combined with another officer’s edit: {fields}.",
+  "src.unsaved": "from this message · not saved",
+  "paste.found.one": "Found {n} value. Check it, then Save.",
+  "paste.found.other": "Found {n} values. Check them, then Save.",
+  "facts.discard": "Discard changes?",
+  "facts.discardYes": "Discard",
+  "facts.discardNo": "Keep editing",
   "profile.title": "Your settings",
   "profile.name": "Your name",
   "profile.nameHelp": "Shown at the top of the desk (up to 32 characters).",
@@ -195,6 +250,8 @@ const en = {
   "profile.theme.light": "Light",
   "profile.theme.dark": "Dark",
   "profile.theme.system": "Same as this device",
+  ...noticesEn,
+  ...importEn,
   ...theftsEn,
 } as const;
 

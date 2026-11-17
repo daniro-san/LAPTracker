@@ -1,9 +1,9 @@
 # 11j — Thefts log for same-server Secret Operations thefts
 
-Issue #321. Decision: D97 (new). Rules applied: D71, D74, D75, D52, D77. Base: `origin/dev` at 61eb192, then merged with `origin/dev` at c538169 before the migration was generated.
+Issue #321. Decision: D97 (new). Rules applied: D71, D74, D75, D52, D77. Base: `origin/dev` at 61eb192, then merged with `origin/dev` at c538169 and at 48d2022 (0021 notices, 0022 member facts) before the migration was generated.
 
 ## Built
-- **Schema** (`lib/schema-thefts.ts`, migration `drizzle/0021_thefts.sql`, journal idx 21, chained to 0020). `drizzle.config.ts` lists both schema files.
+- **Schema** (`lib/schema-thefts.ts`, migration `drizzle/0023_thefts.sql`, journal idx 23, chained to 0022). `drizzle.config.ts` lists it beside `lib/schema-notices.ts`.
   - `thefts`: `workspace_id`, `at` (null when the time was not read), `attacker_key`, `attacker_uid`, `attacker_name`, `attacker_tag` ("" when not known), `stolen` (`quest_rewards` or null for unreadable), `victim_uid`, `victim_name`, `source` (`photo` / `typed`), `note`, `created_by`, `created_at`.
   - `theft_follow_ups`: one row per change (`state` open / talked / resolved, `note`, `changed_by`, `changed_at`); the newest row per attacker is its state.
 - **Public read model** `lib/queries/server-players.ts`: `serverPlayers(db)`, uid, name and tag of every member of each tracked alliance's newest usable daily roster (member-history arrays only, never `raw_json`).
@@ -44,14 +44,14 @@ Issue #321. Decision: D97 (new). Rules applied: D71, D74, D75, D52, D77. Base: `
 - **No PostHog event** (D77's list is closed).
 
 ## Verified
-- **`pnpm check` exits 0** after merging `origin/dev` (c538169) and generating 0021: prettier, eslint, tsc; vitest **112 files passed, 2 skipped; 567 tests passed, 4 skipped**; drift gate "Everything's fine"; i18n "17 languages up to date". No test timed out. Before the merge: 105 files, 519 tests.
+- **`pnpm check` exits 0** after merging `origin/dev` at 48d2022 and generating 0023: prettier, eslint, tsc; vitest **124 files passed, 2 skipped; 616 tests passed, 4 skipped**; drift gate "Everything's fine"; i18n "17 languages up to date". No test timed out. Earlier rounds: 105 files and 519 tests before any merge; 112 and 567 after merging c538169.
 - Tests, one per behaviour:
   - **grouping counts:** 6 entries, two alliances (`VNC` and `vnc` grouped), this week 2 / total 4 and 1 / 2; per attacker 2 / 3 and 0 / 1; known victims counted inside the attacker; the entry without a time last;
   - **follow-up transitions:** open with no change; talked; resolved; a later theft reopens; a theft without a time does not; set back to open by hand is not a reopening;
   - **attacker search across alliances:** NSE's newest name (Grimmer, not Grimm) and URSA's Agrim for "grim", exact before contains, `[NSE] GREMLIN`, an emoji finds nothing, OGs' own player left out, and from NSE's workspace OGs' player is found and NSE's own are not;
   - **the save hook** on image 54's recorded OCR text plus two lines cut off at the edge (`kind: null`): 5 saved, 2 helps and 1 own member left out; Golgsunny matched to the RPD roster (`uid:41`) twice at 11:47 plus once with what was taken unknown; Stene and ANMcinalice kept by name; times 2026-11-15T13:48Z etc.; every row `photo` with the victim; saving again saves 0 (5 duplicates); a member of another alliance gives `not_in_alliance`; an entry without a name gives `attacker_missing`; a report read on 2027-01-02 puts `12-31 23:50` in 2026;
   - **workspace isolation:** OGs logs a theft; NSE's view is empty; NSE cannot remove it or set its follow-up (`not_found`); OGs cannot name NSE's member as victim (`not_in_alliance`) or its own player as attacker (`unknown_player`); a time two days ahead is `bad_time`.
-- **Local e2e** on a production build (`pnpm build` + `next start` on :3157) of the merged tree, db:local on 54417 (bridge 54418), the Discord stub on 54437, playwright-core with system Chrome, browser zone Europe/Paris. Seed: OGs and NSE workspaces and one daily roster for each of the 20 tracked alliances from the committed `/v1` fixtures (uid, name, power, kills). No upstream call, no real Discord call, no `/api/quota`. **56 of 56 checks passed** (the run before the merge also 56 of 56, after fixing two date expectations in the harness):
+- **Local e2e** on a production build (`pnpm build` + `next start` on :3157) of the tree merged with `dev` at 48d2022, db:local on 54417 (bridge 54418), the Discord stub on 54447, playwright-core with system Chrome, browser zone Europe/Paris. Seed: OGs and NSE workspaces and one daily roster for each of the 20 tracked alliances from the committed `/v1` fixtures (uid, name, power, kills). No upstream call, no real Discord call, no `/api/quota`. **56 of 56 checks passed** (also 56 of 56 before the merges and after merging c538169; the first run failed two date expectations in the harness, which were fixed):
   - Home links the log; the title; the empty state;
   - manual entry: the sheet opens on its title; "lollipop" finds `[NSE] Lollipopᴺˢᴱ`; "seesky" (our member) finds no attacker; "Tue, Nov 17 01:10 your time"; every sheet control ≥ 44 px; Save without an attacker asks for one; four thefts saved (search + matcher; last week, unreadable, a note; typed `Stene` with tag `1b8R`; `[WACK] ChaoticFyre`); a time two weeks ahead refused; the rows' keys, sources and `stolen`;
   - grouping: three sections; NSE "1 this week · 2 in total · last Mon, Nov 16 …"; 1b8R "0 this week · 1 in total" (Sunday is last week); WACK 1 / 1; only alliance tags as headings; "Taken from: Seesky 1 · Commerage 1" inside the card; server time · your time per entry; the unreadable entry and its note; the source badge; every control in an opened card ≥ 44 px;
@@ -86,7 +86,7 @@ Plan changes needed: none. The workspace track lives in issues #293–#340, not 
 - A member picker for the draft can reuse `memberCandidates` in `app/(private)/_ui/TheftFormFields.tsx` (matchName, then `searchRoster`); `theftsView(...).roster` or `latestRoster` gives the names.
 - Calendar sub-nav (11h): add `{ id: "thefts", path: "/thefts", key: "thefts.nav" }` to `CalendarNav`'s views ("Thefts" / "Roubos" / "Vols" exist in all three languages), pass `current="thefts"` from the thefts page, and remove the Home card in `app/(private)/w/[slug]/page.tsx` (its comment marks it). The page already passes the Calendar tab as current.
 - `useViewerZone` exists twice (11h's `YourTime.tsx`, this branch's `theft-client.ts`): keep one.
-- Migration: this branch is `0021_thefts`. 11i also generated a 0021; whichever merges second drops its migration, its snapshot and its journal entry, merges `dev`, and runs `pnpm db:generate --name <name>`.
+- Migration: this branch is `0023_thefts`, after 0021 (notices) and 0022 (member facts). A branch made before it regenerates its own migration on top.
 - `lib/schedule.ts` now has `serverInstant(day, hhmm, cfg)` (server date and time to an instant).
 </adjustments>
 
