@@ -88,6 +88,10 @@ const shown = async (access: WorkspaceAccess, occasion: Occasion) =>
     .map((r) => `${r.uid}:${r.mark ?? "-"}${r.away ? " away" : ""}`)
     .sort();
 
+/** A Cheese Trap Calendar entry (I or II, Lv.7) on the test day. */
+const cheeseTrap = (variant: "I" | "II") =>
+  ({ kind: "cheese", variant, level: 7 }) as Partial<NewEntry>;
+
 /** The roll call's title as its page shows it, in English. */
 const titled = async (access: WorkspaceAccess, occasion: Occasion) => {
   const view = await callView(db, access, occasion, "en", ZONE);
@@ -212,20 +216,49 @@ describe("roll call writes (issue 298)", () => {
     expect(await add("raid")).not.toEqual(first);
   });
 
-  it("gives a Cheese Trap Calendar entry its roll call, titled as the Calendar, whose rest took part", async () => {
+  it("gives a Cheese Trap Calendar entry its roll call, titled as the Calendar", async () => {
     const ana = await signedIn("Ana");
-    const cheese = await calendarOccasion(ana, {
-      kind: "cheese",
-      variant: "II",
-      level: 7,
-    } as Partial<NewEntry>);
+    const cheese = await calendarOccasion(ana, cheeseTrap("II"));
     const [item] = await weekItems(db, ana, cheese.week, ZONE);
     expect(item).toMatchObject({ kind: "cheese", occasion: cheese });
     expect(await titled(ana, cheese)).toBe("Cheese Trap II · Lv.7");
+  });
+
+  it("fills a Cheese Trap's rest with took part, keeping a ✗", async () => {
+    const ana = await signedIn("Ana");
+    const cheese = await calendarOccasion(ana, cheeseTrap("II"));
     await mark(ana, cheese, 101, "no", 0);
     const rest = await markRest(db, ana, { occasion: cheese, uids: UIDS }, CLOCK);
     expect(rest).toMatchObject({ ok: true, mark: "yes" });
     expect(await shown(ana, cheese)).toEqual(["101:no", "102:yes", "103:yes", "104:yes"]);
+  });
+
+  it("keeps Cheese Trap I and II on the same day as two roll calls, each with its own counts", async () => {
+    const ana = await signedIn("Ana");
+    const one = await calendarOccasion(ana, cheeseTrap("I"));
+    const two = await calendarOccasion(ana, { ...cheeseTrap("II"), minute: 900 });
+    await mark(ana, one, 101, "yes", 0);
+    await mark(ana, two, 102, "no", 0);
+    const items = await weekItems(db, ana, one.week, ZONE);
+    expect(items.map((i) => [i.occasion, i.tally.yes, i.tally.no])).toEqual([
+      [one, 1, 0],
+      [two, 0, 1],
+    ]);
+  });
+
+  it("keeps a started Cheese Trap on the week when its entry is deleted, with its mark, titled Cheese Trap", async () => {
+    const ana = await signedIn("Ana");
+    const cheese = await calendarOccasion(ana, cheeseTrap("II"));
+    await mark(ana, cheese, 101, "yes", 0);
+    await removeEntry(db, ana, { entry: cheese.entry, scope: "all", week: cheese.week });
+    const [item, ...more] = await weekItems(db, ana, cheese.week, ZONE);
+    expect([item?.kind, item?.placed, item?.tally.yes, more.length]).toEqual([
+      "cheese",
+      null,
+      1,
+      0,
+    ]);
+    expect(item && (await titled(ana, item.occasion))).toBe("Cheese Trap");
   });
 
   it("still lists a plunder roll call saved before 2026-11-17, with its marks and no rest", async () => {

@@ -24,7 +24,14 @@ import type { Placed } from "./calendar-model";
 import { addDays, isDay, mondayOf } from "./calendar-time";
 import { awayOn } from "./fact-fields";
 import { factsOf, isMember } from "./member-facts";
-import { FROM_CALENDAR, REST, tapMark, type Mark, type RollKind } from "./roll-call-rules";
+import {
+  FROM_CALENDAR,
+  REST,
+  tapMark,
+  type ADDED_KINDS,
+  type Mark,
+  type RollKind,
+} from "./roll-call-rules";
 
 /** A Calendar entry's week (`week` is the plan's Monday), or a roll call by its id. */
 export type Occasion = { id: number } | { entry: number; week: string };
@@ -220,7 +227,7 @@ export async function undoMarks(
 export async function addCall(
   db: Db,
   access: WorkspaceAccess,
-  input: { kind: RollKind; day: string },
+  input: { kind: (typeof ADDED_KINDS)[number]; day: string },
   /** Made once per open add sheet (D100): a retry with it answers the first roll call's id. */
   requestId: string,
 ): Promise<{ ok: true; id: number }> {

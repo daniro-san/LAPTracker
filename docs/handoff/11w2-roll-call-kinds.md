@@ -26,14 +26,17 @@
 - **The variant change in `openOccasion`** was not in the task. Calendar Cheese Trap roll calls cannot be saved without it.
 
 ## Verified
-- **`pnpm check` exits 0:** prettier, eslint, tsc; vitest 172 files passed, 2 skipped; 917 tests passed, 4 skipped; drift gate "Everything's fine"; i18n "17 languages up to date".
+- **`pnpm check` exits 0:** prettier, eslint, tsc; vitest 172 files passed, 2 skipped; 921 tests passed, 4 skipped; drift gate "Everything's fine"; i18n "17 languages up to date".
 - **New and changed tests:**
   - `roll-call-rules.test.ts`: the sheet's kinds are exactly shield / raid / cheese; `REST.cheese` is `yes`.
   - `roll-call.test.ts`:
     - A Cheese Trap II Lv.7 Calendar entry is on the week as kind `cheese`, titled "Cheese Trap II · Lv.7", and its rest writes `yes` while keeping a ✗.
     - A plunder roll call inserted as an old row is listed with its mark, titled "Plunders", and its rest is refused.
+    - Cheese Trap I and II on the same day are two week items, each with its own counts.
+    - A started Cheese Trap whose entry is deleted stays on the week with its mark, titled "Cheese Trap".
     - The hand-added test now uses `cheese`.
-  - `roll-call/route.test.ts`: add `cheese` answers 200 with an id; add `plunder` answers 400 `bad_request`.
+  - `roll-call/route.test.ts`: add `cheese` answers 200 with an id; add `plunder` answers 400 `bad_request` (two tests).
+  - `addCall` takes `(typeof ADDED_KINDS)[number]`, so `tsc` refuses `plunder` there too (checked with a throwaway `@ts-expect-error` probe, not committed).
   - `member-session.test.ts`: its add body now uses `cheese`.
 - **Local e2e, 32 of 32 checks.**
   - Setup: production build (`next build` + `next start` on :3947) and local Postgres on 57147 with all 36 migrations. Also the bridge on 57148, a Discord stand-in on 57149, and 11w's invented 60-member roster. The seed adds a Cheese Trap II Lv.7 entry (Thu Nov 19, 14:00 ST) and one plunder roll call with 2 marks.
