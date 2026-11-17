@@ -35,9 +35,14 @@ lib/private/*.ts    the workspace (D71): requireWorkspace and its branded Worksp
                     notices.ts (the notices library's reads
                     and its save, issue 304), notice-rules.ts (pure: fields, the counter, "may be out of date",
                     the save's version check); its table reads and writes are in lib/repo/notices.ts.
+                    The thefts log (D97): thefts.ts (its read and writes, the attacker search), theft-groups.ts
+                    (pure: attacker key, groups and counts, follow-up state), thefts-import.ts (the screenshot
+                    import's save hook for Secret Ops reports), dictionary.thefts.ts (its words); tables in
+                    lib/schema-thefts.ts, reads and writes in lib/repo/thefts.ts.
 lib/ai/*.ts         Groq (D81): the chat client with its model fallback (groq.ts), the notice prompts and plain-text
                     cleanup (notice-writing.ts), the game glossary (glossary.ts). Reached through AppContext.ai.
 lib/queries/*.ts    read models for the UI (joins, sorting, name history). Never write. Never expose BLOCKED_ROSTER_KEYS.
+                    lib/queries/server-players.ts: `serverPlayers`, the tracked alliances' newest roster names (D97).
                     lib/queries/samples.ts: `eventSamples`, an event's Start, samples and End (D69).
                     lib/queries/live.ts: `eventProgress`, the event page's live section (alliance totals per reading, D69):
                     `progressRows` (the database, cacheable) and `eventProgressOf` (pure, per request, takes `now`).

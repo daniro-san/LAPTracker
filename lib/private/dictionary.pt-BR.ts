@@ -3,6 +3,7 @@
 import type { WorkspaceDictionary } from "./dictionary";
 import { importPt } from "./dictionary.import";
 import { noticesPt } from "./dictionary.notices";
+import { theftsPt } from "./dictionary.thefts";
 
 export const pt: WorkspaceDictionary = {
   "app.name": "Mesa dos oficiais",
@@ -247,4 +248,5 @@ export const pt: WorkspaceDictionary = {
   "profile.theme.system": "Igual ao aparelho",
   ...noticesPt,
   ...importPt,
+  ...theftsPt,
 };
