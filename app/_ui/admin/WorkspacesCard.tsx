@@ -26,6 +26,7 @@ export interface WorkspaceView {
   guild: string;
   roles: string;
   sessions: number;
+  memberSessions: number;
   allowlist: string[];
 }
 
@@ -113,20 +114,21 @@ function WorkspaceList({
           <p className="text-body-sm break-words text-ink/80">
             {t.allowlist}: {w.allowlist.length === 0 ? t.allowlistNone : w.allowlist.join(", ")}
           </p>
+          {/* The narrower action first; everyone (the owner too) is the dangerous one (D105). */}
           <p className="mt-2 flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => onSignOut({ w, members: false })}
-              className={buttonClass("secondary")}
-            >
-              {t.signOut}
-            </button>
             <button
               type="button"
               onClick={() => onSignOut({ w, members: true })}
               className={buttonClass("secondary")}
             >
               {t.signOutMembers}
+            </button>
+            <button
+              type="button"
+              onClick={() => onSignOut({ w, members: false })}
+              className={buttonClass("secondary", "font-semibold text-seal")}
+            >
+              {t.signOut}
             </button>
           </p>
         </li>
@@ -238,9 +240,14 @@ export function WorkspacesCard({ workspaces }: { workspaces: WorkspaceView[] }) 
       {workspaces.length > 0 && <AllowForm workspaces={workspaces} run={run} />}
       {confirm && (
         <ConfirmSheet
-          text={fill(confirm.members ? t.signOutMembersConfirm : t.signOutConfirm, {
-            slug: confirm.w.slug,
-          })}
+          text={fill(
+            confirm.members
+              ? confirm.w.memberSessions === 1
+                ? t.signOutMembersOne
+                : t.signOutMembersConfirm
+              : t.signOutConfirm,
+            { slug: confirm.w.slug, n: confirm.w.memberSessions },
+          )}
           onAnswer={answer}
         />
       )}

@@ -11,7 +11,7 @@ export const workspacesAdminCopy = {
   slugHelp: "Lowercase letters, digits and dashes, e.g. ogs.",
   sessions: "{n} signed in",
   allowlist: "Allowlist",
-  allowlistNone: "Nobody on the allowlist.",
+  allowlistNone: "empty",
   until: "until {date}",
   save: "Save workspace",
   edit: "Add or edit a workspace",
@@ -22,11 +22,13 @@ export const workspacesAdminCopy = {
   allowUser: "Discord user id",
   allowUntil: "Until",
   allowSave: "Add",
-  signOut: "Sign out everyone in this workspace",
+  signOut: "Sign out everyone, including me",
   signOutConfirm: "Sign out everyone in /w/{slug}? Each officer signs in with Discord again.",
-  signOutMembers: "Sign out members",
+  signOutMembers: "Sign out members only (officers stay signed in)",
   signOutMembersConfirm:
-    "Sign out every member in /w/{slug}? Officers stay signed in. Members who still belong sign in with Discord again.",
+    "Sign out {n} members in /w/{slug}? Officers stay signed in. Members who still belong sign in with Discord again.",
+  signOutMembersOne:
+    "Sign out 1 member in /w/{slug}? Officers stay signed in. A member who still belongs signs in with Discord again.",
   saved: "Saved.",
   ended: "Signed out {n}.",
   errors: {

@@ -24,6 +24,7 @@ export async function Workspaces({ now }: { now: Date }) {
       guild: w.discordGuildId,
       roles: w.leaderRoleIds.join(", "),
       sessions: w.openSessions,
+      memberSessions: w.memberSessions,
       allowlist: w.allowlist.map(
         (a) =>
           `${a.discordUserId}${a.expiresAt ? ` ${fill(t.until, { date: a.expiresAt.toISOString().slice(0, 10) })}` : ""}`,
