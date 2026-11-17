@@ -1,6 +1,7 @@
 // The workspace dictionary in French (D71), split from dictionary.ts for its size; the keys follow `en`.
 // French puts a no-break space before : ? and !, and inside « ».
 import type { WorkspaceDictionary } from "./dictionary";
+import { boardFr } from "./dictionary.board";
 import { calendarFr } from "./dictionary.calendar.fr";
 import { importFr } from "./dictionary.import";
 import { lifecycleFr } from "./dictionary.lifecycle";
@@ -25,7 +26,7 @@ export const fr: WorkspaceDictionary = {
   "lang.aria": "Langue",
   "signin.title": "Connexion",
   "signin.lead":
-    "Pour la direction de l’alliance : connectez-vous avec le compte Discord que vous utilisez sur le serveur de l’alliance.",
+    "Connectez-vous avec le compte Discord que vous utilisez sur le serveur de l’alliance. Les membres voient le plan de la semaine, les annonces et Pour commencer ; les officiers ont aussi le Bureau des officiers.",
   "signin.button": "Se connecter avec Discord",
   "signin.note": "Discord ne partage que votre nom et vos rôles sur ce serveur. Rien n’est publié.",
   "signin.e.denied": "Discord n’a pas confirmé la connexion. Réessayez.",
@@ -272,4 +273,5 @@ export const fr: WorkspaceDictionary = {
   ...theftsFr,
   ...shotsFr,
   ...translateFr,
+  ...boardFr,
 };

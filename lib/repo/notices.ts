@@ -271,3 +271,34 @@ export async function writeNotice<R>(
     return { id };
   });
 }
+
+/**
+ * The newest value of each of `fields` for the workspace's notices (only `ids`, when given), with each
+ * notice's last change: the members' board (D105) first reads `for_members` and `ends_on` of every notice,
+ * then the text of only those it shows.
+ */
+export async function newestNoticeValues(
+  db: Db,
+  workspaceId: number,
+  fields: readonly string[],
+  ids?: readonly number[],
+): Promise<{ noticeId: number; field: string; value: string; updatedAt: Date }[]> {
+  if (ids?.length === 0) return [];
+  return db
+    .selectDistinctOn([noticeEdits.noticeId, noticeEdits.field], {
+      noticeId: noticeEdits.noticeId,
+      field: noticeEdits.field,
+      value: noticeEdits.value,
+      updatedAt: notices.updatedAt,
+    })
+    .from(noticeEdits)
+    .innerJoin(notices, eq(notices.id, noticeEdits.noticeId))
+    .where(
+      and(
+        eq(noticeEdits.workspaceId, workspaceId),
+        inArray(noticeEdits.field, [...fields]),
+        ids ? inArray(noticeEdits.noticeId, [...ids]) : undefined,
+      ),
+    )
+    .orderBy(noticeEdits.noticeId, noticeEdits.field, desc(noticeEdits.id));
+}

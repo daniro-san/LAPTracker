@@ -2,7 +2,9 @@
 // to return to) in a 10-minute __Host- cookie, then Discord's authorize page. Callback, one fixed path for
 // every workspace: the state compared in constant time (a mismatch counts in auth_attempts), the code
 // exchanged, the member's roles read, and the session renewed or made when a role is a leadership role or
-// the account is on the allowlist. Any other ending drops the browser's session of that workspace.
+// the account is on the allowlist. Anyone else in the workspace's Discord server gets a member's session,
+// which opens only the members' board (D105). Any other ending drops the browser's session of that
+// workspace.
 import { randomBytes } from "node:crypto";
 
 import { analyticsKey, SIGNED_IN_HASH } from "../analytics/events";
@@ -15,6 +17,7 @@ import {
   findWorkspaceUser,
   recordSignIn,
   WORKSPACE_SLUG,
+  type SessionTier,
   type WorkspaceRow,
   type WorkspaceUserRow,
 } from "../repo/workspaces";
@@ -176,39 +179,50 @@ export function refusalOf(
   return notMember ? "not_member" : "no_role";
 }
 
-/** The refusal, or the end the allowlist puts on the session (null when the role let them in). */
+type Admission = { why: null; endsBy: Date | null; viaRole: boolean; tier: SessionTier };
+
+/** The refusal, or the session's tier and the end the allowlist puts on it (null otherwise). */
 async function refusalFor(
   db: Db,
   workspace: WorkspaceRow,
   member: Extract<DiscordMember, { ok: true }>,
   now: Date,
-): Promise<{ why: NoAccess } | { why: null; endsBy: Date | null; viaRole: boolean }> {
+): Promise<{ why: NoAccess } | Admission> {
   const known = await findWorkspaceUser(db, workspace.id, member.userId);
   const viaRole = member.roles?.some((r) => workspace.leaderRoleIds.includes(r)) ?? false;
   const why = refusalOf(known, viaRole, member.roles === null, now);
+  // INVARIANT workspace.member-tier: in the server, not blocked, and not an officer (no leadership role, no
+  // allowlist entry that still runs): the members' board only (D105).
+  if (why && why !== "blocked" && member.roles !== null) {
+    return { why: null, endsBy: null, viaRole: false, tier: "member" };
+  }
   if (why) return { why };
   // INVARIANT workspace.allowlist-cap: let in only by the allowlist, the session ends with the entry.
-  return { why: null, endsBy: viaRole ? null : (known?.allowlistExpiresAt ?? null), viaRole };
+  const endsBy = viaRole ? null : (known?.allowlistExpiresAt ?? null);
+  return { why: null, endsBy, viaRole, tier: "officer" };
 }
 
 async function admit(
   db: Db,
   workspace: WorkspaceRow,
   member: Extract<DiscordMember, { ok: true }>,
-  { endsBy, viaRole }: { endsBy: Date | null; viaRole: boolean },
+  { endsBy, viaRole, tier }: Admission,
   o: { now: Date; analytics: boolean; token: string | undefined; back: string | null },
 ): Promise<Step> {
   // Only people who get in are stored: a refused account leaves no row.
   const userId = await recordSignIn(db, workspace.id, member.userId, member.displayName, o.now);
-  const ids = { workspaceId: workspace.id, workspaceUserId: userId };
+  const ids = { workspaceId: workspace.id, workspaceUserId: userId, tier };
   const cookie = await renewOrCreate(db, o.token, ids, o.now, endsBy);
   privateLog(cookie ? "w.sign_in" : "w.renewed", {
     workspace: workspace.id,
     via_role: viaRole ? 1 : 0,
+    member: tier === "member" ? 1 : 0,
   });
   // With analytics on, a fragment that never reaches a server: the page counts the sign-in and removes it
-  // (D77). A renewal is not a sign-in.
+  // (D77). A renewal is not a sign-in. A member always lands on the board (D105).
   const hash = cookie && o.analytics ? SIGNED_IN_HASH : "";
-  const to = `${o.back ?? `/w/${workspace.slug}`}${hash}`;
+  const home =
+    tier === "member" ? `/w/${workspace.slug}/board` : (o.back ?? `/w/${workspace.slug}`);
+  const to = `${home}${hash}`;
   return go(to, cookie ? [clearState, cookie] : [clearState]);
 }

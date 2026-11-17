@@ -1,6 +1,7 @@
 // The workspace dictionary in Brazilian Portuguese (D71), split from dictionary.ts for its size; the keys
 // follow `en`.
 import type { WorkspaceDictionary } from "./dictionary";
+import { boardPt } from "./dictionary.board";
 import { calendarPt } from "./dictionary.calendar.pt-BR";
 import { importPt } from "./dictionary.import";
 import { lifecyclePt } from "./dictionary.lifecycle";
@@ -25,7 +26,7 @@ export const pt: WorkspaceDictionary = {
   "lang.aria": "Idioma",
   "signin.title": "Entrar",
   "signin.lead":
-    "Para a liderança da aliança: entre com a conta do Discord que você usa no servidor da aliança.",
+    "Entre com a conta do Discord que você usa no servidor da aliança. Os membros veem o plano da semana, os avisos e o Comece aqui; os oficiais também têm a Mesa dos oficiais.",
   "signin.button": "Entrar com o Discord",
   "signin.note":
     "O Discord só compartilha seu nome e seus cargos nesse servidor. Nada é publicado.",
@@ -272,4 +273,5 @@ export const pt: WorkspaceDictionary = {
   ...theftsPt,
   ...shotsPt,
   ...translatePt,
+  ...boardPt,
 };
