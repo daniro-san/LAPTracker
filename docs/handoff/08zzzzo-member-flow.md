@@ -49,3 +49,13 @@ Plan changes needed: none to `docs/IMPLEMENTATION_PLAN.md` or `docs/SESSION_PLAY
 - `flowPage` returns counts of at least `FLOW_MIN` only; a follow-up that needs more must add its own read and its own privacy decision.
 - `dayDate` and `FLOW_PATH` are exported from `app/_ui/FlowPicker.tsx`.
 </adjustments>
+
+## UX review (2026-11-16)
+Measured, Chrome at 360, 390, 412, 600, 768, 810, 820, 1024, 1180, 1280 in light and dark; WebKit at 390 dark and 820; German and Russian at 360; one alliance renamed to a 29-character name locally.
+- Page scroll width equalled the viewport at every width. The two selects measured 44 px in Chrome and WebKit. No tap target under 44 px except the skip link (hidden until focus). The sticky first column held in WebKit at 820. German and Russian wrapped with no clipping; the long name wrapped in the phone row.
+- Fixed: at 768-820 px the matrix box scrolls (893 px in 720-772) and the "Left" column, the only place leavers show, sat off screen. "Left" is now sticky at the right edge.
+- Fixed: on a phone 17 of 20 rows held only "Stayed" and the 3 rows with moves were buried. Rows with a visible move now come first and are open; the rest are one plain line (no chevron).
+- Fixed: the "moves under 5 are hidden" line sat after the 20-row list on a phone. It is now under the sentence, before the table or list.
+- Left: the matrix is mostly empty cells (a hidden move and no move look the same); that is the rule in D89, and the sentence says it. Not changed.
+- Left: "New" is the last phone row; it opens only when it has a visible move. Kept, for the same order as the table.
+- No copy was changed, so no translations changed.

@@ -84,6 +84,8 @@ function Matrix({
   const moves = flow.cells.filter((c) => c.from !== c.to).map((c) => c.n);
   const max = Math.max(1, ...moves);
   const cell = "h-9 min-w-10 border border-rule px-1 text-center text-sm tabular-nums";
+  // "Left" stays in view when the table scrolls sideways (600-820 px), with the column of names on the other side.
+  const stickyEnd = "sticky right-0 z-10 bg-paper";
   const head = "border border-rule px-1 py-1 text-center text-xs font-semibold";
   const rows: { id: Id; label: string }[] = [
     ...flow.alliances.map((a) => ({ id: a.unionId as Id, label: short(a) })),
@@ -101,7 +103,11 @@ function Matrix({
           <tr>
             <td className="sticky left-0 z-10 bg-paper" />
             {cols.map((c) => (
-              <th key={String(c.id)} scope="col" className={head}>
+              <th
+                key={String(c.id)}
+                scope="col"
+                className={`${head} ${c.id === null ? stickyEnd : ""}`}
+              >
                 {c.label}
               </th>
             ))}
@@ -122,7 +128,7 @@ function Matrix({
                 return (
                   <td
                     key={String(c.id)}
-                    className={`${cell} ${n === undefined ? "" : stayed ? "bg-ink/10" : tint(n, max)}`}
+                    className={`${cell} ${c.id === null ? "sticky right-0 z-10" : ""} ${n === undefined ? (c.id === null ? "bg-paper" : "") : stayed ? "bg-ink/10" : tint(n, max)}`}
                   >
                     {n}
                   </td>
@@ -156,10 +162,11 @@ function PhoneRow({
   // The moves first, the biggest first; the stay and the leavers after them.
   const rank = (c: FlowCell) => (c.to === null ? 1 : c.from === c.to ? 2 : 0);
   const sorted = [...cells].sort((p, q) => rank(p) - rank(q) || q.n - p.n);
+  const moves = cells.some((c) => c.from !== c.to);
   const summary = "flex min-h-11 cursor-pointer items-center justify-between gap-3 py-2";
   return (
     <li className="border-b border-rule">
-      {cells.length === 0 ? (
+      {!moves ? (
         <div className={summary}>
           <span className="min-w-0 break-words font-medium">{title}</span>
           <span className="shrink-0 text-sm tabular-nums">
@@ -167,7 +174,7 @@ function PhoneRow({
           </span>
         </div>
       ) : (
-        <details className="group">
+        <details className="group" open>
           <summary className={summary}>
             <span className="min-w-0 break-words font-medium">{title}</span>
             <span className="shrink-0 text-sm tabular-nums">
@@ -213,12 +220,16 @@ export function FlowView({
     flow.alliances.map((a) => [a.unionId, allianceLabel(a.tag, a.name)]),
   );
   const days = { from: clock.day(dayDate(from)), to: clock.day(dayDate(to)) };
+  // On a phone the alliances with a move shown come first, open; the rest are one line each.
+  const moved = (id: Id) => flow.cells.some((c) => c.from === id && c.from !== c.to);
+  const phoneOrder = [...flow.alliances].sort((p, q) => +moved(q.unionId) - +moved(p.unionId));
   return (
     <>
       <Lead flow={flow} from={from} to={to} clock={clock} copy={copy} />
+      <p className="mt-2 text-body-sm text-ink/70">{fill(f.small, { min: FLOW_MIN })}</p>
       <Matrix flow={flow} by={by} from={from} to={to} clock={clock} copy={copy} />
       <ul className="mt-4 sm:hidden">
-        {flow.alliances.map((a) => (
+        {phoneOrder.map((a) => (
           <PhoneRow
             key={a.unionId}
             title={allianceLabel(a.tag, a.name)}
@@ -236,7 +247,6 @@ export function FlowView({
           copy={copy}
         />
       </ul>
-      <p className="mt-3 text-body-sm text-ink/70">{fill(f.small, { min: FLOW_MIN })}</p>
       <p className="mt-1 hidden text-body-sm text-ink/70 sm:block">{fill(f.legend, days)}</p>
       {flow.notCounted.length > 0 && (
         <p className="mt-1 text-body-sm text-ink/70">
