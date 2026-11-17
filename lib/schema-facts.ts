@@ -4,6 +4,7 @@ import { sql } from "drizzle-orm";
 import {
   bigint,
   check,
+  index,
   integer,
   jsonb,
   pgTable,
@@ -42,6 +43,8 @@ export const memberFacts = pgTable(
   },
   (t) => [
     unique("member_facts_version_unique").on(t.workspaceId, t.uid, t.field, t.version),
+    // Home's recent activity (D108) reads the newest saves.
+    index("member_facts_workspace_written_idx").on(t.workspaceId, t.writtenAt),
     check("member_facts_source_check", sql`${t.source} in ('message', 'officer', 'sheet')`),
   ],
 );

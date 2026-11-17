@@ -1,0 +1,125 @@
+// Home's "On the desk now" and "Recent activity" (D108). Presence comes from officer sessions only (a
+// member's session on the board never counts, the game's online flag is not used). The feed merges the
+// newest actions of each history in memory: newest first, one line per action, the same action repeated
+// by the same officer on the same thing shown once. People first (D75): no counts per officer, no list of
+// who is away, and only what was worked on, never a member's values or a note.
+import type { Db } from "../db";
+import { officerNames } from "../repo/calendar";
+import {
+  activityRows,
+  memberNames,
+  officersSeen,
+  type DraftDone,
+  type EntryDone,
+  type MarksDone,
+} from "../repo/desk-activity";
+import { noticeTitles } from "../repo/notices";
+import type { WorkspaceAccess } from "./access";
+
+/** "On the desk now": a session seen in the last ten minutes. */
+export const ON_DESK_MS = 10 * 60_000;
+/** The feed looks back two weeks. */
+export const ACTIVITY_WINDOW_MS = 14 * 24 * 60 * 60_000;
+/** The most lines the feed holds; Home shows the first ACTIVITY_SHOWN and the rest under "Show more". */
+export const ACTIVITY_MAX = 40;
+export const ACTIVITY_SHOWN = 15;
+
+/** The other officers on the desk now, by name; the officer looking is left out. */
+export function onDeskNow(db: Db, access: WorkspaceAccess, now: Date): Promise<string[]> {
+  const since = new Date(now.getTime() - ON_DESK_MS);
+  return officersSeen(db, access.workspaceId, access.user.id, since, now);
+}
+
+type What =
+  | { kind: "facts"; uid: number; members: number }
+  | { kind: "noticeSaved" | "noticePosted"; noticeId: number }
+  | { kind: "draft"; draft: Pick<DraftDone, "kind" | "scope"> }
+  | { kind: "entry"; entry: Pick<EntryDone, "kind" | "variant" | "level" | "title"> }
+  | { kind: "marks"; call: Pick<MarksDone, "kind" | "variant">; rest: boolean }
+  | { kind: "followUp"; uid: number }
+  | { kind: "thefts"; count: number }
+  | { kind: "newMember"; name: string };
+
+type Raw = What & { by: number; at: Date };
+
+/** One line of the feed: who did what, and when. */
+export type ActivityItem = { at: Date; who: string } & (
+  | Exclude<What, { kind: "facts" | "followUp" | "noticeSaved" | "noticePosted" }>
+  | { kind: "facts"; member: string | null; members: number }
+  | { kind: "followUp"; member: string | null }
+  | { kind: "noticeSaved" | "noticePosted"; title: string }
+);
+
+/**
+ * A draft's save also writes facts, thefts and new members, and a follow-up writes facts, all at the same
+ * instant by the same officer: the higher action stands for them.
+ */
+const RANK: Partial<Record<What["kind"], number>> = { draft: 3, followUp: 2, newMember: 1 };
+const rank = (r: Raw) => RANK[r.kind] ?? 0;
+const instant = (r: Raw) => `${r.by}@${r.at.getTime()}`;
+
+/** What makes two lines the same: the action and its object, without the time. */
+const sameKey = (r: Raw) => JSON.stringify({ ...r, at: 0 });
+
+/** Every source's rows as feed lines, merged: newest first, covered and repeated lines dropped. */
+function merge(rows: Awaited<ReturnType<typeof activityRows>>): Raw[] {
+  const raw: Raw[] = [
+    ...rows.facts.map((r) => ({ ...r, kind: "facts" as const })),
+    ...rows.noticeSaves.map((r) => ({ ...r, kind: "noticeSaved" as const })),
+    ...rows.noticePosts.map((r) => ({ ...r, kind: "noticePosted" as const })),
+    ...rows.drafts.map(({ by, at, ...draft }) => ({ by, at, kind: "draft" as const, draft })),
+    ...rows.entries.map(({ by, at, ...entry }) => ({ by, at, kind: "entry" as const, entry })),
+    ...rows.marks.map(({ by, at, rest, ...call }) => ({
+      by,
+      at,
+      rest,
+      kind: "marks" as const,
+      call,
+    })),
+    ...rows.followUps.map((r) => ({ ...r, kind: "followUp" as const })),
+    ...rows.thefts.map((r) => ({ ...r, kind: "thefts" as const })),
+    ...rows.newMembers.map((r) => ({ ...r, kind: "newMember" as const })),
+  ];
+  const top = new Map<string, number>();
+  for (const r of raw) top.set(instant(r), Math.max(top.get(instant(r)) ?? 0, rank(r)));
+  const shown = raw
+    .filter((r) => rank(r) >= (top.get(instant(r)) ?? 0))
+    .sort((a, b) => b.at.getTime() - a.at.getTime());
+  return shown.filter((r, i) => i === 0 || sameKey(r) !== sameKey(shown[i - 1] as Raw));
+}
+
+/** The newest ACTIVITY_MAX things officers did in the last two weeks, with names resolved. */
+export async function recentActivity(
+  db: Db,
+  access: WorkspaceAccess,
+  now: Date,
+): Promise<ActivityItem[]> {
+  const ws = access.workspaceId;
+  const from = new Date(now.getTime() - ACTIVITY_WINDOW_MS);
+  const lines = merge(await activityRows(db, ws, from, ACTIVITY_MAX)).slice(0, ACTIVITY_MAX);
+  const uids = lines.flatMap((r) => (r.kind === "facts" || r.kind === "followUp" ? [r.uid] : []));
+  const ids = lines.flatMap((r) =>
+    r.kind === "noticeSaved" || r.kind === "noticePosted" ? [r.noticeId] : [],
+  );
+  const [officers, members, titles] = await Promise.all([
+    officerNames(db, ws, [...new Set(lines.map((r) => r.by))]),
+    memberNames(db, ws, access.unionId, [...new Set(uids)]),
+    noticeTitles(db, ws, [...new Set(ids)]),
+  ]);
+  return lines.flatMap((r): ActivityItem[] => {
+    const who = officers.get(r.by);
+    if (!who) return [];
+    const line = r;
+    switch (line.kind) {
+      case "facts":
+        return [{ ...line, who, member: members.get(line.uid) ?? null }];
+      case "followUp":
+        return [{ kind: "followUp", at: line.at, who, member: members.get(line.uid) ?? null }];
+      case "noticeSaved":
+      case "noticePosted":
+        return [{ kind: line.kind, at: line.at, who, title: titles.get(line.noticeId) ?? "" }];
+      default:
+        return [{ ...line, who }];
+    }
+  });
+}

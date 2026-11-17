@@ -93,7 +93,7 @@ function member(m: RawMember): RosterMember | null {
 }
 
 /** A usable roster of the alliance (D60): fresh, no error, not empty. */
-const usable = (unionId: number) =>
+export const usable = (unionId: number) =>
   and(
     eq(dailyRosters.unionId, unionId),
     eq(dailyRosters.isFresh, true),

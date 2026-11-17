@@ -51,6 +51,7 @@ export const thefts = pgTable(
   },
   (t) => [
     index("thefts_workspace_attacker_idx").on(t.workspaceId, t.attackerKey),
+    index("thefts_workspace_created_idx").on(t.workspaceId, t.createdAt),
     uniqueIndex("thefts_request_unique").on(t.workspaceId, t.requestId),
     check(
       "thefts_kind_check",
