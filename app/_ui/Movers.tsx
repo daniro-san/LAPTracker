@@ -118,7 +118,7 @@ function MoverList({
 }
 
 /** The tab a key moves to from tab `i` of `n`, or null when the key is not one of the tab keys. */
-function tabAfter(key: string, i: number, n: number): number | null {
+export function tabAfter(key: string, i: number, n: number): number | null {
   if (key === "Home") return 0;
   if (key === "End") return n - 1;
   if (key === "ArrowRight") return (i + 1) % n;

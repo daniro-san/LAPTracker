@@ -112,11 +112,13 @@ export function SaveBar({ p, e }: { p: EditorProps; e: Editor }) {
           {t[e.message]}
         </Notice>
       )}
-      {drafts > 0 && (
-        <p className="mb-1 text-body-sm font-semibold text-plum">
-          {fill(t[`notices.drafts.${form}`], { n: drafts })}
-        </p>
-      )}
+      {/* Always in the page, so a screen reader hears its text change; out of sight while empty. */}
+      <p
+        aria-live="polite"
+        className={drafts > 0 ? "mb-1 text-body-sm font-semibold text-plum" : "sr-only"}
+      >
+        {drafts > 0 ? fill(t[`notices.drafts.${form}`], { n: drafts }) : ""}
+      </p>
       <div className="flex items-center gap-4">
         <button
           type="submit"

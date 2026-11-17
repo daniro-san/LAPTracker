@@ -1,6 +1,6 @@
 // The notice editor's draft (issue 304), pure: what the officer has typed, the versions the save names, which
-// languages Translate or Improve writing filled (for Undo and the translation's source), and a conflict's
-// two answers.
+// languages Translate or Improve writing filled (for Accept, Undo and the translation's source), a conflict's
+// two answers, and what each language tab shows and what Translate does from it (issue 363).
 import {
   isNoticeLanguage,
   NOTICE_FIELDS,
@@ -103,4 +103,62 @@ export function settle(d: Draft, c: Conflict, keep: "theirs" | "mine"): Draft {
     undo: omit(d.undo, c.field),
     kept: omit(d.kept, c.field),
   };
+}
+
+/** Accept: the officer checked the draft; the text stays, and a translation keeps its source. */
+export const accept = (d: Draft, language: NoticeLanguage): Draft => ({
+  ...d,
+  undo: omit(d.undo, language),
+  partly: omit(d.partly, language),
+});
+
+/** Undo: the text from before the draft comes back. */
+export const discard = (d: Draft, language: NoticeLanguage): Draft => ({
+  ...d,
+  values: { ...d.values, [language]: d.undo[language] ?? d.values[language] },
+  undo: omit(d.undo, language),
+  partly: omit(d.partly, language),
+  from: omit(d.from, language),
+});
+
+/**
+ * The tab a Translate or Improve writing request was made from, where its error belongs: the language it
+ * rewrites, the one tab it fills ("from EN", "Update from …"), else the language it translates from.
+ */
+export const askTab = (ask: DraftAsk): NoticeLanguage =>
+  ask.kind === "improve" ? ask.language : ask.to.length === 1 && ask.to[0] ? ask.to[0] : ask.from;
+
+/** What a language's tab shows (issue 363): a draft to check, may be out of date, written, or empty. */
+export type TabState = "draft" | "stale" | "written" | "empty";
+
+/** `staleSaved`: the server says the saved text may be out of date; a change or "Keep as is" clears it. */
+export function tabState(d: Draft, language: NoticeLanguage, staleSaved: boolean): TabState {
+  if (d.undo[language] !== undefined) return "draft";
+  if (staleSaved && !d.kept[language] && d.values[language] === d.base[language]) return "stale";
+  return d.values[language].trim() === "" ? "empty" : "written";
+}
+
+/** Which action filled the language's draft, or null when it holds none. */
+export const draftKind = (d: Draft, language: NoticeLanguage): "translate" | "improve" | null =>
+  d.undo[language] === undefined ? null : d.from[language] ? "translate" : "improve";
+
+/**
+ * What Translate does from the active tab: text the officer wrote (or rewrote) there goes to the other
+ * languages. An empty tab, or one holding a draft from Translate, is filled from the text it came from,
+ * else from the language the officer last wrote in, else from the first written one. Null: nothing to
+ * translate.
+ */
+export function translatePlan(
+  d: Draft,
+  active: NoticeLanguage,
+  languages: NoticeLanguage[],
+  wroteIn: NoticeLanguage | null,
+): { from: NoticeLanguage; to: NoticeLanguage[] } | null {
+  const has = (l: NoticeLanguage) => d.values[l].trim() !== "";
+  if (has(active) && draftKind(d, active) !== "translate")
+    return { from: active, to: languages.filter((l) => l !== active) };
+  const from = [d.from[active]?.language, wroteIn, ...languages].find(
+    (l): l is NoticeLanguage => l !== undefined && l !== null && l !== active && has(l),
+  );
+  return from ? { from, to: [active] } : null;
 }
