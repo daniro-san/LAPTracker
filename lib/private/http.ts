@@ -38,12 +38,16 @@ export const privateError = (status: number, code: string): Response =>
  * message quotes the query's parameters, and app_errors and the admin alert keep a message: so an error
  * leaves here as `code` alone, without its message or cause (D71).
  */
-export async function privately<T>(code: string, work: () => Promise<T>): Promise<T> {
-  try {
-    return await work();
-  } catch {
-    throw new Error(code);
-  }
+export async function privately<T>(
+  code: string | ((error: unknown) => string),
+  work: () => Promise<T>,
+): Promise<T> {
+  // No `cause` on purpose: the cause is what must not leave (D71). `code` may name the error's kind.
+  return Promise.resolve()
+    .then(work)
+    .catch((error: unknown) => {
+      throw new Error(typeof code === "string" ? code : code(error));
+    });
 }
 
 /** A 303 to `location` that sets each cookie on the way. */
