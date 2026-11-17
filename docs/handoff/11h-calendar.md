@@ -15,7 +15,7 @@ Part of #300 (the Calendar, with caravans and open events) and #293. It builds t
   - Editing a weekly entry asks whether a new day and time is for "Only the week of <date>" (default) or "Every week"; the other fields apply to every week.
   - Delete asks once more: a one-off is deleted; a weekly entry offers "Only the week of <date>" or "This week and every week after".
 - **Time**: every time is shown in ST and on the viewer's own clock (`YourTime.tsx`). The browser's zone is read with `useSyncExternalStore` after hydration, so the server renders no local time and nothing differs at hydration. Day shifts show as "(+1 d)" / "(−1 d)".
-- **Model** (`lib/schema-calendar.ts`, re-exported from `lib/schema.ts`, migration `drizzle/0021_calendar.sql`):
+- **Model** (`lib/schema-calendar.ts`, re-exported from `lib/schema.ts`, migration `drizzle/0022_calendar.sql`):
   - `calendar_entries`: one plan. `day` is its first server day, `minute` its server time (null only for the theme), `weekly`, `last_week` (a one-off: its own Monday; weekly: null, or the last week after "this week and every week after"), `for_members` (default false), `kind`, `variant` (I/II, A/B), `level`, `title`, `notes`, `link`, `created_by`, and `rev` + `edits` (per field: version, who, when). A partial unique index allows one Alliance Duel theme per workspace and week.
   - `calendar_occurrences`: one week of an entry, written only when that week differs: moved (`day`, `minute`), `cancelled`, or the caravan's picks (`coach_uid`/`coach_name`, `second_kind`/`second_uid`/`second_name`). Keyed by `(entry_id, week)`, where `week` is the Monday the plan puts it in, so a moved week keeps its picks and a changed weekly day keeps every week's row.
   - Checks in SQL: the second seat is one kind (`vip` or `guardian`), one uid and one name, all set or all empty; the Coachman and the second seat are two different uids; a moved row has both day and minute.
@@ -60,11 +60,32 @@ Part of #300 (the Calendar, with caravans and open events) and #293. It builds t
 - **No caravan suggestions** (prototype `car.cand`, #300's first text): the brief and D75 ("not a ranking") replace them with a roster search.
 - **No event icons**: the month overview and the agenda use text. The brand proposal's drawn icons (`scratchpad/brand/icons/`) cover five of the seven kinds.
 - **No per-tab tip for Calendar** (#312 panel, 11e's adjustments): FirstUse.tsx is shared shell code; the brief did not list it.
-- **The migration was renumbered**: first built as `0020_calendar`; 11n's `0020_workspace_user_profile` landed first, so it was regenerated as `0021_calendar` (snapshot `prevId` = 0020's id). If 11i's `0021_notices` lands before this, it is regenerated again as `0022` (drop `drizzle/0021_calendar.sql`, `drizzle/meta/0021_snapshot.json` and its journal entry, merge `dev`, `pnpm db:generate --name calendar`).
+- **The migration was renumbered twice**: built as `0020_calendar`, then `0021` after 11n's `0020_workspace_user_profile`, now **`0022_calendar`** after 11i's `0021_notices` (snapshot `prevId` = 0021's id; it creates only the two calendar tables). 11f is to take `0022` and 11j `0023`, so expect to regenerate at merge time: drop `drizzle/0022_calendar.sql`, `drizzle/meta/0022_snapshot.json` and its journal entry, merge `dev`, run `pnpm db:generate --name calendar`.
+- **Notices became a Calendar view** (coordinator, after 11i landed with a sixth bottom tab): the bottom bar is back to five tabs (`Frame.tsx`: `TABS`, `grid-cols-5`, comments); 11i's three notices pages pass `current="days"`, and the list page shows the sub-nav with Notices open. Nothing else in 11i's files changed. 11i's megaphone path stays in `TabIcon.tsx`, unused by the bar.
 - **11n's roster read**: the first version used 11n's `latestRosterNames`; after merging `dev` it uses `latestRoster` and keeps only uid and name for the picker (no might or rank reaches the browser).
 
 ## Verified
-- (filled in after the final merge)
+- **`pnpm check` exits 0** after merging `dev` at ab0cd37 (11n, 11i and three public PRs): prettier, eslint, tsc; vitest **118 files passed, 2 skipped; 592 tests passed, 4 skipped**; drift gate "Everything's fine"; i18n "17 languages up to date". No test timed out. Earlier rounds: 99 files / 502 tests before any merge; 13 lib/private files / 57 tests after the 11n merge.
+- **New tests**: `calendar-time.test.ts` 2, `calendar.test.ts` 5 (see Built). All passed on the first run.
+- **Local e2e** against a production build (`pnpm build` + `next start` on :3167) of the final merged tree:
+  - setup: db:local on 54367 with its bridge on 54368, migrated through `0022_calendar`; the Discord stub on 54387 with two officers, Ana (R4) and Bo (R4); the seed: the OGs and NSE workspaces and OGs' newest roster with the 101 uids and names of the scrubbed fixture; a worktree-only `.env.local` with random secrets (never printed) and the upstream on a dead port; playwright-core with system Chrome. Ana's browser is in `America/Sao_Paulo` (UTC−3), Bo's in `Africa/Johannesburg` (UTC+2);
+  - no upstream call, no real Discord call, no `/api/quota`;
+  - **86 of 86 checks passed** (harness `scratchpad/11h/e2e.mjs`, results `scratchpad/11h/e2e-results.txt`):
+    - the Calendar tab is a link and the open one; the sub-nav reads Week · Caravans · Notices with Week open; Notices links to `/w/ogs/notices`; the legend says "ST is server time, the game’s clock (UTC−2)" and "KvK = Kingdom War.";
+    - "25:00" is refused beside the field and nothing is saved; typing 16:00 shows "15:00 your time" in the sheet;
+    - every type created through the sheet and shown: Alliance Caravan (every week), Cheese Trap I · Lv.7, Cheese Trap II · Lv.7, Undead Siege · Lv.4, Elixir Scramble · Team A (18:00–18:30 ST) and Team B (23:00–23:30 ST), KvK with a note, the Alliance Duel theme (stored on its Monday), Prettiest pet vote with a link and "Show to members";
+    - `for_members` stored false for the eight others and true for the pet vote; only that entry says "Shown to members"; the link has `rel="noreferrer nofollow"`;
+    - ST and local: Ana sees "16:00 ST · 15:00 your time" and 23:00 ST as 22:00 the same day; Bo sees "16:00 ST · 20:00 your time" and "23:00–23:30 ST · 03:00 your time (+1 d)";
+    - the 409: both open Cheese Trap I; Ana saves Lv.8; Bo's Lv.9 plus a note is refused with "Ana (R4) changed the level to “Lv.8” now.", nothing of it written; "Use mine" then saves Lv.9 and the note; a raw POST with version 0 answers 409 `stale` with "Lv.9" and `private, no-store`;
+    - weekly repeat: next week shows Monday 16:00; one-offs do not repeat; moving only next week to Tuesday 20:00 (scope defaults to "Only the week of …") shows "20:00 ST · 19:00 your time" and "Moved from Mon, Nov 23 16:00 ST"; this week and the week after keep Monday 16:00;
+    - caravan picks: Coachman and VIP chosen through the search; switching to Guardian moves the same member (`guardian | beazord` in the row, the radio stays on Guardian); the Coachman shows as not choosable for the second seat; a raw POST with a VIP and a Guardian together answers 400;
+    - five bottom tabs and no Notices tab; on `/w/ogs/notices` the Calendar tab is open and the sub-nav has Notices open;
+    - no sideways scroll on Week and Caravans at 360 and 1280, light and dark, EN and PT, and on notices at 360; every target in main and the navs is at least 44 px at 360;
+    - PT: Agenda, "Semana Caravanas Avisos", "ST é a hora do servidor", "15:00 sua hora"; FR: "Semaine de l’Alliance Duel (AD) : economy week" with U+00A0, "15:00 votre heure";
+    - the month overview shows at 1280 and is hidden at 360;
+    - the server log holds no officer name and no entry text.
+  - The first run of the harness failed 2 checks that read the page before the refresh after the last save; the wait was fixed in the harness. One real fix came out of it: the VIP | Guardian choice now shows at once instead of after the refresh.
+- **Screenshots** (not committed) in `/private/tmp/claude-502/-Users-danilordasilva-orca-workspaces-LAPTracker-unicornfish/147759e3-1cdb-4ccd-b74a-1001498a1e18/scratchpad/11h-shots/`: `week-` and `caravans-{360,1280}-{light,dark}-{en,pt-BR}.png`, `week-360-light-fr.png`, `add-360-light-en.png`, `conflict-360-light-en.png`, `picker-360-light-en.png`, `week-moved-360-light-en.png`, `caravans-360-light-en.png`, `notices-360-light-en.png`.
 
 ## Open issues
 1. **Past weeks follow "every week" changes**: a changed weekly day or time also moves the plan's past weeks. Nothing reads past weeks yet; a results feature (#298) may want the time an event actually ran.
@@ -76,6 +97,21 @@ Part of #300 (the Calendar, with caravans and open events) and #293. It builds t
 7. **Two clocks to consolidate (11j)**: 11j adds `serverInstant` to `lib/schedule.ts` and a viewer-clock hook. This branch has `zonedInstant` and `clockIn` (`lib/private/calendar-time.ts`) and `useViewerZone` / `YourTime` (`app/(private)/_ui/YourTime.tsx`), tested for UTC−3 and UTC+2. Keep these as the single ones; whoever merges second moves 11j's callers onto them.
 
 ## Next
-(filled in after the final merge)
+Session: the next workspace issue the orchestrator picks. The workspace track has no prompt in `docs/SESSION_PLAYBOOK.md`. The calendar unblocks #331 (members' board) and the Elixir Scramble teams and roll call in #298.
+Model / effort: keep — the model, the two views and the 409 fit one pass; the rework came from two merges (11n, 11i) and the Notices tab move, not from the task.
+Owner must do first: nothing for this PR. Open choices for the owner: the Coachman / VIP / Guardian words in pt and fr (kept English under D52 until the game's own pt/fr text is seen), and whether the Elixir Scramble registration deadline and the daily Alliance Duel themes should be added.
+Plan changes needed: none. The workspace track lives in issues #293–#331, not in docs/IMPLEMENTATION_PLAN.md.
+
+<adjustments>
+- Calendar data for other screens: `calendarDays(db, access, from, to)` in `lib/private/calendar.ts` returns `Placed[]` (entry, week, day, minute, moved, the week's row) for whole weeks; `agendaItem` in `app/(private)/_ui/calendar-data.ts` turns one into words.
+- #331 (members' board): filter `Placed` by `entry.forMembers`. Strip `notes` and `link` of strategy only if the owner asks; the flag is per entry, for every week. Show times with `YourTime` / `clockIn`.
+- #298 (Elixir teams, roll call): an Elixir Scramble entry is `kind = 'elixir'`, `variant` 'A' or 'B', `minute` one of `ELIXIR_WINDOWS` (540, 1080, 1380). A team list per week can key on `(entry_id, week)` like `calendar_occurrences`.
+- Writes elsewhere in the workspace can reuse the pattern: per-field versions in an `edits` jsonb (`{v, by, at}`), the row locked in a transaction, the 409 body `{code: "stale", conflicts: [{field, version, said}]}`, and `ConflictBox` (`CalendarFields.tsx`) for Keep theirs / Use mine.
+- Roster pickers: `RosterPicker.tsx` (search by name key, the taken member disabled) takes any `{uid, name}[]`.
+- Sub-nav: `CalendarNav.tsx`; Thefts (11j) is one line, see Open issues 6.
+- Clocks: one implementation, `lib/private/calendar-time.ts` + `YourTime.tsx`; see Open issues 7.
+- Migration: `0022_calendar`; 11f and 11j take 0022 and 0023, so this one is renumbered at merge time.
+- `dictionary.ts` grows by one spread line per feature; the calendar's 118 keys per language are in `dictionary.calendar*.ts`.
+</adjustments>
 
 PR: (added by the orchestrator)
