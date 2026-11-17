@@ -50,7 +50,7 @@ export function Flags({ e, t }: { e: Editor; t: WorkspaceDictionary }) {
             aria-describedby="notice-ends-help"
             value={e.draft.values.ends_on}
             onChange={(ev) => set("ends_on", ev.target.value)}
-            className="min-h-11 border border-rule bg-paper px-3"
+            className="min-h-11 min-w-0 flex-1 border border-rule bg-paper px-3"
           />
           {e.draft.values.ends_on && (
             <button type="button" onClick={() => set("ends_on", "")} className={smallButton()}>
