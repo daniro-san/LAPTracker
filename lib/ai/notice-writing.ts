@@ -41,7 +41,7 @@ const DATA_ONLY =
 
 const KEEP = [
   `- Do not translate these game terms; keep them exactly as written: ${DO_NOT_TRANSLATE.join(", ")}.`,
-  "- Keep player names, [TAG]Name tags, numbers, times and percentages verbatim (for example [OGs]Mudkip, 9.9M, 450K, 18:00 ST, 69%).",
+  "- Keep player names, [TAG]Name tags, numbers, times and percentages verbatim (for example [OGs]Mudkip, 12.3M, 450K, 18:00 ST, 55%).",
   "- Keep line breaks, list numbers, separators such as | and emoji as they are.",
   "- Portuguese is Brazilian Portuguese, never European Portuguese.",
   "- In French, put a no-break space (U+00A0) before : ; ! ? and inside « », but never inside a time such as 18:00.",

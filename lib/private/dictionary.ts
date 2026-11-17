@@ -202,7 +202,7 @@ const en = {
   "facts.computed": "Automatic (now: {status})",
   "facts.awayText": "What they said",
   "facts.awayDay": "Last day away",
-  "facts.mightHint": "9.9M or 9,900,000",
+  "facts.mightHint": "12.3M or 12,300,000",
   "facts.theirs": "Keep {theirs}",
   "facts.mine": "Use {mine}",
   "paste.help":
