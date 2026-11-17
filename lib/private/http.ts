@@ -14,6 +14,21 @@ export function isSameOriginJson(request: Request): boolean {
   );
 }
 
+/**
+ * A picture sent from our own page as the request's whole body (issue 299). A cross-site form cannot
+ * send an image content type without a CORS preflight, so the same rule as JSON holds.
+ */
+export function isSameOriginPicture(request: Request): boolean {
+  const origin = request.headers.get("origin");
+  const site = request.headers.get("sec-fetch-site");
+  const type = request.headers.get("content-type") ?? "";
+  return (
+    origin === new URL(request.url).origin &&
+    (site === null || site === "same-origin") &&
+    /^image\/(png|jpeg|webp)$/.test(type.split(";")[0]?.trim() ?? "")
+  );
+}
+
 /** A JSON error code, never a message or a stack (D71). */
 export const privateError = (status: number, code: string): Response =>
   Response.json({ code }, { status, headers: NO_STORE });

@@ -53,11 +53,11 @@ function Card({
 
 export default async function NoticesPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const { access, data: list } = await noticePage(slug, noticesList);
+  const { access, data: list, waiting } = await noticePage(slug, noticesList);
   const { language, t } = await workspaceWords();
   const words = noticeWords(language, t);
   return (
-    <SignedInFrame access={access} language={language} t={t} current="days">
+    <SignedInFrame access={access} language={language} t={t} current="days" waiting={waiting}>
       <h1 className="font-display text-display-lg">{t["tab.notices"]}</h1>
       {/* Notices are a view of the Calendar tab (Week · Caravans · Notices, issue 300). */}
       <CalendarNav slug={slug} current="notices" t={t} />

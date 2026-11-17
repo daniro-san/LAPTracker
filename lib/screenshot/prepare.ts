@@ -1,12 +1,22 @@
 // Image preparation for the OCR, with no native dependency (D74): a PNG screenshot is turned into
 // an 8-bit greyscale PNG whose width is TARGET_WIDTH. The validation found greyscale at twice the
 // width of a 358 px screenshot the best input; a 1170 px phone screenshot is brought down to the
-// same text size. Anything that is not a plain 8-bit PNG is returned unchanged, unless its size is
-// refused: a PNG with no pixels, or more pixels than MAX_PIXELS before or after resizing, throws.
+// same text size. Each pixel's grey is its distance from its row's background grey (issue 299):
+// text then reads dark on white whatever its colours, so the white-on-green own row and the
+// coloured medal rows are read like the others. A full-screen phone capture can lose its status bar.
+// Anything that is not a plain 8-bit PNG is returned unchanged, unless its size is refused: a PNG
+// with no pixels, or more pixels than MAX_PIXELS before or after resizing, throws.
 import { crc32, deflateSync, inflateSync } from "node:zlib";
 
 export const TARGET_WIDTH = 716;
 export const MAX_PIXELS = 40_000_000;
+/**
+ * A phone's status bar (clock, battery) is the top 5.5 % of a full-screen capture, one at least
+ * STATUS_BAR_ASPECT times taller than wide (measured on 923 x 2000 iPhone prints: its text ends at
+ * 4.8 %, the game's header starts at 6.8 %). Its "71" battery was read as a ranking row.
+ */
+export const STATUS_BAR_SHARE = 0.055;
+export const STATUS_BAR_ASPECT = 1.9;
 
 /** The picture cannot be prepared: no pixels, too many pixels, or its data is larger than its header says. */
 export class ImageRefusedError extends Error {
@@ -111,13 +121,64 @@ function inflateRows(head: Header, stride: number): Buffer {
   }
 }
 
-function decodeGrey(head: Header): Grey {
+/** The picture in grey, without its top `skip` rows. */
+function decodeGrey(head: Header, skip: number): Grey {
   const channels = CHANNELS[head.colorType] as number;
   const stride = head.width * channels;
   const samples = unfilter(inflateRows(head, stride), head.height, stride, channels);
-  const data = new Uint8Array(head.width * head.height);
-  for (let i = 0; i < data.length; i++) data[i] = greyAt(samples, i * channels, head);
-  return { width: head.width, height: head.height, data };
+  const height = head.height - skip;
+  const data = new Uint8Array(head.width * height);
+  for (let i = 0; i < data.length; i++)
+    data[i] = greyAt(samples, (skip * head.width + i) * channels, head);
+  return { width: head.width, height, data };
+}
+
+/** Rows above and below a row that count toward its background. */
+const BACKGROUND_REACH = 2;
+/** Grey levels on each side of a level that count with it, so JPEG noise does not split the background. */
+const LEVEL_REACH = 2;
+
+/**
+ * A row's background: the most common grey over the row and its neighbours. Unlike a median it stays
+ * on the background when small text covers half the row.
+ */
+function rowBackground(img: Grey, y: number): number {
+  const counts = new Uint32Array(256);
+  const from = Math.max(0, y - BACKGROUND_REACH);
+  const to = Math.min(img.height - 1, y + BACKGROUND_REACH);
+  for (let at = from * img.width; at < (to + 1) * img.width; at++) {
+    const level = img.data[at] ?? 0;
+    counts[level] = (counts[level] ?? 0) + 1;
+  }
+  let best = 255;
+  let most = -1;
+  for (let v = 0; v < 256; v++) {
+    let near = 0;
+    for (let d = -LEVEL_REACH; d <= LEVEL_REACH; d++) near += counts[v + d] ?? 0;
+    if (near > most) [best, most] = [v, near];
+  }
+  return best;
+}
+
+/** How much a pixel's distance from its row's background is stretched. */
+const FLATTEN_GAIN = 1.5;
+
+/**
+ * Each pixel's grey becomes its distance from its row's background, stretched: the background turns
+ * white and text dark, whether it was lighter or darker than its background. A ranking row is a band
+ * of one colour (the own row green, the medal rows gold, blue and bronze), so its most common grey
+ * is that colour. Dark text on a light row keeps its shape and anti-aliasing.
+ */
+function flatten(img: Grey): Grey {
+  const data = new Uint8Array(img.width * img.height);
+  for (let y = 0; y < img.height; y++) {
+    const background = rowBackground(img, y);
+    for (let at = y * img.width; at < (y + 1) * img.width; at++) {
+      const distance = Math.abs((img.data[at] ?? 0) - background) * FLATTEN_GAIN;
+      data[at] = 255 - Math.min(255, Math.round(distance));
+    }
+  }
+  return { width: img.width, height: img.height, data };
 }
 
 /** Bilinear when enlarging, box average when shrinking: each output sample reads its source footprint. */
@@ -189,25 +250,42 @@ function encodeGrey(img: Grey): Buffer {
   ]);
 }
 
+/** The rows of a full-screen phone capture that its status bar covers; 0 for any other picture. */
+const statusBarRows = (head: Header) =>
+  head.height >= head.width * STATUS_BAR_ASPECT ? Math.round(head.height * STATUS_BAR_SHARE) : 0;
+
 /** The height the picture has at TARGET_WIDTH; refused when its pixels (before or after) pass MAX_PIXELS or it has none. */
-function outputHeight(head: Header): number {
+function outputHeight(head: Header, skip: number): number {
   if (head.width === 0 || head.height === 0) throw new ImageRefusedError("it has no pixels");
-  const height = Math.max(1, Math.round((head.height * TARGET_WIDTH) / head.width));
+  const height = Math.max(1, Math.round(((head.height - skip) * TARGET_WIDTH) / head.width));
   if (head.width * head.height > MAX_PIXELS || TARGET_WIDTH * height > MAX_PIXELS)
     throw new ImageRefusedError("it has too many pixels");
   return height;
 }
 
+export interface PrepareOptions {
+  /** Drop the phone's status bar from a full-screen capture (the browser already did it for an upload). */
+  statusBar?: boolean;
+  /**
+   * false: plain grey, no flattening. A map's labels sit on textured terrain that flattening wipes out,
+   * so a picture that is not recognised is read a second time this way.
+   */
+  flatten?: boolean;
+}
+
 /**
- * The picture the OCR reads: greyscale at TARGET_WIDTH. Not a PNG, or not a plain 8-bit one: returned
- * as given. Throws ImageRefusedError for a PNG with no pixels or too many.
+ * The picture the OCR reads: greyscale at TARGET_WIDTH, each row flattened against its background.
+ * Not a PNG, or not a plain 8-bit one: returned as given. Throws ImageRefusedError for a PNG with no
+ * pixels or too many.
  */
-export function prepareForOcr(image: Uint8Array): Uint8Array {
+export function prepareForOcr(image: Uint8Array, options: PrepareOptions = {}): Uint8Array {
   const png = Buffer.from(image.buffer, image.byteOffset, image.byteLength);
   if (png.length < 8 || !png.subarray(0, 8).equals(PNG_SIGNATURE)) return image;
   const head = readChunks(png);
   if (!head) return image;
-  const height = outputHeight(head);
+  const skip = options.statusBar ? statusBarRows(head) : 0;
+  const height = outputHeight(head, skip);
   if (!head.plain || head.idat.length === 0) return image;
-  return encodeGrey(resize(decodeGrey(head), TARGET_WIDTH, height));
+  const grey = decodeGrey(head, skip);
+  return encodeGrey(resize(options.flatten === false ? grey : flatten(grey), TARGET_WIDTH, height));
 }

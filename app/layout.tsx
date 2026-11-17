@@ -1,5 +1,5 @@
 // Root layout. Rendered per request so proxy.ts's CSP nonce reaches Next's inline scripts.
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { connection } from "next/server";
 import type { ReactNode } from "react";
 
@@ -14,6 +14,12 @@ import { UpstreamBanner } from "./_ui/UpstreamBanner";
 import { VercelInsights } from "./_ui/VercelInsights";
 
 import "./globals.css";
+
+// viewport-fit=cover lets the page draw under the iPhone status bar and notch: the top bars pad themselves
+// with env(safe-area-inset-top) and the bottom tabs with env(safe-area-inset-bottom). No themeColor: the
+// header colour follows the theme cookie, which a media-query themeColor cannot, and the header now fills
+// the status-bar area itself.
+export const viewport: Viewport = { viewportFit: "cover" };
 
 export async function generateMetadata(): Promise<Metadata> {
   const copy = await requestCopy();

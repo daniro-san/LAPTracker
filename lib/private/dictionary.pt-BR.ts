@@ -4,6 +4,7 @@ import type { WorkspaceDictionary } from "./dictionary";
 import { calendarPt } from "./dictionary.calendar.pt-BR";
 import { importPt } from "./dictionary.import";
 import { noticesPt } from "./dictionary.notices";
+import { shotsPt } from "./dictionary.shots";
 import { theftsPt } from "./dictionary.thefts";
 
 export const pt: WorkspaceDictionary = {
@@ -251,4 +252,5 @@ export const pt: WorkspaceDictionary = {
   ...noticesPt,
   ...importPt,
   ...theftsPt,
+  ...shotsPt,
 };

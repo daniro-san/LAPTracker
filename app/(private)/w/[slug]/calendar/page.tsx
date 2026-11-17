@@ -38,7 +38,7 @@ export default async function CalendarPage({
   const month = monthCells(page.data, monday, today, slug, ctx);
   const href = (w: string) => `/w/${slug}/calendar?week=${w}`;
   return (
-    <SignedInFrame access={access} language={language} t={t} current="days">
+    <SignedInFrame access={access} language={language} t={t} current="days" waiting={page.waiting}>
       <h1 className="font-display text-display-lg">{t["tab.days"]}</h1>
       <CalendarNav slug={slug} current="week" t={t} query={`?week=${monday}`} />
       <CalendarWeekBar

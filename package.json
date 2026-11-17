@@ -21,6 +21,7 @@
     "snapshot:dry": "tsx scripts/snapshot-dry.ts",
     "i18n:todo": "tsx scripts/i18n-check.ts --todo",
     "i18n:stamp": "tsx scripts/i18n-check.ts --stamp",
+    "discord:register": "tsx --env-file-if-exists=.env.local scripts/discord-register-command.ts",
     "db:seed": "tsx --env-file-if-exists=.env.local scripts/seed.ts",
     "db:local:start": "node --env-file-if-exists=.env.local scripts/db-local.mjs start",
     "db:local:stop": "node --env-file-if-exists=.env.local scripts/db-local.mjs stop",

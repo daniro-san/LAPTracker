@@ -83,9 +83,25 @@ function statusParts(m: MemberRow, t: WorkspaceDictionary, f: Formats) {
 export interface Shown {
   joined: boolean;
   lastOnline: boolean;
+  /** Alliance Duel points were saved from a photo for someone this week (issue 299). */
+  duel: boolean;
 }
 
-function detailsOf(m: MemberRow, t: WorkspaceDictionary, f: Formats, shown: Shown) {
+const DUEL_DAYS = ["mon", "tue", "wed", "thu", "fri", "sat"] as const;
+
+/** "12,401,468 · Mon 2.4M · Tue 3.1M": the week's points, then each day saved; "—" when none was. */
+function duelText(m: MemberRow, t: WorkspaceDictionary, f: CardFormats): string {
+  const days = DUEL_DAYS.flatMap((d) => {
+    const v = m.duel[d];
+    return v === undefined
+      ? []
+      : [fill(t["shots.duel.dayValue"], { day: t[`day.${d}`], v: f.compact(v) })];
+  });
+  const week = m.duel.week;
+  return [week === undefined ? NONE : f.number(week), ...days].join(" · ");
+}
+
+function detailsOf(m: MemberRow, t: WorkspaceDictionary, f: CardFormats, shown: Shown) {
   const date = (at: Date | null) => (at ? f.date(at) : NONE);
   return [
     { label: t["sheet.activity"], value: or(m.activity, f.number) },
@@ -100,6 +116,9 @@ function detailsOf(m: MemberRow, t: WorkspaceDictionary, f: Formats, shown: Show
           ? NONE
           : fill(t["sheet.mapValue"], { x: m.mapX, y: m.mapY }),
     },
+    ...(shown.duel
+      ? [{ label: `${t["shots.duel.card"]} · ${t["src.photo"]}`, value: duelText(m, t, f) }]
+      : []),
   ];
 }
 

@@ -117,7 +117,7 @@ export function SaveBar(props: {
   const leave = () => (props.dirty ? setAsking(true) : s.close());
   const row = "flex gap-3";
   return (
-    <div className="sticky -bottom-4 -mb-4 mt-3 border-t border-rule bg-paper pt-3 pb-4 sm:-bottom-6 sm:-mb-6 sm:pb-6">
+    <div className="sticky bottom-[calc(-1*max(1rem,env(safe-area-inset-bottom)))] mb-[calc(-1*max(1rem,env(safe-area-inset-bottom)))] mt-3 border-t border-rule bg-paper pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:-bottom-6 sm:-mb-6 sm:pb-6">
       {first && (
         <button
           type="button"

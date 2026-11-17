@@ -20,6 +20,8 @@ import {
 import { serverDay } from "../schedule";
 import type { WorkspaceAccess } from "./access";
 import { awayUntil, type MemberFacts, type OfficerStatus } from "./fact-fields";
+import { duelSaved } from "./import-save";
+import type { DuelSaved } from "./import-view";
 import { factsOf, usedZones } from "./member-facts";
 import {
   DAY_MS,
@@ -62,6 +64,8 @@ export interface MemberRow {
   lastOnlineAt: Date | null;
   mapX: number | null;
   mapY: number | null;
+  /** Alliance Duel points saved from photos for the week (issue 299): `week` and `mon` … `sat`. */
+  duel: DuelSaved;
   seenSince: string | null;
   isNew: boolean;
   reasons: Reason[];
@@ -112,6 +116,7 @@ interface Signals {
   oldest: string;
   unchanged: Map<number, number>;
   event: EventKills | null;
+  duel: Map<number, DuelSaved>;
   facts: Map<number, MemberFacts>;
   /** Today's server day, for away notes. */
   today: string;
@@ -157,6 +162,7 @@ function rowOf(m: RosterMember, week: string[], s: Signals): MemberRow {
     lastOnlineAt: m.lastOnlineAt,
     mapX: m.x,
     mapY: m.y,
+    duel: s.duel.get(m.uid) ?? {},
     isNew: isNewMember(s.firstSeen.get(m.uid), s.oldest, newest.day),
     reasons,
     missing: missing.fields,
@@ -183,6 +189,7 @@ function plainRow(m: RosterMember, week: string[], firstSeen: Map<number, string
     lastOnlineAt: null,
     mapX: null,
     mapY: null,
+    duel: {},
     seenSince: firstSeen.get(m.uid) ?? null,
     isNew: false,
     reasons: [],
@@ -238,6 +245,7 @@ export async function membersView(
     oldest: [...firstSeen.values()].reduce((a, b) => (b < a ? b : a), newest.day),
     unchanged: new Map(might.unchanged.map((u) => [u.uid, u.days])),
     event,
+    duel: await duelSaved(db, access, week[0] as string),
     facts,
     today,
   };

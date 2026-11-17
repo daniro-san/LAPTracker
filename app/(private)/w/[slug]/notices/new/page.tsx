@@ -14,10 +14,10 @@ const EMPTY = Object.fromEntries(
 
 export default async function NewNoticePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const { access } = await noticePage(slug, async () => true);
+  const { access, waiting } = await noticePage(slug, async () => true);
   const { language, t } = await workspaceWords();
   return (
-    <SignedInFrame access={access} language={language} t={t} current="days">
+    <SignedInFrame access={access} language={language} t={t} current="days" waiting={waiting}>
       <p>
         <a
           href={`/w/${slug}/notices`}

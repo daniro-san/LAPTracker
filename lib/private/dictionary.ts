@@ -6,6 +6,7 @@ import { fr } from "./dictionary.fr";
 import { importEn } from "./dictionary.import";
 import { noticesEn } from "./dictionary.notices";
 import { pt } from "./dictionary.pt-BR";
+import { shotsEn } from "./dictionary.shots";
 import { theftsEn } from "./dictionary.thefts";
 
 export const WORKSPACE_LANGUAGES = ["en", "pt-BR", "fr"] as const;
@@ -255,6 +256,7 @@ const en = {
   ...noticesEn,
   ...importEn,
   ...theftsEn,
+  ...shotsEn,
 } as const;
 
 export type WorkspaceKey = keyof typeof en;

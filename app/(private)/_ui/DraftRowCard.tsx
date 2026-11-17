@@ -1,0 +1,209 @@
+"use client";
+
+// One row of a draft under review (issue 299): its label ("#2", the link target of "Row #2 needs a
+// member"), what the OCR read, a mark only when the member is uncertain or not found, a picker with the
+// closest names first, the value to fix, the parser's flags, and what is already known beside it: the
+// Alliance Duel points saved before, the game data for a check, a fact's previous value. A row can be
+// dropped. 44 px controls.
+import type { ViewRow } from "@/lib/private/import-view";
+
+import { factText, fillIn, type Words } from "./draft-known";
+
+export interface RowState {
+  uid: number | null;
+  value: string;
+  dropped: boolean;
+  /** Member update: the version to save on, after "Use mine" answered a conflict. */
+  version?: number;
+  /** Member update: another officer saved this fact meanwhile (D80). */
+  conflict?: { value: number | null; version: number } | undefined;
+  /** Member update: the officer kept the other officer's value; the row is dropped until "use mine". */
+  kept?: { value: number | null; version: number } | undefined;
+}
+
+const button = "inline-flex min-h-11 items-center border border-rule px-3 text-body-sm font-medium";
+const factOr = (field: ViewRow["field"], v: number | null, sep: string) =>
+  v === null ? "—" : factText(field, v, sep);
+
+/** "AD Tech: 60% → 55%" with "Keep 60%" and "Use 55%": another officer saved a newer value (D80). After
+ * Keep: "Kept 60%. Tap to use 55% instead." */
+function Conflict(props: {
+  row: ViewRow;
+  state: RowState;
+  onChange: (next: RowState) => void;
+  w: Words;
+  sep: string;
+}) {
+  const { row, state, w } = props;
+  const mine = state.value === "" ? "—" : factText(row.field, Number(state.value), props.sep);
+  const k = state.kept;
+  if (k) {
+    const theirs = factOr(row.field, k.value, props.sep);
+    return (
+      <button
+        type="button"
+        className={`mt-2 ${button}`}
+        onClick={() =>
+          props.onChange({ ...state, dropped: false, version: k.version, kept: undefined })
+        }
+      >
+        {fillIn(w["shots.keptTheirs"], { theirs, mine })}
+      </button>
+    );
+  }
+  const c = state.conflict;
+  if (!c) return null;
+  const theirs = factOr(row.field, c.value, props.sep);
+  const field = w[`shots.field.${row.field ?? ""}`] ?? "";
+  return (
+    <div className="mt-2 border-l-4 border-seal pl-2">
+      <p className="text-body-sm">{fillIn(w["shots.conflict"], { field, theirs, mine })}</p>
+      <div className="mt-1 flex flex-wrap gap-2">
+        <button
+          type="button"
+          className={button}
+          onClick={() => props.onChange({ ...state, dropped: true, conflict: undefined, kept: c })}
+        >
+          {fillIn(w["shots.keepTheirs"], { theirs })}
+        </button>
+        <button
+          type="button"
+          className={button}
+          onClick={() => props.onChange({ ...state, version: c.version, conflict: undefined })}
+        >
+          {fillIn(w["shots.useMine"], { mine })}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/** Only an uncertain or missing member is marked; a sure match needs no word. */
+const MATCH_TONE = {
+  sure: null,
+  doubtful: "font-semibold text-yarn",
+  none: "font-semibold text-seal",
+};
+/** The parser's flags an officer can act on; `rank` (a rank read differently) changes nothing to save. */
+const SHOWN = new Set(["gap", "order", "points"]);
+
+function RowHead({ row, label, w }: { row: ViewRow; label: string; w: Words }) {
+  const tone = MATCH_TONE[row.match.status];
+  return (
+    <>
+      <p className="flex flex-wrap items-baseline gap-x-2">
+        <span className="font-semibold tabular-nums">{label}</span>
+        {row.field && <span className="font-semibold">{w[`shots.field.${row.field}`]}</span>}
+        <span translate="no">{fillIn(w["shots.read"], { name: row.name || "—" })}</span>
+        {tone && (
+          <span className={`text-body-sm ${tone}`}>{w[`shots.match.${row.match.status}`]}</span>
+        )}
+      </p>
+      {row.flags
+        .filter((f) => SHOWN.has(f))
+        .map((f) => (
+          <p key={f} className="mt-1 border-l-4 border-yarn pl-2 text-body-sm">
+            {w[`shots.flag.${f}`]}
+          </p>
+        ))}
+    </>
+  );
+}
+
+function RowInputs(props: {
+  id: string;
+  row: ViewRow;
+  state: RowState;
+  onChange: (next: RowState) => void;
+  members: { uid: number; name: string }[];
+  w: Words;
+  readOnly: boolean;
+}) {
+  const { id, row, state, w } = props;
+  return (
+    <div className="mt-2 grid gap-2 sm:grid-cols-2">
+      <label className="block text-body-sm" htmlFor={`${id}-m`}>
+        {w["shots.member"]}
+        <select
+          id={`${id}-m`}
+          value={state.uid ?? ""}
+          disabled={props.readOnly}
+          onChange={(e) =>
+            props.onChange({ ...state, uid: e.target.value ? Number(e.target.value) : null })
+          }
+          className="mt-1 block min-h-11 w-full border border-rule bg-paper px-2"
+        >
+          <option value="">{w["shots.pickMember"]}</option>
+          {row.suggestions.length > 0 && (
+            <optgroup label={w["shots.closest"]}>
+              {row.suggestions.map((s) => (
+                <option key={`s${s.uid}`} value={s.uid}>
+                  {s.name}
+                </option>
+              ))}
+            </optgroup>
+          )}
+          {props.members.map((m) => (
+            <option key={m.uid} value={m.uid}>
+              {m.name}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="block text-body-sm" htmlFor={`${id}-v`}>
+        {w["shots.value"]}
+        <input
+          id={`${id}-v`}
+          inputMode="numeric"
+          value={state.value}
+          disabled={props.readOnly}
+          onChange={(e) => props.onChange({ ...state, value: e.target.value.replace(/\D/g, "") })}
+          className="mt-1 block min-h-11 w-full border border-rule bg-paper px-2 tabular-nums"
+        />
+      </label>
+    </div>
+  );
+}
+
+export function DraftRowCard(props: {
+  /** "#2": the row's rank, or its place in the draft when it has none; its card is `#row-2`. */
+  label: string;
+  anchor: string;
+  row: ViewRow;
+  state: RowState;
+  onChange: (next: RowState) => void;
+  members: { uid: number; name: string }[];
+  w: Words;
+  sep: string;
+  /** What is known for the picked member: "saved before: …", "we read …", a fact's previous value. */
+  known: (uid: number | null, value: number | null) => string[];
+  readOnly: boolean;
+}) {
+  const { row, state, w } = props;
+  const value = state.value === "" ? null : Number(state.value);
+  const id = props.anchor;
+  return (
+    <li
+      id={id}
+      className={`scroll-mt-20 border border-rule px-3 py-3 ${state.dropped ? "opacity-60" : ""}`}
+    >
+      <RowHead row={row} label={props.label} w={w} />
+      {!state.dropped && <RowInputs id={id} {...props} />}
+      {!state.dropped && (
+        <p className="mt-1 text-body-sm text-ink/80 tabular-nums">
+          {props.known(state.uid, value).join(" · ")}
+        </p>
+      )}
+      {!props.readOnly && <Conflict {...props} />}
+      {!props.readOnly && !state.kept && (
+        <button
+          type="button"
+          onClick={() => props.onChange({ ...state, dropped: !state.dropped })}
+          className="mt-1 inline-flex min-h-11 items-center text-body-sm font-medium underline underline-offset-4"
+        >
+          {state.dropped ? w["shots.dropped"] : w["shots.drop"]}
+        </button>
+      )}
+    </li>
+  );
+}

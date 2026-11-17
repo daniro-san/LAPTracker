@@ -9,6 +9,7 @@ import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
 import { requireWorkspace, type WorkspaceAccess } from "@/lib/private/access";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
+import { toReviewCount } from "@/lib/private/import-view";
 import { NOTICE_LANGUAGES, type NoticeLanguage } from "@/lib/private/notice-rules";
 import { SLUG } from "@/lib/private/sign-in";
 import { serverDay } from "@/lib/schedule";
@@ -19,13 +20,16 @@ import { refuse } from "./refuse";
 export async function noticePage<T>(
   slug: string,
   read: (db: Db, access: WorkspaceAccess) => Promise<T>,
-): Promise<{ access: WorkspaceAccess; data: T }> {
+): Promise<{ access: WorkspaceAccess; data: T; waiting: number }> {
   if (!SLUG.test(slug)) notFound();
   const jar = await cookies();
   // INVARIANT workspace.access-first: nothing private is read before this check.
   const page = await withPageDb(async (db) => {
-    const access = await requireWorkspace(db, slug, jar, new Date());
-    return access.ok ? { access, data: await read(db, access) } : access;
+    const now = new Date();
+    const access = await requireWorkspace(db, slug, jar, now);
+    if (!access.ok) return access;
+    // The Home tab's count of screenshot drafts (issue 299), in this page's own read.
+    return { access, data: await read(db, access), waiting: await toReviewCount(db, access, now) };
   });
   if ("reason" in page) {
     refuse(slug, page.reason);
