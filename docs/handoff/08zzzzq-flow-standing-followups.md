@@ -58,3 +58,5 @@ Left:
 - Not checked: WebKit, real devices.
 
 Screenshots: `docs/screenshots/08zzzzq-flow-360-light.png`, `-flow-360-dark.png`, `-flow-1280.png`, `-standing-360-light.png`, `-standing-360-dark.png`, `-standing-1280.png`.
+
+https://github.com/daniro-san/LAPTracker/pull/365
