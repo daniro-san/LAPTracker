@@ -158,7 +158,7 @@ function Review(props: {
         ))}
       </ul>
       <Matched preview={preview} rows={matched} words={words} />
-      <div className="sticky bottom-20 mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-rule bg-paper py-3">
+      <div className="sticky bottom-[calc(5rem+env(safe-area-inset-bottom))] mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-rule bg-paper py-3">
         <div>
           <FillCount preview={preview} answers={answers} words={words} language={language} />
           <p className="tabular-nums">{say(words["import.left"], { n: left })}</p>
