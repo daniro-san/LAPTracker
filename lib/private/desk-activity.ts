@@ -11,6 +11,7 @@ import {
   officersSeen,
   type DraftDone,
   type EntryDone,
+  type FollowUpDone,
   type MarksDone,
 } from "../repo/desk-activity";
 import { noticeTitles } from "../repo/notices";
@@ -34,9 +35,9 @@ type What =
   | { kind: "facts"; uid: number; members: number }
   | { kind: "noticeSaved" | "noticePosted"; noticeId: number }
   | { kind: "draft"; draft: Pick<DraftDone, "kind" | "scope"> }
-  | { kind: "entry"; entry: Pick<EntryDone, "kind" | "variant" | "level" | "title"> }
+  | { kind: "entry" | "entryEdit"; entry: Pick<EntryDone, "kind" | "variant" | "level" | "title"> }
   | { kind: "marks"; call: Pick<MarksDone, "kind" | "variant">; rest: boolean }
-  | { kind: "followUp"; uid: number }
+  | ({ kind: "followUp" } & Pick<FollowUpDone, "uid" | "action" | "until">)
   | { kind: "thefts"; count: number }
   | { kind: "newMember"; name: string };
 
@@ -46,7 +47,7 @@ type Raw = What & { by: number; at: Date };
 export type ActivityItem = { at: Date; who: string } & (
   | Exclude<What, { kind: "facts" | "followUp" | "noticeSaved" | "noticePosted" }>
   | { kind: "facts"; member: string | null; members: number }
-  | { kind: "followUp"; member: string | null }
+  | ({ kind: "followUp"; member: string | null } & Pick<FollowUpDone, "action" | "until">)
   | { kind: "noticeSaved" | "noticePosted"; title: string }
 );
 
@@ -69,6 +70,12 @@ function merge(rows: Awaited<ReturnType<typeof activityRows>>): Raw[] {
     ...rows.noticePosts.map((r) => ({ ...r, kind: "noticePosted" as const })),
     ...rows.drafts.map(({ by, at, ...draft }) => ({ by, at, kind: "draft" as const, draft })),
     ...rows.entries.map(({ by, at, ...entry }) => ({ by, at, kind: "entry" as const, entry })),
+    ...rows.entryEdits.map(({ by, at, ...entry }) => ({
+      by,
+      at,
+      kind: "entryEdit" as const,
+      entry,
+    })),
     ...rows.marks.map(({ by, at, rest, ...call }) => ({
       by,
       at,
@@ -113,8 +120,12 @@ export async function recentActivity(
     switch (line.kind) {
       case "facts":
         return [{ ...line, who, member: members.get(line.uid) ?? null }];
-      case "followUp":
-        return [{ kind: "followUp", at: line.at, who, member: members.get(line.uid) ?? null }];
+      case "followUp": {
+        const { at, action, until } = line;
+        return [
+          { kind: "followUp", at, action, until, who, member: members.get(line.uid) ?? null },
+        ];
+      }
       case "noticeSaved":
       case "noticePosted":
         return [{ kind: line.kind, at: line.at, who, title: titles.get(line.noticeId) ?? "" }];

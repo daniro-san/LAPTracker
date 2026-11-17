@@ -1,7 +1,7 @@
 // The words of Home's "On the desk now" and "Recent activity" (D108), made on the server in the officer's
 // language. Every name and title goes through isolate(), so a right-to-left name cannot reorder the line.
 import { fill, isolate } from "../copy";
-import { agoText, titleOf } from "./calendar-words";
+import { agoText, calendarDates, titleOf } from "./calendar-words";
 import type { ActivityItem } from "./desk-activity";
 import type { WorkspaceDictionary, WorkspaceKey, WorkspaceLanguage } from "./dictionary";
 import type { ImportKind, Scope } from "./import-kinds";
@@ -36,14 +36,44 @@ function factsLine(
   return aboutMember(t, who, item.member, ["activity.facts", "activity.factsSomeone"]);
 }
 
+/**
+ * A follow-up record names the choice (owner, 2026-11-17): talked, a break with its last day away, needs
+ * help, fine. Never the note.
+ */
+function followUpLine(
+  t: WorkspaceDictionary,
+  who: string,
+  item: Extract<ActivityItem, { kind: "followUp" }>,
+  language: WorkspaceLanguage,
+): string {
+  const member = isolate(item.member ?? t["activity.aMember"]);
+  const key = item.action === "break" && item.until === null ? "breakOpen" : item.action;
+  const date = item.until === null ? "" : calendarDates(language).dayMonth(item.until);
+  return fill(t[`activity.followUp.${key}`], { who, member, date });
+}
+
+/** Marks in a roll call: "the rest" when one action wrote several. */
+function marksLine(
+  t: WorkspaceDictionary,
+  who: string,
+  item: Extract<ActivityItem, { kind: "marks" }>,
+): string {
+  const call = callTitle({ ...item.call, kind: item.call.kind as RollKind, placed: null }, t);
+  return fill(t[item.rest ? "activity.marksRest" : "activity.marks"], { who, call });
+}
+
 /** What the officer did, as one sentence, without the time. */
-export function activityLine(item: ActivityItem, t: WorkspaceDictionary): string {
+export function activityLine(
+  item: ActivityItem,
+  t: WorkspaceDictionary,
+  language: WorkspaceLanguage,
+): string {
   const who = isolate(item.who);
   switch (item.kind) {
     case "facts":
       return factsLine(t, who, item);
     case "followUp":
-      return aboutMember(t, who, item.member, ["activity.followUp", "activity.followUpSomeone"]);
+      return followUpLine(t, who, item, language);
     case "noticeSaved":
     case "noticePosted":
       return fill(t[`activity.${item.kind}`], { who, title: isolate(item.title) });
@@ -52,11 +82,10 @@ export function activityLine(item: ActivityItem, t: WorkspaceDictionary): string
       return fill(t["activity.draft"], { who, kind });
     }
     case "entry":
-      return fill(t["activity.entry"], { who, entry: isolate(titleOf(item.entry, t)) });
-    case "marks": {
-      const call = callTitle({ ...item.call, kind: item.call.kind as RollKind, placed: null }, t);
-      return fill(t[item.rest ? "activity.marksRest" : "activity.marks"], { who, call });
-    }
+    case "entryEdit":
+      return fill(t[`activity.${item.kind}`], { who, entry: isolate(titleOf(item.entry, t)) });
+    case "marks":
+      return marksLine(t, who, item);
     case "thefts":
       return fill(t[`activity.thefts.${item.count === 1 ? "one" : "other"}`], {
         who,

@@ -38,7 +38,7 @@ function Lines(props: {
     <ul className="mt-1 divide-y divide-rule">
       {props.items.map((item, i) => (
         <li key={`${item.at.getTime()}-${i}`} className="py-2">
-          {activityLine(item, props.t)}
+          {activityLine(item, props.t, props.language)}
           <span className="whitespace-nowrap text-body-sm text-ink/70">
             {" · "}
             <time dateTime={item.at.toISOString()}>

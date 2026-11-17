@@ -7,7 +7,7 @@ Closes #335. Branch `session/11aa-desk-activity`, cut from `origin/dev` at 3ea8c
   - `workspace_sessions.seen_at` (new, nullable). `requireWorkspace` writes it after an officer session passes its checks, only when the stored time is more than a minute old (`SEEN_EVERY_MS`, also checked in the SQL `where`). Pages and private API calls both count.
   - The read takes officer-tier sessions of this workspace seen in the last 10 minutes (`ON_DESK_MS`), not ended, account not blocked, and leaves out the officer looking. Member sessions never count; `requireBoard` writes nothing. The game's `online` flag is not used.
 - **"Recent activity"** on Home, the last section: the newest 15 lines, and up to 40 behind "Show more" (a `<details>`, 44 px).
-  - Sources, one bounded read each (newest 40 of the last 14 days), merged in memory: member facts saves, notice saves and Discord posts, saved screenshot drafts, calendar entries added, roll call marks, follow-up records, thefts added, new members added by hand. Names come from three more reads (officers, members, notice titles). No N+1, no new logging table.
+  - Sources, one bounded read each (newest 40 of the last 14 days), merged in memory: member facts saves, notice saves and Discord posts, saved screenshot drafts, calendar entries added and changed, roll call marks, follow-up records, thefts added, new members added by hand. Names come from three more reads (officers, members, notice titles). No N+1, no new logging table.
   - Roll call marks: one line per action. Several marks at one instant read "marked the rest of the roll call"; one officer's single taps on one roll call within the same hour make one line.
   - A draft save also writes facts, thefts and new members, and a follow-up writes facts. When those rows share the same officer and instant, only the higher action is shown. The same line repeated in a row is shown once.
   - Lines show officer and member names, notice and calendar titles, and the screenshot kind. They never show a field value, a follow-up action or note, or a theft's note, attacker or victim. Every name goes through `isolate()`.
@@ -19,7 +19,7 @@ Closes #335. Branch `session/11aa-desk-activity`, cut from `origin/dev` at 3ea8c
   - `app/(private)/_ui/DeskActivity.tsx`;
   - Home `page.tsx`;
   - `touchSession` in `lib/repo/workspaces.ts`.
-- **Migration** `drizzle/0035_desk_activity.sql`: `seen_at`, plus indexes on `member_facts (workspace_id, written_at)`, `notice_edits (workspace_id, edited_at)`, `member_follow_ups (workspace_id, written_at)`, `thefts (workspace_id, created_at)` and `roll_call_marks (written_at)`.
+- **Migration** `drizzle/0036_desk_activity.sql`: `seen_at`, plus indexes on `member_facts (workspace_id, written_at)`, `notice_edits (workspace_id, edited_at)`, `member_follow_ups (workspace_id, written_at)`, `thefts (workspace_id, created_at)` and `roll_call_marks (written_at)`.
 - **Docs**: D108, the decisions index, ARCHITECTURE.
 
 ## Decisions
@@ -35,7 +35,7 @@ Closes #335. Branch `session/11aa-desk-activity`, cut from `origin/dev` at 3ea8c
 - `usable` (the roster predicate) is now exported from `lib/repo/workspace-rosters.ts` for the member-name read.
 
 ## Deviations
-- **Existing test changed**: `lib/private/member-roles-migration.test.ts` now inserts its two pre-0034 sessions with plain SQL. `createSession` names `seen_at`, which does not exist before 0035.
+- **Existing test changed**: `lib/private/member-roles-migration.test.ts` now inserts its two pre-0034 sessions with plain SQL. `createSession` names `seen_at`, which does not exist before 0036.
 - **No stubbed Discord sign-in in the e2e**: Ana's session row and cookie were seeded directly. Sign-in is not changed by this session.
 - **Screenshots**: no iPhone WebKit shots, because this session's Playwright has no WebKit build.
 
@@ -75,22 +75,42 @@ Closes #335. Branch `session/11aa-desk-activity`, cut from `origin/dev` at 3ea8c
 - The migration was regenerated as `0035_desk_activity` with the same SQL. #398 takes 0035 (`0035_roll_call_cheese`), so this one becomes 0036 when it is regenerated after #398 merges.
 - `pnpm check` exits 0 with default timeouts: **174 files passed, 2 skipped; 925 tests passed, 4 skipped**. The e2e above ran before this rebase.
 
+## Owner answers round (2026-11-17), rebased on 408d046 (#398)
+
+- **Calendar changes** are in the feed: "Ana changed the Calendar entry 'Undead Siege · Lv.5'".
+  - Entries have no history table. Each field of an entry and of its week rows keeps `{v, by, at}` in `edits` (the 409 check).
+  - The read expands those stamps and groups them by officer and instant, so a save of several fields is one line.
+  - Only the newest change of each field exists, so a change that a later one overwrote is not shown.
+- **Notice deletions**: notices cannot be deleted today (no route, no repo function, no soft-delete column). Nothing was added. D108 records the shape a record would take if a delete is built.
+- **Follow-up lines name the choice**: "Wren talked to Bramble", "… marked Thistle on a break until Nov 24", "… marked Thistle as needing help", "… noted a member is fine". The date is the stored last day away. Never the note. The old two follow-up keys were replaced by five, plus "a member" and the calendar-change key, in EN, PT and FR.
+- **Migration**: regenerated as `0036_desk_activity` on top of `0035_roll_call_cheese`, same SQL.
+- **Tests**: `desk-activity.test.ts` +1. It covers a calendar entry with two fields changed in one save (one line), a week-row change by another officer, and talked / break until Nov 24 / fine in EN, with the FR break line "jusqu’au 24 nov.". No note appears. The first feed test now expects "Wren marked Thistle as needing help".
+- **Verified**:
+  - `pnpm check` exits 0 with default timeouts: **174 files passed, 2 skipped; 934 tests passed, 4 skipped**.
+  - Short e2e, **43 of 43**, on a fresh production build. The database was recreated with 37 migrations, and the seed added Wren's change to the Cheese Trap entry and a break for Marlow.
+    - EN: the first line is "Wren changed the Calendar entry 'Cheese Trap I · Lv.7'", the second "Wren marked Marlow on a break until Nov 24", and "Wren marked Thimble as needing help" is in the feed.
+    - Per language, "Show more" opens all 24 lines.
+    - No note, value, attacker or victim appears. Nothing scrolls sideways at 360 and 1280, light and dark.
+    - `app_errors` is empty.
+  - Shots were refreshed in `11aa-shots/`.
+  - Privacy grep: 0 of 101 roster names.
+
 ## Open issues
-- The feed has no calendar entry edits (they are a jsonb field, not a history table), no notice deletions and no theft follow-up states. Each would need a source the desk does not keep yet.
+- The feed shows only the newest change of each calendar field (no history table). It has no calendar deletions and no theft follow-up states (owner: not this round). Notices cannot be deleted at all.
 - Only one bound applies to a long run of single roll call taps: the hour grouping, on top of the 40-row read limit.
 - Both parts are as of the page load. There is no live refresh.
 - A former member (not in the newest roster) reads "a member's info".
 
 ## Next
 - Model/effort: keep. One sitting covered the reads, the UI and the e2e.
-- What the owner must do first: merge and release (migration 0035 adds a nullable column and five indexes, with no backfill). Then open Home on a phone while another officer has the desk open.
+- What the owner must do first: merge and release (migration 0036 adds a nullable column and five indexes, with no backfill). Then open Home on a phone while another officer has the desk open.
 - Plan change: none. The workspace track lives in issues, not in `docs/SESSION_PLAYBOOK.md`.
 
 <adjustments>
 - `workspace_sessions.seen_at` exists; an officer request writes it at most once a minute (`SEEN_EVERY_MS` in `lib/private/session.ts`). Any future "who is around" need should read it, not add a table.
 - `recentActivity(db, access, now)` returns typed lines. A new history (for example calendar edits) joins by adding one bounded read in `lib/repo/desk-activity.ts` and one kind in `desk-activity.ts` and `desk-activity-words.ts`.
 - A migration test that runs app inserts on an older schema breaks when a column is added. Insert with plain SQL in such tests.
-- Migration number: `0035_desk_activity`, on top of dev's `0034_workspace_member_roles`.
+- Migration number: `0036_desk_activity`, on top of dev's `0035_roll_call_cheese` (408d046).
 </adjustments>
 
 PR: (added by the orchestrator)

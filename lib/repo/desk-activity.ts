@@ -70,7 +70,12 @@ export type EntryDone = Done & {
 };
 /** Marks one officer wrote in one roll call within an hour; `rest` when written by "the rest". */
 export type MarksDone = Done & { kind: string; variant: string | null; rest: boolean };
-export type FollowUpDone = Done & { uid: number };
+/** A follow-up record: the choice and, for a break, the last day away; never the note. */
+export type FollowUpDone = Done & {
+  uid: number;
+  action: "talked" | "break" | "help" | "fine";
+  until: string | null;
+};
 export type TheftsDone = Done & { count: number };
 export type NewMemberDone = Done & { name: string };
 
@@ -80,6 +85,7 @@ export interface ActivityRows {
   noticePosts: NoticeDone[];
   drafts: DraftDone[];
   entries: EntryDone[];
+  entryEdits: EntryDone[];
   marks: MarksDone[];
   followUps: FollowUpDone[];
   thefts: TheftsDone[];
@@ -145,6 +151,37 @@ function entriesAdded(db: Db, ws: number, from: Date, n: number) {
 }
 
 /**
+ * Calendar edits: each field of an entry and of its week rows keeps who changed it last and when (`edits`,
+ * issue 293), so one change of several fields is one line. Only the newest change of each field is kept
+ * there, so an older change that a later one overwrote is not in the feed.
+ */
+async function entriesEdited(db: Db, ws: number, from: Date, n: number): Promise<EntryDone[]> {
+  const result = await db.execute<{
+    by: number | string;
+    at: Date | string;
+    kind: string;
+    variant: string | null;
+    level: number | null;
+    title: string | null;
+  }>(sql`
+    with x as (
+      select c.id, e.value->>'by' as by, (e.value->>'at')::timestamptz as at
+      from calendar_entries c cross join lateral jsonb_each(c.edits) e
+      where c.workspace_id = ${ws}
+      union all
+      select o.entry_id, e.value->>'by', (e.value->>'at')::timestamptz
+      from calendar_occurrences o cross join lateral jsonb_each(o.edits) e
+      where o.workspace_id = ${ws}
+    )
+    select x.by, x.at, c.kind, c.variant, c.level, c.title
+    from x join calendar_entries c on c.id = x.id
+    where x.by is not null and x.at >= ${from.toISOString()}
+    group by x.id, x.by, x.at, c.kind, c.variant, c.level, c.title
+    order by x.at desc limit ${n}`);
+  return result.rows.map((r) => ({ ...r, by: Number(r.by), at: new Date(r.at) }));
+}
+
+/**
  * Roll call marks, one line per action and never one per member: the marks one officer wrote at one
  * instant are one action ("the rest" when more than one), and single taps on one roll call within the
  * same hour are one line.
@@ -174,7 +211,7 @@ async function marksWritten(db: Db, ws: number, from: Date, n: number): Promise<
 function followUps(db: Db, ws: number, from: Date, n: number) {
   const f = memberFollowUps;
   return db
-    .select({ by: f.writtenBy, at: f.writtenAt, uid: f.uid })
+    .select({ by: f.writtenBy, at: f.writtenAt, uid: f.uid, action: f.action, until: f.until })
     .from(f)
     .where(and(eq(f.workspaceId, ws), ne(f.action, "withdrawn"), gte(f.writtenAt, from)))
     .orderBy(desc(f.writtenAt))
@@ -210,17 +247,19 @@ export async function activityRows(
   n: number,
 ): Promise<ActivityRows> {
   const args = [db, workspaceId, from, n] as const;
-  const [facts, saves, posts, drafts, entries, marks, follows, stolen, added] = await Promise.all([
-    factSaves(...args),
-    noticeSaves(...args),
-    noticePosts(...args),
-    draftsSaved(...args),
-    entriesAdded(...args),
-    marksWritten(...args),
-    followUps(...args),
-    theftsAdded(...args),
-    membersAdded(...args),
-  ]);
+  const [facts, saves, posts, drafts, entries, edits, marks, follows, stolen, added] =
+    await Promise.all([
+      factSaves(...args),
+      noticeSaves(...args),
+      noticePosts(...args),
+      draftsSaved(...args),
+      entriesAdded(...args),
+      entriesEdited(...args),
+      marksWritten(...args),
+      followUps(...args),
+      theftsAdded(...args),
+      membersAdded(...args),
+    ]);
   return {
     facts: known(facts),
     noticeSaves: known(saves),
@@ -228,8 +267,11 @@ export async function activityRows(
     // A saved draft always has its time; the filter only narrows the type.
     drafts: known(drafts).flatMap(({ done, ...d }) => (done ? [{ ...d, at: done }] : [])),
     entries: known(entries),
+    entryEdits: edits,
     marks,
-    followUps: known(follows),
+    followUps: known(follows).flatMap((f) =>
+      f.action === "withdrawn" ? [] : [{ ...f, action: f.action }],
+    ),
     thefts: known(stolen),
     newMembers: known(added),
   };

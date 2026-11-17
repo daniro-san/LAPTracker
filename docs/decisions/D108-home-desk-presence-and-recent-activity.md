@@ -14,9 +14,10 @@ The owner asked to "say which leader is online". Home now shows two things: the 
   - member facts (`member_facts`): one line per save (same officer, same instant). "Ana updated Bramble's info", or "… the info of 12 members" for a batch such as a sheet import;
   - notices: saves (`notice_edits`, one line per save of any number of fields) and posts to Discord (`notice_publishes`, status `posted`), with the notice's current title;
   - saved screenshot drafts (`screenshot_drafts`, status `saved`), with the kind's label;
-  - calendar entries added (`calendar_entries.created_by`), with the entry's title. Edits of an entry are not in the feed: they live in a jsonb field, not in a history table;
+  - calendar entries added (`calendar_entries.created_by`), with the entry's title;
+  - calendar entries changed (owner, 2026-11-17): "Ana changed the Calendar entry 'Undead Siege · Lv.5'". There is no history table; each field of an entry and of its week rows keeps its last writer and time in `edits` (`{v, by, at}`, the 409 check of issue 293). The read expands those stamps (`jsonb_each`) for the workspace's entries and week rows, newest 40 in the window. A save of several fields is one line. Only the newest change of each field exists, so a change that a later one overwrote is not shown. The read is not index-bound: it expands every entry and week row of the workspace (dozens to a few hundred rows);
   - roll call marks (`roll_call_marks`). Marks one officer wrote at one instant are one action. More than one mark at one instant reads "marked the rest of the roll call". Single taps by one officer on one roll call within the same clock hour are one line ("marked the roll call"). There is never one line per member, and undo rows (mark null) are left out;
-  - follow-up records (`member_follow_ups`, not `withdrawn`): "Ana added a follow-up note for Bramble". The action (talked, break, help, fine) is not shown, because a break or Needs help is a member status;
+  - follow-up records (`member_follow_ups`, not `withdrawn`) name the choice (owner, 2026-11-17): "Ana talked to Bramble", "Ana marked Bramble on a break until Nov 24" (the last day away stored), "Ana marked Bramble as needing help", "Ana noted Bramble is fine". Never the note. An unknown member reads "a member";
   - thefts added (`thefts`): "added a theft to the log" or "added 3 thefts to the log", with no attacker, victim or note;
   - new members added by hand (`pending_members`): "added the new member Bramble".
 - **One line per action.** A draft save also writes facts, thefts and new members, and a follow-up writes facts, all by the same officer at the same instant. The higher action stands for them: draft, then follow-up, then new member, then the rest. The same line repeated in a row (same officer, same action, same object) is shown once, at its newest time.
@@ -24,7 +25,8 @@ The owner asked to "say which leader is online". Home now shows two things: the 
 - **People first (D75).** Newest first, never grouped or counted per officer, no ranking. An officer whose account is gone (null author) is left out, not shown as "someone".
 - **Time.** "5 minutes ago" etc., from the existing `agoText` (`Intl.RelativeTimeFormat`), "just now" under a minute.
 - **Show more.** The first 15 lines show. The rest, up to 40, sit under "Show more", a `<details>` that works without script; there is no further paging. Before anything happened: "Nothing in the last two weeks."
-- **Indexes** (migration `0035_desk_activity`): `member_facts (workspace_id, written_at)`, `notice_edits (workspace_id, edited_at)`, `member_follow_ups (workspace_id, written_at)`, `thefts (workspace_id, created_at)`, `roll_call_marks (written_at)`. The other sources are small (notice publishes, drafts kept 7 days, calendar entries, pending members) and keep their workspace indexes.
+- **Notice deletions** (owner, 2026-11-17): notices cannot be deleted today. There is no delete route, repo function or soft-delete column, so there is nothing to record and no table was added. If a delete is built, the least invasive record is a small append-only row (who, when, the title at the time) written by that delete.
+- **Indexes** (migration `0036_desk_activity`): `member_facts (workspace_id, written_at)`, `notice_edits (workspace_id, edited_at)`, `member_follow_ups (workspace_id, written_at)`, `thefts (workspace_id, created_at)`, `roll_call_marks (written_at)`. The other sources are small (notice publishes, drafts kept 7 days, calendar entries, pending members) and keep their workspace indexes.
 
 ### Order on Home
 
@@ -36,5 +38,5 @@ Title → "On the desk now" line → Today and tomorrow → Members this week �
 
 ### Not done
 
-- No feed of calendar edits, notice deletions, roll call additions, theft follow-up states or member-board views.
+- No feed of calendar entry deletions, roll call additions, theft follow-up states (owner: not this round) or member-board views.
 - No live refresh: both parts are as of the page load.

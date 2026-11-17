@@ -6,6 +6,8 @@ import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
 import { findWorkspaceBySlug, recordSignIn, saveWorkspace } from "../repo/workspaces";
 import {
+  calendarEntries,
+  calendarOccurrences,
   dailyReads,
   dailyRosters,
   memberFacts,
@@ -184,17 +186,81 @@ describe("recent activity", () => {
     ]);
 
     const me = (await ana.visit(NOW)) as WorkspaceAccess;
-    const lines = (await recentActivity(db, me, NOW)).map((i) => activityLine(i, t));
+    const lines = (await recentActivity(db, me, NOW)).map((i) => activityLine(i, t, "en"));
     const plain = lines.map((l) => l.replace(/[⁨⁩]/g, ""));
     expect(plain).toEqual([
       "Wren added a theft to the log",
       "Ana saved a screenshot: Secret Ops report",
-      "Wren added a follow-up note for Thistle",
+      "Wren marked Thistle as needing help",
       "Ana marked the rest of the roll call “KvK shield”",
       "Ana marked the roll call “KvK shield”",
       "Wren updated Bramble’s info",
       "Ana saved the notice “Weekly schedule”",
     ]);
-    expect(lines.join(" ")).not.toMatch(/secret-value|private-note|theft-note|help|Raider/);
+    expect(lines.join(" ")).not.toMatch(/secret-value|private-note|theft-note|Raider/);
+  });
+
+  it("names a calendar change and the follow-up choice, never the note", async () => {
+    const a = (await browser("Ana")).userId;
+    const w = (await browser("Wren")).userId;
+    const stamp = (by: number, at: Date) => ({ v: 1, by, at: at.toISOString() });
+    const [entry] = await db
+      .insert(calendarEntries)
+      .values({
+        workspaceId: ws,
+        kind: "undead",
+        level: 5,
+        day: "2026-11-21",
+        minute: 1200,
+        createdBy: a,
+        createdAt: ago(60),
+        rev: 1,
+        // Two fields changed in one save: one line.
+        edits: { level: stamp(a, ago(30)), notes: stamp(a, ago(30)) },
+      })
+      .returning();
+    await db.insert(calendarOccurrences).values({
+      workspaceId: ws,
+      entryId: entry?.id ?? 0,
+      week: "2026-11-16",
+      day: "2026-11-22",
+      minute: 1200,
+      rev: 1,
+      edits: { when: stamp(w, ago(20)) },
+    });
+    const follow = (uid: number, action: "talked" | "break" | "fine", at: Date) => ({
+      workspaceId: ws,
+      uid,
+      action,
+      note: "private-note",
+      until: action === "break" ? "2026-11-24" : null,
+      writtenBy: w,
+      writtenAt: at,
+      requestId: randomUUID(),
+    });
+    await db
+      .insert(memberFollowUps)
+      .values([
+        follow(101, "talked", ago(15)),
+        follow(102, "break", ago(10)),
+        follow(99, "fine", ago(5)),
+      ]);
+
+    const me = (await browser("Rook")).visit(NOW);
+    const items = await recentActivity(db, (await me) as WorkspaceAccess, NOW);
+    const plain = (language: "en" | "fr") =>
+      items.map((i) =>
+        activityLine(i, WORKSPACE_DICTIONARIES[language], language).replace(/[⁨⁩]/g, ""),
+      );
+    expect(plain("en")).toEqual([
+      "Wren noted a member is fine",
+      "Wren marked Thistle on a break until Nov\u00a024",
+      "Wren talked to Bramble",
+      "Wren changed the Calendar entry “Undead Siege · Lv.5”",
+      "Ana changed the Calendar entry “Undead Siege · Lv.5”",
+      "Ana added “Undead Siege · Lv.5” to the Calendar",
+    ]);
+    expect(plain("fr")[1]).toBe("Wren a noté Thistle en pause jusqu’au 24\u00a0nov.");
+    expect(plain("en").join(" ")).not.toMatch(/private-note/);
   });
 });
