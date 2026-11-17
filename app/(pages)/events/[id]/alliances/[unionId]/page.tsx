@@ -30,6 +30,7 @@ import { AllianceBadge } from "@/app/_ui/Pictures";
 import { previewImage } from "@/app/_ui/preview";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
+import { AllianceStanding } from "@/app/_ui/Standing";
 import { LABEL, type StatMetric } from "@/app/_ui/StatTable";
 import { CaptureWindow, FreshDots, Legend, SideHead, type FreshState } from "@/app/_ui/Status";
 import { rankDelta } from "@/lib/compute";
@@ -315,6 +316,7 @@ export default async function AlliancePage({ params }: { params: Params }) {
         <Movers scopes={[memberScope(movers, null)]} />
         <h2 className="mb-2 mt-8 font-subhead text-display-md">{copy.ledger.members}</h2>
         <MemberList detail={detail} canDelta={canDelta} />
+        <AllianceStanding unionId={unionId} clock={clock} copy={copy} />
         <AcrossEvents unionId={unionId} history={history} clock={clock} />
       </main>
       <SiteFooter copy={copy} />

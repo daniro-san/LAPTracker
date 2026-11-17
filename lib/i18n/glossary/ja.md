@@ -129,6 +129,7 @@ Words already used in `lib/i18n/ja.ts`. Reuse them so the pages stay consistent;
 | Might share               | Might の割合              | `ledger.carried`, `carriedMightMark` — the share of might at Start                                             |
 | pts (percentage points)   | pt                        | `ledger.carriedPoints` — a gap after the sign, `+6.1 pt`                                                       |
 | Bloc                      | ブロック                  | `balance.bloc`, `addTo`, `clear` — a hypothetical group of alliances (D85)                                     |
+| Standing over time        | 順位の推移                | `standing.title`, `standing.*` — the alliance's rank by might on each day                                      |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

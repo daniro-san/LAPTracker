@@ -177,6 +177,32 @@ export const itIT = {
     turnout: "{gainers} di {n} Members hanno guadagnato Kills",
     noTurnout: "ancora nessuna partecipazione in guerra",
   },
+  flow: {
+    title: "Flusso dei membri",
+    tag: "Solo conteggi",
+    lead: "Dove sono andati i membri tra le alleanze seguite: l’alleanza in cui era ciascuno il primo giorno, confrontata con il secondo. Solo conteggi, nessun nome di membro.",
+    from: "Da",
+    to: "A",
+    action: "Mostra",
+    answer: "Tra il {from} e il {to}, lo spostamento più grande è stato {source} → {dest} ({n}).",
+    answerNone:
+      "Tra il {from} e il {to}, nessuno spostamento di {min} o più membri tra le alleanze seguite.",
+    totals: "Cambio di alleanza: {moved} · Nuovi: {arrived} · Usciti: {left}",
+    small:
+      "Gli spostamenti di meno di {min} membri sono nascosti ed esclusi da ogni totale, così nessuno può essere individuato in un gruppo piccolo.",
+    rowNew: "Nuovi",
+    colLeft: "Usciti",
+    legend:
+      "Righe: l’alleanza il {from}. Colonne: l’alleanza il {to}. Nuovi: in nessuna alleanza seguita il {from}. Usciti: in nessuna il {to}.",
+    caption: "Membri per alleanza il {from} (righe) e il {to} (colonne)",
+    stayed: "Rimasti",
+    rowStayed: "Rimasti: {n}",
+    newTitle: "Nuovi nelle alleanze seguite",
+    leftTitle: "Usciti dalle alleanze seguite",
+    notCounted: "Non conteggiati, nessuna lettura valida in entrambi i giorni: {list}.",
+    order: "Scegli un giorno Da precedente al giorno A.",
+    none: "Per ora ci sono meno di due giorni con una lettura valida.",
+  },
   balance: {
     title: "Equilibrio del server",
     description:
@@ -208,6 +234,22 @@ export const itIT = {
     trendSummary: "Le prime {n} hanno {last} il {to}, {first} il {from}.",
     trendFew: "Ancora poche letture giornaliere per tracciare un andamento.",
     day: "Giorno",
+  },
+  standing: {
+    title: "Graduatoria nel tempo",
+    help: "Le alleanze seguite in classifica per Might, dalla lettura di ogni giorno, con la variazione dal {from}. Un giorno in cui un’alleanza non è stata letta viene escluso. Il server qui è il totale delle alleanze seguite.",
+    lead: "{label} è {rank} per Might, {move} dal {from}.",
+    up: "in salita di {n}",
+    down: "in discesa di {n}",
+    held: "invariato",
+    leadGrowth:
+      "Il suo Might è cambiato di {growth} da allora; il totale delle alleanze seguite è cambiato di {server}.",
+    server: "Alleanze seguite",
+    growthSince: "{growth} dal {from}",
+    trend: "Posizione {first} il {from}, {last} il {to}",
+    thisAlliance: "Questa alleanza",
+    detailsHelp: "Posizione di ogni giorno, dal più vecchio: {days}.",
+    few: "Ancora troppe poche letture giornaliere per confrontare le alleanze.",
   },
   history: {
     title: "Storico dei membri",

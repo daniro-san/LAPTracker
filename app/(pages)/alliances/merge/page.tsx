@@ -10,11 +10,13 @@ import { cache } from "react";
 import { Breadcrumbs } from "@/app/_ui/Breadcrumbs";
 import { EmptyState } from "@/app/_ui/EmptyState";
 import { ExactToggle } from "@/app/_ui/ExactToggle";
+import { FLOW_PATH } from "@/app/_ui/FlowPicker";
 import { requestClock, requestCopy } from "@/app/_ui/locale";
 import { MergePicker } from "@/app/_ui/MergePicker";
 import { MergeResultView } from "@/app/_ui/MergeSimulator";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
+import { TextLink } from "@/lib/brand/components/TextLink";
 import { withPageDb } from "@/lib/page";
 import { homeEvent, listEvents, mergePage } from "@/lib/queries";
 
@@ -79,7 +81,15 @@ export default async function MergePage({ searchParams }: { searchParams: Search
         <p className="mb-1 mt-1 inline-block border border-rule px-2 py-0.5 text-sm font-medium text-plum">
           {m.tag}
         </p>
-        <p className="mb-3 mt-1 text-body-sm text-ink/70">{m.lead}</p>
+        <p className="mt-1 text-body-sm text-ink/70">{m.lead}</p>
+        <p className="mb-2">
+          <TextLink
+            href={FLOW_PATH}
+            className="inline-flex min-h-11 items-center text-sm font-medium"
+          >
+            {copy.flow.title} <span aria-hidden="true">&nbsp;→</span>
+          </TextLink>
+        </p>
         <MergePicker choices={page.alliances} a={a} b={b} copy={copy} />
         {page.merge ? (
           <MergeResultView merge={page.merge} clock={clock} copy={copy} />

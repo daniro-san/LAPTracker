@@ -174,6 +174,32 @@ export const ptBR = {
     turnout: "{gainers} de {n} Members ganharam kills",
     noTurnout: "ainda sem participação na guerra",
   },
+  flow: {
+    title: "Fluxo de Members",
+    tag: "Só contagens",
+    lead: "Para onde os Members foram entre as alianças acompanhadas: a aliança de cada um no primeiro dia, comparada ao segundo. Só contagens, sem nomes de Members.",
+    from: "De",
+    to: "Para",
+    action: "Mostrar",
+    answer: "Entre {from} e {to}, a maior mudança foi {source} → {dest} ({n}).",
+    answerNone:
+      "Entre {from} e {to}, nenhuma mudança de {min} ou mais Members entre as alianças acompanhadas.",
+    totals: "Mudaram de aliança: {moved} · Novos: {arrived} · Saíram: {left}",
+    small:
+      "Mudanças de menos de {min} Members ficam ocultas e fora de todas as contagens, para que ninguém possa ser identificado num grupo pequeno.",
+    rowNew: "Novo",
+    colLeft: "Saiu",
+    legend:
+      "Linhas: a aliança em {from}. Colunas: a aliança em {to}. Novo: em nenhuma aliança acompanhada em {from}. Saiu: em nenhuma em {to}.",
+    caption: "Members por aliança em {from} (linhas) e em {to} (colunas)",
+    stayed: "Ficaram",
+    rowStayed: "Ficaram: {n}",
+    newTitle: "Novos nas alianças acompanhadas",
+    leftTitle: "Saíram das alianças acompanhadas",
+    notCounted: "Não contados, sem leitura útil nos dois dias: {list}.",
+    order: "Escolha um dia “De” anterior ao dia “Para”.",
+    none: "Ainda não há dois dias com leitura útil.",
+  },
   balance: {
     title: "Equilíbrio do servidor",
     description:
@@ -205,6 +231,22 @@ export const ptBR = {
     trendSummary: "Os Top {n} têm {last} em {to}, {first} em {from}.",
     trendFew: "Ainda não há leituras diárias suficientes para desenhar uma tendência.",
     day: "Dia",
+  },
+  standing: {
+    title: "Classificação ao longo do tempo",
+    help: "As alianças acompanhadas, ordenadas por Might a partir da leitura de cada dia, com a mudança desde {from}. Um dia em que uma aliança não foi lida fica de fora. O servidor aqui é o total das alianças acompanhadas.",
+    lead: "{label} está em {rank} por Might, {move} desde {from}.",
+    up: "subiu {n} posições",
+    down: "caiu {n} posições",
+    held: "sem mudança",
+    leadGrowth:
+      "O Might dela mudou {growth} desde então; o total das alianças acompanhadas mudou {server}.",
+    server: "Alianças acompanhadas",
+    growthSince: "{growth} desde {from}",
+    trend: "Posição {first} em {from}, {last} em {to}",
+    thisAlliance: "Esta aliança",
+    detailsHelp: "Posição em cada dia, do mais antigo para o mais recente: {days}.",
+    few: "Ainda não há leituras diárias suficientes para comparar as alianças.",
   },
   history: {
     title: "Histórico de membros",

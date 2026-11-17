@@ -3,7 +3,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-import type { Clock } from "@/app/_ui/format";
+import { dayDate, type Clock } from "@/app/_ui/format";
 import { Chip } from "@/lib/brand/components/Chip";
 import { DroppedStitch } from "@/lib/brand/components/StatusIcons";
 import { copy, fill } from "@/lib/copy";
@@ -12,7 +12,7 @@ import type { listDailyReads } from "@/lib/queries/daily-runs";
 
 import { GuideNote, UpstreamDetails } from "./ErrorDetail";
 import { StateChip } from "./parts";
-import { eventWord, readDayDate, runWord, seconds, stateWord } from "./words";
+import { eventWord, runWord, seconds, stateWord } from "./words";
 
 const t = copy.admin.runs;
 
@@ -176,7 +176,7 @@ export function DailyRunRow({ r, clock }: { r: DailyRun; clock: Clock }) {
   return (
     <Link href={`/admin/runs/daily/${r.day}`} className={`tint-button ${ROW}`}>
       <Flags status={r.status} problems={r.problems} deadline={r.deadline} />
-      <Title note={clock.weekday(readDayDate(r.day))}>{t.daily}</Title>
+      <Title note={clock.weekday(dayDate(r.day))}>{t.daily}</Title>
       <Facts
         r={r}
         quota={

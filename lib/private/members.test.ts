@@ -16,7 +16,7 @@ import { requireWorkspace, type WorkspaceAccess } from "./access";
 import { saveFacts, type FactChange } from "./member-facts";
 import { KVK_REASON_ON } from "./member-week";
 import { killsGained, membersView, rankOf, type MemberRow } from "./members";
-import { filterCounts } from "./members-list";
+import { whoOf } from "./members-list";
 import { statusOf } from "./members-sheet";
 import { createSession } from "./session";
 
@@ -224,7 +224,7 @@ describe("member facts on the Members tab (#297)", () => {
 
     expect([1, 2, 3].map((uid) => statusOf(row(uid)))).toEqual(["help", "break", "checkin"]);
     expect([1, 2, 3].map((uid) => row(uid).reasons.length)).toEqual([1, 0, 1]);
-    expect(filterCounts(view.members).checkin).toBe(1);
+    expect(view.members.filter((m) => whoOf(m).includes("checkin")).length).toBe(1);
     expect(view.thanks.donors.map((t) => t.uid)).toEqual([1, 3]);
   });
 });
@@ -314,7 +314,7 @@ describe("before the alliance's first end-of-day read", () => {
         statusOf(m) === "none",
     );
     expect(blank).toBe(true);
-    expect(filterCounts(ogs.members)).toEqual({ all: 3, new: 0, checkin: 0, missing: 0, r4: 1 });
+    expect(ogs.members.flatMap(whoOf)).toEqual([]);
     expect(nse.members.map((m) => [m.uid, m.rank, m.sanctuary])).toEqual([
       [7, "R5", 30],
       [8, "R1", 20],

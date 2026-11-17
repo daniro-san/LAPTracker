@@ -178,6 +178,32 @@ export const nl = {
     turnout: "{gainers} van {n} leden haalden Kills",
     noTurnout: "nog geen oorlogsopkomst",
   },
+  flow: {
+    title: "Ledenstroom",
+    tag: "Alleen aantallen",
+    lead: "Waar leden naartoe gingen tussen de gevolgde allianties: de alliantie waarin elk lid op de eerste dag zat, naast de tweede dag. Alleen aantallen, geen ledennamen.",
+    from: "Van",
+    to: "Naar",
+    action: "Toon",
+    answer: "Tussen {from} en {to} was de grootste verschuiving {source} → {dest} ({n}).",
+    answerNone:
+      "Tussen {from} en {to} geen verschuiving van {min} of meer leden tussen de gevolgde allianties.",
+    totals: "Van alliantie gewisseld: {moved} · Nieuw: {arrived} · Weg: {left}",
+    small:
+      "Verschuivingen van minder dan {min} leden zijn verborgen en tellen in geen enkel totaal mee, zodat niemand uit een kleine groep herkend kan worden.",
+    rowNew: "Nieuw",
+    colLeft: "Weg",
+    legend:
+      "Rijen: de alliantie op {from}. Kolommen: de alliantie op {to}. Nieuw: in geen gevolgde alliantie op {from}. Weg: in geen op {to}.",
+    caption: "Leden per alliantie op {from} (rijen) en op {to} (kolommen)",
+    stayed: "Gebleven",
+    rowStayed: "Gebleven: {n}",
+    newTitle: "Nieuw in de gevolgde allianties",
+    leftTitle: "Weg uit de gevolgde allianties",
+    notCounted: "Niet geteld, geen bruikbare meting op beide dagen: {list}.",
+    order: "Kies een Van-dag die eerder is dan de Naar-dag.",
+    none: "Nog geen twee dagen met een bruikbare meting.",
+  },
   balance: {
     title: "Serverbalans",
     description:
@@ -209,6 +235,22 @@ export const nl = {
     trendSummary: "De top {n} hebben {last} op {to}, {first} op {from}.",
     trendFew: "Nog niet genoeg dagelijkse metingen voor een trend.",
     day: "Dag",
+  },
+  standing: {
+    title: "Stand door de tijd",
+    help: "De gevolgde allianties gerangschikt op might, per dagelijkse meting, met de verandering sinds {from}. Een dag waarop een alliantie niet is gemeten, wordt weggelaten. De server is hier het totaal van de gevolgde allianties.",
+    lead: "{label} staat {rank} op might, {move} sinds {from}.",
+    up: "omhoog {n}",
+    down: "omlaag {n}",
+    held: "ongewijzigd",
+    leadGrowth:
+      "Haar might veranderde sindsdien {growth}; het totaal van de gevolgde allianties veranderde {server}.",
+    server: "Gevolgde allianties",
+    growthSince: "{growth} sinds {from}",
+    trend: "Rang {first} op {from}, {last} op {to}",
+    thisAlliance: "Deze alliantie",
+    detailsHelp: "Rang per dag, oudste eerst: {days}.",
+    few: "Nog niet genoeg dagelijkse metingen om de allianties te vergelijken.",
   },
   history: {
     title: "Ledengeschiedenis",

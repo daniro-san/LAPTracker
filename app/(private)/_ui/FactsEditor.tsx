@@ -12,9 +12,9 @@ import { useState } from "react";
 import { track } from "@/lib/analytics/events";
 import { Sheet } from "@/lib/brand/components/Sheet";
 import type { Fact, FactField, FactValues, MemberFacts } from "@/lib/private/fact-fields";
+import { dayFormat, factText, type FactTextFormat } from "@/lib/private/fact-text";
 import { mightIn, parseOnboarding } from "@/lib/private/onboarding-parse";
 
-import { dayFormat, factText, type FactTextFormat } from "./fact-text";
 import { FactFields } from "./FactFields";
 import {
   changesOf,

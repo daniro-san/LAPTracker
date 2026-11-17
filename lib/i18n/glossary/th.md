@@ -165,6 +165,8 @@ Words already used in `lib/i18n/th.ts`. Reuse them so the pages stay consistent;
 | peak (busiest interval in a window) | จุดสูงสุด                     | `ledger.liveLast` — the largest Kills gain in one interval of the last minutes                            |
 | Server fight clock                  | นาฬิกาการรบเซิร์ฟเวอร์        | `ledger.fightClock` — the events side by side on the server clock, one row each                           |
 | Bloc (a group of alliances)         | กลุ่ม                         | `balance.bloc`, `balance.addTo`, `balance.clear` — the bloc builder                                       |
+| Tracked alliances                   | พันธมิตรที่ติดตาม             | `standing.server`, `standing.help` — the alliances the ledger reads; the server here is their total       |
+| Member flow                         | การย้ายของสมาชิก              | `flow.title` — moves of members between tracked alliances across two days                                 |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

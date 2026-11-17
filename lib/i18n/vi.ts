@@ -175,6 +175,32 @@ export const vi = {
     turnout: "{gainers} trong {n} thành viên có tiêu diệt tăng",
     noTurnout: "chưa có ai tham chiến",
   },
+  flow: {
+    title: "Dòng thành viên",
+    tag: "Chỉ đếm số",
+    lead: "Thành viên đã chuyển giữa các liên minh theo dõi thế nào: liên minh mỗi người ở ngày đầu, đặt cạnh ngày sau. Chỉ đếm số, không có tên thành viên.",
+    from: "Từ",
+    to: "Đến",
+    action: "Hiện",
+    answer: "Từ {from} đến {to}, lần chuyển lớn nhất là {source} → {dest} ({n}).",
+    answerNone:
+      "Từ {from} đến {to}, không có lần chuyển nào từ {min} thành viên trở lên giữa các liên minh theo dõi.",
+    totals: "Đổi liên minh: {moved} · Mới: {arrived} · Rời: {left}",
+    small:
+      "Các lần chuyển dưới {min} thành viên bị ẩn và không tính vào tổng nào, để không ai bị chỉ ra trong một nhóm nhỏ.",
+    rowNew: "Mới",
+    colLeft: "Rời",
+    legend:
+      "Hàng: liên minh ngày {from}. Cột: liên minh ngày {to}. Mới: không thuộc liên minh theo dõi nào ngày {from}. Rời: không thuộc nào ngày {to}.",
+    caption: "Thành viên theo liên minh ngày {from} (hàng) và ngày {to} (cột)",
+    stayed: "Ở lại",
+    rowStayed: "Ở lại: {n}",
+    newTitle: "Mới trong các liên minh theo dõi",
+    leftTitle: "Đã rời các liên minh theo dõi",
+    notCounted: "Không tính, vì không có lần đọc dùng được vào cả hai ngày: {list}.",
+    order: "Chọn ngày Từ trước ngày Đến.",
+    none: "Chưa đủ hai ngày có lần đọc dùng được.",
+  },
   balance: {
     title: "Cân bằng máy chủ",
     description:
@@ -206,6 +232,22 @@ export const vi = {
     trendSummary: "Top {n} giữ {last} vào {to}, {first} vào {from}.",
     trendFew: "Chưa đủ lần đọc hằng ngày để vẽ xu hướng.",
     day: "Ngày",
+  },
+  standing: {
+    title: "Thứ hạng theo thời gian",
+    help: "Các liên minh theo dõi xếp theo Lực Chiến từ lần đọc mỗi ngày, kèm thay đổi kể từ {from}. Ngày mà một liên minh không được đọc thì không tính. Máy chủ ở đây là tổng của các liên minh theo dõi.",
+    lead: "{label} đứng hạng {rank} theo Lực Chiến, {move} từ {from}.",
+    up: "lên {n} hạng",
+    down: "xuống {n} hạng",
+    held: "không đổi",
+    leadGrowth:
+      "Lực Chiến của liên minh này đổi {growth} kể từ đó; tổng các liên minh theo dõi đổi {server}.",
+    server: "Máy chủ",
+    growthSince: "{growth} kể từ {from}",
+    trend: "Hạng {first} ngày {from}, {last} ngày {to}",
+    thisAlliance: "Liên minh này",
+    detailsHelp: "Hạng mỗi ngày, cũ nhất trước: {days}.",
+    few: "Chưa đủ lần đọc hằng ngày để so sánh các liên minh.",
   },
   history: {
     title: "Lịch sử thành viên",

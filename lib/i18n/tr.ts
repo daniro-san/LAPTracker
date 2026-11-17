@@ -178,6 +178,32 @@ export const tr = {
     turnout: "{n} Members’tan {gainers} tanesi Kills kazandı",
     noTurnout: "henüz savaş katılımı yok",
   },
+  flow: {
+    title: "Üye akışı",
+    tag: "Yalnızca sayılar",
+    lead: "Takip edilen ittifaklar arasında üyelerin nereye gittiği: ilk günde her birinin olduğu ittifak, ikinci günle karşılaştırılmış. Yalnızca sayılar, üye adı yok.",
+    from: "Başlangıç",
+    to: "Bitiş",
+    action: "Göster",
+    answer: "{from} ile {to} arasında en büyük geçiş {source} → {dest} ({n}).",
+    answerNone:
+      "{from} ile {to} arasında takip edilen ittifaklar arasında {min} veya daha fazla üyelik bir geçiş olmadı.",
+    totals: "İttifak değiştiren: {moved} · Yeni: {arrived} · Ayrılan: {left}",
+    small:
+      "{min} üyeden az geçiş gizlenir ve hiçbir toplama katılmaz, böylece küçük bir grupta kimse seçilemez.",
+    rowNew: "Yeni",
+    colLeft: "Ayrılan",
+    legend:
+      "Satırlar: {from} itibarıyla ittifak. Sütunlar: {to} itibarıyla ittifak. Yeni: {from} itibarıyla takip edilen hiçbir ittifakta olmayanlar. Ayrılan: {to} itibarıyla hiçbirinde olmayanlar.",
+    caption: "{from} itibarıyla (satırlar) ve {to} itibarıyla (sütunlar) ittifaka göre üyeler",
+    stayed: "Kaldı",
+    rowStayed: "Kaldı: {n}",
+    newTitle: "Takip edilen ittifaklara yeni gelenler",
+    leftTitle: "Takip edilen ittifaklardan ayrılanlar",
+    notCounted: "Sayılmadı, iki günde de kullanılabilir okuma yok: {list}.",
+    order: "Bitiş gününden önce bir Başlangıç günü seç.",
+    none: "Henüz kullanılabilir okuması olan en az iki gün yok.",
+  },
   balance: {
     title: "Sunucu dengesi",
     description:
@@ -209,6 +235,22 @@ export const tr = {
     trendSummary: "İlk {n} tutuyor: {to} itibarıyla {last}, {from} itibarıyla {first}.",
     trendFew: "Trend çizmek için henüz yeterli günlük okuma yok.",
     day: "Gün",
+  },
+  standing: {
+    title: "Zaman içinde durum",
+    help: "Takip edilen ittifaklar, her günün okumasındaki Might’a göre sıralanır; {from} sonrası değişim de gösterilir. Bir ittifakın okunmadığı gün dışarıda bırakılır. Buradaki sunucu, takip edilen ittifakların toplamıdır.",
+    lead: "{label}, Might’a göre {rank}; {from} sonrası {move}.",
+    up: "{n} basamak yukarı",
+    down: "{n} basamak aşağı",
+    held: "değişmedi",
+    leadGrowth:
+      "Ondan beri Might’ı {growth} değişti; takip edilen ittifakların toplamı {server} değişti.",
+    server: "Takipteki toplam",
+    growthSince: "{from} sonrası {growth}",
+    trend: "{from} itibarıyla sıra {first}, {to} itibarıyla {last}",
+    thisAlliance: "Bu ittifak",
+    detailsHelp: "Her günkü sıra, en eskisi önce: {days}.",
+    few: "İttifakları karşılaştırmak için henüz yeterli günlük okuma yok.",
   },
   history: {
     title: "Üye geçmişi",

@@ -110,6 +110,10 @@ export interface ClockView {
   date: DateFormat | null;
 }
 
+/** A daily read's day ("2026-11-12") as an instant inside that date, for the clock's day formats. Noon
+ * UTC is that date in every zone from UTC−11 to UTC+11, which covers the server and the admins. */
+export const dayDate = (day: string): Date => new Date(`${day}T12:00:00Z`);
+
 /** Dates and times for one request: the viewer's locale, the server's clock or the viewer's own
  * (DESIGN.md). */
 export interface Clock {

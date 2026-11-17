@@ -179,6 +179,32 @@ export const de = {
     turnout: "{gainers} von {n} Members mit gewonnenen Kills",
     noTurnout: "Noch keine Beteiligung am Krieg",
   },
+  flow: {
+    title: "Mitgliederfluss",
+    tag: "Nur Zahlen",
+    lead: "Wohin Members zwischen den erfassten Allianzen gewechselt sind: die Allianz jedes Members am ersten Tag, gegen den zweiten Tag gestellt. Nur Zahlen, keine Namen von Members.",
+    from: "Von",
+    to: "Bis",
+    action: "Zeigen",
+    answer: "Zwischen {from} und {to} war der größte Wechsel {source} → {dest} ({n}).",
+    answerNone:
+      "Zwischen {from} und {to} gab es keinen Wechsel von {min} oder mehr Members zwischen den erfassten Allianzen.",
+    totals: "Allianz gewechselt: {moved} · Neu: {arrived} · Ausgetreten: {left}",
+    small:
+      "Wechsel von weniger als {min} Members sind ausgeblendet und in keiner Zahl enthalten, damit in einer kleinen Gruppe niemand erkennbar ist.",
+    rowNew: "Neu",
+    colLeft: "Ausgetr.",
+    legend:
+      "Zeilen: die Allianz am {from}. Spalten: die Allianz am {to}. Neu: am {from} in keiner erfassten Allianz. Ausgetr.: am {to} in keiner erfassten Allianz.",
+    caption: "Members nach Allianz am {from} (Zeilen) und am {to} (Spalten)",
+    stayed: "Geblieben",
+    rowStayed: "Geblieben: {n}",
+    newTitle: "Neu in den erfassten Allianzen",
+    leftTitle: "Aus den erfassten Allianzen ausgetreten",
+    notCounted: "Nicht gezählt, keine brauchbare Messung an beiden Tagen: {list}.",
+    order: "Der Tag „Von“ muss vor dem Tag „Bis“ liegen.",
+    none: "Bisher haben weniger als zwei Tage eine brauchbare Messung.",
+  },
   balance: {
     title: "Server-Balance",
     description:
@@ -210,6 +236,22 @@ export const de = {
     trendSummary: "Die Top {n} halten am {to} {last}, am {from} {first}.",
     trendFew: "Noch nicht genug Tagesabrufe für einen Verlauf.",
     day: "Tag",
+  },
+  standing: {
+    title: "Rangverlauf",
+    help: "Die erfassten Allianzen nach Might, aus jedem Tagesabruf, mit der Änderung seit {from}. Ein Tag, an dem eine Allianz nicht abgerufen wurde, fehlt. Der Server ist hier die Summe der erfassten Allianzen.",
+    lead: "Seit {from} ist {label} nach Might auf {rank}, {move}.",
+    up: "um {n} nach oben",
+    down: "um {n} nach unten",
+    held: "unverändert",
+    leadGrowth:
+      "Das Might der Allianz hat sich seitdem um {growth} verändert; die Summe der erfassten Allianzen um {server}.",
+    server: "Erfasste Allianzen",
+    growthSince: "{growth} seit {from}",
+    trend: "Rang {first} am {from}, {last} am {to}",
+    thisAlliance: "Diese Allianz",
+    detailsHelp: "Rang an jedem Tag, der älteste zuerst: {days}.",
+    few: "Noch nicht genug Tagesabrufe, um die Allianzen zu vergleichen.",
   },
   history: {
     title: "Mitgliederverlauf",

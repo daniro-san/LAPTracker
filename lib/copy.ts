@@ -10,8 +10,10 @@ import { adminCopy } from "./copy-admin";
 import { balanceCopy } from "./copy-balance";
 import { brandCopy } from "./copy-brand";
 import { discordCopy } from "./copy-discord";
+import { flowCopy } from "./copy-flow";
 import { liveCopy } from "./copy-live";
 import { mergeCopy } from "./copy-merge";
+import { standingCopy } from "./copy-standing";
 import { warCopy } from "./copy-war";
 
 /** The public pages' strings in English: the source every other language's dictionary follows. */
@@ -114,8 +116,12 @@ export const en = {
   },
   /** The merge simulator (D84, #282): two alliances as one against the member cap; see lib/copy-merge.ts. */
   merge: mergeCopy,
+  /** The member flow page (D89, #275): moves between tracked alliances; see lib/copy-flow.ts. */
+  flow: flowCopy,
   /** The server balance page (D85, #283). */
   balance: balanceCopy,
+  /** The alliance page's standing against the server (D90, #274). */
+  standing: standingCopy,
   /** Member history (D60, #197): an alliance's rosters over time, each compared with the one before. */
   history: {
     title: "Member history",

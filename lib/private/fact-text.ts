@@ -1,9 +1,9 @@
 // A member fact's value as words (issue 297, D80): one formatter for the card (made on the server), the
 // editor's "Another officer saved …" and the import's examples (in the browser), so a value reads the
 // same everywhere: 9.90M, 83%, T9, "Europe/Kyiv · UTC+2", English. Pure; it does not load lib/copy.
-import { compactLarge } from "@/lib/compact";
-import type { FactField, FactValues } from "@/lib/private/fact-fields";
-import { offsetLabel, offsetMinutes } from "@/lib/private/time-zones";
+import { compactLarge } from "../compact";
+import type { FactField, FactValues } from "./fact-fields";
+import { offsetLabel, offsetMinutes } from "./time-zones";
 
 export const NONE = "—";
 

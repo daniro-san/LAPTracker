@@ -59,5 +59,8 @@ describe("WhoFought", () => {
     it("shows every row when expanded", () => {
       expect(visibleEntries(rows, 7, true)).toHaveLength(8);
     });
+    it("also keeps a page's own alliance in place when it is outside the first 5", () => {
+      expect(ids(visibleEntries(rows, 7, false, 8))).toEqual([1, 2, 3, 4, 5, 7, 8]);
+    });
   });
 });
