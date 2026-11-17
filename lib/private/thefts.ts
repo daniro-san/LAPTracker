@@ -24,6 +24,7 @@ import {
   type AllianceGroup,
   type FollowUpState,
   type TheftEntry,
+  type TheftKind,
 } from "./theft-groups";
 
 /** `now`, and the server's zone (SERVER_TZ): a report's times and the game week are server time. */
@@ -112,7 +113,7 @@ export async function theftsView(
     attackerKey: r.attackerKey,
     attackerName: r.attackerName,
     attackerTag: r.attackerTag,
-    stolen: r.stolen,
+    kind: r.kind,
     victimUid: r.victimUid,
     victimName: r.victimName,
     source: r.source,
@@ -131,7 +132,7 @@ export interface TypedTheft {
   victimUid: number | null;
   day: string;
   time: string;
-  stolen: "quest_rewards" | null;
+  kind: TheftKind;
   note: string;
   /** Made once per open add sheet (D100): a retry with it adds nothing new. */
   requestId: string;
@@ -186,7 +187,7 @@ export async function addTheft(
     attackerUid: attacker.uid,
     attackerName: attacker.name,
     attackerTag: attacker.tag,
-    stolen: input.stolen,
+    kind: input.kind,
     victimUid: victim?.uid ?? null,
     victimName: victim?.name ?? null,
     source: "typed",

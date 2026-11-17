@@ -1,17 +1,17 @@
 "use client";
 
 // "Add a theft" (issue 321), quick on a phone: who took it and the member it was taken from
-// (TheftFormFields.tsx), the report's server day and time with the viewer's own clock beside it, what was
-// taken, and an optional note. Every control is 44 px or more; the time is typed as 24-hour text.
+// (TheftFormFields.tsx), the report's server day and time with the viewer's own clock beside it, the
+// theft's type, and an optional note. Every control is 44 px or more; the time is typed as 24-hour text.
 import { useState, type FormEvent } from "react";
 
 import { FIELD } from "@/lib/brand/components/controls";
-import { RadioField } from "@/lib/brand/components/RadioField";
 import { Sheet } from "@/lib/brand/components/Sheet";
 import { changedFrom } from "@/lib/brand/components/sheet-close";
 import { fill } from "@/lib/copy";
 import { hhmm, parseTime } from "@/lib/private/calendar-time";
 import type { WorkspaceLanguage } from "@/lib/private/dictionary";
+import { THEFT_KINDS, type TheftKind } from "@/lib/private/theft-groups";
 import { serverInstant } from "@/lib/schedule";
 
 import { sheetWords } from "./sheet-words";
@@ -76,28 +76,31 @@ function When({ t, language, serverZone, day, time, setDay, setTime }: WhenProps
   );
 }
 
-function Stolen(props: {
-  t: TheftWords;
-  value: "quest_rewards" | null;
-  onChange: (v: "quest_rewards" | null) => void;
-}) {
+/** The theft's type, required: game terms, the same in every language (D52). */
+function Kind(props: { t: TheftWords; value: TheftKind | ""; onChange: (v: TheftKind) => void }) {
   const { t, value, onChange } = props;
   return (
-    <fieldset className="mt-4 grid gap-1.5">
-      <legend className="mb-1 font-semibold">{t["thefts.form.stolen"]}</legend>
-      <RadioField
-        name="theft-stolen"
-        checked={value !== null}
-        onChange={() => onChange("quest_rewards")}
-        label={t["thefts.stolen.quest_rewards"]}
-      />
-      <RadioField
-        name="theft-stolen"
-        checked={value === null}
-        onChange={() => onChange(null)}
-        label={t["thefts.stolen.none"]}
-      />
-    </fieldset>
+    <div className="mt-4">
+      <label htmlFor="theft-kind" className="font-semibold">
+        {t["thefts.form.kind"]}
+      </label>
+      <select
+        id="theft-kind"
+        required
+        value={value}
+        onChange={(e) => onChange(e.target.value as TheftKind)}
+        className={`${FIELD} mt-1 block`}
+      >
+        <option value="" disabled>
+          —
+        </option>
+        {THEFT_KINDS.map((k) => (
+          <option key={k} value={k}>
+            {t[`thefts.kind.${k}`]}
+          </option>
+        ))}
+      </select>
+    </div>
   );
 }
 
@@ -107,7 +110,7 @@ function useTheftForm(props: FormProps) {
   const [victim, setVictim] = useState<Member | null>(null);
   const [day, setDay] = useState(props.start.day);
   const [time, setTime] = useState(props.start.time);
-  const [stolen, setStolen] = useState<"quest_rewards" | null>("quest_rewards");
+  const [kind, setKind] = useState<TheftKind | "">("");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -128,7 +131,7 @@ function useTheftForm(props: FormProps) {
       victimUid: victim?.uid ?? null,
       day,
       time: hhmm(minute),
-      stolen,
+      kind,
       note,
       requestId,
     };
@@ -139,16 +142,10 @@ function useTheftForm(props: FormProps) {
     setError(t[`thefts.e.${r}` as keyof TheftWords] ?? t["thefts.e.failed"]);
   };
   const fields = { attacker, setAttacker, victim, setVictim, day, setDay, time, setTime };
-  const now = { attacker, victim, day, time, stolen, note };
-  const start: typeof now = {
-    ...props.start,
-    attacker: null,
-    victim: null,
-    stolen: "quest_rewards",
-    note: "",
-  };
+  const now = { attacker, victim, day, time, kind, note };
+  const start: typeof now = { ...props.start, attacker: null, victim: null, kind: "", note: "" };
   const dirty = changedFrom(start, now);
-  return { ...fields, stolen, setStolen, note, setNote, busy, error, submit, dirty };
+  return { ...fields, kind, setKind, note, setNote, busy, error, submit, dirty };
 }
 
 export function TheftForm(props: FormProps) {
@@ -178,7 +175,7 @@ export function TheftForm(props: FormProps) {
           <VictimField t={t} roster={props.roster} value={f.victim} onChange={f.setVictim} />
         </div>
         <When {...props} day={f.day} time={f.time} setDay={f.setDay} setTime={f.setTime} />
-        <Stolen t={t} value={f.stolen} onChange={f.setStolen} />
+        <Kind t={t} value={f.kind} onChange={f.setKind} />
         <label htmlFor="theft-note" className="mt-4 block font-semibold">
           {t["thefts.note"]}
         </label>

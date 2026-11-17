@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 
+import { PGlite } from "@electric-sql/pglite";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import type { Db } from "../db";
@@ -71,7 +72,7 @@ const typed = (attacker: { uid: number } | { name: string; tag: string }, victim
   victimUid,
   day: "2026-11-15",
   time: "13:46",
-  stolen: "quest_rewards" as const,
+  kind: "caravan" as const,
   note: "",
   requestId: randomUUID(),
 });
@@ -108,27 +109,27 @@ describe("the Secret Ops report save hook (issues 299, 321)", () => {
   ]);
   const draft = { victimUid: 11, readAt: NOW, entries };
 
-  it("saves the thefts, kind null as not known, and leaves out help and our own members", async () => {
+  it("saves the thefts as Ops, unread sentences too, and leaves out help and our own members", async () => {
     const ogs = await signedIn("ogs");
     expect(entries.filter((e) => e.kind === null)).toHaveLength(4);
     expect(await saveSecretOpsDraft(db, ogs, draft, CLOCK)).toEqual({
       saved: 6,
       // 11k re-recorded image 54: a stray `[lel` and the second help line (sentence and time misread)
-      // come back with kind null; the first is saved as not known, the second is our own member.
+      // come back with kind null; the first is saved, the second is our own member.
       left: { help: 1, own: 2, duplicate: 0 },
     });
     const rows = await listThefts(db, ogs.workspaceId);
     expect(
-      rows.map((r) => [r.attackerKey, r.attackerTag, r.at?.toISOString() ?? null, r.stolen]),
+      rows.map((r) => [r.attackerKey, r.attackerTag, r.at?.toISOString() ?? null, r.kind]),
     ).toEqual([
-      ["name:stene", "1b8R", "2026-11-15T13:48:00.000Z", "quest_rewards"],
-      // The stray `[lel`: kind null and no time, saved as not known for the officer to remove.
-      ["name:lel", "", null, null],
-      ["uid:41", "RPD", "2026-11-15T13:47:00.000Z", "quest_rewards"],
-      ["uid:41", "RPD", "2026-11-15T13:47:00.000Z", "quest_rewards"],
-      ["name:cinalice", "ANM", "2026-11-14T19:34:00.000Z", "quest_rewards"],
-      // kind null: a theft whose sentence was not read, so what was taken is unknown.
-      ["uid:41", "RPD", "2026-11-14T11:00:00.000Z", null],
+      ["name:stene", "1b8R", "2026-11-15T13:48:00.000Z", "ops"],
+      // The stray `[lel`: kind null and no time, saved for the officer to remove.
+      ["name:lel", "", null, "ops"],
+      ["uid:41", "RPD", "2026-11-15T13:47:00.000Z", "ops"],
+      ["uid:41", "RPD", "2026-11-15T13:47:00.000Z", "ops"],
+      ["name:cinalice", "ANM", "2026-11-14T19:34:00.000Z", "ops"],
+      // kind null: a theft whose sentence was not read; still from a Secret Ops report.
+      ["uid:41", "RPD", "2026-11-14T11:00:00.000Z", "ops"],
     ]);
     expect(rows.every((r) => r.source === "photo" && r.victimName === "Seesky")).toBe(true);
   });
@@ -218,5 +219,35 @@ describe("thefts between two workspaces (D71)", () => {
     });
     expect(await removeTheft(db, ogs, row?.id ?? 0)).toBe("ok");
     expect(await listThefts(db, ogs.workspaceId)).toEqual([]);
+  });
+});
+
+describe("the thefts_kind migration (D97, amended 2026-11-17)", () => {
+  it("turns quest rewards into Ops and keeps an unknown as null", async () => {
+    const dir = `${import.meta.dirname}/../../drizzle`;
+    const journal = JSON.parse(readFileSync(`${dir}/meta/_journal.json`, "utf8")) as {
+      entries: { tag: string }[];
+    };
+    const at = journal.entries.findIndex((e) => e.tag.endsWith("_thefts_kind"));
+    const pg = new PGlite();
+    const apply = async (tag: string) => {
+      for (const statement of readFileSync(`${dir}/${tag}.sql`, "utf8").split(
+        "--> statement-breakpoint",
+      ))
+        await pg.exec(statement);
+    };
+    for (const e of journal.entries.slice(0, at)) await apply(e.tag);
+    await pg.exec(`
+      insert into workspaces (slug, union_id, discord_guild_id, leader_role_ids) values ('ogs', 1, '1', '{}');
+      insert into thefts (workspace_id, attacker_key, attacker_name, attacker_tag, stolen, source, created_at)
+      values (1, 'name:a', 'A', '', 'quest_rewards', 'photo', now()), (1, 'name:b', 'B', '', null, 'typed', now());
+    `);
+    await apply(journal.entries[at]?.tag ?? "");
+    const { rows } = await pg.query("select attacker_key, kind from thefts order by id");
+    expect(rows).toEqual([
+      { attacker_key: "name:a", kind: "ops" },
+      { attacker_key: "name:b", kind: null },
+    ]);
+    await pg.close();
   });
 });
