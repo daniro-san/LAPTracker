@@ -227,6 +227,15 @@ function Notes(p: FieldsProps) {
           />
         </label>
         <label className="mt-2 block text-body-sm">
+          {words["facts.awayFrom"]}
+          <input
+            type="date"
+            value={form.awayFrom}
+            onChange={(e) => edit("away", { awayFrom: e.target.value })}
+            className={`${INPUT} mt-1 block max-w-56`}
+          />
+        </label>
+        <label className="mt-2 block text-body-sm">
           {words["facts.awayDay"]}
           <input
             type="date"

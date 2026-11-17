@@ -131,6 +131,8 @@ export const calendarFr: CalendarWords = {
   "calendar.month.count.one": "{n} événement",
   "calendar.month.count.other": "{n} événements",
   "calendar.roles.choose": "Choisir les rôles ›",
+  "calendar.rollCall": "Appel ›",
+  "calendar.pickTeam": "Choisir l’équipe ›",
   "calendar.delete.weekly": "Sauter ou supprimer",
   "calendar.delete.askWeekly": "Sauter une semaine ou arrêter la répétition ?",
   "calendar.conflict.justNow": "à l’instant",

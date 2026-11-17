@@ -41,7 +41,10 @@ const VALUES = {
   timeZone: z.string().max(64).refine(isZone),
   languages: z.array(z.enum(LANGUAGES)).max(LANGUAGES.length),
   status: z.enum(OFFICER_STATUSES),
-  away: z.object({ text: text(500), until: DAY.nullable() }).strict(),
+  away: z
+    .object({ text: text(500), from: DAY.nullable().optional(), until: DAY.nullable() })
+    .strict()
+    .refine((a) => !a.from || !a.until || a.from <= a.until),
   notes: text(4000),
 } satisfies Record<FactField, z.ZodType>;
 
@@ -83,7 +86,8 @@ function normalise(c: FactChange): unknown {
   const v = c.value;
   if (v === null || v === "") return null;
   if (Array.isArray(v)) return v.length === 0 ? null : LANGUAGES.filter((l) => v.includes(l));
-  if (typeof v === "object" && "until" in v) return v.text === "" && v.until === null ? null : v;
+  if (typeof v === "object" && "until" in v)
+    return v.text === "" && v.until === null && !v.from ? null : v;
   return v;
 }
 

@@ -22,6 +22,7 @@ export interface Form {
   languages: string[];
   status: "" | OfficerStatus;
   awayText: string;
+  awayFrom: string;
   awayUntil: string;
   notes: string;
 }
@@ -45,6 +46,7 @@ export const EDITOR_KEYS = [
   "facts.failed",
   "facts.computed",
   "facts.awayText",
+  "facts.awayFrom",
   "facts.awayDay",
   "facts.mightHint",
   "facts.adHint",
@@ -180,6 +182,7 @@ export function formOf(facts: MemberFacts, language: string): Form {
     languages: v("languages") ?? [],
     status: v("status") ?? "",
     awayText: text(away?.text),
+    awayFrom: text(away?.from),
     awayUntil: text(away?.until),
     notes: text(v("notes")),
   };
@@ -193,7 +196,7 @@ const INPUTS: Record<FactField, (keyof Form)[]> = {
   timeZone: ["timeZone"],
   languages: ["languages"],
   status: ["status"],
-  away: ["awayText", "awayUntil"],
+  away: ["awayText", "awayFrom", "awayUntil"],
   notes: ["notes"],
 };
 
@@ -238,14 +241,18 @@ export function percentOf(typed: string): number | null | undefined {
   return n <= 100 ? n : undefined;
 }
 
+/** The away note as typed; null when nothing is. The first day is kept only when given (issue 298). */
+function awayOf(form: Form): FactValues["away"] | null {
+  const text = form.awayText.trim();
+  if (!text && !form.awayFrom && !form.awayUntil) return null;
+  return { text, ...(form.awayFrom && { from: form.awayFrom }), until: form.awayUntil || null };
+}
+
 /** Each field's value from the form; `undefined` when what was typed is not a value. */
 export function valuesOf(
   form: Form,
   readMight: (text: string) => number | null,
 ): { [F in FactField]: FactValues[F] | null | undefined } {
-  const awayText = form.awayText.trim();
-  const away =
-    awayText || form.awayUntil ? { text: awayText, until: form.awayUntil || null } : null;
   return {
     squadMight: blank(form.squadMight) ? null : (readMight(form.squadMight) ?? undefined),
     adTech: percentOf(form.adTech),
@@ -254,7 +261,7 @@ export function valuesOf(
     languages:
       form.languages.length > 0 ? LANGUAGES.filter((l) => form.languages.includes(l)) : null,
     status: form.status || null,
-    away,
+    away: awayOf(form),
     notes: form.notes.trim() || null,
   };
 }

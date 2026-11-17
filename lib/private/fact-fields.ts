@@ -22,9 +22,13 @@ export type FactSource = (typeof FACT_SOURCES)[number];
 export const OFFICER_STATUSES = ["break", "help"] as const;
 export type OfficerStatus = (typeof OFFICER_STATUSES)[number];
 
-/** An away note; `until` is the last server day away (YYYY-MM-DD), or null when nobody knows. */
+/**
+ * An away note; `until` is the last server day away (YYYY-MM-DD), or null when nobody knows. `from` is the
+ * first day away (issue 298); a note without it runs from the day it was written.
+ */
 export interface AwayNote {
   text: string;
+  from?: string | null;
   until: string | null;
 }
 
@@ -105,6 +109,22 @@ const rank = (code: string) => {
   return i < 0 ? LANGUAGES.length : i;
 };
 
-/** The away note that still runs on server day `today` (YYYY-MM-DD): one with an end day not past. */
-export const awayUntil = (away: AwayNote | null | undefined, today: string): string | null =>
-  away?.until && away.until >= today ? away.until : null;
+/**
+ * The last day of an away note that runs on server day `day` (YYYY-MM-DD): its first day, when it has one,
+ * is not after `day`, and its last day is not before it. Null otherwise.
+ */
+export const awayUntil = (away: AwayNote | null | undefined, day: string): string | null =>
+  away?.until && away.until >= day && (!away.from || away.from <= day) ? away.until : null;
+
+/**
+ * Whether a member is left out on server day `day` (roll calls, caravan suggestions): on a break (an
+ * officer's status), or an away note that runs that day. `until` is that note's last day, else null.
+ */
+export function awayOn(
+  facts: Pick<MemberFacts, "status" | "away"> | undefined,
+  day: string,
+): { until: string | null } | null {
+  const until = awayUntil(facts?.away?.value, day);
+  if (until !== null) return { until };
+  return facts?.status?.value === "break" ? { until: null } : null;
+}

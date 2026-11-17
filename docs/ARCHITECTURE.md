@@ -50,6 +50,12 @@ lib/private/*.ts    the workspace (D71): requireWorkspace and its branded Worksp
                     caravan-suggest.ts (pure: the caravan suggestions' ranking) and caravans.ts (their read),
                     dictionary.calendar*.ts (its words); its tables are in lib/schema-calendar.ts, its reads and
                     writes in lib/repo/calendar.ts.
+                    The Roll call tab (D103): roll-call.ts (occasions and the writes: marks with their
+                    version check, "the rest" and its undo, hand-added roll calls, Elixir Scramble teams),
+                    roll-call-view.ts (the pages' reads), roll-call-rules.ts (pure, browser-safe: kinds,
+                    marks, "the rest", counts, order, team suggestions), roll-call-words.ts,
+                    dictionary.rollcall*.ts; tables in lib/schema-rollcall.ts, reads and writes in
+                    lib/repo/roll-call.ts.
                     The thefts log (D97): thefts.ts (its read and writes, the attacker search), theft-groups.ts
                     (pure: attacker key, groups and counts, follow-up state), thefts-import.ts (the screenshot
                     import's save hook for Secret Ops reports), dictionary.thefts.ts (its words); tables in

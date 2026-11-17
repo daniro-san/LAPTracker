@@ -1,0 +1,127 @@
+// POST /api/w/[slug]/roll-call — the Roll call tab's writes (issue 298, D103): add a roll call by hand
+// (with the add sheet's request id, D100), mark one member (with the version the officer saw), mark "the
+// rest", undo that, and pick or drop Elixir Scramble team members. Same origin and JSON only (D71), zod-
+// parsed, a session of this workspace (401 signed_out, D99). A mark another officer changed since answers
+// 409 with the newer mark in the officer's words. The lib calls run in `privately`; nothing is logged.
+import { z } from "zod";
+
+import { requireWorkspace } from "@/lib/private/access";
+import { WORKSPACE_LANG_COOKIE } from "@/lib/private/cookies";
+import { pickWorkspaceLanguage, WORKSPACE_DICTIONARIES } from "@/lib/private/dictionary";
+import {
+  isSameOriginJson,
+  NO_STORE,
+  privately,
+  privateError,
+  requestCookies,
+} from "@/lib/private/http";
+import { addCall, markOne, markRest, setTeam, undoMarks } from "@/lib/private/roll-call";
+import { ADDED_KINDS, MARKS } from "@/lib/private/roll-call-rules";
+import { staleSaid } from "@/lib/private/roll-call-words";
+import { SLUG } from "@/lib/private/sign-in";
+import { withContext } from "@/lib/route";
+
+const id = z.number().int().positive();
+const uid = z.number().int().positive().max(Number.MAX_SAFE_INTEGER);
+const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+const occasion = z.union([z.object({ id }).strict(), z.object({ entry: id, week: day }).strict()]);
+const uids = z.array(uid).min(1).max(150);
+const body = z.discriminatedUnion("action", [
+  z
+    .object({
+      action: z.literal("add"),
+      kind: z.enum(ADDED_KINDS),
+      day,
+      requestId: z.uuid(),
+    })
+    .strict(),
+  z
+    .object({
+      action: z.literal("mark"),
+      occasion,
+      uid,
+      mark: z.enum(MARKS).nullable(),
+      version: z.number().int().min(0),
+    })
+    .strict(),
+  z.object({ action: z.literal("rest"), occasion, uids }).strict(),
+  z
+    .object({
+      action: z.literal("undo"),
+      occasion,
+      items: z
+        .array(z.object({ uid, version: z.number().int().min(1) }).strict())
+        .min(1)
+        .max(150),
+    })
+    .strict(),
+  z.object({ action: z.literal("team"), occasion, uids, on: z.boolean() }).strict(),
+]);
+type Body = z.infer<typeof body>;
+
+const ok = (extra: object = {}) => Response.json({ ok: true, ...extra }, { headers: NO_STORE });
+const STATUS = { not_found: 404, not_member: 400, invalid: 400, full: 409, other_team: 409 };
+
+type Access = Extract<Awaited<ReturnType<typeof requireWorkspace>>, { ok: true }>;
+type Ctx = { db: Parameters<typeof addCall>[0]; access: Access; now: Date; request: Request };
+
+/** A refused mark: the newer one, who set it and when, in the officer's words. */
+async function mark(input: Extract<Body, { action: "mark" }>, c: Ctx) {
+  const result = await privately("roll_call.mark", () => markOne(c.db, c.access, input, c.now));
+  if (result.ok) return ok({ version: result.version });
+  if (result.code !== "stale") return privateError(STATUS[result.code], result.code);
+  const language = pickWorkspaceLanguage(
+    requestCookies(c.request).get(WORKSPACE_LANG_COOKIE)?.value,
+    c.request.headers.get("accept-language"),
+  );
+  const n = result.newest;
+  const said = staleSaid(n, result.kind, WORKSPACE_DICTIONARIES[language], language, c.now);
+  return Response.json(
+    { code: "stale", mark: n?.mark ?? null, version: n?.version ?? 0, said },
+    { status: 409, headers: NO_STORE },
+  );
+}
+
+async function run(input: Body, c: Ctx): Promise<Response> {
+  const { db, access, now } = c;
+  switch (input.action) {
+    case "add": {
+      const made = await privately("roll_call.add", () =>
+        addCall(db, access, input, input.requestId),
+      );
+      return ok({ id: made.id });
+    }
+    case "mark":
+      return mark(input, c);
+    case "team": {
+      const done = await privately("roll_call.team", () => setTeam(db, access, input, now));
+      return done.ok ? ok(done) : privateError(STATUS[done.code], done.code);
+    }
+    default: {
+      const done = await privately(`roll_call.${input.action}`, () =>
+        input.action === "rest"
+          ? markRest(db, access, input, now)
+          : undoMarks(db, access, input, now),
+      );
+      return done.ok ? ok(done) : privateError(STATUS[done.code], done.code);
+    }
+  }
+}
+
+export async function POST(
+  request: Request,
+  { params }: { params: Promise<{ slug: string }> },
+): Promise<Response> {
+  const { slug } = await params;
+  if (!SLUG.test(slug)) return privateError(404, "not_found");
+  if (!isSameOriginJson(request)) return privateError(403, "forbidden");
+  const parsed = body.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) return privateError(400, "bad_request");
+  const jar = requestCookies(request);
+  return withContext("/api/w/[slug]/roll-call", async (ctx, db) => {
+    const now = ctx.now();
+    const access = await requireWorkspace(db, slug, jar, now);
+    if (!access.ok) return privateError(401, "signed_out");
+    return run(parsed.data, { db, access, now, request });
+  });
+}

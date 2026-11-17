@@ -10,7 +10,7 @@ import { pickableMembers } from "./calendar";
 import type { Placed } from "./calendar-model";
 import { addDays, weekdayIndex } from "./calendar-time";
 import { suggest, type Role, type Suggestion } from "./caravan-suggest";
-import { awayUntil } from "./fact-fields";
+import { awayOn } from "./fact-fields";
 import { factsOf } from "./member-facts";
 
 /** Per caravan week (`entry:week`), its suggestions; caravans only. */
@@ -36,8 +36,7 @@ export async function caravanSuggestions(
     caravans.map((p) => {
       const key = `${p.entry.id}:${p.week}`;
       const candidates = members.map((m) => {
-        const f = facts.get(m.uid);
-        const away = f?.status?.value === "break" || awayUntil(f?.away?.value, p.day) !== null;
+        const away = awayOn(facts.get(m.uid), p.day) !== null;
         return { ...m, active: active.get(m.uid) ?? null, away };
       });
       const seated = [p.row?.coachUid, p.row?.secondUid].filter((u): u is number => u != null);

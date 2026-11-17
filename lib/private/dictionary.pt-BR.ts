@@ -5,6 +5,7 @@ import { calendarPt } from "./dictionary.calendar.pt-BR";
 import { importPt } from "./dictionary.import";
 import { membersPt } from "./dictionary.members.pt-BR";
 import { noticesPt } from "./dictionary.notices";
+import { rollPt } from "./dictionary.rollcall.pt-BR";
 import { shotsPt } from "./dictionary.shots.pt-BR";
 import { theftsPt } from "./dictionary.thefts";
 import { translatePt } from "./dictionary.translate";
@@ -12,6 +13,7 @@ import { translatePt } from "./dictionary.translate";
 export const pt: WorkspaceDictionary = {
   ...calendarPt,
   ...membersPt,
+  ...rollPt,
   "app.name": "Mesa dos oficiais",
   "tab.aria": "Seções",
   "tab.home": "Início",
@@ -210,6 +212,7 @@ export const pt: WorkspaceDictionary = {
   "facts.failed": "Não foi possível salvar. Tente de novo.",
   "facts.computed": "Automático (agora: {status})",
   "facts.awayText": "O que a pessoa disse",
+  "facts.awayFrom": "Primeiro dia ausente",
   "facts.awayDay": "Último dia ausente",
   "facts.mightHint": "12,3 ou 12.300.000",
   "facts.adHint": "De 0 a 100",

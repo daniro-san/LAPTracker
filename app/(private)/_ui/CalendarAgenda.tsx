@@ -12,6 +12,7 @@ import { chip } from "@/lib/brand/components/controls";
 import { Tag } from "@/lib/brand/components/Tag";
 import { fill } from "@/lib/copy";
 import { mondayOf } from "@/lib/private/calendar-time";
+import { FROM_CALENDAR } from "@/lib/private/roll-call-rules";
 
 import type { AgendaDay, AgendaItem, CalendarSheetWords } from "./calendar-data";
 import { EntryForm, type FormProps } from "./EntryForm";
@@ -39,7 +40,13 @@ const useLoadedAt = () =>
     () => null,
   );
 
-/** The caravan's roles, or "Choose roles ›" to that week's caravans while none is chosen. */
+const LINK =
+  "inline-flex min-h-11 items-center font-semibold text-plum underline underline-offset-4";
+
+/**
+ * The caravan's roles, or "Choose roles ›" to that week's caravans while none is chosen; for a KvK, an
+ * Undead Siege or an Elixir Scramble team, its roll call (and the team to pick, issue 298).
+ */
 function Roles({
   item,
   words,
@@ -50,11 +57,26 @@ function Roles({
   slug: string;
 }) {
   if (item.roles) return <p className="text-body-sm">{item.roles}</p>;
+  if (FROM_CALENDAR[item.form.kind]) {
+    const query = `entry=${item.entry}&week=${item.week}`;
+    return (
+      <p className="flex flex-wrap gap-x-5">
+        {item.form.kind === "elixir" && (
+          <a href={`/w/${slug}/roll-call/team?${query}`} className={LINK}>
+            {words["calendar.pickTeam"]}
+          </a>
+        )}
+        <a href={`/w/${slug}/roll-call/mark?${query}`} className={LINK}>
+          {words["calendar.rollCall"]}
+        </a>
+      </p>
+    );
+  }
   if (item.form.kind !== "caravan") return null;
   return (
     <a
       href={`/w/${slug}/calendar/caravans?week=${mondayOf(item.day)}#car-${item.key}`}
-      className="inline-flex min-h-11 items-center font-semibold text-plum underline underline-offset-4"
+      className={LINK}
     >
       {words["calendar.roles.choose"]}
     </a>

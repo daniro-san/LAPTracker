@@ -1,0 +1,174 @@
+// roll_calls, roll_call_marks and roll_call_team (issue 298, D103): plain reads and writes, each inside one
+// workspace. Which marks a roll call takes, the version check and the words stay in lib/private.
+import { and, desc, eq, inArray, isNull, ne, sql } from "drizzle-orm";
+
+import type { Db } from "../db";
+import { rollCallMarks, rollCalls, rollCallTeam, workspaceUsers } from "../schema";
+
+export type RollCallRow = typeof rollCalls.$inferSelect;
+/** A connection or a transaction. */
+type Tx = Pick<Db, "select" | "insert" | "delete">;
+
+export interface MarkRow {
+  rollCallId: number;
+  uid: number;
+  version: number;
+  mark: string | null;
+  /** The officer's chosen name, else their Discord name; null when unknown. */
+  by: string | null;
+  at: Date;
+}
+
+const markColumns = {
+  rollCallId: rollCallMarks.rollCallId,
+  uid: rollCallMarks.uid,
+  version: rollCallMarks.version,
+  mark: rollCallMarks.mark,
+  by: sql<string | null>`coalesce(${workspaceUsers.chosenName}, ${workspaceUsers.displayName})`,
+  at: rollCallMarks.writtenAt,
+};
+
+export async function findCall(
+  db: Db,
+  workspaceId: number,
+  where: { id: number } | { entryId: number; week: string } | { requestId: string },
+): Promise<RollCallRow | null> {
+  const match =
+    "id" in where
+      ? eq(rollCalls.id, where.id)
+      : "requestId" in where
+        ? eq(rollCalls.requestId, where.requestId)
+        : and(eq(rollCalls.entryId, where.entryId), eq(rollCalls.week, where.week));
+  const [row] = await db
+    .select()
+    .from(rollCalls)
+    .where(and(eq(rollCalls.workspaceId, workspaceId), match))
+    .limit(1);
+  return row ?? null;
+}
+
+/** A roll call added by hand for this kind and day (no Calendar entry), so a second add opens it. */
+export async function findAdded(
+  db: Db,
+  workspaceId: number,
+  kind: string,
+  day: string,
+): Promise<RollCallRow | null> {
+  const [row] = await db
+    .select()
+    .from(rollCalls)
+    .where(
+      and(
+        eq(rollCalls.workspaceId, workspaceId),
+        eq(rollCalls.kind, kind),
+        eq(rollCalls.day, day),
+        isNull(rollCalls.entryId),
+      ),
+    )
+    .orderBy(rollCalls.id)
+    .limit(1);
+  return row ?? null;
+}
+
+/** A new roll call's id; null when another one with its entry and week, or its request id, won. */
+export async function insertCall(
+  db: Db,
+  values: typeof rollCalls.$inferInsert,
+): Promise<number | null> {
+  const [row] = await db
+    .insert(rollCalls)
+    .values(values)
+    .onConflictDoNothing()
+    .returning({ id: rollCalls.id });
+  return row?.id ?? null;
+}
+
+/** Every roll call of the weeks that start on these Mondays. */
+export async function callsOfWeeks(db: Db, workspaceId: number, weeks: string[]) {
+  return db
+    .select()
+    .from(rollCalls)
+    .where(and(eq(rollCalls.workspaceId, workspaceId), inArray(rollCalls.week, weeks)))
+    .orderBy(rollCalls.day, rollCalls.id);
+}
+
+/** The newest mark of each member in each of these roll calls. */
+export async function newestMarks(db: Db, callIds: number[]): Promise<MarkRow[]> {
+  if (callIds.length === 0) return [];
+  return db
+    .selectDistinctOn([rollCallMarks.rollCallId, rollCallMarks.uid], markColumns)
+    .from(rollCallMarks)
+    .leftJoin(workspaceUsers, eq(workspaceUsers.id, rollCallMarks.writtenBy))
+    .where(inArray(rollCallMarks.rollCallId, callIds))
+    .orderBy(rollCallMarks.rollCallId, rollCallMarks.uid, desc(rollCallMarks.version));
+}
+
+/** One member's newest mark in a roll call, or null before the first. */
+export async function newestMark(db: Db, callId: number, uid: number): Promise<MarkRow | null> {
+  const [row] = await db
+    .select(markColumns)
+    .from(rollCallMarks)
+    .leftJoin(workspaceUsers, eq(workspaceUsers.id, rollCallMarks.writtenBy))
+    .where(and(eq(rollCallMarks.rollCallId, callId), eq(rollCallMarks.uid, uid)))
+    .orderBy(desc(rollCallMarks.version))
+    .limit(1);
+  return row ?? null;
+}
+
+/** Appends marks; returns the ones stored. A version already taken (another write won) is skipped. */
+export async function insertMarks(
+  db: Db,
+  rows: (typeof rollCallMarks.$inferInsert)[],
+): Promise<{ uid: number; version: number }[]> {
+  if (rows.length === 0) return [];
+  return db
+    .insert(rollCallMarks)
+    .values(rows)
+    .onConflictDoNothing()
+    .returning({ uid: rollCallMarks.uid, version: rollCallMarks.version });
+}
+
+/** The members of these Elixir Scramble teams. */
+export async function teamsOf(db: Pick<Db, "select">, callIds: number[]) {
+  if (callIds.length === 0) return [];
+  return db
+    .select({ rollCallId: rollCallTeam.rollCallId, uid: rollCallTeam.uid, name: rollCallTeam.name })
+    .from(rollCallTeam)
+    .where(inArray(rollCallTeam.rollCallId, callIds))
+    .orderBy(rollCallTeam.addedAt, rollCallTeam.uid);
+}
+
+/** Locks a roll call's row for the rest of the transaction, so team changes to it run one at a time. */
+export async function lockCall(tx: Tx, callId: number): Promise<void> {
+  await tx
+    .select({ id: rollCalls.id })
+    .from(rollCalls)
+    .where(eq(rollCalls.id, callId))
+    .for("update");
+}
+
+/** The members on the other Elixir Scramble teams of the same workspace and week, with their team. */
+export async function otherTeams(tx: Tx, call: RollCallRow) {
+  return tx
+    .select({ uid: rollCallTeam.uid, variant: rollCalls.variant })
+    .from(rollCallTeam)
+    .innerJoin(rollCalls, eq(rollCalls.id, rollCallTeam.rollCallId))
+    .where(
+      and(
+        eq(rollCalls.workspaceId, call.workspaceId),
+        eq(rollCalls.kind, "elixir"),
+        eq(rollCalls.week, call.week),
+        ne(rollCalls.id, call.id),
+      ),
+    );
+}
+
+export async function addToTeam(tx: Tx, rows: (typeof rollCallTeam.$inferInsert)[]) {
+  if (rows.length > 0) await tx.insert(rollCallTeam).values(rows).onConflictDoNothing();
+}
+
+export async function removeFromTeam(tx: Tx, callId: number, uid: number) {
+  await tx
+    .delete(rollCallTeam)
+    .where(and(eq(rollCallTeam.rollCallId, callId), eq(rollCallTeam.uid, uid)));
+}
