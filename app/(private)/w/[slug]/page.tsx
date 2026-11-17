@@ -16,7 +16,7 @@ import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dicti
 import { MAX_PICTURES } from "@/lib/private/import";
 import { toReview, type ReviewItem } from "@/lib/private/import-view";
 import { cardFormats, progressText } from "@/lib/private/member-card";
-import { membersView, type MembersView } from "@/lib/private/members";
+import { membersView, progressHistory, type MembersView } from "@/lib/private/members";
 import { needsAWord, whoOf } from "@/lib/private/members-list";
 import { plural } from "@/lib/private/members-sheet";
 import { matchOnRead, toMatch } from "@/lib/private/pending-members";
@@ -148,11 +148,11 @@ function MembersPart(props: {
               <span className="font-semibold text-ink/75">{t["thanks.progress"]}: </span>
               {view.thanks.progress.map((p, i) => (
                 <span key={p.uid}>
-                  {i > 0 && ", "}
-                  <span translate="no" className="font-semibold">
+                  {i > 0 && "; "}
+                  <bdi translate="no" className="font-semibold">
                     {p.name}
-                  </span>{" "}
-                  ({progressText(p, t, language)})
+                  </bdi>{" "}
+                  {progressText(p, t)}
                 </span>
               ))}
             </p>
@@ -246,7 +246,7 @@ export default async function WorkspacePage({
     const [items, placed, view] = await Promise.all([
       toReview(db, access, now),
       calendarDays(db, access, days.from, days.to),
-      membersView(db, access, now, zone),
+      progressHistory(db, access).then((history) => membersView(db, access, now, zone, history)),
     ]);
     return { access, items, placed, view, toMatch: toMatch(pending, view.readAt).length };
   });

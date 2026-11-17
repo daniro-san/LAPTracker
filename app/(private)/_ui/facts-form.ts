@@ -73,6 +73,8 @@ export const EDITOR_KEYS = [
   "shot.read",
   "shot.reading",
   "shot.failed",
+  "shot.busy",
+  "shot.notKept",
   "tz.choose",
   "tz.search",
   "tz.searchAria",
@@ -107,12 +109,13 @@ const UPDATES_KEYS = [
   "shot.read",
   "shot.reading",
   "shot.failed",
+  "shot.busy",
+  "shot.notKept",
 ] as const;
 export type UpdatesWords = Pick<WorkspaceDictionary, (typeof UPDATES_KEYS)[number]>;
 
 export const updatesWords = (t: WorkspaceDictionary): UpdatesWords =>
   Object.fromEntries(UPDATES_KEYS.map((k) => [k, t[k]])) as UpdatesWords;
-
 /** The import screen's words (SheetImport), sent to the client once. */
 export const IMPORT_KEYS = [
   "import.paste",

@@ -66,7 +66,7 @@ export interface DraftSummary {
 }
 
 export interface Sent {
-  source: "desk" | "discord";
+  source: "desk" | "discord" | "pasted";
   sentBy: string | null;
   /** The server day the pictures belong to. */
   pictureDay: string;
@@ -150,6 +150,7 @@ export async function createDrafts(
       at.map((i) => (pictures[i] as PictureText).lines),
       screen.scope,
       ownTag(access),
+      sent.source === "pasted",
     );
     if (!read || read.rows.length === 0) {
       for (const i of at) outcomes[i] = { status: "empty", kind: screen.kind };
@@ -342,7 +343,8 @@ export async function retype(
   // A tab the officer has not picked yet keeps the draft's guess, still unconfirmed.
   const scoped = SCOPED.includes(screen.kind);
   const scope = scoped ? (screen.scope ?? (found.draft.scope as Scope | null) ?? "weekly") : null;
-  const read = hook.read(found.draft.pages, scope, ownTag(access));
+  const pasted = found.draft.source === "pasted";
+  const read = hook.read(found.draft.pages, scope, ownTag(access), pasted);
   const rows = matched(read.rows, await candidatesOf(db, access, now), hook);
   const sure = !scoped || screen.scope !== null;
   const change = { kind: screen.kind, scope, scopeSure: sure, rows, leftOut: read.leftOut };

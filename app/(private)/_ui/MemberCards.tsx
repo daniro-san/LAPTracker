@@ -55,8 +55,9 @@ export function Facts({
             <dt className="shrink-0 text-ink/75">{l.label}</dt>
             <dd className="min-w-0 text-right break-words whitespace-pre-line">
               <span className="tabular-nums">{l.value}</span>
-              {/* D109: the change since the version before ("+0.4M since …", "was 69%", "complete"). */}
-              {l.change && <span className="tabular-nums"> ({l.change})</span>}
+              {/* D109: the change since the version before, on its own muted line ("+400K since Nov 10",
+                  "+5 points since Nov 10", "Complete"). */}
+              {l.change && <span className="block text-ink/75 tabular-nums">{l.change}</span>}
               {l.field === "timeZone" && l.source && zoneNow && (
                 <span className="block text-ink/75">{zoneNow}</span>
               )}

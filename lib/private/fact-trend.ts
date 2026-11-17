@@ -1,6 +1,7 @@
 // Main squad might and AD Tech over time (issue 347, D109), pure: a member's newest version and the one
-// before it (the card's "+0.4M since Nov 10", "was 69%"), and the week's progress the thanks name (AD Tech
-// reached 100 %, main squad grew by SQUAD_GROWTH or more). The facts are append-only (D80), so the history
+// before it (the card's "+400K since Nov 10", "+5 points since Nov 10"), and the week's progress the thanks
+// name (AD Tech reached 100 %, main squad grew by SQUAD_GROWTH or more over that same version before). The
+// facts are append-only (D80), so the history
 // is the versions themselves. A value with nothing before it is compared with nothing (D75).
 import type { FactRow } from "../repo/member-facts";
 import { dayIn } from "./calendar-time";
@@ -9,7 +10,7 @@ import { AD_COMPLETE } from "./fact-fields";
 export const TREND_FIELDS = ["squadMight", "adTech"] as const;
 export type TrendField = (typeof TREND_FIELDS)[number];
 
-/** Main squad might that grew by at least this share of its value before the week is thanked (D109). */
+/** Main squad might saved this week at least this share above its version before is thanked (D109). */
 export const SQUAD_GROWTH = 0.05;
 
 export interface Version {
@@ -59,10 +60,13 @@ function reachedComplete(versions: Version[], thisWeek: (v: Version) => boolean)
   );
 }
 
-/** Main squad's growth this week over the newest value before it, when SQUAD_GROWTH or more; else null. */
+/**
+ * Main squad's growth when its newest version was saved this week, over the version before it (the same
+ * pair the card's "+400K since Nov 10" compares), when SQUAD_GROWTH or more; else null.
+ */
 function grewNotably(versions: Version[], thisWeek: (v: Version) => boolean): number | null {
-  const now = versions.at(-1);
-  const base = versions.filter((v) => !thisWeek(v)).at(-1)?.value ?? null;
+  const [now, before] = [versions.at(-1), versions.at(-2)];
+  const base = before?.value ?? null;
   if (!now || now.value === null || !thisWeek(now) || base === null || base <= 0) return null;
   const growth = (now.value - base) / base;
   return growth >= SQUAD_GROWTH ? growth : null;
@@ -71,8 +75,8 @@ function grewNotably(versions: Version[], thisWeek: (v: Version) => boolean): nu
 /**
  * The members to thank for the week that starts on server day `monday` (`zone` is SERVER_TZ): AD Tech
  * saved at 100 % this week when the version before it was below 100, and main squad might saved this week
- * at SQUAD_GROWTH or more above the newest value saved before the week. Without a value to compare with,
- * nobody is named and nobody is counted (D75). In name order: progress is not a ranking.
+ * at SQUAD_GROWTH or more above the version before it. Without a value to compare with, nobody is named
+ * and nobody is counted (D75). In name order: progress is not a ranking.
  */
 export function progressOf(
   history: readonly FactRow[],

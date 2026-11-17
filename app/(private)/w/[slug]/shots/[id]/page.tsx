@@ -158,6 +158,8 @@ function Draft(props: {
 }) {
   const { view, t, language } = props;
   const by = view.doneBy ?? t["shots.someone"];
+  // Lines from "Paste updates" (D109): no picture, so neither "from a screenshot" nor "not kept".
+  const pasted = view.source === "pasted";
   return (
     <>
       <h1 className="mt-2 font-display text-display-lg">
@@ -165,11 +167,11 @@ function Draft(props: {
       </h1>
       <p className="mt-1 flex flex-wrap items-center gap-x-2 text-body-sm text-ink/80">
         <span>{counted(t, language, "shots.rows", view.rows.length)}</span>
-        <SourceBadge source="photo" label={t["src.photo"]} />
+        {!pasted && <SourceBadge source="photo" label={t["src.photo"]} />}
       </p>
       <p className="mt-1 text-body-sm text-ink/80">
         {[
-          view.sentBy && fill(t["shots.sentBy"], { name: view.sentBy }),
+          view.sentBy && fill(t[pasted ? "shots.pastedBy" : "shots.sentBy"], { name: view.sentBy }),
           view.source === "discord" && t["shots.viaDiscord"],
           view.pages > 1 && fill(t["shots.draft.pages"], { n: view.pages }),
         ]
@@ -177,7 +179,9 @@ function Draft(props: {
           .join(" · ")}
       </p>
       <p className="mt-1 text-body-sm text-ink/80">
-        {fill(t["shots.draft.kept"], { date: dayOf(language).format(view.expiresAt) })}
+        {fill(t[pasted ? "shots.draft.keptPasted" : "shots.draft.kept"], {
+          date: dayOf(language).format(view.expiresAt),
+        })}
       </p>
       {view.leftOut > 0 && (
         <p className="mt-2 border-l-4 border-yarn pl-2">

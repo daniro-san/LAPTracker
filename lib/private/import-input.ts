@@ -22,6 +22,8 @@ export const createBody = z
       .min(1)
       .max(MAX_PICTURES),
     pick: z.object({ kind, scope }).strict().optional(),
+    /** Lines from Members' "Paste updates" (D109), not a picture's text. */
+    pasted: z.literal(true).optional(),
   })
   .strict();
 

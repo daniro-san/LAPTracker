@@ -13,6 +13,8 @@ import { screenshotDrafts } from "@/lib/schema-import";
 
 const holder = vi.hoisted(() => ({
   ctx: null as AppContext | null,
+  /** hold: wait for `release`; fail: the reader throws; else answer at once. */
+  mode: "now" as "now" | "hold" | "fail",
   release: null as (() => void) | null,
   seen: [] as number[],
 }));
@@ -24,7 +26,8 @@ vi.mock("@/lib/private/import-read", async (original) => ({
   ...(await original<typeof import("@/lib/private/import-read")>()),
   readUpload: async (bytes: Uint8Array) => {
     holder.seen.push(bytes.length);
-    await new Promise<void>((resolve) => (holder.release = resolve));
+    if (holder.mode === "fail") throw new Error("reader died");
+    if (holder.mode === "hold") await new Promise<void>((resolve) => (holder.release = resolve));
     return ["Lv.27 [OGs] Ana", "AD Tech 74%"];
   },
 }));
@@ -68,22 +71,37 @@ const picture = (token: string) =>
     { params: Promise.resolve({ slug: "ogs" }) },
   );
 
+const LINES = { lines: ["Lv.27 [OGs] Ana", "AD Tech 74%"] };
+const answer = async (res: Response) => [res.status, await res.json()];
+
 describe("Read from a screenshot (D109)", () => {
-  it("answers an officer with the lines, one read at a time, refuses a member, and keeps no picture", async () => {
-    const member = await picture(tokens.member);
-    expect([member.status, await member.json()]).toEqual([401, { code: "signed_out" }]);
-    const first = picture(tokens.officer);
-    await vi.waitFor(() => expect(holder.release).not.toBeNull());
-    const second = await picture(tokens.officer);
-    expect([second.status, await second.json()]).toEqual([429, { code: "busy" }]);
-    holder.release?.();
-    const answer = await first;
-    expect([answer.status, await answer.json()]).toEqual([
-      200,
-      { lines: ["Lv.27 [OGs] Ana", "AD Tech 74%"] },
-    ]);
-    // Only the officer's one picture reached the reader; nothing was stored from it.
+  beforeEach(() => {
+    holder.mode = "now";
+    holder.release = null;
+    holder.seen = [];
+  });
+
+  it("answers an officer with the lines, refuses a member, and keeps no picture", async () => {
+    expect(await answer(await picture(tokens.member))).toEqual([401, { code: "signed_out" }]);
+    expect(await answer(await picture(tokens.officer))).toEqual([200, LINES]);
+    // Only the officer's picture reached the reader; nothing was stored from it.
     expect(holder.seen).toEqual([7]);
     expect(await db.select().from(screenshotDrafts)).toEqual([]);
+  });
+
+  it("reads one picture at a time per officer: a second one meanwhile is busy", async () => {
+    holder.mode = "hold";
+    const first = picture(tokens.officer);
+    await vi.waitFor(() => expect(holder.release).not.toBeNull());
+    expect(await answer(await picture(tokens.officer))).toEqual([429, { code: "busy" }]);
+    holder.release?.();
+    expect(await answer(await first)).toEqual([200, LINES]);
+  });
+
+  it("frees the officer's turn when the reader fails, so the next picture is read", async () => {
+    holder.mode = "fail";
+    expect((await picture(tokens.officer)).status).toBe(500);
+    holder.mode = "now";
+    expect(await answer(await picture(tokens.officer))).toEqual([200, LINES]);
   });
 });

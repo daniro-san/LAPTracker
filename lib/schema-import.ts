@@ -61,7 +61,8 @@ export const screenshotDrafts = pgTable(
     rows: jsonb("rows").$type<StoredRow[]>().notNull(),
     /** Rows of other alliances left out (a ranking read without "My Alliance"). */
     leftOut: integer("left_out").notNull().default(0),
-    source: text("source", { enum: ["desk", "discord"] }).notNull(),
+    /** desk and discord: pictures; pasted: lines typed or pasted into Members' "Paste updates" (D109). */
+    source: text("source", { enum: ["desk", "discord", "pasted"] }).notNull(),
     sentBy: text("sent_by"),
     status: text("status", { enum: ["open", "saved", "discarded"] })
       .notNull()
@@ -75,7 +76,7 @@ export const screenshotDrafts = pgTable(
   (t) => [
     index("screenshot_drafts_workspace_idx").on(t.workspaceId, t.status),
     check("screenshot_drafts_status_check", sql`${t.status} in ('open', 'saved', 'discarded')`),
-    check("screenshot_drafts_source_check", sql`${t.source} in ('desk', 'discord')`),
+    check("screenshot_drafts_source_check", sql`${t.source} in ('desk', 'discord', 'pasted')`),
   ],
 );
 

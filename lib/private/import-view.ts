@@ -38,7 +38,7 @@ function photoFacts(facts: Map<number, MemberFacts>): NonNullable<DraftView["fac
 
 export interface ReviewItem extends DraftSummary {
   scopeSure: boolean;
-  source: "desk" | "discord";
+  source: "desk" | "discord" | "pasted";
   sentBy: string | null;
   createdAt: Date;
 }
@@ -80,7 +80,7 @@ export interface DraftView {
   status: "open" | "saved" | "discarded";
   version: number;
   doneBy: string | null;
-  source: "desk" | "discord";
+  source: "desk" | "discord" | "pasted";
   sentBy: string | null;
   createdAt: Date;
   expiresAt: Date;

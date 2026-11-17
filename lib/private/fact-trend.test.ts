@@ -7,7 +7,7 @@ import { progressOf } from "./fact-trend";
 import { cardFormats, factLines, progressText } from "./member-card";
 
 const ZONE = "Etc/GMT+2";
-/** The game week of 2026-11-16 (a Monday). */
+/** The game week of 2026-11-16 (a Monday): it starts at 2026-11-16T02:00Z in server time (UTC−2). */
 const MONDAY = "2026-11-16";
 const row = (uid: number, field: string, version: number, value: number, at: string): FactRow => ({
   uid,
@@ -15,82 +15,82 @@ const row = (uid: number, field: string, version: number, value: number, at: str
   version,
   value,
   source: "message",
-  writtenAt: new Date(`${at}T12:00:00Z`),
+  writtenAt: new Date(at.includes("T") ? at : `${at}T12:00:00Z`),
 });
-const t = WORKSPACE_DICTIONARIES.en;
-const f = cardFormats("en", ZONE, new Date("2026-11-17T12:00:00Z"));
+const NOW = new Date("2026-11-17T12:00:00Z");
+const fact = (value: number, version: number) => ({
+  value,
+  source: "message" as const,
+  version,
+  at: "2026-11-17T12:00:00Z",
+});
 
 describe("the card's trend (D109)", () => {
-  it("shows the value, the day it was saved and the change since the version before", () => {
-    const facts = {
-      squadMight: {
-        value: 10_200_000,
-        source: "message" as const,
-        version: 2,
-        at: "2026-11-17T12:00:00Z",
-      },
-      adTech: { value: 74, source: "message" as const, version: 2, at: "2026-11-17T12:00:00Z" },
-    };
+  it("puts the change since the version before on its own line, with a short date", () => {
+    const facts = { squadMight: fact(10_200_000, 2), adTech: fact(74, 2) };
     const previous = {
       squadMight: { value: 9_800_000, at: new Date("2026-11-10T12:00:00Z") },
       adTech: { value: 69, at: new Date("2026-11-10T12:00:00Z") },
     };
-    const lines = factLines(facts, t, f, previous);
-    expect(lines.find((l) => l.field === "squadMight")).toMatchObject({
+    const en = factLines(facts, WORKSPACE_DICTIONARIES.en, cardFormats("en", ZONE, NOW), previous);
+    expect(en.find((l) => l.field === "squadMight")).toMatchObject({
       value: "10.2M",
-      change: "+400K since Tue, Nov 10",
-      updated: "Updated Tue, Nov 17",
+      change: "+400K since Nov 10",
+      updated: "Updated Nov 17",
     });
-    expect(lines.find((l) => l.field === "adTech")).toMatchObject({
+    expect(en.find((l) => l.field === "adTech")).toMatchObject({
       value: "74%",
-      change: "was 69%",
+      change: "+5 points since Nov 10",
     });
+    // PT: the date never wraps inside itself (a no-break space).
+    const t = WORKSPACE_DICTIONARIES["pt-BR"];
+    const pt = factLines(facts, t, cardFormats("pt-BR", ZONE, NOW), previous);
+    expect(pt.find((l) => l.field === "squadMight")?.change).toBe("+400K desde 10 nov.");
   });
 
   it("marks AD Tech at 100% complete, and says nothing of a change with no version before", () => {
-    const facts = {
-      squadMight: {
-        value: 8_000_000,
-        source: "officer" as const,
-        version: 1,
-        at: "2026-11-17T12:00:00Z",
-      },
-      adTech: { value: 100, source: "officer" as const, version: 1, at: "2026-11-17T12:00:00Z" },
-    };
-    const lines = factLines(facts, t, f, { squadMight: null, adTech: null });
-    expect(lines.find((l) => l.field === "adTech")?.change).toBe("complete");
+    const facts = { squadMight: fact(8_000_000, 1), adTech: fact(100, 1) };
+    const t = WORKSPACE_DICTIONARIES.en;
+    const lines = factLines(facts, t, cardFormats("en", ZONE, NOW), {
+      squadMight: null,
+      adTech: null,
+    });
+    expect(lines.find((l) => l.field === "adTech")?.change).toBe("Complete");
     expect(lines.find((l) => l.field === "squadMight")?.change).toBeUndefined();
   });
 });
 
 describe("the week's progress in the thanks (D109)", () => {
-  it("names AD Tech reaching 100% and main squad up 5% or more this week, by name, nothing without a before", () => {
+  it("names AD Tech reaching 100% and main squad up 5% or more over the card's version before", () => {
     const history = [
-      // Bo: AD Tech 90 → 100 this week.
+      // Bo: AD Tech 90 → 100 at the very first hour of the week (Mon 00:00 server time).
       row(2, "adTech", 1, 90, "2026-11-12"),
-      row(2, "adTech", 2, 100, "2026-11-17"),
-      // Ana: main squad 10M before the week → 10.6M this week (+6%).
+      row(2, "adTech", 2, 100, "2026-11-16T02:00:00Z"),
+      // Ana: main squad 10M → 10.5M this week, exactly +5%.
       row(1, "squadMight", 1, 10_000_000, "2026-11-12"),
-      row(1, "squadMight", 2, 10_600_000, "2026-11-17"),
+      row(1, "squadMight", 2, 10_500_000, "2026-11-17"),
       // Cy: +2% only, and AD Tech first recorded at 100 (nothing to compare with).
       row(3, "squadMight", 1, 10_000_000, "2026-11-12"),
       row(3, "squadMight", 2, 10_200_000, "2026-11-17"),
       row(3, "adTech", 1, 100, "2026-11-17"),
-      // Di: AD Tech reached 100 last week.
+      // Di: AD Tech reached 100 one hour before the week began (Sun 23:00 server time).
       row(4, "adTech", 1, 80, "2026-11-05"),
-      row(4, "adTech", 2, 100, "2026-11-12"),
+      row(4, "adTech", 2, 100, "2026-11-16T01:00:00Z"),
+      // Ed: +8% over the week before, but only +3.8% over the version before (as the card shows it).
+      row(5, "squadMight", 1, 10_000_000, "2026-11-12"),
+      row(5, "squadMight", 2, 10_400_000, "2026-11-16"),
+      row(5, "squadMight", 3, 10_800_000, "2026-11-17"),
     ];
-    const members = [
-      { uid: 2, name: "Bo" },
-      { uid: 1, name: "Ana" },
-      { uid: 3, name: "Cy" },
-      { uid: 4, name: "Di" },
-    ];
+    const members = ["Bo", "Ana", "Cy", "Di", "Ed"].map((name, i) => ({
+      uid: [2, 1, 3, 4, 5][i] as number,
+      name,
+    }));
     const progress = progressOf(history, members, MONDAY, ZONE);
     expect(progress.map((p) => p.name)).toEqual(["Ana", "Bo"]);
-    expect(progress.map((p) => progressText(p, t, "en"))).toEqual([
-      "main squad +6%",
-      "AD Tech 100%",
+    const t = WORKSPACE_DICTIONARIES.en;
+    expect(progress.map((p) => progressText(p, t))).toEqual([
+      "grew their main squad",
+      "finished AD Tech",
     ]);
   });
 });

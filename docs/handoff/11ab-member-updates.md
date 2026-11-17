@@ -41,19 +41,53 @@ The owner's correction of 2026-11-16 applies: no weekly round, so there is no "n
 - Privacy grep of my diff against the 101 names of the OGs fixture: 0 hits, after replacing one name from the issue in a code comment.
 - Screenshots (not committed) are in `/private/tmp/claude-502/-Users-danilordasilva-orca-workspaces-LAPTracker-unicornfish/147759e3-1cdb-4ccd-b74a-1001498a1e18/scratchpad/11ab-shots/`: `members-{360,1280}-{light,dark}-{en,pt}`, `members-360-light-fr`, `card-*`, `card-trend-*`, `card-after-paste-*`, `paste-updates-*`, `paste-review-*`, `edit-info-screenshot-*`, `home-*` and `iphone-paste-updates-390-light-en`. Designer pass: nothing overflows. At 360 the two paste buttons in the editor stack.
 
+## Review round 2 (PR 400)
+The code review, an R4 officer persona, a copywriter persona and the owner's answers. D109 marks each change "(r2)".
+- **New draft source `pasted`.** Migration `0036_draft_source_pasted` comes from `pnpm db:generate`, regenerated after rebasing onto dev's `0035_roll_call_cheese`. The sheet sends `pasted: true`.
+  - The review header says "Pasted by {name}" and "Draft kept until {date}." It no longer shows "from a screenshot" or "Screenshots are not kept"; To review says "Pasted by" too.
+  - Facts saved from it keep "from a message".
+- **Reading.** `SaveHook.read` takes `pasted`. Pasted text is read line by line: typed lines up to the first chat sender line, a chat from there on. Picture text is read as a chat only, so a page with no sender gives no rows, as on dev.
+- **Performance.** `membersView` no longer reads the workspace's history. Members and Home call `progressHistory` and pass it in. The card reads only its own member's history.
+- **Thanks.** The baseline is now the version before the newest one, the same pair the card compares; Marlow is no longer thanked for +8% while his card shows +4%.
+  - The heading is "Worth a thank-you" / "Merecem um obrigado" / "À remercier cette semaine".
+  - Lines read "Fennick grew their main squad" and "Juniper finished AD Tech", with no number.
+  - FR "Les meilleurs de la semaine" (the "Top this week" heading) predates this session and is left as is.
+- **Card.** The change sits on its own muted line: "+400K since Nov 10", "+5 points since Nov 10", "Complete". Dates are short, with no weekday and a no-break space ("10 nov."). "Updated Nov 17" is short too.
+  - The fact is labelled "Main squad might", in PT "Might do esquadrão principal" and in FR "Might de l’escouade principale", everywhere the fact label is used. D104 has an amendment because its quoted line changes.
+- **Members.** Paste updates is the primary action, full width at 360, right under the Members / Former members tabs. "Add a new member" stays secondary.
+  - The help text now says the name comes first.
+- **Read from a screenshot.**
+  - While reading, the control is disabled and shows "Reading the picture… this takes a few seconds".
+  - "The picture is not kept." sits under the control.
+  - On 429 it shows "Still reading the last picture. Wait a moment."
+  - When picture N fails, the text of pictures 1 to N−1 is kept.
+  - In Edit info it is a link above "Fill the fields", which is now the primary button.
+- **Review rows (Paste updates).** Rows say "Matched to {name}". The value shows once: the "= 10,600,000" line is hidden for typed lines. A dropped AD Tech row says "Skipped: AD Tech is already complete."
+- **Comment and tests.**
+  - The `AD_COMPLETE` comment now says "not written again by chat or Paste updates drafts; the editor stays free to correct".
+  - The read-route test is split into three. The new one: the reader fails, and the next read gets 200.
+  - `fact-trend.test.ts` has the week-boundary rows (01:00Z belongs to last week, 02:00Z to this week), an exact +5%, the card-baseline case, and the PT no-break date.
+  - `paste-updates.test.ts` adds mixed typed and OCR text, and a picture with no sender.
+
+- **Verified (r2):**
+  - `pnpm check` exits 0: 177 files and 933 tests passed (4 skipped); drift fine; i18n "17 languages up to date".
+  - Short e2e on a production build with the migration applied (then numbered 0035): 36 of 36 checks pass at 360, EN and PT. It covered the primary Paste updates above the thanks, the thanks wording and baseline, the card's change lines and label, "Complete", and the link above Fill the fields. The reading, failure and busy states used a held or answered read route. The review showed Pasted by, Matched to, Skipped and the value once; after Save, the card showed "+400K since Nov 16" and "+4 points since Nov 16".
+  - Privacy grep: 0 hits.
+  - Screenshots `r2-*` in `11ab-shots/`: members, card trend, card complete, reading, failed and busy (EN and PT), plus paste updates and the paste review (EN).
+
 ## Open issues
-- The draft review of a pasted draft says "from a screenshot" and "Screenshots are not kept" in its header. That wording is correct for pictures but not for typed lines. Changing it needs a draft source other than `desk`, which needs a migration.
 - The read guard is per instance. Two Vercel instances could each read one picture for the same officer at the same time.
 - The card's change is shown on members' cards only. Pending and former members get the "Updated" date but no change, because their cards do not read the history.
 
 ## Next
 - Model/effort: keep. The scope fit one sitting, including the owner's added item.
-- What the owner must do first: merge after review. No migration and no environment change.
+- What the owner must do first: merge; the release applies migration `0036_draft_source_pasted` (a check constraint only). No environment change.
 - Plan change: none (the workspace track has no prompt in `docs/SESSION_PLAYBOOK.md`).
 
 <adjustments>
 - `factHistory(db, workspaceId, fields, uid?)` returns every version of the named fact fields. Use it for any "before" view; do not add another history read.
-- A member-update draft can come from typed lines (a page with no chat sender line). A future change to `memberUpdate.read` must keep both shapes.
+- A member-update draft can come from typed lines: draft source `pasted`, read with `pasted: true`. A future change to `memberUpdate.read` must keep both readings, and a picture's text stays chat only.
+- `membersView(…, history?)`: only a page that shows the week's progress passes `progressHistory`. Do not read the workspace's history inside `membersView`.
 - `POST /api/w/[slug]/shots/read` answers 429 `busy` when the same officer already has a read running. A new caller must handle that code.
 - The phone status-bar constants live in `lib/screenshot/status-bar.ts`. Browser code imports them from there, not from `prepare.ts`.
 </adjustments>

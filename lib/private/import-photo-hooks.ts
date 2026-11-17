@@ -2,8 +2,8 @@
 // - Member update: a chat picture's main squad might and AD Tech % become member facts (D80), one new
 //   version per field "from a message" (the facts' own source for what a member said). 11f's paste parser
 //   reads each message. A stale write rolls the save back with the newer values (409), as 11f's editor
-//   answers. AD Tech at 100 % is complete: a member already there is not written again. Text with no chat
-//   sender line is "Paste updates" (D109): one member per line, the name first.
+//   answers. AD Tech at 100 % is complete: a member already there is not written again. Text from
+//   Members' "Paste updates" (D109) is also read as typed lines, one member per line, the name first.
 // - Secret Ops report: the entries become thefts (D97) through 11j's saveSecretOpsDraft, for the member
 //   the officer names as the report's owner.
 import type { Db } from "../db";
@@ -40,11 +40,16 @@ function pasted(lines: readonly string[]): { name: string; lines: string[] }[] {
 }
 
 /**
- * Rows "sender · fact · value" for every message that states a squad might or an AD Tech %: a chat
- * page's messages, or the lines of "Paste updates" when the text has no chat sender line.
+ * Rows "sender · fact · value" for every message that states a squad might or an AD Tech %. A picture's
+ * text is read as a chat only: a page with no sender line gives no rows. Text from "Paste updates"
+ * (`pasted`) is read line by line: the lines before the first sender line are typed lines, name first,
+ * and from that sender on it is a chat (a picture read into the box).
  */
-function readChat(lines: readonly string[]): ReadRow[] {
-  const each = lines.some((l) => SENDER.test(l)) ? messages(lines) : pasted(lines);
+function readChat(lines: readonly string[], isPasted: boolean): ReadRow[] {
+  const first = isPasted ? lines.findIndex((l) => SENDER.test(l)) : 0;
+  const typed = first < 0 ? lines : lines.slice(0, first);
+  const chat = first < 0 ? [] : lines.slice(first);
+  const each = [...pasted(isPasted ? typed : []), ...messages(chat)];
   return each.flatMap(({ name, lines: said }) => {
     const facts = parseOnboarding(said, new Date(), "UTC");
     return (["squadMight", "adTech"] as const).flatMap((field) => {
@@ -71,8 +76,8 @@ async function saveMemberUpdate(db: Db, access: WorkspaceAccess, saving: Saving)
 }
 
 export const memberUpdate: SaveHook = {
-  read(pages) {
-    const rows = mergePages(pages.map(readChat)).filter(
+  read(pages, _scope, _own, isPasted) {
+    const rows = mergePages(pages.map((lines) => readChat(lines, isPasted))).filter(
       (row, i, all) =>
         all.findIndex(
           (o) => o.name === row.name && o.field === row.field && o.value === row.value,

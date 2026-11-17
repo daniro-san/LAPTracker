@@ -15,6 +15,11 @@ export const shotsEn = {
     "This screenshot could not be read. Send it again, full screen and uncropped.",
   "shots.badge": "{n} to review",
   "shots.sentBy": "Sent by {name}",
+  // Members' "Paste updates" (D109): typed lines, no picture.
+  "shots.pastedBy": "Pasted by {name}",
+  "shots.draft.keptPasted": "Draft kept until {date}.",
+  "shots.matchedTo": "Matched to {name}",
+  "shots.skippedComplete": "Skipped: AD Tech is already complete.",
   "shots.viaDiscord": "from Discord",
   "shots.open": "Review",
   "shots.pickType": "Pick the type",

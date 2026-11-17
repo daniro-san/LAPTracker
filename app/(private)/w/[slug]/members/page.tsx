@@ -21,6 +21,7 @@ import { toReviewCount } from "@/lib/private/import-view";
 import { cardFormats, progressText, type CardFormats } from "@/lib/private/member-card";
 import {
   membersView,
+  progressHistory,
   withListExtras,
   type ListSource,
   type MembersView,
@@ -82,11 +83,11 @@ function Thanks({ view, t, f }: { view: MembersView; t: WorkspaceDictionary; f: 
           <h3 className="text-body-sm font-semibold text-ink/75">{t["thanks.progress"]}</h3>
           <ul className="text-body-sm">
             {progress.map((p) => (
-              <li key={p.uid} className="flex flex-wrap justify-between gap-x-2">
-                <span translate="no" className="min-w-0 truncate font-semibold">
+              <li key={p.uid}>
+                <bdi translate="no" className="font-semibold">
                   {p.name}
-                </span>
-                <span>{progressText(p, t, f.language)}</span>
+                </bdi>{" "}
+                {progressText(p, t)}
               </li>
             ))}
           </ul>
@@ -130,7 +131,7 @@ async function readPage(
   if (!access.ok) return { access, waiting: 0, view: null, rows: [], lifecycle: null };
   // D106: a roster read since a new member was added may now list them.
   const pending = await matchOnRead(db, access, now);
-  const view = await membersView(db, access, now, zone);
+  const view = await membersView(db, access, now, zone, await progressHistory(db, access));
   return {
     access,
     waiting: await toReviewCount(db, access, now),
@@ -214,6 +215,8 @@ export default async function MembersPage({
     <SignedInFrame access={access} language={language} t={t} current="members" waiting={waiting}>
       <h1 className="font-display text-display-lg">{t["tab.members"]}</h1>
       <ViewSwitch slug={slug} former={showFormer} t={t} />
+      {/* The page's one main action (D109): new values for several members at once. */}
+      {!showFormer && view.readAt !== null && <PasteUpdates slug={slug} words={updatesWords(t)} />}
       {showFormer ? (
         <FormerMembers
           rows={lifecycle.former.map((m) => formerRow(m, t, f))}
@@ -302,7 +305,6 @@ function Roster(props: {
         )}
       </p>
       <Legend t={t} />
-      <PasteUpdates slug={slug} words={updatesWords(t)} />
       {props.pending}
       <MembersList
         rows={props.rows.map((m) => listRow(m, t, f))}

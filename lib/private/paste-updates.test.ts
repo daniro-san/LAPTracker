@@ -1,6 +1,6 @@
 // "Paste updates" on Members (issue 347, D109): one member per line becomes a member update draft, matched
-// like a chat screenshot, and its save appends new versions for members who already have values. Invented
-// names and roster.
+// like a chat screenshot, and its save appends new versions for members who already have values; typed
+// lines and a picture's chat can share one paste, and a picture alone reads as before. Invented names.
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import type { Db } from "../db";
@@ -11,6 +11,7 @@ import { screenshotDrafts } from "../schema-import";
 import { classifyScreen } from "../screenshot/classify";
 import { requireWorkspace, type WorkspaceAccess } from "./access";
 import { createDrafts, saveDraft } from "./import";
+import { memberUpdate } from "./import-photo-hooks";
 import { factsOf, saveFacts } from "./member-facts";
 import { createSession } from "./session";
 
@@ -59,7 +60,7 @@ describe("Paste updates (D109)", () => {
       NOW,
     );
     const lines = ["Corvin: AD 80", "Ana 12.9M 74%", "Zzyzx 5M", "thanks all"];
-    const sent = { source: "desk" as const, sentBy: "Ana", pictureDay: "2026-11-16", now: NOW };
+    const sent = { source: "pasted" as const, sentBy: "Ana", pictureDay: "2026-11-16", now: NOW };
     const { drafts } = await createDrafts(
       db,
       ana,
@@ -87,5 +88,25 @@ describe("Paste updates (D109)", () => {
     expect(facts.get(1)?.squadMight).toMatchObject({ value: 12_900_000, version: 2 });
     expect(facts.get(1)?.adTech).toMatchObject({ value: 74, version: 2, source: "message" });
     expect(facts.get(2)?.adTech).toMatchObject({ value: 80, version: 1 });
+  });
+
+  it("reads typed lines then a picture's chat in one paste, each its own way", () => {
+    const text = [
+      "Corvin 9.1M",
+      "Lv.27 [OGs] Ana",
+      "Main squad 12.3 M",
+      "Lv.30 [OGs] Corvin",
+      "Welcome!",
+    ];
+    const { rows } = memberUpdate.read([text], null, "OGs", true);
+    expect(rows.map((r) => [r.name, r.field, r.value])).toEqual([
+      ["Corvin", "squadMight", 9_100_000],
+      ["Ana", "squadMight", 12_300_000],
+    ]);
+  });
+
+  it("keeps a picture with no chat sender line read as nothing, as before Paste updates", () => {
+    const page = ["Main squad 12.3 M", "AD Tech 55%", "Ana 10M"];
+    expect(memberUpdate.read([page], null, "OGs", false).rows).toEqual([]);
   });
 });

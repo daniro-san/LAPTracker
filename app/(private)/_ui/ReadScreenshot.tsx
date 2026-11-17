@@ -4,7 +4,9 @@
 // "Paste updates"), each is read by the desk's reader (POST /api/w/[slug]/shots/read, one at a time, as
 // "Send screenshots" sends them: PNG, no status bar, at most 1080 px wide) and its text lines go into the
 // paste box. Nothing is saved: the paste's own reading runs and the officer checks and saves. The picture
-// is not kept anywhere. `accept="image/*"` without `capture` opens the photo library on an iPhone.
+// is not kept anywhere, and the line under the button says so. When a later picture fails, the text of the
+// pictures before it is still handed over. `accept="image/*"` without `capture` opens the photo library on
+// an iPhone. `link`: a text link above the editor's main "Fill the fields" button.
 import { useRef, useState } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
@@ -14,14 +16,59 @@ import { isSignedOut, pictureText, post, toPng } from "./screenshot-upload";
 import { RefusalLine, SIGNED_OUT } from "./SignedOut";
 
 const STATUS_BAR = { share: STATUS_BAR_SHARE, aspect: STATUS_BAR_ASPECT };
+const LINK =
+  "inline-flex min-h-11 items-center font-semibold text-plum underline underline-offset-4 disabled:text-ink/60 disabled:no-underline";
+
+export interface ShotWords {
+  read: string;
+  reading: string;
+  failed: string;
+  busy: string;
+  notKept: string;
+}
+
+type ShotKey = "shot.read" | "shot.reading" | "shot.failed" | "shot.busy" | "shot.notKept";
+
+/** The control's words, from the editor's or Paste updates' words. */
+export const shotWords = (w: Record<ShotKey, string>): ShotWords => ({
+  read: w["shot.read"],
+  reading: w["shot.reading"],
+  failed: w["shot.failed"],
+  busy: w["shot.busy"],
+  notKept: w["shot.notKept"],
+});
+
+/** Each picture's lines in turn; on a failure, the pages read before it and why it stopped. */
+async function readPictures(slug: string, files: File[]) {
+  const pages: string[][] = [];
+  for (const file of files) {
+    try {
+      const png = await toPng(file, STATUS_BAR);
+      const read = (await post(`/api/w/${slug}/shots/read`, png, "image/png")) as {
+        lines: string[];
+      };
+      pages.push(read.lines);
+    } catch (e) {
+      const why = isSignedOut(e)
+        ? SIGNED_OUT
+        : e instanceof Error && e.message === "429"
+          ? "busy"
+          : "failed";
+      return { pages, why } as const;
+    }
+  }
+  return { pages, why: null };
+}
 
 export function ReadScreenshot(props: {
   slug: string;
-  words: { read: string; reading: string; failed: string };
+  words: ShotWords;
   multiple?: boolean;
+  link?: boolean;
   /** The text read, every picture's lines one after another. */
   onText: (text: string) => void;
 }) {
+  const { words } = props;
   const input = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -29,28 +76,18 @@ export function ReadScreenshot(props: {
   async function read(files: File[]) {
     setBusy(true);
     setError(null);
-    const pages: string[][] = [];
-    try {
-      for (const file of files) {
-        const png = await toPng(file, STATUS_BAR);
-        const read = (await post(`/api/w/${props.slug}/shots/read`, png, "image/png")) as {
-          lines: string[];
-        };
-        pages.push(read.lines);
-      }
-      const text = pictureText(pages);
-      if (text === "") setError(props.words.failed);
-      else props.onText(text);
-    } catch (e) {
-      setError(isSignedOut(e) ? SIGNED_OUT : props.words.failed);
-    } finally {
-      setBusy(false);
-      if (input.current) input.current.value = "";
-    }
+    const { pages, why } = await readPictures(props.slug, files);
+    const text = pictureText(pages);
+    if (text !== "") props.onText(text);
+    if (why === SIGNED_OUT) setError(SIGNED_OUT);
+    else if (why === "busy") setError(words.busy);
+    else if (why === "failed" || text === "") setError(words.failed);
+    setBusy(false);
+    if (input.current) input.current.value = "";
   }
 
   return (
-    <div className="mt-2">
+    <div className={props.link ? "mt-1" : "mt-2"}>
       <input
         ref={input}
         type="file"
@@ -65,16 +102,15 @@ export function ReadScreenshot(props: {
       <button
         type="button"
         disabled={busy}
-        aria-busy={busy}
         onClick={() => input.current?.click()}
-        className={buttonClass("secondary")}
+        className={props.link ? LINK : buttonClass("secondary")}
       >
-        {busy ? props.words.reading : props.words.read}
+        {words.read}
       </button>
-      <span aria-live="polite" className="sr-only">
-        {busy ? props.words.reading : ""}
-      </span>
-      {error && <RefusalLine text={error} className="mt-2 text-body-sm text-seal" />}
+      <p aria-live="polite" className="text-body-sm text-ink/75">
+        {busy ? words.reading : words.notKept}
+      </p>
+      {error && <RefusalLine text={error} className="mt-1 text-body-sm text-seal" />}
     </div>
   );
 }

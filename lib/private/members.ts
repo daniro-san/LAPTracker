@@ -9,7 +9,7 @@ import type { Db } from "../db";
 import { roleOf } from "../queries/leadership";
 import { mightUnchanged } from "../queries/might-unchanged";
 import { photosOf, type Photo } from "../queries/photo";
-import { factHistory } from "../repo/member-facts";
+import { factHistory, type FactRow } from "../repo/member-facts";
 import { openPendings } from "../repo/pending-members";
 import { anyRoster, namesSeen, type AnyRoster } from "../repo/workspace-any-roster";
 import {
@@ -241,15 +241,24 @@ const order = (a: MemberRow, b: MemberRow) =>
   (b.rankCode ?? 0) - (a.rankCode ?? 0) ||
   (b.might ?? -1) - (a.might ?? -1);
 
+/** Every main squad and AD Tech version of the workspace, for the week's progress (D109). */
+export const progressHistory = (db: Db, access: WorkspaceAccess) =>
+  factHistory(db, access.workspaceId, TREND_FIELDS);
+
 /** The Members tab of the workspace's own alliance, as of `now`; `zone` is the server's (SERVER_TZ). */
 export async function membersView(
   db: Db,
   access: WorkspaceAccess,
   now: Date,
   zone: string,
+  /**
+   * Every main squad and AD Tech version (`progressHistory`), passed only by the pages that show the
+   * week's progress (Members, Home); without it `thanks.progress` is empty (D109).
+   */
+  history?: readonly FactRow[],
 ): Promise<MembersView> {
   const unionId = access.unionId;
-  const [reads, firstSeen, might, event, facts, pendingRows, history] = await Promise.all([
+  const [reads, firstSeen, might, event, facts, pendingRows] = await Promise.all([
     endOfDayReads(db, unionId, LOOKBACK_READS),
     firstSeenDays(db, unionId),
     mightUnchanged(db, unionId),
@@ -258,7 +267,6 @@ export async function membersView(
       : null,
     factsOf(db, access),
     openPendings(db, access.workspaceId),
-    factHistory(db, access.workspaceId, TREND_FIELDS),
   ]);
   // Open new members' uids (D106): their zones count among the alliance's.
   const pending = pendingRows.map((p) => -p.id);
@@ -288,7 +296,7 @@ export async function membersView(
     thanks: {
       donors: topOf(counted, (m) => m.weekTotal),
       activity: topOf(counted, (m) => m.activity),
-      progress: progressOf(history, counted, week[0] as string, zone),
+      progress: history ? progressOf(history, counted, week[0] as string, zone) : [],
     },
     zones: usedZones(facts, [...newest.members.map((m) => m.uid), ...pending]),
     facts,

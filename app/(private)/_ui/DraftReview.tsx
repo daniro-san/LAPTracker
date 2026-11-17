@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { track } from "@/lib/analytics/events";
+import { isolate } from "@/lib/copy";
 import type { ImportKind, PhotoFact, Scope } from "@/lib/private/import-kinds";
 import type { DraftView } from "@/lib/private/import-view";
 import { nameKey } from "@/lib/screenshot/name-key";
@@ -56,6 +57,25 @@ function withConflicts(view: DraftView, rows: RowState[], detail: unknown): RowS
     const hit = newer.find((n) => owns(r, n.uid) && n.field === view.rows[i]?.field);
     return hit && !r.dropped ? { ...r, conflict: { value: hit.value, version: hit.version } } : r;
   });
+}
+
+const matchedTo = (name: string | undefined, w: Words) =>
+  name === undefined ? undefined : fillIn(w["shots.matchedTo"], { name: isolate(name) });
+
+/**
+ * A row's label and anchor, and (D109) in a Paste updates draft the member it is matched to, and on an
+ * AD Tech row of a member already at 100 % why it starts dropped.
+ */
+function rowExtras(view: DraftView, uid: number | null, i: number, w: Words) {
+  const pasted = view.source === "pasted";
+  const complete = view.rows[i]?.field === "adTech" && factOf(view, uid, "adTech")?.value === 100;
+  return {
+    label: labelOf(view, i),
+    anchor: `row-${i}`,
+    pasted,
+    matched: matchedTo(pasted ? view.members.find((m) => m.uid === uid)?.name : undefined, w),
+    skipped: complete ? w["shots.skippedComplete"] : undefined,
+  };
 }
 
 /** Rows not found first, then the uncertain ones, then the rest, each in reading order. */
@@ -235,8 +255,6 @@ function RowsReview(props: Props) {
         {order.map((i) => (
           <DraftRowCard
             key={i}
-            label={labelOf(view, i)}
-            anchor={`row-${i}`}
             row={view.rows[i] as DraftView["rows"][number]}
             state={rows[i] as RowState}
             onChange={(next) => setRows(rows.map((r, j) => (j === i ? next : r)))}
@@ -246,6 +264,7 @@ function RowsReview(props: Props) {
             sep={sep}
             known={known(i)}
             readOnly={readOnly}
+            {...rowExtras(view, rows[i]?.uid ?? null, i, w)}
           />
         ))}
       </ul>

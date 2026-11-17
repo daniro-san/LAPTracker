@@ -179,8 +179,24 @@ function detailsOf(m: MemberRow, t: WorkspaceDictionary, f: CardFormats, shown: 
 export type Previous = Partial<Record<TrendField, Version | null>>;
 
 /**
- * "+0.4M since Tue, Nov 10" (main squad) or "was 69%" (AD Tech) against the version before; "complete"
- * for AD Tech at 100 %. Nothing when there is no earlier value or it is the same (D75: no data, no claim).
+ * A short date with no weekday, in server time, that never wraps: "Nov 10", "10 nov." (D109). The day
+ * and month are joined with a no-break space.
+ */
+export function shortDate(at: Date, f: Pick<CardFormats, "language" | "zone">): string {
+  const parts = new Intl.DateTimeFormat(f.language, {
+    day: "numeric",
+    month: "short",
+    timeZone: f.zone,
+  }).formatToParts(at);
+  const of = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+  const [day, month] = [of("day"), of("month")];
+  return f.language === "en" ? `${month}\u00a0${day}` : `${day}\u00a0${month}`;
+}
+
+/**
+ * The muted line under main squad or AD Tech: "+400K since Nov 10", "+5 points since Nov 10", against the
+ * version before; "Complete" for AD Tech at 100 %. Nothing when there is no earlier value or it is the
+ * same (D75: no data, no claim).
  */
 function changeOf(
   field: TrendField,
@@ -188,14 +204,18 @@ function changeOf(
   before: Version | null | undefined,
   t: WorkspaceDictionary,
   f: CardFormats,
-  text: Parameters<typeof factText>[2],
 ): string | undefined {
   if (field === "adTech" && now === AD_COMPLETE) return t["facts.adComplete"];
   const was = before?.value;
-  if (was === null || was === undefined || was === now) return undefined;
-  if (field === "adTech") return fill(t["facts.was"], { v: factText("adTech", was, text) });
-  const delta = `${now > was ? "+" : "−"}${f.compact(Math.abs(now - was))}`;
-  return fill(t["facts.since"], { change: delta, date: f.date(before?.at as Date) });
+  if (was === null || was === undefined || was === now || !before) return undefined;
+  const sign = now > was ? "+" : "−";
+  const date = shortDate(before.at, f);
+  if (field === "squadMight")
+    return fill(t["facts.since"], { change: `${sign}${f.compact(Math.abs(now - was))}`, date });
+  const points = Math.abs(now - was);
+  const form = new Intl.PluralRules(f.language).select(points) === "one" ? "one" : "other";
+  const n = new Intl.NumberFormat(f.language, { maximumFractionDigits: 1 }).format(points);
+  return fill(t[`facts.pointsSince.${form}`], { change: `${sign}${n}`, date });
 }
 
 /**
@@ -221,25 +241,36 @@ export function factLines(
         source: known ? (fact?.source ?? null) : null,
       };
       if (!known || !isTrend(field)) return line;
-      const change = changeOf(field, value as number, previous?.[field], t, f, text);
-      return {
-        ...line,
-        ...(change && { change }),
-        ...(fact?.at && { updated: fill(t["facts.updated"], { date: f.date(new Date(fact.at)) }) }),
-      };
+      return { ...line, ...trendOf(field, value as number, fact?.at, previous, t, f) };
     },
   );
 }
 
-/** A thanks line's reason (D109): "AD Tech 100%", "main squad +8%", or both. */
-export function progressText(p: Progress, t: WorkspaceDictionary, language: string): string {
-  const pct = new Intl.NumberFormat(language, { style: "percent", maximumFractionDigits: 0 });
-  return [
-    ...(p.adDone ? [t["thanks.adDone"]] : []),
-    ...(p.squadGrowth !== null
-      ? [fill(t["thanks.squadUp"], { pct: pct.format(p.squadGrowth) })]
-      : []),
-  ].join(" · ");
+/** Main squad's or AD Tech's change line and "Updated …" (D109). */
+function trendOf(
+  field: TrendField,
+  value: number,
+  savedAt: string | undefined,
+  previous: Previous | undefined,
+  t: WorkspaceDictionary,
+  f: CardFormats,
+): Pick<FactLine, "change" | "updated"> {
+  const change = changeOf(field, value, previous?.[field], t, f);
+  return {
+    ...(change && { change }),
+    ...(savedAt && {
+      updated: fill(t["facts.updated"], { date: shortDate(new Date(savedAt), f) }),
+    }),
+  };
+}
+
+/**
+ * What a thanks line says after the name (D109), with no number and no ranking: "finished AD Tech",
+ * "grew their main squad", or both.
+ */
+export function progressText(p: Progress, t: WorkspaceDictionary): string {
+  if (p.adDone && p.squadGrowth !== null) return t["thanks.both"];
+  return p.adDone ? t["thanks.adDone"] : t["thanks.squadUp"];
 }
 
 const isTrend = (field: FactField): field is TrendField =>

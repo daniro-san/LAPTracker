@@ -30,9 +30,10 @@ export async function POST(
     const now = ctx.now();
     const access = await requireWorkspace(db, slug, requestCookies(request), now);
     if (!access.ok) return privateError(401, "signed_out");
-    const { pictures, pick } = body.data;
+    const { pictures, pick, pasted } = body.data;
     const sent = {
-      source: "desk" as const,
+      // "Paste updates" lines (D109) make a draft whose review says "Pasted by".
+      source: pasted ? ("pasted" as const) : ("desk" as const),
       sentBy: access.user.displayName,
       pictureDay: serverDay(now, ctx.env),
       now,

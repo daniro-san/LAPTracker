@@ -14,7 +14,7 @@ import { FIELD } from "@/lib/brand/components/controls";
 import { Sheet } from "@/lib/brand/components/Sheet";
 
 import type { UpdatesWords } from "./facts-form";
-import { ReadScreenshot } from "./ReadScreenshot";
+import { ReadScreenshot, shotWords } from "./ReadScreenshot";
 import { isSignedOut, post } from "./screenshot-upload";
 import { sheetWords } from "./sheet-words";
 import { RefusalLine, SIGNED_OUT } from "./SignedOut";
@@ -32,7 +32,11 @@ async function makeDraft(slug: string, text: string): Promise<number | null> {
     .slice(0, MAX_LINES);
   const made = (await post(
     `/api/w/${slug}/shots`,
-    JSON.stringify({ pictures: [{ lines }], pick: { kind: "member_update", scope: null } }),
+    JSON.stringify({
+      pictures: [{ lines }],
+      pick: { kind: "member_update", scope: null },
+      pasted: true,
+    }),
     "application/json",
   )) as { drafts: { id: number }[] };
   return made.drafts[0]?.id ?? null;
@@ -65,7 +69,11 @@ export function PasteUpdates({ slug, words }: { slug: string; words: UpdatesWord
 
   return (
     <div className="mt-3">
-      <button type="button" onClick={() => setOpen(true)} className={buttonClass("secondary")}>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className={buttonClass("primary", "w-full sm:w-auto")}
+      >
         {words["updates.open"]}
       </button>
       {open && (
@@ -98,11 +106,7 @@ export function PasteUpdates({ slug, words }: { slug: string; words: UpdatesWord
           <ReadScreenshot
             slug={slug}
             multiple
-            words={{
-              read: words["shot.read"],
-              reading: words["shot.reading"],
-              failed: words["shot.failed"],
-            }}
+            words={shotWords(words)}
             onText={(read) => setText((was) => (was.trim() === "" ? read : `${was}\n${read}`))}
           />
           <p className="mt-2 text-body-sm text-ink/80">{words["updates.after"]}</p>

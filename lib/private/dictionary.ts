@@ -206,7 +206,7 @@ const en = {
   "src.message": "from a message",
   "src.sheet": "from the sheet",
   "facts.head": "Member info",
-  "facts.squadMight": "Main squad",
+  "facts.squadMight": "Main squad might",
   "facts.adTech": "AD Tech",
   "facts.troopTier": "Troops",
   "facts.timeZone": "Time zone",

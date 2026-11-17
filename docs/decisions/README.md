@@ -116,5 +116,5 @@ The header text above is the old file's, kept as it was. The split it describes 
 - [D105 — The members' board: a read-only page for regular members behind a 30-day member session (2026-11-17, owner, 11z, issue 331; amends D71, D73)](D105-the-members-board-and-member-sessions.md)
 - [D106 — New members added by hand: a pending member whose facts move to the roster member of the same name key, never on a fuzzy match (2026-11-17, owner, 11x; amends D80, D96)](D106-new-members-added-by-hand.md)
 - [D107 — Former members: who left stays findable with their officer facts, only public numbers beside them (2026-11-17, owner, 11x; amends D80)](D107-former-members-keep-their-facts.md)
-- [D109 — Member updates: the trend on the card, AD Tech 100 % complete, Paste updates, Read from a screenshot, and progress in the thanks (2026-11-17, owner, 11ab, issue 347; amends D80, D96)](D109-member-updates-trend-paste-and-screenshot-text.md)
+- [D109 — Member updates: the trend on the card, AD Tech 100 % complete, Paste updates, Read from a screenshot, and progress in the thanks (2026-11-17, owner, 11ab, issue 347; amends D80, D96, D104)](D109-member-updates-trend-paste-and-screenshot-text.md)
 - [D112 — picomatch ReDoS (GHSA-fc5q-39xc-vjpf) accepted as dev-only, dated exception (2026-11-17)](D112-picomatch-redos-accepted-as-dev-only.md)
