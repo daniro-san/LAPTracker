@@ -21,7 +21,7 @@ import {
 } from "react";
 
 import { buttonClass } from "./Button";
-import { closeStep, pageSheets } from "./sheet-close";
+import { backdropTap, closeStep, outside, pageSheets } from "./sheet-close";
 
 // iPhone (Safari, Brave): the sheet is its own only scroller, never wider than the screen, below the
 // notch, and a scroll that reaches its end stays in it. Long names, links and zone ids wrap. The page
@@ -64,6 +64,8 @@ function useSheet(modal: boolean, onBack: () => "closed" | "stay") {
     const dialog = ref.current;
     if (!dialog || !modal) return;
     const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    // Set while this code closes it, so the close event is not read as the browser's own.
+    delete dialog.dataset.closing;
     dialog.showModal();
     (
       dialog.querySelector<HTMLElement>("[data-initial-focus]") ??
@@ -71,6 +73,7 @@ function useSheet(modal: boolean, onBack: () => "closed" | "stay") {
     )?.focus();
     const release = pageSheets().open(() => back.current());
     return () => {
+      dialog.dataset.closing = "";
       dialog.close();
       release();
       // Without preventScroll the page jumps back to the opener (to the top for a header button).
@@ -183,17 +186,10 @@ function TitleRow(props: {
 const bodyClass = (framed: boolean, bar: boolean) =>
   `px-4 pt-4 sm:px-6 ${framed ? "" : "sm:pt-6"} ${bar ? "pb-4" : SAFE_BOTTOM}`;
 
-/** A tap on the dialog element itself, outside its card: the backdrop. */
-function onBackdrop(e: MouseEvent<HTMLDialogElement>) {
-  if (e.target !== e.currentTarget) return false;
-  const box = e.currentTarget.getBoundingClientRect();
-  return !(
-    e.clientX >= box.left &&
-    e.clientX <= box.right &&
-    e.clientY >= box.top &&
-    e.clientY <= box.bottom
-  );
-}
+/** A press on the dialog element itself, outside its card: on the backdrop. */
+const onBackdrop = (e: MouseEvent<HTMLDialogElement>) =>
+  e.target === e.currentTarget &&
+  outside(e.currentTarget.getBoundingClientRect(), e.clientX, e.clientY);
 
 /** Every way of closing: closes, or asks first while `dirty`; "stay" when the sheet did not close. */
 function useClose(dirty: boolean, onCancel: (() => void) | undefined) {
@@ -235,6 +231,7 @@ export function Sheet(props: SheetProps) {
   const { gate = false, title, words, primary, onCancel } = props;
   const c = useClose(props.dirty ?? false, onCancel);
   const ref = useSheet(!gate, c.close);
+  const pressedOutside = useRef(false);
   const framed = title !== undefined;
   const bar = primary !== undefined || c.asking;
   return (
@@ -250,8 +247,21 @@ export function Sheet(props: SheetProps) {
         e.stopPropagation();
         c.close();
       }}
+      onPointerDown={(e) => {
+        pressedOutside.current = onBackdrop(e);
+      }}
       onClick={(e) => {
-        if ((props.backdropCloses ?? framed) && onBackdrop(e)) c.close();
+        const tap = backdropTap(pressedOutside.current, onBackdrop(e));
+        if ((props.backdropCloses ?? framed) && tap) c.close();
+      }}
+      onClose={(e) => {
+        e.stopPropagation();
+        const dialog = e.currentTarget;
+        // The browser closed it on its own (Chrome's close watcher can skip the cancel): open it again
+        // and take the usual way, which closes, asks first, or stays.
+        if (gate || dialog.open || "closing" in dialog.dataset) return;
+        dialog.showModal();
+        c.close();
       }}
       className={`${SHEET} ${gate ? GATE_CARD : MODAL_CARD}`}
     >

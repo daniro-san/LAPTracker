@@ -1,23 +1,45 @@
 import { describe, expect, it } from "vitest";
 
-import { changedFrom, closeStep, sheetHistory, type HistoryLike } from "./sheet-close";
+import {
+  backdropTap,
+  changedFrom,
+  closeStep,
+  outside,
+  sheetHistory,
+  type HistoryLike,
+} from "./sheet-close";
 
-/** A history that counts its entries; back() is what the browser does later, so the test calls popped(). */
+/**
+ * A history with real entries and states. back() and forward() move like the browser and return the
+ * state of the entry they land on, which the test hands to popped() as the popstate would.
+ */
 function fakeHistory() {
-  const h = { state: null, entries: 1, backs: 0 };
-  const history: HistoryLike = {
+  const entries: unknown[] = [{ __NA: true }];
+  let at = 0;
+  const history: HistoryLike & { forward(): unknown; length: number; index: number } = {
     get state() {
-      return h.state;
+      return entries[at];
     },
-    pushState: () => {
-      h.entries += 1;
+    pushState: (data) => {
+      entries.splice(at + 1, entries.length, data);
+      at += 1;
     },
     back: () => {
-      h.entries -= 1;
-      h.backs += 1;
+      at -= 1;
+    },
+    forward: () => entries[++at],
+    get length() {
+      return entries.length;
+    },
+    get index() {
+      return at;
     },
   };
-  return { h, history };
+  const back = () => {
+    history.back();
+    return entries[at];
+  };
+  return { history, back };
 }
 
 describe("closing a sheet (Close, Cancel, Escape, the backdrop, back)", () => {
@@ -34,49 +56,72 @@ describe("closing a sheet (Close, Cancel, Escape, the backdrop, back)", () => {
     expect(changedFrom(start, { ...start, who: { uid: 7 } })).toBe(true);
   });
 
-  it("gives each open sheet one history entry, and back closes only the sheet on top", () => {
-    const { h, history } = fakeHistory();
+  it("counts a backdrop tap only when the press began and ended outside the card", () => {
+    const card = { left: 0, right: 360, top: 16, bottom: 800 };
+    expect(outside(card, 4, 4)).toBe(true);
+    expect(outside(card, 100, 300)).toBe(false);
+    expect(backdropTap(true, true)).toBe(true);
+    // A drag that starts in a field and is let go over the backdrop.
+    expect(backdropTap(false, true)).toBe(false);
+  });
+
+  it("gives each open sheet one marked entry, keeps the router's state, and back closes only the top", () => {
+    const { history, back } = fakeHistory();
     const sheets = sheetHistory(history);
     const closed: string[] = [];
     sheets.open(() => (closed.push("member"), "closed"));
     sheets.open(() => (closed.push("facts"), "closed"));
-    expect(h.entries).toBe(3);
-    // The browser already went back one entry when popstate fires.
-    h.entries -= 1;
-    sheets.popped();
+    expect(history.state).toEqual({ __NA: true, lapSheet: 2 });
+    sheets.popped(back());
     expect(closed).toEqual(["facts"]);
-    h.entries -= 1;
-    sheets.popped();
+    sheets.popped(back());
     expect(closed).toEqual(["facts", "member"]);
-    expect(h.entries).toBe(1);
+    expect(history.index).toBe(0);
+  });
+
+  it("closes nothing on a forward step", () => {
+    const { history, back } = fakeHistory();
+    const sheets = sheetHistory(history);
+    const closed: string[] = [];
+    sheets.open(() => (closed.push("member"), "closed"));
+    sheets.open(() => (closed.push("facts"), "closed"));
+    sheets.popped(back());
+    expect(closed).toEqual(["facts"]);
+    // Forward lands on the facts editor's old entry, while the member sheet is still open: nothing
+    // closes, and the step is undone, so the next back closes the member sheet.
+    sheets.popped(history.forward());
+    expect(closed).toEqual(["facts"]);
+    expect(history.index).toBe(1);
+    sheets.popped(history.state);
+    sheets.popped(back());
+    expect(closed).toEqual(["facts", "member"]);
   });
 
   it("puts the entry back when the sheet asks first, so a second back still lands on the sheet", () => {
-    const { h, history } = fakeHistory();
+    const { history, back } = fakeHistory();
     const sheets = sheetHistory(history);
     let dirty = true;
     sheets.open(() => (dirty ? "stay" : "closed"));
-    h.entries -= 1;
-    sheets.popped();
-    expect(h.entries).toBe(2);
+    sheets.popped(back());
+    expect(history.index).toBe(1);
     dirty = false;
-    h.entries -= 1;
-    sheets.popped();
-    expect(h.entries).toBe(1);
+    sheets.popped(back());
+    expect(history.index).toBe(0);
   });
 
-  it("takes the entry off when a sheet closes another way, and does not read that back as the officer's", () => {
-    const { h, history } = fakeHistory();
+  it("takes the entry off when a sheet closes another way, and that back closes nothing else", () => {
+    const { history, back } = fakeHistory();
     const sheets = sheetHistory(history);
     const closed: string[] = [];
     sheets.open(() => (closed.push("member"), "closed"));
     const release = sheets.open(() => (closed.push("facts"), "closed"));
     release();
-    expect(h.backs).toBe(1);
-    sheets.popped(); // the popstate of that back
+    expect(history.index).toBe(1);
+    sheets.popped(history.state); // the popstate of that back
     expect(closed).toEqual([]);
     release(); // a second release does nothing
-    expect(h.backs).toBe(1);
-    expect(h.entries).toBe(2);
+    expect(history.index).toBe(1);
+    sheets.popped(back());
+    expect(closed).toEqual(["member"]);
   });
 });

@@ -90,7 +90,8 @@ export function SaveBar({ p, e }: { p: EditorProps; e: Editor }) {
         </button>
         <button
           type="button"
-          onClick={() => (e.dirty ? setAsking(true) : leave())}
+          // Leaving also forgets the text kept on this device, so it asks while that is on offer too.
+          onClick={() => (e.dirty || e.restorable ? setAsking(true) : leave())}
           className={buttonClass("secondary")}
         >
           {t["sheet.cancel"]}
