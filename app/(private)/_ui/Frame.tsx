@@ -35,14 +35,16 @@ export async function workspaceWords(): Promise<{
 }
 
 const TABS: TabId[] = ["home", "members", "mark", "days", "review"];
-/** The tabs that exist so far; the others come with their own issues and are shown as "soon". */
+/** The tabs that exist so far; the others come with their own issues and are shown as "soon". Notices
+ * live inside Calendar (its Week · Caravans · Notices views, prototype v5), so it has no tab of its own. */
 const PATHS: Partial<Record<TabId, string>> = { home: "", members: "/members", days: "/calendar" };
 
 function Tabs({ t, slug, current }: { t: WorkspaceDictionary; slug: string; current: TabId }) {
   return (
+    // Hidden while a notice editor is open, so its save bar is never under the tabs (review of PR 344).
     <nav
       aria-label={t["tab.aria"]}
-      className="fixed inset-x-0 bottom-0 z-10 border-t border-rule bg-paper pb-[env(safe-area-inset-bottom)]"
+      className="fixed inset-x-0 bottom-0 z-10 border-t border-rule bg-paper pb-[env(safe-area-inset-bottom)] [:root:has(form[data-notice-editor])_&]:hidden"
     >
       <ul className="mx-auto grid max-w-[640px] grid-cols-5">
         {TABS.map((id) => {
@@ -50,7 +52,11 @@ function Tabs({ t, slug, current }: { t: WorkspaceDictionary; slug: string; curr
           const inside = (
             <>
               <TabIcon id={id} />
-              <span className="text-[13px] leading-tight">{label}</span>
+              {/* Five tabs leave 72 px each at 360 px: a long word ("Acompanhar") wraps, without a
+                  hyphen, instead of running past the screen. */}
+              <span className="max-w-full text-[13px] leading-tight hyphens-none [overflow-wrap:anywhere]">
+                {label}
+              </span>
             </>
           );
           const box = "flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 text-center";

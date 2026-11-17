@@ -21,6 +21,14 @@ const zones = [
     message: "lib/screenshot imports nothing from the project, and nothing from the database.",
   },
   {
+    // D81: what goes to Groq is built from the officer's text alone, so no roster field can reach a request.
+    target: "./lib/ai",
+    from: ".",
+    except: ["./node_modules", "./lib/ai"],
+    message:
+      "lib/ai imports nothing from the project: a request carries only the officer's text (D81).",
+  },
+  {
     target: "./lib/schedule.ts",
     from: ".",
     except: ["./node_modules", "./lib/env.ts"],
@@ -130,6 +138,12 @@ export default defineConfig(
     // A describe() block is one function by syntax but N test cases by meaning.
     files: ["**/*.test.ts"],
     rules: { "max-lines-per-function": "off" },
+  },
+  {
+    // One translation per file is data, not logic, and the translate-copy skill edits that one file (D88).
+    files: ["lib/i18n/*.ts"],
+    ignores: ["lib/i18n/index.ts"],
+    rules: { "max-lines": "off" },
   },
   {
     files: ["scripts/**/*.mjs", "*.config.mjs"],

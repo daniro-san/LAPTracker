@@ -2,6 +2,7 @@
 // follow `en`.
 import type { WorkspaceDictionary } from "./dictionary";
 import { calendarPt } from "./dictionary.calendar.pt-BR";
+import { noticesPt } from "./dictionary.notices";
 
 export const pt: WorkspaceDictionary = {
   ...calendarPt,
@@ -192,4 +193,5 @@ export const pt: WorkspaceDictionary = {
   "profile.theme.light": "Claro",
   "profile.theme.dark": "Escuro",
   "profile.theme.system": "Igual ao aparelho",
+  ...noticesPt,
 };

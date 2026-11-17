@@ -82,6 +82,30 @@ export const fr = {
     liveLast: "Dernières {min} min : {last} (pic {peak})",
     liveDone:
       "Évolution depuis Début, au relevé de {time}. Le registre ci-dessus utilise la Fin à {end}.",
+    fightClock: "Horloge des combats du serveur",
+    fightClockLead:
+      "Quand le serveur a combattu, événement par événement. Chaque case est une tranche de {min} minutes, et sa hauteur est la part des Kills gagnés par l’événement dans cette tranche. Les tranches sont alignées sur l’heure serveur : midi est midi dans chaque ligne.",
+    fightClockLink: "Comparer avec les autres événements sur l’horloge des combats du serveur",
+    fightClockShare: "Part des Kills",
+    fightClockOutline: "En contour : les {span} minutes les plus actives de chaque événement",
+    fightClockNoBusiest: "Trop peu de relevés pour nommer les {span} minutes les plus actives",
+    fightClockOffSince:
+      "Pas de relevés de {min} minutes pour cet événement (ils commencent avec l’événement du {date})",
+    fightClockOffNext:
+      "Pas de relevés de {min} minutes pour cet événement (ils commencent avec le prochain événement)",
+    fightClockOffMissed: "Aucun relevé de {min} minutes n’a été pris pour cet événement",
+    fightClockOffWaiting:
+      "Les relevés de {min} minutes arrivent pendant que cet événement se déroule",
+    fightClockNone:
+      "Les relevés de {min} minutes de chaque événement seront tracés ici, à partir du prochain événement.",
+    comparePulseHelp:
+      "Part des Kills gagnés par chaque événement dans chaque tranche de {min} minutes, alignée sur l’heure serveur. Les {span} minutes les plus actives sont en contour.",
+    comparePulseOffA:
+      "Le premier événement ({when}) n’a pas de relevés de {min} minutes, les rythmes des deux événements ne peuvent donc pas être comparés",
+    comparePulseOffB:
+      "Le deuxième événement ({when}) n’a pas de relevés de {min} minutes, les rythmes des deux événements ne peuvent donc pas être comparés",
+    comparePulseOffBoth:
+      "Aucun des deux événements n’a de relevés de {min} minutes : leurs rythmes ne peuvent pas être comparés",
     fought: "Participation",
     foughtSoFar: "Participation pour l’instant",
     foughtHelp:
@@ -126,6 +150,67 @@ export const fr = {
     notTracked: "hors des alliances suivies",
     same: "Choisissez deux événements différents.",
     onlyOne: "Il n’y a pour l’instant qu’un seul événement à comparer.",
+  },
+  merge: {
+    title: "Simulateur de fusion",
+    tag: "Simulation, pas un plan",
+    lead: "Ce que donneraient deux alliances réunies, comparé au plafond de membres. Totaux d’alliance seulement, aucun nom de membre.",
+    link: "Simuler une fusion",
+    first: "Première alliance",
+    second: "Deuxième alliance",
+    choose: "Choisir une alliance",
+    action: "Simuler",
+    swap: "Inverser les alliances",
+    pick: "Choisissez deux alliances pour voir le résultat.",
+    same: "Choisissez deux alliances différentes.",
+    answer: "Ensemble, {all} avec tout le monde, {within} dans le plafond de {cap}",
+    answerFits: "Ensemble, {all}. Les {n} membres tiennent dans le plafond de {cap}",
+    rule: "Pour le calcul, l’alliance fusionnée prend le plus grand des deux plafonds enregistrés ({cap}). Dans le plafond désigne ses membres les plus forts en Might. Un membre présent dans les deux listes ne compte qu’une fois.",
+    capAssumed: "Aucune des deux alliances n’a de plafond enregistré, {cap} est donc retenu.",
+    membersTitle: "Membres et plafond",
+    mightTitle: "Might",
+    rankTitle: "Rang parmi les autres alliances suivies",
+    together: "Ensemble",
+    withEveryone: "Tous inclus",
+    withinCap: "Dans le plafond",
+    leftOut: "Hors plafond",
+    inBoth: "Deux listes",
+    cap: "plafond {cap}",
+    over: "{n} au-dessus du plafond de {cap}",
+    turnout: "{gainers} sur {n} membres ont gagné des Kills",
+    noTurnout: "pas encore de participation",
+  },
+  balance: {
+    title: "Équilibre du serveur",
+    description:
+      "La part de Might de chaque alliance suivie sur le serveur, et un constructeur de blocs hypothétique.",
+    lead: "Aucune alliance ne tient plus de {max} du Might du serveur ; les {n} premières en tiennent {top}.",
+    includes: "Le Might inclut les bâtiments et la technologie.",
+    basis: "{n} alliances suivies, relevées le {date}.",
+    total: "Might total",
+    shares: "Part du Might du serveur",
+    bar: "Part du Might du serveur par alliance : {list}",
+    asOf: "au {date}",
+    none: "Pas encore de relevés quotidiens.",
+    builder: "Blocs simulés",
+    hypothetical: "Hypothétique",
+    builderHelp:
+      "Touchez A ou B sur une alliance pour essayer un bloc. C’est un calcul, pas une prévision, et pas une annonce.",
+    bloc: "Bloc {bloc}",
+    blocShare: "{share} du Might du serveur",
+    blocAlliances: "Alliances",
+    blocEmpty: "Aucune alliance pour l’instant",
+    noBloc: "Hors bloc",
+    clear: "Effacer",
+    addTo: "Ajouter {alliance} au bloc {bloc}",
+    removeFrom: "Retirer {alliance} du bloc {bloc}",
+    trend: "Part des {n} premières au fil du temps",
+    trendHelp:
+      "Part du Might des alliances suivies détenue par les {n} plus grandes, d’après le relevé de chaque jour. Un jour sans relevé pour une alliance est laissé de côté.",
+    trendLabel: "Part des {n} premières",
+    trendSummary: "Les {n} premières en tiennent {last} le {to}, contre {first} le {from}.",
+    trendFew: "Pas encore assez de relevés quotidiens pour tracer une tendance.",
+    day: "Jour",
   },
   history: {
     title: "Historique des membres",

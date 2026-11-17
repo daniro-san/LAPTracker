@@ -1,5 +1,5 @@
 {
-  "id": "4daf3eb2-5c00-4ef8-abf7-7a659a913dce",
+  "id": "88197012-bab9-4c9f-be34-1ed26e390229",
   "prevId": "0807c473-c078-4d54-91dd-331356adf04b",
   "version": "7",
   "dialect": "postgresql",
@@ -1432,8 +1432,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.calendar_entries": {
-      "name": "calendar_entries",
+    "public.notice_edits": {
+      "name": "notice_edits",
       "schema": "",
       "columns": {
         "id": {
@@ -1442,120 +1442,67 @@
           "primaryKey": true,
           "notNull": true
         },
+        "notice_id": {
+          "name": "notice_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
         "workspace_id": {
           "name": "workspace_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
         },
-        "kind": {
-          "name": "kind",
+        "field": {
+          "name": "field",
           "type": "text",
           "primaryKey": false,
           "notNull": true
         },
-        "variant": {
-          "name": "variant",
+        "value": {
+          "name": "value",
           "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "level": {
-          "name": "level",
-          "type": "smallint",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "title": {
-          "name": "title",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "notes": {
-          "name": "notes",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "link": {
-          "name": "link",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "day": {
-          "name": "day",
-          "type": "date",
           "primaryKey": false,
           "notNull": true
         },
-        "minute": {
-          "name": "minute",
-          "type": "smallint",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "weekly": {
-          "name": "weekly",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "last_week": {
-          "name": "last_week",
-          "type": "date",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "for_members": {
-          "name": "for_members",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "created_by": {
-          "name": "created_by",
+        "basis": {
+          "name": "basis",
           "type": "integer",
           "primaryKey": false,
           "notNull": false
         },
-        "created_at": {
-          "name": "created_at",
+        "edited_by": {
+          "name": "edited_by",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "edited_at": {
+          "name": "edited_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "rev": {
-          "name": "rev",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "edits": {
-          "name": "edits",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'{}'::jsonb"
+          "notNull": true
         }
       },
       "indexes": {
-        "calendar_entries_workspace_day_idx": {
-          "name": "calendar_entries_workspace_day_idx",
+        "notice_edits_notice_field_idx": {
+          "name": "notice_edits_notice_field_idx",
           "columns": [
             {
-              "expression": "workspace_id",
+              "expression": "notice_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
             },
             {
-              "expression": "day",
+              "expression": "field",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1565,34 +1512,25 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
-        },
-        "calendar_entries_duel_week_unique": {
-          "name": "calendar_entries_duel_week_unique",
-          "columns": [
-            {
-              "expression": "workspace_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "day",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "where": "\"calendar_entries\".\"kind\" = 'duel'",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
         }
       },
       "foreignKeys": {
-        "calendar_entries_workspace_id_workspaces_id_fk": {
-          "name": "calendar_entries_workspace_id_workspaces_id_fk",
-          "tableFrom": "calendar_entries",
+        "notice_edits_notice_id_notices_id_fk": {
+          "name": "notice_edits_notice_id_notices_id_fk",
+          "tableFrom": "notice_edits",
+          "tableTo": "notices",
+          "columnsFrom": [
+            "notice_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "notice_edits_workspace_id_workspaces_id_fk": {
+          "name": "notice_edits_workspace_id_workspaces_id_fk",
+          "tableFrom": "notice_edits",
           "tableTo": "workspaces",
           "columnsFrom": [
             "workspace_id"
@@ -1603,12 +1541,12 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "calendar_entries_created_by_workspace_users_id_fk": {
-          "name": "calendar_entries_created_by_workspace_users_id_fk",
-          "tableFrom": "calendar_entries",
+        "notice_edits_edited_by_workspace_users_id_fk": {
+          "name": "notice_edits_edited_by_workspace_users_id_fk",
+          "tableFrom": "notice_edits",
           "tableTo": "workspace_users",
           "columnsFrom": [
-            "created_by"
+            "edited_by"
           ],
           "columnsTo": [
             "id"
@@ -1621,31 +1559,15 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {
-        "calendar_entries_kind_check": {
-          "name": "calendar_entries_kind_check",
-          "value": "\"calendar_entries\".\"kind\" in ('caravan', 'cheese', 'undead', 'elixir', 'kvk', 'duel', 'other')"
-        },
-        "calendar_entries_minute_check": {
-          "name": "calendar_entries_minute_check",
-          "value": "\"calendar_entries\".\"minute\" between 0 and 1439"
-        },
-        "calendar_entries_time_check": {
-          "name": "calendar_entries_time_check",
-          "value": "(\"calendar_entries\".\"minute\" is null) = (\"calendar_entries\".\"kind\" = 'duel')"
-        },
-        "calendar_entries_level_check": {
-          "name": "calendar_entries_level_check",
-          "value": "\"calendar_entries\".\"level\" between 1 and 99"
-        },
-        "calendar_entries_variant_check": {
-          "name": "calendar_entries_variant_check",
-          "value": "\"calendar_entries\".\"variant\" in ('I', 'II', 'A', 'B')"
+        "notice_edits_field_check": {
+          "name": "notice_edits_field_check",
+          "value": "\"notice_edits\".\"field\" in ('title', 'en', 'pt-BR', 'fr', 'for_members', 'ends_on')"
         }
       },
       "isRLSEnabled": false
     },
-    "public.calendar_occurrences": {
-      "name": "calendar_occurrences",
+    "public.notices": {
+      "name": "notices",
       "schema": "",
       "columns": {
         "id": {
@@ -1660,94 +1582,37 @@
           "primaryKey": false,
           "notNull": true
         },
-        "entry_id": {
-          "name": "entry_id",
+        "created_by": {
+          "name": "created_by",
           "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true
         },
-        "week": {
-          "name": "week",
-          "type": "date",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "day": {
-          "name": "day",
-          "type": "date",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "minute": {
-          "name": "minute",
-          "type": "smallint",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "cancelled": {
-          "name": "cancelled",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "coach_uid": {
-          "name": "coach_uid",
-          "type": "bigint",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "coach_name": {
-          "name": "coach_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "second_kind": {
-          "name": "second_kind",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "second_uid": {
-          "name": "second_uid",
-          "type": "bigint",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "second_name": {
-          "name": "second_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "rev": {
-          "name": "rev",
+        "updated_by": {
+          "name": "updated_by",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true,
-          "default": 0
+          "notNull": false
         },
-        "edits": {
-          "name": "edits",
-          "type": "jsonb",
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
           "primaryKey": false,
-          "notNull": true,
-          "default": "'{}'::jsonb"
+          "notNull": true
         }
       },
       "indexes": {
-        "calendar_occurrences_workspace_day_idx": {
-          "name": "calendar_occurrences_workspace_day_idx",
+        "notices_workspace_idx": {
+          "name": "notices_workspace_idx",
           "columns": [
             {
               "expression": "workspace_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "day",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1760,9 +1625,9 @@
         }
       },
       "foreignKeys": {
-        "calendar_occurrences_workspace_id_workspaces_id_fk": {
-          "name": "calendar_occurrences_workspace_id_workspaces_id_fk",
-          "tableFrom": "calendar_occurrences",
+        "notices_workspace_id_workspaces_id_fk": {
+          "name": "notices_workspace_id_workspaces_id_fk",
+          "tableFrom": "notices",
           "tableTo": "workspaces",
           "columnsFrom": [
             "workspace_id"
@@ -1773,54 +1638,37 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "calendar_occurrences_entry_id_calendar_entries_id_fk": {
-          "name": "calendar_occurrences_entry_id_calendar_entries_id_fk",
-          "tableFrom": "calendar_occurrences",
-          "tableTo": "calendar_entries",
+        "notices_created_by_workspace_users_id_fk": {
+          "name": "notices_created_by_workspace_users_id_fk",
+          "tableFrom": "notices",
+          "tableTo": "workspace_users",
           "columnsFrom": [
-            "entry_id"
+            "created_by"
           ],
           "columnsTo": [
             "id"
           ],
-          "onDelete": "cascade",
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "notices_updated_by_workspace_users_id_fk": {
+          "name": "notices_updated_by_workspace_users_id_fk",
+          "tableFrom": "notices",
+          "tableTo": "workspace_users",
+          "columnsFrom": [
+            "updated_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
           "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "calendar_occurrences_entry_week_unique": {
-          "name": "calendar_occurrences_entry_week_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "entry_id",
-            "week"
-          ]
-        }
-      },
+      "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {
-        "calendar_occurrences_moved_check": {
-          "name": "calendar_occurrences_moved_check",
-          "value": "(\"calendar_occurrences\".\"day\" is null) = (\"calendar_occurrences\".\"minute\" is null)"
-        },
-        "calendar_occurrences_minute_check": {
-          "name": "calendar_occurrences_minute_check",
-          "value": "\"calendar_occurrences\".\"minute\" between 0 and 1439"
-        },
-        "calendar_occurrences_second_check": {
-          "name": "calendar_occurrences_second_check",
-          "value": "(\"calendar_occurrences\".\"second_kind\" is null) = (\"calendar_occurrences\".\"second_uid\" is null) and (\"calendar_occurrences\".\"second_uid\" is null) = (\"calendar_occurrences\".\"second_name\" is null) and (\"calendar_occurrences\".\"second_kind\" is null or \"calendar_occurrences\".\"second_kind\" in ('vip', 'guardian'))"
-        },
-        "calendar_occurrences_coach_check": {
-          "name": "calendar_occurrences_coach_check",
-          "value": "(\"calendar_occurrences\".\"coach_uid\" is null) = (\"calendar_occurrences\".\"coach_name\" is null)"
-        },
-        "calendar_occurrences_two_people_check": {
-          "name": "calendar_occurrences_two_people_check",
-          "value": "\"calendar_occurrences\".\"coach_uid\" is null or \"calendar_occurrences\".\"second_uid\" is null or \"calendar_occurrences\".\"coach_uid\" <> \"calendar_occurrences\".\"second_uid\""
-        }
-      },
+      "checkConstraints": {},
       "isRLSEnabled": false
     }
   },

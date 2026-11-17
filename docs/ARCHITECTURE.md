@@ -25,12 +25,16 @@ lib/private/*.ts    the workspace (D71): requireWorkspace and its branded Worksp
                     D75's signals), members-list.ts (filters and search), members-sheet.ts (status,
                     reasons and "copy for spreadsheet"), first-use.ts (the first-use cards as data),
                     cookies.ts (the two cookie names, apart from the dictionaries, for client components);
-                    their table reads are in lib/repo/workspace-rosters.ts.
+                    their table reads are in lib/repo/workspace-rosters.ts. notices.ts (the notices library's reads
+                    and its save, issue 304), notice-rules.ts (pure: fields, the counter, "may be out of date",
+                    the save's version check); its table reads and writes are in lib/repo/notices.ts.
                     The Calendar tab (issue 300): calendar.ts (reads and the field-level writes with their
                     version check), calendar-model.ts (pure: kinds, input schemas, which change fits which kind,
                     the weekly layout), calendar-time.ts (pure, browser-safe: server days, ST and the viewer's
                     clock), calendar-words.ts (titles, dates, the 409 sentence), dictionary.calendar*.ts (its
                     words); its tables are in lib/schema-calendar.ts, its reads and writes in lib/repo/calendar.ts.
+lib/ai/*.ts         Groq (D81): the chat client with its model fallback (groq.ts), the notice prompts and plain-text
+                    cleanup (notice-writing.ts), the game glossary (glossary.ts). Reached through AppContext.ai.
 lib/queries/*.ts    read models for the UI (joins, sorting, name history). Never write. Never expose BLOCKED_ROSTER_KEYS.
                     lib/queries/samples.ts: `eventSamples`, an event's Start, samples and End (D69).
                     lib/queries/live.ts: `eventProgress`, the event page's live section (alliance totals per reading, D69):
@@ -69,11 +73,12 @@ lib/screenshot/     the screenshot reader (D74): pure parsers over OCR text line
 
 ## Dependency rule
 
-- `app → lib/{route, auth, run, tick, rehearsal, schedule, queries, repo, images, analytics}`; `lib/private → lib/analytics/events` (the sign-in mark, D77); `lib/run → lib/{collector, queries}` (queries: the public Discord message's numbers).
+- `app → lib/{route, auth, run, tick, rehearsal, schedule, queries, repo, images, analytics, ai}`; `lib/private → lib/analytics/events` (the sign-in mark, D77); `lib/run → lib/{collector, queries}` (queries: the public Discord message's numbers).
 - `lib/collector → lib/{compute, sources, repo, logger, notify}` **through the `Deps` object passed in**.
 - `lib/compute`, `lib/budget` and `lib/compact` import nothing from the project.
 - `lib/logger` imports only `lib/repo` and `lib/redact`.
 - `lib/screenshot` imports nothing from the project.
+- `lib/ai` imports nothing from the project: a request carries only the officer's text (D81).
 - Nothing in `lib/` imports from `app/`.
 - Only `app/(private)` imports `lib/private` (an allowlist zone: every other module is fenced out by default). `app/(private)` does not import `lib/repo`. `lib/private` imports neither `lib/notify*` nor `lib/discord-*` (D71).
 
