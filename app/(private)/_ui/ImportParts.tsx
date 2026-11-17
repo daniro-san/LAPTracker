@@ -23,7 +23,7 @@ function columnText(
     language,
     now: new Date(),
     day: dayFormat(language),
-    words: { "status.break": "", "status.help": "", "facts.until": "" },
+    words: { "status.break": "", "status.help": "", "facts.until": "", "facts.awayRange": "" },
   };
   const value = factText(
     column.field as FactField,

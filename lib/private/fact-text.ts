@@ -13,12 +13,25 @@ export interface FactTextFormat {
   now: Date;
   /** A server day ("2026-11-20") as a short date. */
   day: (iso: string) => string;
-  words: { "status.break": string; "status.help": string; "facts.until": string };
+  words: {
+    "status.break": string;
+    "status.help": string;
+    "facts.until": string;
+    "facts.awayRange": string;
+  };
 }
 
 /** 61.2M (D78); below 1,000 the plain number. */
 const compact = (n: number, language: string) =>
   Math.abs(n) < 1000 ? new Intl.NumberFormat(language).format(n) : compactLarge(n, language);
+
+/** "Nov 20 – Nov 25" with a first day (D103), "until Nov 25" without one; "" with no last day. */
+function awayDays(v: FactValues["away"], f: FactTextFormat): string {
+  if (!v.until) return "";
+  return v.from
+    ? f.words["facts.awayRange"].replace("{from}", f.day(v.from)).replace("{to}", f.day(v.until))
+    : f.words["facts.until"].replace("{date}", f.day(v.until));
+}
 
 const SHOW: { [F in FactField]: (v: FactValues[F], f: FactTextFormat) => string } = {
   squadMight: (v, f) => compact(v, f.language),
@@ -33,10 +46,7 @@ const SHOW: { [F in FactField]: (v: FactValues[F], f: FactTextFormat) => string 
     return v.map((code) => names.of(code) ?? code).join(", ");
   },
   status: (v, f) => f.words[v === "help" ? "status.help" : "status.break"],
-  away: (v, f) =>
-    [v.text, v.until ? f.words["facts.until"].replace("{date}", f.day(v.until)) : ""]
-      .filter(Boolean)
-      .join(" · ") || NONE,
+  away: (v, f) => [v.text, awayDays(v, f)].filter(Boolean).join(" · ") || NONE,
   notes: (v) => v,
 };
 

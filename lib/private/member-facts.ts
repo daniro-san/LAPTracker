@@ -9,6 +9,7 @@ import type { Db } from "../db";
 import { factVersion, insertFact, latestFacts, type FactRow } from "../repo/member-facts";
 import { anyRoster } from "../repo/workspace-any-roster";
 import type { WorkspaceAccess } from "./access";
+import { dayIn, isDay } from "./calendar-time";
 import {
   LANGUAGES,
   MERGED_FIELDS,
@@ -31,7 +32,7 @@ const isZone = (id: string) => {
 };
 
 const text = (max: number) => z.string().trim().max(max);
-const DAY = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+const DAY = z.string().refine(isDay);
 
 /** Each field's value; null clears it. */
 const VALUES = {
@@ -41,7 +42,10 @@ const VALUES = {
   timeZone: z.string().max(64).refine(isZone),
   languages: z.array(z.enum(LANGUAGES)).max(LANGUAGES.length),
   status: z.enum(OFFICER_STATUSES),
-  away: z.object({ text: text(500), until: DAY.nullable() }).strict(),
+  away: z
+    .object({ text: text(500), from: DAY.nullable().optional(), until: DAY.nullable() })
+    .strict()
+    .refine((a) => !a.from || !a.until || a.from <= a.until),
   notes: text(4000),
 } satisfies Record<FactField, z.ZodType>;
 
@@ -83,7 +87,8 @@ function normalise(c: FactChange): unknown {
   const v = c.value;
   if (v === null || v === "") return null;
   if (Array.isArray(v)) return v.length === 0 ? null : LANGUAGES.filter((l) => v.includes(l));
-  if (typeof v === "object" && "until" in v) return v.text === "" && v.until === null ? null : v;
+  if (typeof v === "object" && "until" in v)
+    return v.text === "" && v.until === null && !v.from ? null : v;
   return v;
 }
 
@@ -100,7 +105,8 @@ export async function factsOf(db: Db, access: WorkspaceAccess): Promise<Map<numb
       r.field === "languages" && Array.isArray(r.value)
         ? LANGUAGES.filter((l) => (r.value as string[]).includes(l))
         : r.value;
-    Object.assign(own, { [r.field]: { value, source: r.source, version: r.version } });
+    const at = r.writtenAt.toISOString();
+    Object.assign(own, { [r.field]: { value, source: r.source, version: r.version, at } });
     facts.set(r.uid, own);
   }
   return facts;
@@ -146,11 +152,12 @@ async function saveOne(
   uid: number,
   c: FactChange,
   now: Date,
+  zone: string | undefined,
 ): Promise<ChangeResult> {
   const where = [db, access.workspaceId, uid, c.field] as const;
   const newest = await factVersion(...where, "newest");
   const current = newest?.version ?? 0;
-  let value = normalise(c);
+  let value = startsToday(normalise(c), now, zone);
   let status: ChangeResult["status"] = "saved";
   if (newest && c.version !== current) {
     // Two officers typed the same thing: nothing to refuse.
@@ -170,16 +177,31 @@ async function saveOne(
   return refused(c.field, (await factVersion(...where, "newest")) as FactRow);
 }
 
-/** Writes each field in turn; null when `uid` is not in the workspace's own alliance. */
+/**
+ * An away note saved without a first day starts on the server day of the save (D103), so it never
+ * reaches into past roll calls or caravans. Without `zone` (the screenshot import) nothing is added.
+ */
+function startsToday(value: unknown, now: Date, zone: string | undefined): unknown {
+  if (!zone || typeof value !== "object" || value === null || !("until" in value)) return value;
+  return (value as { from?: string | null }).from
+    ? value
+    : { ...value, from: dayIn(zone, now.getTime()) };
+}
+
+/**
+ * Writes each field in turn; null when `uid` is not in the workspace's own alliance. `zone` is the
+ * server's (SERVER_TZ), for an away note's first day.
+ */
 export async function saveFacts(
   db: Db,
   access: WorkspaceAccess,
   uid: number,
   changes: readonly FactChange[],
   now: Date,
+  zone?: string,
 ): Promise<ChangeResult[] | null> {
   if (!(await isMember(db, access, uid))) return null;
   const results: ChangeResult[] = [];
-  for (const c of changes) results.push(await saveOne(db, access, uid, c, now));
+  for (const c of changes) results.push(await saveOne(db, access, uid, c, now, zone));
   return results;
 }

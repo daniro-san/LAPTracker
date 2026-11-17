@@ -1,8 +1,9 @@
 // The notice editor's draft bookkeeping (issue 304): what a save sends, what Translate and Improve writing
-// leave behind for Accept and Undo, the conflict banner's two answers, and the language tabs (issue 363).
+// leave behind for Accept and Undo, the conflict banner's two answers, the language tabs (issue 363), and
+// "Restore this version" (D102).
 import { describe, expect, it } from "vitest";
 
-import { NOTICE_FIELDS, NOTICE_LANGUAGES } from "@/lib/private/notice-rules";
+import { NOTICE_FIELDS, NOTICE_LANGUAGES, planSave } from "@/lib/private/notice-rules";
 
 import type { NoticeFields } from "./notice-client";
 import {
@@ -16,6 +17,7 @@ import {
   tabState,
   translatePlan,
   withDrafts,
+  withRestored,
 } from "./notice-draft";
 
 /** A saved notice: title v1, English v2, Portuguese v3 (translated), French never written. */
@@ -156,6 +158,36 @@ describe("the notice draft", () => {
       Object.fromEntries(NOTICE_FIELDS.map((f) => [f, { value: "", version: 0 }])) as NoticeFields,
     );
     expect(translatePlan(empty, "en", [...languages], null)).toBeNull();
+  });
+
+  it("restores an earlier version as drafts to check, which Translate replaces and Save still version-checks", () => {
+    const d = withRestored(startDraft(saved()), {
+      title: "Queen",
+      en: "Apply on Monday.",
+      for_members: "true",
+    });
+    expect(draftKind(d, "en")).toBe("restore");
+    expect(tabState(d, "en", false)).toBe("draft");
+    expect(d.values.for_members).toBe("true");
+    expect(accept(d, "en").values.en).toBe("Apply on Monday.");
+    expect(draftKind(accept(d, "en"), "en")).toBeNull();
+    expect(discard(d, "en").values.en).toBe("Apply today.");
+    // Translate into the restored language: the draft is the translation's now.
+    const translated = withDrafts(
+      d,
+      { en: "Apply today!" },
+      { kind: "translate", from: "pt-BR", to: ["en"], text: "Candidate-se hoje." },
+    );
+    expect(translated.restored.en).toBeUndefined();
+    expect(draftKind(translated, "en")).toBe("translate");
+    // Save names the versions the editor opened with: a newer save of English refuses it (409).
+    const changes = changesOf(d);
+    expect(changes.find((c) => c.field === "en")?.version).toBe(2);
+    const newer = {
+      title: { version: 1, value: "Queen", basis: null },
+      en: { version: 9, value: "Apply now.", basis: 2 },
+    };
+    expect(planSave(newer, changes)).toEqual({ ok: false, conflicts: ["en"] });
   });
 
   it("puts a failed request's error on the tab it was asked from, whichever tab is open when it answers", () => {

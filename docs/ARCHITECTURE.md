@@ -37,6 +37,11 @@ lib/private/*.ts    the workspace (D71): requireWorkspace and its branded Worksp
                     notices.ts (the notices library's reads
                     and its save, issue 304), notice-rules.ts (pure: fields, the counter, "may be out of date",
                     the save's version check); its table reads and writes are in lib/repo/notices.ts.
+                    D102: notice-formats.ts (pure: the game notice, game mail and Discord copies, Discord's
+                    messages), notice-history.ts (pure: saves from notice_edits, the text before, a version's
+                    fields), notice-publish.ts ("Publish to Discord": channel by audience from
+                    WORKSPACE_DISCORD_WEBHOOKS, the once-per-request claim, the posts through AppContext.fetch);
+                    its table in lib/repo/notice-publishes.ts.
                     The Calendar tab (issue 300): calendar.ts (reads and the field-level writes with their
                     version check), calendar-model.ts (pure: kinds, input schemas, which change fits which kind,
                     the weekly layout), calendar-kinds.ts (its fixed facts, no zod, for client components),
@@ -45,6 +50,13 @@ lib/private/*.ts    the workspace (D71): requireWorkspace and its branded Worksp
                     caravan-suggest.ts (pure: the caravan suggestions' ranking) and caravans.ts (their read),
                     dictionary.calendar*.ts (its words); its tables are in lib/schema-calendar.ts, its reads and
                     writes in lib/repo/calendar.ts.
+                    The Roll call tab (D103): roll-call.ts (occasions and the writes: marks with their
+                    version check, "the rest" and its undo, hand-added roll calls), roll-call-team.ts (Elixir
+                    Scramble teams under one lock per workspace and week),
+                    roll-call-view.ts (the pages' reads), roll-call-rules.ts (pure, browser-safe: kinds,
+                    marks, "the rest", counts, order, team suggestions), roll-call-words.ts,
+                    dictionary.rollcall*.ts; tables in lib/schema-rollcall.ts, reads and writes in
+                    lib/repo/roll-call.ts.
                     The thefts log (D97): thefts.ts (its read and writes, the attacker search), theft-groups.ts
                     (pure: attacker key, groups and counts, follow-up state), thefts-import.ts (the screenshot
                     import's save hook for Secret Ops reports), dictionary.thefts.ts (its words); tables in
@@ -95,12 +107,12 @@ lib/build-version.ts pure: the footer's live version from Vercel's git variables
 lib/screenshot/     the screenshot reader (D74): pure parsers over OCR text lines (alliance duel, the might/kills/donation rankings, secret
                     operations, pasted text), classify.ts (which screen, scored, D96), merge.ts (pages of one ranking), nameKey and
                     matchName (candidates passed in), and one IO module, read-screenshot.ts (Tesseract.js, committed English data). No DB access.
-lib/import-command.ts the Discord message command's definition and registerImportCommand, shared by the interactions route, scripts/discord-register-command.ts and /admin's POST /api/admin/discord-command (D96).
+lib/app-commands.ts the app's Discord message commands (D96, D101) and registerAppCommands, shared by the interactions route, scripts/discord-register-command.ts and /admin's POST /api/admin/discord-command.
 ```
 
 ## Dependency rule
 
-- `app → lib/{route, auth, run, tick, rehearsal, schedule, queries, repo, images, analytics, ai}`; `lib/private → lib/analytics/events` (the sign-in mark, D77); `lib/private → lib/screenshot` (the name matcher, for the sheet import, D80; the OCR, the classifier and the parsers, for the screenshot import, D96); `lib/run → lib/{collector, queries}` (queries: the public Discord message's numbers).
+- `app → lib/{route, auth, run, tick, rehearsal, schedule, queries, repo, images, analytics, ai}`; `lib/private → lib/analytics/events` (the sign-in mark, D77); `lib/private → lib/screenshot` (the name matcher, for the sheet import, D80; the OCR, the classifier and the parsers, for the screenshot import, D96); `lib/private → lib/ai` (the translator, for Discord's Translate commands, D101); `lib/run → lib/{collector, queries}` (queries: the public Discord message's numbers).
 - `lib/collector → lib/{compute, sources, repo, logger, notify}` **through the `Deps` object passed in**.
 - `lib/compute`, `lib/budget` and `lib/compact` import nothing from the project.
 - `lib/logger` imports only `lib/repo` and `lib/redact`.

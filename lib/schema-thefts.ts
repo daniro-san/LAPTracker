@@ -37,8 +37,8 @@ export const thefts = pgTable(
     attackerName: text("attacker_name").notNull(),
     /** The attacker's alliance tag; "" when not known. */
     attackerTag: text("attacker_tag").notNull(),
-    /** What the report says was taken; null when the report's sentence was unreadable. */
-    stolen: text("stolen", { enum: ["quest_rewards"] }),
+    /** The theft's type (D97, amended 2026-11-17); null on rows saved before the type was asked. */
+    kind: text("kind", { enum: ["tile_hit", "ops", "caravan", "sanctuary"] }),
     /** The member it was taken from, in the workspace's own alliance; null when not known. */
     victimUid: big("victim_uid"),
     victimName: text("victim_name"),
@@ -52,7 +52,10 @@ export const thefts = pgTable(
   (t) => [
     index("thefts_workspace_attacker_idx").on(t.workspaceId, t.attackerKey),
     uniqueIndex("thefts_request_unique").on(t.workspaceId, t.requestId),
-    check("thefts_stolen_check", sql`${t.stolen} is null or ${t.stolen} = 'quest_rewards'`),
+    check(
+      "thefts_kind_check",
+      sql`${t.kind} is null or ${t.kind} in ('tile_hit', 'ops', 'caravan', 'sanctuary')`,
+    ),
     check("thefts_source_check", sql`${t.source} in ('photo', 'typed')`),
   ],
 );

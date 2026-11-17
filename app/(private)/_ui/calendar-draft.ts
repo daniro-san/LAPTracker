@@ -14,6 +14,8 @@ export interface Draft {
   notes: string;
   link: string;
   forMembers: boolean;
+  /** The linked notice's id, "" for none (D102). */
+  notice: string;
   weekly: boolean;
   day: string;
   time: string;
@@ -35,6 +37,7 @@ export function draftOf(form: FormValues | null, day: string): Draft {
       notes: "",
       link: "",
       forMembers: false,
+      notice: "",
       weekly: false,
       day,
       time: "",
@@ -45,6 +48,7 @@ export function draftOf(form: FormValues | null, day: string): Draft {
     ...form,
     variant: form.variant ?? "",
     level: form.level === null ? "" : String(form.level),
+    notice: form.notice === null ? "" : String(form.notice),
     time: form.minute === null ? "" : hhmm(form.minute),
     scope: "one",
   };
@@ -86,6 +90,7 @@ export function newEntryOf(d: Draft): Record<string, unknown> {
     notes: text(d.notes),
     link: text(d.link),
     forMembers: d.forMembers,
+    notice: d.notice ? Number(d.notice) : null,
   };
   if (d.kind === "duel") return { ...base, title: d.title.trim() };
   return {
@@ -119,6 +124,7 @@ function plainFields(d: Draft, f: FormValues): [string, unknown, unknown][] {
     ["notes", text(d.notes), text(f.notes)],
     ["link", text(d.link), text(f.link)],
     ["forMembers", d.forMembers, f.forMembers],
+    ["notice", d.notice ? Number(d.notice) : null, f.notice],
   ];
 }
 

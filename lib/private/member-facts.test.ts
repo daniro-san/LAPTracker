@@ -6,7 +6,7 @@ import { insertFact } from "../repo/member-facts";
 import { findWorkspaceBySlug, recordSignIn, saveWorkspace } from "../repo/workspaces";
 import { dailyReads, dailyRosters } from "../schema";
 import { requireWorkspace, type WorkspaceAccess } from "./access";
-import { factsOf, saveFacts, type FactChange } from "./member-facts";
+import { FACT_CHANGE, factsOf, saveFacts, type FactChange } from "./member-facts";
 import { createSession } from "./session";
 
 const OGS = 67111155;
@@ -71,7 +71,7 @@ describe("member facts, edited by several officers (#297)", () => {
 
     expect(first).toMatchObject([{ status: "saved", version: 2, value: 9 }]);
     expect(stale).toMatchObject([{ status: "conflict", version: 2, value: 9, source: "officer" }]);
-    expect((await factsOf(db, ana)).get(1)?.troopTier).toEqual({
+    expect((await factsOf(db, ana)).get(1)?.troopTier).toMatchObject({
       value: 9,
       source: "officer",
       version: 2,
@@ -131,5 +131,22 @@ describe("member facts, edited by several officers (#297)", () => {
     ).toBeNull();
     expect((await factsOf(db, ogs)).size).toBe(0);
     expect((await factsOf(db, nse)).get(2)?.notes?.value).toBe("NSE only");
+  });
+
+  it("gives an away note its first day: the one typed, else the server day of the save (D103)", async () => {
+    const ana = await officer("ogs", "ana");
+    const away = (value: unknown, version: number) =>
+      ({ field: "away", version, value, source: "officer" }) as FactChange;
+    // 12:00 UTC is 10:00 on the server's clock (UTC−2): Nov 16.
+    await saveFacts(db, ana, 1, [away({ text: "", until: "2026-11-25" }, 0)], NOW, "Etc/GMT+2");
+    const first = (await factsOf(db, ana)).get(1)?.away;
+    expect(first?.value).toEqual({ text: "", from: "2026-11-16", until: "2026-11-25" });
+    expect(first?.at).toBe(NOW.toISOString());
+    await write(ana, 1, away({ text: "Trip", from: "2026-11-20", until: "2026-11-25" }, 1));
+    expect((await factsOf(db, ana)).get(1)?.away?.value).toMatchObject({ from: "2026-11-20" });
+    // The first day after the last, or a day that does not exist, is refused before anything is written.
+    const parse = (value: unknown) => FACT_CHANGE.safeParse(away(value, 2)).success;
+    expect(parse({ text: "", from: "2026-11-26", until: "2026-11-25" })).toBe(false);
+    expect(parse({ text: "", from: "2026-02-31", until: "2026-03-02" })).toBe(false);
   });
 });

@@ -17,6 +17,36 @@ const discordWebhook = z
   .string()
   .regex(/^https:\/\/(discord|discordapp)\.com\/api\/webhooks\//, "expected a Discord webhook URL");
 
+/** One notice channel (D102): its webhook (a secret), the name shown before posting, and whether it is a forum. */
+const noticeChannel = z
+  .object({
+    url: discordWebhook,
+    name: z.string().trim().min(1).max(100),
+    forum: z.boolean().default(false),
+  })
+  .strict();
+
+/**
+ * Where each workspace posts notices (D102), by slug: a members notice to `members`, a leadership one to
+ * `leaders`. JSON in one variable; the URLs are secrets, so a parse error names the path, never the value.
+ */
+const workspaceWebhooks = z
+  .string()
+  .transform((raw, ctx) => {
+    try {
+      return JSON.parse(raw) as unknown;
+    } catch {
+      ctx.addIssue({ code: "custom", message: "expected JSON" });
+      return z.NEVER;
+    }
+  })
+  .pipe(
+    z.record(
+      z.string().regex(/^[a-z0-9][a-z0-9-]{1,31}$/, "expected a workspace slug"),
+      z.object({ members: noticeChannel.optional(), leaders: noticeChannel.optional() }).strict(),
+    ),
+  );
+
 export const envSchema = z.object({
   LAP_API_KEY: z.string().startsWith("lap_", "expected a lap_ key"),
   // The only place upstream hosts appear (plan Phase 2); override if the host or version path moves.
@@ -73,12 +103,18 @@ export const envSchema = z.object({
   // The Discord app's Public Key (D96): verifies "Send to LAPTracker" interactions. Not a secret. Without
   // it the interactions route refuses every request.
   DISCORD_PUBLIC_KEY: optional(z.string().regex(/^[0-9a-f]{64}$/i, "expected 64 hex characters")),
+  // The Discord app's bot token (D101): only opens a thread on a message and posts "Translate for everyone"
+  // in it. A secret, sent only to Discord as `Authorization: Bot …`. Without it translations go to the channel.
+  DISCORD_BOT_TOKEN: optional(z.string().min(20, "expected a Discord bot token")),
   // PostHog (D77): on only on the production deployment (Vercel sets VERCEL_ENV) with the project key set.
   VERCEL_ENV: optional(z.string()),
   POSTHOG_KEY: optional(z.string()),
   // Translate and Improve writing in the notices library (D81). Optional: without it the buttons say
   // they are not set up, and nothing is sent anywhere.
   GROQ_API_KEY: optional(z.string().startsWith("gsk_", "expected a gsk_ key")),
+  // "Publish to Discord" for notices (D102). Optional: without it, or without a workspace's channel, the
+  // button says the channel is not set up and nothing is posted.
+  WORKSPACE_DISCORD_WEBHOOKS: optional(workspaceWebhooks),
 });
 
 export type Env = z.infer<typeof envSchema>;

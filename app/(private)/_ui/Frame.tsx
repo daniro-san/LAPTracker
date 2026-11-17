@@ -38,7 +38,12 @@ export async function workspaceWords(): Promise<{
 const TABS: TabId[] = ["home", "members", "mark", "days", "review"];
 /** The tabs that exist so far; the others come with their own issues and are shown as "soon". Notices
  * live inside Calendar (its Week · Caravans · Notices views, prototype v5), so it has no tab of its own. */
-const PATHS: Partial<Record<TabId, string>> = { home: "", members: "/members", days: "/calendar" };
+const PATHS: Partial<Record<TabId, string>> = {
+  home: "",
+  members: "/members",
+  mark: "/roll-call",
+  days: "/calendar",
+};
 
 /** The Home tab's count of screenshot drafts waiting for review (issue 299), beside its label. */
 function Waiting({ n, t }: { n: number; t: WorkspaceDictionary }) {

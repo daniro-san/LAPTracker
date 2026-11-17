@@ -10,6 +10,7 @@ import { readScreen } from "../screenshot/classify";
 import { ImageRefusedError } from "../screenshot/prepare";
 import type { ScreenshotReader } from "../screenshot/read-screenshot";
 import { WORKSPACE_DICTIONARIES } from "./dictionary";
+import { editOriginal } from "./discord-api";
 import type { Attachment, Job } from "./discord-interaction";
 import { createDrafts, MAX_PICTURES, type PictureText } from "./import";
 import { failureCode } from "./import-read";
@@ -89,19 +90,9 @@ export async function fetchPicture(
 
 /** Edits the sender's "thinking…" reply; mentions are off. A failure is logged as a code only. */
 async function editReply(deps: JobDeps, job: Job, content: string): Promise<void> {
-  const { applicationId, token } = job.webhook;
-  const url = `${deps.discordBase.replace(/\/$/, "")}/webhooks/${applicationId}/${token}/messages/@original`;
-  try {
-    const res = await deps.fetch(url, {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ content, allowed_mentions: { parse: [] } }),
-      signal: AbortSignal.timeout(TIMEOUT_MS),
-    });
-    if (!res.ok) privateLog("w.import.reply_failed", { status: res.status });
-  } catch {
-    privateLog("w.import.reply_failed");
-  }
+  const res = await editOriginal(deps.fetch, deps.discordBase, job.webhook, { content });
+  if (!res) privateLog("w.import.reply_failed");
+  else if (!res.ok) privateLog("w.import.reply_failed", { status: res.status });
 }
 
 /** One fetched picture read, or null when it could not be fetched or its size was refused. */

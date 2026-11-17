@@ -17,6 +17,7 @@ import { useEditor, type EditorProps } from "./notice-editor-state";
 import { NoticeActions } from "./NoticeActions";
 import { ConflictBanner } from "./NoticeBits";
 import { Flags, SaveBar } from "./NoticeEditorParts";
+import { NoticeHistory } from "./NoticeHistory";
 import { LanguageField } from "./NoticeLanguageField";
 
 export type { EditorProps } from "./notice-editor-state";
@@ -58,6 +59,11 @@ export function NoticeEditor(p: EditorProps) {
           </span>
         </Notice>
       )}
+      {e.restored && e.dirty && (
+        <Notice tone="info" className="mt-3">
+          {t["notices.history.restored"]}
+        </Notice>
+      )}
       <label htmlFor="notice-title" className="mt-3 block font-semibold">
         {t["notices.title"]}
       </label>
@@ -71,6 +77,7 @@ export function NoticeEditor(p: EditorProps) {
       <LanguageField p={p} e={e} />
       <NoticeActions p={p} e={e} />
       <Flags e={e} t={t} />
+      <NoticeHistory p={p} e={e} />
       <SaveBar p={p} e={e} />
     </form>
   );

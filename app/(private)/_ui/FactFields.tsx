@@ -8,9 +8,10 @@ import { useMemo, type ReactNode } from "react";
 
 import { chip, FIELD } from "@/lib/brand/components/controls";
 import { LANGUAGES, TIER_MAX, type FactField, type MemberFacts } from "@/lib/private/fact-fields";
-import { mightIn } from "@/lib/private/onboarding-parse";
+import { mightIn, millionsIn } from "@/lib/private/onboarding-parse";
 
-import { say, SOURCE_KEY, type EditorWords, type Form } from "./facts-form";
+import { percentOf, say, SOURCE_KEY, type EditorWords, type Form } from "./facts-form";
+import { SuffixInput } from "./SuffixInput";
 import { TimeZonePicker } from "./TimeZonePicker";
 
 export interface FieldsProps {
@@ -33,7 +34,7 @@ export interface FieldsProps {
 
 const INPUT = FIELD;
 
-function Row(props: FieldsProps & { field: FactField; children: ReactNode }) {
+function Row(props: FieldsProps & { field: FactField; hint?: string | null; children: ReactNode }) {
   const { field, words, stored, fromMessage } = props;
   const source = stored[field]?.value != null ? (stored[field]?.source ?? null) : null;
   return (
@@ -52,9 +53,7 @@ function Row(props: FieldsProps & { field: FactField; children: ReactNode }) {
         )}
       </div>
       {props.children}
-      {props.invalid.includes(field) && field === "squadMight" && (
-        <p className="mt-1 text-body-sm text-seal">{words["facts.mightHint"]}</p>
-      )}
+      {props.hint && <p className="mt-1 text-body-sm text-seal">{props.hint}</p>}
       {props.conflictOf(field)}
     </div>
   );
@@ -63,36 +62,45 @@ function Row(props: FieldsProps & { field: FactField; children: ReactNode }) {
 function Numbers(p: FieldsProps) {
   const { form, edit, words, invalid } = p;
   const might = mightIn(form.squadMight);
+  // Red only for what cannot be read: might once Save found it so (a full number is unreadable while it
+  // is being typed), AD Tech as soon as it is above 100.
+  const mightBad = invalid.includes("squadMight") && might === null;
+  const adBad = percentOf(form.adTech) === undefined;
   return (
     <>
       <Row {...p} field="squadMight">
-        <input
+        <SuffixInput
           aria-labelledby="fact-squadMight"
           aria-describedby="fact-squadMight-n"
           inputMode="decimal"
           value={form.squadMight}
-          aria-invalid={invalid.includes("squadMight") || undefined}
+          suffix={millionsIn(form.squadMight) === null ? null : "M"}
+          aria-invalid={mightBad || undefined}
           placeholder={words["facts.mightHint"]}
           onChange={(e) => edit("squadMight", { squadMight: e.target.value })}
-          className={INPUT}
         />
-        {/* What Save stores, digits grouped: "12.3M" reads 12,300,000. */}
-        <p id="fact-squadMight-n" className="mt-1 min-h-5 text-body-sm text-ink/80 tabular-nums">
-          {might === null ? "" : new Intl.NumberFormat(p.language).format(might)}
+        {/* What Save stores, digits grouped ("19,8" reads = 19,800,000), or the hint in red. */}
+        <p
+          id="fact-squadMight-n"
+          className={`mt-1 min-h-5 text-body-sm tabular-nums ${mightBad ? "text-seal" : "text-ink/80"}`}
+        >
+          {mightBad
+            ? words["facts.mightHint"]
+            : might === null
+              ? ""
+              : `= ${new Intl.NumberFormat(p.language).format(might)}`}
         </p>
       </Row>
-      <Row {...p} field="adTech">
-        <span className="flex items-center gap-2">
-          <input
-            aria-labelledby="fact-adTech"
-            inputMode="decimal"
-            value={form.adTech}
-            aria-invalid={invalid.includes("adTech") || undefined}
-            onChange={(e) => edit("adTech", { adTech: e.target.value })}
-            className={`${INPUT} max-w-28`}
-          />
-          <span aria-hidden="true">%</span>
-        </span>
+      <Row {...p} field="adTech" hint={adBad ? words["facts.adHint"] : null}>
+        <SuffixInput
+          aria-labelledby="fact-adTech"
+          inputMode="decimal"
+          value={form.adTech}
+          suffix="%"
+          aria-invalid={adBad || undefined}
+          onChange={(e) => edit("adTech", { adTech: e.target.value.replace(/[^\d.,]/g, "") })}
+          className="max-w-28"
+        />
       </Row>
       <Row {...p} field="troopTier">
         <select
@@ -206,6 +214,8 @@ function Status(p: FieldsProps) {
 
 function Notes(p: FieldsProps) {
   const { form, edit, words } = p;
+  // The first day after the last (D103): both days are marked, with the reason under them.
+  const daysBad = p.invalid.includes("away") || undefined;
   return (
     <>
       <Row {...p} field="away">
@@ -219,14 +229,30 @@ function Notes(p: FieldsProps) {
           />
         </label>
         <label className="mt-2 block text-body-sm">
+          {words["facts.awayFrom"]}
+          <input
+            type="date"
+            value={form.awayFrom}
+            aria-invalid={daysBad}
+            onChange={(e) => edit("away", { awayFrom: e.target.value })}
+            className={`${INPUT} mt-1 block max-w-56`}
+          />
+        </label>
+        <label className="mt-2 block text-body-sm">
           {words["facts.awayDay"]}
           <input
             type="date"
             value={form.awayUntil}
+            aria-invalid={daysBad}
             onChange={(e) => edit("away", { awayUntil: e.target.value })}
             className={`${INPUT} mt-1 block max-w-56`}
           />
         </label>
+        {daysBad && (
+          <p role="alert" className="mt-1 text-body-sm font-semibold text-seal">
+            {words["facts.awayOrder"]}
+          </p>
+        )}
       </Row>
       <Row {...p} field="notes">
         <textarea
