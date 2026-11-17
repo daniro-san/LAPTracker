@@ -57,7 +57,8 @@ const known = <R extends { by: number | null }>(rows: R[]) =>
 /** One save of member facts: who, when, and the member (or how many members, for a batch). */
 export type FactsDone = Done & { uid: number; members: number };
 export type NoticeDone = Done & { noticeId: number };
-export type DraftDone = Done & { kind: string; scope: string | null };
+/** `source`: desk or discord (pictures), or pasted (Members' "Paste updates", D109). */
+export type DraftDone = Done & { kind: string; scope: string | null; source: string };
 export type EntryDone = Done & {
   kind: string;
   variant: string | null;
@@ -138,7 +139,7 @@ async function smallSources(db: Db, ws: number, from: Date, n: number): Promise<
         and p.published_at >= ${since}
       order by p.published_at desc limit ${n})
     union all
-    (select 'draft', d.done_by, d.done_at, null, d.kind, d.scope, null, null, null
+    (select 'draft', d.done_by, d.done_at, null, d.kind, d.scope, null, d.source, null
       from screenshot_drafts d
       where d.workspace_id = ${ws} and d.status = 'saved' and d.done_by is not null
         and d.done_at >= ${since}
@@ -252,7 +253,13 @@ function split(rows: SmallRow[]) {
       at,
       noticeId: Number(notice_id),
     })),
-    drafts: of("draft").map(({ by, at, a, b }) => ({ by, at, kind: a ?? "", scope: b })),
+    drafts: of("draft").map(({ by, at, a, b, title }) => ({
+      by,
+      at,
+      kind: a ?? "",
+      scope: b,
+      source: title ?? "desk",
+    })),
     entries: of("entry").map(({ by, at, a, b, level, title }) => ({
       by,
       at,

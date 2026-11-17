@@ -142,6 +142,28 @@ describe("recent activity", () => {
     ]);
   });
 
+  it("words a saved paste as pasted updates, not a screenshot", async () => {
+    const a = (await browser(db, ws, "Ana")).userId;
+    await db.insert(screenshotDrafts).values({
+      workspaceId: ws,
+      kind: "member_update",
+      scopeSure: true,
+      pictureDay: "2026-11-20",
+      pages: [],
+      rows: [],
+      source: "pasted",
+      status: "saved",
+      doneBy: a,
+      doneAt: ago(5),
+      createdAt: ago(6),
+      expiresAt: ago(-7 * 24 * 60),
+    });
+    const me = (await browser(db, ws, "Rook")).visit(NOW);
+    const items = await recentActivity(db, (await me) as WorkspaceAccess, NOW);
+    expect(linesOf(items)).toEqual(["Ana pasted member updates"]);
+    expect(linesOf(items, "pt-BR")).toEqual(["Ana colou atualizações de membros"]);
+  });
+
   it("holds at most ACTIVITY_MAX lines", async () => {
     const a = (await browser(db, ws, "Ana")).userId;
     await db.insert(memberFollowUps).values(

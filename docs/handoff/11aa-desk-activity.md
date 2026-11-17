@@ -19,7 +19,7 @@ Closes #335. Branch `session/11aa-desk-activity`, cut from `origin/dev` at 3ea8c
   - `app/(private)/_ui/DeskActivity.tsx`;
   - Home `page.tsx`;
   - `touchSession` in `lib/repo/workspaces.ts`.
-- **Migration** `drizzle/0036_desk_activity.sql`: `seen_at`, plus indexes on `member_facts (workspace_id, written_at)`, `notice_edits (workspace_id, edited_at)`, `member_follow_ups (workspace_id, written_at)`, `thefts (workspace_id, created_at)` and `roll_call_marks (written_at)`.
+- **Migration** `drizzle/0037_desk_activity.sql`: `seen_at`, plus indexes on `member_facts (workspace_id, written_at)`, `notice_edits (workspace_id, edited_at)`, `member_follow_ups (workspace_id, written_at)`, `thefts (workspace_id, created_at)` and `roll_call_marks (written_at)`.
 - **Docs**: D108, the decisions index, ARCHITECTURE.
 
 ## Decisions
@@ -133,6 +133,13 @@ Closes #335. Branch `session/11aa-desk-activity`, cut from `origin/dev` at 3ea8c
   - The privacy grep found 0 of 101 roster names.
   - Not run in this e2e: the "Just you." line (no screenshot with nobody else on the desk). It is covered by the dictionary check only.
 
+## Rebase on fc714d7 (#400, member updates)
+
+- **Home**: both sides kept. #400's `progressHistory(…).then(membersView)` and this branch's `onDeskNow` and `recentActivity` run in the same `Promise.all`. The decisions index keeps D108 and D109.
+- **Migration**: regenerated as `0037_desk_activity` on top of `0036_draft_source_pasted`, same SQL.
+- **Pasted drafts**: #400 added the draft source `pasted`. The union read now carries the draft's source. A saved pasted draft reads "Ana pasted member updates" (PT "colou atualizações de membros", FR "a collé des mises à jour de membres") instead of "saved a screenshot: Member update". +1 test in `desk-activity-feed.test.ts` (EN and PT).
+- `pnpm check` exits 0: **179 files passed, 2 skipped; 950 tests passed, 4 skipped**. The e2e above ran before this rebase.
+
 ## Open issues
 - The feed shows only the newest change of each calendar field (no history table). It has no calendar deletions and no theft follow-up states (owner: not this round). Notices cannot be deleted at all.
 - Only one bound applies to a long run of single roll call taps: the hour grouping, on top of the 40-row read limit.
@@ -142,14 +149,14 @@ Closes #335. Branch `session/11aa-desk-activity`, cut from `origin/dev` at 3ea8c
 
 ## Next
 - Model/effort: keep. One sitting covered the reads, the UI and the e2e.
-- What the owner must do first: merge and release (migration 0036 adds a nullable column and five indexes, with no backfill). Then open Home on a phone while another officer has the desk open.
+- What the owner must do first: merge and release (migration 0037 adds a nullable column and five indexes, with no backfill). Then open Home on a phone while another officer has the desk open.
 - Plan change: none. The workspace track lives in issues, not in `docs/SESSION_PLAYBOOK.md`.
 
 <adjustments>
 - `workspace_sessions.seen_at` exists; an officer request writes it at most once a minute (`SEEN_EVERY_MS` in `lib/private/session.ts`). Any future "who is around" need should read it, not add a table.
 - `recentActivity(db, access, now)` returns typed lines. A new history (for example calendar edits) joins by adding one bounded read in `lib/repo/desk-activity.ts` and one kind in `desk-activity.ts` and `desk-activity-words.ts`.
 - A migration test that runs app inserts on an older schema breaks when a column is added. Insert with plain SQL in such tests.
-- Migration number: `0036_desk_activity`, on top of dev's `0035_roll_call_cheese` (408d046).
+- Migration number: `0037_desk_activity`, on top of dev's `0036_draft_source_pasted` (fc714d7).
 </adjustments>
 
 PR: (added by the orchestrator)

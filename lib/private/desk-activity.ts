@@ -36,7 +36,7 @@ type What =
   /** `uids`: members saved one at a time; `batch`: members of batch saves (a sheet import). */
   | { kind: "facts"; uids: number[]; batch: number }
   | { kind: "noticeSaved" | "noticePosted"; noticeId: number }
-  | { kind: "draft"; draft: Pick<DraftDone, "kind" | "scope"> }
+  | { kind: "draft"; draft: Pick<DraftDone, "kind" | "scope" | "source"> }
   | { kind: "entry" | "entryEdit"; entry: Pick<EntryDone, "kind" | "variant" | "level" | "title"> }
   | { kind: "marks"; call: Pick<MarksDone, "kind" | "variant">; rest: boolean }
   | ({ kind: "followUp" } & Pick<FollowUpDone, "uid" | "action" | "until">)

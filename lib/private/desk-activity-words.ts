@@ -59,6 +59,17 @@ function followUpLine(
   return fill(t[`activity.followUp.${key}`], { who, member, date });
 }
 
+/** A saved draft: a screenshot of some kind, or lines pasted into Members' "Paste updates" (D109). */
+function draftLine(
+  t: WorkspaceDictionary,
+  who: string,
+  item: Extract<ActivityItem, { kind: "draft" }>,
+): string {
+  if (item.draft.source === "pasted") return fill(t["activity.pasted"], { who });
+  const kind = kindLabel(t, item.draft.kind as ImportKind, item.draft.scope as Scope | null);
+  return fill(t["activity.draft"], { who, kind });
+}
+
 /** Marks in a roll call: "the rest" when one action wrote several. */
 function marksLine(
   t: WorkspaceDictionary,
@@ -99,10 +110,8 @@ export function activityLine(
     case "noticeSaved":
     case "noticePosted":
       return fill(t[`activity.${item.kind}`], { who, title: isolate(item.title) });
-    case "draft": {
-      const kind = kindLabel(t, item.draft.kind as ImportKind, item.draft.scope as Scope | null);
-      return fill(t["activity.draft"], { who, kind });
-    }
+    case "draft":
+      return draftLine(t, who, item);
     case "entry":
     case "entryEdit":
       return fill(t[`activity.${item.kind}`], { who, entry: isolate(titleOf(item.entry, t)) });
