@@ -213,22 +213,33 @@ export async function deleteSession(db: Db, workspaceId: number, tokenHash: stri
     );
 }
 
-/** "Sign out everyone in this workspace": every session of the workspace ends now. */
-export async function signOutWorkspace(db: Db, workspaceId: number): Promise<number> {
-  const gone = await db
-    .delete(workspaceSessions)
-    .where(eq(workspaceSessions.workspaceId, workspaceId))
-    .returning({ hash: workspaceSessions.tokenHash });
-  return gone.length;
-}
+/** Whose sessions /admin's "Sign out users" ends (D105, amended 2026-11-17). */
+export type SignOutWho =
+  | { scope: "all" }
+  | { scope: "officers" }
+  | { scope: "members" }
+  | { scope: "user"; userId: number };
 
-/** /admin's "Sign out members" (D105): every member session of the workspace ends now; officers stay. */
-export async function signOutMembers(db: Db, workspaceId: number): Promise<number> {
+/**
+ * /admin's "Sign out users": ends the workspace's sessions now, all of them, one tier's, or every session
+ * of one workspace_users row, only inside this workspace. Nobody is blocked. Returns how many ended.
+ */
+export async function signOutWorkspace(
+  db: Db,
+  workspaceId: number,
+  who: SignOutWho = { scope: "all" },
+): Promise<number> {
+  const only =
+    who.scope === "officers"
+      ? eq(workspaceSessions.tier, "officer")
+      : who.scope === "members"
+        ? eq(workspaceSessions.tier, "member")
+        : who.scope === "user"
+          ? eq(workspaceSessions.workspaceUserId, who.userId)
+          : undefined;
   const gone = await db
     .delete(workspaceSessions)
-    .where(
-      and(eq(workspaceSessions.workspaceId, workspaceId), eq(workspaceSessions.tier, "member")),
-    )
+    .where(and(eq(workspaceSessions.workspaceId, workspaceId), only))
     .returning({ hash: workspaceSessions.tokenHash });
   return gone.length;
 }

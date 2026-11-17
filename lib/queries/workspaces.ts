@@ -1,6 +1,6 @@
 // /admin's Workspaces card (D71, D73): each workspace's settings, its allowlist and how many sessions are
-// open. Owner only (PIN); no roster data.
-import { asc, count, eq, gt, sql } from "drizzle-orm";
+// open, and who holds them (for "Sign out users", D105). Owner only (PIN); no roster data.
+import { and, asc, count, eq, gt, max, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { workspaces, workspaceSessions, workspaceUsers } from "../schema";
@@ -12,21 +12,27 @@ export interface AdminWorkspace {
   discordGuildId: string;
   leaderRoleIds: string[];
   openSessions: number;
-  /** Of them, members' sessions (D105). */
-  memberSessions: number;
   allowlist: { discordUserId: string; expiresAt: Date | null }[];
+  /** Each person with an open session: officer if any of their open sessions is an officer's. */
+  signedIn: SignedInPerson[];
+}
+
+export interface SignedInPerson {
+  userId: number;
+  /** The name they chose, else Discord's display name; null when neither is known. */
+  name: string | null;
+  tier: "officer" | "member";
+  /** The latest sign-in or Discord renewal of their open sessions (`checked_at`). */
+  lastSeen: Date;
 }
 
 export async function listWorkspaces(db: Db, now: Date): Promise<AdminWorkspace[]> {
-  const [rows, sessions, allowed] = await Promise.all([
+  const [rows, sessions, allowed, people] = await Promise.all([
     db.select().from(workspaces).orderBy(asc(workspaces.slug)),
     db
       .select({
         workspaceId: workspaceSessions.workspaceId,
         n: count(),
-        members: sql<number>`count(*) filter (where ${workspaceSessions.tier} = 'member')`.mapWith(
-          Number,
-        ),
       })
       .from(workspaceSessions)
       .where(gt(workspaceSessions.expiresAt, now))
@@ -40,6 +46,27 @@ export async function listWorkspaces(db: Db, now: Date): Promise<AdminWorkspace[
       .from(workspaceUsers)
       .where(eq(workspaceUsers.allowlisted, true))
       .orderBy(asc(workspaceUsers.id)),
+    db
+      .select({
+        workspaceId: workspaceSessions.workspaceId,
+        userId: workspaceUsers.id,
+        name: sql<
+          string | null
+        >`coalesce(${workspaceUsers.chosenName}, ${workspaceUsers.displayName})`,
+        officer: sql<boolean>`bool_or(${workspaceSessions.tier} = 'officer')`,
+        lastSeen: max(workspaceSessions.checkedAt),
+      })
+      .from(workspaceSessions)
+      .innerJoin(
+        workspaceUsers,
+        and(
+          eq(workspaceUsers.id, workspaceSessions.workspaceUserId),
+          eq(workspaceUsers.workspaceId, workspaceSessions.workspaceId),
+        ),
+      )
+      .where(gt(workspaceSessions.expiresAt, now))
+      .groupBy(workspaceSessions.workspaceId, workspaceUsers.id)
+      .orderBy(sql`max(${workspaceSessions.checkedAt}) desc`, asc(workspaceUsers.id)),
   ]);
   return rows.map((w) => ({
     id: w.id,
@@ -48,9 +75,16 @@ export async function listWorkspaces(db: Db, now: Date): Promise<AdminWorkspace[
     discordGuildId: w.discordGuildId,
     leaderRoleIds: w.leaderRoleIds,
     openSessions: sessions.find((s) => s.workspaceId === w.id)?.n ?? 0,
-    memberSessions: sessions.find((s) => s.workspaceId === w.id)?.members ?? 0,
     allowlist: allowed
       .filter((a) => a.workspaceId === w.id)
       .map(({ discordUserId, expiresAt }) => ({ discordUserId, expiresAt })),
+    signedIn: people
+      .filter((p) => p.workspaceId === w.id)
+      .map((p) => ({
+        userId: p.userId,
+        name: p.name,
+        tier: p.officer ? ("officer" as const) : ("member" as const),
+        lastSeen: new Date(p.lastSeen ?? 0),
+      })),
   }));
 }

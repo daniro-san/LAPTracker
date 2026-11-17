@@ -1,8 +1,7 @@
 "use client";
 
-// /admin's Workspaces card (D71, D73, D105): each workspace with its allowlist, "Sign out everyone" and
-// "Sign out members" (officers stay signed in), each asked in a sheet first,
-// a form that adds or edits a workspace, and one that adds an allowlist entry. Each press sends the PIN as
+// /admin's Workspaces card (D71, D73, D105): each workspace with its allowlist and one "Sign out users"
+// button (a sheet picks everyone, officers, members or one person, then asks), a form that adds or edits a workspace, and one that adds an allowlist entry. Each press sends the PIN as
 // x-edit-pin, like the run buttons, and shows the outcome in words.
 import { useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
@@ -11,9 +10,9 @@ import { ALLIANCES } from "@/config/alliances";
 import { buttonClass } from "@/lib/brand/components/Button";
 import { copy, fill } from "@/lib/copy";
 
-import { ConfirmSheet } from "./ConfirmSheet";
 import { Result } from "./outcome";
 import { forgetPin, PinSheet, savedPin } from "./PinSheet";
+import { SignOutUsersSheet, type SignOutChoice, type SignOutPerson } from "./SignOutUsersSheet";
 
 const t = copy.admin.workspaces;
 const FIELD = "drawn-field min-h-11 w-full px-3";
@@ -26,8 +25,9 @@ export interface WorkspaceView {
   guild: string;
   roles: string;
   sessions: number;
-  memberSessions: number;
   allowlist: string[];
+  /** Who has an open session, for "Sign out users". */
+  people: SignOutPerson[];
 }
 
 type Call = { url: string; body: unknown; ok: (answer: Record<string, unknown>) => string };
@@ -90,15 +90,12 @@ function fields(e: React.FormEvent<HTMLFormElement>): Record<string, string> {
   return Object.fromEntries(new FormData(e.currentTarget)) as Record<string, string>;
 }
 
-/** Which sign-out the sheet asks about: every session, or only members' (D105). */
-type SignOut = { w: WorkspaceView; members: boolean };
-
 function WorkspaceList({
   workspaces,
   onSignOut,
 }: {
   workspaces: WorkspaceView[];
-  onSignOut: (s: SignOut) => void;
+  onSignOut: (w: WorkspaceView) => void;
 }) {
   if (workspaces.length === 0) return <p className="text-ink/70">{t.none}</p>;
   return (
@@ -114,21 +111,9 @@ function WorkspaceList({
           <p className="text-body-sm break-words text-ink/80">
             {t.allowlist}: {w.allowlist.length === 0 ? t.allowlistNone : w.allowlist.join(", ")}
           </p>
-          {/* The narrower action first; everyone (the owner too) is the dangerous one (D105). */}
-          <p className="mt-2 flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => onSignOut({ w, members: true })}
-              className={buttonClass("secondary")}
-            >
-              {t.signOutMembers}
-            </button>
-            <button
-              type="button"
-              onClick={() => onSignOut({ w, members: false })}
-              className={buttonClass("secondary", "font-semibold text-seal")}
-            >
-              {t.signOut}
+          <p className="mt-2">
+            <button type="button" onClick={() => onSignOut(w)} className={buttonClass("secondary")}>
+              {t.signOutUsers.button}
             </button>
           </p>
         </li>
@@ -221,34 +206,30 @@ function AllowForm({ workspaces, run }: { workspaces: WorkspaceView[]; run: Run 
 
 export function WorkspacesCard({ workspaces }: { workspaces: WorkspaceView[] }) {
   const { run, message, sheet } = usePinCall();
-  const [confirm, setConfirm] = useState<SignOut | null>(null);
-  const answer = (yes: boolean) => {
-    const asked = confirm;
-    setConfirm(null);
-    if (!yes || !asked) return;
+  const [signingOut, setSigningOut] = useState<WorkspaceView | null>(null);
+  const signOut = (w: WorkspaceView, choice: SignOutChoice) => {
+    setSigningOut(null);
     run({
-      url: `/api/admin/workspaces/${asked.members ? "sign-out-members" : "sign-out"}`,
-      body: { workspace_id: asked.w.id },
+      url: "/api/admin/workspaces/sign-out",
+      body:
+        choice.scope === "user"
+          ? { workspace_id: w.id, scope: "user", user_id: choice.userId }
+          : { workspace_id: w.id, scope: choice.scope },
       ok: (a) => fill(t.ended, { n: Number(a.ended ?? 0) }),
     });
   };
   return (
     <div>
       {message && <Result message={message} />}
-      <WorkspaceList workspaces={workspaces} onSignOut={setConfirm} />
+      <WorkspaceList workspaces={workspaces} onSignOut={setSigningOut} />
       <WorkspaceForm run={run} />
       {workspaces.length > 0 && <AllowForm workspaces={workspaces} run={run} />}
-      {confirm && (
-        <ConfirmSheet
-          text={fill(
-            confirm.members
-              ? confirm.w.memberSessions === 1
-                ? t.signOutMembersOne
-                : t.signOutMembersConfirm
-              : t.signOutConfirm,
-            { slug: confirm.w.slug, n: confirm.w.memberSessions },
-          )}
-          onAnswer={answer}
+      {signingOut && (
+        <SignOutUsersSheet
+          slug={signingOut.slug}
+          people={signingOut.people}
+          onCancel={() => setSigningOut(null)}
+          onConfirm={(choice) => signOut(signingOut, choice)}
         />
       )}
       {sheet}
