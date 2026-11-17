@@ -211,11 +211,13 @@ export interface NoticeWrite {
 /**
  * One save. `decide` sees the notice's current fields (none for a new notice) and returns the edits to
  * write, or a refusal that is returned as it is and writes nothing. null: no such notice in the workspace.
+ * `after` runs in the same transaction once the edits are written (D113: a review request's outcome).
  */
 export async function writeNotice<R>(
   db: Db,
   target: NoticeWrite,
   decide: (current: FieldRow[]) => { write: NewEditRow[] } | { refuse: R },
+  after?: (tx: Pick<Db, "select" | "insert">, id: number) => Promise<unknown>,
 ): Promise<{ id: number } | { refuse: R } | null> {
   const { workspaceId, noticeId, userId, now, requestId } = target;
   return db.transaction(async (tx) => {
@@ -268,6 +270,7 @@ export async function writeNotice<R>(
       })),
     );
     await tx.update(notices).set({ updatedBy: userId, updatedAt: now }).where(eq(notices.id, id));
+    await after?.(tx, id);
     return { id };
   });
 }

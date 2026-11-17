@@ -57,6 +57,8 @@ export interface EditorProps {
   /** More edits exist than `history` holds: how many of the newest it holds. */
   historyCut?: number | undefined;
   onClose?: (() => void) | undefined;
+  /** Opened from a review request (D113): Save closes it as "Edited by …". */
+  review?: number | undefined;
 }
 
 /** Warns before the page is left while `dirty`, unless the returned flag says the officer chose to leave. */
@@ -123,6 +125,17 @@ function useBanner(conflicts: Conflict[]) {
   return { banner, showBanner };
 }
 
+/** Translate, Improve writing and "Fit to 1,000" (D81, D113), each from the text in the draft. */
+function aiAsks(run: (ask: DraftAsk) => Promise<void>, values: Record<NoticeField, string>) {
+  return {
+    translate: (from: NoticeLanguage, to: NoticeLanguage[]) =>
+      run({ kind: "translate", from, to, text: values[from] }),
+    improve: (language: NoticeLanguage, tone: Tone) =>
+      run({ kind: "improve", language, tone, text: values[language] }),
+    fit: (language: NoticeLanguage) => run({ kind: "fit", language, text: values[language] }),
+  };
+}
+
 export function useEditor(p: EditorProps) {
   const router = useRouter();
   const [draft, setDraft] = useState(() => startDraft(p.fields));
@@ -142,8 +155,8 @@ export function useEditor(p: EditorProps) {
   const dirty = changesOf(draft).length > 0;
   const leaving = useLeaveWarning(dirty);
   const kept = useKept(p, draft.values, dirty, (values) => setDraft((d) => ({ ...d, values })));
-  const run = async (label: DraftAsk["kind"], ask: DraftAsk) => {
-    setBusy(label);
+  const run = async (ask: DraftAsk) => {
+    setBusy(ask.kind);
     setAiMessage(null);
     const answer = await askDraft(p.slug, ask);
     setBusy(null);
@@ -158,7 +171,7 @@ export function useEditor(p: EditorProps) {
     if (changes.length === 0) return p.onClose?.();
     setBusy("save");
     setMessage(null);
-    const answer = await saveNotice(p.slug, p.id, changes, requestId);
+    const answer = await saveNotice(p.slug, p.id, changes, requestId, p.review ?? null);
     setBusy(null);
     if (answer.ok) {
       leaving.current = true;
@@ -189,10 +202,7 @@ export function useEditor(p: EditorProps) {
       if (isNoticeLanguage(field)) setWroteIn(field);
       setDraft((d) => ({ ...d, values: { ...d.values, [field]: value } }));
     },
-    translate: (from: NoticeLanguage, to: NoticeLanguage[]) =>
-      run("translate", { kind: "translate", from, to, text: draft.values[from] }),
-    improve: (language: NoticeLanguage, tone: Tone) =>
-      run("improve", { kind: "improve", language, tone, text: draft.values[language] }),
+    ...aiAsks(run, draft.values),
     restored,
     /** Puts an earlier version's fields in as a draft (D102); nothing is saved until Save. */
     restoreVersion: (earlier: Partial<Record<NoticeField, string>>) => {

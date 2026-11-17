@@ -1,6 +1,7 @@
 // The "To review" list on Home (issue 299): the workspace's drafts waiting for an officer, shared by all of
 // them, and the door in, "Send screenshots". Each draft says what was read and how many rows need a person.
-// Above them, "2 new members to match" when a roster read could not match new members added by hand.
+// Above them, "2 new members to match" when a roster read could not match new members added by hand, and
+// each notice review request the officer may answer (D113), linked to its notice.
 import { fill, isolate } from "@/lib/copy";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import { MAX_PICTURES } from "@/lib/private/import";
@@ -9,7 +10,9 @@ import { STATUS_BAR } from "@/lib/private/import-kinds";
 import { SAVED_KINDS } from "@/lib/private/import-save";
 import type { ReviewItem } from "@/lib/private/import-view";
 import { draftCounts, kindLabel } from "@/lib/private/import-words";
+import type { reviewsForMe } from "@/lib/private/notice-reviews";
 
+import { LANGUAGE_NAME } from "./languages";
 import { SendScreenshots, type TypeChoice } from "./SendScreenshots";
 
 const KINDS: ImportKind[] = [
@@ -77,6 +80,39 @@ export function TabSend(props: {
   );
 }
 
+/** The notice review requests for this officer (D113): "Ana asked you to review Français", the title under it. */
+function NoticeReviewLinks(props: {
+  slug: string;
+  t: WorkspaceDictionary;
+  reviews: Awaited<ReturnType<typeof reviewsForMe>>;
+}) {
+  const { t } = props;
+  if (props.reviews.length === 0) return null;
+  return (
+    <ul className="mt-3 space-y-2">
+      {props.reviews.map((r) => (
+        <li key={r.id}>
+          <a
+            href={`/w/${props.slug}/notices/${r.noticeId}`}
+            className="flex min-h-11 flex-col gap-0.5 border border-rule px-3 py-2"
+          >
+            <span className="font-semibold">
+              {fill(t[r.forMe ? "notices.review.home.you" : "notices.review.home.team"], {
+                name: r.askedBy ? isolate(r.askedBy) : t["notices.someone"],
+                what: r.language ? LANGUAGE_NAME[r.language] : t["notices.review.wholeIn"],
+              })}
+            </span>
+            <span className="text-body-sm text-ink/75">{isolate(r.title)}</span>
+            <span className="self-end text-body-sm font-semibold text-plum underline underline-offset-4">
+              {t["notices.review.open"]}
+            </span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export function ToReview(props: {
   slug: string;
   items: ReviewItem[];
@@ -84,17 +120,22 @@ export function ToReview(props: {
   language: WorkspaceLanguage;
   /** "2 new members to match" and its link to Members (D106, 2026-11-17); null when none. */
   toMatch: { line: string; href: string } | null;
+  /** The open notice review requests for this officer (D113). */
+  reviews: Awaited<ReturnType<typeof reviewsForMe>>;
   /** "Mon 16 Nov 18:54 server time", per item. */
   when: (at: Date) => string;
 }) {
   const { slug, items, t, language } = props;
+  // Screenshot drafts and the notice reviews for this officer (D113).
+  const waiting = items.length + props.reviews.length;
   return (
     <section aria-labelledby="to-review" className="mt-4 border border-rule px-4 py-4">
       <h2 id="to-review" className="font-subhead text-display-sm">
         {t["shots.head"]}
-        {items.length > 0 && <span className="ml-2 tabular-nums text-plum">{items.length}</span>}
+        {waiting > 0 && <span className="ml-2 tabular-nums text-plum">{waiting}</span>}
       </h2>
       {items.length > 0 && <p className="mt-1">{t["shots.lead"]}</p>}
+      <NoticeReviewLinks slug={slug} t={t} reviews={props.reviews} />
       {props.toMatch && (
         <p className="mt-1">
           <a
@@ -107,9 +148,8 @@ export function ToReview(props: {
       )}
       {/* The door in comes first, so it does not sink under a long queue (panel PD-4, UI-8). */}
       <SendScreenshots {...sendProps(slug, t, language)} />
-      {items.length === 0 ? (
-        <p className="mt-3">{t["shots.none"]}</p>
-      ) : (
+      {waiting === 0 && <p className="mt-3">{t["shots.none"]}</p>}
+      {items.length > 0 && (
         <ul className="mt-3 space-y-2">
           {items.map((d) => (
             <li key={d.id}>

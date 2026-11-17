@@ -64,8 +64,11 @@ export const noticeSave = z
     changes: z.array(change).min(1).max(NOTICE_FIELDS.length),
     /** A new notice's request id (D100), made once per open editor. */
     requestId: z.uuid().optional(),
+    /** Saved from a review request (D113): the save closes it as edited, under the editor's request id. */
+    review: z.object({ id: z.number().int().positive(), requestId: z.uuid() }).strict().optional(),
   })
   .strict()
+  .refine((s) => s.review === undefined || s.id !== undefined)
   .refine((s) => new Set(s.changes.map((c) => c.field)).size === s.changes.length)
   // INVARIANT notices.request-once: a new notice carries its request id, so a retry stores one notice.
   .refine((s) => (s.id === undefined) === (s.requestId !== undefined));
@@ -181,6 +184,8 @@ export async function saveNotice(
   now: Date,
   /** A new notice's request id (D100); a retry with it answers the first notice's id. */
   requestId: string | null = null,
+  /** Runs in the save's transaction after the edits (D113: closes the review request it came from). */
+  after?: (tx: Pick<Db, "select" | "insert">, id: number) => Promise<unknown>,
 ): Promise<SaveResult> {
   if (id === null && !changes.some((c) => c.field === "title")) {
     return { ok: false, reason: "no_title" };
@@ -192,21 +197,26 @@ export async function saveNotice(
     now,
     requestId,
   };
-  const result = await writeNotice(db, target, (current) => {
-    const plan = planSave(stateOf(current), changes);
-    if (plan.ok) return { write: plan.edits };
-    const conflicts = plan.conflicts.map((field): Conflict => {
-      const row = current.find((r) => r.field === field);
-      return {
-        field,
-        value: row?.value ?? "",
-        version: row?.version ?? 0,
-        by: row?.by ?? null,
-        at: row?.at ?? now,
-      };
-    });
-    return { refuse: conflicts };
-  });
+  const result = await writeNotice(
+    db,
+    target,
+    (current) => {
+      const plan = planSave(stateOf(current), changes);
+      if (plan.ok) return { write: plan.edits };
+      const conflicts = plan.conflicts.map((field): Conflict => {
+        const row = current.find((r) => r.field === field);
+        return {
+          field,
+          value: row?.value ?? "",
+          version: row?.version ?? 0,
+          by: row?.by ?? null,
+          at: row?.at ?? now,
+        };
+      });
+      return { refuse: conflicts };
+    },
+    after,
+  );
   if (result === null) return { ok: false, reason: "not_found" };
   if ("refuse" in result) return { ok: false, reason: "conflict", conflicts: result.refuse };
   return { ok: true, id: result.id };

@@ -1,6 +1,6 @@
 // The notice editor's draft bookkeeping (issue 304): what a save sends, what Translate and Improve writing
 // leave behind for Accept and Undo, the conflict banner's two answers, the language tabs (issue 363), and
-// "Restore this version" (D102).
+// "Restore this version" (D102), and "Fit to 1,000" (D113).
 import { describe, expect, it } from "vitest";
 
 import { NOTICE_FIELDS, NOTICE_LANGUAGES, planSave } from "@/lib/private/notice-rules";
@@ -9,6 +9,7 @@ import type { NoticeFields } from "./notice-client";
 import {
   accept,
   askTab,
+  canFit,
   changesOf,
   discard,
   draftKind,
@@ -188,6 +189,94 @@ describe("the notice draft", () => {
       en: { version: 9, value: "Apply now.", basis: 2 },
     };
     expect(planSave(newer, changes)).toEqual({ ok: false, conflicts: ["en"] });
+  });
+
+  it("offers Fit only over the limit, and its draft gets Accept and Undo", () => {
+    const d = startDraft(saved());
+    expect(canFit(d, "en")).toBe(false);
+    // 1,000 characters is within the limit; one emoji more is over it (graphemes, not code units).
+    const full = { ...d, values: { ...d.values, en: "a".repeat(1000) } };
+    expect(canFit(full, "en")).toBe(false);
+    const over = { ...full, values: { ...full.values, en: `${"a".repeat(1000)}🙂` } };
+    expect(canFit(over, "en")).toBe(true);
+    const fitted = withDrafts(over, { en: "Short." }, { kind: "fit", language: "en", text: "x" });
+    expect([draftKind(fitted, "en"), tabState(fitted, "en", false)]).toEqual(["fit", "draft"]);
+    expect(canFit(fitted, "en")).toBe(false);
+    expect(discard(fitted, "en").values.en).toBe(over.values.en);
+    expect(draftKind(accept(fitted, "en"), "en")).toBeNull();
+    expect(askTab({ kind: "fit", language: "fr", text: "x" })).toBe("fr");
+  });
+
+  it("keeps a fitted fresh translation linked to its source; Fit on hand-written text does not", () => {
+    const long = "b".repeat(1001);
+    const translated = withDrafts(
+      startDraft(saved()),
+      { fr: long },
+      { kind: "translate", from: "en", to: ["fr"], text: "Apply today." },
+    );
+    const fitted = withDrafts(
+      translated,
+      { fr: "Postulez." },
+      { kind: "fit", language: "fr", text: long },
+    );
+    expect(draftKind(fitted, "fr")).toBe("fit");
+    const fr = changesOf(fitted).find((c) => c.field === "fr");
+    expect(fr?.from).toEqual({ language: "en", version: 2 });
+    // The save takes English's basis: the other languages are not marked out of date.
+    const state = {
+      en: { version: 2, value: "Apply today.", basis: 2 },
+      "pt-BR": { version: 3, value: "Candidate-se hoje.", basis: 2 },
+    };
+    const plan = planSave(state, changesOf(fitted));
+    expect(plan.ok && plan.edits.find((e) => e.field === "fr")?.basis).toBe(2);
+    // Translate from the fitted tab still refills it from English.
+    expect(translatePlan(fitted, "fr", ["en", "pt-BR", "fr"], "en")).toEqual({
+      from: "en",
+      to: ["fr"],
+    });
+    const hand = { ...startDraft(saved()), values: { ...startDraft(saved()).values, en: long } };
+    const own = withDrafts(hand, { en: "Apply." }, { kind: "fit", language: "en", text: long });
+    expect(changesOf(own).find((c) => c.field === "en")?.from).toBeUndefined();
+  });
+
+  it("Undo after Fit on an accepted translation brings it back still linked to its source", () => {
+    const long = "c".repeat(1001);
+    const translated = accept(
+      withDrafts(
+        startDraft(saved()),
+        { fr: long },
+        { kind: "translate", from: "en", to: ["fr"], text: "Apply today." },
+      ),
+      "fr",
+    );
+    const fitted = withDrafts(
+      translated,
+      { fr: "Court." },
+      { kind: "fit", language: "fr", text: long },
+    );
+    const undone = discard(fitted, "fr");
+    expect(undone.values.fr).toBe(long);
+    expect(changesOf(undone).find((c) => c.field === "fr")?.from).toEqual({
+      language: "en",
+      version: 2,
+    });
+    // An unaccepted translation: Undo goes back past it, so the link goes too.
+    const fresh = withDrafts(
+      startDraft(saved()),
+      { fr: long },
+      { kind: "translate", from: "en", to: ["fr"], text: "Apply today." },
+    );
+    const back = discard(
+      withDrafts(fresh, { fr: "Court." }, { kind: "fit", language: "fr", text: long }),
+      "fr",
+    );
+    expect([back.values.fr, back.from.fr]).toEqual(["", undefined]);
+  });
+
+  it("counts Fit's limit on trimmed text, as the route does", () => {
+    const d = startDraft(saved());
+    const padded = { ...d, values: { ...d.values, en: `${"a".repeat(1000)}\n\n   ` } };
+    expect(canFit(padded, "en")).toBe(false);
   });
 
   it("puts a failed request's error on the tab it was asked from, whichever tab is open when it answers", () => {

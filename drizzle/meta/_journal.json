@@ -267,6 +267,13 @@
       "when": 1794947825308,
       "tag": "0037_desk_activity",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1794949237411,
+      "tag": "0038_notice_reviews",
+      "breakpoints": true
     }
   ]
 }

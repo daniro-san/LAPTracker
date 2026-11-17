@@ -54,7 +54,7 @@ export const fr: WorkspaceDictionary = {
   "shell.stay": "Rester connecté",
   "signedOut.text": "Vous avez été déconnecté. Votre texte est toujours là.",
   "signedOut.link": "Se reconnecter (ouvre un nouvel onglet), puis réessayer ici.",
-  "home.title": "Agenda, membres et captures",
+  "home.title": "Accueil",
   "home.next.head": "Aujourd’hui et demain",
   "home.today": "Aujourd’hui",
   "home.tomorrow": "Demain",
@@ -62,7 +62,7 @@ export const fr: WorkspaceDictionary = {
   "home.calendar": "Ouvrir l’agenda",
   "home.members.head": "Membres cette semaine",
   "home.notYet":
-    "Pas encore. Les remerciements et les membres à contacter arrivent avec la première mise à jour quotidienne, juste avant le changement de jour du serveur.",
+    "Rien pour l’instant. Les remerciements et les membres à contacter apparaissent après la première mise à jour quotidienne.",
   "home.open": "Ouvrir Membres",
   "shell.help": "Comment ça marche",
   "signin.howto": "Comment l’avoir sur votre téléphone",

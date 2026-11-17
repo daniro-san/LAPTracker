@@ -4,9 +4,12 @@
 // the game's mail, Discord; issue 345), or edit it. A language that may be out of date carries an "Out of
 // date" tag, which opens the editor at that language; "Update from …" and "Keep as is" are there, behind the
 // editor's save and its checks. Under the languages: "Publish to Discord" and the calendar link (D102).
+// Review requests (D113): the open ones at the top, where "Edit and save" opens the editor for that request,
+// and the "Review" section with "Ask for a review" before Discord.
 import { useState } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
+import { chip } from "@/lib/brand/components/controls";
 import { Tag } from "@/lib/brand/components/Tag";
 import { fill } from "@/lib/copy";
 import { discordPost, gameMail, gameNotice } from "@/lib/private/notice-formats";
@@ -19,6 +22,7 @@ import { Counter, OutOfDateTag, OverLimit } from "./NoticeBits";
 import { NoticeCalendarLink } from "./NoticeCalendarLink";
 import { NoticeEditor, type EditorProps } from "./NoticeEditor";
 import { NoticePublish, type PublishProps } from "./NoticePublish";
+import { AskSheet, ReviewRequests, ReviewSection, type ReviewProps } from "./NoticeReviews";
 
 export interface ScreenProps extends Omit<EditorProps, "focus" | "onClose" | "id"> {
   id: number;
@@ -26,6 +30,7 @@ export interface ScreenProps extends Omit<EditorProps, "focus" | "onClose" | "id
   meta: { written: string; changed: string; flags: string[] };
   publish: PublishProps["publish"];
   calendar: NoticeCalendar;
+  reviews: ReviewProps;
 }
 
 /** The three copies of one language: the game's notice board (cut to fit), the game's mail, Discord. */
@@ -60,10 +65,13 @@ function LanguageText({
   p,
   language,
   onEdit,
+  onAsk,
 }: {
   p: ScreenProps;
   language: NoticeLanguage;
   onEdit: () => void;
+  /** "Ask for a review" of this language (D113). */
+  onAsk: () => void;
 }) {
   const { t } = p;
   const field = p.fields[language];
@@ -82,8 +90,11 @@ function LanguageText({
               t={t}
             />
           )}
+          {p.reviews.open.some((r) => r.language === language) && (
+            <Tag tone="attention">{t["notices.review.waiting"]}</Tag>
+          )}
         </span>
-        <Counter text={field.value} t={t} />
+        <Counter text={field.value} t={t} language={p.viewer} />
       </div>
       {field.value === "" ? (
         <p className="mt-2 text-ink/70">{t["notices.missing"]}</p>
@@ -92,8 +103,11 @@ function LanguageText({
           <div lang={language} translate="no" className="mt-2 break-words whitespace-pre-wrap">
             {field.value}
           </div>
-          <OverLimit text={field.value} t={t} />
+          <OverLimit text={field.value} t={t} language={p.viewer} />
           <Copies p={p} language={language} />
+          <button type="button" aria-haspopup="dialog" onClick={onAsk} className={`${chip()} mt-2`}>
+            {t["notices.review.ask"]}
+          </button>
         </>
       )}
     </section>
@@ -103,7 +117,12 @@ function LanguageText({
 export function NoticeScreen(p: ScreenProps) {
   /** null: reading. A language: editing, opened at it. true: editing from the top. */
   const [editing, setEditing] = useState<NoticeLanguage | true | null>(null);
+  /** The review request the editor was opened from, if any (D113). */
+  const [review, setReview] = useState<number | undefined>(undefined);
+  /** The ask sheet: false when closed, else the language it opened with (null: the whole notice). */
+  const [asking, setAsking] = useState<NoticeLanguage | null | false>(false);
   const { t } = p;
+  const written = p.languages.filter((l) => p.fields[l].value.trim() !== "");
   if (editing) {
     return (
       <>
@@ -111,7 +130,11 @@ export function NoticeScreen(p: ScreenProps) {
         <NoticeEditor
           {...p}
           focus={editing === true ? undefined : editing}
-          onClose={() => setEditing(null)}
+          review={review}
+          onClose={() => {
+            setEditing(null);
+            setReview(undefined);
+          }}
         />
       </>
     );
@@ -135,21 +158,37 @@ export function NoticeScreen(p: ScreenProps) {
       >
         {t["notices.edit"]}
       </button>
+      <ReviewRequests
+        slug={p.slug}
+        t={t}
+        reviews={p.reviews}
+        onEdit={(id, language) => {
+          setReview(id);
+          setEditing(language ?? true);
+        }}
+      />
       {p.languages.map((language) => (
         <LanguageText
           key={language}
           p={p}
           language={language}
           onEdit={() => setEditing(language)}
+          onAsk={() => setAsking(language)}
         />
       ))}
-      <NoticePublish
-        slug={p.slug}
-        id={p.id}
-        t={t}
-        publish={p.publish}
-        written={p.languages.filter((l) => p.fields[l].value.trim() !== "")}
-      />
+      <ReviewSection t={t} reviews={p.reviews} onAsk={() => setAsking(null)} />
+      {asking !== false && (
+        <AskSheet
+          slug={p.slug}
+          id={p.id}
+          t={t}
+          officers={p.reviews.officers}
+          written={written}
+          initial={asking}
+          onClose={() => setAsking(false)}
+        />
+      )}
+      <NoticePublish slug={p.slug} id={p.id} t={t} publish={p.publish} written={written} />
       <NoticeCalendarLink slug={p.slug} id={p.id} t={t} calendar={p.calendar} />
     </>
   );

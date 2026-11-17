@@ -138,7 +138,9 @@ function DraftMark({ p, e }: { p: EditorProps; e: Editor }) {
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <p className="flex min-w-0 flex-1 basis-48 items-center gap-2 text-body-sm font-semibold text-plum">
           <span aria-hidden="true" className="size-2 shrink-0 rounded-full bg-plum" />
-          {t[`notices.draft.${kind}`]}
+          {fill(t[`notices.draft.${kind}`], {
+            limit: new Intl.NumberFormat(p.viewer).format(NOTICE_LIMIT),
+          })}
         </p>
         <span className="flex gap-2">
           <button
@@ -200,9 +202,9 @@ export function LanguageField({ p, e }: { p: EditorProps; e: Editor }) {
           />
         </div>
         <div className="mt-1 flex items-start justify-between gap-3">
-          <OverLimit text={value} t={t} id="notice-over" />
+          <OverLimit text={value} t={t} language={p.viewer} id="notice-over" />
           <span className="shrink-0">
-            <Counter text={value} t={t} />
+            <Counter text={value} t={t} language={p.viewer} />
           </span>
         </div>
       </div>

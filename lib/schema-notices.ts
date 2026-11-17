@@ -108,3 +108,59 @@ export const noticePublishes = pgTable(
     check("notice_publishes_status_check", sql`${t.status} in ('posting', 'posted', 'failed')`),
   ],
 );
+
+/**
+ * Review requests on a notice (D113): an officer asks the whole team (`reviewer_id` null) or one officer to
+ * look at the whole notice (`language` null) or one language. Append-only, made under the ask sheet's
+ * request id (D100). A request is open until it has a row in notice_review_outcomes.
+ */
+export const noticeReviews = pgTable(
+  "notice_reviews",
+  {
+    id: serial("id").primaryKey(),
+    workspaceId: integer("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    noticeId: integer("notice_id")
+      .notNull()
+      .references(() => notices.id, { onDelete: "cascade" }),
+    requestId: text("request_id").notNull(),
+    language: text("language"),
+    reviewerId: integer("reviewer_id").references(() => workspaceUsers.id, {
+      onDelete: "set null",
+    }),
+    askedBy: integer("asked_by").references(() => workspaceUsers.id, { onDelete: "set null" }),
+    askedAt: tstz("asked_at").notNull(),
+  },
+  (t) => [
+    uniqueIndex("notice_reviews_request_unique").on(t.workspaceId, t.requestId),
+    index("notice_reviews_notice_idx").on(t.noticeId, t.id),
+    check("notice_reviews_language_check", sql`${t.language} in ('en', 'pt-BR', 'fr')`),
+  ],
+);
+
+/**
+ * How a review request ended (D113): "approved", or "edited" when the reviewer saved an edit from it. One
+ * per request (the first wins), append-only, with who and when, under its own request id (D100).
+ */
+export const noticeReviewOutcomes = pgTable(
+  "notice_review_outcomes",
+  {
+    id: serial("id").primaryKey(),
+    workspaceId: integer("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    reviewId: integer("review_id")
+      .notNull()
+      .references(() => noticeReviews.id, { onDelete: "cascade" }),
+    requestId: text("request_id").notNull(),
+    outcome: text("outcome").$type<"approved" | "edited">().notNull(),
+    by: integer("by").references(() => workspaceUsers.id, { onDelete: "set null" }),
+    at: tstz("at").notNull(),
+  },
+  (t) => [
+    uniqueIndex("notice_review_outcomes_review_unique").on(t.reviewId),
+    uniqueIndex("notice_review_outcomes_request_unique").on(t.workspaceId, t.requestId),
+    check("notice_review_outcomes_outcome_check", sql`${t.outcome} in ('approved', 'edited')`),
+  ],
+);
