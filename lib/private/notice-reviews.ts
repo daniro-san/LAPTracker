@@ -10,10 +10,12 @@ import {
   findReview,
   insertOutcome,
   insertReview,
-  openReviews,
+  openReviewCount,
+  openReviewsFor,
   reviewsOfNotice,
   workspaceOfficers,
   type ReviewRow,
+  type Tx,
 } from "../repo/notice-reviews";
 import { noticeInWorkspace, noticeTitles } from "../repo/notices";
 import type { WorkspaceAccess } from "./access";
@@ -51,7 +53,10 @@ export interface ReviewView {
   mine: boolean;
 }
 
-/** Who answers a request: the officer it names, or for the team's, anyone but the one who asked. */
+/**
+ * Who answers a request: the officer it names, or for the team's, anyone but the one who asked. The same
+ * rule runs in SQL for Home (`openFor` in lib/repo/notice-reviews.ts).
+ */
 const mayAnswer = (r: ReviewRow, userId: number) =>
   r.reviewerId === null ? r.askedById !== userId : r.reviewerId === userId;
 
@@ -108,7 +113,7 @@ export type AnswerResult = "ok" | "not_found" | "not_reviewer" | "closed";
  * which must be the request's.
  */
 export async function answerReview(
-  db: Db,
+  db: Tx,
   access: WorkspaceAccess,
   answer: { review: number; outcome: "approved" | "edited"; notice?: number },
   requestId: string,
@@ -136,17 +141,13 @@ export async function noticeReviews(db: Db, access: WorkspaceAccess, noticeId: n
   return { list: rows.map((r): ReviewView => viewOf(r, access.user.id)), officers };
 }
 
-/** The open requests the viewer may answer: theirs, or the team's when someone else asked. */
-const openForMe = async (db: Db, access: WorkspaceAccess) =>
-  (await openReviews(db, access.workspaceId)).filter((r) => mayAnswer(r, access.user.id));
+/** How many requests wait for the viewer, for the Home tab's number (D113): one count in SQL. */
+export const reviewsForMeCount = (db: Db, access: WorkspaceAccess) =>
+  openReviewCount(db, access.workspaceId, access.user.id);
 
-/** How many requests wait for the viewer, for the Home tab's number (D113). */
-export const reviewsForMeCount = async (db: Db, access: WorkspaceAccess) =>
-  (await openForMe(db, access)).length;
-
-/** Home's "To review" (D113): the open requests the viewer may answer, with the notice's title. */
+/** Home's "To review" (D113): every open request the viewer may answer, with the notice's title. */
 export async function reviewsForMe(db: Db, access: WorkspaceAccess) {
-  const open = await openForMe(db, access);
+  const open = await openReviewsFor(db, access.workspaceId, access.user.id);
   const titles = await noticeTitles(db, access.workspaceId, [
     ...new Set(open.map((r) => r.noticeId)),
   ]);

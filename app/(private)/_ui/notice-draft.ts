@@ -31,7 +31,11 @@ export interface Draft {
   /** Filled from an earlier version ("Restore this version", D102). */
   restored: Partial<Record<NoticeLanguage, true>>;
   /** Filled by "Fit to 1,000" (D113). */
-  fitted: Partial<Record<NoticeLanguage, true>>;
+  /**
+   * Filled by "Fit to 1,000" (D113). `keepsSource`: Fit shortened an accepted translation, so Undo brings
+   * that translation back with its source, and the save keeps the source's basis.
+   */
+  fitted: Partial<Record<NoticeLanguage, { keepsSource: boolean }>>;
 }
 
 export const omit = <T extends object>(record: T, key: PropertyKey): T =>
@@ -81,8 +85,13 @@ export function withDrafts(
   for (const [language, text] of Object.entries(drafts) as [NoticeLanguage, string][]) {
     next.undo[language] = d.undo[language] ?? d.values[language];
     next.restored = omit(next.restored, language);
+    const keepsSource =
+      d.fitted[language]?.keepsSource ??
+      (d.undo[language] === undefined && d.from[language] !== undefined);
     next.fitted =
-      ask.kind === "fit" ? { ...next.fitted, [language]: true } : omit(next.fitted, language);
+      ask.kind === "fit"
+        ? { ...next.fitted, [language]: { keepsSource } }
+        : omit(next.fitted, language);
     next.values[language] = text;
     next.partly = partly.includes(language)
       ? { ...next.partly, [language]: true }
@@ -155,7 +164,8 @@ export const discard = (d: Draft, language: NoticeLanguage): Draft => ({
   values: { ...d.values, [language]: d.undo[language] ?? d.values[language] },
   undo: omit(d.undo, language),
   partly: omit(d.partly, language),
-  from: omit(d.from, language),
+  // Undo of a Fit on an accepted translation brings that translation back, still linked to its source.
+  from: d.fitted[language]?.keepsSource ? d.from : omit(d.from, language),
   restored: omit(d.restored, language),
   fitted: omit(d.fitted, language),
 });
@@ -169,7 +179,8 @@ export const askTab = (ask: DraftAsk): NoticeLanguage =>
 
 /** "Fit to 1,000" is offered on a tab only while its text is over the board's limit (D113). */
 export const canFit = (d: Draft, language: NoticeLanguage): boolean =>
-  noticeLength(d.values[language]) > NOTICE_LIMIT;
+  // Trimmed, as the draft route counts it.
+  noticeLength(d.values[language].trim()) > NOTICE_LIMIT;
 
 /** What a language's tab shows (issue 363): a draft to check, may be out of date, written, or empty. */
 export type TabState = "draft" | "stale" | "written" | "empty";

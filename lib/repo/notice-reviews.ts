@@ -1,7 +1,7 @@
 // notice_reviews and notice_review_outcomes (D113): a review request is stored once under the ask sheet's
 // request id, and closed by its first outcome. Neither table is ever updated. Also the workspace's officers,
 // the people a request can name.
-import { and, desc, eq, isNull, sql, type SQL } from "drizzle-orm";
+import { and, count, desc, eq, isNotNull, isNull, ne, or, sql, type SQL } from "drizzle-orm";
 import { alias, type AnyPgColumn } from "drizzle-orm/pg-core";
 
 import type { Db } from "../db";
@@ -24,6 +24,9 @@ export interface ReviewRow {
   outcomeAt: Date | null;
 }
 
+/** A save's transaction or the database: the outcome of an edit is written in the save's (D113). */
+export type Tx = Pick<Db, "select" | "insert">;
+
 const asker = alias(workspaceUsers, "asker");
 const reviewer = alias(workspaceUsers, "reviewer");
 const closer = alias(workspaceUsers, "closer");
@@ -31,7 +34,7 @@ const shown = (u: { chosenName: AnyPgColumn; displayName: AnyPgColumn }) =>
   sql<string | null>`coalesce(${u.chosenName}, ${u.displayName})`;
 
 /** The workspace's requests with their outcome and the three names; `where` narrows them. */
-function reviewRows(db: Db, workspaceId: number, where: SQL) {
+function reviewRows(db: Tx, workspaceId: number, where: SQL) {
   return db
     .select({
       id: noticeReviews.id,
@@ -83,7 +86,7 @@ export async function insertReview(db: Db, r: NewReview): Promise<number> {
 }
 
 export async function findReview(
-  db: Db,
+  db: Tx,
   workspaceId: number,
   id: number,
 ): Promise<ReviewRow | null> {
@@ -91,13 +94,50 @@ export async function findReview(
   return row ?? null;
 }
 
-/** A notice's requests, newest first: the open ones and the newest answered ones. */
-export const reviewsOfNotice = (db: Db, workspaceId: number, noticeId: number) =>
-  reviewRows(db, workspaceId, eq(noticeReviews.noticeId, noticeId)).limit(20);
+/** How many answered requests a notice lists; its open requests are always all listed. */
+export const ANSWERED_SHOWN = 20;
 
-/** Every open request of the workspace, newest first. */
-export const openReviews = (db: Db, workspaceId: number) =>
-  reviewRows(db, workspaceId, isNull(noticeReviewOutcomes.id)).limit(100);
+/** A notice's requests, newest first: every open one, and the newest ANSWERED_SHOWN answered ones. */
+export async function reviewsOfNotice(db: Db, workspaceId: number, noticeId: number) {
+  const ofNotice = eq(noticeReviews.noticeId, noticeId);
+  const [open, answered] = await Promise.all([
+    reviewRows(db, workspaceId, and(ofNotice, isNull(noticeReviewOutcomes.id)) as SQL),
+    reviewRows(db, workspaceId, and(ofNotice, isNotNull(noticeReviewOutcomes.id)) as SQL).limit(
+      ANSWERED_SHOWN,
+    ),
+  ]);
+  return [...open, ...answered].sort((a, b) => b.id - a.id);
+}
+
+/**
+ * An open request `userId` may answer: named for them, or for the team when someone else asked (a request
+ * whose asker's account is gone counts for everyone).
+ */
+const openFor = (userId: number) =>
+  and(
+    isNull(noticeReviewOutcomes.id),
+    or(
+      eq(noticeReviews.reviewerId, userId),
+      and(
+        isNull(noticeReviews.reviewerId),
+        or(isNull(noticeReviews.askedBy), ne(noticeReviews.askedBy, userId)),
+      ),
+    ),
+  ) as SQL;
+
+/** Every open request `userId` may answer, newest first (Home's "To review"). */
+export const openReviewsFor = (db: Db, workspaceId: number, userId: number) =>
+  reviewRows(db, workspaceId, openFor(userId));
+
+/** How many open requests `userId` may answer: the Home tab's number, on every page. */
+export async function openReviewCount(db: Db, workspaceId: number, userId: number) {
+  const [row] = await db
+    .select({ n: count() })
+    .from(noticeReviews)
+    .leftJoin(noticeReviewOutcomes, eq(noticeReviewOutcomes.reviewId, noticeReviews.id))
+    .where(and(eq(noticeReviews.workspaceId, workspaceId), openFor(userId)));
+  return row?.n ?? 0;
+}
 
 export interface NewOutcome {
   workspaceId: number;
@@ -112,7 +152,7 @@ export interface NewOutcome {
  * Closes the request. "ok": this outcome is stored, now or by an earlier try with the same request id.
  * "closed": another outcome closed it first.
  */
-export async function insertOutcome(db: Db, o: NewOutcome): Promise<"ok" | "closed"> {
+export async function insertOutcome(db: Tx, o: NewOutcome): Promise<"ok" | "closed"> {
   const made = await db
     .insert(noticeReviewOutcomes)
     .values(o)

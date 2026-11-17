@@ -121,11 +121,13 @@ export function ToReview(props: {
   when: (at: Date) => string;
 }) {
   const { slug, items, t, language } = props;
+  // Screenshot drafts and the notice reviews for this officer (D113).
+  const waiting = items.length + props.reviews.length;
   return (
     <section aria-labelledby="to-review" className="mt-4 border border-rule px-4 py-4">
       <h2 id="to-review" className="font-subhead text-display-sm">
         {t["shots.head"]}
-        {items.length > 0 && <span className="ml-2 tabular-nums text-plum">{items.length}</span>}
+        {waiting > 0 && <span className="ml-2 tabular-nums text-plum">{waiting}</span>}
       </h2>
       {items.length > 0 && <p className="mt-1">{t["shots.lead"]}</p>}
       <NoticeReviewLinks slug={slug} t={t} reviews={props.reviews} />
@@ -141,9 +143,8 @@ export function ToReview(props: {
       )}
       {/* The door in comes first, so it does not sink under a long queue (panel PD-4, UI-8). */}
       <SendScreenshots {...sendProps(slug, t, language)} />
-      {items.length === 0 ? (
-        <p className="mt-3">{t["shots.none"]}</p>
-      ) : (
+      {waiting === 0 && <p className="mt-3">{t["shots.none"]}</p>}
+      {items.length > 0 && (
         <ul className="mt-3 space-y-2">
           {items.map((d) => (
             <li key={d.id}>

@@ -113,7 +113,21 @@ describe("POST /api/w/[slug]/notices/draft", () => {
     expect(fr).toContain("a French-speaking officer of the alliance");
   });
 
-  it("Fit: refused within the limit, retried once with a stricter budget, else a plain failure", async () => {
+  it("Fit: refused with 400 for text within the limit, counted after trimming", async () => {
+    const asked: string[] = [];
+    withAi({
+      complete: async ({ user }) => {
+        asked.push(user);
+        return "never";
+      },
+    });
+    expect((await draft({ kind: "fit", language: "en", text: "Short." })).status).toBe(400);
+    const padded = `${"a".repeat(1000)}\n\n   `;
+    expect((await draft({ kind: "fit", language: "en", text: padded })).status).toBe(400);
+    expect(asked).toHaveLength(0);
+  });
+
+  it("Fit: retried once with a stricter budget, else a plain failure", async () => {
     const long = `${"Rally at 18:00 ST, bring Construction Speedups. ".repeat(25)}`;
     const asked: { system: string; user: string }[] = [];
     const answers = ["x".repeat(1001), "Rally 18:00 ST, bring Construction Speedups."];
@@ -123,9 +137,6 @@ describe("POST /api/w/[slug]/notices/draft", () => {
         return answers[asked.length - 1] ?? "y".repeat(1200);
       },
     });
-    expect((await draft({ kind: "fit", language: "en", text: "Short." })).status).toBe(400);
-    expect(asked).toHaveLength(0);
-
     const fitted = await draft({ kind: "fit", language: "pt-BR", text: long });
     expect([fitted.status, await fitted.json()]).toEqual([
       200,

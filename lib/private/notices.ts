@@ -184,6 +184,8 @@ export async function saveNotice(
   now: Date,
   /** A new notice's request id (D100); a retry with it answers the first notice's id. */
   requestId: string | null = null,
+  /** Runs in the save's transaction after the edits (D113: closes the review request it came from). */
+  after?: (tx: Pick<Db, "select" | "insert">, id: number) => Promise<unknown>,
 ): Promise<SaveResult> {
   if (id === null && !changes.some((c) => c.field === "title")) {
     return { ok: false, reason: "no_title" };
@@ -195,21 +197,26 @@ export async function saveNotice(
     now,
     requestId,
   };
-  const result = await writeNotice(db, target, (current) => {
-    const plan = planSave(stateOf(current), changes);
-    if (plan.ok) return { write: plan.edits };
-    const conflicts = plan.conflicts.map((field): Conflict => {
-      const row = current.find((r) => r.field === field);
-      return {
-        field,
-        value: row?.value ?? "",
-        version: row?.version ?? 0,
-        by: row?.by ?? null,
-        at: row?.at ?? now,
-      };
-    });
-    return { refuse: conflicts };
-  });
+  const result = await writeNotice(
+    db,
+    target,
+    (current) => {
+      const plan = planSave(stateOf(current), changes);
+      if (plan.ok) return { write: plan.edits };
+      const conflicts = plan.conflicts.map((field): Conflict => {
+        const row = current.find((r) => r.field === field);
+        return {
+          field,
+          value: row?.value ?? "",
+          version: row?.version ?? 0,
+          by: row?.by ?? null,
+          at: row?.at ?? now,
+        };
+      });
+      return { refuse: conflicts };
+    },
+    after,
+  );
   if (result === null) return { ok: false, reason: "not_found" };
   if ("refuse" in result) return { ok: false, reason: "conflict", conflicts: result.refuse };
   return { ok: true, id: result.id };

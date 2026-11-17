@@ -239,6 +239,46 @@ describe("the notice draft", () => {
     expect(changesOf(own).find((c) => c.field === "en")?.from).toBeUndefined();
   });
 
+  it("Undo after Fit on an accepted translation brings it back still linked to its source", () => {
+    const long = "c".repeat(1001);
+    const translated = accept(
+      withDrafts(
+        startDraft(saved()),
+        { fr: long },
+        { kind: "translate", from: "en", to: ["fr"], text: "Apply today." },
+      ),
+      "fr",
+    );
+    const fitted = withDrafts(
+      translated,
+      { fr: "Court." },
+      { kind: "fit", language: "fr", text: long },
+    );
+    const undone = discard(fitted, "fr");
+    expect(undone.values.fr).toBe(long);
+    expect(changesOf(undone).find((c) => c.field === "fr")?.from).toEqual({
+      language: "en",
+      version: 2,
+    });
+    // An unaccepted translation: Undo goes back past it, so the link goes too.
+    const fresh = withDrafts(
+      startDraft(saved()),
+      { fr: long },
+      { kind: "translate", from: "en", to: ["fr"], text: "Apply today." },
+    );
+    const back = discard(
+      withDrafts(fresh, { fr: "Court." }, { kind: "fit", language: "fr", text: long }),
+      "fr",
+    );
+    expect([back.values.fr, back.from.fr]).toEqual(["", undefined]);
+  });
+
+  it("counts Fit's limit on trimmed text, as the route does", () => {
+    const d = startDraft(saved());
+    const padded = { ...d, values: { ...d.values, en: `${"a".repeat(1000)}\n\n   ` } };
+    expect(canFit(padded, "en")).toBe(false);
+  });
+
   it("puts a failed request's error on the tab it was asked from, whichever tab is open when it answers", () => {
     const text = "Apply today.";
     expect(askTab({ kind: "translate", from: "en", to: ["pt-BR", "fr"], text })).toBe("en");

@@ -1,8 +1,10 @@
-// Review requests on notices (D113): an officer asks one officer to review PT and the team to review the
-// whole notice; who sees which on Home; approve (only the one asked, once); edit and save from the request
-// closes it as edited; an answered request refuses a second answer.
+// Review requests on notices (D113), one behaviour per test: asking (once per request id, never yourself,
+// never a blocked officer or one of another workspace, never another workspace's notice); who sees which on
+// Home and in the tab's number; approving (only the one asked, once); edit and save from a request, which
+// closes it in the save's transaction, and the saves that leave it open.
 import { randomUUID } from "node:crypto";
 
+import { eq } from "drizzle-orm";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { AppContext } from "@/lib/app-context";
@@ -29,28 +31,33 @@ const { POST: SAVE } = await import("../route");
 let db: Db;
 const tokens: Record<string, string> = {};
 const ids: Record<string, number> = {};
+const SLUG_OF: Record<string, string> = { Ana: "ogs", Rook: "ogs", Wren: "ogs", Nia: "nse" };
+
 beforeAll(async () => {
   db = await openTestDb();
 });
 beforeEach(async () => {
   await truncateAll(db);
-  await db
-    .insert(workspaces)
-    .values({ unionId: 67111155, slug: "ogs", discordGuildId: "1", leaderRoleIds: ["2"] });
+  await db.insert(workspaces).values([
+    { unionId: 67111155, slug: "ogs", discordGuildId: "1", leaderRoleIds: ["2"] },
+    { unionId: 67109944, slug: "nse", discordGuildId: "3", leaderRoleIds: ["4"] },
+  ]);
   holder.ctx = testContext(db).ctx;
-  for (const name of ["Ana", "Rook", "Wren"]) {
+  for (const name of ["Ana", "Rook", "Wren", "Nia"]) {
+    const workspaceId = SLUG_OF[name] === "ogs" ? 1 : 2;
     const [user] = await db
       .insert(workspaceUsers)
-      .values({ workspaceId: 1, discordUserId: `id-${name}`, displayName: name })
+      .values({ workspaceId, discordUserId: `id-${name}`, displayName: name })
       .returning({ id: workspaceUsers.id });
     ids[name] = user?.id ?? 0;
-    tokens[name] = (await createSession(db, 1, ids[name], T0, null, "officer")).token;
+    tokens[name] = (await createSession(db, workspaceId, ids[name], T0, null, "officer")).token;
   }
 });
 
 function call(handler: typeof POST, path: string, name: string, body: object) {
+  const slug = SLUG_OF[name] ?? "ogs";
   return handler(
-    new Request(`https://laptracker.test/api/w/ogs/${path}`, {
+    new Request(`https://laptracker.test/api/w/${slug}/${path}`, {
       method: "POST",
       headers: {
         origin: "https://laptracker.test",
@@ -59,21 +66,26 @@ function call(handler: typeof POST, path: string, name: string, body: object) {
       },
       body: JSON.stringify(body),
     }),
-    { params: Promise.resolve({ slug: "ogs" }) },
+    { params: Promise.resolve({ slug }) },
   );
 }
 
 const review = (name: string, body: object) => call(POST, "notices/reviews", name, body);
 
 async function access(name: string) {
-  const a = await requireWorkspace(db, "ogs", { get: () => ({ value: tokens[name] ?? "" }) }, T0);
+  const a = await requireWorkspace(
+    db,
+    SLUG_OF[name] ?? "ogs",
+    { get: () => ({ value: tokens[name] ?? "" }) },
+    T0,
+  );
   if (!a.ok) throw new Error("no access");
   return a;
 }
 
-/** Ana's notice with English and Portuguese: its id. */
-async function notice(): Promise<number> {
-  const res = await call(SAVE, "notices", "Ana", {
+/** A notice with English and Portuguese, written by `name`: its id. */
+async function notice(name = "Ana"): Promise<number> {
+  const res = await call(SAVE, "notices", name, {
     requestId: randomUUID(),
     changes: [
       { field: "title", value: "Garden rota", version: 0 },
@@ -84,58 +96,130 @@ async function notice(): Promise<number> {
   return ((await res.json()) as { id: number }).id;
 }
 
-describe("review requests on a notice (D113)", () => {
-  it("asks one officer or the team, shows each on the right Homes, approves once, and edit-and-save closes", async () => {
-    const id = await notice();
-    const ask = { action: "ask", notice: id, requestId: randomUUID() };
-    // Ana asks Rook to review PT; asking herself is refused; a repeat stores one request.
-    const self = await review("Ana", { ...ask, language: "pt-BR", reviewer: ids.Ana });
-    expect([self.status, await self.json()]).toEqual([400, { code: "reviewer" }]);
-    const toRook = { ...ask, language: "pt-BR", reviewer: ids.Rook };
-    const first = (await (await review("Ana", toRook)).json()) as { id: number };
-    expect(await (await review("Ana", toRook)).json()).toEqual(first);
-    // And the team to review the whole notice.
-    const team = { action: "ask", notice: id, language: null, reviewer: null };
-    const second = (await (await review("Ana", { ...team, requestId: randomUUID() })).json()) as {
-      id: number;
-    };
+/** Ana asks: `reviewer` null for the team, `language` null for the whole notice. Its id. */
+async function ask(id: number, language: string | null, reviewer: number | null) {
+  const body = { action: "ask", notice: id, language, reviewer, requestId: randomUUID() };
+  return ((await (await review("Ana", body)).json()) as { id: number }).id;
+}
 
-    // Who sees what on Home: Rook both, Wren the team's, Ana (who asked) neither.
-    const home = async (name: string) =>
-      (await reviewsForMe(db, await access(name))).map((r) => [r.title, r.language, r.askedBy]);
+const home = async (name: string) =>
+  (await reviewsForMe(db, await access(name))).map((r) => [r.title, r.language, r.askedBy]);
+
+const isOpen = async (id: number, reviewId: number) =>
+  (await noticeReviews(db, await access("Ana"), id)).list.find((r) => r.id === reviewId)
+    ?.outcome === null;
+
+/** Saves PT from a request; `version` defaults to the current one. */
+async function saveFrom(name: string, id: number, reviewId: number, version?: number) {
+  const current = (await noticeDetail(db, await access(name), id))?.fields["pt-BR"].version ?? 0;
+  return call(SAVE, "notices", name, {
+    id,
+    changes: [
+      { field: "pt-BR", value: `Reguem às 18:00 ST (${name}).`, version: version ?? current },
+    ],
+    review: { id: reviewId, requestId: randomUUID() },
+  });
+}
+
+describe("asking for a review (D113)", () => {
+  it("stores one request per request id", async () => {
+    const id = await notice();
+    const body = {
+      action: "ask",
+      notice: id,
+      language: "pt-BR",
+      reviewer: ids.Rook,
+      requestId: randomUUID(),
+    };
+    const first = await (await review("Ana", body)).json();
+    expect(await (await review("Ana", body)).json()).toEqual(first);
+    expect((await noticeReviews(db, await access("Ana"), id)).list).toHaveLength(1);
+  });
+
+  it("refuses yourself, a blocked officer and another workspace's officer as reviewer (400)", async () => {
+    const id = await notice();
+    await db
+      .update(workspaceUsers)
+      .set({ blocked: true })
+      .where(eq(workspaceUsers.id, ids.Wren ?? 0));
+    for (const reviewer of [ids.Ana, ids.Wren, ids.Nia]) {
+      const body = { action: "ask", notice: id, language: null, reviewer, requestId: randomUUID() };
+      const res = await review("Ana", body);
+      expect([res.status, await res.json()]).toEqual([400, { code: "reviewer" }]);
+    }
+  });
+
+  it("does not find another workspace's notice or request (404)", async () => {
+    const theirs = await notice("Nia");
+    const body = {
+      action: "ask",
+      notice: theirs,
+      language: null,
+      reviewer: null,
+      requestId: randomUUID(),
+    };
+    expect((await review("Ana", body)).status).toBe(404);
+    const theirsAsk = (await (
+      await review("Nia", { ...body, requestId: randomUUID() })
+    ).json()) as { id: number };
+    const approve = { action: "approve", review: theirsAsk.id, requestId: randomUUID() };
+    expect((await review("Rook", approve)).status).toBe(404);
+  });
+});
+
+describe("who sees a request (D113)", () => {
+  it("shows a named request to that officer, a team one to all but the asker, on Home and in the tab number", async () => {
+    const id = await notice();
+    await ask(id, "pt-BR", ids.Rook ?? 0);
+    await ask(id, null, null);
     expect(await home("Rook")).toEqual([
       ["Garden rota", null, "Ana"],
       ["Garden rota", "pt-BR", "Ana"],
     ]);
     expect(await home("Wren")).toEqual([["Garden rota", null, "Ana"]]);
     expect(await home("Ana")).toEqual([]);
-    // The Home tab's number counts them too, never one the viewer asked for.
     const tab = async (name: string) => toReviewCount(db, await access(name), T0);
     expect([await tab("Rook"), await tab("Wren"), await tab("Ana")]).toEqual([2, 1, 0]);
+  });
+});
 
-    // Only Rook approves Rook's request; a repeat of his tap is the same answer.
-    const approve = { action: "approve", review: first.id, requestId: randomUUID() };
+describe("answering a request (D113)", () => {
+  it("lets only the officer asked approve, once per request id; a later answer gets 409", async () => {
+    const id = await notice();
+    const toRook = await ask(id, "pt-BR", ids.Rook ?? 0);
+    const approve = { action: "approve", review: toRook, requestId: randomUUID() };
     expect((await review("Wren", approve)).status).toBe(403);
     expect((await review("Rook", approve)).status).toBe(200);
     expect((await review("Rook", approve)).status).toBe(200);
+    const late = await review("Rook", { ...approve, requestId: randomUUID() });
+    expect([late.status, await late.json()]).toEqual([409, { code: "closed" }]);
+    expect(await home("Rook")).toEqual([]);
+  });
 
-    // Wren edits PT from the team's request and saves: the save counts and the request closes as edited.
-    const pt = (await noticeDetail(db, await access("Wren"), id))?.fields["pt-BR"].version ?? 0;
-    const saved = await call(SAVE, "notices", "Wren", {
-      id,
-      changes: [{ field: "pt-BR", value: "Reguem o feijão às 18:00 ST, por favor.", version: pt }],
-      review: { id: second.id, requestId: randomUUID() },
-    });
-    expect(saved.status).toBe(200);
-    const late = { action: "approve", review: second.id, requestId: randomUUID() };
-    expect([(await review("Rook", late)).status]).toEqual([409]);
-
-    // The notice shows both outcomes, with who; nothing is left open on any Home.
+  it("closes a request as edited when its reviewer saves from it", async () => {
+    const id = await notice();
+    const toTeam = await ask(id, null, null);
+    expect((await saveFrom("Wren", id, toTeam)).status).toBe(200);
     const { list } = await noticeReviews(db, await access("Ana"), id);
-    expect(list.map((r) => [r.language, r.outcome?.kind, r.outcome?.by, r.mine])).toEqual([
-      [null, "edited", "Wren", false],
-      ["pt-BR", "approved", "Rook", false],
-    ]);
-    for (const name of ["Ana", "Rook", "Wren"]) expect(await home(name)).toEqual([]);
+    expect(list.map((r) => [r.outcome?.kind, r.outcome?.by])).toEqual([["edited", "Wren"]]);
+  });
+
+  it("leaves the request open when the save is refused with 409", async () => {
+    const id = await notice();
+    const toRook = await ask(id, "pt-BR", ids.Rook ?? 0);
+    const res = await saveFrom("Rook", id, toRook, 1);
+    expect(res.status).toBe(409);
+    expect(await isOpen(id, toRook)).toBe(true);
+  });
+
+  it("saves from a request the officer may not answer, and leaves that request open", async () => {
+    const id = await notice();
+    const toRook = await ask(id, "pt-BR", ids.Rook ?? 0);
+    const res = await saveFrom("Wren", id, toRook);
+    expect(res.status).toBe(200);
+    expect(await isOpen(id, toRook)).toBe(true);
+    expect((await noticeDetail(db, await access("Ana"), id))?.fields["pt-BR"].value).toBe(
+      "Reguem às 18:00 ST (Wren).",
+    );
   });
 });
