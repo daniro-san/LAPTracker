@@ -18,11 +18,16 @@ const row = (rankCode: number | null): MemberRow => ({
   lastOnlineAt: null,
   mapX: 0,
   mapY: 0,
+  duel: {},
   seenSince: null,
   isNew: false,
   reasons: [],
   missing: [],
   missingDays: 0,
+  facts: {},
+  officerStatus: null,
+  awayUntil: null,
+  early: false,
 });
 
 describe("the R4 and R5 filter", () => {

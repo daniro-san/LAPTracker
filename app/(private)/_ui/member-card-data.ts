@@ -3,8 +3,16 @@
 // is "—", never 0.
 import { fill } from "@/lib/copy";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
+import {
+  FACT_FIELDS,
+  type FactField,
+  type FactSource,
+  type FactValues,
+  type MemberFacts,
+} from "@/lib/private/fact-fields";
 import type { MemberRow } from "@/lib/private/members";
 import {
+  breakText,
   dayLabel,
   missingText,
   reasonText,
@@ -13,9 +21,21 @@ import {
   type Status,
 } from "@/lib/private/members-sheet";
 
+import { factText, NONE } from "./fact-text";
+
 export interface CardFormats extends Formats {
   /** 61.2M, 61,2M (D78). */
   compact: (n: number) => string;
+  /** When the page is made: a time zone's offset is shown as of now. */
+  now: Date;
+}
+
+/** One member fact as the opened card shows it, with where it came from. */
+export interface FactLine {
+  field: FactField;
+  label: string;
+  value: string;
+  source: FactSource | null;
 }
 
 export interface CardData {
@@ -31,15 +51,26 @@ export interface CardData {
   donationsHead: string;
   days: { weekday: string; day: string; value: string; said: string; none: boolean }[];
   details: { label: string; value: string }[];
+  factLines: FactLine[];
+  /** The member facts as stored, with their versions, for the editor. */
+  stored: MemberFacts;
+  /** The status shown when no officer sets one ("Check in", "Fine" …), for the editor's Automatic. */
+  autoStatus: string;
 }
 
-const NONE = "—";
 const or = (v: number | null, as: (n: number) => string) => (v === null ? NONE : as(v));
 
 function statusParts(m: MemberRow, t: WorkspaceDictionary, f: Formats) {
   const status = statusOf(m);
-  if (status === "checkin")
-    return { status, label: t["status.checkin"], lines: m.reasons.map((r) => reasonText(r, t, f)) };
+  if (status === "checkin" || status === "help") {
+    const label = t[status === "help" ? "status.help" : "status.checkin"];
+    return { status, label, lines: m.reasons.map((r) => reasonText(r, t, f)) };
+  }
+  if (status === "break") {
+    const note = m.facts.away?.value?.text;
+    return { status, label: breakText(m, t, f), lines: note ? [note] : [] };
+  }
+  if (status === "none") return { status, label: "", lines: [] };
   if (status === "new") {
     const seen = m.seenSince ? [fill(t["members.firstSeen"], { date: f.date(m.seenSince) })] : [];
     return { status, label: t["members.new"], lines: seen };
@@ -52,9 +83,25 @@ function statusParts(m: MemberRow, t: WorkspaceDictionary, f: Formats) {
 export interface Shown {
   joined: boolean;
   lastOnline: boolean;
+  /** Alliance Duel points were saved from a photo for someone this week (issue 299). */
+  duel: boolean;
 }
 
-function detailsOf(m: MemberRow, t: WorkspaceDictionary, f: Formats, shown: Shown) {
+const DUEL_DAYS = ["mon", "tue", "wed", "thu", "fri", "sat"] as const;
+
+/** "12,401,468 · Mon 2.4M · Tue 3.1M": the week's points, then each day saved; "—" when none was. */
+function duelText(m: MemberRow, t: WorkspaceDictionary, f: CardFormats): string {
+  const days = DUEL_DAYS.flatMap((d) => {
+    const v = m.duel[d];
+    return v === undefined
+      ? []
+      : [fill(t["shots.duel.dayValue"], { day: t[`day.${d}`], v: f.compact(v) })];
+  });
+  const week = m.duel.week;
+  return [week === undefined ? NONE : f.number(week), ...days].join(" · ");
+}
+
+function detailsOf(m: MemberRow, t: WorkspaceDictionary, f: CardFormats, shown: Shown) {
   const date = (at: Date | null) => (at ? f.date(at) : NONE);
   return [
     { label: t["sheet.activity"], value: or(m.activity, f.number) },
@@ -69,7 +116,27 @@ function detailsOf(m: MemberRow, t: WorkspaceDictionary, f: Formats, shown: Show
           ? NONE
           : fill(t["sheet.mapValue"], { x: m.mapX, y: m.mapY }),
     },
+    ...(shown.duel
+      ? [{ label: `${t["shots.duel.card"]} · ${t["src.photo"]}`, value: duelText(m, t, f) }]
+      : []),
   ];
+}
+
+/** The facts with their value; Status only when an officer set one (otherwise the card's status says it). */
+function factLines(m: MemberRow, t: WorkspaceDictionary, f: CardFormats): FactLine[] {
+  const text = { language: f.language, now: f.now, day: (iso: string) => f.date(iso), words: t };
+  return FACT_FIELDS.filter((field) => field !== "status" || m.facts.status?.value).map(
+    <F extends FactField>(field: F) => {
+      const value = m.facts[field]?.value as FactValues[F] | null | undefined;
+      const known = value !== null && value !== undefined;
+      return {
+        field,
+        label: t[`facts.${field}`],
+        value: factText(field, value, text),
+        source: known ? (m.facts[field]?.source ?? null) : null,
+      };
+    },
+  );
 }
 
 export function cardData(
@@ -102,5 +169,8 @@ export function cardData(
       return { weekday, day, value, said: `${weekday} ${day}: ${said}`, none: v === null };
     }),
     details: detailsOf(m, t, f, shown),
+    factLines: factLines(m, t, f),
+    stored: m.facts,
+    autoStatus: statusParts({ ...m, officerStatus: null }, t, f).label || NONE,
   };
 }

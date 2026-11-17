@@ -12,6 +12,24 @@ export type AnalyticsLanguage = "en" | "pt-BR" | "fr";
  */
 export type MemberFilter = "all" | "new" | "checkin" | "missing" | "r4";
 
+/**
+ * What a screenshot sent to the desk was read as (issue 299): `ImportKind` in lib/private/import-kinds.ts,
+ * which this module may not import, plus a picture not recognised and a map. The desk passes that type
+ * here, so `tsc` fails if a kind is added there and not here.
+ */
+export type ScreenshotKind =
+  | "alliance_duel"
+  | "donation"
+  | "might"
+  | "kills"
+  | "secret_ops"
+  | "member_update"
+  | "damage_event"
+  | "undead_mail"
+  | "elixir_teams"
+  | "unrecognised"
+  | "map";
+
 type NoProperties = Record<string, never>;
 
 export interface AnalyticsEvents {
@@ -21,6 +39,16 @@ export interface AnalyticsEvents {
   ws_copy_spreadsheet: NoProperties;
   ws_filter_used: { filter: MemberFilter };
   ws_language_switched: { language: AnalyticsLanguage };
+  /** A member's facts saved from the card's editor (D80); nothing about the member or the values. */
+  ws_facts_saved: NoProperties;
+  /** A sheet imported once every row was matched or dismissed (D80). */
+  ws_sheet_imported: NoProperties;
+  /** A notice's Translate filled drafts (D81); nothing about the text. */
+  ws_notice_translated: NoProperties;
+  /** One picture read from the desk's "Send screenshots": its type only, nothing it showed. */
+  ws_screenshot_sent: { kind: ScreenshotKind };
+  /** A draft saved: its type only. */
+  ws_draft_saved: { kind: ScreenshotKind };
 }
 export type AnalyticsEvent = keyof AnalyticsEvents;
 

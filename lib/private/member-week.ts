@@ -20,7 +20,8 @@ export const KVK_REASON_ON: boolean = false;
 
 export const DAY_MS = 86_400_000;
 const dayMs = (day: string) => Date.parse(`${day}T00:00:00Z`);
-const isoDay = (ms: number) => new Date(ms).toISOString().slice(0, 10);
+/** A day as YYYY-MM-DD (UTC). */
+export const isoDay = (ms: number) => new Date(ms).toISOString().slice(0, 10);
 export const nextDay = (day: string) => isoDay(dayMs(day) + DAY_MS);
 const isMonday = (day: string) => new Date(dayMs(day)).getUTCDay() === 1;
 

@@ -50,3 +50,27 @@ Plan changes needed: none.
 - `lib/standing.ts` `standing(rows)` takes those rows and returns the ranked list; a period choice would filter `rows` by day before the call.
 - `Sparkline` takes `points` ({at: 0..1, rank}) and an accessible `label`.
 </adjustments>
+
+## UX review (2026-11-16)
+Local data only: the seed's alliances all grow about 4.2 %, so the local database had a few alliances' daily might changed (#1, #7, #8, #17 moved) and one alliance renamed to a 29-character name. Nothing else was touched; no upstream call.
+
+Measured, Chrome at 360, 390, 412, 600, 768, 810, 820, 1024, 1180 and 1280, light and dark, WebKit at 390 dark and 820:
+- `document.documentElement.scrollWidth` equals the viewport at every width, with and without the long name, de and ru at 360.
+- Every control is at least 44 px high (Details 44, Show all 44). Details is 46 px wide in English, 79 px in Russian.
+- The sparkline is 64 x 32 px at every width, always beside the might and growth figures. No figure is truncated; names wrap (`TheMightySpartan` / `s` breaks inside a word at 360 because the name column is about 130 px).
+- Contrast, dark: "My alliance" chip text was plum on two stacked yarn tints, about 3.4:1 (calculated from the computed colours). It is now ink.
+
+Fixed:
+- The section was 1891 px tall at 360 with 20 cards. It now shows the first 5 rows, the page's and the viewer's alliance wherever they rank, and "Show all (20)" (852 px at 360; 552 px from 768). The new client component is `app/_ui/StandingList.tsx`; the rows stay rendered on the server.
+- The page's own alliance had only a bar and tint, and a screen-reader label. It now has a visible "This alliance" chip (existing key `standing.thisAlliance`). When the page's alliance is also the viewer's, both chips show and are told apart by outline and fill.
+- A short date ending in a full stop (ru "23 окт.", de "23. Okt.") doubled it in the help and details lines; the lead sentence already handled it.
+
+Left:
+- The sparkline says nothing on screen about its direction (rank 1 at the top). The rank arrow beside it carries the direction; adding a sentence needs a new key in 17 languages. Follow-up if the owner wants it.
+- "since 23 Oct" repeats on every card. It is short and keeps each card readable alone; left.
+- The lead sentence is four lines at 360 (`text-lg`). It is the 3-second takeaway; left.
+- Not checked: a real Galaxy or iPad device; WebKit and Chrome emulation only.
+
+Takeaway in 3 seconds on the first phone screen, before: "[OGs] is #3, down 2 since 23 Oct" plus a wall of 20 cards below it. After: the same sentence, then 5 cards that include the page's and the viewer's alliance, and a Show all button.
+
+https://github.com/daniro-san/LAPTracker/pull/348

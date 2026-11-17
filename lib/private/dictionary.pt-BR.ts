@@ -1,8 +1,14 @@
 // The workspace dictionary in Brazilian Portuguese (D71), split from dictionary.ts for its size; the keys
 // follow `en`.
 import type { WorkspaceDictionary } from "./dictionary";
+import { calendarPt } from "./dictionary.calendar.pt-BR";
+import { importPt } from "./dictionary.import";
+import { noticesPt } from "./dictionary.notices";
+import { shotsPt } from "./dictionary.shots";
+import { theftsPt } from "./dictionary.thefts";
 
 export const pt: WorkspaceDictionary = {
+  ...calendarPt,
   "app.name": "Mesa dos oficiais",
   "tab.aria": "Seções",
   "tab.home": "Início",
@@ -165,6 +171,59 @@ export const pt: WorkspaceDictionary = {
     "No Safari, toque no ícone de compartilhar (um quadrado com uma seta para cima). Na lista, toque no item com um + dentro de um quadrado e confirme.",
   "howto.android.body":
     "No Chrome, toque em ⋮ no canto de cima. No menu, toque no item que coloca a página na tela inicial (um celular com uma seta) e confirme.",
+  "status.break": "Em pausa",
+  "status.breakUntil": "Em pausa até {date}",
+  "status.help": "Precisa de ajuda",
+  "members.early":
+    "Lista de {when} · doações e atividade vêm com a primeira leitura de fim de dia, depois das {time} hora do servidor.",
+  "members.import": "Importar as planilhas antigas",
+  "src.message": "de uma mensagem",
+  "src.sheet": "da planilha",
+  "facts.head": "Dados do membro",
+  "facts.squadMight": "Esquadrão principal",
+  "facts.adTech": "AD Tech",
+  "facts.troopTier": "Tropas",
+  "facts.timeZone": "Fuso horário",
+  "facts.languages": "Idiomas",
+  "facts.status": "Status",
+  "facts.away": "Ausência",
+  "facts.notes": "Notas",
+  "facts.until": "até {date}",
+  "facts.edit": "Editar dados",
+  "facts.paste": "Colar o que a pessoa disse",
+  "facts.title": "Dados: {name}",
+  "facts.save": "Salvar",
+  "facts.cancel": "Cancelar",
+  "facts.failed": "Não foi possível salvar. Tente de novo.",
+  "facts.computed": "Automático (agora: {status})",
+  "facts.awayText": "O que a pessoa disse",
+  "facts.awayDay": "Último dia ausente",
+  "facts.mightHint": "12,3M ou 12.300.000",
+  "facts.theirs": "Manter {theirs}",
+  "facts.mine": "Usar {mine}",
+  "paste.help":
+    "Cole a conversa aqui e toque em Preencher os campos. Nada é salvo até você tocar em Salvar.",
+  "paste.read": "Preencher os campos",
+  "paste.nothing": "Nada encontrado. Digite os valores abaixo.",
+  "paste.zones": "Outras opções",
+  "tz.choose": "Escolher",
+  "tz.search": "Cidade, país, PST, ST +3…",
+  "tz.searchAria": "Buscar fuso horário",
+  "tz.theirTime": "Hora da pessoa agora",
+  "tz.st": "ST é a hora do servidor ({offset}).",
+  "tz.more": "Mais {n}: continue digitando.",
+  "tz.none": "Nenhum fuso horário encontrado.",
+  "tz.now": "agora {time}",
+  "facts.conflictBar":
+    "Outro oficial mudou {field} enquanto você editava. Responda abaixo de {field} e depois salve.",
+  "facts.conflictField": "Outro oficial salvou {theirs}. Você digitou {mine}.",
+  "facts.mergedLine": "Combinado com a edição de outro oficial: {fields}.",
+  "src.unsaved": "desta mensagem · não salvo",
+  "paste.found.one": "Encontrado {n} valor. Confira e salve.",
+  "paste.found.other": "Encontrados {n} valores. Confira e salve.",
+  "facts.discard": "Descartar as alterações?",
+  "facts.discardYes": "Descartar",
+  "facts.discardNo": "Continuar editando",
   "profile.title": "Suas configurações",
   "profile.name": "Seu nome",
   "profile.nameHelp": "Aparece no topo da mesa (até 32 caracteres).",
@@ -190,4 +249,8 @@ export const pt: WorkspaceDictionary = {
   "profile.theme.light": "Claro",
   "profile.theme.dark": "Escuro",
   "profile.theme.system": "Igual ao aparelho",
+  ...noticesPt,
+  ...importPt,
+  ...theftsPt,
+  ...shotsPt,
 };

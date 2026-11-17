@@ -110,7 +110,7 @@ export async function finishSignIn(db: Db, deps: SignInDeps, input: CallbackInpu
 export type NoAccess = "not_member" | "no_role" | "allowlist_expired" | "blocked";
 
 /** null: let in, through a leadership role or an allowlist entry that has not expired. */
-function refusalOf(
+export function refusalOf(
   known: WorkspaceUserRow | null,
   viaRole: boolean,
   notMember: boolean,
