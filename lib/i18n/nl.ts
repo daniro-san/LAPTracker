@@ -52,7 +52,7 @@ export const nl = {
     myAlliance: "Mijn alliantie",
     names: "Namen",
     alliances: "Allianties",
-    movers: "Oma merkte",
+    movers: "Grootste veranderingen in dit event",
     progress: "Dagelijkse voortgang",
     progressMight: "Jij: {change} sinds {date}.",
     progressMedian: "Middelste lid van {tag}: {percent}.",
@@ -81,7 +81,7 @@ export const nl = {
     liveKillsSoFar: "Kills tot nu toe: {kills}",
     liveLast: "Laatste {min} min: {last} (piek {peak})",
     liveDone:
-      "Verschil sinds Begin bij de meting van {time}. Het logboek hierboven gebruikt het Einde om {end}.",
+      "Verschil sinds Begin bij de meting van {time}. De tabel hierboven gebruikt het Einde om {end}.",
     fought: "Oorlogsopkomst",
     foughtSoFar: "Oorlogsopkomst tot nu toe",
     foughtHelp:
@@ -91,7 +91,7 @@ export const nl = {
     withKills: "Members met behaalde Kills",
     topShare: "Kills van de top 5 leden",
     topShareHelp:
-      "Aandeel van de Kills van de alliantie dat de 5 grootste stijgers haalden. Hoe hoger, hoe minder spelers het hebben gedragen.",
+      "Aandeel van de Kills dat de 5 grootste stijgers haalden. Hoog: een paar spelers droegen de strijd.",
     topBasis: "{top} van {n}",
     fewGainers: "weinig stijgers",
     fightClock: "Strijdklok server",
@@ -120,9 +120,7 @@ export const nl = {
       "Geen van beide events heeft metingen van {min} minuten, dus hun pulsen kunnen niet vergeleken worden",
     carried: "Aandeel Kills tegen aandeel Might",
     carriedHelp:
-      "Het aandeel van elke alliantie in de Kills die tussen Begin en Einde zijn gewonnen, naast haar aandeel in de Might bij Begin. Verdedigers en support-spelers winnen geen Kills.",
-    carriedShown:
-      "De allianties waarvan het aandeel Kills het verst boven het aandeel Might ligt, en de jouwe.",
+      "Het aandeel van elke alliantie in de Kills, naast haar aandeel in de Might. Kills van Begin tot Einde, Might bij Begin.",
     carriedTotal: "Alle {n} allianties: {kills} Kills gewonnen, {might} Might bij Begin",
     carriedMightMark: "Aandeel Might bij Begin",
     carriedKillsMark: "Aandeel Kills gewonnen",
@@ -130,7 +128,7 @@ export const nl = {
     carriedTurnout: "{share} met Kills",
     carriedSpread: "{low}–{high} over {n} events",
     carriedRatioHelp:
-      "%-pt is het aandeel Kills min het aandeel Might. Bij 3 events of meer staat eronder de bandbreedte van aandeel Kills ÷ aandeel Might over die events.",
+      "+6 %-pt: het aandeel Kills ligt 6 procentpunten boven het aandeel Might. Bij 3 events of meer geeft de regel eronder het aandeel Kills als veelvoud van het aandeel Might, van laag naar hoog.",
     carriedPoints: "%-pt",
   },
   compare: {
@@ -153,7 +151,7 @@ export const nl = {
   merge: {
     title: "Fusiesimulator",
     tag: "Simulatie, geen plan",
-    lead: "Twee allianties samen geteld en getoetst aan de ledengrens. Alleen totalen van de allianties, geen ledennamen.",
+    lead: "Twee allianties geteld als één, getoetst aan de ledengrens.",
     link: "Simuleer een fusie",
     first: "Eerste alliantie",
     second: "Tweede alliantie",
@@ -182,7 +180,7 @@ export const nl = {
   flow: {
     title: "Ledenstroom",
     tag: "Alleen aantallen",
-    lead: "Waar leden heen gingen tussen de gevolgde allianties, van de eerste dag naar de tweede. Geen enkel lid wordt genoemd.",
+    lead: "Waar leden heen gingen tussen de gevolgde allianties, tussen de twee dagen die je kiest.",
     from: "Van",
     to: "Naar",
     action: "Toon",
@@ -191,8 +189,7 @@ export const nl = {
       "Tussen {from} en {to} geen verschuiving van {min} of meer leden tussen de gevolgde allianties.",
     totals:
       "Verschuivingen van {min} of meer · Van alliantie gewisseld: {moved} · Nieuw: {arrived} · Weg: {left}",
-    small:
-      "Aantallen onder {min} leden zijn verborgen en tellen in geen enkel totaal mee, ook de gebleven leden niet. Dit beschermt kleine groepen.",
+    small: "Verschuivingen van minder dan {min} leden zijn verborgen en tellen niet mee.",
     rowNew: "Nieuw",
     colLeft: "Weg",
     legend:
@@ -202,9 +199,9 @@ export const nl = {
     rowStayed: "Gebleven: {n}",
     newTitle: "Nieuw in de gevolgde allianties",
     leftTitle: "Weg uit de gevolgde allianties",
-    notCounted: "Niet geteld, geen bruikbare meting op beide dagen: {list}.",
+    notCounted: "Niet geteld, geen bruikbare dagelijkse meting op beide dagen: {list}.",
     order: "Kies een Van-dag die eerder is dan de Naar-dag.",
-    none: "Nog geen twee dagen met een bruikbare meting.",
+    none: "Nog geen twee dagen met een bruikbare dagelijkse meting.",
   },
   balance: {
     title: "Serverbalans",
@@ -212,7 +209,7 @@ export const nl = {
       "Het aandeel van elke gevolgde alliantie in de might van de gevolgde allianties, en een hypothetische blokbouwer.",
     lead: "Geen alliantie heeft meer dan {max} van de might van de gevolgde allianties. De top {n} hebben samen {top}.",
     includes: "Might telt gebouwen en tech mee.",
-    basis: "{n} gevolgde allianties, gemeten op {date}.",
+    basis: "{n} gevolgde allianties, bijgewerkt op {date}.",
     total: "Gevolgde allianties",
     shares: "Aandeel per alliantie",
     bar: "Aandeel van de might van de gevolgde allianties per alliantie: {list}",
@@ -220,8 +217,7 @@ export const nl = {
     none: "Nog geen dagelijkse metingen.",
     builder: "Blokbouwer",
     hypothetical: "Hypothetisch",
-    builderHelp:
-      "Tik op A of B bij een alliantie om een blok te proberen. Het telt alleen getallen op. Het voorspelt of kondigt geen echt blok aan.",
+    builderHelp: "Tik op A of B bij allianties om hun might op te tellen.",
     bloc: "Blok {bloc}",
     blocShare: "{share} van de might van de gevolgde allianties",
     blocAlliances: "Allianties",
@@ -232,7 +228,7 @@ export const nl = {
     removeFrom: "{alliance} verwijderen uit blok {bloc}",
     trend: "Aandeel van de top {n} door de tijd",
     trendHelp:
-      "Het aandeel van de might van de gevolgde allianties dat de {n} grootste samen hebben, per dagelijkse meting. Een dag waarop een alliantie niet is gemeten, wordt weggelaten.",
+      "Het aandeel van de might van de gevolgde allianties dat de {n} grootste samen hebben, per dagelijkse meting. Een dag zonder dagelijkse meting voor een alliantie wordt weggelaten.",
     trendLabel: "Aandeel top {n}",
     trendSummary: "De top {n} hebben {last} op {to}, {first} op {from}.",
     trendFew: "Nog niet genoeg dagelijkse metingen voor een trend.",
@@ -240,7 +236,7 @@ export const nl = {
   },
   standing: {
     title: "Stand door de tijd",
-    help: "De gevolgde allianties gerangschikt op might, per dagelijkse meting, met de verandering sinds {from}. Een dag waarop een alliantie niet is gemeten, wordt weggelaten. De server is hier het totaal van de gevolgde allianties.",
+    help: "De gevolgde allianties gerangschikt op might, per dagelijkse meting, met de verandering sinds {from}. Een dag zonder dagelijkse meting voor een alliantie wordt weggelaten. De server is hier het totaal van de gevolgde allianties.",
     lead: "{label} stond op {to} {rank} op might en op {from} {before}.",
     leadGrowth:
       "Haar might veranderde sindsdien {growth}. Het totaal van de gevolgde allianties veranderde {server}.",
@@ -254,8 +250,8 @@ export const nl = {
   },
   history: {
     title: "Ledengeschiedenis",
-    lead: "Elke kaart vergelijkt de ledenlijst met de vorige keer dat die is ingelezen. Wijzigingen daartussen zijn niet te zien.",
-    daily: "Dagelijkse lezing",
+    lead: "Elke kaart vergelijkt de ledenlijst met de vorige dagelijkse meting. Wie er tussendoor is gekomen en weer weg is gegaan, is niet te zien.",
+    daily: "Dagelijkse meting",
     since: "sinds {time}",
     first: "Eerste meting: nog niets om mee te vergelijken.",
     noChange: "Geen ledenwijzigingen.",
@@ -268,7 +264,7 @@ export const nl = {
     none: "Niets van dit soort op deze pagina.",
     copy: "Kopieer voor spreadsheet",
     copied: "Gekopieerd",
-    copyFailed: "Kopiëren mislukt",
+    copyFailed: "Kopiëren mislukt. Probeer het opnieuw.",
   },
   settings: {
     language: "Taal",
@@ -351,7 +347,7 @@ export const nl = {
     submit: "Zoeken",
     seen: "Gezien",
     limit: "Eerste {n}",
-    noMatch: "Geen speler met die naam in het logboek.",
+    noMatch: "Geen speler met die naam. Controleer de spelling, of typ een deel van de naam.",
     pending: "Oma zoekt in het logboek…",
   },
   errors: {
@@ -364,7 +360,7 @@ export const nl = {
     server: {
       code: "500",
       title: "Er is iets gebarsten.",
-      body: "Geeft niks, oma ruimt het op.",
+      body: "Er is iets misgegaan aan onze kant. Probeer het over een minuut nog eens.",
       retry: "Opnieuw",
       back: "Terug naar het logboek",
     },

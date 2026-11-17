@@ -47,8 +47,7 @@ export function ToReview(props: {
         {t["shots.head"]}
         {items.length > 0 && <span className="ml-2 tabular-nums text-plum">{items.length}</span>}
       </h2>
-      <p className="mt-1">{t["shots.lead"]}</p>
-      <p className="mt-1 text-body-sm text-ink/80">{t["shots.nothingCounts"]}</p>
+      {items.length > 0 && <p className="mt-1">{t["shots.lead"]}</p>}
       {/* The door in comes first, so it does not sink under a long queue (panel PD-4, UI-8). */}
       <SendScreenshots
         slug={slug}

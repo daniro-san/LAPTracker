@@ -52,7 +52,7 @@ export const itIT = {
     myAlliance: "La mia alleanza",
     names: "Nomi",
     alliances: "Alleanze",
-    movers: "Nonna nota",
+    movers: "Variazioni maggiori di questo evento",
     progress: "Progresso giornaliero",
     progressMight: "Tu: {change} da {date}.",
     progressMedian: "Membro di mezzo di {tag}: {percent}.",
@@ -81,7 +81,7 @@ export const itIT = {
     liveKillsSoFar: "Kills finora: {kills}",
     liveLast: "Ultimi {min} min: {last} (picco {peak})",
     liveDone:
-      "Variazione da Inizio alla lettura delle {time}. Il registro sopra usa la Fine alle {end}.",
+      "Variazione da Inizio alla lettura delle {time}. La tabella sopra usa la Fine alle {end}.",
     fightClock: "Orologio dei combattimenti del server",
     fightClockLead:
       "I Kills delle alleanze seguite, {min} minuti alla volta, evento per evento. L’altezza di una casella è la sua quota dei Kills disegnati per quell’evento, dall’Inizio alla sua ultima lettura.",
@@ -120,8 +120,7 @@ export const itIT = {
     fewGainers: "pochi guadagni",
     carried: "Quota Kills vs quota Might",
     carriedHelp:
-      "Per ogni alleanza, la quota delle Kills guadagnate da Inizio a Fine, accanto alla sua quota di Might a Inizio. I difensori e i giocatori di supporto non guadagnano Kills.",
-    carriedShown: "Le alleanze con la quota di Kills più sopra la quota di Might, e la tua.",
+      "Per ogni alleanza, la quota delle Kills guadagnate da Inizio a Fine, accanto alla sua quota di Might a Inizio.",
     carriedTotal: "Tutte le {n} alleanze: {kills} Kills guadagnate, {might} di Might a Inizio",
     carriedMightMark: "Quota di Might a Inizio",
     carriedKillsMark: "Quota di Kills guadagnate",
@@ -129,7 +128,7 @@ export const itIT = {
     carriedTurnout: "{share} con Kills",
     carriedSpread: "{low}–{high} su {n} eventi",
     carriedRatioHelp:
-      "pp è la quota di Kills meno la quota di Might. Con 3 eventi o più, la riga sotto mostra l’intervallo della quota di Kills ÷ quota di Might su quegli eventi.",
+      "+6 pp: la quota di Kills è di 6 punti sopra la quota di Might. Con 3 eventi o più, la riga sotto mostra la quota di Kills come multiplo della quota di Might, dal più basso al più alto.",
     carriedPoints: "pp",
   },
   compare: {
@@ -152,7 +151,7 @@ export const itIT = {
   merge: {
     title: "Simulatore di fusione",
     tag: "Simulazione, non un piano",
-    lead: "Due alleanze contate come una sola e confrontate con il limite di Members. Solo totali delle alleanze, nessun nome di membro.",
+    lead: "Due alleanze contate come una sola e confrontate con il limite di Members.",
     link: "Simula una fusione",
     first: "Prima alleanza",
     second: "Seconda alleanza",
@@ -181,7 +180,7 @@ export const itIT = {
   flow: {
     title: "Flusso dei membri",
     tag: "Solo conteggi",
-    lead: "Dove si sono spostati i membri tra le alleanze seguite, dal primo giorno al secondo. Nessun membro viene nominato.",
+    lead: "Dove si sono spostati i membri tra le alleanze seguite, tra i due giorni che scegli.",
     from: "Da",
     to: "A",
     action: "Mostra",
@@ -190,8 +189,7 @@ export const itIT = {
       "Tra il {from} e il {to}, nessuno spostamento di {min} o più membri tra le alleanze seguite.",
     totals:
       "Spostamenti di {min} o più · Cambio di alleanza: {moved} · Nuovi: {arrived} · Usciti: {left}",
-    small:
-      "I conteggi sotto {min} membri sono nascosti e non entrano in nessun totale, compresi i membri rimasti. Così si proteggono i gruppi piccoli.",
+    small: "Gli spostamenti sotto {min} membri sono nascosti e non vengono conteggiati.",
     rowNew: "Nuovi",
     colLeft: "Usciti",
     legend:
@@ -201,9 +199,10 @@ export const itIT = {
     rowStayed: "Rimasti: {n}",
     newTitle: "Nuovi nelle alleanze seguite",
     leftTitle: "Usciti dalle alleanze seguite",
-    notCounted: "Non conteggiati, nessuna lettura valida in entrambi i giorni: {list}.",
+    notCounted:
+      "Non conteggiati, nessun aggiornamento giornaliero utilizzabile in entrambi i giorni: {list}.",
     order: "Scegli un giorno Da precedente al giorno A.",
-    none: "Per ora ci sono meno di due giorni con una lettura valida.",
+    none: "Per ora ci sono meno di due giorni con un aggiornamento giornaliero utilizzabile.",
   },
   balance: {
     title: "Equilibrio del server",
@@ -211,16 +210,15 @@ export const itIT = {
       "Quota di ogni alleanza seguita sul Might delle alleanze seguite, e un costruttore di blocchi ipotetici.",
     lead: "Nessuna alleanza ha più del {max} del Might delle alleanze seguite. Le prime {n} ne hanno {top}.",
     includes: "Il Might include edifici e tecnologie.",
-    basis: "{n} alleanze seguite, lette il {date}.",
+    basis: "{n} alleanze seguite, aggiornate il {date}.",
     total: "Alleanze seguite",
     shares: "Quota per alleanza",
     bar: "Quota del Might delle alleanze seguite per alleanza: {list}",
     asOf: "dati del {date}",
-    none: "Ancora nessuna lettura giornaliera.",
+    none: "Ancora nessun aggiornamento giornaliero.",
     builder: "Costruttore blocchi",
     hypothetical: "Ipotetico",
-    builderHelp:
-      "Tocca A o B su un’alleanza per provare un blocco. Fa solo somme. Non prevede né annuncia un blocco reale.",
+    builderHelp: "Tocca A o B su un’alleanza per sommarne il Might.",
     bloc: "Blocco {bloc}",
     blocShare: "{share} del Might delle alleanze seguite",
     blocAlliances: "Alleanze",
@@ -231,15 +229,15 @@ export const itIT = {
     removeFrom: "Rimuovi {alliance} dal blocco {bloc}",
     trend: "Quota delle prime {n} nel tempo",
     trendHelp:
-      "Quota del Might delle alleanze seguite detenuta dalle {n} maggiori, calcolata sulla lettura di ogni giorno. Un giorno in cui un’alleanza non è stata letta viene escluso.",
+      "Quota del Might delle alleanze seguite detenuta dalle {n} maggiori, da ogni aggiornamento giornaliero. Un giorno senza aggiornamento per un’alleanza viene escluso.",
     trendLabel: "Quota prime {n}",
     trendSummary: "Le prime {n} hanno {last} il {to}, {first} il {from}.",
-    trendFew: "Ancora poche letture giornaliere per tracciare un andamento.",
+    trendFew: "Ancora pochi aggiornamenti giornalieri per tracciare un andamento.",
     day: "Giorno",
   },
   standing: {
     title: "Graduatoria nel tempo",
-    help: "Le alleanze seguite in classifica per Might, dalla lettura di ogni giorno, con la variazione dal {from}. Un giorno in cui un’alleanza non è stata letta viene escluso. Il server qui è il totale delle alleanze seguite.",
+    help: "Le alleanze seguite in classifica per Might, da ogni aggiornamento giornaliero, con la variazione dal {from}. Un giorno senza aggiornamento per un’alleanza viene escluso. Il server qui è il totale delle alleanze seguite.",
     lead: "{label} era {rank} per Might il {to} e {before} il {from}.",
     leadGrowth:
       "Il suo Might è cambiato di {growth} da allora. Il totale delle alleanze seguite è cambiato di {server}.",
@@ -248,13 +246,14 @@ export const itIT = {
     trend: "Posizione {first} il {from}, {last} il {to}",
     thisAlliance: "Questa alleanza",
     detailsHelp: "Posizione di ogni giorno, dal più vecchio: {days}.",
-    few: "Ancora troppe poche letture giornaliere per confrontare le alleanze.",
-    notRanked: "Non in classifica, nessuna lettura giornaliera valida in questo periodo: {list}.",
+    few: "Ancora pochi aggiornamenti giornalieri per confrontare le alleanze.",
+    notRanked:
+      "Non in classifica, nessun aggiornamento giornaliero utilizzabile in questo periodo: {list}.",
   },
   history: {
     title: "Storico dei membri",
-    lead: "Ogni scheda confronta l’elenco dei membri con quello letto in precedenza. I cambi intermedi non si vedono.",
-    daily: "Lettura giornaliera",
+    lead: "Ogni scheda confronta l’elenco dei membri con quello dell’aggiornamento precedente. I cambi intermedi non si vedono.",
+    daily: "Aggiornamento giornaliero",
     since: "da {time}",
     first: "Prima lettura: ancora nulla da confrontare.",
     noChange: "Nessun cambio di membri.",
@@ -267,7 +266,7 @@ export const itIT = {
     none: "Nulla di questo tipo in questa pagina.",
     copy: "Copia per foglio",
     copied: "Copiato",
-    copyFailed: "Copia non riuscita",
+    copyFailed: "Impossibile copiare. Riprova.",
   },
   settings: {
     language: "Lingua",
@@ -350,7 +349,8 @@ export const itIT = {
     submit: "Cerca",
     seen: "Visto",
     limit: "Primi {n}",
-    noMatch: "Nessun giocatore con quel nome nel registro.",
+    noMatch:
+      "Nessun giocatore con quel nome. Controlla come è scritto, oppure scrivi una parte del nome.",
     pending: "La nonna sta cercando nel registro…",
   },
   errors: {
@@ -363,7 +363,7 @@ export const itIT = {
     server: {
       code: "500",
       title: "Si è crepato qualcosa.",
-      body: "Tranquillo, la nonna pulisce.",
+      body: "Qualcosa si è rotto da parte nostra. Riprova tra un minuto.",
       retry: "Riprova",
       back: "Torna al registro",
     },

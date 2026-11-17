@@ -28,12 +28,7 @@ export function plural(t: WorkspaceDictionary, key: Counted, n: number, f: Forma
 export function reasonText(r: Reason, t: WorkspaceDictionary, f: Formats): string {
   if (r.kind === "might") return fill(plural(t, "reason.might", r.days, f), { n: r.days });
   if (r.kind === "kvk") return fill(t["reason.kvk"], { date: f.date(r.at) });
-  return fill(plural(t, "reason.idle", r.days, f), {
-    activity: f.number(r.activity),
-    donated: f.number(r.donated),
-    n: r.days,
-    r: r.days + 1,
-  });
+  return fill(plural(t, "reason.idle", r.days, f), { n: r.days });
 }
 
 /**

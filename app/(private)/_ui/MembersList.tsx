@@ -155,7 +155,6 @@ function Sections({ s, t, row }: { s: ListState; t: ListWords; row: ReturnType<t
           <h2 id="ml-heading" className="font-subhead text-display-sm">
             {t["list.heading"]}
           </h2>
-          <p className="text-body-sm text-ink/80">{t["list.headingLead"]}</p>
           <ul className="mt-1">{heading}</ul>
         </section>
       )}

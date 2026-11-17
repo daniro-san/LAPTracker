@@ -52,7 +52,7 @@ export const vi = {
     myAlliance: "Liên minh của tôi",
     names: "Tên",
     alliances: "Liên minh",
-    movers: "Bà để ý",
+    movers: "Thay đổi lớn nhất trong sự kiện",
     progress: "Tiến độ hằng ngày",
     progressMight: "Bạn: {change} từ {date}.",
     progressMedian: "Thành viên ở giữa của {tag}: {percent}.",
@@ -111,14 +111,12 @@ export const vi = {
     withKills: "Thành viên có tiêu diệt tăng",
     topShare: "Tiêu diệt của Top 5 thành viên",
     topShareHelp:
-      "Phần tiêu diệt của liên minh do 5 thành viên có tiêu diệt tăng nhiều nhất làm ra. Càng cao thì càng ít người gánh.",
+      "Phần tiêu diệt do 5 thành viên có tiêu diệt tăng nhiều nhất làm ra. Cao: vài người gánh phần lớn.",
     topBasis: "{top} trong {n}",
     fewGainers: "ít tăng",
     carried: "Phần tiêu diệt so với Lực Chiến",
     carriedHelp:
-      "Phần tiêu diệt tăng của mỗi liên minh từ Bắt đầu đến Kết thúc, đặt cạnh phần Lực Chiến của liên minh đó lúc Bắt đầu. Vai phòng thủ và vai hỗ trợ không tăng tiêu diệt.",
-    carriedShown:
-      "Các liên minh có phần tiêu diệt vượt xa phần Lực Chiến nhất, và liên minh của bạn.",
+      "Phần tiêu diệt của mỗi liên minh, đặt cạnh phần Lực Chiến của liên minh đó. Tiêu diệt tăng từ Bắt đầu đến Kết thúc, Lực Chiến lúc Bắt đầu.",
     carriedTotal: "Cả {n} liên minh: {kills} tiêu diệt tăng, {might} Lực Chiến lúc Bắt đầu",
     carriedMightMark: "Phần Lực Chiến lúc Bắt đầu",
     carriedKillsMark: "Phần tiêu diệt tăng",
@@ -126,7 +124,7 @@ export const vi = {
     carriedTurnout: "{share} có tiêu diệt tăng",
     carriedSpread: "{low}–{high} qua {n} sự kiện",
     carriedRatioHelp:
-      "điểm % là phần tiêu diệt trừ phần Lực Chiến. Từ 3 sự kiện trở lên, dòng bên dưới cho thấy khoảng của phần tiêu diệt ÷ phần Lực Chiến qua các sự kiện đó.",
+      "+6 điểm %: phần tiêu diệt cao hơn phần Lực Chiến 6 điểm. Từ 3 sự kiện trở lên, dòng bên dưới cho thấy phần tiêu diệt gấp bao nhiêu lần phần Lực Chiến, thấp nhất đến cao nhất.",
     carriedPoints: "điểm %",
   },
   compare: {
@@ -149,7 +147,7 @@ export const vi = {
   merge: {
     title: "Mô phỏng sáp nhập",
     tag: "Mô phỏng, không phải kế hoạch",
-    lead: "Hai liên minh được gộp thành một và kiểm tra theo giới hạn thành viên. Chỉ có tổng của liên minh, không có tên thành viên.",
+    lead: "Hai liên minh được tính thành một, so với giới hạn thành viên.",
     link: "Mô phỏng sáp nhập",
     first: "Liên minh thứ nhất",
     second: "Liên minh thứ hai",
@@ -178,7 +176,7 @@ export const vi = {
   flow: {
     title: "Dòng thành viên",
     tag: "Chỉ đếm số",
-    lead: "Thành viên chuyển giữa các liên minh theo dõi thế nào, từ ngày đầu đến ngày sau. Không nêu tên thành viên nào.",
+    lead: "Thành viên chuyển giữa các liên minh theo dõi ở đâu, giữa hai ngày bạn chọn.",
     from: "Từ",
     to: "Đến",
     action: "Hiện",
@@ -186,8 +184,7 @@ export const vi = {
     answerNone:
       "Từ {from} đến {to}, không có lần chuyển nào từ {min} thành viên trở lên giữa các liên minh theo dõi.",
     totals: "Chuyển từ {min} trở lên · Đổi liên minh: {moved} · Mới: {arrived} · Rời: {left}",
-    small:
-      "Số liệu dưới {min} thành viên bị ẩn và không tính vào bất kỳ tổng nào, kể cả thành viên ở lại. Điều này bảo vệ các nhóm nhỏ.",
+    small: "Lần chuyển dưới {min} thành viên bị ẩn và không được tính.",
     rowNew: "Mới",
     colLeft: "Rời",
     legend:
@@ -197,9 +194,9 @@ export const vi = {
     rowStayed: "Ở lại: {n}",
     newTitle: "Mới trong các liên minh theo dõi",
     leftTitle: "Đã rời các liên minh theo dõi",
-    notCounted: "Không tính, vì không có lần đọc dùng được vào cả hai ngày: {list}.",
+    notCounted: "Không tính, vì không có lần đọc hằng ngày dùng được vào cả hai ngày: {list}.",
     order: "Chọn ngày Từ trước ngày Đến.",
-    none: "Chưa đủ hai ngày có lần đọc dùng được.",
+    none: "Chưa đủ hai ngày có lần đọc hằng ngày dùng được.",
   },
   balance: {
     title: "Cân bằng máy chủ",
@@ -207,7 +204,7 @@ export const vi = {
       "Phần của mỗi liên minh theo dõi trong Lực Chiến của các liên minh theo dõi, và công cụ dựng khối giả định.",
     lead: "Không liên minh nào giữ quá {max} Lực Chiến của các liên minh theo dõi. Top {n} chiếm {top}.",
     includes: "Lực Chiến gồm công trình và công nghệ.",
-    basis: "{n} liên minh theo dõi, đọc ngày {date}.",
+    basis: "{n} liên minh theo dõi, cập nhật ngày {date}.",
     total: "Liên minh theo dõi",
     shares: "Phần theo liên minh",
     bar: "Phần Lực Chiến của các liên minh theo dõi theo liên minh: {list}",
@@ -215,8 +212,7 @@ export const vi = {
     none: "Chưa có lần đọc hằng ngày.",
     builder: "Dựng khối",
     hypothetical: "Giả định",
-    builderHelp:
-      "Chạm A hoặc B trên một liên minh để thử một khối. Đây chỉ là phép cộng số. Không dự đoán hay thông báo khối thật nào.",
+    builderHelp: "Chạm A hoặc B trên liên minh để cộng Lực Chiến của chúng.",
     bloc: "Khối {bloc}",
     blocShare: "{share} Lực Chiến của các liên minh theo dõi",
     blocAlliances: "Liên minh",
@@ -227,7 +223,7 @@ export const vi = {
     removeFrom: "Bỏ {alliance} khỏi khối {bloc}",
     trend: "Phần top {n} theo thời gian",
     trendHelp:
-      "Phần Lực Chiến của các liên minh theo dõi do {n} liên minh lớn nhất nắm, lấy từ lần đọc mỗi ngày. Ngày mà một liên minh không được đọc thì không tính.",
+      "Phần Lực Chiến của các liên minh theo dõi do {n} liên minh lớn nhất nắm, lấy từ mỗi lần đọc hằng ngày. Ngày mà một liên minh không có lần đọc thì không tính.",
     trendLabel: "Phần top {n}",
     trendSummary: "Top {n} giữ {last} vào {to}, {first} vào {from}.",
     trendFew: "Chưa đủ lần đọc hằng ngày để vẽ xu hướng.",
@@ -235,7 +231,7 @@ export const vi = {
   },
   standing: {
     title: "Thứ hạng theo thời gian",
-    help: "Các liên minh theo dõi xếp theo Lực Chiến từ lần đọc mỗi ngày, kèm thay đổi kể từ {from}. Ngày mà một liên minh không được đọc thì không tính. Máy chủ ở đây là tổng của các liên minh theo dõi.",
+    help: "Các liên minh theo dõi xếp theo Lực Chiến từ mỗi lần đọc hằng ngày, kèm thay đổi kể từ {from}. Ngày mà một liên minh không có lần đọc thì không tính. Máy chủ ở đây là tổng của các liên minh theo dõi.",
     lead: "{label} đứng hạng {rank} theo Lực Chiến ngày {to} và {before} ngày {from}.",
     leadGrowth:
       "Lực Chiến của liên minh này đã đổi {growth} kể từ đó. Tổng các liên minh theo dõi đã đổi {server}.",
@@ -249,8 +245,8 @@ export const vi = {
   },
   history: {
     title: "Lịch sử thành viên",
-    lead: "Mỗi thẻ so sánh danh sách thành viên với lần đọc trước đó. Thay đổi xảy ra giữa hai lần thì không được ghi nhận.",
-    daily: "Đọc hằng ngày",
+    lead: "Mỗi thẻ so sánh danh sách thành viên với lần đọc trước đó. Ai vào rồi rời giữa hai lần thì không được ghi nhận.",
+    daily: "Lần đọc hằng ngày",
     since: "từ {time}",
     first: "Lần đọc đầu tiên: chưa có gì để so sánh.",
     noChange: "Không có thay đổi thành viên.",
@@ -263,7 +259,7 @@ export const vi = {
     none: "Trang này không có mục nào loại này.",
     copy: "Chép cho bảng tính",
     copied: "Đã chép",
-    copyFailed: "Chép lỗi",
+    copyFailed: "Không chép được. Thử lại.",
   },
   settings: {
     language: "Ngôn ngữ",
@@ -346,7 +342,7 @@ export const vi = {
     submit: "Tìm",
     seen: "Thấy lần cuối",
     limit: "{n} người đầu",
-    noMatch: "Không có người chơi nào tên đó trong sổ.",
+    noMatch: "Không có người chơi nào tên đó. Kiểm tra lại chính tả, hoặc gõ một phần tên.",
     pending: "Bà đang tìm trong sổ…",
   },
   errors: {
@@ -359,7 +355,7 @@ export const vi = {
     server: {
       code: "500",
       title: "Có gì đó bị nứt.",
-      body: "Không sao, bà sẽ dọn.",
+      body: "Có gì đó hỏng phía bên này. Thử lại sau một phút.",
       retry: "Thử lại",
       back: "Về sổ",
     },

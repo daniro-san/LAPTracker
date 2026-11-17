@@ -4,15 +4,15 @@ import type { ShotsWords } from "./dictionary.shots";
 
 export const shotsFr: ShotsWords = {
   "shots.head": "À vérifier",
-  "shots.lead": "Les captures lues depuis le jeu attendent ici qu’un officier les vérifie.",
-  "shots.nothingCounts": "Rien ici ne compte avant d’être enregistré.",
+  "shots.lead": "Vérifiez chacune, puis enregistrez-la.",
   "shots.none": "Rien à vérifier.",
   "shots.send": "Envoyer des captures",
   "shots.help":
     "Classements : activez My Alliance d’abord. Plusieurs captures d’une longue liste font un seul brouillon. Les captures ne sont pas gardées après lecture.",
   "shots.reading": "Lecture {n} sur {total}…",
   "shots.tooMany": "Envoyez au plus {n} captures à la fois.",
-  "shots.readFailed": "Cette capture n’a pas pu être lue.",
+  "shots.readFailed":
+    "Cette capture n’a pas pu être lue. Renvoyez-la en plein écran, sans la recadrer.",
   "shots.badge": "{n} à vérifier",
   "shots.sentBy": "Envoyé par {name}",
   "shots.viaDiscord": "depuis Discord",
@@ -31,7 +31,10 @@ export const shotsFr: ShotsWords = {
   "shots.kind.elixir_teams": "Équipes de l’Elixir",
   "shots.scope.daily": "du jour",
   "shots.scope.weekly": "de la semaine",
-  "shots.kindScope": "{kind} {scope}",
+  "shots.kindScope.alliance_duel.daily": "Alliance Duel du jour",
+  "shots.kindScope.alliance_duel.weekly": "Alliance Duel de la semaine",
+  "shots.kindScope.donation.daily": "Dons du jour",
+  "shots.kindScope.donation.weekly": "Dons de la semaine",
   "shots.rows.one": "{n} ligne",
   "shots.rows.other": "{n} lignes",
   "shots.doubtful.one": "{n} incertaine",
@@ -40,10 +43,13 @@ export const shotsFr: ShotsWords = {
   "shots.notFound.other": "{n} introuvables",
   "shots.leftOut.one": "{n} ligne d’une autre alliance a été écartée : activez My Alliance.",
   "shots.leftOut.other": "{n} lignes d’autres alliances ont été écartées : activez My Alliance.",
-  "shots.lost.one": "{n} capture n’a pas pu être lue.",
-  "shots.lost.other": "{n} captures n’ont pas pu être lues.",
+  "shots.lost.one":
+    "{n} capture n’a pas pu être lue. Renvoyez-la en plein écran, sans la recadrer.",
+  "shots.lost.other":
+    "{n} captures n’ont pas pu être lues. Renvoyez-les en plein écran, sans les recadrer.",
   "shots.unrecognised": "Non reconnue. Rien n’a été enregistré.",
-  "shots.map": "Cette capture ne contient rien que le bureau utilise. Rien n’a été enregistré.",
+  "shots.map":
+    "Le bureau ne peut pas utiliser cet écran. Rien n’a été enregistré. Envoyez un classement, un rapport de Secret Ops ou une mise à jour d’un membre.",
   "shots.soon": "Lu : {what}. Ce type ne s’enregistre pas encore. Rien n’a été enregistré.",
   "shots.empty": "Lu : {what}, mais aucune ligne n’a pu être lue. Rien n’a été enregistré.",
   "shots.reply.read": "Lu : {what}, {counts}",
@@ -51,9 +57,9 @@ export const shotsFr: ShotsWords = {
   "shots.discord.noDesk": "Ce serveur Discord n’a pas encore de Bureau des officiers.",
   "shots.discord.notOfficer":
     "Seuls les R4 et R5 de l’alliance peuvent envoyer des captures au Bureau des officiers.",
-  "shots.discord.noPicture": "Ce message n’a pas d’image à lire.",
+  "shots.discord.noPicture": "Ce message n’a pas de capture à lire.",
   "shots.discord.already":
-    "Ces images ont déjà été envoyées au Bureau des officiers. Aucun nouveau brouillon n’a été créé.",
+    "Ces captures ont déjà été envoyées au Bureau des officiers. Aucun nouveau brouillon n’a été créé.",
   "shots.discord.failed":
     "Les captures n’ont pas pu être lues cette fois. Rien n’a été enregistré. Réessayez, ou envoyez-les depuis le bureau.",
   "shots.draft.back": "Retour à l’accueil",
@@ -67,11 +73,9 @@ export const shotsFr: ShotsWords = {
   "shots.where.duelWeek": "points d’Alliance Duel de chaque membre, {week}",
   "shots.where.duelDay": "points d’Alliance Duel de chaque membre, {day}",
   "shots.where.check":
-    "Rien n’est écrit dans les membres. Nous comparons avec les données du jeu et ne gardons que le nombre de lignes identiques.",
-  "shots.draft.kept":
-    "Gardé jusqu’au {date}, puis supprimé. La capture elle-même n’a pas été gardée.",
-  "shots.draft.pages.one": "Lu depuis {n} capture.",
-  "shots.draft.pages.other": "Lu depuis {n} captures.",
+    "Enregistrer compare ces nombres avec ceux du jeu et garde seulement combien correspondent. Aucune donnée de membre ne change.",
+  "shots.draft.kept": "Brouillon gardé jusqu’au {date}. Les captures ne sont pas gardées.",
+  "shots.draft.pages": "Lu depuis {n} captures.",
   "shots.match.doubtful": "vérifiez le membre",
   "shots.match.none": "introuvable",
   "shots.read": "Lu « {name} »",
@@ -107,7 +111,7 @@ export const shotsFr: ShotsWords = {
   "shots.duel.card": "Alliance Duel cette semaine",
   "shots.duel.dayValue": "{day} {v}",
   "shots.where.facts":
-    "la might de l’escouade principale et l’AD Tech de chaque membre, en nouvelle version « d’un message »",
+    "le Might de l’escouade principale et l’AD Tech de chaque membre, en nouvelle version « d’un message »",
   "shots.where.thefts": "le journal des vols",
   "shots.field.squadMight": "Might de l’escouade principale",
   "shots.field.adTech": "AD Tech",

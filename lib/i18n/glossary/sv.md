@@ -25,7 +25,7 @@ Words already used in `lib/i18n/sv.ts`. Reuse them so the pages stay consistent;
 | Run by hand by the admin              | Admin kör den för hand                 | `status.byHand`                                                                               |
 | grandma                               | mormor                                 | the voice in empty states and errors                                                          |
 | Member history                        | Medlemshistorik                        | `history.title` — an alliance's rosters over time                                             |
-| Daily read                            | Dagsavläsning                          | `history.daily` — a card head for the once-a-day read                                         |
+| Daily update                          | Dagsavläsning                          | `history.daily`, `flow.none`, `balance.trendHelp` — the once-a-day update of the member lists |
 | Renamed                               | Namnbyte                               | `history.renamed` — a member whose name changed                                               |
 | Middle member                         | Mittenmedlem                           | `ledger.progressMedian` — an alliance's median member                                         |
 | Reading (live)                        | avläsning                              | `ledger.liveReadings` — one snapshot of the live event                                        |
@@ -62,7 +62,7 @@ Words already used in `lib/i18n/sv.ts`. Reuse them so the pages stay consistent;
 | Run by hand by the admin              | Admin kör den för hand                 | `status.byHand`                                                                               |
 | grandma                               | mormor                                 | the voice in empty states and errors                                                          |
 | Member history                        | Medlemshistorik                        | `history.title` — an alliance's rosters over time                                             |
-| Daily read                            | Dagsavläsning                          | `history.daily` — a card head for the once-a-day read                                         |
+| Daily update                          | Dagsavläsning                          | `history.daily`, `flow.none`, `balance.trendHelp` — the once-a-day update of the member lists |
 | Renamed                               | Namnbyte                               | `history.renamed` — a member whose name changed                                               |
 | Middle member                         | Mittenmedlem                           | `ledger.progressMedian` — an alliance's median member                                         |
 | Reading (live)                        | avläsning                              | `ledger.liveReadings` — one snapshot of the live event                                        |
@@ -99,7 +99,7 @@ Words already used in `lib/i18n/sv.ts`. Reuse them so the pages stay consistent;
 | Run by hand by the admin              | Admin kör den för hand                 | `status.byHand`                                                                               |
 | grandma                               | mormor                                 | the voice in empty states and errors                                                          |
 | Member history                        | Medlemshistorik                        | `history.title` — an alliance's rosters over time                                             |
-| Daily read                            | Dagsavläsning                          | `history.daily` — a card head for the once-a-day read                                         |
+| Daily update                          | Dagsavläsning                          | `history.daily`, `flow.none`, `balance.trendHelp` — the once-a-day update of the member lists |
 | Renamed                               | Namnbyte                               | `history.renamed` — a member whose name changed                                               |
 | Middle member                         | Mittenmedlem                           | `ledger.progressMedian` — an alliance's median member                                         |
 | Reading (live)                        | avläsning                              | `ledger.liveReadings` — one snapshot of the live event                                        |

@@ -52,7 +52,7 @@ export const es = {
     myAlliance: "Mi alianza",
     names: "Nombres",
     alliances: "Alianzas",
-    movers: "Abuela notó",
+    movers: "Lo que más cambió en este evento",
     progress: "Progreso diario",
     progressMight: "Tú: {change} desde {date}.",
     progressMedian: "Miembro del medio de {tag}: {percent}.",
@@ -81,7 +81,7 @@ export const es = {
     liveKillsSoFar: "Kills hasta ahora: {kills}",
     liveLast: "Últimos {min} min: {last} (pico {peak})",
     liveDone:
-      "Cambio desde Inicio en la lectura de {time}. El registro de arriba usa el Fin de {end}.",
+      "Cambio desde Inicio en la lectura de {time}. La tabla de arriba usa el Fin de {end}.",
     fightClock: "Reloj de combate del servidor",
     fightClockLead:
       "Los Kills de las alianzas seguidas, en tramos de {min} minutos, evento por evento. La altura de una casilla es su parte de los Kills dibujados de ese evento, desde el Inicio hasta su última lectura.",
@@ -115,13 +115,12 @@ export const es = {
     withKills: "Members que sumaron Kills",
     topShare: "Kills de los 5 mejores Members",
     topShareHelp:
-      "Parte de los Kills de la alianza que hicieron sus 5 Members que más Kills sumaron. Cuanto más alto, menos jugadores la llevaron.",
+      "Parte de los Kills que hicieron los 5 Members que más Kills sumaron. Alto: pocos jugadores hicieron la mayor parte del combate.",
     topBasis: "{top} de {n}",
     fewGainers: "pocos subieron",
     carried: "Parte de Kills frente a parte de Might",
     carriedHelp:
-      "Parte de los Kills ganados de Inicio a Fin en cada alianza, junto a su parte del Might al Inicio. Los defensores y los jugadores de apoyo no suman Kills.",
-    carriedShown: "Las alianzas cuya parte de Kills supera más a su parte de Might, y la tuya.",
+      "Parte de los Kills de cada alianza, junto a su parte del Might. Kills de Inicio a Fin; Might al Inicio.",
     carriedTotal: "Todas las {n} alianzas: {kills} Kills ganados, {might} de Might al Inicio",
     carriedMightMark: "Parte de Might al Inicio",
     carriedKillsMark: "Parte de Kills ganados",
@@ -129,7 +128,7 @@ export const es = {
     carriedTurnout: "{share} con Kills",
     carriedSpread: "{low}–{high} en {n} eventos",
     carriedRatioHelp:
-      "pp es la parte de Kills menos la parte de Might. Con 3 eventos o más, la línea de debajo muestra el rango de la parte de Kills ÷ la parte de Might en esos eventos.",
+      "+6 pp: la parte de Kills queda 6 puntos por encima de la parte de Might. Con 3 eventos o más, la línea de debajo da la parte de Kills como múltiplo de la parte de Might, de la más baja a la más alta.",
     carriedPoints: "pp",
   },
   compare: {
@@ -152,7 +151,7 @@ export const es = {
   merge: {
     title: "Simulador de fusión",
     tag: "Simulación, no un plan",
-    lead: "Dos alianzas contadas como una y comparadas con el tope de Members. Solo totales de alianza, sin nombres de Members.",
+    lead: "Dos alianzas contadas como una, frente al tope de Members.",
     link: "Simular una fusión",
     first: "Primera alianza",
     second: "Segunda alianza",
@@ -181,7 +180,7 @@ export const es = {
   flow: {
     title: "Flujo de Members",
     tag: "Solo conteos",
-    lead: "Adónde pasaron los Members entre las alianzas seguidas, del primer día al segundo. No se nombra a ningún Member.",
+    lead: "Adónde pasaron los Members entre las alianzas seguidas, entre los dos días que eliges.",
     from: "Desde",
     to: "Hasta",
     action: "Mostrar",
@@ -190,8 +189,7 @@ export const es = {
       "Entre {from} y {to}, ningún movimiento de {min} o más Members entre las alianzas seguidas.",
     totals:
       "Movimientos de {min} o más · Cambiaron de alianza: {moved} · Nuevos: {arrived} · Salieron: {left}",
-    small:
-      "Los recuentos de menos de {min} Members se ocultan y no entran en ningún total, incluidos los Members que se quedaron. Así se protege a los grupos pequeños.",
+    small: "Los movimientos de menos de {min} Members se ocultan y no cuentan.",
     rowNew: "Nuevos",
     colLeft: "Salieron",
     legend:
@@ -201,9 +199,9 @@ export const es = {
     rowStayed: "Se quedaron: {n}",
     newTitle: "Nuevos en las alianzas seguidas",
     leftTitle: "Salieron de las alianzas seguidas",
-    notCounted: "No cuentan, sin lectura útil en los dos días: {list}.",
+    notCounted: "No cuentan, sin actualización diaria útil en los dos días: {list}.",
     order: "Elige un día Desde anterior al día Hasta.",
-    none: "Todavía no hay dos días con una lectura útil.",
+    none: "Todavía no hay dos días con una actualización diaria útil.",
   },
   balance: {
     title: "Balance del servidor",
@@ -211,16 +209,15 @@ export const es = {
       "La parte de cada alianza seguida en el Might de las alianzas seguidas, y un armador de bloques hipotéticos.",
     lead: "Ninguna alianza tiene más del {max} del Might de las alianzas seguidas. Las {n} primeras tienen el {top}.",
     includes: "El Might incluye edificios y tecnología.",
-    basis: "{n} alianzas seguidas, leídas el {date}.",
+    basis: "{n} alianzas seguidas, actualizadas el {date}.",
     total: "Alianzas seguidas",
     shares: "Reparto por alianza",
     bar: "Reparto del Might de las alianzas seguidas por alianza: {list}",
     asOf: "al {date}",
-    none: "Todavía no hay lecturas diarias.",
+    none: "Todavía no hay actualizaciones diarias.",
     builder: "Creador de bloques",
     hypothetical: "Hipotético",
-    builderHelp:
-      "Toca A o B en una alianza para probar un bloque. Solo suma números. No predice ni anuncia un bloque real.",
+    builderHelp: "Toca A o B en las alianzas para sumar su Might.",
     bloc: "Bloque {bloc}",
     blocShare: "{share} del Might de las alianzas seguidas",
     blocAlliances: "Alianzas",
@@ -231,15 +228,15 @@ export const es = {
     removeFrom: "Quitar {alliance} del bloque {bloc}",
     trend: "Parte de las {n} primeras en el tiempo",
     trendHelp:
-      "Parte del Might de las alianzas seguidas que suman las {n} mayores, según la lectura de cada día. Un día en que no se leyó una alianza queda fuera.",
+      "Parte del Might de las alianzas seguidas que suman las {n} mayores, según cada actualización diaria. Un día sin actualización de una alianza queda fuera.",
     trendLabel: "Parte top {n}",
     trendSummary: "Las {n} primeras suman {last} el {to}, {first} el {from}.",
-    trendFew: "Todavía no hay suficientes lecturas diarias para trazar una tendencia.",
+    trendFew: "Todavía no hay suficientes actualizaciones diarias para trazar una tendencia.",
     day: "Día",
   },
   standing: {
     title: "Clasificación en el tiempo",
-    help: "Las alianzas seguidas ordenadas por Might según la lectura de cada día, con el cambio desde {from}. Un día en que no se leyó una alianza queda fuera. El servidor aquí es el total de las alianzas seguidas.",
+    help: "Las alianzas seguidas ordenadas por Might según cada actualización diaria, con el cambio desde {from}. Un día sin actualización de una alianza queda fuera. El servidor aquí es el total de las alianzas seguidas.",
     lead: "{label} estuvo {rank} por Might el {to} y {before} el {from}.",
     leadGrowth:
       "Su Might cambió {growth} desde entonces. El total de las alianzas seguidas cambió {server}.",
@@ -248,13 +245,13 @@ export const es = {
     trend: "Puesto {first} el {from}, {last} el {to}",
     thisAlliance: "Esta alianza",
     detailsHelp: "Puesto de cada día, del más antiguo al más reciente: {days}.",
-    few: "Todavía no hay suficientes lecturas diarias para comparar las alianzas.",
-    notRanked: "Sin clasificar, sin lectura diaria útil en este periodo: {list}.",
+    few: "Todavía no hay suficientes actualizaciones diarias para comparar las alianzas.",
+    notRanked: "Sin clasificar, sin actualización diaria útil en este periodo: {list}.",
   },
   history: {
     title: "Historial de miembros",
-    lead: "Cada tarjeta compara la lista de miembros con la anterior. Los cambios entre una lectura y otra no se ven.",
-    daily: "Lectura diaria",
+    lead: "Cada tarjeta compara la lista de miembros con la anterior. Quien entró y salió entre medias no se ve.",
+    daily: "Actualización diaria",
     since: "desde {time}",
     first: "Primera lectura: nada con qué comparar todavía.",
     noChange: "Sin cambios de miembros.",
@@ -267,7 +264,7 @@ export const es = {
     none: "Nada de este tipo en esta página.",
     copy: "Copiar para hoja de cálculo",
     copied: "Copiado",
-    copyFailed: "Error al copiar",
+    copyFailed: "No se pudo copiar. Vuelve a intentarlo.",
   },
   settings: {
     language: "Idioma",
@@ -350,7 +347,8 @@ export const es = {
     submit: "Buscar",
     seen: "Visto",
     limit: "Primeros {n}",
-    noMatch: "No hay ningún jugador con ese nombre en el registro.",
+    noMatch:
+      "No hay ningún jugador con ese nombre. Revisa la escritura o escribe parte del nombre.",
     pending: "La abuela está buscando en el registro…",
   },
   errors: {
@@ -363,7 +361,7 @@ export const es = {
     server: {
       code: "500",
       title: "Algo se rompió.",
-      body: "Tranquilo, la abuela lo limpia.",
+      body: "Algo se rompió por nuestra parte. Inténtalo de nuevo en un minuto.",
       retry: "Reintentar",
       back: "Volver al registro",
     },

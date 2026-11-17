@@ -198,10 +198,7 @@ function Results(props: {
     !d.scope
       ? kinds[d.kind]
       : d.scopeSure
-        ? fillIn(w["shots.kindScope"], {
-            kind: kinds[d.kind],
-            scope: w[`shots.scope.${d.scope}`] ?? "",
-          })
+        ? (w[`shots.kindScope.${d.kind}.${d.scope}`] ?? kinds[d.kind])
         : fillIn(w["shots.kindUnsure"], { kind: kinds[d.kind] });
   const counts = (d: DraftSummary) =>
     [

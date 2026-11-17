@@ -52,7 +52,7 @@ export const de = {
     myAlliance: "Meine Allianz",
     names: "Namen",
     alliances: "Allianzen",
-    movers: "Oma merkt's",
+    movers: "Größte Änderungen in diesem Event",
     progress: "Tägliche Entwicklung",
     progressMight: "Du: {change} seit {date}.",
     progressMedian: "Mitglied in der Mitte von {tag}: {percent}.",
@@ -115,14 +115,12 @@ export const de = {
     withKills: "Members mit gewonnenen Kills",
     topShare: "Kills der Top 5 Members",
     topShareHelp:
-      "Anteil an den Kills der Allianz, den ihre 5 größten Zuwächser erzielt haben. Je höher der Anteil, desto weniger Spieler haben die Allianz getragen.",
+      "Anteil an den Kills der Allianz, den ihre 5 größten Zuwächser erzielt haben. Hoch: Wenige Spieler haben den Großteil der Kämpfe getragen.",
     topBasis: "{top} von {n}",
     fewGainers: "wenige Zuwächser",
     carried: "Kills-Anteil gegen Might-Anteil",
     carriedHelp:
-      "Der Anteil jeder Allianz an den von Beginn bis Ende gewonnenen Kills, neben ihrem Anteil am Might bei Beginn. Verteidiger und Support-Spieler gewinnen keine Kills.",
-    carriedShown:
-      "Die Allianzen, deren Kills-Anteil am weitesten über ihrem Might-Anteil liegt, und deine Allianz.",
+      "Der Anteil jeder Allianz an den von Beginn bis Ende gewonnenen Kills, neben ihrem Anteil am Might bei Beginn.",
     carriedTotal: "Alle {n} Allianzen: {kills} Kills gewonnen, {might} Might bei Beginn",
     carriedMightMark: "Might-Anteil bei Beginn",
     carriedKillsMark: "Kills-Anteil gewonnen",
@@ -130,7 +128,7 @@ export const de = {
     carriedTurnout: "{share} mit gewonnenen Kills",
     carriedSpread: "{low}–{high} über {n} Events",
     carriedRatioHelp:
-      "%-Pkt. ist der Kills-Anteil minus der Might-Anteil. Ab 3 Events zeigt die Zeile darunter die Spanne von Kills-Anteil ÷ Might-Anteil über alle diese Events.",
+      "+6 %-Pkt.: Der Kills-Anteil liegt 6 Punkte über dem Might-Anteil. Ab 3 Events zeigt die Zeile darunter den Kills-Anteil als Vielfaches des Might-Anteils, vom niedrigsten bis zum höchsten.",
     carriedPoints: "%-Pkt.",
   },
   compare: {
@@ -153,7 +151,7 @@ export const de = {
   merge: {
     title: "Fusions-Simulator",
     tag: "Simulation, kein Plan",
-    lead: "Zwei Allianzen werden als eine gezählt und mit der Members-Obergrenze verglichen. Nur Summen je Allianz, keine Namen von Members.",
+    lead: "Zwei Allianzen werden als eine gezählt und mit der Members-Obergrenze verglichen.",
     link: "Fusion simulieren",
     first: "Erste Allianz",
     second: "Zweite Allianz",
@@ -183,7 +181,7 @@ export const de = {
   flow: {
     title: "Mitgliederfluss",
     tag: "Nur Zahlen",
-    lead: "Wohin Members zwischen den erfassten Allianzen gewechselt sind, vom ersten Tag zum zweiten. Kein Member wird namentlich genannt.",
+    lead: "Wohin Members zwischen den erfassten Allianzen gewechselt sind, zwischen den beiden Tagen, die du wählst.",
     from: "Von",
     to: "Bis",
     action: "Zeigen",
@@ -192,8 +190,7 @@ export const de = {
       "Zwischen {from} und {to} gab es keinen Wechsel von {min} oder mehr Members zwischen den erfassten Allianzen.",
     totals:
       "Wechsel ab {min} Members · Allianz gewechselt: {moved} · Neu: {arrived} · Ausgetreten: {left}",
-    small:
-      "Zahlen unter {min} Members sind ausgeblendet und in keiner Summe enthalten, auch nicht bei den Gebliebenen. Das schützt kleine Gruppen.",
+    small: "Wechsel unter {min} Members sind ausgeblendet und werden nicht gezählt.",
     rowNew: "Neu",
     colLeft: "Ausgetr.",
     legend:
@@ -203,9 +200,9 @@ export const de = {
     rowStayed: "Geblieben: {n}",
     newTitle: "Neu in den erfassten Allianzen",
     leftTitle: "Aus den erfassten Allianzen ausgetreten",
-    notCounted: "Nicht gezählt, keine brauchbare Messung an beiden Tagen: {list}.",
+    notCounted: "Nicht gezählt, an beiden Tagen kein brauchbarer Tagesabruf: {list}.",
     order: "Der Tag „Von“ muss vor dem Tag „Bis“ liegen.",
-    none: "Bisher haben weniger als zwei Tage eine brauchbare Messung.",
+    none: "Bisher haben weniger als zwei Tage einen brauchbaren Tagesabruf.",
   },
   balance: {
     title: "Server-Balance",
@@ -221,8 +218,7 @@ export const de = {
     none: "Noch keine Tagesabrufe.",
     builder: "Blockrechner",
     hypothetical: "Hypothetisch",
-    builderHelp:
-      "Tippe bei einer Allianz auf A oder B, um einen Block zu probieren. Es werden nur Zahlen addiert. Es sagt keinen echten Block voraus und kündigt auch keinen an.",
+    builderHelp: "Tippe bei einer Allianz auf A oder B, um ihr Might zusammenzuzählen.",
     bloc: "Block {bloc}",
     blocShare: "{share} des Might der erfassten Allianzen",
     blocAlliances: "Allianzen",
@@ -255,7 +251,7 @@ export const de = {
   },
   history: {
     title: "Mitgliederverlauf",
-    lead: "Jede Karte vergleicht die Mitgliederliste mit der davor abgerufenen. Änderungen dazwischen bleiben unbemerkt.",
+    lead: "Jede Karte vergleicht die Mitgliederliste mit der davor abgerufenen. Wer dazwischen beigetreten und wieder ausgetreten ist, wird nicht gesehen.",
     daily: "Tagesabruf",
     since: "seit {time}",
     first: "Erste Erfassung: noch nichts zum Vergleichen.",
@@ -269,7 +265,7 @@ export const de = {
     none: "Auf dieser Seite gibt es davon nichts.",
     copy: "Für Tabelle kopieren",
     copied: "Kopiert",
-    copyFailed: "Kopieren fehlgeschlagen",
+    copyFailed: "Kopieren hat nicht geklappt. Nochmal versuchen.",
   },
   settings: {
     language: "Sprache",
@@ -352,7 +348,8 @@ export const de = {
     submit: "Suchen",
     seen: "Gesehen",
     limit: "Erste {n}",
-    noMatch: "Kein Spieler mit diesem Namen in der Chronik.",
+    noMatch:
+      "Kein Spieler mit diesem Namen. Prüfe die Schreibweise oder tippe einen Teil des Namens.",
     pending: "Oma sucht in der Chronik…",
   },
   errors: {
@@ -365,7 +362,7 @@ export const de = {
     server: {
       code: "500",
       title: "Da ist was zersprungen.",
-      body: "Halb so wild, Oma räumt das auf.",
+      body: "Bei uns ist etwas kaputtgegangen. Versuch es in einer Minute noch einmal.",
       retry: "Nochmal",
       back: "Zurück zur Chronik",
     },

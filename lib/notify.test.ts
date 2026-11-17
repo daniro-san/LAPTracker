@@ -255,9 +255,7 @@ describe("manual round public message", () => {
   it("says it is a manual round by name and keeps the rest of the template", () => {
     const plain = publicSnapshotMessage(summary(), publicCtx());
     const embed = publicSnapshotMessage(summary(), publicCtx({ roundName: "Demo round" }));
-    expect(embed.description).toBe(
-      `Manual round: Demo round. Taken by hand.\n${plain.description}`,
-    );
+    expect(embed.description).toBe(`Manual round: Demo round.\n${plain.description}`);
     expect({ ...embed, description: plain.description }).toEqual(plain);
   });
 
@@ -273,7 +271,7 @@ describe("manual round public message", () => {
       }),
     );
     expect(embed.description?.split("\n")).toEqual([
-      `Manual round: ${literal}. Taken by hand.`,
+      `Manual round: ${literal}.`,
       "0/1 alliances",
       "○ 1 stale: [NSE] Natural Selection",
     ]);

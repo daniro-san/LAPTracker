@@ -4,7 +4,7 @@
 export const standingCopy = {
   title: "Standing over time",
   /** Under the title: what is ranked, what the server is and which days count. */
-  help: "The tracked alliances ranked by might from each day's read, with the change since {from}. A day on which an alliance was not read is left out. The server here is the tracked alliances' total.",
+  help: "The tracked alliances ranked by might from each daily update, with the change since {from}. A day with no update for an alliance is left out. The server here is the tracked alliances' total.",
   /** The first sentence. `{label}` is the alliance, `{rank}` its rank on the period's newest day and
    * `{before}` on its first day (`#4`), `{to}` and `{from}` those days. */
   lead: "{label} was {rank} by might on {to} and {before} on {from}.",
@@ -21,7 +21,7 @@ export const standingCopy = {
   thisAlliance: "This alliance",
   /** Details: the ranks day by day. `{days}` are the dates, oldest first. */
   detailsHelp: "Rank on each day, oldest first: {days}.",
-  few: "Not enough daily reads yet to compare the alliances.",
+  few: "Not enough daily updates yet to compare the alliances.",
   /** Under the list: alliances read before the period but not in it. `{list}` is alliance names. */
-  notRanked: "Not ranked, no usable daily read in this period: {list}.",
+  notRanked: "Not ranked, no usable daily update in this period: {list}.",
 };

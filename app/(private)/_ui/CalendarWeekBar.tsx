@@ -46,7 +46,7 @@ export function CalendarWeekBar(props: {
         </p>
       )}
       <p className="mt-2 text-body-sm text-ink/80">
-        {fill(t["calendar.legend"], { offset: props.offset })} {t["calendar.kvk"]}
+        {fill(t["calendar.legend"], { offset: props.offset })}
       </p>
     </>
   );
