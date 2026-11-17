@@ -155,13 +155,6 @@
       "when": 1794872235950,
       "tag": "0021_notices",
       "breakpoints": true
-    },
-    {
-      "idx": 22,
-      "version": "7",
-      "when": 1794876225899,
-      "tag": "0022_last_madripoor",
-      "breakpoints": true
     }
   ]
 }
