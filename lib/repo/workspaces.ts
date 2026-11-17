@@ -31,6 +31,8 @@ export interface WorkspaceInput {
   slug: string;
   discordGuildId: string;
   leaderRoleIds: string[];
+  /** The members' board roles (D105, amended 2026-11-17); left out or empty: the board is closed. */
+  memberRoleIds?: string[];
 }
 
 /** One workspace per alliance: a second save for the same union id edits it. */
@@ -41,10 +43,14 @@ export async function saveWorkspace(db: Db, input: WorkspaceInput): Promise<"ok"
     .where(and(eq(workspaces.slug, input.slug), ne(workspaces.unionId, input.unionId)));
   if (taken) return "slug_taken";
   const { slug, discordGuildId, leaderRoleIds } = input;
-  await db.insert(workspaces).values(input).onConflictDoUpdate({
-    target: workspaces.unionId,
-    set: { slug, discordGuildId, leaderRoleIds },
-  });
+  const memberRoleIds = input.memberRoleIds ?? [];
+  await db
+    .insert(workspaces)
+    .values({ ...input, memberRoleIds })
+    .onConflictDoUpdate({
+      target: workspaces.unionId,
+      set: { slug, discordGuildId, leaderRoleIds, memberRoleIds },
+    });
   return "ok";
 }
 

@@ -7,6 +7,10 @@ export const workspacesAdminCopy = {
   guild: "Discord server id",
   roles: "Leadership role ids",
   rolesHelp: "One or more, separated by commas or spaces.",
+  memberRoles: "Member role ids",
+  memberRolesHelp:
+    "Who sees the members' board: people in the server with one of these roles. Separated by commas or spaces. Empty: the board is off.",
+  boardOff: "Members' board is off until you set a member role.",
   slug: "Address (slug)",
   slugHelp: "Lowercase letters, digits and dashes, e.g. ogs.",
   sessions: "{n} signed in",
@@ -15,7 +19,18 @@ export const workspacesAdminCopy = {
   until: "until {date}",
   save: "Save workspace",
   edit: "Add or edit a workspace",
-  editHelp: "Saving for an alliance that already has a workspace edits it.",
+  editHelp:
+    "Pick a workspace to load its settings, or New workspace to add one. Saving for an alliance that already has a workspace edits it.",
+  /** The form's workspace picker: it loads the workspace's current settings into the fields. */
+  editing: "Editing /w/{slug}",
+  adding: "New workspace",
+  pick: "Workspace to edit",
+  /** Saving would empty the member roles of a workspace that has some. */
+  closeBoard: {
+    title: "Close the members' board?",
+    ask: "This closes the members' board. Save anyway?",
+    yes: "Save anyway",
+  },
   allow: "Add to the allowlist",
   allowHelp: "Lets one Discord account in without the role, until the end of the date (UTC).",
   allowWorkspace: "Workspace",

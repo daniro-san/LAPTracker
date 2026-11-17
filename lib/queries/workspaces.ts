@@ -11,6 +11,8 @@ export interface AdminWorkspace {
   unionId: number;
   discordGuildId: string;
   leaderRoleIds: string[];
+  /** The members' board roles (D105, amended 2026-11-17); empty: the board is closed. */
+  memberRoleIds: string[];
   openSessions: number;
   allowlist: { discordUserId: string; expiresAt: Date | null }[];
   /** Each person with an open session: officer if any of their open sessions is an officer's. */
@@ -74,6 +76,7 @@ export async function listWorkspaces(db: Db, now: Date): Promise<AdminWorkspace[
     unionId: w.unionId,
     discordGuildId: w.discordGuildId,
     leaderRoleIds: w.leaderRoleIds,
+    memberRoleIds: w.memberRoleIds,
     openSessions: sessions.find((s) => s.workspaceId === w.id)?.n ?? 0,
     allowlist: allowed
       .filter((a) => a.workspaceId === w.id)

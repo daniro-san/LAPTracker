@@ -27,6 +27,10 @@ const ACCOUNTS: Record<string, { id: string; roles: string[] | null }> = {
   /** The same member after an R5 gave them the R4 role (D105). */
   promoted: { id: MEMBER_ID, roles: [MEMBER_ROLE, R4] },
   outsider: { id: "200000000000000003", roles: null },
+  /** In the server, not sorted yet: no member role (D105, amended 2026-11-17). */
+  guest: { id: "200000000000000004", roles: [] },
+  /** The member after an officer took the member role away. */
+  unsorted: { id: MEMBER_ID, roles: [] },
 };
 const discord: typeof fetch = async (input, init) => {
   const url = String(input);

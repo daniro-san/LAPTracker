@@ -1,5 +1,5 @@
-// POST /api/admin/workspaces {union_id, slug, discord_guild_id, leader_role_ids} — /admin's Workspaces
-// card (D71, D73): registers an alliance's workspace, or edits it (one per alliance). PIN only. The
+// POST /api/admin/workspaces {union_id, slug, discord_guild_id, leader_role_ids, member_role_ids} — /admin's
+// Workspaces card (D71, D73, D105): registers an alliance's workspace, or edits it (one per alliance). PIN only. The
 // alliance must be tracked (config/alliances.ts); Discord ids are snowflakes, kept as text.
 import { z } from "zod";
 
@@ -18,6 +18,8 @@ const body = z
     slug: z.string().regex(WORKSPACE_SLUG),
     discord_guild_id: snowflake,
     leader_role_ids: z.array(snowflake).min(1).max(20),
+    // Empty: no member session, the members' board is closed (D105, amended 2026-11-17).
+    member_role_ids: z.array(snowflake).max(20),
   })
   .strict();
 
@@ -33,6 +35,7 @@ export function POST(request: Request): Promise<Response> {
       slug: b.slug,
       discordGuildId: b.discord_guild_id,
       leaderRoleIds: [...new Set(b.leader_role_ids)],
+      memberRoleIds: [...new Set(b.member_role_ids)],
     });
     if (result === "slug_taken") return errorResponse(409, "slug_taken");
     return Response.json({ ok: true });

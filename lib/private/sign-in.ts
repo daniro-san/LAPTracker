@@ -2,9 +2,9 @@
 // to return to) in a 10-minute __Host- cookie, then Discord's authorize page. Callback, one fixed path for
 // every workspace: the state compared in constant time (a mismatch counts in auth_attempts), the code
 // exchanged, the member's roles read, and the session renewed or made when a role is a leadership role or
-// the account is on the allowlist. Anyone else in the workspace's Discord server gets a member's session,
-// which opens only the members' board (D105). Any other ending drops the browser's session of that
-// workspace.
+// the account is on the allowlist. Someone in the workspace's Discord server who holds one of its member
+// roles gets a member's session, which opens only the members' board (D105, amended 2026-11-17); anyone
+// else is refused. Any other ending drops the browser's session of that workspace.
 import { randomBytes } from "node:crypto";
 
 import { analyticsKey, SIGNED_IN_HASH } from "../analytics/events";
@@ -160,8 +160,12 @@ export async function finishSignIn(db: Db, deps: SignInDeps, input: CallbackInpu
   });
 }
 
-/** Why an account gets no access, in the words the no-access page explains. */
-export type NoAccess = "not_member" | "no_role" | "allowlist_expired" | "blocked";
+/**
+ * Why an account gets no access, in the words the no-access page explains. no_role: in the server with
+ * neither a leadership role nor a member role. board_closed: the same, while the workspace has no member
+ * role set, so nobody gets the members' board (D105, amended 2026-11-17).
+ */
+export type NoAccess = "not_member" | "no_role" | "board_closed" | "allowlist_expired" | "blocked";
 
 /** null: let in, through a leadership role or an allowlist entry that has not expired. */
 export function refusalOf(
@@ -181,6 +185,10 @@ export function refusalOf(
 
 type Admission = { why: null; endsBy: Date | null; viaRole: boolean; tier: SessionTier };
 
+/** Whether the member's roles (null: not in the server) include one of `ids`. */
+const holdsAny = (roles: string[] | null, ids: string[]) =>
+  roles?.some((r) => ids.includes(r)) ?? false;
+
 /** The refusal, or the session's tier and the end the allowlist puts on it (null otherwise). */
 async function refusalFor(
   db: Db,
@@ -189,13 +197,15 @@ async function refusalFor(
   now: Date,
 ): Promise<{ why: NoAccess } | Admission> {
   const known = await findWorkspaceUser(db, workspace.id, member.userId);
-  const viaRole = member.roles?.some((r) => workspace.leaderRoleIds.includes(r)) ?? false;
+  const viaRole = holdsAny(member.roles, workspace.leaderRoleIds);
   const why = refusalOf(known, viaRole, member.roles === null, now);
-  // INVARIANT workspace.member-tier: in the server, not blocked, and not an officer (no leadership role, no
-  // allowlist entry that still runs): the members' board only (D105).
-  if (why && why !== "blocked" && member.roles !== null) {
+  // INVARIANT workspace.member-tier: in the server, not blocked, not an officer (no leadership role, no
+  // allowlist entry that still runs), and holding one of the workspace's member roles: the members' board
+  // only (D105, amended 2026-11-17). With no member role set, nobody gets it.
+  if (why && why !== "blocked" && holdsAny(member.roles, workspace.memberRoleIds)) {
     return { why: null, endsBy: null, viaRole: false, tier: "member" };
   }
+  if (why === "no_role" && workspace.memberRoleIds.length === 0) return { why: "board_closed" };
   if (why) return { why };
   // INVARIANT workspace.allowlist-cap: let in only by the allowlist, the session ends with the entry.
   const endsBy = viaRole ? null : (known?.allowlistExpiresAt ?? null);

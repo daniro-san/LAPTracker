@@ -1,45 +1,36 @@
 "use client";
 
-// /admin's Workspaces card (D71, D73, D105): each workspace with its allowlist and one "Sign out users"
-// button (a sheet picks everyone, officers, members or one person, then asks), a form that adds or edits a workspace, and one that adds an allowlist entry. Each press sends the PIN as
+// /admin's Workspaces card (D71, D73, D105): each workspace with its member roles (or "Members' board is
+// off"), its allowlist and one "Sign out users"
+// button (a sheet picks everyone, officers, members or one person, then asks), the add-or-edit form
+// (WorkspaceForm.tsx), and a form that adds an allowlist entry. Each press sends the PIN as
 // x-edit-pin, like the run buttons, and shows the outcome in words.
 import { useRouter } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 
-import { ALLIANCES } from "@/config/alliances";
 import { buttonClass } from "@/lib/brand/components/Button";
 import { copy, fill } from "@/lib/copy";
 
 import { Result } from "./outcome";
 import { forgetPin, PinSheet, savedPin } from "./PinSheet";
 import { SignOutUsersSheet, type SignOutChoice, type SignOutPerson } from "./SignOutUsersSheet";
+import {
+  Field,
+  FIELD,
+  WorkspaceForm,
+  type Call,
+  type Run,
+  type WorkspaceSettings,
+} from "./WorkspaceForm";
 
 const t = copy.admin.workspaces;
-const FIELD = "drawn-field min-h-11 w-full px-3";
-const LABEL_TEXT = "text-body-sm font-semibold";
 
-export interface WorkspaceView {
-  id: number;
-  slug: string;
+export interface WorkspaceView extends WorkspaceSettings {
   alliance: string;
-  guild: string;
-  roles: string;
   sessions: number;
   allowlist: string[];
   /** Who has an open session, for "Sign out users". */
   people: SignOutPerson[];
-}
-
-type Call = { url: string; body: unknown; ok: (answer: Record<string, unknown>) => string };
-
-function Field({ label, help, children }: { label: string; help?: string; children: ReactNode }) {
-  return (
-    <label className="grid gap-1">
-      <span className={LABEL_TEXT}>{label}</span>
-      {children}
-      {help && <span className="text-body-sm text-ink/70">{help}</span>}
-    </label>
-  );
 }
 
 function usePinCall() {
@@ -81,8 +72,6 @@ function usePinCall() {
 }
 
 const saved = () => t.saved;
-const ids = (text: string) => text.split(/[\s,]+/).filter((s) => s !== "");
-type Run = (call: Call) => void;
 
 /** The form's fields by name, the default submit stopped. */
 function fields(e: React.FormEvent<HTMLFormElement>): Record<string, string> {
@@ -108,6 +97,13 @@ function WorkspaceList({
           <p className="text-body-sm break-words text-ink/80">
             {t.guild}: {w.guild} · {t.roles}: {w.roles} · {fill(t.sessions, { n: w.sessions })}
           </p>
+          {w.memberRoles === "" ? (
+            <p className="text-body-sm font-semibold">{t.boardOff}</p>
+          ) : (
+            <p className="text-body-sm break-words text-ink/80">
+              {t.memberRoles}: {w.memberRoles}
+            </p>
+          )}
           <p className="text-body-sm break-words text-ink/80">
             {t.allowlist}: {w.allowlist.length === 0 ? t.allowlistNone : w.allowlist.join(", ")}
           </p>
@@ -119,49 +115,6 @@ function WorkspaceList({
         </li>
       ))}
     </ul>
-  );
-}
-
-function WorkspaceForm({ run }: { run: Run }) {
-  const save = (e: React.FormEvent<HTMLFormElement>) => {
-    const f = fields(e);
-    run({
-      url: "/api/admin/workspaces",
-      ok: saved,
-      body: {
-        union_id: Number(f.union_id),
-        slug: (f.slug ?? "").trim(),
-        discord_guild_id: (f.guild ?? "").trim(),
-        leader_role_ids: ids(f.roles ?? ""),
-      },
-    });
-  };
-  return (
-    <form onSubmit={save} className="mt-6 grid gap-3 sm:max-w-xl">
-      <h3 className="font-subhead text-display-sm">{t.edit}</h3>
-      <p className="text-body-sm text-ink/70">{t.editHelp}</p>
-      <Field label={t.alliance}>
-        <select name="union_id" required className={FIELD}>
-          {ALLIANCES.map((a) => (
-            <option key={a.unionId} value={a.unionId}>
-              {a.tag} · {a.name}
-            </option>
-          ))}
-        </select>
-      </Field>
-      <Field label={t.guild}>
-        <input name="guild" required inputMode="numeric" autoComplete="off" className={FIELD} />
-      </Field>
-      <Field label={t.roles} help={t.rolesHelp}>
-        <input name="roles" required autoComplete="off" className={FIELD} />
-      </Field>
-      <Field label={t.slug} help={t.slugHelp}>
-        <input name="slug" required autoCapitalize="none" autoComplete="off" className={FIELD} />
-      </Field>
-      <button type="submit" className={buttonClass("primary", "font-semibold")}>
-        {t.save}
-      </button>
-    </form>
   );
 }
 
@@ -222,7 +175,7 @@ export function WorkspacesCard({ workspaces }: { workspaces: WorkspaceView[] }) 
     <div>
       {message && <Result message={message} />}
       <WorkspaceList workspaces={workspaces} onSignOut={setSigningOut} />
-      <WorkspaceForm run={run} />
+      <WorkspaceForm workspaces={workspaces} run={run} />
       {workspaces.length > 0 && <AllowForm workspaces={workspaces} run={run} />}
       {signingOut && (
         <SignOutUsersSheet
