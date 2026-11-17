@@ -94,7 +94,7 @@ function ZoneSheet(props: Props & { onPick: (zone: string) => void; onClose: () 
           type="time"
           value={theirTime}
           onChange={(e) => setTheirTime(e.target.value)}
-          className="min-h-11 border border-rule bg-paper px-2"
+          className="min-h-11 w-32 border border-rule bg-paper px-2"
         />
       </label>
       <ZoneList
@@ -144,7 +144,8 @@ function ZoneList(props: {
   if (results.length === 0) return <p className="mt-3">{words["tz.none"]}</p>;
   return (
     <>
-      <ul className="mt-3 max-h-[45dvh] overflow-y-auto border-t border-rule">
+      {/* The list scrolls on its own so the search box above stays in view over ~420 zones. */}
+      <ul className="mt-3 max-h-[45dvh] overflow-x-hidden overflow-y-auto overscroll-contain border-t border-rule">
         {results.slice(0, SHOWN).map((z) => (
           <li key={z.id} className="border-b border-rule">
             <button

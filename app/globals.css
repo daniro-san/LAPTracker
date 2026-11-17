@@ -31,13 +31,11 @@
     font-size: 16px;
   }
   /* Date and time fields: iOS draws them as a centred pill with a minimum width of its own, which
-     pushes a sheet sideways. Here they fill their box like a text field, text on the left, 44 px tall,
-     in the border and background their class gives them. */
+     pushes a sheet sideways. Here they shrink like a text field (their class sets the width), text on
+     the left, 44 px tall, in the border and background their class gives them. */
   input:is([type="date"], [type="time"], [type="datetime-local"], [type="month"], [type="week"]) {
     -webkit-appearance: none;
     appearance: none;
-    display: block;
-    width: 100%;
     min-width: 0;
     min-height: 44px;
     text-align: left;
@@ -49,12 +47,17 @@
   select:not([multiple]) {
     -webkit-appearance: none;
     appearance: none;
-    padding-right: 2rem;
     background-image: var(--select-arrow);
     background-repeat: no-repeat;
     background-position: right 0.75rem center;
     background-size: 12px 8px;
   }
+}
+
+/* Room for the select's arrow. Outside the layers on purpose, so a `px-*` utility on the select cannot
+   put its text under the arrow. */
+select:not([multiple]) {
+  padding-right: 2rem;
 }
 
 /* A modal sheet is open (lib/brand/components/Sheet.tsx): the page behind it does not scroll, and keeps
