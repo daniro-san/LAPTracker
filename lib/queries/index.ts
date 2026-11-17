@@ -23,6 +23,7 @@ export {
   type MightUnchanged,
   type UnchangedRow,
 } from "./might-unchanged";
+export { BALANCE_DAYS, powerBalance, type PowerBalance } from "./balance";
 export { whoCarried, type Carried, type CarriedRow } from "./carried";
 export { allianceNames } from "./names";
 export { eventSamples, type EventReading, type SampleAlliance, type SampleMember } from "./samples";
@@ -77,3 +78,10 @@ export {
   type PlayerComparison,
   type PlayerEventFigures,
 } from "./compare-player";
+export {
+  mergePage,
+  type MergeAlliance,
+  type MergePage,
+  type MergeSide,
+  type MergeTurnout,
+} from "./merge";

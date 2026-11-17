@@ -132,6 +132,12 @@ export default defineConfig(
     rules: { "max-lines-per-function": "off" },
   },
   {
+    // One translation per file is data, not logic, and the translate-copy skill edits that one file (D88).
+    files: ["lib/i18n/*.ts"],
+    ignores: ["lib/i18n/index.ts"],
+    rules: { "max-lines": "off" },
+  },
+  {
     files: ["scripts/**/*.mjs", "*.config.mjs"],
     languageOptions: { globals: { process: "readonly", console: "readonly" } },
   },

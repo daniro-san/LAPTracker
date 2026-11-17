@@ -135,12 +135,27 @@ export async function findSession(db: Db, tokenHash: string) {
       expiresAt: workspaceSessions.expiresAt,
       userId: workspaceUsers.id,
       displayName: workspaceUsers.displayName,
+      chosenName: workspaceUsers.chosenName,
+      playerUid: workspaceUsers.playerUid,
       blocked: workspaceUsers.blocked,
     })
     .from(workspaceSessions)
     .innerJoin(workspaceUsers, eq(workspaceUsers.id, workspaceSessions.workspaceUserId))
     .where(eq(workspaceSessions.tokenHash, tokenHash));
   return row ?? null;
+}
+
+/** The officer's own profile (issue 334): the name they chose, and "This is me" (null unlinks). */
+export async function updateWorkspaceUser(
+  db: Db,
+  workspaceId: number,
+  userId: number,
+  set: { chosenName: string } | { playerUid: number | null },
+): Promise<void> {
+  await db
+    .update(workspaceUsers)
+    .set(set)
+    .where(and(eq(workspaceUsers.id, userId), eq(workspaceUsers.workspaceId, workspaceId)));
 }
 
 /** Ends one session, only inside its own workspace. */
