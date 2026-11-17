@@ -86,7 +86,7 @@ export const calendarEn = {
   "calendar.form.weekly": "Every week",
   "calendar.form.members": "Members can see this",
   "calendar.form.membersHelp":
-    "Members will see this event, its notes and its link on their board (coming soon). Leave it off for leadership plans like KvK.",
+    "Members will see this event, its notes and its link on their board. Leave it off for leadership plans like KvK.",
   "calendar.form.scope": "Change the day and time for",
   "calendar.form.scopeOne": "Only the week of {date}",
   "calendar.form.scopeAll": "Every week",

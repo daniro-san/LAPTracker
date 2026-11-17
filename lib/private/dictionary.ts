@@ -1,11 +1,15 @@
 // The workspace's own words in English, Brazilian Portuguese and French (D71, issue #305): separate from
 // lib/copy.ts, so the public pages' i18n check and payload do not change. Names and game terms stay as the
 // officers write them (naming.md). French puts a no-break space before : ? and !.
+import { boardEn } from "./dictionary.board";
 import { calendarEn } from "./dictionary.calendar";
+import { followUpEn } from "./dictionary.followup";
 import { fr } from "./dictionary.fr";
 import { importEn } from "./dictionary.import";
+import { lifecycleEn } from "./dictionary.lifecycle";
 import { membersEn } from "./dictionary.members";
 import { noticesEn } from "./dictionary.notices";
+import { profileEn } from "./dictionary.profile";
 import { pt } from "./dictionary.pt-BR";
 import { rollEn } from "./dictionary.rollcall";
 import { shotsEn } from "./dictionary.shots";
@@ -29,7 +33,7 @@ const en = {
   "lang.aria": "Language",
   "signin.title": "Sign in",
   "signin.lead":
-    "For the alliance’s leadership: sign in with the Discord account you use in the alliance’s server.",
+    "Sign in with the Discord account you use in the alliance’s server. Members see this week’s plan, the notices and Start here; officers also get the Officers’ Desk.",
   "signin.button": "Sign in with Discord",
   "signin.note": "Discord shares only your name and your roles in that server. Nothing is posted.",
   "signin.e.denied": "Discord did not confirm the sign-in. Try again.",
@@ -39,11 +43,13 @@ const en = {
   "noaccess.not_member":
     "This Discord account is not in the alliance’s Discord server. Join the server, or sign in with the account you use there.",
   "noaccess.no_role":
-    "This Discord account does not have a leadership role in the alliance’s server. Ask an R5 to give you the role, then sign in again.",
+    "This Discord account doesn’t have the alliance’s member role yet. Once an officer gives it to you, sign in again.",
+  "noaccess.board_closed":
+    "The members’ board is not open yet. Your officers will say on Discord when it is.",
   "noaccess.allowlist_expired":
     "Your access was for a limited time, and that time is over. Ask the site owner to extend it.",
   "noaccess.blocked":
-    "This Discord account no longer has access to the Officers’ Desk. Ask an R5 if this is a mistake.",
+    "This Discord account no longer has access to the alliance’s pages here: the members’ board or the Officers’ Desk. Ask an R5 if this is a mistake.",
   "noaccess.retry": "Sign in again",
   "noaccess.public": "Go to the public Event Ledger",
   "shell.signedIn": "Signed in as {name}",
@@ -244,35 +250,15 @@ const en = {
   "src.unsaved": "from this message · not saved",
   "paste.found.one": "Found {n} value. Check it, then Save.",
   "paste.found.other": "Found {n} values. Check them, then Save.",
-  "profile.title": "Your settings",
-  "profile.name": "Your name",
-  "profile.nameHelp": "Shown at the top of the desk (up to 32 characters).",
-  "profile.save": "Save",
-  "profile.saved": "Saved.",
-  "profile.invalid": "Write 1 to 32 characters.",
-  "profile.failed": "Could not save. Try again.",
-  "profile.loadFailed": "Could not load this. Close and try again.",
-  "profile.me": "This is me",
-  "profile.me.lead": "Optional: tell the desk which player in the alliance is you.",
-  "profile.me.loading": "Looking for your name in the alliance…",
-  "profile.me.linked": "In the game, you are {name}.",
-  "profile.me.gone": "Your player is no longer in the alliance.",
-  "profile.me.unlink": "This isn’t me",
-  "profile.me.undo": "You can remove this link any time.",
-  "profile.me.ask": "Is this you?",
-  "profile.me.confirm": "That’s me",
-  "profile.me.none": "No one in the alliance has a name like yours. Search for your name below.",
-  "profile.me.find": "Search the alliance",
-  "profile.me.noResult": "No one in the alliance has a name like that.",
-  "profile.theme": "Theme",
-  "profile.theme.light": "Light",
-  "profile.theme.dark": "Dark",
-  "profile.theme.system": "Same as this device",
+  ...profileEn,
   ...noticesEn,
   ...importEn,
+  ...lifecycleEn,
   ...theftsEn,
   ...shotsEn,
   ...translateEn,
+  ...boardEn,
+  ...followUpEn,
 } as const;
 
 export type WorkspaceKey = keyof typeof en;

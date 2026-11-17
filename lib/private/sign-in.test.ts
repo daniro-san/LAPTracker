@@ -12,10 +12,11 @@ import {
   signOutWorkspace,
 } from "../repo/workspaces";
 import { authAttempts, workspaceSessions, workspaceUsers } from "../schema";
-import { requireWorkspace, signOut } from "./access";
+import { requireBoard, requireWorkspace, signOut } from "./access";
 import {
   CHECK_MS,
   hashToken,
+  MEMBER_SESSION_MS,
   RENEW_MS,
   revokeSession,
   SESSION_COOKIE,
@@ -28,6 +29,7 @@ import {
   jar,
   location,
   MEMBER_ID,
+  MEMBER_ROLE,
   ORIGIN,
   R4,
   signInWith,
@@ -46,6 +48,7 @@ beforeEach(async () => {
     slug: "ogs",
     discordGuildId: "400000000000000001",
     leaderRoleIds: [R4],
+    memberRoleIds: [MEMBER_ROLE],
   });
   await saveWorkspace(db, {
     unionId: 67109944,
@@ -85,21 +88,52 @@ describe("workspace sign-in (D71)", () => {
     expect((await requireWorkspace(db, "ogs", jar(token), T0)).ok).toBe(true);
   });
 
-  it("refuses an account whose allowlist entry has expired", async () => {
-    await allowUser(db, await workspaceId("ogs"), MEMBER_ID, new Date(T0.getTime() - 1), "admin");
-    const { step, token } = await signIn("ogs", "member");
+  it("refuses an account outside the server whose allowlist entry has expired", async () => {
+    const outsider = "200000000000000003";
+    await allowUser(db, await workspaceId("ogs"), outsider, new Date(T0.getTime() - 1), "admin");
+    const { step, token } = await signIn("ogs", "outsider");
     expect(location(step)).toBe("/w/ogs/no-access?why=allowlist_expired");
     expect(token).toBeUndefined();
   });
 
-  it("gives no access to an account without the role, and stores nothing about it", async () => {
-    const { step, token } = await signIn("ogs", "member");
-    expect(location(step)).toBe("/w/ogs/no-access?why=no_role");
-    expect(token).toBeUndefined();
-    expect(await db.select().from(workspaceUsers)).toEqual([]);
-    expect(location((await signIn("ogs", "outsider")).step)).toBe(
-      "/w/ogs/no-access?why=not_member",
-    );
+  it("gives a server member with the member role the members' board only, for 30 days (D105)", async () => {
+    const { step, token } = await signIn("ogs", "member", T0, {}, { next: "/w/ogs/members" });
+    expect(location(step)).toBe("/w/ogs/board");
+    const cookie = step.kind === "redirect" ? step.cookies.join(" ") : "";
+    expect(cookie).toContain(`Max-Age=${MEMBER_SESSION_MS / 1000};`);
+    expect(await requireWorkspace(db, "ogs", jar(token), T0)).toEqual({
+      ok: false,
+      reason: "member",
+    });
+    // The role is checked again through Discord once a day (amended 2026-11-17), up to day 30.
+    const day29 = new Date(T0.getTime() + MEMBER_SESSION_MS - 86_400_000);
+    expect(await requireBoard(db, "ogs", jar(token), day29)).toEqual({
+      ok: false,
+      reason: "expired",
+    });
+    const renewal = await signIn("ogs", "member", day29, {}, { session: token ?? "" });
+    expect(renewal.token).toBeUndefined();
+    expect(await requireBoard(db, "ogs", jar(token), day29)).toMatchObject({
+      ok: true,
+      officer: false,
+    });
+    const day30 = new Date(T0.getTime() + MEMBER_SESSION_MS);
+    expect(await requireBoard(db, "ogs", jar(token), day30)).toEqual({
+      ok: false,
+      reason: "expired",
+    });
+  });
+
+  it("lets an officer's session see the board, and gives an account outside the server nothing", async () => {
+    const { token } = await signIn("ogs", "officer");
+    expect(await requireBoard(db, "ogs", jar(token), T0)).toMatchObject({
+      ok: true,
+      officer: true,
+    });
+    const outsider = await signIn("ogs", "outsider");
+    expect(location(outsider.step)).toBe("/w/ogs/no-access?why=not_member");
+    expect(outsider.token).toBeUndefined();
+    expect(await db.select().from(workspaceUsers)).toHaveLength(1);
   });
 
   it("refuses a state that does not match its cookie and counts it in auth_attempts", async () => {
@@ -158,9 +192,13 @@ describe("workspace sign-in (D71)", () => {
     const { token } = await signIn("ogs", "officer");
     const later = new Date(T0.getTime() + RENEW_MS);
     const renewal = await signIn("ogs", "demoted", later, {}, { session: token ?? "" });
-    expect(location(renewal.step)).toBe("/w/ogs/no-access?why=no_role");
+    // Still in the server: a member now (D105). The officer's session is gone.
+    expect(location(renewal.step)).toBe("/w/ogs/board");
     expect(await requireWorkspace(db, "ogs", jar(token), later)).toMatchObject({
       reason: "signed_out",
+    });
+    expect(await requireWorkspace(db, "ogs", jar(renewal.token), later)).toMatchObject({
+      reason: "member",
     });
   });
 
@@ -234,7 +272,10 @@ describe("two workspaces stay apart (D71)", () => {
 
   it("does not let an account in through another workspace's allowlist", async () => {
     await allowInOgs();
-    expect(location((await signIn("nse", "member")).step)).toBe("/w/nse/no-access?why=no_role");
+    const { step, token } = await signIn("nse", "member");
+    // nse has no member role set, so its board is closed too (D105, amended 2026-11-17).
+    expect(location(step)).toBe("/w/nse/no-access?why=board_closed");
+    expect(token).toBeUndefined();
   });
 
   it("does not end a session when it signs out under another workspace's slug", async () => {

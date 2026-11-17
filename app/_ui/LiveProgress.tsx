@@ -6,6 +6,7 @@
 // text and underlined.
 import { Chip } from "@/lib/brand/components/Chip";
 import { fill, type Dictionary } from "@/lib/copy";
+import { isOn } from "@/lib/flags";
 import type { EventProgress } from "@/lib/queries";
 
 import type { ComparisonRow } from "./event-rows";
@@ -187,8 +188,9 @@ function Standings({
 }
 
 /** The pulse and the standings, once there is a reading. Live: they sit above the ledger under their own
- * titles. After the End: under one "During the event" title below it. */
-export function LiveSections({
+ * titles. After the End: under one "During the event" title below it. The pulse's Details table follows
+ * the `chart-details` flag (D91). */
+export async function LiveSections({
   progress,
   eventId,
   rows,
@@ -210,6 +212,7 @@ export function LiveSections({
   placement: "above" | "below";
 }) {
   if (progress.live !== (placement === "above") || progress.readings === 0) return null;
+  const details = await isOn("chart-details");
   return (
     <div
       id={progress.live ? undefined : LIVE_DURING_ID}
@@ -220,7 +223,7 @@ export function LiveSections({
           {copy.ledger.liveDuring}
         </h2>
       )}
-      <Pulse progress={progress} clock={clock} copy={copy} locale={locale} />
+      <Pulse progress={progress} details={details} clock={clock} copy={copy} locale={locale} />
       <Standings
         progress={progress}
         eventId={eventId}

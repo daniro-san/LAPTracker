@@ -223,12 +223,15 @@ export function FlowView({
   flow,
   from,
   to,
+  merge,
   clock,
   copy,
 }: {
   flow: FlowResult;
   from: string;
   to: string;
+  /** The `merge-simulator` flag (D91): off, no link to it. */
+  merge: boolean;
   clock: Clock;
   copy: Dictionary;
 }) {
@@ -263,14 +266,16 @@ export function FlowView({
         />
       </ul>
       <p className="mt-1 hidden text-body-sm text-ink/70 sm:block">{fill(f.legend, days)}</p>
-      <p className="mt-3">
-        <TextLink
-          href={MERGE_PATH}
-          className="inline-flex min-h-11 items-center text-sm font-medium"
-        >
-          {copy.merge.title} <span aria-hidden="true">&nbsp;→</span>
-        </TextLink>
-      </p>
+      {merge && (
+        <p className="mt-3">
+          <TextLink
+            href={MERGE_PATH}
+            className="inline-flex min-h-11 items-center text-sm font-medium"
+          >
+            {copy.merge.title} <span aria-hidden="true">&nbsp;→</span>
+          </TextLink>
+        </p>
+      )}
     </>
   );
 }

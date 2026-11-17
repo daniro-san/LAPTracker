@@ -87,7 +87,7 @@ export const calendarFr: CalendarWords = {
   "calendar.form.weekly": "Chaque semaine",
   "calendar.form.members": "Les membres peuvent voir ceci",
   "calendar.form.membersHelp":
-    "Les membres verront cet événement, ses notes et son lien sur leur tableau (bientôt). Laissez-le désactivé pour les plans de la direction, comme ceux de la KvK.",
+    "Les membres verront cet événement, ses notes et son lien sur leur tableau. Laissez-le désactivé pour les plans de la direction, comme ceux de la KvK.",
   "calendar.form.scope": "Changer le jour et l’heure pour",
   "calendar.form.scopeOne": "La semaine du {date} seulement",
   "calendar.form.scopeAll": "Chaque semaine",

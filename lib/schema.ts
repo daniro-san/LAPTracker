@@ -323,6 +323,11 @@ export const workspaces = pgTable("workspaces", {
   unionId: big("union_id").notNull().unique(),
   discordGuildId: text("discord_guild_id").notNull(),
   leaderRoleIds: text("leader_role_ids").array().notNull(),
+  /** Members' board roles (D105, amended 2026-11-17): empty means no member session, the board is closed. */
+  memberRoleIds: text("member_role_ids")
+    .array()
+    .notNull()
+    .default(sql`'{}'::text[]`),
   createdAt: tstz("created_at").notNull().defaultNow(),
 });
 
@@ -367,8 +372,13 @@ export const workspaceSessions = pgTable(
     expiresAt: tstz("expires_at").notNull(),
     /** When Discord last confirmed the role (D99): at sign-in and at each renewal. */
     checkedAt: tstz("checked_at").notNull().defaultNow(),
+    /** "officer": the desk (D71). "member": the members' board only (D105). */
+    tier: text("tier").$type<"officer" | "member">().notNull().default("officer"),
   },
-  (t) => [index("workspace_sessions_workspace_idx").on(t.workspaceId)],
+  (t) => [
+    index("workspace_sessions_workspace_idx").on(t.workspaceId),
+    check("workspace_sessions_tier_check", sql`${t.tier} in ('officer', 'member')`),
+  ],
 );
 
 // The workspace calendar (issue 300), in its own file for size.
@@ -376,4 +386,6 @@ export * from "./schema-calendar";
 // The Roll call tab (issue 298), in its own file for size.
 export * from "./schema-rollcall";
 // The workspace's member facts and remembered sheet names (D80), in their own file for size.
-export { memberFacts, nameAliases } from "./schema-facts";
+export { memberFacts, nameAliases, pendingMembers } from "./schema-facts";
+// The Follow-up tab's officer actions (issue 340, D104), in their own file for size.
+export { memberFollowUps } from "./schema-followup";

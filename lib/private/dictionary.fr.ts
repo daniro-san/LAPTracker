@@ -1,8 +1,11 @@
 // The workspace dictionary in French (D71), split from dictionary.ts for its size; the keys follow `en`.
 // French puts a no-break space before : ? and !, and inside « ».
 import type { WorkspaceDictionary } from "./dictionary";
+import { boardFr } from "./dictionary.board";
 import { calendarFr } from "./dictionary.calendar.fr";
+import { followUpFr } from "./dictionary.followup";
 import { importFr } from "./dictionary.import";
+import { lifecycleFr } from "./dictionary.lifecycle";
 import { membersFr } from "./dictionary.members.fr";
 import { noticesFr } from "./dictionary.notices";
 import { rollFr } from "./dictionary.rollcall.fr";
@@ -24,7 +27,7 @@ export const fr: WorkspaceDictionary = {
   "lang.aria": "Langue",
   "signin.title": "Connexion",
   "signin.lead":
-    "Pour la direction de l’alliance : connectez-vous avec le compte Discord que vous utilisez sur le serveur de l’alliance.",
+    "Connectez-vous avec le compte Discord que vous utilisez sur le serveur de l’alliance. Les membres voient le plan de la semaine, les annonces et Pour commencer ; les officiers ont aussi le Bureau des officiers.",
   "signin.button": "Se connecter avec Discord",
   "signin.note": "Discord ne partage que votre nom et vos rôles sur ce serveur. Rien n’est publié.",
   "signin.e.denied": "Discord n’a pas confirmé la connexion. Réessayez.",
@@ -35,11 +38,13 @@ export const fr: WorkspaceDictionary = {
   "noaccess.not_member":
     "Ce compte Discord n’est pas sur le serveur Discord de l’alliance. Rejoignez le serveur, ou connectez-vous avec le compte que vous y utilisez.",
   "noaccess.no_role":
-    "Ce compte Discord n’a pas de rôle de direction sur le serveur de l’alliance. Demandez le rôle à un R5, puis reconnectez-vous.",
+    "Ce compte Discord n’a pas encore le rôle de membre de l’alliance. Quand un officier vous l’aura donné, reconnectez-vous.",
+  "noaccess.board_closed":
+    "Le tableau des membres n’est pas encore ouvert. Vos officiers le diront sur Discord quand il le sera.",
   "noaccess.allowlist_expired":
     "Votre accès était limité dans le temps, et ce temps est écoulé. Demandez au propriétaire du site de le prolonger.",
   "noaccess.blocked":
-    "Ce compte Discord n’a plus accès au Bureau des officiers. Demandez à un R5 si c’est une erreur.",
+    "Ce compte Discord n’a plus accès aux pages de l’alliance ici : le tableau des membres et le Bureau des officiers. Demandez à un R5 si c’est une erreur.",
   "noaccess.retry": "Se reconnecter",
   "noaccess.public": "Aller au Registre des événements public",
   "shell.signedIn": "Connecté en tant que {name}",
@@ -267,7 +272,10 @@ export const fr: WorkspaceDictionary = {
   "profile.theme.system": "Comme l’appareil",
   ...noticesFr,
   ...importFr,
+  ...lifecycleFr,
   ...theftsFr,
   ...shotsFr,
   ...translateFr,
+  ...boardFr,
+  ...followUpFr,
 };

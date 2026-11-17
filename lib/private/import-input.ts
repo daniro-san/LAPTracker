@@ -26,6 +26,13 @@ export const createBody = z
   .strict();
 
 const uid = z.number().int().positive().max(Number.MAX_SAFE_INTEGER);
+/** A row's member: a game uid, or a pending member's (minus its serial id, D106). */
+const rowUid = z
+  .number()
+  .int()
+  .min(-2147483647)
+  .max(Number.MAX_SAFE_INTEGER)
+  .refine((n) => n !== 0);
 
 export const actionBody = z.discriminatedUnion("action", [
   z
@@ -39,13 +46,16 @@ export const actionBody = z.discriminatedUnion("action", [
         .array(
           z
             .object({
-              uid,
+              // A member, or the name of a new member not in the roster yet (D106): one of the two.
+              uid: rowUid.optional(),
+              newName: z.string().trim().min(1).max(64).optional(),
               value: z.number().int().min(0).max(1e13),
               // A member update: the fact and the version the officer saw (D80).
               field: z.enum(["squadMight", "adTech"]).optional(),
               version: z.number().int().min(0).optional(),
             })
-            .strict(),
+            .strict()
+            .refine((r) => (r.uid === undefined) !== (r.newName === undefined)),
         )
         .max(500),
       // A Secret Ops report: whose it is (a member, or nobody known) and each entry kept, by row.

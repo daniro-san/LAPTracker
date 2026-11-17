@@ -9,6 +9,7 @@ import type { Db } from "../db";
 import { roleOf } from "../queries/leadership";
 import { mightUnchanged } from "../queries/might-unchanged";
 import { photosOf, type Photo } from "../queries/photo";
+import { openPendings } from "../repo/pending-members";
 import { anyRoster, namesSeen, type AnyRoster } from "../repo/workspace-any-roster";
 import {
   endOfDayReads,
@@ -96,6 +97,11 @@ export interface MembersView {
   thanks: { donors: Thank[]; activity: Thank[] };
   /** The time zones the members have, most used first (the picker lists them first). */
   zones: string[];
+  /**
+   * Every fact of the workspace by uid, members or not (pending members' too, D106), read once per view
+   * so the Members tab does not read them again.
+   */
+  facts: Map<number, MemberFacts>;
 }
 
 /** The rank as the game shows it, with an R4's title by the game's name (D56). */
@@ -204,16 +210,26 @@ function plainRow(m: RosterMember, week: string[], firstSeen: Map<number, string
 
 function earlyView(
   roster: AnyRoster | null,
-  s: Pick<Signals, "facts" | "today" | "firstSeen">,
+  s: Pick<Signals, "facts" | "today" | "firstSeen"> & { pending: readonly number[] },
   zone: string,
 ): MembersView {
   const none = { donors: [], activity: [] };
-  if (!roster) return { readAt: null, early: true, week: [], members: [], thanks: none, zones: [] };
+  if (!roster)
+    return {
+      readAt: null,
+      early: true,
+      week: [],
+      members: [],
+      thanks: none,
+      zones: [],
+      facts: s.facts,
+    };
   const week = gameWeek(serverDay(roster.at, { SERVER_TZ: zone }));
   const members = roster.members
     .map((m) => ({ ...plainRow(m, week, s.firstSeen), ...factsPart(m.uid, s), early: true }))
     .sort(order);
-  return { readAt: roster.at, early: true, week, members, thanks: none, zones: usedZones(s.facts) };
+  const zones = usedZones(s.facts, [...roster.members.map((m) => m.uid), ...s.pending]);
+  return { readAt: roster.at, early: true, week, members, thanks: none, zones, facts: s.facts };
 }
 
 /** Check in first; then R5, R4 … R1, then by might; a member without a rank or might last. */
@@ -230,7 +246,7 @@ export async function membersView(
   zone: string,
 ): Promise<MembersView> {
   const unionId = access.unionId;
-  const [reads, firstSeen, might, event, facts] = await Promise.all([
+  const [reads, firstSeen, might, event, facts, pendingRows] = await Promise.all([
     endOfDayReads(db, unionId, LOOKBACK_READS),
     firstSeenDays(db, unionId),
     mightUnchanged(db, unionId),
@@ -238,10 +254,14 @@ export async function membersView(
       ? scheduledEventKills(db, unionId, new Date(now.getTime() - KVK_DAYS * DAY_MS))
       : null,
     factsOf(db, access),
+    openPendings(db, access.workspaceId),
   ]);
+  // Open new members' uids (D106): their zones count among the alliance's.
+  const pending = pendingRows.map((p) => -p.id);
   const today = serverDay(now, { SERVER_TZ: zone });
   const newest = reads.at(-1);
-  if (!newest) return earlyView(await anyRoster(db, unionId), { facts, today, firstSeen }, zone);
+  if (!newest)
+    return earlyView(await anyRoster(db, unionId), { facts, today, firstSeen, pending }, zone);
   const week = gameWeek(newest.day);
   const signals: Signals = {
     reads,
@@ -265,7 +285,8 @@ export async function membersView(
       donors: topOf(counted, (m) => m.weekTotal),
       activity: topOf(counted, (m) => m.activity),
     },
-    zones: usedZones(facts),
+    zones: usedZones(facts, [...newest.members.map((m) => m.uid), ...pending]),
+    facts,
   };
 }
 

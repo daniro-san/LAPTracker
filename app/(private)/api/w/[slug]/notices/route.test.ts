@@ -41,7 +41,7 @@ async function officer(slug: "ogs" | "nse", name: string): Promise<string> {
     .insert(workspaceUsers)
     .values({ workspaceId, discordUserId: `id-${name}`, displayName: name })
     .returning({ id: workspaceUsers.id });
-  return (await createSession(db, workspaceId, user?.id ?? 0, T0, null)).token;
+  return (await createSession(db, workspaceId, user?.id ?? 0, T0, null, "officer")).token;
 }
 
 async function save(slug: string, token: string, body: object) {

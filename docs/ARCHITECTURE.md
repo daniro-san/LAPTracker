@@ -34,6 +34,13 @@ lib/private/*.ts    the workspace (D71): requireWorkspace and its branded Worksp
                     they told you"; pure, for pastes and OCR lines), time-zones.ts and zone-table.ts (the
                     picker's search; pure), sheet-parse.ts (pure) and sheet-import.ts (the one-time import);
                     their tables are in lib/repo/member-facts.ts and lib/schema-facts.ts.
+                    D106: pending-members.ts (new members added by hand: the add, the screenshot import's
+                    "New member", the match against the newest roster when Members or Home is read, "To
+                    match", link, and delete as dismiss (row, facts and points kept); facts under the uid
+                    `-id`), its table reads and writes in
+                    lib/repo/pending-members.ts. D107: former-members.ts (who an earlier roster listed and
+                    the newest does not), on lib/repo/workspace-past-roster.ts (uid, name, might and kills
+                    from the roster arrays and Start/End member rows only).
                     notices.ts (the notices library's reads
                     and its save, issue 304), notice-rules.ts (pure: fields, the counter, "may be out of date",
                     the save's version check); its table reads and writes are in lib/repo/notices.ts.
@@ -57,10 +64,18 @@ lib/private/*.ts    the workspace (D71): requireWorkspace and its branded Worksp
                     marks, "the rest", counts, order, team suggestions), roll-call-words.ts,
                     dictionary.rollcall*.ts; tables in lib/schema-rollcall.ts, reads and writes in
                     lib/repo/roll-call.ts.
+                    The members' board (D105): board.ts (its one read, on a BoardAccess from requireBoard, never a
+                    WorkspaceAccess) and start-here.ts (Start here's editor read and its per-language save);
+                    dictionary.board.ts; its table in lib/schema-board.ts, read and written in lib/repo/start-here.ts.
                     The thefts log (D97): thefts.ts (its read and writes, the attacker search), theft-groups.ts
                     (pure: attacker key, groups and counts, follow-up state), thefts-import.ts (the screenshot
                     import's save hook for Secret Ops reports), dictionary.thefts.ts (its words); tables in
                     lib/schema-thefts.ts, reads and writes in lib/repo/thefts.ts.
+                    The Follow-up tab (D104): follow-up.ts (the week's list from membersView and theftsView,
+                    and the officers' records, with On a break and Needs help through member facts),
+                    follow-up-rules.ts (pure: who is on the list, resolved for the week, the history line),
+                    dictionary.followup.ts (its words); table in lib/schema-followup.ts, reads and writes
+                    in lib/repo/member-follow-ups.ts.
                     The screenshot import (D96): import.ts (drafts, save, discard, change of type),
                     import-kinds.ts (the kinds and the SaveHook other sessions plug in), import-save.ts
                     (the hooks: Alliance Duel points, the ranking checks), import-photo-hooks.ts (member
@@ -100,6 +115,7 @@ app/img/*           /img/badge/[id] and /img/avatar/[uid]: upstream images serve
 app/ingest/*        PostHog's same-origin proxy (D77), via lib/analytics/ingest.ts.
 lib/analytics/*.ts  PostHog (D77): the typed custom events (events.ts), the browser SDK and replay switch (posthog.ts),
                     before_send (sanitise.ts, pure), the /ingest forwarding (ingest.ts) and the region (region.ts).
+lib/flags.ts        PostHog feature flags (D91), server only: the four flag keys, one cached read of /flags, off on failure.
 lib/images.ts       the two image sources (preset badge id, stored photo URL on its one host), capped fetch, cache headers.
 proxy.ts            per-request CSP nonce (Next 16's middleware); next.config.ts holds the static security headers
 instrumentation.ts  validates the environment once at server start
@@ -112,7 +128,7 @@ lib/app-commands.ts the app's Discord message commands (D96, D101) and registerA
 
 ## Dependency rule
 
-- `app → lib/{route, auth, run, tick, rehearsal, schedule, queries, repo, images, analytics, ai}`; `lib/private → lib/analytics/events` (the sign-in mark, D77); `lib/private → lib/screenshot` (the name matcher, for the sheet import, D80; the OCR, the classifier and the parsers, for the screenshot import, D96); `lib/private → lib/ai` (the translator, for Discord's Translate commands, D101); `lib/run → lib/{collector, queries}` (queries: the public Discord message's numbers).
+- `app → lib/{route, auth, run, tick, rehearsal, schedule, queries, repo, images, analytics, ai, flags}`; `lib/private → lib/analytics/events` (the sign-in mark, D77); `lib/private → lib/screenshot` (the name matcher, for the sheet import, D80; the OCR, the classifier and the parsers, for the screenshot import, D96); `lib/private → lib/ai` (the translator, for Discord's Translate commands, D101); `lib/run → lib/{collector, queries, flags}` (queries: the public Discord message's numbers; flags: its war-turnout line, D91).
 - `lib/collector → lib/{compute, sources, repo, logger, notify}` **through the `Deps` object passed in**.
 - `lib/compute`, `lib/budget` and `lib/compact` import nothing from the project.
 - `lib/logger` imports only `lib/repo` and `lib/redact`.

@@ -278,7 +278,7 @@ const DB_WARN_ABOVE_MB = 700;
 export async function quotaReport(
   ctx: AppContext,
   db: Db,
-  options: { always: boolean; origin: string },
+  options: { always: boolean },
 ): Promise<{ remaining: number | null; posted: boolean }> {
   const remaining = await ctx.v1.fetchQuota().then(
     (q) => q.remaining,
@@ -305,7 +305,6 @@ export async function quotaReport(
           unchanged: might.unchanged.length,
           pct: LOST_MIGHT_PCT,
           lost: might.lost.length,
-          url: `${options.origin}/admin/members`,
         }
       : undefined,
   });

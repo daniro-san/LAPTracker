@@ -4,14 +4,18 @@
 // after that check; a page renews it through Discord once the check is 23 hours old, so the trip comes about
 // once a day, as under D73, and an API call made from a page loaded before then still has an hour left. It
 // ends seven days after sign-in at the latest, and never past the allowlist entry that let its person in.
+// A member's session (D105) opens only the members' board: it lasts 30 days, and the board confirms the
+// member role through Discord, like an officer's, once its check is 24 hours old (amended 2026-11-17).
 import { createHash, randomBytes } from "node:crypto";
 
 import type { Db } from "../db";
-import { deleteSession, insertSession, renewSession } from "../repo/workspaces";
+import { deleteSession, insertSession, renewSession, type SessionTier } from "../repo/workspaces";
 
 export const SESSION_COOKIE = "__Host-lap_ws";
 /** The cap: a session ends this long after sign-in, however often it was renewed. */
 export const SESSION_MS = 7 * 24 * 60 * 60_000;
+/** A member's session (D105) ends this long after sign-in; its role is checked again every CHECK_MS. */
+export const MEMBER_SESSION_MS = 30 * 24 * 60 * 60_000;
 /** A role check is good this long: past it, a workspace API answers signed_out (D99). */
 export const CHECK_MS = 24 * 60 * 60_000;
 /** A page renews the check through Discord once it is this old (the last hour of the day). */
@@ -36,16 +40,20 @@ export function sessionState(
   return now.getTime() - s.checkedAt.getTime() >= checkWithin ? "stale" : "fine";
 }
 
-/** A new session and the cookie that carries it. `endsBy` caps the seven days (an allowlist expiry). */
+/**
+ * A new session and the cookie that carries it: seven days for an officer, 30 for a member (D105).
+ * `endsBy` caps it (an allowlist expiry).
+ */
 export async function createSession(
   db: Db,
   workspaceId: number,
   workspaceUserId: number,
   now: Date,
   endsBy: Date | null,
+  tier: SessionTier,
 ): Promise<{ token: string; cookie: string }> {
   const token = randomBytes(32).toString("base64url");
-  const full = now.getTime() + SESSION_MS;
+  const full = now.getTime() + (tier === "member" ? MEMBER_SESSION_MS : SESSION_MS);
   const expiresAt = new Date(endsBy ? Math.min(full, endsBy.getTime()) : full);
   await insertSession(
     db,
@@ -56,6 +64,7 @@ export async function createSession(
       createdAt: now,
       expiresAt,
       checkedAt: now,
+      tier,
     },
     now,
   );
@@ -64,20 +73,23 @@ export async function createSession(
 }
 
 /**
- * After Discord confirmed the role: the browser's own session (`token`) of this workspace and person is
- * renewed in place, keeping its cookie and its seven-day end. Without one, a new session is made.
+ * After Discord confirmed the role: the browser's own session (`token`) of this workspace, person and tier
+ * is renewed in place, keeping its cookie and its end. Otherwise a new session is made, and the browser's
+ * old one in this workspace ends (a member who became an officer, or the other way round, D105).
  * Returns the cookie to set, or null when the browser's cookie stays as it is.
  */
 export async function renewOrCreate(
   db: Db,
   token: string | undefined,
-  ids: { workspaceId: number; workspaceUserId: number },
+  ids: { workspaceId: number; workspaceUserId: number; tier: SessionTier },
   now: Date,
   endsBy: Date | null,
 ): Promise<string | null> {
   const key = token ? { tokenHash: hashToken(token), ...ids } : null;
   if (key && (await renewSession(db, key, now, endsBy))) return null;
-  return (await createSession(db, ids.workspaceId, ids.workspaceUserId, now, endsBy)).cookie;
+  if (key) await deleteSession(db, ids.workspaceId, key.tokenHash);
+  const { workspaceId, workspaceUserId, tier } = ids;
+  return (await createSession(db, workspaceId, workspaceUserId, now, endsBy, tier)).cookie;
 }
 
 export const clearSessionCookie = () => `${SESSION_COOKIE}=; ${cookieAttributes(0)}`;

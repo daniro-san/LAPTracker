@@ -1,0 +1,189 @@
+// The words for new members added by hand and former members (D106, D107) in English, Brazilian
+// Portuguese and French: one module the three workspace dictionaries spread, as the sheet import's does.
+// Neutral words (D75): a member who left is not a fault. French puts a no-break space before : ; ! and ?.
+export const lifecycleEn = {
+  "members.view.aria": "Which members",
+  "members.view.current": "Members",
+  "members.view.former": "Former members",
+  "pending.head": "New members",
+  "pending.add": "Add a new member",
+  "pending.addHelp":
+    "For someone who joined today. Their notes attach to their player after the nightly roster ({time} server time).",
+  "pending.name": "Name in the game",
+  "pending.nameMissing": "Type their name as the game shows it.",
+  "pending.tag": "New · waiting for the nightly roster",
+  "pending.unmatched":
+    "The roster of {date} did not have exactly one player with this name. Link them to the right member, or wait for the next roster.",
+  "pending.link": "Link to a member",
+  "pending.linkTitle": "Link {name} to a member",
+  "pending.linkHelp":
+    "Their info moves to the member you pick, after anything that member already has.",
+  "pending.search": "Search the roster",
+  "pending.closest": "Closest names",
+  "pending.others": "Everyone else",
+  "pending.noMatch": "No member matches.",
+  "pending.pick": "Pick",
+  "pending.delete": "Remove",
+  "pending.deleteAsk":
+    "Remove {name} from the list? Their info is saved and comes back if you add the same name again.",
+  "pending.keep": "Keep on list",
+  "pending.failed": "Could not save. Try again.",
+  "pending.takenWhy": "Answer the question above first.",
+  "pending.bringBack": "Bring back",
+  "pending.taken": "{name} is already in the alliance. Open {name}, or add a second {name}?",
+  "pending.open": "Open {name}",
+  "pending.addAnyway": "Add anyway",
+  "pending.toMatch.one": "{n} new member needs linking",
+  "pending.toMatch.other": "{n} new members need linking",
+  "pending.toMatchHelp":
+    "The nightly roster did not have exactly one player with this name. Pick the right player, or wait for the next roster.",
+  "pending.toMatchTag": "Needs linking",
+  "pending.dismissed": "Removed ({n})",
+  "pending.dismissedOn": "Removed {date}",
+  "pending.dismissedHelp":
+    "Removed from the list. Their info is saved here. Add the same name again to bring them back.",
+  "former.lead":
+    "People who left the alliance. We keep their info and bring it back if they rejoin.",
+  "former.none": "No former members yet.",
+  "former.search": "Search former members",
+  "former.empty": "No former member matches.",
+  "former.lastSeen": "Last seen {date}",
+  "former.more": "Show 25 more",
+  "former.duel": "Alliance Duel points, week of {date}",
+  "shots.newMember": "New member: {name}",
+  "shots.newName": "New member’s name in the game",
+  "shots.newHelp":
+    "Saves to a new member who waits for the nightly roster. Fix the name if the screenshot misread it.",
+  "shots.pickInstead": "Pick a member instead",
+  "shots.pendingGroup": "New, waiting for the nightly roster",
+  "shots.taken": "{name} is already in the alliance. Use {name}, or add a second {name}?",
+  "shots.pickThem": "Use {name}",
+  "shots.addAnyway": "Add anyway",
+  "shots.why.taken":
+    "Row {row}: that name is already in the alliance. Answer the question under it first.",
+} as const;
+
+type LifecycleKey = keyof typeof lifecycleEn;
+
+export const lifecyclePt: Record<LifecycleKey, string> = {
+  "members.view.aria": "Quais membros",
+  "members.view.current": "Membros",
+  "members.view.former": "Ex-membros",
+  "pending.head": "Membros novos",
+  "pending.add": "Adicionar membro novo",
+  "pending.addHelp":
+    "Para quem entrou hoje. As anotações vão para o jogador depois da lista da noite ({time}, horário do servidor).",
+  "pending.name": "Nome no jogo",
+  "pending.nameMissing": "Digite o nome como aparece no jogo.",
+  "pending.tag": "Novo · esperando a lista da noite",
+  "pending.unmatched":
+    "A lista de {date} não trouxe exatamente um jogador com esse nome. Vincule ao membro certo ou espere a próxima lista.",
+  "pending.link": "Vincular a um membro",
+  "pending.linkTitle": "Vincular {name} a um membro",
+  "pending.linkHelp":
+    "As informações passam para o membro escolhido, depois do que esse membro já tem.",
+  "pending.search": "Buscar na lista",
+  "pending.closest": "Nomes mais parecidos",
+  "pending.others": "Todos os outros",
+  "pending.noMatch": "Nenhum membro encontrado.",
+  "pending.pick": "Escolher",
+  "pending.delete": "Tirar",
+  "pending.deleteAsk":
+    "Tirar {name} da lista? Os dados ficam guardados e voltam se você adicionar o mesmo nome de novo.",
+  "pending.keep": "Manter",
+  "pending.failed": "Não foi possível salvar. Tente de novo.",
+  "pending.takenWhy": "Responda primeiro à pergunta acima.",
+  "pending.bringBack": "Trazer de volta",
+  "pending.taken": "{name} já está na aliança. Abrir {name} ou adicionar outro {name}?",
+  "pending.open": "Abrir {name}",
+  "pending.addAnyway": "Adicionar mesmo assim",
+  "pending.toMatch.one": "{n} membro novo para vincular",
+  "pending.toMatch.other": "{n} membros novos para vincular",
+  "pending.toMatchHelp":
+    "A lista da noite não trouxe exatamente um jogador com esse nome. Escolha o jogador certo ou espere a próxima lista.",
+  "pending.toMatchTag": "Falta vincular",
+  "pending.dismissed": "Tirados ({n})",
+  "pending.dismissedOn": "Tirado em {date}",
+  "pending.dismissedHelp":
+    "Tirados da lista. Os dados ficam guardados aqui. Adicione o mesmo nome de novo para trazer a pessoa de volta.",
+  "former.lead":
+    "Quem saiu da aliança. Guardamos os dados e eles voltam se a pessoa entrar de novo.",
+  "former.none": "Nenhum ex-membro ainda.",
+  "former.search": "Buscar ex-membros",
+  "former.empty": "Nenhum ex-membro encontrado.",
+  "former.lastSeen": "Visto por último em {date}",
+  "former.more": "Mostrar mais 25",
+  "former.duel": "Pontos de Alliance Duel, semana de {date}",
+  "shots.newMember": "Membro novo: {name}",
+  "shots.newName": "Nome do membro novo no jogo",
+  "shots.newHelp":
+    "Salva num membro novo que espera a lista da noite. Corrija o nome se o print foi lido errado.",
+  "shots.pickInstead": "Escolher um membro",
+  "shots.pendingGroup": "Novos, esperando a lista da noite",
+  "shots.taken": "{name} já está na aliança. Usar {name} ou adicionar outro {name}?",
+  "shots.pickThem": "Usar {name}",
+  "shots.addAnyway": "Adicionar mesmo assim",
+  "shots.why.taken":
+    "Linha {row}: esse nome já está na aliança. Responda primeiro à pergunta abaixo dele.",
+};
+
+export const lifecycleFr: Record<LifecycleKey, string> = {
+  "members.view.aria": "Quels membres",
+  "members.view.current": "Membres",
+  "members.view.former": "Anciens membres",
+  "pending.head": "Nouveaux membres",
+  "pending.add": "Ajouter un nouveau membre",
+  "pending.addHelp":
+    "Pour quelqu’un arrivé aujourd’hui. Ses notes passent à son joueur après la liste de la nuit ({time}, heure du serveur).",
+  "pending.name": "Nom dans le jeu",
+  "pending.nameMissing": "Tapez son nom tel que le jeu l’affiche.",
+  "pending.tag": "Nouveau · attend la liste de la nuit",
+  "pending.unmatched":
+    "La liste du {date} n’avait pas exactement un joueur avec ce nom. Associez-le au bon membre, ou attendez la prochaine liste.",
+  "pending.link": "Associer à un membre",
+  "pending.linkTitle": "Associer {name} à un membre",
+  "pending.linkHelp": "Ses infos passent au membre choisi, après celles que ce membre a déjà.",
+  "pending.search": "Chercher dans la liste",
+  "pending.closest": "Noms les plus proches",
+  "pending.others": "Tous les autres",
+  "pending.noMatch": "Aucun membre trouvé.",
+  "pending.pick": "Choisir",
+  "pending.delete": "Retirer",
+  "pending.deleteAsk":
+    "Retirer {name} de la liste ? Ses infos sont gardées et reviennent si vous ajoutez le même nom.",
+  "pending.keep": "Garder dans la liste",
+  "pending.failed": "Enregistrement impossible. Réessayez.",
+  "pending.takenWhy": "Répondez d’abord à la question ci-dessus.",
+  "pending.bringBack": "Faire revenir",
+  "pending.taken": "{name} est déjà dans l’alliance. Ouvrir {name}, ou ajouter un second {name} ?",
+  "pending.open": "Ouvrir {name}",
+  "pending.addAnyway": "Ajouter quand même",
+  "pending.toMatch.one": "{n} nouveau membre à associer",
+  "pending.toMatch.other": "{n} nouveaux membres à associer",
+  "pending.toMatchHelp":
+    "La liste de la nuit n’avait pas exactement un joueur avec ce nom. Choisissez le bon joueur, ou attendez la prochaine liste.",
+  "pending.toMatchTag": "À associer",
+  "pending.dismissed": "Retirés ({n})",
+  "pending.dismissedOn": "Retiré le {date}",
+  "pending.dismissedHelp":
+    "Retirés de la liste. Leurs infos sont gardées ici. Ajoutez le même nom pour les faire revenir.",
+  "former.lead":
+    "Les personnes qui ont quitté l’alliance. Nous gardons leurs infos et les rétablissons si elles reviennent.",
+  "former.none": "Aucun ancien membre pour l’instant.",
+  "former.search": "Chercher un ancien membre",
+  "former.empty": "Aucun ancien membre trouvé.",
+  "former.lastSeen": "Vu pour la dernière fois le {date}",
+  "former.more": "Afficher 25 de plus",
+  "former.duel": "Points Alliance Duel, semaine du {date}",
+  "shots.newMember": "Nouveau membre : {name}",
+  "shots.newHelp":
+    "Enregistre pour un nouveau membre qui attend la liste de la nuit. Corrigez le nom si la capture l’a mal lu.",
+  "shots.newName": "Nom du nouveau membre dans le jeu",
+  "shots.pickInstead": "Choisir plutôt un membre",
+  "shots.pendingGroup": "Nouveaux, en attente de la liste de la nuit",
+  "shots.taken": "{name} est déjà dans l’alliance. Utiliser {name}, ou ajouter un second {name} ?",
+  "shots.pickThem": "Utiliser {name}",
+  "shots.addAnyway": "Ajouter quand même",
+  "shots.why.taken":
+    "Ligne {row} : ce nom est déjà dans l’alliance. Répondez d’abord à la question en dessous.",
+};

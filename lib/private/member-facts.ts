@@ -2,12 +2,15 @@
 // officers' writes. A write is one field at a time and appends a version (history kept). It names the
 // version it was based on: when another officer saved that field since, notes are combined and languages
 // joined, and any other field is refused with the newer value (409), so nobody's edit vanishes. Only
-// members of the workspace's own alliance (access.unionId, D71) can have facts.
+// members of the workspace's own alliance (access.unionId, D71), now or before (D107), and the
+// workspace's pending members (D106) can have facts.
 import { z } from "zod";
 
 import type { Db } from "../db";
 import { factVersion, insertFact, latestFacts, type FactRow } from "../repo/member-facts";
+import { findPending } from "../repo/pending-members";
 import { anyRoster } from "../repo/workspace-any-roster";
+import { wasInRoster } from "../repo/workspace-past-roster";
 import type { WorkspaceAccess } from "./access";
 import { dayIn, isDay } from "./calendar-time";
 import {
@@ -30,6 +33,9 @@ const isZone = (id: string) => {
     return false;
   }
 };
+
+/** The largest serial id (Postgres integer). */
+const PG_INT_MAX = 2_147_483_647;
 
 const text = (max: number) => z.string().trim().max(max);
 const DAY = z.string().refine(isDay);
@@ -112,11 +118,14 @@ export async function factsOf(db: Db, access: WorkspaceAccess): Promise<Map<numb
   return facts;
 }
 
-/** The time zones the workspace's members have, most used first. */
-export function usedZones(facts: Map<number, MemberFacts>): string[] {
+/**
+ * The time zones of `uids` (the newest roster's members and the open new members), most used first;
+ * former and removed new members do not count.
+ */
+export function usedZones(facts: Map<number, MemberFacts>, uids: Iterable<number>): string[] {
   const count = new Map<string, number>();
-  for (const f of facts.values()) {
-    const zone = f.timeZone?.value;
+  for (const uid of uids) {
+    const zone = facts.get(uid)?.timeZone?.value;
     if (zone) count.set(zone, (count.get(zone) ?? 0) + 1);
   }
   return [...count].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([z]) => z);
@@ -126,6 +135,18 @@ export function usedZones(facts: Map<number, MemberFacts>): string[] {
 export async function isMember(db: Db, access: WorkspaceAccess, uid: number): Promise<boolean> {
   const roster = await anyRoster(db, access.unionId);
   return roster?.members.some((m) => m.uid === uid) ?? false;
+}
+
+/**
+ * Whether `uid` may have facts written: a member now, a former member (any earlier roster of this
+ * alliance, D107), or an open pending member of this workspace (`-id`, D106). Only facts are widened:
+ * roll calls and every other write keep `isMember`.
+ */
+async function mayHaveFacts(db: Db, access: WorkspaceAccess, uid: number): Promise<boolean> {
+  // A pending member's id is a Postgres integer: anything below its range is no one (not a 500).
+  if (uid < 0)
+    return uid >= -PG_INT_MAX && (await findPending(db, access.workspaceId, { id: -uid })) !== null;
+  return (await isMember(db, access, uid)) || wasInRoster(db, access.unionId, uid);
 }
 
 const combine = (field: FactField, base: unknown, mine: unknown, theirs: unknown): unknown =>
@@ -189,7 +210,7 @@ function startsToday(value: unknown, now: Date, zone: string | undefined): unkno
 }
 
 /**
- * Writes each field in turn; null when `uid` is not in the workspace's own alliance. `zone` is the
+ * Writes each field in turn; null when `uid` may not have facts (`mayHaveFacts`). `zone` is the
  * server's (SERVER_TZ), for an away note's first day.
  */
 export async function saveFacts(
@@ -200,7 +221,7 @@ export async function saveFacts(
   now: Date,
   zone?: string,
 ): Promise<ChangeResult[] | null> {
-  if (!(await isMember(db, access, uid))) return null;
+  if (!(await mayHaveFacts(db, access, uid))) return null;
   const results: ChangeResult[] = [];
   for (const c of changes) results.push(await saveOne(db, access, uid, c, now, zone));
   return results;

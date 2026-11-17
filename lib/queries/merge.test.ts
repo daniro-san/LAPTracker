@@ -175,6 +175,9 @@ describe("mergePage (#282)", () => {
     expect(page.merge?.a.turnout).toMatchObject({ n: 2, gainers: 1 });
     expect(page.merge?.b.turnout).toMatchObject({ n: 2, gainers: 2 });
     expect(JSON.stringify(page)).not.toMatch(/"P\d/);
+    // While the war-turnout flag is off (D91) no side has a turnout.
+    const off = await mergePage(db, [1, 2], TRACKED, undefined, Promise.resolve(false));
+    expect([off.merge?.a.turnout, off.merge?.b.turnout]).toEqual([null, null]);
   });
 
   it("gives no merge for the same alliance twice or an alliance with no usable roster", async () => {

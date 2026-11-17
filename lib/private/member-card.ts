@@ -14,6 +14,8 @@ import {
   type MemberFacts,
 } from "./fact-fields";
 import { factText, NONE } from "./fact-text";
+import { followUpsOf } from "./follow-up";
+import { historyLine } from "./follow-up-rules";
 import { membersView, type MemberRow } from "./members";
 import {
   breakText,
@@ -64,6 +66,8 @@ export interface CardData {
   stored: MemberFacts;
   /** The status shown when no officer sets one ("Check in", "Fine" …), for the editor's Automatic. */
   autoStatus: string;
+  /** The officers' follow-ups (issue 340), newest first: "Talked Mon 16 Nov: … · Ana". */
+  followUps: { head: string; lines: string[] };
 }
 
 /** Server days as dates in the officer's language; instants in server time (help.servertime). */
@@ -165,17 +169,17 @@ function detailsOf(m: MemberRow, t: WorkspaceDictionary, f: CardFormats, shown: 
 }
 
 /** The facts with their value; Status only when an officer set one (otherwise the card's status says it). */
-function factLines(m: MemberRow, t: WorkspaceDictionary, f: CardFormats): FactLine[] {
+export function factLines(facts: MemberFacts, t: WorkspaceDictionary, f: CardFormats): FactLine[] {
   const text = { language: f.language, now: f.now, day: (iso: string) => f.date(iso), words: t };
-  return FACT_FIELDS.filter((field) => field !== "status" || m.facts.status?.value).map(
+  return FACT_FIELDS.filter((field) => field !== "status" || facts.status?.value).map(
     <F extends FactField>(field: F) => {
-      const value = m.facts[field]?.value as FactValues[F] | null | undefined;
+      const value = facts[field]?.value as FactValues[F] | null | undefined;
       const known = value !== null && value !== undefined;
       return {
         field,
         label: t[`facts.${field}`],
         value: factText(field, value, text),
-        source: known ? (m.facts[field]?.source ?? null) : null,
+        source: known ? (facts[field]?.source ?? null) : null,
       };
     },
   );
@@ -187,6 +191,7 @@ export function cardData(
   t: WorkspaceDictionary,
   f: CardFormats,
   shown: Shown,
+  followUps: string[] = [],
 ): CardData {
   const { status, label, lines } = statusParts(m, t, f);
   return {
@@ -212,9 +217,10 @@ export function cardData(
       return { weekday, day, value, said: `${weekday} ${day}: ${said}`, none: v === null };
     }),
     details: detailsOf(m, t, f, shown),
-    factLines: factLines(m, t, f),
+    factLines: factLines(m.facts, t, f),
     stored: m.facts,
     autoStatus: statusParts({ ...m, officerStatus: null }, t, f).label || NONE,
+    followUps: { head: t["followup.cardHead"], lines: followUps },
   };
 }
 
@@ -225,9 +231,13 @@ export async function memberCard(
   uid: number,
   at: { now: Date; zone: string; language: WorkspaceLanguage; t: WorkspaceDictionary },
 ): Promise<CardData | null> {
-  const view = await membersView(db, access, at.now, at.zone);
+  const [view, history] = await Promise.all([
+    membersView(db, access, at.now, at.zone),
+    followUpsOf(db, access, uid),
+  ]);
   const member = view.members.find((m) => m.uid === uid);
   if (!member) return null;
   const f = cardFormats(at.language, at.zone, at.now);
-  return cardData(member, view.week, at.t, f, shownOf(view.members));
+  const lines = history.map((row) => historyLine(row, at.t, f.date, f.date));
+  return cardData(member, view.week, at.t, f, shownOf(view.members), lines);
 }

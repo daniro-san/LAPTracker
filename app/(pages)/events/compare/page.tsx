@@ -24,6 +24,7 @@ import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { Legend } from "@/app/_ui/Status";
 import { fill, type Dictionary } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
+import { isOn } from "@/lib/flags";
 import { withPageDb } from "@/lib/page";
 import {
   getComparePage,
@@ -160,12 +161,16 @@ async function PulseSection({
   copy: Dictionary;
   locale: string;
 }) {
-  const { pulses, everyMin } = await loadComparePulses(c.a.id, isDone(c.a), c.b.id, isDone(c.b));
+  const [{ pulses, everyMin }, details] = await Promise.all([
+    loadComparePulses(c.a.id, isDone(c.a), c.b.id, isDone(c.b)),
+    isOn("chart-details"),
+  ]);
   return (
     <ComparePulse
       data={c}
       pulses={pulses}
       everyMin={everyMin}
+      details={details}
       clock={clock}
       copy={copy}
       locale={locale}

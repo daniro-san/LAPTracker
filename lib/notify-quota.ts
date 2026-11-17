@@ -10,8 +10,8 @@ export interface QuotaReport {
   warnAboveMb: number;
   beforeAt: string;
   afterAt: string;
-  /** The site's own alliance's might lists (D70): counts and the page's link, never names. Omitted while not ready. */
-  might?: { days: number; unchanged: number; pct: number; lost: number; url: string } | undefined;
+  /** The site's own alliance's might lists (D70): counts only, never names. Omitted while not ready. */
+  might?: { days: number; unchanged: number; pct: number; lost: number } | undefined;
 }
 
 /** The Friday check: requests left, database size, the coming snapshots. */
@@ -34,7 +34,6 @@ export function quotaReportMessage(r: QuotaReport): string {
             unchanged: r.might.unchanged,
             pct: r.might.pct,
             lost: r.might.lost,
-            url: r.might.url,
           }),
         ]
       : []),

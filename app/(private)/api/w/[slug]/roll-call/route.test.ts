@@ -56,7 +56,7 @@ beforeEach(async () => {
       .insert(workspaceUsers)
       .values({ workspaceId: ws?.id ?? 0, discordUserId: `ogs-${name}`, displayName: name })
       .returning({ id: workspaceUsers.id });
-    tokens[name] = (await createSession(db, ws?.id ?? 0, user?.id ?? 0, T0, null)).token;
+    tokens[name] = (await createSession(db, ws?.id ?? 0, user?.id ?? 0, T0, null, "officer")).token;
   }
   const access = await requireWorkspace(
     db,

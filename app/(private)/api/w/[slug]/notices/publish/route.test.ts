@@ -94,7 +94,7 @@ async function officer(workspaceId = 1): Promise<string> {
     .insert(workspaceUsers)
     .values({ workspaceId, discordUserId: `id-rook-${workspaceId}`, displayName: "Rook" })
     .returning({ id: workspaceUsers.id });
-  return (await createSession(db, workspaceId, user?.id ?? 0, T0, null)).token;
+  return (await createSession(db, workspaceId, user?.id ?? 0, T0, null, "officer")).token;
 }
 
 /** A claim left in the table: `status`, made `ago` ms before the test clock. */

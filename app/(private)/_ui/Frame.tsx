@@ -43,6 +43,7 @@ const PATHS: Partial<Record<TabId, string>> = {
   members: "/members",
   mark: "/roll-call",
   days: "/calendar",
+  review: "/follow-up",
 };
 
 /** The Home tab's count of screenshot drafts waiting for review (issue 299), beside its label. */
@@ -130,6 +131,7 @@ function Tabs({
 export async function Frame({
   language,
   t,
+  title,
   subtitle,
   account,
   tabs,
@@ -137,6 +139,8 @@ export async function Frame({
 }: {
   language: WorkspaceLanguage;
   t: WorkspaceDictionary;
+  /** The name in the header; the Officers' Desk unless given (the members' board, D105). */
+  title?: string;
   /** The alliance, under the workspace name. */
   subtitle?: string;
   /** "Signed in as … · Sign out", once signed in. */
@@ -155,7 +159,7 @@ export async function Frame({
       <header className="bg-burgundy pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)] text-wax-paper">
         <div className="mx-auto flex max-w-[960px] flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 sm:px-6">
           <div className="min-w-0 flex-1">
-            <p className="font-display text-display-sm">{t["app.name"]}</p>
+            <p className="font-display text-display-sm">{title ?? t["app.name"]}</p>
             {subtitle && <p className="text-body-sm opacity-90">{subtitle}</p>}
           </div>
           {tabs && <FirstUse t={t} seen={seen} />}

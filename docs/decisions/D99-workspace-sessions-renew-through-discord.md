@@ -40,3 +40,7 @@ Why: under D73, a session ended after 24 hours, and its cookie expired with it.
   - It needs a new secret env var that the owner sets and rotates.
   - It adds a Discord call on the request path once an hour per officer.
 - **Not chosen either:** extending a session on every API request without a Discord check, because that would let a demoted officer keep access through API calls alone.
+
+**Amendment (2026-11-17, 11z, D105).** The `/admin` button "Sign out everyone in this workspace" now reads "Sign out everyone, including me", in a danger style, after "Sign out members only (officers stay signed in)" (D105). What it does is unchanged.
+
+**Amendment (2026-11-17, 11z2, D105).** "Sign out everyone, including me" and "Sign out members only (officers stay signed in)" are now one button, "Sign out users", whose sheet picks everyone, officers only, members only or one person and then confirms with the count (D105). Everyone still ends every session of the workspace; the owner's `/admin` PIN is not one of them.

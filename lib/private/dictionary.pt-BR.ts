@@ -1,8 +1,11 @@
 // The workspace dictionary in Brazilian Portuguese (D71), split from dictionary.ts for its size; the keys
 // follow `en`.
 import type { WorkspaceDictionary } from "./dictionary";
+import { boardPt } from "./dictionary.board";
 import { calendarPt } from "./dictionary.calendar.pt-BR";
+import { followUpPt } from "./dictionary.followup";
 import { importPt } from "./dictionary.import";
+import { lifecyclePt } from "./dictionary.lifecycle";
 import { membersPt } from "./dictionary.members.pt-BR";
 import { noticesPt } from "./dictionary.notices";
 import { rollPt } from "./dictionary.rollcall.pt-BR";
@@ -24,7 +27,7 @@ export const pt: WorkspaceDictionary = {
   "lang.aria": "Idioma",
   "signin.title": "Entrar",
   "signin.lead":
-    "Para a liderança da aliança: entre com a conta do Discord que você usa no servidor da aliança.",
+    "Entre com a conta do Discord que você usa no servidor da aliança. Os membros veem o plano da semana, os avisos e o Comece aqui; os oficiais também têm a Mesa dos oficiais.",
   "signin.button": "Entrar com o Discord",
   "signin.note":
     "O Discord só compartilha seu nome e seus cargos nesse servidor. Nada é publicado.",
@@ -36,14 +39,16 @@ export const pt: WorkspaceDictionary = {
   "noaccess.not_member":
     "Esta conta do Discord não está no servidor da aliança. Entre no servidor ou use a conta que você usa lá.",
   "noaccess.no_role":
-    "Esta conta do Discord não tem um cargo de liderança no servidor da aliança. Peça a um R5 que lhe dê o cargo e entre de novo.",
+    "Esta conta do Discord ainda não tem o cargo de membro da aliança. Quando um oficial der o cargo a você, entre de novo.",
+  "noaccess.board_closed":
+    "O mural dos membros ainda não está aberto. Os oficiais vão avisar no Discord quando abrir.",
   "noaccess.allowlist_expired":
     "Seu acesso era por tempo limitado, e esse tempo acabou. Peça ao dono do site que o prolongue.",
   "noaccess.blocked":
-    "Esta conta do Discord não tem mais acesso à Mesa dos oficiais. Fale com um R5 se for engano.",
+    "Esta conta do Discord não tem mais acesso às páginas da aliança aqui: o mural dos membros e a Mesa dos oficiais. Fale com um R5 se for engano.",
   "noaccess.retry": "Entrar de novo",
   "noaccess.public": "Ir para o Registro de eventos público",
-  "shell.signedIn": "Conectado como {name}",
+  "shell.signedIn": "Você entrou como {name}",
   "shell.signOut": "Sair",
   "shell.signOutAsk": "Sair? O texto que você não salvou nesta página será perdido.",
   "shell.stay": "Continuar conectado",
@@ -267,7 +272,10 @@ export const pt: WorkspaceDictionary = {
   "profile.theme.system": "Igual ao aparelho",
   ...noticesPt,
   ...importPt,
+  ...lifecyclePt,
   ...theftsPt,
   ...shotsPt,
   ...translatePt,
+  ...boardPt,
+  ...followUpPt,
 };

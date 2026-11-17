@@ -6,6 +6,8 @@ import type { Db } from "../db";
 import { workspaces, workspaceSessions, workspaceUsers } from "../schema";
 
 export type WorkspaceRow = typeof workspaces.$inferSelect;
+/** "officer": the desk (D71). "member": the members' board only (D105). */
+export type SessionTier = "officer" | "member";
 
 /** A workspace's address, /w/<slug>: lowercase letters, digits and dashes; "auth" is the callback's. */
 export const WORKSPACE_SLUG = /^(?!auth$)[a-z0-9][a-z0-9-]{1,31}$/;
@@ -29,6 +31,8 @@ export interface WorkspaceInput {
   slug: string;
   discordGuildId: string;
   leaderRoleIds: string[];
+  /** The members' board roles (D105, amended 2026-11-17); left out or empty: the board is closed. */
+  memberRoleIds?: string[];
 }
 
 /** One workspace per alliance: a second save for the same union id edits it. */
@@ -39,10 +43,14 @@ export async function saveWorkspace(db: Db, input: WorkspaceInput): Promise<"ok"
     .where(and(eq(workspaces.slug, input.slug), ne(workspaces.unionId, input.unionId)));
   if (taken) return "slug_taken";
   const { slug, discordGuildId, leaderRoleIds } = input;
-  await db.insert(workspaces).values(input).onConflictDoUpdate({
-    target: workspaces.unionId,
-    set: { slug, discordGuildId, leaderRoleIds },
-  });
+  const memberRoleIds = input.memberRoleIds ?? [];
+  await db
+    .insert(workspaces)
+    .values({ ...input, memberRoleIds })
+    .onConflictDoUpdate({
+      target: workspaces.unionId,
+      set: { slug, discordGuildId, leaderRoleIds, memberRoleIds },
+    });
   return "ok";
 }
 
@@ -136,12 +144,13 @@ export async function insertSession(
 }
 
 /**
- * A renewal after Discord confirmed the role again (D99): the session of this token, workspace and person
- * that has not ended gets `checkedAt`, and its end moves no later than `endsBy`. False when there is none.
+ * A renewal after Discord confirmed the role again (D99): the session of this token, workspace, person and
+ * tier (D105) that has not ended gets `checkedAt`, and its end moves no later than `endsBy`. False when
+ * there is none.
  */
 export async function renewSession(
   db: Db,
-  key: { tokenHash: string; workspaceId: number; workspaceUserId: number },
+  key: { tokenHash: string; workspaceId: number; workspaceUserId: number; tier: SessionTier },
   checkedAt: Date,
   endsBy: Date | null,
 ): Promise<boolean> {
@@ -156,6 +165,7 @@ export async function renewSession(
         eq(workspaceSessions.tokenHash, key.tokenHash),
         eq(workspaceSessions.workspaceId, key.workspaceId),
         eq(workspaceSessions.workspaceUserId, key.workspaceUserId),
+        eq(workspaceSessions.tier, key.tier),
         gt(workspaceSessions.expiresAt, checkedAt),
       ),
     )
@@ -171,6 +181,7 @@ export async function findSession(db: Db, tokenHash: string) {
       workspaceId: workspaceSessions.workspaceId,
       expiresAt: workspaceSessions.expiresAt,
       checkedAt: workspaceSessions.checkedAt,
+      tier: workspaceSessions.tier,
       userId: workspaceUsers.id,
       displayName: workspaceUsers.displayName,
       chosenName: workspaceUsers.chosenName,
@@ -208,11 +219,33 @@ export async function deleteSession(db: Db, workspaceId: number, tokenHash: stri
     );
 }
 
-/** "Sign out everyone in this workspace": every session of the workspace ends now. */
-export async function signOutWorkspace(db: Db, workspaceId: number): Promise<number> {
+/** Whose sessions /admin's "Sign out users" ends (D105, amended 2026-11-17). */
+export type SignOutWho =
+  | { scope: "all" }
+  | { scope: "officers" }
+  | { scope: "members" }
+  | { scope: "user"; userId: number };
+
+/**
+ * /admin's "Sign out users": ends the workspace's sessions now, all of them, one tier's, or every session
+ * of one workspace_users row, only inside this workspace. Nobody is blocked. Returns how many ended.
+ */
+export async function signOutWorkspace(
+  db: Db,
+  workspaceId: number,
+  who: SignOutWho = { scope: "all" },
+): Promise<number> {
+  const only =
+    who.scope === "officers"
+      ? eq(workspaceSessions.tier, "officer")
+      : who.scope === "members"
+        ? eq(workspaceSessions.tier, "member")
+        : who.scope === "user"
+          ? eq(workspaceSessions.workspaceUserId, who.userId)
+          : undefined;
   const gone = await db
     .delete(workspaceSessions)
-    .where(eq(workspaceSessions.workspaceId, workspaceId))
+    .where(and(eq(workspaceSessions.workspaceId, workspaceId), only))
     .returning({ hash: workspaceSessions.tokenHash });
   return gone.length;
 }

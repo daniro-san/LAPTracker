@@ -13,6 +13,7 @@ import {
   TOP_N,
 } from "@/lib/balance";
 import { fill, type Dictionary } from "@/lib/copy";
+import { isOn } from "@/lib/flags";
 
 import { balanceHref, BLOC_FILL, sideOf } from "./BalanceBar";
 import { LineChart } from "./charts/LineChart";
@@ -145,8 +146,9 @@ export function BalanceRows({
   );
 }
 
-/** The top share over time: a line, the first and last values in a sentence, every day in a table. */
-export function BalanceTrend({
+/** The top share over time: a line, the first and last values in a sentence, every day in a table while
+ * the `chart-details` flag is on (D91). */
+export async function BalanceTrend({
   trend,
   locale,
   clock,
@@ -157,6 +159,7 @@ export function BalanceTrend({
   clock: Clock;
   copy: Dictionary;
 }) {
+  const details = await isOn("chart-details");
   const first = trend[0];
   const last = trend.at(-1);
   const b = copy.balance;
@@ -187,41 +190,59 @@ export function BalanceTrend({
             time={clock.hhmm}
             copy={copy}
           />
-          <details className="mt-2">
-            <summary className="text-button flex min-h-11 w-fit items-center underline underline-offset-2">
-              {copy.ledger.details}
-            </summary>
-            <table className="w-full border-collapse text-sm tabular-nums">
-              <thead className="text-xs text-ink/70">
-                <tr className="border-b border-rule">
-                  <th scope="col" className="py-1 text-left font-normal">
-                    {b.day}
-                  </th>
-                  <th scope="col" className="py-1 pl-2 text-right font-medium">
-                    {fill(b.trendLabel, { n: TOP_N })}
-                  </th>
-                  <th scope="col" className="py-1 pl-2 text-right font-medium">
-                    {b.total}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {[...trend].reverse().map((p) => (
-                  <tr key={p.day} className="border-b border-rule last:border-0">
-                    <th scope="row" className="py-1 text-left font-normal">
-                      {clock.day(p.at)}
-                    </th>
-                    <td className="py-1 pl-2 text-right">{sharePreciseText(p.top, locale)}</td>
-                    <td className="py-1 pl-2 text-right">
-                      <Num n={p.total} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </details>
+          {details && <TrendTable trend={trend} locale={locale} clock={clock} copy={copy} />}
         </div>
       )}
     </section>
+  );
+}
+
+/** Every day of the trend, newest first, under Details. */
+function TrendTable({
+  trend,
+  locale,
+  clock,
+  copy,
+}: {
+  trend: ConcentrationPoint[];
+  locale: string;
+  clock: Clock;
+  copy: Dictionary;
+}) {
+  const b = copy.balance;
+  return (
+    <details className="mt-2">
+      <summary className="text-button flex min-h-11 w-fit items-center underline underline-offset-2">
+        {copy.ledger.details}
+      </summary>
+      <table className="w-full border-collapse text-sm tabular-nums">
+        <thead className="text-xs text-ink/70">
+          <tr className="border-b border-rule">
+            <th scope="col" className="py-1 text-left font-normal">
+              {b.day}
+            </th>
+            <th scope="col" className="py-1 pl-2 text-right font-medium">
+              {fill(b.trendLabel, { n: TOP_N })}
+            </th>
+            <th scope="col" className="py-1 pl-2 text-right font-medium">
+              {b.total}
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {[...trend].reverse().map((p) => (
+            <tr key={p.day} className="border-b border-rule last:border-0">
+              <th scope="row" className="py-1 text-left font-normal">
+                {clock.day(p.at)}
+              </th>
+              <td className="py-1 pl-2 text-right">{sharePreciseText(p.top, locale)}</td>
+              <td className="py-1 pl-2 text-right">
+                <Num n={p.total} />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </details>
   );
 }
