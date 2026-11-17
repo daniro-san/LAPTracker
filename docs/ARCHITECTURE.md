@@ -100,6 +100,7 @@ app/img/*           /img/badge/[id] and /img/avatar/[uid]: upstream images serve
 app/ingest/*        PostHog's same-origin proxy (D77), via lib/analytics/ingest.ts.
 lib/analytics/*.ts  PostHog (D77): the typed custom events (events.ts), the browser SDK and replay switch (posthog.ts),
                     before_send (sanitise.ts, pure), the /ingest forwarding (ingest.ts) and the region (region.ts).
+lib/flags.ts        PostHog feature flags (D91), server only: the four flag keys, one cached read of /flags, off on failure.
 lib/images.ts       the two image sources (preset badge id, stored photo URL on its one host), capped fetch, cache headers.
 proxy.ts            per-request CSP nonce (Next 16's middleware); next.config.ts holds the static security headers
 instrumentation.ts  validates the environment once at server start
@@ -112,7 +113,7 @@ lib/app-commands.ts the app's Discord message commands (D96, D101) and registerA
 
 ## Dependency rule
 
-- `app → lib/{route, auth, run, tick, rehearsal, schedule, queries, repo, images, analytics, ai}`; `lib/private → lib/analytics/events` (the sign-in mark, D77); `lib/private → lib/screenshot` (the name matcher, for the sheet import, D80; the OCR, the classifier and the parsers, for the screenshot import, D96); `lib/private → lib/ai` (the translator, for Discord's Translate commands, D101); `lib/run → lib/{collector, queries}` (queries: the public Discord message's numbers).
+- `app → lib/{route, auth, run, tick, rehearsal, schedule, queries, repo, images, analytics, ai, flags}`; `lib/private → lib/analytics/events` (the sign-in mark, D77); `lib/private → lib/screenshot` (the name matcher, for the sheet import, D80; the OCR, the classifier and the parsers, for the screenshot import, D96); `lib/private → lib/ai` (the translator, for Discord's Translate commands, D101); `lib/run → lib/{collector, queries, flags}` (queries: the public Discord message's numbers; flags: its war-turnout line, D91).
 - `lib/collector → lib/{compute, sources, repo, logger, notify}` **through the `Deps` object passed in**.
 - `lib/compute`, `lib/budget` and `lib/compact` import nothing from the project.
 - `lib/logger` imports only `lib/repo` and `lib/redact`.

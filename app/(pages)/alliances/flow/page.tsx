@@ -16,6 +16,7 @@ import { requestClock, requestCopy } from "@/app/_ui/locale";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { getEnv } from "@/lib/env";
+import { isOn } from "@/lib/flags";
 import { withPageDb } from "@/lib/page";
 import { flowPage, homeEvent, listEvents } from "@/lib/queries";
 
@@ -62,7 +63,11 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function FlowPage({ searchParams }: { searchParams: Search }) {
   const data = await read(searchParams);
   if (!data) notFound();
-  const [clock, copy] = await Promise.all([requestClock(), requestCopy()]);
+  const [clock, copy, merge] = await Promise.all([
+    requestClock(),
+    requestCopy(),
+    isOn("merge-simulator"),
+  ]);
   const { page, events, homeId } = data;
   const f = copy.flow;
   const { period, flow } = page;
@@ -93,7 +98,14 @@ export default async function FlowPage({ searchParams }: { searchParams: Search 
               copy={copy}
             />
             {flow ? (
-              <FlowView flow={flow} from={period.from} to={period.to} clock={clock} copy={copy} />
+              <FlowView
+                flow={flow}
+                from={period.from}
+                to={period.to}
+                merge={merge}
+                clock={clock}
+                copy={copy}
+              />
             ) : (
               <EmptyState>{f.order}</EmptyState>
             )}

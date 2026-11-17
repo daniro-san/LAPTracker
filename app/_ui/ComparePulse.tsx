@@ -22,10 +22,21 @@ const Heading = ({ text }: { text: string }) => (
   </h2>
 );
 
+/** The section when either event has no slots: the reason in a muted frame, and nothing drawn. */
+const Off = ({ title, reason }: { title: string; reason: string }) => (
+  <section aria-labelledby="compare-pulse" className="mb-4 border-y border-rule py-3">
+    <Heading text={title} />
+    <p className="mt-2 rounded-sm border border-dashed border-rule px-3 py-2 text-body-sm text-ink/70">
+      {reason}
+    </p>
+  </section>
+);
+
 export function ComparePulse({
   data,
   pulses,
   everyMin,
+  details,
   clock,
   copy,
   locale,
@@ -33,6 +44,8 @@ export function ComparePulse({
   data: EventComparison;
   pulses: Record<Side, EventPulse>;
   everyMin: number;
+  /** The `chart-details` flag (D91): off, no figures table under the strips. */
+  details: boolean;
   clock: Clock;
   copy: Dictionary;
   locale: string;
@@ -44,14 +57,7 @@ export function ComparePulse({
   if (!a || !b) {
     const off = !a && !b ? l.comparePulseOffBoth : !a ? l.comparePulseOffA : l.comparePulseOffB;
     const when = eventHead(!a ? data.a : data.b, !a ? data.b : data.a, clock);
-    return (
-      <section aria-labelledby="compare-pulse" className="mb-4 border-y border-rule py-3">
-        <Heading text={l.livePulse} />
-        <p className="mt-2 rounded-sm border border-dashed border-rule px-3 py-2 text-body-sm text-ink/70">
-          {fill(off, { min: everyMin, when })}
-        </p>
-      </section>
-    );
+    return <Off title={l.livePulse} reason={fill(off, { min: everyMin, when })} />;
   }
   const span = 2 * everyMin;
   const own = { a, b };
@@ -90,15 +96,17 @@ export function ComparePulse({
       <div className="mt-2 text-body-sm text-ink/70">
         <PulseLegend pulse={all.flatMap((c) => c.slots)} copy={copy} />
       </div>
-      <PulseDetails
-        columns={columns}
-        events={sides.map((k) => ({ key: k, label: label(k), clock: own[k] }))}
-        clock={clock}
-        everyMin={everyMin}
-        copy={copy}
-        locale={locale}
-        lead={l.livePulse}
-      />
+      {details && (
+        <PulseDetails
+          columns={columns}
+          events={sides.map((k) => ({ key: k, label: label(k), clock: own[k] }))}
+          clock={clock}
+          everyMin={everyMin}
+          copy={copy}
+          locale={locale}
+          lead={l.livePulse}
+        />
+      )}
     </section>
   );
 }

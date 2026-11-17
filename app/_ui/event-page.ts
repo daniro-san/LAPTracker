@@ -5,6 +5,7 @@ import { cache } from "react";
 
 import { getAppContext } from "@/lib/app-context";
 import { DONE_MAX_AGE_S, LIVE_MAX_AGE_S } from "@/lib/event-cache";
+import { isOn } from "@/lib/flags";
 import { withPageDb } from "@/lib/page";
 import { getEventPage } from "@/lib/queries/event-page";
 import {
@@ -20,15 +21,25 @@ import { requestClock, requestCopy } from "./locale";
 
 // The turnout so far is read only while the event has no End: a live event's entry. Its read opens its own
 // connection, because Next can run it in the background after this request's connection is closed.
-export const loadEventPage = cache((id: number | null) =>
-  withPageDb((db) =>
-    getEventPage(db, id, getAppContext().env.SNAPSHOT_WINDOW_MIN, (eventId, load) =>
-      getAppContext().eventCache.read(eventId, "turnout-so-far", LIVE_MAX_AGE_S, () =>
-        withPageDb(load),
-      ),
+// War turnout and kill share vs might share are read only while their flags are on (D91); the flags are
+// read per request, while the event is, and never stored in the event cache.
+export const loadEventPage = cache(async (id: number | null) => {
+  const sections = Promise.all([isOn("war-turnout"), isOn("kill-vs-might")]).then(
+    ([turnout, carried]) => ({ turnout, carried }),
+  );
+  return withPageDb((db) =>
+    getEventPage(
+      db,
+      id,
+      getAppContext().env.SNAPSHOT_WINDOW_MIN,
+      (eventId, load) =>
+        getAppContext().eventCache.read(eventId, "turnout-so-far", LIVE_MAX_AGE_S, () =>
+          withPageDb(load),
+        ),
+      sections,
     ),
-  ),
-);
+  );
+});
 
 /** `Sat, Oct 31 · Event Ledger`: the event's day, so tabs and shared links tell events apart. */
 export async function eventTitle({

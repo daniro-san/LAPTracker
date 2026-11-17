@@ -25,6 +25,7 @@ import { LABEL } from "@/app/_ui/StatTable";
 import { fill, type Dictionary } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
 import { clockColumns, type OffReason } from "@/lib/fight-clock";
+import { isOn } from "@/lib/flags";
 import { homeEvent, type FightClockEvent } from "@/lib/queries";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -60,6 +61,8 @@ function Heading({ event, clock }: { event: FightClockEvent; clock: Clock }) {
 
 interface View {
   everyMin: number;
+  /** The `chart-details` flag (D91): off, no figures table under a row. */
+  details: boolean;
   clock: Clock;
   copy: Dictionary;
   locale: string;
@@ -77,7 +80,8 @@ function OffRow({ event, v }: { event: FightClockEvent; v: View }) {
   );
 }
 
-/** A sampled event: the whole card links to its "During the event" section; the figures sit under Details. */
+/** A sampled event: the whole card links to its "During the event" section; the figures sit under Details
+ * while the `chart-details` flag is on. */
 function SampledRow({
   event,
   columns,
@@ -89,7 +93,7 @@ function SampledRow({
   most: number;
   v: View;
 }) {
-  const { everyMin, clock, copy, locale } = v;
+  const { everyMin, details, clock, copy, locale } = v;
   const own = event.pulse.clock;
   if (!own) return null;
   const label = eventTitle(event) ?? clock.weekday(event.eventAtUtc);
@@ -118,7 +122,7 @@ function SampledRow({
           <span className="text-body-sm text-ink/70">{copy.ledger.liveNoReading}</span>
         )}
       </Link>
-      {own.slots.length > 0 && (
+      {details && own.slots.length > 0 && (
         <PulseDetails
           columns={own.slots}
           events={[{ key: String(event.id), label, clock: own }]}
@@ -134,17 +138,18 @@ function SampledRow({
 }
 
 export default async function FightClockPage() {
-  const [data, clock, copy, locale] = await Promise.all([
+  const [data, clock, copy, locale, details] = await Promise.all([
     loadFightClock(),
     requestClock(),
     requestCopy(),
     requestLocale(),
+    isOn("chart-details"),
   ]);
   const { listed, events, everyMin } = data;
   const l = copy.ledger;
   const clocks = events.flatMap((e) => (e.pulse.clock ? [e.pulse.clock] : []));
   const [columns, most] = [clockColumns(clocks), mostShare(clocks)];
-  const v: View = { everyMin, clock, copy, locale };
+  const v: View = { everyMin, details, clock, copy, locale };
   return (
     <>
       <SiteHeader

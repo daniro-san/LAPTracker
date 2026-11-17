@@ -2,7 +2,7 @@
 // alliances as one, against the member cap: members, might and rank with everyone and within the cap.
 // A GET form, no client-side fetch. Alliance totals only, labelled a simulation; public. A union id that is
 // not a number, or is not among the tracked alliances with a usable roster, is a 404; a missing one is
-// not (the picker waits for it).
+// not (the picker waits for it). Behind the `merge-simulator` flag (D91): off, the page is a 404.
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cache } from "react";
@@ -18,6 +18,7 @@ import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { TextLink } from "@/lib/brand/components/TextLink";
 import { getEnv } from "@/lib/env";
+import { isOn } from "@/lib/flags";
 import { withPageDb } from "@/lib/page";
 import { homeEvent, listEvents, mergePage } from "@/lib/queries";
 
@@ -31,16 +32,19 @@ const idOf = (raw: string | string[] | undefined) => {
 
 const load = cache((a: number | null, b: number | null) =>
   withPageDb(async (db) => {
-    // One read of the event list, shared by the header and the turnout figures.
+    // One read of the event list, shared by the header and the turnout figures. The war turnout line is
+    // read and shown only under its own flag (D91), which is read while the rosters are.
     const eventsRead = listEvents(db);
+    const turnout = isOn("war-turnout");
     const [page, events] = await Promise.all([
-      mergePage(db, a !== null && b !== null ? [a, b] : null, undefined, eventsRead),
+      mergePage(db, a !== null && b !== null ? [a, b] : null, undefined, eventsRead, turnout),
       eventsRead,
     ]);
     return {
       page,
       events,
       homeId: homeEvent(events, new Date(), getEnv().SNAPSHOT_WINDOW_MIN)?.id ?? null,
+      turnout: await turnout,
     };
   }),
 );
@@ -57,15 +61,17 @@ async function read(searchParams: Search) {
 }
 
 export async function generateMetadata(): Promise<Metadata> {
+  if (!(await isOn("merge-simulator"))) notFound();
   const copy = await requestCopy();
   return { title: `${copy.merge.title} · ${copy.site.name}` };
 }
 
 export default async function MergePage({ searchParams }: { searchParams: Search }) {
+  if (!(await isOn("merge-simulator"))) notFound();
   const data = await read(searchParams);
   if (!data) notFound();
   const [clock, copy] = await Promise.all([requestClock(), requestCopy()]);
-  const { page, events, homeId, a, b } = data;
+  const { page, events, homeId, a, b, turnout } = data;
   const m = copy.merge;
   return (
     <>
@@ -97,7 +103,7 @@ export default async function MergePage({ searchParams }: { searchParams: Search
         </p>
         <MergePicker choices={page.alliances} a={a} b={b} copy={copy} />
         {page.merge ? (
-          <MergeResultView merge={page.merge} clock={clock} copy={copy} />
+          <MergeResultView merge={page.merge} turnout={turnout} clock={clock} copy={copy} />
         ) : (
           <EmptyState>{a !== null && a === b ? m.same : m.pick}</EmptyState>
         )}

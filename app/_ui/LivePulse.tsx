@@ -2,8 +2,9 @@
 // underlined and named in text, the numbers in a Details table. The game moves an alliance's numbers every
 // 10-13 minutes, so an interval can hold no update: it shows as a hollow stub, never as a quiet zero.
 // A chart under D68 (docs/decisions/D68-charts-are-hand-built-inline-svg.md): hand-built, no chart library,
-// labels in HTML, numbers beside it (the Details table). Its bars are HTML boxes, which D68 allows by its
-// amendment of 2026-11-16 (PR 319); a line chart stays SVG.
+// labels in HTML, numbers beside it (the busiest-span sentence, and the Details table while the
+// `chart-details` flag is on, D91). Its bars are HTML boxes, which D68 allows by its amendment of
+// 2026-11-16 (PR 319); a line chart stays SVG.
 import { TextLink } from "@/lib/brand/components/TextLink";
 import { fill, type Dictionary } from "@/lib/copy";
 import type { EventProgress } from "@/lib/queries";
@@ -91,14 +92,17 @@ export function PulseLegend({
   );
 }
 
-/** Kills gained per interval as bars, the busiest two intervals underlined and named, the numbers under Details. */
+/** Kills gained per interval as bars, the busiest two intervals underlined and named, the numbers under
+ * Details while `details` (the `chart-details` flag, D91) is on. */
 export function Pulse({
   progress,
+  details,
   clock,
   copy,
   locale,
 }: {
   progress: Progress;
+  details: boolean;
   clock: Clock;
   copy: Dictionary;
   locale: string;
@@ -154,17 +158,19 @@ export function Pulse({
           {copy.ledger.fightClockLink}
         </TextLink>
       </p>
-      <div className="mt-2">
-        <MoreBar
-          row={{
-            key: "pulse",
-            lead: copy.ledger.livePulse,
-            metrics: [],
-            detail: <PulseTable pulse={pulse} clock={clock} copy={copy} />,
-          }}
-          copy={copy}
-        />
-      </div>
+      {details && (
+        <div className="mt-2">
+          <MoreBar
+            row={{
+              key: "pulse",
+              lead: copy.ledger.livePulse,
+              metrics: [],
+              detail: <PulseTable pulse={pulse} clock={clock} copy={copy} />,
+            }}
+            copy={copy}
+          />
+        </div>
+      )}
     </section>
   );
 }
