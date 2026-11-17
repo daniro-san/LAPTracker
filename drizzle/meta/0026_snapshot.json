@@ -1,5 +1,5 @@
 {
-  "id": "5842bd5b-9acf-4ad2-9881-b1cc1cdabf12",
+  "id": "38d7ec60-d649-401a-85d0-7807063479d7",
   "prevId": "11954d78-023e-43d6-bdd6-982bc0d4a9c7",
   "version": "7",
   "dialect": "postgresql",
@@ -2225,6 +2225,12 @@
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true
+        },
+        "request_id": {
+          "name": "request_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -2239,6 +2245,27 @@
             }
           ],
           "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "notices_request_unique": {
+          "name": "notices_request_unique",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "request_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
           "concurrently": false,
           "method": "btree",
           "with": {}

@@ -45,9 +45,11 @@ export async function saveNotice(
   slug: string,
   id: number | null,
   changes: Change[],
+  /** A new notice's request id (D100): one per open editor, so a retry stores one notice. */
+  requestId: string,
 ): Promise<SaveAnswer> {
   const { status, json } = await post(`/api/w/${slug}/notices`, {
-    ...(id !== null && { id }),
+    ...(id !== null ? { id } : { requestId }),
     changes,
   });
   const body = json as { id?: number; conflicts?: Conflict[] } | null;

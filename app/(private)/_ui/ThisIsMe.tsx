@@ -11,19 +11,22 @@ import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dicti
 import type { Player, Profile } from "@/lib/private/profile";
 import { searchRoster } from "@/lib/private/roster-search";
 
+import { SIGNED_OUT, SignedOutNote } from "./SignedOut";
+
 type Words = WorkspaceDictionary;
 
 /** "This is me": the linked player and "This isn't me", or the matcher's suggestions and the search. */
 export function Me(props: {
   t: Words;
   language: WorkspaceLanguage;
-  me: Profile | "loading" | "failed";
+  me: Profile | "loading" | "failed" | typeof SIGNED_OUT;
   busy: boolean;
   onLink: (uid: number | null) => void;
 }) {
   const { t, language, me, busy, onLink } = props;
   if (me === "loading") return <p className="mt-2 text-body-sm">{t["profile.me.loading"]}</p>;
   if (me === "failed") return <p className="mt-2 text-body-sm">{t["profile.loadFailed"]}</p>;
+  if (me === SIGNED_OUT) return <SignedOutNote className="mt-2" />;
   if (me.player) {
     const [before, after] = t["profile.me.linked"].split("{name}");
     return (

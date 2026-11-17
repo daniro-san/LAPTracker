@@ -1,7 +1,16 @@
 // The notices library's tables (issue 304, D81), apart from lib/schema.ts for its size. drizzle.config.ts lists
 // both files; migration 0021 creates these two tables.
 import { sql } from "drizzle-orm";
-import { check, index, integer, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
+import {
+  check,
+  index,
+  integer,
+  pgTable,
+  serial,
+  text,
+  timestamp,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
 
 import { workspaces, workspaceUsers } from "./schema";
 
@@ -22,8 +31,13 @@ export const notices = pgTable(
     createdAt: tstz("created_at").notNull(),
     updatedBy: integer("updated_by").references(() => workspaceUsers.id, { onDelete: "set null" }),
     updatedAt: tstz("updated_at").notNull(),
+    /** The new-notice editor's request id (D100): a retry of the same first Save finds this notice. */
+    requestId: text("request_id"),
   },
-  (t) => [index("notices_workspace_idx").on(t.workspaceId)],
+  (t) => [
+    index("notices_workspace_idx").on(t.workspaceId),
+    uniqueIndex("notices_request_unique").on(t.workspaceId, t.requestId),
+  ],
 );
 
 /**

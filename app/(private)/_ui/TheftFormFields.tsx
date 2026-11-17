@@ -12,6 +12,7 @@ import { searchRoster } from "@/lib/private/roster-search";
 import type { AttackerOption } from "@/lib/private/thefts";
 import { matchName } from "@/lib/screenshot/match-name";
 
+import { SIGNED_OUT, SignedOutNote } from "./SignedOut";
 import type { TheftWords } from "./theft-data";
 
 export type Member = { uid: number; name: string };
@@ -36,9 +37,14 @@ function memberCandidates(query: string, roster: readonly Member[]): Member[] {
   return uids.flatMap((uid) => roster.filter((m) => m.uid === uid)).slice(0, 6);
 }
 
-/** Players found by the route for `query`, searched a moment after the officer stops typing. */
-function usePlayerSearch(slug: string, query: string): AttackerOption[] | "searching" | null {
-  const [hits, setHits] = useState<AttackerOption[] | "searching" | null>(null);
+type Hits = AttackerOption[] | "searching" | typeof SIGNED_OUT | null;
+
+/**
+ * Players found by the route for `query`, searched a moment after the officer stops typing; SIGNED_OUT
+ * on a 401 (D99), so the sheet says so instead of "no player found".
+ */
+function usePlayerSearch(slug: string, query: string): Hits {
+  const [hits, setHits] = useState<Hits>(null);
   useEffect(() => {
     const q = query.trim();
     setHits(q === "" ? null : "searching");
@@ -46,10 +52,11 @@ function usePlayerSearch(slug: string, query: string): AttackerOption[] | "searc
     const stop = new AbortController();
     const timer = setTimeout(() => {
       fetch(`/api/w/${slug}/thefts?q=${encodeURIComponent(q)}`, { signal: stop.signal })
-        .then((r) =>
-          r.ok ? (r.json() as Promise<{ players: AttackerOption[] }>) : { players: [] },
-        )
-        .then((d) => setHits(d.players))
+        .then(async (r): Promise<Hits> => {
+          if (r.status === 401) return SIGNED_OUT;
+          return r.ok ? ((await r.json()) as { players: AttackerOption[] }).players : [];
+        })
+        .then((found) => setHits(found))
         // A newer keystroke aborted this search; any other failure shows as no result.
         .catch((e: unknown) => {
           if (!(e instanceof DOMException && e.name === "AbortError")) setHits([]);
@@ -172,6 +179,7 @@ function PlayerSearch({ slug, t, onChange }: AttackerProps) {
         className={INPUT}
       />
       {hits === "searching" && <Status text={t["thefts.form.searching"]} />}
+      {hits === SIGNED_OUT && <SignedOutNote className="mt-1" />}
       {Array.isArray(hits) && hits.length === 0 && <Status text={t["thefts.form.noHit"]} />}
       <ul className="mt-1 grid gap-1">
         {Array.isArray(hits) &&

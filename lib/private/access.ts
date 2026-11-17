@@ -38,8 +38,8 @@ export interface CookieReader {
 }
 
 /**
- * `checkWithin`: how old the session's Discord role check may be. The API routes keep the default, an
- * hour; pages pass RENEW_MS, so they renew the check before the API would refuse it (D99).
+ * `checkWithin`: how old the session's Discord role check may be. The API routes keep the default, 24
+ * hours; pages pass RENEW_MS (23 hours), so they renew the check before the API would refuse it (D99).
  */
 export async function requireWorkspace(
   db: Db,

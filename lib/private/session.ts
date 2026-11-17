@@ -1,9 +1,9 @@
 // Workspace sessions (D71, D73, D99): a random 32-byte token in a __Host- cookie, only its sha256 in
 // workspace_sessions; a session belongs to one workspace. No Discord token is kept (D71), so the role is
-// confirmed only by a trip through Discord: at sign-in, and at each renewal. A session is served for an hour
-// after that check; a page renews it through Discord once the check is half an hour old, so an officer who
-// keeps using the desk is not stopped. It ends seven days after sign-in at the latest, and never past the
-// allowlist entry that let its person in.
+// confirmed only by a trip through Discord: at sign-in, and at each renewal. A session is served for 24 hours
+// after that check; a page renews it through Discord once the check is 23 hours old, so the trip comes about
+// once a day, as under D73, and an API call made from a page loaded before then still has an hour left. It
+// ends seven days after sign-in at the latest, and never past the allowlist entry that let its person in.
 import { createHash, randomBytes } from "node:crypto";
 
 import type { Db } from "../db";
@@ -13,9 +13,9 @@ export const SESSION_COOKIE = "__Host-lap_ws";
 /** The cap: a session ends this long after sign-in, however often it was renewed. */
 export const SESSION_MS = 7 * 24 * 60 * 60_000;
 /** A role check is good this long: past it, a workspace API answers signed_out (D99). */
-export const CHECK_MS = 60 * 60_000;
-/** A page renews the check through Discord once it is this old (the last part of the hour). */
-export const RENEW_MS = 30 * 60_000;
+export const CHECK_MS = 24 * 60 * 60_000;
+/** A page renews the check through Discord once it is this old (the last hour of the day). */
+export const RENEW_MS = 23 * 60 * 60_000;
 
 /** HttpOnly, Secure, SameSite=Lax: the OAuth callback arrives from discord.com, a cross-site navigation. */
 export const cookieAttributes = (maxAgeMs: number) =>

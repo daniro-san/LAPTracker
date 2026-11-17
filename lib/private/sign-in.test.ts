@@ -122,7 +122,7 @@ describe("workspace sign-in (D71)", () => {
     expect(await db.select().from(workspaceSessions)).toEqual([]);
   });
 
-  it("serves a session for an hour after its role check; a page asks for a renewal after 30 minutes", async () => {
+  it("serves a session for 24 hours after its role check; a page asks for a renewal after 23 hours", async () => {
     const { token } = await signIn("ogs", "officer");
     const at = (ms: number) => new Date(T0.getTime() + ms);
     expect((await requireWorkspace(db, "ogs", jar(token), at(RENEW_MS - 1), RENEW_MS)).ok).toBe(
@@ -138,8 +138,8 @@ describe("workspace sign-in (D71)", () => {
 
   it("renews the same session through Discord, until seven days after sign-in", async () => {
     const { token } = await signIn("ogs", "officer");
-    // Renewed after 50 minutes and a minute before the cap: same cookie, served again each time.
-    for (const ms of [50 * 60_000, SESSION_MS - 60_000]) {
+    // Renewed a day after sign-in and a minute before the cap: same cookie, served again each time.
+    for (const ms of [CHECK_MS + 60_000, SESSION_MS - 60_000]) {
       const now = new Date(T0.getTime() + ms);
       expect((await requireWorkspace(db, "ogs", jar(token), now, RENEW_MS)).ok).toBe(false);
       const renewal = await signIn("ogs", "officer", now, {}, { session: token ?? "" });

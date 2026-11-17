@@ -1,12 +1,12 @@
 ## D100 — No duplicates from a repeat: Discord pictures claimed once, add sheets carry a request id, Send screenshots busy until the drafts exist (2026-11-17, panel batch B, ADV-7/10, ADV-12)
 
-Amends D96 (the Discord command) and D97 (typed thefts), and the calendar's add (issue 300).
+Amends D96 (the Discord command) and D97 (typed thefts), the calendar's add (issue 300) and the new notice (issue 304).
 
 Why: the same input could be stored twice, each time with nothing to show it was a repeat.
 
 - **Discord.** Running "Send to LAPTracker" twice on one message, or two officers running it at once, made two identical sets of drafts and spent the OCR twice.
 - **Desk.** "Send screenshots" was enabled again while the drafts were being made.
-- **Add sheets.** A theft or calendar add retried after a lost answer was stored twice. That inflates the theft totals officers take to other alliances, against D75.
+- **Add sheets.** A theft, calendar or new-notice add retried after a lost answer was stored twice. That inflates the theft totals officers take to other alliances, against D75.
 
 **Discord (D96 amended).**
 
@@ -17,11 +17,11 @@ Why: the same input could be stored twice, each time with nothing to show it was
 - A claim lasts as long as a draft (7 days). It goes with its draft when the draft is deleted, and older claims are dropped at the next claim.
 - No picture, URL or file name is stored: ids only.
 
-**Add sheets (D97 and issue 300 amended).**
+**Add sheets (D97, issues 300 and 304 amended).**
 
-- The theft add sheet and the calendar add sheet each make one `crypto.randomUUID()` when they open and send it as `requestId`. The routes require it (a UUID).
-- `thefts.request_id` and `calendar_entries.request_id` hold it, with a unique index on (workspace, request id).
-- An add whose request id is already stored answers as the first one did: `ok`, and for the calendar the first entry's id. Nothing new is stored.
+- The theft add sheet, the calendar add sheet and the notice editor each make one `crypto.randomUUID()` when they open, and send it as `requestId` with an add (for a notice: its first Save, which has no id). The routes require it (a UUID).
+- `thefts.request_id`, `calendar_entries.request_id` and `notices.request_id` hold it, each with a unique index on (workspace, request id).
+- An add whose request id is already stored answers as the first one did: `ok`, and for the calendar and the notice the first one's id. Nothing new is stored.
 - An add that was refused (for example a bad time, or a theme that already exists) stored nothing, so the officer can fix the form and send again with the same id.
 - The id is kept with the row rather than for "a short window", because a UUID does not repeat.
 

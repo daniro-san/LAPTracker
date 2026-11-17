@@ -143,6 +143,8 @@ export interface NoticeWrite {
   noticeId: number | null;
   userId: number;
   now: Date;
+  /** A new notice's request id (D100): when a notice already carries it, that notice is the answer. */
+  requestId: string | null;
 }
 
 /**
@@ -154,8 +156,15 @@ export async function writeNotice<R>(
   target: NoticeWrite,
   decide: (current: FieldRow[]) => { write: NewEditRow[] } | { refuse: R },
 ): Promise<{ id: number } | { refuse: R } | null> {
-  const { workspaceId, noticeId, userId, now } = target;
+  const { workspaceId, noticeId, userId, now, requestId } = target;
   return db.transaction(async (tx) => {
+    if (noticeId === null && requestId !== null) {
+      const [made] = await tx
+        .select({ id: notices.id })
+        .from(notices)
+        .where(and(eq(notices.workspaceId, workspaceId), eq(notices.requestId, requestId)));
+      if (made) return { id: made.id };
+    }
     if (noticeId !== null) {
       const [locked] = await tx
         .select({ id: notices.id })
@@ -177,6 +186,7 @@ export async function writeNotice<R>(
               createdAt: now,
               updatedBy: userId,
               updatedAt: now,
+              requestId,
             })
             .returning({ id: notices.id })
         : [{ id: noticeId }];

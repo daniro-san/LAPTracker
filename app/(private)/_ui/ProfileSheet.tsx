@@ -170,12 +170,14 @@ function Settings(props: {
 }) {
   const { slug, t, language, onClose } = props;
   const router = useRouter();
-  const [me, setMe] = useState<Profile | "loading" | "failed">("loading");
+  const [me, setMe] = useState<Profile | "loading" | "failed" | typeof SIGNED_OUT>("loading");
   const [busy, setBusy] = useState(false);
   /** The last write's outcome, shown under the part it came from. */
   const [note, setNote] = useState<{ at: "name" | "me"; text: string } | null>(null);
   useEffect(() => {
-    void call(slug).then((r) => setMe(typeof r === "string" ? "failed" : r));
+    void call(slug).then((r) =>
+      setMe(r === SIGNED_OUT ? SIGNED_OUT : typeof r === "string" ? "failed" : r),
+    );
   }, [slug]);
   const write = async (body: Write) => {
     const at = body.action === "rename" ? "name" : "me";
