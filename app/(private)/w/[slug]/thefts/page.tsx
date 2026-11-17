@@ -10,6 +10,7 @@ import { withPageDb } from "@/lib/page";
 import { requireWorkspace } from "@/lib/private/access";
 import type { WorkspaceLanguage } from "@/lib/private/dictionary";
 import { toReviewCount } from "@/lib/private/import-view";
+import { RENEW_MS } from "@/lib/private/session";
 import { SLUG } from "@/lib/private/sign-in";
 import { theftsView } from "@/lib/private/thefts";
 
@@ -55,7 +56,7 @@ export default async function TheftsPage({ params }: { params: Promise<{ slug: s
   const zone = getEnv().SERVER_TZ;
   // INVARIANT workspace.access-first: nothing private is read before this check.
   const { access, view, waiting } = await withPageDb(async (db) => {
-    const access = await requireWorkspace(db, slug, jar, now);
+    const access = await requireWorkspace(db, slug, jar, now, RENEW_MS);
     const waiting = access.ok ? await toReviewCount(db, access, now) : 0;
     return {
       access,
@@ -64,7 +65,7 @@ export default async function TheftsPage({ params }: { params: Promise<{ slug: s
     };
   });
   if (!access.ok) {
-    refuse(slug, access.reason);
+    refuse(slug, access.reason, `/w/${slug}/thefts`);
     redirect(`/w/${slug}`);
   }
   if (!view) notFound();

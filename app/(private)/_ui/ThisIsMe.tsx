@@ -34,7 +34,9 @@ export function Me(props: {
           ) : (
             <>
               {before}
-              <b translate="no">{me.player.name}</b>
+              <b translate="no">
+                <bdi>{me.player.name}</bdi>
+              </b>
               {after}
             </>
           )}

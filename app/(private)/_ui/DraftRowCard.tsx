@@ -6,6 +6,7 @@
 // Alliance Duel points saved before, the game data for a check, a fact's previous value. A row can be
 // dropped. 44 px controls.
 import { chip, FIELD } from "@/lib/brand/components/controls";
+import { isolate } from "@/lib/copy";
 import type { ViewRow } from "@/lib/private/import-view";
 
 import { factText, fillIn, groupedValue, type Words } from "./draft-known";
@@ -95,7 +96,7 @@ function RowHead({ row, label, w }: { row: ViewRow; label: string; w: Words }) {
       <p className="flex flex-wrap items-baseline gap-x-2">
         <span className="font-semibold tabular-nums">{label}</span>
         {row.field && <span className="font-semibold">{w[`shots.field.${row.field}`]}</span>}
-        <span translate="no">{fillIn(w["shots.read"], { name: row.name || "—" })}</span>
+        <span translate="no">{fillIn(w["shots.read"], { name: isolate(row.name || "—") })}</span>
         {tone && (
           <span className={`text-body-sm ${tone}`}>{w[`shots.match.${row.match.status}`]}</span>
         )}

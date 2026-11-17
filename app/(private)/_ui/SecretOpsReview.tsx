@@ -200,7 +200,7 @@ export function SecretOpsReview(props: {
         w={w}
         readOnly={readOnly}
       />
-      <ul className="mt-4 space-y-2">
+      <ul className="mt-4 space-y-2" data-unsaved={touched && !readOnly ? "" : undefined}>
         {view.rows.map((row, i) => (
           <EntryCard
             key={`${i}-${row.name}`}

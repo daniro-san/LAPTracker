@@ -1,7 +1,7 @@
 // The thefts log's words per card (issue 321), made on the server in the officer's language: server times,
 // counts and labels. The client list (TheftCards.tsx) only lays them out, and adds the viewer's own clock
 // after hydration, so server and browser HTML never differ.
-import { fill } from "@/lib/copy";
+import { fill, isolate } from "@/lib/copy";
 import type { WorkspaceDictionary, WorkspaceKey } from "@/lib/private/dictionary";
 import type { AllianceGroup, AttackerGroup, FollowUpState } from "@/lib/private/theft-groups";
 
@@ -83,10 +83,13 @@ function attackerCard(a: AttackerGroup, t: TheftWords, f: TheftFormats): Attacke
   const { last, reopened, state, earlier } = a.followUp;
   const server = (at: Date) => fill(t["time.server"], { time: f.when(at) });
   const changed = (c: { by: string | null; changedAt: Date }) =>
-    fill(t["thefts.changed"], { name: c.by ?? t["thefts.someone"], when: server(c.changedAt) });
+    fill(t["thefts.changed"], {
+      name: c.by ? isolate(c.by) : t["thefts.someone"],
+      when: server(c.changedAt),
+    });
   return {
     key: a.key,
-    name: a.tag ? `[${a.tag}] ${a.name}` : a.name,
+    name: a.tag ? `[${a.tag}] ${isolate(a.name)}` : a.name,
     counts: counts(a, t, f),
     state,
     badge: reopened ? t["thefts.state.reopened"] : t[`thefts.state.${state}`],
@@ -96,7 +99,7 @@ function attackerCard(a: AttackerGroup, t: TheftWords, f: TheftFormats): Attacke
       reopened && last
         ? capitalised(
             fill(t["thefts.reopened"], {
-              who: last.by ?? t["thefts.someone"],
+              who: last.by ? isolate(last.by) : t["thefts.someone"],
               state: t[`thefts.state.${last.state}`],
               day: f.date(last.changedAt),
             }),
@@ -112,7 +115,9 @@ function attackerCard(a: AttackerGroup, t: TheftWords, f: TheftFormats): Attacke
       server: e.at ? server(e.at) : t["thefts.noTime"],
       at: e.at?.getTime() ?? null,
       day: e.at ? f.day(e.at) : null,
-      victim: e.victimName ? fill(t["thefts.from"], { name: e.victimName }) : t["thefts.noVictim"],
+      victim: e.victimName
+        ? fill(t["thefts.from"], { name: isolate(e.victimName) })
+        : t["thefts.noVictim"],
       stolen:
         t[e.stolen === "quest_rewards" ? "thefts.stolen.quest_rewards" : "thefts.stolen.none"],
       source: e.source,

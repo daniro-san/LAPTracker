@@ -3,7 +3,7 @@
 // `grant`. Every private query takes one, so the workspace id never comes from a request.
 import type { Db } from "../db";
 import { deleteSession, findSession, findWorkspaceBySlug } from "../repo/workspaces";
-import { hashToken, revokeSession, SESSION_COOKIE } from "./session";
+import { CHECK_MS, hashToken, revokeSession, SESSION_COOKIE, sessionState } from "./session";
 
 declare const accessBrand: unique symbol;
 
@@ -23,8 +23,9 @@ export type WorkspaceAccess = {
 
 /**
  * no_workspace: no workspace has this slug. signed_out: no cookie, or no session for it.
- * other_workspace: the session belongs to another workspace. expired: past its end (24 hours, or the
- * allowlist expiry), so a silent Discord re-authorisation follows. blocked: the account is blocked in this workspace.
+ * other_workspace: the session belongs to another workspace. expired: past its end (seven days, or the
+ * allowlist expiry), or its Discord role check is too old (D99), so a silent Discord re-authorisation
+ * follows. blocked: the account is blocked in this workspace.
  */
 export type Refusal = {
   readonly ok: false;
@@ -36,11 +37,16 @@ export interface CookieReader {
   get(name: string): { value: string } | undefined;
 }
 
+/**
+ * `checkWithin`: how old the session's Discord role check may be. The API routes keep the default, an
+ * hour; pages pass RENEW_MS, so they renew the check before the API would refuse it (D99).
+ */
 export async function requireWorkspace(
   db: Db,
   slug: string,
   cookies: CookieReader,
   now: Date,
+  checkWithin = CHECK_MS,
 ): Promise<WorkspaceAccess | Refusal> {
   const refuse = (reason: Refusal["reason"]): Refusal => ({ ok: false, reason });
   const token = cookies.get(SESSION_COOKIE)?.value;
@@ -53,11 +59,15 @@ export async function requireWorkspace(
   if (!session) return refuse("signed_out");
   // INVARIANT workspace.session-bound: a session of one workspace opens no other.
   if (session.workspaceId !== workspace.id) return refuse("other_workspace");
-  if (session.expiresAt.getTime() <= now.getTime()) {
+  const state = sessionState(session, now, checkWithin);
+  if (state === "ended") {
     await deleteSession(db, workspace.id, session.tokenHash);
     return refuse("expired");
   }
   if (session.blocked) return refuse("blocked");
+  // INVARIANT workspace.role-recheck: no request is served on a role check older than CHECK_MS. The row
+  // stays, so the sign-in that confirms the role again renews this same session.
+  if (state === "stale") return refuse("expired");
   return grant(workspace, {
     id: session.userId,
     displayName: session.chosenName ?? session.displayName,
@@ -110,7 +120,8 @@ export async function signOut(
   cookies: CookieReader,
   now: Date,
 ): Promise<boolean> {
-  const access = await requireWorkspace(db, slug, cookies, now);
+  // A session waiting for its role check (D99) can still be ended.
+  const access = await requireWorkspace(db, slug, cookies, now, Number.POSITIVE_INFINITY);
   const token = cookies.get(SESSION_COOKIE)?.value;
   if (!access.ok || !token) return false;
   await revokeSession(db, access.workspaceId, token);

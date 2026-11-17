@@ -21,7 +21,7 @@ export default async function NoticePage({
     access,
     data: notice,
     waiting,
-  } = await noticePage(slug, (db, a) => noticeDetail(db, a, id));
+  } = await noticePage(slug, (db, a) => noticeDetail(db, a, id), `/${id}`);
   if (!notice) notFound();
   const { language, t } = await workspaceWords();
   const words = noticeWords(language, t);

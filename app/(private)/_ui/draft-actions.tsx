@@ -7,9 +7,11 @@
 import { useState } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
+import { isolate } from "@/lib/copy";
 
 import { AskSheet } from "./AskSheet";
 import { fillIn, type Words } from "./draft-known";
+import { SIGNED_OUT, SignedOutNote } from "./SignedOut";
 
 export type Answer = { ok: boolean; data: Record<string, unknown> };
 
@@ -27,10 +29,11 @@ export function useDraftActions(slug: string, view: { id: number; version: numbe
         body: JSON.stringify({ version: view.version, ...body }),
       });
       const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
-      if (!res.ok) {
+      if (res.status === 401) setMessage(SIGNED_OUT);
+      else if (!res.ok) {
         const template = w[`shots.e.${String(data.code)}`] ?? w["shots.e.failed"];
         const name = (data.by as string | null) ?? w["shots.someone"] ?? "";
-        setMessage(fillIn(template, { name }));
+        setMessage(fillIn(template, { name: isolate(name) }));
       }
       return { ok: res.ok, data };
     } catch {
@@ -118,7 +121,11 @@ export function Actions(props: {
 export function Message({ text }: { text: string | null }) {
   return (
     <div aria-live="polite" className="mt-3">
-      {text && <p className="border-l-4 border-seal pl-3">{text}</p>}
+      {text === SIGNED_OUT ? (
+        <SignedOutNote className="border-l-4 border-seal pl-3" />
+      ) : (
+        text && <p className="border-l-4 border-seal pl-3">{text}</p>
+      )}
     </div>
   );
 }

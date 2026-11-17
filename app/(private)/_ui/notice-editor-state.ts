@@ -144,7 +144,7 @@ export function useEditor(p: EditorProps) {
       return;
     }
     if (answer.conflicts) setConflicts(answer.conflicts);
-    else setMessage("notices.saveFailed");
+    else setMessage(answer.signedOut ? "signedOut.text" : "notices.saveFailed");
   };
   return {
     draft,

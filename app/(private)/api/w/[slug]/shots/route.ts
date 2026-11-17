@@ -29,7 +29,7 @@ export async function POST(
   return withContext("/api/w/[slug]/shots", async (ctx, db) => {
     const now = ctx.now();
     const access = await requireWorkspace(db, slug, requestCookies(request), now);
-    if (!access.ok) return privateError(401, access.reason);
+    if (!access.ok) return privateError(401, "signed_out");
     const { pictures, pick } = body.data;
     const sent = {
       source: "desk" as const,

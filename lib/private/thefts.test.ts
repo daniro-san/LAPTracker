@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
@@ -72,6 +73,7 @@ const typed = (attacker: { uid: number } | { name: string; tag: string }, victim
   time: "13:46",
   stolen: "quest_rewards" as const,
   note: "",
+  requestId: randomUUID(),
 });
 
 describe("the attacker search (issue 321)", () => {
@@ -168,6 +170,18 @@ describe("the Secret Ops report save hook (issues 299, 321)", () => {
     expect(reportInstant("12-31 23:50", new Date("2027-01-02T12:00:00Z"), "Etc/GMT+2")).toEqual(
       new Date("2027-01-01T01:50:00Z"),
     );
+  });
+});
+
+describe("a typed theft sent twice (D100)", () => {
+  it("is stored once when the retry carries the same request id", async () => {
+    const ogs = await signedIn("ogs");
+    const add = typed({ uid: 21 }, 11);
+    expect(await addTheft(db, ogs, add, CLOCK)).toBe("ok");
+    expect(await addTheft(db, ogs, add, CLOCK)).toBe("ok");
+    expect(await listThefts(db, ogs.workspaceId)).toHaveLength(1);
+    expect(await addTheft(db, ogs, typed({ uid: 21 }, 11), CLOCK)).toBe("ok");
+    expect(await listThefts(db, ogs.workspaceId)).toHaveLength(2);
   });
 });
 

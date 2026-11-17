@@ -6,6 +6,7 @@ import type { Db } from "../db";
 import {
   calendarRows,
   deleteEntry,
+  findByRequest,
   findEntry,
   findTheme,
   insertEntry,
@@ -55,7 +56,13 @@ export async function createEntry(
   db: Db,
   access: WorkspaceAccess,
   input: NewEntry,
+  /** Made once per open add sheet (D100): a retry with it answers the first entry's id. */
+  requestId: string,
 ): Promise<{ ok: true; id: number } | { ok: false; code: "theme_exists" }> {
+  // INVARIANT calendar.request-once: a retry after a lost answer finds the first add; the unique index
+  // on (workspace, request id) refuses a second row that arrives at the same moment.
+  const made = await findByRequest(db, access.workspaceId, requestId);
+  if (made !== null) return { ok: true, id: made };
   const base = {
     workspaceId: access.workspaceId,
     kind: input.kind,
@@ -63,6 +70,7 @@ export async function createEntry(
     link: input.link,
     forMembers: input.forMembers,
     createdBy: access.user.id,
+    requestId,
   };
   if (input.kind === "duel") {
     const monday = mondayOf(input.day);

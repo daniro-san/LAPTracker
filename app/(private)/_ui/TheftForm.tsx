@@ -15,6 +15,7 @@ import type { WorkspaceLanguage } from "@/lib/private/dictionary";
 import { serverInstant } from "@/lib/schedule";
 
 import { sheetWords } from "./sheet-words";
+import { RefusalLine, SIGNED_OUT } from "./SignedOut";
 import { postTheft, viewerClock } from "./theft-client";
 import type { TheftWords } from "./theft-data";
 import { AttackerField, VictimField, type Attacker, type Member } from "./TheftFormFields";
@@ -110,6 +111,8 @@ function useTheftForm(props: FormProps) {
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  // One per open sheet (D100): a retry after a lost answer adds nothing new.
+  const [requestId] = useState(() => crypto.randomUUID());
   const { slug, t } = props;
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -127,10 +130,12 @@ function useTheftForm(props: FormProps) {
       time: hhmm(minute),
       stolen,
       note,
+      requestId,
     };
     const r = await postTheft(slug, body);
     setBusy(false);
     if (r === "ok") return props.onSaved();
+    if (r === SIGNED_OUT) return setError(SIGNED_OUT);
     setError(t[`thefts.e.${r}` as keyof TheftWords] ?? t["thefts.e.failed"]);
   };
   const fields = { attacker, setAttacker, victim, setVictim, day, setDay, time, setTime };
@@ -157,13 +162,7 @@ export function TheftForm(props: FormProps) {
       title={t["thefts.add"]}
       words={sheetWords(t)}
       primary={{ label: t["thefts.form.save"], form: "theft-form", disabled: f.busy }}
-      note={
-        f.error && (
-          <p role="status" className="mb-2 text-body-sm font-semibold">
-            {f.error}
-          </p>
-        )
-      }
+      note={f.error && <RefusalLine text={f.error} className="mb-2 text-body-sm font-semibold" />}
     >
       <form id="theft-form" onSubmit={(e) => void f.submit(e)}>
         <div>

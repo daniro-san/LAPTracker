@@ -17,11 +17,13 @@ import type { CardData } from "@/lib/private/member-card";
 import type { ListRow, ListWords } from "./member-list-data";
 import { MemberCard, type EditorContext } from "./MemberCards";
 import { sheetWords } from "./sheet-words";
+import { SIGNED_OUT, SignedOutNote } from "./SignedOut";
 import { useMinute } from "./YourTime";
 
-async function readCard(slug: string, uid: number): Promise<CardData | null> {
+async function readCard(slug: string, uid: number): Promise<CardData | typeof SIGNED_OUT | null> {
   try {
     const res = await fetch(`/api/w/${slug}/members/${uid}`, { cache: "no-store" });
+    if (res.status === 401) return SIGNED_OUT;
     return res.ok ? ((await res.json()) as { card: CardData }).card : null;
   } catch {
     return null;
@@ -37,12 +39,17 @@ export function MemberSheet(props: {
   onClose: () => void;
 }) {
   const { row, words: t, editor } = props;
-  const [card, setCard] = useState<{ uid: number; data: CardData | null } | null>(null);
+  const [card, setCard] = useState<{
+    uid: number;
+    data: CardData | null;
+    signedOut: boolean;
+  } | null>(null);
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     let live = true;
-    void readCard(editor.slug, row.uid).then((data) => {
-      if (live) setCard({ uid: row.uid, data });
+    void readCard(editor.slug, row.uid).then((r) => {
+      const signedOut = r === SIGNED_OUT;
+      if (live) setCard({ uid: row.uid, data: signedOut ? null : r, signedOut });
     });
     return () => {
       live = false;
@@ -73,22 +80,29 @@ export function MemberSheet(props: {
             {t["list.loading"]}
           </p>
         ) : shown.data === null ? (
-          <div className="px-3 py-4">
-            <p role="alert" className="text-body-sm">
-              {t["list.failed"]}
-            </p>
-            <button
-              type="button"
-              onClick={() => setAttempt((n) => n + 1)}
-              className={buttonClass("primary", "mt-2")}
-            >
-              {t["list.retry"]}
-            </button>
-          </div>
+          <NotRead signedOut={shown.signedOut} t={t} onRetry={() => setAttempt((n) => n + 1)} />
         ) : (
           <MemberCard card={shown.data} editor={editor} zoneNow={zoneNow} />
         )}
       </div>
     </Sheet>
+  );
+}
+
+/** The card could not be read: the signed-out note (D99) or "Could not load", and Try again. */
+function NotRead(props: { signedOut: boolean; t: ListWords; onRetry: () => void }) {
+  return (
+    <div className="px-3 py-4">
+      {props.signedOut ? (
+        <SignedOutNote />
+      ) : (
+        <p role="alert" className="text-body-sm">
+          {props.t["list.failed"]}
+        </p>
+      )}
+      <button type="button" onClick={props.onRetry} className={buttonClass("primary", "mt-2")}>
+        {props.t["list.retry"]}
+      </button>
+    </div>
   );
 }

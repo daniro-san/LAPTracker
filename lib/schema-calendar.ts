@@ -58,9 +58,12 @@ export const calendarEntries = pgTable(
     createdAt: tstz("created_at").notNull().defaultNow(),
     rev: integer("rev").notNull().default(0),
     edits: jsonb("edits").$type<FieldEdits>().notNull().default({}),
+    /** The add sheet's request id (D100): a retry of the same add finds this entry instead of a second. */
+    requestId: text("request_id"),
   },
   (t) => [
     index("calendar_entries_workspace_day_idx").on(t.workspaceId, t.day),
+    uniqueIndex("calendar_entries_request_unique").on(t.workspaceId, t.requestId),
     // One Alliance Duel theme per week.
     uniqueIndex("calendar_entries_duel_week_unique")
       .on(t.workspaceId, t.day)

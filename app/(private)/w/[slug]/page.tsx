@@ -16,22 +16,34 @@ import { MAX_PICTURES } from "@/lib/private/import";
 import { toReview, type ReviewItem } from "@/lib/private/import-view";
 import { cardFormats } from "@/lib/private/member-card";
 import { membersView, type MembersView } from "@/lib/private/members";
-import { whoOf } from "@/lib/private/members-list";
+import { needsAWord, whoOf } from "@/lib/private/members-list";
 import { plural } from "@/lib/private/members-sheet";
-import { SLUG } from "@/lib/private/sign-in";
+import { RENEW_MS } from "@/lib/private/session";
+import { returnPath, SLUG } from "@/lib/private/sign-in";
 import { serverDay } from "@/lib/schedule";
 
 import { calendarWords, nextItems } from "../../_ui/calendar-data";
 import { Frame, SignedInFrame, workspaceWords } from "../../_ui/Frame";
 import { digestDays, type NextItem } from "../../_ui/home-digest";
 import { HomeNext } from "../../_ui/HomeNext";
-import { refuse } from "../../_ui/refuse";
+import { nextQuery, refuse } from "../../_ui/refuse";
 import { ToReview } from "../../_ui/ToReview";
 
 const ERRORS = ["denied", "discord", "not_configured"] as const;
 type SignInError = (typeof ERRORS)[number];
 
-function SignIn({ slug, t, error }: { slug: string; t: WorkspaceDictionary; error?: SignInError }) {
+function SignIn({
+  slug,
+  t,
+  error,
+  next,
+}: {
+  slug: string;
+  t: WorkspaceDictionary;
+  error?: SignInError;
+  /** `next=…`: the page asked for before sign-in (D99), or "". */
+  next: string;
+}) {
   return (
     <section aria-labelledby="sign-in" className="mx-auto max-w-md">
       <h1 id="sign-in" className="font-display text-display-lg">
@@ -43,7 +55,10 @@ function SignIn({ slug, t, error }: { slug: string; t: WorkspaceDictionary; erro
           {t[`signin.e.${error}`]}
         </p>
       )}
-      <a href={`/api/w/${slug}/login`} className={buttonClass("primary", "mt-6 w-full text-lg")}>
+      <a
+        href={`/api/w/${slug}/login${next && `?${next}`}`}
+        className={buttonClass("primary", "mt-6 w-full text-lg")}
+      >
         {t["signin.button"]}
       </a>
       <p className="mt-4 text-body-sm text-ink/75">{t["signin.note"]}</p>
@@ -99,7 +114,7 @@ function MembersPart(props: {
     view.thanks.donors.length > 0
       ? (["thanks.donors", view.thanks.donors] as const)
       : (["thanks.activity", view.thanks.activity] as const);
-  const checkins = view.members.filter((m) => whoOf(m).includes("checkin")).length;
+  const checkins = view.members.filter((m) => needsAWord(whoOf(m))).length;
   return (
     <section aria-labelledby="home-members" className="mt-4 border border-rule px-4 py-3">
       <h2 id="home-members" className="font-subhead text-display-sm">
@@ -127,7 +142,7 @@ function MembersPart(props: {
           {checkins === 0 ? (
             <p className="mt-1">{t["members.checkinNone"]}</p>
           ) : (
-            <a href={`${members}?who=checkin`} className={LINK}>
+            <a href={`${members}?order=rank#ml-heading`} className={LINK}>
               {fill(plural(t, "members.checkinCount", checkins, f), { n: checkins })}
             </a>
           )}
@@ -192,7 +207,7 @@ export default async function WorkspacePage({
   const days = digestDays(serverDay(now, { SERVER_TZ: zone }));
   // INVARIANT workspace.access-first: nothing private is read before this check.
   const { access, items, placed, view } = await withPageDb(async (db) => {
-    const access = await requireWorkspace(db, slug, jar, now);
+    const access = await requireWorkspace(db, slug, jar, now, RENEW_MS);
     if (!access.ok) return { access, items: [], placed: [], view: null };
     const [items, placed, view] = await Promise.all([
       toReview(db, access, now),
@@ -201,14 +216,18 @@ export default async function WorkspacePage({
     ]);
     return { access, items, placed, view };
   });
-  if (!access.ok) refuse(slug, access.reason);
+  const query = await searchParams;
+  // The page a refused visitor asked for (refuse.ts), kept through the sign-in.
+  const back = returnPath(slug, typeof query.next === "string" ? query.next : null);
+  // Only a renewal goes on to `back`: signed out, Home shows the sign-in itself.
+  if (!access.ok)
+    refuse(slug, access.reason, access.reason === "expired" ? (back ?? undefined) : undefined);
   const { language, t } = await workspaceWords();
   if (!access.ok || !view) {
-    const e = (await searchParams).e;
-    const error = ERRORS.find((code) => code === e);
+    const error = ERRORS.find((code) => code === query.e);
     return (
       <Frame language={language} t={t}>
-        <SignIn slug={slug} t={t} {...(error && { error })} />
+        <SignIn slug={slug} t={t} next={nextQuery(slug, back)} {...(error && { error })} />
       </Frame>
     );
   }

@@ -324,6 +324,13 @@ const source = {
 } as const;
 
 /** `fill("Last updated at {time}", { time: "14:01" })`; unknown placeholders stay as written. */
+/**
+ * A player's name, or a title someone typed, set inside a sentence: wrapped in FSI … PDI (U+2068, U+2069)
+ * so an Arabic or Hebrew name, or one holding a direction control such as U+202E, cannot reorder the
+ * words, times and counts around it (ADV-12). For text shown on a page; never for copied or exported text.
+ */
+export const isolate = (text: string) => `⁨${text}⁩`;
+
 export function fill(template: string, vars: Record<string, string | number>): string {
   return template.replace(/\{(\w+)\}/g, (all, key: string) =>
     key in vars ? String(vars[key]) : all,

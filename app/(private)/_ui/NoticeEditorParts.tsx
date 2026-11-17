@@ -17,6 +17,7 @@ import type { NoticeField } from "@/lib/private/notice-rules";
 import { AskSheet } from "./AskSheet";
 import type { Editor, EditorProps } from "./notice-editor-state";
 import { smallButton } from "./NoticeBits";
+import { SignedOutNote } from "./SignedOut";
 
 export function Flags({ e, t }: { e: Editor; t: WorkspaceDictionary }) {
   const set = (field: NoticeField, value: string) => e.set(field, value);
@@ -68,10 +69,14 @@ export function SaveBar({ p, e }: { p: EditorProps; e: Editor }) {
   };
   return (
     <div className="sticky bottom-0 z-[5] -mx-4 mt-4 border-t border-rule bg-paper px-4 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:-mx-6 sm:px-6">
-      {e.message && (
-        <Notice tone="fail" className="mb-2">
-          {t[e.message]}
-        </Notice>
+      {e.message === "signedOut.text" ? (
+        <SignedOutNote className="mb-2" />
+      ) : (
+        e.message && (
+          <Notice tone="fail" className="mb-2">
+            {t[e.message]}
+          </Notice>
+        )
       )}
       {/* Always in the page, so a screen reader hears its text change; out of sight while empty. */}
       <p

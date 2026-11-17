@@ -7,6 +7,7 @@ import {
   clockAt,
   factsToAsk,
   keepMembers,
+  needsAWord,
   NO_QUERY,
   orderMembers,
   pastMatch,
@@ -138,6 +139,16 @@ describe("Who", () => {
     expect(whoOf(row({ reasons: [idle] }))).toEqual(["checkin"]);
     expect(whoOf(row({ reasons: [idle], officerStatus: "help" }))).toEqual(["help"]);
     expect(whoOf(row({ awayUntil: "2026-11-20", isNew: true }))).toEqual(["break", "new"]);
+  });
+
+  it("counts Check in and Needs help, never a member on a break, as the list's first group (ADV-9)", () => {
+    const idle = { kind: "might" as const, days: 16 };
+    const counted = (over: Partial<MemberRow>) => needsAWord(whoOf(row(over)));
+    expect(counted({ reasons: [idle] })).toBe(true);
+    expect(counted({ reasons: [idle], officerStatus: "help" })).toBe(true);
+    expect(counted({ reasons: [idle], awayUntil: "2026-11-20" })).toBe(false);
+    expect(counted({ officerStatus: "help", awayUntil: "2026-11-20" })).toBe(false);
+    expect(counted({ isNew: true })).toBe(false);
   });
 });
 

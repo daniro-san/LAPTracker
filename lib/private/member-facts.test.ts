@@ -2,6 +2,7 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
+import { insertFact } from "../repo/member-facts";
 import { findWorkspaceBySlug, recordSignIn, saveWorkspace } from "../repo/workspaces";
 import { dailyReads, dailyRosters } from "../schema";
 import { requireWorkspace, type WorkspaceAccess } from "./access";
@@ -103,6 +104,22 @@ describe("member facts, edited by several officers (#297)", () => {
       { status: "merged", value: "Recruited by Zed\nPrefers Discord\nAway on Sundays" },
       { status: "merged", value: ["en", "pt", "uk"] },
     ]);
+  });
+
+  it("reads stored languages in the app's order, so an editor opened on them starts unchanged", async () => {
+    const ana = await officer("ogs", "ana");
+    // As an old sheet import stored them: the sheet's order, not LANGUAGES order.
+    await insertFact(db, {
+      workspaceId: ana.workspaceId,
+      uid: 1,
+      field: "languages",
+      version: 1,
+      value: ["fr", "uk", "en"],
+      source: "sheet",
+      writtenBy: ana.user.id,
+      writtenAt: NOW,
+    });
+    expect((await factsOf(db, ana)).get(1)?.languages?.value).toEqual(["en", "fr", "uk"]);
   });
 
   it("writes nothing for a member of another alliance, and one workspace never reads another's facts", async () => {

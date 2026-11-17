@@ -17,6 +17,7 @@ import { LANGUAGE_CODE } from "./languages";
 import { translatePlan } from "./notice-draft";
 import type { Editor, EditorProps } from "./notice-editor-state";
 import { sheetWords } from "./sheet-words";
+import { SignedOutNote } from "./SignedOut";
 
 /** Improve writing's tones, in order; a Record, so tsc fails if a tone is left out. */
 const TONE_WORDS: Record<Tone, WorkspaceKey> = {
@@ -144,6 +145,7 @@ function ActionNote({
         {fill(t[reason], { limit: DRAFT_LIMIT })}
       </p>
     );
+  if (e.aiMessage === "signedOut.text") return <SignedOutNote className="mt-1" />;
   if (e.aiMessage)
     return (
       <p role="alert" className="mt-1 text-body-sm font-semibold text-seal">

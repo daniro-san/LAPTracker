@@ -1,7 +1,7 @@
 // The Calendar tab's words, made on the server (issue 300): each entry of a week as data for the client
 // list (title, server time, the instant for the viewer's own clock, tags, the values its edit form starts
 // from), the week's days and the month overview. Dates and numbers are formatted here, never in the browser.
-import { fill } from "@/lib/copy";
+import { fill, isolate } from "@/lib/copy";
 import { DUEL_DAYS, type Field, type Kind, type Placed } from "@/lib/private/calendar-model";
 import { addDays, hhmm, mondayOf, weekdayIndex, zonedInstant } from "@/lib/private/calendar-time";
 import { calendarDates, stOf, titleOf } from "@/lib/private/calendar-words";
@@ -80,7 +80,9 @@ function rolesLine(p: Placed, t: WorkspaceDictionary): string | null {
   const r = p.row;
   if (!r?.coachUid && !r?.secondKind) return null;
   const seat = (role: string, name: string | null | undefined) =>
-    name ? fill(t["calendar.roles.who"], { role, name }) : fill(t["calendar.roles.open"], { role });
+    name
+      ? fill(t["calendar.roles.who"], { role, name: isolate(name) })
+      : fill(t["calendar.roles.open"], { role });
   const second = r.secondKind
     ? t[`calendar.role.${r.secondKind}` as CalendarKey]
     : t["calendar.role.second"];

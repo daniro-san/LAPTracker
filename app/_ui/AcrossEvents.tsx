@@ -228,7 +228,8 @@ export function NameTimeline({
       <ul>
         {names.map((n) => (
           <li key={`${n.tag}|${n.name}`}>
-            {allianceLabel(n.tag, n.name)} · {clock.day(n.firstSeen)} – {clock.day(n.lastSeen)}
+            <bdi>{allianceLabel(n.tag, n.name)}</bdi> · {clock.day(n.firstSeen)} –{" "}
+            {clock.day(n.lastSeen)}
           </li>
         ))}
       </ul>

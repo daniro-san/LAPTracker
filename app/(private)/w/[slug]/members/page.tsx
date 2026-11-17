@@ -20,8 +20,9 @@ import {
   type ListSource,
   type MembersView,
 } from "@/lib/private/members";
-import { pickOrder, pickQuery, whoOf } from "@/lib/private/members-list";
+import { needsAWord, pickOrder, pickQuery, whoOf } from "@/lib/private/members-list";
 import { plural, sheetHeader } from "@/lib/private/members-sheet";
+import { RENEW_MS } from "@/lib/private/session";
 import { SLUG } from "@/lib/private/sign-in";
 import { serverDay } from "@/lib/schedule";
 
@@ -95,7 +96,7 @@ export default async function MembersPage({
   const env = getEnv();
   // INVARIANT workspace.access-first: nothing private is read before this check.
   const { access, view, rows, waiting } = await withPageDb(async (db) => {
-    const access = await requireWorkspace(db, slug, jar, now);
+    const access = await requireWorkspace(db, slug, jar, now, RENEW_MS);
     if (!access.ok) return { access, waiting: 0, view: null, rows: [] };
     const view = await membersView(db, access, now, env.SERVER_TZ);
     return {
@@ -107,7 +108,7 @@ export default async function MembersPage({
     };
   });
   if (!access.ok) {
-    refuse(slug, access.reason);
+    refuse(slug, access.reason, `/w/${slug}/members`);
     redirect(`/w/${slug}`);
   }
   if (!view) notFound();
@@ -156,7 +157,7 @@ function Roster(props: {
   const { slug, view, t, language, now, zone } = props;
   const f = cardFormats(language, zone, now);
   const today = serverDay(now, { SERVER_TZ: zone });
-  const checkins = view.members.filter((m) => whoOf(m).includes("checkin")).length;
+  const checkins = view.members.filter((m) => needsAWord(whoOf(m))).length;
   const [from, to] = [view.week[0] ?? "", view.week[6] ?? ""];
   return (
     <>
@@ -176,7 +177,7 @@ function Roster(props: {
           t["members.checkinNone"]
         ) : (
           <a
-            href={`/w/${slug}/members?who=checkin`}
+            href={`/w/${slug}/members?order=rank#ml-heading`}
             className="inline-flex min-h-11 items-center py-2 font-semibold text-plum underline underline-offset-4"
           >
             {fill(plural(t, "members.checkinCount", checkins, f), { n: checkins })}

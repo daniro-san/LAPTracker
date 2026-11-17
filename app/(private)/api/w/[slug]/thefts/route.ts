@@ -35,6 +35,7 @@ const body = z.discriminatedUnion("action", [
       time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
       stolen: z.literal("quest_rewards").nullable(),
       note,
+      requestId: z.uuid(),
     })
     .strict(),
   z

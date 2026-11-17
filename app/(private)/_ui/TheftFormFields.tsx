@@ -7,7 +7,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { chip, FIELD } from "@/lib/brand/components/controls";
-import { fill } from "@/lib/copy";
+import { fill, isolate } from "@/lib/copy";
 import { searchRoster } from "@/lib/private/roster-search";
 import type { AttackerOption } from "@/lib/private/thefts";
 import { matchName } from "@/lib/screenshot/match-name";
@@ -147,7 +147,7 @@ function TypedOption(props: {
       onClick={() => onChange({ typed, tag: "" })}
       className={`${PICK} mt-1 text-plum underline underline-offset-4`}
     >
-      {fill(t["thefts.form.asTyped"], { name: typed })}
+      {fill(t["thefts.form.asTyped"], { name: isolate(typed) })}
     </button>
   );
 }
@@ -179,7 +179,7 @@ function PlayerSearch({ slug, t, onChange }: AttackerProps) {
             <li key={p.uid}>
               <button type="button" onClick={() => onChange(p)} className={PICK}>
                 <span translate="no">
-                  [{p.tag}] {p.name}
+                  [{p.tag}] <bdi>{p.name}</bdi>
                 </span>
               </button>
             </li>
@@ -196,7 +196,13 @@ export function AttackerField(props: AttackerProps) {
   const { t, value, onChange } = props;
   if (value && "typed" in value) return <TypedAttacker {...props} value={value} />;
   if (value)
-    return <Chosen label={`[${value.tag}] ${value.name}`} t={t} onChange={() => onChange(null)} />;
+    return (
+      <Chosen
+        label={`[${value.tag}] ${isolate(value.name)}`}
+        t={t}
+        onChange={() => onChange(null)}
+      />
+    );
   return <PlayerSearch {...props} />;
 }
 

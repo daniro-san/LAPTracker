@@ -13,6 +13,7 @@ import {
   clockAt,
   keepMembers,
   languagesIn,
+  needsAWord,
   NO_QUERY,
   orderMembers,
   queryString,
@@ -45,7 +46,7 @@ function readOrder(): Order | null {
 const noSubscribe = () => () => {};
 
 /** Check in and Needs help come first in the default order (D75: a friendly word, never a ranking). */
-const needsWord = (r: ListRow) => r.who.includes("checkin") || r.who.includes("help");
+const needsWord = (r: ListRow) => needsAWord(r.who);
 
 /** The address follows the list; it is written again after a sheet's history entry is taken off. */
 function useAddress(address: string) {
@@ -65,13 +66,15 @@ function useAddress(address: string) {
 /** The groups in order: the heading (default order only), the rest, then "—" and On a break. */
 function groupsOf(rows: ListRow[], order: Order) {
   const sorted = orderMembers(rows, order);
-  const heading = order === "rank" ? sorted.ranked.filter(needsWord) : [];
-  const main = order === "rank" ? sorted.ranked.filter((r) => !needsWord(r)) : sorted.ranked;
+  const byRank = order === "rank";
+  // Every member the count above the list names, a member with no rank read included (ADV-9).
+  const heading = byRank ? [...sorted.ranked, ...sorted.noValue].filter(needsWord) : [];
+  const rest = (group: ListRow[]) => (byRank ? group.filter((r) => !needsWord(r)) : group);
   return {
     heading,
     groups: [
-      { key: "main" as const, rows: main },
-      { key: "none" as const, rows: sorted.noValue },
+      { key: "main" as const, rows: rest(sorted.ranked) },
+      { key: "none" as const, rows: rest(sorted.noValue) },
       { key: "break" as const, rows: sorted.onBreak },
     ],
   };

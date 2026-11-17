@@ -73,6 +73,21 @@ export async function insertEntry(
   return row?.id ?? 0;
 }
 
+/** The entry an add with this request id made (D100), if one did. */
+export async function findByRequest(
+  db: Db,
+  workspaceId: number,
+  requestId: string,
+): Promise<number | null> {
+  const [row] = await db
+    .select({ id: calendarEntries.id })
+    .from(calendarEntries)
+    .where(
+      and(eq(calendarEntries.workspaceId, workspaceId), eq(calendarEntries.requestId, requestId)),
+    );
+  return row?.id ?? null;
+}
+
 /** The week's Alliance Duel theme entry, if one exists. */
 export async function findTheme(
   db: Db,
