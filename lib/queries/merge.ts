@@ -200,13 +200,15 @@ async function latestTurnouts(
  * The simulator's page data. `pair` is the two chosen union ids; null gives only the choices. A chosen id
  * with no usable roster among the tracked alliances yields `merge: null` too, and the caller checks the
  * ids against `alliances`. `tracked` defaults to the tracked list; tests pass their own. `events` is the
- * page's own event list (or its read on its way), so the list is not read twice.
+ * page's own event list (or its read on its way), so the list is not read twice. `turnout` false (its flag
+ * off, D91) skips the turnout read: every side's `turnout` is null.
  */
 export async function mergePage(
   db: Db,
   pair: readonly [number, number] | null,
   tracked: readonly number[] = TRACKED,
   events?: Events | PromiseLike<Events>,
+  turnout = true,
 ): Promise<MergePage> {
   const heads = await newestHeads(db, [...tracked]);
   const alliances = [...heads.values()]
@@ -219,7 +221,9 @@ export async function mergePage(
     rosterOf(db, headA),
     rosterOf(db, headB),
     storedCapacities(db, [idA as number, idB as number]),
-    latestTurnouts(db, [idA as number, idB as number], events ?? listEvents(db)),
+    turnout
+      ? latestTurnouts(db, [idA as number, idB as number], events ?? listEvents(db))
+      : new Map<number, MergeTurnout>(),
   ]);
   const side = (head: Head, roster: { power: number | null }[]): MergeSide => {
     return {

@@ -24,16 +24,32 @@ function turnoutOf(db: Db, id: number, snapshots: Phases["snapshots"], shared: S
   return before ? shared(id, (read) => memberTurnoutSoFar(read, id, before.id)) : null;
 }
 
+/** Which war sections the page reads (their flags, D91); one left out is null and its rows are never read. */
+interface Sections {
+  turnout: boolean;
+  carried: boolean;
+}
+
+/** War turnout and kill share vs might share, as reads on their way. Kill share vs might share takes each
+ * row's "with kills" figure from the turnout, so without the turnout it has none. */
+function warReads(db: Db, id: number, detail: Phases, shared: Shared, sections: Sections) {
+  const turnout = Promise.resolve(
+    sections.turnout ? turnoutOf(db, id, detail.snapshots, shared) : null,
+  );
+  return [turnout, sections.carried ? whoCarried(db, detail, turnout) : null] as const;
+}
+
 /**
  * `eventId` null = the home page's event (`homeEvent`). Null page: no such (public) event. `shared` keeps
  * the turnout so far (no End yet) for every viewer; by default it reads every time. `windowMin` is
- * SNAPSHOT_WINDOW_MIN, for `homeEvent`.
+ * SNAPSHOT_WINDOW_MIN, for `homeEvent`. `sections`: which war sections are read.
  */
 export async function getEventPage(
   db: Db,
   eventId: number | null,
   windowMin: number,
   shared: Shared = (_id, load) => load(db),
+  sections: Sections = { turnout: true, carried: true },
 ) {
   const events = await listEvents(db);
   const homeId = homeEvent(events, new Date(), windowMin)?.id ?? null;
@@ -44,7 +60,7 @@ export async function getEventPage(
   const before = detail.snapshots.find((s) => s.phase === "before");
   const after = detail.snapshots.find((s) => s.phase === "after");
   const unionIds = [...new Set(detail.snapshots.flatMap((s) => s.alliances.map((a) => a.unionId)))];
-  const turnoutRead = Promise.resolve(turnoutOf(db, id, detail.snapshots, shared));
+  const [turnoutRead, carriedRead] = warReads(db, id, detail, shared, sections);
   const [names, ranks, changes, members, turnout, carried] = await Promise.all([
     allianceNames(db, unionIds),
     eventRanks(db, id),
@@ -53,7 +69,7 @@ export async function getEventPage(
       : Promise.resolve(new Map<number, RosterChange>()),
     memberMovers(db, detail.snapshots),
     turnoutRead,
-    whoCarried(db, detail, turnoutRead),
+    carriedRead,
   ]);
   const movers = {
     alliances: before && after ? allianceMovers(before.alliances, after.alliances, ranks) : null,

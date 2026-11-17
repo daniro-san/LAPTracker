@@ -5,6 +5,7 @@ import type { RunSummary } from "./collector";
 import { copy, fill } from "./copy";
 import type { Db } from "./db";
 import { eventImage } from "./event-image";
+import { flagsOf } from "./flags";
 import {
   adminEventMessage,
   adminSnapshotMessage,
@@ -47,21 +48,23 @@ async function storeId(db: Db, shared: Shared, channel: "public" | "admin", id: 
   if (id && id !== old) await setDiscordMessageId(db, event.id, channel, id).catch(() => undefined);
 }
 
-/** The End's turnout (#271), read once for the picture and the text; null for the Start, an unread detail or a failed read. */
+/** The End's turnout (#271), read once for the picture and the text; null for the Start, an unread detail,
+ * a failed read or while the `war-turnout` flag is off (D91). */
 async function endTurnout(
   db: Db,
   eventId: number,
   phase: Phase,
   detail: { snapshots: Parameters<typeof memberTurnout>[1] } | null,
+  env: AppContext["env"],
 ) {
-  if (phase !== "after" || !detail) return null;
+  if (phase !== "after" || !detail || !(await flagsOf(env)).has("war-turnout")) return null;
   return memberTurnout(db, detail.snapshots).catch(() => {
     console.error("notify.turnout_failed", { event_id: eventId });
     return null;
   });
 }
 
-async function notifyPublic(db: Db, s: Shared) {
+async function notifyPublic(db: Db, s: Shared, env: AppContext["env"]) {
   const { event, phase, origin } = s.req;
   // getEventDetail reads real events only: the public message never sees a rehearsal.
   const detail = await getEventDetail(db, event.id).catch(() => {
@@ -74,7 +77,7 @@ async function notifyPublic(db: Db, s: Shared) {
   const nextAt = phase === "before" && !event.manual ? event.afterAt : null;
   const beforeAt =
     phase === "after" ? (s.reports.find((r) => r.phase === "before")?.finishedAt ?? null) : null;
-  const turnout = await endTurnout(db, event.id, phase, detail);
+  const turnout = await endTurnout(db, event.id, phase, detail, env);
   // The picture (D58) needs this phase's rows; a failed run or an unread detail sends the text alone.
   const image =
     alliances && alliances.length > 0 && s.run.summary.status !== "failed"
@@ -223,7 +226,7 @@ export async function notifyFinished(
   // A manual round posts publicly only when its toggle is on (D28); the server never allows that
   // together with "admin only", and getEventDetail also refuses an admin-only event.
   if (!req.event.isTest && (!req.event.manual || req.event.postPublic)) {
-    await notifyPublic(db, shared);
+    await notifyPublic(db, shared, ctx.env);
   }
   await notifyAdmin(ctx, db, shared);
 }

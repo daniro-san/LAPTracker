@@ -1,7 +1,8 @@
 // One event's server pulse as a strip of boxes on the server clock (issue 284, D86): a column per
 // 15-minute slot, shared by every strip on the page so noon is noon in each; a bar as high as the slot's
 // share of the event's kills; a hollow stub where the game sent no update; a hairline where nothing could
-// be read; the busiest 30 minutes outlined; the hours in HTML under it; every figure in `PulseDetails`.
+// be read; the busiest 30 minutes outlined; the hours in HTML under it; every figure in `PulseDetails`,
+// which the pages show while the `chart-details` flag is on (D91).
 // A chart under D68 (hand-built, no library, HTML boxes by its amendment of PR 319, labels in HTML, numbers
 // beside it). Nothing is hover-only and nothing scrolls sideways: the columns share the width.
 import type { CSSProperties } from "react";

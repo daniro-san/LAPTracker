@@ -1,8 +1,9 @@
 // "Standing over time" on the alliance page (D90, issue 274): one sentence, then the tracked alliances
 // ranked by might on the newest complete daily read, each with its rank change, might, might growth against
-// the tracked alliances' total, and a small rank line; the ranks day by day sit under Details. Alliance
-// totals only, public. The page's own alliance and the viewer's ("My alliance") are marked.
+// the tracked alliances' total, and a small rank line; the ranks day by day sit under Details while the
+// `chart-details` flag is on (D91). Alliance totals only, public. The page's own alliance and the viewer's ("My alliance") are marked.
 import { fill, type Dictionary } from "@/lib/copy";
+import { isOn } from "@/lib/flags";
 import { withPageDb } from "@/lib/page";
 import { allianceStanding, type Standing as Figures } from "@/lib/queries";
 import type { StandingRow } from "@/lib/standing";
@@ -156,6 +157,7 @@ function NotRanked({ list, copy }: { list: Figures["notRanked"]; copy: Dictionar
 function StandingBody({
   standing,
   unionId,
+  details,
   clock,
   locale,
   copy,
@@ -164,6 +166,8 @@ function StandingBody({
   standing: Figures | null;
   /** The page's own alliance. */
   unionId: number;
+  /** The `chart-details` flag (D91): off, no ranks table under the list. */
+  details: boolean;
   clock: Clock;
   locale: string;
   copy: Dictionary;
@@ -222,7 +226,7 @@ function StandingBody({
             }))}
           />
           <NotRanked list={standing.notRanked} copy={copy} />
-          <RanksTable s={standing} clock={clock} copy={copy} />
+          {details && <RanksTable s={standing} clock={clock} copy={copy} />}
         </>
       )}
     </section>
@@ -239,11 +243,19 @@ export async function AllianceStanding({
   clock: Clock;
   copy: Dictionary;
 }) {
-  const [standing, locale] = await Promise.all([
+  const [standing, locale, details] = await Promise.all([
     withPageDb((db) => allianceStanding(db, new Date())),
     requestLocale(),
+    isOn("chart-details"),
   ]);
   return (
-    <StandingBody standing={standing} unionId={unionId} clock={clock} locale={locale} copy={copy} />
+    <StandingBody
+      standing={standing}
+      unionId={unionId}
+      details={details}
+      clock={clock}
+      locale={locale}
+      copy={copy}
+    />
   );
 }

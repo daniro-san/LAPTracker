@@ -93,6 +93,7 @@ app/img/*           /img/badge/[id] and /img/avatar/[uid]: upstream images serve
 app/ingest/*        PostHog's same-origin proxy (D77), via lib/analytics/ingest.ts.
 lib/analytics/*.ts  PostHog (D77): the typed custom events (events.ts), the browser SDK and replay switch (posthog.ts),
                     before_send (sanitise.ts, pure), the /ingest forwarding (ingest.ts) and the region (region.ts).
+lib/flags.ts        PostHog feature flags (D91), server only: the four flag keys, one cached read of /flags, off on failure.
 lib/images.ts       the two image sources (preset badge id, stored photo URL on its one host), capped fetch, cache headers.
 proxy.ts            per-request CSP nonce (Next 16's middleware); next.config.ts holds the static security headers
 instrumentation.ts  validates the environment once at server start

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { PUBLIC_WEBHOOK, testContext } from "./app-context.test-helpers";
+import { PUBLIC_WEBHOOK, TEST_ENV, testContext } from "./app-context.test-helpers";
 import type { Db } from "./db";
 import { eventImage } from "./event-image";
 import { getEventDetail, memberTurnout, type TurnoutLists } from "./queries";
@@ -32,9 +32,11 @@ const lead = {
 };
 const lists: TurnoutLists = { withKills: [lead], topShare: [lead] };
 const db = {} as Db;
+// The war turnout is sent only while its flag is on (D91); without a PostHog key, LOCAL_FLAGS turns it on.
+const FLAG_ON = { ...TEST_ENV, LOCAL_FLAGS: "war-turnout" };
 
-async function finishAfter() {
-  const { ctx, posts } = testContext(db);
+async function finishAfter(env: typeof TEST_ENV = FLAG_ON) {
+  const { ctx, posts } = testContext(db, env);
   await notifyFinished(
     ctx,
     db,
@@ -94,6 +96,14 @@ describe("the End's turnout in the public message (#276)", () => {
   it("gives null and no line when the event has no turnout", async () => {
     vi.mocked(memberTurnout).mockResolvedValue(null);
     const sent = await finishAfter();
+    expect(vi.mocked(eventImage).mock.calls.at(-1)?.[0].turnout).toBeNull();
+    expect(sent?.content).not.toContain("Most members with kills gained");
+  });
+
+  it("reads and sends no turnout while the war-turnout flag is off", async () => {
+    vi.mocked(memberTurnout).mockClear().mockResolvedValue(lists);
+    const sent = await finishAfter(TEST_ENV);
+    expect(memberTurnout).not.toHaveBeenCalled();
     expect(vi.mocked(eventImage).mock.calls.at(-1)?.[0].turnout).toBeNull();
     expect(sent?.content).not.toContain("Most members with kills gained");
   });

@@ -107,8 +107,12 @@ export const envSchema = z.object({
   // in it. A secret, sent only to Discord as `Authorization: Bot …`. Without it translations go to the channel.
   DISCORD_BOT_TOKEN: optional(z.string().min(20, "expected a Discord bot token")),
   // PostHog (D77): on only on the production deployment (Vercel sets VERCEL_ENV) with the project key set.
+  // The feature flags (D91) are read wherever the key is set.
   VERCEL_ENV: optional(z.string()),
   POSTHOG_KEY: optional(z.string()),
+  // Feature flags turned on without PostHog (D91): comma-separated flag keys, read only when POSTHOG_KEY is
+  // not set (local `next dev`, reviews). Never set it on Vercel.
+  LOCAL_FLAGS: optional(z.string()),
   // Translate and Improve writing in the notices library (D81). Optional: without it the buttons say
   // they are not set up, and nothing is sent anywhere.
   GROQ_API_KEY: optional(z.string().startsWith("gsk_", "expected a gsk_ key")),

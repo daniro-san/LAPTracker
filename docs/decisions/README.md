@@ -103,6 +103,7 @@ The header text above is the old file's, kept as it was. The split it describes 
 - [D88 — Translation files are data: max-lines does not apply to lib/i18n/<tag>.ts (2026-11-16, 08zzzzm, PR #342)](D88-translation-files-are-data-not-line-limited.md)
 - [D89 — Member flow: where members went between the tracked alliances, public, counts only, moves under 5 hidden (2026-11-16, owner, 08zzzzo, issue #275)](D89-member-flow-between-tracked-alliances.md)
 - [D90 — Alliance page: standing against the server over time, a rank list with a small trend per row (2026-11-16, owner, 08zzzzp, issue #274)](D90-alliance-standing-against-the-server.md)
+- [D91 — Four features are switched by PostHog feature flags, read on the server, off unless PostHog says on (2026-11-17, owner, 08zzzzs)](D91-feature-flags-from-posthog.md)
 - [D96 — Screenshot import: one door in (desk upload and a Discord message command), drafts every officer reviews, the picture never kept (2026-11-16, owner, 11k, issue #299)](D96-screenshot-import-drafts-and-discord-command.md)
 - [D97 — The thefts log: Secret Operations thefts per attacker, a follow-up per attacker, no list of our members (2026-11-16, owner, 11j, issue #321)](D97-the-thefts-log.md)
 - [D98 — Members list: compact rows, filters and orders in the browser, details read on open, and the Server time / My time switch (2026-11-17, owner, 11o, issue #337)](D98-members-list-filters-orders-and-the-clock-switch.md)

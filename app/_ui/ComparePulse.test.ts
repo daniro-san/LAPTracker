@@ -28,6 +28,7 @@ const html = (a: EventPulse, b: EventPulse) =>
       data,
       pulses: { a, b },
       everyMin: 15,
+      details: true,
       clock,
       copy: en,
       locale: "en",

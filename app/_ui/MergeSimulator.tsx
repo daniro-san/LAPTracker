@@ -215,10 +215,13 @@ export function mergeAnswer(r: NonNullable<MergePage["merge"]>["result"], copy: 
 
 export function MergeResultView({
   merge,
+  turnout,
   clock,
   copy,
 }: {
   merge: NonNullable<MergePage["merge"]>;
+  /** The `war-turnout` flag (D91): off, the turnout section is left out. */
+  turnout: boolean;
   clock: Clock;
   copy: Dictionary;
 }) {
@@ -238,7 +241,7 @@ export function MergeResultView({
       <Members a={a} b={b} r={r} copy={copy} />
       <Might a={a} b={b} r={r} copy={copy} />
       <Ranks r={r} copy={copy} />
-      <Turnout sides={[a, b]} clock={clock} copy={copy} />
+      {turnout && <Turnout sides={[a, b]} clock={clock} copy={copy} />}
       <p className="mt-6 text-body-sm text-ink/70">
         {[a, b]
           .map(

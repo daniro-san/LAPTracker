@@ -1,9 +1,10 @@
 // "Daily progress" on the player page (issue 270): one summary line (the might change over the last 7
 // days next to the alliance's median member), a might line and a smaller kills line over every reading
 // with the events' Start-to-End windows shaded, a note that war events cost might, and every reading in a
-// table under Details. The same card at every width.
+// table under Details while the `chart-details` flag is on (D91). The same card at every width.
 import type { Dictionary } from "@/lib/copy";
 import { fill } from "@/lib/copy";
+import { isOn } from "@/lib/flags";
 import type { PlayerProgress as Progress, ProgressReading } from "@/lib/queries";
 
 import { LineChart } from "./charts/LineChart";
@@ -126,7 +127,11 @@ function ReadingsTable({
 }
 
 export async function PlayerProgress({ progress, clock }: { progress: Progress; clock: Clock }) {
-  const [copy, locale] = await Promise.all([requestCopy(), requestLocale()]);
+  const [copy, locale, details] = await Promise.all([
+    requestCopy(),
+    requestLocale(),
+    isOn("chart-details"),
+  ]);
   const l = copy.ledger;
   const { readings } = progress;
   const bands = bandsOf(readings);
@@ -163,17 +168,19 @@ export async function PlayerProgress({ progress, clock }: { progress: Progress; 
           </p>
           <h3 className={`mb-1 mt-4 ${LABEL}`}>{l.kills}</h3>
           <LineChart points={pointsOf(readings, "kills")} label={l.kills} small {...chart} />
-          <div className="mt-2">
-            <MoreBar
-              row={{
-                key: "readings",
-                lead: l.progress,
-                metrics: [],
-                detail: <ReadingsTable readings={readings} clock={clock} copy={copy} />,
-              }}
-              copy={copy}
-            />
-          </div>
+          {details && (
+            <div className="mt-2">
+              <MoreBar
+                row={{
+                  key: "readings",
+                  lead: l.progress,
+                  metrics: [],
+                  detail: <ReadingsTable readings={readings} clock={clock} copy={copy} />,
+                }}
+                copy={copy}
+              />
+            </div>
+          )}
         </div>
       )}
     </section>
