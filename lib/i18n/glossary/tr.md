@@ -145,6 +145,9 @@ Words already used in `lib/i18n/tr.ts`. Reuse them so the pages stay consistent;
 | gainer                    | Kills kazanan Members           | `ledger.withKills`, `ledger.topShare`, `ledger.fewGainers` — a member whose Kills rose                                            |
 | Server fight clock        | Sunucu savaş saati              | `ledger.fightClock`, `ledger.fightClockLink` — events side by side on the server clock                                            |
 | Bloc                      | Blok                            | `balance.*` — a group of alliances the reader tries together                                                                      |
+| Standing over time        | Zaman içinde durum              | `standing.title` — the alliance page's rank-over-days section                                                                     |
+| tracked alliances' total  | Takipteki toplam                | `standing.server` — the server row: all tracked alliances together                                                                |
+| rank step up / down       | {n} basamak yukarı / aşağı      | `standing.up`, `standing.down` — places moved; the same form after 1 and after many                                               |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

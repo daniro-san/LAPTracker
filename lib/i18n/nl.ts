@@ -210,6 +210,22 @@ export const nl = {
     trendFew: "Nog niet genoeg dagelijkse metingen voor een trend.",
     day: "Dag",
   },
+  standing: {
+    title: "Stand door de tijd",
+    help: "De gevolgde allianties gerangschikt op might, per dagelijkse meting, met de verandering sinds {from}. Een dag waarop een alliantie niet is gemeten, wordt weggelaten. De server is hier het totaal van de gevolgde allianties.",
+    lead: "{label} staat {rank} op might, {move} sinds {from}.",
+    up: "omhoog {n}",
+    down: "omlaag {n}",
+    held: "ongewijzigd",
+    leadGrowth:
+      "Haar might veranderde sindsdien {growth}; het totaal van de gevolgde allianties veranderde {server}.",
+    server: "Gevolgde allianties",
+    growthSince: "{growth} sinds {from}",
+    trend: "Rang {first} op {from}, {last} op {to}",
+    thisAlliance: "Deze alliantie",
+    detailsHelp: "Rang per dag, oudste eerst: {days}.",
+    few: "Nog niet genoeg dagelijkse metingen om de allianties te vergelijken.",
+  },
   history: {
     title: "Ledengeschiedenis",
     lead: "Elke kaart vergelijkt de ledenlijst met de vorige keer dat die is ingelezen. Wijzigingen daartussen zijn niet te zien.",

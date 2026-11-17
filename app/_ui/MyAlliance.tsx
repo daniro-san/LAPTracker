@@ -82,3 +82,17 @@ export function MyAllianceJump({ tags }: { tags: Record<number, string> }) {
     </a>
   );
 }
+
+/** In a list row: marks the viewer's own alliance with a label, and flags it (`data-mine`) so the row can be tinted. */
+export function MineMark({ unionId }: { unionId: number }) {
+  const copy = useCopy();
+  if (useMyAlliance() !== unionId) return null;
+  return (
+    <span
+      data-mine=""
+      className="ml-2 inline-block bg-yarn/15 px-1.5 text-xs font-medium text-plum"
+    >
+      {copy.ledger.myAlliance}
+    </span>
+  );
+}

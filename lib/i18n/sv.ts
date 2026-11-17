@@ -178,6 +178,22 @@ export const sv = {
     trendFew: "Inte tillräckligt med dagsavläsningar för en trend än.",
     day: "Dag",
   },
+  standing: {
+    title: "Ställningen över tid",
+    help: "De bevakade allianserna placerade efter Might från varje dagsavläsning, med förändringen sedan {from}. En dag då en allians inte lästes räknas inte med. Servern här är de bevakade allianserna tillsammans.",
+    lead: "{label} är {rank} efter Might, {move} sedan {from}.",
+    up: "upp {n}",
+    down: "ner {n}",
+    held: "oförändrad",
+    leadGrowth:
+      "Dess Might har ändrats {growth} sedan dess; de bevakade allianserna tillsammans har ändrats {server}.",
+    server: "Bevakade allianser",
+    growthSince: "{growth} sedan {from}",
+    trend: "Placering {first} den {from}, {last} den {to}",
+    thisAlliance: "Den här alliansen",
+    detailsHelp: "Placering varje dag, äldst först: {days}.",
+    few: "Inte tillräckligt med dagsavläsningar för att jämföra allianserna än.",
+  },
   history: {
     title: "Medlemshistorik",
     lead: "Varje kort jämför medlemslistan med den som lästes innan. Ändringar däremellan syns inte.",

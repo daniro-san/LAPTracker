@@ -206,6 +206,22 @@ export const ptBR = {
     trendFew: "Ainda não há leituras diárias suficientes para desenhar uma tendência.",
     day: "Dia",
   },
+  standing: {
+    title: "Classificação ao longo do tempo",
+    help: "As alianças acompanhadas, ordenadas por Might a partir da leitura de cada dia, com a mudança desde {from}. Um dia em que uma aliança não foi lida fica de fora. O servidor aqui é o total das alianças acompanhadas.",
+    lead: "{label} está em {rank} por Might, {move} desde {from}.",
+    up: "subiu {n} posições",
+    down: "caiu {n} posições",
+    held: "sem mudança",
+    leadGrowth:
+      "O Might dela mudou {growth} desde então; o total das alianças acompanhadas mudou {server}.",
+    server: "Alianças acompanhadas",
+    growthSince: "{growth} desde {from}",
+    trend: "Posição {first} em {from}, {last} em {to}",
+    thisAlliance: "Esta aliança",
+    detailsHelp: "Posição em cada dia, do mais antigo para o mais recente: {days}.",
+    few: "Ainda não há leituras diárias suficientes para comparar as alianças.",
+  },
   history: {
     title: "Histórico de membros",
     lead: "Cada cartão compara a lista de membros com a leitura anterior. Mudanças entre as duas leituras não aparecem.",

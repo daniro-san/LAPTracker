@@ -99,3 +99,4 @@ The header text above is the old file's, kept as it was. The split it describes 
 - [D85 — Server power balance: a public page of alliance-level shares, a hypothetical bloc builder and the top 3's share over time (2026-11-16, owner, 08zzzzm, issue #283)](D85-server-power-balance-and-a-hypothetical-bloc-builder.md)
 - [D87 — The officer's profile: a chosen display name, "This is me" and the theme in the workspace (2026-11-16, owner, 11n, issue #334)](D87-officer-profile-display-name-and-player-link.md)
 - [D88 — Translation files are data: max-lines does not apply to lib/i18n/<tag>.ts (2026-11-16, 08zzzzm, PR #342)](D88-translation-files-are-data-not-line-limited.md)
+- [D90 — Alliance page: standing against the server over time, a rank list with a small trend per row (2026-11-16, owner, 08zzzzp, issue #274)](D90-alliance-standing-against-the-server.md)

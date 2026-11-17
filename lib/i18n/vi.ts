@@ -207,6 +207,22 @@ export const vi = {
     trendFew: "Chưa đủ lần đọc hằng ngày để vẽ xu hướng.",
     day: "Ngày",
   },
+  standing: {
+    title: "Thứ hạng theo thời gian",
+    help: "Các liên minh theo dõi xếp theo Lực Chiến từ lần đọc mỗi ngày, kèm thay đổi kể từ {from}. Ngày mà một liên minh không được đọc thì không tính. Máy chủ ở đây là tổng của các liên minh theo dõi.",
+    lead: "{label} đứng hạng {rank} theo Lực Chiến, {move} từ {from}.",
+    up: "lên {n} hạng",
+    down: "xuống {n} hạng",
+    held: "không đổi",
+    leadGrowth:
+      "Lực Chiến của liên minh này đổi {growth} kể từ đó; tổng các liên minh theo dõi đổi {server}.",
+    server: "Máy chủ",
+    growthSince: "{growth} kể từ {from}",
+    trend: "Hạng {first} ngày {from}, {last} ngày {to}",
+    thisAlliance: "Liên minh này",
+    detailsHelp: "Hạng mỗi ngày, cũ nhất trước: {days}.",
+    few: "Chưa đủ lần đọc hằng ngày để so sánh các liên minh.",
+  },
   history: {
     title: "Lịch sử thành viên",
     lead: "Mỗi thẻ so sánh danh sách thành viên với lần đọc trước đó. Thay đổi xảy ra giữa hai lần thì không được ghi nhận.",

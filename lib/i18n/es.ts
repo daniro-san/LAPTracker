@@ -209,6 +209,22 @@ export const es = {
     trendFew: "Todavía no hay suficientes lecturas diarias para trazar una tendencia.",
     day: "Día",
   },
+  standing: {
+    title: "Clasificación en el tiempo",
+    help: "Las alianzas seguidas ordenadas por Might según la lectura de cada día, con el cambio desde {from}. Un día en que no se leyó una alianza queda fuera. El servidor aquí es el total de las alianzas seguidas.",
+    lead: "{label} está {rank} por Might, {move} desde {from}.",
+    up: "sube {n} puestos",
+    down: "baja {n} puestos",
+    held: "sin cambios",
+    leadGrowth:
+      "Su Might cambió {growth} desde entonces; el total de las alianzas seguidas cambió {server}.",
+    server: "Alianzas seguidas",
+    growthSince: "{growth} desde {from}",
+    trend: "Puesto {first} el {from}, {last} el {to}",
+    thisAlliance: "Esta alianza",
+    detailsHelp: "Puesto de cada día, del más antiguo al más reciente: {days}.",
+    few: "Todavía no hay suficientes lecturas diarias para comparar las alianzas.",
+  },
   history: {
     title: "Historial de miembros",
     lead: "Cada tarjeta compara la lista de miembros con la anterior. Los cambios entre una lectura y otra no se ven.",

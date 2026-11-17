@@ -210,6 +210,22 @@ export const tr = {
     trendFew: "Trend çizmek için henüz yeterli günlük okuma yok.",
     day: "Gün",
   },
+  standing: {
+    title: "Zaman içinde durum",
+    help: "Takip edilen ittifaklar, her günün okumasındaki Might’a göre sıralanır; {from} sonrası değişim de gösterilir. Bir ittifakın okunmadığı gün dışarıda bırakılır. Buradaki sunucu, takip edilen ittifakların toplamıdır.",
+    lead: "{label}, Might’a göre {rank}; {from} sonrası {move}.",
+    up: "{n} basamak yukarı",
+    down: "{n} basamak aşağı",
+    held: "değişmedi",
+    leadGrowth:
+      "Ondan beri Might’ı {growth} değişti; takip edilen ittifakların toplamı {server} değişti.",
+    server: "Takipteki toplam",
+    growthSince: "{from} sonrası {growth}",
+    trend: "{from} itibarıyla sıra {first}, {to} itibarıyla {last}",
+    thisAlliance: "Bu ittifak",
+    detailsHelp: "Her günkü sıra, en eskisi önce: {days}.",
+    few: "İttifakları karşılaştırmak için henüz yeterli günlük okuma yok.",
+  },
   history: {
     title: "Üye geçmişi",
     lead: "Her kart, üye listesini bir önce okunanla karşılaştırır. Aradaki değişiklikler görülmez.",

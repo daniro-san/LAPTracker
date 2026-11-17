@@ -212,6 +212,22 @@ export const fr = {
     trendFew: "Pas encore assez de relevés quotidiens pour tracer une tendance.",
     day: "Jour",
   },
+  standing: {
+    title: "Classement au fil du temps",
+    help: "Les alliances suivies classées par Might d’après le relevé de chaque jour, avec l’évolution depuis le {from}. Un jour où une alliance n’a pas été relevée est laissé de côté. Ici, le serveur est le total des alliances suivies.",
+    lead: "{label} est {rank} par Might, {move} depuis le {from}.",
+    up: "en hausse de {n}",
+    down: "en baisse de {n}",
+    held: "sans changement",
+    leadGrowth:
+      "Son Might a évolué de {growth} depuis, et le total des alliances suivies de {server}.",
+    server: "Alliances suivies",
+    growthSince: "{growth} depuis le {from}",
+    trend: "Rang {first} le {from}, {last} le {to}",
+    thisAlliance: "Cette alliance",
+    detailsHelp: "Rang chaque jour, du plus ancien au plus récent : {days}.",
+    few: "Pas encore assez de relevés quotidiens pour comparer les alliances.",
+  },
   history: {
     title: "Historique des membres",
     lead: "Chaque carte compare la liste des membres à celle relevée juste avant. Les changements intervenus entre-temps ne sont pas vus.",

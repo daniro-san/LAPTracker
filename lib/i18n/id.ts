@@ -208,6 +208,22 @@ export const idID = {
     trendFew: "Pembacaan harian belum cukup untuk menggambar tren.",
     day: "Hari",
   },
+  standing: {
+    title: "Klasemen dari waktu ke waktu",
+    help: "Aliansi yang dilacak diurutkan menurut Might dari pembacaan tiap hari, dengan perubahan sejak {from}. Hari ketika sebuah aliansi tidak terbaca tidak dihitung. Server di sini adalah total aliansi yang dilacak.",
+    lead: "{label} di peringkat {rank} menurut Might, {move} sejak {from}.",
+    up: "naik {n}",
+    down: "turun {n}",
+    held: "tidak berubah",
+    leadGrowth:
+      "Might-nya berubah {growth} sejak itu; total aliansi yang dilacak berubah {server}.",
+    server: "Aliansi dilacak",
+    growthSince: "{growth} sejak {from}",
+    trend: "Peringkat {first} pada {from}, {last} pada {to}",
+    thisAlliance: "Aliansi ini",
+    detailsHelp: "Peringkat tiap hari, dari yang paling lama: {days}.",
+    few: "Pembacaan harian belum cukup untuk membandingkan aliansi.",
+  },
   history: {
     title: "Riwayat anggota",
     lead: "Setiap kartu membandingkan daftar anggota dengan yang dibaca sebelumnya. Perubahan di antaranya tidak terlihat.",

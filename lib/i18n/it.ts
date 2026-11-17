@@ -209,6 +209,22 @@ export const itIT = {
     trendFew: "Ancora poche letture giornaliere per tracciare un andamento.",
     day: "Giorno",
   },
+  standing: {
+    title: "Graduatoria nel tempo",
+    help: "Le alleanze seguite in classifica per Might, dalla lettura di ogni giorno, con la variazione dal {from}. Un giorno in cui un’alleanza non è stata letta viene escluso. Il server qui è il totale delle alleanze seguite.",
+    lead: "{label} è {rank} per Might, {move} dal {from}.",
+    up: "in salita di {n}",
+    down: "in discesa di {n}",
+    held: "invariato",
+    leadGrowth:
+      "Il suo Might è cambiato di {growth} da allora; il totale delle alleanze seguite è cambiato di {server}.",
+    server: "Alleanze seguite",
+    growthSince: "{growth} dal {from}",
+    trend: "Posizione {first} il {from}, {last} il {to}",
+    thisAlliance: "Questa alleanza",
+    detailsHelp: "Posizione di ogni giorno, dal più vecchio: {days}.",
+    few: "Ancora troppe poche letture giornaliere per confrontare le alleanze.",
+  },
   history: {
     title: "Storico dei membri",
     lead: "Ogni scheda confronta l’elenco dei membri con quello letto in precedenza. I cambi intermedi non si vedono.",

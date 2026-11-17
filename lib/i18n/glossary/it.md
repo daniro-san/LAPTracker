@@ -246,6 +246,9 @@ Words already used in `lib/i18n/it.ts`. Reuse them so the pages stay consistent;
 | Gainers                   | guadagni                              | `ledger.fewGainers`, `ledger.topShareHelp` — members whose Kills rose; `ledger.withKills` says "Kills guadagnate"                |
 | Server might              | Might totale                          | `balance.total` — label; prose says "del Might del server" (`balance.blocShare`, `balance.lead`)                                 |
 | Bloc                      | Blocco                                | `balance.bloc`, `balance.noBloc`, `balance.addTo` — a hypothetical group of alliances on the balance page                        |
+| Standing over time        | Graduatoria nel tempo                 | `standing.title` — the alliance page's rank section                                                                              |
+| Tracked alliances         | Alleanze seguite                      | `standing.server`, `standing.help`, `standing.leadGrowth` — the server total                                                     |
+| Up / down (places)        | in salita di n / in discesa di n      | `standing.up`, `standing.down` — a rank change, no plural; `standing.lead` reads "…, in salita di 2 dal 9 nov."                  |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.
