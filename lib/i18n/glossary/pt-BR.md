@@ -130,6 +130,7 @@ Words already used in `lib/i18n/pt-BR.ts`. Reuse them so the pages stay consiste
 | Live                      | Ao vivo                            | `ledger.live` — the live event's label                                                 |
 | gainer (Kills rose)       | ganhador                           | `ledger.topShareHelp`, `ledger.fewGainers` — a member whose Kills rose in the event    |
 | fight clock               | relógio de lutas                   | `ledger.fightClock`, `ledger.fightClockLink` — the server's events on one clock        |
+| tracked alliance          | aliança acompanhada                | `balance.*`, `compare.notTracked`, `standing.*` — an alliance the ledger follows       |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

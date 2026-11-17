@@ -108,6 +108,7 @@ Words already used in `lib/i18n/es.ts`. Reuse them so the pages stay consistent;
 | percentage points (pts)   | pp                                 | `ledger.carriedPoints` — after a gap: +6.1 pp                                                 |
 | Bloc                      | Bloque                             | `balance.bloc`, `addTo`, `removeFrom` — a hypothetical group of alliances on the balance page |
 | Server might              | Might total                        | `balance.total` — the server's summed Might, a label                                          |
+| Standing                  | Clasificación                      | `standing.title`, `ledger.liveStandings` — the alliances ranked over time                     |
 | English                   | es                                 | Key and use                                                                                   |
 | ------------------------- | ---------------------------------- | -----------------------------------------------------------------------------------------     |
 | Server 325 · Event Ledger | Servidor 325 · Registro de eventos | `site.ledger` — the page title                                                                |

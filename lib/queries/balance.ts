@@ -18,7 +18,13 @@ export interface PowerBalance {
   trend: ConcentrationPoint[];
 }
 
-export async function powerBalance(db: Db, now: Date): Promise<PowerBalance> {
+/** One usable daily roster's alliance figures (totals only). */
+export interface DailyAlliance extends BalanceAlliance {
+  day: string;
+}
+
+/** Every usable daily roster of the last `BALANCE_DAYS` days, newest day first. Shared with the standing (D90). */
+export async function dailyAlliances(db: Db, now: Date): Promise<DailyAlliance[]> {
   const since = new Date(now.getTime() - BALANCE_DAYS * 86_400_000).toISOString().slice(0, 10);
   const rows = await db
     .select({
@@ -34,12 +40,16 @@ export async function powerBalance(db: Db, now: Date): Promise<PowerBalance> {
     .from(dailyRosters)
     .where(and(dailyFit, isNotNull(dailyRosters.totalPower), gte(dailyRosters.readDay, since)))
     .orderBy(desc(dailyRosters.readDay));
-  const usable = rows.map((r) => ({
+  return rows.map((r) => ({
     ...r,
     might: r.might ?? 0,
     members: r.members ?? 0,
     at: r.at ?? new Date(`${r.day}T00:00:00Z`),
   }));
+}
+
+export async function powerBalance(db: Db, now: Date): Promise<PowerBalance> {
+  const usable = await dailyAlliances(db, now);
   // Newest first, so the first row of an alliance is its newest read.
   const newest = new Map<number, (typeof usable)[number]>();
   for (const r of usable) if (!newest.has(r.unionId)) newest.set(r.unionId, r);

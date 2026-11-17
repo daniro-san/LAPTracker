@@ -67,6 +67,7 @@ Words already used in `lib/i18n/ru.ts`. Reuse them so the pages stay consistent;
 | Merge                     | слияние                     | `merge.link`, `merge.lead` — two alliances counted as one                                   |
 | Kill share / might share  | доля убийств / доля мощи    | `ledger.carried*` — an alliance's share of Kills gained, and of Might at Start              |
 | pts (percentage points)   | п.п.                        | `ledger.carriedPoints`, `ledger.carriedRatioHelp` — the gap between two shares              |
+| Standing over time        | Места во времени            | `standing.title` — the alliance's rank by might on each day                                 |
 | Member flow               | Переходы участников         | `flow.title` — the page title; moves between tracked alliances                              |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).

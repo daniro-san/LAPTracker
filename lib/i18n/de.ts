@@ -237,6 +237,22 @@ export const de = {
     trendFew: "Noch nicht genug Tagesabrufe für einen Verlauf.",
     day: "Tag",
   },
+  standing: {
+    title: "Rangverlauf",
+    help: "Die erfassten Allianzen nach Might, aus jedem Tagesabruf, mit der Änderung seit {from}. Ein Tag, an dem eine Allianz nicht abgerufen wurde, fehlt. Der Server ist hier die Summe der erfassten Allianzen.",
+    lead: "Seit {from} ist {label} nach Might auf {rank}, {move}.",
+    up: "um {n} nach oben",
+    down: "um {n} nach unten",
+    held: "unverändert",
+    leadGrowth:
+      "Das Might der Allianz hat sich seitdem um {growth} verändert; die Summe der erfassten Allianzen um {server}.",
+    server: "Erfasste Allianzen",
+    growthSince: "{growth} seit {from}",
+    trend: "Rang {first} am {from}, {last} am {to}",
+    thisAlliance: "Diese Allianz",
+    detailsHelp: "Rang an jedem Tag, der älteste zuerst: {days}.",
+    few: "Noch nicht genug Tagesabrufe, um die Allianzen zu vergleichen.",
+  },
   history: {
     title: "Mitgliederverlauf",
     lead: "Jede Karte vergleicht die Mitgliederliste mit der davor abgerufenen. Änderungen dazwischen bleiben unbemerkt.",

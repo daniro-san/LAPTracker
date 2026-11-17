@@ -168,6 +168,8 @@ Words already used in `lib/i18n/de.ts`. Reuse them so the pages stay consistent;
 | Support player            | Support-Spieler              | `ledger.foughtHelp` — a player who gains no kills                                          |
 | Bloc                      | Block                        | `balance.bloc` — a hypothetical group of alliances, A or B                                 |
 | Server might              | Server-Might                 | `balance.total`, `balance.shares` — Might stays English                                    |
+| Standing over time        | Rangverlauf                  | `standing.title` — the alliance page's rank-by-day section                                 |
+| tracked alliances         | erfasste Allianzen           | `standing.server`, `standing.help`, `standing.leadGrowth` — the alliances the ledger reads |
 | Member flow               | Mitgliederfluss              | `flow.title`, `flow.lead` — moves between tracked alliances                                |
 | New / Left / Stayed       | Neu / Ausgetr. / Geblieben   | `flow.rowNew`, `flow.colLeft` (Ausgetr. as a column head), `flow.stayed` — the flow matrix |
 
