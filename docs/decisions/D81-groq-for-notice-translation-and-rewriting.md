@@ -25,12 +25,16 @@ Why: the OGs leadership reads English, Portuguese or French, and posts each noti
 - **Logs.** `privateLog` only: `notices.translate.ok`, `notices.improve.ok`, and `….timeout` / `….busy` / `….failed`, each with the time taken in ms. Never the text.
 - **Failures.** A timeout answers 504 ("The translator took too long. Try again in a minute."), a 429 that the second model also answers is 429 ("The translator is busy."), anything else 502 ("…did not answer this time. Try again, or write it yourself."). Nothing is retried beyond the second model. The route declares `maxDuration = 60`: two models at 15 s each, at worst.
 - **Limits and cost.** Groq's free tier: 1,000 requests a day and 8,000 tokens a minute per model (issue #305). A Translate into two languages is two requests (in parallel); a rewrite or a single "Translate from …" is one. The bake-off measured about 600 tokens per translation, so about 20 translations a day is about 12K tokens. Measured in 11i: EN→PT and FR of a 369-character notice took 1.0–1.1 s on the server and 1.4–2.0 s from click to drafts, across three runs. No card, no cost.
-- **Translation quality on terse weekly lists (open).** On an invented notice shaped like the alliance's weekly Alliance Duel plan ("Mon | SCOUTING: …" to "Sat | …", a "HOMEWORK:" line), at `reasoning_effort: "low"`, four runs per language, 2026-11-16:
-  - every run translated the weekday abbreviations and HOMEWORK, and French always wrote "DUEL D’ALLIANCE";
-  - Portuguese wrote "DUEL DA ALIANÇA" (not "DUELO") in all four;
-  - the capitals headings (SCOUTING, BUILDING) and some phrases stayed in English in some runs and not in others.
+- **Own names are put in before the model sees the text; `reasoning_effort` stays `"low"`** (coordinator's decision, 2026-11-16: the quota matters more).
+  - `withOwnNames` replaces each `TRANSLATED_TERMS` term in the officer's text with the target language's name before the request, in the case it was written: "ALLIANCE DUEL" becomes "DUELO DA ALIANÇA" (pt-BR) or "DUEL D’ALLIANCE" (fr); "Alliance Duel" becomes "Duelo da Aliança" or "Duel d’alliance"; lower case stays lower case.
+  - The prompt says that words already in the target language stay as they are. On the invented weekly notice below, the real model then printed "DUELO DA ALIANÇA" (it had written "DUEL DA ALIANÇA" in all four earlier runs).
+  - At `"medium"`, one diagnostic call per language gave a complete Portuguese answer. But it used 2,100–2,700 tokens per request instead of about 600, close to the free tier's 8,000 tokens a minute and to the 2,000-token cap, so it is not used.
+- **Known, left to the officer's review** (the invented notice shaped like the alliance's weekly Alliance Duel plan, "Mon | SCOUTING: …" to "Sat | …" and a "HOMEWORK:" line, five runs per language at `"low"`, 2026-11-16):
+  - weekdays were translated in every run;
+  - capitals headings (SCOUTING, BUILDING) stayed in English in some runs;
+  - in two of the five French runs most lines stayed in English.
 
-  The same prompt at `"medium"` gave a complete Portuguese answer ("DUELO DA ALIANÇA", every phrase translated, item names kept), and French still kept the capitals headings. It used 2,100–2,700 tokens per request instead of about 600, close to the free tier's 8,000 tokens a minute and to the 2,000-token completion cap. So the setting stays `"low"` until the owner decides; the officer reviews every draft.
+  The draft shows it, and the officer fixes it or presses Translate again.
 
 - **Analytics.** One more custom event (D77), `ws_notice_translated`, with no properties: Translate filled drafts. D77 itself is not edited.
 - **No new dependency.** Two `fetch` calls and `zod`, which the project already has.

@@ -64,6 +64,7 @@ export const TRANSLATE_SYSTEM = [
         `${term} (${term.toUpperCase()}) = ${to["pt-BR"]} (${to["pt-BR"].toLocaleUpperCase("pt-BR")}) in Portuguese, ${to.fr} (${to.fr.toLocaleUpperCase("fr")}) in French`,
     )
     .join("; ")}.`,
+  "- Words already written in the target language, such as these terms' own names, stay exactly as they are.",
   "- Only the decimal separator of a number may follow the target language.",
   "Example of these rules, English, then Portuguese, then French:",
   "ALLIANCE DUEL tomorrow / Wed | REMINDER: use your Construction Speedups",
@@ -86,6 +87,28 @@ export const improveSystem = (limit: number): string =>
     "- Output only the rewritten text, without the <text> tags: no quotes, no notes, no explanation.",
   ].join("\n");
 
+/** The found text's case on the name: ALL CAPS and lower case carry over; anything else keeps the name's own. */
+function caseOf(found: string, name: string, language: WritingLanguage): string {
+  if (found === found.toLocaleUpperCase(language)) return name.toLocaleUpperCase(language);
+  if (found === found.toLocaleLowerCase(language)) return name.toLocaleLowerCase(language);
+  return name;
+}
+
+/**
+ * Each TRANSLATED_TERMS term already in the target language's own name before the model sees it, in the
+ * case it was written ("ALLIANCE DUEL" → "DUELO DA ALIANÇA"), so the name does not depend on the model.
+ */
+export function withOwnNames(text: string, to: WritingLanguage): string {
+  if (to === "en") return text;
+  return Object.entries(TRANSLATED_TERMS).reduce((out, [term, names]) => {
+    const pattern = new RegExp(
+      `\\b${term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/ /g, "\\s+")}\\b`,
+      "gi",
+    );
+    return out.replace(pattern, (found) => caseOf(found, names[to], to));
+  }, text);
+}
+
 /**
  * What a game's notice board can show, whatever the model sent: the narrow no-break space (U+202F) becomes
  * the French no-break space (U+00A0), or a plain space outside French; the non-breaking hyphen (U+2011) a
@@ -107,7 +130,7 @@ export async function translateText(
 ): Promise<string> {
   const answer = await model.complete({
     system: TRANSLATE_SYSTEM,
-    user: `Translate from ${NAME[from]} to ${NAME[to]}:\n\n${wrap(text)}`,
+    user: `Translate from ${NAME[from]} to ${NAME[to]}:\n\n${wrap(withOwnNames(text, to))}`,
   });
   return plainText(answer, to);
 }

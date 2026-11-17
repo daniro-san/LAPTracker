@@ -153,7 +153,7 @@ Issues #304 (notices library) and #305 (translation of officer-written text, Imp
 8. **A fallback to the second model is not logged on its own**, only the outcome.
 9. `lib/schema.ts` is at about 278 of 300 counted lines. A new table belongs in its own schema module listed in `drizzle.config.ts` (the `lib/schema-notices.ts` pattern).
 
-10. **Translation of terse weekly lists is not reliable at `reasoning_effort: "low"`** (D81): Portuguese writes "DUEL DA ALIANÇA", and capitals headings sometimes stay in English. `"medium"` fixes Portuguese but costs about four times the tokens, close to the free tier's 8,000 a minute and to the 2,000-token cap. Owner's call; officers review every draft meanwhile.
+10. **Terse weekly lists at `reasoning_effort: "low"`** (kept, coordinator's decision; D81). `withOwnNames` puts "DUELO DA ALIANÇA" / "DUEL D’ALLIANCE" in before the request, and the real model now prints them. Known and left to officer review: capitals headings (SCOUTING) stay in English in some runs, and in 2 of 5 French runs most lines did.
 11. **Official PT/FR item names** (Raven Essence, Construction Speedups, Covert Operations …) are being asked of the owner; they move from the do-not-translate list to `TRANSLATED_TERMS` when known.
 12. The view page no longer saves on its own: "Keep as is" lives in the editor and goes through its save (the review's `keep()` finding).
 

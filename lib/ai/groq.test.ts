@@ -9,6 +9,7 @@ import {
   plainText,
   TRANSLATE_SYSTEM,
   translateText,
+  withOwnNames,
 } from "./notice-writing";
 
 type Answer = (init: RequestInit | undefined) => Response | Promise<Response>;
@@ -173,7 +174,22 @@ describe("the notice prompts (D81)", () => {
     const { calls, fetcher } = fake(ok("DUEL D’ALLIANCE cette semaine"));
     await translateText(groqChat("gsk_test", fetcher), "en", "fr", notice);
     expect((calls[0]?.body.messages as { content: string }[])[1]?.content).toBe(
-      `Translate from English to French:\n\n<text>\n${notice}\n</text>`,
+      `Translate from English to French:\n\n<text>\n${notice.replace("ALLIANCE DUEL", "DUEL D’ALLIANCE")}\n</text>`,
+    );
+  });
+
+  it("put a term's own name in the text before the model sees it, in the case it was written", () => {
+    const text =
+      "ALLIANCE DUEL tomorrow. The Alliance Duel ends Sunday; the alliance duel points count.";
+    expect(withOwnNames(text, "pt-BR")).toBe(
+      "DUELO DA ALIANÇA tomorrow. The Duelo da Aliança ends Sunday; the duelo da aliança points count.",
+    );
+    expect(withOwnNames(text, "fr")).toBe(
+      "DUEL D’ALLIANCE tomorrow. The Duel d’alliance ends Sunday; the duel d’alliance points count.",
+    );
+    expect(withOwnNames(text, "en")).toBe(text);
+    expect(TRANSLATE_SYSTEM).toContain(
+      "Words already written in the target language, such as these terms' own names, stay exactly as they are.",
     );
   });
 
