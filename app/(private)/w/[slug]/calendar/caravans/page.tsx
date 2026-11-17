@@ -1,5 +1,6 @@
 // /w/[slug]/calendar/caravans (issue 300): the week's Alliance Caravans and their picks, one Coachman plus a
 // VIP or a Guardian, from the alliance's own newest roster (D71: only its own members). `?week=` as on Week.
+import { getEnv } from "@/lib/env";
 import { calendarDays, pickableMembers } from "@/lib/private/calendar";
 import { addDays } from "@/lib/private/calendar-time";
 import { caravanSuggestions } from "@/lib/private/caravans";
@@ -27,7 +28,11 @@ export default async function CaravansPage({
         pickableMembers(db, access),
       ]);
       const caravans = days.filter((p) => p.entry.kind === "caravan");
-      return { caravans, roster, suggested: await caravanSuggestions(db, access, caravans) };
+      return {
+        caravans,
+        roster,
+        suggested: await caravanSuggestions(db, access, caravans, getEnv().SERVER_TZ),
+      };
     },
     "calendar/caravans",
   );

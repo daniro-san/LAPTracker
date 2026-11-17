@@ -7,6 +7,7 @@ import { importEn } from "./dictionary.import";
 import { membersEn } from "./dictionary.members";
 import { noticesEn } from "./dictionary.notices";
 import { pt } from "./dictionary.pt-BR";
+import { rollEn } from "./dictionary.rollcall";
 import { shotsEn } from "./dictionary.shots";
 import { theftsEn } from "./dictionary.thefts";
 import { translateEn } from "./dictionary.translate";
@@ -17,6 +18,7 @@ export type WorkspaceLanguage = (typeof WORKSPACE_LANGUAGES)[number];
 const en = {
   ...calendarEn,
   ...membersEn,
+  ...rollEn,
   "app.name": "Officers’ Desk",
   "tab.aria": "Sections",
   "tab.home": "Home",
@@ -207,6 +209,8 @@ const en = {
   "facts.away": "Away",
   "facts.notes": "Notes",
   "facts.until": "until {date}",
+  "facts.awayRange": "{from} – {to}",
+  "facts.awayOrder": "The first day must be on or before the last day.",
   "facts.edit": "Edit info",
   "facts.paste": "Paste what they told you",
   "facts.title": "Info: {name}",
@@ -214,6 +218,7 @@ const en = {
   "facts.failed": "Could not save. Try again.",
   "facts.computed": "Automatic (now: {status})",
   "facts.awayText": "What they said",
+  "facts.awayFrom": "First day away",
   "facts.awayDay": "Last day away",
   "facts.mightHint": "12.3 or 12,300,000",
   "facts.adHint": "0 to 100",

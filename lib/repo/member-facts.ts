@@ -12,6 +12,7 @@ export interface FactRow {
   version: number;
   value: unknown;
   source: "message" | "officer" | "sheet";
+  writtenAt: Date;
 }
 
 const columns = {
@@ -20,6 +21,7 @@ const columns = {
   version: memberFacts.version,
   value: memberFacts.value,
   source: memberFacts.source,
+  writtenAt: memberFacts.writtenAt,
 };
 
 /** The newest version of every field of every member of the workspace. */

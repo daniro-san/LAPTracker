@@ -129,6 +129,8 @@ export const calendarPt: CalendarWords = {
   "calendar.month.count.one": "{n} evento",
   "calendar.month.count.other": "{n} eventos",
   "calendar.roles.choose": "Escolher funções ›",
+  "calendar.rollCall": "Chamada ›",
+  "calendar.pickTeam": "Escolher a equipe ›",
   "calendar.delete.weekly": "Pular ou apagar",
   "calendar.delete.askWeekly": "Pular uma semana ou encerrar a repetição?",
   "calendar.conflict.justNow": "agora mesmo",

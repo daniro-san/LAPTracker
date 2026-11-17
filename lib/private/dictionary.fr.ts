@@ -5,6 +5,7 @@ import { calendarFr } from "./dictionary.calendar.fr";
 import { importFr } from "./dictionary.import";
 import { membersFr } from "./dictionary.members.fr";
 import { noticesFr } from "./dictionary.notices";
+import { rollFr } from "./dictionary.rollcall.fr";
 import { shotsFr } from "./dictionary.shots.fr";
 import { theftsFr } from "./dictionary.thefts";
 import { translateFr } from "./dictionary.translate";
@@ -12,6 +13,7 @@ import { translateFr } from "./dictionary.translate";
 export const fr: WorkspaceDictionary = {
   ...calendarFr,
   ...membersFr,
+  ...rollFr,
   "app.name": "Bureau des officiers",
   "tab.aria": "Sections",
   "tab.home": "Accueil",
@@ -204,6 +206,8 @@ export const fr: WorkspaceDictionary = {
   "facts.away": "Absence",
   "facts.notes": "Notes",
   "facts.until": "jusqu’au {date}",
+  "facts.awayRange": "{from} – {to}",
+  "facts.awayOrder": "Le premier jour doit être le même que le dernier ou avant.",
   "facts.edit": "Modifier les infos",
   "facts.paste": "Coller ce qu’on vous a dit",
   "facts.title": "Infos : {name}",
@@ -211,6 +215,7 @@ export const fr: WorkspaceDictionary = {
   "facts.failed": "Impossible d’enregistrer. Réessayez.",
   "facts.computed": "Automatique (actuellement : {status})",
   "facts.awayText": "Ce qui a été dit",
+  "facts.awayFrom": "Premier jour d’absence",
   "facts.awayDay": "Dernier jour d’absence",
   "facts.adHint": "De 0 à 100",
   "facts.mightHint": "12,3 ou 12 300 000",
