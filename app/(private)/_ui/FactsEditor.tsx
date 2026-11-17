@@ -222,9 +222,10 @@ function NameField(props: {
           <div className="mt-1 flex flex-wrap gap-2">
             <a
               href={`/w/${props.slug}/members?q=${encodeURIComponent(first.name)}`}
-              className={chip()}
+              translate="no"
+              className={chip(true)}
             >
-              {words["pending.open"]}
+              {say(words["pending.open"], { name: isolate(first.name) })}
             </a>
             <button type="button" onClick={props.onAnyway} className={chip()}>
               {words["pending.addAnyway"]}
@@ -234,6 +235,16 @@ function NameField(props: {
       )}
     </div>
   );
+}
+
+/** Above Save: why it is off while the name question waits, else the save's own note. */
+function Note(props: {
+  s: ReturnType<typeof useSave>;
+  words: EditorProps["words"];
+  asking: boolean;
+}) {
+  if (props.asking) return <p className="mb-2 text-body-sm">{props.words["pending.takenWhy"]}</p>;
+  return <SaveNote s={props.s} words={props.words} />;
 }
 
 /** The members who already have the new member's name, until "Add anyway" for that name key. */
@@ -281,7 +292,7 @@ export function FactsEditor(props: EditorProps) {
         disabled: s.state === "saving" || s.conflicts.length > 0 || taken.members.length > 0,
         focus: props.mode === "edit" && !adding,
       }}
-      note={<SaveNote s={s} words={words} />}
+      note={<Note s={s} words={words} asking={taken.members.length > 0} />}
     >
       {adding && (
         <NameField

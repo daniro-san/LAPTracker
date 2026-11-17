@@ -52,6 +52,27 @@ Part of #293. Follows PR #385 (D106, D107). Branch `fix/member-lifecycle-owner-a
 - **Privacy:** invented names only. The former-member read still takes only uid, name, might and kills from rosters; the Duel points come from the officers' own saves.
 - **Screenshots** (not committed) are in `/private/tmp/claude-502/-Users-danilordasilva-orca-workspaces-LAPTracker-unicornfish/147759e3-1cdb-4ccd-b74a-1001498a1e18/scratchpad/11x2-shots/`: `home-to-match`, `members-to-match`, `add-name-taken`, `delete-ask`, `dismissed`, `former-duel`, `former-sheet` and `import-name-taken`, each at `360-light-{en,pt}`. A design pass found that the Dismissed summary had no open/closed marker. It now keeps the default marker.
 
+## Review round (PR 388)
+- **Copy:**
+  - "Remove" / "Removed (n)" / "Bring back" replace "Delete" / "Dismissed" (PT "Tirar" / "Tirados" / "Trazer de volta", FR "Retirer" / "Retirés").
+  - "needs linking" replaces "To match" (PT "vincular", FR "à associer"). The banner and sheet text now say "did not have exactly one player with this name".
+  - The name warning reads "Open {name}, or add a second {name}?", with a filled "Open {name}" (import: "Use {name}"). "Answer the question above first." shows while Save is off.
+  - The roster is called the "nightly roster" everywhere. The add sheet's time comes from `DAILY_ROSTER_AT` (23:30 by default), not the 23:37 in the review text.
+  - The former lead is new, and the Duel line has no "—" and keeps each day with its number (U+00A0). All of this is in the second D106 and D107 amendments.
+- **"Bring back"** on a removed row sends the add again with a new request id, which reopens the record.
+- **Code:**
+  - `newestDuelWeeks` uses a `group by uid` subquery and moved to `lib/repo/workspace-past-roster.ts`, so `lib/repo/import.ts` is unchanged from dev.
+  - `reconcilePending` returns `{ moved, open }`. `matchOnRead` serves Members and Home with one read of the open pending members, and a failed match logs `w.pending.match_failed` only.
+  - `usedZones` counts only the newest roster and open new members.
+  - `withConflicts` maps a new-member row's conflict by name key.
+  - The `member-card.ts` change was reverted; the former view has its own Duel formatter.
+- **Tests added (4):**
+  - facts for a removed uid are 404 `not_member`, then 200 after re-adding;
+  - a D100 replay after the reopen answers the same uid with no results;
+  - another workspace's same name does not reopen the first one's record;
+  - Home's count after `matchOnRead`.
+- **Verified:** `pnpm check` exits 0, vitest 163 files passed, 2 skipped; 862 tests passed, 4 skipped. Local e2e 89 of 89 (EN and PT) on a fresh build. Screenshots `r2-*` are in the same folder.
+
 ## Open issues
 1. Only 360 light EN/PT screenshots were taken, as the task asked. 1280, dark and WebKit were not re-run for these screens.
 2. A former member whose newest saved week has only daily values shows "—" for the week total, as the member card does.

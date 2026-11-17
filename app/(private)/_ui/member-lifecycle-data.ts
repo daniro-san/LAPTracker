@@ -8,7 +8,7 @@ import { lifecycleEn } from "@/lib/private/dictionary.lifecycle";
 import type { MemberFacts } from "@/lib/private/fact-fields";
 import { NONE } from "@/lib/private/fact-text";
 import type { FormerMember } from "@/lib/private/former-members";
-import { duelText, factLines, or, type CardFormats } from "@/lib/private/member-card";
+import { factLines, or, type CardFormats } from "@/lib/private/member-card";
 import { plural } from "@/lib/private/members-sheet";
 import type { Pending } from "@/lib/private/pending-members";
 
@@ -69,6 +69,22 @@ export const dismissedRow = (
   summary: summaryOf(factLines(facts, t, f)),
 });
 
+const DUEL_DAYS = ["mon", "tue", "wed", "thu", "fri", "sat"] as const;
+
+/** "Alliance Duel points, week of Mon, Nov 9: 12,401,468 · Mon 2.40M": only what was saved, each day
+ * kept with its number. */
+function duelLine(duel: NonNullable<FormerMember["duel"]>, t: WorkspaceDictionary, f: CardFormats) {
+  const { week, ...days } = duel.points;
+  const parts = [
+    ...(week === undefined ? [] : [f.number(week)]),
+    ...DUEL_DAYS.flatMap((d) => {
+      const v = days[d];
+      return v === undefined ? [] : [`${t[`day.${d}`]}\u00a0${f.compact(v)}`];
+    }),
+  ];
+  return `${fill(t["former.duel"], { date: f.date(duel.week) })}: ${parts.join(" · ")}`;
+}
+
 export interface FormerRow extends FactsCard {
   /** "Last seen Mon, Nov 9". */
   lastSeen: string;
@@ -76,7 +92,7 @@ export interface FormerRow extends FactsCard {
   numbers: string;
   /** The facts recorded, one line: "Notes: moved server · Main squad: 48.2M". */
   summary: string;
-  /** "Alliance Duel, week of Mon, Nov 9: 12,401,468 · Mon 2.4M", the newest week saved; else null. */
+  /** "Alliance Duel points, week of Mon, Nov 9: Mon 2.40M · Tue 3.10M", the newest week saved; else null. */
   duel: string | null;
 }
 
@@ -94,9 +110,7 @@ export function formerRow(m: FormerMember, t: WorkspaceDictionary, f: CardFormat
       fill(t["list.meta.kills"], { v: or(m.kills, f.compact) }),
     ].join(" · "),
     summary: summaryOf(lines),
-    duel: m.duel
-      ? `${fill(t["former.duel"], { date: f.date(m.duel.week) })}: ${duelText(m.duel.points, t, f)}`
-      : null,
+    duel: m.duel && duelLine(m.duel, t, f),
   };
 }
 

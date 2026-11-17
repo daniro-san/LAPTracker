@@ -205,7 +205,8 @@ function NewMemberName(props: InputProps & { name: string }) {
           <div className="mt-1 flex flex-wrap gap-2">
             <button
               type="button"
-              className={button}
+              translate="no"
+              className={chip(true)}
               onClick={() =>
                 props.onChange({
                   ...state,
@@ -214,7 +215,7 @@ function NewMemberName(props: InputProps & { name: string }) {
                 })
               }
             >
-              {w["shots.pickThem"]}
+              {fillIn(w["shots.pickThem"], { name: isolate(first.name) })}
             </button>
             <button
               type="button"

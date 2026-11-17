@@ -27,12 +27,7 @@ import {
 } from "@/lib/private/members";
 import { needsAWord, pickOrder, pickQuery, whoOf } from "@/lib/private/members-list";
 import { plural, sheetHeader } from "@/lib/private/members-sheet";
-import {
-  dismissedMembers,
-  pendingMembers,
-  reconcilePending,
-  toMatch,
-} from "@/lib/private/pending-members";
+import { dismissedMembers, matchOnRead, toMatch } from "@/lib/private/pending-members";
 import { RENEW_MS } from "@/lib/private/session";
 import { SLUG } from "@/lib/private/sign-in";
 import { serverDay } from "@/lib/schedule";
@@ -116,7 +111,7 @@ async function readPage(
   const access = await requireWorkspace(db, p.slug, p.jar, now, RENEW_MS);
   if (!access.ok) return { access, waiting: 0, view: null, rows: [], lifecycle: null };
   // D106: a roster read since a new member was added may now list them.
-  await reconcilePending(db, access, now);
+  const pending = await matchOnRead(db, access, now);
   const view = await membersView(db, access, now, zone);
   return {
     access,
@@ -128,11 +123,17 @@ async function readPage(
       ? { former: await formerMembers(db, access, zone, view.facts), pending: [], dismissed: [] }
       : {
           former: [],
-          pending: await pendingMembers(db, access),
+          pending,
           dismissed: await dismissedMembers(db, access),
         },
   };
 }
+
+/** The editor's words; the add sheet says when the nightly roster is read (D106). */
+const lifecycleEditorWords = (t: WorkspaceDictionary, readAt: string) => ({
+  ...editorWords(t),
+  "pending.addHelp": fill(t["pending.addHelp"], { time: readAt }),
+});
 
 /** Members · Former members (D107): two links, the open one pressed. */
 function ViewSwitch({
@@ -186,7 +187,7 @@ export default async function MembersPage({
   const f = cardFormats(language, env.SERVER_TZ, now);
   const editor = {
     slug,
-    words: editorWords(t),
+    words: lifecycleEditorWords(t, env.DAILY_ROSTER_AT),
     language,
     serverZone: env.SERVER_TZ,
     used: view.zones,

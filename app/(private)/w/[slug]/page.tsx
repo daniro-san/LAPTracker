@@ -19,7 +19,7 @@ import { cardFormats } from "@/lib/private/member-card";
 import { membersView, type MembersView } from "@/lib/private/members";
 import { needsAWord, whoOf } from "@/lib/private/members-list";
 import { plural } from "@/lib/private/members-sheet";
-import { pendingMembers, reconcilePending, toMatch } from "@/lib/private/pending-members";
+import { matchOnRead, toMatch } from "@/lib/private/pending-members";
 import { RENEW_MS } from "@/lib/private/session";
 import { returnPath, SLUG } from "@/lib/private/sign-in";
 import { serverDay } from "@/lib/schedule";
@@ -227,12 +227,11 @@ export default async function WorkspacePage({
     const access = await requireWorkspace(db, slug, jar, now, RENEW_MS);
     if (!access.ok) return { access, items: [], placed: [], view: null, toMatch: 0 };
     // D106: a roster read since a new member was added may now list them, as on Members.
-    await reconcilePending(db, access, now);
-    const [items, placed, view, pending] = await Promise.all([
+    const pending = await matchOnRead(db, access, now);
+    const [items, placed, view] = await Promise.all([
       toReview(db, access, now),
       calendarDays(db, access, days.from, days.to),
       membersView(db, access, now, zone),
-      pendingMembers(db, access),
     ]);
     return { access, items, placed, view, toMatch: toMatch(pending, view.readAt).length };
   });

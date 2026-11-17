@@ -14,6 +14,7 @@ import { saveFacts, type FactChange } from "./member-facts";
 import {
   addPending,
   linkPending,
+  matchOnRead,
   pendingMembers,
   reconcilePending,
   toMatch,
@@ -96,7 +97,7 @@ const notesOf = (uid: number) =>
 describe("pending members and the roster (D106)", () => {
   it("moves the facts to the one member with the same name key, keeping versions and times", async () => {
     const pending = await added("zéphyrine");
-    expect(await reconcilePending(db, ana, LATER)).toBe(1);
+    expect((await reconcilePending(db, ana, LATER)).moved).toBe(1);
 
     expect(await notesOf(11)).toEqual([
       { version: 1, value: "joined today", at: ADDED },
@@ -117,7 +118,7 @@ describe("pending members and the roster (D106)", () => {
     // Added after tonight's read: only a later roster can list them.
     await added("Zephyrine", new Date(ROSTER_AT.getTime() + 60_000));
 
-    expect(await reconcilePending(db, ana, LATER)).toBe(0);
+    expect((await reconcilePending(db, ana, LATER)).moved).toBe(0);
     expect((await pendingMembers(db, ana)).map((p) => p.name)).toEqual([
       "Nobody Here",
       "Corvin",
@@ -150,11 +151,21 @@ describe("pending members and the roster (D106)", () => {
       memberPower: ROSTER.map(() => 1000),
       memberKills: ROSTER.map(() => 0),
     });
-    expect(await reconcilePending(db, ana, next)).toBe(0);
+    expect((await reconcilePending(db, ana, next)).moved).toBe(0);
     expect(toMatch(await pendingMembers(db, ana), next).map((p) => p.name)).toEqual([
       "Corvin",
       "Ilsa",
     ]);
+  });
+
+  it("counts Home's new members to link after the match on read", async () => {
+    await added("Zephyrine");
+    await added("Nobody Here");
+    await added("Ilsa", new Date(ROSTER_AT.getTime() + 60_000));
+
+    const open = await matchOnRead(db, ana, LATER);
+    expect(open.map((p) => p.name)).toEqual(["Nobody Here", "Ilsa"]);
+    expect(toMatch(open, ROSTER_AT)).toHaveLength(1);
   });
 
   it("links by hand after a member's own facts: their versions follow the member's", async () => {

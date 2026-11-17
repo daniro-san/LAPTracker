@@ -136,14 +136,14 @@ export const shownOf = (members: MemberRow[]): Shown => ({
 const DUEL_DAYS = ["mon", "tue", "wed", "thu", "fri", "sat"] as const;
 
 /** "12,401,468 · Mon 2.4M · Tue 3.1M": the week's points, then each day saved; "—" when none was. */
-export function duelText(duel: MemberRow["duel"], t: WorkspaceDictionary, f: CardFormats): string {
+function duelText(m: MemberRow, t: WorkspaceDictionary, f: CardFormats): string {
   const days = DUEL_DAYS.flatMap((d) => {
-    const v = duel[d];
+    const v = m.duel[d];
     return v === undefined
       ? []
       : [fill(t["shots.duel.dayValue"], { day: t[`day.${d}`], v: f.compact(v) })];
   });
-  const week = duel.week;
+  const week = m.duel.week;
   return [week === undefined ? NONE : f.number(week), ...days].join(" · ");
 }
 
@@ -163,7 +163,7 @@ function detailsOf(m: MemberRow, t: WorkspaceDictionary, f: CardFormats, shown: 
           : fill(t["sheet.mapValue"], { x: m.mapX, y: m.mapY }),
     },
     ...(shown.duel
-      ? [{ label: `${t["shots.duel.card"]} · ${t["src.photo"]}`, value: duelText(m.duel, t, f) }]
+      ? [{ label: `${t["shots.duel.card"]} · ${t["src.photo"]}`, value: duelText(m, t, f) }]
       : []),
   ];
 }

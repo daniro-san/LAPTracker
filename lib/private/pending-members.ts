@@ -26,6 +26,7 @@ import { nameKey } from "../screenshot/name-key";
 import type { WorkspaceAccess } from "./access";
 import type { FactField, MemberFacts } from "./fact-fields";
 import { SaveRefused } from "./import-kinds";
+import { privateLog } from "./log";
 import { factsOf, isMember, saveFacts, type ChangeResult, type FactChange } from "./member-facts";
 
 /** A pending member's uid in member_facts: game uids are positive. */
@@ -208,20 +209,24 @@ export const removePending = (db: Db, access: WorkspaceAccess, pendingId: number
 
 /**
  * Matches each pending member added before the newest roster to the one member of that roster with the
- * same name key (or the uid its key is remembered for) and no facts yet; returns how many moved. Runs
- * when the Members tab is read, since the end-of-day read itself is outside the workspace (D71's fence).
+ * same name key (or the uid its key is remembered for) and no facts yet. Returns how many moved and the
+ * pending members still open, oldest first. Runs when Members or Home is read, since the end-of-day read
+ * itself is outside the workspace (D71's fence).
  */
 export async function reconcilePending(
   db: Db,
   access: WorkspaceAccess,
   now: Date,
-): Promise<number> {
+): Promise<{ moved: number; open: Pending[] }> {
   const ws = access.workspaceId;
   const pending = await openPendings(db, ws);
-  if (pending.length === 0) return 0;
-  const roster = await anyRoster(db, access.unionId);
+  const open = (gone: ReadonlySet<number>) =>
+    pending
+      .filter((p) => !gone.has(p.id))
+      .map((p) => ({ uid: pendingUid(p.id), name: p.name, createdAt: p.createdAt }));
+  const roster = pending.length > 0 ? await anyRoster(db, access.unionId) : null;
   const due = roster ? pending.filter((p) => p.createdAt <= roster.at) : [];
-  if (!roster || due.length === 0) return 0;
+  if (!roster || due.length === 0) return { moved: 0, open: open(new Set()) };
   const [aliases, known] = await Promise.all([
     aliasesOf(db, ws),
     uidsWithFacts(
@@ -230,6 +235,7 @@ export async function reconcilePending(
       roster.members.map((m) => m.uid),
     ),
   ]);
+  const gone = new Set<number>();
   let moved = 0;
   for (const p of due) {
     const alias = aliases.get(p.nameKey);
@@ -237,9 +243,25 @@ export async function reconcilePending(
       (m) => !known.has(m.uid) && (nameKey(m.name) === p.nameKey || alias === m.uid),
     );
     const only = fits.length === 1 ? (fits[0]?.uid ?? null) : null;
-    if (only === null || !(await merge(db, access, p.id, only, { userId: null, now }))) continue;
+    if (only === null) continue;
+    // Matched here, or by another officer's read at the same moment: no longer open either way.
+    gone.add(p.id);
+    if (!(await merge(db, access, p.id, only, { userId: null, now }))) continue;
     known.add(only);
     moved += 1;
   }
-  return moved;
+  return { moved, open: open(gone) };
+}
+
+/**
+ * The match a page read runs first (Members, Home), and the pending members still open. A failed match
+ * is logged as a code only and the page shows them as they are, so it never takes the page down.
+ */
+export async function matchOnRead(db: Db, access: WorkspaceAccess, now: Date): Promise<Pending[]> {
+  try {
+    return (await reconcilePending(db, access, now)).open;
+  } catch {
+    privateLog("w.pending.match_failed");
+    return pendingMembers(db, access);
+  }
 }

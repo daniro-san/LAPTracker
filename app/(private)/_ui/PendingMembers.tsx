@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
+import { chip } from "@/lib/brand/components/controls";
 import { Sheet } from "@/lib/brand/components/Sheet";
 import { Tag } from "@/lib/brand/components/Tag";
 import { fill, isolate } from "@/lib/copy";
@@ -189,8 +190,10 @@ function ToMatch(props: {
   );
 }
 
-/** Deleted new members, kept with their info (2026-11-17), closed until opened. */
-function Dismissed({ rows, words: t }: { rows: DismissedRow[]; words: Words }) {
+/** Removed new members, kept with their info (2026-11-17), closed until opened; "Bring back" adds the
+ * name again, which reopens the record. */
+function Dismissed({ rows, words: t, slug }: { rows: DismissedRow[]; words: Words; slug: string }) {
+  const back = useAction(slug, () => undefined);
   if (rows.length === 0) return null;
   return (
     <details className="mt-3">
@@ -209,16 +212,37 @@ function Dismissed({ rows, words: t }: { rows: DismissedRow[]; words: Words }) {
               <span className="shrink-0 text-body-sm text-ink/80">{r.dismissedOn}</span>
             </p>
             {r.summary && <p className="text-body-sm text-ink/75">{r.summary}</p>}
+            <button
+              type="button"
+              disabled={back.state === "busy"}
+              onClick={() =>
+                void back.run({
+                  action: "add",
+                  requestId: crypto.randomUUID(),
+                  name: r.name,
+                  changes: [],
+                })
+              }
+              className={`${chip()} mt-1`}
+            >
+              {t["pending.bringBack"]}
+            </button>
           </li>
         ))}
       </ul>
+      {back.state === "failed" && (
+        <p role="alert" className="mt-2 font-semibold text-seal">
+          {t["pending.failed"]}
+        </p>
+      )}
+      {back.state === SIGNED_OUT && <SignedOutNote className="mt-2" />}
     </details>
   );
 }
 
 export function PendingMembers(props: {
   rows: PendingRow[];
-  /** "2 new members to match", in the officer's language. */
+  /** "2 new members need linking", in the officer's language. */
   toMatchLine: string;
   dismissed: DismissedRow[];
   roster: RosterName[];
@@ -262,7 +286,7 @@ export function PendingMembers(props: {
       >
         {t["pending.add"]}
       </button>
-      <Dismissed rows={props.dismissed} words={t} />
+      <Dismissed rows={props.dismissed} words={t} slug={props.editor.slug} />
       {adding && (
         <FactsEditor
           {...props.editor}

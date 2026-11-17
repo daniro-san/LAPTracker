@@ -14,6 +14,7 @@ import { useState } from "react";
 import { track } from "@/lib/analytics/events";
 import type { ImportKind, PhotoFact, Scope } from "@/lib/private/import-kinds";
 import type { DraftView } from "@/lib/private/import-view";
+import { nameKey } from "@/lib/screenshot/name-key";
 
 import { Actions, confirmRetype, Message, useDraftActions, type Why } from "./draft-actions";
 import {
@@ -47,8 +48,12 @@ function withConflicts(view: DraftView, rows: RowState[], detail: unknown): RowS
   const newer = Array.isArray(detail)
     ? (detail as { uid: number; field: string; value: number | null; version: number }[])
     : [];
+  // A "New member" row has no uid: its conflict comes back under the pending member of its name key.
+  const keyOf = new Map(view.pending.map((p) => [p.uid, nameKey(p.name)]));
+  const owns = (r: RowState, uid: number) =>
+    uid === r.uid || (r.newName !== undefined && keyOf.get(uid) === nameKey(r.newName));
   return rows.map((r, i) => {
-    const hit = newer.find((n) => n.uid === r.uid && n.field === view.rows[i]?.field);
+    const hit = newer.find((n) => owns(r, n.uid) && n.field === view.rows[i]?.field);
     return hit && !r.dropped ? { ...r, conflict: { value: hit.value, version: hit.version } } : r;
   });
 }

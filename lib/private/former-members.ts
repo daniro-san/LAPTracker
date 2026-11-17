@@ -5,9 +5,8 @@
 // are not members any more, so nothing here feeds roll calls, suggestions, counts or the alliance's
 // numbers. A member who comes back has the same uid, so the Members tab shows their facts again.
 import type { Db } from "../db";
-import { newestDuelWeeks } from "../repo/import";
 import { anyRoster } from "../repo/workspace-any-roster";
-import { lastSeen } from "../repo/workspace-past-roster";
+import { lastSeen, newestDuelWeeks } from "../repo/workspace-past-roster";
 import { serverDay } from "../schedule";
 import type { WorkspaceAccess } from "./access";
 import type { MemberFacts } from "./fact-fields";
