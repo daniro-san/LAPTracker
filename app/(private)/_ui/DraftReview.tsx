@@ -102,17 +102,20 @@ export function DraftReview(props: Props) {
 }
 
 /**
- * A check (panel PD-5): read-only. It shows how many rows match the game data, what Save keeps, and one
- * Save; no row is edited, because only the counts are kept.
+ * A check (panel PD-5): read-only. It shows how many rows match the game data, what Save keeps, Save and
+ * Discard; no row is edited, because only the counts are kept. Picking Daily or Weekly reads the draft
+ * again with that tab, so the count shown is the one Save stores.
  */
 function CheckReview(props: Props) {
   const { view, w } = props;
   const router = useRouter();
-  const [scope, setScope] = useState<Scope | null>(view.scopeSure ? view.scope : null);
+  const scope = view.scopeSure ? view.scope : null;
   const { busy, message, act } = useDraftActions(props.slug, view, w);
   const readOnly = view.status !== "open" || !view.canSave;
   const sum = checkSummary(view);
   const needsTab = view.scope !== null && scope === null;
+  const retype = (kind: ImportKind, tab: Scope | null) =>
+    void act({ action: "retype", kind, scope: tab }).then((a) => a.ok && router.refresh());
   async function save() {
     const answer = await act({
       action: "save",
@@ -131,11 +134,9 @@ function CheckReview(props: Props) {
       <DraftHeader
         {...props}
         choice={{ scope, day: "sat", weekBefore: false }}
-        set={{ scope: setScope, day: () => {}, weekBefore: () => {} }}
-        readOnly={readOnly}
-        retype={(kind) =>
-          void act({ action: "retype", kind, scope }).then((a) => a.ok && router.refresh())
-        }
+        set={{ scope: (tab) => retype(view.kind, tab), day: () => {}, weekBefore: () => {} }}
+        readOnly={readOnly || busy}
+        retype={(kind) => retype(kind, scope)}
       />
       <section aria-labelledby="check-head" className="mt-4 border border-rule px-4 py-3">
         <h2 id="check-head" className="font-subhead text-display-sm">
@@ -152,19 +153,13 @@ function CheckReview(props: Props) {
       </section>
       <Message text={message} />
       {!readOnly && (
-        <div className="mt-4">
-          {needsTab && (
-            <p className="mb-2 border-l-4 border-yarn pl-2 text-body-sm">{w["shots.why.tab"]}</p>
-          )}
-          <button
-            type="button"
-            disabled={busy || needsTab}
-            onClick={() => void save()}
-            className="ink-button inline-flex min-h-11 items-center justify-center px-6 font-medium disabled:opacity-50"
-          >
-            {busy ? w["shots.saving"] : w["shots.check.save"]}
-          </button>
-        </div>
+        <Actions
+          w={{ ...w, "shots.save": w["shots.check.save"] ?? "" }}
+          busy={busy}
+          why={needsTab ? { template: w["shots.why.tab"] } : null}
+          onSave={() => void save()}
+          onDiscard={() => void act({ action: "discard" }).then((a) => a.ok && router.refresh())}
+        />
       )}
     </>
   );

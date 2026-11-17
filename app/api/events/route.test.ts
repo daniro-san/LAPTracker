@@ -21,7 +21,7 @@ beforeAll(async () => {
 });
 
 describe("GET /api/events", () => {
-  it("serves events without isTest and with a 5-minute shared cache header", async () => {
+  it("serves events without isTest or afterAt and with a 5-minute shared cache header", async () => {
     holder.ctx = testContext(db).ctx;
     await findOrCreateEvent(db, {
       name: "Saturday Event 2026-11-07",
@@ -37,5 +37,7 @@ describe("GET /api/events", () => {
     const { events } = (await res.json()) as { events: object[] };
     expect(events).toHaveLength(1);
     expect(JSON.stringify(events)).not.toContain("isTest");
+    // listEvents reads after_at for the home page's pick; the response keeps its old shape.
+    expect(JSON.stringify(events)).not.toContain("afterAt");
   });
 });

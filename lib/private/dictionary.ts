@@ -45,7 +45,6 @@ const en = {
   "shell.signedIn": "Signed in as {name}",
   "shell.signOut": "Sign out",
   "home.title": "Calendar, members and screenshots",
-  "home.empty": "Nothing here yet. The kettle is on.",
   "home.next.head": "Today and tomorrow",
   "home.today": "Today",
   "home.tomorrow": "Tomorrow",

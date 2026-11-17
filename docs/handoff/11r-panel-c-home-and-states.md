@@ -12,30 +12,34 @@ Basis: the review panel of 2026-11-17 (product designer, UI/UX, adversarial, cop
   - the type and the Daily/Weekly tab, as before;
   - what the check keeps (`shots.where.check`);
   - "Match: 4 of 5" and "Not counted: n (no sure member, or no game data)";
-  - one "Save the count" button.
-  No row can be edited. Save sends each surely matched member once with the value read. The server counts it as before. Alliance Duel, Member update and Secret Ops reviews are unchanged.
+  - "Save the count" and Discard (the shared `Actions`).
+  No row can be edited. Save sends each surely matched member once with the value read. The server counts it as before. Picking Daily or Weekly retypes the draft with that tab and reloads, so the count shown is the count Save stores. Alliance Duel, Member update and Secret Ops reviews are unchanged.
 - **One stale rule for runs**: `runAbandoned` in `lib/compute.ts` (`running` for `RUN_STALE_AFTER_MS` or longer). It is used in four places:
   - `Status.tsx`: `StatusChips` and `CaptureWindow` take `now`. An abandoned run reads "Last update failed at …" and "END failed", never "Updating now".
-  - `homeEvent(events, now)` (`lib/queries/events.ts`): `/` takes the newest event whose End is done or still to come. An event whose End never ran, failed or was abandoned gives way to the last finished one. `listEvents` now selects `after_at`; `GET /api/events` strips it, so its response is unchanged.
-  - /admin: "Last result" shows an abandoned run as `failed`, so it no longer says `running` beside "Running now: Nothing".
+  - `homeEvent(events, now, windowMin)` (`lib/queries/events.ts`): `/` takes the newest event whose End is done or still to come. An End row that failed or was abandoned gives way to the last finished event. With no End row, the event waits for the tick's End window (`SNAPSHOT_WINDOW_MIN`, as `duePhases`) plus one tick (15 min) after `after_at`. `getEventPage`, `comparePicks`, `getComparePage` and `getComparePlayerPage` take `windowMin` from their pages. `listEvents` now selects `after_at`; `GET /api/events` strips it, so its response is unchanged.
+  - /admin: `settledRun` (`app/_ui/admin/words.ts`) maps an abandoned run to `failed` once. "Last result", `watchViews` and RunWatch use it, so none says `running` beside "Running now: Nothing".
+  - The hand-written checks in `words.ts` (Running now, the daily Retry card) and `upstream-status.ts` now call `runAbandoned`. The banner's check moved from `>` to `>=`, like the others.
 - **Card order**: rows without a rank (no End yet) are ordered by their newest might, biggest first, then by tag (`event-rows.ts`).
 - **Banner**:
   - only the time keeps to one line, so PT and FR wrap at 360 px (`UpstreamBanner.tsx`);
   - it moved from the root layout to `app/(pages)/layout.tsx`, so it shows on the public pages and /admin, not in the workspace;
   - the Frame's padding rule for it is removed.
 - **First use**: a 4th card, third in order: "Calendar, screenshots and Discord" (`intro.desk.*`). It has three lines: the Calendar with Notices and Thefts inside it, Send screenshots on Home, and Apps → Send to LAPTracker in Discord. The "?" sheet shows it too, because it lists the same steps.
-- Words in EN, PT-BR and FR: `home.*` (7 new, `home.next` removed, `home.title` changed), `intro.desk.*` (4), `shots.nextDraft.*` (2), `shots.check.*` (4).
+- Words in EN, PT-BR and FR: `home.*` (7 new, `home.next` and the unused `home.empty` removed, `home.title` changed), `intro.desk.*` (4), `shots.nextDraft.*` (2), `shots.check.*` (4).
 - D27 and D28 amended.
 - Tests:
   - `home-digest.test.ts` (3): today and tomorrow on the server's clock and on the viewer's clock; the days read.
   - `Status.test.ts`: the stale chip and the abandoned End.
-  - `events.test.ts`: the fallback to the last finished result.
+  - `events.test.ts`: the fallback to the last finished result, and a missing End inside the window (30 and 59 min) and past it (60 min).
+  - `draft-known.test.ts`: `checkSummary` with a doubtful row, a repeated member, a null value, null `ours` and a differing value.
+  - `event-rows.test.ts`: unranked rows by might, then tag.
+  - `api/events/route.test.ts`: no `afterAt` in the response.
 
 ## Decisions
 - "Send screenshots at the top" is read as the top of the To review card, above the drafts. Home's order is Calendar, Members, then To review. With 8 drafts the button is at about 900 css px at 360 px. Before this change it was at about 1,360.
 - "Top 3 to thank" is the thanks list Members already computes (`THANKS_SIZE` = 3): donors first, the most active when no donation was read.
 - The check-in count is the same as on Members (`checkin` only). ADV-9 ("Needs help" is outside the count) is not changed here.
-- The abandoned rule is the existing `RUN_STALE_AFTER_MS` (150 s). An End not run at all counts as missing from `after_at + RUN_STALE_AFTER_MS`.
+- The abandoned rule is the existing `RUN_STALE_AFTER_MS` (150 s). An End with no row counts as missing only after `after_at + SNAPSHOT_WINDOW_MIN + 15 min`, because the tick runs every 15 minutes and may start the End late in its window (review of #371). The 15 minutes is `TICK_EVERY_MS` in `lib/queries/events.ts`, from `.github/workflows/tick.yml`.
 - The home falls back to the last finished event instead of adding a line above the cards. This needs no new public string, so the 17 translations are untouched.
 - The banner is left out of the whole workspace (ADV-16, first fix), not reworded.
 - The new first-use card is a 4th card, not a fuller "?" sheet only. Officers who already finished the cards on this browser see it through "?".
@@ -66,11 +70,10 @@ Basis: the review panel of 2026-11-17 (product designer, UI/UX, adversarial, cop
 - No upstream, Groq, real Discord or `/api/quota` call. All names are invented.
 
 ## Open issues
-1. A donation check's summary uses our values for the tab the draft was read as. If the officer switches Daily/Weekly, the shown count can differ from the count Save stores, because the server recounts with the chosen tab. `draftView` would need both tabs' values.
-2. Home now runs `membersView` (up to 15 end-of-day reads) on every load, as Members does. No timing was taken.
-3. On an abandoned event's own page, "Grandma noticed" can still show empty sections (part of PD-3 and UI-4). It was not in this batch's list.
-4. `RowsReview`'s `checkKnown` branch can no longer be reached by a check. It stays only to narrow `view.duel`.
-5. The workspace header is still two rows (see Deviations).
+1. Home now runs `membersView` (up to 15 end-of-day reads) on every load, as Members does. No timing was taken.
+2. On an abandoned event's own page, "Grandma noticed" can still show empty sections (part of PD-3 and UI-4). It was not in this batch's list.
+3. `RowsReview`'s `checkKnown` branch can no longer be reached by a check. It stays only to narrow `view.duel`.
+4. The workspace header is still two rows (see Deviations).
 
 ## Next
 Session: the next panel batch the orchestrator picks. The workspace track has no prompt in `docs/SESSION_PLAYBOOK.md`.
@@ -81,7 +84,7 @@ Plan changes needed: none.
 <adjustments>
 - `runAbandoned(run, now)` in `lib/compute.ts` is the one check for a run left `running`. Use it instead of comparing with `RUN_STALE_AFTER_MS` by hand.
 - `StatusChips` and `CaptureWindow` now require `now`.
-- `homeEvent` takes `now`, and its events need `afterAt` and each snapshot's `phase` and `startedAt` (`listEvents` gives them).
+- `homeEvent` takes `now` and `windowMin` (SNAPSHOT_WINDOW_MIN), and its events need `afterAt` and each snapshot's `phase` and `startedAt` (`listEvents` gives them).
 - The workspace has no upstream banner. A workspace page that needs to say its data is old must say it itself, as Members does.
 - A check draft (`view.ours !== null`) renders `CheckReview`. A new check kind needs nothing else on the client.
 </adjustments>

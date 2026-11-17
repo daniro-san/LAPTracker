@@ -42,7 +42,6 @@ export const pt: WorkspaceDictionary = {
   "shell.signedIn": "Conectado como {name}",
   "shell.signOut": "Sair",
   "home.title": "Agenda, membros e prints",
-  "home.empty": "Nada aqui ainda. A chaleira está no fogo.",
   "home.next.head": "Hoje e amanhã",
   "home.today": "Hoje",
   "home.tomorrow": "Amanhã",

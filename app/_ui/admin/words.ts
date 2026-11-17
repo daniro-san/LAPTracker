@@ -1,7 +1,7 @@
 // The admin area names snapshots and run states with one set of words, the public pages' where they
 // exist (07c S1, S3b): "Before snapshot", "done", "partly done", "failed".
 import type { Clock } from "@/app/_ui/format";
-import { RUN_STALE_AFTER_MS } from "@/lib/compute";
+import { runAbandoned } from "@/lib/compute";
 import { copy, fill } from "@/lib/copy";
 import type { ManualEventStatus, RunningSnapshot } from "@/lib/queries/admin";
 import { isGeneratedName, type ScheduledEvent } from "@/lib/schedule";
@@ -25,6 +25,10 @@ const STATE: Record<string, string> = {
 
 /** A snapshot's status column in words; an unknown value is shown as stored. */
 export const stateWord = (status: string): string => STATE[status] ?? status;
+
+/** A run left `running` past RUN_STALE_AFTER_MS was killed: /admin shows it as failed, never running. */
+export const settledRun = <R extends { status: string; startedAt: Date }>(r: R, now: Date): R =>
+  runAbandoned(r, now) ? { ...r, status: "failed" } : r;
 
 /** A run duration in milliseconds as seconds with one decimal: 9_866 → "9.9". */
 export const seconds = (ms: number): string => (ms / 1000).toFixed(1);
@@ -74,7 +78,7 @@ export function watchViews(
   }));
   const dailyWord = copy.admin.runs.daily;
   // INVARIANT run.stale-after-150s: a read left running longer was killed, as for a snapshot.
-  if (daily?.status === "running" && now.getTime() - daily.startedAt.getTime() < RUN_STALE_AFTER_MS)
+  if (daily?.status === "running" && !runAbandoned(daily, now))
     views.push({
       phase: dailyWord,
       event: clock.weekday(daily.startedAt),
@@ -84,9 +88,17 @@ export function watchViews(
   return {
     running: views,
     latest: dailyLatest
-      ? { event: clock.weekday(daily.startedAt), phase: dailyWord, status: daily.status }
+      ? {
+          event: clock.weekday(daily.startedAt),
+          phase: dailyWord,
+          status: settledRun(daily, now).status,
+        }
       : last
-        ? { event: eventWord(last, clock), phase: runWord(last, clock), status: last.status }
+        ? {
+            event: eventWord(last, clock),
+            phase: runWord(last, clock),
+            status: settledRun(last, now).status,
+          }
         : null,
   };
 }
@@ -186,7 +198,7 @@ export function dailyView(
       }),
     };
   }
-  const stuck =
-    daily?.status === "running" && now.getTime() - daily.startedAt.getTime() >= RUN_STALE_AFTER_MS;
-  return stuck ? { text: fill(d.stuck, { at: clock.stamp(daily.startedAt) }) } : null;
+  return daily && runAbandoned(daily, now)
+    ? { text: fill(d.stuck, { at: clock.stamp(daily.startedAt) }) }
+    : null;
 }

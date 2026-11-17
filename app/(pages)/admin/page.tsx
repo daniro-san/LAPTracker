@@ -13,6 +13,7 @@ import {
   runWord,
   roundView,
   seconds,
+  settledRun,
   stateWord,
   currentView,
   dailyView,
@@ -26,7 +27,6 @@ import { Chip } from "@/lib/brand/components/Chip";
 import { FactList } from "@/lib/brand/components/FactList";
 import { DroppedStitch, StitchedCheck } from "@/lib/brand/components/StatusIcons";
 import { TextLink } from "@/lib/brand/components/TextLink";
-import { runAbandoned } from "@/lib/compute";
 import { copy, fill } from "@/lib/copy";
 import { dailyReadEndsInDay } from "@/lib/daily-read";
 import { getEnv, type Env } from "@/lib/env";
@@ -252,8 +252,10 @@ export default async function AdminPage() {
   const env = getEnv();
   const now = new Date();
   const next = nextEvent(now, env);
-  const [[current, rehearsal, quota, manual, running, recent, row, ticks, daily], clock] =
+  const [[current, rehearsal, quota, manual, running, runs, row, ticks, daily], clock] =
     await Promise.all([withPageDb((db) => loadAdminPage(db, now, env)), requestServerClock()]);
+  // A run left running past RUN_STALE_AFTER_MS is not under "Running now", so not "running" anywhere.
+  const recent = runs.map((r) => settledRun(r, now));
   const views = watchViews(running, recent[0], daily, now, clock);
   const nextRun = [
     { phase: "before" as const, at: current.beforeAt, event: current },
@@ -274,8 +276,7 @@ export default async function AdminPage() {
             eventAt: nextRun.event.eventAtUtc,
           }
         }
-        // A run left running past RUN_STALE_AFTER_MS is not under "Running now", so not "running" here.
-        recent={recent.map((r) => (runAbandoned(r, now) ? { ...r, status: "failed" } : r))}
+        recent={recent}
         ticks={ticks}
         now={now}
         clock={clock}

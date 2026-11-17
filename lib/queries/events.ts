@@ -3,7 +3,7 @@
 // Test events (rehearsals) are not public (plan Phase 6): /admin reads them elsewhere.
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
 
-import { RUN_STALE_AFTER_MS, runAbandoned } from "../compute";
+import { runAbandoned } from "../compute";
 import type { Db } from "../db";
 import { allianceSnapshots, events, snapshots } from "../schema";
 import { phaseColumn, phaseSnapshot, publicEvent } from "./visibility";
@@ -52,13 +52,17 @@ export async function listEvents(db: Db) {
 
 export type EventSummary = Awaited<ReturnType<typeof listEvents>>[number];
 
+/** How often the tick runs (.github/workflows/tick.yml: every 15 minutes). */
+const TICK_EVERY_MS = 15 * 60_000;
+
 /**
  * The event `/` shows, from `listEvents` (newest first; D28): the newest real event with a complete
  * snapshot whose End is done or still to come, else the newest event of any kind like that, else the
  * newest real event with a complete snapshot, else the newest event with one, else the newest real event,
  * else the newest. An upcoming event the tick created a day ahead has no data yet, so it does not take the
- * home page. An event whose End never came (not run, failed, or left running past RUN_STALE_AFTER_MS) has
- * no result, so the last finished one keeps the home page (panel PD-3).
+ * home page. An event whose End never came has no result, so the last finished one keeps the home page
+ * (panel PD-3): its End failed or was left running past RUN_STALE_AFTER_MS, or no End row exists once the
+ * tick's window for it (`windowMin`, SNAPSHOT_WINDOW_MIN, as `duePhases`) and one more tick have passed.
  */
 export function homeEvent<
   E extends {
@@ -66,11 +70,12 @@ export function homeEvent<
     afterAt: Date;
     snapshots: Pick<EventSummary["snapshots"][number], "phase" | "status" | "startedAt">[];
   },
->(events: E[], now: Date): E | undefined {
+>(events: E[], now: Date, windowMin: number): E | undefined {
   const hasData = (e: E) => e.snapshots.some((s) => s.status === "complete");
+  const endWaitMs = windowMin * 60_000 + TICK_EVERY_MS;
   const answered = (e: E) => {
     const end = e.snapshots.find((s) => s.phase === "after");
-    if (!end) return now.getTime() < e.afterAt.getTime() + RUN_STALE_AFTER_MS;
+    if (!end) return now.getTime() < e.afterAt.getTime() + endWaitMs;
     if (end.status === "running") return !runAbandoned(end, now);
     return end.status === "complete" || end.status === "partial";
   };

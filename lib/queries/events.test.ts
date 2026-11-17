@@ -17,7 +17,9 @@ const event = (id: number, manual: boolean, ...statuses: Status[]) => ({
   })),
 });
 // listEvents order: newest first.
-const pick = (events: ReturnType<typeof event>[], now = NOW) => homeEvent(events, now)?.id;
+// SNAPSHOT_WINDOW_MIN = 45: with one tick (15 min) after it, a missing End may still come for 60 minutes.
+const pick = (events: ReturnType<typeof event>[], now = NOW) => homeEvent(events, now, 45)?.id;
+const after = (minutes: number) => new Date(END_AT.getTime() + minutes * 60_000);
 
 describe("homeEvent", () => {
   it("picks the newest event with data, a real one before a manual round", () => {
@@ -40,9 +42,13 @@ describe("homeEvent", () => {
     expect(pick([event(2, false, "complete", "failed"), finished])).toBe(1);
     expect(pick([event(2, false, "complete"), finished])).toBe(1);
     // While the End may still come (its run is young, or it is not due yet), the newest event stays.
-    const soon = new Date(END_AT.getTime() + 60_000);
-    expect(pick([event(2, false, "complete", "running"), finished], soon)).toBe(2);
+    expect(pick([event(2, false, "complete", "running"), finished], after(1))).toBe(2);
     expect(pick([event(2, false, "complete"), finished], new Date("2026-11-07T14:00:00Z"))).toBe(2);
+    // No End row yet, 30 min after it was due: a late tick may still start it (past 150 s, inside the
+    // window); one hour after, it never came.
+    expect(pick([event(2, false, "complete"), finished], after(30))).toBe(2);
+    expect(pick([event(2, false, "complete"), finished], after(59))).toBe(2);
+    expect(pick([event(2, false, "complete"), finished], after(60))).toBe(1);
     // No finished event at all: the newest one with data still shows.
     expect(pick([event(2, false, "complete", "failed")])).toBe(2);
   });

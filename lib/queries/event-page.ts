@@ -26,15 +26,17 @@ function turnoutOf(db: Db, id: number, snapshots: Phases["snapshots"], shared: S
 
 /**
  * `eventId` null = the home page's event (`homeEvent`). Null page: no such (public) event. `shared` keeps
- * the turnout so far (no End yet) for every viewer; by default it reads every time.
+ * the turnout so far (no End yet) for every viewer; by default it reads every time. `windowMin` is
+ * SNAPSHOT_WINDOW_MIN, for `homeEvent`.
  */
 export async function getEventPage(
   db: Db,
   eventId: number | null,
+  windowMin: number,
   shared: Shared = (_id, load) => load(db),
 ) {
   const events = await listEvents(db);
-  const homeId = homeEvent(events, new Date())?.id ?? null;
+  const homeId = homeEvent(events, new Date(), windowMin)?.id ?? null;
   const id = eventId ?? homeId;
   if (id === null) return { events, homeId, page: null };
   const detail = await getEventDetail(db, id);
