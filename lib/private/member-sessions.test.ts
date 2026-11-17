@@ -6,7 +6,12 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { T0 } from "../collector.test-helpers";
 import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
-import { findWorkspaceBySlug, saveWorkspace, signOutWorkspace } from "../repo/workspaces";
+import {
+  allowUser,
+  findWorkspaceBySlug,
+  saveWorkspace,
+  signOutWorkspace,
+} from "../repo/workspaces";
 import { workspaceSessions, workspaceUsers } from "../schema";
 import { requireBoard, requireWorkspace } from "./access";
 import { CHECK_MS } from "./session";
@@ -58,6 +63,28 @@ describe("member sessions (D105)", () => {
     const officer = await signIn("ogs", "officer");
     expect(location(officer.step)).toBe("/w/ogs");
     expect((await requireWorkspace(db, "ogs", jar(officer.token), T0)).ok).toBe(true);
+  });
+
+  it("refuses a blocked account that holds the member role", async () => {
+    await signIn("ogs", "member");
+    await db
+      .update(workspaceUsers)
+      .set({ blocked: true })
+      .where(eq(workspaceUsers.discordUserId, MEMBER_ID));
+    const { step, token } = await signIn("ogs", "member");
+    expect(location(step)).toBe("/w/ogs/no-access?why=blocked");
+    expect(token).toBeUndefined();
+  });
+
+  it("gives the board to an account whose allowlist entry expired but which holds the member role", async () => {
+    const expired = new Date(T0.getTime() - 1);
+    await allowUser(db, await workspaceId("ogs"), MEMBER_ID, expired, "admin");
+    const { step, token } = await signIn("ogs", "member");
+    expect(location(step)).toBe("/w/ogs/board");
+    expect(await requireBoard(db, "ogs", jar(token), T0)).toMatchObject({
+      ok: true,
+      officer: false,
+    });
   });
 
   it("ends a member's session at the daily re-check once the member role is gone", async () => {

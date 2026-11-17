@@ -52,13 +52,32 @@
 
   Designer check: the copy fits at 360 in PT, and the card's "off" line is bold so it stands out. No fix was needed.
 
+## Review round (PR 390, security review)
+- **Old member sessions.** Migration 0034 also deletes every member-tier session (`DELETE FROM "workspace_sessions" WHERE "tier" = 'member';`, after a drizzle statement breakpoint). A session made under the old rule ("anyone in the server") would otherwise have been served for up to 24 hours after the owner set the role. Recorded in D105.
+  - Test: `lib/private/member-roles-migration.test.ts` migrates a database to 0033, makes a member session and an officer session, applies 0034 and sets the role. The member's session is refused (`signed_out`); the officer's is still served. With the DELETE removed, the test fails.
+- **The `/admin` form pre-fills** (`app/_ui/admin/WorkspaceForm.tsx`, moved out of `WorkspacesCard.tsx`).
+  - Picking a workspace ("Workspace to edit") or the alliance it belongs to loads its current address, server id, leadership role ids and member role ids. Editing one field keeps the others.
+  - The heading reads "Editing /w/<slug>", or "New workspace". "New workspace" is the last option of the picker and starts with empty fields.
+  - A save that would empty the member roles of a workspace that has some asks first in a sheet: "This closes the members' board. Save anyway?", with "Save anyway" and Cancel.
+  - Recorded in D105 and D73.
+- **Two sign-in tests** (`member-sessions.test.ts`): a blocked account that holds the member role gets `blocked`; an account whose allowlist entry expired but that holds the member role gets the board.
+- `pnpm check` exits 0: **172 files passed, 2 skipped; 913 tests passed, 4 skipped**.
+- Form e2e, **14 of 14 checks pass** (production build on :3969, local database, two workspaces), all at 360:
+  - the form opens on the first workspace, and picking `/w/ogs` loads its four fields and its alliance;
+  - a save that changes only the member roles keeps the server id and both leadership role ids in the database;
+  - picking nse's alliance loads `/w/nse`, and "New workspace" empties the fields;
+  - emptying the member roles opens the sheet. Cancel writes nothing. "Save anyway" empties only the member roles, and the card then says the board is off;
+  - saving a workspace whose member roles were already empty does not ask;
+  - no target is under 44 px, and nothing scrolls sideways.
+- Screenshots: `r2-form-prefilled-ogs-360-en`, `r2-form-prefilled-360-en-{light,dark}` (with the heading), `r2-form-new-360-en`, `r2-close-board-sheet-360-en`, in the same folder.
+
 ## Open issues
 - Members whose phone browser is not signed in to discord.com now see Discord's sign-in page about once a day. D105 first avoided that cost, and the owner chose privacy over it. If members complain, the option is D99's "encrypted Discord refresh token", which is not built.
 - Changing the member role ids (without clearing them) does not end open member sessions right away. They end at their next 24-hour check. "Sign out users → Members only" ends them right away.
 
 ## Next
 - Model/effort: keep. The change was small and fit one sitting with the e2e.
-- What the owner must do first: merge, release, then on `/admin` set the OGs member role id (the role sorted members get) in the workspace form. Re-enter the leadership role ids too, because the form edits the whole row. Until then the members' board is closed for everyone; officers are not affected.
+- What the owner must do first: merge, release, then on `/admin` pick `/w/ogs` in the workspace form (its current settings load), type the OGs member role id (the role sorted members get) and save. Until then the members' board is closed for everyone; officers are not affected. The release signs every member out once (migration 0034).
 - Plan change: none (the workspace track has no prompt in `docs/SESSION_PLAYBOOK.md`).
 
 <adjustments>

@@ -28,6 +28,7 @@ export async function Workspaces({ now }: { now: Date }) {
     const alliance = ALLIANCES.find((a) => a.unionId === w.unionId);
     return {
       id: w.id,
+      unionId: w.unionId,
       slug: w.slug,
       alliance: alliance ? `${alliance.tag} · ${alliance.name}` : String(w.unionId),
       guild: w.discordGuildId,
