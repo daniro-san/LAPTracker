@@ -1,18 +1,20 @@
+import { generateKeyPairSync, sign } from "node:crypto";
+
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
-import type { ChatModel, ChatRequest } from "../ai/groq";
 import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
+import { recordFailure } from "../repo/auth-attempts";
 import { saveWorkspace } from "../repo/workspaces";
+import { handleInteraction } from "./discord-interaction";
 import {
+  TRANSLATE_PER_DAY,
   TRANSLATE_PER_MINUTE,
   translateCommand,
   translateComponent,
   type TranslateInput,
-  type TranslationJob,
 } from "./discord-translate";
-import { runTranslation, type TranslationDeps } from "./discord-translate-run";
-import { guessLanguage, mask, pickerId, unmask, type Picker } from "./translate-message";
+import { guessLanguage, mask, pickerId, type Picker, unmask } from "./translate-message";
 
 // Invented server, people and messages.
 const NOW = new Date("2026-11-17T20:00:00Z");
@@ -20,7 +22,11 @@ const GUILD = "1544808864262914060";
 const CHANNEL = "1600000000000000001";
 const MESSAGE = "1600000000000000055";
 const ASKER = "700000000000000001";
+const OTHER = "700000000000000002";
 const ENGLISH = "Hello everyone, the rally is at 18:00 today. Please bring your troops!";
+/** Send Messages, Create Public Threads and Send Messages in Threads. */
+const ALL = String((1n << 11n) | (1n << 35n) | (1n << 38n));
+const CHANNEL_ONLY = String(1n << 11n);
 
 let db: Db;
 beforeAll(async () => {
@@ -41,8 +47,9 @@ const input = (over: Partial<TranslateInput> = {}): TranslateInput => ({
   channelId: CHANNEL,
   userId: ASKER,
   locale: "en-US",
+  permissions: ALL,
   webhook: { applicationId: "900", token: "itok" },
-  threads: false,
+  bot: true,
   ...over,
 });
 
@@ -51,56 +58,74 @@ const forMe = (content: string, over: Partial<TranslateInput> = {}) =>
 const forEveryone = (content: string, over: Partial<TranslateInput> = {}) =>
   translateCommand(db, "everyone", input(over), { messageId: MESSAGE, content }, NOW);
 
+type Rows = {
+  components: { custom_id: string; options?: { value: string; default: boolean }[] }[];
+}[];
+const rowsOf = (answer: { body: unknown }) =>
+  (answer.body as { data: { components: Rows } }).data.components;
+const contentOf = (answer: { body: unknown } | null | undefined) =>
+  (answer?.body as { data?: { content?: string } } | undefined)?.data?.content;
+
+const picker = (over: Partial<Picker> = {}): Picker => ({
+  messageId: MESSAGE,
+  userId: ASKER,
+  from: "en",
+  to: ["pt-BR"],
+  where: "thread",
+  ...over,
+});
+const press = (p: Picker, over: { owner?: string | undefined } = {}) => ({
+  customId: pickerId("p", p),
+  values: undefined,
+  shownText: ENGLISH,
+  owner: ASKER,
+  ...over,
+});
+
 describe("Translate for me: the asker's Discord language (D101)", () => {
   it("maps pt-BR, fr and fr-CA to their language, and any other locale to English", async () => {
-    const cases = [
+    const french = "Bonjour à tous, le rally est à 18:00. Merci de venir avec vos troupes !";
+    for (const [locale, language] of [
       ["pt-BR", "pt-BR"],
       ["fr", "fr"],
       ["fr-CA", "fr"],
       ["en-GB", "en"],
       ["es-ES", "en"],
-    ] as const;
-    for (const [locale, language] of cases) {
-      const text = "Bonjour à tous, le rally est à 18:00. Merci de venir avec vos troupes !";
-      const answer = await forMe(language === "fr" ? ENGLISH : text, { locale });
+    ] as const) {
+      // Five languages in a minute: exactly the per-person limit.
+      const answer = await forMe(language === "fr" ? ENGLISH : french, { locale });
       expect(answer.translation?.to, locale).toEqual([language]);
-      expect(answer.translation?.language, locale).toBe(language);
     }
   });
 
   it("answers at once, without the translator, when the message is already in that language", async () => {
-    const answer = await forMe(ENGLISH, { locale: "en-US" });
+    const answer = await forMe(ENGLISH, { permissions: "0" });
     expect(answer.translation).toBeUndefined();
-    expect(answer.body).toEqual({
-      type: 4,
-      data: { content: "This message is already in your language.", flags: 64 },
-    });
+    expect(contentOf(answer)).toBe("This message is already in your language.");
   });
 });
 
 describe("which languages are produced", () => {
-  it("guesses English, Portuguese and French, and nothing from a word or a time", () => {
+  it("guesses English, Portuguese and French, and nothing from a word, a time or shared words", () => {
     expect(guessLanguage(ENGLISH)).toBe("en");
     expect(guessLanguage("Pessoal, o rally é hoje às 18:00. Não esqueçam as tropas!")).toBe(
       "pt-BR",
     );
     expect(guessLanguage("Bonjour à tous, le rally est à 18:00. Merci !")).toBe("fr");
     expect(guessLanguage("gg 18:00")).toBeNull();
+    // "mais" and "nos" are French too; the curly apostrophe counts as the straight one.
+    expect(guessLanguage("Mais bien sûr, nos amis")).not.toBe("pt-BR");
+    expect(guessLanguage("don’t")).toBe("en");
   });
 
   it("offers every language but the message's own, and all three when it is not clear", async () => {
-    const picked = (answer: Awaited<ReturnType<typeof forEveryone>>) => {
-      const rows = (answer.body as { data: { components: { components: unknown[] }[] } }).data
-        .components;
-      const select = rows[0]?.components[0] as { options: { value: string; default: boolean }[] };
-      return select.options.filter((o) => o.default).map((o) => o.value);
-    };
-    expect(picked(await forEveryone(ENGLISH))).toEqual(["p", "f"]);
-    expect(picked(await forEveryone("Pessoal, o rally é hoje às 18:00. Não esqueçam!"))).toEqual([
-      "e",
-      "f",
-    ]);
-    expect(picked(await forEveryone("gg 18:00"))).toEqual(["e", "p", "f"]);
+    const picked = async (text: string) =>
+      rowsOf(await forEveryone(text))[0]
+        ?.components[0]?.options?.filter((o) => o.default)
+        .map((o) => o.value);
+    expect(await picked(ENGLISH)).toEqual(["p", "f"]);
+    expect(await picked("Pessoal, o rally é hoje às 18:00. Não esqueçam!")).toEqual(["e", "f"]);
+    expect(await picked("gg 18:00")).toEqual(["e", "p", "f"]);
   });
 
   it("keeps mentions, links and custom emoji out of the request and puts them back verbatim", () => {
@@ -114,161 +139,162 @@ describe("which languages are produced", () => {
   });
 });
 
-describe("the length cap", () => {
+describe("where the asker may post: their permissions in this channel", () => {
+  it("offers Thread and Channel, Channel alone, or says plainly they cannot post here", async () => {
+    const places = (answer: { body: unknown }) =>
+      rowsOf(answer).flatMap((r) => r.components.map((c) => c.custom_id.slice(0, 4)));
+    expect(places(await forEveryone(ENGLISH))).toEqual(["tr:l", "tr:t", "tr:c", "tr:p"]);
+    const channel = await forEveryone(ENGLISH, { permissions: CHANNEL_ONLY });
+    expect(places(channel)).toEqual(["tr:l", "tr:p"]);
+    expect(contentOf(channel)).toBe(
+      "Choose the languages, then press Post. It is posted in the channel for everyone.",
+    );
+    const noBot = await forEveryone(ENGLISH, { bot: false });
+    expect(contentOf(noBot)).toContain("Threads need the bot. See /admin.");
+    const none = await forEveryone(ENGLISH, { permissions: "0" });
+    expect(none.body).toEqual({
+      type: 4,
+      data: { content: "You can’t post in this channel.", flags: 64 },
+    });
+  });
+
+  it("checks the permissions again at Post, from the press itself", async () => {
+    const lost = await translateComponent(
+      db,
+      input({ permissions: CHANNEL_ONLY }),
+      press(picker()),
+      NOW,
+    );
+    expect(lost?.translation).toBeUndefined();
+    expect(lost?.body).toEqual({ type: 7, data: { content: "You can’t post in this channel." } });
+  });
+});
+
+describe("the picker is the asker's own", () => {
+  it("refuses a press from anyone else or from a message that is not their private picker", async () => {
+    const p = picker();
+    for (const [who, owner] of [
+      [OTHER, ASKER],
+      [ASKER, OTHER],
+      [ASKER, undefined],
+    ] as const) {
+      const answer = await translateComponent(db, input({ userId: who }), press(p, { owner }), NOW);
+      expect(contentOf(answer), `${who} ${owner}`).toBe(
+        "Only the person who opened this menu can use it.",
+      );
+    }
+    const own = await translateComponent(db, input(), press(p), NOW);
+    // Post takes the buttons away at once, keeping the text, so a second press cannot post twice.
+    expect(own?.body).toEqual({ type: 7, data: { content: "Translating…", components: [] } });
+    expect(own?.translation?.post?.where).toBe("thread");
+  });
+});
+
+describe("limits", () => {
   it("translates 1,500 characters and says plainly when a message is longer", async () => {
     const at = "Please come. ".repeat(116).slice(0, 1500);
     expect((await forMe(at, { locale: "fr" })).translation).toBeDefined();
     const over = await forMe(`${at}x`, { locale: "pt-BR" });
     expect(over.translation).toBeUndefined();
-    expect(JSON.stringify(over.body)).toContain(
+    expect(contentOf(over)).toBe(
       "Esta mensagem é longa demais para traduzir: 1.501 caracteres. O limite é 1.500.",
     );
   });
-});
 
-describe("the rate limit", () => {
-  it(`allows ${TRANSLATE_PER_MINUTE} a minute per person, then refuses, and counts each person apart`, async () => {
-    for (let i = 0; i < TRANSLATE_PER_MINUTE; i += 1) {
-      expect((await forMe(ENGLISH, { locale: "fr" })).translation, `use ${i + 1}`).toBeDefined();
-    }
+  it(`allows ${TRANSLATE_PER_MINUTE} languages a minute per person, counting each language of a Post`, async () => {
+    const three = picker({ to: ["en", "pt-BR", "fr"], from: null });
+    expect((await translateComponent(db, input(), press(three), NOW))?.translation).toBeDefined();
+    expect((await forMe(ENGLISH, { locale: "fr" })).translation).toBeDefined();
+    expect((await forMe(ENGLISH, { locale: "fr" })).translation).toBeDefined();
     const refused = await forMe(ENGLISH, { locale: "fr" });
-    expect(refused.translation).toBeUndefined();
-    expect(JSON.stringify(refused.body)).toContain("Vous pouvez traduire 5 messages par minute.");
-    expect(
-      (await forMe(ENGLISH, { locale: "fr", userId: "700000000000000002" })).translation,
-    ).toBeDefined();
+    expect(contentOf(refused)).toBe(
+      "Vous pouvez traduire 5 messages par minute. Attendez une minute et réessayez.",
+    );
+    expect((await forMe(ENGLISH, { locale: "fr", userId: OTHER })).translation).toBeDefined();
+  });
+
+  it(`pauses everyone for the day past ${TRANSLATE_PER_DAY} languages`, async () => {
+    await recordFailure(db, "day:translate", 24 * 3_600_000, NOW, TRANSLATE_PER_DAY - 1);
+    const two = await translateComponent(db, input(), press(picker({ to: ["pt-BR", "fr"] })), NOW);
+    expect(two?.body).toEqual({
+      type: 7,
+      data: { content: "Translations are paused for today. Try again tomorrow." },
+    });
+    expect((await forMe(ENGLISH, { locale: "fr" })).translation).toBeDefined();
+    expect(contentOf(await forMe(ENGLISH, { locale: "fr", userId: OTHER }))).toBe(
+      "Les traductions sont en pause pour aujourd’hui. Réessayez demain.",
+    );
   });
 });
 
-describe("the picker is the asker's own", () => {
-  it("refuses a press from anyone else", async () => {
-    const picker: Picker = {
-      messageId: MESSAGE,
-      userId: ASKER,
-      from: "en",
-      to: ["pt-BR"],
-      where: "channel",
+describe("handleInteraction routes the Translate interactions", () => {
+  const keys = generateKeyPairSync("ed25519");
+  const publicKey = Buffer.from(
+    String(keys.publicKey.export({ format: "jwk" }).x),
+    "base64url",
+  ).toString("hex");
+  const signed = (payload: unknown) => {
+    const body = JSON.stringify(payload);
+    const timestamp = String(Math.floor(NOW.getTime() / 1000));
+    return {
+      body,
+      timestamp,
+      signature: sign(null, Buffer.from(timestamp + body), keys.privateKey).toString("hex"),
     };
-    const press = { customId: pickerId("p", picker), values: undefined, shownText: ENGLISH };
-    const other = await translateComponent(db, input({ userId: "700000000000000002" }), press, NOW);
-    expect(other?.translation).toBeUndefined();
-    expect(JSON.stringify(other?.body)).toContain(
-      "Only the person who opened this menu can use it.",
-    );
-    const own = await translateComponent(db, input(), press, NOW);
-    expect(own?.body).toEqual({ type: 6 });
-    expect(own?.translation?.to).toEqual(["pt-BR"]);
-  });
-});
-
-/** A translator that answers each language with an invented line, {1} kept. */
-const model: ChatModel = {
-  complete: async (request: ChatRequest) =>
-    request.user.includes("to French") ? "Le rally {1} est à 18:00." : "O rally {1} é às 18:00.",
-};
-
-/** Discord, recorded: `thread` is what opening a thread answers. */
-function discordStub(thread: Response) {
-  const calls: { method: string; path: string; bot: boolean; body: Record<string, unknown> }[] = [];
-  const fetcher: typeof fetch = async (url, init) => {
-    const path = String(url).replace("https://discord.test/api", "");
-    const bot = new Headers(init?.headers).get("authorization")?.startsWith("Bot ") ?? false;
-    calls.push({ method: init?.method ?? "GET", path, bot, body: JSON.parse(String(init?.body)) });
-    return path.endsWith("/threads") ? thread.clone() : Response.json({ id: "1" });
   };
-  return { calls, fetcher };
-}
-
-const job = (where: "thread" | "channel", threads: boolean): TranslationJob => {
-  const picker: Picker = {
-    messageId: MESSAGE,
-    userId: ASKER,
-    from: "en",
-    to: ["pt-BR", "fr"],
-    where,
+  const base = {
+    application_id: "900",
+    token: "itok",
+    guild_id: GUILD,
+    channel_id: CHANNEL,
+    locale: "en-US",
+    member: { roles: [], permissions: ALL, user: { id: ASKER, username: "asker" } },
   };
-  return {
-    mode: "everyone",
-    language: "en",
-    from: "en",
-    to: ["pt-BR", "fr"],
-    ...mask("The rally <#1600000000000000009> is at 18:00."),
-    webhook: { applicationId: "900", token: "itok" },
-    post: {
-      where,
-      channelId: CHANNEL,
-      link: `https://discord.com/channels/${GUILD}/${CHANNEL}/${MESSAGE}`,
-      picker,
-      threads,
+  const command = (name: string) => ({
+    ...base,
+    type: 2,
+    data: {
+      name,
+      type: 3,
+      target_id: MESSAGE,
+      resolved: {
+        messages: {
+          [MESSAGE]: { timestamp: "2026-11-17T19:00:00Z", content: ENGLISH, attachments: [] },
+        },
+      },
     },
-  };
-};
-
-const deps = (fetcher: typeof fetch, botToken?: string): TranslationDeps => ({
-  ai: model,
-  fetch: fetcher,
-  discordBase: "https://discord.test/api",
-  botToken,
-  now: () => NOW,
-});
-
-describe("posting for everyone: a thread or the channel", () => {
-  it("opens a thread on the message and posts each language in it as the bot, mentions off", async () => {
-    const { calls, fetcher } = discordStub(
-      Response.json({ id: "1700000000000000001" }, { status: 201 }),
-    );
-    await runTranslation(deps(fetcher, "bot-token-for-tests"), job("thread", true));
-    const opened = calls.find((c) => c.path.endsWith("/threads"));
-    expect(opened).toMatchObject({
-      path: `/channels/${CHANNEL}/messages/${MESSAGE}/threads`,
-      bot: true,
-      body: { name: "Translation", auto_archive_duration: 1440 },
-    });
-    const posts = calls.filter((c) => c.path === "/channels/1700000000000000001/messages");
-    expect(posts.map((p) => p.body.content)).toEqual([
-      "**🇧🇷 Português**\nO rally <#1600000000000000009> é às 18:00.",
-      "**🇫🇷 Français**\nLe rally <#1600000000000000009> est à 18:00.",
-    ]);
-    expect(
-      posts.every((p) => p.bot && JSON.stringify(p.body.allowed_mentions) === '{"parse":[]}'),
-    ).toBe(true);
-    expect(calls.at(-1)).toMatchObject({
-      method: "PATCH",
-      body: { content: "Posted in the message’s thread.", components: [] },
-    });
   });
+  const handle = (payload: unknown) =>
+    handleInteraction(db, publicKey, signed(payload), NOW, "https://laptracker.test", true);
 
-  it("posts in the thread the message already has", async () => {
-    const exists = Response.json(
-      { code: 160004, message: "A thread has already been created" },
-      { status: 400 },
-    );
-    const { calls, fetcher } = discordStub(exists);
-    await runTranslation(deps(fetcher, "bot-token-for-tests"), job("thread", true));
-    expect(calls.filter((c) => c.path === `/channels/${MESSAGE}/messages`)).toHaveLength(2);
-  });
-
-  it("falls back to the channel, and says so, when the bot cannot open a thread", async () => {
-    const { calls, fetcher } = discordStub(Response.json({ code: 50013 }, { status: 403 }));
-    await runTranslation(deps(fetcher, "bot-token-for-tests"), job("thread", true));
-    const followUp = calls.find((c) => c.method === "POST" && c.path === "/webhooks/900/itok");
-    expect(followUp?.bot).toBe(false);
-    expect(followUp?.body.embeds).toHaveLength(2);
-    expect(calls.at(-1)?.body.content).toBe(
-      "Posted in the channel: the bot can’t open threads here.",
-    );
-  });
-
-  it("posts in the channel with a link to the message when the channel was chosen or there is no bot", async () => {
-    const { calls, fetcher } = discordStub(Response.json({}, { status: 500 }));
-    await runTranslation(deps(fetcher, undefined), job("channel", false));
-    expect(calls.some((c) => c.path.includes("/threads") || c.bot)).toBe(false);
-    const followUp = calls.find((c) => c.path === "/webhooks/900/itok");
-    expect(followUp?.body).toMatchObject({
-      content: `https://discord.com/channels/${GUILD}/${CHANNEL}/${MESSAGE}`,
-      embeds: [{ title: "🇧🇷 Português" }, { title: "🇫🇷 Français" }],
-      allowed_mentions: { parse: [] },
+  it("answers both Translate commands, a signed picker press, and refuses an unknown command", async () => {
+    expect(await handle(command("Translate for me"))).toMatchObject({
+      status: 200,
+      body: { type: 4, data: { content: "This message is already in your language." } },
     });
-    expect(calls.at(-1)?.body.content).toBe("Posted in the channel.");
+    expect(await handle({ ...command("Translate for me"), locale: "fr" })).toMatchObject({
+      status: 200,
+      body: { type: 5, data: { flags: 64 } },
+      translation: { mode: "me", to: ["fr"] },
+    });
+    expect(await handle(command("Translate for everyone"))).toMatchObject({
+      status: 200,
+      body: { type: 4, data: { flags: 64, embeds: [{ description: ENGLISH }] } },
+    });
+    const pressed = await handle({
+      ...base,
+      type: 3,
+      message: {
+        flags: 64,
+        embeds: [{ description: ENGLISH }],
+        interaction_metadata: { user: { id: ASKER } },
+      },
+      data: { custom_id: pickerId("p", picker({ to: ["fr"] })), component_type: 2 },
+    });
+    expect(pressed).toMatchObject({ status: 200, body: { type: 7 }, translation: { to: ["fr"] } });
+    expect(await handle(command("Translate for nobody"))).toEqual({
+      status: 400,
+      body: { code: "unknown_command" },
+    });
   });
 });

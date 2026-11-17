@@ -2,7 +2,12 @@
 // Discord pieces kept out of the model's reach, the "Translate for everyone" picker and its state, and the
 // text of what is posted. No database, no network.
 import { WRITING_LANGUAGES, type WritingLanguage } from "../ai/notice-writing";
-import { WORKSPACE_DICTIONARIES, type WorkspaceDictionary } from "./dictionary";
+import {
+  WORKSPACE_DICTIONARIES,
+  type WorkspaceDictionary,
+  type WorkspaceLanguage,
+} from "./dictionary";
+import { CREATE_PUBLIC_THREADS, SEND_MESSAGES, SEND_MESSAGES_IN_THREADS } from "./discord-api";
 
 /** A longer message gets a plain "too long" line; Discord's own limit is 2,000 (4,000 with Nitro). */
 export const MAX_TRANSLATE_CHARS = 1500;
@@ -16,7 +21,10 @@ export const HEADING: Record<WritingLanguage, string> = {
   fr: "🇫🇷 Français",
 };
 
-/** Short words that only one of the three languages uses (words two of them share are left out). */
+/**
+ * Short words that only one of the three languages uses. Words two of them share are left out ("que",
+ * "mais" and "nos" are French too).
+ */
 const MARKERS: Record<WritingLanguage, ReadonlySet<string>> = {
   en: new Set(
     "the and you your is are to of for we our please all with this that be will have it in at today tomorrow everyone thanks guys what don't can".split(
@@ -24,7 +32,7 @@ const MARKERS: Record<WritingLanguage, ReadonlySet<string>> = {
     ),
   ),
   "pt-BR": new Set(
-    "o os e é que não para pra com um uma na nos vocês você por pessoal nós está estão hoje amanhã obrigado obrigada tem mais muito isso aqui seu sua também bom dia".split(
+    "o os e é não para pra com um uma na vocês você por pessoal nós está estão hoje amanhã obrigado obrigada tem muito isso aqui seu sua também bom dia".split(
       " ",
     ),
   ),
@@ -46,7 +54,8 @@ const LETTERS: Record<WritingLanguage, RegExp> = {
  * clearly leads ("ok", a name, a time, or a fourth language). The caller then asks the model without one.
  */
 export function guessLanguage(text: string): WritingLanguage | null {
-  const lower = text.toLowerCase();
+  // The curly apostrophe (don’t) counts as the straight one.
+  const lower = text.toLowerCase().replace(/’/g, "'");
   const words = lower.match(/[\p{L}']+/gu) ?? [];
   const scores = WRITING_LANGUAGES.map((language) => ({
     language,
@@ -76,10 +85,13 @@ export function mask(text: string): { text: string; kept: string[] } {
 export const unmask = (text: string, kept: readonly string[]): string =>
   text.replace(/\{(\d+)\}/g, (found, n: string) => kept[Number(n) - 1] ?? found);
 
-/** A heading line and the text, cut at line breaks (or spaces) into pieces one Discord message holds. */
-export function messagesOf(to: WritingLanguage, text: string): string[] {
+/**
+ * `lead` (a line, or nothing), a heading line and the text, cut at line breaks (or spaces) into pieces one
+ * Discord message holds.
+ */
+export function messagesOf(to: WritingLanguage, text: string, lead = ""): string[] {
   const out: string[] = [];
-  let rest = `**${HEADING[to]}**\n${text}`;
+  let rest = `${lead}**${HEADING[to]}**\n${text}`;
   while (rest.length > DISCORD_MESSAGE_CHARS) {
     const window = rest.slice(0, DISCORD_MESSAGE_CHARS);
     const cut = Math.max(window.lastIndexOf("\n"), window.lastIndexOf(" "));
@@ -91,6 +103,20 @@ export function messagesOf(to: WritingLanguage, text: string): string[] {
 }
 
 export type Where = "thread" | "channel";
+
+/**
+ * Where the asker may post, from their permissions in this channel (Discord resolves them into
+ * `member.permissions`): a thread needs the bot and Create Public Threads with Send Messages in Threads;
+ * the channel needs Send Messages. Empty: they cannot post here.
+ */
+export function placesFor(permissions: string | undefined, bot: boolean): Where[] {
+  const has = BigInt(permissions ?? "0");
+  const all = (bits: bigint) => (has & bits) === bits;
+  return [
+    ...(bot && all(CREATE_PUBLIC_THREADS | SEND_MESSAGES_IN_THREADS) ? (["thread"] as const) : []),
+    ...(all(SEND_MESSAGES) ? (["channel"] as const) : []),
+  ];
+}
 
 /** What the "Translate for everyone" picker holds; it travels in each component's custom_id. */
 export interface Picker {
@@ -106,7 +132,8 @@ export interface Picker {
 const CODE: Record<WritingLanguage, string> = { en: "e", "pt-BR": "p", fr: "f" };
 const byCode = (c: string) => WRITING_LANGUAGES.find((l) => CODE[l] === c);
 /** The picker's actions: l the language select, t and c the Thread and Channel buttons, p Post. */
-export type PickerAction = "l" | "t" | "c" | "p";
+const ACTIONS = ["l", "t", "c", "p"] as const;
+export type PickerAction = (typeof ACTIONS)[number];
 
 /** "tr:<action>:<message>:<user>:<from>:<to>:<where>", under Discord's 100 characters. */
 export const pickerId = (action: PickerAction, p: Picker): string =>
@@ -121,17 +148,20 @@ export const pickerId = (action: PickerAction, p: Picker): string =>
   ].join(":");
 
 export function parsePickerId(id: string): { action: PickerAction; picker: Picker } | null {
-  const m = /^tr:([ltcp]):(\d{1,20}):(\d{1,20}):([epfx]):([epf]{0,3}):([tc])$/.exec(id);
-  if (!m) return null;
-  const [, action, messageId, userId, from, to, where] = m as unknown as string[];
+  const g =
+    /^tr:(?<action>[ltcp]):(?<message>\d{1,20}):(?<user>\d{1,20}):(?<from>[epfx]):(?<to>[epf]{0,3}):(?<where>[tc])$/.exec(
+      id,
+    )?.groups;
+  const action = ACTIONS.find((a) => a === g?.action);
+  if (!g || !action) return null;
   return {
-    action: action as PickerAction,
+    action,
     picker: {
-      messageId: messageId ?? "",
-      userId: userId ?? "",
-      from: byCode(from ?? "") ?? null,
-      to: [...(to ?? "")].flatMap((c) => byCode(c) ?? []),
-      where: where === "t" ? "thread" : "channel",
+      messageId: g.message ?? "",
+      userId: g.user ?? "",
+      from: byCode(g.from ?? "") ?? null,
+      to: [...(g.to ?? "")].flatMap((c) => byCode(c) ?? []),
+      where: g.where === "t" ? "thread" : "channel",
     },
   };
 }
@@ -148,10 +178,10 @@ const PRIMARY = 1;
 const SECONDARY = 2;
 
 /**
- * The picker's rows: the languages (at least one), Thread or Channel when the bot can open threads, and
+ * The picker's rows: the languages (at least one), Thread or Channel when the asker may use both, and
  * Post. Each component carries the whole state, so the app keeps nothing between the steps.
  */
-export function pickerRows(t: WorkspaceDictionary, p: Picker, threads: boolean): unknown[] {
+export function pickerRows(t: WorkspaceDictionary, p: Picker, places: readonly Where[]): unknown[] {
   const languages = {
     type: SELECT,
     custom_id: pickerId("l", p),
@@ -178,16 +208,24 @@ export function pickerRows(t: WorkspaceDictionary, p: Picker, threads: boolean):
   };
   return [
     { type: ROW, components: [languages] },
-    ...(threads ? [{ type: ROW, components: [place("t", "thread"), place("c", "channel")] }] : []),
+    ...(places.length > 1
+      ? [{ type: ROW, components: [place("t", "thread"), place("c", "channel")] }]
+      : []),
     { type: ROW, components: [post] },
   ];
 }
 
-/** The picker's first line: what to do, and why there is no Thread without the bot. */
-export const pickerLine = (t: WorkspaceDictionary, threads: boolean): string =>
-  threads
-    ? t["translate.discord.choose"]
-    : `${t["translate.discord.chooseChannel"]}\n${t["translate.discord.noBot"]}`;
+/** The picker's first line: what to do and where it goes, and why there is no Thread without the bot. */
+export function pickerLine(t: WorkspaceDictionary, places: readonly Where[], bot: boolean): string {
+  if (places.length > 1) return t["translate.discord.choose"];
+  if (places[0] === "thread") return t["translate.discord.chooseThread"];
+  const line = t["translate.discord.chooseChannel"];
+  return bot ? line : `${line}\n${t["translate.discord.noBot"]}`;
+}
+
+/** Languages by name, as a list in the asker's language ("🇧🇷 Português and 🇫🇷 Français"). */
+export const languageList = (language: WorkspaceLanguage, languages: readonly WritingLanguage[]) =>
+  new Intl.ListFormat(language).format(languages.map((l) => HEADING[l]));
 
 /** The reply's "partly untranslated" line, in the language of the translation it is under. */
 export const partlyLine = (to: WritingLanguage): string =>

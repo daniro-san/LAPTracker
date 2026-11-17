@@ -27,6 +27,17 @@ export const translateEn = {
   "translate.discord.noThread": "Posted in the channel: the bot can’t open threads here.",
   "translate.discord.nothing": "Nothing to post: the message is already in the chosen languages.",
   "translate.discord.notYours": "Only the person who opened this menu can use it.",
+  "translate.discord.chooseThread":
+    "Choose the languages, then press Post. It is posted in a thread on the message, for everyone.",
+  "translate.discord.cantPost": "You can’t post in this channel.",
+  "translate.discord.paused": "Translations are paused for today. Try again tomorrow.",
+  "translate.discord.askedBy": "Asked by {user}",
+  "translate.discord.inThreadList": "Posted in the thread: {languages}.",
+  "translate.discord.restInChannel":
+    "The bot could not post the rest in the thread. In the channel: {languages}.",
+  "translate.discord.threadStopped":
+    "The bot could not post in the thread, so it was posted in the channel.",
+  "translate.discord.missing": "Not translated: {languages}.",
 };
 
 type TranslateWords = Record<keyof typeof translateEn, string>;
@@ -56,6 +67,17 @@ export const translatePt: TranslateWords = {
   "translate.discord.noThread": "Publicado no canal: o bot não pode abrir tópicos aqui.",
   "translate.discord.nothing": "Nada para publicar: a mensagem já está nos idiomas escolhidos.",
   "translate.discord.notYours": "Só quem abriu este menu pode usá-lo.",
+  "translate.discord.chooseThread":
+    "Escolha os idiomas, depois toque em Publicar. A tradução sai num tópico da mensagem, para todos.",
+  "translate.discord.cantPost": "Você não pode publicar neste canal.",
+  "translate.discord.paused": "As traduções estão pausadas por hoje. Tente de novo amanhã.",
+  "translate.discord.askedBy": "Pedido por {user}",
+  "translate.discord.inThreadList": "Publicado no tópico: {languages}.",
+  "translate.discord.restInChannel":
+    "O bot não conseguiu publicar o resto no tópico. No canal: {languages}.",
+  "translate.discord.threadStopped":
+    "O bot não conseguiu publicar no tópico, então a tradução saiu no canal.",
+  "translate.discord.missing": "Sem tradução: {languages}.",
 };
 
 export const translateFr: TranslateWords = {
@@ -85,4 +107,15 @@ export const translateFr: TranslateWords = {
   "translate.discord.noThread": "Publié dans le salon : le bot ne peut pas ouvrir de fils ici.",
   "translate.discord.nothing": "Rien à publier : le message est déjà dans les langues choisies.",
   "translate.discord.notYours": "Seule la personne qui a ouvert ce menu peut l’utiliser.",
+  "translate.discord.chooseThread":
+    "Choisissez les langues, puis appuyez sur Publier. La traduction est publiée dans un fil du message, pour tous.",
+  "translate.discord.cantPost": "Vous ne pouvez pas publier dans ce salon.",
+  "translate.discord.paused": "Les traductions sont en pause pour aujourd’hui. Réessayez demain.",
+  "translate.discord.askedBy": "Demandé par {user}",
+  "translate.discord.inThreadList": "Publié dans le fil : {languages}.",
+  "translate.discord.restInChannel":
+    "Le bot n’a pas pu publier le reste dans le fil. Dans le salon : {languages}.",
+  "translate.discord.threadStopped":
+    "Le bot n’a pas pu publier dans le fil, la traduction est donc publiée dans le salon.",
+  "translate.discord.missing": "Non traduit : {languages}.",
 };
