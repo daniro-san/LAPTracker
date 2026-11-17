@@ -36,4 +36,29 @@ export const workspacesAdminCopy = {
     pin_locked: "PIN sign-in is locked for an hour.",
     failed: "Could not save. Try again.",
   },
+  /** The Discord section: the "Send to LAPTracker" command registered in each workspace's server (D96). */
+  command: {
+    title: "Discord",
+    help: "Adds 'Send to LAPTracker' to the Apps menu of each workspace's Discord server. Run it again after the command changes.",
+    register: "Register the Discord command",
+    noCredentials: "The Discord app credentials are not set.",
+    noGuild: "No workspace has a Discord server yet.",
+    line: "{name} ({guild}): {outcome}",
+    registered: "registered",
+    failed: "failed: HTTP {status}",
+    /** A short reason from Discord's status code only, never its answer's body. */
+    reasons: {
+      0: "failed: no answer from Discord",
+      403: "failed: HTTP 403, the app is not added to this server",
+      429: "failed: HTTP 429, Discord asks to wait; try again later",
+    },
+    errors: {
+      no_credentials: "The Discord app credentials are not set.",
+      discord_token: "Discord refused the app's credentials: HTTP {status}.",
+      unauthorized: "Wrong PIN.",
+      rate_limited: "Too many attempts. Wait a few minutes.",
+      pin_locked: "PIN sign-in is locked for an hour.",
+      failed: "Could not reach the server. Try again.",
+    },
+  },
 };

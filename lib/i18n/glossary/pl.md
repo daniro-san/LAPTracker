@@ -158,6 +158,7 @@ Words already used in `lib/i18n/pl.ts`. Reuse them so the pages stay consistent;
 | Bloc                      | Blok                            | `balance.bloc`, `balance.addTo` — a hypothetical group of alliances                                   |
 | Bloc builder              | Kreator bloków                  | `balance.builder` — the page's hypothetical bloc tool                                                 |
 | Standing over time        | Miejsce w czasie                | `standing.title` — the tracked alliances' rank by might, day by day                                   |
+| Member flow               | Przepływ członków               | `flow.title` — counts of members moving between tracked alliances                                     |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

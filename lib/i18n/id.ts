@@ -177,6 +177,32 @@ export const idID = {
     turnout: "{gainers} dari {n} Members mendapat Kills",
     noTurnout: "belum ada partisipasi perang",
   },
+  flow: {
+    title: "Perpindahan anggota",
+    tag: "Hanya angka",
+    lead: "Ke mana anggota pindah antar aliansi yang dilacak: aliansi tiap orang pada hari pertama, dibandingkan dengan hari kedua. Hanya angka, tanpa nama anggota.",
+    from: "Dari",
+    to: "Ke",
+    action: "Tampilkan",
+    answer: "Antara {from} dan {to}, perpindahan terbesar adalah {source} → {dest} ({n}).",
+    answerNone:
+      "Antara {from} dan {to}, tidak ada perpindahan {min} Members atau lebih di antara aliansi yang dilacak.",
+    totals: "Pindah aliansi: {moved} · Baru: {arrived} · Keluar: {left}",
+    small:
+      "Perpindahan di bawah {min} Members disembunyikan dan tidak dihitung dalam total mana pun, supaya tidak ada yang bisa ditunjuk dari kelompok kecil.",
+    rowNew: "Baru",
+    colLeft: "Keluar",
+    legend:
+      "Baris: aliansi pada {from}. Kolom: aliansi pada {to}. Baru: tidak di aliansi yang dilacak pada {from}. Keluar: tidak di aliansi yang dilacak pada {to}.",
+    caption: "Members menurut aliansi pada {from} (baris) dan {to} (kolom)",
+    stayed: "Tetap",
+    rowStayed: "Tetap: {n}",
+    newTitle: "Baru di aliansi yang dilacak",
+    leftTitle: "Keluar dari aliansi yang dilacak",
+    notCounted: "Tidak dihitung, tidak ada pembacaan yang bisa dipakai di kedua hari: {list}.",
+    order: "Pilih hari Dari yang lebih awal dari hari Ke.",
+    none: "Belum ada dua hari dengan pembacaan yang bisa dipakai.",
+  },
   balance: {
     title: "Keseimbangan server",
     description: "Porsi Might server tiap aliansi yang dilacak, dan penyusun blok hipotetis.",

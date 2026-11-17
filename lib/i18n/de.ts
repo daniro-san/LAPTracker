@@ -179,6 +179,32 @@ export const de = {
     turnout: "{gainers} von {n} Members mit gewonnenen Kills",
     noTurnout: "Noch keine Beteiligung am Krieg",
   },
+  flow: {
+    title: "Mitgliederfluss",
+    tag: "Nur Zahlen",
+    lead: "Wohin Members zwischen den erfassten Allianzen gewechselt sind: die Allianz jedes Members am ersten Tag, gegen den zweiten Tag gestellt. Nur Zahlen, keine Namen von Members.",
+    from: "Von",
+    to: "Bis",
+    action: "Zeigen",
+    answer: "Zwischen {from} und {to} war der größte Wechsel {source} → {dest} ({n}).",
+    answerNone:
+      "Zwischen {from} und {to} gab es keinen Wechsel von {min} oder mehr Members zwischen den erfassten Allianzen.",
+    totals: "Allianz gewechselt: {moved} · Neu: {arrived} · Ausgetreten: {left}",
+    small:
+      "Wechsel von weniger als {min} Members sind ausgeblendet und in keiner Zahl enthalten, damit in einer kleinen Gruppe niemand erkennbar ist.",
+    rowNew: "Neu",
+    colLeft: "Ausgetr.",
+    legend:
+      "Zeilen: die Allianz am {from}. Spalten: die Allianz am {to}. Neu: am {from} in keiner erfassten Allianz. Ausgetr.: am {to} in keiner erfassten Allianz.",
+    caption: "Members nach Allianz am {from} (Zeilen) und am {to} (Spalten)",
+    stayed: "Geblieben",
+    rowStayed: "Geblieben: {n}",
+    newTitle: "Neu in den erfassten Allianzen",
+    leftTitle: "Aus den erfassten Allianzen ausgetreten",
+    notCounted: "Nicht gezählt, keine brauchbare Messung an beiden Tagen: {list}.",
+    order: "Der Tag „Von“ muss vor dem Tag „Bis“ liegen.",
+    none: "Bisher haben weniger als zwei Tage eine brauchbare Messung.",
+  },
   balance: {
     title: "Server-Balance",
     description:

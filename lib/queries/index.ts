@@ -25,6 +25,14 @@ export {
 } from "./might-unchanged";
 export { BALANCE_DAYS, powerBalance, type PowerBalance } from "./balance";
 export { allianceStanding, type Standing } from "./standing";
+export {
+  FLOW_DAYS,
+  defaultPeriod,
+  flowPage,
+  type FlowAlliance,
+  type FlowPage,
+  type FlowResult,
+} from "./flow";
 export { whoCarried, type Carried, type CarriedRow } from "./carried";
 export { allianceNames } from "./names";
 export { eventSamples, type EventReading, type SampleAlliance, type SampleMember } from "./samples";
