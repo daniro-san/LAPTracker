@@ -46,7 +46,7 @@ const PATHS: Partial<Record<TabId, string>> = {
   review: "/follow-up",
 };
 
-/** The Home tab's count of screenshot drafts waiting for review (issue 299), beside its label. */
+/** The Home tab's count: screenshot drafts (issue 299) and notice reviews for this officer (D113). */
 function Waiting({ n, t }: { n: number; t: WorkspaceDictionary }) {
   if (n === 0) return null;
   return (

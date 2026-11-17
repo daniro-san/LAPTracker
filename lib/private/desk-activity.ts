@@ -14,6 +14,7 @@ import {
   type FollowUpDone,
   type MarksDone,
 } from "../repo/desk-activity";
+import type { ReviewAnsweredDone, ReviewAskedDone } from "../repo/desk-activity-reviews";
 import { SAVED_DRAFT_KEEP_MS } from "../repo/import";
 import { noticeTitles } from "../repo/notices";
 import type { WorkspaceAccess } from "./access";
@@ -41,23 +42,40 @@ type What =
   | { kind: "marks"; call: Pick<MarksDone, "kind" | "variant">; rest: boolean }
   | ({ kind: "followUp" } & Pick<FollowUpDone, "uid" | "action" | "until">)
   | { kind: "thefts"; count: number }
-  | { kind: "newMember"; names: string[] };
+  | { kind: "newMember"; names: string[] }
+  | ({ kind: "reviewAsked" } & Pick<ReviewAskedDone, "noticeId" | "language" | "reviewerId">)
+  | ({ kind: "reviewAnswered" } & Pick<ReviewAnsweredDone, "noticeId" | "outcome" | "language">);
 
 type Raw = What & { by: number; at: Date };
 
 /** One line of the feed: who did what, and when. */
 export type ActivityItem = { at: Date; who: string } & (
-  | Exclude<What, { kind: "facts" | "followUp" | "noticeSaved" | "noticePosted" }>
+  | Exclude<
+      What,
+      {
+        kind:
+          "facts" | "followUp" | "noticeSaved" | "noticePosted" | "reviewAsked" | "reviewAnswered";
+      }
+    >
   | { kind: "facts"; member: string | null; members: number }
   | ({ kind: "followUp"; member: string | null } & Pick<FollowUpDone, "action" | "until">)
   | { kind: "noticeSaved" | "noticePosted"; title: string }
+  /** `reviewer` null: the whole team (D113). */
+  | { kind: "reviewAsked"; title: string; language: string | null; reviewer: string | null }
+  | ({ kind: "reviewAnswered"; title: string } & Pick<ReviewAnsweredDone, "outcome" | "language">)
 );
 
 /**
  * A draft's save also writes facts, thefts and new members, and a follow-up writes facts, all at the same
- * instant by the same officer: the higher action stands for them.
+ * instant by the same officer: the higher action stands for them. A save from a review request is said
+ * as "edited … after a review" (D113), not as a plain save.
  */
-const RANK: Partial<Record<What["kind"], number>> = { draft: 3, followUp: 2, newMember: 1 };
+const RANK: Partial<Record<What["kind"], number>> = {
+  draft: 3,
+  followUp: 2,
+  newMember: 1,
+  reviewAnswered: 1,
+};
 const rank = (r: Raw) => RANK[r.kind] ?? 0;
 const instant = (r: Raw) => `${r.by}@${r.at.getTime()}`;
 
@@ -126,6 +144,8 @@ function merge(rows: Awaited<ReturnType<typeof activityRows>>): Raw[] {
       kind: "newMember" as const,
       names: [name],
     })),
+    ...rows.reviewsAsked.map((r) => ({ ...r, kind: "reviewAsked" as const })),
+    ...rows.reviewsAnswered.map((r) => ({ ...r, kind: "reviewAnswered" as const })),
   ];
   const top = new Map<string, number>();
   for (const r of raw) top.set(instant(r), Math.max(top.get(instant(r)) ?? 0, rank(r)));
@@ -133,6 +153,28 @@ function merge(rows: Awaited<ReturnType<typeof activityRows>>): Raw[] {
     .filter((r) => rank(r) >= (top.get(instant(r)) ?? 0))
     .sort((a, b) => b.at.getTime() - a.at.getTime());
   return grouped(shown.filter((r, i) => i === 0 || sameKey(r) !== sameKey(shown[i - 1] as Raw)));
+}
+
+/**
+ * A line about a notice, with its title: a save, a post, a review request and the officer it names, or how
+ * a review ended (D113).
+ */
+function noticeItem(
+  line: Extract<Raw, { noticeId: number }>,
+  who: string,
+  titles: Map<number, string>,
+  officers: Map<number, string>,
+): ActivityItem {
+  const title = titles.get(line.noticeId) ?? "";
+  if (line.kind === "reviewAnswered") {
+    const { at, outcome, language } = line;
+    return { kind: "reviewAnswered", at, who, title, outcome, language };
+  }
+  if (line.kind === "reviewAsked") {
+    const reviewer = line.reviewerId === null ? null : (officers.get(line.reviewerId) ?? null);
+    return { kind: "reviewAsked", at: line.at, who, title, language: line.language, reviewer };
+  }
+  return { kind: line.kind, at: line.at, who, title };
 }
 
 /** The newest ACTIVITY_MAX things officers did in the last two weeks, with names resolved. */
@@ -147,11 +189,12 @@ export async function recentActivity(
   const uids = lines.flatMap((r) =>
     r.kind === "followUp" ? [r.uid] : r.kind === "facts" ? r.uids : [],
   );
-  const ids = lines.flatMap((r) =>
-    r.kind === "noticeSaved" || r.kind === "noticePosted" ? [r.noticeId] : [],
+  const ids = lines.flatMap((r) => ("noticeId" in r ? [r.noticeId] : []));
+  const reviewers = lines.flatMap((r) =>
+    r.kind === "reviewAsked" && r.reviewerId !== null ? [r.reviewerId] : [],
   );
   const [officers, members, titles] = await Promise.all([
-    officerNames(db, ws, [...new Set(lines.map((r) => r.by))]),
+    officerNames(db, ws, [...new Set([...lines.map((r) => r.by), ...reviewers])]),
     memberNames(db, ws, access.unionId, [...new Set(uids)]),
     noticeTitles(db, ws, [...new Set(ids)]),
   ]);
@@ -159,6 +202,7 @@ export async function recentActivity(
     const who = officers.get(r.by);
     if (!who) return [];
     const line = r;
+    if ("noticeId" in line) return [noticeItem(line, who, titles, officers)];
     switch (line.kind) {
       case "facts": {
         const one = new Set(line.uids);
@@ -172,9 +216,6 @@ export async function recentActivity(
           { kind: "followUp", at, action, until, who, member: members.get(line.uid) ?? null },
         ];
       }
-      case "noticeSaved":
-      case "noticePosted":
-        return [{ kind: line.kind, at: line.at, who, title: titles.get(line.noticeId) ?? "" }];
       default:
         return [{ ...line, who }];
     }

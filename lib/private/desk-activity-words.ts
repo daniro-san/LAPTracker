@@ -95,6 +95,24 @@ function countLine(
     : fill(t["activity.newMembers"], { who, n: item.names.length });
 }
 
+const CODE: Record<string, string> = { en: "EN", "pt-BR": "PT", fr: "FR" };
+
+/** A review request or its outcome (D113): to whom (one officer or the team), and which language. */
+function reviewLine(
+  t: WorkspaceDictionary,
+  who: string,
+  item: Extract<ActivityItem, { kind: "reviewAsked" | "reviewAnswered" }>,
+): string {
+  const title = isolate(item.title);
+  const what = item.language ? (CODE[item.language] ?? item.language) : t["notices.review.all"];
+  if (item.kind === "reviewAnswered") {
+    const key = item.outcome === "approved" ? "activity.reviewApproved" : "activity.reviewEdited";
+    return fill(t[key], { who, title, what });
+  }
+  if (item.reviewer === null) return fill(t["activity.reviewAskedTeam"], { who, title, what });
+  return fill(t["activity.reviewAsked"], { who, title, what, reviewer: isolate(item.reviewer) });
+}
+
 /** What the officer did, as one sentence, without the time. */
 export function activityLine(
   item: ActivityItem,
@@ -120,6 +138,9 @@ export function activityLine(
     case "thefts":
     case "newMember":
       return countLine(t, who, item);
+    // The rest: a review request or its outcome (D113).
+    default:
+      return reviewLine(t, who, item);
   }
 }
 

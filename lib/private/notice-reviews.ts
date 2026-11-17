@@ -1,0 +1,160 @@
+// Review requests on notices (issue 402, D113). An officer asks the whole team or one officer to look at
+// the whole notice or one language. The reviewer approves it, or edits and saves it from the request, which
+// closes it as "Edited by …"; the notice's earlier versions (D102) keep both texts. No comment thread. A
+// request never blocks publishing and nothing is sent outside the desk. Every read and write takes the
+// WorkspaceAccess, so a request is reached only from its own workspace (D71).
+import { z } from "zod";
+
+import type { Db } from "../db";
+import {
+  findReview,
+  insertOutcome,
+  insertReview,
+  openReviews,
+  reviewsOfNotice,
+  workspaceOfficers,
+  type ReviewRow,
+} from "../repo/notice-reviews";
+import { noticeInWorkspace, noticeTitles } from "../repo/notices";
+import type { WorkspaceAccess } from "./access";
+import { NOTICE_LANGUAGES, type NoticeLanguage } from "./notice-rules";
+
+const id = z.number().int().positive();
+
+/** POST /api/w/[slug]/notices/reviews: ask for a review, or approve one. */
+export const reviewBody = z.discriminatedUnion("action", [
+  z
+    .object({
+      action: z.literal("ask"),
+      notice: id,
+      /** null: the whole notice. */
+      language: z.enum(NOTICE_LANGUAGES).nullable(),
+      /** null: anyone on the team. */
+      reviewer: id.nullable(),
+      requestId: z.uuid(),
+    })
+    .strict(),
+  z.object({ action: z.literal("approve"), review: id, requestId: z.uuid() }).strict(),
+]);
+
+/** One request as the notice page shows it. */
+export interface ReviewView {
+  id: number;
+  language: NoticeLanguage | null;
+  /** null: anyone on the team. */
+  reviewerId: number | null;
+  reviewer: string | null;
+  askedBy: string | null;
+  askedAt: Date;
+  outcome: { kind: "approved" | "edited"; by: string | null; at: Date } | null;
+  /** The viewer may approve it or edit from it: open, and theirs, or the team's and not asked by them. */
+  mine: boolean;
+}
+
+/** Who answers a request: the officer it names, or for the team's, anyone but the one who asked. */
+const mayAnswer = (r: ReviewRow, userId: number) =>
+  r.reviewerId === null ? r.askedById !== userId : r.reviewerId === userId;
+
+function viewOf(r: ReviewRow, userId: number): ReviewView {
+  return {
+    id: r.id,
+    language: r.language as NoticeLanguage | null,
+    reviewerId: r.reviewerId,
+    reviewer: r.reviewer,
+    askedBy: r.askedBy,
+    askedAt: r.askedAt,
+    outcome: r.outcome && r.outcomeAt && { kind: r.outcome, by: r.outcomeBy, at: r.outcomeAt },
+    mine: r.outcome === null && mayAnswer(r, userId),
+  };
+}
+
+/** The officers a request can name, without the one asking. */
+export async function reviewers(db: Db, access: WorkspaceAccess) {
+  const officers = await workspaceOfficers(db, access.workspaceId);
+  return officers.filter((o) => o.id !== access.user.id);
+}
+
+export type AskResult = { ok: true; id: number } | { ok: false; reason: "not_found" | "reviewer" };
+
+export async function askReview(
+  db: Db,
+  access: WorkspaceAccess,
+  ask: { notice: number; language: NoticeLanguage | null; reviewer: number | null },
+  requestId: string,
+  now: Date,
+): Promise<AskResult> {
+  if (!(await noticeInWorkspace(db, access.workspaceId, ask.notice))) {
+    return { ok: false, reason: "not_found" };
+  }
+  if (ask.reviewer !== null && !(await reviewers(db, access)).some((o) => o.id === ask.reviewer)) {
+    return { ok: false, reason: "reviewer" };
+  }
+  const made = await insertReview(db, {
+    workspaceId: access.workspaceId,
+    noticeId: ask.notice,
+    requestId,
+    language: ask.language,
+    reviewerId: ask.reviewer,
+    askedBy: access.user.id,
+    at: now,
+  });
+  return { ok: true, id: made };
+}
+
+export type AnswerResult = "ok" | "not_found" | "not_reviewer" | "closed";
+
+/**
+ * Approves the request, or closes it as edited after a save from it. `notice`: the notice that was saved,
+ * which must be the request's.
+ */
+export async function answerReview(
+  db: Db,
+  access: WorkspaceAccess,
+  answer: { review: number; outcome: "approved" | "edited"; notice?: number },
+  requestId: string,
+  now: Date,
+): Promise<AnswerResult> {
+  const r = await findReview(db, access.workspaceId, answer.review);
+  if (!r || (answer.notice !== undefined && r.noticeId !== answer.notice)) return "not_found";
+  if (!mayAnswer(r, access.user.id)) return "not_reviewer";
+  return insertOutcome(db, {
+    workspaceId: access.workspaceId,
+    reviewId: r.id,
+    requestId,
+    outcome: answer.outcome,
+    by: access.user.id,
+    at: now,
+  });
+}
+
+/** A notice's requests, newest first, as the viewer sees them, and the officers a new one can name. */
+export async function noticeReviews(db: Db, access: WorkspaceAccess, noticeId: number) {
+  const [rows, officers] = await Promise.all([
+    reviewsOfNotice(db, access.workspaceId, noticeId),
+    reviewers(db, access),
+  ]);
+  return { list: rows.map((r): ReviewView => viewOf(r, access.user.id)), officers };
+}
+
+/** The open requests the viewer may answer: theirs, or the team's when someone else asked. */
+const openForMe = async (db: Db, access: WorkspaceAccess) =>
+  (await openReviews(db, access.workspaceId)).filter((r) => mayAnswer(r, access.user.id));
+
+/** How many requests wait for the viewer, for the Home tab's number (D113). */
+export const reviewsForMeCount = async (db: Db, access: WorkspaceAccess) =>
+  (await openForMe(db, access)).length;
+
+/** Home's "To review" (D113): the open requests the viewer may answer, with the notice's title. */
+export async function reviewsForMe(db: Db, access: WorkspaceAccess) {
+  const open = await openForMe(db, access);
+  const titles = await noticeTitles(db, access.workspaceId, [
+    ...new Set(open.map((r) => r.noticeId)),
+  ]);
+  return open.map((r) => ({
+    id: r.id,
+    noticeId: r.noticeId,
+    title: titles.get(r.noticeId) ?? "",
+    language: r.language as NoticeLanguage | null,
+    askedBy: r.askedBy,
+  }));
+}

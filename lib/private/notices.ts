@@ -64,8 +64,11 @@ export const noticeSave = z
     changes: z.array(change).min(1).max(NOTICE_FIELDS.length),
     /** A new notice's request id (D100), made once per open editor. */
     requestId: z.uuid().optional(),
+    /** Saved from a review request (D113): the save closes it as edited, under the editor's request id. */
+    review: z.object({ id: z.number().int().positive(), requestId: z.uuid() }).strict().optional(),
   })
   .strict()
+  .refine((s) => s.review === undefined || s.id !== undefined)
   .refine((s) => new Set(s.changes.map((c) => c.field)).size === s.changes.length)
   // INVARIANT notices.request-once: a new notice carries its request id, so a retry stores one notice.
   .refine((s) => (s.id === undefined) === (s.requestId !== undefined));

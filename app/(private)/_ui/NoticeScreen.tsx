@@ -4,6 +4,8 @@
 // the game's mail, Discord; issue 345), or edit it. A language that may be out of date carries an "Out of
 // date" tag, which opens the editor at that language; "Update from …" and "Keep as is" are there, behind the
 // editor's save and its checks. Under the languages: "Publish to Discord" and the calendar link (D102).
+// Review requests (D113): the open ones at the top, where "Edit and save" opens the editor for that request,
+// and the "Review" section with "Ask for a review" before Discord.
 import { useState } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
@@ -19,6 +21,7 @@ import { Counter, OutOfDateTag, OverLimit } from "./NoticeBits";
 import { NoticeCalendarLink } from "./NoticeCalendarLink";
 import { NoticeEditor, type EditorProps } from "./NoticeEditor";
 import { NoticePublish, type PublishProps } from "./NoticePublish";
+import { ReviewRequests, ReviewSection, type ReviewProps } from "./NoticeReviews";
 
 export interface ScreenProps extends Omit<EditorProps, "focus" | "onClose" | "id"> {
   id: number;
@@ -26,6 +29,7 @@ export interface ScreenProps extends Omit<EditorProps, "focus" | "onClose" | "id
   meta: { written: string; changed: string; flags: string[] };
   publish: PublishProps["publish"];
   calendar: NoticeCalendar;
+  reviews: ReviewProps;
 }
 
 /** The three copies of one language: the game's notice board (cut to fit), the game's mail, Discord. */
@@ -103,7 +107,10 @@ function LanguageText({
 export function NoticeScreen(p: ScreenProps) {
   /** null: reading. A language: editing, opened at it. true: editing from the top. */
   const [editing, setEditing] = useState<NoticeLanguage | true | null>(null);
+  /** The review request the editor was opened from, if any (D113). */
+  const [review, setReview] = useState<number | undefined>(undefined);
   const { t } = p;
+  const written = p.languages.filter((l) => p.fields[l].value.trim() !== "");
   if (editing) {
     return (
       <>
@@ -111,7 +118,11 @@ export function NoticeScreen(p: ScreenProps) {
         <NoticeEditor
           {...p}
           focus={editing === true ? undefined : editing}
-          onClose={() => setEditing(null)}
+          review={review}
+          onClose={() => {
+            setEditing(null);
+            setReview(undefined);
+          }}
         />
       </>
     );
@@ -135,6 +146,15 @@ export function NoticeScreen(p: ScreenProps) {
       >
         {t["notices.edit"]}
       </button>
+      <ReviewRequests
+        slug={p.slug}
+        t={t}
+        reviews={p.reviews}
+        onEdit={(id, language) => {
+          setReview(id);
+          setEditing(language ?? true);
+        }}
+      />
       {p.languages.map((language) => (
         <LanguageText
           key={language}
@@ -143,13 +163,8 @@ export function NoticeScreen(p: ScreenProps) {
           onEdit={() => setEditing(language)}
         />
       ))}
-      <NoticePublish
-        slug={p.slug}
-        id={p.id}
-        t={t}
-        publish={p.publish}
-        written={p.languages.filter((l) => p.fields[l].value.trim() !== "")}
-      />
+      <ReviewSection slug={p.slug} id={p.id} t={t} reviews={p.reviews} written={written} />
+      <NoticePublish slug={p.slug} id={p.id} t={t} publish={p.publish} written={written} />
       <NoticeCalendarLink slug={p.slug} id={p.id} t={t} calendar={p.calendar} />
     </>
   );

@@ -55,10 +55,13 @@ export async function saveNotice(
   changes: Change[],
   /** A new notice's request id (D100): one per open editor, so a retry stores one notice. */
   requestId: string,
+  /** Saved from a review request (D113): the save closes it as "Edited by …", under the same id. */
+  review: number | null = null,
 ): Promise<SaveAnswer> {
   const { status, json } = await post(`/api/w/${slug}/notices`, {
     ...(id !== null ? { id } : { requestId }),
     changes,
+    ...(review !== null && { review: { id: review, requestId } }),
   });
   const body = json as { id?: number; conflicts?: Conflict[] } | null;
   if (status === 200 && typeof body?.id === "number") return { ok: true, id: body.id };
@@ -68,9 +71,10 @@ export async function saveNotice(
 
 export type DraftAsk =
   | { kind: "translate"; from: NoticeLanguage; to: NoticeLanguage[]; text: string }
-  | { kind: "improve"; language: NoticeLanguage; tone: string; text: string };
+  | { kind: "improve"; language: NoticeLanguage; tone: string; text: string }
+  | { kind: "fit"; language: NoticeLanguage; text: string };
 
-/** A Translate or Improve writing answer: each language's draft, and those still partly untranslated. */
+/** A Translate, Improve writing or Fit answer: each language's draft, and those still partly untranslated. */
 export interface DraftAnswer {
   drafts: Partial<Record<NoticeLanguage, string>>;
   partly: NoticeLanguage[];
@@ -85,6 +89,7 @@ export async function askDraft(
   const body = json as Partial<DraftAnswer> | null;
   if (status === 200 && body?.drafts) return { drafts: body.drafts, partly: body.partly ?? [] };
   if (status === 401) return { failed: "signedOut.text" };
+  if (status === 422) return { failed: "notices.fit.failed" };
   if (status === 504) return { failed: "notices.ai.timeout" };
   if (status === 429) return { failed: "notices.ai.busy" };
   return { failed: "notices.ai.failed" };

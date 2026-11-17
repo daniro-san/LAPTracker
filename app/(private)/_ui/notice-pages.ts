@@ -10,12 +10,14 @@ import { withPageDb } from "@/lib/page";
 import { requireWorkspace, type WorkspaceAccess } from "@/lib/private/access";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import { toReviewCount } from "@/lib/private/import-view";
+import type { noticeReviews, ReviewView } from "@/lib/private/notice-reviews";
 import { NOTICE_LANGUAGES, type NoticeLanguage } from "@/lib/private/notice-rules";
 import { RENEW_MS } from "@/lib/private/session";
 import { SLUG } from "@/lib/private/sign-in";
 import { serverDay } from "@/lib/schedule";
 
 import { LANGUAGE_CODE } from "./languages";
+import type { ReviewProps } from "./NoticeReviews";
 import { refuse } from "./refuse";
 
 /** Checks access first, then reads; a refused visitor goes where `refuse` sends them, else to the sign-in. */
@@ -87,6 +89,8 @@ export function noticeWords(language: WorkspaceLanguage, t: WorkspaceDictionary)
     /** "Rook · Tue, Nov 17 14:02 ST": an earlier version's line (D102). */
     version: (name: string | null, at: Date) => fill(t["notices.history.by"], by(name, at)),
     written: (name: string | null, at: Date) => fill(t["notices.written"], by(name, at)),
+    /** "Rook" (isolated) or "an officer", and the time in server time. */
+    by,
     changed: (name: string | null, at: Date) => fill(t["notices.changed"], by(name, at)),
   };
 }
@@ -104,4 +108,47 @@ export function sourceFor(
   stale: NoticeLanguage[],
 ): NoticeLanguage | null {
   return languages.find((l) => text[l].value !== "" && !stale.includes(l)) ?? null;
+}
+
+/** Review requests (D113): the open ones with who asked, what and for whom; the newest 5 answered. */
+export function reviewProps(
+  words: ReturnType<typeof noticeWords>,
+  t: WorkspaceDictionary,
+  reviews: Awaited<ReturnType<typeof noticeReviews>>,
+  viewerId: number,
+): ReviewProps {
+  const what = (l: NoticeLanguage | null) => (l ? LANGUAGE_CODE[l] : t["notices.review.all"]);
+  const sub = (r: ReviewView) => {
+    const { when } = words.by(null, r.askedAt);
+    if (r.reviewerId === null) return fill(t["notices.review.forTeam"], { when });
+    if (r.reviewerId === viewerId) return fill(t["notices.review.forYou"], { when });
+    return fill(t["notices.review.for"], words.by(r.reviewer, r.askedAt));
+  };
+  return {
+    open: reviews.list
+      .filter((r) => !r.outcome)
+      .map((r) => ({
+        id: r.id,
+        language: r.language,
+        mine: r.mine,
+        line: fill(t["notices.review.asked"], {
+          name: words.by(r.askedBy, r.askedAt).name,
+          what: what(r.language),
+        }),
+        sub: sub(r),
+      })),
+    done: reviews.list
+      .flatMap((r) =>
+        r.outcome
+          ? [
+              fill(t[`notices.review.${r.outcome.kind}`], {
+                what: what(r.language),
+                ...words.by(r.outcome.by, r.outcome.at),
+              }),
+            ]
+          : [],
+      )
+      .slice(0, 5),
+    officers: reviews.officers.map((o) => ({ id: o.id, name: o.name ?? t["notices.someone"] })),
+  };
 }

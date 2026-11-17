@@ -1,6 +1,7 @@
 // The "To review" list on Home (issue 299): the workspace's drafts waiting for an officer, shared by all of
 // them, and the door in, "Send screenshots". Each draft says what was read and how many rows need a person.
-// Above them, "2 new members to match" when a roster read could not match new members added by hand.
+// Above them, "2 new members to match" when a roster read could not match new members added by hand, and
+// each notice review request the officer may answer (D113), linked to its notice.
 import { fill, isolate } from "@/lib/copy";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import { MAX_PICTURES } from "@/lib/private/import";
@@ -9,7 +10,9 @@ import { STATUS_BAR } from "@/lib/private/import-kinds";
 import { SAVED_KINDS } from "@/lib/private/import-save";
 import type { ReviewItem } from "@/lib/private/import-view";
 import { draftCounts, kindLabel } from "@/lib/private/import-words";
+import type { reviewsForMe } from "@/lib/private/notice-reviews";
 
+import { LANGUAGE_CODE } from "./languages";
 import { SendScreenshots, type TypeChoice } from "./SendScreenshots";
 
 const KINDS: ImportKind[] = [
@@ -77,6 +80,34 @@ export function TabSend(props: {
   );
 }
 
+/** The notice review requests for this officer (D113), one link each to its notice. */
+function NoticeReviewLinks(props: {
+  slug: string;
+  t: WorkspaceDictionary;
+  reviews: Awaited<ReturnType<typeof reviewsForMe>>;
+}) {
+  const { t } = props;
+  if (props.reviews.length === 0) return null;
+  return (
+    <ul className="mt-1">
+      {props.reviews.map((r) => (
+        <li key={r.id}>
+          <a
+            href={`/w/${props.slug}/notices/${r.noticeId}`}
+            className="inline-flex min-h-11 items-center py-1 font-semibold text-plum underline underline-offset-4"
+          >
+            {fill(t["notices.review.home"], {
+              title: isolate(r.title),
+              what: r.language ? LANGUAGE_CODE[r.language] : t["notices.review.all"],
+              name: r.askedBy ? isolate(r.askedBy) : t["notices.someone"],
+            })}
+          </a>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export function ToReview(props: {
   slug: string;
   items: ReviewItem[];
@@ -84,6 +115,8 @@ export function ToReview(props: {
   language: WorkspaceLanguage;
   /** "2 new members to match" and its link to Members (D106, 2026-11-17); null when none. */
   toMatch: { line: string; href: string } | null;
+  /** The open notice review requests for this officer (D113): "Review “Garden rota” · PT, asked by Ana". */
+  reviews: Awaited<ReturnType<typeof reviewsForMe>>;
   /** "Mon 16 Nov 18:54 server time", per item. */
   when: (at: Date) => string;
 }) {
@@ -95,6 +128,7 @@ export function ToReview(props: {
         {items.length > 0 && <span className="ml-2 tabular-nums text-plum">{items.length}</span>}
       </h2>
       {items.length > 0 && <p className="mt-1">{t["shots.lead"]}</p>}
+      <NoticeReviewLinks slug={slug} t={t} reviews={props.reviews} />
       {props.toMatch && (
         <p className="mt-1">
           <a

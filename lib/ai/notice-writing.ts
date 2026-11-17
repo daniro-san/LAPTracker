@@ -53,10 +53,8 @@ const KEEP = [
   "- Plain text for a game's notice board: no Markdown, no spaces at the end of a line, the ordinary hyphen (-), and ordinary spaces except the French no-break space.",
 ];
 
-export const TRANSLATE_SYSTEM = [
-  "You are the translator for the leadership of a mobile game alliance. Officers write alliance notices and short notes; you translate them between English, Brazilian Portuguese and French.",
-  CONTEXT,
-  "Rules:",
+/** Translate's rules, shared by Discord's translator and the notices' localizer (D113). */
+const TRANSLATE_RULES = [
   "- Natural, not literal: write what a fluent player in a friendly gaming community would write, in the same register as the source.",
   DATA_ONLY,
   ...KEEP,
@@ -76,8 +74,75 @@ export const TRANSLATE_SYSTEM = [
   "ALLIANCE DUEL tomorrow / Wed | REMINDER: use your Construction Speedups",
   "DUELO DA ALIANÇA amanhã / Qua | LEMBRETE: use seus Construction Speedups",
   "DUEL D’ALLIANCE demain / Mer | RAPPEL : utilisez vos Construction Speedups",
-  "- Output only the translation, without the <text> tags: no quotes, no notes, no explanation.",
+];
+
+const TRANSLATE_OUTPUT =
+  "- Output only the translation, without the <text> tags: no quotes, no notes, no explanation.";
+
+/** Discord's "Translate for me" (D101). The notices' Translate uses `localizeSystem` (D113). */
+export const TRANSLATE_SYSTEM = [
+  "You are the translator for the leadership of a mobile game alliance. Officers write alliance notices and short notes; you translate them between English, Brazilian Portuguese and French.",
+  CONTEXT,
+  "Rules:",
+  ...TRANSLATE_RULES,
+  TRANSLATE_OUTPUT,
 ].join("\n");
+
+/** How a native officer of the alliance writes in each language (D113): the localizer's and Fit's voice. */
+const VOICE: Record<WritingLanguage, string> = {
+  en: "Write the way a native English-speaking officer of the alliance writes to its members: plain, friendly and clear, as players write in alliance chat and on the notice board.",
+  "pt-BR":
+    'Write the way a Brazilian officer of the alliance writes to its members: natural Brazilian Portuguese as players write it in alliance chat and on the notice board, speaking to the members as "vocês", friendly and clear. Never European Portuguese.',
+  fr: "Write the way a French-speaking officer of the alliance writes to its members: natural French as players write it in alliance chat and on the notice board, speaking to the members as « vous », friendly and clear.",
+};
+
+/** The notice board's room, as a rule: every character counts. */
+const within = (limit: number) =>
+  `- Stay within ${limit} characters, counting every letter, space, line break and emoji.`;
+
+const KEY_POINTS =
+  "- Keep every key point: each date, day, time, name, number, place and call to action, and what members are asked to do.";
+
+const NATURAL = [
+  "- Game terms stay as the alliance uses them: the game's own word in this language where the rules below give one, else the term as the officer wrote it.",
+  "- No machine-translated or AI-sounding phrasing: no stiff word-for-word sentences, and no greetings, sign-offs, emoji, headings or filler that the text does not have.",
+];
+
+/**
+ * The notices' Translate (D113): a localizer per target language, with the board's room. It carries the
+ * meaning and context, not each word, and keeps D81's rules (data only, the glossary, the terms).
+ */
+export const localizeSystem = (to: WritingLanguage, limit: number): string =>
+  [
+    `You localize alliance notices into ${NAME[to]} for the leadership of a mobile game alliance. ${VOICE[to]}`,
+    CONTEXT,
+    "Rules:",
+    "- Localize, do not translate word for word: carry the meaning, intent and context of each sentence and say it the way that officer would. Sentence order and idioms may change; the facts may not.",
+    KEY_POINTS,
+    "- Keep the register of the source: a reminder stays a reminder, a thank-you stays warm.",
+    ...NATURAL,
+    `${within(limit)} If a full translation would not fit, say the same key points in fewer words.`,
+    // From the data-only line on: "Natural, not literal" is said above, in the localizer's own words.
+    ...TRANSLATE_RULES.slice(1),
+    TRANSLATE_OUTPUT,
+  ].join("\n");
+
+/** "Fit to 1,000" (D113): shortens a text in its own language to `budget` characters, in its officer's voice. */
+export const fitSystem = (language: WritingLanguage, budget: number): string =>
+  [
+    `You shorten notices that the leadership of a mobile game alliance writes for the game's notice board, in ${NAME[language]}. ${VOICE[language]}`,
+    CONTEXT,
+    "Rules:",
+    DATA_ONLY,
+    `- Rewrite the text in ${NAME[language]}, at most ${budget} characters long, counting every letter, space, line break and emoji.`,
+    KEY_POINTS,
+    "- Cut first: repetition, greetings and sign-offs, filler words and long explanations. Merge lines that say the same thing.",
+    "- Add no facts, dates, names or requests.",
+    ...NATURAL,
+    ...KEEP,
+    "- The alliance puts people first: never add blame, threats, punishment, warnings of consequences or shaming.",
+    "- Output only the shortened text, without the <text> tags: no quotes, no notes, no explanation.",
+  ].join("\n");
 
 /** `limit`: the in-game notice board's room in characters, which a rewrite stays under. */
 export const improveSystem = (limit: number): string =>
@@ -144,16 +209,20 @@ export interface Translation {
   same: boolean;
 }
 
-/** `from` null: the source language is not known, and the model works it out (D101). */
+/**
+ * `from` null: the source language is not known, and the model works it out (D101). `limit`: a notice's
+ * Translate, which localizes within the board's room (D113); without it, Discord's translator.
+ */
 export async function translateText(
   model: ChatModel,
   from: WritingLanguage | null,
   to: WritingLanguage,
   text: string,
+  limit?: number,
 ): Promise<Translation> {
   const sent = withOwnNames(text, to);
   const request = {
-    system: TRANSLATE_SYSTEM,
+    system: limit === undefined ? TRANSLATE_SYSTEM : localizeSystem(to, limit),
     user: `Translate ${from ? `from ${NAME[from]} ` : ""}to ${NAME[to]}:\n\n${wrap(sent)}`,
   };
   const first = plainText(await model.complete(request), to);
@@ -188,4 +257,31 @@ export async function improveText(
     user: `Rewrite this ${NAME[language]} text. ${TONE[tone]}\n\n${wrap(text)}`,
   });
   return plainText(answer, language);
+}
+
+/** Fit's two budgets as shares of the limit: the first ask, then the one stricter retry (D113). */
+export const FIT_BUDGETS = [0.95, 0.8] as const;
+
+/**
+ * "Fit to 1,000" (D113): the text rewritten within `limit`, as `length` counts it (lib/ai imports nothing
+ * from the project, so the counter is passed in). An answer still over the limit is asked once more with
+ * the stricter budget; null when that one is over too, so the officer's text stays as it is.
+ */
+export async function fitText(
+  model: ChatModel,
+  language: WritingLanguage,
+  text: string,
+  limit: number,
+  length: (text: string) => number,
+): Promise<{ text: string; retried: boolean } | null> {
+  for (const [i, share] of FIT_BUDGETS.entries()) {
+    const budget = Math.floor(limit * share);
+    const answer = await model.complete({
+      system: fitSystem(language, budget),
+      user: `Shorten this ${NAME[language]} text to at most ${budget} characters.\n\n${wrap(text)}`,
+    });
+    const fitted = plainText(answer, language);
+    if (length(fitted) <= limit) return { text: fitted, retried: i > 0 };
+  }
+  return null;
 }

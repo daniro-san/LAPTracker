@@ -1,8 +1,11 @@
 // POST /api/w/[slug]/notices {id?, changes} — saves a notice's changed fields (issue 304), or makes a new
 // notice when there is no id. A write: same origin, JSON, a valid session. A field someone else saved after
 // the version the officer was looking at answers 409 with the newer text, and nothing is written (issue 293).
+// A save from a review request closes it as "Edited by …" (D113); a request that is not the officer's, or
+// that someone already answered, stays as it was, and the save still counts.
 import { requireWorkspace } from "@/lib/private/access";
 import { isSameOriginJson, NO_STORE, privateError, requestCookies } from "@/lib/private/http";
+import { answerReview } from "@/lib/private/notice-reviews";
 import { noticeSave, saveNotice } from "@/lib/private/notices";
 import { SLUG } from "@/lib/private/sign-in";
 import { withContext } from "@/lib/route";
@@ -20,9 +23,15 @@ export async function POST(
     const now = ctx.now();
     const access = await requireWorkspace(db, slug, requestCookies(request), now);
     if (!access.ok) return privateError(401, "signed_out");
-    const { id, changes, requestId } = parsed.data;
+    const { id, changes, requestId, review } = parsed.data;
     const result = await saveNotice(db, access, id ?? null, changes, now, requestId ?? null);
-    if (result.ok) return Response.json({ id: result.id }, { headers: NO_STORE });
+    if (result.ok) {
+      if (review) {
+        const answer = { review: review.id, outcome: "edited" as const, notice: result.id };
+        await answerReview(db, access, answer, review.requestId, now);
+      }
+      return Response.json({ id: result.id }, { headers: NO_STORE });
+    }
     if (result.reason === "conflict") {
       return Response.json(
         { code: "conflict", conflicts: result.conflicts },

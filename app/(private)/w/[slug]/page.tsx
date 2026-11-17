@@ -2,7 +2,8 @@
 // older than 24 hours goes through Discord again without a click (prompt=none, D71). Home is a short
 // digest of what the other tabs already work out (panel PD-1): today and tomorrow from the Calendar, who to
 // thank and how many to check in with from Members, then the screenshots to review and the new members to
-// match (D106). Like Members, it first matches new members to the newest roster.
+// match (D106), and the notice reviews asked of this officer (D113). Like Members, it first matches new
+// members to the newest roster.
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 
@@ -19,6 +20,7 @@ import { cardFormats, progressText } from "@/lib/private/member-card";
 import { membersView, progressHistory, type MembersView } from "@/lib/private/members";
 import { needsAWord, whoOf } from "@/lib/private/members-list";
 import { plural } from "@/lib/private/members-sheet";
+import { reviewsForMe } from "@/lib/private/notice-reviews";
 import { matchOnRead, toMatch } from "@/lib/private/pending-members";
 import { RENEW_MS } from "@/lib/private/session";
 import { returnPath, SLUG } from "@/lib/private/sign-in";
@@ -197,6 +199,7 @@ function Home(props: {
   /** D108: the other officers on the desk now, and what officers did lately. */
   desk: { names: string[]; activity: ActivityItem[]; now: Date };
   shared: string[] | null;
+  reviews: Awaited<ReturnType<typeof reviewsForMe>>;
 }) {
   const { slug, t, language } = props;
   const f = cardFormats(language, getEnv().SERVER_TZ, new Date());
@@ -233,6 +236,7 @@ function Home(props: {
             ? { line: toMatchLine(props.toMatch, t, f), href: `/w/${slug}/members#to-match` }
             : null
         }
+        reviews={props.reviews}
         when={(d) => fill(t["time.server"], { time: at.format(d) })}
       />
       <RecentActivity items={props.desk.activity} t={t} language={language} now={props.desk.now} />
@@ -261,20 +265,24 @@ export default async function WorkspacePage({
     view,
     toMatch: unmatched,
     desk,
+    reviews,
   } = await withPageDb(async (db) => {
     const access = await requireWorkspace(db, slug, jar, now, RENEW_MS);
-    if (!access.ok) return { access, items: [], placed: [], view: null, toMatch: 0, desk: null };
+    if (!access.ok)
+      return { access, items: [], placed: [], view: null, toMatch: 0, desk: null, reviews: [] };
     // D106: a roster read since a new member was added may now list them, as on Members.
     const pending = await matchOnRead(db, access, now);
-    const [items, placed, view, names, activity] = await Promise.all([
+    const [items, placed, view, names, activity, reviews] = await Promise.all([
       toReview(db, access, now),
       calendarDays(db, access, days.from, days.to),
       progressHistory(db, access).then((history) => membersView(db, access, now, zone, history)),
       onDeskNow(db, access, now),
       recentActivity(db, access, now),
+      reviewsForMe(db, access),
     ]);
     const desk = { names, activity, now };
-    return { access, items, placed, view, toMatch: toMatch(pending, view.readAt).length, desk };
+    const unmatched = toMatch(pending, view.readAt).length;
+    return { access, items, placed, view, toMatch: unmatched, desk, reviews };
   });
   const query = await searchParams;
   // The page a refused visitor asked for (refuse.ts), kept through the sign-in.
@@ -300,8 +308,10 @@ export default async function WorkspacePage({
       </Frame>
     );
   }
+  // The Home tab's number: drafts and the notice reviews waiting for this officer (D113).
+  const waiting = items.length + reviews.length;
   return (
-    <SignedInFrame access={access} language={language} t={t} current="home" waiting={items.length}>
+    <SignedInFrame access={access} language={language} t={t} current="home" waiting={waiting}>
       <Home
         slug={slug}
         t={t}
@@ -312,6 +322,7 @@ export default async function WorkspacePage({
         toMatch={unmatched}
         desk={desk}
         shared={shared}
+        reviews={reviews}
       />
     </SignedInFrame>
   );

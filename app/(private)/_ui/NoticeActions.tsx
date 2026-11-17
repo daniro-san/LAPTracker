@@ -1,20 +1,21 @@
 "use client";
 
-// Translate and Improve writing (issues 305, 363), side by side under the text of the tab in view. Each is a
-// two-line button that keeps its size while it works: Translate says where it goes ("to PT and FR", or "from
-// EN" for an empty tab); Improve writing shows the tone and opens a small sheet of the six tones, where one tap
-// asks for the draft. Under them: why they are off, the last error, or that the other languages' text becomes
-// a draft (D81).
+// Translate and Improve writing (issues 305, 363), side by side under the text of the tab in view, and "Fit to
+// 1,000" while that text is over the board's limit (D113): under them on a phone, beside them from 640 px.
+// Each is a two-line button that keeps its size while it works: Translate says where it goes ("to PT and
+// FR", or "from EN" for an empty tab); Improve writing shows the tone and opens a small sheet of the six
+// tones, where one tap asks for the draft; Fit says it keeps the key points. Under them: why they are off,
+// the last error, or that the other languages' text becomes a draft (D81).
 import { useState, type ButtonHTMLAttributes, type ReactNode } from "react";
 
 import type { Tone } from "@/lib/ai/notice-writing";
 import { Sheet } from "@/lib/brand/components/Sheet";
 import { fill } from "@/lib/copy";
 import type { WorkspaceKey } from "@/lib/private/dictionary";
-import { DRAFT_LIMIT } from "@/lib/private/notice-rules";
+import { DRAFT_LIMIT, NOTICE_LIMIT } from "@/lib/private/notice-rules";
 
 import { LANGUAGE_CODE } from "./languages";
-import { translatePlan } from "./notice-draft";
+import { canFit, translatePlan } from "./notice-draft";
 import type { Editor, EditorProps } from "./notice-editor-state";
 import { sheetWords } from "./sheet-words";
 import { SignedOutNote } from "./SignedOut";
@@ -111,6 +112,7 @@ function ActionButton({
   name,
   detail,
   t,
+  className = "",
   ...rest
 }: {
   working: boolean;
@@ -119,7 +121,7 @@ function ActionButton({
   t: EditorProps["t"];
 } & ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
-    <button type="button" aria-busy={working} {...rest} className={ACTION}>
+    <button type="button" aria-busy={working} {...rest} className={`${ACTION} ${className}`}>
       <span className="font-semibold">{working ? t["notices.working"] : name}</span>
       <span className="text-[13px] text-ink/75">{detail}</span>
     </button>
@@ -165,9 +167,12 @@ export function NoticeActions({ p, e }: { p: EditorProps; e: Editor }) {
   const { plan, reason, where, replaces } = actionsOf(p, e);
   const off = reason !== null || e.busy !== null;
   const described = reason ? { "aria-describedby": "notice-ai-reason" } : {};
+  const over = canFit(e.draft, language);
   return (
     <>
-      <div className="mt-3 grid grid-cols-2 gap-2 sm:max-w-md">
+      <div
+        className={`mt-3 grid grid-cols-2 gap-2 ${over ? "sm:max-w-xl sm:grid-cols-3" : "sm:max-w-md"}`}
+      >
         <ActionButton
           t={t}
           working={e.busy === "translate"}
@@ -195,6 +200,20 @@ export function NoticeActions({ p, e }: { p: EditorProps; e: Editor }) {
           {...described}
           onClick={() => setPicking(true)}
         />
+        {over && (
+          <ActionButton
+            t={t}
+            working={e.busy === "fit"}
+            name={fill(t["notices.fit"], {
+              limit: new Intl.NumberFormat(p.viewer).format(NOTICE_LIMIT),
+            })}
+            detail={t["notices.fit.detail"]}
+            disabled={off}
+            {...described}
+            onClick={() => void e.fit(language)}
+            className="col-span-2 sm:col-span-1"
+          />
+        )}
       </div>
       <ActionNote p={p} e={e} reason={reason} replaces={replaces} />
       {picking && (

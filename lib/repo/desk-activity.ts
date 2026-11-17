@@ -13,6 +13,7 @@ import {
   workspaceUsers,
 } from "../schema";
 import { thefts } from "../schema-thefts";
+import { reviewParts, reviewRows, type ReviewKind, type ReviewRows } from "./desk-activity-reviews";
 import { usable } from "./workspace-rosters";
 
 /** The officers, other than `me`, whose desk session was seen since `since` and is still open. */
@@ -75,8 +76,7 @@ export type FollowUpDone = Done & {
 };
 export type TheftsDone = Done & { count: number };
 export type NewMemberDone = Done & { name: string };
-
-export interface ActivityRows {
+export interface ActivityRows extends ReviewRows {
   facts: FactsDone[];
   noticeSaves: NoticeDone[];
   noticePosts: NoticeDone[];
@@ -107,7 +107,7 @@ function factSaves(db: Db, ws: number, from: Date, n: number) {
 
 /** One row of the small sources' read; the columns each kind does not use are null. */
 type SmallRow = {
-  kind: "noticeSaved" | "noticePosted" | "draft" | "entry" | "newMember" | "followUp";
+  kind: "noticeSaved" | "noticePosted" | "draft" | "entry" | "newMember" | "followUp" | ReviewKind;
   by: number | string;
   at: Date | string;
   notice_id: number | null;
@@ -121,7 +121,7 @@ type SmallRow = {
 /**
  * The small sources in one read (one connection): notice saves (one per save of any number of fields),
  * notice posts, saved drafts, calendar entries added, new members added by hand, and follow-up records
- * (not `withdrawn`, and not one an Undo cancelled). Each part is its own newest `n` since `from`; `n` bounds the rows returned, not the
+ * (not `withdrawn`, and not one an Undo cancelled), and notice review requests and their outcomes (D113). Each part is its own newest `n` since `from`; `n` bounds the rows returned, not the
  * rows a part scans.
  */
 async function smallSources(db: Db, ws: number, from: Date, n: number): Promise<SmallRow[]> {
@@ -163,7 +163,8 @@ async function smallSources(db: Db, ws: number, from: Date, n: number): Promise<
         and coalesce((select x.action from member_follow_ups x
           where x.workspace_id = f.workspace_id and x.uid = f.uid and x.id > f.id
           order by x.id limit 1), '') <> 'withdrawn'
-      order by f.written_at desc limit ${n})`);
+      order by f.written_at desc limit ${n})
+    ${reviewParts(ws, since, n)}`);
   return result.rows;
 }
 
@@ -269,6 +270,7 @@ function split(rows: SmallRow[]) {
       title,
     })),
     newMembers: of("newMember").map(({ by, at, title }) => ({ by, at, name: title ?? "" })),
+    ...reviewRows(of("reviewAsked"), of("reviewAnswered")),
     followUps: of("followUp").map(({ by, at, a, b, uid }) => ({
       by,
       at,

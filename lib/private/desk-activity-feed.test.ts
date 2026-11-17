@@ -8,7 +8,13 @@ import { openTestDb } from "../db.test-helpers";
 import { openDrafts } from "../repo/import";
 import { memberFacts, memberFollowUps, pendingMembers } from "../schema";
 import { screenshotDrafts } from "../schema-import";
-import { noticeEdits, noticePublishes, notices } from "../schema-notices";
+import {
+  noticeEdits,
+  noticePublishes,
+  noticeReviewOutcomes,
+  noticeReviews,
+  notices,
+} from "../schema-notices";
 import type { WorkspaceAccess } from "./access";
 import { ACTIVITY_MAX, recentActivity } from "./desk-activity";
 import { ago, browser, freshWorkspace, linesOf, NOW } from "./desk-activity.test-helpers";
@@ -162,6 +168,74 @@ describe("recent activity", () => {
     const items = await recentActivity(db, (await me) as WorkspaceAccess, NOW);
     expect(linesOf(items)).toEqual(["Ana pasted member updates"]);
     expect(linesOf(items, "pt-BR")).toEqual(["Ana colou atualizações de membros"]);
+  });
+
+  it("says who asked whom for a review, and who approved or edited after one (D113)", async () => {
+    const a = (await browser(db, ws, "Ana")).userId;
+    const viewer = await browser(db, ws, "Rook");
+    const r = viewer.userId;
+    const [notice] = await db
+      .insert(notices)
+      .values({ workspaceId: ws, createdAt: ago(90), updatedAt: ago(90) })
+      .returning();
+    const noticeId = notice?.id ?? 0;
+    const edit = (by: number | null, at: Date) => ({
+      noticeId,
+      workspaceId: ws,
+      field: "title",
+      value: "Garden rota",
+      editedBy: by,
+      editedAt: at,
+    });
+    await db.insert(noticeEdits).values(edit(null, ago(90)));
+    const ask = (
+      requestId: string,
+      language: string | null,
+      reviewerId: number | null,
+      at: Date,
+    ) => ({
+      workspaceId: ws,
+      noticeId,
+      requestId,
+      language,
+      reviewerId,
+      askedBy: a,
+      askedAt: at,
+    });
+    const [toRook, toTeam] = await db
+      .insert(noticeReviews)
+      .values([ask("q1", "pt-BR", r, ago(40)), ask("q2", null, null, ago(30))])
+      .returning();
+    // Rook approves PT, then edits from the team's request: the save and the outcome share one instant.
+    await db.insert(noticeReviewOutcomes).values([
+      {
+        workspaceId: ws,
+        reviewId: toRook?.id ?? 0,
+        requestId: "o1",
+        outcome: "approved",
+        by: r,
+        at: ago(20),
+      },
+      {
+        workspaceId: ws,
+        reviewId: toTeam?.id ?? 0,
+        requestId: "o2",
+        outcome: "edited",
+        by: r,
+        at: ago(10),
+      },
+    ]);
+    await db.insert(noticeEdits).values(edit(r, ago(10)));
+    const items = await recentActivity(db, (await viewer.visit(NOW)) as WorkspaceAccess, NOW);
+    expect(linesOf(items)).toEqual([
+      "Rook edited the notice “Garden rota” after a review",
+      "Rook approved the notice “Garden rota” · PT",
+      "Ana asked the team to review the notice “Garden rota” · All languages",
+      "Ana asked Rook to review the notice “Garden rota” · PT",
+    ]);
+    expect(linesOf(items, "pt-BR")[3]).toBe(
+      "Ana pediu a Rook que revise o aviso “Garden rota” · PT",
+    );
   });
 
   it("holds at most ACTIVITY_MAX lines", async () => {
