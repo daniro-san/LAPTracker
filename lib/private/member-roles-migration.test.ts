@@ -56,5 +56,5 @@ describe("migration 0034 (D105, amended 2026-11-17)", () => {
       reason: "signed_out",
     });
     expect((await requireBoard(db, "ogs", jar(officer.token), T0)).ok).toBe(true);
-  });
+  }, 60_000); // Two full migration runs on PGlite; slow when the machine is busy.
 });
