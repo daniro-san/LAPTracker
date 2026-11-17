@@ -188,9 +188,10 @@ export const nl = {
     answer: "Tussen {from} en {to} was de grootste verschuiving {source} → {dest} ({n}).",
     answerNone:
       "Tussen {from} en {to} geen verschuiving van {min} of meer leden tussen de gevolgde allianties.",
-    totals: "Van alliantie gewisseld: {moved} · Nieuw: {arrived} · Weg: {left}",
+    totals:
+      "Verschuivingen van {min} of meer · Van alliantie gewisseld: {moved} · Nieuw: {arrived} · Weg: {left}",
     small:
-      "Verschuivingen van minder dan {min} leden zijn verborgen en tellen in geen enkel totaal mee, zodat niemand uit een kleine groep herkend kan worden.",
+      "Aantallen onder de {min} leden, ook de gebleven, zijn verborgen en tellen in geen enkel totaal mee, zodat deze pagina geen kleine groepen uitlicht.",
     rowNew: "Nieuw",
     colLeft: "Weg",
     legend:
@@ -239,10 +240,7 @@ export const nl = {
   standing: {
     title: "Stand door de tijd",
     help: "De gevolgde allianties gerangschikt op might, per dagelijkse meting, met de verandering sinds {from}. Een dag waarop een alliantie niet is gemeten, wordt weggelaten. De server is hier het totaal van de gevolgde allianties.",
-    lead: "{label} staat {rank} op might, {move} sinds {from}.",
-    up: "omhoog {n}",
-    down: "omlaag {n}",
-    held: "ongewijzigd",
+    lead: "{label} stond op {to} {rank} op might en op {from} {before}.",
     leadGrowth:
       "Haar might veranderde sindsdien {growth}; het totaal van de gevolgde allianties veranderde {server}.",
     server: "Gevolgde allianties",
@@ -251,6 +249,7 @@ export const nl = {
     thisAlliance: "Deze alliantie",
     detailsHelp: "Rang per dag, oudste eerst: {days}.",
     few: "Nog niet genoeg dagelijkse metingen om de allianties te vergelijken.",
+    notRanked: "Niet gerangschikt, geen bruikbare dagelijkse meting in deze periode: {list}.",
   },
   history: {
     title: "Ledengeschiedenis",

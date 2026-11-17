@@ -53,8 +53,20 @@ function Lead({
     <>
       <p className="mt-1 text-lg">{sentence}</p>
       <p className="text-body-sm text-ink/70">
-        {fill(f.totals, { moved: flow.moved, arrived: flow.arrived, left: flow.left })}
+        {fill(f.totals, {
+          min: FLOW_MIN,
+          moved: flow.moved,
+          arrived: flow.arrived,
+          left: flow.left,
+        })}
       </p>
+      {flow.notCounted.length > 0 && (
+        <p className="mt-1 text-body-sm text-ink/70">
+          {fill(f.notCounted, {
+            list: flow.notCounted.map((a) => allianceLabel(a.tag, a.name)).join(", "),
+          })}
+        </p>
+      )}
     </>
   );
 }
@@ -240,13 +252,6 @@ export function FlowView({
         />
       </ul>
       <p className="mt-1 hidden text-body-sm text-ink/70 sm:block">{fill(f.legend, days)}</p>
-      {flow.notCounted.length > 0 && (
-        <p className="mt-1 text-body-sm text-ink/70">
-          {fill(f.notCounted, {
-            list: flow.notCounted.map((a) => allianceLabel(a.tag, a.name)).join(", "),
-          })}
-        </p>
-      )}
       <p className="mt-3">
         <TextLink
           href={MERGE_PATH}
