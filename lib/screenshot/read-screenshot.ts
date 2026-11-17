@@ -17,8 +17,23 @@ const LANG_PATH = path.join(process.cwd(), "lib", "screenshot", "tessdata");
 /** A worker call (its start, or one picture's reading) not answered by then is given up. */
 export const CALL_MS = 20_000;
 
-/** The OCR worker died or did not answer within CALL_MS: its thread is stopped, the reader is spent. */
-export class ReaderFailedError extends Error {}
+/**
+ * The OCR worker died or did not answer within CALL_MS: its thread is stopped, the reader is spent.
+ * `reason` is a code, never a message: the thread error's `code` (MODULE_NOT_FOUND), else its class
+ * name (RangeError), else "exit" or "timeout".
+ */
+export class ReaderFailedError extends Error {
+  constructor(readonly reason: string) {
+    super(`the OCR worker failed: ${reason}`);
+  }
+}
+
+/** A thread error as a code: its `code`, else its class name; "unknown" for anything else. */
+function reasonOf(error: unknown): string {
+  const code = (error as { code?: unknown } | null)?.code;
+  const reason = typeof code === "string" ? code : error instanceof Error ? error.name : "";
+  return /^[A-Za-z0-9_]{1,64}$/.test(reason) ? reason : "unknown";
+}
 
 /**
  * Runs `start` and returns the worker thread it spawned. Tesseract.js watches its thread with
@@ -90,18 +105,15 @@ export async function openScreenshotReader(): Promise<ScreenshotReader> {
     }),
   );
   const died = new Promise<never>((_, reject) => {
-    thread?.on("error", () => reject(new ReaderFailedError("the OCR worker failed")));
-    thread?.on("exit", () => reject(new ReaderFailedError("the OCR worker stopped")));
+    thread?.on("error", (error) => reject(new ReaderFailedError(reasonOf(error))));
+    thread?.on("exit", () => reject(new ReaderFailedError("exit")));
   });
   // The thread may die while no call is waiting.
   died.catch(() => undefined);
   const settled = async <T>(work: Promise<T>): Promise<T> => {
     let timer: NodeJS.Timeout | undefined;
     const late = new Promise<never>((_, reject) => {
-      timer = setTimeout(
-        () => reject(new ReaderFailedError(`the OCR worker did not answer in ${CALL_MS} ms`)),
-        CALL_MS,
-      );
+      timer = setTimeout(() => reject(new ReaderFailedError("timeout")), CALL_MS);
     });
     try {
       return await Promise.race([work, died, late]);
@@ -112,7 +124,11 @@ export async function openScreenshotReader(): Promise<ScreenshotReader> {
       clearTimeout(timer);
     }
   };
-  const worker = await settled(started);
+  // A start that fails in any way (a core that does not load, too) leaves no thread running.
+  const worker = await settled(started).catch((error: unknown) => {
+    void thread?.terminate();
+    throw error;
+  });
   try {
     await settled(worker.setParameters({ tessedit_pageseg_mode: PSM.SINGLE_BLOCK }));
   } catch (error) {

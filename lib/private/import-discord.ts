@@ -11,6 +11,7 @@ import type { ScreenshotReader } from "../screenshot/read-screenshot";
 import { WORKSPACE_DICTIONARIES } from "./dictionary";
 import type { Attachment, Job } from "./discord-interaction";
 import { createDrafts, MAX_PICTURES, type PictureText } from "./import";
+import { failureCode } from "./import-read";
 import { outcomeLines } from "./import-words";
 import { privateLog } from "./log";
 
@@ -197,8 +198,10 @@ export async function runJob(deps: JobDeps, job: Job): Promise<void> {
     content = outcomeLines(t, job.language, result, lost, review).join("\n");
     const drafts = result.drafts.length;
     privateLog("w.import.discord", { workspace: job.access.workspaceId, drafts, lost });
-  } catch {
-    privateLog("w.import.discord_failed", { workspace: job.access.workspaceId });
+  } catch (error) {
+    privateLog(failureCode("w.import.discord_failed", error), {
+      workspace: job.access.workspaceId,
+    });
   } finally {
     await editReply(deps, job, content);
     await close();

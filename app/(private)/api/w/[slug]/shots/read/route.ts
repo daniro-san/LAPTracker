@@ -9,7 +9,7 @@ import {
   privately,
   requestCookies,
 } from "@/lib/private/http";
-import { readUpload } from "@/lib/private/import-read";
+import { failureCode, readUpload } from "@/lib/private/import-read";
 import { privateLog } from "@/lib/private/log";
 import { SLUG } from "@/lib/private/sign-in";
 import { withContext } from "@/lib/route";
@@ -34,8 +34,12 @@ export async function POST(
     if (!access.ok) return privateError(401, access.reason);
     const bytes = new Uint8Array(await request.arrayBuffer());
     if (bytes.length === 0 || bytes.length > MAX_UPLOAD) return privateError(413, "too_large");
-    // A worker that dies or stalls fails the request with a code (500 "internal"), never a timeout.
-    const lines = await privately("w.import.read_failed", () => readUpload(bytes));
+    // A worker that dies or stalls fails the request with a code (500 "internal"), never a timeout;
+    // app_errors keeps the code only, e.g. w.import.read_failed:reader:MODULE_NOT_FOUND.
+    const lines = await privately(
+      (error) => failureCode("w.import.read_failed", error),
+      () => readUpload(bytes),
+    );
     if (!lines) return privateError(422, "refused");
     privateLog("w.import.read", { workspace: access.workspaceId, lines: lines.length });
     return Response.json({ lines }, { headers: NO_STORE });

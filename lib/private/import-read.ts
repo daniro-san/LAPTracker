@@ -2,8 +2,16 @@
 // through lib/private. The picture's bytes stay in memory for the reading and are not kept.
 import { classifyScreen, readScreen } from "../screenshot/classify";
 import { ImageRefusedError } from "../screenshot/prepare";
-import { openScreenshotReader, type ScreenshotReader } from "../screenshot/read-screenshot";
+import {
+  openScreenshotReader,
+  ReaderFailedError,
+  type ScreenshotReader,
+} from "../screenshot/read-screenshot";
 import type { PictureText } from "./import";
+
+/** A failed reading as a log code, never its message: `<prefix>:reader:<reason>` or `<prefix>:other`. */
+export const failureCode = (prefix: string, error: unknown): string =>
+  error instanceof ReaderFailedError ? `${prefix}:reader:${error.reason}` : `${prefix}:other`;
 
 /**
  * One Tesseract worker per function instance, started on first use and kept: starting it costs more

@@ -1,7 +1,7 @@
 import { generateKeyPairSync, sign } from "node:crypto";
 
 import { sql } from "drizzle-orm";
-import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
@@ -262,11 +262,12 @@ describe("the deferred flow", () => {
     expect(reply(stalled.calls)).toBe("1 picture could not be read.");
 
     const failing = discord();
+    const logged = vi.spyOn(console, "info").mockImplementation(() => undefined);
     await runJob(
       {
         ...deps(failing.fetcher, []),
         openReader: async () => ({
-          read: () => Promise.reject(new ReaderFailedError("the OCR worker failed")),
+          read: () => Promise.reject(new ReaderFailedError("MODULE_NOT_FOUND")),
           toPng: async (image) => image,
           close: async () => undefined,
         }),
@@ -276,5 +277,9 @@ describe("the deferred flow", () => {
     expect(reply(failing.calls)).toBe(
       "The pictures could not be read this time. Nothing was saved. Try again, or send them from the desk.",
     );
+    expect(logged.mock.calls.map(([line]) => JSON.parse(String(line)).code)).toContain(
+      "w.import.discord_failed:reader:MODULE_NOT_FOUND",
+    );
+    logged.mockRestore();
   });
 });
