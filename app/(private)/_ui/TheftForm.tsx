@@ -12,9 +12,10 @@ import { fill } from "@/lib/copy";
 import type { WorkspaceLanguage } from "@/lib/private/dictionary";
 import { serverInstant } from "@/lib/schedule";
 
-import { postTheft, useViewerZone, viewerClock } from "./theft-client";
+import { postTheft, viewerClock } from "./theft-client";
 import type { TheftWords } from "./theft-data";
 import { AttackerField, VictimField, type Attacker, type Member } from "./TheftFormFields";
+import { useViewerZone } from "./YourTime";
 
 type FormProps = {
   slug: string;

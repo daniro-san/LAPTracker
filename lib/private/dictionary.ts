@@ -1,6 +1,7 @@
 // The workspace's own words in English, Brazilian Portuguese and French (D71, issue #305): separate from
 // lib/copy.ts, so the public pages' i18n check and payload do not change. Names and game terms stay as the
 // officers write them (naming.md). French puts a no-break space before : ? and !.
+import { calendarEn } from "./dictionary.calendar";
 import { fr } from "./dictionary.fr";
 import { importEn } from "./dictionary.import";
 import { noticesEn } from "./dictionary.notices";
@@ -12,6 +13,7 @@ export const WORKSPACE_LANGUAGES = ["en", "pt-BR", "fr"] as const;
 export type WorkspaceLanguage = (typeof WORKSPACE_LANGUAGES)[number];
 
 const en = {
+  ...calendarEn,
   "app.name": "Officers’ Desk",
   "tab.aria": "Sections",
   "tab.home": "Home",
@@ -200,7 +202,7 @@ const en = {
   "facts.computed": "Automatic (now: {status})",
   "facts.awayText": "What they said",
   "facts.awayDay": "Last day away",
-  "facts.mightHint": "9.9M or 9,900,000",
+  "facts.mightHint": "12.3M or 12,300,000",
   "facts.theirs": "Keep {theirs}",
   "facts.mine": "Use {mine}",
   "paste.help":

@@ -1,12 +1,14 @@
 // The workspace dictionary in Brazilian Portuguese (D71), split from dictionary.ts for its size; the keys
 // follow `en`.
 import type { WorkspaceDictionary } from "./dictionary";
+import { calendarPt } from "./dictionary.calendar.pt-BR";
 import { importPt } from "./dictionary.import";
 import { noticesPt } from "./dictionary.notices";
 import { shotsPt } from "./dictionary.shots";
 import { theftsPt } from "./dictionary.thefts";
 
 export const pt: WorkspaceDictionary = {
+  ...calendarPt,
   "app.name": "Mesa dos oficiais",
   "tab.aria": "Seções",
   "tab.home": "Início",
@@ -196,7 +198,7 @@ export const pt: WorkspaceDictionary = {
   "facts.computed": "Automático (agora: {status})",
   "facts.awayText": "O que a pessoa disse",
   "facts.awayDay": "Último dia ausente",
-  "facts.mightHint": "9,9M ou 9.900.000",
+  "facts.mightHint": "12,3M ou 12.300.000",
   "facts.theirs": "Manter {theirs}",
   "facts.mine": "Usar {mine}",
   "paste.help":

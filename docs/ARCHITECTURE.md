@@ -37,6 +37,14 @@ lib/private/*.ts    the workspace (D71): requireWorkspace and its branded Worksp
                     notices.ts (the notices library's reads
                     and its save, issue 304), notice-rules.ts (pure: fields, the counter, "may be out of date",
                     the save's version check); its table reads and writes are in lib/repo/notices.ts.
+                    The Calendar tab (issue 300): calendar.ts (reads and the field-level writes with their
+                    version check), calendar-model.ts (pure: kinds, input schemas, which change fits which kind,
+                    the weekly layout), calendar-kinds.ts (its fixed facts, no zod, for client components),
+                    calendar-time.ts (pure, browser-safe: server days, ST and the viewer's clock, on
+                    lib/schedule's `serverInstant`), calendar-words.ts (titles, dates, the 409 sentence),
+                    caravan-suggest.ts (pure: the caravan suggestions' ranking) and caravans.ts (their read),
+                    dictionary.calendar*.ts (its words); its tables are in lib/schema-calendar.ts, its reads and
+                    writes in lib/repo/calendar.ts.
                     The thefts log (D97): thefts.ts (its read and writes, the attacker search), theft-groups.ts
                     (pure: attacker key, groups and counts, follow-up state), thefts-import.ts (the screenshot
                     import's save hook for Secret Ops reports), dictionary.thefts.ts (its words); tables in
@@ -87,7 +95,7 @@ lib/build-version.ts pure: the footer's live version from Vercel's git variables
 lib/screenshot/     the screenshot reader (D74): pure parsers over OCR text lines (alliance duel, the might/kills/donation rankings, secret
                     operations, pasted text), classify.ts (which screen, scored, D96), merge.ts (pages of one ranking), nameKey and
                     matchName (candidates passed in), and one IO module, read-screenshot.ts (Tesseract.js, committed English data). No DB access.
-lib/import-command.ts the Discord message command's definition, shared by the interactions route and scripts/discord-register-command.ts (D96).
+lib/import-command.ts the Discord message command's definition and registerImportCommand, shared by the interactions route, scripts/discord-register-command.ts and /admin's POST /api/admin/discord-command (D96).
 ```
 
 ## Dependency rule
