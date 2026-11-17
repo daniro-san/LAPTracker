@@ -46,4 +46,16 @@ describe("a new notice saved twice (D100, ADV-12)", () => {
     await saveNotice(db, ana, null, changes, NOW, randomUUID());
     expect(await db.select().from(notices)).toHaveLength(2);
   });
+
+  it("is stored once when two sends with one request id arrive at the same moment", async () => {
+    const ana = await officer();
+    const changes = [{ field: "title" as const, value: "Saturday plan", version: 0 }];
+    const id = randomUUID();
+    const [a, b] = await Promise.all([
+      saveNotice(db, ana, null, changes, NOW, id),
+      saveNotice(db, ana, null, changes, NOW, id),
+    ]);
+    expect(a.ok && b.ok && a.id === b.id).toBe(true);
+    expect(await db.select().from(notices)).toHaveLength(1);
+  });
 });

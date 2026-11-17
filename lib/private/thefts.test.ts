@@ -183,6 +183,14 @@ describe("a typed theft sent twice (D100)", () => {
     expect(await addTheft(db, ogs, typed({ uid: 21 }, 11), CLOCK)).toBe("ok");
     expect(await listThefts(db, ogs.workspaceId)).toHaveLength(2);
   });
+
+  it("is stored once when two sends with one request id arrive at the same moment", async () => {
+    const ogs = await signedIn("ogs");
+    const add = typed({ uid: 21 }, 11);
+    const both = await Promise.all([addTheft(db, ogs, add, CLOCK), addTheft(db, ogs, add, CLOCK)]);
+    expect(both).toEqual(["ok", "ok"]);
+    expect(await listThefts(db, ogs.workspaceId)).toHaveLength(1);
+  });
 });
 
 describe("thefts between two workspaces (D71)", () => {

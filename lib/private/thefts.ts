@@ -8,7 +8,7 @@ import {
   deleteTheft,
   hasAttacker,
   insertFollowUp,
-  insertThefts,
+  insertRequestedTheft,
   listFollowUps,
   listThefts,
   theftRequested,
@@ -168,8 +168,8 @@ export async function addTheft(
 ): Promise<"ok" | TypedRefusal> {
   const at = typedInstant(input, clock);
   if (!at) return "bad_time";
-  // INVARIANT thefts.request-once: a retry after a lost answer finds the first add (D100); the unique
-  // index on (workspace, request id) refuses a second row that arrives at the same moment.
+  // INVARIANT thefts.request-once: a retry after a lost answer finds the first add (D100); a second send
+  // that arrives at the same moment loses on the unique index and gets the same "ok".
   if (await theftRequested(db, access.workspaceId, input.requestId)) return "ok";
   const [attacker, roster] = await Promise.all([
     attackerOf(db, access, input.attacker),
@@ -178,24 +178,23 @@ export async function addTheft(
   if (typeof attacker === "string") return attacker;
   const victim = input.victimUid === null ? null : roster.find((m) => m.uid === input.victimUid);
   if (victim === undefined) return "not_in_alliance";
-  await insertThefts(db, [
-    {
-      workspaceId: access.workspaceId,
-      at,
-      attackerKey: attackerKeyOf(attacker.uid, attacker.name),
-      attackerUid: attacker.uid,
-      attackerName: attacker.name,
-      attackerTag: attacker.tag,
-      stolen: input.stolen,
-      victimUid: victim?.uid ?? null,
-      victimName: victim?.name ?? null,
-      source: "typed",
-      note: cleanNote(input.note),
-      createdBy: access.user.id,
-      createdAt: clock.now,
-      requestId: input.requestId,
-    },
-  ]);
+  // Stored now, or by the send that won the unique index: either way the theft is there once.
+  await insertRequestedTheft(db, {
+    workspaceId: access.workspaceId,
+    at,
+    attackerKey: attackerKeyOf(attacker.uid, attacker.name),
+    attackerUid: attacker.uid,
+    attackerName: attacker.name,
+    attackerTag: attacker.tag,
+    stolen: input.stolen,
+    victimUid: victim?.uid ?? null,
+    victimName: victim?.name ?? null,
+    source: "typed",
+    note: cleanNote(input.note),
+    createdBy: access.user.id,
+    createdAt: clock.now,
+    requestId: input.requestId,
+  });
   return "ok";
 }
 

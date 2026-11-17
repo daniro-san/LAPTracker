@@ -101,6 +101,14 @@ describe("the workspace calendar (issue 300)", () => {
     const first = await createEntry(db, ogs, entry, id);
     expect(await createEntry(db, ogs, entry, id)).toEqual(first);
     expect(await db.select().from(calendarEntries)).toHaveLength(1);
+    // Two sends with a new id at the same moment: both answer the one entry stored.
+    const again = randomUUID();
+    const [a, b] = await Promise.all([
+      createEntry(db, ogs, entry, again),
+      createEntry(db, ogs, entry, again),
+    ]);
+    expect(a).toEqual(b);
+    expect(await db.select().from(calendarEntries)).toHaveLength(2);
   });
 
   it("repeats a weekly entry; one week moves or is skipped while the others follow the plan", async () => {

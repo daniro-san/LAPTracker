@@ -7,7 +7,7 @@ import { join, relative } from "node:path";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
 
-import { blankCopy, blankDictionary, copy, en, fill } from "./copy";
+import { blankCopy, blankDictionary, copy, en, fill, isolate } from "./copy";
 import { TRANSLATIONS } from "./i18n";
 
 const ROOT = join(import.meta.dirname, "..");
@@ -129,4 +129,17 @@ describe("translations", () => {
       }
     },
   );
+});
+
+describe("isolate (ADV-12)", () => {
+  const [FSI, PDI] = ["⁨", "⁩"];
+  it.each([
+    ["A⁩‮B", "AB"],
+    ["‮Vex", "Vex"],
+    ["⁦x⁧y⁨z⁩", "xyz"],
+    ["‪a‫b‬c‭d", "abcd"],
+    ["محمد٢", "محمد٢"],
+  ])("keeps %j in one isolate, its own bidi controls removed", (name, kept) => {
+    expect(isolate(name)).toBe(`${FSI}${kept}${PDI}`);
+  });
 });

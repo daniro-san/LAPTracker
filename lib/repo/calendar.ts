@@ -62,15 +62,20 @@ export async function calendarRows(
   return { entries: [...entries, ...more], rows };
 }
 
+/**
+ * A new entry's id; null when its request id is already stored (D100): a send that arrived at the same
+ * moment won the unique index, and the caller answers with that entry instead.
+ */
 export async function insertEntry(
   db: Db,
   values: typeof calendarEntries.$inferInsert,
-): Promise<number> {
+): Promise<number | null> {
   const [row] = await db
     .insert(calendarEntries)
     .values(values)
+    .onConflictDoNothing({ target: [calendarEntries.workspaceId, calendarEntries.requestId] })
     .returning({ id: calendarEntries.id });
-  return row?.id ?? 0;
+  return row?.id ?? null;
 }
 
 /** The entry an add with this request id made (D100), if one did. */

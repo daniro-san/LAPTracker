@@ -158,13 +158,15 @@ export async function writeNotice<R>(
 ): Promise<{ id: number } | { refuse: R } | null> {
   const { workspaceId, noticeId, userId, now, requestId } = target;
   return db.transaction(async (tx) => {
-    if (noticeId === null && requestId !== null) {
+    // The notice a new notice's request id already made (D100): the answer when the insert below finds it.
+    const requested = async () => {
+      if (requestId === null) return null;
       const [made] = await tx
         .select({ id: notices.id })
         .from(notices)
         .where(and(eq(notices.workspaceId, workspaceId), eq(notices.requestId, requestId)));
-      if (made) return { id: made.id };
-    }
+      return made ? { id: made.id } : null;
+    };
     if (noticeId !== null) {
       const [locked] = await tx
         .select({ id: notices.id })
@@ -188,9 +190,12 @@ export async function writeNotice<R>(
               updatedAt: now,
               requestId,
             })
+            .onConflictDoNothing({ target: [notices.workspaceId, notices.requestId] })
             .returning({ id: notices.id })
         : [{ id: noticeId }];
-    if (!made) return null;
+    // A send with the same request id came first (a retry, or one at the same moment) and holds the unique
+    // index: its notice is the answer, and nothing of this one is written.
+    if (!made) return requested();
     const id = made.id;
     await tx.insert(noticeEdits).values(
       decision.write.map((e) => ({
