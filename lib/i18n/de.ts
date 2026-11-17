@@ -179,6 +179,34 @@ export const de = {
     turnout: "{gainers} von {n} Members mit gewonnenen Kills",
     noTurnout: "Noch keine Beteiligung am Krieg",
   },
+  flow: {
+    title: "Mitgliederfluss",
+    tag: "Nur Zahlen",
+    lead: "Wohin Members zwischen den erfassten Allianzen gewechselt sind: die Allianz jedes Members am ersten Tag, gegen den zweiten Tag gestellt. Nur Zahlen, keine Namen von Members.",
+    from: "Von",
+    to: "Bis",
+    action: "Zeigen",
+    answer:
+      "Zwischen {from} und {to} haben {moved} Members die Allianz gewechselt; der größte Wechsel war {source} → {dest} ({n}).",
+    answerSmall:
+      "Zwischen {from} und {to} haben {moved} Members die Allianz gewechselt; kein einzelner Wechsel erreichte {min}.",
+    answerNone: "Zwischen {from} und {to} hat kein Member die Allianz gewechselt.",
+    outside: "{arrived} kamen von außerhalb der erfassten Allianzen, {left} haben sie verlassen.",
+    small:
+      "Wechsel von weniger als {min} Members sind ausgeblendet, damit in einer kleinen Gruppe niemand erkennbar ist.",
+    rowNew: "Neu",
+    colLeft: "Ausgetr.",
+    legend:
+      "Zeilen: die Allianz am {from}. Spalten: die Allianz am {to}. Neu: am {from} in keiner erfassten Allianz. Ausgetr.: am {to} in keiner erfassten Allianz.",
+    caption: "Members nach Allianz am {from} (Zeilen) und am {to} (Spalten)",
+    stayed: "Geblieben",
+    rowMembers: "{n} Members",
+    newTitle: "Neu in den erfassten Allianzen",
+    leftTitle: "Aus den erfassten Allianzen ausgetreten",
+    notCounted: "Nicht gezählt, keine brauchbare Messung an beiden Tagen: {list}.",
+    order: "Der Tag „Von“ muss vor dem Tag „Bis“ liegen.",
+    none: "Bisher haben weniger als zwei Tage eine brauchbare Messung.",
+  },
   balance: {
     title: "Server-Balance",
     description:

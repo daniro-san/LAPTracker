@@ -65,6 +65,8 @@ Words already used in `lib/i18n/ko.ts`. Reuse them so the pages stay consistent;
 | Merge                     | 합병                   | `merge.title`, `merge.link` — two alliances counted as one                                         |
 | Cap                       | 상한                   | `merge.cap`, `merge.over`, `merge.answer*`, `merge.capAssumed` — an alliance's member limit        |
 | Kill share vs might share | 처치 몫 대 전투력 몫   | `ledger.carried*` — each alliance's kill share against its might share                             |
+| Member flow               | 멤버 흐름              | `flow.title` — members who moved between tracked alliances                                         |
+| New (no tracked alliance) | 신규                   | `flow.rowNew`, `flow.legend` — a member in no tracked alliance on the From day                     |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

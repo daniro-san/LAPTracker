@@ -174,6 +174,34 @@ export const ptBR = {
     turnout: "{gainers} de {n} Members ganharam kills",
     noTurnout: "ainda sem participação na guerra",
   },
+  flow: {
+    title: "Fluxo de Members",
+    tag: "Só contagens",
+    lead: "Para onde os Members foram entre as alianças acompanhadas: a aliança de cada um no primeiro dia, comparada ao segundo. Só contagens, sem nomes de Members.",
+    from: "De",
+    to: "Para",
+    action: "Mostrar",
+    answer:
+      "Entre {from} e {to}, {moved} Members mudaram de aliança; a maior mudança foi {source} → {dest} ({n}).",
+    answerSmall:
+      "Entre {from} e {to}, {moved} Members mudaram de aliança; nenhuma mudança chegou a {min}.",
+    answerNone: "Entre {from} e {to}, nenhum Member mudou de aliança.",
+    outside: "{arrived} vieram de fora das alianças acompanhadas e {left} saíram delas.",
+    small:
+      "Mudanças de menos de {min} Members ficam ocultas, para que ninguém possa ser identificado num grupo pequeno.",
+    rowNew: "Novo",
+    colLeft: "Saiu",
+    legend:
+      "Linhas: a aliança em {from}. Colunas: a aliança em {to}. Novo: em nenhuma aliança acompanhada em {from}. Saiu: em nenhuma em {to}.",
+    caption: "Members por aliança em {from} (linhas) e em {to} (colunas)",
+    stayed: "Ficaram",
+    rowMembers: "{n} Members",
+    newTitle: "Novos nas alianças acompanhadas",
+    leftTitle: "Saíram das alianças acompanhadas",
+    notCounted: "Não contados, sem leitura útil nos dois dias: {list}.",
+    order: "Escolha um dia “De” anterior ao dia “Para”.",
+    none: "Ainda não há dois dias com leitura útil.",
+  },
   balance: {
     title: "Equilíbrio do servidor",
     description:

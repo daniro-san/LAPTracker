@@ -175,6 +175,33 @@ export const vi = {
     turnout: "{gainers} trong {n} thành viên có tiêu diệt tăng",
     noTurnout: "chưa có ai tham chiến",
   },
+  flow: {
+    title: "Dòng thành viên",
+    tag: "Chỉ đếm số",
+    lead: "Thành viên đã chuyển giữa các liên minh theo dõi thế nào: liên minh mỗi người ở ngày đầu, đặt cạnh ngày sau. Chỉ đếm số, không có tên thành viên.",
+    from: "Từ",
+    to: "Đến",
+    action: "Hiện",
+    answer:
+      "Từ {from} đến {to}, {moved} thành viên đổi liên minh; lần chuyển lớn nhất là {source} → {dest} ({n}).",
+    answerSmall:
+      "Từ {from} đến {to}, {moved} thành viên đổi liên minh; không lần chuyển nào đạt {min}.",
+    answerNone: "Từ {from} đến {to}, không thành viên nào đổi liên minh.",
+    outside: "{arrived} đến từ ngoài các liên minh theo dõi và {left} rời khỏi đó.",
+    small: "Các lần chuyển dưới {min} thành viên bị ẩn, để không ai bị chỉ ra trong một nhóm nhỏ.",
+    rowNew: "Mới",
+    colLeft: "Rời",
+    legend:
+      "Hàng: liên minh ngày {from}. Cột: liên minh ngày {to}. Mới: không thuộc liên minh theo dõi nào ngày {from}. Rời: không thuộc nào ngày {to}.",
+    caption: "Thành viên theo liên minh ngày {from} (hàng) và ngày {to} (cột)",
+    stayed: "Ở lại",
+    rowMembers: "{n} thành viên",
+    newTitle: "Mới trong các liên minh theo dõi",
+    leftTitle: "Đã rời các liên minh theo dõi",
+    notCounted: "Không tính, vì không có lần đọc dùng được vào cả hai ngày: {list}.",
+    order: "Chọn ngày Từ trước ngày Đến.",
+    none: "Chưa đủ hai ngày có lần đọc dùng được.",
+  },
   balance: {
     title: "Cân bằng máy chủ",
     description:

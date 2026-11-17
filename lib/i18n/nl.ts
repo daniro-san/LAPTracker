@@ -178,6 +178,34 @@ export const nl = {
     turnout: "{gainers} van {n} leden haalden Kills",
     noTurnout: "nog geen oorlogsopkomst",
   },
+  flow: {
+    title: "Ledenstroom",
+    tag: "Alleen aantallen",
+    lead: "Waar leden naartoe gingen tussen de gevolgde allianties: de alliantie waarin elk lid op de eerste dag zat, naast de tweede dag. Alleen aantallen, geen ledennamen.",
+    from: "Van",
+    to: "Naar",
+    action: "Toon",
+    answer:
+      "Tussen {from} en {to} wisselden {moved} leden van alliantie; de grootste verschuiving was {source} → {dest} ({n}).",
+    answerSmall:
+      "Tussen {from} en {to} wisselden {moved} leden van alliantie; geen enkele verschuiving haalde {min}.",
+    answerNone: "Tussen {from} en {to} wisselde geen lid van alliantie.",
+    outside: "{arrived} kwamen van buiten de gevolgde allianties en {left} verlieten ze.",
+    small:
+      "Verschuivingen van minder dan {min} leden zijn verborgen, zodat niemand uit een kleine groep herkend kan worden.",
+    rowNew: "Nieuw",
+    colLeft: "Weg",
+    legend:
+      "Rijen: de alliantie op {from}. Kolommen: de alliantie op {to}. Nieuw: in geen gevolgde alliantie op {from}. Weg: in geen op {to}.",
+    caption: "Leden per alliantie op {from} (rijen) en op {to} (kolommen)",
+    stayed: "Gebleven",
+    rowMembers: "{n} members",
+    newTitle: "Nieuw in de gevolgde allianties",
+    leftTitle: "Weg uit de gevolgde allianties",
+    notCounted: "Niet geteld, geen bruikbare meting op beide dagen: {list}.",
+    order: "Kies een Van-dag die eerder is dan de Naar-dag.",
+    none: "Nog geen twee dagen met een bruikbare meting.",
+  },
   balance: {
     title: "Serverbalans",
     description:

@@ -180,6 +180,34 @@ export const fr = {
     turnout: "{gainers} sur {n} membres ont gagné des Kills",
     noTurnout: "pas encore de participation",
   },
+  flow: {
+    title: "Flux des membres",
+    tag: "Comptes seulement",
+    lead: "Où les membres sont allés entre les alliances suivies : l’alliance de chacun le premier jour, comparée au deuxième. Comptes seulement, aucun nom de membre.",
+    from: "De",
+    to: "À",
+    action: "Afficher",
+    answer:
+      "Entre {from} et {to}, {moved} membres ont changé d’alliance ; le plus grand mouvement a été {source} → {dest} ({n}).",
+    answerSmall:
+      "Entre {from} et {to}, {moved} membres ont changé d’alliance ; aucun mouvement n’a atteint {min}.",
+    answerNone: "Entre {from} et {to}, aucun membre n’a changé d’alliance.",
+    outside: "{arrived} sont venus de hors des alliances suivies, {left} en sont partis.",
+    small:
+      "Les mouvements de moins de {min} membres sont masqués, pour que personne ne puisse être repéré dans un petit groupe.",
+    rowNew: "Nouveaux",
+    colLeft: "Partis",
+    legend:
+      "Lignes : l’alliance le {from}. Colonnes : l’alliance le {to}. Nouveaux : dans aucune alliance suivie le {from}. Partis : dans aucune le {to}.",
+    caption: "Membres par alliance le {from} (lignes) et le {to} (colonnes)",
+    stayed: "Restés",
+    rowMembers: "{n} members",
+    newTitle: "Nouveaux dans les alliances suivies",
+    leftTitle: "Partis des alliances suivies",
+    notCounted: "Non comptés, pas de relevé utilisable les deux jours : {list}.",
+    order: "Choisissez un jour De antérieur au jour À.",
+    none: "Moins de deux jours ont déjà un relevé utilisable.",
+  },
   balance: {
     title: "Équilibre du serveur",
     description:

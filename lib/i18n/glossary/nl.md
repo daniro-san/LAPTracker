@@ -233,6 +233,7 @@ Words already used in `lib/i18n/nl.ts`. Reuse them so the pages stay consistent;
 | peak                      | piek                             | `ledger.liveLast` — the highest reading in the last minutes                               |
 | Merge                     | Fusie                            | `merge.title`, `merge.link` — the merge simulator                                         |
 | cap (member cap)          | grens                            | `merge.cap`, `merge.over`, `merge.answer` — the member limit                              |
+| Member flow               | Ledenstroom                      | `flow.title` — moves between tracked alliances between two days                           |
 | English                   | nl                               | Key and use                                                                               |
 | ------------------------- | -------------------------------- | ------------------------------------------------------------------------------            |
 | Server 325 · Event Ledger | Server 325 · Eventlogboek        | `site.ledger` — the page title                                                            |
