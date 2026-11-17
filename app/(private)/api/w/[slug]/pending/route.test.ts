@@ -153,16 +153,64 @@ describe("POST /api/w/[slug]/pending (D106)", () => {
     expect(moved).toEqual([{ uid: 101 }]);
   });
 
-  it("deletes a pending member with its facts and points (200), then 404", async () => {
+  it("deletes by dismissing (200): record, facts and points stay, then 404; re-adding reopens it", async () => {
     const uid = await pendingOfOgs();
     expect(await answer(await post({ action: "delete", uid }))).toEqual([200, { ok: true }]);
-    expect(await db.select().from(pendingMembers)).toEqual([]);
-    expect(await db.select().from(memberFacts)).toEqual([]);
-    expect(await db.select().from(allianceDuelPoints)).toEqual([]);
+    const [kept] = await db.select().from(pendingMembers);
+    expect(kept?.id).toBe(-uid);
+    expect(kept?.dismissedAt).not.toBeNull();
+    expect((await db.select().from(memberFacts)).map((f) => [f.uid, f.field])).toEqual([
+      [uid, "troopTier"],
+    ]);
+    expect(await db.select({ uid: allianceDuelPoints.uid }).from(allianceDuelPoints)).toEqual([
+      { uid },
+    ]);
     expect(await answer(await post({ action: "delete", uid }))).toEqual([
       404,
       { code: "not_found" },
     ]);
+    const again = (await (await post({ ...add(randomUUID()), changes: [] })).json()) as {
+      uid: number;
+    };
+    expect(again.uid).toBe(uid);
+    expect((await db.select().from(pendingMembers))[0]?.dismissedAt).toBeNull();
+  });
+
+  it("refuses facts for a removed member until re-added; a replay after the reopen repeats it", async () => {
+    const uid = await pendingOfOgs();
+    await post({ action: "delete", uid });
+    const change = { changes: [{ field: "notes", version: 0, value: "hi", source: "officer" }] };
+    const write = () =>
+      facts.POST(request(`https://laptracker.test/api/w/ogs/members/${uid}/facts`, change, {}), {
+        params: Promise.resolve({ slug: "ogs", uid: String(uid) }),
+      });
+    expect(await answer(await write())).toEqual([404, { code: "not_member" }]);
+
+    const requestId = randomUUID();
+    const reopened = await (await post({ ...add(requestId), changes: [] })).json();
+    expect(reopened.uid).toBe(uid);
+    expect((await write()).status).toBe(200);
+    // D100: the same request again answers the reopened member and stores nothing.
+    expect(await (await post({ ...add(requestId), changes: [] })).json()).toEqual({
+      ok: true,
+      uid,
+      results: [],
+    });
+    expect(await db.select().from(pendingMembers)).toHaveLength(1);
+  });
+
+  it("does not reopen another workspace's removed member with the same name", async () => {
+    const uid = await pendingOfOgs();
+    await post({ action: "delete", uid });
+    const theirs = await (
+      await post({ ...add(randomUUID()), changes: [] }, { slug: "nse" })
+    ).json();
+    expect(theirs.uid).not.toBe(uid);
+    const rows = await db
+      .select({ id: pendingMembers.id, dismissedAt: pendingMembers.dismissedAt })
+      .from(pendingMembers);
+    expect(rows.find((r) => r.id === -uid)?.dismissedAt).not.toBeNull();
+    expect(rows).toHaveLength(2);
   });
 
   it("refuses another workspace's pending member in link, delete and the facts route", async () => {

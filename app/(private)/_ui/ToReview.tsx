@@ -1,5 +1,6 @@
 // The "To review" list on Home (issue 299): the workspace's drafts waiting for an officer, shared by all of
 // them, and the door in, "Send screenshots". Each draft says what was read and how many rows need a person.
+// Above them, "2 new members to match" when a roster read could not match new members added by hand.
 import { fill, isolate } from "@/lib/copy";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import type { ImportKind, Scope } from "@/lib/private/import-kinds";
@@ -37,6 +38,8 @@ export function ToReview(props: {
   t: WorkspaceDictionary;
   language: WorkspaceLanguage;
   maxPictures: number;
+  /** "2 new members to match" and its link to Members (D106, 2026-11-17); null when none. */
+  toMatch: { line: string; href: string } | null;
   /** "Mon 16 Nov 18:54 server time", per item. */
   when: (at: Date) => string;
 }) {
@@ -48,6 +51,16 @@ export function ToReview(props: {
         {items.length > 0 && <span className="ml-2 tabular-nums text-plum">{items.length}</span>}
       </h2>
       {items.length > 0 && <p className="mt-1">{t["shots.lead"]}</p>}
+      {props.toMatch && (
+        <p className="mt-1">
+          <a
+            href={props.toMatch.href}
+            className="inline-flex min-h-11 items-center font-semibold text-plum underline underline-offset-4"
+          >
+            {props.toMatch.line}
+          </a>
+        </p>
+      )}
       {/* The door in comes first, so it does not sink under a long queue (panel PD-4, UI-8). */}
       <SendScreenshots
         slug={slug}

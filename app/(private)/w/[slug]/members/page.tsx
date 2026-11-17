@@ -27,7 +27,7 @@ import {
 } from "@/lib/private/members";
 import { needsAWord, pickOrder, pickQuery, whoOf } from "@/lib/private/members-list";
 import { plural, sheetHeader } from "@/lib/private/members-sheet";
-import { pendingMembers, reconcilePending } from "@/lib/private/pending-members";
+import { dismissedMembers, matchOnRead, toMatch } from "@/lib/private/pending-members";
 import { RENEW_MS } from "@/lib/private/session";
 import { SLUG } from "@/lib/private/sign-in";
 import { serverDay } from "@/lib/schedule";
@@ -35,7 +35,13 @@ import { serverDay } from "@/lib/schedule";
 import { editorWords } from "../../../_ui/facts-form";
 import { FormerMembers } from "../../../_ui/FormerMembers";
 import { SignedInFrame, workspaceWords } from "../../../_ui/Frame";
-import { formerRow, lifecycleWords, pendingRow } from "../../../_ui/member-lifecycle-data";
+import {
+  dismissedRow,
+  formerRow,
+  lifecycleWords,
+  pendingRow,
+  toMatchLine,
+} from "../../../_ui/member-lifecycle-data";
 import { listRow, listWords } from "../../../_ui/member-list-data";
 import { MembersList } from "../../../_ui/MembersList";
 import { MembersSource } from "../../../_ui/MembersSource";
@@ -105,7 +111,7 @@ async function readPage(
   const access = await requireWorkspace(db, p.slug, p.jar, now, RENEW_MS);
   if (!access.ok) return { access, waiting: 0, view: null, rows: [], lifecycle: null };
   // D106: a roster read since a new member was added may now list them.
-  await reconcilePending(db, access, now);
+  const pending = await matchOnRead(db, access, now);
   const view = await membersView(db, access, now, zone);
   return {
     access,
@@ -114,10 +120,20 @@ async function readPage(
     // The list's own read (photos and past names); the card route never runs it (issue 337).
     rows: showFormer ? [] : await withListExtras(db, access, view.members),
     lifecycle: showFormer
-      ? { former: await formerMembers(db, access, zone, view.facts), pending: [] }
-      : { former: [], pending: await pendingMembers(db, access) },
+      ? { former: await formerMembers(db, access, zone, view.facts), pending: [], dismissed: [] }
+      : {
+          former: [],
+          pending,
+          dismissed: await dismissedMembers(db, access),
+        },
   };
 }
+
+/** The editor's words; the add sheet says when the nightly roster is read (D106). */
+const lifecycleEditorWords = (t: WorkspaceDictionary, readAt: string) => ({
+  ...editorWords(t),
+  "pending.addHelp": fill(t["pending.addHelp"], { time: readAt }),
+});
 
 /** Members · Former members (D107): two links, the open one pressed. */
 function ViewSwitch({
@@ -171,7 +187,7 @@ export default async function MembersPage({
   const f = cardFormats(language, env.SERVER_TZ, now);
   const editor = {
     slug,
-    words: editorWords(t),
+    words: lifecycleEditorWords(t, env.DAILY_ROSTER_AT),
     language,
     serverZone: env.SERVER_TZ,
     used: view.zones,
@@ -198,6 +214,10 @@ export default async function MembersPage({
             <PendingMembers
               rows={lifecycle.pending.map((p) =>
                 pendingRow(p, view.facts.get(p.uid) ?? {}, view.readAt, t, f),
+              )}
+              toMatchLine={toMatchLine(toMatch(lifecycle.pending, view.readAt).length, t, f)}
+              dismissed={lifecycle.dismissed.map((p) =>
+                dismissedRow(p, view.facts.get(p.uid) ?? {}, t, f),
               )}
               roster={view.members.map((m) => ({ uid: m.uid, name: m.name }))}
               words={lifecycleWords(t)}

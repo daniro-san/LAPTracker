@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import type { Db } from "../db";
@@ -7,8 +9,8 @@ import { dailyReads, dailyRosters } from "../schema";
 import { classifyScreen } from "../screenshot/classify";
 import { requireWorkspace, type WorkspaceAccess } from "./access";
 import { createDrafts, saveDraft } from "./import";
-import { factsOf } from "./member-facts";
-import { pendingMembers } from "./pending-members";
+import { factsOf, saveFacts, type FactChange } from "./member-facts";
+import { addPending, pendingMembers, removePending } from "./pending-members";
 import { createSession } from "./session";
 
 const OGS = 67111155;
@@ -74,14 +76,41 @@ describe("a row not found saved to a new member (D106)", () => {
   it("makes the pending member on Save, and the next save under the same name key reuses it", async () => {
     expect(await save("Main squad 9.8 M", " Zephyrine ", 0)).toEqual({ ok: true });
     // The officer typed the name differently the second time; its key is the same.
-    expect(await save("Main squad 9.8M", "ZEPHYRINE", 1)).toEqual({ ok: true });
+    expect(await save("Main squad 9.8M", "ZEPHYRINE", 0)).toEqual({ ok: true });
 
     const pending = await pendingMembers(db, ana);
     expect(pending.map((p) => p.name)).toEqual(["Zephyrine"]);
     expect((await factsOf(db, ana)).get(pending[0]?.uid ?? 0)?.squadMight).toMatchObject({
       value: 9_800_000,
-      version: 2,
+      version: 1,
       source: "message",
     });
+  });
+
+  it("saves to a reopened member at its current version: a new value appends, never a conflict", async () => {
+    const made = await addPending(
+      db,
+      ana,
+      { requestId: randomUUID(), name: "Zephyrine", changes: [] },
+      { now: NOW, zone: "Etc/GMT+2" },
+    );
+    const uid = made?.uid ?? 0;
+    const first: FactChange = {
+      field: "squadMight",
+      version: 0,
+      value: 9_000_000,
+      source: "officer",
+    };
+    await saveFacts(db, ana, uid, [first], NOW);
+    expect(await removePending(db, ana, -uid, NOW)).toBe(true);
+
+    // The import sends version 0: the officer saw no facts for a member not found.
+    expect(await save("Main squad 9.8 M", "Zephyrine", 0)).toEqual({ ok: true });
+    expect(await save("Main squad 9.8 M", "Zephyrine", 0)).toEqual({ ok: true });
+    expect((await factsOf(db, ana)).get(uid)?.squadMight).toMatchObject({
+      value: 9_800_000,
+      version: 2,
+    });
+    expect((await pendingMembers(db, ana)).map((p) => p.uid)).toEqual([uid]);
   });
 });

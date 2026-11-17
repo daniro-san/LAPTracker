@@ -3,26 +3,31 @@
 // roster read after the pending member was added lists exactly one member with the same name key (the
 // sheet import's comparison form, or a remembered alias) who has no facts yet, the facts move to that
 // member with their versions and times, the name is remembered as an alias and the pending member is
-// marked matched. No match or several: it stays, and an officer links it by hand or deletes it. A fuzzy
-// match never merges.
+// marked matched. No match or several: it stays, "To match" (`toMatch`), and an officer links it by hand
+// or deletes it. Delete dismisses it and keeps its facts and points; adding the name again reopens it
+// (2026-11-17). A fuzzy match never merges.
 import type { Db } from "../db";
 import { newestRoster } from "../repo/import";
 import { aliasesOf, saveAliases } from "../repo/member-facts";
 import {
   claimPending,
-  deletePending,
+  dismissedPendings,
+  dismissPending,
   findPending,
   insertPending,
   moveDuelPoints,
   moveFacts,
   openPendings,
+  reopenDismissed,
   uidsWithFacts,
 } from "../repo/pending-members";
 import { anyRoster } from "../repo/workspace-any-roster";
 import { nameKey } from "../screenshot/name-key";
 import type { WorkspaceAccess } from "./access";
+import type { FactField, MemberFacts } from "./fact-fields";
 import { SaveRefused } from "./import-kinds";
-import { isMember, saveFacts, type ChangeResult, type FactChange } from "./member-facts";
+import { privateLog } from "./log";
+import { factsOf, isMember, saveFacts, type ChangeResult, type FactChange } from "./member-facts";
 
 /** A pending member's uid in member_facts: game uids are positive. */
 export const pendingUid = (id: number) => -id;
@@ -42,8 +47,26 @@ export async function pendingMembers(db: Db, access: WorkspaceAccess): Promise<P
   }));
 }
 
+/** The open pending members a roster read at `rosterAt` came after, still with no single match. */
+export const toMatch = (pending: readonly Pending[], rosterAt: Date | null): Pending[] =>
+  rosterAt === null ? [] : pending.filter((p) => p.createdAt <= rosterAt);
+
+/** The pending members an officer deleted, kept with their facts (2026-11-17), newest first. */
+export async function dismissedMembers(
+  db: Db,
+  access: WorkspaceAccess,
+): Promise<(Pending & { dismissedAt: Date })[]> {
+  return (await dismissedPendings(db, access.workspaceId)).map((p) => ({
+    uid: pendingUid(p.id),
+    name: p.name,
+    createdAt: p.createdAt,
+    dismissedAt: p.dismissedAt,
+  }));
+}
+
 /**
- * The open pending member with this name's key, made when there is none; null for a name with no key.
+ * The open pending member with this name's key, else the dismissed one reopened, else a new one; null for
+ * a name with no key.
  * With a request id (the add sheet, D100), a repeat returns the first add's member as `repeat`.
  */
 export async function openPending(
@@ -61,6 +84,7 @@ export async function openPending(
   const row = { workspaceId: ws, name: name.trim(), nameKey: key, requestId, createdAt: now };
   const id =
     (await findPending(db, ws, { nameKey: key }))?.id ??
+    (await reopenDismissed(db, ws, key, { name: row.name, requestId, now })) ??
     (await insertPending(db, { ...row, createdBy: access.user.id })) ??
     // Another officer sent the same request, or added the same name, at the same moment: reuse theirs.
     (await theirs(db, ws, requestId, key));
@@ -91,7 +115,12 @@ type SavedRow = {
   uid?: number | undefined;
   newName?: string | undefined;
   field?: string | undefined;
+  value?: unknown;
 };
+
+/** The stored version of a row's fact, if the member has one. */
+const factOf = (facts: MemberFacts | undefined, field: string | undefined) =>
+  field === undefined ? undefined : facts?.[field as FactField];
 
 /**
  * A screenshot save's rows each name a member of the newest roster, a pending member, or a new member's
@@ -118,7 +147,8 @@ export async function rowsFit(
 /**
  * A screenshot save's rows with each "New member: <name>" row given its pending member's uid, made or
  * reused by name key. It runs inside the save's transaction; two rows that turn out to be the same
- * member and fact refuse the save.
+ * member and fact refuse the save. A new member's fact is written at its current version, since the
+ * officer saw none (fill or append, D80): an equal value is left as it is, another one appends.
  */
 export async function withNewMembers<R extends SavedRow>(
   db: Db,
@@ -127,10 +157,14 @@ export async function withNewMembers<R extends SavedRow>(
   now: Date,
 ): Promise<(Omit<R, "uid" | "newName"> & { uid: number })[]> {
   const out: (Omit<R, "uid" | "newName"> & { uid: number })[] = [];
+  const reused = rows.some((r) => r.newName !== undefined && r.field !== undefined);
+  const facts = reused ? await factsOf(db, access) : new Map<number, MemberFacts>();
   for (const { newName, uid, ...rest } of rows) {
     const id = newName === undefined ? uid : (await openPending(db, access, newName, now))?.uid;
     if (id === undefined) throw new SaveRefused("bad_rows");
-    out.push({ ...rest, uid: id });
+    const stored = newName === undefined ? undefined : factOf(facts.get(id), rest.field);
+    if (stored && stored.value === rest.value) continue;
+    out.push({ ...rest, uid: id, ...(stored && { version: stored.version }) });
   }
   if (new Set(out.map((r) => `${r.uid}:${r.field ?? ""}`)).size !== out.length)
     throw new SaveRefused("bad_rows");
@@ -169,26 +203,30 @@ export async function linkPending(
   return merged ? "ok" : "not_found";
 }
 
-/** Deletes an open pending member and what was saved for it. */
-export const removePending = (db: Db, access: WorkspaceAccess, pendingId: number) =>
-  deletePending(db, access.workspaceId, pendingId);
+/** Deletes an open pending member from the list: it is dismissed, its facts and points are kept. */
+export const removePending = (db: Db, access: WorkspaceAccess, pendingId: number, now: Date) =>
+  dismissPending(db, access.workspaceId, pendingId, now);
 
 /**
  * Matches each pending member added before the newest roster to the one member of that roster with the
- * same name key (or the uid its key is remembered for) and no facts yet; returns how many moved. Runs
- * when the Members tab is read, since the end-of-day read itself is outside the workspace (D71's fence).
+ * same name key (or the uid its key is remembered for) and no facts yet. Returns how many moved and the
+ * pending members still open, oldest first. Runs when Members or Home is read, since the end-of-day read
+ * itself is outside the workspace (D71's fence).
  */
 export async function reconcilePending(
   db: Db,
   access: WorkspaceAccess,
   now: Date,
-): Promise<number> {
+): Promise<{ moved: number; open: Pending[] }> {
   const ws = access.workspaceId;
   const pending = await openPendings(db, ws);
-  if (pending.length === 0) return 0;
-  const roster = await anyRoster(db, access.unionId);
+  const open = (gone: ReadonlySet<number>) =>
+    pending
+      .filter((p) => !gone.has(p.id))
+      .map((p) => ({ uid: pendingUid(p.id), name: p.name, createdAt: p.createdAt }));
+  const roster = pending.length > 0 ? await anyRoster(db, access.unionId) : null;
   const due = roster ? pending.filter((p) => p.createdAt <= roster.at) : [];
-  if (!roster || due.length === 0) return 0;
+  if (!roster || due.length === 0) return { moved: 0, open: open(new Set()) };
   const [aliases, known] = await Promise.all([
     aliasesOf(db, ws),
     uidsWithFacts(
@@ -197,6 +235,7 @@ export async function reconcilePending(
       roster.members.map((m) => m.uid),
     ),
   ]);
+  const gone = new Set<number>();
   let moved = 0;
   for (const p of due) {
     const alias = aliases.get(p.nameKey);
@@ -204,9 +243,25 @@ export async function reconcilePending(
       (m) => !known.has(m.uid) && (nameKey(m.name) === p.nameKey || alias === m.uid),
     );
     const only = fits.length === 1 ? (fits[0]?.uid ?? null) : null;
-    if (only === null || !(await merge(db, access, p.id, only, { userId: null, now }))) continue;
+    if (only === null) continue;
+    // Matched here, or by another officer's read at the same moment: no longer open either way.
+    gone.add(p.id);
+    if (!(await merge(db, access, p.id, only, { userId: null, now }))) continue;
     known.add(only);
     moved += 1;
   }
-  return moved;
+  return { moved, open: open(gone) };
+}
+
+/**
+ * The match a page read runs first (Members, Home), and the pending members still open. A failed match
+ * is logged as a code only and the page shows them as they are, so it never takes the page down.
+ */
+export async function matchOnRead(db: Db, access: WorkspaceAccess, now: Date): Promise<Pending[]> {
+  try {
+    return (await reconcilePending(db, access, now)).open;
+  } catch {
+    privateLog("w.pending.match_failed");
+    return pendingMembers(db, access);
+  }
 }

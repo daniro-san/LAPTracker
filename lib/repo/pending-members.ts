@@ -1,7 +1,8 @@
 // pending_members (D106): the plain reads and writes behind new members added by hand before the roster
 // lists them, and moving their facts (and Alliance Duel points) onto the member they turn out to be. Every
 // function takes the workspace id; lib/private passes its WorkspaceAccess's own and decides who matches.
-import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
+// A deleted pending member is dismissed, not removed: its row, facts and points stay (2026-11-17).
+import { and, asc, desc, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { memberFacts, pendingMembers } from "../schema";
@@ -21,16 +22,72 @@ const columns = {
   createdAt: pendingMembers.createdAt,
 };
 
+/** Not matched and not dismissed. */
 const open = (workspaceId: number) =>
-  and(eq(pendingMembers.workspaceId, workspaceId), isNull(pendingMembers.matchedUid));
+  and(
+    eq(pendingMembers.workspaceId, workspaceId),
+    isNull(pendingMembers.matchedUid),
+    isNull(pendingMembers.dismissedAt),
+  );
 
-/** The workspace's pending members not matched yet, oldest first. */
+/** Deleted by an officer and kept (2026-11-17). */
+const dismissed = (workspaceId: number) =>
+  and(
+    eq(pendingMembers.workspaceId, workspaceId),
+    isNull(pendingMembers.matchedUid),
+    isNotNull(pendingMembers.dismissedAt),
+  );
+
+/** The workspace's pending members neither matched nor dismissed, oldest first. */
 export async function openPendings(db: Db, workspaceId: number): Promise<PendingRow[]> {
   return db
     .select(columns)
     .from(pendingMembers)
     .where(open(workspaceId))
     .orderBy(asc(pendingMembers.createdAt), asc(pendingMembers.id));
+}
+
+/** The workspace's dismissed pending members, newest dismissal first. */
+export async function dismissedPendings(
+  db: Db,
+  workspaceId: number,
+): Promise<(PendingRow & { dismissedAt: Date })[]> {
+  const rows = await db
+    .select({ ...columns, dismissedAt: pendingMembers.dismissedAt })
+    .from(pendingMembers)
+    .where(dismissed(workspaceId))
+    .orderBy(desc(pendingMembers.dismissedAt), desc(pendingMembers.id));
+  return rows.map((r) => ({ ...r, dismissedAt: r.dismissedAt as Date }));
+}
+
+/**
+ * Reopens the newest dismissed pending member with this key, as added again now (by this request);
+ * its id, or null when none was dismissed.
+ */
+export async function reopenDismissed(
+  db: Db,
+  workspaceId: number,
+  nameKey: string,
+  again: { name: string; requestId: string | null; now: Date },
+): Promise<number | null> {
+  const [last] = await db
+    .select({ id: pendingMembers.id })
+    .from(pendingMembers)
+    .where(and(dismissed(workspaceId), eq(pendingMembers.nameKey, nameKey)))
+    .orderBy(desc(pendingMembers.dismissedAt), desc(pendingMembers.id))
+    .limit(1);
+  if (!last) return null;
+  const [row] = await db
+    .update(pendingMembers)
+    .set({
+      dismissedAt: null,
+      name: again.name,
+      createdAt: again.now,
+      ...(again.requestId !== null && { requestId: again.requestId }),
+    })
+    .where(and(dismissed(workspaceId), eq(pendingMembers.id, last.id)))
+    .returning({ id: pendingMembers.id });
+  return row?.id ?? null;
 }
 
 /** The pending member an add with this request id made (matched or not), or the open one with this key. */
@@ -106,20 +163,19 @@ export async function moveDuelPoints(db: Db, workspaceId: number, from: number, 
     .where(and(eq(allianceDuelPoints.workspaceId, workspaceId), eq(allianceDuelPoints.uid, from)));
 }
 
-/** Deletes an open pending member with its facts and points (uid `-id`); false when there is none. */
-export async function deletePending(db: Db, workspaceId: number, id: number): Promise<boolean> {
-  return db.transaction(async (tx) => {
-    const gone = await tx
-      .delete(pendingMembers)
-      .where(and(open(workspaceId), eq(pendingMembers.id, id)))
-      .returning({ id: pendingMembers.id });
-    if (gone.length === 0) return false;
-    const of = (t: typeof memberFacts | typeof allianceDuelPoints) =>
-      and(eq(t.workspaceId, workspaceId), eq(t.uid, -id));
-    await tx.delete(memberFacts).where(of(memberFacts));
-    await tx.delete(allianceDuelPoints).where(of(allianceDuelPoints));
-    return true;
-  });
+/** Dismisses an open pending member; its row, facts and points stay. False when there is none. */
+export async function dismissPending(
+  db: Db,
+  workspaceId: number,
+  id: number,
+  now: Date,
+): Promise<boolean> {
+  const gone = await db
+    .update(pendingMembers)
+    .set({ dismissedAt: now })
+    .where(and(open(workspaceId), eq(pendingMembers.id, id)))
+    .returning({ id: pendingMembers.id });
+  return gone.length > 0;
 }
 
 /** Which of `uids` have any fact version in the workspace (a facts history). */

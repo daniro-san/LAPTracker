@@ -118,11 +118,14 @@ export async function factsOf(db: Db, access: WorkspaceAccess): Promise<Map<numb
   return facts;
 }
 
-/** The time zones the workspace's members have, most used first. */
-export function usedZones(facts: Map<number, MemberFacts>): string[] {
+/**
+ * The time zones of `uids` (the newest roster's members and the open new members), most used first;
+ * former and removed new members do not count.
+ */
+export function usedZones(facts: Map<number, MemberFacts>, uids: Iterable<number>): string[] {
   const count = new Map<string, number>();
-  for (const f of facts.values()) {
-    const zone = f.timeZone?.value;
+  for (const uid of uids) {
+    const zone = facts.get(uid)?.timeZone?.value;
     if (zone) count.set(zone, (count.get(zone) ?? 0) + 1);
   }
   return [...count].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([z]) => z);

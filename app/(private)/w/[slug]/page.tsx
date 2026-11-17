@@ -1,7 +1,8 @@
 // /w/[slug]: the access check first, then either the sign-in, or the signed-in shell with Home. A session
 // older than 24 hours goes through Discord again without a click (prompt=none, D71). Home is a short
 // digest of what the other tabs already work out (panel PD-1): today and tomorrow from the Calendar, who to
-// thank and how many to check in with from Members, then the screenshots to review.
+// thank and how many to check in with from Members, then the screenshots to review and the new members to
+// match (D106). Like Members, it first matches new members to the newest roster.
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 
@@ -18,6 +19,7 @@ import { cardFormats } from "@/lib/private/member-card";
 import { membersView, type MembersView } from "@/lib/private/members";
 import { needsAWord, whoOf } from "@/lib/private/members-list";
 import { plural } from "@/lib/private/members-sheet";
+import { matchOnRead, toMatch } from "@/lib/private/pending-members";
 import { RENEW_MS } from "@/lib/private/session";
 import { returnPath, SLUG } from "@/lib/private/sign-in";
 import { serverDay } from "@/lib/schedule";
@@ -26,6 +28,7 @@ import { calendarWords, nextItems } from "../../_ui/calendar-data";
 import { Frame, SignedInFrame, workspaceWords } from "../../_ui/Frame";
 import { digestDays, type NextItem } from "../../_ui/home-digest";
 import { HomeNext } from "../../_ui/HomeNext";
+import { toMatchLine } from "../../_ui/member-lifecycle-data";
 import { nextQuery, refuse } from "../../_ui/refuse";
 import { ToReview } from "../../_ui/ToReview";
 
@@ -164,8 +167,11 @@ function Home(props: {
   items: ReviewItem[];
   next: NextItem[];
   view: MembersView;
+  /** New members a roster read since their add could not match (D106, 2026-11-17). */
+  toMatch: number;
 }) {
   const { slug, t, language } = props;
+  const f = cardFormats(language, getEnv().SERVER_TZ, new Date());
   const at = new Intl.DateTimeFormat(language, {
     weekday: "short",
     hour: "2-digit",
@@ -186,6 +192,11 @@ function Home(props: {
         t={t}
         language={language}
         maxPictures={MAX_PICTURES}
+        toMatch={
+          props.toMatch > 0
+            ? { line: toMatchLine(props.toMatch, t, f), href: `/w/${slug}/members#to-match` }
+            : null
+        }
         when={(d) => fill(t["time.server"], { time: at.format(d) })}
       />
     </section>
@@ -206,15 +217,23 @@ export default async function WorkspacePage({
   const zone = getEnv().SERVER_TZ;
   const days = digestDays(serverDay(now, { SERVER_TZ: zone }));
   // INVARIANT workspace.access-first: nothing private is read before this check.
-  const { access, items, placed, view } = await withPageDb(async (db) => {
+  const {
+    access,
+    items,
+    placed,
+    view,
+    toMatch: unmatched,
+  } = await withPageDb(async (db) => {
     const access = await requireWorkspace(db, slug, jar, now, RENEW_MS);
-    if (!access.ok) return { access, items: [], placed: [], view: null };
+    if (!access.ok) return { access, items: [], placed: [], view: null, toMatch: 0 };
+    // D106: a roster read since a new member was added may now list them, as on Members.
+    const pending = await matchOnRead(db, access, now);
     const [items, placed, view] = await Promise.all([
       toReview(db, access, now),
       calendarDays(db, access, days.from, days.to),
       membersView(db, access, now, zone),
     ]);
-    return { access, items, placed, view };
+    return { access, items, placed, view, toMatch: toMatch(pending, view.readAt).length };
   });
   const query = await searchParams;
   // The page a refused visitor asked for (refuse.ts), kept through the sign-in.
@@ -240,6 +259,7 @@ export default async function WorkspacePage({
         items={items}
         next={nextItems(placed, slug, { t, language, zone })}
         view={view}
+        toMatch={unmatched}
       />
     </SignedInFrame>
   );
