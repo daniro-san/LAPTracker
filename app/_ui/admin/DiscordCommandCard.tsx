@@ -1,7 +1,7 @@
 "use client";
 
-// /admin's Discord section (D96): one button that registers "Send to LAPTracker" in every workspace's
-// Discord server, on the server with the app's credentials. The press sends the PIN as x-edit-pin, like the
+// /admin's Discord section (D96): one button that registers the app's three message commands (D101) in
+// every workspace's Discord server, on the server with the app's credentials. The press sends the PIN as x-edit-pin, like the
 // other admin buttons, and shows one line per server from Discord's HTTP status only.
 import { useState } from "react";
 

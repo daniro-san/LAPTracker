@@ -45,6 +45,7 @@ export function secretsOf(env: Env): string[] {
     env.NOTIFY_WEBHOOK_PUBLIC,
     env.NOTIFY_WEBHOOK_ADMIN,
     env.DISCORD_CLIENT_SECRET,
+    env.DISCORD_BOT_TOKEN,
     env.GROQ_API_KEY,
   ].filter((s): s is string => s !== undefined);
 }

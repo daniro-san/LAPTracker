@@ -7,6 +7,7 @@ import { membersPt } from "./dictionary.members.pt-BR";
 import { noticesPt } from "./dictionary.notices";
 import { shotsPt } from "./dictionary.shots.pt-BR";
 import { theftsPt } from "./dictionary.thefts";
+import { translatePt } from "./dictionary.translate";
 
 export const pt: WorkspaceDictionary = {
   ...calendarPt,
@@ -262,4 +263,5 @@ export const pt: WorkspaceDictionary = {
   ...importPt,
   ...theftsPt,
   ...shotsPt,
+  ...translatePt,
 };

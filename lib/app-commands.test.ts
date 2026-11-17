@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { IMPORT_COMMAND, registerImportCommand } from "./import-command";
+import { IMPORT_COMMAND, registerAppCommands } from "./app-commands";
 
 const env = {
   DISCORD_CLIENT_ID: "900000000000000001",
@@ -10,8 +10,8 @@ const env = {
 const OGS = "1544808864262914060";
 const OTHER = "1544808864262914061";
 
-describe("registerImportCommand (D96)", () => {
-  it("takes a client-credentials token, then PUTs the command in each guild and returns each status", async () => {
+describe("registerAppCommands (D96, D101)", () => {
+  it("takes a client-credentials token, then PUTs the three commands in each guild and returns each status", async () => {
     const calls: { url: string; init: RequestInit }[] = [];
     const fetcher = vi.fn(async (url: string | URL | Request, init?: RequestInit) => {
       calls.push({ url: String(url), init: init ?? {} });
@@ -23,7 +23,7 @@ describe("registerImportCommand (D96)", () => {
         : Response.json({ message: "Missing Access", code: 50001 }, { status: 403 });
     });
 
-    const result = await registerImportCommand(env, fetcher as typeof fetch, [OGS, OTHER]);
+    const result = await registerAppCommands(env, fetcher as typeof fetch, [OGS, OTHER]);
 
     expect(result).toEqual({
       ok: true,
@@ -57,14 +57,19 @@ describe("registerImportCommand (D96)", () => {
     ]);
     for (const put of puts) {
       expect(new Headers(put.init.headers).get("authorization")).toBe("Bearer bearer-for-tests");
-      expect(JSON.parse(String(put.init.body))).toEqual([{ name: "Send to LAPTracker", type: 3 }]);
+      // One PUT replaces the guild's whole set, so all three go together (D101).
+      expect(JSON.parse(String(put.init.body))).toEqual([
+        { name: "Send to LAPTracker", type: 3 },
+        { name: "Translate for me", type: 3 },
+        { name: "Translate for everyone", type: 3 },
+      ]);
     }
   });
 
   it("refuses without calling Discord when a credential is missing", async () => {
     const fetcher = vi.fn();
     for (const missing of ["DISCORD_CLIENT_ID", "DISCORD_CLIENT_SECRET"] as const) {
-      const result = await registerImportCommand(
+      const result = await registerAppCommands(
         { ...env, [missing]: undefined },
         fetcher as typeof fetch,
         [OGS],
@@ -75,7 +80,7 @@ describe("registerImportCommand (D96)", () => {
   });
   it("answers the token's refusal or no answer as discord_token, with no PUT", async () => {
     const refused = vi.fn(async () => new Response("", { status: 401 }));
-    expect(await registerImportCommand(env, refused as typeof fetch, [OGS])).toEqual({
+    expect(await registerAppCommands(env, refused as typeof fetch, [OGS])).toEqual({
       ok: false,
       code: "discord_token",
       status: 401,
@@ -84,7 +89,7 @@ describe("registerImportCommand (D96)", () => {
     const down = vi.fn(async () => {
       throw new TypeError("fetch failed");
     });
-    expect(await registerImportCommand(env, down as typeof fetch, [OGS])).toEqual({
+    expect(await registerAppCommands(env, down as typeof fetch, [OGS])).toEqual({
       ok: false,
       code: "discord_token",
       status: 0,

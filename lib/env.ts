@@ -73,6 +73,9 @@ export const envSchema = z.object({
   // The Discord app's Public Key (D96): verifies "Send to LAPTracker" interactions. Not a secret. Without
   // it the interactions route refuses every request.
   DISCORD_PUBLIC_KEY: optional(z.string().regex(/^[0-9a-f]{64}$/i, "expected 64 hex characters")),
+  // The Discord app's bot token (D101): only opens a thread on a message and posts "Translate for everyone"
+  // in it. A secret, sent only to Discord as `Authorization: Bot …`. Without it translations go to the channel.
+  DISCORD_BOT_TOKEN: optional(z.string().min(20, "expected a Discord bot token")),
   // PostHog (D77): on only on the production deployment (Vercel sets VERCEL_ENV) with the project key set.
   VERCEL_ENV: optional(z.string()),
   POSTHOG_KEY: optional(z.string()),

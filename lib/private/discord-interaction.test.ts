@@ -91,7 +91,7 @@ function signed(payload: unknown, key = keys.privateKey, at = 0) {
 }
 
 const handle = (request: { body: string; signature: string | null; timestamp: string | null }) =>
-  handleInteraction(db, PUBLIC_KEY, request, NOW, "https://laptracker.test");
+  handleInteraction(db, PUBLIC_KEY, request, NOW, "https://laptracker.test", false);
 
 describe("the interaction's signature", () => {
   it("accepts Discord's signature and refuses a wrong or missing one", async () => {
@@ -112,7 +112,7 @@ describe("the interaction's signature", () => {
       body: { code: "stale_signature" },
     });
     expect(
-      await handleInteraction(db, undefined, ping, NOW, "https://laptracker.test"),
+      await handleInteraction(db, undefined, ping, NOW, "https://laptracker.test", false),
     ).toMatchObject({ status: 401 });
   });
 

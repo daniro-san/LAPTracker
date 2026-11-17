@@ -91,7 +91,7 @@ describe("groqChat (D81)", () => {
     const french = "Envoyez des éclaireurs ce soir.\nGardez vos accélérations pour mardi.";
     const fixed = fake(ok(english), ok(french));
     const out = await translateText(groqChat("gsk_test", fixed.fetcher), "en", "fr", english);
-    expect(out).toEqual({ text: french, retried: true, partly: false });
+    expect(out).toEqual({ text: french, retried: true, partly: false, same: false });
     expect(fixed.calls.map((c) => [c.body.reasoning_effort, c.body.max_completion_tokens])).toEqual(
       [
         ["low", 2000],

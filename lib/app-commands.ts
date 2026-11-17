@@ -1,11 +1,17 @@
-// The Discord message command of the screenshot import (D96), as registered in each workspace's server and
-// as the interactions route checks it: one definition for both. Type 3 is a message command ("Apps" on a
-// message); its name may have capitals and spaces.
+// The app's Discord message commands, as registered in each workspace's server and as the interactions
+// route checks them: one definition for both. "Send to LAPTracker" is the screenshot import (D96); the two
+// Translate commands are D101's. Type 3 is a message command ("Apps" on a message); its name may have
+// capitals and spaces.
 import { z } from "zod";
 
 import type { Env } from "./env";
 
 export const IMPORT_COMMAND = { name: "Send to LAPTracker", type: 3 } as const;
+export const TRANSLATE_FOR_ME = { name: "Translate for me", type: 3 } as const;
+export const TRANSLATE_FOR_EVERYONE = { name: "Translate for everyone", type: 3 } as const;
+
+/** Every command of the app. Discord's PUT replaces a guild's whole set, so they are registered together. */
+export const APP_COMMANDS = [IMPORT_COMMAND, TRANSLATE_FOR_ME, TRANSLATE_FOR_EVERYONE] as const;
 
 const TIMEOUT_MS = 10_000;
 
@@ -41,11 +47,11 @@ async function clientToken(
 }
 
 /**
- * Registers IMPORT_COMMAND in each guild, where the app is installed with `applications.commands`: the
+ * Registers APP_COMMANDS in each guild, where the app is installed with `applications.commands`: the
  * app's client-credentials grant (scope `applications.commands.update`), no bot token, then Discord's bulk
- * overwrite (PUT), so each guild's commands become this one. Used by `pnpm discord:register` and /admin.
+ * overwrite (PUT), so each guild's commands become exactly these. Used by `pnpm discord:register` and /admin.
  */
-export async function registerImportCommand(
+export async function registerAppCommands(
   env: Pick<Env, "DISCORD_CLIENT_ID" | "DISCORD_CLIENT_SECRET" | "DISCORD_API_BASE_URL">,
   fetcher: typeof fetch,
   guildIds: readonly string[],
@@ -66,7 +72,7 @@ export async function registerImportCommand(
       const res = await send(`/applications/${id}/guilds/${guildId}/commands`, {
         method: "PUT",
         headers: { authorization: `Bearer ${token.bearer}`, "content-type": "application/json" },
-        body: JSON.stringify([IMPORT_COMMAND]),
+        body: JSON.stringify(APP_COMMANDS),
       });
       return { guildId, status: res?.status ?? 0 };
     }),
