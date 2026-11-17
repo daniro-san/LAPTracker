@@ -221,3 +221,14 @@ export async function signOutWorkspace(db: Db, workspaceId: number): Promise<num
     .returning({ hash: workspaceSessions.tokenHash });
   return gone.length;
 }
+
+/** /admin's "Sign out members" (D105): every member session of the workspace ends now; officers stay. */
+export async function signOutMembers(db: Db, workspaceId: number): Promise<number> {
+  const gone = await db
+    .delete(workspaceSessions)
+    .where(
+      and(eq(workspaceSessions.workspaceId, workspaceId), eq(workspaceSessions.tier, "member")),
+    )
+    .returning({ hash: workspaceSessions.tokenHash });
+  return gone.length;
+}

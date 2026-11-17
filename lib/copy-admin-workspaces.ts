@@ -24,6 +24,9 @@ export const workspacesAdminCopy = {
   allowSave: "Add",
   signOut: "Sign out everyone in this workspace",
   signOutConfirm: "Sign out everyone in /w/{slug}? Each officer signs in with Discord again.",
+  signOutMembers: "Sign out members",
+  signOutMembersConfirm:
+    "Sign out every member in /w/{slug}? Officers stay signed in. Members who still belong sign in with Discord again.",
   saved: "Saved.",
   ended: "Signed out {n}.",
   errors: {
