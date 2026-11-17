@@ -184,21 +184,19 @@ export const pl = {
     from: "Od",
     to: "Do",
     action: "Pokaż",
-    answer:
-      "Zmiany sojuszu między {from} a {to}: {moved}. Największy przepływ: {source} → {dest} ({n}).",
-    answerSmall:
-      "Zmiany sojuszu między {from} a {to}: {moved}. Żaden pojedynczy przepływ nie osiągnął {min}.",
-    answerNone: "Między {from} a {to} nikt nie zmienił sojuszu.",
-    outside: "{arrived} doszło spoza śledzonych sojuszy, a {left} odeszło z nich.",
+    answer: "Największy przepływ między {from} a {to}: {source} → {dest} ({n}).",
+    answerNone:
+      "Między {from} a {to} nie było przepływu {min} lub więcej członków między śledzonymi sojuszami.",
+    totals: "Zmiany sojuszu: {moved} · Nowi: {arrived} · Odeszli: {left}",
     small:
-      "Przepływy mniejsze niż {min} członków są ukryte, żeby nikogo nie dało się wskazać w małej grupie.",
+      "Przepływy mniejsze niż {min} członków są ukryte i nie wchodzą do żadnej sumy, żeby nikogo nie dało się wskazać w małej grupie.",
     rowNew: "Nowi",
     colLeft: "Odeszli",
     legend:
       "Wiersze: sojusz w dniu {from}. Kolumny: sojusz w dniu {to}. Nowi: w żadnym śledzonym sojuszu w dniu {from}. Odeszli: w żadnym sojuszu w dniu {to}.",
     caption: "Członkowie według sojuszu w dniu {from} (wiersze) i w dniu {to} (kolumny)",
     stayed: "Zostali",
-    rowMembers: "Członków: {n}",
+    rowStayed: "Zostali: {n}",
     newTitle: "Nowi w śledzonych sojuszach",
     leftTitle: "Odeszli ze śledzonych sojuszy",
     notCounted: "Nie wliczono, brak użytecznego odczytu z obu dni: {list}.",

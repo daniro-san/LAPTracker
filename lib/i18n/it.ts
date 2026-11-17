@@ -184,21 +184,19 @@ export const itIT = {
     from: "Da",
     to: "A",
     action: "Mostra",
-    answer:
-      "Tra il {from} e il {to}, {moved} membri hanno cambiato alleanza; lo spostamento più grande è stato {source} → {dest} ({n}).",
-    answerSmall:
-      "Tra il {from} e il {to}, {moved} membri hanno cambiato alleanza; nessuno spostamento ha raggiunto {min}.",
-    answerNone: "Tra il {from} e il {to}, nessun membro ha cambiato alleanza.",
-    outside: "{arrived} sono arrivati da fuori delle alleanze seguite e {left} ne sono usciti.",
+    answer: "Tra il {from} e il {to}, lo spostamento più grande è stato {source} → {dest} ({n}).",
+    answerNone:
+      "Tra il {from} e il {to}, nessuno spostamento di {min} o più membri tra le alleanze seguite.",
+    totals: "Cambio di alleanza: {moved} · Nuovi: {arrived} · Usciti: {left}",
     small:
-      "Gli spostamenti di meno di {min} membri sono nascosti, così nessuno può essere individuato in un gruppo piccolo.",
+      "Gli spostamenti di meno di {min} membri sono nascosti ed esclusi da ogni totale, così nessuno può essere individuato in un gruppo piccolo.",
     rowNew: "Nuovi",
     colLeft: "Usciti",
     legend:
       "Righe: l’alleanza il {from}. Colonne: l’alleanza il {to}. Nuovi: in nessuna alleanza seguita il {from}. Usciti: in nessuna il {to}.",
     caption: "Membri per alleanza il {from} (righe) e il {to} (colonne)",
     stayed: "Rimasti",
-    rowMembers: "{n} membri",
+    rowStayed: "Rimasti: {n}",
     newTitle: "Nuovi nelle alleanze seguite",
     leftTitle: "Usciti dalle alleanze seguite",
     notCounted: "Non conteggiati, nessuna lettura valida in entrambi i giorni: {list}.",

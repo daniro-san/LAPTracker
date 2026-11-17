@@ -185,21 +185,19 @@ export const nl = {
     from: "Van",
     to: "Naar",
     action: "Toon",
-    answer:
-      "Tussen {from} en {to} wisselden {moved} leden van alliantie; de grootste verschuiving was {source} → {dest} ({n}).",
-    answerSmall:
-      "Tussen {from} en {to} wisselden {moved} leden van alliantie; geen enkele verschuiving haalde {min}.",
-    answerNone: "Tussen {from} en {to} wisselde geen lid van alliantie.",
-    outside: "{arrived} kwamen van buiten de gevolgde allianties en {left} verlieten ze.",
+    answer: "Tussen {from} en {to} was de grootste verschuiving {source} → {dest} ({n}).",
+    answerNone:
+      "Tussen {from} en {to} geen verschuiving van {min} of meer leden tussen de gevolgde allianties.",
+    totals: "Van alliantie gewisseld: {moved} · Nieuw: {arrived} · Weg: {left}",
     small:
-      "Verschuivingen van minder dan {min} leden zijn verborgen, zodat niemand uit een kleine groep herkend kan worden.",
+      "Verschuivingen van minder dan {min} leden zijn verborgen en tellen in geen enkel totaal mee, zodat niemand uit een kleine groep herkend kan worden.",
     rowNew: "Nieuw",
     colLeft: "Weg",
     legend:
       "Rijen: de alliantie op {from}. Kolommen: de alliantie op {to}. Nieuw: in geen gevolgde alliantie op {from}. Weg: in geen op {to}.",
     caption: "Leden per alliantie op {from} (rijen) en op {to} (kolommen)",
     stayed: "Gebleven",
-    rowMembers: "{n} members",
+    rowStayed: "Gebleven: {n}",
     newTitle: "Nieuw in de gevolgde allianties",
     leftTitle: "Weg uit de gevolgde allianties",
     notCounted: "Niet geteld, geen bruikbare meting op beide dagen: {list}.",

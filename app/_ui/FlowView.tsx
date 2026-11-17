@@ -8,8 +8,7 @@ import { fill, type Dictionary } from "@/lib/copy";
 import { FLOW_MIN, type FlowCell } from "@/lib/flow";
 import type { FlowAlliance, FlowResult } from "@/lib/queries";
 
-import { dayDate } from "./FlowPicker";
-import { allianceLabel, type Clock } from "./format";
+import { allianceLabel, dayDate, type Clock } from "./format";
 import { MERGE_PATH } from "./MergePicker";
 
 type Id = number | null;
@@ -41,23 +40,20 @@ function Lead({
     return a ? allianceLabel(a.tag, a.name) : "";
   };
   const { largest } = flow;
-  const sentence =
-    flow.moved === 0
-      ? fill(f.answerNone, days)
-      : largest
-        ? fill(f.answer, {
-            ...days,
-            moved: flow.moved,
-            source: label(largest.from),
-            dest: label(largest.to),
-            n: largest.n,
-          })
-        : fill(f.answerSmall, { ...days, moved: flow.moved, min: FLOW_MIN });
+  // The figures are those of the cells shown: a total of every move would give away the hidden ones.
+  const sentence = largest
+    ? fill(f.answer, {
+        ...days,
+        source: label(largest.from),
+        dest: label(largest.to),
+        n: largest.n,
+      })
+    : fill(f.answerNone, { ...days, min: FLOW_MIN });
   return (
     <>
       <p className="mt-1 text-lg">{sentence}</p>
       <p className="text-body-sm text-ink/70">
-        {fill(f.outside, { arrived: flow.arrived, left: flow.left })}
+        {fill(f.totals, { moved: flow.moved, arrived: flow.arrived, left: flow.left })}
       </p>
     </>
   );
@@ -142,16 +138,15 @@ function Matrix({
   );
 }
 
-/** One phone row: the source, and when opened its destinations as text with counts. */
+/** One phone row: the source, and when opened its destinations as text with counts. No row total: with
+ * the cells shown it would give the size of the hidden ones. */
 function PhoneRow({
   title,
-  members,
   cells,
   names,
   copy,
 }: {
   title: string;
-  members: number;
   cells: FlowCell[];
   names: Map<Id, string>;
   copy: Dictionary;
@@ -169,19 +164,18 @@ function PhoneRow({
       {!moves ? (
         <div className={summary}>
           <span className="min-w-0 break-words font-medium">{title}</span>
-          <span className="shrink-0 text-sm tabular-nums">
-            {fill(f.rowMembers, { n: members })}
-          </span>
+          {cells[0] && (
+            <span className="shrink-0 text-sm tabular-nums">
+              {fill(f.rowStayed, { n: cells[0].n })}
+            </span>
+          )}
         </div>
       ) : (
         <details className="group" open>
           <summary className={summary}>
             <span className="min-w-0 break-words font-medium">{title}</span>
-            <span className="shrink-0 text-sm tabular-nums">
-              {fill(f.rowMembers, { n: members })}{" "}
-              <span aria-hidden="true" className="inline-block group-open:rotate-90">
-                ›
-              </span>
+            <span aria-hidden="true" className="inline-block shrink-0 group-open:rotate-90">
+              ›
             </span>
           </summary>
           <ul className="pb-2">
@@ -233,7 +227,6 @@ export function FlowView({
           <PhoneRow
             key={a.unionId}
             title={allianceLabel(a.tag, a.name)}
-            members={a.start}
             cells={flow.cells.filter((c) => c.from === a.unionId)}
             names={names}
             copy={copy}
@@ -241,7 +234,6 @@ export function FlowView({
         ))}
         <PhoneRow
           title={f.newTitle}
-          members={flow.arrived}
           cells={flow.cells.filter((c) => c.from === null)}
           names={names}
           copy={copy}

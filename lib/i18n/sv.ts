@@ -338,20 +338,19 @@ export const sv = {
     from: "Från",
     to: "Till",
     action: "Visa",
-    answer:
-      "Mellan {from} och {to} bytte {moved} Members allians; den största flytten var {source} → {dest} ({n}).",
-    answerSmall:
-      "Mellan {from} och {to} bytte {moved} Members allians; ingen enskild flytt nådde {min}.",
-    answerNone: "Mellan {from} och {to} bytte inga Members allians.",
-    outside: "{arrived} kom från utanför de bevakade allianserna och {left} lämnade dem.",
-    small: "Flyttar på färre än {min} Members döljs, så ingen kan pekas ut i en liten grupp.",
+    answer: "Mellan {from} och {to} var den största flytten {source} → {dest} ({n}).",
+    answerNone:
+      "Mellan {from} och {to} ingen flytt på {min} eller fler Members mellan de bevakade allianserna.",
+    totals: "Bytte allians: {moved} · Nya: {arrived} · Lämnade: {left}",
+    small:
+      "Flyttar på färre än {min} Members döljs och räknas inte in i någon summa, så ingen kan pekas ut i en liten grupp.",
     rowNew: "Nya",
     colLeft: "Lämnade",
     legend:
       "Rader: alliansen på {from}. Kolumner: alliansen på {to}. Nya: i ingen bevakad allians på {from}. Lämnade: i ingen på {to}.",
     caption: "Members per allians på {from} (rader) och på {to} (kolumner)",
     stayed: "Kvar",
-    rowMembers: "{n} Members",
+    rowStayed: "Kvar: {n}",
     newTitle: "Nya i de bevakade allianserna",
     leftTitle: "Lämnade de bevakade allianserna",
     notCounted: "Räknas inte, inga användbara avläsningar båda dagarna: {list}.",

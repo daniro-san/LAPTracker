@@ -185,21 +185,19 @@ export const tr = {
     from: "Başlangıç",
     to: "Bitiş",
     action: "Göster",
-    answer:
-      "{from} ile {to} arasında {moved} üye ittifak değiştirdi; en büyük geçiş {source} → {dest} ({n}).",
-    answerSmall:
-      "{from} ile {to} arasında {moved} üye ittifak değiştirdi; tek bir geçiş bile {min} üyeye ulaşmadı.",
-    answerNone: "{from} ile {to} arasında hiçbir üye ittifak değiştirmedi.",
-    outside:
-      "{arrived} üye takip edilen ittifaklar dışından geldi, {left} üye bu ittifaklardan ayrıldı.",
-    small: "{min} üyeden az geçiş gizlenir, böylece küçük bir grupta kimse seçilemez.",
+    answer: "{from} ile {to} arasında en büyük geçiş {source} → {dest} ({n}).",
+    answerNone:
+      "{from} ile {to} arasında takip edilen ittifaklar arasında {min} veya daha fazla üyelik bir geçiş olmadı.",
+    totals: "İttifak değiştiren: {moved} · Yeni: {arrived} · Ayrılan: {left}",
+    small:
+      "{min} üyeden az geçiş gizlenir ve hiçbir toplama katılmaz, böylece küçük bir grupta kimse seçilemez.",
     rowNew: "Yeni",
     colLeft: "Ayrılan",
     legend:
       "Satırlar: {from} itibarıyla ittifak. Sütunlar: {to} itibarıyla ittifak. Yeni: {from} itibarıyla takip edilen hiçbir ittifakta olmayanlar. Ayrılan: {to} itibarıyla hiçbirinde olmayanlar.",
     caption: "{from} itibarıyla (satırlar) ve {to} itibarıyla (sütunlar) ittifaka göre üyeler",
     stayed: "Kaldı",
-    rowMembers: "{n} üye",
+    rowStayed: "Kaldı: {n}",
     newTitle: "Takip edilen ittifaklara yeni gelenler",
     leftTitle: "Takip edilen ittifaklardan ayrılanlar",
     notCounted: "Sayılmadı, iki günde de kullanılabilir okuma yok: {list}.",

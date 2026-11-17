@@ -1,7 +1,8 @@
 // `/alliances/flow[?from=YYYY-MM-DD&to=YYYY-MM-DD]`: member flow between the tracked alliances (D89, issue
 // 275). Which alliance each member was in on two days with a usable daily read, counted per source and
 // destination: counts only, no member names, moves under 5 members hidden. A GET form, no client-side
-// fetch; public. A day that is not a date, or is not one with a usable read, is a 404.
+// fetch; public. A day that is not a date, or is not one with a usable read, is a 404, and so is a link that
+// gives only one of the two days.
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cache } from "react";
@@ -10,6 +11,7 @@ import { Breadcrumbs } from "@/app/_ui/Breadcrumbs";
 import { EmptyState } from "@/app/_ui/EmptyState";
 import { FlowPicker } from "@/app/_ui/FlowPicker";
 import { FlowView } from "@/app/_ui/FlowView";
+import { dayDate } from "@/app/_ui/format";
 import { requestClock, requestCopy } from "@/app/_ui/locale";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
@@ -18,10 +20,13 @@ import { flowPage, homeEvent, listEvents } from "@/lib/queries";
 
 type Search = Promise<Record<string, string | string[] | undefined>>;
 
-/** A missing (or empty) parameter is null; one that is not a date is `undefined` (a 404). */
+/** A missing (or empty) parameter is null; one that is not a calendar date is `undefined` (a 404): an
+ * impossible date such as 2026-02-31 would reach the database's date column. */
 const dayOf = (raw: string | string[] | undefined) => {
   if (raw === undefined || raw === "") return null;
-  return typeof raw === "string" && /^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw : undefined;
+  if (typeof raw !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(raw)) return undefined;
+  const at = dayDate(raw);
+  return !Number.isNaN(at.getTime()) && at.toISOString().startsWith(raw) ? raw : undefined;
 };
 
 const load = cache((from: string | null, to: string | null) =>
@@ -38,7 +43,7 @@ const load = cache((from: string | null, to: string | null) =>
 async function read(searchParams: Search) {
   const sp = await searchParams;
   const [from, to] = [dayOf(sp.from), dayOf(sp.to)];
-  if (from === undefined || to === undefined) return null;
+  if (from === undefined || to === undefined || (from === null) !== (to === null)) return null;
   const data = await load(from, to);
   const known = (day: string | null) => day === null || data.page.days.includes(day);
   return known(from) && known(to) ? data : null;

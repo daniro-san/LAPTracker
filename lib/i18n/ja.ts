@@ -182,20 +182,18 @@ export const ja = {
     from: "開始日",
     to: "終了日",
     action: "表示",
-    answer:
-      "{from}から{to}まで、同盟を移ったメンバーは{moved}人。最も大きな移動は {source} → {dest}（{n}人）。",
-    answerSmall:
-      "{from}から{to}まで、同盟を移ったメンバーは{moved}人。1回の移動で{min}人に達したものはありません。",
-    answerNone: "{from}から{to}まで、同盟を移ったメンバーはいません。",
-    outside: "{arrived}人は追跡中の同盟の外から来て、{left}人は外へ出ていきました。",
-    small: "小さな集団から個人が特定されないよう、{min}人未満の移動は表示していません。",
+    answer: "{from}から{to}まで、最も大きな移動は {source} → {dest}（{n}人）。",
+    answerNone: "{from}から{to}まで、追跡中の同盟の間で{min}人以上の移動はありません。",
+    totals: "同盟移動：{moved} · 新規：{arrived} · 脱退：{left}",
+    small:
+      "小さな集団から個人が特定されないよう、{min}人未満の移動は表示せず、どの合計にも含めていません。",
     rowNew: "新規",
     colLeft: "脱退",
     legend:
       "行：{from}の同盟。列：{to}の同盟。新規：{from}に追跡中の同盟のどれにもいなかった。脱退：{to}にどの同盟にもいない。",
     caption: "{from}の同盟別メンバー（行）と{to}の同盟別メンバー（列）",
     stayed: "変わらず",
-    rowMembers: "{n}人",
+    rowStayed: "変わらず：{n}",
     newTitle: "追跡中の同盟に新たに加わった",
     leftTitle: "追跡中の同盟を離れた",
     notCounted: "集計外。両日とも使える読み取りがありません：{list}。",

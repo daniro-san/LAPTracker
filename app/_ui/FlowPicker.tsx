@@ -4,14 +4,10 @@
 import { buttonClass } from "@/lib/brand/components/Button";
 import type { Dictionary } from "@/lib/copy";
 
-import type { Clock } from "./format";
+import { dayDate, type Clock } from "./format";
 import { LABEL } from "./StatTable";
 
 export const FLOW_PATH = "/alliances/flow";
-
-/** A daily read's day ("2026-11-12") as an instant inside that date: noon UTC is that date in every
- * zone the clock uses (as the admin's `readDayDate`). */
-export const dayDate = (day: string): Date => new Date(`${day}T12:00:00Z`);
 
 function DaySelect({
   name,

@@ -179,20 +179,18 @@ export const ko = {
     from: "시작 날짜",
     to: "종료 날짜",
     action: "보기",
-    answer:
-      "{from}부터 {to}까지 인원 {moved}명이 연맹을 옮겼어요. 가장 큰 이동은 {source} → {dest} ({n})이에요.",
-    answerSmall:
-      "{from}부터 {to}까지 인원 {moved}명이 연맹을 옮겼어요. 한 번에 {min}명 이상 옮긴 경우는 없어요.",
-    answerNone: "{from}부터 {to}까지 연맹을 옮긴 인원이 없어요.",
-    outside: "{arrived}명은 추적 중인 연맹 밖에서 왔고, {left}명은 탈퇴했어요.",
-    small: "{min}명 미만의 이동은 숨겨요. 작은 무리에서 누군지 알아볼 수 없게요.",
+    answer: "{from}부터 {to}까지 가장 큰 이동은 {source} → {dest} ({n})이에요.",
+    answerNone: "{from}부터 {to}까지 추적 중인 연맹 사이에 {min}명 이상의 이동은 없어요.",
+    totals: "연맹 이동: {moved} · 신규: {arrived} · 탈퇴: {left}",
+    small:
+      "{min}명 미만의 이동은 숨기고 어떤 합계에도 넣지 않아요. 작은 무리에서 누군지 알아볼 수 없게요.",
     rowNew: "신규",
     colLeft: "탈퇴",
     legend:
       "행: {from} 기준 연맹. 열: {to} 기준 연맹. 신규: {from}에 추적 중인 연맹 어디에도 없던 멤버. 탈퇴: {to}에 어디에도 없는 멤버.",
     caption: "{from} 기준 연맹(행), {to} 기준 연맹(열)별 멤버",
     stayed: "유지",
-    rowMembers: "인원 {n}명",
+    rowStayed: "유지: {n}",
     newTitle: "추적 중인 연맹에 새로 들어옴",
     leftTitle: "추적 중인 연맹에서 탈퇴",
     notCounted: "집계 제외, 두 날 모두 쓸 수 있는 읽기가 없음: {list}.",

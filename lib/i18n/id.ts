@@ -184,21 +184,19 @@ export const idID = {
     from: "Dari",
     to: "Ke",
     action: "Tampilkan",
-    answer:
-      "Antara {from} dan {to}, {moved} Members pindah aliansi; perpindahan terbesar adalah {source} → {dest} ({n}).",
-    answerSmall:
-      "Antara {from} dan {to}, {moved} Members pindah aliansi; tidak ada satu perpindahan yang mencapai {min}.",
-    answerNone: "Antara {from} dan {to}, tidak ada Members yang pindah aliansi.",
-    outside: "{arrived} datang dari luar aliansi yang dilacak dan {left} keluar dari sana.",
+    answer: "Antara {from} dan {to}, perpindahan terbesar adalah {source} → {dest} ({n}).",
+    answerNone:
+      "Antara {from} dan {to}, tidak ada perpindahan {min} Members atau lebih di antara aliansi yang dilacak.",
+    totals: "Pindah aliansi: {moved} · Baru: {arrived} · Keluar: {left}",
     small:
-      "Perpindahan di bawah {min} Members disembunyikan, supaya tidak ada yang bisa ditunjuk dari kelompok kecil.",
+      "Perpindahan di bawah {min} Members disembunyikan dan tidak dihitung dalam total mana pun, supaya tidak ada yang bisa ditunjuk dari kelompok kecil.",
     rowNew: "Baru",
     colLeft: "Keluar",
     legend:
       "Baris: aliansi pada {from}. Kolom: aliansi pada {to}. Baru: tidak di aliansi yang dilacak pada {from}. Keluar: tidak di aliansi yang dilacak pada {to}.",
     caption: "Members menurut aliansi pada {from} (baris) dan {to} (kolom)",
     stayed: "Tetap",
-    rowMembers: "{n} Members",
+    rowStayed: "Tetap: {n}",
     newTitle: "Baru di aliansi yang dilacak",
     leftTitle: "Keluar dari aliansi yang dilacak",
     notCounted: "Tidak dihitung, tidak ada pembacaan yang bisa dipakai di kedua hari: {list}.",

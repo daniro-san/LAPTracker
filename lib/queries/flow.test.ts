@@ -41,7 +41,7 @@ beforeAll(async () => {
 beforeEach(() => truncateAll(db));
 
 describe("flowPage", () => {
-  it("counts the members of each alliance on the two days and shows only cells of 5 or more", async () => {
+  it("shows only cells of 5 or more, and leaves the hidden ones out of the totals and the row order", async () => {
     // Alliance 1: 12 members; on the end day 6 are in 2, 4 in 3 (hidden), 1 left, 1 stayed.
     await daily("2026-11-07", 1, range(100, 12));
     await daily("2026-11-07", 2, range(200, 3));
@@ -56,11 +56,13 @@ describe("flowPage", () => {
       TRACKED,
     );
     expect(period).toEqual({ from: "2026-11-07", to: "2026-11-16" });
-    expect(flow?.alliances.find((a) => a.unionId === 2)).toMatchObject({ start: 3, end: 14 });
     expect(flow?.cells).toContainEqual({ from: 1, to: 2, n: 6 });
     expect(flow?.cells).toContainEqual({ from: null, to: 2, n: 5 });
     expect(flow?.cells.every((c) => c.n >= 5)).toBe(true);
-    expect([flow?.moved, flow?.arrived, flow?.left]).toEqual([10, 5, 1]);
+    // The 4 who went to 3 and the 1 who left are hidden: counted nowhere, so they cannot be subtracted out.
+    expect([flow?.moved, flow?.arrived, flow?.left]).toEqual([6, 5, 0]);
+    // By every move, 1 and 2 tie at 11 and 1 comes first; by the moves shown, 2 (11) leads 1 (6).
+    expect(flow?.alliances.map((a) => a.unionId)).toEqual([2, 1, 3]);
     expect(flow?.largest).toEqual({ from: 1, to: 2, n: 6 });
   });
 

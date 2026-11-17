@@ -181,21 +181,19 @@ export const ptBR = {
     from: "De",
     to: "Para",
     action: "Mostrar",
-    answer:
-      "Entre {from} e {to}, {moved} Members mudaram de aliança; a maior mudança foi {source} → {dest} ({n}).",
-    answerSmall:
-      "Entre {from} e {to}, {moved} Members mudaram de aliança; nenhuma mudança chegou a {min}.",
-    answerNone: "Entre {from} e {to}, nenhum Member mudou de aliança.",
-    outside: "{arrived} vieram de fora das alianças acompanhadas e {left} saíram delas.",
+    answer: "Entre {from} e {to}, a maior mudança foi {source} → {dest} ({n}).",
+    answerNone:
+      "Entre {from} e {to}, nenhuma mudança de {min} ou mais Members entre as alianças acompanhadas.",
+    totals: "Mudaram de aliança: {moved} · Novos: {arrived} · Saíram: {left}",
     small:
-      "Mudanças de menos de {min} Members ficam ocultas, para que ninguém possa ser identificado num grupo pequeno.",
+      "Mudanças de menos de {min} Members ficam ocultas e fora de todas as contagens, para que ninguém possa ser identificado num grupo pequeno.",
     rowNew: "Novo",
     colLeft: "Saiu",
     legend:
       "Linhas: a aliança em {from}. Colunas: a aliança em {to}. Novo: em nenhuma aliança acompanhada em {from}. Saiu: em nenhuma em {to}.",
     caption: "Members por aliança em {from} (linhas) e em {to} (colunas)",
     stayed: "Ficaram",
-    rowMembers: "{n} Members",
+    rowStayed: "Ficaram: {n}",
     newTitle: "Novos nas alianças acompanhadas",
     leftTitle: "Saíram das alianças acompanhadas",
     notCounted: "Não contados, sem leitura útil nos dois dias: {list}.",

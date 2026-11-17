@@ -1,7 +1,8 @@
 // Member flow between tracked alliances (D89, #275): which alliance each member was in on two days, from
 // the usable daily rosters of those days (D60; event rosters are not counted), counted per source and
 // destination. Fields read: an alliance's tag and name and each roster's uids and read time. No member name,
-// might, kills or blocked key is selected, and only counts leave this file: cells under FLOW_MIN are dropped here.
+// might, kills or blocked key is selected, and only counts leave this file: cells under FLOW_MIN are dropped here,
+// and every total and the order of the rows are made of the cells kept, so no hidden move can be subtracted out.
 import { and, desc, gte, inArray } from "drizzle-orm";
 
 import { ALLIANCES } from "../../config/alliances";
@@ -30,18 +31,15 @@ export interface FlowAlliance {
   unionId: number;
   tag: string | null;
   name: string | null;
-  /** Members on the start day and on the end day. */
-  start: number;
-  end: number;
 }
 
 export interface FlowResult extends FlowSummary {
-  /** The counted alliances, the ones with the most moves first. */
+  /** The counted alliances, the ones with the most moves shown first. */
   alliances: FlowAlliance[];
   /** Only the cells of at least FLOW_MIN members; the stayed cells have `from === to`. */
   cells: FlowCell[];
   /** Tracked alliances with a usable read on only one of the two days: not counted. */
-  notCounted: { unionId: number; tag: string | null; name: string | null }[];
+  notCounted: FlowAlliance[];
 }
 
 export interface FlowPage {
@@ -105,25 +103,19 @@ export async function flowPage(
   const ids = tracked.filter((id) => atStart.has(id) && atEnd.has(id));
   const placement = (rs: typeof rows) =>
     placeMembers(rs.map((r) => ({ unionId: r.unionId, at: r.at?.getTime() ?? 0, uids: r.uids })));
-  const cells = buildFlow(placement(startRows), placement(endRows), ids);
-  const label = (id: number) => {
+  const cells = visibleCells(buildFlow(placement(startRows), placement(endRows), ids));
+  const label = (id: number): FlowAlliance => {
     // The end day's tag and name, else the start day's.
     const r = endRows.find((x) => x.unionId === id) ?? startRows.find((x) => x.unionId === id);
     return { unionId: id, tag: r?.tag ?? null, name: r?.name ?? null };
   };
-  const size = (key: "from" | "to", id: number) =>
-    cells.filter((c) => c[key] === id).reduce((s, c) => s + c.n, 0);
-  const alliances = activityOrder(cells, ids).map((id) => ({
-    ...label(id),
-    start: size("from", id),
-    end: size("to", id),
-  }));
+  const alliances = activityOrder(cells, ids).map(label);
   const notCounted = tracked
     .filter((id) => !ids.includes(id) && (atStart.has(id) || atEnd.has(id)))
     .map(label);
   return {
     days,
     period: chosen,
-    flow: { ...summarise(cells), alliances, cells: visibleCells(cells), notCounted },
+    flow: { ...summarise(cells), alliances, cells, notCounted },
   };
 }

@@ -184,21 +184,19 @@ export const es = {
     from: "Desde",
     to: "Hasta",
     action: "Mostrar",
-    answer:
-      "Entre {from} y {to}, {moved} Members cambiaron de alianza; el mayor movimiento fue {source} → {dest} ({n}).",
-    answerSmall:
-      "Entre {from} y {to}, {moved} Members cambiaron de alianza; ningún movimiento llegó a {min}.",
-    answerNone: "Entre {from} y {to}, ningún Member cambió de alianza.",
-    outside: "{arrived} llegaron desde fuera de las alianzas seguidas y {left} salieron de ellas.",
+    answer: "Entre {from} y {to}, el mayor movimiento fue {source} → {dest} ({n}).",
+    answerNone:
+      "Entre {from} y {to}, ningún movimiento de {min} o más Members entre las alianzas seguidas.",
+    totals: "Cambiaron de alianza: {moved} · Nuevos: {arrived} · Salieron: {left}",
     small:
-      "Se ocultan los movimientos de menos de {min} Members, para que nadie pueda ser señalado en un grupo pequeño.",
+      "Se ocultan los movimientos de menos de {min} Members y no entran en ningún total, para que nadie pueda ser señalado en un grupo pequeño.",
     rowNew: "Nuevos",
     colLeft: "Salieron",
     legend:
       "Filas: la alianza el {from}. Columnas: la alianza el {to}. Nuevos: en ninguna alianza seguida el {from}. Salieron: en ninguna el {to}.",
     caption: "Members por alianza el {from} (filas) y el {to} (columnas)",
     stayed: "Se quedaron",
-    rowMembers: "{n} Members",
+    rowStayed: "Se quedaron: {n}",
     newTitle: "Nuevos en las alianzas seguidas",
     leftTitle: "Salieron de las alianzas seguidas",
     notCounted: "No cuentan, sin lectura útil en los dos días: {list}.",

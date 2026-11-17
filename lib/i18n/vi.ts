@@ -182,20 +182,19 @@ export const vi = {
     from: "Từ",
     to: "Đến",
     action: "Hiện",
-    answer:
-      "Từ {from} đến {to}, {moved} thành viên đổi liên minh; lần chuyển lớn nhất là {source} → {dest} ({n}).",
-    answerSmall:
-      "Từ {from} đến {to}, {moved} thành viên đổi liên minh; không lần chuyển nào đạt {min}.",
-    answerNone: "Từ {from} đến {to}, không thành viên nào đổi liên minh.",
-    outside: "{arrived} đến từ ngoài các liên minh theo dõi và {left} rời khỏi đó.",
-    small: "Các lần chuyển dưới {min} thành viên bị ẩn, để không ai bị chỉ ra trong một nhóm nhỏ.",
+    answer: "Từ {from} đến {to}, lần chuyển lớn nhất là {source} → {dest} ({n}).",
+    answerNone:
+      "Từ {from} đến {to}, không có lần chuyển nào từ {min} thành viên trở lên giữa các liên minh theo dõi.",
+    totals: "Đổi liên minh: {moved} · Mới: {arrived} · Rời: {left}",
+    small:
+      "Các lần chuyển dưới {min} thành viên bị ẩn và không tính vào tổng nào, để không ai bị chỉ ra trong một nhóm nhỏ.",
     rowNew: "Mới",
     colLeft: "Rời",
     legend:
       "Hàng: liên minh ngày {from}. Cột: liên minh ngày {to}. Mới: không thuộc liên minh theo dõi nào ngày {from}. Rời: không thuộc nào ngày {to}.",
     caption: "Thành viên theo liên minh ngày {from} (hàng) và ngày {to} (cột)",
     stayed: "Ở lại",
-    rowMembers: "{n} thành viên",
+    rowStayed: "Ở lại: {n}",
     newTitle: "Mới trong các liên minh theo dõi",
     leftTitle: "Đã rời các liên minh theo dõi",
     notCounted: "Không tính, vì không có lần đọc dùng được vào cả hai ngày: {list}.",

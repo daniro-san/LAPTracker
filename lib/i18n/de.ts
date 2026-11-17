@@ -186,21 +186,19 @@ export const de = {
     from: "Von",
     to: "Bis",
     action: "Zeigen",
-    answer:
-      "Zwischen {from} und {to} haben {moved} Members die Allianz gewechselt; der größte Wechsel war {source} → {dest} ({n}).",
-    answerSmall:
-      "Zwischen {from} und {to} haben {moved} Members die Allianz gewechselt; kein einzelner Wechsel erreichte {min}.",
-    answerNone: "Zwischen {from} und {to} hat kein Member die Allianz gewechselt.",
-    outside: "{arrived} kamen von außerhalb der erfassten Allianzen, {left} haben sie verlassen.",
+    answer: "Zwischen {from} und {to} war der größte Wechsel {source} → {dest} ({n}).",
+    answerNone:
+      "Zwischen {from} und {to} gab es keinen Wechsel von {min} oder mehr Members zwischen den erfassten Allianzen.",
+    totals: "Allianz gewechselt: {moved} · Neu: {arrived} · Ausgetreten: {left}",
     small:
-      "Wechsel von weniger als {min} Members sind ausgeblendet, damit in einer kleinen Gruppe niemand erkennbar ist.",
+      "Wechsel von weniger als {min} Members sind ausgeblendet und in keiner Zahl enthalten, damit in einer kleinen Gruppe niemand erkennbar ist.",
     rowNew: "Neu",
     colLeft: "Ausgetr.",
     legend:
       "Zeilen: die Allianz am {from}. Spalten: die Allianz am {to}. Neu: am {from} in keiner erfassten Allianz. Ausgetr.: am {to} in keiner erfassten Allianz.",
     caption: "Members nach Allianz am {from} (Zeilen) und am {to} (Spalten)",
     stayed: "Geblieben",
-    rowMembers: "{n} Members",
+    rowStayed: "Geblieben: {n}",
     newTitle: "Neu in den erfassten Allianzen",
     leftTitle: "Aus den erfassten Allianzen ausgetreten",
     notCounted: "Nicht gezählt, keine brauchbare Messung an beiden Tagen: {list}.",

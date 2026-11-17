@@ -75,6 +75,7 @@ export function buildFlow(
 export const visibleCells = (cells: readonly FlowCell[], min: number = FLOW_MIN): FlowCell[] =>
   cells.filter((c) => c.n >= min);
 
+/** The totals of the cells given: the page passes only the visible ones, so no hidden move is counted. */
 export interface FlowSummary {
   /** Members in one counted alliance on the start day and another on the end day. */
   moved: number;

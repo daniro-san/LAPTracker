@@ -9,18 +9,16 @@ export const flowCopy = {
   from: "From",
   to: "To",
   action: "Show",
-  /** `{from}` and `{to}` are days; `{moved}` members changed alliance; `{source}` and `{dest}` are alliances, `{n}` the move. */
-  answer:
-    "Between {from} and {to}, {moved} members changed alliance; the largest move was {source} → {dest} ({n}).",
-  /** When every move is under the threshold: `{min}` is the smallest move shown. */
-  answerSmall:
-    "Between {from} and {to}, {moved} members changed alliance; no single move reached {min}.",
-  answerNone: "Between {from} and {to}, no member changed alliance.",
-  /** The line under it: members who came from, or went to, no tracked alliance. */
-  outside: "{arrived} came from outside the tracked alliances and {left} left them.",
+  /** `{from}` and `{to}` are days; `{source}` and `{dest}` are alliances, `{n}` the members of that move. */
+  answer: "Between {from} and {to}, the largest move was {source} → {dest} ({n}).",
+  /** When no move is big enough to show: `{min}` is the smallest move shown. */
+  answerNone:
+    "Between {from} and {to}, no move of {min} or more members between the tracked alliances.",
+  /** The line under it, counts of the moves shown: between two tracked alliances, from outside them, out of them. */
+  totals: "Changed alliance: {moved} · New: {arrived} · Left: {left}",
   /** Said on the page: why some moves are missing. `{min}` is the smallest move shown. */
   small:
-    "Moves of fewer than {min} members are hidden, so nobody can be picked out of a small group.",
+    "Moves of fewer than {min} members are hidden and left out of every count, so nobody can be picked out of a small group.",
   /** The row for members in no tracked alliance on the first day, and the column for those in none on the second. */
   rowNew: "New",
   colLeft: "Left",
@@ -29,8 +27,8 @@ export const flowCopy = {
     "Rows: the alliance on {from}. Columns: the alliance on {to}. New: in no tracked alliance on {from}. Left: in none on {to}.",
   caption: "Members by alliance on {from} (rows) and on {to} (columns)",
   stayed: "Stayed",
-  /** A row's summary on a phone: `{n}` members on the first day. */
-  rowMembers: "{n} members",
+  /** A phone row whose members all stayed: `{n}` of them. */
+  rowStayed: "Stayed: {n}",
   newTitle: "New to the tracked alliances",
   leftTitle: "Left the tracked alliances",
   /** `{list}` is alliance names. */

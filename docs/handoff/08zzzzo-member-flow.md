@@ -17,7 +17,7 @@
 - Only alliances with a usable read on both days are counted; others are named under the matrix, and their members count as outside on both days.
 - Rows are the counted alliances plus "New"; columns are the counted alliances plus "Left". "Changed alliance" means two different counted alliances; arrivals and leavers are a second line.
 - The default period is the newest read and the latest read on or before 7 days earlier, else the oldest read. The selects list the days with a usable read from the last 90 days (`FLOW_DAYS`).
-- Cells and destinations under 5 are not shown; the hidden remainder per row is not shown either. The diagonal ("Stayed") follows the same threshold.
+- Cells and destinations under 5 are not shown; the hidden remainder per row is not shown either. The diagonal ("Stayed") follows the same threshold. Every total on the page and the row order count only the cells shown (review fix, below).
 - No exact-numbers toggle on the page: counts are small whole numbers.
 - Rows on the table are ordered by moves in plus out, not by size.
 
@@ -47,7 +47,7 @@ Plan changes needed: none to `docs/IMPLEMENTATION_PLAN.md` or `docs/SESSION_PLAY
 <adjustments>
 - The alliance page's links live in `app/_ui/AllianceLinks.tsx`; add any new one there.
 - `flowPage` returns counts of at least `FLOW_MIN` only; a follow-up that needs more must add its own read and its own privacy decision.
-- `dayDate` and `FLOW_PATH` are exported from `app/_ui/FlowPicker.tsx`.
+- `FLOW_PATH` is exported from `app/_ui/FlowPicker.tsx`; `dayDate` (a read day as a Date) is in `app/_ui/format.ts`, shared with the admin.
 </adjustments>
 
 ## UX review (2026-11-16)
@@ -61,3 +61,11 @@ Measured, Chrome at 360, 390, 412, 600, 768, 810, 820, 1024, 1180, 1280 in light
 - No copy was changed, so no translations changed.
 
 https://github.com/daniro-san/LAPTracker/pull/349
+
+## Review fixes (2026-11-17, `/pr-review` of #349)
+- Privacy: `flowPage` now drops cells under 5 before anything else, so `summarise`, `activityOrder` and the result are built from the cells shown. Before, the totals ("15 changed alliance", arrivals, leavers), the row order and each phone row's member count included the hidden moves, and subtracting the visible cells gave them back. `FlowAlliance` lost `start` and `end`.
+- Copy in the `Label: {n}` shape (D48): the sentence names only the largest move; a second line reads "Changed alliance: {moved} · New: {arrived} · Left: {left}" from the cells shown; with no move shown, "no move of 5 or more members between the tracked alliances". The hidden-moves note says hidden moves are left out of every count. A phone row whose members all stayed shows "Stayed: {n}"; rows with moves show no total. Keys `answerSmall`, `outside`, `rowMembers` removed; `totals`, `rowStayed` added; the 17 languages retranslated and stamped.
+- `dayOf` rejects an impossible date (2026-02-31 reached the Postgres date column and gave a 500); a link with only one of the two days is a 404 instead of silently showing the default period.
+- `dayDate` moved to `app/_ui/format.ts`; the admin's copy `readDayDate` is gone.
+- Test: `lib/queries/flow.test.ts` asserts totals of 6/5/0 (the hidden 4 and the 1 leaver count nowhere) and the row order by the moves shown.
+- Known limit: an alliance's member count on another page minus the cells shown here still gives that alliance's hidden remainder. This page prints no such total; closing it would mean hiding extra cells (complementary suppression), not done.
