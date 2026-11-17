@@ -4,17 +4,17 @@
 export const balanceCopy = {
   title: "Server balance",
   description:
-    "Each tracked alliance's share of the server's might, and a hypothetical bloc builder.",
+    "Each tracked alliance's share of the tracked alliances' might, and a hypothetical bloc builder.",
   /** The first sentence: `{max}` is the greatest share rounded up to a whole percent, `{n}` is 3, `{top}` their share. */
-  lead: "No alliance holds more than {max} of the server's might; the top {n} hold {top}.",
+  lead: "No alliance holds more than {max} of the tracked alliances' might; the top {n} hold {top}.",
   /** Under the lead: what is counted, in one line. */
   includes: "Might includes buildings and tech.",
   /** `{n}` tracked alliances, `{date}` the newest read. */
   basis: "{n} tracked alliances, read {date}.",
-  total: "Server might",
-  shares: "Share of server might",
+  total: "Tracked alliances",
+  shares: "Share by alliance",
   /** The stacked bar's accessible name: the shares, greatest first. */
-  bar: "Share of server might by alliance: {list}",
+  bar: "Share of the tracked alliances' might by alliance: {list}",
   /** An alliance read before the newest day: `as of Nov 14`. */
   asOf: "as of {date}",
   none: "No daily reads yet.",
@@ -23,7 +23,7 @@ export const balanceCopy = {
   builderHelp:
     "Tap A or B on an alliance to try a bloc. This is arithmetic, not a forecast, and not an announcement.",
   bloc: "Bloc {bloc}",
-  blocShare: "{share} of the server's might",
+  blocShare: "{share} of the tracked alliances' might",
   blocAlliances: "Alliances",
   blocEmpty: "No alliance yet",
   noBloc: "Not in a bloc",

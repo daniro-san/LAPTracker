@@ -84,7 +84,7 @@ export const ja = {
       "開始からの変化は {time} の読み取り時点のものです。上の台帳は終了時点（{end}）の値を使っています。",
     fightClock: "サーバーの戦闘時計",
     fightClockLead:
-      "サーバーがいつ戦ったかを、イベントごとに示します。箱は一つひとつが{min}分の区間で、高さはその区間で得た、そのイベントの Kills の割合です。区間はサーバー時間に揃えてあるので、どの行でも正午は同じ列になります。",
+      "追跡中の同盟の Kills を、{min}分ごとにイベント別に示します。箱の高さは、そのイベントで描いた Kills のうち、開始から最後の読み取りまでに占める割合です。",
     fightClockLink: "サーバーの戦闘時計で他のイベントと比べる",
     fightClockShare: "Kills の割合",
     fightClockOutline: "囲み線：各イベントで最も忙しかった{span}分",
@@ -93,7 +93,7 @@ export const ja = {
       "このイベントには{min}分の読み取りがありません（{date}のイベントから始まります）",
     fightClockOffNext:
       "このイベントには{min}分の読み取りがありません（次のイベントから始まります）",
-    fightClockOffMissed: "このイベントでは{min}分の読み取りが行われませんでした",
+    fightClockOffMissed: "このイベントでは、使える{min}分の読み取りが保存されていません。",
     fightClockOffWaiting: "{min}分の読み取りは、このイベントの進行中に入ってきます",
     fightClockNone: "各イベントの{min}分の読み取りは、次のイベントからここに描かれます。",
     comparePulseHelp:
@@ -126,7 +126,7 @@ export const ja = {
     carriedTurnout: "Kills を得た {share}",
     carriedSpread: "{n} イベントで {low}–{high}",
     carriedRatioHelp:
-      "× は Kills の割合を Might の割合で割った値です。3 イベント以上では範囲とともに表示します。それより前は、割合の差をパーセントポイントで示します。",
+      "pt は Kills の割合から Might の割合を引いた値です。3 イベント以上では、その下に、それらのイベントでの Kills の割合 ÷ Might の割合の範囲を表示します。",
     carriedPoints: "pt",
   },
   compare: {
@@ -202,13 +202,13 @@ export const ja = {
   },
   balance: {
     title: "サーバーの勢力バランス",
-    description: "追跡中の各同盟が占めるサーバー Might の割合と、仮のブロック作成ツール。",
-    lead: "どの同盟も、サーバー Might の {max} を超えていません。上位{n}同盟の合計は{top}です。",
+    description: "追跡中の各同盟が占める、追跡中の同盟の Might の割合と、仮のブロック作成ツール。",
+    lead: "どの同盟も、追跡中の同盟の Might の {max} を超えていません。上位{n}同盟の合計は{top}です。",
     includes: "Might には建物と科学が含まれます。",
     basis: "追跡中の同盟 {n} 件、{date} の読み取り。",
-    total: "サーバー Might",
-    shares: "サーバー Might の割合",
-    bar: "同盟別のサーバー Might の割合：{list}",
+    total: "追跡中の同盟",
+    shares: "同盟別の割合",
+    bar: "同盟別の、追跡中の同盟の Might の割合：{list}",
     asOf: "{date} 時点",
     none: "まだ毎日の読み取りがありません。",
     builder: "ブロック作成",
@@ -216,7 +216,7 @@ export const ja = {
     builderHelp:
       "同盟の A か B をタップして、ブロックを試せます。これは計算であり、予測でも発表でもありません。",
     bloc: "ブロック {bloc}",
-    blocShare: "サーバー Might の {share}",
+    blocShare: "追跡中の同盟の Might の {share}",
     blocAlliances: "同盟",
     blocEmpty: "同盟はまだありません",
     noBloc: "ブロックなし",

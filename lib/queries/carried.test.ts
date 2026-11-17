@@ -107,14 +107,13 @@ describe("whoCarried (#280)", () => {
     // Alliance 1 has ratio 3 in the first two events, 1 in the third and 3 in the fourth.
     await seedEvent(start(), end());
     const second = await carriedOf(await seedEvent(start(), end()));
-    expect(second?.rows.find((r) => r.unionId === 1)).toMatchObject({ ratio: null, spread: null });
+    expect(second?.rows.find((r) => r.unionId === 1)).toMatchObject({ spread: null });
     await seedEvent(start(), [
       { unionId: 1, might: 100, kills: 100 },
       { unionId: 2, might: 300, kills: 300 },
     ]);
     const third = await carriedOf(await seedEvent(start(), end()));
     expect(third?.rows.find((r) => r.unionId === 1)).toMatchObject({
-      ratio: 3,
       spread: { n: 4, low: 1, high: 3 },
     });
   });
