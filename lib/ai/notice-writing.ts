@@ -32,8 +32,12 @@ const CONTEXT = `The game is Last Asylum: Plague. What the officers' short forms
   ([term, meaning]) => `${term} = ${meaning}`,
 ).join("; ")}.`;
 
-/** The officer's text travels between these tags, so the model can tell it from instructions. */
-const wrap = (text: string) => `<text>\n${text}\n</text>`;
+/**
+ * The officer's text travels between these tags, so the model can tell it from instructions. A tag written
+ * inside the text (any case, with spaces) gets ‹ › for its angle brackets, so the text cannot close the
+ * block early (D101).
+ */
+const wrap = (text: string) => `<text>\n${text.replace(/<(\s*\/?\s*text\s*)>/gi, "‹$1›")}\n</text>`;
 
 /** Both prompts: the text inside the tags is data, never instructions. */
 const DATA_ONLY =
@@ -43,6 +47,7 @@ const KEEP = [
   `- Do not translate these game terms; keep them exactly as written: ${DO_NOT_TRANSLATE.join(", ")}.`,
   "- Keep player names, [TAG]Name tags, numbers, times and percentages verbatim (for example [OGs]Mudkip, 12.3M, 450K, 18:00 ST, 55%).",
   "- Keep line breaks, list numbers, separators such as | and emoji as they are.",
+  "- Keep placeholders such as {1} and {2} exactly as written, where they belong in the sentence.",
   "- Portuguese is Brazilian Portuguese, never European Portuguese.",
   "- In French, put a no-break space (U+00A0) before : ; ! ? and inside « », but never inside a time such as 18:00.",
   "- Plain text for a game's notice board: no Markdown, no spaces at the end of a line, the ordinary hyphen (-), and ordinary spaces except the French no-break space.",
@@ -132,22 +137,31 @@ export interface Translation {
   retried: boolean;
   /** Still mostly untranslated after the retry: the draft says "Partly untranslated, please check". */
   partly: boolean;
+  /**
+   * The source language was not given and the answer came back mostly as sent: the text was already in
+   * `to` (Discord's Translate, D101). Not retried.
+   */
+  same: boolean;
 }
 
+/** `from` null: the source language is not known, and the model works it out (D101). */
 export async function translateText(
   model: ChatModel,
-  from: WritingLanguage,
+  from: WritingLanguage | null,
   to: WritingLanguage,
   text: string,
 ): Promise<Translation> {
   const sent = withOwnNames(text, to);
   const request = {
     system: TRANSLATE_SYSTEM,
-    user: `Translate from ${NAME[from]} to ${NAME[to]}:\n\n${wrap(sent)}`,
+    user: `Translate ${from ? `from ${NAME[from]} ` : ""}to ${NAME[to]}:\n\n${wrap(sent)}`,
   };
   const first = plainText(await model.complete(request), to);
   const firstShare = untranslatedShare(sent, first);
-  if (firstShare < UNTRANSLATED_SHARE) return { text: first, retried: false, partly: false };
+  if (firstShare < UNTRANSLATED_SHARE) {
+    return { text: first, retried: false, partly: false, same: false };
+  }
+  if (from === null) return { text: first, retried: false, partly: false, same: true };
   const second = await model.complete(request, RETRY).then(
     (answer) => plainText(answer, to),
     () => null,
@@ -158,6 +172,7 @@ export async function translateText(
     text: better,
     retried: true,
     partly: Math.min(firstShare, secondShare) >= UNTRANSLATED_SHARE,
+    same: false,
   };
 }
 

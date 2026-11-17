@@ -7,6 +7,7 @@ import { membersFr } from "./dictionary.members.fr";
 import { noticesFr } from "./dictionary.notices";
 import { shotsFr } from "./dictionary.shots.fr";
 import { theftsFr } from "./dictionary.thefts";
+import { translateFr } from "./dictionary.translate";
 
 export const fr: WorkspaceDictionary = {
   ...calendarFr,
@@ -263,4 +264,5 @@ export const fr: WorkspaceDictionary = {
   ...importFr,
   ...theftsFr,
   ...shotsFr,
+  ...translateFr,
 };

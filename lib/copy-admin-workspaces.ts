@@ -36,10 +36,10 @@ export const workspacesAdminCopy = {
     pin_locked: "PIN sign-in is locked for an hour.",
     failed: "Could not save. Try again.",
   },
-  /** The Discord section: the "Send to LAPTracker" command registered in each workspace's server (D96). */
+  /** The Discord section: the app's three message commands, registered in each workspace's server (D96, D101). */
   command: {
     title: "Discord",
-    help: "Adds 'Send to LAPTracker' to the Apps menu of each workspace's Discord server. Run it again after the command changes.",
+    help: "Adds 'Send to LAPTracker', 'Translate for me' and 'Translate for everyone' to the Apps menu of each workspace's Discord server. Run it again after the commands change.",
     register: "Register the Discord command",
     noCredentials: "The Discord app credentials are not set.",
     noGuild: "No workspace has a Discord server yet.",

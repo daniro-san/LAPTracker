@@ -100,12 +100,12 @@ lib/build-version.ts pure: the footer's live version from Vercel's git variables
 lib/screenshot/     the screenshot reader (D74): pure parsers over OCR text lines (alliance duel, the might/kills/donation rankings, secret
                     operations, pasted text), classify.ts (which screen, scored, D96), merge.ts (pages of one ranking), nameKey and
                     matchName (candidates passed in), and one IO module, read-screenshot.ts (Tesseract.js, committed English data). No DB access.
-lib/import-command.ts the Discord message command's definition and registerImportCommand, shared by the interactions route, scripts/discord-register-command.ts and /admin's POST /api/admin/discord-command (D96).
+lib/app-commands.ts the app's Discord message commands (D96, D101) and registerAppCommands, shared by the interactions route, scripts/discord-register-command.ts and /admin's POST /api/admin/discord-command.
 ```
 
 ## Dependency rule
 
-- `app → lib/{route, auth, run, tick, rehearsal, schedule, queries, repo, images, analytics, ai}`; `lib/private → lib/analytics/events` (the sign-in mark, D77); `lib/private → lib/screenshot` (the name matcher, for the sheet import, D80; the OCR, the classifier and the parsers, for the screenshot import, D96); `lib/run → lib/{collector, queries}` (queries: the public Discord message's numbers).
+- `app → lib/{route, auth, run, tick, rehearsal, schedule, queries, repo, images, analytics, ai}`; `lib/private → lib/analytics/events` (the sign-in mark, D77); `lib/private → lib/screenshot` (the name matcher, for the sheet import, D80; the OCR, the classifier and the parsers, for the screenshot import, D96); `lib/private → lib/ai` (the translator, for Discord's Translate commands, D101); `lib/run → lib/{collector, queries}` (queries: the public Discord message's numbers).
 - `lib/collector → lib/{compute, sources, repo, logger, notify}` **through the `Deps` object passed in**.
 - `lib/compute`, `lib/budget` and `lib/compact` import nothing from the project.
 - `lib/logger` imports only `lib/repo` and `lib/redact`.

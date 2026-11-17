@@ -9,6 +9,7 @@ import { noticesEn } from "./dictionary.notices";
 import { pt } from "./dictionary.pt-BR";
 import { shotsEn } from "./dictionary.shots";
 import { theftsEn } from "./dictionary.thefts";
+import { translateEn } from "./dictionary.translate";
 
 export const WORKSPACE_LANGUAGES = ["en", "pt-BR", "fr"] as const;
 export type WorkspaceLanguage = (typeof WORKSPACE_LANGUAGES)[number];
@@ -266,6 +267,7 @@ const en = {
   ...importEn,
   ...theftsEn,
   ...shotsEn,
+  ...translateEn,
 } as const;
 
 export type WorkspaceKey = keyof typeof en;
