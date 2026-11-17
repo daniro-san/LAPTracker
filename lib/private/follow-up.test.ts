@@ -7,7 +7,9 @@ import { openTestDb, truncateAll } from "../db.test-helpers";
 import { findWorkspaceBySlug, recordSignIn, saveWorkspace } from "../repo/workspaces";
 import { dailyReads, dailyRosters } from "../schema";
 import { requireWorkspace, type WorkspaceAccess } from "./access";
+import { WORKSPACE_DICTIONARIES } from "./dictionary";
 import { followUpsOf, followUpView, recordFollowUp, type FollowUpInput } from "./follow-up";
+import { memberCard } from "./member-card";
 import { saveFacts } from "./member-facts";
 import { createSession } from "./session";
 
@@ -79,23 +81,26 @@ const input = (uid: number, extra: Partial<FollowUpInput> = {}): FollowUpInput =
   ...extra,
 });
 
-const listed = async (access: WorkspaceAccess) =>
-  (await followUpView(db, access, NOW, CLOCK.zone)).items.map((i) => [
+/** Members' "Missing info" (D98): every fact a new member is asked for. */
+const ASK = ["squadMight", "troopTier", "adTech", "timeZone", "languages"];
+
+const listed = async (access: WorkspaceAccess, now = NOW) =>
+  (await followUpView(db, access, now, CLOCK.zone)).items.map((i) => [
     i.member.uid,
     i.checkIn,
     i.toAsk,
   ]);
 
 describe("the Follow-up list (issue 340, D104)", () => {
-  it("holds Check in and new members with onboarding facts missing; a record takes them off", async () => {
+  it("holds Check in and new members with Missing info; a record takes them off", async () => {
     const ana = await signedIn("Ana");
     expect(await listed(ana)).toEqual([
       [101, true, []],
-      [103, false, ["squadMight", "adTech", "timeZone"]],
+      [103, false, ASK],
     ]);
     const done = await recordFollowUp(db, ana, input(101, { note: "Busy at work" }), CLOCK);
     expect(done).toEqual({ ok: true });
-    expect(await listed(ana)).toEqual([[103, false, ["squadMight", "adTech", "timeZone"]]]);
+    expect(await listed(ana)).toEqual([[103, false, ASK]]);
     const history = await followUpsOf(db, ana, 101);
     expect(history).toMatchObject([{ action: "talked", note: "Busy at work", by: "Ana" }]);
   });
@@ -139,5 +144,39 @@ describe("the Follow-up list (issue 340, D104)", () => {
     });
     const past = input(101, { action: "break", until: "2026-11-19" });
     expect(await recordFollowUp(db, ana, past, CLOCK)).toEqual({ ok: false, code: "bad_until" });
+  });
+
+  it("brings a Needs help member back next week while the signal still holds", async () => {
+    const ana = await signedIn("Ana");
+    await recordFollowUp(db, ana, input(101, { action: "help" }), CLOCK);
+    expect((await listed(ana)).map(([uid]) => uid)).toEqual([103]);
+    // Next week 101 still holds still: Sat and Sun the same, Monday's reset compared with 0.
+    await endOfDay("2026-11-21", { 101: 5 });
+    await endOfDay("2026-11-22", { 101: 5 });
+    await endOfDay("2026-11-23", { 101: 0 });
+    expect(await listed(ana, new Date("2026-11-24T12:00:00Z"))).toEqual([[101, true, []]]);
+  });
+
+  it("drops a member whose signal clears, with nothing recorded", async () => {
+    const ana = await signedIn("Ana");
+    await endOfDay("2026-11-20", { 101: 9, 102: 40, 103: 3 });
+    expect(await listed(ana, new Date("2026-11-21T12:00:00Z"))).toEqual([[103, false, ASK]]);
+  });
+
+  it("shows the member card's follow-ups newest first", async () => {
+    const ana = await signedIn("Ana");
+    await recordFollowUp(db, ana, input(101, { note: "Busy" }), CLOCK);
+    const later = new Date(NOW.getTime() + 3_600_000);
+    await recordFollowUp(db, ana, input(101, { action: "fine" }), { ...CLOCK, now: later });
+    const card = await memberCard(db, ana, 101, {
+      now: later,
+      zone: CLOCK.zone,
+      language: "en",
+      t: WORKSPACE_DICTIONARIES.en,
+    });
+    expect(card?.followUps.lines).toEqual([
+      "All fine, Fri, Nov 20 · ⁨Ana⁩",
+      "Talked Fri, Nov 20: Busy · ⁨Ana⁩",
+    ]);
   });
 });

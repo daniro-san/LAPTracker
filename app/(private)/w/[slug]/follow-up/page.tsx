@@ -27,7 +27,9 @@ function rowOf({ member, checkIn, toAsk }: WorkItem, t: WorkspaceDictionary, f: 
     name: member.name,
     rank: member.rank,
     lines: [
-      ...(checkIn ? [`${t["status.checkin"]}: ${reasons}`] : []),
+      ...(checkIn
+        ? [`${t[member.officerStatus === "help" ? "status.help" : "status.checkin"]}: ${reasons}`]
+        : []),
       ...(toAsk.length > 0 ? [fill(t["followup.toAsk"], { list: ask })] : []),
     ],
     versions: {

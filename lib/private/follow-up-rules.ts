@@ -1,60 +1,50 @@
 // The Follow-up tab's rules (issue 340, D104), pure: who is on the week's list, what takes them off it, and
 // a follow-up as one line of the member card's history. The list reuses the Members rules as they are
-// (D75, D98): "Check in" is `whoOf`'s, so its reasons are the Members tab's (offline proxy, might unchanged
-// per D70, the held KvK reason), and the onboarding facts still to ask are `factsToAsk`'s. No donation
-// reason, no ranking: the list is by name.
+// (D75, D98): the reasons are the Members tab's (offline proxy, might unchanged per D70, the held KvK
+// reason), shown under Check in or under Needs help (`needsAWord`), and the facts still to ask are
+// Members' "Missing info" (`factsToAsk`). No donation reason, no ranking: the list is by name.
 import { fill, isolate } from "../copy";
-import { mondayOf } from "./calendar-time";
+import { mondayOf, zonedInstant } from "./calendar-time";
 import type { WorkspaceDictionary } from "./dictionary";
 import type { MemberRow } from "./members";
-import { factsToAsk, whoOf, type AskFact } from "./members-list";
+import { factsToAsk, needsAWord, whoOf, type AskFact } from "./members-list";
 
 /** What an officer can record about a member on the list. */
 export const FOLLOW_UP_ACTIONS = ["talked", "break", "help", "fine"] as const;
 export type FollowUpAction = (typeof FOLLOW_UP_ACTIONS)[number];
 
-/** The onboarding facts a new member is asked for (issue 340): main squad might, AD Tech %, time zone. */
-export const ONBOARDING_FACTS: readonly AskFact[] = ["squadMight", "adTech", "timeZone"];
-
 export interface WorkItem {
   member: MemberRow;
-  /** A "Check in" reason, as the Members tab shows it. */
+  /** A reason to look, as the Members tab shows it (under Check in, or under Needs help). */
   checkIn: boolean;
-  /** A new member's onboarding facts not recorded yet. */
+  /** A new member's facts not recorded yet (Members' "Missing info"). */
   toAsk: AskFact[];
 }
 
 /**
- * The members to look at this week: Check in, or new with an onboarding fact still missing (a member on a
- * break is not asked, D75), minus those an officer followed up this week (`resolved`). By name.
+ * The members to look at this week, minus those an officer followed up this week (`resolved`), by name:
+ * - a reason to look while not on a break: Check in, or Needs help whose signal still holds (an officer's
+ *   Needs help keeps the reasons, D80, so the member comes back each week while the signal holds);
+ * - new with a fact still missing (a member on a break is not asked, D75).
  */
 export function worklist(members: readonly MemberRow[], resolved: ReadonlySet<number>): WorkItem[] {
   return members
     .flatMap((member) => {
       if (resolved.has(member.uid)) return [];
       const who = whoOf(member);
-      const checkIn = who.includes("checkin");
-      const toAsk =
-        who.includes("new") && !who.includes("break")
-          ? factsToAsk(member.facts).filter((f) => ONBOARDING_FACTS.includes(f))
-          : [];
+      const checkIn = member.reasons.length > 0 && needsAWord(who);
+      const toAsk = who.includes("new") && !who.includes("break") ? factsToAsk(member.facts) : [];
       return checkIn || toAsk.length > 0 ? [{ member, checkIn, toAsk }] : [];
     })
     .sort((a, b) => a.member.name.localeCompare(b.member.name));
 }
 
 /**
- * The members an officer followed up in the game week (Monday to Sunday, server days) that holds
- * `today`: anything recorded resolves the item for the week. `dayOf` gives a write's server day.
+ * When the game week that holds server day `today` began: Monday 00:00 server time (`zone`, SERVER_TZ).
+ * Anything recorded since resolves the member for the week.
  */
-export function resolvedIn(
-  rows: readonly { uid: number; at: Date }[],
-  today: string,
-  dayOf: (at: Date) => string,
-): Set<number> {
-  const monday = mondayOf(today);
-  return new Set(rows.filter((r) => mondayOf(dayOf(r.at)) === monday).map((r) => r.uid));
-}
+export const weekStart = (today: string, zone: string) =>
+  new Date(zonedInstant(mondayOf(today), 0, zone));
 
 export interface HistoryRow {
   action: FollowUpAction;

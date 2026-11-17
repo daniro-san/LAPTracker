@@ -6,6 +6,7 @@
 // of the workspace's own alliance only (D71). Nothing here is logged: notes are what officers typed.
 import type { Db } from "../db";
 import {
+  followedUpSince,
   followUpRequested,
   insertMemberFollowUp,
   listMemberFollowUps,
@@ -13,7 +14,7 @@ import {
 import type { WorkspaceAccess } from "./access";
 import { dayIn } from "./calendar-time";
 import type { FactSource } from "./fact-fields";
-import { resolvedIn, worklist, type FollowUpAction, type WorkItem } from "./follow-up-rules";
+import { weekStart, worklist, type FollowUpAction, type WorkItem } from "./follow-up-rules";
 import { isMember, saveFacts, type FactChange } from "./member-facts";
 import { gameWeek } from "./member-week";
 import { membersView } from "./members";
@@ -37,13 +38,13 @@ export async function followUpView(
   now: Date,
   zone: string,
 ): Promise<FollowUpView> {
+  const today = dayIn(zone, now.getTime());
   const [members, rows, thefts] = await Promise.all([
     membersView(db, access, now, zone),
-    listMemberFollowUps(db, access.workspaceId),
+    followedUpSince(db, access.workspaceId, weekStart(today, zone)),
     theftsView(db, access, { now, zone }),
   ]);
-  const today = dayIn(zone, now.getTime());
-  const resolved = resolvedIn(rows, today, (at) => dayIn(zone, at.getTime()));
+  const resolved = new Set(rows.map((r) => r.uid));
   return {
     early: members.early,
     week: gameWeek(today),

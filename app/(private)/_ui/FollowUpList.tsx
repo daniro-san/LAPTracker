@@ -11,7 +11,7 @@ import { useState } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
 import { Sheet } from "@/lib/brand/components/Sheet";
-import { fill } from "@/lib/copy";
+import { fill, isolate } from "@/lib/copy";
 import { FOLLOW_UP_ACTIONS, type FollowUpAction } from "@/lib/private/follow-up-rules";
 
 import { Choice, FIELD, Labeled, TextInput } from "./CalendarFields";
@@ -155,7 +155,7 @@ export function FollowUpList(props: {
   return (
     <>
       <p role="status" className="mt-2 text-body-sm font-semibold text-sage empty:hidden">
-        {saved && fill(words["followup.saved"], { name: saved })}
+        {saved && fill(words["followup.saved"], { name: isolate(saved) })}
       </p>
       <ul className="mt-2 empty:hidden">
         {props.rows.map((row) => (

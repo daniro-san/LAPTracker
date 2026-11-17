@@ -1,17 +1,17 @@
 import { describe, expect, it } from "vitest";
 
 import { WORKSPACE_DICTIONARIES } from "./dictionary";
-import { historyLine, resolvedIn } from "./follow-up-rules";
+import { historyLine, weekStart } from "./follow-up-rules";
 
 const dayOf = (at: Date) => at.toISOString().slice(0, 10);
 
 describe("the Follow-up rules (issue 340, D104)", () => {
-  it("resolves a member only for the game week the record was made in", () => {
-    const rows = [
-      { uid: 1, at: new Date("2026-11-16T08:00:00Z") }, // Monday of this week
-      { uid: 2, at: new Date("2026-11-15T20:00:00Z") }, // Sunday of last week: back on the list
-    ];
-    expect([...resolvedIn(rows, "2026-11-22", dayOf)]).toEqual([1]);
+  it("starts the week at Monday 00:00 server time, not UTC", () => {
+    // Server time is UTC−2: Mon 16 Nov 01:00Z is Sun 15 Nov 23:00 ST, still the week before.
+    const start = weekStart("2026-11-22", "Etc/GMT+2");
+    expect(start.toISOString()).toBe("2026-11-16T02:00:00.000Z");
+    expect(new Date("2026-11-16T01:00:00Z") < start).toBe(true);
+    expect(new Date("2026-11-16T02:00:00Z") >= start).toBe(true);
   });
 
   it("writes a follow-up as one history line with its note and officer", () => {

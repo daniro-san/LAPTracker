@@ -80,11 +80,18 @@ const record = (extra: object = {}) => ({
 });
 
 describe("POST /api/w/[slug]/follow-up (issue 340)", () => {
-  it("answers 401 without a session and 400 for a bad body", async () => {
+  it("answers 401 without a session, 400 for a bad action, a note over 500 characters or an extra key", async () => {
     const out = await post(record(), false);
     expect([out.status, await out.json()]).toEqual([401, { code: "signed_out" }]);
-    const bad = await post(record({ action: "remove" }));
-    expect([bad.status, await bad.json()]).toEqual([400, { code: "bad_request" }]);
+    for (const body of [
+      record({ action: "remove" }),
+      record({ note: "x".repeat(501) }),
+      record({ officer: "Ana" }),
+    ]) {
+      const bad = await post(body);
+      expect([bad.status, await bad.json()]).toEqual([400, { code: "bad_request" }]);
+    }
+    expect((await post(record({ note: "x".repeat(500) }))).status).toBe(200);
   });
 
   it("answers Needs help over a newer status with 409, its version and its words", async () => {
