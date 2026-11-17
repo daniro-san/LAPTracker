@@ -11,7 +11,7 @@ export const SCREEN_KINDS = [
   "might",
   "kills",
   "secret_ops",
-  "onboarding_chat",
+  "member_update",
   "damage_event",
   "undead_mail",
   "elixir_teams",
@@ -55,7 +55,7 @@ const dayTabs = (t: Text) => DAYS.filter((d) => new RegExp(`\\b${d}\\b`, "i").te
  */
 const SENDER = /\.\s?\d{1,2}\b.{0,12}[[({]\s*[A-Za-z0-9]{1,6}\s*[\])}]\s*\S/;
 const senders = (t: Text) =>
-  t.lines.filter((line, i) => SENDER.test(line) && !SENDER.test(t.lines[i + 1] ?? "x")).length;
+  t.lines.filter((line, i) => SENDER.test(line) && !SENDER.test(t.lines[i + 1] ?? "")).length;
 /**
  * `#325 [OGs] Name`: a city label on the map, the server number before the tag. The `#` and the closing
  * bracket are often lost (`P9325 [ods]`, `4323 (00a`). A number's last group (`14,800,884 [OGs]`) is not one.
@@ -92,7 +92,7 @@ const SIGNALS: Record<ScreenKind, Signal[]> = {
     [2, (t) => count(t, /d[ée]rob[ée]|\bstole\b|roubou|vous a aid|helped you|ajudou/i) >= 1],
     [1, (t) => count(t, /\b\d{2}-\d{2}\s?\d{2}:\d{2}\b/) >= 2],
   ],
-  onboarding_chat: [
+  member_update: [
     // A chat page shows four to eight messages; a notice shows one or two comments under it.
     [3, (t) => senders(t) >= 3],
     [1, has(/^\s*\W{0,3}\s*Chat\b|Private\s+Chat|\bKingdom\b/im)],

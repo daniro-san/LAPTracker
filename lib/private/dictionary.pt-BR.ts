@@ -1,6 +1,7 @@
 // The workspace dictionary in Brazilian Portuguese (D71), split from dictionary.ts for its size; the keys
 // follow `en`.
 import type { WorkspaceDictionary } from "./dictionary";
+import { importPt } from "./dictionary.import";
 
 export const pt: WorkspaceDictionary = {
   "app.name": "Mesa dos oficiais",
@@ -163,4 +164,5 @@ export const pt: WorkspaceDictionary = {
     "No Safari, toque no ícone de compartilhar (um quadrado com uma seta para cima). Na lista, toque no item com um + dentro de um quadrado e confirme.",
   "howto.android.body":
     "No Chrome, toque em ⋮ no canto de cima. No menu, toque no item que coloca a página na tela inicial (um celular com uma seta) e confirme.",
+  ...importPt,
 };

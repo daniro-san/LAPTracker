@@ -70,6 +70,9 @@ export const envSchema = z.object({
   DISCORD_CLIENT_ID: optional(z.string().regex(/^\d{17,20}$/, "expected a Discord application id")),
   DISCORD_CLIENT_SECRET: optional(z.string().min(16, "expected 16+ characters")),
   DISCORD_API_BASE_URL: z.url().default("https://discord.com/api"),
+  // The Discord app's Public Key (D96): verifies "Send to LAPTracker" interactions. Not a secret. Without
+  // it the interactions route refuses every request.
+  DISCORD_PUBLIC_KEY: optional(z.string().regex(/^[0-9a-f]{64}$/i, "expected 64 hex characters")),
   // PostHog (D77): on only on the production deployment (Vercel sets VERCEL_ENV) with the project key set.
   VERCEL_ENV: optional(z.string()),
   POSTHOG_KEY: optional(z.string()),

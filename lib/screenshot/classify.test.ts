@@ -47,7 +47,7 @@ describe("classifyScreen", () => {
       ...message("Arephrey", "but they don't really want to kick"),
       ...message("Kasoar-Thorne", "69% for AD Tech"),
     ];
-    expect(classifyScreen(chat).kind).toBe("onboarding_chat");
+    expect(classifyScreen(chat).kind).toBe("member_update");
     const notice = ["SCHEDULE | MONDAY", ...message("Arephrey", "alliance duel - economy week")];
     expect(classifyScreen([...notice, ...message("LD21", "Is this the server time?")]).kind).toBe(
       null,
