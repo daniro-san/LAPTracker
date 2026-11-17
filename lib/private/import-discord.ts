@@ -131,9 +131,25 @@ function limit(n: number) {
   };
 }
 
+const LATE = Symbol("late");
+
+/** What `work` settles to, or LATE when it has not settled within `ms`; work left behind is not awaited. */
+async function within<T>(work: Promise<T>, ms: number): Promise<T | typeof LATE> {
+  let timer: NodeJS.Timeout | undefined;
+  const late = new Promise<typeof LATE>((resolve) => {
+    timer = setTimeout(resolve, ms, LATE);
+  });
+  try {
+    return await Promise.race([work, late]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 /**
  * Fetches the pictures, FETCHES at a time, and reads them in order until DEADLINE_MS has passed since
- * the job started; `lost` counts the ones not fetched, not read, or left for lack of time.
+ * the job started (a picture still being read then is left); `lost` counts the ones not fetched, not
+ * read, or left for lack of time. A reader that fails (ReaderFailedError) fails the job.
  */
 async function readPictures(deps: JobDeps, job: Job) {
   const started = deps.now().getTime();
@@ -145,8 +161,13 @@ async function readPictures(deps: JobDeps, job: Job) {
   const reader = await deps.openReader();
   try {
     for (const fetched of fetches) {
-      if (deps.now().getTime() - started > DEADLINE_MS) break;
-      const read = await readOne(reader, await fetched);
+      const left = DEADLINE_MS - (deps.now().getTime() - started);
+      if (left <= 0) break;
+      const read = await within(
+        fetched.then((bytes) => readOne(reader, bytes)),
+        left,
+      );
+      if (read === LATE) break;
       if (read) pictures.push(read);
     }
   } finally {
@@ -155,7 +176,11 @@ async function readPictures(deps: JobDeps, job: Job) {
   return { pictures, lost: job.pictures.length - pictures.length };
 }
 
-/** The work after the deferred reply: read, make the drafts, then edit the reply to say what happened. */
+/**
+ * The work after the deferred reply: read, make the drafts, then edit the reply to say what happened.
+ * The edit always runs: on any failure it carries `shots.discord.failed`, and the failure is logged as
+ * a code only.
+ */
 export async function runJob(deps: JobDeps, job: Job): Promise<void> {
   const t = WORKSPACE_DICTIONARIES[job.language];
   const { db, close } = deps.openDb();
@@ -175,7 +200,7 @@ export async function runJob(deps: JobDeps, job: Job): Promise<void> {
   } catch {
     privateLog("w.import.discord_failed", { workspace: job.access.workspaceId });
   } finally {
+    await editReply(deps, job, content);
     await close();
   }
-  await editReply(deps, job, content);
 }

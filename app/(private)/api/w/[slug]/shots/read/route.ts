@@ -2,7 +2,13 @@
 // sends it as PNG, without the phone's status bar and scaled down; the OCR reads it and its text lines come
 // back. The picture is read in memory and not kept. Officers of the workspace only (D71).
 import { requireWorkspace } from "@/lib/private/access";
-import { isSameOriginPicture, NO_STORE, privateError, requestCookies } from "@/lib/private/http";
+import {
+  isSameOriginPicture,
+  NO_STORE,
+  privateError,
+  privately,
+  requestCookies,
+} from "@/lib/private/http";
 import { readUpload } from "@/lib/private/import-read";
 import { privateLog } from "@/lib/private/log";
 import { SLUG } from "@/lib/private/sign-in";
@@ -28,7 +34,8 @@ export async function POST(
     if (!access.ok) return privateError(401, access.reason);
     const bytes = new Uint8Array(await request.arrayBuffer());
     if (bytes.length === 0 || bytes.length > MAX_UPLOAD) return privateError(413, "too_large");
-    const lines = await readUpload(bytes);
+    // A worker that dies or stalls fails the request with a code (500 "internal"), never a timeout.
+    const lines = await privately("w.import.read_failed", () => readUpload(bytes));
     if (!lines) return privateError(422, "refused");
     privateLog("w.import.read", { workspace: access.workspaceId, lines: lines.length });
     return Response.json({ lines }, { headers: NO_STORE });

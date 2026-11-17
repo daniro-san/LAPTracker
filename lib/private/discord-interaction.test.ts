@@ -8,7 +8,7 @@ import { openTestDb, truncateAll } from "../db.test-helpers";
 import { allowUser, findWorkspaceBySlug, saveWorkspace } from "../repo/workspaces";
 import { dailyReads, dailyRosters } from "../schema";
 import { screenshotDrafts } from "../schema-import";
-import type { ScreenshotReader } from "../screenshot/read-screenshot";
+import { ReaderFailedError, type ScreenshotReader } from "../screenshot/read-screenshot";
 import { ogsCandidates, recorded } from "../screenshot/test-helpers";
 import { handleInteraction, type Job, verifySignature } from "./discord-interaction";
 import { runJob, type JobDeps } from "./import-discord";
@@ -237,5 +237,44 @@ describe("the deferred flow", () => {
     await runJob(deps(second.fetcher, recorded("90-might-phone")), elsewhere.job);
     expect(second.calls.map((c) => c.method)).toEqual(["PATCH"]);
     expect(JSON.parse(second.calls[0]?.body ?? "{}").content).toBe("1 picture could not be read.");
+  });
+
+  it("edits the reply when a reading never settles, and when the reader fails", async () => {
+    const handled = await deferred(command([LEADER]));
+    const reply = (calls: { method: string; body?: string }[]) =>
+      JSON.parse(calls.find((c) => c.method === "PATCH")?.body ?? "{}").content;
+
+    const stalled = discord();
+    let looks = 0;
+    await runJob(
+      {
+        ...deps(stalled.fetcher, []),
+        openReader: async () => ({
+          read: () => new Promise<string[]>(() => {}),
+          toPng: async (image) => image,
+          close: async () => undefined,
+        }),
+        // The job's second look at the clock is 10 ms before its 45 s deadline.
+        now: () => new Date(NOW.getTime() + (looks++ === 0 ? 0 : 44_990)),
+      },
+      handled.job,
+    );
+    expect(reply(stalled.calls)).toBe("1 picture could not be read.");
+
+    const failing = discord();
+    await runJob(
+      {
+        ...deps(failing.fetcher, []),
+        openReader: async () => ({
+          read: () => Promise.reject(new ReaderFailedError("the OCR worker failed")),
+          toPng: async (image) => image,
+          close: async () => undefined,
+        }),
+      },
+      handled.job,
+    );
+    expect(reply(failing.calls)).toBe(
+      "The pictures could not be read this time. Nothing was saved. Try again, or send them from the desk.",
+    );
   });
 });

@@ -7,28 +7,30 @@ import type { PictureText } from "./import";
 
 /**
  * One Tesseract worker per function instance, started on first use and kept: starting it costs more
- * than reading a page (D74). Its jobs run one after another. A worker that fails is dropped, so the next
- * use starts a new one.
+ * than reading a page (D74). Its jobs run one after another. A worker that fails is dropped and closed,
+ * so the next use starts a new one.
  */
 let shared: Promise<ScreenshotReader> | null = null;
 
 /** The instance's reader. Closing it keeps the worker for the next request. */
 export function openOcr(): Promise<ScreenshotReader> {
-  shared ??= openScreenshotReader().catch((error: unknown) => {
+  const current = (shared ??= openScreenshotReader().catch((error: unknown) => {
     shared = null;
     throw error;
-  });
-  return shared.then((reader) => ({
+  }));
+  /** A failed reading drops the worker (it may be broken or dead); a refused picture keeps it. */
+  const dropped = (error: unknown): never => {
+    if (!(error instanceof ImageRefusedError) && shared === current) {
+      shared = null;
+      void current.then((reader) => reader.close()).catch(() => undefined);
+    }
+    throw error;
+  };
+  return current.then((reader) => ({
     read: (image, options) => reader.read(image, options).catch(dropped),
     toPng: (image) => reader.toPng(image).catch(dropped),
     close: async () => undefined,
   }));
-}
-
-/** A failed reading drops the worker (it may be broken); a refused picture keeps it. */
-function dropped(error: unknown): never {
-  if (!(error instanceof ImageRefusedError)) shared = null;
-  throw error;
 }
 
 /**
