@@ -20,7 +20,8 @@ export const balanceCopy = {
   none: "No daily updates yet.",
   builder: "Bloc builder",
   hypothetical: "Hypothetical",
-  builderHelp: "Tap A or B on alliances to add up their might.",
+  builderHelp:
+    "Tap A or B on alliances to add up their might. Arithmetic only: not a forecast or an announcement.",
   bloc: "Bloc {bloc}",
   blocShare: "{share} of the tracked alliances' might",
   blocAlliances: "Alliances",

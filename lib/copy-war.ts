@@ -24,9 +24,9 @@ export const warCopy = {
   fewGainers: "few gainers",
   /** The event page's section after the war turnout (#280, D83): kill share against might share. */
   carried: "Kill share vs might share",
-  /** Under the title: what the two shares are and who gains no kills. */
+  /** Under the title: what the two shares are, and that defenders and support players gain no kills (D83). */
   carriedHelp:
-    "Each alliance's share of the kills, next to its share of the might. Kills from Start to End, might at Start.",
+    "Each alliance's share of the kills, next to its share of the might. Kills from Start to End, might at Start. Defenders and support players gain no kills.",
   /** `{n}` alliances, their kills gained and their might at Start (all as compact numbers). */
   carriedTotal: "All {n} alliances: {kills} kills gained, {might} might at Start",
   /** The legend: the square mark and the round mark on each row. */

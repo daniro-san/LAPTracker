@@ -120,7 +120,7 @@ export const nl = {
       "Geen van beide events heeft metingen van {min} minuten, dus hun pulsen kunnen niet vergeleken worden",
     carried: "Aandeel Kills tegen aandeel Might",
     carriedHelp:
-      "Het aandeel van elke alliantie in de Kills, naast haar aandeel in de Might. Kills van Begin tot Einde, Might bij Begin.",
+      "Het aandeel van elke alliantie in de Kills, naast haar aandeel in de Might. Kills van Begin tot Einde, Might bij Begin. Verdedigers en support-spelers krijgen geen Kills.",
     carriedTotal: "Alle {n} allianties: {kills} Kills gewonnen, {might} Might bij Begin",
     carriedMightMark: "Aandeel Might bij Begin",
     carriedKillsMark: "Aandeel Kills gewonnen",
@@ -217,7 +217,8 @@ export const nl = {
     none: "Nog geen dagelijkse metingen.",
     builder: "Blokbouwer",
     hypothetical: "Hypothetisch",
-    builderHelp: "Tik op A of B bij allianties om hun might op te tellen.",
+    builderHelp:
+      "Tik op A of B bij allianties om hun might op te tellen. Alleen rekenwerk: geen prognose of aankondiging.",
     bloc: "Blok {bloc}",
     blocShare: "{share} van de might van de gevolgde allianties",
     blocAlliances: "Allianties",

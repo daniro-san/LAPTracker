@@ -4,7 +4,7 @@ Basis: `scratchpad/panel/copywriter.md` (CW-1 to CW-20 and "Strings to cut entir
 
 ## Built
 - **Workspace** (EN, pt-BR and fr together):
-  - Members: the lead, the legend ("— means no data."), the legend link ("What the labels mean"), the check-in help, the list heading ("To check in with or help"), and the check-in reason ("no new donations or activity for {n} days"). Cut: `list.headingLead`, `members.weekHelp`, and the second sentence of `list.lowFirst`.
+  - Members: the lead, the legend ("— means no data."), the legend link ("What the labels mean"), the check-in help, the list heading ("To check in with or help"), and the check-in reason ("no new donations or activity for {n} days"). Cut: `list.headingLead` and `members.weekHelp`.
   - Names: "Missing info" (chip and help), "Donated" (column), "Member info", "Edit info" and "Info: {name}" (EN), "Top this week", and "Show the tips" (help panel).
   - Screenshots: "screenshot" everywhere in EN (PT "print", FR "capture"), the Discord replies included. `src.photo` is now "from a screenshot".
   - To review: `shots.lead` shows only when the queue has items. `shots.nothingCounts` is cut on Home and on the draft page. The draft page says what Save does (`shots.where.check`), keeps one line about deletion (`shots.draft.kept`), and shows "Read from {n} screenshots." only for 2 or more.
@@ -49,8 +49,17 @@ Basis: `scratchpad/panel/copywriter.md` (CW-1 to CW-20 and "Strings to cut entir
   - ja: `search.noMatch` kept "台帳".
   - ko: the movers heading lacked 의.
 
+- **Restored after the PR #375 review** (the earlier cuts went against recorded owner decisions):
+  - `ledger.carriedHelp` again ends "Defenders and support players gain no kills." (D83).
+  - `balance.builderHelp` again ends "Arithmetic only: not a forecast or an announcement." (D85:11). Both keys were redone in all 17 languages and stamped.
+  - `list.lowFirst` keeps "Not a ranking." in EN, PT and FR (D98, D75).
+  - Dated amendments record the new strings: D83 (the `carriedShown` line is gone), D98 (the new heading, the "Missing info" chip name, "Donated"), D80 ("first daily update") and D89 ("hidden and not counted", the not-counted line).
+  - `docs/GLOSSARY.md` names "daily update" as the UI word for the daily read.
+  - pl, sv, ja, zh-CN and uk said "daily reading" or "daily snapshot". They now use the update word: "aktualizacja dzienna", "daglig uppdatering", "毎日の更新", "每日更新" and "щоденне оновлення". The keys that use it and the glossary rows were changed to match.
+  - PT `shots.kindUnsure` is now "{kind} (do dia ou da semana?)", so it no longer needs gender agreement.
+
 ## Deviations
-- **Applied:** CW-1, 3, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17 and 19 in full. CW-2 and CW-18 in part. Every row of "Strings to cut entirely".
+- **Applied:** CW-1, 3, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17 and 19 in full. CW-2 and CW-18 in part. Every row of "Strings to cut entirely" except three that the PR #375 review restored: `list.lowFirst` "Not a ranking.", the defenders note in `ledger.carriedHelp`, and the arithmetic clause in `balance.builderHelp`.
 - **CW-2, partly:** the reason is shorter, but at 360 px it is still cut off with "…" in EN and PT (`members-rows-360-*.png`). The row's reason line is `truncate` (`MemberListRow.tsx:73`). Showing it whole needs a layout change: two lines, or the reason under the name. That is not copy, so it is a follow-up.
 - **CW-4:** overridden by the orchestrator. PT uses "Mesa dos oficiais", not "Painel".
 - **CW-8:** `home.title`, `home.next` and `home.empty` were already changed or removed by batch C. Only `shots.lead` and `shots.nothingCounts` were left to apply.
@@ -60,7 +69,7 @@ Basis: `scratchpad/panel/copywriter.md` (CW-1 to CW-20 and "Strings to cut entir
   - an empty-theme string for `calendar.theme`;
   - splitting `calendar.suggest.how`;
   - moving `thefts.lead` above the times note.
-- **Not edited:** D98's record quotes "Info to ask" and "… Not a ranking." It is a decision record of what shipped then, not an owner ruling on wording.
+- **D98:** its original text is unchanged. The dated amendment above gives the new strings.
 
 ## Verified
 - **`pnpm check` exit 0:**
@@ -82,7 +91,7 @@ Basis: `scratchpad/panel/copywriter.md` (CW-1 to CW-20 and "Strings to cut entir
 ## Open issues
 1. The check-in reason is still cut off at 360 px (see Deviations, CW-2). It needs a row layout change.
 2. Most `lib/i18n/glossary/*.md` files repeat their main table 2 to 16 times (it.md has 16 copies), an old merge artifact. Stale rows remain in some copies: "Grandma noticed" and "Daily read". A clean-up would make each file one table.
-3. Glossary, id: the "Defender" row still cites `ledger.carriedHelp`, which no longer mentions defenders.
+3. The phrase for "daily update" still means "reading", "measurement" or "fetch" in tr ("günlük okuma"), id ("pembacaan harian"), vi ("lần đọc hằng ngày"), nl ("dagelijkse meting") and de ("Tagesabruf"). Only pl, sv, ja, zh-CN and uk were in the review's list.
 
 ## Next
 Session: the next panel batch the orchestrator picks. The workspace track has no prompt in `docs/SESSION_PLAYBOOK.md`.

@@ -116,7 +116,7 @@ export const vi = {
     fewGainers: "ít tăng",
     carried: "Phần tiêu diệt so với Lực Chiến",
     carriedHelp:
-      "Phần tiêu diệt của mỗi liên minh, đặt cạnh phần Lực Chiến của liên minh đó. Tiêu diệt tăng từ Bắt đầu đến Kết thúc, Lực Chiến lúc Bắt đầu.",
+      "Phần tiêu diệt của mỗi liên minh, đặt cạnh phần Lực Chiến của liên minh đó. Tiêu diệt tăng từ Bắt đầu đến Kết thúc, Lực Chiến lúc Bắt đầu. Vai phòng thủ và hỗ trợ không tăng tiêu diệt.",
     carriedTotal: "Cả {n} liên minh: {kills} tiêu diệt tăng, {might} Lực Chiến lúc Bắt đầu",
     carriedMightMark: "Phần Lực Chiến lúc Bắt đầu",
     carriedKillsMark: "Phần tiêu diệt tăng",
@@ -212,7 +212,8 @@ export const vi = {
     none: "Chưa có lần đọc hằng ngày.",
     builder: "Dựng khối",
     hypothetical: "Giả định",
-    builderHelp: "Chạm A hoặc B trên liên minh để cộng Lực Chiến của chúng.",
+    builderHelp:
+      "Chạm A hoặc B trên liên minh để cộng Lực Chiến của chúng. Chỉ là phép cộng: không phải dự báo hay thông báo.",
     bloc: "Khối {bloc}",
     blocShare: "{share} Lực Chiến của các liên minh theo dõi",
     blocAlliances: "Liên minh",

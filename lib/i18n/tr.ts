@@ -120,7 +120,7 @@ export const tr = {
     fewGainers: "az kazanan",
     carried: "Kills payı ile Might payı",
     carriedHelp:
-      "Her ittifakın Kills payı, yanında Might payı. Kills Başlangıç’tan Bitiş’e, Might Başlangıç’ta ölçülür.",
+      "Her ittifakın Kills payı, yanında Might payı. Kills Başlangıç’tan Bitiş’e, Might Başlangıç’ta ölçülür. Savunucular ve destek oyuncuları Kills kazanmaz.",
     carriedTotal: "Tüm {n} ittifak: {kills} Kills kazanıldı, Başlangıç’ta {might} Might",
     carriedMightMark: "Başlangıç’taki Might payı",
     carriedKillsMark: "Kazanılan Kills payı",
@@ -217,7 +217,8 @@ export const tr = {
     none: "Henüz günlük okuma yok.",
     builder: "Blok kurucu",
     hypothetical: "Varsayımsal",
-    builderHelp: "Might’larını toplamak için ittifaklarda A ya da B’ye dokun.",
+    builderHelp:
+      "Might’larını toplamak için ittifaklarda A ya da B’ye dokun. Yalnızca hesap: tahmin ya da duyuru değil.",
     bloc: "Blok {bloc}",
     blocShare: "Takip edilen ittifakların Might payı: {share}",
     blocAlliances: "İttifaklar",

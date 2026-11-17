@@ -121,7 +121,7 @@ export const fr = {
     fewGainers: "gagnants rares",
     carried: "Part des Kills contre part du Might",
     carriedHelp:
-      "Part de chaque alliance dans les Kills gagnés de Début à Fin, à côté de sa part du Might au Début.",
+      "Part de chaque alliance dans les Kills gagnés de Début à Fin, à côté de sa part du Might au Début. Les défenseurs et les joueurs de soutien ne gagnent pas de Kills.",
     carriedTotal: "Toutes les {n} alliances : {kills} Kills gagnés, {might} de Might au Début",
     carriedMightMark: "Part du Might au Début",
     carriedKillsMark: "Part des Kills gagnés",
@@ -219,7 +219,8 @@ export const fr = {
     none: "Pas encore de mises à jour quotidiennes.",
     builder: "Blocs simulés",
     hypothetical: "Hypothétique",
-    builderHelp: "Touchez A ou B sur des alliances pour additionner leur Might.",
+    builderHelp:
+      "Touchez A ou B sur des alliances pour additionner leur Might. Calcul seulement, ni prévision ni annonce.",
     bloc: "Bloc {bloc}",
     blocShare: "{share} du Might des alliances suivies",
     blocAlliances: "Alliances",

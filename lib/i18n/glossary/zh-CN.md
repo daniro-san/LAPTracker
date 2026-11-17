@@ -4,7 +4,7 @@ Words already used in `lib/i18n/zh-CN.ts`. Reuse them so the pages stay consiste
 
 | English                   | zh-CN                   | Key and use                                                                                    |
 | ------------------------- | ----------------------- | ---------------------------------------------------------------------------------------------- |
-| daily update              | 每日读取                | `history.daily`, `flow.*`, `standing.*`, `balance.*` — the once-a-day read of the member lists |
+| daily update              | 每日更新                | `history.daily`, `flow.*`, `standing.*`, `balance.*` — the once-a-day read of the member lists |
 | Server 325 · Event Ledger | 325 服 · 活动账本       | `site.ledger` — the page title                                                                 |
 | Ledger                    | 账本                    | `site.home` — the ledger, as a breadcrumb                                                      |
 | kept by the Old Grandmas  | 由 Old Grandmas 记录    | `site.byline` — Old Grandmas stays a name                                                      |

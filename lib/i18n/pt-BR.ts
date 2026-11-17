@@ -117,7 +117,7 @@ export const ptBR = {
     fewGainers: "poucos ganhadores",
     carried: "Fatia de kills vs fatia de might",
     carriedHelp:
-      "A fatia de cada aliança nos kills, ao lado da fatia do Might. Kills do Início ao Fim, Might no Início.",
+      "A fatia de cada aliança nos kills, ao lado da fatia do Might. Kills do Início ao Fim, Might no Início. Defensores e jogadores de suporte não ganham kills.",
     carriedTotal: "Todas as {n} alianças: {kills} kills ganhos, {might} de might no Início",
     carriedMightMark: "Fatia do might no Início",
     carriedKillsMark: "Fatia dos kills ganhos",
@@ -214,7 +214,8 @@ export const ptBR = {
     none: "Ainda não há nenhuma atualização diária.",
     builder: "Montar blocos",
     hypothetical: "Hipotético",
-    builderHelp: "Toque em A ou B nas alianças para somar o Might delas.",
+    builderHelp:
+      "Toque em A ou B nas alianças para somar o Might delas. Só aritmética: não é previsão nem anúncio.",
     bloc: "Bloco {bloc}",
     blocShare: "{share} do Might das alianças acompanhadas",
     blocAlliances: "Alianças",

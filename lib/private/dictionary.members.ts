@@ -69,7 +69,7 @@ export const membersEn = {
   "list.notShownLang": "Not shown: {n} with no languages recorded",
   "list.pill.noZone": "No time zone · {n}",
   "list.pill.noLang": "No languages · {n}",
-  "list.lowFirst": "Lowest first, to see who may need help growing.",
+  "list.lowFirst": "Lowest first, to see who may need help growing. Not a ranking.",
   "list.was": "was {name}",
   "list.theirTimeNow": "their time now {time}",
   "clock.mineHere": "My time first (this phone: {zone}, {time} now)",

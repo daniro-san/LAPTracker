@@ -113,7 +113,8 @@ export const ko = {
     topBasis: "{n}명 중 상위 {top}명",
     fewGainers: "인원 적음",
     carried: "처치 몫 대 전투력 몫",
-    carriedHelp: "시작부터 종료까지 획득한 처치 중 각 연맹의 몫과, 시작 때 전투력 중 몫입니다.",
+    carriedHelp:
+      "시작부터 종료까지 획득한 처치 중 각 연맹의 몫과, 시작 때 전투력 중 몫입니다. 수비와 지원 플레이어는 처치를 획득하지 못합니다.",
     carriedTotal: "전체 {n}개 연맹: 획득 처치 {kills}, 시작 때 전투력 {might}",
     carriedMightMark: "시작 때 전투력 몫",
     carriedKillsMark: "획득 처치 몫",
@@ -208,7 +209,8 @@ export const ko = {
     none: "아직 일일 업데이트가 없어요.",
     builder: "블록 짜기",
     hypothetical: "가상",
-    builderHelp: "연맹에서 A 또는 B를 눌러 전투력을 더해 보세요.",
+    builderHelp:
+      "연맹에서 A 또는 B를 눌러 전투력을 더해 보세요. 계산일 뿐이며 예측이나 발표가 아닙니다.",
     bloc: "블록 {bloc}",
     blocShare: "추적 연맹 전투력의 {share}",
     blocAlliances: "연맹",

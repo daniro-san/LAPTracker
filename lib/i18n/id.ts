@@ -119,7 +119,7 @@ export const idID = {
     fewGainers: "sedikit kenaikan",
     carried: "Bagian Kills vs bagian Might",
     carriedHelp:
-      "Bagian tiap aliansi dari Kills, di samping bagiannya dari Might. Kills dari Awal sampai Akhir, Might pada Awal.",
+      "Bagian tiap aliansi dari Kills, di samping bagiannya dari Might. Kills dari Awal sampai Akhir, Might pada Awal. Pemain bertahan dan pemain support tidak mendapat Kills.",
     carriedTotal: "Semua {n} aliansi: {kills} Kills didapat, {might} Might di Awal",
     carriedMightMark: "Bagian Might di Awal",
     carriedKillsMark: "Bagian Kills didapat",
@@ -217,7 +217,8 @@ export const idID = {
     none: "Belum ada pembacaan harian.",
     builder: "Penyusun blok",
     hypothetical: "Hipotetis",
-    builderHelp: "Ketuk A atau B di sebuah aliansi untuk menjumlahkan Might-nya.",
+    builderHelp:
+      "Ketuk A atau B di sebuah aliansi untuk menjumlahkan Might-nya. Hanya hitungan, bukan prakiraan atau pengumuman.",
     bloc: "Blok {bloc}",
     blocShare: "{share} dari Might aliansi yang dilacak",
     blocAlliances: "Aliansi",

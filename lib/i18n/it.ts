@@ -120,7 +120,7 @@ export const itIT = {
     fewGainers: "pochi guadagni",
     carried: "Quota Kills vs quota Might",
     carriedHelp:
-      "Per ogni alleanza, la quota delle Kills guadagnate da Inizio a Fine, accanto alla sua quota di Might a Inizio.",
+      "Per ogni alleanza, la quota delle Kills guadagnate da Inizio a Fine, accanto alla sua quota di Might a Inizio. I difensori e i giocatori di supporto non guadagnano Kills.",
     carriedTotal: "Tutte le {n} alleanze: {kills} Kills guadagnate, {might} di Might a Inizio",
     carriedMightMark: "Quota di Might a Inizio",
     carriedKillsMark: "Quota di Kills guadagnate",
@@ -218,7 +218,8 @@ export const itIT = {
     none: "Ancora nessun aggiornamento giornaliero.",
     builder: "Costruttore blocchi",
     hypothetical: "Ipotetico",
-    builderHelp: "Tocca A o B su un’alleanza per sommarne il Might.",
+    builderHelp:
+      "Tocca A o B su un’alleanza per sommarne il Might. Solo calcolo: non una previsione né un annuncio.",
     bloc: "Blocco {bloc}",
     blocShare: "{share} del Might delle alleanze seguite",
     blocAlliances: "Alleanze",

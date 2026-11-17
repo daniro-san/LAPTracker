@@ -120,7 +120,7 @@ export const es = {
     fewGainers: "pocos subieron",
     carried: "Parte de Kills frente a parte de Might",
     carriedHelp:
-      "Parte de los Kills de cada alianza, junto a su parte del Might. Kills de Inicio a Fin; Might al Inicio.",
+      "Parte de los Kills de cada alianza, junto a su parte del Might. Kills de Inicio a Fin; Might al Inicio. Los defensores y los jugadores de apoyo no ganan Kills.",
     carriedTotal: "Todas las {n} alianzas: {kills} Kills ganados, {might} de Might al Inicio",
     carriedMightMark: "Parte de Might al Inicio",
     carriedKillsMark: "Parte de Kills ganados",
@@ -217,7 +217,8 @@ export const es = {
     none: "Todavía no hay actualizaciones diarias.",
     builder: "Creador de bloques",
     hypothetical: "Hipotético",
-    builderHelp: "Toca A o B en las alianzas para sumar su Might.",
+    builderHelp:
+      "Toca A o B en las alianzas para sumar su Might. Solo aritmética: no es un pronóstico ni un anuncio.",
     bloc: "Bloque {bloc}",
     blocShare: "{share} del Might de las alianzas seguidas",
     blocAlliances: "Alianzas",

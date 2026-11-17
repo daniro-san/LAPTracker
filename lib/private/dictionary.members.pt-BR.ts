@@ -69,7 +69,8 @@ export const membersPt: MembersWords = {
   "list.notShownLang": "Fora da lista: {n} sem idioma registrado",
   "list.pill.noZone": "Sem fuso horário · {n}",
   "list.pill.noLang": "Sem idiomas · {n}",
-  "list.lowFirst": "Do menor para o maior, para ver quem pode precisar de ajuda para crescer.",
+  "list.lowFirst":
+    "Do menor para o maior, para ver quem pode precisar de ajuda para crescer. Não é um ranking.",
   "list.was": "antes {name}",
   "list.theirTimeNow": "hora deles agora {time}",
   "clock.mineHere": "Minha hora primeiro (este celular: {zone}, {time} agora)",

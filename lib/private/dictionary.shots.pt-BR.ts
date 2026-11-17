@@ -139,7 +139,7 @@ export const shotsPt: ShotsWords = {
   "shots.why.tab": "Escolha a aba que o print mostra: diário ou semanal.",
   "shots.why.victim": "Escolha de quem é o relatório.",
   "shots.why.attacker": "A linha {row} precisa do nome do atacante. Digite ou tire a linha.",
-  "shots.kindUnsure": "{kind} (diário ou semanal?)",
+  "shots.kindUnsure": "{kind} (do dia ou da semana?)",
   "shots.victimYou": "Marcado como você. Mude se o relatório for de outra pessoa.",
   "shots.keptTheirs": "Mantido {theirs}. Toque para usar {mine}.",
   "shots.theftsSaved.one": "{n} roubo salvo.",

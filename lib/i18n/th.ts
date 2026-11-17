@@ -113,7 +113,7 @@ export const th = {
     fewGainers: "ผู้ได้เพิ่มน้อย",
     carried: "สัดส่วน Kills เทียบ สัดส่วน Might",
     carriedHelp:
-      "สัดส่วนของ Kills ของแต่ละพันธมิตร คู่กับสัดส่วนของ Might Kills นับจากเริ่มถึงสิ้นสุด Might นับตอนเริ่ม",
+      "สัดส่วนของ Kills ของแต่ละพันธมิตร คู่กับสัดส่วนของ Might Kills นับจากเริ่มถึงสิ้นสุด Might นับตอนเริ่ม สายตั้งรับและสายซัพพอร์ตไม่เพิ่ม Kills",
     carriedTotal: "รวม {n} พันธมิตร: Kills ที่เพิ่ม {kills}, Might ตอนเริ่ม {might}",
     carriedMightMark: "สัดส่วน Might ตอนเริ่ม",
     carriedKillsMark: "สัดส่วน Kills ที่เพิ่ม",
@@ -210,7 +210,8 @@ export const th = {
     none: "ยังไม่มีการอัปเดตรายวัน",
     builder: "ตัวสร้างกลุ่ม",
     hypothetical: "สมมติ",
-    builderHelp: "แตะ A หรือ B ที่พันธมิตรเพื่อรวม Might ของพันธมิตรเหล่านั้น",
+    builderHelp:
+      "แตะ A หรือ B ที่พันธมิตรเพื่อรวม Might ของพันธมิตรเหล่านั้น เป็นการคำนวณเท่านั้น ไม่ใช่การคาดการณ์หรือการประกาศ",
     bloc: "กลุ่ม {bloc}",
     blocShare: "{share} ของ Might ของพันธมิตรที่ติดตาม",
     blocAlliances: "พันธมิตร",

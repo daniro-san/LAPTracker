@@ -120,7 +120,7 @@ export const de = {
     fewGainers: "wenige Zuwächser",
     carried: "Kills-Anteil gegen Might-Anteil",
     carriedHelp:
-      "Der Anteil jeder Allianz an den von Beginn bis Ende gewonnenen Kills, neben ihrem Anteil am Might bei Beginn.",
+      "Der Anteil jeder Allianz an den von Beginn bis Ende gewonnenen Kills, neben ihrem Anteil am Might bei Beginn. Verteidiger und Support-Spieler sammeln keine Kills.",
     carriedTotal: "Alle {n} Allianzen: {kills} Kills gewonnen, {might} Might bei Beginn",
     carriedMightMark: "Might-Anteil bei Beginn",
     carriedKillsMark: "Kills-Anteil gewonnen",
@@ -218,7 +218,8 @@ export const de = {
     none: "Noch keine Tagesabrufe.",
     builder: "Blockrechner",
     hypothetical: "Hypothetisch",
-    builderHelp: "Tippe bei einer Allianz auf A oder B, um ihr Might zusammenzuzählen.",
+    builderHelp:
+      "Tippe bei einer Allianz auf A oder B, um ihr Might zusammenzuzählen. Nur Rechnung: keine Prognose und keine Ankündigung.",
     bloc: "Block {bloc}",
     blocShare: "{share} des Might der erfassten Allianzen",
     blocAlliances: "Allianzen",

@@ -37,7 +37,7 @@ Words already used in `lib/i18n/uk.ts`. Reuse them so the pages stay consistent;
 | pts (percentage points)             | в. п.                       | `ledger.carriedPoints` — after a gap, `+6.1 в. п.`                                                                                          |
 | Server fight clock                  | Годинник боїв сервера       | `ledger.fightClock`, `ledger.fightClockLink` — event slots on the server clock                                                              |
 | Share of the kills                  | Частка Kills                | `ledger.fightClockShare`, `ledger.fightClockLead`, `ledger.comparePulseHelp` — an event's share of its Kills gained                         |
-| daily update                        | щоденний знімок             | `history.daily`, `flow.notCounted`, `balance.trendHelp`, `standing.help` — the once-a-day read of the member lists; one phrase in every key |
+| daily update                        | щоденне оновлення           | `history.daily`, `flow.notCounted`, `balance.trendHelp`, `standing.help` — the once-a-day read of the member lists; one phrase in every key |
 | English                             | uk                          | Key and use                                                                                                                                 |
 | ----------------------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------                          |
 | Server 325 · Event Ledger           | Сервер 325 · Журнал подій   | `site.ledger` — the page title                                                                                                              |
@@ -75,7 +75,7 @@ Words already used in `lib/i18n/uk.ts`. Reuse them so the pages stay consistent;
 | pts (percentage points)             | в. п.                       | `ledger.carriedPoints` — after a gap, `+6.1 в. п.`                                                                                          |
 | Bloc                                | блок                        | `balance.bloc`, `balance.builder`, `balance.addTo` — a hypothetical group of alliances on the balance page                                  |
 | Tracked alliances                   | Відстежувані альянси        | `standing.server`, `standing.help`, `balance.basis` — the alliances the ledger follows; their total is "the server"                         |
-| daily update                        | щоденний знімок             | `history.daily`, `flow.notCounted`, `balance.trendHelp`, `standing.help` — the once-a-day read of the member lists; one phrase in every key |
+| daily update                        | щоденне оновлення           | `history.daily`, `flow.notCounted`, `balance.trendHelp`, `standing.help` — the once-a-day read of the member lists; one phrase in every key |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

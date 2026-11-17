@@ -4,7 +4,7 @@ Words already used in `lib/i18n/ja.ts`. Reuse them so the pages stay consistent;
 
 | English                   | ja                        | Key and use                                                                                                                                   |
 | ------------------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| Daily update              | 毎日の読み取り            | `history.daily`, `flow.none`, `balance.none`, `balance.trendHelp`, `standing.help` — the once-a-day member-list read, one phrase in every key |
+| Daily update              | 毎日の更新                | `history.daily`, `flow.none`, `balance.none`, `balance.trendHelp`, `standing.help` — the once-a-day member-list read, one phrase in every key |
 | Server 325 · Event Ledger | サーバー325・イベント台帳 | `site.ledger` — the page title                                                                                                                |
 | Ledger                    | 台帳                      | `site.home` — the ledger, as a breadcrumb                                                                                                     |
 | kept by the Old Grandmas  | Old Grandmas が記録       | `site.byline` — Old Grandmas stays a name                                                                                                     |
@@ -29,7 +29,7 @@ Words already used in `lib/i18n/ja.ts`. Reuse them so the pages stay consistent;
 | grandma                   | おばあちゃん              | the voice in empty states and errors                                                                                                          |
 | Grandma noticed           | おばあちゃんの気づき      | `ledger.movers` — the biggest gains and losses per event                                                                                      |
 | Renamed                   | 改名                      | `history.renamed` — a member's name changed                                                                                                   |
-| Daily read                | 毎日の読み取り            | `history.daily` — the once-a-day roster read                                                                                                  |
+| Daily read                | 毎日の更新                | `history.daily` — the once-a-day roster read                                                                                                  |
 | Daily progress            | 毎日の推移                | `ledger.progress` — the player page's section of readings                                                                                     |
 | English                   | ja                        | Key and use                                                                                                                                   |
 | ------------------------- | ------------------------- | --------------------------------------------------------------------------------------                                                        |
@@ -57,7 +57,7 @@ Words already used in `lib/i18n/ja.ts`. Reuse them so the pages stay consistent;
 | grandma                   | おばあちゃん              | the voice in empty states and errors                                                                                                          |
 | Grandma noticed           | おばあちゃんの気づき      | `ledger.movers` — the biggest gains and losses per event                                                                                      |
 | Renamed                   | 改名                      | `history.renamed` — a member's name changed                                                                                                   |
-| Daily read                | 毎日の読み取り            | `history.daily` — the once-a-day roster read                                                                                                  |
+| Daily read                | 毎日の更新                | `history.daily` — the once-a-day roster read                                                                                                  |
 | Live                      | ライブ                    | `ledger.live` — the live event section and its strip                                                                                          |
 | War turnout               | 参戦状況                  | `ledger.fought` — the event's section: how many took part                                                                                     |
 | Reading                   | 読み取り                  | `ledger.liveFirst`, `liveOverdue`, `liveDone` — one read of the game's standings, live                                                        |
@@ -92,7 +92,7 @@ Words already used in `lib/i18n/ja.ts`. Reuse them so the pages stay consistent;
 | grandma                   | おばあちゃん              | the voice in empty states and errors                                                                                                          |
 | Grandma noticed           | おばあちゃんの気づき      | `ledger.movers` — the biggest gains and losses per event                                                                                      |
 | Renamed                   | 改名                      | `history.renamed` — a member's name changed                                                                                                   |
-| Daily read                | 毎日の読み取り            | `history.daily` — the once-a-day roster read                                                                                                  |
+| Daily read                | 毎日の更新                | `history.daily` — the once-a-day roster read                                                                                                  |
 | Daily progress            | 毎日の推移                | `ledger.progress` — the player page's section of readings                                                                                     |
 | English                   | ja                        | Key and use                                                                                                                                   |
 | ------------------------- | ------------------------- | --------------------------------------------------------------------------------------                                                        |
@@ -120,7 +120,7 @@ Words already used in `lib/i18n/ja.ts`. Reuse them so the pages stay consistent;
 | grandma                   | おばあちゃん              | the voice in empty states and errors                                                                                                          |
 | Grandma noticed           | おばあちゃんの気づき      | `ledger.movers` — the biggest gains and losses per event                                                                                      |
 | Renamed                   | 改名                      | `history.renamed` — a member's name changed                                                                                                   |
-| Daily read                | 毎日の読み取り            | `history.daily` — the once-a-day roster read                                                                                                  |
+| Daily read                | 毎日の更新                | `history.daily` — the once-a-day roster read                                                                                                  |
 | Live                      | ライブ                    | `ledger.live` — the live event section and its strip                                                                                          |
 | War turnout               | 参戦状況                  | `ledger.fought` — the event's section: how many took part                                                                                     |
 | Reading                   | 読み取り                  | `ledger.liveFirst`, `liveOverdue`, `liveDone` — one read of the game's standings, live                                                        |

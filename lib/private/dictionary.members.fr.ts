@@ -71,7 +71,7 @@ export const membersFr: MembersWords = {
   "list.pill.noZone": "Sans fuseau horaire · {n}",
   "list.pill.noLang": "Sans langues · {n}",
   "list.lowFirst":
-    "Du plus bas au plus haut, pour voir qui pourrait avoir besoin d’aide pour progresser.",
+    "Du plus bas au plus haut, pour voir qui pourrait avoir besoin d’aide pour progresser. Ce n’est pas un classement.",
   "list.was": "anciennement {name}",
   "list.theirTimeNow": "leur heure maintenant {time}",
   "clock.mineHere": "Mon heure d’abord (cet appareil : {zone}, {time} maintenant)",
