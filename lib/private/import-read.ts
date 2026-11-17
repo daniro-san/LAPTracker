@@ -41,6 +41,9 @@ export function openOcr(): Promise<ScreenshotReader> {
   }));
 }
 
+/** One uploaded picture, under Vercel's 4.5 MB request body limit; the desk sends about 0.5-1.5 MB. */
+export const MAX_UPLOAD = 4 * 1024 * 1024;
+
 /**
  * Officers with pictures being read on this instance (D109): one reading at a time each, whether it comes
  * from "Read from a screenshot", "Send screenshots" or a share from the phone (D110), so the reader is not

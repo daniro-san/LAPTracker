@@ -134,6 +134,14 @@ This section supersedes the share target's address, the workspace lookup, the `/
   - the decisions index lists D108, D109 and D110.
 - **The share takes the same per-officer read guard.** It moved from the `/shots/read` route to `startReading` / `endReading` in `lib/private/import-read.ts`, so both routes share one set. A share during a reading lands on Home with "The desk was still reading your last screenshot, so this share was not read. …" (`?shared=busy`). New test in `share/route.test.ts`: a held reading sends the share to `?shared=busy` with nothing read, and the guard is free after a share.
 
+- **To stay under the lint limits after #400:** `MAX_UPLOAD` moved to `lib/private/import-read.ts`, and the scope check in `createDrafts` is shorter. Members' `ViewSwitch` (D107) moved, unchanged, to `app/(private)/_ui/MembersHead.tsx`, which renders the tab's button and the switch; the page has one `<MembersHead>` line.
+- **`pnpm check`:** exit 0. Vitest: 182 files passed, 2 skipped; 961 tests passed, 4 skipped. Drift fine; i18n 17 languages up to date.
+- **Short e2e after the rebase, 37 of 37 checks**, on a fresh production build: the database was recreated with 38 migrations, and the e2e used the same stand-ins.
+  - The 28 earlier checks pass.
+  - Two shares from one officer at once: the first opens its review, the second lands on `?shared=busy`, and a third afterwards reads again. Home says "The desk was still reading your last screenshot…".
+  - With Wren on the desk, Home shows the share line right under the title and "On the desk now · Wren (R4)" right after it (EN light, PT dark). No sideways scroll, and every target ≥ 44 px.
+  - Screenshots: `v3-home-shared-desk-360-*`.
+
 ## Next
 Session: none queued in `docs/SESSION_PLAYBOOK.md`; the workspace track continues in issues #293–#321.
 Model / effort: keep. The change had no surprises; the open question (Android's real request) is a device test, not more code.

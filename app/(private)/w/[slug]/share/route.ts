@@ -13,11 +13,12 @@ import {
   redirectWith,
   requestCookies,
 } from "@/lib/private/http";
-import { createDrafts, MAX_PICTURES, MAX_UPLOAD } from "@/lib/private/import";
+import { createDrafts, MAX_PICTURES } from "@/lib/private/import";
 import {
   classified,
   endReading,
   failureCode,
+  MAX_UPLOAD,
   readUpload,
   startReading,
 } from "@/lib/private/import-read";

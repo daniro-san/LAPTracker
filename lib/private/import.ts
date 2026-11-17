@@ -36,8 +36,6 @@ import { rowsFit, withNewMembers } from "./pending-members";
 export const DRAFT_DAYS = 7;
 /** Pictures in one send: a long ranking is about 13 pages of 8 rows; more are refused. */
 export const MAX_PICTURES = 16;
-/** One uploaded picture, under Vercel's 4.5 MB request body limit; the desk sends about 0.5-1.5 MB. */
-export const MAX_UPLOAD = 4 * 1024 * 1024;
 /** Past names count for the match when they were seen this recently. */
 const NAME_HISTORY_DAYS = 60;
 
@@ -166,13 +164,8 @@ export async function createDrafts(
     }
     const rows = matched(read.rows, candidates, SAVE_HOOKS[screen.kind] as SaveHook);
     // A preset's tab is a guess: the classifier did not read the picture (D110).
-    const scopeSure =
-      pick !== undefined ||
-      at.every(
-        (i) =>
-          pictures[i]?.classified.scopeSure &&
-          !(screen.scope !== null && pictures[i]?.classified.kind === null),
-      );
+    const guessed = (c?: Classified) => !c?.scopeSure || (screen.scope !== null && c.kind === null);
+    const scopeSure = pick !== undefined || !at.some((i) => guessed(pictures[i]?.classified));
     inserts.push({
       workspaceId: access.workspaceId,
       kind: screen.kind,
