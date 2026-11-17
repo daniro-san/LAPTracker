@@ -20,7 +20,7 @@ export const standingCopy = {
   growthSince: "{growth} since {from}",
   /** The sparkline's accessible name; `{first}` and `{last}` are ranks (`#6`), `{from}` and `{to}` dates. */
   trend: "Rank {first} on {from}, {last} on {to}",
-  /** Marks the page's own alliance in the list, for screen readers. */
+  /** The chip on the page's own alliance row in the list. */
   thisAlliance: "This alliance",
   /** Details: the ranks day by day. `{days}` are the dates, oldest first. */
   detailsHelp: "Rank on each day, oldest first: {days}.",

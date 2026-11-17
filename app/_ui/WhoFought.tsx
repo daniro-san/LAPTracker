@@ -33,13 +33,17 @@ interface Entry {
 /** Rows shown before "Show all": the first ones, and the viewer's own wherever it is. */
 const SHOWN = 5;
 
-/** The rows a list shows: all when expanded, else the first SHOWN and the viewer's own wherever it is. */
+/** The rows a list shows: all when expanded, else the first SHOWN, the viewer's own wherever it is, and
+ * `own` (a page's own alliance) when given. */
 export function visibleEntries<E extends { t: { unionId: number } }>(
   entries: E[],
   mine: number | null,
   all: boolean,
+  own: number | null = null,
 ): E[] {
-  return all ? entries : entries.filter(({ t }, i) => i < SHOWN || t.unionId === mine);
+  return all
+    ? entries
+    : entries.filter(({ t }, i) => i < SHOWN || t.unionId === mine || t.unionId === own);
 }
 
 function BarList({

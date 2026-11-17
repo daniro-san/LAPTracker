@@ -74,3 +74,8 @@ Left:
 Takeaway in 3 seconds on the first phone screen, before: "[OGs] is #3, down 2 since 23 Oct" plus a wall of 20 cards below it. After: the same sentence, then 5 cards that include the page's and the viewer's alliance, and a Show all button.
 
 https://github.com/daniro-san/LAPTracker/pull/348
+
+## Review fixes (2026-11-17, `/pr-review` of #348)
+- The lead sentence collapsed every `..` after the alliance name was filled in, so a name such as `Wait...` read `Wait.`. The full stop is now collapsed only right after the date (`endDate` in `app/_ui/Standing.tsx`), in the lead, the help line and the Details line.
+- `StandingList` picked the rows to keep by parsing React's `Children.toArray` key format and copied `SHOWN = 5`. It now takes the rows as data (`{ t: { unionId }, node }`) and calls `visibleEntries` from `app/_ui/WhoFought.tsx`, which gained an optional `own` argument (one test added in `app/_ui/WhoFought.test.ts`).
+- D90's Layout line and the `thisAlliance` comment now describe the visible chip and the 5-row list.

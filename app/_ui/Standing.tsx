@@ -39,12 +39,13 @@ function lead(row: StandingRow, s: Figures, clock: Clock, locale: string, copy: 
           server: percentText(s.serverGrowth, locale),
         })
       : null;
-  // A short date can end with a full stop ("24. Okt."): the sentence's own full stop would double it.
-  return noDoubleStop([rank, growth].filter(Boolean).join(" "));
+  return endDate([rank, growth].filter(Boolean).join(" "), from);
 }
 
-/** A short date can end with a full stop ("23 окт."): the sentence's own full stop would double it. */
-const noDoubleStop = (text: string) => text.replace(/\.\./g, ".");
+/** A short date can end with a full stop ("23 окт."): where the sentence's own full stop follows the date,
+ * one is kept. Only the date is touched, so an alliance name with ".." stays as it is. */
+const endDate = (text: string, date: string) =>
+  date.endsWith(".") ? text.replaceAll(`${date}.`, date) : text;
 
 const day = (d: string | undefined) => new Date(`${d}T12:00:00Z`);
 
@@ -124,10 +125,11 @@ function RanksTable({ s, clock, copy }: { s: Figures; clock: Clock; copy: Dictio
         {copy.ledger.details}
       </summary>
       <p className={`mb-1 text-xs ${MUTED}`}>
-        {noDoubleStop(
+        {endDate(
           fill(copy.standing.detailsHelp, {
             days: s.days.map((d) => clock.day(day(d))).join(", "),
           }),
+          clock.day(day(s.days[s.days.length - 1])),
         )}
       </p>
       <table className="w-full border-collapse text-sm tabular-nums">
@@ -173,7 +175,10 @@ function StandingBody({
         <>
           {own && <p className="mt-1 text-lg">{lead(own, standing, clock, locale, copy)}</p>}
           <p className={`mb-2 text-body-sm ${MUTED}`}>
-            {noDoubleStop(fill(copy.standing.help, { from: clock.day(day(standing.days[0])) }))}
+            {endDate(
+              fill(copy.standing.help, { from: clock.day(day(standing.days[0])) }),
+              clock.day(day(standing.days[0])),
+            )}
           </p>
           <StandingList
             own={unionId}
@@ -196,19 +201,21 @@ function StandingBody({
                 </span>
               </li>
             }
-          >
-            {standing.rows.map((r) => (
-              <Row
-                key={r.unionId}
-                row={r}
-                s={standing}
-                own={r.unionId === unionId}
-                clock={clock}
-                locale={locale}
-                copy={copy}
-              />
-            ))}
-          </StandingList>
+            rows={standing.rows.map((r) => ({
+              t: { unionId: r.unionId },
+              node: (
+                <Row
+                  key={r.unionId}
+                  row={r}
+                  s={standing}
+                  own={r.unionId === unionId}
+                  clock={clock}
+                  locale={locale}
+                  copy={copy}
+                />
+              ),
+            }))}
+          />
           <RanksTable s={standing} clock={clock} copy={copy} />
         </>
       )}
