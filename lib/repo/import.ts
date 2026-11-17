@@ -244,14 +244,15 @@ export async function findWorkspaceByGuild(db: Db, guildId: string) {
 
 /**
  * The officer who used the Discord command, as one of the workspace's people (D73 stores who gets in):
- * the row is made or its name updated, without touching the last sign-in. Returns its id.
+ * the row is made or its Discord name updated, without touching the last sign-in. Returns the row's id,
+ * the name the officer chose in the desk and their linked player.
  */
 export async function recordOfficer(
   db: Db,
   workspaceId: number,
   discordUserId: string,
   displayName: string,
-): Promise<number> {
+) {
   const [row] = await db
     .insert(workspaceUsers)
     .values({ workspaceId, discordUserId, displayName })
@@ -259,9 +260,14 @@ export async function recordOfficer(
       target: [workspaceUsers.workspaceId, workspaceUsers.discordUserId],
       set: { displayName },
     })
-    .returning({ id: workspaceUsers.id });
+    .returning({
+      id: workspaceUsers.id,
+      displayName: workspaceUsers.displayName,
+      chosenName: workspaceUsers.chosenName,
+      playerUid: workspaceUsers.playerUid,
+    });
   if (!row) throw new Error("workspace user upsert returned no row");
-  return row.id;
+  return row;
 }
 
 export type { StoredRow };

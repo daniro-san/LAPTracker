@@ -1,6 +1,7 @@
 // What a draft's review shows beside a row (issue 299), pure: for Alliance Duel the points already saved
 // for that member (and a note when the days and the week disagree, never fixed silently), for a check our
 // own read and how far apart it is. Digits are grouped with the separator the server sent.
+import { fill } from "@/lib/copy";
 import type { DuelSaved } from "@/lib/private/import-view";
 
 export const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat"] as const;
@@ -10,8 +11,9 @@ export type Words = Record<string, string>;
 /** Digits grouped with the officer's language's separator (from the server: no Intl in the client). */
 export const grouped = (n: number, sep: string) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, sep);
 
+/** `fill` for a word that may be missing from the words sent to the client. */
 export const fillIn = (template: string | undefined, values: Record<string, string | number>) =>
-  (template ?? "").replace(/\{(\w+)\}/g, (_, k: string) => String(values[k] ?? `{${k}}`));
+  fill(template ?? "", values);
 
 /** The saved points of one member for the target (a day, or "week"), and what disagrees with the new value. */
 export function duelKnown(
@@ -41,7 +43,7 @@ export const factText = (field: string | undefined, v: number, sep: string) =>
   field === "adTech" ? `${v}%` : grouped(v, sep);
 
 /**
- * A member update beside its row: "AD Tech: 69% → 74%", or "(nothing before)", and that AD Tech at 100 %
+ * A member update beside its row: "AD Tech: 55% → 60%", or "(nothing before)", and that AD Tech at 100 %
  * is complete and is not written again (owner, issue 299).
  */
 export function factKnown(
@@ -60,14 +62,12 @@ export function factKnown(
     : [fillIn(w["shots.factChange"], { field: label, was: factText(field, before, sep), now })];
 }
 
-/** Our own read of the member beside the picture's value: "we read 9,100 · same" or "· 650 apart". */
+/** The game data beside the picture's value: "Game data: 5,750 · picture is 4,000 higher", or "same". */
 export function checkKnown(ours: number | null, value: number | null, w: Words, sep: string) {
   if (ours === null) return [w["shots.oursNone"] ?? ""];
   const read = fillIn(w["shots.ours"], { v: grouped(ours, sep) });
   if (value === null) return [read];
-  const apart = Math.abs(value - ours);
-  return [
-    read,
-    apart === 0 ? (w["shots.same"] ?? "") : fillIn(w["shots.apart"], { d: grouped(apart, sep) }),
-  ];
+  if (value === ours) return [read, w["shots.same"] ?? ""];
+  const key = value > ours ? "shots.higher" : "shots.lower";
+  return [read, fillIn(w[key], { d: grouped(Math.abs(value - ours), sep) })];
 }

@@ -10,7 +10,7 @@ import { dailyReads, dailyRosters } from "../schema";
 import { screenshotDrafts } from "../schema-import";
 import type { ScreenshotReader } from "../screenshot/read-screenshot";
 import { ogsCandidates, recorded } from "../screenshot/test-helpers";
-import { handleInteraction, type Handled, verifySignature } from "./discord-interaction";
+import { handleInteraction, type Job, verifySignature } from "./discord-interaction";
 import { runJob, type JobDeps } from "./import-discord";
 
 // A test key pair stands in for the Discord app's: its public key goes where DISCORD_PUBLIC_KEY would.
@@ -80,14 +80,15 @@ function command(roles: string[], attachment: Record<string, unknown> = {}) {
   };
 }
 
-function signed(payload: unknown, key = keys.privateKey) {
+/** A request as Discord sends it, signed with `key`, `at` seconds after NOW (0: on time). */
+function signed(payload: unknown, key = keys.privateKey, at = 0) {
   const body = JSON.stringify(payload);
-  const timestamp = "1763323200";
+  const timestamp = String(Math.floor(NOW.getTime() / 1000) + at);
   const signature = sign(null, Buffer.from(timestamp + body), key).toString("hex");
   return { body, signature, timestamp };
 }
 
-const handle = (request: ReturnType<typeof signed>) =>
+const handle = (request: { body: string; signature: string | null; timestamp: string | null }) =>
   handleInteraction(db, PUBLIC_KEY, request, NOW);
 
 describe("the interaction's signature", () => {
@@ -100,7 +101,14 @@ describe("the interaction's signature", () => {
     );
     expect((await handle(other)).status).toBe(401);
     expect((await handle({ ...ping, body: ping.body.replace("900", "901") })).status).toBe(401);
-    expect((await handle({ ...ping, signature: null as unknown as string })).status).toBe(401);
+    expect((await handle({ ...ping, signature: null })).status).toBe(401);
+    // A signed request replayed more than 5 minutes later.
+    expect(
+      await handle(signed({ type: 1, application_id: "900", token: "t" }, undefined, -301)),
+    ).toEqual({
+      status: 401,
+      body: { code: "stale_signature" },
+    });
     expect(await handleInteraction(db, undefined, ping, NOW)).toMatchObject({ status: 401 });
   });
 
@@ -156,7 +164,11 @@ function discord() {
 }
 
 function deps(fetcher: typeof fetch, read: string[]): JobDeps {
-  const reader: ScreenshotReader = { read: async () => read, close: async () => undefined };
+  const reader: ScreenshotReader = {
+    read: async () => read,
+    toPng: async (image) => image,
+    close: async () => undefined,
+  };
   return {
     openDb: () => ({ db, close: async () => {} }),
     fetch: fetcher,
@@ -168,10 +180,10 @@ function deps(fetcher: typeof fetch, read: string[]): JobDeps {
   };
 }
 
-async function deferred(payload: unknown): Promise<Extract<Handled, { status: 200 }>> {
+async function deferred(payload: unknown): Promise<{ body: unknown; job: Job }> {
   const handled = await handle(signed(payload));
   if (handled.status !== 200 || !handled.job) throw new Error("no deferred reply");
-  return handled;
+  return { body: handled.body, job: handled.job };
 }
 
 describe("the deferred flow", () => {
@@ -179,7 +191,7 @@ describe("the deferred flow", () => {
     const handled = await deferred(command([LEADER]));
     expect(handled.body).toEqual({ type: 5, data: { flags: 64 } });
     const { calls, fetcher } = discord();
-    await runJob(deps(fetcher, recorded("98-alliance-duel-weekly-phone")), handled.job as never);
+    await runJob(deps(fetcher, recorded("98-alliance-duel-weekly-phone")), handled.job);
     expect(calls[0]).toEqual({ url: CDN, method: "GET" });
     const edit = calls.find((c) => c.method === "PATCH");
     expect(edit?.url).toBe(
@@ -187,17 +199,14 @@ describe("the deferred flow", () => {
     );
     const [draft] = await db.select().from(screenshotDrafts);
     expect(JSON.parse(edit?.body ?? "{}").content).toBe(
-      `Read: Alliance Duel weekly, 8 rows, 2 doubtful → [Review](https://laptracker.test/w/ogs/shots/${draft?.id})`,
+      `Read: Alliance Duel — daily or weekly?, 8 rows, 2 doubtful → [Review](https://laptracker.test/w/ogs/shots/${draft?.id})`,
     );
     expect(draft).toMatchObject({ source: "discord", sentBy: "Ana", pictureDay: "2026-11-16" });
   });
 
   it("keeps the OCR text and rows, never the picture", async () => {
     const handled = await deferred(command([LEADER]));
-    await runJob(
-      deps(discord().fetcher, recorded("98-alliance-duel-weekly-phone")),
-      handled.job as never,
-    );
+    await runJob(deps(discord().fetcher, recorded("98-alliance-duel-weekly-phone")), handled.job);
     const stored = JSON.stringify(await db.select().from(screenshotDrafts));
     for (const form of ["picture-bytes-XYZ", PICTURE.toString("base64"), PICTURE.toString("hex")]) {
       expect(stored).not.toContain(form);
@@ -218,14 +227,14 @@ describe("the deferred flow", () => {
       }),
     );
     const first = discord();
-    await runJob(deps(first.fetcher, recorded("90-might-phone")), jpeg.job as never);
+    await runJob(deps(first.fetcher, recorded("90-might-phone")), jpeg.job);
     expect(first.calls[0]?.url).toBe(
       "https://media.discordapp.net/attachments/1/2/98.jpg?format=png",
     );
 
     const elsewhere = await deferred(command([LEADER], { url: "https://example.com/98.png" }));
     const second = discord();
-    await runJob(deps(second.fetcher, recorded("90-might-phone")), elsewhere.job as never);
+    await runJob(deps(second.fetcher, recorded("90-might-phone")), elsewhere.job);
     expect(second.calls.map((c) => c.method)).toEqual(["PATCH"]);
     expect(JSON.parse(second.calls[0]?.body ?? "{}").content).toBe("1 picture could not be read.");
   });

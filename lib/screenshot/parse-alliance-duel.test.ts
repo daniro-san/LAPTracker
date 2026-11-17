@@ -89,7 +89,16 @@ describe("parseAllianceDuelRanking", () => {
   it("drops the pinned row under a full page even when its rank was not read", () => {
     // Picture 98: eight rows, then the uploader's row 76 whose rank the OCR lost.
     const rows = parseAllianceDuelRanking(recorded("98-alliance-duel-weekly-phone"), weekly);
-    expect(rows).toHaveLength(8);
+    expect(rows.map((r) => [r.rank, r.points])).toEqual([
+      [1, 22961474],
+      [2, 18345893],
+      [3, 14800884],
+      [4, 12401468],
+      [5, 11146597],
+      [6, 10850521],
+      [7, 10167223],
+      [8, 9956111],
+    ]);
     expect(rows.some((r) => r.points === 2479687)).toBe(false);
   });
 

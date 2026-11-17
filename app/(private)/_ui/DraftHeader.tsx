@@ -1,8 +1,9 @@
 "use client";
 
 // The top of a draft under review (issue 299): the type (one tap re-reads the pictures as another type),
-// Daily or Weekly (asked when the picture cannot tell), the Alliance Duel's week and day, and where a Save
-// puts the rows. Every choice is a row of 44 px buttons; nothing is hover-only.
+// Daily or Weekly (when the picture cannot tell, neither tab is pressed until the officer picks one), the
+// Alliance Duel's week and day, and where a Save puts the rows (a check writes nothing to members). Every
+// choice is a row of 44 px buttons; nothing is hover-only.
 import type { ImportKind, Scope } from "@/lib/private/import-kinds";
 import type { DraftView } from "@/lib/private/import-view";
 
@@ -26,7 +27,8 @@ interface Choices {
 function Choice<T extends string | boolean>(props: {
   legend: string | undefined;
   options: { value: T; label: string }[];
-  value: T;
+  /** null: nothing chosen yet, no button pressed. */
+  value: T | null;
   onChange: (v: T) => void;
   disabled: boolean;
 }) {
@@ -54,19 +56,19 @@ function Choice<T extends string | boolean>(props: {
   );
 }
 
-/** Where a kind that is not a ranking check saves. */
+/** Where a kind saves, when it is not Alliance Duel or a check. */
 const WHERE: Partial<Record<ImportKind, string>> = {
   member_update: "shots.where.facts",
   secret_ops: "shots.where.thefts",
 };
 
-/** "Saves to: Alliance Duel points of each member, week of Mon 16 Nov", or a check's line. */
-function whereText(view: DraftView, w: Words, text: ReviewText, c: Choices): string {
+/** "Saves to: Alliance Duel points of each member, week of Mon 16 Nov"; a check writes nothing. */
+function whereText(view: DraftView, w: Words, text: ReviewText, c: Choices): string | undefined {
+  const other = WHERE[view.kind];
+  if (other) return fillIn(w["shots.draft.saveTo"], { where: w[other] ?? "" });
+  if (view.kind !== "alliance_duel") return w["shots.where.check"];
+  if (c.scope === null) return w["shots.where.pickTab"];
   const week = c.weekBefore ? 1 : 0;
-  if (view.kind !== "alliance_duel") {
-    const key = WHERE[view.kind] ?? "shots.where.check";
-    return fillIn(w["shots.draft.saveTo"], { where: w[key] ?? "" });
-  }
   const where =
     c.scope === "daily"
       ? fillIn(w["shots.where.duelDay"], { day: text.days[week][DAYS.indexOf(c.day)] ?? "" })
@@ -113,7 +115,7 @@ export function DraftHeader(props: {
   text: ReviewText;
   choice: Choices;
   set: {
-    scope: (s: Scope | null) => void;
+    scope: (s: Scope) => void;
     day: (d: Day) => void;
     weekBefore: (b: boolean) => void;
   };
@@ -121,7 +123,8 @@ export function DraftHeader(props: {
   retype: (kind: ImportKind) => void;
 }) {
   const { view, w, choice, readOnly } = props;
-  const scope = choice.scope;
+  // A kind with a Daily and a Weekly tab; the draft keeps the classifier's guess in view.scope.
+  const tabbed = view.scope !== null;
   return (
     <section aria-label={w["shots.draft.type"]}>
       <Choice
@@ -131,17 +134,17 @@ export function DraftHeader(props: {
         onChange={props.retype}
         disabled={readOnly}
       />
-      {scope !== null && !view.scopeSure && !readOnly && (
+      {tabbed && choice.scope === null && !readOnly && (
         <p className="mt-3 border-l-4 border-yarn pl-2">{w["shots.draft.confirmTab"]}</p>
       )}
-      {scope !== null && (
+      {tabbed && (
         <Choice
           legend={w["shots.draft.tab"]}
           options={(["daily", "weekly"] as const).map((s) => ({
             value: s,
             label: w[`shots.scope.${s}`] ?? s,
           }))}
-          value={scope}
+          value={choice.scope}
           onChange={props.set.scope}
           disabled={readOnly}
         />

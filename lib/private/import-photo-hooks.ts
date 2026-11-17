@@ -15,7 +15,7 @@ import { factsOf, saveFacts, type FactChange } from "./member-facts";
 import { parseOnboarding } from "./onboarding-parse";
 import { saveSecretOpsDraft } from "./thefts-import";
 
-/** `Lv.28 [OGs] Kasoar-Thorne`: a chat sender line; group 1 is the name (its first word). */
+/** `Lv.28 [OGs] Ana`: a chat sender line; group 1 is the name (its first word). */
 const SENDER = /\.\s?\d{1,2}\b.{0,12}[[({]\s*[A-Za-z0-9]{1,6}\s*[\])}]\s*(\S+)/;
 /** AD Tech at this value is complete. */
 const AD_COMPLETE = 100;

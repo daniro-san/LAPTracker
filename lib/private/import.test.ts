@@ -33,8 +33,8 @@ beforeAll(async () => {
 beforeEach(async () => {
   await truncateAll(db);
   await saveWorkspace(db, { unionId: OGS, slug: "ogs", discordGuildId: "1", leaderRoleIds: ["2"] });
-  // The OGs roster of 2026-11-16 (101 members, names only), as the newest daily read.
-  const members = ogsCandidates();
+  // The OGs roster of 2026-11-16 (public names), plus an invented member "Ana" for the chat tests.
+  const members = [...ogsCandidates(), { uid: 1, names: ["Ana"] }];
   await db.insert(dailyReads).values({ day: "2026-11-15", startedAt: NOW, status: "complete" });
   await db.insert(dailyRosters).values({
     readDay: "2026-11-15",
@@ -162,15 +162,15 @@ describe("the hooks of other sessions' destinations", () => {
 
   it("appends member facts from a chat, refuses a stale fact with the newer value, then saves", async () => {
     const [ana, bo] = [await officer("1", "Ana"), await officer("2", "Bo")];
-    // Invented lines in the shape the OCR reads from a chat (Lv misread as CIEL).
+    // Invented sender and messages in the shape of a chat (the member "Ana" is added to the roster).
     const chat = [
       "Kingdom Alliance | Private Chat",
-      "WA CIEL. 27 ¢ [0Gs] Arephrey",
-      "9.9 M for main squad",
-      "WA CIEL. 27 ¢ [0Gs] Arephrey",
-      "AD tech 69%",
-      "WA CIEL. 28 ¢ [0Gs] xCage",
-      "thanks",
+      "WA XX. 27 ¢ [0Gs] Ana",
+      "Main squad 12.3 M",
+      "WA XX. 27 ¢ [0Gs] Ana",
+      "AD Tech 55%",
+      "WA XX. 28 ¢ [0Gs] Bo",
+      "Hello everyone",
     ];
     const { drafts } = await createDrafts(
       db,
@@ -186,19 +186,19 @@ describe("the hooks of other sessions' destinations", () => {
       db,
       bo,
       uid,
-      [{ field: "adTech", version: 0, value: 74, source: "officer" }],
+      [{ field: "adTech", version: 0, value: 60, source: "officer" }],
       NOW,
     );
     const rows = [
-      { uid, value: 9_900_000, field: "squadMight" as const, version: 0 },
-      { uid, value: 69, field: "adTech" as const, version: 0 },
+      { uid, value: 12_300_000, field: "squadMight" as const, version: 0 },
+      { uid, value: 55, field: "adTech" as const, version: 0 },
     ];
     const base = { version: 1, scope: null, day: null, weekBefore: false };
     const clock = { now: NOW, zone: "Etc/GMT+2" };
     const stale = await saveDraft(db, ana, drafts[0]?.id ?? 0, { ...base, rows }, clock);
     expect(stale).toMatchObject({ ok: false, code: "conflict" });
     expect(stale.ok === false && stale.detail).toEqual([
-      expect.objectContaining({ uid, field: "adTech", value: 74, version: 1 }),
+      expect.objectContaining({ uid, field: "adTech", value: 60, version: 1 }),
     ]);
     // Nothing was written, and the draft is still open: "Use mine" saves on the newer version.
     expect((await factsOf(db, ana)).get(uid)?.squadMight).toBeUndefined();
@@ -207,8 +207,99 @@ describe("the hooks of other sessions' destinations", () => {
       ok: true,
     });
     const facts = (await factsOf(db, ana)).get(uid);
-    expect(facts?.adTech).toMatchObject({ value: 69, version: 2, source: "message" });
-    expect(facts?.squadMight).toMatchObject({ value: 9_900_000, version: 1 });
+    expect(facts?.adTech).toMatchObject({ value: 55, version: 2, source: "message" });
+    expect(facts?.squadMight).toMatchObject({ value: 12_300_000, version: 1 });
+  });
+});
+
+describe("saving, kind by kind", () => {
+  const clock = { now: NOW, zone: "Etc/GMT+2" };
+  const base = { version: 1, scope: null, day: null, weekBefore: false } as const;
+
+  it("makes no draft from a notice it does not recognise, nor from a kind that saves later", async () => {
+    const notice = ["SCHEDULE | MONDAY", "Good morning", "See you later"];
+    const damage = ["Reward Details", "Damage Phase: 5", "MVP Bonus: Reward x10"];
+    const result = await createDrafts(
+      db,
+      await officer("1", "Ana"),
+      [notice, damage].map((lines) => ({ lines, classified: classifyScreen(lines) })),
+      sent(),
+    );
+    expect(result).toEqual({
+      drafts: [],
+      outcomes: [{ status: "unrecognised" }, { status: "soon", kind: "damage_event" }],
+    });
+  });
+
+  it("does not write AD Tech again for a member already at 100%, and still saves the squad might", async () => {
+    const ana = await officer("1", "Ana");
+    await saveFacts(
+      db,
+      ana,
+      1,
+      [{ field: "adTech", version: 0, value: 100, source: "officer" }],
+      NOW,
+    );
+    const chat = [
+      "WA XX. 27 ¢ [0Gs] Ana",
+      "Main squad 12.3 M",
+      "WA XX. 27 ¢ [0Gs] Ana",
+      "AD Tech 55%",
+      "WA XX. 28 ¢ [0Gs] Bo",
+      "Hello everyone",
+    ];
+    const { drafts } = await createDrafts(
+      db,
+      ana,
+      [{ lines: chat, classified: classifyScreen(chat) }],
+      sent(),
+    );
+    const rows = [
+      { uid: 1, value: 12_300_000, field: "squadMight" as const, version: 0 },
+      { uid: 1, value: 55, field: "adTech" as const, version: 1 },
+    ];
+    expect(await saveDraft(db, ana, drafts[0]?.id ?? 0, { ...base, rows }, clock)).toEqual({
+      ok: true,
+    });
+    const facts = (await factsOf(db, ana)).get(1);
+    expect(facts?.adTech).toMatchObject({ value: 100, version: 1 });
+    expect(facts?.squadMight).toMatchObject({ value: 12_300_000, version: 1 });
+  });
+
+  it("keeps a Kills check as counts only", async () => {
+    const ana = await officer("1", "Ana");
+    const { drafts } = await createDrafts(db, ana, pictures("89-kills-phone"), sent());
+    const [draft] = await db.select().from(screenshotDrafts);
+    const rows = (draft?.rows ?? []).flatMap((r) =>
+      r.match.status === "sure" && r.value !== null ? [{ uid: r.match.uid, value: r.value }] : [],
+    );
+    await saveDraft(db, ana, drafts[0]?.id ?? 0, { ...base, rows }, clock);
+    const checks = await db.execute<{ kind: string; rows: number; compared: number }>(
+      sql`select kind, rows, compared from screenshot_checks`,
+    );
+    // The test roster's kills are 0, so every compared row differs; only the counts are stored.
+    expect(checks.rows).toEqual([{ kind: "kills", rows: rows.length, compared: rows.length }]);
+  });
+
+  it("stores an Alliance Duel daily page under the day tab and the week the officer picked", async () => {
+    const ana = await officer("1", "Ana");
+    const { drafts } = await createDrafts(
+      db,
+      ana,
+      pictures("99-alliance-duel-daily-phone"),
+      sent(),
+    );
+    const [draft] = await db.select().from(screenshotDrafts);
+    const rows = (draft?.rows ?? []).flatMap((r) =>
+      r.match.status === "sure" && r.value !== null ? [{ uid: r.match.uid, value: r.value }] : [],
+    );
+    const input: SaveInput = { version: 1, scope: "daily", day: "tue", weekBefore: true, rows };
+    expect(await saveDraft(db, ana, drafts[0]?.id ?? 0, input, clock)).toEqual({ ok: true });
+    const saved = await db
+      .selectDistinct({ week: allianceDuelPoints.week, day: allianceDuelPoints.day })
+      .from(allianceDuelPoints);
+    // The picture's day is Monday 2026-11-16; the week before starts on Monday 2026-11-09.
+    expect(saved).toEqual([{ week: "2026-11-09", day: "tue" }]);
   });
 });
 

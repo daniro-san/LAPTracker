@@ -16,7 +16,7 @@ import { summaryOf, type DraftSummary } from "./import";
 import type { ImportKind, PhotoFact, Scope } from "./import-kinds";
 import { canSave, duelSaved, oursFor } from "./import-save";
 import { factsOf } from "./member-facts";
-import { DAY_MS, gameWeek } from "./member-week";
+import { DAY_MS, gameWeek, isoDay } from "./member-week";
 
 /** The rankings checked against our own reads. */
 const CHECKED: ImportKind[] = ["donation", "might", "kills"];
@@ -100,8 +100,6 @@ export interface DraftView {
   /** Secret Ops report: the member it is preselected for, the officer's "This is me" player when set. */
   victim: number | null;
 }
-
-const isoDay = (ms: number) => new Date(ms).toISOString().slice(0, 10);
 
 /** One draft of the workspace, ready for the review screen; null when it is not there (or expired). */
 export async function draftView(

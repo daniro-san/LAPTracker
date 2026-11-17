@@ -56,14 +56,19 @@ describe("prepareForOcr", () => {
   });
 
   it("makes text dark on white, both dark text on a light row and white text on the green own row", () => {
-    // 20 x 20 RGB, Sub filtered: rows 0-9 light grey with a dark block at x 8-11, rows 10-19 the own
-    // row's green with a white block there.
+    // 20 x 20 RGB, rows 0-9 light grey with a dark block at x 8-11, rows 10-19 the own row's green with
+    // a white block there. Even rows are Sub filtered (1), odd rows Up filtered (2).
     const light = [220, 220, 220];
     const green = [124, 179, 66];
     const pixel = (y: number, x: number) =>
       x >= 8 && x < 12 ? (y < 10 ? [40, 40, 40] : [255, 255, 255]) : y < 10 ? light : green;
+    const samplesOf = (y: number) => Array.from({ length: 20 }, (_, x) => pixel(y, x)).flat();
     const raw = Array.from({ length: 20 }, (_, y) => {
-      const samples = Array.from({ length: 20 }, (_, x) => pixel(y, x)).flat();
+      const samples = samplesOf(y);
+      if (y % 2 === 1) {
+        const above = samplesOf(y - 1);
+        return [2, ...samples.map((v, i) => (v - (above[i] ?? 0)) & 0xff)];
+      }
       return [1, ...samples.map((v, i) => (v - (i >= 3 ? (samples[i - 3] ?? 0) : 0)) & 0xff)];
     });
     const { width, rows } = greyRows(prepareForOcr(png(20, 20, 2, Uint8Array.from(raw.flat()))));

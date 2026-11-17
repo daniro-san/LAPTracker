@@ -6,6 +6,8 @@ One dependency rule and one injection point. Source: docs/IMPLEMENTATION_PLAN.md
 app/api/*           thin HTTP handlers: auth → parse → call lib → respond. No logic.
 app/(pages)/*       UI. Reads through lib/queries only.
 app/(private)/*     the workspace (D71): pages under w/[slug], handlers under api/w (one fixed callback, D73).
+                    One handler sits outside api/w: api/discord/interactions (public, checked by Discord's
+                    signature instead of a session, then the officer rule; D96).
                     Reaches data only through lib/private, after requireWorkspace.
 lib/collector.ts    domain: runSnapshot, freshness check, per-alliance fallback, resume logic.
 lib/compute.ts      pure functions only — sums, deltas, freshness predicate, roster diff; no IO, no Date.now() (passed in).
@@ -39,9 +41,6 @@ lib/private/*.ts    the workspace (D71): requireWorkspace and its branded Worksp
                     (pure: attacker key, groups and counts, follow-up state), thefts-import.ts (the screenshot
                     import's save hook for Secret Ops reports), dictionary.thefts.ts (its words); tables in
                     lib/schema-thefts.ts, reads and writes in lib/repo/thefts.ts.
-lib/ai/*.ts         Groq (D81): the chat client with its model fallback (groq.ts), the notice prompts and plain-text
-                    cleanup (notice-writing.ts), the game glossary (glossary.ts). Reached through AppContext.ai.
-                    their table reads are in lib/repo/workspace-rosters.ts.
                     The screenshot import (D96): import.ts (drafts, save, discard, change of type),
                     import-kinds.ts (the kinds and the SaveHook other sessions plug in), import-save.ts
                     (the hooks: Alliance Duel points, the ranking checks), import-photo-hooks.ts (member
@@ -50,6 +49,8 @@ lib/ai/*.ts         Groq (D81): the chat client with its model fallback (groq.ts
                     import-input.ts (request bodies), discord-interaction.ts (signature, PING, the officer
                     rule, the deferred reply) and import-discord.ts (fetch, read, edit the reply, after the
                     response); their tables are lib/schema-import.ts, read in lib/repo/import.ts.
+lib/ai/*.ts         Groq (D81): the chat client with its model fallback (groq.ts), the notice prompts and plain-text
+                    cleanup (notice-writing.ts), the game glossary (glossary.ts). Reached through AppContext.ai.
 lib/queries/*.ts    read models for the UI (joins, sorting, name history). Never write. Never expose BLOCKED_ROSTER_KEYS.
                     lib/queries/server-players.ts: `serverPlayers`, the tracked alliances' newest roster names (D97).
                     lib/queries/samples.ts: `eventSamples`, an event's Start, samples and End (D69).
@@ -91,7 +92,7 @@ lib/import-command.ts the Discord message command's definition, shared by the in
 
 ## Dependency rule
 
-- `app → lib/{route, auth, run, tick, rehearsal, schedule, queries, repo, images, analytics, ai}`; `lib/private → lib/analytics/events` (the sign-in mark, D77); `lib/private → lib/screenshot` (the name matcher, for the sheet import, D80); `lib/run → lib/{collector, queries}` (queries: the public Discord message's numbers).
+- `app → lib/{route, auth, run, tick, rehearsal, schedule, queries, repo, images, analytics, ai}`; `lib/private → lib/analytics/events` (the sign-in mark, D77); `lib/private → lib/screenshot` (the name matcher, for the sheet import, D80; the OCR, the classifier and the parsers, for the screenshot import, D96); `lib/run → lib/{collector, queries}` (queries: the public Discord message's numbers).
 - `lib/collector → lib/{compute, sources, repo, logger, notify}` **through the `Deps` object passed in**.
 - `lib/compute`, `lib/budget` and `lib/compact` import nothing from the project.
 - `lib/logger` imports only `lib/repo` and `lib/redact`.

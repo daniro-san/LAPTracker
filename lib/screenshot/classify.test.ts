@@ -39,19 +39,17 @@ describe("classifyScreen", () => {
   });
 
   it("needs a chat page's several sender lines; a notice with two comments is not a chat", () => {
-    // Invented lines in the shape the OCR read from the R4&R5 chat (Lv misread as CIEL).
-    const message = (name: string, text: string) => [`WA CIEL. 28 ¢ [0Gs] ${name}`, text];
+    // Invented names and messages in the shape of a chat sender line (the Lv is often misread).
+    const message = (name: string, text: string) => [`WA XX. 28 ¢ [0Gs] ${name}`, text];
     const chat = [
       "Kingdom Alliance | Private Chat",
-      ...message("Kasoar-Thorne", "Floki 9.9 M for main squad"),
-      ...message("Arephrey", "but they don't really want to kick"),
-      ...message("Kasoar-Thorne", "69% for AD Tech"),
+      ...message("Ana", "Main squad 12.3 M"),
+      ...message("Bo", "Hello everyone"),
+      ...message("Ana", "AD Tech 55%"),
     ];
     expect(classifyScreen(chat).kind).toBe("member_update");
-    const notice = ["SCHEDULE | MONDAY", ...message("Arephrey", "alliance duel - economy week")];
-    expect(classifyScreen([...notice, ...message("LD21", "Is this the server time?")]).kind).toBe(
-      null,
-    );
+    const notice = ["SCHEDULE | MONDAY", ...message("Bo", "Good morning")];
+    expect(classifyScreen([...notice, ...message("Cy", "See you later")]).kind).toBe(null);
   });
 
   it("recognises a map, and says nothing about a picture it cannot place", () => {
@@ -66,17 +64,26 @@ describe("classifyScreen", () => {
 });
 
 describe("readScreen", () => {
-  it("reads a picture again in plain grey when the first reading is not recognised", async () => {
+  it("converts once, and reads again in plain grey when the first reading is not recognised", async () => {
     const calls: unknown[] = [];
+    const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47]);
     const reader: ScreenshotReader = {
-      read: async (_image, options) => {
-        calls.push(options);
+      read: async (image, options) => {
+        calls.push([image === png, options]);
         return options?.flatten === false ? ["0/s 15 0/s", "Map", "Mail"] : ["?"];
+      },
+      toPng: async () => {
+        calls.push("toPng");
+        return png;
       },
       close: async () => undefined,
     };
     const read = await readScreen(reader, new Uint8Array(1), { statusBar: true });
     expect(read.classified.kind).toBe("map");
-    expect(calls).toEqual([{ statusBar: true }, { statusBar: true, flatten: false }]);
+    expect(calls).toEqual([
+      "toPng",
+      [true, { statusBar: true }],
+      [true, { statusBar: true, flatten: false }],
+    ]);
   });
 });

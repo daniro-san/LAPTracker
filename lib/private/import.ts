@@ -18,6 +18,7 @@ import { matchName, type NameCandidate } from "../screenshot/match-name";
 import type { WorkspaceAccess } from "./access";
 import {
   SaveRefused,
+  SCOPED,
   type ImportKind,
   type PhotoFact,
   type ReadRow,
@@ -28,7 +29,7 @@ import {
   type Screen,
 } from "./import-kinds";
 import { SAVE_HOOKS } from "./import-save";
-import { DAY_MS, gameWeek } from "./member-week";
+import { DAY_MS, gameWeek, isoDay } from "./member-week";
 
 /** A draft not saved or discarded is deleted after this long (issue 299). */
 export const DRAFT_DAYS = 7;
@@ -55,6 +56,8 @@ export interface DraftSummary {
   id: number;
   kind: ImportKind;
   scope: Scope | null;
+  /** False when Daily or Weekly is only a guess (the picture shows both tabs alike). */
+  scopeSure: boolean;
   rows: number;
   doubtful: number;
   notFound: number;
@@ -68,8 +71,6 @@ export interface Sent {
   pictureDay: string;
   now: Date;
 }
-
-const isoDay = (ms: number) => new Date(ms).toISOString().slice(0, 10);
 
 /** The workspace's members as name candidates: the newest daily roster, with names seen recently. */
 async function candidatesOf(db: Db, access: WorkspaceAccess, now: Date) {
@@ -174,6 +175,7 @@ export async function createDrafts(
       id: 0,
       kind: screen.kind,
       scope: screen.scope,
+      scopeSure,
       leftOut: read.leftOut,
       at,
     });
@@ -339,9 +341,13 @@ export async function retype(
   const hook = SAVE_HOOKS[screen.kind];
   if (!found) return { ok: false, code: "gone" };
   if (!hook) return { ok: false, code: "cannot_save" };
-  const read = hook.read(found.draft.pages, screen.scope, ownTag(access));
+  // A tab the officer has not picked yet keeps the draft's guess, still unconfirmed.
+  const scoped = SCOPED.includes(screen.kind);
+  const scope = scoped ? (screen.scope ?? (found.draft.scope as Scope | null) ?? "weekly") : null;
+  const read = hook.read(found.draft.pages, scope, ownTag(access));
   const rows = matched(read.rows, await candidatesOf(db, access, now), hook);
-  const change = { ...screen, scopeSure: true, rows, leftOut: read.leftOut };
+  const sure = !scoped || screen.scope !== null;
+  const change = { kind: screen.kind, scope, scopeSure: sure, rows, leftOut: read.leftOut };
   return (await retypeDraft(db, access.workspaceId, id, version, change, now))
     ? { ok: true }
     : whyNot(db, access, id, now);

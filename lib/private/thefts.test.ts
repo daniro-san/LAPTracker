@@ -108,17 +108,20 @@ describe("the Secret Ops report save hook (issues 299, 321)", () => {
 
   it("saves the thefts, kind null as not known, and leaves out help and our own members", async () => {
     const ogs = await signedIn("ogs");
-    expect(entries.filter((e) => e.kind === null)).toHaveLength(2);
+    expect(entries.filter((e) => e.kind === null)).toHaveLength(4);
     expect(await saveSecretOpsDraft(db, ogs, draft, CLOCK)).toEqual({
-      saved: 5,
-      // 11k re-recorded image 54: its second help line is unreadable (no sentence, no time), so not an entry.
-      left: { help: 1, own: 1, duplicate: 0 },
+      saved: 6,
+      // 11k re-recorded image 54: a stray `[lel` and the second help line (sentence and time misread)
+      // come back with kind null; the first is saved as not known, the second is our own member.
+      left: { help: 1, own: 2, duplicate: 0 },
     });
     const rows = await listThefts(db, ogs.workspaceId);
     expect(
       rows.map((r) => [r.attackerKey, r.attackerTag, r.at?.toISOString() ?? null, r.stolen]),
     ).toEqual([
       ["name:stene", "1b8R", "2026-11-15T13:48:00.000Z", "quest_rewards"],
+      // The stray `[lel`: kind null and no time, saved as not known for the officer to remove.
+      ["name:lel", "", null, null],
       ["uid:41", "RPD", "2026-11-15T13:47:00.000Z", "quest_rewards"],
       ["uid:41", "RPD", "2026-11-15T13:47:00.000Z", "quest_rewards"],
       ["name:cinalice", "ANM", "2026-11-14T19:34:00.000Z", "quest_rewards"],
@@ -133,9 +136,9 @@ describe("the Secret Ops report save hook (issues 299, 321)", () => {
     await saveSecretOpsDraft(db, ogs, draft, CLOCK);
     expect(await saveSecretOpsDraft(db, ogs, draft, CLOCK)).toMatchObject({
       saved: 0,
-      left: { duplicate: 5 },
+      left: { duplicate: 6 },
     });
-    expect(await listThefts(db, ogs.workspaceId)).toHaveLength(5);
+    expect(await listThefts(db, ogs.workspaceId)).toHaveLength(6);
   });
 
   it("refuses a member who is not in the alliance", async () => {

@@ -9,6 +9,7 @@ import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
 import { requireWorkspace } from "@/lib/private/access";
 import type { WorkspaceLanguage } from "@/lib/private/dictionary";
+import { toReviewCount } from "@/lib/private/import-view";
 import { SLUG } from "@/lib/private/sign-in";
 import { theftsView } from "@/lib/private/thefts";
 
@@ -52,9 +53,14 @@ export default async function TheftsPage({ params }: { params: Promise<{ slug: s
   const now = new Date();
   const zone = getEnv().SERVER_TZ;
   // INVARIANT workspace.access-first: nothing private is read before this check.
-  const { access, view } = await withPageDb(async (db) => {
+  const { access, view, waiting } = await withPageDb(async (db) => {
     const access = await requireWorkspace(db, slug, jar, now);
-    return { access, view: access.ok ? await theftsView(db, access, { now, zone }) : null };
+    const waiting = access.ok ? await toReviewCount(db, access, now) : 0;
+    return {
+      access,
+      waiting,
+      view: access.ok ? await theftsView(db, access, { now, zone }) : null,
+    };
   });
   if (!access.ok) {
     refuse(slug, access.reason);
@@ -65,7 +71,7 @@ export default async function TheftsPage({ params }: { params: Promise<{ slug: s
   const words = theftWords(t);
   const f = formats(language, zone);
   return (
-    <SignedInFrame access={access} language={language} t={t} current="days">
+    <SignedInFrame access={access} language={language} t={t} current="days" waiting={waiting}>
       <h1 className="font-display text-display-lg">{t["thefts.title"]}</h1>
       <p className="mt-1 text-body-sm text-ink/80">{t["thefts.timesNote"]}</p>
       <p className="mt-2 text-body-sm text-ink/80">{t["thefts.lead"]}</p>

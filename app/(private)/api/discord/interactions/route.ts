@@ -5,7 +5,7 @@
 import { after } from "next/server";
 
 import { handleInteraction } from "@/lib/private/discord-interaction";
-import { NO_STORE } from "@/lib/private/http";
+import { NO_STORE, privateError } from "@/lib/private/http";
 import { runJob } from "@/lib/private/import-discord";
 import { openOcr } from "@/lib/private/import-read";
 import { withContext } from "@/lib/route";
@@ -17,10 +17,10 @@ const MAX_BODY = 256 * 1024;
 
 export async function POST(request: Request): Promise<Response> {
   if (Number(request.headers.get("content-length") ?? 0) > MAX_BODY) {
-    return Response.json({ code: "too_large" }, { status: 413, headers: NO_STORE });
+    return privateError(413, "too_large");
   }
   const body = await request.text();
-  if (body.length > MAX_BODY) return Response.json({ code: "too_large" }, { status: 413 });
+  if (body.length > MAX_BODY) return privateError(413, "too_large");
   return withContext("/api/discord/interactions", async (ctx, db) => {
     const handled = await handleInteraction(
       db,

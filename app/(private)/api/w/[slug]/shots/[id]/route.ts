@@ -11,7 +11,7 @@ import {
   requestCookies,
 } from "@/lib/private/http";
 import { discardDraft, retype, saveDraft, type SaveResult } from "@/lib/private/import";
-import { actionBody, screenOf } from "@/lib/private/import-input";
+import { actionBody } from "@/lib/private/import-input";
 import { privateLog } from "@/lib/private/log";
 import { SLUG } from "@/lib/private/sign-in";
 import { withContext } from "@/lib/route";
@@ -49,7 +49,7 @@ export async function POST(
         ? saveDraft(db, access, draft, input, { now, zone: ctx.env.SERVER_TZ })
         : input.action === "discard"
           ? discardDraft(db, access, draft, input.version, now)
-          : retype(db, access, draft, input.version, screenOf(input.kind, input.scope), now),
+          : retype(db, access, draft, input.version, { kind: input.kind, scope: input.scope }, now),
     );
     privateLog(`w.import.${input.action}`, {
       workspace: access.workspaceId,

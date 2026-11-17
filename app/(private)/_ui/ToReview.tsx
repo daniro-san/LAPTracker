@@ -59,10 +59,7 @@ export function ToReview(props: {
                 href={`/w/${slug}/shots/${d.id}`}
                 className="flex min-h-11 flex-col gap-0.5 border border-rule px-3 py-2"
               >
-                <span className="font-semibold">
-                  {kindLabel(t, d.kind, d.scope)}
-                  {!d.scopeSure && " ?"}
-                </span>
+                <span className="font-semibold">{kindLabel(t, d.kind, d.scope, d.scopeSure)}</span>
                 <span className="text-body-sm tabular-nums">{draftCounts(t, language, d)}</span>
                 <span className="text-body-sm text-ink/75">
                   {[

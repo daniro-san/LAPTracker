@@ -11,11 +11,12 @@ import { requireWorkspace } from "@/lib/private/access";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import type { ImportKind } from "@/lib/private/import-kinds";
 import { SAVED_KINDS } from "@/lib/private/import-save";
-import { draftView, type DraftView } from "@/lib/private/import-view";
+import { draftView, toReviewCount, type DraftView } from "@/lib/private/import-view";
 import { counted, kindLabel } from "@/lib/private/import-words";
 import { SLUG } from "@/lib/private/sign-in";
 
-import { DraftReview, type ReviewText } from "../../../../_ui/DraftReview";
+import { type ReviewText } from "../../../../_ui/DraftHeader";
+import { DraftReview } from "../../../../_ui/DraftReview";
 import { SignedInFrame, workspaceWords } from "../../../../_ui/Frame";
 import { refuse } from "../../../../_ui/refuse";
 import { SourceBadge } from "../../../../_ui/SourceBadge";
@@ -76,9 +77,14 @@ export default async function DraftPage({
   const jar = await cookies();
   const now = new Date();
   // INVARIANT workspace.access-first: nothing private is read before this check.
-  const { access, view } = await withPageDb(async (db) => {
+  const { access, view, waiting } = await withPageDb(async (db) => {
     const access = await requireWorkspace(db, slug, jar, now);
-    return { access, view: access.ok ? await draftView(db, access, Number(id), now) : null };
+    const waiting = access.ok ? await toReviewCount(db, access, now) : 0;
+    return {
+      access,
+      waiting,
+      view: access.ok ? await draftView(db, access, Number(id), now) : null,
+    };
   });
   if (!access.ok) {
     refuse(slug, access.reason);
@@ -90,7 +96,7 @@ export default async function DraftPage({
     string
   >;
   return (
-    <SignedInFrame access={access} language={language} t={t} current="home">
+    <SignedInFrame access={access} language={language} t={t} current="home" waiting={waiting}>
       <p>
         <a
           href={`/w/${slug}`}
@@ -119,7 +125,9 @@ function Draft(props: {
   const by = view.doneBy ?? t["shots.someone"];
   return (
     <>
-      <h1 className="mt-2 font-display text-display-lg">{kindLabel(t, view.kind, view.scope)}</h1>
+      <h1 className="mt-2 font-display text-display-lg">
+        {kindLabel(t, view.kind, view.scope, view.scopeSure)}
+      </h1>
       <p className="mt-1 flex flex-wrap items-center gap-x-2 text-body-sm text-ink/80">
         <span>{counted(t, language, "shots.rows", view.rows.length)}</span>
         <SourceBadge source="photo" label={t["src.photo"]} />
@@ -141,7 +149,7 @@ function Draft(props: {
           {counted(t, language, "shots.leftOut", view.leftOut)}
         </p>
       )}
-      <p className="mt-2 font-semibold">{t["shots.nothingCounts"]}</p>
+      {view.status === "open" && <p className="mt-2 font-semibold">{t["shots.nothingCounts"]}</p>}
       {view.status !== "open" && (
         <p role="status" className="mt-3 border-l-4 border-plum pl-3 font-semibold">
           {fill(t[view.status === "saved" ? "shots.savedBy" : "shots.discardedBy"], { name: by })}

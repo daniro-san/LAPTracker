@@ -6,7 +6,6 @@ import type { ReactNode } from "react";
 
 import { ALLIANCES } from "@/config/alliances";
 import { fill } from "@/lib/copy";
-import { withPageDb } from "@/lib/page";
 import type { WorkspaceAccess } from "@/lib/private/access";
 import { WORKSPACE_INTRO_COOKIE, WORKSPACE_LANG_COOKIE } from "@/lib/private/cookies";
 import {
@@ -15,7 +14,6 @@ import {
   type WorkspaceDictionary,
   type WorkspaceLanguage,
 } from "@/lib/private/dictionary";
-import { toReviewCount } from "@/lib/private/import-view";
 
 import { FirstUse } from "./FirstUse";
 import { LanguageSwitch } from "./LanguageSwitch";
@@ -176,24 +174,26 @@ export async function Frame({
 
 /**
  * The frame once signed in: the alliance under the name, "Signed in as … · Sign out", the tabs with the
- * count of screenshot drafts waiting for review on Home.
+ * count of screenshot drafts waiting for review on Home (`waiting`, read by the page in its own
+ * database read: the frame opens no connection).
  */
-export async function SignedInFrame({
+export function SignedInFrame({
   access,
   language,
   t,
   current,
+  waiting,
   children,
 }: {
   access: WorkspaceAccess;
   language: WorkspaceLanguage;
   t: WorkspaceDictionary;
   current: TabId;
+  waiting: number;
   children: ReactNode;
 }) {
   const alliance = ALLIANCES.find((a) => a.unionId === access.unionId);
   const name = access.user.displayName ?? "";
-  const waiting = await withPageDb((db) => toReviewCount(db, access, new Date()));
   const account = (
     <>
       <ProfileSheet

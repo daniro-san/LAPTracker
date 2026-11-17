@@ -126,7 +126,7 @@ export default async function WorkspacePage({
     );
   }
   return (
-    <SignedInFrame access={access} language={language} t={t} current="home">
+    <SignedInFrame access={access} language={language} t={t} current="home" waiting={items.length}>
       <Home slug={slug} t={t} language={language} items={items} />
     </SignedInFrame>
   );

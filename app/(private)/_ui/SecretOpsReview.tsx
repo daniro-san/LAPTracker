@@ -1,10 +1,10 @@
 "use client";
 
 // A Secret Ops report under review (issues 299, 321): the report never says whose it is, so the officer
-// picks the member who was robbed (their own player first, when "This is me" is set; otherwise nobody
-// until chosen). Each entry shows what the sentence said and when, with its attacker's name to fix or
-// the row to drop. Save hands the entries to the thefts log (D97) and says how many it saved and why the
-// others were left out, with a link to the log. Help lines are shown and never saved.
+// picks the member who was robbed (their own player first, when "This is me" is set, with a line saying
+// so; otherwise nobody until chosen). Each entry shows what the sentence said and when, with its attacker's name to fix or
+// the row to drop. Save hands the entries to the thefts log (D97) and says how many it saved and, for the
+// reasons that apply, how many were left out, with a link to the log. Help lines are shown and never saved.
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -12,7 +12,7 @@ import { track } from "@/lib/analytics/events";
 import type { ImportKind } from "@/lib/private/import-kinds";
 import type { DraftView } from "@/lib/private/import-view";
 
-import { Actions, Message, useDraftActions } from "./draft-actions";
+import { Actions, confirmRetype, Message, useDraftActions, type Why } from "./draft-actions";
 import { fillIn, type Words } from "./draft-known";
 import { DraftHeader, type ReviewText } from "./DraftHeader";
 
@@ -26,6 +26,8 @@ type Saved = { saved: number; left: { help: number; own: number; duplicate: numb
 /** A report has no tab, day or week to choose. */
 const NO_CHOICE = { scope: null, day: "sat", weekBefore: false } as const;
 const noop = () => undefined;
+/** A report saves no ranking rows, tab, day or week. */
+const NO_ROWS = { scope: null, day: null, weekBefore: false, rows: [] };
 
 const KIND_WORD = { theft: "shots.entry.theft", help: "shots.entry.help" } as const;
 
@@ -73,12 +75,18 @@ function EntryCard(props: {
   );
 }
 
-/** What the thefts log took and why it left the rest out, with a link to the log. */
+/** "Saved 4 thefts. Left out: 1 help, 2 already in the log." — only the reasons that apply. */
 function SavedThefts({ saved, slug, w }: { saved: Saved; slug: string; w: Words }) {
+  const n = saved.saved;
+  const list = (["help", "own", "duplicate"] as const)
+    .filter((k) => saved.left[k] > 0)
+    .map((k) => fillIn(w[`shots.left.${k}`], { n: saved.left[k] }))
+    .join(", ");
   return (
     <div role="status" className="mt-3 border-l-4 border-plum pl-3">
       <p className="font-semibold">
-        {fillIn(w["shots.theftsSaved"], { n: saved.saved, ...saved.left })}
+        {fillIn(w[n === 1 ? "shots.theftsSaved.one" : "shots.theftsSaved.other"], { n })}
+        {list && ` ${fillIn(w["shots.leftOut.list"], { list })}`}
       </p>
       <a
         href={`/w/${slug}/thefts`}
@@ -93,6 +101,8 @@ function SavedThefts({ saved, slug, w }: { saved: Saved; slug: string; w: Words 
 function Victim(props: {
   members: DraftView["members"];
   value: number | null;
+  /** The officer's own player, preselected by "This is me". */
+  you: number | null;
   onChange: (uid: number | null) => void;
   w: Words;
   readOnly: boolean;
@@ -102,6 +112,11 @@ function Victim(props: {
     <label className="mt-4 block" htmlFor="victim">
       <span className="font-semibold">{w["shots.victim"]}</span>
       <span className="block text-body-sm text-ink/80">{w["shots.victimHelp"]}</span>
+      {props.value !== null && props.value === props.you && (
+        <span className="mt-1 block border-l-4 border-yarn pl-2 text-body-sm">
+          {w["shots.victimYou"]}
+        </span>
+      )}
       <select
         id="victim"
         value={props.value ?? ""}
@@ -118,6 +133,20 @@ function Victim(props: {
       </select>
     </label>
   );
+}
+
+/** Why Save is off: no victim yet, or a theft kept without its attacker's name. */
+function whyNot(
+  view: DraftView,
+  victim: number | null,
+  kept: { row: number; name: string }[],
+  w: Words,
+): Why | null {
+  if (victim === null) return { template: w["shots.why.victim"] };
+  const nameless = kept.find((e) => e.name === "" && view.rows[e.row]?.entry?.kind !== "help");
+  if (!nameless) return null;
+  const row = { label: `#${nameless.row + 1}`, href: `#entry-${nameless.row}` };
+  return { template: w["shots.why.attacker"], row };
 }
 
 export function SecretOpsReview(props: {
@@ -138,19 +167,13 @@ export function SecretOpsReview(props: {
   const { busy, message, act } = useDraftActions(slug, view, w);
   const readOnly = view.status !== "open" || !view.canSave || saved !== null;
   const kept = entries.flatMap((e, row) => (e.dropped ? [] : [{ row, name: e.name.trim() }]));
-  const ready =
-    victim !== null && kept.every((e) => e.name !== "" || view.rows[e.row]?.entry?.kind === "help");
+  const why = whyNot(view, victim, kept, w);
+  const touched =
+    victim !== view.victim || entries.some((e, i) => e.dropped || e.name !== view.rows[i]?.name);
 
   async function save() {
     const report = { victimUid: victim, entries: kept };
-    const answer = await act({
-      action: "save",
-      scope: null,
-      day: null,
-      weekBefore: false,
-      rows: [],
-      report,
-    });
+    const answer = await act({ action: "save", ...NO_ROWS, report });
     if (answer.ok) {
       track("ws_draft_saved", { kind: view.kind });
       setSaved(answer.data.thefts as Saved);
@@ -164,12 +187,14 @@ export function SecretOpsReview(props: {
         set={{ scope: noop, day: noop, weekBefore: noop }}
         readOnly={readOnly}
         retype={(kind) =>
+          confirmRetype(touched, w) &&
           void act({ action: "retype", kind, scope: null }).then((a) => a.ok && router.refresh())
         }
       />
       <Victim
         members={view.members}
         value={victim}
+        you={view.victim}
         onChange={setVictim}
         w={w}
         readOnly={readOnly}
@@ -193,7 +218,7 @@ export function SecretOpsReview(props: {
         <Actions
           w={w}
           busy={busy}
-          ready={ready}
+          why={why}
           onSave={() => void save()}
           onDiscard={() => void act({ action: "discard" }).then((a) => a.ok && router.refresh())}
         />

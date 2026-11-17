@@ -11,12 +11,13 @@ import type { Db } from "../db";
 import { IMPORT_COMMAND } from "../import-command";
 import { findWorkspaceByGuild, recordOfficer } from "../repo/import";
 import { findWorkspaceUser } from "../repo/workspaces";
-import type { WorkspaceAccess } from "./access";
+import { officerAccess, type WorkspaceAccess } from "./access";
 import {
   pickWorkspaceLanguage,
   WORKSPACE_DICTIONARIES,
   type WorkspaceLanguage,
 } from "./dictionary";
+import { privately } from "./http";
 import { privateLog } from "./log";
 import { refusalOf } from "./sign-in";
 
@@ -28,6 +29,8 @@ const REPLY = 4;
 const DEFERRED_REPLY = 5;
 /** A reply only the person who used the command sees. */
 const EPHEMERAL = 64;
+/** How far a signed timestamp may be from now (seconds). */
+const MAX_SKEW_S = 300;
 
 /** Ed25519 over `timestamp + body` with the app's Public Key (hex); false on anything malformed. */
 export function verifySignature(
@@ -131,15 +134,11 @@ async function officerOf(db: Db, interaction: Interaction, now: Date) {
   if (refusalOf(known, viaRole, false, now))
     return { refused: "shots.discord.notOfficer" as const };
   const name = member.nick ?? member.user.global_name ?? member.user.username;
-  const userId = await recordOfficer(db, workspace.id, member.user.id, name);
-  const access = {
-    ok: true,
-    workspaceId: workspace.id,
-    unionId: workspace.unionId,
-    slug: workspace.slug,
-    user: { id: userId, displayName: name },
-  } as WorkspaceAccess;
-  return { access };
+  // A Discord name is what a person typed: a database error leaves as a code alone (D80).
+  const officer = await privately("discord_officer", () =>
+    recordOfficer(db, workspace.id, member.user.id, name),
+  );
+  return { access: officerAccess(workspace, officer) };
 }
 
 const isOurCommand = (i: Interaction) =>
@@ -163,6 +162,10 @@ export async function handleInteraction(
 ): Promise<Handled> {
   if (!verifySignature(publicKey, request.signature, request.timestamp, request.body)) {
     return { status: 401, body: { code: "bad_signature" } };
+  }
+  // A signed request replayed later is refused: its timestamp must be within 5 minutes of now.
+  if (Math.abs(now.getTime() / 1000 - Number(request.timestamp)) > MAX_SKEW_S) {
+    return { status: 401, body: { code: "stale_signature" } };
   }
   const interaction = parse(request.body);
   if (!interaction) return { status: 400, body: { code: "bad_request" } };

@@ -12,7 +12,6 @@ export const shotsFr: ShotsWords = {
     "Classements : activez My Alliance d’abord. Plusieurs captures d’une longue liste font un seul brouillon. Les captures sont lues, puis oubliées.",
   "shots.reading": "Lecture {n} sur {total}…",
   "shots.tooMany": "Envoyez au plus {n} captures à la fois.",
-  "shots.notPicture": "Ce fichier n’est pas une image.",
   "shots.readFailed": "Cette capture n’a pas pu être lue.",
   "shots.badge": "{n} à vérifier",
   "shots.sentBy": "Envoyé par {name}",
@@ -66,12 +65,12 @@ export const shotsFr: ShotsWords = {
   "shots.where.duelWeek": "points d’Alliance Duel de chaque membre, {week}",
   "shots.where.duelDay": "points d’Alliance Duel de chaque membre, {day}",
   "shots.where.check":
-    "une vérification avec nos relevés de fin de journée : seul le nombre de lignes concordantes est gardé, pas les valeurs",
-  "shots.draft.kept": "Gardé jusqu’au {date}. La capture elle-même n’a pas été gardée.",
+    "Rien n’est écrit dans les membres. Nous comparons avec les données du jeu et ne gardons que le nombre de lignes identiques.",
+  "shots.draft.kept":
+    "Gardé jusqu’au {date}, puis supprimé. La capture elle-même n’a pas été gardée.",
   "shots.draft.pages.one": "Lu depuis {n} capture.",
   "shots.draft.pages.other": "Lu depuis {n} captures.",
-  "shots.match.sure": "sûr",
-  "shots.match.doubtful": "incertain",
+  "shots.match.doubtful": "vérifiez le membre",
   "shots.match.none": "introuvable",
   "shots.read": "Lu « {name} »",
   "shots.member": "Membre",
@@ -83,10 +82,9 @@ export const shotsFr: ShotsWords = {
   "shots.flag.order": "Plus haut que la ligne du dessus : vérifiez le nombre.",
   "shots.flag.points": "Le nombre n’a pas été lu : saisissez-le.",
   "shots.was": "enregistré avant : {v}",
-  "shots.ours": "nous avons lu {v}",
-  "shots.oursNone": "nous n’avons pas de relevé pour cela",
+  "shots.ours": "Données du jeu : {v}",
+  "shots.oursNone": "Pas de données du jeu pour ce membre",
   "shots.same": "identique",
-  "shots.apart": "écart de {d}",
   "shots.duel.daysMore":
     "Les jours enregistrés font {sum} au total, plus que le total de cette semaine.",
   "shots.duel.overWeek": "Plus que les {v} enregistrés pour toute la semaine.",
@@ -113,7 +111,8 @@ export const shotsFr: ShotsWords = {
   "shots.factChange": "{field} : {was} → {now}",
   "shots.factNew": "{field} : {now} (rien avant)",
   "shots.adComplete": "L’AD Tech est déjà à 100 % : complet, pas réécrit.",
-  "shots.conflict": "Un autre officier a enregistré {theirs} entre-temps. La capture dit {mine}.",
+  "shots.conflict":
+    "Un autre officier a enregistré une valeur plus récente. {field} : {theirs} → {mine}",
   "shots.keepTheirs": "Garder {theirs}",
   "shots.useMine": "Utiliser {mine}",
   "shots.e.conflict":
@@ -122,14 +121,36 @@ export const shotsFr: ShotsWords = {
   "shots.e.attacker_missing":
     "Chaque vol a besoin du nom de l’attaquant. Saisissez-le, ou retirez la ligne.",
   "shots.victim": "À qui est ce rapport ?",
-  "shots.victimHelp":
-    "Le membre volé. Votre propre joueur est choisi quand vous avez indiqué « C’est moi ».",
+  "shots.victimHelp": "Le rapport ne le dit pas. Choisissez le membre qui a été volé.",
   "shots.attacker": "Attaquant",
   "shots.entry.theft": "a volé des récompenses de quête",
   "shots.entry.help": "a aidé (pas enregistré)",
   "shots.entry.unknown": "phrase illisible",
   "shots.at": "{at}, heure du serveur",
-  "shots.theftsSaved":
-    "{n} vols enregistrés. Écartés : {help} aides, {own} de notre alliance, {duplicate} déjà dans le journal.",
   "shots.openThefts": "Ouvrir le journal des vols",
+  "shots.where.pickTab": "Choisissez d’abord l’onglet : il décide où ceci est enregistré.",
+  "shots.higher": "la capture est {d} au-dessus",
+  "shots.lower": "la capture est {d} en dessous",
+  "shots.closest": "Noms les plus proches",
+  "shots.why.member": "La ligne {row} a besoin d’un membre. Choisissez-en un, ou retirez la ligne.",
+  "shots.why.value": "La ligne {row} a besoin d’une valeur. Saisissez-la, ou retirez la ligne.",
+  "shots.why.conflict":
+    "Ligne {row} : un autre officier a enregistré une valeur plus récente. Répondez dessous.",
+  "shots.why.tab": "Choisissez l’onglet que montre la capture : du jour ou de la semaine.",
+  "shots.why.victim": "Choisissez à qui est ce rapport.",
+  "shots.why.attacker":
+    "La ligne {row} a besoin du nom de l’attaquant. Saisissez-le, ou retirez la ligne.",
+  "shots.kindUnsure": "{kind} — du jour ou de la semaine ?",
+  "shots.victimYou": "Réglé sur vous. Changez-le si ce rapport est celui de quelqu’un d’autre.",
+  "shots.keptTheirs": "{theirs} gardé. Touchez pour utiliser {mine} à la place.",
+  "shots.theftsSaved.one": "{n} vol enregistré.",
+  "shots.theftsSaved.other": "{n} vols enregistrés.",
+  "shots.leftOut.list": "Écartés : {list}.",
+  "shots.left.help": "{n} aides",
+  "shots.left.own": "{n} de notre alliance",
+  "shots.left.duplicate": "{n} déjà dans le journal",
+  "shots.retypeConfirm":
+    "Changer le type relit les captures et efface vos corrections. Le changer ?",
+  "shots.discord.unrecognised":
+    "Non reconnue — rien n’a été enregistré. Envoyez-la depuis le bureau pour choisir le type.",
 };

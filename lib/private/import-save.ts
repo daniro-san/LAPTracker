@@ -10,7 +10,7 @@ import { nameKey } from "../screenshot/name-key";
 import { parseAllianceDuelRanking } from "../screenshot/parse-alliance-duel";
 import { parseRanking } from "../screenshot/parse-ranking";
 import type { WorkspaceAccess } from "./access";
-import type { ImportKind, ReadRow, SaveHook, Saving, Scope, Screen } from "./import-kinds";
+import type { ImportKind, ReadRow, SaveHook, Screen } from "./import-kinds";
 import { memberUpdate, secretOps } from "./import-photo-hooks";
 import { gameWeek, weekDonations, weekTotal } from "./member-week";
 
@@ -149,5 +149,3 @@ export async function duelSaved(
   }
   return saved;
 }
-
-export type { Saving, Scope };

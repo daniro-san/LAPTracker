@@ -5,6 +5,7 @@
 // The French sentences come from screenshots; the English and Portuguese ones are NOT verified
 // against the game: they are built from the French structure (the verb, then "your quest
 // rewards"), so check them against a real report before relying on them.
+import { nameKey } from "./name-key";
 
 export interface SecretOpsEntry {
   /** null when no sentence under the name was readable: a person has to say which it is. */
@@ -50,8 +51,8 @@ function kindOf(sentence: string): SecretOpsEntry["kind"] {
 
 /**
  * Entries in the order shown, newest first in the game. An entry with no readable sentence (cut off at
- * an edge) has `kind: null`. A bracket with neither a sentence nor a time under it is OCR noise, not an
- * entry (11k: the re-recorded image 54 read a stray `= [lel`).
+ * an edge) has `kind: null`, and a person says which it is. A bracket with no readable name, no sentence
+ * and no time is OCR noise, not an entry.
  */
 export function parseSecretOpsReport(lines: readonly string[]): SecretOpsEntry[] {
   const starts = lines.flatMap((line, at) => (START.test(line) ? [at] : []));
@@ -65,6 +66,6 @@ export function parseSecretOpsReport(lines: readonly string[]): SecretOpsEntry[]
       at: timeOf(line) ?? timeOf(sentence),
       raw: line,
     };
-    return entry.kind === null && entry.at === null ? [] : [entry];
+    return entry.kind === null && entry.at === null && nameKey(entry.name) === "" ? [] : [entry];
   });
 }

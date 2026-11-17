@@ -5,11 +5,17 @@ import type { WorkspaceDictionary, WorkspaceLanguage } from "./dictionary";
 import type { DraftSummary, Outcome } from "./import";
 import type { ImportKind, Scope } from "./import-kinds";
 
-export function kindLabel(t: WorkspaceDictionary, kind: ImportKind, scope: Scope | null): string {
+/** "Alliance Duel weekly"; "Alliance Duel — daily or weekly?" while the tab is only a guess. */
+export function kindLabel(
+  t: WorkspaceDictionary,
+  kind: ImportKind,
+  scope: Scope | null,
+  sure = true,
+): string {
   const name = t[`shots.kind.${kind}`];
-  return scope
-    ? fill(t["shots.kindScope"], { kind: name, scope: t[`shots.scope.${scope}`] })
-    : name;
+  if (!scope) return name;
+  if (!sure) return fill(t["shots.kindUnsure"], { kind: name });
+  return fill(t["shots.kindScope"], { kind: name, scope: t[`shots.scope.${scope}`] });
 }
 
 type Counted =
@@ -43,7 +49,7 @@ export function draftCounts(t: WorkspaceDictionary, language: WorkspaceLanguage,
 /** What one picture that made no draft says; null for a picture that made one. */
 export function outcomeText(t: WorkspaceDictionary, outcome: Outcome): string | null {
   if (outcome.status === "draft") return null;
-  if (outcome.status === "unrecognised") return t["shots.unrecognised"];
+  if (outcome.status === "unrecognised") return t["shots.discord.unrecognised"];
   if (outcome.status === "map") return t["shots.map"];
   const what = kindLabel(t, outcome.kind, null);
   return fill(t[outcome.status === "soon" ? "shots.soon" : "shots.empty"], { what });
@@ -62,7 +68,7 @@ export function outcomeLines(
 ): string[] {
   const drafts = result.drafts.flatMap((d) => [
     `${fill(t["shots.reply.read"], {
-      what: kindLabel(t, d.kind, d.scope),
+      what: kindLabel(t, d.kind, d.scope, d.scopeSure),
       counts: draftCounts(t, language, d),
     })} → [${t["shots.reply.review"]}](${review(d.id)})`,
     ...(d.leftOut > 0 ? [counted(t, language, "shots.leftOut", d.leftOut)] : []),

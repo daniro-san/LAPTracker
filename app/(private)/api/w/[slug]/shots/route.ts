@@ -2,7 +2,13 @@
 // OCR text lines (from /shots/read) become drafts for every officer to review. Classified again here,
 // so a map never becomes data. `pick` is the officer's type for pictures that were not recognised.
 import { requireWorkspace } from "@/lib/private/access";
-import { isSameOriginJson, NO_STORE, privateError, requestCookies } from "@/lib/private/http";
+import {
+  isSameOriginJson,
+  NO_STORE,
+  privateError,
+  privately,
+  requestCookies,
+} from "@/lib/private/http";
 import { createDrafts } from "@/lib/private/import";
 import { createBody, screenOf } from "@/lib/private/import-input";
 import { classified } from "@/lib/private/import-read";
@@ -25,17 +31,21 @@ export async function POST(
     const access = await requireWorkspace(db, slug, requestCookies(request), now);
     if (!access.ok) return privateError(401, access.reason);
     const { pictures, pick } = body.data;
-    const result = await createDrafts(
-      db,
-      access,
-      classified(pictures.map((p) => p.lines)),
-      {
-        source: "desk",
-        sentBy: access.user.displayName,
-        pictureDay: serverDay(now, ctx.env),
-        now,
-      },
-      pick && screenOf(pick.kind, pick.scope),
+    const sent = {
+      source: "desk" as const,
+      sentBy: access.user.displayName,
+      pictureDay: serverDay(now, ctx.env),
+      now,
+    };
+    // The text read from a picture (names, chat lines) leaves an error as a code alone (D80).
+    const result = await privately("shots_create", () =>
+      createDrafts(
+        db,
+        access,
+        classified(pictures.map((p) => p.lines)),
+        sent,
+        pick && screenOf(pick.kind, pick.scope),
+      ),
     );
     privateLog("w.import.desk", {
       workspace: access.workspaceId,

@@ -18,6 +18,10 @@ import { privateLog } from "./log";
 export const MAX_PICTURE_BYTES = 8 * 1024 * 1024;
 const HOSTS = new Set(["cdn.discordapp.com", "media.discordapp.net"]);
 const TIMEOUT_MS = 10_000;
+/** Pictures fetched at once. */
+const FETCHES = 4;
+/** The reading stops here, so the drafts and the reply's edit fit in the function's 60 s. */
+const DEADLINE_MS = 45_000;
 
 export interface JobDeps {
   openDb: () => { db: Db; close: () => Promise<void> };
@@ -98,9 +102,8 @@ async function editReply(deps: JobDeps, job: Job, content: string): Promise<void
   }
 }
 
-/** One picture read, or null when it could not be fetched or its size was refused. */
-async function readOne(deps: JobDeps, reader: ScreenshotReader, a: Attachment) {
-  const bytes = await fetchPicture(deps.fetch, a);
+/** One fetched picture read, or null when it could not be fetched or its size was refused. */
+async function readOne(reader: ScreenshotReader, bytes: Uint8Array | null) {
   if (!bytes) return null;
   try {
     // A phone screenshot posted as is still has its status bar.
@@ -111,13 +114,39 @@ async function readOne(deps: JobDeps, reader: ScreenshotReader, a: Attachment) {
   }
 }
 
-/** Fetches and reads each picture; `lost` counts the ones that could not be fetched or read. */
+/** Runs `work` with at most `n` running at once. */
+function limit(n: number) {
+  let free = n;
+  const waiting: (() => void)[] = [];
+  return async <R>(work: () => Promise<R>): Promise<R> => {
+    if (free > 0) free -= 1;
+    else await new Promise<void>((go) => waiting.push(go));
+    try {
+      return await work();
+    } finally {
+      const next = waiting.shift();
+      if (next) next();
+      else free += 1;
+    }
+  };
+}
+
+/**
+ * Fetches the pictures, FETCHES at a time, and reads them in order until DEADLINE_MS has passed since
+ * the job started; `lost` counts the ones not fetched, not read, or left for lack of time.
+ */
 async function readPictures(deps: JobDeps, job: Job) {
+  const started = deps.now().getTime();
+  const slot = limit(FETCHES);
+  const fetches = job.pictures
+    .slice(0, MAX_PICTURES)
+    .map((a) => slot(() => fetchPicture(deps.fetch, a)));
   const pictures: PictureText[] = [];
   const reader = await deps.openReader();
   try {
-    for (const attachment of job.pictures.slice(0, MAX_PICTURES)) {
-      const read = await readOne(deps, reader, attachment);
+    for (const fetched of fetches) {
+      if (deps.now().getTime() - started > DEADLINE_MS) break;
+      const read = await readOne(reader, await fetched);
       if (read) pictures.push(read);
     }
   } finally {

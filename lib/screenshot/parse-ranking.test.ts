@@ -86,6 +86,21 @@ describe("parseRanking", () => {
     ]);
   });
 
+  it("reads the phone donation pages, weekly and daily, medal rows and own row included", () => {
+    for (const fixture of ["87-donation-weekly-phone", "88-donation-daily-phone"]) {
+      const rows = parseRanking(recorded(fixture));
+      expect(rows.map((r) => [r.rank, r.value])).toEqual([
+        [1, 9750],
+        [2, 9750],
+        [3, 9650],
+        [4, 9100],
+        [5, 8400],
+        [6, 8300],
+      ]);
+      expect(rows.every((r) => r.flags.length === 0)).toBe(true);
+    }
+  });
+
   it("keeps the medal rows 1 to 3 when the row after them is missing, and flags the gap", () => {
     // Picture 88 without its green own row (rank 4): the old inference counted back from rank 5
     // and gave the medal rows 2, 3 and 4.

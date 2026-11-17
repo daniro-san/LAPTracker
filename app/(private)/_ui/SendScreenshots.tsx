@@ -11,6 +11,8 @@ import { track, type ScreenshotKind } from "@/lib/analytics/events";
 import type { DraftSummary, Outcome } from "@/lib/private/import";
 import type { ImportKind, Scope } from "@/lib/private/import-kinds";
 
+import { fillIn } from "./draft-known";
+
 /** Wide enough for the OCR (it reads at 716 px), small enough to upload quickly. */
 const MAX_WIDTH = 1080;
 
@@ -31,9 +33,6 @@ interface Result {
   unrecognised: string[][];
   lost: number;
 }
-
-const fillIn = (template: string, values: Record<string, string | number>) =>
-  template.replace(/\{(\w+)\}/g, (_, k: string) => String(values[k] ?? `{${k}}`));
 
 /** The picture as a PNG: the top band of a full-screen phone capture dropped, scaled down when wide. */
 async function toPng(file: File, statusBar: { share: number; aspect: number }): Promise<Blob> {
@@ -222,12 +221,14 @@ function Results(props: {
 }) {
   const { w, language, kinds, result } = props;
   const label = (d: DraftSummary) =>
-    d.scope
-      ? fillIn(w["shots.kindScope"] ?? "", {
-          kind: kinds[d.kind],
-          scope: w[`shots.scope.${d.scope}`] ?? "",
-        })
-      : kinds[d.kind];
+    !d.scope
+      ? kinds[d.kind]
+      : d.scopeSure
+        ? fillIn(w["shots.kindScope"], {
+            kind: kinds[d.kind],
+            scope: w[`shots.scope.${d.scope}`] ?? "",
+          })
+        : fillIn(w["shots.kindUnsure"], { kind: kinds[d.kind] });
   const counts = (d: DraftSummary) =>
     [
       plural(w, language, "shots.rows", d.rows),

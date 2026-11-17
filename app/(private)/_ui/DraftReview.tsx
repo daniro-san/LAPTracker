@@ -2,8 +2,9 @@
 
 // A draft under review (issue 299), shared by every officer of the workspace: the type the pictures were
 // read as (one tap to change it), Daily or Weekly, the Alliance Duel's day and week, where it saves, and
-// the rows. Save sends one value per member (per member and fact for a member update); the first save
-// wins, and a later one is told who saved it. A member fact another officer saved meanwhile comes back
+// the rows, uncertain and unmatched ones first. While something is missing, a line above Save says what
+// ("Row #2 needs a member", a link to that card). Save sends one value per member (per member and fact
+// for a member update); the first save wins, and a later one is told who saved it. A member fact another officer saved meanwhile comes back
 // marked, with "Keep theirs" and "Use mine" (D80). A Secret Ops report has its own review. Nothing counts
 // before Save (D75). Numbers and dates come formatted from the server.
 import { useRouter } from "next/navigation";
@@ -13,13 +14,11 @@ import { track } from "@/lib/analytics/events";
 import type { ImportKind, PhotoFact, Scope } from "@/lib/private/import-kinds";
 import type { DraftView } from "@/lib/private/import-view";
 
-import { Actions, Message, useDraftActions } from "./draft-actions";
+import { Actions, confirmRetype, Message, useDraftActions, type Why } from "./draft-actions";
 import { checkKnown, DAYS, duelKnown, factKnown, type Day, type Words } from "./draft-known";
 import { DraftHeader, type ReviewText } from "./DraftHeader";
 import { DraftRowCard, type RowState } from "./DraftRowCard";
 import { SecretOpsReview } from "./SecretOpsReview";
-
-export type { ReviewText };
 
 const factOf = (view: DraftView, uid: number | null, field: PhotoFact | undefined) =>
   uid === null || !field ? undefined : view.facts?.[uid]?.[field];
@@ -44,6 +43,37 @@ function withConflicts(view: DraftView, rows: RowState[], detail: unknown): RowS
   });
 }
 
+/** Rows not found first, then the uncertain ones, then the rest, each in reading order. */
+const ORDER = { none: 0, doubtful: 1, sure: 2 };
+const displayOrder = (view: DraftView) =>
+  view.rows
+    .map((_, i) => i)
+    .sort((a, b) => {
+      const [ra, rb] = [view.rows[a], view.rows[b]];
+      return ORDER[ra?.match.status ?? "sure"] - ORDER[rb?.match.status ?? "sure"] || a - b;
+    });
+
+const labelOf = (view: DraftView, i: number) => `#${view.rows[i]?.rank ?? i + 1}`;
+
+/** Why Save is off: the first thing missing, in the order the officer sees it; null when it can save. */
+function whyNot(
+  view: DraftView,
+  rows: RowState[],
+  order: number[],
+  scope: Scope | null,
+): Why | null {
+  if (view.scope !== null && scope === null) return { template: "shots.why.tab" };
+  for (const i of order) {
+    const r = rows[i];
+    if (!r || r.dropped) continue;
+    const key =
+      r.uid === null ? "member" : r.value === "" ? "value" : r.conflict ? "conflict" : null;
+    if (key)
+      return { template: `shots.why.${key}`, row: { label: labelOf(view, i), href: `#row-${i}` } };
+  }
+  return null;
+}
+
 type Props = {
   slug: string;
   view: DraftView;
@@ -65,14 +95,16 @@ export function DraftReview(props: Props) {
 function RowsReview(props: Props) {
   const { view, w, text, sep } = props;
   const router = useRouter();
-  const [scope, setScope] = useState<Scope | null>(view.scope);
+  // A guessed tab is not pressed: the officer confirms it (issue 299).
+  const [scope, setScope] = useState<Scope | null>(view.scopeSure ? view.scope : null);
   const [day, setDay] = useState<Day>(DAYS[text.pictureDay] ?? "sat");
   const [weekBefore, setWeekBefore] = useState(false);
   const [rows, setRows] = useState(initialRows(view));
   const { busy, message, act } = useDraftActions(props.slug, view, w);
   const readOnly = view.status !== "open" || !view.canSave;
-  const kept = rows.filter((r) => !r.dropped);
-  const ready = kept.every((r) => r.uid !== null && r.value !== "" && !r.conflict);
+  const [order] = useState(() => displayOrder(view));
+  const why = whyNot(view, rows, order, scope);
+  const touched = JSON.stringify(rows) !== JSON.stringify(initialRows(view));
 
   async function save() {
     const sent = rows.flatMap((r, i) => {
@@ -106,14 +138,17 @@ function RowsReview(props: Props) {
         set={{ scope: setScope, day: setDay, weekBefore: setWeekBefore }}
         readOnly={readOnly}
         retype={(kind) =>
+          confirmRetype(touched, w) &&
           void act({ action: "retype", kind, scope }).then((a) => a.ok && router.refresh())
         }
       />
       <ul className="mt-4 space-y-2">
-        {view.rows.map((row, i) => (
+        {order.map((i) => (
           <DraftRowCard
-            key={`${i}-${row.rank}-${row.name}`}
-            row={row}
+            key={i}
+            label={labelOf(view, i)}
+            anchor={`row-${i}`}
+            row={view.rows[i] as DraftView["rows"][number]}
             state={rows[i] as RowState}
             onChange={(next) => setRows(rows.map((r, j) => (j === i ? next : r)))}
             members={view.members}
@@ -129,7 +164,7 @@ function RowsReview(props: Props) {
         <Actions
           w={w}
           busy={busy}
-          ready={ready}
+          why={why && { ...why, template: w[why.template ?? ""] }}
           onSave={() => void save()}
           onDiscard={() => void act({ action: "discard" }).then((a) => a.ok && router.refresh())}
         />

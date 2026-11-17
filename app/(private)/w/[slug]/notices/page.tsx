@@ -52,11 +52,11 @@ function Card({
 
 export default async function NoticesPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const { access, data: list } = await noticePage(slug, noticesList);
+  const { access, data: list, waiting } = await noticePage(slug, noticesList);
   const { language, t } = await workspaceWords();
   const words = noticeWords(language, t);
   return (
-    <SignedInFrame access={access} language={language} t={t} current="notices">
+    <SignedInFrame access={access} language={language} t={t} current="notices" waiting={waiting}>
       <h1 className="font-display text-display-lg">{t["tab.notices"]}</h1>
       <p className="mt-2 text-ink/80">{t["notices.lead"]}</p>
       <a

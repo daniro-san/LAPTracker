@@ -50,8 +50,8 @@ const TAG_LINE = /[[({]\s*[A-Za-z0-9]{1,6}\s*[\])}][A-Za-z0-9]/;
 const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat"];
 const dayTabs = (t: Text) => DAYS.filter((d) => new RegExp(`\\b${d}\\b`, "i").test(t.all)).length;
 /**
- * `Lv.28 [OGs] Kasoar•Thorne`: a chat sender line, with a message on the line after it. The `Lv` sits
- * on a coloured badge and is often misread (`CIEL. 28`), so the level's dot and digits are enough.
+ * `Lv.28 [OGs] Ana`: a chat sender line, with a message on the line after it. The `Lv` sits on a
+ * coloured badge and is often misread, so the level's dot and digits are enough.
  */
 const SENDER = /\.\s?\d{1,2}\b.{0,12}[[({]\s*[A-Za-z0-9]{1,6}\s*[\])}]\s*\S/;
 const senders = (t: Text) =>
@@ -167,10 +167,11 @@ export async function readScreen(
   image: Uint8Array,
   options: { statusBar: boolean },
 ): Promise<ScreenRead> {
-  const lines = await reader.read(image, options);
+  const png = await reader.toPng(image);
+  const lines = await reader.read(png, options);
   const classified = classifyScreen(lines);
   if (classified.kind !== null) return { lines, classified };
-  const plain = await reader.read(image, { ...options, flatten: false });
+  const plain = await reader.read(png, { ...options, flatten: false });
   const again = classifyScreen(plain);
   return again.kind === null ? { lines, classified } : { lines: plain, classified: again };
 }
