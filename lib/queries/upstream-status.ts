@@ -2,7 +2,7 @@
 // Reads the newest public snapshot and, for the "last fresh" time, the newest fresh alliance row.
 import { and, desc, eq, isNull, max } from "drizzle-orm";
 
-import { RUN_STALE_AFTER_MS } from "../compute";
+import { runAbandoned } from "../compute";
 import type { Db } from "../db";
 import { allianceSnapshots, events, snapshots } from "../schema";
 import { phaseSnapshot, publicEvent } from "./visibility";
@@ -54,7 +54,7 @@ async function attemptFailedUpstream(
   now: Date,
 ): Promise<boolean> {
   // Never closed: the function was killed, which the 100 s deadline (D25) exists to prevent.
-  if (s.status === "running") return now.getTime() - s.startedAt.getTime() > RUN_STALE_AFTER_MS;
+  if (s.status === "running") return runAbandoned(s, now);
   if (s.status === "complete") return false;
   if (s.error === "deadline") return true;
   const rows = await db

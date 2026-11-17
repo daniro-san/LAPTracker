@@ -17,6 +17,7 @@ import { MergeResultView } from "@/app/_ui/MergeSimulator";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { TextLink } from "@/lib/brand/components/TextLink";
+import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
 import { homeEvent, listEvents, mergePage } from "@/lib/queries";
 
@@ -36,7 +37,11 @@ const load = cache((a: number | null, b: number | null) =>
       mergePage(db, a !== null && b !== null ? [a, b] : null, undefined, eventsRead),
       eventsRead,
     ]);
-    return { page, events, homeId: homeEvent(events)?.id ?? null };
+    return {
+      page,
+      events,
+      homeId: homeEvent(events, new Date(), getEnv().SNAPSHOT_WINDOW_MIN)?.id ?? null,
+    };
   }),
 );
 

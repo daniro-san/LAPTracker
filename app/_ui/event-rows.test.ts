@@ -63,6 +63,25 @@ describe("comparisonRows", () => {
     ]);
     expect(rows[1]?.ranks.might.before).toBe(12);
   });
+
+  it("orders rows without a rank by might, biggest first, then by tag (panel PD-3)", () => {
+    // Start only, so nothing is ranked yet; BBB was not read.
+    const rows = comparisonRows(
+      [
+        snap("before", [
+          cell(1, "AAA", 10),
+          cell(2, "BBB", 0, true),
+          cell(3, "ZZZ", 30),
+          cell(4, "MMM", 30),
+        ]),
+      ],
+      new Map(),
+      new Map(),
+      new Map(),
+      en,
+    );
+    expect(rows.map((r) => r.tag)).toEqual(["MMM", "ZZZ", "AAA", "BBB"]);
+  });
 });
 
 describe("nextUpdateAt", () => {

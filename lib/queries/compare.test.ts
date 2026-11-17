@@ -114,7 +114,7 @@ describe("compareEvents (D57)", () => {
   });
 
   it("defaults to the home event as B and the newest event with data before it as A", async () => {
-    const page = await getComparePage(db, { a: null, b: null, unionId: null });
+    const page = await getComparePage(db, { a: null, b: null, unionId: null }, 45);
     expect([page.a, page.b]).toEqual([eventA, eventB]);
     expect(page.comparison).not.toBeNull();
   });

@@ -2,7 +2,7 @@
 // for that member (and a note when the days and the week disagree, never fixed silently), for a check our
 // own read and how far apart it is. Digits are grouped with the separator the server sent.
 import { fill } from "@/lib/copy";
-import type { DuelSaved } from "@/lib/private/import-view";
+import type { DraftView, DuelSaved } from "@/lib/private/import-view";
 
 export const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat"] as const;
 export type Day = (typeof DAYS)[number];
@@ -74,4 +74,19 @@ export function checkKnown(ours: number | null, value: number | null, w: Words, 
   if (value === ours) return [read, w["shots.same"] ?? ""];
   const key = value > ours ? "shots.higher" : "shots.lower";
   return [read, fillIn(w[key], { d: grouped(Math.abs(value - ours), sep) })];
+}
+
+/** What a check's Save sends and counts (panel PD-5): each surely matched member once, with the value read;
+ * a member with no value of ours is left out of the comparison, as the save leaves them out (D75). */
+export function checkSummary(view: Pick<DraftView, "rows" | "ours">) {
+  const seen = new Set<number>();
+  const sent = view.rows.flatMap((r) => {
+    if (r.match.status !== "sure" || r.value === null || seen.has(r.match.uid)) return [];
+    seen.add(r.match.uid);
+    return [{ uid: r.match.uid, value: r.value }];
+  });
+  const ours = view.ours ?? {};
+  const compared = sent.filter((r) => (ours[r.uid] ?? null) !== null);
+  const same = compared.filter((r) => ours[r.uid] === r.value).length;
+  return { sent, compared: compared.length, same, left: view.rows.length - compared.length };
 }

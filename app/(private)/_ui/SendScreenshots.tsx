@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
 import { track, type ScreenshotKind } from "@/lib/analytics/events";
+import { chip } from "@/lib/brand/components/controls";
 import type { DraftSummary, Outcome } from "@/lib/private/import";
 import type { ImportKind, Scope } from "@/lib/private/import-kinds";
 
@@ -294,7 +295,7 @@ function PickType(props: {
             key={`${p.kind}:${p.scope}`}
             type="button"
             onClick={() => props.onPick({ kind: p.kind, scope: p.scope })}
-            className="inline-flex min-h-11 items-center border border-rule px-3 text-body-sm font-medium"
+            className={chip()}
           >
             {p.label}
           </button>

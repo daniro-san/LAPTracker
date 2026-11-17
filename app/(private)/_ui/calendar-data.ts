@@ -9,6 +9,7 @@ import type { Suggestion } from "@/lib/private/caravan-suggest";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import type { CalendarKey, CalendarWords } from "@/lib/private/dictionary.calendar";
 
+import type { NextItem } from "./home-digest";
 import type { SHEET_KEYS } from "./sheet-words";
 
 export interface Member {
@@ -150,6 +151,24 @@ export function agendaItem(p: Placed, ctx: CalendarCtx): AgendaItem {
     ...seatsOf(p.row),
     form: formOf(p, plannedDay, language),
   };
+}
+
+/** The timed entries for the Home digest (the week's Alliance Duel theme has no time). */
+export function nextItems(placed: Placed[], slug: string, ctx: CalendarCtx): NextItem[] {
+  return placed.flatMap((p) => {
+    if (p.entry.kind === "duel" || p.minute === null) return [];
+    const item = agendaItem(p, ctx);
+    return [
+      {
+        key: item.key,
+        title: item.title,
+        st: item.st as string,
+        at: item.at as number,
+        day: item.day,
+        href: `/w/${slug}/calendar?week=${mondayOf(item.day)}#d-${item.day}`,
+      },
+    ];
+  });
 }
 
 export interface AgendaDay {

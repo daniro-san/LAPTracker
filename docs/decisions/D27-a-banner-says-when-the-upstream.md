@@ -7,5 +7,6 @@
   3. it is `partial` or `failed` and at least half of its alliance rows carry `http 5xx`, `TimeoutError` or `AbortError`.
 - **Clears** when a newer snapshot completes or fails for another reason (404, quota, stale rows), or 24 hours after the failed attempt started.
 - **Shown:** one slim notice above the header of every page, with the newest time an alliance row was fresh with no error (`MAX(source_updated_at)`, server time). It has no controls and renders nothing when the rule is false or the read fails.
+  - Amended 2026-11-17 (panel ADV-16, UI-3): shown on the public pages and /admin only (`app/(pages)/layout.tsx`), not in the workspace (`/w`), whose calendar, notices and thefts are the officers' own data and whose Members page names its own read. Only the time keeps to one line, so the sentence wraps at 360 px in every language.
 - **Limits:** the state is that of the last attempt. Few attempts exist (two per event, plus manual runs), so the banner can lag a recovery until the next run and can miss an outage between runs.
 - **Not done:** a status page, an outage history, a live probe.

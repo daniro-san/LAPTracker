@@ -9,6 +9,7 @@ import {
   HourglassOutline,
   StitchedCheck,
 } from "@/lib/brand/components/StatusIcons";
+import { runAbandoned } from "@/lib/compute";
 import { fill, type Dictionary } from "@/lib/copy";
 
 import { MEMBER_MARK, type Clock } from "./format";
@@ -30,6 +31,11 @@ const CHIP: Record<PhaseStatus["status"], { icon: ReactNode; tone: ChipTone }> =
 } as const;
 
 const finishedAt = (p: PhaseStatus) => p.finishedAt ?? p.startedAt;
+
+/** A run left `running` past RUN_STALE_AFTER_MS was killed: it reads as failed at its start, never as
+ * "Updating now" for good (the rule /admin's "Running now" and the upstream banner use). */
+const settled = (p: PhaseStatus, now: Date): PhaseStatus =>
+  runAbandoned(p, now) ? { ...p, status: "failed", finishedAt: p.startedAt } : p;
 
 /** "Last updated at …" (a partial run shows its icon and the stale count beside it), "Last update
  * failed at …", "Updating now"; nothing yet: "Not updated yet" (owner, 2026-11-05). */
@@ -101,6 +107,7 @@ export function StatusChips({
   stale,
   failed,
   live = false,
+  now,
   clock,
   copy,
 }: {
@@ -108,6 +115,8 @@ export function StatusChips({
   stale: number;
   failed: number;
   live?: boolean;
+  /** The page's time: a run still running past RUN_STALE_AFTER_MS reads as failed. */
+  now: Date;
   clock: Clock;
   copy: Dictionary;
 }) {
@@ -120,7 +129,7 @@ export function StatusChips({
     <ul className="flex flex-wrap items-center gap-x-3 gap-y-1" aria-label={copy.status.label}>
       {!live && (
         <li className="min-w-0 flex-[1_1_12rem]">
-          <LastChip phases={phases} clock={clock} copy={copy} />
+          <LastChip phases={phases.map((p) => settled(p, now))} clock={clock} copy={copy} />
         </li>
       )}
       {counts.map(
@@ -161,19 +170,22 @@ const hasTime = (p: PhaseStatus | undefined): p is PhaseStatus =>
  * change covers without opening Details. The day shows when the two times fall on different days; the
  * clock's word follows the last time shown. One window per call: a page with several repeats it. */
 export function CaptureWindow({
-  before,
-  after,
   endDue,
+  now,
   clock,
   copy,
+  ...phases
 }: {
   before: PhaseStatus | undefined;
   after: PhaseStatus | undefined;
   /** While the event runs: when the End is due, shown as `END after 16:31` instead of `END —`. */
   endDue?: Date | null;
+  /** The page's time: a run still running past RUN_STALE_AFTER_MS reads as failed. */
+  now: Date;
   clock: Clock;
   copy: Dictionary;
 }) {
+  const [before, after] = [phases.before, phases.after].map((p) => p && settled(p, now));
   const withDay =
     hasTime(before) &&
     hasTime(after) &&

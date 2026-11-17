@@ -17,6 +17,7 @@ export function TopStatus({
   hasMovers,
   live,
   hasDuring,
+  now,
   clock,
   copy,
 }: {
@@ -27,6 +28,8 @@ export function TopStatus({
   live: boolean;
   /** The finished event's "During the event" section exists: a jump link to it. */
   hasDuring: boolean;
+  /** The page's time: a run left running past RUN_STALE_AFTER_MS reads as failed. */
+  now: Date;
   clock: Clock;
   copy: Dictionary;
 }) {
@@ -38,6 +41,7 @@ export function TopStatus({
         stale={worst.filter((w) => w === "stale").length}
         failed={worst.filter((w) => w === "failed").length}
         live={live}
+        now={now}
         clock={clock}
         copy={copy}
       />
@@ -46,6 +50,7 @@ export function TopStatus({
           before={detail.snapshots.find((s) => s.phase === "before")}
           after={detail.snapshots.find((s) => s.phase === "after")}
           endDue={live ? detail.afterAt : null}
+          now={now}
           clock={clock}
           copy={copy}
         />
