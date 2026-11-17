@@ -25,23 +25,24 @@ Issue #363. The owner tested the notices editor on his phone. He did not like th
     - Tapping a tone closes the sheet and asks for the draft. Cancel, Escape or a tap on the backdrop closes the sheet.
   - Under the buttons:
     - why they are off ("not set up", "too long", tied by `aria-describedby`);
-    - otherwise the last Translate or Improve error (`role=alert`), which clears when another tab opens;
+    - otherwise the last Translate or Improve error (`role=alert`), shown only on the tab the request was made from (`askTab`), even when the answer comes after a tab switch;
     - otherwise "Text already in the other languages becomes a draft you can undo." when Translate would replace text.
 - **State** (`notice-editor-state.ts`):
   - the open tab, and the last language typed in;
   - AI errors (`aiMessage`) kept apart from save errors (the save bar shows only the save errors);
   - `busy` is now `"translate" | "improve" | "save" | null`;
   - `accept`.
-- **Pure logic** (`notice-draft.ts`): `accept`, `discard` (Undo, moved out of the hook), `tabState`, `draftKind`, `translatePlan`.
-- **Save bar:** "n drafts to check" is now an `aria-live=polite` line, so a screen reader hears that Translate filled the other tabs. The bar is otherwise unchanged: pinned, with the safe-area padding.
+- **Pure logic** (`notice-draft.ts`): `accept`, `discard` (Undo, moved out of the hook), `tabState`, `draftKind`, `translatePlan`, `askTab`.
+- **Save bar:** "n drafts to check" is now an `aria-live=polite` line that is always in the page (`sr-only` while there are no drafts; only its text changes), so a screen reader hears that Translate filled the other tabs. The bar is otherwise unchanged: pinned, with the safe-area padding.
 - **Words** (`dictionary.notices.ts`), in EN, PT-BR and FR:
   - 12 new keys: `notices.languages`, `notices.tab.empty/written`, `notices.translate`, `notices.translate.to/from`, `notices.tone.choose/current/help`, `notices.draft.translate/improve`, `notices.accept`;
   - removed, because they are now unused: `notices.translateTo`, `notices.draft`;
   - French has U+00A0 in "Ton : {tone}".
 - **D81** amended: the "Review before save" bullet now describes the tab marks and Accept/Undo, and "What is sent" names the Translate button and the tone sheet.
-- **Tests** (`notice-draft.test.ts`, 2 new, 5 in the file):
+- **Tests** (`notice-draft.test.ts`, 3 new, 6 in the file):
   - the tab states, Accept keeping the text and the translation's source, Undo, and "Keep as is" clearing out of date;
-  - `translatePlan` from the open tab, into an empty tab from the last language typed in or the first written one, a re-translate of a Translate draft from its own source, and null when nothing is written.
+  - `translatePlan` from the open tab, into an empty tab from the last language typed in or the first written one, a re-translate of a Translate draft from its own source, and null when nothing is written;
+  - `askTab`: the error of a Translate to two languages belongs to its source tab, of a one-tab Translate to that tab, of Improve writing to its language.
 
 ## Decisions
 - **One title.** The notice has one title for all three languages (11i), so the title stays above the tabs and does not follow them.
@@ -55,10 +56,9 @@ Issue #363. The owner tested the notices editor on his phone. He did not like th
 ## Deviations
 - **Groq was stubbed differently from 11i.** The brief says to see 11i for how Translate was stubbed, but 11i's e2e used the real Groq key; only its "no key" run had no Groq. Here the Groq URL is a constant (`lib/ai/groq.ts`), so I did not change code. A Node preload (`--import groq-stub.mjs`) wraps `globalThis.fetch` inside `next start` and answers `api.groq.com` with invented text after 700 ms. The real draft route, prompts, the untranslated check and the logging all ran. A text containing `ZZFAIL` got a 500 from both models, and the route answered 502.
 - `tabAfter` in `app/_ui/Movers.tsx` became an export, so that the arrow-key logic exists once.
-- The comma operator in `setActive: (l) => (setActive(l), setAiMessage(null))` keeps `useEditor` under the 80-line limit.
 
 ## Verified
-- **`pnpm check` exit 0** (prettier, eslint, tsc, vitest, drift, i18n): **142 files passed, 2 skipped; 719 tests passed, 4 skipped**. The drift gate said "Everything's fine"; i18n reported 17 languages up to date.
+- **`pnpm check` exit 0** (prettier, eslint, tsc, vitest, drift, i18n): **142 files passed, 2 skipped; 720 tests passed, 4 skipped** (after the PR #369 review fixes; 719 before). The drift gate said "Everything's fine"; i18n reported 17 languages up to date.
 - **Local e2e, Chrome**, on a production build (`next build`, then `next start` on :3237).
   - Setup:
     - local Postgres 18 on 54637 with all 26 migrations, and the bridge on 54638;
@@ -73,7 +73,7 @@ Issue #363. The owner tested the notices editor on his phone. He did not like th
     - PT and FR tabs say Draft, EN stays Written, and the save bar says "2 drafts to check";
     - PT shows "Draft from Translate, not saved". **Accept** makes it Written, keeps the text, and leaves 1 draft. On FR, **Undo** makes it Empty, then "Translate from EN" fills only FR;
     - Improve writing opens the sheet with the six tones in order, each 44 px; **Warmer** closes it, the button reads "Tone: Warmer", and EN holds the rewrite as "Draft from Improve writing". Undo restores EN, and Warmer is marked when the sheet opens again;
-    - a failed Improve shows "The translator did not answer this time…" under the buttons, the buttons keep their size, and the error goes when another tab opens;
+    - a failed Improve shows "The translator did not answer this time…" under the buttons, the buttons keep their size, and the error is not shown on another tab;
     - Cancel asks "Discard your changes?", and closing the page with unsaved text gets a `beforeunload` dialog;
     - the save bar is pinned to the bottom of the viewport;
     - Save with an end date and "Show to members" on, then the read page shows the title, all three languages, "For members" and "Until …";
@@ -95,7 +95,7 @@ Issue #363. The owner tested the notices editor on his phone. He did not like th
   - Full-page shots draw the sticky save bar partway down the page. Playwright stretches the viewport for them; viewport shots show the bar at the bottom.
 - **Designer critique** (a senior mobile product designer, for a non-native English officer on a 360 px phone), from the screenshots:
   1. Fixed: Accept and Undo looked alike, though Accept is the usual answer. Accept now has a plum frame and bold text.
-  2. Fixed: an AI error stayed under the buttons after switching to another tab, where it no longer applied. It now clears on a tab change.
+  2. Fixed: an AI error stayed under the buttons after switching to another tab, where it no longer applied. It now shows only on the tab the request was made from, also when the answer arrives after a switch (review of PR #369).
   3. Kept: two-line buttons. "Translate / to PT and FR" says where the text goes without a long label, and "Improve writing / Tone: Warmer ▾" shows the tone and that it opens a choice. Neither button changes size while working or after an error.
   4. Kept: a dot plus a word for the tab states. The colour is never the only signal, and "Draft" and "Out of date" (Desatualizado, Pas à jour) fit 109 px.
   5. Kept: the tone sheet as six full-width rows, with no explanations per tone. The words are short and literal, and a draft can always be undone.
@@ -120,3 +120,5 @@ Plan changes needed: none. The workspace track lives in issues, not in docs/IMPL
 - Stubbing Groq without code changes: `NODE_OPTIONS="--import ./scripts/db-local-preload.mjs --import <groq-stub.mjs>" next start`, with a fake `gsk_` key. The stub wraps `globalThis.fetch` for `https://api.groq.com/openai/v1/chat/completions`. A copy is in `scratchpad/11p/groq-stub.mjs`.
 - Officer notes (#297) can reuse the draft bookkeeping (`withDrafts`, `accept`, `discard`, `draftKind`) and `NoticeActions`' two-line button pattern.
 </adjustments>
+
+https://github.com/daniro-san/LAPTracker/pull/369

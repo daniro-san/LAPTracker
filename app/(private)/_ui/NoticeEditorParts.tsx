@@ -112,7 +112,11 @@ export function SaveBar({ p, e }: { p: EditorProps; e: Editor }) {
           {t[e.message]}
         </Notice>
       )}
-      <p aria-live="polite" className="mb-1 text-body-sm font-semibold text-plum empty:hidden">
+      {/* Always in the page, so a screen reader hears its text change; out of sight while empty. */}
+      <p
+        aria-live="polite"
+        className={drafts > 0 ? "mb-1 text-body-sm font-semibold text-plum" : "sr-only"}
+      >
         {drafts > 0 ? fill(t[`notices.drafts.${form}`], { n: drafts }) : ""}
       </p>
       <div className="flex items-center gap-4">

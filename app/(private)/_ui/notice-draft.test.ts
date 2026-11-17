@@ -7,6 +7,7 @@ import { NOTICE_FIELDS, NOTICE_LANGUAGES } from "@/lib/private/notice-rules";
 import type { NoticeFields } from "./notice-client";
 import {
   accept,
+  askTab,
   changesOf,
   discard,
   draftKind,
@@ -155,5 +156,12 @@ describe("the notice draft", () => {
       Object.fromEntries(NOTICE_FIELDS.map((f) => [f, { value: "", version: 0 }])) as NoticeFields,
     );
     expect(translatePlan(empty, "en", [...languages], null)).toBeNull();
+  });
+
+  it("puts a failed request's error on the tab it was asked from, whichever tab is open when it answers", () => {
+    const text = "Apply today.";
+    expect(askTab({ kind: "translate", from: "en", to: ["pt-BR", "fr"], text })).toBe("en");
+    expect(askTab({ kind: "translate", from: "en", to: ["fr"], text })).toBe("fr");
+    expect(askTab({ kind: "improve", language: "pt-BR", tone: "warmer", text })).toBe("pt-BR");
   });
 });

@@ -121,6 +121,13 @@ export const discard = (d: Draft, language: NoticeLanguage): Draft => ({
   from: omit(d.from, language),
 });
 
+/**
+ * The tab a Translate or Improve writing request was made from, where its error belongs: the language it
+ * rewrites, the one tab it fills ("from EN", "Update from …"), else the language it translates from.
+ */
+export const askTab = (ask: DraftAsk): NoticeLanguage =>
+  ask.kind === "improve" ? ask.language : ask.to.length === 1 && ask.to[0] ? ask.to[0] : ask.from;
+
 /** What a language's tab shows (issue 363): a draft to check, may be out of date, written, or empty. */
 export type TabState = "draft" | "stale" | "written" | "empty";
 

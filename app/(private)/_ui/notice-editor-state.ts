@@ -25,7 +25,7 @@ import {
   type DraftAsk,
   type NoticeFields,
 } from "./notice-client";
-import { accept, changesOf, discard, settle, startDraft, withDrafts } from "./notice-draft";
+import { accept, askTab, changesOf, discard, settle, startDraft, withDrafts } from "./notice-draft";
 
 export interface EditorProps {
   slug: string;
@@ -56,6 +56,12 @@ function useLeaveWarning(dirty: boolean, allowed: { current: boolean }) {
   }, [dirty, allowed]);
 }
 
+/** Why the last Translate or Improve writing gave no draft, and the tab it was asked from. */
+interface AiMessage {
+  language: NoticeLanguage;
+  key: WorkspaceKey;
+}
+
 export function useEditor(p: EditorProps) {
   const router = useRouter();
   const [draft, setDraft] = useState(() => startDraft(p.fields));
@@ -63,8 +69,7 @@ export function useEditor(p: EditorProps) {
   /** The action running now, if any: every AI button and Save wait for it. */
   const [busy, setBusy] = useState<DraftAsk["kind"] | "save" | null>(null);
   const [message, setMessage] = useState<WorkspaceKey | null>(null);
-  /** Why the last Translate or Improve writing gave no draft, shown under those buttons. */
-  const [aiMessage, setAiMessage] = useState<WorkspaceKey | null>(null);
+  const [aiMessage, setAiMessage] = useState<AiMessage | null>(null);
   const [active, setActive] = useState<NoticeLanguage>(p.focus ?? p.languages[0] ?? "en");
   /** The tab the officer last typed in: where Translate fills an empty tab from. */
   const [wroteIn, setWroteIn] = useState<NoticeLanguage | null>(p.source);
@@ -84,7 +89,7 @@ export function useEditor(p: EditorProps) {
     setAiMessage(null);
     const answer = await askDraft(p.slug, ask);
     setBusy(null);
-    if ("failed" in answer) return setAiMessage(answer.failed);
+    if ("failed" in answer) return setAiMessage({ language: askTab(ask), key: answer.failed });
     setDraft((d) => withDrafts(d, answer.drafts, ask, answer.partly));
     if (ask.kind === "translate") track("ws_notice_translated");
   };
@@ -111,10 +116,10 @@ export function useEditor(p: EditorProps) {
     conflicts,
     busy,
     message,
-    aiMessage,
+    /** The error shows only on the tab it was asked from, even when the answer comes after a switch. */
+    aiMessage: aiMessage?.language === active ? aiMessage.key : null,
     active,
-    /** Another tab: the last Translate or Improve writing error belonged to the one left. */
-    setActive: (language: NoticeLanguage) => (setActive(language), setAiMessage(null)),
+    setActive,
     wroteIn,
     banner,
     dirty,
