@@ -19,7 +19,7 @@ Why: the leadership wants one weekly worklist: who to look at, why, and what the
   - "Needs help": the member's `status` fact (D80);
   - "All fine".
 
-  Each record is one row of `member_follow_ups` (migration `0031_follow_up`): uid, action, note, until, who, when, and the sheet's request id (unique per workspace, D100: a retry stores nothing new). The two status answers write the fact first with the version the page saw; another officer's newer value is refused with 409 and "Another officer changed this just now: {value}. Save again to replace it."; a second Save sends the newer version. Nothing is sent anywhere.
+  Each record is one row of `member_follow_ups` (migration `0032_follow_up`): uid, action, note, until, who, when, and the sheet's request id (unique per workspace, D100: a retry stores nothing new). The two status answers write the fact first with the version the page saw; another officer's newer value is refused with 409 and "Another officer changed this just now: {value}. Save again to replace it."; a second Save sends the newer version. Nothing is sent anywhere.
 
 - **Leaving the list.** Any record takes the member off the list for the rest of that game week (from Monday 00:00 server time, `weekStart`). A member also leaves by themselves when the signal clears (activity changed, might moved, a break started, the facts were recorded). If the signal still holds next week, the member is on next week's list again: a talk is about that week.
 - **History.** The member card (`memberCard`, the Members sheet) shows "Follow-up notes", newest first, one line per record: "Talked Mon 16 Nov: back after exams · Ana", "On a break Mon 16 Nov – Fri 20 Nov · Ana", "Needs help, …", "All fine, …". The officer name is the desk name (D87).

@@ -12,7 +12,7 @@ Closes #340; part of #293. Branch `session/11y-follow-up`, rebased on `origin/de
 - **Record sheet** (`FollowUpList.tsx`): the member's reasons, "What happened?" with Talked to them / On a break / Needs help / All fine, "Last day away (ST)" for a break (today or later), a note of up to 500 characters, Save. A request id per open sheet (D100). After a save the page is read again and "Saved. {name} is off this week's list." stays, even when the list is now empty.
 - **Member card**: "Follow-up notes", newest first, e.g. "Talked Tue, Nov 17: Back after the weekend · Ana (R4)" (`member-card.ts`, `MemberCards.tsx`; the only Members change).
 - **Code**:
-  - `lib/schema-followup.ts` (`member_follow_ups`), migration `drizzle/0031_follow_up.sql`;
+  - `lib/schema-followup.ts` (`member_follow_ups`), migration `drizzle/0032_follow_up.sql`;
   - `lib/repo/member-follow-ups.ts`;
   - `lib/private/follow-up-rules.ts` (pure: `worklist`, `weekStart`, `historyLine`), `lib/private/follow-up.ts` (`followUpView`, `recordFollowUp`, `followUpsOf`), `lib/private/dictionary.followup.ts` (32 keys × EN, PT, FR);
   - route `POST /api/w/[slug]/follow-up`;
@@ -75,7 +75,7 @@ An R4 officer, a product designer and a copywriter looked at the screenshots. D1
   - the line "People you note leave the list until Sunday. If the reason is still there, they’re back on Monday." sits under the week;
   - the saved line reads "Saved. {name} is off the list until Monday." with a 44 px Undo;
   - Undo appends a `withdrawn` record (`undoFollowUp`, `liveRecords`, `resolvedBy`) and puts a break's or Needs help's fact back to the version before, as a new version, unless another officer changed it since;
-  - `member_follow_ups` gains `withdrawn` and `fact_version`. The migration was regenerated: still `0031_follow_up`, for the orchestrator to renumber to 0032.
+  - `member_follow_ups` gains `withdrawn` and `fact_version`. The migration was regenerated (now `0032_follow_up`, see below).
 - **Rows**:
   - one-tap "Talked to them" (its own request id, no note), "Add a note" (PT "Anotar", FR "Noter") and "Members ›", all 44 px and on one line, in EN, PT and FR at 360;
   - grouped under "Check in · n" and "New · n", alphabetical in each;
@@ -108,6 +108,12 @@ An R4 officer, a product designer and a copywriter looked at the screenshots. D1
   - Shots: `11y-shots/r3-{list,sheet,sheet-break,after-save,empty}-360-{en,pt,fr}.png`.
   - Another agent's worktree held this session's earlier ports (3947, 54947–54949), so this run used 3967, 54957, 54958 and 54969. Only my own processes were stopped.
 
+## Rebase on b075de8 (#386, the members' board)
+- The migration was regenerated as `0032_follow_up` after #386's `0031_members_board`.
+- The follow-up route has a fixture in #386's route walk (`member-session.test.ts`), and my tests make officer sessions (`createSession(…, "officer")`).
+- Both branches added a spread to `lib/private/dictionary.ts`, which came to 301 lines; the English `profile.*` keys moved to `lib/private/dictionary.profile.ts` (the D88 pattern: blocks spread in from modules). The pt-BR and fr dictionaries are unchanged.
+- `pnpm check` exits 0: **170 files passed, 2 skipped; 893 tests passed, 4 skipped**. The e2e above ran before this rebase.
+
 ## Open issues
 1. **"Members ›"** opens the Members list searched by the name, not the card directly; an address that opens a member's sheet would need a Members change.
 2. **A record resolves the member for the whole game week**, whatever the signal; a new signal later the same week does not bring them back until Monday.
@@ -123,7 +129,7 @@ Plan changes needed: none. The workspace track lives in issues, not in docs/IMPL
 <adjustments>
 - Follow-up records: `listMemberFollowUps(db, workspaceId, uid)` in `lib/repo/member-follow-ups.ts` (one member, newest first, with the officer's desk name); `followedUpSince(db, workspaceId, weekStart(today, zone))` gives the uids followed up this game week (for a Home count).
 - A constant exported from a `"use client"` module cannot be read in a server component (it arrives as a client reference); put shared key lists in a plain module.
-- Migration: `0031_follow_up`, on top of dev's `0030_pending_members` (the orchestrator renumbers it to 0032 after #331).
+- Migration: `0032_follow_up`, on top of dev's `0031_members_board` (b075de8).
 </adjustments>
 
 PR: (added by the orchestrator)

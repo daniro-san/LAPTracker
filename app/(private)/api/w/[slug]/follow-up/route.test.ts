@@ -52,7 +52,7 @@ beforeEach(async () => {
     .insert(workspaceUsers)
     .values({ workspaceId: ws?.id ?? 0, discordUserId: "ogs-ana", displayName: "Ana" })
     .returning({ id: workspaceUsers.id });
-  token = (await createSession(db, ws?.id ?? 0, user?.id ?? 0, T0, null)).token;
+  token = (await createSession(db, ws?.id ?? 0, user?.id ?? 0, T0, null, "officer")).token;
 });
 
 const post = (body: unknown, signedIn = true) =>

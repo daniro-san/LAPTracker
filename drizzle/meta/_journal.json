@@ -225,6 +225,13 @@
       "when": 1794926731497,
       "tag": "0031_members_board",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1794929873743,
+      "tag": "0032_follow_up",
+      "breakpoints": true
     }
   ]
 }
