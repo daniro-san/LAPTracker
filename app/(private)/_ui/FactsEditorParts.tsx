@@ -10,6 +10,7 @@ import { FIELD } from "@/lib/brand/components/controls";
 import type { FactField } from "@/lib/private/fact-fields";
 
 import { counted, say, type EditorWords } from "./facts-form";
+import { ReadScreenshot } from "./ReadScreenshot";
 
 /** What the save bar needs from the editor's save. */
 export interface SaveState {
@@ -19,6 +20,7 @@ export interface SaveState {
 }
 
 export function Paste(props: {
+  slug: string;
   words: EditorWords;
   language: string;
   open: boolean;
@@ -45,13 +47,28 @@ export function Paste(props: {
         onChange={(e) => setText(e.target.value)}
         className={`${FIELD} mt-2`}
       />
-      <button
-        type="button"
-        onClick={() => setFound(props.onRead(text))}
-        className={buttonClass("secondary", "mt-2")}
-      >
-        {words["paste.read"]}
-      </button>
+      <div className="flex flex-wrap items-start gap-x-2">
+        <button
+          type="button"
+          onClick={() => setFound(props.onRead(text))}
+          className={buttonClass("secondary", "mt-2")}
+        >
+          {words["paste.read"]}
+        </button>
+        {/* The picture's text goes into the box and is read at once; the officer still checks and saves. */}
+        <ReadScreenshot
+          slug={props.slug}
+          words={{
+            read: words["shot.read"],
+            reading: words["shot.reading"],
+            failed: words["shot.failed"],
+          }}
+          onText={(read) => {
+            setText(read);
+            setFound(props.onRead(read));
+          }}
+        />
+      </div>
       {found !== null && (
         <p aria-live="polite" className="mt-2 text-body-sm">
           {found === 0

@@ -1,7 +1,7 @@
 // Invented lines in the shapes measured on real onboarding chats (issue #297); never the real chats.
 import { describe, expect, it } from "vitest";
 
-import { mightIn, millionsIn, parseOnboarding } from "./onboarding-parse";
+import { mightIn, millionsIn, nameAndValues, parseOnboarding } from "./onboarding-parse";
 
 const NOW = new Date("2026-11-16T12:00:00Z");
 const read = (text: string) => parseOnboarding(text, NOW, "Etc/GMT+2");
@@ -98,5 +98,18 @@ describe("the facts editor's main squad field (iPhone decimal keypad)", () => {
     expect(millionsIn("1000")).toBeNull();
     expect(millionsIn("19,8M")).toBeNull();
     expect(millionsIn("")).toBeNull();
+  });
+});
+
+describe("a line of Paste updates (D109)", () => {
+  it("takes the name before the first value or AD/squad word, in the shapes officers write", () => {
+    expect(nameAndValues("Ana 10.2M 74%")).toEqual({ name: "Ana", rest: "10.2M 74%" });
+    expect(nameAndValues("RC9-XY 8,442,626 · 42%")).toEqual({
+      name: "RC9-XY",
+      rest: "8,442,626 · 42%",
+    });
+    expect(nameAndValues("Dark Knight: AD 80")).toEqual({ name: "Dark Knight", rest: "AD 80" });
+    expect(nameAndValues("74% 10.2M")).toBeNull();
+    expect(nameAndValues("Hello everyone")).toBeNull();
   });
 });

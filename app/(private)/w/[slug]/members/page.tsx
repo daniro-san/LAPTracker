@@ -18,7 +18,7 @@ import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dicti
 import { LANGUAGES } from "@/lib/private/fact-fields";
 import { formerMembers } from "@/lib/private/former-members";
 import { toReviewCount } from "@/lib/private/import-view";
-import { cardFormats, type CardFormats } from "@/lib/private/member-card";
+import { cardFormats, progressText, type CardFormats } from "@/lib/private/member-card";
 import {
   membersView,
   withListExtras,
@@ -32,7 +32,7 @@ import { RENEW_MS } from "@/lib/private/session";
 import { SLUG } from "@/lib/private/sign-in";
 import { serverDay } from "@/lib/schedule";
 
-import { editorWords } from "../../../_ui/facts-form";
+import { editorWords, updatesWords } from "../../../_ui/facts-form";
 import { FormerMembers } from "../../../_ui/FormerMembers";
 import { SignedInFrame, workspaceWords } from "../../../_ui/Frame";
 import {
@@ -45,12 +45,15 @@ import {
 import { listRow, listWords } from "../../../_ui/member-list-data";
 import { MembersList } from "../../../_ui/MembersList";
 import { MembersSource } from "../../../_ui/MembersSource";
+import { PasteUpdates } from "../../../_ui/PasteUpdates";
 import { PendingMembers } from "../../../_ui/PendingMembers";
 import { refuse } from "../../../_ui/refuse";
 
+/** Top donors and most active; then progress this week, in name order, not a ranking (D109). */
 function Thanks({ view, t, f }: { view: MembersView; t: WorkspaceDictionary; f: CardFormats }) {
   const rows = (["donors", "activity"] as const).filter((k) => view.thanks[k].length > 0);
-  if (rows.length === 0) return null;
+  const progress = view.thanks.progress;
+  if (rows.length === 0 && progress.length === 0) return null;
   return (
     <section aria-labelledby="thanks" className="mt-4 border border-rule px-4 py-3">
       <h2 id="thanks" className="font-subhead text-display-sm">
@@ -74,6 +77,21 @@ function Thanks({ view, t, f }: { view: MembersView; t: WorkspaceDictionary; f: 
           </div>
         ))}
       </div>
+      {progress.length > 0 && (
+        <div className="mt-2 border-t border-rule pt-1">
+          <h3 className="text-body-sm font-semibold text-ink/75">{t["thanks.progress"]}</h3>
+          <ul className="text-body-sm">
+            {progress.map((p) => (
+              <li key={p.uid} className="flex flex-wrap justify-between gap-x-2">
+                <span translate="no" className="min-w-0 truncate font-semibold">
+                  {p.name}
+                </span>
+                <span>{progressText(p, t, f.language)}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </section>
   );
 }
@@ -284,6 +302,7 @@ function Roster(props: {
         )}
       </p>
       <Legend t={t} />
+      <PasteUpdates slug={slug} words={updatesWords(t)} />
       {props.pending}
       <MembersList
         rows={props.rows.map((m) => listRow(m, t, f))}

@@ -15,7 +15,7 @@ import { calendarDays } from "@/lib/private/calendar";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import { MAX_PICTURES } from "@/lib/private/import";
 import { toReview, type ReviewItem } from "@/lib/private/import-view";
-import { cardFormats } from "@/lib/private/member-card";
+import { cardFormats, progressText } from "@/lib/private/member-card";
 import { membersView, type MembersView } from "@/lib/private/members";
 import { needsAWord, whoOf } from "@/lib/private/members-list";
 import { plural } from "@/lib/private/members-sheet";
@@ -141,6 +141,21 @@ function MembersPart(props: {
                 ))}
               </ol>
             </div>
+          )}
+          {/* D109: AD Tech done or main squad grown this week, as on Members (name order). */}
+          {view.thanks.progress.length > 0 && (
+            <p className="mt-1 max-w-sm text-body-sm">
+              <span className="font-semibold text-ink/75">{t["thanks.progress"]}: </span>
+              {view.thanks.progress.map((p, i) => (
+                <span key={p.uid}>
+                  {i > 0 && ", "}
+                  <span translate="no" className="font-semibold">
+                    {p.name}
+                  </span>{" "}
+                  ({progressText(p, t, language)})
+                </span>
+              ))}
+            </p>
           )}
           {checkins === 0 ? (
             <p className="mt-1">{t["members.checkinNone"]}</p>

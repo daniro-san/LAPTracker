@@ -80,6 +80,25 @@ export const membersEn = {
   "clock.server": "Server time (ST) first",
   "clock.mine": "My time first",
   "clock.help": "Changes which time comes first in Calendar and the hour picker.",
+  // Member updates (issue 347, D109).
+  "facts.updated": "Updated {date}",
+  "facts.since": "{change} since {date}",
+  "facts.was": "was {v}",
+  "facts.adComplete": "complete",
+  "thanks.progress": "Progress this week",
+  "thanks.adDone": "AD Tech 100%",
+  "thanks.squadUp": "main squad +{pct}",
+  "updates.open": "Paste updates",
+  "updates.help":
+    "One member per line, in any order: their name, then main squad and AD Tech %. For example: Ana 10.2M 74%",
+  "updates.after": "Next, you check each line (before → after) and save.",
+  "updates.read": "Check the updates",
+  "updates.nothing":
+    "No line had a name with a main squad or AD Tech %. Write one member per line, the name first.",
+  "updates.failed": "Could not read the lines. Try again.",
+  "shot.read": "Read from a screenshot",
+  "shot.reading": "Reading…",
+  "shot.failed": "Couldn’t read this picture. Try a sharper screenshot, or paste the text.",
 } as const;
 
 export type MembersWords = Record<keyof typeof membersEn, string>;

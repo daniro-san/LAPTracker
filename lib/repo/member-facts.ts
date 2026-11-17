@@ -1,7 +1,7 @@
 // member_facts and name_aliases (issue #297, D80): the plain reads and writes behind officer-edited member
 // facts and the sheet import's remembered matches. Every function takes the workspace id; lib/private
 // passes its WorkspaceAccess's own. Versions, merging and who may write stay in lib/private.
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { memberFacts, nameAliases } from "../schema";
@@ -31,6 +31,29 @@ export async function latestFacts(db: Db, workspaceId: number): Promise<FactRow[
     .from(memberFacts)
     .where(eq(memberFacts.workspaceId, workspaceId))
     .orderBy(memberFacts.uid, memberFacts.field, desc(memberFacts.version));
+}
+
+/**
+ * Every version of `fields` in the workspace (of one member when `uid` is given), oldest first per member
+ * and field: the card's change since the previous version and the week's progress (D109).
+ */
+export async function factHistory(
+  db: Db,
+  workspaceId: number,
+  fields: readonly string[],
+  uid?: number,
+): Promise<FactRow[]> {
+  return db
+    .select(columns)
+    .from(memberFacts)
+    .where(
+      and(
+        eq(memberFacts.workspaceId, workspaceId),
+        inArray(memberFacts.field, [...fields]),
+        uid === undefined ? undefined : eq(memberFacts.uid, uid),
+      ),
+    )
+    .orderBy(memberFacts.uid, memberFacts.field, asc(memberFacts.version));
 }
 
 /** One field of one member: its newest version, or the version asked for; null when there is none. */

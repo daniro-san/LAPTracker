@@ -82,4 +82,23 @@ export const membersFr: MembersWords = {
   "clock.server": "Heure du serveur (ST) d’abord",
   "clock.mine": "Mon heure d’abord",
   "clock.help": "Change l’heure affichée en premier dans l’Agenda et le choix de l’heure.",
+  "facts.updated": "Mis à jour le {date}",
+  "facts.since": "{change} depuis le {date}",
+  "facts.was": "avant {v}",
+  "facts.adComplete": "terminé",
+  "thanks.progress": "Progrès de la semaine",
+  "thanks.adDone": "AD Tech 100 %",
+  "thanks.squadUp": "escouade principale +{pct}",
+  "updates.open": "Coller des mises à jour",
+  "updates.help":
+    "Un membre par ligne, dans n’importe quel ordre : son nom, puis l’escouade principale et l’AD Tech %. Par exemple : Ana 10.2M 74%",
+  "updates.after": "Ensuite, vous vérifiez chaque ligne (avant → après) et enregistrez.",
+  "updates.read": "Vérifier les mises à jour",
+  "updates.nothing":
+    "Aucune ligne n’avait un nom avec une escouade principale ou un AD Tech %. Écrivez un membre par ligne, le nom d’abord.",
+  "updates.failed": "Impossible de lire les lignes. Réessayez.",
+  "shot.read": "Lire depuis une capture",
+  "shot.reading": "Lecture…",
+  "shot.failed":
+    "Impossible de lire cette image. Essayez une capture plus nette, ou collez le texte.",
 };

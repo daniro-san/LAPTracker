@@ -81,4 +81,22 @@ export const membersPt: MembersWords = {
   "clock.server": "Hora do servidor (ST) primeiro",
   "clock.mine": "Minha hora primeiro",
   "clock.help": "Muda qual hora vem primeiro na Agenda e no seletor de hora.",
+  "facts.updated": "Atualizado em {date}",
+  "facts.since": "{change} desde {date}",
+  "facts.was": "antes {v}",
+  "facts.adComplete": "completo",
+  "thanks.progress": "Progresso da semana",
+  "thanks.adDone": "AD Tech 100%",
+  "thanks.squadUp": "esquadrão principal +{pct}",
+  "updates.open": "Colar atualizações",
+  "updates.help":
+    "Um membro por linha, em qualquer ordem: o nome, depois o esquadrão principal e o AD Tech %. Por exemplo: Ana 10.2M 74%",
+  "updates.after": "Depois você confere cada linha (antes → depois) e salva.",
+  "updates.read": "Conferir as atualizações",
+  "updates.nothing":
+    "Nenhuma linha tinha um nome com esquadrão principal ou AD Tech %. Escreva um membro por linha, com o nome primeiro.",
+  "updates.failed": "Não foi possível ler as linhas. Tente de novo.",
+  "shot.read": "Ler de um print",
+  "shot.reading": "Lendo…",
+  "shot.failed": "Não foi possível ler esta imagem. Tente um print mais nítido ou cole o texto.",
 };

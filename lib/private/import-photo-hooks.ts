@@ -2,23 +2,23 @@
 // - Member update: a chat picture's main squad might and AD Tech % become member facts (D80), one new
 //   version per field "from a message" (the facts' own source for what a member said). 11f's paste parser
 //   reads each message. A stale write rolls the save back with the newer values (409), as 11f's editor
-//   answers. AD Tech at 100 % is complete: a member already there is not written again.
+//   answers. AD Tech at 100 % is complete: a member already there is not written again. Text with no chat
+//   sender line is "Paste updates" (D109): one member per line, the name first.
 // - Secret Ops report: the entries become thefts (D97) through 11j's saveSecretOpsDraft, for the member
 //   the officer names as the report's owner.
 import type { Db } from "../db";
 import { mergePages } from "../screenshot/merge";
 import { parseSecretOpsReport } from "../screenshot/parse-secret-ops";
 import type { WorkspaceAccess } from "./access";
+import { AD_COMPLETE } from "./fact-fields";
 import type { ReadRow, SaveHook, Saving } from "./import-kinds";
 import { SaveRefused } from "./import-kinds";
 import { factsOf, saveFacts, type FactChange } from "./member-facts";
-import { parseOnboarding } from "./onboarding-parse";
+import { nameAndValues, parseOnboarding } from "./onboarding-parse";
 import { saveSecretOpsDraft } from "./thefts-import";
 
 /** `Lv.28 [OGs] Ana`: a chat sender line; group 1 is the name (its first word). */
 const SENDER = /\.\s?\d{1,2}\b.{0,12}[[({]\s*[A-Za-z0-9]{1,6}\s*[\])}]\s*(\S+)/;
-/** AD Tech at this value is complete. */
-const AD_COMPLETE = 100;
 
 /** Each message of a chat page: its sender's name and the lines under it, up to the next sender. */
 function messages(lines: readonly string[]): { name: string; lines: string[] }[] {
@@ -31,9 +31,21 @@ function messages(lines: readonly string[]): { name: string; lines: string[] }[]
   return out;
 }
 
-/** Rows "sender · fact · value" for every message that states a squad might or an AD Tech %. */
+/** Each line of "Paste updates" as a message: its name first, then what the member said (D109). */
+function pasted(lines: readonly string[]): { name: string; lines: string[] }[] {
+  return lines.flatMap((line) => {
+    const split = nameAndValues(line);
+    return split ? [{ name: split.name, lines: [split.rest] }] : [];
+  });
+}
+
+/**
+ * Rows "sender · fact · value" for every message that states a squad might or an AD Tech %: a chat
+ * page's messages, or the lines of "Paste updates" when the text has no chat sender line.
+ */
 function readChat(lines: readonly string[]): ReadRow[] {
-  return messages(lines).flatMap(({ name, lines: said }) => {
+  const each = lines.some((l) => SENDER.test(l)) ? messages(lines) : pasted(lines);
+  return each.flatMap(({ name, lines: said }) => {
     const facts = parseOnboarding(said, new Date(), "UTC");
     return (["squadMight", "adTech"] as const).flatMap((field) => {
       const value = facts[field];

@@ -6,7 +6,10 @@
 const MAX_WIDTH = 1080;
 
 /** The picture as a PNG: the top band of a full-screen phone capture dropped, scaled down when wide. */
-async function toPng(file: File, statusBar: { share: number; aspect: number }): Promise<Blob> {
+export async function toPng(
+  file: File,
+  statusBar: { share: number; aspect: number },
+): Promise<Blob> {
   const bitmap = await createImageBitmap(file);
   const top =
     bitmap.height >= bitmap.width * statusBar.aspect
@@ -72,3 +75,14 @@ export async function readAll(
   }
   return { pages, signedOut: false };
 }
+
+/**
+ * "Read from a screenshot" (D109): the text lines read from each picture, as the paste box holds pasted
+ * text, one line per line, so the paste's own reading ("Fill the fields", "Paste updates") runs on it.
+ */
+export const pictureText = (pages: readonly (readonly string[])[]) =>
+  pages
+    .flat()
+    .map((l) => l.trim())
+    .filter((l) => l !== "")
+    .join("\n");

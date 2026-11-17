@@ -70,6 +70,9 @@ export const EDITOR_KEYS = [
   "paste.found.one",
   "paste.found.other",
   "paste.zones",
+  "shot.read",
+  "shot.reading",
+  "shot.failed",
   "tz.choose",
   "tz.search",
   "tz.searchAria",
@@ -91,6 +94,24 @@ export type EditorWords = Pick<WorkspaceDictionary, (typeof EDITOR_KEYS)[number]
 
 export const editorWords = (t: WorkspaceDictionary): EditorWords =>
   Object.fromEntries(EDITOR_KEYS.map((k) => [k, t[k]])) as EditorWords;
+
+/** "Paste updates" on Members (D109): its sheet's words, sent to the client once. */
+const UPDATES_KEYS = [
+  ...SHEET_KEYS,
+  "updates.open",
+  "updates.help",
+  "updates.after",
+  "updates.read",
+  "updates.nothing",
+  "updates.failed",
+  "shot.read",
+  "shot.reading",
+  "shot.failed",
+] as const;
+export type UpdatesWords = Pick<WorkspaceDictionary, (typeof UPDATES_KEYS)[number]>;
+
+export const updatesWords = (t: WorkspaceDictionary): UpdatesWords =>
+  Object.fromEntries(UPDATES_KEYS.map((k) => [k, t[k]])) as UpdatesWords;
 
 /** The import screen's words (SheetImport), sent to the client once. */
 export const IMPORT_KEYS = [

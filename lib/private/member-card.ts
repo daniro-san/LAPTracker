@@ -4,9 +4,11 @@
 import { compactLarge } from "../compact";
 import { fill } from "../copy";
 import type { Db } from "../db";
+import { factHistory } from "../repo/member-facts";
 import type { WorkspaceAccess } from "./access";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "./dictionary";
 import {
+  AD_COMPLETE,
   FACT_FIELDS,
   type FactField,
   type FactSource,
@@ -14,6 +16,7 @@ import {
   type MemberFacts,
 } from "./fact-fields";
 import { factText, NONE } from "./fact-text";
+import { lastTwo, TREND_FIELDS, type Progress, type TrendField, type Version } from "./fact-trend";
 import { followUpsOf } from "./follow-up";
 import { historyLine } from "./follow-up-rules";
 import { membersView, type MemberRow } from "./members";
@@ -46,6 +49,10 @@ export interface FactLine {
   label: string;
   value: string;
   source: FactSource | null;
+  /** Main squad and AD Tech (D109): "+0.4M since Tue, Nov 10", "was 69%", or "complete" at 100 %. */
+  change?: string;
+  /** Main squad and AD Tech: "Updated Tue, Nov 17", plain information, never a warning (D109). */
+  updated?: string;
 }
 
 export interface CardData {
@@ -168,22 +175,75 @@ function detailsOf(m: MemberRow, t: WorkspaceDictionary, f: CardFormats, shown: 
   ];
 }
 
-/** The facts with their value; Status only when an officer set one (otherwise the card's status says it). */
-export function factLines(facts: MemberFacts, t: WorkspaceDictionary, f: CardFormats): FactLine[] {
+/** Each trend field's version before the newest, from the history (D109). */
+export type Previous = Partial<Record<TrendField, Version | null>>;
+
+/**
+ * "+0.4M since Tue, Nov 10" (main squad) or "was 69%" (AD Tech) against the version before; "complete"
+ * for AD Tech at 100 %. Nothing when there is no earlier value or it is the same (D75: no data, no claim).
+ */
+function changeOf(
+  field: TrendField,
+  now: number,
+  before: Version | null | undefined,
+  t: WorkspaceDictionary,
+  f: CardFormats,
+  text: Parameters<typeof factText>[2],
+): string | undefined {
+  if (field === "adTech" && now === AD_COMPLETE) return t["facts.adComplete"];
+  const was = before?.value;
+  if (was === null || was === undefined || was === now) return undefined;
+  if (field === "adTech") return fill(t["facts.was"], { v: factText("adTech", was, text) });
+  const delta = `${now > was ? "+" : "−"}${f.compact(Math.abs(now - was))}`;
+  return fill(t["facts.since"], { change: delta, date: f.date(before?.at as Date) });
+}
+
+/**
+ * The facts with their value; Status only when an officer set one (otherwise the card's status says it).
+ * Main squad and AD Tech also carry the day they were saved and, with `previous`, the change (D109).
+ */
+export function factLines(
+  facts: MemberFacts,
+  t: WorkspaceDictionary,
+  f: CardFormats,
+  previous?: Previous,
+): FactLine[] {
   const text = { language: f.language, now: f.now, day: (iso: string) => f.date(iso), words: t };
   return FACT_FIELDS.filter((field) => field !== "status" || facts.status?.value).map(
     <F extends FactField>(field: F) => {
-      const value = facts[field]?.value as FactValues[F] | null | undefined;
+      const fact = facts[field];
+      const value = fact?.value as FactValues[F] | null | undefined;
       const known = value !== null && value !== undefined;
-      return {
+      const line: FactLine = {
         field,
         label: t[`facts.${field}`],
         value: factText(field, value, text),
-        source: known ? (facts[field]?.source ?? null) : null,
+        source: known ? (fact?.source ?? null) : null,
+      };
+      if (!known || !isTrend(field)) return line;
+      const change = changeOf(field, value as number, previous?.[field], t, f, text);
+      return {
+        ...line,
+        ...(change && { change }),
+        ...(fact?.at && { updated: fill(t["facts.updated"], { date: f.date(new Date(fact.at)) }) }),
       };
     },
   );
 }
+
+/** A thanks line's reason (D109): "AD Tech 100%", "main squad +8%", or both. */
+export function progressText(p: Progress, t: WorkspaceDictionary, language: string): string {
+  const pct = new Intl.NumberFormat(language, { style: "percent", maximumFractionDigits: 0 });
+  return [
+    ...(p.adDone ? [t["thanks.adDone"]] : []),
+    ...(p.squadGrowth !== null
+      ? [fill(t["thanks.squadUp"], { pct: pct.format(p.squadGrowth) })]
+      : []),
+  ].join(" · ");
+}
+
+const isTrend = (field: FactField): field is TrendField =>
+  (TREND_FIELDS as readonly string[]).includes(field);
 
 export function cardData(
   m: MemberRow,
@@ -192,6 +252,7 @@ export function cardData(
   f: CardFormats,
   shown: Shown,
   followUps: string[] = [],
+  previous: Previous = {},
 ): CardData {
   const { status, label, lines } = statusParts(m, t, f);
   return {
@@ -217,7 +278,7 @@ export function cardData(
       return { weekday, day, value, said: `${weekday} ${day}: ${said}`, none: v === null };
     }),
     details: detailsOf(m, t, f, shown),
-    factLines: factLines(m.facts, t, f),
+    factLines: factLines(m.facts, t, f, previous),
     stored: m.facts,
     autoStatus: statusParts({ ...m, officerStatus: null }, t, f).label || NONE,
     followUps: { head: t["followup.cardHead"], lines: followUps },
@@ -231,13 +292,17 @@ export async function memberCard(
   uid: number,
   at: { now: Date; zone: string; language: WorkspaceLanguage; t: WorkspaceDictionary },
 ): Promise<CardData | null> {
-  const [view, history] = await Promise.all([
+  const [view, history, versions] = await Promise.all([
     membersView(db, access, at.now, at.zone),
     followUpsOf(db, access, uid),
+    factHistory(db, access.workspaceId, TREND_FIELDS, uid),
   ]);
   const member = view.members.find((m) => m.uid === uid);
   if (!member) return null;
   const f = cardFormats(at.language, at.zone, at.now);
   const lines = history.map((row) => historyLine(row, at.t, f.date, f.date));
-  return cardData(member, view.week, at.t, f, shownOf(view.members), lines);
+  const previous = Object.fromEntries(
+    TREND_FIELDS.map((field) => [field, lastTwo(versions, uid, field)?.before ?? null]),
+  );
+  return cardData(member, view.week, at.t, f, shownOf(view.members), lines, previous);
 }
