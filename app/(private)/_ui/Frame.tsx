@@ -132,7 +132,9 @@ export async function Frame({
           )}
         </div>
       </header>
-      <main className="mx-auto max-w-[960px] px-4 py-5 sm:px-6">{children}</main>
+      <main className="mx-auto max-w-[960px] py-5 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] sm:pl-[max(1.5rem,env(safe-area-inset-left))] sm:pr-[max(1.5rem,env(safe-area-inset-right))]">
+        {children}
+      </main>
       {tabs && <Tabs t={t} {...tabs} />}
     </div>
   );
