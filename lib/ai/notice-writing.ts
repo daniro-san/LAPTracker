@@ -3,7 +3,8 @@
 // nothing from the project, so no roster field or name list can reach a request (D71). The result is a
 // draft the officer reviews before saving.
 import { DO_NOT_TRANSLATE, GLOSSARY, ITEM_EXAMPLES, TRANSLATED_TERMS } from "./glossary";
-import type { ChatModel } from "./groq";
+import type { ChatModel, Retune } from "./groq";
+import { untranslatedShare, UNTRANSLATED_SHARE } from "./untranslated";
 
 export const WRITING_LANGUAGES = ["en", "pt-BR", "fr"] as const;
 export type WritingLanguage = (typeof WRITING_LANGUAGES)[number];
@@ -122,17 +123,42 @@ export function plainText(text: string, language: WritingLanguage): string {
   return spaced.replace(/\u2011/g, "-").replace(/[ \t]+$/gm, "");
 }
 
+/** The one harder look a mostly untranslated answer gets: medium reasoning, room for it (D81). */
+export const RETRY: Retune = { effort: "medium", maxTokens: 4000 };
+
+export interface Translation {
+  text: string;
+  /** The first answer came back mostly untranslated, so it was asked once more. */
+  retried: boolean;
+  /** Still mostly untranslated after the retry: the draft says "Partly untranslated, please check". */
+  partly: boolean;
+}
+
 export async function translateText(
   model: ChatModel,
   from: WritingLanguage,
   to: WritingLanguage,
   text: string,
-): Promise<string> {
-  const answer = await model.complete({
+): Promise<Translation> {
+  const sent = withOwnNames(text, to);
+  const request = {
     system: TRANSLATE_SYSTEM,
-    user: `Translate from ${NAME[from]} to ${NAME[to]}:\n\n${wrap(withOwnNames(text, to))}`,
-  });
-  return plainText(answer, to);
+    user: `Translate from ${NAME[from]} to ${NAME[to]}:\n\n${wrap(sent)}`,
+  };
+  const first = plainText(await model.complete(request), to);
+  const firstShare = untranslatedShare(sent, first);
+  if (firstShare < UNTRANSLATED_SHARE) return { text: first, retried: false, partly: false };
+  const second = await model.complete(request, RETRY).then(
+    (answer) => plainText(answer, to),
+    () => null,
+  );
+  const secondShare = second === null ? 1 : untranslatedShare(sent, second);
+  const better = second !== null && secondShare <= firstShare ? second : first;
+  return {
+    text: better,
+    retried: true,
+    partly: Math.min(firstShare, secondShare) >= UNTRANSLATED_SHARE,
+  };
 }
 
 export async function improveText(

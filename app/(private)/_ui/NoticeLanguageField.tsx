@@ -49,6 +49,8 @@ export interface LanguageFieldProps {
   stale: { from: NoticeLanguage | null } | null;
   /** Filled by Translate or Improve writing and not saved yet: Undo puts the text back. */
   drafted: boolean;
+  /** The translation came back partly untranslated even after its retry (D81). */
+  partly: boolean;
   /** Another language has text, which Translate would turn into a draft. */
   othersWritten: boolean;
   onTranslate: (from: NoticeLanguage, to: NoticeLanguage[]) => void;
@@ -193,6 +195,11 @@ export function LanguageField(p: LanguageFieldProps) {
               {t["notices.undo"]}
             </button>
           </p>
+          {p.partly && (
+            <p role="status" className="mb-2 text-body-sm font-semibold text-seal">
+              {t["notices.draft.partly"]}
+            </p>
+          )}
           {box}
         </div>
       ) : (

@@ -1,6 +1,7 @@
 // POST /api/w/[slug]/notices/draft — Translate and Improve writing (D81, issues 304 and 305). The body is the
 // text the officer is editing and nothing else; the answer is a draft per language that the officer reviews
-// before saving. Nothing is stored. The log carries a code and the time taken, never the text.
+// before saving. A translation that came back mostly untranslated after its one retry is listed in `partly`.
+// Nothing is stored. The log carries a code, the time taken and counts, never the text.
 //   {kind: "translate", from, to: [languages], text}  {kind: "improve", language, tone, text}
 import { z } from "zod";
 
@@ -13,8 +14,8 @@ import { DRAFT_LIMIT, NOTICE_LIMIT } from "@/lib/private/notice-rules";
 import { SLUG } from "@/lib/private/sign-in";
 import { withContext } from "@/lib/route";
 
-/** Two models at 15 s each, at worst (D81); the platform's default would cut that short on some plans. */
-export const maxDuration = 60;
+/** At worst four calls of 15 s: both models, then the one retry and its fallback (D81). */
+export const maxDuration = 90;
 
 const language = z.enum(WRITING_LANGUAGES);
 const text = z.string().trim().min(1).max(DRAFT_LIMIT);
@@ -50,14 +51,34 @@ export async function POST(
     const ask = parsed.data;
     const started = ctx.now().getTime();
     try {
-      const drafts =
+      const answers =
         ask.kind === "translate"
           ? await Promise.all(
-              ask.to.map(async (to) => [to, await translateText(ai, ask.from, to, ask.text)]),
+              ask.to.map(async (to) => ({
+                to,
+                ...(await translateText(ai, ask.from, to, ask.text)),
+              })),
             )
-          : [[ask.language, await improveText(ai, ask.language, ask.tone, ask.text, NOTICE_LIMIT)]];
-      privateLog(`notices.${ask.kind}.ok`, { ms: ctx.now().getTime() - started });
-      return Response.json({ drafts: Object.fromEntries(drafts) }, { headers: NO_STORE });
+          : [
+              {
+                to: ask.language,
+                text: await improveText(ai, ask.language, ask.tone, ask.text, NOTICE_LIMIT),
+                retried: false,
+                partly: false,
+              },
+            ];
+      privateLog(`notices.${ask.kind}.ok`, {
+        ms: ctx.now().getTime() - started,
+        retried: answers.filter((a) => a.retried).length,
+        partly: answers.filter((a) => a.partly).length,
+      });
+      return Response.json(
+        {
+          drafts: Object.fromEntries(answers.map((a) => [a.to, a.text])),
+          partly: answers.filter((a) => a.partly).map((a) => a.to),
+        },
+        { headers: NO_STORE },
+      );
     } catch (error) {
       if (!(error instanceof ChatError)) throw error;
       privateLog(`notices.${ask.kind}.${error.kind}`, { ms: ctx.now().getTime() - started });

@@ -23,8 +23,14 @@ export interface ChatRequest {
   user: string;
 }
 
+/** A second, harder look for one request: more reasoning and room on the first model (D81). */
+export interface Retune {
+  effort: "medium";
+  maxTokens: number;
+}
+
 export interface ChatModel {
-  complete(request: ChatRequest): Promise<string>;
+  complete(request: ChatRequest, retune?: Retune): Promise<string>;
 }
 
 /** timeout: no answer in time. busy: the free tier's limit (429). failed: anything else. */
@@ -54,11 +60,16 @@ async function read(response: Response): Promise<string> {
 }
 
 export function groqChat(apiKey: string, fetcher: typeof fetch, timeoutMs = TIMEOUT_MS): ChatModel {
-  async function ask(choice: (typeof GROQ_MODELS)[number], request: ChatRequest): Promise<string> {
+  async function ask(
+    choice: (typeof GROQ_MODELS)[number],
+    request: ChatRequest,
+    retune?: Retune,
+  ): Promise<string> {
     const body = {
       ...choice,
+      ...(retune && { reasoning_effort: retune.effort }),
       temperature: TEMPERATURE,
-      max_completion_tokens: MAX_TOKENS,
+      max_completion_tokens: retune?.maxTokens ?? MAX_TOKENS,
       messages: [
         { role: "system", content: request.system },
         { role: "user", content: request.user },
@@ -80,6 +91,7 @@ export function groqChat(apiKey: string, fetcher: typeof fetch, timeoutMs = TIME
   }
   const [first, second] = GROQ_MODELS;
   return {
-    complete: (request) => ask(first, request).catch(() => ask(second, request)),
+    // A retune applies to the first model only; the second keeps the settings it was measured with.
+    complete: (request, retune) => ask(first, request, retune).catch(() => ask(second, request)),
   };
 }

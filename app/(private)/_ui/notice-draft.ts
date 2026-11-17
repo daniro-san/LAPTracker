@@ -24,6 +24,8 @@ export interface Draft {
   undo: Partial<Record<NoticeLanguage, string>>;
   /** "Keep as is" on a language that may be out of date: saved unchanged, which brings it up to date. */
   kept: Partial<Record<NoticeLanguage, true>>;
+  /** A translation that came back partly untranslated even after its retry (D81). */
+  partly: Partial<Record<NoticeLanguage, true>>;
 }
 
 export const omit = <T extends object>(record: T, key: PropertyKey): T =>
@@ -38,7 +40,7 @@ export function startDraft(fields: NoticeFields): Draft {
   ) as Values;
   const versions = Object.fromEntries(NOTICE_FIELDS.map((f) => [f, fields[f].version]));
   const draft = { values, base: values, versions: versions as Draft["versions"] };
-  return { ...draft, from: {}, undo: {}, kept: {} };
+  return { ...draft, from: {}, undo: {}, kept: {}, partly: {} };
 }
 
 const changed = (d: Draft, f: NoticeField) =>
@@ -59,16 +61,23 @@ export function changesOf(d: Draft): Change[] {
   });
 }
 
-/** Translate or Improve writing put `drafts` in: each language keeps its previous text for Undo. */
+/**
+ * Translate or Improve writing put `drafts` in: each language keeps its previous text for Undo, and is
+ * marked when it came back partly untranslated.
+ */
 export function withDrafts(
   d: Draft,
   drafts: Partial<Record<NoticeLanguage, string>>,
   ask: DraftAsk,
+  partly: NoticeLanguage[] = [],
 ): Draft {
-  let next = { ...d, values: { ...d.values }, undo: { ...d.undo } };
+  let next = { ...d, values: { ...d.values }, undo: { ...d.undo }, partly: { ...d.partly } };
   for (const [language, text] of Object.entries(drafts) as [NoticeLanguage, string][]) {
     next.undo[language] = d.undo[language] ?? d.values[language];
     next.values[language] = text;
+    next.partly = partly.includes(language)
+      ? { ...next.partly, [language]: true }
+      : omit(next.partly, language);
     next.from =
       ask.kind === "translate"
         ? { ...next.from, [language]: { language: ask.from, text: ask.text } }

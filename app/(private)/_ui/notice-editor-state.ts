@@ -74,7 +74,7 @@ export function useEditor(p: EditorProps) {
     const answer = await askDraft(p.slug, ask);
     setBusy(null);
     if ("failed" in answer) return setMessage(answer.failed);
-    setDraft((d) => withDrafts(d, answer.drafts, ask));
+    setDraft((d) => withDrafts(d, answer.drafts, ask, answer.partly));
     if (ask.kind === "translate") track("ws_notice_translated");
   };
   const save = async () => {
@@ -120,6 +120,7 @@ export function useEditor(p: EditorProps) {
         ...d,
         values: { ...d.values, [language]: d.undo[language] ?? d.values[language] },
         undo: omit(d.undo, language),
+        partly: omit(d.partly, language),
         from: omit(d.from, language),
       })),
     keep: (language: NoticeLanguage) =>

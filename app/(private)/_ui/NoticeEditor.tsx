@@ -69,6 +69,7 @@ export function NoticeEditor(p: EditorProps) {
             busy={e.busy}
             stale={stale ? { from: p.source } : null}
             drafted={draft.undo[language] !== undefined}
+            partly={draft.partly[language] === true}
             othersWritten={others.some((l) => draft.values[l].trim() !== "")}
             onTranslate={(from, to) => void e.translate(from, to)}
             onImprove={(tone) => void e.improve(language, tone)}

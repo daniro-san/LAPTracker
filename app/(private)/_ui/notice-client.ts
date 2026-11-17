@@ -56,14 +56,20 @@ export type DraftAsk =
   | { kind: "translate"; from: NoticeLanguage; to: NoticeLanguage[]; text: string }
   | { kind: "improve"; language: NoticeLanguage; tone: string; text: string };
 
+/** A Translate or Improve writing answer: each language's draft, and those still partly untranslated. */
+export interface DraftAnswer {
+  drafts: Partial<Record<NoticeLanguage, string>>;
+  partly: NoticeLanguage[];
+}
+
 /** The drafts by language, or the words that say why there are none. */
 export async function askDraft(
   slug: string,
   ask: DraftAsk,
-): Promise<{ drafts: Partial<Record<NoticeLanguage, string>> } | { failed: WorkspaceKey }> {
+): Promise<DraftAnswer | { failed: WorkspaceKey }> {
   const { status, json } = await post(`/api/w/${slug}/notices/draft`, ask);
-  const drafts = (json as { drafts?: Partial<Record<NoticeLanguage, string>> } | null)?.drafts;
-  if (status === 200 && drafts) return { drafts };
+  const body = json as Partial<DraftAnswer> | null;
+  if (status === 200 && body?.drafts) return { drafts: body.drafts, partly: body.partly ?? [] };
   if (status === 504) return { failed: "notices.ai.timeout" };
   if (status === 429) return { failed: "notices.ai.busy" };
   return { failed: "notices.ai.failed" };

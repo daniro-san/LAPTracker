@@ -79,6 +79,7 @@ describe("POST /api/w/[slug]/notices/draft", () => {
     expect(ok.status).toBe(200);
     expect(await ok.json()).toEqual({
       drafts: { "pt-BR": "Rally às 18:00 ST.", fr: "Ralliement à 18:00 ST." },
+      partly: [],
     });
     expect(asked).toHaveLength(2);
 
