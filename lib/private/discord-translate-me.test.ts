@@ -1,9 +1,12 @@
+import { createHash } from "node:crypto";
+
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
+import { currentCount, recordFailure } from "../repo/auth-attempts";
 import { translateComponent, type TranslateInput } from "./discord-translate";
-import { TRANSLATE_PER_MINUTE } from "./translate-limits";
+import { TRANSLATE_PER_DAY, TRANSLATE_PER_MINUTE } from "./translate-limits";
 
 // Invented server, people and message (D101, amended 2026-11-17).
 const NOW = new Date("2026-11-17T20:00:00Z");
@@ -73,6 +76,33 @@ describe("Translate for me: a language button", () => {
     expect(refused?.body).toEqual({
       type: 7,
       data: { content: "You can translate 5 messages a minute. Wait a minute and try again." },
+    });
+  });
+
+  it("refuses a shown text it cannot translate without counting it", async () => {
+    const press = (shownText: string) =>
+      translateComponent(
+        db,
+        input(),
+        { customId: `tm:p:e:${ASKER}`, values: undefined, shownText, owner: ASKER },
+        NOW,
+      );
+    const noLetters = await press("<@123456789012345678> https://example.test 18:00");
+    expect(noLetters?.body).toEqual({
+      type: 7,
+      data: { content: "This message has no text to translate." },
+    });
+    expect((await press("x".repeat(1501)))?.translation).toBeUndefined();
+    const person = `translate:${createHash("sha256").update(ASKER).digest("hex").slice(0, 32)}`;
+    expect(await currentCount(db, person, 60_000, NOW)).toBe(0);
+  });
+
+  it("past the day's cap, says translations are paused and keeps the buttons", async () => {
+    await recordFailure(db, "day:translate", 24 * 3_600_000, NOW, TRANSLATE_PER_DAY);
+    // Type 7 with only a content: Discord keeps the embed and the buttons as they were.
+    expect((await pressSwitch(`tm:p:e:${ASKER}`))?.body).toEqual({
+      type: 7,
+      data: { content: "Translations are paused for today. Try again tomorrow." },
     });
   });
 });

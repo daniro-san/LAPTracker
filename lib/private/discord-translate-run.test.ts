@@ -207,4 +207,33 @@ describe("Translate for me: the other languages' buttons", () => {
     });
     expect(labels(calls[0]?.body)).toEqual(["English", "Français"]);
   });
+
+  it("after a press the translator failed: the line, the shown text kept, its buttons back", async () => {
+    const { calls, fetcher } = discordStub(created());
+    const pressed: TranslationJob = { ...job("channel", "me"), pressed: true };
+    await runTranslation(deps(fetcher, undefined, model(true)), pressed);
+    const body = calls[0]?.body ?? {};
+    expect(body.content).toBe("The translator is busy. Try again in a minute.");
+    expect("embeds" in body).toBe(false);
+    expect(labels(body)).toEqual(["Português", "Français"]);
+    expect(JSON.stringify(body.components)).toContain(`"tm:p:e:${ASKER}"`);
+  });
+
+  it("the translator finds the text already in that language: shown as it is, under that language", async () => {
+    // Reachable only from the command, with no clear language (`from` null); a press always has one.
+    const { calls, fetcher } = discordStub(created());
+    const echo: ChatModel = {
+      complete: async (r) => /<text>\n?([\s\S]*?)\n?<\/text>/.exec(r.user)?.[1] ?? "",
+    };
+    const unclear: TranslationJob = { ...job("channel", "me"), from: null, to: ["en"] };
+    await runTranslation(deps(fetcher, undefined, echo), unclear);
+    expect(calls[0]?.body.embeds).toEqual([
+      {
+        title: "🇬🇧 English",
+        description: "The rally <#1600000000000000009> is at 18:00.",
+        footer: { text: "Already in English. Translate to:" },
+      },
+    ]);
+    expect(labels(calls[0]?.body)).toEqual(["Português", "Français"]);
+  });
 });
