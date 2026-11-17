@@ -63,8 +63,8 @@ const sameTheft = (a: Omit<NewTheft, "workspaceId">, b: Omit<NewTheft, "workspac
   (a.at?.getTime() ?? null) === (b.at?.getTime() ?? null);
 
 /**
- * Saves the reviewed entries as thefts. Help (`kind: "help"`) is left out; an unreadable sentence
- * (`kind: null`) is saved with what was stolen unknown. An entry naming the workspace's own alliance
+ * Saves the reviewed entries as thefts of type `ops`, the report being a Secret Ops one: an unreadable
+ * sentence (`kind: null`) too. Help (`kind: "help"`) is left out. An entry naming the workspace's own alliance
  * (its tag, or a name that matches one member) is left out: our members help each other, and a help line
  * whose sentence was lost must not read as a theft. The same report saved twice adds nothing the second
  * time: each (attacker, victim, time) is saved only as many times as the log does not hold it yet.
@@ -102,7 +102,7 @@ export async function saveSecretOpsDraft(
         attackerUid: player?.uid ?? null,
         attackerName: name,
         attackerTag: tag,
-        stolen: e.kind === "theft" ? "quest_rewards" : null,
+        kind: "ops",
         victimUid: victim?.uid ?? null,
         victimName: victim?.name ?? null,
         source: "photo",

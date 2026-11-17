@@ -146,7 +146,7 @@ function Entry({ entry, slug, t, language }: Shared & { entry: EntryCard }) {
         />
       </p>
       <p>
-        <bdi translate="no">{entry.victim}</bdi> · {entry.stolen}
+        <bdi translate="no">{entry.victim}</bdi> · {entry.kind}
       </p>
       {/* "Typed by an officer" is the default and says nothing; a photo is a plain word. */}
       {entry.source === "photo" && <p className="mt-1 text-[12px] text-ink/70">{t["src.photo"]}</p>}

@@ -13,7 +13,7 @@ import {
   requestCookies,
 } from "@/lib/private/http";
 import { SLUG } from "@/lib/private/sign-in";
-import { FOLLOW_UP_STATES } from "@/lib/private/theft-groups";
+import { FOLLOW_UP_STATES, THEFT_KINDS } from "@/lib/private/theft-groups";
 import { addTheft, findAttackers, removeTheft, setFollowUp } from "@/lib/private/thefts";
 import { parseQuery, withContext } from "@/lib/route";
 
@@ -33,7 +33,7 @@ const body = z.discriminatedUnion("action", [
       victimUid: uid.nullable(),
       day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
       time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
-      stolen: z.literal("quest_rewards").nullable(),
+      kind: z.enum(THEFT_KINDS),
       note,
       requestId: z.uuid(),
     })

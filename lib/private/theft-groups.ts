@@ -6,6 +6,10 @@ import { nameKey } from "../screenshot/name-key";
 export const FOLLOW_UP_STATES = ["open", "talked", "resolved"] as const;
 export type FollowUpState = (typeof FOLLOW_UP_STATES)[number];
 
+/** A theft's type, as the add sheet offers it (D97, amended 2026-11-17). */
+export const THEFT_KINDS = ["tile_hit", "ops", "caravan", "sanctuary"] as const;
+export type TheftKind = (typeof THEFT_KINDS)[number];
+
 /** One attacker across entries: `uid:<uid>` for a player found in a tracked roster, else `name:<name key>`. */
 export function attackerKeyOf(uid: number | null, name: string): string {
   return uid !== null ? `uid:${uid}` : `name:${nameKey(name)}`;
@@ -18,7 +22,8 @@ export interface TheftEntry {
   attackerKey: string;
   attackerName: string;
   attackerTag: string;
-  stolen: "quest_rewards" | null;
+  /** Null on rows saved before the type was asked. */
+  kind: TheftKind | null;
   victimUid: number | null;
   victimName: string | null;
   source: "photo" | "typed";
