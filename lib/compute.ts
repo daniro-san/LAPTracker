@@ -239,6 +239,63 @@ export function killsTurnout(
   };
 }
 
+/** Events an alliance needs before its ratio is shown: one event's ratio is noise (D83). */
+export const CARRIED_MIN_EVENTS = 3;
+
+export interface CarriedInput {
+  key: number;
+  /** Alliance might at Start. */
+  might: number | null;
+  killsBefore: number | null;
+  killsAfter: number | null;
+}
+
+export interface CarriedShare {
+  key: number;
+  /** The alliance's part of the might of all the alliances counted, 0 to 1. */
+  mightShare: number;
+  /** The alliance's part of the kills gained by all the alliances counted, 0 to 1. */
+  killShare: number;
+  /** Kill share over might share; null when the might share is 0. */
+  ratio: number | null;
+}
+
+/**
+ * Each alliance's share of the kills gained (D83) next to its share of the might at Start (#280). Only
+ * alliances with all three totals count, so the shares are of the same set; the caller decides that the
+ * totals are usable (INVARIANT freshness.no-stale-delta). A fall in an alliance's kills total is not a
+ * gain. Empty when the set has no might or no kills gained.
+ */
+export function carriedShares(rows: readonly CarriedInput[]): CarriedShare[] {
+  const counted = rows.flatMap((r) =>
+    r.might === null || r.killsBefore === null || r.killsAfter === null
+      ? []
+      : [{ key: r.key, might: r.might, gained: Math.max(0, r.killsAfter - r.killsBefore) }],
+  );
+  const might = counted.reduce((t, r) => t + r.might, 0);
+  const gained = counted.reduce((t, r) => t + r.gained, 0);
+  if (might === 0 || gained === 0) return [];
+  return counted.map((r) => {
+    const mightShare = r.might / might;
+    const killShare = r.gained / gained;
+    return {
+      key: r.key,
+      mightShare,
+      killShare,
+      ratio: mightShare === 0 ? null : killShare / mightShare,
+    };
+  });
+}
+
+/** The lowest and highest of an alliance's ratios over its events; null under `CARRIED_MIN_EVENTS`. */
+export function ratioSpread(
+  ratios: readonly number[],
+): { n: number; low: number; high: number } | null {
+  return ratios.length < CARRIED_MIN_EVENTS
+    ? null
+    : { n: ratios.length, low: Math.min(...ratios), high: Math.max(...ratios) };
+}
+
 export type MoverMetric = "power" | "kills";
 export type MoverDirection = "gain" | "loss";
 

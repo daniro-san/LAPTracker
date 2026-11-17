@@ -29,12 +29,44 @@ Words already used in `lib/i18n/ru.ts`. Reuse them so the pages stay consistent;
 | Start / End               | Начало / Конец              | `status.start` / `status.end`, `compare.lead`                                               |
 | Member history            | История участников          | `history.title` — the page title                                                            |
 | Daily read                | Ежедневное чтение           | `history.daily` — a card head for the once-a-day read                                       |
+| Chart                     | график                      | `ledger.progressEmpty`, `ledger.chart` — the might chart                                    |
+| English                   | ru                          | Key and use                                                                                 |
+| ------------------------- | --------------------------- | ------------------------------------------------------------------------------------------- |
+| Server 325 · Event Ledger | Сервер 325 · Журнал событий | `site.ledger` — the page title                                                              |
+| Ledger                    | Журнал                      | `site.home` — the ledger, as a breadcrumb                                                   |
+| kept by the Old Grandmas  | ведут Old Grandmas          | `site.byline` — Old Grandmas stays a name                                                   |
+| Alliance                  | Альянс                      | `ledger.alliance`                                                                           |
+| not in a tracked alliance | не в отслеживаемом альянсе  | `compare.notTracked` — player view                                                          |
+| Member                    | Участник                    | `ledger.member` — a player inside an alliance                                               |
+| Player                    | Игрок                       | `ledger.player`                                                                             |
+| Event                     | Событие                     | `ledger.event` — a game event                                                               |
+| Rank                      | Место                       | `ledger.rank` — the #n position                                                             |
+| Ranking                   | Рейтинг                     | `ledger.ranking` — the game's server rank                                                   |
+| joined                    | пришли                      | `ledger.joined` — after +n                                                                  |
+| left                      | ушли                        | `ledger.left` — after −n                                                                    |
+| Stale                     | Устарели                    | `fresh.stale` — data not fresh                                                              |
+| server time               | по серверу                  | `time.serverTime` — after a time: 14:01 …                                                   |
+| your time                 | ваше время                  | `time.yourTime` — after a time, the viewer's zone                                           |
+| Exact numbers             | Точные числа                | `site.exactNumbers` — the toggle; legend.rounded names it                                   |
+| Manual round              | Ручной раунд                | `site.manualRound` — an event the admin runs by hand                                        |
+| Leader                    | Лидер                       | `leadership.leader` — the R5                                                                |
+| Run by hand by the admin  | Админ запускает вручную     | `status.byHand`                                                                             |
+| grandma                   | бабушка                     | the voice in empty states and errors                                                        |
+| Grandma noticed           | Бабушка заметила            | `ledger.movers` — the event's biggest gains and losses                                      |
+| vs                        | против                      | `compare.title`, `compare.versus` — two events side by side                                 |
+| Start / End               | Начало / Конец              | `status.start` / `status.end`, `compare.lead`                                               |
+| Member history            | История участников          | `history.title` — the page title                                                            |
+| Daily read                | Ежедневное чтение           | `history.daily` — a card head for the once-a-day read                                       |
 | Reading                   | Чтение                      | `ledger.liveReadings`, `ledger.liveNoReading` — one pass of the game's data in a live event |
 | Standings                 | Итоги                       | `ledger.liveStandings`, `ledger.liveStandingsHelp` — the live table so far                  |
 | Busiest                   | Пик                         | `ledger.liveBusiest`, `ledger.liveBusiestDone` — the 30 minutes with most kills             |
 | Top 5                     | Топ-5                       | `ledger.topShare` — the 5 biggest gainers in an alliance                                    |
 | War turnout               | Участие                     | `ledger.fought` — the event page's kills section title                                      |
 | Gainers                   | растущие                    | `ledger.topShareHelp`, `ledger.fewGainers` — a member whose Kills rose in the event         |
+| Member cap                | лимит                       | `merge.cap`, `merge.over`, `merge.answer` — the most members an alliance may hold           |
+| Merge                     | слияние                     | `merge.link`, `merge.lead` — two alliances counted as one                                   |
+| Kill share / might share  | доля убийств / доля мощи    | `ledger.carried*` — an alliance's share of Kills gained, and of Might at Start              |
+| pts (percentage points)   | п.п.                        | `ledger.carriedPoints`, `ledger.carriedRatioHelp` — the gap between two shares              |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.
@@ -43,10 +75,18 @@ Words already used in `lib/i18n/ru.ts`. Reuse them so the pages stay consistent;
 
 The game's own word for each term, with the page that shows it in the game's text and the quote. A term not listed stays English. Add a row only with a source that carries the game's own text (datamined text or an in-game screenshot), never a guide's prose (D52).
 
-| English | ru        | Source                                        | Quote                                                         |
-| ------- | --------- | --------------------------------------------- | ------------------------------------------------------------- |
-| Might   | Мощь      | https://lastasylum.gg/ru/events/alliance-duel | входящие в топ-32 по мощи на сервере                          |
-| Kills   | Убийства  | https://lastasylum.gg/ru/events/kingdom-war   | Повышайте свой рейтинг убийств и достигайте ступеней по очкам |
-| Members | Участники | https://lastasylum.gg/ru/events/alliance-duel | допускаются альянсы с более чем 20 участниками в воскресенье  |
+| English            | ru                      | Source                                                                                    | Quote                                                         |
+| ------------------ | ----------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| Might              | Мощь                    | https://lastasylum.gg/ru/events/alliance-duel                                             | входящие в топ-32 по мощи на сервере                          |
+| Kills              | Убийства                | https://lastasylum.gg/ru/events/kingdom-war                                               | Повышайте свой рейтинг убийств и достигайте ступеней по очкам |
+| Members            | Участники               | https://lastasylum.gg/ru/events/alliance-duel                                             | допускаются альянсы с более чем 20 участниками в воскресенье  |
+| Server fight clock | Хронология боёв сервера | `ledger.fightClock*`, `ledger.comparePulse*` — events side by side on the server clock    |
+| Outlined           | обведено                | `ledger.fightClockOutline`, `ledger.comparePulseHelp` — the busiest minutes of each event |
+| English            | ru                      | Source                                                                                    | Quote                                                         |
+| -------            | ---------               | -------------------------------------------------------------------------------------     | ------------------------------------------------------------- |
+| Might              | Мощь                    | https://lastasylum.gg/ru/events/alliance-duel                                             | входящие в топ-32 по мощи на сервере                          |
+| Kills              | Убийства                | https://lastasylum.gg/ru/events/kingdom-war                                               | Повышайте свой рейтинг убийств и достигайте ступеней по очкам |
+| Members            | Участники               | https://lastasylum.gg/ru/events/alliance-duel                                             | допускаются альянсы с более чем 20 участниками в воскресенье  |
+| Bloc               | Блок                    | `balance.bloc`, `balance.noBloc`, `balance.clear` — a hypothetical group of alliances     |
 
 Nominative plural for the column headers (`Убийства`, `Участники`); lower case after an abbreviation (`Мин. мощь`). Level stays English: the game writes `ур.` before the number, not as a header.

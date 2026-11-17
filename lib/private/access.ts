@@ -1,5 +1,6 @@
-// The workspace's door (D71): `requireWorkspace` is the only maker of a WorkspaceAccess, and every private
-// query takes one, so the workspace id always comes from a checked session, never from a request.
+// The workspace's doors (D71, D96): `requireWorkspace` (a checked session) and `officerAccess` (the Discord
+// command, after its signature and officer checks) are the only makers of a WorkspaceAccess, through
+// `grant`. Every private query takes one, so the workspace id never comes from a request.
 import type { Db } from "../db";
 import { deleteSession, findSession, findWorkspaceBySlug } from "../repo/workspaces";
 import { hashToken, revokeSession, SESSION_COOKIE } from "./session";
@@ -11,7 +12,12 @@ export type WorkspaceAccess = {
   readonly workspaceId: number;
   readonly unionId: number;
   readonly slug: string;
-  readonly user: { readonly id: number; readonly displayName: string | null };
+  /** displayName: the name the officer chose, else the one from Discord. playerUid: "This is me" (issue 334). */
+  readonly user: {
+    readonly id: number;
+    readonly displayName: string | null;
+    readonly playerUid: number | null;
+  };
   readonly [accessBrand]: true;
 };
 
@@ -52,13 +58,49 @@ export async function requireWorkspace(
     return refuse("expired");
   }
   if (session.blocked) return refuse("blocked");
-  return {
+  return grant(workspace, {
+    id: session.userId,
+    displayName: session.chosenName ?? session.displayName,
+    playerUid: session.playerUid,
+  });
+}
+
+type Granted = Omit<WorkspaceAccess, "ok" | "user" | typeof accessBrand>;
+
+/** The one place the brand is set: a workspace and the person who passed its door. */
+function grant(
+  workspace: { id: number; unionId: number; slug: string },
+  user: WorkspaceAccess["user"],
+): WorkspaceAccess {
+  const fields: Granted & Pick<WorkspaceAccess, "ok" | "user"> = {
     ok: true,
     workspaceId: workspace.id,
     unionId: workspace.unionId,
     slug: workspace.slug,
-    user: { id: session.userId, displayName: session.displayName },
-  } as WorkspaceAccess;
+    user,
+  };
+  return fields as WorkspaceAccess;
+}
+
+/**
+ * The Discord command's door (D96): the workspace of the interaction's server and an officer who passed
+ * its rule (leadership role or allowlist, D71) on a signature-checked interaction. The name is the one the
+ * officer chose in the desk, else Discord's; "This is me" is their linked player (issue 334).
+ */
+export function officerAccess(
+  workspace: { id: number; unionId: number; slug: string },
+  officer: {
+    id: number;
+    displayName: string | null;
+    chosenName: string | null;
+    playerUid: number | null;
+  },
+): WorkspaceAccess {
+  return grant(workspace, {
+    id: officer.id,
+    displayName: officer.chosenName ?? officer.displayName,
+    playerUid: officer.playerUid,
+  });
 }
 
 /** Sign out: ends this browser's session, only when it is a valid one of this workspace. */

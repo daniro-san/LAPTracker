@@ -211,7 +211,23 @@ export function slotOf(at: Date, everyMin: number): Date {
 export const serverDay = (now: Date, cfg: Pick<ScheduleConfig, "SERVER_TZ">) =>
   isoDate(wallClock(now, cfg.SERVER_TZ));
 
+/** Minutes since midnight in server time (0..1439): the position of a slot on the server clock. */
+export function serverMinuteOfDay(at: Date, cfg: Pick<ScheduleConfig, "SERVER_TZ">): number {
+  const { hh, mm } = wallClock(at, cfg.SERVER_TZ);
+  return hh * 60 + mm;
+}
+
 /** 0 = Sunday … 6 = Saturday, in server time. */
 export function serverWeekday(at: Date, cfg: Pick<ScheduleConfig, "SERVER_TZ">): number {
   return wallClock(at, cfg.SERVER_TZ).weekday;
+}
+
+/** The instant a server date ("2026-11-15") and time ("13:46") stand for. */
+export function serverInstant(
+  day: string,
+  hhmm: string,
+  cfg: Pick<ScheduleConfig, "SERVER_TZ">,
+): Date {
+  const [y = 0, m = 0, d = 0] = day.split("-").map(Number);
+  return zonedToUtc({ y, m, d }, hhmm, cfg.SERVER_TZ);
 }

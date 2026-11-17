@@ -12,8 +12,15 @@ export function RadioField({
   help?: ReactNode;
 } & Omit<InputHTMLAttributes<HTMLInputElement>, "type" | "className">) {
   return (
-    <label className="drawn-frame-soft tint-button flex min-h-11 items-start gap-3 px-3 py-2">
-      <input type="radio" className="mt-0.5 size-6 shrink-0 accent-plum" {...input} />
+    <label
+      className={`drawn-frame-soft tint-button flex min-h-11 gap-3 px-3 py-2 ${help ? "items-start" : "items-center"}`}
+    >
+      {/* Centred on a one-line label; beside the label's first line when a help line follows. */}
+      <input
+        type="radio"
+        className={`size-6 shrink-0 accent-plum ${help ? "mt-0.5" : ""}`}
+        {...input}
+      />
       <span className="flex flex-col">
         <span className="font-medium">{label}</span>
         {help && <span className="text-sm text-ink/70">{help}</span>}

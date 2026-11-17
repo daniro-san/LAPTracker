@@ -4,6 +4,7 @@
 // read, and a session made when a role is a leadership role or the account is on the allowlist.
 import { randomBytes } from "node:crypto";
 
+import { analyticsKey, SIGNED_IN_HASH } from "../analytics/events";
 import { IP_LIMIT, IP_WINDOW_MS, secretEquals } from "../auth";
 import type { Db } from "../db";
 import type { Env } from "../env";
@@ -102,14 +103,14 @@ export async function finishSignIn(db: Db, deps: SignInDeps, input: CallbackInpu
     privateLog(`w.${member.code}`, { workspace: workspace.id });
     return go(`/w/${slug}?e=discord`);
   }
-  return admit(db, workspace, member, deps.now);
+  return admit(db, workspace, member, deps.now, analyticsKey(deps.env) !== undefined);
 }
 
 /** Why an account gets no access, in the words the no-access page explains. */
 export type NoAccess = "not_member" | "no_role" | "allowlist_expired" | "blocked";
 
 /** null: let in, through a leadership role or an allowlist entry that has not expired. */
-function refusalOf(
+export function refusalOf(
   known: WorkspaceUserRow | null,
   viaRole: boolean,
   notMember: boolean,
@@ -129,6 +130,7 @@ async function admit(
   workspace: WorkspaceRow,
   member: Extract<DiscordMember, { ok: true }>,
   now: Date,
+  analytics: boolean,
 ): Promise<Step> {
   const known = await findWorkspaceUser(db, workspace.id, member.userId);
   const viaRole = member.roles?.some((r) => workspace.leaderRoleIds.includes(r)) ?? false;
@@ -143,5 +145,6 @@ async function admit(
   const endsBy = viaRole ? null : (known?.allowlistExpiresAt ?? null);
   const { cookie } = await createSession(db, workspace.id, userId, now, endsBy);
   privateLog("w.sign_in", { workspace: workspace.id, via_role: viaRole ? 1 : 0 });
-  return go(`/w/${workspace.slug}`, [clearState, cookie]);
+  // With analytics on, a fragment that never reaches a server: the page counts the sign-in and removes it (D77).
+  return go(`/w/${workspace.slug}${analytics ? SIGNED_IN_HASH : ""}`, [clearState, cookie]);
 }

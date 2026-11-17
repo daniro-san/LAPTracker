@@ -32,7 +32,7 @@ describe("parseSecretOpsReport", () => {
 
   it("reads a time whose space was lost", () => {
     const entries = parseSecretOpsReport(recorded("54-secret-ops-report"));
-    expect(entries.find((e) => e.name === "ANMcinalice")?.at).toBe("11-14 17:34");
+    expect(entries.find((e) => e.name === "cinalice")?.at).toBe("11-14 17:34");
   });
 
   it("returns an entry with no kind when its sentence was cut off or unreadable", () => {

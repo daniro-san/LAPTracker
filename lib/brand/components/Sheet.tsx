@@ -9,7 +9,7 @@
 import { useLayoutEffect, useRef, type ReactNode } from "react";
 
 const SHEET =
-  "fixed inset-x-0 bottom-0 top-auto z-50 m-0 w-full max-w-none border-0 border-t border-rule bg-paper p-4 text-ink shadow-[0_-8px_24px_var(--sheet-shadow)] backdrop:bg-ink/20";
+  "fixed inset-x-0 bottom-0 top-auto z-50 m-0 w-full max-w-none border-0 border-t border-rule bg-paper p-4 pb-[max(1rem,env(safe-area-inset-bottom))] text-ink shadow-[0_-8px_24px_var(--sheet-shadow)] backdrop:bg-[var(--sheet-scrim)]";
 const MODAL_CARD = "sm:inset-0 sm:m-auto sm:h-fit sm:max-w-md sm:border sm:p-6";
 const GATE_CARD = "sm:static sm:mt-6 sm:border sm:p-6 sm:shadow-none";
 

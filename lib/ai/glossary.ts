@@ -1,0 +1,110 @@
+// The game words every Translate and Improve writing request carries (D81): what the officers' short forms
+// mean, and the terms that stay exactly as written in every language. One module, so it can grow. Sources:
+// the leadership's own glossary notice (2026-11-16), the workspace's naming research and the 11i bake-off
+// list (issue 305).
+
+/** What a short form means, so the model reads the notice right. */
+export const GLOSSARY: readonly (readonly [term: string, meaning: string])[] = [
+  ["AD", "Alliance Duel"],
+  ["EB", "Elixir Scramble"],
+  ["KvK", "Kingdom War, kingdom against kingdom"],
+  ["SvS", "server against server"],
+  ["ST", "server time"],
+  ["AC", "Alliance Chat"],
+  ["WC", "World Chat"],
+  ["EC", "English chat"],
+  ["PM, DM, PC", "private message"],
+  ["DC", "Discord"],
+  ["SB", "Survival Battle"],
+  ["Rss", "resources"],
+  ["Pfp", "profile picture"],
+  ["Ss", "screenshot"],
+  ["Bubble", "shield"],
+  ["Coords", "coordinates"],
+  ["Mud", "the brown area around the Royal City"],
+  ["Tile", "one farm tile, or a 3x3 square the size of a Sanctuary"],
+  ["Farm tile", "a gathering spot for wood, grain or herbs"],
+  ["Tank, Support, DPS, Carry", "hero roles"],
+  ["R1 to R5", "alliance ranks; R4 and R5 are the officers"],
+  ["Coachman, VIP, Guardian", "the caravan's driver and the members who ride with it"],
+];
+
+/**
+ * Game terms that have a name of their own in Portuguese and French: a translation uses it. The keys are
+ * written as officers write them in English.
+ */
+export const TRANSLATED_TERMS: Readonly<Record<string, { "pt-BR": string; fr: string }>> = {
+  "Alliance Duel": { "pt-BR": "Duelo da Aliança", fr: "Duel d’alliance" },
+};
+
+/** Game item names stay in English until the game's own Portuguese and French names are known. */
+export const ITEM_EXAMPLES: readonly string[] = [
+  "Raven Essence",
+  "Construction Speedups",
+  "Covert Operations",
+];
+
+/** Kept verbatim in every language: game terms, ranks, tiers, events, alliance tags and names. */
+export const DO_NOT_TRANSLATE: readonly string[] = [
+  "AD",
+  "AC",
+  "WC",
+  "EC",
+  "PM",
+  "DM",
+  "PC",
+  "DC",
+  "SB",
+  "EB",
+  "KvK",
+  "SvS",
+  "ST",
+  "Rss",
+  "Pfp",
+  "Ss",
+  "Bubble",
+  "Coords",
+  "Cords",
+  "Mud",
+  "Tile",
+  "Farm tile",
+  "Tank",
+  "Support",
+  "DPS",
+  "Carry",
+  "R1",
+  "R2",
+  "R3",
+  "R4",
+  "R5",
+  "T7",
+  "T8",
+  "T9",
+  "T10",
+  "Lv",
+  "Squad",
+  "1st squad",
+  "Might",
+  "Sanctuary",
+  "Coachman",
+  "VIP",
+  "Guardian",
+  "Alliance Chat",
+  "World Chat",
+  "Kingdom War",
+  "Elixir",
+  "Elixir Scramble",
+  "Cheese Trap",
+  "Undead Siege",
+  "Crystal Cluster",
+  "Crystal Cluster Valley",
+  "Royal City",
+  "Royal City Scramble",
+  "Survival Battle",
+  "Old Grandmas",
+  "OGs",
+  "AFR",
+  "Discord",
+  "UTC",
+  ...ITEM_EXAMPLES,
+];

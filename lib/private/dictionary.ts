@@ -2,7 +2,11 @@
 // lib/copy.ts, so the public pages' i18n check and payload do not change. Names and game terms stay as the
 // officers write them (naming.md). French puts a no-break space before : ? and !.
 import { fr } from "./dictionary.fr";
+import { importEn } from "./dictionary.import";
+import { noticesEn } from "./dictionary.notices";
 import { pt } from "./dictionary.pt-BR";
+import { shotsEn } from "./dictionary.shots";
+import { theftsEn } from "./dictionary.thefts";
 
 export const WORKSPACE_LANGUAGES = ["en", "pt-BR", "fr"] as const;
 export type WorkspaceLanguage = (typeof WORKSPACE_LANGUAGES)[number];
@@ -151,13 +155,15 @@ const en = {
   "howto.android": "On Android",
   "intro.1.body":
     "The leadership’s own place for the alliance: who is in it, their might, donations and activity, filled in from the game. It replaces the spreadsheets.",
+  "intro.1.settings": "Tap your name at the top for your settings.",
   "intro.only": "R4 · R5 only",
   "intro.2.more": "— means no data, and it is left out of every count.",
   "intro.3.title": "Each week",
-  "intro.3.body":
-    "Open Members. Start with the thank-you list, then look at anyone marked Check in: what we saw is written under the name.",
-  "intro.3.more": "You decide what to do; nothing is sent by itself.",
-  "intro.3.last": "Tap EN · PT · FR to switch. Tap ? to see this again.",
+  "intro.3.body": "Open Members and start at the top: thank the people who carried the week.",
+  "intro.3.more":
+    "Then look at anyone marked Check in. The reason is right under the name, and a quick message in game usually sorts it out.",
+  "intro.3.note": "The app never messages anyone. The talking is up to you.",
+  "intro.3.last": "EN · PT · FR at the top switches language. ? brings these cards back.",
   "intro.replay": "Replay",
   "intro.close": "Close",
   "howto.signin.body":
@@ -167,6 +173,88 @@ const en = {
     "In Safari, tap the Share icon (a square with an arrow pointing up). In the list, tap the item with a + in a square, then confirm.",
   "howto.android.body":
     "In Chrome, tap ⋮ at the top right. In the menu, tap the item that adds the page to your home screen (a phone with an arrow), then confirm.",
+  "status.break": "On a break",
+  "status.breakUntil": "On a break until {date}",
+  "status.help": "Needs help",
+  "members.early":
+    "Roster from {when} · donations and activity come with the first end-of-day read, after {time} server time.",
+  "members.import": "Import the old spreadsheets",
+  "src.message": "from a message",
+  "src.sheet": "from the sheet",
+  "facts.head": "Member facts",
+  "facts.squadMight": "Main squad",
+  "facts.adTech": "AD Tech",
+  "facts.troopTier": "Troops",
+  "facts.timeZone": "Time zone",
+  "facts.languages": "Languages",
+  "facts.status": "Status",
+  "facts.away": "Away",
+  "facts.notes": "Notes",
+  "facts.until": "until {date}",
+  "facts.edit": "Edit facts",
+  "facts.paste": "Paste what they told you",
+  "facts.title": "Facts: {name}",
+  "facts.save": "Save",
+  "facts.cancel": "Cancel",
+  "facts.failed": "Could not save. Try again.",
+  "facts.computed": "Automatic (now: {status})",
+  "facts.awayText": "What they said",
+  "facts.awayDay": "Last day away",
+  "facts.mightHint": "9.9M or 9,900,000",
+  "facts.theirs": "Keep {theirs}",
+  "facts.mine": "Use {mine}",
+  "paste.help":
+    "Paste the chat here, then tap Fill the fields. Nothing is saved until you tap Save.",
+  "paste.read": "Fill the fields",
+  "paste.nothing": "Nothing found. Type the values below.",
+  "paste.zones": "Other matches",
+  "tz.choose": "Choose",
+  "tz.search": "City, country, PST, ST +3…",
+  "tz.searchAria": "Search time zones",
+  "tz.theirTime": "Their time now",
+  "tz.st": "ST is server time ({offset}).",
+  "tz.more": "{n} more: keep typing.",
+  "tz.none": "No time zone matches.",
+  "tz.now": "now {time}",
+  "facts.conflictBar":
+    "Another officer changed {field} while you were editing. Answer under {field}, then Save.",
+  "facts.conflictField": "Another officer saved {theirs}. You typed {mine}.",
+  "facts.mergedLine": "Combined with another officer’s edit: {fields}.",
+  "src.unsaved": "from this message · not saved",
+  "paste.found.one": "Found {n} value. Check it, then Save.",
+  "paste.found.other": "Found {n} values. Check them, then Save.",
+  "facts.discard": "Discard changes?",
+  "facts.discardYes": "Discard",
+  "facts.discardNo": "Keep editing",
+  "profile.title": "Your settings",
+  "profile.name": "Your name",
+  "profile.nameHelp": "Shown at the top of the desk (up to 32 characters).",
+  "profile.save": "Save",
+  "profile.saved": "Saved.",
+  "profile.invalid": "Write 1 to 32 characters.",
+  "profile.failed": "Could not save. Try again.",
+  "profile.loadFailed": "Could not load this. Close and try again.",
+  "profile.me": "This is me",
+  "profile.me.lead": "Optional: tell the desk which player in the alliance is you.",
+  "profile.me.loading": "Looking for your name in the alliance…",
+  "profile.me.linked": "In the game, you are {name}.",
+  "profile.me.gone": "Your player is no longer in the alliance.",
+  "profile.me.unlink": "This isn’t me",
+  "profile.me.undo": "You can remove this link any time.",
+  "profile.me.ask": "Is this you?",
+  "profile.me.confirm": "That’s me",
+  "profile.me.none":
+    "We couldn’t find a player with a name like yours. Search for your name below.",
+  "profile.me.find": "Search the alliance",
+  "profile.me.noResult": "No one in the alliance has a name like that.",
+  "profile.theme": "Theme",
+  "profile.theme.light": "Light",
+  "profile.theme.dark": "Dark",
+  "profile.theme.system": "Same as this device",
+  ...noticesEn,
+  ...importEn,
+  ...theftsEn,
+  ...shotsEn,
 } as const;
 
 export type WorkspaceKey = keyof typeof en;

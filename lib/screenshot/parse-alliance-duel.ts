@@ -8,6 +8,7 @@ import {
   inferRanks,
   keptRowCount,
   lastWord,
+  placeRanks,
   readRank,
   type RowFlag,
   separatedCount,
@@ -36,6 +37,8 @@ export interface DuelRow extends DuelScreen {
 const TAG = /[[({]\s*([A-Za-z0-9]{1,6})\s*[\])}](?=[A-Za-z0-9])/;
 /** Lines after the points line where the tag line may be. */
 const TAG_REACH = 3;
+/** The rows one page of the list shows, the pinned row not counted (issue 299). */
+const PAGE_ROWS = 8;
 
 interface Found {
   /** The line the row is placed by: its points line, or its tag line when the points were not read. */
@@ -110,18 +113,20 @@ function findRows(lines: readonly string[]): Found[] {
 /**
  * The rows of one screenshot of the ranking, top to bottom. A row whose number was not read comes
  * back with `points: null`. The pinned row of the viewer's own alliance under the list is dropped,
- * and a row is flagged when its points are above the row before, its rank disagrees with its place,
- * or its rank does not follow the row above.
+ * and a row is flagged when its points are above the row before, its read rank disagrees with the
+ * inferred one, or a row seems to be missing above it.
  */
 export function parseAllianceDuelRanking(lines: readonly string[], screen: DuelScreen): DuelRow[] {
   const found = findRows(lines);
-  const ranks = inferRanks(found.map((row) => row.read));
-  return found.slice(0, keptRowCount(found, ranks, true)).map((row, place) => ({
+  const pinned = { pinsAfter: PAGE_ROWS };
+  const kept = found.slice(0, keptRowCount(found, placeRanks(found.map((r) => r.read)), pinned));
+  const ranks = inferRanks(kept.map((row) => row.read));
+  return kept.map((row, place) => ({
     ...screen,
     rank: ranks[place] ?? null,
     name: row.name,
     tag: row.tag,
     points: row.points,
-    flags: flagsOf(found, ranks, place),
+    flags: flagsOf(kept, ranks, place),
   }));
 }

@@ -37,6 +37,27 @@ describe("roster fields kept for the workspace (D71)", () => {
   it("are read only in lib/repo, lib/private, the collector and raw_json trimming", () => {
     const files = ["app", "lib", "config", "scripts"].flatMap(sources).concat("proxy.ts");
     expect(files.length).toBeGreaterThan(100);
+    // What reaches PostHog (D77) is scanned like the rest, never allowed.
+    expect(files).toEqual(
+      expect.arrayContaining([
+        "lib/analytics/events.ts",
+        "lib/analytics/ingest.ts",
+        "lib/analytics/posthog.ts",
+        "lib/analytics/region.ts",
+        "lib/analytics/sanitise.ts",
+        "app/_ui/PostHogAnalytics.tsx",
+        "app/ingest/[...path]/route.ts",
+      ]),
+    );
+    // What goes to Groq (D81) is scanned too: the client, the prompts, the glossary and the draft route.
+    expect(files).toEqual(
+      expect.arrayContaining([
+        "lib/ai/groq.ts",
+        "lib/ai/notice-writing.ts",
+        "lib/ai/glossary.ts",
+        "app/(private)/api/w/[slug]/notices/draft/route.ts",
+      ]),
+    );
     const offenders = files
       .filter((f) => !ALLOWED.some((a) => a.test(relative(".", f))))
       .flatMap((f) => {

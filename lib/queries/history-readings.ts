@@ -21,25 +21,35 @@ export interface Reading {
 export const numbers = (values: (string | null)[] | null) =>
   (values ?? []).map((v) => (v === null ? null : Number(v)));
 
-/** A usable roster: fresh, no error, not empty; older than `before` when given. */
+/** A usable daily roster: fresh, no error, not empty. */
+export const dailyFit = and(
+  eq(dailyRosters.isFresh, true),
+  isNull(dailyRosters.error),
+  gt(dailyRosters.memberCount, 0),
+);
+
+/** A usable event roster: a public event's, fresh, no error, not empty. */
+export const eventFit = and(
+  publicEvent,
+  // A sample (D69) has no member rows: it would read as a roster of 0 members.
+  phaseSnapshot,
+  eq(allianceSnapshots.isFresh, true),
+  isNull(allianceSnapshots.error),
+  gt(allianceSnapshots.memberCount, 0),
+);
+
+/** A usable roster of one alliance, older than `before` when given. */
 export const dailyUsable = (unionId: number, before: Date | null) =>
   and(
     eq(dailyRosters.unionId, unionId),
-    eq(dailyRosters.isFresh, true),
-    isNull(dailyRosters.error),
-    gt(dailyRosters.memberCount, 0),
+    dailyFit,
     before ? lt(dailyRosters.sourceUpdatedAt, before) : undefined,
   );
 
 const eventUsable = (unionId: number, before: Date | null) =>
   and(
     eq(allianceSnapshots.unionId, unionId),
-    publicEvent,
-    // A sample (D69) has no member rows: it would read as a roster of 0 members.
-    phaseSnapshot,
-    eq(allianceSnapshots.isFresh, true),
-    isNull(allianceSnapshots.error),
-    gt(allianceSnapshots.memberCount, 0),
+    eventFit,
     before ? lt(allianceSnapshots.sourceUpdatedAt, before) : undefined,
   );
 
@@ -50,7 +60,7 @@ export const dailyHead = {
   badgeId: dailyRosters.badgeId,
 };
 
-const eventHead = {
+export const eventHead = {
   at: allianceSnapshots.sourceUpdatedAt,
   tag: allianceSnapshots.tag,
   name: allianceSnapshots.name,

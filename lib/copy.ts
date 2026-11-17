@@ -7,8 +7,12 @@
 // `{name}` is a placeholder filled by `fill()`; labels on public pages are at most two words. Symbols
 // (signs, arrows, `#`) stay in the components so the blank dictionary keeps them visible.
 import { adminCopy } from "./copy-admin";
+import { balanceCopy } from "./copy-balance";
 import { brandCopy } from "./copy-brand";
 import { discordCopy } from "./copy-discord";
+import { liveCopy } from "./copy-live";
+import { mergeCopy } from "./copy-merge";
+import { warCopy } from "./copy-war";
 
 /** The public pages' strings in English: the source every other language's dictionary follows. */
 export const en = {
@@ -66,53 +70,22 @@ export const en = {
     alliances: "Alliances",
     /** The event's biggest gains and losses (#70). */
     movers: "Grandma noticed",
-    /** The live event section (issue 307): the strip while the event runs, then the section's words. */
-    live: "Live",
-    liveUpdate: "updated {updated} · next {next}",
-    liveReadings: "{n} readings so far",
-    liveStandings: "Standings so far",
-    liveStandingsDone: "At the last reading",
-    liveDuring: "During the event",
-    liveStandingsHelp: "Change since Start, most kills gained first",
-    livePulse: "Server pulse",
-    livePulseHelp: "Kills gained by {n} alliances in each {min} minutes",
-    /** `{span}`: two reading intervals, in minutes (30 at the 15-minute cadence). */
-    liveBusiest: "Busiest {span} minutes so far: {from}–{to} · {share} of the kills",
-    liveBusiestDone: "Busiest {span} minutes: {from}–{to} · {share} of the kills",
-    liveNoUpdate: "No update from the game",
-    liveNoReading: "No reading",
-    liveInterval: "Interval",
-    liveKillsGained: "Kills gained",
-    /** The strip from the Start until the first reading. */
-    liveFirst: "Start {start} · first reading {next}",
-    liveNoReadings: "No readings yet",
-    /** After the strip's next reading while the slot's sample is more than 3 minutes late. */
-    liveOverdue: "(reading due {time})",
-    /** `{kills}`: the top three alliances with their gains, or the total until the busiest span is named. */
-    liveKillsSoFar: "Kills so far: {kills}",
-    liveLast: "Last {min} min: {last} (peak {peak})",
-    liveDone: "Change since Start at the {time} reading. The ledger above uses the End at {end}.",
-    /** The event page's section on kills gained by members (#271); no figure is about one person. */
-    fought: "War turnout",
-    /** The title while the event has no End: the figures are as of each alliance's latest sample. */
-    foughtSoFar: "War turnout so far",
-    /** Under the section's title: what the figures count. */
-    foughtHelp:
-      "Members who were in the alliance at Start and at End. Support players gain no kills.",
-    /** The help line while the title is `foughtSoFar`: there is no End yet. */
-    foughtSoFarHelp:
-      "Members who were in the alliance at Start and at its latest reading. Support players gain no kills.",
-    /** The first list: members with kills gained, as a share of the members in both reads. */
-    withKills: "Members with kills gained",
-    /** The second list: the alliance's five biggest kills gains, as a share of all its kills gained. */
-    topShare: "Kills from the top 5 members",
-    /** Under the second list's title: what its figure says. */
-    topShareHelp:
-      "Share of the alliance's kills made by its 5 biggest gainers. Higher means fewer players carried it.",
-    /** After that share: how many of the alliance's gainers it is the top of, `5 of 47`. */
-    topBasis: "{top} of {n}",
-    /** After that share, for an alliance with under 10 gainers: the figure is not ranked. */
-    fewGainers: "few gainers",
+    /** The player page's section of every reading (#270): daily reads and events' Start and End. */
+    progress: "Daily progress",
+    /** Its summary line, the player's might change in percent: `You: +4.1% since Nov 9.` */
+    progressMight: "You: {change} since {date}.",
+    /** After it, when both readings are of one alliance: the change of that alliance's middle member (the median). */
+    progressMedian: "Middle member of {tag}: {percent}.",
+    /** Under the might chart: what the event marks are, and the Start date of each. */
+    progressEvents: "Event (Start to End): {dates}",
+    /** Under the might chart. */
+    progressWar: "Might often drops in war events. That is expected.",
+    /** Fewer than two readings: no chart yet. */
+    progressEmpty: "Not enough readings yet for a chart.",
+    /** A chart's accessible name: `Might: 1.02B on Nov 9, 1.10B on Nov 16`. */
+    chart: "{label}: {first} on {from}, {last} on {to}",
+    ...liveCopy,
+    ...warCopy,
   },
   /** Event vs event (D57, #177): two events' in-event changes side by side. */
   compare: {
@@ -139,6 +112,10 @@ export const en = {
     same: "Pick two different events.",
     onlyOne: "There is only one event to compare so far.",
   },
+  /** The merge simulator (D84, #282): two alliances as one against the member cap; see lib/copy-merge.ts. */
+  merge: mergeCopy,
+  /** The server balance page (D85, #283). */
+  balance: balanceCopy,
   /** Member history (D60, #197): an alliance's rosters over time, each compared with the one before. */
   history: {
     title: "Member history",

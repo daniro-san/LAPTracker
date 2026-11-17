@@ -3,16 +3,19 @@
 
 /**
  * `order`: the points are higher than the row above. `rank`: the rank read from the picture is not the
- * one the row's place gives. `gap`: its read rank does not follow the read rank of the row above, so a
- * row may be missing between them. `points`: the number of the row was not read.
+ * one inferred for the row (taken as misread). `gap`: its rank does not follow the rank of the row
+ * above, so a row may be missing between them. `points`: the number of the row was not read.
  */
 export type RowFlag = "order" | "rank" | "gap" | "points";
 
-/** One to three digits, then groups of exactly three behind a thousands separator: , . space or U+202F. */
-const GROUPS = String.raw`\d{1,3}(?:[,. \u202F]\d{3})*`;
+/**
+ * One to three digits, then groups of exactly three behind one thousands separator, the same one
+ * throughout: , . space or U+202F. So `8 174,488,831` (a medal's digit beside a number) is two numbers.
+ */
+const groups = (ref: number) => `\\d{1,3}(?:([,. \\u202F])\\d{3}(?:\\${ref}\\d{3})*)?`;
 /** A number as a whole token; not the middle of a longer one, not a decimal such as 12,34. */
-export const COUNT = new RegExp(String.raw`(?<![\d,.\u202F])${GROUPS}(?!\d|[,.]\d)`, "gu");
-const COUNT_AT_END = new RegExp(String.raw`(?:^|\s)(${GROUPS})\s*$`, "u");
+export const COUNT = new RegExp(String.raw`(?<![\d,.\u202F])${groups(1)}(?!\d|[,.]\d)`, "gu");
+const COUNT_AT_END = new RegExp(String.raw`(?:^|\s)(${groups(2)})\s*$`, "u");
 const SEPARATOR = /[,. \u202F]/u;
 
 export const toCount = (text: string) => Number(text.replace(/[,. \u202F]/gu, ""));
@@ -76,12 +79,8 @@ export function readRank(prefix: string): number | null {
   return /^\d{1,3}$/.test(first) ? Number(first) : null;
 }
 
-/**
- * The rank of every row from its place in the list: ranks 1 to 3 are medals with no digits, and a
- * digit is often misread. The offset (rank minus place) that most rows agree on gives each row its
- * rank; with no rank read at all, no row has one, and a place that would be below rank 1 has none.
- */
-export function inferRanks(read: readonly (number | null)[]): (number | null)[] {
+/** The offset (rank minus place) that most read ranks agree on; null when no rank was read. */
+function majorityOffset(read: readonly (number | null)[]): number | null {
   const votes = new Map<number, number>();
   read.forEach((rank, place) => {
     if (rank !== null) votes.set(rank - place, (votes.get(rank - place) ?? 0) + 1);
@@ -94,7 +93,59 @@ export function inferRanks(read: readonly (number | null)[]): (number | null)[] 
       most = count;
     }
   }
+  return best;
+}
+
+/**
+ * The rank each place gives with the offset most read ranks agree on: what the pinned-row check
+ * compares the last row's read rank with. Null without any read rank, or below rank 1.
+ */
+export function placeRanks(read: readonly (number | null)[]): (number | null)[] {
+  const best = majorityOffset(read);
   return read.map((_, place) => (best === null || best + place < 1 ? null : best + place));
+}
+
+interface Anchor {
+  place: number;
+  /** Rank minus place. */
+  offset: number;
+}
+
+/**
+ * Read ranks the others hang on: one whose offset a neighbouring read rank shares, or a lone one
+ * that steps the offset up at either end of the page (a row is missing beside it). Any other lone
+ * read rank is taken as misread.
+ */
+function anchorsOf(read: readonly (number | null)[]): Anchor[] {
+  const all = read.flatMap((rank, place) =>
+    rank === null ? [] : [{ place, offset: rank - place }],
+  );
+  return all.filter(({ offset }, i) => {
+    const [before, after] = [all[i - 1]?.offset, all[i + 1]?.offset];
+    if (offset === before || offset === after || all.length === 1) return true;
+    const last = i === all.length - 1 && before !== undefined && offset > before;
+    return last || (i === 0 && after !== undefined && offset < after);
+  });
+}
+
+/**
+ * The rank of every row. A row takes the rank of the nearest anchor above it plus its distance, so
+ * a missing row shows as a jump (the flag `gap`) where the read ranks step up, and never shifts the
+ * rows above it. Rows above the first anchor count back from it, except in one case: when that puts
+ * the page's top row at rank 2 and gives a row of rank 4 or more no printed rank, those rows are the
+ * medal rows 1 to 3 (which print no digit) and a row is missing after them (the own row, white on
+ * green, measured on issue 299). No read rank at all: no ranks.
+ */
+export function inferRanks(read: readonly (number | null)[]): (number | null)[] {
+  const anchors = anchorsOf(read);
+  const first = anchors[0];
+  if (!first) return read.map(() => null);
+  const medals = first.offset === 2 && first.place + first.offset - 1 >= 4;
+  return read.map((_, place) => {
+    if (place < first.place && medals) return place + 1;
+    const rank = place + (anchors.findLast((a) => a.place <= place) ?? first).offset;
+    return rank < 1 ? null : rank;
+  });
 }
 
 interface Placed {
@@ -121,16 +172,20 @@ function isPinned(rows: readonly Placed[], rank: number | null, unreadIsPinned: 
 /**
  * Counts the rows left after dropping the viewer's own row pinned under the list when it is the last
  * row and does not belong to the sequence: its rank is not the one its place gives, or its points are
- * above the nearest row above that has points. With `unreadIsPinned` a last row whose number was not
- * read is dropped too (the Alliance Duel screens always pin one under the list).
+ * above the nearest row above that has points. The Alliance Duel screens always pin one under a list
+ * of at most `pinsAfter` rows (`pinned`), so there a last row whose number was not read, or one row
+ * more than the list holds, is dropped too.
  */
 export function keptRowCount(
   rows: readonly Placed[],
   ranks: readonly (number | null)[],
-  unreadIsPinned = false,
+  pinned?: { pinsAfter: number },
 ): number {
   if (rows.length === 0) return 0;
-  return isPinned(rows, ranks.at(-1) ?? null, unreadIsPinned) ? rows.length - 1 : rows.length;
+  const over = pinned !== undefined && rows.length > pinned.pinsAfter;
+  return over || isPinned(rows, ranks.at(-1) ?? null, pinned !== undefined)
+    ? rows.length - 1
+    : rows.length;
 }
 
 /** Flags for the row at `place`: see RowFlag. */
@@ -142,13 +197,12 @@ export function flagsOf(
   const row = rows[place];
   if (!row) return [];
   const above = pointsAbove(rows, place);
-  const previous = rows[place - 1]?.read ?? null;
+  const [rank, previous] = [ranks[place] ?? null, ranks[place - 1] ?? null];
   const flags: [boolean, RowFlag][] = [
     [row.points === null, "points"],
     [row.points !== null && above !== null && row.points > above, "order"],
-    [row.read !== null && row.read !== (ranks[place] ?? null), "rank"],
-    // A misread rank breaks the sequence twice: at its own row and at the row after it.
-    [row.read !== null && previous !== null && row.read !== previous + 1, "gap"],
+    [row.read !== null && row.read !== rank, "rank"],
+    [rank !== null && previous !== null && rank !== previous + 1, "gap"],
   ];
   return flags.filter(([on]) => on).map(([, flag]) => flag);
 }

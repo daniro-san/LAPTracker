@@ -11,6 +11,7 @@ import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
 import { requireWorkspace } from "@/lib/private/access";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
+import { toReviewCount } from "@/lib/private/import-view";
 import { membersView, type MembersView } from "@/lib/private/members";
 import {
   filterCounts,
@@ -23,11 +24,13 @@ import { plural, sheetHeader, sheetRow } from "@/lib/private/members-sheet";
 import { SLUG } from "@/lib/private/sign-in";
 
 import { CopyButton } from "../../../_ui/CopyButton";
+import { editorWords } from "../../../_ui/facts-form";
+import { FilterChip } from "../../../_ui/FilterChip";
 import { SignedInFrame, workspaceWords } from "../../../_ui/Frame";
 import { cardData, type CardFormats } from "../../../_ui/member-card-data";
-import { MemberCards } from "../../../_ui/MemberCards";
+import { MemberCards, type EditorContext } from "../../../_ui/MemberCards";
+import { MembersSource } from "../../../_ui/MembersSource";
 import { refuse } from "../../../_ui/refuse";
-import { SourceBadge } from "../../../_ui/SourceBadge";
 
 /** Server days as dates in the officer's language; instants in server time (help.servertime). */
 function formats(
@@ -51,8 +54,14 @@ function formats(
     time: (at) => `${instant.format(at)} ${hhmm.format(at)}`,
     language,
     zone,
+    now: new Date(),
   };
 }
+
+const noCounts = Object.fromEntries(MEMBER_FILTERS.map((id) => [id, "—"])) as Record<
+  MemberFilter,
+  "—"
+>;
 
 /** The address of the list with this filter and search. */
 function listHref(slug: string, f: MemberFilter, q: string) {
@@ -111,7 +120,8 @@ function Controls(props: {
   t: WorkspaceDictionary;
   filter: MemberFilter;
   query: string;
-  counts: Record<MemberFilter, number>;
+  /** Before the first end-of-day read nothing is counted (D75): the chips show "—". */
+  counts: Record<MemberFilter, number | "—">;
 }) {
   const { slug, t, filter, query, counts } = props;
   return (
@@ -135,16 +145,17 @@ function Controls(props: {
         <ul className="flex flex-wrap gap-2">
           {MEMBER_FILTERS.map((id) => (
             <li key={id}>
-              <a
+              <FilterChip
+                filter={id}
                 href={listHref(slug, id, query)}
-                aria-current={id === filter ? "true" : undefined}
+                current={id === filter}
                 className={`inline-flex min-h-11 items-center gap-1.5 border px-3 text-body-sm font-medium whitespace-nowrap ${
                   id === filter ? "border-plum bg-plum text-paper" : "border-rule"
                 }`}
               >
                 {t[`members.filter.${id}`]}
                 <span className="tabular-nums">{counts[id]}</span>
-              </a>
+              </FilterChip>
             </li>
           ))}
         </ul>
@@ -164,10 +175,16 @@ export default async function MembersPage({
   if (!SLUG.test(slug)) notFound();
   const jar = await cookies();
   const now = new Date();
+  const env = getEnv();
   // INVARIANT workspace.access-first: nothing private is read before this check.
-  const { access, view } = await withPageDb(async (db) => {
+  const { access, view, waiting } = await withPageDb(async (db) => {
     const access = await requireWorkspace(db, slug, jar, now);
-    return { access, view: access.ok ? await membersView(db, access, now) : null };
+    const waiting = access.ok ? await toReviewCount(db, access, now) : 0;
+    return {
+      access,
+      waiting,
+      view: access.ok ? await membersView(db, access, now, env.SERVER_TZ) : null,
+    };
   });
   if (!access.ok) {
     refuse(slug, access.reason);
@@ -178,9 +195,16 @@ export default async function MembersPage({
   const filter = pickFilter(search.f);
   const query = (typeof search.q === "string" ? search.q : "").trim().slice(0, 64);
   const { language, t } = await workspaceWords();
-  const f = formats(language, getEnv().SERVER_TZ);
+  const f = formats(language, env.SERVER_TZ);
+  const editor = {
+    slug,
+    words: editorWords(t),
+    language,
+    serverZone: env.SERVER_TZ,
+    used: view.zones,
+  };
   return (
-    <SignedInFrame access={access} language={language} t={t} current="members">
+    <SignedInFrame access={access} language={language} t={t} current="members" waiting={waiting}>
       <h1 className="font-display text-display-lg">{t["tab.members"]}</h1>
       {view.readAt === null ? (
         <p className="mt-4 border border-rule px-4 py-5">{t["members.none"]}</p>
@@ -193,8 +217,18 @@ export default async function MembersPage({
           filter={filter}
           query={query}
           readAt={f.time(view.readAt)}
+          readHour={env.DAILY_ROSTER_AT}
+          editor={editor}
         />
       )}
+      <p className="mt-6">
+        <a
+          href={`/w/${slug}/import`}
+          className="inline-flex min-h-11 items-center text-body-sm font-semibold text-plum underline underline-offset-4"
+        >
+          {t["members.import"]}
+        </a>
+      </p>
     </SignedInFrame>
   );
 }
@@ -207,29 +241,27 @@ function Body(props: {
   filter: MemberFilter;
   query: string;
   readAt: string;
+  readHour: string;
+  editor: EditorContext;
 }) {
   const { slug, view, t, f, filter, query } = props;
   const shown = {
     joined: view.members.some((m) => m.joinedAt !== null),
     lastOnline: view.members.some((m) => m.lastOnlineAt !== null),
+    duel: view.members.some((m) => Object.keys(m.duel).length > 0),
   };
   const counts = filterCounts(view.members);
   const visible = keepMembers(view.members, filter, query);
   const [from, to] = [view.week[0] ?? "", view.week[6] ?? ""];
   return (
     <>
-      <p className="mt-2 flex flex-wrap items-center gap-x-2 text-body-sm text-ink/80">
-        <span>{t["members.lead"]}</span>
-        <SourceBadge source="game" label={t["src.game"]} />
-      </p>
-      <p className="mt-1 text-body-sm text-ink/80">
-        {fill(t["members.lastRead"], { when: fill(t["time.server"], { time: props.readAt }) })}
-      </p>
+      <MembersSource t={t} early={view.early} readAt={props.readAt} readHour={props.readHour} />
       <p className="mt-1 text-body-sm text-ink/80">
         {fill(t["members.week"], { from: f.date(from), to: f.date(to) })}
       </p>
       <Thanks view={view} t={t} f={f} />
-      <p className="mt-3">
+      {/* Before the first end-of-day read nothing is computed, so nothing is said about check-ins. */}
+      <p className={view.early ? "hidden" : "mt-3"}>
         {counts.checkin === 0 ? (
           t["members.checkinNone"]
         ) : (
@@ -242,12 +274,19 @@ function Body(props: {
         )}
       </p>
       <Legend t={t} />
-      <Controls slug={slug} t={t} filter={filter} query={query} counts={counts} />
+      <Controls
+        slug={slug}
+        t={t}
+        filter={filter}
+        query={query}
+        counts={view.early ? noCounts : counts}
+      />
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
         <p className="text-body-sm tabular-nums">
           {fill(t["members.count"], { n: visible.length, total: view.members.length })}
         </p>
         <CopyButton
+          event="ws_copy_spreadsheet"
           text={[sheetHeader(view.week, t), ...visible.map((m) => sheetRow(m, t, f))].join("\n")}
           labels={{
             copy: t["members.copy"],
@@ -262,6 +301,7 @@ function Body(props: {
         <MemberCards
           cards={visible.map((m) => cardData(m, view.week, t, f, shown))}
           details={{ open: t["members.details"], of: t["members.detailsOf"] }}
+          editor={props.editor}
         />
       )}
     </>

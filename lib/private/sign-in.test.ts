@@ -69,7 +69,11 @@ beforeEach(async () => {
   });
 });
 
-const deps = (now = T0) => ({ env, fetch: discord, now });
+const deps = (now = T0, more: Partial<typeof env> = {}) => ({
+  env: { ...env, ...more },
+  fetch: discord,
+  now,
+});
 const cookieValue = (step: Step, name: string) =>
   step.kind === "redirect"
     ? step.cookies
@@ -82,11 +86,11 @@ const jar = (token: string | undefined): CookieReader => ({
 });
 
 /** The whole round trip: login sets the state cookie, Discord answers with `code`. */
-async function signIn(slug: string, code: string, now = T0) {
-  const start = await startSignIn(db, deps(now), slug, ORIGIN, false);
+async function signIn(slug: string, code: string, now = T0, more: Partial<typeof env> = {}) {
+  const start = await startSignIn(db, deps(now, more), slug, ORIGIN, false);
   const state = cookieValue(start, STATE_COOKIE) ?? "";
   const query = new URLSearchParams({ state, code });
-  const step = await finishSignIn(db, deps(now), {
+  const step = await finishSignIn(db, deps(now, more), {
     query,
     stateCookie: state,
     ip: "198.51.100.1",
@@ -103,6 +107,13 @@ describe("workspace sign-in (D71)", () => {
     expect(location(step)).toBe("/w/ogs");
     const access = await requireWorkspace(db, "ogs", jar(token), T0);
     expect(access.ok && access.user.displayName).toBe("Nick");
+  });
+
+  it("marks the redirect #signed-in for analytics only on production with a PostHog key (D77)", async () => {
+    const on = { VERCEL_ENV: "production", POSTHOG_KEY: "phc_test" };
+    expect(location((await signIn("ogs", "officer", T0, on)).step)).toBe("/w/ogs#signed-in");
+    const preview = { VERCEL_ENV: "preview", POSTHOG_KEY: "phc_test" };
+    expect(location((await signIn("ogs", "officer", T0, preview)).step)).toBe("/w/ogs");
   });
 
   it("lets in an account through an allowlist entry that has not expired", async () => {

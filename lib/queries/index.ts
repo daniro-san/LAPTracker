@@ -23,12 +23,30 @@ export {
   type MightUnchanged,
   type UnchangedRow,
 } from "./might-unchanged";
+export { BALANCE_DAYS, powerBalance, type PowerBalance } from "./balance";
+export { whoCarried, type Carried, type CarriedRow } from "./carried";
 export { allianceNames } from "./names";
 export { eventSamples, type EventReading, type SampleAlliance, type SampleMember } from "./samples";
 export { eventProgress, type EventProgress } from "./live";
+export {
+  eventPulses,
+  getFightClock,
+  isDone,
+  sampledEventIds,
+  type EventPulse,
+  type FightClockEvent,
+  type PulseOptions,
+  type RowsOf,
+} from "./fight-clock";
 export { playerHistory, searchPlayers } from "./players";
 export type { Photo } from "./photo";
 export type { PlayerEventRow, PlayerHistory, PlayerMatch } from "./players";
+export {
+  playerProgress,
+  type PlayerProgress,
+  type ProgressReading,
+  type ProgressSummary,
+} from "./player-progress";
 export { eventRanks, historyRanks, type Ranks } from "./ranks";
 export { getUpstreamStatus, type UpstreamStatus } from "./upstream-status";
 export { rosterChanges, type RosterChange } from "./rosters";
@@ -60,3 +78,10 @@ export {
   type PlayerComparison,
   type PlayerEventFigures,
 } from "./compare-player";
+export {
+  mergePage,
+  type MergeAlliance,
+  type MergePage,
+  type MergeSide,
+  type MergeTurnout,
+} from "./merge";

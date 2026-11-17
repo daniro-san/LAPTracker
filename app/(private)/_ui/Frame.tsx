@@ -1,5 +1,5 @@
 // The workspace frame (D71, brand proposal): the burgundy header with the workspace name, the "?" that
-// opens the first-use cards (issue 312) and EN · PT · FR, the page, and, once signed in, the five bottom
+// opens the first-use cards (issue 312) and EN · PT · FR, the page, and, once signed in, the six bottom
 // tabs. Designed at 360 px; every control is 44 px or more.
 import { cookies, headers } from "next/headers";
 import type { ReactNode } from "react";
@@ -17,6 +17,7 @@ import {
 
 import { FirstUse } from "./FirstUse";
 import { LanguageSwitch } from "./LanguageSwitch";
+import { ProfileSheet } from "./ProfileSheet";
 import { SignOutButton } from "./SignOutButton";
 import { TabIcon, type TabId } from "./TabIcon";
 
@@ -33,26 +34,63 @@ export async function workspaceWords(): Promise<{
   return { language, t: WORKSPACE_DICTIONARIES[language] };
 }
 
-const TABS: TabId[] = ["home", "members", "mark", "days", "review"];
+const TABS: TabId[] = ["home", "members", "mark", "days", "notices", "review"];
 /** The tabs that exist so far; the other three come with their own issues and are shown as "soon". */
-const PATHS: Partial<Record<TabId, string>> = { home: "", members: "/members" };
+const PATHS: Partial<Record<TabId, string>> = {
+  home: "",
+  members: "/members",
+  notices: "/notices",
+};
 
-function Tabs({ t, slug, current }: { t: WorkspaceDictionary; slug: string; current: TabId }) {
+/** The Home tab's count of screenshot drafts waiting for review (issue 299), beside its label. */
+function Waiting({ n, t }: { n: number; t: WorkspaceDictionary }) {
+  if (n === 0) return null;
   return (
+    <>
+      <span
+        aria-hidden="true"
+        className="absolute top-1 left-1/2 ml-2 rounded-full bg-seal px-1.5 text-[11px] leading-4 font-semibold text-paper tabular-nums"
+      >
+        {n}
+      </span>
+      <span className="sr-only">{`, ${fill(t["shots.badge"], { n })}`}</span>
+    </>
+  );
+}
+
+function Tabs({
+  t,
+  slug,
+  current,
+  waiting,
+}: {
+  t: WorkspaceDictionary;
+  slug: string;
+  current: TabId;
+  waiting: number;
+}) {
+  return (
+    // Hidden while a notice editor is open, so its save bar is never under the tabs (review of PR 344).
     <nav
       aria-label={t["tab.aria"]}
-      className="fixed inset-x-0 bottom-0 z-10 border-t border-rule bg-paper pb-[env(safe-area-inset-bottom)]"
+      className="fixed inset-x-0 bottom-0 z-10 border-t border-rule bg-paper pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] [:root:has(form[data-notice-editor])_&]:hidden"
     >
-      <ul className="mx-auto grid max-w-[640px] grid-cols-5">
+      <ul className="mx-auto grid max-w-[640px] grid-cols-6">
         {TABS.map((id) => {
           const label = t[`tab.${id}`];
           const inside = (
             <>
               <TabIcon id={id} />
-              <span className="text-[13px] leading-tight">{label}</span>
+              {/* Six tabs leave 60 px each at 360 px: a long word ("Acompanhar") wraps, without a
+                  hyphen, instead of running past the screen. */}
+              <span className="max-w-full text-[13px] leading-tight hyphens-none [overflow-wrap:anywhere]">
+                {label}
+              </span>
+              {id === "home" && <Waiting n={waiting} t={t} />}
             </>
           );
-          const box = "flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 text-center";
+          const box =
+            "relative flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 text-center";
           const path = PATHS[id];
           return (
             <li key={id}>
@@ -101,13 +139,17 @@ export async function Frame({
   /** "Signed in as … · Sign out", once signed in. */
   account?: ReactNode;
   /** Signed in: the bottom tabs with `current` open, and the first-use cards. */
-  tabs?: { slug: string; current: TabId };
+  tabs?: { slug: string; current: TabId; waiting: number };
   children: ReactNode;
 }) {
   const seen = !tabs || (await cookies()).get(WORKSPACE_INTRO_COOKIE)?.value === "1";
   return (
-    <div lang={language} id="top" className={tabs ? "pb-20" : undefined}>
-      <header className="bg-burgundy text-wax-paper">
+    <div
+      lang={language}
+      id="top"
+      className={tabs ? "pb-[calc(5rem+env(safe-area-inset-bottom))]" : undefined}
+    >
+      <header className="bg-burgundy pt-[env(safe-area-inset-top)] [body:has([data-upstream-banner])_&]:pt-0 pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)] text-wax-paper">
         <div className="mx-auto flex max-w-[960px] flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 sm:px-6">
           <div className="min-w-0 flex-1">
             <p className="font-display text-display-sm">{t["app.name"]}</p>
@@ -116,38 +158,51 @@ export async function Frame({
           {tabs && <FirstUse t={t} seen={seen} />}
           <LanguageSwitch current={language} label={t["lang.aria"]} />
           {account && (
-            <div className="flex basis-full flex-wrap items-center justify-between gap-x-2 border-t border-wax-paper/25 pt-1 text-body-sm">
+            <div className="flex min-w-0 basis-full items-center justify-between gap-x-2 border-t border-wax-paper/25 pt-1 text-body-sm">
               {account}
             </div>
           )}
         </div>
       </header>
-      <main className="mx-auto max-w-[960px] px-4 py-5 sm:px-6">{children}</main>
+      <main className="mx-auto max-w-[960px] py-5 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] sm:pl-[max(1.5rem,env(safe-area-inset-left))] sm:pr-[max(1.5rem,env(safe-area-inset-right))]">
+        {children}
+      </main>
       {tabs && <Tabs t={t} {...tabs} />}
     </div>
   );
 }
 
-/** The frame once signed in: the alliance under the name, "Signed in as … · Sign out", the tabs. */
+/**
+ * The frame once signed in: the alliance under the name, "Signed in as … · Sign out", the tabs with the
+ * count of screenshot drafts waiting for review on Home (`waiting`, read by the page in its own
+ * database read: the frame opens no connection).
+ */
 export function SignedInFrame({
   access,
   language,
   t,
   current,
+  waiting,
   children,
 }: {
   access: WorkspaceAccess;
   language: WorkspaceLanguage;
   t: WorkspaceDictionary;
   current: TabId;
+  waiting: number;
   children: ReactNode;
 }) {
   const alliance = ALLIANCES.find((a) => a.unionId === access.unionId);
+  const name = access.user.displayName ?? "";
   const account = (
     <>
-      <span className="min-w-0 truncate">
-        {fill(t["shell.signedIn"], { name: access.user.displayName ?? "" })}
-      </span>
+      <ProfileSheet
+        slug={access.slug}
+        t={t}
+        language={language}
+        name={name}
+        label={fill(t["shell.signedIn"], { name })}
+      />
       <SignOutButton slug={access.slug} label={t["shell.signOut"]} />
     </>
   );
@@ -155,7 +210,7 @@ export function SignedInFrame({
     <Frame
       language={language}
       t={t}
-      tabs={{ slug: access.slug, current }}
+      tabs={{ slug: access.slug, current, waiting }}
       account={account}
       {...(alliance && { subtitle: `${alliance.tag} · ${alliance.name}` })}
     >

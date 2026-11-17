@@ -2,6 +2,7 @@
 // 'unsafe-inline' for scripts, which plan §12.3 rules out. API routes (JSON) and /img get a fixed deny-all CSP.
 // Vercel Web Analytics and Speed Insights (D36) need no extra source: a nonced Next chunk adds their script with
 // createElement, which 'strict-dynamic' trusts ('self' in browsers without it), and they send to our own origin.
+// PostHog (D77) needs none either: its SDK and replay recorder are our own chunks, and it sends to /ingest.
 import { NextResponse, type NextRequest } from "next/server";
 
 const API_CSP = "default-src 'none'; frame-ancestors 'none'";
@@ -22,6 +23,14 @@ export function pageCsp(nonce: string, dev: boolean): string {
 }
 
 export function proxy(request: NextRequest): NextResponse {
+  // Next's own trailing-slash redirect, which next.config skips so PostHog's /ingest/e/ arrives as sent (D77).
+  const { pathname } = request.nextUrl;
+  if (pathname.length > 1 && pathname.endsWith("/") && !pathname.startsWith("/ingest/")) {
+    // A plain URL: a NextURL clone would put the slash back.
+    const url = new URL(request.url);
+    url.pathname = pathname.replace(/\/+$/, "");
+    return NextResponse.redirect(url, 308);
+  }
   const res = respond(request);
   // The workspace (D71): no shared or browser cache keeps a private page or answer.
   if (/^\/(api\/)?w\//.test(request.nextUrl.pathname)) {
@@ -32,8 +41,9 @@ export function proxy(request: NextRequest): NextResponse {
 
 function respond(request: NextRequest): NextResponse {
   const { pathname } = request.nextUrl;
-  // Images from /img (D22) get the same deny-all CSP: nothing in them should ever run.
-  if (pathname.startsWith("/api/") || pathname.startsWith("/img/")) {
+  // Images from /img (D22) and PostHog's answers through /ingest (D77) get the same deny-all CSP: nothing in
+  // them should ever run.
+  if (/^\/(?:api|img|ingest)\//.test(pathname)) {
     const res = NextResponse.next();
     res.headers.set("Content-Security-Policy", API_CSP);
     return res;
