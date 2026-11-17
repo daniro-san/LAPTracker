@@ -1,6 +1,6 @@
 "use client";
 
-// "Add a roll call" (issue 298): a KvK shield, an Undead Siege or plunders on a day, for an occasion the
+// "Add a roll call" (issue 298): a KvK shield, an Undead Siege or a Cheese Trap on a day, for an occasion the
 // Calendar does not hold. The sheet makes one request id when it opens (D100), so a retry after a lost
 // answer opens the same roll call; a second add of the same kind and day opens the first one too.
 import { useState } from "react";
@@ -60,9 +60,6 @@ function AddSheet(props: {
         options={ADDED_KINDS.map((k) => ({ value: k, label: words[`roll.kind.${k}`] }))}
         onChange={setKind}
       />
-      {kind === "plunder" && (
-        <p className="mt-1 text-body-sm text-ink/75">{words["roll.add.plunderHint"]}</p>
-      )}
       <Labeled id="roll-day" label={words["roll.add.day"]}>
         <TextInput
           id="roll-day"

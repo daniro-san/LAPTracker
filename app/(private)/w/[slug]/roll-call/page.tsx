@@ -1,5 +1,5 @@
 // /w/[slug]/roll-call (issue 298): the week's roll calls, one card each: the Calendar's KvK (shield),
-// Undead Siege and Elixir Scramble teams, and those added by hand (plunders and the rest). Each card says
+// Undead Siege, Cheese Trap and Elixir Scramble teams, and those added by hand. Each card says
 // its counts, where "not set" is only that (D75), and opens the marking page; an Elixir Scramble card also
 // opens its team. `?week=` takes any day of the week shown, as on the Calendar.
 import { Fragment } from "react";

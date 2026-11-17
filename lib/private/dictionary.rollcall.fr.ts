@@ -8,6 +8,7 @@ export const rollFr: RollWords = {
   "roll.kind.raid": "Undead Siege",
   "roll.kind.plunder": "Pillages",
   "roll.kind.elixir": "Elixir Scramble",
+  "roll.kind.cheese": "Cheese Trap",
   "roll.yes.shield": "Bouclier mis",
   "roll.no.shield": "Pas de bouclier",
   "roll.assumed": "Aucun problème vu",
@@ -18,7 +19,8 @@ export const rollFr: RollWords = {
   "roll.notSet": "Sans marque",
   "roll.away": "Absent",
   "roll.count": "{word} {n}",
-  "roll.none": "Pas de KvK, d’Undead Siege ni d’Elixir Scramble dans l’agenda cette semaine.",
+  "roll.none":
+    "Pas de KvK, d’Undead Siege, de Cheese Trap ni d’Elixir Scramble dans l’agenda cette semaine.",
   "roll.add": "Ajouter un appel",
   "roll.add.title": "Nouvel appel",
   "roll.add.kind": "Quoi",
@@ -92,7 +94,6 @@ export const rollFr: RollWords = {
   "roll.away.help":
     "Ces jours-là, la personne est laissée hors des appels et des suggestions de caravane.",
   "roll.away.failed": "Pas enregistré. Vérifiez la connexion et réessayez.",
-  "roll.add.plunderHint": "Pillages : quand nous pillons des caravanes ou des Black Ops.",
   "roll.how": "Comment ça marche",
   "roll.how.notSet":
     "Sans marque ne compte jamais contre personne. Cela veut seulement dire que personne n’a encore marqué.",

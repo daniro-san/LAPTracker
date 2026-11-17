@@ -15,6 +15,7 @@ const SET: Record<RollKind, "shield" | "join" | "did"> = {
   elixir: "join",
   raid: "did",
   plunder: "did",
+  cheese: "did",
 };
 
 export function markWord(mark: Mark, kind: RollKind, t: WorkspaceDictionary): string {
@@ -35,7 +36,10 @@ export function restWords(kind: RollKind, t: WorkspaceDictionary) {
   };
 }
 
-/** "KvK shield", the Calendar's own title ("Undead Siege · Lv.4", "Elixir Scramble · Team A"), "Plunders". */
+/**
+ * "KvK shield", the Calendar's own title ("Undead Siege · Lv.4", "Cheese Trap I · Lv.7", "Elixir Scramble ·
+ * Team A"), else the kind ("Cheese Trap", "Plunders").
+ */
 export function callTitle(
   o: { kind: RollKind; variant: string | null; placed: Placed | null },
   t: WorkspaceDictionary,

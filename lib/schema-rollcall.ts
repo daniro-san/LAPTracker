@@ -1,5 +1,6 @@
 // The Roll call tab's tables (issue 298, D103), split from lib/schema.ts for its size and re-exported there.
-// A roll call is one occasion: a KvK shield check, an Undead Siege, plunders or an Elixir Scramble team.
+// A roll call is one occasion: a KvK shield check, an Undead Siege, a Cheese Trap or an Elixir Scramble
+// team; plunders were one until 2026-11-17 and the saved ones stay.
 // Each mark is one write of one member's answer, append-only with a version per member (D80's pattern), so
 // two officers marking the same member cannot both win and the history keeps both. No mark is "not set",
 // which never counts against anyone (D75).
@@ -29,7 +30,7 @@ const day = (name: string) => date(name, { mode: "string" });
 /**
  * One occasion of a workspace. From the Calendar: `entry_id` and the plan's `week` (its Monday), one roll
  * call per entry and week; it stays when the entry is deleted. Added by hand (KvK shield, Undead Siege,
- * plunders): no entry, `week` is the Monday of `day`, and the add sheet's request id (D100). `variant` is
+ * Cheese Trap; plunders before 2026-11-17): no entry, `week` is the Monday of `day`, and the add sheet's request id (D100). `variant` is
  * an Elixir Scramble's team (A or B).
  */
 export const rollCalls = pgTable(
@@ -58,7 +59,10 @@ export const rollCalls = pgTable(
     uniqueIndex("roll_calls_added_unique")
       .on(t.workspaceId, t.kind, t.day)
       .where(sql`${t.requestId} is not null`),
-    check("roll_calls_kind_check", sql`${t.kind} in ('shield', 'raid', 'plunder', 'elixir')`),
+    check(
+      "roll_calls_kind_check",
+      sql`${t.kind} in ('shield', 'raid', 'plunder', 'elixir', 'cheese')`,
+    ),
     check("roll_calls_variant_check", sql`${t.variant} in ('A', 'B')`),
   ],
 );
