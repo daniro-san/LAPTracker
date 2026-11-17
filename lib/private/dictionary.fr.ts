@@ -1,6 +1,7 @@
 // The workspace dictionary in French (D71), split from dictionary.ts for its size; the keys follow `en`.
 // French puts a no-break space before : ? and !, and inside « ».
 import type { WorkspaceDictionary } from "./dictionary";
+import { noticesFr } from "./dictionary.notices";
 
 export const fr: WorkspaceDictionary = {
   "app.name": "Bureau des officiers",
@@ -113,7 +114,7 @@ export const fr: WorkspaceDictionary = {
   "howto.after":
     "Ensuite, touchez l’icône comme pour n’importe quelle appli. Vous restez connecté une journée ; ensuite, Discord vérifie à nouveau votre rôle.",
   "howto.open": "Ouvrir le Bureau des officiers",
-  "time.server": "{time} heure serveur",
+  "time.server": "{time} heure du serveur",
   "tab.review": "À suivre",
   "members.lead": "Du jeu, relevé chaque nuit juste avant le changement de jour du serveur.",
   "members.lastRead": "Dernier relevé : {when}",
@@ -191,4 +192,5 @@ export const fr: WorkspaceDictionary = {
   "profile.theme.light": "Clair",
   "profile.theme.dark": "Sombre",
   "profile.theme.system": "Comme l’appareil",
+  ...noticesFr,
 };

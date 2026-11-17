@@ -93,6 +93,7 @@ The header text above is the old file's, kept as it was. The split it describes 
 - [D77 — PostHog on production: page views, typed events, client errors and session replay on every page, masked per area (2026-11-16, owner, issue #326)](D77-posthog-analytics-replay-and-errors.md)
 - [D78 — Compact numbers use K, M, B, T in every language and browser (2026-11-16, owner, issue #325)](D78-compact-numbers-use-k-m-b-t-everywhere.md)
 - [D79 — The event page's live reads are shared between viewers in Next's data cache, tagged by event (2026-11-16, owner, 08zzzzj, issue #327)](D79-event-page-reads-shared-in-the-data-cache.md)
+- [D81 — Groq translates and rewrites officer-written notices, as drafts the officer reviews (2026-11-16, owner, 11i, issues #304 and #305)](D81-groq-for-notice-translation-and-rewriting.md)
 - [D86 — The server fight clock and the compare page's server pulse: one notion of "sampled", unsampled events disabled (2026-11-16, owner, 08zzzzn, issue #284)](D86-the-server-fight-clock-on-the-samples.md)
 - [D83 — Kill share vs might share: a public section on the event page, alliance-level only, a ratio only from 3 events (2026-11-16, owner, 08zzzzk, issue #280)](D83-kill-share-vs-might-share.md)
 - [D84 — The merge simulator: two alliances against the member cap, public, totals only (2026-11-16, owner, 08zzzzl, issue #282)](D84-merge-simulator-against-the-member-cap.md)

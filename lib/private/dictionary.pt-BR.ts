@@ -1,6 +1,7 @@
 // The workspace dictionary in Brazilian Portuguese (D71), split from dictionary.ts for its size; the keys
 // follow `en`.
 import type { WorkspaceDictionary } from "./dictionary";
+import { noticesPt } from "./dictionary.notices";
 
 export const pt: WorkspaceDictionary = {
   "app.name": "Mesa dos oficiais",
@@ -190,4 +191,5 @@ export const pt: WorkspaceDictionary = {
   "profile.theme.light": "Claro",
   "profile.theme.dark": "Escuro",
   "profile.theme.system": "Igual ao aparelho",
+  ...noticesPt,
 };
