@@ -3,6 +3,8 @@
 // is named, and a move under FLOW_MIN members is hidden. From 640 px the matrix is a table that scrolls inside
 // its own box; on a phone each row is a <details> that lists that source's destinations as text with counts.
 // HTML only (D68): the tint behind a count is decoration, the number is always written.
+import { Fragment } from "react";
+
 import { TextLink } from "@/lib/brand/components/TextLink";
 import { fill, type Dictionary } from "@/lib/copy";
 import { FLOW_MIN, type FlowCell } from "@/lib/flow";
@@ -52,21 +54,31 @@ function Lead({
   return (
     <>
       <p className="mt-1 text-lg">{sentence}</p>
-      <p className="text-body-sm text-ink/70">
+      <p className="mt-2 text-body-sm text-ink">
         {fill(f.totals, {
           min: FLOW_MIN,
           moved: flow.moved,
           arrived: flow.arrived,
           left: flow.left,
-        })}
+        })
+          .split(" · ")
+          .map((part, i) => (
+            <Fragment key={part}>
+              {i > 0 && " · "}
+              <span className="whitespace-nowrap">{part}</span>
+            </Fragment>
+          ))}
       </p>
-      {flow.notCounted.length > 0 && (
-        <p className="mt-1 text-body-sm text-ink/70">
-          {fill(f.notCounted, {
-            list: flow.notCounted.map((a) => allianceLabel(a.tag, a.name)).join(", "),
-          })}
-        </p>
-      )}
+      <div className="mt-3 space-y-1 border-l-2 border-ink/15 pl-3 text-body-sm text-ink/70">
+        {flow.notCounted.length > 0 && (
+          <p>
+            {fill(f.notCounted, {
+              list: flow.notCounted.map((a) => allianceLabel(a.tag, a.name)).join(", "),
+            })}
+          </p>
+        )}
+        <p>{fill(f.small, { min: FLOW_MIN })}</p>
+      </div>
     </>
   );
 }
@@ -232,7 +244,6 @@ export function FlowView({
   return (
     <>
       <Lead flow={flow} from={from} to={to} clock={clock} copy={copy} />
-      <p className="mt-2 text-body-sm text-ink/70">{fill(f.small, { min: FLOW_MIN })}</p>
       <Matrix flow={flow} by={by} from={from} to={to} clock={clock} copy={copy} />
       <ul className="mt-4 sm:hidden">
         {phoneOrder.map((a) => (

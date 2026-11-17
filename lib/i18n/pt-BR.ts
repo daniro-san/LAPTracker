@@ -245,7 +245,7 @@ export const ptBR = {
     thisAlliance: "Esta aliança",
     detailsHelp: "Posição em cada dia, do mais antigo para o mais recente: {days}.",
     few: "Ainda não há leituras diárias suficientes para comparar as alianças.",
-    notRanked: "Sem posição, sem leitura diária útil neste período: {list}.",
+    notRanked: "Fora da classificação, sem leitura diária útil neste período: {list}.",
   },
   history: {
     title: "Histórico de membros",

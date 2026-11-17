@@ -149,7 +149,7 @@ function NotRanked({ list, copy }: { list: Figures["notRanked"]; copy: Dictionar
   if (list.length === 0) return null;
   const names = list.map((a) => allianceLabel(a.tag ?? String(a.unionId), a.name)).join(", ");
   return (
-    <p className={`mt-2 text-sm ${MUTED}`}>{fill(copy.standing.notRanked, { list: names })}</p>
+    <p className={`mt-3 text-sm ${MUTED}`}>{fill(copy.standing.notRanked, { list: names })}</p>
   );
 }
 
