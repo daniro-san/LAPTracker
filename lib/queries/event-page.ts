@@ -42,14 +42,15 @@ function warReads(db: Db, id: number, detail: Phases, shared: Shared, sections: 
 /**
  * `eventId` null = the home page's event (`homeEvent`). Null page: no such (public) event. `shared` keeps
  * the turnout so far (no End yet) for every viewer; by default it reads every time. `windowMin` is
- * SNAPSHOT_WINDOW_MIN, for `homeEvent`. `sections`: which war sections are read.
+ * SNAPSHOT_WINDOW_MIN, for `homeEvent`. `sections`: which war sections are read; it may still be on its way,
+ * so the flags are read while the event is.
  */
 export async function getEventPage(
   db: Db,
   eventId: number | null,
   windowMin: number,
   shared: Shared = (_id, load) => load(db),
-  sections: Sections = { turnout: true, carried: true },
+  sections: Sections | PromiseLike<Sections> = { turnout: true, carried: true },
 ) {
   const events = await listEvents(db);
   const homeId = homeEvent(events, new Date(), windowMin)?.id ?? null;
@@ -60,7 +61,7 @@ export async function getEventPage(
   const before = detail.snapshots.find((s) => s.phase === "before");
   const after = detail.snapshots.find((s) => s.phase === "after");
   const unionIds = [...new Set(detail.snapshots.flatMap((s) => s.alliances.map((a) => a.unionId)))];
-  const [turnoutRead, carriedRead] = warReads(db, id, detail, shared, sections);
+  const [turnoutRead, carriedRead] = warReads(db, id, detail, shared, await sections);
   const [names, ranks, changes, members, turnout, carried] = await Promise.all([
     allianceNames(db, unionIds),
     eventRanks(db, id),

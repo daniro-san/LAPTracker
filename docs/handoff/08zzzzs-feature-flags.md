@@ -90,4 +90,10 @@ Plan changes needed: none.
 - The event-alliance page is at exactly 300 lines and `EventView` at 80 lines per function: any addition there needs a component that reads its own data or a small extraction first.
 </adjustments>
 
-PR: opened by the orchestrator (this worktree cannot push).
+## Review fixes (2026-11-17, `/pr-review` of #382)
+- `lib/flags.ts`: a failed read is remembered for 30 s per server instance and concurrent reads share one request, so a PostHog outage costs one 1.5 s timeout per 30 s, not one per page (test in `lib/flags.test.ts`). `flagsOf` takes the `fetch` to use; the Discord run passes `ctx.fetch`.
+- The event page and the merge page start the flag read together with their database reads; only the war reads wait for the flags (`getEventPage` and `mergePage` accept the flags as a promise).
+- Tests: `getEventPage` with both war sections off (`lib/queries/carried.test.ts`), `mergePage` with the turnout flag off (`lib/queries/merge.test.ts`).
+- `docs/ARCHITECTURE.md` lists `lib/flags` in the `app` and `lib/run` edges; the `lib/flags.ts` header and D91's cache line match the code.
+
+https://github.com/daniro-san/LAPTracker/pull/382

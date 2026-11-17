@@ -208,7 +208,7 @@ export async function mergePage(
   pair: readonly [number, number] | null,
   tracked: readonly number[] = TRACKED,
   events?: Events | PromiseLike<Events>,
-  turnout = true,
+  turnout: boolean | PromiseLike<boolean> = true,
 ): Promise<MergePage> {
   const heads = await newestHeads(db, [...tracked]);
   const alliances = [...heads.values()]
@@ -221,9 +221,11 @@ export async function mergePage(
     rosterOf(db, headA),
     rosterOf(db, headB),
     storedCapacities(db, [idA as number, idB as number]),
-    turnout
-      ? latestTurnouts(db, [idA as number, idB as number], events ?? listEvents(db))
-      : new Map<number, MergeTurnout>(),
+    Promise.resolve(turnout).then((on) =>
+      on
+        ? latestTurnouts(db, [idA as number, idB as number], events ?? listEvents(db))
+        : new Map<number, MergeTurnout>(),
+    ),
   ]);
   const side = (head: Head, roster: { power: number | null }[]): MergeSide => {
     return {

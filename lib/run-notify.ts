@@ -55,16 +55,17 @@ async function endTurnout(
   eventId: number,
   phase: Phase,
   detail: { snapshots: Parameters<typeof memberTurnout>[1] } | null,
-  env: AppContext["env"],
+  ctx: Pick<AppContext, "env" | "fetch">,
 ) {
-  if (phase !== "after" || !detail || !(await flagsOf(env)).has("war-turnout")) return null;
+  if (phase !== "after" || !detail || !(await flagsOf(ctx.env, ctx.fetch)).has("war-turnout"))
+    return null;
   return memberTurnout(db, detail.snapshots).catch(() => {
     console.error("notify.turnout_failed", { event_id: eventId });
     return null;
   });
 }
 
-async function notifyPublic(db: Db, s: Shared, env: AppContext["env"]) {
+async function notifyPublic(db: Db, s: Shared, ctx: Pick<AppContext, "env" | "fetch">) {
   const { event, phase, origin } = s.req;
   // getEventDetail reads real events only: the public message never sees a rehearsal.
   const detail = await getEventDetail(db, event.id).catch(() => {
@@ -77,7 +78,7 @@ async function notifyPublic(db: Db, s: Shared, env: AppContext["env"]) {
   const nextAt = phase === "before" && !event.manual ? event.afterAt : null;
   const beforeAt =
     phase === "after" ? (s.reports.find((r) => r.phase === "before")?.finishedAt ?? null) : null;
-  const turnout = await endTurnout(db, event.id, phase, detail, env);
+  const turnout = await endTurnout(db, event.id, phase, detail, ctx);
   // The picture (D58) needs this phase's rows; a failed run or an unread detail sends the text alone.
   const image =
     alliances && alliances.length > 0 && s.run.summary.status !== "failed"
@@ -226,7 +227,7 @@ export async function notifyFinished(
   // A manual round posts publicly only when its toggle is on (D28); the server never allows that
   // together with "admin only", and getEventDetail also refuses an admin-only event.
   if (!req.event.isTest && (!req.event.manual || req.event.postPublic)) {
-    await notifyPublic(db, shared, ctx.env);
+    await notifyPublic(db, shared, ctx);
   }
   await notifyAdmin(ctx, db, shared);
 }

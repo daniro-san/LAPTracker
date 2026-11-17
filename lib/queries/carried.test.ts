@@ -5,6 +5,7 @@ import { openTestDb, truncateAll } from "../db.test-helpers";
 import { allianceSnapshots, events, snapshots } from "../schema";
 import { findBlockedKeys } from "./blocked-keys";
 import { whoCarried } from "./carried";
+import { getEventPage } from "./event-page";
 import { getEventDetail } from "./events";
 
 interface Side {
@@ -116,5 +117,15 @@ describe("whoCarried (#280)", () => {
     expect(third?.rows.find((r) => r.unionId === 1)).toMatchObject({
       spread: { n: 4, low: 1, high: 3 },
     });
+  });
+});
+
+describe("getEventPage's war sections (D91)", () => {
+  it("reads neither kill share vs might share nor the war turnout while their flags are off", async () => {
+    const id = await seedEvent(start(), end());
+    const on = await getEventPage(db, id, 45);
+    expect(on.page?.carried).not.toBeNull();
+    const off = await getEventPage(db, id, 45, undefined, { turnout: false, carried: false });
+    expect([off.page?.turnout, off.page?.carried]).toEqual([null, null]);
   });
 });

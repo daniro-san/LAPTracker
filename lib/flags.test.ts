@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { flagsOf } from "./flags";
 
@@ -9,8 +9,16 @@ const KEY = { POSTHOG_KEY: "phc_test" };
 const answer = (flags: Record<string, { enabled: boolean }>) =>
   new Response(JSON.stringify({ flags, errorsWhileComputingFlags: false }), { status: 200 });
 
+// A failed read is remembered for 30 s on the module: each test starts an hour after the last one, past it.
+let hour = Date.UTC(2026, 10, 17);
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  hour += 3_600_000;
+  vi.setSystemTime(hour);
+});
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.useRealTimers();
 });
 
 describe("feature flags (D91)", () => {
@@ -34,9 +42,29 @@ describe("feature flags (D91)", () => {
       async () => Promise.reject(new TypeError("fetch failed")),
       async () => new Response("<html>", { status: 200 }),
     ]) {
-      vi.stubGlobal("fetch", reply);
+      vi.setSystemTime(Date.now() + 31_000);
+      const posthog = vi.fn(reply);
+      vi.stubGlobal("fetch", posthog);
       expect((await flagsOf(KEY)).size).toBe(0);
+      expect(posthog).toHaveBeenCalledTimes(1);
     }
+  });
+
+  it("shares one request between concurrent reads, and asks again only 30 s after a failure", async () => {
+    const posthog = vi.fn(async () => answer({ "war-turnout": { enabled: true } }));
+    vi.stubGlobal("fetch", posthog);
+    const [one, two] = await Promise.all([flagsOf(KEY), flagsOf(KEY)]);
+    expect([one.has("war-turnout"), two.has("war-turnout")]).toEqual([true, true]);
+    expect(posthog).toHaveBeenCalledTimes(1);
+
+    const down = vi.fn(async () => new Response("{}", { status: 503 }));
+    vi.stubGlobal("fetch", down);
+    expect((await flagsOf(KEY)).size).toBe(0);
+    vi.stubGlobal("fetch", posthog);
+    expect((await flagsOf(KEY)).size).toBe(0);
+    expect(posthog).toHaveBeenCalledTimes(1);
+    vi.setSystemTime(Date.now() + 31_000);
+    expect((await flagsOf(KEY)).has("war-turnout")).toBe(true);
   });
 
   it("reads LOCAL_FLAGS only without a PostHog key", async () => {

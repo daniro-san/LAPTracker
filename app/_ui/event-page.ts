@@ -22,9 +22,11 @@ import { requestClock, requestCopy } from "./locale";
 // The turnout so far is read only while the event has no End: a live event's entry. Its read opens its own
 // connection, because Next can run it in the background after this request's connection is closed.
 // War turnout and kill share vs might share are read only while their flags are on (D91); the flags are
-// read per request and never stored in the event cache.
+// read per request, while the event is, and never stored in the event cache.
 export const loadEventPage = cache(async (id: number | null) => {
-  const [turnout, carried] = await Promise.all([isOn("war-turnout"), isOn("kill-vs-might")]);
+  const sections = Promise.all([isOn("war-turnout"), isOn("kill-vs-might")]).then(
+    ([turnout, carried]) => ({ turnout, carried }),
+  );
   return withPageDb((db) =>
     getEventPage(
       db,
@@ -34,7 +36,7 @@ export const loadEventPage = cache(async (id: number | null) => {
         getAppContext().eventCache.read(eventId, "turnout-so-far", LIVE_MAX_AGE_S, () =>
           withPageDb(load),
         ),
-      { turnout, carried },
+      sections,
     ),
   );
 });

@@ -30,10 +30,12 @@ const idOf = (raw: string | string[] | undefined) => {
   return typeof raw === "string" && /^\d{1,15}$/.test(raw) ? Number(raw) : undefined;
 };
 
-const load = cache((a: number | null, b: number | null, turnout: boolean) =>
+const load = cache((a: number | null, b: number | null) =>
   withPageDb(async (db) => {
-    // One read of the event list, shared by the header and the turnout figures.
+    // One read of the event list, shared by the header and the turnout figures. The war turnout line is
+    // read and shown only under its own flag (D91), which is read while the rosters are.
     const eventsRead = listEvents(db);
+    const turnout = isOn("war-turnout");
     const [page, events] = await Promise.all([
       mergePage(db, a !== null && b !== null ? [a, b] : null, undefined, eventsRead, turnout),
       eventsRead,
@@ -42,6 +44,7 @@ const load = cache((a: number | null, b: number | null, turnout: boolean) =>
       page,
       events,
       homeId: homeEvent(events, new Date(), getEnv().SNAPSHOT_WINDOW_MIN)?.id ?? null,
+      turnout: await turnout,
     };
   }),
 );
@@ -51,12 +54,10 @@ async function read(searchParams: Search) {
   const sp = await searchParams;
   const [a, b] = [idOf(sp.a), idOf(sp.b)];
   if (a === undefined || b === undefined) return null;
-  // The war turnout line is read and shown only under its own flag (D91).
-  const turnout = await isOn("war-turnout");
-  const data = await load(a, b, turnout);
+  const data = await load(a, b);
   const known = (id: number | null) =>
     id === null || data.page.alliances.some((c) => c.unionId === id);
-  return known(a) && known(b) ? { ...data, a, b, turnout } : null;
+  return known(a) && known(b) ? { ...data, a, b } : null;
 }
 
 export async function generateMetadata(): Promise<Metadata> {
