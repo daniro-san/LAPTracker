@@ -112,11 +112,9 @@ export function SaveBar({ p, e }: { p: EditorProps; e: Editor }) {
           {t[e.message]}
         </Notice>
       )}
-      {drafts > 0 && (
-        <p className="mb-1 text-body-sm font-semibold text-plum">
-          {fill(t[`notices.drafts.${form}`], { n: drafts })}
-        </p>
-      )}
+      <p aria-live="polite" className="mb-1 text-body-sm font-semibold text-plum empty:hidden">
+        {drafts > 0 ? fill(t[`notices.drafts.${form}`], { n: drafts }) : ""}
+      </p>
       <div className="flex items-center gap-4">
         <button
           type="submit"

@@ -1,11 +1,21 @@
 // The notice editor's draft bookkeeping (issue 304): what a save sends, what Translate and Improve writing
-// leave behind for Undo, and the conflict banner's two answers.
+// leave behind for Accept and Undo, the conflict banner's two answers, and the language tabs (issue 363).
 import { describe, expect, it } from "vitest";
 
-import { NOTICE_FIELDS } from "@/lib/private/notice-rules";
+import { NOTICE_FIELDS, NOTICE_LANGUAGES } from "@/lib/private/notice-rules";
 
 import type { NoticeFields } from "./notice-client";
-import { changesOf, settle, startDraft, withDrafts } from "./notice-draft";
+import {
+  accept,
+  changesOf,
+  discard,
+  draftKind,
+  settle,
+  startDraft,
+  tabState,
+  translatePlan,
+  withDrafts,
+} from "./notice-draft";
 
 /** A saved notice: title v1, English v2, Portuguese v3 (translated), French never written. */
 const saved = (): NoticeFields => {
@@ -91,5 +101,59 @@ describe("the notice draft", () => {
       undefined,
     ]);
     expect(changesOf(used)).toEqual([]);
+  });
+
+  it("shows each tab's state, and Accept keeps a draft's text and source while Undo puts the old text back", () => {
+    const d = withDrafts(
+      startDraft(saved()),
+      { fr: "Postulez !" },
+      { kind: "translate", from: "en", to: ["pt-BR", "fr"], text: "Apply today." },
+    );
+    expect(NOTICE_LANGUAGES.map((l) => tabState(d, l, l === "pt-BR"))).toEqual([
+      "written",
+      "stale",
+      "draft",
+    ]);
+    expect([draftKind(d, "fr"), draftKind(d, "en")]).toEqual(["translate", null]);
+    const accepted = accept(d, "fr");
+    expect([tabState(accepted, "fr", false), accepted.values.fr]).toEqual([
+      "written",
+      "Postulez !",
+    ]);
+    expect(changesOf(accepted)[0]?.from).toEqual({ language: "en", version: 2 });
+    const undone = discard(d, "fr");
+    expect([tabState(undone, "fr", false), undone.from.fr]).toEqual(["empty", undefined]);
+    // "Keep as is", or a change, clears "may be out of date".
+    expect(tabState({ ...d, kept: { "pt-BR": true } }, "pt-BR", true)).toBe("written");
+  });
+
+  it("translates from the tab in view, or fills an empty tab or a translated draft from its source", () => {
+    const languages = ["pt-BR", "en", "fr"] as const;
+    const d = startDraft(saved());
+    expect(translatePlan(d, "en", [...languages], null)).toEqual({
+      from: "en",
+      to: ["pt-BR", "fr"],
+    });
+    expect(translatePlan(d, "fr", [...languages], "en")).toEqual({ from: "en", to: ["fr"] });
+    // Without a language written in, the first written one in the officer's order.
+    expect(translatePlan(d, "fr", [...languages], null)).toEqual({ from: "pt-BR", to: ["fr"] });
+    const drafted = withDrafts(
+      d,
+      { fr: "Postulez !" },
+      {
+        kind: "translate",
+        from: "en",
+        to: ["fr"],
+        text: "Apply today.",
+      },
+    );
+    expect(translatePlan(drafted, "fr", [...languages], "pt-BR")).toEqual({
+      from: "en",
+      to: ["fr"],
+    });
+    const empty = startDraft(
+      Object.fromEntries(NOTICE_FIELDS.map((f) => [f, { value: "", version: 0 }])) as NoticeFields,
+    );
+    expect(translatePlan(empty, "en", [...languages], null)).toBeNull();
   });
 });
