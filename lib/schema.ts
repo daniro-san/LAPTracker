@@ -371,3 +371,5 @@ export const workspaceSessions = pgTable(
 
 // The workspace calendar (issue 300), in its own file for size.
 export * from "./schema-calendar";
+// The workspace's member facts and remembered sheet names (D80), in their own file for size.
+export { memberFacts, nameAliases } from "./schema-facts";

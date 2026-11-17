@@ -52,14 +52,15 @@ function Tabs({ t, slug, current }: { t: WorkspaceDictionary; slug: string; curr
           const inside = (
             <>
               <TabIcon id={id} />
-              {/* Five tabs leave 72 px each at 360 px: a long word ("Acompanhar") wraps, without a
-                  hyphen, instead of running past the screen. */}
-              <span className="max-w-full text-[13px] leading-tight hyphens-none [overflow-wrap:anywhere]">
+              {/* Five tabs leave 72 px each at 360 px. 12 px fits the longest word ("Acompanhar") whole;
+                  a label of two words may take two lines, broken only between words. */}
+              <span className="max-w-full text-[12px] leading-tight hyphens-none [overflow-wrap:normal]">
                 {label}
               </span>
             </>
           );
-          const box = "flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 text-center";
+          const box =
+            "flex min-h-14 flex-col items-center justify-center gap-0.5 px-0.5 text-center";
           const path = PATHS[id];
           return (
             <li key={id}>

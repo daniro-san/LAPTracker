@@ -1,10 +1,14 @@
 // The Members tab's read (issue #296): one row per member of the workspace's own alliance, from its newest
 // end-of-day read (D72), with the week's donations, the D71 fields, who is new, what is missing, the
-// "Check in" reasons with their evidence (D75) and the week's thanks. Rows of the workspace's alliance
-// only (union_id = access.unionId, D71). avatar_url is never read.
+// "Check in" reasons with their evidence (D75), the week's thanks and the officers' member facts (#297).
+// A member on a break (an officer's status, or an away note with an end day not past) has no reasons and
+// no place in the thanks (D75). Before the alliance's first end-of-day read, the rows come from its newest
+// roster of any kind, with nothing computed from it. Rows of the workspace's alliance only (union_id =
+// access.unionId, D71). avatar_url is never read.
 import type { Db } from "../db";
 import { roleOf } from "../queries/leadership";
 import { mightUnchanged } from "../queries/might-unchanged";
+import { anyRoster, type AnyRoster } from "../repo/workspace-any-roster";
 import {
   endOfDayReads,
   firstSeenDays,
@@ -13,7 +17,10 @@ import {
   type RosterMember,
   type RosterRead,
 } from "../repo/workspace-rosters";
+import { serverDay } from "../schedule";
 import type { WorkspaceAccess } from "./access";
+import { awayUntil, type MemberFacts, type OfficerStatus } from "./fact-fields";
+import { factsOf, usedZones } from "./member-facts";
 import {
   DAY_MS,
   gameWeek,
@@ -61,15 +68,27 @@ export interface MemberRow {
   missing: MissingField[];
   /** Days of the week so far with no donations data. */
   missingDays: number;
+  /** The officers' facts about the member (#297). */
+  facts: MemberFacts;
+  /** A status an officer set (D75): On a break or Needs help. */
+  officerStatus: OfficerStatus | null;
+  /** The last day of an away note that still runs; the member is On a break until then. */
+  awayUntil: string | null;
+  /** From a roster read before the first end-of-day read: nothing computed, no status. */
+  early: boolean;
 }
 
 export interface MembersView {
-  /** When the newest end-of-day read was taken; null before the first one. */
+  /** When the rows were read: the newest end-of-day read, or the roster before one; null when none. */
   readAt: Date | null;
+  /** True before the alliance's first end-of-day read: the rows are its newest roster of any kind. */
+  early: boolean;
   /** The game week of the newest read, Monday to Sunday (server days). */
   week: string[];
   members: MemberRow[];
   thanks: { donors: Thank[]; activity: Thank[] };
+  /** The time zones the members have, most used first (the picker lists them first). */
+  zones: string[];
 }
 
 /** The rank as the game shows it, with an R4's title by the game's name (D56). */
@@ -93,28 +112,43 @@ interface Signals {
   oldest: string;
   unchanged: Map<number, number>;
   event: EventKills | null;
+  facts: Map<number, MemberFacts>;
+  /** Today's server day, for away notes. */
+  today: string;
 }
+
+/** The member's facts, the status an officer set, and an away note that still runs. */
+function factsPart(uid: number, s: Pick<Signals, "facts" | "today">) {
+  const facts = s.facts.get(uid) ?? {};
+  return {
+    facts,
+    officerStatus: facts.status?.value ?? null,
+    awayUntil: awayUntil(facts.away?.value, s.today),
+  };
+}
+
+const onBreak = (p: ReturnType<typeof factsPart>) =>
+  p.officerStatus === "break" || p.awayUntil !== null;
 
 function rowOf(m: RosterMember, week: string[], s: Signals): MemberRow {
   const newest = s.reads.at(-1) as RosterRead;
   const donations = weekDonations(s.reads, week, m.uid);
   const idle = idleRun(s.reads, m.uid);
   const flat = s.unchanged.get(m.uid);
-  const reasons: Reason[] = [
-    ...(idle ? [{ kind: "idle" as const, ...idle }] : []),
-    ...(flat !== undefined ? [{ kind: "might" as const, days: flat }] : []),
-    ...(s.event && killsGained(s.event, m.uid) === 0
-      ? [{ kind: "kvk" as const, at: s.event.at }]
-      : []),
-  ];
+  const part = factsPart(m.uid, s);
+  // D75: a member away is left out of every comparison, so never a reason to check in.
+  const reasons: Reason[] = onBreak(part)
+    ? []
+    : [
+        ...(idle ? [{ kind: "idle" as const, ...idle }] : []),
+        ...(flat !== undefined ? [{ kind: "might" as const, days: flat }] : []),
+        ...(s.event && killsGained(s.event, m.uid) === 0
+          ? [{ kind: "kvk" as const, at: s.event.at }]
+          : []),
+      ];
   const missing = missingOf(m, donations);
   return {
-    uid: m.uid,
-    name: m.name,
-    rank: rankOf(m),
-    rankCode: m.rankCode,
-    might: m.power,
-    sanctuary: m.lv,
+    ...plainRow(m, week, s.firstSeen),
     activity: m.active,
     honor: m.dailyHonor,
     donations,
@@ -123,12 +157,52 @@ function rowOf(m: RosterMember, week: string[], s: Signals): MemberRow {
     lastOnlineAt: m.lastOnlineAt,
     mapX: m.x,
     mapY: m.y,
-    seenSince: s.firstSeen.get(m.uid) ?? null,
     isNew: isNewMember(s.firstSeen.get(m.uid), s.oldest, newest.day),
     reasons,
     missing: missing.fields,
     missingDays: missing.days,
+    ...part,
+    early: false,
   };
+}
+
+/** A row from a roster before the first end-of-day read: what the roster has, "—" for the rest. */
+function plainRow(m: RosterMember, week: string[], firstSeen: Map<number, string>) {
+  return {
+    uid: m.uid,
+    name: m.name,
+    rank: rankOf(m),
+    rankCode: m.rankCode,
+    might: m.power,
+    sanctuary: m.lv,
+    activity: null,
+    honor: null,
+    donations: week.map(() => null),
+    weekTotal: null,
+    joinedAt: null,
+    lastOnlineAt: null,
+    mapX: null,
+    mapY: null,
+    seenSince: firstSeen.get(m.uid) ?? null,
+    isNew: false,
+    reasons: [],
+    missing: [],
+    missingDays: 0,
+  };
+}
+
+function earlyView(
+  roster: AnyRoster | null,
+  s: Pick<Signals, "facts" | "today" | "firstSeen">,
+  zone: string,
+): MembersView {
+  const none = { donors: [], activity: [] };
+  if (!roster) return { readAt: null, early: true, week: [], members: [], thanks: none, zones: [] };
+  const week = gameWeek(serverDay(roster.at, { SERVER_TZ: zone }));
+  const members = roster.members
+    .map((m) => ({ ...plainRow(m, week, s.firstSeen), ...factsPart(m.uid, s), early: true }))
+    .sort(order);
+  return { readAt: roster.at, early: true, week, members, thanks: none, zones: usedZones(s.facts) };
 }
 
 /** Check in first; then R5, R4 … R1, then by might; a member without a rank or might last. */
@@ -137,23 +211,26 @@ const order = (a: MemberRow, b: MemberRow) =>
   (b.rankCode ?? 0) - (a.rankCode ?? 0) ||
   (b.might ?? -1) - (a.might ?? -1);
 
-/** The Members tab of the workspace's own alliance, as of `now`. */
+/** The Members tab of the workspace's own alliance, as of `now`; `zone` is the server's (SERVER_TZ). */
 export async function membersView(
   db: Db,
   access: WorkspaceAccess,
   now: Date,
+  zone: string,
 ): Promise<MembersView> {
   const unionId = access.unionId;
-  const [reads, firstSeen, might, event] = await Promise.all([
+  const [reads, firstSeen, might, event, facts] = await Promise.all([
     endOfDayReads(db, unionId, LOOKBACK_READS),
     firstSeenDays(db, unionId),
     mightUnchanged(db, unionId),
     KVK_REASON_ON
       ? scheduledEventKills(db, unionId, new Date(now.getTime() - KVK_DAYS * DAY_MS))
       : null,
+    factsOf(db, access),
   ]);
+  const today = serverDay(now, { SERVER_TZ: zone });
   const newest = reads.at(-1);
-  if (!newest) return { readAt: null, week: [], members: [], thanks: { donors: [], activity: [] } };
+  if (!newest) return earlyView(await anyRoster(db, unionId), { facts, today, firstSeen }, zone);
   const week = gameWeek(newest.day);
   const signals: Signals = {
     reads,
@@ -161,15 +238,21 @@ export async function membersView(
     oldest: [...firstSeen.values()].reduce((a, b) => (b < a ? b : a), newest.day),
     unchanged: new Map(might.unchanged.map((u) => [u.uid, u.days])),
     event,
+    facts,
+    today,
   };
   const members = newest.members.map((m) => rowOf(m, week, signals)).sort(order);
+  // D75: thanks are a comparison, so members on a break are left out of them.
+  const counted = members.filter((m) => !onBreak(m));
   return {
     readAt: newest.at,
+    early: false,
     week,
     members,
     thanks: {
-      donors: topOf(members, (m) => m.weekTotal),
-      activity: topOf(members, (m) => m.activity),
+      donors: topOf(counted, (m) => m.weekTotal),
+      activity: topOf(counted, (m) => m.activity),
     },
+    zones: usedZones(facts),
   };
 }

@@ -36,6 +36,10 @@ const m: MemberRow = {
   reasons: [{ kind: "might", days: 9 }],
   missing: ["donations"],
   missingDays: 1,
+  facts: {},
+  officerStatus: null,
+  awayUntil: null,
+  early: false,
 };
 
 describe("Copy for spreadsheet (D71)", () => {

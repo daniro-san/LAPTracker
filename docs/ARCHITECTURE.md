@@ -25,7 +25,14 @@ lib/private/*.ts    the workspace (D71): requireWorkspace and its branded Worksp
                     D75's signals), members-list.ts (filters and search), members-sheet.ts (status,
                     reasons and "copy for spreadsheet"), first-use.ts (the first-use cards as data),
                     cookies.ts (the two cookie names, apart from the dictionaries, for client components);
-                    their table reads are in lib/repo/workspace-rosters.ts. notices.ts (the notices library's reads
+                    their table reads are in lib/repo/workspace-rosters.ts, and the newest roster of any kind
+                    (before the first end-of-day read) and the names members used in workspace-any-roster.ts.
+                    Member facts (D80): fact-fields.ts (the fields, sources and merges; pure, also on the
+                    client), member-facts.ts (versions, 409 and merging), onboarding-parse.ts ("Paste what
+                    they told you"; pure, for pastes and OCR lines), time-zones.ts and zone-table.ts (the
+                    picker's search; pure), sheet-parse.ts (pure) and sheet-import.ts (the one-time import);
+                    their tables are in lib/repo/member-facts.ts and lib/schema-facts.ts.
+                    notices.ts (the notices library's reads
                     and its save, issue 304), notice-rules.ts (pure: fields, the counter, "may be out of date",
                     the save's version check); its table reads and writes are in lib/repo/notices.ts.
                     The Calendar tab (issue 300): calendar.ts (reads and the field-level writes with their
@@ -33,9 +40,14 @@ lib/private/*.ts    the workspace (D71): requireWorkspace and its branded Worksp
                     the weekly layout), calendar-time.ts (pure, browser-safe: server days, ST and the viewer's
                     clock), calendar-words.ts (titles, dates, the 409 sentence), dictionary.calendar*.ts (its
                     words); its tables are in lib/schema-calendar.ts, its reads and writes in lib/repo/calendar.ts.
+                    The thefts log (D97): thefts.ts (its read and writes, the attacker search), theft-groups.ts
+                    (pure: attacker key, groups and counts, follow-up state), thefts-import.ts (the screenshot
+                    import's save hook for Secret Ops reports), dictionary.thefts.ts (its words); tables in
+                    lib/schema-thefts.ts, reads and writes in lib/repo/thefts.ts.
 lib/ai/*.ts         Groq (D81): the chat client with its model fallback (groq.ts), the notice prompts and plain-text
                     cleanup (notice-writing.ts), the game glossary (glossary.ts). Reached through AppContext.ai.
 lib/queries/*.ts    read models for the UI (joins, sorting, name history). Never write. Never expose BLOCKED_ROSTER_KEYS.
+                    lib/queries/server-players.ts: `serverPlayers`, the tracked alliances' newest roster names (D97).
                     lib/queries/samples.ts: `eventSamples`, an event's Start, samples and End (D69).
                     lib/queries/live.ts: `eventProgress`, the event page's live section (alliance totals per reading, D69):
                     `progressRows` (the database, cacheable) and `eventProgressOf` (pure, per request, takes `now`).
@@ -73,7 +85,7 @@ lib/screenshot/     the screenshot reader (D74): pure parsers over OCR text line
 
 ## Dependency rule
 
-- `app → lib/{route, auth, run, tick, rehearsal, schedule, queries, repo, images, analytics, ai}`; `lib/private → lib/analytics/events` (the sign-in mark, D77); `lib/run → lib/{collector, queries}` (queries: the public Discord message's numbers).
+- `app → lib/{route, auth, run, tick, rehearsal, schedule, queries, repo, images, analytics, ai}`; `lib/private → lib/analytics/events` (the sign-in mark, D77); `lib/private → lib/screenshot` (the name matcher, for the sheet import, D80); `lib/run → lib/{collector, queries}` (queries: the public Discord message's numbers).
 - `lib/collector → lib/{compute, sources, repo, logger, notify}` **through the `Deps` object passed in**.
 - `lib/compute`, `lib/budget` and `lib/compact` import nothing from the project.
 - `lib/logger` imports only `lib/repo` and `lib/redact`.

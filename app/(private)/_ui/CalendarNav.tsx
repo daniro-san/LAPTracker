@@ -1,16 +1,15 @@
-// The Calendar tab's own views (issue 300, prototype v5): Week · Caravans · Notices, as links, so the
+// The Calendar tab's own views (issue 300, prototype v5): Week · Caravans · Notices · Thefts, as links, so the
 // address says which one is open. Every link is 44 px tall; the columns follow the list's length.
 import type { WorkspaceDictionary, WorkspaceKey } from "@/lib/private/dictionary";
 
-export type CalendarView = "week" | "caravans" | "notices";
+export type CalendarView = "week" | "caravans" | "notices" | "thefts";
 
 /** Only the calendar's own views keep the week shown (`?week=`). */
 const VIEWS: { id: CalendarView; path: string; key: WorkspaceKey; keepsWeek: boolean }[] = [
   { id: "week", path: "/calendar", key: "calendar.nav.week", keepsWeek: true },
   { id: "caravans", path: "/calendar/caravans", key: "calendar.nav.caravans", keepsWeek: true },
   { id: "notices", path: "/notices", key: "calendar.nav.notices", keepsWeek: false },
-  // The thefts log (issue 321, session 11j) goes here as the fourth view: add "thefts" to CalendarView and
-  // { id: "thefts", path: "/thefts", key: "thefts.nav", keepsWeek: false }.
+  { id: "thefts", path: "/thefts", key: "thefts.nav", keepsWeek: false },
 ];
 
 export function CalendarNav({
