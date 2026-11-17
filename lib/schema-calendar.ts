@@ -21,6 +21,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 import { workspaces, workspaceUsers } from "./schema";
+import { notices } from "./schema-notices";
 
 const tstz = (name: string) => timestamp(name, { withTimezone: true });
 const big = (name: string) => bigint(name, { mode: "number" });
@@ -60,6 +61,8 @@ export const calendarEntries = pgTable(
     edits: jsonb("edits").$type<FieldEdits>().notNull().default({}),
     /** The add sheet's request id (D100): a retry of the same add finds this entry instead of a second. */
     requestId: text("request_id"),
+    /** The notice that goes with this entry (D102), linked from either side; cleared when it is deleted. */
+    noticeId: integer("notice_id").references(() => notices.id, { onDelete: "set null" }),
   },
   (t) => [
     index("calendar_entries_workspace_day_idx").on(t.workspaceId, t.day),

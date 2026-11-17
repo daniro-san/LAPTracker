@@ -14,6 +14,7 @@ const moved = (): FormValues => ({
   notes: "",
   link: "",
   forMembers: false,
+  notice: null,
   weekly: true,
   day: "2026-11-24",
   minute: 1200,

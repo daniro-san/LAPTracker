@@ -23,9 +23,19 @@ import {
   saveNotice,
   type Conflict,
   type DraftAsk,
+  type HistoryItem,
   type NoticeFields,
 } from "./notice-client";
-import { accept, askTab, changesOf, discard, settle, startDraft, withDrafts } from "./notice-draft";
+import {
+  accept,
+  askTab,
+  changesOf,
+  discard,
+  settle,
+  startDraft,
+  withDrafts,
+  withRestored,
+} from "./notice-draft";
 import { keepKey, readKept, restorable, writeKept } from "./notice-keep";
 
 export interface EditorProps {
@@ -42,6 +52,10 @@ export interface EditorProps {
   source: NoticeLanguage | null;
   /** Opened from the read page's "Out of date" tag: this language is brought into view. */
   focus?: NoticeLanguage | undefined;
+  /** The notice's saves, newest first (D102); none for a new notice. */
+  history?: HistoryItem[] | undefined;
+  /** More edits exist than `history` holds: how many of the newest it holds. */
+  historyCut?: number | undefined;
   onClose?: (() => void) | undefined;
 }
 
@@ -120,6 +134,8 @@ export function useEditor(p: EditorProps) {
   const [message, setMessage] = useState<WorkspaceKey | null>(null);
   const [aiMessage, setAiMessage] = useState<AiMessage | null>(null);
   const [active, setActive] = useState<NoticeLanguage>(p.focus ?? p.languages[0] ?? "en");
+  /** "Restore this version" was pressed: the editor says what to do next until the draft is saved. */
+  const [restored, setRestored] = useState(false);
   /** The tab the officer last typed in: where Translate fills an empty tab from. */
   const [wroteIn, setWroteIn] = useState<NoticeLanguage | null>(p.source);
   const { banner, showBanner } = useBanner(conflicts);
@@ -177,6 +193,12 @@ export function useEditor(p: EditorProps) {
       run("translate", { kind: "translate", from, to, text: draft.values[from] }),
     improve: (language: NoticeLanguage, tone: Tone) =>
       run("improve", { kind: "improve", language, tone, text: draft.values[language] }),
+    restored,
+    /** Puts an earlier version's fields in as a draft (D102); nothing is saved until Save. */
+    restoreVersion: (earlier: Partial<Record<NoticeField, string>>) => {
+      setDraft((d) => withRestored(d, earlier));
+      setRestored(true);
+    },
     accept: (language: NoticeLanguage) => setDraft((d) => accept(d, language)),
     undo: (language: NoticeLanguage) => setDraft((d) => discard(d, language)),
     keep: (language: NoticeLanguage) =>

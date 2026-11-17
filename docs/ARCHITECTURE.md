@@ -37,6 +37,11 @@ lib/private/*.ts    the workspace (D71): requireWorkspace and its branded Worksp
                     notices.ts (the notices library's reads
                     and its save, issue 304), notice-rules.ts (pure: fields, the counter, "may be out of date",
                     the save's version check); its table reads and writes are in lib/repo/notices.ts.
+                    D102: notice-formats.ts (pure: the game notice, game mail and Discord copies, Discord's
+                    messages), notice-history.ts (pure: saves from notice_edits, the text before, a version's
+                    fields), notice-publish.ts ("Publish to Discord": channel by audience from
+                    WORKSPACE_DISCORD_WEBHOOKS, the once-per-request claim, the posts through AppContext.fetch);
+                    its table in lib/repo/notice-publishes.ts.
                     The Calendar tab (issue 300): calendar.ts (reads and the field-level writes with their
                     version check), calendar-model.ts (pure: kinds, input schemas, which change fits which kind,
                     the weekly layout), calendar-kinds.ts (its fixed facts, no zod, for client components),

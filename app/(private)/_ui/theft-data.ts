@@ -26,7 +26,8 @@ export interface EntryCard {
   /** The server day "2026-11-15", to tell whether the viewer's clock is on another day. */
   day: string | null;
   victim: string;
-  stolen: string;
+  /** "Ops"; "—" on rows saved before the type was asked (D75). */
+  kind: string;
   source: "photo" | "typed";
   note: string | null;
 }
@@ -118,8 +119,7 @@ function attackerCard(a: AttackerGroup, t: TheftWords, f: TheftFormats): Attacke
       victim: e.victimName
         ? fill(t["thefts.from"], { name: isolate(e.victimName) })
         : t["thefts.noVictim"],
-      stolen:
-        t[e.stolen === "quest_rewards" ? "thefts.stolen.quest_rewards" : "thefts.stolen.none"],
+      kind: e.kind ? t[`thefts.kind.${e.kind}`] : "—",
       source: e.source,
       note: e.note,
     })),

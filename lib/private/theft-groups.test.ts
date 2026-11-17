@@ -22,7 +22,7 @@ function entry(key: string, tag: string, at: string | null, victim: number | nul
     attackerKey: key,
     attackerName: key.slice(key.indexOf(":") + 1),
     attackerTag: tag,
-    stolen: "quest_rewards",
+    kind: "ops",
     victimUid: victim,
     victimName: victim === null ? null : `member${victim}`,
     source: "typed",

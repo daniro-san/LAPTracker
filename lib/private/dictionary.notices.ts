@@ -1,7 +1,10 @@
 // The notices library's words (issue 304) in English, Brazilian Portuguese and French: one module that the
 // three workspace dictionaries spread, so the notices keys stay together. French puts a no-break space
-// before : ; ! and ?.
+// before : ; ! and ?. The words added in issue 345 are in dictionary.notices-more.ts.
+import { noticesMoreEn, noticesMoreFr, noticesMorePt } from "./dictionary.notices-more";
+
 export const noticesEn = {
+  ...noticesMoreEn,
   "tab.notices": "Notices",
   "notices.lead":
     "Write a notice once. Each officer reads it in their own language. Copy it into the game or Discord.",
@@ -26,7 +29,6 @@ export const noticesEn = {
   "notices.outOfDate.aria": "{lang} may be out of date. Edit the notice",
   "notices.chars": "{n} of {limit} characters",
   "notices.over": "{n} over the game’s {limit} limit. The end may be cut.",
-  "notices.copy": "Copy {lang}",
   "notices.edit": "Edit",
   "notices.title": "Title",
   "notices.updateFrom": "Update from {lang}",
@@ -88,6 +90,7 @@ export const noticesEn = {
 export type NoticesKey = keyof typeof noticesEn;
 
 export const noticesPt: Record<NoticesKey, string> = {
+  ...noticesMorePt,
   "tab.notices": "Avisos",
   "notices.lead":
     "Escreva o aviso uma vez. Cada oficial lê no próprio idioma. Copie para o jogo ou o Discord.",
@@ -112,7 +115,6 @@ export const noticesPt: Record<NoticesKey, string> = {
   "notices.outOfDate.aria": "{lang} pode estar desatualizado. Editar o aviso",
   "notices.chars": "{n} de {limit} caracteres",
   "notices.over": "{n} acima do limite de {limit} do jogo. O fim pode ser cortado.",
-  "notices.copy": "Copiar {lang}",
   "notices.edit": "Editar",
   "notices.title": "Título",
   "notices.updateFrom": "Atualizar a partir de {lang}",
@@ -175,6 +177,7 @@ export const noticesPt: Record<NoticesKey, string> = {
 };
 
 export const noticesFr: Record<NoticesKey, string> = {
+  ...noticesMoreFr,
   "tab.notices": "Annonces",
   "notices.lead":
     "Écrivez l’annonce une fois. Chaque officier la lit dans sa langue. Copiez-la dans le jeu ou sur Discord.",
@@ -200,7 +203,6 @@ export const noticesFr: Record<NoticesKey, string> = {
   "notices.outOfDate.aria": "{lang} n’est peut-être plus à jour. Modifier l’annonce",
   "notices.chars": "{n} sur {limit} caractères",
   "notices.over": "{n} de plus que la limite de {limit} du jeu. La fin peut être coupée.",
-  "notices.copy": "Copier {lang}",
   "notices.edit": "Modifier",
   "notices.title": "Titre",
   "notices.updateFrom": "Mettre à jour depuis {lang}",

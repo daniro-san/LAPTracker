@@ -131,6 +131,67 @@ export async function workspaceNotice(
   return row ? { ...row, fields } : null;
 }
 
+/** The editor's "Earlier versions" read this many of a notice's newest edits (D102). */
+export const HISTORY_LIMIT = 300;
+
+export interface EditRow {
+  id: number;
+  field: string;
+  value: string;
+  by: string | null;
+  at: Date;
+}
+
+/** A notice's newest edits, newest first, with who made each (D102). */
+export function noticeEditRows(db: Db, workspaceId: number, noticeId: number): Promise<EditRow[]> {
+  return db
+    .select({
+      id: noticeEdits.id,
+      field: noticeEdits.field,
+      value: noticeEdits.value,
+      by: workspaceUsers.displayName,
+      at: noticeEdits.editedAt,
+    })
+    .from(noticeEdits)
+    .leftJoin(workspaceUsers, eq(workspaceUsers.id, noticeEdits.editedBy))
+    .where(and(eq(noticeEdits.workspaceId, workspaceId), eq(noticeEdits.noticeId, noticeId)))
+    .orderBy(desc(noticeEdits.id))
+    .limit(HISTORY_LIMIT);
+}
+
+/** The current title of each of these notices of the workspace, by id (D102: the calendar's links). */
+export async function noticeTitles(
+  db: Db,
+  workspaceId: number,
+  ids: number[],
+): Promise<Map<number, string>> {
+  if (ids.length === 0) return new Map();
+  const rows = await db
+    .selectDistinctOn([noticeEdits.noticeId], {
+      id: noticeEdits.noticeId,
+      title: noticeEdits.value,
+    })
+    .from(noticeEdits)
+    .where(
+      and(
+        eq(noticeEdits.workspaceId, workspaceId),
+        inArray(noticeEdits.noticeId, ids),
+        eq(noticeEdits.field, "title"),
+      ),
+    )
+    .orderBy(noticeEdits.noticeId, desc(noticeEdits.id));
+  return new Map(rows.map((r) => [r.id, r.title]));
+}
+
+/** Whether the workspace has this notice: a calendar entry may link only its own workspace's (D102). */
+export async function noticeInWorkspace(db: Db, workspaceId: number, id: number): Promise<boolean> {
+  const [row] = await db
+    .select({ id: notices.id })
+    .from(notices)
+    .where(and(eq(notices.workspaceId, workspaceId), eq(notices.id, id)));
+  return row !== undefined;
+}
+
 export interface NewEditRow {
   field: string;
   value: string;

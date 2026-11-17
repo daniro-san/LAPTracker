@@ -15,6 +15,7 @@ import {
   type FieldChange,
   type NewEntry,
 } from "./calendar-model";
+import { saveNotice } from "./notices";
 import { createSession } from "./session";
 
 const OGS = 67111155;
@@ -60,6 +61,7 @@ const newEntry = (fields: Partial<NewEntry> & Pick<NewEntry, "kind">) =>
     notes: null,
     link: null,
     forMembers: false,
+    notice: null,
     ...fields,
   }) as NewEntry;
 
@@ -230,6 +232,25 @@ describe("the workspace calendar (issue 300)", () => {
       "not_found",
     );
     expect(await calendarDays(db, ogs, "2026-11-16", "2026-11-22")).toHaveLength(1);
+  });
+  it("links only a notice of its own workspace (D102)", async () => {
+    const ogs = await signedIn("ogs");
+    const nse = await signedIn("nse");
+    const title = [{ field: "title" as const, value: "Rota", version: 0 }];
+    const theirs = await saveNotice(db, nse, null, title, NOW, randomUUID());
+    const ours = await saveNotice(db, ogs, null, title, NOW, randomUUID());
+    if (!theirs.ok || !ours.ok) throw new Error("notice not saved");
+    const id = await create(ogs, { kind: "kvk" });
+    expect(await edit(ogs, id, null, { field: "notice", value: theirs.id, version: 0 })).toEqual({
+      ok: false,
+      code: "invalid",
+    });
+    expect(
+      await createEntry(db, ogs, newEntry({ kind: "kvk", notice: theirs.id }), randomUUID()),
+    ).toEqual({ ok: false, code: "invalid" });
+    expect(await edit(ogs, id, null, { field: "notice", value: ours.id, version: 0 })).toEqual({
+      ok: true,
+    });
   });
   it("follows the owner's rules: Elixir windows, levels 1 to 10, one theme per week, the daily themes", async () => {
     const ogs = await signedIn("ogs");

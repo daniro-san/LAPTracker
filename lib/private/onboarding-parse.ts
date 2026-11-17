@@ -8,6 +8,7 @@
 // when every line that has one agrees.
 import { LANGUAGES } from "./fact-fields";
 import { fold } from "./members-list";
+import { cellNumber } from "./sheet-parse";
 import { abbreviation, zonesNamed } from "./time-zones";
 
 export interface OnboardingFacts {
@@ -196,9 +197,23 @@ function zonesOf(line: string, now: Date, serverZone: string): string[] {
   return named.via === "abbreviation" && capitals ? named.zones : [];
 }
 
-/** The squad might typed in the editor's field ("12.3M", "12 300 000"); null when it holds none. */
-export const mightIn = (text: string): number | null =>
-  pick(text.split(/\r?\n/).flatMap((l) => readLine(l).might));
+/**
+ * "19,8", "19.8", "198": a bare number below 1,000 typed in the editor's might field, read in millions as
+ * the sheet import reads its might column (D80); null for anything else. A trailing separator ("19,")
+ * reads as the number before it, so the field's "M" stays while the officer types the decimal. Zero is
+ * no might: the sheet import drops it too.
+ */
+export function millionsIn(text: string): number | null {
+  const n = cellNumber(text.trim().replace(/[.,]$/, ""));
+  return n && !n.percent && n.n > 0 && n.n < 1000 ? n.n : null;
+}
+
+/** The squad might typed in the editor's field ("19,8", "12.3M", "12 300 000"); null when it holds none. */
+export function mightIn(text: string): number | null {
+  const millions = millionsIn(text);
+  if (millions !== null) return Math.round(millions * 1e6);
+  return pick(text.split(/\r?\n/).flatMap((l) => readLine(l).might));
+}
 
 /** Reads the facts out of a pasted chat, or out of a chat picture's OCR lines. */
 export function parseOnboarding(
