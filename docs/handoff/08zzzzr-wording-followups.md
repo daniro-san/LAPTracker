@@ -6,7 +6,7 @@ Basis: owner delegated; persona panel and adversarial review agreed, 2026-11-17.
 - Server balance (`lib/copy-balance.ts`): the figures are the tracked alliances' might. Changed keys: `description`, `lead`, `total` ("Tracked alliances"), `shares` ("Share by alliance"), `bar`, `blocShare`. The page title stays "Server balance".
 - Kill share vs might share: every row shows the points gap (`+6.1 pts`). The ratio appears only as its range (`carriedSpread`) from 3 events. `CarriedRow.ratio` is removed (unused). `carriedRatioHelp` is rewritten. One component test replaces the old one.
 - Server fight clock: the "since" date is now the first sampled event over all scheduled public events (`getFightClock` in `lib/queries/fight-clock.ts`). `fightClockOffMissed` and `fightClockLead` rewritten. One new test.
-- Translations: the 9 changed keys in all 17 languages, reusing each language's words for "tracked alliances" and Might. No glossary row added.
+- Translations: the 9 changed keys in all 17 languages, reusing each language's words for "tracked alliances" and Might. Glossary rows for `balance.total`/`balance.shares` rewritten in de, id, nl, sv, es and it (they still said "server might"); vi's tracked-alliances row replaced and its duplicated table merged (review of #366).
 - D83, D85, D86 amended.
 
 ## Decisions
@@ -16,7 +16,9 @@ Basis: owner delegated; persona panel and adversarial review agreed, 2026-11-17.
 - No other public string calls this total "the server's might". Remaining matches are code comments only (`lib/balance.ts`, `app/_ui/BalanceBar.tsx`, `app/(pages)/alliances/balance/page.tsx`, `app/(pages)/events/compare/page.tsx`) and D85's earlier bullets (amended). No Discord copy matched.
 
 ## Deviations
-- None from the request.
+- vi `standing.server` changed from "Máy chủ" (the server) to "Liên minh theo dõi" (tracked alliances), a key outside the agreed list, so the standing section and the balance page say the same thing in vi.
+- UX review (3cbf9f6): a small top margin between the two help paragraphs of kill share vs might share.
+- Review of #366: the first-sampled lookup reads only the events older than the 12 shown; the shown ones come from their pulses.
 
 ## Verified
 - `pnpm exec tsx scripts/i18n-check.ts` before stamping: only the 9 changed keys stale in 17 languages, none broken, missing or extra. After `--stamp`: 17 languages up to date.

@@ -126,14 +126,17 @@ export async function getFightClock(db: Db, now: Date, options: PulseOptions) {
     options,
   );
   // The first sampled event over every scheduled event, not only the ones shown: once the window slides, an
-  // older unsampled event must not name a later date.
-  const everSampled = await sampledEventIds(
+  // older unsampled event must not name a later date. The shown events' pulses already say whether they are
+  // sampled, so only the older ones are read again (none while there are 12 events or fewer).
+  const older = allScheduled.slice(FIGHT_CLOCK_EVENTS);
+  const olderSampled = await sampledEventIds(
     db,
-    allScheduled.map((e) => e.id),
+    older.map((e) => e.id),
   );
-  const sampledAt = allScheduled
-    .filter((e) => everSampled.has(e.id))
-    .map((e) => e.eventAtUtc.getTime());
+  const sampledAt = [
+    ...scheduled.filter((_, i) => pulses[i]?.sampled),
+    ...older.filter((e) => olderSampled.has(e.id)),
+  ].map((e) => e.eventAtUtc.getTime());
   const firstSampledAt = sampledAt.length ? new Date(Math.min(...sampledAt)) : null;
   const rows = scheduled.map((e, i): FightClockEvent => {
     const pulse = pulses[i] as EventPulse;
