@@ -13,7 +13,6 @@ import { fill } from "@/lib/copy";
 import type { WorkspaceLanguage } from "@/lib/private/dictionary";
 import { FOLLOW_UP_STATES, type FollowUpState } from "@/lib/private/theft-groups";
 
-import { SourceBadge } from "./SourceBadge";
 import { postTheft, viewerClock } from "./theft-client";
 import type { AllianceCard, AttackerCard, EntryCard, TheftWords } from "./theft-data";
 import { useViewerZone } from "./YourTime";
@@ -146,12 +145,8 @@ function Entry({ entry, slug, t, language }: Shared & { entry: EntryCard }) {
       <p>
         <span translate="no">{entry.victim}</span> · {entry.stolen}
       </p>
-      <p className="mt-1">
-        <SourceBadge
-          source={entry.source === "photo" ? "photo" : "officer"}
-          label={t[entry.source === "photo" ? "src.photo" : "src.officer"]}
-        />
-      </p>
+      {/* "Typed by an officer" is the default and says nothing; a photo is a plain word. */}
+      {entry.source === "photo" && <p className="mt-1 text-[12px] text-ink/70">{t["src.photo"]}</p>}
       {entry.note && <p className="mt-1 text-body-sm">{entry.note}</p>}
       {asking ? (
         <div className="mt-1 flex flex-wrap items-center gap-2">
