@@ -242,7 +242,7 @@ export const vi = {
     held: "không đổi",
     leadGrowth:
       "Lực Chiến của liên minh này đổi {growth} kể từ đó; tổng các liên minh theo dõi đổi {server}.",
-    server: "Máy chủ",
+    server: "Liên minh theo dõi",
     growthSince: "{growth} kể từ {from}",
     trend: "Hạng {first} ngày {from}, {last} ngày {to}",
     thisAlliance: "Liên minh này",

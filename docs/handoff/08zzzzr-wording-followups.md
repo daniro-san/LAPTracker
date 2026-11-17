@@ -12,7 +12,7 @@ Basis: owner delegated; persona panel and adversarial review agreed, 2026-11-17.
 ## Decisions
 - The "since" fix reads `sampledEventIds` for all scheduled events (one extra query by event ids), not only the 12 shown.
 - `ratio` removed from `CarriedRow` and its query; `spread` kept (CLAUDE.md: remove an unused field).
-- `balance.total` in tr ("Takipteki toplam") and ko ("추적 연맹 합계") keep the `standing.server` wording so the pages agree. In vi, `standing.server` is "Máy chủ" (the server), so `balance.total` uses "Liên minh theo dõi" instead.
+- `balance.total` in tr ("Takipteki toplam") and ko ("추적 연맹 합계") keep the `standing.server` wording so the pages agree. In vi, `standing.server` read "Máy chủ" (the server); the orchestrator changed it to "Liên minh theo dõi" in this PR, and `balance.total` uses the same words.
 - No other public string calls this total "the server's might". Remaining matches are code comments only (`lib/balance.ts`, `app/_ui/BalanceBar.tsx`, `app/(pages)/alliances/balance/page.tsx`, `app/(pages)/events/compare/page.tsx`) and D85's earlier bullets (amended). No Discord copy matched.
 
 ## Deviations
@@ -26,7 +26,6 @@ Basis: owner delegated; persona panel and adversarial review agreed, 2026-11-17.
 1. The ratio's earlier events include manual rounds (D83). The 14-hour manual round of Nov 5 gave 6 of 20 alliances a ratio of 0, so ranges reach 0×.
 2. The fight clock's busiest-span share divides by the drawn slots' kills; the event page divides by all kills since Start. One event can show two different shares.
 3. Drawing the last quarter hour from the End reading: only when the End is at most 1.5 cadences after the last sample, through `readingsOf`, so both pages change together.
-4. vi `standing.server` reads "Máy chủ" and no longer matches "tracked alliances"; a one-key fix.
 
 ## Next
 Session: none planned; the orchestrator picks the next issue.
