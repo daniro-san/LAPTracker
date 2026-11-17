@@ -52,6 +52,8 @@ export const shotsPt: ShotsWords = {
   "shots.discord.notOfficer":
     "Só os R4 e R5 da aliança podem enviar prints ao Painel dos Oficiais.",
   "shots.discord.noPicture": "Esta mensagem não tem imagem para ler.",
+  "shots.discord.already":
+    "Estas imagens já foram enviadas ao Painel dos Oficiais. Nenhum rascunho novo foi criado.",
   "shots.discord.failed":
     "Não foi possível ler os prints desta vez. Nada foi salvo. Tente de novo ou envie pelo painel.",
   "shots.draft.back": "Voltar ao Início",
@@ -99,6 +101,7 @@ export const shotsPt: ShotsWords = {
     "Cada linha precisa de um membro, e cada membro de uma linha. Escolha o membro ou tire a linha.",
   "shots.e.cannot_save": "Ainda não dá para salvar este tipo.",
   "shots.e.failed": "Não foi possível salvar. Tente de novo.",
+  "shots.tryAgain": "Tentar de novo",
   "shots.duel.card": "Alliance Duel nesta semana",
   "shots.duel.dayValue": "{day} {v}",
   "shots.where.facts":

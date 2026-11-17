@@ -14,6 +14,7 @@ import { fill } from "@/lib/copy";
 import type { WorkspaceLanguage } from "@/lib/private/dictionary";
 import { FOLLOW_UP_STATES, type FollowUpState } from "@/lib/private/theft-groups";
 
+import { SIGNED_OUT, SignedOutNote } from "./SignedOut";
 import { postTheft, viewerClock } from "./theft-client";
 import type { AllianceCard, AttackerCard, EntryCard, TheftWords } from "./theft-data";
 import { TimePair, useViewerZone } from "./YourTime";
@@ -63,7 +64,7 @@ function FollowUpForm({ card, slug, t }: Shared & { card: AttackerCard }) {
     setBusy(true);
     const r = await postTheft(slug, { action: "follow", attacker: card.key, state, note });
     setBusy(false);
-    setSaid(r === "ok" ? t["thefts.saved"] : t["thefts.e.failed"]);
+    setSaid(r === "ok" ? t["thefts.saved"] : r === SIGNED_OUT ? SIGNED_OUT : t["thefts.e.failed"]);
     if (r === "ok") {
       setNote("");
       router.refresh();
@@ -110,9 +111,13 @@ function FollowUpForm({ card, slug, t }: Shared & { card: AttackerCard }) {
         >
           {t["thefts.save"]}
         </button>
-        <p role="status" className="text-body-sm">
-          {said}
-        </p>
+        {said === SIGNED_OUT ? (
+          <SignedOutNote />
+        ) : (
+          <p role="status" className="text-body-sm">
+            {said}
+          </p>
+        )}
       </div>
     </form>
   );
@@ -122,10 +127,10 @@ function Entry({ entry, slug, t, language }: Shared & { entry: EntryCard }) {
   const router = useRouter();
   const zone = useViewerZone();
   const [asking, setAsking] = useState(false);
-  const [failed, setFailed] = useState(false);
+  const [failed, setFailed] = useState<string | null>(null);
   const remove = async () => {
     const r = await postTheft(slug, { action: "remove", id: entry.id });
-    setFailed(r !== "ok" && r !== "not_found");
+    setFailed(r === "ok" || r === "not_found" ? null : r);
     if (r === "ok" || r === "not_found") router.refresh();
   };
   return (
@@ -141,7 +146,7 @@ function Entry({ entry, slug, t, language }: Shared & { entry: EntryCard }) {
         />
       </p>
       <p>
-        <span translate="no">{entry.victim}</span> · {entry.stolen}
+        <bdi translate="no">{entry.victim}</bdi> · {entry.stolen}
       </p>
       {/* "Typed by an officer" is the default and says nothing; a photo is a plain word. */}
       {entry.source === "photo" && <p className="mt-1 text-[12px] text-ink/70">{t["src.photo"]}</p>}
@@ -165,10 +170,14 @@ function Entry({ entry, slug, t, language }: Shared & { entry: EntryCard }) {
           {t["thefts.remove"]}
         </button>
       )}
-      {failed && (
-        <p role="status" className="text-body-sm">
-          {t["thefts.e.failed"]}
-        </p>
+      {failed === SIGNED_OUT ? (
+        <SignedOutNote />
+      ) : (
+        failed && (
+          <p role="status" className="text-body-sm">
+            {t["thefts.e.failed"]}
+          </p>
+        )
       )}
     </li>
   );
@@ -197,7 +206,7 @@ function Attacker({ card, ...shared }: Shared & { card: AttackerCard }) {
             {card.victims.map((v, i) => (
               <span key={v.uid} className="whitespace-nowrap">
                 {i > 0 && " · "}
-                <span translate="no">{v.name}</span> ({v.count})
+                <bdi translate="no">{v.name}</bdi> ({v.count})
               </span>
             ))}
           </p>

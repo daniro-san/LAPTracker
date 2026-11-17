@@ -35,21 +35,27 @@ async function post(path: string, body: unknown): Promise<{ status: number; json
   }
 }
 
+/** `conflicts: null`: refused for another reason; `signedOut` when it was the session (D99). */
 export type SaveAnswer =
-  { ok: true; id: number } | { ok: false; conflicts: Conflict[] } | { ok: false; conflicts: null };
+  | { ok: true; id: number }
+  | { ok: false; conflicts: Conflict[] }
+  | { ok: false; conflicts: null; signedOut: boolean };
 
 export async function saveNotice(
   slug: string,
   id: number | null,
   changes: Change[],
+  /** A new notice's request id (D100): one per open editor, so a retry stores one notice. */
+  requestId: string,
 ): Promise<SaveAnswer> {
   const { status, json } = await post(`/api/w/${slug}/notices`, {
-    ...(id !== null && { id }),
+    ...(id !== null ? { id } : { requestId }),
     changes,
   });
   const body = json as { id?: number; conflicts?: Conflict[] } | null;
   if (status === 200 && typeof body?.id === "number") return { ok: true, id: body.id };
-  return { ok: false, conflicts: status === 409 ? (body?.conflicts ?? []) : null };
+  if (status === 409) return { ok: false, conflicts: body?.conflicts ?? [] };
+  return { ok: false, conflicts: null, signedOut: status === 401 };
 }
 
 export type DraftAsk =
@@ -70,6 +76,7 @@ export async function askDraft(
   const { status, json } = await post(`/api/w/${slug}/notices/draft`, ask);
   const body = json as Partial<DraftAnswer> | null;
   if (status === 200 && body?.drafts) return { drafts: body.drafts, partly: body.partly ?? [] };
+  if (status === 401) return { failed: "signedOut.text" };
   if (status === 504) return { failed: "notices.ai.timeout" };
   if (status === 429) return { failed: "notices.ai.busy" };
   return { failed: "notices.ai.failed" };

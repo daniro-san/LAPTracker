@@ -52,6 +52,8 @@ export const shotsEn = {
   "shots.discord.notOfficer":
     "Only the alliance’s R4 and R5 can send screenshots to the Officers’ Desk.",
   "shots.discord.noPicture": "This message has no picture to read.",
+  "shots.discord.already":
+    "These pictures were already sent to the Officers’ Desk. No new draft was made.",
   "shots.discord.failed":
     "The pictures could not be read this time. Nothing was saved. Try again, or send them from the desk.",
   "shots.draft.back": "Back to Home",
@@ -99,6 +101,7 @@ export const shotsEn = {
     "Each row needs a member, and each member one row. Pick the member, or drop the row.",
   "shots.e.cannot_save": "This type cannot be saved yet.",
   "shots.e.failed": "Could not save. Try again.",
+  "shots.tryAgain": "Try again",
   "shots.duel.card": "Alliance Duel this week",
   "shots.duel.dayValue": "{day} {v}",
   "shots.where.facts":

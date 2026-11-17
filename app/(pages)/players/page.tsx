@@ -9,7 +9,7 @@ import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { LABEL } from "@/app/_ui/StatTable";
 import { GrannyEmpty } from "@/lib/brand/components/Mascot";
 import { TextLink } from "@/lib/brand/components/TextLink";
-import { fill } from "@/lib/copy";
+import { fill, isolate } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
 import { homeEvent, listEvents } from "@/lib/queries";
@@ -71,11 +71,11 @@ export default async function PlayersPage({
                     href={`/players/${m.uid}`}
                     className="font-subhead text-display-sm leading-tight"
                   >
-                    {m.name}
+                    <bdi>{m.name}</bdi>
                   </TextLink>
                   {m.matchedName && (
                     <span className="block text-sm text-ink/70">
-                      {fill(copy.ledger.was, { name: m.matchedName })}
+                      {fill(copy.ledger.was, { name: isolate(m.matchedName) })}
                     </span>
                   )}
                   <div className="mt-1 flex flex-wrap items-center gap-x-2 text-sm">

@@ -3,7 +3,7 @@
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 
-import { fill } from "@/lib/copy";
+import { fill, isolate } from "@/lib/copy";
 import type { Db } from "@/lib/db";
 import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
@@ -11,6 +11,7 @@ import { requireWorkspace, type WorkspaceAccess } from "@/lib/private/access";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import { toReviewCount } from "@/lib/private/import-view";
 import { NOTICE_LANGUAGES, type NoticeLanguage } from "@/lib/private/notice-rules";
+import { RENEW_MS } from "@/lib/private/session";
 import { SLUG } from "@/lib/private/sign-in";
 import { serverDay } from "@/lib/schedule";
 
@@ -20,19 +21,21 @@ import { refuse } from "./refuse";
 export async function noticePage<T>(
   slug: string,
   read: (db: Db, access: WorkspaceAccess) => Promise<T>,
+  /** The page's path below /notices, for the return after sign-in (D99): "", "/new" or "/<id>". */
+  sub: string,
 ): Promise<{ access: WorkspaceAccess; data: T; waiting: number }> {
   if (!SLUG.test(slug)) notFound();
   const jar = await cookies();
   // INVARIANT workspace.access-first: nothing private is read before this check.
   const page = await withPageDb(async (db) => {
     const now = new Date();
-    const access = await requireWorkspace(db, slug, jar, now);
+    const access = await requireWorkspace(db, slug, jar, now, RENEW_MS);
     if (!access.ok) return access;
     // The Home tab's count of screenshot drafts (issue 299), in this page's own read.
     return { access, data: await read(db, access), waiting: await toReviewCount(db, access, now) };
   });
   if ("reason" in page) {
-    refuse(slug, page.reason);
+    refuse(slug, page.reason, `/w/${slug}/notices${sub}`);
     redirect(`/w/${slug}`);
   }
   return page;
@@ -54,7 +57,7 @@ export function noticeWords(language: WorkspaceLanguage, t: WorkspaceDictionary)
   const when = (at: Date) =>
     fill(t["time.server"], { time: `${date.format(at)} ${hhmm.format(at)}` });
   const by = (name: string | null, at: Date) => ({
-    name: name ?? t["notices.someone"],
+    name: name ? isolate(name) : t["notices.someone"],
     when: when(at),
   });
   return {

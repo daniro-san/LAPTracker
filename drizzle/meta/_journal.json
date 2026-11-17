@@ -183,6 +183,13 @@
       "when": 1794883850004,
       "tag": "0025_calendar",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1794905402670,
+      "tag": "0026_session_checks_and_request_ids",
+      "breakpoints": true
     }
   ]
 }

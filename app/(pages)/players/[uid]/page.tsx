@@ -52,7 +52,7 @@ function Timelines({
           <ul>
             {names.map((n) => (
               <li key={n.name} className="break-words">
-                {n.name} <span className="text-ink/70">· {span(n)}</span>
+                <bdi>{n.name}</bdi> <span className="text-ink/70">· {span(n)}</span>
               </li>
             ))}
           </ul>
@@ -188,7 +188,7 @@ export default async function PlayerPage({ params }: { params: Params }) {
             <PlayerAvatar uid={history.uid} photo={current} size="lg" />
             <div className="min-w-0">
               <h1 className="break-words font-display text-display-lg leading-tight">
-                {current.name}
+                <bdi>{current.name}</bdi>
               </h1>
               <TextLink
                 href={`/events/${current.eventId}/alliances/${current.unionId}`}

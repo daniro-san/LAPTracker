@@ -40,7 +40,7 @@ export async function POST(
   return withContext("/api/w/[slug]/shots/[id]", async (ctx, db) => {
     const now = ctx.now();
     const access = await requireWorkspace(db, slug, requestCookies(request), now);
-    if (!access.ok) return privateError(401, access.reason);
+    if (!access.ok) return privateError(401, "signed_out");
     const input = body.data;
     const draft = Number(id);
     // Facts and attacker names are what officers and pictures said: an error leaves as a code (D80).

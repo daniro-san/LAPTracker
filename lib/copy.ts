@@ -323,6 +323,17 @@ const source = {
   discord: discordCopy,
 } as const;
 
+/** Bidi embeddings and overrides (U+202A–U+202E) and isolates (U+2066–U+2069): never needed in a name. */
+const BIDI_CONTROLS = /[‪-‮⁦-⁩]/g;
+
+/**
+ * A player's name, or a title someone typed, set inside a sentence: its own bidi controls removed, then
+ * wrapped in FSI … PDI (U+2068, U+2069), so an Arabic or Hebrew name, or one holding a direction control,
+ * cannot close the isolation early or reorder the words, times and counts around it (ADV-12). For text
+ * shown on a page; never for copied or exported text.
+ */
+export const isolate = (text: string) => `⁨${text.replace(BIDI_CONTROLS, "")}⁩`;
+
 /** `fill("Last updated at {time}", { time: "14:01" })`; unknown placeholders stay as written. */
 export function fill(template: string, vars: Record<string, string | number>): string {
   return template.replace(/\{(\w+)\}/g, (all, key: string) =>

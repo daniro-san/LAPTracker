@@ -52,6 +52,8 @@ export const shotsFr: ShotsWords = {
   "shots.discord.notOfficer":
     "Seuls les R4 et R5 de l’alliance peuvent envoyer des captures au Bureau des officiers.",
   "shots.discord.noPicture": "Ce message n’a pas d’image à lire.",
+  "shots.discord.already":
+    "Ces images ont déjà été envoyées au Bureau des officiers. Aucun nouveau brouillon n’a été créé.",
   "shots.discord.failed":
     "Les captures n’ont pas pu être lues cette fois. Rien n’a été enregistré. Réessayez, ou envoyez-les depuis le bureau.",
   "shots.draft.back": "Retour à l’accueil",
@@ -101,6 +103,7 @@ export const shotsFr: ShotsWords = {
     "Chaque ligne a besoin d’un membre, et chaque membre d’une seule ligne. Choisissez le membre ou retirez la ligne.",
   "shots.e.cannot_save": "Ce type ne s’enregistre pas encore.",
   "shots.e.failed": "Impossible d’enregistrer. Réessayez.",
+  "shots.tryAgain": "Réessayer",
   "shots.duel.card": "Alliance Duel cette semaine",
   "shots.duel.dayValue": "{day} {v}",
   "shots.where.facts":

@@ -20,8 +20,8 @@ export async function POST(
     const now = ctx.now();
     const access = await requireWorkspace(db, slug, requestCookies(request), now);
     if (!access.ok) return privateError(401, "signed_out");
-    const { id, changes } = parsed.data;
-    const result = await saveNotice(db, access, id ?? null, changes, now);
+    const { id, changes, requestId } = parsed.data;
+    const result = await saveNotice(db, access, id ?? null, changes, now, requestId ?? null);
     if (result.ok) return Response.json({ id: result.id }, { headers: NO_STORE });
     if (result.reason === "conflict") {
       return Response.json(

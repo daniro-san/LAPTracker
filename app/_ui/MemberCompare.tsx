@@ -49,7 +49,7 @@ export function MemberCompareCard({
         <>
           <PlayerAvatar uid={m.uid} photo={m} />
           <Link href={`/players/${m.uid}`} className={NAME}>
-            {m.name}
+            <bdi>{m.name}</bdi>
           </Link>
           <span className={`ml-auto text-sm tabular-nums ${MUTED}`}>
             <Num n={m.b?.power ?? m.a?.power ?? null} />

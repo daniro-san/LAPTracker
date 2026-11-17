@@ -2,6 +2,8 @@
 // officer's words for a refusal. A 409 carries, per field changed since, its version and a ready sentence.
 import type { CalendarKey, CalendarWords } from "@/lib/private/dictionary.calendar";
 
+import { SIGNED_OUT } from "./SignedOut";
+
 export interface Stale {
   field: string;
   version: number;
@@ -34,6 +36,6 @@ const REFUSAL: Record<string, CalendarKey> = {
   same_person: "calendar.form.samePerson",
 };
 
-/** The sentence for a refusal other than a 409 conflict. */
+/** The sentence for a refusal other than a 409 conflict; SIGNED_OUT for a 401 (RefusalLine shows it). */
 export const refusalText = (code: string, words: CalendarWords) =>
-  words[REFUSAL[code] ?? "calendar.form.failed"];
+  code === SIGNED_OUT ? SIGNED_OUT : words[REFUSAL[code] ?? "calendar.form.failed"];

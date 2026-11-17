@@ -8,14 +8,14 @@ import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
 import { track, type ScreenshotKind } from "@/lib/analytics/events";
+import { buttonClass } from "@/lib/brand/components/Button";
 import { chip } from "@/lib/brand/components/controls";
 import type { DraftSummary, Outcome } from "@/lib/private/import";
-import type { ImportKind, Scope } from "@/lib/private/import-kinds";
+import type { ImportKind, Scope, Screen } from "@/lib/private/import-kinds";
 
 import { fillIn } from "./draft-known";
-
-/** Wide enough for the OCR (it reads at 716 px), small enough to upload quickly. */
-const MAX_WIDTH = 1080;
+import { isSignedOut, post, readAll } from "./screenshot-upload";
+import { RefusalLine, SIGNED_OUT } from "./SignedOut";
 
 export interface SendWords {
   [key: string]: string;
@@ -33,66 +33,6 @@ interface Result {
   /** The text lines of the pictures that were not recognised, for "Pick the type". */
   unrecognised: string[][];
   lost: number;
-}
-
-/** The picture as a PNG: the top band of a full-screen phone capture dropped, scaled down when wide. */
-async function toPng(file: File, statusBar: { share: number; aspect: number }): Promise<Blob> {
-  const bitmap = await createImageBitmap(file);
-  const top =
-    bitmap.height >= bitmap.width * statusBar.aspect
-      ? Math.round(bitmap.height * statusBar.share)
-      : 0;
-  const scale = Math.min(1, MAX_WIDTH / bitmap.width);
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.round(bitmap.width * scale);
-  canvas.height = Math.round((bitmap.height - top) * scale);
-  const context = canvas.getContext("2d");
-  if (!context) throw new Error("no canvas");
-  context.drawImage(
-    bitmap,
-    0,
-    top,
-    bitmap.width,
-    bitmap.height - top,
-    0,
-    0,
-    canvas.width,
-    canvas.height,
-  );
-  bitmap.close();
-  return new Promise((resolve, reject) =>
-    canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("no png"))), "image/png"),
-  );
-}
-
-async function post(url: string, body: BodyInit, type: string) {
-  const res = await fetch(url, { method: "POST", headers: { "content-type": type }, body });
-  if (!res.ok) throw new Error(String(res.status));
-  return res.json();
-}
-
-/** Each picture's text lines, one request each; a picture that cannot be converted or read is skipped. */
-async function readAll(
-  files: File[],
-  slug: string,
-  statusBar: { share: number; aspect: number },
-  onProgress: (p: { n: number; total: number }) => void,
-): Promise<string[][]> {
-  const pages: string[][] = [];
-  for (const [i, file] of files.entries()) {
-    onProgress({ n: i + 1, total: files.length });
-    if (!file.type.startsWith("image/")) continue;
-    try {
-      const png = await toPng(file, statusBar);
-      const read = (await post(`/api/w/${slug}/shots/read`, png, "image/png")) as {
-        lines: string[];
-      };
-      pages.push(read.lines);
-    } catch {
-      // Counted by the caller as a picture that could not be read.
-    }
-  }
-  return pages;
 }
 
 /** "Send screenshots": a 44 px button that opens the phone's picker, several pictures at once. */
@@ -137,7 +77,7 @@ const kindOf = (o: Outcome, drafts: DraftSummary[]): ScreenshotKind =>
       ? o.kind
       : o.status;
 
-export function SendScreenshots(props: {
+interface SendProps {
   slug: string;
   language: string;
   w: SendWords;
@@ -145,58 +85,91 @@ export function SendScreenshots(props: {
   picks: TypeChoice[];
   maxPictures: number;
   statusBar: { share: number; aspect: number };
-}) {
+}
+
+/** Reading the pictures, then making the drafts; every step runs inside `run`, which keeps `busy` on. */
+function useSend(props: SendProps) {
   const { slug, w, maxPictures } = props;
   const router = useRouter();
   const [progress, setProgress] = useState<{ n: number; total: number } | null>(null);
+  // Busy from the first picture until the drafts exist (ADV-10): a second tap cannot make a second set.
+  const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /** Pages already read when making the drafts failed: "Try again" sends them without reading again. */
+  const [unsent, setUnsent] = useState<{ pages: string[][]; lost: number; pick?: Screen } | null>(
+    null,
+  );
 
-  async function makeDrafts(
-    pages: string[][],
-    lost: number,
-    pick?: { kind: ImportKind; scope: Scope | null },
-  ) {
-    const made = (await post(
-      `/api/w/${slug}/shots`,
-      JSON.stringify({ pictures: pages.map((lines) => ({ lines })), ...(pick && { pick }) }),
-      "application/json",
-    )) as Pick<Result, "drafts" | "outcomes">;
-    for (const o of made.outcomes) track("ws_screenshot_sent", { kind: kindOf(o, made.drafts) });
-    const unrecognised = pages.filter((_, i) => made.outcomes[i]?.status === "unrecognised");
-    setResult({ ...made, unrecognised, lost });
-    router.refresh();
+  async function makeDrafts(pages: string[][], lost: number, pick?: Screen) {
+    setUnsent(null);
+    try {
+      const made = (await post(
+        `/api/w/${slug}/shots`,
+        JSON.stringify({ pictures: pages.map((lines) => ({ lines })), ...(pick && { pick }) }),
+        "application/json",
+      )) as Pick<Result, "drafts" | "outcomes">;
+      for (const o of made.outcomes) track("ws_screenshot_sent", { kind: kindOf(o, made.drafts) });
+      const unrecognised = pages.filter((_, i) => made.outcomes[i]?.status === "unrecognised");
+      setResult({ ...made, unrecognised, lost });
+      router.refresh();
+    } catch (e) {
+      setUnsent({ pages, lost, ...(pick && { pick }) });
+      setError(isSignedOut(e) ? SIGNED_OUT : (w["shots.e.failed"] ?? ""));
+    }
+  }
+
+  async function run(work: () => Promise<void>) {
+    setBusy(true);
+    setError(null);
+    try {
+      await work();
+    } finally {
+      setProgress(null);
+      setBusy(false);
+    }
   }
 
   async function send(files: File[]) {
-    setError(null);
     setResult(null);
+    setUnsent(null);
     if (files.length > maxPictures)
       return setError(fillIn(w["shots.tooMany"] ?? "", { n: maxPictures }));
-    const pages = await readAll(files, slug, props.statusBar, setProgress);
+    const { pages, signedOut } = await readAll(files, slug, props.statusBar, setProgress);
     setProgress(null);
+    if (signedOut) return setError(SIGNED_OUT);
     if (pages.length === 0) return setError(w["shots.readFailed"] ?? "");
-    await makeDrafts(pages, files.length - pages.length).catch(() =>
-      setError(w["shots.e.failed"] ?? ""),
-    );
+    await makeDrafts(pages, files.length - pages.length);
   }
+  return { progress, busy, result, setResult, error, unsent, makeDrafts, run, send };
+}
 
+export function SendScreenshots(props: SendProps) {
+  const { w } = props;
+  const { progress, busy, result, setResult, error, unsent, makeDrafts, run, send } =
+    useSend(props);
   return (
     <div className="mt-4">
-      <FilePicker label={w["shots.send"]} busy={progress !== null} onFiles={(f) => void send(f)} />
+      <FilePicker label={w["shots.send"]} busy={busy} onFiles={(f) => void run(() => send(f))} />
       <p className="mt-2 text-body-sm text-ink/80">{w["shots.help"]}</p>
       <div aria-live="polite" className="mt-2">
         {progress && <p>{fillIn(w["shots.reading"] ?? "", progress)}</p>}
-        {error && <p className="border-l-4 border-seal pl-3">{error}</p>}
+        {error && <RefusalLine text={error} className="border-l-4 border-seal pl-3" />}
+        {unsent && (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void run(() => makeDrafts(unsent.pages, unsent.lost, unsent.pick))}
+            className={buttonClass("primary", "mt-2")}
+          >
+            {w["shots.tryAgain"]}
+          </button>
+        )}
         {result && (
           <Results
             {...props}
             result={result}
-            onPick={(pick) =>
-              void makeDrafts(result.unrecognised, 0, pick).catch(() =>
-                setError(w["shots.e.failed"] ?? ""),
-              )
-            }
+            onPick={(pick) => void run(() => makeDrafts(result.unrecognised, 0, pick))}
             onDiscard={() => setResult({ ...result, unrecognised: [] })}
           />
         )}

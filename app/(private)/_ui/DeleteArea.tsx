@@ -10,6 +10,7 @@ import type { CalendarWords } from "@/lib/private/dictionary.calendar";
 
 import type { AgendaItem } from "./calendar-data";
 import { refusalText, sendCalendar } from "./calendar-send";
+import { RefusalLine } from "./SignedOut";
 
 export function DeleteArea(props: {
   item: AgendaItem;
@@ -78,11 +79,7 @@ export function DeleteArea(props: {
           {words["calendar.delete.keep"]}
         </button>
       </div>
-      {error && (
-        <p role="alert" className="mt-2 text-body-sm">
-          {error}
-        </p>
-      )}
+      {error && <RefusalLine text={error} className="mt-2 text-body-sm" />}
     </div>
   );
 }

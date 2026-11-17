@@ -18,14 +18,19 @@ export default async function CaravansPage({
   params: Promise<{ slug: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const page = await openCalendar(params, searchParams, async (db, access, monday) => {
-    const [days, roster] = await Promise.all([
-      calendarDays(db, access, monday, addDays(monday, 6)),
-      pickableMembers(db, access),
-    ]);
-    const caravans = days.filter((p) => p.entry.kind === "caravan");
-    return { caravans, roster, suggested: await caravanSuggestions(db, access, caravans) };
-  });
+  const page = await openCalendar(
+    params,
+    searchParams,
+    async (db, access, monday) => {
+      const [days, roster] = await Promise.all([
+        calendarDays(db, access, monday, addDays(monday, 6)),
+        pickableMembers(db, access),
+      ]);
+      const caravans = days.filter((p) => p.entry.kind === "caravan");
+      return { caravans, roster, suggested: await caravanSuggestions(db, access, caravans) };
+    },
+    "calendar/caravans",
+  );
   const { access, slug, monday, ctx } = page;
   const { t, language } = ctx;
   const caravans = page.data.caravans.map((p) => agendaItem(p, ctx));

@@ -87,12 +87,20 @@ function normalise(c: FactChange): unknown {
   return v;
 }
 
-/** The newest value of every field, per member of the workspace. */
+/**
+ * The newest value of every field, per member of the workspace. Languages come in LANGUAGES order
+ * whatever order they were stored in (an old sheet import kept the sheet's), so an editor opened on them
+ * starts unchanged.
+ */
 export async function factsOf(db: Db, access: WorkspaceAccess): Promise<Map<number, MemberFacts>> {
   const facts = new Map<number, MemberFacts>();
   for (const r of await latestFacts(db, access.workspaceId)) {
     const own = facts.get(r.uid) ?? {};
-    Object.assign(own, { [r.field]: { value: r.value, source: r.source, version: r.version } });
+    const value =
+      r.field === "languages" && Array.isArray(r.value)
+        ? LANGUAGES.filter((l) => (r.value as string[]).includes(l))
+        : r.value;
+    Object.assign(own, { [r.field]: { value, source: r.source, version: r.version } });
     facts.set(r.uid, own);
   }
   return facts;

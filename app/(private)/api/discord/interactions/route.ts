@@ -22,6 +22,7 @@ export async function POST(request: Request): Promise<Response> {
   const body = await request.text();
   if (body.length > MAX_BODY) return privateError(413, "too_large");
   return withContext("/api/discord/interactions", async (ctx, db) => {
+    const origin = new URL(request.url).origin;
     const handled = await handleInteraction(
       db,
       ctx.env.DISCORD_PUBLIC_KEY,
@@ -31,6 +32,7 @@ export async function POST(request: Request): Promise<Response> {
         timestamp: request.headers.get("x-signature-timestamp"),
       },
       ctx.now(),
+      origin,
     );
     if (handled.status === 200 && handled.job) {
       const job = handled.job;
@@ -39,7 +41,7 @@ export async function POST(request: Request): Promise<Response> {
         fetch: ctx.fetch,
         openReader: openOcr,
         discordBase: ctx.env.DISCORD_API_BASE_URL,
-        origin: new URL(request.url).origin,
+        origin,
         serverTz: ctx.env.SERVER_TZ,
         now: ctx.now,
       };

@@ -7,6 +7,7 @@ import { notFound, redirect } from "next/navigation";
 import { withPageDb } from "@/lib/page";
 import { requireWorkspace } from "@/lib/private/access";
 import { toReviewCount } from "@/lib/private/import-view";
+import { RENEW_MS } from "@/lib/private/session";
 import { SLUG } from "@/lib/private/sign-in";
 
 import { importWords } from "../../../_ui/facts-form";
@@ -21,11 +22,11 @@ export default async function ImportPage({ params }: { params: Promise<{ slug: s
   // INVARIANT workspace.access-first: nothing private is read before this check.
   const now = new Date();
   const { access, waiting } = await withPageDb(async (db) => {
-    const access = await requireWorkspace(db, slug, jar, now);
+    const access = await requireWorkspace(db, slug, jar, now, RENEW_MS);
     return { access, waiting: access.ok ? await toReviewCount(db, access, now) : 0 };
   });
   if (!access.ok) {
-    refuse(slug, access.reason);
+    refuse(slug, access.reason, `/w/${slug}/import`);
     redirect(`/w/${slug}`);
   }
   const { language, t } = await workspaceWords();

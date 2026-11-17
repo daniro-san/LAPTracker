@@ -23,7 +23,7 @@ import { withContext } from "@/lib/route";
 
 const id = z.number().int().positive();
 const body = z.discriminatedUnion("action", [
-  z.object({ action: z.literal("create"), entry: newEntry }).strict(),
+  z.object({ action: z.literal("create"), entry: newEntry, requestId: z.uuid() }).strict(),
   z
     .object({
       action: z.literal("edit"),
@@ -61,7 +61,9 @@ export async function POST(
     const access = await requireWorkspace(db, slug, jar, now);
     if (!access.ok) return privateError(401, "signed_out");
     if (input.action === "create") {
-      const made = await privately("calendar.create", () => createEntry(db, access, input.entry));
+      const made = await privately("calendar.create", () =>
+        createEntry(db, access, input.entry, input.requestId),
+      );
       return made.ok ? ok({ id: made.id }) : privateError(409, made.code);
     }
     if (input.action === "delete") {

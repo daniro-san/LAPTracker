@@ -1,7 +1,8 @@
-// The Discord sign-in round trip (D71, D73). Login: a random `state` (it carries the slug) in a 10-minute
-// __Host- cookie, then Discord's authorize page. Callback, one fixed path for every workspace: the state
-// compared in constant time (a mismatch counts in auth_attempts), the code exchanged, the member's roles
-// read, and a session made when a role is a leadership role or the account is on the allowlist.
+// The Discord sign-in round trip (D71, D73, D99). Login: a random `state` (it carries the slug and the page
+// to return to) in a 10-minute __Host- cookie, then Discord's authorize page. Callback, one fixed path for
+// every workspace: the state compared in constant time (a mismatch counts in auth_attempts), the code
+// exchanged, the member's roles read, and the session renewed or made when a role is a leadership role or
+// the account is on the allowlist. Any other ending drops the browser's session of that workspace.
 import { randomBytes } from "node:crypto";
 
 import { analyticsKey, SIGNED_IN_HASH } from "../analytics/events";
@@ -19,12 +20,16 @@ import {
 } from "../repo/workspaces";
 import { authorizeUrl, discordConfig, readMember, type DiscordMember } from "./discord";
 import { privateLog } from "./log";
-import { cookieAttributes, createSession } from "./session";
+import { cookieAttributes, renewOrCreate, revokeSession } from "./session";
 
 export const STATE_COOKIE = "__Host-lap_ws_state";
 export const STATE_MS = 10 * 60_000;
 export const CALLBACK_PATH = "/api/w/auth/callback";
 export const SLUG = WORKSPACE_SLUG;
+/** A return path longer than this is dropped (Home is used). */
+const MAX_RETURN = 512;
+/** Only for parsing: a path that leaves this origin is refused. */
+const PROBE = "https://return.invalid";
 
 export interface SignInDeps {
   env: Env;
@@ -44,17 +49,39 @@ const go = (location: string, cookies: string[] = [clearState]): Step => ({
   cookies,
 });
 
+/**
+ * The page to return to after sign-in (ADV-7), or null: only a path of this same workspace, `/w/<slug>`
+ * or below it, with its query and without its fragment. A scheme, another host (`//x`, `/\x`), a path
+ * that `..` takes out of the workspace, or another slug is refused.
+ */
+export function returnPath(slug: string, raw: string | null | undefined): string | null {
+  if (!raw || raw.length > MAX_RETURN || !raw.startsWith("/") || /[\\\s]/.test(raw)) return null;
+  let url: URL;
+  try {
+    url = new URL(raw, PROBE);
+  } catch {
+    return null;
+  }
+  const home = `/w/${slug}`;
+  if (url.origin !== PROBE) return null;
+  if (url.pathname !== home && !url.pathname.startsWith(`${home}/`)) return null;
+  return `${url.pathname}${url.search}`;
+}
+
 export async function startSignIn(
   db: Db,
   deps: SignInDeps,
   slug: string,
   origin: string,
   silent: boolean,
+  next?: string | null,
 ): Promise<Step> {
   const config = discordConfig(deps.env);
   if (!config) return go(`/w/${slug}?e=not_configured`);
   if (!(await findWorkspaceBySlug(db, slug))) return go(`/w/${slug}`);
-  const state = `${slug}.${randomBytes(32).toString("base64url")}`;
+  const back = returnPath(slug, next);
+  const random = randomBytes(32).toString("base64url");
+  const state = `${slug}.${random}${back ? `.${Buffer.from(back).toString("base64url")}` : ""}`;
   const location = authorizeUrl(config, `${origin}${CALLBACK_PATH}`, state, silent);
   return go(location, [`${STATE_COOKIE}=${state}; ${cookieAttributes(STATE_MS)}`]);
 }
@@ -62,15 +89,22 @@ export async function startSignIn(
 export interface CallbackInput {
   query: URLSearchParams;
   stateCookie: string | undefined;
+  /** The browser's workspace session cookie, if any: renewed in place when the role still holds. */
+  sessionCookie: string | undefined;
   ip: string;
   origin: string;
 }
 
-/** The slug the state carries, once cookie and query agree; null otherwise. */
-function checkedSlug(cookie: string | undefined, given: string | null): string | null {
+/** The slug and the return path the state carries, once cookie and query agree; null otherwise. */
+function checkedState(
+  cookie: string | undefined,
+  given: string | null,
+): { slug: string; back: string | null } | null {
   if (!cookie || !given || !secretEquals(given, cookie)) return null;
-  const slug = given.split(".")[0] ?? "";
-  return SLUG.test(slug) ? slug : null;
+  const [slug = "", , packed] = given.split(".");
+  if (!SLUG.test(slug)) return null;
+  const back = packed ? returnPath(slug, Buffer.from(packed, "base64url").toString()) : null;
+  return { slug, back };
 }
 
 export async function finishSignIn(db: Db, deps: SignInDeps, input: CallbackInput): Promise<Step> {
@@ -79,18 +113,25 @@ export async function finishSignIn(db: Db, deps: SignInDeps, input: CallbackInpu
   if ((await currentCount(db, ipKey, IP_WINDOW_MS, deps.now)) >= IP_LIMIT) {
     return { kind: "refused", status: 429, code: "rate_limited" };
   }
-  const slug = checkedSlug(input.stateCookie, input.query.get("state"));
-  if (!slug) {
+  const state = checkedState(input.stateCookie, input.query.get("state"));
+  if (!state) {
     const count = await recordFailure(db, ipKey, IP_WINDOW_MS, deps.now);
     privateLog("w.state_bad", { count });
     return { kind: "refused", status: 400, code: "bad_state" };
   }
+  const { slug } = state;
   const config = discordConfig(deps.env);
   if (!config) return go(`/w/${slug}?e=not_configured`);
-  const code = input.query.get("code");
-  if (input.query.has("error") || !code) return go(`/w/${slug}?e=denied`);
   const workspace = await findWorkspaceBySlug(db, slug);
   if (!workspace) return go(`/w/${slug}`);
+  // INVARIANT workspace.renewal-or-out: a trip through Discord that does not end in admit() ends the
+  // browser's session here, so a page whose session waits for its check shows the sign-in, not a loop.
+  const out = async (location: string) => {
+    if (input.sessionCookie) await revokeSession(db, workspace.id, input.sessionCookie);
+    return go(location);
+  };
+  const code = input.query.get("code");
+  if (input.query.has("error") || !code) return out(`/w/${slug}?e=denied`);
 
   const member = await readMember(
     deps.fetch,
@@ -101,9 +142,19 @@ export async function finishSignIn(db: Db, deps: SignInDeps, input: CallbackInpu
   );
   if (!member.ok) {
     privateLog(`w.${member.code}`, { workspace: workspace.id });
-    return go(`/w/${slug}?e=discord`);
+    return out(`/w/${slug}?e=discord`);
   }
-  return admit(db, workspace, member, deps.now, analyticsKey(deps.env) !== undefined);
+  const refusal = await refusalFor(db, workspace, member, deps.now);
+  if (refusal.why) {
+    privateLog("w.no_access", { workspace: workspace.id });
+    return out(`/w/${workspace.slug}/no-access?why=${refusal.why}`);
+  }
+  return admit(db, workspace, member, refusal, {
+    now: deps.now,
+    analytics: analyticsKey(deps.env) !== undefined,
+    token: input.sessionCookie,
+    back: state.back,
+  });
 }
 
 /** Why an account gets no access, in the words the no-access page explains. */
@@ -125,26 +176,39 @@ export function refusalOf(
   return notMember ? "not_member" : "no_role";
 }
 
-async function admit(
+/** The refusal, or the end the allowlist puts on the session (null when the role let them in). */
+async function refusalFor(
   db: Db,
   workspace: WorkspaceRow,
   member: Extract<DiscordMember, { ok: true }>,
   now: Date,
-  analytics: boolean,
-): Promise<Step> {
+): Promise<{ why: NoAccess } | { why: null; endsBy: Date | null; viaRole: boolean }> {
   const known = await findWorkspaceUser(db, workspace.id, member.userId);
   const viaRole = member.roles?.some((r) => workspace.leaderRoleIds.includes(r)) ?? false;
-  const refusal = refusalOf(known, viaRole, member.roles === null, now);
-  if (refusal) {
-    privateLog("w.no_access", { workspace: workspace.id });
-    return go(`/w/${workspace.slug}/no-access?why=${refusal}`);
-  }
-  // Only people who get in are stored: a refused account leaves no row.
-  const userId = await recordSignIn(db, workspace.id, member.userId, member.displayName, now);
+  const why = refusalOf(known, viaRole, member.roles === null, now);
+  if (why) return { why };
   // INVARIANT workspace.allowlist-cap: let in only by the allowlist, the session ends with the entry.
-  const endsBy = viaRole ? null : (known?.allowlistExpiresAt ?? null);
-  const { cookie } = await createSession(db, workspace.id, userId, now, endsBy);
-  privateLog("w.sign_in", { workspace: workspace.id, via_role: viaRole ? 1 : 0 });
-  // With analytics on, a fragment that never reaches a server: the page counts the sign-in and removes it (D77).
-  return go(`/w/${workspace.slug}${analytics ? SIGNED_IN_HASH : ""}`, [clearState, cookie]);
+  return { why: null, endsBy: viaRole ? null : (known?.allowlistExpiresAt ?? null), viaRole };
+}
+
+async function admit(
+  db: Db,
+  workspace: WorkspaceRow,
+  member: Extract<DiscordMember, { ok: true }>,
+  { endsBy, viaRole }: { endsBy: Date | null; viaRole: boolean },
+  o: { now: Date; analytics: boolean; token: string | undefined; back: string | null },
+): Promise<Step> {
+  // Only people who get in are stored: a refused account leaves no row.
+  const userId = await recordSignIn(db, workspace.id, member.userId, member.displayName, o.now);
+  const ids = { workspaceId: workspace.id, workspaceUserId: userId };
+  const cookie = await renewOrCreate(db, o.token, ids, o.now, endsBy);
+  privateLog(cookie ? "w.sign_in" : "w.renewed", {
+    workspace: workspace.id,
+    via_role: viaRole ? 1 : 0,
+  });
+  // With analytics on, a fragment that never reaches a server: the page counts the sign-in and removes it
+  // (D77). A renewal is not a sign-in.
+  const hash = cookie && o.analytics ? SIGNED_IN_HASH : "";
+  const to = `${o.back ?? `/w/${workspace.slug}`}${hash}`;
+  return go(to, cookie ? [clearState, cookie] : [clearState]);
 }

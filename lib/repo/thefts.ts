@@ -9,8 +9,37 @@ import { theftFollowUps, thefts } from "../schema-thefts";
 export type TheftRow = typeof thefts.$inferSelect;
 export type NewTheft = Omit<typeof thefts.$inferInsert, "id">;
 
+/** Whether an add with this request id was already stored (D100). */
+export async function theftRequested(
+  db: Db,
+  workspaceId: number,
+  requestId: string,
+): Promise<boolean> {
+  const rows = await db
+    .select({ id: thefts.id })
+    .from(thefts)
+    .where(and(eq(thefts.workspaceId, workspaceId), eq(thefts.requestId, requestId)));
+  return rows.length > 0;
+}
+
 export async function insertThefts(db: Db, rows: NewTheft[]): Promise<void> {
   if (rows.length > 0) await db.insert(thefts).values(rows);
+}
+
+/**
+ * One typed theft with its request id (D100). False when that id is already stored: a send that arrived
+ * at the same moment won the unique index, and its row is the answer.
+ */
+export async function insertRequestedTheft(
+  db: Db,
+  row: NewTheft & { requestId: string },
+): Promise<boolean> {
+  const made = await db
+    .insert(thefts)
+    .values(row)
+    .onConflictDoNothing({ target: [thefts.workspaceId, thefts.requestId] })
+    .returning({ id: thefts.id });
+  return made.length > 0;
 }
 
 /** The workspace's thefts, oldest entry first. */

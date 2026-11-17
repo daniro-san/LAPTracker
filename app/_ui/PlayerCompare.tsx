@@ -21,10 +21,10 @@ const PLAIN_NAME = "min-w-0 break-words font-subhead text-display-sm leading-tig
 function PlayerName({ p, link, plain }: { p: Player; link: string; plain: string }) {
   return p.hasPage ? (
     <Link href={`/players/${p.uid}`} className={link}>
-      {p.name}
+      <bdi>{p.name}</bdi>
     </Link>
   ) : (
-    <span className={plain}>{p.name}</span>
+    <bdi className={plain}>{p.name}</bdi>
   );
 }
 

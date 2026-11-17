@@ -55,8 +55,8 @@ beforeEach(async () => {
   });
 });
 
-/** A message command on a message with one picture, by a member with these roles. */
-function command(roles: string[], attachment: Record<string, unknown> = {}) {
+/** A message command on message `message` with one picture, by a member with these roles. */
+function command(roles: string[], attachment: Record<string, unknown> = {}, message = "55") {
   return {
     type: 2,
     application_id: "900",
@@ -67,12 +67,14 @@ function command(roles: string[], attachment: Record<string, unknown> = {}) {
     data: {
       name: "Send to LAPTracker",
       type: 3,
-      target_id: "55",
+      target_id: message,
       resolved: {
         messages: {
-          "55": {
+          [message]: {
             timestamp: "2026-11-16T18:54:00Z",
-            attachments: [{ url: CDN, content_type: "image/png", size: 700_000, ...attachment }],
+            attachments: [
+              { id: "98", url: CDN, content_type: "image/png", size: 700_000, ...attachment },
+            ],
           },
         },
       },
@@ -89,7 +91,7 @@ function signed(payload: unknown, key = keys.privateKey, at = 0) {
 }
 
 const handle = (request: { body: string; signature: string | null; timestamp: string | null }) =>
-  handleInteraction(db, PUBLIC_KEY, request, NOW);
+  handleInteraction(db, PUBLIC_KEY, request, NOW, "https://laptracker.test");
 
 describe("the interaction's signature", () => {
   it("accepts Discord's signature and refuses a wrong or missing one", async () => {
@@ -109,7 +111,9 @@ describe("the interaction's signature", () => {
       status: 401,
       body: { code: "stale_signature" },
     });
-    expect(await handleInteraction(db, undefined, ping, NOW)).toMatchObject({ status: 401 });
+    expect(
+      await handleInteraction(db, undefined, ping, NOW, "https://laptracker.test"),
+    ).toMatchObject({ status: 401 });
   });
 
   it("answers Discord's PING", async () => {
@@ -138,7 +142,7 @@ describe("who may send", () => {
       new Date("2026-12-01T00:00:00Z"),
       "admin",
     );
-    expect(await handle(signed(command([MEMBER])))).toMatchObject({ body: { type: 5 } });
+    expect(await handle(signed(command([MEMBER], {}, "56")))).toMatchObject({ body: { type: 5 } });
   });
 });
 
@@ -204,6 +208,34 @@ describe("the deferred flow", () => {
     expect(draft).toMatchObject({ source: "discord", sentBy: "Ana", pictureDay: "2026-11-16" });
   });
 
+  it("makes no new draft on a second run on the same message, and links the first one (D100)", async () => {
+    const first = await deferred(command([LEADER]));
+    await runJob(deps(discord().fetcher, recorded("98-alliance-duel-weekly-phone")), first.job);
+    const [draft] = await db.select().from(screenshotDrafts);
+    const again = await handle(signed(command([LEADER])));
+    expect("job" in again).toBe(false);
+    expect(again.body).toEqual({
+      type: 4,
+      data: {
+        flags: 64,
+        content: `These pictures were already sent to the Officers’ Desk. No new draft was made.\n→ [Review](https://laptracker.test/w/ogs/shots/${draft?.id})`,
+      },
+    });
+    expect(await db.select().from(screenshotDrafts)).toHaveLength(1);
+  });
+
+  it("lets a picture be sent again when its reading failed", async () => {
+    const first = await deferred(command([LEADER]));
+    const broken: ScreenshotReader = {
+      read: () => Promise.reject(new ReaderFailedError("MODULE_NOT_FOUND")),
+      toPng: async (image) => image,
+      close: async () => undefined,
+    };
+    vi.spyOn(console, "info").mockImplementation(() => undefined);
+    await runJob({ ...deps(discord().fetcher, []), openReader: async () => broken }, first.job);
+    expect(await handle(signed(command([LEADER])))).toMatchObject({ body: { type: 5 } });
+  });
+
   it("keeps the OCR text and rows, never the picture", async () => {
     const handled = await deferred(command([LEADER]));
     await runJob(deps(discord().fetcher, recorded("98-alliance-duel-weekly-phone")), handled.job);
@@ -232,7 +264,9 @@ describe("the deferred flow", () => {
       "https://media.discordapp.net/attachments/1/2/98.jpg?format=png",
     );
 
-    const elsewhere = await deferred(command([LEADER], { url: "https://example.com/98.png" }));
+    const elsewhere = await deferred(
+      command([LEADER], { url: "https://example.com/98.png" }, "56"),
+    );
     const second = discord();
     await runJob(deps(second.fetcher, recorded("90-might-phone")), elsewhere.job);
     expect(second.calls.map((c) => c.method)).toEqual(["PATCH"]);

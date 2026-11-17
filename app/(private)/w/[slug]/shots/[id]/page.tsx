@@ -6,7 +6,7 @@ import { notFound, redirect } from "next/navigation";
 
 import { exact } from "@/app/_ui/format";
 import { buttonClass } from "@/lib/brand/components/Button";
-import { fill } from "@/lib/copy";
+import { fill, isolate } from "@/lib/copy";
 import { withPageDb } from "@/lib/page";
 import { requireWorkspace } from "@/lib/private/access";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
@@ -14,6 +14,7 @@ import type { ImportKind } from "@/lib/private/import-kinds";
 import { SAVED_KINDS } from "@/lib/private/import-save";
 import { draftView, toReview, type DraftView } from "@/lib/private/import-view";
 import { counted, kindLabel } from "@/lib/private/import-words";
+import { RENEW_MS } from "@/lib/private/session";
 import { SLUG } from "@/lib/private/sign-in";
 
 import { type ReviewText } from "../../../../_ui/DraftHeader";
@@ -81,7 +82,7 @@ export default async function DraftPage({
   const now = new Date();
   // INVARIANT workspace.access-first: nothing private is read before this check.
   const { access, view, open } = await withPageDb(async (db) => {
-    const access = await requireWorkspace(db, slug, jar, now);
+    const access = await requireWorkspace(db, slug, jar, now, RENEW_MS);
     if (!access.ok) return { access, open: [], view: null };
     const [open, view] = await Promise.all([
       toReview(db, access, now),
@@ -90,7 +91,7 @@ export default async function DraftPage({
     return { access, open, view };
   });
   if (!access.ok) {
-    refuse(slug, access.reason);
+    refuse(slug, access.reason, `/w/${slug}/shots/${id}`);
     redirect(`/w/${slug}`);
   }
   const { language, t } = await workspaceWords();
@@ -186,7 +187,9 @@ function Draft(props: {
       {view.status === "open" && <p className="mt-2 font-semibold">{t["shots.nothingCounts"]}</p>}
       {view.status !== "open" && (
         <p role="status" className="mt-3 border-l-4 border-plum pl-3 font-semibold">
-          {fill(t[view.status === "saved" ? "shots.savedBy" : "shots.discardedBy"], { name: by })}
+          {fill(t[view.status === "saved" ? "shots.savedBy" : "shots.discardedBy"], {
+            name: isolate(by),
+          })}
         </p>
       )}
       <DraftReview

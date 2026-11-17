@@ -11,6 +11,7 @@ import {
   integer,
   jsonb,
   pgTable,
+  primaryKey,
   serial,
   text,
   timestamp,
@@ -76,6 +77,25 @@ export const screenshotDrafts = pgTable(
     check("screenshot_drafts_status_check", sql`${t.status} in ('open', 'saved', 'discarded')`),
     check("screenshot_drafts_source_check", sql`${t.source} in ('desk', 'discord')`),
   ],
+);
+
+/**
+ * A Discord message's picture already sent through "Send to LAPTracker" (D100): a second run on the same
+ * message and attachment makes no new draft and answers with the first one's link. `draft_id` is the draft
+ * the picture went into; null when it made none, or while it is being read. Kept as long as a draft.
+ */
+export const discordPictures = pgTable(
+  "discord_pictures",
+  {
+    workspaceId: integer("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    messageId: text("message_id").notNull(),
+    attachmentId: text("attachment_id").notNull(),
+    draftId: integer("draft_id").references(() => screenshotDrafts.id, { onDelete: "cascade" }),
+    createdAt: tstz("created_at").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.workspaceId, t.messageId, t.attachmentId] })],
 );
 
 /** Alliance Duel points from a saved picture: one member's points for one day (Mon-Sat) or the week. */

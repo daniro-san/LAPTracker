@@ -58,9 +58,13 @@ export const noticeSave = z
   .object({
     id: z.number().int().positive().optional(),
     changes: z.array(change).min(1).max(NOTICE_FIELDS.length),
+    /** A new notice's request id (D100), made once per open editor. */
+    requestId: z.uuid().optional(),
   })
   .strict()
-  .refine((s) => new Set(s.changes.map((c) => c.field)).size === s.changes.length);
+  .refine((s) => new Set(s.changes.map((c) => c.field)).size === s.changes.length)
+  // INVARIANT notices.request-once: a new notice carries its request id, so a retry stores one notice.
+  .refine((s) => (s.id === undefined) === (s.requestId !== undefined));
 
 export interface NoticeSummary {
   id: number;
@@ -154,11 +158,19 @@ export async function saveNotice(
   id: number | null,
   changes: Change[],
   now: Date,
+  /** A new notice's request id (D100); a retry with it answers the first notice's id. */
+  requestId: string | null = null,
 ): Promise<SaveResult> {
   if (id === null && !changes.some((c) => c.field === "title")) {
     return { ok: false, reason: "no_title" };
   }
-  const target = { workspaceId: access.workspaceId, noticeId: id, userId: access.user.id, now };
+  const target = {
+    workspaceId: access.workspaceId,
+    noticeId: id,
+    userId: access.user.id,
+    now,
+    requestId,
+  };
   const result = await writeNotice(db, target, (current) => {
     const plan = planSave(stateOf(current), changes);
     if (plan.ok) return { write: plan.edits };

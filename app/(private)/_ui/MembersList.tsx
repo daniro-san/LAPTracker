@@ -7,7 +7,7 @@
 // order, Check in and Needs help come first under their own heading. A row opens the member's sheet.
 import { useState } from "react";
 
-import { fill } from "@/lib/copy";
+import { fill, isolate } from "@/lib/copy";
 import { clockIn, hhmm } from "@/lib/private/calendar-time";
 import type { WorkspaceLanguage } from "@/lib/private/dictionary";
 import {
@@ -122,7 +122,7 @@ function useRows(s: ListState, props: MembersListProps, onOpen: (uid: number) =>
         row={r}
         column={COLUMN[s.order]}
         words={t}
-        was={was && fill(t["list.was"], { name: was })}
+        was={was && fill(t["list.was"], { name: isolate(was) })}
         toAsk={s.query.ask ? toAskText(r, t) : null}
         theirTime={theirTime(r)}
         index={index}

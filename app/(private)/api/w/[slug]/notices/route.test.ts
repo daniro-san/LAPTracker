@@ -1,6 +1,8 @@
 // The notices' save (issues 304, 293): two officers on different fields both persist; on the same field the
 // second gets 409 with the first one's text and nothing of theirs is written; another workspace's notice is
 // not found.
+import { randomUUID } from "node:crypto";
+
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { AppContext } from "@/lib/app-context";
@@ -61,6 +63,7 @@ async function save(slug: string, token: string, body: object) {
 /** A notice with a title and English text, at version 1 (title) and 2 (en). */
 async function notice(token: string): Promise<number> {
   const made = await save("ogs", token, {
+    requestId: randomUUID(),
     changes: [
       { field: "title", value: "Queen position", version: 0 },
       { field: "en", value: "Apply for Queen today.", version: 0 },
