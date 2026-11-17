@@ -126,7 +126,7 @@ export const vi = {
     carriedTurnout: "{share} có tiêu diệt tăng",
     carriedSpread: "{low}–{high} qua {n} sự kiện",
     carriedRatioHelp:
-      "điểm % là phần tiêu diệt trừ phần Lực Chiến. Từ 3 sự kiện, khoảng của phần tiêu diệt ÷ phần Lực Chiến qua các sự kiện đó hiện bên dưới.",
+      "điểm % là phần tiêu diệt trừ phần Lực Chiến. Từ 3 sự kiện trở lên, dòng bên dưới cho thấy khoảng của phần tiêu diệt ÷ phần Lực Chiến qua các sự kiện đó.",
     carriedPoints: "điểm %",
   },
   compare: {
@@ -149,7 +149,7 @@ export const vi = {
   merge: {
     title: "Mô phỏng sáp nhập",
     tag: "Mô phỏng, không phải kế hoạch",
-    lead: "Hai liên minh sẽ ra sao khi gộp làm một, so với giới hạn thành viên. Chỉ tổng của liên minh, không có tên thành viên.",
+    lead: "Hai liên minh được gộp thành một và kiểm tra theo giới hạn thành viên. Chỉ có tổng của liên minh, không có tên thành viên.",
     link: "Mô phỏng sáp nhập",
     first: "Liên minh thứ nhất",
     second: "Liên minh thứ hai",
@@ -178,7 +178,7 @@ export const vi = {
   flow: {
     title: "Dòng thành viên",
     tag: "Chỉ đếm số",
-    lead: "Thành viên đã chuyển giữa các liên minh theo dõi thế nào: liên minh mỗi người ở ngày đầu, đặt cạnh ngày sau. Chỉ đếm số, không có tên thành viên.",
+    lead: "Thành viên chuyển giữa các liên minh theo dõi thế nào, từ ngày đầu đến ngày sau. Không nêu tên thành viên nào.",
     from: "Từ",
     to: "Đến",
     action: "Hiện",
@@ -187,7 +187,7 @@ export const vi = {
       "Từ {from} đến {to}, không có lần chuyển nào từ {min} thành viên trở lên giữa các liên minh theo dõi.",
     totals: "Chuyển từ {min} trở lên · Đổi liên minh: {moved} · Mới: {arrived} · Rời: {left}",
     small:
-      "Số dưới {min} thành viên, kể cả người ở lại, bị ẩn và không tính vào tổng nào, để trang này không chỉ ra nhóm nhỏ.",
+      "Số liệu dưới {min} thành viên bị ẩn và không tính vào bất kỳ tổng nào, kể cả thành viên ở lại. Điều này bảo vệ các nhóm nhỏ.",
     rowNew: "Mới",
     colLeft: "Rời",
     legend:
@@ -205,7 +205,7 @@ export const vi = {
     title: "Cân bằng máy chủ",
     description:
       "Phần của mỗi liên minh theo dõi trong Lực Chiến của các liên minh theo dõi, và công cụ dựng khối giả định.",
-    lead: "Không liên minh nào chiếm quá {max} Lực Chiến của các liên minh theo dõi; top {n} chiếm {top}.",
+    lead: "Không liên minh nào giữ quá {max} Lực Chiến của các liên minh theo dõi. Top {n} chiếm {top}.",
     includes: "Lực Chiến gồm công trình và công nghệ.",
     basis: "{n} liên minh theo dõi, đọc ngày {date}.",
     total: "Liên minh theo dõi",
@@ -216,7 +216,7 @@ export const vi = {
     builder: "Dựng khối",
     hypothetical: "Giả định",
     builderHelp:
-      "Chạm A hoặc B trên một liên minh để thử một khối. Đây là phép tính, không phải dự báo, cũng không phải thông báo.",
+      "Chạm A hoặc B trên một liên minh để thử một khối. Đây chỉ là phép cộng số. Không dự đoán hay thông báo khối thật nào.",
     bloc: "Khối {bloc}",
     blocShare: "{share} Lực Chiến của các liên minh theo dõi",
     blocAlliances: "Liên minh",
@@ -238,7 +238,7 @@ export const vi = {
     help: "Các liên minh theo dõi xếp theo Lực Chiến từ lần đọc mỗi ngày, kèm thay đổi kể từ {from}. Ngày mà một liên minh không được đọc thì không tính. Máy chủ ở đây là tổng của các liên minh theo dõi.",
     lead: "{label} đứng hạng {rank} theo Lực Chiến ngày {to} và {before} ngày {from}.",
     leadGrowth:
-      "Lực Chiến của liên minh này đổi {growth} kể từ đó; tổng các liên minh theo dõi đổi {server}.",
+      "Lực Chiến của liên minh này đã đổi {growth} kể từ đó. Tổng các liên minh theo dõi đã đổi {server}.",
     server: "Liên minh theo dõi",
     growthSince: "{growth} kể từ {from}",
     trend: "Hạng {first} ngày {from}, {last} ngày {to}",
@@ -347,7 +347,7 @@ export const vi = {
     seen: "Thấy lần cuối",
     limit: "{n} người đầu",
     noMatch: "Không có người chơi nào tên đó trong sổ.",
-    pending: "Bà đang lật sổ…",
+    pending: "Bà đang tìm trong sổ…",
   },
   errors: {
     notFound: {
@@ -369,6 +369,6 @@ export const vi = {
     manualNotRun: "Vòng này chưa chạy. Admin bắt đầu thủ công.",
     manualNoRows: "Lần chạy không ra gì. Admin sẽ chạy lại thủ công.",
     noEvents: "Chưa có sự kiện nào trong sổ.",
-    noMembers: "Không ai khớp. Bà đã kiểm tra hai lần.",
+    noMembers: "Không có ai ở đây khớp.",
   },
 } as const satisfies Translation;

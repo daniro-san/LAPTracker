@@ -127,7 +127,7 @@ export const sv = {
     carriedTurnout: "{share} med Kills",
     carriedSpread: "{low}–{high} över {n} event",
     carriedRatioHelp:
-      "%-enh. är Kills-andelen minus Might-andelen. Från 3 event visas under den spannet för Kills-andel ÷ Might-andel över dessa event.",
+      "%-enh. är Kills-andelen minus Might-andelen. Vid 3 event eller fler visar raden under den spannet för Kills-andel ÷ Might-andel över dem.",
     carriedPoints: "%-enh.",
   },
   compare: {
@@ -151,7 +151,7 @@ export const sv = {
     title: "Serverbalans",
     description:
       "Varje bevakad allians andel av de bevakade alliansernas Might, och en hypotetisk blockbyggare.",
-    lead: "Ingen allians har mer än {max} av de bevakade alliansernas Might; de {n} främsta har {top}.",
+    lead: "Ingen allians har mer än {max} av de bevakade alliansernas Might. De {n} främsta har {top}.",
     includes: "Might inkluderar byggnader och teknik.",
     basis: "{n} bevakade allianser, lästa {date}.",
     total: "Bevakade allianser",
@@ -162,7 +162,7 @@ export const sv = {
     builder: "Blockbyggare",
     hypothetical: "Hypotetisk",
     builderHelp:
-      "Tryck på A eller B vid en allians för att prova ett block. Det här är räkneexempel, inte en prognos och inget besked.",
+      "Tryck på A eller B vid en allians för att prova ett block. Det här räknar bara ihop tal. Det förutsäger eller tillkännager inget riktigt block.",
     bloc: "Block {bloc}",
     blocShare: "{share} av de bevakade alliansernas Might",
     blocAlliances: "Allianser",
@@ -184,7 +184,7 @@ export const sv = {
     help: "De bevakade allianserna placerade efter Might från varje dagsavläsning, med förändringen sedan {from}. En dag då en allians inte lästes räknas inte med. Servern här är de bevakade allianserna tillsammans.",
     lead: "{label} var {rank} efter Might den {to} och {before} den {from}.",
     leadGrowth:
-      "Dess Might har ändrats {growth} sedan dess; de bevakade allianserna tillsammans har ändrats {server}.",
+      "Dess Might har ändrats {growth} sedan dess. De bevakade allianserna tillsammans har ändrats {server}.",
     server: "Bevakade allianser",
     growthSince: "{growth} sedan {from}",
     trend: "Placering {first} den {from}, {last} den {to}",
@@ -293,7 +293,7 @@ export const sv = {
     seen: "Sedd",
     limit: "Första {n}",
     noMatch: "Ingen spelare med det namnet i loggen.",
-    pending: "Mormor bläddrar i loggen…",
+    pending: "Mormor letar i loggen…",
   },
   errors: {
     notFound: {
@@ -315,12 +315,12 @@ export const sv = {
     manualNotRun: "Den här omgången har inte körts än. Admin startar den för hand.",
     manualNoRows: "Körningen gav ingenting. Admin kör den igen för hand.",
     noEvents: "Inga event i loggen än.",
-    noMembers: "Ingen matchar. Mormor kollade två gånger.",
+    noMembers: "Ingen matchar här.",
   },
   merge: {
     title: "Sammanslagningssimulator",
     tag: "Simulering, inte en plan",
-    lead: "Vad två allianser skulle bli som en, mot medlemstaket. Bara allianssummor, inga medlemsnamn.",
+    lead: "Två allianser räknas som en och kontrolleras mot medlemstaket. Bara allianssummor, inga medlemsnamn.",
     link: "Simulera en sammanslagning",
     first: "Första allians",
     second: "Andra allians",
@@ -349,7 +349,7 @@ export const sv = {
   flow: {
     title: "Flöde av Members",
     tag: "Bara antal",
-    lead: "Vart Members flyttade mellan de bevakade allianserna: alliansen de var i första dagen, mot den andra dagen. Bara antal, inga namn.",
+    lead: "Vart Members flyttade mellan de bevakade allianserna, från första dagen till den andra. Inga namn visas.",
     from: "Från",
     to: "Till",
     action: "Visa",
@@ -359,7 +359,7 @@ export const sv = {
     totals:
       "Flyttar på {min} eller fler · Bytte allians: {moved} · Nya: {arrived} · Lämnade: {left}",
     small:
-      "Antal under {min} Members, även de som blev kvar, döljs och räknas inte in i någon summa, så att sidan inte pekar ut små grupper.",
+      "Antal under {min} Members döljs och räknas inte med i någon summa, inte heller de som stannade kvar. Det skyddar små grupper.",
     rowNew: "Nya",
     colLeft: "Lämnade",
     legend:

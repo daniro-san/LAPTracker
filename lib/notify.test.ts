@@ -240,7 +240,7 @@ describe("admin messages", () => {
 
   it("says the PIN is locked and that the tick still works", () => {
     expect(pinLockedMessage(20)).toBe(
-      "Locked: PIN entry is off for an hour: 20 wrong PINs. The scheduled tick and workflow_dispatch still work.",
+      "Locked: 20 wrong PINs, so PIN entry is off for an hour. The scheduled tick and workflow_dispatch still work.",
     );
   });
 

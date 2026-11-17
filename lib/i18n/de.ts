@@ -130,7 +130,7 @@ export const de = {
     carriedTurnout: "{share} mit gewonnenen Kills",
     carriedSpread: "{low}–{high} über {n} Events",
     carriedRatioHelp:
-      "%-Pkt. ist der Kills-Anteil minus der Might-Anteil. Ab 3 Events wird darunter die Spanne aus Kills-Anteil ÷ Might-Anteil über diese Events gezeigt.",
+      "%-Pkt. ist der Kills-Anteil minus der Might-Anteil. Ab 3 Events zeigt die Zeile darunter die Spanne von Kills-Anteil ÷ Might-Anteil über alle diese Events.",
     carriedPoints: "%-Pkt.",
   },
   compare: {
@@ -153,7 +153,7 @@ export const de = {
   merge: {
     title: "Fusions-Simulator",
     tag: "Simulation, kein Plan",
-    lead: "Wie zwei Allianzen als eine dastünden, gemessen an der Members-Obergrenze. Nur Summen je Allianz, keine Namen von Members.",
+    lead: "Zwei Allianzen werden als eine gezählt und mit der Members-Obergrenze verglichen. Nur Summen je Allianz, keine Namen von Members.",
     link: "Fusion simulieren",
     first: "Erste Allianz",
     second: "Zweite Allianz",
@@ -183,7 +183,7 @@ export const de = {
   flow: {
     title: "Mitgliederfluss",
     tag: "Nur Zahlen",
-    lead: "Wohin Members zwischen den erfassten Allianzen gewechselt sind: die Allianz jedes Members am ersten Tag, gegen den zweiten Tag gestellt. Nur Zahlen, keine Namen von Members.",
+    lead: "Wohin Members zwischen den erfassten Allianzen gewechselt sind, vom ersten Tag zum zweiten. Kein Member wird namentlich genannt.",
     from: "Von",
     to: "Bis",
     action: "Zeigen",
@@ -193,7 +193,7 @@ export const de = {
     totals:
       "Wechsel ab {min} Members · Allianz gewechselt: {moved} · Neu: {arrived} · Ausgetreten: {left}",
     small:
-      "Zahlen unter {min} Members, auch Gebliebene, sind ausgeblendet und in keiner Summe enthalten, damit diese Seite keine kleinen Gruppen herausgreift.",
+      "Zahlen unter {min} Members sind ausgeblendet und in keiner Summe enthalten, auch nicht bei den Gebliebenen. Das schützt kleine Gruppen.",
     rowNew: "Neu",
     colLeft: "Ausgetr.",
     legend:
@@ -211,7 +211,7 @@ export const de = {
     title: "Server-Balance",
     description:
       "Anteil jeder erfassten Allianz am Might der erfassten Allianzen und ein hypothetischer Blockrechner.",
-    lead: "Keine Allianz hält mehr als {max} des Might der erfassten Allianzen; die Top {n} halten {top}.",
+    lead: "Keine Allianz hält mehr als {max} des Might der erfassten Allianzen. Die Top {n} halten {top}.",
     includes: "Might umfasst Gebäude und Technologie.",
     basis: "{n} erfasste Allianzen, Stand {date}.",
     total: "Erfasste Allianzen",
@@ -222,7 +222,7 @@ export const de = {
     builder: "Blockrechner",
     hypothetical: "Hypothetisch",
     builderHelp:
-      "Tippe bei einer Allianz auf A oder B, um einen Block zu probieren. Das ist Rechnerei, keine Prognose und keine Ankündigung.",
+      "Tippe bei einer Allianz auf A oder B, um einen Block zu probieren. Es werden nur Zahlen addiert. Es sagt keinen echten Block voraus und kündigt auch keinen an.",
     bloc: "Block {bloc}",
     blocShare: "{share} des Might der erfassten Allianzen",
     blocAlliances: "Allianzen",
@@ -244,7 +244,7 @@ export const de = {
     help: "Die erfassten Allianzen nach Might, aus jedem Tagesabruf, mit der Änderung seit {from}. Ein Tag, an dem eine Allianz nicht abgerufen wurde, fehlt. Der Server ist hier die Summe der erfassten Allianzen.",
     lead: "{label} war am {to} nach Might auf {rank} und am {from} auf {before}.",
     leadGrowth:
-      "Das Might der Allianz hat sich seitdem um {growth} verändert; die Summe der erfassten Allianzen um {server}.",
+      "Das Might der Allianz hat sich seitdem um {growth} verändert. Die Summe der erfassten Allianzen hat sich um {server} verändert.",
     server: "Erfasste Allianzen",
     growthSince: "{growth} seit {from}",
     trend: "Rang {first} am {from}, {last} am {to}",
@@ -353,7 +353,7 @@ export const de = {
     seen: "Gesehen",
     limit: "Erste {n}",
     noMatch: "Kein Spieler mit diesem Namen in der Chronik.",
-    pending: "Oma blättert in der Chronik…",
+    pending: "Oma sucht in der Chronik…",
   },
   errors: {
     notFound: {
@@ -375,6 +375,6 @@ export const de = {
     manualNotRun: "Diese Runde lief noch nicht. Der Admin startet sie von Hand.",
     manualNoRows: "Der Lauf hat nichts ergeben. Der Admin startet ihn noch einmal von Hand.",
     noEvents: "Noch keine Events in der Chronik.",
-    noMembers: "Hier passt niemand. Oma hat zweimal nachgesehen.",
+    noMembers: "Hier passt niemand.",
   },
 } as const satisfies Translation;

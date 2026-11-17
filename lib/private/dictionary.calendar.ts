@@ -13,7 +13,7 @@ export const calendarEn = {
   "calendar.thisWeek": "This week",
   "calendar.today": "today (ST)",
   "calendar.legend":
-    "ST is server time, the game’s clock ({offset}). The other time is your own; +1 d means the next day.",
+    "ST is server time, the game’s clock ({offset}). The other time is yours. +1 d means the next day.",
   "calendar.kvk": "KvK = Kingdom War.",
   "calendar.st": "{time} ST",
   "calendar.stRange": "{from}–{to} ST",
@@ -71,7 +71,7 @@ export const calendarEn = {
   "calendar.form.level": "Level, 1 to {max}",
   "calendar.form.team": "Team",
   "calendar.form.name": "Name",
-  "calendar.form.nameHint": "For example: prettiest pet vote",
+  "calendar.form.nameHint": "For example: alliance meeting",
   "calendar.form.theme": "Theme of the week",
   "calendar.form.themeHint": "For example: economy week",
   "calendar.form.needed": "Write something here.",

@@ -17,7 +17,7 @@ export const membersEn = {
   "list.notShown": "Not shown: {n} with no time zone",
   "list.seeWho": "See who",
   "list.heading": "Check in and Needs help",
-  "list.headingLead": "What we saw, for a friendly word. Nothing is sent.",
+  "list.headingLead": "What we saw, so you can ask how they are. Nothing is sent.",
   "list.rest": "Everyone else",
   "list.more": "Show {k} more · {n} left",
   "list.showing": "Showing {n} of {total}",

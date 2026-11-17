@@ -47,7 +47,7 @@ export const adminCopy = {
     quotaNote: "Last read {at}",
     /** The reading is from an earlier UTC day, when the quota was another one (it resets every UTC day). */
     quotaOld: "Not read today",
-    quotaNoteOld: "Last read {at}; today's first run reads it again.",
+    quotaNoteOld: "Last read {at}. Today's first run reads it again.",
     quotaNone: "No run has reported it yet.",
     running: "Running now",
     nothing: "Nothing",
@@ -87,7 +87,7 @@ export const adminCopy = {
   run: {
     title: "Run something now",
     intro:
-      "The scheduler runs these for you. Every press spends API calls of the 1,000 a day; the cost is on each button.",
+      "The scheduler runs these on its own. Each press uses some of the 1,000 API calls a day. The cost is on each button.",
     event: "Target event",
     /** The event the buttons act on: the nearest one until both its snapshots are done, then the next. */
     target: "{date} · {age} · {state}",
@@ -133,7 +133,7 @@ export const adminCopy = {
     live: {
       title: "A run is in progress",
       line: "{phase}, {event}. Started {at}.",
-      note: "It closes by itself within about 100 seconds. The buttons are off until it ends; this page checks every few seconds.",
+      note: "It ends by itself within about 100 seconds. The buttons stay off until then. This page checks every few seconds.",
       finished: "{mark} {phase} of {event}: {state}.",
       next: "Next scheduled run: {phase}, {at}.",
     },
@@ -236,7 +236,7 @@ export const adminCopy = {
   rehearsal: {
     title: "Last rehearsal",
     none: "No rehearsal yet. Use “Rehearse” to run one.",
-    help: "The result of the last practice run, so you can trust the real one.",
+    help: "The result of the last practice run, to check the setup before the real one.",
     checks: "Checks",
     phase: "{phase}: {state} (due {at})",
     notRun: "not run",

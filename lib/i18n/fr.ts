@@ -131,7 +131,7 @@ export const fr = {
     carriedTurnout: "{share} ont gagné des Kills",
     carriedSpread: "{low}–{high} sur {n} événements",
     carriedRatioHelp:
-      "pts est la part des Kills moins la part du Might. À partir de 3 événements, la fourchette de la part des Kills ÷ part du Might sur ces événements s’affiche en dessous.",
+      "pts est la part des Kills moins la part du Might. À partir de 3 événements, la ligne en dessous indique la fourchette de la part des Kills ÷ part du Might sur ces événements.",
     carriedPoints: "pts",
   },
   compare: {
@@ -155,7 +155,7 @@ export const fr = {
   merge: {
     title: "Simulateur de fusion",
     tag: "Simulation, pas un plan",
-    lead: "Ce que donneraient deux alliances réunies, comparé au plafond de membres. Totaux d’alliance seulement, aucun nom de membre.",
+    lead: "Deux alliances comptées comme une seule, et comparées au plafond de membres. Totaux d’alliance seulement, aucun nom de membre.",
     link: "Simuler une fusion",
     first: "Première alliance",
     second: "Deuxième alliance",
@@ -184,7 +184,7 @@ export const fr = {
   flow: {
     title: "Flux des membres",
     tag: "Comptes seulement",
-    lead: "Où les membres sont allés entre les alliances suivies : l’alliance de chacun le premier jour, comparée au deuxième. Comptes seulement, aucun nom de membre.",
+    lead: "Où sont allés les membres entre les alliances suivies, du premier jour au deuxième. Aucun membre n’est nommé.",
     from: "De",
     to: "À",
     action: "Afficher",
@@ -194,7 +194,7 @@ export const fr = {
     totals:
       "Mouvements de {min} ou plus · Changé d’alliance : {moved} · Nouveaux : {arrived} · Partis : {left}",
     small:
-      "Les chiffres de moins de {min} membres, y compris ceux qui sont restés, sont masqués et exclus de tous les totaux, pour que cette page ne désigne pas de petits groupes.",
+      "Les chiffres de moins de {min} membres sont masqués et exclus de tous les totaux, y compris les membres restés. Cela protège les petits groupes.",
     rowNew: "Nouveaux",
     colLeft: "Partis",
     legend:
@@ -212,7 +212,7 @@ export const fr = {
     title: "Équilibre du serveur",
     description:
       "La part de chaque alliance suivie dans le Might des alliances suivies, et un constructeur de blocs hypothétique.",
-    lead: "Aucune alliance ne tient plus de {max} du Might des alliances suivies ; les {n} premières en tiennent {top}.",
+    lead: "Aucune alliance ne détient plus de {max} du Might des alliances suivies. Les {n} premières en détiennent {top}.",
     includes: "Le Might inclut les bâtiments et la technologie.",
     basis: "{n} alliances suivies, relevées le {date}.",
     total: "Alliances suivies",
@@ -223,7 +223,7 @@ export const fr = {
     builder: "Blocs simulés",
     hypothetical: "Hypothétique",
     builderHelp:
-      "Touchez A ou B sur une alliance pour essayer un bloc. C’est un calcul, pas une prévision, et pas une annonce.",
+      "Touchez A ou B sur une alliance pour essayer un bloc. Ce n’est qu’un calcul. Ce n’est ni une prévision ni une annonce de bloc réel.",
     bloc: "Bloc {bloc}",
     blocShare: "{share} du Might des alliances suivies",
     blocAlliances: "Alliances",
@@ -245,7 +245,7 @@ export const fr = {
     help: "Les alliances suivies classées par Might d’après le relevé de chaque jour, avec l’évolution depuis le {from}. Un jour où une alliance n’a pas été relevée est laissé de côté. Ici, le serveur est le total des alliances suivies.",
     lead: "{label} était {rank} par Might le {to} et {before} le {from}.",
     leadGrowth:
-      "Son Might a évolué de {growth} depuis, et le total des alliances suivies de {server}.",
+      "Son Might a changé de {growth} depuis. Le total des alliances suivies a changé de {server}.",
     server: "Alliances suivies",
     growthSince: "{growth} depuis le {from}",
     trend: "Rang {first} le {from}, {last} le {to}",
@@ -354,7 +354,7 @@ export const fr = {
     seen: "Vu",
     limit: "Les {n} premiers",
     noMatch: "Aucun joueur de ce nom dans le registre.",
-    pending: "Mamie feuillette le registre…",
+    pending: "Mamie cherche dans le registre…",
   },
   errors: {
     notFound: {
@@ -376,6 +376,6 @@ export const fr = {
     manualNotRun: "Cette manche n’a pas encore été lancée. L’admin la lance à la main.",
     manualNoRows: "Le lancement n’a rien donné. L’admin le relance à la main.",
     noEvents: "Aucun événement dans le registre pour l’instant.",
-    noMembers: "Personne ne correspond. Mamie a vérifié deux fois.",
+    noMembers: "Personne ne correspond ici.",
   },
 } as const satisfies Translation;

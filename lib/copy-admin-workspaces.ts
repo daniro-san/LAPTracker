@@ -50,7 +50,7 @@ export const workspacesAdminCopy = {
     reasons: {
       0: "failed: no answer from Discord",
       403: "failed: HTTP 403, the app is not added to this server",
-      429: "failed: HTTP 429, Discord asks to wait; try again later",
+      429: "failed: HTTP 429, Discord asks to wait. Try again later",
     },
     errors: {
       no_credentials: "The Discord app credentials are not set.",

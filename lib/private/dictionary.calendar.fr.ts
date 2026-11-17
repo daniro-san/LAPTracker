@@ -13,7 +13,7 @@ export const calendarFr: CalendarWords = {
   "calendar.thisWeek": "Cette semaine",
   "calendar.today": "aujourd’hui (ST)",
   "calendar.legend":
-    "ST est l’heure serveur, l’horloge du jeu ({offset}). L’autre heure est la vôtre ; +1 j veut dire le lendemain.",
+    "ST est l’heure serveur, l’horloge du jeu ({offset}). L’autre heure est la vôtre. +1 j veut dire le lendemain.",
   "calendar.kvk": "KvK = Kingdom War.",
   "calendar.st": "{time} ST",
   "calendar.stRange": "{from}–{to} ST",
@@ -71,7 +71,7 @@ export const calendarFr: CalendarWords = {
   "calendar.form.level": "Niveau, de 1 à {max}",
   "calendar.form.team": "Équipe",
   "calendar.form.name": "Nom",
-  "calendar.form.nameHint": "Par exemple : vote du plus bel animal",
+  "calendar.form.nameHint": "Par exemple : réunion d’alliance",
   "calendar.form.theme": "Thème de la semaine",
   "calendar.form.themeHint": "Par exemple : semaine économie",
   "calendar.form.needed": "Écrivez quelque chose ici.",

@@ -66,11 +66,11 @@ export const discordCopy = {
     quotaLow: " (⚠ under {n})",
     /** The weekly check's line for the site's own alliance (D70): counts and a link, never names. */
     mightLine:
-      "Might unchanged ≥ {days} daily reads: {unchanged} · Lost might ≥ {pct} %: {lost} — [Members ↗](<{url}>)",
+      "Might unchanged ≥ {days} daily reads: {unchanged} · Lost might ≥ {pct} %: {lost} · [Members ↗](<{url}>)",
     database: "{icon} Database {mb} MB",
     databaseHigh: " (⚠ over {n} MB)",
     pinLocked:
-      "Locked: PIN entry is off for an hour: {n} wrong PINs. The scheduled tick and workflow_dispatch still work.",
+      "Locked: {n} wrong PINs, so PIN entry is off for an hour. The scheduled tick and workflow_dispatch still work.",
     appError: "✗ App error on {route}: {message}{digest} · /admin/errors",
     digest: " · digest {digest}",
     tickSilence:

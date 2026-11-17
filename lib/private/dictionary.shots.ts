@@ -4,12 +4,12 @@
 // French puts a no-break space before : ; ! and ?.
 export const shotsEn = {
   "shots.head": "To review",
-  "shots.lead": "Screenshots read from the game wait here until an officer saves them.",
+  "shots.lead": "Screenshots read from the game wait here for an officer to check them.",
   "shots.nothingCounts": "Nothing here counts until it is saved.",
   "shots.none": "Nothing to review.",
   "shots.send": "Send screenshots",
   "shots.help":
-    "Rankings: turn on My Alliance first. Several pictures of one long list become one draft. The pictures are read, then forgotten.",
+    "Rankings: turn on My Alliance first. Several pictures of one long list become one draft. The pictures are not kept after reading.",
   "shots.reading": "Reading {n} of {total}…",
   "shots.tooMany": "Send at most {n} pictures at once.",
   "shots.readFailed": "This picture could not be read.",
@@ -41,9 +41,9 @@ export const shotsEn = {
   "shots.leftOut.other": "{n} rows of other alliances were left out: turn on My Alliance.",
   "shots.lost.one": "{n} picture could not be read.",
   "shots.lost.other": "{n} pictures could not be read.",
-  "shots.unrecognised": "Not recognised — nothing was saved.",
+  "shots.unrecognised": "Not recognised. Nothing was saved.",
   "shots.map": "This screenshot has nothing the desk uses. Nothing was saved.",
-  "shots.soon": "Read: {what}. Saving this type comes soon; nothing was saved.",
+  "shots.soon": "Read: {what}. This type cannot be saved yet. Nothing was saved.",
   "shots.empty": "Read: {what}, but no rows could be read. Nothing was saved.",
   "shots.reply.read": "Read: {what}, {counts}",
   "shots.reply.review": "Review",
@@ -96,7 +96,7 @@ export const shotsEn = {
   "shots.e.gone": "This draft is gone: saved, discarded, or older than 7 days.",
   "shots.e.bad_rows":
     "Each row needs a member, and each member one row. Pick the member, or drop the row.",
-  "shots.e.cannot_save": "Saving this type comes soon.",
+  "shots.e.cannot_save": "This type cannot be saved yet.",
   "shots.e.failed": "Could not save. Try again.",
   "shots.duel.card": "Alliance Duel this week",
   "shots.duel.dayValue": "{day} {v}",
@@ -133,7 +133,7 @@ export const shotsEn = {
   "shots.why.tab": "Pick the tab the picture shows: daily or weekly.",
   "shots.why.victim": "Pick whose report it is.",
   "shots.why.attacker": "Row {row} needs the attacker’s name. Type it, or drop the row.",
-  "shots.kindUnsure": "{kind} — daily or weekly?",
+  "shots.kindUnsure": "{kind} (daily or weekly?)",
   "shots.victimYou": "Set to you. Change it if this is someone else’s report.",
   "shots.keptTheirs": "Kept {theirs}. Tap to use {mine} instead.",
   "shots.theftsSaved.one": "Saved {n} theft.",
@@ -145,19 +145,19 @@ export const shotsEn = {
   "shots.retypeConfirm":
     "Changing the type reads the pictures again and clears your fixes. Change it?",
   "shots.discord.unrecognised":
-    "Not recognised — nothing was saved. Send it from the desk to pick the type.",
+    "Not recognised. Nothing was saved. Send it from the desk to pick the type.",
 } as const;
 
 export type ShotsWords = Record<keyof typeof shotsEn, string>;
 
 export const shotsPt: ShotsWords = {
   "shots.head": "Para revisar",
-  "shots.lead": "Os prints lidos do jogo esperam aqui até um oficial salvar.",
+  "shots.lead": "Os prints lidos do jogo esperam aqui até um oficial conferir.",
   "shots.nothingCounts": "Nada aqui conta antes de ser salvo.",
   "shots.none": "Nada para revisar.",
   "shots.send": "Enviar prints",
   "shots.help":
-    "Rankings: ligue My Alliance antes. Vários prints de uma lista longa viram um rascunho só. Os prints são lidos e depois esquecidos.",
+    "Rankings: ligue My Alliance antes. Vários prints de uma lista longa viram um rascunho só. Os prints não são guardados depois da leitura.",
   "shots.reading": "Lendo {n} de {total}…",
   "shots.tooMany": "Envie no máximo {n} prints de uma vez.",
   "shots.readFailed": "Não foi possível ler este print.",
@@ -189,9 +189,9 @@ export const shotsPt: ShotsWords = {
   "shots.leftOut.other": "{n} linhas de outras alianças ficaram de fora: ligue My Alliance.",
   "shots.lost.one": "Não foi possível ler {n} print.",
   "shots.lost.other": "Não foi possível ler {n} prints.",
-  "shots.unrecognised": "Não reconhecido — nada foi salvo.",
+  "shots.unrecognised": "Não reconhecido. Nada foi salvo.",
   "shots.map": "Este print não tem nada que o painel use. Nada foi salvo.",
-  "shots.soon": "Lido: {what}. Salvar este tipo vem em breve; nada foi salvo.",
+  "shots.soon": "Lido: {what}. Ainda não dá para salvar este tipo. Nada foi salvo.",
   "shots.empty": "Lido: {what}, mas nenhuma linha pôde ser lida. Nada foi salvo.",
   "shots.reply.read": "Lido: {what}, {counts}",
   "shots.reply.review": "Revisar",
@@ -244,7 +244,7 @@ export const shotsPt: ShotsWords = {
   "shots.e.gone": "Este rascunho não existe mais: salvo, descartado ou com mais de 7 dias.",
   "shots.e.bad_rows":
     "Cada linha precisa de um membro, e cada membro de uma linha. Escolha o membro ou tire a linha.",
-  "shots.e.cannot_save": "Salvar este tipo vem em breve.",
+  "shots.e.cannot_save": "Ainda não dá para salvar este tipo.",
   "shots.e.failed": "Não foi possível salvar. Tente de novo.",
   "shots.duel.card": "Alliance Duel nesta semana",
   "shots.duel.dayValue": "{day} {v}",
@@ -282,7 +282,7 @@ export const shotsPt: ShotsWords = {
   "shots.why.tab": "Escolha a aba que o print mostra: diário ou semanal.",
   "shots.why.victim": "Escolha de quem é o relatório.",
   "shots.why.attacker": "A linha {row} precisa do nome do atacante. Digite ou tire a linha.",
-  "shots.kindUnsure": "{kind} — diário ou semanal?",
+  "shots.kindUnsure": "{kind} (diário ou semanal?)",
   "shots.victimYou": "Marcado como você. Mude se o relatório for de outra pessoa.",
   "shots.keptTheirs": "Mantido {theirs}. Toque para usar {mine}.",
   "shots.theftsSaved.one": "{n} roubo salvo.",
@@ -293,5 +293,5 @@ export const shotsPt: ShotsWords = {
   "shots.left.duplicate": "{n} já no registro",
   "shots.retypeConfirm": "Mudar o tipo lê os prints de novo e apaga suas correções. Mudar?",
   "shots.discord.unrecognised":
-    "Não reconhecido — nada foi salvo. Envie pelo painel para escolher o tipo.",
+    "Não reconhecido. Nada foi salvo. Envie pelo painel para escolher o tipo.",
 };

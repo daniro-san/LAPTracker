@@ -149,7 +149,7 @@ export const ja = {
   merge: {
     title: "合併シミュレーター",
     tag: "シミュレーションで、計画ではありません",
-    lead: "2つの同盟が1つになったら、メンバー上限に対してどうなるかを示します。同盟の合計だけで、メンバー名は出しません。",
+    lead: "2つの同盟を1つとして数え、メンバー上限と照らし合わせます。同盟の合計だけで、メンバー名は出しません。",
     link: "合併をシミュレート",
     first: "1つ目の同盟",
     second: "2つ目の同盟",
@@ -178,7 +178,7 @@ export const ja = {
   flow: {
     title: "メンバーの移動",
     tag: "集計のみ",
-    lead: "追跡中の同盟のあいだで、メンバーがどこからどこへ移ったかを示します。最初の日に各メンバーがいた同盟を、2日目と並べたものです。集計だけで、メンバー名は出しません。",
+    lead: "追跡中の同盟のあいだで、メンバーが1日目から2日目にかけてどこへ移ったかを示します。メンバー名は出しません。",
     from: "開始日",
     to: "終了日",
     action: "表示",
@@ -186,7 +186,7 @@ export const ja = {
     answerNone: "{from}から{to}まで、追跡中の同盟の間で{min}人以上の移動はありません。",
     totals: "{min}人以上の移動 · 同盟移動：{moved} · 新規：{arrived} · 脱退：{left}",
     small:
-      "{min}人未満の人数は、残った人数も含めて表示せず、どの合計にも含めていません。このページで小さな集団が特定されないようにするためです。",
+      "{min}人未満の人数は、残った人の数も含めて表示せず、どの合計にも入れません。小さな集団が特定されないようにするためです。",
     rowNew: "新規",
     colLeft: "脱退",
     legend:
@@ -203,7 +203,7 @@ export const ja = {
   balance: {
     title: "サーバーの勢力バランス",
     description: "追跡中の各同盟が占める、追跡中の同盟の Might の割合と、仮のブロック作成ツール。",
-    lead: "どの同盟も、追跡中の同盟の Might の {max} を超えていません。上位{n}同盟の合計は{top}です。",
+    lead: "どの同盟も、追跡中の同盟の Might の {max} を超えていません。上位{n}同盟は{top}を占めています。",
     includes: "Might には建物と科学が含まれます。",
     basis: "追跡中の同盟 {n} 件、{date} の読み取り。",
     total: "追跡中の同盟",
@@ -214,7 +214,7 @@ export const ja = {
     builder: "ブロック作成",
     hypothetical: "仮定",
     builderHelp:
-      "同盟の A か B をタップして、ブロックを試せます。これは計算であり、予測でも発表でもありません。",
+      "同盟の A か B をタップして、ブロックを試せます。数字を足すだけの計算です。実際のブロックを予測したり発表したりはしません。",
     bloc: "ブロック {bloc}",
     blocShare: "追跡中の同盟の Might の {share}",
     blocAlliances: "同盟",
@@ -235,7 +235,7 @@ export const ja = {
     title: "順位の推移",
     help: "各日の読み取りから見た、追跡中の同盟の Might による順位と、{from} からの変化です。同盟が読み取られなかった日は除いています。ここでの「サーバー」は追跡中の同盟の合計です。",
     lead: "{label} の Might の順位は、{to}が{rank}、{from}が{before}でした。",
-    leadGrowth: "その間に Might は{growth}変化し、追跡中の同盟の合計は{server}変化しました。",
+    leadGrowth: "その間に Might は{growth}変わりました。追跡中の同盟の合計は{server}変わりました。",
     server: "追跡中の同盟",
     growthSince: "{from} から {growth}",
     trend: "{from}に順位 {first}、{to}に {last}",
@@ -344,7 +344,7 @@ export const ja = {
     seen: "最終確認",
     limit: "先頭 {n} 件",
     noMatch: "その名前のプレイヤーは台帳にいません。",
-    pending: "おばあちゃんが台帳をめくっています…",
+    pending: "おばあちゃんが台帳を探しています…",
   },
   errors: {
     notFound: {
@@ -366,6 +366,6 @@ export const ja = {
     manualNotRun: "このラウンドはまだ実行されていません。管理者が手動で開始します。",
     manualNoRows: "実行しても何も得られませんでした。管理者が手動でやり直します。",
     noEvents: "台帳にはまだイベントがありません。",
-    noMembers: "該当者なし。おばあちゃんが二度確認しました。",
+    noMembers: "該当するメンバーはいません。",
   },
 } as const satisfies Translation;

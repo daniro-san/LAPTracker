@@ -18,7 +18,8 @@ export const membersFr: MembersWords = {
   "list.notShown": "Hors liste : {n} sans fuseau horaire",
   "list.seeWho": "Voir qui",
   "list.heading": "Prendre des nouvelles et Besoin d’aide",
-  "list.headingLead": "Ce que nous avons vu, pour un mot amical. Rien n’est envoyé.",
+  "list.headingLead":
+    "Ce que nous avons vu, pour leur demander comment ils vont. Rien n’est envoyé.",
   "list.rest": "Tous les autres",
   "list.more": "Afficher {k} de plus · encore {n}",
   "list.showing": "{n} affichés sur {total}",

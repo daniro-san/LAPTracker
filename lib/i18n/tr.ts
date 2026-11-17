@@ -129,7 +129,7 @@ export const tr = {
     carriedTurnout: "Kills kazanan {share}",
     carriedSpread: "{low}–{high}, {n} etkinlik üzerinden",
     carriedRatioHelp:
-      "yp, Kills payı eksi Might payıdır. 3 etkinlikten itibaren altında, bu etkinliklerdeki Kills payı ÷ Might payı aralığı gösterilir.",
+      "yp (yüzde puan), Kills payı eksi Might payıdır. 3 etkinlik ve üzerinde, altındaki satır bu etkinliklerdeki Kills payı ÷ Might payı aralığını gösterir.",
     carriedPoints: "yp",
   },
   compare: {
@@ -152,7 +152,7 @@ export const tr = {
   merge: {
     title: "Birleştirme simülatörü",
     tag: "Simülasyon, plan değil",
-    lead: "İki ittifak tek olsaydı ne olurdu, Members sınırına göre. Yalnızca ittifak toplamları, isim yok.",
+    lead: "İki ittifak tek ittifak olarak sayılır ve Members sınırına karşı kontrol edilir. Yalnızca ittifak toplamları, üye adı yok.",
     link: "Birleştirmeyi simüle et",
     first: "İlk ittifak",
     second: "İkinci ittifak",
@@ -181,7 +181,7 @@ export const tr = {
   flow: {
     title: "Üye akışı",
     tag: "Yalnızca sayılar",
-    lead: "Takip edilen ittifaklar arasında üyelerin nereye gittiği: ilk günde her birinin olduğu ittifak, ikinci günle karşılaştırılmış. Yalnızca sayılar, üye adı yok.",
+    lead: "Takip edilen ittifaklar arasında üyelerin geçişleri: ilk günden ikinci güne. Hiçbir üyenin adı yazılmaz.",
     from: "Başlangıç",
     to: "Bitiş",
     action: "Göster",
@@ -191,7 +191,7 @@ export const tr = {
     totals:
       "{min} veya daha fazla geçiş · İttifak değiştiren: {moved} · Yeni: {arrived} · Ayrılan: {left}",
     small:
-      "{min} üyeden az sayılar, kalanlar dahil, gizlenir ve hiçbir toplama katılmaz; böylece bu sayfa küçük grupları öne çıkarmaz.",
+      "{min} üyeden az sayılar gizlenir ve kalanlar dahil hiçbir toplama girmez. Bu, küçük grupları korur.",
     rowNew: "Yeni",
     colLeft: "Ayrılan",
     legend:
@@ -209,7 +209,7 @@ export const tr = {
     title: "Sunucu dengesi",
     description:
       "Takip edilen her ittifakın, takip edilen ittifakların Might’ındaki payı ve varsayımsal bir blok kurucu.",
-    lead: "Hiçbir ittifak, takip edilen ittifakların Might’ının {max} payından fazlasını tutmuyor; ilk {n} birlikte {top} tutuyor.",
+    lead: "Hiçbir ittifak, takip edilen ittifakların Might’ının {max} payından fazlasını tutmuyor. İlk {n} birlikte {top} tutuyor.",
     includes: "Might, binaları ve teknolojiyi içerir.",
     basis: "{n} takip edilen ittifak, {date} okuması.",
     total: "Takipteki toplam",
@@ -220,7 +220,7 @@ export const tr = {
     builder: "Blok kurucu",
     hypothetical: "Varsayımsal",
     builderHelp:
-      "Bir ittifakta A ya da B’ye dokun, bir blok dene. Bu aritmetik, tahmin ya da duyuru değil.",
+      "Bir ittifakta A ya da B’ye dokun, bir blok dene. Bu yalnızca sayıları toplar. Gerçek bir bloku tahmin etmez, duyurmaz.",
     bloc: "Blok {bloc}",
     blocShare: "Takip edilen ittifakların Might payı: {share}",
     blocAlliances: "İttifaklar",
@@ -242,7 +242,7 @@ export const tr = {
     help: "Takip edilen ittifaklar, her günün okumasındaki Might’a göre sıralanır; {from} sonrası değişim de gösterilir. Bir ittifakın okunmadığı gün dışarıda bırakılır. Buradaki sunucu, takip edilen ittifakların toplamıdır.",
     lead: "{label}, {to} günü Might’a göre {rank}, {from} günü {before} sıradaydı.",
     leadGrowth:
-      "Ondan beri Might’ı {growth} değişti; takip edilen ittifakların toplamı {server} değişti.",
+      "Ondan beri Might’ı {growth} değişti. Takip edilen ittifakların toplamı {server} değişti.",
     server: "Takipteki toplam",
     growthSince: "{from} sonrası {growth}",
     trend: "{from} itibarıyla sıra {first}, {to} itibarıyla {last}",
@@ -351,7 +351,7 @@ export const tr = {
     seen: "Görüldü",
     limit: "İlk {n}",
     noMatch: "Defterde bu isimde oyuncu yok.",
-    pending: "Nine defteri karıştırıyor…",
+    pending: "Nine defterde arıyor…",
   },
   errors: {
     notFound: {
@@ -373,6 +373,6 @@ export const tr = {
     manualNotRun: "Bu tur henüz çalıştırılmadı. Admin elle başlatır.",
     manualNoRows: "Çalıştırma bir şey getirmedi. Admin elle yeniden çalıştırır.",
     noEvents: "Defterde henüz etkinlik yok.",
-    noMembers: "Eşleşen kimse yok. Nine iki kez baktı.",
+    noMembers: "Burada eşleşen kimse yok.",
   },
 } as const satisfies Translation;
