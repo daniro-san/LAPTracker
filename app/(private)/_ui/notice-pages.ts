@@ -15,6 +15,7 @@ import { RENEW_MS } from "@/lib/private/session";
 import { SLUG } from "@/lib/private/sign-in";
 import { serverDay } from "@/lib/schedule";
 
+import { LANGUAGE_CODE } from "./languages";
 import { refuse } from "./refuse";
 
 /** Checks access first, then reads; a refused visitor goes where `refuse` sends them, else to the sign-in. */
@@ -71,6 +72,20 @@ export function noticeWords(language: WorkspaceLanguage, t: WorkspaceDictionary)
           ]
         : []),
     ],
+    /** "Posted to Discord by Rook · Tue, Nov 17 14:02 ST · EN, PT" (D102). */
+    posted: (
+      p: { by: string | null; at: Date; languages: string[] } | null,
+      /** The channel's name for the audience it was posted to, when still set up. */
+      channel: string | null,
+    ) =>
+      p &&
+      fill(t["notices.publish.last"], {
+        ...by(p.by, p.at),
+        where: channel ? `#${channel}` : "Discord",
+        languages: p.languages.map((l) => LANGUAGE_CODE[l as NoticeLanguage] ?? l).join(", "),
+      }),
+    /** "Rook · Tue, Nov 17 14:02 ST": an earlier version's line (D102). */
+    version: (name: string | null, at: Date) => fill(t["notices.history.by"], by(name, at)),
     written: (name: string | null, at: Date) => fill(t["notices.written"], by(name, at)),
     changed: (name: string | null, at: Date) => fill(t["notices.changed"], by(name, at)),
   };

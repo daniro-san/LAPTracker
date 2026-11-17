@@ -13,6 +13,14 @@ import { LANGUAGE_NAME } from "./languages";
 /** The notice's fields as the page sent them: each value and its version. */
 export type NoticeFields = Record<NoticeField, { value: string; version: number }>;
 
+/** One earlier save of the notice (D102): who and when in words, and the fields it saved. */
+export interface HistoryItem {
+  id: number;
+  /** "Rook · Tue, Nov 17 14:02 ST". */
+  line: string;
+  changes: { field: NoticeField; value: string }[];
+}
+
 /** A field someone else saved first, as the 409 carries it. */
 export interface Conflict {
   field: NoticeField;

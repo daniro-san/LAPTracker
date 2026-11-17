@@ -1,5 +1,5 @@
 // The notices library's tables (issue 304, D81), apart from lib/schema.ts for its size. drizzle.config.ts lists
-// both files; migration 0021 creates these two tables.
+// this file; migration 0021 creates the first two tables, 0028 the publishes (D102).
 import { sql } from "drizzle-orm";
 import {
   check,
@@ -68,5 +68,42 @@ export const noticeEdits = pgTable(
       "notice_edits_field_check",
       sql`${t.field} in ('title', 'en', 'pt-BR', 'fr', 'for_members', 'ends_on')`,
     ),
+  ],
+);
+
+/**
+ * Each "Publish to Discord" of a notice (D102): who, when, to which audience's channel and in which
+ * languages, and how it ended. The row is claimed before anything is posted, under the publish sheet's
+ * request id (D100), so a double tap or a retry posts once. No webhook URL, channel name or text is kept.
+ */
+export const noticePublishes = pgTable(
+  "notice_publishes",
+  {
+    id: serial("id").primaryKey(),
+    workspaceId: integer("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    noticeId: integer("notice_id")
+      .notNull()
+      .references(() => notices.id, { onDelete: "cascade" }),
+    requestId: text("request_id").notNull(),
+    /** "members" or "leaders": the notice's audience when it was posted, which chose the channel. */
+    audience: text("audience").notNull(),
+    /** The languages posted, comma-separated, in the order posted. */
+    languages: text("languages").notNull(),
+    /** "posting" while it runs, then "posted" or "failed". */
+    status: text("status").notNull(),
+    /** How many messages Discord accepted. */
+    messages: integer("messages").notNull().default(0),
+    publishedBy: integer("published_by").references(() => workspaceUsers.id, {
+      onDelete: "set null",
+    }),
+    publishedAt: tstz("published_at").notNull(),
+  },
+  (t) => [
+    uniqueIndex("notice_publishes_request_unique").on(t.workspaceId, t.requestId),
+    index("notice_publishes_notice_idx").on(t.noticeId, t.id),
+    check("notice_publishes_audience_check", sql`${t.audience} in ('members', 'leaders')`),
+    check("notice_publishes_status_check", sql`${t.status} in ('posting', 'posted', 'failed')`),
   ],
 );

@@ -6,6 +6,9 @@ import { z } from "zod";
 
 import type { Db } from "../db";
 import {
+  HISTORY_LIMIT,
+  noticeEditRows,
+  noticeTitles,
   workspaceNotice,
   workspaceNoticeList,
   writeNotice,
@@ -13,6 +16,7 @@ import {
   type NoticeListRow,
 } from "../repo/notices";
 import type { WorkspaceAccess } from "./access";
+import { versionsOf, type NoticeVersion } from "./notice-history";
 import {
   isNoticeLanguage,
   NOTICE_FIELDS,
@@ -109,6 +113,10 @@ function summaryOf(row: NoticeListRow): NoticeSummary {
   };
 }
 
+/** The titles of these notices by id, for the calendar entries linked to them (D102). */
+export const titlesOf = (db: Db, access: WorkspaceAccess, ids: number[]) =>
+  noticeTitles(db, access.workspaceId, [...new Set(ids)]);
+
 /** The library: at most LIST_LIMIT notices, without their text. */
 export async function noticesList(db: Db, access: WorkspaceAccess): Promise<NoticeSummary[]> {
   return (await workspaceNoticeList(db, access.workspaceId)).map(summaryOf);
@@ -134,6 +142,19 @@ export async function noticeDetail(
       ]),
     ) as NoticeDetail["fields"],
     stale: staleLanguages(state),
+  };
+}
+
+/** The notice's saves, newest first, for the editor's "Earlier versions" (D102). */
+export async function noticeHistory(
+  db: Db,
+  access: WorkspaceAccess,
+  id: number,
+): Promise<{ versions: NoticeVersion[]; cut: number | undefined }> {
+  const rows = await noticeEditRows(db, access.workspaceId, id);
+  return {
+    versions: versionsOf(rows),
+    cut: rows.length === HISTORY_LIMIT ? HISTORY_LIMIT : undefined,
   };
 }
 

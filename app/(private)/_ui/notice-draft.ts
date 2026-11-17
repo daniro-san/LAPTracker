@@ -26,6 +26,8 @@ export interface Draft {
   kept: Partial<Record<NoticeLanguage, true>>;
   /** A translation that came back partly untranslated even after its retry (D81). */
   partly: Partial<Record<NoticeLanguage, true>>;
+  /** Filled from an earlier version ("Restore this version", D102). */
+  restored: Partial<Record<NoticeLanguage, true>>;
 }
 
 export const omit = <T extends object>(record: T, key: PropertyKey): T =>
@@ -40,7 +42,7 @@ export function startDraft(fields: NoticeFields): Draft {
   ) as Values;
   const versions = Object.fromEntries(NOTICE_FIELDS.map((f) => [f, fields[f].version]));
   const draft = { values, base: values, versions: versions as Draft["versions"] };
-  return { ...draft, from: {}, undo: {}, kept: {}, partly: {} };
+  return { ...draft, from: {}, undo: {}, kept: {}, partly: {}, restored: {} };
 }
 
 const changed = (d: Draft, f: NoticeField) =>
@@ -74,6 +76,7 @@ export function withDrafts(
   let next = { ...d, values: { ...d.values }, undo: { ...d.undo }, partly: { ...d.partly } };
   for (const [language, text] of Object.entries(drafts) as [NoticeLanguage, string][]) {
     next.undo[language] = d.undo[language] ?? d.values[language];
+    next.restored = omit(next.restored, language);
     next.values[language] = text;
     next.partly = partly.includes(language)
       ? { ...next.partly, [language]: true }
@@ -85,6 +88,25 @@ export function withDrafts(
   }
   // The language translated from is now the source text, not a translation.
   if (ask.kind === "translate") next = { ...next, from: omit(next.from, ask.from) };
+  return next;
+}
+
+/**
+ * "Restore this version" (D102): each field as it stood then. A language that changes becomes a draft to
+ * Accept or Undo, like a translation; the other fields simply take their earlier value.
+ */
+export function withRestored(d: Draft, earlier: Partial<Values>): Draft {
+  const next = { ...d, values: { ...d.values }, undo: { ...d.undo }, restored: { ...d.restored } };
+  for (const [field, value] of Object.entries(earlier) as [NoticeField, string][]) {
+    if (next.values[field] === value) continue;
+    if (isNoticeLanguage(field)) {
+      next.undo[field] = d.undo[field] ?? d.values[field];
+      next.restored[field] = true;
+      next.from = omit(next.from, field);
+      next.partly = omit(next.partly, field);
+    }
+    next.values[field] = value;
+  }
   return next;
 }
 
@@ -102,6 +124,7 @@ export function settle(d: Draft, c: Conflict, keep: "theirs" | "mine"): Draft {
     from: omit(d.from, c.field),
     undo: omit(d.undo, c.field),
     kept: omit(d.kept, c.field),
+    restored: omit(d.restored, c.field),
   };
 }
 
@@ -110,6 +133,7 @@ export const accept = (d: Draft, language: NoticeLanguage): Draft => ({
   ...d,
   undo: omit(d.undo, language),
   partly: omit(d.partly, language),
+  restored: omit(d.restored, language),
 });
 
 /** Undo: the text from before the draft comes back. */
@@ -119,6 +143,7 @@ export const discard = (d: Draft, language: NoticeLanguage): Draft => ({
   undo: omit(d.undo, language),
   partly: omit(d.partly, language),
   from: omit(d.from, language),
+  restored: omit(d.restored, language),
 });
 
 /**
@@ -139,8 +164,14 @@ export function tabState(d: Draft, language: NoticeLanguage, staleSaved: boolean
 }
 
 /** Which action filled the language's draft, or null when it holds none. */
-export const draftKind = (d: Draft, language: NoticeLanguage): "translate" | "improve" | null =>
-  d.undo[language] === undefined ? null : d.from[language] ? "translate" : "improve";
+export function draftKind(
+  d: Draft,
+  language: NoticeLanguage,
+): "translate" | "improve" | "restore" | null {
+  if (d.undo[language] === undefined) return null;
+  if (d.restored[language]) return "restore";
+  return d.from[language] ? "translate" : "improve";
+}
 
 /**
  * What Translate does from the active tab: text the officer wrote (or rewrote) there goes to the other

@@ -81,6 +81,14 @@ function Item(props: {
         <p className="font-semibold">{item.title}</p>
         <Roles item={item} words={words} slug={props.slug} />
         {item.notes && <p className="text-body-sm whitespace-pre-line text-ink/85">{item.notes}</p>}
+        {item.notice && (
+          <a
+            href={`/w/${props.slug}/notices/${item.notice.id}`}
+            className="inline-flex min-h-11 items-center font-semibold text-plum underline underline-offset-4"
+          >
+            {fill(words["calendar.notice"], { title: item.notice.title })}
+          </a>
+        )}
         {item.link && (
           <a
             href={item.link}
@@ -160,6 +168,8 @@ export function CalendarAgenda(props: {
   words: CalendarSheetWords;
   slug: string;
   zone: string;
+  /** The workspace's notices, for the sheet's "Notice" choice (D102). */
+  notices: FormProps["notices"];
   /** The day "Add an event" starts on: today in this week, else its Monday. */
   addDay: string;
 }) {
@@ -211,6 +221,7 @@ export function CalendarAgenda(props: {
           words={words}
           slug={props.slug}
           zone={props.zone}
+          notices={props.notices}
           mode={open}
           onDone={done}
           onClose={() => setOpen(null)}

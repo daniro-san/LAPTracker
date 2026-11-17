@@ -35,12 +35,15 @@ const link = z
   .refine((s) => /^https?:\/\/[^\s]+$/i.test(s) && URL.canParse(s))
   .nullable();
 const uid = z.number().int().positive();
+/** The notice that goes with the entry (D102); the workspace's own, checked on write. */
+const notice = z.number().int().positive().nullable();
 
 const shared = {
   day,
   notes: notes.default(null),
   link: link.default(null),
   forMembers: z.boolean().default(false),
+  notice: notice.default(null),
 };
 const timed = { ...shared, minute, weekly: z.boolean().default(false) };
 
@@ -80,6 +83,7 @@ export const fieldChange = z.discriminatedUnion("field", [
   change("notes", notes),
   change("link", link),
   change("forMembers", z.boolean()),
+  change("notice", notice),
   change("when", z.object({ day, minute }).strict().nullable()),
   change("coach", z.object({ uid }).strict().nullable()),
   change(
@@ -115,6 +119,7 @@ const FITS: Record<Field, Fits> = {
   notes: () => true,
   link: () => true,
   forMembers: () => true,
+  notice: () => true,
 };
 
 /** True when the change belongs to this kind of entry: a level only for Cheese Trap and Undead Siege, an

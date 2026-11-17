@@ -1,11 +1,16 @@
-// /w/[slug]/notices/[id] (issue 304): one notice, read in each language with a Copy per language, and its
-// editor. A notice of another workspace is a 404, like one that does not exist (D71).
+// /w/[slug]/notices/[id] (issue 304): one notice, read in each language with its copies, its editor with the
+// earlier versions, "Publish to Discord" and the calendar link (issue 345, D102). A notice of another
+// workspace is a 404, like one that does not exist (D71).
 import { notFound } from "next/navigation";
 
 import { getAppContext } from "@/lib/app-context";
-import { noticeDetail } from "@/lib/private/notices";
+import { getEnv } from "@/lib/env";
+import { audienceOf, lastPublish, noticeChannels } from "@/lib/private/notice-publish";
+import { noticeDetail, noticeHistory } from "@/lib/private/notices";
+import { serverDay } from "@/lib/schedule";
 
 import { SignedInFrame, workspaceWords } from "../../../../_ui/Frame";
+import { noticeCalendar } from "../../../../_ui/notice-calendar";
 import { languagesFor, noticePage, noticeWords, sourceFor } from "../../../../_ui/notice-pages";
 import { NoticeScreen } from "../../../../_ui/NoticeScreen";
 
@@ -17,15 +22,31 @@ export default async function NoticePage({
   const { slug, id: raw } = await params;
   const id = /^[1-9]\d{0,8}$/.test(raw) ? Number(raw) : null;
   if (id === null) notFound();
-  const {
-    access,
-    data: notice,
-    waiting,
-  } = await noticePage(slug, (db, a) => noticeDetail(db, a, id), `/${id}`);
-  if (!notice) notFound();
   const { language, t } = await workspaceWords();
+  const today = serverDay(new Date(), getEnv());
+  const { access, data, waiting } = await noticePage(
+    slug,
+    async (db, a) => {
+      const notice = await noticeDetail(db, a, id);
+      if (!notice) return null;
+      const [history, last, calendar] = await Promise.all([
+        noticeHistory(db, a, id),
+        lastPublish(db, a, id),
+        noticeCalendar(db, a, id, today, { t, language }),
+      ]);
+      return { notice, history, last, calendar };
+    },
+    `/${id}`,
+  );
+  if (!data) notFound();
+  const { notice, history, last, calendar } = data;
   const words = noticeWords(language, t);
   const languages = languagesFor(language);
+  const audience = audienceOf(notice.forMembers);
+  const channels = noticeChannels(getEnv(), slug);
+  const nameOf = (a: string) =>
+    channels[a === "members" ? "members" : "leaders"]?.name.replace(/^#/, "") ?? null;
+  const channel = nameOf(audience);
   // A new version of any field remounts the screen, so a save or a refresh closes the editor.
   const key = Object.values(notice.fields)
     .map((f) => f.version)
@@ -56,6 +77,18 @@ export default async function NoticePage({
           changed: words.changed(notice.updatedBy, notice.updatedAt),
           flags: words.flags(notice),
         }}
+        history={history.versions.map((v) => ({
+          id: v.id,
+          line: words.version(v.by, v.at),
+          changes: v.changes,
+        }))}
+        historyCut={history.cut}
+        publish={{
+          audience,
+          channel,
+          last: words.posted(last, last && nameOf(last.audience)),
+        }}
+        calendar={calendar}
       />
     </SignedInFrame>
   );
