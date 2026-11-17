@@ -15,11 +15,13 @@ import { editOriginal, type Webhook } from "./discord-api";
 import type { TranslationJob } from "./discord-translate";
 import { privateLog } from "./log";
 import {
+  forMeMessage,
   HEADING,
   languageList,
   messagesOf,
   partlyLine,
   pickerRows,
+  switchRows,
   unmask,
 } from "./translate-message";
 
@@ -244,16 +246,28 @@ const missingLine = (
 ) =>
   `${t["translate.discord.missing"].replace("{languages}", languageList(language, failed))} ${failureLine(t, failure)}`;
 
-/** "For me": the private reply becomes the translation, or a line saying why there is none. */
+/**
+ * "For me": the private reply becomes the translation with a button for each other language, or a line
+ * saying why there is none (after a press, with the text shown before and its buttons back).
+ */
 async function forMe(deps: TranslationDeps, ai: ChatModel, job: TranslationJob) {
   const t = WORKSPACE_DICTIONARIES[job.language];
-  const { done, failure } = await translateAll(ai, job);
-  if (done.length > 0) privateLog("discord.translate.me", { languages: done.length });
-  const message =
-    done.length > 0
-      ? { embeds: done.map(embedOf) }
-      : { content: failure ? failureLine(t, failure) : t["translate.discord.same"] };
-  await editOwn(deps, job.webhook, message);
+  const { done, failed, failure } = await translateAll(ai, job);
+  const [d] = done;
+  const to = job.to[0];
+  if (failed.length > 0 || !to) {
+    const content = failureLine(t, failure);
+    const again = job.pressed && job.from && { components: switchRows(job.from, job.userId) };
+    await editOwn(deps, job.webhook, { content, ...again });
+    return;
+  }
+  if (d) privateLog("discord.translate.me", { languages: 1 });
+  // The translator found the text already in that language: shown as it is, with the other languages.
+  const shown = d ?? { to, text: unmask(job.text, job.kept), partly: false };
+  const line =
+    !d && to === job.language ? t["translate.discord.already"] : t["translate.discord.other"];
+  const message = forMeMessage(shown.to, shown.text, shown.partly, line, job.userId);
+  await editOwn(deps, job.webhook, { content: "", ...message });
 }
 
 export async function runTranslation(deps: TranslationDeps, job: TranslationJob): Promise<void> {
