@@ -39,10 +39,10 @@ Closes #331 (the members' board, the first slice of #301); part of #293. Rules a
 - The e2e's iPhone pass could not do the Discord round trip in WebKit. WebKit drops the `Secure` OAuth state cookie on `http://localhost` and the callback answers `bad_state`. Chrome signed in and the session cookie was handed to WebKit. The sign-in itself is covered by the Chrome runs and the unit tests.
 
 ## Verified
-- **`pnpm check` exits 0**: prettier, eslint, tsc; vitest **165 files passed, 2 skipped; 875 tests passed, 4 skipped** (after the rebase on 99f46e5); drift gate fine; i18n "17 languages up to date".
+- **`pnpm check` exits 0**: prettier, eslint, tsc; vitest **167 files passed, 2 skipped; 881 tests passed, 4 skipped** (after the review round); drift gate fine; i18n "17 languages up to date".
 - **Tests added or changed:**
-  - `app/(private)/api/w/[slug]/member-session.test.ts`: 17 tests. It walks all 15 officer route files (including `pending`, added by #385) and checks that a member session gets the same status and body as no session. Where the session check is reached, an officer's session passes it. Start here: a member gets 401, an officer 200 `{version: 1}`.
-  - `lib/private/board.test.ts`: 2 tests. Only member-marked entries and notices from today, no author, seat or edit data, and a link to a leadership notice dropped. Start here: two officers' languages both kept, a stale language refused with who.
+  - `app/(private)/api/w/[slug]/member-session.test.ts`: 17 tests. It walks all 15 officer route files (including `pending`, added by #385) with a minimal valid request per route and method (a fixture map), and checks that no session and a member's session both get `401 signed_out` while an officer's does not; a route without a fixture, or one that answers before its session check, fails. Start here: a member gets 401, an officer 200 `{version: 1}`.
+  - `lib/private/board.test.ts`: 4 tests (2 more in the review round, below). Only member-marked entries and notices from today, no author, seat or edit data, and a link to a leadership notice dropped. Start here: two officers' languages both kept, a stale language refused with who.
   - `lib/private/sign-in.test.ts`: the member tier (board landing, 30-day cookie, `member` refusal, served on day 29, expired on day 30), the officer's preview, the outsider, a demoted officer becoming a member, and an expired allowlist outside the server.
 - **Local e2e: 51 of 51 checks pass.** Setup: a production build (`next build` + `next start` on :3967), local Postgres with all 31 migrations, the bridge, and a Discord stand-in with Rook (R4), Rio (member) and Ash (not in the server). The browser time zone was America/Sao_Paulo. No upstream, Groq or real Discord call. The checks:
   - Rio (PT, 360) lands on the board, and the session cookie runs for 30 days.
@@ -67,10 +67,18 @@ Closes #331 (the members' board, the first slice of #301); part of #293. Rules a
 
   Designer pass: the hierarchy reads well at 360 in PT, nothing overflows, and the time pair and language tabs are clear. No fix was needed.
 
+## Review round (PR 386)
+- **Route test** (`member-session.test.ts`): every route and method gets a minimal valid request from a fixture map; no session and a member's session must both answer `401 signed_out` and an officer's must not get 401. Exclusions are listed with a reason (login, logout; board and how-to are pages). A route without a fixture, or one answering before its session check, fails. 17 tests over 15 routes.
+- **Officer door**: `requireWorkspace` serves only `tier === "officer"`; `createSession` has no default tier (19 test callers now pass `"officer"`).
+- **Architecture**: `StartHereText` is re-exported from `lib/private/start-here.ts`; the UI no longer imports `lib/schema-board`.
+- **Copy**: `noaccess.blocked` names both the members' board and the Officers' Desk (EN, PT, FR).
+- **Tests added** (`lib/private/member-sessions.test.ts` for the first three, `board.test.ts`, the admin route test): a blocked member gets `blocked` from `requireBoard`; Sign out everyone ends a member session; a member promoted to R4 gets a new officer session and the member one is deleted; the board from a Sunday (this week's theme stays, next Monday's is a day, a weekly repeat into next week, a cancelled week left out, today+6 in and today+7 out); a notice ending today is kept and one ending yesterday hidden; the admin "Sign out members" route ends only that workspace's member sessions, behind the PIN.
+- **Out-of-date languages**: a notice language behind the newest (`staleOf`) shows "This translation may be behind the newest version. The other languages are one tap away." (EN, PT, FR).
+- **Owner's asks**: `/admin` "Sign out members" (sheet first, PIN, member sessions of that workspace only) and Translate on the Start here editor (drafts with Accept / Undo, nothing saved until Save, 3,000-character limit). Both recorded in D105.
+
 ## Open issues
 - `noaccess.no_role` is no longer reached from the sign-in. An old link with `?why=no_role` still shows it. It could be removed with the reason list in D73.
-- A person who leaves the Discord server keeps the board for up to 30 days (D105). "Sign out everyone" is the instant way, but it signs out officers too. Member-only revocation would need a new `/admin` control.
-- Start here has no Translate button. The notices' translator (D81) could be reused later.
+- A person who leaves the Discord server keeps the board for up to 30 days (D105). "Sign out members" on `/admin` ends every member session at once; there is no per-person sign-out.
 - Officers cannot see which notices or entries members can see without opening the board. The "For members" tag on cards already shows it per item.
 - Member rows in `workspace_users` fall under D71's open retention question.
 
