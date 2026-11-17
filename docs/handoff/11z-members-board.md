@@ -4,7 +4,7 @@ Closes #331 (the members' board, the first slice of #301); part of #293. Rules a
 
 ## Built
 - **Member sessions.** An account in the workspace's Discord server with no leadership role (and no allowlist entry that still runs) now gets a member session instead of "No access".
-  - Column `workspace_sessions.tier` (`officer` default, `member`); migration `0030_members_board`.
+  - Column `workspace_sessions.tier` (`officer` default, `member`); migration `0031_members_board`.
   - A member session lasts 30 days (`MEMBER_SESSION_MS`) with no role check in between. Officer sessions (D99) are unchanged.
   - A member always lands on `/w/[slug]/board`.
 - **Two doors** in `lib/private/access.ts`.
@@ -39,9 +39,9 @@ Closes #331 (the members' board, the first slice of #301); part of #293. Rules a
 - The e2e's iPhone pass could not do the Discord round trip in WebKit. WebKit drops the `Secure` OAuth state cookie on `http://localhost` and the callback answers `bad_state`. Chrome signed in and the session cookie was handed to WebKit. The sign-in itself is covered by the Chrome runs and the unit tests.
 
 ## Verified
-- **`pnpm check` exits 0**: prettier, eslint, tsc; vitest **161 files passed, 2 skipped; 861 tests passed, 4 skipped**; drift gate fine; i18n "17 languages up to date".
+- **`pnpm check` exits 0**: prettier, eslint, tsc; vitest **165 files passed, 2 skipped; 875 tests passed, 4 skipped** (after the rebase on 99f46e5); drift gate fine; i18n "17 languages up to date".
 - **Tests added or changed:**
-  - `app/(private)/api/w/[slug]/member-session.test.ts`: 16 tests. It walks all 14 officer route files and checks that a member session gets the same status and body as no session. Where the session check is reached, an officer's session passes it. Start here: a member gets 401, an officer 200 `{version: 1}`.
+  - `app/(private)/api/w/[slug]/member-session.test.ts`: 17 tests. It walks all 15 officer route files (including `pending`, added by #385) and checks that a member session gets the same status and body as no session. Where the session check is reached, an officer's session passes it. Start here: a member gets 401, an officer 200 `{version: 1}`.
   - `lib/private/board.test.ts`: 2 tests. Only member-marked entries and notices from today, no author, seat or edit data, and a link to a leadership notice dropped. Start here: two officers' languages both kept, a stale language refused with who.
   - `lib/private/sign-in.test.ts`: the member tier (board landing, 30-day cookie, `member` refusal, served on day 29, expired on day 30), the officer's preview, the outsider, a demoted officer becoming a member, and an expired allowlist outside the server.
 - **Local e2e: 51 of 51 checks pass.** Setup: a production build (`next build` + `next start` on :3967), local Postgres with all 31 migrations, the bridge, and a Discord stand-in with Rook (R4), Rio (member) and Ash (not in the server). The browser time zone was America/Sao_Paulo. No upstream, Groq or real Discord call. The checks:

@@ -46,7 +46,7 @@ Amends D71's "Regular members are out of scope" and "Leadership only", for this 
 
 **What it never shows** (issue 331's no-gos, D75): officers' names or data, roster fields, statuses, notes, member facts, per-member lists, "my stats", rankings, online, coordinates, join date, avatars, caravan seats. The board has no public or unlisted link: every view goes through the sign-in. The response is `private, no-store`, and the `/w` layout's static metadata (D73) holds.
 
-**Start here** (`start_here`, migration 0030; `lib/private/start-here.ts`; `/w/[slug]/start-here`; `POST /api/w/[slug]/start-here`).
+**Start here** (`start_here`, migration 0031; `lib/private/start-here.ts`; `/w/[slug]/start-here`; `POST /api/w/[slug]/start-here`).
 
 - One record per workspace. Officers edit it; members read it.
 - Per language (en, pt-BR, fr) it holds three texts: "Words we use" (the glossary, up to 4,000 characters), "Alliance rules" (about 10 lines, up to 3,000) and "Who to ask" (up to 1,500).
