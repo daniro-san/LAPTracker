@@ -18,6 +18,7 @@ Part of #293. Follows PR #385 (D106, D107). Branch `fix/member-lifecycle-owner-a
   - `lib/private/roster-search.test.ts`: the name warning rule (`sameName`).
   - `lib/private/pending-members.test.ts`: "To match" after tonight's read, and after a newer read for one added later.
   - `lib/private/former-members.test.ts`: the newest Duel week of a former member; the key list now includes `duel`.
+  - `lib/private/import-new-member.test.ts`: an import to a reopened member with a stored fact appends version 2, and the same value again writes nothing. The first test's second save of an equal value now keeps version 1.
   - `app/(private)/api/w/[slug]/pending/route.test.ts`: the delete test is rewritten. Delete keeps the row (dismissed), its fact and its points, a second delete answers 404, and re-adding reopens the same uid.
 
 ## Decisions
@@ -25,6 +26,7 @@ Part of #293. Follows PR #385 (D106, D107). Branch `fix/member-lifecycle-owner-a
 - **Save waits for an answer** on a taken name, in both places. "Add anyway" is remembered per name key, so typing another matching name asks again.
 - **Import "Open" is "Pick them".** Leaving a draft would lose the officer's row fixes, so the import's action picks the member for the row instead of linking away.
 - **Home runs the match too.** Without it, Home would count a pending member that the next Members read would match. Running the match on Home also partly covers 11x open issue 2: the match no longer waits for an officer to open Members.
+- **The import never conflicts on a new member** (coordinator review): `withNewMembers` writes each fact of a "New member" row at that pending member's current version of the field. An equal value is skipped; another value appends (D80's fill or append). Before, the row sent version 0 and an open or reopened pending member with that fact answered 409.
 - **Reopen resets `created_at`** to the new add. A re-added member waits for the next roster read, as a new add does.
 
 ## Deviations
@@ -51,9 +53,8 @@ Part of #293. Follows PR #385 (D106, D107). Branch `fix/member-lifecycle-owner-a
 - **Screenshots** (not committed) are in `/private/tmp/claude-502/-Users-danilordasilva-orca-workspaces-LAPTracker-unicornfish/147759e3-1cdb-4ccd-b74a-1001498a1e18/scratchpad/11x2-shots/`: `home-to-match`, `members-to-match`, `add-name-taken`, `delete-ask`, `dismissed`, `former-duel`, `former-sheet` and `import-name-taken`, each at `360-light-{en,pt}`. A design pass found that the Dismissed summary had no open/closed marker. It now keeps the default marker.
 
 ## Open issues
-1. The import's "New member" for a member update sends version 0. If the reused pending member (open or reopened) already has that fact, the save conflicts. This existed for open pending members before this change; reopening makes it more likely.
-2. Only 360 light EN/PT screenshots were taken, as the task asked. 1280, dark and WebKit were not re-run for these screens.
-3. A former member whose newest saved week has only daily values shows "—" for the week total, as the member card does.
+1. Only 360 light EN/PT screenshots were taken, as the task asked. 1280, dark and WebKit were not re-run for these screens.
+2. A former member whose newest saved week has only daily values shows "—" for the week total, as the member card does.
 
 ## Next
 Session: the next workspace issue the orchestrator picks. The workspace track has no prompt in `docs/SESSION_PLAYBOOK.md`.

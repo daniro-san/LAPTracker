@@ -24,8 +24,9 @@ import {
 import { anyRoster } from "../repo/workspace-any-roster";
 import { nameKey } from "../screenshot/name-key";
 import type { WorkspaceAccess } from "./access";
+import type { FactField, MemberFacts } from "./fact-fields";
 import { SaveRefused } from "./import-kinds";
-import { isMember, saveFacts, type ChangeResult, type FactChange } from "./member-facts";
+import { factsOf, isMember, saveFacts, type ChangeResult, type FactChange } from "./member-facts";
 
 /** A pending member's uid in member_facts: game uids are positive. */
 export const pendingUid = (id: number) => -id;
@@ -113,7 +114,12 @@ type SavedRow = {
   uid?: number | undefined;
   newName?: string | undefined;
   field?: string | undefined;
+  value?: unknown;
 };
+
+/** The stored version of a row's fact, if the member has one. */
+const factOf = (facts: MemberFacts | undefined, field: string | undefined) =>
+  field === undefined ? undefined : facts?.[field as FactField];
 
 /**
  * A screenshot save's rows each name a member of the newest roster, a pending member, or a new member's
@@ -140,7 +146,8 @@ export async function rowsFit(
 /**
  * A screenshot save's rows with each "New member: <name>" row given its pending member's uid, made or
  * reused by name key. It runs inside the save's transaction; two rows that turn out to be the same
- * member and fact refuse the save.
+ * member and fact refuse the save. A new member's fact is written at its current version, since the
+ * officer saw none (fill or append, D80): an equal value is left as it is, another one appends.
  */
 export async function withNewMembers<R extends SavedRow>(
   db: Db,
@@ -149,10 +156,14 @@ export async function withNewMembers<R extends SavedRow>(
   now: Date,
 ): Promise<(Omit<R, "uid" | "newName"> & { uid: number })[]> {
   const out: (Omit<R, "uid" | "newName"> & { uid: number })[] = [];
+  const reused = rows.some((r) => r.newName !== undefined && r.field !== undefined);
+  const facts = reused ? await factsOf(db, access) : new Map<number, MemberFacts>();
   for (const { newName, uid, ...rest } of rows) {
     const id = newName === undefined ? uid : (await openPending(db, access, newName, now))?.uid;
     if (id === undefined) throw new SaveRefused("bad_rows");
-    out.push({ ...rest, uid: id });
+    const stored = newName === undefined ? undefined : factOf(facts.get(id), rest.field);
+    if (stored && stored.value === rest.value) continue;
+    out.push({ ...rest, uid: id, ...(stored && { version: stored.version }) });
   }
   if (new Set(out.map((r) => `${r.uid}:${r.field ?? ""}`)).size !== out.length)
     throw new SaveRefused("bad_rows");
