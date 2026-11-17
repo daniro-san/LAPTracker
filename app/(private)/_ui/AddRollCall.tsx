@@ -3,7 +3,6 @@
 // "Add a roll call" (issue 298): a KvK shield, an Undead Siege or plunders on a day, for an occasion the
 // Calendar does not hold. The sheet makes one request id when it opens (D100), so a retry after a lost
 // answer opens the same roll call; a second add of the same kind and day opens the first one too.
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
@@ -25,7 +24,6 @@ function AddSheet(props: {
   onClose: () => void;
 }) {
   const { words } = props;
-  const router = useRouter();
   const [requestId] = useState(() => crypto.randomUUID());
   const [kind, setKind] = useState<Kind>("shield");
   const [day, setDay] = useState(props.day);
@@ -40,8 +38,9 @@ function AddSheet(props: {
       requestId,
     });
     setBusy(false);
+    // A full load: a client push would be undone by the sheet giving its history entry back on unmount.
     if (status === 200 && json.id)
-      return router.push(`/w/${props.slug}/roll-call/mark?id=${json.id}`);
+      return window.location.assign(`/w/${props.slug}/roll-call/mark?id=${json.id}`);
     setError(status === 401 ? SIGNED_OUT : words["roll.add.failed"]);
   };
   return (
