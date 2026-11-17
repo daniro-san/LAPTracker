@@ -1,6 +1,7 @@
 "use client";
 
-// /admin's Workspaces card (D71, D73): each workspace with its allowlist and a "Sign out everyone" button,
+// /admin's Workspaces card (D71, D73, D105): each workspace with its allowlist, "Sign out everyone" and
+// "Sign out members" (officers stay signed in), each asked in a sheet first,
 // a form that adds or edits a workspace, and one that adds an allowlist entry. Each press sends the PIN as
 // x-edit-pin, like the run buttons, and shows the outcome in words.
 import { useRouter } from "next/navigation";
@@ -25,6 +26,7 @@ export interface WorkspaceView {
   guild: string;
   roles: string;
   sessions: number;
+  memberSessions: number;
   allowlist: string[];
 }
 
@@ -88,12 +90,15 @@ function fields(e: React.FormEvent<HTMLFormElement>): Record<string, string> {
   return Object.fromEntries(new FormData(e.currentTarget)) as Record<string, string>;
 }
 
+/** Which sign-out the sheet asks about: every session, or only members' (D105). */
+type SignOut = { w: WorkspaceView; members: boolean };
+
 function WorkspaceList({
   workspaces,
   onSignOut,
 }: {
   workspaces: WorkspaceView[];
-  onSignOut: (w: WorkspaceView) => void;
+  onSignOut: (s: SignOut) => void;
 }) {
   if (workspaces.length === 0) return <p className="text-ink/70">{t.none}</p>;
   return (
@@ -109,13 +114,23 @@ function WorkspaceList({
           <p className="text-body-sm break-words text-ink/80">
             {t.allowlist}: {w.allowlist.length === 0 ? t.allowlistNone : w.allowlist.join(", ")}
           </p>
-          <button
-            type="button"
-            onClick={() => onSignOut(w)}
-            className={buttonClass("secondary", "mt-2")}
-          >
-            {t.signOut}
-          </button>
+          {/* The narrower action first; everyone (the owner too) is the dangerous one (D105). */}
+          <p className="mt-2 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => onSignOut({ w, members: true })}
+              className={buttonClass("secondary")}
+            >
+              {t.signOutMembers}
+            </button>
+            <button
+              type="button"
+              onClick={() => onSignOut({ w, members: false })}
+              className={buttonClass("secondary", "font-semibold text-seal")}
+            >
+              {t.signOut}
+            </button>
+          </p>
         </li>
       ))}
     </ul>
@@ -206,14 +221,14 @@ function AllowForm({ workspaces, run }: { workspaces: WorkspaceView[]; run: Run 
 
 export function WorkspacesCard({ workspaces }: { workspaces: WorkspaceView[] }) {
   const { run, message, sheet } = usePinCall();
-  const [confirm, setConfirm] = useState<WorkspaceView | null>(null);
+  const [confirm, setConfirm] = useState<SignOut | null>(null);
   const answer = (yes: boolean) => {
-    const w = confirm;
+    const asked = confirm;
     setConfirm(null);
-    if (!yes || !w) return;
+    if (!yes || !asked) return;
     run({
-      url: "/api/admin/workspaces/sign-out",
-      body: { workspace_id: w.id },
+      url: `/api/admin/workspaces/${asked.members ? "sign-out-members" : "sign-out"}`,
+      body: { workspace_id: asked.w.id },
       ok: (a) => fill(t.ended, { n: Number(a.ended ?? 0) }),
     });
   };
@@ -224,7 +239,17 @@ export function WorkspacesCard({ workspaces }: { workspaces: WorkspaceView[] }) 
       <WorkspaceForm run={run} />
       {workspaces.length > 0 && <AllowForm workspaces={workspaces} run={run} />}
       {confirm && (
-        <ConfirmSheet text={fill(t.signOutConfirm, { slug: confirm.slug })} onAnswer={answer} />
+        <ConfirmSheet
+          text={fill(
+            confirm.members
+              ? confirm.w.memberSessions === 1
+                ? t.signOutMembersOne
+                : t.signOutMembersConfirm
+              : t.signOutConfirm,
+            { slug: confirm.w.slug, n: confirm.w.memberSessions },
+          )}
+          onAnswer={answer}
+        />
       )}
       {sheet}
     </div>

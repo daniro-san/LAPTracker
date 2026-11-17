@@ -66,7 +66,8 @@ export const noticesEn = {
   "notices.ai.busy": "The translator is busy. Try again in a minute.",
   "notices.ai.failed": "The translator did not answer this time. Try again, or write it yourself.",
   "notices.show": "Show to members",
-  "notices.show.help": "Members cannot see notices yet. Turn this on to have it ready.",
+  "notices.show.help":
+    "Members see it on their board, with its end date. Leave it off for leadership plans like KvK.",
   "notices.endsOn": "Ends on",
   "notices.endsOn.help": "Optional. After this day it leaves the members’ board.",
   "notices.clear": "Clear",
@@ -155,7 +156,8 @@ export const noticesPt: Record<NoticesKey, string> = {
   "notices.ai.busy": "O tradutor está ocupado. Tente de novo em um minuto.",
   "notices.ai.failed": "O tradutor não respondeu desta vez. Tente de novo ou escreva você mesmo.",
   "notices.show": "Mostrar aos membros",
-  "notices.show.help": "Os membros ainda não veem os avisos. Ligue para deixar este pronto.",
+  "notices.show.help":
+    "Os membros veem no mural deles, com a data de fim. Deixe desligado para planos da liderança, como os de KvK.",
   "notices.endsOn": "Termina em",
   "notices.endsOn.help": "Opcional. Depois deste dia, sai do mural dos membros.",
   "notices.clear": "Limpar",
@@ -245,7 +247,7 @@ export const noticesFr: Record<NoticesKey, string> = {
     "Le traducteur n’a pas répondu cette fois. Réessayez, ou écrivez-le vous-même.",
   "notices.show": "Montrer aux membres",
   "notices.show.help":
-    "Les membres ne voient pas encore les annonces. Activez-le pour que celle-ci soit prête.",
+    "Les membres la voient sur leur tableau, avec sa date de fin. Laissez-le désactivé pour les plans de la direction, comme ceux de KvK.",
   "notices.endsOn": "Se termine le",
   "notices.endsOn.help": "Facultatif. Après ce jour, elle quitte le tableau des membres.",
   "notices.clear": "Effacer",

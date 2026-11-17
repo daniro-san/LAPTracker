@@ -1,6 +1,7 @@
 // The workspace's own words in English, Brazilian Portuguese and French (D71, issue #305): separate from
 // lib/copy.ts, so the public pages' i18n check and payload do not change. Names and game terms stay as the
 // officers write them (naming.md). French puts a no-break space before : ? and !.
+import { boardEn } from "./dictionary.board";
 import { calendarEn } from "./dictionary.calendar";
 import { fr } from "./dictionary.fr";
 import { importEn } from "./dictionary.import";
@@ -30,7 +31,7 @@ const en = {
   "lang.aria": "Language",
   "signin.title": "Sign in",
   "signin.lead":
-    "For the alliance’s leadership: sign in with the Discord account you use in the alliance’s server.",
+    "Sign in with the Discord account you use in the alliance’s server. Members see this week’s plan, the notices and Start here; officers also get the Officers’ Desk.",
   "signin.button": "Sign in with Discord",
   "signin.note": "Discord shares only your name and your roles in that server. Nothing is posted.",
   "signin.e.denied": "Discord did not confirm the sign-in. Try again.",
@@ -44,7 +45,7 @@ const en = {
   "noaccess.allowlist_expired":
     "Your access was for a limited time, and that time is over. Ask the site owner to extend it.",
   "noaccess.blocked":
-    "This Discord account no longer has access to the Officers’ Desk. Ask an R5 if this is a mistake.",
+    "This Discord account no longer has access to the alliance’s pages here: the members’ board or the Officers’ Desk. Ask an R5 if this is a mistake.",
   "noaccess.retry": "Sign in again",
   "noaccess.public": "Go to the public Event Ledger",
   "shell.signedIn": "Signed in as {name}",
@@ -275,6 +276,7 @@ const en = {
   ...theftsEn,
   ...shotsEn,
   ...translateEn,
+  ...boardEn,
 } as const;
 
 export type WorkspaceKey = keyof typeof en;

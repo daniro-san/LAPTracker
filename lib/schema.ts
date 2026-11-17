@@ -367,8 +367,13 @@ export const workspaceSessions = pgTable(
     expiresAt: tstz("expires_at").notNull(),
     /** When Discord last confirmed the role (D99): at sign-in and at each renewal. */
     checkedAt: tstz("checked_at").notNull().defaultNow(),
+    /** "officer": the desk (D71). "member": the members' board only (D105). */
+    tier: text("tier").$type<"officer" | "member">().notNull().default("officer"),
   },
-  (t) => [index("workspace_sessions_workspace_idx").on(t.workspaceId)],
+  (t) => [
+    index("workspace_sessions_workspace_idx").on(t.workspaceId),
+    check("workspace_sessions_tier_check", sql`${t.tier} in ('officer', 'member')`),
+  ],
 );
 
 // The workspace calendar (issue 300), in its own file for size.

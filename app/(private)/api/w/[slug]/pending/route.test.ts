@@ -51,7 +51,7 @@ beforeEach(async () => {
       .insert(workspaceUsers)
       .values({ workspaceId: ws?.id ?? 0, discordUserId: `${slug}-ana`, displayName: "Ana" })
       .returning({ id: workspaceUsers.id });
-    tokens[slug] = (await createSession(db, ws?.id ?? 0, user?.id ?? 0, T0, null)).token;
+    tokens[slug] = (await createSession(db, ws?.id ?? 0, user?.id ?? 0, T0, null, "officer")).token;
     await db.insert(dailyRosters).values({
       readDay: "2026-11-06",
       unionId,

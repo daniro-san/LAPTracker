@@ -6,6 +6,8 @@ import type { Db } from "../db";
 import { workspaces, workspaceSessions, workspaceUsers } from "../schema";
 
 export type WorkspaceRow = typeof workspaces.$inferSelect;
+/** "officer": the desk (D71). "member": the members' board only (D105). */
+export type SessionTier = "officer" | "member";
 
 /** A workspace's address, /w/<slug>: lowercase letters, digits and dashes; "auth" is the callback's. */
 export const WORKSPACE_SLUG = /^(?!auth$)[a-z0-9][a-z0-9-]{1,31}$/;
@@ -136,12 +138,13 @@ export async function insertSession(
 }
 
 /**
- * A renewal after Discord confirmed the role again (D99): the session of this token, workspace and person
- * that has not ended gets `checkedAt`, and its end moves no later than `endsBy`. False when there is none.
+ * A renewal after Discord confirmed the role again (D99): the session of this token, workspace, person and
+ * tier (D105) that has not ended gets `checkedAt`, and its end moves no later than `endsBy`. False when
+ * there is none.
  */
 export async function renewSession(
   db: Db,
-  key: { tokenHash: string; workspaceId: number; workspaceUserId: number },
+  key: { tokenHash: string; workspaceId: number; workspaceUserId: number; tier: SessionTier },
   checkedAt: Date,
   endsBy: Date | null,
 ): Promise<boolean> {
@@ -156,6 +159,7 @@ export async function renewSession(
         eq(workspaceSessions.tokenHash, key.tokenHash),
         eq(workspaceSessions.workspaceId, key.workspaceId),
         eq(workspaceSessions.workspaceUserId, key.workspaceUserId),
+        eq(workspaceSessions.tier, key.tier),
         gt(workspaceSessions.expiresAt, checkedAt),
       ),
     )
@@ -171,6 +175,7 @@ export async function findSession(db: Db, tokenHash: string) {
       workspaceId: workspaceSessions.workspaceId,
       expiresAt: workspaceSessions.expiresAt,
       checkedAt: workspaceSessions.checkedAt,
+      tier: workspaceSessions.tier,
       userId: workspaceUsers.id,
       displayName: workspaceUsers.displayName,
       chosenName: workspaceUsers.chosenName,
@@ -213,6 +218,17 @@ export async function signOutWorkspace(db: Db, workspaceId: number): Promise<num
   const gone = await db
     .delete(workspaceSessions)
     .where(eq(workspaceSessions.workspaceId, workspaceId))
+    .returning({ hash: workspaceSessions.tokenHash });
+  return gone.length;
+}
+
+/** /admin's "Sign out members" (D105): every member session of the workspace ends now; officers stay. */
+export async function signOutMembers(db: Db, workspaceId: number): Promise<number> {
+  const gone = await db
+    .delete(workspaceSessions)
+    .where(
+      and(eq(workspaceSessions.workspaceId, workspaceId), eq(workspaceSessions.tier, "member")),
+    )
     .returning({ hash: workspaceSessions.tokenHash });
   return gone.length;
 }

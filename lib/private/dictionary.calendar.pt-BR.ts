@@ -86,7 +86,7 @@ export const calendarPt: CalendarWords = {
   "calendar.form.weekly": "Toda semana",
   "calendar.form.members": "Os membros podem ver isto",
   "calendar.form.membersHelp":
-    "Os membros vão ver este evento, as notas e o link no quadro deles (em breve). Deixe desligado para planos da liderança, como os de KvK.",
+    "Os membros vão ver este evento, as notas e o link no mural deles. Deixe desligado para planos da liderança, como os de KvK.",
   "calendar.form.scope": "Mudar o dia e a hora de",
   "calendar.form.scopeOne": "Só a semana de {date}",
   "calendar.form.scopeAll": "Toda semana",

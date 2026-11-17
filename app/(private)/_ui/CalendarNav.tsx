@@ -1,5 +1,6 @@
 // The Calendar tab's own views (issue 300, prototype v5): Week · Caravans · Notices · Thefts, as links, so the
-// address says which one is open. Every link is 44 px tall; the columns follow the list's length.
+// address says which one is open. Every link is 44 px tall; the columns follow the list's length. Under them,
+// "See what members see" opens the members' board (D105).
 import type { WorkspaceDictionary, WorkspaceKey } from "@/lib/private/dictionary";
 
 export type CalendarView = "week" | "caravans" | "notices" | "thefts";
@@ -44,6 +45,15 @@ export function CalendarNav({
           </li>
         ))}
       </ul>
+      {/* D105: what the "for members" switches on these views put on the members' board. */}
+      <p className="text-right">
+        <a
+          href={`/w/${slug}/board`}
+          className="inline-flex min-h-11 items-center text-body-sm font-semibold text-plum underline underline-offset-4"
+        >
+          {t["board.seeMembers"]}
+        </a>
+      </p>
     </nav>
   );
 }

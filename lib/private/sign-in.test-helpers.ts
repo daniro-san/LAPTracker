@@ -24,6 +24,8 @@ const ACCOUNTS: Record<string, { id: string; roles: string[] | null }> = {
   /** The same person after an R5 took the R4 role away. */
   demoted: { id: "200000000000000001", roles: [MEMBER_ROLE] },
   member: { id: MEMBER_ID, roles: [MEMBER_ROLE] },
+  /** The same member after an R5 gave them the R4 role (D105). */
+  promoted: { id: MEMBER_ID, roles: [MEMBER_ROLE, R4] },
   outsider: { id: "200000000000000003", roles: null },
 };
 const discord: typeof fetch = async (input, init) => {

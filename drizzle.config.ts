@@ -8,6 +8,7 @@ export default defineConfig({
     "./lib/schema-notices.ts",
     "./lib/schema-thefts.ts",
     "./lib/schema-import.ts",
+    "./lib/schema-board.ts",
   ],
   out: "./drizzle",
 });

@@ -218,6 +218,13 @@
       "when": 1794923322160,
       "tag": "0030_pending_members",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1794926731497,
+      "tag": "0031_members_board",
+      "breakpoints": true
     }
   ]
 }
