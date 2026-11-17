@@ -1,0 +1,258 @@
+// The member flow result (D89, issue 275): one sentence first, then a source x destination matrix (rows: the
+// alliance on the first day, columns: the alliance on the second, plus New and Left). Counts only, no member
+// is named, and a move under FLOW_MIN members is hidden. From 640 px the matrix is a table that scrolls inside
+// its own box; on a phone each row is a <details> that lists that source's destinations as text with counts.
+// HTML only (D68): the tint behind a count is decoration, the number is always written.
+import { TextLink } from "@/lib/brand/components/TextLink";
+import { fill, type Dictionary } from "@/lib/copy";
+import { FLOW_MIN, type FlowCell } from "@/lib/flow";
+import type { FlowAlliance, FlowResult } from "@/lib/queries";
+
+import { dayDate } from "./FlowPicker";
+import { allianceLabel, type Clock } from "./format";
+import { MERGE_PATH } from "./MergePicker";
+
+type Id = number | null;
+const key = (from: Id, to: Id) => `${from}>${to}`;
+const short = (a: FlowAlliance) => a.tag ?? a.name ?? String(a.unionId);
+
+/** A count's tint, three steps of the biggest move shown; a stay is a neutral one. */
+const TINT = ["bg-plum/10", "bg-plum/20", "bg-plum/30"] as const;
+const tint = (n: number, max: number) =>
+  TINT[Math.max(0, Math.min(2, Math.ceil((3 * n) / max) - 1))];
+
+function Lead({
+  flow,
+  from,
+  to,
+  clock,
+  copy,
+}: {
+  flow: FlowResult;
+  from: string;
+  to: string;
+  clock: Clock;
+  copy: Dictionary;
+}) {
+  const f = copy.flow;
+  const days = { from: clock.day(dayDate(from)), to: clock.day(dayDate(to)) };
+  const label = (id: Id) => {
+    const a = flow.alliances.find((x) => x.unionId === id);
+    return a ? allianceLabel(a.tag, a.name) : "";
+  };
+  const { largest } = flow;
+  const sentence =
+    flow.moved === 0
+      ? fill(f.answerNone, days)
+      : largest
+        ? fill(f.answer, {
+            ...days,
+            moved: flow.moved,
+            source: label(largest.from),
+            dest: label(largest.to),
+            n: largest.n,
+          })
+        : fill(f.answerSmall, { ...days, moved: flow.moved, min: FLOW_MIN });
+  return (
+    <>
+      <p className="mt-1 text-lg">{sentence}</p>
+      <p className="text-body-sm text-ink/70">
+        {fill(f.outside, { arrived: flow.arrived, left: flow.left })}
+      </p>
+    </>
+  );
+}
+
+/** The wide matrix: rows are sources, columns destinations, from 640 px. */
+function Matrix({
+  flow,
+  by,
+  from,
+  to,
+  clock,
+  copy,
+}: {
+  flow: FlowResult;
+  by: Map<string, number>;
+  from: string;
+  to: string;
+  clock: Clock;
+  copy: Dictionary;
+}) {
+  const f = copy.flow;
+  const days = { from: clock.day(dayDate(from)), to: clock.day(dayDate(to)) };
+  const moves = flow.cells.filter((c) => c.from !== c.to).map((c) => c.n);
+  const max = Math.max(1, ...moves);
+  const cell = "h-9 min-w-10 border border-rule px-1 text-center text-sm tabular-nums";
+  const head = "border border-rule px-1 py-1 text-center text-xs font-semibold";
+  const rows: { id: Id; label: string }[] = [
+    ...flow.alliances.map((a) => ({ id: a.unionId as Id, label: short(a) })),
+    { id: null, label: f.rowNew },
+  ];
+  const cols: { id: Id; label: string }[] = [
+    ...flow.alliances.map((a) => ({ id: a.unionId as Id, label: short(a) })),
+    { id: null, label: f.colLeft },
+  ];
+  return (
+    <div className="mt-4 hidden overflow-x-auto sm:block">
+      <table className="border-collapse">
+        <caption className="sr-only">{fill(f.caption, days)}</caption>
+        <thead>
+          <tr>
+            <td className="sticky left-0 z-10 bg-paper" />
+            {cols.map((c) => (
+              <th key={String(c.id)} scope="col" className={head}>
+                {c.label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={String(r.id)}>
+              <th
+                scope="row"
+                className="sticky left-0 z-10 whitespace-nowrap border border-rule bg-paper px-2 text-left text-sm font-semibold"
+              >
+                {r.label}
+              </th>
+              {cols.map((c) => {
+                const n = by.get(key(r.id, c.id));
+                const stayed = r.id !== null && r.id === c.id;
+                return (
+                  <td
+                    key={String(c.id)}
+                    className={`${cell} ${n === undefined ? "" : stayed ? "bg-ink/10" : tint(n, max)}`}
+                  >
+                    {n}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/** One phone row: the source, and when opened its destinations as text with counts. */
+function PhoneRow({
+  title,
+  members,
+  cells,
+  names,
+  copy,
+}: {
+  title: string;
+  members: number;
+  cells: FlowCell[];
+  names: Map<Id, string>;
+  copy: Dictionary;
+}) {
+  const f = copy.flow;
+  const line = (c: FlowCell) =>
+    c.to === null ? f.leftTitle : c.from === c.to ? f.stayed : (names.get(c.to) ?? "");
+  // The moves first, the biggest first; the stay and the leavers after them.
+  const rank = (c: FlowCell) => (c.to === null ? 1 : c.from === c.to ? 2 : 0);
+  const sorted = [...cells].sort((p, q) => rank(p) - rank(q) || q.n - p.n);
+  const summary = "flex min-h-11 cursor-pointer items-center justify-between gap-3 py-2";
+  return (
+    <li className="border-b border-rule">
+      {cells.length === 0 ? (
+        <div className={summary}>
+          <span className="min-w-0 break-words font-medium">{title}</span>
+          <span className="shrink-0 text-sm tabular-nums">
+            {fill(f.rowMembers, { n: members })}
+          </span>
+        </div>
+      ) : (
+        <details className="group">
+          <summary className={summary}>
+            <span className="min-w-0 break-words font-medium">{title}</span>
+            <span className="shrink-0 text-sm tabular-nums">
+              {fill(f.rowMembers, { n: members })}{" "}
+              <span aria-hidden="true" className="inline-block group-open:rotate-90">
+                ›
+              </span>
+            </span>
+          </summary>
+          <ul className="pb-2">
+            {sorted.map((c) => (
+              <li key={key(c.from, c.to)} className="flex justify-between gap-3 py-1 pl-3">
+                <span className="min-w-0 break-words">
+                  {c.to !== null && c.from !== c.to && <span aria-hidden="true">{"→ "}</span>}
+                  {line(c)}
+                </span>
+                <span className="shrink-0 tabular-nums">{c.n}</span>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+    </li>
+  );
+}
+
+export function FlowView({
+  flow,
+  from,
+  to,
+  clock,
+  copy,
+}: {
+  flow: FlowResult;
+  from: string;
+  to: string;
+  clock: Clock;
+  copy: Dictionary;
+}) {
+  const f = copy.flow;
+  const by = new Map(flow.cells.map((c) => [key(c.from, c.to), c.n]));
+  const names = new Map<Id, string>(
+    flow.alliances.map((a) => [a.unionId, allianceLabel(a.tag, a.name)]),
+  );
+  const days = { from: clock.day(dayDate(from)), to: clock.day(dayDate(to)) };
+  return (
+    <>
+      <Lead flow={flow} from={from} to={to} clock={clock} copy={copy} />
+      <Matrix flow={flow} by={by} from={from} to={to} clock={clock} copy={copy} />
+      <ul className="mt-4 sm:hidden">
+        {flow.alliances.map((a) => (
+          <PhoneRow
+            key={a.unionId}
+            title={allianceLabel(a.tag, a.name)}
+            members={a.start}
+            cells={flow.cells.filter((c) => c.from === a.unionId)}
+            names={names}
+            copy={copy}
+          />
+        ))}
+        <PhoneRow
+          title={f.newTitle}
+          members={flow.arrived}
+          cells={flow.cells.filter((c) => c.from === null)}
+          names={names}
+          copy={copy}
+        />
+      </ul>
+      <p className="mt-3 text-body-sm text-ink/70">{fill(f.small, { min: FLOW_MIN })}</p>
+      <p className="mt-1 hidden text-body-sm text-ink/70 sm:block">{fill(f.legend, days)}</p>
+      {flow.notCounted.length > 0 && (
+        <p className="mt-1 text-body-sm text-ink/70">
+          {fill(f.notCounted, {
+            list: flow.notCounted.map((a) => allianceLabel(a.tag, a.name)).join(", "),
+          })}
+        </p>
+      )}
+      <p className="mt-3">
+        <TextLink
+          href={MERGE_PATH}
+          className="inline-flex min-h-11 items-center text-sm font-medium"
+        >
+          {copy.merge.title} <span aria-hidden="true">&nbsp;→</span>
+        </TextLink>
+      </p>
+    </>
+  );
+}
