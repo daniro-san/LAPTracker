@@ -66,4 +66,12 @@ Measured on the local seed (two sampled events, one older unsampled), Chrome at 
 - Screenshots: the six `08zzzzn-*-360.png` files are replaced; `08zzzzn-fight-clock-light-390.png` (Chrome) and `08zzzzn-fight-clock-light-820.png` (WebKit) are new.
 - Merge of origin/dev (#338) resolved: stamps and glossaries kept from both sides, `pnpm check` green after it.
 
+## Review fixes (2026-11-16, /pr-review standard)
+
+- The fight clock shows the newest 12 scheduled events (`FIGHT_CLOCK_EVENTS`), so its reads and its page stay bounded; D86 is amended.
+- The compare page uses `isDone` from `lib/queries` instead of its own copy of the End rule, which picks the D79 cache key.
+- `ComparePulse` treats a sampled event whose readings give no slots as off, as the fight clock page does. `app/_ui/ComparePulse.test.ts` covers the disabled frame (the reason, no strip) and that case.
+- Tapping a cell to open that range (issue 284) is deferred to the window-picker build (D86 amendment).
+- A tautological assertion in `lib/queries/fight-clock.test.ts` is gone.
+
 https://github.com/daniro-san/LAPTracker/pull/343

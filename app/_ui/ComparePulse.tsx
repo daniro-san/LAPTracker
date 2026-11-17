@@ -38,7 +38,9 @@ export function ComparePulse({
   locale: string;
 }) {
   const l = copy.ledger;
-  const [a, b] = [pulses.a.clock, pulses.b.clock];
+  // A sampled event whose Start or samples cannot be read has no slots: it is off here too.
+  const readable = (c: EventPulse["clock"]) => (c && c.slots.length > 0 ? c : null);
+  const [a, b] = [readable(pulses.a.clock), readable(pulses.b.clock)];
   if (!a || !b) {
     const off = !a && !b ? l.comparePulseOffBoth : !a ? l.comparePulseOffA : l.comparePulseOffB;
     const when = eventHead(!a ? data.a : data.b, !a ? data.b : data.a, clock);

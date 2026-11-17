@@ -105,17 +105,20 @@ export type FightClockEvent = EventSummary & {
   off: OffReason | null;
 };
 
+/** The newest scheduled events the fight clock shows: about three months of weekly events (D86). */
+export const FIGHT_CLOCK_EVENTS = 12;
+
 /** The End has a row: the event is over and its reads can be kept for a day (D79). */
 export const isDone = (e: Pick<EventSummary, "snapshots">) =>
   e.snapshots.some((s) => s.phase === "after");
 
 /**
- * The server fight clock's data: every public scheduled event (a manual round has no schedule), newest
- * first, each sampled or off. `listed` is the whole event list, for the header's selector.
+ * The server fight clock's data: the newest `FIGHT_CLOCK_EVENTS` public scheduled events (a manual round
+ * has no schedule), newest first, each sampled or off. `listed` is the whole event list, for the header's selector.
  */
 export async function getFightClock(db: Db, now: Date, options: PulseOptions) {
   const listed = await listEvents(db);
-  const scheduled = listed.filter((e) => !e.manual);
+  const scheduled = listed.filter((e) => !e.manual).slice(0, FIGHT_CLOCK_EVENTS);
   const pulses = await eventPulses(
     db,
     scheduled.map((e) => ({ id: e.id, done: isDone(e) })),

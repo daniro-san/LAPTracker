@@ -27,6 +27,7 @@ import { withPageDb } from "@/lib/page";
 import {
   getComparePage,
   getComparePlayerPage,
+  isDone,
   type AllianceComparison,
   type EventComparison,
   type PlayerComparison,
@@ -158,8 +159,7 @@ async function PulseSection({
   copy: Dictionary;
   locale: string;
 }) {
-  const done = (e: EventComparison["a"]) => e.snapshots.some((s) => s.phase === "after");
-  const { pulses, everyMin } = await loadComparePulses(c.a.id, done(c.a), c.b.id, done(c.b));
+  const { pulses, everyMin } = await loadComparePulses(c.a.id, isDone(c.a), c.b.id, isDone(c.b));
   return (
     <ComparePulse
       data={c}

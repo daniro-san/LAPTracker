@@ -90,13 +90,12 @@ const FIVE: Sample[] = [
 describe("sampledEventIds", () => {
   it("is an event with a fresh, error-free sample, and neither an event with only a Start and an End nor one whose samples are stale or failed", async () => {
     const sampled = await seedEvent("2026-11-21", FIVE);
-    const plain = await seedEvent("2026-11-14", []);
-    const unusable = await seedEvent("2026-11-07", [
+    await seedEvent("2026-11-14", []); // only a Start and an End
+    await seedEvent("2026-11-07", [
       { time: "12:15", kills: 110, fresh: false },
       { time: "12:30", kills: 0, failed: true },
     ]);
     expect(await sampledEventIds(db)).toEqual(new Set([sampled]));
-    expect([plain, unusable]).not.toContain(sampled);
   });
 
   it("leaves out an event that is not public", async () => {
