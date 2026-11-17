@@ -26,6 +26,13 @@ lib/private/*.ts    the workspace (D71): requireWorkspace and its branded Worksp
                     reasons and "copy for spreadsheet"), first-use.ts (the first-use cards as data),
                     cookies.ts (the two cookie names, apart from the dictionaries, for client components);
                     their table reads are in lib/repo/workspace-rosters.ts.
+                    The screenshot import (D96): import.ts (drafts, save, discard, change of type),
+                    import-kinds.ts (the kinds and the SaveHook other sessions plug in), import-save.ts
+                    (the hooks: Alliance Duel points, the ranking checks), import-view.ts (To review, a
+                    draft's review), import-read.ts (the only way to the OCR), import-words.ts,
+                    import-input.ts (request bodies), discord-interaction.ts (signature, PING, the officer
+                    rule, the deferred reply) and import-discord.ts (fetch, read, edit the reply, after the
+                    response); their tables are lib/schema-import.ts, read in lib/repo/import.ts.
 lib/queries/*.ts    read models for the UI (joins, sorting, name history). Never write. Never expose BLOCKED_ROSTER_KEYS.
                     lib/queries/samples.ts: `eventSamples`, an event's Start, samples and End (D69).
                     lib/queries/live.ts: `eventProgress`, the event page's live section (alliance totals per reading, D69):
@@ -58,8 +65,10 @@ lib/images.ts       the two image sources (preset badge id, stored photo URL on 
 proxy.ts            per-request CSP nonce (Next 16's middleware); next.config.ts holds the static security headers
 instrumentation.ts  validates the environment once at server start
 lib/build-version.ts pure: the footer's live version from Vercel's git variables (D59); next.config.ts calls it once per build.
-lib/screenshot/     the screenshot reader (D74): pure parsers over OCR text lines (alliance duel, donation, secret operations, pasted text),
-                    nameKey and matchName (candidates passed in), and one IO module, read-screenshot.ts (Tesseract.js, committed English data). No DB access.
+lib/screenshot/     the screenshot reader (D74): pure parsers over OCR text lines (alliance duel, the might/kills/donation rankings, secret
+                    operations, pasted text), classify.ts (which screen, scored, D96), merge.ts (pages of one ranking), nameKey and
+                    matchName (candidates passed in), and one IO module, read-screenshot.ts (Tesseract.js, committed English data). No DB access.
+lib/import-command.ts the Discord message command's definition, shared by the interactions route and scripts/discord-register-command.ts (D96).
 ```
 
 ## Dependency rule

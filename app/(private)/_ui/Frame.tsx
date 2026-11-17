@@ -6,6 +6,7 @@ import type { ReactNode } from "react";
 
 import { ALLIANCES } from "@/config/alliances";
 import { fill } from "@/lib/copy";
+import { withPageDb } from "@/lib/page";
 import type { WorkspaceAccess } from "@/lib/private/access";
 import { WORKSPACE_INTRO_COOKIE, WORKSPACE_LANG_COOKIE } from "@/lib/private/cookies";
 import {
@@ -14,6 +15,7 @@ import {
   type WorkspaceDictionary,
   type WorkspaceLanguage,
 } from "@/lib/private/dictionary";
+import { toReviewCount } from "@/lib/private/import-view";
 
 import { FirstUse } from "./FirstUse";
 import { LanguageSwitch } from "./LanguageSwitch";
@@ -37,7 +39,33 @@ const TABS: TabId[] = ["home", "members", "mark", "days", "review"];
 /** The tabs that exist so far; the other three come with their own issues and are shown as "soon". */
 const PATHS: Partial<Record<TabId, string>> = { home: "", members: "/members" };
 
-function Tabs({ t, slug, current }: { t: WorkspaceDictionary; slug: string; current: TabId }) {
+/** The Home tab's count of screenshot drafts waiting for review (issue 299), beside its label. */
+function Waiting({ n, t }: { n: number; t: WorkspaceDictionary }) {
+  if (n === 0) return null;
+  return (
+    <>
+      <span
+        aria-hidden="true"
+        className="absolute top-1 left-1/2 ml-2 rounded-full bg-seal px-1.5 text-[11px] leading-4 font-semibold text-paper tabular-nums"
+      >
+        {n}
+      </span>
+      <span className="sr-only">{`, ${fill(t["import.badge"], { n })}`}</span>
+    </>
+  );
+}
+
+function Tabs({
+  t,
+  slug,
+  current,
+  waiting,
+}: {
+  t: WorkspaceDictionary;
+  slug: string;
+  current: TabId;
+  waiting: number;
+}) {
   return (
     <nav
       aria-label={t["tab.aria"]}
@@ -50,9 +78,11 @@ function Tabs({ t, slug, current }: { t: WorkspaceDictionary; slug: string; curr
             <>
               <TabIcon id={id} />
               <span className="text-[13px] leading-tight">{label}</span>
+              {id === "home" && <Waiting n={waiting} t={t} />}
             </>
           );
-          const box = "flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 text-center";
+          const box =
+            "relative flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 text-center";
           const path = PATHS[id];
           return (
             <li key={id}>
@@ -101,7 +131,7 @@ export async function Frame({
   /** "Signed in as … · Sign out", once signed in. */
   account?: ReactNode;
   /** Signed in: the bottom tabs with `current` open, and the first-use cards. */
-  tabs?: { slug: string; current: TabId };
+  tabs?: { slug: string; current: TabId; waiting: number };
   children: ReactNode;
 }) {
   const seen = !tabs || (await cookies()).get(WORKSPACE_INTRO_COOKIE)?.value === "1";
@@ -128,8 +158,11 @@ export async function Frame({
   );
 }
 
-/** The frame once signed in: the alliance under the name, "Signed in as … · Sign out", the tabs. */
-export function SignedInFrame({
+/**
+ * The frame once signed in: the alliance under the name, "Signed in as … · Sign out", the tabs with the
+ * count of screenshot drafts waiting for review on Home.
+ */
+export async function SignedInFrame({
   access,
   language,
   t,
@@ -143,6 +176,7 @@ export function SignedInFrame({
   children: ReactNode;
 }) {
   const alliance = ALLIANCES.find((a) => a.unionId === access.unionId);
+  const waiting = await withPageDb((db) => toReviewCount(db, access, new Date()));
   const account = (
     <>
       <span className="min-w-0 truncate">
@@ -155,7 +189,7 @@ export function SignedInFrame({
     <Frame
       language={language}
       t={t}
-      tabs={{ slug: access.slug, current }}
+      tabs={{ slug: access.slug, current, waiting }}
       account={account}
       {...(alliance && { subtitle: `${alliance.tag} · ${alliance.name}` })}
     >

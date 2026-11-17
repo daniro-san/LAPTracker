@@ -14,6 +14,8 @@ import {
   type RosterRead,
 } from "../repo/workspace-rosters";
 import type { WorkspaceAccess } from "./access";
+import { duelSaved } from "./import-save";
+import type { DuelSaved } from "./import-view";
 import {
   DAY_MS,
   gameWeek,
@@ -55,6 +57,8 @@ export interface MemberRow {
   lastOnlineAt: Date | null;
   mapX: number | null;
   mapY: number | null;
+  /** Alliance Duel points saved from photos for the week (issue 299): `week` and `mon` … `sat`. */
+  duel: DuelSaved;
   seenSince: string | null;
   isNew: boolean;
   reasons: Reason[];
@@ -93,6 +97,7 @@ interface Signals {
   oldest: string;
   unchanged: Map<number, number>;
   event: EventKills | null;
+  duel: Map<number, DuelSaved>;
 }
 
 function rowOf(m: RosterMember, week: string[], s: Signals): MemberRow {
@@ -123,6 +128,7 @@ function rowOf(m: RosterMember, week: string[], s: Signals): MemberRow {
     lastOnlineAt: m.lastOnlineAt,
     mapX: m.x,
     mapY: m.y,
+    duel: s.duel.get(m.uid) ?? {},
     seenSince: s.firstSeen.get(m.uid) ?? null,
     isNew: isNewMember(s.firstSeen.get(m.uid), s.oldest, newest.day),
     reasons,
@@ -161,6 +167,7 @@ export async function membersView(
     oldest: [...firstSeen.values()].reduce((a, b) => (b < a ? b : a), newest.day),
     unchanged: new Map(might.unchanged.map((u) => [u.uid, u.days])),
     event,
+    duel: await duelSaved(db, access, week[0] as string),
   };
   const members = newest.members.map((m) => rowOf(m, week, signals)).sort(order);
   return {

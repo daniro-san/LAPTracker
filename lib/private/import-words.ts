@@ -13,7 +13,12 @@ export function kindLabel(t: WorkspaceDictionary, kind: ImportKind, scope: Scope
 }
 
 type Counted =
-  "import.rows" | "import.doubtful" | "import.notFound" | "import.leftOut" | "import.lost";
+  | "import.rows"
+  | "import.doubtful"
+  | "import.notFound"
+  | "import.leftOut"
+  | "import.lost"
+  | "import.draft.pages";
 
 /** "8 rows", "1 doubtful": the plural form of the officer's language. */
 export function counted(

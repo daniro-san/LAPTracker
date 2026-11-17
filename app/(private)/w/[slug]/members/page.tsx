@@ -214,6 +214,7 @@ function Body(props: {
   const shown = {
     joined: view.members.some((m) => m.joinedAt !== null),
     lastOnline: view.members.some((m) => m.lastOnlineAt !== null),
+    duel: view.members.some((m) => Object.keys(m.duel).length > 0),
   };
   const counts = filterCounts(view.members);
   const visible = keepMembers(view.members, filter, query);

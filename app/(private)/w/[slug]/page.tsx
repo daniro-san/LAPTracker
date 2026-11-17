@@ -4,13 +4,18 @@ import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 
 import { buttonClass } from "@/lib/brand/components/Button";
+import { fill } from "@/lib/copy";
+import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
 import { requireWorkspace } from "@/lib/private/access";
-import type { WorkspaceDictionary } from "@/lib/private/dictionary";
+import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
+import { MAX_PICTURES } from "@/lib/private/import";
+import { toReview, type ReviewItem } from "@/lib/private/import-view";
 import { SLUG } from "@/lib/private/sign-in";
 
 import { Frame, SignedInFrame, workspaceWords } from "../../_ui/Frame";
 import { refuse } from "../../_ui/refuse";
+import { ToReview } from "../../_ui/ToReview";
 
 const ERRORS = ["denied", "discord", "not_configured"] as const;
 type SignInError = (typeof ERRORS)[number];
@@ -43,15 +48,40 @@ function SignIn({ slug, t, error }: { slug: string; t: WorkspaceDictionary; erro
   );
 }
 
-function Home({ slug, t }: { slug: string; t: WorkspaceDictionary }) {
+function Home({
+  slug,
+  t,
+  language,
+  items,
+}: {
+  slug: string;
+  t: WorkspaceDictionary;
+  language: WorkspaceLanguage;
+  items: ReviewItem[];
+}) {
+  const zone = getEnv().SERVER_TZ;
+  const at = new Intl.DateTimeFormat(language, {
+    weekday: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+    timeZone: zone,
+  });
   return (
     <section aria-labelledby="home">
       <h1 id="home" className="font-display text-display-lg">
         {t["home.title"]}
       </h1>
+      <ToReview
+        slug={slug}
+        items={items}
+        t={t}
+        language={language}
+        maxPictures={MAX_PICTURES}
+        when={(d) => fill(t["time.server"], { time: at.format(d) })}
+      />
       <div className="mt-4 border border-rule px-4 py-5">
-        <p className="font-subhead text-display-sm">{t["home.empty"]}</p>
-        <p className="mt-2 text-ink/80">{t["home.next"]}</p>
+        <p className="text-ink/80">{t["home.next"]}</p>
         <a href={`/w/${slug}/members`} className={buttonClass("secondary", "mt-4")}>
           {t["home.open"]}
         </a>
@@ -70,8 +100,12 @@ export default async function WorkspacePage({
   const { slug } = await params;
   if (!SLUG.test(slug)) notFound();
   const jar = await cookies();
+  const now = new Date();
   // INVARIANT workspace.access-first: nothing private is read before this check.
-  const access = await withPageDb((db) => requireWorkspace(db, slug, jar, new Date()));
+  const { access, items } = await withPageDb(async (db) => {
+    const access = await requireWorkspace(db, slug, jar, now);
+    return { access, items: access.ok ? await toReview(db, access, now) : [] };
+  });
   if (!access.ok) refuse(slug, access.reason);
   const { language, t } = await workspaceWords();
   if (!access.ok) {
@@ -85,7 +119,7 @@ export default async function WorkspacePage({
   }
   return (
     <SignedInFrame access={access} language={language} t={t} current="home">
-      <Home slug={slug} t={t} />
+      <Home slug={slug} t={t} language={language} items={items} />
     </SignedInFrame>
   );
 }

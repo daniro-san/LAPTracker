@@ -6,6 +6,7 @@
 import type { Db } from "../db";
 import type { DuelDay } from "../repo/import";
 import type { ScreenKind } from "../screenshot/classify";
+import { STATUS_BAR_ASPECT, STATUS_BAR_SHARE } from "../screenshot/prepare";
 import type { WorkspaceAccess } from "./access";
 
 export type ImportKind = Exclude<ScreenKind, "map">;
@@ -13,6 +14,9 @@ export type Scope = "daily" | "weekly";
 
 /** The kinds whose ranking has a Daily and a Weekly tab. */
 export const SCOPED: readonly ImportKind[] = ["alliance_duel", "donation"];
+
+/** The phone status bar the browser drops before sending, by the same rule as the server (prepare.ts). */
+export const STATUS_BAR = { share: STATUS_BAR_SHARE, aspect: STATUS_BAR_ASPECT };
 
 /** A row read from the pictures, before a person confirms it. */
 export interface ReadRow {
