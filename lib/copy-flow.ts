@@ -5,7 +5,7 @@ export const flowCopy = {
   title: "Member flow",
   /** The chip beside the title. */
   tag: "Counts only",
-  lead: "Where members moved between the tracked alliances, from the first day to the second. No member is named.",
+  lead: "Where members moved between the tracked alliances, between the two days you pick.",
   from: "From",
   to: "To",
   action: "Show",
@@ -19,8 +19,7 @@ export const flowCopy = {
    * part stays on one line. */
   totals: "Moves of {min} or more · Changed alliance: {moved} · New: {arrived} · Left: {left}",
   /** Said on the page: why some moves are missing. `{min}` is the smallest move shown. */
-  small:
-    "Counts under {min} members are hidden and left out of every total, including members who stayed. This protects small groups.",
+  small: "Moves of fewer than {min} members are hidden and not counted.",
   /** The row for members in no tracked alliance on the first day, and the column for those in none on the second. */
   rowNew: "New",
   colLeft: "Left",
@@ -34,8 +33,8 @@ export const flowCopy = {
   newTitle: "New to the tracked alliances",
   leftTitle: "Left the tracked alliances",
   /** `{list}` is alliance names. */
-  notCounted: "Not counted, no usable read on both days: {list}.",
+  notCounted: "Not counted, no usable daily update on both days: {list}.",
   /** Under the picker: the two days are not in order. */
   order: "Choose a From day earlier than the To day.",
-  none: "Fewer than two days have a usable read yet.",
+  none: "Fewer than two days have a usable daily update yet.",
 } as const;

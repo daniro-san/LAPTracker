@@ -15,16 +15,10 @@ export function kindLabel(
   const name = t[`shots.kind.${kind}`];
   if (!scope) return name;
   if (!sure) return fill(t["shots.kindUnsure"], { kind: name });
-  return fill(t["shots.kindScope"], { kind: name, scope: t[`shots.scope.${scope}`] });
+  return t[`shots.kindScope.${kind as "alliance_duel" | "donation"}.${scope}`];
 }
 
-type Counted =
-  | "shots.rows"
-  | "shots.doubtful"
-  | "shots.notFound"
-  | "shots.leftOut"
-  | "shots.lost"
-  | "shots.draft.pages";
+type Counted = "shots.rows" | "shots.doubtful" | "shots.notFound" | "shots.leftOut" | "shots.lost";
 
 /** "8 rows", "1 doubtful": the plural form of the officer's language. */
 export function counted(

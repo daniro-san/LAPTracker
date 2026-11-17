@@ -171,7 +171,7 @@ function Draft(props: {
         {[
           view.sentBy && fill(t["shots.sentBy"], { name: view.sentBy }),
           view.source === "discord" && t["shots.viaDiscord"],
-          counted(t, language, "shots.draft.pages", view.pages),
+          view.pages > 1 && fill(t["shots.draft.pages"], { n: view.pages }),
         ]
           .filter(Boolean)
           .join(" · ")}
@@ -184,7 +184,6 @@ function Draft(props: {
           {counted(t, language, "shots.leftOut", view.leftOut)}
         </p>
       )}
-      {view.status === "open" && <p className="mt-2 font-semibold">{t["shots.nothingCounts"]}</p>}
       {view.status !== "open" && (
         <p role="status" className="mt-3 border-l-4 border-plum pl-3 font-semibold">
           {fill(t[view.status === "saved" ? "shots.savedBy" : "shots.discardedBy"], {

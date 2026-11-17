@@ -160,7 +160,7 @@ export const noticesPt: Record<NoticesKey, string> = {
   "notices.save": "Salvar",
   "notices.saving": "Salvando…",
   "notices.cancel": "Cancelar",
-  "notices.saveFailed": "Não deu para salvar. Tente de novo.",
+  "notices.saveFailed": "Não foi possível salvar. Tente de novo.",
   "notices.noTitle": "Dê um título ao aviso.",
   "notices.conflict.banner":
     "{name} salvou alterações agora há pouco. Suas edições continuam aqui. Escolha o que manter:",
@@ -250,7 +250,7 @@ export const noticesFr: Record<NoticesKey, string> = {
   "notices.save": "Enregistrer",
   "notices.saving": "Enregistrement…",
   "notices.cancel": "Annuler",
-  "notices.saveFailed": "Enregistrement impossible. Réessayez.",
+  "notices.saveFailed": "Impossible d’enregistrer. Réessayez.",
   "notices.noTitle": "Donnez un titre à l’annonce.",
   "notices.conflict.banner":
     "{name} a enregistré des modifications à l’instant. Les vôtres sont toujours là. Choisissez ce que vous gardez :",

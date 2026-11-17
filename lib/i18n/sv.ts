@@ -52,7 +52,7 @@ export const sv = {
     myAlliance: "Min allians",
     names: "Namn",
     alliances: "Allianser",
-    movers: "Mormor märkte",
+    movers: "Största förändringarna i eventet",
     progress: "Dagsutveckling",
     progressMight: "Du: {change} sedan {date}.",
     progressMedian: "Mittenmedlem i {tag}: {percent}.",
@@ -81,7 +81,7 @@ export const sv = {
     liveKillsSoFar: "Kills hittills: {kills}",
     liveLast: "Senaste {min} min: {last} (topp {peak})",
     liveDone:
-      "Förändring sedan Början vid avläsningen {time}. Loggen ovan använder Slut vid {end}.",
+      "Förändring sedan Början vid avläsningen {time}. Tabellen ovan använder Slut vid {end}.",
     fought: "Krigsdeltagande",
     foughtSoFar: "Krigsdeltagande hittills",
     foughtHelp:
@@ -91,7 +91,7 @@ export const sv = {
     withKills: "Members som fick Kills",
     topShare: "Kills från topp 5-medlemmarna",
     topShareHelp:
-      "Andelen av alliansens Kills som de 5 största vinnarna gjorde. Högre betyder att färre spelare bar den.",
+      "Andelen av alliansens Kills som de 5 största vinnarna gjorde. Högt: några få spelare stod för det mesta av striden.",
     topBasis: "{top} av {n}",
     fewGainers: "få vinnare",
     fightClock: "Serverns stridsklocka",
@@ -118,8 +118,7 @@ export const sv = {
       "Inget av de två eventen har {min}-minuters avläsningar, så deras pulser kan inte jämföras",
     carried: "Kills-andel mot Might-andel",
     carriedHelp:
-      "Varje allians andel av Kills vunna från Början till Slut, bredvid dess andel av Might vid Början. Försvarare och supportspelare vinner inga Kills.",
-    carriedShown: "Allianserna vars Kills-andel ligger längst över deras Might-andel, och din.",
+      "Varje allians andel av Kills, bredvid dess andel av Might. Kills från Början till Slut, Might vid Början. Försvarare och supportspelare får inga Kills.",
     carriedTotal: "Alla {n} allianser: {kills} Kills vunna, {might} Might vid Början",
     carriedMightMark: "Might-andel vid Början",
     carriedKillsMark: "Kills-andel vunnen",
@@ -127,7 +126,7 @@ export const sv = {
     carriedTurnout: "{share} med Kills",
     carriedSpread: "{low}–{high} över {n} event",
     carriedRatioHelp:
-      "%-enh. är Kills-andelen minus Might-andelen. Vid 3 event eller fler visar raden under den spannet för Kills-andel ÷ Might-andel över dem.",
+      "+6 %-enh.: Kills-andelen ligger 6 %-enh. över Might-andelen. Med 3 event eller fler visar raden under Kills-andelen som en multipel av Might-andelen, från lägst till högst.",
     carriedPoints: "%-enh.",
   },
   compare: {
@@ -153,16 +152,16 @@ export const sv = {
       "Varje bevakad allians andel av de bevakade alliansernas Might, och en hypotetisk blockbyggare.",
     lead: "Ingen allians har mer än {max} av de bevakade alliansernas Might. De {n} främsta har {top}.",
     includes: "Might inkluderar byggnader och teknik.",
-    basis: "{n} bevakade allianser, lästa {date}.",
+    basis: "{n} bevakade allianser, uppdaterade {date}.",
     total: "Bevakade allianser",
     shares: "Andel per allians",
     bar: "Andel av de bevakade alliansernas Might per allians: {list}",
     asOf: "per {date}",
-    none: "Inga dagsavläsningar än.",
+    none: "Inga dagliga uppdateringar än.",
     builder: "Blockbyggare",
     hypothetical: "Hypotetisk",
     builderHelp:
-      "Tryck på A eller B vid en allians för att prova ett block. Det här räknar bara ihop tal. Det förutsäger eller tillkännager inget riktigt block.",
+      "Tryck på A eller B vid allianser för att räkna ihop deras Might. Bara uträkning, inte en prognos eller ett besked.",
     bloc: "Block {bloc}",
     blocShare: "{share} av de bevakade alliansernas Might",
     blocAlliances: "Allianser",
@@ -173,15 +172,15 @@ export const sv = {
     removeFrom: "Ta bort {alliance} från block {bloc}",
     trend: "Topp {n} andel över tid",
     trendHelp:
-      "Andelen av de bevakade alliansernas Might som de {n} största har, från varje dagsavläsning. En dag då en allians inte lästes räknas inte med.",
+      "Andelen av de bevakade alliansernas Might som de {n} största har, från varje daglig uppdatering. En dag utan daglig uppdatering för en allians räknas inte med.",
     trendLabel: "Topp {n}-andel",
     trendSummary: "De {n} främsta har {last} den {to}, {first} den {from}.",
-    trendFew: "Inte tillräckligt med dagsavläsningar för en trend än.",
+    trendFew: "Inte tillräckligt med dagliga uppdateringar för en trend än.",
     day: "Dag",
   },
   standing: {
     title: "Ställningen över tid",
-    help: "De bevakade allianserna placerade efter Might från varje dagsavläsning, med förändringen sedan {from}. En dag då en allians inte lästes räknas inte med. Servern här är de bevakade allianserna tillsammans.",
+    help: "De bevakade allianserna placerade efter Might från varje daglig uppdatering, med förändringen sedan {from}. En dag utan daglig uppdatering för en allians räknas inte med. Servern här är de bevakade allianserna tillsammans.",
     lead: "{label} var {rank} efter Might den {to} och {before} den {from}.",
     leadGrowth:
       "Dess Might har ändrats {growth} sedan dess. De bevakade allianserna tillsammans har ändrats {server}.",
@@ -190,13 +189,13 @@ export const sv = {
     trend: "Placering {first} den {from}, {last} den {to}",
     thisAlliance: "Den här alliansen",
     detailsHelp: "Placering varje dag, äldst först: {days}.",
-    few: "Inte tillräckligt med dagsavläsningar för att jämföra allianserna än.",
-    notRanked: "Ej rankade, ingen användbar dagsavläsning under perioden: {list}.",
+    few: "Inte tillräckligt med dagliga uppdateringar för att jämföra allianserna än.",
+    notRanked: "Ej rankade, ingen användbar daglig uppdatering under perioden: {list}.",
   },
   history: {
     title: "Medlemshistorik",
-    lead: "Varje kort jämför medlemslistan med den som lästes innan. Ändringar däremellan syns inte.",
-    daily: "Dagsavläsning",
+    lead: "Varje kort jämför medlemslistan med den innan. Den som gick med och lämnade emellan syns inte.",
+    daily: "Daglig uppdatering",
     since: "sedan {time}",
     first: "Första avläsningen: inget att jämföra med än.",
     noChange: "Inga medlemsändringar.",
@@ -209,7 +208,7 @@ export const sv = {
     none: "Inget av det slaget på den här sidan.",
     copy: "Kopiera till kalkylark",
     copied: "Kopierat",
-    copyFailed: "Kopieringen misslyckades",
+    copyFailed: "Kopieringen misslyckades. Försök igen.",
   },
   settings: {
     language: "Språk",
@@ -292,7 +291,7 @@ export const sv = {
     submit: "Sök",
     seen: "Sedd",
     limit: "Första {n}",
-    noMatch: "Ingen spelare med det namnet i loggen.",
+    noMatch: "Ingen spelare med det namnet. Kontrollera stavningen, eller skriv en del av namnet.",
     pending: "Mormor letar i loggen…",
   },
   errors: {
@@ -305,7 +304,7 @@ export const sv = {
     server: {
       code: "500",
       title: "Något sprack.",
-      body: "Ingen fara, mormor städar upp.",
+      body: "Något gick sönder hos oss. Försök igen om en minut.",
       retry: "Försök igen",
       back: "Tillbaka till loggen",
     },
@@ -320,7 +319,7 @@ export const sv = {
   merge: {
     title: "Sammanslagningssimulator",
     tag: "Simulering, inte en plan",
-    lead: "Två allianser räknas som en och kontrolleras mot medlemstaket. Bara allianssummor, inga medlemsnamn.",
+    lead: "Två allianser räknas som en, mot medlemstaket.",
     link: "Simulera en sammanslagning",
     first: "Första allians",
     second: "Andra allians",
@@ -349,7 +348,7 @@ export const sv = {
   flow: {
     title: "Flöde av Members",
     tag: "Bara antal",
-    lead: "Vart Members flyttade mellan de bevakade allianserna, från första dagen till den andra. Inga namn visas.",
+    lead: "Vart Members flyttade mellan de bevakade allianserna, mellan de två dagar du väljer.",
     from: "Från",
     to: "Till",
     action: "Visa",
@@ -358,8 +357,7 @@ export const sv = {
       "Mellan {from} och {to} ingen flytt på {min} eller fler Members mellan de bevakade allianserna.",
     totals:
       "Flyttar på {min} eller fler · Bytte allians: {moved} · Nya: {arrived} · Lämnade: {left}",
-    small:
-      "Antal under {min} Members döljs och räknas inte med i någon summa, inte heller de som stannade kvar. Det skyddar små grupper.",
+    small: "Flyttningar på färre än {min} Members döljs och räknas inte.",
     rowNew: "Nya",
     colLeft: "Lämnade",
     legend:
@@ -369,8 +367,8 @@ export const sv = {
     rowStayed: "Kvar: {n}",
     newTitle: "Nya i de bevakade allianserna",
     leftTitle: "Lämnade de bevakade allianserna",
-    notCounted: "Räknas inte, inga användbara avläsningar båda dagarna: {list}.",
+    notCounted: "Räknas inte, ingen användbar daglig uppdatering båda dagarna: {list}.",
     order: "Välj en Från-dag som ligger före Till-dagen.",
-    none: "Färre än två dagar har en användbar avläsning än.",
+    none: "Färre än två dagar har en användbar daglig uppdatering än.",
   },
 } as const satisfies Translation;

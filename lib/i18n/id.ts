@@ -53,7 +53,7 @@ export const idID = {
     myAlliance: "Aliansiku",
     names: "Nama",
     alliances: "Aliansi",
-    movers: "Nenek perhatikan",
+    movers: "Perubahan terbesar di event ini",
     progress: "Progres harian",
     progressMight: "Kamu: {change} sejak {date}.",
     progressMedian: "Anggota tengah {tag}: {percent}.",
@@ -81,7 +81,7 @@ export const idID = {
     liveOverdue: "(pembacaan seharusnya {time})",
     liveKillsSoFar: "Kills sejauh ini: {kills}",
     liveLast: "{min} menit terakhir: {last} (puncak {peak})",
-    liveDone: "Perubahan sejak Awal pada pembacaan {time}. Buku di atas memakai Akhir pada {end}.",
+    liveDone: "Perubahan sejak Awal pada pembacaan {time}. Tabel di atas memakai Akhir pada {end}.",
     fightClock: "Jam perang server",
     fightClockLead:
       "Kills aliansi yang dilacak, per {min} menit, event demi event. Tinggi sebuah kotak adalah bagiannya dari Kills yang digambar untuk event itu, dari Awal sampai pembacaan terakhir.",
@@ -114,14 +114,12 @@ export const idID = {
     withKills: "Members dengan Kills yang didapat",
     topShare: "Kills dari 5 Members teratas",
     topShareHelp:
-      "Bagian Kills aliansi yang dibuat 5 Members dengan kenaikan Kills terbesar. Makin tinggi, makin sedikit pemain yang memikulnya.",
+      "Bagian Kills aliansi yang dibuat 5 Members dengan kenaikan Kills terbesar. Tinggi: sedikit pemain yang melakukan sebagian besar pertarungan.",
     topBasis: "{top} dari {n}",
     fewGainers: "sedikit kenaikan",
     carried: "Bagian Kills vs bagian Might",
     carriedHelp:
-      "Bagian tiap aliansi dari Kills didapat dari Awal ke Akhir, di samping bagiannya dari Might di Awal. Pemain bertahan dan pemain support tidak mendapat Kills.",
-    carriedShown:
-      "Aliansi dengan bagian Kills paling jauh di atas bagian Might-nya, dan aliansimu.",
+      "Bagian tiap aliansi dari Kills, di samping bagiannya dari Might. Kills dari Awal sampai Akhir, Might pada Awal. Pemain bertahan dan pemain support tidak mendapat Kills.",
     carriedTotal: "Semua {n} aliansi: {kills} Kills didapat, {might} Might di Awal",
     carriedMightMark: "Bagian Might di Awal",
     carriedKillsMark: "Bagian Kills didapat",
@@ -129,7 +127,7 @@ export const idID = {
     carriedTurnout: "{share} dengan Kills",
     carriedSpread: "{low}–{high} dari {n} event",
     carriedRatioHelp:
-      "pts adalah bagian Kills dikurangi bagian Might. Jika ada 3 event atau lebih, baris di bawahnya menunjukkan rentang bagian Kills ÷ bagian Might di event-event itu.",
+      "+6 pts: bagian Kills 6 poin di atas bagian Might. Dengan 3 event atau lebih, baris di bawahnya memberi bagian Kills sebagai kelipatan bagian Might, dari terendah ke tertinggi.",
     carriedPoints: "pts",
   },
   compare: {
@@ -152,7 +150,7 @@ export const idID = {
   merge: {
     title: "Simulator merge",
     tag: "Simulasi, bukan rencana",
-    lead: "Dua aliansi dihitung sebagai satu, lalu dicek terhadap batas Members. Hanya total aliansi, tanpa nama anggota.",
+    lead: "Dua aliansi dihitung sebagai satu, dibandingkan dengan batas Members.",
     link: "Simulasikan merge",
     first: "Aliansi pertama",
     second: "Aliansi kedua",
@@ -181,7 +179,7 @@ export const idID = {
   flow: {
     title: "Perpindahan anggota",
     tag: "Hanya angka",
-    lead: "Ke mana anggota pindah antar aliansi yang dilacak, dari hari pertama ke hari kedua. Tidak ada anggota yang disebut namanya.",
+    lead: "Ke mana anggota pindah antar aliansi yang dilacak, antara dua hari yang kamu pilih.",
     from: "Dari",
     to: "Ke",
     action: "Tampilkan",
@@ -190,8 +188,7 @@ export const idID = {
       "Antara {from} dan {to}, tidak ada perpindahan {min} Members atau lebih di antara aliansi yang dilacak.",
     totals:
       "Perpindahan {min} atau lebih · Pindah aliansi: {moved} · Baru: {arrived} · Keluar: {left}",
-    small:
-      "Jumlah di bawah {min} Members disembunyikan dan tidak dihitung dalam total mana pun, termasuk anggota yang tetap. Ini melindungi kelompok kecil.",
+    small: "Perpindahan di bawah {min} anggota disembunyikan dan tidak dihitung.",
     rowNew: "Baru",
     colLeft: "Keluar",
     legend:
@@ -201,9 +198,10 @@ export const idID = {
     rowStayed: "Tetap: {n}",
     newTitle: "Baru di aliansi yang dilacak",
     leftTitle: "Keluar dari aliansi yang dilacak",
-    notCounted: "Tidak dihitung, tidak ada pembacaan yang bisa dipakai di kedua hari: {list}.",
+    notCounted:
+      "Tidak dihitung, tidak ada pembacaan harian yang bisa dipakai di kedua hari: {list}.",
     order: "Pilih hari Dari yang lebih awal dari hari Ke.",
-    none: "Belum ada dua hari dengan pembacaan yang bisa dipakai.",
+    none: "Belum ada dua hari dengan pembacaan harian yang bisa dipakai.",
   },
   balance: {
     title: "Keseimbangan server",
@@ -211,7 +209,7 @@ export const idID = {
       "Porsi tiap aliansi yang dilacak dari Might aliansi yang dilacak, dan penyusun blok hipotetis.",
     lead: "Tidak ada aliansi yang memegang lebih dari {max} Might aliansi yang dilacak. {n} teratas memegang {top}.",
     includes: "Might termasuk bangunan dan teknologi.",
-    basis: "{n} aliansi yang dilacak, dibaca {date}.",
+    basis: "{n} aliansi yang dilacak, diperbarui {date}.",
     total: "Aliansi dilacak",
     shares: "Porsi per aliansi",
     bar: "Porsi Might aliansi yang dilacak per aliansi: {list}",
@@ -220,7 +218,7 @@ export const idID = {
     builder: "Penyusun blok",
     hypothetical: "Hipotetis",
     builderHelp:
-      "Ketuk A atau B di sebuah aliansi untuk mencoba blok. Ini hanya menjumlahkan angka. Ini tidak meramalkan atau mengumumkan blok sungguhan.",
+      "Ketuk A atau B di sebuah aliansi untuk menjumlahkan Might-nya. Hanya hitungan, bukan prakiraan atau pengumuman.",
     bloc: "Blok {bloc}",
     blocShare: "{share} dari Might aliansi yang dilacak",
     blocAlliances: "Aliansi",
@@ -231,7 +229,7 @@ export const idID = {
     removeFrom: "Keluarkan {alliance} dari blok {bloc}",
     trend: "Porsi {n} teratas dari waktu ke waktu",
     trendHelp:
-      "Porsi Might aliansi yang dilacak yang dipegang {n} terbesar, dari pembacaan tiap hari. Hari ketika sebuah aliansi tidak terbaca tidak ikut dihitung.",
+      "Porsi Might aliansi yang dilacak dipegang {n} terbesar, dari tiap pembacaan harian. Hari tanpa pembacaan untuk sebuah aliansi tidak ikut dihitung.",
     trendLabel: "Porsi {n} teratas",
     trendSummary: "{n} teratas memegang {last} pada {to}, {first} pada {from}.",
     trendFew: "Pembacaan harian belum cukup untuk menggambar tren.",
@@ -239,7 +237,7 @@ export const idID = {
   },
   standing: {
     title: "Klasemen dari waktu ke waktu",
-    help: "Aliansi yang dilacak diurutkan menurut Might dari pembacaan tiap hari, dengan perubahan sejak {from}. Hari ketika sebuah aliansi tidak terbaca tidak dihitung. Server di sini adalah total aliansi yang dilacak.",
+    help: "Aliansi yang dilacak diurutkan menurut Might dari tiap pembacaan harian, dengan perubahan sejak {from}. Hari tanpa pembacaan untuk sebuah aliansi tidak dihitung. Server di sini adalah total aliansi yang dilacak.",
     lead: "{label} berada di peringkat {rank} menurut Might pada {to} dan {before} pada {from}.",
     leadGrowth:
       "Might-nya berubah {growth} sejak itu. Total aliansi yang dilacak berubah {server}.",
@@ -254,7 +252,7 @@ export const idID = {
   },
   history: {
     title: "Riwayat anggota",
-    lead: "Setiap kartu membandingkan daftar anggota dengan yang dibaca sebelumnya. Perubahan di antaranya tidak terlihat.",
+    lead: "Setiap kartu membandingkan daftar anggota dengan yang sebelumnya. Siapa pun yang masuk lalu keluar di antaranya tidak terlihat.",
     daily: "Pembacaan harian",
     since: "sejak {time}",
     first: "Pembacaan pertama: belum ada yang dibandingkan.",
@@ -268,7 +266,7 @@ export const idID = {
     none: "Tidak ada yang seperti ini di halaman ini.",
     copy: "Salin untuk spreadsheet",
     copied: "Tersalin",
-    copyFailed: "Gagal menyalin",
+    copyFailed: "Gagal menyalin. Coba lagi.",
   },
   settings: {
     language: "Bahasa",
@@ -351,7 +349,7 @@ export const idID = {
     submit: "Cari",
     seen: "Terlihat",
     limit: "{n} pertama",
-    noMatch: "Tidak ada pemain dengan nama itu di buku.",
+    noMatch: "Tidak ada pemain dengan nama itu. Periksa ejaannya, atau ketik sebagian namanya.",
     pending: "Nenek sedang mencari di buku…",
   },
   errors: {
@@ -364,7 +362,7 @@ export const idID = {
     server: {
       code: "500",
       title: "Ada yang retak.",
-      body: "Tidak apa-apa, nenek yang bereskan.",
+      body: "Ada yang rusak di pihak kami. Coba lagi dalam semenit.",
       retry: "Coba lagi",
       back: "Kembali ke buku",
     },

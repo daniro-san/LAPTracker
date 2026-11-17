@@ -218,7 +218,7 @@ describe("the deferred flow", () => {
       type: 4,
       data: {
         flags: 64,
-        content: `These pictures were already sent to the Officers’ Desk. No new draft was made.\n→ [Review](https://laptracker.test/w/ogs/shots/${draft?.id})`,
+        content: `These screenshots were already sent to the Officers’ Desk. No new draft was made.\n→ [Review](https://laptracker.test/w/ogs/shots/${draft?.id})`,
       },
     });
     expect(await db.select().from(screenshotDrafts)).toHaveLength(1);
@@ -270,7 +270,9 @@ describe("the deferred flow", () => {
     const second = discord();
     await runJob(deps(second.fetcher, recorded("90-might-phone")), elsewhere.job);
     expect(second.calls.map((c) => c.method)).toEqual(["PATCH"]);
-    expect(JSON.parse(second.calls[0]?.body ?? "{}").content).toBe("1 picture could not be read.");
+    expect(JSON.parse(second.calls[0]?.body ?? "{}").content).toBe(
+      "1 screenshot could not be read. Send it again, full screen and uncropped.",
+    );
   });
 
   it("edits the reply when a reading never settles, and when the reader fails", async () => {
@@ -293,7 +295,9 @@ describe("the deferred flow", () => {
       },
       handled.job,
     );
-    expect(reply(stalled.calls)).toBe("1 picture could not be read.");
+    expect(reply(stalled.calls)).toBe(
+      "1 screenshot could not be read. Send it again, full screen and uncropped.",
+    );
 
     const failing = discord();
     const logged = vi.spyOn(console, "info").mockImplementation(() => undefined);
@@ -309,7 +313,7 @@ describe("the deferred flow", () => {
       handled.job,
     );
     expect(reply(failing.calls)).toBe(
-      "The pictures could not be read this time. Nothing was saved. Try again, or send them from the desk.",
+      "The screenshots could not be read this time. Nothing was saved. Try again, or send them from the desk.",
     );
     expect(logged.mock.calls.map(([line]) => JSON.parse(String(line)).code)).toContain(
       "w.import.discord_failed:reader:MODULE_NOT_FOUND",

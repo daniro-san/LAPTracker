@@ -52,7 +52,7 @@ export const pl = {
     myAlliance: "Mój sojusz",
     names: "Nazwy",
     alliances: "Sojusze",
-    movers: "Babcia zauważyła",
+    movers: "Największe zmiany w tym wydarzeniu",
     progress: "Postęp dzienny",
     progressMight: "Ty: {change} od {date}.",
     progressMedian: "Środkowy członek {tag}: {percent}.",
@@ -80,7 +80,7 @@ export const pl = {
     liveOverdue: "(odczyt miał być {time})",
     liveKillsSoFar: "Kills dotąd: {kills}",
     liveLast: "Ostatnie {min} min: {last} (szczyt {peak})",
-    liveDone: "Zmiana od Początku przy odczycie {time}. Księga powyżej korzysta z Końca o {end}.",
+    liveDone: "Zmiana od Początku przy odczycie {time}. Tabela powyżej korzysta z Końca o {end}.",
     fought: "Frekwencja wojny",
     foughtSoFar: "Frekwencja wojny dotąd",
     foughtHelp:
@@ -90,7 +90,7 @@ export const pl = {
     withKills: "Members ze zdobytymi Kills",
     topShare: "Kills od 5 najlepszych członków",
     topShareHelp:
-      "Udział 5 największych zdobywców w Kills sojuszu. Im wyższy udział, tym mniej graczy niosło sojusz.",
+      "Udział 5 największych zdobywców w zdobytych Kills. Wysoki udział: kilku graczy zrobiło większość walki.",
     topBasis: "{top} z {n}",
     fewGainers: "mało zdobywców",
     fightClock: "Zegar walk serwera",
@@ -119,9 +119,7 @@ export const pl = {
       "Żadne z wydarzeń nie ma odczytów {min}-minutowych, więc ich pulsu nie da się porównać",
     carried: "Udział w Kills vs udział w Might",
     carriedHelp:
-      "Udział każdego sojuszu w zdobytych Kills od Początku do Końca, obok jego udziału w Might na Początku. Obrońcy i gracze wsparcia nie zdobywają Kills.",
-    carriedShown:
-      "Sojusze, których udział w Kills najbardziej przewyższa udział w Might, oraz twój.",
+      "Udział każdego sojuszu w zdobytych Kills, obok jego udziału w Might. Kills od Początku do Końca, Might na Początku. Obrońcy i gracze wsparcia nie zdobywają Kills.",
     carriedTotal: "Razem ({n}): {kills} zdobytych Kills, {might} Might na Początku",
     carriedMightMark: "Udział w Might na Początku",
     carriedKillsMark: "Udział w zdobytych Kills",
@@ -129,7 +127,7 @@ export const pl = {
     carriedTurnout: "{share} ze zdobytymi Kills",
     carriedSpread: "{low}–{high} · wydarzeń: {n}",
     carriedRatioHelp:
-      "pkt proc. to udział w Kills minus udział w Might. Przy 3 wydarzeniach lub więcej linia pod spodem pokazuje zakres udziału w Kills ÷ udziału w Might w tych wydarzeniach.",
+      "+6 pkt proc.: udział w Kills jest o 6 pkt proc. wyższy niż udział w Might. Przy 3 wydarzeniach lub więcej linia pod spodem podaje udział w Kills jako wielokrotność udziału w Might, od najniższej do najwyższej.",
     carriedPoints: "pkt proc.",
   },
   compare: {
@@ -152,7 +150,7 @@ export const pl = {
   merge: {
     title: "Symulator scalenia",
     tag: "Symulacja, nie plan",
-    lead: "Dwa sojusze policzone jako jeden i sprawdzone względem limitu członków. Tylko sumy sojuszy, bez nazw członków.",
+    lead: "Dwa sojusze policzone jako jeden i sprawdzone względem limitu członków.",
     link: "Symuluj scalenie",
     first: "Pierwszy sojusz",
     second: "Drugi sojusz",
@@ -181,7 +179,7 @@ export const pl = {
   flow: {
     title: "Przepływ członków",
     tag: "Tylko liczby",
-    lead: "Dokąd przechodzili członkowie między śledzonymi sojuszami, od pierwszego dnia do drugiego. Nie podano nazw członków.",
+    lead: "Dokąd przechodzili członkowie między śledzonymi sojuszami, między dwoma wybranymi dniami.",
     from: "Od",
     to: "Do",
     action: "Pokaż",
@@ -190,8 +188,7 @@ export const pl = {
       "Między {from} a {to} nie było przepływu {min} lub więcej członków między śledzonymi sojuszami.",
     totals:
       "Przepływy od {min} członków · Zmiany sojuszu: {moved} · Nowi: {arrived} · Odeszli: {left}",
-    small:
-      "Liczby poniżej {min} członków są ukryte i nie wchodzą do żadnej sumy, także do liczby tych, którzy zostali. Chroni to małe grupy.",
+    small: "Przejścia mniejsze niż {min} członków są ukryte i nie są liczone.",
     rowNew: "Nowi",
     colLeft: "Odeszli",
     legend:
@@ -201,9 +198,9 @@ export const pl = {
     rowStayed: "Zostali: {n}",
     newTitle: "Nowi w śledzonych sojuszach",
     leftTitle: "Odeszli ze śledzonych sojuszy",
-    notCounted: "Nie wliczono, brak użytecznego odczytu z obu dni: {list}.",
+    notCounted: "Nie wliczono, brak użytecznej aktualizacji dziennej z obu dni: {list}.",
     order: "Wybierz dzień Od wcześniejszy niż dzień Do.",
-    none: "Jeszcze nie ma dwóch dni z użytecznym odczytem.",
+    none: "Jeszcze nie ma dwóch dni z użyteczną aktualizacją dzienną.",
   },
   balance: {
     title: "Równowaga serwera",
@@ -211,16 +208,16 @@ export const pl = {
       "Udział każdego śledzonego sojuszu w Might śledzonych sojuszy oraz hipotetyczny kreator bloków.",
     lead: "Żaden sojusz nie ma więcej niż {max} Might śledzonych sojuszy. Pierwsze {n} mają {top}.",
     includes: "Might liczy budynki i technologie.",
-    basis: "Śledzone sojusze: {n}, odczyt z {date}.",
+    basis: "Śledzone sojusze: {n}, zaktualizowano {date}.",
     total: "Śledzone sojusze",
     shares: "Udział według sojuszu",
     bar: "Udział w Might śledzonych sojuszy według sojuszu: {list}",
     asOf: "stan na {date}",
-    none: "Dziennych odczytów jeszcze nie ma.",
+    none: "Dziennych aktualizacji jeszcze nie ma.",
     builder: "Kreator bloków",
     hypothetical: "Hipotetyczny",
     builderHelp:
-      "Dotknij A lub B przy sojuszu, żeby wypróbować blok. To tylko dodawanie liczb. Nie przewiduje ani nie ogłasza prawdziwego bloku.",
+      "Dotknij A lub B przy sojuszach, żeby zsumować ich Might. Tylko arytmetyka: nie prognoza ani zapowiedź.",
     bloc: "Blok {bloc}",
     blocShare: "{share} Might śledzonych sojuszy",
     blocAlliances: "Sojusze",
@@ -231,15 +228,15 @@ export const pl = {
     removeFrom: "Usuń {alliance} z bloku {bloc}",
     trend: "Udział top {n} w czasie",
     trendHelp:
-      "Udział {n} największych w Might śledzonych sojuszy, z każdego dziennego odczytu. Dzień, w którym sojusz nie został odczytany, jest pominięty.",
+      "Udział {n} największych w Might śledzonych sojuszy, z każdej dziennej aktualizacji. Dzień, w którym sojusz nie został odczytany, jest pominięty.",
     trendLabel: "Udział top {n}",
     trendSummary: "Pierwsze {n} mają {last} na {to}, a {first} na {from}.",
-    trendFew: "Za mało dziennych odczytów, żeby narysować trend.",
+    trendFew: "Za mało dziennych aktualizacji, żeby narysować trend.",
     day: "Dzień",
   },
   standing: {
     title: "Miejsce w czasie",
-    help: "Śledzone sojusze ułożone według Might z każdego dziennego odczytu, ze zmianą od {from}. Dzień, w którym sojusz nie został odczytany, jest pominięty. Serwer to tutaj suma śledzonych sojuszy.",
+    help: "Śledzone sojusze ułożone według Might z każdej dziennej aktualizacji, ze zmianą od {from}. Dzień, w którym sojusz nie został odczytany, jest pominięty. Serwer to tutaj suma śledzonych sojuszy.",
     lead: "{label} w dniu {to} zajmował miejsce {rank} pod względem Might, a w dniu {from} {before}.",
     leadGrowth:
       "Jego Might zmieniło się od tego czasu o {growth}. Suma śledzonych sojuszy zmieniła się o {server}.",
@@ -248,13 +245,14 @@ export const pl = {
     trend: "Miejsce {first} dnia {from}, {last} dnia {to}",
     thisAlliance: "Ten sojusz",
     detailsHelp: "Miejsce każdego dnia, od najstarszego: {days}.",
-    few: "Za mało dziennych odczytów, żeby porównać sojusze.",
-    notRanked: "Bez miejsca w rankingu, brak użytecznego dziennego odczytu w tym okresie: {list}.",
+    few: "Za mało dziennych aktualizacji, żeby porównać sojusze.",
+    notRanked:
+      "Bez miejsca w rankingu, brak użytecznej dziennej aktualizacji w tym okresie: {list}.",
   },
   history: {
     title: "Historia członków",
-    lead: "Każda karta porównuje listę członków z tą odczytaną wcześniej. Zmiany między odczytami nie są widoczne.",
-    daily: "Odczyt dzienny",
+    lead: "Każda karta porównuje listę członków z poprzednim odczytem. Kto doszedł i odszedł w międzyczasie, nie jest widoczny.",
+    daily: "Aktualizacja dzienna",
     since: "od {time}",
     first: "Pierwszy odczyt: nie ma jeszcze z czym porównać.",
     noChange: "Bez zmian w składzie.",
@@ -267,7 +265,7 @@ export const pl = {
     none: "Na tej stronie nic takiego nie ma.",
     copy: "Kopiuj do arkusza",
     copied: "Skopiowano",
-    copyFailed: "Kopiowanie nieudane",
+    copyFailed: "Nie udało się skopiować. Spróbuj ponownie.",
   },
   settings: {
     language: "Język",
@@ -350,7 +348,7 @@ export const pl = {
     submit: "Szukaj",
     seen: "Widziany",
     limit: "Pierwsze {n}",
-    noMatch: "Brak gracza o tej nazwie w księdze.",
+    noMatch: "Nie ma gracza o tej nazwie. Sprawdź pisownię albo wpisz część nazwy.",
     pending: "Babcia szuka w księdze…",
   },
   errors: {
@@ -363,7 +361,7 @@ export const pl = {
     server: {
       code: "500",
       title: "Coś pękło.",
-      body: "Spokojnie, babcia posprząta.",
+      body: "Po naszej stronie coś się zepsuło. Spróbuj ponownie za minutę.",
       retry: "Spróbuj ponownie",
       back: "Wróć do księgi",
     },

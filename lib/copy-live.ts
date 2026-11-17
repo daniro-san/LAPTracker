@@ -26,7 +26,7 @@ export const liveCopy = {
   /** `{kills}`: the top three alliances with their gains, or the total until the busiest span is named. */
   liveKillsSoFar: "Kills so far: {kills}",
   liveLast: "Last {min} min: {last} (peak {peak})",
-  liveDone: "Change since Start at the {time} reading. The ledger above uses the End at {end}.",
+  liveDone: "Change since Start at the {time} reading. The table above uses the End at {end}.",
   /** The server fight clock (issue 284, D86): events side by side on their samples, one row each. `{min}` is the cadence. */
   fightClock: "Server fight clock",
   fightClockLead:

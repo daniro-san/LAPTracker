@@ -39,3 +39,4 @@ Why: officers record onboarding facts about members (main squad might, AD Tech %
   - The routes run the work through `privately` (`lib/private/http.ts`): an error reaches `app_errors` and the admin alert as a code alone, because a database error's message quotes the query's parameters, which would be what an officer typed.
   - The sheet is read in memory and never stored or logged; only its facts and the confirmed names stay.
   - Two PostHog events without properties, `ws_facts_saved` and `ws_sheet_imported` (D77's closed list). `/w` stays masked in replay.
+- **Amendment 2026-11-17 (copy pass, panel batch D): new wording.** The officer-facing word for the end-of-day read is "daily update". The line before the first one reads "Roster from <time> server time · donations and activity come with the first daily update, after <DAILY_ROSTER_AT> server time." The facts are called "Member info" in English.

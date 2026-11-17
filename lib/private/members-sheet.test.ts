@@ -99,11 +99,9 @@ describe("Copy for spreadsheet (D71)", () => {
 });
 
 describe("Check in reasons (D75)", () => {
-  it("says the offline proxy's evidence: the activity and donations that held, the days and the reads", () => {
+  it("says the offline proxy's evidence: no new donations or activity, and for how many days", () => {
     const idle = { kind: "idle", days: 2, activity: 87, donated: 0 } as const;
 
-    expect(reasonText(idle, t, f)).toBe(
-      "activity 87 and donations 0 unchanged for 2 days (3 end-of-day reads in a row)",
-    );
+    expect(reasonText(idle, t, f)).toBe("no new donations or activity for 2 days");
   });
 });

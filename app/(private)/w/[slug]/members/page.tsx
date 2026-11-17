@@ -76,7 +76,6 @@ function Legend({ t }: { t: WorkspaceDictionary }) {
         <p>{t["members.checkinHelp"]}</p>
         <p>{t["list.askHelp"]}</p>
         <p>{t["members.nodataHelp"]}</p>
-        <p>{t["members.weekHelp"]}</p>
       </div>
     </details>
   );

@@ -24,7 +24,7 @@ Words already used in `lib/i18n/pt-BR.ts`. Reuse them so the pages stay consiste
 | Leader                    | Líder                              | `leadership.leader` — the R5                                                           |
 | Run by hand by the admin  | Rodado à mão pelo admin            | `status.byHand`                                                                        |
 | grandma                   | a vovó                             | the voice in empty states and errors                                                   |
-| read (one roster read)    | leitura                            | `history.lead`, `history.daily`, `history.first` — a read of the member list           |
+| daily update              | atualização diária                 | `history.daily`, `standing.*`, `balance.*`, `flow.*` — the once-a-day member lists     |
 | chart                     | gráfico                            | `ledger.chart`, `ledger.progressEmpty` — a player's progress graph                     |
 | median                    | do meio                            | `ledger.progressMedian` — "Membro do meio de {tag}", the middle member                 |
 | English                   | pt-BR                              | Key and use                                                                            |
@@ -49,7 +49,7 @@ Words already used in `lib/i18n/pt-BR.ts`. Reuse them so the pages stay consiste
 | Leader                    | Líder                              | `leadership.leader` — the R5                                                           |
 | Run by hand by the admin  | Rodado à mão pelo admin            | `status.byHand`                                                                        |
 | grandma                   | a vovó                             | the voice in empty states and errors                                                   |
-| read (one roster read)    | leitura                            | `history.lead`, `history.daily`, `history.first` — a read of the member list           |
+| daily update              | atualização diária                 | `history.daily`, `standing.*`, `balance.*`, `flow.*` — the once-a-day member lists     |
 | Live                      | Ao vivo                            | `ledger.live` — the live event's label                                                 |
 | gainer (Kills rose)       | ganhador                           | `ledger.topShareHelp`, `ledger.fewGainers` — a member whose Kills rose in the event    |
 | cap (member cap)          | limite                             | `merge.cap`, `merge.over`, `merge.answer` — an alliance's member limit                 |
@@ -75,7 +75,7 @@ Words already used in `lib/i18n/pt-BR.ts`. Reuse them so the pages stay consiste
 | Leader                    | Líder                              | `leadership.leader` — the R5                                                           |
 | Run by hand by the admin  | Rodado à mão pelo admin            | `status.byHand`                                                                        |
 | grandma                   | a vovó                             | the voice in empty states and errors                                                   |
-| read (one roster read)    | leitura                            | `history.lead`, `history.daily`, `history.first` — a read of the member list           |
+| daily update              | atualização diária                 | `history.daily`, `standing.*`, `balance.*`, `flow.*` — the once-a-day member lists     |
 | Live                      | Ao vivo                            | `ledger.live` — the live event's label                                                 |
 | gainer (Kills rose)       | ganhador                           | `ledger.topShareHelp`, `ledger.fewGainers` — a member whose Kills rose in the event    |
 | Kill share · Might share  | fatia de kills · fatia de might    | `ledger.carried*` — an alliance's share of the kills gained, and of the might at Start |
@@ -101,7 +101,7 @@ Words already used in `lib/i18n/pt-BR.ts`. Reuse them so the pages stay consiste
 | Leader                    | Líder                              | `leadership.leader` — the R5                                                           |
 | Run by hand by the admin  | Rodado à mão pelo admin            | `status.byHand`                                                                        |
 | grandma                   | a vovó                             | the voice in empty states and errors                                                   |
-| read (one roster read)    | leitura                            | `history.lead`, `history.daily`, `history.first` — a read of the member list           |
+| daily update              | atualização diária                 | `history.daily`, `standing.*`, `balance.*`, `flow.*` — the once-a-day member lists     |
 | chart                     | gráfico                            | `ledger.chart`, `ledger.progressEmpty` — a player's progress graph                     |
 | median                    | do meio                            | `ledger.progressMedian` — "Membro do meio de {tag}", the middle member                 |
 | English                   | pt-BR                              | Key and use                                                                            |
@@ -126,13 +126,15 @@ Words already used in `lib/i18n/pt-BR.ts`. Reuse them so the pages stay consiste
 | Leader                    | Líder                              | `leadership.leader` — the R5                                                           |
 | Run by hand by the admin  | Rodado à mão pelo admin            | `status.byHand`                                                                        |
 | grandma                   | a vovó                             | the voice in empty states and errors                                                   |
-| read (one roster read)    | leitura                            | `history.lead`, `history.daily`, `history.first` — a read of the member list           |
+| read (one roster read)    | leitura                            | `history.first` — a read of the member list                                            |
+| daily update              | atualização diária                 | `history.daily`, `standing.*`, `balance.*`, `flow.*` — the once-a-day member lists     |
 | Live                      | Ao vivo                            | `ledger.live` — the live event's label                                                 |
 | gainer (Kills rose)       | ganhador                           | `ledger.topShareHelp`, `ledger.fewGainers` — a member whose Kills rose in the event    |
 | fight clock               | relógio de lutas                   | `ledger.fightClock`, `ledger.fightClockLink` — the server's events on one clock        |
 | tracked alliance          | aliança acompanhada                | `balance.*`, `compare.notTracked`, `standing.*` — an alliance the ledger follows       |
 
-- Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
+- Might, Kills and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
+- Members stays English only as the column label (`ledger.members`) and inside `± Members`. Every other sentence, title or label says "membros" ("Fluxo de membros", "Membros que estavam na aliança…").
 - Counts read `Label: {n}` so no plural forms are needed.
 
 ## Game terms (from the game)
