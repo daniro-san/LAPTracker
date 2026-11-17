@@ -82,6 +82,29 @@ export const de = {
     liveLast: "Letzte {min} Min.: {last} (Spitze {peak})",
     liveDone:
       "Änderung seit Beginn bei der Messung um {time}. Die Tabelle oben rechnet mit dem Ende um {end}.",
+    fightClock: "Kampfuhr des Servers",
+    fightClockLead:
+      "Wann der Server gekämpft hat, Event für Event. Jeder Kasten ist ein Zeitfenster von {min} Minuten, seine Höhe ist der Anteil der im Event gewonnenen Kills. Die Zeitfenster richten sich nach der Serverzeit, daher ist Mittag in jeder Zeile Mittag.",
+    fightClockLink: "Mit anderen Events auf der Kampfuhr des Servers vergleichen",
+    fightClockShare: "Anteil an den Kills",
+    fightClockOutline: "Umrandet: die aktivsten {span} Minuten jedes Events",
+    fightClockNoBusiest: "Zu wenige Messungen, um die aktivsten {span} Minuten zu benennen",
+    fightClockOffSince:
+      "Keine {min}-Minuten-Messungen für dieses Event (sie beginnen mit dem Event vom {date})",
+    fightClockOffNext:
+      "Keine {min}-Minuten-Messungen für dieses Event (sie beginnen mit dem nächsten Event)",
+    fightClockOffMissed: "Für dieses Event wurden keine {min}-Minuten-Messungen gemacht",
+    fightClockOffWaiting: "Die {min}-Minuten-Messungen kommen, während dieses Event läuft",
+    fightClockNone:
+      "Die {min}-Minuten-Messungen jedes Events werden hier gezeichnet, beginnend mit dem nächsten Event.",
+    comparePulseHelp:
+      "Anteil der gewonnenen Kills jedes Events in jeweils {min} Minuten, auf die Serverzeit ausgerichtet. Die aktivsten {span} Minuten sind umrandet.",
+    comparePulseOffA:
+      "Event A ({when}) hat keine {min}-Minuten-Messungen, daher lassen sich die Pulse der beiden Events nicht vergleichen",
+    comparePulseOffB:
+      "Event B ({when}) hat keine {min}-Minuten-Messungen, daher lassen sich die Pulse der beiden Events nicht vergleichen",
+    comparePulseOffBoth:
+      "Keines der beiden Events hat {min}-Minuten-Messungen, daher lassen sich ihre Pulse nicht vergleichen",
     fought: "Beteiligung am Krieg",
     foughtSoFar: "Beteiligung am Krieg bisher",
     foughtHelp:
@@ -125,6 +148,68 @@ export const de = {
     notTracked: "in keiner erfassten Allianz",
     same: "Wähle zwei verschiedene Events.",
     onlyOne: "Bisher gibt es nur ein Event zum Vergleichen.",
+  },
+  merge: {
+    title: "Fusions-Simulator",
+    tag: "Simulation, kein Plan",
+    lead: "Wie zwei Allianzen als eine dastünden, gemessen an der Members-Obergrenze. Nur Summen je Allianz, keine Namen von Members.",
+    link: "Fusion simulieren",
+    first: "Erste Allianz",
+    second: "Zweite Allianz",
+    choose: "Allianz wählen",
+    action: "Simulieren",
+    swap: "Allianzen tauschen",
+    pick: "Zwei Allianzen wählen, um das Ergebnis zu sehen.",
+    same: "Wähle zwei verschiedene Allianzen.",
+    answer: "Zusammen: {all} mit allen, {within} innerhalb der Obergrenze von {cap}",
+    answerFits: "Zusammen: {all}. Alle {n} Members passen in die Obergrenze von {cap}",
+    rule: "So wird gerechnet: Die fusionierte Allianz bekommt die größere der beiden gespeicherten Obergrenzen ({cap}). Innerhalb der Obergrenze heißt: ihre stärksten Members nach Might. Wer in beiden Listen steht, zählt einmal.",
+    capAssumed:
+      "Keine der beiden Allianzen hat eine gespeicherte Obergrenze, daher wird {cap} angenommen.",
+    membersTitle: "Members und Obergrenze",
+    mightTitle: "Might",
+    rankTitle: "Rang unter den anderen erfassten Allianzen",
+    together: "Zusammen",
+    withEveryone: "Mit allen",
+    withinCap: "Im Limit",
+    leftOut: "Passt nicht",
+    inBoth: "Beide Listen",
+    cap: "Max. {cap}",
+    over: "{n} über der Obergrenze von {cap}",
+    turnout: "{gainers} von {n} Members mit gewonnenen Kills",
+    noTurnout: "Noch keine Beteiligung am Krieg",
+  },
+  balance: {
+    title: "Server-Balance",
+    description:
+      "Anteil jeder erfassten Allianz am Server-Might und ein hypothetischer Blockrechner.",
+    lead: "Keine Allianz hält mehr als {max} des Server-Might; die Top {n} halten {top}.",
+    includes: "Might umfasst Gebäude und Technologie.",
+    basis: "{n} erfasste Allianzen, Stand {date}.",
+    total: "Server-Might",
+    shares: "Anteil am Server-Might",
+    bar: "Anteil am Server-Might je Allianz: {list}",
+    asOf: "Stand {date}",
+    none: "Noch keine Tagesabrufe.",
+    builder: "Blockrechner",
+    hypothetical: "Hypothetisch",
+    builderHelp:
+      "Tippe bei einer Allianz auf A oder B, um einen Block zu probieren. Das ist Rechnerei, keine Prognose und keine Ankündigung.",
+    bloc: "Block {bloc}",
+    blocShare: "{share} des Server-Might",
+    blocAlliances: "Allianzen",
+    blocEmpty: "Noch keine Allianz",
+    noBloc: "In keinem Block",
+    clear: "Blöcke leeren",
+    addTo: "{alliance} zu Block {bloc} hinzufügen",
+    removeFrom: "{alliance} aus Block {bloc} entfernen",
+    trend: "Anteil der Top {n} im Verlauf",
+    trendHelp:
+      "Anteil am Might der erfassten Allianzen, den die {n} größten halten, aus jedem Tagesabruf. Ein Tag, an dem eine Allianz nicht abgerufen wurde, fehlt.",
+    trendLabel: "Anteil Top {n}",
+    trendSummary: "Die Top {n} halten am {to} {last}, am {from} {first}.",
+    trendFew: "Noch nicht genug Tagesabrufe für einen Verlauf.",
+    day: "Tag",
   },
   history: {
     title: "Mitgliederverlauf",

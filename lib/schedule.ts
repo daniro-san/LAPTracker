@@ -211,6 +211,12 @@ export function slotOf(at: Date, everyMin: number): Date {
 export const serverDay = (now: Date, cfg: Pick<ScheduleConfig, "SERVER_TZ">) =>
   isoDate(wallClock(now, cfg.SERVER_TZ));
 
+/** Minutes since midnight in server time (0..1439): the position of a slot on the server clock. */
+export function serverMinuteOfDay(at: Date, cfg: Pick<ScheduleConfig, "SERVER_TZ">): number {
+  const { hh, mm } = wallClock(at, cfg.SERVER_TZ);
+  return hh * 60 + mm;
+}
+
 /** 0 = Sunday … 6 = Saturday, in server time. */
 export function serverWeekday(at: Date, cfg: Pick<ScheduleConfig, "SERVER_TZ">): number {
   return wallClock(at, cfg.SERVER_TZ).weekday;
