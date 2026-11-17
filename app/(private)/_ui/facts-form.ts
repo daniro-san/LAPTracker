@@ -47,6 +47,7 @@ export const EDITOR_KEYS = [
   "facts.awayText",
   "facts.awayDay",
   "facts.mightHint",
+  "facts.adHint",
   "facts.conflictBar",
   "facts.conflictField",
   "facts.mergedLine",
@@ -229,11 +230,12 @@ type Value = FactValues[FactField] | null;
 
 const blank = (s: string) => s.trim() === "";
 
-/** "69", "69,5", "69%": 0–100; undefined when it is not one. */
-function percentOf(typed: string): number | null | undefined {
-  if (blank(typed)) return null;
-  const n = Number(typed.replace(",", ".").replace("%", "").trim());
-  return n >= 0 && n <= 100 ? n : undefined;
+/** "69", "69,5", "69.5", "69%": 0–100; undefined when it is not one, or above 100. */
+export function percentOf(typed: string): number | null | undefined {
+  const s = typed.replace("%", "").trim();
+  if (s === "") return null;
+  const n = /^\d+([.,]\d*)?$/.test(s) ? Number(s.replace(",", ".")) : NaN;
+  return n <= 100 ? n : undefined;
 }
 
 /** Each field's value from the form; `undefined` when what was typed is not a value. */
