@@ -3,7 +3,8 @@
 // The officers' Start here editor (D105): one tab per language, EN · PT · FR, each with the glossary, the
 // rules and who to ask. Save sends only the languages changed, with the version each was opened at; a
 // language another officer saved since is refused (409) and nothing is written. Marked `data-unsaved` while
-// it holds changes, so Sign out asks first (D99).
+// it holds changes, so Sign out asks first (D99). Translate (StartHereTranslate.tsx) fills the other
+// languages as drafts to accept or undo.
 import { useRef, useState, type KeyboardEvent } from "react";
 
 import { tabAfter } from "@/app/_ui/Movers";
@@ -11,10 +12,11 @@ import { buttonClass } from "@/lib/brand/components/Button";
 import { FIELD } from "@/lib/brand/components/controls";
 import { fill, isolate } from "@/lib/copy";
 import type { NoticeLanguage } from "@/lib/private/notice-rules";
-import type { StartHereText } from "@/lib/schema-board";
+import type { StartHereText } from "@/lib/private/start-here";
 
 import { LANGUAGE_CODE, LANGUAGE_NAME } from "./languages";
 import { RefusalLine, SIGNED_OUT } from "./SignedOut";
+import { TranslateBar, useTranslate, type TranslateWords } from "./StartHereTranslate";
 
 type Part = keyof StartHereText;
 type Texts = Record<NoticeLanguage, StartHereText>;
@@ -150,8 +152,41 @@ function Panel(props: {
   );
 }
 
+/** The outcome line and Save. */
+function SaveBar(props: {
+  error: string | null;
+  done: boolean;
+  off: boolean;
+  busy: boolean;
+  w: StartHereWords;
+}) {
+  const { w } = props;
+  return (
+    <>
+      {props.error && (
+        <RefusalLine text={props.error} className="mt-3 text-body-sm font-semibold" />
+      )}
+      {props.done && (
+        <p role="status" className="mt-3 text-body-sm">
+          {w.saved}
+        </p>
+      )}
+      <button
+        type="submit"
+        disabled={props.off || props.busy}
+        className={buttonClass("primary", "mt-4 w-full sm:w-auto disabled:opacity-60")}
+      >
+        {props.busy ? w.saving : w.save}
+      </button>
+    </>
+  );
+}
+
 export function StartHereEditor(props: {
   slug: string;
+  /** False without the translator's key (D81): Translate is off and says why. */
+  ai: boolean;
+  translate: TranslateWords;
   languages: readonly NoticeLanguage[];
   first: NoticeLanguage;
   texts: Texts;
@@ -164,25 +199,21 @@ export function StartHereEditor(props: {
   const [texts, setTexts] = useState(props.texts);
   const [versions, setVersions] = useState(props.versions);
   const [active, setActive] = useState(props.first);
-  const [state, setState] = useState<"idle" | "saving" | "saved">("idle");
-  const [error, setError] = useState<string | null>(null);
+  // An error carries the line to show (SIGNED_OUT on 401).
+  const [state, setState] = useState<"idle" | "saving" | "saved" | { error: string }>("idle");
   const changed = languages.filter((l) =>
     PARTS.some(({ part }) => texts[l][part] !== saved[l][part]),
   );
+  const tr = useTranslate(props.slug, languages, texts, setTexts);
 
   async function save() {
     setState("saving");
-    setError(null);
     const changes = changed.map((l) => ({ language: l, version: versions[l], text: texts[l] }));
     const result = await post(props.slug, changes, w);
-    if ("error" in result) {
-      setError(result.error);
-      setState("idle");
-      return;
-    }
-    // Every language of one save takes the save's version.
+    if ("error" in result) return setState({ error: result.error });
     setSaved((x) => ({ ...x, ...Object.fromEntries(changed.map((l) => [l, texts[l]])) }));
     setVersions((v) => ({ ...v, ...Object.fromEntries(changed.map((l) => [l, result.version])) }));
+    tr.clear();
     setState("saved");
   }
 
@@ -212,19 +243,21 @@ export function StartHereEditor(props: {
           setTexts((x) => ({ ...x, [active]: { ...x[active], [part]: value } }));
         }}
       />
-      {error && <RefusalLine text={error} className="mt-3 text-body-sm font-semibold" />}
-      {state === "saved" && changed.length === 0 && (
-        <p role="status" className="mt-3 text-body-sm">
-          {w.saved}
-        </p>
-      )}
-      <button
-        type="submit"
-        disabled={changed.length === 0 || state === "saving"}
-        className={buttonClass("primary", "mt-4 w-full sm:w-auto disabled:opacity-60")}
-      >
-        {state === "saving" ? w.saving : w.save}
-      </button>
+      <TranslateBar
+        active={active}
+        languages={languages}
+        ai={props.ai}
+        tr={tr}
+        words={props.translate}
+        text={texts[active]}
+      />
+      <SaveBar
+        error={typeof state === "object" ? state.error : null}
+        done={state === "saved" && changed.length === 0}
+        off={changed.length === 0}
+        busy={state === "saving"}
+        w={w}
+      />
     </form>
   );
 }
