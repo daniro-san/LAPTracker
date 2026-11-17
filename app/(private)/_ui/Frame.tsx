@@ -35,14 +35,42 @@ export async function workspaceWords(): Promise<{
 }
 
 const TABS: TabId[] = ["home", "members", "mark", "days", "review"];
-/** The tabs that exist so far; the other three come with their own issues and are shown as "soon". */
-const PATHS: Partial<Record<TabId, string>> = { home: "", members: "/members" };
+/** The tabs that exist so far; the others come with their own issues and are shown as "soon". Notices
+ * live inside Calendar (its Week · Caravans · Notices views, prototype v5), so it has no tab of its own. */
+const PATHS: Partial<Record<TabId, string>> = { home: "", members: "/members", days: "/calendar" };
 
-function Tabs({ t, slug, current }: { t: WorkspaceDictionary; slug: string; current: TabId }) {
+/** The Home tab's count of screenshot drafts waiting for review (issue 299), beside its label. */
+function Waiting({ n, t }: { n: number; t: WorkspaceDictionary }) {
+  if (n === 0) return null;
   return (
+    <>
+      <span
+        aria-hidden="true"
+        className="absolute top-1 left-1/2 ml-2 rounded-full bg-seal px-1.5 text-[11px] leading-4 font-semibold text-paper tabular-nums"
+      >
+        {n}
+      </span>
+      <span className="sr-only">{`, ${fill(t["shots.badge"], { n })}`}</span>
+    </>
+  );
+}
+
+function Tabs({
+  t,
+  slug,
+  current,
+  waiting,
+}: {
+  t: WorkspaceDictionary;
+  slug: string;
+  current: TabId;
+  waiting: number;
+}) {
+  return (
+    // Hidden while a notice editor is open, so its save bar is never under the tabs (review of PR 344).
     <nav
       aria-label={t["tab.aria"]}
-      className="fixed inset-x-0 bottom-0 z-10 border-t border-rule bg-paper pb-[env(safe-area-inset-bottom)]"
+      className="fixed inset-x-0 bottom-0 z-10 border-t border-rule bg-paper pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] [:root:has(form[data-notice-editor])_&]:hidden"
     >
       <ul className="mx-auto grid max-w-[640px] grid-cols-5">
         {TABS.map((id) => {
@@ -50,10 +78,16 @@ function Tabs({ t, slug, current }: { t: WorkspaceDictionary; slug: string; curr
           const inside = (
             <>
               <TabIcon id={id} />
-              <span className="text-[13px] leading-tight">{label}</span>
+              {/* Five tabs leave 72 px each at 360 px. 12 px fits the longest word ("Acompanhar") whole;
+                  a label of two words may take two lines, broken only between words. */}
+              <span className="max-w-full text-[12px] leading-tight hyphens-none [overflow-wrap:normal]">
+                {label}
+              </span>
+              {id === "home" && <Waiting n={waiting} t={t} />}
             </>
           );
-          const box = "flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 text-center";
+          const box =
+            "relative flex min-h-14 flex-col items-center justify-center gap-0.5 px-0.5 text-center";
           const path = PATHS[id];
           return (
             <li key={id}>
@@ -102,13 +136,17 @@ export async function Frame({
   /** "Signed in as … · Sign out", once signed in. */
   account?: ReactNode;
   /** Signed in: the bottom tabs with `current` open, and the first-use cards. */
-  tabs?: { slug: string; current: TabId };
+  tabs?: { slug: string; current: TabId; waiting: number };
   children: ReactNode;
 }) {
   const seen = !tabs || (await cookies()).get(WORKSPACE_INTRO_COOKIE)?.value === "1";
   return (
-    <div lang={language} id="top" className={tabs ? "pb-20" : undefined}>
-      <header className="bg-burgundy text-wax-paper">
+    <div
+      lang={language}
+      id="top"
+      className={tabs ? "pb-[calc(5rem+env(safe-area-inset-bottom))]" : undefined}
+    >
+      <header className="bg-burgundy pt-[env(safe-area-inset-top)] [body:has([data-upstream-banner])_&]:pt-0 pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)] text-wax-paper">
         <div className="mx-auto flex max-w-[960px] flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 sm:px-6">
           <div className="min-w-0 flex-1">
             <p className="font-display text-display-sm">{t["app.name"]}</p>
@@ -123,24 +161,32 @@ export async function Frame({
           )}
         </div>
       </header>
-      <main className="mx-auto max-w-[960px] px-4 py-5 sm:px-6">{children}</main>
+      <main className="mx-auto max-w-[960px] py-5 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] sm:pl-[max(1.5rem,env(safe-area-inset-left))] sm:pr-[max(1.5rem,env(safe-area-inset-right))]">
+        {children}
+      </main>
       {tabs && <Tabs t={t} {...tabs} />}
     </div>
   );
 }
 
-/** The frame once signed in: the alliance under the name, "Signed in as … · Sign out", the tabs. */
+/**
+ * The frame once signed in: the alliance under the name, "Signed in as … · Sign out", the tabs with the
+ * count of screenshot drafts waiting for review on Home (`waiting`, read by the page in its own
+ * database read: the frame opens no connection).
+ */
 export function SignedInFrame({
   access,
   language,
   t,
   current,
+  waiting,
   children,
 }: {
   access: WorkspaceAccess;
   language: WorkspaceLanguage;
   t: WorkspaceDictionary;
   current: TabId;
+  waiting: number;
   children: ReactNode;
 }) {
   const alliance = ALLIANCES.find((a) => a.unionId === access.unionId);
@@ -161,7 +207,7 @@ export function SignedInFrame({
     <Frame
       language={language}
       t={t}
-      tabs={{ slug: access.slug, current }}
+      tabs={{ slug: access.slug, current, waiting }}
       account={account}
       {...(alliance && { subtitle: `${alliance.tag} · ${alliance.name}` })}
     >

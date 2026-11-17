@@ -23,7 +23,7 @@ export default function BrandPage() {
   return (
     <div lang="en" className="min-h-screen bg-paper font-body text-ink">
       <header className="sticky top-0 z-30 text-plum">
-        <div className="bg-plum text-paper">
+        <div className="bg-plum pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)] text-paper">
           <div className="mx-auto flex max-w-[960px] items-center justify-between gap-2 px-4 py-1 sm:px-6">
             <Logo name={copy.site.name} />
             <ThemeSwitch label={copy.site.darkMode} />

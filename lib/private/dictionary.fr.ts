@@ -1,8 +1,14 @@
 // The workspace dictionary in French (D71), split from dictionary.ts for its size; the keys follow `en`.
 // French puts a no-break space before : ? and !, and inside « ».
 import type { WorkspaceDictionary } from "./dictionary";
+import { calendarFr } from "./dictionary.calendar.fr";
+import { importFr } from "./dictionary.import";
+import { noticesFr } from "./dictionary.notices";
+import { shotsFr } from "./dictionary.shots.fr";
+import { theftsFr } from "./dictionary.thefts";
 
 export const fr: WorkspaceDictionary = {
+  ...calendarFr,
   "app.name": "Bureau des officiers",
   "tab.aria": "Sections",
   "tab.home": "Accueil",
@@ -113,7 +119,7 @@ export const fr: WorkspaceDictionary = {
   "howto.after":
     "Ensuite, touchez l’icône comme pour n’importe quelle appli. Vous restez connecté une journée ; ensuite, Discord vérifie à nouveau votre rôle.",
   "howto.open": "Ouvrir le Bureau des officiers",
-  "time.server": "{time} heure serveur",
+  "time.server": "{time} heure du serveur",
   "tab.review": "À suivre",
   "members.lead": "Du jeu, relevé chaque nuit juste avant le changement de jour du serveur.",
   "members.lastRead": "Dernier relevé : {when}",
@@ -167,6 +173,59 @@ export const fr: WorkspaceDictionary = {
     "Dans Safari, touchez l’icône de partage (un carré avec une flèche vers le haut). Dans la liste, touchez l’élément avec un + dans un carré, puis confirmez.",
   "howto.android.body":
     "Dans Chrome, touchez ⋮ en haut à droite. Dans le menu, touchez l’élément qui ajoute la page à l’écran d’accueil (un téléphone avec une flèche), puis confirmez.",
+  "status.break": "En pause",
+  "status.breakUntil": "En pause jusqu’au {date}",
+  "status.help": "Besoin d’aide",
+  "members.early":
+    "Liste du {when} · dons et activité arrivent avec le premier relevé de fin de journée, après {time} heure serveur.",
+  "members.import": "Importer les anciens tableurs",
+  "src.message": "d’un message",
+  "src.sheet": "du tableur",
+  "facts.head": "Infos du membre",
+  "facts.squadMight": "Escouade principale",
+  "facts.adTech": "AD Tech",
+  "facts.troopTier": "Troupes",
+  "facts.timeZone": "Fuseau horaire",
+  "facts.languages": "Langues",
+  "facts.status": "Statut",
+  "facts.away": "Absence",
+  "facts.notes": "Notes",
+  "facts.until": "jusqu’au {date}",
+  "facts.edit": "Modifier les infos",
+  "facts.paste": "Coller ce qu’on vous a dit",
+  "facts.title": "Infos : {name}",
+  "facts.save": "Enregistrer",
+  "facts.cancel": "Annuler",
+  "facts.failed": "Échec de l’enregistrement. Réessayez.",
+  "facts.computed": "Automatique (actuellement : {status})",
+  "facts.awayText": "Ce qui a été dit",
+  "facts.awayDay": "Dernier jour d’absence",
+  "facts.mightHint": "12,3M ou 12 300 000",
+  "facts.theirs": "Garder {theirs}",
+  "facts.mine": "Utiliser {mine}",
+  "paste.help":
+    "Collez la conversation ici, puis touchez Remplir les champs. Rien n’est enregistré avant que vous touchiez Enregistrer.",
+  "paste.read": "Remplir les champs",
+  "paste.nothing": "Rien trouvé. Saisissez les valeurs ci-dessous.",
+  "paste.zones": "Autres possibilités",
+  "tz.choose": "Choisir",
+  "tz.search": "Ville, pays, PST, ST +3…",
+  "tz.searchAria": "Chercher un fuseau horaire",
+  "tz.theirTime": "Son heure actuelle",
+  "tz.st": "ST est l’heure du serveur ({offset}).",
+  "tz.more": "{n} de plus : continuez à taper.",
+  "tz.none": "Aucun fuseau horaire ne correspond.",
+  "tz.now": "maintenant {time}",
+  "facts.conflictBar":
+    "Un autre officier a modifié {field} pendant que vous modifiiez. Répondez sous {field}, puis enregistrez.",
+  "facts.conflictField": "Un autre officier a enregistré {theirs}. Vous avez saisi {mine}.",
+  "facts.mergedLine": "Combiné avec la modification d’un autre officier : {fields}.",
+  "src.unsaved": "de ce message · non enregistré",
+  "paste.found.one": "{n} valeur trouvée. Vérifiez-la, puis enregistrez.",
+  "paste.found.other": "{n} valeurs trouvées. Vérifiez-les, puis enregistrez.",
+  "facts.discard": "Abandonner les modifications ?",
+  "facts.discardYes": "Abandonner",
+  "facts.discardNo": "Continuer",
   "profile.title": "Vos réglages",
   "profile.name": "Votre nom",
   "profile.nameHelp": "Affiché en haut du bureau (32 caractères au plus).",
@@ -191,4 +250,8 @@ export const fr: WorkspaceDictionary = {
   "profile.theme.light": "Clair",
   "profile.theme.dark": "Sombre",
   "profile.theme.system": "Comme l’appareil",
+  ...noticesFr,
+  ...importFr,
+  ...theftsFr,
+  ...shotsFr,
 };

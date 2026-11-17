@@ -6,6 +6,8 @@ One dependency rule and one injection point. Source: docs/IMPLEMENTATION_PLAN.md
 app/api/*           thin HTTP handlers: auth → parse → call lib → respond. No logic.
 app/(pages)/*       UI. Reads through lib/queries only.
 app/(private)/*     the workspace (D71): pages under w/[slug], handlers under api/w (one fixed callback, D73).
+                    One handler sits outside api/w: api/discord/interactions (public, checked by Discord's
+                    signature instead of a session, then the officer rule; D96).
                     Reaches data only through lib/private, after requireWorkspace.
 lib/collector.ts    domain: runSnapshot, freshness check, per-alliance fallback, resume logic.
 lib/compute.ts      pure functions only — sums, deltas, freshness predicate, roster diff; no IO, no Date.now() (passed in).
@@ -25,8 +27,40 @@ lib/private/*.ts    the workspace (D71): requireWorkspace and its branded Worksp
                     D75's signals), members-list.ts (filters and search), members-sheet.ts (status,
                     reasons and "copy for spreadsheet"), first-use.ts (the first-use cards as data),
                     cookies.ts (the two cookie names, apart from the dictionaries, for client components);
-                    their table reads are in lib/repo/workspace-rosters.ts.
+                    their table reads are in lib/repo/workspace-rosters.ts, and the newest roster of any kind
+                    (before the first end-of-day read) and the names members used in workspace-any-roster.ts.
+                    Member facts (D80): fact-fields.ts (the fields, sources and merges; pure, also on the
+                    client), member-facts.ts (versions, 409 and merging), onboarding-parse.ts ("Paste what
+                    they told you"; pure, for pastes and OCR lines), time-zones.ts and zone-table.ts (the
+                    picker's search; pure), sheet-parse.ts (pure) and sheet-import.ts (the one-time import);
+                    their tables are in lib/repo/member-facts.ts and lib/schema-facts.ts.
+                    notices.ts (the notices library's reads
+                    and its save, issue 304), notice-rules.ts (pure: fields, the counter, "may be out of date",
+                    the save's version check); its table reads and writes are in lib/repo/notices.ts.
+                    The Calendar tab (issue 300): calendar.ts (reads and the field-level writes with their
+                    version check), calendar-model.ts (pure: kinds, input schemas, which change fits which kind,
+                    the weekly layout), calendar-kinds.ts (its fixed facts, no zod, for client components),
+                    calendar-time.ts (pure, browser-safe: server days, ST and the viewer's clock, on
+                    lib/schedule's `serverInstant`), calendar-words.ts (titles, dates, the 409 sentence),
+                    caravan-suggest.ts (pure: the caravan suggestions' ranking) and caravans.ts (their read),
+                    dictionary.calendar*.ts (its words); its tables are in lib/schema-calendar.ts, its reads and
+                    writes in lib/repo/calendar.ts.
+                    The thefts log (D97): thefts.ts (its read and writes, the attacker search), theft-groups.ts
+                    (pure: attacker key, groups and counts, follow-up state), thefts-import.ts (the screenshot
+                    import's save hook for Secret Ops reports), dictionary.thefts.ts (its words); tables in
+                    lib/schema-thefts.ts, reads and writes in lib/repo/thefts.ts.
+                    The screenshot import (D96): import.ts (drafts, save, discard, change of type),
+                    import-kinds.ts (the kinds and the SaveHook other sessions plug in), import-save.ts
+                    (the hooks: Alliance Duel points, the ranking checks), import-photo-hooks.ts (member
+                    updates into member facts, Secret Ops reports into thefts), import-view.ts (To review, a
+                    draft's review), import-read.ts (the only way to the OCR), import-words.ts,
+                    import-input.ts (request bodies), discord-interaction.ts (signature, PING, the officer
+                    rule, the deferred reply) and import-discord.ts (fetch, read, edit the reply, after the
+                    response); their tables are lib/schema-import.ts, read in lib/repo/import.ts.
+lib/ai/*.ts         Groq (D81): the chat client with its model fallback (groq.ts), the notice prompts and plain-text
+                    cleanup (notice-writing.ts), the game glossary (glossary.ts). Reached through AppContext.ai.
 lib/queries/*.ts    read models for the UI (joins, sorting, name history). Never write. Never expose BLOCKED_ROSTER_KEYS.
+                    lib/queries/server-players.ts: `serverPlayers`, the tracked alliances' newest roster names (D97).
                     lib/queries/samples.ts: `eventSamples`, an event's Start, samples and End (D69).
                     lib/queries/live.ts: `eventProgress`, the event page's live section (alliance totals per reading, D69):
                     `progressRows` (the database, cacheable) and `eventProgressOf` (pure, per request, takes `now`).
@@ -58,17 +92,20 @@ lib/images.ts       the two image sources (preset badge id, stored photo URL on 
 proxy.ts            per-request CSP nonce (Next 16's middleware); next.config.ts holds the static security headers
 instrumentation.ts  validates the environment once at server start
 lib/build-version.ts pure: the footer's live version from Vercel's git variables (D59); next.config.ts calls it once per build.
-lib/screenshot/     the screenshot reader (D74): pure parsers over OCR text lines (alliance duel, donation, secret operations, pasted text),
-                    nameKey and matchName (candidates passed in), and one IO module, read-screenshot.ts (Tesseract.js, committed English data). No DB access.
+lib/screenshot/     the screenshot reader (D74): pure parsers over OCR text lines (alliance duel, the might/kills/donation rankings, secret
+                    operations, pasted text), classify.ts (which screen, scored, D96), merge.ts (pages of one ranking), nameKey and
+                    matchName (candidates passed in), and one IO module, read-screenshot.ts (Tesseract.js, committed English data). No DB access.
+lib/import-command.ts the Discord message command's definition, shared by the interactions route and scripts/discord-register-command.ts (D96).
 ```
 
 ## Dependency rule
 
-- `app → lib/{route, auth, run, tick, rehearsal, schedule, queries, repo, images, analytics}`; `lib/private → lib/analytics/events` (the sign-in mark, D77); `lib/run → lib/{collector, queries}` (queries: the public Discord message's numbers).
+- `app → lib/{route, auth, run, tick, rehearsal, schedule, queries, repo, images, analytics, ai}`; `lib/private → lib/analytics/events` (the sign-in mark, D77); `lib/private → lib/screenshot` (the name matcher, for the sheet import, D80; the OCR, the classifier and the parsers, for the screenshot import, D96); `lib/run → lib/{collector, queries}` (queries: the public Discord message's numbers).
 - `lib/collector → lib/{compute, sources, repo, logger, notify}` **through the `Deps` object passed in**.
 - `lib/compute`, `lib/budget` and `lib/compact` import nothing from the project.
 - `lib/logger` imports only `lib/repo` and `lib/redact`.
 - `lib/screenshot` imports nothing from the project.
+- `lib/ai` imports nothing from the project: a request carries only the officer's text (D81).
 - Nothing in `lib/` imports from `app/`.
 - Only `app/(private)` imports `lib/private` (an allowlist zone: every other module is fenced out by default). `app/(private)` does not import `lib/repo`. `lib/private` imports neither `lib/notify*` nor `lib/discord-*` (D71).
 

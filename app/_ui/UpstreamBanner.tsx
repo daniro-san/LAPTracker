@@ -12,7 +12,11 @@ export async function UpstreamBanner() {
   if (!status?.down) return null;
   const [clock, copy] = await Promise.all([requestClock(), requestCopy()]);
   return (
-    <div role="status" className="border-b border-seal/40 bg-seal/10 text-ink">
+    <div
+      role="status"
+      data-upstream-banner
+      className="border-b border-seal/40 bg-seal/10 pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)] text-ink"
+    >
       <div className="mx-auto flex max-w-[960px] items-start gap-2 px-4 py-2 text-body-sm sm:px-6">
         <span className="mt-0.5 text-seal">
           <DroppedStitch />

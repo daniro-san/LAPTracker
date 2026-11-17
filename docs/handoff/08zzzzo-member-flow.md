@@ -59,3 +59,5 @@ Measured, Chrome at 360, 390, 412, 600, 768, 810, 820, 1024, 1180, 1280 in light
 - Left: the matrix is mostly empty cells (a hidden move and no move look the same); that is the rule in D89, and the sentence says it. Not changed.
 - Left: "New" is the last phone row; it opens only when it has a visible move. Kept, for the same order as the table.
 - No copy was changed, so no translations changed.
+
+https://github.com/daniro-san/LAPTracker/pull/349

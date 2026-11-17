@@ -221,3 +221,13 @@ export function serverMinuteOfDay(at: Date, cfg: Pick<ScheduleConfig, "SERVER_TZ
 export function serverWeekday(at: Date, cfg: Pick<ScheduleConfig, "SERVER_TZ">): number {
   return wallClock(at, cfg.SERVER_TZ).weekday;
 }
+
+/** The instant a server date ("2026-11-15") and time ("13:46") stand for. */
+export function serverInstant(
+  day: string,
+  hhmm: string,
+  cfg: Pick<ScheduleConfig, "SERVER_TZ">,
+): Date {
+  const [y = 0, m = 0, d = 0] = day.split("-").map(Number);
+  return zonedToUtc({ y, m, d }, hhmm, cfg.SERVER_TZ);
+}
