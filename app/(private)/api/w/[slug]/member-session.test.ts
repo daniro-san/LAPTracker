@@ -1,8 +1,9 @@
-// D105: a member's session opens the members' board only. Every officer handler under /api/w/[slug] (all but
-// login and logout, which every session uses) answers a member's session exactly as it answers no session,
-// found by walking this folder, so a route added later is covered without a change here.
+// D105: a member's session opens the members' board only. Every officer handler under /api/w/[slug] gets a
+// minimal valid request (FIXTURES), so it passes its own checks (origin, body, query) and reaches the session
+// check. Then no session and a member's session must both get 401 signed_out, and an officer's must not.
+// Routes are found by walking this folder: a new route without a fixture, or one that answers before its
+// session check, fails here.
 import { readdirSync } from "node:fs";
-import { join } from "node:path";
 
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -21,12 +22,58 @@ vi.mock("@/lib/app-context", async (original) => ({
 }));
 
 const ORIGIN = "https://laptracker.test";
-const HERE = import.meta.dirname;
-const ROUTES = readdirSync(HERE, { recursive: true, encoding: "utf8" })
-  .filter((f) => f.endsWith("route.ts") && !/^(login|logout)\//.test(f))
-  .sort();
 const METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE"] as const;
+type Method = (typeof METHODS)[number];
 type Handler = (r: Request, c: { params: Promise<Record<string, string>> }) => Promise<Response>;
+/** A JSON body, a query string, or a picture body; `officer: false` skips the officer's call (below). */
+type Fixture = { body?: unknown; query?: string; picture?: true; officer?: false };
+
+/**
+ * Not officer routes, so not here. login: where every sign-in starts, with no session yet. logout: ends a
+ * session of either tier (D105). The board and how-to are pages, not API routes: the board has its own
+ * door (requireBoard) and how-to reads nothing.
+ */
+const EXCLUDED = new Set(["login/route.ts", "logout/route.ts"]);
+
+const ID = "00000000-0000-4000-8000-000000000001";
+const FIXTURES: Record<string, Partial<Record<Method, Fixture>>> = {
+  "calendar/route.ts": {
+    POST: { body: { action: "delete", entry: 1, scope: "all", week: "2026-11-16" } },
+  },
+  "import/route.ts": { POST: { body: { csv: "name", apply: false, decisions: [] } } },
+  "members/[uid]/facts/route.ts": {
+    POST: { body: { changes: [{ field: "notes", version: 0, value: "x", source: "officer" }] } },
+  },
+  "members/[uid]/route.ts": { GET: {} },
+  "notices/draft/route.ts": {
+    POST: { body: { kind: "translate", from: "en", to: ["fr"], text: "Hello" } },
+  },
+  "notices/publish/route.ts": { POST: { body: { id: 1, languages: ["en"], requestId: ID } } },
+  "notices/route.ts": {
+    POST: { body: { changes: [{ field: "title", value: "x", version: 0 }], requestId: ID } },
+  },
+  "pending/route.ts": { POST: { body: { action: "delete", uid: -1 } } },
+  "profile/route.ts": { GET: {}, POST: { body: { action: "unlink" } } },
+  "roll-call/route.ts": {
+    POST: { body: { action: "add", kind: "plunder", day: "2026-11-16", requestId: ID } },
+  },
+  "shots/[id]/route.ts": { POST: { body: { action: "discard", version: 1 } } },
+  // The officer's call would run the OCR on the stand-in bytes: the refusals are what is checked here.
+  "shots/read/route.ts": { POST: { picture: true, officer: false } },
+  "shots/route.ts": { POST: { body: { pictures: [{ lines: [] }] } } },
+  "start-here/route.ts": {
+    POST: {
+      body: {
+        changes: [{ language: "en", version: 0, text: { glossary: "x", rules: "", ask: "" } }],
+      },
+    },
+  },
+  "thefts/route.ts": { GET: { query: "?q=ab" }, POST: { body: { action: "remove", id: 1 } } },
+};
+
+const ROUTES = readdirSync(import.meta.dirname, { recursive: true, encoding: "utf8" })
+  .filter((f) => f.endsWith("route.ts") && !EXCLUDED.has(f))
+  .sort();
 
 let db: Db;
 const tokens = { officer: "", member: "" };
@@ -49,10 +96,12 @@ beforeEach(async () => {
   }
 });
 
-function call(handler: Handler, method: string, token: string | null, body = "{}") {
-  const headers = new Headers({ origin: ORIGIN, "content-type": "application/json" });
+function call(handler: Handler, method: Method, fixture: Fixture, token: string | null) {
+  const headers = new Headers({ origin: ORIGIN, "sec-fetch-site": "same-origin" });
+  headers.set("content-type", fixture.picture ? "image/png" : "application/json");
   if (token) headers.set("cookie", `${SESSION_COOKIE}=${token}`);
-  const request = new Request(`${ORIGIN}/api/w/ogs/x`, {
+  const body = fixture.picture ? new Uint8Array([137, 80, 78, 71]) : JSON.stringify(fixture.body);
+  const request = new Request(`${ORIGIN}/api/w/ogs/x${fixture.query ?? ""}`, {
     method,
     headers,
     ...(method === "GET" ? {} : { body }),
@@ -61,37 +110,42 @@ function call(handler: Handler, method: string, token: string | null, body = "{}
 }
 
 describe("a member's session on the officers' API (D105)", () => {
-  it("finds the officer routes to check", () => {
-    expect(ROUTES.length).toBeGreaterThanOrEqual(14);
-    expect(ROUTES).toContain(join("start-here", "route.ts"));
+  it("finds the officer routes, and every one has a fixture", () => {
+    expect(ROUTES.length).toBeGreaterThanOrEqual(15);
+    expect(ROUTES.filter((f) => !(f in FIXTURES))).toEqual([]);
   });
 
-  it.each(ROUTES)("%s answers a member's session as it answers no session", async (file) => {
-    const mod = (await import(/* @vite-ignore */ `./${file}`)) as Partial<Record<string, Handler>>;
-    for (const method of METHODS) {
-      const handler = mod[method];
-      if (!handler) continue;
-      const none = await call(handler, method, null);
-      const member = await call(handler, method, tokens.member);
-      expect([method, member.status], file).toEqual([method, none.status]);
-      expect(await member.json(), file).toEqual(await none.json());
-      // Where the session check is reached, an officer's session passes it: the refusal is the tier's.
-      if (none.status === 401) {
-        expect((await call(handler, method, tokens.officer)).status, file).not.toBe(401);
+  it.each(ROUTES)("%s refuses no session and a member's session alike", async (file) => {
+    const mod = (await import(/* @vite-ignore */ `./${file}`)) as Partial<Record<Method, Handler>>;
+    const exported = METHODS.filter((m) => mod[m]);
+    expect(exported.length, file).toBeGreaterThan(0);
+    // Every handler the route exports has a fixture, so none is skipped.
+    expect(
+      exported.filter((m) => !FIXTURES[file]?.[m]),
+      file,
+    ).toEqual([]);
+    for (const method of exported) {
+      const handler = mod[method] as Handler;
+      const fixture = FIXTURES[file]?.[method] as Fixture;
+      for (const token of [null, tokens.member]) {
+        const res = await call(handler, method, fixture, token);
+        const who = `${file} ${method} ${token ? "member" : "no session"}`;
+        expect([res.status, await res.json()], who).toEqual([401, { code: "signed_out" }]);
+      }
+      // The same request passes the session check for an officer: the refusal above is the tier's.
+      if (fixture.officer !== false) {
+        const res = await call(handler, method, fixture, tokens.officer);
+        expect(res.status, `${file} ${method} officer`).not.toBe(401);
       }
     }
   });
 
   it("refuses a member's Start here save that an officer's session saves", async () => {
     const { POST } = (await import("./start-here/route")) as { POST: Handler };
-    const body = JSON.stringify({
-      changes: [
-        { language: "en", version: 0, text: { glossary: "EB: Elite Boss", rules: "", ask: "" } },
-      ],
-    });
-    const member = await call(POST, "POST", tokens.member, body);
+    const fixture = FIXTURES["start-here/route.ts"]?.POST as Fixture;
+    const member = await call(POST, "POST", fixture, tokens.member);
     expect([member.status, await member.json()]).toEqual([401, { code: "signed_out" }]);
-    const officer = await call(POST, "POST", tokens.officer, body);
+    const officer = await call(POST, "POST", fixture, tokens.officer);
     expect([officer.status, await officer.json()]).toEqual([200, { version: 1 }]);
   });
 });

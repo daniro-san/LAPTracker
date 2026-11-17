@@ -48,7 +48,7 @@ async function roster(unionId: number, day: string, names: Record<number, string
 async function signedIn(slug: string, discordName: string): Promise<WorkspaceAccess> {
   const ws = await findWorkspaceBySlug(db, slug);
   const userId = await recordSignIn(db, ws?.id ?? 0, `officer-${slug}`, discordName, NOW);
-  const { token } = await createSession(db, ws?.id ?? 0, userId, NOW, null);
+  const { token } = await createSession(db, ws?.id ?? 0, userId, NOW, null, "officer");
   const access = await requireWorkspace(db, slug, { get: () => ({ value: token }) }, NOW);
   if (!access.ok) throw new Error(`no access to ${slug}`);
   return access;

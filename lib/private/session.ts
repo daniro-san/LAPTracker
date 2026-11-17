@@ -50,7 +50,7 @@ export async function createSession(
   workspaceUserId: number,
   now: Date,
   endsBy: Date | null,
-  tier: SessionTier = "officer",
+  tier: SessionTier,
 ): Promise<{ token: string; cookie: string }> {
   const token = randomBytes(32).toString("base64url");
   const full = now.getTime() + (tier === "member" ? MEMBER_SESSION_MS : SESSION_MS);

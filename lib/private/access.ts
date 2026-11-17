@@ -127,8 +127,9 @@ export async function requireWorkspace(
   const found = await openSession(db, slug, cookies);
   if ("ok" in found) return found;
   const { workspace, session } = found;
-  // INVARIANT workspace.member-board-only: a member's session opens no officer page, route or API (D105).
-  if (session.tier === "member") return refuse("member");
+  // INVARIANT workspace.member-board-only: only an officer's session opens an officer page, route or API;
+  // a member's, or any other tier, does not (D105).
+  if (session.tier !== "officer") return refuse("member");
   const refusal = await servedOrNot(db, workspace, session, now, checkWithin);
   if (refusal) return refusal;
   return grant(workspace, {

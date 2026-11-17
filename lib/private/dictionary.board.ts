@@ -15,6 +15,8 @@ export const boardEn = {
   "board.link": "Open link",
   "board.read": "Read in",
   "board.notInYours": "Not written in your language yet.",
+  "board.stale":
+    "This translation may be behind the newest version. The other languages are one tap away.",
   "board.start": "Start here",
   "board.start.glossary": "Words we use",
   "board.start.rules": "Alliance rules",
@@ -60,6 +62,8 @@ export const boardPt: BoardWords = {
   "board.link": "Abrir link",
   "board.read": "Ler em",
   "board.notInYours": "Ainda não foi escrito no seu idioma.",
+  "board.stale":
+    "Esta tradução pode estar atrás da versão mais nova. Os outros idiomas estão a um toque.",
   "board.start": "Comece aqui",
   "board.start.glossary": "Palavras que usamos",
   "board.start.rules": "Regras da aliança",
@@ -103,6 +107,8 @@ export const boardFr: BoardWords = {
   "board.link": "Ouvrir le lien",
   "board.read": "Lire en",
   "board.notInYours": "Pas encore écrit dans votre langue.",
+  "board.stale":
+    "Cette traduction est peut-être en retard sur la dernière version. Les autres langues sont à un toucher.",
   "board.start": "Pour commencer",
   "board.start.glossary": "Les mots qu’on utilise",
   "board.start.rules": "Règles de l’alliance",

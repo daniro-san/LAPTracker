@@ -41,7 +41,7 @@ export const fr: WorkspaceDictionary = {
   "noaccess.allowlist_expired":
     "Votre accès était limité dans le temps, et ce temps est écoulé. Demandez au propriétaire du site de le prolonger.",
   "noaccess.blocked":
-    "Ce compte Discord n’a plus accès au Bureau des officiers. Demandez à un R5 si c’est une erreur.",
+    "Ce compte Discord n’a plus accès aux pages de l’alliance ici : le tableau des membres et le Bureau des officiers. Demandez à un R5 si c’est une erreur.",
   "noaccess.retry": "Se reconnecter",
   "noaccess.public": "Aller au Registre des événements public",
   "shell.signedIn": "Connecté en tant que {name}",

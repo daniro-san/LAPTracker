@@ -45,7 +45,7 @@ const en = {
   "noaccess.allowlist_expired":
     "Your access was for a limited time, and that time is over. Ask the site owner to extend it.",
   "noaccess.blocked":
-    "This Discord account no longer has access to the Officers’ Desk. Ask an R5 if this is a mistake.",
+    "This Discord account no longer has access to the alliance’s pages here: the members’ board or the Officers’ Desk. Ask an R5 if this is a mistake.",
   "noaccess.retry": "Sign in again",
   "noaccess.public": "Go to the public Event Ledger",
   "shell.signedIn": "Signed in as {name}",

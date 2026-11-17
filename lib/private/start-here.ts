@@ -11,6 +11,9 @@ import type { StartHereText } from "../schema-board";
 import type { WorkspaceAccess } from "./access";
 import { NOTICE_LANGUAGES, type NoticeLanguage } from "./notice-rules";
 
+/** For the UI: pages and components reach the table's types through lib/private, never lib/schema-board. */
+export type { StartHereText };
+
 /** Caps per part: about a page each, which the board shows in full. */
 export const START_HERE_MAX = { glossary: 4000, rules: 3000, ask: 1500 } as const;
 

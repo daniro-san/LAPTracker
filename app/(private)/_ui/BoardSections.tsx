@@ -10,7 +10,7 @@ import { addDays, zonedInstant } from "@/lib/private/calendar-time";
 import { calendarDates, stOf, titleOf } from "@/lib/private/calendar-words";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import { NOTICE_LANGUAGES, type NoticeLanguage } from "@/lib/private/notice-rules";
-import type { StartHereText } from "@/lib/schema-board";
+import type { StartHereText } from "@/lib/private/start-here";
 
 import { BoardTime, LanguageTabs, type LanguagePanel } from "./BoardParts";
 import { calendarWords } from "./calendar-data";
@@ -32,6 +32,8 @@ function Translated(props: {
   t: WorkspaceDictionary;
   language: WorkspaceLanguage;
   written: readonly string[];
+  /** Languages that may be behind the newest: their panel says so first. */
+  stale?: readonly NoticeLanguage[];
   body: (l: NoticeLanguage) => ReactNode;
 }) {
   const { t, language, written } = props;
@@ -40,7 +42,14 @@ function Translated(props: {
     language: l,
     short: LANGUAGE_CODE[l],
     name: LANGUAGE_NAME[l],
-    body: props.body(l),
+    body: props.stale?.includes(l) ? (
+      <>
+        <p className="mt-1 text-body-sm font-semibold text-yarn">{t["board.stale"]}</p>
+        {props.body(l)}
+      </>
+    ) : (
+      props.body(l)
+    ),
   }));
   return (
     <>
@@ -170,6 +179,7 @@ export function Notices(props: {
             t={t}
             language={language}
             written={Object.keys(n.texts)}
+            stale={n.stale}
             body={(l) => (
               <p translate="no" className={`mt-1 ${TEXT}`}>
                 {n.texts[l]}

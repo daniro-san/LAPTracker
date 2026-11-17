@@ -54,7 +54,7 @@ beforeEach(async () => {
   });
   const ws = await findWorkspaceBySlug(db, "ogs");
   const userId = await recordSignIn(db, ws?.id ?? 0, "ana", "Ana", ADDED);
-  const { token } = await createSession(db, ws?.id ?? 0, userId, ADDED, null);
+  const { token } = await createSession(db, ws?.id ?? 0, userId, ADDED, null, "officer");
   const access = await requireWorkspace(db, "ogs", { get: () => ({ value: token }) }, ADDED);
   if (!access.ok) throw new Error("no access");
   ana = access;

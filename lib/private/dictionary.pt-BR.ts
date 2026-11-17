@@ -42,7 +42,7 @@ export const pt: WorkspaceDictionary = {
   "noaccess.allowlist_expired":
     "Seu acesso era por tempo limitado, e esse tempo acabou. Peça ao dono do site que o prolongue.",
   "noaccess.blocked":
-    "Esta conta do Discord não tem mais acesso à Mesa dos oficiais. Fale com um R5 se for engano.",
+    "Esta conta do Discord não tem mais acesso às páginas da aliança aqui: o mural dos membros e a Mesa dos oficiais. Fale com um R5 se for engano.",
   "noaccess.retry": "Entrar de novo",
   "noaccess.public": "Ir para o Registro de eventos público",
   "shell.signedIn": "Conectado como {name}",

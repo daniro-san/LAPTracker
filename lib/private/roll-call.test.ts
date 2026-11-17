@@ -46,7 +46,7 @@ beforeEach(async () => {
 async function signedIn(name: string): Promise<WorkspaceAccess> {
   const ws = await findWorkspaceBySlug(db, "ogs");
   const userId = await recordSignIn(db, ws?.id ?? 0, `ogs-${name}`, name, NOW);
-  const { token } = await createSession(db, ws?.id ?? 0, userId, NOW, null);
+  const { token } = await createSession(db, ws?.id ?? 0, userId, NOW, null, "officer");
   const access = await requireWorkspace(db, "ogs", { get: () => ({ value: token }) }, NOW);
   if (!access.ok) throw new Error("no access");
   return access;

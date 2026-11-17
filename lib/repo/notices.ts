@@ -282,13 +282,16 @@ export async function newestNoticeValues(
   workspaceId: number,
   fields: readonly string[],
   ids?: readonly number[],
-): Promise<{ noticeId: number; field: string; value: string; updatedAt: Date }[]> {
+): Promise<
+  { noticeId: number; field: string; value: string; basis: number | null; updatedAt: Date }[]
+> {
   if (ids?.length === 0) return [];
   return db
     .selectDistinctOn([noticeEdits.noticeId, noticeEdits.field], {
       noticeId: noticeEdits.noticeId,
       field: noticeEdits.field,
       value: noticeEdits.value,
+      basis: noticeEdits.basis,
       updatedAt: notices.updatedAt,
     })
     .from(noticeEdits)

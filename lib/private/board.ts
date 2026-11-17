@@ -10,7 +10,7 @@ import type { StartHereText } from "../schema-board";
 import type { BoardAccess } from "./access";
 import { layOut, type EntryRow } from "./calendar-model";
 import { addDays, mondayOf } from "./calendar-time";
-import { NOTICE_LANGUAGES, type NoticeLanguage } from "./notice-rules";
+import { NOTICE_LANGUAGES, staleOf, type NoticeLanguage } from "./notice-rules";
 
 /** How many days "This week" shows: today and the six after it. */
 export const BOARD_DAYS = 7;
@@ -31,6 +31,8 @@ export interface BoardNotice {
   endsOn: string | null;
   /** The languages written, with their text. */
   texts: Partial<Record<NoticeLanguage, string>>;
+  /** Written languages behind the newest one ("may be out of date", D81's basis). */
+  stale: NoticeLanguage[];
 }
 
 export interface BoardView {
@@ -57,12 +59,17 @@ async function memberNotices(db: Db, workspaceId: number, today: string): Promis
   return shown.map(([id, n]) => {
     const mine = values.filter((v) => v.noticeId === id);
     const texts: BoardNotice["texts"] = {};
+    const bases: Partial<Record<NoticeLanguage, number | null>> = {};
     for (const language of NOTICE_LANGUAGES) {
-      const text = mine.find((v) => v.field === language)?.value.trim();
-      if (text) texts[language] = text;
+      const row = mine.find((v) => v.field === language);
+      const text = row?.value.trim();
+      if (text) {
+        texts[language] = text;
+        bases[language] = row?.basis ?? null;
+      }
     }
     const title = mine.find((v) => v.field === "title")?.value ?? "";
-    return { id, title, endsOn: n.endsOn || null, texts };
+    return { id, title, endsOn: n.endsOn || null, texts, stale: staleOf(bases) };
   });
 }
 
