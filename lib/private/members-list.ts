@@ -9,7 +9,8 @@ export type MemberFilter = (typeof MEMBER_FILTERS)[number];
 export function filtersOf(m: MemberRow): MemberFilter[] {
   return [
     ...(m.isNew ? (["new"] as const) : []),
-    ...(m.reasons.length > 0 ? (["checkin"] as const) : []),
+    // A status an officer set shows instead of Check in (#297), so it leaves this filter too.
+    ...(m.reasons.length > 0 && m.officerStatus === null ? (["checkin"] as const) : []),
     ...(m.missing.length > 0 ? (["missing"] as const) : []),
     ...((m.rankCode ?? 0) >= 104 ? (["r4"] as const) : []),
   ];
