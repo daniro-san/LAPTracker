@@ -43,7 +43,8 @@ export interface RollCard {
   st: string | null;
   at: number | null;
   day: string;
-  counts: string;
+  /** Null for an Elixir Scramble team nobody is on yet: "Team A: 0/20" says it. */
+  counts: string | null;
   /** "Team A: 6/20" for an Elixir Scramble team. */
   team: string | null;
   markHref: string;
@@ -60,7 +61,7 @@ export function rollCard(item: WeekItem, slug: string, { t, language, zone }: Ct
     st: minute === null ? null : stOf(item.placed?.entry.kind ?? "", minute, t),
     at: minute === null ? null : zonedInstant(item.day, minute, zone),
     day: item.day,
-    counts: tallyLine(item.tally, item.kind, t),
+    counts: item.team === 0 ? null : tallyLine(item.tally, item.kind, t),
     team:
       item.team === null
         ? null

@@ -2,7 +2,7 @@
 
 Why: officers mark the KvK shield, the Undead Siege, plunders and the Elixir Scramble every week in spreadsheets (#293: "Shield … 0 % filled"). The owner's rules for #298: the default is unmarked, never "did"; "the rest" depends on the activity; away members are skipped; rows never move while being tapped; Elixir Scramble is per team, up to 20 players, built before registration closes. D75 applies throughout: marking is for planning and thanks, never for punishment.
 
-- **Occasions.** A roll call is one occasion (`roll_calls`, migration `0027_roll_call`):
+- **Occasions.** A roll call is one occasion (`roll_calls`, migration `0028_roll_call`):
   - **From the Calendar:** a KvK entry's week is a "KvK shield" roll call, an Undead Siege's week an "Undead Siege" one (the issue's "raid"), an Elixir Scramble team's week that team's roll call. Keyed by (entry, the plan's Monday). Its row is written with the first mark or pick, so reading a page writes nothing. Deleting the Calendar entry keeps the roll call and its marks (`entry_id` set null).
   - **Added by hand:** KvK shield, Undead Siege or plunders on a day ("Add a roll call"). The sheet sends a request id (D100), and a second add of the same kind and day opens the first one.
   - An Elixir Scramble roll call starts only from its Calendar entry, which holds the team and the window (09:00, 18:00 or 23:00 ST).

@@ -30,7 +30,7 @@ function Card({ c, words }: { c: RollCard; words: CalendarSheetWords }) {
       </p>
       <h2 className="font-subhead text-display-sm">{c.title}</h2>
       {c.team && <p className="text-body-sm font-semibold">{c.team}</p>}
-      <p className="text-body-sm text-ink/80">{c.counts}</p>
+      {c.counts && <p className="text-body-sm text-ink/80">{c.counts}</p>}
       <p className="flex flex-wrap gap-x-5">
         {c.teamHref && (
           <a href={c.teamHref} className={LINK}>

@@ -210,12 +210,15 @@ export async function teamView(
   };
   const pickedUids = new Set(mine.map((t) => t.uid));
   const free = asked(roster, facts, opened.day).filter((m) => !pickedUids.has(m.uid));
+  // The other team's members go last: they cannot be picked, so the suggestions read first.
+  const open = teamOrder(
+    free.filter((m) => m.away === null).map((m) => row(m, false)),
+    language,
+  );
   const ordered = [
     ...teamMembers(mine, roster).map((m) => row(m, true)),
-    ...teamOrder(
-      free.filter((m) => m.away === null).map((m) => row(m, false)),
-      language,
-    ),
+    ...open.filter((r) => r.other === null),
+    ...open.filter((r) => r.other !== null),
   ];
   const rows: TeamRow[] = ordered.map(({ active: a, ...r }) => ({
     ...r,
