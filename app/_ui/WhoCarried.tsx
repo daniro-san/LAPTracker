@@ -135,7 +135,6 @@ export function WhoCarried({ eventId, carried }: { eventId: number; carried: Car
             might: compact(totals.might, locale),
           })}
         </p>
-        {!all && <p className="mt-1 text-body-sm text-ink/70">{l.carriedShown}</p>}
         <p className={`mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 ${LABEL}`}>
           <span className="flex items-center gap-1.5">
             <span aria-hidden="true" className="size-3 border-2 border-ink bg-paper" />

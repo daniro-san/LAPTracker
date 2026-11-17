@@ -31,7 +31,7 @@ export async function POST(
   }
   return withContext("/api/w/[slug]/shots/read", async (ctx, db) => {
     const access = await requireWorkspace(db, slug, requestCookies(request), ctx.now());
-    if (!access.ok) return privateError(401, access.reason);
+    if (!access.ok) return privateError(401, "signed_out");
     const bytes = new Uint8Array(await request.arrayBuffer());
     if (bytes.length === 0 || bytes.length > MAX_UPLOAD) return privateError(413, "too_large");
     // A worker that dies or stalls fails the request with a code (500 "internal"), never a timeout;

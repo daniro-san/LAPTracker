@@ -96,21 +96,9 @@ interface AiMessage {
   key: WorkspaceKey;
 }
 
-export function useEditor(p: EditorProps) {
-  const router = useRouter();
-  const [draft, setDraft] = useState(() => startDraft(p.fields));
-  const [conflicts, setConflicts] = useState<Conflict[]>([]);
-  /** The action running now, if any: every AI button and Save wait for it. */
-  const [busy, setBusy] = useState<DraftAsk["kind"] | "save" | null>(null);
-  const [message, setMessage] = useState<WorkspaceKey | null>(null);
-  const [aiMessage, setAiMessage] = useState<AiMessage | null>(null);
-  const [active, setActive] = useState<NoticeLanguage>(p.focus ?? p.languages[0] ?? "en");
-  /** The tab the officer last typed in: where Translate fills an empty tab from. */
-  const [wroteIn, setWroteIn] = useState<NoticeLanguage | null>(p.source);
+/** The conflict banner, scrolled to and focused whenever another officer's save comes back. */
+function useBanner(conflicts: Conflict[]) {
   const banner = useRef<HTMLDivElement>(null);
-  const dirty = changesOf(draft).length > 0;
-  const leaving = useLeaveWarning(dirty);
-  const kept = useKept(p, draft.values, dirty, (values) => setDraft((d) => ({ ...d, values })));
   const showBanner = () => {
     banner.current?.scrollIntoView({ block: "start" });
     banner.current?.focus({ preventScroll: true });
@@ -118,6 +106,26 @@ export function useEditor(p: EditorProps) {
   useEffect(() => {
     if (conflicts.length > 0) showBanner();
   }, [conflicts]);
+  return { banner, showBanner };
+}
+
+export function useEditor(p: EditorProps) {
+  const router = useRouter();
+  const [draft, setDraft] = useState(() => startDraft(p.fields));
+  const [conflicts, setConflicts] = useState<Conflict[]>([]);
+  // One per open editor (D100): a new notice's Save retried after a lost answer stores one notice.
+  const [requestId] = useState(() => crypto.randomUUID());
+  /** The action running now, if any: every AI button and Save wait for it. */
+  const [busy, setBusy] = useState<DraftAsk["kind"] | "save" | null>(null);
+  const [message, setMessage] = useState<WorkspaceKey | null>(null);
+  const [aiMessage, setAiMessage] = useState<AiMessage | null>(null);
+  const [active, setActive] = useState<NoticeLanguage>(p.focus ?? p.languages[0] ?? "en");
+  /** The tab the officer last typed in: where Translate fills an empty tab from. */
+  const [wroteIn, setWroteIn] = useState<NoticeLanguage | null>(p.source);
+  const { banner, showBanner } = useBanner(conflicts);
+  const dirty = changesOf(draft).length > 0;
+  const leaving = useLeaveWarning(dirty);
+  const kept = useKept(p, draft.values, dirty, (values) => setDraft((d) => ({ ...d, values })));
   const run = async (label: DraftAsk["kind"], ask: DraftAsk) => {
     setBusy(label);
     setAiMessage(null);
@@ -134,7 +142,7 @@ export function useEditor(p: EditorProps) {
     if (changes.length === 0) return p.onClose?.();
     setBusy("save");
     setMessage(null);
-    const answer = await saveNotice(p.slug, p.id, changes);
+    const answer = await saveNotice(p.slug, p.id, changes, requestId);
     setBusy(null);
     if (answer.ok) {
       leaving.current = true;
@@ -144,7 +152,7 @@ export function useEditor(p: EditorProps) {
       return;
     }
     if (answer.conflicts) setConflicts(answer.conflicts);
-    else setMessage("notices.saveFailed");
+    else setMessage(answer.signedOut ? "signedOut.text" : "notices.saveFailed");
   };
   return {
     draft,

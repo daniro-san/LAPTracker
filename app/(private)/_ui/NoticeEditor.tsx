@@ -31,6 +31,7 @@ export function NoticeEditor(p: EditorProps) {
   return (
     <form
       data-notice-editor=""
+      data-unsaved={e.dirty ? "" : undefined}
       className="max-w-2xl"
       onSubmit={(event) => {
         event.preventDefault();

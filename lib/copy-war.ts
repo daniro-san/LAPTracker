@@ -17,18 +17,16 @@ export const warCopy = {
   topShare: "Kills from the top 5 members",
   /** Under the second list's title: what its figure says. */
   topShareHelp:
-    "Share of the alliance's kills made by its 5 biggest gainers. Higher means fewer players carried it.",
+    "Share of the kills made by the 5 biggest gainers. High: a few players did most of the fighting.",
   /** After that share: how many of the alliance's gainers it is the top of, `5 of 47`. */
   topBasis: "{top} of {n}",
   /** After that share, for an alliance with under 10 gainers: the figure is not ranked. */
   fewGainers: "few gainers",
   /** The event page's section after the war turnout (#280, D83): kill share against might share. */
   carried: "Kill share vs might share",
-  /** Under the title: what the two shares are and who gains no kills. */
+  /** Under the title: what the two shares are, and that defenders and support players gain no kills (D83). */
   carriedHelp:
-    "Each alliance's share of the kills gained from Start to End, next to its share of the might at Start. Defenders and support players gain no kills.",
-  /** Under the help: which rows are shown. */
-  carriedShown: "The alliances whose kill share is furthest above their might share, and yours.",
+    "Each alliance's share of the kills, next to its share of the might. Kills from Start to End, might at Start. Defenders and support players gain no kills.",
   /** `{n}` alliances, their kills gained and their might at Start (all as compact numbers). */
   carriedTotal: "All {n} alliances: {kills} kills gained, {might} might at Start",
   /** The legend: the square mark and the round mark on each row. */
@@ -41,7 +39,7 @@ export const warCopy = {
   carriedSpread: "{low}–{high} over {n} events",
   /** The figure's meaning, and when the ratio's range is shown. */
   carriedRatioHelp:
-    "pts is the kill share minus the might share. With 3 events or more, the line under it shows the range of kill share ÷ might share across them.",
+    "+6 pts: the kill share is 6 points above the might share. With 3 events or more, the line under it gives the kill share as a multiple of the might share, lowest to highest.",
   /** After a gap in percentage points, `+6.1 pts`. */
   carriedPoints: "pts",
 } as const;

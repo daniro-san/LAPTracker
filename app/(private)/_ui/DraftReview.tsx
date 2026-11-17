@@ -215,7 +215,7 @@ function RowsReview(props: Props) {
           void act({ action: "retype", kind, scope }).then((a) => a.ok && router.refresh())
         }
       />
-      <ul className="mt-4 space-y-2">
+      <ul className="mt-4 space-y-2" data-unsaved={touched && !readOnly ? "" : undefined}>
         {order.map((i) => (
           <DraftRowCard
             key={i}

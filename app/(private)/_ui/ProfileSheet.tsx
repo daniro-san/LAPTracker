@@ -19,6 +19,7 @@ import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dicti
 import type { Profile } from "@/lib/private/profile";
 
 import { sheetWords } from "./sheet-words";
+import { RefusalLine, SIGNED_OUT, SignedOutNote } from "./SignedOut";
 import { Me } from "./ThisIsMe";
 import { setClockChoice, useClockChoice, useMinute, useViewerZone } from "./YourTime";
 
@@ -79,9 +80,13 @@ function NameForm(props: {
           {t["profile.save"]}
         </button>
       </div>
-      <p id="profile-name-note" role="status" className="mt-1 min-h-6 text-body-sm">
-        {note}
-      </p>
+      {note === SIGNED_OUT ? (
+        <SignedOutNote className="mt-1" />
+      ) : (
+        <p id="profile-name-note" role="status" className="mt-1 min-h-6 text-body-sm">
+          {note}
+        </p>
+      )}
     </form>
   );
 }
@@ -165,19 +170,21 @@ function Settings(props: {
 }) {
   const { slug, t, language, onClose } = props;
   const router = useRouter();
-  const [me, setMe] = useState<Profile | "loading" | "failed">("loading");
+  const [me, setMe] = useState<Profile | "loading" | "failed" | typeof SIGNED_OUT>("loading");
   const [busy, setBusy] = useState(false);
   /** The last write's outcome, shown under the part it came from. */
   const [note, setNote] = useState<{ at: "name" | "me"; text: string } | null>(null);
   useEffect(() => {
-    void call(slug).then((r) => setMe(typeof r === "string" ? "failed" : r));
+    void call(slug).then((r) =>
+      setMe(r === SIGNED_OUT ? SIGNED_OUT : typeof r === "string" ? "failed" : r),
+    );
   }, [slug]);
   const write = async (body: Write) => {
     const at = body.action === "rename" ? "name" : "me";
     setBusy(true);
     const r = await call(slug, body);
     setBusy(false);
-    if (r === "signed_out") router.refresh();
+    if (r === SIGNED_OUT) return setNote({ at, text: SIGNED_OUT });
     if (typeof r === "string") {
       setNote({ at, text: t[r === "invalid_name" ? "profile.invalid" : "profile.failed"] });
       return;
@@ -216,11 +223,7 @@ function Settings(props: {
             void write(uid === null ? { action: "unlink" } : { action: "link", uid })
           }
         />
-        {note?.at === "me" && (
-          <p role="status" className="mt-1 text-body-sm">
-            {note.text}
-          </p>
-        )}
+        {note?.at === "me" && <RefusalLine text={note.text} className="mt-1 text-body-sm" />}
       </section>
       <ThemeChoice t={t} />
       <ClockChoiceField t={t} />

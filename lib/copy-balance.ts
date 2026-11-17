@@ -10,18 +10,18 @@ export const balanceCopy = {
   /** Under the lead: what is counted, in one line. */
   includes: "Might includes buildings and tech.",
   /** `{n}` tracked alliances, `{date}` the newest read. */
-  basis: "{n} tracked alliances, read {date}.",
+  basis: "{n} tracked alliances, updated {date}.",
   total: "Tracked alliances",
   shares: "Share by alliance",
   /** The stacked bar's accessible name: the shares, greatest first. */
   bar: "Share of the tracked alliances' might by alliance: {list}",
   /** An alliance read before the newest day: `as of Nov 14`. */
   asOf: "as of {date}",
-  none: "No daily reads yet.",
+  none: "No daily updates yet.",
   builder: "Bloc builder",
   hypothetical: "Hypothetical",
   builderHelp:
-    "Tap A or B on an alliance to try a bloc. It only adds up numbers. It does not predict or announce a real bloc.",
+    "Tap A or B on alliances to add up their might. Arithmetic only: not a forecast or an announcement.",
   bloc: "Bloc {bloc}",
   blocShare: "{share} of the tracked alliances' might",
   blocAlliances: "Alliances",
@@ -33,10 +33,10 @@ export const balanceCopy = {
   removeFrom: "Remove {alliance} from bloc {bloc}",
   trend: "Top {n} share over time",
   trendHelp:
-    "Share of the tracked alliances' might held by the {n} greatest, from each day's read. A day on which an alliance was not read is left out.",
+    "Share of the tracked alliances' might held by the {n} greatest, from each daily update. A day with no update for an alliance is left out.",
   trendLabel: "Top {n} share",
   /** `{last}` and `{first}` are shares, `{to}` and `{from}` dates. */
   trendSummary: "The top {n} hold {last} on {to}, {first} on {from}.",
-  trendFew: "Not enough daily reads yet to draw a trend.",
+  trendFew: "Not enough daily updates yet to draw a trend.",
   day: "Day",
 };

@@ -1,6 +1,6 @@
 // workspaces, workspace_users and workspace_sessions (D71): what /admin writes, and the plain reads and
 // writes lib/private builds on. Who gets in, and the WorkspaceAccess brand, stay in lib/private.
-import { and, asc, eq, lte, ne } from "drizzle-orm";
+import { and, asc, eq, gt, lte, ne, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { workspaces, workspaceSessions, workspaceUsers } from "../schema";
@@ -135,6 +135,34 @@ export async function insertSession(
   await db.insert(workspaceSessions).values(row);
 }
 
+/**
+ * A renewal after Discord confirmed the role again (D99): the session of this token, workspace and person
+ * that has not ended gets `checkedAt`, and its end moves no later than `endsBy`. False when there is none.
+ */
+export async function renewSession(
+  db: Db,
+  key: { tokenHash: string; workspaceId: number; workspaceUserId: number },
+  checkedAt: Date,
+  endsBy: Date | null,
+): Promise<boolean> {
+  const rows = await db
+    .update(workspaceSessions)
+    .set({
+      checkedAt,
+      ...(endsBy && { expiresAt: sql`least(${workspaceSessions.expiresAt}, ${endsBy})` }),
+    })
+    .where(
+      and(
+        eq(workspaceSessions.tokenHash, key.tokenHash),
+        eq(workspaceSessions.workspaceId, key.workspaceId),
+        eq(workspaceSessions.workspaceUserId, key.workspaceUserId),
+        gt(workspaceSessions.expiresAt, checkedAt),
+      ),
+    )
+    .returning({ hash: workspaceSessions.tokenHash });
+  return rows.length > 0;
+}
+
 /** The session with this token hash and its person, whatever its workspace. */
 export async function findSession(db: Db, tokenHash: string) {
   const [row] = await db
@@ -142,6 +170,7 @@ export async function findSession(db: Db, tokenHash: string) {
       tokenHash: workspaceSessions.tokenHash,
       workspaceId: workspaceSessions.workspaceId,
       expiresAt: workspaceSessions.expiresAt,
+      checkedAt: workspaceSessions.checkedAt,
       userId: workspaceUsers.id,
       displayName: workspaceUsers.displayName,
       chosenName: workspaceUsers.chosenName,

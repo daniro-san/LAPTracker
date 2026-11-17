@@ -6,7 +6,7 @@
 import type { ReactNode, Ref } from "react";
 
 import { chip } from "@/lib/brand/components/controls";
-import { fill } from "@/lib/copy";
+import { fill, isolate } from "@/lib/copy";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
 import { NOTICE_LIMIT, noticeLength } from "@/lib/private/notice-rules";
 
@@ -96,14 +96,14 @@ export function ConflictBanner({
       tabIndex={-1}
       className="mt-3 scroll-mt-4 border-l-4 border-seal bg-seal/5 px-3 py-3 outline-none focus-visible:ring-2 focus-visible:ring-seal"
     >
-      <p className="font-semibold">{fill(t["notices.conflict.banner"], { name })}</p>
+      <p className="font-semibold">{fill(t["notices.conflict.banner"], { name: isolate(name) })}</p>
       {/* The answers right after "Choose what to keep:", so a long text never pushes them out of view. */}
       <div className="mt-2 flex flex-wrap gap-2">
         <button type="button" onClick={onKeepMine} className={smallButton("bg-paper")}>
           {t["notices.conflict.mine"]}
         </button>
         <button type="button" onClick={onUseTheirs} className={smallButton("bg-paper")}>
-          {fill(t["notices.conflict.theirs"], { name })}
+          {fill(t["notices.conflict.theirs"], { name: isolate(name) })}
         </button>
       </div>
       <dl className="mt-3 space-y-3">

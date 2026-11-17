@@ -8,13 +8,14 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
-import { fill } from "@/lib/copy";
+import { fill, isolate } from "@/lib/copy";
 
 import type { AgendaItem, CalendarSheetWords, Member, SuggestedMember } from "./calendar-data";
 import { refusalText, sendCalendar, type Stale } from "./calendar-send";
 import { useFreshOnReturn } from "./CalendarAgenda";
 import { Choice, ConflictBox } from "./CalendarFields";
 import { RosterPicker } from "./RosterPicker";
+import { RefusalLine } from "./SignedOut";
 import { Times } from "./YourTime";
 
 type SeatKind = "vip" | "guardian";
@@ -41,9 +42,9 @@ function SeatRow(props: {
         <p className="min-w-0 flex-1">
           <span className="block text-body-sm text-ink/75">{props.role}</span>
           {member ? (
-            <span translate="no" className="font-semibold">
+            <bdi translate="no" className="font-semibold">
               {member.name}
-            </span>
+            </bdi>
           ) : (
             <span className="text-ink/70">{words["calendar.pick.empty"]}</span>
           )}
@@ -74,7 +75,7 @@ function SeatRow(props: {
           className="mt-1 flex flex-wrap items-center gap-2"
         >
           <span className="text-body-sm font-semibold">
-            {fill(words["calendar.pick.removeAsk"], { name: member.name })}
+            {fill(words["calendar.pick.removeAsk"], { name: isolate(member.name) })}
           </span>
           <button type="button" onClick={() => setAsking(false)} className={buttonClass("primary")}>
             {words["calendar.delete.keep"]}
@@ -192,9 +193,7 @@ function CaravanCard(props: {
         onRemove={() => void seats.save(item, "second", null)}
       />
       {note?.error && (
-        <p role="alert" className="mt-3 border-l-4 border-seal pl-3 text-body-sm">
-          {note.error}
-        </p>
+        <RefusalLine text={note.error} className="mt-3 border-l-4 border-seal pl-3 text-body-sm" />
       )}
       {note?.stale && (
         <ConflictBox

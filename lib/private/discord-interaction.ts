@@ -9,16 +9,19 @@ import { z } from "zod";
 
 import type { Db } from "../db";
 import { IMPORT_COMMAND } from "../import-command";
-import { findWorkspaceByGuild, recordOfficer } from "../repo/import";
+import { claimPictures, findWorkspaceByGuild, picturesDrafts, recordOfficer } from "../repo/import";
 import { findWorkspaceUser } from "../repo/workspaces";
 import { officerAccess, type WorkspaceAccess } from "./access";
 import {
   pickWorkspaceLanguage,
   WORKSPACE_DICTIONARIES,
+  type WorkspaceDictionary,
   type WorkspaceLanguage,
 } from "./dictionary";
 import { privately } from "./http";
+import { DRAFT_DAYS } from "./import";
 import { privateLog } from "./log";
+import { DAY_MS } from "./member-week";
 import { refusalOf } from "./sign-in";
 
 /** Discord's interaction and response types used here. */
@@ -51,6 +54,7 @@ export function verifySignature(
 }
 
 const attachmentSchema = z.object({
+  id: z.string(),
   url: z.string(),
   proxy_url: z.string().optional(),
   content_type: z.string().optional(),
@@ -95,7 +99,10 @@ type Interaction = z.infer<typeof interactionSchema>;
 export interface Job {
   access: WorkspaceAccess;
   language: WorkspaceLanguage;
+  /** Only the pictures this run claimed (D100): none an earlier run already sent. */
   pictures: Attachment[];
+  /** The Discord message the pictures are on. */
+  messageId: string;
   /** When the message with the pictures was posted. */
   postedAt: Date;
   /** The interaction's webhook: application id and token, to edit the "thinking…" reply. */
@@ -151,14 +158,34 @@ const targetMessage = (i: Interaction) =>
   i.data?.target_id ? i.data.resolved?.messages?.[i.data.target_id] : undefined;
 
 /**
+ * A second run on pictures already sent (D100): the drafts they went into, with their review links. A
+ * run still reading them has no draft yet; the line alone says so.
+ */
+async function alreadySent(
+  db: Db,
+  access: WorkspaceAccess,
+  messageId: string,
+  t: WorkspaceDictionary,
+  origin: string,
+): Promise<string> {
+  const drafts = await picturesDrafts(db, { workspaceId: access.workspaceId, messageId });
+  const links = drafts.map(
+    (id) => `→ [${t["shots.reply.review"]}](${origin}/w/${access.slug}/shots/${id})`,
+  );
+  return [t["shots.discord.already"], ...links].join("\n");
+}
+
+/**
  * One request to the interactions route. The body is the raw text Discord signed. A command from an
- * officer with pictures gets the deferred reply and a `job` for after the response.
+ * officer with pictures not sent before gets the deferred reply and a `job` for after the response.
+ * `origin` is the app's, for the review links.
  */
 export async function handleInteraction(
   db: Db,
   publicKey: string | undefined,
   request: { body: string; signature: string | null; timestamp: string | null },
   now: Date,
+  origin: string,
 ): Promise<Handled> {
   if (!verifySignature(publicKey, request.signature, request.timestamp, request.body)) {
     return { status: 401, body: { code: "bad_signature" } };
@@ -171,6 +198,16 @@ export async function handleInteraction(
   if (!interaction) return { status: 400, body: { code: "bad_request" } };
   if (interaction.type === PING) return { status: 200, body: { type: PONG } };
   if (!isOurCommand(interaction)) return { status: 400, body: { code: "unknown_command" } };
+  return command(db, interaction, now, origin);
+}
+
+/** Our command, signature checked: who sent it, which pictures, and whether they were sent before. */
+async function command(
+  db: Db,
+  interaction: Interaction,
+  now: Date,
+  origin: string,
+): Promise<Handled> {
   const language = pickWorkspaceLanguage(undefined, interaction.locale ?? null);
   const t = WORKSPACE_DICTIONARIES[language];
   const officer = await officerOf(db, interaction, now);
@@ -180,15 +217,31 @@ export async function handleInteraction(
   }
   const message = targetMessage(interaction);
   const pictures = (message?.attachments ?? []).filter(isPicture);
-  if (!message || pictures.length === 0) return reply(t["shots.discord.noPicture"]);
+  const messageId = interaction.data?.target_id;
+  if (!message || !messageId || pictures.length === 0) return reply(t["shots.discord.noPicture"]);
+  // INVARIANT import.discord-once: a (message, attachment) is read once per workspace; the claim is
+  // atomic, so two officers running the command at once make one set of drafts.
+  const access = officer.access;
+  const claimed = await claimPictures(
+    db,
+    { workspaceId: access.workspaceId, messageId },
+    pictures.map((p) => p.id),
+    now,
+    new Date(now.getTime() - DRAFT_DAYS * DAY_MS),
+  );
+  if (claimed.length === 0) {
+    privateLog("w.import.discord_repeat", { workspace: access.workspaceId });
+    return reply(await alreadySent(db, access, messageId, t, origin));
+  }
   const webhook = { applicationId: interaction.application_id, token: interaction.token };
   return {
     status: 200,
     body: { type: DEFERRED_REPLY, data: { flags: EPHEMERAL } },
     job: {
-      access: officer.access,
+      access,
       language,
-      pictures,
+      pictures: pictures.filter((p) => claimed.includes(p.id)),
+      messageId,
       postedAt: new Date(message.timestamp),
       webhook,
     },

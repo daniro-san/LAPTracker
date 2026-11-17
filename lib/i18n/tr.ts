@@ -48,12 +48,12 @@ export const tr = {
     was: "eski adı {name}",
     since: "{date} sonrası",
     acrossEvents: "Etkinliklere göre",
-    toTop: "Yukarı",
+    toTop: "Başa dön",
     showAll: "Tüm etkinlikler ({n})",
     myAlliance: "İttifakım",
     names: "İsimler",
     alliances: "İttifaklar",
-    movers: "Nine sezdi",
+    movers: "Bu etkinlikteki en büyük değişimler",
     progress: "Günlük ilerleme",
     progressMight: "Sen: {date} sonrası {change}.",
     progressMedian: "{tag} ortadaki üyesi: {percent}.",
@@ -82,7 +82,7 @@ export const tr = {
     liveKillsSoFar: "Şimdiye kadar Kills: {kills}",
     liveLast: "Son {min} dk: {last} (zirve {peak})",
     liveDone:
-      "{time} okumasına göre Başlangıç’tan beri değişim. Yukarıdaki defter {end} itibarıyla Bitiş’i kullanır.",
+      "{time} okumasına göre Başlangıç’tan beri değişim. Yukarıdaki tablo {end} itibarıyla Bitiş’i kullanır.",
     fightClock: "Sunucu savaş saati",
     fightClockLead:
       "Takip edilen ittifakların Kills’i, {min} dakikalık dilimlerle, etkinlik etkinlik. Bir kutunun yüksekliği, o etkinlik için çizilen Kills içindeki payıdır; Başlangıç’tan son okumaya kadar.",
@@ -115,13 +115,12 @@ export const tr = {
     withKills: "Kills kazanan Members",
     topShare: "İlk 5 Members’in Kills’i",
     topShareHelp:
-      "İttifakın Kills’inin, en çok Kills kazanan 5 Members tarafından yapılan payı. Yüksek olması, daha az oyuncunun taşıdığı anlamına gelir.",
+      "İttifakın Kills’inin, en çok Kills kazanan 5 Members tarafından yapılan payı. Yüksek olması, savaşın çoğunu birkaç oyuncunun yaptığı anlamına gelir.",
     topBasis: "{n} içinden {top}",
     fewGainers: "az kazanan",
     carried: "Kills payı ile Might payı",
     carriedHelp:
-      "Her ittifakın Başlangıç’tan Bitiş’e kazandığı Kills payı, Başlangıç’taki Might payının yanında. Savunucular ve destek oyuncuları Kills kazanmaz.",
-    carriedShown: "Kills payı Might payının en çok üstünde olan ittifaklar ve senin ittifakın.",
+      "Her ittifakın Kills payı, yanında Might payı. Kills Başlangıç’tan Bitiş’e, Might Başlangıç’ta ölçülür. Savunucular ve destek oyuncuları Kills kazanmaz.",
     carriedTotal: "Tüm {n} ittifak: {kills} Kills kazanıldı, Başlangıç’ta {might} Might",
     carriedMightMark: "Başlangıç’taki Might payı",
     carriedKillsMark: "Kazanılan Kills payı",
@@ -129,7 +128,7 @@ export const tr = {
     carriedTurnout: "Kills kazanan {share}",
     carriedSpread: "{low}–{high}, {n} etkinlik üzerinden",
     carriedRatioHelp:
-      "yp (yüzde puan), Kills payı eksi Might payıdır. 3 etkinlik ve üzerinde, altındaki satır bu etkinliklerdeki Kills payı ÷ Might payı aralığını gösterir.",
+      "+6 yp: Kills payı, Might payının 6 yüzde puan üstünde. 3 etkinlik ve üzerinde, altındaki satır Kills payının Might payının kaç katı olduğunu en düşükten en yükseğe gösterir.",
     carriedPoints: "yp",
   },
   compare: {
@@ -152,7 +151,7 @@ export const tr = {
   merge: {
     title: "Birleştirme simülatörü",
     tag: "Simülasyon, plan değil",
-    lead: "İki ittifak tek ittifak olarak sayılır ve Members sınırına karşı kontrol edilir. Yalnızca ittifak toplamları, üye adı yok.",
+    lead: "İki ittifak tek ittifak olarak sayılır ve Members sınırına karşı kontrol edilir.",
     link: "Birleştirmeyi simüle et",
     first: "İlk ittifak",
     second: "İkinci ittifak",
@@ -181,7 +180,7 @@ export const tr = {
   flow: {
     title: "Üye akışı",
     tag: "Yalnızca sayılar",
-    lead: "Takip edilen ittifaklar arasında üyelerin geçişleri: ilk günden ikinci güne. Hiçbir üyenin adı yazılmaz.",
+    lead: "Seçtiğin iki gün arasında, takip edilen ittifaklar arasındaki üye geçişleri.",
     from: "Başlangıç",
     to: "Bitiş",
     action: "Göster",
@@ -190,8 +189,7 @@ export const tr = {
       "{from} ile {to} arasında takip edilen ittifaklar arasında {min} veya daha fazla üyelik bir geçiş olmadı.",
     totals:
       "{min} veya daha fazla geçiş · İttifak değiştiren: {moved} · Yeni: {arrived} · Ayrılan: {left}",
-    small:
-      "{min} üyeden az sayılar gizlenir ve kalanlar dahil hiçbir toplama girmez. Bu, küçük grupları korur.",
+    small: "{min} üyeden az geçişler gizlenir ve sayılmaz.",
     rowNew: "Yeni",
     colLeft: "Ayrılan",
     legend:
@@ -201,9 +199,9 @@ export const tr = {
     rowStayed: "Kaldı: {n}",
     newTitle: "Takip edilen ittifaklara yeni gelenler",
     leftTitle: "Takip edilen ittifaklardan ayrılanlar",
-    notCounted: "Sayılmadı, iki günde de kullanılabilir okuma yok: {list}.",
+    notCounted: "Sayılmadı, iki günde de kullanılabilir günlük okuma yok: {list}.",
     order: "Bitiş gününden önce bir Başlangıç günü seç.",
-    none: "Henüz kullanılabilir okuması olan en az iki gün yok.",
+    none: "Henüz kullanılabilir günlük okuması olan gün sayısı ikiden az.",
   },
   balance: {
     title: "Sunucu dengesi",
@@ -211,7 +209,7 @@ export const tr = {
       "Takip edilen her ittifakın, takip edilen ittifakların Might’ındaki payı ve varsayımsal bir blok kurucu.",
     lead: "Hiçbir ittifak, takip edilen ittifakların Might’ının {max} payından fazlasını tutmuyor. İlk {n} birlikte {top} tutuyor.",
     includes: "Might, binaları ve teknolojiyi içerir.",
-    basis: "{n} takip edilen ittifak, {date} okuması.",
+    basis: "{n} takip edilen ittifak, {date} tarihinde güncellendi.",
     total: "Takipteki toplam",
     shares: "İttifaka göre pay",
     bar: "İttifaka göre takip edilen ittifakların Might payı: {list}",
@@ -220,7 +218,7 @@ export const tr = {
     builder: "Blok kurucu",
     hypothetical: "Varsayımsal",
     builderHelp:
-      "Bir ittifakta A ya da B’ye dokun, bir blok dene. Bu yalnızca sayıları toplar. Gerçek bir bloku tahmin etmez, duyurmaz.",
+      "Might’larını toplamak için ittifaklarda A ya da B’ye dokun. Yalnızca hesap: tahmin ya da duyuru değil.",
     bloc: "Blok {bloc}",
     blocShare: "Takip edilen ittifakların Might payı: {share}",
     blocAlliances: "İttifaklar",
@@ -231,7 +229,7 @@ export const tr = {
     removeFrom: "{alliance} ittifakı {bloc} blokundan çıkar",
     trend: "İlk {n} payı zaman içinde",
     trendHelp:
-      "Takip edilen ittifakların Might’ından en büyük {n} tanesinin tuttuğu pay, her günkü okumadan. Bir ittifakın okunmadığı gün dışarıda bırakılır.",
+      "Takip edilen ittifakların Might’ının en büyük {n} tanesinin tuttuğu pay, her günlük okumadan. Bir ittifak için günlük okuma olmayan gün dışarıda bırakılır.",
     trendLabel: "İlk {n} payı",
     trendSummary: "İlk {n} tutuyor: {to} itibarıyla {last}, {from} itibarıyla {first}.",
     trendFew: "Trend çizmek için henüz yeterli günlük okuma yok.",
@@ -239,7 +237,7 @@ export const tr = {
   },
   standing: {
     title: "Zaman içinde durum",
-    help: "Takip edilen ittifaklar, her günün okumasındaki Might’a göre sıralanır; {from} sonrası değişim de gösterilir. Bir ittifakın okunmadığı gün dışarıda bırakılır. Buradaki sunucu, takip edilen ittifakların toplamıdır.",
+    help: "Takip edilen ittifaklar, her günlük okumadaki Might’a göre sıralanır; {from} sonrası değişim de gösterilir. Bir ittifak için günlük okuma olmayan gün dışarıda bırakılır. Buradaki sunucu, takip edilen ittifakların toplamıdır.",
     lead: "{label}, {to} günü Might’a göre {rank}, {from} günü {before} sıradaydı.",
     leadGrowth:
       "Ondan beri Might’ı {growth} değişti. Takip edilen ittifakların toplamı {server} değişti.",
@@ -253,7 +251,7 @@ export const tr = {
   },
   history: {
     title: "Üye geçmişi",
-    lead: "Her kart, üye listesini bir önce okunanla karşılaştırır. Aradaki değişiklikler görülmez.",
+    lead: "Her kart, üye listesini bir önceki günlük okumayla karşılaştırır. Aradaki katılıp ayrılanlar görülmez.",
     daily: "Günlük okuma",
     since: "{time} sonrası",
     first: "İlk okuma: henüz karşılaştırılacak bir şey yok.",
@@ -267,7 +265,7 @@ export const tr = {
     none: "Bu sayfada bu türden bir şey yok.",
     copy: "Tabloya kopyala",
     copied: "Kopyalandı",
-    copyFailed: "Kopyalanamadı",
+    copyFailed: "Kopyalanamadı. Tekrar dene.",
   },
   settings: {
     language: "Dil",
@@ -350,7 +348,7 @@ export const tr = {
     submit: "Ara",
     seen: "Görüldü",
     limit: "İlk {n}",
-    noMatch: "Defterde bu isimde oyuncu yok.",
+    noMatch: "Bu adda oyuncu yok. Yazılışını kontrol et ya da adın bir parçasını yaz.",
     pending: "Nine defterde arıyor…",
   },
   errors: {
@@ -363,7 +361,7 @@ export const tr = {
     server: {
       code: "500",
       title: "Bir şey çatladı.",
-      body: "Sorun değil, nine temizler.",
+      body: "Bizde bir şey bozuldu. Bir dakika sonra tekrar dene.",
       retry: "Tekrar dene",
       back: "Deftere dön",
     },

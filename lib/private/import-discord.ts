@@ -4,6 +4,7 @@
 // review it. A non-PNG asks Discord's media proxy for a PNG first (`format=png`); the original is the
 // fallback, which the reader decodes itself. No picture is stored, logged or sent anywhere else.
 import type { Db } from "../db";
+import { settlePictures } from "../repo/import";
 import { serverDay } from "../schedule";
 import { readScreen } from "../screenshot/classify";
 import { ImageRefusedError } from "../screenshot/prepare";
@@ -159,9 +160,11 @@ async function readPictures(deps: JobDeps, job: Job) {
     .slice(0, MAX_PICTURES)
     .map((a) => slot(() => fetchPicture(deps.fetch, a)));
   const pictures: PictureText[] = [];
+  /** The attachment id of each entry of `pictures`. */
+  const ids: string[] = [];
   const reader = await deps.openReader();
   try {
-    for (const fetched of fetches) {
+    for (const [i, fetched] of fetches.entries()) {
       const left = DEADLINE_MS - (deps.now().getTime() - started);
       if (left <= 0) break;
       const read = await within(
@@ -169,12 +172,28 @@ async function readPictures(deps: JobDeps, job: Job) {
         left,
       );
       if (read === LATE) break;
-      if (read) pictures.push(read);
+      if (read) {
+        pictures.push(read);
+        ids.push(job.pictures[i]?.id ?? "");
+      }
     }
   } finally {
     await reader.close();
   }
-  return { pictures, lost: job.pictures.length - pictures.length };
+  return { pictures, ids, lost: job.pictures.length - pictures.length };
+}
+
+/** Each read picture's draft id (null: it made none), by attachment id. */
+function draftOfEach(
+  ids: readonly string[],
+  result: Awaited<ReturnType<typeof createDrafts>>,
+): Map<string, number | null> {
+  return new Map(
+    ids.map((id, i) => {
+      const o = result.outcomes[i];
+      return [id, o?.status === "draft" ? (result.drafts[o.draft]?.id ?? null) : null];
+    }),
+  );
 }
 
 /**
@@ -185,15 +204,24 @@ async function readPictures(deps: JobDeps, job: Job) {
 export async function runJob(deps: JobDeps, job: Job): Promise<void> {
   const t = WORKSPACE_DICTIONARIES[job.language];
   const { db, close } = deps.openDb();
+  const key = { workspaceId: job.access.workspaceId, messageId: job.messageId };
+  const all = job.pictures.map((p) => p.id);
   let content = t["shots.discord.failed"];
   try {
-    const { pictures, lost } = await readPictures(deps, job);
+    const { pictures, ids, lost } = await readPictures(deps, job);
     const result = await createDrafts(db, job.access, pictures, {
       source: "discord",
       sentBy: job.access.user.displayName,
       pictureDay: serverDay(job.postedAt, { SERVER_TZ: deps.serverTz }),
       now: deps.now(),
     });
+    // A picture not read (lost) is let go, so the next run on the message tries it again.
+    await settlePictures(
+      db,
+      key,
+      draftOfEach(ids, result),
+      all.filter((id) => !ids.includes(id)),
+    );
     const review = (id: number) => `${deps.origin}/w/${job.access.slug}/shots/${id}`;
     content = outcomeLines(t, job.language, result, lost, review).join("\n");
     const drafts = result.drafts.length;
@@ -202,6 +230,8 @@ export async function runJob(deps: JobDeps, job: Job): Promise<void> {
     privateLog(failureCode("w.import.discord_failed", error), {
       workspace: job.access.workspaceId,
     });
+    // Nothing was made: every picture of this run can be sent again.
+    await settlePictures(db, key, new Map(), all).catch(() => undefined);
   } finally {
     await editReply(deps, job, content);
     await close();

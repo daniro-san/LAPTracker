@@ -53,7 +53,7 @@ function Card({
 
 export default async function NoticesPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const { access, data: list, waiting } = await noticePage(slug, noticesList);
+  const { access, data: list, waiting } = await noticePage(slug, noticesList, "");
   const { language, t } = await workspaceWords();
   const words = noticeWords(language, t);
   return (

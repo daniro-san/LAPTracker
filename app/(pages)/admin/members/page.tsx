@@ -34,7 +34,8 @@ function Row({ uid, name, parts }: { uid: number; name: string; parts: string[] 
   return (
     <li className="flex flex-col gap-1 border border-rule p-3 sm:border-0 sm:border-b sm:px-0 sm:last:border-0">
       <p className="min-w-0 break-words font-semibold">
-        {name} <span className="text-body-sm font-normal tabular-nums text-ink/70">#{uid}</span>
+        <bdi>{name}</bdi>{" "}
+        <span className="text-body-sm font-normal tabular-nums text-ink/70">#{uid}</span>
       </p>
       <p className="text-body-sm tabular-nums text-ink/70">{parts.join(" · ")}</p>
     </li>

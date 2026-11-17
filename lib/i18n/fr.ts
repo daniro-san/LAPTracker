@@ -52,7 +52,7 @@ export const fr = {
     myAlliance: "Mon alliance",
     names: "Noms",
     alliances: "Alliances",
-    movers: "Mamie remarque",
+    movers: "Plus fortes évolutions de l’événement",
     progress: "Progression quotidienne",
     progressMight: "Vous : {change} depuis {date}.",
     progressMedian: "Membre du milieu de {tag} : {percent}.",
@@ -81,7 +81,7 @@ export const fr = {
     liveKillsSoFar: "Kills pour l’instant : {kills}",
     liveLast: "Dernières {min} min : {last} (pic {peak})",
     liveDone:
-      "Évolution depuis Début, au relevé de {time}. Le registre ci-dessus utilise la Fin à {end}.",
+      "Évolution depuis Début, au relevé de {time}. Le tableau ci-dessus utilise la Fin à {end}.",
     fightClock: "Horloge des combats du serveur",
     fightClockLead:
       "Les Kills des alliances suivies, par tranches de {min} minutes, événement par événement. La hauteur d’une case est sa part des Kills tracés pour cet événement, du Début à son dernier relevé.",
@@ -116,14 +116,12 @@ export const fr = {
     withKills: "Membres ayant gagné des Kills",
     topShare: "Kills des 5 Membres en tête",
     topShareHelp:
-      "Part des Kills de l’alliance faits par ses 5 plus gros gagnants. Plus elle est élevée, moins l’alliance dépend de quelques joueurs.",
+      "Part des Kills de l’alliance faits par ses 5 plus gros gagnants. Élevée : quelques joueurs ont fait l’essentiel des combats.",
     topBasis: "{top} sur {n}",
     fewGainers: "gagnants rares",
     carried: "Part des Kills contre part du Might",
     carriedHelp:
       "Part de chaque alliance dans les Kills gagnés de Début à Fin, à côté de sa part du Might au Début. Les défenseurs et les joueurs de soutien ne gagnent pas de Kills.",
-    carriedShown:
-      "Les alliances dont la part de Kills dépasse le plus leur part de Might, et la vôtre.",
     carriedTotal: "Toutes les {n} alliances : {kills} Kills gagnés, {might} de Might au Début",
     carriedMightMark: "Part du Might au Début",
     carriedKillsMark: "Part des Kills gagnés",
@@ -131,7 +129,7 @@ export const fr = {
     carriedTurnout: "{share} ont gagné des Kills",
     carriedSpread: "{low}–{high} sur {n} événements",
     carriedRatioHelp:
-      "pts est la part des Kills moins la part du Might. À partir de 3 événements, la ligne en dessous indique la fourchette de la part des Kills ÷ part du Might sur ces événements.",
+      "+6 pts : la part des Kills dépasse de 6 points la part du Might. À partir de 3 événements, la ligne en dessous donne la part des Kills en multiple de la part du Might, du plus bas au plus haut.",
     carriedPoints: "pts",
   },
   compare: {
@@ -155,7 +153,7 @@ export const fr = {
   merge: {
     title: "Simulateur de fusion",
     tag: "Simulation, pas un plan",
-    lead: "Deux alliances comptées comme une seule, et comparées au plafond de membres. Totaux d’alliance seulement, aucun nom de membre.",
+    lead: "Deux alliances comptées comme une seule, comparées au plafond de membres.",
     link: "Simuler une fusion",
     first: "Première alliance",
     second: "Deuxième alliance",
@@ -184,7 +182,7 @@ export const fr = {
   flow: {
     title: "Flux des membres",
     tag: "Comptes seulement",
-    lead: "Où sont allés les membres entre les alliances suivies, du premier jour au deuxième. Aucun membre n’est nommé.",
+    lead: "Où sont allés les membres entre les alliances suivies, sur les deux jours choisis.",
     from: "De",
     to: "À",
     action: "Afficher",
@@ -193,8 +191,7 @@ export const fr = {
       "Entre {from} et {to}, aucun mouvement de {min} membres ou plus entre les alliances suivies.",
     totals:
       "Mouvements de {min} ou plus · Changé d’alliance : {moved} · Nouveaux : {arrived} · Partis : {left}",
-    small:
-      "Les chiffres de moins de {min} membres sont masqués et exclus de tous les totaux, y compris les membres restés. Cela protège les petits groupes.",
+    small: "Les mouvements de moins de {min} membres sont masqués et non comptés.",
     rowNew: "Nouveaux",
     colLeft: "Partis",
     legend:
@@ -204,9 +201,9 @@ export const fr = {
     rowStayed: "Restés : {n}",
     newTitle: "Nouveaux dans les alliances suivies",
     leftTitle: "Partis des alliances suivies",
-    notCounted: "Non comptés, pas de relevé utilisable les deux jours : {list}.",
+    notCounted: "Non comptés, pas de mise à jour quotidienne utilisable les deux jours : {list}.",
     order: "Choisissez un jour De antérieur au jour À.",
-    none: "Moins de deux jours ont déjà un relevé utilisable.",
+    none: "Moins de deux jours ont déjà une mise à jour quotidienne utilisable.",
   },
   balance: {
     title: "Équilibre du serveur",
@@ -214,16 +211,16 @@ export const fr = {
       "La part de chaque alliance suivie dans le Might des alliances suivies, et un constructeur de blocs hypothétique.",
     lead: "Aucune alliance ne détient plus de {max} du Might des alliances suivies. Les {n} premières en détiennent {top}.",
     includes: "Le Might inclut les bâtiments et la technologie.",
-    basis: "{n} alliances suivies, relevées le {date}.",
+    basis: "{n} alliances suivies, mises à jour le {date}.",
     total: "Alliances suivies",
     shares: "Part par alliance",
     bar: "Part du Might des alliances suivies par alliance : {list}",
     asOf: "au {date}",
-    none: "Pas encore de relevés quotidiens.",
+    none: "Pas encore de mises à jour quotidiennes.",
     builder: "Blocs simulés",
     hypothetical: "Hypothétique",
     builderHelp:
-      "Touchez A ou B sur une alliance pour essayer un bloc. Ce n’est qu’un calcul. Ce n’est ni une prévision ni une annonce de bloc réel.",
+      "Touchez A ou B sur des alliances pour additionner leur Might. Calcul seulement, ni prévision ni annonce.",
     bloc: "Bloc {bloc}",
     blocShare: "{share} du Might des alliances suivies",
     blocAlliances: "Alliances",
@@ -234,15 +231,15 @@ export const fr = {
     removeFrom: "Retirer {alliance} du bloc {bloc}",
     trend: "Part des {n} premières au fil du temps",
     trendHelp:
-      "Part du Might des alliances suivies détenue par les {n} plus grandes, d’après le relevé de chaque jour. Un jour sans relevé pour une alliance est laissé de côté.",
+      "Part du Might des alliances suivies détenue par les {n} plus grandes, d’après chaque mise à jour quotidienne. Un jour sans mise à jour pour une alliance est laissé de côté.",
     trendLabel: "Part des {n} premières",
     trendSummary: "Les {n} premières en tiennent {last} le {to}, contre {first} le {from}.",
-    trendFew: "Pas encore assez de relevés quotidiens pour tracer une tendance.",
+    trendFew: "Pas encore assez de mises à jour quotidiennes pour tracer une tendance.",
     day: "Jour",
   },
   standing: {
     title: "Classement au fil du temps",
-    help: "Les alliances suivies classées par Might d’après le relevé de chaque jour, avec l’évolution depuis le {from}. Un jour où une alliance n’a pas été relevée est laissé de côté. Ici, le serveur est le total des alliances suivies.",
+    help: "Les alliances suivies classées par Might d’après chaque mise à jour quotidienne, avec l’évolution depuis le {from}. Un jour sans mise à jour pour une alliance est laissé de côté. Ici, le serveur est le total des alliances suivies.",
     lead: "{label} était {rank} par Might le {to} et {before} le {from}.",
     leadGrowth:
       "Son Might a changé de {growth} depuis. Le total des alliances suivies a changé de {server}.",
@@ -251,13 +248,13 @@ export const fr = {
     trend: "Rang {first} le {from}, {last} le {to}",
     thisAlliance: "Cette alliance",
     detailsHelp: "Rang chaque jour, du plus ancien au plus récent : {days}.",
-    few: "Pas encore assez de relevés quotidiens pour comparer les alliances.",
-    notRanked: "Non classés, pas de relevé quotidien utilisable sur cette période : {list}.",
+    few: "Pas encore assez de mises à jour quotidiennes pour comparer les alliances.",
+    notRanked: "Non classés, pas de mise à jour quotidienne utilisable sur cette période : {list}.",
   },
   history: {
     title: "Historique des membres",
-    lead: "Chaque carte compare la liste des membres à celle relevée juste avant. Les changements intervenus entre-temps ne sont pas vus.",
-    daily: "Relevé quotidien",
+    lead: "Chaque carte compare la liste des membres à celle juste avant. Les membres arrivés puis repartis entre-temps ne sont pas vus.",
+    daily: "Mise à jour quotidienne",
     since: "depuis {time}",
     first: "Premier relevé. Rien à comparer pour l’instant.",
     noChange: "Aucun changement de membre.",
@@ -270,7 +267,7 @@ export const fr = {
     none: "Rien de ce genre sur cette page.",
     copy: "Copier pour tableur",
     copied: "Copié",
-    copyFailed: "Échec de la copie",
+    copyFailed: "Impossible de copier. Réessayez.",
   },
   settings: {
     language: "Langue",
@@ -353,7 +350,7 @@ export const fr = {
     submit: "Chercher",
     seen: "Vu",
     limit: "Les {n} premiers",
-    noMatch: "Aucun joueur de ce nom dans le registre.",
+    noMatch: "Aucun joueur de ce nom. Vérifiez l’orthographe, ou tapez une partie du nom.",
     pending: "Mamie cherche dans le registre…",
   },
   errors: {
@@ -366,7 +363,7 @@ export const fr = {
     server: {
       code: "500",
       title: "Quelque chose s’est fêlé.",
-      body: "Pas grave, mamie va nettoyer.",
+      body: "Un problème de notre côté. Réessayez dans une minute.",
       retry: "Réessayer",
       back: "Retour au registre",
     },

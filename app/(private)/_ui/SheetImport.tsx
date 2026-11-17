@@ -13,6 +13,7 @@ import type { ImportPreview, ImportResult, ImportRow } from "@/lib/private/sheet
 
 import { IMPORT_PROBLEM, say, type ImportWords } from "./facts-form";
 import { Columns, Done, FillCount, Matched } from "./ImportParts";
+import { SIGNED_OUT, SignedOutNote } from "./SignedOut";
 
 /** A row's answer: a member, null for "not a member", undefined while open. */
 type Answers = Map<number, number | null>;
@@ -209,7 +210,10 @@ export function SheetImport(props: { slug: string; words: ImportWords; language:
   const [preview, setPreview] = useState<ImportPreview | null>(null);
   const [answers, setAnswers] = useState<Answers>(new Map());
   const [result, setResult] = useState<ImportResult | null>(null);
-  const [problem, setProblem] = useState<"noName" | "tooMany" | "failed" | null>(null);
+  const [problem, setProblem] = useState<
+    "noName" | "tooMany" | "failed" | typeof SIGNED_OUT | null
+  >(null);
+  const failed = (res: Response | null) => (res?.status === 401 ? SIGNED_OUT : "failed");
   const [busy, setBusy] = useState(false);
 
   const check = async () => {
@@ -220,7 +224,7 @@ export function SheetImport(props: { slug: string; words: ImportWords; language:
     // 422: no "Name" column, or more rows than one import takes.
     if (res?.status === 422)
       return setProblem(body?.code === "too_many_rows" ? "tooMany" : "noName");
-    setProblem(res?.ok ? null : "failed");
+    setProblem(res?.ok ? null : failed(res));
     if (res?.ok && body) {
       setPreview(body);
       setAnswers(new Map());
@@ -231,7 +235,7 @@ export function SheetImport(props: { slug: string; words: ImportWords; language:
     const decisions = [...answers].map(([line, uid]) => ({ line, uid }));
     const res = await post(slug, { csv, apply: true, decisions });
     setBusy(false);
-    if (!res?.ok) return setProblem("failed");
+    if (!res?.ok) return setProblem(failed(res));
     track("ws_sheet_imported");
     setResult((await res.json()) as ImportResult);
   };
@@ -251,10 +255,14 @@ export function SheetImport(props: { slug: string; words: ImportWords; language:
       >
         {words["import.check"]}
       </button>
-      {problem && (
-        <p role="alert" className="mt-2 text-seal">
-          {words[IMPORT_PROBLEM[problem]]}
-        </p>
+      {problem === SIGNED_OUT ? (
+        <SignedOutNote className="mt-2" />
+      ) : (
+        problem && (
+          <p role="alert" className="mt-2 text-seal">
+            {words[IMPORT_PROBLEM[problem]]}
+          </p>
+        )
       )}
       {preview && (
         <Review

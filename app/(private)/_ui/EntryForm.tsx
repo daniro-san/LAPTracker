@@ -8,6 +8,7 @@ import { useState } from "react";
 import { CheckField } from "@/lib/brand/components/CheckField";
 import { Sheet } from "@/lib/brand/components/Sheet";
 import { changedFrom } from "@/lib/brand/components/sheet-close";
+import { isolate } from "@/lib/copy";
 import { KINDS } from "@/lib/private/calendar-kinds";
 import type { CalendarKey } from "@/lib/private/dictionary.calendar";
 
@@ -26,6 +27,7 @@ import { Choice, ConflictBox, FIELD, Labeled, TextInput } from "./CalendarFields
 import { DeleteArea } from "./DeleteArea";
 import { KindFields, RepeatFields, TimeFields, type PartProps } from "./EntryFields";
 import { sheetWords } from "./sheet-words";
+import { RefusalLine } from "./SignedOut";
 
 export interface FormProps {
   words: CalendarSheetWords;
@@ -44,11 +46,13 @@ function useSave(props: FormProps, d: Draft) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [stale, setStale] = useState<{ conflicts: Stale[]; changes: Change[] } | null>(null);
+  // One per open add sheet (D100): a retry after a lost answer adds nothing new.
+  const [requestId] = useState(() => crypto.randomUUID());
   async function send(changes: Change[] | null) {
     setBusy(true);
     setError(null);
     const body = mode.add
-      ? { action: "create", entry: newEntryOf(d) }
+      ? { action: "create", entry: newEntryOf(d), requestId }
       : { action: "edit", entry: mode.item.entry, week: mode.item.week, changes };
     const sent =
       changes?.length === 0 ? ({ ok: true } as const) : await sendCalendar(props.slug, body);
@@ -130,7 +134,9 @@ export function EntryForm(props: FormProps) {
       labelledBy="cal-form-title"
       onCancel={props.onClose}
       dirty={changedFrom(start, d)}
-      title={item ? `${words["calendar.form.edit"]}: ${item.title}` : words["calendar.form.add"]}
+      title={
+        item ? `${words["calendar.form.edit"]}: ${isolate(item.title)}` : words["calendar.form.add"]
+      }
       words={sheetWords(words)}
       primary={{
         label: words["calendar.form.save"],
@@ -142,9 +148,10 @@ export function EntryForm(props: FormProps) {
       }}
       note={
         save.error && (
-          <p role="alert" className="mb-2 border-l-4 border-seal pl-3 text-body-sm">
-            {save.error}
-          </p>
+          <RefusalLine
+            text={save.error}
+            className="mb-2 border-l-4 border-seal pl-3 text-body-sm"
+          />
         )
       }
     >

@@ -26,7 +26,7 @@ const FIRST_CHANGES = 10;
 
 const player = (m: { uid: number; name: string }) => (
   <Link href={`/players/${m.uid}`} className={PLAYER}>
-    {m.name}
+    <bdi>{m.name}</bdi>
   </Link>
 );
 

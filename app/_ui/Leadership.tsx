@@ -75,7 +75,7 @@ function Card({
             href={`/players/${m.uid}`}
             className="inline-flex min-h-11 items-center font-subhead text-display-sm leading-tight"
           >
-            {m.name}
+            <bdi>{m.name}</bdi>
           </TextLink>
           <p className="flex flex-wrap items-center gap-x-2 text-sm text-ink/70">
             {m.role && <RoleMark role={m.role} />}

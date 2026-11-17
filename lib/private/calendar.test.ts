@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import type { Db } from "../db";
@@ -62,7 +64,8 @@ const newEntry = (fields: Partial<NewEntry> & Pick<NewEntry, "kind">) =>
   }) as NewEntry;
 
 async function create(access: WorkspaceAccess, fields: Partial<NewEntry> & Pick<NewEntry, "kind">) {
-  const made = await createEntry(db, access, { weekly: false, ...newEntry(fields) } as NewEntry);
+  const entry = { weekly: false, ...newEntry(fields) } as NewEntry;
+  const made = await createEntry(db, access, entry, randomUUID());
   if (!made.ok) throw new Error(made.code);
   return made.id;
 }
@@ -89,6 +92,23 @@ describe("the workspace calendar (issue 300)", () => {
       ["kvk", false],
       ["other", true],
     ]);
+  });
+
+  it("adds an entry once when the retry carries the same request id (D100)", async () => {
+    const ogs = await signedIn("ogs");
+    const entry = { weekly: false, ...newEntry({ kind: "kvk" }) } as NewEntry;
+    const id = randomUUID();
+    const first = await createEntry(db, ogs, entry, id);
+    expect(await createEntry(db, ogs, entry, id)).toEqual(first);
+    expect(await db.select().from(calendarEntries)).toHaveLength(1);
+    // Two sends with a new id at the same moment: both answer the one entry stored.
+    const again = randomUUID();
+    const [a, b] = await Promise.all([
+      createEntry(db, ogs, entry, again),
+      createEntry(db, ogs, entry, again),
+    ]);
+    expect(a).toEqual(b);
+    expect(await db.select().from(calendarEntries)).toHaveLength(2);
   });
 
   it("repeats a weekly entry; one week moves or is skipped while the others follow the plan", async () => {
@@ -226,7 +246,12 @@ describe("the workspace calendar (issue 300)", () => {
       );
     }
     const theme = (day: string) =>
-      createEntry(db, ogs, newEntry({ kind: "duel", day, title: "economy week" } as NewEntry));
+      createEntry(
+        db,
+        ogs,
+        newEntry({ kind: "duel", day, title: "economy week" } as NewEntry),
+        randomUUID(),
+      );
     expect((await theme("2026-11-18")).ok).toBe(true);
     expect(await theme("2026-11-20")).toEqual({ ok: false, code: "theme_exists" });
     const [row] = await db.select().from(calendarEntries);

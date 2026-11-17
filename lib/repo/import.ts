@@ -1,12 +1,13 @@
 // The screenshot import's tables (issue 299, D96): drafts, Alliance Duel points and check records, plus
 // the roster names and numbers a draft is matched and checked against. Every function takes the
 // workspace (or its alliance) from lib/private's WorkspaceAccess; nothing here reads a picture.
-import { and, desc, eq, gt, isNull, lte, sql } from "drizzle-orm";
+import { and, desc, eq, gt, inArray, isNull, lte, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { dailyRosters, workspaces, workspaceUsers } from "../schema";
 import {
   allianceDuelPoints,
+  discordPictures,
   screenshotChecks,
   screenshotDrafts,
   type StoredRow,
@@ -33,6 +34,71 @@ export async function insertDrafts(db: Db, drafts: NewDraft[], now: Date): Promi
     .values(drafts)
     .returning({ id: screenshotDrafts.id });
   return rows.map((r) => r.id);
+}
+
+/**
+ * Claims a Discord message's pictures for one run of the command (D100); claims made before `since` are
+ * dropped first. Returns the attachment ids this run claimed: those no earlier run holds.
+ */
+export async function claimPictures(
+  db: Db,
+  key: { workspaceId: number; messageId: string },
+  attachmentIds: readonly string[],
+  now: Date,
+  since: Date,
+): Promise<string[]> {
+  await db
+    .delete(discordPictures)
+    .where(
+      and(eq(discordPictures.workspaceId, key.workspaceId), lte(discordPictures.createdAt, since)),
+    );
+  if (attachmentIds.length === 0) return [];
+  const rows = await db
+    .insert(discordPictures)
+    .values(attachmentIds.map((attachmentId) => ({ ...key, attachmentId, createdAt: now })))
+    .onConflictDoNothing()
+    .returning({ id: discordPictures.attachmentId });
+  return rows.map((r) => r.id);
+}
+
+/** The drafts a message's pictures went into, oldest first, each once. */
+export async function picturesDrafts(
+  db: Db,
+  key: { workspaceId: number; messageId: string },
+): Promise<number[]> {
+  const rows = await db
+    .selectDistinct({ id: discordPictures.draftId })
+    .from(discordPictures)
+    .where(
+      and(
+        eq(discordPictures.workspaceId, key.workspaceId),
+        eq(discordPictures.messageId, key.messageId),
+      ),
+    );
+  return rows.flatMap((r) => (r.id === null ? [] : [r.id])).sort((a, b) => a - b);
+}
+
+/** After the run: each read picture's draft (null: it made none); pictures not read are let go. */
+export async function settlePictures(
+  db: Db,
+  key: { workspaceId: number; messageId: string },
+  drafts: ReadonlyMap<string, number | null>,
+  unread: readonly string[],
+): Promise<void> {
+  const own = (ids: string[]) =>
+    and(
+      eq(discordPictures.workspaceId, key.workspaceId),
+      eq(discordPictures.messageId, key.messageId),
+      inArray(discordPictures.attachmentId, ids),
+    );
+  for (const [attachmentId, draftId] of drafts) {
+    if (draftId !== null)
+      await db
+        .update(discordPictures)
+        .set({ draftId })
+        .where(own([attachmentId]));
+  }
+  if (unread.length > 0) await db.delete(discordPictures).where(own([...unread]));
 }
 
 /** The workspace's drafts waiting for review, newest first. */

@@ -1,7 +1,6 @@
 import { eq } from "drizzle-orm";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
-import { TEST_ENV } from "../app-context.test-helpers";
 import { T0 } from "../collector.test-helpers";
 import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
@@ -13,43 +12,30 @@ import {
   signOutWorkspace,
 } from "../repo/workspaces";
 import { authAttempts, workspaceSessions, workspaceUsers } from "../schema";
-import { requireWorkspace, signOut, type CookieReader } from "./access";
-import { hashToken, revokeSession, SESSION_COOKIE, SESSION_MS } from "./session";
-import { finishSignIn, startSignIn, STATE_COOKIE, type Step } from "./sign-in";
-
-const ORIGIN = "https://laptracker.test";
-const R4 = "300000000000000001";
-const MEMBER_ROLE = "300000000000000009";
-const MEMBER_ID = "200000000000000002";
-const env = {
-  ...TEST_ENV,
-  DISCORD_CLIENT_ID: "100000000000000001",
-  DISCORD_CLIENT_SECRET: "client-secret-for-tests",
-  DISCORD_API_BASE_URL: "https://discord.test/api",
-};
-
-/** A stand-in for Discord: the OAuth code names the account; roles null = not in the server. */
-const ACCOUNTS: Record<string, { id: string; roles: string[] | null }> = {
-  officer: { id: "200000000000000001", roles: [MEMBER_ROLE, R4] },
-  member: { id: MEMBER_ID, roles: [MEMBER_ROLE] },
-  outsider: { id: "200000000000000003", roles: null },
-};
-const discord: typeof fetch = async (input, init) => {
-  const url = String(input);
-  if (url.endsWith("/oauth2/token")) {
-    const code = new URLSearchParams(String(init?.body)).get("code") ?? "";
-    return ACCOUNTS[code]
-      ? Response.json({ access_token: code })
-      : new Response(null, { status: 400 });
-  }
-  const account = ACCOUNTS[String(new Headers(init?.headers).get("authorization")).slice(7)];
-  if (!account) return new Response(null, { status: 401 });
-  if (url.endsWith("/users/@me")) return Response.json({ id: account.id, username: "someone" });
-  if (account.roles === null) return Response.json({ code: 10004 }, { status: 404 });
-  return Response.json({ nick: "Nick", roles: account.roles });
-};
+import { requireWorkspace, signOut } from "./access";
+import {
+  CHECK_MS,
+  hashToken,
+  RENEW_MS,
+  revokeSession,
+  SESSION_COOKIE,
+  SESSION_MS,
+} from "./session";
+import { finishSignIn, startSignIn, STATE_COOKIE } from "./sign-in";
+import {
+  cookieValue,
+  deps,
+  jar,
+  location,
+  MEMBER_ID,
+  ORIGIN,
+  R4,
+  signInWith,
+} from "./sign-in.test-helpers";
 
 let db: Db;
+const signIn = (...args: Parameters<typeof signInWith> extends [Db, ...infer R] ? R : never) =>
+  signInWith(db, ...args);
 beforeAll(async () => {
   db = await openTestDb();
 });
@@ -69,36 +55,6 @@ beforeEach(async () => {
   });
 });
 
-const deps = (now = T0, more: Partial<typeof env> = {}) => ({
-  env: { ...env, ...more },
-  fetch: discord,
-  now,
-});
-const cookieValue = (step: Step, name: string) =>
-  step.kind === "redirect"
-    ? step.cookies
-        .find((c) => c.startsWith(`${name}=`))
-        ?.split(";")[0]
-        ?.slice(name.length + 1)
-    : undefined;
-const jar = (token: string | undefined): CookieReader => ({
-  get: (name) => (name === SESSION_COOKIE && token ? { value: token } : undefined),
-});
-
-/** The whole round trip: login sets the state cookie, Discord answers with `code`. */
-async function signIn(slug: string, code: string, now = T0, more: Partial<typeof env> = {}) {
-  const start = await startSignIn(db, deps(now, more), slug, ORIGIN, false);
-  const state = cookieValue(start, STATE_COOKIE) ?? "";
-  const query = new URLSearchParams({ state, code });
-  const step = await finishSignIn(db, deps(now, more), {
-    query,
-    stateCookie: state,
-    ip: "198.51.100.1",
-    origin: ORIGIN,
-  });
-  return { step, token: cookieValue(step, SESSION_COOKIE) };
-}
-const location = (step: Step) => (step.kind === "redirect" ? step.location : step.code);
 const workspaceId = async (slug: string) => (await findWorkspaceBySlug(db, slug))?.id ?? 0;
 
 describe("workspace sign-in (D71)", () => {
@@ -153,6 +109,7 @@ describe("workspace sign-in (D71)", () => {
     const step = await finishSignIn(db, deps(), {
       query,
       stateCookie: state,
+      sessionCookie: undefined,
       ip: "198.51.100.1",
       origin: ORIGIN,
     });
@@ -165,14 +122,63 @@ describe("workspace sign-in (D71)", () => {
     expect(await db.select().from(workspaceSessions)).toEqual([]);
   });
 
-  it("refuses a session older than 24 hours, so Discord is asked again", async () => {
+  it("serves a session for 24 hours after its role check; a page asks for a renewal after 23 hours", async () => {
     const { token } = await signIn("ogs", "officer");
-    const later = new Date(T0.getTime() + SESSION_MS);
-    expect(await requireWorkspace(db, "ogs", jar(token), later)).toEqual({
-      ok: false,
-      reason: "expired",
+    const at = (ms: number) => new Date(T0.getTime() + ms);
+    expect((await requireWorkspace(db, "ogs", jar(token), at(RENEW_MS - 1), RENEW_MS)).ok).toBe(
+      true,
+    );
+    const page = await requireWorkspace(db, "ogs", jar(token), at(RENEW_MS), RENEW_MS);
+    expect(page).toMatchObject({ reason: "expired" });
+    // An API call keeps working until the hour, then answers signed_out; the session row stays.
+    expect((await requireWorkspace(db, "ogs", jar(token), at(CHECK_MS - 1))).ok).toBe(true);
+    expect((await requireWorkspace(db, "ogs", jar(token), at(CHECK_MS))).ok).toBe(false);
+    expect(await db.select().from(workspaceSessions)).toHaveLength(1);
+  });
+
+  it("renews the same session through Discord, until seven days after sign-in", async () => {
+    const { token } = await signIn("ogs", "officer");
+    // Renewed a day after sign-in and a minute before the cap: same cookie, served again each time.
+    for (const ms of [CHECK_MS + 60_000, SESSION_MS - 60_000]) {
+      const now = new Date(T0.getTime() + ms);
+      expect((await requireWorkspace(db, "ogs", jar(token), now, RENEW_MS)).ok).toBe(false);
+      const renewal = await signIn("ogs", "officer", now, {}, { session: token ?? "" });
+      expect(renewal.token).toBeUndefined();
+      expect((await requireWorkspace(db, "ogs", jar(token), now, RENEW_MS)).ok).toBe(true);
+    }
+    // The cap: seven days after sign-in the session ends, and the next trip makes a new one.
+    const end = new Date(T0.getTime() + SESSION_MS);
+    expect(await requireWorkspace(db, "ogs", jar(token), end)).toMatchObject({ reason: "expired" });
+    const fresh = await signIn("ogs", "officer", end, {}, { session: token ?? "" });
+    expect(fresh.token !== undefined && fresh.token !== token).toBe(true);
+    expect(await db.select().from(workspaceSessions)).toHaveLength(1);
+  });
+
+  it("takes access away at the next renewal from an officer who lost the role (ADV-8)", async () => {
+    const { token } = await signIn("ogs", "officer");
+    const later = new Date(T0.getTime() + RENEW_MS);
+    const renewal = await signIn("ogs", "demoted", later, {}, { session: token ?? "" });
+    expect(location(renewal.step)).toBe("/w/ogs/no-access?why=no_role");
+    expect(await requireWorkspace(db, "ogs", jar(token), later)).toMatchObject({
+      reason: "signed_out",
     });
+  });
+
+  it("ends the session when Discord does not confirm the renewal, so the page shows the sign-in", async () => {
+    const { token } = await signIn("ogs", "officer");
+    const later = new Date(T0.getTime() + RENEW_MS);
+    const opts = { session: token ?? "", error: "login_required" };
+    const renewal = await signIn("ogs", "officer", later, {}, opts);
+    expect(location(renewal.step)).toBe("/w/ogs?e=denied");
+    expect((await requireWorkspace(db, "ogs", jar(token), later)).ok).toBe(false);
     expect(await db.select().from(workspaceSessions)).toEqual([]);
+  });
+
+  it("returns to the page the officer came from, and drops a return outside the workspace", async () => {
+    const back = await signIn("ogs", "officer", T0, {}, { next: "/w/ogs/shots/5?x=1#top" });
+    expect(location(back.step)).toBe("/w/ogs/shots/5?x=1");
+    const away = await signIn("ogs", "officer", T0, {}, { next: "https://evil.example/w/ogs" });
+    expect(location(away.step)).toBe("/w/ogs");
   });
 
   it("refuses a session of one workspace under another workspace's slug", async () => {
@@ -195,7 +201,7 @@ describe("workspace sign-in (D71)", () => {
     }
   });
 
-  it("ends a session let in only by the allowlist when the entry ends, before 24 hours", async () => {
+  it("ends a session let in only by the allowlist when the entry ends, before seven days", async () => {
     const entryEnds = new Date(T0.getTime() + 2 * 3_600_000);
     await allowUser(db, await workspaceId("ogs"), MEMBER_ID, entryEnds, "admin");
     const { step, token } = await signIn("ogs", "member");

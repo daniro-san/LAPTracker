@@ -101,7 +101,7 @@ function WorkspaceList({
       {workspaces.map((w) => (
         <li key={w.id} className="border-b border-rule pb-4 last:border-0">
           <p className="font-semibold">
-            /w/{w.slug} · {w.alliance}
+            /w/{w.slug} · <bdi>{w.alliance}</bdi>
           </p>
           <p className="text-body-sm break-words text-ink/80">
             {t.guild}: {w.guild} · {t.roles}: {w.roles} · {fill(t.sessions, { n: w.sessions })}

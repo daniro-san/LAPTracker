@@ -8,9 +8,10 @@ import {
   deleteTheft,
   hasAttacker,
   insertFollowUp,
-  insertThefts,
+  insertRequestedTheft,
   listFollowUps,
   listThefts,
+  theftRequested,
 } from "../repo/thefts";
 import { latestRoster } from "../repo/workspace-rosters";
 import { serverDay, serverInstant } from "../schedule";
@@ -132,6 +133,8 @@ export interface TypedTheft {
   time: string;
   stolen: "quest_rewards" | null;
   note: string;
+  /** Made once per open add sheet (D100): a retry with it adds nothing new. */
+  requestId: string;
 }
 
 export type TypedRefusal = "unknown_player" | "bad_name" | "not_in_alliance" | "bad_time";
@@ -148,17 +151,26 @@ async function attackerOf(db: Db, access: WorkspaceAccess, attacker: TypedTheft[
   return name ? { uid: null, name, tag: attacker.tag.trim() } : "bad_name";
 }
 
+/** The typed day and time as an instant; null for a day that does not exist or a time still to come. */
+function typedInstant(input: TypedTheft, clock: Clock): Date | null {
+  const at = isRealDay(input.day)
+    ? serverInstant(input.day, input.time, { SERVER_TZ: clock.zone })
+    : null;
+  // A minute's grace for a clock set a little ahead; a later time is a typing slip.
+  return at && at.getTime() <= clock.now.getTime() + 60_000 ? at : null;
+}
+
 export async function addTheft(
   db: Db,
   access: WorkspaceAccess,
   input: TypedTheft,
   clock: Clock,
 ): Promise<"ok" | TypedRefusal> {
-  const at = isRealDay(input.day)
-    ? serverInstant(input.day, input.time, { SERVER_TZ: clock.zone })
-    : null;
-  // A minute's grace for a clock set a little ahead; a later time is a typing slip.
-  if (!at || at.getTime() > clock.now.getTime() + 60_000) return "bad_time";
+  const at = typedInstant(input, clock);
+  if (!at) return "bad_time";
+  // INVARIANT thefts.request-once: a retry after a lost answer finds the first add (D100); a second send
+  // that arrives at the same moment loses on the unique index and gets the same "ok".
+  if (await theftRequested(db, access.workspaceId, input.requestId)) return "ok";
   const [attacker, roster] = await Promise.all([
     attackerOf(db, access, input.attacker),
     input.victimUid === null ? [] : latestRoster(db, access.unionId),
@@ -166,23 +178,23 @@ export async function addTheft(
   if (typeof attacker === "string") return attacker;
   const victim = input.victimUid === null ? null : roster.find((m) => m.uid === input.victimUid);
   if (victim === undefined) return "not_in_alliance";
-  await insertThefts(db, [
-    {
-      workspaceId: access.workspaceId,
-      at,
-      attackerKey: attackerKeyOf(attacker.uid, attacker.name),
-      attackerUid: attacker.uid,
-      attackerName: attacker.name,
-      attackerTag: attacker.tag,
-      stolen: input.stolen,
-      victimUid: victim?.uid ?? null,
-      victimName: victim?.name ?? null,
-      source: "typed",
-      note: cleanNote(input.note),
-      createdBy: access.user.id,
-      createdAt: clock.now,
-    },
-  ]);
+  // Stored now, or by the send that won the unique index: either way the theft is there once.
+  await insertRequestedTheft(db, {
+    workspaceId: access.workspaceId,
+    at,
+    attackerKey: attackerKeyOf(attacker.uid, attacker.name),
+    attackerUid: attacker.uid,
+    attackerName: attacker.name,
+    attackerTag: attacker.tag,
+    stolen: input.stolen,
+    victimUid: victim?.uid ?? null,
+    victimName: victim?.name ?? null,
+    source: "typed",
+    note: cleanNote(input.note),
+    createdBy: access.user.id,
+    createdAt: clock.now,
+    requestId: input.requestId,
+  });
   return "ok";
 }
 

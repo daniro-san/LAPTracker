@@ -6,6 +6,7 @@ import type { Db } from "../db";
 import {
   calendarRows,
   deleteEntry,
+  findByRequest,
   findEntry,
   findTheme,
   insertEntry,
@@ -55,7 +56,13 @@ export async function createEntry(
   db: Db,
   access: WorkspaceAccess,
   input: NewEntry,
+  /** Made once per open add sheet (D100): a retry with it answers the first entry's id. */
+  requestId: string,
 ): Promise<{ ok: true; id: number } | { ok: false; code: "theme_exists" }> {
+  // INVARIANT calendar.request-once: a retry after a lost answer finds the first add; a second send that
+  // arrives at the same moment loses on the unique index and answers the first entry's id (D100).
+  const made = await findByRequest(db, access.workspaceId, requestId);
+  if (made !== null) return { ok: true, id: made };
   const base = {
     workspaceId: access.workspaceId,
     kind: input.kind,
@@ -63,30 +70,30 @@ export async function createEntry(
     link: input.link,
     forMembers: input.forMembers,
     createdBy: access.user.id,
+    requestId,
   };
+  let values: typeof base & Parameters<typeof insertEntry>[1];
   if (input.kind === "duel") {
     const monday = mondayOf(input.day);
     if ((await findTheme(db, access.workspaceId, monday)) !== null) {
       return { ok: false, code: "theme_exists" };
     }
-    const id = await insertEntry(db, {
+    values = { ...base, title: input.title, day: monday, lastWeek: monday };
+  } else {
+    values = {
       ...base,
-      title: input.title,
-      day: monday,
-      lastWeek: monday,
-    });
-    return { ok: true, id };
+      variant: "variant" in input ? input.variant : null,
+      level: "level" in input ? input.level : null,
+      title: "title" in input ? input.title : null,
+      day: input.day,
+      minute: input.minute,
+      weekly: input.weekly,
+      lastWeek: input.weekly ? null : mondayOf(input.day),
+    };
   }
-  const id = await insertEntry(db, {
-    ...base,
-    variant: "variant" in input ? input.variant : null,
-    level: "level" in input ? input.level : null,
-    title: "title" in input ? input.title : null,
-    day: input.day,
-    minute: input.minute,
-    weekly: input.weekly,
-    lastWeek: input.weekly ? null : mondayOf(input.day),
-  });
+  const id =
+    (await insertEntry(db, values)) ?? (await findByRequest(db, access.workspaceId, requestId));
+  if (id === null) throw new Error("calendar_request_lost");
   return { ok: true, id };
 }
 

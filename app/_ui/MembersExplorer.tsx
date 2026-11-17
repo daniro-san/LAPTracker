@@ -74,7 +74,7 @@ function toRow(m: MemberView, mode: Mode, copy: Dictionary): StatRow {
       : { n },
     lead: m.role ? (
       <>
-        {m.name} <RoleMark role={m.role} />
+        <bdi>{m.name}</bdi> <RoleMark role={m.role} />
         <span className="sr-only">
           {" "}
           {m.role.kind === "officer" ? m.role.title : copy.leadership.leader}

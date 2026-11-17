@@ -1,6 +1,6 @@
 // The "To review" list on Home (issue 299): the workspace's drafts waiting for an officer, shared by all of
 // them, and the door in, "Send screenshots". Each draft says what was read and how many rows need a person.
-import { fill } from "@/lib/copy";
+import { fill, isolate } from "@/lib/copy";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import type { ImportKind, Scope } from "@/lib/private/import-kinds";
 import { STATUS_BAR } from "@/lib/private/import-kinds";
@@ -47,8 +47,7 @@ export function ToReview(props: {
         {t["shots.head"]}
         {items.length > 0 && <span className="ml-2 tabular-nums text-plum">{items.length}</span>}
       </h2>
-      <p className="mt-1">{t["shots.lead"]}</p>
-      <p className="mt-1 text-body-sm text-ink/80">{t["shots.nothingCounts"]}</p>
+      {items.length > 0 && <p className="mt-1">{t["shots.lead"]}</p>}
       {/* The door in comes first, so it does not sink under a long queue (panel PD-4, UI-8). */}
       <SendScreenshots
         slug={slug}
@@ -78,7 +77,7 @@ export function ToReview(props: {
                 <span className="text-body-sm tabular-nums">{draftCounts(t, language, d)}</span>
                 <span className="text-body-sm text-ink/75">
                   {[
-                    d.sentBy && fill(t["shots.sentBy"], { name: d.sentBy }),
+                    d.sentBy && fill(t["shots.sentBy"], { name: isolate(d.sentBy) }),
                     d.source === "discord" && t["shots.viaDiscord"],
                     props.when(d.createdAt),
                   ]

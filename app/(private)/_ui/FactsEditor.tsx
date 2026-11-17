@@ -11,6 +11,7 @@ import { useState } from "react";
 
 import { track } from "@/lib/analytics/events";
 import { Sheet } from "@/lib/brand/components/Sheet";
+import { isolate } from "@/lib/copy";
 import type { Fact, FactField, FactValues, MemberFacts } from "@/lib/private/fact-fields";
 import { dayFormat, factText, type FactTextFormat } from "@/lib/private/fact-text";
 import { mightIn, parseOnboarding } from "@/lib/private/onboarding-parse";
@@ -28,6 +29,7 @@ import {
 } from "./facts-form";
 import { Conflict, Paste, SaveNote } from "./FactsEditorParts";
 import { sheetWords } from "./sheet-words";
+import { SIGNED_OUT, SignedOutNote } from "./SignedOut";
 
 export interface EditorProps {
   slug: string;
@@ -77,7 +79,7 @@ function useSave(props: EditorProps, f: ReturnType<typeof useForm>) {
   const [invalid, setInvalid] = useState<FactField[]>([]);
   const [conflicts, setConflicts] = useState<Result[]>([]);
   const [merged, setMerged] = useState<FactField[]>([]);
-  const [state, setState] = useState<"idle" | "saving" | "failed">("idle");
+  const [state, setState] = useState<"idle" | "saving" | "failed" | "signed_out">("idle");
   const [savedAny, setSavedAny] = useState(false);
   const close = () => {
     if (savedAny) router.refresh();
@@ -107,6 +109,7 @@ function useSave(props: EditorProps, f: ReturnType<typeof useForm>) {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ changes }),
     }).catch(() => null);
+    if (res?.status === 401) return setState(SIGNED_OUT);
     if (!res || (res.status !== 200 && res.status !== 409)) return setState("failed");
     const { results } = (await res.json()) as { results: Result[] };
     const kept = results.filter((r) => r.status !== "conflict");
@@ -154,7 +157,7 @@ export function FactsEditor(props: EditorProps) {
       labelledBy="facts-title"
       onCancel={s.close}
       dirty={dirty}
-      title={<span translate="no">{say(words["facts.title"], { name: props.name })}</span>}
+      title={<span translate="no">{say(words["facts.title"], { name: isolate(props.name) })}</span>}
       words={sheetWords(words)}
       primary={{
         label: words["facts.save"],
@@ -184,6 +187,7 @@ export function FactsEditor(props: EditorProps) {
           {words["facts.failed"]}
         </p>
       )}
+      {s.state === SIGNED_OUT && <SignedOutNote className="mt-2" />}
     </Sheet>
   );
 }

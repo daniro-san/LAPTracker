@@ -65,13 +65,13 @@ export const en = {
     was: "was {name}",
     since: "since {date}",
     acrossEvents: "Across events",
-    toTop: "Back up",
+    toTop: "Back to top",
     showAll: "All events ({n})",
     myAlliance: "My alliance",
     names: "Names",
     alliances: "Alliances",
     /** The event's biggest gains and losses (#70). */
-    movers: "Grandma noticed",
+    movers: "Biggest changes in this event",
     /** The player page's section of every reading (#270): daily reads and events' Start and End. */
     progress: "Daily progress",
     /** Its summary line, the player's might change in percent: `You: +4.1% since Nov 9.` */
@@ -126,9 +126,9 @@ export const en = {
   history: {
     title: "Member history",
     /** Under the title: what each card is. */
-    lead: "Each card compares the member list with the one read before it. Changes in between are not seen.",
+    lead: "Each card compares the member list with the one before it. Anyone who joined and left in between is not seen.",
     /** A card's head for a roster from the once-a-day read. */
-    daily: "Daily read",
+    daily: "Daily update",
     /** Under a card's head: `since Nov 8, 06:01 server time`. */
     since: "since {time}",
     first: "First reading: nothing to compare yet.",
@@ -146,7 +146,7 @@ export const en = {
     /** Copies the card's whole member list as tab-separated rows (name, might, kills). */
     copy: "Copy for spreadsheet",
     copied: "Copied",
-    copyFailed: "Copy failed",
+    copyFailed: "Could not copy. Try again.",
   },
   /** The header's settings menu (D38). */
   settings: {
@@ -237,7 +237,7 @@ export const en = {
     submit: "Search",
     seen: "Seen",
     limit: "First {n}",
-    noMatch: "No player by that name in the ledger.",
+    noMatch: "No player with that name. Check the spelling, or type part of the name.",
     pending: "Grandma is searching the ledger…",
   },
   errors: {
@@ -250,7 +250,7 @@ export const en = {
     server: {
       code: "500",
       title: "Something cracked.",
-      body: "It's okay, grandma will clean it.",
+      body: "Something broke on our side. Try again in a minute.",
       retry: "Try again",
       back: "Back to the ledger",
     },
@@ -322,6 +322,17 @@ const source = {
   brand: brandCopy,
   discord: discordCopy,
 } as const;
+
+/** Bidi embeddings and overrides (U+202A–U+202E) and isolates (U+2066–U+2069): never needed in a name. */
+const BIDI_CONTROLS = /[‪-‮⁦-⁩]/g;
+
+/**
+ * A player's name, or a title someone typed, set inside a sentence: its own bidi controls removed, then
+ * wrapped in FSI … PDI (U+2068, U+2069), so an Arabic or Hebrew name, or one holding a direction control,
+ * cannot close the isolation early or reorder the words, times and counts around it (ADV-12). For text
+ * shown on a page; never for copied or exported text.
+ */
+export const isolate = (text: string) => `⁨${text.replace(BIDI_CONTROLS, "")}⁩`;
 
 /** `fill("Last updated at {time}", { time: "14:01" })`; unknown placeholders stay as written. */
 export function fill(template: string, vars: Record<string, string | number>): string {

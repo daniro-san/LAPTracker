@@ -10,6 +10,7 @@ import {
   serial,
   text,
   timestamp,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 import { workspaces, workspaceUsers } from "./schema";
@@ -45,9 +46,12 @@ export const thefts = pgTable(
     note: text("note"),
     createdBy: integer("created_by").references(() => workspaceUsers.id, { onDelete: "set null" }),
     createdAt: tstz("created_at").notNull(),
+    /** The add sheet's request id (D100): a retry of the same add finds this row instead of a second. */
+    requestId: text("request_id"),
   },
   (t) => [
     index("thefts_workspace_attacker_idx").on(t.workspaceId, t.attackerKey),
+    uniqueIndex("thefts_request_unique").on(t.workspaceId, t.requestId),
     check("thefts_stolen_check", sql`${t.stolen} is null or ${t.stolen} = 'quest_rewards'`),
     check("thefts_source_check", sql`${t.source} in ('photo', 'typed')`),
   ],

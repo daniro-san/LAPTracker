@@ -64,7 +64,8 @@ export function Matched(props: { preview: ImportPreview; rows: ImportRow[]; word
       <ul translate="no" className="text-body-sm">
         {props.rows.map((r) => (
           <li key={r.line} className="border-t border-rule py-2 break-words">
-            {r.name} → {r.match.status === "matched" ? nameOf(r.match.uid) : ""}
+            <bdi>{r.name}</bdi> →{" "}
+            <bdi>{r.match.status === "matched" ? nameOf(r.match.uid) : ""}</bdi>
           </li>
         ))}
       </ul>

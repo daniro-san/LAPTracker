@@ -75,7 +75,8 @@ function RowDetail({
         <ul className="mt-2 text-ink/70">
           {history.map((h) => (
             <li key={`${h.tag}|${h.name}`}>
-              {allianceLabel(h.tag, h.name)} · {clock.day(h.firstSeen)} – {clock.day(h.lastSeen)}
+              <bdi>{allianceLabel(h.tag, h.name)}</bdi> · {clock.day(h.firstSeen)} –{" "}
+              {clock.day(h.lastSeen)}
             </li>
           ))}
         </ul>

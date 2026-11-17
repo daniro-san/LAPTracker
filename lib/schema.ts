@@ -365,6 +365,8 @@ export const workspaceSessions = pgTable(
       .references(() => workspaceUsers.id, { onDelete: "cascade" }),
     createdAt: tstz("created_at").notNull(),
     expiresAt: tstz("expires_at").notNull(),
+    /** When Discord last confirmed the role (D99): at sign-in and at each renewal. */
+    checkedAt: tstz("checked_at").notNull().defaultNow(),
   },
   (t) => [index("workspace_sessions_workspace_idx").on(t.workspaceId)],
 );

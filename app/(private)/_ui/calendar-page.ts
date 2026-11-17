@@ -9,6 +9,7 @@ import { withPageDb } from "@/lib/page";
 import { requireWorkspace, type WorkspaceAccess } from "@/lib/private/access";
 import { isDay, mondayOf, offsetLabel } from "@/lib/private/calendar-time";
 import { toReviewCount } from "@/lib/private/import-view";
+import { RENEW_MS } from "@/lib/private/session";
 import { SLUG } from "@/lib/private/sign-in";
 import { serverDay } from "@/lib/schedule";
 
@@ -20,6 +21,8 @@ export async function openCalendar<T>(
   params: Promise<{ slug: string }>,
   searchParams: Promise<Record<string, string | string[] | undefined>>,
   read: (db: Db, access: WorkspaceAccess, monday: string) => Promise<T>,
+  /** The view's path below the workspace, for the return after sign-in (D99). */
+  view: "calendar" | "calendar/caravans",
 ) {
   const { slug } = await params;
   if (!SLUG.test(slug)) notFound();
@@ -31,7 +34,7 @@ export async function openCalendar<T>(
   const monday = mondayOf(typeof asked === "string" && isDay(asked) ? asked : today);
   // INVARIANT workspace.access-first: nothing private is read before this check.
   const { access, data, waiting } = await withPageDb(async (db) => {
-    const access = await requireWorkspace(db, slug, jar, now);
+    const access = await requireWorkspace(db, slug, jar, now, RENEW_MS);
     if (!access.ok) return { access, data: null, waiting: 0 };
     // The Home tab's count of screenshot drafts waiting for review (issue 299), for the frame.
     return {
@@ -41,7 +44,8 @@ export async function openCalendar<T>(
     };
   });
   if (!access.ok) {
-    refuse(slug, access.reason);
+    const week = typeof asked === "string" && isDay(asked) ? `?week=${asked}` : "";
+    refuse(slug, access.reason, `/w/${slug}/${view}${week}`);
     redirect(`/w/${slug}`);
   }
   const { language, t } = await workspaceWords();

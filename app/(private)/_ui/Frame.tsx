@@ -5,7 +5,7 @@ import { cookies, headers } from "next/headers";
 import type { ReactNode } from "react";
 
 import { ALLIANCES } from "@/config/alliances";
-import { fill } from "@/lib/copy";
+import { fill, isolate } from "@/lib/copy";
 import type { WorkspaceAccess } from "@/lib/private/access";
 import { WORKSPACE_INTRO_COOKIE, WORKSPACE_LANG_COOKIE } from "@/lib/private/cookies";
 import {
@@ -18,6 +18,7 @@ import {
 import { FirstUse } from "./FirstUse";
 import { LanguageSwitch } from "./LanguageSwitch";
 import { ProfileSheet } from "./ProfileSheet";
+import { SignedOutProvider } from "./SignedOut";
 import { SignOutButton } from "./SignOutButton";
 import { TabIcon, type TabId } from "./TabIcon";
 
@@ -198,20 +199,29 @@ export function SignedInFrame({
         t={t}
         language={language}
         name={name}
-        label={fill(t["shell.signedIn"], { name })}
+        label={fill(t["shell.signedIn"], { name: isolate(name) })}
       />
-      <SignOutButton slug={access.slug} label={t["shell.signOut"]} />
+      <SignOutButton
+        slug={access.slug}
+        words={{
+          label: t["shell.signOut"],
+          ask: t["shell.signOutAsk"],
+          stay: t["shell.stay"],
+        }}
+      />
     </>
   );
   return (
-    <Frame
-      language={language}
-      t={t}
-      tabs={{ slug: access.slug, current, waiting }}
-      account={account}
-      {...(alliance && { subtitle: `${alliance.tag} · ${alliance.name}` })}
-    >
-      {children}
-    </Frame>
+    <SignedOutProvider slug={access.slug} text={t["signedOut.text"]} link={t["signedOut.link"]}>
+      <Frame
+        language={language}
+        t={t}
+        tabs={{ slug: access.slug, current, waiting }}
+        account={account}
+        {...(alliance && { subtitle: `${alliance.tag} · ${alliance.name}` })}
+      >
+        {children}
+      </Frame>
+    </SignedOutProvider>
   );
 }

@@ -26,10 +26,15 @@ export default async function CalendarPage({
   params: Promise<{ slug: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const page = await openCalendar(params, searchParams, (db, access, monday) => {
-    const grid = gridOf(monday);
-    return calendarDays(db, access, grid.from, grid.to);
-  });
+  const page = await openCalendar(
+    params,
+    searchParams,
+    (db, access, monday) => {
+      const grid = gridOf(monday);
+      return calendarDays(db, access, grid.from, grid.to);
+    },
+    "calendar",
+  );
   const { access, slug, monday, today, ctx } = page;
   const { t, language } = ctx;
   const sunday = addDays(monday, 6);

@@ -15,7 +15,7 @@ import { counted, say, type EditorWords } from "./facts-form";
 export interface SaveState {
   conflicts: readonly { field: FactField }[];
   merged: readonly FactField[];
-  state: "idle" | "saving" | "failed";
+  state: "idle" | "saving" | "failed" | "signed_out";
 }
 
 export function Paste(props: {
