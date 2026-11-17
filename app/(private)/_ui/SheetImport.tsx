@@ -8,6 +8,7 @@ import { useState } from "react";
 
 import { track } from "@/lib/analytics/events";
 import { buttonClass } from "@/lib/brand/components/Button";
+import { FIELD } from "@/lib/brand/components/controls";
 import type { ImportPreview, ImportResult, ImportRow } from "@/lib/private/sheet-import";
 
 import { IMPORT_PROBLEM, say, type ImportWords } from "./facts-form";
@@ -80,7 +81,7 @@ function OpenRow(props: {
             aria-label={words["import.someone"]}
             value=""
             onChange={(e) => props.onAnswer(Number(e.target.value))}
-            className="min-h-11 border border-rule bg-paper px-2"
+            className={`${FIELD} w-auto`}
           >
             <option value="">{words["import.choose"]}</option>
             {preview.members.map((m) => (
@@ -186,7 +187,7 @@ function SheetInput(props: { csv: string; onText: (text: string) => void; words:
           value={props.csv}
           rows={6}
           onChange={(e) => props.onText(e.target.value)}
-          className="mt-1 w-full border border-rule bg-paper px-3 py-2 font-normal"
+          className={`${FIELD} mt-1 font-normal`}
         />
       </label>
       <label className="mt-2 flex min-h-11 flex-wrap items-center gap-2 text-body-sm">

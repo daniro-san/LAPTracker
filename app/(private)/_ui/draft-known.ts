@@ -11,6 +11,10 @@ export type Words = Record<string, string>;
 /** Digits grouped with the officer's language's separator (from the server: no Intl in the client). */
 export const grouped = (n: number, sep: string) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, sep);
 
+/** A value field's text with its digits grouped ("77,384,266"), for the line under the field; "" when empty. */
+export const groupedValue = (text: string, sep: string) =>
+  /^\d+$/.test(text) ? grouped(Number(text), sep) : "";
+
 /** `fill` for a word that may be missing from the words sent to the client. */
 export const fillIn = (template: string | undefined, values: Record<string, string | number>) =>
   fill(template ?? "", values);

@@ -50,6 +50,7 @@ export const calendarPt: CalendarWords = {
   "calendar.pick.choose": "Escolher",
   "calendar.pick.change": "Trocar",
   "calendar.pick.remove": "Remover",
+  "calendar.pick.removeAsk": "Remover {name}?",
   "calendar.pick.title": "Escolher: {role}",
   "calendar.pick.search": "Procurar na aliança",
   "calendar.pick.hint": "Digite parte de um nome. Emoji e acentos não importam.",

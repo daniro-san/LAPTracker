@@ -6,7 +6,9 @@
 // row shows its time now, and "Their time now" lists the zones whose clock reads that time.
 import { useMemo, useRef, useState } from "react";
 
+import { FIELD } from "@/lib/brand/components/controls";
 import { Sheet } from "@/lib/brand/components/Sheet";
+import { hhmm, parseTime } from "@/lib/private/calendar-time";
 import {
   offsetLabel,
   offsetMinutes,
@@ -16,6 +18,8 @@ import {
 } from "@/lib/private/time-zones";
 
 import { say, type EditorWords } from "./facts-form";
+import { sheetWords } from "./sheet-words";
+import { TimeInput } from "./TimeInput";
 
 const SHOWN = 50;
 
@@ -40,7 +44,7 @@ export function TimeZonePicker(props: Props) {
         aria-labelledby={props.labelledBy}
         aria-haspopup="dialog"
         onClick={() => setOpen(true)}
-        className="flex min-h-11 w-full items-center justify-between gap-2 border border-rule bg-paper px-3 text-left"
+        className={`${FIELD} flex items-center justify-between gap-2 text-left`}
       >
         <span className="min-w-0 truncate">
           {props.value ? props.value.replaceAll("_", " ") : "—"}
@@ -68,16 +72,19 @@ function ZoneSheet(props: Props & { onPick: (zone: string) => void; onClose: () 
   const now = useMemo(() => new Date(), []);
   const results = useMemo(() => {
     const o = { now, serverZone, used };
-    if (!theirTime) return searchZones(query, o);
+    const minute = parseTime(theirTime);
+    if (minute === null) return searchZones(query, o);
     const fit = new Set(searchZones(query, o).map((z) => z.id));
-    return zonesAtLocalTime(theirTime, o).filter((z) => fit.has(z.id));
+    return zonesAtLocalTime(hhmm(minute), o).filter((z) => fit.has(z.id));
   }, [query, theirTime, now, serverZone, used]);
   const st = offsetLabel(offsetMinutes(serverZone, now));
   return (
-    <Sheet labelledBy="tz-title" onCancel={props.onClose}>
-      <h2 id="tz-title" className="font-subhead text-display-sm">
-        {words["facts.timeZone"]}
-      </h2>
+    <Sheet
+      labelledBy="tz-title"
+      onCancel={props.onClose}
+      title={words["facts.timeZone"]}
+      words={sheetWords(words)}
+    >
       <input
         type="search"
         data-initial-focus
@@ -85,17 +92,12 @@ function ZoneSheet(props: Props & { onPick: (zone: string) => void; onClose: () 
         onChange={(e) => setQuery(e.target.value)}
         placeholder={words["tz.search"]}
         aria-label={words["tz.searchAria"]}
-        className="mt-3 min-h-11 w-full border border-rule bg-paper px-3"
+        className={FIELD}
       />
       <p className="mt-1 text-body-sm text-ink/75">{say(words["tz.st"], { offset: st })}</p>
       <label className="mt-2 flex min-h-11 items-center justify-between gap-3">
         <span>{words["tz.theirTime"]}</span>
-        <input
-          type="time"
-          value={theirTime}
-          onChange={(e) => setTheirTime(e.target.value)}
-          className="min-h-11 w-32 border border-rule bg-paper px-2"
-        />
+        <TimeInput value={theirTime} onChange={setTheirTime} className="w-32" />
       </label>
       <ZoneList
         results={results}
@@ -104,13 +106,6 @@ function ZoneSheet(props: Props & { onPick: (zone: string) => void; onClose: () 
         words={words}
         onPick={props.onPick}
       />
-      <button
-        type="button"
-        onClick={props.onClose}
-        className="mt-3 min-h-11 w-full border border-rule font-medium"
-      >
-        {words["facts.cancel"]}
-      </button>
     </Sheet>
   );
 }

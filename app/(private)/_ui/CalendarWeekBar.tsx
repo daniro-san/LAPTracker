@@ -1,13 +1,13 @@
 // The week a Calendar view shows (issue 300): its Monday-to-Sunday range, the weeks before and after, and
 // back to this week; then once per screen what ST means (owner: members keep asking "is this server
 // time?") and what KvK stands for (naming.md).
+import { chip } from "@/lib/brand/components/controls";
 import { fill } from "@/lib/copy";
 import { addDays } from "@/lib/private/calendar-time";
 import { calendarDates } from "@/lib/private/calendar-words";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 
-const LINK =
-  "inline-flex min-h-11 min-w-11 items-center justify-center border border-rule px-3 text-body-sm font-semibold";
+const LINK = `${chip()} min-w-11 justify-center font-semibold`;
 
 export function CalendarWeekBar(props: {
   href: (week: string) => string;

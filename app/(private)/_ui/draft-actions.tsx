@@ -2,10 +2,13 @@
 
 // What both draft reviews share (issue 299): posting a decision at the version the officer opened, with
 // the refusal in words (who saved first, a stale member fact); the Save and Discard buttons with, above
-// them, why Save is off ("Row #2 needs a member…", the row a link to its card); asking before a change of
-// type throws the officer's fixes away.
+// them, why Save is off ("Row #2 needs a member…", the row a link to its card); asking before Discard
+// deletes the draft and before a change of type throws the officer's fixes away.
 import { useState } from "react";
 
+import { buttonClass } from "@/lib/brand/components/Button";
+
+import { AskSheet } from "./AskSheet";
 import { fillIn, type Words } from "./draft-known";
 
 export type Answer = { ok: boolean; data: Record<string, unknown> };
@@ -73,27 +76,40 @@ export function Actions(props: {
   onDiscard: () => void;
 }) {
   const { w, busy } = props;
+  const [asking, setAsking] = useState(false);
   return (
     <div className="mt-4">
       {props.why && <WhyLine why={props.why} />}
-      <div className="flex flex-wrap gap-3">
+      <div className="flex gap-3">
         <button
           type="button"
           disabled={busy || props.why !== null}
           onClick={props.onSave}
-          className="ink-button inline-flex min-h-11 items-center justify-center px-6 font-medium disabled:opacity-50"
+          className={buttonClass("primary", "flex-1 sm:flex-none sm:px-6")}
         >
           {busy ? w["shots.saving"] : w["shots.save"]}
         </button>
         <button
           type="button"
           disabled={busy}
-          onClick={props.onDiscard}
-          className="inline-flex min-h-11 items-center px-4 font-medium underline underline-offset-4"
+          onClick={() => setAsking(true)}
+          className={buttonClass("secondary")}
         >
           {w["shots.discard"]}
         </button>
       </div>
+      {asking && (
+        <AskSheet
+          id="draft-discard"
+          question={w["shots.discardAsk"] ?? ""}
+          yes={w["shots.discard"] ?? ""}
+          no={w["sheet.keep"] ?? ""}
+          onAnswer={(yes) => {
+            setAsking(false);
+            if (yes) props.onDiscard();
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -90,6 +90,11 @@ html {
   outline: 2px solid currentColor;
   outline-offset: 2px;
 }
+/* An element that only code focuses (tabindex="-1": a sheet's title, a section) draws no ring: WebKit
+   showed it as a black box around a sheet's title, like a text field (UI-2). Real controls keep theirs. */
+[tabindex="-1"]:focus {
+  outline: none;
+}
 /* A Details bar (`details-bar`: MoreBar, the alliance Summary band): the keyboard ring goes round the
    framed Details control only, never the whole bar, also when a key press follows a click or a tap
    (issue 125). Other summaries with a framed child (the closed round on /admin) keep the global ring. */
@@ -428,6 +433,9 @@ body {
     border-image: var(--frame-field) 12 / 6px / 3px stretch;
     border-radius: 0;
     background-color: var(--paper);
+  }
+  .drawn-field[aria-invalid="true"] {
+    border-image-source: var(--frame-field-error);
   }
   .drawn-field:focus-visible,
   .drawn-check:focus-visible {

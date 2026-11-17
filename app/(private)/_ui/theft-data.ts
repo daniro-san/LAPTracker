@@ -5,13 +5,14 @@ import { fill } from "@/lib/copy";
 import type { WorkspaceDictionary, WorkspaceKey } from "@/lib/private/dictionary";
 import type { AllianceGroup, AttackerGroup, FollowUpState } from "@/lib/private/theft-groups";
 
-type TheftKey = Extract<WorkspaceKey, `thefts.${string}`>;
+type TheftKey = Extract<WorkspaceKey, `thefts.${string}` | `sheet.${string}`>;
 export type TheftWords = Record<TheftKey | "time.server" | "src.photo", string>;
 
-/** The words the client components need: the thefts keys and two shared ones. */
+/** The words the client components need: the thefts keys, the sheet frame's and two shared ones. */
 export function theftWords(t: WorkspaceDictionary): TheftWords {
   const keys = Object.keys(t).filter(
-    (k) => k.startsWith("thefts.") || ["time.server", "src.photo"].includes(k),
+    (k) =>
+      k.startsWith("thefts.") || k.startsWith("sheet.") || ["time.server", "src.photo"].includes(k),
   ) as (keyof TheftWords)[];
   return Object.fromEntries(keys.map((k) => [k, t[k]])) as TheftWords;
 }

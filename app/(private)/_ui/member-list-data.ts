@@ -11,6 +11,8 @@ import { listMember, type ListMember } from "@/lib/private/members-list";
 import { sheetRow, type Status } from "@/lib/private/members-sheet";
 import type { Photo } from "@/lib/queries/photo";
 
+import { SHEET_KEYS } from "./sheet-words";
+
 export interface ListRow extends ListMember {
   /** "R4", "R3": the code only; the title is in the sheet. */
   rankShort: string;
@@ -69,7 +71,7 @@ const LIST_KEYS = [
   "status.checkin",
   "status.help",
   "status.break",
-  "intro.close",
+  ...SHEET_KEYS,
 ] as const satisfies readonly WorkspaceKey[];
 
 export type ListWords = Record<(typeof LIST_KEYS)[number], string>;

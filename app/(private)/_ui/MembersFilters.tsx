@@ -5,7 +5,7 @@
 // would then hold (the search and the other filters applied). Only chips, radios and native selects, so a
 // phone shows its own picker and no number has to be typed.
 import type { MemberFilter } from "@/lib/analytics/events";
-import { buttonClass } from "@/lib/brand/components/Button";
+import { FIELD } from "@/lib/brand/components/controls";
 import { RadioField } from "@/lib/brand/components/RadioField";
 import { Sheet } from "@/lib/brand/components/Sheet";
 import { fill } from "@/lib/copy";
@@ -22,6 +22,7 @@ import {
 
 import type { ListWords } from "./member-list-data";
 import { chipClass } from "./MembersListParts";
+import { sheetWords } from "./sheet-words";
 import { useClockChoice, useViewerZone } from "./YourTime";
 
 export interface FilterProps {
@@ -57,7 +58,7 @@ const counted = (label: string, n: number | string) => (
 function OrderPart(p: FilterProps) {
   const t = p.words;
   return (
-    <fieldset className="mt-4 grid gap-1.5">
+    <fieldset className="grid gap-1.5">
       <legend className="mb-1 font-semibold">{t["list.order.head"]}</legend>
       {ORDERS.map((o) => (
         <RadioField
@@ -133,7 +134,7 @@ function HourSelect(p: FilterProps & { hour: number }) {
           p.onHour(h);
           if (p.query.time) p.onQuery({ time: { mode: p.query.time.mode, hour: h } });
         }}
-        className="drawn-field min-h-11 px-2"
+        className={`${FIELD} mt-1`}
       >
         {Array.from({ length: 24 }, (_, h) => (
           <option key={h} value={h}>
@@ -193,7 +194,7 @@ function LanguagePart(p: FilterProps) {
           aria-labelledby="ml-lang"
           value={p.query.lang ?? ""}
           onChange={(e) => p.onQuery({ lang: e.target.value || null }, "language")}
-          className="drawn-field min-h-11 w-full px-2"
+          className={FIELD}
         >
           <option value="">
             {fill(t["list.lang.option"], { lang: t["list.lang.any"], n: p.counts.langAny })}
@@ -212,32 +213,18 @@ function LanguagePart(p: FilterProps) {
 export function MembersFilters(p: FilterProps) {
   const t = p.words;
   return (
-    <Sheet labelledBy="ml-sheet-title" onCancel={p.onClose} backdropCloses>
-      <div className="flex items-center justify-between gap-3">
-        <h2
-          id="ml-sheet-title"
-          tabIndex={-1}
-          data-initial-focus
-          className="font-display text-display-sm"
-        >
-          {t["list.sheet.title"]}
-        </h2>
-        <button type="button" onClick={p.onClose} className={buttonClass("secondary")}>
-          {t["intro.close"]}
-        </button>
-      </div>
+    <Sheet
+      labelledBy="ml-sheet-title"
+      onCancel={p.onClose}
+      title={t["list.sheet.title"]}
+      words={sheetWords(t)}
+      primary={{ label: fill(t["list.show"], { n: p.shown }), onClick: p.onClose }}
+      secondary={{ label: t["list.clear"], onClick: p.onClear }}
+    >
       <OrderPart {...p} />
       <WhoPart {...p} />
       <TimePart {...p} />
       <LanguagePart {...p} />
-      <div className="mt-5 flex flex-wrap justify-between gap-2">
-        <button type="button" onClick={p.onClear} className={buttonClass("secondary")}>
-          {t["list.clear"]}
-        </button>
-        <button type="button" onClick={p.onClose} className={buttonClass("primary")}>
-          {fill(t["list.show"], { n: p.shown })}
-        </button>
-      </div>
     </Sheet>
   );
 }

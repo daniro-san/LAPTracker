@@ -6,6 +6,7 @@
 import { useEffect, useRef, type InputHTMLAttributes, type ReactNode } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
+import { FIELD } from "@/lib/brand/components/controls";
 import type { CalendarWords } from "@/lib/private/dictionary.calendar";
 
 import type { Stale } from "./calendar-send";
@@ -24,8 +25,8 @@ export function Choice<V extends string>(props: {
         {props.options.map((o) => (
           <label
             key={o.value}
-            className={`inline-flex min-h-11 cursor-pointer items-center gap-2 border px-3 ${
-              props.value === o.value ? "border-plum font-semibold text-plum" : "border-rule"
+            className={`drawn-frame-soft tint-button inline-flex min-h-11 cursor-pointer items-center gap-2 px-3 ${
+              props.value === o.value ? "bg-plum/10 font-semibold text-plum" : ""
             }`}
           >
             <input
@@ -44,7 +45,7 @@ export function Choice<V extends string>(props: {
   );
 }
 
-export const FIELD = "min-h-11 w-full border border-rule bg-paper px-3 py-2 text-ink";
+export { FIELD };
 
 export function Labeled({
   id,

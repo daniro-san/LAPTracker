@@ -12,6 +12,8 @@ import {
 } from "@/lib/private/fact-fields";
 import type { OnboardingFacts } from "@/lib/private/onboarding-parse";
 
+import { SHEET_KEYS } from "./sheet-words";
+
 export interface Form {
   squadMight: string;
   adTech: string;
@@ -26,6 +28,7 @@ export interface Form {
 
 /** The words the editor, the paste box and the time-zone picker use, sent to the client once. */
 export const EDITOR_KEYS = [
+  ...SHEET_KEYS,
   "facts.head",
   "facts.squadMight",
   "facts.adTech",
@@ -39,7 +42,6 @@ export const EDITOR_KEYS = [
   "facts.paste",
   "facts.title",
   "facts.save",
-  "facts.cancel",
   "facts.failed",
   "facts.computed",
   "facts.awayText",
@@ -51,9 +53,6 @@ export const EDITOR_KEYS = [
   "facts.theirs",
   "facts.mine",
   "facts.until",
-  "facts.discard",
-  "facts.discardYes",
-  "facts.discardNo",
   "status.break",
   "status.help",
   "src.message",

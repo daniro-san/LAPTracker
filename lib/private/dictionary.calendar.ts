@@ -51,6 +51,7 @@ export const calendarEn = {
   "calendar.pick.choose": "Choose",
   "calendar.pick.change": "Change",
   "calendar.pick.remove": "Remove",
+  "calendar.pick.removeAsk": "Remove {name}?",
   "calendar.pick.title": "Choose the {role}",
   "calendar.pick.search": "Search the alliance",
   "calendar.pick.hint": "Type part of a name. Emoji and accents do not matter.",

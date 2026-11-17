@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { clockIn, mondayOf, offsetLabel, parseTime, zonedInstant } from "./calendar-time";
+import {
+  clockIn,
+  mondayOf,
+  offsetLabel,
+  parseTime,
+  typedTime,
+  zonedInstant,
+} from "./calendar-time";
 
 const SERVER = "Etc/GMT+2"; // UTC−2, the server's clock
 
@@ -32,5 +39,25 @@ describe("server time and the viewer's own time (issue 300)", () => {
       "2026-11-16",
       "2026-11-23",
     ]);
+  });
+
+  it("puts the colon in as a time is typed on a digit keypad, and keeps one the officer typed", () => {
+    expect(["2", "21", "210", "2100", "930", "0930"].map(typedTime)).toEqual([
+      "2",
+      "21",
+      "21:0",
+      "21:00",
+      "9:30",
+      "09:30",
+    ]);
+    expect(["21:", "21:0", "9:3", "18h00", "21:000", "21:00 ST"].map(typedTime)).toEqual([
+      "21:",
+      "21:0",
+      "9:3",
+      "18:00",
+      "21:00",
+      "21:00",
+    ]);
+    expect(parseTime(typedTime("2100"))).toBe(1260);
   });
 });

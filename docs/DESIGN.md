@@ -234,7 +234,7 @@ A guild ledger, kept by hand, in a plague year. The page is aged paper; the ink 
 - **Ink** (`{colors.ink}` — #1e1a1f): all text. Dark: `{colors.dark-ink}`.
 - **Plum** (`{colors.plum}` — #3b2436): header, links, primary actions, focus rings. Dark: `{colors.dark-plum}`.
 - **Seal** (`{colors.seal}` — #8c2f2f): negative deltas, errors, "stale", the seal button. Dark: `{colors.dark-seal}`.
-- **Yarn** (`{colors.yarn}` — #805c12): positive deltas, highlights. Bronze in daylight, gold by lamplight (dark: `{colors.dark-yarn}`); a true mustard cannot reach 4.5:1 on paper, so the light value is kept for contrast and only the word changed (08zzt, #173 M1).
+- **Yarn** (`{colors.yarn}` — #805c12): positive deltas, highlights on public pages; in the officers' workspace, where nothing goes up or down, "needs a look" (see Workspace components). Bronze in daylight, gold by lamplight (dark: `{colors.dark-yarn}`); a true mustard cannot reach 4.5:1 on paper, so the light value is kept for contrast and only the word changed (08zzt, #173 M1).
 - **Sage** (`{colors.sage}` — #586750): neutral badges — `[TEST]`, "fallback source", "manual". Dark: `{colors.dark-sage}`.
 - **Rule** (`{colors.rule}` — #d9cdb4): borders and table rules. Dark: `{colors.dark-rule}`.
 
@@ -358,6 +358,22 @@ The whole list. Anything else is a composition of these; a new one needs a line 
 - **`error-page`** — 404 "Grandma wandered off." and 500 "Something cracked.": the line set large is the page; the Granny Doctor is a small detail beside it (owner, Session 7), one original inline SVG and one CSS keyframe loop each.
 
 Ornament budget: header lace border, one footer corner per page (the yarn ball, or the Granny Doctor on the error and player pages), the seal buttons, the primary button's hatching, empty states, the search's pending state, error pages, the admin live candle, favicon. All of it is drawn in one hand: `docs/brand/DRAWING.md`. Never behind numbers, inside cells, on cards, as backgrounds or dividers. Every ornament is an original single-colour inline SVG under 4 KB (4,096 bytes as rendered into the page), `aria-hidden`. Nothing from the game.
+
+## Workspace components
+
+The officers' workspace (`/w/[slug]`, D71) uses the components above plus these. Build new screens from them; a new kind of control needs a line here first.
+
+- **Sheet frame** — every workspace sheet is `Sheet` (`lib/brand/components/Sheet.tsx`) with `title` and `words` (`sheetWords(t)`, `app/(private)/_ui/sheet-words.ts`):
+  - a sticky title row: the title (display-sm) and a 44 px Close (×) at the right. The title takes the first focus only from code and draws no ring (`[tabindex="-1"]:focus`, `app/globals.css`); a child marked `data-initial-focus` goes first;
+  - with `primary`, a sticky bar at the bottom: the main action first, `button-primary`, widest (`flex-1`); then Cancel, `button-secondary`. `secondary` replaces Cancel where the sheet has another second action ("Clear filters"). `note` sits above the buttons: why the main action is off, the last error. A sheet without a main action (a member, a picker, settings) has no bar: Close is at the top;
+  - `dirty` (the form differs from what it opened with, `changedFrom` in `sheet-close.ts`): Close, Cancel, Escape, a tap on the backdrop and the phone's back gesture all ask "Discard your changes?" in the bar first, with "Keep editing" as the main button;
+  - each modal sheet owns one history entry at the same address, so back closes the sheet on top and never leaves the page (`sheet-close.ts`).
+- **Question** — before anything is thrown away or deleted: `AskSheet` (`app/(private)/_ui/AskSheet.tsx`, an alertdialog) or, in a list, the same question inline under the row. The safe answer comes first as the main button and takes the focus; the destructive one follows as `button-secondary`. Nothing is deleted on one tap: a draft's Discard, a theft's Remove, a caravan pick's Remove, a calendar entry's Delete.
+- **Field** — every text field, select and textarea is `FIELD` (`lib/brand/components/controls.ts`): `.drawn-field`, the plum drawn frame (about 11:1 on paper in light, 6:1 in dark; the old 1 px rule was 1.3:1), 44 px or taller, 16 px text. A field with an error sets `aria-invalid` and its frame turns seal (`--frame-field-error`); the error line under it is seal and bold. No `border-*` of its own.
+- **Numbers and times** — a number an officer checks against the game is shown with grouped digits in the officer's language under its field ("77,384,266"); the field keeps the plain digits, and so does the database. Every time is 24-hour. A time field is `TimeInput` (`app/(private)/_ui/TimeInput.tsx`): text with the digit keypad, the colon put in while typing ("2100" reads "21:00", `typedTime`), never `type="time"`, which an English iPhone shows as "04:39 AM".
+- **Button and tag** — something to tap is a button: `button-primary`, `button-secondary`, or for a small one or a toggle chip `chip()` (`controls.ts`: soft drawn frame, tint on hover and press, 44 px; pressed chips fill plum). A tag only describes and must not look tappable: `Tag` (`lib/brand/components/Tag.tsx`), label type, no frame, no fill, no 44 px box. Tones: `neutral` sage (a source, "For members", "Every week"), `attention` yarn, `progress` plum.
+- **On/off** — `check-field` (`CheckField`), the same control for the same question everywhere ("Show to members" in Notices and the Calendar). No toggle switch, no pill.
+- **Colour meaning in the workspace** — yarn means "needs a look": a member to check in with or who needs help, a doubtful match in a draft, an open theft, a notice out of date, a value not saved yet, a conflict to settle. Seal is an error or something lost. Plum is an action or something under way. Sage is a neutral tag. The public pages keep yarn for gains.
 
 ## Motion
 
