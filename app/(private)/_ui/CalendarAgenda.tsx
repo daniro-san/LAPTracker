@@ -14,7 +14,7 @@ import type { CalendarWords } from "@/lib/private/dictionary.calendar";
 
 import type { AgendaDay, AgendaItem } from "./calendar-data";
 import { EntryForm, type FormProps } from "./EntryForm";
-import { YourTime } from "./YourTime";
+import { Times } from "./YourTime";
 
 /** Reads the page again when the officer comes back to it (another app, another tab). */
 export function useFreshOnReturn() {
@@ -61,11 +61,7 @@ function Item(props: { item: AgendaItem; words: CalendarWords; slug: string; onE
       <div className="min-w-0 flex-1">
         {item.st && item.at !== null && (
           <p className="text-body-sm">
-            <span className="font-bold tabular-nums">{item.st}</span>
-            <span className="text-ink/75">
-              {" · "}
-              <YourTime at={item.at} day={item.day} words={words} />
-            </span>
+            <Times st={item.st} at={item.at} day={item.day} words={words} />
           </p>
         )}
         <p className="font-semibold">{item.title}</p>

@@ -1,98 +1,58 @@
-// /w/[slug]/members (issue 296): the alliance's members from its newest end-of-day read (D72), thanks
-// first, then one card per member with the week's donations and what we saw (D75). The access check runs
-// before anything is read (D71). The filter (?f=) and the name search (?q=) are applied on the server, so
-// they work as plain links and a GET form, and each card is sent once.
+// /w/[slug]/members (issues 296, 337): the alliance's members from its newest end-of-day read (D72), thanks
+// first, then the list: compact rows, Check in and Needs help first, an instant search, filters and orders
+// (D98). The access check runs before anything is read (D71). The page sends each member's row once; the
+// list filters and orders them in the browser, and a member's details are read when their sheet opens.
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 
-import { compact, exact } from "@/app/_ui/format";
 import { fill } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
 import { requireWorkspace } from "@/lib/private/access";
+import { clockIn } from "@/lib/private/calendar-time";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
+import { LANGUAGES } from "@/lib/private/fact-fields";
 import { toReviewCount } from "@/lib/private/import-view";
 import { membersView, type MembersView } from "@/lib/private/members";
-import {
-  filterCounts,
-  keepMembers,
-  MEMBER_FILTERS,
-  pickFilter,
-  type MemberFilter,
-} from "@/lib/private/members-list";
-import { plural, sheetHeader, sheetRow } from "@/lib/private/members-sheet";
+import { pickOrder, pickQuery } from "@/lib/private/members-list";
+import { plural, sheetHeader } from "@/lib/private/members-sheet";
 import { SLUG } from "@/lib/private/sign-in";
+import { serverDay } from "@/lib/schedule";
 
-import { CopyButton } from "../../../_ui/CopyButton";
 import { editorWords } from "../../../_ui/facts-form";
-import { FilterChip } from "../../../_ui/FilterChip";
 import { SignedInFrame, workspaceWords } from "../../../_ui/Frame";
-import { cardData, type CardFormats } from "../../../_ui/member-card-data";
-import { MemberCards, type EditorContext } from "../../../_ui/MemberCards";
+import { cardFormats, type CardFormats } from "../../../_ui/member-card-data";
+import { listRow, listWords } from "../../../_ui/member-list-data";
+import { MembersList } from "../../../_ui/MembersList";
 import { MembersSource } from "../../../_ui/MembersSource";
 import { refuse } from "../../../_ui/refuse";
-
-/** Server days as dates in the officer's language; instants in server time (help.servertime). */
-function formats(
-  language: WorkspaceLanguage,
-  zone: string,
-): CardFormats & { time: (at: Date) => string } {
-  const options = { weekday: "short", day: "numeric", month: "short" } as const;
-  const day = new Intl.DateTimeFormat(language, { ...options, timeZone: "UTC" });
-  const instant = new Intl.DateTimeFormat(language, { ...options, timeZone: zone });
-  const hhmm = new Intl.DateTimeFormat(language, {
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-    timeZone: zone,
-  });
-  return {
-    date: (at) =>
-      typeof at === "string" ? day.format(new Date(`${at}T00:00:00Z`)) : instant.format(at),
-    number: (n) => exact(n, language),
-    compact: (n) => compact(n, language),
-    time: (at) => `${instant.format(at)} ${hhmm.format(at)}`,
-    language,
-    zone,
-    now: new Date(),
-  };
-}
-
-const noCounts = Object.fromEntries(MEMBER_FILTERS.map((id) => [id, "—"])) as Record<
-  MemberFilter,
-  "—"
->;
-
-/** The address of the list with this filter and search. */
-function listHref(slug: string, f: MemberFilter, q: string) {
-  const query = new URLSearchParams({ ...(f !== "all" && { f }), ...(q && { q }) }).toString();
-  return `/w/${slug}/members${query ? `?${query}` : ""}`;
-}
 
 function Thanks({ view, t, f }: { view: MembersView; t: WorkspaceDictionary; f: CardFormats }) {
   const rows = (["donors", "activity"] as const).filter((k) => view.thanks[k].length > 0);
   if (rows.length === 0) return null;
   return (
-    <section aria-labelledby="thanks" className="mt-4 border border-rule px-4 py-4">
+    <section aria-labelledby="thanks" className="mt-4 border border-rule px-4 py-3">
       <h2 id="thanks" className="font-subhead text-display-sm">
         {t["thanks.head"]}
       </h2>
-      <p className="mt-1">{t["thanks.intro"]}</p>
-      {rows.map((k) => (
-        <div key={k} className="mt-3 border-t border-rule pt-2">
-          <h3 className="text-body-sm font-semibold text-ink/75">{t[`thanks.${k}`]}</h3>
-          <ol className="mt-1">
-            {view.thanks[k].map((x) => (
-              <li key={x.uid} className="flex justify-between gap-3">
-                <span translate="no" className="min-w-0 truncate font-semibold">
-                  {x.name}
-                </span>
-                <span className="tabular-nums">{f.compact(x.value)}</span>
-              </li>
-            ))}
-          </ol>
-        </div>
-      ))}
+      <p className="text-body-sm">{t["thanks.intro"]}</p>
+      <div className="mt-2 grid grid-cols-2 gap-x-4">
+        {rows.map((k) => (
+          <div key={k} className="min-w-0 border-t border-rule pt-1">
+            <h3 className="text-body-sm font-semibold text-ink/75">{t[`thanks.${k}`]}</h3>
+            <ol className="text-body-sm">
+              {view.thanks[k].map((x) => (
+                <li key={x.uid} className="flex justify-between gap-2">
+                  <span translate="no" className="min-w-0 truncate font-semibold">
+                    {x.name}
+                  </span>
+                  <span className="tabular-nums">{f.compact(x.value)}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        ))}
+      </div>
     </section>
   );
 }
@@ -108,59 +68,11 @@ function Legend({ t }: { t: WorkspaceDictionary }) {
       </summary>
       <div className="space-y-1 pb-2">
         <p>{t["members.checkinHelp"]}</p>
+        <p>{t["list.askHelp"]}</p>
         <p>{t["members.nodataHelp"]}</p>
         <p>{t["members.weekHelp"]}</p>
       </div>
     </details>
-  );
-}
-
-function Controls(props: {
-  slug: string;
-  t: WorkspaceDictionary;
-  filter: MemberFilter;
-  query: string;
-  /** Before the first end-of-day read nothing is counted (D75): the chips show "—". */
-  counts: Record<MemberFilter, number | "—">;
-}) {
-  const { slug, t, filter, query, counts } = props;
-  return (
-    <>
-      <form method="get" role="search" className="mt-4 flex gap-2">
-        {filter !== "all" && <input type="hidden" name="f" value={filter} />}
-        <input
-          type="search"
-          name="q"
-          defaultValue={query}
-          maxLength={64}
-          placeholder={t["members.search.ph"]}
-          aria-label={t["members.search.aria"]}
-          className="min-h-11 min-w-0 flex-1 border border-rule bg-paper px-3"
-        />
-        <button type="submit" className="min-h-11 border border-rule px-4 font-medium">
-          {t["members.search.go"]}
-        </button>
-      </form>
-      <nav aria-label={t["members.filter.aria"]} className="mt-3">
-        <ul className="flex flex-wrap gap-2">
-          {MEMBER_FILTERS.map((id) => (
-            <li key={id}>
-              <FilterChip
-                filter={id}
-                href={listHref(slug, id, query)}
-                current={id === filter}
-                className={`inline-flex min-h-11 items-center gap-1.5 border px-3 text-body-sm font-medium whitespace-nowrap ${
-                  id === filter ? "border-plum bg-plum text-paper" : "border-rule"
-                }`}
-              >
-                {t[`members.filter.${id}`]}
-                <span className="tabular-nums">{counts[id]}</span>
-              </FilterChip>
-            </li>
-          ))}
-        </ul>
-      </nav>
-    </>
   );
 }
 
@@ -191,34 +103,21 @@ export default async function MembersPage({
     redirect(`/w/${slug}`);
   }
   if (!view) notFound();
-  const search = await searchParams;
-  const filter = pickFilter(search.f);
-  const query = (typeof search.q === "string" ? search.q : "").trim().slice(0, 64);
+  const search = new URLSearchParams(
+    Object.entries(await searchParams).flatMap(([k, v]) => (typeof v === "string" ? [[k, v]] : [])),
+  );
   const { language, t } = await workspaceWords();
-  const f = formats(language, env.SERVER_TZ);
-  const editor = {
-    slug,
-    words: editorWords(t),
-    language,
-    serverZone: env.SERVER_TZ,
-    used: view.zones,
-  };
   return (
     <SignedInFrame access={access} language={language} t={t} current="members" waiting={waiting}>
       <h1 className="font-display text-display-lg">{t["tab.members"]}</h1>
       {view.readAt === null ? (
         <p className="mt-4 border border-rule px-4 py-5">{t["members.none"]}</p>
       ) : (
-        <Body
-          slug={slug}
-          view={view}
-          t={t}
-          f={f}
-          filter={filter}
-          query={query}
-          readAt={f.time(view.readAt)}
+        <Roster
+          {...{ slug, view, t, language, search, now }}
+          readAt={view.readAt}
+          zone={env.SERVER_TZ}
           readHour={env.DAILY_ROSTER_AT}
-          editor={editor}
         />
       )}
       <p className="mt-6">
@@ -233,77 +132,61 @@ export default async function MembersPage({
   );
 }
 
-function Body(props: {
+/** The read's source and week, the thanks, the check-in line, the legend and the list. */
+function Roster(props: {
   slug: string;
   view: MembersView;
+  readAt: Date;
   t: WorkspaceDictionary;
-  f: CardFormats;
-  filter: MemberFilter;
-  query: string;
-  readAt: string;
+  language: WorkspaceLanguage;
+  search: URLSearchParams;
+  now: Date;
+  zone: string;
   readHour: string;
-  editor: EditorContext;
 }) {
-  const { slug, view, t, f, filter, query } = props;
-  const shown = {
-    joined: view.members.some((m) => m.joinedAt !== null),
-    lastOnline: view.members.some((m) => m.lastOnlineAt !== null),
-    duel: view.members.some((m) => Object.keys(m.duel).length > 0),
-  };
-  const counts = filterCounts(view.members);
-  const visible = keepMembers(view.members, filter, query);
+  const { slug, view, t, language, now, zone } = props;
+  const f = cardFormats(language, zone, now);
+  const today = serverDay(now, { SERVER_TZ: zone });
+  const checkins = view.members.filter((m) => m.reasons.length > 0 && !m.officerStatus).length;
   const [from, to] = [view.week[0] ?? "", view.week[6] ?? ""];
   return (
     <>
-      <MembersSource t={t} early={view.early} readAt={props.readAt} readHour={props.readHour} />
+      <MembersSource
+        t={t}
+        early={view.early}
+        readAt={f.time(props.readAt)}
+        readHour={props.readHour}
+      />
       <p className="mt-1 text-body-sm text-ink/80">
         {fill(t["members.week"], { from: f.date(from), to: f.date(to) })}
       </p>
       <Thanks view={view} t={t} f={f} />
       {/* Before the first end-of-day read nothing is computed, so nothing is said about check-ins. */}
       <p className={view.early ? "hidden" : "mt-3"}>
-        {counts.checkin === 0 ? (
+        {checkins === 0 ? (
           t["members.checkinNone"]
         ) : (
           <a
-            href={listHref(slug, "checkin", "")}
+            href={`/w/${slug}/members?who=checkin`}
             className="inline-flex min-h-11 items-center py-2 font-semibold text-plum underline underline-offset-4"
           >
-            {fill(plural(t, "members.checkinCount", counts.checkin, f), { n: counts.checkin })}
+            {fill(plural(t, "members.checkinCount", checkins, f), { n: checkins })}
           </a>
         )}
       </p>
       <Legend t={t} />
-      <Controls
-        slug={slug}
-        t={t}
-        filter={filter}
-        query={query}
-        counts={view.early ? noCounts : counts}
+      <MembersList
+        rows={view.members.map((m) => listRow(m, t, f))}
+        words={listWords(t)}
+        language={language}
+        editor={{ slug, words: editorWords(t), language, serverZone: zone, used: view.zones }}
+        initialQuery={pickQuery(props.search, LANGUAGES)}
+        initialOrder={pickOrder(props.search.get("order"))}
+        today={today}
+        hour={Number(clockIn(now.getTime(), zone, today).time.slice(0, 2))}
+        serverZone={zone}
+        sheetHeader={sheetHeader(view.week, t)}
       />
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-        <p className="text-body-sm tabular-nums">
-          {fill(t["members.count"], { n: visible.length, total: view.members.length })}
-        </p>
-        <CopyButton
-          event="ws_copy_spreadsheet"
-          text={[sheetHeader(view.week, t), ...visible.map((m) => sheetRow(m, t, f))].join("\n")}
-          labels={{
-            copy: t["members.copy"],
-            copied: t["members.copied"],
-            failed: t["members.copyFailed"],
-          }}
-        />
-      </div>
-      {visible.length === 0 ? (
-        <p className="mt-4">{t["members.empty"]}</p>
-      ) : (
-        <MemberCards
-          cards={visible.map((m) => cardData(m, view.week, t, f, shown))}
-          details={{ open: t["members.details"], of: t["members.detailsOf"] }}
-          editor={props.editor}
-        />
-      )}
     </>
   );
 }

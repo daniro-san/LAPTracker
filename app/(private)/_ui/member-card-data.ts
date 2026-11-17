@@ -1,8 +1,9 @@
 // One member card's words, made on the server (issue 296): every number and date is formatted here, in
 // the officer's language, so the client list only lays strings out and its markup is sent once. No data
 // is "—", never 0.
+import { compact, exact } from "@/app/_ui/format";
 import { fill } from "@/lib/copy";
-import type { WorkspaceDictionary } from "@/lib/private/dictionary";
+import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import {
   FACT_FIELDS,
   type FactField,
@@ -58,9 +59,37 @@ export interface CardData {
   autoStatus: string;
 }
 
-const or = (v: number | null, as: (n: number) => string) => (v === null ? NONE : as(v));
+/** Server days as dates in the officer's language; instants in server time (help.servertime). */
+export function cardFormats(
+  language: WorkspaceLanguage,
+  zone: string,
+  now: Date,
+): CardFormats & { time: (at: Date) => string } {
+  const options = { weekday: "short", day: "numeric", month: "short" } as const;
+  const day = new Intl.DateTimeFormat(language, { ...options, timeZone: "UTC" });
+  const instant = new Intl.DateTimeFormat(language, { ...options, timeZone: zone });
+  const hhmm = new Intl.DateTimeFormat(language, {
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+    timeZone: zone,
+  });
+  return {
+    date: (at) =>
+      typeof at === "string" ? day.format(new Date(`${at}T00:00:00Z`)) : instant.format(at),
+    number: (n) => exact(n, language),
+    compact: (n) => compact(n, language),
+    time: (at) => `${instant.format(at)} ${hhmm.format(at)}`,
+    language,
+    zone,
+    now,
+  };
+}
 
-function statusParts(m: MemberRow, t: WorkspaceDictionary, f: Formats) {
+export const or = (v: number | null, as: (n: number) => string) => (v === null ? NONE : as(v));
+
+/** The member's status, its label and the lines under it (the reasons with their evidence …). */
+export function statusParts(m: MemberRow, t: WorkspaceDictionary, f: Formats) {
   const status = statusOf(m);
   if (status === "checkin" || status === "help") {
     const label = t[status === "help" ? "status.help" : "status.checkin"];
@@ -86,6 +115,12 @@ export interface Shown {
   /** Alliance Duel points were saved from a photo for someone this week (issue 299). */
   duel: boolean;
 }
+
+export const shownOf = (members: MemberRow[]): Shown => ({
+  joined: members.some((m) => m.joinedAt !== null),
+  lastOnline: members.some((m) => m.lastOnlineAt !== null),
+  duel: members.some((m) => Object.keys(m.duel).length > 0),
+});
 
 const DUEL_DAYS = ["mon", "tue", "wed", "thu", "fri", "sat"] as const;
 
@@ -154,6 +189,7 @@ export function cardData(
     facts: [
       { game: true, text: fill(t["members.meta.level"], { n: or(m.sanctuary, String) }) },
       { game: true, text: fill(t["members.meta.might"], { v: or(m.might, f.compact) }) },
+      { game: true, text: fill(t["list.meta.kills"], { v: or(m.kills, f.compact) }) },
       { game: false, text: fill(t["members.meta.don"], { v: or(m.weekTotal, f.compact) }) },
       { game: false, text: fill(t["members.meta.act"], { v: or(m.activity, f.number) }) },
     ],

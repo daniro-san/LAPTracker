@@ -3,12 +3,14 @@
 import type { WorkspaceDictionary } from "./dictionary";
 import { calendarFr } from "./dictionary.calendar.fr";
 import { importFr } from "./dictionary.import";
+import { membersFr } from "./dictionary.members.fr";
 import { noticesFr } from "./dictionary.notices";
 import { shotsFr } from "./dictionary.shots.fr";
 import { theftsFr } from "./dictionary.thefts";
 
 export const fr: WorkspaceDictionary = {
   ...calendarFr,
+  ...membersFr,
   "app.name": "Bureau des officiers",
   "tab.aria": "Sections",
   "tab.home": "Accueil",
@@ -55,10 +57,6 @@ export const fr: WorkspaceDictionary = {
   "members.search.ph": "Nom (sans les émojis)",
   "members.search.aria": "Chercher un membre",
   "members.filter.aria": "Filtre",
-  "members.filter.all": "Tous",
-  "members.filter.new": "Nouveaux",
-  "members.filter.checkin": "Prendre des nouvelles",
-  "members.filter.missing": "Infos manquantes",
   "members.filter.r4": "R4 et R5",
   "members.count": "{n} sur {total} membres",
   "members.empty": "Personne ne correspond. Mamie a vérifié deux fois.",
@@ -134,7 +132,6 @@ export const fr: WorkspaceDictionary = {
   "members.checkinCount.one": "{n} personne à qui prendre des nouvelles",
   "members.checkinCount.other": "{n} personnes à qui prendre des nouvelles",
   "members.checkinNone": "Tout le monde a l’air bien cette semaine.",
-  "members.search.go": "Chercher",
   "reason.might.one": "might inchangé depuis {n} jour",
   "reason.might.other": "might inchangé depuis {n} jours",
   "reason.idle.one":

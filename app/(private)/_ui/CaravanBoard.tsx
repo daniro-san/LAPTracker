@@ -13,7 +13,7 @@ import { refusalText, sendCalendar, type Stale } from "./calendar-send";
 import { useFreshOnReturn } from "./CalendarAgenda";
 import { Choice, ConflictBox } from "./CalendarFields";
 import { RosterPicker } from "./RosterPicker";
-import { YourTime } from "./YourTime";
+import { Times } from "./YourTime";
 
 type SeatKind = "vip" | "guardian";
 type Field = "coach" | "second";
@@ -128,11 +128,7 @@ function CaravanCard(props: {
       </h2>
       {item.st && item.at !== null && (
         <p className="text-body-sm">
-          <span className="font-bold tabular-nums">{item.st}</span>
-          <span className="text-ink/75">
-            {" · "}
-            <YourTime at={item.at} day={item.day} words={words} />
-          </span>
+          <Times st={item.st} at={item.at} day={item.day} words={words} />
         </p>
       )}
       <SeatRow

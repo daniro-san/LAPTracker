@@ -1,5 +1,5 @@
 // alliance_snapshots and their member_snapshots, which are only ever written together.
-import { and, desc, eq, inArray, isNotNull } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { allianceSnapshots, memberSnapshots, playerFrames, snapshots } from "../schema";
@@ -100,6 +100,36 @@ export async function findPhoto(
     .orderBy(desc(memberSnapshots.id))
     .limit(1);
   return row ?? { avatarUrl: null, frameId: null };
+}
+
+/**
+ * Per uid, as `findPhoto` sees it: whether the newest roster row has a photo, and the current frame. Only
+ * booleans and frame ids leave this function; the URL never does (D22, D65, D66).
+ */
+export async function findPhotos(
+  db: Db,
+  uids: number[],
+): Promise<Map<number, { hasAvatar: boolean; frameId: number | null }>> {
+  if (uids.length === 0) return new Map();
+  const [photos, frames] = await Promise.all([
+    db
+      .selectDistinctOn([memberSnapshots.uid], {
+        uid: memberSnapshots.uid,
+        hasAvatar: sql<boolean>`${memberSnapshots.avatarUrl} is not null`,
+      })
+      .from(memberSnapshots)
+      .where(inArray(memberSnapshots.uid, uids))
+      .orderBy(memberSnapshots.uid, desc(memberSnapshots.id)),
+    db
+      .select({ uid: playerFrames.uid, frameId: playerFrames.frameId })
+      .from(playerFrames)
+      .where(inArray(playerFrames.uid, uids)),
+  ]);
+  const has = new Map(photos.map((p) => [p.uid, p.hasAvatar]));
+  const frame = new Map(frames.map((f) => [f.uid, f.frameId]));
+  return new Map(
+    uids.map((uid) => [uid, { hasAvatar: has.get(uid) ?? false, frameId: frame.get(uid) ?? null }]),
+  );
 }
 
 /** A re-run without force (D62): the rows whose read failed go, so the run reads those alliances again;

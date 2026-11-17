@@ -8,6 +8,8 @@
 import type { Db } from "../db";
 import { roleOf } from "../queries/leadership";
 import { mightUnchanged } from "../queries/might-unchanged";
+import type { Photo } from "../queries/photo";
+import { findPhotos } from "../repo/alliance-snapshots";
 import { anyRoster, type AnyRoster } from "../repo/workspace-any-roster";
 import {
   endOfDayReads,
@@ -55,6 +57,8 @@ export interface MemberRow {
   rank: string | null;
   rankCode: number | null;
   might: number | null;
+  /** Lifetime kills from the read (public); null when not sent. */
+  kills: number | null;
   sanctuary: number | null;
   activity: number | null;
   honor: number | null;
@@ -80,6 +84,8 @@ export interface MemberRow {
   awayUntil: string | null;
   /** From a roster read before the first end-of-day read: nothing computed, no status. */
   early: boolean;
+  /** The photo and frame as the public pages show them: served by /img/avatar and /img/frame (D22, D65). */
+  photo: Photo;
 }
 
 export interface MembersView {
@@ -180,6 +186,7 @@ function plainRow(m: RosterMember, week: string[], firstSeen: Map<number, string
     rank: rankOf(m),
     rankCode: m.rankCode,
     might: m.power,
+    kills: m.kills,
     sanctuary: m.lv,
     activity: null,
     honor: null,
@@ -195,8 +202,11 @@ function plainRow(m: RosterMember, week: string[], firstSeen: Map<number, string
     reasons: [],
     missing: [],
     missingDays: 0,
+    photo: NO_PHOTO,
   };
 }
+
+const NO_PHOTO: Photo = { hasAvatar: false, frameId: null };
 
 function earlyView(
   roster: AnyRoster | null,
@@ -220,6 +230,21 @@ const order = (a: MemberRow, b: MemberRow) =>
 
 /** The Members tab of the workspace's own alliance, as of `now`; `zone` is the server's (SERVER_TZ). */
 export async function membersView(
+  db: Db,
+  access: WorkspaceAccess,
+  now: Date,
+  zone: string,
+): Promise<MembersView> {
+  const view = await readView(db, access, now, zone);
+  const photos = await findPhotos(
+    db,
+    view.members.map((m) => m.uid),
+  );
+  const members = view.members.map((m) => ({ ...m, photo: photos.get(m.uid) ?? NO_PHOTO }));
+  return { ...view, members };
+}
+
+async function readView(
   db: Db,
   access: WorkspaceAccess,
   now: Date,

@@ -1,9 +1,9 @@
 "use client";
 
-// The Members tab's cards (issue 296): the server sends each card's words once (member-card-data.ts) and
-// this lays them out. A card is a native <details>: tapping it opens the donations per day and the other
-// facts, which are drawn only once it is open. Nothing is hover-only. The officers' member facts (issue
-// 297) are listed with their source, and "Edit facts" or "Paste what they told you" opens the editor.
+// A member's card (issue 296), shown in the Members list's sheet (issue 337): the server makes its words
+// (member-card-data.ts) and this lays them out: the status with its evidence, the game's numbers, the
+// donations per day and the other details. The officers' member facts (issue 297) are listed with their
+// source, and "Edit facts" or "Paste what they told you" opens the editor. Nothing is hover-only.
 import { useState } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
@@ -12,7 +12,7 @@ import { SOURCE_KEY } from "./facts-form";
 import { FactsEditor, type EditorProps } from "./FactsEditor";
 import type { CardData } from "./member-card-data";
 
-const STATUS_TONE = {
+export const STATUS_TONE = {
   help: "font-semibold text-yarn",
   break: "font-semibold text-sage",
   checkin: "font-semibold text-yarn",
@@ -111,31 +111,20 @@ function Details({ card, editor }: { card: CardData; editor: EditorContext }) {
   );
 }
 
-function Card({
-  card,
-  details,
-  editor,
-}: {
-  card: CardData;
-  details: { open: string; of: string };
-  editor: EditorContext;
-}) {
-  const [open, setOpen] = useState(false);
+/** The opened member: the status with its evidence and the game's numbers, then the details and facts. */
+export function MemberCard({ card, editor }: { card: CardData; editor: EditorContext }) {
   return (
-    <details
-      onToggle={(e) => setOpen(e.currentTarget.open)}
-      className="group border border-rule bg-paper"
-    >
-      <summary className="flex min-h-11 cursor-pointer list-none flex-col gap-1 px-3 py-3 [&::-webkit-details-marker]:hidden">
-        <span className="flex items-baseline gap-2">
-          <span translate="no" className="min-w-0 flex-1 truncate font-semibold">
-            {card.name}
-          </span>
-          <span translate="no" className="shrink-0 text-body-sm text-ink/80">
-            {card.rank}
-          </span>
-        </span>
-        <span className="flex flex-wrap gap-x-3 text-body-sm tabular-nums">
+    <>
+      <div className="px-3 pb-3">
+        <p className="text-body-sm">
+          <span className={STATUS_TONE[card.status]}>{card.statusLabel}</span>
+          {card.statusLines.map((line) => (
+            <span key={line} className="block">
+              {line}
+            </span>
+          ))}
+        </p>
+        <p className="mt-1 flex flex-wrap gap-x-3 text-body-sm tabular-nums">
           {card.facts.map((f) => (
             <span
               key={f.text}
@@ -145,44 +134,9 @@ function Card({
               {f.text}
             </span>
           ))}
-        </span>
-        <span className="block text-body-sm">
-          <span className={STATUS_TONE[card.status]}>{card.statusLabel}</span>
-          {card.statusLines.map((line) => (
-            <span key={line} className="block">
-              {line}
-            </span>
-          ))}
-        </span>
-        <span className="self-end text-body-sm font-semibold text-plum underline underline-offset-4">
-          <span className="sr-only">{details.of.replace("{name}", card.name)}</span>
-          <span aria-hidden="true">
-            {details.open} <span className="inline-block group-open:rotate-180">▾</span>
-          </span>
-        </span>
-      </summary>
-      {open && <Details card={card} editor={editor} />}
-    </details>
-  );
-}
-
-export function MemberCards({
-  cards,
-  details,
-  editor,
-}: {
-  cards: CardData[];
-  /** "Details" and "Details, {name}". */
-  details: { open: string; of: string };
-  editor: EditorContext;
-}) {
-  return (
-    <ul className="mt-3 grid items-start gap-2 sm:grid-cols-2">
-      {cards.map((card) => (
-        <li key={card.uid}>
-          <Card card={card} details={details} editor={editor} />
-        </li>
-      ))}
-    </ul>
+        </p>
+      </div>
+      <Details card={card} editor={editor} />
+    </>
   );
 }

@@ -4,6 +4,7 @@
 import { calendarEn } from "./dictionary.calendar";
 import { fr } from "./dictionary.fr";
 import { importEn } from "./dictionary.import";
+import { membersEn } from "./dictionary.members";
 import { noticesEn } from "./dictionary.notices";
 import { pt } from "./dictionary.pt-BR";
 import { shotsEn } from "./dictionary.shots";
@@ -14,6 +15,7 @@ export type WorkspaceLanguage = (typeof WORKSPACE_LANGUAGES)[number];
 
 const en = {
   ...calendarEn,
+  ...membersEn,
   "app.name": "Officers’ Desk",
   "tab.aria": "Sections",
   "tab.home": "Home",
@@ -59,10 +61,6 @@ const en = {
   "members.search.ph": "Name (no emoji needed)",
   "members.search.aria": "Search members",
   "members.filter.aria": "Filter",
-  "members.filter.all": "All",
-  "members.filter.new": "New",
-  "members.filter.checkin": "Check in",
-  "members.filter.missing": "Missing info",
   "members.filter.r4": "R4 and R5",
   "members.count": "{n} of {total} members",
   "members.empty": "Nobody here matches. Grandma checked twice.",
@@ -137,7 +135,6 @@ const en = {
   "members.checkinCount.one": "{n} person to check in with",
   "members.checkinCount.other": "{n} people to check in with",
   "members.checkinNone": "Everyone looks fine this week.",
-  "members.search.go": "Search",
   "reason.might.one": "might unchanged for {n} day",
   "reason.might.other": "might unchanged for {n} days",
   "reason.idle.one":

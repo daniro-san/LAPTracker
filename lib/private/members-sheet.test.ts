@@ -22,6 +22,7 @@ const m: MemberRow = {
   rank: "R4 · Goddess",
   rankCode: 104,
   might: 61_234_567,
+  kills: null,
   sanctuary: 29,
   activity: 214,
   honor: 300,
@@ -41,6 +42,7 @@ const m: MemberRow = {
   officerStatus: null,
   awayUntil: null,
   early: false,
+  photo: { hasAvatar: false, frameId: null },
 };
 
 describe("Copy for spreadsheet (D71)", () => {

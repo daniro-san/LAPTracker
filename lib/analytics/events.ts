@@ -7,10 +7,22 @@ import type { PostHog } from "posthog-js";
 /** The workspace languages (D71); the same three as lib/private/dictionary.ts, which this module may not import. */
 export type AnalyticsLanguage = "en" | "pt-BR" | "fr";
 /**
- * The Members tab's filters (`MEMBER_FILTERS` in lib/private/members-list.ts, which this module may not import).
- * FilterChip passes that type here, so `tsc` fails if a filter is added there and not here.
+ * The Members list's filters and orders (issue 337, D98; lib/private/members-list.ts, which this module may not
+ * import). Only the name is sent: never the hour, the language, the search text or the address.
  */
-export type MemberFilter = "all" | "new" | "checkin" | "missing" | "r4";
+export type MemberFilter =
+  | "r4"
+  | "ask"
+  | "who"
+  | "daytime"
+  | "night"
+  | "language"
+  | "order_rank"
+  | "order_might"
+  | "order_might_asc"
+  | "order_kills"
+  | "order_kills_asc"
+  | "order_squad";
 
 /**
  * What a screenshot sent to the desk was read as (issue 299): `ImportKind` in lib/private/import-kinds.ts,

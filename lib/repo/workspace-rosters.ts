@@ -13,6 +13,8 @@ export interface RosterMember {
   uid: number;
   name: string;
   power: number | null;
+  /** Lifetime kills (public, D15: null when not sent). */
+  kills: number | null;
   lv: number | null;
   rankCode: number | null;
   rankLabel: string | null;
@@ -37,6 +39,7 @@ const KEYS = [
   "uid",
   "nick_name",
   "power",
+  "kills",
   "lv",
   "rank_code",
   "rank_label",
@@ -75,6 +78,7 @@ function member(m: RawMember): RosterMember | null {
     uid,
     name: typeof m.nick_name === "string" ? m.nick_name : "",
     power: num(m.power),
+    kills: num(m.kills),
     lv: num(m.lv),
     rankCode: num(m.rank_code),
     rankLabel: typeof m.rank_label === "string" && m.rank_label !== "" ? m.rank_label : null,

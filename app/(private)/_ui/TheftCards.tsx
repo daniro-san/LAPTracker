@@ -16,7 +16,7 @@ import { FOLLOW_UP_STATES, type FollowUpState } from "@/lib/private/theft-groups
 import { SourceBadge } from "./SourceBadge";
 import { postTheft, viewerClock } from "./theft-client";
 import type { AllianceCard, AttackerCard, EntryCard, TheftWords } from "./theft-data";
-import { useViewerZone } from "./YourTime";
+import { TimePair, useViewerZone } from "./YourTime";
 
 const STATE_TONE: Record<FollowUpState, string> = {
   open: "border-yarn text-yarn",
@@ -133,15 +133,14 @@ function Entry({ entry, slug, t, language }: Shared & { entry: EntryCard }) {
   return (
     <li className="border-t border-rule py-2">
       <p className="tabular-nums">
-        <span className="font-semibold">{entry.server}</span>
-        {zone && entry.at !== null && entry.day !== null && (
-          <span className="text-ink/75">
-            {" · "}
-            {fill(t["thefts.yours"], {
-              time: viewerClock(entry.at, entry.day, zone, language),
-            })}
-          </span>
-        )}
+        <TimePair
+          st={entry.server}
+          mine={
+            zone && entry.at !== null && entry.day !== null
+              ? fill(t["thefts.yours"], { time: viewerClock(entry.at, entry.day, zone, language) })
+              : null
+          }
+        />
       </p>
       <p>
         <span translate="no">{entry.victim}</span> · {entry.stolen}
