@@ -82,6 +82,29 @@ export const de = {
     liveLast: "Letzte {min} Min.: {last} (Spitze {peak})",
     liveDone:
       "Änderung seit Beginn bei der Messung um {time}. Die Tabelle oben rechnet mit dem Ende um {end}.",
+    fightClock: "Kampfuhr des Servers",
+    fightClockLead:
+      "Wann der Server gekämpft hat, Event für Event. Jeder Kasten ist ein Zeitfenster von {min} Minuten, seine Höhe ist der Anteil der im Event gewonnenen Kills. Die Zeitfenster richten sich nach der Serverzeit, daher ist Mittag in jeder Zeile Mittag.",
+    fightClockLink: "Mit anderen Events auf der Kampfuhr des Servers vergleichen",
+    fightClockShare: "Anteil an den Kills",
+    fightClockOutline: "Umrandet: die aktivsten {span} Minuten jedes Events",
+    fightClockNoBusiest: "Zu wenige Messungen, um die aktivsten {span} Minuten zu benennen",
+    fightClockOffSince:
+      "Keine {min}-Minuten-Messungen für dieses Event (sie beginnen mit dem Event vom {date})",
+    fightClockOffNext:
+      "Keine {min}-Minuten-Messungen für dieses Event (sie beginnen mit dem nächsten Event)",
+    fightClockOffMissed: "Für dieses Event wurden keine {min}-Minuten-Messungen gemacht",
+    fightClockOffWaiting: "Die {min}-Minuten-Messungen kommen, während dieses Event läuft",
+    fightClockNone:
+      "Die {min}-Minuten-Messungen jedes Events werden hier gezeichnet, beginnend mit dem nächsten Event.",
+    comparePulseHelp:
+      "Anteil der gewonnenen Kills jedes Events in jeweils {min} Minuten, auf die Serverzeit ausgerichtet. Die aktivsten {span} Minuten sind umrandet.",
+    comparePulseOffA:
+      "Event A ({when}) hat keine {min}-Minuten-Messungen, daher lassen sich die Pulse der beiden Events nicht vergleichen",
+    comparePulseOffB:
+      "Event B ({when}) hat keine {min}-Minuten-Messungen, daher lassen sich die Pulse der beiden Events nicht vergleichen",
+    comparePulseOffBoth:
+      "Keines der beiden Events hat {min}-Minuten-Messungen, daher lassen sich ihre Pulse nicht vergleichen",
     fought: "Beteiligung am Krieg",
     foughtSoFar: "Beteiligung am Krieg bisher",
     foughtHelp:

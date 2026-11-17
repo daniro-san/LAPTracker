@@ -82,6 +82,30 @@ export const fr = {
     liveLast: "Dernières {min} min : {last} (pic {peak})",
     liveDone:
       "Évolution depuis Début, au relevé de {time}. Le registre ci-dessus utilise la Fin à {end}.",
+    fightClock: "Horloge des combats du serveur",
+    fightClockLead:
+      "Quand le serveur a combattu, événement par événement. Chaque case est une tranche de {min} minutes, et sa hauteur est la part des Kills gagnés par l’événement dans cette tranche. Les tranches sont alignées sur l’heure serveur : midi est midi dans chaque ligne.",
+    fightClockLink: "Comparer avec les autres événements sur l’horloge des combats du serveur",
+    fightClockShare: "Part des Kills",
+    fightClockOutline: "En contour : les {span} minutes les plus actives de chaque événement",
+    fightClockNoBusiest: "Trop peu de relevés pour nommer les {span} minutes les plus actives",
+    fightClockOffSince:
+      "Pas de relevés de {min} minutes pour cet événement (ils commencent avec l’événement du {date})",
+    fightClockOffNext:
+      "Pas de relevés de {min} minutes pour cet événement (ils commencent avec le prochain événement)",
+    fightClockOffMissed: "Aucun relevé de {min} minutes n’a été pris pour cet événement",
+    fightClockOffWaiting:
+      "Les relevés de {min} minutes arrivent pendant que cet événement se déroule",
+    fightClockNone:
+      "Les relevés de {min} minutes de chaque événement seront tracés ici, à partir du prochain événement.",
+    comparePulseHelp:
+      "Part des Kills gagnés par chaque événement dans chaque tranche de {min} minutes, alignée sur l’heure serveur. Les {span} minutes les plus actives sont en contour.",
+    comparePulseOffA:
+      "Le premier événement ({when}) n’a pas de relevés de {min} minutes, les rythmes des deux événements ne peuvent donc pas être comparés",
+    comparePulseOffB:
+      "Le deuxième événement ({when}) n’a pas de relevés de {min} minutes, les rythmes des deux événements ne peuvent donc pas être comparés",
+    comparePulseOffBoth:
+      "Aucun des deux événements n’a de relevés de {min} minutes : leurs rythmes ne peuvent pas être comparés",
     fought: "Participation",
     foughtSoFar: "Participation pour l’instant",
     foughtHelp:

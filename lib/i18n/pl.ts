@@ -93,6 +93,29 @@ export const pl = {
       "Udział 5 największych zdobywców w Kills sojuszu. Im wyższy udział, tym mniej graczy niosło sojusz.",
     topBasis: "{top} z {n}",
     fewGainers: "mało zdobywców",
+    fightClock: "Zegar walk serwera",
+    fightClockLead:
+      "Kiedy serwer walczył, wydarzenie po wydarzeniu. Każde pole to jeden przedział {min}-minutowy, a jego wysokość to udział wydarzenia w zdobytych w nim Kills. Przedziały ustawione są na zegarze serwera, więc południe to południe w każdym wierszu.",
+    fightClockLink: "Porównaj z innymi wydarzeniami na zegarze walk serwera",
+    fightClockShare: "Udział w Kills",
+    fightClockOutline: "Obrysowane: najaktywniejsze {span} minut każdego wydarzenia",
+    fightClockNoBusiest: "Za mało odczytów, by wskazać najaktywniejsze {span} minut",
+    fightClockOffSince:
+      "Brak odczytów {min}-minutowych w tym wydarzeniu (zaczynają się od wydarzenia z {date})",
+    fightClockOffNext:
+      "Brak odczytów {min}-minutowych w tym wydarzeniu (zaczynają się od następnego wydarzenia)",
+    fightClockOffMissed: "Odczytów {min}-minutowych nie wykonano w tym wydarzeniu",
+    fightClockOffWaiting: "Odczyty {min}-minutowe pojawiają się podczas trwania tego wydarzenia",
+    fightClockNone:
+      "Odczyty {min}-minutowe każdego wydarzenia pojawią się tutaj, zaczynając od następnego wydarzenia.",
+    comparePulseHelp:
+      "Udział każdego wydarzenia w zdobytych Kills w każdych {min} minutach, ustawiony na zegarze serwera. Najaktywniejsze {span} minut są obrysowane.",
+    comparePulseOffA:
+      "Wydarzenie A ({when}) nie ma odczytów {min}-minutowych, więc pulsu obu wydarzeń nie da się porównać",
+    comparePulseOffB:
+      "Wydarzenie B ({when}) nie ma odczytów {min}-minutowych, więc pulsu obu wydarzeń nie da się porównać",
+    comparePulseOffBoth:
+      "Żadne z wydarzeń nie ma odczytów {min}-minutowych, więc ich pulsu nie da się porównać",
     carried: "Udział w Kills vs udział w Might",
     carriedHelp:
       "Udział każdego sojuszu w zdobytych Kills od Początku do Końca, obok jego udziału w Might na Początku. Obrońcy i gracze wsparcia nie zdobywają Kills.",

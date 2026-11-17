@@ -65,6 +65,7 @@ Words already used in `lib/i18n/fr.ts`. Reuse them so the pages stay consistent;
 | cap                       | plafond                               | `merge.cap`, `merge.over`, `merge.withinCap` — an alliance's member limit, `plafond {cap}`                                           |
 | Merge                     | fusion                                | `merge.title`, `merge.link` — two alliances as one, simulated only                                                                   |
 | Kill share / might share  | part des Kills / part du Might        | `ledger.carried*` — an alliance's share of the kills gained, and of the might at Start; `pts` is the percentage-point abbreviation   |
+| Server fight clock        | Horloge des combats du serveur        | `ledger.fightClock` and its keys, `ledger.comparePulseHelp` — the events side by side on the server clock                            |
 | Bloc                      | Bloc                                  | `balance.bloc`, `balance.addTo`, `balance.removeFrom` — one side of the hypothetical split, A or B                                   |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).

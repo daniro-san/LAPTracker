@@ -29,9 +29,10 @@ describe("SiteHeader", () => {
     const links = [...html.matchAll(/<a [^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/g)]
       .filter(([, href]) => href === "/" || href?.startsWith("/events/"))
       .map(([, href, body]) => [href, body?.includes(en.site.latest)]);
-    // The first "/" is the logo.
+    // The first "/" is the logo; the fight clock (D86) heads the list.
     expect(links).toEqual([
       ["/", false],
+      ["/events/fight-clock", false],
       ["/events/3", false],
       ["/", true],
     ]);

@@ -94,6 +94,29 @@ export const nl = {
       "Aandeel van de Kills van de alliantie dat de 5 grootste stijgers haalden. Hoe hoger, hoe minder spelers het hebben gedragen.",
     topBasis: "{top} van {n}",
     fewGainers: "weinig stijgers",
+    fightClock: "Strijdklok server",
+    fightClockLead:
+      "Wanneer de server vocht, event per event. Elk vakje is een slot van {min} minuten; de hoogte is het aandeel van de gewonnen Kills van het event in dat slot. De slots lopen gelijk met de servertijd, dus twaalf uur is in elke rij twaalf uur.",
+    fightClockLink: "Vergelijk met andere events op de strijdklok",
+    fightClockShare: "Aandeel Kills",
+    fightClockOutline: "Omlijnd: de drukste {span} minuten van elk event",
+    fightClockNoBusiest: "Te weinig metingen om de drukste {span} minuten aan te wijzen",
+    fightClockOffSince:
+      "Geen metingen van {min} minuten voor dit event (die beginnen bij het event van {date})",
+    fightClockOffNext:
+      "Geen metingen van {min} minuten voor dit event (die beginnen bij het volgende event)",
+    fightClockOffMissed: "Voor dit event zijn geen metingen van {min} minuten genomen",
+    fightClockOffWaiting: "De metingen van {min} minuten komen binnen terwijl dit event loopt",
+    fightClockNone:
+      "De metingen van {min} minuten van elk event komen hier, te beginnen bij het volgende event.",
+    comparePulseHelp:
+      "Aandeel van de gewonnen Kills van elk event per {min} minuten, gelijk met de servertijd. De drukste {span} minuten zijn omlijnd.",
+    comparePulseOffA:
+      "Event A ({when}) heeft geen metingen van {min} minuten, dus de pulsen van de twee events kunnen niet vergeleken worden",
+    comparePulseOffB:
+      "Event B ({when}) heeft geen metingen van {min} minuten, dus de pulsen van de twee events kunnen niet vergeleken worden",
+    comparePulseOffBoth:
+      "Geen van beide events heeft metingen van {min} minuten, dus hun pulsen kunnen niet vergeleken worden",
     carried: "Aandeel Kills tegen aandeel Might",
     carriedHelp:
       "Het aandeel van elke alliantie in de Kills die tussen Begin en Einde zijn gewonnen, naast haar aandeel in de Might bij Begin. Verdedigers en support-spelers winnen geen Kills.",

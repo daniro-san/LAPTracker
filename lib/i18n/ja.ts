@@ -82,6 +82,28 @@ export const ja = {
     liveLast: "直近{min}分：{last}（ピーク {peak}）",
     liveDone:
       "開始からの変化は {time} の読み取り時点のものです。上の台帳は終了時点（{end}）の値を使っています。",
+    fightClock: "サーバーの戦闘時計",
+    fightClockLead:
+      "サーバーがいつ戦ったかを、イベントごとに示します。箱は一つひとつが{min}分の区間で、高さはその区間で得た、そのイベントの Kills の割合です。区間はサーバー時間に揃えてあるので、どの行でも正午は同じ列になります。",
+    fightClockLink: "サーバーの戦闘時計で他のイベントと比べる",
+    fightClockShare: "Kills の割合",
+    fightClockOutline: "囲み線：各イベントで最も忙しかった{span}分",
+    fightClockNoBusiest: "最も忙しかった{span}分を特定するには、読み取りが少なすぎます",
+    fightClockOffSince:
+      "このイベントには{min}分の読み取りがありません（{date}のイベントから始まります）",
+    fightClockOffNext:
+      "このイベントには{min}分の読み取りがありません（次のイベントから始まります）",
+    fightClockOffMissed: "このイベントでは{min}分の読み取りが行われませんでした",
+    fightClockOffWaiting: "{min}分の読み取りは、このイベントの進行中に入ってきます",
+    fightClockNone: "各イベントの{min}分の読み取りは、次のイベントからここに描かれます。",
+    comparePulseHelp:
+      "各イベントが{min}分ごとに得た Kills の割合を、サーバー時間に揃えて示します。最も忙しかった{span}分は囲み線で示します。",
+    comparePulseOffA:
+      "イベントA（{when}）には{min}分の読み取りがないため、2つのイベントの動きは比べられません",
+    comparePulseOffB:
+      "イベントB（{when}）には{min}分の読み取りがないため、2つのイベントの動きは比べられません",
+    comparePulseOffBoth:
+      "どちらのイベントにも{min}分の読み取りがないため、両者の動きは比べられません",
     fought: "参戦状況",
     foughtSoFar: "ここまでの参戦状況",
     foughtHelp: "開始と終了の両方で同盟にいた Members。支援役のプレイヤーは Kills を得ません。",

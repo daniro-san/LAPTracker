@@ -81,6 +81,27 @@ export const vi = {
     liveKillsSoFar: "Tiêu diệt đến nay: {kills}",
     liveLast: "{min} phút gần nhất: {last} (đỉnh {peak})",
     liveDone: "Thay đổi từ Bắt đầu tại lần đọc {time}. Bảng trên dùng Kết thúc lúc {end}.",
+    fightClock: "Đồng hồ giao tranh máy chủ",
+    fightClockLead:
+      "Máy chủ đánh nhau lúc nào, từng sự kiện một. Mỗi ô là một khung {min} phút, chiều cao là phần Tiêu diệt của sự kiện đó đạt được trong khung ấy. Các khung khớp theo giờ máy chủ, nên 12 giờ trưa luôn là 12 giờ trưa ở mọi hàng.",
+    fightClockLink: "So với các sự kiện khác trên đồng hồ giao tranh máy chủ",
+    fightClockShare: "Phần Tiêu diệt",
+    fightClockOutline: "Viền: {span} phút sôi động nhất của mỗi sự kiện",
+    fightClockNoBusiest: "Quá ít lần đọc để xác định {span} phút sôi động nhất",
+    fightClockOffSince: "Sự kiện này không có lần đọc {min} phút (bắt đầu từ sự kiện ngày {date})",
+    fightClockOffNext: "Sự kiện này không có lần đọc {min} phút (bắt đầu từ sự kiện kế tiếp)",
+    fightClockOffMissed: "Không có lần đọc {min} phút nào được ghi cho sự kiện này",
+    fightClockOffWaiting: "Các lần đọc {min} phút sẽ về trong lúc sự kiện này diễn ra",
+    fightClockNone:
+      "Lần đọc {min} phút của mỗi sự kiện sẽ được vẽ ở đây, bắt đầu từ sự kiện kế tiếp.",
+    comparePulseHelp:
+      "Phần Tiêu diệt mỗi sự kiện đạt được trong mỗi {min} phút, khớp theo giờ máy chủ. {span} phút sôi động nhất được tô viền.",
+    comparePulseOffA:
+      "Sự kiện A ({when}) không có lần đọc {min} phút, nên không so sánh được nhịp của hai sự kiện",
+    comparePulseOffB:
+      "Sự kiện B ({when}) không có lần đọc {min} phút, nên không so sánh được nhịp của hai sự kiện",
+    comparePulseOffBoth:
+      "Cả hai sự kiện đều không có lần đọc {min} phút, nên không so sánh được nhịp của chúng",
     fought: "Tham chiến",
     foughtSoFar: "Tham chiến đến nay",
     foughtHelp:

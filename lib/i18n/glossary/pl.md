@@ -153,6 +153,8 @@ Words already used in `lib/i18n/pl.ts`. Reuse them so the pages stay consistent;
 | War turnout               | Frekwencja wojny                | `ledger.fought` — who took part in the war event                                                      |
 | gainer                    | zdobywca                        | `ledger.topShareHelp`, `ledger.fewGainers` — a member whose Kills rose                                |
 | peak                      | szczyt                          | `ledger.liveLast` — the highest interval in the last span                                             |
+| Server fight clock        | Zegar walk serwera              | `ledger.fightClock*`, `ledger.comparePulse*` — events side by side on the server clock                |
+| Outlined                  | Obrysowane                      | `ledger.fightClockOutline`, `ledger.comparePulseHelp` — the busiest minutes of each event             |
 | Bloc                      | Blok                            | `balance.bloc`, `balance.addTo` — a hypothetical group of alliances                                   |
 | Bloc builder              | Kreator bloków                  | `balance.builder` — the page's hypothetical bloc tool                                                 |
 

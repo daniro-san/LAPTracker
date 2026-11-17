@@ -81,6 +81,27 @@ export const ptBR = {
     liveKillsSoFar: "Kills até agora: {kills}",
     liveLast: "Últimos {min} min: {last} (pico {peak})",
     liveDone: "Mudança desde o Início, na leitura de {time}. O registro acima usa o Fim às {end}.",
+    fightClock: "Relógio de lutas do servidor",
+    fightClockLead:
+      "Quando o servidor lutou, evento por evento. Cada caixa é uma faixa de {min} minutos, e a altura é a fatia dos kills ganhos no evento nela. As faixas se alinham na hora do servidor, então meio-dia é meio-dia em todas as linhas.",
+    fightClockLink: "Comparar com outros eventos no relógio de lutas do servidor",
+    fightClockShare: "Fatia dos kills",
+    fightClockOutline: "Com contorno: os {span} minutos mais movimentados de cada evento",
+    fightClockNoBusiest: "Poucas leituras para apontar os {span} minutos mais movimentados",
+    fightClockOffSince: "Sem leituras de {min} minutos neste evento (começam no evento de {date})",
+    fightClockOffNext: "Sem leituras de {min} minutos neste evento (começam no próximo evento)",
+    fightClockOffMissed: "Não foram feitas leituras de {min} minutos neste evento",
+    fightClockOffWaiting: "As leituras de {min} minutos chegam enquanto este evento acontece",
+    fightClockNone:
+      "As leituras de {min} minutos de cada evento vão aparecer aqui, a partir do próximo evento.",
+    comparePulseHelp:
+      "Fatia dos kills ganhos por cada evento a cada {min} minutos, alinhada à hora do servidor. Os {span} minutos mais movimentados têm contorno.",
+    comparePulseOffA:
+      "O evento A ({when}) não tem leituras de {min} minutos, então os pulsos dos dois eventos não podem ser comparados",
+    comparePulseOffB:
+      "O evento B ({when}) não tem leituras de {min} minutos, então os pulsos dos dois eventos não podem ser comparados",
+    comparePulseOffBoth:
+      "Nenhum dos dois eventos tem leituras de {min} minutos, então os pulsos não podem ser comparados",
     fought: "Participação",
     foughtSoFar: "Participação até agora",
     foughtHelp:

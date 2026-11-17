@@ -82,6 +82,29 @@ export const itIT = {
     liveLast: "Ultimi {min} min: {last} (picco {peak})",
     liveDone:
       "Variazione da Inizio alla lettura delle {time}. Il registro sopra usa la Fine alle {end}.",
+    fightClock: "Orologio dei combattimenti del server",
+    fightClockLead:
+      "Quando il server ha combattuto, evento per evento. Ogni casella è una fascia di {min} minuti e la sua altezza è la quota dei Kills guadagnati dall’evento in quella fascia. Le fasce si allineano sull’ora del server, quindi mezzogiorno è mezzogiorno in ogni riga.",
+    fightClockLink: "Confronta con altri eventi sull’orologio dei combattimenti del server",
+    fightClockShare: "Quota dei Kills",
+    fightClockOutline: "In contorno: i {span} minuti più intensi di ogni evento",
+    fightClockNoBusiest: "Troppe poche letture per indicare i {span} minuti più intensi",
+    fightClockOffSince:
+      "Nessuna lettura di {min} minuti per questo evento (iniziano con l’evento del {date})",
+    fightClockOffNext:
+      "Nessuna lettura di {min} minuti per questo evento (iniziano con il prossimo evento)",
+    fightClockOffMissed: "Per questo evento non sono state fatte letture di {min} minuti",
+    fightClockOffWaiting: "Le letture di {min} minuti arrivano mentre questo evento è in corso",
+    fightClockNone:
+      "Le letture di {min} minuti di ogni evento saranno disegnate qui, a partire dal prossimo evento.",
+    comparePulseHelp:
+      "Quota dei Kills guadagnati da ogni evento in ogni {min} minuti, allineata sull’ora del server. I {span} minuti più intensi sono in contorno.",
+    comparePulseOffA:
+      "L’evento A ({when}) non ha letture di {min} minuti, quindi i ritmi dei due eventi non si possono confrontare",
+    comparePulseOffB:
+      "L’evento B ({when}) non ha letture di {min} minuti, quindi i ritmi dei due eventi non si possono confrontare",
+    comparePulseOffBoth:
+      "Nessuno dei due eventi ha letture di {min} minuti, quindi i loro ritmi non si possono confrontare",
     fought: "Partecipazione",
     foughtSoFar: "Partecipazione finora",
     foughtHelp:

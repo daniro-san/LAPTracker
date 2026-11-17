@@ -94,6 +94,28 @@ export const sv = {
       "Andelen av alliansens Kills som de 5 största vinnarna gjorde. Högre betyder att färre spelare bar den.",
     topBasis: "{top} av {n}",
     fewGainers: "få vinnare",
+    fightClock: "Serverns stridsklocka",
+    fightClockLead:
+      "När servern stridde, event för event. Varje ruta är en tidsruta på {min} minuter, och höjden visar andelen av eventets vunna Kills i den. Rutorna följer serverklockan, så middag är middag på varje rad.",
+    fightClockLink: "Jämför med andra event på serverns stridsklocka",
+    fightClockShare: "Andel av Kills",
+    fightClockOutline: "Med kontur: de mest aktiva {span} minuterna i varje event",
+    fightClockNoBusiest: "För få avläsningar för att peka ut de mest aktiva {span} minuterna",
+    fightClockOffSince:
+      "Inga {min}-minuters avläsningar för det här eventet (de börjar med eventet den {date})",
+    fightClockOffNext:
+      "Inga {min}-minuters avläsningar för det här eventet (de börjar med nästa event)",
+    fightClockOffMissed: "Inga {min}-minuters avläsningar togs för det här eventet",
+    fightClockOffWaiting: "{min}-minuters avläsningarna kommer in medan det här eventet pågår",
+    fightClockNone: "Varje events {min}-minuters avläsningar ritas här, med början i nästa event.",
+    comparePulseHelp:
+      "Andelen av varje events vunna Kills under varje {min} minuter, i linje med serverklockan. De mest aktiva {span} minuterna har kontur.",
+    comparePulseOffA:
+      "Event A ({when}) har inga {min}-minuters avläsningar, så de två eventens pulser kan inte jämföras",
+    comparePulseOffB:
+      "Event B ({when}) har inga {min}-minuters avläsningar, så de två eventens pulser kan inte jämföras",
+    comparePulseOffBoth:
+      "Inget av de två eventen har {min}-minuters avläsningar, så deras pulser kan inte jämföras",
     carried: "Kills-andel mot Might-andel",
     carriedHelp:
       "Varje allians andel av Kills vunna från Början till Slut, bredvid dess andel av Might vid Början. Försvarare och supportspelare vinner inga Kills.",

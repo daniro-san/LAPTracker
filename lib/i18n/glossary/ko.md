@@ -73,11 +73,18 @@ Words already used in `lib/i18n/ko.ts`. Reuse them so the pages stay consistent;
 
 The game's own word for each term, with the page that shows it in the game's text and the quote. A term not listed stays English. Add a row only with a source that carries the game's own text (datamined text or an in-game screenshot), never a guide's prose (D52).
 
-| English | ko     | Source                                                                 | Quote                                                                                                   |
-| ------- | ------ | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| Might   | 전투력 | https://lastasylum.gg/ko/events/alliance-duel                          | 일요일 길드 인원이 20명을 초과하고, 길드 전투력이 서버 32위 안에 드는 길드만 매칭에 참여할 수 있습니다. |
-| Kills   | 처치   | https://lastasylum.gg/ko/events/kingdom-war                            | 적 처치 랭킹을 올리고 목표 포인트를 달성하면 목표 보물상자 보상을 획득합니다.                           |
-| Members | 인원   | https://lastasylum.gg/ko/events/alliance-duel                          | 일요일 길드 인원이 20명을 초과하고, …                                                                   |
-| Bloc    | 블록   | `balance.bloc` — a hypothetical group of alliances in the bloc builder |
+| English            | ko             | Source                                                                                    | Quote                                                                                                   |
+| ------------------ | -------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| Might              | 전투력         | https://lastasylum.gg/ko/events/alliance-duel                                             | 일요일 길드 인원이 20명을 초과하고, 길드 전투력이 서버 32위 안에 드는 길드만 매칭에 참여할 수 있습니다. |
+| Kills              | 처치           | https://lastasylum.gg/ko/events/kingdom-war                                               | 적 처치 랭킹을 올리고 목표 포인트를 달성하면 목표 보물상자 보상을 획득합니다.                           |
+| Members            | 인원           | https://lastasylum.gg/ko/events/alliance-duel                                             | 일요일 길드 인원이 20명을 초과하고, …                                                                   |
+| Server fight clock | 서버 전투 시계 | `ledger.fightClock`, `ledger.fightClockLink` — events side by side on the server clock    |
+| Outlined           | 테두리         | `ledger.fightClockOutline`, `ledger.comparePulseHelp` — the busiest minutes of each event |
+| English            | ko             | Source                                                                                    | Quote                                                                                                   |
+| -------            | ------         | ----------------------------------------------------------------------                    | ------------------------------------------------------------------------------------------------------- |
+| Might              | 전투력         | https://lastasylum.gg/ko/events/alliance-duel                                             | 일요일 길드 인원이 20명을 초과하고, 길드 전투력이 서버 32위 안에 드는 길드만 매칭에 참여할 수 있습니다. |
+| Kills              | 처치           | https://lastasylum.gg/ko/events/kingdom-war                                               | 적 처치 랭킹을 올리고 목표 포인트를 달성하면 목표 보물상자 보상을 획득합니다.                           |
+| Members            | 인원           | https://lastasylum.gg/ko/events/alliance-duel                                             | 일요일 길드 인원이 20명을 초과하고, …                                                                   |
+| Bloc               | 블록           | `balance.bloc` — a hypothetical group of alliances in the bloc builder                    |
 
 Level stays English: the game writes a level as `Lv.` before the number (`성당 Lv.10+`), and `레벨` appears only as the pass level. In the game an alliance is a guild (길드); this file still says 연맹.

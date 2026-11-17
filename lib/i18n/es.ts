@@ -82,6 +82,29 @@ export const es = {
     liveLast: "Últimos {min} min: {last} (pico {peak})",
     liveDone:
       "Cambio desde Inicio en la lectura de {time}. El registro de arriba usa el Fin de {end}.",
+    fightClock: "Reloj de combate del servidor",
+    fightClockLead:
+      "Cuándo luchó el servidor, evento por evento. Cada casilla es un tramo de {min} minutos y su altura es la parte de los Kills del evento ganados en él. Los tramos se alinean con la hora del servidor, así que el mediodía es el mediodía en cada fila.",
+    fightClockLink: "Comparar con otros eventos en el reloj de combate del servidor",
+    fightClockShare: "Parte de los Kills",
+    fightClockOutline: "Con contorno: los {span} minutos más intensos de cada evento",
+    fightClockNoBusiest: "Muy pocas lecturas para nombrar los {span} minutos más intensos",
+    fightClockOffSince:
+      "Sin lecturas de {min} minutos para este evento (empiezan con el evento del {date})",
+    fightClockOffNext:
+      "Sin lecturas de {min} minutos para este evento (empiezan con el próximo evento)",
+    fightClockOffMissed: "No se tomaron lecturas de {min} minutos para este evento",
+    fightClockOffWaiting: "Las lecturas de {min} minutos llegan mientras este evento está en curso",
+    fightClockNone:
+      "Las lecturas de {min} minutos de cada evento se dibujarán aquí, empezando por el próximo evento.",
+    comparePulseHelp:
+      "Parte de los Kills de cada evento ganada en cada {min} minutos, alineada con la hora del servidor. Los {span} minutos más intensos están con contorno.",
+    comparePulseOffA:
+      "El evento A ({when}) no tiene lecturas de {min} minutos, así que los pulsos de los dos eventos no se pueden comparar",
+    comparePulseOffB:
+      "El evento B ({when}) no tiene lecturas de {min} minutos, así que los pulsos de los dos eventos no se pueden comparar",
+    comparePulseOffBoth:
+      "Ninguno de los dos eventos tiene lecturas de {min} minutos, así que sus pulsos no se pueden comparar",
     fought: "Participación bélica",
     foughtSoFar: "Participación bélica hasta ahora",
     foughtHelp:
