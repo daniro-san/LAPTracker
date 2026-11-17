@@ -151,7 +151,7 @@ export const itIT = {
   },
   merge: {
     title: "Simulatore di fusione",
-    tag: "Solo simulazione",
+    tag: "Simulazione, non un piano",
     lead: "Due alleanze contate come una sola e confrontate con il limite di Members. Solo totali delle alleanze, nessun nome di membro.",
     link: "Simula una fusione",
     first: "Prima alleanza",

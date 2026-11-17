@@ -151,7 +151,7 @@ export const tr = {
   },
   merge: {
     title: "Birleştirme simülatörü",
-    tag: "Yalnızca simülasyon",
+    tag: "Simülasyon, plan değil",
     lead: "İki ittifak tek ittifak olarak sayılır ve Members sınırına karşı kontrol edilir. Yalnızca ittifak toplamları, üye adı yok.",
     link: "Birleştirmeyi simüle et",
     first: "İlk ittifak",

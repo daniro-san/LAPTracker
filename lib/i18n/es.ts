@@ -151,7 +151,7 @@ export const es = {
   },
   merge: {
     title: "Simulador de fusión",
-    tag: "Solo simulación",
+    tag: "Simulación, no un plan",
     lead: "Dos alianzas contadas como una y comparadas con el tope de Members. Solo totales de alianza, sin nombres de Members.",
     link: "Simular una fusión",
     first: "Primera alianza",

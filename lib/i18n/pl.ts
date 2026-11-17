@@ -151,7 +151,7 @@ export const pl = {
   },
   merge: {
     title: "Symulator scalenia",
-    tag: "Tylko symulacja",
+    tag: "Symulacja, nie plan",
     lead: "Dwa sojusze policzone jako jeden i sprawdzone względem limitu członków. Tylko sumy sojuszy, bez nazw członków.",
     link: "Symuluj scalenie",
     first: "Pierwszy sojusz",

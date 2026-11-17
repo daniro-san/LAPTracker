@@ -148,7 +148,7 @@ export const ptBR = {
   },
   merge: {
     title: "Simulador de fusão",
-    tag: "Só simulação",
+    tag: "Simulação, não um plano",
     lead: "Duas alianças contadas como uma só e conferidas contra o limite de Members. Só totais das alianças, sem nomes de Members.",
     link: "Simular uma fusão",
     first: "Primeira aliança",

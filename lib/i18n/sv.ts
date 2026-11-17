@@ -319,7 +319,7 @@ export const sv = {
   },
   merge: {
     title: "Sammanslagningssimulator",
-    tag: "Bara simulering",
+    tag: "Simulering, inte en plan",
     lead: "Två allianser räknas som en och kontrolleras mot medlemstaket. Bara allianssummor, inga medlemsnamn.",
     link: "Simulera en sammanslagning",
     first: "Första allians",

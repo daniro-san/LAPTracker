@@ -151,7 +151,7 @@ export const idID = {
   },
   merge: {
     title: "Simulator merge",
-    tag: "Hanya simulasi",
+    tag: "Simulasi, bukan rencana",
     lead: "Dua aliansi dihitung sebagai satu, lalu dicek terhadap batas Members. Hanya total aliansi, tanpa nama anggota.",
     link: "Simulasikan merge",
     first: "Aliansi pertama",

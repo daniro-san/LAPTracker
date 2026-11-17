@@ -3,13 +3,13 @@
 Issue #362. The owner said the text on /admin, the workspace and the public pages read like AI. Branch `chore/copy-pass` from `origin/dev` (5b17636), which already holds the in-flight UI PRs the issue waits for (#360, #367, #369).
 
 ## Built
-- **Public pages** (`lib/copy.ts` and its parts), 10 English strings:
+- **Public pages** (`lib/copy.ts` and its parts), 9 English strings:
   - `empty.noMembers`, `search.pending`;
   - `balance.lead`, `balance.builderHelp`;
   - `flow.lead`, `flow.small`;
-  - `merge.tag`, `merge.lead`;
+  - `merge.lead`;
   - `standing.leadGrowth`, `ledger.carriedRatioHelp`.
-  - All 17 languages were translated again for these 10 keys with the translate-copy skill, one `translator` agent per language, then stamped.
+  - All 17 languages were translated again for these 9 keys with the translate-copy skill, one `translator` agent per language, then stamped.
 - **/admin** (English only, D48), 8 strings: `status.quotaNoteOld`, `run.intro`, `run.live.note`, `rehearsal.help`, `members.help`, `members.unchangedHelp`, `guide.entries.network.action`, `workspaces.command.reasons.429`.
 - **Discord admin messages**, 2 strings: `mightLine` (the em dash before the link is now ` · `) and `pinLocked`.
 - **Workspace**, 25 keys, each in EN, pt-BR and fr (75 strings):
@@ -20,6 +20,7 @@ Issue #362. The owner said the text on /admin, the workspace and the public page
   - `dictionary.thefts`: `thefts.form.whenHelp`, `thefts.e.failed`;
   - `dictionary.shots*`: `shots.lead`, `shots.help`, `shots.unrecognised`, `shots.soon`, `shots.e.cannot_save`, `shots.kindUnsure`, `shots.discord.unrecognised` (the last two are also Discord bot replies).
 - `docs/DESIGN.md`: the quoted search-pending line follows the new wording.
+- `docs/decisions/D90-…`: the Wording bullet's example sentence follows the new `standing.leadGrowth` (a full stop in place of the semicolon).
 - Tests: three expected strings updated (`lib/notify.test.ts`, `lib/quota-report.test.ts`, `lib/private/discord-interaction.test.ts`). No assertion was loosened.
 
 ## Decisions
@@ -33,6 +34,8 @@ Issue #362. The owner said the text on /admin, the workspace and the public page
   - `≠` used in place of words.
 - **Kept the brand lines DESIGN.md names**: "Nothing recorded yet. The kettle is on.", "Grandma wandered off.", "Something cracked.", "It's okay, grandma will clean it.", "Grandma noticed", and the byline. The workspace's "Nothing here yet. The kettle is on." follows the same line. Only "Grandma checked twice" (a joke) was dropped, and "leafing" became "searching".
 - **Changed only strings with a pattern.** Most strings were already short and literal, so the change is surgical, not a rewrite of every string. This also keeps the translation churn small.
+- **`merge.tag` stays "Simulation, not a plan"**, in English and in all 17 languages (origin/dev values). D84 quotes it as the owner's decision, so a copy pass does not change it (PR #370 review). D84 does not quote `merge.lead`, so its rewrite stays.
+- **D90's quoted sentence was updated, not restored.** It is the design's example of the wording (one neutral sentence, no verdict), not an owner ruling on the exact text, and the 2026-11-17 amendment already replaced its first half.
 - `shots.kindUnsure` became "{kind} (daily or weekly?)". A colon gave "Read: Alliance Duel: daily or weekly?" in the Discord reply.
 - `thefts.e.failed` now uses the same "Could not save. Try again." as every other form.
 - **Hand fixes after the translators**: in French, `flow.lead` kept a sentence the new English dropped; Swedish `balance.builderHelp` had the wrong word order; Polish `search.pending` still said "browsing".

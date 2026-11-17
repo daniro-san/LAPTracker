@@ -152,7 +152,7 @@ export const nl = {
   },
   merge: {
     title: "Fusiesimulator",
-    tag: "Alleen simulatie",
+    tag: "Simulatie, geen plan",
     lead: "Twee allianties samen geteld en getoetst aan de ledengrens. Alleen totalen van de allianties, geen ledennamen.",
     link: "Simuleer een fusie",
     first: "Eerste alliantie",

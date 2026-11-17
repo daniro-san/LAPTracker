@@ -152,7 +152,7 @@ export const de = {
   },
   merge: {
     title: "Fusions-Simulator",
-    tag: "Nur Simulation",
+    tag: "Simulation, kein Plan",
     lead: "Zwei Allianzen werden als eine gezählt und mit der Members-Obergrenze verglichen. Nur Summen je Allianz, keine Namen von Members.",
     link: "Fusion simulieren",
     first: "Erste Allianz",

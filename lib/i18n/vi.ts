@@ -148,7 +148,7 @@ export const vi = {
   },
   merge: {
     title: "Mô phỏng sáp nhập",
-    tag: "Chỉ mô phỏng",
+    tag: "Mô phỏng, không phải kế hoạch",
     lead: "Hai liên minh được gộp thành một và kiểm tra theo giới hạn thành viên. Chỉ có tổng của liên minh, không có tên thành viên.",
     link: "Mô phỏng sáp nhập",
     first: "Liên minh thứ nhất",
