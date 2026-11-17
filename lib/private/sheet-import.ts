@@ -17,6 +17,7 @@ import { anyRoster, namesSeen } from "../repo/workspace-any-roster";
 import { matchName, type NameCandidate } from "../screenshot/match-name";
 import { nameKey } from "../screenshot/name-key";
 import type { WorkspaceAccess } from "./access";
+import { fillPlan } from "./import-plan";
 import { readSheet, type Sheet, type SheetRow } from "./sheet-parse";
 
 export type RowMatch =
@@ -35,6 +36,8 @@ export interface ImportPreview {
   rows: ImportRow[];
   /** The alliance's members, by name, for a person to pick from. */
   members: { uid: number; name: string }[];
+  /** Per member, the fields that already hold a value: the screen counts what an import would fill. */
+  filled: Record<number, string[]>;
 }
 
 /** A person's answer for a row the matcher left open: a member, or null for "not a member". */
@@ -84,10 +87,11 @@ async function prepare(db: Db, access: WorkspaceAccess, csv: string, w: Where) {
   const sheet = readSheet(csv, w.now, w.serverZone);
   if (!sheet) return "no_name_column" as const;
   if (sheet.rows.length > MAX_SHEET_ROWS) return "too_many_rows" as const;
-  const [roster, seen, aliases] = await Promise.all([
+  const [roster, seen, aliases, facts] = await Promise.all([
     anyRoster(db, access.unionId),
     namesSeen(db, access.unionId),
     aliasesOf(db, access.workspaceId),
+    latestFacts(db, access.workspaceId),
   ]);
   const members = roster?.members ?? [];
   const current = new Set(members.map((m) => m.uid));
@@ -102,6 +106,7 @@ async function prepare(db: Db, access: WorkspaceAccess, csv: string, w: Where) {
       .map((m) => ({ uid: m.uid, name: m.name }))
       .sort((a, b) => a.name.localeCompare(b.name)),
     current,
+    facts,
   };
 }
 
@@ -113,41 +118,30 @@ export async function previewImport(
   w: Where,
 ): Promise<ImportPreview | SheetRefusal> {
   const p = await prepare(db, access, csv, w);
-  return typeof p === "string" ? p : { columns: p.columns, rows: p.rows, members: p.members };
+  if (typeof p === "string") return p;
+  const filled: Record<number, string[]> = {};
+  for (const f of p.facts) if (f.value !== null) (filled[f.uid] ??= []).push(f.field);
+  return { columns: p.columns, rows: p.rows, members: p.members, filled };
 }
 
 const isOpen = (r: ImportRow) => r.match.status === "unsure" || r.match.status === "none";
 
 type NewFact = Parameters<typeof insertFacts>[1][number];
 
-/** The facts to write: one per member and field, only where the field holds no value yet. */
+/** The facts to write: one per member and field, only where the field holds no value yet (fillPlan). */
 function plan(
   rows: readonly ImportRow[],
   uidOf: (r: ImportRow) => number | null,
   newest: Map<string, FactRow>,
   by: Pick<NewFact, "workspaceId" | "writtenBy" | "writtenAt">,
 ): { planned: NewFact[]; kept: number } {
-  const planned = new Map<string, NewFact>();
-  let kept = 0;
-  for (const r of rows) {
-    const uid = uidOf(r);
-    if (uid === null) continue;
-    for (const [field, value] of Object.entries(r.facts)) {
-      const key = `${uid} ${field}`;
-      const had = newest.get(key);
-      if ((had && had.value !== null) || planned.has(key)) kept++;
-      else
-        planned.set(key, {
-          ...by,
-          uid,
-          field,
-          version: (had?.version ?? 0) + 1,
-          value,
-          source: "sheet",
-        });
-    }
-  }
-  return { planned: [...planned.values()], kept };
+  const had = (uid: number, field: string) => newest.get(`${uid} ${field}`);
+  const { fill, kept } = fillPlan(rows, uidOf, (uid, field) => had(uid, field)?.value != null);
+  const planned = fill.map(({ uid, field, value }) => {
+    const version = (had(uid, field)?.version ?? 0) + 1;
+    return { ...by, uid, field, version, value, source: "sheet" as const };
+  });
+  return { planned, kept };
 }
 
 /**
@@ -172,8 +166,7 @@ export async function applyImport(
   await saveAliases(db, access.workspaceId, remembered, access.user.id, w.now);
   const uidOf = (r: ImportRow) =>
     r.match.status === "matched" ? r.match.uid : isOpen(r) ? (decided.get(r.line) ?? null) : null;
-  const facts = await latestFacts(db, access.workspaceId);
-  const newest = new Map(facts.map((f) => [`${f.uid} ${f.field}`, f]));
+  const newest = new Map(p.facts.map((f) => [`${f.uid} ${f.field}`, f]));
   const by = { workspaceId: access.workspaceId, writtenBy: access.user.id, writtenAt: w.now };
   const { planned, kept } = plan(p.rows, uidOf, newest, by);
   const saved = await insertFacts(db, planned);

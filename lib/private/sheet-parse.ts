@@ -50,10 +50,23 @@ export interface SheetRow {
   unread: string[];
 }
 
+/** A sheet column: its header, what it fills, and its first value as written and as read (10.7 → 10.7M). */
+export interface SheetColumn {
+  header: string;
+  field: Column | null;
+  example: { raw: string; value: unknown } | null;
+}
+
 export interface Sheet {
-  /** Each header and what it fills; null for a column not imported. */
-  columns: { header: string; field: Column | null }[];
+  columns: SheetColumn[];
   rows: SheetRow[];
+}
+
+/** The first row in which the column gave a fact, as written and as read. */
+function exampleOf(column: Column | null, at: number, body: string[][], rows: SheetRow[]) {
+  if (column === null || column === "name" || column === "role") return null;
+  const row = rows.find((r) => r.facts[column] !== undefined);
+  return row ? { raw: (body[row.line - 1]?.[at] ?? "").trim(), value: row.facts[column] } : null;
 }
 
 /** RFC 4180 rows: quoted cells may hold the separator, quotes ("") and line breaks. */
@@ -139,14 +152,25 @@ export function readSheet(text: string, now: Date, serverZone: string): Sheet | 
     squadMight: at.squadMight === undefined ? 1 : scaleOf(body, at.squadMight, "squadMight"),
     adTech: at.adTech === undefined ? 1 : scaleOf(body, at.adTech, "adTech"),
   };
+  const read = body.flatMap((cells, i) => {
+    const name = (cells[at.name as number] ?? "").trim();
+    if (name === "") return [];
+    const role = at.role === undefined ? "" : (cells[at.role] ?? "").trim();
+    return [
+      { line: i + 1, name, role: role || null, ...factsOf(cells, at, scale, { now, serverZone }) },
+    ];
+  });
   return {
-    columns: header.map((h) => ({ header: h, field: fieldOf(h) })),
-    rows: body.flatMap((cells, i) => {
-      const name = (cells[at.name as number] ?? "").trim();
-      if (name === "") return [];
-      const role = at.role === undefined ? "" : (cells[at.role] ?? "").trim();
-      const read = factsOf(cells, at, scale, { now, serverZone });
-      return [{ line: i + 1, name, role: role || null, ...read }];
+    columns: header.map((h, i) => {
+      const field = fieldOf(h);
+      // The first column of a kind is the one read; a repeated header is not imported.
+      const used = field !== null && at[field] === i;
+      return {
+        header: h,
+        field: used ? field : null,
+        example: used ? exampleOf(field, i, body, read) : null,
+      };
     }),
+    rows: read,
   };
 }

@@ -50,9 +50,22 @@ Issue #297. Rules applied: D71, D72, D75, D77, D78. New decision: D80. Also buil
 - **Privacy.**
   - `privately` (`lib/private/http.ts`) gives `app_errors` and the admin alert a code only for the facts and import routes, because a database error's message quotes the parameters.
   - Two analytics events without properties: `ws_facts_saved` and `ws_sheet_imported`.
+- **After the UX review of #350** (designer persona, 17 screenshots):
+  - **Conflicts.** Under the field: "Another officer saved T10. You typed T8." with "Keep T10" and "Use T8". Both values are written the way the card writes them; the shared formatter is `app/(private)/_ui/fact-text.ts`. In the save bar: "Another officer changed Troops while you were editing. Answer under Troops, then Save.", a button that scrolls the sheet to the field. When notes or languages were combined, the editor stays open and says "Combined with another officer’s edit: Notes."
+  - **Paste.** The button reads "Fill the fields", then "Found 4 values. Check them, then Save." Until Save, the filled fields say "from this message · not saved". Cancel or Escape with unsaved changes asks "Discard changes?" (Keep editing / Discard). The collapsed paste box has the "▾" of the card's Details.
+  - **Status.** The editor's default option reads "Automatic (now: <the computed status>)". The card lists Status only when an officer set one.
+  - **Sources.** "Typed by an officer", the default, shows nothing; "from a message" and "from the sheet" are plain muted text, not boxes.
+  - **Import.** The lead names no sheet: "Use this when moving from your old spreadsheets. You can import several sheets."
+    - "Read:" gives one example per column, as written and as stored: "First Squad → Main squad (10.7 → 10.7M)".
+    - Above Import: "Will fill N empty fields. M fields already have a value and stay as they are." It is counted by `lib/private/import-plan.ts` `fillPlan` (pure); the server writes from the same plan.
+    - The result line has singular and plural forms, with "Back to Members".
+    - The member picker's placeholder is "Choose a member…".
+    - The import words moved to `lib/private/dictionary.import.ts`, spread like the notices', so `dictionary.ts` stays under 300 lines.
+  - **Early roster.** Before the first end-of-day read, the filter chips show "—" instead of counts.
 - **Words:** 64 new keys in en, pt-BR and fr, with French no-break spaces (U+00A0).
 - **Docs:** D80, `docs/ARCHITECTURE.md` (new modules; `lib/private → lib/screenshot`).
-- **Tests (26 new):**
+- **Tests (27 new):**
+  - `import-plan.test.ts`: 1, what an import fills and keeps;
   - `onboarding-parse.test.ts`: 6;
   - `time-zones.test.ts`: 5 (stable zones only, not the running ICU's full list);
   - `member-facts.test.ts` (PGlite): 3;
@@ -119,6 +132,14 @@ Issue #297. Rules applied: D71, D72, D75, D77, D78. New decision: D80. Also buil
 
     - Past-name matches were 0: the local roster has no renames (fixture names only), so that path is covered by `sheet-import.test.ts` only.
     - For the 33 OG TRACKING rows with no match, the longest prefix shared with any current name is mostly 1–2 characters. They are players who are not in the 2026-11-16 roster, not misses of the matcher.
+- **After the UX review**, the e2e ran again on a production build of the branch at dev ab0cd37, against a fresh local database (migrations through `0022_member_facts`): **34 of 34 checks passed in light and 34 of 34 in dark**. New checks:
+  - the conflict wording, "Keep T10", the save bar's scroll (the editor stays open);
+  - "Found 4 values", four "not saved" marks, "Discard changes?";
+  - no badge for "typed by an officer";
+  - the chips show "—" before an end-of-day read;
+  - the column example "First Squad → Main squad (10.7 → 10.7M)", the "Will fill …" line, and "Saved … for … members." with "Back to Members".
+  - The real sheets gave the same counts as above.
+  - Screenshots with the `-v2` suffix, at 360 in light and dark: conflict, paste, editor, import, import-done, card-facts, early-roster and the picker.
 - **Screenshots** (not committed) in `/private/tmp/claude-502/-Users-danilordasilva-orca-workspaces-LAPTracker-unicornfish/147759e3-1cdb-4ccd-b74a-1001498a1e18/scratchpad/11f-shots/`:
   - the card with facts and the editor at 360 and 1280, light and dark;
   - the time-zone picker, the conflict and the paste at 360;
@@ -135,6 +156,10 @@ Issue #297. Rules applied: D71, D72, D75, D77, D78. New decision: D80. Also buil
 6. **Shared machine.** During the e2e another session stopped every `next start` and `db-local-bridge` process twice. The e2e ran through launchers with their own names (`scratchpad/11f/serve-11f.mjs`, `bridge-11f.mjs`).
 7. **The zone table** is generated from macOS tzdata 2026f (`/usr/share/zoneinfo/zone.tab`). A zone added to Intl later shows without a country until the table is regenerated.
 8. **`isMember`** reads the newest roster (3–4 queries) on every save. It does not show in timings locally.
+9. **Left for later (UX review):**
+   - the zone label in server time (ST) everywhere;
+   - relabelling "Their time now";
+   - a Change button on matched import rows.
 
 ## Next
 

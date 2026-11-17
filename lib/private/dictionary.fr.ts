@@ -1,6 +1,7 @@
 // The workspace dictionary in French (D71), split from dictionary.ts for its size; the keys follow `en`.
 // French puts a no-break space before : ? and !, and inside « ».
 import type { WorkspaceDictionary } from "./dictionary";
+import { importFr } from "./dictionary.import";
 import { noticesFr } from "./dictionary.notices";
 
 export const fr: WorkspaceDictionary = {
@@ -192,16 +193,15 @@ export const fr: WorkspaceDictionary = {
   "facts.save": "Enregistrer",
   "facts.cancel": "Annuler",
   "facts.failed": "Échec de l’enregistrement. Réessayez.",
-  "facts.computed": "Comme on le voit",
+  "facts.computed": "Automatique (actuellement : {status})",
   "facts.awayText": "Ce qui a été dit",
   "facts.awayDay": "Dernier jour d’absence",
   "facts.mightHint": "9,9M ou 9 900 000",
-  "facts.conflict": "Un autre officier a enregistré ceci entre-temps : {value}",
-  "facts.theirs": "Garder la sienne",
-  "facts.mine": "Garder la mienne",
+  "facts.theirs": "Garder {theirs}",
+  "facts.mine": "Utiliser {mine}",
   "paste.help":
-    "Collez la conversation ici. Ce qu’on trouve remplit les champs ci-dessous, marqué « d’un message ». Vérifiez, puis enregistrez.",
-  "paste.read": "Lire",
+    "Collez la conversation ici, puis touchez Remplir les champs. Rien n’est enregistré avant que vous touchiez Enregistrer.",
+  "paste.read": "Remplir les champs",
   "paste.nothing": "Rien trouvé. Saisissez les valeurs ci-dessous.",
   "paste.zones": "Autres possibilités",
   "tz.choose": "Choisir",
@@ -212,31 +212,16 @@ export const fr: WorkspaceDictionary = {
   "tz.more": "{n} de plus : continuez à taper.",
   "tz.none": "Aucun fuseau horaire ne correspond.",
   "tz.now": "maintenant {time}",
-  "import.lead":
-    "Une seule fois. Collez un tableur ou choisissez son fichier CSV : OG TRACKING, Might and ADp, une semaine de participation. Chaque ligne est reliée à un membre, et vous confirmez les lignes douteuses. Les valeurs ne vont que dans les champs vides, marquées « du tableur ».",
-  "import.paste": "Le tableur (CSV, ou cellules copiées)",
-  "import.file": "Ou choisissez un fichier CSV",
-  "import.check": "Vérifier les lignes",
-  "import.noName": "Aucune colonne « Name » trouvée. Collez le tableur avec sa ligne de titres.",
-  "import.tooMany": "Ce tableur a plus de 2 000 lignes. Importez-le en plusieurs fois.",
-  "import.columns": "Lu : {list}",
-  "import.ignored": "Non importé : {list}",
-  "import.summary":
-    "{rows} lignes · {matched} reliées · {open} à vérifier · {dismissed} non membres",
-  "import.isIt": "Est-ce…",
-  "import.someone": "Quelqu’un d’autre",
-  "import.dismiss": "Pas membre",
-  "import.dismissAll": "Pas membres : toutes les lignes sans correspondance ({n})",
-  "import.change": "Modifier",
-  "import.matched": "Lignes reliées ({n})",
-  "import.role": "Dans le tableur : {role}",
-  "import.zone": "Fuseau horaire non compris : {text}",
-  "import.apply": "Importer",
-  "import.left": "Encore à vérifier : {n}",
-  "import.done":
-    "Terminé : {saved} valeurs enregistrées pour {members} membres. {kept} gardées, car le champ avait déjà une valeur.",
-  "import.failed": "Échec de l’import. Réessayez.",
-  "import.again": "Importer un autre tableur",
+  "facts.conflictBar":
+    "Un autre officier a modifié {field} pendant que vous modifiiez. Répondez sous {field}, puis enregistrez.",
+  "facts.conflictField": "Un autre officier a enregistré {theirs}. Vous avez saisi {mine}.",
+  "facts.mergedLine": "Combiné avec la modification d’un autre officier : {fields}.",
+  "src.unsaved": "de ce message · non enregistré",
+  "paste.found.one": "{n} valeur trouvée. Vérifiez-la, puis enregistrez.",
+  "paste.found.other": "{n} valeurs trouvées. Vérifiez-les, puis enregistrez.",
+  "facts.discard": "Abandonner les modifications ?",
+  "facts.discardYes": "Abandonner",
+  "facts.discardNo": "Continuer",
   "profile.title": "Vos réglages",
   "profile.name": "Votre nom",
   "profile.nameHelp": "Affiché en haut du bureau (32 caractères au plus).",
@@ -262,4 +247,5 @@ export const fr: WorkspaceDictionary = {
   "profile.theme.dark": "Sombre",
   "profile.theme.system": "Comme l’appareil",
   ...noticesFr,
+  ...importFr,
 };

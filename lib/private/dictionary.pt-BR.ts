@@ -1,6 +1,7 @@
 // The workspace dictionary in Brazilian Portuguese (D71), split from dictionary.ts for its size; the keys
 // follow `en`.
 import type { WorkspaceDictionary } from "./dictionary";
+import { importPt } from "./dictionary.import";
 import { noticesPt } from "./dictionary.notices";
 
 export const pt: WorkspaceDictionary = {
@@ -190,16 +191,15 @@ export const pt: WorkspaceDictionary = {
   "facts.save": "Salvar",
   "facts.cancel": "Cancelar",
   "facts.failed": "Não foi possível salvar. Tente de novo.",
-  "facts.computed": "Como vemos",
+  "facts.computed": "Automático (agora: {status})",
   "facts.awayText": "O que a pessoa disse",
   "facts.awayDay": "Último dia ausente",
   "facts.mightHint": "9,9M ou 9.900.000",
-  "facts.conflict": "Outro oficial salvou isto enquanto isso: {value}",
-  "facts.theirs": "Manter o dele",
-  "facts.mine": "Usar o meu",
+  "facts.theirs": "Manter {theirs}",
+  "facts.mine": "Usar {mine}",
   "paste.help":
-    "Cole a conversa aqui. O que encontrarmos preenche os campos abaixo, marcado “de uma mensagem”. Confira e salve.",
-  "paste.read": "Ler",
+    "Cole a conversa aqui e toque em Preencher os campos. Nada é salvo até você tocar em Salvar.",
+  "paste.read": "Preencher os campos",
   "paste.nothing": "Nada encontrado. Digite os valores abaixo.",
   "paste.zones": "Outras opções",
   "tz.choose": "Escolher",
@@ -210,31 +210,16 @@ export const pt: WorkspaceDictionary = {
   "tz.more": "Mais {n}: continue digitando.",
   "tz.none": "Nenhum fuso horário encontrado.",
   "tz.now": "agora {time}",
-  "import.lead":
-    "Uma vez só. Cole uma planilha ou escolha o arquivo CSV: OG TRACKING, Might and ADp, uma semana de participação. Cada linha é ligada a um membro, e você confirma as duvidosas. Os valores só vão para campos vazios, marcados “da planilha”.",
-  "import.paste": "A planilha (CSV, ou células copiadas da planilha)",
-  "import.file": "Ou escolha um arquivo CSV",
-  "import.check": "Conferir as linhas",
-  "import.noName": "Nenhuma coluna “Name” encontrada. Cole a planilha com a linha de títulos.",
-  "import.tooMany": "Esta planilha tem mais de 2.000 linhas. Importe em partes.",
-  "import.columns": "Lido: {list}",
-  "import.ignored": "Não importado: {list}",
-  "import.summary":
-    "{rows} linhas · {matched} encontradas · {open} a conferir · {dismissed} não membros",
-  "import.isIt": "É…",
-  "import.someone": "Outra pessoa",
-  "import.dismiss": "Não é membro",
-  "import.dismissAll": "Não membros: todas as linhas sem correspondência ({n})",
-  "import.change": "Alterar",
-  "import.matched": "Linhas encontradas ({n})",
-  "import.role": "Na planilha: {role}",
-  "import.zone": "Fuso horário não entendido: {text}",
-  "import.apply": "Importar",
-  "import.left": "Ainda a conferir: {n}",
-  "import.done":
-    "Pronto: {saved} valores salvos para {members} membros. {kept} mantidos, porque o campo já tinha um valor.",
-  "import.failed": "Não foi possível importar. Tente de novo.",
-  "import.again": "Importar outra planilha",
+  "facts.conflictBar":
+    "Outro oficial mudou {field} enquanto você editava. Responda abaixo de {field} e depois salve.",
+  "facts.conflictField": "Outro oficial salvou {theirs}. Você digitou {mine}.",
+  "facts.mergedLine": "Combinado com a edição de outro oficial: {fields}.",
+  "src.unsaved": "desta mensagem · não salvo",
+  "paste.found.one": "Encontrado {n} valor. Confira e salve.",
+  "paste.found.other": "Encontrados {n} valores. Confira e salve.",
+  "facts.discard": "Descartar as alterações?",
+  "facts.discardYes": "Descartar",
+  "facts.discardNo": "Continuar editando",
   "profile.title": "Suas configurações",
   "profile.name": "Seu nome",
   "profile.nameHelp": "Aparece no topo da mesa (até 32 caracteres).",
@@ -261,4 +246,5 @@ export const pt: WorkspaceDictionary = {
   "profile.theme.dark": "Escuro",
   "profile.theme.system": "Igual ao aparelho",
   ...noticesPt,
+  ...importPt,
 };

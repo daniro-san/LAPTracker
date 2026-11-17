@@ -20,7 +20,8 @@ import {
   type Formats,
   type Status,
 } from "@/lib/private/members-sheet";
-import { offsetLabel, offsetMinutes } from "@/lib/private/time-zones";
+
+import { factText, NONE } from "./fact-text";
 
 export interface CardFormats extends Formats {
   /** 61.2M, 61,2M (D78). */
@@ -53,9 +54,10 @@ export interface CardData {
   factLines: FactLine[];
   /** The member facts as stored, with their versions, for the editor. */
   stored: MemberFacts;
+  /** The status shown when no officer sets one ("Check in", "Fine" …), for the editor's Automatic. */
+  autoStatus: string;
 }
 
-const NONE = "—";
 const or = (v: number | null, as: (n: number) => string) => (v === null ? NONE : as(v));
 
 function statusParts(m: MemberRow, t: WorkspaceDictionary, f: Formats) {
@@ -101,45 +103,21 @@ function detailsOf(m: MemberRow, t: WorkspaceDictionary, f: Formats, shown: Show
   ];
 }
 
-/** Each fact's value in the officer's language. */
-const SHOW: {
-  [F in FactField]: (v: FactValues[F], t: WorkspaceDictionary, f: CardFormats) => string;
-} = {
-  squadMight: (v, _t, f) => f.compact(v),
-  adTech: (v, _t, f) =>
-    new Intl.NumberFormat(f.language, { style: "percent", maximumFractionDigits: 1 }).format(
-      v / 100,
-    ),
-  troopTier: (v) => `T${v}`,
-  timeZone: (v, _t, f) => `${v.replaceAll("_", " ")} · ${offsetLabel(offsetMinutes(v, f.now))}`,
-  languages: (v, _t, f) => {
-    const names = new Intl.DisplayNames([f.language], { type: "language" });
-    return v.map((code) => names.of(code) ?? code).join(", ");
-  },
-  status: (v, t) => t[v === "help" ? "status.help" : "status.break"],
-  away: (v, t, f) =>
-    [v.text, v.until ? fill(t["facts.until"], { date: f.date(v.until) }) : ""]
-      .filter(Boolean)
-      .join(" · ") || NONE,
-  notes: (v) => v,
-};
-
+/** The facts with their value; Status only when an officer set one (otherwise the card's status says it). */
 function factLines(m: MemberRow, t: WorkspaceDictionary, f: CardFormats): FactLine[] {
-  return FACT_FIELDS.map(<F extends FactField>(field: F) => {
-    const value = m.facts[field]?.value as FactValues[F] | null | undefined;
-    const show = SHOW[field] as (
-      v: FactValues[F],
-      t: WorkspaceDictionary,
-      f: CardFormats,
-    ) => string;
-    const known = value !== null && value !== undefined;
-    return {
-      field,
-      label: t[`facts.${field}`],
-      value: known ? show(value, t, f) : NONE,
-      source: known ? (m.facts[field]?.source ?? null) : null,
-    };
-  });
+  const text = { language: f.language, now: f.now, day: (iso: string) => f.date(iso), words: t };
+  return FACT_FIELDS.filter((field) => field !== "status" || m.facts.status?.value).map(
+    <F extends FactField>(field: F) => {
+      const value = m.facts[field]?.value as FactValues[F] | null | undefined;
+      const known = value !== null && value !== undefined;
+      return {
+        field,
+        label: t[`facts.${field}`],
+        value: factText(field, value, text),
+        source: known ? (m.facts[field]?.source ?? null) : null,
+      };
+    },
+  );
 }
 
 export function cardData(
@@ -174,5 +152,6 @@ export function cardData(
     details: detailsOf(m, t, f, shown),
     factLines: factLines(m, t, f),
     stored: m.facts,
+    autoStatus: statusParts({ ...m, officerStatus: null }, t, f).label || NONE,
   };
 }

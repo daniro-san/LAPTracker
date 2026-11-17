@@ -28,7 +28,7 @@ export default async function ImportPage({ params }: { params: Promise<{ slug: s
     <SignedInFrame access={access} language={language} t={t} current="members">
       <h1 className="font-display text-display-lg">{t["members.import"]}</h1>
       <p className="mt-2 max-w-prose">{t["import.lead"]}</p>
-      <SheetImport slug={slug} words={importWords(t)} />
+      <SheetImport slug={slug} words={importWords(t)} language={language} />
     </SignedInFrame>
   );
 }

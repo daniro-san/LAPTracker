@@ -1,19 +1,20 @@
 "use client";
 
 // A member's facts, edited (issue 297, D80): a sheet over the card with "Paste what they told you" on top
-// and the eight fields below. What the paste finds only fills the fields, marked "from a message"; it is
-// saved when the officer taps Save, like anything typed. A save sends only the fields that changed, each
-// with the version it started from. When another officer saved a field meanwhile, notes and languages are
-// combined by the server; any other field shows the newer value with "Keep theirs" and "Use mine".
+// and the eight fields below. What the paste finds only fills the fields, marked "from this message · not
+// saved"; it is saved when the officer taps Save, like anything typed. A save sends only the fields that
+// changed, each with the version it started from. When another officer saved a field meanwhile, notes and
+// languages are combined by the server (and the editor says so); any other field shows both values with
+// "Keep <theirs>" and "Use <mine>". Closing with unsaved changes asks first.
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { track } from "@/lib/analytics/events";
-import { buttonClass } from "@/lib/brand/components/Button";
 import { Sheet } from "@/lib/brand/components/Sheet";
-import type { Fact, FactField, MemberFacts } from "@/lib/private/fact-fields";
+import type { Fact, FactField, FactValues, MemberFacts } from "@/lib/private/fact-fields";
 import { mightIn, parseOnboarding } from "@/lib/private/onboarding-parse";
 
+import { dayFormat, factText, type FactTextFormat } from "./fact-text";
 import { FactFields } from "./FactFields";
 import {
   changesOf,
@@ -25,12 +26,15 @@ import {
   type EditorWords,
   type Form,
 } from "./facts-form";
+import { Conflict, Paste, SaveBar } from "./FactsEditorParts";
 
 export interface EditorProps {
   slug: string;
   uid: number;
   name: string;
   facts: MemberFacts;
+  /** The status shown when no officer sets one, for "Automatic (now: …)". */
+  autoStatus: string;
   /** "paste" opens with the paste box ready. */
   mode: "edit" | "paste";
   words: EditorWords;
@@ -43,45 +47,6 @@ export interface EditorProps {
 interface Result extends Fact {
   field: FactField;
   status: "saved" | "merged" | "conflict";
-}
-
-function Paste(props: { words: EditorWords; open: boolean; onRead: (text: string) => boolean }) {
-  const [text, setText] = useState("");
-  const [nothing, setNothing] = useState(false);
-  const { words } = props;
-  return (
-    <details open={props.open} className="border border-rule px-3 py-2">
-      <summary className="flex min-h-11 cursor-pointer items-center font-semibold text-plum">
-        {words["facts.paste"]}
-      </summary>
-      <p className="text-body-sm text-ink/80">{words["paste.help"]}</p>
-      <textarea
-        {...(props.open && { "data-initial-focus": true })}
-        aria-label={words["facts.paste"]}
-        value={text}
-        rows={4}
-        maxLength={4000}
-        onChange={(e) => setText(e.target.value)}
-        className="mt-2 w-full border border-rule bg-paper px-3 py-2"
-      />
-      <button
-        type="button"
-        onClick={() => setNothing(!props.onRead(text))}
-        className={buttonClass("secondary", "mt-2")}
-      >
-        {words["paste.read"]}
-      </button>
-      {nothing && <p className="mt-2 text-body-sm">{words["paste.nothing"]}</p>}
-    </details>
-  );
-}
-
-/** Another officer's newer value, as plain words. */
-function shown(value: unknown): string {
-  if (value === null || value === undefined) return "—";
-  if (Array.isArray(value)) return value.join(", ");
-  if (typeof value === "object") return Object.values(value).filter(Boolean).join(" · ");
-  return String(value);
 }
 
 /** The form, what the paste proposed, and the values stored (each save updates them). */
@@ -100,7 +65,7 @@ function useForm(props: EditorProps) {
     setForm(next);
     setFromMessage(new Set([...fromMessage, ...filled]));
     setZones(found.timeZones.slice(1, 4));
-    return filled.length > 0;
+    return filled.length;
   };
   return { stored, setStored, form, setForm, fromMessage, zones, edit, read };
 }
@@ -110,6 +75,7 @@ function useSave(props: EditorProps, f: ReturnType<typeof useForm>) {
   const router = useRouter();
   const [invalid, setInvalid] = useState<FactField[]>([]);
   const [conflicts, setConflicts] = useState<Result[]>([]);
+  const [merged, setMerged] = useState<FactField[]>([]);
   const [state, setState] = useState<"idle" | "saving" | "failed">("idle");
   const [savedAny, setSavedAny] = useState(false);
   const close = () => {
@@ -149,61 +115,48 @@ function useSave(props: EditorProps, f: ReturnType<typeof useForm>) {
     };
     f.setStored(next);
     // A combined note or language list replaces what this officer typed, so a second Save keeps both.
-    const merged = kept.filter((r) => r.status === "merged");
-    const inputs = merged.map((r) => inputsOf(r.field, next, props.language));
-    f.setForm((form) => Object.assign({ ...form }, ...inputs));
+    const combined = kept.filter((r) => r.status === "merged").map((r) => r.field);
+    f.setForm((form) =>
+      Object.assign({ ...form }, ...combined.map((x) => inputsOf(x, next, props.language))),
+    );
+    setMerged(combined);
     setSavedAny(savedAny || kept.length > 0);
     track("ws_facts_saved");
-    if (res.status === 200) {
+    // Stay open after a merge or a conflict, so the officer sees what changed.
+    if (res.status === 200 && combined.length === 0) {
       router.refresh();
       return props.onClose();
     }
     setConflicts(results.filter((r) => r.status === "conflict"));
     setState("idle");
   };
-  return { invalid, conflicts, state, close, settle, save };
-}
-
-function Conflict(props: { c: Result; words: EditorWords; onSettle: (theirs: boolean) => void }) {
-  const { c, words } = props;
-  return (
-    <div role="alert" className="mt-2 border border-yarn px-3 py-2 text-body-sm">
-      <p>{say(words["facts.conflict"], { value: shown(c.value) })}</p>
-      <div className="mt-2 flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={() => props.onSettle(true)}
-          className={buttonClass("secondary")}
-        >
-          {words["facts.theirs"]}
-        </button>
-        <button
-          type="button"
-          onClick={() => props.onSettle(false)}
-          className={buttonClass("secondary")}
-        >
-          {words["facts.mine"]}
-        </button>
-      </div>
-    </div>
-  );
+  return { invalid, conflicts, merged, state, close, settle, save };
 }
 
 export function FactsEditor(props: EditorProps) {
-  const { words } = props;
+  const { words, language } = props;
   const f = useForm(props);
   const s = useSave(props, f);
+  const values = valuesOf(f.form, mightIn);
+  const pending = changesOf(values, f.stored, f.fromMessage);
+  const dirty = pending.changes.length > 0 || pending.invalid.length > 0;
+  const text: FactTextFormat = { language, now: new Date(), day: dayFormat(language), words };
   const conflictOf = (field: FactField) => {
     const c = s.conflicts.find((x) => x.field === field);
-    return c ? <Conflict c={c} words={words} onSettle={(theirs) => s.settle(c, theirs)} /> : null;
+    if (!c) return null;
+    const theirs = factText(field, c.value as FactValues[FactField] | null, text);
+    const mine = factText(field, values[field] ?? null, text);
+    return <Conflict mine={mine} theirs={theirs} words={words} onSettle={(t) => s.settle(c, t)} />;
   };
+  // Escape asks first too: the sheet never drops typed values without a word.
+  const [asking, setAsking] = useState(false);
   return (
-    <Sheet labelledBy="facts-title" onCancel={s.close}>
+    <Sheet labelledBy="facts-title" onCancel={() => (dirty ? setAsking(true) : s.close())}>
       <h2 id="facts-title" className="font-display text-display-md" translate="no">
         {say(words["facts.title"], { name: props.name })}
       </h2>
       <div className="mt-3">
-        <Paste words={words} open={props.mode === "paste"} onRead={f.read} />
+        <Paste words={words} language={language} open={props.mode === "paste"} onRead={f.read} />
       </div>
       <FactFields
         form={f.form}
@@ -213,9 +166,10 @@ export function FactsEditor(props: EditorProps) {
         invalid={s.invalid}
         zones={f.zones}
         words={words}
-        language={props.language}
+        language={language}
         serverZone={props.serverZone}
         used={props.used}
+        autoStatus={props.autoStatus}
         conflictOf={conflictOf}
       />
       {s.state === "failed" && (
@@ -223,30 +177,14 @@ export function FactsEditor(props: EditorProps) {
           {words["facts.failed"]}
         </p>
       )}
-      <div className="sticky -bottom-4 -mb-4 mt-3 border-t border-rule bg-paper pt-3 pb-4 sm:-bottom-6 sm:-mb-6 sm:pb-6">
-        {/* Save waits for an answer to each newer value: say which fields, wherever the officer scrolled. */}
-        {s.conflicts.length > 0 && (
-          <p aria-live="polite" className="mb-2 text-body-sm">
-            {say(words["facts.conflict"], {
-              value: s.conflicts.map((c) => words[`facts.${c.field}`]).join(", "),
-            })}
-          </p>
-        )}
-        <div className="flex gap-3">
-          <button type="button" onClick={s.close} className={buttonClass("secondary", "flex-1")}>
-            {words["facts.cancel"]}
-          </button>
-          <button
-            type="button"
-            {...(props.mode === "edit" && { "data-initial-focus": true })}
-            disabled={s.state === "saving" || s.conflicts.length > 0}
-            onClick={() => void s.save()}
-            className={buttonClass("primary", "flex-1")}
-          >
-            {words["facts.save"]}
-          </button>
-        </div>
-      </div>
+      <SaveBar
+        s={s}
+        words={words}
+        focusSave={props.mode === "edit"}
+        dirty={dirty}
+        asking={asking}
+        setAsking={setAsking}
+      />
     </Sheet>
   );
 }

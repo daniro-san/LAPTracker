@@ -45,17 +45,26 @@ export const EDITOR_KEYS = [
   "facts.awayText",
   "facts.awayDay",
   "facts.mightHint",
-  "facts.conflict",
+  "facts.conflictBar",
+  "facts.conflictField",
+  "facts.mergedLine",
   "facts.theirs",
   "facts.mine",
+  "facts.until",
+  "facts.discard",
+  "facts.discardYes",
+  "facts.discardNo",
   "status.break",
   "status.help",
   "src.message",
   "src.officer",
   "src.sheet",
+  "src.unsaved",
   "paste.help",
   "paste.read",
   "paste.nothing",
+  "paste.found.one",
+  "paste.found.other",
   "paste.zones",
   "tz.choose",
   "tz.search",
@@ -91,7 +100,18 @@ export const IMPORT_KEYS = [
   "import.zone",
   "import.apply",
   "import.left",
-  "import.done",
+  "import.saved.one",
+  "import.saved.other",
+  "import.for.one",
+  "import.for.other",
+  "import.skipped.one",
+  "import.skipped.other",
+  "import.back",
+  "import.choose",
+  "import.fill.one",
+  "import.fill.other",
+  "import.stay.one",
+  "import.stay.other",
   "import.failed",
   "import.again",
   "sheet.name",
@@ -123,6 +143,15 @@ export const COLUMN_LABEL = {
   troopTier: "facts.troopTier",
   timeZone: "facts.timeZone",
 } as const satisfies Record<string, keyof ImportWords>;
+
+/** The singular or plural form of a counted phrase (`key.one` / `key.other`), by the language's rule. */
+export const counted = (
+  words: Readonly<Record<string, string>>,
+  key: string,
+  n: number,
+  language: string,
+): string =>
+  words[`${key}.${new Intl.PluralRules(language).select(n) === "one" ? "one" : "other"}`] ?? "";
 
 /** lib/copy's `fill` for client components, which do not load lib/copy (the public pages' words). */
 export const say = (text: string, values: Record<string, string | number>) =>

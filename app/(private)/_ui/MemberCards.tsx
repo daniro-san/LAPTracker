@@ -11,7 +11,6 @@ import { buttonClass } from "@/lib/brand/components/Button";
 import { SOURCE_KEY } from "./facts-form";
 import { FactsEditor, type EditorProps } from "./FactsEditor";
 import type { CardData } from "./member-card-data";
-import { SourceBadge } from "./SourceBadge";
 
 const STATUS_TONE = {
   help: "font-semibold text-yarn",
@@ -41,9 +40,10 @@ function Facts({ card, editor }: { card: CardData; editor: EditorContext }) {
             <dt className="shrink-0 text-ink/75">{l.label}</dt>
             <dd className="min-w-0 text-right break-words whitespace-pre-line">
               <span className="tabular-nums">{l.value}</span>
-              {l.source && (
-                <span className="ml-2 inline-block">
-                  <SourceBadge source={l.source} label={words[SOURCE_KEY[l.source]]} />
+              {/* "Typed by an officer" is the default and says nothing; the others are plain words. */}
+              {l.source && l.source !== "officer" && (
+                <span className="ml-2 inline-block text-[12px] text-ink/70">
+                  {words[SOURCE_KEY[l.source]]}
                 </span>
               )}
             </dd>
@@ -64,6 +64,7 @@ function Facts({ card, editor }: { card: CardData; editor: EditorContext }) {
           uid={card.uid}
           name={card.name}
           facts={card.stored}
+          autoStatus={card.autoStatus}
           mode={mode}
           onClose={() => setMode(null)}
         />

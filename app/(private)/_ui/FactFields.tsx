@@ -1,14 +1,14 @@
 "use client";
 
 // The member-facts editor's inputs (issue 297, D80), one row per field with its label and, when it has a
-// value, where it came from: "from a message" for a value the paste box found, else the stored source.
-// Every control is 44 px or more; nothing is hover-only.
+// value, where it came from: "from this message · not saved" for a value the paste box found, else the
+// stored source as plain words ("typed by an officer", the default, says nothing). Every control is 44 px
+// or more; nothing is hover-only.
 import { useMemo, type ReactNode } from "react";
 
 import { LANGUAGES, TIER_MAX, type FactField, type MemberFacts } from "@/lib/private/fact-fields";
 
-import { SOURCE_KEY, type EditorWords, type Form } from "./facts-form";
-import { SourceBadge } from "./SourceBadge";
+import { say, SOURCE_KEY, type EditorWords, type Form } from "./facts-form";
 import { TimeZonePicker } from "./TimeZonePicker";
 
 export interface FieldsProps {
@@ -23,6 +23,8 @@ export interface FieldsProps {
   language: string;
   serverZone: string;
   used: readonly string[];
+  /** The status shown when no officer sets one, for "Automatic (now: …)". */
+  autoStatus: string;
   /** Under a field: another officer's newer value and the two answers. */
   conflictOf: (field: FactField) => ReactNode;
 }
@@ -31,18 +33,21 @@ const INPUT = "min-h-11 w-full border border-rule bg-paper px-3";
 
 function Row(props: FieldsProps & { field: FactField; children: ReactNode }) {
   const { field, words, stored, fromMessage } = props;
-  const source = fromMessage.has(field)
-    ? "message"
-    : stored[field]?.value != null
-      ? (stored[field]?.source ?? null)
-      : null;
+  const source = stored[field]?.value != null ? (stored[field]?.source ?? null) : null;
   return (
     <div className="border-t border-rule py-3">
       <div className="mb-1 flex flex-wrap items-center gap-2">
         <span id={`fact-${field}`} className="font-semibold">
           {words[`facts.${field}`]}
         </span>
-        {source && <SourceBadge source={source} label={words[SOURCE_KEY[source]]} />}
+        {fromMessage.has(field) ? (
+          <span className="text-[12px] font-semibold text-yarn">{words["src.unsaved"]}</span>
+        ) : (
+          source &&
+          source !== "officer" && (
+            <span className="text-[12px] text-ink/70">{words[SOURCE_KEY[source]]}</span>
+          )
+        )}
       </div>
       {props.children}
       {props.invalid.includes(field) && field === "squadMight" && (
@@ -165,7 +170,7 @@ function Languages(p: FieldsProps) {
 function Status(p: FieldsProps) {
   const { form, edit, words } = p;
   const options = [
-    ["", words["facts.computed"]],
+    ["", say(words["facts.computed"], { status: p.autoStatus })],
     ["break", words["status.break"]],
     ["help", words["status.help"]],
   ] as const;

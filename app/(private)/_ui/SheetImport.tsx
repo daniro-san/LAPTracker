@@ -10,8 +10,8 @@ import { track } from "@/lib/analytics/events";
 import { buttonClass } from "@/lib/brand/components/Button";
 import type { ImportPreview, ImportResult, ImportRow } from "@/lib/private/sheet-import";
 
-import { COLUMN_LABEL, IMPORT_PROBLEM, say, type ImportWords } from "./facts-form";
-import { SourceBadge } from "./SourceBadge";
+import { IMPORT_PROBLEM, say, type ImportWords } from "./facts-form";
+import { Columns, Done, FillCount, Matched } from "./ImportParts";
 
 /** A row's answer: a member, null for "not a member", undefined while open. */
 type Answers = Map<number, number | null>;
@@ -82,7 +82,7 @@ function OpenRow(props: {
             onChange={(e) => props.onAnswer(Number(e.target.value))}
             className="min-h-11 border border-rule bg-paper px-2"
           >
-            <option value="">{words["import.someone"]}</option>
+            <option value="">{words["import.choose"]}</option>
             {preview.members.map((m) => (
               <option key={m.uid} value={m.uid}>
                 {m.name}
@@ -102,48 +102,6 @@ function OpenRow(props: {
   );
 }
 
-/** Which columns the sheet's header gave, and what each fills; the ones not imported. */
-function Columns({ preview, words }: { preview: ImportPreview; words: ImportWords }) {
-  const read = preview.columns.filter((c) => c.field !== null);
-  const ignored = preview.columns.filter((c) => c.field === null && c.header.trim() !== "");
-  return (
-    <>
-      <p className="text-body-sm">
-        {say(words["import.columns"], {
-          list: read
-            .map(
-              (c) => `${c.header} → ${words[COLUMN_LABEL[c.field as keyof typeof COLUMN_LABEL]]}`,
-            )
-            .join(", "),
-        })}
-      </p>
-      {ignored.length > 0 && (
-        <p className="text-body-sm text-ink/75">
-          {say(words["import.ignored"], { list: ignored.map((c) => c.header).join(", ") })}
-        </p>
-      )}
-    </>
-  );
-}
-
-function Matched(props: { preview: ImportPreview; rows: ImportRow[]; words: ImportWords }) {
-  const nameOf = (uid: number) => props.preview.members.find((m) => m.uid === uid)?.name ?? "";
-  return (
-    <details className="mt-3 border border-rule px-3 py-2">
-      <summary className="flex min-h-11 cursor-pointer items-center font-semibold">
-        {say(props.words["import.matched"], { n: props.rows.length })}
-      </summary>
-      <ul translate="no" className="text-body-sm">
-        {props.rows.map((r) => (
-          <li key={r.line} className="border-t border-rule py-2 break-words">
-            {r.name} → {r.match.status === "matched" ? nameOf(r.match.uid) : ""}
-          </li>
-        ))}
-      </ul>
-    </details>
-  );
-}
-
 function Review(props: {
   preview: ImportPreview;
   answers: Answers;
@@ -151,8 +109,9 @@ function Review(props: {
   words: ImportWords;
   onApply: () => void;
   busy: boolean;
+  language: string;
 }) {
-  const { preview, answers, words } = props;
+  const { preview, answers, words, language } = props;
   const open = preview.rows.filter(isOpen);
   const left = open.filter((r) => !answers.has(r.line)).length;
   const matched = preview.rows.filter((r) => r.match.status === "matched");
@@ -166,7 +125,7 @@ function Review(props: {
   };
   return (
     <section className="mt-4">
-      <Columns preview={preview} words={words} />
+      <Columns preview={preview} words={words} language={language} />
       <p className="mt-2 font-semibold tabular-nums">
         {say(words["import.summary"], {
           rows: preview.rows.length,
@@ -200,7 +159,10 @@ function Review(props: {
       </ul>
       <Matched preview={preview} rows={matched} words={words} />
       <div className="sticky bottom-20 mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-rule bg-paper py-3">
-        <p className="tabular-nums">{say(words["import.left"], { n: left })}</p>
+        <div>
+          <FillCount preview={preview} answers={answers} words={words} language={language} />
+          <p className="tabular-nums">{say(words["import.left"], { n: left })}</p>
+        </div>
         <button
           type="button"
           disabled={left > 0 || props.busy}
@@ -240,22 +202,8 @@ function SheetInput(props: { csv: string; onText: (text: string) => void; words:
   );
 }
 
-function Done(props: { result: ImportResult; words: ImportWords; onAgain: () => void }) {
-  const { words } = props;
-  return (
-    <div className="mt-4 border border-rule px-4 py-4">
-      <p className="flex flex-wrap items-center gap-2">
-        <SourceBadge source="sheet" label={words["src.sheet"]} />
-        <span>{say(words["import.done"], { ...props.result })}</span>
-      </p>
-      <button type="button" onClick={props.onAgain} className={buttonClass("secondary", "mt-3")}>
-        {words["import.again"]}
-      </button>
-    </div>
-  );
-}
-
-export function SheetImport({ slug, words }: { slug: string; words: ImportWords }) {
+export function SheetImport(props: { slug: string; words: ImportWords; language: string }) {
+  const { slug, words, language } = props;
   const [csv, setCsv] = useState("");
   const [preview, setPreview] = useState<ImportPreview | null>(null);
   const [answers, setAnswers] = useState<Answers>(new Map());
@@ -289,7 +237,8 @@ export function SheetImport({ slug, words }: { slug: string; words: ImportWords 
   const again = () => [setCsv(""), setPreview(null), setResult(null), setProblem(null)];
   const typed = (text: string) => [setCsv(text), setPreview(null)];
 
-  if (result) return <Done result={result} words={words} onAgain={again} />;
+  if (result)
+    return <Done result={result} words={words} language={language} slug={slug} onAgain={again} />;
   return (
     <>
       <SheetInput csv={csv} onText={typed} words={words} />
@@ -314,6 +263,7 @@ export function SheetImport({ slug, words }: { slug: string; words: ImportWords 
           words={words}
           onApply={() => void apply()}
           busy={busy}
+          language={language}
         />
       )}
     </>

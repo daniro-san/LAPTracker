@@ -2,6 +2,7 @@
 // lib/copy.ts, so the public pages' i18n check and payload do not change. Names and game terms stay as the
 // officers write them (naming.md). French puts a no-break space before : ? and !.
 import { fr } from "./dictionary.fr";
+import { importEn } from "./dictionary.import";
 import { noticesEn } from "./dictionary.notices";
 import { pt } from "./dictionary.pt-BR";
 
@@ -194,16 +195,15 @@ const en = {
   "facts.save": "Save",
   "facts.cancel": "Cancel",
   "facts.failed": "Could not save. Try again.",
-  "facts.computed": "As we see it",
+  "facts.computed": "Automatic (now: {status})",
   "facts.awayText": "What they said",
   "facts.awayDay": "Last day away",
   "facts.mightHint": "9.9M or 9,900,000",
-  "facts.conflict": "Another officer saved this meanwhile: {value}",
-  "facts.theirs": "Keep theirs",
-  "facts.mine": "Use mine",
+  "facts.theirs": "Keep {theirs}",
+  "facts.mine": "Use {mine}",
   "paste.help":
-    "Paste the chat here. What we find fills the fields below, marked “from a message”. Check it, then save.",
-  "paste.read": "Read",
+    "Paste the chat here, then tap Fill the fields. Nothing is saved until you tap Save.",
+  "paste.read": "Fill the fields",
   "paste.nothing": "Nothing found. Type the values below.",
   "paste.zones": "Other matches",
   "tz.choose": "Choose",
@@ -214,30 +214,16 @@ const en = {
   "tz.more": "{n} more: keep typing.",
   "tz.none": "No time zone matches.",
   "tz.now": "now {time}",
-  "import.lead":
-    "Once only. Paste a sheet, or choose its CSV file: OG TRACKING, Might and ADp, a participation week. Each row is matched to a member, and you confirm the doubtful ones. Values go only into empty fields, marked “from the sheet”.",
-  "import.paste": "The sheet (CSV, or cells copied from the spreadsheet)",
-  "import.file": "Or choose a CSV file",
-  "import.check": "Check the rows",
-  "import.noName": "No “Name” column found. Paste the sheet with its header row.",
-  "import.tooMany": "This sheet has more than 2,000 rows. Import it in parts.",
-  "import.columns": "Read: {list}",
-  "import.ignored": "Not imported: {list}",
-  "import.summary": "{rows} rows · {matched} matched · {open} to check · {dismissed} not members",
-  "import.isIt": "Is it…",
-  "import.someone": "Someone else",
-  "import.dismiss": "Not a member",
-  "import.dismissAll": "Not members: every row with no match ({n})",
-  "import.change": "Change",
-  "import.matched": "Matched rows ({n})",
-  "import.role": "In the sheet: {role}",
-  "import.zone": "Time zone not understood: {text}",
-  "import.apply": "Import",
-  "import.left": "Still to check: {n}",
-  "import.done":
-    "Done: {saved} values saved for {members} members. {kept} kept, because the field already had a value.",
-  "import.failed": "Could not import. Try again.",
-  "import.again": "Import another sheet",
+  "facts.conflictBar":
+    "Another officer changed {field} while you were editing. Answer under {field}, then Save.",
+  "facts.conflictField": "Another officer saved {theirs}. You typed {mine}.",
+  "facts.mergedLine": "Combined with another officer’s edit: {fields}.",
+  "src.unsaved": "from this message · not saved",
+  "paste.found.one": "Found {n} value. Check it, then Save.",
+  "paste.found.other": "Found {n} values. Check them, then Save.",
+  "facts.discard": "Discard changes?",
+  "facts.discardYes": "Discard",
+  "facts.discardNo": "Keep editing",
   "profile.title": "Your settings",
   "profile.name": "Your name",
   "profile.nameHelp": "Shown at the top of the desk (up to 32 characters).",
@@ -264,6 +250,7 @@ const en = {
   "profile.theme.dark": "Dark",
   "profile.theme.system": "Same as this device",
   ...noticesEn,
+  ...importEn,
 } as const;
 
 export type WorkspaceKey = keyof typeof en;

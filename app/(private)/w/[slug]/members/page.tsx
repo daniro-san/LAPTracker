@@ -57,6 +57,11 @@ function formats(
   };
 }
 
+const noCounts = Object.fromEntries(MEMBER_FILTERS.map((id) => [id, "—"])) as Record<
+  MemberFilter,
+  "—"
+>;
+
 /** The address of the list with this filter and search. */
 function listHref(slug: string, f: MemberFilter, q: string) {
   const query = new URLSearchParams({ ...(f !== "all" && { f }), ...(q && { q }) }).toString();
@@ -114,7 +119,8 @@ function Controls(props: {
   t: WorkspaceDictionary;
   filter: MemberFilter;
   query: string;
-  counts: Record<MemberFilter, number>;
+  /** Before the first end-of-day read nothing is counted (D75): the chips show "—". */
+  counts: Record<MemberFilter, number | "—">;
 }) {
   const { slug, t, filter, query, counts } = props;
   return (
@@ -261,7 +267,13 @@ function Body(props: {
         )}
       </p>
       <Legend t={t} />
-      <Controls slug={slug} t={t} filter={filter} query={query} counts={counts} />
+      <Controls
+        slug={slug}
+        t={t}
+        filter={filter}
+        query={query}
+        counts={view.early ? noCounts : counts}
+      />
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
         <p className="text-body-sm tabular-nums">
           {fill(t["members.count"], { n: visible.length, total: view.members.length })}
