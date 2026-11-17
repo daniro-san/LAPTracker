@@ -1,24 +1,59 @@
 "use client";
 
-// One notice (issue 304): read it in each language with one Copy per language, for pasting into the game or
-// Discord, or edit it. A language that may be out of date carries an "Out of date" tag, which opens the editor
-// at that language; "Update from …" and "Keep as is" are there, behind the editor's save and its checks.
+// One notice (issue 304): read it in each language, copy it in each place's format (the game's notice board,
+// the game's mail, Discord; issue 345), or edit it. A language that may be out of date carries an "Out of
+// date" tag, which opens the editor at that language; "Update from …" and "Keep as is" are there, behind the
+// editor's save and its checks. Under the languages: "Publish to Discord" and the calendar link (D102).
 import { useState } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
 import { Tag } from "@/lib/brand/components/Tag";
 import { fill } from "@/lib/copy";
-import type { NoticeLanguage } from "@/lib/private/notice-rules";
+import { discordPost, gameMail, gameNotice } from "@/lib/private/notice-formats";
+import { NOTICE_LIMIT, type NoticeLanguage } from "@/lib/private/notice-rules";
 
 import { CopyButton } from "./CopyButton";
 import { LANGUAGE_NAME } from "./languages";
+import type { NoticeCalendar } from "./notice-calendar";
 import { Counter, OutOfDateTag, OverLimit } from "./NoticeBits";
+import { NoticeCalendarLink } from "./NoticeCalendarLink";
 import { NoticeEditor, type EditorProps } from "./NoticeEditor";
+import { NoticePublish, type PublishProps } from "./NoticePublish";
 
 export interface ScreenProps extends Omit<EditorProps, "focus" | "onClose" | "id"> {
   id: number;
   /** Server-made lines: who wrote it and who changed it last, and the members flag and end date. */
   meta: { written: string; changed: string; flags: string[] };
+  publish: PublishProps["publish"];
+  calendar: NoticeCalendar;
+}
+
+/** The three copies of one language: the game's notice board (cut to fit), the game's mail, Discord. */
+function Copies({ p, language }: { p: ScreenProps; language: NoticeLanguage }) {
+  const { t } = p;
+  const text = p.fields[language].value;
+  const board = gameNotice(text);
+  const words = (copy: string, copied = t["members.copied"]) => ({
+    copy,
+    copied,
+    failed: t["members.copyFailed"],
+  });
+  return (
+    <div className="mt-3 flex flex-wrap gap-2">
+      <CopyButton
+        text={board.text}
+        labels={words(
+          t["notices.copy.notice"],
+          board.cut ? fill(t["notices.copied.cut"], { limit: NOTICE_LIMIT }) : undefined,
+        )}
+      />
+      <CopyButton text={gameMail(text)} labels={words(t["notices.copy.mail"])} />
+      <CopyButton
+        text={discordPost(p.fields.title.value, text)}
+        labels={words(t["notices.copy.discord"])}
+      />
+    </div>
+  );
 }
 
 function LanguageText({
@@ -58,16 +93,7 @@ function LanguageText({
             {field.value}
           </div>
           <OverLimit text={field.value} t={t} />
-          <div className="mt-3">
-            <CopyButton
-              text={field.value}
-              labels={{
-                copy: fill(t["notices.copy"], { lang: name }),
-                copied: t["members.copied"],
-                failed: t["members.copyFailed"],
-              }}
-            />
-          </div>
+          <Copies p={p} language={language} />
         </>
       )}
     </section>
@@ -117,6 +143,14 @@ export function NoticeScreen(p: ScreenProps) {
           onEdit={() => setEditing(language)}
         />
       ))}
+      <NoticePublish
+        slug={p.slug}
+        id={p.id}
+        t={t}
+        publish={p.publish}
+        written={p.languages.filter((l) => p.fields[l].value.trim() !== "")}
+      />
+      <NoticeCalendarLink slug={p.slug} id={p.id} t={t} calendar={p.calendar} />
     </>
   );
 }

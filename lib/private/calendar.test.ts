@@ -60,6 +60,7 @@ const newEntry = (fields: Partial<NewEntry> & Pick<NewEntry, "kind">) =>
     notes: null,
     link: null,
     forMembers: false,
+    notice: null,
     ...fields,
   }) as NewEntry;
 

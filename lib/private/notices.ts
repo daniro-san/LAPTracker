@@ -6,6 +6,8 @@ import { z } from "zod";
 
 import type { Db } from "../db";
 import {
+  HISTORY_LIMIT,
+  noticeEditRows,
   workspaceNotice,
   workspaceNoticeList,
   writeNotice,
@@ -13,6 +15,7 @@ import {
   type NoticeListRow,
 } from "../repo/notices";
 import type { WorkspaceAccess } from "./access";
+import { versionsOf, type NoticeVersion } from "./notice-history";
 import {
   isNoticeLanguage,
   NOTICE_FIELDS,
@@ -134,6 +137,19 @@ export async function noticeDetail(
       ]),
     ) as NoticeDetail["fields"],
     stale: staleLanguages(state),
+  };
+}
+
+/** The notice's saves, newest first, for the editor's "Earlier versions" (D102). */
+export async function noticeHistory(
+  db: Db,
+  access: WorkspaceAccess,
+  id: number,
+): Promise<{ versions: NoticeVersion[]; cut: number | undefined }> {
+  const rows = await noticeEditRows(db, access.workspaceId, id);
+  return {
+    versions: versionsOf(rows),
+    cut: rows.length === HISTORY_LIMIT ? HISTORY_LIMIT : undefined,
   };
 }
 

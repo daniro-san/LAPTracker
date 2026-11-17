@@ -209,3 +209,13 @@ export async function caravanSeats(db: Db, workspaceId: number) {
       ),
     );
 }
+
+/** The entries linked to one notice (D102). */
+export async function entriesOfNotice(db: Db, workspaceId: number, noticeId: number) {
+  return db
+    .select()
+    .from(calendarEntries)
+    .where(
+      and(eq(calendarEntries.workspaceId, workspaceId), eq(calendarEntries.noticeId, noticeId)),
+    );
+}

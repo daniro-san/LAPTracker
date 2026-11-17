@@ -138,7 +138,7 @@ function DraftMark({ p, e }: { p: EditorProps; e: Editor }) {
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <p className="flex min-w-0 flex-1 basis-48 items-center gap-2 text-body-sm font-semibold text-plum">
           <span aria-hidden="true" className="size-2 shrink-0 rounded-full bg-plum" />
-          {t[kind === "translate" ? "notices.draft.translate" : "notices.draft.improve"]}
+          {t[`notices.draft.${kind}`]}
         </p>
         <span className="flex gap-2">
           <button

@@ -121,6 +121,7 @@ function valueText(c: Conflict, t: WorkspaceDictionary, language: WorkspaceLangu
   if (v === null || v === "") return t[EMPTY[c.field] ?? "calendar.value.empty"];
   if (typeof v === "boolean") return t[v ? "calendar.value.on" : "calendar.value.off"];
   if (typeof v === "object") return objectText(c.field, v, t, language);
+  if (c.field === "notice") return t["calendar.value.linked"];
   return c.field === "level" ? `Lv.${v}` : String(v).slice(0, 80);
 }
 

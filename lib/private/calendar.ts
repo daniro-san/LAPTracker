@@ -6,6 +6,7 @@ import type { Db } from "../db";
 import {
   calendarRows,
   deleteEntry,
+  entriesOfNotice,
   findByRequest,
   findEntry,
   findTheme,
@@ -15,6 +16,7 @@ import {
   updateEntry,
   updateWeekRow,
 } from "../repo/calendar";
+import { noticeInWorkspace } from "../repo/notices";
 import { latestRoster } from "../repo/workspace-rosters";
 import type { FieldEdits } from "../schema";
 import type { WorkspaceAccess } from "./access";
@@ -58,17 +60,21 @@ export async function createEntry(
   input: NewEntry,
   /** Made once per open add sheet (D100): a retry with it answers the first entry's id. */
   requestId: string,
-): Promise<{ ok: true; id: number } | { ok: false; code: "theme_exists" }> {
+): Promise<{ ok: true; id: number } | { ok: false; code: "theme_exists" | "invalid" }> {
   // INVARIANT calendar.request-once: a retry after a lost answer finds the first add; a second send that
   // arrives at the same moment loses on the unique index and answers the first entry's id (D100).
   const made = await findByRequest(db, access.workspaceId, requestId);
   if (made !== null) return { ok: true, id: made };
+  if (input.notice !== null && !(await noticeInWorkspace(db, access.workspaceId, input.notice))) {
+    return { ok: false, code: "invalid" };
+  }
   const base = {
     workspaceId: access.workspaceId,
     kind: input.kind,
     notes: input.notes,
     link: input.link,
     forMembers: input.forMembers,
+    noticeId: input.notice,
     createdBy: access.user.id,
     requestId,
   };
@@ -124,6 +130,8 @@ function valueOf(entry: EntryRow, row: OccurrenceRow | null, field: Field): unkn
       return row?.secondKind
         ? { kind: row.secondKind, uid: row.secondUid, name: row.secondName }
         : null;
+    case "notice":
+      return entry.noticeId;
     default:
       return entry[field];
   }
@@ -150,6 +158,8 @@ function columnsOf(c: FieldChange, entry: EntryRow, names: Map<number, string>):
         ? null
         : { secondKind: c.value.kind, secondUid: c.value.uid, secondName: name };
     }
+    case "notice":
+      return { noticeId: c.value };
     default:
       return { [c.field]: c.value };
   }
@@ -178,6 +188,10 @@ export async function editEntry(
   const onWeek = changes.some((c) => WEEK_FIELDS.includes(c.field));
   const once = new Set(changes.map((c) => c.field)).size === changes.length;
   if (!once || (onWeek && (week === null || !isDay(week) || mondayOf(week) !== week))) {
+    return { ok: false, code: "invalid" };
+  }
+  const linked = changes.find((c) => c.field === "notice")?.value;
+  if (typeof linked === "number" && !(await noticeInWorkspace(db, access.workspaceId, linked))) {
     return { ok: false, code: "invalid" };
   }
   const picks = changes.some((c) => c.field === "coach" || c.field === "second");
@@ -312,3 +326,7 @@ export async function removeEntry(
   }
   return "ok";
 }
+
+/** The calendar entries linked to a notice (D102), for its page. */
+export const noticeEntries = (db: Db, access: WorkspaceAccess, noticeId: number) =>
+  entriesOfNotice(db, access.workspaceId, noticeId);

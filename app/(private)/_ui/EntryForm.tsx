@@ -34,6 +34,8 @@ export interface FormProps {
   slug: string;
   /** The server's zone (SERVER_TZ), for the officer's own clock under the time. */
   zone: string;
+  /** The workspace's notices, newest change first: the "Notice" choice (D102). */
+  notices: { id: number; title: string }[];
   /** Add: the day it starts on, and whether the week already has its Alliance Duel theme. Edit: the entry. */
   mode: { add: true; day: string; hasTheme: boolean } | { add: false; item: AgendaItem };
   onDone: () => void;
@@ -73,6 +75,27 @@ function useSave(props: FormProps, d: Draft) {
         stale?.changes.map((c) => ({ ...c, version: newer(c)?.version ?? c.version })) ?? [],
       ),
   };
+}
+
+/** The notice that goes with the entry (D102): any of the workspace's, or none. */
+function NoticeChoice({ d, set, words, notices }: PartProps & Pick<FormProps, "notices">) {
+  return (
+    <Labeled id="cal-notice" label={words["calendar.form.notice"]}>
+      <select
+        id="cal-notice"
+        value={d.notice}
+        onChange={(e) => set({ notice: e.target.value })}
+        className={FIELD}
+      >
+        <option value="">{words["calendar.form.noticeNone"]}</option>
+        {notices.map((n) => (
+          <option key={n.id} value={String(n.id)}>
+            {n.title}
+          </option>
+        ))}
+      </select>
+    </Labeled>
+  );
 }
 
 function CommonFields({ d, set, p, words }: PartProps) {
@@ -171,6 +194,7 @@ export function EntryForm(props: FormProps) {
       <TimeFields {...part} zone={props.zone} />
       <RepeatFields {...part} item={item} />
       <CommonFields {...part} />
+      <NoticeChoice {...part} notices={props.notices} />
       {save.stale && (
         <ConflictBox
           conflicts={save.stale.conflicts}

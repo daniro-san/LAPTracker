@@ -27,6 +27,8 @@ export interface FormValues {
   notes: string;
   link: string;
   forMembers: boolean;
+  /** The linked notice's id (D102). */
+  notice: number | null;
   weekly: boolean;
   /** Where this week's one is (moved or not), and where the plan puts it this week. */
   day: string;
@@ -53,6 +55,8 @@ export interface AgendaItem {
   roles: string | null;
   notes: string | null;
   link: string | null;
+  /** The linked notice (D102), with its title. */
+  notice: { id: number; title: string } | null;
   tags: string[];
   coach: Member | null;
   second: Seat | null;
@@ -63,6 +67,8 @@ export interface CalendarCtx {
   t: WorkspaceDictionary;
   language: WorkspaceLanguage;
   zone: string;
+  /** The workspace's notices' titles by id, for an entry's linked notice (D102). */
+  noticeTitles?: ReadonlyMap<number, string>;
 }
 
 /** The calendar's words and the sheet frame's (Close, Cancel, "Discard your changes?"). */
@@ -122,6 +128,7 @@ function formOf(p: Placed, plannedDay: string, language: WorkspaceLanguage): For
     notes: e.notes ?? "",
     link: e.link ?? "",
     forMembers: e.forMembers,
+    notice: e.noticeId,
     weekly: e.weekly,
     day: p.day,
     minute: p.minute,
@@ -149,6 +156,10 @@ export function agendaItem(p: Placed, ctx: CalendarCtx): AgendaItem {
     roles: rolesLine(p, t),
     notes: e.notes,
     link: e.link,
+    notice:
+      e.noticeId === null
+        ? null
+        : { id: e.noticeId, title: ctx.noticeTitles?.get(e.noticeId) ?? "" },
     tags: tagsOf(p, plannedDay, ctx),
     ...seatsOf(p.row),
     form: formOf(p, plannedDay, language),

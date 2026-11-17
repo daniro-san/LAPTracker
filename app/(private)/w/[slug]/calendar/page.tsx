@@ -4,6 +4,7 @@
 import { calendarDays } from "@/lib/private/calendar";
 import { addDays, mondayOf, weekDays } from "@/lib/private/calendar-time";
 import { calendarDates } from "@/lib/private/calendar-words";
+import { noticesList } from "@/lib/private/notices";
 
 import { agendaWeek, calendarWords, monthCells } from "../../../_ui/calendar-data";
 import { openCalendar } from "../../../_ui/calendar-page";
@@ -29,18 +30,24 @@ export default async function CalendarPage({
   const page = await openCalendar(
     params,
     searchParams,
-    (db, access, monday) => {
+    async (db, access, monday) => {
       const grid = gridOf(monday);
-      return calendarDays(db, access, grid.from, grid.to);
+      const [placed, notices] = await Promise.all([
+        calendarDays(db, access, grid.from, grid.to),
+        noticesList(db, access),
+      ]);
+      return { placed, notices: notices.map(({ id, title }) => ({ id, title })) };
     },
     "calendar",
   );
-  const { access, slug, monday, today, ctx } = page;
+  const { access, slug, monday, today } = page;
+  const { placed, notices } = page.data;
+  const ctx = { ...page.ctx, noticeTitles: new Map(notices.map((n) => [n.id, n.title])) };
   const { t, language } = ctx;
   const sunday = addDays(monday, 6);
-  const week = page.data.filter((p) => p.day >= monday && p.day <= sunday);
+  const week = placed.filter((p) => p.day >= monday && p.day <= sunday);
   const { days, theme } = agendaWeek(week, monday, today, ctx);
-  const month = monthCells(page.data, monday, today, slug, ctx);
+  const month = monthCells(placed, monday, today, slug, ctx);
   const href = (w: string) => `/w/${slug}/calendar?week=${w}`;
   return (
     <SignedInFrame access={access} language={language} t={t} current="days" waiting={page.waiting}>
@@ -66,6 +73,7 @@ export default async function CalendarPage({
         words={calendarWords(t)}
         slug={slug}
         zone={ctx.zone}
+        notices={notices}
         addDay={today >= monday && today <= sunday ? today : monday}
       />
     </SignedInFrame>

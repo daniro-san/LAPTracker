@@ -64,7 +64,8 @@ export async function POST(
       const made = await privately("calendar.create", () =>
         createEntry(db, access, input.entry, input.requestId),
       );
-      return made.ok ? ok({ id: made.id }) : privateError(409, made.code);
+      if (made.ok) return ok({ id: made.id });
+      return privateError(made.code === "invalid" ? 400 : 409, made.code);
     }
     if (input.action === "delete") {
       const done = await privately("calendar.remove", () => removeEntry(db, access, input));
