@@ -102,14 +102,17 @@ const MATCH_TONE = {
 /** The parser's flags an officer can act on; `rank` (a rank read differently) changes nothing to save. */
 const SHOWN = new Set(["gap", "order", "points"]);
 
-function RowHead({ row, label, w }: { row: ViewRow; label: string; w: Words }) {
+function RowHead(props: { row: ViewRow; label: string; w: Words; matched?: string | undefined }) {
+  const { row, label, w, matched } = props;
   const tone = MATCH_TONE[row.match.status];
   return (
     <>
       <p className="flex flex-wrap items-baseline gap-x-2">
         <span className="font-semibold tabular-nums">{label}</span>
         {row.field && <span className="font-semibold">{w[`shots.field.${row.field}`]}</span>}
-        <span translate="no">{fillIn(w["shots.read"], { name: isolate(row.name || "—") })}</span>
+        <span translate="no">
+          {matched ?? fillIn(w["shots.read"], { name: isolate(row.name || "—") })}
+        </span>
         {tone && (
           <span className={`text-body-sm ${tone}`}>{w[`shots.match.${row.match.status}`]}</span>
         )}
@@ -136,6 +139,7 @@ type InputProps = {
   pending: { uid: number; name: string }[];
   w: Words;
   readOnly: boolean;
+  pasted?: boolean;
 };
 
 const LINK =
@@ -276,9 +280,9 @@ function RowInputs(props: InputProps) {
           onChange={(e) => props.onChange({ ...state, value: e.target.value.replace(/\D/g, "") })}
           className={`${FIELD} mt-1 block tabular-nums`}
         />
-        {/* The value as the game shows it, digits grouped, to check against the picture. */}
+        {/* Digits grouped, to check against the picture; typed lines have none (D109). */}
         <span id={`${id}-g`} className="mt-1 block min-h-5 text-ink/80 tabular-nums">
-          {groupedValue(state.value, props.sep)}
+          {props.pasted ? "" : groupedValue(state.value, props.sep)}
         </span>
       </label>
     </div>
@@ -299,6 +303,10 @@ export function DraftRowCard(props: {
   /** What is known for the picked member: "saved before: …", "we read …", a fact's previous value. */
   known: (uid: number | null, value: number | null) => string[];
   readOnly: boolean;
+  /** D109: Paste updates (value shown once, "Matched to {name}"), and why a row starts dropped. */
+  pasted?: boolean;
+  matched?: string | undefined;
+  skipped?: string | undefined;
 }) {
   const { row, state, w } = props;
   const value = state.value === "" ? null : Number(state.value);
@@ -308,13 +316,11 @@ export function DraftRowCard(props: {
       id={id}
       className={`scroll-mt-20 border border-rule px-3 py-3 ${state.dropped ? "opacity-60" : ""}`}
     >
-      <RowHead row={row} label={props.label} w={w} />
+      <RowHead row={row} label={props.label} w={w} matched={props.matched} />
       {!state.dropped && <RowInputs id={id} {...props} />}
-      {!state.dropped && (
-        <p className="mt-1 text-body-sm text-ink/80 tabular-nums">
-          {props.known(state.uid, value).join(" · ")}
-        </p>
-      )}
+      <p className="mt-1 text-body-sm text-ink/80 tabular-nums">
+        {state.dropped ? props.skipped : props.known(state.uid, value).join(" · ")}
+      </p>
       {!props.readOnly && <Conflict {...props} />}
       {!props.readOnly && !state.kept && (
         <button

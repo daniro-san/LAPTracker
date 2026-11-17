@@ -18,9 +18,10 @@ import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dicti
 import { LANGUAGES } from "@/lib/private/fact-fields";
 import { formerMembers } from "@/lib/private/former-members";
 import { toReviewCount } from "@/lib/private/import-view";
-import { cardFormats, type CardFormats } from "@/lib/private/member-card";
+import { cardFormats, progressText, type CardFormats } from "@/lib/private/member-card";
 import {
   membersView,
+  progressHistory,
   withListExtras,
   type ListSource,
   type MembersView,
@@ -32,7 +33,7 @@ import { RENEW_MS } from "@/lib/private/session";
 import { SLUG } from "@/lib/private/sign-in";
 import { serverDay } from "@/lib/schedule";
 
-import { editorWords } from "../../../_ui/facts-form";
+import { editorWords, updatesWords } from "../../../_ui/facts-form";
 import { FormerMembers } from "../../../_ui/FormerMembers";
 import { SignedInFrame, workspaceWords } from "../../../_ui/Frame";
 import {
@@ -45,12 +46,15 @@ import {
 import { listRow, listWords } from "../../../_ui/member-list-data";
 import { MembersList } from "../../../_ui/MembersList";
 import { MembersSource } from "../../../_ui/MembersSource";
+import { PasteUpdates } from "../../../_ui/PasteUpdates";
 import { PendingMembers } from "../../../_ui/PendingMembers";
 import { refuse } from "../../../_ui/refuse";
 
+/** Top donors and most active; then progress this week, in name order, not a ranking (D109). */
 function Thanks({ view, t, f }: { view: MembersView; t: WorkspaceDictionary; f: CardFormats }) {
   const rows = (["donors", "activity"] as const).filter((k) => view.thanks[k].length > 0);
-  if (rows.length === 0) return null;
+  const progress = view.thanks.progress;
+  if (rows.length === 0 && progress.length === 0) return null;
   return (
     <section aria-labelledby="thanks" className="mt-4 border border-rule px-4 py-3">
       <h2 id="thanks" className="font-subhead text-display-sm">
@@ -74,6 +78,21 @@ function Thanks({ view, t, f }: { view: MembersView; t: WorkspaceDictionary; f: 
           </div>
         ))}
       </div>
+      {progress.length > 0 && (
+        <div className="mt-2 border-t border-rule pt-1">
+          <h3 className="text-body-sm font-semibold text-ink/75">{t["thanks.progress"]}</h3>
+          <ul className="text-body-sm">
+            {progress.map((p) => (
+              <li key={p.uid}>
+                <bdi translate="no" className="font-semibold">
+                  {p.name}
+                </bdi>{" "}
+                {progressText(p, t)}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </section>
   );
 }
@@ -112,7 +131,7 @@ async function readPage(
   if (!access.ok) return { access, waiting: 0, view: null, rows: [], lifecycle: null };
   // D106: a roster read since a new member was added may now list them.
   const pending = await matchOnRead(db, access, now);
-  const view = await membersView(db, access, now, zone);
+  const view = await membersView(db, access, now, zone, await progressHistory(db, access));
   return {
     access,
     waiting: await toReviewCount(db, access, now),
@@ -196,6 +215,8 @@ export default async function MembersPage({
     <SignedInFrame access={access} language={language} t={t} current="members" waiting={waiting}>
       <h1 className="font-display text-display-lg">{t["tab.members"]}</h1>
       <ViewSwitch slug={slug} former={showFormer} t={t} />
+      {/* The page's one main action (D109): new values for several members at once. */}
+      {!showFormer && view.readAt !== null && <PasteUpdates slug={slug} words={updatesWords(t)} />}
       {showFormer ? (
         <FormerMembers
           rows={lifecycle.former.map((m) => formerRow(m, t, f))}

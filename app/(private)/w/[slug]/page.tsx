@@ -15,8 +15,8 @@ import { calendarDays } from "@/lib/private/calendar";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import { MAX_PICTURES } from "@/lib/private/import";
 import { toReview, type ReviewItem } from "@/lib/private/import-view";
-import { cardFormats } from "@/lib/private/member-card";
-import { membersView, type MembersView } from "@/lib/private/members";
+import { cardFormats, progressText } from "@/lib/private/member-card";
+import { membersView, progressHistory, type MembersView } from "@/lib/private/members";
 import { needsAWord, whoOf } from "@/lib/private/members-list";
 import { plural } from "@/lib/private/members-sheet";
 import { matchOnRead, toMatch } from "@/lib/private/pending-members";
@@ -142,6 +142,21 @@ function MembersPart(props: {
               </ol>
             </div>
           )}
+          {/* D109: AD Tech done or main squad grown this week, as on Members (name order). */}
+          {view.thanks.progress.length > 0 && (
+            <p className="mt-1 max-w-sm text-body-sm">
+              <span className="font-semibold text-ink/75">{t["thanks.progress"]}: </span>
+              {view.thanks.progress.map((p, i) => (
+                <span key={p.uid}>
+                  {i > 0 && "; "}
+                  <bdi translate="no" className="font-semibold">
+                    {p.name}
+                  </bdi>{" "}
+                  {progressText(p, t)}
+                </span>
+              ))}
+            </p>
+          )}
           {checkins === 0 ? (
             <p className="mt-1">{t["members.checkinNone"]}</p>
           ) : (
@@ -231,7 +246,7 @@ export default async function WorkspacePage({
     const [items, placed, view] = await Promise.all([
       toReview(db, access, now),
       calendarDays(db, access, days.from, days.to),
-      membersView(db, access, now, zone),
+      progressHistory(db, access).then((history) => membersView(db, access, now, zone, history)),
     ]);
     return { access, items, placed, view, toMatch: toMatch(pending, view.readAt).length };
   });

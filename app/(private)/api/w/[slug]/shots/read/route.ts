@@ -1,6 +1,7 @@
 // POST /api/w/[slug]/shots/read — one picture from the desk's "Send screenshots" (issue 299): the browser
 // sends it as PNG, without the phone's status bar and scaled down; the OCR reads it and its text lines come
-// back. The picture is read in memory and not kept. Officers of the workspace only (D71).
+// back. The picture is read in memory and not kept. Officers of the workspace only (D71). Also "Read from a
+// screenshot" beside the facts' paste boxes (D109): one read at a time per officer, else 429 `busy`.
 import { requireWorkspace } from "@/lib/private/access";
 import {
   isSameOriginPicture,
@@ -18,6 +19,8 @@ import { withContext } from "@/lib/route";
 export const maxDuration = 60;
 /** Under Vercel's 4.5 MB request body limit; the browser sends about 0.5-1.5 MB. */
 const MAX_UPLOAD = 4 * 1024 * 1024;
+/** Officers with a picture being read on this instance: one at a time each, so the reader is not hammered. */
+const reading = new Set<number>();
 
 export async function POST(
   request: Request,
@@ -32,14 +35,22 @@ export async function POST(
   return withContext("/api/w/[slug]/shots/read", async (ctx, db) => {
     const access = await requireWorkspace(db, slug, requestCookies(request), ctx.now());
     if (!access.ok) return privateError(401, "signed_out");
-    const bytes = new Uint8Array(await request.arrayBuffer());
-    if (bytes.length === 0 || bytes.length > MAX_UPLOAD) return privateError(413, "too_large");
-    // A worker that dies or stalls fails the request with a code (500 "internal"), never a timeout;
-    // app_errors keeps the code only, e.g. w.import.read_failed:reader:MODULE_NOT_FOUND.
-    const lines = await privately(
-      (error) => failureCode("w.import.read_failed", error),
-      () => readUpload(bytes),
-    );
+    const officer = access.user.id;
+    if (reading.has(officer)) return privateError(429, "busy");
+    reading.add(officer);
+    let lines: string[] | null;
+    try {
+      const bytes = new Uint8Array(await request.arrayBuffer());
+      if (bytes.length === 0 || bytes.length > MAX_UPLOAD) return privateError(413, "too_large");
+      // A worker that dies or stalls fails the request with a code (500 "internal"), never a timeout;
+      // app_errors keeps the code only, e.g. w.import.read_failed:reader:MODULE_NOT_FOUND.
+      lines = await privately(
+        (error) => failureCode("w.import.read_failed", error),
+        () => readUpload(bytes),
+      );
+    } finally {
+      reading.delete(officer);
+    }
     if (!lines) return privateError(422, "refused");
     privateLog("w.import.read", { workspace: access.workspaceId, lines: lines.length });
     return Response.json({ lines }, { headers: NO_STORE });

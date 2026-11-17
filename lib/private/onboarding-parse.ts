@@ -215,6 +215,25 @@ export function mightIn(text: string): number | null {
   return pick(text.split(/\r?\n/).flatMap((l) => readLine(l).might));
 }
 
+/** A word that starts the values of a "Paste updates" line: an amount, a percentage, or AD/squad words. */
+const VALUE_START = /^\d[\d.,]*(%|kk|k|mil|mi|mm|mln|millions?|m|bi|b|billions?)?$/i;
+const NAME_STOP = new Set([...AD_WORDS, ...MIGHT_WORDS, "main", "first", "alliance"]);
+
+/**
+ * One line of "Paste updates" (issue 347, D109): the member's name, then what they said. "Ana 10.2M 74%",
+ * "RC9-XY 8,442,626 · 42%", "Bo: AD 80": the name is every word before the first value or AD/squad word,
+ * without trailing punctuation. Null when the line starts with a value (no name).
+ */
+export function nameAndValues(line: string): { name: string; rest: string } | null {
+  const words = line.trim().split(/\s+/);
+  const at = words.findIndex(
+    (w) => VALUE_START.test(w) || wordsOf(w).some((x) => NAME_STOP.has(x)),
+  );
+  const name = (at < 0 ? words : words.slice(0, at)).join(" ").replace(/[\s:;,·•|=–—-]+$/u, "");
+  if (name === "" || at < 0) return null;
+  return { name, rest: words.slice(at).join(" ") };
+}
+
 /** Reads the facts out of a pasted chat, or out of a chat picture's OCR lines. */
 export function parseOnboarding(
   text: string | readonly string[],

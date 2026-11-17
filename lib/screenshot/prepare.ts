@@ -8,15 +8,12 @@
 // with no pixels, or more pixels than MAX_PIXELS before or after resizing, throws.
 import { crc32, deflateSync, inflateSync } from "node:zlib";
 
+import { STATUS_BAR_ASPECT, STATUS_BAR_SHARE } from "./status-bar";
+
 export const TARGET_WIDTH = 716;
 export const MAX_PIXELS = 40_000_000;
-/**
- * A phone's status bar (clock, battery) is the top 5.5 % of a full-screen capture, one at least
- * STATUS_BAR_ASPECT times taller than wide (measured on 923 x 2000 iPhone prints: its text ends at
- * 4.8 %, the game's header starts at 6.8 %). Its "71" battery was read as a ranking row.
- */
-export const STATUS_BAR_SHARE = 0.055;
-export const STATUS_BAR_ASPECT = 1.9;
+// The phone's status bar (status-bar.ts): also dropped in the browser, which cannot load this module.
+export { STATUS_BAR_ASPECT, STATUS_BAR_SHARE };
 
 /** The picture cannot be prepared: no pixels, too many pixels, or its data is larger than its header says. */
 export class ImageRefusedError extends Error {

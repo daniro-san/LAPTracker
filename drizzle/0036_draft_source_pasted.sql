@@ -1,0 +1,2 @@
+ALTER TABLE "screenshot_drafts" DROP CONSTRAINT "screenshot_drafts_source_check";--> statement-breakpoint
+ALTER TABLE "screenshot_drafts" ADD CONSTRAINT "screenshot_drafts_source_check" CHECK ("screenshot_drafts"."source" in ('desk', 'discord', 'pasted'));

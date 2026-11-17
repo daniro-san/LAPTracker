@@ -90,7 +90,10 @@ export function ToReview(props: {
                 <span className="text-body-sm tabular-nums">{draftCounts(t, language, d)}</span>
                 <span className="text-body-sm text-ink/75">
                   {[
-                    d.sentBy && fill(t["shots.sentBy"], { name: isolate(d.sentBy) }),
+                    d.sentBy &&
+                      fill(t[d.source === "pasted" ? "shots.pastedBy" : "shots.sentBy"], {
+                        name: isolate(d.sentBy),
+                      }),
                     d.source === "discord" && t["shots.viaDiscord"],
                     props.when(d.createdAt),
                   ]

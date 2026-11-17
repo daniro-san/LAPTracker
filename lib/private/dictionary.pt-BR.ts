@@ -201,7 +201,7 @@ export const pt: WorkspaceDictionary = {
   "src.message": "de uma mensagem",
   "src.sheet": "da planilha",
   "facts.head": "Dados do membro",
-  "facts.squadMight": "Esquadrão principal",
+  "facts.squadMight": "Might do esquadrão principal",
   "facts.adTech": "AD Tech",
   "facts.troopTier": "Tropas",
   "facts.timeZone": "Fuso horário",

@@ -90,6 +90,8 @@ export interface SaveHook {
     pages: readonly (readonly string[])[],
     scope: Scope | null,
     own: string,
+    /** The text came from Members' "Paste updates", not from pictures (D109). */
+    pasted: boolean,
   ): {
     rows: ReadRow[];
     leftOut: number;
