@@ -5,6 +5,8 @@
 // the browser over the rows the page sent; filters and the order are kept in the address (a reload or a
 // shared link shows the same list), and only the order is remembered on this browser. In the default
 // order, Check in and Needs help come first under their own heading. A row opens the member's sheet.
+import { useState } from "react";
+
 import { fill } from "@/lib/copy";
 import { clockIn, hhmm } from "@/lib/private/calendar-time";
 import type { WorkspaceLanguage } from "@/lib/private/dictionary";
@@ -23,7 +25,6 @@ import { useMembersList, type ListState } from "./members-list-state";
 import { MembersFilters } from "./MembersFilters";
 import { MemberSheet } from "./MemberSheet";
 import { CountLine, Empty, More, StickyBar } from "./MembersListParts";
-import { useHistorySheet } from "./sheet-history";
 import { useMinute } from "./YourTime";
 
 const COLUMN: Record<Order, Column> = {
@@ -182,15 +183,16 @@ function copyText(s: ListState, header: string): string {
 
 export function MembersList(props: MembersListProps) {
   const { rows, words: t } = props;
-  const filters = useHistorySheet<true>();
-  const member = useHistorySheet<number>();
-  const s = useMembersList({ ...props, sheetOpen: filters.open !== null });
-  const row = useRows(s, props, member.show);
+  // The sheet frame gives each sheet its history entry: the phone's back button closes it.
+  const [filters, setFilters] = useState(false);
+  const [member, setMember] = useState<number | null>(null);
+  const s = useMembersList({ ...props, sheetOpen: filters });
+  const row = useRows(s, props, setMember);
   const all = s.heading.length + s.groups.reduce((n, g) => n + g.rows.length, 0);
-  const open = rows.find((r) => r.uid === member.open);
+  const open = rows.find((r) => r.uid === member);
   return (
     <>
-      <StickyBar s={s} t={t} column={COLUMN[s.order]} onFilters={() => filters.show(true)} />
+      <StickyBar s={s} t={t} column={COLUMN[s.order]} onFilters={() => setFilters(true)} />
       <CountLine
         s={s}
         t={t}
@@ -201,14 +203,14 @@ export function MembersList(props: MembersListProps) {
       <Empty s={s} t={t} rows={rows} />
       <Sections s={s} t={t} row={row} />
       <More s={s} t={t} left={all - s.depth} />
-      {filters.open && s.sheet && <Filters s={s} props={props} onClose={filters.hide} />}
+      {filters && s.sheet && <Filters s={s} props={props} onClose={() => setFilters(false)} />}
       {open && (
         <MemberSheet
           row={open}
           version={rows}
           words={t}
           editor={props.editor}
-          onClose={member.hide}
+          onClose={() => setMember(null)}
         />
       )}
     </>

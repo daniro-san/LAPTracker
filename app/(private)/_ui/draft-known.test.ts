@@ -2,7 +2,14 @@ import { describe, expect, it } from "vitest";
 
 import type { DraftView } from "@/lib/private/import-view";
 
-import { checkKnown, checkSummary, duelKnown, factKnown, grouped } from "./draft-known";
+import {
+  checkKnown,
+  checkSummary,
+  duelKnown,
+  factKnown,
+  grouped,
+  groupedValue,
+} from "./draft-known";
 
 const w = {
   "shots.was": "saved before: {v}",
@@ -22,6 +29,12 @@ const w = {
 describe("what a draft row shows beside its value (issue 299)", () => {
   it("groups digits with the language's separator", () => {
     expect(grouped(22961474, ".")).toBe("22.961.474");
+  });
+
+  it("shows a value field's digits grouped under it, and nothing for an empty field", () => {
+    expect(groupedValue("77384266", ",")).toBe("77,384,266");
+    expect(groupedValue("950", ",")).toBe("950");
+    expect(groupedValue("", ",")).toBe("");
   });
 
   it("Alliance Duel: the value saved before, days above the week, a day above the week", () => {

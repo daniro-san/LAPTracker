@@ -19,6 +19,7 @@ export const shotsEn = {
   "shots.open": "Review",
   "shots.pickType": "Pick the type",
   "shots.discard": "Discard",
+  "shots.discardAsk": "Discard this draft? The rows are deleted.",
   "shots.kind.alliance_duel": "Alliance Duel",
   "shots.kind.donation": "Donation",
   "shots.kind.might": "Might",

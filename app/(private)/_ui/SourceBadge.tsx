@@ -1,20 +1,11 @@
 // Where a number comes from (issue 312, prototype v5): from the game, from a photo, typed by an officer,
-// and for member facts (issue 297) from a message or from the sheet. A small framed word in the source's
-// tone, the same on the Members page and in the first-use steps.
-const TONE = {
-  game: "text-sage",
-  photo: "text-yarn",
-  officer: "text-plum",
-  message: "text-yarn",
-  sheet: "text-ink/75",
-} as const;
+// and for member facts (issue 297) from a message or from the sheet. A neutral tag (DESIGN.md "Workspace
+// components"), the same on the Members page and in the first-use steps: the word names the source, and
+// no source takes yarn, which in the workspace means "needs a look".
+import { Tag } from "@/lib/brand/components/Tag";
 
-export function SourceBadge({ source, label }: { source: keyof typeof TONE; label: string }) {
-  return (
-    <span
-      className={`inline-flex items-center rounded-xs border border-current px-2 text-[12px] leading-5 font-semibold whitespace-nowrap ${TONE[source]}`}
-    >
-      {label}
-    </span>
-  );
+type Source = "game" | "photo" | "officer" | "message" | "sheet";
+
+export function SourceBadge({ label }: { source: Source; label: string }) {
+  return <Tag>{label}</Tag>;
 }

@@ -8,7 +8,6 @@
 import { useState, type ButtonHTMLAttributes, type ReactNode } from "react";
 
 import type { Tone } from "@/lib/ai/notice-writing";
-import { buttonClass } from "@/lib/brand/components/Button";
 import { Sheet } from "@/lib/brand/components/Sheet";
 import { fill } from "@/lib/copy";
 import type { WorkspaceKey } from "@/lib/private/dictionary";
@@ -17,6 +16,7 @@ import { DRAFT_LIMIT } from "@/lib/private/notice-rules";
 import { LANGUAGE_CODE } from "./languages";
 import { translatePlan } from "./notice-draft";
 import type { Editor, EditorProps } from "./notice-editor-state";
+import { sheetWords } from "./sheet-words";
 
 /** Improve writing's tones, in order; a Record, so tsc fails if a tone is left out. */
 const TONE_WORDS: Record<Tone, WorkspaceKey> = {
@@ -48,12 +48,10 @@ function ToneSheet({
       labelledBy="notice-tone-title"
       describedBy="notice-tone-help"
       onCancel={onClose}
-      backdropCloses
+      title={t["notices.improve"]}
+      words={sheetWords(t)}
     >
-      <p id="notice-tone-title" className="font-subhead text-display-sm">
-        {t["notices.improve"]}
-      </p>
-      <p id="notice-tone-help" className="mt-1 text-body-sm text-ink/75">
+      <p id="notice-tone-help" className="text-body-sm text-ink/75">
         {t["notices.tone.help"]}
       </p>
       <div role="group" aria-label={t["notices.tone.choose"]} className="mt-3 grid gap-2">
@@ -64,7 +62,7 @@ function ToneSheet({
             aria-pressed={each === tone}
             data-initial-focus={each === (tone ?? "formal") ? "" : undefined}
             onClick={() => onPick(each)}
-            className="flex min-h-11 items-center justify-between gap-3 border border-rule px-3 text-left font-medium aria-pressed:border-plum aria-pressed:bg-plum/10"
+            className="drawn-frame-soft tint-button flex min-h-11 items-center justify-between gap-3 px-3 text-left font-medium aria-pressed:bg-plum/10 aria-pressed:text-plum"
           >
             {t[TONE_WORDS[each]]}
             {each === tone && (
@@ -75,9 +73,6 @@ function ToneSheet({
           </button>
         ))}
       </div>
-      <button type="button" onClick={onClose} className={buttonClass("secondary", "mt-4 w-full")}>
-        {t["notices.cancel"]}
-      </button>
     </Sheet>
   );
 }

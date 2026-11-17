@@ -19,6 +19,7 @@ export const shotsFr: ShotsWords = {
   "shots.open": "Vérifier",
   "shots.pickType": "Choisir le type",
   "shots.discard": "Écarter",
+  "shots.discardAsk": "Écarter ce brouillon ? Les lignes sont supprimées.",
   "shots.kind.alliance_duel": "Alliance Duel",
   "shots.kind.donation": "Dons",
   "shots.kind.might": "Might",

@@ -1,11 +1,12 @@
 "use client";
 
 // Parts of the member-facts editor (issue 297, D80), split from FactsEditor.tsx for its size: the paste box,
-// the box under a field another officer saved meanwhile, and the save bar (which fields wait for an answer,
-// what was combined, and "Discard changes?").
+// the box under a field another officer saved meanwhile, and the note above Save (which fields wait for an
+// answer, what was combined).
 import { useState } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
+import { FIELD } from "@/lib/brand/components/controls";
 import type { FactField } from "@/lib/private/fact-fields";
 
 import { counted, say, type EditorWords } from "./facts-form";
@@ -15,8 +16,6 @@ export interface SaveState {
   conflicts: readonly { field: FactField }[];
   merged: readonly FactField[];
   state: "idle" | "saving" | "failed";
-  close: () => void;
-  save: () => Promise<void>;
 }
 
 export function Paste(props: {
@@ -29,7 +28,7 @@ export function Paste(props: {
   const [found, setFound] = useState<number | null>(null);
   const { words } = props;
   return (
-    <details open={props.open} className="group border border-rule px-3 py-2">
+    <details open={props.open} className="group drawn-frame-soft px-3 py-2">
       <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 font-semibold text-plum [&::-webkit-details-marker]:hidden">
         <span>{words["facts.paste"]}</span>
         <span aria-hidden="true" className="inline-block group-open:rotate-180">
@@ -44,7 +43,7 @@ export function Paste(props: {
         rows={4}
         maxLength={4000}
         onChange={(e) => setText(e.target.value)}
-        className="mt-2 w-full border border-rule bg-paper px-3 py-2"
+        className={`${FIELD} mt-2`}
       />
       <button
         type="button"
@@ -102,22 +101,12 @@ function showField(field: FactField) {
     ?.scrollTo({ top: Math.max(0, label.offsetTop - 24), behavior: "smooth" });
 }
 
-export function SaveBar(props: {
-  s: SaveState;
-  words: EditorWords;
-  focusSave: boolean;
-  dirty: boolean;
-  /** "Discard changes?" is showing. */
-  asking: boolean;
-  setAsking: (asking: boolean) => void;
-}) {
-  const { s, words, asking, setAsking } = props;
+/** Above Save: the fields that wait for an answer (a link to the first) and what was combined. */
+export function SaveNote({ s, words }: { s: SaveState; words: EditorWords }) {
   const names = (fields: readonly FactField[]) => fields.map((x) => words[`facts.${x}`]).join(", ");
   const first = s.conflicts[0]?.field;
-  const leave = () => (props.dirty ? setAsking(true) : s.close());
-  const row = "flex gap-3";
   return (
-    <div className="sticky bottom-[calc(-1*max(1rem,env(safe-area-inset-bottom)))] mb-[calc(-1*max(1rem,env(safe-area-inset-bottom)))] mt-3 border-t border-rule bg-paper pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:-bottom-6 sm:-mb-6 sm:pb-6">
+    <>
       {first && (
         <button
           type="button"
@@ -132,38 +121,6 @@ export function SaveBar(props: {
           {say(words["facts.mergedLine"], { fields: names(s.merged) })}
         </p>
       )}
-      {asking ? (
-        <>
-          <p className="mb-2 font-semibold">{words["facts.discard"]}</p>
-          <div className={row}>
-            <button
-              type="button"
-              onClick={() => setAsking(false)}
-              className={buttonClass("secondary", "flex-1")}
-            >
-              {words["facts.discardNo"]}
-            </button>
-            <button type="button" onClick={s.close} className={buttonClass("primary", "flex-1")}>
-              {words["facts.discardYes"]}
-            </button>
-          </div>
-        </>
-      ) : (
-        <div className={row}>
-          <button type="button" onClick={leave} className={buttonClass("secondary", "flex-1")}>
-            {words["facts.cancel"]}
-          </button>
-          <button
-            type="button"
-            {...(props.focusSave && { "data-initial-focus": true })}
-            disabled={s.state === "saving" || s.conflicts.length > 0}
-            onClick={() => void s.save()}
-            className={buttonClass("primary", "flex-1")}
-          >
-            {words["facts.save"]}
-          </button>
-        </div>
-      )}
-    </div>
+    </>
   );
 }

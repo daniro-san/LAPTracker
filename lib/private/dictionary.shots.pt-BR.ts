@@ -19,6 +19,7 @@ export const shotsPt: ShotsWords = {
   "shots.open": "Revisar",
   "shots.pickType": "Escolher o tipo",
   "shots.discard": "Descartar",
+  "shots.discardAsk": "Descartar este rascunho? As linhas são apagadas.",
   "shots.kind.alliance_duel": "Alliance Duel",
   "shots.kind.donation": "Doação",
   "shots.kind.might": "Might",

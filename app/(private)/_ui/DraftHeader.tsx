@@ -4,6 +4,7 @@
 // Daily or Weekly (when the picture cannot tell, neither tab is pressed until the officer picks one), the
 // Alliance Duel's week and day, and where a Save puts the rows (a check writes nothing to members). Every
 // choice is a row of 44 px buttons; nothing is hover-only.
+import { chip } from "@/lib/brand/components/controls";
 import type { ImportKind, Scope } from "@/lib/private/import-kinds";
 import type { DraftView } from "@/lib/private/import-view";
 
@@ -45,7 +46,7 @@ function Choice<T extends string | boolean>(props: {
               aria-pressed={on}
               disabled={props.disabled}
               onClick={() => props.onChange(o.value)}
-              className={`inline-flex min-h-11 items-center border px-3 text-body-sm font-medium ${on ? "border-plum bg-plum text-paper" : "border-rule"}`}
+              className={chip(on)}
             >
               {o.label}
             </button>

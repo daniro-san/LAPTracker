@@ -10,6 +10,7 @@ import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dicti
 import type { CalendarKey, CalendarWords } from "@/lib/private/dictionary.calendar";
 
 import type { NextItem } from "./home-digest";
+import type { SHEET_KEYS } from "./sheet-words";
 
 export interface Member {
   uid: number;
@@ -64,9 +65,15 @@ export interface CalendarCtx {
   zone: string;
 }
 
-/** Only the calendar's own words, for client components. */
-export const calendarWords = (t: WorkspaceDictionary): CalendarWords =>
-  Object.fromEntries(Object.entries(t).filter(([k]) => k.startsWith("calendar."))) as CalendarWords;
+/** The calendar's words and the sheet frame's (Close, Cancel, "Discard your changes?"). */
+export type CalendarSheetWords = CalendarWords &
+  Pick<WorkspaceDictionary, (typeof SHEET_KEYS)[number]>;
+
+/** Only the calendar's own words and the sheet frame's, for client components. */
+export const calendarWords = (t: WorkspaceDictionary): CalendarSheetWords =>
+  Object.fromEntries(
+    Object.entries(t).filter(([k]) => k.startsWith("calendar.") || k.startsWith("sheet.")),
+  ) as CalendarSheetWords;
 
 function rolesLine(p: Placed, t: WorkspaceDictionary): string | null {
   if (p.entry.kind !== "caravan") return null;

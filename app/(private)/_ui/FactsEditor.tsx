@@ -5,7 +5,7 @@
 // saved"; it is saved when the officer taps Save, like anything typed. A save sends only the fields that
 // changed, each with the version it started from. When another officer saved a field meanwhile, notes and
 // languages are combined by the server (and the editor says so); any other field shows both values with
-// "Keep <theirs>" and "Use <mine>". Closing with unsaved changes asks first.
+// "Keep <theirs>" and "Use <mine>". Every way of closing with unsaved changes asks first (the sheet frame).
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -26,7 +26,8 @@ import {
   type EditorWords,
   type Form,
 } from "./facts-form";
-import { Conflict, Paste, SaveBar } from "./FactsEditorParts";
+import { Conflict, Paste, SaveNote } from "./FactsEditorParts";
+import { sheetWords } from "./sheet-words";
 
 export interface EditorProps {
   slug: string;
@@ -148,16 +149,22 @@ export function FactsEditor(props: EditorProps) {
     const mine = factText(field, values[field] ?? null, text);
     return <Conflict mine={mine} theirs={theirs} words={words} onSettle={(t) => s.settle(c, t)} />;
   };
-  // Escape asks first too: the sheet never drops typed values without a word.
-  const [asking, setAsking] = useState(false);
   return (
-    <Sheet labelledBy="facts-title" onCancel={() => (dirty ? setAsking(true) : s.close())}>
-      <h2 id="facts-title" className="font-display text-display-md" translate="no">
-        {say(words["facts.title"], { name: props.name })}
-      </h2>
-      <div className="mt-3">
-        <Paste words={words} language={language} open={props.mode === "paste"} onRead={f.read} />
-      </div>
+    <Sheet
+      labelledBy="facts-title"
+      onCancel={s.close}
+      dirty={dirty}
+      title={<span translate="no">{say(words["facts.title"], { name: props.name })}</span>}
+      words={sheetWords(words)}
+      primary={{
+        label: words["facts.save"],
+        onClick: () => void s.save(),
+        disabled: s.state === "saving" || s.conflicts.length > 0,
+        focus: props.mode === "edit",
+      }}
+      note={<SaveNote s={s} words={words} />}
+    >
+      <Paste words={words} language={language} open={props.mode === "paste"} onRead={f.read} />
       <FactFields
         form={f.form}
         edit={f.edit}
@@ -177,14 +184,6 @@ export function FactsEditor(props: EditorProps) {
           {words["facts.failed"]}
         </p>
       )}
-      <SaveBar
-        s={s}
-        words={words}
-        focusSave={props.mode === "edit"}
-        dirty={dirty}
-        asking={asking}
-        setAsking={setAsking}
-      />
     </Sheet>
   );
 }

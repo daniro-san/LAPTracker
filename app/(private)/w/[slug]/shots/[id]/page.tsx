@@ -35,9 +35,11 @@ const KINDS: ImportKind[] = [
   "elixir_teams",
 ];
 
-/** The import's words for the client: every `shots.*` key. */
+/** The import's words for the client: every `shots.*` key and the sheet frame's. */
 const importWords = (t: WorkspaceDictionary) =>
-  Object.fromEntries(Object.entries(t).filter(([k]) => k.startsWith("shots.")));
+  Object.fromEntries(
+    Object.entries(t).filter(([k]) => k.startsWith("shots.") || k.startsWith("sheet.")),
+  );
 
 /** "Mon 16 Nov": a server day, as a date (the days are UTC dates). */
 const dayOf = (language: WorkspaceLanguage) =>

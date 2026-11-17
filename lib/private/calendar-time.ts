@@ -40,6 +40,20 @@ export function parseTime(text: string): number | null {
   return h < 24 && min < 60 ? h * 60 + min : null;
 }
 
+/**
+ * A time field's text as it is typed on a phone's digit keypad, which has no ":" key: the colon goes in by
+ * itself ("2100" reads "21:00", "930" reads "9:30"). A colon, dot or "h" the officer typed is kept as the
+ * split. Only digits and that one colon are kept, at most "HH:MM".
+ */
+export function typedTime(text: string): string {
+  const split = /^([^:.h]*)[:.h](.*)$/i.exec(text);
+  const digits = (s: string) => s.replace(/\D/g, "");
+  if (split) return `${digits(split[1] ?? "").slice(0, 2)}:${digits(split[2] ?? "").slice(0, 2)}`;
+  const d = digits(text).slice(0, 4);
+  if (d.length <= 2) return d;
+  return (d[0] ?? "0") > "2" ? `${d[0]}:${d.slice(1, 3)}` : `${d.slice(0, 2)}:${d.slice(2)}`;
+}
+
 const formatters = new Map<string, Intl.DateTimeFormat>();
 function partsIn(zone: string, at: number) {
   let f = formatters.get(zone);

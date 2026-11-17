@@ -3,8 +3,8 @@
 // A member's sheet in the Members list (issue 337): a native <dialog> from the bottom, read from
 // /api/w/[slug]/members/[uid] when it opens, so the map position and last online time are never in the
 // list's page (D71). It reads again when the list's rows change (after the facts editor saved and the
-// page refreshed), keeping what it shows until the new card arrives. Close, Escape, the backdrop and the
-// phone's back button close it.
+// page refreshed), keeping what it shows until the new card arrives. Close (×) at the top, Escape, the
+// backdrop and the phone's back button close it (the sheet frame).
 import { useEffect, useState } from "react";
 
 import { PlayerAvatar } from "@/app/_ui/Pictures";
@@ -16,6 +16,7 @@ import type { CardData } from "@/lib/private/member-card";
 
 import type { ListRow, ListWords } from "./member-list-data";
 import { MemberCard, type EditorContext } from "./MemberCards";
+import { sheetWords } from "./sheet-words";
 import { useMinute } from "./YourTime";
 
 async function readCard(slug: string, uid: number): Promise<CardData | null> {
@@ -54,23 +55,17 @@ export function MemberSheet(props: {
       ? fill(t["list.theirTimeNow"], { time: clockIn(minute * 60_000, row.zone, "").time })
       : null;
   return (
-    <Sheet labelledBy="member-sheet-title" onCancel={props.onClose} backdropCloses>
+    <Sheet
+      labelledBy="member-sheet-title"
+      onCancel={props.onClose}
+      title={<span translate="no">{row.name}</span>}
+      words={sheetWords(t)}
+    >
       <div className="flex items-center gap-3">
         <PlayerAvatar uid={row.uid} photo={row.photo} size="lg" />
-        <div className="min-w-0 flex-1">
-          <h2
-            id="member-sheet-title"
-            tabIndex={-1}
-            data-initial-focus
-            translate="no"
-            className="font-display text-display-sm break-words"
-          >
-            {row.name}
-          </h2>
-          <p translate="no" className="text-body-sm text-ink/80">
-            {shown?.data?.rank ?? row.rankShort}
-          </p>
-        </div>
+        <p translate="no" className="min-w-0 flex-1 text-body-sm text-ink/80">
+          {shown?.data?.rank ?? row.rankShort}
+        </p>
       </div>
       <div className="mt-3 -mx-3">
         {shown === null ? (
@@ -85,7 +80,7 @@ export function MemberSheet(props: {
             <button
               type="button"
               onClick={() => setAttempt((n) => n + 1)}
-              className={buttonClass("secondary", "mt-2")}
+              className={buttonClass("primary", "mt-2")}
             >
               {t["list.retry"]}
             </button>
@@ -94,13 +89,6 @@ export function MemberSheet(props: {
           <MemberCard card={shown.data} editor={editor} zoneNow={zoneNow} />
         )}
       </div>
-      <button
-        type="button"
-        onClick={props.onClose}
-        className={buttonClass("primary", "mt-4 w-full")}
-      >
-        {t["intro.close"]}
-      </button>
     </Sheet>
   );
 }

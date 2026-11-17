@@ -6,7 +6,9 @@
 // or more; nothing is hover-only.
 import { useMemo, type ReactNode } from "react";
 
+import { chip, FIELD } from "@/lib/brand/components/controls";
 import { LANGUAGES, TIER_MAX, type FactField, type MemberFacts } from "@/lib/private/fact-fields";
+import { mightIn } from "@/lib/private/onboarding-parse";
 
 import { say, SOURCE_KEY, type EditorWords, type Form } from "./facts-form";
 import { TimeZonePicker } from "./TimeZonePicker";
@@ -29,7 +31,7 @@ export interface FieldsProps {
   conflictOf: (field: FactField) => ReactNode;
 }
 
-const INPUT = "min-h-11 w-full border border-rule bg-paper px-3";
+const INPUT = FIELD;
 
 function Row(props: FieldsProps & { field: FactField; children: ReactNode }) {
   const { field, words, stored, fromMessage } = props;
@@ -60,11 +62,13 @@ function Row(props: FieldsProps & { field: FactField; children: ReactNode }) {
 
 function Numbers(p: FieldsProps) {
   const { form, edit, words, invalid } = p;
+  const might = mightIn(form.squadMight);
   return (
     <>
       <Row {...p} field="squadMight">
         <input
           aria-labelledby="fact-squadMight"
+          aria-describedby="fact-squadMight-n"
           inputMode="decimal"
           value={form.squadMight}
           aria-invalid={invalid.includes("squadMight") || undefined}
@@ -72,6 +76,10 @@ function Numbers(p: FieldsProps) {
           onChange={(e) => edit("squadMight", { squadMight: e.target.value })}
           className={INPUT}
         />
+        {/* What Save stores, digits grouped: "12.3M" reads 12,300,000. */}
+        <p id="fact-squadMight-n" className="mt-1 min-h-5 text-body-sm text-ink/80 tabular-nums">
+          {might === null ? "" : new Intl.NumberFormat(p.language).format(might)}
+        </p>
       </Row>
       <Row {...p} field="adTech">
         <span className="flex items-center gap-2">
@@ -124,7 +132,7 @@ function Zone(p: FieldsProps) {
               key={z}
               type="button"
               onClick={() => edit("timeZone", { timeZone: z })}
-              className="min-h-11 border border-rule px-3"
+              className={chip()}
             >
               {z.replaceAll("_", " ")}
             </button>
@@ -155,7 +163,7 @@ function Languages(p: FieldsProps) {
                 type="button"
                 aria-pressed={on}
                 onClick={() => toggle(code)}
-                className={`min-h-11 border px-3 text-body-sm ${on ? "border-plum bg-plum text-paper" : "border-rule"}`}
+                className={chip(on)}
               >
                 {names.of(code) ?? code}
               </button>
@@ -180,7 +188,7 @@ function Status(p: FieldsProps) {
         {options.map(([value, label]) => (
           <label
             key={value}
-            className={`inline-flex min-h-11 cursor-pointer items-center gap-2 border px-3 ${form.status === value ? "border-plum" : "border-rule"}`}
+            className={`${chip()} cursor-pointer gap-2 text-body ${form.status === value ? "bg-plum/10 font-semibold text-plum" : ""}`}
           >
             <input
               type="radio"

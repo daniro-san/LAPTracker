@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { track } from "@/lib/analytics/events";
+import { FIELD } from "@/lib/brand/components/controls";
 import type { ImportKind } from "@/lib/private/import-kinds";
 import type { DraftView } from "@/lib/private/import-view";
 
@@ -58,7 +59,7 @@ function EntryCard(props: {
             translate="no"
             disabled={props.readOnly}
             onChange={(e) => props.onChange({ ...entry, name: e.target.value })}
-            className="mt-1 block min-h-11 w-full border border-rule bg-paper px-2"
+            className={`${FIELD} mt-1 block`}
           />
         </label>
       )}
@@ -122,7 +123,7 @@ function Victim(props: {
         value={props.value ?? ""}
         disabled={props.readOnly}
         onChange={(e) => props.onChange(e.target.value ? Number(e.target.value) : null)}
-        className="mt-1 block min-h-11 w-full border border-rule bg-paper px-2"
+        className={`${FIELD} mt-1 block`}
       >
         <option value="">{w["shots.pickMember"]}</option>
         {props.members.map((m) => (

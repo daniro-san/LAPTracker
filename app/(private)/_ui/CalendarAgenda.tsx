@@ -8,11 +8,12 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
+import { chip } from "@/lib/brand/components/controls";
+import { Tag } from "@/lib/brand/components/Tag";
 import { fill } from "@/lib/copy";
 import { mondayOf } from "@/lib/private/calendar-time";
-import type { CalendarWords } from "@/lib/private/dictionary.calendar";
 
-import type { AgendaDay, AgendaItem } from "./calendar-data";
+import type { AgendaDay, AgendaItem, CalendarSheetWords } from "./calendar-data";
 import { EntryForm, type FormProps } from "./EntryForm";
 import { Times } from "./YourTime";
 
@@ -39,7 +40,15 @@ const useLoadedAt = () =>
   );
 
 /** The caravan's roles, or "Choose roles ›" to that week's caravans while none is chosen. */
-function Roles({ item, words, slug }: { item: AgendaItem; words: CalendarWords; slug: string }) {
+function Roles({
+  item,
+  words,
+  slug,
+}: {
+  item: AgendaItem;
+  words: CalendarSheetWords;
+  slug: string;
+}) {
   if (item.roles) return <p className="text-body-sm">{item.roles}</p>;
   if (item.form.kind !== "caravan") return null;
   return (
@@ -52,7 +61,12 @@ function Roles({ item, words, slug }: { item: AgendaItem; words: CalendarWords; 
   );
 }
 
-function Item(props: { item: AgendaItem; words: CalendarWords; slug: string; onEdit: () => void }) {
+function Item(props: {
+  item: AgendaItem;
+  words: CalendarSheetWords;
+  slug: string;
+  onEdit: () => void;
+}) {
   const { item, words } = props;
   const now = useLoadedAt();
   const past = now !== null && item.at !== null && item.at < now;
@@ -78,10 +92,10 @@ function Item(props: { item: AgendaItem; words: CalendarWords; slug: string; onE
           </a>
         )}
         {item.tags.length > 0 && (
-          <ul className="mt-1 flex flex-wrap gap-1">
+          <ul className="mt-1 flex flex-wrap gap-x-3">
             {item.tags.map((tag) => (
-              <li key={tag} className="border border-rule px-1.5 text-[12px] leading-5 text-ink/80">
-                {tag}
+              <li key={tag}>
+                <Tag>{tag}</Tag>
               </li>
             ))}
           </ul>
@@ -91,7 +105,7 @@ function Item(props: { item: AgendaItem; words: CalendarWords; slug: string; onE
         type="button"
         onClick={props.onEdit}
         aria-label={fill(words["calendar.editOf"], { title: item.title })}
-        className="min-h-11 min-w-11 shrink-0 border border-rule px-3 text-body-sm font-semibold"
+        className={`${chip()} min-w-11 shrink-0 justify-center font-semibold text-plum`}
       >
         {words["calendar.edit"]}
       </button>
@@ -101,7 +115,7 @@ function Item(props: { item: AgendaItem; words: CalendarWords; slug: string; onE
 
 function Day(props: {
   d: AgendaDay;
-  words: CalendarWords;
+  words: CalendarSheetWords;
   slug: string;
   onEdit: (item: AgendaItem) => void;
 }) {
@@ -143,7 +157,7 @@ function Day(props: {
 export function CalendarAgenda(props: {
   days: AgendaDay[];
   theme: AgendaItem | null;
-  words: CalendarWords;
+  words: CalendarSheetWords;
   slug: string;
   zone: string;
   /** The day "Add an event" starts on: today in this week, else its Monday. */

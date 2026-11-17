@@ -6,14 +6,13 @@
 // one person never holds both seats.
 import { useState } from "react";
 
-import { buttonClass } from "@/lib/brand/components/Button";
 import { Sheet } from "@/lib/brand/components/Sheet";
 import { fill } from "@/lib/copy";
-import type { CalendarWords } from "@/lib/private/dictionary.calendar";
 import { searchRoster } from "@/lib/private/roster-search";
 
-import type { Member, SuggestedMember } from "./calendar-data";
+import type { CalendarSheetWords, Member, SuggestedMember } from "./calendar-data";
 import { Labeled, TextInput } from "./CalendarFields";
+import { sheetWords } from "./sheet-words";
 
 /** The suggestions, each one tap; or where to look when nobody qualifies. */
 function Suggested({
@@ -22,7 +21,7 @@ function Suggested({
   onPick,
 }: {
   suggested: SuggestedMember[];
-  words: CalendarWords;
+  words: CalendarSheetWords;
   onPick: (m: Member) => void;
 }) {
   return (
@@ -68,7 +67,7 @@ export function RosterPicker(props: {
   /** The member in the other seat, and that seat's name. */
   taken: Member | null;
   takenRole: string;
-  words: CalendarWords;
+  words: CalendarSheetWords;
   onPick: (m: Member) => void;
   onClose: () => void;
 }) {
@@ -76,10 +75,12 @@ export function RosterPicker(props: {
   const [query, setQuery] = useState("");
   const found = searchRoster(query, props.roster);
   return (
-    <Sheet labelledBy="pick-title" onCancel={props.onClose}>
-      <h2 id="pick-title" data-initial-focus tabIndex={-1} className="font-subhead text-display-sm">
-        {fill(words["calendar.pick.title"], { role: props.role })}
-      </h2>
+    <Sheet
+      labelledBy="pick-title"
+      onCancel={props.onClose}
+      title={fill(words["calendar.pick.title"], { role: props.role })}
+      words={sheetWords(words)}
+    >
       <Suggested {...props} />
       {props.roster.length === 0 ? (
         <p className="mt-3">{words["calendar.pick.noRoster"]}</p>
@@ -124,9 +125,6 @@ export function RosterPicker(props: {
           );
         })}
       </ul>
-      <button type="button" onClick={props.onClose} className={buttonClass("secondary", "mt-4")}>
-        {words["calendar.form.close"]}
-      </button>
     </Sheet>
   );
 }

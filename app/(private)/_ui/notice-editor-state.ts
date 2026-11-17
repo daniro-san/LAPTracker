@@ -1,7 +1,7 @@
 // The notice editor's state and actions (issues 304, 305, 293, 363): the draft, the language tab in view and
 // the one the officer last wrote in, Translate and Improve writing with their own error line, Accept and Undo,
 // the save with its version check, the conflict banner (shown and focused; Save brings it back), "Keep as is",
-// and a warning before the page is left with unsaved text.
+// a warning before the page is left with unsaved text, and that text kept on this device (notice-keep.ts).
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
@@ -26,6 +26,7 @@ import {
   type NoticeFields,
 } from "./notice-client";
 import { accept, askTab, changesOf, discard, settle, startDraft, withDrafts } from "./notice-draft";
+import { keepKey, readKept, restorable, writeKept } from "./notice-keep";
 
 export interface EditorProps {
   slug: string;
@@ -44,8 +45,9 @@ export interface EditorProps {
   onClose?: (() => void) | undefined;
 }
 
-/** Warns before the page is left while `dirty`, unless `allowed` says the officer chose to leave. */
-function useLeaveWarning(dirty: boolean, allowed: { current: boolean }) {
+/** Warns before the page is left while `dirty`, unless the returned flag says the officer chose to leave. */
+function useLeaveWarning(dirty: boolean) {
+  const allowed = useRef(false);
   useEffect(() => {
     if (!dirty) return;
     const warn = (event: BeforeUnloadEvent) => {
@@ -54,6 +56,38 @@ function useLeaveWarning(dirty: boolean, allowed: { current: boolean }) {
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
   }, [dirty, allowed]);
+  return allowed;
+}
+
+/**
+ * The unsaved text on this device: read once the editor is in the page (undefined until then), offered
+ * back while nothing new is typed, written while the draft differs from the saved notice.
+ */
+function useKept(
+  p: EditorProps,
+  values: Record<NoticeField, string>,
+  dirty: boolean,
+  put: (values: Record<NoticeField, string>) => void,
+) {
+  const key = keepKey(p.slug, p.id);
+  const [offer, setOffer] = useState<Record<NoticeField, string> | null | undefined>(undefined);
+  useEffect(() => {
+    setOffer(restorable(readKept(key), startDraft(p.fields).values));
+  }, [key, p.fields]);
+  useEffect(() => {
+    if (dirty) writeKept(key, values);
+    else if (offer === null) writeKept(key, null);
+  }, [key, values, dirty, offer]);
+  const shown = dirty ? null : (offer ?? null);
+  return {
+    /** Unsaved text this device kept from an earlier visit, while nothing new is typed. */
+    restorable: shown !== null,
+    restore: () => {
+      if (shown) put(shown);
+      setOffer(null);
+    },
+    forget: () => writeKept(key, null),
+  };
 }
 
 /** Why the last Translate or Improve writing gave no draft, and the tab it was asked from. */
@@ -74,9 +108,9 @@ export function useEditor(p: EditorProps) {
   /** The tab the officer last typed in: where Translate fills an empty tab from. */
   const [wroteIn, setWroteIn] = useState<NoticeLanguage | null>(p.source);
   const banner = useRef<HTMLDivElement>(null);
-  const leaving = useRef(false);
   const dirty = changesOf(draft).length > 0;
-  useLeaveWarning(dirty, leaving);
+  const leaving = useLeaveWarning(dirty);
+  const kept = useKept(p, draft.values, dirty, (values) => setDraft((d) => ({ ...d, values })));
   const showBanner = () => {
     banner.current?.scrollIntoView({ block: "start" });
     banner.current?.focus({ preventScroll: true });
@@ -104,6 +138,7 @@ export function useEditor(p: EditorProps) {
     setBusy(null);
     if (answer.ok) {
       leaving.current = true;
+      kept.forget();
       if (p.id === null) router.push(`/w/${p.slug}/notices/${answer.id}`);
       else router.refresh();
       return;
@@ -125,6 +160,7 @@ export function useEditor(p: EditorProps) {
     dirty,
     leaving,
     save,
+    ...kept,
     set: (field: NoticeField, value: string) => {
       if (isNoticeLanguage(field)) setWroteIn(field);
       setDraft((d) => ({ ...d, values: { ...d.values, [field]: value } }));

@@ -18,6 +18,7 @@ import { clockIn } from "@/lib/private/calendar-time";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import type { Profile } from "@/lib/private/profile";
 
+import { sheetWords } from "./sheet-words";
 import { Me } from "./ThisIsMe";
 import { setClockChoice, useClockChoice, useMinute, useViewerZone } from "./YourTime";
 
@@ -187,16 +188,13 @@ function Settings(props: {
     if (at === "name") router.refresh();
   };
   return (
-    <Sheet labelledBy="profile-title" onCancel={onClose}>
-      {/* Focus starts on the title: on a phone, a focused field would raise the keyboard. */}
-      <h2
-        id="profile-title"
-        tabIndex={-1}
-        data-initial-focus
-        className="font-display text-display-md"
-      >
-        {t["profile.title"]}
-      </h2>
+    // Focus starts on the title (the frame's default): on a phone, a focused field would raise the keyboard.
+    <Sheet
+      labelledBy="profile-title"
+      onCancel={onClose}
+      title={t["profile.title"]}
+      words={sheetWords(t)}
+    >
       <NameForm
         t={t}
         name={typeof me === "string" ? props.name : me.name}
@@ -226,9 +224,6 @@ function Settings(props: {
       </section>
       <ThemeChoice t={t} />
       <ClockChoiceField t={t} />
-      <button type="button" onClick={onClose} className={buttonClass("primary", "mt-6 w-full")}>
-        {t["intro.close"]}
-      </button>
     </Sheet>
   );
 }

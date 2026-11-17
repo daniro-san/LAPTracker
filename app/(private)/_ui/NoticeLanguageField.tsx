@@ -9,6 +9,7 @@
 import { useLayoutEffect, useRef, type KeyboardEvent } from "react";
 
 import { tabAfter } from "@/app/_ui/Movers";
+import { FIELD } from "@/lib/brand/components/controls";
 import { fill } from "@/lib/copy";
 import { NOTICE_LIMIT, noticeLength, type NoticeLanguage } from "@/lib/private/notice-rules";
 
@@ -120,13 +121,8 @@ function GrowingText({
       aria-label={LANGUAGE_NAME[language]}
       aria-describedby="notice-over"
       onChange={(ev) => onChange(ev.target.value)}
-      className={`block w-full resize-none overflow-hidden border p-3 leading-relaxed ${
-        over
-          ? "border-seal bg-paper ring-2 ring-seal"
-          : drafted
-            ? "border-plum bg-plum/5"
-            : "border-rule bg-paper"
-      }`}
+      aria-invalid={over}
+      className={`${FIELD} block resize-none overflow-hidden p-3 leading-relaxed ${drafted ? "bg-plum/5" : ""}`}
     />
   );
 }

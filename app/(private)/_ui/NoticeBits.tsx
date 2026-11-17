@@ -5,6 +5,7 @@
 // and tag; and the one banner that says someone else saved first, with each field side by side.
 import type { ReactNode, Ref } from "react";
 
+import { chip } from "@/lib/brand/components/controls";
 import { fill } from "@/lib/copy";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
 import { NOTICE_LIMIT, noticeLength } from "@/lib/private/notice-rules";
@@ -12,8 +13,7 @@ import { NOTICE_LIMIT, noticeLength } from "@/lib/private/notice-rules";
 import { fieldName, valueWords, type Conflict } from "./notice-client";
 
 /** Every small control: 44 px both ways. */
-export const smallButton = (extra = "") =>
-  `inline-flex min-h-11 min-w-11 items-center justify-center border border-rule px-3 text-body-sm font-medium disabled:opacity-50 ${extra}`;
+export const smallButton = (extra = "") => `${chip()} min-w-11 justify-center ${extra}`;
 
 export function Counter({ text, t }: { text: string; t: WorkspaceDictionary }) {
   const n = noticeLength(text);

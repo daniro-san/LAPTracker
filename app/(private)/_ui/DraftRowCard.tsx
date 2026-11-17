@@ -5,9 +5,10 @@
 // closest names first, the value to fix, the parser's flags, and what is already known beside it: the
 // Alliance Duel points saved before, the game data for a check, a fact's previous value. A row can be
 // dropped. 44 px controls.
+import { chip, FIELD } from "@/lib/brand/components/controls";
 import type { ViewRow } from "@/lib/private/import-view";
 
-import { factText, fillIn, type Words } from "./draft-known";
+import { factText, fillIn, groupedValue, type Words } from "./draft-known";
 
 export interface RowState {
   uid: number | null;
@@ -21,7 +22,7 @@ export interface RowState {
   kept?: { value: number | null; version: number } | undefined;
 }
 
-const button = "inline-flex min-h-11 items-center border border-rule px-3 text-body-sm font-medium";
+const button = chip();
 const factOr = (field: ViewRow["field"], v: number | null, sep: string) =>
   v === null ? "—" : factText(field, v, sep);
 
@@ -112,6 +113,7 @@ function RowHead({ row, label, w }: { row: ViewRow; label: string; w: Words }) {
 
 function RowInputs(props: {
   id: string;
+  sep: string;
   row: ViewRow;
   state: RowState;
   onChange: (next: RowState) => void;
@@ -131,7 +133,7 @@ function RowInputs(props: {
           onChange={(e) =>
             props.onChange({ ...state, uid: e.target.value ? Number(e.target.value) : null })
           }
-          className="mt-1 block min-h-11 w-full border border-rule bg-paper px-2"
+          className={`${FIELD} mt-1 block`}
         >
           <option value="">{w["shots.pickMember"]}</option>
           {row.suggestions.length > 0 && (
@@ -157,9 +159,14 @@ function RowInputs(props: {
           inputMode="numeric"
           value={state.value}
           disabled={props.readOnly}
+          aria-describedby={`${id}-g`}
           onChange={(e) => props.onChange({ ...state, value: e.target.value.replace(/\D/g, "") })}
-          className="mt-1 block min-h-11 w-full border border-rule bg-paper px-2 tabular-nums"
+          className={`${FIELD} mt-1 block tabular-nums`}
         />
+        {/* The value as the game shows it, digits grouped, to check against the picture. */}
+        <span id={`${id}-g`} className="mt-1 block min-h-5 text-ink/80 tabular-nums">
+          {groupedValue(state.value, props.sep)}
+        </span>
       </label>
     </div>
   );

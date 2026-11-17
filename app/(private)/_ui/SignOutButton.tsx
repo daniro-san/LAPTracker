@@ -1,14 +1,18 @@
 "use client";
 
 // "Sign out": a same-origin JSON POST (D71), then the workspace's address again, which shows the sign-in.
+// Unsaved notice text kept on this device goes too: the next officer on a shared phone must not see it.
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+
+import { forgetAllKept } from "./notice-keep";
 
 export function SignOutButton({ slug, label }: { slug: string; label: string }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   async function signOut() {
     setBusy(true);
+    forgetAllKept();
     try {
       await fetch(`/api/w/${slug}/logout`, {
         method: "POST",

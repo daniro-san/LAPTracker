@@ -5,13 +5,13 @@
 // started from; a 409 shows who changed what first, with "Keep theirs" and "Use mine".
 import { useState } from "react";
 
-import { buttonClass } from "@/lib/brand/components/Button";
 import { CheckField } from "@/lib/brand/components/CheckField";
 import { Sheet } from "@/lib/brand/components/Sheet";
+import { changedFrom } from "@/lib/brand/components/sheet-close";
 import { KINDS } from "@/lib/private/calendar-kinds";
-import type { CalendarKey, CalendarWords } from "@/lib/private/dictionary.calendar";
+import type { CalendarKey } from "@/lib/private/dictionary.calendar";
 
-import type { AgendaItem } from "./calendar-data";
+import type { AgendaItem, CalendarSheetWords } from "./calendar-data";
 import {
   changesOf,
   draftOf,
@@ -25,9 +25,10 @@ import { refusalText, sendCalendar, type Stale } from "./calendar-send";
 import { Choice, ConflictBox, FIELD, Labeled, TextInput } from "./CalendarFields";
 import { DeleteArea } from "./DeleteArea";
 import { KindFields, RepeatFields, TimeFields, type PartProps } from "./EntryFields";
+import { sheetWords } from "./sheet-words";
 
 export interface FormProps {
-  words: CalendarWords;
+  words: CalendarSheetWords;
   slug: string;
   /** The server's zone (SERVER_TZ), for the officer's own clock under the time. */
   zone: string;
@@ -90,6 +91,7 @@ function CommonFields({ d, set, p, words }: PartProps) {
       >
         <TextInput
           id="cal-link"
+          aria-invalid={p.shown && Boolean(p.link)}
           type="url"
           inputMode="url"
           placeholder="https://"
@@ -112,9 +114,8 @@ function CommonFields({ d, set, p, words }: PartProps) {
 export function EntryForm(props: FormProps) {
   const { words, mode } = props;
   const item = mode.add ? null : mode.item;
-  const [d, setDraft] = useState<Draft>(() =>
-    draftOf(item?.form ?? null, mode.add ? mode.day : ""),
-  );
+  const [start] = useState<Draft>(() => draftOf(item?.form ?? null, mode.add ? mode.day : ""));
+  const [d, setDraft] = useState<Draft>(start);
   const [shown, setShown] = useState(false);
   const save = useSave(props, d);
   const part: PartProps = {
@@ -125,64 +126,54 @@ export function EntryForm(props: FormProps) {
   };
   const kinds = KINDS.filter((k) => k !== "duel" || (mode.add && !mode.hasTheme));
   return (
-    <Sheet labelledBy="cal-form-title" onCancel={props.onClose}>
-      <div className="pb-2">
-        <h2
-          id="cal-form-title"
-          data-initial-focus
-          tabIndex={-1}
-          className="font-subhead text-display-sm"
-        >
-          {item ? `${words["calendar.form.edit"]}: ${item.title}` : words["calendar.form.add"]}
-        </h2>
-        {!item && (
-          <Choice
-            legend={words["calendar.form.kind"]}
-            name="cal-kind"
-            value={d.kind}
-            options={kinds.map((k) => ({
-              value: k,
-              label: words[`calendar.kind.${k}` as CalendarKey],
-            }))}
-            onChange={(k) => setDraft((old) => withKind(old, k))}
-          />
-        )}
-        <KindFields {...part} />
-        <TimeFields {...part} zone={props.zone} />
-        <RepeatFields {...part} item={item} />
-        <CommonFields {...part} />
-        {save.stale && (
-          <ConflictBox
-            conflicts={save.stale.conflicts}
-            words={words}
-            busy={save.busy}
-            onKeep={save.keep}
-            onMine={save.mine}
-          />
-        )}
-        {save.error && (
-          <p role="alert" className="mt-4 border-l-4 border-seal pl-3 text-body-sm">
+    <Sheet
+      labelledBy="cal-form-title"
+      onCancel={props.onClose}
+      dirty={changedFrom(start, d)}
+      title={item ? `${words["calendar.form.edit"]}: ${item.title}` : words["calendar.form.add"]}
+      words={sheetWords(words)}
+      primary={{
+        label: words["calendar.form.save"],
+        disabled: save.busy || save.stale !== null,
+        onClick: () => {
+          setShown(true);
+          if (Object.keys(problems(d)).length === 0) save.save();
+        },
+      }}
+      note={
+        save.error && (
+          <p role="alert" className="mb-2 border-l-4 border-seal pl-3 text-body-sm">
             {save.error}
           </p>
-        )}
-        <div className="mt-5 flex flex-wrap gap-2">
-          <button
-            type="button"
-            disabled={save.busy || save.stale !== null}
-            onClick={() => {
-              setShown(true);
-              if (Object.keys(problems(d)).length === 0) save.save();
-            }}
-            className={buttonClass("primary", "flex-1")}
-          >
-            {words["calendar.form.save"]}
-          </button>
-          <button type="button" onClick={props.onClose} className={buttonClass("secondary")}>
-            {words["calendar.form.close"]}
-          </button>
-        </div>
-        {item && <DeleteArea item={item} words={words} slug={props.slug} onDone={props.onDone} />}
-      </div>
+        )
+      }
+    >
+      {!item && (
+        <Choice
+          legend={words["calendar.form.kind"]}
+          name="cal-kind"
+          value={d.kind}
+          options={kinds.map((k) => ({
+            value: k,
+            label: words[`calendar.kind.${k}` as CalendarKey],
+          }))}
+          onChange={(k) => setDraft((old) => withKind(old, k))}
+        />
+      )}
+      <KindFields {...part} />
+      <TimeFields {...part} zone={props.zone} />
+      <RepeatFields {...part} item={item} />
+      <CommonFields {...part} />
+      {save.stale && (
+        <ConflictBox
+          conflicts={save.stale.conflicts}
+          words={words}
+          busy={save.busy}
+          onKeep={save.keep}
+          onMine={save.mine}
+        />
+      )}
+      {item && <DeleteArea item={item} words={words} slug={props.slug} onDone={props.onDone} />}
     </Sheet>
   );
 }
