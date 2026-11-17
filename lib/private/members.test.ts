@@ -13,7 +13,7 @@ import {
   snapshots,
 } from "../schema";
 import { requireWorkspace, type WorkspaceAccess } from "./access";
-import { saveFacts } from "./member-facts";
+import { saveFacts, type FactChange } from "./member-facts";
 import { KVK_REASON_ON } from "./member-week";
 import { killsGained, membersView, rankOf, type MemberRow } from "./members";
 import { filterCounts } from "./members-list";
@@ -185,6 +185,10 @@ describe("Check in reasons (D75)", () => {
   });
 });
 
+/** An officer's write of one fact, as the card's editor sends it. */
+const fact = (access: WorkspaceAccess, uid: number, change: FactChange) =>
+  saveFacts(db, access, uid, [change], NOW);
+
 describe("member facts on the Members tab (#297)", () => {
   it("puts a member with an away note that still runs on a break: no reasons, no thanks", async () => {
     // Members 1 and 2 both kept their activity and donations for 3 end-of-day reads.
@@ -192,13 +196,7 @@ describe("member facts on the Members tab (#297)", () => {
       await endOfDay(OGS, dayOf(n), { 1: { tech: 900, active: 50 }, 2: { tech: 5, active: 50 } });
     const ogs = await signedIn("ogs");
     const away = { text: "travelling", until: "2026-11-20" };
-    await saveFacts(
-      db,
-      ogs,
-      1,
-      [{ field: "away", version: 0, value: away, source: "officer" }],
-      NOW,
-    );
+    await fact(ogs, 1, { field: "away", version: 0, value: away, source: "officer" });
 
     const view = await membersView(db, ogs, NOW, ZONE);
     const [one, two] = [1, 2].map((uid) => view.members.find((m) => m.uid === uid) as MemberRow);
@@ -210,6 +208,24 @@ describe("member facts on the Members tab (#297)", () => {
     ]);
     expect(two?.reasons.map((r) => r.kind)).toEqual(["idle"]);
     expect(view.thanks.donors.map((t) => t.uid)).toEqual([2]);
+  });
+
+  it("shows an officer's status instead of the computed one; On a break also clears reasons and thanks", async () => {
+    // All three kept activity and donations for 3 reads; 2 donated the most.
+    const same = (tech: number) => ({ tech, active: 50 });
+    for (const n of [1, 2, 3])
+      await endOfDay(OGS, dayOf(n), { 1: same(900), 2: same(5000), 3: same(5) });
+    const ogs = await signedIn("ogs");
+    await fact(ogs, 1, { field: "status", version: 0, value: "help", source: "officer" });
+    await fact(ogs, 2, { field: "status", version: 0, value: "break", source: "officer" });
+
+    const view = await membersView(db, ogs, NOW, ZONE);
+    const row = (uid: number) => view.members.find((m) => m.uid === uid) as MemberRow;
+
+    expect([1, 2, 3].map((uid) => statusOf(row(uid)))).toEqual(["help", "break", "checkin"]);
+    expect([1, 2, 3].map((uid) => row(uid).reasons.length)).toEqual([1, 0, 1]);
+    expect(filterCounts(view.members).checkin).toBe(1);
+    expect(view.thanks.donors.map((t) => t.uid)).toEqual([1, 3]);
   });
 });
 

@@ -77,6 +77,7 @@ export const IMPORT_KEYS = [
   "import.file",
   "import.check",
   "import.noName",
+  "import.tooMany",
   "import.columns",
   "import.ignored",
   "import.summary",
@@ -105,6 +106,13 @@ export type ImportWords = Pick<WorkspaceDictionary, (typeof IMPORT_KEYS)[number]
 
 export const importWords = (t: WorkspaceDictionary): ImportWords =>
   Object.fromEntries(IMPORT_KEYS.map((k) => [k, t[k]])) as ImportWords;
+
+/** What went wrong reading a sheet, as words: no "Name" column, too many rows, anything else. */
+export const IMPORT_PROBLEM = {
+  noName: "import.noName",
+  tooMany: "import.tooMany",
+  failed: "import.failed",
+} as const satisfies Record<string, keyof ImportWords>;
 
 /** A sheet column's label, by what it fills (lib/private/sheet-parse.ts). */
 export const COLUMN_LABEL = {

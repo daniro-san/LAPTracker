@@ -132,9 +132,9 @@ export const pt: WorkspaceDictionary = {
   "reason.might.one": "might igual há {n} dia",
   "reason.might.other": "might igual há {n} dias",
   "reason.idle.one":
-    "atividade {activity} e doações {donated} sem mudança há {n} dia ({r} leituras de fim de dia seguidas), sem aviso de ausência",
+    "atividade {activity} e doações {donated} sem mudança há {n} dia ({r} leituras de fim de dia seguidas)",
   "reason.idle.other":
-    "atividade {activity} e doações {donated} sem mudança há {n} dias ({r} leituras de fim de dia seguidas), sem aviso de ausência",
+    "atividade {activity} e doações {donated} sem mudança há {n} dias ({r} leituras de fim de dia seguidas)",
   "nodata.donations.one": "doações em {n} dia",
   "nodata.donations.other": "doações em {n} dias",
   "howto.address": "1. Abra este endereço",
@@ -197,7 +197,6 @@ export const pt: WorkspaceDictionary = {
   "facts.conflict": "Outro oficial salvou isto enquanto isso: {value}",
   "facts.theirs": "Manter o dele",
   "facts.mine": "Usar o meu",
-  "facts.merged": "Combinado com a edição de outro oficial.",
   "paste.help":
     "Cole a conversa aqui. O que encontrarmos preenche os campos abaixo, marcado “de uma mensagem”. Confira e salve.",
   "paste.read": "Ler",
@@ -217,6 +216,7 @@ export const pt: WorkspaceDictionary = {
   "import.file": "Ou escolha um arquivo CSV",
   "import.check": "Conferir as linhas",
   "import.noName": "Nenhuma coluna “Name” encontrada. Cole a planilha com a linha de títulos.",
+  "import.tooMany": "Esta planilha tem mais de 2.000 linhas. Importe em partes.",
   "import.columns": "Lido: {list}",
   "import.ignored": "Não importado: {list}",
   "import.summary":

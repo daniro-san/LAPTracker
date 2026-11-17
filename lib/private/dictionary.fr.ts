@@ -133,9 +133,9 @@ export const fr: WorkspaceDictionary = {
   "reason.might.one": "might inchangé depuis {n} jour",
   "reason.might.other": "might inchangé depuis {n} jours",
   "reason.idle.one":
-    "activité {activity} et dons {donated} inchangés depuis {n} jour ({r} relevés de fin de journée d’affilée), sans note d’absence",
+    "activité {activity} et dons {donated} inchangés depuis {n} jour ({r} relevés de fin de journée d’affilée)",
   "reason.idle.other":
-    "activité {activity} et dons {donated} inchangés depuis {n} jours ({r} relevés de fin de journée d’affilée), sans note d’absence",
+    "activité {activity} et dons {donated} inchangés depuis {n} jours ({r} relevés de fin de journée d’affilée)",
   "nodata.donations.one": "dons sur {n} jour",
   "nodata.donations.other": "dons sur {n} jours",
   "howto.address": "1. Ouvrez cette adresse",
@@ -199,7 +199,6 @@ export const fr: WorkspaceDictionary = {
   "facts.conflict": "Un autre officier a enregistré ceci entre-temps : {value}",
   "facts.theirs": "Garder la sienne",
   "facts.mine": "Garder la mienne",
-  "facts.merged": "Combiné avec la modification d’un autre officier.",
   "paste.help":
     "Collez la conversation ici. Ce qu’on trouve remplit les champs ci-dessous, marqué « d’un message ». Vérifiez, puis enregistrez.",
   "paste.read": "Lire",
@@ -219,6 +218,7 @@ export const fr: WorkspaceDictionary = {
   "import.file": "Ou choisissez un fichier CSV",
   "import.check": "Vérifier les lignes",
   "import.noName": "Aucune colonne « Name » trouvée. Collez le tableur avec sa ligne de titres.",
+  "import.tooMany": "Ce tableur a plus de 2 000 lignes. Importez-le en plusieurs fois.",
   "import.columns": "Lu : {list}",
   "import.ignored": "Non importé : {list}",
   "import.summary":

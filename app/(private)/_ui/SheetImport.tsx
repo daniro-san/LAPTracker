@@ -10,7 +10,7 @@ import { track } from "@/lib/analytics/events";
 import { buttonClass } from "@/lib/brand/components/Button";
 import type { ImportPreview, ImportResult, ImportRow } from "@/lib/private/sheet-import";
 
-import { COLUMN_LABEL, say, type ImportWords } from "./facts-form";
+import { COLUMN_LABEL, IMPORT_PROBLEM, say, type ImportWords } from "./facts-form";
 import { SourceBadge } from "./SourceBadge";
 
 /** A row's answer: a member, null for "not a member", undefined while open. */
@@ -260,16 +260,20 @@ export function SheetImport({ slug, words }: { slug: string; words: ImportWords 
   const [preview, setPreview] = useState<ImportPreview | null>(null);
   const [answers, setAnswers] = useState<Answers>(new Map());
   const [result, setResult] = useState<ImportResult | null>(null);
-  const [problem, setProblem] = useState<"noName" | "failed" | null>(null);
+  const [problem, setProblem] = useState<"noName" | "tooMany" | "failed" | null>(null);
   const [busy, setBusy] = useState(false);
 
   const check = async () => {
     setBusy(true);
     const res = await post(slug, { csv, apply: false, decisions: [] });
     setBusy(false);
-    setProblem(res?.status === 422 ? "noName" : res?.ok ? null : "failed");
-    if (res?.ok) {
-      setPreview((await res.json()) as ImportPreview);
+    const body = res ? ((await res.json()) as ImportPreview & { code?: string }) : null;
+    // 422: no "Name" column, or more rows than one import takes.
+    if (res?.status === 422)
+      return setProblem(body?.code === "too_many_rows" ? "tooMany" : "noName");
+    setProblem(res?.ok ? null : "failed");
+    if (res?.ok && body) {
+      setPreview(body);
       setAnswers(new Map());
     }
   };
@@ -299,7 +303,7 @@ export function SheetImport({ slug, words }: { slug: string; words: ImportWords 
       </button>
       {problem && (
         <p role="alert" className="mt-2 text-seal">
-          {words[problem === "noName" ? "import.noName" : "import.failed"]}
+          {words[IMPORT_PROBLEM[problem]]}
         </p>
       )}
       {preview && (

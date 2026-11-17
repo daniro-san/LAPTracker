@@ -3,12 +3,13 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
+import { aliasesOf } from "../repo/member-facts";
 import { findWorkspaceBySlug, recordSignIn, saveWorkspace } from "../repo/workspaces";
 import { dailyReads, dailyRosters } from "../schema";
 import { requireWorkspace, type WorkspaceAccess } from "./access";
 import { factsOf, saveFacts } from "./member-facts";
 import { createSession } from "./session";
-import { applyImport, previewImport } from "./sheet-import";
+import { applyImport, MAX_SHEET_ROWS, previewImport, type ImportPreview } from "./sheet-import";
 
 const OGS = 67111155;
 const NOW = new Date("2026-11-16T12:00:00Z");
@@ -75,7 +76,7 @@ const CSV = [
 
 describe("the one-time sheet import (#297)", () => {
   it("matches rows by current and past names, and leaves doubtful and unknown rows to a person", async () => {
-    const preview = await previewImport(db, access, CSV, WHERE);
+    const preview = (await previewImport(db, access, CSV, WHERE)) as ImportPreview;
 
     expect(preview?.rows.map((r) => [r.line, r.match])).toEqual([
       [1, { status: "matched", uid: 12, via: "current" }],
@@ -116,12 +117,30 @@ describe("the one-time sheet import (#297)", () => {
     expect(facts.get(13)?.timeZone?.value).toBe("Etc/GMT-1");
     expect(facts.get(15)?.troopTier).toMatchObject({ value: 11, source: "officer" });
     // The next sheet asks nothing about these names, and importing again writes nothing.
-    const again = await previewImport(db, access, CSV, WHERE);
+    const again = (await previewImport(db, access, CSV, WHERE)) as ImportPreview;
     expect(again?.rows.filter((r) => r.line >= 4).map((r) => r.match)).toEqual([
       { status: "matched", uid: 13, via: "alias" },
       { status: "dismissed" },
       { status: "matched", uid: 15, via: "current" },
     ]);
     expect(await applyImport(db, access, CSV, [], WHERE)).toMatchObject({ saved: 0 });
+  });
+
+  it("refuses an answer that names someone outside the alliance, and writes nothing", async () => {
+    const decided = [
+      { line: 4, uid: 99 },
+      { line: 5, uid: null },
+    ];
+
+    expect(await applyImport(db, access, CSV, decided, WHERE)).toBe("not_member");
+    expect((await factsOf(db, access)).size).toBe(0);
+    expect((await aliasesOf(db, access.workspaceId)).size).toBe(0);
+  });
+
+  it("reads at most 2000 rows from one sheet", async () => {
+    const rows = Array.from({ length: MAX_SHEET_ROWS + 1 }, (_, i) => `${i},Thistle,T9,,,`);
+    const big = [CSV.split("\n")[0], ...rows].join("\n");
+
+    expect(await previewImport(db, access, big, WHERE)).toBe("too_many_rows");
   });
 });

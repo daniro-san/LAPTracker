@@ -74,9 +74,16 @@ function matchRow(
     : m;
 }
 
+/** Rows read from one sheet at most: the same as the decisions one import takes. */
+export const MAX_SHEET_ROWS = 2000;
+
+/** Why a sheet is not read: no "Name" column, or more rows than one import takes. */
+export type SheetRefusal = "no_name_column" | "too_many_rows";
+
 async function prepare(db: Db, access: WorkspaceAccess, csv: string, w: Where) {
   const sheet = readSheet(csv, w.now, w.serverZone);
-  if (!sheet) return null;
+  if (!sheet) return "no_name_column" as const;
+  if (sheet.rows.length > MAX_SHEET_ROWS) return "too_many_rows" as const;
   const [roster, seen, aliases] = await Promise.all([
     anyRoster(db, access.unionId),
     namesSeen(db, access.unionId),
@@ -98,15 +105,15 @@ async function prepare(db: Db, access: WorkspaceAccess, csv: string, w: Where) {
   };
 }
 
-/** The sheet's rows and how each matches; null when no row of it names a "Name" column. */
+/** The sheet's rows and how each matches, or why the sheet is not read. */
 export async function previewImport(
   db: Db,
   access: WorkspaceAccess,
   csv: string,
   w: Where,
-): Promise<ImportPreview | null> {
+): Promise<ImportPreview | SheetRefusal> {
   const p = await prepare(db, access, csv, w);
-  return p && { columns: p.columns, rows: p.rows, members: p.members };
+  return typeof p === "string" ? p : { columns: p.columns, rows: p.rows, members: p.members };
 }
 
 const isOpen = (r: ImportRow) => r.match.status === "unsure" || r.match.status === "none";
@@ -153,9 +160,9 @@ export async function applyImport(
   csv: string,
   decisions: readonly Decision[],
   w: Where,
-): Promise<ImportResult | "no_name_column" | "undecided" | "not_member"> {
+): Promise<ImportResult | SheetRefusal | "undecided" | "not_member"> {
   const p = await prepare(db, access, csv, w);
-  if (!p) return "no_name_column";
+  if (typeof p === "string") return p;
   const decided = new Map(decisions.map((d) => [d.line, d.uid]));
   const open = p.rows.filter(isOpen);
   if (open.some((r) => !decided.has(r.line))) return "undecided";

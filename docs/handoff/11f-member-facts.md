@@ -28,7 +28,7 @@ Issue #297. Rules applied: D71, D72, D75, D77, D78. New decision: D80. Also buil
   - an away note whose last day is today or later (server day) shows "On a break until <day>";
   - a member on a break has no Check in reasons and is left out of the thanks;
   - Needs help keeps the reasons as lines and leaves the Check in filter and count.
-  - The idle reason now ends "…, no away note" in all three languages.
+  - The idle reason keeps its wording. A "no away note" ending (11e's adjustment) was added and then removed after review of #350: a member whose away note has no last day still gets the reason, so the sentence would contradict the card.
 - **"Paste what they told you"** (`lib/private/onboarding-parse.ts`, pure). `parseOnboarding(text | lines, now, serverZone)` returns squad might, AD Tech, time zones (best first) and languages.
   - What it finds fills the editor's fields marked "from a message"; nothing is saved until Save. A value the officer edits becomes "typed by an officer".
   - It takes a string or OCR lines, for 11k.
@@ -40,6 +40,7 @@ Issue #297. Rules applied: D71, D72, D75, D77, D78. New decision: D80. Also buil
   - Input: paste (CSV or tab-separated cells) or a CSV file.
   - Output: the columns read and not imported, then "N rows · matched · to check · not members".
   - Each open row offers "Is it…" suggestions, "Someone else" (every member) and "Not a member", plus one button for every row with no match.
+  - A sheet of more than 2000 rows (the decisions' cap) is refused: 422 `too_many_rows`, "This sheet has more than 2,000 rows. Import it in parts."
   - Import stays off until every row is answered. The result reads "Done: N values saved for M members. K kept, because the field already had a value."
   - A link "Import the old spreadsheets" sits at the bottom of Members.
 - **Before the first end-of-day read** (coordinator's request, any workspace): `lib/repo/workspace-any-roster.ts` `anyRoster` returns the alliance's newest roster of any kind: a daily read, an event's Start or End, or a sample, even a stale one.
@@ -51,13 +52,14 @@ Issue #297. Rules applied: D71, D72, D75, D77, D78. New decision: D80. Also buil
   - Two analytics events without properties: `ws_facts_saved` and `ws_sheet_imported`.
 - **Words:** 64 new keys in en, pt-BR and fr, with French no-break spaces (U+00A0).
 - **Docs:** D80, `docs/ARCHITECTURE.md` (new modules; `lib/private → lib/screenshot`).
-- **Tests (21 new):**
+- **Tests (26 new):**
   - `onboarding-parse.test.ts`: 6;
-  - `time-zones.test.ts`: 5;
+  - `time-zones.test.ts`: 5 (stable zones only, not the running ICU's full list);
   - `member-facts.test.ts` (PGlite): 3;
   - `sheet-parse.test.ts`: 3;
-  - `sheet-import.test.ts` (PGlite): 2;
-  - `members.test.ts`: 2, the away note and the roster before the first end-of-day read, the second alliance with only a snapshot included.
+  - `sheet-import.test.ts` (PGlite): 4, with a not-a-member answer (nothing written) and the 2000-row cap;
+  - `http.test.ts`: 1, `privately` keeps only the code;
+  - `members.test.ts`: 3, an officer's status (Needs help, On a break), the away note and the roster before the first end-of-day read, the second alliance with only a snapshot included.
 
 ## Decisions
 

@@ -136,9 +136,9 @@ const en = {
   "reason.might.one": "might unchanged for {n} day",
   "reason.might.other": "might unchanged for {n} days",
   "reason.idle.one":
-    "activity {activity} and donations {donated} unchanged for {n} day ({r} end-of-day reads in a row), no away note",
+    "activity {activity} and donations {donated} unchanged for {n} day ({r} end-of-day reads in a row)",
   "reason.idle.other":
-    "activity {activity} and donations {donated} unchanged for {n} days ({r} end-of-day reads in a row), no away note",
+    "activity {activity} and donations {donated} unchanged for {n} days ({r} end-of-day reads in a row)",
   "nodata.donations.one": "donations on {n} day",
   "nodata.donations.other": "donations on {n} days",
   "howto.address": "1. Open this address",
@@ -201,7 +201,6 @@ const en = {
   "facts.conflict": "Another officer saved this meanwhile: {value}",
   "facts.theirs": "Keep theirs",
   "facts.mine": "Use mine",
-  "facts.merged": "Combined with another officer’s edit.",
   "paste.help":
     "Paste the chat here. What we find fills the fields below, marked “from a message”. Check it, then save.",
   "paste.read": "Read",
@@ -221,6 +220,7 @@ const en = {
   "import.file": "Or choose a CSV file",
   "import.check": "Check the rows",
   "import.noName": "No “Name” column found. Paste the sheet with its header row.",
+  "import.tooMany": "This sheet has more than 2,000 rows. Import it in parts.",
   "import.columns": "Read: {list}",
   "import.ignored": "Not imported: {list}",
   "import.summary": "{rows} rows · {matched} matched · {open} to check · {dismissed} not members",
