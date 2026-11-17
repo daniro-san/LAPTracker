@@ -232,6 +232,13 @@
       "when": 1794929873743,
       "tag": "0032_follow_up",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1794930374971,
+      "tag": "0033_pending_members_dismissed",
+      "breakpoints": true
     }
   ]
 }

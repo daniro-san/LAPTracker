@@ -11,7 +11,7 @@ Part of #293. Follows PR #385 (D106, D107). Branch `fix/member-lifecycle-owner-a
    - Home now runs `reconcilePending` before its reads, as Members does, and shows "<n> new members to match" in "To review", linking to `/w/<slug>/members#to-match`.
    - Members: at the top of "New members", a box with that line, a one-line reason and each one with "Link to a member" (opens the picker directly). Their tag reads "To match".
 3. **Former members' Alliance Duel points.** `newestDuelWeeks` in `lib/repo/import.ts` reads the newest saved week per former uid. The row and the sheet show "Alliance Duel, week of <Monday>: <week total> · Mon … · Tue …" with the member card's formatter (`duelText`, now exported and taking the duel map).
-4. **Delete keeps the record.** Migration `drizzle/0031_pending_members_dismissed.sql`: `pending_members.dismissed_at`. The one-open-per-name-key index now also skips dismissed rows. Delete sets `dismissed_at`; facts and points stay. "Open" now means neither matched nor dismissed. Members lists dismissed ones under "Dismissed (<n>)", a closed `details` below "Add a new member", read-only, each with the day it was dismissed and its facts on one line. Adding the same name key again (by hand or from the import) reopens the newest dismissed record (`reopenDismissed`): new name as typed, new add time, the add's request id.
+4. **Delete keeps the record.** Migration `drizzle/0033_pending_members_dismissed.sql`: `pending_members.dismissed_at`. The one-open-per-name-key index now also skips dismissed rows. Delete sets `dismissed_at`; facts and points stay. "Open" now means neither matched nor dismissed. Members lists dismissed ones under "Dismissed (<n>)", a closed `details` below "Add a new member", read-only, each with the day it was dismissed and its facts on one line. Adding the same name key again (by hand or from the import) reopens the newest dismissed record (`reopenDismissed`): new name as typed, new add time, the add's request id.
 - **Words:** 19 new keys in en, pt-BR, fr in `lib/private/dictionary.lifecycle.ts`. Changed `pending.deleteAsk` ("Delete <name> from the list? The info added here is kept under Dismissed."); recorded in the D106 amendment.
 - **Docs:** amendments to D106 and D107, ARCHITECTURE (pending-members line), GLOSSARY ("to match", "dismissed").
 - **Tests (one per behavior):**
@@ -85,7 +85,7 @@ Plan changes needed: none. The workspace track lives in issues.
 
 <adjustments>
 - Open pending member = `matched_uid is null and dismissed_at is null`. Any new read of `pending_members` must use `open()` / `dismissed()` in `lib/repo/pending-members.ts`.
-- Migration `0031_pending_members_dismissed` collides by number with #386 (`0031_members_board`) and #387 (`0031_follow_up`); renumber at merge.
+- Migration `0033_pending_members_dismissed`, on dev's `0031_members_board` (#386) and `0032_follow_up` (#387).
 - `toMatch(pending, rosterAt)` is the one rule for "To match"; Home and Members both use the newest roster's read time from `membersView`.
 </adjustments>
 
