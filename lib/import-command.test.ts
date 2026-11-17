@@ -73,4 +73,22 @@ describe("registerImportCommand (D96)", () => {
     }
     expect(fetcher).not.toHaveBeenCalled();
   });
+  it("answers the token's refusal or no answer as discord_token, with no PUT", async () => {
+    const refused = vi.fn(async () => new Response("", { status: 401 }));
+    expect(await registerImportCommand(env, refused as typeof fetch, [OGS])).toEqual({
+      ok: false,
+      code: "discord_token",
+      status: 401,
+    });
+    expect(refused).toHaveBeenCalledTimes(1);
+    const down = vi.fn(async () => {
+      throw new TypeError("fetch failed");
+    });
+    expect(await registerImportCommand(env, down as typeof fetch, [OGS])).toEqual({
+      ok: false,
+      code: "discord_token",
+      status: 0,
+    });
+    expect(down).toHaveBeenCalledTimes(1);
+  });
 });

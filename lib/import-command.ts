@@ -61,14 +61,15 @@ export async function registerImportCommand(
 
   const token = await clientToken(send, id, secret);
   if ("status" in token) return { ok: false, code: "discord_token", status: token.status };
-  const guilds = [];
-  for (const guildId of guildIds) {
-    const res = await send(`/applications/${id}/guilds/${guildId}/commands`, {
-      method: "PUT",
-      headers: { authorization: `Bearer ${token.bearer}`, "content-type": "application/json" },
-      body: JSON.stringify([IMPORT_COMMAND]),
-    });
-    guilds.push({ guildId, status: res?.status ?? 0 });
-  }
+  const guilds = await Promise.all(
+    guildIds.map(async (guildId) => {
+      const res = await send(`/applications/${id}/guilds/${guildId}/commands`, {
+        method: "PUT",
+        headers: { authorization: `Bearer ${token.bearer}`, "content-type": "application/json" },
+        body: JSON.stringify([IMPORT_COMMAND]),
+      });
+      return { guildId, status: res?.status ?? 0 };
+    }),
+  );
   return { ok: true, guilds };
 }
