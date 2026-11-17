@@ -4,6 +4,7 @@
 // link never reads as an announcement; a link with blocs is kept out of search engines. Unknown or repeated
 // ids in the URL are dropped; an alliance named in both blocs stays in A.
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 
 import { BlocCards, StackedBar } from "@/app/_ui/BalanceBar";
 import { BalanceRows, BalanceTrend } from "@/app/_ui/BalanceRows";
@@ -17,6 +18,7 @@ import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { greatestShareUp, parseBlocs, TOP_N, topShare } from "@/lib/balance";
 import { fill } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
+import { isOn } from "@/lib/flags";
 import { withPageDb } from "@/lib/page";
 import { homeEvent, listEvents, powerBalance } from "@/lib/queries";
 
@@ -30,6 +32,7 @@ export async function generateMetadata({
   searchParams: Search;
 }): Promise<Metadata> {
   const [sp, copy] = await Promise.all([searchParams, requestCopy()]);
+  if (!(await isOn("server-balance"))) notFound();
   return {
     title: `${copy.balance.title} · ${copy.site.name}`,
     description: copy.balance.description,
@@ -38,6 +41,7 @@ export async function generateMetadata({
 }
 
 export default async function BalancePage({ searchParams }: { searchParams: Search }) {
+  if (!(await isOn("server-balance"))) notFound();
   const [sp, clock, copy, locale] = await Promise.all([
     searchParams,
     requestClock(),
