@@ -9,14 +9,14 @@ const read = (text: string) => parseOnboarding(text, NOW, "Etc/GMT+2");
 describe("paste what they told you (#297)", () => {
   it("reads the main squad might in every measured shape", () => {
     const shapes = {
-      "Zed 9.9 M for main squad": 9_900_000,
-      "First squad is 8,442,626": 8_442_626,
-      "6969172": 6_969_172,
-      "Squadron 1 - 5,963,493": 5_963_493,
-      "Esquadrão 1 - 5.963.493": 5_963_493,
-      "poder 10.2M": 10_200_000,
-      "9,9 M": 9_900_000,
-      "9900k": 9_900_000,
+      "Zed 12.3 M for main squad": 12_300_000,
+      "First squad is 7,215,408": 7_215_408,
+      "6481293": 6_481_293,
+      "Squadron 1 - 4,830,112": 4_830_112,
+      "Esquadrão 1 - 4.830.112": 4_830_112,
+      "poder 11.4M": 11_400_000,
+      "12,3 M": 12_300_000,
+      "12300k": 12_300_000,
     };
     for (const [line, might] of Object.entries(shapes))
       expect(read(line).squadMight, line).toBe(might);
@@ -24,10 +24,10 @@ describe("paste what they told you (#297)", () => {
 
   it("reads the AD Tech %, and leaves a field empty for idk yet", () => {
     const shapes = {
-      "69% for AD Tech": 69,
-      "Alliance Duel 53%": 53,
-      "pesquisa duelo da aliança tá 61%": 61,
-      "59%": 59,
+      "55% for AD Tech": 55,
+      "Alliance Duel 47%": 47,
+      "pesquisa duelo da aliança tá 62%": 62,
+      "58%": 58,
     };
     for (const [line, ad] of Object.entries(shapes)) expect(read(line).adTech, line).toBe(ad);
     expect(read("idk yet")).toEqual({
@@ -53,10 +53,10 @@ describe("paste what they told you (#297)", () => {
   });
 
   it("takes a number from a translated pair only when it carries its unit or both lines agree", () => {
-    // The OCR misread the English line's 53% as 539.
-    expect(read("Duelo da aliança 53%\nAlliance Duel 539").adTech).toBe(53);
-    expect(read("Primeiro esquadrão 8.442.626\nFirst squad 8,442,626").squadMight).toBe(8_442_626);
-    expect(read("Primeiro esquadrão 8442626\nFirst squad 8442628").squadMight).toBeNull();
+    // The OCR misread the English line's 47% as 479.
+    expect(read("Duelo da aliança 47%\nAlliance Duel 479").adTech).toBe(47);
+    expect(read("Primeiro esquadrão 7.215.408\nFirst squad 7,215,408").squadMight).toBe(7_215_408);
+    expect(read("Primeiro esquadrão 7215408\nFirst squad 7215402").squadMight).toBeNull();
   });
 
   it("names the languages written out, in the offered order", () => {
@@ -66,8 +66,8 @@ describe("paste what they told you (#297)", () => {
   });
 
   it("reads OCR lines as it reads a paste", () => {
-    expect(read(["Lv.25 [0Gs] Zed", "9.9 M for main squad", "69%", "PST"].join("\n"))).toEqual(
-      parseOnboarding(["Lv.25 [0Gs] Zed", "9.9 M for main squad", "69%", "PST"], NOW, "Etc/GMT+2"),
+    expect(read(["Lv.25 [0Gs] Zed", "12.3 M for main squad", "55%", "PST"].join("\n"))).toEqual(
+      parseOnboarding(["Lv.25 [0Gs] Zed", "12.3 M for main squad", "55%", "PST"], NOW, "Etc/GMT+2"),
     );
   });
 });

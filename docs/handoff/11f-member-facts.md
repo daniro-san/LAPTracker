@@ -18,7 +18,7 @@ Issue #297. Rules applied: D71, D72, D75, D77, D78. New decision: D80. Also buil
 - **`POST /api/w/[slug]/members/[uid]/facts`** `{ changes }`: same origin, JSON, a session of the workspace; 200, or 409 when any field conflicted (the other fields are saved).
 - **The card** (`MemberCards.tsx`, `member-card-data.ts`). The opened card lists the eight facts with their source badge ("from a message", "typed by an officer", "from the sheet"), then two buttons: "Paste what they told you" and "Edit facts".
 - **The editor** (`FactsEditor.tsx`, `FactFields.tsx`, `facts-form.ts`): a bottom sheet on phones, a centred card from 640 px.
-  - Fields: squad might (accepts "9.9M"), AD Tech %, troops T1–T12, the time-zone picker, 18 language toggles, status (As we see it / On a break / Needs help), away note and last day away, notes.
+  - Fields: squad might (accepts "12.3M"), AD Tech %, troops T1–T12, the time-zone picker, 18 language toggles, status (As we see it / On a break / Needs help), away note and last day away, notes.
   - Save sends only the changed fields, each with its version.
   - On 409: under the field, "Another officer saved this meanwhile: <value>" with "Keep theirs" and "Use mine"; the save bar names the waiting fields; Save stays off until each is answered.
   - A field the server combined replaces what the officer typed in the form.
@@ -106,14 +106,14 @@ Issue #297. Rules applied: D71, D72, D75, D77, D78. New decision: D80. Also buil
   - Seed: 11e's OGs seed, from the scrubbed fixture: 9 end-of-day reads, 8 arrays-only reads and a Saturday event. Plus `/w/nse`, with only one public event roster from `fixtures/v1-ids/67109944.json`.
   - **29 of 29 checks passed**, on a production build of this branch merged with dev at c6aad69 (before the notices merge; the facts code is unchanged since):
     - sign-in through the stub;
-    - edit facts (9.9M, 69, T9, Kyiv through the picker, English, a note): the card shows "9.90M", "69%", "T9", "Europe/Kyiv · UTC+2", "English" and the note, each "typed by an officer";
+    - edit facts (12.3M, 55, T9, Kyiv through the picker, English, a note): the card shows "12.30M", "55%", "T9", "Europe/Kyiv · UTC+2", "English" and the note, each "typed by an officer";
     - time-zone search: "ukraine" → Kyiv first, "Brazil -3" → São Paulo first, "PST" → Los Angeles first;
     - two editors on one card:
       - the stale troops edit shows "Another officer saved this meanwhile: 10";
       - the notes were combined ("Line from Ana\nLine from Bea");
       - "Keep theirs" leaves troops at 10 and the combined notes;
     - the route: a stale version answers 409 with the newer value; `cache-control: private, no-store`; a cross-site write is refused (403);
-    - paste (invented lines): main squad 9,900,000; AD Tech 53 from the line with "%", not "539"; time zone America/Sao Paulo; four "from a message" badges; nothing saved before Save; after Save the card says "from a message";
+    - paste (invented lines): main squad 12,300,000; AD Tech 47 from the line with "%", not "479"; time zone America/Sao Paulo; four "from a message" badges; nothing saved before Save; after Save the card says "from a message";
     - no sideways scroll at 360 dark, 1280 light and 1280 dark;
     - `/w/nse`:
       - the OGs session does not open it; it asks for its own sign-in;

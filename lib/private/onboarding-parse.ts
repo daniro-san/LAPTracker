@@ -4,7 +4,7 @@
 // officer confirms or edits before anything is saved. The shapes were measured on real chats (issue #297).
 //
 // The game's auto-translation shows a message twice, the original and then English, and the OCR can
-// misread one of the two ("53%" as "539"). So a number is taken when it carries its unit (%, M, K) or
+// misread one of the two ("47%" as "479"). So a number is taken when it carries its unit (%, M, K) or
 // when every line that has one agrees.
 import { LANGUAGES } from "./fact-fields";
 import { fold } from "./members-list";
@@ -28,7 +28,7 @@ interface Reading {
 const MILLION = /^(m|mi|mm|mln|kk|million|millions|milhao|milhoes)$/;
 const THOUSAND = /^(k|mil)$/;
 const BILLION = /^(b|bi|billion|billions)$/;
-/** 8,442,626 · 5.963.493 · 6969172 · 9.9 M · 9,9M · 9900k · 10.2M; never part of a word or a time. */
+/** 7,215,408 · 4.830.112 · 6481293 · 12.3 M · 12,3M · 12300k · 11.4M; never part of a word or a time. */
 const AMOUNT =
   /(?<![\p{L}\d.,])(\d{1,3}(?:[.,\s]\d{3})+|\d+(?:[.,]\d+)?)\s*(kk|k|mil|mi|mm|mln|millions?|milh(?:ão|ões|ao|oes)|m|bi|b|billions?)?(?![\p{L}\d])/giu;
 const PERCENT = /(\d{1,3}(?:[.,]\d+)?)\s*%/g;
@@ -196,7 +196,7 @@ function zonesOf(line: string, now: Date, serverZone: string): string[] {
   return named.via === "abbreviation" && capitals ? named.zones : [];
 }
 
-/** The squad might typed in the editor's field ("9.9M", "9 900 000"); null when it holds none. */
+/** The squad might typed in the editor's field ("12.3M", "12 300 000"); null when it holds none. */
 export const mightIn = (text: string): number | null =>
   pick(text.split(/\r?\n/).flatMap((l) => readLine(l).might));
 
