@@ -185,9 +185,9 @@ export const vi = {
     answer: "Từ {from} đến {to}, lần chuyển lớn nhất là {source} → {dest} ({n}).",
     answerNone:
       "Từ {from} đến {to}, không có lần chuyển nào từ {min} thành viên trở lên giữa các liên minh theo dõi.",
-    totals: "Đổi liên minh: {moved} · Mới: {arrived} · Rời: {left}",
+    totals: "Chuyển từ {min} trở lên · Đổi liên minh: {moved} · Mới: {arrived} · Rời: {left}",
     small:
-      "Các lần chuyển dưới {min} thành viên bị ẩn và không tính vào tổng nào, để không ai bị chỉ ra trong một nhóm nhỏ.",
+      "Số dưới {min} thành viên, kể cả người ở lại, bị ẩn và không tính vào tổng nào, để trang này không chỉ ra nhóm nhỏ.",
     rowNew: "Mới",
     colLeft: "Rời",
     legend:
@@ -236,10 +236,7 @@ export const vi = {
   standing: {
     title: "Thứ hạng theo thời gian",
     help: "Các liên minh theo dõi xếp theo Lực Chiến từ lần đọc mỗi ngày, kèm thay đổi kể từ {from}. Ngày mà một liên minh không được đọc thì không tính. Máy chủ ở đây là tổng của các liên minh theo dõi.",
-    lead: "{label} đứng hạng {rank} theo Lực Chiến, {move} từ {from}.",
-    up: "lên {n} hạng",
-    down: "xuống {n} hạng",
-    held: "không đổi",
+    lead: "{label} đứng hạng {rank} theo Lực Chiến ngày {to} và {before} ngày {from}.",
     leadGrowth:
       "Lực Chiến của liên minh này đổi {growth} kể từ đó; tổng các liên minh theo dõi đổi {server}.",
     server: "Liên minh theo dõi",
@@ -248,6 +245,7 @@ export const vi = {
     thisAlliance: "Liên minh này",
     detailsHelp: "Hạng mỗi ngày, cũ nhất trước: {days}.",
     few: "Chưa đủ lần đọc hằng ngày để so sánh các liên minh.",
+    notRanked: "Không xếp hạng, không có lần đọc hằng ngày dùng được trong giai đoạn này: {list}.",
   },
   history: {
     title: "Lịch sử thành viên",

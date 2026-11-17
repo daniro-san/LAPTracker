@@ -184,9 +184,9 @@ export const ja = {
     action: "表示",
     answer: "{from}から{to}まで、最も大きな移動は {source} → {dest}（{n}人）。",
     answerNone: "{from}から{to}まで、追跡中の同盟の間で{min}人以上の移動はありません。",
-    totals: "同盟移動：{moved} · 新規：{arrived} · 脱退：{left}",
+    totals: "{min}人以上の移動 · 同盟移動：{moved} · 新規：{arrived} · 脱退：{left}",
     small:
-      "小さな集団から個人が特定されないよう、{min}人未満の移動は表示せず、どの合計にも含めていません。",
+      "{min}人未満の人数は、残った人数も含めて表示せず、どの合計にも含めていません。このページで小さな集団が特定されないようにするためです。",
     rowNew: "新規",
     colLeft: "脱退",
     legend:
@@ -234,10 +234,7 @@ export const ja = {
   standing: {
     title: "順位の推移",
     help: "各日の読み取りから見た、追跡中の同盟の Might による順位と、{from} からの変化です。同盟が読み取られなかった日は除いています。ここでの「サーバー」は追跡中の同盟の合計です。",
-    lead: "{label} は Might の順位が {rank}、{from} から{move}。",
-    up: "{n}位上昇",
-    down: "{n}位下降",
-    held: "変わらず",
+    lead: "{label} の Might の順位は、{to}が{rank}、{from}が{before}でした。",
     leadGrowth: "その間に Might は{growth}変化し、追跡中の同盟の合計は{server}変化しました。",
     server: "追跡中の同盟",
     growthSince: "{from} から {growth}",
@@ -245,6 +242,7 @@ export const ja = {
     thisAlliance: "この同盟",
     detailsHelp: "各日の順位、古い順：{days}。",
     few: "同盟を比べるには、毎日の読み取りがまだ足りません。",
+    notRanked: "順位対象外。この期間に使える毎日の読み取りがありません：{list}。",
   },
   history: {
     title: "メンバー履歴",

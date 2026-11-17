@@ -190,9 +190,10 @@ export const de = {
     answer: "Zwischen {from} und {to} war der größte Wechsel {source} → {dest} ({n}).",
     answerNone:
       "Zwischen {from} und {to} gab es keinen Wechsel von {min} oder mehr Members zwischen den erfassten Allianzen.",
-    totals: "Allianz gewechselt: {moved} · Neu: {arrived} · Ausgetreten: {left}",
+    totals:
+      "Wechsel ab {min} Members · Allianz gewechselt: {moved} · Neu: {arrived} · Ausgetreten: {left}",
     small:
-      "Wechsel von weniger als {min} Members sind ausgeblendet und in keiner Zahl enthalten, damit in einer kleinen Gruppe niemand erkennbar ist.",
+      "Zahlen unter {min} Members, auch Gebliebene, sind ausgeblendet und in keiner Summe enthalten, damit diese Seite keine kleinen Gruppen herausgreift.",
     rowNew: "Neu",
     colLeft: "Ausgetr.",
     legend:
@@ -241,10 +242,7 @@ export const de = {
   standing: {
     title: "Rangverlauf",
     help: "Die erfassten Allianzen nach Might, aus jedem Tagesabruf, mit der Änderung seit {from}. Ein Tag, an dem eine Allianz nicht abgerufen wurde, fehlt. Der Server ist hier die Summe der erfassten Allianzen.",
-    lead: "Seit {from} ist {label} nach Might auf {rank}, {move}.",
-    up: "um {n} nach oben",
-    down: "um {n} nach unten",
-    held: "unverändert",
+    lead: "{label} war am {to} nach Might auf {rank} und am {from} auf {before}.",
     leadGrowth:
       "Das Might der Allianz hat sich seitdem um {growth} verändert; die Summe der erfassten Allianzen um {server}.",
     server: "Erfasste Allianzen",
@@ -253,6 +251,7 @@ export const de = {
     thisAlliance: "Diese Allianz",
     detailsHelp: "Rang an jedem Tag, der älteste zuerst: {days}.",
     few: "Noch nicht genug Tagesabrufe, um die Allianzen zu vergleichen.",
+    notRanked: "Nicht platziert, kein brauchbarer Tagesabruf in diesem Zeitraum: {list}.",
   },
   history: {
     title: "Mitgliederverlauf",

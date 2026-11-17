@@ -188,9 +188,10 @@ export const tr = {
     answer: "{from} ile {to} arasında en büyük geçiş {source} → {dest} ({n}).",
     answerNone:
       "{from} ile {to} arasında takip edilen ittifaklar arasında {min} veya daha fazla üyelik bir geçiş olmadı.",
-    totals: "İttifak değiştiren: {moved} · Yeni: {arrived} · Ayrılan: {left}",
+    totals:
+      "{min} veya daha fazla geçiş · İttifak değiştiren: {moved} · Yeni: {arrived} · Ayrılan: {left}",
     small:
-      "{min} üyeden az geçiş gizlenir ve hiçbir toplama katılmaz, böylece küçük bir grupta kimse seçilemez.",
+      "{min} üyeden az sayılar, kalanlar dahil, gizlenir ve hiçbir toplama katılmaz; böylece bu sayfa küçük grupları öne çıkarmaz.",
     rowNew: "Yeni",
     colLeft: "Ayrılan",
     legend:
@@ -239,10 +240,7 @@ export const tr = {
   standing: {
     title: "Zaman içinde durum",
     help: "Takip edilen ittifaklar, her günün okumasındaki Might’a göre sıralanır; {from} sonrası değişim de gösterilir. Bir ittifakın okunmadığı gün dışarıda bırakılır. Buradaki sunucu, takip edilen ittifakların toplamıdır.",
-    lead: "{label}, Might’a göre {rank}; {from} sonrası {move}.",
-    up: "{n} basamak yukarı",
-    down: "{n} basamak aşağı",
-    held: "değişmedi",
+    lead: "{label}, {to} günü Might’a göre {rank}, {from} günü {before} sıradaydı.",
     leadGrowth:
       "Ondan beri Might’ı {growth} değişti; takip edilen ittifakların toplamı {server} değişti.",
     server: "Takipteki toplam",
@@ -251,6 +249,7 @@ export const tr = {
     thisAlliance: "Bu ittifak",
     detailsHelp: "Her günkü sıra, en eskisi önce: {days}.",
     few: "İttifakları karşılaştırmak için henüz yeterli günlük okuma yok.",
+    notRanked: "Sıralanmadı, bu dönemde kullanılabilir günlük okuma yok: {list}.",
   },
   history: {
     title: "Üye geçmişi",

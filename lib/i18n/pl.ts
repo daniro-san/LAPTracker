@@ -188,9 +188,10 @@ export const pl = {
     answer: "Największy przepływ między {from} a {to}: {source} → {dest} ({n}).",
     answerNone:
       "Między {from} a {to} nie było przepływu {min} lub więcej członków między śledzonymi sojuszami.",
-    totals: "Zmiany sojuszu: {moved} · Nowi: {arrived} · Odeszli: {left}",
+    totals:
+      "Przepływy od {min} członków · Zmiany sojuszu: {moved} · Nowi: {arrived} · Odeszli: {left}",
     small:
-      "Przepływy mniejsze niż {min} członków są ukryte i nie wchodzą do żadnej sumy, żeby nikogo nie dało się wskazać w małej grupie.",
+      "Liczby poniżej {min} członków, także tych, którzy zostali, są ukryte i nie wchodzą do żadnej sumy, żeby ta strona nie wskazywała małych grup.",
     rowNew: "Nowi",
     colLeft: "Odeszli",
     legend:
@@ -239,10 +240,7 @@ export const pl = {
   standing: {
     title: "Miejsce w czasie",
     help: "Śledzone sojusze ułożone według Might z każdego dziennego odczytu, ze zmianą od {from}. Dzień, w którym sojusz nie został odczytany, jest pominięty. Serwer to tutaj suma śledzonych sojuszy.",
-    lead: "{label} zajmuje miejsce {rank} pod względem Might, {move} od {from}.",
-    up: "w górę: {n}",
-    down: "w dół: {n}",
-    held: "bez zmian",
+    lead: "{label} w dniu {to} zajmował miejsce {rank} pod względem Might, a w dniu {from} {before}.",
     leadGrowth: "Jego Might: {growth} od tego czasu; suma śledzonych sojuszy: {server}.",
     server: "Śledzone sojusze",
     growthSince: "{growth} od {from}",
@@ -250,6 +248,7 @@ export const pl = {
     thisAlliance: "Ten sojusz",
     detailsHelp: "Miejsce każdego dnia, od najstarszego: {days}.",
     few: "Za mało dziennych odczytów, żeby porównać sojusze.",
+    notRanked: "Bez miejsca w rankingu, brak użytecznego dziennego odczytu w tym okresie: {list}.",
   },
   history: {
     title: "Historia członków",

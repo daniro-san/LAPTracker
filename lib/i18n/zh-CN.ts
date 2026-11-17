@@ -176,8 +176,8 @@ export const zhCN = {
     action: "显示",
     answer: "{from} 到 {to} 之间，最大的一次流动是 {source} → {dest}（{n}）。",
     answerNone: "{from} 到 {to} 之间，追踪的联盟之间没有 {min} 人及以上的流动。",
-    totals: "更换联盟：{moved} · 新增：{arrived} · 离开：{left}",
-    small: "少于 {min} 人的流动已隐藏，也不计入任何总数，以免有人在小群体中被认出。",
+    totals: "{min} 人及以上的流动 · 更换联盟：{moved} · 新增：{arrived} · 离开：{left}",
+    small: "少于 {min} 人的数字（含留下的人）已隐藏，也不计入任何总数，使本页不会指出小群体。",
     rowNew: "新增",
     colLeft: "离开",
     legend:
@@ -224,10 +224,7 @@ export const zhCN = {
   standing: {
     title: "排名随时间变化",
     help: "各追踪联盟按每日读取的 Might 排名，并显示自 {from} 以来的变化。某个联盟当天未被读取，该天即不计入。此处的服务器指追踪联盟的总和。",
-    lead: "{label} 按 Might 排名 {rank}，自 {from} 以来{move}。",
-    up: "上升 {n} 位",
-    down: "下降 {n} 位",
-    held: "名次不变",
+    lead: "{label} 按 Might 排名，{to} 为 {rank}，{from} 为 {before}。",
     leadGrowth: "其 Might 自那时起变化 {growth}；追踪联盟的总和变化 {server}。",
     server: "追踪联盟",
     growthSince: "自 {from} 以来 {growth}",
@@ -235,6 +232,7 @@ export const zhCN = {
     thisAlliance: "本联盟",
     detailsHelp: "按日排名，从最早到最近：{days}。",
     few: "每日读取还不够多，暂时无法比较各联盟。",
+    notRanked: "未列入排名，本期间没有可用的每日读取：{list}。",
   },
   history: {
     title: "成员历史",

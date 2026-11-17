@@ -321,7 +321,6 @@ Words already used in `lib/i18n/nl.ts`. Reuse them so the pages stay consistent;
 | peak                      | piek                             | `ledger.liveLast` — the highest reading in the last minutes                               |
 | Standing                  | Stand door de tijd               | `standing.title` — the alliance's rank over time                                          |
 | Tracked alliances         | gevolgde allianties              | `standing.server`, `standing.help` — the alliances the ledger follows                     |
-| unchanged                 | ongewijzigd                      | `standing.held` — a rank that did not move                                                |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

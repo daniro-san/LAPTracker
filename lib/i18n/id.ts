@@ -188,9 +188,10 @@ export const idID = {
     answer: "Antara {from} dan {to}, perpindahan terbesar adalah {source} → {dest} ({n}).",
     answerNone:
       "Antara {from} dan {to}, tidak ada perpindahan {min} Members atau lebih di antara aliansi yang dilacak.",
-    totals: "Pindah aliansi: {moved} · Baru: {arrived} · Keluar: {left}",
+    totals:
+      "Perpindahan {min} atau lebih · Pindah aliansi: {moved} · Baru: {arrived} · Keluar: {left}",
     small:
-      "Perpindahan di bawah {min} Members disembunyikan dan tidak dihitung dalam total mana pun, supaya tidak ada yang bisa ditunjuk dari kelompok kecil.",
+      "Jumlah di bawah {min} Members, termasuk yang tetap, disembunyikan dan tidak dihitung dalam total mana pun, supaya halaman ini tidak menunjuk kelompok kecil.",
     rowNew: "Baru",
     colLeft: "Keluar",
     legend:
@@ -239,10 +240,7 @@ export const idID = {
   standing: {
     title: "Klasemen dari waktu ke waktu",
     help: "Aliansi yang dilacak diurutkan menurut Might dari pembacaan tiap hari, dengan perubahan sejak {from}. Hari ketika sebuah aliansi tidak terbaca tidak dihitung. Server di sini adalah total aliansi yang dilacak.",
-    lead: "{label} di peringkat {rank} menurut Might, {move} sejak {from}.",
-    up: "naik {n}",
-    down: "turun {n}",
-    held: "tidak berubah",
+    lead: "{label} berada di peringkat {rank} menurut Might pada {to} dan {before} pada {from}.",
     leadGrowth:
       "Might-nya berubah {growth} sejak itu; total aliansi yang dilacak berubah {server}.",
     server: "Aliansi dilacak",
@@ -251,6 +249,8 @@ export const idID = {
     thisAlliance: "Aliansi ini",
     detailsHelp: "Peringkat tiap hari, dari yang paling lama: {days}.",
     few: "Pembacaan harian belum cukup untuk membandingkan aliansi.",
+    notRanked:
+      "Tidak diberi peringkat, tidak ada pembacaan harian yang bisa dipakai pada periode ini: {list}.",
   },
   history: {
     title: "Riwayat anggota",
