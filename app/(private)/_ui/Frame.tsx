@@ -43,6 +43,7 @@ const PATHS: Partial<Record<TabId, string>> = {
   members: "/members",
   mark: "/roll-call",
   days: "/calendar",
+  review: "/follow-up",
 };
 
 /** The Home tab's count of screenshot drafts waiting for review (issue 299), beside its label. */

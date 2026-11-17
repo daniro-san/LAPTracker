@@ -3,6 +3,7 @@
 import type { WorkspaceDictionary } from "./dictionary";
 import { boardPt } from "./dictionary.board";
 import { calendarPt } from "./dictionary.calendar.pt-BR";
+import { followUpPt } from "./dictionary.followup";
 import { importPt } from "./dictionary.import";
 import { lifecyclePt } from "./dictionary.lifecycle";
 import { membersPt } from "./dictionary.members.pt-BR";
@@ -274,4 +275,5 @@ export const pt: WorkspaceDictionary = {
   ...shotsPt,
   ...translatePt,
   ...boardPt,
+  ...followUpPt,
 };

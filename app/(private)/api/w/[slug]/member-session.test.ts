@@ -40,6 +40,9 @@ const FIXTURES: Record<string, Partial<Record<Method, Fixture>>> = {
   "calendar/route.ts": {
     POST: { body: { action: "delete", entry: 1, scope: "all", week: "2026-11-16" } },
   },
+  "follow-up/route.ts": {
+    POST: { body: { uid: 1, action: "talked", note: "", until: null, version: 0, requestId: ID } },
+  },
   "import/route.ts": { POST: { body: { csv: "name", apply: false, decisions: [] } } },
   "members/[uid]/facts/route.ts": {
     POST: { body: { changes: [{ field: "notes", version: 0, value: "x", source: "officer" }] } },
