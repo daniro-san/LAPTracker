@@ -1,6 +1,7 @@
 "use client";
 
-// /admin's Workspaces card (D71, D73, D105): each workspace with its allowlist and one "Sign out users"
+// /admin's Workspaces card (D71, D73, D105): each workspace with its member roles (or "Members' board is
+// off"), its allowlist and one "Sign out users"
 // button (a sheet picks everyone, officers, members or one person, then asks), a form that adds or edits a workspace, and one that adds an allowlist entry. Each press sends the PIN as
 // x-edit-pin, like the run buttons, and shows the outcome in words.
 import { useRouter } from "next/navigation";
@@ -24,6 +25,8 @@ export interface WorkspaceView {
   alliance: string;
   guild: string;
   roles: string;
+  /** The members' board roles (D105, amended 2026-11-17); "" when none is set. */
+  memberRoles: string;
   sessions: number;
   allowlist: string[];
   /** Who has an open session, for "Sign out users". */
@@ -108,6 +111,13 @@ function WorkspaceList({
           <p className="text-body-sm break-words text-ink/80">
             {t.guild}: {w.guild} · {t.roles}: {w.roles} · {fill(t.sessions, { n: w.sessions })}
           </p>
+          {w.memberRoles === "" ? (
+            <p className="text-body-sm font-semibold">{t.boardOff}</p>
+          ) : (
+            <p className="text-body-sm break-words text-ink/80">
+              {t.memberRoles}: {w.memberRoles}
+            </p>
+          )}
           <p className="text-body-sm break-words text-ink/80">
             {t.allowlist}: {w.allowlist.length === 0 ? t.allowlistNone : w.allowlist.join(", ")}
           </p>
@@ -133,6 +143,7 @@ function WorkspaceForm({ run }: { run: Run }) {
         slug: (f.slug ?? "").trim(),
         discord_guild_id: (f.guild ?? "").trim(),
         leader_role_ids: ids(f.roles ?? ""),
+        member_role_ids: ids(f.member_roles ?? ""),
       },
     });
   };
@@ -154,6 +165,9 @@ function WorkspaceForm({ run }: { run: Run }) {
       </Field>
       <Field label={t.roles} help={t.rolesHelp}>
         <input name="roles" required autoComplete="off" className={FIELD} />
+      </Field>
+      <Field label={t.memberRoles} help={t.memberRolesHelp}>
+        <input name="member_roles" autoComplete="off" className={FIELD} />
       </Field>
       <Field label={t.slug} help={t.slugHelp}>
         <input name="slug" required autoCapitalize="none" autoComplete="off" className={FIELD} />

@@ -9,7 +9,13 @@ import { SLUG } from "@/lib/private/sign-in";
 
 import { Frame, workspaceWords } from "../../../_ui/Frame";
 
-const REASONS: NoAccess[] = ["not_member", "no_role", "allowlist_expired", "blocked"];
+const REASONS: NoAccess[] = [
+  "not_member",
+  "no_role",
+  "board_closed",
+  "allowlist_expired",
+  "blocked",
+];
 
 export default async function NoAccessPage({
   params,

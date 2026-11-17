@@ -7,6 +7,10 @@ export const workspacesAdminCopy = {
   guild: "Discord server id",
   roles: "Leadership role ids",
   rolesHelp: "One or more, separated by commas or spaces.",
+  memberRoles: "Member role ids",
+  memberRolesHelp:
+    "Who sees the members' board: people in the server with one of these roles. Separated by commas or spaces. Empty: the board is off.",
+  boardOff: "Members' board is off until you set a member role.",
   slug: "Address (slug)",
   slugHelp: "Lowercase letters, digits and dashes, e.g. ogs.",
   sessions: "{n} signed in",

@@ -32,6 +32,7 @@ export async function Workspaces({ now }: { now: Date }) {
       alliance: alliance ? `${alliance.tag} · ${alliance.name}` : String(w.unionId),
       guild: w.discordGuildId,
       roles: w.leaderRoleIds.join(", "),
+      memberRoles: w.memberRoleIds.join(", "),
       sessions: w.openSessions,
       allowlist: w.allowlist.map(
         (a) =>

@@ -29,6 +29,7 @@ beforeEach(async () => {
     slug: "ogs",
     discordGuildId: "1",
     leaderRoleIds: ["2"],
+    memberRoleIds: ["3"],
   });
 });
 

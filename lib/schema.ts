@@ -323,6 +323,11 @@ export const workspaces = pgTable("workspaces", {
   unionId: big("union_id").notNull().unique(),
   discordGuildId: text("discord_guild_id").notNull(),
   leaderRoleIds: text("leader_role_ids").array().notNull(),
+  /** Members' board roles (D105, amended 2026-11-17): empty means no member session, the board is closed. */
+  memberRoleIds: text("member_role_ids")
+    .array()
+    .notNull()
+    .default(sql`'{}'::text[]`),
   createdAt: tstz("created_at").notNull().defaultNow(),
 });
 

@@ -43,7 +43,9 @@ const en = {
   "noaccess.not_member":
     "This Discord account is not in the alliance’s Discord server. Join the server, or sign in with the account you use there.",
   "noaccess.no_role":
-    "This Discord account does not have a leadership role in the alliance’s server. Ask an R5 to give you the role, then sign in again.",
+    "This Discord account doesn’t have the alliance’s member role yet. Once an officer gives it to you, sign in again.",
+  "noaccess.board_closed":
+    "The members’ board is not open yet. Your officers will say on Discord when it is.",
   "noaccess.allowlist_expired":
     "Your access was for a limited time, and that time is over. Ask the site owner to extend it.",
   "noaccess.blocked":

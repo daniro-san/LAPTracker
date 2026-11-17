@@ -239,6 +239,13 @@
       "when": 1794930374971,
       "tag": "0033_pending_members_dismissed",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1794931384309,
+      "tag": "0034_workspace_member_roles",
+      "breakpoints": true
     }
   ]
 }

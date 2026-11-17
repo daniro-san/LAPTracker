@@ -29,6 +29,7 @@ import {
   jar,
   location,
   MEMBER_ID,
+  MEMBER_ROLE,
   ORIGIN,
   R4,
   signInWith,
@@ -47,6 +48,7 @@ beforeEach(async () => {
     slug: "ogs",
     discordGuildId: "400000000000000001",
     leaderRoleIds: [R4],
+    memberRoleIds: [MEMBER_ROLE],
   });
   await saveWorkspace(db, {
     unionId: 67109944,
@@ -94,7 +96,7 @@ describe("workspace sign-in (D71)", () => {
     expect(token).toBeUndefined();
   });
 
-  it("gives a server member without the role the members' board only, for 30 days (D105)", async () => {
+  it("gives a server member with the member role the members' board only, for 30 days (D105)", async () => {
     const { step, token } = await signIn("ogs", "member", T0, {}, { next: "/w/ogs/members" });
     expect(location(step)).toBe("/w/ogs/board");
     const cookie = step.kind === "redirect" ? step.cookies.join(" ") : "";
@@ -103,8 +105,14 @@ describe("workspace sign-in (D71)", () => {
       ok: false,
       reason: "member",
     });
-    // No daily role check: still served on day 29, through Discord again after day 30.
+    // The role is checked again through Discord once a day (amended 2026-11-17), up to day 30.
     const day29 = new Date(T0.getTime() + MEMBER_SESSION_MS - 86_400_000);
+    expect(await requireBoard(db, "ogs", jar(token), day29)).toEqual({
+      ok: false,
+      reason: "expired",
+    });
+    const renewal = await signIn("ogs", "member", day29, {}, { session: token ?? "" });
+    expect(renewal.token).toBeUndefined();
     expect(await requireBoard(db, "ogs", jar(token), day29)).toMatchObject({
       ok: true,
       officer: false,
@@ -265,8 +273,9 @@ describe("two workspaces stay apart (D71)", () => {
   it("does not let an account in through another workspace's allowlist", async () => {
     await allowInOgs();
     const { step, token } = await signIn("nse", "member");
-    expect(location(step)).toBe("/w/nse/board");
-    expect(await requireWorkspace(db, "nse", jar(token), T0)).toMatchObject({ reason: "member" });
+    // nse has no member role set, so its board is closed too (D105, amended 2026-11-17).
+    expect(location(step)).toBe("/w/nse/no-access?why=board_closed");
+    expect(token).toBeUndefined();
   });
 
   it("does not end a session when it signs out under another workspace's slug", async () => {

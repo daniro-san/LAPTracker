@@ -4,8 +4,8 @@
 // after that check; a page renews it through Discord once the check is 23 hours old, so the trip comes about
 // once a day, as under D73, and an API call made from a page loaded before then still has an hour left. It
 // ends seven days after sign-in at the latest, and never past the allowlist entry that let its person in.
-// A member's session (D105) opens only the members' board: it lasts 30 days with no role check in between,
-// because each trip through Discord on a phone can ask the member to sign in again.
+// A member's session (D105) opens only the members' board: it lasts 30 days, and the board confirms the
+// member role through Discord, like an officer's, once its check is 24 hours old (amended 2026-11-17).
 import { createHash, randomBytes } from "node:crypto";
 
 import type { Db } from "../db";
@@ -14,7 +14,7 @@ import { deleteSession, insertSession, renewSession, type SessionTier } from "..
 export const SESSION_COOKIE = "__Host-lap_ws";
 /** The cap: a session ends this long after sign-in, however often it was renewed. */
 export const SESSION_MS = 7 * 24 * 60 * 60_000;
-/** A member's session (D105) ends this long after sign-in; Discord is not asked again before then. */
+/** A member's session (D105) ends this long after sign-in; its role is checked again every CHECK_MS. */
 export const MEMBER_SESSION_MS = 30 * 24 * 60 * 60_000;
 /** A role check is good this long: past it, a workspace API answers signed_out (D99). */
 export const CHECK_MS = 24 * 60 * 60_000;

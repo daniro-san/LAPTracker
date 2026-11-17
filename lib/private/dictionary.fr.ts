@@ -38,7 +38,9 @@ export const fr: WorkspaceDictionary = {
   "noaccess.not_member":
     "Ce compte Discord n’est pas sur le serveur Discord de l’alliance. Rejoignez le serveur, ou connectez-vous avec le compte que vous y utilisez.",
   "noaccess.no_role":
-    "Ce compte Discord n’a pas de rôle de direction sur le serveur de l’alliance. Demandez le rôle à un R5, puis reconnectez-vous.",
+    "Ce compte Discord n’a pas encore le rôle de membre de l’alliance. Quand un officier vous l’aura donné, reconnectez-vous.",
+  "noaccess.board_closed":
+    "Le tableau des membres n’est pas encore ouvert. Vos officiers le diront sur Discord quand il le sera.",
   "noaccess.allowlist_expired":
     "Votre accès était limité dans le temps, et ce temps est écoulé. Demandez au propriétaire du site de le prolonger.",
   "noaccess.blocked":

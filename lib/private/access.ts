@@ -140,9 +140,11 @@ export async function requireWorkspace(
 }
 
 /**
- * The members' board (D105): a member's session is served until its end, with no role check in between;
- * an officer's keeps its page rule (RENEW_MS, D99), so the officer's trip through Discord comes as on the
- * desk.
+ * The members' board (D105): a member's session is served for 24 hours after its role check (CHECK_MS),
+ * then the page sends it through Discord silently, which confirms the member role again or ends the
+ * session (amended 2026-11-17). With no member role set, a member's session is not served at all and goes
+ * the same way. An officer's keeps its page rule (RENEW_MS, D99), so the officer's trip through Discord
+ * comes as on the desk.
  */
 export async function requireBoard(
   db: Db,
@@ -154,7 +156,10 @@ export async function requireBoard(
   if ("ok" in found) return found;
   const { workspace, session } = found;
   const officer = session.tier === "officer";
-  const within = officer ? RENEW_MS : Number.POSITIVE_INFINITY;
+  // INVARIANT workspace.member-recheck: a member's role is confirmed again at least once a day, and no
+  // member's session is served while the workspace has no member role.
+  const closed = !officer && workspace.memberRoleIds.length === 0;
+  const within = officer ? RENEW_MS : closed ? 0 : CHECK_MS;
   const refusal = await servedOrNot(db, workspace, session, now, within);
   if (refusal) return refusal;
   const fields: Omit<BoardAccess, typeof boardBrand> = {

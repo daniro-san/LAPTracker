@@ -1,0 +1,1 @@
+ALTER TABLE "workspaces" ADD COLUMN "member_role_ids" text[] DEFAULT '{}'::text[] NOT NULL;
