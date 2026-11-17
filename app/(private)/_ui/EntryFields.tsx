@@ -5,7 +5,8 @@
 // officer's own time under it, and whether it repeats.
 import type { ReactNode } from "react";
 
-import { ELIXIR_WINDOWS, LEVEL_MAX, type Kind } from "@/lib/private/calendar-model";
+import { fill } from "@/lib/copy";
+import { ELIXIR_WINDOWS, LEVEL_MAX, type Kind } from "@/lib/private/calendar-kinds";
 import { hhmm, parseTime, zonedInstant } from "@/lib/private/calendar-time";
 import type { CalendarWords } from "@/lib/private/dictionary.calendar";
 
@@ -20,9 +21,6 @@ export interface PartProps {
   p: ReturnType<typeof problems> & { shown: boolean };
   words: CalendarWords;
 }
-
-export const fillIn = (w: string, vars: Record<string, string | number>) =>
-  w.replace(/\{(\w+)\}/g, (all, k: string) => String(vars[k] ?? all));
 
 /** "Cheese Trap I / II" or "Team A / B", as the game writes them. */
 function VariantField({ d, set, words }: PartProps) {
@@ -45,7 +43,7 @@ function LevelField({ d, set, p, words }: PartProps) {
   return (
     <Labeled
       id="cal-level"
-      label={fillIn(words["calendar.form.level"], { max: LEVEL_MAX })}
+      label={fill(words["calendar.form.level"], { max: LEVEL_MAX })}
       error={p.shown && p.level ? words["calendar.form.needed"] : null}
     >
       <select
@@ -181,7 +179,7 @@ export function RepeatFields(props: PartProps & { item: AgendaItem | null }) {
         options={[
           {
             value: "one",
-            label: fillIn(words["calendar.form.scopeOne"], { date: item.form.weekLabel }),
+            label: fill(words["calendar.form.scopeOne"], { date: item.form.weekLabel }),
           },
           { value: "all", label: words["calendar.form.scopeAll"] },
         ]}

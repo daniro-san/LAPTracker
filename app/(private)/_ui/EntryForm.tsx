@@ -8,7 +8,7 @@ import { useState } from "react";
 import { buttonClass } from "@/lib/brand/components/Button";
 import { CheckField } from "@/lib/brand/components/CheckField";
 import { Sheet } from "@/lib/brand/components/Sheet";
-import { KINDS } from "@/lib/private/calendar-model";
+import { KINDS } from "@/lib/private/calendar-kinds";
 import type { CalendarKey, CalendarWords } from "@/lib/private/dictionary.calendar";
 
 import type { AgendaItem } from "./calendar-data";
@@ -168,7 +168,7 @@ export function EntryForm(props: FormProps) {
         <div className="mt-5 flex flex-wrap gap-2">
           <button
             type="button"
-            disabled={save.busy}
+            disabled={save.busy || save.stale !== null}
             onClick={() => {
               setShown(true);
               if (Object.keys(problems(d)).length === 0) save.save();

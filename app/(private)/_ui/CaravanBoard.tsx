@@ -2,13 +2,13 @@
 
 // The week's Alliance Caravans and their picks (issue 300): one Coachman, plus a VIP or a Guardian, never
 // both (owner, 2026-11-16). Members come from the alliance's newest roster, found by typing part of a name.
-// Not a ranking (D75): no suggestions, no counts, no "who was never picked"; the list is in name order.
+// The picker suggests up to three members first (issue 354); the full list is in name order.
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import type { CalendarWords } from "@/lib/private/dictionary.calendar";
 
-import type { AgendaItem, Member } from "./calendar-data";
+import type { AgendaItem, Member, SuggestedMember } from "./calendar-data";
 import { refusalText, sendCalendar, type Stale } from "./calendar-send";
 import { useFreshOnReturn } from "./CalendarAgenda";
 import { Choice, ConflictBox } from "./CalendarFields";
@@ -182,6 +182,8 @@ function CaravanCard(props: {
 export function CaravanBoard(props: {
   items: AgendaItem[];
   roster: Member[];
+  /** Per caravan week (`entry:week`), up to three suggested members with their reasons. */
+  suggested: Record<string, SuggestedMember[]>;
   words: CalendarWords;
   slug: string;
 }) {
@@ -211,6 +213,7 @@ export function CaravanBoard(props: {
         <RosterPicker
           role={picking.field === "coach" ? words["calendar.role.coach"] : role(picking.kind)}
           roster={props.roster}
+          suggested={props.suggested[picking.item.key] ?? []}
           taken={picking.field === "coach" ? picking.item.second : picking.item.coach}
           takenRole={
             picking.field === "coach"

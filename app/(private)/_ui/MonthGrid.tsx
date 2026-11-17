@@ -1,6 +1,8 @@
 // The month overview beside the week (issue 300), from 640 px only: six Monday-to-Sunday rows, each day a
-// link to its week, with up to three of its entries as text (server time) and how many more. Below 640 px
+// link to its week, with up to three of its entries as text (server time, "(ST)" in the heading) and how many more. Below 640 px
 // the week list is the calendar.
+import { fill } from "@/lib/copy";
+
 import type { MonthCell } from "./calendar-data";
 
 export function MonthGrid({
@@ -18,7 +20,7 @@ export function MonthGrid({
 }) {
   return (
     <section aria-label={title} className="mt-5 hidden sm:block">
-      <h2 className="font-subhead text-display-sm capitalize">{title}</h2>
+      <h2 className="font-subhead text-display-sm">{title}</h2>
       <div className="mt-2 grid grid-cols-7 gap-0.5 text-[12px] leading-4">
         {weekdays.map((w) => (
           <span key={w} aria-hidden="true" className="pb-1 text-center font-semibold text-ink/70">
@@ -45,7 +47,7 @@ export function MonthGrid({
             ))}
             {c.more > 0 && (
               <span aria-hidden="true" className="text-ink/70">
-                {more.replace("{n}", String(c.more))}
+                {fill(more, { n: c.more })}
               </span>
             )}
           </a>

@@ -1,15 +1,23 @@
 // POST /api/w/[slug]/calendar — the Calendar tab's writes (issue 300): add an entry, change fields of one
 // (each with the version the officer saw), or delete it. A write: same origin and a JSON body (D71). A
 // field changed by someone else since answers 409 with its newer value in the officer's words (issue 293).
+// The lib calls run in `privately`, so an error reaches app_errors as its code alone, never with what an
+// officer typed.
 import { z } from "zod";
 
 import { requireWorkspace } from "@/lib/private/access";
 import { createEntry, editEntry, removeEntry } from "@/lib/private/calendar";
 import { fieldChange, newEntry } from "@/lib/private/calendar-model";
-import { conflictSaid } from "@/lib/private/calendar-words";
+import { conflictSaid, conflictYours } from "@/lib/private/calendar-words";
 import { WORKSPACE_LANG_COOKIE } from "@/lib/private/cookies";
 import { pickWorkspaceLanguage, WORKSPACE_DICTIONARIES } from "@/lib/private/dictionary";
-import { isSameOriginJson, NO_STORE, privateError, requestCookies } from "@/lib/private/http";
+import {
+  isSameOriginJson,
+  NO_STORE,
+  privately,
+  privateError,
+  requestCookies,
+} from "@/lib/private/http";
 import { SLUG } from "@/lib/private/sign-in";
 import { withContext } from "@/lib/route";
 
@@ -53,14 +61,14 @@ export async function POST(
     const access = await requireWorkspace(db, slug, jar, now);
     if (!access.ok) return privateError(401, "signed_out");
     if (input.action === "create") {
-      const made = await createEntry(db, access, input.entry);
+      const made = await privately("calendar.create", () => createEntry(db, access, input.entry));
       return made.ok ? ok({ id: made.id }) : privateError(409, made.code);
     }
     if (input.action === "delete") {
-      const done = await removeEntry(db, access, input);
+      const done = await privately("calendar.remove", () => removeEntry(db, access, input));
       return done === "ok" ? ok() : privateError(404, done);
     }
-    const result = await editEntry(db, access, input, now);
+    const result = await privately("calendar.edit", () => editEntry(db, access, input, now));
     if (result.ok) return ok();
     if (result.code !== "stale") return privateError(STATUS[result.code], result.code);
     const language = pickWorkspaceLanguage(
@@ -72,6 +80,7 @@ export async function POST(
       field: c.field,
       version: c.version,
       said: conflictSaid(c, t, language, now),
+      yours: conflictYours(c, t, language),
     }));
     return Response.json({ code: "stale", conflicts }, { status: 409, headers: NO_STORE });
   });

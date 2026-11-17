@@ -1,6 +1,6 @@
 // calendar_entries and calendar_occurrences (issue 300): plain reads and writes, each inside one workspace.
 // What a change means, its version check and its words stay in lib/private.
-import { and, eq, gte, inArray, isNull, lte, notInArray, or, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, isNotNull, isNull, lte, notInArray, or, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { calendarEntries, calendarOccurrences, workspaceUsers } from "../schema";
@@ -165,4 +165,27 @@ export async function officerNames(
     .from(workspaceUsers)
     .where(and(eq(workspaceUsers.workspaceId, workspaceId), inArray(workspaceUsers.id, ids)));
   return new Map(rows.flatMap((r) => (r.name ? [[r.id, r.name] as const] : [])));
+}
+
+/** Every Alliance Caravan week of the workspace with a seat taken: who sat, and where the week falls. */
+export async function caravanSeats(db: Db, workspaceId: number) {
+  return db
+    .select({
+      entryId: calendarOccurrences.entryId,
+      week: calendarOccurrences.week,
+      movedTo: calendarOccurrences.day,
+      planned: calendarEntries.day,
+      coachUid: calendarOccurrences.coachUid,
+      secondUid: calendarOccurrences.secondUid,
+    })
+    .from(calendarOccurrences)
+    .innerJoin(calendarEntries, eq(calendarEntries.id, calendarOccurrences.entryId))
+    .where(
+      and(
+        eq(calendarOccurrences.workspaceId, workspaceId),
+        eq(calendarEntries.kind, "caravan"),
+        eq(calendarOccurrences.cancelled, false),
+        or(isNotNull(calendarOccurrences.coachUid), isNotNull(calendarOccurrences.secondUid)),
+      ),
+    );
 }

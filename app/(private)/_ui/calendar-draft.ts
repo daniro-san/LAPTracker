@@ -1,7 +1,7 @@
 // The add and edit form's draft (issue 300): what an officer is typing, what is wrong with it, and what is
 // sent: a new entry, or only the fields that changed, each with the version the officer saw. The server
 // checks it all again (lib/private/calendar-model.ts); this is for words next to the field.
-import { ELIXIR_WINDOWS, LEVEL_MAX, type Kind } from "@/lib/private/calendar-model";
+import { ELIXIR_WINDOWS, LEVEL_MAX, type Kind } from "@/lib/private/calendar-kinds";
 import { hhmm, parseTime, weekdayIndex } from "@/lib/private/calendar-time";
 
 import type { FormValues } from "./calendar-data";

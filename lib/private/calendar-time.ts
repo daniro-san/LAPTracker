@@ -2,6 +2,8 @@
 // after the server's midnight, the instant a server day and time fall on, and the same instant on the
 // viewer's own clock. Weeks run Monday to Sunday (naming.md: the calendar week starts on Monday in all
 // three languages). Works for any IANA zone; the server's (Etc/GMT+2) has no daylight saving.
+import { serverInstant } from "../schedule";
+
 export const DAY_MS = 86_400_000;
 
 const dayMs = (day: string) => Date.parse(`${day}T00:00:00Z`);
@@ -68,13 +70,10 @@ export function zoneOffset(zone: string, at: number): number {
   );
 }
 
-/** The instant (epoch ms) at which the clock of `zone` reads `minute` on `day`. */
-export function zonedInstant(day: string, minute: number, zone: string): number {
-  const guess = dayMs(day) + minute * 60_000;
-  const first = guess - zoneOffset(zone, guess) * 60_000;
-  // A second pass settles instants next to a daylight-saving change.
-  return guess - zoneOffset(zone, first) * 60_000;
-}
+/** The instant (epoch ms) at which the clock of `zone` reads `minute` on `day`: lib/schedule's one
+ * zone conversion (`serverInstant`), which works for any IANA zone. */
+export const zonedInstant = (day: string, minute: number, zone: string): number =>
+  serverInstant(day, hhmm(minute), { SERVER_TZ: zone }).getTime();
 
 /**
  * The instant `at` on the clock of `zone`: its time, and how many days its date lies from `serverDay`

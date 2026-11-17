@@ -4,29 +4,17 @@
 import { z } from "zod";
 
 import type { calendarEntries, calendarOccurrences } from "../schema";
+import { ELIXIR_WINDOWS, LEVEL_MAX } from "./calendar-kinds";
 import { addDays, isDay, mondayOf, weekdayIndex } from "./calendar-time";
 
-export const KINDS = ["caravan", "cheese", "undead", "elixir", "kvk", "duel", "other"] as const;
-export type Kind = (typeof KINDS)[number];
-
-/** The level an officer picks for Cheese Trap and Undead Siege: 1 to 10 (owner: "maybe more later"). */
-export const LEVEL_MAX = 10;
-/** Elixir Scramble's three Friday windows, server time, 30 minutes each (in-game screen, 2026-11-16). */
-export const ELIXIR_WINDOWS = [9 * 60, 18 * 60, 23 * 60] as const;
-export const ELIXIR_MINUTES = 30;
-/**
- * The Alliance Duel's theme of each server day, Monday first, in the game's English (D52; owner,
- * 2026-11-16). Fixed by the game, so a map in code, not an entry; Sunday has none.
- */
-export const DUEL_DAYS = [
-  "Raven",
-  "Building",
-  "Research",
-  "Heroes",
-  "Training",
-  "Raid",
-  null,
-] as const;
+export {
+  DUEL_DAYS,
+  ELIXIR_MINUTES,
+  ELIXIR_WINDOWS,
+  KINDS,
+  LEVEL_MAX,
+  type Kind,
+} from "./calendar-kinds";
 export const TITLE_MAX = 80;
 export const NOTES_MAX = 1000;
 

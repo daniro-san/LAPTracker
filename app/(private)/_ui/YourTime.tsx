@@ -4,6 +4,7 @@
 // after hydration (the server renders nothing here), so server and browser HTML never differ.
 import { useSyncExternalStore } from "react";
 
+import { fill } from "@/lib/copy";
 import { clockIn } from "@/lib/private/calendar-time";
 import type { CalendarWords } from "@/lib/private/dictionary.calendar";
 
@@ -19,7 +20,7 @@ export function useViewerZone(): string | null {
 export function yourTime(at: number, day: string, zone: string, words: CalendarWords): string {
   const { time, shift } = clockIn(at, zone, day);
   const mark = shift > 0 ? words["calendar.nextDay"] : shift < 0 ? words["calendar.prevDay"] : "";
-  return `${words["calendar.yours"].replace("{time}", time)}${mark ? ` (${mark})` : ""}`;
+  return `${fill(words["calendar.yours"], { time })}${mark ? ` (${mark})` : ""}`;
 }
 
 export function YourTime({ at, day, words }: { at: number; day: string; words: CalendarWords }) {

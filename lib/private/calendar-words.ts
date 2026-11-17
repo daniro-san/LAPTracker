@@ -9,26 +9,13 @@ import { hhmm, weekDays } from "./calendar-time";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "./dictionary";
 import type { CalendarKey } from "./dictionary.calendar";
 
-/** How the calendar writes a server day ("Mon, Nov 16") and a long one for a day's heading. */
-export function calendarDates(language: WorkspaceLanguage) {
-  const short = new Intl.DateTimeFormat(language, {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-    timeZone: "UTC",
-  });
-  const long = new Intl.DateTimeFormat(language, {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    timeZone: "UTC",
-  });
-  const weekday = new Intl.DateTimeFormat(language, { weekday: "short", timeZone: "UTC" });
-  const dayMonth = new Intl.DateTimeFormat(language, {
-    day: "numeric",
-    month: "short",
-    timeZone: "UTC",
-  });
+function datesOf(language: WorkspaceLanguage) {
+  const format = (options: Intl.DateTimeFormatOptions) =>
+    new Intl.DateTimeFormat(language, { ...options, timeZone: "UTC" });
+  const short = format({ weekday: "short", day: "numeric", month: "short" });
+  const long = format({ weekday: "long", day: "numeric", month: "long" });
+  const weekday = format({ weekday: "short" });
+  const dayMonth = format({ day: "numeric", month: "short" });
   const at = (day: string) => new Date(`${day}T00:00:00Z`);
   return {
     short: (day: string) => short.format(at(day)),
@@ -37,6 +24,19 @@ export function calendarDates(language: WorkspaceLanguage) {
     /** "Nov 16", kept on one line (no-break spaces). */
     dayMonth: (day: string) => dayMonth.format(at(day)).replace(/ /g, "\u00a0"),
   };
+}
+
+const DATES = new Map<WorkspaceLanguage, ReturnType<typeof datesOf>>();
+
+/** How the calendar writes a server day ("Mon, Nov 16"), a long one for a day's heading, and the rest;
+ * made once per language. */
+export function calendarDates(language: WorkspaceLanguage) {
+  let dates = DATES.get(language);
+  if (!dates) {
+    dates = datesOf(language);
+    DATES.set(language, dates);
+  }
+  return dates;
 }
 
 /** The entry's name as the game writes it: "Cheese Trap I · Lv.7", "Elixir Scramble · Team A". */
@@ -73,17 +73,21 @@ const UNITS = [
   ["minute", 60],
 ] as const;
 
-/** "12 seconds ago", "há 3 minutos", "il y a 2 heures". */
-export function agoText(at: string | null, now: Date, language: WorkspaceLanguage): string {
+/** `justNow` under a minute, then "3 minutes ago", "há 2 horas", "il y a 1 jour". */
+export function agoText(
+  at: string | null,
+  now: Date,
+  language: WorkspaceLanguage,
+  justNow: string,
+): string {
   const seconds = Math.max(
     0,
     Math.round((now.getTime() - Date.parse(at ?? now.toISOString())) / 1000),
   );
-  const rtf = new Intl.RelativeTimeFormat(language, { numeric: "auto" });
   const unit = UNITS.find(([, size]) => seconds >= size);
-  return unit
-    ? rtf.format(-Math.floor(seconds / unit[1]), unit[0])
-    : rtf.format(-seconds, "second");
+  if (!unit) return justNow;
+  const rtf = new Intl.RelativeTimeFormat(language, { numeric: "auto" });
+  return rtf.format(-Math.floor(seconds / unit[1]), unit[0]);
 }
 
 const EMPTY: Partial<Record<Conflict["field"], CalendarKey>> = {
@@ -131,6 +135,13 @@ export function conflictSaid(
     name: c.by ?? t["calendar.conflict.someone"],
     field: t[`calendar.field.${c.field}`],
     value: valueText(c, t, language),
-    ago: agoText(c.at, now, language),
+    ago: agoText(c.at, now, language, t["calendar.conflict.justNow"]),
+  });
+}
+
+/** "You had “Lv.9”.": what the refused save sent, in the same words. */
+export function conflictYours(c: Conflict, t: WorkspaceDictionary, language: WorkspaceLanguage) {
+  return fill(t["calendar.conflict.yours"], {
+    mine: valueText({ ...c, value: c.mine }, t, language),
   });
 }

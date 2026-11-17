@@ -2,8 +2,9 @@
 // VIP or a Guardian, from the alliance's own newest roster (D71: only its own members). `?week=` as on Week.
 import { calendarDays, pickableMembers } from "@/lib/private/calendar";
 import { addDays } from "@/lib/private/calendar-time";
+import { caravanSuggestions } from "@/lib/private/caravans";
 
-import { agendaItem, calendarWords } from "../../../../_ui/calendar-data";
+import { agendaItem, calendarWords, suggestionWords } from "../../../../_ui/calendar-data";
 import { openCalendar } from "../../../../_ui/calendar-page";
 import { CalendarNav } from "../../../../_ui/CalendarNav";
 import { CalendarWeekBar } from "../../../../_ui/CalendarWeekBar";
@@ -22,13 +23,15 @@ export default async function CaravansPage({
       calendarDays(db, access, monday, addDays(monday, 6)),
       pickableMembers(db, access),
     ]);
-    return { days, roster };
+    const caravans = days.filter((p) => p.entry.kind === "caravan");
+    return { caravans, roster, suggested: await caravanSuggestions(db, access, caravans) };
   });
   const { access, slug, monday, ctx } = page;
   const { t, language } = ctx;
-  const caravans = page.data.days
-    .filter((p) => p.entry.kind === "caravan")
-    .map((p) => agendaItem(p, ctx));
+  const caravans = page.data.caravans.map((p) => agendaItem(p, ctx));
+  const suggested = Object.fromEntries(
+    [...page.data.suggested].map(([key, list]) => [key, suggestionWords(list, ctx)]),
+  );
   // Name order, not might order: the picker is not a ranking (D75).
   const roster = [...page.data.roster].sort((a, b) => a.name.localeCompare(b.name, language));
   return (
@@ -43,7 +46,13 @@ export default async function CaravansPage({
         language={language}
         offset={page.offset}
       />
-      <CaravanBoard items={caravans} roster={roster} words={calendarWords(t)} slug={slug} />
+      <CaravanBoard
+        items={caravans}
+        roster={roster}
+        suggested={suggested}
+        words={calendarWords(t)}
+        slug={slug}
+      />
       {caravans.length === 0 && (
         <p className="mt-2">
           <a

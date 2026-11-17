@@ -5,6 +5,7 @@ import { fill } from "@/lib/copy";
 import { DUEL_DAYS, type Field, type Kind, type Placed } from "@/lib/private/calendar-model";
 import { addDays, hhmm, mondayOf, weekdayIndex, zonedInstant } from "@/lib/private/calendar-time";
 import { calendarDates, stOf, titleOf } from "@/lib/private/calendar-words";
+import type { Suggestion } from "@/lib/private/caravan-suggest";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import type { CalendarKey, CalendarWords } from "@/lib/private/dictionary.calendar";
 
@@ -68,7 +69,7 @@ export const calendarWords = (t: WorkspaceDictionary): CalendarWords =>
 function rolesLine(p: Placed, t: WorkspaceDictionary): string | null {
   if (p.entry.kind !== "caravan") return null;
   const r = p.row;
-  if (!r?.coachUid && !r?.secondKind) return t["calendar.roles.none"];
+  if (!r?.coachUid && !r?.secondKind) return null;
   const seat = (role: string, name: string | null | undefined) =>
     name ? fill(t["calendar.roles.who"], { role, name }) : fill(t["calendar.roles.open"], { role });
   const second = r.secondKind
@@ -169,6 +170,14 @@ export function agendaWeek(placed: Placed[], monday: string, today: string, ctx:
   return { days, theme: items.find((x) => x.form.kind === "duel" && x.week === monday) ?? null };
 }
 
+/** A month cell's label: what tells entries apart comes first, so a cut keeps the level or team. */
+function cellLabel(e: Placed["entry"], t: WorkspaceDictionary): string {
+  if (e.kind === "cheese") return `${e.variant} · Lv.${e.level} Cheese Trap`;
+  if (e.kind === "undead") return `Lv.${e.level} Undead Siege`;
+  if (e.kind === "elixir") return `${e.variant} · Elixir Scramble`;
+  return titleOf(e, t);
+}
+
 export interface MonthCell {
   day: string;
   date: number;
@@ -197,7 +206,7 @@ export function monthCells(
     const day = addDays(start, i);
     const on = placed.filter((p) => p.day === day && p.entry.kind !== "duel");
     const labels = on.map(
-      (p) => `${p.minute === null ? "" : `${hhmm(p.minute)} `}${titleOf(p.entry, t)}`,
+      (p) => `${p.minute === null ? "" : `${hhmm(p.minute)} `}${cellLabel(p.entry, t)}`,
     );
     const count = fill(
       t[`calendar.month.count.${rules.select(on.length) === "one" ? "one" : "other"}`],
@@ -214,10 +223,42 @@ export function monthCells(
       href: `/w/${slug}/calendar?week=${mondayOf(day)}#d-${day}`,
     };
   });
-  const title = new Intl.DateTimeFormat(language, {
+  const month = new Intl.DateTimeFormat(language, {
     month: "long",
     year: "numeric",
     timeZone: "UTC",
   }).format(new Date(`${first}T00:00:00Z`));
+  // Only the first letter: "Novembro de 2026", never "Novembro De 2026".
+  const title = fill(t["calendar.month.title"], {
+    month: month.charAt(0).toLocaleUpperCase(language) + month.slice(1),
+  });
   return { title, cells };
+}
+
+/** A suggested member for a caravan seat, with its reason in the officer's words. */
+export interface SuggestedMember extends Member {
+  why: string;
+}
+
+/** "Active this week · last role 12 days ago", or the role part alone (D75: nothing about inactivity). */
+export function suggestionWords(
+  list: readonly Suggestion[],
+  { t, language }: Pick<CalendarCtx, "t" | "language">,
+): SuggestedMember[] {
+  const rules = new Intl.PluralRules(language);
+  return list.map((s) => {
+    const role =
+      s.lastRoleDays === null
+        ? t["calendar.suggest.never"]
+        : fill(
+            t[`calendar.suggest.last.${rules.select(s.lastRoleDays) === "one" ? "one" : "other"}`],
+            {
+              n: s.lastRoleDays,
+            },
+          );
+    const why = s.activeThisWeek
+      ? `${t["calendar.suggest.active"]} · ${role}`
+      : role.charAt(0).toLocaleUpperCase(language) + role.slice(1);
+    return { uid: s.uid, name: s.name, why };
+  });
 }

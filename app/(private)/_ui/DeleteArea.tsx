@@ -1,10 +1,11 @@
 "use client";
 
-// Deleting a calendar entry (issue 300), asked once more before it happens. A one-off goes; a weekly entry
-// loses only this week, or this week and every week after.
+// Skipping or deleting a calendar entry (issue 300), asked once more before it happens. A one-off goes; a
+// weekly entry skips this week only, or ends from this week on.
 import { useState } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
+import { fill } from "@/lib/copy";
 import type { CalendarWords } from "@/lib/private/dictionary.calendar";
 
 import type { AgendaItem } from "./calendar-data";
@@ -39,7 +40,7 @@ export function DeleteArea(props: {
         onClick={() => setAsking(true)}
         className="mt-4 min-h-11 px-1 font-semibold text-seal underline underline-offset-4"
       >
-        {words["calendar.delete"]}
+        {words[item.form.weekly ? "calendar.delete.weekly" : "calendar.delete"]}
       </button>
     );
   }
@@ -47,7 +48,7 @@ export function DeleteArea(props: {
     ? [
         {
           scope: "one",
-          label: words["calendar.delete.one"].replace("{date}", item.form.weekLabel),
+          label: fill(words["calendar.delete.one"], { date: item.form.weekLabel }),
         },
         { scope: "after", label: words["calendar.delete.after"] },
       ]
@@ -55,7 +56,7 @@ export function DeleteArea(props: {
   return (
     <div role="group" aria-labelledby="cal-delete-ask" className="mt-4 border-t border-rule pt-3">
       <p id="cal-delete-ask" className="font-semibold">
-        {words["calendar.delete.ask"]}
+        {words[item.form.weekly ? "calendar.delete.askWeekly" : "calendar.delete.ask"]}
       </p>
       <div className="mt-2 flex flex-col gap-2">
         {choices.map((c) => (

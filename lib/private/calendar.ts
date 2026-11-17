@@ -90,11 +90,12 @@ export async function createEntry(
   return { ok: true, id };
 }
 
-/** A field as it now stands, its version, and who wrote it when. */
+/** A field as it now stands, its version, who wrote it when, and what the refused save sent. */
 export interface Conflict {
   field: Field;
   version: number;
   value: unknown;
+  mine: unknown;
   by: string | null;
   at: string | null;
 }
@@ -185,12 +186,12 @@ export async function editEntry(
     const editsOf = (f: Field) => (WEEK_FIELDS.includes(f) ? row?.edits : entry.edits);
     const stale = changes.filter((c) => versionOf(editsOf(c.field), c.field) !== c.version);
     if (stale.length > 0) {
-      return { ok: false, code: "stale", stale: stale.map((c) => c.field), entry, row } as const;
+      return { ok: false, code: "stale", stale, entry, row } as const;
     }
     return write(tx, { entry, row, week, changes, names, by: access.user.id, now });
   });
   if (result.ok || result.code !== "stale") return result;
-  return { ok: false, code: "stale", conflicts: await conflicts(db, access, result) };
+  return { ok: false, code: "stale", conflicts: await conflicts(db, access, result, names) };
 }
 
 type Write = {
@@ -253,19 +254,26 @@ async function write(tx: Parameters<Parameters<Db["transaction"]>[0]>[0], w: Wri
 async function conflicts(
   db: Db,
   access: WorkspaceAccess,
-  s: { stale: readonly Field[]; entry: EntryRow; row: OccurrenceRow | null },
+  s: { stale: readonly FieldChange[]; entry: EntryRow; row: OccurrenceRow | null },
+  roster: Map<number, string>,
 ): Promise<Conflict[]> {
   const editOf = (f: Field) => (WEEK_FIELDS.includes(f) ? s.row?.edits : s.entry.edits)?.[f];
   const ids = s.stale
-    .map((f) => editOf(f)?.by)
+    .map((c) => editOf(c.field)?.by)
     .filter((by): by is number => typeof by === "number");
   const names = await officerNames(db, access.workspaceId, [...new Set(ids)]);
-  return s.stale.map((field) => {
+  return s.stale.map(({ field, value }) => {
     const edit = editOf(field);
+    // A picked member is sent as a uid; the sentence names them from the roster.
+    const mine =
+      value && typeof value === "object" && "uid" in value
+        ? { ...value, name: roster.get(value.uid) ?? "" }
+        : value;
     return {
       field,
       version: edit?.v ?? 0,
       value: valueOf(s.entry, s.row, field),
+      mine,
       by: edit?.by == null ? null : (names.get(edit.by) ?? null),
       at: edit?.at ?? null,
     };

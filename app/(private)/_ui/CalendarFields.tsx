@@ -3,7 +3,7 @@
 // The Calendar tab's form pieces (issue 300): a one-of choice drawn as chips (native radios, 44 px, the
 // whole chip is the target), a labelled field with its hint or error, and the box a 409 opens: what
 // changed, by whom and when, with "Keep theirs" and "Use mine" (owner rule, issue 293).
-import type { InputHTMLAttributes, ReactNode } from "react";
+import { useEffect, useRef, type InputHTMLAttributes, type ReactNode } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
 import type { CalendarWords } from "@/lib/private/dictionary.calendar";
@@ -92,12 +92,15 @@ export function ConflictBox(props: {
   onMine: () => void;
 }) {
   const { words } = props;
+  const box = useRef<HTMLDivElement>(null);
+  // The box opens at the end of a long sheet: bring it into view.
+  useEffect(() => box.current?.scrollIntoView({ block: "nearest" }), []);
   return (
-    <div role="alert" className="mt-4 border-l-4 border-yarn pl-3">
+    <div ref={box} role="alert" className="mt-4 border-l-4 border-yarn pl-3">
       <p className="font-semibold">{words["calendar.conflict.title"]}</p>
       {props.conflicts.map((c) => (
         <p key={c.field} className="mt-1 text-body-sm">
-          {c.said}
+          {c.said} {c.yours}
         </p>
       ))}
       <div className="mt-2 flex flex-wrap gap-2">

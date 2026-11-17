@@ -6,7 +6,13 @@ import { findWorkspaceBySlug, recordSignIn, saveWorkspace } from "../repo/worksp
 import { calendarEntries, calendarOccurrences, dailyReads, dailyRosters } from "../schema";
 import { requireWorkspace, type WorkspaceAccess } from "./access";
 import { calendarDays, createEntry, editEntry, removeEntry } from "./calendar";
-import { fieldChange, type FieldChange, type NewEntry } from "./calendar-model";
+import {
+  DUEL_DAYS,
+  fieldChange,
+  newEntry as newEntrySchema,
+  type FieldChange,
+  type NewEntry,
+} from "./calendar-model";
 import { createSession } from "./session";
 
 const OGS = 67111155;
@@ -204,5 +210,27 @@ describe("the workspace calendar (issue 300)", () => {
       "not_found",
     );
     expect(await calendarDays(db, ogs, "2026-11-16", "2026-11-22")).toHaveLength(1);
+  });
+  it("follows the owner's rules: Elixir windows, levels 1 to 10, one theme per week, the daily themes", async () => {
+    const ogs = await signedIn("ogs");
+    const elixir = { kind: "elixir", variant: "A", day: "2026-11-20", forMembers: false };
+    expect(newEntrySchema.safeParse({ ...elixir, minute: 22 * 60 }).success).toBe(false);
+    expect(newEntrySchema.safeParse({ ...elixir, minute: 23 * 60 }).success).toBe(true);
+    for (const level of [0, 11]) {
+      expect(
+        newEntrySchema.safeParse({ kind: "undead", day: "2026-11-17", minute: 1080, level })
+          .success,
+      ).toBe(false);
+      expect(fieldChange.safeParse({ field: "level", value: level, version: 0 }).success).toBe(
+        false,
+      );
+    }
+    const theme = (day: string) =>
+      createEntry(db, ogs, newEntry({ kind: "duel", day, title: "economy week" } as NewEntry));
+    expect((await theme("2026-11-18")).ok).toBe(true);
+    expect(await theme("2026-11-20")).toEqual({ ok: false, code: "theme_exists" });
+    const [row] = await db.select().from(calendarEntries);
+    expect([row?.day, row?.minute]).toEqual(["2026-11-16", null]);
+    expect([DUEL_DAYS[0], DUEL_DAYS[6]]).toEqual(["Raven", null]);
   });
 });

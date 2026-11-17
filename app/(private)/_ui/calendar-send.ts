@@ -5,7 +5,10 @@ import type { CalendarKey, CalendarWords } from "@/lib/private/dictionary.calend
 export interface Stale {
   field: string;
   version: number;
+  /** "Ana changed the level to “Lv.8” just now." */
   said: string;
+  /** "You had “Lv.9”." */
+  yours: string;
 }
 export type Sent = { ok: true } | { ok: false; code: string; conflicts: Stale[] };
 
