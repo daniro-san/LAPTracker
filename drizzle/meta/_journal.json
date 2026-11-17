@@ -169,13 +169,6 @@
       "when": 1794878082161,
       "tag": "0023_thefts",
       "breakpoints": true
-    },
-    {
-      "idx": 24,
-      "version": "7",
-      "when": 1794879903711,
-      "tag": "0024_calendar",
-      "breakpoints": true
     }
   ]
 }
