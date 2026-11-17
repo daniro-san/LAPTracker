@@ -1,7 +1,7 @@
 // Image preparation for the OCR, with no native dependency (D74): a PNG screenshot is turned into
 // an 8-bit greyscale PNG whose width is TARGET_WIDTH. The validation found greyscale at twice the
 // width of a 358 px screenshot the best input; a 1170 px phone screenshot is brought down to the
-// same text size. Each pixel's grey is its distance from its row's background colour (issue 299):
+// same text size. Each pixel's grey is its distance from its row's background grey (issue 299):
 // text then reads dark on white whatever its colours, so the white-on-green own row and the
 // coloured medal rows are read like the others. A full-screen phone capture can lose its status bar.
 // Anything that is not a plain 8-bit PNG is returned unchanged, unless its size is refused: a PNG
@@ -166,15 +166,14 @@ const FLATTEN_GAIN = 1.5;
 /**
  * Each pixel's grey becomes its distance from its row's background, stretched: the background turns
  * white and text dark, whether it was lighter or darker than its background. A ranking row is a band
- * of one colour (the own row green, the medal rows gold, blue and bronze), so the row's median is
- * that colour. Dark text on a light row keeps its shape and anti-aliasing.
+ * of one colour (the own row green, the medal rows gold, blue and bronze), so its most common grey
+ * is that colour. Dark text on a light row keeps its shape and anti-aliasing.
  */
 function flatten(img: Grey): Grey {
   const data = new Uint8Array(img.width * img.height);
   for (let y = 0; y < img.height; y++) {
     const background = rowBackground(img, y);
-    for (let x = 0; x < img.width; x++) {
-      const at = y * img.width + x;
+    for (let at = y * img.width; at < (y + 1) * img.width; at++) {
       const distance = Math.abs((img.data[at] ?? 0) - background) * FLATTEN_GAIN;
       data[at] = 255 - Math.min(255, Math.round(distance));
     }
@@ -267,6 +266,11 @@ function outputHeight(head: Header, skip: number): number {
 export interface PrepareOptions {
   /** Drop the phone's status bar from a full-screen capture (the browser already did it for an upload). */
   statusBar?: boolean;
+  /**
+   * false: plain grey, no flattening. A map's labels sit on textured terrain that flattening wipes out,
+   * so a picture that is not recognised is read a second time this way.
+   */
+  flatten?: boolean;
 }
 
 /**
@@ -282,5 +286,6 @@ export function prepareForOcr(image: Uint8Array, options: PrepareOptions = {}): 
   const skip = options.statusBar ? statusBarRows(head) : 0;
   const height = outputHeight(head, skip);
   if (!head.plain || head.idat.length === 0) return image;
-  return encodeGrey(resize(flatten(decodeGrey(head, skip)), TARGET_WIDTH, height));
+  const grey = decodeGrey(head, skip);
+  return encodeGrey(resize(options.flatten === false ? grey : flatten(grey), TARGET_WIDTH, height));
 }
