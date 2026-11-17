@@ -26,7 +26,12 @@ lib/private/*.ts    the workspace (D71): requireWorkspace and its branded Worksp
                     reasons and "copy for spreadsheet"), first-use.ts (the first-use cards as data),
                     cookies.ts (the two cookie names, apart from the dictionaries, for client components);
                     their table reads are in lib/repo/workspace-rosters.ts.
+                    The thefts log (D97): thefts.ts (its read and writes, the attacker search), theft-groups.ts
+                    (pure: attacker key, groups and counts, follow-up state), thefts-import.ts (the screenshot
+                    import's save hook for Secret Ops reports), dictionary.thefts.ts (its words); tables in
+                    lib/schema-thefts.ts, reads and writes in lib/repo/thefts.ts.
 lib/queries/*.ts    read models for the UI (joins, sorting, name history). Never write. Never expose BLOCKED_ROSTER_KEYS.
+                    lib/queries/server-players.ts: `serverPlayers`, the tracked alliances' newest roster names (D97).
                     lib/queries/samples.ts: `eventSamples`, an event's Start, samples and End (D69).
                     lib/queries/live.ts: `eventProgress`, the event page's live section (alliance totals per reading, D69):
                     `progressRows` (the database, cacheable) and `eventProgressOf` (pure, per request, takes `now`).

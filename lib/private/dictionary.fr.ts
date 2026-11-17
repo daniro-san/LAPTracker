@@ -1,6 +1,7 @@
 // The workspace dictionary in French (D71), split from dictionary.ts for its size; the keys follow `en`.
 // French puts a no-break space before : ? and !, and inside « ».
 import type { WorkspaceDictionary } from "./dictionary";
+import { theftsFr } from "./dictionary.thefts";
 
 export const fr: WorkspaceDictionary = {
   "app.name": "Bureau des officiers",
@@ -191,4 +192,5 @@ export const fr: WorkspaceDictionary = {
   "profile.theme.light": "Clair",
   "profile.theme.dark": "Sombre",
   "profile.theme.system": "Comme l’appareil",
+  ...theftsFr,
 };
