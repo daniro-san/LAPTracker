@@ -80,3 +80,15 @@ Why: the alliance uses a flag-reaction bot ("Jake Translation") whose output is 
   - The thread answer for an existing thread is still code 160004.
   - `member.permissions` and `message.interaction_metadata` arrive on component interactions as documented.
 - **Not done here.** A flag-reaction trigger (needs a Gateway host); remembering the asker's last Thread/Channel choice; a stored count per mode.
+
+**Amendment (2026-11-17, 11u2, owner): "Translate for me" lets the asker pick another language.** The owner reads English and Portuguese with Discord set to English. On an English message the reply was "This message is already in your language." and Portuguese could not be had. That line is removed (`translate.discord.same`); the rest of D101 stands.
+
+- **Already in the asker's language.** The private reply comes at once, without the translator: the message's text in an embed headed with its language ("🇬🇧 English"), the small line "Already in English. Translate to:" / "Já está em português. Traduzir para:" / "Déjà en français. Traduire en :" under it, and a button for each other language, by its own name: [Português] [Français]. The same reply is shown when the translator finds the text already in the asker's language (D81's `same`).
+- **A translation.** Under the translated text, the small line "Other language:" / "Outro idioma:" / "Autre langue :" and a button for each language but the one shown.
+- **A press** translates the text the reply shows into that language and edits the same private reply, which again carries the other languages' buttons.
+  - Each button's `custom_id` is `tm:<to>:<shown>:<user id>`. A press counts only under the picker's rules: that user id is the presser, the message is private (`flags & 64`) and its `interaction_metadata.user.id` is the presser; anything else gets "Only the person who opened this menu can use it." The same signed route and Ed25519 check.
+  - Each press is one unit against the per-person limit and the daily cap, checked before anything is counted. Past a limit, the reply's line says so (type 7) and keeps the text and the buttons.
+  - The press is answered with type 7: "Translating…" and no buttons, the text kept, so a double press has nothing to press. Then the reply is edited. When the translator fails, the failure line comes with the buttons back.
+  - The text is read back from the reply's embed, as Post reads the picker's; nothing is stored. Mentions, links and custom emoji are masked again before the request; every reply and edit sends `allowed_mentions: { parse: [] }`.
+  - The source of a press is the text shown, in the language its button names (`from`), not the original message, which the app does not keep. So English → Português → English shows Portuguese translated back, not the original words.
+- Logs stay codes and numbers: a press logs `discord.translate.me` like the command.

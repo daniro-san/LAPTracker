@@ -7,13 +7,8 @@ import { openTestDb, truncateAll } from "../db.test-helpers";
 import { recordFailure } from "../repo/auth-attempts";
 import { saveWorkspace } from "../repo/workspaces";
 import { handleInteraction } from "./discord-interaction";
-import {
-  TRANSLATE_PER_DAY,
-  TRANSLATE_PER_MINUTE,
-  translateCommand,
-  translateComponent,
-  type TranslateInput,
-} from "./discord-translate";
+import { translateCommand, translateComponent, type TranslateInput } from "./discord-translate";
+import { TRANSLATE_PER_DAY, TRANSLATE_PER_MINUTE } from "./translate-limits";
 import { guessLanguage, mask, pickerId, type Picker, unmask } from "./translate-message";
 
 // Invented server, people and messages.
@@ -65,6 +60,10 @@ const rowsOf = (answer: { body: unknown }) =>
   (answer.body as { data: { components: Rows } }).data.components;
 const contentOf = (answer: { body: unknown } | null | undefined) =>
   (answer?.body as { data?: { content?: string } } | undefined)?.data?.content;
+const buttonsOf = (answer: { body: unknown }) =>
+  (rowsOf(answer) as unknown as { components: { label: string; custom_id: string }[] }[]).flatMap(
+    (r) => r.components.map((c) => [c.label, c.custom_id]),
+  );
 
 const picker = (over: Partial<Picker> = {}): Picker => ({
   messageId: MESSAGE,
@@ -98,10 +97,21 @@ describe("Translate for me: the asker's Discord language (D101)", () => {
     }
   });
 
-  it("answers at once, without the translator, when the message is already in that language", async () => {
+  it("answers at once, without the translator, with the two other languages when the message is already in that language", async () => {
     const answer = await forMe(ENGLISH, { permissions: "0" });
     expect(answer.translation).toBeUndefined();
-    expect(contentOf(answer)).toBe("This message is already in your language.");
+    expect(answer.body).toMatchObject({
+      type: 4,
+      data: {
+        flags: 64,
+        embeds: [{ description: ENGLISH, footer: { text: "Already in English. Translate to:" } }],
+        allowed_mentions: { parse: [] },
+      },
+    });
+    expect(buttonsOf(answer)).toEqual([
+      ["Português", `tm:p:e:${ASKER}`],
+      ["Français", `tm:f:e:${ASKER}`],
+    ]);
   });
 });
 
@@ -270,7 +280,7 @@ describe("handleInteraction routes the Translate interactions", () => {
   it("answers both Translate commands, a signed picker press, and refuses an unknown command", async () => {
     expect(await handle(command("Translate for me"))).toMatchObject({
       status: 200,
-      body: { type: 4, data: { content: "This message is already in your language." } },
+      body: { type: 4, data: { flags: 64, embeds: [{ description: ENGLISH }] } },
     });
     expect(await handle({ ...command("Translate for me"), locale: "fr" })).toMatchObject({
       status: 200,
