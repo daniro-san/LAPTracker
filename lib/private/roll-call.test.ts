@@ -58,6 +58,7 @@ async function calendarOccasion(access: WorkspaceAccess, entry: Partial<NewEntry
       notes: null,
       link: null,
       forMembers: false,
+      notice: null,
       weekly: false,
       ...entry,
     } as NewEntry,

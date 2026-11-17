@@ -1,6 +1,6 @@
 # 11w — Roll call: marks per occasion, "the rest" per kind, away dates, Elixir Scramble teams
 
-Closes #298; part of #293. Branch `session/11w-roll-call`, rebased on `origin/dev` at b6cd331. Rules applied: D71, D75, D76, D80, D98, D99, D100. New decision: **D103** (amends D80).
+Closes #298; part of #293. Branch `session/11w-roll-call`, rebased on `origin/dev` at a89492d. Rules applied: D71, D75, D76, D80, D98, D99, D100. New decision: **D103** (amends D80).
 
 ## Built
 - **The Roll call tab is on.** `Frame.tsx` `PATHS.mark = "/roll-call"`; the bottom bar no longer says "soon" for it.
@@ -21,7 +21,7 @@ Closes #298; part of #293. Branch `session/11w-roll-call`, rebased on `origin/de
 - **Calendar**: KvK, Undead Siege and Elixir Scramble entries link to their roll call; Elixir also to "Pick the team ›" (`CalendarAgenda.tsx`).
 - **Facts editor**: "First day away" next to "Last day away" (`FactFields.tsx`, `facts-form.ts`).
 - **Code**:
-  - `lib/schema-rollcall.ts` (`roll_calls`, `roll_call_marks`, `roll_call_team`), migration `drizzle/0028_roll_call.sql`;
+  - `lib/schema-rollcall.ts` (`roll_calls`, `roll_call_marks`, `roll_call_team`), migration `drizzle/0029_roll_call.sql`;
   - `lib/repo/roll-call.ts`;
   - `lib/private/roll-call.ts` (occasions and writes), `roll-call-view.ts` (page reads), `roll-call-rules.ts` (pure), `roll-call-words.ts`, `dictionary.rollcall*.ts` (89 keys per language under `roll.*`), two `calendar.*` keys;
   - `fact-fields.ts`: `AwayNote.from`, `awayUntil` honours it, `awayOn` (break or a running away note); `caravans.ts` uses `awayOn`; `member-facts.ts` accepts `from` (not after `until`);
@@ -54,10 +54,10 @@ Closes #298; part of #293. Branch `session/11w-roll-call`, rebased on `origin/de
 - **A roll call lists the alliance's current roster** (newest roster of any kind). A member who left after the occasion drops off it; their marks stay stored.
 
 ## Verified
-- **`pnpm check` exits 0** on the branch rebased on b6cd331: prettier, eslint, tsc; vitest **152 files passed, 2 skipped; 791 tests passed, 4 skipped**; drift gate "Everything's fine"; i18n "17 languages up to date". Before the rebase: 149 files, 784 tests.
-- **Local e2e, 53 of 53 checks**, on a production build (`next build` + `next start` on :3927) of the rebased tree with the two review fixes. Local Postgres on 54927 with all 29 migrations, the bridge on 54928, a Discord stand-in on 54929 (Ana and Wren, R4), an invented 60-member roster with weekly activity, time zones, main squad, a break and an away note, and this week's caravan, KvK, Undead Siege and Elixir A/B. No upstream, Groq or real Discord call; no `/api/quota`. Checks:
+- **`pnpm check` exits 0** on the branch rebased on a89492d: prettier, eslint, tsc; vitest **157 files passed, 2 skipped; 829 tests passed, 4 skipped**; drift gate "Everything's fine"; i18n "17 languages up to date". Before the rebase: 149 files, 784 tests.
+- **Local e2e, 54 of 54 checks**, on a production build (`next build` + `next start` on :3927) of the rebased tree with the two review fixes. Local Postgres on 54927 with all 30 migrations, the bridge on 54928, a Discord stand-in on 54929 (Ana and Wren, R4), an invented 60-member roster with weekly activity, time zones, main squad, a break and an away note, and this week's caravan, KvK, Undead Siege and Elixir A/B. No upstream, Groq or real Discord call; no `/api/quota`. Checks:
   - the tab is a link and the open one; the week lists the four Calendar occasions; an untouched card says only "Not set";
-  - the Calendar links "Roll call ›" and "Pick the team ›";
+  - the Calendar links "Roll call ›" and "Pick the team ›"; a KvK entry with a notice (D102) shows "Roll call ›" and "Notice: …" together;
   - opening a roll call writes nothing; ✓ stores `yes` v1; ✓ again stores null v2; rows keep their order; the mark buttons are 48 × 48;
   - Wren's stale ✗ shows "Ana (R4) marked “Shield up” just now…", the row takes Ana's mark, nothing of Wren's is stored; a raw stale POST answers 409 `stale` with `private, no-store`; without a session 401 `signed_out`;
   - away dates for the caravan's first suggestion, Nov 20–25: stored with `from`; the member moves to "Away, left out" with "until Wed, Nov 25"; the other rows keep their order; the next week's caravan suggestions skip them, this week's (before Nov 20) still suggest them;
@@ -85,7 +85,7 @@ Closes #298; part of #293. Branch `session/11w-roll-call`, rebased on `origin/de
 
 ## Next
 Session: the next workspace issue the orchestrator picks. The workspace track has no prompt in `docs/SESSION_PLAYBOOK.md`.
-Model / effort: keep — the model, the three pages and the e2e fit one pass. The rework came from the restart (scratchpad lost, rebase on dev's `0027_thefts_kind`) and one real navigation bug found by the e2e.
+Model / effort: keep — the model, the three pages and the e2e fit one pass. The rework came from the restart (scratchpad lost, rebases on dev's new migrations) and one real navigation bug found by the e2e.
 Owner must do first: release dev, then on a phone mark one KvK shield and pick one Elixir Scramble team. Answer: the registration day (Wednesday or Thursday), and whether Undead Siege and plunders' "the rest" should be "took part".
 Plan changes needed: none. The workspace track lives in issues, not in docs/IMPLEMENTATION_PLAN.md.
 
@@ -94,7 +94,7 @@ Plan changes needed: none. The workspace track lives in issues, not in docs/IMPL
 - Marks for a Follow-up list: `newestMarks(db, callIds)` in `lib/repo/roll-call.ts`; `assumed` ("no problem seen") is not a ✓ and must be left out of any follow-up, and no mark is "not set", never a ✗ (D75).
 - Calendar occasions: `FROM_CALENDAR` in `lib/private/roll-call-rules.ts` maps kvk/undead/elixir to roll call kinds; a new Calendar kind with a roll call is one line there.
 - Elixir teams: `roll_call_team` per (roll call, uid); a team's roll call is keyed by its Calendar entry and plan week.
-- Migration: `0028_roll_call`, on top of dev's `0027_thefts_kind`.
+- Migration: `0029_roll_call`, on top of dev's `0028_notice_publishes_and_calendar_link`.
 </adjustments>
 
 PR: (added by the orchestrator)
