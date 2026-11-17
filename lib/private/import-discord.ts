@@ -130,7 +130,7 @@ async function readPictures(deps: JobDeps, job: Job) {
 export async function runJob(deps: JobDeps, job: Job): Promise<void> {
   const t = WORKSPACE_DICTIONARIES[job.language];
   const { db, close } = deps.openDb();
-  let content = t["import.discord.failed"];
+  let content = t["shots.discord.failed"];
   try {
     const { pictures, lost } = await readPictures(deps, job);
     const result = await createDrafts(db, job.access, pictures, {
@@ -139,7 +139,7 @@ export async function runJob(deps: JobDeps, job: Job): Promise<void> {
       pictureDay: serverDay(job.postedAt, { SERVER_TZ: deps.serverTz }),
       now: deps.now(),
     });
-    const review = (id: number) => `${deps.origin}/w/${job.access.slug}/import/${id}`;
+    const review = (id: number) => `${deps.origin}/w/${job.access.slug}/shots/${id}`;
     content = outcomeLines(t, job.language, result, lost, review).join("\n");
     const drafts = result.drafts.length;
     privateLog("w.import.discord", { workspace: job.access.workspaceId, drafts, lost });

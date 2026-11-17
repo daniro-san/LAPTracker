@@ -11,10 +11,28 @@ import {
   type StoredRow,
 } from "../repo/import";
 import type { WorkspaceAccess } from "./access";
+import type { MemberFacts } from "./fact-fields";
 import { summaryOf, type DraftSummary } from "./import";
-import type { ImportKind, Scope } from "./import-kinds";
+import type { ImportKind, PhotoFact, Scope } from "./import-kinds";
 import { canSave, duelSaved, oursFor } from "./import-save";
+import { factsOf } from "./member-facts";
 import { DAY_MS, gameWeek } from "./member-week";
+
+/** The rankings checked against our own reads. */
+const CHECKED: ImportKind[] = ["donation", "might", "kills"];
+
+/** Squad might and AD Tech of each member, with their versions. */
+function photoFacts(facts: Map<number, MemberFacts>): NonNullable<DraftView["facts"]> {
+  const out: NonNullable<DraftView["facts"]> = {};
+  for (const [uid, f] of facts) {
+    const pick = (field: PhotoFact) => {
+      const fact = f[field];
+      return fact ? { [field]: { value: fact.value, version: fact.version } } : {};
+    };
+    out[uid] = { ...pick("squadMight"), ...pick("adTech") };
+  }
+  return out;
+}
 
 export interface ReviewItem extends DraftSummary {
   scopeSure: boolean;
@@ -74,6 +92,13 @@ export interface DraftView {
   duel: { thisWeek: Record<number, DuelSaved>; weekBefore: Record<number, DuelSaved> } | null;
   /** A check: our own value per member for the picture's day or week (null: no data, D75). */
   ours: Record<number, number | null> | null;
+  /** Member update: each member's squad might and AD Tech now, with the version a save is based on (D80). */
+  facts: Record<
+    number,
+    Partial<Record<PhotoFact, { value: number | null; version: number }>>
+  > | null;
+  /** Secret Ops report: the member it is preselected for, the officer's "This is me" player when set. */
+  victim: number | null;
 }
 
 const isoDay = (ms: number) => new Date(ms).toISOString().slice(0, 10);
@@ -101,7 +126,7 @@ export async function draftView(
           duelSaved(db, access, isoDay(Date.parse(`${monday}T00:00:00Z`) - 7 * DAY_MS)),
         ])
       : null,
-    kind === "alliance_duel" ? null : oursFor(db, access, { kind, scope }, d.pictureDay),
+    CHECKED.includes(kind) ? oursFor(db, access, { kind, scope }, d.pictureDay) : null,
   ]);
   return {
     id: d.id,
@@ -135,5 +160,10 @@ export async function draftView(
       weekBefore: Object.fromEntries(duel[1]),
     },
     ours: ours && Object.fromEntries(ours),
+    facts: kind === "member_update" ? photoFacts(await factsOf(db, access)) : null,
+    victim:
+      kind === "secret_ops" && roster.some((m) => m.uid === access.user.playerUid)
+        ? access.user.playerUid
+        : null,
   };
 }

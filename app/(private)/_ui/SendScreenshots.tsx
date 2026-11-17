@@ -84,7 +84,7 @@ async function readAll(
     if (!file.type.startsWith("image/")) continue;
     try {
       const png = await toPng(file, statusBar);
-      const read = (await post(`/api/w/${slug}/import/read`, png, "image/png")) as {
+      const read = (await post(`/api/w/${slug}/shots/read`, png, "image/png")) as {
         lines: string[];
       };
       pages.push(read.lines);
@@ -158,7 +158,7 @@ export function SendScreenshots(props: {
     pick?: { kind: ImportKind; scope: Scope | null },
   ) {
     const made = (await post(
-      `/api/w/${slug}/import`,
+      `/api/w/${slug}/shots`,
       JSON.stringify({ pictures: pages.map((lines) => ({ lines })), ...(pick && { pick }) }),
       "application/json",
     )) as Pick<Result, "drafts" | "outcomes">;
@@ -172,21 +172,21 @@ export function SendScreenshots(props: {
     setError(null);
     setResult(null);
     if (files.length > maxPictures)
-      return setError(fillIn(w["import.tooMany"] ?? "", { n: maxPictures }));
+      return setError(fillIn(w["shots.tooMany"] ?? "", { n: maxPictures }));
     const pages = await readAll(files, slug, props.statusBar, setProgress);
     setProgress(null);
-    if (pages.length === 0) return setError(w["import.readFailed"] ?? "");
+    if (pages.length === 0) return setError(w["shots.readFailed"] ?? "");
     await makeDrafts(pages, files.length - pages.length).catch(() =>
-      setError(w["import.e.failed"] ?? ""),
+      setError(w["shots.e.failed"] ?? ""),
     );
   }
 
   return (
     <div className="mt-4">
-      <FilePicker label={w["import.send"]} busy={progress !== null} onFiles={(f) => void send(f)} />
-      <p className="mt-2 text-body-sm text-ink/80">{w["import.help"]}</p>
+      <FilePicker label={w["shots.send"]} busy={progress !== null} onFiles={(f) => void send(f)} />
+      <p className="mt-2 text-body-sm text-ink/80">{w["shots.help"]}</p>
       <div aria-live="polite" className="mt-2">
-        {progress && <p>{fillIn(w["import.reading"] ?? "", progress)}</p>}
+        {progress && <p>{fillIn(w["shots.reading"] ?? "", progress)}</p>}
         {error && <p className="border-l-4 border-seal pl-3">{error}</p>}
         {result && (
           <Results
@@ -194,7 +194,7 @@ export function SendScreenshots(props: {
             result={result}
             onPick={(pick) =>
               void makeDrafts(result.unrecognised, 0, pick).catch(() =>
-                setError(w["import.e.failed"] ?? ""),
+                setError(w["shots.e.failed"] ?? ""),
               )
             }
             onDiscard={() => setResult({ ...result, unrecognised: [] })}
@@ -223,24 +223,24 @@ function Results(props: {
   const { w, language, kinds, result } = props;
   const label = (d: DraftSummary) =>
     d.scope
-      ? fillIn(w["import.kindScope"] ?? "", {
+      ? fillIn(w["shots.kindScope"] ?? "", {
           kind: kinds[d.kind],
-          scope: w[`import.scope.${d.scope}`] ?? "",
+          scope: w[`shots.scope.${d.scope}`] ?? "",
         })
       : kinds[d.kind];
   const counts = (d: DraftSummary) =>
     [
-      plural(w, language, "import.rows", d.rows),
-      ...(d.doubtful ? [plural(w, language, "import.doubtful", d.doubtful)] : []),
-      ...(d.notFound ? [plural(w, language, "import.notFound", d.notFound)] : []),
+      plural(w, language, "shots.rows", d.rows),
+      ...(d.doubtful ? [plural(w, language, "shots.doubtful", d.doubtful)] : []),
+      ...(d.notFound ? [plural(w, language, "shots.notFound", d.notFound)] : []),
     ].join(", ");
   const notes = new Set(
     result.outcomes.flatMap((o) =>
       o.status === "map"
-        ? [w["import.map"] ?? ""]
+        ? [w["shots.map"] ?? ""]
         : o.status === "soon" || o.status === "empty"
           ? [
-              fillIn(w[o.status === "soon" ? "import.soon" : "import.empty"] ?? "", {
+              fillIn(w[o.status === "soon" ? "shots.soon" : "shots.empty"] ?? "", {
                 what: kinds[o.kind],
               }),
             ]
@@ -251,15 +251,15 @@ function Results(props: {
     <ul className="space-y-2">
       {result.drafts.map((d) => (
         <li key={d.id} className="border border-rule px-3 py-2">
-          <p>{fillIn(w["import.reply.read"] ?? "", { what: label(d), counts: counts(d) })}</p>
+          <p>{fillIn(w["shots.reply.read"] ?? "", { what: label(d), counts: counts(d) })}</p>
           {d.leftOut > 0 && (
-            <p className="text-body-sm">{plural(w, language, "import.leftOut", d.leftOut)}</p>
+            <p className="text-body-sm">{plural(w, language, "shots.leftOut", d.leftOut)}</p>
           )}
           <a
-            href={`/w/${props.slug}/import/${d.id}`}
+            href={`/w/${props.slug}/shots/${d.id}`}
             className="inline-flex min-h-11 items-center font-semibold text-plum underline underline-offset-4"
           >
-            {w["import.open"]}
+            {w["shots.open"]}
           </a>
         </li>
       ))}
@@ -270,7 +270,7 @@ function Results(props: {
       ))}
       {result.unrecognised.length > 0 && <PickType {...props} />}
       {result.lost > 0 && (
-        <li className="px-3 py-2">{plural(w, language, "import.lost", result.lost)}</li>
+        <li className="px-3 py-2">{plural(w, language, "shots.lost", result.lost)}</li>
       )}
     </ul>
   );
@@ -285,8 +285,8 @@ function PickType(props: {
   const { w } = props;
   return (
     <li className="border border-rule px-3 py-2">
-      <p>{w["import.unrecognised"]}</p>
-      <p className="mt-1 text-body-sm font-semibold">{w["import.pickType"]}</p>
+      <p>{w["shots.unrecognised"]}</p>
+      <p className="mt-1 text-body-sm font-semibold">{w["shots.pickType"]}</p>
       <div className="mt-1 flex flex-wrap gap-2">
         {props.picks.map((p) => (
           <button
@@ -303,7 +303,7 @@ function PickType(props: {
           onClick={props.onDiscard}
           className="inline-flex min-h-11 items-center px-3 text-body-sm font-medium underline underline-offset-4"
         >
-          {w["import.discard"]}
+          {w["shots.discard"]}
         </button>
       </div>
     </li>

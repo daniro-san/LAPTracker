@@ -1,4 +1,4 @@
-// /w/[slug]/import/[id] (issue 299): one draft of the screenshot import, for any officer of the workspace to
+// /w/[slug]/shots/[id] (issue 299): one draft of the screenshot import, for any officer of the workspace to
 // check, fix and save. The access check runs before anything is read (D71). Numbers and dates are formatted
 // here, in the officer's language, and the review itself is a client component.
 import { cookies } from "next/headers";
@@ -33,9 +33,9 @@ const KINDS: ImportKind[] = [
   "elixir_teams",
 ];
 
-/** The import's words for the client: every `import.*` key. */
+/** The import's words for the client: every `shots.*` key. */
 const importWords = (t: WorkspaceDictionary) =>
-  Object.fromEntries(Object.entries(t).filter(([k]) => k.startsWith("import.")));
+  Object.fromEntries(Object.entries(t).filter(([k]) => k.startsWith("shots.")));
 
 /** "Mon 16 Nov": a server day, as a date (the days are UTC dates). */
 const dayOf = (language: WorkspaceLanguage) =>
@@ -58,8 +58,8 @@ function reviewText(
   const index = view.week.indexOf(view.pictureDay);
   return {
     weeks: [
-      fill(t["import.draft.weekOf"], { date: at(monday) }),
-      fill(t["import.draft.weekOf"], { date: at(monday, 7 * DAY_MS) }),
+      fill(t["shots.draft.weekOf"], { date: at(monday) }),
+      fill(t["shots.draft.weekOf"], { date: at(monday, 7 * DAY_MS) }),
     ],
     days: [sixDays(0), sixDays(7 * DAY_MS)],
     pictureDay: index >= 0 && index <= 5 ? index : 5,
@@ -85,7 +85,7 @@ export default async function DraftPage({
     redirect(`/w/${slug}`);
   }
   const { language, t } = await workspaceWords();
-  const kinds = Object.fromEntries(KINDS.map((k) => [k, t[`import.kind.${k}`]])) as Record<
+  const kinds = Object.fromEntries(KINDS.map((k) => [k, t[`shots.kind.${k}`]])) as Record<
     ImportKind,
     string
   >;
@@ -96,11 +96,11 @@ export default async function DraftPage({
           href={`/w/${slug}`}
           className="inline-flex min-h-11 items-center underline underline-offset-4"
         >
-          ← {t["import.draft.back"]}
+          ← {t["shots.draft.back"]}
         </a>
       </p>
       {view === null ? (
-        <p className="mt-4 border border-rule px-4 py-5">{t["import.e.gone"]}</p>
+        <p className="mt-4 border border-rule px-4 py-5">{t["shots.e.gone"]}</p>
       ) : (
         <Draft view={view} t={t} language={language} slug={slug} kinds={kinds} />
       )}
@@ -116,35 +116,35 @@ function Draft(props: {
   kinds: Record<ImportKind, string>;
 }) {
   const { view, t, language } = props;
-  const by = view.doneBy ?? t["import.someone"];
+  const by = view.doneBy ?? t["shots.someone"];
   return (
     <>
       <h1 className="mt-2 font-display text-display-lg">{kindLabel(t, view.kind, view.scope)}</h1>
       <p className="mt-1 flex flex-wrap items-center gap-x-2 text-body-sm text-ink/80">
-        <span>{counted(t, language, "import.rows", view.rows.length)}</span>
+        <span>{counted(t, language, "shots.rows", view.rows.length)}</span>
         <SourceBadge source="photo" label={t["src.photo"]} />
       </p>
       <p className="mt-1 text-body-sm text-ink/80">
         {[
-          view.sentBy && fill(t["import.sentBy"], { name: view.sentBy }),
-          view.source === "discord" && t["import.viaDiscord"],
-          counted(t, language, "import.draft.pages", view.pages),
+          view.sentBy && fill(t["shots.sentBy"], { name: view.sentBy }),
+          view.source === "discord" && t["shots.viaDiscord"],
+          counted(t, language, "shots.draft.pages", view.pages),
         ]
           .filter(Boolean)
           .join(" · ")}
       </p>
       <p className="mt-1 text-body-sm text-ink/80">
-        {fill(t["import.draft.kept"], { date: dayOf(language).format(view.expiresAt) })}
+        {fill(t["shots.draft.kept"], { date: dayOf(language).format(view.expiresAt) })}
       </p>
       {view.leftOut > 0 && (
         <p className="mt-2 border-l-4 border-yarn pl-2">
-          {counted(t, language, "import.leftOut", view.leftOut)}
+          {counted(t, language, "shots.leftOut", view.leftOut)}
         </p>
       )}
-      <p className="mt-2 font-semibold">{t["import.nothingCounts"]}</p>
+      <p className="mt-2 font-semibold">{t["shots.nothingCounts"]}</p>
       {view.status !== "open" && (
         <p role="status" className="mt-3 border-l-4 border-plum pl-3 font-semibold">
-          {fill(t[view.status === "saved" ? "import.savedBy" : "import.discardedBy"], { name: by })}
+          {fill(t[view.status === "saved" ? "shots.savedBy" : "shots.discardedBy"], { name: by })}
         </p>
       )}
       <DraftReview

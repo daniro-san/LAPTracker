@@ -6,19 +6,19 @@ import type { DraftSummary, Outcome } from "./import";
 import type { ImportKind, Scope } from "./import-kinds";
 
 export function kindLabel(t: WorkspaceDictionary, kind: ImportKind, scope: Scope | null): string {
-  const name = t[`import.kind.${kind}`];
+  const name = t[`shots.kind.${kind}`];
   return scope
-    ? fill(t["import.kindScope"], { kind: name, scope: t[`import.scope.${scope}`] })
+    ? fill(t["shots.kindScope"], { kind: name, scope: t[`shots.scope.${scope}`] })
     : name;
 }
 
 type Counted =
-  | "import.rows"
-  | "import.doubtful"
-  | "import.notFound"
-  | "import.leftOut"
-  | "import.lost"
-  | "import.draft.pages";
+  | "shots.rows"
+  | "shots.doubtful"
+  | "shots.notFound"
+  | "shots.leftOut"
+  | "shots.lost"
+  | "shots.draft.pages";
 
 /** "8 rows", "1 doubtful": the plural form of the officer's language. */
 export function counted(
@@ -34,19 +34,19 @@ export function counted(
 /** "8 rows, 1 doubtful": the rows of a draft and the ones that need a person. */
 export function draftCounts(t: WorkspaceDictionary, language: WorkspaceLanguage, d: DraftSummary) {
   return [
-    counted(t, language, "import.rows", d.rows),
-    ...(d.doubtful > 0 ? [counted(t, language, "import.doubtful", d.doubtful)] : []),
-    ...(d.notFound > 0 ? [counted(t, language, "import.notFound", d.notFound)] : []),
+    counted(t, language, "shots.rows", d.rows),
+    ...(d.doubtful > 0 ? [counted(t, language, "shots.doubtful", d.doubtful)] : []),
+    ...(d.notFound > 0 ? [counted(t, language, "shots.notFound", d.notFound)] : []),
   ].join(", ");
 }
 
 /** What one picture that made no draft says; null for a picture that made one. */
 export function outcomeText(t: WorkspaceDictionary, outcome: Outcome): string | null {
   if (outcome.status === "draft") return null;
-  if (outcome.status === "unrecognised") return t["import.unrecognised"];
-  if (outcome.status === "map") return t["import.map"];
+  if (outcome.status === "unrecognised") return t["shots.unrecognised"];
+  if (outcome.status === "map") return t["shots.map"];
   const what = kindLabel(t, outcome.kind, null);
-  return fill(t[outcome.status === "soon" ? "import.soon" : "import.empty"], { what });
+  return fill(t[outcome.status === "soon" ? "shots.soon" : "shots.empty"], { what });
 }
 
 /**
@@ -61,14 +61,14 @@ export function outcomeLines(
   review: (id: number) => string,
 ): string[] {
   const drafts = result.drafts.flatMap((d) => [
-    `${fill(t["import.reply.read"], {
+    `${fill(t["shots.reply.read"], {
       what: kindLabel(t, d.kind, d.scope),
       counts: draftCounts(t, language, d),
-    })} → [${t["import.reply.review"]}](${review(d.id)})`,
-    ...(d.leftOut > 0 ? [counted(t, language, "import.leftOut", d.leftOut)] : []),
+    })} → [${t["shots.reply.review"]}](${review(d.id)})`,
+    ...(d.leftOut > 0 ? [counted(t, language, "shots.leftOut", d.leftOut)] : []),
   ]);
   const others = [...new Set(result.outcomes.map((o) => outcomeText(t, o)))].filter(
     (line): line is string => line !== null,
   );
-  return [...drafts, ...others, ...(lost > 0 ? [counted(t, language, "import.lost", lost)] : [])];
+  return [...drafts, ...others, ...(lost > 0 ? [counted(t, language, "shots.lost", lost)] : [])];
 }

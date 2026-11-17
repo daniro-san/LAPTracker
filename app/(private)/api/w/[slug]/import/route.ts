@@ -1,15 +1,41 @@
-// POST /api/w/[slug]/import {pictures: [{lines}], pick?} — "Send screenshots" (issue 299): the pictures'
-// OCR text lines (from /import/read) become drafts for every officer to review. Classified again here,
-// so a map never becomes data. `pick` is the officer's type for pictures that were not recognised.
+// POST /api/w/[slug]/import {csv, apply, decisions} — the one-time sheet import (issue 297, D80): same
+// origin, a JSON body and a session of this workspace (D71). `apply: false` reads the sheet and answers
+// how each row matches a member; `apply: true` writes it once every open row has a person's decision.
+// The sheet is read in memory and never stored or logged; only its facts and the confirmed names stay.
+import { z } from "zod";
+
 import { requireWorkspace } from "@/lib/private/access";
-import { isSameOriginJson, NO_STORE, privateError, requestCookies } from "@/lib/private/http";
-import { createDrafts } from "@/lib/private/import";
-import { createBody, screenOf } from "@/lib/private/import-input";
-import { classified } from "@/lib/private/import-read";
-import { privateLog } from "@/lib/private/log";
+import {
+  isSameOriginJson,
+  NO_STORE,
+  privateError,
+  privately,
+  requestCookies,
+} from "@/lib/private/http";
+import { applyImport, MAX_SHEET_ROWS, previewImport } from "@/lib/private/sheet-import";
 import { SLUG } from "@/lib/private/sign-in";
 import { withContext } from "@/lib/route";
-import { serverDay } from "@/lib/schedule";
+
+const body = z
+  .object({
+    csv: z.string().min(1).max(300_000),
+    apply: z.boolean(),
+    decisions: z
+      .array(
+        z
+          .object({ line: z.number().int().min(1), uid: z.number().int().positive().nullable() })
+          .strict(),
+      )
+      .max(MAX_SHEET_ROWS),
+  })
+  .strict();
+
+const REFUSED = {
+  no_name_column: 422,
+  too_many_rows: 422,
+  undecided: 409,
+  not_member: 400,
+} as const;
 
 export async function POST(
   request: Request,
@@ -18,30 +44,24 @@ export async function POST(
   const { slug } = await params;
   if (!SLUG.test(slug)) return privateError(404, "not_found");
   if (!isSameOriginJson(request)) return privateError(403, "forbidden");
-  const body = createBody.safeParse(await request.json().catch(() => null));
-  if (!body.success) return privateError(400, "bad_request");
+  const parsed = body.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) return privateError(400, "bad_request");
+  const { csv, apply, decisions } = parsed.data;
   return withContext("/api/w/[slug]/import", async (ctx, db) => {
-    const now = ctx.now();
-    const access = await requireWorkspace(db, slug, requestCookies(request), now);
-    if (!access.ok) return privateError(401, access.reason);
-    const { pictures, pick } = body.data;
-    const result = await createDrafts(
-      db,
-      access,
-      classified(pictures.map((p) => p.lines)),
-      {
-        source: "desk",
-        sentBy: access.user.displayName,
-        pictureDay: serverDay(now, ctx.env),
-        now,
-      },
-      pick && screenOf(pick.kind, pick.scope),
+    const access = await requireWorkspace(db, slug, requestCookies(request), ctx.now());
+    if (!access.ok) return privateError(401, "signed_out");
+    const where = { now: ctx.now(), serverZone: ctx.env.SERVER_TZ };
+    if (!apply) {
+      const preview = await privately("sheet_import.preview", () =>
+        previewImport(db, access, csv, where),
+      );
+      if (typeof preview === "string") return privateError(REFUSED[preview], preview);
+      return Response.json(preview, { headers: NO_STORE });
+    }
+    const result = await privately("sheet_import.apply", () =>
+      applyImport(db, access, csv, decisions, where),
     );
-    privateLog("w.import.desk", {
-      workspace: access.workspaceId,
-      pictures: pictures.length,
-      drafts: result.drafts.length,
-    });
+    if (typeof result === "string") return privateError(REFUSED[result], result);
     return Response.json(result, { headers: NO_STORE });
   });
 }

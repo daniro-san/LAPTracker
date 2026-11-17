@@ -18,6 +18,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 import { workspaces, workspaceUsers } from "./schema";
+import type { SecretOpsEntry } from "./screenshot/parse-secret-ops";
 
 const tstz = (name: string) => timestamp(name, { withTimezone: true });
 const big = (name: string) => bigint(name, { mode: "number" });
@@ -32,6 +33,10 @@ export interface StoredRow {
   flags: string[];
   match:
     { status: "sure"; uid: number } | { status: "doubtful"; uids: number[] } | { status: "none" };
+  /** Member update: which member fact `value` is (D80). */
+  field?: "squadMight" | "adTech";
+  /** Secret Ops report: the entry as read; `name` is its attacker. */
+  entry?: SecretOpsEntry;
 }
 
 /**

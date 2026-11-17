@@ -27,7 +27,7 @@ const nextConfig: NextConfig = {
   // route globs without the route group: `*` stands for [slug].
   serverExternalPackages: ["tesseract.js"],
   outputFileTracingIncludes: Object.fromEntries(
-    ["/api/w/*/import/read", "/api/discord/interactions"].map((route) => [
+    ["/api/w/*/shots/read", "/api/discord/interactions"].map((route) => [
       route,
       [
         "./lib/screenshot/tessdata/**",

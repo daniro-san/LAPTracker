@@ -48,15 +48,23 @@ function kindOf(sentence: string): SecretOpsEntry["kind"] {
   return HELP.test(sentence) ? "help" : null;
 }
 
-/** Entries in the order shown, newest first in the game. An entry with no readable sentence (cut off at an edge) has `kind: null`. */
+/**
+ * Entries in the order shown, newest first in the game. An entry with no readable sentence (cut off at
+ * an edge) has `kind: null`. A bracket with neither a sentence nor a time under it is OCR noise, not an
+ * entry (11k: the re-recorded image 54 read a stray `= [lel`).
+ */
 export function parseSecretOpsReport(lines: readonly string[]): SecretOpsEntry[] {
   const starts = lines.flatMap((line, at) => (START.test(line) ? [at] : []));
   return starts.flatMap((from, n) => {
     const line = lines[from] as string;
     const rest = lines.slice(from + 1, starts[n + 1] ?? lines.length);
     const sentence = rest.join("\n");
-    return [
-      { kind: kindOf(sentence), ...whoOf(line), at: timeOf(line) ?? timeOf(sentence), raw: line },
-    ];
+    const entry = {
+      kind: kindOf(sentence),
+      ...whoOf(line),
+      at: timeOf(line) ?? timeOf(sentence),
+      raw: line,
+    };
+    return entry.kind === null && entry.at === null ? [] : [entry];
   });
 }

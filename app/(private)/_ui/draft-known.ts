@@ -25,25 +25,49 @@ export function duelKnown(
   const days = DAYS.reduce((sum, d) => sum + (saved[d] ?? 0), 0);
   const week = saved.week;
   const lines: string[] = [];
-  if (before !== undefined) lines.push(fillIn(w["import.was"], { v: grouped(before, sep) }));
+  if (before !== undefined) lines.push(fillIn(w["shots.was"], { v: grouped(before, sep) }));
   if (value === null) return lines;
   if (target === "week" && days > value) {
-    lines.push(fillIn(w["import.duel.daysMore"], { sum: grouped(days, sep) }));
+    lines.push(fillIn(w["shots.duel.daysMore"], { sum: grouped(days, sep) }));
   }
   if (target !== "week" && week !== undefined && value > week) {
-    lines.push(fillIn(w["import.duel.overWeek"], { v: grouped(week, sep) }));
+    lines.push(fillIn(w["shots.duel.overWeek"], { v: grouped(week, sep) }));
   }
   return lines;
 }
 
+/** A member fact as shown: AD Tech in %, squad might with grouped digits. */
+export const factText = (field: string | undefined, v: number, sep: string) =>
+  field === "adTech" ? `${v}%` : grouped(v, sep);
+
+/**
+ * A member update beside its row: "AD Tech: 69% → 74%", or "(nothing before)", and that AD Tech at 100 %
+ * is complete and is not written again (owner, issue 299).
+ */
+export function factKnown(
+  field: string | undefined,
+  before: number | null | undefined,
+  value: number | null,
+  w: Words,
+  sep: string,
+): string[] {
+  const label = w[`shots.field.${field}`] ?? "";
+  if (field === "adTech" && before === 100) return [w["shots.adComplete"] ?? ""];
+  if (value === null) return [];
+  const now = factText(field, value, sep);
+  return before === null || before === undefined
+    ? [fillIn(w["shots.factNew"], { field: label, now })]
+    : [fillIn(w["shots.factChange"], { field: label, was: factText(field, before, sep), now })];
+}
+
 /** Our own read of the member beside the picture's value: "we read 9,100 · same" or "· 650 apart". */
 export function checkKnown(ours: number | null, value: number | null, w: Words, sep: string) {
-  if (ours === null) return [w["import.oursNone"] ?? ""];
-  const read = fillIn(w["import.ours"], { v: grouped(ours, sep) });
+  if (ours === null) return [w["shots.oursNone"] ?? ""];
+  const read = fillIn(w["shots.ours"], { v: grouped(ours, sep) });
   if (value === null) return [read];
   const apart = Math.abs(value - ours);
   return [
     read,
-    apart === 0 ? (w["import.same"] ?? "") : fillIn(w["import.apart"], { d: grouped(apart, sep) }),
+    apart === 0 ? (w["shots.same"] ?? "") : fillIn(w["shots.apart"], { d: grouped(apart, sep) }),
   ];
 }

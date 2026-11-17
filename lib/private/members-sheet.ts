@@ -36,10 +36,16 @@ export function reasonText(r: Reason, t: WorkspaceDictionary, f: Formats): strin
   });
 }
 
-/** One status per member: Check in, else New, else No data, else Fine. */
-export type Status = "checkin" | "new" | "nodata" | "fine";
+/**
+ * One status per member: the one an officer set (On a break, Needs help), else On a break while an away
+ * note runs, else Check in, New, No data or Fine. A row read before the first end-of-day read has none.
+ */
+export type Status = "help" | "break" | "checkin" | "new" | "nodata" | "fine" | "none";
 
 export function statusOf(m: MemberRow): Status {
+  if (m.officerStatus) return m.officerStatus;
+  if (m.awayUntil) return "break";
+  if (m.early) return "none";
   if (m.reasons.length > 0) return "checkin";
   if (m.isNew) return "new";
   return m.missing.length > 0 ? "nodata" : "fine";
@@ -55,11 +61,18 @@ export function missingText(m: MemberRow, t: WorkspaceDictionary, f: Formats): s
   return fill(t["members.nodata"], { list: words.join(", ") });
 }
 
+/** "On a break until Fri 20 Nov", or "On a break" when no away note gives a day. */
+export const breakText = (m: MemberRow, t: WorkspaceDictionary, f: Formats) =>
+  m.awayUntil ? fill(t["status.breakUntil"], { date: f.date(m.awayUntil) }) : t["status.break"];
+
 export function statusText(m: MemberRow, t: WorkspaceDictionary, f: Formats): string {
   const status = statusOf(m);
   if (status === "checkin")
     return `${t["status.checkin"]}: ${m.reasons.map((r) => reasonText(r, t, f)).join("; ")}`;
   if (status === "new") return t["members.new"];
+  if (status === "break") return breakText(m, t, f);
+  if (status === "help") return t["status.help"];
+  if (status === "none") return "";
   return status === "nodata" ? missingText(m, t, f) : t["status.fine"];
 }
 

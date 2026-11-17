@@ -1,8 +1,15 @@
-// POST /api/w/[slug]/import/[id] {action: save | discard | retype, version, …} — an officer's decision on a
+// POST /api/w/[slug]/shots/[id] {action: save | discard | retype, version, …} — an officer's decision on a
 // draft (issue 299). The first save or discard wins: a second one with the same version gets 409 and who
-// did it. Nothing counts before a save (D75).
+// did it. A member update that another officer changed meanwhile gets 409 with the newer values (D80).
+// A Secret Ops save answers the thefts' counts (D97). Nothing counts before a save (D75).
 import { requireWorkspace } from "@/lib/private/access";
-import { isSameOriginJson, NO_STORE, privateError, requestCookies } from "@/lib/private/http";
+import {
+  isSameOriginJson,
+  NO_STORE,
+  privateError,
+  privately,
+  requestCookies,
+} from "@/lib/private/http";
 import { discardDraft, retype, saveDraft, type SaveResult } from "@/lib/private/import";
 import { actionBody, screenOf } from "@/lib/private/import-input";
 import { privateLog } from "@/lib/private/log";
@@ -14,8 +21,11 @@ const STATUS: Record<Exclude<SaveResult, { ok: true }>["code"], number> = {
   already_saved: 409,
   discarded: 409,
   changed: 409,
+  conflict: 409,
   bad_rows: 400,
   cannot_save: 400,
+  not_in_alliance: 400,
+  attacker_missing: 400,
 };
 
 export async function POST(
@@ -27,26 +37,26 @@ export async function POST(
   if (!isSameOriginJson(request)) return privateError(403, "forbidden");
   const body = actionBody.safeParse(await request.json().catch(() => null));
   if (!body.success) return privateError(400, "bad_request");
-  return withContext("/api/w/[slug]/import/[id]", async (ctx, db) => {
+  return withContext("/api/w/[slug]/shots/[id]", async (ctx, db) => {
     const now = ctx.now();
     const access = await requireWorkspace(db, slug, requestCookies(request), now);
     if (!access.ok) return privateError(401, access.reason);
     const input = body.data;
     const draft = Number(id);
-    const result =
+    // Facts and attacker names are what officers and pictures said: an error leaves as a code (D80).
+    const result = await privately("shots_save", () =>
       input.action === "save"
-        ? await saveDraft(db, access, draft, input, now)
+        ? saveDraft(db, access, draft, input, { now, zone: ctx.env.SERVER_TZ })
         : input.action === "discard"
-          ? await discardDraft(db, access, draft, input.version, now)
-          : await retype(db, access, draft, input.version, screenOf(input.kind, input.scope), now);
+          ? discardDraft(db, access, draft, input.version, now)
+          : retype(db, access, draft, input.version, screenOf(input.kind, input.scope), now),
+    );
     privateLog(`w.import.${input.action}`, {
       workspace: access.workspaceId,
       ok: result.ok ? 1 : 0,
     });
-    if (result.ok) return Response.json({ ok: true }, { headers: NO_STORE });
-    return Response.json(
-      { code: result.code, by: result.by ?? null },
-      { status: STATUS[result.code], headers: NO_STORE },
-    );
+    if (result.ok) return Response.json(result, { headers: NO_STORE });
+    const { code, by = null, detail = null } = result;
+    return Response.json({ code, by, detail }, { status: STATUS[code], headers: NO_STORE });
   });
 }

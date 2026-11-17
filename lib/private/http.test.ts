@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { isSameOriginJson } from "./http";
+import { isSameOriginJson, privately } from "./http";
 
 const write = (headers: Record<string, string>) =>
   new Request("https://laptracker.test/api/w/ogs/logout", { method: "POST", headers, body: "{}" });
@@ -31,5 +31,19 @@ describe("isSameOriginJson (D71 writes)", () => {
   it("refuses a form body", () => {
     const form = { ...ours, "content-type": "application/x-www-form-urlencoded" };
     expect(isSameOriginJson(write(form))).toBe(false);
+  });
+});
+
+describe("privately (D80)", () => {
+  it("rethrows an error as its code alone, without the message or cause that quote typed text", async () => {
+    const typed = new Error('Failed query: insert … params: 1,12,notes,"Away on Sundays"', {
+      cause: new Error('Key (value)=("Away on Sundays") already exists'),
+    });
+    const thrown = await privately("member_facts.save", () => Promise.reject(typed)).catch(
+      (e: unknown) => e as Error,
+    );
+
+    expect(thrown.message).toBe("member_facts.save");
+    expect(thrown.cause).toBeUndefined();
   });
 });

@@ -1,6 +1,7 @@
 // The kinds this build can save (issue 299, D96): Alliance Duel points per member per day and per week,
 // and the donation, might and kills rankings as a check against our own reads, of which only the counts
-// are kept. A kind missing from SAVE_HOOKS is recognised but "coming soon" (import-kinds.ts).
+// are kept; member updates and Secret Ops reports (import-photo-hooks.ts). A kind missing from SAVE_HOOKS
+// is recognised but "coming soon" (import-kinds.ts).
 import type { Db } from "../db";
 import { duelWeek, insertCheck, newestRoster, saveDuelPoints } from "../repo/import";
 import { endOfDayReads } from "../repo/workspace-rosters";
@@ -10,6 +11,7 @@ import { parseAllianceDuelRanking } from "../screenshot/parse-alliance-duel";
 import { parseRanking } from "../screenshot/parse-ranking";
 import type { WorkspaceAccess } from "./access";
 import type { ImportKind, ReadRow, SaveHook, Saving, Scope, Screen } from "./import-kinds";
+import { memberUpdate, secretOps } from "./import-photo-hooks";
 import { gameWeek, weekDonations, weekTotal } from "./member-week";
 
 /** End-of-day reads a weekly donation check sums: a full week. */
@@ -59,6 +61,7 @@ const duel: SaveHook = {
     if (!saving.duel) throw new Error("an Alliance Duel draft needs its week and day");
     const points = saving.rows.map((r) => ({ uid: r.uid, points: r.value }));
     await saveDuelPoints(db, access.workspaceId, saving.duel, points, saving);
+    return {};
   },
 };
 
@@ -115,15 +118,18 @@ const check: SaveHook = {
       savedBy: saving.userId,
       savedAt: saving.now,
     });
+    return {};
   },
 };
 
-/** The kinds this build saves. Another session adds its kind here with its own SaveHook. */
+/** The kinds this build saves; event results and Elixir teams (issue 298) add theirs here. */
 export const SAVE_HOOKS: Partial<Record<ImportKind, SaveHook>> = {
   alliance_duel: duel,
   donation: check,
   might: check,
   kills: check,
+  member_update: memberUpdate,
+  secret_ops: secretOps,
 };
 
 export const canSave = (kind: ImportKind) => SAVE_HOOKS[kind] !== undefined;

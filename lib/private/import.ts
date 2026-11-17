@@ -16,7 +16,17 @@ import {
 import type { Classified } from "../screenshot/classify";
 import { matchName, type NameCandidate } from "../screenshot/match-name";
 import type { WorkspaceAccess } from "./access";
-import type { ImportKind, ReadRow, Scope, Screen } from "./import-kinds";
+import {
+  SaveRefused,
+  type ImportKind,
+  type PhotoFact,
+  type ReadRow,
+  type SaveExtra,
+  type SaveHook,
+  type Saving,
+  type Scope,
+  type Screen,
+} from "./import-kinds";
 import { SAVE_HOOKS } from "./import-save";
 import { DAY_MS, gameWeek } from "./member-week";
 
@@ -77,8 +87,13 @@ async function candidatesOf(db: Db, access: WorkspaceAccess, now: Date) {
   }));
 }
 
-/** sure: one member fits; doubtful: a few might (the officer picks); none: nobody in the alliance. */
-function matched(rows: ReadRow[], candidates: NameCandidate[]): StoredRow[] {
+/**
+ * sure: one member fits; doubtful: a few might (the officer picks); none: nobody in the alliance. A hook
+ * whose rows are not members (a report's attackers) gets no match.
+ */
+function matched(rows: ReadRow[], candidates: NameCandidate[], hook: SaveHook): StoredRow[] {
+  if (hook.matchMembers === false)
+    return rows.map((row) => ({ ...row, match: { status: "none" } }));
   return rows.map((row) => {
     const match = matchName(row.name, candidates);
     if (match.status === "matched") return { ...row, match: { status: "sure", uid: match.uid } };
@@ -138,7 +153,7 @@ export async function createDrafts(
       for (const i of at) outcomes[i] = { status: "empty", kind: screen.kind };
       continue;
     }
-    const rows = matched(read.rows, candidates);
+    const rows = matched(read.rows, candidates, SAVE_HOOKS[screen.kind] as SaveHook);
     const scopeSure = pick !== undefined || at.every((i) => pictures[i]?.classified.scopeSure);
     inserts.push({
       workspaceId: access.workspaceId,
@@ -188,15 +203,32 @@ export interface SaveInput {
   day: Exclude<DuelDay, "week"> | null;
   /** Alliance Duel: the week before the picture's (a Sunday picture sent on Monday). */
   weekBefore: boolean;
-  rows: { uid: number; value: number }[];
+  /** A member update sends each fact with the version the officer saw (D80). */
+  rows: {
+    uid: number;
+    value: number;
+    field?: PhotoFact | undefined;
+    version?: number | undefined;
+  }[];
+  /** Secret Ops report: whose report it is, and each entry kept (by its row) with its attacker as fixed. */
+  report?: { victimUid: number | null; entries: { row: number; name: string }[] } | undefined;
 }
 
 export type SaveResult =
-  | { ok: true }
+  | ({ ok: true } & SaveExtra)
   | {
       ok: false;
-      code: "gone" | "already_saved" | "discarded" | "changed" | "bad_rows" | "cannot_save";
+      code:
+        | "gone"
+        | "already_saved"
+        | "discarded"
+        | "changed"
+        | "bad_rows"
+        | "cannot_save"
+        | SaveRefused["code"];
       by?: string | null;
+      /** A member update's newer values, when another officer saved first (409). */
+      detail?: unknown;
     };
 
 /** Why a draft can no longer be saved, read again after a refused claim. */
@@ -217,6 +249,12 @@ function duelTarget(pictureDay: string, input: SaveInput): { week: string; day: 
   return { week, day: input.scope === "daily" ? (input.day as DuelDay) : "week" };
 }
 
+/** Every row names a member of the alliance, each (member, fact) once. */
+function rowsFit(rows: SaveInput["rows"], members: Set<number>): boolean {
+  const keys = rows.map((r) => `${r.uid}:${r.field ?? ""}`);
+  return rows.every((r) => members.has(r.uid)) && new Set(keys).size === keys.length;
+}
+
 /**
  * Saves a draft as the officer confirmed it. The claim (open, at the version the officer saw) and the
  * hook's writes run in one transaction: the first save wins, and a second gets who saved it.
@@ -226,39 +264,52 @@ export async function saveDraft(
   access: WorkspaceAccess,
   id: number,
   input: SaveInput,
-  now: Date,
+  clock: { now: Date; zone: string },
 ): Promise<SaveResult> {
+  const { now, zone } = clock;
   const found = await findDraft(db, access.workspaceId, id, now);
   if (!found) return { ok: false, code: "gone" };
   const draft = found.draft;
   const hook = SAVE_HOOKS[draft.kind as ImportKind];
   if (!hook) return { ok: false, code: "cannot_save" };
   const members = new Set((await newestRoster(db, access.unionId)).map((m) => m.uid));
-  const uids = input.rows.map((r) => r.uid);
   const duel = draft.kind === "alliance_duel" ? duelTarget(draft.pictureDay, input) : null;
-  if (
-    uids.some((uid) => !members.has(uid)) ||
-    new Set(uids).size !== uids.length ||
-    (draft.kind === "alliance_duel" && duel === null)
-  ) {
-    return { ok: false, code: "bad_rows" };
+  const secretOps = reportOf(draft.rows, input.report);
+  const missing =
+    (draft.kind === "alliance_duel" && duel === null) ||
+    (draft.kind === "secret_ops" && secretOps === null);
+  if (missing || !rowsFit(input.rows, members)) return { ok: false, code: "bad_rows" };
+  const saving: Saving = {
+    screen: { kind: draft.kind as ImportKind, scope: input.scope },
+    pictureDay: draft.pictureDay,
+    duel,
+    rows: input.rows,
+    secretOps,
+    userId: access.user.id,
+    now,
+    zone,
+  };
+  try {
+    const done = await db.transaction(async (tx) => {
+      const close = { status: "saved" as const, userId: access.user.id };
+      if (!(await closeDraft(tx, access.workspaceId, id, input.version, close, now))) return null;
+      return hook.save(tx, access, saving);
+    });
+    return done ? { ok: true, ...done } : whyNot(db, access, id, now);
+  } catch (error) {
+    if (!(error instanceof SaveRefused)) throw error;
+    return { ok: false, code: error.code, detail: error.detail };
   }
-  const screen = { kind: draft.kind as ImportKind, scope: input.scope };
-  const claimed = await db.transaction(async (tx) => {
-    const close = { status: "saved" as const, userId: access.user.id };
-    if (!(await closeDraft(tx, access.workspaceId, id, input.version, close, now))) return false;
-    const saving = {
-      screen,
-      pictureDay: draft.pictureDay,
-      duel,
-      rows: input.rows,
-      userId: access.user.id,
-      now,
-    };
-    await hook.save(tx, access, saving);
-    return true;
+}
+
+/** A Secret Ops report's entries as kept, with their attackers as the officer fixed them; null when unusable. */
+function reportOf(rows: StoredRow[], report: SaveInput["report"]): Saving["secretOps"] {
+  if (!report) return null;
+  const entries = report.entries.map(({ row, name }) => {
+    const entry = rows[row]?.entry;
+    return entry ? { ...entry, name } : null;
   });
-  return claimed ? { ok: true } : whyNot(db, access, id, now);
+  return entries.every((e) => e !== null) ? { victimUid: report.victimUid, entries } : null;
 }
 
 /** Discards a draft at the version the officer saw; the first close wins, as with a save. */
@@ -289,7 +340,7 @@ export async function retype(
   if (!found) return { ok: false, code: "gone" };
   if (!hook) return { ok: false, code: "cannot_save" };
   const read = hook.read(found.draft.pages, screen.scope, ownTag(access));
-  const rows = matched(read.rows, await candidatesOf(db, access, now));
+  const rows = matched(read.rows, await candidatesOf(db, access, now), hook);
   const change = { ...screen, scopeSure: true, rows, leftOut: read.leftOut };
   return (await retypeDraft(db, access.workspaceId, id, version, change, now))
     ? { ok: true }

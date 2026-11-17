@@ -187,7 +187,7 @@ describe("the deferred flow", () => {
     );
     const [draft] = await db.select().from(screenshotDrafts);
     expect(JSON.parse(edit?.body ?? "{}").content).toBe(
-      `Read: Alliance Duel weekly, 8 rows, 2 doubtful → [Review](https://laptracker.test/w/ogs/import/${draft?.id})`,
+      `Read: Alliance Duel weekly, 8 rows, 2 doubtful → [Review](https://laptracker.test/w/ogs/shots/${draft?.id})`,
     );
     expect(draft).toMatchObject({ source: "discord", sentBy: "Ana", pictureDay: "2026-11-16" });
   });

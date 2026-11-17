@@ -125,11 +125,11 @@ async function officerOf(db: Db, interaction: Interaction, now: Date) {
   const workspace = interaction.guild_id
     ? await findWorkspaceByGuild(db, interaction.guild_id)
     : null;
-  if (!workspace || !member) return { refused: "import.discord.noDesk" as const };
+  if (!workspace || !member) return { refused: "shots.discord.noDesk" as const };
   const known = await findWorkspaceUser(db, workspace.id, member.user.id);
   const viaRole = member.roles.some((r) => workspace.leaderRoleIds.includes(r));
   if (refusalOf(known, viaRole, false, now))
-    return { refused: "import.discord.notOfficer" as const };
+    return { refused: "shots.discord.notOfficer" as const };
   const name = member.nick ?? member.user.global_name ?? member.user.username;
   const userId = await recordOfficer(db, workspace.id, member.user.id, name);
   const access = {
@@ -177,7 +177,7 @@ export async function handleInteraction(
   }
   const message = targetMessage(interaction);
   const pictures = (message?.attachments ?? []).filter(isPicture);
-  if (!message || pictures.length === 0) return reply(t["import.discord.noPicture"]);
+  if (!message || pictures.length === 0) return reply(t["shots.discord.noPicture"]);
   const webhook = { applicationId: interaction.application_id, token: interaction.token };
   return {
     status: 200,

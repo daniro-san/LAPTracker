@@ -54,16 +54,24 @@ function Choice<T extends string | boolean>(props: {
   );
 }
 
+/** Where a kind that is not a ranking check saves. */
+const WHERE: Partial<Record<ImportKind, string>> = {
+  member_update: "shots.where.facts",
+  secret_ops: "shots.where.thefts",
+};
+
 /** "Saves to: Alliance Duel points of each member, week of Mon 16 Nov", or a check's line. */
 function whereText(view: DraftView, w: Words, text: ReviewText, c: Choices): string {
   const week = c.weekBefore ? 1 : 0;
-  if (view.kind !== "alliance_duel")
-    return fillIn(w["import.draft.saveTo"], { where: w["import.where.check"] ?? "" });
+  if (view.kind !== "alliance_duel") {
+    const key = WHERE[view.kind] ?? "shots.where.check";
+    return fillIn(w["shots.draft.saveTo"], { where: w[key] ?? "" });
+  }
   const where =
     c.scope === "daily"
-      ? fillIn(w["import.where.duelDay"], { day: text.days[week][DAYS.indexOf(c.day)] ?? "" })
-      : fillIn(w["import.where.duelWeek"], { week: text.weeks[week] });
-  return fillIn(w["import.draft.saveTo"], { where });
+      ? fillIn(w["shots.where.duelDay"], { day: text.days[week][DAYS.indexOf(c.day)] ?? "" })
+      : fillIn(w["shots.where.duelWeek"], { week: text.weeks[week] });
+  return fillIn(w["shots.draft.saveTo"], { where });
 }
 
 function DuelChoices(props: {
@@ -78,7 +86,7 @@ function DuelChoices(props: {
   return (
     <>
       <Choice
-        legend={w["import.draft.week"]}
+        legend={w["shots.draft.week"]}
         options={[false, true].map((b) => ({ value: b, label: text.weeks[b ? 1 : 0] }))}
         value={choice.weekBefore}
         onChange={props.set.weekBefore}
@@ -86,7 +94,7 @@ function DuelChoices(props: {
       />
       {choice.scope === "daily" && (
         <Choice
-          legend={w["import.draft.day"]}
+          legend={w["shots.draft.day"]}
           options={DAYS.map((d, i) => ({ value: d, label: days[i] ?? d }))}
           value={choice.day}
           onChange={props.set.day}
@@ -115,23 +123,23 @@ export function DraftHeader(props: {
   const { view, w, choice, readOnly } = props;
   const scope = choice.scope;
   return (
-    <section aria-label={w["import.draft.type"]}>
+    <section aria-label={w["shots.draft.type"]}>
       <Choice
-        legend={w["import.draft.type"]}
+        legend={w["shots.draft.type"]}
         options={props.saveKinds.map((k) => ({ value: k, label: props.kinds[k] }))}
         value={view.kind}
         onChange={props.retype}
         disabled={readOnly}
       />
       {scope !== null && !view.scopeSure && !readOnly && (
-        <p className="mt-3 border-l-4 border-yarn pl-2">{w["import.draft.confirmTab"]}</p>
+        <p className="mt-3 border-l-4 border-yarn pl-2">{w["shots.draft.confirmTab"]}</p>
       )}
       {scope !== null && (
         <Choice
-          legend={w["import.draft.tab"]}
+          legend={w["shots.draft.tab"]}
           options={(["daily", "weekly"] as const).map((s) => ({
             value: s,
-            label: w[`import.scope.${s}`] ?? s,
+            label: w[`shots.scope.${s}`] ?? s,
           }))}
           value={scope}
           onChange={props.set.scope}

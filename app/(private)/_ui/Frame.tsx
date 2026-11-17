@@ -55,7 +55,7 @@ function Waiting({ n, t }: { n: number; t: WorkspaceDictionary }) {
       >
         {n}
       </span>
-      <span className="sr-only">{`, ${fill(t["import.badge"], { n })}`}</span>
+      <span className="sr-only">{`, ${fill(t["shots.badge"], { n })}`}</span>
     </>
   );
 }
@@ -75,7 +75,7 @@ function Tabs({
     // Hidden while a notice editor is open, so its save bar is never under the tabs (review of PR 344).
     <nav
       aria-label={t["tab.aria"]}
-      className="fixed inset-x-0 bottom-0 z-10 border-t border-rule bg-paper pb-[env(safe-area-inset-bottom)] [:root:has(form[data-notice-editor])_&]:hidden"
+      className="fixed inset-x-0 bottom-0 z-10 border-t border-rule bg-paper pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] [:root:has(form[data-notice-editor])_&]:hidden"
     >
       <ul className="mx-auto grid max-w-[640px] grid-cols-6">
         {TABS.map((id) => {
@@ -146,8 +146,12 @@ export async function Frame({
 }) {
   const seen = !tabs || (await cookies()).get(WORKSPACE_INTRO_COOKIE)?.value === "1";
   return (
-    <div lang={language} id="top" className={tabs ? "pb-20" : undefined}>
-      <header className="bg-burgundy text-wax-paper">
+    <div
+      lang={language}
+      id="top"
+      className={tabs ? "pb-[calc(5rem+env(safe-area-inset-bottom))]" : undefined}
+    >
+      <header className="bg-burgundy pt-[env(safe-area-inset-top)] [body:has([data-upstream-banner])_&]:pt-0 pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)] text-wax-paper">
         <div className="mx-auto flex max-w-[960px] flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 sm:px-6">
           <div className="min-w-0 flex-1">
             <p className="font-display text-display-sm">{t["app.name"]}</p>
@@ -162,7 +166,9 @@ export async function Frame({
           )}
         </div>
       </header>
-      <main className="mx-auto max-w-[960px] px-4 py-5 sm:px-6">{children}</main>
+      <main className="mx-auto max-w-[960px] py-5 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] sm:pl-[max(1.5rem,env(safe-area-inset-left))] sm:pr-[max(1.5rem,env(safe-area-inset-right))]">
+        {children}
+      </main>
       {tabs && <Tabs t={t} {...tabs} />}
     </div>
   );

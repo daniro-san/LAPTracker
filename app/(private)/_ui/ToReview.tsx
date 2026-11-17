@@ -44,19 +44,19 @@ export function ToReview(props: {
   return (
     <section aria-labelledby="to-review" className="mt-4 border border-rule px-4 py-4">
       <h2 id="to-review" className="font-subhead text-display-sm">
-        {t["import.head"]}
+        {t["shots.head"]}
         {items.length > 0 && <span className="ml-2 tabular-nums text-plum">{items.length}</span>}
       </h2>
-      <p className="mt-1">{t["import.lead"]}</p>
-      <p className="mt-1 text-body-sm text-ink/80">{t["import.nothingCounts"]}</p>
+      <p className="mt-1">{t["shots.lead"]}</p>
+      <p className="mt-1 text-body-sm text-ink/80">{t["shots.nothingCounts"]}</p>
       {items.length === 0 ? (
-        <p className="mt-3">{t["import.none"]}</p>
+        <p className="mt-3">{t["shots.none"]}</p>
       ) : (
         <ul className="mt-3 space-y-2">
           {items.map((d) => (
             <li key={d.id}>
               <a
-                href={`/w/${slug}/import/${d.id}`}
+                href={`/w/${slug}/shots/${d.id}`}
                 className="flex min-h-11 flex-col gap-0.5 border border-rule px-3 py-2"
               >
                 <span className="font-semibold">
@@ -66,15 +66,15 @@ export function ToReview(props: {
                 <span className="text-body-sm tabular-nums">{draftCounts(t, language, d)}</span>
                 <span className="text-body-sm text-ink/75">
                   {[
-                    d.sentBy && fill(t["import.sentBy"], { name: d.sentBy }),
-                    d.source === "discord" && t["import.viaDiscord"],
+                    d.sentBy && fill(t["shots.sentBy"], { name: d.sentBy }),
+                    d.source === "discord" && t["shots.viaDiscord"],
                     props.when(d.createdAt),
                   ]
                     .filter(Boolean)
                     .join(" · ")}
                 </span>
                 <span className="self-end text-body-sm font-semibold text-plum underline underline-offset-4">
-                  {t["import.open"]}
+                  {t["shots.open"]}
                 </span>
               </a>
             </li>
@@ -84,9 +84,9 @@ export function ToReview(props: {
       <SendScreenshots
         slug={slug}
         language={language}
-        w={Object.fromEntries(Object.entries(t).filter(([k]) => k.startsWith("import.")))}
+        w={Object.fromEntries(Object.entries(t).filter(([k]) => k.startsWith("shots.")))}
         kinds={
-          Object.fromEntries(KINDS.map((k) => [k, t[`import.kind.${k}`]])) as Record<
+          Object.fromEntries(KINDS.map((k) => [k, t[`shots.kind.${k}`]])) as Record<
             ImportKind,
             string
           >

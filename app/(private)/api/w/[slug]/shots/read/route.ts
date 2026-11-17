@@ -1,4 +1,4 @@
-// POST /api/w/[slug]/import/read — one picture from the desk's "Send screenshots" (issue 299): the browser
+// POST /api/w/[slug]/shots/read — one picture from the desk's "Send screenshots" (issue 299): the browser
 // sends it as PNG, without the phone's status bar and scaled down; the OCR reads it and its text lines come
 // back. The picture is read in memory and not kept. Officers of the workspace only (D71).
 import { requireWorkspace } from "@/lib/private/access";
@@ -23,7 +23,7 @@ export async function POST(
   if (Number(request.headers.get("content-length") ?? 0) > MAX_UPLOAD) {
     return privateError(413, "too_large");
   }
-  return withContext("/api/w/[slug]/import/read", async (ctx, db) => {
+  return withContext("/api/w/[slug]/shots/read", async (ctx, db) => {
     const access = await requireWorkspace(db, slug, requestCookies(request), ctx.now());
     if (!access.ok) return privateError(401, access.reason);
     const bytes = new Uint8Array(await request.arrayBuffer());

@@ -2,58 +2,49 @@
 
 // A draft under review (issue 299), shared by every officer of the workspace: the type the pictures were
 // read as (one tap to change it), Daily or Weekly, the Alliance Duel's day and week, where it saves, and
-// the rows. Save sends one value per member; the first save wins, and a later one is told who saved it.
-// Nothing counts before Save (D75). Numbers and dates come formatted from the server.
+// the rows. Save sends one value per member (per member and fact for a member update); the first save
+// wins, and a later one is told who saved it. A member fact another officer saved meanwhile comes back
+// marked, with "Keep theirs" and "Use mine" (D80). A Secret Ops report has its own review. Nothing counts
+// before Save (D75). Numbers and dates come formatted from the server.
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { track } from "@/lib/analytics/events";
-import type { ImportKind, Scope } from "@/lib/private/import-kinds";
+import type { ImportKind, PhotoFact, Scope } from "@/lib/private/import-kinds";
 import type { DraftView } from "@/lib/private/import-view";
 
-import { checkKnown, DAYS, duelKnown, fillIn, type Day, type Words } from "./draft-known";
+import { Actions, Message, useDraftActions } from "./draft-actions";
+import { checkKnown, DAYS, duelKnown, factKnown, type Day, type Words } from "./draft-known";
 import { DraftHeader, type ReviewText } from "./DraftHeader";
 import { DraftRowCard, type RowState } from "./DraftRowCard";
+import { SecretOpsReview } from "./SecretOpsReview";
 
 export type { ReviewText };
 
+const factOf = (view: DraftView, uid: number | null, field: PhotoFact | undefined) =>
+  uid === null || !field ? undefined : view.facts?.[uid]?.[field];
+
 function initialRows(view: DraftView): RowState[] {
-  return view.rows.map((r) => ({
-    uid: r.match.status === "sure" ? r.match.uid : null,
-    value: r.value === null ? "" : String(r.value),
-    dropped: false,
-  }));
+  return view.rows.map((r) => {
+    const uid = r.match.status === "sure" ? r.match.uid : null;
+    // AD Tech at 100 % is complete: such a row starts dropped (owner, issue 299).
+    const complete = r.field === "adTech" && factOf(view, uid, r.field)?.value === 100;
+    return { uid, value: r.value === null ? "" : String(r.value), dropped: complete };
+  });
 }
 
-/** Posts a decision on the draft at the version the officer opened; says why when it is refused. */
-function useDraftActions(slug: string, view: DraftView, w: Words) {
-  const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-  async function act(body: object): Promise<boolean> {
-    setBusy(true);
-    setMessage(null);
-    try {
-      const res = await fetch(`/api/w/${slug}/import/${view.id}`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ version: view.version, ...body }),
-      });
-      if (res.ok) return true;
-      const { code, by } = (await res.json().catch(() => ({}))) as { code?: string; by?: string };
-      const template = w[`import.e.${code}`] ?? w["import.e.failed"];
-      setMessage(fillIn(template, { name: by ?? w["import.someone"] ?? "" }));
-      return false;
-    } catch {
-      setMessage(w["import.e.failed"] ?? "");
-      return false;
-    } finally {
-      setBusy(false);
-    }
-  }
-  return { busy, message, act };
+/** The newer values a stale member update came back with, put on their rows. */
+function withConflicts(view: DraftView, rows: RowState[], detail: unknown): RowState[] {
+  const newer = Array.isArray(detail)
+    ? (detail as { uid: number; field: string; value: number | null; version: number }[])
+    : [];
+  return rows.map((r, i) => {
+    const hit = newer.find((n) => n.uid === r.uid && n.field === view.rows[i]?.field);
+    return hit && !r.dropped ? { ...r, conflict: { value: hit.value, version: hit.version } } : r;
+  });
 }
 
-export function DraftReview(props: {
+type Props = {
   slug: string;
   view: DraftView;
   w: Words;
@@ -61,7 +52,17 @@ export function DraftReview(props: {
   saveKinds: ImportKind[];
   text: ReviewText;
   sep: string;
-}) {
+};
+
+export function DraftReview(props: Props) {
+  return props.view.kind === "secret_ops" ? (
+    <SecretOpsReview {...props} />
+  ) : (
+    <RowsReview {...props} />
+  );
+}
+
+function RowsReview(props: Props) {
   const { view, w, text, sep } = props;
   const router = useRouter();
   const [scope, setScope] = useState<Scope | null>(view.scope);
@@ -71,18 +72,27 @@ export function DraftReview(props: {
   const { busy, message, act } = useDraftActions(props.slug, view, w);
   const readOnly = view.status !== "open" || !view.canSave;
   const kept = rows.filter((r) => !r.dropped);
-  const ready = kept.every((r) => r.uid !== null && r.value !== "");
+  const ready = kept.every((r) => r.uid !== null && r.value !== "" && !r.conflict);
 
   async function save() {
-    const sent = kept.map((r) => ({ uid: r.uid as number, value: Number(r.value) }));
+    const sent = rows.flatMap((r, i) => {
+      const field = view.rows[i]?.field;
+      if (r.dropped || r.uid === null) return [];
+      const version = r.version ?? factOf(view, r.uid, field)?.version ?? 0;
+      return [{ uid: r.uid, value: Number(r.value), ...(field && { field, version }) }];
+    });
     const daily = scope === "daily" ? day : null;
-    if (await act({ action: "save", scope, day: daily, weekBefore, rows: sent })) {
+    const answer = await act({ action: "save", scope, day: daily, weekBefore, rows: sent });
+    if (answer.ok) {
       track("ws_draft_saved", { kind: view.kind });
       router.refresh();
-    }
+    } else if (answer.data.code === "conflict")
+      setRows(withConflicts(view, rows, answer.data.detail));
   }
-  const known = (uid: number | null, value: number | null): string[] => {
+  const known = (i: number) => (uid: number | null, value: number | null) => {
     if (uid === null) return [];
+    const field = view.rows[i]?.field;
+    if (field) return factKnown(field, factOf(view, uid, field)?.value, value, w, sep);
     if (!view.duel) return checkKnown(view.ours?.[uid] ?? null, value, w, sep);
     const saved = (weekBefore ? view.duel.weekBefore : view.duel.thisWeek)[uid] ?? {};
     return duelKnown(saved, scope === "daily" ? day : "week", value, w, sep);
@@ -96,7 +106,7 @@ export function DraftReview(props: {
         set={{ scope: setScope, day: setDay, weekBefore: setWeekBefore }}
         readOnly={readOnly}
         retype={(kind) =>
-          void act({ action: "retype", kind, scope }).then((ok) => ok && router.refresh())
+          void act({ action: "retype", kind, scope }).then((a) => a.ok && router.refresh())
         }
       />
       <ul className="mt-4 space-y-2">
@@ -108,53 +118,22 @@ export function DraftReview(props: {
             onChange={(next) => setRows(rows.map((r, j) => (j === i ? next : r)))}
             members={view.members}
             w={w}
-            known={known}
+            sep={sep}
+            known={known(i)}
             readOnly={readOnly}
           />
         ))}
       </ul>
-      <div aria-live="polite" className="mt-3">
-        {message && <p className="border-l-4 border-seal pl-3">{message}</p>}
-      </div>
+      <Message text={message} />
       {!readOnly && (
         <Actions
           w={w}
           busy={busy}
           ready={ready}
           onSave={() => void save()}
-          onDiscard={() => void act({ action: "discard" }).then((ok) => ok && router.refresh())}
+          onDiscard={() => void act({ action: "discard" }).then((a) => a.ok && router.refresh())}
         />
       )}
     </>
-  );
-}
-
-function Actions(props: {
-  w: Words;
-  busy: boolean;
-  ready: boolean;
-  onSave: () => void;
-  onDiscard: () => void;
-}) {
-  const { w, busy } = props;
-  return (
-    <div className="mt-4 flex flex-wrap gap-3">
-      <button
-        type="button"
-        disabled={busy || !props.ready}
-        onClick={props.onSave}
-        className="ink-button inline-flex min-h-11 items-center justify-center px-6 font-medium disabled:opacity-50"
-      >
-        {busy ? w["import.saving"] : w["import.save"]}
-      </button>
-      <button
-        type="button"
-        disabled={busy}
-        onClick={props.onDiscard}
-        className="inline-flex min-h-11 items-center px-4 font-medium underline underline-offset-4"
-      >
-        {w["import.discard"]}
-      </button>
-    </div>
   );
 }

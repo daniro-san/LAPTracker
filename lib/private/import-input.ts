@@ -35,7 +35,29 @@ export const actionBody = z.discriminatedUnion("action", [
       scope,
       day: z.enum(["mon", "tue", "wed", "thu", "fri", "sat"]).nullable(),
       weekBefore: z.boolean(),
-      rows: z.array(z.object({ uid, value: z.number().int().min(0).max(1e13) }).strict()).max(500),
+      rows: z
+        .array(
+          z
+            .object({
+              uid,
+              value: z.number().int().min(0).max(1e13),
+              // A member update: the fact and the version the officer saw (D80).
+              field: z.enum(["squadMight", "adTech"]).optional(),
+              version: z.number().int().min(0).optional(),
+            })
+            .strict(),
+        )
+        .max(500),
+      // A Secret Ops report: whose it is (a member, or nobody known) and each entry kept, by row.
+      report: z
+        .object({
+          victimUid: uid.nullable(),
+          entries: z
+            .array(z.object({ row: z.number().int().min(0), name: z.string().max(64) }).strict())
+            .max(200),
+        })
+        .strict()
+        .optional(),
     })
     .strict(),
   z.object({ action: z.literal("discard"), version: z.number().int().positive() }).strict(),

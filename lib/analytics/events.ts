@@ -39,6 +39,10 @@ export interface AnalyticsEvents {
   ws_copy_spreadsheet: NoProperties;
   ws_filter_used: { filter: MemberFilter };
   ws_language_switched: { language: AnalyticsLanguage };
+  /** A member's facts saved from the card's editor (D80); nothing about the member or the values. */
+  ws_facts_saved: NoProperties;
+  /** A sheet imported once every row was matched or dismissed (D80). */
+  ws_sheet_imported: NoProperties;
   /** A notice's Translate filled drafts (D81); nothing about the text. */
   ws_notice_translated: NoProperties;
   /** One picture read from the desk's "Send screenshots": its type only, nothing it showed. */
