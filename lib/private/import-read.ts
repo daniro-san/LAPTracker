@@ -42,13 +42,32 @@ export function openOcr(): Promise<ScreenshotReader> {
 }
 
 /**
- * One uploaded picture's text lines. The browser already dropped the phone's status bar. Null when the
- * picture's size is refused (no pixels, too many, or a size its header does not state).
+ * Officers with pictures being read on this instance (D109): one reading at a time each, whether it comes
+ * from "Read from a screenshot", "Send screenshots" or a share from the phone (D110), so the reader is not
+ * hammered. Per server instance; freed when the reading ends or fails.
  */
-export async function readUpload(image: Uint8Array): Promise<string[] | null> {
+const reading = new Set<number>();
+
+/** Takes the officer's one reading; false when one is already running. */
+export function startReading(officer: number): boolean {
+  if (reading.has(officer)) return false;
+  reading.add(officer);
+  return true;
+}
+
+export function endReading(officer: number): void {
+  reading.delete(officer);
+}
+
+/**
+ * One uploaded picture's text lines. "Send screenshots" already dropped the phone's status bar; a picture
+ * shared from the phone (D110) still has it. Null when the picture's size is refused (no pixels, too
+ * many, or a size its header does not state).
+ */
+export async function readUpload(image: Uint8Array, statusBar = false): Promise<string[] | null> {
   const reader = await openOcr();
   try {
-    return (await readScreen(reader, image, { statusBar: false })).lines;
+    return (await readScreen(reader, image, { statusBar })).lines;
   } catch (error) {
     if (error instanceof ImageRefusedError) return null;
     throw error;

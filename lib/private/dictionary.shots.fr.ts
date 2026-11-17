@@ -170,4 +170,23 @@ export const shotsFr: ShotsWords = {
   "shots.check.match": "Identiques : {same} sur {compared}",
   "shots.check.left": "Non comptés : {n} (pas de membre sûr, ou pas de données du jeu).",
   "shots.check.save": "Enregistrer le décompte",
+  "shots.sendOne": "Envoyer une capture",
+  "shots.sendSecretOps": "Envoyer un rapport de Secret Ops",
+  "shots.presetAsk": "Que montre-t-elle ?",
+  "shots.share.again":
+    "Les captures partagées n’ont pas été gardées. Connectez-vous si le bureau le demande, puis partagez-les à nouveau.",
+  "shots.share.limit":
+    "Un partage contient environ 4 Mo au total, 2 ou 3 captures, et rien n’a été lu. Pour en envoyer plus d’un coup, utilisez Envoyer des captures ici.",
+  "shots.share.empty":
+    "Le partage ne contenait aucune capture lisible par le bureau. Partagez une capture (une image), ou utilisez Envoyer des captures ici.",
+  "shots.share.busy":
+    "Le bureau lisait encore votre dernière capture, donc ce partage n’a pas été lu. Attendez un instant, puis partagez à nouveau.",
+  "shots.share.failed":
+    "Impossible de lire les captures partagées. Partagez-les à nouveau, ou utilisez Envoyer des captures.",
+  "shots.share.made.one": "De votre partage : {n} brouillon, dans la liste ci-dessous.",
+  "shots.share.made.other": "De votre partage : {n} brouillons, dans la liste ci-dessous.",
+  "shots.share.none.one":
+    "{n} capture partagée n’a donné aucun brouillon. Envoyez-la avec Envoyer des captures pour voir pourquoi ou choisir son type.",
+  "shots.share.none.other":
+    "{n} captures partagées n’ont donné aucun brouillon. Envoyez-les avec Envoyer des captures pour voir pourquoi ou choisir leur type.",
 };

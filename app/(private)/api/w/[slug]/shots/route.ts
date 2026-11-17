@@ -1,6 +1,7 @@
 // POST /api/w/[slug]/shots {pictures: [{lines}], pick?} — "Send screenshots" (issue 299): the pictures'
 // OCR text lines (from /shots/read) become drafts for every officer to review. Classified again here,
-// so a map never becomes data. `pick` is the officer's type for pictures that were not recognised.
+// so a map never becomes data. `pick` is the officer's type for pictures that were not recognised;
+// `preset`, the type of the tab's button they were sent with (D110).
 import { requireWorkspace } from "@/lib/private/access";
 import {
   isSameOriginJson,
@@ -30,7 +31,7 @@ export async function POST(
     const now = ctx.now();
     const access = await requireWorkspace(db, slug, requestCookies(request), now);
     if (!access.ok) return privateError(401, "signed_out");
-    const { pictures, pick, pasted } = body.data;
+    const { pictures, pick, pasted, preset } = body.data;
     const sent = {
       // "Paste updates" lines (D109) make a draft whose review says "Pasted by".
       source: pasted ? ("pasted" as const) : ("desk" as const),
@@ -46,6 +47,7 @@ export async function POST(
         classified(pictures.map((p) => p.lines)),
         sent,
         pick && screenOf(pick.kind, pick.scope),
+        preset && screenOf(preset, null),
       ),
     );
     privateLog("w.import.desk", {

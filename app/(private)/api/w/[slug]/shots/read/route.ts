@@ -10,17 +10,14 @@ import {
   privately,
   requestCookies,
 } from "@/lib/private/http";
-import { failureCode, readUpload } from "@/lib/private/import-read";
+import { MAX_UPLOAD } from "@/lib/private/import";
+import { endReading, failureCode, readUpload, startReading } from "@/lib/private/import-read";
 import { privateLog } from "@/lib/private/log";
 import { SLUG } from "@/lib/private/sign-in";
 import { withContext } from "@/lib/route";
 
 /** The OCR's worker start and one page: seconds, more under load (D74). */
 export const maxDuration = 60;
-/** Under Vercel's 4.5 MB request body limit; the browser sends about 0.5-1.5 MB. */
-const MAX_UPLOAD = 4 * 1024 * 1024;
-/** Officers with a picture being read on this instance: one at a time each, so the reader is not hammered. */
-const reading = new Set<number>();
 
 export async function POST(
   request: Request,
@@ -36,8 +33,8 @@ export async function POST(
     const access = await requireWorkspace(db, slug, requestCookies(request), ctx.now());
     if (!access.ok) return privateError(401, "signed_out");
     const officer = access.user.id;
-    if (reading.has(officer)) return privateError(429, "busy");
-    reading.add(officer);
+    // One reading at a time per officer, shared with the phone's share (D109, D110).
+    if (!startReading(officer)) return privateError(429, "busy");
     let lines: string[] | null;
     try {
       const bytes = new Uint8Array(await request.arrayBuffer());
@@ -49,7 +46,7 @@ export async function POST(
         () => readUpload(bytes),
       );
     } finally {
-      reading.delete(officer);
+      endReading(officer);
     }
     if (!lines) return privateError(422, "refused");
     privateLog("w.import.read", { workspace: access.workspaceId, lines: lines.length });

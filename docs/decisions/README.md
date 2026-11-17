@@ -118,4 +118,5 @@ The header text above is the old file's, kept as it was. The split it describes 
 - [D107 — Former members: who left stays findable with their officer facts, only public numbers beside them (2026-11-17, owner, 11x; amends D80)](D107-former-members-keep-their-facts.md)
 - [D108 — Home: who is on the desk now (officer sessions seen in 10 minutes) and recent officer activity from the existing histories (2026-11-17, owner-approved, 11aa, issue 335)](D108-home-desk-presence-and-recent-activity.md)
 - [D109 — Member updates: the trend on the card, AD Tech 100 % complete, Paste updates, Read from a screenshot, and progress in the thanks (2026-11-17, owner, 11ab, issue 347; amends D80, D96, D104)](D109-member-updates-trend-paste-and-screenshot-text.md)
+- [D110 — Screenshots from anywhere: a tab's button starts its pictures as the tab's type, and Android shares screenshots to the installed desk (2026-11-17, owner, 11ac, issue 293; amends D96)](D110-screenshots-from-anywhere-and-the-android-share-target.md)
 - [D112 — picomatch ReDoS (GHSA-fc5q-39xc-vjpf) accepted as dev-only, dated exception (2026-11-17)](D112-picomatch-redos-accepted-as-dev-only.md)

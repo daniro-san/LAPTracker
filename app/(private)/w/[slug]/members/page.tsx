@@ -49,6 +49,7 @@ import { MembersSource } from "../../../_ui/MembersSource";
 import { PasteUpdates } from "../../../_ui/PasteUpdates";
 import { PendingMembers } from "../../../_ui/PendingMembers";
 import { refuse } from "../../../_ui/refuse";
+import { TabSend } from "../../../_ui/ToReview";
 
 /** Top donors and most active; then progress this week, in name order, not a ranking (D109). */
 function Thanks({ view, t, f }: { view: MembersView; t: WorkspaceDictionary; f: CardFormats }) {
@@ -214,6 +215,7 @@ export default async function MembersPage({
   return (
     <SignedInFrame access={access} language={language} t={t} current="members" waiting={waiting}>
       <h1 className="font-display text-display-lg">{t["tab.members"]}</h1>
+      <TabSend {...{ slug, t, language }} tab="members" />
       <ViewSwitch slug={slug} former={showFormer} t={t} />
       {/* The page's one main action (D109): new values for several members at once. */}
       {!showFormer && view.readAt !== null && <PasteUpdates slug={slug} words={updatesWords(t)} />}

@@ -37,6 +37,9 @@ export const OCR_RUNTIME = [
   `${PNPM}/whatwg-url@*/node_modules/webidl-conversions/**`,
 ];
 
+/** The routes that read pictures (D96, D110): the desk's reading, the Discord command and the phone's share. */
+export const OCR_ROUTES = ["/api/w/*/shots/read", "/api/discord/interactions", "/w/*/share"];
+
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   // Without this, `next dev` writes AGENTS.md into the repo (issue 126).
@@ -50,7 +53,7 @@ const nextConfig: NextConfig = {
   // group: `*` stands for [slug].
   serverExternalPackages: ["tesseract.js"],
   outputFileTracingIncludes: Object.fromEntries(
-    ["/api/w/*/shots/read", "/api/discord/interactions"].map((route) => [
+    OCR_ROUTES.map((route) => [
       route,
       ["./lib/screenshot/tessdata/**", "./node_modules/tesseract.js/src/**", ...OCR_RUNTIME],
     ]),

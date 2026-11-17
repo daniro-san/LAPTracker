@@ -19,6 +19,7 @@ import { SignedInFrame, workspaceWords } from "../../../_ui/Frame";
 import { refuse } from "../../../_ui/refuse";
 import { theftCards, theftWords, type TheftFormats } from "../../../_ui/theft-data";
 import { TheftsBoard } from "../../../_ui/TheftsBoard";
+import { TabSend } from "../../../_ui/ToReview";
 
 /** Server-time dates in the officer's language ("Sun 15 Nov 13:46"), the server day, and "HH:MM". */
 function formats(
@@ -79,6 +80,8 @@ export default async function TheftsPage({ params }: { params: Promise<{ slug: s
       <CalendarNav slug={slug} current="thefts" t={t} />
       <p className="mt-1 text-body-sm text-ink/80">{t["thefts.timesNote"]}</p>
       <p className="mt-2 text-body-sm text-ink/80">{t["thefts.lead"]}</p>
+      {/* D110: a Secret Ops report becomes a draft, then thefts on Save. */}
+      <TabSend {...{ slug, t, language }} tab="thefts" />
       <TheftsBoard
         slug={slug}
         t={words}

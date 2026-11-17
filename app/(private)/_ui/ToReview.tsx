@@ -3,6 +3,7 @@
 // Above them, "2 new members to match" when a roster read could not match new members added by hand.
 import { fill, isolate } from "@/lib/copy";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
+import { MAX_PICTURES } from "@/lib/private/import";
 import type { ImportKind, Scope } from "@/lib/private/import-kinds";
 import { STATUS_BAR } from "@/lib/private/import-kinds";
 import { SAVED_KINDS } from "@/lib/private/import-save";
@@ -32,12 +33,55 @@ function choices(t: WorkspaceDictionary): TypeChoice[] {
   });
 }
 
+/** What every "Send screenshots" button takes: Home's, and each tab's with its types (D110). */
+export function sendProps(slug: string, t: WorkspaceDictionary, language: WorkspaceLanguage) {
+  return {
+    slug,
+    language,
+    w: Object.fromEntries(Object.entries(t).filter(([k]) => k.startsWith("shots."))),
+    kinds: Object.fromEntries(KINDS.map((k) => [k, t[`shots.kind.${k}`]])) as Record<
+      ImportKind,
+      string
+    >,
+    picks: choices(t),
+    maxPictures: MAX_PICTURES,
+    statusBar: STATUS_BAR,
+  };
+}
+
+/**
+ * Each tab's button and the types its pictures start as (D110): on Members a chat (member update) or an
+ * Alliance Duel page, picked first; on Thefts a Secret Ops report. No button on Roll call: Elixir teams
+ * are not saved yet (D103).
+ */
+const TABS = {
+  members: { button: "shots.sendOne", kinds: ["member_update", "alliance_duel"] },
+  thefts: { button: "shots.sendSecretOps", kinds: ["secret_ops"] },
+} as const satisfies Record<string, { button: keyof WorkspaceDictionary; kinds: ImportKind[] }>;
+
+export function TabSend(props: {
+  slug: string;
+  t: WorkspaceDictionary;
+  language: WorkspaceLanguage;
+  tab: keyof typeof TABS;
+}) {
+  const { t } = props;
+  const { button, kinds } = TABS[props.tab];
+  return (
+    <SendScreenshots
+      {...sendProps(props.slug, t, props.language)}
+      button={t[button]}
+      ask={t["shots.presetAsk"]}
+      presets={kinds.map((kind) => ({ kind, label: t[`shots.kind.${kind}`] }))}
+    />
+  );
+}
+
 export function ToReview(props: {
   slug: string;
   items: ReviewItem[];
   t: WorkspaceDictionary;
   language: WorkspaceLanguage;
-  maxPictures: number;
   /** "2 new members to match" and its link to Members (D106, 2026-11-17); null when none. */
   toMatch: { line: string; href: string } | null;
   /** "Mon 16 Nov 18:54 server time", per item. */
@@ -62,20 +106,7 @@ export function ToReview(props: {
         </p>
       )}
       {/* The door in comes first, so it does not sink under a long queue (panel PD-4, UI-8). */}
-      <SendScreenshots
-        slug={slug}
-        language={language}
-        w={Object.fromEntries(Object.entries(t).filter(([k]) => k.startsWith("shots.")))}
-        kinds={
-          Object.fromEntries(KINDS.map((k) => [k, t[`shots.kind.${k}`]])) as Record<
-            ImportKind,
-            string
-          >
-        }
-        picks={choices(t)}
-        maxPictures={props.maxPictures}
-        statusBar={STATUS_BAR}
-      />
+      <SendScreenshots {...sendProps(slug, t, language)} />
       {items.length === 0 ? (
         <p className="mt-3">{t["shots.none"]}</p>
       ) : (

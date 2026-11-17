@@ -4,7 +4,7 @@ import { dirname, join, matchesGlob, relative } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { OCR_RUNTIME } from "./next.config";
+import { OCR_ROUTES, OCR_RUNTIME } from "./next.config";
 
 // Tracing does not follow Tesseract.js's worker thread, so next.config.ts lists what that thread
 // requires (OCR_RUNTIME). v5.8.1 shipped without bmp-js and the worker died at its first require.
@@ -34,6 +34,25 @@ describe("the OCR routes' runtime (next.config.ts)", () => {
       const shipped = relative(root, join(dirname(tesseract), name, "package.json"));
       const covered = OCR_RUNTIME.some((glob) => matchesGlob(shipped, glob.replace(/^\.\//, "")));
       expect(covered, `${name} (${relative(root, file)}) is not in OCR_RUNTIME`).toBe(true);
+    }
+  });
+});
+
+describe("the routes that read pictures (next.config.ts)", () => {
+  it("ship the OCR: every route that reaches the reader is in OCR_ROUTES", () => {
+    const app = join(root, "app");
+    const readers = readdirSync(app, { recursive: true, encoding: "utf8" })
+      .filter((f) => f.endsWith("route.ts"))
+      .filter((f) => /\b(readUpload|openOcr|runJob)\b/.test(readFileSync(join(app, f), "utf8")))
+      // The route's address: no route group, [slug] matched by `*`.
+      .map((f) => `/${f.replace(/\/route\.ts$/, "").replace(/\([^)]*\)\//g, "")}`)
+      .map((path) => path.replace(/\[[^\]]+\]/g, "x"));
+    expect(readers).toHaveLength(3);
+    for (const path of readers) {
+      expect(
+        OCR_ROUTES.some((glob) => matchesGlob(path, glob)),
+        path,
+      ).toBe(true);
     }
   });
 });
