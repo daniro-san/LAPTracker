@@ -1,8 +1,9 @@
 // POST /api/w/[slug]/thanks — "Share the thanks" (issue 404, D114). Officers only (401 signed_out, D99).
 //   {action: "share", target: "discord" | "board", week, title, texts, names, requestId}: once per request
 //     id (D100). Discord: the members' channel of WORKSPACE_DISCORD_WEBHOOKS (D102), no mentions; codes
-//     not_set_up (no members channel), posting (the same request is still running), failed (Discord
-//     refused or timed out). Board: the card members see until the next thanks or a Take down.
+//     not_set_up (no members channel), posting (the same request is still running), recent (the same
+//     week went to the same place in the last 30 s), failed (Discord refused or timed out). Board: the
+//     card members see until the next thanks or a Take down.
 //   {action: "take_down", id}: hides the board's card; not_found for another workspace's or a Discord share.
 import { requireWorkspace } from "@/lib/private/access";
 import {
@@ -19,7 +20,7 @@ import { withContext } from "@/lib/route";
 
 import { LANGUAGE_NAME } from "../../../../_ui/languages";
 
-const STATUS = { not_set_up: 409, posting: 409, failed: 502 } as const;
+const STATUS = { not_set_up: 409, posting: 409, recent: 409, failed: 502 } as const;
 
 /** Discord's messages have the notices' 5 s each within a 40 s budget (D102). */
 export const maxDuration = 60;

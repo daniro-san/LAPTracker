@@ -12,6 +12,7 @@ import { thanksWeek } from "@/lib/private/fact-trend";
 import { progressText } from "@/lib/private/member-card";
 import type { MembersView } from "@/lib/private/members";
 import { noticeChannels } from "@/lib/private/notice-publish";
+import { NOTE_LIMIT } from "@/lib/private/thanks";
 
 import { SHEET_KEYS } from "./sheet-words";
 
@@ -42,6 +43,8 @@ export interface ShareThanksProps {
   channel: string | null;
   /** Writing help is on (GROQ_API_KEY). */
   ai: boolean;
+  /** The longest "few words about them" the draft takes. */
+  noteLimit: number;
 }
 
 /** "Nov 16 – Nov 22": the week that starts on `monday`, in the officer's language. */
@@ -81,5 +84,6 @@ export function shareThanksProps(p: {
     roster: p.view.members.map((m) => ({ uid: m.uid, name: m.name })),
     channel: noticeChannels(getEnv(), p.slug).members?.name ?? null,
     ai: getAppContext().ai !== null,
+    noteLimit: NOTE_LIMIT,
   };
 }

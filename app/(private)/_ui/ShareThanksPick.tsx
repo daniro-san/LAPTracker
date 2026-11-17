@@ -10,14 +10,22 @@ import { searchRoster } from "@/lib/private/roster-search";
 
 import type { SharePerson, ShareThanksProps } from "./share-thanks-data";
 
-/** Who is named: the week's list, ticked, plus anyone the officer adds from the roster. */
+/**
+ * Who is named: the week's list, ticked, plus anyone the officer adds from the roster; and, for each, the
+ * officer's optional few words about them.
+ */
 export function usePick(initial: SharePerson[]) {
   const [people, setPeople] = useState<SharePerson[]>(initial);
   const [ticked, setTicked] = useState<number[]>(initial.map((p) => p.uid));
+  const [notes, setNotes] = useState<Record<number, string>>({});
   return {
     people,
     ticked,
-    chosen: people.filter((p) => ticked.includes(p.uid)),
+    notes,
+    chosen: people
+      .filter((p) => ticked.includes(p.uid))
+      .map((p) => ({ ...p, note: (notes[p.uid] ?? "").trim() })),
+    note: (uid: number, text: string) => setNotes((n) => ({ ...n, [uid]: text })),
     toggle: (uid: number, on: boolean) =>
       setTicked((t) => (on ? [...t, uid] : t.filter((u) => u !== uid))),
     add: (m: { uid: number; name: string }) => {
@@ -25,6 +33,34 @@ export function usePick(initial: SharePerson[]) {
       setTicked((t) => [...t, m.uid]);
     },
   };
+}
+
+/** "A few words about them (optional)", under a ticked person, indented to the name. */
+function NoteField(props: {
+  uid: number;
+  value: string;
+  limit: number;
+  words: ShareThanksProps["words"];
+  onChange: (text: string) => void;
+}) {
+  const id = `share-note-${props.uid}`;
+  return (
+    <div className="mt-1 pl-[34px]">
+      <label htmlFor={id} className="text-body-sm text-ink/80">
+        {props.words["share.note"]}
+      </label>
+      <input
+        id={id}
+        type="text"
+        value={props.value}
+        maxLength={props.limit}
+        autoComplete="off"
+        aria-describedby="share-note-help"
+        onChange={(e) => props.onChange(e.target.value)}
+        className={`${FIELD} mt-1 text-base`}
+      />
+    </div>
+  );
 }
 
 /** Add someone the week's list does not hold: type part of a name, tap one of the matches. */
@@ -80,6 +116,7 @@ export function PickStep(props: {
   pick: ReturnType<typeof usePick>;
   roster: ShareThanksProps["roster"];
   words: ShareThanksProps["words"];
+  noteLimit: number;
 }) {
   const { pick, words } = props;
   return (
@@ -89,21 +126,36 @@ export function PickStep(props: {
         <p className="text-body-sm text-ink/80">
           {pick.people.length === 0 ? words["share.pick.none"] : words["share.pick.help"]}
         </p>
-        <div className="mt-2 space-y-1">
+        <ul className="mt-2 space-y-3">
           {pick.people.map((p) => (
-            <CheckField
-              key={p.uid}
-              label={
-                <bdi translate="no" className="font-semibold">
-                  {p.name}
-                </bdi>
-              }
-              {...(p.line && { help: p.line })}
-              checked={pick.ticked.includes(p.uid)}
-              onChange={(e) => pick.toggle(p.uid, e.target.checked)}
-            />
+            <li key={p.uid}>
+              <CheckField
+                label={
+                  <bdi translate="no" className="font-semibold">
+                    {p.name}
+                  </bdi>
+                }
+                {...(p.line && { help: p.line })}
+                checked={pick.ticked.includes(p.uid)}
+                onChange={(e) => pick.toggle(p.uid, e.target.checked)}
+              />
+              {pick.ticked.includes(p.uid) && (
+                <NoteField
+                  uid={p.uid}
+                  value={pick.notes[p.uid] ?? ""}
+                  limit={props.noteLimit}
+                  words={words}
+                  onChange={(text) => pick.note(p.uid, text)}
+                />
+              )}
+            </li>
           ))}
-        </div>
+        </ul>
+        {pick.ticked.length > 0 && (
+          <p id="share-note-help" className="mt-2 text-body-sm text-ink/70">
+            {words["share.note.help"]}
+          </p>
+        )}
       </fieldset>
       <AddSomeone
         roster={props.roster.filter((m) => !pick.people.some((p) => p.uid === m.uid))}

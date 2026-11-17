@@ -11,8 +11,37 @@ import { plural } from "@/lib/private/members-sheet";
 import { serverDay } from "@/lib/schedule";
 
 import { LINK } from "./BoardText";
-import { shareThanksProps } from "./share-thanks-data";
+import { shareThanksProps, type ShareThanksProps } from "./share-thanks-data";
 import { ShareThanks } from "./ShareThanks";
+
+/** D109's progress in name order, its own block under the top lists, with "Share the thanks" (D114). */
+function SayThanks(props: {
+  t: WorkspaceDictionary;
+  view: MembersView;
+  nudge: boolean;
+  share: ShareThanksProps;
+}) {
+  const { t, view } = props;
+  return (
+    <div className="mt-3 border-t border-rule pt-2">
+      {view.thanks.progress.length > 0 && (
+        <p className="max-w-sm text-body-sm">
+          <span className="font-semibold text-ink/75">{t["thanks.progress"]} </span>
+          {view.thanks.progress.map((p, i) => (
+            <span key={p.uid}>
+              {i > 0 && "; "}
+              <bdi translate="no" className="font-semibold">
+                {p.name}
+              </bdi>{" "}
+              {progressText(p, t)}
+            </span>
+          ))}
+        </p>
+      )}
+      <ShareThanks nudge={props.nudge} {...props.share} />
+    </div>
+  );
+}
 
 export function HomeMembers(props: {
   slug: string;
@@ -33,6 +62,7 @@ export function HomeMembers(props: {
       : (["thanks.activity", view.thanks.activity] as const);
   const checkins = view.members.filter((m) => needsAWord(whoOf(m))).length;
   const today = serverDay(now, getEnv());
+  const sharing = view.thanks.progress.length > 0 || nudge;
   return (
     <section aria-labelledby="home-members" className="mt-4 border border-rule px-4 py-3">
       <h2 id="home-members" className="font-subhead text-display-sm">
@@ -57,26 +87,12 @@ export function HomeMembers(props: {
               </ol>
             </div>
           )}
-          {/* D109: AD Tech done or main squad grown this week, as on Members (name order). */}
-          {view.thanks.progress.length > 0 && (
-            <p className="mt-1 max-w-sm text-body-sm">
-              <span className="font-semibold text-ink/75">{t["thanks.progress"]}: </span>
-              {view.thanks.progress.map((p, i) => (
-                <span key={p.uid}>
-                  {i > 0 && "; "}
-                  <bdi translate="no" className="font-semibold">
-                    {p.name}
-                  </bdi>{" "}
-                  {progressText(p, t)}
-                </span>
-              ))}
-            </p>
+          {sharing && (
+            <SayThanks {...props} share={shareThanksProps({ slug, t, language, view, today })} />
           )}
-          {(view.thanks.progress.length > 0 || nudge) && (
-            <ShareThanks nudge={nudge} {...shareThanksProps({ slug, t, language, view, today })} />
-          )}
+          {/* "Everyone looks fine" is left out beside the thanks block, where it reads as noise (D114). */}
           {checkins === 0 ? (
-            <p className="mt-1">{t["members.checkinNone"]}</p>
+            !sharing && <p className="mt-1">{t["members.checkinNone"]}</p>
           ) : (
             <a href={`${members}?order=rank#ml-heading`} className={LINK}>
               {fill(plural(t, "members.checkinCount", checkins, f), { n: checkins })}

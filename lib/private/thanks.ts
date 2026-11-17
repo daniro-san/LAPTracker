@@ -7,7 +7,7 @@ import { z } from "zod";
 
 import type { ChatModel } from "../ai/groq";
 import { WRITING_LANGUAGES } from "../ai/notice-writing";
-import { withNames, writeThanks, type Deed } from "../ai/thanks-writing";
+import { withNames, writeThanks, type Person } from "../ai/thanks-writing";
 import type { Db } from "../db";
 import { claimShare, finishShare, takeDown, weekShared, type ShareRow } from "../repo/thanks";
 import type { WorkspaceAccess } from "./access";
@@ -15,7 +15,7 @@ import { isDay, weekdayIndex } from "./calendar-time";
 import { appreciationDay, thanksWeek } from "./fact-trend";
 import { privateLog } from "./log";
 import { discordMessages } from "./notice-formats";
-import { postMessages, type Channels } from "./notice-publish";
+import { postMessages, STUCK_MS, type Channels } from "./notice-publish";
 import { NOTICE_LANGUAGES, NOTICE_LIMIT, noticeLength, type NoticeLanguage } from "./notice-rules";
 
 /** The most people one post names. */
@@ -23,13 +23,23 @@ export const THANKS_PEOPLE = 40;
 /** A name as the roster writes it. */
 const NAME = z.string().trim().min(1).max(60);
 
-/** "Write the thank-you": who, in order, with what they did; and whether it covers last week (a Monday). */
+/** "A few words about them": the officer's own reason for one person (D114). */
+export const NOTE_LIMIT = 80;
+
+/**
+ * "Draft it for me": who, in order, with what they did and, optionally, the officer's few words about them;
+ * and whether it covers last week (a Monday).
+ */
 export const draftInput = z
   .object({
     people: z
       .array(
         z
-          .object({ name: NAME, did: z.array(z.enum(["squad", "ad"])).max(2) })
+          .object({
+            name: NAME,
+            did: z.array(z.enum(["squad", "ad"])).max(2),
+            note: z.string().trim().max(NOTE_LIMIT).optional(),
+          })
           .strict()
           .refine((p) => new Set(p.did).size === p.did.length),
       )
@@ -73,11 +83,11 @@ export async function draftThanks(
   model: ChatModel,
   input: DraftInput,
 ): Promise<Record<NoticeLanguage, string>> {
-  const deeds: Deed[][] = input.people.map((p) => p.did);
+  const people: Person[] = input.people.map((p) => ({ did: p.did, note: p.note ?? "" }));
   const names = input.people.map((p) => p.name);
   const texts = await Promise.all(
     WRITING_LANGUAGES.map(async (l) => {
-      const draft = await writeThanks(model, l, deeds, input.lastWeek);
+      const draft = await writeThanks(model, l, people, input.lastWeek);
       return [l, withNames(draft, names)] as const;
     }),
   );
@@ -85,7 +95,14 @@ export async function draftThanks(
 }
 
 export type ShareResult =
-  { ok: true; row: ShareRow } | { ok: false; code: "not_set_up" | "posting" | "failed" };
+  { ok: true; row: ShareRow } | { ok: false; code: "not_set_up" | "posting" | "recent" | "failed" };
+
+/** An earlier claim of this request id: what it came to. A claim stuck in "posting" counts as failed. */
+function earlier(row: ShareRow, now: Date): ShareResult {
+  if (row.status === "posted") return { ok: true, row };
+  const running = row.status === "posting" && now.getTime() - row.at.getTime() < STUCK_MS;
+  return { ok: false, code: running ? "posting" : "failed" };
+}
 
 export interface ShareDeps {
   fetch: typeof fetch;
@@ -105,7 +122,8 @@ const written = (texts: ShareInput["texts"]) =>
 /**
  * Shares the post once per request id (D100): to the members' board at once, or to the members' Discord
  * channel, each language under its name, with no mention allowed (D102). A repeat of the request id gets
- * the first one's outcome and posts nothing more.
+ * the first one's outcome and posts nothing more; a claim still "posting" after STUCK_MS counts as failed.
+ * The same week to the same place within 30 s of another share is refused (`recent`, D102's cooldown).
  */
 export async function shareThanks(
   db: Db,
@@ -127,10 +145,8 @@ export async function shareThanks(
     userId: access.user.id,
     now: deps.now,
   });
-  if (claim.kind === "earlier") {
-    if (claim.row.status === "posted") return { ok: true, row: claim.row };
-    return { ok: false, code: claim.row.status === "posting" ? "posting" : "failed" };
-  }
+  if (claim.kind === "recent") return { ok: false, code: "recent" };
+  if (claim.kind === "earlier") return earlier(claim.row, deps.now);
   if (input.target === "board" || !channel) {
     privateLog("thanks.share.board", { languages: Object.keys(texts).length });
     return { ok: true, row: claim.row };

@@ -6,7 +6,7 @@ import { fill } from "../copy";
 import type { Db } from "../db";
 import { factHistory } from "../repo/member-facts";
 import type { WorkspaceAccess } from "./access";
-import { dayIn, mondayOf } from "./calendar-time";
+import { dayIn } from "./calendar-time";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "./dictionary";
 import {
   FACT_FIELDS,
@@ -16,7 +16,7 @@ import {
   type MemberFacts,
 } from "./fact-fields";
 import { factText, NONE } from "./fact-text";
-import { lastTwo, TREND_FIELDS, weekBase, type Progress, type TrendField } from "./fact-trend";
+import { cardBase, lastTwo, TREND_FIELDS, type Progress, type TrendField } from "./fact-trend";
 import { followUpsOf } from "./follow-up";
 import { historyLine } from "./follow-up-rules";
 import { membersView, type MemberRow } from "./members";
@@ -278,10 +278,10 @@ export async function memberCard(
   const previous = Object.fromEntries(
     TREND_FIELDS.map((field) => [field, lastTwo(versions, uid, field)?.before ?? null]),
   );
-  // This game week, from today's server day (D114).
-  const monday = mondayOf(dayIn(at.zone, at.now.getTime()));
+  // This game week, or on a Monday the week the thanks cover (D114).
+  const today = dayIn(at.zone, at.now.getTime());
   const week = Object.fromEntries(
-    TREND_FIELDS.map((field) => [field, weekBase(versions, uid, field, monday, at.zone)]),
+    TREND_FIELDS.map((field) => [field, cardBase(versions, uid, field, today, at.zone)]),
   );
   return cardData(member, view.week, at.t, f, shownOf(view.members), lines, previous, week);
 }

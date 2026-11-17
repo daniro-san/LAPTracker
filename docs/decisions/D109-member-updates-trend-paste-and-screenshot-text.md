@@ -41,3 +41,5 @@ Why: officers get new main squad and AD Tech values from members whenever someon
 - The card says "+600K this week" ("+5 points this week") when the newest version is from this game week and a value from before the week exists; otherwise it keeps "+400K since Nov 10". The card and the thanks compare the same pair again (r2's reason for the version before).
 - The week is no longer the game week of the newest daily update. It is the week the thanks cover (`thanksWeek`): the current game week, or last week on a Monday.
 - A first-ever value still gets no thanks.
+
+**Amendment (2026-11-17, 11ae review round, PR 407): "Say thanks to".** The heading "Worth a thank-you" / "Merecem um obrigado" / "À remercier cette semaine" now reads "Say thanks to" / "Agradeça a" / "Dites merci à" (copywriter persona), in its own block under the top lists (D114).

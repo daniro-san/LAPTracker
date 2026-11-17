@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import type { FactRow } from "../repo/member-facts";
 import { WORKSPACE_DICTIONARIES } from "./dictionary";
-import { lastTwo, progressOf, thanksWeek, weekBase } from "./fact-trend";
+import { cardBase, lastTwo, progressOf, thanksWeek, weekBase } from "./fact-trend";
 import { cardFormats, factLines, progressText } from "./member-card";
 
 const ZONE = "Etc/GMT+2";
@@ -122,15 +122,24 @@ describe("the week's progress in the thanks (D109, weekly baseline D114)", () =>
       row(5, "squadMight", 2, 10_300_000, "2026-11-16"),
       row(5, "squadMight", 3, 10_600_000, "2026-11-17"),
     ];
-    const week = { squadMight: weekBase(history, 5, "squadMight", MONDAY, ZONE) };
+    const on = (today: string) => ({
+      squadMight: cardBase(history, 5, "squadMight", today, ZONE),
+    });
     const previous = { squadMight: lastTwo(history, 5, "squadMight")?.before ?? null };
     const facts = { squadMight: fact(10_600_000, 3) };
     const t = WORKSPACE_DICTIONARIES.en;
     const f = cardFormats("en", ZONE, NOW);
-    expect(factLines(facts, t, f, previous, week)[0]?.change).toBe("+600K this week");
-    // A week later with no new version: back to "since" the version before.
-    const next = { squadMight: weekBase(history, 5, "squadMight", "2026-11-23", ZONE) };
-    expect(next.squadMight).toBeNull();
-    expect(factLines(facts, t, f, previous, next)[0]?.change).toBe("+300K since Nov 16");
+    expect(factLines(facts, t, f, previous, on("2026-11-17"))[0]?.change).toBe("+600K this week");
+    // The next Monday the thanks still cover last week, and so does the card.
+    expect(factLines(facts, t, f, previous, on("2026-11-23"))[0]?.change).toBe("+600K last week");
+    // From Tuesday, with no new version: back to "since" the version before.
+    expect(on("2026-11-24").squadMight).toBeNull();
+    expect(factLines(facts, t, f, previous, on("2026-11-24"))[0]?.change).toBe(
+      "+300K since Nov 16",
+    );
+    // A version saved on that Monday belongs to the new week, not to last week's thanks.
+    const monday = [...history, row(5, "squadMight", 4, 10_700_000, "2026-11-23T12:00:00Z")];
+    expect(weekBase(monday, 5, "squadMight", MONDAY, ZONE)).toBeNull();
+    expect(cardBase(monday, 5, "squadMight", "2026-11-23", ZONE)?.last).toBe(false);
   });
 });

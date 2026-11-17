@@ -10,16 +10,26 @@ import type { CardFormats } from "./member-card";
 /** Each trend field's version before the newest, from the history (D109). */
 export type Previous = Partial<Record<TrendField, Version | null>>;
 /**
- * Each trend field's value saved before this game week began, when its newest version is from this week
- * (D114): the card then says "+600K this week", the same comparison as the thanks.
+ * Each trend field's value saved before its newest version's game week began (`cardBase`, D114): the card
+ * then says "+600K this week", or on a Monday "+600K last week", the same comparison as the thanks.
  */
-export type WeekBase = Partial<Record<TrendField, Version | null>>;
+export type WeekBase = Partial<Record<TrendField, { base: Version; last: boolean } | null>>;
 
 /** What a trend field's newest value is compared with: the version before, and the week's baseline. */
 export interface Compared {
   before: Version | null | undefined;
-  week: Version | null | undefined;
+  week: { base: Version; last: boolean } | null | undefined;
 }
+
+/** Which words the change takes: against a week's start, or since the version before. */
+type Since = "Since" | "ThisWeek" | "LastWeek";
+const sinceOf = (week: Compared["week"]): Since =>
+  !week ? "Since" : week.last ? "LastWeek" : "ThisWeek";
+const SQUAD_KEY = {
+  Since: "facts.since",
+  ThisWeek: "facts.thisWeek",
+  LastWeek: "facts.lastWeek",
+} as const;
 
 /**
  * A short date with no weekday, in server time, that never wraps: "Nov 10", "10 nov." (D109). The day
@@ -40,22 +50,19 @@ export function shortDate(at: Date, f: Pick<CardFormats, "language" | "zone">): 
 function pointsText(
   change: number,
   date: string,
-  thisWeek: boolean,
+  since: Since,
   t: WorkspaceDictionary,
   f: CardFormats,
 ): string {
   const points = Math.abs(change);
   const form = new Intl.PluralRules(f.language).select(points) === "one" ? "one" : "other";
   const n = new Intl.NumberFormat(f.language, { maximumFractionDigits: 1 }).format(points);
-  const key = thisWeek
-    ? (`facts.pointsThisWeek.${form}` as const)
-    : (`facts.pointsSince.${form}` as const);
-  return fill(t[key], { change: `${change > 0 ? "+" : "−"}${n}`, date });
+  return fill(t[`facts.points${since}.${form}`], { change: `${change > 0 ? "+" : "−"}${n}`, date });
 }
 
 /**
- * The muted line under main squad or AD Tech: "+600K this week" against the value before the game week
- * when the newest version is from this week (D114), else "+400K since Nov 10", "+5 points since Nov 10"
+ * The muted line under main squad or AD Tech: "+600K this week" (on a Monday, "+600K last week") against
+ * the value before the newest version's game week (D114), else "+400K since Nov 10", "+5 points since Nov 10"
  * against the version before; "Complete" for AD Tech at 100 %. Nothing when there is no earlier value or
  * it is the same (D75: no data, no claim).
  */
@@ -67,13 +74,14 @@ function changeOf(
   f: CardFormats,
 ): string | undefined {
   const week = compared.week ?? null;
-  const before = week ?? compared.before ?? null;
+  const before = week?.base ?? compared.before ?? null;
   const was = before?.value ?? now;
   if (!before || was === now) return undefined;
   const date = shortDate(before.at, f);
-  if (field === "adTech") return pointsText(now - was, date, week !== null, t, f);
+  const since = sinceOf(week);
+  if (field === "adTech") return pointsText(now - was, date, since, t, f);
   const change = `${now > was ? "+" : "−"}${f.compact(Math.abs(now - was))}`;
-  return fill(t[week ? "facts.thisWeek" : "facts.since"], { change, date });
+  return fill(t[SQUAD_KEY[since]], { change, date });
 }
 
 /** Main squad's or AD Tech's change line and "Updated …" (D109). */

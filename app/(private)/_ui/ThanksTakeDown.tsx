@@ -34,7 +34,7 @@ export function ThanksTakeDown(props: {
     setError(code === "signed_out" ? code : words.failed);
   };
   return (
-    <div className="mt-2 border-t border-rule pt-2">
+    <div className="mt-3">
       <button
         type="button"
         disabled={busy}

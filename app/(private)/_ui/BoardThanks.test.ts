@@ -76,14 +76,14 @@ async function seen(who: Awaited<ReturnType<typeof jar>>, language: WorkspaceLan
   return { view, html };
 }
 
-const board = (by: WorkspaceAccess, en: string) =>
+const board = (by: WorkspaceAccess, en: string, week = "2026-11-16") =>
   shareThanks(
     db,
     by,
     {
       action: "share",
       target: "board",
-      week: "2026-11-16",
+      week,
       title: "Weekly appreciation",
       texts: { en, "pt-BR": "Obrigado, Bramble, de coração." },
       names: ["Bramble"],
@@ -99,12 +99,12 @@ const board = (by: WorkspaceAccess, en: string) =>
 
 describe("the thank-you card on the members' board (D114)", () => {
   it("shows members the newest thank-you in their language; Take down leaves no trace", async () => {
-    const officer = await requireWorkspace(db, "ogs", await jar("Rook", "officer"), NOW);
+    const officer = await requireWorkspace(db, "ogs", await jar("Rook (R4)", "officer"), NOW);
     if (!officer.ok) throw new Error("no access");
-    await board(officer, "An older thank-you.");
+    await board(officer, "An older thank-you.", "2026-11-09");
     const shared = await board(officer, "Thank you, Bramble, from all of us.");
     const member = await jar("Fern", "member");
-    const preview = await jar("Rook", "officer");
+    const preview = await jar("Rook (R4)", "officer");
 
     const pt = await seen(member, "pt-BR");
     expect(pt.view.thanks).toEqual({
@@ -114,9 +114,13 @@ describe("the thank-you card on the members' board (D114)", () => {
         en: "Thank you, Bramble, from all of us.",
         "pt-BR": "Obrigado, Bramble, de coração.",
       },
-      by: "Rook",
+      names: ["Bramble"],
+      by: "Rook (R4)",
     });
-    expect(pt.html).toContain("Obrigado, Bramble, de coração.");
+    // The name in bold, and the signature without the rank tag.
+    expect(pt.html).toContain(
+      'Obrigado, <strong class="font-bold"><bdi>Bramble</bdi></strong>, de coração.',
+    );
     expect(pt.html).toContain('Com carinho, <bdi translate="no">Rook</bdi>');
     expect(pt.html).not.toContain("Tirar do mural");
     expect((await seen(preview, "en")).html).toContain("Take down");

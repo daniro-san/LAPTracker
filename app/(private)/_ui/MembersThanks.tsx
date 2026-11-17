@@ -22,7 +22,7 @@ export function MembersThanks(props: {
       <h2 id="thanks" className="font-subhead text-display-sm">
         {t["thanks.head"]}
       </h2>
-      <p className="text-body-sm">{t["thanks.intro"]}</p>
+      {rows.length > 0 && <p className="text-body-sm">{t["thanks.intro"]}</p>}
       <div className="mt-2 grid grid-cols-2 gap-x-4">
         {rows.map((k) => (
           <div key={k} className="min-w-0 border-t border-rule pt-1">
@@ -40,9 +40,10 @@ export function MembersThanks(props: {
           </div>
         ))}
       </div>
+      {/* D114: its own block under the top lists, with the share button. */}
       {progress.length > 0 && (
-        <div className="mt-2 border-t border-rule pt-1">
-          <h3 className="text-body-sm font-semibold text-ink/75">{t["thanks.progress"]}</h3>
+        <div className="mt-4 border-t-2 border-rule pt-2">
+          <h3 className="font-semibold">{t["thanks.progress"]}</h3>
           <ul className="text-body-sm">
             {progress.map((p) => (
               <li key={p.uid}>

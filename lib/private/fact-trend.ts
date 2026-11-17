@@ -74,8 +74,28 @@ export function weekBase(
 ): Version | null {
   const versions = versionsOf(history, uid, field);
   const newest = versions.at(-1);
-  if (!newest || dayIn(zone, newest.at.getTime()) < monday) return null;
+  const day = newest ? dayIn(zone, newest.at.getTime()) : "";
+  if (!newest || day < monday || day >= addDays(monday, 7)) return null;
   return aroundWeek(versions, monday, zone).base;
+}
+
+/**
+ * The card's baseline on `today` (D114): this game week's when the newest version is from it ("this
+ * week"), else, on a Monday, last week's when the newest version is from last week ("last week"), the
+ * week the thanks cover then. Null: the card compares with the version before.
+ */
+export function cardBase(
+  history: readonly FactRow[],
+  uid: number,
+  field: TrendField,
+  today: string,
+  zone: string,
+): { base: Version; last: boolean } | null {
+  for (const monday of new Set([mondayOf(today), thanksWeek(today)])) {
+    const base = weekBase(history, uid, field, monday, zone);
+    if (base) return { base, last: monday !== mondayOf(today) };
+  }
+  return null;
 }
 
 export interface Progress {

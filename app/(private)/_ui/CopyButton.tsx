@@ -10,10 +10,13 @@ export function CopyButton({
   text,
   labels,
   event,
+  className = "",
 }: {
   text: string;
   labels: { copy: string; copied: string; failed: string };
   event?: "ws_copy_spreadsheet";
+  /** Extra classes, such as full width in the thanks sheet (D114). */
+  className?: string;
 }) {
   const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -36,7 +39,7 @@ export function CopyButton({
             () => done("failed"),
           );
       }}
-      className="drawn-frame-soft tint-button inline-flex min-h-11 items-center gap-1 px-3 text-sm font-medium text-plum"
+      className={`drawn-frame-soft tint-button inline-flex min-h-11 items-center gap-1 px-3 text-sm font-medium text-plum ${className}`}
     >
       <span aria-hidden="true">⧉</span>
       <span aria-live="polite">

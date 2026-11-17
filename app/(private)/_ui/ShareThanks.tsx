@@ -35,7 +35,7 @@ async function draft(slug: string, body: object): Promise<Texts | string> {
 const EMPTY: Texts = { en: "", "pt-BR": "", fr: "" };
 
 /** "Write the thank-you": the draft route's three texts, or blank fields to write by hand. */
-function useWrite(props: ShareThanksProps, chosen: SharePerson[]) {
+function useWrite(props: ShareThanksProps, chosen: (SharePerson & { note: string })[]) {
   const { words } = props;
   const [texts, setTexts] = useState<Texts | null>(null);
   const [busy, setBusy] = useState(false);
@@ -46,7 +46,7 @@ function useWrite(props: ShareThanksProps, chosen: SharePerson[]) {
     if (!props.ai) return setTexts(EMPTY);
     setBusy(true);
     const answer = await draft(props.slug, {
-      people: chosen.map((p) => ({ name: p.name, did: p.did })),
+      people: chosen.map((p) => ({ name: p.name, did: p.did, ...(p.note && { note: p.note }) })),
       lastWeek: props.week.lastWeek,
     });
     setBusy(false);
@@ -107,7 +107,7 @@ function ShareSheet(props: ShareThanksProps & { onClose: () => void }) {
         <p className="mb-3 text-body-sm">{fill(words["share.lastWeek"], { range: week.range })}</p>
       )}
       {w.texts === null ? (
-        <PickStep pick={pick} roster={props.roster} words={words} />
+        <PickStep pick={pick} roster={props.roster} words={words} noteLimit={props.noteLimit} />
       ) : (
         <ShareThanksEdit
           {...props}
