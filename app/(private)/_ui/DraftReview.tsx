@@ -5,7 +5,8 @@
 // the rows, uncertain and unmatched ones first. While something is missing, a line above Save says what
 // ("Row #2 needs a member", a link to that card). Save sends one value per member (per member and fact
 // for a member update); the first save wins, and a later one is told who saved it. A member fact another officer saved meanwhile comes back
-// marked, with "Keep theirs" and "Use mine" (D80). A Secret Ops report has its own review. Nothing counts
+// marked, with "Keep theirs" and "Use mine" (D80). A Secret Ops report has its own review, and a check
+// (Donation, Might, Kills) is read-only: only how many rows match is kept (panel PD-5). Nothing counts
 // before Save (D75). Numbers and dates come formatted from the server.
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -15,7 +16,16 @@ import type { ImportKind, PhotoFact, Scope } from "@/lib/private/import-kinds";
 import type { DraftView } from "@/lib/private/import-view";
 
 import { Actions, confirmRetype, Message, useDraftActions, type Why } from "./draft-actions";
-import { checkKnown, DAYS, duelKnown, factKnown, type Day, type Words } from "./draft-known";
+import {
+  checkKnown,
+  checkSummary,
+  DAYS,
+  duelKnown,
+  factKnown,
+  fillIn,
+  type Day,
+  type Words,
+} from "./draft-known";
 import { DraftHeader, type ReviewText } from "./DraftHeader";
 import { DraftRowCard, type RowState } from "./DraftRowCard";
 import { SecretOpsReview } from "./SecretOpsReview";
@@ -85,10 +95,73 @@ type Props = {
 };
 
 export function DraftReview(props: Props) {
-  return props.view.kind === "secret_ops" ? (
-    <SecretOpsReview {...props} />
-  ) : (
-    <RowsReview {...props} />
+  if (props.view.kind === "secret_ops") return <SecretOpsReview {...props} />;
+  // A check (`ours` is set: donation, might, kills) keeps only how many match, so it has nothing to fix.
+  if (props.view.ours !== null) return <CheckReview {...props} />;
+  return <RowsReview {...props} />;
+}
+
+/**
+ * A check (panel PD-5): read-only. It shows how many rows match the game data, what Save keeps, Save and
+ * Discard; no row is edited, because only the counts are kept. Picking Daily or Weekly reads the draft
+ * again with that tab, so the count shown is the one Save stores.
+ */
+function CheckReview(props: Props) {
+  const { view, w } = props;
+  const router = useRouter();
+  const scope = view.scopeSure ? view.scope : null;
+  const { busy, message, act } = useDraftActions(props.slug, view, w);
+  const readOnly = view.status !== "open" || !view.canSave;
+  const sum = checkSummary(view);
+  const needsTab = view.scope !== null && scope === null;
+  const retype = (kind: ImportKind, tab: Scope | null) =>
+    void act({ action: "retype", kind, scope: tab }).then((a) => a.ok && router.refresh());
+  async function save() {
+    const answer = await act({
+      action: "save",
+      scope,
+      day: null,
+      weekBefore: false,
+      rows: sum.sent,
+    });
+    if (answer.ok) {
+      track("ws_draft_saved", { kind: view.kind });
+      router.refresh();
+    }
+  }
+  return (
+    <>
+      <DraftHeader
+        {...props}
+        choice={{ scope, day: "sat", weekBefore: false }}
+        set={{ scope: (tab) => retype(view.kind, tab), day: () => {}, weekBefore: () => {} }}
+        readOnly={readOnly || busy}
+        retype={(kind) => retype(kind, scope)}
+      />
+      <section aria-labelledby="check-head" className="mt-4 border border-rule px-4 py-3">
+        <h2 id="check-head" className="font-subhead text-display-sm">
+          {w["shots.check.head"]}
+        </h2>
+        <p className="mt-1 text-lg font-semibold tabular-nums">
+          {fillIn(w["shots.check.match"], { same: sum.same, compared: sum.compared })}
+        </p>
+        {sum.left > 0 && (
+          <p className="mt-1 text-body-sm text-ink/80">
+            {fillIn(w["shots.check.left"], { n: sum.left })}
+          </p>
+        )}
+      </section>
+      <Message text={message} />
+      {!readOnly && (
+        <Actions
+          w={{ ...w, "shots.save": w["shots.check.save"] ?? "" }}
+          busy={busy}
+          why={needsTab ? { template: w["shots.why.tab"] } : null}
+          onSave={() => void save()}
+          onDiscard={() => void act({ action: "discard" }).then((a) => a.ok && router.refresh())}
+        />
+      )}
+    </>
   );
 }
 

@@ -293,10 +293,15 @@ export const comparable = (e: Pick<EventSummary, "snapshots">) =>
   e.snapshots.some((s) => s.status === "complete" || s.status === "partial");
 
 /** The events the picker can pick, then A and B: B defaults to the home event, A to the newest event
- * with data before B. Shared by the alliance view and the player view (issue 199). */
-export async function comparePicks(db: Db, ids: { a: number | null; b: number | null }) {
+ * with data before B. Shared by the alliance view and the player view (issue 199). `windowMin` is
+ * SNAPSHOT_WINDOW_MIN, for `homeEvent`. */
+export async function comparePicks(
+  db: Db,
+  ids: { a: number | null; b: number | null },
+  windowMin: number,
+) {
   const events = await listEvents(db);
-  const homeId = homeEvent(events)?.id ?? null;
+  const homeId = homeEvent(events, new Date(), windowMin)?.id ?? null;
   const b = ids.b ?? homeId;
   const bAt = events.find((e) => e.id === b)?.eventAtUtc;
   const older = events.filter((e) => comparable(e) && bAt !== undefined && e.eventAtUtc < bAt);
@@ -313,8 +318,9 @@ export async function comparePicks(db: Db, ids: { a: number | null; b: number | 
 export async function getComparePage(
   db: Db,
   ids: { a: number | null; b: number | null; unionId: number | null },
+  windowMin: number,
 ) {
-  const base = await comparePicks(db, ids);
+  const base = await comparePicks(db, ids, windowMin);
   const { a, b } = base;
   if (a === null || b === null || a === b) return { ...base, found: true, comparison: null };
   const comparison = await compareEvents(db, a, b, ids.unionId ?? undefined);

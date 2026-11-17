@@ -233,6 +233,7 @@ export async function EventView({
           hasMovers={hasMovers}
           live={progress?.live === true}
           hasDuring={progress !== null && !progress.live && progress.readings > 0}
+          now={now}
           clock={clock}
           copy={copy}
         />

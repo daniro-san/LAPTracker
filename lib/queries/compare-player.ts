@@ -135,8 +135,9 @@ export type PlayerComparison = NonNullable<Awaited<ReturnType<typeof comparePlay
 export async function getComparePlayerPage(
   db: Db,
   ids: { a: number | null; b: number | null; uid: number },
+  windowMin: number,
 ) {
-  const base = await comparePicks(db, ids);
+  const base = await comparePicks(db, ids, windowMin);
   const { a, b } = base;
   if (a === null || b === null || a === b) return { ...base, found: true, comparison: null };
   const comparison = await comparePlayer(db, a, b, ids.uid);

@@ -62,6 +62,9 @@ function partsIn(zone: string, at: number) {
   };
 }
 
+/** The day ("YYYY-MM-DD") the clock of `zone` shows at `at`. */
+export const dayIn = (zone: string, at: number) => partsIn(zone, at).day;
+
 /** Minutes east of UTC on the clock of `zone` at `at`. */
 export function zoneOffset(zone: string, at: number): number {
   const wall = partsIn(zone, at);

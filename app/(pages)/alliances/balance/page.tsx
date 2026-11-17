@@ -16,6 +16,7 @@ import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { greatestShareUp, parseBlocs, TOP_N, topShare } from "@/lib/balance";
 import { fill } from "@/lib/copy";
+import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
 import { homeEvent, listEvents, powerBalance } from "@/lib/queries";
 
@@ -47,7 +48,7 @@ export default async function BalancePage({ searchParams }: { searchParams: Sear
     Promise.all([listEvents(db), powerBalance(db, new Date())]),
   );
   const { alliances, trend } = balance;
-  const homeId = homeEvent(events)?.id ?? null;
+  const homeId = homeEvent(events, new Date(), getEnv().SNAPSHOT_WINDOW_MIN)?.id ?? null;
   const known = new Set(alliances.map((a) => a.unionId));
   const blocs = parseBlocs(first(sp.a), first(sp.b), known);
   const total = alliances.reduce((a, r) => a + r.might, 0);

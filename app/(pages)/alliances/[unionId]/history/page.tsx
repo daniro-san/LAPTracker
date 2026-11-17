@@ -23,6 +23,7 @@ import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { TextLink } from "@/lib/brand/components/TextLink";
 import type { Dictionary } from "@/lib/copy";
 import type { Db } from "@/lib/db";
+import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
 import { homeEvent, listEvents, memberHistory, memberHistoryIndex } from "@/lib/queries";
 
@@ -59,7 +60,13 @@ const load = cache((unionId: number, before: number | null, show: HistoryFilter 
       historyPage(db, unionId, before === null ? null : new Date(before), show),
       listEvents(db),
     ]);
-    return history && { history, events, homeId: homeEvent(events)?.id ?? null };
+    return (
+      history && {
+        history,
+        events,
+        homeId: homeEvent(events, new Date(), getEnv().SNAPSHOT_WINDOW_MIN)?.id ?? null,
+      }
+    );
   }),
 );
 

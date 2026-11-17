@@ -13,6 +13,7 @@ import {
   runWord,
   roundView,
   seconds,
+  settledRun,
   stateWord,
   currentView,
   dailyView,
@@ -251,8 +252,10 @@ export default async function AdminPage() {
   const env = getEnv();
   const now = new Date();
   const next = nextEvent(now, env);
-  const [[current, rehearsal, quota, manual, running, recent, row, ticks, daily], clock] =
+  const [[current, rehearsal, quota, manual, running, runs, row, ticks, daily], clock] =
     await Promise.all([withPageDb((db) => loadAdminPage(db, now, env)), requestServerClock()]);
+  // A run left running past RUN_STALE_AFTER_MS is not under "Running now", so not "running" anywhere.
+  const recent = runs.map((r) => settledRun(r, now));
   const views = watchViews(running, recent[0], daily, now, clock);
   const nextRun = [
     { phase: "before" as const, at: current.beforeAt, event: current },

@@ -15,6 +15,7 @@ import { dayDate } from "@/app/_ui/format";
 import { requestClock, requestCopy } from "@/app/_ui/locale";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
+import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
 import { flowPage, homeEvent, listEvents } from "@/lib/queries";
 
@@ -35,7 +36,11 @@ const load = cache((from: string | null, to: string | null) =>
       flowPage(db, new Date(), from !== null && to !== null ? { from, to } : null),
       listEvents(db),
     ]);
-    return { page, events, homeId: homeEvent(events)?.id ?? null };
+    return {
+      page,
+      events,
+      homeId: homeEvent(events, new Date(), getEnv().SNAPSHOT_WINDOW_MIN)?.id ?? null,
+    };
   }),
 );
 

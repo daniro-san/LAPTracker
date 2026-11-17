@@ -44,10 +44,15 @@ const en = {
   "noaccess.public": "Go to the public Event Ledger",
   "shell.signedIn": "Signed in as {name}",
   "shell.signOut": "Sign out",
-  "home.title": "This week",
-  "home.empty": "Nothing here yet. The kettle is on.",
-  "home.next":
-    "The Members tab is ready: every member’s might, donations and activity, from the game.",
+  "home.title": "Calendar, members and screenshots",
+  "home.next.head": "Today and tomorrow",
+  "home.today": "Today",
+  "home.tomorrow": "Tomorrow",
+  "home.next.none": "Nothing on the Calendar today or tomorrow.",
+  "home.calendar": "Open Calendar",
+  "home.members.head": "Members this week",
+  "home.notYet":
+    "Not yet. Thanks and check-ins start with the first end-of-day read, just before the server resets.",
   "home.open": "Open Members",
   "shell.help": "How this works",
   "signin.howto": "How to put it on your phone",
@@ -154,6 +159,13 @@ const en = {
   "intro.1.settings": "Tap your name at the top for your settings.",
   "intro.only": "R4 · R5 only",
   "intro.2.more": "— means no data, and it is left out of every count.",
+  "intro.desk.title": "Calendar, screenshots and Discord",
+  "intro.desk.calendar":
+    "Calendar: what is on, in server time and in your time. Notices and Thefts are tabs inside it.",
+  "intro.desk.shots":
+    "Home: Send screenshots of a ranking or a report from the game. Check each one, then save it.",
+  "intro.desk.discord":
+    "In Discord, on a message with screenshots: Apps → Send to LAPTracker. They wait on Home.",
   "intro.3.title": "Each week",
   "intro.3.body":
     "Open Members and start at the top: thank the members who did the most this week.",
