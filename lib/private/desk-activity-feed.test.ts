@@ -7,6 +7,7 @@ import type { Db } from "../db";
 import { openTestDb } from "../db.test-helpers";
 import { openDrafts } from "../repo/import";
 import { memberFacts, memberFollowUps, pendingMembers } from "../schema";
+import { thanksShares, thanksTakedowns } from "../schema-board";
 import { screenshotDrafts } from "../schema-import";
 import {
   noticeEdits,
@@ -236,6 +237,40 @@ describe("recent activity", () => {
     expect(linesOf(items, "pt-BR")[3]).toBe(
       "Ana pediu a Rook que revise o aviso “Garden rota” · PT",
     );
+  });
+
+  it("says where the thanks were shared, and who took them down; a failed post is not a line", async () => {
+    const a = (await browser(db, ws, "Ana")).userId;
+    const share = (target: string, status: string, at: Date) => ({
+      workspaceId: ws,
+      requestId: randomUUID(),
+      target,
+      week: "2026-11-16",
+      texts: { en: "Thank you, Bramble." },
+      names: ["Bramble"],
+      status,
+      sharedBy: a,
+      sharedAt: at,
+    });
+    const [, board] = await db
+      .insert(thanksShares)
+      .values([
+        share("discord", "posted", ago(30)),
+        share("board", "posted", ago(20)),
+        share("discord", "failed", ago(15)),
+      ])
+      .returning({ id: thanksShares.id });
+    await db
+      .insert(thanksTakedowns)
+      .values({ shareId: board?.id ?? 0, takenBy: a, takenAt: ago(5) });
+    const me = (await browser(db, ws, "Rook")).visit(NOW);
+    const items = await recentActivity(db, (await me) as WorkspaceAccess, NOW);
+    expect(linesOf(items)).toEqual([
+      "Ana took the thanks down from the members’ board",
+      "Ana shared the thanks on the members’ board",
+      "Ana shared the thanks on Discord",
+    ]);
+    expect(linesOf(items, "pt-BR")[2]).toBe("Ana compartilhou os agradecimentos no Discord");
   });
 
   it("holds at most ACTIVITY_MAX lines", async () => {

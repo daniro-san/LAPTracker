@@ -34,3 +34,10 @@ Why: officers get new main squad and AD Tech values from members whenever someon
   - No value before: not named and not counted (D75). Members on a break are left out, as from the other thanks. New members are not: progress compares a member with their own earlier value.
   - Lines say what happened, with no number: "Fennick grew their main squad", "Juniper finished AD Tech", "… finished AD Tech and grew their main squad". The list is in name order and is not a ranking.
 - **D75.** No "didn't answer" list exists. "—" is no data and counts against no one.
+
+**Amendment (2026-11-17, 11ae, owner, issue 404): a weekly baseline (D114).**
+
+- Main squad progress in the thanks compares the newest value saved in the week with the last value saved before Monday 00:00 ST of that week, no longer with the version just before the newest. 10.0M → 10.3M → 10.6M in one week counts as +6 %. AD Tech counts as reached when the newest value in the week is 100 and the value before the week was below 100.
+- The card says "+600K this week" ("+5 points this week") when the newest version is from this game week and a value from before the week exists; otherwise it keeps "+400K since Nov 10". The card and the thanks compare the same pair again (r2's reason for the version before).
+- The week is no longer the game week of the newest daily update. It is the week the thanks cover (`thanksWeek`): the current game week, or last week on a Monday.
+- A first-ever value still gets no thanks.

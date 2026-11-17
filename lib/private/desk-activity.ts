@@ -44,7 +44,8 @@ type What =
   | { kind: "thefts"; count: number }
   | { kind: "newMember"; names: string[] }
   | ({ kind: "reviewAsked" } & Pick<ReviewAskedDone, "noticeId" | "language" | "reviewerId">)
-  | ({ kind: "reviewAnswered" } & Pick<ReviewAnsweredDone, "noticeId" | "outcome" | "language">);
+  | ({ kind: "reviewAnswered" } & Pick<ReviewAnsweredDone, "noticeId" | "outcome" | "language">)
+  | { kind: "thanks"; target: "discord" | "board" | "down" };
 
 type Raw = What & { by: number; at: Date };
 
@@ -146,6 +147,7 @@ function merge(rows: Awaited<ReturnType<typeof activityRows>>): Raw[] {
     })),
     ...rows.reviewsAsked.map((r) => ({ ...r, kind: "reviewAsked" as const })),
     ...rows.reviewsAnswered.map((r) => ({ ...r, kind: "reviewAnswered" as const })),
+    ...rows.thanks.map((r) => ({ ...r, kind: "thanks" as const })),
   ];
   const top = new Map<string, number>();
   for (const r of raw) top.set(instant(r), Math.max(top.get(instant(r)) ?? 0, rank(r)));

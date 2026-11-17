@@ -18,6 +18,7 @@ import { SLUG } from "@/lib/private/sign-in";
 import { serverDay } from "@/lib/schedule";
 
 import { LINK, Notices, StartHere, Week } from "../../../_ui/BoardSections";
+import { BoardThanks } from "../../../_ui/BoardThanks";
 import { Frame, workspaceWords } from "../../../_ui/Frame";
 import { refuse } from "../../../_ui/refuse";
 import { SignOutButton } from "../../../_ui/SignOutButton";
@@ -89,6 +90,13 @@ export default async function BoardPage({ params }: { params: Promise<{ slug: st
         </a>
       </p>
       {access.officer && <p className="text-body-sm text-ink/75">{t["board.preview.only"]}</p>}
+      <BoardThanks
+        thanks={view.thanks}
+        t={t}
+        language={language}
+        slug={slug}
+        officer={access.officer}
+      />
       <Week t={t} language={language} today={today} entries={view.entries} notices={view.notices} />
       <Notices t={t} language={language} notices={view.notices} linked={linked} />
       <StartHere

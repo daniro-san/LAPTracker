@@ -14,6 +14,7 @@ import {
 } from "../schema";
 import { thefts } from "../schema-thefts";
 import { reviewParts, reviewRows, type ReviewKind, type ReviewRows } from "./desk-activity-reviews";
+import { thanksParts, type ThanksDone } from "./desk-activity-thanks";
 import { usable } from "./workspace-rosters";
 
 /** The officers, other than `me`, whose desk session was seen since `since` and is still open. */
@@ -87,6 +88,7 @@ export interface ActivityRows extends ReviewRows {
   followUps: FollowUpDone[];
   thefts: TheftsDone[];
   newMembers: NewMemberDone[];
+  thanks: ThanksDone[];
 }
 
 function factSaves(db: Db, ws: number, from: Date, n: number) {
@@ -105,9 +107,11 @@ function factSaves(db: Db, ws: number, from: Date, n: number) {
     .limit(n);
 }
 
+type OwnKind = "noticeSaved" | "noticePosted" | "draft" | "entry" | "newMember" | "followUp";
+
 /** One row of the small sources' read; the columns each kind does not use are null. */
 type SmallRow = {
-  kind: "noticeSaved" | "noticePosted" | "draft" | "entry" | "newMember" | "followUp" | ReviewKind;
+  kind: OwnKind | ReviewKind | "thanks";
   by: number | string;
   at: Date | string;
   notice_id: number | null;
@@ -121,8 +125,9 @@ type SmallRow = {
 /**
  * The small sources in one read (one connection): notice saves (one per save of any number of fields),
  * notice posts, saved drafts, calendar entries added, new members added by hand, and follow-up records
- * (not `withdrawn`, and not one an Undo cancelled), and notice review requests and their outcomes (D113). Each part is its own newest `n` since `from`; `n` bounds the rows returned, not the
- * rows a part scans.
+ * (not `withdrawn`, and not one an Undo cancelled), notice review requests and their outcomes (D113), and
+ * the weekly thanks shared or taken down (D114). Each part is its own newest `n` since `from`; `n` bounds
+ * the rows returned, not the rows a part scans.
  */
 async function smallSources(db: Db, ws: number, from: Date, n: number): Promise<SmallRow[]> {
   const since = from.toISOString();
@@ -164,7 +169,8 @@ async function smallSources(db: Db, ws: number, from: Date, n: number): Promise<
           where x.workspace_id = f.workspace_id and x.uid = f.uid and x.id > f.id
           order by x.id limit 1), '') <> 'withdrawn'
       order by f.written_at desc limit ${n})
-    ${reviewParts(ws, since, n)}`);
+    ${reviewParts(ws, since, n)}
+    ${thanksParts(ws, since, n)}`);
   return result.rows;
 }
 
@@ -278,6 +284,7 @@ function split(rows: SmallRow[]) {
       action: a as FollowUpDone["action"],
       until: b,
     })),
+    thanks: of("thanks").map(({ by, at, a }) => ({ by, at, target: a as ThanksDone["target"] })),
   };
 }
 

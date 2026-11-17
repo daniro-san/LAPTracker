@@ -138,6 +138,8 @@ export function activityLine(
     case "thefts":
     case "newMember":
       return countLine(t, who, item);
+    case "thanks":
+      return fill(t[`activity.thanks.${item.target}`], { who });
     // The rest: a review request or its outcome (D113).
     default:
       return reviewLine(t, who, item);
