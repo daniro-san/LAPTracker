@@ -139,6 +139,12 @@ function formOf(p: Placed, plannedDay: string, language: WorkspaceLanguage): For
   };
 }
 
+/** The linked notice with its title; null when none, or when its title was not read (never an empty link). */
+function noticeOf(id: number | null, ctx: CalendarCtx): AgendaItem["notice"] {
+  const title = id === null ? undefined : ctx.noticeTitles?.get(id);
+  return id !== null && title ? { id, title } : null;
+}
+
 export function agendaItem(p: Placed, ctx: CalendarCtx): AgendaItem {
   const { t, language, zone } = ctx;
   const e = p.entry;
@@ -156,10 +162,7 @@ export function agendaItem(p: Placed, ctx: CalendarCtx): AgendaItem {
     roles: rolesLine(p, t),
     notes: e.notes,
     link: e.link,
-    notice:
-      e.noticeId === null
-        ? null
-        : { id: e.noticeId, title: ctx.noticeTitles?.get(e.noticeId) ?? "" },
+    notice: noticeOf(e.noticeId, ctx),
     tags: tagsOf(p, plannedDay, ctx),
     ...seatsOf(p.row),
     form: formOf(p, plannedDay, language),

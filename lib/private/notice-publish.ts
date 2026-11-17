@@ -16,6 +16,10 @@ import { NOTICE_LANGUAGES, type NoticeLanguage } from "./notice-rules";
 import { noticeDetail } from "./notices";
 
 const SEND_TIMEOUT_MS = 5_000;
+/** All the messages of one publish; the route's maxDuration (60 s) leaves room for the reads and writes. */
+const BUDGET_MS = 40_000;
+/** A claim still "posting" after this long was left by a run that died: it counts as failed. */
+export const STUCK_MS = 120_000;
 
 export type Audience = "members" | "leaders";
 export interface Channel {
@@ -49,7 +53,10 @@ export type PublishInput = z.infer<typeof publishInput>;
 
 export type PublishResult =
   | { ok: true; row: PublishRow }
-  | { ok: false; code: "not_found" | "not_set_up" | "no_text" | "posting" | "failed" };
+  | {
+      ok: false;
+      code: "not_found" | "not_set_up" | "no_text" | "posting" | "recent" | "failed";
+    };
 
 export interface PublishDeps {
   fetch: typeof fetch;
@@ -66,6 +73,8 @@ function send(
   content: string,
   thread: string | null,
   title: string,
+  /** Milliseconds left in the publish's budget. */
+  left: number,
 ) {
   const url = `${channel.url}?wait=true${thread ? `&thread_id=${thread}` : ""}`;
   const opens = channel.forum && thread === null;
@@ -78,20 +87,26 @@ function send(
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(body),
-    signal: AbortSignal.timeout(SEND_TIMEOUT_MS),
+    signal: AbortSignal.timeout(Math.min(SEND_TIMEOUT_MS, left)),
   }).catch(() => null);
 }
 
-/** Posts each message in turn; a forum's first one opens the post, the rest go into it. */
+/**
+ * Posts each message in turn; a forum's first one opens the post, the rest go into it. Stops when the
+ * budget is spent, which leaves the publish failed.
+ */
 async function post(
   doFetch: typeof fetch,
   channel: Channel,
   title: string,
   messages: string[],
 ): Promise<{ sent: number; status: number | null }> {
+  const deadline = Date.now() + BUDGET_MS;
   let thread: string | null = null;
   for (const [i, content] of messages.entries()) {
-    const res = await send(doFetch, channel, content, thread, title);
+    const left = deadline - Date.now();
+    if (left <= 0) return { sent: i, status: null };
+    const res = await send(doFetch, channel, content, thread, title, left);
     if (!res?.ok) return { sent: i, status: res?.status ?? null };
     if (channel.forum && i === 0) {
       const made = (await res.json().catch(() => null)) as { channel_id?: unknown } | null;
@@ -102,11 +117,12 @@ async function post(
   return { sent: messages.length, status: null };
 }
 
-/** An earlier claim of this request id: what it came to. */
-function earlier(row: PublishRow, id: number): PublishResult {
+/** An earlier claim of this request id: what it came to. A claim stuck in "posting" counts as failed. */
+function earlier(row: PublishRow, id: number, now: Date): PublishResult {
   if (row.noticeId !== id) return { ok: false, code: "not_found" };
   if (row.status === "posted") return { ok: true, row };
-  return { ok: false, code: row.status === "posting" ? "posting" : "failed" };
+  const running = row.status === "posting" && now.getTime() - row.at.getTime() < STUCK_MS;
+  return { ok: false, code: running ? "posting" : "failed" };
 }
 
 export async function publishNotice(
@@ -132,7 +148,8 @@ export async function publishNotice(
     userId: access.user.id,
     now: deps.now,
   });
-  if (!claim.claimed) return earlier(claim.row, input.id);
+  if (claim.kind === "recent") return { ok: false, code: "recent" };
+  if (claim.kind === "earlier") return earlier(claim.row, input.id, deps.now);
   const title = notice.fields.title.value;
   const sections = languages.map((l) => ({ name: deps.names[l], text: notice.fields[l].value }));
   const messages = discordMessages(title, sections, !channel.forum);

@@ -1,6 +1,6 @@
 // notice_publishes (D102): a publish is claimed under its request id before anything is posted, then
 // marked posted or failed; the notice page shows the newest one that was posted.
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, gt, inArray } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { workspaceUsers } from "../schema";
@@ -41,14 +41,56 @@ const rowOf = (r: Omit<PublishRow, "languages"> & { languages: string }): Publis
   languages: r.languages.split(","),
 });
 
+/** No second publish of a notice to one audience within this long of the last (D102). */
+export const COOLDOWN_MS = 30_000;
+
+/** The row this request id made, if any. */
+async function byRequest(db: Db, c: PublishClaim) {
+  const [row] = await db
+    .select(columns)
+    .from(noticePublishes)
+    .leftJoin(workspaceUsers, eq(workspaceUsers.id, noticePublishes.publishedBy))
+    .where(
+      and(
+        eq(noticePublishes.workspaceId, c.workspaceId),
+        eq(noticePublishes.requestId, c.requestId),
+      ),
+    );
+  return row ? rowOf(row) : null;
+}
+
+/** A publish of the notice to the same audience, running or posted, in the last COOLDOWN_MS. */
+async function recentOne(db: Db, c: PublishClaim): Promise<boolean> {
+  const [row] = await db
+    .select({ id: noticePublishes.id })
+    .from(noticePublishes)
+    // notice_publishes_notice_idx (notice_id, id): the newest rows of one notice.
+    .where(
+      and(
+        eq(noticePublishes.noticeId, c.noticeId),
+        eq(noticePublishes.workspaceId, c.workspaceId),
+        eq(noticePublishes.audience, c.audience),
+        inArray(noticePublishes.status, ["posting", "posted"]),
+        gt(noticePublishes.publishedAt, new Date(c.now.getTime() - COOLDOWN_MS)),
+      ),
+    )
+    .orderBy(desc(noticePublishes.id))
+    .limit(1);
+  return row !== undefined;
+}
+
 /**
- * The claim: a new row ("posting") and `claimed: true`, or the row this request id already made (a double
- * tap, a retry, or one at the same moment, which lost on the unique index) and `claimed: false`.
+ * The claim. `claimed`: a new row ("posting"). `earlier`: the row this request id already made (a double
+ * tap, a retry, or one at the same moment, which lost on the unique index). `recent`: another publish of
+ * this notice to this audience ran or was posted in the last 30 s, so nothing is claimed.
  */
 export async function claimPublish(
   db: Db,
   c: PublishClaim,
-): Promise<{ claimed: boolean; row: PublishRow }> {
+): Promise<{ kind: "claimed" | "earlier"; row: PublishRow } | { kind: "recent" }> {
+  const known = await byRequest(db, c);
+  if (known) return { kind: "earlier", row: known };
+  if (await recentOne(db, c)) return { kind: "recent" };
   const [made] = await db
     .insert(noticePublishes)
     .values({
@@ -63,18 +105,9 @@ export async function claimPublish(
     })
     .onConflictDoNothing({ target: [noticePublishes.workspaceId, noticePublishes.requestId] })
     .returning({ id: noticePublishes.id });
-  const [row] = await db
-    .select(columns)
-    .from(noticePublishes)
-    .leftJoin(workspaceUsers, eq(workspaceUsers.id, noticePublishes.publishedBy))
-    .where(
-      and(
-        eq(noticePublishes.workspaceId, c.workspaceId),
-        eq(noticePublishes.requestId, c.requestId),
-      ),
-    );
+  const row = await byRequest(db, c);
   if (!row) throw new Error("publish_claim_lost");
-  return { claimed: made !== undefined, row: rowOf(row) };
+  return { kind: made === undefined ? "earlier" : "claimed", row };
 }
 
 export async function finishPublish(

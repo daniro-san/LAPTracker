@@ -3,7 +3,8 @@
 // "Publish to Discord" on a notice's page (issue 345, D102). Where it goes follows the notice's audience: a
 // members notice to the members' channel, a leadership one to the leaders'. Without that channel the button
 // is off and says why. The sheet asks "Post to #channel?" with the written languages ticked; Post sends them
-// once (a request id per opened sheet, D100), and the page then shows who posted it last and when.
+// once (a request id per opened sheet, D100), and the page then shows who posted it last and when. When
+// Discord refused it, the sheet takes a new request id, so the next Post tries again.
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -17,7 +18,7 @@ import type { NoticeLanguage } from "@/lib/private/notice-rules";
 
 import { LANGUAGE_NAME } from "./languages";
 import { sheetWords } from "./sheet-words";
-import { SignedOutNote } from "./SignedOut";
+import { RefusalLine, SIGNED_OUT } from "./SignedOut";
 
 export interface PublishProps {
   slug: string;
@@ -34,12 +35,8 @@ export interface PublishProps {
   written: NoticeLanguage[];
 }
 
-const REFUSAL: Record<string, WorkspaceKey> = {
-  posting: "notices.publish.busy",
-  no_text: "notices.publish.pick",
-};
-
-async function send(slug: string, body: object): Promise<"ok" | "signed_out" | WorkspaceKey> {
+/** The route's answer: "ok", or its code; "lost" when no answer came (it may have posted). */
+async function send(slug: string, body: object): Promise<string> {
   try {
     const res = await fetch(`/api/w/${slug}/notices/publish`, {
       method: "POST",
@@ -48,11 +45,26 @@ async function send(slug: string, body: object): Promise<"ok" | "signed_out" | W
     });
     if (res.ok) return "ok";
     const { code } = (await res.json().catch(() => ({}))) as { code?: string };
-    if (code === "signed_out") return code;
-    return REFUSAL[code ?? ""] ?? "notices.publish.failed";
+    return code ?? "failed";
   } catch {
-    return "notices.publish.failed";
+    return "lost";
   }
+}
+
+/** A refusal's words; SIGNED_OUT for the signed-out note (RefusalLine shows it). */
+function refusal(
+  code: string,
+  audience: PublishProps["publish"]["audience"],
+  t: WorkspaceDictionary,
+): string {
+  const words: Record<string, WorkspaceKey> = {
+    posting: "notices.publish.busy",
+    recent: "notices.publish.recent",
+    no_text: "notices.publish.pick",
+    not_found: "notices.publish.gone",
+    not_set_up: `notices.publish.off.${audience}`,
+  };
+  return code === SIGNED_OUT ? SIGNED_OUT : t[words[code] ?? "notices.publish.failed"];
 }
 
 function PublishSheet(props: PublishProps & { channel: string; onClose: () => void }) {
@@ -60,16 +72,19 @@ function PublishSheet(props: PublishProps & { channel: string; onClose: () => vo
   const router = useRouter();
   const [chosen, setChosen] = useState<NoticeLanguage[]>(props.written);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<"signed_out" | WorkspaceKey | null>(null);
-  // One per opened sheet (D100): a double tap or a retry after a lost answer posts once.
-  const [requestId] = useState(() => crypto.randomUUID());
+  /** The refusal's code ("no_text" before sending), or null. */
+  const [error, setError] = useState<string | null>(null);
+  // One per opened sheet (D100): a double tap or a retry after a lost answer posts once. A refusal from
+  // Discord ("failed") ends that request, so the next Post gets a new one.
+  const [requestId, setRequestId] = useState(() => crypto.randomUUID());
   const post = async () => {
-    if (chosen.length === 0) return setError("notices.publish.pick");
+    if (chosen.length === 0) return setError("no_text");
     setBusy(true);
     setError(null);
     const languages = props.written.filter((l) => chosen.includes(l));
     const answer = await send(props.slug, { id: props.id, languages, requestId });
     setBusy(false);
+    if (answer === "failed") setRequestId(crypto.randomUUID());
     if (answer !== "ok") return setError(answer);
     props.onClose();
     router.refresh();
@@ -86,14 +101,11 @@ function PublishSheet(props: PublishProps & { channel: string; onClose: () => vo
         onClick: () => void post(),
       }}
       note={
-        error === "signed_out" ? (
-          <SignedOutNote className="mb-2" />
-        ) : (
-          error && (
-            <p role="alert" className="mb-2 border-l-4 border-seal pl-3 text-body-sm font-semibold">
-              {t[error]}
-            </p>
-          )
+        error && (
+          <RefusalLine
+            text={refusal(error, props.publish.audience, t)}
+            className="mb-2 border-l-4 border-seal pl-3 text-body-sm font-semibold"
+          />
         )
       }
     >

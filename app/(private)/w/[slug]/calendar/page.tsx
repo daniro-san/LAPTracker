@@ -4,7 +4,7 @@
 import { calendarDays } from "@/lib/private/calendar";
 import { addDays, mondayOf, weekDays } from "@/lib/private/calendar-time";
 import { calendarDates } from "@/lib/private/calendar-words";
-import { noticesList } from "@/lib/private/notices";
+import { noticesList, titlesOf } from "@/lib/private/notices";
 
 import { agendaWeek, calendarWords, monthCells } from "../../../_ui/calendar-data";
 import { openCalendar } from "../../../_ui/calendar-page";
@@ -36,13 +36,16 @@ export default async function CalendarPage({
         calendarDays(db, access, grid.from, grid.to),
         noticesList(db, access),
       ]);
-      return { placed, notices: notices.map(({ id, title }) => ({ id, title })) };
+      // The linked notices' titles by id: a link to a notice outside the newest 200 keeps its title.
+      const linked = placed.flatMap((p) => (p.entry.noticeId === null ? [] : [p.entry.noticeId]));
+      const titles = await titlesOf(db, access, linked);
+      return { placed, titles, notices: notices.map(({ id, title }) => ({ id, title })) };
     },
     "calendar",
   );
   const { access, slug, monday, today } = page;
-  const { placed, notices } = page.data;
-  const ctx = { ...page.ctx, noticeTitles: new Map(notices.map((n) => [n.id, n.title])) };
+  const { placed, notices, titles } = page.data;
+  const ctx = { ...page.ctx, noticeTitles: titles };
   const { t, language } = ctx;
   const sunday = addDays(monday, 6);
   const week = placed.filter((p) => p.day >= monday && p.day <= sunday);

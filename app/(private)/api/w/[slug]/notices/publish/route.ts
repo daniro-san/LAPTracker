@@ -1,7 +1,8 @@
 // POST /api/w/[slug]/notices/publish {id, languages, requestId} — "Publish to Discord" (issue 345, D102):
 // posts the notice to its audience's channel, once per request id. A write: same origin, JSON, a valid
 // session (401 signed_out, D99). Answers who posted it and when, or a code: not_set_up (no channel for this
-// audience), no_text, posting (the same request is still running), failed (Discord refused or timed out).
+// audience), no_text, posting (the same request is still running), recent (this notice went to this
+// audience in the last 30 s), failed (Discord refused, timed out or ran past the budget).
 import { requireWorkspace } from "@/lib/private/access";
 import {
   isSameOriginJson,
@@ -21,8 +22,12 @@ const STATUS = {
   not_set_up: 409,
   no_text: 400,
   posting: 409,
+  recent: 409,
   failed: 502,
 } as const;
+
+/** Every message has its own 5 s limit and the publish a 40 s budget (D102). */
+export const maxDuration = 60;
 
 export async function POST(
   request: Request,

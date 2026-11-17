@@ -8,6 +8,7 @@ import type { Db } from "../db";
 import {
   HISTORY_LIMIT,
   noticeEditRows,
+  noticeTitles,
   workspaceNotice,
   workspaceNoticeList,
   writeNotice,
@@ -111,6 +112,10 @@ function summaryOf(row: NoticeListRow): NoticeSummary {
     updatedBy: row.updatedBy,
   };
 }
+
+/** The titles of these notices by id, for the calendar entries linked to them (D102). */
+export const titlesOf = (db: Db, access: WorkspaceAccess, ids: number[]) =>
+  noticeTitles(db, access.workspaceId, [...new Set(ids)]);
 
 /** The library: at most LIST_LIMIT notices, without their text. */
 export async function noticesList(db: Db, access: WorkspaceAccess): Promise<NoticeSummary[]> {

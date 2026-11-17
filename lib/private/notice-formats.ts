@@ -21,18 +21,29 @@ export function gameText(text: string): string {
 }
 
 const graphemes = new Intl.Segmenter();
-const firstGraphemes = (text: string, n: number) =>
-  Array.from(graphemes.segment(text), (s) => s.segment)
-    .slice(0, n)
-    .join("");
+const split = (text: string) => Array.from(graphemes.segment(text), (s) => s.segment);
+const firstGraphemes = (text: string, n: number) => split(text).slice(0, n).join("");
+
+/** The longest run of whole graphemes from the start whose length (UTF-16, as Discord counts) fits. */
+function within(text: string, limit: number): string {
+  let head = "";
+  for (const g of split(text)) {
+    if (head.length + g.length > limit) break;
+    head += g;
+  }
+  return head;
+}
 
 /** For the game's notice board: cut after the last whole line (else word) within the limit. */
 export function gameNotice(text: string): { text: string; cut: boolean } {
   const plain = gameText(text);
   if (noticeLength(plain) <= NOTICE_LIMIT) return { text: plain, cut: false };
-  const head = firstGraphemes(plain, NOTICE_LIMIT);
-  const line = head.lastIndexOf("\n");
-  const word = head.lastIndexOf(" ");
+  const all = split(plain);
+  const head = all.slice(0, NOTICE_LIMIT).join("");
+  // What follows the head: a line break (or a space, for one long line) means the head ends whole.
+  const next = all[NOTICE_LIMIT];
+  const line = next === "\n" ? head.length : head.lastIndexOf("\n");
+  const word = next === " " ? head.length : head.lastIndexOf(" ");
   const at = line > 0 ? line : word > 0 ? word : head.length;
   return { text: head.slice(0, at).trimEnd(), cut: true };
 }
@@ -49,15 +60,18 @@ export function discordLiteral(text: string): string {
     .map((part, i) => (i % 2 === 1 ? part : part.replace(/[\\*_~`|]/g, "\\$&")))
     .join("")
     .replace(/^([ \t]*)(#|>|-#)/gm, "$1\\$2")
-    .replace(/@(everyone|here)/g, "@​$1")
-    .replace(/<@/g, "<@​");
+    .replace(/@(everyone|here)/g, "@\u200b$1")
+    .replace(/<@/g, "<@\u200b");
 }
 
 /** "Copy for Discord": the title in bold, a blank line, the text. */
 export const discordPost = (title: string, text: string): string =>
   `**${discordLiteral(title.trim())}**\n\n${discordLiteral(gameText(text))}`;
 
-/** A block longer than one message, split at line breaks (a longer line is split where it must). */
+/**
+ * A block longer than one message, split at line breaks; a longer line is split where it must, between
+ * whole graphemes, so an emoji or an accented letter is never cut in two.
+ */
 function pieces(block: string): string[] {
   const out: string[] = [];
   let current = "";
@@ -73,8 +87,9 @@ function pieces(block: string): string[] {
         current = "";
         continue;
       }
-      out.push(rest.slice(0, DISCORD_LIMIT));
-      rest = rest.slice(DISCORD_LIMIT);
+      const head = within(rest, DISCORD_LIMIT);
+      out.push(head);
+      rest = rest.slice(head.length);
     }
   }
   return current === "" ? out : [...out, current];

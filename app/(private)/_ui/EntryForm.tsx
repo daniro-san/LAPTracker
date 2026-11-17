@@ -77,8 +77,19 @@ function useSave(props: FormProps, d: Draft) {
   };
 }
 
-/** The notice that goes with the entry (D102): any of the workspace's, or none. */
-function NoticeChoice({ d, set, words, notices }: PartProps & Pick<FormProps, "notices">) {
+/**
+ * The notice that goes with the entry (D102): any of the workspace's, or none. The entry's own notice is
+ * offered even when it is not among the newest the list holds.
+ */
+function NoticeChoice({
+  d,
+  set,
+  words,
+  notices,
+  current,
+}: PartProps & Pick<FormProps, "notices"> & { current: AgendaItem["notice"] }) {
+  const options =
+    current && !notices.some((n) => n.id === current.id) ? [current, ...notices] : notices;
   return (
     <Labeled id="cal-notice" label={words["calendar.form.notice"]}>
       <select
@@ -88,7 +99,7 @@ function NoticeChoice({ d, set, words, notices }: PartProps & Pick<FormProps, "n
         className={FIELD}
       >
         <option value="">{words["calendar.form.noticeNone"]}</option>
-        {notices.map((n) => (
+        {options.map((n) => (
           <option key={n.id} value={String(n.id)}>
             {n.title}
           </option>
@@ -194,7 +205,7 @@ export function EntryForm(props: FormProps) {
       <TimeFields {...part} zone={props.zone} />
       <RepeatFields {...part} item={item} />
       <CommonFields {...part} />
-      <NoticeChoice {...part} notices={props.notices} />
+      <NoticeChoice {...part} notices={props.notices} current={item?.notice ?? null} />
       {save.stale && (
         <ConflictBox
           conflicts={save.stale.conflicts}

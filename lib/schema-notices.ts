@@ -1,5 +1,5 @@
 // The notices library's tables (issue 304, D81), apart from lib/schema.ts for its size. drizzle.config.ts lists
-// this file; migration 0021 creates the first two tables, 0027 the publishes (D102).
+// this file; migration 0021 creates the first two tables, 0028 the publishes (D102).
 import { sql } from "drizzle-orm";
 import {
   check,

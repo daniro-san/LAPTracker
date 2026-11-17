@@ -1,6 +1,8 @@
 // "Publish to Discord" (issue 345, D102): a notice goes to its audience's channel, never to the other; a
 // repeat of the same request id posts nothing more; no message can mention anyone; a forum channel gets a
-// post named after the notice with the rest inside it; without a channel nothing is sent.
+// post named after the notice with the rest inside it; without a channel nothing is sent. A refusal is a
+// failed publish; a claim still running answers 409, one stuck over 2 minutes counts as failed; a second
+// publish to the same audience within 30 s is refused; another workspace's notice is not found.
 import { randomUUID } from "node:crypto";
 
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
@@ -12,6 +14,7 @@ import type { Db } from "@/lib/db";
 import { openTestDb, truncateAll } from "@/lib/db.test-helpers";
 import { createSession, SESSION_COOKIE } from "@/lib/private/session";
 import { workspaces, workspaceUsers } from "@/lib/schema";
+import { noticePublishes } from "@/lib/schema-notices";
 
 const holder = vi.hoisted(() => ({ ctx: null as AppContext | null }));
 vi.mock("@/lib/app-context", async (original) => ({
@@ -47,21 +50,31 @@ beforeEach(async () => {
   use(env(false));
 });
 
-/** The app context with `e`, and a Discord stand-in that keeps each post and opens a forum thread. */
-function use(e: AppContext["env"]) {
+/**
+ * The app context with `e`, and a Discord stand-in that keeps each post and opens a forum thread; with
+ * `refuse`, Discord answers 500.
+ */
+function use(e: AppContext["env"], refuse = false) {
   sent = [];
   holder.ctx = {
     ...testContext(db, e).ctx,
     fetch: async (input, init) => {
       sent.push({ url: String(input), body: JSON.parse(String(init?.body)) });
+      if (refuse) return new Response(null, { status: 500 });
       return Response.json({ id: `m${sent.length}`, channel_id: "900" });
     },
   };
 }
 
-async function call(route: typeof POST, path: string, token: string, body: object) {
+async function call(
+  route: typeof POST,
+  path: string,
+  token: string,
+  body: object,
+  slug: "ogs" | "nse" = "ogs",
+) {
   const response = await route(
-    new Request(`https://laptracker.test/api/w/ogs/${path}`, {
+    new Request(`https://laptracker.test/api/w/${slug}/${path}`, {
       method: "POST",
       headers: {
         origin: "https://laptracker.test",
@@ -70,17 +83,31 @@ async function call(route: typeof POST, path: string, token: string, body: objec
       },
       body: JSON.stringify(body),
     }),
-    { params: Promise.resolve({ slug: "ogs" }) },
+    { params: Promise.resolve({ slug }) },
   );
   return { status: response.status, json: (await response.json()) as Record<string, unknown> };
 }
 
-async function officer(): Promise<string> {
+/** An officer of ogs (workspace 1), or of nse (workspace 2): their session token. */
+async function officer(workspaceId = 1): Promise<string> {
   const [user] = await db
     .insert(workspaceUsers)
-    .values({ workspaceId: 1, discordUserId: "id-rook", displayName: "Rook" })
+    .values({ workspaceId, discordUserId: `id-rook-${workspaceId}`, displayName: "Rook" })
     .returning({ id: workspaceUsers.id });
-  return (await createSession(db, 1, user?.id ?? 0, T0, null)).token;
+  return (await createSession(db, workspaceId, user?.id ?? 0, T0, null)).token;
+}
+
+/** A claim left in the table: `status`, made `ago` ms before the test clock. */
+async function claim(id: number, requestId: string, status: string, ago: number) {
+  await db.insert(noticePublishes).values({
+    workspaceId: 1,
+    noticeId: id,
+    requestId,
+    audience: "members",
+    languages: "en",
+    status,
+    publishedAt: new Date(T0.getTime() - ago),
+  });
 }
 
 /** A notice in English and French; `members` sets "Show to members". */
@@ -112,7 +139,7 @@ describe("POST /api/w/[slug]/notices/publish", () => {
     expect(sent[0]?.url).toBe(`${HOOK}members?wait=true`);
     expect(sent[0]?.body.allowed_mentions).toEqual({ parse: [] });
     expect(String(sent[0]?.body.content)).toContain("**Garden rota**");
-    expect(String(sent[0]?.body.content)).toContain("\\*roses\\* @​everyone");
+    expect(String(sent[0]?.body.content)).toContain("\\*roses\\* @\u200beveryone");
     // The same request again (a double tap): the first answer, nothing posted.
     expect((await publish(token, id, requestId)).status).toBe(200);
     expect(sent).toHaveLength(1);
@@ -143,6 +170,51 @@ describe("POST /api/w/[slug]/notices/publish", () => {
     ]);
     expect(sent[0]?.body.thread_name).toBe("Garden rota");
     expect(sent[1]?.body.thread_name).toBeUndefined();
+  });
+
+  it("records a Discord refusal as a failed publish (502)", async () => {
+    use(env(false), true);
+    const token = await officer();
+    expect(await publish(token, await notice(token, true))).toEqual({
+      status: 502,
+      json: { code: "failed" },
+    });
+    const [row] = await db.select().from(noticePublishes);
+    expect(row).toMatchObject({ status: "failed", messages: 0 });
+  });
+
+  it("answers 409 while the same request runs, and counts a claim stuck over 2 minutes as failed", async () => {
+    const token = await officer();
+    const id = await notice(token, true);
+    const [running, stuck] = [randomUUID(), randomUUID()];
+    await claim(id, running, "posting", 60_000);
+    await claim(id, stuck, "posting", 3 * 60_000);
+    expect(await publish(token, id, running)).toEqual({ status: 409, json: { code: "posting" } });
+    expect(await publish(token, id, stuck)).toEqual({ status: 502, json: { code: "failed" } });
+    expect(sent).toHaveLength(0);
+  });
+
+  it("refuses a second publish to the same audience within 30 s", async () => {
+    const token = await officer();
+    const id = await notice(token, true);
+    expect((await publish(token, id)).status).toBe(200);
+    const count = sent.length;
+    expect(await publish(token, id)).toEqual({ status: 409, json: { code: "recent" } });
+    expect(sent).toHaveLength(count);
+  });
+
+  it("does not find another workspace's notice", async () => {
+    const id = await notice(await officer(), true);
+    const other = await officer(2);
+    const answer = await call(
+      POST,
+      "notices/publish",
+      other,
+      { id, languages: ["en"], requestId: randomUUID() },
+      "nse",
+    );
+    expect(answer).toEqual({ status: 404, json: { code: "not_found" } });
+    expect(sent).toHaveLength(0);
   });
 
   it("sends nothing when the audience's channel is not set up", async () => {

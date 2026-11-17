@@ -24,6 +24,9 @@ export const noticesMoreEn = {
     "Discord did not take the whole notice. Check the channel before you post again.",
   "notices.publish.busy": "This notice is being posted. Wait a moment, then reload the page.",
   "notices.publish.pick": "Choose at least one language.",
+  "notices.publish.recent":
+    "This notice was posted to this channel less than a minute ago. Check the channel before you post again.",
+  "notices.publish.gone": "This notice no longer exists. Reload the page.",
   "notices.history": "Earlier versions ({n})",
   "notices.history.by": "{name} · {when}",
   "notices.history.current": "Current version",
@@ -69,6 +72,9 @@ export const noticesMorePt: Record<keyof typeof noticesMoreEn, string> = {
     "O Discord não recebeu o aviso inteiro. Confira o canal antes de publicar de novo.",
   "notices.publish.busy": "Este aviso está sendo publicado. Espere um pouco e recarregue a página.",
   "notices.publish.pick": "Escolha pelo menos um idioma.",
+  "notices.publish.recent":
+    "Este aviso foi publicado neste canal há menos de um minuto. Confira o canal antes de publicar de novo.",
+  "notices.publish.gone": "Este aviso não existe mais. Recarregue a página.",
   "notices.history": "Versões anteriores ({n})",
   "notices.history.by": "{name} · {when}",
   "notices.history.current": "Versão atual",
@@ -116,6 +122,9 @@ export const noticesMoreFr: Record<keyof typeof noticesMoreEn, string> = {
   "notices.publish.busy":
     "Cette annonce est en cours de publication. Attendez un peu, puis rechargez la page.",
   "notices.publish.pick": "Choisissez au moins une langue.",
+  "notices.publish.recent":
+    "Cette annonce a été publiée dans ce salon il y a moins d’une minute. Vérifiez le salon avant de publier à nouveau.",
+  "notices.publish.gone": "Cette annonce n’existe plus. Rechargez la page.",
   "notices.history": "Versions précédentes ({n})",
   "notices.history.by": "{name} · {when}",
   "notices.history.current": "Version actuelle",

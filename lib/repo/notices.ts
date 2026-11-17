@@ -159,6 +159,30 @@ export function noticeEditRows(db: Db, workspaceId: number, noticeId: number): P
     .limit(HISTORY_LIMIT);
 }
 
+/** The current title of each of these notices of the workspace, by id (D102: the calendar's links). */
+export async function noticeTitles(
+  db: Db,
+  workspaceId: number,
+  ids: number[],
+): Promise<Map<number, string>> {
+  if (ids.length === 0) return new Map();
+  const rows = await db
+    .selectDistinctOn([noticeEdits.noticeId], {
+      id: noticeEdits.noticeId,
+      title: noticeEdits.value,
+    })
+    .from(noticeEdits)
+    .where(
+      and(
+        eq(noticeEdits.workspaceId, workspaceId),
+        inArray(noticeEdits.noticeId, ids),
+        eq(noticeEdits.field, "title"),
+      ),
+    )
+    .orderBy(noticeEdits.noticeId, desc(noticeEdits.id));
+  return new Map(rows.map((r) => [r.id, r.title]));
+}
+
 /** Whether the workspace has this notice: a calendar entry may link only its own workspace's (D102). */
 export async function noticeInWorkspace(db: Db, workspaceId: number, id: number): Promise<boolean> {
   const [row] = await db
