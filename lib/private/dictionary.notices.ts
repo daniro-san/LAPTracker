@@ -4,11 +4,11 @@
 export const noticesEn = {
   "tab.notices": "Notices",
   "notices.lead":
-    "Written once, read in each officer’s language. Copy it straight into the game or Discord.",
+    "Write a notice once. Each officer reads it in their own language. Copy it into the game or Discord.",
   "notices.write": "Write a notice",
   "notices.new": "New notice",
   "notices.edit.title": "Edit notice",
-  "notices.empty": "No notices yet. Write the first one; Translate fills in the other languages.",
+  "notices.empty": "No notices yet. Write the first one. Translate fills in the other languages.",
   "notices.back": "All notices",
   "notices.forMembers": "For members",
   "notices.leadersOnly": "Leadership only",
@@ -64,7 +64,7 @@ export const noticesEn = {
   "notices.ai.busy": "The translator is busy. Try again in a minute.",
   "notices.ai.failed": "The translator did not answer this time. Try again, or write it yourself.",
   "notices.show": "Show to members",
-  "notices.show.help": "Nothing is shown to members yet. Turn this on to have it ready.",
+  "notices.show.help": "Members cannot see notices yet. Turn this on to have it ready.",
   "notices.endsOn": "Ends on",
   "notices.endsOn.help": "Optional. After this day it leaves the members’ board.",
   "notices.clear": "Clear",
@@ -74,7 +74,7 @@ export const noticesEn = {
   "notices.saveFailed": "Could not save. Try again.",
   "notices.noTitle": "Give the notice a title.",
   "notices.conflict.banner":
-    "{name} saved changes a moment ago. Your edits are still here, nothing is lost. Choose what to keep:",
+    "{name} saved changes a moment ago. Your edits are still here. Choose what to keep:",
   "notices.conflict.mine": "Keep mine",
   "notices.conflict.theirs": "Use {name}’s",
   "notices.conflict.you": "You",
@@ -91,11 +91,11 @@ export type NoticesKey = keyof typeof noticesEn;
 export const noticesPt: Record<NoticesKey, string> = {
   "tab.notices": "Avisos",
   "notices.lead":
-    "Escrito uma vez, lido no idioma de cada oficial. Copie direto para o jogo ou o Discord.",
+    "Escreva o aviso uma vez. Cada oficial lê no próprio idioma. Copie para o jogo ou o Discord.",
   "notices.write": "Escrever um aviso",
   "notices.new": "Novo aviso",
   "notices.edit.title": "Editar aviso",
-  "notices.empty": "Nenhum aviso ainda. Escreva o primeiro; o Traduzir preenche os outros idiomas.",
+  "notices.empty": "Nenhum aviso ainda. Escreva o primeiro. O Traduzir preenche os outros idiomas.",
   "notices.back": "Todos os avisos",
   "notices.forMembers": "Para os membros",
   "notices.leadersOnly": "Só a liderança",
@@ -154,7 +154,7 @@ export const noticesPt: Record<NoticesKey, string> = {
   "notices.ai.busy": "O tradutor está ocupado. Tente de novo em um minuto.",
   "notices.ai.failed": "O tradutor não respondeu desta vez. Tente de novo ou escreva você mesmo.",
   "notices.show": "Mostrar aos membros",
-  "notices.show.help": "Nada aparece para os membros ainda. Ligue para deixar pronto.",
+  "notices.show.help": "Os membros ainda não veem os avisos. Ligue para deixar este pronto.",
   "notices.endsOn": "Termina em",
   "notices.endsOn.help": "Opcional. Depois deste dia, sai do mural dos membros.",
   "notices.clear": "Limpar",
@@ -164,7 +164,7 @@ export const noticesPt: Record<NoticesKey, string> = {
   "notices.saveFailed": "Não deu para salvar. Tente de novo.",
   "notices.noTitle": "Dê um título ao aviso.",
   "notices.conflict.banner":
-    "{name} salvou alterações agora há pouco. Suas edições continuam aqui, nada se perdeu. Escolha o que manter:",
+    "{name} salvou alterações agora há pouco. Suas edições continuam aqui. Escolha o que manter:",
   "notices.conflict.mine": "Manter as minhas",
   "notices.conflict.theirs": "Usar as de {name}",
   "notices.conflict.you": "Você",
@@ -179,12 +179,12 @@ export const noticesPt: Record<NoticesKey, string> = {
 export const noticesFr: Record<NoticesKey, string> = {
   "tab.notices": "Annonces",
   "notices.lead":
-    "Rédigée une fois, lue dans la langue de chaque officier. Copiez-la dans le jeu ou sur Discord.",
+    "Écrivez l’annonce une fois. Chaque officier la lit dans sa langue. Copiez-la dans le jeu ou sur Discord.",
   "notices.write": "Écrire une annonce",
   "notices.new": "Nouvelle annonce",
   "notices.edit.title": "Modifier l’annonce",
   "notices.empty":
-    "Aucune annonce pour l’instant. Écrivez la première ; Traduire remplit les autres langues.",
+    "Aucune annonce pour l’instant. Écrivez la première. Traduire remplit les autres langues.",
   "notices.back": "Toutes les annonces",
   "notices.forMembers": "Pour les membres",
   "notices.leadersOnly": "Réservée à la direction",
@@ -244,7 +244,8 @@ export const noticesFr: Record<NoticesKey, string> = {
   "notices.ai.failed":
     "Le traducteur n’a pas répondu cette fois. Réessayez, ou écrivez-le vous-même.",
   "notices.show": "Montrer aux membres",
-  "notices.show.help": "Rien n’est encore montré aux membres. Activez-le pour qu’elle soit prête.",
+  "notices.show.help":
+    "Les membres ne voient pas encore les annonces. Activez-le pour que celle-ci soit prête.",
   "notices.endsOn": "Se termine le",
   "notices.endsOn.help": "Facultatif. Après ce jour, elle quitte le tableau des membres.",
   "notices.clear": "Effacer",
@@ -254,7 +255,7 @@ export const noticesFr: Record<NoticesKey, string> = {
   "notices.saveFailed": "Enregistrement impossible. Réessayez.",
   "notices.noTitle": "Donnez un titre à l’annonce.",
   "notices.conflict.banner":
-    "{name} a enregistré des modifications à l’instant. Vos modifications sont toujours là, rien n’est perdu. Choisissez ce que vous gardez :",
+    "{name} a enregistré des modifications à l’instant. Les vôtres sont toujours là. Choisissez ce que vous gardez :",
   "notices.conflict.mine": "Garder les miennes",
   "notices.conflict.theirs": "Prendre celles de {name}",
   "notices.conflict.you": "Vous",

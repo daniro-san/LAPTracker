@@ -24,7 +24,7 @@ export const pt: WorkspaceDictionary = {
     "Para a liderança da aliança: entre com a conta do Discord que você usa no servidor da aliança.",
   "signin.button": "Entrar com o Discord",
   "signin.note":
-    "O Discord nos informa seu nome e seus cargos nesse servidor. Nada mais, e nada é publicado.",
+    "O Discord só compartilha seu nome e seus cargos nesse servidor. Nada é publicado.",
   "signin.e.denied": "O Discord não confirmou a entrada. Tente de novo.",
   "signin.e.discord": "O Discord não respondeu. Tente de novo em um minuto.",
   "signin.e.not_configured":
@@ -51,7 +51,7 @@ export const pt: WorkspaceDictionary = {
   "members.none":
     "Ainda não houve leitura de fim de dia. Os membros aparecem aqui depois da primeira, pouco antes de o servidor virar o dia.",
   "thanks.head": "Obrigado por esta semana",
-  "thanks.intro": "Alguns nomes se destacaram. Obrigado.",
+  "thanks.intro": "Agradeça a eles no jogo.",
   "thanks.donors": "Quem mais doou",
   "thanks.activity": "Mais ativos",
   "members.search.ph": "Nome (sem precisar de emoji)",
@@ -113,7 +113,7 @@ export const pt: WorkspaceDictionary = {
   "howto.title": "Como abrir a Mesa dos oficiais",
   "howto.lead": "Para os R4 e R5 da aliança. Fixe esta página no seu Discord.",
   "howto.after":
-    "Daí em diante, toque no ícone como em qualquer app. Você fica conectado por um dia; depois disso, o Discord confere seu cargo de novo.",
+    "A partir daí, abra pelo ícone, como qualquer app. Você fica conectado por um dia. Depois, o Discord confere seu cargo de novo.",
   "howto.open": "Abrir a Mesa dos oficiais",
   "time.server": "{time} hora do servidor",
   "tab.review": "Acompanhar",
@@ -124,8 +124,8 @@ export const pt: WorkspaceDictionary = {
   "members.legend": "Ver como está mostra o que vimos. — quer dizer sem dados.",
   "members.more": "Mais",
   "members.checkinHelp":
-    "Ver como está mostra o que vimos, para você puxar uma conversa amiga. Você decide o que fazer; nada é enviado nem muda sozinho.",
-  "members.nodataHelp": "— quer dizer sem dados. Fica fora de toda conta.",
+    "“Ver como está” quer dizer: pergunte como a pessoa está. Você decide o que fazer. O app não envia nem muda nada.",
+  "members.nodataHelp": "Dados que faltam ficam fora de todas as contas.",
   "members.checkinCount.one": "{n} pessoa para ver como está",
   "members.checkinCount.other": "{n} pessoas para ver como estão",
   "members.checkinNone": "Todo mundo parece bem esta semana.",
@@ -147,15 +147,15 @@ export const pt: WorkspaceDictionary = {
   "howto.iphone": "No iPhone",
   "howto.android": "No Android",
   "intro.1.body":
-    "O espaço da liderança para a aliança: quem está nela, o might, as doações e a atividade de cada um, preenchidos a partir do jogo. Substitui as planilhas.",
+    "Quem está na aliança, com o might, as doações e a atividade de cada membro, vindos do jogo. Use no lugar das planilhas.",
   "intro.1.settings": "Toque no seu nome no topo para ver suas configurações.",
   "intro.only": "Só R4 · R5",
   "intro.2.more": "— quer dizer sem dados, e não entra em nenhuma conta.",
   "intro.3.title": "Toda semana",
-  "intro.3.body": "Abra Membros e comece pelo topo: agradeça quem mais ajudou na semana.",
+  "intro.3.body": "Abra Membros e comece pelo topo: agradeça a quem mais fez nesta semana.",
   "intro.3.more":
-    "Depois veja quem está com «Ver como está». O motivo aparece logo abaixo do nome, e quase sempre uma mensagem no jogo resolve.",
-  "intro.3.note": "O app não manda mensagem para ninguém: quem conversa é você.",
+    "Depois veja quem está marcado com “Ver como está”. O motivo aparece abaixo do nome. Muitas vezes basta uma mensagem curta no jogo.",
+  "intro.3.note": "O app nunca manda mensagem para ninguém. Você decide com quem falar.",
   "intro.3.last": "EN · PT · FR no topo muda o idioma. O botão ? mostra estes cartões de novo.",
   "intro.replay": "Ver de novo",
   "intro.close": "Fechar",

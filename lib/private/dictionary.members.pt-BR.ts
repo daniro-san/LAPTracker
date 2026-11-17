@@ -17,7 +17,7 @@ export const membersPt: MembersWords = {
   "list.notShown": "Fora da lista: {n} sem fuso horário",
   "list.seeWho": "Ver quem",
   "list.heading": "Ver como está e Precisa de ajuda",
-  "list.headingLead": "O que vimos, para uma palavra amiga. Nada é enviado.",
+  "list.headingLead": "O que vimos, para você perguntar como estão. Nada é enviado.",
   "list.rest": "Todos os outros",
   "list.more": "Mostrar mais {k} · faltam {n}",
   "list.showing": "Mostrando {n} de {total}",

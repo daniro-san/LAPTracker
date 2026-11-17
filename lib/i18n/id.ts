@@ -129,7 +129,7 @@ export const idID = {
     carriedTurnout: "{share} dengan Kills",
     carriedSpread: "{low}–{high} dari {n} event",
     carriedRatioHelp:
-      "pts adalah bagian Kills dikurangi bagian Might. Mulai dari 3 event, rentang bagian Kills ÷ bagian Might dari event-event itu ditampilkan di bawahnya.",
+      "pts adalah bagian Kills dikurangi bagian Might. Jika ada 3 event atau lebih, baris di bawahnya menunjukkan rentang bagian Kills ÷ bagian Might di event-event itu.",
     carriedPoints: "pts",
   },
   compare: {
@@ -151,8 +151,8 @@ export const idID = {
   },
   merge: {
     title: "Simulator merge",
-    tag: "Simulasi, bukan rencana",
-    lead: "Seperti apa dua aliansi jika jadi satu, dibandingkan dengan batas Members. Hanya total aliansi, tanpa nama anggota.",
+    tag: "Hanya simulasi",
+    lead: "Dua aliansi dihitung sebagai satu, lalu dicek terhadap batas Members. Hanya total aliansi, tanpa nama anggota.",
     link: "Simulasikan merge",
     first: "Aliansi pertama",
     second: "Aliansi kedua",
@@ -181,7 +181,7 @@ export const idID = {
   flow: {
     title: "Perpindahan anggota",
     tag: "Hanya angka",
-    lead: "Ke mana anggota pindah antar aliansi yang dilacak: aliansi tiap orang pada hari pertama, dibandingkan dengan hari kedua. Hanya angka, tanpa nama anggota.",
+    lead: "Ke mana anggota pindah antar aliansi yang dilacak, dari hari pertama ke hari kedua. Tidak ada anggota yang disebut namanya.",
     from: "Dari",
     to: "Ke",
     action: "Tampilkan",
@@ -191,7 +191,7 @@ export const idID = {
     totals:
       "Perpindahan {min} atau lebih · Pindah aliansi: {moved} · Baru: {arrived} · Keluar: {left}",
     small:
-      "Jumlah di bawah {min} Members, termasuk yang tetap, disembunyikan dan tidak dihitung dalam total mana pun, supaya halaman ini tidak menunjuk kelompok kecil.",
+      "Jumlah di bawah {min} Members disembunyikan dan tidak dihitung dalam total mana pun, termasuk anggota yang tetap. Ini melindungi kelompok kecil.",
     rowNew: "Baru",
     colLeft: "Keluar",
     legend:
@@ -209,7 +209,7 @@ export const idID = {
     title: "Keseimbangan server",
     description:
       "Porsi tiap aliansi yang dilacak dari Might aliansi yang dilacak, dan penyusun blok hipotetis.",
-    lead: "Tidak ada aliansi yang memegang lebih dari {max} Might aliansi yang dilacak; {n} teratas memegang {top}.",
+    lead: "Tidak ada aliansi yang memegang lebih dari {max} Might aliansi yang dilacak. {n} teratas memegang {top}.",
     includes: "Might termasuk bangunan dan teknologi.",
     basis: "{n} aliansi yang dilacak, dibaca {date}.",
     total: "Aliansi dilacak",
@@ -220,7 +220,7 @@ export const idID = {
     builder: "Penyusun blok",
     hypothetical: "Hipotetis",
     builderHelp:
-      "Ketuk A atau B di sebuah aliansi untuk mencoba blok. Ini hitungan, bukan ramalan, dan bukan pengumuman.",
+      "Ketuk A atau B di sebuah aliansi untuk mencoba blok. Ini hanya menjumlahkan angka. Ini tidak meramalkan atau mengumumkan blok sungguhan.",
     bloc: "Blok {bloc}",
     blocShare: "{share} dari Might aliansi yang dilacak",
     blocAlliances: "Aliansi",
@@ -242,7 +242,7 @@ export const idID = {
     help: "Aliansi yang dilacak diurutkan menurut Might dari pembacaan tiap hari, dengan perubahan sejak {from}. Hari ketika sebuah aliansi tidak terbaca tidak dihitung. Server di sini adalah total aliansi yang dilacak.",
     lead: "{label} berada di peringkat {rank} menurut Might pada {to} dan {before} pada {from}.",
     leadGrowth:
-      "Might-nya berubah {growth} sejak itu; total aliansi yang dilacak berubah {server}.",
+      "Might-nya berubah {growth} sejak itu. Total aliansi yang dilacak berubah {server}.",
     server: "Aliansi dilacak",
     growthSince: "{growth} sejak {from}",
     trend: "Peringkat {first} pada {from}, {last} pada {to}",
@@ -352,7 +352,7 @@ export const idID = {
     seen: "Terlihat",
     limit: "{n} pertama",
     noMatch: "Tidak ada pemain dengan nama itu di buku.",
-    pending: "Nenek sedang membolak-balik buku…",
+    pending: "Nenek sedang mencari di buku…",
   },
   errors: {
     notFound: {
@@ -374,6 +374,6 @@ export const idID = {
     manualNotRun: "Ronde ini belum dijalankan. Admin memulainya secara manual.",
     manualNoRows: "Jalannya tidak menghasilkan apa-apa. Admin menjalankannya lagi secara manual.",
     noEvents: "Belum ada event di buku.",
-    noMembers: "Tidak ada yang cocok. Nenek sudah cek dua kali.",
+    noMembers: "Tidak ada yang cocok di sini.",
   },
 } as const satisfies Translation;

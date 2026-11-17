@@ -2,7 +2,7 @@
 // never "inactive".
 export const membersCopy = {
   title: "Might unchanged",
-  help: "Might has not changed in any read across at least {days} daily reads. Support and farm players are expected here; use it to check in, not to judge.",
+  help: "Might stayed the same in every read for at least {days} daily reads. Support and farm players are expected here. Use it to check in, not to judge.",
   alliance: "Alliance",
   show: "Show",
   periodLabel: "Period",
@@ -13,7 +13,7 @@ export const membersCopy = {
   ownOnly: "Only your own alliance lists members. Pick it to see its list.",
   unchangedTitle: "Might unchanged across {days} daily reads or more",
   unchangedHelp:
-    "Might was the same in every read of the run. Members first seen in this alliance less than {new} days ago are left out. Not listed ≠ active: the signal catches about 23 % of the members who stop playing, so someone who is not listed may still have stopped.",
+    "Might was the same in every read of the run. Members first seen in this alliance less than {new} days ago are left out. This list catches about 23 % of the members who stop playing, so a member who is not listed may still have stopped.",
   unchangedFor: "unchanged for {n} days",
   lostTitle: "Lost might",
   lostHelp:

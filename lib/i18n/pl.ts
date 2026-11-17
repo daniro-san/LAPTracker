@@ -129,7 +129,7 @@ export const pl = {
     carriedTurnout: "{share} ze zdobytymi Kills",
     carriedSpread: "{low}–{high} · wydarzeń: {n}",
     carriedRatioHelp:
-      "pkt proc. to udział w Kills minus udział w Might. Od 3 wydarzeń pod spodem pokazany jest zakres udziału w Kills ÷ udziału w Might z tych wydarzeń.",
+      "pkt proc. to udział w Kills minus udział w Might. Przy 3 wydarzeniach lub więcej linia pod spodem pokazuje zakres udziału w Kills ÷ udziału w Might w tych wydarzeniach.",
     carriedPoints: "pkt proc.",
   },
   compare: {
@@ -151,8 +151,8 @@ export const pl = {
   },
   merge: {
     title: "Symulator scalenia",
-    tag: "Symulacja, nie plan",
-    lead: "Jak wyglądałyby dwa sojusze jako jeden, na tle limitu członków. Tylko sumy sojuszy, bez nazw członków.",
+    tag: "Tylko symulacja",
+    lead: "Dwa sojusze policzone jako jeden i sprawdzone względem limitu członków. Tylko sumy sojuszy, bez nazw członków.",
     link: "Symuluj scalenie",
     first: "Pierwszy sojusz",
     second: "Drugi sojusz",
@@ -181,7 +181,7 @@ export const pl = {
   flow: {
     title: "Przepływ członków",
     tag: "Tylko liczby",
-    lead: "Dokąd przechodzili członkowie między śledzonymi sojuszami: sojusz, w którym każdy był pierwszego dnia, obok drugiego dnia. Tylko liczby, bez nazw członków.",
+    lead: "Dokąd przechodzili członkowie między śledzonymi sojuszami, od pierwszego dnia do drugiego. Nie podano nazw członków.",
     from: "Od",
     to: "Do",
     action: "Pokaż",
@@ -191,7 +191,7 @@ export const pl = {
     totals:
       "Przepływy od {min} członków · Zmiany sojuszu: {moved} · Nowi: {arrived} · Odeszli: {left}",
     small:
-      "Liczby poniżej {min} członków, także tych, którzy zostali, są ukryte i nie wchodzą do żadnej sumy, żeby ta strona nie wskazywała małych grup.",
+      "Liczby poniżej {min} członków są ukryte i nie wchodzą do żadnej sumy, także do liczby tych, którzy zostali. Chroni to małe grupy.",
     rowNew: "Nowi",
     colLeft: "Odeszli",
     legend:
@@ -209,7 +209,7 @@ export const pl = {
     title: "Równowaga serwera",
     description:
       "Udział każdego śledzonego sojuszu w Might śledzonych sojuszy oraz hipotetyczny kreator bloków.",
-    lead: "Żaden sojusz nie ma więcej niż {max} Might śledzonych sojuszy; pierwsze {n} mają {top}.",
+    lead: "Żaden sojusz nie ma więcej niż {max} Might śledzonych sojuszy. Pierwsze {n} mają {top}.",
     includes: "Might liczy budynki i technologie.",
     basis: "Śledzone sojusze: {n}, odczyt z {date}.",
     total: "Śledzone sojusze",
@@ -220,7 +220,7 @@ export const pl = {
     builder: "Kreator bloków",
     hypothetical: "Hipotetyczny",
     builderHelp:
-      "Dotknij A albo B przy sojuszu, żeby wypróbować blok. To rachunek, nie prognoza i nie ogłoszenie.",
+      "Dotknij A lub B przy sojuszu, żeby wypróbować blok. To tylko dodawanie liczb. Nie przewiduje ani nie ogłasza prawdziwego bloku.",
     bloc: "Blok {bloc}",
     blocShare: "{share} Might śledzonych sojuszy",
     blocAlliances: "Sojusze",
@@ -241,7 +241,8 @@ export const pl = {
     title: "Miejsce w czasie",
     help: "Śledzone sojusze ułożone według Might z każdego dziennego odczytu, ze zmianą od {from}. Dzień, w którym sojusz nie został odczytany, jest pominięty. Serwer to tutaj suma śledzonych sojuszy.",
     lead: "{label} w dniu {to} zajmował miejsce {rank} pod względem Might, a w dniu {from} {before}.",
-    leadGrowth: "Jego Might: {growth} od tego czasu; suma śledzonych sojuszy: {server}.",
+    leadGrowth:
+      "Jego Might zmieniło się od tego czasu o {growth}. Suma śledzonych sojuszy zmieniła się o {server}.",
     server: "Śledzone sojusze",
     growthSince: "{growth} od {from}",
     trend: "Miejsce {first} dnia {from}, {last} dnia {to}",
@@ -350,7 +351,7 @@ export const pl = {
     seen: "Widziany",
     limit: "Pierwsze {n}",
     noMatch: "Brak gracza o tej nazwie w księdze.",
-    pending: "Babcia kartkuje księgę…",
+    pending: "Babcia szuka w księdze…",
   },
   errors: {
     notFound: {
@@ -372,6 +373,6 @@ export const pl = {
     manualNotRun: "Ta runda jeszcze nie ruszyła. Admin uruchamia ją ręcznie.",
     manualNoRows: "Uruchomienie nic nie dało. Admin uruchomi je ponownie ręcznie.",
     noEvents: "Jeszcze brak wydarzeń w księdze.",
-    noMembers: "Nikt nie pasuje. Babcia sprawdziła dwa razy.",
+    noMembers: "Nikt tu nie pasuje.",
   },
 } as const satisfies Translation;

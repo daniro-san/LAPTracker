@@ -118,7 +118,7 @@ export const zhCN = {
     carriedTurnout: "{share} 的 Members 获得 Kills",
     carriedSpread: "{low}–{high}，共 {n} 次活动",
     carriedRatioHelp:
-      "pts 为 Kills 占比减去 Might 占比。从 3 次活动起，下方显示这些活动中 Kills 占比 ÷ Might 占比的范围。",
+      "pts 为 Kills 占比减去 Might 占比。有 3 次活动或以上时，下方一行显示这些活动中 Kills 占比 ÷ Might 占比的范围。",
     carriedPoints: "pts",
   },
   compare: {
@@ -140,8 +140,8 @@ export const zhCN = {
   },
   merge: {
     title: "合并模拟器",
-    tag: "模拟，不是计划",
-    lead: "两个联盟合并成一个后会怎样，与成员上限相比。只看联盟总数，不显示成员名字。",
+    tag: "仅模拟",
+    lead: "把两个联盟算作一个，并与成员上限比较。只显示联盟总数，不显示成员名字。",
     link: "模拟合并",
     first: "第一个联盟",
     second: "第二个联盟",
@@ -170,14 +170,14 @@ export const zhCN = {
   flow: {
     title: "成员流向",
     tag: "仅计数",
-    lead: "成员在追踪的联盟之间的去向：比较第一天与第二天各人所在的联盟。仅统计人数，不显示成员名字。",
+    lead: "成员在追踪的联盟之间如何流动，从第一天到第二天。不列出任何成员名字。",
     from: "从",
     to: "到",
     action: "显示",
     answer: "{from} 到 {to} 之间，最大的一次流动是 {source} → {dest}（{n}）。",
     answerNone: "{from} 到 {to} 之间，追踪的联盟之间没有 {min} 人及以上的流动。",
     totals: "{min} 人及以上的流动 · 更换联盟：{moved} · 新增：{arrived} · 离开：{left}",
-    small: "少于 {min} 人的数字（含留下的人）已隐藏，也不计入任何总数，使本页不会指出小群体。",
+    small: "少于 {min} 人的数字会被隐藏，并且不计入任何总数，包括留下的成员。这是为了保护小群体。",
     rowNew: "新增",
     colLeft: "离开",
     legend:
@@ -194,7 +194,7 @@ export const zhCN = {
   balance: {
     title: "服务器均势",
     description: "各追踪联盟占追踪联盟 Might 的份额，以及一个假设的阵营试算。",
-    lead: "没有任何联盟超过追踪联盟 Might 的 {max}；前 {n} 个联盟合计占 {top}。",
+    lead: "没有任何联盟占追踪联盟 Might 超过 {max}。前 {n} 个联盟合计占 {top}。",
     includes: "Might 包括建筑和科技。",
     basis: "{n} 个追踪联盟，{date} 读取。",
     total: "追踪联盟",
@@ -204,7 +204,7 @@ export const zhCN = {
     none: "还没有每日读取。",
     builder: "阵营试算",
     hypothetical: "假设",
-    builderHelp: "点击联盟上的 A 或 B，试排一个阵营。这只是算术，不是预测，也不是公告。",
+    builderHelp: "点击联盟上的 A 或 B，试排一个阵营。这里只做加法，不预测，也不公布真实的阵营。",
     bloc: "阵营 {bloc}",
     blocShare: "追踪联盟 Might 的 {share}",
     blocAlliances: "联盟",
@@ -225,7 +225,7 @@ export const zhCN = {
     title: "排名随时间变化",
     help: "各追踪联盟按每日读取的 Might 排名，并显示自 {from} 以来的变化。某个联盟当天未被读取，该天即不计入。此处的服务器指追踪联盟的总和。",
     lead: "{label} 按 Might 排名，{to} 为 {rank}，{from} 为 {before}。",
-    leadGrowth: "其 Might 自那时起变化 {growth}；追踪联盟的总和变化 {server}。",
+    leadGrowth: "自那时起，它的 Might 变化了 {growth}。追踪联盟的合计变化了 {server}。",
     server: "追踪联盟",
     growthSince: "自 {from} 以来 {growth}",
     trend: "{from} 排名 {first}，{to} 排名 {last}",
@@ -334,7 +334,7 @@ export const zhCN = {
     seen: "最近出现",
     limit: "前 {n} 个",
     noMatch: "账本里没有这个名字的玩家。",
-    pending: "奶奶正在翻账本…",
+    pending: "奶奶正在账本里查找…",
   },
   errors: {
     notFound: {
@@ -356,6 +356,6 @@ export const zhCN = {
     manualNotRun: "这一轮还没运行，由管理员手动开始。",
     manualNoRows: "这次运行什么也没得到，管理员会手动重跑。",
     noEvents: "账本里还没有活动。",
-    noMembers: "没有符合的人。奶奶查了两遍。",
+    noMembers: "这里没有符合条件的人。",
   },
 } as const satisfies Translation;

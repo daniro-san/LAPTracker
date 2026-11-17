@@ -28,8 +28,7 @@ const en = {
   "signin.lead":
     "For the alliance’s leadership: sign in with the Discord account you use in the alliance’s server.",
   "signin.button": "Sign in with Discord",
-  "signin.note":
-    "Discord tells us your name and your roles in that server. Nothing else, and nothing is posted.",
+  "signin.note": "Discord shares only your name and your roles in that server. Nothing is posted.",
   "signin.e.denied": "Discord did not confirm the sign-in. Try again.",
   "signin.e.discord": "Discord did not answer. Try again in a minute.",
   "signin.e.not_configured": "Sign-in is not set up yet. The site owner has to finish it first.",
@@ -55,7 +54,7 @@ const en = {
   "members.none":
     "No end-of-day read yet. Members show up here after the first one, just before the server resets.",
   "thanks.head": "Thank you this week",
-  "thanks.intro": "A few names stood out. Thank you.",
+  "thanks.intro": "Thank them in the game.",
   "thanks.donors": "Top donors",
   "thanks.activity": "Most active",
   "members.search.ph": "Name (no emoji needed)",
@@ -117,7 +116,7 @@ const en = {
   "howto.title": "How to open the Officers’ Desk",
   "howto.lead": "For the alliance’s R4 and R5. Pin this page in your Discord.",
   "howto.after":
-    "From then on, tap the icon like any app. You stay signed in for a day; after that, Discord checks your role again.",
+    "Then open it from the icon, like any app. You stay signed in for a day. After that, Discord checks your role again.",
   "howto.open": "Open the Officers’ Desk",
   "time.server": "{time} server time",
   "tab.review": "Follow-up",
@@ -128,8 +127,8 @@ const en = {
   "members.legend": "Check in shows what we saw. — means no data.",
   "members.more": "More",
   "members.checkinHelp":
-    "Check in shows what we saw, so you can have a friendly word. You decide what to do; nothing is sent or changed by itself.",
-  "members.nodataHelp": "— means no data. It is left out of every count.",
+    "Check in means: ask how they are doing. You decide what to do. The app sends nothing and changes nothing.",
+  "members.nodataHelp": "Missing data is left out of every count.",
   "members.checkinCount.one": "{n} person to check in with",
   "members.checkinCount.other": "{n} people to check in with",
   "members.checkinNone": "Everyone looks fine this week.",
@@ -151,15 +150,16 @@ const en = {
   "howto.iphone": "On iPhone",
   "howto.android": "On Android",
   "intro.1.body":
-    "The leadership’s own place for the alliance: who is in it, their might, donations and activity, filled in from the game. It replaces the spreadsheets.",
+    "Who is in the alliance, with each member’s might, donations and activity, from the game. Use it instead of the spreadsheets.",
   "intro.1.settings": "Tap your name at the top for your settings.",
   "intro.only": "R4 · R5 only",
   "intro.2.more": "— means no data, and it is left out of every count.",
   "intro.3.title": "Each week",
-  "intro.3.body": "Open Members and start at the top: thank the people who carried the week.",
+  "intro.3.body":
+    "Open Members and start at the top: thank the members who did the most this week.",
   "intro.3.more":
-    "Then look at anyone marked Check in. The reason is right under the name, and a quick message in game usually sorts it out.",
-  "intro.3.note": "The app never messages anyone. The talking is up to you.",
+    "Then look at anyone marked Check in. The reason is under the name. A short message in the game is often enough.",
+  "intro.3.note": "The app never messages anyone. You decide who to talk to.",
   "intro.3.last": "EN · PT · FR at the top switches language. ? brings these cards back.",
   "intro.replay": "Replay",
   "intro.close": "Close",

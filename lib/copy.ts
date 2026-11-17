@@ -238,7 +238,7 @@ export const en = {
     seen: "Seen",
     limit: "First {n}",
     noMatch: "No player by that name in the ledger.",
-    pending: "Grandma is leafing through the ledger…",
+    pending: "Grandma is searching the ledger…",
   },
   errors: {
     notFound: {
@@ -260,7 +260,7 @@ export const en = {
     manualNotRun: "This round has not been run yet. The admin starts it by hand.",
     manualNoRows: "The run produced nothing. The admin runs it again by hand.",
     noEvents: "No events in the ledger yet.",
-    noMembers: "Nobody here matches. Grandma checked twice.",
+    noMembers: "Nobody here matches.",
   },
 } as const;
 

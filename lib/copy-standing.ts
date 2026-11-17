@@ -10,7 +10,7 @@ export const standingCopy = {
   lead: "{label} was {rank} by might on {to} and {before} on {from}.",
   /** After the lead; `{growth}` and `{server}` are signed percents. */
   leadGrowth:
-    "Its might changed {growth} since then; the tracked alliances' total changed {server}.",
+    "Its might changed {growth} since then. The tracked alliances' total changed {server}.",
   /** The first row of the list: the tracked alliances together. */
   server: "Tracked alliances",
   /** Beside each row's might: its change since the period's first day, `{growth}` a signed percent. */

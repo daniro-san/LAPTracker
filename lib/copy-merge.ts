@@ -3,8 +3,8 @@
 export const mergeCopy = {
   title: "Merge simulator",
   /** The chip beside the title: the page is arithmetic, not advice. */
-  tag: "Simulation, not a plan",
-  lead: "What two alliances would be as one, set against the member cap. Alliance totals only, no member names.",
+  tag: "Simulation only",
+  lead: "Two alliances counted as one and checked against the member cap. Alliance totals only, no member names.",
   /** The alliance page's link. */
   link: "Simulate a merge",
   first: "First alliance",

@@ -126,7 +126,7 @@ export const ptBR = {
     carriedTurnout: "{share} com kills",
     carriedSpread: "{low}–{high} em {n} eventos",
     carriedRatioHelp:
-      "pts é a fatia de kills menos a fatia de might. A partir de 3 eventos, a faixa de fatia de kills ÷ fatia de might nesses eventos aparece abaixo.",
+      "pts é a fatia de kills menos a fatia de might. Com 3 eventos ou mais, a linha abaixo mostra a faixa de fatia de kills ÷ fatia de might nesses eventos.",
     carriedPoints: "pts",
   },
   compare: {
@@ -148,8 +148,8 @@ export const ptBR = {
   },
   merge: {
     title: "Simulador de fusão",
-    tag: "Simulação, não um plano",
-    lead: "O que duas alianças seriam juntas, comparado ao limite de Members. Só totais das alianças, sem nomes de Members.",
+    tag: "Só simulação",
+    lead: "Duas alianças contadas como uma só e conferidas contra o limite de Members. Só totais das alianças, sem nomes de Members.",
     link: "Simular uma fusão",
     first: "Primeira aliança",
     second: "Segunda aliança",
@@ -178,7 +178,7 @@ export const ptBR = {
   flow: {
     title: "Fluxo de Members",
     tag: "Só contagens",
-    lead: "Para onde os Members foram entre as alianças acompanhadas: a aliança de cada um no primeiro dia, comparada ao segundo. Só contagens, sem nomes de Members.",
+    lead: "Para onde os Members foram entre as alianças acompanhadas, do primeiro dia ao segundo. Nenhum Member aparece pelo nome.",
     from: "De",
     to: "Para",
     action: "Mostrar",
@@ -188,7 +188,7 @@ export const ptBR = {
     totals:
       "Mudanças de {min} ou mais · Mudaram de aliança: {moved} · Novos: {arrived} · Saíram: {left}",
     small:
-      "Contagens abaixo de {min} Members, incluindo quem ficou, ficam ocultas e fora de todos os totais, para que esta página não aponte grupos pequenos.",
+      "Contagens abaixo de {min} Members ficam ocultas e fora de todos os totais, incluindo quem ficou. Isso protege grupos pequenos.",
     rowNew: "Novo",
     colLeft: "Saiu",
     legend:
@@ -206,7 +206,7 @@ export const ptBR = {
     title: "Equilíbrio do servidor",
     description:
       "A fatia de cada aliança acompanhada no Might das alianças acompanhadas, e um montador de blocos hipotético.",
-    lead: "Nenhuma aliança tem mais de {max} do Might das alianças acompanhadas; as {n} maiores têm {top}.",
+    lead: "Nenhuma aliança tem mais de {max} do Might das alianças acompanhadas. As {n} maiores têm {top}.",
     includes: "O Might inclui construções e tecnologia.",
     basis: "{n} alianças acompanhadas, leitura de {date}.",
     total: "Alianças acompanhadas",
@@ -217,7 +217,7 @@ export const ptBR = {
     builder: "Montar blocos",
     hypothetical: "Hipotético",
     builderHelp:
-      "Toque em A ou B numa aliança para testar um bloco. É aritmética, não uma previsão e não um anúncio.",
+      "Toque em A ou B numa aliança para testar um bloco. Ele só soma números. Não prevê nem anuncia um bloco real.",
     bloc: "Bloco {bloc}",
     blocShare: "{share} do Might das alianças acompanhadas",
     blocAlliances: "Alianças",
@@ -239,7 +239,7 @@ export const ptBR = {
     help: "As alianças acompanhadas, ordenadas por Might a partir da leitura de cada dia, com a mudança desde {from}. Um dia em que uma aliança não foi lida fica de fora. O servidor aqui é o total das alianças acompanhadas.",
     lead: "{label} estava em {rank} por Might em {to} e em {before} em {from}.",
     leadGrowth:
-      "O Might dela mudou {growth} desde então; o total das alianças acompanhadas mudou {server}.",
+      "Desde então, o Might dela mudou {growth}. O total das alianças acompanhadas mudou {server}.",
     server: "Alianças acompanhadas",
     growthSince: "{growth} desde {from}",
     trend: "Posição {first} em {from}, {last} em {to}",
@@ -348,7 +348,7 @@ export const ptBR = {
     seen: "Visto em",
     limit: "Primeiros {n}",
     noMatch: "Nenhum jogador com esse nome no registro.",
-    pending: "A vovó está folheando o registro…",
+    pending: "A vovó está procurando no registro…",
   },
   errors: {
     notFound: {
@@ -370,6 +370,6 @@ export const ptBR = {
     manualNotRun: "Esta rodada ainda não rodou. O admin inicia à mão.",
     manualNoRows: "A rodada não trouxe nada. O admin roda de novo à mão.",
     noEvents: "Nenhum evento no registro ainda.",
-    noMembers: "Ninguém aqui bate. A vovó conferiu duas vezes.",
+    noMembers: "Nenhum Member corresponde.",
   },
 } as const satisfies Translation;

@@ -23,8 +23,7 @@ export const fr: WorkspaceDictionary = {
   "signin.lead":
     "Pour la direction de l’alliance : connectez-vous avec le compte Discord que vous utilisez sur le serveur de l’alliance.",
   "signin.button": "Se connecter avec Discord",
-  "signin.note":
-    "Discord nous donne votre nom et vos rôles sur ce serveur. Rien d’autre, et rien n’est publié.",
+  "signin.note": "Discord ne partage que votre nom et vos rôles sur ce serveur. Rien n’est publié.",
   "signin.e.denied": "Discord n’a pas confirmé la connexion. Réessayez.",
   "signin.e.discord": "Discord n’a pas répondu. Réessayez dans une minute.",
   "signin.e.not_configured":
@@ -51,7 +50,7 @@ export const fr: WorkspaceDictionary = {
   "members.none":
     "Pas encore de relevé de fin de journée. Les membres apparaissent ici après le premier, juste avant le changement de jour du serveur.",
   "thanks.head": "Merci pour cette semaine",
-  "thanks.intro": "Quelques noms se sont distingués. Merci.",
+  "thanks.intro": "Remerciez-les dans le jeu.",
   "thanks.donors": "Plus gros donateurs",
   "thanks.activity": "Les plus actifs",
   "members.search.ph": "Nom (sans les émojis)",
@@ -113,7 +112,7 @@ export const fr: WorkspaceDictionary = {
   "howto.title": "Comment ouvrir le Bureau des officiers",
   "howto.lead": "Pour les R4 et R5 de l’alliance. Épinglez cette page sur votre Discord.",
   "howto.after":
-    "Ensuite, touchez l’icône comme pour n’importe quelle appli. Vous restez connecté une journée ; ensuite, Discord vérifie à nouveau votre rôle.",
+    "Ensuite, ouvrez-le depuis l’icône, comme une appli. Vous restez connecté une journée. Après, Discord vérifie de nouveau votre rôle.",
   "howto.open": "Ouvrir le Bureau des officiers",
   "time.server": "{time} heure du serveur",
   "tab.review": "À suivre",
@@ -125,8 +124,8 @@ export const fr: WorkspaceDictionary = {
     "Prendre des nouvelles montre ce que nous avons vu. — veut dire pas de données.",
   "members.more": "Plus",
   "members.checkinHelp":
-    "Prendre des nouvelles montre ce que nous avons vu, pour un mot amical. Vous décidez quoi faire ; rien n’est envoyé ni modifié tout seul.",
-  "members.nodataHelp": "— veut dire pas de données ; elles n’entrent dans aucun calcul.",
+    "« Prendre des nouvelles » veut dire : demandez comment va la personne. Vous décidez quoi faire. L’appli n’envoie rien et ne change rien.",
+  "members.nodataHelp": "Les données manquantes n’entrent dans aucun calcul.",
   "members.checkinCount.one": "{n} personne à qui prendre des nouvelles",
   "members.checkinCount.other": "{n} personnes à qui prendre des nouvelles",
   "members.checkinNone": "Tout le monde a l’air bien cette semaine.",
@@ -148,16 +147,16 @@ export const fr: WorkspaceDictionary = {
   "howto.iphone": "Sur iPhone",
   "howto.android": "Sur Android",
   "intro.1.body":
-    "L’espace de la direction pour l’alliance : qui en fait partie, sa might, ses dons et son activité, remplis depuis le jeu. Il remplace les tableurs.",
+    "Qui est dans l’alliance, avec la might, les dons et l’activité de chaque membre, tirés du jeu. Utilisez-le à la place des tableurs.",
   "intro.1.settings": "Touchez votre nom en haut pour vos réglages.",
   "intro.only": "R4 · R5 uniquement",
   "intro.2.more": "— veut dire pas de données ; elles n’entrent dans aucun calcul.",
   "intro.3.title": "Chaque semaine",
   "intro.3.body":
-    "Ouvrez Membres et commencez par le haut : remerciez ceux qui ont le plus aidé cette semaine.",
+    "Ouvrez Membres et commencez par le haut : remerciez ceux qui en ont fait le plus cette semaine.",
   "intro.3.more":
-    "Regardez ensuite qui est marqué « Prendre des nouvelles ». La raison est juste sous le nom, et un petit message en jeu suffit souvent.",
-  "intro.3.note": "L’appli n’envoie jamais de message : c’est à vous de leur parler.",
+    "Regardez ensuite qui est marqué « Prendre des nouvelles ». La raison est sous le nom. Un court message dans le jeu suffit souvent.",
+  "intro.3.note": "L’appli n’envoie jamais de message. Vous décidez à qui parler.",
   "intro.3.last": "EN · PT · FR en haut change la langue. Le ? fait revenir ces cartes.",
   "intro.replay": "Revoir",
   "intro.close": "Fermer",
