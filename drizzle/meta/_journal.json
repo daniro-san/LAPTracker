@@ -148,13 +148,6 @@
       "when": 1794869639274,
       "tag": "0020_workspace_user_profile",
       "breakpoints": true
-    },
-    {
-      "idx": 21,
-      "version": "7",
-      "when": 1794874406517,
-      "tag": "0021_thefts",
-      "breakpoints": true
     }
   ]
 }
