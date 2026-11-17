@@ -17,7 +17,11 @@ export default async function NoticePage({
   const { slug, id: raw } = await params;
   const id = /^[1-9]\d{0,8}$/.test(raw) ? Number(raw) : null;
   if (id === null) notFound();
-  const { access, data: notice } = await noticePage(slug, (db, a) => noticeDetail(db, a, id));
+  const {
+    access,
+    data: notice,
+    waiting,
+  } = await noticePage(slug, (db, a) => noticeDetail(db, a, id));
   if (!notice) notFound();
   const { language, t } = await workspaceWords();
   const words = noticeWords(language, t);
@@ -27,7 +31,7 @@ export default async function NoticePage({
     .map((f) => f.version)
     .join(".");
   return (
-    <SignedInFrame access={access} language={language} t={t} current="notices">
+    <SignedInFrame access={access} language={language} t={t} current="notices" waiting={waiting}>
       <p>
         <a
           href={`/w/${slug}/notices`}

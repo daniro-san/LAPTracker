@@ -31,6 +31,7 @@ const m: MemberRow = {
   lastOnlineAt: new Date("2026-11-15T20:00:00Z"),
   mapX: 4321,
   mapY: 8765,
+  duel: {},
   seenSince: "2026-11-02",
   isNew: false,
   reasons: [{ kind: "might", days: 9 }],

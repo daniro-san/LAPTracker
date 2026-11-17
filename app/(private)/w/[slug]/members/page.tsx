@@ -11,6 +11,7 @@ import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
 import { requireWorkspace } from "@/lib/private/access";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
+import { toReviewCount } from "@/lib/private/import-view";
 import { membersView, type MembersView } from "@/lib/private/members";
 import {
   filterCounts,
@@ -176,9 +177,14 @@ export default async function MembersPage({
   const now = new Date();
   const env = getEnv();
   // INVARIANT workspace.access-first: nothing private is read before this check.
-  const { access, view } = await withPageDb(async (db) => {
+  const { access, view, waiting } = await withPageDb(async (db) => {
     const access = await requireWorkspace(db, slug, jar, now);
-    return { access, view: access.ok ? await membersView(db, access, now, env.SERVER_TZ) : null };
+    const waiting = access.ok ? await toReviewCount(db, access, now) : 0;
+    return {
+      access,
+      waiting,
+      view: access.ok ? await membersView(db, access, now, env.SERVER_TZ) : null,
+    };
   });
   if (!access.ok) {
     refuse(slug, access.reason);
@@ -198,7 +204,7 @@ export default async function MembersPage({
     used: view.zones,
   };
   return (
-    <SignedInFrame access={access} language={language} t={t} current="members">
+    <SignedInFrame access={access} language={language} t={t} current="members" waiting={waiting}>
       <h1 className="font-display text-display-lg">{t["tab.members"]}</h1>
       {view.readAt === null ? (
         <p className="mt-4 border border-rule px-4 py-5">{t["members.none"]}</p>
@@ -242,6 +248,7 @@ function Body(props: {
   const shown = {
     joined: view.members.some((m) => m.joinedAt !== null),
     lastOnline: view.members.some((m) => m.lastOnlineAt !== null),
+    duel: view.members.some((m) => Object.keys(m.duel).length > 0),
   };
   const counts = filterCounts(view.members);
   const visible = keepMembers(view.members, filter, query);

@@ -6,6 +6,8 @@ One dependency rule and one injection point. Source: docs/IMPLEMENTATION_PLAN.md
 app/api/*           thin HTTP handlers: auth → parse → call lib → respond. No logic.
 app/(pages)/*       UI. Reads through lib/queries only.
 app/(private)/*     the workspace (D71): pages under w/[slug], handlers under api/w (one fixed callback, D73).
+                    One handler sits outside api/w: api/discord/interactions (public, checked by Discord's
+                    signature instead of a session, then the officer rule; D96).
                     Reaches data only through lib/private, after requireWorkspace.
 lib/collector.ts    domain: runSnapshot, freshness check, per-alliance fallback, resume logic.
 lib/compute.ts      pure functions only — sums, deltas, freshness predicate, roster diff; no IO, no Date.now() (passed in).
@@ -39,6 +41,14 @@ lib/private/*.ts    the workspace (D71): requireWorkspace and its branded Worksp
                     (pure: attacker key, groups and counts, follow-up state), thefts-import.ts (the screenshot
                     import's save hook for Secret Ops reports), dictionary.thefts.ts (its words); tables in
                     lib/schema-thefts.ts, reads and writes in lib/repo/thefts.ts.
+                    The screenshot import (D96): import.ts (drafts, save, discard, change of type),
+                    import-kinds.ts (the kinds and the SaveHook other sessions plug in), import-save.ts
+                    (the hooks: Alliance Duel points, the ranking checks), import-photo-hooks.ts (member
+                    updates into member facts, Secret Ops reports into thefts), import-view.ts (To review, a
+                    draft's review), import-read.ts (the only way to the OCR), import-words.ts,
+                    import-input.ts (request bodies), discord-interaction.ts (signature, PING, the officer
+                    rule, the deferred reply) and import-discord.ts (fetch, read, edit the reply, after the
+                    response); their tables are lib/schema-import.ts, read in lib/repo/import.ts.
 lib/ai/*.ts         Groq (D81): the chat client with its model fallback (groq.ts), the notice prompts and plain-text
                     cleanup (notice-writing.ts), the game glossary (glossary.ts). Reached through AppContext.ai.
 lib/queries/*.ts    read models for the UI (joins, sorting, name history). Never write. Never expose BLOCKED_ROSTER_KEYS.
@@ -74,13 +84,15 @@ lib/images.ts       the two image sources (preset badge id, stored photo URL on 
 proxy.ts            per-request CSP nonce (Next 16's middleware); next.config.ts holds the static security headers
 instrumentation.ts  validates the environment once at server start
 lib/build-version.ts pure: the footer's live version from Vercel's git variables (D59); next.config.ts calls it once per build.
-lib/screenshot/     the screenshot reader (D74): pure parsers over OCR text lines (alliance duel, donation, secret operations, pasted text),
-                    nameKey and matchName (candidates passed in), and one IO module, read-screenshot.ts (Tesseract.js, committed English data). No DB access.
+lib/screenshot/     the screenshot reader (D74): pure parsers over OCR text lines (alliance duel, the might/kills/donation rankings, secret
+                    operations, pasted text), classify.ts (which screen, scored, D96), merge.ts (pages of one ranking), nameKey and
+                    matchName (candidates passed in), and one IO module, read-screenshot.ts (Tesseract.js, committed English data). No DB access.
+lib/import-command.ts the Discord message command's definition, shared by the interactions route and scripts/discord-register-command.ts (D96).
 ```
 
 ## Dependency rule
 
-- `app → lib/{route, auth, run, tick, rehearsal, schedule, queries, repo, images, analytics, ai}`; `lib/private → lib/analytics/events` (the sign-in mark, D77); `lib/private → lib/screenshot` (the name matcher, for the sheet import, D80); `lib/run → lib/{collector, queries}` (queries: the public Discord message's numbers).
+- `app → lib/{route, auth, run, tick, rehearsal, schedule, queries, repo, images, analytics, ai}`; `lib/private → lib/analytics/events` (the sign-in mark, D77); `lib/private → lib/screenshot` (the name matcher, for the sheet import, D80; the OCR, the classifier and the parsers, for the screenshot import, D96); `lib/run → lib/{collector, queries}` (queries: the public Discord message's numbers).
 - `lib/collector → lib/{compute, sources, repo, logger, notify}` **through the `Deps` object passed in**.
 - `lib/compute`, `lib/budget` and `lib/compact` import nothing from the project.
 - `lib/logger` imports only `lib/repo` and `lib/redact`.

@@ -169,6 +169,13 @@
       "when": 1794878082161,
       "tag": "0023_thefts",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1794880600851,
+      "tag": "0024_cuddly_pete_wisdom",
+      "breakpoints": true
     }
   ]
 }

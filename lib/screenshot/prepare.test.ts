@@ -55,18 +55,36 @@ describe("prepareForOcr", () => {
     expect([out[24], out[25]]).toEqual([8, 0]);
   });
 
-  it("decodes Sub and Up filtered rows into the grey values of the pixels", () => {
-    // 2 x 2 RGB: red, green / blue, white. Row 0 is Sub filtered, row 1 is Up filtered.
-    const rows = Uint8Array.from([1, 255, 0, 0, 1, 255, 0, 2, 1, 0, 255, 255, 0, 255]);
-    const { width, height, rows: grey } = greyRows(prepareForOcr(png(2, 2, 2, rows)));
-    expect([width, height]).toEqual([TARGET_WIDTH, TARGET_WIDTH]);
-    // The corners of an enlargement are the source pixels: luma of red, green, blue, white.
-    expect([
-      grey[0]?.[0],
-      grey[0]?.[width - 1],
-      grey[height - 1]?.[0],
-      grey[height - 1]?.[width - 1],
-    ]).toEqual([76, 150, 29, 255]);
+  it("makes text dark on white, both dark text on a light row and white text on the green own row", () => {
+    // 20 x 20 RGB, rows 0-9 light grey with a dark block at x 8-11, rows 10-19 the own row's green with
+    // a white block there. Even rows are Sub filtered (1), odd rows Up filtered (2).
+    const light = [220, 220, 220];
+    const green = [124, 179, 66];
+    const pixel = (y: number, x: number) =>
+      x >= 8 && x < 12 ? (y < 10 ? [40, 40, 40] : [255, 255, 255]) : y < 10 ? light : green;
+    const samplesOf = (y: number) => Array.from({ length: 20 }, (_, x) => pixel(y, x)).flat();
+    const raw = Array.from({ length: 20 }, (_, y) => {
+      const samples = samplesOf(y);
+      if (y % 2 === 1) {
+        const above = samplesOf(y - 1);
+        return [2, ...samples.map((v, i) => (v - (above[i] ?? 0)) & 0xff)];
+      }
+      return [1, ...samples.map((v, i) => (v - (i >= 3 ? (samples[i - 3] ?? 0) : 0)) & 0xff)];
+    });
+    const { width, rows } = greyRows(prepareForOcr(png(20, 20, 2, Uint8Array.from(raw.flat()))));
+    const [top, bottom] = [rows[TARGET_WIDTH / 4], rows[(TARGET_WIDTH * 3) / 4]];
+    // The block's middle is dark and the background white, on both rows (luma alone gives the
+    // white block 255 on a green of 150: lighter than its background).
+    expect([top?.[width / 2], bottom?.[width / 2]].every((v) => (v ?? 255) < 128)).toBe(true);
+    expect([top?.[20], bottom?.[20]].every((v) => (v ?? 0) > 240)).toBe(true);
+  });
+
+  it("drops a full-screen phone capture's status bar only when asked", () => {
+    // 10 x 40 grey: taller than 1.9 times its width, so its top 5.5 % (2 rows) is the status bar.
+    const rows = new Uint8Array(40 * 11).fill(200);
+    const as = (statusBar: boolean) =>
+      Buffer.from(prepareForOcr(png(10, 40, 0, rows), { statusBar })).readUInt32BE(20);
+    expect([as(false), as(true)]).toEqual([2864, 2721]);
   });
 
   it("returns bytes that are not a PNG unchanged", () => {

@@ -6,6 +6,7 @@ import { notFound, redirect } from "next/navigation";
 
 import { withPageDb } from "@/lib/page";
 import { requireWorkspace } from "@/lib/private/access";
+import { toReviewCount } from "@/lib/private/import-view";
 import { SLUG } from "@/lib/private/sign-in";
 
 import { importWords } from "../../../_ui/facts-form";
@@ -18,14 +19,18 @@ export default async function ImportPage({ params }: { params: Promise<{ slug: s
   if (!SLUG.test(slug)) notFound();
   const jar = await cookies();
   // INVARIANT workspace.access-first: nothing private is read before this check.
-  const access = await withPageDb((db) => requireWorkspace(db, slug, jar, new Date()));
+  const now = new Date();
+  const { access, waiting } = await withPageDb(async (db) => {
+    const access = await requireWorkspace(db, slug, jar, now);
+    return { access, waiting: access.ok ? await toReviewCount(db, access, now) : 0 };
+  });
   if (!access.ok) {
     refuse(slug, access.reason);
     redirect(`/w/${slug}`);
   }
   const { language, t } = await workspaceWords();
   return (
-    <SignedInFrame access={access} language={language} t={t} current="members">
+    <SignedInFrame access={access} language={language} t={t} current="members" waiting={waiting}>
       <h1 className="font-display text-display-lg">{t["members.import"]}</h1>
       <p className="mt-2 max-w-prose">{t["import.lead"]}</p>
       <SheetImport slug={slug} words={importWords(t)} language={language} />

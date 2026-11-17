@@ -42,7 +42,33 @@ const PATHS: Partial<Record<TabId, string>> = {
   notices: "/notices",
 };
 
-function Tabs({ t, slug, current }: { t: WorkspaceDictionary; slug: string; current: TabId }) {
+/** The Home tab's count of screenshot drafts waiting for review (issue 299), beside its label. */
+function Waiting({ n, t }: { n: number; t: WorkspaceDictionary }) {
+  if (n === 0) return null;
+  return (
+    <>
+      <span
+        aria-hidden="true"
+        className="absolute top-1 left-1/2 ml-2 rounded-full bg-seal px-1.5 text-[11px] leading-4 font-semibold text-paper tabular-nums"
+      >
+        {n}
+      </span>
+      <span className="sr-only">{`, ${fill(t["shots.badge"], { n })}`}</span>
+    </>
+  );
+}
+
+function Tabs({
+  t,
+  slug,
+  current,
+  waiting,
+}: {
+  t: WorkspaceDictionary;
+  slug: string;
+  current: TabId;
+  waiting: number;
+}) {
   return (
     // Hidden while a notice editor is open, so its save bar is never under the tabs (review of PR 344).
     <nav
@@ -60,9 +86,11 @@ function Tabs({ t, slug, current }: { t: WorkspaceDictionary; slug: string; curr
               <span className="max-w-full text-[13px] leading-tight hyphens-none [overflow-wrap:anywhere]">
                 {label}
               </span>
+              {id === "home" && <Waiting n={waiting} t={t} />}
             </>
           );
-          const box = "flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 text-center";
+          const box =
+            "relative flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 text-center";
           const path = PATHS[id];
           return (
             <li key={id}>
@@ -111,7 +139,7 @@ export async function Frame({
   /** "Signed in as … · Sign out", once signed in. */
   account?: ReactNode;
   /** Signed in: the bottom tabs with `current` open, and the first-use cards. */
-  tabs?: { slug: string; current: TabId };
+  tabs?: { slug: string; current: TabId; waiting: number };
   children: ReactNode;
 }) {
   const seen = !tabs || (await cookies()).get(WORKSPACE_INTRO_COOKIE)?.value === "1";
@@ -144,18 +172,24 @@ export async function Frame({
   );
 }
 
-/** The frame once signed in: the alliance under the name, "Signed in as … · Sign out", the tabs. */
+/**
+ * The frame once signed in: the alliance under the name, "Signed in as … · Sign out", the tabs with the
+ * count of screenshot drafts waiting for review on Home (`waiting`, read by the page in its own
+ * database read: the frame opens no connection).
+ */
 export function SignedInFrame({
   access,
   language,
   t,
   current,
+  waiting,
   children,
 }: {
   access: WorkspaceAccess;
   language: WorkspaceLanguage;
   t: WorkspaceDictionary;
   current: TabId;
+  waiting: number;
   children: ReactNode;
 }) {
   const alliance = ALLIANCES.find((a) => a.unionId === access.unionId);
@@ -176,7 +210,7 @@ export function SignedInFrame({
     <Frame
       language={language}
       t={t}
-      tabs={{ slug: access.slug, current }}
+      tabs={{ slug: access.slug, current, waiting }}
       account={account}
       {...(alliance && { subtitle: `${alliance.tag} · ${alliance.name}` })}
     >

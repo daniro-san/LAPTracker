@@ -18,6 +18,7 @@ const row = (rankCode: number | null): MemberRow => ({
   lastOnlineAt: null,
   mapX: 0,
   mapY: 0,
+  duel: {},
   seenSince: null,
   isNew: false,
   reasons: [],
