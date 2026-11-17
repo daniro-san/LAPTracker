@@ -4,7 +4,8 @@
 // /api/w/[slug]/members/[uid] when it opens, so the map position and last online time are never in the
 // list's page (D71). It reads again when the list's rows change (after the facts editor saved and the
 // page refreshed), keeping what it shows until the new card arrives. Close (×) at the top, Escape, the
-// backdrop and the phone's back button close it (the sheet frame).
+// backdrop and the phone's back button close it (the sheet frame). Once the card is read, the sticky bar
+// holds "Edit info" and "Paste what they told you", so they stay in view while the card scrolls.
 import { useEffect, useState } from "react";
 
 import { PlayerAvatar } from "@/app/_ui/Pictures";
@@ -15,7 +16,7 @@ import { clockIn } from "@/lib/private/calendar-time";
 import type { CardData } from "@/lib/private/member-card";
 
 import type { ListRow, ListWords } from "./member-list-data";
-import { MemberCard, type EditorContext } from "./MemberCards";
+import { factsActions, MemberCard, type EditorContext, type FactsMode } from "./MemberCards";
 import { sheetWords } from "./sheet-words";
 import { SIGNED_OUT, SignedOutNote } from "./SignedOut";
 import { useMinute } from "./YourTime";
@@ -45,6 +46,7 @@ export function MemberSheet(props: {
     signedOut: boolean;
   } | null>(null);
   const [attempt, setAttempt] = useState(0);
+  const [mode, setMode] = useState<FactsMode>(null);
   useEffect(() => {
     let live = true;
     void readCard(editor.slug, row.uid).then((r) => {
@@ -67,6 +69,7 @@ export function MemberSheet(props: {
       onCancel={props.onClose}
       title={<span translate="no">{row.name}</span>}
       words={sheetWords(t)}
+      {...(shown?.data && factsActions(editor.words, setMode))}
     >
       <div className="flex items-center gap-3">
         <PlayerAvatar uid={row.uid} photo={row.photo} size="lg" />
@@ -82,7 +85,13 @@ export function MemberSheet(props: {
         ) : shown.data === null ? (
           <NotRead signedOut={shown.signedOut} t={t} onRetry={() => setAttempt((n) => n + 1)} />
         ) : (
-          <MemberCard card={shown.data} editor={editor} zoneNow={zoneNow} />
+          <MemberCard
+            card={shown.data}
+            editor={editor}
+            zoneNow={zoneNow}
+            mode={mode}
+            onEditorClose={() => setMode(null)}
+          />
         )}
       </div>
     </Sheet>
