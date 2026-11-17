@@ -63,6 +63,9 @@ lib/private/*.ts    the workspace (D71): requireWorkspace and its branded Worksp
                     marks, "the rest", counts, order, team suggestions), roll-call-words.ts,
                     dictionary.rollcall*.ts; tables in lib/schema-rollcall.ts, reads and writes in
                     lib/repo/roll-call.ts.
+                    The members' board (D105): board.ts (its one read, on a BoardAccess from requireBoard, never a
+                    WorkspaceAccess) and start-here.ts (Start here's editor read and its per-language save);
+                    dictionary.board.ts; its table in lib/schema-board.ts, read and written in lib/repo/start-here.ts.
                     The thefts log (D97): thefts.ts (its read and writes, the attacker search), theft-groups.ts
                     (pure: attacker key, groups and counts, follow-up state), thefts-import.ts (the screenshot
                     import's save hook for Secret Ops reports), dictionary.thefts.ts (its words); tables in
