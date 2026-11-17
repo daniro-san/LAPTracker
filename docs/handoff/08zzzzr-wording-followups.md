@@ -55,3 +55,5 @@ Left:
 - The seed has no sampled event with the 5-event range; ranges were seen with 3 events only.
 
 Screenshots: `docs/screenshots/08zzzzr-{balance,fight-clock,kill-vs-might}-{light-360,dark-360,1280}.png`.
+
+https://github.com/daniro-san/LAPTracker/pull/366
