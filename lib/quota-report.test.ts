@@ -40,12 +40,10 @@ describe("the Friday check's might line (D70)", () => {
     await reads(7);
     const { ctx, posts } = testContext(db);
 
-    await quotaReport(ctx, db, { always: true, origin: "https://lap.test" });
+    await quotaReport(ctx, db, { always: true });
 
     const content = posts[0]?.content ?? "";
-    expect(content).toContain(
-      "Might unchanged ≥ 7 daily reads: 0 · Lost might ≥ 5 %: 1 · [Members ↗](<https://lap.test/admin/members>)",
-    );
+    expect(content).toContain("Might unchanged ≥ 7 daily reads: 0 · Lost might ≥ 5 %: 1");
     expect(content).not.toContain("Zelda");
   });
 
@@ -53,7 +51,7 @@ describe("the Friday check's might line (D70)", () => {
     await reads(6);
     const { ctx, posts } = testContext(db);
 
-    await quotaReport(ctx, db, { always: true, origin: "https://lap.test" });
+    await quotaReport(ctx, db, { always: true });
 
     expect(posts[0]?.content).not.toContain("Might unchanged");
   });

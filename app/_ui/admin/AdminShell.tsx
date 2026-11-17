@@ -24,7 +24,6 @@ const NAV = [
   { href: "/admin", label: copy.admin.nav.overview },
   { href: "/admin/runs", label: copy.admin.nav.runs },
   { href: "/admin/errors", label: copy.admin.nav.errors },
-  { href: "/admin/members", label: copy.admin.nav.members },
 ];
 
 export async function AdminShell({ title, children }: { title: string; children?: ReactNode }) {
