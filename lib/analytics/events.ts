@@ -25,6 +25,8 @@ export interface AnalyticsEvents {
   ws_facts_saved: NoProperties;
   /** A sheet imported once every row was matched or dismissed (D80). */
   ws_sheet_imported: NoProperties;
+  /** A notice's Translate filled drafts (D81); nothing about the text. */
+  ws_notice_translated: NoProperties;
 }
 export type AnalyticsEvent = keyof AnalyticsEvents;
 

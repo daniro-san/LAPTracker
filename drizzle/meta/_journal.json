@@ -141,6 +141,27 @@
       "when": 1794853943064,
       "tag": "0019_furry_fabian_cortez",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1794869639274,
+      "tag": "0020_workspace_user_profile",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1794872235950,
+      "tag": "0021_notices",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1794875433519,
+      "tag": "0022_member_facts",
+      "breakpoints": true
     }
   ]
 }

@@ -1,6 +1,7 @@
 // The workspace dictionary in French (D71), split from dictionary.ts for its size; the keys follow `en`.
 // French puts a no-break space before : ? and !, and inside « ».
 import type { WorkspaceDictionary } from "./dictionary";
+import { noticesFr } from "./dictionary.notices";
 
 export const fr: WorkspaceDictionary = {
   "app.name": "Bureau des officiers",
@@ -113,7 +114,7 @@ export const fr: WorkspaceDictionary = {
   "howto.after":
     "Ensuite, touchez l’icône comme pour n’importe quelle appli. Vous restez connecté une journée ; ensuite, Discord vérifie à nouveau votre rôle.",
   "howto.open": "Ouvrir le Bureau des officiers",
-  "time.server": "{time} heure serveur",
+  "time.server": "{time} heure du serveur",
   "tab.review": "À suivre",
   "members.lead": "Du jeu, relevé chaque nuit juste avant le changement de jour du serveur.",
   "members.lastRead": "Dernier relevé : {when}",
@@ -148,13 +149,16 @@ export const fr: WorkspaceDictionary = {
   "howto.android": "Sur Android",
   "intro.1.body":
     "L’espace de la direction pour l’alliance : qui en fait partie, sa might, ses dons et son activité, remplis depuis le jeu. Il remplace les tableurs.",
+  "intro.1.settings": "Touchez votre nom en haut pour vos réglages.",
   "intro.only": "R4 · R5 uniquement",
   "intro.2.more": "— veut dire pas de données ; elles n’entrent dans aucun calcul.",
   "intro.3.title": "Chaque semaine",
   "intro.3.body":
-    "Ouvrez Membres. Commencez par la liste des remerciements, puis regardez les personnes marquées Prendre des nouvelles : ce que nous avons vu est écrit sous le nom.",
-  "intro.3.more": "C’est vous qui décidez ; rien n’est envoyé tout seul.",
-  "intro.3.last": "Touchez EN · PT · FR pour changer de langue. Touchez ? pour revoir ceci.",
+    "Ouvrez Membres et commencez par le haut : remerciez ceux qui ont le plus aidé cette semaine.",
+  "intro.3.more":
+    "Regardez ensuite qui est marqué « Prendre des nouvelles ». La raison est juste sous le nom, et un petit message en jeu suffit souvent.",
+  "intro.3.note": "L’appli n’envoie jamais de message : c’est à vous de leur parler.",
+  "intro.3.last": "EN · PT · FR en haut change la langue. Le ? fait revenir ces cartes.",
   "intro.replay": "Revoir",
   "intro.close": "Fermer",
   "howto.signin.body":
@@ -233,4 +237,29 @@ export const fr: WorkspaceDictionary = {
     "Terminé : {saved} valeurs enregistrées pour {members} membres. {kept} gardées, car le champ avait déjà une valeur.",
   "import.failed": "Échec de l’import. Réessayez.",
   "import.again": "Importer un autre tableur",
+  "profile.title": "Vos réglages",
+  "profile.name": "Votre nom",
+  "profile.nameHelp": "Affiché en haut du bureau (32 caractères au plus).",
+  "profile.save": "Enregistrer",
+  "profile.saved": "Enregistré.",
+  "profile.invalid": "Écrivez de 1 à 32 caractères.",
+  "profile.failed": "Impossible d’enregistrer. Réessayez.",
+  "profile.loadFailed": "Impossible de charger. Fermez et réessayez.",
+  "profile.me": "C’est moi",
+  "profile.me.lead": "Facultatif : dites au bureau quel joueur de l’alliance vous êtes.",
+  "profile.me.loading": "Recherche de votre nom dans l’alliance…",
+  "profile.me.linked": "Dans le jeu, vous êtes {name}.",
+  "profile.me.gone": "Votre joueur n’est plus dans l’alliance.",
+  "profile.me.unlink": "Ce n’est pas moi",
+  "profile.me.undo": "Vous pourrez retirer ce lien à tout moment.",
+  "profile.me.ask": "Est-ce vous ?",
+  "profile.me.confirm": "C’est moi",
+  "profile.me.none": "Aucun joueur n’a un nom proche du vôtre. Cherchez votre nom ci-dessous.",
+  "profile.me.find": "Chercher dans l’alliance",
+  "profile.me.noResult": "Personne dans l’alliance n’a un nom comme celui-ci.",
+  "profile.theme": "Thème",
+  "profile.theme.light": "Clair",
+  "profile.theme.dark": "Sombre",
+  "profile.theme.system": "Comme l’appareil",
+  ...noticesFr,
 };

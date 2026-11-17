@@ -7,6 +7,13 @@ import { getAppContext } from "@/lib/app-context";
 import { DONE_MAX_AGE_S, LIVE_MAX_AGE_S } from "@/lib/event-cache";
 import { withPageDb } from "@/lib/page";
 import { getEventPage } from "@/lib/queries/event-page";
+import {
+  eventPulses,
+  getFightClock,
+  type EventPulse,
+  type PulseOptions,
+  type RowsOf,
+} from "@/lib/queries/fight-clock";
 import { eventProgressOf, progressRows } from "@/lib/queries/live";
 
 import { requestClock, requestCopy } from "./locale";
@@ -41,13 +48,48 @@ export async function loadProgress(
   detail: { id: number; snapshots: readonly { phase: string }[] },
   now: Date,
 ) {
-  const { eventCache, env } = getAppContext();
   const done = detail.snapshots.some((s) => s.phase === "after");
-  const rows = await eventCache.read(
-    detail.id,
+  const rows = await progressRowsOf(detail.id, done);
+  return eventProgressOf(rows, { now, everyMin: getAppContext().env.SAMPLE_EVERY_MIN });
+}
+
+/** An event's progress rows through the shared cache, under the key its End picks (issue 327): the
+ * event page and the views across events (D86) read the same entry. */
+export const progressRowsOf: RowsOf = (eventId, done) =>
+  getAppContext().eventCache.read(
+    eventId,
     done ? "progress-done" : "progress",
     done ? DONE_MAX_AGE_S : LIVE_MAX_AGE_S,
-    () => withPageDb((db) => progressRows(db, detail.id)),
+    () => withPageDb((db) => progressRows(db, eventId)),
   );
-  return eventProgressOf(rows, { now, everyMin: env.SAMPLE_EVERY_MIN });
-}
+
+/** What the views across events need to read each event's slots (D86). */
+export const pulseOptions = (): PulseOptions => {
+  const { env } = getAppContext();
+  return { everyMin: env.SAMPLE_EVERY_MIN, serverTz: env.SERVER_TZ, rowsOf: progressRowsOf };
+};
+
+/** The server fight clock's data (D86), once per request. Its rows come through the shared event cache. */
+export const loadFightClock = cache(async () => {
+  const options = pulseOptions();
+  const data = await withPageDb((db) => getFightClock(db, getAppContext().now(), options));
+  return { ...data, everyMin: options.everyMin };
+});
+
+/** Events A and B of the compare page on their samples (D86), once per request. */
+export const loadComparePulses = cache(
+  async (a: number, aDone: boolean, b: number, bDone: boolean) => {
+    const options = pulseOptions();
+    const [pa, pb] = await withPageDb((db) =>
+      eventPulses(
+        db,
+        [
+          { id: a, done: aDone },
+          { id: b, done: bDone },
+        ],
+        options,
+      ),
+    );
+    return { pulses: { a: pa as EventPulse, b: pb as EventPulse }, everyMin: options.everyMin };
+  },
+);

@@ -93,6 +93,7 @@ export function testContext(db: Db, env = TEST_ENV) {
     },
     openDb: () => ({ db, close: async () => {} }),
     eventCache: memoryEventCache(),
+    ai: null,
   };
   return { ctx, clock, posts, edits, v1 };
 }

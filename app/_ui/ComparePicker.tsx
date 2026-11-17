@@ -171,6 +171,11 @@ export function StopCompareLink({
   return <ActionLink href={href} icon="✕" label={copy.compare.stop} />;
 }
 
+/** The title row's link to the server balance page (D85). */
+export function BalanceLink({ copy }: { copy: Dictionary }) {
+  return <ActionLink href="/alliances/balance" icon="%" label={copy.balance.title} />;
+}
+
 function ActionLink({ href, icon, label }: { href: string; icon: string; label: string }) {
   return (
     <Link

@@ -49,6 +49,15 @@ describe("roster fields kept for the workspace (D71)", () => {
         "app/ingest/[...path]/route.ts",
       ]),
     );
+    // What goes to Groq (D81) is scanned too: the client, the prompts, the glossary and the draft route.
+    expect(files).toEqual(
+      expect.arrayContaining([
+        "lib/ai/groq.ts",
+        "lib/ai/notice-writing.ts",
+        "lib/ai/glossary.ts",
+        "app/(private)/api/w/[slug]/notices/draft/route.ts",
+      ]),
+    );
     const offenders = files
       .filter((f) => !ALLOWED.some((a) => a.test(relative(".", f))))
       .flatMap((f) => {

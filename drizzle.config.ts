@@ -1,8 +1,8 @@
-// drizzle-kit: `pnpm db:generate` writes SQL migrations to drizzle/ from lib/schema.ts (no DB connection).
+// drizzle-kit: `pnpm db:generate` writes SQL migrations to drizzle/ from the schema files (no DB connection).
 import { defineConfig } from "drizzle-kit";
 
 export default defineConfig({
   dialect: "postgresql",
-  schema: "./lib/schema.ts",
+  schema: ["./lib/schema.ts", "./lib/schema-notices.ts"],
   out: "./drizzle",
 });

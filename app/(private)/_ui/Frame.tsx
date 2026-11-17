@@ -1,5 +1,5 @@
 // The workspace frame (D71, brand proposal): the burgundy header with the workspace name, the "?" that
-// opens the first-use cards (issue 312) and EN · PT · FR, the page, and, once signed in, the five bottom
+// opens the first-use cards (issue 312) and EN · PT · FR, the page, and, once signed in, the six bottom
 // tabs. Designed at 360 px; every control is 44 px or more.
 import { cookies, headers } from "next/headers";
 import type { ReactNode } from "react";
@@ -17,6 +17,7 @@ import {
 
 import { FirstUse } from "./FirstUse";
 import { LanguageSwitch } from "./LanguageSwitch";
+import { ProfileSheet } from "./ProfileSheet";
 import { SignOutButton } from "./SignOutButton";
 import { TabIcon, type TabId } from "./TabIcon";
 
@@ -33,23 +34,32 @@ export async function workspaceWords(): Promise<{
   return { language, t: WORKSPACE_DICTIONARIES[language] };
 }
 
-const TABS: TabId[] = ["home", "members", "mark", "days", "review"];
+const TABS: TabId[] = ["home", "members", "mark", "days", "notices", "review"];
 /** The tabs that exist so far; the other three come with their own issues and are shown as "soon". */
-const PATHS: Partial<Record<TabId, string>> = { home: "", members: "/members" };
+const PATHS: Partial<Record<TabId, string>> = {
+  home: "",
+  members: "/members",
+  notices: "/notices",
+};
 
 function Tabs({ t, slug, current }: { t: WorkspaceDictionary; slug: string; current: TabId }) {
   return (
+    // Hidden while a notice editor is open, so its save bar is never under the tabs (review of PR 344).
     <nav
       aria-label={t["tab.aria"]}
-      className="fixed inset-x-0 bottom-0 z-10 border-t border-rule bg-paper pb-[env(safe-area-inset-bottom)]"
+      className="fixed inset-x-0 bottom-0 z-10 border-t border-rule bg-paper pb-[env(safe-area-inset-bottom)] [:root:has(form[data-notice-editor])_&]:hidden"
     >
-      <ul className="mx-auto grid max-w-[640px] grid-cols-5">
+      <ul className="mx-auto grid max-w-[640px] grid-cols-6">
         {TABS.map((id) => {
           const label = t[`tab.${id}`];
           const inside = (
             <>
               <TabIcon id={id} />
-              <span className="text-[13px] leading-tight">{label}</span>
+              {/* Six tabs leave 60 px each at 360 px: a long word ("Acompanhar") wraps, without a
+                  hyphen, instead of running past the screen. */}
+              <span className="max-w-full text-[13px] leading-tight hyphens-none [overflow-wrap:anywhere]">
+                {label}
+              </span>
             </>
           );
           const box = "flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 text-center";
@@ -116,7 +126,7 @@ export async function Frame({
           {tabs && <FirstUse t={t} seen={seen} />}
           <LanguageSwitch current={language} label={t["lang.aria"]} />
           {account && (
-            <div className="flex basis-full flex-wrap items-center justify-between gap-x-2 border-t border-wax-paper/25 pt-1 text-body-sm">
+            <div className="flex min-w-0 basis-full items-center justify-between gap-x-2 border-t border-wax-paper/25 pt-1 text-body-sm">
               {account}
             </div>
           )}
@@ -143,11 +153,16 @@ export function SignedInFrame({
   children: ReactNode;
 }) {
   const alliance = ALLIANCES.find((a) => a.unionId === access.unionId);
+  const name = access.user.displayName ?? "";
   const account = (
     <>
-      <span className="min-w-0 truncate">
-        {fill(t["shell.signedIn"], { name: access.user.displayName ?? "" })}
-      </span>
+      <ProfileSheet
+        slug={access.slug}
+        t={t}
+        language={language}
+        name={name}
+        label={fill(t["shell.signedIn"], { name })}
+      />
       <SignOutButton slug={access.slug} label={t["shell.signOut"]} />
     </>
   );

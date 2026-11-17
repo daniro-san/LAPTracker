@@ -4,7 +4,7 @@ Issue #297. Rules applied: D71, D72, D75, D77, D78. New decision: D80. Also buil
 
 ## Built
 
-- **`member_facts` and `name_aliases`** (migration `0020_lying_squadron_sinister`; tables in `lib/schema-facts.ts`, re-exported by `lib/schema.ts`).
+- **`member_facts` and `name_aliases`** (migration `0022_member_facts`, after dev's `0020_workspace_user_profile` and `0021_notices`; tables in `lib/schema-facts.ts`, re-exported by `lib/schema.ts`).
   - One append-only row per write of one field: `squadMight`, `adTech`, `troopTier`, `timeZone` (IANA), `languages`, `status` (`break`, `help`), `away` (`{ text, until }`), `notes`.
   - Each row has a `source` (`message`, `officer`, `sheet`), a `version` per (workspace, uid, field) and `written_by`.
   - Reads and writes: `lib/repo/member-facts.ts`. Rules: `lib/private/member-facts.ts`. Fields, sources and merges: `lib/private/fact-fields.ts` (pure).
@@ -76,20 +76,20 @@ Issue #297. Rules applied: D71, D72, D75, D77, D78. New decision: D80. Also buil
 - **KvK reason still held** (`KVK_REASON_ON = false`), as asked. Away notes now exist, so the owner can decide to turn it on (see Next).
 - **Not built:** an "Away" filter (#296), facts in "Copy for spreadsheet", and translation of notes (#305).
 - **Time zone in the import:** an offset alone ("ST +3", "EU +1") is stored as the fixed IANA zone (`Etc/GMT-1`). It does not follow daylight saving; an officer can pick a city later.
-- **Migration number:** `0020`, the next free one on dev when committed. #341 (11n, `0020_workspace_user_profile`) is still open and 11i has no PR yet. See Open issues 1.
+- **Migration number:** written as `0020`, then dropped and regenerated as `0022_member_facts` after dev took `0020_workspace_user_profile` (11n) and `0021_notices` (11i, #344); the SQL is unchanged. The journal is contiguous.
 - **Analytics:** two events were added (D77's list was six); D80 records them.
 
 ## Verified
 
-- **`pnpm check` exits 0** on the merged tree (dev at c6aad69):
+- **`pnpm check` exits 0** on the merged tree (dev at ab0cd37, migration renumbered to 0022):
   - prettier, eslint, tsc;
-  - vitest: 105 files passed, 2 skipped; 530 tests passed, 4 skipped;
+  - vitest: 121 files passed, 2 skipped; 606 tests passed, 4 skipped;
   - drift gate "Everything's fine";
   - i18n: 17 languages up to date.
   - No test timed out.
 - **Local e2e:** `next build` + `next start` of this tree; the local Postgres (54327) and its bridge; 11c's Discord stub on 54378; Playwright-core with system Chrome. The worktree-only `.env.local` has random secrets (never printed) and the upstream pointed at a dead port. No upstream call and no Discord call.
   - Seed: 11e's OGs seed, from the scrubbed fixture: 9 end-of-day reads, 8 arrays-only reads and a Saturday event. Plus `/w/nse`, with only one public event roster from `fixtures/v1-ids/67109944.json`.
-  - **29 of 29 checks passed**, on the final build of the merged tree:
+  - **29 of 29 checks passed**, on a production build of this branch merged with dev at c6aad69 (before the notices merge; the facts code is unchanged since):
     - sign-in through the stub;
     - edit facts (9.9M, 69, T9, Kyiv through the picker, English, a note): the card shows "9.90M", "69%", "T9", "Europe/Kyiv · UTC+2", "English" and the note, each "typed by an officer";
     - time-zone search: "ukraine" → Kyiv first, "Brazil -3" → São Paulo first, "PST" → Los Angeles first;
@@ -125,12 +125,7 @@ Issue #297. Rules applied: D71, D72, D75, D77, D78. New decision: D80. Also buil
 
 ## Open issues
 
-1. **Migration renumbering (orchestrator).** After #341 (0020) and 11i (0021) merge into dev:
-   - delete `drizzle/0020_lying_squadron_sinister.sql` and `drizzle/meta/0020_snapshot.json`, and remove the `idx: 20` entry from `drizzle/meta/_journal.json`;
-   - `git merge origin/dev`;
-   - run `pnpm db:generate`. It writes the next number (0022) with the right `prevId`; the SQL is the same two tables.
-   - Change "migration `0020` when written" in D80's first bullet to the number it gets.
-   - `lib/schema.ts` may conflict only on its last lines: keep both `export … from` lines.
+1. **Two ways to split the schema.** 11i lists `lib/schema-notices.ts` in `drizzle.config.ts`; this session re-exports `lib/schema-facts.ts` from `lib/schema.ts`. Both work, and drizzle-kit sees no drift. Pick one if a third schema file comes.
 2. **Retention (D71)** blocks importing the sheets' notes and statuses. Owner's decision.
 3. **KvK reason:** the owner can turn `KVK_REASON_ON` on now; the reason would then skip members on a break. The plan's "no away note on the event's day" would need the away note's history: `member_facts` keeps every version, but a check by date is not written.
 4. **An officer-set "On a break"** lasts until an officer clears it. Only an away note with a last day ends by itself.
