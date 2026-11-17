@@ -45,7 +45,7 @@ export const pt: WorkspaceDictionary = {
     "Esta conta do Discord não tem mais acesso às páginas da aliança aqui: o mural dos membros e a Mesa dos oficiais. Fale com um R5 se for engano.",
   "noaccess.retry": "Entrar de novo",
   "noaccess.public": "Ir para o Registro de eventos público",
-  "shell.signedIn": "Conectado como {name}",
+  "shell.signedIn": "Você entrou como {name}",
   "shell.signOut": "Sair",
   "shell.signOutAsk": "Sair? O texto que você não salvou nesta página será perdido.",
   "shell.stay": "Continuar conectado",

@@ -10,17 +10,31 @@ import type { CalendarWords } from "@/lib/private/dictionary.calendar";
 
 import { useViewerZone, yourTime } from "./YourTime";
 
-/** "15:00 your time · 16:00 ST": the viewer's clock first, once the browser knows its zone. */
-export function BoardTime(props: { st: string; at: number; day: string; words: CalendarWords }) {
+/** The zone's short name in the viewer's language ("BRT", "GMT-3"); "" when the browser gives none. */
+function zoneName(zone: string, at: number, language: string): string {
+  const parts = new Intl.DateTimeFormat(language, { timeZone: zone, timeZoneName: "short" });
+  return parts.formatToParts(at).find((p) => p.type === "timeZoneName")?.value ?? "";
+}
+
+/** "15:00 your time (BRT) · 16:00 ST": the viewer's clock first, once the browser knows its zone. */
+export function BoardTime(props: {
+  st: string;
+  at: number;
+  day: string;
+  language: string;
+  words: CalendarWords;
+}) {
   const zone = useViewerZone();
-  const mine = zone ? yourTime(props.at, props.day, zone, props.words) : null;
-  return mine ? (
+  if (!zone) return <span className="font-bold tabular-nums">{props.st}</span>;
+  // "15:00 your time (+1 d)" gets the zone's name after "your time": "15:00 your time (BRT) (+1 d)".
+  const name = zoneName(zone, props.at, props.language);
+  const [time, ...shift] = yourTime(props.at, props.day, zone, props.words).split(" (");
+  const mine = [`${time}${name ? ` (${name})` : ""}`, ...shift].join(" (");
+  return (
     <>
       <span className="font-bold tabular-nums">{mine}</span>
       <span className="text-ink/75">{` · ${props.st}`}</span>
     </>
-  ) : (
-    <span className="font-bold tabular-nums">{props.st}</span>
   );
 }
 

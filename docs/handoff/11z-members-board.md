@@ -76,6 +76,11 @@ Closes #331 (the members' board, the first slice of #301); part of #293. Rules a
 - **Out-of-date languages**: a notice language behind the newest (`staleOf`) shows "This translation may be behind the newest version. The other languages are one tap away." (EN, PT, FR).
 - **Owner's asks**: `/admin` "Sign out members" (sheet first, PIN, member sessions of that workspace only) and Translate on the Start here editor (drafts with Accept / Undo, nothing saved until Save, 3,000-character limit). Both recorded in D105.
 
+## Persona panel round
+- Recorded in D105 ("Persona panel round"): the sticky preview strip and "Previewing as a member"; the line under the title with "Start here ↓"; no second "This week" heading; language tags on cards; the editor's missing-part hint; the zone's name beside "your time"; "See the event above for your time."; link labels by destination and "See notice"; the "Who to ask" help; the copy changes; the `/admin` buttons renamed and reordered with the member count in the sheet; full-size Accept and Undo and tinted draft fields.
+- D73 and D99 carry a dated amendment for the renamed "Sign out everyone" button.
+- The repeated PT line in the earlier Translate screenshot came from the Groq stand-in (one fixed sentence per language), not from the editor; the stand-in now echoes each text's start, and the r3 shots show a different line per field.
+
 ## Open issues
 - `noaccess.no_role` is no longer reached from the sign-in. An old link with `?why=no_role` still shows it. It could be removed with the reason list in D73.
 - A person who leaves the Discord server keeps the board for up to 30 days (D105). "Sign out members" on `/admin` ends every member session at once; there is no per-person sign-out.

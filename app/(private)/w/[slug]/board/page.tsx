@@ -12,6 +12,7 @@ import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
 import { requireBoard } from "@/lib/private/access";
 import { boardView } from "@/lib/private/board";
+import type { WorkspaceDictionary } from "@/lib/private/dictionary";
 import { noticeChannels } from "@/lib/private/notice-publish";
 import { SLUG } from "@/lib/private/sign-in";
 import { serverDay } from "@/lib/schedule";
@@ -22,6 +23,23 @@ import { refuse } from "../../../_ui/refuse";
 import { SignOutButton } from "../../../_ui/SignOutButton";
 
 export const metadata: Metadata = { title: "Members’ board" };
+
+/** "Signed in as … · Sign out"; an officer's preview names no officer, and reads as a member's would. */
+function Account(props: { officer: boolean; name: string; slug: string; t: WorkspaceDictionary }) {
+  const { t } = props;
+  if (props.officer) return <span className="min-w-0 truncate py-2">{t["board.previewing"]}</span>;
+  return (
+    <>
+      <span className="min-w-0 truncate">
+        {fill(t["shell.signedIn"], { name: isolate(props.name) })}
+      </span>
+      <SignOutButton
+        slug={props.slug}
+        words={{ label: t["shell.signOut"], ask: t["shell.signOutAsk"], stay: t["shell.stay"] }}
+      />
+    </>
+  );
+}
 
 export default async function BoardPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -41,16 +59,8 @@ export default async function BoardPage({ params }: { params: Promise<{ slug: st
   }
   const { language, t } = await workspaceWords();
   const alliance = ALLIANCES.find((a) => a.unionId === access.unionId);
-  const name = access.name ?? "";
-  const account = (
-    <>
-      <span className="min-w-0 truncate">{fill(t["shell.signedIn"], { name: isolate(name) })}</span>
-      <SignOutButton
-        slug={slug}
-        words={{ label: t["shell.signOut"], ask: t["shell.signOutAsk"], stay: t["shell.stay"] }}
-      />
-    </>
-  );
+  const account = <Account officer={access.officer} name={access.name ?? ""} slug={slug} t={t} />;
+  const linked = new Set(view.entries.flatMap((e) => (e.noticeId === null ? [] : [e.noticeId])));
   return (
     <Frame
       language={language}
@@ -60,27 +70,34 @@ export default async function BoardPage({ params }: { params: Promise<{ slug: st
       {...(alliance && { subtitle: `${alliance.tag} · ${alliance.name}` })}
     >
       {access.officer && (
-        <aside className="mb-4 border-l-4 border-plum pl-3">
-          <p>{t["board.preview"]}</p>
-          <p className="flex flex-wrap gap-x-4">
-            <a href={`/w/${slug}`} className={LINK}>
-              {t["board.preview.back"]}
-            </a>
-            <a href={`/w/${slug}/start-here`} className={LINK}>
-              {t["board.preview.edit"]}
-            </a>
-          </p>
+        // A strip that stays on screen while scrolling, so a preview is never taken for the member view.
+        <aside className="sticky top-0 z-20 -mx-4 -mt-5 mb-4 flex flex-wrap items-center justify-between gap-x-3 bg-plum px-4 py-1 text-paper sm:-mx-6 sm:px-6">
+          <p className="py-2 font-semibold">{t["board.preview"]}</p>
+          <a
+            href={`/w/${slug}`}
+            className="inline-flex min-h-11 items-center font-semibold underline underline-offset-4"
+          >
+            {t["board.preview.back"]}
+          </a>
         </aside>
       )}
       <h1 className="font-display text-display-lg">{t["board.title"]}</h1>
+      <p className="mt-1">
+        {t["board.lead"]}{" "}
+        <a href="#board-start" className={LINK}>
+          {t["board.lead.start"]}
+        </a>
+      </p>
+      {access.officer && <p className="text-body-sm text-ink/75">{t["board.preview.only"]}</p>}
       <Week t={t} language={language} today={today} entries={view.entries} notices={view.notices} />
-      <Notices t={t} language={language} notices={view.notices} />
+      <Notices t={t} language={language} notices={view.notices} linked={linked} />
       <StartHere
         t={t}
         language={language}
         texts={view.startHere}
         channel={noticeChannels(env, slug).members?.name ?? null}
         guildId={access.guildId}
+        edit={access.officer ? `/w/${slug}/start-here` : null}
       />
     </Frame>
   );

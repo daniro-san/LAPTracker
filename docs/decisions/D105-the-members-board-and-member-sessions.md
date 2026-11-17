@@ -68,3 +68,15 @@ Amends D71's "Regular members are out of scope" and "Leadership only", for this 
 **Logs.** `w.sign_in` and `w.renewed` carry `member: 0|1`. Nothing else is logged by the board.
 
 **Not built (later, issue 301):** a calendar feed, weekly thanks, "my EB/caravan line", self-report, Spanish, push.
+
+**Persona panel round (2026-11-17, 11z; a new member, an adversarial reviewer, a copywriter).**
+
+- **Preview.** An officer on the board sees a plum strip that stays at the top while scrolling: "Preview: this is what members see" and "Back to the Officers' Desk". The header reads "Previewing as a member", with no officer name, and a line says "Only events and notices marked for members are here." "Edit Start here" sits in the Start here section.
+- **What the page is.** Under the title: "Your officers keep this page. New here? Start here ↓", the last part a jump to Start here. The "This week" heading under the title "This week in the alliance" is gone.
+- **Language.** A block not in the viewer's language carries a tag on its card: "English only for now" (one language written) or "Not in Portuguese yet" (several). The tabs open on the viewer's language when it is written. In the editor, a part written in one language and empty in another shows "PT is missing “Who to ask”." under the tabs.
+- **Times.** "15:00 your time (BRT) · 16:00 ST": the zone's short name in the viewer's language, from the browser (`Intl`, `timeZoneName: "short"`; English may read "GMT-3"). A notice an event links to says "See the event above for your time."
+- **Links.** An event's link is labelled by where it goes: "Open in Discord" for discord.com, discord.gg or discordapp.com, otherwise "Open link (opens example.com)". The link to an event's notice reads "See notice".
+- **Who to ask.** The editor's help says every member sees it and suggests roles or channels rather than one person. Names are not blocked: it is the officers' choice.
+- **Copy.** Empty Start here: "Nothing here yet. Your officers are working on it." A notice with no end day: "Stays up until removed". Portuguese "Signed in as": "Você entrou como {name}" (the whole workspace). `/admin`: "Allowlist: empty".
+- **`/admin` buttons.** "Sign out members only (officers stay signed in)" comes first, in the neutral style; "Sign out everyone, including me" second, in a danger style (D73 and D99 amended). The sheet names the count of member sessions open: "Sign out 2 members in /w/ogs? …" (`listWorkspaces` counts them with the open sessions).
+- **Translate drafts.** Accept and Undo are full 44 px buttons beside "Draft from Translate, not saved"; the fields holding draft text are tinted and ringed in plum until accepted or undone. Each part is sent and placed back on its own; the same line in two fields in the earlier screenshots came from the test stand-in, which answered every text with one fixed sentence.
