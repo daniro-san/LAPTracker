@@ -2,6 +2,8 @@
 // Undead Siege and Elixir Scramble teams, and those added by hand (plunders and the rest). Each card says
 // its counts, where "not set" is only that (D75), and opens the marking page; an Elixir Scramble card also
 // opens its team. `?week=` takes any day of the week shown, as on the Calendar.
+import { Fragment } from "react";
+
 import { isDay, mondayOf, offsetLabel } from "@/lib/private/calendar-time";
 import { weekItems } from "@/lib/private/roll-call-view";
 
@@ -21,10 +23,11 @@ function Counts({ parts }: { parts: string[] }) {
   return (
     <p className="text-body-sm text-ink/80">
       {parts.map((p, i) => (
-        <span key={p} className="whitespace-nowrap">
+        <Fragment key={p}>
+          {/* The separator stays outside the unit, so the line can break at its spaces. */}
           {i > 0 && " · "}
-          {p}
-        </span>
+          <span className="whitespace-nowrap">{p}</span>
+        </Fragment>
       ))}
     </p>
   );
