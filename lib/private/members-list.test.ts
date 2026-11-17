@@ -3,13 +3,16 @@ import { describe, expect, it } from "vitest";
 import type { MemberFacts } from "./fact-fields";
 import type { MemberRow } from "./members";
 import {
+  chipCounts,
   clockAt,
-  facetCounts,
   factsToAsk,
   keepMembers,
   NO_QUERY,
   orderMembers,
+  pastMatch,
   pickQuery,
+  queryString,
+  sheetCounts,
   whoOf,
   type ListMember,
 } from "./members-list";
@@ -20,6 +23,7 @@ const clock = clockAt("2026-11-17", "Etc/GMT+2");
 const m = (uid: number, over: Partial<ListMember> = {}): ListMember => ({
   uid,
   name: `P${uid}`,
+  pastNames: [],
   rankCode: 103,
   might: 1000 * uid,
   kills: 10 * uid,
@@ -76,12 +80,22 @@ describe("filters together", () => {
     ];
     const query = { ...NO_QUERY, q: "la", r4: true };
     expect(keepMembers(rows, query, clock).kept.map((r) => r.uid)).toEqual([1, 2]);
-    expect(keepMembers(rows, { ...query, ask: true }, clock).kept.map((r) => r.uid)).toEqual([1]);
-    const counts = facetCounts(rows, query, clock, ["fr", "en"]);
-    expect([counts.r4, counts.ask, counts.who.new, counts.who.any]).toEqual([2, 1, 0, 2]);
+    expect(keepMembers(rows, { ...query, ask: "any" }, clock).kept.map((r) => r.uid)).toEqual([1]);
+    const chips = chipCounts(rows, query, clock);
+    const counts = sheetCounts(rows, query, clock, ["fr", "en"]);
+    expect([chips.r4, chips.ask, counts.who.new, counts.who.any]).toEqual([2, 1, 0, 2]);
     expect(counts.lang).toEqual({ fr: 2, en: 1 });
-    const other = facetCounts(rows, { ...query, r4: false }, clock, ["fr", "en"]);
-    expect([other.r4, other.who.new, other.ask]).toEqual([2, 1, 2]);
+    const other = { ...query, r4: false };
+    expect([
+      chipCounts(rows, other, clock).r4,
+      sheetCounts(rows, other, clock, []).who.new,
+    ]).toEqual([2, 1]);
+    // A language filter counts who it cannot judge; "See who" lists exactly them.
+    const fr = keepMembers(rows, { ...query, r4: false, lang: "fr" }, clock);
+    expect(fr.noLanguage).toBe(1);
+    expect(keepMembers(rows, { ...other, ask: "languages" }, clock).kept.map((r) => r.uid)).toEqual(
+      [3],
+    );
     for (const code of ["fr", "en"]) {
       const chosen = keepMembers(rows, { ...query, lang: code }, clock).kept.length;
       expect(counts.lang[code]).toBe(chosen);
@@ -127,6 +141,18 @@ describe("Who", () => {
   });
 });
 
+describe("past names", () => {
+  it("are searched too, and the row can say which one matched", () => {
+    const rows = [m(1, { name: "Sorrel", pastNames: ["Mara"] }), m(2, { name: "Marigold" })];
+    const kept = keepMembers(rows, { ...NO_QUERY, q: "MARA" }, clock).kept;
+    expect(kept.map((r) => r.uid)).toEqual([1]);
+    expect([
+      pastMatch(rows[0] as ListMember, "mara"),
+      pastMatch(rows[1] as ListMember, "mari"),
+    ]).toEqual(["Mara", null]);
+  });
+});
+
 describe("pickQuery", () => {
   const pick = (s: string) => pickQuery(new URLSearchParams(s), ["en", "pt"]);
   it("reads the address, drops what it does not know and maps the old ?f= links", () => {
@@ -140,5 +166,23 @@ describe("pickQuery", () => {
       time: { mode: "night", hour: 3 },
       lang: "pt",
     });
+  });
+});
+
+describe("the address", () => {
+  it("round-trips the query and the order, and leaves the default order out", () => {
+    const languages = ["en", "pt"];
+    const query = {
+      q: "mar",
+      r4: true,
+      ask: "timeZone" as const,
+      who: "new" as const,
+      time: { mode: "day" as const, hour: 18 },
+      lang: "pt",
+    };
+    const text = queryString(query, "kills-asc");
+    expect(pickQuery(new URLSearchParams(text), languages)).toEqual(query);
+    expect(new URLSearchParams(text).get("order")).toBe("kills-asc");
+    expect(queryString({ ...NO_QUERY, ask: "any" }, "rank")).toBe("ask=1");
   });
 });

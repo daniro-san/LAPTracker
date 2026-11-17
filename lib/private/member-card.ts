@@ -1,17 +1,20 @@
-// One member card's words, made on the server (issue 296): every number and date is formatted here, in
-// the officer's language, so the client list only lays strings out and its markup is sent once. No data
-// is "—", never 0.
-import { compact, exact } from "@/app/_ui/format";
-import { fill } from "@/lib/copy";
-import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
+// One member card's words, made on the server (issues 296, 337): every number and date is formatted here, in
+// the officer's language, so the browser only lays strings out. No data is "—", never 0. `memberCard` is the
+// read behind GET /api/w/[slug]/members/[uid]: one member of the workspace's own alliance, no photo read.
+import { compactLarge } from "../compact";
+import { fill } from "../copy";
+import type { Db } from "../db";
+import type { WorkspaceAccess } from "./access";
+import type { WorkspaceDictionary, WorkspaceLanguage } from "./dictionary";
 import {
   FACT_FIELDS,
   type FactField,
   type FactSource,
   type FactValues,
   type MemberFacts,
-} from "@/lib/private/fact-fields";
-import type { MemberRow } from "@/lib/private/members";
+} from "./fact-fields";
+import { factText, NONE } from "./fact-text";
+import { membersView, type MemberRow } from "./members";
 import {
   breakText,
   dayLabel,
@@ -20,9 +23,13 @@ import {
   statusOf,
   type Formats,
   type Status,
-} from "@/lib/private/members-sheet";
+} from "./members-sheet";
 
-import { factText, NONE } from "./fact-text";
+const exact = (n: number, language: string) =>
+  new Intl.NumberFormat(language, { maximumFractionDigits: 0 }).format(Math.abs(n));
+/** 61.2M (D78); below 1,000 the plain integer. */
+const compact = (n: number, language: string) =>
+  Math.abs(n) < 1000 ? exact(n, language) : compactLarge(n, language);
 
 export interface CardFormats extends Formats {
   /** 61.2M, 61,2M (D78). */
@@ -209,4 +216,18 @@ export function cardData(
     stored: m.facts,
     autoStatus: statusParts({ ...m, officerStatus: null }, t, f).label || NONE,
   };
+}
+
+/** One member's card in `language`, or null when the uid is not in the workspace's own alliance. */
+export async function memberCard(
+  db: Db,
+  access: WorkspaceAccess,
+  uid: number,
+  at: { now: Date; zone: string; language: WorkspaceLanguage; t: WorkspaceDictionary },
+): Promise<CardData | null> {
+  const view = await membersView(db, access, at.now, at.zone);
+  const member = view.members.find((m) => m.uid === uid);
+  if (!member) return null;
+  const f = cardFormats(at.language, at.zone, at.now);
+  return cardData(member, view.week, at.t, f, shownOf(view.members));
 }

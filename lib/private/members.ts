@@ -8,9 +8,8 @@
 import type { Db } from "../db";
 import { roleOf } from "../queries/leadership";
 import { mightUnchanged } from "../queries/might-unchanged";
-import type { Photo } from "../queries/photo";
-import { findPhotos } from "../repo/alliance-snapshots";
-import { anyRoster, type AnyRoster } from "../repo/workspace-any-roster";
+import { photosOf, type Photo } from "../queries/photo";
+import { anyRoster, namesSeen, type AnyRoster } from "../repo/workspace-any-roster";
 import {
   endOfDayReads,
   firstSeenDays,
@@ -84,8 +83,6 @@ export interface MemberRow {
   awayUntil: string | null;
   /** From a roster read before the first end-of-day read: nothing computed, no status. */
   early: boolean;
-  /** The photo and frame as the public pages show them: served by /img/avatar and /img/frame (D22, D65). */
-  photo: Photo;
 }
 
 export interface MembersView {
@@ -202,11 +199,8 @@ function plainRow(m: RosterMember, week: string[], firstSeen: Map<number, string
     reasons: [],
     missing: [],
     missingDays: 0,
-    photo: NO_PHOTO,
   };
 }
-
-const NO_PHOTO: Photo = { hasAvatar: false, frameId: null };
 
 function earlyView(
   roster: AnyRoster | null,
@@ -230,21 +224,6 @@ const order = (a: MemberRow, b: MemberRow) =>
 
 /** The Members tab of the workspace's own alliance, as of `now`; `zone` is the server's (SERVER_TZ). */
 export async function membersView(
-  db: Db,
-  access: WorkspaceAccess,
-  now: Date,
-  zone: string,
-): Promise<MembersView> {
-  const view = await readView(db, access, now, zone);
-  const photos = await findPhotos(
-    db,
-    view.members.map((m) => m.uid),
-  );
-  const members = view.members.map((m) => ({ ...m, photo: photos.get(m.uid) ?? NO_PHOTO }));
-  return { ...view, members };
-}
-
-async function readView(
   db: Db,
   access: WorkspaceAccess,
   now: Date,
@@ -288,4 +267,33 @@ async function readView(
     },
     zones: usedZones(facts),
   };
+}
+
+/** A member as the list page shows them: the photo and frame, and the names they used before here. */
+export type ListSource = MemberRow & { photo: Photo; pastNames: string[] };
+
+const NO_PHOTO: Photo = { hasAvatar: false, frameId: null };
+
+/**
+ * The list page's own read (issue 337), apart from `membersView` so the card route never runs it: each
+ * member's photo and frame (as the public pages show them) and their past names in this alliance's
+ * rosters, newest first.
+ */
+export async function withListExtras(
+  db: Db,
+  access: WorkspaceAccess,
+  members: MemberRow[],
+): Promise<ListSource[]> {
+  const [photos, names] = await Promise.all([
+    photosOf(
+      db,
+      members.map((m) => m.uid),
+    ),
+    namesSeen(db, access.unionId),
+  ]);
+  return members.map((m) => ({
+    ...m,
+    photo: photos.get(m.uid) ?? NO_PHOTO,
+    pastNames: (names.get(m.uid) ?? []).filter((n) => n !== m.name),
+  }));
 }

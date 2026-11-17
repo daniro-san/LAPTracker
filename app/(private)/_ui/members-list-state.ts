@@ -9,13 +9,14 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "reac
 import { track, type MemberFilter } from "@/lib/analytics/events";
 import { LANGUAGES } from "@/lib/private/fact-fields";
 import {
+  chipCounts,
   clockAt,
-  facetCounts,
   keepMembers,
   languagesIn,
   NO_QUERY,
   orderMembers,
   queryString,
+  sheetCounts,
   type MemberQuery,
   type Order,
 } from "@/lib/private/members-list";
@@ -84,6 +85,9 @@ export function useMembersList(props: {
   /** The server hour when the page was made: the hour picker's first value. */
   hour: number;
   serverZone: string;
+  /** Before the first end-of-day read nothing is computed: Who shows "—" (D75). */
+  early: boolean;
+  sheetOpen: boolean;
 }) {
   const { rows } = props;
   const [query, setQuery] = useState(props.initialQuery);
@@ -98,8 +102,16 @@ export function useMembersList(props: {
     [props.today, props.serverZone],
   );
   const langs = useMemo(() => languagesIn(rows, LANGUAGES), [rows]);
-  const { kept, noZone } = useMemo(() => keepMembers(rows, query, clock), [rows, query, clock]);
-  const counts = useMemo(() => facetCounts(rows, query, clock, langs), [rows, query, clock, langs]);
+  const { kept, noZone, noLanguage } = useMemo(
+    () => keepMembers(rows, query, clock),
+    [rows, query, clock],
+  );
+  const chips = useMemo(() => chipCounts(rows, query, clock), [rows, query, clock]);
+  // The sheet's counts (24 hours × 2, every Who and language) only while the sheet is open.
+  const sheet = useMemo(
+    () => (props.sheetOpen ? sheetCounts(rows, query, clock, langs) : null),
+    [props.sheetOpen, rows, query, clock, langs],
+  );
   const { heading, groups } = useMemo(() => groupsOf(kept, order), [kept, order]);
   useAddress(queryString(query, order));
   useEffect(() => {
@@ -129,7 +141,8 @@ export function useMembersList(props: {
   };
   const clearFilters = () => change({ ...NO_QUERY, q: query.q });
   return {
-    ...{ query, order, depth, hour, clock, langs, kept, noZone, counts, heading, groups },
+    ...{ query, order, depth, hour, clock, langs, kept, noZone, noLanguage, chips, sheet },
+    ...{ heading, groups, early: props.early },
     ...{ change, choose, more, clearFilters, setHour },
   };
 }

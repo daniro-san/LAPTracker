@@ -4,13 +4,12 @@
 // opened (/api/w/[slug]/members/[uid]). The photo is a yes/no and a frame id (D22, D65).
 import type { WorkspaceDictionary, WorkspaceKey } from "@/lib/private/dictionary";
 import { membersEn } from "@/lib/private/dictionary.members";
-import type { MemberRow } from "@/lib/private/members";
+import { NONE } from "@/lib/private/fact-text";
+import { or, statusParts, type CardFormats } from "@/lib/private/member-card";
+import type { ListSource } from "@/lib/private/members";
 import { listMember, type ListMember } from "@/lib/private/members-list";
 import { sheetRow, type Status } from "@/lib/private/members-sheet";
 import type { Photo } from "@/lib/queries/photo";
-
-import { NONE } from "./fact-text";
-import { or, statusParts, type CardFormats } from "./member-card-data";
 
 export interface ListRow extends ListMember {
   /** "R4", "R3": the code only; the title is in the sheet. */
@@ -25,21 +24,23 @@ export interface ListRow extends ListMember {
 }
 
 /** "48.2M · T10", "— · T10", "48.2M", or "—". */
-function squadText(m: MemberRow, f: CardFormats): string {
+function squadText(m: ListSource, f: CardFormats): string {
   const [squad, tier] = [m.facts.squadMight?.value ?? null, m.facts.troopTier?.value ?? null];
   if (squad === null && tier === null) return NONE;
   return tier === null ? or(squad, f.compact) : `${or(squad, f.compact)} · T${tier}`;
 }
 
-export function listRow(m: MemberRow, t: WorkspaceDictionary, f: CardFormats): ListRow {
+const rankShort = (m: ListSource) =>
+  m.rankCode !== null && m.rankCode >= 101 && m.rankCode <= 105
+    ? `R${m.rankCode - 100}`
+    : (m.rank ?? NONE);
+
+export function listRow(m: ListSource, t: WorkspaceDictionary, f: CardFormats): ListRow {
   const { status, label, lines } = statusParts(m, t, f);
   const quiet = status === "fine" || status === "none";
   return {
     ...listMember(m),
-    rankShort:
-      m.rankCode !== null && m.rankCode >= 101 && m.rankCode <= 105
-        ? `R${m.rankCode - 100}`
-        : (m.rank ?? NONE),
+    rankShort: rankShort(m),
     photo: m.photo,
     text: {
       might: or(m.might, f.compact),
@@ -65,12 +66,9 @@ const LIST_KEYS = [
   "members.copied",
   "members.copyFailed",
   "members.new",
-  "members.details",
-  "members.detailsOf",
   "status.checkin",
   "status.help",
   "status.break",
-  "calendar.yours",
   "intro.close",
 ] as const satisfies readonly WorkspaceKey[];
 

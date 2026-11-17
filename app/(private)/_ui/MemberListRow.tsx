@@ -26,13 +26,15 @@ export function MemberListRow(props: {
   words: ListWords;
   /** "To ask: main squad, time zone", when the Info to ask chip is on. */
   toAsk: string | null;
+  /** "was Mara", when the search found a past name. */
+  was: string | null;
   /** "14:05 their time", once the browser knows the time; null without a time zone. */
   theirTime: string | null;
   index: number;
   onOpen: () => void;
 }) {
   const { row, words: t } = props;
-  const extra = [props.toAsk, props.theirTime].filter((x) => x !== null);
+  const extra = [props.was, props.toAsk, props.theirTime].filter((x) => x !== null);
   return (
     <li>
       <button
@@ -65,17 +67,15 @@ export function MemberListRow(props: {
               {row.text.donated}
             </span>
           </span>
-          {/* The second line runs under the numbers too, so the evidence has room at 360 px. */}
-          {(row.statusLine || extra.length > 0) && (
-            <span className="line-clamp-2 text-body-sm">
-              {row.statusLine && <span className={STATUS_TONE[row.status]}>{row.statusLine}</span>}
-              {extra.length > 0 && (
-                <span className="text-ink/75">
-                  {row.statusLine ? " · " : ""}
-                  {extra.join(" · ")}
-                </span>
-              )}
+          {/* The status and its evidence on one line, under the numbers too; the full text is in
+              the sheet. What a filter or the search shows has its own line, never cut. */}
+          {row.statusLine && (
+            <span className={`truncate text-body-sm ${STATUS_TONE[row.status]}`}>
+              {row.statusLine}
             </span>
+          )}
+          {extra.length > 0 && (
+            <span className="text-body-sm text-ink/75">{extra.join(" · ")}</span>
           )}
         </span>
       </button>

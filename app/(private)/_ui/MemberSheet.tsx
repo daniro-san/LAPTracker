@@ -10,10 +10,13 @@ import { useEffect, useState } from "react";
 import { PlayerAvatar } from "@/app/_ui/Pictures";
 import { buttonClass } from "@/lib/brand/components/Button";
 import { Sheet } from "@/lib/brand/components/Sheet";
+import { fill } from "@/lib/copy";
+import { clockIn } from "@/lib/private/calendar-time";
+import type { CardData } from "@/lib/private/member-card";
 
-import type { CardData } from "./member-card-data";
 import type { ListRow, ListWords } from "./member-list-data";
 import { MemberCard, type EditorContext } from "./MemberCards";
+import { useMinute } from "./YourTime";
 
 async function readCard(slug: string, uid: number): Promise<CardData | null> {
   try {
@@ -45,6 +48,11 @@ export function MemberSheet(props: {
     };
   }, [editor.slug, row.uid, props.version, attempt]);
   const shown = card?.uid === row.uid ? card : null;
+  const minute = useMinute();
+  const zoneNow =
+    row.zone && minute !== null
+      ? fill(t["list.theirTimeNow"], { time: clockIn(minute * 60_000, row.zone, "").time })
+      : null;
   return (
     <Sheet labelledBy="member-sheet-title" onCancel={props.onClose} backdropCloses>
       <div className="flex items-center gap-3">
@@ -83,7 +91,7 @@ export function MemberSheet(props: {
             </button>
           </div>
         ) : (
-          <MemberCard card={shown.data} editor={editor} />
+          <MemberCard card={shown.data} editor={editor} zoneNow={zoneNow} />
         )}
       </div>
       <button

@@ -18,6 +18,18 @@ export function useViewerZone(): string | null {
   return useSyncExternalStore(subscribe, browserZone, () => null);
 }
 
+/** The current minute (epoch minutes), after hydration only; it moves on by itself. */
+export function useMinute(): number | null {
+  return useSyncExternalStore(
+    (tick) => {
+      const id = setInterval(tick, 20_000);
+      return () => clearInterval(id);
+    },
+    () => Math.floor(Date.now() / 60_000),
+    () => null,
+  );
+}
+
 export type ClockChoice = "server" | "mine";
 const CLOCK_KEY = "ws.clock";
 const clockListeners = new Set<() => void>();

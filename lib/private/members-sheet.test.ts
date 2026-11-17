@@ -42,7 +42,6 @@ const m: MemberRow = {
   officerStatus: null,
   awayUntil: null,
   early: false,
-  photo: { hasAvatar: false, frameId: null },
 };
 
 describe("Copy for spreadsheet (D71)", () => {

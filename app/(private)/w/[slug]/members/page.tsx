@@ -13,15 +13,20 @@ import { clockIn } from "@/lib/private/calendar-time";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import { LANGUAGES } from "@/lib/private/fact-fields";
 import { toReviewCount } from "@/lib/private/import-view";
-import { membersView, type MembersView } from "@/lib/private/members";
-import { pickOrder, pickQuery } from "@/lib/private/members-list";
+import { cardFormats, type CardFormats } from "@/lib/private/member-card";
+import {
+  membersView,
+  withListExtras,
+  type ListSource,
+  type MembersView,
+} from "@/lib/private/members";
+import { pickOrder, pickQuery, whoOf } from "@/lib/private/members-list";
 import { plural, sheetHeader } from "@/lib/private/members-sheet";
 import { SLUG } from "@/lib/private/sign-in";
 import { serverDay } from "@/lib/schedule";
 
 import { editorWords } from "../../../_ui/facts-form";
 import { SignedInFrame, workspaceWords } from "../../../_ui/Frame";
-import { cardFormats, type CardFormats } from "../../../_ui/member-card-data";
 import { listRow, listWords } from "../../../_ui/member-list-data";
 import { MembersList } from "../../../_ui/MembersList";
 import { MembersSource } from "../../../_ui/MembersSource";
@@ -89,13 +94,16 @@ export default async function MembersPage({
   const now = new Date();
   const env = getEnv();
   // INVARIANT workspace.access-first: nothing private is read before this check.
-  const { access, view, waiting } = await withPageDb(async (db) => {
+  const { access, view, rows, waiting } = await withPageDb(async (db) => {
     const access = await requireWorkspace(db, slug, jar, now);
-    const waiting = access.ok ? await toReviewCount(db, access, now) : 0;
+    if (!access.ok) return { access, waiting: 0, view: null, rows: [] };
+    const view = await membersView(db, access, now, env.SERVER_TZ);
     return {
       access,
-      waiting,
-      view: access.ok ? await membersView(db, access, now, env.SERVER_TZ) : null,
+      waiting: await toReviewCount(db, access, now),
+      view,
+      // The list's own read (photos and past names); the card route never runs it (issue 337).
+      rows: await withListExtras(db, access, view.members),
     };
   });
   if (!access.ok) {
@@ -114,7 +122,7 @@ export default async function MembersPage({
         <p className="mt-4 border border-rule px-4 py-5">{t["members.none"]}</p>
       ) : (
         <Roster
-          {...{ slug, view, t, language, search, now }}
+          {...{ slug, view, rows, t, language, search, now }}
           readAt={view.readAt}
           zone={env.SERVER_TZ}
           readHour={env.DAILY_ROSTER_AT}
@@ -136,6 +144,7 @@ export default async function MembersPage({
 function Roster(props: {
   slug: string;
   view: MembersView;
+  rows: ListSource[];
   readAt: Date;
   t: WorkspaceDictionary;
   language: WorkspaceLanguage;
@@ -147,7 +156,7 @@ function Roster(props: {
   const { slug, view, t, language, now, zone } = props;
   const f = cardFormats(language, zone, now);
   const today = serverDay(now, { SERVER_TZ: zone });
-  const checkins = view.members.filter((m) => m.reasons.length > 0 && !m.officerStatus).length;
+  const checkins = view.members.filter((m) => whoOf(m).includes("checkin")).length;
   const [from, to] = [view.week[0] ?? "", view.week[6] ?? ""];
   return (
     <>
@@ -176,7 +185,8 @@ function Roster(props: {
       </p>
       <Legend t={t} />
       <MembersList
-        rows={view.members.map((m) => listRow(m, t, f))}
+        rows={props.rows.map((m) => listRow(m, t, f))}
+        early={view.early}
         words={listWords(t)}
         language={language}
         editor={{ slug, words: editorWords(t), language, serverZone: zone, used: view.zones }}

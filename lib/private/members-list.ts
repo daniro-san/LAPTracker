@@ -1,7 +1,8 @@
 // The Members list's filters, counts and orders (issue 337, D98), pure and browser-safe: the page turns
-// each MemberRow into a small ListMember on the server, and the list filters, counts and orders those in
+// each member into a small ListMember on the server, and the list filters, counts and orders those in
 // the browser as the officer types and taps. Missing data never matches a filter and is never sorted as 0
-// (D75): it goes to its own group at the end, and so does a member on a break, in every order.
+// (D75): it is counted on its own "Not shown" line, or goes to its own group at the end, and so does a
+// member on a break, in every order.
 import { zonedInstant, zoneOffset } from "./calendar-time";
 import type { MemberFacts } from "./fact-fields";
 import type { MemberRow } from "./members";
@@ -9,6 +10,9 @@ import type { MemberRow } from "./members";
 /** The facts an officer can ask a member for ("Info to ask"); languages count (owner, 2026-11-17). */
 export const ASK_FACTS = ["squadMight", "troopTier", "adTech", "timeZone", "languages"] as const;
 export type AskFact = (typeof ASK_FACTS)[number];
+/** Info to ask: any fact missing (the chip), or the one a "Not shown … See who" line names. */
+export const ASK_KINDS = ["any", "timeZone", "languages"] as const;
+export type AskKind = (typeof ASK_KINDS)[number];
 
 /** "Who" in the Filters sheet: one choice at a time. */
 export const WHO = ["checkin", "help", "break", "new"] as const;
@@ -25,10 +29,10 @@ export const DAY_TO = 23 * 60;
 export type TimeMode = "day" | "night";
 
 export interface MemberQuery {
-  /** The name search, as typed. */
+  /** The name search, as typed; it also finds past names. */
   q: string;
   r4: boolean;
-  ask: boolean;
+  ask: AskKind | null;
   who: Who | null;
   /** Daytime or night for them when the server clock reads `hour`:00. */
   time: { mode: TimeMode; hour: number } | null;
@@ -39,7 +43,7 @@ export interface MemberQuery {
 export const NO_QUERY: MemberQuery = {
   q: "",
   r4: false,
-  ask: false,
+  ask: null,
   who: null,
   time: null,
   lang: null,
@@ -49,6 +53,8 @@ export const NO_QUERY: MemberQuery = {
 export interface ListMember {
   uid: number;
   name: string;
+  /** Names the member used before in this alliance, newest first. */
+  pastNames: string[];
   rankCode: number | null;
   might: number | null;
   kills: number | null;
@@ -80,10 +86,11 @@ export function whoOf(m: MemberRow): Who[] {
   ];
 }
 
-export function listMember(m: MemberRow): ListMember {
+export function listMember(m: MemberRow & { pastNames: string[] }): ListMember {
   return {
     uid: m.uid,
     name: m.name,
+    pastNames: m.pastNames,
     rankCode: m.rankCode,
     might: m.might,
     kills: m.kills,
@@ -101,6 +108,27 @@ export const fold = (s: string) =>
     .normalize("NFD")
     .replace(/\p{Mn}/gu, "")
     .toLowerCase();
+
+/** Each member's names folded once: the current name first, then the past ones. */
+const foldedNames = new WeakMap<ListMember, string[]>();
+function namesOf(m: ListMember): string[] {
+  let names = foldedNames.get(m);
+  if (!names) {
+    names = [m.name, ...m.pastNames].map(fold);
+    foldedNames.set(m, names);
+  }
+  return names;
+}
+
+/** The past name the search found, when the current name does not hold it ("was Mara"); else null. */
+export function pastMatch(m: ListMember, q: string): string | null {
+  const needle = fold(q.trim());
+  if (needle === "") return null;
+  const [current = "", ...past] = namesOf(m);
+  if (current.includes(needle)) return null;
+  const i = past.findIndex((n) => n.includes(needle));
+  return i < 0 ? null : (m.pastNames[i] ?? null);
+}
 
 /** The minute on a zone's clock when the server's clock reads `hour`:00 on `today`; memoised per call site. */
 export function clockAt(today: string, serverZone: string) {
@@ -121,64 +149,83 @@ export type Clock = ReturnType<typeof clockAt>;
 
 export const isDaytime = (minute: number) => minute >= DAY_FROM && minute < DAY_TO;
 
-/** Whether the member's clock fits; null when their time zone is not known (they match neither). */
-function fitsTime(m: ListMember, time: NonNullable<MemberQuery["time"]>, clock: Clock) {
-  if (m.zone === null) return null;
-  return isDaytime(clock(m.zone, time.hour)) === (time.mode === "day");
+/** A query with its search folded once, for one pass over the rows. */
+type Ready = MemberQuery & { needle: string };
+const ready = (query: MemberQuery): Ready => ({ ...query, needle: fold(query.q.trim()) });
+
+const asks = (m: ListMember, ask: AskKind) =>
+  ask === "any" ? m.ask.length > 0 : m.ask.includes(ask);
+
+function keepsFacts(m: ListMember, q: Ready, clock: Clock): boolean {
+  // No time zone matches neither daytime nor night; no language matches no language (D75).
+  const time = q.time;
+  if (time && (m.zone === null || isDaytime(clock(m.zone, time.hour)) !== (time.mode === "day")))
+    return false;
+  return q.lang === null || m.languages.includes(q.lang);
 }
 
-const found = (m: ListMember, q: string) => {
-  const needle = fold(q.trim());
-  return needle === "" || fold(m.name).includes(needle);
-};
-
-function keeps(m: ListMember, query: MemberQuery, clock: Clock): boolean {
+function keeps(m: ListMember, q: Ready, clock: Clock): boolean {
   return (
-    found(m, query.q) &&
-    (!query.r4 || (m.rankCode ?? 0) >= 104) &&
-    (!query.ask || m.ask.length > 0) &&
-    (query.who === null || m.who.includes(query.who)) &&
-    (query.time === null || fitsTime(m, query.time, clock) === true) &&
-    (query.lang === null || m.languages.includes(query.lang))
+    (q.needle === "" || namesOf(m).some((n) => n.includes(q.needle))) &&
+    (!q.r4 || (m.rankCode ?? 0) >= 104) &&
+    (q.ask === null || asks(m, q.ask)) &&
+    (q.who === null || m.who.includes(q.who)) &&
+    keepsFacts(m, q, clock)
   );
 }
 
-/** The members the query keeps, in their order, and how many a time filter cannot judge (no time zone). */
+/**
+ * The members the query keeps, in their order, and how many the time or language filter cannot judge:
+ * those that pass every other filter but have no time zone, or no language, recorded.
+ */
 export function keepMembers<M extends ListMember>(rows: M[], query: MemberQuery, clock: Clock) {
-  const kept = rows.filter((m) => keeps(m, query, clock));
-  const noZone =
-    query.time === null
-      ? 0
-      : rows.filter((m) => m.zone === null && keeps(m, { ...query, time: null }, clock)).length;
-  return { kept, noZone };
+  const q = ready(query);
+  const kept = rows.filter((m) => keeps(m, q, clock));
+  const unjudged = (change: Partial<MemberQuery>, missing: (m: M) => boolean) =>
+    rows.filter((m) => missing(m) && keeps(m, { ...q, ...change }, clock)).length;
+  return {
+    kept,
+    noZone: q.time === null ? 0 : unjudged({ time: null }, (m) => m.zone === null),
+    noLanguage: q.lang === null ? 0 : unjudged({ lang: null }, (m) => m.languages.length === 0),
+  };
 }
 
 /** The languages someone has, in LANGUAGES order (the caller passes LANGUAGES). */
 export const languagesIn = (rows: ListMember[], order: readonly string[]) =>
   order.filter((code) => rows.some((m) => m.languages.includes(code)));
 
+function counter(rows: ListMember[], query: MemberQuery, clock: Clock) {
+  const q = ready(query);
+  return (change: Partial<MemberQuery>) =>
+    rows.filter((m) => keeps(m, { ...q, ...change }, clock)).length;
+}
+
+/** The two chips' counts: the list each would give, with the search and every other filter applied. */
+export function chipCounts(rows: ListMember[], query: MemberQuery, clock: Clock) {
+  const count = counter(rows, query, clock);
+  return { r4: count({ r4: true }), ask: count({ ask: "any" }) };
+}
+
 /**
- * Each option's count: how many members the list would hold with that option chosen, the search and every
- * other filter applied. `hours` gives, for each server hour, the count in daytime and at night.
+ * The Filters sheet's counts, made only while it is open: each Who and language option, and for each
+ * server hour the count in daytime and at night, with the search and every other filter applied.
  */
-export function facetCounts(rows: ListMember[], query: MemberQuery, clock: Clock, langs: string[]) {
-  const count = (change: Partial<MemberQuery>) =>
-    rows.filter((m) => keeps(m, { ...query, ...change }, clock)).length;
+export function sheetCounts(rows: ListMember[], query: MemberQuery, clock: Clock, langs: string[]) {
+  const count = counter(rows, query, clock);
   const hours = (mode: TimeMode) =>
     Array.from({ length: 24 }, (_, hour) => count({ time: { mode, hour } }));
+  const whoCount = (w: Who | "any") => count({ who: w === "any" ? null : w });
   return {
-    r4: count({ r4: true }),
-    ask: count({ ask: true }),
-    who: Object.fromEntries(
-      [...WHO, "any"].map((w) => [w, count({ who: w === "any" ? null : (w as Who) })]),
-    ) as Record<Who | "any", number>,
+    who: Object.fromEntries([...WHO, "any" as const].map((w) => [w, whoCount(w)])) as Record<
+      Who | "any",
+      number
+    >,
     lang: Object.fromEntries(langs.map((code) => [code, count({ lang: code })])),
     langAny: count({ lang: null }),
-    timeAny: count({ time: null }),
     hours: { day: hours("day"), night: hours("night") },
   };
 }
-export type FacetCounts = ReturnType<typeof facetCounts>;
+export type SheetCounts = ReturnType<typeof sheetCounts>;
 
 const VALUE: Record<Exclude<Order, "rank">, (m: ListMember) => number | null> = {
   might: (m) => m.might,
@@ -219,6 +266,8 @@ const OLD_F: Record<string, Partial<MemberQuery>> = {
 
 const hourOf = (raw: string | null) =>
   raw !== null && /^\d{1,2}$/.test(raw) && Number(raw) < 24 ? Number(raw) : null;
+const askOf = (raw: string | null): AskKind | null =>
+  raw === "1" ? "any" : (ASK_KINDS.find((k) => k !== "any" && k === raw) ?? null);
 
 /** The address as a query (a system boundary): unknown or out-of-range values are left out. */
 export function pickQuery(params: URLSearchParams, languages: readonly string[]): MemberQuery {
@@ -230,7 +279,7 @@ export function pickQuery(params: URLSearchParams, languages: readonly string[])
     ...OLD_F[params.get("f") ?? ""],
     q: (params.get("q") ?? "").slice(0, 64),
     ...(params.get("r4") === "1" && { r4: true }),
-    ...(params.get("ask") === "1" && { ask: true }),
+    ...(askOf(params.get("ask")) && { ask: askOf(params.get("ask")) }),
     ...(WHO.includes(who as Who) && { who: who as Who }),
     ...(day !== null
       ? { time: { mode: "day" as const, hour: day } }
@@ -247,7 +296,7 @@ export function queryString(query: MemberQuery, order: Order): string {
   const p = new URLSearchParams();
   if (query.q.trim()) p.set("q", query.q);
   if (query.r4) p.set("r4", "1");
-  if (query.ask) p.set("ask", "1");
+  if (query.ask) p.set("ask", query.ask === "any" ? "1" : query.ask);
   if (query.who) p.set("who", query.who);
   if (query.time) p.set(query.time.mode, String(query.time.hour));
   if (query.lang) p.set("lang", query.lang);

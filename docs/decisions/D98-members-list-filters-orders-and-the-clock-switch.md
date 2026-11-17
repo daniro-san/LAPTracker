@@ -32,3 +32,19 @@ Why: the Members tab showed one tall card per member (4 to 5 per phone screen) a
   - Each member with a known time zone shows their own time now on their row ("14:05 their time"). With a time filter on, the row shows their time at that hour instead.
   - `Intl` only; no new dependency.
 - **Analytics.** `ws_filter_used` keeps its closed list of names: r4, ask, who, daytime, night, language and order_*. No hour, language or search text is sent.
+
+- **Amended 2026-11-17 (review of PR #360).**
+  - **Info to ask has three kinds.** The chip lists anyone with a fact missing (`ask=1`). Each "Not shown" line has its own kind: "no time zone recorded" (`ask=timeZone`) and "no languages recorded" (`ask=languages`).
+    - "See who" sets the matching kind.
+    - The count line says "No time zone · n" or "No languages · n".
+  - **The Language filter counts who it cannot judge.** Members with no languages get a "Not shown" line, as members with no time zone do for the time filter.
+  - **The count line names every filter on:** R4 and R5, Info to ask (or its kind), Who, the time, the language and the order.
+  - **Past names are searched.** They are the names a member used in this alliance's rosters (`namesSeen`). A row found by a past name says "was …".
+  - **"Show more" counts the Check in and Needs help rows.** The heading's rows count toward the 25, so a long heading no longer pushes the list below the screen.
+  - **Before the first end-of-day read,** Who shows "—" for Check in, Needs help and New (D75: nothing is computed then).
+  - **Photos, frames and past names are read by the list page only** (`withListExtras`; `photosOf` in `lib/queries/photo.ts`, built on `photoColumns`). `membersView` and the card route read none of them.
+    - A member with no stored event roster row has no photo or frame on the list, as on the public pages.
+  - **The card's words live in `lib/private/member-card.ts`** (`memberCard`). The route only checks the session, reads the address, calls it and answers.
+  - **Low-first orders** show "Lowest first, to see who may need help growing. Not a ranking." While one is chosen, "Copy for spreadsheet" copies the members on screen in rank order.
+  - **The time filter puts the hour first** ("At (ST)", options "18:00 ST"). The two radios read "Daytime for them · n" and "Night for them · n". "Daytime" is said as 08:00 to 23:00, which is the same window.
+  - **The switch** reads "My time first (this phone: {zone}, {hh:mm} now)".

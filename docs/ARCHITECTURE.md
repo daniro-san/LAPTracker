@@ -24,7 +24,7 @@ lib/private/*.ts    the workspace (D71): requireWorkspace and its branded Worksp
                     sign-in, its own log (a code and numbers) and its en/pt-BR/fr dictionary. The only code
                     outside lib/repo that may read the blocked roster keys, for its own alliance's rows.
                     members.ts (the Members tab's read), member-week.ts (its pure week arithmetic and
-                    D75's signals), members-list.ts (the list's filters, counts and orders; pure, browser-safe, D98), members-sheet.ts (status,
+                    D75's signals), members-list.ts (the list's filters, counts and orders; pure, browser-safe, D98), member-card.ts (a member's card words and the card route's read, D98), fact-text.ts (a fact's value as words; pure), members-sheet.ts (status,
                     reasons and "copy for spreadsheet"), first-use.ts (the first-use cards as data),
                     cookies.ts (the two cookie names, apart from the dictionaries, for client components);
                     their table reads are in lib/repo/workspace-rosters.ts, and the newest roster of any kind

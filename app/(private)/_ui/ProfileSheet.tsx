@@ -13,11 +13,13 @@ import { Gear } from "@/lib/brand/components/Gear";
 import { RadioField } from "@/lib/brand/components/RadioField";
 import { Sheet } from "@/lib/brand/components/Sheet";
 import { Moon, setTheme, Sun, useThemeChoice } from "@/lib/brand/components/ThemeSwitch";
+import { fill } from "@/lib/copy";
+import { clockIn } from "@/lib/private/calendar-time";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import type { Profile } from "@/lib/private/profile";
 
 import { Me } from "./ThisIsMe";
-import { setClockChoice, useClockChoice } from "./YourTime";
+import { setClockChoice, useClockChoice, useMinute, useViewerZone } from "./YourTime";
 
 type Words = WorkspaceDictionary;
 
@@ -118,6 +120,17 @@ function ThemeChoice({ t }: { t: Words }) {
 /** Which time the desk shows first: server time (default) or the officer's own (this browser only). */
 function ClockChoiceField({ t }: { t: Words }) {
   const choice = useClockChoice();
+  const zone = useViewerZone();
+  const minute = useMinute();
+  // "My time first (this phone: America/Sao Paulo, 22:33 now)", once the browser has said both.
+  const mine =
+    zone && minute !== null
+      ? fill(t["clock.mineHere"], {
+          zone: zone.replaceAll("_", " "),
+          time: clockIn(minute * 60_000, zone, "").time,
+        })
+      : t["clock.mine"];
+  const label = { server: t["clock.server"], mine };
   return (
     <div className="mt-4 border-t border-rule pt-4">
       <fieldset className="grid gap-1.5" aria-describedby="profile-clock-help">
@@ -128,7 +141,7 @@ function ClockChoiceField({ t }: { t: Words }) {
             name="ws-clock"
             checked={choice === c}
             onChange={() => setClockChoice(c)}
-            label={t[`clock.${c}`]}
+            label={label[c]}
           />
         ))}
       </fieldset>

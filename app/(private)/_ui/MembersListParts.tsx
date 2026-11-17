@@ -1,9 +1,10 @@
 "use client";
 
-// The Members list's pieces (issue 337): the slim sticky block (search, Filters, the two chips), the count
-// line with Clear filters and Copy, the "Not shown" line, the empty states and "Show more".
+// The Members list's pieces (issue 337): the slim sticky block (search, Filters, the two chips, the column
+// labels), the count line naming every filter on, with Clear filters and Copy, the "Not shown" lines, the
+// empty states and "Show more".
 import { fill } from "@/lib/copy";
-import { NO_QUERY, sheetFilters, keepMembers } from "@/lib/private/members-list";
+import { keepMembers, NO_QUERY, sheetFilters } from "@/lib/private/members-list";
 
 import { CopyButton } from "./CopyButton";
 import type { ListRow, ListWords } from "./member-list-data";
@@ -12,26 +13,24 @@ import { PAGE, type ListState } from "./members-list-state";
 
 const LINK =
   "inline-flex min-h-11 items-center font-semibold text-plum underline underline-offset-4";
-const chipClass = (on: boolean, zero: boolean) =>
+
+/** A toggle chip: plum when on, dashed when it would give no one. */
+export const chipClass = (on: boolean, zero: boolean) =>
   `inline-flex min-h-11 items-center gap-1.5 border px-3 text-body-sm font-medium whitespace-nowrap ${
     on ? "border-plum bg-plum text-paper" : zero ? "border-dashed border-rule" : "border-rule"
   }`;
 
-export function StickyBar({
-  s,
-  t,
-  column,
-  onFilters,
-}: {
+export function StickyBar(props: {
   s: ListState;
   t: ListWords;
   column: Column;
   onFilters: () => void;
 }) {
+  const { s, t } = props;
   const on = sheetFilters(s.query);
   const chips = [
-    ["r4", t["members.filter.r4"], s.counts.r4],
-    ["ask", t["list.ask"], s.counts.ask],
+    { id: "r4", label: t["members.filter.r4"], n: s.chips.r4, pressed: s.query.r4 },
+    { id: "ask", label: t["list.ask"], n: s.chips.ask, pressed: s.query.ask === "any" },
   ] as const;
   return (
     <div className="sticky top-0 z-[5] -mx-4 mt-4 border-b border-rule bg-paper px-4 py-2 sm:-mx-6 sm:px-6">
@@ -47,7 +46,7 @@ export function StickyBar({
         <button
           type="button"
           aria-haspopup="dialog"
-          onClick={onFilters}
+          onClick={props.onFilters}
           className={`${chipClass(on > 0, false)} shrink-0 font-semibold`}
         >
           {on > 0 ? fill(t["list.filtersN"], { n: on }) : t["list.filters"]}
@@ -58,26 +57,51 @@ export function StickyBar({
         role="group"
         aria-label={t["members.filter.aria"]}
       >
-        {chips.map(([id, label, n]) => (
+        {chips.map((c) => (
           <button
-            key={id}
+            key={c.id}
             type="button"
-            aria-pressed={s.query[id]}
-            onClick={() => s.change({ [id]: !s.query[id] }, id)}
-            className={chipClass(s.query[id], n === 0)}
+            aria-pressed={c.pressed}
+            onClick={() =>
+              s.change(c.id === "r4" ? { r4: !c.pressed } : { ask: c.pressed ? null : "any" }, c.id)
+            }
+            className={chipClass(c.pressed, c.n === 0)}
           >
-            {label}
-            <span className="tabular-nums">{n}</span>
+            {c.label}
+            <span className="tabular-nums">{c.n}</span>
           </button>
         ))}
       </div>
       {/* The rows' column labels, over every row while the list scrolls. */}
-      <div className="mt-1 flex justify-end gap-2 pr-1 text-[12px] text-ink/70" aria-hidden="true">
-        <span className={`${COLUMN_WIDTH[column]} text-right`}>{t[`list.col.${column}`]}</span>
-        <span className="w-12 text-right">{t["list.col.donated"]}</span>
+      <div className="mt-1 flex justify-end gap-2 pr-1 text-[13px] text-ink/75" aria-hidden="true">
+        <span className={`${COLUMN_WIDTH[props.column]} text-right`}>
+          {t[`list.col.${props.column}`]}
+        </span>
+        <span className="w-12 text-right">{t["list.col.week"]}</span>
       </div>
     </div>
   );
+}
+
+/** "Not shown: n with no time zone · See who", and the same for languages (D75: never dropped silently). */
+function NotShown({ s, t }: { s: ListState; t: ListWords }) {
+  const lines = [
+    { n: s.noZone, text: t["list.notShown"], change: { time: null, ask: "timeZone" as const } },
+    {
+      n: s.noLanguage,
+      text: t["list.notShownLang"],
+      change: { lang: null, ask: "languages" as const },
+    },
+  ].filter((l) => l.n > 0);
+  return lines.map((l) => (
+    <p key={l.text} className="text-body-sm">
+      {fill(l.text, { n: l.n })}
+      {" · "}
+      <button type="button" onClick={() => s.change(l.change, "ask")} className={LINK}>
+        {t["list.seeWho"]}
+      </button>
+    </p>
+  ));
 }
 
 export function CountLine(props: {
@@ -88,15 +112,13 @@ export function CountLine(props: {
   copy: string;
 }) {
   const { s, t } = props;
-  const anyFilter = s.query.r4 || s.query.ask || sheetFilters(s.query) > 0;
+  const anyFilter = s.query.r4 || s.query.ask !== null || sheetFilters(s.query) > 0;
+  const total = fill(t["members.count"], { n: s.kept.length, total: props.total });
   return (
     <>
       <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
         <p aria-live="polite" className="text-body-sm tabular-nums">
-          {[
-            fill(t["members.count"], { n: s.kept.length, total: props.total }),
-            ...props.pills,
-          ].join(" · ")}
+          {[total, ...props.pills].join(" · ")}
         </p>
         <div className="flex flex-wrap items-center gap-2">
           {anyFilter && (
@@ -115,19 +137,8 @@ export function CountLine(props: {
           />
         </div>
       </div>
-      {s.noZone > 0 && (
-        <p className="text-body-sm">
-          {fill(t["list.notShown"], { n: s.noZone })}
-          {" · "}
-          <button
-            type="button"
-            onClick={() => s.change({ time: null, ask: true }, "ask")}
-            className={LINK}
-          >
-            {t["list.seeWho"]}
-          </button>
-        </p>
-      )}
+      {s.order.endsWith("-asc") && <p className="text-body-sm text-ink/80">{t["list.lowFirst"]}</p>}
+      <NotShown s={s} t={t} />
     </>
   );
 }

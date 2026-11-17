@@ -15,7 +15,7 @@ Closes #337. Rules applied: D75, D71, D76, D80, D52, D22, D65, D66, D68 (no char
     - "14:05 their time", or "20:00 their time at 18:00 ST" while a time filter is on.
   - **The default order:**
     - "Check in and Needs help" comes first, with "What we saw, for a friendly word. Nothing is sent.";
-    - it is never paged;
+    - its rows count toward the first 25 (review of PR #360);
     - "Everyone else" follows.
   - **Paging:** 25 rows, then "Show 25 more · n left" with "Showing n of total". Focus moves to the first new row. After the last row: "That's everyone."
   - **Sticky block, 113 px at 360 in EN, PT and FR:**
@@ -24,7 +24,7 @@ Closes #337. Rules applied: D75, D71, D76, D80, D52, D22, D65, D66, D68 (no char
     - the chips "R4 and R5" and "Info to ask", with counts; a chip at 0 has a dashed border;
     - the column labels.
   - **Count line:** "n of 100 members · Daytime at 18:00 ST · Portuguese · Order: …", then "Clear filters" and "Copy for spreadsheet". Copy takes the shown members in the shown order.
-  - **"Not shown: n with no time zone · See who".** See who turns on Info to ask and clears the time filter.
+  - **"Not shown: n with no time zone · See who"**, and the same for languages. See who lists exactly those members (`ask=timeZone`, `ask=languages`) and clears that filter.
   - **Empty states:**
     - "No one matches “q”." with Clear search;
     - "No one matches “q” with these filters." with Search everyone;
@@ -32,7 +32,7 @@ Closes #337. Rules applied: D75, D71, D76, D80, D52, D22, D65, D66, D68 (no char
 - **Filter and order sheet** (`MembersFilters.tsx`):
   - Order: six radios. Main squad is disabled when nobody has one, and says "known for n of total".
   - Who: chips with counts (Everyone, Check in, Needs help, On a break, New).
-  - Time: Any time, Daytime for them at, Night for them at, each with its count at the chosen hour. A native hour select reads "18:00 ST · 33", or "17:00 your time (18:00 ST) · 33" with My time first. A help line says "Daytime is 08:00–22:59 on their own clock; night is the rest." and "Time zone known for n of total."
+  - Time: first a native hour select, "At (ST)", reading "18:00 ST" (or "17:00 your time (18:00 ST)" with My time first); then Any time, "Daytime for them · n" and "Night for them · n" at that hour. A help line says "Daytime is 08:00 to 23:00 on their own clock." and "Time zone known for n of total."
   - Language: a native select of the languages someone has, named by `Intl.DisplayNames` in the officer's language, with counts. Before anyone has one: "No languages recorded yet…".
   - Clear filters, and "Show n".
 - **Pure functions** (`lib/private/members-list.ts`, browser-safe):
@@ -56,8 +56,8 @@ Closes #337. Rules applied: D75, D71, D76, D80, D52, D22, D65, D66, D68 (no char
 - **Sheets and back** (`sheet-history.ts`): opening a sheet pushes one history entry at the same address. The phone's back button closes the sheet. Close, Escape or the backdrop take the entry off again. The list behind keeps its scroll and depth.
 - **Data:**
   - `RosterMember.kills` comes from raw_json `kills`. Before the first end-of-day read it comes from the newest roster's `member_kills`.
-  - `MemberRow.kills` and `MemberRow.photo`.
-  - `findPhotos(db, uids)` in `lib/repo/alliance-snapshots.ts` returns, per uid, whether the newest member row has a photo (a boolean) and the current frame from `player_frames`. No URL leaves the function.
+  - `MemberRow.kills`.
+  - Photos, frames and past names: see "Review round" below (`withListExtras`, `photosOf`).
 - **Words:**
   - `lib/private/dictionary.members.ts`, `.pt-BR.ts` and `.fr.ts` hold 70 keys per language under `list.*` and `clock.*`. French uses U+00A0 before `:` and `;` and inside « ».
   - Five keys are removed (`members.filter.all|new|checkin|missing`, `members.search.go`).
@@ -83,14 +83,13 @@ Closes #337. Rules applied: D75, D71, D76, D80, D52, D22, D65, D66, D68 (no char
 - **D98** records the shape, filters, orders, state, the details route, kills and the clock switch.
 - **"Daytime" is 08:00–22:59 on the member's clock**, and night is the rest, as the owner answered on 2026-11-17. The offset is computed for the server day the page was made on, so a daylight-saving change later that day is not reflected.
 - **"—" and On a break groups exist in every order**, the default included. In rank order, "—" means no rank in the read.
-- **Search uses `fold`**, as the brief says: accents and case. "zofie" finds Žofie. "lukasz" does not find Łukasz, because `fold` does not change ł (see Open issues).
+- **Search uses `fold`**, as the brief says: accents and case, over current and past names. "zofie" finds Žofie. "lukasz" does not find Łukasz, because `fold` does not change ł (see Open issues).
 - **The clock switch reorders, it does not hide.** Times typed in forms stay in ST, and the "Last read" line stays in server time.
 - **Copy for spreadsheet keeps its columns** and copies all members kept, in the shown order, not only the rows paged in.
 
 ## Deviations
 - **No status marks (icons).** Variant A drew a mark per status. The row prints the status word and its evidence instead, in the status tone. Fine has no line.
 - **One column at 1280**, not two. The column labels sit in the sticky block and would not line up over two columns.
-- **Past names are not searched.** The issue asked for it; the brief named `fold` over the loaded rows. `namesSeen` in `lib/repo/workspace-any-roster.ts` already returns them.
 - **The thanks box is the shipped one**, laid out in two columns with its intro line.
 
 ## Verified
@@ -127,8 +126,8 @@ Closes #337. Rules applied: D75, D71, D76, D80, D52, D22, D65, D66, D68 (no char
 
 ## Open issues
 1. **`fold` does not fold ł, ø, đ, ß, æ, œ, þ**, so "lukasz" does not find "Łukasz". The variants study found the same gap in `nameKey` (`lib/screenshot/name-key.ts`). One letter table would fix both.
-2. **Past names are not in the search** (see Deviations).
-3. **The members route reads the whole Members view** (about 6 queries) for one card. Its time on Neon has not been measured.
+2. **A member with no stored event roster row has no photo or frame on the list**, as on the public pages: `photoColumns` reads the frame through the member's newest `member_snapshots` row. A recruit who joined after the last event shows the drawn placeholder until the next event read.
+3. **The members route reads the whole Members view** (about 6 queries, no photo read) for one card. Its time on Neon has not been measured.
 4. **Info to ask will hold almost everyone in production**: languages are 0/101 until officers fill them (owner's choice). Locally it was 86/100.
 5. **Real photos were not seen locally**: `/img/avatar` fetches only the photo host, so the seed has no photos and rows show the drawn placeholder. Frames were checked with the local stand-in only.
 6. **Copy for spreadsheet carries no facts, kills or local time** (a follow-up from the filters study).
@@ -148,8 +147,60 @@ Plan changes needed: none. The workspace track lives in issues, not in docs/IMPL
 - Time display: use `Times` or `TimePair` from `YourTime.tsx`, never a fixed "ST · your time" order, so the officer's "My time first" applies.
 - A member's card on demand: `GET /api/w/[slug]/members/[uid]` returns `{ card: CardData }`.
 - Kills: `MemberRow.kills` is lifetime kills from the newest read.
-- Photos for a list of uids: `findPhotos(db, uids)`.
+- Photos for a list of uids: `photosOf(db, uids)` in `lib/queries/photo.ts`; for the Members rows with past names, `withListExtras(db, access, members)`.
 - Words: `list.*` and `clock.*` are in `dictionary.members*.ts`. `dictionary.ts` is now about 287 lines.
 </adjustments>
 
-PR: (added by the orchestrator)
+## Review round (PR #360, /pr-review and the designer's review)
+- **Fixed, code:**
+  1. Before the first end-of-day read, Who shows "—" for Check in, Needs help and New (`early` passed to the list).
+  2. The page counts Check in with `whoOf`.
+  3. `membersView` reads no photos. The list page has its own read, `withListExtras` (photos and frames through `photosOf`, which reuses `photoColumns`; past names through `namesSeen`). The card's words moved to `lib/private/member-card.ts` (with `fact-text.ts`), and `memberCard` is the card route's only call; the route imports nothing from `_ui` and runs no photo query.
+  4. `findPhotos` is gone from `lib/repo`.
+  5. The search is folded once per call, and each member's names once (a WeakMap per row). The sheet's counts (`sheetCounts`: Who, 48 hours, languages) are made only while the Filters sheet is open; the chips' counts (`chipCounts`) stay live.
+  6. The Check in / Needs help rows count toward "Show more"'s 25.
+  7. Past names are searched, and a row found by one says "was …".
+  8. Tests:
+     - the address round trip (`queryString` ↔ `pickQuery`, default order left out);
+     - past names;
+     - the language "Not shown" count and its "See who";
+     - `listRow` (R1–R5, `squadText`, no status line while fine) in `app/(private)/_ui/member-list-data.test.ts`;
+     - kills null stays null, and photos, frames and past names with and without, in `lib/private/members-list-read.test.ts` (PGlite). It has its own file because `members.test.ts` would pass the 300-line limit.
+  9. One `chipClass`. `langName` is no longer exported, and `Intl.DisplayNames` is kept per language. `members.details`, `members.detailsOf` and `calendar.yours` are out of `LIST_KEYS`, and the first two are out of the dictionaries.
+- **Fixed, UX:**
+  - 10. "See who" sets "time zone not recorded" (`ask=timeZone`). The pill reads "No time zone · n".
+  - 11. The time filter puts the hour first ("At (ST)", options "18:00 ST" or "17:00 your time (18:00 ST)"). The radios read "Daytime for them · n" and "Night for them · n". "Any time" has no number. The help line is "Daytime is 08:00 to 23:00 on their own clock."
+  - 12. The status evidence is one line. "was …", "To ask: …" and "hh:mm their time" have their own line, never cut.
+  - 13. The Language filter counts members with no languages: "Not shown: n with no languages recorded · See who" (`ask=languages`).
+  - 14. The count line names R4 and R5, Info to ask (or its kind), Who, the time, the language and the order.
+  - 15. A low-first order shows "Lowest first, to see who may need help growing. Not a ranking.", and Copy then takes the shown members in rank order.
+  - 16. The switch reads "My time first (this phone: {zone}, {hh:mm} now)" with "Changes which time comes first in Calendar and the hour picker."
+  - 17. The member sheet shows "their time now 22:33" under the time zone.
+  - 18. The column labels are 13 px: "Might" and "Week". Screen readers hear "Donated this week".
+  - 19. The empty state reads "No one matches these filters." (EN, PT, FR).
+- **Left as is, as asked:**
+  - no route test for `members/[uid]` (no private route has one);
+  - the UID regex copied from the facts route (pre-existing).
+- **Verified:**
+  - `pnpm check` exits 0: vitest **136 files passed, 2 skipped; 687 tests passed, 4 skipped**; drift gate fine; i18n up to date.
+  - The local e2e on a production build of this round passed **91 of 91 checks**. It covers every check from the first round, with these added:
+    - the first page is 25 rows with the heading's included;
+    - a past name ("pemberly") finds the member and the row says "was Pemberly";
+    - the count line names both chips, and names Who;
+    - the hour options read "18:00 ST";
+    - "Daytime for them · n" equals the list it gives, and "Any time" has no number;
+    - See who gives exactly the members with no time zone, with the pill "No time zone · n";
+    - the language "Not shown" line and its See who;
+    - the low-first line;
+    - the switch label with "America/Sao Paulo" and its help line;
+    - "their time now" in the sheet;
+    - the plain empty state.
+  - The seed gained an invented rename ("Pemberly", Nov 1–5) and an invented test event roster, so frames show through `photoColumns`.
+  - The "—" Who counts before the first end-of-day read were not run end to end: the Discord stub serves only the OGs guild. The code path is the `early` flag.
+- **Screenshots** in the same folder, with the `-v2` suffix, at 360 in light and dark, EN and PT:
+  - `list-top-…`, `list-…`, `list-filtered-…`;
+  - `filters-…`, `filters-end-…`;
+  - `member-…`;
+  - `switch-…`, `switch-calendar-mine-…`.
+
+PR: https://github.com/daniro-san/LAPTracker/pull/360

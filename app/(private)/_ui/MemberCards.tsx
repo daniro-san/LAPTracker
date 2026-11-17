@@ -1,16 +1,16 @@
 "use client";
 
 // A member's card (issue 296), shown in the Members list's sheet (issue 337): the server makes its words
-// (member-card-data.ts) and this lays them out: the status with its evidence, the game's numbers, the
+// (lib/private/member-card.ts) and this lays them out: the status with its evidence, the game's numbers, the
 // donations per day and the other details. The officers' member facts (issue 297) are listed with their
 // source, and "Edit facts" or "Paste what they told you" opens the editor. Nothing is hover-only.
 import { useState } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
+import type { CardData } from "@/lib/private/member-card";
 
 import { SOURCE_KEY } from "./facts-form";
 import { FactsEditor, type EditorProps } from "./FactsEditor";
-import type { CardData } from "./member-card-data";
 
 export const STATUS_TONE = {
   help: "font-semibold text-yarn",
@@ -28,7 +28,10 @@ export type EditorContext = Pick<
   "slug" | "words" | "language" | "serverZone" | "used"
 >;
 
-function Facts({ card, editor }: { card: CardData; editor: EditorContext }) {
+/** The card, its editor's shared context, and "their time now 22:33" for the time-zone line. */
+type CardProps = { card: CardData; editor: EditorContext; zoneNow: string | null };
+
+function Facts({ card, editor, zoneNow }: CardProps) {
   const [mode, setMode] = useState<"edit" | "paste" | null>(null);
   const { words } = editor;
   return (
@@ -40,6 +43,9 @@ function Facts({ card, editor }: { card: CardData; editor: EditorContext }) {
             <dt className="shrink-0 text-ink/75">{l.label}</dt>
             <dd className="min-w-0 text-right break-words whitespace-pre-line">
               <span className="tabular-nums">{l.value}</span>
+              {l.field === "timeZone" && l.source && zoneNow && (
+                <span className="block text-ink/75">{zoneNow}</span>
+              )}
               {/* "Typed by an officer" is the default and says nothing; the others are plain words. */}
               {l.source && l.source !== "officer" && (
                 <span className="ml-2 inline-block text-[12px] text-ink/70">
@@ -73,7 +79,7 @@ function Facts({ card, editor }: { card: CardData; editor: EditorContext }) {
   );
 }
 
-function Details({ card, editor }: { card: CardData; editor: EditorContext }) {
+function Details({ card, editor, zoneNow }: CardProps) {
   return (
     <div className="border-t border-rule px-3 py-3">
       <p className="text-body-sm font-semibold">{card.donationsHead}</p>
@@ -106,13 +112,13 @@ function Details({ card, editor }: { card: CardData; editor: EditorContext }) {
           </div>
         ))}
       </dl>
-      <Facts card={card} editor={editor} />
+      <Facts card={card} editor={editor} zoneNow={zoneNow} />
     </div>
   );
 }
 
 /** The opened member: the status with its evidence and the game's numbers, then the details and facts. */
-export function MemberCard({ card, editor }: { card: CardData; editor: EditorContext }) {
+export function MemberCard({ card, editor, zoneNow }: CardProps) {
   return (
     <>
       <div className="px-3 pb-3">
@@ -136,7 +142,7 @@ export function MemberCard({ card, editor }: { card: CardData; editor: EditorCon
           ))}
         </p>
       </div>
-      <Details card={card} editor={editor} />
+      <Details card={card} editor={editor} zoneNow={zoneNow} />
     </>
   );
 }
