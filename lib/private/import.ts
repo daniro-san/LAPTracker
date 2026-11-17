@@ -66,7 +66,7 @@ export interface DraftSummary {
 }
 
 export interface Sent {
-  source: "desk" | "discord";
+  source: "desk" | "discord" | "pasted";
   sentBy: string | null;
   /** The server day the pictures belong to. */
   pictureDay: string;
@@ -105,11 +105,14 @@ function matched(rows: ReadRow[], candidates: NameCandidate[], hook: SaveHook): 
   });
 }
 
-/** The screen a picture is read as: the officer's pick, else the classifier's. A map stays a map. */
-function screenOf(c: Classified, pick: Screen | undefined): Screen | "map" | null {
+/**
+ * The screen a picture is read as: the officer's pick, else the classifier's, else the type of the button
+ * it was sent with (D110). A map stays a map.
+ */
+function screenOf(c: Classified, pick?: Screen, preset?: Screen): Screen | "map" | null {
   if (c.kind === "map") return "map";
   if (pick) return pick;
-  return c.kind === null ? null : { kind: c.kind, scope: c.scope };
+  return c.kind === null ? (preset ?? null) : { kind: c.kind, scope: c.scope };
 }
 
 export const ownTag = (access: WorkspaceAccess) =>
@@ -118,7 +121,9 @@ export const ownTag = (access: WorkspaceAccess) =>
 /**
  * Drafts from pictures sent together. Pictures of one kind (and tab) merge into one draft: the pages of
  * a long ranking. A picture not recognised, a map, a kind not saved yet and a page with no rows make no
- * draft. `pick` is the officer's choice for pictures that were not recognised.
+ * draft. `pick` is the officer's choice for pictures that were not recognised. `preset` is the type of the
+ * tab's button the pictures were sent with (D110): it starts a picture the classifier does not recognise
+ * as that type; a picture it does recognise keeps its own type, which the officer can change on review.
  */
 export async function createDrafts(
   db: Db,
@@ -126,8 +131,9 @@ export async function createDrafts(
   pictures: PictureText[],
   sent: Sent,
   pick?: Screen,
+  preset?: Screen,
 ): Promise<{ drafts: DraftSummary[]; outcomes: Outcome[] }> {
-  const screens = pictures.map((p) => screenOf(p.classified, pick));
+  const screens = pictures.map((p) => screenOf(p.classified, pick, preset));
   const outcomes: Outcome[] = screens.map((s) =>
     s === null
       ? { status: "unrecognised" }
@@ -150,13 +156,16 @@ export async function createDrafts(
       at.map((i) => (pictures[i] as PictureText).lines),
       screen.scope,
       ownTag(access),
+      sent.source === "pasted",
     );
     if (!read || read.rows.length === 0) {
       for (const i of at) outcomes[i] = { status: "empty", kind: screen.kind };
       continue;
     }
     const rows = matched(read.rows, candidates, SAVE_HOOKS[screen.kind] as SaveHook);
-    const scopeSure = pick !== undefined || at.every((i) => pictures[i]?.classified.scopeSure);
+    // A preset's tab is a guess: the classifier did not read the picture (D110).
+    const guessed = (c?: Classified) => !c?.scopeSure || (screen.scope !== null && c.kind === null);
+    const scopeSure = pick !== undefined || !at.some((i) => guessed(pictures[i]?.classified));
     inserts.push({
       workspaceId: access.workspaceId,
       kind: screen.kind,
@@ -342,7 +351,8 @@ export async function retype(
   // A tab the officer has not picked yet keeps the draft's guess, still unconfirmed.
   const scoped = SCOPED.includes(screen.kind);
   const scope = scoped ? (screen.scope ?? (found.draft.scope as Scope | null) ?? "weekly") : null;
-  const read = hook.read(found.draft.pages, scope, ownTag(access));
+  const pasted = found.draft.source === "pasted";
+  const read = hook.read(found.draft.pages, scope, ownTag(access), pasted);
   const rows = matched(read.rows, await candidatesOf(db, access, now), hook);
   const sure = !scoped || screen.scope !== null;
   const change = { kind: screen.kind, scope, scopeSure: sure, rows, leftOut: read.leftOut };

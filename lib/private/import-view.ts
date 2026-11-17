@@ -18,6 +18,7 @@ import type { ImportKind, PhotoFact, Scope } from "./import-kinds";
 import { canSave, duelSaved, oursFor } from "./import-save";
 import { factsOf } from "./member-facts";
 import { DAY_MS, gameWeek, isoDay } from "./member-week";
+import { reviewsForMeCount } from "./notice-reviews";
 import { pendingMembers } from "./pending-members";
 
 /** The rankings checked against our own reads. */
@@ -38,7 +39,7 @@ function photoFacts(facts: Map<number, MemberFacts>): NonNullable<DraftView["fac
 
 export interface ReviewItem extends DraftSummary {
   scopeSure: boolean;
-  source: "desk" | "discord";
+  source: "desk" | "discord" | "pasted";
   sentBy: string | null;
   createdAt: Date;
 }
@@ -58,8 +59,14 @@ export async function toReview(db: Db, access: WorkspaceAccess, now: Date): Prom
   }));
 }
 
-export const toReviewCount = (db: Db, access: WorkspaceAccess, now: Date) =>
-  countOpenDrafts(db, access.workspaceId, now);
+/** The Home tab's number: screenshot drafts, plus the notice reviews waiting for this officer (D113). */
+export const toReviewCount = async (db: Db, access: WorkspaceAccess, now: Date) => {
+  const [drafts, reviews] = await Promise.all([
+    countOpenDrafts(db, access.workspaceId, now),
+    reviewsForMeCount(db, access),
+  ]);
+  return drafts + reviews;
+};
 
 export interface ViewRow extends StoredRow {
   /** The members the matcher suggests for a doubtful row; for a row not found, the closest names. */
@@ -80,7 +87,7 @@ export interface DraftView {
   status: "open" | "saved" | "discarded";
   version: number;
   doneBy: string | null;
-  source: "desk" | "discord";
+  source: "desk" | "discord" | "pasted";
   sentBy: string | null;
   createdAt: Date;
   expiresAt: Date;

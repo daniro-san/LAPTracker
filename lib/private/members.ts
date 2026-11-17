@@ -9,6 +9,7 @@ import type { Db } from "../db";
 import { roleOf } from "../queries/leadership";
 import { mightUnchanged } from "../queries/might-unchanged";
 import { photosOf, type Photo } from "../queries/photo";
+import { factHistory, type FactRow } from "../repo/member-facts";
 import { openPendings } from "../repo/pending-members";
 import { anyRoster, namesSeen, type AnyRoster } from "../repo/workspace-any-roster";
 import {
@@ -22,6 +23,7 @@ import {
 import { serverDay } from "../schedule";
 import type { WorkspaceAccess } from "./access";
 import { awayUntil, type MemberFacts, type OfficerStatus } from "./fact-fields";
+import { progressOf, TREND_FIELDS, type Progress } from "./fact-trend";
 import { duelSaved } from "./import-save";
 import type { DuelSaved } from "./import-view";
 import { factsOf, usedZones } from "./member-facts";
@@ -94,7 +96,8 @@ export interface MembersView {
   /** The game week of the newest read, Monday to Sunday (server days). */
   week: string[];
   members: MemberRow[];
-  thanks: { donors: Thank[]; activity: Thank[] };
+  /** Top donors and most active, and who made progress this week (AD Tech 100 %, main squad, D109). */
+  thanks: { donors: Thank[]; activity: Thank[]; progress: Progress[] };
   /** The time zones the members have, most used first (the picker lists them first). */
   zones: string[];
   /**
@@ -213,7 +216,7 @@ function earlyView(
   s: Pick<Signals, "facts" | "today" | "firstSeen"> & { pending: readonly number[] },
   zone: string,
 ): MembersView {
-  const none = { donors: [], activity: [] };
+  const none = { donors: [], activity: [], progress: [] };
   if (!roster)
     return {
       readAt: null,
@@ -238,12 +241,21 @@ const order = (a: MemberRow, b: MemberRow) =>
   (b.rankCode ?? 0) - (a.rankCode ?? 0) ||
   (b.might ?? -1) - (a.might ?? -1);
 
+/** Every main squad and AD Tech version of the workspace, for the week's progress (D109). */
+export const progressHistory = (db: Db, access: WorkspaceAccess) =>
+  factHistory(db, access.workspaceId, TREND_FIELDS);
+
 /** The Members tab of the workspace's own alliance, as of `now`; `zone` is the server's (SERVER_TZ). */
 export async function membersView(
   db: Db,
   access: WorkspaceAccess,
   now: Date,
   zone: string,
+  /**
+   * Every main squad and AD Tech version (`progressHistory`), passed only by the pages that show the
+   * week's progress (Members, Home); without it `thanks.progress` is empty (D109).
+   */
+  history?: readonly FactRow[],
 ): Promise<MembersView> {
   const unionId = access.unionId;
   const [reads, firstSeen, might, event, facts, pendingRows] = await Promise.all([
@@ -284,6 +296,7 @@ export async function membersView(
     thanks: {
       donors: topOf(counted, (m) => m.weekTotal),
       activity: topOf(counted, (m) => m.activity),
+      progress: history ? progressOf(history, counted, week[0] as string, zone) : [],
     },
     zones: usedZones(facts, [...newest.members.map((m) => m.uid), ...pending]),
     facts,

@@ -8,3 +8,9 @@ allowBuilds:
   esbuild: false
   lefthook: false
   tesseract.js: false
+
+# A high audit finding with no patched version, reached only through dev tooling: a dated exception, not
+# a silent --omit (docs/decisions/D112). Remove the entry when picomatch ships a fix.
+auditConfig:
+  ignoreGhsas:
+    - GHSA-fc5q-39xc-vjpf

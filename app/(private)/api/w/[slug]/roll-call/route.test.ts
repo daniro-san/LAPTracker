@@ -98,6 +98,9 @@ const mark = (uid: number, m: "yes" | "no", version: number) => ({
   version,
 });
 
+/** A hand add of `kind` (the add sheet's body). */
+const add = (kind: string) => ({ action: "add", kind, day: "2026-11-18", requestId: randomUUID() });
+
 describe("POST /api/w/[slug]/roll-call (issue 298)", () => {
   it("refuses a form from elsewhere (403) and a request without a session (401)", async () => {
     expect((await post(mark(101, "yes", 0), { who: "Ana", type: "text/plain" })).status).toBe(403);
@@ -133,5 +136,18 @@ describe("POST /api/w/[slug]/roll-call (issue 298)", () => {
     };
     expect([body.code, body.mark, body.version]).toEqual(["stale", "no", 1]);
     expect(body.said).toMatch(/Ana.* marked “No shield” just now/);
+  });
+
+  it("adds a Cheese Trap by hand", async () => {
+    const cheese = await post(add("cheese"), { who: "Ana" });
+    expect([cheese.status, await cheese.json()]).toMatchObject([
+      200,
+      { ok: true, id: expect.any(Number) },
+    ]);
+  });
+
+  it("refuses a new plunder (2026-11-17)", async () => {
+    const plunder = await post(add("plunder"), { who: "Ana" });
+    expect([plunder.status, await plunder.json()]).toEqual([400, { code: "bad_request" }]);
   });
 });

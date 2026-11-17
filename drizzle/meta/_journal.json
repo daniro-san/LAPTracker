@@ -246,6 +246,34 @@
       "when": 1794931384309,
       "tag": "0034_workspace_member_roles",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1794942916063,
+      "tag": "0035_roll_call_cheese",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1794947363361,
+      "tag": "0036_draft_source_pasted",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1794947825308,
+      "tag": "0037_desk_activity",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1794949237411,
+      "tag": "0038_notice_reviews",
+      "breakpoints": true
     }
   ]
 }

@@ -374,6 +374,8 @@ export const workspaceSessions = pgTable(
     checkedAt: tstz("checked_at").notNull().defaultNow(),
     /** "officer": the desk (D71). "member": the members' board only (D105). */
     tier: text("tier").$type<"officer" | "member">().notNull().default("officer"),
+    /** The last request this session made on the desk, kept to the minute (D108): "On the desk now". */
+    seenAt: tstz("seen_at"),
   },
   (t) => [
     index("workspace_sessions_workspace_idx").on(t.workspaceId),

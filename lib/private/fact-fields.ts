@@ -83,6 +83,12 @@ export const LANGUAGES = [
 
 export const TIER_MAX = 12;
 
+/**
+ * AD Tech at this value is complete (D109): shown as done, never asked again, and not written again by
+ * chat or Paste updates drafts. The facts editor stays free to correct it.
+ */
+export const AD_COMPLETE = 100;
+
 /** Fields whose concurrent edits are combined instead of refused (the owner's rule, issue #293). */
 export const MERGED_FIELDS: readonly FactField[] = ["notes", "languages"];
 

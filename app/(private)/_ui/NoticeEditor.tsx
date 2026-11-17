@@ -59,6 +59,11 @@ export function NoticeEditor(p: EditorProps) {
           </span>
         </Notice>
       )}
+      {p.review !== undefined && (
+        <Notice tone="info" className="mt-3">
+          {t["notices.review.editing"]}
+        </Notice>
+      )}
       {e.restored && e.dirty && (
         <Notice tone="info" className="mt-3">
           {t["notices.history.restored"]}

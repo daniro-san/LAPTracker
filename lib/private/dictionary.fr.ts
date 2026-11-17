@@ -1,6 +1,7 @@
 // The workspace dictionary in French (D71), split from dictionary.ts for its size; the keys follow `en`.
 // French puts a no-break space before : ? and !, and inside « ».
 import type { WorkspaceDictionary } from "./dictionary";
+import { activityFr } from "./dictionary.activity";
 import { boardFr } from "./dictionary.board";
 import { calendarFr } from "./dictionary.calendar.fr";
 import { followUpFr } from "./dictionary.followup";
@@ -53,7 +54,7 @@ export const fr: WorkspaceDictionary = {
   "shell.stay": "Rester connecté",
   "signedOut.text": "Vous avez été déconnecté. Votre texte est toujours là.",
   "signedOut.link": "Se reconnecter (ouvre un nouvel onglet), puis réessayer ici.",
-  "home.title": "Agenda, membres et captures",
+  "home.title": "Accueil",
   "home.next.head": "Aujourd’hui et demain",
   "home.today": "Aujourd’hui",
   "home.tomorrow": "Demain",
@@ -61,7 +62,7 @@ export const fr: WorkspaceDictionary = {
   "home.calendar": "Ouvrir l’agenda",
   "home.members.head": "Membres cette semaine",
   "home.notYet":
-    "Pas encore. Les remerciements et les membres à contacter arrivent avec la première mise à jour quotidienne, juste avant le changement de jour du serveur.",
+    "Rien pour l’instant. Les remerciements et les membres à contacter apparaissent après la première mise à jour quotidienne.",
   "home.open": "Ouvrir Membres",
   "shell.help": "Comment ça marche",
   "signin.howto": "Comment l’avoir sur votre téléphone",
@@ -193,6 +194,8 @@ export const fr: WorkspaceDictionary = {
     "Dans Safari, touchez l’icône de partage (un carré avec une flèche vers le haut). Dans la liste, touchez l’élément avec un + dans un carré, puis confirmez.",
   "howto.android.body":
     "Dans Chrome, touchez ⋮ en haut à droite. Dans le menu, touchez l’élément qui ajoute la page à l’écran d’accueil (un téléphone avec une flèche), puis confirmez.",
+  "howto.share":
+    "Partager des captures : sur Android, ajoutez le bureau à l’écran d’accueil depuis une page du bureau (cette adresse, pas le site public), pour que l’icône s’appelle « Bureau des officiers ». Ouvrez ensuite une capture dans la galerie, touchez Partager et choisissez « Bureau des officiers ». Le bureau s’ouvre sur les brouillons à vérifier. Un partage contient environ 4 Mo au total, 2 ou 3 captures ; pour plus, utilisez Envoyer des captures dans le bureau. Si le bureau n’apparaît pas dans la liste Partager, retirez son icône et ajoutez-la à nouveau depuis ici. Sur iPhone, le partage vers le bureau n’est pas possible : utilisez Envoyer des captures dans le bureau ou la commande Discord « Send to LAPTracker ».",
   "status.break": "En pause",
   "status.breakUntil": "En pause jusqu’au {date}",
   "status.help": "Besoin d’aide",
@@ -202,7 +205,7 @@ export const fr: WorkspaceDictionary = {
   "src.message": "d’un message",
   "src.sheet": "du tableur",
   "facts.head": "Infos du membre",
-  "facts.squadMight": "Escouade principale",
+  "facts.squadMight": "Might de l’escouade principale",
   "facts.adTech": "AD Tech",
   "facts.troopTier": "Troupes",
   "facts.timeZone": "Fuseau horaire",
@@ -278,4 +281,5 @@ export const fr: WorkspaceDictionary = {
   ...translateFr,
   ...boardFr,
   ...followUpFr,
+  ...activityFr,
 };

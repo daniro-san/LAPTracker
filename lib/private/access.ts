@@ -7,12 +7,14 @@ import {
   deleteSession,
   findSession,
   findWorkspaceBySlug,
+  touchSession,
   type WorkspaceRow,
 } from "../repo/workspaces";
 import {
   CHECK_MS,
   hashToken,
   RENEW_MS,
+  SEEN_EVERY_MS,
   revokeSession,
   SESSION_COOKIE,
   sessionState,
@@ -132,6 +134,11 @@ export async function requireWorkspace(
   if (session.tier !== "officer") return refuse("member");
   const refusal = await servedOrNot(db, workspace, session, now, checkWithin);
   if (refusal) return refusal;
+  // "On the desk now" (D108): an officer's request marks the session seen, at most once a minute.
+  const since = new Date(now.getTime() - SEEN_EVERY_MS);
+  if (!session.seenAt || session.seenAt < since) {
+    await touchSession(db, session.tokenHash, now, since);
+  }
   return grant(workspace, {
     id: session.userId,
     displayName: session.chosenName ?? session.displayName,

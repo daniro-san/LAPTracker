@@ -10,6 +10,7 @@ import { FIELD } from "@/lib/brand/components/controls";
 import type { FactField } from "@/lib/private/fact-fields";
 
 import { counted, say, type EditorWords } from "./facts-form";
+import { ReadScreenshot, shotWords } from "./ReadScreenshot";
 
 /** What the save bar needs from the editor's save. */
 export interface SaveState {
@@ -19,6 +20,7 @@ export interface SaveState {
 }
 
 export function Paste(props: {
+  slug: string;
   words: EditorWords;
   language: string;
   open: boolean;
@@ -45,10 +47,20 @@ export function Paste(props: {
         onChange={(e) => setText(e.target.value)}
         className={`${FIELD} mt-2`}
       />
+      {/* The picture's text goes into the box and is read at once; the officer still checks and saves. */}
+      <ReadScreenshot
+        slug={props.slug}
+        link
+        words={shotWords(words)}
+        onText={(read) => {
+          setText(read);
+          setFound(props.onRead(read));
+        }}
+      />
       <button
         type="button"
         onClick={() => setFound(props.onRead(text))}
-        className={buttonClass("secondary", "mt-2")}
+        className={buttonClass("primary", "mt-2")}
       >
         {words["paste.read"]}
       </button>

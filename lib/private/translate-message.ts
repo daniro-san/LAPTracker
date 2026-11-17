@@ -1,6 +1,6 @@
 // The pure parts of the Discord Translate commands (D101): which language a message is probably in, the
-// Discord pieces kept out of the model's reach, the "Translate for everyone" picker and its state, and the
-// text of what is posted. No database, no network.
+// Discord pieces kept out of the model's reach, the "Translate for everyone" picker and its state, the
+// "Translate for me" reply and its language buttons, and the text of what is posted. No database, no network.
 import { WRITING_LANGUAGES, type WritingLanguage } from "../ai/notice-writing";
 import {
   WORKSPACE_DICTIONARIES,
@@ -230,3 +230,64 @@ export const languageList = (language: WorkspaceLanguage, languages: readonly Wr
 /** The reply's "partly untranslated" line, in the language of the translation it is under. */
 export const partlyLine = (to: WritingLanguage): string =>
   WORKSPACE_DICTIONARIES[to]["notices.draft.partly"];
+
+/** Each language's own name, as the "for me" buttons show it. */
+const NAME: Record<WritingLanguage, string> = {
+  en: "English",
+  "pt-BR": "Português",
+  fr: "Français",
+};
+
+/**
+ * A "for me" language button: "tm:<to>:<shown>:<user>". `shown` is the language of the text the private
+ * reply shows, which a press translates; only that user may press it.
+ */
+const switchId = (to: WritingLanguage, shown: WritingLanguage, userId: string) =>
+  `tm:${CODE[to]}:${CODE[shown]}:${userId}`;
+
+export function parseSwitchId(
+  id: string,
+): { to: WritingLanguage; shown: WritingLanguage; userId: string } | null {
+  const g = /^tm:(?<to>[epf]):(?<shown>[epf]):(?<user>\d{1,20})$/.exec(id)?.groups;
+  const to = byCode(g?.to ?? "");
+  const shown = byCode(g?.shown ?? "");
+  return to && shown && g?.user ? { to, shown, userId: g.user } : null;
+}
+
+/** A button for each language but the one shown. */
+export const switchRows = (shown: WritingLanguage, userId: string): unknown[] => [
+  {
+    type: ROW,
+    components: WRITING_LANGUAGES.filter((l) => l !== shown).map((l) => ({
+      type: BUTTON,
+      custom_id: switchId(l, shown, userId),
+      label: NAME[l],
+      style: SECONDARY,
+    })),
+  },
+];
+
+/**
+ * The "for me" private reply: the text in `shown` under its heading, `line` ("Already in English.
+ * Translate to:" or "Other language:") small under it, and the other languages' buttons. A press reads the
+ * text back from this embed, so nothing is stored.
+ */
+export function forMeMessage(
+  shown: WritingLanguage,
+  text: string,
+  partly: boolean,
+  line: string,
+  userId: string,
+) {
+  return {
+    embeds: [
+      {
+        title: HEADING[shown],
+        description: text,
+        footer: { text: partly ? `${partlyLine(shown)}\n${line}` : line },
+      },
+    ],
+    components: switchRows(shown, userId),
+    allowed_mentions: { parse: [] },
+  };
+}

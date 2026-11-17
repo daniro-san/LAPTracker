@@ -1,6 +1,7 @@
 // The workspace's own words in English, Brazilian Portuguese and French (D71, issue #305): separate from
 // lib/copy.ts, so the public pages' i18n check and payload do not change. Names and game terms stay as the
 // officers write them (naming.md). French puts a no-break space before : ? and !.
+import { activityEn } from "./dictionary.activity";
 import { boardEn } from "./dictionary.board";
 import { calendarEn } from "./dictionary.calendar";
 import { followUpEn } from "./dictionary.followup";
@@ -58,15 +59,14 @@ const en = {
   "shell.stay": "Stay signed in",
   "signedOut.text": "You were signed out. Your text is still here.",
   "signedOut.link": "Sign in again (opens a new tab), then try again here.",
-  "home.title": "Calendar, members and screenshots",
+  "home.title": "Home",
   "home.next.head": "Today and tomorrow",
   "home.today": "Today",
   "home.tomorrow": "Tomorrow",
   "home.next.none": "Nothing on the Calendar today or tomorrow.",
   "home.calendar": "Open Calendar",
   "home.members.head": "Members this week",
-  "home.notYet":
-    "Not yet. Thanks and check-ins start with the first daily update, just before the server resets.",
+  "home.notYet": "Nothing yet. Thanks and check-ins appear after the first daily update.",
   "home.open": "Open Members",
   "shell.help": "How this works",
   "signin.howto": "How to put it on your phone",
@@ -197,6 +197,8 @@ const en = {
     "In Safari, tap the Share icon (a square with an arrow pointing up). In the list, tap the item with a + in a square, then confirm.",
   "howto.android.body":
     "In Chrome, tap ⋮ at the top right. In the menu, tap the item that adds the page to your home screen (a phone with an arrow), then confirm.",
+  "howto.share":
+    "Sharing screenshots: on Android, add the desk to your home screen from a desk page (this address, not the public site), so the icon is “Officers’ Desk”. Then open a screenshot in your gallery, tap Share and pick “Officers’ Desk”. The desk opens on the drafts to review. A share holds about 4 MB in all, around 2 or 3 screenshots; for more, use Send screenshots in the desk. If the desk is not in the Share list, remove its icon and add it again from here. On iPhone, sharing to the desk is not possible: use Send screenshots in the desk or the Discord command “Send to LAPTracker”.",
   "status.break": "On a break",
   "status.breakUntil": "On a break until {date}",
   "status.help": "Needs help",
@@ -206,7 +208,7 @@ const en = {
   "src.message": "from a message",
   "src.sheet": "from the sheet",
   "facts.head": "Member info",
-  "facts.squadMight": "Main squad",
+  "facts.squadMight": "Main squad might",
   "facts.adTech": "AD Tech",
   "facts.troopTier": "Troops",
   "facts.timeZone": "Time zone",
@@ -259,6 +261,7 @@ const en = {
   ...translateEn,
   ...boardEn,
   ...followUpEn,
+  ...activityEn,
 } as const;
 
 export type WorkspaceKey = keyof typeof en;

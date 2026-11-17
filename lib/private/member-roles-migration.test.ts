@@ -15,7 +15,7 @@ import type { Db } from "../db";
 import { saveWorkspace } from "../repo/workspaces";
 import * as schema from "../schema";
 import { requireBoard } from "./access";
-import { createSession } from "./session";
+import { hashToken } from "./session";
 import { jar, MEMBER_ROLE, R4 } from "./sign-in.test-helpers";
 
 const DRIZZLE = `${import.meta.dirname}/../../drizzle`;
@@ -40,8 +40,16 @@ describe("migration 0034 (D105, amended 2026-11-17)", () => {
       values ('ogs', 67111155, '400000000000000001', ${`{${R4}}`})`);
     await db.execute(sql`insert into workspace_users (workspace_id, discord_user_id, display_name)
       values (1, '200000000000000002', 'Rio'), (1, '200000000000000001', 'Rook')`);
-    const member = await createSession(db, 1, 1, T0, null, "member");
-    const officer = await createSession(db, 1, 2, T0, null, "officer");
+    // Plain SQL, not createSession: the app's insert names columns added after 0033 (seen_at, D108).
+    const session = async (token: string, user: number, tier: string) => {
+      const ends = new Date(T0.getTime() + 7 * 86_400_000).toISOString();
+      await db.execute(sql`insert into workspace_sessions
+        (token_hash, workspace_id, workspace_user_id, created_at, expires_at, checked_at, tier)
+        values (${hashToken(token)}, 1, ${user}, ${T0.toISOString()}, ${ends}, ${T0.toISOString()}, ${tier})`);
+      return { token };
+    };
+    const member = await session("member-token", 1, "member");
+    const officer = await session("officer-token", 2, "officer");
 
     await migrate(pg, { migrationsFolder: DRIZZLE });
     await saveWorkspace(db, {
@@ -56,5 +64,5 @@ describe("migration 0034 (D105, amended 2026-11-17)", () => {
       reason: "signed_out",
     });
     expect((await requireBoard(db, "ogs", jar(officer.token), T0)).ok).toBe(true);
-  });
+  }, 60_000); // Two full migration runs on PGlite; slow when the machine is busy.
 });

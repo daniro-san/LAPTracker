@@ -7,7 +7,7 @@ import type { ReactNode, Ref } from "react";
 
 import { chip } from "@/lib/brand/components/controls";
 import { fill, isolate } from "@/lib/copy";
-import type { WorkspaceDictionary } from "@/lib/private/dictionary";
+import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import { NOTICE_LIMIT, noticeLength } from "@/lib/private/notice-rules";
 
 import { fieldName, valueWords, type Conflict } from "./notice-client";
@@ -15,24 +15,39 @@ import { fieldName, valueWords, type Conflict } from "./notice-client";
 /** Every small control: 44 px both ways. */
 export const smallButton = (extra = "") => `${chip()} min-w-11 justify-center ${extra}`;
 
-export function Counter({ text, t }: { text: string; t: WorkspaceDictionary }) {
-  const n = noticeLength(text);
+/** Counts and the limit in the officer's own thousands format: "1,555 / 1,000", "1.555 / 1.000". */
+const count = (n: number, language: WorkspaceLanguage) => new Intl.NumberFormat(language).format(n);
+
+export function Counter(props: {
+  text: string;
+  t: WorkspaceDictionary;
+  language: WorkspaceLanguage;
+}) {
+  const { t, language } = props;
+  const n = noticeLength(props.text);
+  const words = { n: count(n, language), limit: count(NOTICE_LIMIT, language) };
   return (
     <span
-      aria-label={fill(t["notices.chars"], { n, limit: NOTICE_LIMIT })}
+      aria-label={fill(t["notices.chars"], words)}
       className={`text-body-sm tabular-nums ${n > NOTICE_LIMIT ? "font-semibold text-seal" : "text-ink/70"}`}
     >
-      {n} / {NOTICE_LIMIT}
+      {words.n} / {words.limit}
     </span>
   );
 }
 
-/** Under the text: "5 over the game's 1000 limit. The end may be cut.", announced when it changes. */
-export function OverLimit({ text, t, id }: { text: string; t: WorkspaceDictionary; id?: string }) {
-  const over = noticeLength(text) - NOTICE_LIMIT;
+/** Under the text: "555 characters over the game's 1,000 limit. …", announced when it changes. */
+export function OverLimit(props: {
+  text: string;
+  t: WorkspaceDictionary;
+  language: WorkspaceLanguage;
+  id?: string;
+}) {
+  const over = noticeLength(props.text) - NOTICE_LIMIT;
+  const words = { n: count(over, props.language), limit: count(NOTICE_LIMIT, props.language) };
   return (
-    <p id={id} aria-live="polite" className="text-left text-body-sm font-semibold text-seal">
-      {over > 0 ? fill(t["notices.over"], { n: over, limit: NOTICE_LIMIT }) : ""}
+    <p id={props.id} aria-live="polite" className="text-left text-body-sm font-semibold text-seal">
+      {over > 0 ? fill(props.t["notices.over"], words) : ""}
     </p>
   );
 }

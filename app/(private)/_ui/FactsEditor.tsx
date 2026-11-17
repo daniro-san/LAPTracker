@@ -303,7 +303,13 @@ export function FactsEditor(props: EditorProps) {
           onAnyway={taken.anyway}
         />
       )}
-      <Paste words={words} language={language} open={props.mode === "paste"} onRead={f.read} />
+      <Paste
+        slug={props.slug}
+        words={words}
+        language={language}
+        open={props.mode === "paste"}
+        onRead={f.read}
+      />
       <FactFields
         form={f.form}
         edit={f.edit}

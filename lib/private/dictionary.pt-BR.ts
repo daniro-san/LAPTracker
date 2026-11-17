@@ -1,6 +1,7 @@
 // The workspace dictionary in Brazilian Portuguese (D71), split from dictionary.ts for its size; the keys
 // follow `en`.
 import type { WorkspaceDictionary } from "./dictionary";
+import { activityPt } from "./dictionary.activity";
 import { boardPt } from "./dictionary.board";
 import { calendarPt } from "./dictionary.calendar.pt-BR";
 import { followUpPt } from "./dictionary.followup";
@@ -54,7 +55,7 @@ export const pt: WorkspaceDictionary = {
   "shell.stay": "Continuar conectado",
   "signedOut.text": "Você foi desconectado. Seu texto continua aqui.",
   "signedOut.link": "Entre de novo (abre uma nova aba) e depois tente de novo aqui.",
-  "home.title": "Agenda, membros e prints",
+  "home.title": "Início",
   "home.next.head": "Hoje e amanhã",
   "home.today": "Hoje",
   "home.tomorrow": "Amanhã",
@@ -62,7 +63,7 @@ export const pt: WorkspaceDictionary = {
   "home.calendar": "Abrir Agenda",
   "home.members.head": "Membros nesta semana",
   "home.notYet":
-    "Ainda não. Os agradecimentos e quem ver como está começam com a primeira atualização diária, pouco antes de o servidor virar o dia.",
+    "Nada ainda. Os agradecimentos e quem ver como está aparecem depois da primeira atualização diária.",
   "home.open": "Abrir Membros",
   "shell.help": "Como funciona",
   "signin.howto": "Como colocar no seu celular",
@@ -192,6 +193,8 @@ export const pt: WorkspaceDictionary = {
     "No Safari, toque no ícone de compartilhar (um quadrado com uma seta para cima). Na lista, toque no item com um + dentro de um quadrado e confirme.",
   "howto.android.body":
     "No Chrome, toque em ⋮ no canto de cima. No menu, toque no item que coloca a página na tela inicial (um celular com uma seta) e confirme.",
+  "howto.share":
+    "Compartilhar prints: no Android, coloque a mesa na tela inicial a partir de uma página da mesa (este endereço, não o site público), para o ícone se chamar “Mesa dos oficiais”. Depois abra um print na galeria, toque em Compartilhar e escolha “Mesa dos oficiais”. A mesa abre nos rascunhos para revisar. Um compartilhamento leva uns 4 MB no total, 2 ou 3 prints; para mais, use Enviar prints na mesa. Se a mesa não aparece na lista de Compartilhar, remova o ícone e coloque de novo a partir daqui. No iPhone não dá para compartilhar com a mesa: use Enviar prints na mesa ou o comando “Send to LAPTracker” no Discord.",
   "status.break": "Em pausa",
   "status.breakUntil": "Em pausa até {date}",
   "status.help": "Precisa de ajuda",
@@ -201,7 +204,7 @@ export const pt: WorkspaceDictionary = {
   "src.message": "de uma mensagem",
   "src.sheet": "da planilha",
   "facts.head": "Dados do membro",
-  "facts.squadMight": "Esquadrão principal",
+  "facts.squadMight": "Might do esquadrão principal",
   "facts.adTech": "AD Tech",
   "facts.troopTier": "Tropas",
   "facts.timeZone": "Fuso horário",
@@ -278,4 +281,5 @@ export const pt: WorkspaceDictionary = {
   ...translatePt,
   ...boardPt,
   ...followUpPt,
+  ...activityPt,
 };

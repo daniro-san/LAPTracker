@@ -57,6 +57,7 @@ const job = (
   to: mode === "me" ? ["fr"] : ["pt-BR", "fr"],
   ...mask("The rally <#1600000000000000009> is at 18:00."),
   webhook: { applicationId: "900", token: "itok" },
+  userId: ASKER,
   ...(mode === "everyone" && {
     post: {
       where,
@@ -160,13 +161,79 @@ describe("Translate for me, after the answer", () => {
       method: "PATCH",
       path: "/webhooks/900/itok/messages/@original",
       body: {
+        content: "",
         embeds: [
-          { title: "🇫🇷 Français", description: "Le rally <#1600000000000000009> est à 18:00." },
+          {
+            title: "🇫🇷 Français",
+            description: "Le rally <#1600000000000000009> est à 18:00.",
+            footer: { text: "Other language:" },
+          },
         ],
       },
     });
     const off = discordStub(created());
     await runTranslation(deps(off.fetcher, undefined, null), job("channel", "me"));
     expect(lastLine(off.calls)).toBe("Translate isn’t available yet. Ask the site owner.");
+  });
+});
+
+describe("Translate for me: the other languages' buttons", () => {
+  const labels = (body: Record<string, unknown> | undefined) =>
+    (body?.components as { components: { label: string }[] }[]).flatMap((r) =>
+      r.components.map((c) => c.label),
+    );
+
+  it("offers every language but the one shown, each a button only the asker may press", async () => {
+    const { calls, fetcher } = discordStub(created());
+    await runTranslation(deps(fetcher), job("channel", "me"));
+    expect(labels(calls[0]?.body)).toEqual(["English", "Português"]);
+    expect(JSON.stringify(calls[0]?.body.components)).toContain(`:${ASKER}"`);
+  });
+
+  it("edits the same reply with the pressed language, its own button left out", async () => {
+    const { calls, fetcher } = discordStub(created());
+    const pressed: TranslationJob = { ...job("channel", "me"), to: ["pt-BR"], pressed: true };
+    await runTranslation(deps(fetcher), pressed);
+    expect(calls).toHaveLength(1);
+    expect(calls[0]).toMatchObject({
+      path: "/webhooks/900/itok/messages/@original",
+      body: {
+        content: "",
+        embeds: [
+          { title: "🇧🇷 Português", description: "O rally <#1600000000000000009> é às 18:00." },
+        ],
+        allowed_mentions: { parse: [] },
+      },
+    });
+    expect(labels(calls[0]?.body)).toEqual(["English", "Français"]);
+  });
+
+  it("after a press the translator failed: the line, the shown text kept, its buttons back", async () => {
+    const { calls, fetcher } = discordStub(created());
+    const pressed: TranslationJob = { ...job("channel", "me"), pressed: true };
+    await runTranslation(deps(fetcher, undefined, model(true)), pressed);
+    const body = calls[0]?.body ?? {};
+    expect(body.content).toBe("The translator is busy. Try again in a minute.");
+    expect("embeds" in body).toBe(false);
+    expect(labels(body)).toEqual(["Português", "Français"]);
+    expect(JSON.stringify(body.components)).toContain(`"tm:p:e:${ASKER}"`);
+  });
+
+  it("the translator finds the text already in that language: shown as it is, under that language", async () => {
+    // Reachable only from the command, with no clear language (`from` null); a press always has one.
+    const { calls, fetcher } = discordStub(created());
+    const echo: ChatModel = {
+      complete: async (r) => /<text>\n?([\s\S]*?)\n?<\/text>/.exec(r.user)?.[1] ?? "",
+    };
+    const unclear: TranslationJob = { ...job("channel", "me"), from: null, to: ["en"] };
+    await runTranslation(deps(fetcher, undefined, echo), unclear);
+    expect(calls[0]?.body.embeds).toEqual([
+      {
+        title: "🇬🇧 English",
+        description: "The rally <#1600000000000000009> is at 18:00.",
+        footer: { text: "Already in English. Translate to:" },
+      },
+    ]);
+    expect(labels(calls[0]?.body)).toEqual(["Português", "Français"]);
   });
 });

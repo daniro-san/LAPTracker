@@ -1,5 +1,5 @@
 // Roll call writes (issue 298, D103), each inside one workspace (D71). An occasion is a Calendar entry's
-// week (KvK, Undead Siege, an Elixir Scramble team) or a roll call added by hand; a Calendar one gets its
+// week (KvK, Undead Siege, Cheese Trap, an Elixir Scramble team) or a roll call added by hand; a Calendar one gets its
 // row on the first write, so reading a page never writes. A mark names the version the officer saw: when
 // another officer marked that member since, it is refused with the newer mark (409), unless both said the
 // same. "The rest" fills only members with no mark, and its undo clears only what it wrote and nobody
@@ -24,7 +24,14 @@ import type { Placed } from "./calendar-model";
 import { addDays, isDay, mondayOf } from "./calendar-time";
 import { awayOn } from "./fact-fields";
 import { factsOf, isMember } from "./member-facts";
-import { FROM_CALENDAR, REST, tapMark, type Mark, type RollKind } from "./roll-call-rules";
+import {
+  FROM_CALENDAR,
+  REST,
+  tapMark,
+  type ADDED_KINDS,
+  type Mark,
+  type RollKind,
+} from "./roll-call-rules";
 
 /** A Calendar entry's week (`week` is the plan's Monday), or a roll call by its id. */
 export type Occasion = { id: number } | { entry: number; week: string };
@@ -75,7 +82,9 @@ export async function openOccasion(
   ]);
   const kind = placed && FROM_CALENDAR[placed.entry.kind];
   if (!placed || !kind) return call && fromCall(call, null);
-  return { call, kind, variant: placed.entry.variant, day: placed.day, week, placed };
+  // Only an Elixir Scramble keeps its team as the variant; a Cheese Trap's I or II stays in its title.
+  const variant = kind === "elixir" ? placed.entry.variant : null;
+  return { call, kind, variant, day: placed.day, week, placed };
 }
 
 /** The roll call's row; a Calendar occasion's is made on its first write. */
@@ -212,13 +221,13 @@ export async function undoMarks(
 }
 
 /**
- * A roll call added by hand (KvK shield, Undead Siege, plunders): one per kind and day, held by a unique
+ * A roll call added by hand (KvK shield, Undead Siege, Cheese Trap): one per kind and day, held by a unique
  * index on the hand-added rows; an add that loses to another officer's opens theirs.
  */
 export async function addCall(
   db: Db,
   access: WorkspaceAccess,
-  input: { kind: RollKind; day: string },
+  input: { kind: (typeof ADDED_KINDS)[number]; day: string },
   /** Made once per open add sheet (D100): a retry with it answers the first roll call's id. */
   requestId: string,
 ): Promise<{ ok: true; id: number }> {

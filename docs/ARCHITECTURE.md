@@ -8,6 +8,8 @@ app/(pages)/*       UI. Reads through lib/queries only.
 app/(private)/*     the workspace (D71): pages under w/[slug], handlers under api/w (one fixed callback, D73).
                     One handler sits outside api/w: api/discord/interactions (public, checked by Discord's
                     signature instead of a session, then the officer rule; D96).
+                    Two handlers sit under w/[slug]: the desk's own web manifest (manifest.webmanifest) and
+                    its share target (share, POST; D110).
                     Reaches data only through lib/private, after requireWorkspace.
 lib/collector.ts    domain: runSnapshot, freshness check, per-alliance fallback, resume logic.
 lib/compute.ts      pure functions only — sums, deltas, freshness predicate, roster diff; no IO, no Date.now() (passed in).
@@ -49,6 +51,8 @@ lib/private/*.ts    the workspace (D71): requireWorkspace and its branded Worksp
                     fields), notice-publish.ts ("Publish to Discord": channel by audience from
                     WORKSPACE_DISCORD_WEBHOOKS, the once-per-request claim, the posts through AppContext.fetch);
                     its table in lib/repo/notice-publishes.ts.
+                    D113: notice-reviews.ts (review requests: ask, approve, close as edited from a save, the
+                    notice's list and Home's "To review"); its tables in lib/repo/notice-reviews.ts.
                     The Calendar tab (issue 300): calendar.ts (reads and the field-level writes with their
                     version check), calendar-model.ts (pure: kinds, input schemas, which change fits which kind,
                     the weekly layout), calendar-kinds.ts (its fixed facts, no zod, for client components),
@@ -76,6 +80,10 @@ lib/private/*.ts    the workspace (D71): requireWorkspace and its branded Worksp
                     follow-up-rules.ts (pure: who is on the list, resolved for the week, the history line),
                     dictionary.followup.ts (its words); table in lib/schema-followup.ts, reads and writes
                     in lib/repo/member-follow-ups.ts.
+                    Home's desk activity (D108): desk-activity.ts ("On the desk now" from officer sessions'
+                    seen_at, and the recent-activity feed merged from the existing histories),
+                    desk-activity-words.ts (its lines), dictionary.activity.ts (its words); reads in
+                    lib/repo/desk-activity.ts, one bounded read per source.
                     The screenshot import (D96): import.ts (drafts, save, discard, change of type),
                     import-kinds.ts (the kinds and the SaveHook other sessions plug in), import-save.ts
                     (the hooks: Alliance Duel points, the ranking checks), import-photo-hooks.ts (member
@@ -85,7 +93,7 @@ lib/private/*.ts    the workspace (D71): requireWorkspace and its branded Worksp
                     rule, the deferred reply) and import-discord.ts (fetch, read, edit the reply, after the
                     response); their tables are lib/schema-import.ts, read in lib/repo/import.ts.
 lib/ai/*.ts         Groq (D81): the chat client with its model fallback (groq.ts), the notice prompts and plain-text
-                    cleanup (notice-writing.ts), the game glossary (glossary.ts). Reached through AppContext.ai.
+                    cleanup (notice-writing.ts; D113: the localizer per target language and "Fit to 1,000"), the game glossary (glossary.ts). Reached through AppContext.ai.
 lib/queries/*.ts    read models for the UI (joins, sorting, name history). Never write. Never expose BLOCKED_ROSTER_KEYS.
                     lib/queries/server-players.ts: `serverPlayers`, the tracked alliances' newest roster names (D97).
                     lib/queries/samples.ts: `eventSamples`, an event's Start, samples and End (D69).

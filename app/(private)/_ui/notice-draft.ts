@@ -4,6 +4,8 @@
 import {
   isNoticeLanguage,
   NOTICE_FIELDS,
+  NOTICE_LIMIT,
+  noticeLength,
   type Change,
   type NoticeField,
   type NoticeLanguage,
@@ -28,6 +30,12 @@ export interface Draft {
   partly: Partial<Record<NoticeLanguage, true>>;
   /** Filled from an earlier version ("Restore this version", D102). */
   restored: Partial<Record<NoticeLanguage, true>>;
+  /** Filled by "Fit to 1,000" (D113). */
+  /**
+   * Filled by "Fit to 1,000" (D113). `keepsSource`: Fit shortened an accepted translation, so Undo brings
+   * that translation back with its source, and the save keeps the source's basis.
+   */
+  fitted: Partial<Record<NoticeLanguage, { keepsSource: boolean }>>;
 }
 
 export const omit = <T extends object>(record: T, key: PropertyKey): T =>
@@ -42,7 +50,7 @@ export function startDraft(fields: NoticeFields): Draft {
   ) as Values;
   const versions = Object.fromEntries(NOTICE_FIELDS.map((f) => [f, fields[f].version]));
   const draft = { values, base: values, versions: versions as Draft["versions"] };
-  return { ...draft, from: {}, undo: {}, kept: {}, partly: {}, restored: {} };
+  return { ...draft, from: {}, undo: {}, kept: {}, partly: {}, restored: {}, fitted: {} };
 }
 
 const changed = (d: Draft, f: NoticeField) =>
@@ -77,14 +85,25 @@ export function withDrafts(
   for (const [language, text] of Object.entries(drafts) as [NoticeLanguage, string][]) {
     next.undo[language] = d.undo[language] ?? d.values[language];
     next.restored = omit(next.restored, language);
+    const keepsSource =
+      d.fitted[language]?.keepsSource ??
+      (d.undo[language] === undefined && d.from[language] !== undefined);
+    next.fitted =
+      ask.kind === "fit"
+        ? { ...next.fitted, [language]: { keepsSource } }
+        : omit(next.fitted, language);
     next.values[language] = text;
     next.partly = partly.includes(language)
       ? { ...next.partly, [language]: true }
       : omit(next.partly, language);
+    // Fit on a fresh translation keeps its source, so the save keeps that language's basis (D113);
+    // Fit on hand-written text, like Improve writing, makes it the officer's own.
     next.from =
       ask.kind === "translate"
         ? { ...next.from, [language]: { language: ask.from, text: ask.text } }
-        : omit(next.from, language);
+        : ask.kind === "fit"
+          ? next.from
+          : omit(next.from, language);
   }
   // The language translated from is now the source text, not a translation.
   if (ask.kind === "translate") next = { ...next, from: omit(next.from, ask.from) };
@@ -104,6 +123,7 @@ export function withRestored(d: Draft, earlier: Partial<Values>): Draft {
       next.restored[field] = true;
       next.from = omit(next.from, field);
       next.partly = omit(next.partly, field);
+      next.fitted = omit(next.fitted, field);
     }
     next.values[field] = value;
   }
@@ -125,6 +145,7 @@ export function settle(d: Draft, c: Conflict, keep: "theirs" | "mine"): Draft {
     undo: omit(d.undo, c.field),
     kept: omit(d.kept, c.field),
     restored: omit(d.restored, c.field),
+    fitted: omit(d.fitted, c.field),
   };
 }
 
@@ -134,6 +155,7 @@ export const accept = (d: Draft, language: NoticeLanguage): Draft => ({
   undo: omit(d.undo, language),
   partly: omit(d.partly, language),
   restored: omit(d.restored, language),
+  fitted: omit(d.fitted, language),
 });
 
 /** Undo: the text from before the draft comes back. */
@@ -142,8 +164,10 @@ export const discard = (d: Draft, language: NoticeLanguage): Draft => ({
   values: { ...d.values, [language]: d.undo[language] ?? d.values[language] },
   undo: omit(d.undo, language),
   partly: omit(d.partly, language),
-  from: omit(d.from, language),
+  // Undo of a Fit on an accepted translation brings that translation back, still linked to its source.
+  from: d.fitted[language]?.keepsSource ? d.from : omit(d.from, language),
   restored: omit(d.restored, language),
+  fitted: omit(d.fitted, language),
 });
 
 /**
@@ -151,7 +175,12 @@ export const discard = (d: Draft, language: NoticeLanguage): Draft => ({
  * rewrites, the one tab it fills ("from EN", "Update from …"), else the language it translates from.
  */
 export const askTab = (ask: DraftAsk): NoticeLanguage =>
-  ask.kind === "improve" ? ask.language : ask.to.length === 1 && ask.to[0] ? ask.to[0] : ask.from;
+  ask.kind !== "translate" ? ask.language : ask.to.length === 1 && ask.to[0] ? ask.to[0] : ask.from;
+
+/** "Fit to 1,000" is offered on a tab only while its text is over the board's limit (D113). */
+export const canFit = (d: Draft, language: NoticeLanguage): boolean =>
+  // Trimmed, as the draft route counts it.
+  noticeLength(d.values[language].trim()) > NOTICE_LIMIT;
 
 /** What a language's tab shows (issue 363): a draft to check, may be out of date, written, or empty. */
 export type TabState = "draft" | "stale" | "written" | "empty";
@@ -167,9 +196,10 @@ export function tabState(d: Draft, language: NoticeLanguage, staleSaved: boolean
 export function draftKind(
   d: Draft,
   language: NoticeLanguage,
-): "translate" | "improve" | "restore" | null {
+): "translate" | "improve" | "fit" | "restore" | null {
   if (d.undo[language] === undefined) return null;
   if (d.restored[language]) return "restore";
+  if (d.fitted[language]) return "fit";
   return d.from[language] ? "translate" : "improve";
 }
 
@@ -186,7 +216,8 @@ export function translatePlan(
   wroteIn: NoticeLanguage | null,
 ): { from: NoticeLanguage; to: NoticeLanguage[] } | null {
   const has = (l: NoticeLanguage) => d.values[l].trim() !== "";
-  if (has(active) && draftKind(d, active) !== "translate")
+  const translation = draftKind(d, active) === "translate" || (d.fitted[active] && d.from[active]);
+  if (has(active) && !translation)
     return { from: active, to: languages.filter((l) => l !== active) };
   const from = [d.from[active]?.language, wroteIn, ...languages].find(
     (l): l is NoticeLanguage => l !== undefined && l !== null && l !== active && has(l),

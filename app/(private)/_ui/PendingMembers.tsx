@@ -2,8 +2,9 @@
 
 // New members added by hand, waiting for the roster (D106), above the Members list: "Add a new member"
 // (the facts editor with a name field), and each one waiting, tagged "New · waiting for tonight's roster".
-// A row opens its sheet: the facts to edit like any member's, "Link to a member" (the closest names
-// first) and Delete, which asks first. On top, the ones "To match": a roster read since their add had
+// A row opens its sheet: the facts to edit like any member's ("Edit info" and "Paste what they told you"
+// in the sticky bar), then "Link to a member" (the closest names first) and Remove, which asks first, in
+// the content: a bar holds two buttons. On top, the ones "To match": a roster read since their add had
 // no single match, each with "Link to a member". Below, "Dismissed": the deleted ones, kept with their
 // info (2026-11-17).
 import { useRouter } from "next/navigation";
@@ -19,7 +20,7 @@ import { NONE } from "@/lib/private/fact-text";
 import { AskSheet } from "./AskSheet";
 import { FactsEditor } from "./FactsEditor";
 import type { DismissedRow, LifecycleWords, PendingRow } from "./member-lifecycle-data";
-import { Facts, type EditorContext } from "./MemberCards";
+import { Facts, factsActions, type EditorContext, type FactsMode } from "./MemberCards";
 import { PendingLink, type RosterName } from "./PendingLink";
 import { sheetWords } from "./sheet-words";
 import { SIGNED_OUT, SignedOutNote } from "./SignedOut";
@@ -54,6 +55,7 @@ function PendingSheet(props: {
 }) {
   const { row, words: t } = props;
   const [step, setStep] = useState<"link" | "delete" | null>(null);
+  const [mode, setMode] = useState<FactsMode>(null);
   const action = useAction(props.editor.slug, props.onClose);
   return (
     <Sheet
@@ -61,16 +63,23 @@ function PendingSheet(props: {
       onCancel={props.onClose}
       title={<span translate="no">{isolate(row.name)}</span>}
       words={sheetWords(t)}
+      {...factsActions(props.editor.words, setMode)}
     >
       <Tag>{t[row.toMatch ? "pending.toMatchTag" : "pending.tag"]}</Tag>
       {row.unmatched && <p className="mt-1 text-body-sm">{row.unmatched}</p>}
-      <Facts card={row} editor={props.editor} zoneNow={null} />
+      <Facts
+        card={row}
+        editor={props.editor}
+        zoneNow={null}
+        mode={mode}
+        onEditorClose={() => setMode(null)}
+      />
       <div className="mt-4 flex flex-wrap gap-2 border-t border-rule pt-3">
         <button
           type="button"
           disabled={action.state === "busy"}
           onClick={() => setStep("link")}
-          className={buttonClass("primary")}
+          className={buttonClass("secondary")}
         >
           {t["pending.link"]}
         </button>

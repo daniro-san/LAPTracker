@@ -41,6 +41,7 @@ export const memberFollowUps = pgTable(
   },
   (t) => [
     index("member_follow_ups_workspace_uid_idx").on(t.workspaceId, t.uid, t.id),
+    index("member_follow_ups_workspace_written_idx").on(t.workspaceId, t.writtenAt),
     unique("member_follow_ups_request_unique").on(t.workspaceId, t.requestId),
     check(
       "member_follow_ups_action_check",

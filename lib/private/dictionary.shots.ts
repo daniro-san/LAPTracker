@@ -15,6 +15,11 @@ export const shotsEn = {
     "This screenshot could not be read. Send it again, full screen and uncropped.",
   "shots.badge": "{n} to review",
   "shots.sentBy": "Sent by {name}",
+  // Members' "Paste updates" (D109): typed lines, no picture.
+  "shots.pastedBy": "Pasted by {name}",
+  "shots.draft.keptPasted": "Draft kept until {date}.",
+  "shots.matchedTo": "Matched to {name}",
+  "shots.skippedComplete": "Skipped: AD Tech is already complete.",
   "shots.viaDiscord": "from Discord",
   "shots.open": "Review",
   "shots.pickType": "Pick the type",
@@ -160,6 +165,26 @@ export const shotsEn = {
   "shots.check.match": "Match: {same} of {compared}",
   "shots.check.left": "Not counted: {n} (no sure member, or no game data).",
   "shots.check.save": "Save the count",
+  // Each tab's button and the phone's share (D110).
+  "shots.sendOne": "Send a screenshot",
+  "shots.sendSecretOps": "Send a Secret Ops report",
+  "shots.presetAsk": "What does it show?",
+  "shots.share.again":
+    "The shared screenshots were not kept. Sign in if the desk asks, then share them again.",
+  "shots.share.limit":
+    "A share holds about 4 MB in all, around 2 or 3 screenshots, and nothing was read. To send more at once, use Send screenshots here.",
+  "shots.share.empty":
+    "The share held no screenshot the desk could read. Share a screenshot (a picture), or use Send screenshots here.",
+  "shots.share.busy":
+    "The desk was still reading your last screenshot, so this share was not read. Wait a moment, then share again.",
+  "shots.share.failed":
+    "The shared screenshots could not be read. Share them again, or use Send screenshots.",
+  "shots.share.made.one": "From your share: {n} draft, in the list below.",
+  "shots.share.made.other": "From your share: {n} drafts, in the list below.",
+  "shots.share.none.one":
+    "{n} shared screenshot made no draft. Send it with Send screenshots to see why or pick its type.",
+  "shots.share.none.other":
+    "{n} shared screenshots made no draft. Send them with Send screenshots to see why or pick their type.",
 } as const;
 
 export type ShotsWords = Record<keyof typeof shotsEn, string>;

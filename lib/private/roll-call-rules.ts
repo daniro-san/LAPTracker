@@ -5,18 +5,22 @@
 import { addDays, mondayOf } from "./calendar-time";
 import { isDaytime } from "./members-list";
 
-/** KvK shield, Undead Siege (the issue's "raid"), plunders, an Elixir Scramble team. */
-export const ROLL_KINDS = ["shield", "raid", "plunder", "elixir"] as const;
+/**
+ * KvK shield, Undead Siege (the issue's "raid"), plunders, an Elixir Scramble team, Cheese Trap. Plunders
+ * are no longer added (owner, 2026-11-17); the kind stays so the ones already saved read as before.
+ */
+export const ROLL_KINDS = ["shield", "raid", "plunder", "elixir", "cheese"] as const;
 export type RollKind = (typeof ROLL_KINDS)[number];
 
 /** The kinds an officer adds by hand. An Elixir Scramble roll call starts from its Calendar entry. */
-export const ADDED_KINDS = ["shield", "raid", "plunder"] as const;
+export const ADDED_KINDS = ["shield", "raid", "cheese"] as const;
 
 /** Calendar entry kinds that have a roll call, and its kind. */
 export const FROM_CALENDAR: Readonly<Record<string, RollKind>> = {
   kvk: "shield",
   undead: "raid",
   elixir: "elixir",
+  cheese: "cheese",
 };
 
 /** `assumed` is "no problem seen": the KvK shield's answer for the rest, not checked one by one. */
@@ -26,14 +30,15 @@ export type Mark = (typeof MARKS)[number];
 /**
  * What "the rest" becomes (owner, issue 298): the shield's rest is "no problem seen", never a silent "shield
  * up"; an Elixir Scramble team's rest did not join (its joiners are the few); an Undead Siege's rest took
- * part. Plunders (plundering caravans or Black Ops) have no "the rest": each one is marked (owner,
- * 2026-11-17).
+ * part, and so does a Cheese Trap's (an assumption the owner can change, D103 amended 2026-11-17).
+ * Plunders, which are no longer added, have no "the rest": each one was marked (owner, 2026-11-17).
  */
 export const REST: Readonly<Record<RollKind, Mark | null>> = {
   shield: "assumed",
   elixir: "no",
   raid: "yes",
   plunder: null,
+  cheese: "yes",
 };
 
 /** Players per Elixir Scramble team (the game's own limit). */

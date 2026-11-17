@@ -82,4 +82,27 @@ export const membersFr: MembersWords = {
   "clock.server": "Heure du serveur (ST) d’abord",
   "clock.mine": "Mon heure d’abord",
   "clock.help": "Change l’heure affichée en premier dans l’Agenda et le choix de l’heure.",
+  "facts.updated": "Mis à jour le {date}",
+  "facts.since": "{change} depuis le {date}",
+  "facts.pointsSince.one": "{change} point depuis le {date}",
+  "facts.pointsSince.other": "{change} points depuis le {date}",
+  "facts.adComplete": "Terminé",
+  "thanks.progress": "À remercier cette semaine",
+  "thanks.adDone": "a terminé l’AD Tech",
+  "thanks.squadUp": "a fait grandir son escouade principale",
+  "thanks.both": "a terminé l’AD Tech et fait grandir son escouade principale",
+  "updates.open": "Coller des mises à jour",
+  "updates.help":
+    "Un membre par ligne : nom, puis escouade principale et AD Tech %. Exemple : Ana 10.2M 74%",
+  "updates.after": "Ensuite, vous vérifiez chaque ligne (avant → après) et enregistrez.",
+  "updates.read": "Vérifier les mises à jour",
+  "updates.nothing":
+    "Aucune ligne n’avait un nom avec une escouade principale ou un AD Tech %. Écrivez un membre par ligne, le nom d’abord.",
+  "updates.failed": "Impossible de lire les lignes. Réessayez.",
+  "shot.read": "Lire depuis une capture",
+  "shot.reading": "Lecture de l’image… cela prend quelques secondes",
+  "shot.failed":
+    "Impossible de lire cette image. Essayez une capture plus nette, ou collez le texte.",
+  "shot.busy": "L’image précédente est encore en lecture. Patientez un instant.",
+  "shot.notKept": "L’image n’est pas conservée.",
 };

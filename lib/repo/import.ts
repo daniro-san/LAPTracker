@@ -1,7 +1,7 @@
 // The screenshot import's tables (issue 299, D96): drafts, Alliance Duel points and check records, plus
 // the roster names and numbers a draft is matched and checked against. Every function takes the
 // workspace (or its alliance) from lib/private's WorkspaceAccess; nothing here reads a picture.
-import { and, desc, eq, gt, inArray, isNull, lte, sql } from "drizzle-orm";
+import { and, desc, eq, gt, inArray, isNull, lte, ne, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { dailyRosters, workspaces, workspaceUsers } from "../schema";
@@ -16,13 +16,26 @@ import {
 export type DraftRow = typeof screenshotDrafts.$inferSelect;
 export type NewDraft = Omit<typeof screenshotDrafts.$inferInsert, "id">;
 
-/** Drafts past their 7 days are deleted when the workspace's list is read or a draft is made. */
+/** How long a saved draft's row stays: as long as Home's recent activity looks back (D108). */
+export const SAVED_DRAFT_KEEP_MS = 14 * 24 * 60 * 60_000;
+
+/**
+ * Runs when the workspace's list is read or a draft is made. Open and discarded drafts are deleted past
+ * their 7 days (D96). A saved draft loses its OCR text and rows at 7 days too, but its row (who saved
+ * which kind, and when) stays until the feed's window ends, so the feed keeps one "saved a screenshot"
+ * line for the facts, thefts and new members that save wrote (D108, D96 amended 2026-11-17).
+ */
 async function dropExpired(db: Db, workspaceId: number, now: Date): Promise<void> {
+  const d = screenshotDrafts;
+  const ours = eq(d.workspaceId, workspaceId);
+  const saved = eq(d.status, "saved");
+  await db.delete(d).where(and(ours, lte(d.expiresAt, now), ne(d.status, "saved")));
+  const kept = new Date(now.getTime() - SAVED_DRAFT_KEEP_MS);
+  await db.delete(d).where(and(ours, saved, lte(d.doneAt, kept)));
   await db
-    .delete(screenshotDrafts)
-    .where(
-      and(eq(screenshotDrafts.workspaceId, workspaceId), lte(screenshotDrafts.expiresAt, now)),
-    );
+    .update(d)
+    .set({ pages: [], rows: [] })
+    .where(and(ours, saved, lte(d.expiresAt, now), sql`jsonb_array_length(${d.pages}) > 0`));
 }
 
 export async function insertDrafts(db: Db, drafts: NewDraft[], now: Date): Promise<number[]> {

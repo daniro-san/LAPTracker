@@ -1,15 +1,13 @@
 // The Discord Translate commands (D101), on a message's Apps menu. "Translate for me" answers only the
-// person who asked, in their Discord language. "Translate for everyone" first shows them a picker (which
-// languages; in a thread or the channel, as their channel permissions allow), then posts the chosen
-// translations for everyone. Anyone in a workspace's Discord server may use both (issue 346; pending the
-// owner's answer, D101). Only the text of the message the person chose is sent to the translator; nothing
-// is stored but the rate limit's counters, and the log holds codes only. Each step answers Discord within
-// 3 s; the translating runs after (discord-translate-run.ts).
-import { createHash } from "node:crypto";
-
+// person who asked, in their Discord language, with buttons for the other languages. "Translate for
+// everyone" first shows them a picker (which languages; in a thread or the channel, as their channel
+// permissions allow), then posts the chosen translations for everyone. Anyone in a workspace's Discord
+// server may use both (issue 346; pending the owner's answer, D101). Only the text of the message the
+// person chose is sent to the translator; nothing is stored but the rate limit's counters
+// (translate-limits.ts), and the log holds codes only. Each step answers Discord within 3 s; the
+// translating runs after (discord-translate-run.ts).
 import { WRITING_LANGUAGES, type WritingLanguage } from "../ai/notice-writing";
 import type { Db } from "../db";
-import { currentCount, DAY_KEY_PREFIX, recordFailure } from "../repo/auth-attempts";
 import { findWorkspaceByGuild } from "../repo/import";
 import {
   pickWorkspaceLanguage,
@@ -19,29 +17,19 @@ import {
 } from "./dictionary";
 import { DEFERRED_REPLY, EPHEMERAL, REPLY, UPDATE, type Webhook } from "./discord-api";
 import { privateLog } from "./log";
+import { checkedText, quota, quotaLine } from "./translate-limits";
 import {
+  forMeMessage,
   guessLanguage,
   languagesOf,
-  mask,
-  MAX_TRANSLATE_CHARS,
   parsePickerId,
+  parseSwitchId,
   type Picker,
   pickerLine,
   pickerRows,
   placesFor,
   type Where,
 } from "./translate-message";
-
-/** Languages one person may have translated in a minute (one unit per language asked). */
-export const TRANSLATE_PER_MINUTE = 5;
-/**
- * Languages the whole app may have translated in a day. Groq's free tier allows 1,000 requests a day per
- * model; a language is one request, or up to two on each model with the untranslated retry (D81).
- */
-export const TRANSLATE_PER_DAY = 300;
-const MINUTE_MS = 60_000;
-const DAY_MS = 24 * 60 * MINUTE_MS;
-const DAY_KEY = `${DAY_KEY_PREFIX}translate`;
 
 /** What the translating after the response needs. */
 export interface TranslationJob {
@@ -55,6 +43,10 @@ export interface TranslationJob {
   text: string;
   kept: string[];
   webhook: Webhook;
+  /** The asker: only they may press the "for me" language buttons. */
+  userId: string;
+  /** "For me": a language button was pressed, so on a failure the reply's text and buttons come back. */
+  pressed?: boolean;
   /** "Translate for everyone" only: where to post, and the picker to show again on a failure. */
   post?: { where: Where; channelId: string; link: string; picker: Picker; places: Where[] };
 }
@@ -83,55 +75,6 @@ const privateReply = (content: string): TranslateAnswer => ({
 
 const jumpLink = (input: TranslateInput, messageId: string) =>
   `https://discord.com/channels/${input.guildId}/${input.channelId}/${messageId}`;
-
-/** The per-person key: a hash, so the person's Discord id is not what the table keeps. */
-const personKey = (userId: string) =>
-  `translate:${createHash("sha256").update(userId).digest("hex").slice(0, 32)}`;
-
-/**
- * Counts `units` (languages) for the person and the day, or says which limit they would pass: then
- * nothing is counted.
- */
-async function quota(db: Db, userId: string, units: number, now: Date) {
-  const person = personKey(userId);
-  if ((await currentCount(db, person, MINUTE_MS, now)) + units > TRANSLATE_PER_MINUTE) {
-    privateLog("discord.translate.limited");
-    return "person" as const;
-  }
-  if ((await currentCount(db, DAY_KEY, DAY_MS, now)) + units > TRANSLATE_PER_DAY) {
-    privateLog("discord.translate.paused");
-    return "day" as const;
-  }
-  await recordFailure(db, person, MINUTE_MS, now, units);
-  await recordFailure(db, DAY_KEY, DAY_MS, now, units);
-  return "ok" as const;
-}
-
-const quotaLine = (t: WorkspaceDictionary, refused: "person" | "day") =>
-  refused === "day"
-    ? t["translate.discord.paused"]
-    : t["translate.discord.tooMany"].replace("{limit}", String(TRANSLATE_PER_MINUTE));
-
-/** The message's text, checked and masked; or the line that says why it cannot be translated. */
-function checkedText(
-  t: WorkspaceDictionary,
-  language: WorkspaceLanguage,
-  content: string,
-): { text: string; kept: string[] } | { refused: string } {
-  const text = content.trim();
-  if (text.length > MAX_TRANSLATE_CHARS) {
-    const n = new Intl.NumberFormat(language);
-    return {
-      refused: t["translate.discord.tooLong"]
-        .replace("{count}", n.format(text.length))
-        .replace("{limit}", n.format(MAX_TRANSLATE_CHARS)),
-    };
-  }
-  const masked = mask(text);
-  // Only mentions, links, emoji, numbers: nothing for the model.
-  if (!/\p{L}/u.test(masked.text)) return { refused: t["translate.discord.noText"] };
-  return masked;
-}
 
 /**
  * The private picker: every language but the message's own, the first place the asker may use. It shows
@@ -188,12 +131,64 @@ export async function translateCommand(
     const picker = { messageId: target.messageId, userId: input.userId, from };
     return openPicker(t, picker, places, input.bot, target.content);
   }
-  if (from === language) return privateReply(t["translate.discord.same"]);
+  if (from === language) {
+    // Already in the asker's language: the text, with a button for each other language.
+    const already = forMeMessage(
+      language,
+      target.content.trim(),
+      false,
+      t["translate.discord.already"],
+      input.userId,
+    );
+    return { body: { type: REPLY, data: { ...already, flags: EPHEMERAL } } };
+  }
   const refused = await quota(db, input.userId, 1, now);
   if (refused !== "ok") return privateReply(quotaLine(t, refused));
   return {
     body: { type: DEFERRED_REPLY, data: { flags: EPHEMERAL } },
-    translation: { mode, language, from, to: [language], ...checked, webhook: input.webhook },
+    translation: {
+      mode,
+      language,
+      from,
+      to: [language],
+      ...checked,
+      webhook: input.webhook,
+      userId: input.userId,
+    },
+  };
+}
+
+/**
+ * A language button under a "for me" reply: the text the reply shows, translated into that language. One
+ * unit, counted like the command; the reply says "Translating…" without its buttons at once (type 7), so a
+ * second press has nothing to press, and is edited with the translation after.
+ */
+async function switchLanguage(
+  db: Db,
+  input: TranslateInput,
+  pressed: { to: WritingLanguage; shown: WritingLanguage; userId: string },
+  shownText: string,
+  now: Date,
+): Promise<TranslateAnswer> {
+  const language = pickWorkspaceLanguage(undefined, input.locale ?? null);
+  const t = WORKSPACE_DICTIONARIES[language];
+  const refuse = (content: string) => ({ body: { type: UPDATE, data: { content } } });
+  const checked = checkedText(t, language, shownText);
+  if ("refused" in checked) return refuse(checked.refused);
+  const refused = await quota(db, pressed.userId, 1, now);
+  if (refused !== "ok") return refuse(quotaLine(t, refused));
+  return {
+    body: { type: UPDATE, data: { content: t["translate.discord.working"], components: [] } },
+    translation: {
+      mode: "me",
+      language,
+      from: pressed.shown,
+      to: [pressed.to],
+      ...checked,
+      webhook: input.webhook,
+      userId: pressed.userId,
+      pressed: true,
+    },
   };
 }
 
@@ -213,20 +208,39 @@ function redraw(
   return { body: { type: UPDATE, data: { components: pickerRows(t, next, places) } } };
 }
 
+/** What a press carries: its custom_id, a select's values, the text shown and who opened the message. */
+interface Press {
+  customId: string;
+  values: string[] | undefined;
+  shownText: string | undefined;
+  owner: string | undefined;
+}
+
 /**
- * A press in the picker, null when it is not ours. Only the person who opened the picker may use it: its
- * custom_id carries their id, and the press must come from that person's own private picker (`owner`, from
- * the message's interaction metadata).
+ * A press in the picker or on a "for me" reply, null when it is not ours. Only the person who opened it
+ * may use it: its custom_id carries their id, and the press must come from that person's own private
+ * message (`owner`, from the message's interaction metadata).
  */
 export async function translateComponent(
   db: Db,
   input: TranslateInput,
-  component: {
-    customId: string;
-    values: string[] | undefined;
-    shownText: string | undefined;
-    owner: string | undefined;
-  },
+  component: Press,
+  now: Date,
+): Promise<TranslateAnswer | null> {
+  const switched = parseSwitchId(component.customId);
+  if (!switched) return pickerPress(db, input, component, now);
+  if (switched.userId !== input.userId || component.owner !== input.userId) {
+    const t = WORKSPACE_DICTIONARIES[pickWorkspaceLanguage(undefined, input.locale ?? null)];
+    return privateReply(t["translate.discord.notYours"]);
+  }
+  return switchLanguage(db, input, switched, component.shownText ?? "", now);
+}
+
+/** A press in the "Translate for everyone" picker. */
+async function pickerPress(
+  db: Db,
+  input: TranslateInput,
+  component: Press,
   now: Date,
 ): Promise<TranslateAnswer | null> {
   const parsed = parsePickerId(component.customId);
@@ -273,6 +287,7 @@ async function post(
       to: picker.to,
       ...checked,
       webhook: input.webhook,
+      userId: picker.userId,
       post: {
         where: picker.where,
         channelId: input.channelId,

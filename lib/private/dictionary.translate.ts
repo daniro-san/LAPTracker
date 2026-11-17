@@ -8,7 +8,8 @@ export const translateEn = {
     "This message is too long to translate: {count} characters. The limit is {limit}.",
   "translate.discord.tooMany":
     "You can translate {limit} messages a minute. Wait a minute and try again.",
-  "translate.discord.same": "This message is already in your language.",
+  "translate.discord.already": "Already in English. Translate to:",
+  "translate.discord.other": "Other language:",
   "translate.discord.off": "Translate isn’t available yet. Ask the site owner.",
   "translate.discord.failed": "The translator did not answer this time. Try again in a minute.",
   "translate.discord.choose":
@@ -48,7 +49,8 @@ export const translatePt: TranslateWords = {
     "Esta mensagem é longa demais para traduzir: {count} caracteres. O limite é {limit}.",
   "translate.discord.tooMany":
     "Você pode traduzir {limit} mensagens por minuto. Espere um minuto e tente de novo.",
-  "translate.discord.same": "Esta mensagem já está no seu idioma.",
+  "translate.discord.already": "Já está em português. Traduzir para:",
+  "translate.discord.other": "Outro idioma:",
   "translate.discord.off": "Traduzir ainda não está disponível. Peça ao dono do site.",
   "translate.discord.failed": "O tradutor não respondeu desta vez. Tente de novo em um minuto.",
   "translate.discord.choose":
@@ -86,7 +88,8 @@ export const translateFr: TranslateWords = {
     "Ce message est trop long pour être traduit : {count} caractères. La limite est de {limit}.",
   "translate.discord.tooMany":
     "Vous pouvez traduire {limit} messages par minute. Attendez une minute et réessayez.",
-  "translate.discord.same": "Ce message est déjà dans votre langue.",
+  "translate.discord.already": "Déjà en français. Traduire en :",
+  "translate.discord.other": "Autre langue :",
   "translate.discord.off":
     "Traduire n’est pas encore disponible. Demandez au propriétaire du site.",
   "translate.discord.failed":
