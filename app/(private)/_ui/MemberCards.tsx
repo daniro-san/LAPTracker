@@ -153,6 +153,18 @@ export function MemberCard({ card, editor, zoneNow }: CardProps) {
             </span>
           ))}
         </p>
+        {card.followUps.lines.length > 0 && (
+          <section className="mt-3 border-t border-rule pt-2">
+            <h3 className="text-body-sm font-semibold">{card.followUps.head}</h3>
+            <ul className="text-body-sm whitespace-pre-line">
+              {card.followUps.lines.map((line, i) => (
+                <li key={i} className="py-1">
+                  {line}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
       </div>
       <Details card={card} editor={editor} zoneNow={zoneNow} />
     </>

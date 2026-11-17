@@ -70,6 +70,11 @@ lib/private/*.ts    the workspace (D71): requireWorkspace and its branded Worksp
                     (pure: attacker key, groups and counts, follow-up state), thefts-import.ts (the screenshot
                     import's save hook for Secret Ops reports), dictionary.thefts.ts (its words); tables in
                     lib/schema-thefts.ts, reads and writes in lib/repo/thefts.ts.
+                    The Follow-up tab (D104): follow-up.ts (the week's list from membersView and theftsView,
+                    and the officers' records, with On a break and Needs help through member facts),
+                    follow-up-rules.ts (pure: who is on the list, resolved for the week, the history line),
+                    dictionary.followup.ts (its words); table in lib/schema-followup.ts, reads and writes
+                    in lib/repo/member-follow-ups.ts.
                     The screenshot import (D96): import.ts (drafts, save, discard, change of type),
                     import-kinds.ts (the kinds and the SaveHook other sessions plug in), import-save.ts
                     (the hooks: Alliance Duel points, the ranking checks), import-photo-hooks.ts (member

@@ -3,6 +3,7 @@
 // officers write them (naming.md). French puts a no-break space before : ? and !.
 import { boardEn } from "./dictionary.board";
 import { calendarEn } from "./dictionary.calendar";
+import { followUpEn } from "./dictionary.followup";
 import { fr } from "./dictionary.fr";
 import { importEn } from "./dictionary.import";
 import { lifecycleEn } from "./dictionary.lifecycle";
@@ -277,6 +278,7 @@ const en = {
   ...shotsEn,
   ...translateEn,
   ...boardEn,
+  ...followUpEn,
 } as const;
 
 export type WorkspaceKey = keyof typeof en;

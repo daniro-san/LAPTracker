@@ -3,6 +3,7 @@
 import type { WorkspaceDictionary } from "./dictionary";
 import { boardFr } from "./dictionary.board";
 import { calendarFr } from "./dictionary.calendar.fr";
+import { followUpFr } from "./dictionary.followup";
 import { importFr } from "./dictionary.import";
 import { lifecycleFr } from "./dictionary.lifecycle";
 import { membersFr } from "./dictionary.members.fr";
@@ -274,4 +275,5 @@ export const fr: WorkspaceDictionary = {
   ...shotsFr,
   ...translateFr,
   ...boardFr,
+  ...followUpFr,
 };

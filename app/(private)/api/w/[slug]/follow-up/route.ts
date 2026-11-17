@@ -1,0 +1,82 @@
+// POST /api/w/[slug]/follow-up — an officer records what happened with a member on the week's list (issue
+// 340, D104): "Talked to them", On a break until a day, Needs help or "All fine", with a short note and the
+// sheet's request id (D100). Same origin and JSON only (D71), zod-parsed, a session of this workspace (401
+// signed_out, D99). On a break and Needs help go through the member facts (D80): another officer's newer
+// value answers 409 with it in the officer's words. The lib call runs in `privately`; nothing is logged.
+import { z } from "zod";
+
+import { requireWorkspace } from "@/lib/private/access";
+import { isDay } from "@/lib/private/calendar-time";
+import { WORKSPACE_LANG_COOKIE } from "@/lib/private/cookies";
+import { pickWorkspaceLanguage, WORKSPACE_DICTIONARIES } from "@/lib/private/dictionary";
+import type { FactValues } from "@/lib/private/fact-fields";
+import { factText } from "@/lib/private/fact-text";
+import { recordFollowUp } from "@/lib/private/follow-up";
+import { FOLLOW_UP_ACTIONS } from "@/lib/private/follow-up-rules";
+import {
+  isSameOriginJson,
+  NO_STORE,
+  privateError,
+  privately,
+  requestCookies,
+} from "@/lib/private/http";
+import { SLUG } from "@/lib/private/sign-in";
+import { withContext } from "@/lib/route";
+
+const body = z
+  .object({
+    uid: z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
+    action: z.enum(FOLLOW_UP_ACTIONS),
+    note: z.string().max(500),
+    until: z.string().refine(isDay).nullable(),
+    version: z.number().int().min(0),
+    requestId: z.uuid(),
+  })
+  .strict();
+
+export async function POST(
+  request: Request,
+  { params }: { params: Promise<{ slug: string }> },
+): Promise<Response> {
+  const { slug } = await params;
+  if (!SLUG.test(slug)) return privateError(404, "not_found");
+  if (!isSameOriginJson(request)) return privateError(403, "forbidden");
+  const parsed = body.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) return privateError(400, "bad_request");
+  const jar = requestCookies(request);
+  return withContext("/api/w/[slug]/follow-up", async (ctx, db) => {
+    const now = ctx.now();
+    const access = await requireWorkspace(db, slug, jar, now);
+    if (!access.ok) return privateError(401, "signed_out");
+    const zone = ctx.env.SERVER_TZ;
+    const result = await privately("follow_up.record", () =>
+      recordFollowUp(db, access, parsed.data, { now, zone }),
+    );
+    if (result.ok) return Response.json({ ok: true }, { headers: NO_STORE });
+    if (result.code !== "stale") return privateError(400, result.code);
+    const language = pickWorkspaceLanguage(
+      jar.get(WORKSPACE_LANG_COOKIE)?.value,
+      request.headers.get("accept-language"),
+    );
+    const t = WORKSPACE_DICTIONARIES[language];
+    const day = new Intl.DateTimeFormat(language, {
+      day: "numeric",
+      month: "short",
+      timeZone: "UTC",
+    });
+    const value = factText(result.field, result.value as FactValues[typeof result.field] | null, {
+      language,
+      now,
+      day: (iso) => day.format(new Date(`${iso}T00:00:00Z`)),
+      words: t,
+    });
+    return Response.json(
+      {
+        code: "stale",
+        version: result.version,
+        said: t["followup.stale"].replace("{value}", value),
+      },
+      { status: 409, headers: NO_STORE },
+    );
+  });
+}
