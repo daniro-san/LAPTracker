@@ -194,6 +194,8 @@ export const fr: WorkspaceDictionary = {
     "Dans Safari, touchez l’icône de partage (un carré avec une flèche vers le haut). Dans la liste, touchez l’élément avec un + dans un carré, puis confirmez.",
   "howto.android.body":
     "Dans Chrome, touchez ⋮ en haut à droite. Dans le menu, touchez l’élément qui ajoute la page à l’écran d’accueil (un téléphone avec une flèche), puis confirmez.",
+  "howto.share":
+    "Partager des captures : sur Android, ajoutez le bureau à l’écran d’accueil depuis une page du bureau (cette adresse, pas le site public), pour que l’icône s’appelle « Bureau des officiers ». Ouvrez ensuite une capture dans la galerie, touchez Partager et choisissez « Bureau des officiers ». Le bureau s’ouvre sur les brouillons à vérifier. Un partage contient environ 4 Mo au total, 2 ou 3 captures ; pour plus, utilisez Envoyer des captures dans le bureau. Si le bureau n’apparaît pas dans la liste Partager, retirez son icône et ajoutez-la à nouveau depuis ici. Sur iPhone, le partage vers le bureau n’est pas possible : utilisez Envoyer des captures dans le bureau ou la commande Discord « Send to LAPTracker ».",
   "status.break": "En pause",
   "status.breakUntil": "En pause jusqu’au {date}",
   "status.help": "Besoin d’aide",

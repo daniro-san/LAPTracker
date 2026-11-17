@@ -193,6 +193,8 @@ export const pt: WorkspaceDictionary = {
     "No Safari, toque no ícone de compartilhar (um quadrado com uma seta para cima). Na lista, toque no item com um + dentro de um quadrado e confirme.",
   "howto.android.body":
     "No Chrome, toque em ⋮ no canto de cima. No menu, toque no item que coloca a página na tela inicial (um celular com uma seta) e confirme.",
+  "howto.share":
+    "Compartilhar prints: no Android, coloque a mesa na tela inicial a partir de uma página da mesa (este endereço, não o site público), para o ícone se chamar “Mesa dos oficiais”. Depois abra um print na galeria, toque em Compartilhar e escolha “Mesa dos oficiais”. A mesa abre nos rascunhos para revisar. Um compartilhamento leva uns 4 MB no total, 2 ou 3 prints; para mais, use Enviar prints na mesa. Se a mesa não aparece na lista de Compartilhar, remova o ícone e coloque de novo a partir daqui. No iPhone não dá para compartilhar com a mesa: use Enviar prints na mesa ou o comando “Send to LAPTracker” no Discord.",
   "status.break": "Em pausa",
   "status.breakUntil": "Em pausa até {date}",
   "status.help": "Precisa de ajuda",

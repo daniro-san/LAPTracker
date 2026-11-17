@@ -8,7 +8,6 @@ import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import type { ReactNode } from "react";
 
-import { chip } from "@/lib/brand/components/controls";
 import { fill } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
@@ -44,6 +43,7 @@ import {
   toMatchLine,
 } from "../../../_ui/member-lifecycle-data";
 import { listRow, listWords } from "../../../_ui/member-list-data";
+import { MembersHead } from "../../../_ui/MembersHead";
 import { MembersList } from "../../../_ui/MembersList";
 import { MembersSource } from "../../../_ui/MembersSource";
 import { PasteUpdates } from "../../../_ui/PasteUpdates";
@@ -154,29 +154,6 @@ const lifecycleEditorWords = (t: WorkspaceDictionary, readAt: string) => ({
   "pending.addHelp": fill(t["pending.addHelp"], { time: readAt }),
 });
 
-/** Members · Former members (D107): two links, the open one pressed. */
-function ViewSwitch({
-  slug,
-  former,
-  t,
-}: {
-  slug: string;
-  former: boolean;
-  t: WorkspaceDictionary;
-}) {
-  const link = (on: boolean, href: string, label: string) => (
-    <a href={href} aria-current={on ? "page" : undefined} className={`${chip(on)} justify-center`}>
-      {label}
-    </a>
-  );
-  return (
-    <nav aria-label={t["members.view.aria"]} className="mt-2 flex gap-2">
-      {link(!former, `/w/${slug}/members`, t["members.view.current"])}
-      {link(former, `/w/${slug}/members?view=former`, t["members.view.former"])}
-    </nav>
-  );
-}
-
 export default async function MembersPage({
   params,
   searchParams,
@@ -214,7 +191,7 @@ export default async function MembersPage({
   return (
     <SignedInFrame access={access} language={language} t={t} current="members" waiting={waiting}>
       <h1 className="font-display text-display-lg">{t["tab.members"]}</h1>
-      <ViewSwitch slug={slug} former={showFormer} t={t} />
+      <MembersHead slug={slug} former={showFormer} t={t} language={language} />
       {/* The page's one main action (D109): new values for several members at once. */}
       {!showFormer && view.readAt !== null && <PasteUpdates slug={slug} words={updatesWords(t)} />}
       {showFormer ? (

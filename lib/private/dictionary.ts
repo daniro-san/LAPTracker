@@ -198,6 +198,8 @@ const en = {
     "In Safari, tap the Share icon (a square with an arrow pointing up). In the list, tap the item with a + in a square, then confirm.",
   "howto.android.body":
     "In Chrome, tap ⋮ at the top right. In the menu, tap the item that adds the page to your home screen (a phone with an arrow), then confirm.",
+  "howto.share":
+    "Sharing screenshots: on Android, add the desk to your home screen from a desk page (this address, not the public site), so the icon is “Officers’ Desk”. Then open a screenshot in your gallery, tap Share and pick “Officers’ Desk”. The desk opens on the drafts to review. A share holds about 4 MB in all, around 2 or 3 screenshots; for more, use Send screenshots in the desk. If the desk is not in the Share list, remove its icon and add it again from here. On iPhone, sharing to the desk is not possible: use Send screenshots in the desk or the Discord command “Send to LAPTracker”.",
   "status.break": "On a break",
   "status.breakUntil": "On a break until {date}",
   "status.help": "Needs help",

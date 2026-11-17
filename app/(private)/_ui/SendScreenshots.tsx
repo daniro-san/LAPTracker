@@ -5,7 +5,7 @@
 // (under Vercel's body limit); then the pictures' text lines become drafts. The pictures are not kept.
 // A picture that is not recognised can be given a type, or left; a map never becomes data.
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useState } from "react";
 
 import { track, type ScreenshotKind } from "@/lib/analytics/events";
 import { buttonClass } from "@/lib/brand/components/Button";
@@ -15,6 +15,7 @@ import type { ImportKind, Scope, Screen } from "@/lib/private/import-kinds";
 
 import { fillIn } from "./draft-known";
 import { isSignedOut, post, readAll } from "./screenshot-upload";
+import { FilePicker, type Preset } from "./ScreenshotPicker";
 import { RefusalLine, SIGNED_OUT } from "./SignedOut";
 
 export interface SendWords {
@@ -35,47 +36,19 @@ interface Result {
   lost: number;
 }
 
-/** "Send screenshots": a 44 px button that opens the phone's picker, several pictures at once. */
-function FilePicker(props: {
-  label: string | undefined;
-  busy: boolean;
-  onFiles: (f: File[]) => void;
-}) {
-  const input = useRef<HTMLInputElement>(null);
-  return (
-    <>
-      <input
-        ref={input}
-        type="file"
-        accept="image/*"
-        multiple
-        className="sr-only"
-        tabIndex={-1}
-        aria-hidden="true"
-        onChange={(e) => {
-          const files = [...(e.currentTarget.files ?? [])];
-          e.currentTarget.value = "";
-          if (files.length > 0) props.onFiles(files);
-        }}
-      />
-      <button
-        type="button"
-        disabled={props.busy}
-        onClick={() => input.current?.click()}
-        className="ink-button inline-flex min-h-11 w-full items-center justify-center px-4 font-medium disabled:opacity-50 sm:w-auto"
-      >
-        {props.label}
-      </button>
-    </>
-  );
-}
-
 const kindOf = (o: Outcome, drafts: DraftSummary[]): ScreenshotKind =>
   o.status === "draft"
     ? (drafts[o.draft]?.kind ?? "unrecognised")
     : o.status === "soon" || o.status === "empty"
       ? o.kind
       : o.status;
+
+/** From a tab's button, one draft and nothing else to say: straight to its review (D110). */
+function onlyDraft(made: Pick<Result, "drafts" | "outcomes">, lost: number): number | null {
+  const [only, ...more] = made.drafts;
+  const clean = lost === 0 && made.outcomes.every((o) => o.status === "draft");
+  return only && more.length === 0 && clean ? only.id : null;
+}
 
 interface SendProps {
   slug: string;
@@ -85,6 +58,10 @@ interface SendProps {
   picks: TypeChoice[];
   maxPictures: number;
   statusBar: { share: number; aspect: number };
+  /** A tab's button (D110): its text, its types, and the question above two types. Home has none. */
+  button?: string;
+  presets?: Preset[];
+  ask?: string;
 }
 
 /** Reading the pictures, then making the drafts; every step runs inside `run`, which keeps `busy` on. */
@@ -97,24 +74,33 @@ function useSend(props: SendProps) {
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState<string | null>(null);
   /** Pages already read when making the drafts failed: "Try again" sends them without reading again. */
-  const [unsent, setUnsent] = useState<{ pages: string[][]; lost: number; pick?: Screen } | null>(
-    null,
-  );
+  const [unsent, setUnsent] = useState<{
+    pages: string[][];
+    lost: number;
+    pick?: Screen;
+    preset?: ImportKind;
+  } | null>(null);
 
-  async function makeDrafts(pages: string[][], lost: number, pick?: Screen) {
+  async function makeDrafts(pages: string[][], lost: number, pick?: Screen, preset?: ImportKind) {
     setUnsent(null);
     try {
       const made = (await post(
         `/api/w/${slug}/shots`,
-        JSON.stringify({ pictures: pages.map((lines) => ({ lines })), ...(pick && { pick }) }),
+        JSON.stringify({
+          pictures: pages.map((lines) => ({ lines })),
+          ...(pick && { pick }),
+          ...(preset && { preset }),
+        }),
         "application/json",
       )) as Pick<Result, "drafts" | "outcomes">;
       for (const o of made.outcomes) track("ws_screenshot_sent", { kind: kindOf(o, made.drafts) });
+      const only = preset && onlyDraft(made, lost);
+      if (only) return router.push(`/w/${slug}/shots/${only}`);
       const unrecognised = pages.filter((_, i) => made.outcomes[i]?.status === "unrecognised");
       setResult({ ...made, unrecognised, lost });
       router.refresh();
     } catch (e) {
-      setUnsent({ pages, lost, ...(pick && { pick }) });
+      setUnsent({ pages, lost, ...(pick && { pick }), ...(preset && { preset }) });
       setError(isSignedOut(e) ? SIGNED_OUT : (w["shots.e.failed"] ?? ""));
     }
   }
@@ -130,7 +116,7 @@ function useSend(props: SendProps) {
     }
   }
 
-  async function send(files: File[]) {
+  async function send(files: File[], preset?: ImportKind) {
     setResult(null);
     setUnsent(null);
     if (files.length > maxPictures)
@@ -139,7 +125,7 @@ function useSend(props: SendProps) {
     setProgress(null);
     if (signedOut) return setError(SIGNED_OUT);
     if (pages.length === 0) return setError(w["shots.readFailed"] ?? "");
-    await makeDrafts(pages, files.length - pages.length);
+    await makeDrafts(pages, files.length - pages.length, undefined, preset);
   }
   return { progress, busy, result, setResult, error, unsent, makeDrafts, run, send };
 }
@@ -150,8 +136,14 @@ export function SendScreenshots(props: SendProps) {
     useSend(props);
   return (
     <div className="mt-4">
-      <FilePicker label={w["shots.send"]} busy={busy} onFiles={(f) => void run(() => send(f))} />
-      <p className="mt-2 text-body-sm text-ink/80">{w["shots.help"]}</p>
+      <FilePicker
+        label={props.button ?? w["shots.send"]}
+        busy={busy}
+        presets={props.presets ?? []}
+        ask={props.ask}
+        onFiles={(f, preset) => void run(() => send(f, preset?.kind))}
+      />
+      {!props.presets && <p className="mt-2 text-body-sm text-ink/80">{w["shots.help"]}</p>}
       <div aria-live="polite" className="mt-2">
         {progress && <p>{fillIn(w["shots.reading"] ?? "", progress)}</p>}
         {error && <RefusalLine text={error} className="border-l-4 border-seal pl-3" />}
@@ -159,7 +151,9 @@ export function SendScreenshots(props: SendProps) {
           <button
             type="button"
             disabled={busy}
-            onClick={() => void run(() => makeDrafts(unsent.pages, unsent.lost, unsent.pick))}
+            onClick={() =>
+              void run(() => makeDrafts(unsent.pages, unsent.lost, unsent.pick, unsent.preset))
+            }
             className={buttonClass("primary", "mt-2")}
           >
             {w["shots.tryAgain"]}

@@ -161,4 +161,23 @@ export const shotsPt: ShotsWords = {
   "shots.check.match": "Batem: {same} de {compared}",
   "shots.check.left": "Fora da conta: {n} (sem membro certo ou sem dados do jogo).",
   "shots.check.save": "Salvar a contagem",
+  "shots.sendOne": "Enviar um print",
+  "shots.sendSecretOps": "Enviar um relatório de Secret Ops",
+  "shots.presetAsk": "O que o print mostra?",
+  "shots.share.again":
+    "Os prints compartilhados não foram guardados. Entre se a mesa pedir e compartilhe de novo.",
+  "shots.share.limit":
+    "Um compartilhamento leva uns 4 MB no total, 2 ou 3 prints, e nada foi lido. Para mandar mais de uma vez, use Enviar prints aqui.",
+  "shots.share.empty":
+    "O compartilhamento não tinha nenhum print que a mesa conseguisse ler. Compartilhe um print (uma imagem) ou use Enviar prints aqui.",
+  "shots.share.busy":
+    "A mesa ainda estava lendo o seu último print, então este compartilhamento não foi lido. Espere um pouco e compartilhe de novo.",
+  "shots.share.failed":
+    "Não foi possível ler os prints compartilhados. Compartilhe de novo ou use Enviar prints.",
+  "shots.share.made.one": "Do que você compartilhou: {n} rascunho, na lista abaixo.",
+  "shots.share.made.other": "Do que você compartilhou: {n} rascunhos, na lista abaixo.",
+  "shots.share.none.one":
+    "{n} print compartilhado não virou rascunho. Envie com Enviar prints para ver o motivo ou escolher o tipo.",
+  "shots.share.none.other":
+    "{n} prints compartilhados não viraram rascunho. Envie com Enviar prints para ver o motivo ou escolher o tipo.",
 };

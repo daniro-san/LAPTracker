@@ -55,6 +55,7 @@ export default async function HowToPage({ params }: { params: Promise<{ slug: st
         <p className="mt-1">{t["howto.iphone.body"]}</p>
         <h3 className="mt-3 font-semibold">{t["howto.android"]}</h3>
         <p className="mt-1">{t["howto.android.body"]}</p>
+        <p className="mt-3">{t["howto.share"]}</p>
         <p className="mt-6">{t["howto.after"]}</p>
         <a href={`/w/${slug}`} className={buttonClass("primary", "mt-6 w-full text-lg")}>
           {t["howto.open"]}

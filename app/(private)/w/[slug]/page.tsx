@@ -14,7 +14,6 @@ import { requireWorkspace } from "@/lib/private/access";
 import { calendarDays } from "@/lib/private/calendar";
 import { onDeskNow, recentActivity, type ActivityItem } from "@/lib/private/desk-activity";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
-import { MAX_PICTURES } from "@/lib/private/import";
 import { toReview, type ReviewItem } from "@/lib/private/import-view";
 import { cardFormats, progressText } from "@/lib/private/member-card";
 import { membersView, progressHistory, type MembersView } from "@/lib/private/members";
@@ -32,6 +31,7 @@ import { digestDays, type NextItem } from "../../_ui/home-digest";
 import { HomeNext } from "../../_ui/HomeNext";
 import { toMatchLine } from "../../_ui/member-lifecycle-data";
 import { nextQuery, refuse } from "../../_ui/refuse";
+import { sharedLines } from "../../_ui/share-lines";
 import { ToReview } from "../../_ui/ToReview";
 
 const ERRORS = ["denied", "discord", "not_configured"] as const;
@@ -42,12 +42,15 @@ function SignIn({
   t,
   error,
   next,
+  notice,
 }: {
   slug: string;
   t: WorkspaceDictionary;
   error?: SignInError;
   /** `next=…`: the page asked for before sign-in (D99), or "". */
   next: string;
+  /** "The shared screenshots were not kept…" after a share from the phone (D110). */
+  notice: string[] | null;
 }) {
   return (
     <section aria-labelledby="sign-in" className="mx-auto max-w-md">
@@ -55,6 +58,11 @@ function SignIn({
         {t["signin.title"]}
       </h1>
       <p className="mt-3">{t["signin.lead"]}</p>
+      {notice?.map((line) => (
+        <p key={line} role="status" className="mt-4 border-l-4 border-plum pl-3">
+          {line}
+        </p>
+      ))}
       {error && (
         <p role="alert" className="mt-4 border-l-4 border-seal pl-3 text-body-sm">
           {t[`signin.e.${error}`]}
@@ -188,6 +196,7 @@ function Home(props: {
   toMatch: number;
   /** D108: the other officers on the desk now, and what officers did lately. */
   desk: { names: string[]; activity: ActivityItem[]; now: Date };
+  shared: string[] | null;
 }) {
   const { slug, t, language } = props;
   const f = cardFormats(language, getEnv().SERVER_TZ, new Date());
@@ -203,6 +212,14 @@ function Home(props: {
       <h1 id="home" className="font-display text-display-lg">
         {t["home.title"]}
       </h1>
+      {/* What became of a share from the phone (D110): first, where the person lands. */}
+      {props.shared && (
+        <div role="status" className="mt-3 border-l-4 border-plum pl-3">
+          {props.shared.map((line) => (
+            <p key={line}>{line}</p>
+          ))}
+        </div>
+      )}
       <OnDesk names={props.desk.names} t={t} language={language} />
       <NextUp slug={slug} t={t} items={props.next} />
       <MembersPart slug={slug} t={t} language={language} view={props.view} />
@@ -211,7 +228,6 @@ function Home(props: {
         items={props.items}
         t={t}
         language={language}
-        maxPictures={MAX_PICTURES}
         toMatch={
           props.toMatch > 0
             ? { line: toMatchLine(props.toMatch, t, f), href: `/w/${slug}/members#to-match` }
@@ -262,16 +278,25 @@ export default async function WorkspacePage({
   });
   const query = await searchParams;
   // The page a refused visitor asked for (refuse.ts), kept through the sign-in.
-  const back = returnPath(slug, typeof query.next === "string" ? query.next : null);
+  // After a share that was not kept, the sign-in comes back to say so (D110).
+  const asked = query.shared === "again" ? `/w/${slug}?shared=again` : null;
+  const back = returnPath(slug, typeof query.next === "string" ? query.next : asked);
   // Only a renewal goes on to `back`: signed out, Home shows the sign-in itself.
   if (!access.ok)
     refuse(slug, access.reason, access.reason === "expired" ? (back ?? undefined) : undefined);
   const { language, t } = await workspaceWords();
+  const shared = sharedLines(t, language, query);
   if (!access.ok || !view || !desk) {
     const error = ERRORS.find((code) => code === query.e);
     return (
       <Frame language={language} t={t}>
-        <SignIn slug={slug} t={t} next={nextQuery(slug, back)} {...(error && { error })} />
+        <SignIn
+          slug={slug}
+          t={t}
+          next={nextQuery(slug, back)}
+          notice={shared}
+          {...(error && { error })}
+        />
       </Frame>
     );
   }
@@ -286,6 +311,7 @@ export default async function WorkspacePage({
         view={view}
         toMatch={unmatched}
         desk={desk}
+        shared={shared}
       />
     </SignedInFrame>
   );

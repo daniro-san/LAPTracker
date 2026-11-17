@@ -29,6 +29,21 @@ export function isSameOriginPicture(request: Request): boolean {
   );
 }
 
+/**
+ * The phone's share target (D110): Android posts the shared pictures as a form, in a navigation the browser
+ * makes itself, so Sec-Fetch-Site is "none" and Origin is absent or "null". A cross-site form is
+ * "cross-site" (and carries no SameSite=Lax session cookie either). A post from our own page passes too.
+ */
+export function isShareTarget(request: Request): boolean {
+  const origin = request.headers.get("origin");
+  const site = request.headers.get("sec-fetch-site");
+  const type = request.headers.get("content-type") ?? "";
+  const own = new URL(request.url).origin;
+  const byBrowser = site === "none" && (origin === null || origin === "null" || origin === own);
+  const byUs = origin === own && (site === null || site === "same-origin");
+  return (byBrowser || byUs) && type.split(";")[0]?.trim() === "multipart/form-data";
+}
+
 /** A JSON error code, never a message or a stack (D71). */
 export const privateError = (status: number, code: string): Response =>
   Response.json({ code }, { status, headers: NO_STORE });

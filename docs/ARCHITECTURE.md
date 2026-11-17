@@ -8,6 +8,8 @@ app/(pages)/*       UI. Reads through lib/queries only.
 app/(private)/*     the workspace (D71): pages under w/[slug], handlers under api/w (one fixed callback, D73).
                     One handler sits outside api/w: api/discord/interactions (public, checked by Discord's
                     signature instead of a session, then the officer rule; D96).
+                    Two handlers sit under w/[slug]: the desk's own web manifest (manifest.webmanifest) and
+                    its share target (share, POST; D110).
                     Reaches data only through lib/private, after requireWorkspace.
 lib/collector.ts    domain: runSnapshot, freshness check, per-alliance fallback, resume logic.
 lib/compute.ts      pure functions only — sums, deltas, freshness predicate, roster diff; no IO, no Date.now() (passed in).
