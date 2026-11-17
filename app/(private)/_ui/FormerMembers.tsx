@@ -10,7 +10,7 @@ import { Sheet } from "@/lib/brand/components/Sheet";
 import { fold } from "@/lib/private/members-list";
 
 import type { FormerRow, LifecycleWords } from "./member-lifecycle-data";
-import { Facts, type EditorContext } from "./MemberCards";
+import { Facts, factsActions, type EditorContext, type FactsMode } from "./MemberCards";
 import { sheetWords } from "./sheet-words";
 
 const PAGE = 25;
@@ -22,12 +22,14 @@ function FormerSheet(props: {
   onClose: () => void;
 }) {
   const { row } = props;
+  const [mode, setMode] = useState<FactsMode>(null);
   return (
     <Sheet
       labelledBy="former-sheet-title"
       onCancel={props.onClose}
       title={<span translate="no">{row.name}</span>}
       words={sheetWords(props.words)}
+      {...factsActions(props.editor.words, setMode)}
     >
       <p className="text-body-sm">{row.lastSeen}</p>
       <p translate="no" className="mt-1 text-body-sm tabular-nums">
@@ -38,7 +40,13 @@ function FormerSheet(props: {
           {row.duel}
         </p>
       )}
-      <Facts card={row} editor={props.editor} zoneNow={null} />
+      <Facts
+        card={row}
+        editor={props.editor}
+        zoneNow={null}
+        mode={mode}
+        onEditorClose={() => setMode(null)}
+      />
     </Sheet>
   );
 }

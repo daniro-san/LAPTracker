@@ -3,10 +3,9 @@
 // A member's card (issue 296), shown in the Members list's sheet (issue 337): the server makes its words
 // (lib/private/member-card.ts) and this lays them out: the status with its evidence, the game's numbers, the
 // donations per day and the other details. The officers' member facts (issue 297) are listed with their
-// source, and "Edit facts" or "Paste what they told you" opens the editor. Nothing is hover-only.
-import { useState } from "react";
-
-import { buttonClass } from "@/lib/brand/components/Button";
+// source; "Edit info" and "Paste what they told you" sit in the sheet's sticky bar (factsActions) and open
+// the editor. Nothing is hover-only.
+import type { SheetAction } from "@/lib/brand/components/Sheet";
 import type { CardData } from "@/lib/private/member-card";
 
 import { SOURCE_KEY } from "./facts-form";
@@ -28,23 +27,45 @@ export type EditorContext = Pick<
   "slug" | "words" | "language" | "serverZone" | "used"
 >;
 
+/** Which way into the facts editor is open, if any. */
+export type FactsMode = "edit" | "paste" | null;
+
+/** The editor's mode, held by the sheet that shows the facts, and how to close it. */
+type Editing = { mode: FactsMode; onEditorClose: () => void };
+
 /** The card, its editor's shared context, and "their time now 22:33" for the time-zone line. */
-type CardProps = { card: CardData; editor: EditorContext; zoneNow: string | null };
+type CardProps = { card: CardData; editor: EditorContext; zoneNow: string | null } & Editing;
+
+/** The sheet bar's two ways into the editor: "Edit info" the main action, "Paste what they told you" second. */
+export function factsActions(
+  words: EditorContext["words"],
+  open: (mode: "edit" | "paste") => void,
+): { primary: SheetAction; secondary: SheetAction } {
+  return {
+    // One line: at 360 px the longer second label wraps instead ("Colar o que a pessoa disse").
+    primary: {
+      label: <span className="whitespace-nowrap">{words["facts.edit"]}</span>,
+      onClick: () => open("edit"),
+    },
+    secondary: { label: words["facts.paste"], onClick: () => open("paste") },
+  };
+}
 
 /** What the facts section needs: also a pending or former member's (D106, D107), who have no card. */
 export type FactsCard = Pick<CardData, "uid" | "name" | "factLines" | "stored" | "autoStatus">;
 
-/** The member facts with their sources, and the two ways into the editor. */
+/** The member facts with their sources, and the editor while the sheet's bar has it open. */
 export function Facts({
   card,
   editor,
   zoneNow,
+  mode,
+  onEditorClose,
 }: {
   card: FactsCard;
   editor: EditorContext;
   zoneNow: string | null;
-}) {
-  const [mode, setMode] = useState<"edit" | "paste" | null>(null);
+} & Editing) {
   const { words } = editor;
   return (
     <section className="mt-3 border-t border-rule pt-3">
@@ -73,14 +94,6 @@ export function Facts({
           </div>
         ))}
       </dl>
-      <div className="mt-2 flex flex-wrap gap-2">
-        <button type="button" onClick={() => setMode("paste")} className={buttonClass("secondary")}>
-          {words["facts.paste"]}
-        </button>
-        <button type="button" onClick={() => setMode("edit")} className={buttonClass("secondary")}>
-          {words["facts.edit"]}
-        </button>
-      </div>
       {mode && (
         <FactsEditor
           {...editor}
@@ -89,14 +102,14 @@ export function Facts({
           facts={card.stored}
           autoStatus={card.autoStatus}
           mode={mode}
-          onClose={() => setMode(null)}
+          onClose={onEditorClose}
         />
       )}
     </section>
   );
 }
 
-function Details({ card, editor, zoneNow }: CardProps) {
+function Details({ card, editor, zoneNow, mode, onEditorClose }: CardProps) {
   return (
     <div className="border-t border-rule px-3 py-3">
       <p className="text-body-sm font-semibold">{card.donationsHead}</p>
@@ -129,13 +142,20 @@ function Details({ card, editor, zoneNow }: CardProps) {
           </div>
         ))}
       </dl>
-      <Facts card={card} editor={editor} zoneNow={zoneNow} />
+      <Facts
+        card={card}
+        editor={editor}
+        zoneNow={zoneNow}
+        mode={mode}
+        onEditorClose={onEditorClose}
+      />
     </div>
   );
 }
 
 /** The opened member: the status with its evidence and the game's numbers, then the details and facts. */
-export function MemberCard({ card, editor, zoneNow }: CardProps) {
+export function MemberCard(props: CardProps) {
+  const { card } = props;
   return (
     <>
       <div className="px-3 pb-3">
@@ -171,7 +191,7 @@ export function MemberCard({ card, editor, zoneNow }: CardProps) {
           </section>
         )}
       </div>
-      <Details card={card} editor={editor} zoneNow={zoneNow} />
+      <Details {...props} />
     </>
   );
 }
