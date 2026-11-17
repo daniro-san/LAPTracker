@@ -6,8 +6,10 @@ import { SHEET_KEYS } from "./sheet-words";
 
 export const FOLLOW_UP_KEYS = [
   ...SHEET_KEYS,
+  "followup.talkedNow",
   "followup.record",
   "followup.inMembers",
+  "followup.inMembersAria",
   "followup.what",
   "followup.action.talked",
   "followup.action.break",
@@ -16,10 +18,14 @@ export const FOLLOW_UP_KEYS = [
   "followup.until",
   "followup.untilHelp",
   "followup.untilNeed",
+  "followup.untilDay",
   "followup.note",
   "followup.noteHelp",
   "followup.save",
   "followup.saved",
+  "followup.undo",
+  "followup.undone",
+  "followup.undoFailed",
   "followup.failed",
 ] as const;
 export type FollowUpWords = Pick<WorkspaceDictionary, (typeof FOLLOW_UP_KEYS)[number]>;

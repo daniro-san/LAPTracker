@@ -105,7 +105,7 @@ describe("POST /api/w/[slug]/follow-up (issue 340)", () => {
     expect(await stale.json()).toEqual({
       code: "stale",
       version: 1,
-      said: "Another officer changed this just now: On a break. Save again to replace it.",
+      said: "⁨Ana⁩ changed this just now: On a break. Save again to replace it.",
     });
     expect((await post(record({ action: "help", version: 1 }))).status).toBe(200);
   });

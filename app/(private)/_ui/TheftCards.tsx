@@ -233,7 +233,8 @@ export function TheftCards({ alliances, ...shared }: Shared & { alliances: Allia
           <p className="text-body-sm tabular-nums text-ink/80">{a.counts}</p>
           <ul className="mt-2 grid gap-2 sm:grid-cols-2">
             {a.attackers.map((card) => (
-              <li key={card.key}>
+              // The Follow-up tab links each open attacker here (issue 340).
+              <li key={card.key} id={`attacker-${card.key}`} className="scroll-mt-4">
                 <Attacker card={card} {...shared} />
               </li>
             ))}

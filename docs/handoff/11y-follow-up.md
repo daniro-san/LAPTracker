@@ -7,7 +7,7 @@ Closes #340; part of #293. Branch `session/11y-follow-up`, rebased on `origin/de
 - **Page** `/w/[slug]/follow-up`:
   - title, then "These are notes for you. Nothing is sent and nobody is removed from the alliance.";
   - "Week Nov 16 – 22", then "{n} to look at · everyone else is fine", or "Nobody to look at this week." (before the first daily update, also "Reasons to check in come with the first daily update.");
-  - one row per member, by name: name, rank, the reasons in yarn ("Check in: …" with the Members tab's evidence; "New · still to ask: Main squad, Troops, AD Tech, Time zone, Languages"), "Note what happened" and "See in Members" (the list searched by the name);
+  - one row per member, by name: name, rank, the reasons in yarn (see "Persona panel round" for the current rows);
   - "Thefts to follow up · n": attackers in state Open or Open again, with this week's count, and "Open the thefts log".
 - **Record sheet** (`FollowUpList.tsx`): the member's reasons, "What happened?" with Talked to them / On a break / Needs help / All fine, "Last day away (ST)" for a break (today or later), a note of up to 500 characters, Save. A request id per open sheet (D100). After a save the page is read again and "Saved. {name} is off this week's list." stays, even when the list is now empty.
 - **Member card**: "Follow-up notes", newest first, e.g. "Talked Tue, Nov 17: Back after the weekend · Ana (R4)" (`member-card.ts`, `MemberCards.tsx`; the only Members change).
@@ -69,8 +69,47 @@ Owner answers of 2026-11-17 and the review's fixes; D104's amendment records the
     - no sideways scroll at 360; no note or name in the server log; `app_errors` empty.
   - Screenshots `r2-list-360-light-{en,pt}.png`.
 
+## Persona panel round
+An R4 officer, a product designer and a copywriter looked at the screenshots. D104's second amendment records each change and quotes the old strings.
+- **Monday rule and Undo**:
+  - the line "People you note leave the list until Sunday. If the reason is still there, they’re back on Monday." sits under the week;
+  - the saved line reads "Saved. {name} is off the list until Monday." with a 44 px Undo;
+  - Undo appends a `withdrawn` record (`undoFollowUp`, `liveRecords`, `resolvedBy`) and puts a break's or Needs help's fact back to the version before, as a new version, unless another officer changed it since;
+  - `member_follow_ups` gains `withdrawn` and `fact_version`. The migration was regenerated: still `0031_follow_up`, for the orchestrator to renumber to 0032.
+- **Rows**:
+  - one-tap "Talked to them" (its own request id, no note), "Add a note" (PT "Anotar", FR "Noter") and "Members ›", all 44 px and on one line, in EN, PT and FR at 360;
+  - grouped under "Check in · n" and "New · n", alphabetical in each;
+  - the warm reason lines are Follow-up-only keys; the Members keys are unchanged;
+  - "n things still to ask" on the row, the full list in the sheet;
+  - a "Needs help" tag.
+- **Sheet** (`FollowUpSheet.tsx`, split from the list for size):
+  - no answer chosen at first, Save off until one is;
+  - an equal 2 × 2 grid;
+  - "They need help";
+  - "Back on (server time)" only for On a break, with "Back on Wed, Nov 25" and the hint under it (the last day stored is the day before);
+  - the 409 line names the officer, in amber, with the card's date format (`factWriter`).
+- **Thefts**:
+  - "Thefts by other alliances · n";
+  - the jump line "2 thefts to follow ↓";
+  - each attacker links to `#attacker-<key>` in the log. `TheftCards.tsx` gains that `id` on each attacker; it is the only change outside Follow-up and the member card.
+- **Kept as the owner wrote them (issue 340)**: the help line, "Nobody to look at this week." (now normal weight) and "{n} to look at · everyone else is fine". The panel's alternatives are in D104 for the owner.
+- **Tests**: `follow-up.test.ts` +1 (Undo: back on the list, two rows kept, the card shows neither, the away fact back to empty as v2, a second Undo answers `not_found`). The route test's 409 line now names the officer.
+- **Verified**:
+  - `pnpm check` exits 0.
+  - Local e2e **59 of 59** on a production build, with a fresh seed for each language, 360 px, EN, PT and FR:
+    - warm lines and two headings;
+    - row actions on one line;
+    - every target ≥ 44 px, no sideways scroll;
+    - the sheet: nothing chosen, Save off, no date until On a break, 4 equal widths, Save on after a choice;
+    - one tap stores one talked row with no note; Undo is 44 px; Undo brings the member back and appends `withdrawn`;
+    - everyone noted gives the empty state;
+    - no names in the server log; `app_errors` empty.
+  - The designer look found the thefts rows losing the space before "·" (a flex link); fixed.
+  - Shots: `11y-shots/r3-{list,sheet,sheet-break,after-save,empty}-360-{en,pt,fr}.png`.
+  - Another agent's worktree held this session's earlier ports (3947, 54947–54949), so this run used 3967, 54957, 54958 and 54969. Only my own processes were stopped.
+
 ## Open issues
-1. **"See in Members"** cannot open the card directly; an address that opens a member's sheet would need a Members change.
+1. **"Members ›"** opens the Members list searched by the name, not the card directly; an address that opens a member's sheet would need a Members change.
 2. **A record resolves the member for the whole game week**, whatever the signal; a new signal later the same week does not bring them back until Monday.
 3. **The KvK reason** stays held (`KVK_REASON_ON`); when it is turned on it appears here too.
 4. **Home** does not show the Follow-up count yet.

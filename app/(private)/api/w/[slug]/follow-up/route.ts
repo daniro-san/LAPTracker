@@ -5,13 +5,14 @@
 // value answers 409 with it in the officer's words. The lib call runs in `privately`; nothing is logged.
 import { z } from "zod";
 
+import { fill, isolate } from "@/lib/copy";
 import { requireWorkspace } from "@/lib/private/access";
 import { isDay } from "@/lib/private/calendar-time";
 import { WORKSPACE_LANG_COOKIE } from "@/lib/private/cookies";
 import { pickWorkspaceLanguage, WORKSPACE_DICTIONARIES } from "@/lib/private/dictionary";
 import type { FactValues } from "@/lib/private/fact-fields";
 import { factText } from "@/lib/private/fact-text";
-import { recordFollowUp } from "@/lib/private/follow-up";
+import { recordFollowUp, undoFollowUp } from "@/lib/private/follow-up";
 import { FOLLOW_UP_ACTIONS } from "@/lib/private/follow-up-rules";
 import {
   isSameOriginJson,
@@ -20,12 +21,14 @@ import {
   privately,
   requestCookies,
 } from "@/lib/private/http";
+import { cardFormats } from "@/lib/private/member-card";
 import { SLUG } from "@/lib/private/sign-in";
 import { withContext } from "@/lib/route";
 
-const body = z
+const uid = z.number().int().positive().max(Number.MAX_SAFE_INTEGER);
+const record = z
   .object({
-    uid: z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
+    uid,
     action: z.enum(FOLLOW_UP_ACTIONS),
     note: z.string().max(500),
     until: z.string().refine(isDay).nullable(),
@@ -33,6 +36,11 @@ const body = z
     requestId: z.uuid(),
   })
   .strict();
+/** Undo: `target` is the request id of the record to withdraw. */
+const undo = z
+  .object({ uid, action: z.literal("undo"), target: z.uuid(), requestId: z.uuid() })
+  .strict();
+const body = z.union([record, undo]);
 
 export async function POST(
   request: Request,
@@ -49,33 +57,35 @@ export async function POST(
     const access = await requireWorkspace(db, slug, jar, now);
     if (!access.ok) return privateError(401, "signed_out");
     const zone = ctx.env.SERVER_TZ;
-    const result = await privately("follow_up.record", () =>
-      recordFollowUp(db, access, parsed.data, { now, zone }),
+    const input = parsed.data;
+    const result = await privately(
+      `follow_up.${input.action === "undo" ? "undo" : "record"}`,
+      () =>
+        input.action === "undo"
+          ? undoFollowUp(db, access, input, { now, zone })
+          : recordFollowUp(db, access, input, { now, zone }),
     );
     if (result.ok) return Response.json({ ok: true }, { headers: NO_STORE });
+    if (result.code === "not_found") return privateError(409, result.code);
     if (result.code !== "stale") return privateError(400, result.code);
     const language = pickWorkspaceLanguage(
       jar.get(WORKSPACE_LANG_COOKIE)?.value,
       request.headers.get("accept-language"),
     );
     const t = WORKSPACE_DICTIONARIES[language];
-    const day = new Intl.DateTimeFormat(language, {
-      day: "numeric",
-      month: "short",
-      timeZone: "UTC",
-    });
+    // The same date format as the page and the member card ("Tue, Nov 17").
+    const f = cardFormats(language, zone, now);
     const value = factText(result.field, result.value as FactValues[typeof result.field] | null, {
       language,
       now,
-      day: (iso) => day.format(new Date(`${iso}T00:00:00Z`)),
+      day: (iso) => f.date(iso),
       words: t,
     });
+    const said = result.by
+      ? fill(t["followup.staleBy"], { who: isolate(result.by), value })
+      : fill(t["followup.stale"], { value });
     return Response.json(
-      {
-        code: "stale",
-        version: result.version,
-        said: t["followup.stale"].replace("{value}", value),
-      },
+      { code: "stale", version: result.version, said },
       { status: 409, headers: NO_STORE },
     );
   });

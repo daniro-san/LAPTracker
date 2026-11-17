@@ -46,6 +46,26 @@ export function worklist(members: readonly MemberRow[], resolved: ReadonlySet<nu
 export const weekStart = (today: string, zone: string) =>
   new Date(zonedInstant(mondayOf(today), 0, zone));
 
+/**
+ * One member's records that still count, oldest first (`rows` oldest first): Undo appends "withdrawn",
+ * which cancels the newest record still counting before it, so the log stays append-only.
+ */
+export function liveRecords<T extends { action: string }>(rows: readonly T[]): T[] {
+  const live: T[] = [];
+  for (const row of rows) {
+    if (row.action === "withdrawn") live.pop();
+    else live.push(row);
+  }
+  return live;
+}
+
+/** The members with a record still counting among `rows` (oldest first, any members). */
+export function resolvedBy(rows: readonly { uid: number; action: string }[]): Set<number> {
+  const byUid = new Map<number, { action: string }[]>();
+  for (const row of rows) byUid.set(row.uid, [...(byUid.get(row.uid) ?? []), row]);
+  return new Set([...byUid].filter(([, own]) => liveRecords(own).length > 0).map(([uid]) => uid));
+}
+
 export interface HistoryRow {
   action: FollowUpAction;
   note: string | null;

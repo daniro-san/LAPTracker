@@ -5,12 +5,18 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
 import { findWorkspaceBySlug, recordSignIn, saveWorkspace } from "../repo/workspaces";
-import { dailyReads, dailyRosters } from "../schema";
+import { dailyReads, dailyRosters, memberFollowUps } from "../schema";
 import { requireWorkspace, type WorkspaceAccess } from "./access";
 import { WORKSPACE_DICTIONARIES } from "./dictionary";
-import { followUpsOf, followUpView, recordFollowUp, type FollowUpInput } from "./follow-up";
+import {
+  followUpsOf,
+  followUpView,
+  recordFollowUp,
+  undoFollowUp,
+  type FollowUpInput,
+} from "./follow-up";
 import { memberCard } from "./member-card";
-import { saveFacts } from "./member-facts";
+import { factsOf, saveFacts } from "./member-facts";
 import { createSession } from "./session";
 
 const OGS = 67111155;
@@ -178,5 +184,25 @@ describe("the Follow-up list (issue 340, D104)", () => {
       "All fine, Fri, Nov 20 · ⁨Ana⁩",
       "Talked Fri, Nov 20: Busy · ⁨Ana⁩",
     ]);
+  });
+
+  it("undoes with an appended withdrawn record: back on the list, the break's fact put back", async () => {
+    const ana = await signedIn("Ana");
+    const off = input(101, { action: "break", until: "2026-11-25", note: "Exams" });
+    await recordFollowUp(db, ana, off, CLOCK);
+    expect((await listed(ana)).map(([uid]) => uid)).toEqual([103]);
+    const undo = { uid: 101, target: off.requestId, requestId: randomUUID() };
+    expect(await undoFollowUp(db, ana, undo, CLOCK)).toEqual({ ok: true });
+    expect((await listed(ana)).map(([uid]) => uid)).toEqual([101, 103]);
+    // Append-only: both rows stay; the card shows neither.
+    const rows = await db.select({ action: memberFollowUps.action }).from(memberFollowUps);
+    expect(rows.map((r) => r.action)).toEqual(["break", "withdrawn"]);
+    expect(await followUpsOf(db, ana, 101)).toEqual([]);
+    // The away note is cleared as a new version (v2), not deleted.
+    const away = (await factsOf(db, ana)).get(101)?.away;
+    expect([away?.value, away?.version]).toEqual([null, 2]);
+    // A second undo of the same record finds nothing to withdraw.
+    const again = { ...undo, requestId: randomUUID() };
+    expect(await undoFollowUp(db, ana, again, CLOCK)).toEqual({ ok: false, code: "not_found" });
   });
 });
