@@ -151,8 +151,9 @@ async function seedEvent(db: Db, base: BaseAlliance[], event: number): Promise<v
   const eventId = (ev as { id: number }).id;
   await seedPhase(db, base, eventId, { event, phase: "before", at: day });
   await seedPhase(db, base, eventId, { event, phase: "after", at: afterAt });
-  // The latest event is sampled like a KvK (D69), so the event page's live section has data.
-  if (event === 2) await seedSamples(db, base, eventId, day, afterAt);
+  // The latest two events are sampled like a KvK (D69, D86), so the event page's live section and the views
+  // across events have data; the first one is not, so those views show a disabled row.
+  if (event >= 1) await seedSamples(db, base, eventId, day, afterAt, event);
 }
 
 async function seedRunLogs(db: Db, snapshotId: number, base: BaseAlliance[]): Promise<void> {
