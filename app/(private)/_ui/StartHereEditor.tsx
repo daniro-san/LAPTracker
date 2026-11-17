@@ -233,6 +233,14 @@ export function StartHereEditor(props: {
         label={w.languages}
         onPick={setActive}
       />
+      <TranslateBar
+        active={active}
+        languages={languages}
+        ai={props.ai}
+        tr={tr}
+        words={props.translate}
+        text={texts[active]}
+      />
       <Panel
         language={active}
         text={texts[active]}
@@ -242,14 +250,6 @@ export function StartHereEditor(props: {
           setState("idle");
           setTexts((x) => ({ ...x, [active]: { ...x[active], [part]: value } }));
         }}
-      />
-      <TranslateBar
-        active={active}
-        languages={languages}
-        ai={props.ai}
-        tr={tr}
-        words={props.translate}
-        text={texts[active]}
       />
       <SaveBar
         error={typeof state === "object" ? state.error : null}

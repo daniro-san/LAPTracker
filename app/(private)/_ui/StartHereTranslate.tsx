@@ -119,7 +119,7 @@ export function TranslateBar(props: {
     .map((l) => LANGUAGE_NAME[l])
     .join(", ");
   return (
-    <div className="mt-3">
+    <div className="mt-3 mb-1">
       <button
         type="button"
         disabled={!props.ai || empty || tr.busy}
