@@ -1,6 +1,6 @@
 # 11h — Calendar tab: week agenda, caravan picks, server and local time
 
-Part of #300 (the Calendar, with caravans and open events) and #293. It builds the `for_members` flag that #331 (the members' board) reads later. Rules applied: D71, D73, D75, D77, D52, D38. No new decision.
+Closes #300 (the Calendar, with caravans and open events); part of #293. It builds the `for_members` flag that #331 (the members' board) reads later. Rules applied: D71, D73, D75, D77, D52, D38. No new decision.
 
 ## Built
 - **Pages**:
@@ -15,7 +15,7 @@ Part of #300 (the Calendar, with caravans and open events) and #293. It builds t
   - Editing a weekly entry asks whether a new day and time is for "Only the week of <date>" (default) or "Every week"; the other fields apply to every week.
   - Delete asks once more: a one-off is deleted; a weekly entry offers "Only the week of <date>" or "This week and every week after".
 - **Time**: every time is shown in ST and on the viewer's own clock (`YourTime.tsx`). The browser's zone is read with `useSyncExternalStore` after hydration, so the server renders no local time and nothing differs at hydration. Day shifts show as "(+1 d)" / "(−1 d)".
-- **Model** (`lib/schema-calendar.ts`, re-exported from `lib/schema.ts`, migration `drizzle/0022_calendar.sql`):
+- **Model** (`lib/schema-calendar.ts`, re-exported from `lib/schema.ts`, migration `drizzle/0024_calendar.sql`):
   - `calendar_entries`: one plan. `day` is its first server day, `minute` its server time (null only for the theme), `weekly`, `last_week` (a one-off: its own Monday; weekly: null, or the last week after "this week and every week after"), `for_members` (default false), `kind`, `variant` (I/II, A/B), `level`, `title`, `notes`, `link`, `created_by`, and `rev` + `edits` (per field: version, who, when). A partial unique index allows one Alliance Duel theme per workspace and week.
   - `calendar_occurrences`: one week of an entry, written only when that week differs: moved (`day`, `minute`), `cancelled`, or the caravan's picks (`coach_uid`/`coach_name`, `second_kind`/`second_uid`/`second_name`). Keyed by `(entry_id, week)`, where `week` is the Monday the plan puts it in, so a moved week keeps its picks and a changed weekly day keeps every week's row.
   - Checks in SQL: the second seat is one kind (`vip` or `guardian`), one uid and one name, all set or all empty; the Coachman and the second seat are two different uids; a moved row has both day and minute.
@@ -60,17 +60,19 @@ Part of #300 (the Calendar, with caravans and open events) and #293. It builds t
 - **No caravan suggestions** (prototype `car.cand`, #300's first text): the brief and D75 ("not a ranking") replace them with a roster search.
 - **No event icons**: the month overview and the agenda use text. The brand proposal's drawn icons (`scratchpad/brand/icons/`) cover five of the seven kinds.
 - **No per-tab tip for Calendar** (#312 panel, 11e's adjustments): FirstUse.tsx is shared shell code; the brief did not list it.
-- **The migration was renumbered twice**: built as `0020_calendar`, then `0021` after 11n's `0020_workspace_user_profile`, now **`0022_calendar`** after 11i's `0021_notices` (snapshot `prevId` = 0021's id; it creates only the two calendar tables). 11f is to take `0022` and 11j `0023`, so expect to regenerate at merge time: drop `drizzle/0022_calendar.sql`, `drizzle/meta/0022_snapshot.json` and its journal entry, merge `dev`, run `pnpm db:generate --name calendar`.
+- **The migration was renumbered three times**: built as `0020_calendar`, then `0021` (after 11n's `0020_workspace_user_profile`), `0022` (after 11i's `0021_notices`), and now **`0024_calendar`** after 11f's `0022_member_facts` and 11j's `0023_thefts` (snapshot `prevId` = 0023's id; it creates only the two calendar tables). If another migration lands first: drop `drizzle/0024_calendar.sql`, `drizzle/meta/0024_snapshot.json` and its journal entry, merge `dev`, run `pnpm db:generate --name calendar`.
 - **Notices became a Calendar view** (coordinator, after 11i landed with a sixth bottom tab): the bottom bar is back to five tabs (`Frame.tsx`: `TABS`, `grid-cols-5`, comments); 11i's three notices pages pass `current="days"`, and the list page shows the sub-nav with Notices open. Nothing else in 11i's files changed. 11i's megaphone path stays in `TabIcon.tsx`, unused by the bar.
+- **Thefts became the fourth Calendar view** (coordinator, after 11j landed): the sub-nav reads Week · Caravans · Notices · Thefts (`thefts.nav`); the thefts page already passed `current="days"` and now shows the sub-nav with Thefts open; 11j's temporary Home card and its two words (`thefts.home`, `thefts.homeOpen`) are removed. The thefts code uses the one viewer clock: `useViewerZone` from `YourTime.tsx` and `clockIn` for the day comparison inside its `viewerClock` (same output). 11j's `serverInstant` stays in `lib/schedule.ts` for its server-side reads.
+- **Tab labels** (`Frame.tsx`): 12 px, `overflow-wrap: normal` and less side padding, so a word never breaks inside itself; a two-word label may take two lines. PT "Acompanhar" now stays whole at 360 px (it broke as "Acompanh / ar" after 11i). Checked in EN, PT and FR.
 - **11n's roster read**: the first version used 11n's `latestRosterNames`; after merging `dev` it uses `latestRoster` and keeps only uid and name for the picker (no might or rank reaches the browser).
 
 ## Verified
-- **`pnpm check` exits 0** after merging `dev` at ab0cd37 (11n, 11i and three public PRs): prettier, eslint, tsc; vitest **118 files passed, 2 skipped; 592 tests passed, 4 skipped**; drift gate "Everything's fine"; i18n "17 languages up to date". No test timed out. Earlier rounds: 99 files / 502 tests before any merge; 13 lib/private files / 57 tests after the 11n merge.
+- **`pnpm check` exits 0** after merging `dev` at 7b90d4d (11n, 11i, 11f, 11j and the public PRs): prettier, eslint, tsc; vitest **126 files passed, 2 skipped; 627 tests passed, 4 skipped**; drift gate "Everything's fine"; i18n "17 languages up to date". No test timed out. Earlier rounds: 99 files / 502 tests before any merge; 118 files / 592 tests after the 11i merge.
 - **New tests**: `calendar-time.test.ts` 2, `calendar.test.ts` 5 (see Built). All passed on the first run.
 - **Local e2e** against a production build (`pnpm build` + `next start` on :3167) of the final merged tree:
-  - setup: db:local on 54367 with its bridge on 54368, migrated through `0022_calendar`; the Discord stub on 54387 with two officers, Ana (R4) and Bo (R4); the seed: the OGs and NSE workspaces and OGs' newest roster with the 101 uids and names of the scrubbed fixture; a worktree-only `.env.local` with random secrets (never printed) and the upstream on a dead port; playwright-core with system Chrome. Ana's browser is in `America/Sao_Paulo` (UTC−3), Bo's in `Africa/Johannesburg` (UTC+2);
+  - setup: db:local on 54367 with its bridge on 54368, migrated through `0024_calendar`; the Discord stub on 54387 with two officers, Ana (R4) and Bo (R4); the seed: the OGs and NSE workspaces and OGs' newest roster with the 101 uids and names of the scrubbed fixture; a worktree-only `.env.local` with random secrets (never printed) and the upstream on a dead port; playwright-core with system Chrome. Ana's browser is in `America/Sao_Paulo` (UTC−3), Bo's in `Africa/Johannesburg` (UTC+2);
   - no upstream call, no real Discord call, no `/api/quota`;
-  - **86 of 86 checks passed**; after the daily Alliance Duel line was added, a rerun on a new build passed **87 of 87** (one more check: "AD day: Raven" … "AD day: Raid" on Monday to Saturday, none on Sunday) (harness `scratchpad/11h/e2e.mjs`, results `scratchpad/11h/e2e-results.txt`):
+  - **95 of 95 checks passed** on the final merged build (earlier rounds: 86 of 86 after the 11i merge, 87 of 87 with the daily Alliance Duel line). Added in the last round: Thefts as the fourth view (sub-nav order, Thefts open, Calendar tab open, no sideways scroll), Home without the thefts card, and the bottom-tab labels in EN, PT and FR at 360 px (each fits its tab, a one-word label stays on one line). The first run of this round failed one old check that still expected three views; it was updated and the rerun passed all 95:
     - the Calendar tab is a link and the open one; the sub-nav reads Week · Caravans · Notices with Week open; Notices links to `/w/ogs/notices`; the legend says "ST is server time, the game’s clock (UTC−2)" and "KvK = Kingdom War.";
     - "25:00" is refused beside the field and nothing is saved; typing 16:00 shows "15:00 your time" in the sheet;
     - every type created through the sheet and shown: Alliance Caravan (every week), Cheese Trap I · Lv.7, Cheese Trap II · Lv.7, Undead Siege · Lv.4, Elixir Scramble · Team A (18:00–18:30 ST) and Team B (23:00–23:30 ST), KvK with a note, the Alliance Duel theme (stored on its Monday), Prettiest pet vote with a link and "Show to members";
@@ -85,7 +87,7 @@ Part of #300 (the Calendar, with caravans and open events) and #293. It builds t
     - the month overview shows at 1280 and is hidden at 360;
     - the server log holds no officer name and no entry text.
   - The first run of the harness failed 2 checks that read the page before the refresh after the last save; the wait was fixed in the harness. One real fix came out of it: the VIP | Guardian choice now shows at once instead of after the refresh.
-- **Screenshots** (not committed) in `/private/tmp/claude-502/-Users-danilordasilva-orca-workspaces-LAPTracker-unicornfish/147759e3-1cdb-4ccd-b74a-1001498a1e18/scratchpad/11h-shots/`: `week-` and `caravans-{360,1280}-{light,dark}-{en,pt-BR}.png`, `week-360-light-fr.png`, `add-360-light-en.png`, `conflict-360-light-en.png`, `picker-360-light-en.png`, `week-moved-360-light-en.png`, `caravans-360-light-en.png`, `notices-360-light-en.png`; with the daily Alliance Duel line: `week-360-{light,dark}-{en,pt-BR}-v2.png`.
+- **Screenshots** (not committed) in `/private/tmp/claude-502/-Users-danilordasilva-orca-workspaces-LAPTracker-unicornfish/147759e3-1cdb-4ccd-b74a-1001498a1e18/scratchpad/11h-shots/`: `week-` and `caravans-{360,1280}-{light,dark}-{en,pt-BR}.png`, `week-360-light-fr.png`, `add-360-light-en.png`, `conflict-360-light-en.png`, `picker-360-light-en.png`, `week-moved-360-light-en.png`, `caravans-360-light-en.png`, `notices-360-light-en.png`; with the daily Alliance Duel line: `week-360-{light,dark}-{en,pt-BR}-v2.png`; on the final build: `week-` and `thefts-360-{light,dark}-{en,pt-BR}-v3.png`.
 
 ## Open issues
 1. **Past weeks follow "every week" changes**: a changed weekly day or time also moves the plan's past weeks. Nothing reads past weeks yet; a results feature (#298) may want the time an event actually ran.
@@ -93,9 +95,6 @@ Part of #300 (the Calendar, with caravans and open events) and #293. It builds t
 3. **The month overview does not mark the week shown**, only today.
 4. **`next start` does not send the PostHog key**, so no calendar event is tracked; no new analytics event was added (D77's list is closed).
 5. **Picks keep the name at the time of the pick**: a member who renames in the game shows the old name on that week's caravan until re-picked.
-6. **Thefts in the sub-nav (11j, issue 321)**: 11j was not on `dev` at this merge. `CalendarNav.tsx` has the slot marked: add `"thefts"` to `CalendarView` and `{ id: "thefts", path: "/thefts", key: "thefts.nav", keepsWeek: false }` to `VIEWS`; the columns follow the list's length. Then remove 11j's temporary Home card that links to the thefts log.
-7. **Two clocks to consolidate (11j)**: 11j adds `serverInstant` to `lib/schedule.ts` and a viewer-clock hook. This branch has `zonedInstant` and `clockIn` (`lib/private/calendar-time.ts`) and `useViewerZone` / `YourTime` (`app/(private)/_ui/YourTime.tsx`), tested for UTC−3 and UTC+2. Keep these as the single ones; whoever merges second moves 11j's callers onto them.
-8. **PT "Acompanhar" breaks mid-word in the bottom bar at 360 px** ("Acompanh / ar"): 11i's label class `[overflow-wrap:anywhere]` in `Frame.tsx`, written for six tabs, still breaks it with five (72 px each). Not changed here; `overflow-wrap: normal` or a shorter word would fix it.
 
 ## Next
 Session: the next workspace issue the orchestrator picks. The workspace track has no prompt in `docs/SESSION_PLAYBOOK.md`. The calendar unblocks #331 (members' board) and the Elixir Scramble teams and roll call in #298.
@@ -109,9 +108,9 @@ Plan changes needed: none. The workspace track lives in issues #293–#331, not 
 - #298 (Elixir teams, roll call): an Elixir Scramble entry is `kind = 'elixir'`, `variant` 'A' or 'B', `minute` one of `ELIXIR_WINDOWS` (540, 1080, 1380). A team list per week can key on `(entry_id, week)` like `calendar_occurrences`.
 - Writes elsewhere in the workspace can reuse the pattern: per-field versions in an `edits` jsonb (`{v, by, at}`), the row locked in a transaction, the 409 body `{code: "stale", conflicts: [{field, version, said}]}`, and `ConflictBox` (`CalendarFields.tsx`) for Keep theirs / Use mine.
 - Roster pickers: `RosterPicker.tsx` (search by name key, the taken member disabled) takes any `{uid, name}[]`.
-- Sub-nav: `CalendarNav.tsx`; Thefts (11j) is one line, see Open issues 6.
-- Clocks: one implementation, `lib/private/calendar-time.ts` + `YourTime.tsx`; see Open issues 7. The workspace-wide server-time / my-time switch and each member's local time are planned for the Members-list session (#337) on top of these: `zonedInstant` (server day + minute → instant), `clockIn` (instant → a zone's time and day shift), `offsetLabel`, `useViewerZone` (the browser's zone after hydration) and `yourTime`. Not built here.
-- Migration: `0022_calendar`; 11f and 11j take 0022 and 0023, so this one is renumbered at merge time.
+- Sub-nav: `CalendarNav.tsx`, four views; a fifth is one line in `VIEWS` (the columns follow its length).
+- Clocks: one implementation, `lib/private/calendar-time.ts` + `YourTime.tsx`; the thefts log uses them too. The workspace-wide server-time / my-time switch and each member's local time are planned for the Members-list session (#337) on top of these: `zonedInstant` (server day + minute → instant), `clockIn` (instant → a zone's time and day shift), `offsetLabel`, `useViewerZone` (the browser's zone after hydration) and `yourTime`. Not built here.
+- Migration: `0024_calendar`, on top of `0023_thefts`.
 - `dictionary.ts` grows by one spread line per feature; the calendar's 119 keys per language are in `dictionary.calendar*.ts`.
 </adjustments>
 
