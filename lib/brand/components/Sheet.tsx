@@ -10,7 +10,8 @@
 // The frame (DESIGN.md "Workspace components"): with `title`, a sticky title row with a 44 px Close (×);
 // with `primary`, a sticky bar at the bottom: the main action first and widest, Cancel after it. Every way
 // of closing — Close, Cancel, Escape, the backdrop, the phone's back gesture — asks "Discard your changes?"
-// first while `dirty`. A modal sheet owns one history entry, so back closes the sheet, not the page.
+// first while `dirty`. A modal sheet owns one history entry, so back closes the sheet, not the page. A
+// focused field is scrolled clear of the bar and of the iPhone keyboard (revealFocused).
 import {
   useEffect,
   useLayoutEffect,
@@ -54,6 +55,34 @@ export interface SheetAction {
   focus?: boolean;
 }
 
+const TYPED = 'input:not([type="checkbox"], [type="radio"], [type="file"]), textarea, select';
+
+/**
+ * A field that gets the focus is kept above the sticky bar and above the iPhone keyboard: the browser
+ * scrolls it into the sheet but not clear of the bar, and the keyboard opens after the focus, so the
+ * check runs again when the visible viewport shrinks. Returns the cleanup.
+ */
+function revealFocused(dialog: HTMLDialogElement): () => void {
+  const reveal = () => {
+    const field = document.activeElement;
+    if (!(field instanceof HTMLElement) || !dialog.contains(field) || !field.matches(TYPED)) return;
+    if (field.closest("[data-sheet-bar]")) return;
+    const view = window.visualViewport;
+    const bar = dialog.querySelector("[data-sheet-bar]")?.getBoundingClientRect().top ?? Infinity;
+    const bottom = Math.min(bar, view ? view.offsetTop + view.height : window.innerHeight);
+    const hidden = field.getBoundingClientRect().bottom + 8 - bottom;
+    if (hidden > 0) dialog.scrollBy({ top: hidden });
+  };
+  // focusin comes before the browser's own scroll to the field: measure after it.
+  const later = () => requestAnimationFrame(reveal);
+  dialog.addEventListener("focusin", later);
+  window.visualViewport?.addEventListener("resize", reveal);
+  return () => {
+    dialog.removeEventListener("focusin", later);
+    window.visualViewport?.removeEventListener("resize", reveal);
+  };
+}
+
 function useSheet(modal: boolean, onBack: () => "closed" | "stay") {
   const ref = useRef<HTMLDialogElement>(null);
   const back = useRef(onBack);
@@ -72,7 +101,9 @@ function useSheet(modal: boolean, onBack: () => "closed" | "stay") {
       dialog.querySelector<HTMLElement>("[data-sheet-title]")
     )?.focus();
     const release = pageSheets().open(() => back.current());
+    const stopReveal = revealFocused(dialog);
     return () => {
+      stopReveal();
       dialog.dataset.closing = "";
       dialog.close();
       release();
@@ -119,6 +150,7 @@ function Bar(props: {
   const secondary = props.secondary ?? cancel;
   return (
     <div
+      data-sheet-bar
       className={`sticky bottom-0 z-10 border-t border-rule bg-paper px-4 pt-3 sm:px-6 ${SAFE_BOTTOM}`}
     >
       {asking && words ? (

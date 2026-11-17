@@ -211,7 +211,8 @@ export const fr: WorkspaceDictionary = {
   "facts.computed": "Automatique (actuellement : {status})",
   "facts.awayText": "Ce qui a été dit",
   "facts.awayDay": "Dernier jour d’absence",
-  "facts.mightHint": "12,3M ou 12 300 000",
+  "facts.adHint": "De 0 à 100",
+  "facts.mightHint": "12,3 ou 12 300 000",
   "facts.theirs": "Garder {theirs}",
   "facts.mine": "Utiliser {mine}",
   "paste.help":

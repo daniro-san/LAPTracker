@@ -88,7 +88,7 @@ export function parseDelimited(text: string): string[][] {
 }
 
 /** "54,327,837", "10.7", "10,7", "0.83", "62%"; null when it is not a number. */
-function cellNumber(raw: string): { n: number; percent: boolean } | null {
+export function cellNumber(raw: string): { n: number; percent: boolean } | null {
   const s = raw.replace(/\s/g, "");
   const percent = s.endsWith("%");
   const digits = s.replace(/%$/, "");

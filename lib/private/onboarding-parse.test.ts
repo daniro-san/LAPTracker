@@ -1,7 +1,7 @@
 // Invented lines in the shapes measured on real onboarding chats (issue #297); never the real chats.
 import { describe, expect, it } from "vitest";
 
-import { parseOnboarding } from "./onboarding-parse";
+import { mightIn, millionsIn, parseOnboarding } from "./onboarding-parse";
 
 const NOW = new Date("2026-11-16T12:00:00Z");
 const read = (text: string) => parseOnboarding(text, NOW, "Etc/GMT+2");
@@ -69,5 +69,34 @@ describe("paste what they told you (#297)", () => {
     expect(read(["Lv.25 [0Gs] Zed", "12.3 M for main squad", "55%", "PST"].join("\n"))).toEqual(
       parseOnboarding(["Lv.25 [0Gs] Zed", "12.3 M for main squad", "55%", "PST"], NOW, "Etc/GMT+2"),
     );
+  });
+});
+
+describe("the facts editor's main squad field (iPhone decimal keypad)", () => {
+  it("reads a bare number below 1,000 in millions, and full numbers and units as before", () => {
+    const typed = {
+      "19,8": 19_800_000,
+      "19.8": 19_800_000,
+      "198": 198_000_000,
+      "19,": 19_000_000,
+      "0": 0,
+      "999.9": 999_900_000,
+      "19800000": 19_800_000,
+      "19.800.000": 19_800_000,
+      "19,800,000": 19_800_000,
+      "19,8M": 19_800_000,
+      "19.8 m": 19_800_000,
+      "19800k": 19_800_000,
+    };
+    for (const [text, might] of Object.entries(typed)) expect(mightIn(text), text).toBe(might);
+  });
+
+  it("does not read 1000 or words as a might, and shows the M only for a short number", () => {
+    expect(mightIn("1000")).toBeNull();
+    expect(mightIn("lots")).toBeNull();
+    expect(millionsIn("19,8")).toBe(19.8);
+    expect(millionsIn("1000")).toBeNull();
+    expect(millionsIn("19,8M")).toBeNull();
+    expect(millionsIn("")).toBeNull();
   });
 });
