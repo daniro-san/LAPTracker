@@ -147,7 +147,6 @@ Words already used in `lib/i18n/tr.ts`. Reuse them so the pages stay consistent;
 | Bloc                              | Blok                            | `balance.*` — a group of alliances the reader tries together                                                                      |
 | Standing over time                | Zaman içinde durum              | `standing.title` — the alliance page's rank-over-days section                                                                     |
 | tracked alliances' total          | Takipteki toplam                | `standing.server` — the server row: all tracked alliances together                                                                |
-| rank step up / down               | {n} basamak yukarı / aşağı      | `standing.up`, `standing.down` — places moved; the same form after 1 and after many                                               |
 | English                           | tr                              | Key and use                                                                                                                       |
 | --------------------------------- | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | Server 325 · Event Ledger         | Sunucu 325 · Etkinlik Defteri   | `site.ledger` — the page title                                                                                                    |

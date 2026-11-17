@@ -15,7 +15,8 @@ export const flowCopy = {
   answerNone:
     "Between {from} and {to}, no move of {min} or more members between the tracked alliances.",
   /** The line under it, counts of the moves shown: between two tracked alliances, from outside them, out of
-   * them; `{min}` is the smallest move shown. */
+   * them; `{min}` is the smallest move shown. Keep " · " between the parts: the page splits on it so each
+   * part stays on one line. */
   totals: "Moves of {min} or more · Changed alliance: {moved} · New: {arrived} · Left: {left}",
   /** Said on the page: why some moves are missing. `{min}` is the smallest move shown. */
   small:

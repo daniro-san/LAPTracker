@@ -248,7 +248,6 @@ Words already used in `lib/i18n/it.ts`. Reuse them so the pages stay consistent;
 | Bloc                      | Blocco                                | `balance.bloc`, `balance.noBloc`, `balance.addTo` — a hypothetical group of alliances on the balance page                             |
 | Standing over time        | Graduatoria nel tempo                 | `standing.title` — the alliance page's rank section                                                                                   |
 | Tracked alliances         | Alleanze seguite                      | `standing.server`, `standing.help`, `standing.leadGrowth` — the server total                                                          |
-| Up / down (places)        | in salita di n / in discesa di n      | `standing.up`, `standing.down` — a rank change, no plural; `standing.lead` reads "…, in salita di 2 dal 9 nov."                       |
 | English                   | it                                    | Key and use                                                                                                                           |
 | ------------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
 | Server 325 · Event Ledger | Server 325 · Registro eventi          | `site.ledger` — the page title                                                                                                        |

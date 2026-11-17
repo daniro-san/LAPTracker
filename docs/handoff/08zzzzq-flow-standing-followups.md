@@ -16,7 +16,8 @@
 - Translations written by hand by the session, no subagents, reusing each language's existing terms.
 
 ## Deviations
-- None.
+- UX review (fdf646b), layout only: the totals line is full ink and each part stays on one line; the "Not counted" line and the hidden-counts note sit together in a group with a left rule under the totals. No English word changed.
+- Review of #365: the glossary rows of nl, it and tr that described the deleted `standing.up`/`down`/`held` are removed.
 
 ## Verified
 - `pnpm check` (see the commit report for the summary lines).
