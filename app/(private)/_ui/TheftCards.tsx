@@ -1,14 +1,15 @@
 "use client";
 
 // The thefts log's list (issue 321): one section per attacker alliance, one card per attacker with this
-// week's and all-time counts and the follow-up state; a card opens to the members it was taken from, the
-// follow-up and each entry. Per-member counts exist only inside an attacker's card (D75). Nothing is
-// hover-only; every control is 44 px or more.
+// week's and all-time counts and the state of the talks with their alliance; a card opens to the members
+// it was taken from (by name, D75: only inside an attacker's card), the talks with their history, and each
+// entry. Nothing is hover-only; every control is 44 px or more.
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
 import { RadioField } from "@/lib/brand/components/RadioField";
+import { fill } from "@/lib/copy";
 import type { WorkspaceLanguage } from "@/lib/private/dictionary";
 import { FOLLOW_UP_STATES, type FollowUpState } from "@/lib/private/theft-groups";
 
@@ -24,13 +25,31 @@ const STATE_TONE: Record<FollowUpState, string> = {
 
 type Shared = { slug: string; t: TheftWords; language: WorkspaceLanguage };
 
-function StateBadge({ state, t }: { state: FollowUpState; t: TheftWords }) {
+function StateBadge({ card }: { card: AttackerCard }) {
   return (
     <span
-      className={`inline-flex shrink-0 items-center rounded-xs border px-2 text-[12px] leading-5 font-semibold ${STATE_TONE[state]}`}
+      className={`inline-flex shrink-0 items-center rounded-xs border px-2 text-[12px] leading-5 font-semibold ${STATE_TONE[card.state]}`}
     >
-      {t[`thefts.state.${state}`]}
+      {card.badge}
     </span>
+  );
+}
+
+/** The changes before the newest, small, newest first. */
+function Earlier({ card, t }: { card: AttackerCard; t: TheftWords }) {
+  if (card.earlier.length === 0) return null;
+  return (
+    <div className="mt-1 text-body-sm text-ink/75">
+      <p className="font-semibold">{t["thefts.earlier"]}</p>
+      <ul className="mt-0.5 space-y-0.5">
+        {card.earlier.map((c, i) => (
+          <li key={i}>
+            {c.text}
+            {c.note && <span className="block pl-2">{c.note}</span>}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
@@ -61,6 +80,7 @@ function FollowUpForm({ card, slug, t }: Shared & { card: AttackerCard }) {
         {card.lastNote && (
           <p className="border-l-2 border-rule pl-2 text-body-sm">{card.lastNote}</p>
         )}
+        <Earlier card={card} t={t} />
         {FOLLOW_UP_STATES.map((s) => (
           <RadioField
             key={s}
@@ -83,7 +103,12 @@ function FollowUpForm({ card, slug, t }: Shared & { card: AttackerCard }) {
         className="drawn-field mt-1 w-full px-3 py-2"
       />
       <div className="mt-2 flex items-center gap-3">
-        <button type="submit" disabled={busy} className={buttonClass("secondary")}>
+        {/* Nothing to save until the state or the note changes, so the history gets no repeated rows. */}
+        <button
+          type="submit"
+          disabled={busy || (state === card.state && note.trim() === "")}
+          className={buttonClass("secondary")}
+        >
           {t["thefts.save"]}
         </button>
         <p role="status" className="text-body-sm">
@@ -111,7 +136,9 @@ function Entry({ entry, slug, t, language }: Shared & { entry: EntryCard }) {
         {zone && entry.at !== null && entry.day !== null && (
           <span className="text-ink/75">
             {" · "}
-            {t["thefts.yours"].replace("{time}", viewerClock(entry.at, entry.day, zone, language))}
+            {fill(t["thefts.yours"], {
+              time: viewerClock(entry.at, entry.day, zone, language),
+            })}
           </span>
         )}
       </p>
@@ -166,7 +193,7 @@ function Attacker({ card, ...shared }: Shared & { card: AttackerCard }) {
           <span translate="no" className="min-w-0 flex-1 truncate font-semibold">
             {card.name}
           </span>
-          <StateBadge state={card.state} t={t} />
+          <StateBadge card={card} />
         </span>
         <span className="text-body-sm tabular-nums">{card.counts}</span>
         <span className="text-body-sm font-semibold text-plum underline underline-offset-4">
@@ -180,7 +207,7 @@ function Attacker({ card, ...shared }: Shared & { card: AttackerCard }) {
             {card.victims.map((v, i) => (
               <span key={v.uid} className="whitespace-nowrap">
                 {i > 0 && " · "}
-                <span translate="no">{v.name}</span> {v.count}
+                <span translate="no">{v.name}</span> ({v.count})
               </span>
             ))}
           </p>

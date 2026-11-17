@@ -1,11 +1,17 @@
 // /api/w/[slug]/thefts (issue 321): the thefts log. GET ?q= finds attackers among the players of the
-// server's other tracked alliances; POST, a write (same origin, JSON), adds a typed theft, removes an
-// entry, or sets an attacker's follow-up. Every answer is { ok: true }, the players found, or a code.
-// Nothing here is logged.
+// other tracked alliances; POST, a write (same origin, JSON), adds a typed theft, removes an entry, or
+// sets an attacker's follow-up. Every answer is { ok: true }, the players found, or a code. The work runs
+// in `privately`, so an error reaches app_errors as its code alone, never with what an officer typed.
 import { z } from "zod";
 
 import { requireWorkspace } from "@/lib/private/access";
-import { isSameOriginJson, NO_STORE, privateError, requestCookies } from "@/lib/private/http";
+import {
+  isSameOriginJson,
+  NO_STORE,
+  privateError,
+  privately,
+  requestCookies,
+} from "@/lib/private/http";
 import { SLUG } from "@/lib/private/sign-in";
 import { FOLLOW_UP_STATES } from "@/lib/private/theft-groups";
 import { addTheft, findAttackers, removeTheft, setFollowUp } from "@/lib/private/thefts";
@@ -63,10 +69,8 @@ export async function GET(request: Request, { params }: Params): Promise<Respons
   return withContext(ROUTE, async (ctx, db) => {
     const access = await requireWorkspace(db, slug, requestCookies(request), ctx.now());
     if (!access.ok) return privateError(401, "signed_out");
-    return Response.json(
-      { players: await findAttackers(db, access, query.q) },
-      { headers: NO_STORE },
-    );
+    const players = await privately("thefts.search", () => findAttackers(db, access, query.q));
+    return Response.json({ players }, { headers: NO_STORE });
   });
 }
 
@@ -83,10 +87,12 @@ export async function POST(request: Request, { params }: Params): Promise<Respon
     if (!access.ok) return privateError(401, "signed_out");
     const result =
       input.action === "add"
-        ? await addTheft(db, access, input, { now, zone: ctx.env.SERVER_TZ })
+        ? await privately("thefts.add", () =>
+            addTheft(db, access, input, { now, zone: ctx.env.SERVER_TZ }),
+          )
         : input.action === "remove"
-          ? await removeTheft(db, access, input.id)
-          : await setFollowUp(db, access, input, now);
+          ? await privately("thefts.remove", () => removeTheft(db, access, input.id))
+          : await privately("thefts.follow", () => setFollowUp(db, access, input, now));
     if (result !== "ok") return privateError(result === "not_found" ? 404 : 400, result);
     return Response.json({ ok: true }, { headers: NO_STORE });
   });

@@ -1,6 +1,6 @@
-// /w/[slug]/thefts (issue 321): the thefts log. Secret Operations thefts from our members by players of the
-// same server, grouped by the attacker's alliance and by attacker, with this week's and all-time counts and
-// "to follow up" per attacker. The access check runs before anything is read (D71). It belongs under the
+// /w/[slug]/thefts (issue 321): the thefts log. Secret Operations thefts from our members, grouped by the
+// attacker's alliance and by attacker, with this week's and all-time counts and the talks with their
+// alliance per attacker. The access check runs before anything is read (D71). It belongs under the
 // Calendar tab (issue 300), so that tab is the current one.
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
@@ -39,6 +39,7 @@ function formats(
   const day = new Intl.DateTimeFormat("en-CA", { timeZone: zone });
   return {
     when: (at) => `${date.format(at)} ${shown.format(at)}`,
+    date: (at) => date.format(at),
     day: (at) => day.format(at),
     hhmm: (at) => field.format(at),
   };
@@ -66,6 +67,7 @@ export default async function TheftsPage({ params }: { params: Promise<{ slug: s
   return (
     <SignedInFrame access={access} language={language} t={t} current="days">
       <h1 className="font-display text-display-lg">{t["thefts.title"]}</h1>
+      <p className="mt-1 text-body-sm text-ink/80">{t["thefts.timesNote"]}</p>
       <p className="mt-2 text-body-sm text-ink/80">{t["thefts.lead"]}</p>
       <TheftsBoard
         slug={slug}

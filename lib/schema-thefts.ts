@@ -18,8 +18,8 @@ const tstz = (name: string) => timestamp(name, { withTimezone: true });
 const big = (name: string) => bigint(name, { mode: "number" });
 
 /**
- * One Secret Operations theft from a member of the workspace's alliance (issue 321): who took it (a player
- * of the same server), whose it was, when, and where the entry came from. `attacker_key` names the attacker
+ * One Secret Operations theft from a member of the workspace's alliance (issue 321): who took it (name and
+ * alliance tag), whose it was, when, and where the entry came from. `attacker_key` names the attacker
  * across entries: `uid:<uid>` for a player found in a tracked alliance's roster, else `name:<name key>`.
  */
 export const thefts = pgTable(

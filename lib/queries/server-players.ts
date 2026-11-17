@@ -1,10 +1,11 @@
 // The server's known players (issue 321): every member of each tracked alliance's newest usable daily
 // roster (D60), as uid, name and alliance tag. Public data: the member-history arrays only, never raw_json.
-import { and, desc, eq, gt, isNull } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 
 import { ALLIANCES } from "../../config/alliances";
 import type { Db } from "../db";
 import { dailyRosters } from "../schema";
+import { dailyFit } from "./history-readings";
 
 export interface ServerPlayer {
   uid: number;
@@ -14,25 +15,24 @@ export interface ServerPlayer {
   tag: string;
 }
 
-export async function serverPlayers(db: Db): Promise<ServerPlayer[]> {
-  const rows = await db
-    .selectDistinctOn([dailyRosters.unionId], {
-      unionId: dailyRosters.unionId,
+/** One alliance's newest usable daily roster, as players; empty before its first one. */
+async function newestRoster(db: Db, unionId: number, listed: string): Promise<ServerPlayer[]> {
+  const [row] = await db
+    .select({
       tag: dailyRosters.tag,
       uids: dailyRosters.memberUids,
       names: dailyRosters.memberNames,
     })
     .from(dailyRosters)
-    .where(
-      and(
-        eq(dailyRosters.isFresh, true),
-        isNull(dailyRosters.error),
-        gt(dailyRosters.memberCount, 0),
-      ),
-    )
-    .orderBy(dailyRosters.unionId, desc(dailyRosters.readDay));
-  return rows.flatMap((r) => {
-    const tag = r.tag ?? ALLIANCES.find((a) => a.unionId === r.unionId)?.tag ?? "";
-    return r.uids.map((uid, i) => ({ uid, name: r.names[i] ?? "", unionId: r.unionId, tag }));
-  });
+    .where(and(eq(dailyRosters.unionId, unionId), dailyFit))
+    .orderBy(desc(dailyRosters.readDay))
+    .limit(1);
+  if (!row) return [];
+  const tag = row.tag ?? listed;
+  return row.uids.map((uid, i) => ({ uid, name: row.names[i] ?? "", unionId, tag }));
+}
+
+export async function serverPlayers(db: Db): Promise<ServerPlayer[]> {
+  const rosters = await Promise.all(ALLIANCES.map((a) => newestRoster(db, a.unionId, a.tag)));
+  return rosters.flat();
 }

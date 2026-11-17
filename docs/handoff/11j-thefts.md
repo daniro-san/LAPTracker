@@ -1,4 +1,4 @@
-# 11j — Thefts log for same-server Secret Operations thefts
+# 11j — Thefts log for Secret Operations thefts
 
 Issue #321. Decision: D97 (new). Rules applied: D71, D74, D75, D52, D77. Base: `origin/dev` at 61eb192, then merged with `origin/dev` at c538169 and at 48d2022 (0021 notices, 0022 member facts) before the migration was generated.
 
@@ -16,18 +16,20 @@ Issue #321. Decision: D97 (new). Rules applied: D71, D74, D75, D52, D77. Base: `
 - **Route** `app/(private)/api/w/[slug]/thefts/route.ts`: `GET ?q=` (attacker search); `POST` `{action:"add"|"remove"|"follow"}` (same origin, JSON, zod). Answers `{ ok: true }`, `{ players }` or a code; `private, no-store`; nothing logged.
 - **Page** `/w/[slug]/thefts` (`app/(private)/w/[slug]/thefts/page.tsx`): access check first, then the log. The Calendar tab is passed as current (the log belongs to it); until 11h lands that tab is "soon", so no tab is highlighted.
   - `TheftsBoard.tsx`: "Add a theft", the empty state, the list.
-  - `TheftCards.tsx`: one section per attacker alliance (`[TAG]`, counts), one `<details>` card per attacker (name, state badge, counts). Opened: "Taken from: Seesky 1 · Commerage 1", the follow-up (who set it and when, the last note, "A new theft after “Resolved”.", three radios, a note, Save), and each entry (server time and the viewer's clock, the member, what was taken, the source badge, the note, Remove in two taps).
-  - `TheftForm.tsx` and `TheftFormFields.tsx`: the bottom sheet. Attacker: search via the route (250 ms after typing stops), or "Use “…” as typed" with an optional tag. Member: D74's `matchName` first, then the roster search, at most 6. Day and time in server time, default now, with "… your time" under them. What was taken: Quest rewards / Unreadable. Note. Save / Cancel.
+  - `TheftCards.tsx`: one section per attacker alliance (`[TAG]`, counts), one `<details>` card per attacker (name, state badge, counts). Opened: "Taken from: Commerage (1) · Seesky (1)" (by name), "Talks with their alliance" (who set it and when, or, when reopened, one sentence: "Ana (R4) marked this “Resolved” on Fri, Nov 13. A new theft came after that, so it is open again."; the last note; older changes under "Earlier"; three radios, a note, and Save, which stays off until the state or the note changes), and each entry (server time and the viewer's clock, the member, what was taken, the source badge, the note, Remove in two taps).
+  - `TheftForm.tsx` and `TheftFormFields.tsx`: the bottom sheet. Attacker: search via the route (250 ms after typing stops), or "Not in the list: save the name “…”" with an optional tag; that option shows at once only when the search found no one, else behind "Not in the list?". A failed search shows no result; only an aborted one is ignored. Member: D74's `matchName` first, then the roster search, at most 6. Day and time in server time, default now, with "Starts at the server’s current time; change it to the time on the report." and "… your time" under them. What was taken: Quest rewards / Not known. Note. Save / Cancel pinned to the bottom of the sheet.
   - `theft-data.ts`: card words and server times made on the server. `theft-client.ts`: the POST call, `useViewerZone` (the browser zone after hydration only), `viewerClock`.
+- Under the page title: "Times are server time. The week starts Monday."
 - **Home** gets a card linking the log, marked to go when the Calendar sub-nav links it.
+- **Changed after the review of PR #351:** the route runs its work in `privately` (codes `thefts.add`, `thefts.remove`, `thefts.follow`, `thefts.search`); `serverPlayers` reads one newest roster per tracked alliance (`dailyFit`, `LIMIT 1`, in parallel); `addTheft` reads the attacker and the roster in parallel; `fill` for every placeholder; the page lead no longer says "of our server" (nothing records the attacker's server); the items under "Must fix" and "Cheap" in the review (reopened sentence and "Open again", the typed-name option, "Taken from {name}", "Not known", members by name with "(n)", "Talks with their alliance", Save off until a change, "Earlier", the pinned footer, the time hint, the times line).
 - `lib/schedule.ts`: `serverInstant(day, hhmm, cfg)`.
 - Docs: D97 and its index line, `docs/ARCHITECTURE.md` (the new modules), `docs/GLOSSARY.md` ("theft").
-- Tests: `lib/private/theft-groups.test.ts` (2), `lib/private/thefts.test.ts` (3, PGlite).
+- Tests: `lib/private/theft-groups.test.ts` (2), `lib/private/thefts.test.ts` (7, PGlite: the hook's behaviours are 5 focused tests).
 
 ## Decisions
 - **D97** holds the model: the attacker key, public reads for the search, the counts, no list of our members, the follow-up rows and reopening, the hook's rules, typed entries, game terms.
-- **"What was stolen"** is the report's kind: `theft` → `quest_rewards` ("stole your quest rewards"), `null` → unreadable. The stolen items themselves are not read by the parser; an officer can write them in the note.
-- **Follow-up reopening:** a theft whose time is later than the newest change shows the attacker as open, with "A new theft after “<state>”." A theft without a time does not reopen. Setting it back to open by hand is not a reopening.
+- **"What was stolen"** is the report's kind: `theft` → `quest_rewards` ("stole your quest rewards"), `null` → "Not known" (a sentence the OCR could not read, or an officer who does not know). The stolen items themselves are not read by the parser; an officer can write them in the note.
+- **Follow-up reopening:** a theft whose time is later than the newest change shows the attacker as "Open again", with one sentence naming who set the old state and on which day. A theft without a time does not reopen. Setting it back to open by hand is not a reopening.
 - **The hook leaves out our own alliance** (its tag, or a name that matches exactly one member): a help line whose sentence was lost (`kind: null`) must not become a theft by one of our members (D75). The attacker search leaves out our own alliance too.
 - **A re-sent report adds nothing:** each (attacker, member, time) is saved only as many times as the log lacks it, so the two Golgsunny thefts at 11:47 in image 54 are both kept the first time and neither the second time.
 - **An attacker match needs the tag to agree:** `matchName` must find exactly one tracked player, and the read tag, when there is one, must be theirs (case-insensitive). Otherwise the name and tag stay as reviewed (`name:` key).
@@ -44,23 +46,28 @@ Issue #321. Decision: D97 (new). Rules applied: D71, D74, D75, D52, D77. Base: `
 - **No PostHog event** (D77's list is closed).
 
 ## Verified
-- **`pnpm check` exits 0** after merging `origin/dev` at 48d2022 and generating 0023: prettier, eslint, tsc; vitest **124 files passed, 2 skipped; 616 tests passed, 4 skipped**; drift gate "Everything's fine"; i18n "17 languages up to date". No test timed out. Earlier rounds: 105 files and 519 tests before any merge; 112 and 567 after merging c538169.
+- **`pnpm check` exits 0** after merging `origin/dev` at 48d2022 and generating 0023: prettier, eslint, tsc; vitest **124 files passed, 2 skipped; 620 tests passed, 4 skipped** (after the PR #351 review round); drift gate "Everything's fine"; i18n "17 languages up to date". No test timed out. Earlier rounds: 105 files and 519 tests before any merge; 112 and 567 after merging c538169; 124 and 616 after merging 48d2022.
 - Tests, one per behaviour:
   - **grouping counts:** 6 entries, two alliances (`VNC` and `vnc` grouped), this week 2 / total 4 and 1 / 2; per attacker 2 / 3 and 0 / 1; known victims counted inside the attacker; the entry without a time last;
-  - **follow-up transitions:** open with no change; talked; resolved; a later theft reopens; a theft without a time does not; set back to open by hand is not a reopening;
+  - **follow-up transitions:** open with no change; talked; resolved, with talked under `earlier`; a later theft reopens; a theft without a time does not; set back to open by hand is not a reopening;
   - **attacker search across alliances:** NSE's newest name (Grimmer, not Grimm) and URSA's Agrim for "grim", exact before contains, `[NSE] GREMLIN`, an emoji finds nothing, OGs' own player left out, and from NSE's workspace OGs' player is found and NSE's own are not;
-  - **the save hook** on image 54's recorded OCR text plus two lines cut off at the edge (`kind: null`): 5 saved, 2 helps and 1 own member left out; Golgsunny matched to the RPD roster (`uid:41`) twice at 11:47 plus once with what was taken unknown; Stene and ANMcinalice kept by name; times 2026-11-15T13:48Z etc.; every row `photo` with the victim; saving again saves 0 (5 duplicates); a member of another alliance gives `not_in_alliance`; an entry without a name gives `attacker_missing`; a report read on 2027-01-02 puts `12-31 23:50` in 2026;
+  - **the save hook** on image 54's recorded OCR text plus two lines cut off at the edge (`kind: null`), five tests:
+    - save and filter: 5 saved, 2 helps and 1 own member left out; Golgsunny matched to a tracked roster tagged RPD (`uid:41`) twice at 11:47 plus once with what was taken unknown; Stene and ANMcinalice kept by name; times 2026-11-15T13:48Z etc.; every row `photo` with the victim;
+    - saving the same report again saves 0 (5 duplicates);
+    - a member of another alliance gives `not_in_alliance` and saves nothing;
+    - an entry without a name gives `attacker_missing` and saves nothing;
+    - a report read on 2027-01-02 puts `12-31 23:50` in 2026;
   - **workspace isolation:** OGs logs a theft; NSE's view is empty; NSE cannot remove it or set its follow-up (`not_found`); OGs cannot name NSE's member as victim (`not_in_alliance`) or its own player as attacker (`unknown_player`); a time two days ahead is `bad_time`.
-- **Local e2e** on a production build (`pnpm build` + `next start` on :3157) of the tree merged with `dev` at 48d2022, db:local on 54417 (bridge 54418), the Discord stub on 54447, playwright-core with system Chrome, browser zone Europe/Paris. Seed: OGs and NSE workspaces and one daily roster for each of the 20 tracked alliances from the committed `/v1` fixtures (uid, name, power, kills). No upstream call, no real Discord call, no `/api/quota`. **56 of 56 checks passed** (also 56 of 56 before the merges and after merging c538169; the first run failed two date expectations in the harness, which were fixed):
-  - Home links the log; the title; the empty state;
-  - manual entry: the sheet opens on its title; "lollipop" finds `[NSE] Lollipopᴺˢᴱ`; "seesky" (our member) finds no attacker; "Tue, Nov 17 01:10 your time"; every sheet control ≥ 44 px; Save without an attacker asks for one; four thefts saved (search + matcher; last week, unreadable, a note; typed `Stene` with tag `1b8R`; `[WACK] ChaoticFyre`); a time two weeks ahead refused; the rows' keys, sources and `stolen`;
-  - grouping: three sections; NSE "1 this week · 2 in total · last Mon, Nov 16 …"; 1b8R "0 this week · 1 in total" (Sunday is last week); WACK 1 / 1; only alliance tags as headings; "Taken from: Seesky 1 · Commerage 1" inside the card; server time · your time per entry; the unreadable entry and its note; the source badge; every control in an opened card ≥ 44 px;
-  - follow-up: Talked (with "Set by Ana (R4), …" and the note), Resolved, both rows kept; after moving the changes 3 days back, the card shows Open and "A new theft after “Resolved”.";
+- **Local e2e** on a production build (`pnpm build` + `next start` on :3157) of the tree merged with `dev` at 48d2022, db:local on 54417 (bridge 54418), the Discord stub on 54447, playwright-core with system Chrome, browser zone Europe/Paris. Seed: OGs and NSE workspaces and one daily roster for each of the 20 tracked alliances from the committed `/v1` fixtures (uid, name, power, kills). No upstream call, no real Discord call, no `/api/quota`. **65 of 65 checks passed** after the PR #351 review round (56 of 56 before it, on each earlier tree; harness slips fixed along the way: two date expectations, and a "Set by" check that also read the Earlier list):
+  - Home links the log; the title; "Times are server time. The week starts Monday."; the lead names no server; the empty state;
+  - manual entry: the sheet opens on its title; "lollipop" finds `[NSE] Lollipopᴺˢᴱ`; with hits, the typed option sits behind "Not in the list?", which shows it; "seesky" (our member) finds no attacker; the time hint; "Tue, Nov 17 … your time"; Save the theft in view at 360 without scrolling; every sheet control ≥ 44 px; Save without an attacker asks for one; four thefts saved (search + matcher; last week, not known, a note; typed `Stene` with tag `1b8R`; `[WACK] ChaoticFyre`); a time two weeks ahead refused; the rows' keys, sources and `stolen`;
+  - grouping: three sections; NSE "1 this week · 2 in total · last Mon, Nov 16 …"; 1b8R "0 this week · 1 in total" (Sunday is last week); WACK 1 / 1; only alliance tags as headings; "Taken from: Commerage (1) · Seesky (1)" inside the card; server time · your time per entry; "Taken from Commerage · Not known" and its note; the source badge; every control in an opened card ≥ 44 px;
+  - talks: Save off before each change; Talked (with "Set by Ana (R4), …" and the note), Resolved, both rows kept, Talked listed under Earlier; after moving the changes 3 days back, the badge reads "Open again" and one sentence reads "Ana (R4) marked this “Resolved” on Fri, Nov 13. A new theft came after that, so it is open again.", with no "Set by" line above Earlier;
   - remove asks first, then the entry and its empty group are gone;
   - route: search is `private, no-store` and leaves out our members; `/api/w/nse/thefts` with the OGs session is 401; a write with another Origin is 403; an unknown state is 400;
   - words and layout: no sideways scroll at 360 and 1280, light and dark, EN, PT and FR; no "flagged / warned / violation / shame"; PT "Roubos em Secret Operations", FR "Vols en Opération secrète", "cette semaine", "au total", U+00A0 in "Retirer cette entrée ?".
   - The server log holds only `w.sign_in` codes.
-- **Screenshots** (not committed) in `/private/tmp/claude-502/-Users-danilordasilva-orca-workspaces-LAPTracker-unicornfish/147759e3-1cdb-4ccd-b74a-1001498a1e18/scratchpad/11j-shots/`: `thefts-{360,1280}-{light,dark}-{en,pt-BR}.png` (first card open), `add-360-light-en.png`, `add-360-dark-{en,pt-BR}.png` (with search results), `card-360-light-en.png`, `empty-360-light-en.png`.
+- **Screenshots** (not committed) in `/private/tmp/claude-502/-Users-danilordasilva-orca-workspaces-LAPTracker-unicornfish/147759e3-1cdb-4ccd-b74a-1001498a1e18/scratchpad/11j-shots/`: after the review, `list-360-{light,dark}-{en,pt-BR}-v2.png`, `card-360-{light,dark}-{en,pt-BR}-v2.png` (first card open, reopened), `add-360-{light,dark}-{en,pt-BR}-v2.png` (with search results and "Not in the list?"), `thefts-1280-{light,dark}-{en,pt-BR}-v2.png`; the first round's files without the suffix.
 - Not run: the screenshot path end to end (11k is not on `dev`); a Vercel deployment.
 
 ## Open issues
@@ -71,7 +78,8 @@ Issue #321. Decision: D97 (new). Rules applied: D71, D74, D75, D52, D77. Base: `
 5. **The counts line's "last …" time is server time** but not labelled; entries say "server time".
 6. **English and Portuguese report wording** is still unverified (11d open issue 5); the hook depends on the parser's `kind`.
 7. **Retention** of thefts and follow-ups falls under D71's open retention question.
-8. **The attacker search reads all 20 rosters** (about 1,900 names) on each request after typing stops. Not measured; fine at this size.
+8. **The attacker search reads all 20 rosters** (about 1,900 names, one `LIMIT 1` query per alliance) on each request after typing stops. Not measured; fine at this size.
+9. **Declined on PR #351 by the coordinator:** route tests (no other private route has them), a time window on `listThefts` (small volume for now), the server column and the five-step status (deferred in D97), and a status summary in each alliance's header.
 
 ## Next
 Session: the next workspace issue the orchestrator picks. The workspace track has no prompt in `docs/SESSION_PLAYBOOK.md`.
@@ -91,7 +99,7 @@ Plan changes needed: none. The workspace track lives in issues #293–#340, not 
 </adjustments>
 
 <adjustments for="Session #340 (Follow-up tab)">
-- "Thefts to follow up" are the attackers of `theftsView(db, access, clock).groups` whose `followUp.state` is not `resolved`; `followUp.reopened` marks those a new theft opened again. The changes are append-only in `theft_follow_ups` with who and when; `setFollowUp` writes one.
+- "Thefts to follow up" are the attackers of `theftsView(db, access, clock).groups` whose `followUp.state` is not `resolved`; `followUp.reopened` marks those a new theft opened again, and `followUp.earlier` holds the older changes. The section is called "Talks with their alliance" in the log, so it does not clash with the tab's name. The changes are append-only in `theft_follow_ups` with who and when; `setFollowUp` writes one.
 </adjustments>
 
 PR: (added by the orchestrator)

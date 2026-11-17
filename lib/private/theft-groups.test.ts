@@ -78,6 +78,7 @@ describe("an attacker's follow-up (issue 321)", () => {
       state: "open",
       last: null,
       reopened: false,
+      earlier: [],
     });
     const talked = [change("talked", "2026-11-17T12:00:00Z")];
     expect(followUpOf(talked, theft("2026-11-17T10:00:00Z")).state).toBe("talked");
@@ -86,6 +87,8 @@ describe("an attacker's follow-up (issue 321)", () => {
       state: "resolved",
       last: { state: "resolved", by: "Ana" },
       reopened: false,
+      // The changes before the newest stay listed, newest first.
+      earlier: [{ state: "talked", by: "Ana" }],
     });
     // A theft after "resolved" opens it again; one whose time was not read does not.
     expect(followUpOf(resolved, theft("2026-11-19T09:00:00Z"))).toMatchObject({

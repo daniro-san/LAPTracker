@@ -6,6 +6,7 @@
 // a 44 px button; a chosen one shows with "Change".
 import { useEffect, useMemo, useState } from "react";
 
+import { fill } from "@/lib/copy";
 import { searchRoster } from "@/lib/private/roster-search";
 import type { AttackerOption } from "@/lib/private/thefts";
 import { matchName } from "@/lib/screenshot/match-name";
@@ -48,7 +49,10 @@ function usePlayerSearch(slug: string, query: string): AttackerOption[] | "searc
           r.ok ? (r.json() as Promise<{ players: AttackerOption[] }>) : { players: [] },
         )
         .then((d) => setHits(d.players))
-        .catch(() => undefined);
+        // A newer keystroke aborted this search; any other failure shows as no result.
+        .catch((e: unknown) => {
+          if (!(e instanceof DOMException && e.name === "AbortError")) setHits([]);
+        });
     }, 250);
     return () => {
       clearTimeout(timer);
@@ -114,6 +118,39 @@ function TypedAttacker({
   );
 }
 
+/**
+ * Saving the name as typed: offered at once when the search found no one, else behind "Not in the
+ * list?", so a listed player is picked rather than typed (a typed name is a separate attacker).
+ */
+function TypedOption(props: {
+  t: TheftWords;
+  typed: string;
+  found: number;
+  onChange: (a: Attacker) => void;
+}) {
+  const { t, typed, found, onChange } = props;
+  const [asked, setAsked] = useState(false);
+  if (found > 0 && !asked)
+    return (
+      <button
+        type="button"
+        onClick={() => setAsked(true)}
+        className="mt-1 inline-flex min-h-11 items-center text-body-sm font-semibold text-plum underline underline-offset-4"
+      >
+        {t["thefts.form.notListed"]}
+      </button>
+    );
+  return (
+    <button
+      type="button"
+      onClick={() => onChange({ typed, tag: "" })}
+      className={`${PICK} mt-1 text-plum underline underline-offset-4`}
+    >
+      {fill(t["thefts.form.asTyped"], { name: typed })}
+    </button>
+  );
+}
+
 function PlayerSearch({ slug, t, onChange }: AttackerProps) {
   const [query, setQuery] = useState("");
   const hits = usePlayerSearch(slug, query);
@@ -146,18 +183,10 @@ function PlayerSearch({ slug, t, onChange }: AttackerProps) {
               </button>
             </li>
           ))}
-        {typed !== "" && (
-          <li>
-            <button
-              type="button"
-              onClick={() => onChange({ typed, tag: "" })}
-              className={`${PICK} text-plum underline underline-offset-4`}
-            >
-              {t["thefts.form.asTyped"].replace("{name}", typed)}
-            </button>
-          </li>
-        )}
       </ul>
+      {typed !== "" && Array.isArray(hits) && (
+        <TypedOption key={typed} t={t} typed={typed} found={hits.length} onChange={onChange} />
+      )}
     </>
   );
 }

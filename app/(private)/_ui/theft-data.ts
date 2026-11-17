@@ -36,10 +36,15 @@ export interface AttackerCard {
   name: string;
   counts: string;
   state: FollowUpState;
-  /** "Set by Ana, Sun 15 Nov 14:02 server time"; null before any officer set one. */
+  /** The state's label, or "Open again" when a later theft opened it. */
+  badge: string;
+  /** "Set by Ana, Sun 15 Nov 14:02 server time"; null before any officer set one, or when reopened. */
   changed: string | null;
   lastNote: string | null;
+  /** "Ana marked this “Resolved” on Fri, Nov 13. A new theft came after that, so it is open again." */
   reopened: string | null;
+  /** The changes before the newest, newest first: "Talked to their leaders · Set by Ana, …". */
+  earlier: { text: string; note: string | null }[];
   victims: { uid: number; name: string; count: number }[];
   entries: EntryCard[];
 }
@@ -53,9 +58,13 @@ export interface AllianceCard {
 export interface TheftFormats {
   /** "Sun 15 Nov 13:46" in server time. */
   when: (at: Date) => string;
+  /** "Sun 15 Nov" in server time. */
+  date: (at: Date) => string;
   /** The server day of an instant, "2026-11-15". */
   day: (at: Date) => string;
 }
+
+const capitalised = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 
 function counts(
   g: { week: number; total: number; lastAt: Date | null },
@@ -70,24 +79,32 @@ function counts(
 }
 
 function attackerCard(a: AttackerGroup, t: TheftWords, f: TheftFormats): AttackerCard {
-  const last = a.followUp.last;
+  const { last, reopened, state, earlier } = a.followUp;
   const server = (at: Date) => fill(t["time.server"], { time: f.when(at) });
+  const changed = (c: { by: string | null; changedAt: Date }) =>
+    fill(t["thefts.changed"], { name: c.by ?? t["thefts.someone"], when: server(c.changedAt) });
   return {
     key: a.key,
     name: a.tag ? `[${a.tag}] ${a.name}` : a.name,
     counts: counts(a, t, f),
-    state: a.followUp.state,
-    changed: last
-      ? fill(t["thefts.changed"], {
-          name: last.by ?? t["thefts.someone"],
-          when: server(last.changedAt),
-        })
-      : null,
+    state,
+    badge: reopened ? t["thefts.state.reopened"] : t[`thefts.state.${state}`],
+    changed: last && !reopened ? changed(last) : null,
     lastNote: last?.note ?? null,
     reopened:
-      a.followUp.reopened && last
-        ? fill(t["thefts.reopened"], { state: t[`thefts.state.${last.state}`] })
+      reopened && last
+        ? capitalised(
+            fill(t["thefts.reopened"], {
+              who: last.by ?? t["thefts.someone"],
+              state: t[`thefts.state.${last.state}`],
+              day: f.date(last.changedAt),
+            }),
+          )
         : null,
+    earlier: earlier.map((c) => ({
+      text: `${t[`thefts.state.${c.state}`]} · ${changed(c)}`,
+      note: c.note,
+    })),
     victims: a.victims,
     entries: a.entries.map((e) => ({
       id: e.id,

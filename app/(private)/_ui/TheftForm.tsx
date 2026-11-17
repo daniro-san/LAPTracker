@@ -8,6 +8,7 @@ import { useState, type FormEvent } from "react";
 import { buttonClass } from "@/lib/brand/components/Button";
 import { RadioField } from "@/lib/brand/components/RadioField";
 import { Sheet } from "@/lib/brand/components/Sheet";
+import { fill } from "@/lib/copy";
 import type { WorkspaceLanguage } from "@/lib/private/dictionary";
 import { serverInstant } from "@/lib/schedule";
 
@@ -64,9 +65,10 @@ function When({ t, language, serverZone, day, time, setDay, setTime }: WhenProps
           />
         </label>
       </div>
+      <p className="mt-1 text-body-sm text-ink/75">{t["thefts.form.whenHelp"]}</p>
       {zone && !Number.isNaN(at) && (
         <p className="mt-1 text-body-sm text-ink/75">
-          {t["thefts.yours"].replace("{time}", viewerClock(at, day, zone, language))}
+          {fill(t["thefts.yours"], { time: viewerClock(at, day, zone, language) })}
         </p>
       )}
     </fieldset>
@@ -172,16 +174,19 @@ export function TheftForm(props: FormProps) {
           onChange={(e) => f.setNote(e.target.value)}
           className="drawn-field mt-1 w-full px-3 py-2"
         />
-        <p role="status" className="mt-2 min-h-6 text-body-sm font-semibold">
-          {f.error}
-        </p>
-        <div className="mt-2 grid gap-2 sm:grid-cols-2">
-          <button type="submit" disabled={f.busy} className={buttonClass("primary")}>
-            {t["thefts.form.save"]}
-          </button>
-          <button type="button" onClick={onClose} className={buttonClass("secondary")}>
-            {t["thefts.form.cancel"]}
-          </button>
+        {/* Pinned to the bottom of the sheet, so Save is in reach at 360 px without scrolling. */}
+        <div className="sticky bottom-0 mt-2 border-t border-rule bg-paper pt-2 pb-1">
+          <p role="status" className="min-h-6 text-body-sm font-semibold">
+            {f.error}
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            <button type="submit" disabled={f.busy} className={buttonClass("primary")}>
+              {t["thefts.form.save"]}
+            </button>
+            <button type="button" onClick={onClose} className={buttonClass("secondary")}>
+              {t["thefts.form.cancel"]}
+            </button>
+          </div>
         </div>
       </form>
     </Sheet>

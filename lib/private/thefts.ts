@@ -1,5 +1,5 @@
-// The thefts log (issue 321, D97): Secret Operations thefts from the workspace's members by players of the
-// same server, grouped by the attacker's alliance and by attacker, with "to follow up" per attacker. The
+// The thefts log (issue 321, D97): Secret Operations thefts from the workspace's members by other players,
+// grouped by the attacker's alliance and by attacker, with "to follow up" per attacker. The
 // attackers are looked up in the public read model of the tracked alliances' rosters (names and tags only);
 // the victims in the workspace's own alliance (D71: union_id = access.unionId). Nothing here is logged.
 import type { Db } from "../db";
@@ -159,12 +159,12 @@ export async function addTheft(
     : null;
   // A minute's grace for a clock set a little ahead; a later time is a typing slip.
   if (!at || at.getTime() > clock.now.getTime() + 60_000) return "bad_time";
-  const attacker = await attackerOf(db, access, input.attacker);
+  const [attacker, roster] = await Promise.all([
+    attackerOf(db, access, input.attacker),
+    input.victimUid === null ? [] : latestRoster(db, access.unionId),
+  ]);
   if (typeof attacker === "string") return attacker;
-  const victim =
-    input.victimUid === null
-      ? null
-      : (await latestRoster(db, access.unionId)).find((m) => m.uid === input.victimUid);
+  const victim = input.victimUid === null ? null : roster.find((m) => m.uid === input.victimUid);
   if (victim === undefined) return "not_in_alliance";
   await insertThefts(db, [
     {

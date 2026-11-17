@@ -40,7 +40,16 @@ export interface FollowUp {
   last: Omit<FollowUpChange, "attackerKey"> | null;
   /** A theft that happened after the last change opened it again. */
   reopened: boolean;
+  /** The changes before the newest, newest first. */
+  earlier: Omit<FollowUpChange, "attackerKey">[];
 }
+
+const withoutKey = ({ state, note, changedAt, by }: FollowUpChange) => ({
+  state,
+  note,
+  changedAt,
+  by,
+});
 
 /**
  * The newest change of the attacker (`changes`, oldest first), else open. A theft whose time is known and
@@ -51,17 +60,13 @@ export function followUpOf(
   entries: readonly TheftEntry[],
 ): FollowUp {
   const change = changes.at(-1);
-  if (!change) return { state: "open", last: null, reopened: false };
-  const last = {
-    state: change.state,
-    note: change.note,
-    changedAt: change.changedAt,
-    by: change.by,
-  };
+  if (!change) return { state: "open", last: null, reopened: false, earlier: [] };
+  const last = withoutKey(change);
+  const earlier = changes.slice(0, -1).map(withoutKey).reverse();
   const again = entries.some((e) => e.at !== null && e.at > change.changedAt);
   return again && change.state !== "open"
-    ? { state: "open", last, reopened: true }
-    : { state: change.state, last, reopened: false };
+    ? { state: "open", last, reopened: true, earlier }
+    : { state: change.state, last, reopened: false, earlier };
 }
 
 export interface Victim {
@@ -82,7 +87,7 @@ export interface AttackerGroup extends Counts {
   /** The name and tag of the newest entry. */
   name: string;
   tag: string;
-  /** Known victims, most thefts first. */
+  /** Known victims, by name (D75: never ranked by how often). */
   victims: Victim[];
   followUp: FollowUp;
   /** Newest first. */
@@ -118,7 +123,7 @@ function victimsOf(entries: readonly TheftEntry[]): Victim[] {
     if (known) known.count += 1;
     else byUid.set(e.victimUid, { uid: e.victimUid, name: e.victimName ?? "", count: 1 });
   }
-  return [...byUid.values()].sort((a, b) => b.count - a.count);
+  return [...byUid.values()].sort((a, b) => a.name.localeCompare(b.name));
 }
 
 function attackerOf(

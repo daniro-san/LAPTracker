@@ -16,8 +16,8 @@ import { reportInstant, saveSecretOpsDraft } from "./thefts-import";
 const OGS = 67111155;
 const NSE = 67109944;
 const URSA = 67110320;
-/** An alliance tagged RPD, as the committed report (image 54) names one. */
-const RPD = 67100001;
+/** A tracked alliance (TmS's id) whose newest roster reads RPD, the tag the committed report (image 54) names. */
+const RPD = 67110584;
 const NOW = new Date("2026-11-16T12:00:00Z");
 const CLOCK = { now: NOW, zone: "Etc/GMT+2" };
 
@@ -94,20 +94,21 @@ describe("the attacker search (issue 321)", () => {
 });
 
 describe("the Secret Ops report save hook (issues 299, 321)", () => {
-  it("turns the reviewed entries into thefts, once, leaving out help and our own members", async () => {
+  // Image 54's recorded text, then two entries cut off at the picture's edge: no sentence, kind null.
+  const lines = readFileSync(
+    `${import.meta.dirname}/../../fixtures/screenshots/54-secret-ops-report.txt`,
+    "utf8",
+  ).split("\n");
+  const entries = parseSecretOpsReport([
+    ...lines,
+    "[RPD]Golgsunny 11-14 09:00",
+    "[OGs]Grimbald 11-14 08:00",
+  ]);
+  const draft = { victimUid: 11, readAt: NOW, entries };
+
+  it("saves the thefts, kind null as not known, and leaves out help and our own members", async () => {
     const ogs = await signedIn("ogs");
-    // Image 54's recorded text, then two entries cut off at the picture's edge: no sentence, kind null.
-    const lines = readFileSync(
-      `${import.meta.dirname}/../../fixtures/screenshots/54-secret-ops-report.txt`,
-      "utf8",
-    ).split("\n");
-    const entries = parseSecretOpsReport([
-      ...lines,
-      "[RPD]Golgsunny 11-14 09:00",
-      "[OGs]Grimbald 11-14 08:00",
-    ]);
     expect(entries.filter((e) => e.kind === null)).toHaveLength(2);
-    const draft = { victimUid: 11, readAt: NOW, entries };
     expect(await saveSecretOpsDraft(db, ogs, draft, CLOCK)).toEqual({
       saved: 5,
       left: { help: 2, own: 1, duplicate: 0 },
@@ -124,14 +125,28 @@ describe("the Secret Ops report save hook (issues 299, 321)", () => {
       ["uid:41", "RPD", "2026-11-14T11:00:00.000Z", null],
     ]);
     expect(rows.every((r) => r.source === "photo" && r.victimName === "Seesky")).toBe(true);
-    // The same report saved again adds nothing.
+  });
+
+  it("adds nothing when the same report is saved again", async () => {
+    const ogs = await signedIn("ogs");
+    await saveSecretOpsDraft(db, ogs, draft, CLOCK);
     expect(await saveSecretOpsDraft(db, ogs, draft, CLOCK)).toMatchObject({
       saved: 0,
       left: { duplicate: 5 },
     });
+    expect(await listThefts(db, ogs.workspaceId)).toHaveLength(5);
+  });
+
+  it("refuses a member who is not in the alliance", async () => {
+    const ogs = await signedIn("ogs");
     expect(await saveSecretOpsDraft(db, ogs, { ...draft, victimUid: 21 }, CLOCK)).toBe(
       "not_in_alliance",
     );
+    expect(await listThefts(db, ogs.workspaceId)).toEqual([]);
+  });
+
+  it("refuses an entry whose attacker name was not read", async () => {
+    const ogs = await signedIn("ogs");
     // A name the OCR did not read ("") must be filled in or the entry dropped before saving.
     const noName = {
       kind: "theft" as const,
@@ -142,7 +157,10 @@ describe("the Secret Ops report save hook (issues 299, 321)", () => {
     };
     const unnamed = { ...draft, entries: [...entries, noName] };
     expect(await saveSecretOpsDraft(db, ogs, unnamed, CLOCK)).toBe("attacker_missing");
-    // A report read in early January: December's entries are from the year before.
+    expect(await listThefts(db, ogs.workspaceId)).toEqual([]);
+  });
+
+  it("dates December's entries of a report read in early January in the year before", () => {
     expect(reportInstant("12-31 23:50", new Date("2027-01-02T12:00:00Z"), "Etc/GMT+2")).toEqual(
       new Date("2027-01-01T01:50:00Z"),
     );
