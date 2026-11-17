@@ -1,0 +1,2 @@
+ALTER TABLE "roll_calls" DROP CONSTRAINT "roll_calls_kind_check";--> statement-breakpoint
+ALTER TABLE "roll_calls" ADD CONSTRAINT "roll_calls_kind_check" CHECK ("roll_calls"."kind" in ('shield', 'raid', 'plunder', 'elixir', 'cheese'));

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { WORKSPACE_DICTIONARIES } from "./dictionary";
 import { awayOn, awayUntil } from "./fact-fields";
 import {
+  ADDED_KINDS,
   callOrder,
   registrationOpen,
   REST,
@@ -33,13 +34,23 @@ describe("roll call rules (issue 298)", () => {
     expect(t).toEqual({ yes: 1, no: 1, assumed: 1, notSet: 2, away: 1 });
   });
 
-  it("fills the rest per kind, none for plunders, and a second tap of the same button clears", () => {
-    expect(REST).toEqual({ shield: "assumed", elixir: "no", raid: "yes", plunder: null });
+  it("fills the rest per kind (Cheese Trap took part, none for plunders), and a second tap of the same button clears", () => {
+    expect(REST).toEqual({
+      shield: "assumed",
+      elixir: "no",
+      raid: "yes",
+      plunder: null,
+      cheese: "yes",
+    });
     expect([toggled(null, "yes"), toggled("yes", "yes"), toggled("assumed", "no")]).toEqual([
       "yes",
       null,
       "no",
     ]);
+  });
+
+  it("offers KvK shield, Undead Siege and Cheese Trap by hand, no longer plunders (2026-11-17)", () => {
+    expect(ADDED_KINDS).toEqual(["shield", "raid", "cheese"]);
   });
 
   it("orders not set first, then marked, by name, and away members last", () => {

@@ -5,14 +5,16 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
 import { findWorkspaceBySlug, recordSignIn, saveWorkspace } from "../repo/workspaces";
-import { dailyReads, dailyRosters } from "../schema";
+import { dailyReads, dailyRosters, rollCalls, rollCallMarks } from "../schema";
 import { requireWorkspace, type WorkspaceAccess } from "./access";
 import { createEntry, removeEntry } from "./calendar";
 import type { NewEntry } from "./calendar-model";
+import { WORKSPACE_DICTIONARIES } from "./dictionary";
 import { saveFacts } from "./member-facts";
 import { addCall, markOne, markRest, undoMarks, type Occasion } from "./roll-call";
 import { setTeam } from "./roll-call-team";
 import { callView, teamView, weekItems } from "./roll-call-view";
+import { callTitle } from "./roll-call-words";
 import { createSession } from "./session";
 
 const OGS = 67111155;
@@ -85,6 +87,12 @@ const shown = async (access: WorkspaceAccess, occasion: Occasion) =>
   (await callView(db, access, occasion, "en", ZONE))?.rows
     .map((r) => `${r.uid}:${r.mark ?? "-"}${r.away ? " away" : ""}`)
     .sort();
+
+/** The roll call's title as its page shows it, in English. */
+const titled = async (access: WorkspaceAccess, occasion: Occasion) => {
+  const view = await callView(db, access, occasion, "en", ZONE);
+  return view && callTitle(view.opened, WORKSPACE_DICTIONARIES.en);
+};
 
 describe("roll call writes (issue 298)", () => {
   it("refuses a mark based on an older version with the newer one, unless both said the same", async () => {
@@ -194,16 +202,52 @@ describe("roll call writes (issue 298)", () => {
 
   it("opens the same hand-added roll call for a repeated request or the same kind and day", async () => {
     const ana = await signedIn("Ana");
-    const add = (kind: "plunder" | "raid", id = randomUUID()) =>
+    const add = (kind: "cheese" | "raid", id = randomUUID()) =>
       addCall(db, ana, { kind, day: "2026-11-18" }, id);
     const id = randomUUID();
-    const first = await add("plunder", id);
-    expect(await add("plunder", id)).toEqual(first);
+    const first = await add("cheese", id);
+    expect(await add("cheese", id)).toEqual(first);
     // Two officers adding it at once: the unique index lets one in, the other opens it.
-    expect(await Promise.all([add("plunder"), add("plunder")])).toEqual([first, first]);
+    expect(await Promise.all([add("cheese"), add("cheese")])).toEqual([first, first]);
     expect(await add("raid")).not.toEqual(first);
-    // Plunders have no "the rest" (owner, 2026-11-17).
-    const rest = await markRest(db, ana, { occasion: { id: first.id }, uids: UIDS }, CLOCK);
+  });
+
+  it("gives a Cheese Trap Calendar entry its roll call, titled as the Calendar, whose rest took part", async () => {
+    const ana = await signedIn("Ana");
+    const cheese = await calendarOccasion(ana, {
+      kind: "cheese",
+      variant: "II",
+      level: 7,
+    } as Partial<NewEntry>);
+    const [item] = await weekItems(db, ana, cheese.week, ZONE);
+    expect(item).toMatchObject({ kind: "cheese", occasion: cheese });
+    expect(await titled(ana, cheese)).toBe("Cheese Trap II · Lv.7");
+    await mark(ana, cheese, 101, "no", 0);
+    const rest = await markRest(db, ana, { occasion: cheese, uids: UIDS }, CLOCK);
+    expect(rest).toMatchObject({ ok: true, mark: "yes" });
+    expect(await shown(ana, cheese)).toEqual(["101:no", "102:yes", "103:yes", "104:yes"]);
+  });
+
+  it("still lists a plunder roll call saved before 2026-11-17, with its marks and no rest", async () => {
+    const ana = await signedIn("Ana");
+    const [old] = await db
+      .insert(rollCalls)
+      .values({
+        workspaceId: ana.workspaceId,
+        kind: "plunder",
+        day: "2026-11-17",
+        week: "2026-11-16",
+        requestId: randomUUID(),
+      })
+      .returning({ id: rollCalls.id });
+    const id = old?.id ?? 0;
+    await db
+      .insert(rollCallMarks)
+      .values({ rollCallId: id, uid: 102, version: 1, mark: "yes", writtenAt: NOW });
+    const items = await weekItems(db, ana, "2026-11-16", ZONE);
+    expect(items.map((i) => [i.kind, i.tally.yes])).toEqual([["plunder", 1]]);
+    expect(await titled(ana, { id })).toBe("Plunders");
+    const rest = await markRest(db, ana, { occasion: { id }, uids: UIDS }, CLOCK);
     expect(rest).toEqual({ ok: false, code: "invalid" });
   });
 

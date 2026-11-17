@@ -58,7 +58,7 @@ const FIXTURES: Record<string, Partial<Record<Method, Fixture>>> = {
   "pending/route.ts": { POST: { body: { action: "delete", uid: -1 } } },
   "profile/route.ts": { GET: {}, POST: { body: { action: "unlink" } } },
   "roll-call/route.ts": {
-    POST: { body: { action: "add", kind: "plunder", day: "2026-11-16", requestId: ID } },
+    POST: { body: { action: "add", kind: "cheese", day: "2026-11-16", requestId: ID } },
   },
   "shots/[id]/route.ts": { POST: { body: { action: "discard", version: 1 } } },
   // The officer's call would run the OCR on the stand-in bytes: the refusals are what is checked here.

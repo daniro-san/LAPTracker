@@ -134,4 +134,20 @@ describe("POST /api/w/[slug]/roll-call (issue 298)", () => {
     expect([body.code, body.mark, body.version]).toEqual(["stale", "no", 1]);
     expect(body.said).toMatch(/Ana.* marked “No shield” just now/);
   });
+
+  it("adds a Cheese Trap by hand and refuses a new plunder (2026-11-17)", async () => {
+    const add = (kind: string) => ({
+      action: "add",
+      kind,
+      day: "2026-11-18",
+      requestId: randomUUID(),
+    });
+    const cheese = await post(add("cheese"), { who: "Ana" });
+    expect([cheese.status, await cheese.json()]).toMatchObject([
+      200,
+      { ok: true, id: expect.any(Number) },
+    ]);
+    const plunder = await post(add("plunder"), { who: "Ana" });
+    expect([plunder.status, await plunder.json()]).toEqual([400, { code: "bad_request" }]);
+  });
 });

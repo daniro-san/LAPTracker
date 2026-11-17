@@ -61,8 +61,8 @@ export interface WeekItem {
 }
 
 /**
- * The week's occasions from Monday `monday`: the Calendar's (KvK, Undead Siege, Elixir) and those added. A
- * Calendar roll call whose week was skipped or moved out, or whose entry was deleted, shows with the added
+ * The week's occasions from Monday `monday`: the Calendar's (KvK, Undead Siege, Cheese Trap, Elixir) and
+ * those added. A Calendar roll call whose week was skipped or moved out, or whose entry was deleted, shows with the added
  * ones, on its own day, with its marks. `zone` is the server's (SERVER_TZ).
  */
 export async function weekItems(db: Db, access: WorkspaceAccess, monday: string, zone: string) {
