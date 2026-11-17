@@ -22,6 +22,8 @@ export interface Draft {
   from: Partial<Record<NoticeLanguage, { language: NoticeLanguage; text: string }>>;
   /** The text before Translate or Improve writing filled it, for Undo. */
   undo: Partial<Record<NoticeLanguage, string>>;
+  /** "Keep as is" on a language that may be out of date: saved unchanged, which brings it up to date. */
+  kept: Partial<Record<NoticeLanguage, true>>;
 }
 
 export const omit = <T extends object>(record: T, key: PropertyKey): T =>
@@ -35,12 +37,19 @@ export function startDraft(fields: NoticeFields): Draft {
     ]),
   ) as Values;
   const versions = Object.fromEntries(NOTICE_FIELDS.map((f) => [f, fields[f].version]));
-  return { values, base: values, versions: versions as Draft["versions"], from: {}, undo: {} };
+  const draft = { values, base: values, versions: versions as Draft["versions"] };
+  return { ...draft, from: {}, undo: {}, kept: {} };
 }
 
-/** The changed fields, each with its version; a translation names its source when that text is unchanged. */
+const changed = (d: Draft, f: NoticeField) =>
+  d.values[f] !== d.base[f] || (isNoticeLanguage(f) && d.kept[f] === true);
+
+/**
+ * The changed fields (and the kept ones), each with its version; a translation names its source when that
+ * text is unchanged.
+ */
 export function changesOf(d: Draft): Change[] {
-  return NOTICE_FIELDS.filter((f) => d.values[f] !== d.base[f]).map((field) => {
+  return NOTICE_FIELDS.filter((f) => changed(d, f)).map((field) => {
     const source = isNoticeLanguage(field) ? d.from[field] : undefined;
     const from =
       source && d.values[source.language] === source.text
@@ -70,7 +79,7 @@ export function withDrafts(
   return next;
 }
 
-/** Keep theirs: their value becomes mine. Use mine: only their version. Either way the box closes. */
+/** Keep mine: only their version is taken. Use theirs: their value replaces mine. */
 export function settle(d: Draft, c: Conflict, keep: "theirs" | "mine"): Draft {
   const next = {
     ...d,
@@ -83,5 +92,6 @@ export function settle(d: Draft, c: Conflict, keep: "theirs" | "mine"): Draft {
     values: { ...d.values, [c.field]: c.value },
     from: omit(d.from, c.field),
     undo: omit(d.undo, c.field),
+    kept: omit(d.kept, c.field),
   };
 }

@@ -9,12 +9,15 @@ import { improveText, TONES, translateText, WRITING_LANGUAGES } from "@/lib/ai/n
 import { requireWorkspace } from "@/lib/private/access";
 import { isSameOriginJson, NO_STORE, privateError, requestCookies } from "@/lib/private/http";
 import { privateLog } from "@/lib/private/log";
-import { NOTICE_LIMIT } from "@/lib/private/notice-rules";
+import { DRAFT_LIMIT, NOTICE_LIMIT } from "@/lib/private/notice-rules";
 import { SLUG } from "@/lib/private/sign-in";
 import { withContext } from "@/lib/route";
 
+/** Two models at 15 s each, at worst (D81); the platform's default would cut that short on some plans. */
+export const maxDuration = 60;
+
 const language = z.enum(WRITING_LANGUAGES);
-const text = z.string().trim().min(1).max(8000);
+const text = z.string().trim().min(1).max(DRAFT_LIMIT);
 const body = z.discriminatedUnion("kind", [
   z
     .object({

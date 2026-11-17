@@ -1,21 +1,28 @@
 "use client";
 
-// One language of the notice editor (issues 304, 305): the text with its counter, Translate into the other
-// two, Improve writing with its tone chips, the "draft" line with Undo after either, the "may be out of
-// date" line, and what someone else saved first. Every button is 44 px high; nothing is hover-only.
-import { useState } from "react";
+// One language of the notice editor (issues 304, 305): the text, which grows with what is written, its
+// counter and how far over the game's limit it is; "Translate to …" and, lighter, "Improve writing" with its
+// tone chips; a draft from either in a tinted box with Undo; and, when the saved text may be out of date,
+// "Update from …" and "Keep as is". Every control is 44 px; nothing is hover-only.
+import { useLayoutEffect, useRef, useState } from "react";
 
 import type { Tone } from "@/lib/ai/notice-writing";
+import { buttonClass } from "@/lib/brand/components/Button";
 import { fill } from "@/lib/copy";
 import type {
   WorkspaceDictionary,
   WorkspaceKey,
   WorkspaceLanguage,
 } from "@/lib/private/dictionary";
-import type { NoticeLanguage } from "@/lib/private/notice-rules";
+import {
+  DRAFT_LIMIT,
+  NOTICE_LIMIT,
+  noticeLength,
+  type NoticeLanguage,
+} from "@/lib/private/notice-rules";
 
-import { LANGUAGE_CODE, LANGUAGE_NAME, type Conflict } from "./notice-client";
-import { ConflictBox, Counter, smallButton, StaleLine } from "./NoticeBits";
+import { LANGUAGE_NAME } from "./languages";
+import { Counter, OverLimit, smallButton, StaleLine } from "./NoticeBits";
 
 /** Improve writing's chips, in order; a Record, so tsc fails if a tone is left out. */
 const TONE_WORDS: Record<Tone, WorkspaceKey> = {
@@ -38,29 +45,70 @@ export interface LanguageFieldProps {
   ai: boolean;
   /** The action running now, if any: every AI button waits for it. */
   busy: string | null;
-  /** The saved text may be out of date, and the language to translate it from. */
+  /** The saved text may be out of date, and the language to update it from. */
   stale: { from: NoticeLanguage | null } | null;
   /** Filled by Translate or Improve writing and not saved yet: Undo puts the text back. */
   drafted: boolean;
-  conflict: Conflict | null;
+  /** Another language has text, which Translate would turn into a draft. */
+  othersWritten: boolean;
   onTranslate: (from: NoticeLanguage, to: NoticeLanguage[]) => void;
   onImprove: (tone: Tone) => void;
   onUndo: () => void;
-  onConflict: (keep: "theirs" | "mine") => void;
+  onKeep: () => void;
 }
 
-function AiButtons(p: LanguageFieldProps & { chips: boolean; setChips: (open: boolean) => void }) {
+/** The text box, as tall as its text: no inner scroll and no resize handle. */
+function GrowingText({ p, describedBy }: { p: LanguageFieldProps; describedBy: string }) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  useLayoutEffect(() => {
+    const box = ref.current;
+    if (!box) return;
+    box.style.height = "auto";
+    box.style.height = `${box.scrollHeight + 2}px`;
+  }, [p.value]);
+  const over = noticeLength(p.value) > NOTICE_LIMIT;
+  return (
+    <textarea
+      ref={ref}
+      id={`notice-${p.language}`}
+      lang={p.language}
+      translate="no"
+      rows={4}
+      value={p.value}
+      aria-describedby={describedBy}
+      onChange={(e) => p.onChange(e.target.value)}
+      className={`block w-full resize-none overflow-hidden border bg-paper p-3 leading-relaxed ${
+        over ? "border-seal ring-2 ring-seal" : "border-rule"
+      }`}
+    />
+  );
+}
+
+/** Why Translate and Improve writing are off, said on the buttons themselves. */
+function reasonOf(p: LanguageFieldProps): WorkspaceKey | null {
+  if (!p.ai) return "notices.ai.off";
+  return p.value.length > DRAFT_LIMIT ? "notices.ai.tooLong" : null;
+}
+
+function AiButtons(p: LanguageFieldProps) {
   const { language, others, t, busy } = p;
-  const off = !p.ai || busy !== null || p.value.trim() === "";
-  const list = others.map((l) => LANGUAGE_CODE[l]).join(" · ");
+  const [chips, setChips] = useState(false);
+  const reason = reasonOf(p);
+  const off = reason !== null || busy !== null || p.value.trim() === "";
+  const reasonId = `notice-${language}-ai-reason`;
+  const described = reason ? { "aria-describedby": reasonId } : {};
+  const list = new Intl.ListFormat(p.viewer, { type: "conjunction" }).format(
+    others.map((l) => LANGUAGE_NAME[l]),
+  );
   return (
     <>
-      <div className="mt-2 flex flex-wrap gap-2">
+      <div className="mt-2 flex flex-wrap items-center gap-2">
         <button
           type="button"
           disabled={off}
+          {...described}
           onClick={() => p.onTranslate(language, others)}
-          className={smallButton("text-plum")}
+          className={buttonClass("secondary", "text-body-sm text-plum")}
         >
           {busy === `translate:${language}`
             ? t["notices.working"]
@@ -68,15 +116,25 @@ function AiButtons(p: LanguageFieldProps & { chips: boolean; setChips: (open: bo
         </button>
         <button
           type="button"
-          disabled={!p.ai}
-          aria-expanded={p.chips}
-          onClick={() => p.setChips(!p.chips)}
-          className={smallButton("text-plum")}
+          disabled={reason !== null}
+          {...described}
+          aria-expanded={chips}
+          onClick={() => setChips(!chips)}
+          className="inline-flex min-h-11 min-w-11 items-center px-2 text-body-sm font-medium text-plum underline underline-offset-4 disabled:opacity-50"
         >
           {busy === `improve:${language}` ? t["notices.working"] : t["notices.improve"]}
         </button>
       </div>
-      {p.chips && (
+      {reason ? (
+        <p id={reasonId} className="mt-1 text-body-sm text-ink/75">
+          {fill(t[reason], { limit: DRAFT_LIMIT })}
+        </p>
+      ) : (
+        p.othersWritten && (
+          <p className="mt-1 text-body-sm text-ink/70">{t["notices.translateNote"]}</p>
+        )
+      )}
+      {chips && reason === null && (
         <div role="group" aria-label={t["notices.improve"]} className="mt-2 flex flex-wrap gap-2">
           {(Object.keys(TONE_WORDS) as Tone[]).map((tone) => (
             <button
@@ -95,59 +153,53 @@ function AiButtons(p: LanguageFieldProps & { chips: boolean; setChips: (open: bo
   );
 }
 
-export function LanguageField(props: LanguageFieldProps) {
-  const { language, t, stale, conflict } = props;
-  const [chips, setChips] = useState(false);
+export function LanguageField(p: LanguageFieldProps) {
+  const { language, t, stale } = p;
   const id = `notice-${language}`;
+  const box = <GrowingText p={p} describedBy={`${id}-over`} />;
   return (
     <section aria-labelledby={`${id}-label`} className="mt-5 border-t border-rule pt-3">
       <div className="flex items-start justify-between gap-3">
         <label id={`${id}-label`} htmlFor={id} className="font-subhead text-display-sm">
           {LANGUAGE_NAME[language]}
         </label>
-        <Counter text={props.value} t={t} />
+        <Counter text={p.value} t={t} />
       </div>
       {stale && (
         <StaleLine t={t}>
-          {props.ai && stale.from && (
+          {p.ai && stale.from && (
             <button
               type="button"
-              disabled={props.busy !== null}
-              onClick={() => stale.from && props.onTranslate(stale.from, [language])}
+              disabled={p.busy !== null}
+              onClick={() => stale.from && p.onTranslate(stale.from, [language])}
               className={smallButton("text-plum")}
             >
-              {fill(t["notices.translateFrom"], { lang: LANGUAGE_CODE[stale.from] })}
+              {fill(t["notices.updateFrom"], { lang: LANGUAGE_NAME[stale.from] })}
             </button>
           )}
+          <button type="button" onClick={p.onKeep} className={smallButton()}>
+            {t["notices.keep"]}
+          </button>
         </StaleLine>
       )}
-      {conflict && (
-        <ConflictBox
-          conflict={conflict}
-          t={t}
-          language={props.viewer}
-          onTheirs={() => props.onConflict("theirs")}
-          onMine={() => props.onConflict("mine")}
-        />
+      {p.drafted ? (
+        <div className="mt-2 border-l-4 border-plum bg-plum/5 py-2 pr-2 pl-3">
+          <p className="mb-2 flex flex-wrap items-center gap-2 text-body-sm">
+            <span className="rounded-full bg-plum px-2 py-0.5 text-[12px] font-semibold text-paper">
+              {t["notices.draft.pill"]}
+            </span>
+            <span className="text-plum">{t["notices.draft"]}</span>
+            <button type="button" onClick={p.onUndo} className={smallButton("ml-auto bg-paper")}>
+              {t["notices.undo"]}
+            </button>
+          </p>
+          {box}
+        </div>
+      ) : (
+        <div className="mt-2">{box}</div>
       )}
-      <textarea
-        id={id}
-        lang={language}
-        translate="no"
-        rows={8}
-        value={props.value}
-        onChange={(e) => props.onChange(e.target.value)}
-        className="mt-2 block w-full border border-rule bg-paper p-3 leading-relaxed"
-      />
-      {props.drafted && (
-        <p className="mt-1 flex flex-wrap items-center gap-x-3 text-body-sm text-plum">
-          <span>{t["notices.draft"]}</span>
-          <button type="button" onClick={props.onUndo} className="min-h-11 font-semibold underline">
-            {t["notices.undo"]}
-          </button>
-        </p>
-      )}
-      <AiButtons {...props} chips={chips} setChips={setChips} />
+      <OverLimit text={p.value} t={t} id={`${id}-over`} />
+      <AiButtons {...p} />
     </section>
   );
 }

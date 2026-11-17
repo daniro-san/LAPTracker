@@ -1,8 +1,8 @@
-// notices and notice_edits (issue 304): a workspace's notices with each field's newest edit, and a save in
-// one transaction. The save locks the notice's row, so two officers saving the same notice at once are
+// notices and notice_edits (issue 304): the library's list (no text, at most LIST_LIMIT notices), one notice
+// with each field's newest edit, and a save in one transaction. The save locks the notice's row, so two officers saving the same notice at once are
 // taken one after the other and the second sees the first one's versions. What a save may write is
 // decided in lib/private (`decide`), which sees the current values under that lock.
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
 import type { Db } from "../db";
@@ -50,11 +50,10 @@ function noticeRows(db: Db, workspaceId: number, id?: number) {
     .orderBy(desc(notices.updatedAt), desc(notices.id));
 }
 
-/** The newest edit of each field, for one notice or for every notice of the workspace. */
-function newestFields(db: Pick<Db, "selectDistinctOn">, workspaceId: number, noticeId?: number) {
+/** The newest edit of each field of one notice. */
+function newestFields(db: Pick<Db, "selectDistinctOn">, workspaceId: number, noticeId: number) {
   return db
-    .selectDistinctOn([noticeEdits.noticeId, noticeEdits.field], {
-      noticeId: noticeEdits.noticeId,
+    .selectDistinctOn([noticeEdits.field], {
       field: noticeEdits.field,
       version: noticeEdits.id,
       value: noticeEdits.value,
@@ -64,23 +63,59 @@ function newestFields(db: Pick<Db, "selectDistinctOn">, workspaceId: number, not
     })
     .from(noticeEdits)
     .leftJoin(workspaceUsers, eq(workspaceUsers.id, noticeEdits.editedBy))
+    .where(and(eq(noticeEdits.workspaceId, workspaceId), eq(noticeEdits.noticeId, noticeId)))
+    .orderBy(noticeEdits.field, desc(noticeEdits.id));
+}
+
+/** The library shows this many notices, the most recently changed first. */
+export const LIST_LIMIT = 200;
+
+/** A field as the list needs it: a language's text stays in the database, only whether it is written. */
+export interface ListField {
+  field: string;
+  /** null for a language. */
+  value: string | null;
+  written: boolean;
+  basis: number | null;
+}
+
+export interface NoticeListRow {
+  id: number;
+  updatedAt: Date;
+  updatedBy: string | null;
+  fields: ListField[];
+}
+
+export async function workspaceNoticeList(db: Db, workspaceId: number): Promise<NoticeListRow[]> {
+  const rows = await noticeRows(db, workspaceId).limit(LIST_LIMIT);
+  if (rows.length === 0) return [];
+  const fields = await db
+    .selectDistinctOn([noticeEdits.noticeId, noticeEdits.field], {
+      noticeId: noticeEdits.noticeId,
+      field: noticeEdits.field,
+      // The three language fields of notice_edits_field_check: their text is not read here.
+      value: sql<
+        string | null
+      >`case when ${noticeEdits.field} in ('en', 'pt-BR', 'fr') then null else ${noticeEdits.value} end`,
+      written: sql<boolean>`${noticeEdits.value} <> ''`,
+      basis: noticeEdits.basis,
+    })
+    .from(noticeEdits)
     .where(
       and(
         eq(noticeEdits.workspaceId, workspaceId),
-        noticeId === undefined ? undefined : eq(noticeEdits.noticeId, noticeId),
+        inArray(
+          noticeEdits.noticeId,
+          rows.map((r) => r.id),
+        ),
       ),
     )
     .orderBy(noticeEdits.noticeId, noticeEdits.field, desc(noticeEdits.id));
-}
-
-export async function workspaceNotices(db: Db, workspaceId: number): Promise<NoticeRecord[]> {
-  const [rows, fields] = await Promise.all([
-    noticeRows(db, workspaceId),
-    newestFields(db, workspaceId),
-  ]);
-  return rows.map((row) => ({
-    ...row,
-    fields: fields.filter((f) => f.noticeId === row.id),
+  return rows.map(({ id, updatedAt, updatedBy }) => ({
+    id,
+    updatedAt,
+    updatedBy,
+    fields: fields.filter((f) => f.noticeId === id),
   }));
 }
 

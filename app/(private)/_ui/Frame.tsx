@@ -44,9 +44,10 @@ const PATHS: Partial<Record<TabId, string>> = {
 
 function Tabs({ t, slug, current }: { t: WorkspaceDictionary; slug: string; current: TabId }) {
   return (
+    // Hidden while a notice editor is open, so its save bar is never under the tabs (review of PR 344).
     <nav
       aria-label={t["tab.aria"]}
-      className="fixed inset-x-0 bottom-0 z-10 border-t border-rule bg-paper pb-[env(safe-area-inset-bottom)]"
+      className="fixed inset-x-0 bottom-0 z-10 border-t border-rule bg-paper pb-[env(safe-area-inset-bottom)] [:root:has(form[data-notice-editor])_&]:hidden"
     >
       <ul className="mx-auto grid max-w-[640px] grid-cols-6">
         {TABS.map((id) => {
@@ -54,9 +55,9 @@ function Tabs({ t, slug, current }: { t: WorkspaceDictionary; slug: string; curr
           const inside = (
             <>
               <TabIcon id={id} />
-              {/* Six tabs leave 60 px each at 360 px: a long word ("Acompanhar") breaks, hyphenated
-                  where the browser knows the language, instead of running past the screen. */}
-              <span className="max-w-full text-[13px] leading-tight hyphens-auto [overflow-wrap:anywhere]">
+              {/* Six tabs leave 60 px each at 360 px: a long word ("Acompanhar") wraps, without a
+                  hyphen, instead of running past the screen. */}
+              <span className="max-w-full text-[13px] leading-tight hyphens-none [overflow-wrap:anywhere]">
                 {label}
               </span>
             </>

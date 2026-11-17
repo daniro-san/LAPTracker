@@ -5,7 +5,13 @@
 import { z } from "zod";
 
 import type { Db } from "../db";
-import { workspaceNotice, workspaceNotices, writeNotice, type FieldRow } from "../repo/notices";
+import {
+  workspaceNotice,
+  workspaceNoticeList,
+  writeNotice,
+  type FieldRow,
+  type NoticeListRow,
+} from "../repo/notices";
 import type { WorkspaceAccess } from "./access";
 import {
   isNoticeLanguage,
@@ -13,6 +19,7 @@ import {
   NOTICE_LANGUAGES,
   planSave,
   staleLanguages,
+  staleOf,
   type Change,
   type NoticeField,
   type NoticeLanguage,
@@ -76,31 +83,31 @@ export interface NoticeDetail extends NoticeSummary {
 const stateOf = (rows: FieldRow[]): NoticeState =>
   Object.fromEntries(rows.map((r) => [r.field, r]));
 
-function summaryOf(record: {
-  id: number;
-  updatedAt: Date;
-  updatedBy: string | null;
-  fields: FieldRow[];
-}): NoticeSummary {
-  const state = stateOf(record.fields);
-  const stale = staleLanguages(state);
+/** A card's words from the list's fields: the title, the flags, and each language written or behind. */
+function summaryOf(row: NoticeListRow): NoticeSummary {
+  const value = (field: NoticeField) => row.fields.find((f) => f.field === field)?.value ?? "";
+  const bases = Object.fromEntries(
+    row.fields.filter((f) => isNoticeLanguage(f.field) && f.written).map((f) => [f.field, f.basis]),
+  );
+  const stale = staleOf(bases);
   return {
-    id: record.id,
-    title: state.title?.value ?? "",
+    id: row.id,
+    title: value("title"),
     languages: NOTICE_LANGUAGES.map((language) => ({
       language,
-      written: (state[language]?.value ?? "") !== "",
+      written: language in bases,
       stale: stale.includes(language),
     })),
-    forMembers: state.for_members?.value === "true",
-    endsOn: state.ends_on?.value || null,
-    updatedAt: record.updatedAt,
-    updatedBy: record.updatedBy,
+    forMembers: value("for_members") === "true",
+    endsOn: value("ends_on") || null,
+    updatedAt: row.updatedAt,
+    updatedBy: row.updatedBy,
   };
 }
 
+/** The library: at most LIST_LIMIT notices, without their text. */
 export async function noticesList(db: Db, access: WorkspaceAccess): Promise<NoticeSummary[]> {
-  return (await workspaceNotices(db, access.workspaceId)).map(summaryOf);
+  return (await workspaceNoticeList(db, access.workspaceId)).map(summaryOf);
 }
 
 export async function noticeDetail(
@@ -111,8 +118,9 @@ export async function noticeDetail(
   const record = await workspaceNotice(db, access.workspaceId, id);
   if (!record) return null;
   const state = stateOf(record.fields);
+  const fields = record.fields.map((f) => ({ ...f, written: f.value !== "" }));
   return {
-    ...summaryOf(record),
+    ...summaryOf({ ...record, fields }),
     createdAt: record.createdAt,
     createdBy: record.createdBy,
     fields: Object.fromEntries(

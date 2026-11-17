@@ -19,13 +19,20 @@ export type NoticeField = (typeof NOTICE_FIELDS)[number];
 
 /** The in-game notice board's room (owner, issue 304). Over it is a soft warning, never a block. */
 export const NOTICE_LIMIT = 1000;
+/** The most Translate and Improve writing take in one request: three times the board's room (D81). */
+export const DRAFT_LIMIT = 3000;
 
 export const isNoticeLanguage = (field: string): field is NoticeLanguage =>
   (NOTICE_LANGUAGES as readonly string[]).includes(field);
 
+const graphemes = new Intl.Segmenter();
+
 /** Characters as a reader counts them: an emoji or an accented letter is one. */
 export function noticeLength(text: string): number {
-  return [...new Intl.Segmenter().segment(text)].length;
+  const segments = graphemes.segment(text)[Symbol.iterator]();
+  let n = 0;
+  while (!segments.next().done) n++;
+  return n;
 }
 
 /** A field's current value. `version` is the id of the edit that set it; 0 means never set. */
@@ -39,11 +46,20 @@ export type NoticeState = Partial<Record<NoticeField, FieldValue>>;
 const written = (state: NoticeState, language: NoticeLanguage) =>
   (state[language]?.value ?? "") !== "";
 
-/** The languages with text that is behind the newest language's: "may be out of date". */
+/** From the basis of each written language: the ones behind the newest, "may be out of date". */
+export function staleOf(bases: Partial<Record<NoticeLanguage, number | null>>): NoticeLanguage[] {
+  const languages = NOTICE_LANGUAGES.filter((l) => l in bases);
+  const newest = Math.max(0, ...languages.map((l) => bases[l] ?? 0));
+  return languages.filter((l) => (bases[l] ?? 0) < newest);
+}
+
+/** The languages with text that is behind the newest language's. */
 export function staleLanguages(state: NoticeState): NoticeLanguage[] {
-  const languages = NOTICE_LANGUAGES.filter((l) => written(state, l));
-  const newest = Math.max(0, ...languages.map((l) => state[l]?.basis ?? 0));
-  return languages.filter((l) => (state[l]?.basis ?? 0) < newest);
+  return staleOf(
+    Object.fromEntries(
+      NOTICE_LANGUAGES.filter((l) => written(state, l)).map((l) => [l, state[l]?.basis ?? null]),
+    ),
+  );
 }
 
 /** One field as the officer saved it. */

@@ -29,6 +29,21 @@ export const GLOSSARY: readonly (readonly [term: string, meaning: string])[] = [
   ["Coachman, VIP, Guardian", "the caravan's driver and the members who ride with it"],
 ];
 
+/**
+ * Game terms that have a name of their own in Portuguese and French: a translation uses it. The keys are
+ * written as officers write them in English.
+ */
+export const TRANSLATED_TERMS: Readonly<Record<string, { "pt-BR": string; fr: string }>> = {
+  "Alliance Duel": { "pt-BR": "Duelo da Aliança", fr: "Duel d’alliance" },
+};
+
+/** Game item names stay in English until the game's own Portuguese and French names are known. */
+export const ITEM_EXAMPLES: readonly string[] = [
+  "Raven Essence",
+  "Construction Speedups",
+  "Covert Operations",
+];
+
 /** Kept verbatim in every language: game terms, ranks, tiers, events, alliance tags and names. */
 export const DO_NOT_TRANSLATE: readonly string[] = [
   "AD",
@@ -91,4 +106,5 @@ export const DO_NOT_TRANSLATE: readonly string[] = [
   "AFR",
   "Discord",
   "UTC",
+  ...ITEM_EXAMPLES,
 ];

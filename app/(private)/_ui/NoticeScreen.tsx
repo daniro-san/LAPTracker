@@ -1,9 +1,8 @@
 "use client";
 
 // One notice (issue 304): read it in each language with one Copy per language, for pasting into the game or
-// Discord, or edit it. A language that may be out of date says so, with "Translate from …" (opens the
-// editor and translates) and "Keep as is" (saves it unchanged, which clears the line).
-import { useRouter } from "next/navigation";
+// Discord, or edit it. A language that may be out of date carries an "Out of date" tag, which opens the editor
+// at that language; "Update from …" and "Keep as is" are there, behind the editor's save and its checks.
 import { useState } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
@@ -11,11 +10,11 @@ import { fill } from "@/lib/copy";
 import type { NoticeLanguage } from "@/lib/private/notice-rules";
 
 import { CopyButton } from "./CopyButton";
-import { saveNotice, LANGUAGE_CODE, LANGUAGE_NAME } from "./notice-client";
-import { Counter, smallButton, StaleLine } from "./NoticeBits";
+import { LANGUAGE_NAME } from "./languages";
+import { Counter, OutOfDateTag, OverLimit } from "./NoticeBits";
 import { NoticeEditor, type EditorProps } from "./NoticeEditor";
 
-export interface ScreenProps extends Omit<EditorProps, "start" | "onClose" | "id"> {
+export interface ScreenProps extends Omit<EditorProps, "focus" | "onClose" | "id"> {
   id: number;
   /** Server-made lines: who wrote it and who changed it last, and the members flag and end date. */
   meta: { written: string; changed: string; flags: string[] };
@@ -24,52 +23,32 @@ export interface ScreenProps extends Omit<EditorProps, "start" | "onClose" | "id
 function LanguageText({
   p,
   language,
-  onTranslate,
+  onEdit,
 }: {
   p: ScreenProps;
   language: NoticeLanguage;
-  onTranslate: (from: NoticeLanguage) => void;
+  onEdit: () => void;
 }) {
-  const router = useRouter();
-  const [busy, setBusy] = useState(false);
   const { t } = p;
   const field = p.fields[language];
-  const keep = async () => {
-    setBusy(true);
-    await saveNotice(p.slug, p.id, [
-      { field: language, value: field.value, version: field.version },
-    ]);
-    router.refresh();
-  };
+  const name = LANGUAGE_NAME[language];
   return (
     <section aria-labelledby={`read-${language}`} className="mt-5 border-t border-rule pt-3">
-      <div className="flex items-start justify-between gap-3">
-        <h2 id={`read-${language}`} className="font-subhead text-display-sm">
-          {LANGUAGE_NAME[language]}
-        </h2>
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+        <span className="flex flex-wrap items-center gap-2">
+          <h2 id={`read-${language}`} className="font-subhead text-display-sm">
+            {name}
+          </h2>
+          {p.stale.includes(language) && (
+            <OutOfDateTag
+              label={fill(t["notices.outOfDate.aria"], { lang: name })}
+              onOpen={onEdit}
+              t={t}
+            />
+          )}
+        </span>
         <Counter text={field.value} t={t} />
       </div>
-      {p.stale.includes(language) && (
-        <StaleLine t={t}>
-          {p.ai && p.source && (
-            <button
-              type="button"
-              onClick={() => p.source && onTranslate(p.source)}
-              className={smallButton("text-plum")}
-            >
-              {fill(t["notices.translateFrom"], { lang: LANGUAGE_CODE[p.source] })}
-            </button>
-          )}
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => void keep()}
-            className={smallButton()}
-          >
-            {t["notices.keep"]}
-          </button>
-        </StaleLine>
-      )}
       {field.value === "" ? (
         <p className="mt-2 text-ink/70">{t["notices.missing"]}</p>
       ) : (
@@ -77,11 +56,12 @@ function LanguageText({
           <div lang={language} translate="no" className="mt-2 break-words whitespace-pre-wrap">
             {field.value}
           </div>
+          <OverLimit text={field.value} t={t} />
           <div className="mt-3">
             <CopyButton
               text={field.value}
               labels={{
-                copy: fill(t["notices.copy"], { lang: LANGUAGE_CODE[language] }),
+                copy: fill(t["notices.copy"], { lang: name }),
                 copied: t["members.copied"],
                 failed: t["members.copyFailed"],
               }}
@@ -94,15 +74,16 @@ function LanguageText({
 }
 
 export function NoticeScreen(p: ScreenProps) {
-  const [editing, setEditing] = useState<EditorProps["start"] | true | null>(null);
+  /** null: reading. A language: editing, opened at it. true: editing from the top. */
+  const [editing, setEditing] = useState<NoticeLanguage | true | null>(null);
   const { t } = p;
   if (editing) {
     return (
       <>
-        <h1 className="font-display text-display-lg">{t["notices.edit"]}</h1>
+        <h1 className="font-display text-display-lg">{t["notices.edit.title"]}</h1>
         <NoticeEditor
           {...p}
-          start={editing === true ? undefined : editing}
+          focus={editing === true ? undefined : editing}
           onClose={() => setEditing(null)}
         />
       </>
@@ -132,7 +113,7 @@ export function NoticeScreen(p: ScreenProps) {
           key={language}
           p={p}
           language={language}
-          onTranslate={(from) => setEditing({ from, to: [language] })}
+          onEdit={() => setEditing(language)}
         />
       ))}
     </>

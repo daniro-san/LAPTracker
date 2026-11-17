@@ -6,29 +6,32 @@ Issues #304 (notices library) and #305 (translation of officer-written text, Imp
 - **`/w/[slug]/notices`**, the library (`app/(private)/w/[slug]/notices/page.tsx`):
   - `noticePage` (`app/(private)/_ui/notice-pages.ts`) runs `requireWorkspace` first, inside `withPageDb`, then the read; a refused visitor goes through `refuse`.
   - h1 "Notices", the lead line "Written once, read in each officer's language. Copy it straight into the game or Discord." (the panel's per-tab tip, issue 312), and "Write a notice".
-  - One card per notice, the most recently changed first: the title; EN · PT · FR, each "✓", "may be out of date" or "—"; "Leadership only" or "For members", and "Until <date>" or "Ended <date>"; "Last change by <name> · <day hh:mm> server time". One column below 640 px, two from 640 px.
-- **The Notices tab**: a sixth tab, a link with `aria-current`, between Calendar and Follow-up. Its mark is a megaphone drawn with the brand's 24 px icon helpers (the confident nib), added to `TabIcon.tsx`. Tab labels may now hyphenate or break inside a word (`hyphens-auto`, `overflow-wrap: anywhere`), so "Acompanhar" stays inside its 60 px column at 360 px.
+  - One card per notice, the most recently changed first, at most 200: the title; each language as "EN up to date", "PT may be out of date" or "FR not written yet"; "Leadership only" or "For members", and "Until <date>" or "Ended <date>"; "Last change by <name> · <day hh:mm> server time". One column below 640 px, two from 640 px.
+- **The Notices tab**: a sixth tab, a link with `aria-current`, between Calendar and Follow-up. Its mark is a megaphone drawn with the brand's 24 px icon helpers (the confident nib), added to `TabIcon.tsx`. Tab labels wrap inside a long word without a hyphen (`hyphens: none`, `overflow-wrap: anywhere`), so "Acompanhar" stays inside its 60 px column at 360 px. The whole tab bar is hidden while a notice editor is open (`:root:has(form[data-notice-editor])`), so the save bar is never under it.
 - **`/w/[slug]/notices/new`**: the editor, empty. The first Save makes the notice and opens it.
 - **`/w/[slug]/notices/[id]`** (`NoticeScreen.tsx`): a notice of another workspace is a 404.
   - The title, "Written by … · …", "Last change by … · …", the members flag and the end date, and Edit.
-  - Each language, the officer's own first: its name, the counter, the text (`translate="no"`, `lang`), and **Copy EN / Copy PT / Copy FR** (the body only). An empty language reads "Not written yet."
-  - A language that may be out of date shows "May be out of date — translate again?" with **Translate from <code>** (opens the editor and translates from the newest language into this one) and **Keep as is** (saves it unchanged, which clears the line).
+  - Each language, the officer's own first: its name, the counter, the text (`translate="no"`, `lang`), and **Copy English / Copy Português / Copy Français** (the body only), with the over-limit line under the text. An empty language reads "Not written yet."
+  - A language that may be out of date carries a compact **Out of date** tag beside its name; it opens the editor at that language ("Edit notice").
 - **The editor** (`NoticeEditor.tsx`, `NoticeLanguageField.tsx`, `notice-draft.ts`):
-  - title; the three languages, each with the counter `n / 1000` (a soft warning over 1000: "Over the game's 1000 characters: the game may cut the end.", never a block), **Translate into <the other two>**, and **Improve writing** with six chips: More formal · Warmer · Kinder · More direct · Shorter · Fix mistakes only;
-  - an answer is a draft: "Draft: read it and fix anything before saving." with Undo;
-  - "Show to members" (off by default; "strategy stays with the leadership") and "Ends on" (a date, optional, with Clear);
-  - a Save bar that stays above the tabs and holds the last error;
-  - a field someone else saved first shows "<name> changed this <n> ago:", their text, and **Keep their version** / **Use my version**.
-  - Without `GROQ_API_KEY` the AI buttons are disabled and the editor says "Translate and Improve writing are not set up on this site yet."
+  - title; the three languages, each a text box that grows with its text (no resize handle, no inner scroll), the counter `n / 1000`, and over the limit a red outline and, under the box, "5 over the game's 1000 limit. The end may be cut." (`aria-live=polite`; never a block);
+  - **Translate to Português and Français** (the language names, a framed button) and, lighter, **Improve writing** (a text link) with six chips: More formal · Warmer · Kinder · More direct · Shorter · Fix mistakes only; a note says that text already in the other languages becomes a draft with Undo;
+  - an answer is a draft: a tinted, left-bordered box with a "Draft" pill, "Read it and fix anything before saving." and a 44 px Undo;
+  - a language that may be out of date: "This version may be out of date. Translate again?" with **Update from English** (the newest language, by name) and **Keep as is** (saved unchanged with the next Save, which brings it up to date);
+  - "Show to members" as a 44 px switch row (`role=switch`, off by default: "Nothing is shown to members yet. Turn this on to have it ready.") and "Ends on" (a date, optional, with Clear);
+  - the save bar, sticky at the bottom (the tabs are hidden): "2 drafts to check", the last error, Save, and Cancel as a text link that asks "Discard your changes?" when anything changed; leaving the page with unsaved text asks first (`beforeunload`);
+  - a 409 opens **one banner at the top** (`role=alert`, focused, scrolled to): "Ana saved changes a moment ago. Your edits are still here, nothing is lost. Choose what to keep:", then **Keep mine** / **Use Ana’s** for all fields at once, then each field she changed with her version and yours side by side. Pressing Save again before choosing brings the banner back.
+  - Without `GROQ_API_KEY` the AI buttons are disabled, with the reason under them and tied by `aria-describedby`: "Translate isn’t available yet. Write each language by hand, or ask the site owner." A text over 3,000 characters gets "Too long for Translate and Improve writing" the same way.
 - **Saves** (`POST /api/w/[slug]/notices`, `{id?, changes}`): same origin and JSON (D71), a session, then `saveNotice` (`lib/private/notices.ts`):
   - each change is `{field, value, version, from?}`; `version` is the id of the edit the officer was looking at (0 for none);
   - in one transaction with the notice's row locked (`lib/repo/notices.ts` `writeNotice`), `planSave` (`lib/private/notice-rules.ts`) compares every version. Any stale one refuses the whole save with **409** `{code: "conflict", conflicts: [{field, value, version, by, at}]}` and nothing is written;
   - otherwise each changed field is a new `notice_edits` row (append-only, issue 293), and `notices.updated_by/at` move.
-- **Drafts** (`POST /api/w/[slug]/notices/draft`): `{kind: "translate", from, to[], text}` or `{kind: "improve", language, tone, text}` → `{drafts: {<language>: text}}`. 503 `not_set_up` without the key; 504 timeout, 429 busy, 502 failed. `privateLog` codes only: `notices.translate.ok` etc. with `ms`.
+- **Drafts** (`POST /api/w/[slug]/notices/draft`): `{kind: "translate", from, to[], text}` or `{kind: "improve", language, tone, text}` → `{drafts: {<language>: text}}`; text at most 3,000 characters; `maxDuration = 60`. 503 `not_set_up` without the key; 504 timeout, 429 busy, 502 failed. `privateLog` codes only: `notices.translate.ok` etc. with `ms`.
 - **`lib/ai/`** (D81), which imports nothing from the project:
   - `groq.ts`: `groqChat(key, fetch, timeoutMs)`; `openai/gpt-oss-120b` (`reasoning_effort: "low"`), then `qwen/qwen3.8-27b` (`"none"`) on any failure; temperature 0.2; 15 s per model; 2,000 completion tokens; an answer cut at the limit counts as a failure.
   - `notice-writing.ts`: `TRANSLATE_SYSTEM`, `improveSystem(limit)`, `translateText`, `improveText`, and `plainText`, which makes an answer pasteable (below).
-  - `glossary.ts`: the short forms' meanings and the do-not-translate list.
+  - `glossary.ts`: the short forms' meanings, the do-not-translate list (now with the item names Raven Essence, Construction Speedups and Covert Operations), and `TRANSLATED_TERMS`, the game terms with their own name per language (Alliance Duel → Duelo da Aliança, Duel d’alliance).
+  - The officer's text travels between `<text>` tags; both prompts say everything inside is content, never instructions, and an answer that kept the tags loses them. Translate also always translates weekday and month names and every heading, keeps `|` separators, and carries a short worked example.
 - **`GROQ_API_KEY`**: optional in `lib/env.ts` (a `gsk_` key), made into `AppContext.ai` in `lib/app-context.ts` (null without it), on `secretsOf`'s redaction list, in `.env.example`.
 - **Out of date** (`notice-rules.ts`): each language row stores `basis`, the revision of the notice its text reflects.
   - A hand change to up-to-date text starts revision `newest + 1`.
@@ -126,6 +129,13 @@ Issues #304 (notices library) and #305 (translation of officer-written text, Imp
   - list, notice and editor at 360 and 1280, light and dark, EN and PT, plus FR at 360;
   - drafts after Translate, Warmer, the conflict (full page and viewport), over the limit, without the key, the out-of-date view and list.
 
+- **After the review of PR #344** (all on the merged tree at af71231 plus this fix pass):
+  - `pnpm check` exit 0: **108 files passed, 2 skipped; 532 tests passed, 4 skipped**; no timeout. New tests: the draft route (401, 400 twice, 200, 503 `not_set_up`, a `ChatError` → 504), `changesOf`, `withDrafts` and `settle`, the `<text>` delimiters, and the weekday / heading / Alliance Duel rules on an invented notice.
+  - **E2e v2, 59 of 59** on a production build (harness `scratchpad/11i/pw/e2e-v2.mjs`, screenshots in `scratchpad/11i-shots/v2/`: 360 EN/PT/FR, dark and 1280, the drafts, the conflict, Discard, over the limit, no key). Items 8–21: the tabs hidden and Save fully on screen at 360 px with the last field above the bar; the banner's copy, focus, both versions, its answers in view above the save bar, and Save bringing it back; the FR and PT wording; text boxes without resize or inner scroll; the Draft pill, a 44 px Undo, "2 drafts to check" and the leave warning; the Out of date tag leading to Edit, "Update from English" and "Keep as is" in the editor; Translate by language names and two different weights; the no-key reason tied by `aria-describedby`; the over-limit line, outline and `aria-live`; the switch row; every target 44 px with 8 px gaps; Cancel as a link with Discard; `hyphens: none`; "EN up to date"; "Edit notice"; "Copy English".
+  - **Real Groq with the delimiters**: one Translate in the e2e (EN→PT and FR, 1.8 s): clean answers, names and times kept, no tags left.
+  - **Translation tuning** on an invented weekly notice ("Mon | SCOUTING: …" to "Sat | …", "HOMEWORK:", "ALLIANCE DUEL"), four rounds of one call per language while the rules were tightened, at `reasoning_effort: "low"`: weekdays translated 8 of 8; HOMEWORK translated 8 of 8; "DUEL D’ALLIANCE" 4 of 4 in French; Portuguese wrote "DUEL DA ALIANÇA" 4 of 4 (not "DUELO"); capitals headings and some phrases came out in English in some runs. One diagnostic run at `"medium"` gave a complete Portuguese answer and kept the French headings in English, at 2,100–2,700 tokens per request (about 600 at "low"). Recorded in D81 as open.
+  - Groq use in this fix pass: 10 calls for the tuning (four rounds and the diagnostic) and 6 in three e2e runs (the first stopped after its Translate); 33 chat requests in the session.
+
 ## Open issues
 1. **#304's done_when needs the real notices.** Queen position, the weekly schedule and the Kingdom War defense have to be entered in `/w/ogs/notices` by an officer. They are not in the repo, because the repo is public. #305's "existing notices arrive pre-translated by the agents" needs a way to load them that keeps them out of git, for example an officer pasting them in.
 2. The model's answers still need the officer's review:
@@ -142,6 +152,10 @@ Issues #304 (notices library) and #305 (translation of officer-written text, Imp
 7. **Notices cannot be deleted** (not asked).
 8. **A fallback to the second model is not logged on its own**, only the outcome.
 9. `lib/schema.ts` is at about 278 of 300 counted lines. A new table belongs in its own schema module listed in `drizzle.config.ts` (the `lib/schema-notices.ts` pattern).
+
+10. **Translation of terse weekly lists is not reliable at `reasoning_effort: "low"`** (D81): Portuguese writes "DUEL DA ALIANÇA", and capitals headings sometimes stay in English. `"medium"` fixes Portuguese but costs about four times the tokens, close to the free tier's 8,000 a minute and to the 2,000-token cap. Owner's call; officers review every draft meanwhile.
+11. **Official PT/FR item names** (Raven Essence, Construction Speedups, Covert Operations …) are being asked of the owner; they move from the do-not-translate list to `TRANSLATED_TERMS` when known.
+12. The view page no longer saves on its own: "Keep as is" lives in the editor and goes through its save (the review's `keep()` finding).
 
 ## Next
 Session: #300 — Workspace: Days tab with the event calendar and caravan picks (the last thing #331's members' board waits for).

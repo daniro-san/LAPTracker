@@ -2,11 +2,12 @@
 // per notice: its title, which languages are written and which may be out of date, whether members see it
 // and until when, and who changed it last. The access check runs before anything is read (D71).
 import { buttonClass } from "@/lib/brand/components/Button";
+import { fill } from "@/lib/copy";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
 import { noticesList, type NoticeSummary } from "@/lib/private/notices";
 
 import { SignedInFrame, workspaceWords } from "../../../_ui/Frame";
-import { LANGUAGE_CODE } from "../../../_ui/notice-client";
+import { LANGUAGE_CODE } from "../../../_ui/languages";
 import { noticePage, noticeWords } from "../../../_ui/notice-pages";
 
 function Card({
@@ -29,12 +30,17 @@ function Card({
         {notice.title}
       </span>
       <span className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-body-sm">
-        {notice.languages.map(({ language, written, stale }) => (
-          <span key={language} className={written ? (stale ? "text-yarn" : "") : "text-ink/50"}>
-            <span className="font-semibold">{LANGUAGE_CODE[language]}</span>{" "}
-            {!written ? "—" : stale ? t["notices.staleShort"] : "✓"}
-          </span>
-        ))}
+        {notice.languages.map(({ language, written, stale }) => {
+          const state = !written ? "missing" : stale ? "stale" : "fresh";
+          const tone = { missing: "text-ink/60", stale: "font-semibold text-yarn", fresh: "" }[
+            state
+          ];
+          return (
+            <span key={language} className={tone}>
+              {fill(t[`notices.status.${state}`], { lang: LANGUAGE_CODE[language] })}
+            </span>
+          );
+        })}
       </span>
       <span className="mt-1 block text-body-sm text-ink/80">{words.flags(notice).join(" · ")}</span>
       <span className="mt-1 block text-body-sm text-ink/70">
