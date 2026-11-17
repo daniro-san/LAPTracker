@@ -177,6 +177,32 @@ export const es = {
     turnout: "{gainers} de {n} Members sumaron Kills",
     noTurnout: "aún sin participación bélica",
   },
+  flow: {
+    title: "Flujo de Members",
+    tag: "Solo conteos",
+    lead: "Hacia dónde fueron los Members entre las alianzas seguidas: la alianza de cada uno el primer día, frente al segundo. Solo conteos, sin nombres de Members.",
+    from: "Desde",
+    to: "Hasta",
+    action: "Mostrar",
+    answer: "Entre {from} y {to}, el mayor movimiento fue {source} → {dest} ({n}).",
+    answerNone:
+      "Entre {from} y {to}, ningún movimiento de {min} o más Members entre las alianzas seguidas.",
+    totals: "Cambiaron de alianza: {moved} · Nuevos: {arrived} · Salieron: {left}",
+    small:
+      "Se ocultan los movimientos de menos de {min} Members y no entran en ningún total, para que nadie pueda ser señalado en un grupo pequeño.",
+    rowNew: "Nuevos",
+    colLeft: "Salieron",
+    legend:
+      "Filas: la alianza el {from}. Columnas: la alianza el {to}. Nuevos: en ninguna alianza seguida el {from}. Salieron: en ninguna el {to}.",
+    caption: "Members por alianza el {from} (filas) y el {to} (columnas)",
+    stayed: "Se quedaron",
+    rowStayed: "Se quedaron: {n}",
+    newTitle: "Nuevos en las alianzas seguidas",
+    leftTitle: "Salieron de las alianzas seguidas",
+    notCounted: "No cuentan, sin lectura útil en los dos días: {list}.",
+    order: "Elige un día Desde anterior al día Hasta.",
+    none: "Todavía no hay dos días con una lectura útil.",
+  },
   balance: {
     title: "Balance del servidor",
     description:

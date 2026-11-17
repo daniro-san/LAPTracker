@@ -177,6 +177,32 @@ export const itIT = {
     turnout: "{gainers} di {n} Members hanno guadagnato Kills",
     noTurnout: "ancora nessuna partecipazione in guerra",
   },
+  flow: {
+    title: "Flusso dei membri",
+    tag: "Solo conteggi",
+    lead: "Dove sono andati i membri tra le alleanze seguite: l’alleanza in cui era ciascuno il primo giorno, confrontata con il secondo. Solo conteggi, nessun nome di membro.",
+    from: "Da",
+    to: "A",
+    action: "Mostra",
+    answer: "Tra il {from} e il {to}, lo spostamento più grande è stato {source} → {dest} ({n}).",
+    answerNone:
+      "Tra il {from} e il {to}, nessuno spostamento di {min} o più membri tra le alleanze seguite.",
+    totals: "Cambio di alleanza: {moved} · Nuovi: {arrived} · Usciti: {left}",
+    small:
+      "Gli spostamenti di meno di {min} membri sono nascosti ed esclusi da ogni totale, così nessuno può essere individuato in un gruppo piccolo.",
+    rowNew: "Nuovi",
+    colLeft: "Usciti",
+    legend:
+      "Righe: l’alleanza il {from}. Colonne: l’alleanza il {to}. Nuovi: in nessuna alleanza seguita il {from}. Usciti: in nessuna il {to}.",
+    caption: "Membri per alleanza il {from} (righe) e il {to} (colonne)",
+    stayed: "Rimasti",
+    rowStayed: "Rimasti: {n}",
+    newTitle: "Nuovi nelle alleanze seguite",
+    leftTitle: "Usciti dalle alleanze seguite",
+    notCounted: "Non conteggiati, nessuna lettura valida in entrambi i giorni: {list}.",
+    order: "Scegli un giorno Da precedente al giorno A.",
+    none: "Per ora ci sono meno di due giorni con una lettura valida.",
+  },
   balance: {
     title: "Equilibrio del server",
     description:

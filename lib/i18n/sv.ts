@@ -331,4 +331,30 @@ export const sv = {
     turnout: "{gainers} av {n} Members fick Kills",
     noTurnout: "inget krigsdeltagande ännu",
   },
+  flow: {
+    title: "Flöde av Members",
+    tag: "Bara antal",
+    lead: "Vart Members flyttade mellan de bevakade allianserna: alliansen de var i första dagen, mot den andra dagen. Bara antal, inga namn.",
+    from: "Från",
+    to: "Till",
+    action: "Visa",
+    answer: "Mellan {from} och {to} var den största flytten {source} → {dest} ({n}).",
+    answerNone:
+      "Mellan {from} och {to} ingen flytt på {min} eller fler Members mellan de bevakade allianserna.",
+    totals: "Bytte allians: {moved} · Nya: {arrived} · Lämnade: {left}",
+    small:
+      "Flyttar på färre än {min} Members döljs och räknas inte in i någon summa, så ingen kan pekas ut i en liten grupp.",
+    rowNew: "Nya",
+    colLeft: "Lämnade",
+    legend:
+      "Rader: alliansen på {from}. Kolumner: alliansen på {to}. Nya: i ingen bevakad allians på {from}. Lämnade: i ingen på {to}.",
+    caption: "Members per allians på {from} (rader) och på {to} (kolumner)",
+    stayed: "Kvar",
+    rowStayed: "Kvar: {n}",
+    newTitle: "Nya i de bevakade allianserna",
+    leftTitle: "Lämnade de bevakade allianserna",
+    notCounted: "Räknas inte, inga användbara avläsningar båda dagarna: {list}.",
+    order: "Välj en Från-dag som ligger före Till-dagen.",
+    none: "Färre än två dagar har en användbar avläsning än.",
+  },
 } as const satisfies Translation;

@@ -7,7 +7,8 @@ import { AdminSection, StateChip } from "@/app/_ui/admin/parts";
 import { RunLog } from "@/app/_ui/admin/RunLog";
 import { DailyFailures } from "@/app/_ui/admin/RunRows";
 import { RunTrace } from "@/app/_ui/admin/RunTrace";
-import { readDayDate, seconds, stateWord } from "@/app/_ui/admin/words";
+import { seconds, stateWord } from "@/app/_ui/admin/words";
+import { dayDate } from "@/app/_ui/format";
 import { requestServerClock } from "@/app/_ui/locale";
 import { isAdmin } from "@/lib/admin-session";
 import { Chip } from "@/lib/brand/components/Chip";
@@ -29,7 +30,7 @@ export default async function DailyRunPage({ params }: { params: Promise<{ day: 
   ]);
   if (!found) notFound();
   const { run, logs, tags, trace } = found;
-  const title = fill(t.dailyRun, { read: t.daily, day: clock.weekday(readDayDate(run.day)) });
+  const title = fill(t.dailyRun, { read: t.daily, day: clock.weekday(dayDate(run.day)) });
   return (
     <AdminShell title={title}>
       <AdminSection

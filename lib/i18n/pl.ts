@@ -177,6 +177,32 @@ export const pl = {
     turnout: "{gainers} z {n} członków zdobyło Kills",
     noTurnout: "jeszcze brak frekwencji wojny",
   },
+  flow: {
+    title: "Przepływ członków",
+    tag: "Tylko liczby",
+    lead: "Dokąd przechodzili członkowie między śledzonymi sojuszami: sojusz, w którym każdy był pierwszego dnia, obok drugiego dnia. Tylko liczby, bez nazw członków.",
+    from: "Od",
+    to: "Do",
+    action: "Pokaż",
+    answer: "Największy przepływ między {from} a {to}: {source} → {dest} ({n}).",
+    answerNone:
+      "Między {from} a {to} nie było przepływu {min} lub więcej członków między śledzonymi sojuszami.",
+    totals: "Zmiany sojuszu: {moved} · Nowi: {arrived} · Odeszli: {left}",
+    small:
+      "Przepływy mniejsze niż {min} członków są ukryte i nie wchodzą do żadnej sumy, żeby nikogo nie dało się wskazać w małej grupie.",
+    rowNew: "Nowi",
+    colLeft: "Odeszli",
+    legend:
+      "Wiersze: sojusz w dniu {from}. Kolumny: sojusz w dniu {to}. Nowi: w żadnym śledzonym sojuszu w dniu {from}. Odeszli: w żadnym sojuszu w dniu {to}.",
+    caption: "Członkowie według sojuszu w dniu {from} (wiersze) i w dniu {to} (kolumny)",
+    stayed: "Zostali",
+    rowStayed: "Zostali: {n}",
+    newTitle: "Nowi w śledzonych sojuszach",
+    leftTitle: "Odeszli ze śledzonych sojuszy",
+    notCounted: "Nie wliczono, brak użytecznego odczytu z obu dni: {list}.",
+    order: "Wybierz dzień Od wcześniejszy niż dzień Do.",
+    none: "Jeszcze nie ma dwóch dni z użytecznym odczytem.",
+  },
   balance: {
     title: "Równowaga serwera",
     description:

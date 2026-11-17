@@ -39,6 +39,48 @@ function rosterRow(base: BaseAlliance[], i: number, event: number, share: number
   };
 }
 
+/**
+ * Members who change alliance from the fourth day of the second week on (D89, the member flow page): six of
+ * the second alliance and five of the third join the first, three of the fourth join the first too (a move
+ * the page hides), five of the fifth leave the tracked alliances, and five new members (uids from 9 000 000)
+ * join the fourth. The members that move are the last of their roster.
+ */
+const MOVES = [
+  { from: 1, to: 0, n: 6 },
+  { from: 2, to: 0, n: 5 },
+  { from: 3, to: 0, n: 3 },
+  { from: 4, to: null, n: 5 },
+] as const;
+const ARRIVALS = { to: 3, n: 5, firstUid: 9_000_000 };
+
+type Row = ReturnType<typeof rosterRow>;
+const COLUMNS = ["memberUids", "memberNames", "memberPower", "memberKills"] as const;
+
+/** `rows` after the scripted moves; the counts and the might follow the members. */
+function moveMembers(rows: Row[]): Row[] {
+  const out = rows.map((r) => ({ ...r }));
+  for (const { from, to, n } of MOVES) {
+    const [source, target] = [out[from] as Row, to === null ? null : (out[to] as Row)];
+    for (const c of COLUMNS) {
+      const moved = (source[c] as unknown[]).splice(-n, n);
+      if (target) (target[c] as unknown[]).push(...moved);
+    }
+  }
+  const arrivals = out[ARRIVALS.to] as Row;
+  for (let i = 0; i < ARRIVALS.n; i++) {
+    arrivals.memberUids.push(ARRIVALS.firstUid + i);
+    arrivals.memberNames.push(`Newcomer ${i + 1}`);
+    arrivals.memberPower.push(1_000_000);
+    arrivals.memberKills.push(0);
+  }
+  for (const r of out) {
+    r.memberCount = r.memberUids.length;
+    r.totalPower = r.memberPower.reduce((s, p) => s + p, 0);
+    r.totalKills = r.memberKills.reduce((s, k) => s + k, 0);
+  }
+  return out;
+}
+
 /** Twelve complete daily reads of every seeded alliance, at 08:01 UTC (06:01 server time). */
 export async function seedDaily(db: Db, base: BaseAlliance[]): Promise<void> {
   for (const { event, sunday } of WEEKS) {
@@ -52,9 +94,10 @@ export async function seedDaily(db: Db, base: BaseAlliance[]): Promise<void> {
         status: "complete",
         callsUsed: base.length + 1,
       });
+      const rows = base.map((_, i) => rosterRow(base, i, event, (d + 1) / 7));
       await db.insert(dailyRosters).values(
-        base.map((_, i) => ({
-          ...rosterRow(base, i, event, (d + 1) / 7),
+        (event === 1 && d >= 3 ? moveMembers(rows) : rows).map((row) => ({
+          ...row,
           readDay: day,
           sourceUpdatedAt: new Date(at.getTime() + 30_000),
         })),

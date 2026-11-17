@@ -160,6 +160,7 @@ Words already used in `lib/i18n/es.ts`. Reuse them so the pages stay consistent;
 | kill share                | parte de Kills                     | `ledger.carried` and its rows — the share of the alliance's kills gained                      |
 | might share               | parte de Might                     | `ledger.carried` and its rows — the share of the might at Start                               |
 | percentage points (pts)   | pp                                 | `ledger.carriedPoints` — after a gap: +6.1 pp                                                 |
+| From / To                 | Desde / Hasta                      | `flow.from`, `flow.to` — the two day pickers on the member flow page                          |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.
