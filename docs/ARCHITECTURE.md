@@ -76,6 +76,10 @@ lib/private/*.ts    the workspace (D71): requireWorkspace and its branded Worksp
                     follow-up-rules.ts (pure: who is on the list, resolved for the week, the history line),
                     dictionary.followup.ts (its words); table in lib/schema-followup.ts, reads and writes
                     in lib/repo/member-follow-ups.ts.
+                    Home's desk activity (D108): desk-activity.ts ("On the desk now" from officer sessions'
+                    seen_at, and the recent-activity feed merged from the existing histories),
+                    desk-activity-words.ts (its lines), dictionary.activity.ts (its words); reads in
+                    lib/repo/desk-activity.ts, one bounded read per source.
                     The screenshot import (D96): import.ts (drafts, save, discard, change of type),
                     import-kinds.ts (the kinds and the SaveHook other sessions plug in), import-save.ts
                     (the hooks: Alliance Duel points, the ranking checks), import-photo-hooks.ts (member

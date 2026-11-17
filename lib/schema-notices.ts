@@ -64,6 +64,7 @@ export const noticeEdits = pgTable(
   },
   (t) => [
     index("notice_edits_notice_field_idx").on(t.noticeId, t.field, t.id),
+    index("notice_edits_workspace_edited_idx").on(t.workspaceId, t.editedAt),
     check(
       "notice_edits_field_check",
       sql`${t.field} in ('title', 'en', 'pt-BR', 'fr', 'for_members', 'ends_on')`,

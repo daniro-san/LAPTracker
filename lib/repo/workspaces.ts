@@ -1,6 +1,6 @@
 // workspaces, workspace_users and workspace_sessions (D71): what /admin writes, and the plain reads and
 // writes lib/private builds on. Who gets in, and the WorkspaceAccess brand, stay in lib/private.
-import { and, asc, eq, gt, lte, ne, sql } from "drizzle-orm";
+import { and, asc, eq, gt, isNull, lt, lte, ne, or, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { workspaces, workspaceSessions, workspaceUsers } from "../schema";
@@ -182,6 +182,7 @@ export async function findSession(db: Db, tokenHash: string) {
       expiresAt: workspaceSessions.expiresAt,
       checkedAt: workspaceSessions.checkedAt,
       tier: workspaceSessions.tier,
+      seenAt: workspaceSessions.seenAt,
       userId: workspaceUsers.id,
       displayName: workspaceUsers.displayName,
       chosenName: workspaceUsers.chosenName,
@@ -192,6 +193,22 @@ export async function findSession(db: Db, tokenHash: string) {
     .innerJoin(workspaceUsers, eq(workspaceUsers.id, workspaceSessions.workspaceUserId))
     .where(eq(workspaceSessions.tokenHash, tokenHash));
   return row ?? null;
+}
+
+/**
+ * "Last seen" on the desk (D108): written only when the stored time is older than `since`, so a session
+ * writes at most once a minute however many requests it makes.
+ */
+export async function touchSession(db: Db, tokenHash: string, now: Date, since: Date) {
+  await db
+    .update(workspaceSessions)
+    .set({ seenAt: now })
+    .where(
+      and(
+        eq(workspaceSessions.tokenHash, tokenHash),
+        or(isNull(workspaceSessions.seenAt), lt(workspaceSessions.seenAt, since)),
+      ),
+    );
 }
 
 /** The officer's own profile (issue 334): the name they chose, and "This is me" (null unlinks). */

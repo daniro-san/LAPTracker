@@ -20,6 +20,8 @@ export const MEMBER_SESSION_MS = 30 * 24 * 60 * 60_000;
 export const CHECK_MS = 24 * 60 * 60_000;
 /** A page renews the check through Discord once it is this old (the last hour of the day). */
 export const RENEW_MS = 23 * 60 * 60_000;
+/** An officer's request marks the session seen at most this often (D108). */
+export const SEEN_EVERY_MS = 60_000;
 
 /** HttpOnly, Secure, SameSite=Lax: the OAuth callback arrives from discord.com, a cross-site navigation. */
 export const cookieAttributes = (maxAgeMs: number) =>

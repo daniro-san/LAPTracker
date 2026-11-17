@@ -12,6 +12,7 @@ import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
 import { requireWorkspace } from "@/lib/private/access";
 import { calendarDays } from "@/lib/private/calendar";
+import { onDeskNow, recentActivity, type ActivityItem } from "@/lib/private/desk-activity";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import { MAX_PICTURES } from "@/lib/private/import";
 import { toReview, type ReviewItem } from "@/lib/private/import-view";
@@ -25,6 +26,7 @@ import { returnPath, SLUG } from "@/lib/private/sign-in";
 import { serverDay } from "@/lib/schedule";
 
 import { calendarWords, nextItems } from "../../_ui/calendar-data";
+import { OnDesk, RecentActivity } from "../../_ui/DeskActivity";
 import { Frame, SignedInFrame, workspaceWords } from "../../_ui/Frame";
 import { digestDays, type NextItem } from "../../_ui/home-digest";
 import { HomeNext } from "../../_ui/HomeNext";
@@ -184,6 +186,8 @@ function Home(props: {
   view: MembersView;
   /** New members a roster read since their add could not match (D106, 2026-11-17). */
   toMatch: number;
+  /** D108: the other officers on the desk now, and what officers did lately. */
+  desk: { names: string[]; activity: ActivityItem[]; now: Date };
 }) {
   const { slug, t, language } = props;
   const f = cardFormats(language, getEnv().SERVER_TZ, new Date());
@@ -199,6 +203,7 @@ function Home(props: {
       <h1 id="home" className="font-display text-display-lg">
         {t["home.title"]}
       </h1>
+      <OnDesk names={props.desk.names} t={t} language={language} />
       <NextUp slug={slug} t={t} items={props.next} />
       <MembersPart slug={slug} t={t} language={language} view={props.view} />
       <ToReview
@@ -214,6 +219,7 @@ function Home(props: {
         }
         when={(d) => fill(t["time.server"], { time: at.format(d) })}
       />
+      <RecentActivity items={props.desk.activity} t={t} language={language} now={props.desk.now} />
     </section>
   );
 }
@@ -238,17 +244,21 @@ export default async function WorkspacePage({
     placed,
     view,
     toMatch: unmatched,
+    desk,
   } = await withPageDb(async (db) => {
     const access = await requireWorkspace(db, slug, jar, now, RENEW_MS);
-    if (!access.ok) return { access, items: [], placed: [], view: null, toMatch: 0 };
+    if (!access.ok) return { access, items: [], placed: [], view: null, toMatch: 0, desk: null };
     // D106: a roster read since a new member was added may now list them, as on Members.
     const pending = await matchOnRead(db, access, now);
-    const [items, placed, view] = await Promise.all([
+    const [items, placed, view, names, activity] = await Promise.all([
       toReview(db, access, now),
       calendarDays(db, access, days.from, days.to),
       progressHistory(db, access).then((history) => membersView(db, access, now, zone, history)),
+      onDeskNow(db, access, now),
+      recentActivity(db, access, now),
     ]);
-    return { access, items, placed, view, toMatch: toMatch(pending, view.readAt).length };
+    const desk = { names, activity, now };
+    return { access, items, placed, view, toMatch: toMatch(pending, view.readAt).length, desk };
   });
   const query = await searchParams;
   // The page a refused visitor asked for (refuse.ts), kept through the sign-in.
@@ -257,7 +267,7 @@ export default async function WorkspacePage({
   if (!access.ok)
     refuse(slug, access.reason, access.reason === "expired" ? (back ?? undefined) : undefined);
   const { language, t } = await workspaceWords();
-  if (!access.ok || !view) {
+  if (!access.ok || !view || !desk) {
     const error = ERRORS.find((code) => code === query.e);
     return (
       <Frame language={language} t={t}>
@@ -275,6 +285,7 @@ export default async function WorkspacePage({
         next={nextItems(placed, slug, { t, language, zone })}
         view={view}
         toMatch={unmatched}
+        desk={desk}
       />
     </SignedInFrame>
   );

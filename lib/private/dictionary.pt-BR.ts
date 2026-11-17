@@ -1,6 +1,7 @@
 // The workspace dictionary in Brazilian Portuguese (D71), split from dictionary.ts for its size; the keys
 // follow `en`.
 import type { WorkspaceDictionary } from "./dictionary";
+import { activityPt } from "./dictionary.activity";
 import { boardPt } from "./dictionary.board";
 import { calendarPt } from "./dictionary.calendar.pt-BR";
 import { followUpPt } from "./dictionary.followup";
@@ -278,4 +279,5 @@ export const pt: WorkspaceDictionary = {
   ...translatePt,
   ...boardPt,
   ...followUpPt,
+  ...activityPt,
 };

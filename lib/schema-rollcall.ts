@@ -86,6 +86,8 @@ export const rollCallMarks = pgTable(
   },
   (t) => [
     unique("roll_call_marks_version_unique").on(t.rollCallId, t.uid, t.version),
+    // Home's recent activity (D108) reads the marks of the last two weeks.
+    index("roll_call_marks_written_idx").on(t.writtenAt),
     check("roll_call_marks_mark_check", sql`${t.mark} in ('yes', 'no', 'assumed')`),
   ],
 );

@@ -1,6 +1,7 @@
 // The workspace's own words in English, Brazilian Portuguese and French (D71, issue #305): separate from
 // lib/copy.ts, so the public pages' i18n check and payload do not change. Names and game terms stay as the
 // officers write them (naming.md). French puts a no-break space before : ? and !.
+import { activityEn } from "./dictionary.activity";
 import { boardEn } from "./dictionary.board";
 import { calendarEn } from "./dictionary.calendar";
 import { followUpEn } from "./dictionary.followup";
@@ -259,6 +260,7 @@ const en = {
   ...translateEn,
   ...boardEn,
   ...followUpEn,
+  ...activityEn,
 } as const;
 
 export type WorkspaceKey = keyof typeof en;
