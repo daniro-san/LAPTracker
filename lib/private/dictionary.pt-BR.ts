@@ -3,6 +3,7 @@
 import type { WorkspaceDictionary } from "./dictionary";
 import { calendarPt } from "./dictionary.calendar.pt-BR";
 import { importPt } from "./dictionary.import";
+import { lifecyclePt } from "./dictionary.lifecycle";
 import { membersPt } from "./dictionary.members.pt-BR";
 import { noticesPt } from "./dictionary.notices";
 import { rollPt } from "./dictionary.rollcall.pt-BR";
@@ -267,6 +268,7 @@ export const pt: WorkspaceDictionary = {
   "profile.theme.system": "Igual ao aparelho",
   ...noticesPt,
   ...importPt,
+  ...lifecyclePt,
   ...theftsPt,
   ...shotsPt,
   ...translatePt,

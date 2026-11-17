@@ -34,6 +34,12 @@ lib/private/*.ts    the workspace (D71): requireWorkspace and its branded Worksp
                     they told you"; pure, for pastes and OCR lines), time-zones.ts and zone-table.ts (the
                     picker's search; pure), sheet-parse.ts (pure) and sheet-import.ts (the one-time import);
                     their tables are in lib/repo/member-facts.ts and lib/schema-facts.ts.
+                    D106: pending-members.ts (new members added by hand: the add, the screenshot import's
+                    "New member", the match against the newest roster when the Members tab is read, link
+                    and delete; facts under the uid `-id`), its table reads and writes in
+                    lib/repo/pending-members.ts. D107: former-members.ts (who an earlier roster listed and
+                    the newest does not), on lib/repo/workspace-past-roster.ts (uid, name, might and kills
+                    from the roster arrays and Start/End member rows only).
                     notices.ts (the notices library's reads
                     and its save, issue 304), notice-rules.ts (pure: fields, the counter, "may be out of date",
                     the save's version check); its table reads and writes are in lib/repo/notices.ts.

@@ -6,10 +6,12 @@
 // changed, each with the version it started from. When another officer saved a field meanwhile, notes and
 // languages are combined by the server (and the editor says so); any other field shows both values with
 // "Keep <theirs>" and "Use <mine>". Every way of closing with unsaved changes asks first (the sheet frame).
+// Without a uid it is "Add a new member" (D106): a name field first, and Save makes the pending member.
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { track } from "@/lib/analytics/events";
+import { FIELD } from "@/lib/brand/components/controls";
 import { Sheet } from "@/lib/brand/components/Sheet";
 import { isolate } from "@/lib/copy";
 import type { Fact, FactField, FactValues, MemberFacts } from "@/lib/private/fact-fields";
@@ -33,7 +35,8 @@ import { SIGNED_OUT, SignedOutNote } from "./SignedOut";
 
 export interface EditorProps {
   slug: string;
-  uid: number;
+  /** null: "Add a new member" (D106), with a name field; the first Save makes the pending member. */
+  uid: number | null;
   name: string;
   facts: MemberFacts;
   /** The status shown when no officer sets one, for "Automatic (now: …)". */
@@ -73,9 +76,48 @@ function useForm(props: EditorProps) {
   return { stored, setStored, form, setForm, fromMessage, zones, edit, read };
 }
 
+/**
+ * Where a Save goes: the member's facts, or, for a new member, the add with its name and the sheet's
+ * request id (D100). After the add, later saves go to the new member's facts.
+ */
+function useTarget(props: EditorProps) {
+  const [uid, setUid] = useState(props.uid);
+  const [name, setName] = useState(props.name);
+  const [requestId] = useState(() => crypto.randomUUID());
+  const [nameMissing, setNameMissing] = useState(false);
+  /** False, and the name's error shown, when a new member has no name yet. */
+  const named = () => {
+    setNameMissing(uid === null && name.trim() === "");
+    return uid !== null || name.trim() !== "";
+  };
+  /** The results with the HTTP status, or why there are none. */
+  const send = async (
+    changes: unknown[],
+  ): Promise<{ status: number; results: Result[] } | "failed" | typeof SIGNED_OUT> => {
+    const adding = uid === null;
+    const res = await fetch(
+      adding ? `/api/w/${props.slug}/pending` : `/api/w/${props.slug}/members/${uid}/facts`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(
+          adding ? { action: "add", requestId, name: name.trim(), changes } : { changes },
+        ),
+      },
+    ).catch(() => null);
+    if (res?.status === 401) return SIGNED_OUT;
+    if (!res || (res.status !== 200 && res.status !== 409)) return "failed";
+    const body = (await res.json()) as { results: Result[]; uid?: number };
+    if (adding && body.uid !== undefined) setUid(body.uid);
+    return { status: res.status, results: body.results };
+  };
+  return { uid, name, setName, nameMissing, named, send };
+}
+
 /** Save: the changed fields, each with its version. A 409 leaves the newer values to settle one by one. */
 function useSave(props: EditorProps, f: ReturnType<typeof useForm>) {
   const router = useRouter();
+  const target = useTarget(props);
   const [invalid, setInvalid] = useState<FactField[]>([]);
   const [conflicts, setConflicts] = useState<Result[]>([]);
   const [merged, setMerged] = useState<FactField[]>([]);
@@ -101,17 +143,13 @@ function useSave(props: EditorProps, f: ReturnType<typeof useForm>) {
       f.fromMessage,
     );
     setInvalid(wrong);
-    if (wrong.length > 0) return;
-    if (changes.length === 0) return close();
+    const adding = target.uid === null;
+    if (!target.named() || wrong.length > 0) return;
+    if (changes.length === 0 && !adding) return close();
     setState("saving");
-    const res = await fetch(`/api/w/${props.slug}/members/${props.uid}/facts`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ changes }),
-    }).catch(() => null);
-    if (res?.status === 401) return setState(SIGNED_OUT);
-    if (!res || (res.status !== 200 && res.status !== 409)) return setState("failed");
-    const { results } = (await res.json()) as { results: Result[] };
+    const res = await target.send(changes);
+    if (typeof res === "string") return setState(res);
+    const results = res.results;
     const kept = results.filter((r) => r.status !== "conflict");
     const next: MemberFacts = {
       ...f.stored,
@@ -124,7 +162,7 @@ function useSave(props: EditorProps, f: ReturnType<typeof useForm>) {
       Object.assign({ ...form }, ...combined.map((x) => inputsOf(x, next, props.language))),
     );
     setMerged(combined);
-    setSavedAny(savedAny || kept.length > 0);
+    setSavedAny(savedAny || kept.length > 0 || adding);
     track("ws_facts_saved");
     // Stay open after a merge or a conflict, so the officer sees what changed.
     if (res.status === 200 && combined.length === 0) {
@@ -134,7 +172,38 @@ function useSave(props: EditorProps, f: ReturnType<typeof useForm>) {
     setConflicts(results.filter((r) => r.status === "conflict"));
     setState("idle");
   };
-  return { invalid, conflicts, merged, state, close, settle, save };
+  return { invalid, conflicts, merged, state, close, settle, save, target };
+}
+
+/** "Add a new member": their name in the game, required (D106). */
+function NameField(props: { s: ReturnType<typeof useSave>; words: EditorProps["words"] }) {
+  const { target } = props.s;
+  const { words } = props;
+  return (
+    <div className="mb-3">
+      <p className="text-body-sm text-ink/80">{words["pending.addHelp"]}</p>
+      <label htmlFor="pending-name" className="mt-2 block font-semibold">
+        {words["pending.name"]}
+      </label>
+      <input
+        id="pending-name"
+        data-initial-focus
+        value={target.name}
+        maxLength={64}
+        autoComplete="off"
+        translate="no"
+        aria-invalid={target.nameMissing || undefined}
+        aria-describedby={target.nameMissing ? "pending-name-e" : undefined}
+        onChange={(e) => target.setName(e.target.value)}
+        className={`${FIELD} mt-1`}
+      />
+      {target.nameMissing && (
+        <p id="pending-name-e" className="mt-1 font-semibold text-seal">
+          {words["pending.nameMissing"]}
+        </p>
+      )}
+    </div>
+  );
 }
 
 export function FactsEditor(props: EditorProps) {
@@ -143,7 +212,9 @@ export function FactsEditor(props: EditorProps) {
   const s = useSave(props, f);
   const values = valuesOf(f.form, mightIn);
   const pending = changesOf(values, f.stored, f.fromMessage);
-  const dirty = pending.changes.length > 0 || pending.invalid.length > 0;
+  const adding = props.uid === null;
+  const named = adding && s.target.name.trim() !== "";
+  const dirty = pending.changes.length > 0 || pending.invalid.length > 0 || named;
   const text: FactTextFormat = { language, now: new Date(), day: dayFormat(language), words };
   const conflictOf = (field: FactField) => {
     const c = s.conflicts.find((x) => x.field === field);
@@ -157,16 +228,23 @@ export function FactsEditor(props: EditorProps) {
       labelledBy="facts-title"
       onCancel={s.close}
       dirty={dirty}
-      title={<span translate="no">{say(words["facts.title"], { name: isolate(props.name) })}</span>}
+      title={
+        adding ? (
+          words["pending.add"]
+        ) : (
+          <span translate="no">{say(words["facts.title"], { name: isolate(props.name) })}</span>
+        )
+      }
       words={sheetWords(words)}
       primary={{
         label: words["facts.save"],
         onClick: () => void s.save(),
         disabled: s.state === "saving" || s.conflicts.length > 0,
-        focus: props.mode === "edit",
+        focus: props.mode === "edit" && !adding,
       }}
       note={<SaveNote s={s} words={words} />}
     >
+      {adding && <NameField s={s} words={words} />}
       <Paste words={words} language={language} open={props.mode === "paste"} onRead={f.read} />
       <FactFields
         form={f.form}

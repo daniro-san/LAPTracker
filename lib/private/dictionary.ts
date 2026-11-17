@@ -4,6 +4,7 @@
 import { calendarEn } from "./dictionary.calendar";
 import { fr } from "./dictionary.fr";
 import { importEn } from "./dictionary.import";
+import { lifecycleEn } from "./dictionary.lifecycle";
 import { membersEn } from "./dictionary.members";
 import { noticesEn } from "./dictionary.notices";
 import { pt } from "./dictionary.pt-BR";
@@ -270,6 +271,7 @@ const en = {
   "profile.theme.system": "Same as this device",
   ...noticesEn,
   ...importEn,
+  ...lifecycleEn,
   ...theftsEn,
   ...shotsEn,
   ...translateEn,

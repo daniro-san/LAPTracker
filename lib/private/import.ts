@@ -30,6 +30,7 @@ import {
 } from "./import-kinds";
 import { SAVE_HOOKS } from "./import-save";
 import { DAY_MS, gameWeek, isoDay } from "./member-week";
+import { rowsFit, withNewMembers } from "./pending-members";
 
 /** A draft not saved or discarded is deleted after this long (issue 299). */
 export const DRAFT_DAYS = 7;
@@ -205,9 +206,13 @@ export interface SaveInput {
   day: Exclude<DuelDay, "week"> | null;
   /** Alliance Duel: the week before the picture's (a Sunday picture sent on Monday). */
   weekBefore: boolean;
-  /** A member update sends each fact with the version the officer saw (D80). */
+  /**
+   * A member update sends each fact with the version the officer saw (D80). A row for a new member not in
+   * the roster yet sends `newName` instead of `uid` (D106).
+   */
   rows: {
-    uid: number;
+    uid?: number | undefined;
+    newName?: string | undefined;
     value: number;
     field?: PhotoFact | undefined;
     version?: number | undefined;
@@ -251,12 +256,6 @@ function duelTarget(pictureDay: string, input: SaveInput): { week: string; day: 
   return { week, day: input.scope === "daily" ? (input.day as DuelDay) : "week" };
 }
 
-/** Every row names a member of the alliance, each (member, fact) once. */
-function rowsFit(rows: SaveInput["rows"], members: Set<number>): boolean {
-  const keys = rows.map((r) => `${r.uid}:${r.field ?? ""}`);
-  return rows.every((r) => members.has(r.uid)) && new Set(keys).size === keys.length;
-}
-
 /**
  * Saves a draft as the officer confirmed it. The claim (open, at the version the officer saw) and the
  * hook's writes run in one transaction: the first save wins, and a second gets who saved it.
@@ -274,18 +273,16 @@ export async function saveDraft(
   const draft = found.draft;
   const hook = SAVE_HOOKS[draft.kind as ImportKind];
   if (!hook) return { ok: false, code: "cannot_save" };
-  const members = new Set((await newestRoster(db, access.unionId)).map((m) => m.uid));
   const duel = draft.kind === "alliance_duel" ? duelTarget(draft.pictureDay, input) : null;
   const secretOps = reportOf(draft.rows, input.report);
   const missing =
     (draft.kind === "alliance_duel" && duel === null) ||
     (draft.kind === "secret_ops" && secretOps === null);
-  if (missing || !rowsFit(input.rows, members)) return { ok: false, code: "bad_rows" };
-  const saving: Saving = {
+  if (missing || !(await rowsFit(db, access, input.rows))) return { ok: false, code: "bad_rows" };
+  const saving: Omit<Saving, "rows"> = {
     screen: { kind: draft.kind as ImportKind, scope: input.scope },
     pictureDay: draft.pictureDay,
     duel,
-    rows: input.rows,
     secretOps,
     userId: access.user.id,
     now,
@@ -295,7 +292,8 @@ export async function saveDraft(
     const done = await db.transaction(async (tx) => {
       const close = { status: "saved" as const, userId: access.user.id };
       if (!(await closeDraft(tx, access.workspaceId, id, input.version, close, now))) return null;
-      return hook.save(tx, access, saving);
+      const rows = await withNewMembers(tx, access, input.rows, now);
+      return hook.save(tx, access, { ...saving, rows });
     });
     return done ? { ok: true, ...done } : whyNot(db, access, id, now);
   } catch (error) {

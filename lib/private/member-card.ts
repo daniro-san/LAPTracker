@@ -165,17 +165,17 @@ function detailsOf(m: MemberRow, t: WorkspaceDictionary, f: CardFormats, shown: 
 }
 
 /** The facts with their value; Status only when an officer set one (otherwise the card's status says it). */
-function factLines(m: MemberRow, t: WorkspaceDictionary, f: CardFormats): FactLine[] {
+export function factLines(facts: MemberFacts, t: WorkspaceDictionary, f: CardFormats): FactLine[] {
   const text = { language: f.language, now: f.now, day: (iso: string) => f.date(iso), words: t };
-  return FACT_FIELDS.filter((field) => field !== "status" || m.facts.status?.value).map(
+  return FACT_FIELDS.filter((field) => field !== "status" || facts.status?.value).map(
     <F extends FactField>(field: F) => {
-      const value = m.facts[field]?.value as FactValues[F] | null | undefined;
+      const value = facts[field]?.value as FactValues[F] | null | undefined;
       const known = value !== null && value !== undefined;
       return {
         field,
         label: t[`facts.${field}`],
         value: factText(field, value, text),
-        source: known ? (m.facts[field]?.source ?? null) : null,
+        source: known ? (facts[field]?.source ?? null) : null,
       };
     },
   );
@@ -212,7 +212,7 @@ export function cardData(
       return { weekday, day, value, said: `${weekday} ${day}: ${said}`, none: v === null };
     }),
     details: detailsOf(m, t, f, shown),
-    factLines: factLines(m, t, f),
+    factLines: factLines(m.facts, t, f),
     stored: m.facts,
     autoStatus: statusParts({ ...m, officerStatus: null }, t, f).label || NONE,
   };

@@ -31,7 +31,19 @@ export type EditorContext = Pick<
 /** The card, its editor's shared context, and "their time now 22:33" for the time-zone line. */
 type CardProps = { card: CardData; editor: EditorContext; zoneNow: string | null };
 
-function Facts({ card, editor, zoneNow }: CardProps) {
+/** What the facts section needs: also a pending or former member's (D106, D107), who have no card. */
+export type FactsCard = Pick<CardData, "uid" | "name" | "factLines" | "stored" | "autoStatus">;
+
+/** The member facts with their sources, and the two ways into the editor. */
+export function Facts({
+  card,
+  editor,
+  zoneNow,
+}: {
+  card: FactsCard;
+  editor: EditorContext;
+  zoneNow: string | null;
+}) {
   const [mode, setMode] = useState<"edit" | "paste" | null>(null);
   const { words } = editor;
   return (

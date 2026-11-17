@@ -376,4 +376,4 @@ export * from "./schema-calendar";
 // The Roll call tab (issue 298), in its own file for size.
 export * from "./schema-rollcall";
 // The workspace's member facts and remembered sheet names (D80), in their own file for size.
-export { memberFacts, nameAliases } from "./schema-facts";
+export { memberFacts, nameAliases, pendingMembers } from "./schema-facts";

@@ -71,7 +71,7 @@ export interface SaveExtra {
  */
 export class SaveRefused extends Error {
   constructor(
-    readonly code: "conflict" | "not_in_alliance" | "attacker_missing",
+    readonly code: "conflict" | "not_in_alliance" | "attacker_missing" | "bad_rows",
     readonly detail: unknown = null,
   ) {
     super(code);

@@ -1,7 +1,8 @@
 // POST /api/w/[slug]/members/[uid]/facts {changes} — an officer saves a member's facts (issue 297, D80):
 // same origin, a JSON body and a session of this workspace (D71). Each field is written on its own: 200
 // when every field was saved or combined, 409 with the newer value of each field another officer saved
-// meanwhile (the others are saved). 404 when the uid is not in the workspace's own alliance.
+// meanwhile (the others are saved). 404 when the uid is not in the workspace's own alliance, now or before
+// (D107), nor one of its pending members (D106).
 import { z } from "zod";
 
 import { requireWorkspace } from "@/lib/private/access";
@@ -25,7 +26,8 @@ const body = z
       .refine((c) => new Set(c.map((x) => x.field)).size === c.length),
   })
   .strict();
-const UID = /^[1-9]\d{0,15}$/;
+/** A game uid, or a pending member's (minus its id, D106). */
+const UID = /^-?[1-9]\d{0,15}$/;
 
 export async function POST(
   request: Request,
