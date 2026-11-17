@@ -1,15 +1,13 @@
 import { randomUUID } from "node:crypto";
 
+import { eq } from "drizzle-orm";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import type { Db } from "../db";
-import { openTestDb, truncateAll } from "../db.test-helpers";
-import { findWorkspaceBySlug, recordSignIn, saveWorkspace } from "../repo/workspaces";
+import { openTestDb } from "../db.test-helpers";
 import {
   calendarEntries,
   calendarOccurrences,
-  dailyReads,
-  dailyRosters,
   memberFacts,
   memberFollowUps,
   rollCallMarks,
@@ -19,16 +17,9 @@ import {
 import { screenshotDrafts } from "../schema-import";
 import { noticeEdits, notices } from "../schema-notices";
 import { thefts } from "../schema-thefts";
-import { requireWorkspace, type WorkspaceAccess } from "./access";
+import type { WorkspaceAccess } from "./access";
 import { onDeskNow, recentActivity } from "./desk-activity";
-import { activityLine } from "./desk-activity-words";
-import { WORKSPACE_DICTIONARIES } from "./dictionary";
-import { createSession } from "./session";
-
-const OGS = 67111155;
-const NOW = new Date("2026-11-20T12:00:00Z");
-const ago = (minutes: number) => new Date(NOW.getTime() - minutes * 60_000);
-const t = WORKSPACE_DICTIONARIES.en;
+import { ago, browser, freshWorkspace, linesOf, NOW } from "./desk-activity.test-helpers";
 
 let db: Db;
 let ws: number;
@@ -37,54 +28,36 @@ beforeAll(async () => {
 });
 
 beforeEach(async () => {
-  await truncateAll(db);
-  await saveWorkspace(db, { unionId: OGS, slug: "ogs", discordGuildId: "1", leaderRoleIds: ["2"] });
-  ws = (await findWorkspaceBySlug(db, "ogs"))?.id ?? 0;
-  await db
-    .insert(dailyReads)
-    .values({ day: "2026-11-19", startedAt: ago(600), status: "complete" });
-  await db.insert(dailyRosters).values({
-    readDay: "2026-11-19",
-    unionId: OGS,
-    memberCount: 2,
-    sourceUpdatedAt: ago(600),
-    isFresh: true,
-    memberUids: [101, 102],
-    memberNames: ["Bramble", "Thistle"],
-    memberPower: [1000, 1000],
-    memberKills: [0, 0],
-    rawJson: { members: [] },
-  });
+  ws = await freshWorkspace(db);
 });
-
-/** A signed-in browser of `name`: its cookie, and a request made with it at `at`. */
-async function browser(name: string, tier: "officer" | "member" = "officer") {
-  const userId = await recordSignIn(db, ws, `ogs-${name}`, name, ago(120));
-  const { token } = await createSession(db, ws, userId, ago(120), null, tier);
-  const visit = async (at: Date): Promise<WorkspaceAccess | null> => {
-    const access = await requireWorkspace(db, "ogs", { get: () => ({ value: token }) }, at);
-    return access.ok ? access : null;
-  };
-  return { userId, visit };
-}
 
 const seenAt = async () => (await db.select().from(workspaceSessions)).map((s) => s.seenAt);
 
 describe("on the desk now", () => {
   it("lists the other officers seen in ten minutes, never a member's session", async () => {
-    const ana = await browser("Ana");
-    const wren = await browser("Wren");
-    const rook = await browser("Rook");
-    const rio = await browser("Rio", "member");
+    const ana = await browser(db, ws, "Ana");
+    const wren = await browser(db, ws, "Wren");
+    const rook = await browser(db, ws, "Rook");
+    const rio = await browser(db, ws, "Rio", "member");
     await wren.visit(ago(3));
     await rook.visit(ago(11));
-    expect(await rio.visit(ago(1))).toBeNull();
+    // A member's session seen a minute ago (set directly): the tier filter keeps it off the list.
+    await db
+      .update(workspaceSessions)
+      .set({ seenAt: ago(1) })
+      .where(eq(workspaceSessions.workspaceUserId, rio.userId));
     const me = await ana.visit(NOW);
     expect(await onDeskNow(db, me as WorkspaceAccess, NOW)).toEqual(["Wren"]);
   });
 
+  it("never marks a member's session seen on the members' board", async () => {
+    const rio = await browser(db, ws, "Rio", "member");
+    expect(await rio.board(ago(1))).toBe(true);
+    expect(await seenAt()).toEqual([null]);
+  });
+
   it("writes the last-seen time at most once a minute", async () => {
-    const ana = await browser("Ana");
+    const ana = await browser(db, ws, "Ana");
     await ana.visit(ago(2));
     await ana.visit(new Date(ago(2).getTime() + 30_000));
     expect(await seenAt()).toEqual([ago(2)]);
@@ -95,8 +68,8 @@ describe("on the desk now", () => {
 
 describe("recent activity", () => {
   it("one line per action, newest first, with names and never a value or a note", async () => {
-    const ana = await browser("Ana");
-    const wren = await browser("Wren");
+    const ana = await browser(db, ws, "Ana");
+    const wren = await browser(db, ws, "Wren");
     const a = ana.userId;
     const w = wren.userId;
     // A notice saved with two fields at once.
@@ -186,23 +159,22 @@ describe("recent activity", () => {
     ]);
 
     const me = (await ana.visit(NOW)) as WorkspaceAccess;
-    const lines = (await recentActivity(db, me, NOW)).map((i) => activityLine(i, t, "en"));
-    const plain = lines.map((l) => l.replace(/[⁨⁩]/g, ""));
+    const plain = linesOf(await recentActivity(db, me, NOW));
     expect(plain).toEqual([
       "Wren added a theft to the log",
       "Ana saved a screenshot: Secret Ops report",
       "Wren marked Thistle as needing help",
-      "Ana marked the rest of the roll call “KvK shield”",
-      "Ana marked the roll call “KvK shield”",
+      "Ana finished the roll call “KvK shield”",
+      "Ana took the roll call “KvK shield”",
       "Wren updated Bramble’s info",
       "Ana saved the notice “Weekly schedule”",
     ]);
-    expect(lines.join(" ")).not.toMatch(/secret-value|private-note|theft-note|Raider/);
+    expect(plain.join(" ")).not.toMatch(/secret-value|private-note|theft-note|Raider/);
   });
 
   it("names a calendar change and the follow-up choice, never the note", async () => {
-    const a = (await browser("Ana")).userId;
-    const w = (await browser("Wren")).userId;
+    const a = (await browser(db, ws, "Ana")).userId;
+    const w = (await browser(db, ws, "Wren")).userId;
     const stamp = (by: number, at: Date) => ({ v: 1, by, at: at.toISOString() });
     const [entry] = await db
       .insert(calendarEntries)
@@ -246,12 +218,9 @@ describe("recent activity", () => {
         follow(99, "fine", ago(5)),
       ]);
 
-    const me = (await browser("Rook")).visit(NOW);
+    const me = (await browser(db, ws, "Rook")).visit(NOW);
     const items = await recentActivity(db, (await me) as WorkspaceAccess, NOW);
-    const plain = (language: "en" | "fr") =>
-      items.map((i) =>
-        activityLine(i, WORKSPACE_DICTIONARIES[language], language).replace(/[⁨⁩]/g, ""),
-      );
+    const plain = (language: "en" | "fr") => linesOf(items, language);
     expect(plain("en")).toEqual([
       "Wren noted a member is fine",
       "Wren marked Thistle on a break until Nov\u00a024",
@@ -260,7 +229,7 @@ describe("recent activity", () => {
       "Ana changed the Calendar entry “Undead Siege · Lv.5”",
       "Ana added “Undead Siege · Lv.5” to the Calendar",
     ]);
-    expect(plain("fr")[1]).toBe("Wren a noté Thistle en pause jusqu’au 24\u00a0nov.");
+    expect(plain("fr")[1]).toBe("Wren a mis Thistle en pause jusqu’au 24\u00a0nov.");
     expect(plain("en").join(" ")).not.toMatch(/private-note/);
   });
 });

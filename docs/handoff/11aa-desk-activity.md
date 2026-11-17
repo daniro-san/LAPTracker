@@ -95,9 +95,48 @@ Closes #335. Branch `session/11aa-desk-activity`, cut from `origin/dev` at 3ea8c
   - Shots were refreshed in `11aa-shots/`.
   - Privacy grep: 0 of 101 roster names.
 
+## Review round (PR 401: code review and persona panel)
+
+- **Grouping.** One officer's consecutive member info saves, thefts added or new members added become one line at the newest time, for example "Ana updated 11 members" (distinct members, plus batch members). Any other line ends the run, so posts, roll calls, breaks and calendar changes stay in sight. Home shows 6 lines before "Show more" (it was 15).
+- **Saved drafts past 7 days.** `dropExpired` (`lib/repo/import.ts`):
+  - open and discarded drafts are still deleted at 7 days;
+  - a saved draft has its `pages` and `rows` emptied at 7 days;
+  - the saved draft's row is kept until 14 days after the save (`SAVED_DRAFT_KEEP_MS`, also the feed's window).
+
+  The save's facts, thefts and new members therefore stay behind one "saved a screenshot" line. Recorded in D108, with a dated D96 amendment.
+- **Fewer queries.** The six small sources (notice saves, notice posts, saved drafts, entries added, new members, follow-ups) are one `union all` read. A Home open now runs 5 feed reads at once, then 3 name reads: 8 queries in all (it was 13, 10 of them at once). D108 states the count and that `limit` bounds the rows returned, not the rows scanned.
+- **Undo.** A `withdrawn` row is not shown, and neither is the record it cancelled (the next record after it is `withdrawn`).
+- **Copy** (the grep found these strings quoted only in D108, which is this PR's own, so D108 was updated in place):
+  - "Just you." / "Só você." / "Il n’y a que vous.", and "Na Mesa agora";
+  - "took the roll call" / "finished the roll call";
+  - "added Wobbleton as a new member";
+  - "Ana updated n members";
+  - PT: "editou os dados de", "colocou … em pausa até 24/11" (a numeric day/month for PT only), "fez / concluiu a chamada", "anotou um roubo no registro";
+  - FR: "a modifié la fiche de", "a mis … en pause jusqu’au 24 nov.", "a fait / a terminé l’appel", "a noté un vol dans le registre";
+  - the new empty feed line in three languages.
+- **"(R4)".** The feed adds no rank tag. The "(R4)" in the earlier shots was part of the e2e seed's chosen name ("Rook (R4)"). The seed now uses "Rook". D108 says names are the officers' chosen names, as elsewhere on the desk.
+- **Tests.** `lib/private/desk-activity.test.ts` (5), `lib/private/desk-activity-feed.test.ts` (3, new), and shared setup in `desk-activity.test-helpers.ts`, because one file passed the 300-line limit:
+  - a member session whose `seen_at` is set directly is not listed. With the tier filter removed, this test fails (checked);
+  - a `requireBoard` visit leaves `seen_at` null;
+  - grouping: 5 members across single and batch saves, a Discord post ending the run, 2 new members grouped;
+  - a member-update save 10 days old, with its fact and new member at the same instant, gives one line, and its `pages` are emptied; a talked-then-Undo follow-up shows nothing;
+  - 45 follow-ups give 40 lines.
+- **Verified**:
+  - `pnpm check` exits 0: **175 files passed, 2 skipped; 938 tests passed, 4 skipped**.
+  - Short e2e, **34 of 34**, on a fresh production build (37 migrations, the same seed with "Rook"). At 360, in EN, PT and FR:
+    - 6 lines show before "Show more";
+    - the grouped line ("Ana updated 11 members"), "finished" / "took the roll call", the break with its date ("24/11" in PT), and the theft wording;
+    - no note, value, attacker or victim, and no "(R4)";
+    - no sideways scroll, light and dark;
+    - `app_errors` is empty.
+  - Shots: `11aa-shots/r2-home-360-light-{en,pt-BR,fr}.png` and `r2-feed-360-{light,dark}-{en,pt-BR,fr}.png`.
+  - The privacy grep found 0 of 101 roster names.
+  - Not run in this e2e: the "Just you." line (no screenshot with nobody else on the desk). It is covered by the dictionary check only.
+
 ## Open issues
 - The feed shows only the newest change of each calendar field (no history table). It has no calendar deletions and no theft follow-up states (owner: not this round). Notices cannot be deleted at all.
 - Only one bound applies to a long run of single roll call taps: the hour grouping, on top of the 40-row read limit.
+- A saved draft's row (and its `discord_pictures` rows) now lives 14 days instead of 7. A second "Send to LAPTracker" on the same picture in that time points to the saved draft instead of making a new one.
 - Both parts are as of the page load. There is no live refresh.
 - A former member (not in the newest roster) reads "a member's info".
 

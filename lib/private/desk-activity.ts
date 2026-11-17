@@ -14,16 +14,17 @@ import {
   type FollowUpDone,
   type MarksDone,
 } from "../repo/desk-activity";
+import { SAVED_DRAFT_KEEP_MS } from "../repo/import";
 import { noticeTitles } from "../repo/notices";
 import type { WorkspaceAccess } from "./access";
 
 /** "On the desk now": a session seen in the last ten minutes. */
 export const ON_DESK_MS = 10 * 60_000;
-/** The feed looks back two weeks. */
-export const ACTIVITY_WINDOW_MS = 14 * 24 * 60 * 60_000;
+/** The feed looks back two weeks: as long as a saved draft's row is kept (D108). */
+export const ACTIVITY_WINDOW_MS = SAVED_DRAFT_KEEP_MS;
 /** The most lines the feed holds; Home shows the first ACTIVITY_SHOWN and the rest under "Show more". */
 export const ACTIVITY_MAX = 40;
-export const ACTIVITY_SHOWN = 15;
+export const ACTIVITY_SHOWN = 6;
 
 /** The other officers on the desk now, by name; the officer looking is left out. */
 export function onDeskNow(db: Db, access: WorkspaceAccess, now: Date): Promise<string[]> {
@@ -32,14 +33,15 @@ export function onDeskNow(db: Db, access: WorkspaceAccess, now: Date): Promise<s
 }
 
 type What =
-  | { kind: "facts"; uid: number; members: number }
+  /** `uids`: members saved one at a time; `batch`: members of batch saves (a sheet import). */
+  | { kind: "facts"; uids: number[]; batch: number }
   | { kind: "noticeSaved" | "noticePosted"; noticeId: number }
   | { kind: "draft"; draft: Pick<DraftDone, "kind" | "scope"> }
   | { kind: "entry" | "entryEdit"; entry: Pick<EntryDone, "kind" | "variant" | "level" | "title"> }
   | { kind: "marks"; call: Pick<MarksDone, "kind" | "variant">; rest: boolean }
   | ({ kind: "followUp" } & Pick<FollowUpDone, "uid" | "action" | "until">)
   | { kind: "thefts"; count: number }
-  | { kind: "newMember"; name: string };
+  | { kind: "newMember"; names: string[] };
 
 type Raw = What & { by: number; at: Date };
 
@@ -62,10 +64,43 @@ const instant = (r: Raw) => `${r.by}@${r.at.getTime()}`;
 /** What makes two lines the same: the action and its object, without the time. */
 const sameKey = (r: Raw) => JSON.stringify({ ...r, at: 0 });
 
+/** Two lines of the same noisy verb as one: member info saves, thefts added, new members added. */
+function joined(a: Raw, b: Raw): Raw | null {
+  if (a.kind === "facts" && b.kind === "facts") {
+    return { ...a, uids: [...a.uids, ...b.uids], batch: a.batch + b.batch };
+  }
+  if (a.kind === "thefts" && b.kind === "thefts") return { ...a, count: a.count + b.count };
+  if (a.kind === "newMember" && b.kind === "newMember") {
+    return { ...a, names: [...a.names, ...b.names] };
+  }
+  return null;
+}
+
+/**
+ * One officer's consecutive lines of a noisy verb become one line at the newest time ("Ana updated 9
+ * members"), so a post, a roll call or a break stays in sight (persona panel, 2026-11-17).
+ */
+function grouped(lines: Raw[]): Raw[] {
+  const out: Raw[] = [];
+  for (const r of lines) {
+    const last = out.at(-1);
+    const both = last && last.by === r.by ? joined(last, r) : null;
+    if (both) out[out.length - 1] = both;
+    else out.push(r);
+  }
+  return out;
+}
+
 /** Every source's rows as feed lines, merged: newest first, covered and repeated lines dropped. */
 function merge(rows: Awaited<ReturnType<typeof activityRows>>): Raw[] {
   const raw: Raw[] = [
-    ...rows.facts.map((r) => ({ ...r, kind: "facts" as const })),
+    ...rows.facts.map(({ by, at, uid, members }) => ({
+      by,
+      at,
+      kind: "facts" as const,
+      uids: members === 1 ? [uid] : [],
+      batch: members === 1 ? 0 : members,
+    })),
     ...rows.noticeSaves.map((r) => ({ ...r, kind: "noticeSaved" as const })),
     ...rows.noticePosts.map((r) => ({ ...r, kind: "noticePosted" as const })),
     ...rows.drafts.map(({ by, at, ...draft }) => ({ by, at, kind: "draft" as const, draft })),
@@ -85,14 +120,19 @@ function merge(rows: Awaited<ReturnType<typeof activityRows>>): Raw[] {
     })),
     ...rows.followUps.map((r) => ({ ...r, kind: "followUp" as const })),
     ...rows.thefts.map((r) => ({ ...r, kind: "thefts" as const })),
-    ...rows.newMembers.map((r) => ({ ...r, kind: "newMember" as const })),
+    ...rows.newMembers.map(({ by, at, name }) => ({
+      by,
+      at,
+      kind: "newMember" as const,
+      names: [name],
+    })),
   ];
   const top = new Map<string, number>();
   for (const r of raw) top.set(instant(r), Math.max(top.get(instant(r)) ?? 0, rank(r)));
   const shown = raw
     .filter((r) => rank(r) >= (top.get(instant(r)) ?? 0))
     .sort((a, b) => b.at.getTime() - a.at.getTime());
-  return shown.filter((r, i) => i === 0 || sameKey(r) !== sameKey(shown[i - 1] as Raw));
+  return grouped(shown.filter((r, i) => i === 0 || sameKey(r) !== sameKey(shown[i - 1] as Raw)));
 }
 
 /** The newest ACTIVITY_MAX things officers did in the last two weeks, with names resolved. */
@@ -104,7 +144,9 @@ export async function recentActivity(
   const ws = access.workspaceId;
   const from = new Date(now.getTime() - ACTIVITY_WINDOW_MS);
   const lines = merge(await activityRows(db, ws, from, ACTIVITY_MAX)).slice(0, ACTIVITY_MAX);
-  const uids = lines.flatMap((r) => (r.kind === "facts" || r.kind === "followUp" ? [r.uid] : []));
+  const uids = lines.flatMap((r) =>
+    r.kind === "followUp" ? [r.uid] : r.kind === "facts" ? r.uids : [],
+  );
   const ids = lines.flatMap((r) =>
     r.kind === "noticeSaved" || r.kind === "noticePosted" ? [r.noticeId] : [],
   );
@@ -118,8 +160,12 @@ export async function recentActivity(
     if (!who) return [];
     const line = r;
     switch (line.kind) {
-      case "facts":
-        return [{ ...line, who, member: members.get(line.uid) ?? null }];
+      case "facts": {
+        const one = new Set(line.uids);
+        const [uid] = [...one];
+        const member = one.size === 1 && line.batch === 0 ? (members.get(uid ?? 0) ?? null) : null;
+        return [{ kind: "facts", at: line.at, who, member, members: one.size + line.batch }];
+      }
       case "followUp": {
         const { at, action, until } = line;
         return [

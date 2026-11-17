@@ -36,6 +36,13 @@ function factsLine(
   return aboutMember(t, who, item.member, ["activity.facts", "activity.factsSomeone"]);
 }
 
+/** A break's last day: "Nov 24", "24 nov."; Portuguese writes it as officers do, "24/11" (persona panel). */
+function breakDay(day: string, language: WorkspaceLanguage): string {
+  if (language !== "pt-BR") return calendarDates(language).dayMonth(day);
+  const numeric = { day: "2-digit", month: "2-digit", timeZone: "UTC" } as const;
+  return new Intl.DateTimeFormat(language, numeric).format(new Date(`${day}T00:00:00Z`));
+}
+
 /**
  * A follow-up record names the choice (owner, 2026-11-17): talked, a break with its last day away, needs
  * help, fine. Never the note.
@@ -48,7 +55,7 @@ function followUpLine(
 ): string {
   const member = isolate(item.member ?? t["activity.aMember"]);
   const key = item.action === "break" && item.until === null ? "breakOpen" : item.action;
-  const date = item.until === null ? "" : calendarDates(language).dayMonth(item.until);
+  const date = item.until === null ? "" : breakDay(item.until, language);
   return fill(t[`activity.followUp.${key}`], { who, member, date });
 }
 
@@ -60,6 +67,21 @@ function marksLine(
 ): string {
   const call = callTitle({ ...item.call, kind: item.call.kind as RollKind, placed: null }, t);
   return fill(t[item.rest ? "activity.marksRest" : "activity.marks"], { who, call });
+}
+
+/** Thefts added, or new members added: one named member, or how many (a grouped line). */
+function countLine(
+  t: WorkspaceDictionary,
+  who: string,
+  item: Extract<ActivityItem, { kind: "thefts" | "newMember" }>,
+): string {
+  if (item.kind === "thefts") {
+    return fill(t[`activity.thefts.${item.count === 1 ? "one" : "other"}`], { who, n: item.count });
+  }
+  const [name] = item.names;
+  return item.names.length === 1
+    ? fill(t["activity.newMember"], { who, member: isolate(name ?? "") })
+    : fill(t["activity.newMembers"], { who, n: item.names.length });
 }
 
 /** What the officer did, as one sentence, without the time. */
@@ -87,12 +109,8 @@ export function activityLine(
     case "marks":
       return marksLine(t, who, item);
     case "thefts":
-      return fill(t[`activity.thefts.${item.count === 1 ? "one" : "other"}`], {
-        who,
-        n: item.count,
-      });
     case "newMember":
-      return fill(t["activity.newMember"], { who, member: isolate(item.name) });
+      return countLine(t, who, item);
   }
 }
 

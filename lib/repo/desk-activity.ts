@@ -1,21 +1,17 @@
 // Home's "On the desk now" and "Recent activity" (D108): who else had the desk open in the last minutes, and
-// what officers did, read from the histories the desk already keeps. One bounded read per source (the
-// newest `n` actions since `from`), merged in lib/private. Only who, when and which thing: never a member
+// what officers did, read from the histories the desk already keeps. Five reads at once, each returning at
+// most the newest `n` actions per source since `from`; lib/private merges them. Only who, when and which thing: never a member
 // field's value, a follow-up note or a theft's note or people.
 import { and, desc, eq, gt, gte, inArray, isNotNull, ne, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
 import {
-  calendarEntries,
   dailyRosters,
   memberFacts,
-  memberFollowUps,
   pendingMembers,
   workspaceSessions,
   workspaceUsers,
 } from "../schema";
-import { screenshotDrafts } from "../schema-import";
-import { noticeEdits, noticePublishes } from "../schema-notices";
 import { thefts } from "../schema-thefts";
 import { usable } from "./workspace-rosters";
 
@@ -108,46 +104,66 @@ function factSaves(db: Db, ws: number, from: Date, n: number) {
     .limit(n);
 }
 
-function noticeSaves(db: Db, ws: number, from: Date, n: number) {
-  const e = noticeEdits;
-  return db
-    .select({ by: e.editedBy, at: e.editedAt, noticeId: e.noticeId })
-    .from(e)
-    .where(and(eq(e.workspaceId, ws), isNotNull(e.editedBy), gte(e.editedAt, from)))
-    .groupBy(e.noticeId, e.editedBy, e.editedAt)
-    .orderBy(desc(e.editedAt))
-    .limit(n);
-}
+/** One row of the small sources' read; the columns each kind does not use are null. */
+type SmallRow = {
+  kind: "noticeSaved" | "noticePosted" | "draft" | "entry" | "newMember" | "followUp";
+  by: number | string;
+  at: Date | string;
+  notice_id: number | null;
+  a: string | null;
+  b: string | null;
+  level: number | null;
+  title: string | null;
+  uid: number | string | null;
+};
 
-function noticePosts(db: Db, ws: number, from: Date, n: number) {
-  const p = noticePublishes;
-  return db
-    .select({ by: p.publishedBy, at: p.publishedAt, noticeId: p.noticeId })
-    .from(p)
-    .where(and(eq(p.workspaceId, ws), eq(p.status, "posted"), gte(p.publishedAt, from)))
-    .orderBy(desc(p.publishedAt))
-    .limit(n);
-}
-
-function draftsSaved(db: Db, ws: number, from: Date, n: number) {
-  const d = screenshotDrafts;
-  return db
-    .select({ by: d.doneBy, done: d.doneAt, kind: d.kind, scope: d.scope })
-    .from(d)
-    .where(and(eq(d.workspaceId, ws), eq(d.status, "saved"), gte(d.doneAt, from)))
-    .orderBy(desc(d.doneAt))
-    .limit(n);
-}
-
-function entriesAdded(db: Db, ws: number, from: Date, n: number) {
-  const c = calendarEntries;
-  const fields = { kind: c.kind, variant: c.variant, level: c.level, title: c.title };
-  return db
-    .select({ by: c.createdBy, at: c.createdAt, ...fields })
-    .from(c)
-    .where(and(eq(c.workspaceId, ws), gte(c.createdAt, from)))
-    .orderBy(desc(c.createdAt))
-    .limit(n);
+/**
+ * The small sources in one read (one connection): notice saves (one per save of any number of fields),
+ * notice posts, saved drafts, calendar entries added, new members added by hand, and follow-up records
+ * (not `withdrawn`, and not one an Undo cancelled). Each part is its own newest `n` since `from`; `n` bounds the rows returned, not the
+ * rows a part scans.
+ */
+async function smallSources(db: Db, ws: number, from: Date, n: number): Promise<SmallRow[]> {
+  const since = from.toISOString();
+  const result = await db.execute<SmallRow>(sql`
+    (select 'noticeSaved' as kind, e.edited_by as by, e.edited_at as at, e.notice_id,
+        null::text as a, null::text as b, null::int as level, null::text as title, null::bigint as uid
+      from notice_edits e
+      where e.workspace_id = ${ws} and e.edited_by is not null and e.edited_at >= ${since}
+      group by e.notice_id, e.edited_by, e.edited_at order by e.edited_at desc limit ${n})
+    union all
+    (select 'noticePosted', p.published_by, p.published_at, p.notice_id, null, null, null, null, null
+      from notice_publishes p
+      where p.workspace_id = ${ws} and p.status = 'posted' and p.published_by is not null
+        and p.published_at >= ${since}
+      order by p.published_at desc limit ${n})
+    union all
+    (select 'draft', d.done_by, d.done_at, null, d.kind, d.scope, null, null, null
+      from screenshot_drafts d
+      where d.workspace_id = ${ws} and d.status = 'saved' and d.done_by is not null
+        and d.done_at >= ${since}
+      order by d.done_at desc limit ${n})
+    union all
+    (select 'entry', c.created_by, c.created_at, null, c.kind, c.variant, c.level, c.title, null
+      from calendar_entries c
+      where c.workspace_id = ${ws} and c.created_by is not null and c.created_at >= ${since}
+      order by c.created_at desc limit ${n})
+    union all
+    (select 'newMember', m.created_by, m.created_at, null, null, null, null, m.name, null
+      from pending_members m
+      where m.workspace_id = ${ws} and m.created_by is not null and m.created_at >= ${since}
+      order by m.created_at desc limit ${n})
+    union all
+    (select 'followUp', f.written_by, f.written_at, null, f.action, f.until, null, null, f.uid
+      from member_follow_ups f
+      where f.workspace_id = ${ws} and f.written_by is not null and f.action <> 'withdrawn'
+        and f.written_at >= ${since}
+        -- Undo appends "withdrawn" right after the record it cancels (D104): neither is shown.
+        and coalesce((select x.action from member_follow_ups x
+          where x.workspace_id = f.workspace_id and x.uid = f.uid and x.id > f.id
+          order by x.id limit 1), '') <> 'withdrawn'
+      order by f.written_at desc limit ${n})`);
+  return result.rows;
 }
 
 /**
@@ -208,16 +224,6 @@ async function marksWritten(db: Db, ws: number, from: Date, n: number): Promise<
   return result.rows.map((r) => ({ ...r, by: Number(r.by), at: new Date(r.at) }));
 }
 
-function followUps(db: Db, ws: number, from: Date, n: number) {
-  const f = memberFollowUps;
-  return db
-    .select({ by: f.writtenBy, at: f.writtenAt, uid: f.uid, action: f.action, until: f.until })
-    .from(f)
-    .where(and(eq(f.workspaceId, ws), ne(f.action, "withdrawn"), gte(f.writtenAt, from)))
-    .orderBy(desc(f.writtenAt))
-    .limit(n);
-}
-
 function theftsAdded(db: Db, ws: number, from: Date, n: number) {
   const t = thefts;
   return db
@@ -229,17 +235,47 @@ function theftsAdded(db: Db, ws: number, from: Date, n: number) {
     .limit(n);
 }
 
-function membersAdded(db: Db, ws: number, from: Date, n: number) {
-  const p = pendingMembers;
-  return db
-    .select({ by: p.createdBy, at: p.createdAt, name: p.name })
-    .from(p)
-    .where(and(eq(p.workspaceId, ws), gte(p.createdAt, from)))
-    .orderBy(desc(p.createdAt))
-    .limit(n);
+/** Splits the small sources' rows by kind, typed. */
+function split(rows: SmallRow[]) {
+  const of = <K extends SmallRow["kind"]>(kind: K) =>
+    rows
+      .filter((r) => r.kind === kind)
+      .map((r) => ({ ...r, by: Number(r.by), at: new Date(r.at) }));
+  return {
+    noticeSaves: of("noticeSaved").map(({ by, at, notice_id }) => ({
+      by,
+      at,
+      noticeId: Number(notice_id),
+    })),
+    noticePosts: of("noticePosted").map(({ by, at, notice_id }) => ({
+      by,
+      at,
+      noticeId: Number(notice_id),
+    })),
+    drafts: of("draft").map(({ by, at, a, b }) => ({ by, at, kind: a ?? "", scope: b })),
+    entries: of("entry").map(({ by, at, a, b, level, title }) => ({
+      by,
+      at,
+      kind: a ?? "",
+      variant: b,
+      level,
+      title,
+    })),
+    newMembers: of("newMember").map(({ by, at, title }) => ({ by, at, name: title ?? "" })),
+    followUps: of("followUp").map(({ by, at, a, b, uid }) => ({
+      by,
+      at,
+      uid: Number(uid),
+      action: a as FollowUpDone["action"],
+      until: b,
+    })),
+  };
 }
 
-/** The newest `n` actions of each source since `from`, all read at once. */
+/**
+ * The newest `n` actions of each source since `from`: five reads at once (member facts, calendar edits,
+ * roll call marks, thefts, and the small sources together).
+ */
 export async function activityRows(
   db: Db,
   workspaceId: number,
@@ -247,34 +283,14 @@ export async function activityRows(
   n: number,
 ): Promise<ActivityRows> {
   const args = [db, workspaceId, from, n] as const;
-  const [facts, saves, posts, drafts, entries, edits, marks, follows, stolen, added] =
-    await Promise.all([
-      factSaves(...args),
-      noticeSaves(...args),
-      noticePosts(...args),
-      draftsSaved(...args),
-      entriesAdded(...args),
-      entriesEdited(...args),
-      marksWritten(...args),
-      followUps(...args),
-      theftsAdded(...args),
-      membersAdded(...args),
-    ]);
-  return {
-    facts: known(facts),
-    noticeSaves: known(saves),
-    noticePosts: known(posts),
-    // A saved draft always has its time; the filter only narrows the type.
-    drafts: known(drafts).flatMap(({ done, ...d }) => (done ? [{ ...d, at: done }] : [])),
-    entries: known(entries),
-    entryEdits: edits,
-    marks,
-    followUps: known(follows).flatMap((f) =>
-      f.action === "withdrawn" ? [] : [{ ...f, action: f.action }],
-    ),
-    thefts: known(stolen),
-    newMembers: known(added),
-  };
+  const [facts, small, edits, marks, stolen] = await Promise.all([
+    factSaves(...args),
+    smallSources(...args),
+    entriesEdited(...args),
+    marksWritten(...args),
+    theftsAdded(...args),
+  ]);
+  return { ...split(small), facts: known(facts), entryEdits: edits, marks, thefts: known(stolen) };
 }
 
 /**
