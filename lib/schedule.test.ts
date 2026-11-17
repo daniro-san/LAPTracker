@@ -2,7 +2,13 @@ import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
 import { RUN_DEADLINE_MS } from "./compute";
-import { endsInServerDay, slotOf, targetEvent, type ScheduleConfig } from "./schedule";
+import {
+  endsInServerDay,
+  serverMinuteOfDay,
+  slotOf,
+  targetEvent,
+  type ScheduleConfig,
+} from "./schedule";
 
 // Saturdays at 12:00 server time (UTC−2), so Saturday 2026-11-07 is 14:00Z.
 const cfg: ScheduleConfig = {
@@ -31,6 +37,13 @@ describe("targetEvent", () => {
 
   it("is the past Saturday on a Tuesday when its After is missing", () => {
     expect(day("2026-11-10T12:00:00Z")).toBe("Saturday Event 2026-11-07");
+  });
+});
+
+describe("serverMinuteOfDay", () => {
+  it("is the minutes since midnight on the server clock: 14:15Z is 12:15 server time, and 01:30Z the evening before", () => {
+    expect(serverMinuteOfDay(new Date("2026-11-21T14:15:00Z"), cfg)).toBe(12 * 60 + 15);
+    expect(serverMinuteOfDay(new Date("2026-11-21T01:30:00Z"), cfg)).toBe(23 * 60 + 30);
   });
 });
 

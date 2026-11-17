@@ -4,11 +4,13 @@
 // A chart under D68 (docs/decisions/D68-charts-are-hand-built-inline-svg.md): hand-built, no chart library,
 // labels in HTML, numbers beside it (the Details table). Its bars are HTML boxes, which D68 allows by its
 // amendment of 2026-11-16 (PR 319); a line chart stays SVG.
+import { TextLink } from "@/lib/brand/components/TextLink";
 import { fill, type Dictionary } from "@/lib/copy";
 import type { EventProgress } from "@/lib/queries";
 
 import { compact, shareText, type Clock } from "./format";
 import { Num } from "./Num";
+import { FIGHT_CLOCK_PATH } from "./PulseStrip";
 import { LABEL, MoreBar } from "./StatTable";
 
 type Progress = EventProgress;
@@ -56,7 +58,14 @@ function Bars({ progress, clock, copy }: { progress: Progress; clock: Clock; cop
   );
 }
 
-function PulseLegend({ pulse, copy }: { pulse: Progress["pulse"]; copy: Dictionary }) {
+/** The key to the stub and the hairline; also under the strips across events (D86). */
+export function PulseLegend({
+  pulse,
+  copy,
+}: {
+  pulse: readonly { state: string }[];
+  copy: Dictionary;
+}) {
   const hasStill = pulse.some((s) => s.state === "still");
   const hasMissing = pulse.some((s) => s.state === "missing");
   return (
@@ -140,6 +149,11 @@ export function Pulse({
         <span>{clock.time(last.to)}</span>
       </div>
       <PulseLegend pulse={pulse} copy={copy} />
+      <p className="mt-1">
+        <TextLink href={FIGHT_CLOCK_PATH} className="inline-flex min-h-11 items-center">
+          {copy.ledger.fightClockLink}
+        </TextLink>
+      </p>
       <div className="mt-2">
         <MoreBar
           row={{

@@ -2,64 +2,186 @@
 
 Words already used in `lib/i18n/id.ts`. Reuse them so the pages stay consistent; add a row when you coin a term another key will need again (translate-copy skill).
 
-| English                   | id                            | Key and use                                                          |
-| ------------------------- | ----------------------------- | -------------------------------------------------------------------- |
-| Server 325 · Event Ledger | Server 325 · Buku Event       | `site.ledger` — the page title                                       |
-| Ledger                    | Buku                          | `site.home` — the ledger, as a breadcrumb                            |
-| kept by the Old Grandmas  | dicatat oleh Old Grandmas     | `site.byline` — Old Grandmas stays a name                            |
-| Alliance                  | Aliansi                       | `ledger.alliance`                                                    |
-| not in a tracked alliance | tidak di aliansi yang dilacak | `compare.notTracked` — player view                                   |
-| Member                    | Anggota                       | `ledger.member` — a player inside an alliance                        |
-| Player                    | Pemain                        | `ledger.player`                                                      |
-| Event                     | Event                         | `ledger.event` — a game event                                        |
-| Rank                      | Peringkat                     | `ledger.rank` — the #n position                                      |
-| Ranking                   | Peringkat server              | `ledger.ranking` — the game's server rank                            |
-| joined                    | masuk                         | `ledger.joined` — after +n                                           |
-| left                      | keluar                        | `ledger.left` — after −n                                             |
-| Stale                     | Usang                         | `fresh.stale` — data not fresh                                       |
-| server time               | waktu server                  | `time.serverTime` — after a time: 14:01 …                            |
-| your time                 | waktumu                       | `time.yourTime` — after a time, the viewer's zone                    |
-| Exact numbers             | Angka pasti                   | `site.exactNumbers` — the toggle; legend.rounded names it            |
-| Manual round              | Ronde manual                  | `site.manualRound` — an event the admin runs by hand                 |
-| Grandma noticed           | Nenek perhatikan              | `ledger.movers` — the event's biggest gains and losses               |
-| Start / End               | Awal / Akhir                  | `status.start` / `status.end`, `compare.lead`                        |
-| Leader                    | Pemimpin                      | `leadership.leader` — the R5                                         |
-| Run by hand by the admin  | Dijalankan manual oleh admin  | `status.byHand`                                                      |
-| grandma                   | nenek                         | the voice in empty states and errors                                 |
-| Member history            | Riwayat anggota               | `history.title` — the page title and its link on the event page      |
-| Daily progress            | Progres harian                | `ledger.progress` — the player page's section heading                |
-| Middle member             | Anggota tengah                | `ledger.progressMedian` — the alliance's median member               |
-| English                   | id                            | Key and use                                                          |
-| ------------------------- | ----------------------------- | -------------------------------------------------------------------- |
-| Server 325 · Event Ledger | Server 325 · Buku Event       | `site.ledger` — the page title                                       |
-| Ledger                    | Buku                          | `site.home` — the ledger, as a breadcrumb                            |
-| kept by the Old Grandmas  | dicatat oleh Old Grandmas     | `site.byline` — Old Grandmas stays a name                            |
-| Alliance                  | Aliansi                       | `ledger.alliance`                                                    |
-| not in a tracked alliance | tidak di aliansi yang dilacak | `compare.notTracked` — player view                                   |
-| Member                    | Anggota                       | `ledger.member` — a player inside an alliance                        |
-| Player                    | Pemain                        | `ledger.player`                                                      |
-| Event                     | Event                         | `ledger.event` — a game event                                        |
-| Rank                      | Peringkat                     | `ledger.rank` — the #n position                                      |
-| Ranking                   | Peringkat server              | `ledger.ranking` — the game's server rank                            |
-| joined                    | masuk                         | `ledger.joined` — after +n                                           |
-| left                      | keluar                        | `ledger.left` — after −n                                             |
-| Stale                     | Usang                         | `fresh.stale` — data not fresh                                       |
-| server time               | waktu server                  | `time.serverTime` — after a time: 14:01 …                            |
-| your time                 | waktumu                       | `time.yourTime` — after a time, the viewer's zone                    |
-| Exact numbers             | Angka pasti                   | `site.exactNumbers` — the toggle; legend.rounded names it            |
-| Manual round              | Ronde manual                  | `site.manualRound` — an event the admin runs by hand                 |
-| Grandma noticed           | Nenek perhatikan              | `ledger.movers` — the event's biggest gains and losses               |
-| Start / End               | Awal / Akhir                  | `status.start` / `status.end`, `compare.lead`                        |
-| Leader                    | Pemimpin                      | `leadership.leader` — the R5                                         |
-| Run by hand by the admin  | Dijalankan manual oleh admin  | `status.byHand`                                                      |
-| grandma                   | nenek                         | the voice in empty states and errors                                 |
-| Member history            | Riwayat anggota               | `history.title` — the page title and its link on the event page      |
-| Standings                 | Klasemen                      | `ledger.liveStandings` — the live kills-gained table                 |
-| Kills gained              | Kills didapat                 | `ledger.liveKillsGained`, `ledger.livePulseHelp` — after a count     |
-| Support player            | pemain support                | `ledger.foughtHelp` — a player who gains no Kills                    |
-| Gainer (Kills rose)       | Members dengan kenaikan Kills | `ledger.fewGainers`, `ledger.topShareHelp` — member whose Kills rose |
-| Kill share / Might share  | Bagian Kills / Bagian Might   | `ledger.carried*` — an alliance's share of Kills gained / of Might   |
-| Defender                  | pemain bertahan               | `ledger.carriedHelp` — a player who gains no Kills, like a support   |
+| English                   | id                            | Key and use                                                                          |
+| ------------------------- | ----------------------------- | ------------------------------------------------------------------------------------ |
+| Server 325 · Event Ledger | Server 325 · Buku Event       | `site.ledger` — the page title                                                       |
+| Ledger                    | Buku                          | `site.home` — the ledger, as a breadcrumb                                            |
+| kept by the Old Grandmas  | dicatat oleh Old Grandmas     | `site.byline` — Old Grandmas stays a name                                            |
+| Alliance                  | Aliansi                       | `ledger.alliance`                                                                    |
+| not in a tracked alliance | tidak di aliansi yang dilacak | `compare.notTracked` — player view                                                   |
+| Member                    | Anggota                       | `ledger.member` — a player inside an alliance                                        |
+| Player                    | Pemain                        | `ledger.player`                                                                      |
+| Event                     | Event                         | `ledger.event` — a game event                                                        |
+| Rank                      | Peringkat                     | `ledger.rank` — the #n position                                                      |
+| Ranking                   | Peringkat server              | `ledger.ranking` — the game's server rank                                            |
+| joined                    | masuk                         | `ledger.joined` — after +n                                                           |
+| left                      | keluar                        | `ledger.left` — after −n                                                             |
+| Stale                     | Usang                         | `fresh.stale` — data not fresh                                                       |
+| server time               | waktu server                  | `time.serverTime` — after a time: 14:01 …                                            |
+| your time                 | waktumu                       | `time.yourTime` — after a time, the viewer's zone                                    |
+| Exact numbers             | Angka pasti                   | `site.exactNumbers` — the toggle; legend.rounded names it                            |
+| Manual round              | Ronde manual                  | `site.manualRound` — an event the admin runs by hand                                 |
+| Grandma noticed           | Nenek perhatikan              | `ledger.movers` — the event's biggest gains and losses                               |
+| Start / End               | Awal / Akhir                  | `status.start` / `status.end`, `compare.lead`                                        |
+| Leader                    | Pemimpin                      | `leadership.leader` — the R5                                                         |
+| Run by hand by the admin  | Dijalankan manual oleh admin  | `status.byHand`                                                                      |
+| grandma                   | nenek                         | the voice in empty states and errors                                                 |
+| Member history            | Riwayat anggota               | `history.title` — the page title and its link on the event page                      |
+| Daily progress            | Progres harian                | `ledger.progress` — the player page's section heading                                |
+| Middle member             | Anggota tengah                | `ledger.progressMedian` — the alliance's median member                               |
+| English                   | id                            | Key and use                                                                          |
+| ------------------------- | ----------------------------- | --------------------------------------------------------------------                 |
+| Server 325 · Event Ledger | Server 325 · Buku Event       | `site.ledger` — the page title                                                       |
+| Ledger                    | Buku                          | `site.home` — the ledger, as a breadcrumb                                            |
+| kept by the Old Grandmas  | dicatat oleh Old Grandmas     | `site.byline` — Old Grandmas stays a name                                            |
+| Alliance                  | Aliansi                       | `ledger.alliance`                                                                    |
+| not in a tracked alliance | tidak di aliansi yang dilacak | `compare.notTracked` — player view                                                   |
+| Member                    | Anggota                       | `ledger.member` — a player inside an alliance                                        |
+| Player                    | Pemain                        | `ledger.player`                                                                      |
+| Event                     | Event                         | `ledger.event` — a game event                                                        |
+| Rank                      | Peringkat                     | `ledger.rank` — the #n position                                                      |
+| Ranking                   | Peringkat server              | `ledger.ranking` — the game's server rank                                            |
+| joined                    | masuk                         | `ledger.joined` — after +n                                                           |
+| left                      | keluar                        | `ledger.left` — after −n                                                             |
+| Stale                     | Usang                         | `fresh.stale` — data not fresh                                                       |
+| server time               | waktu server                  | `time.serverTime` — after a time: 14:01 …                                            |
+| your time                 | waktumu                       | `time.yourTime` — after a time, the viewer's zone                                    |
+| Exact numbers             | Angka pasti                   | `site.exactNumbers` — the toggle; legend.rounded names it                            |
+| Manual round              | Ronde manual                  | `site.manualRound` — an event the admin runs by hand                                 |
+| Grandma noticed           | Nenek perhatikan              | `ledger.movers` — the event's biggest gains and losses                               |
+| Start / End               | Awal / Akhir                  | `status.start` / `status.end`, `compare.lead`                                        |
+| Leader                    | Pemimpin                      | `leadership.leader` — the R5                                                         |
+| Run by hand by the admin  | Dijalankan manual oleh admin  | `status.byHand`                                                                      |
+| grandma                   | nenek                         | the voice in empty states and errors                                                 |
+| Member history            | Riwayat anggota               | `history.title` — the page title and its link on the event page                      |
+| Standings                 | Klasemen                      | `ledger.liveStandings` — the live kills-gained table                                 |
+| Kills gained              | Kills didapat                 | `ledger.liveKillsGained`, `ledger.livePulseHelp` — after a count                     |
+| Support player            | pemain support                | `ledger.foughtHelp` — a player who gains no Kills                                    |
+| Gainer (Kills rose)       | Members dengan kenaikan Kills | `ledger.fewGainers`, `ledger.topShareHelp` — member whose Kills rose                 |
+| Kill share / Might share  | Bagian Kills / Bagian Might   | `ledger.carried*` — an alliance's share of Kills gained / of Might                   |
+| Defender                  | pemain bertahan               | `ledger.carriedHelp` — a player who gains no Kills, like a support                   |
+| Server fight clock        | Jam perang server             | `ledger.fightClock`, `ledger.fightClockLink` — the event-by-event slot chart         |
+| English                   | id                            | Key and use                                                                          |
+| ------------------------- | ----------------------------- | ------------------------------------------------------------------------------------ |
+| Server 325 · Event Ledger | Server 325 · Buku Event       | `site.ledger` — the page title                                                       |
+| Ledger                    | Buku                          | `site.home` — the ledger, as a breadcrumb                                            |
+| kept by the Old Grandmas  | dicatat oleh Old Grandmas     | `site.byline` — Old Grandmas stays a name                                            |
+| Alliance                  | Aliansi                       | `ledger.alliance`                                                                    |
+| not in a tracked alliance | tidak di aliansi yang dilacak | `compare.notTracked` — player view                                                   |
+| Member                    | Anggota                       | `ledger.member` — a player inside an alliance                                        |
+| Player                    | Pemain                        | `ledger.player`                                                                      |
+| Event                     | Event                         | `ledger.event` — a game event                                                        |
+| Rank                      | Peringkat                     | `ledger.rank` — the #n position                                                      |
+| Ranking                   | Peringkat server              | `ledger.ranking` — the game's server rank                                            |
+| joined                    | masuk                         | `ledger.joined` — after +n                                                           |
+| left                      | keluar                        | `ledger.left` — after −n                                                             |
+| Stale                     | Usang                         | `fresh.stale` — data not fresh                                                       |
+| server time               | waktu server                  | `time.serverTime` — after a time: 14:01 …                                            |
+| your time                 | waktumu                       | `time.yourTime` — after a time, the viewer's zone                                    |
+| Exact numbers             | Angka pasti                   | `site.exactNumbers` — the toggle; legend.rounded names it                            |
+| Manual round              | Ronde manual                  | `site.manualRound` — an event the admin runs by hand                                 |
+| Grandma noticed           | Nenek perhatikan              | `ledger.movers` — the event's biggest gains and losses                               |
+| Start / End               | Awal / Akhir                  | `status.start` / `status.end`, `compare.lead`                                        |
+| Leader                    | Pemimpin                      | `leadership.leader` — the R5                                                         |
+| Run by hand by the admin  | Dijalankan manual oleh admin  | `status.byHand`                                                                      |
+| grandma                   | nenek                         | the voice in empty states and errors                                                 |
+| Member history            | Riwayat anggota               | `history.title` — the page title and its link on the event page                      |
+| Daily progress            | Progres harian                | `ledger.progress` — the player page's section heading                                |
+| Middle member             | Anggota tengah                | `ledger.progressMedian` — the alliance's median member                               |
+| English                   | id                            | Key and use                                                                          |
+| ------------------------- | ----------------------------- | --------------------------------------------------------------------                 |
+| Server 325 · Event Ledger | Server 325 · Buku Event       | `site.ledger` — the page title                                                       |
+| Ledger                    | Buku                          | `site.home` — the ledger, as a breadcrumb                                            |
+| kept by the Old Grandmas  | dicatat oleh Old Grandmas     | `site.byline` — Old Grandmas stays a name                                            |
+| Alliance                  | Aliansi                       | `ledger.alliance`                                                                    |
+| not in a tracked alliance | tidak di aliansi yang dilacak | `compare.notTracked` — player view                                                   |
+| Member                    | Anggota                       | `ledger.member` — a player inside an alliance                                        |
+| Player                    | Pemain                        | `ledger.player`                                                                      |
+| Event                     | Event                         | `ledger.event` — a game event                                                        |
+| Rank                      | Peringkat                     | `ledger.rank` — the #n position                                                      |
+| Ranking                   | Peringkat server              | `ledger.ranking` — the game's server rank                                            |
+| joined                    | masuk                         | `ledger.joined` — after +n                                                           |
+| left                      | keluar                        | `ledger.left` — after −n                                                             |
+| Stale                     | Usang                         | `fresh.stale` — data not fresh                                                       |
+| server time               | waktu server                  | `time.serverTime` — after a time: 14:01 …                                            |
+| your time                 | waktumu                       | `time.yourTime` — after a time, the viewer's zone                                    |
+| Exact numbers             | Angka pasti                   | `site.exactNumbers` — the toggle; legend.rounded names it                            |
+| Manual round              | Ronde manual                  | `site.manualRound` — an event the admin runs by hand                                 |
+| Grandma noticed           | Nenek perhatikan              | `ledger.movers` — the event's biggest gains and losses                               |
+| Start / End               | Awal / Akhir                  | `status.start` / `status.end`, `compare.lead`                                        |
+| Leader                    | Pemimpin                      | `leadership.leader` — the R5                                                         |
+| Run by hand by the admin  | Dijalankan manual oleh admin  | `status.byHand`                                                                      |
+| grandma                   | nenek                         | the voice in empty states and errors                                                 |
+| Member history            | Riwayat anggota               | `history.title` — the page title and its link on the event page                      |
+| Standings                 | Klasemen                      | `ledger.liveStandings` — the live kills-gained table                                 |
+| Kills gained              | Kills didapat                 | `ledger.liveKillsGained`, `ledger.livePulseHelp` — after a count                     |
+| Support player            | pemain support                | `ledger.foughtHelp` — a player who gains no Kills                                    |
+| Gainer (Kills rose)       | Members dengan kenaikan Kills | `ledger.fewGainers`, `ledger.topShareHelp` — member whose Kills rose                 |
+| Kill share / Might share  | Bagian Kills / Bagian Might   | `ledger.carried*` — an alliance's share of Kills gained / of Might                   |
+| Defender                  | pemain bertahan               | `ledger.carriedHelp` — a player who gains no Kills, like a support                   |
+| Bloc                      | Blok                          | `balance.bloc`, `balance.addTo`, `balance.clear` — a hypothetical group of alliances |
+| Bloc builder              | Penyusun blok                 | `balance.builder` — the page's try-a-bloc tool                                       |
+| Server might              | Might server                  | `balance.total`, `balance.shares` — Might stays English                              |
+| English                   | id                            | Key and use                                                                          |
+| ------------------------- | ----------------------------- | --------------------------------------------------------------------                 |
+| Server 325 · Event Ledger | Server 325 · Buku Event       | `site.ledger` — the page title                                                       |
+| Ledger                    | Buku                          | `site.home` — the ledger, as a breadcrumb                                            |
+| kept by the Old Grandmas  | dicatat oleh Old Grandmas     | `site.byline` — Old Grandmas stays a name                                            |
+| Alliance                  | Aliansi                       | `ledger.alliance`                                                                    |
+| not in a tracked alliance | tidak di aliansi yang dilacak | `compare.notTracked` — player view                                                   |
+| Member                    | Anggota                       | `ledger.member` — a player inside an alliance                                        |
+| Player                    | Pemain                        | `ledger.player`                                                                      |
+| Event                     | Event                         | `ledger.event` — a game event                                                        |
+| Rank                      | Peringkat                     | `ledger.rank` — the #n position                                                      |
+| Ranking                   | Peringkat server              | `ledger.ranking` — the game's server rank                                            |
+| joined                    | masuk                         | `ledger.joined` — after +n                                                           |
+| left                      | keluar                        | `ledger.left` — after −n                                                             |
+| Stale                     | Usang                         | `fresh.stale` — data not fresh                                                       |
+| server time               | waktu server                  | `time.serverTime` — after a time: 14:01 …                                            |
+| your time                 | waktumu                       | `time.yourTime` — after a time, the viewer's zone                                    |
+| Exact numbers             | Angka pasti                   | `site.exactNumbers` — the toggle; legend.rounded names it                            |
+| Manual round              | Ronde manual                  | `site.manualRound` — an event the admin runs by hand                                 |
+| Grandma noticed           | Nenek perhatikan              | `ledger.movers` — the event's biggest gains and losses                               |
+| Start / End               | Awal / Akhir                  | `status.start` / `status.end`, `compare.lead`                                        |
+| Leader                    | Pemimpin                      | `leadership.leader` — the R5                                                         |
+| Run by hand by the admin  | Dijalankan manual oleh admin  | `status.byHand`                                                                      |
+| grandma                   | nenek                         | the voice in empty states and errors                                                 |
+| Member history            | Riwayat anggota               | `history.title` — the page title and its link on the event page                      |
+| Daily progress            | Progres harian                | `ledger.progress` — the player page's section heading                                |
+| Middle member             | Anggota tengah                | `ledger.progressMedian` — the alliance's median member                               |
+| English                   | id                            | Key and use                                                                          |
+| ------------------------- | ----------------------------- | --------------------------------------------------------------------                 |
+| Server 325 · Event Ledger | Server 325 · Buku Event       | `site.ledger` — the page title                                                       |
+| Ledger                    | Buku                          | `site.home` — the ledger, as a breadcrumb                                            |
+| kept by the Old Grandmas  | dicatat oleh Old Grandmas     | `site.byline` — Old Grandmas stays a name                                            |
+| Alliance                  | Aliansi                       | `ledger.alliance`                                                                    |
+| not in a tracked alliance | tidak di aliansi yang dilacak | `compare.notTracked` — player view                                                   |
+| Member                    | Anggota                       | `ledger.member` — a player inside an alliance                                        |
+| Player                    | Pemain                        | `ledger.player`                                                                      |
+| Event                     | Event                         | `ledger.event` — a game event                                                        |
+| Rank                      | Peringkat                     | `ledger.rank` — the #n position                                                      |
+| Ranking                   | Peringkat server              | `ledger.ranking` — the game's server rank                                            |
+| joined                    | masuk                         | `ledger.joined` — after +n                                                           |
+| left                      | keluar                        | `ledger.left` — after −n                                                             |
+| Stale                     | Usang                         | `fresh.stale` — data not fresh                                                       |
+| server time               | waktu server                  | `time.serverTime` — after a time: 14:01 …                                            |
+| your time                 | waktumu                       | `time.yourTime` — after a time, the viewer's zone                                    |
+| Exact numbers             | Angka pasti                   | `site.exactNumbers` — the toggle; legend.rounded names it                            |
+| Manual round              | Ronde manual                  | `site.manualRound` — an event the admin runs by hand                                 |
+| Grandma noticed           | Nenek perhatikan              | `ledger.movers` — the event's biggest gains and losses                               |
+| Start / End               | Awal / Akhir                  | `status.start` / `status.end`, `compare.lead`                                        |
+| Leader                    | Pemimpin                      | `leadership.leader` — the R5                                                         |
+| Run by hand by the admin  | Dijalankan manual oleh admin  | `status.byHand`                                                                      |
+| grandma                   | nenek                         | the voice in empty states and errors                                                 |
+| Member history            | Riwayat anggota               | `history.title` — the page title and its link on the event page                      |
+| Standings                 | Klasemen                      | `ledger.liveStandings` — the live kills-gained table                                 |
+| Kills gained              | Kills didapat                 | `ledger.liveKillsGained`, `ledger.livePulseHelp` — after a count                     |
+| Support player            | pemain support                | `ledger.foughtHelp` — a player who gains no Kills                                    |
+| Gainer (Kills rose)       | Members dengan kenaikan Kills | `ledger.fewGainers`, `ledger.topShareHelp` — member whose Kills rose                 |
+| Merge                     | merge                         | `merge.title`, `merge.link` — the merge simulator (kept English)                     |
+| Cap                       | batas                         | `merge.cap`, `merge.over`, `merge.rule` — the member cap                             |
+| Kill share / Might share  | Bagian Kills / Bagian Might   | `ledger.carried*` — an alliance's share of Kills gained / of Might                   |
+| Defender                  | pemain bertahan               | `ledger.carriedHelp` — a player who gains no Kills, like a support                   |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

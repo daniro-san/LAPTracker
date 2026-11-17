@@ -184,3 +184,45 @@ export async function scheduledEventKills(
     new Map(kills.filter((k) => k.id === id).map((k) => [k.uid, k.kills]));
   return { at: event.at, before: byUid(before.id), after: byUid(after.id) };
 }
+
+/** A member of the newest roster as "This is me" shows it: who, and enough to tell look-alike names apart. */
+export interface RosterEntry {
+  uid: number;
+  name: string;
+  might: number | null;
+  rankCode: number | null;
+  rankLabel: string | null;
+}
+
+/** Only uid, rank_code and rank_label are read from raw_json; the row has none before D72. */
+const ranks = sql<
+  { uid: unknown; rank_code: unknown; rank_label: unknown }[]
+>`coalesce((select jsonb_agg(jsonb_build_object('uid', m->'uid', 'rank_code', m->'rank_code', 'rank_label', m->'rank_label')) from jsonb_array_elements(${dailyRosters.rawJson}->'members') m), '[]'::jsonb)`;
+
+/** Each member of the alliance's newest usable daily roster (D60), with might and rank; empty before one. */
+export async function latestRoster(db: Db, unionId: number): Promise<RosterEntry[]> {
+  const [row] = await db
+    .select({
+      uids: dailyRosters.memberUids,
+      names: dailyRosters.memberNames,
+      power: dailyRosters.memberPower,
+      ranks,
+    })
+    .from(dailyRosters)
+    .where(usable(unionId))
+    .orderBy(desc(dailyRosters.readDay))
+    .limit(1);
+  if (!row) return [];
+  const rankOf = new Map(row.ranks.map((r) => [num(r.uid), r]));
+  return row.uids.map((uid, i) => {
+    const rank = rankOf.get(uid);
+    return {
+      uid,
+      name: row.names[i] ?? "",
+      might: row.power[i] ?? null,
+      rankCode: num(rank?.rank_code),
+      rankLabel:
+        typeof rank?.rank_label === "string" && rank.rank_label !== "" ? rank.rank_label : null,
+    };
+  });
+}

@@ -39,6 +39,8 @@ export interface AnalyticsEvents {
   ws_copy_spreadsheet: NoProperties;
   ws_filter_used: { filter: MemberFilter };
   ws_language_switched: { language: AnalyticsLanguage };
+  /** A notice's Translate filled drafts (D81); nothing about the text. */
+  ws_notice_translated: NoProperties;
   /** One picture read from the desk's "Send screenshots": its type only, nothing it showed. */
   ws_screenshot_sent: { kind: ScreenshotKind };
   /** A draft saved: its type only. */
