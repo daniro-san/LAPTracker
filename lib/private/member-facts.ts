@@ -34,6 +34,9 @@ const isZone = (id: string) => {
   }
 };
 
+/** The largest serial id (Postgres integer). */
+const PG_INT_MAX = 2_147_483_647;
+
 const text = (max: number) => z.string().trim().max(max);
 const DAY = z.string().refine(isDay);
 
@@ -137,7 +140,9 @@ export async function isMember(db: Db, access: WorkspaceAccess, uid: number): Pr
  * roll calls and every other write keep `isMember`.
  */
 async function mayHaveFacts(db: Db, access: WorkspaceAccess, uid: number): Promise<boolean> {
-  if (uid < 0) return (await findPending(db, access.workspaceId, { id: -uid })) !== null;
+  // A pending member's id is a Postgres integer: anything below its range is no one (not a 500).
+  if (uid < 0)
+    return uid >= -PG_INT_MAX && (await findPending(db, access.workspaceId, { id: -uid })) !== null;
   return (await isMember(db, access, uid)) || wasInRoster(db, access.unionId, uid);
 }
 

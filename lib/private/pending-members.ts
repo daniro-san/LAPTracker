@@ -62,9 +62,15 @@ export async function openPending(
   const id =
     (await findPending(db, ws, { nameKey: key }))?.id ??
     (await insertPending(db, { ...row, createdBy: access.user.id })) ??
-    // Another officer added the same name (or sent the same request) at the same moment.
-    (await findPending(db, ws, requestId ? { requestId } : { nameKey: key }))?.id;
+    // Another officer sent the same request, or added the same name, at the same moment: reuse theirs.
+    (await theirs(db, ws, requestId, key));
   return id === undefined ? null : { uid: pendingUid(id), repeat: false };
+}
+
+/** After a lost insert: the pending member of the same request, else the open one with the same key. */
+async function theirs(db: Db, ws: number, requestId: string | null, key: string) {
+  const same = requestId ? await findPending(db, ws, { requestId }) : null;
+  return (same ?? (await findPending(db, ws, { nameKey: key })))?.id;
 }
 
 /** "Add a new member": the pending member and its first facts; a repeated request saves nothing again. */

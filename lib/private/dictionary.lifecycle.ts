@@ -80,7 +80,7 @@ export const lifecyclePt: Record<LifecycleKey, string> = {
   "shots.newMember": "Membro novo: {name}",
   "shots.newName": "Nome do membro novo no jogo",
   "shots.newHelp":
-    "Salva num membro novo que espera a lista de hoje à noite. Corrija o nome se a captura leu errado.",
+    "Salva num membro novo que espera a lista de hoje à noite. Corrija o nome se o print foi lido errado.",
   "shots.pickInstead": "Escolher um membro",
   "shots.pendingGroup": "Novos, esperando a lista",
 };

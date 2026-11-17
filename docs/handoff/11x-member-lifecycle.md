@@ -49,6 +49,16 @@ Part of #293. No open issue asks for this; it comes from an officer's test of `/
   - `link-360-light-en` and `import-new-360-light-en`;
   - `iphone-{members,former,add}-390-light-en.png` (WebKit, iPhone 14), with `measures-iphone.json`: no sideways scroll, no field under 16 px.
 
+## Review round (PR 385)
+- **Start/End rosters:** former members and `wasInRoster` now also read `member_snapshots` (uid, name, power, kills only) for event Start/End rosters, which keep no arrays. D107, ARCHITECTURE and the file header say so. New test: a member only in a Start roster is a former member and can get facts.
+- **Facts route:** a negative uid below the serial range answers 404 `not_member` (was a 500).
+- **Add race:** after a lost insert, the add finds the pending member by request id, then by name key, so two officers adding one name at once share one member (test).
+- **Tests added:** link 200 / `not_member` / 404; delete 200 then 404, removing facts and points; `moveDuelPoints` keeps the member's own value for a shared day; another workspace's pending uid refused by link, delete and the facts route.
+- **One facts read per Members tab open:** `membersView` returns `facts`; the pending rows and `formerMembers` reuse it.
+- **`lastSeen`:** still unbounded; the growth bound is written next to it and in D107.
+- **PT copy:** "Corrija o nome se o print foi lido errado." (no "captura" left).
+- **Verified:** `pnpm check` exits 0, vitest 163 files passed, 2 skipped; 855 tests passed, 4 skipped. Local e2e 47 of 47 on a fresh build and reseed, with a Start-only former member added (five former members, the Start-only one listed).
+
 ## Open issues
 1. No warning when the name typed for a new member is already a current member's. The next roster read matches them only if that member has no facts; otherwise the officer links by hand.
 2. Reconcile runs only when someone opens the Members tab. A Discord-only officer would not trigger it.

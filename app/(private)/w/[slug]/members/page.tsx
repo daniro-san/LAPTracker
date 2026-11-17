@@ -12,14 +12,13 @@ import { chip } from "@/lib/brand/components/controls";
 import { fill } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
-import { requireWorkspace, type WorkspaceAccess } from "@/lib/private/access";
+import { requireWorkspace } from "@/lib/private/access";
 import { clockIn } from "@/lib/private/calendar-time";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import { LANGUAGES } from "@/lib/private/fact-fields";
 import { formerMembers } from "@/lib/private/former-members";
 import { toReviewCount } from "@/lib/private/import-view";
 import { cardFormats, type CardFormats } from "@/lib/private/member-card";
-import { factsOf } from "@/lib/private/member-facts";
 import {
   membersView,
   withListExtras,
@@ -91,15 +90,9 @@ function Legend({ t }: { t: WorkspaceDictionary }) {
   );
 }
 
-/** The open pending members and, when there are any, their facts (D106). */
-async function pendingRead(db: Parameters<typeof factsOf>[0], access: WorkspaceAccess) {
-  const pending = await pendingMembers(db, access);
-  return { former: [], pending, facts: pending.length > 0 ? await factsOf(db, access) : null };
-}
-
 /** The page's reads, after the access check: one view (members, or former members, D107). */
 async function readPage(
-  db: Parameters<typeof factsOf>[0],
+  db: Parameters<typeof membersView>[0],
   p: {
     slug: string;
     jar: Parameters<typeof requireWorkspace>[2];
@@ -121,8 +114,8 @@ async function readPage(
     // The list's own read (photos and past names); the card route never runs it (issue 337).
     rows: showFormer ? [] : await withListExtras(db, access, view.members),
     lifecycle: showFormer
-      ? { former: await formerMembers(db, access, zone), pending: [], facts: null }
-      : await pendingRead(db, access),
+      ? { former: await formerMembers(db, access, zone, view.facts), pending: [] }
+      : { former: [], pending: await pendingMembers(db, access) },
   };
 }
 
@@ -204,7 +197,7 @@ export default async function MembersPage({
           pending={
             <PendingMembers
               rows={lifecycle.pending.map((p) =>
-                pendingRow(p, lifecycle.facts?.get(p.uid) ?? {}, view.readAt, t, f),
+                pendingRow(p, view.facts.get(p.uid) ?? {}, view.readAt, t, f),
               )}
               roster={view.members.map((m) => ({ uid: m.uid, name: m.name }))}
               words={lifecycleWords(t)}

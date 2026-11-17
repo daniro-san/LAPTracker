@@ -39,7 +39,7 @@ lib/private/*.ts    the workspace (D71): requireWorkspace and its branded Worksp
                     and delete; facts under the uid `-id`), its table reads and writes in
                     lib/repo/pending-members.ts. D107: former-members.ts (who an earlier roster listed and
                     the newest does not), on lib/repo/workspace-past-roster.ts (uid, name, might and kills
-                    from the roster arrays only).
+                    from the roster arrays and Start/End member rows only).
                     notices.ts (the notices library's reads
                     and its save, issue 304), notice-rules.ts (pure: fields, the counter, "may be out of date",
                     the save's version check); its table reads and writes are in lib/repo/notices.ts.

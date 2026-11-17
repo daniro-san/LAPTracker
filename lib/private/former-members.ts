@@ -22,16 +22,20 @@ export interface FormerMember {
   facts: MemberFacts;
 }
 
-/** The workspace's former members, newest leavers first; `zone` is the server's (SERVER_TZ). */
+/**
+ * The workspace's former members, newest leavers first; `zone` is the server's (SERVER_TZ). `known` is
+ * the workspace's facts when the caller has read them already (the Members tab, from `membersView`).
+ */
 export async function formerMembers(
   db: Db,
   access: WorkspaceAccess,
   zone: string,
+  known?: Map<number, MemberFacts>,
 ): Promise<FormerMember[]> {
   const [roster, seen, facts] = await Promise.all([
     anyRoster(db, access.unionId),
     lastSeen(db, access.unionId),
-    factsOf(db, access),
+    known ?? factsOf(db, access),
   ]);
   if (!roster) return [];
   const now = new Set(roster.members.map((m) => m.uid));

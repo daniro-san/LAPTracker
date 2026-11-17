@@ -3,7 +3,14 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
 import { findWorkspaceBySlug, recordSignIn, saveWorkspace } from "../repo/workspaces";
-import { dailyReads, dailyRosters } from "../schema";
+import {
+  allianceSnapshots,
+  dailyReads,
+  dailyRosters,
+  events,
+  memberSnapshots,
+  snapshots,
+} from "../schema";
 import { requireWorkspace, type WorkspaceAccess } from "./access";
 import { formerMembers } from "./former-members";
 import { saveFacts, type FactChange } from "./member-facts";
@@ -106,5 +113,50 @@ describe("former members (D107)", () => {
       "1760000000",
     ])
       expect(sent).not.toContain(leak);
+  });
+
+  it("finds who was only in an event's Start roster (member rows, no arrays)", async () => {
+    await read("2026-11-14", [[21, "Wren", 40_000_000]]);
+    await read("2026-11-16", [[21, "Wren", 42_000_000]]);
+    const at = new Date("2026-11-14T12:00:00Z");
+    const [event] = await db
+      .insert(events)
+      .values({ name: "Saturday", eventAtUtc: at, allianceIds: [OGS], beforeAt: at, afterAt: at })
+      .returning({ id: events.id });
+    const [snap] = await db
+      .insert(snapshots)
+      .values({ eventId: event?.id ?? 0, phase: "before", startedAt: at, status: "complete" })
+      .returning({ id: snapshots.id });
+    const [row] = await db
+      .insert(allianceSnapshots)
+      .values({
+        snapshotId: snap?.id ?? 0,
+        unionId: OGS,
+        source: "v1",
+        isFresh: true,
+        sourceUpdatedAt: at,
+      })
+      .returning({ id: allianceSnapshots.id });
+    await db.insert(memberSnapshots).values({
+      allianceSnapshotId: row?.id ?? 0,
+      uid: 25,
+      name: "Odalys",
+      power: 18_000_000,
+      kills: 7000,
+      avatarUrl: "https://example.test/avatar.png",
+    });
+    const why: FactChange = { field: "notes", version: 0, value: "event only", source: "officer" };
+
+    expect(await saveFacts(db, ana, 25, [why], NOW)).toMatchObject([{ status: "saved" }]);
+    const former = await formerMembers(db, ana, ZONE);
+    expect(former).toEqual([
+      expect.objectContaining({
+        uid: 25,
+        name: "Odalys",
+        lastSeen: "2026-11-14",
+        might: 18_000_000,
+      }),
+    ]);
+    expect(JSON.stringify(former)).not.toContain("avatar");
   });
 });

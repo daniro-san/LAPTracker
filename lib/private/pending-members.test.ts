@@ -8,6 +8,7 @@ import { openTestDb, truncateAll } from "../db.test-helpers";
 import { aliasesOf } from "../repo/member-facts";
 import { findWorkspaceBySlug, recordSignIn, saveWorkspace } from "../repo/workspaces";
 import { dailyReads, dailyRosters, memberFacts, pendingMembers as pendingTable } from "../schema";
+import { allianceDuelPoints } from "../schema-import";
 import { requireWorkspace, type WorkspaceAccess } from "./access";
 import { saveFacts, type FactChange } from "./member-facts";
 import { addPending, linkPending, pendingMembers, reconcilePending } from "./pending-members";
@@ -133,5 +134,44 @@ describe("pending members and the roster (D106)", () => {
     // A second link of the same pending member finds nothing; a non-member is refused.
     expect(await linkPending(db, ana, -pending, 13, LATER)).toBe("not_found");
     expect(await linkPending(db, ana, -(await added("Ilsa")), 999, LATER)).toBe("not_member");
+  });
+
+  it("moves Alliance Duel points, keeping the member's own value for a day both have", async () => {
+    const pending = await added("Maelis");
+    const day = (uid: number, d: "mon" | "tue", points: number) => ({
+      workspaceId: ana.workspaceId,
+      uid,
+      week: "2026-11-16",
+      day: d,
+      points,
+      savedAt: ADDED,
+    });
+    await db
+      .insert(allianceDuelPoints)
+      .values([day(14, "mon", 500), day(pending, "mon", 900), day(pending, "tue", 700)]);
+
+    expect(await linkPending(db, ana, -pending, 14, LATER)).toBe("ok");
+    const points = await db
+      .select({
+        uid: allianceDuelPoints.uid,
+        day: allianceDuelPoints.day,
+        points: allianceDuelPoints.points,
+      })
+      .from(allianceDuelPoints)
+      .orderBy(allianceDuelPoints.day);
+    expect(points).toEqual([
+      { uid: 14, day: "mon", points: 500 },
+      { uid: 14, day: "tue", points: 700 },
+    ]);
+  });
+
+  it("two officers adding the same name at once with different requests get one member", async () => {
+    const add = (requestId: string) =>
+      addPending(db, ana, { requestId, name: "Ottoline", changes: [] }, { now: ADDED, zone: ZONE });
+    const [a, b] = await Promise.all([add(randomUUID()), add(randomUUID())]);
+
+    expect(a?.uid).toBeLessThan(0);
+    expect(b?.uid).toBe(a?.uid);
+    expect(await pendingMembers(db, ana)).toHaveLength(1);
   });
 });
