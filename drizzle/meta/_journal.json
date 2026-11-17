@@ -211,6 +211,13 @@
       "when": 1794921386918,
       "tag": "0029_roll_call",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1794923322160,
+      "tag": "0030_pending_members",
+      "breakpoints": true
     }
   ]
 }

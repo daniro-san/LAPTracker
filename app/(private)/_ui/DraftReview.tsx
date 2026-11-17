@@ -76,8 +76,8 @@ function whyNot(
   for (const i of order) {
     const r = rows[i];
     if (!r || r.dropped) continue;
-    const key =
-      r.uid === null ? "member" : r.value === "" ? "value" : r.conflict ? "conflict" : null;
+    const noMember = r.uid === null && !r.newName?.trim();
+    const key = noMember ? "member" : r.value === "" ? "value" : r.conflict ? "conflict" : null;
     if (key)
       return { template: `shots.why.${key}`, row: { label: labelOf(view, i), href: `#row-${i}` } };
   }
@@ -182,9 +182,12 @@ function RowsReview(props: Props) {
   async function save() {
     const sent = rows.flatMap((r, i) => {
       const field = view.rows[i]?.field;
-      if (r.dropped || r.uid === null) return [];
+      const newName = r.newName?.trim();
+      if (r.dropped || (r.uid === null && !newName)) return [];
+      // A new member (D106) is saved under the name as fixed; it has no facts to start from.
+      const who = newName ? { newName } : { uid: r.uid as number };
       const version = r.version ?? factOf(view, r.uid, field)?.version ?? 0;
-      return [{ uid: r.uid, value: Number(r.value), ...(field && { field, version }) }];
+      return [{ ...who, value: Number(r.value), ...(field && { field, version }) }];
     });
     const daily = scope === "daily" ? day : null;
     const answer = await act({ action: "save", scope, day: daily, weekBefore, rows: sent });
@@ -225,6 +228,7 @@ function RowsReview(props: Props) {
             state={rows[i] as RowState}
             onChange={(next) => setRows(rows.map((r, j) => (j === i ? next : r)))}
             members={view.members}
+            pending={view.pending}
             w={w}
             sep={sep}
             known={known(i)}

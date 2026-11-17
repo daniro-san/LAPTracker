@@ -2,12 +2,15 @@
 // officers' writes. A write is one field at a time and appends a version (history kept). It names the
 // version it was based on: when another officer saved that field since, notes are combined and languages
 // joined, and any other field is refused with the newer value (409), so nobody's edit vanishes. Only
-// members of the workspace's own alliance (access.unionId, D71) can have facts.
+// members of the workspace's own alliance (access.unionId, D71), now or before (D107), and the
+// workspace's pending members (D106) can have facts.
 import { z } from "zod";
 
 import type { Db } from "../db";
 import { factVersion, insertFact, latestFacts, type FactRow } from "../repo/member-facts";
+import { findPending } from "../repo/pending-members";
 import { anyRoster } from "../repo/workspace-any-roster";
+import { wasInRoster } from "../repo/workspace-past-roster";
 import type { WorkspaceAccess } from "./access";
 import { dayIn, isDay } from "./calendar-time";
 import {
@@ -128,6 +131,16 @@ export async function isMember(db: Db, access: WorkspaceAccess, uid: number): Pr
   return roster?.members.some((m) => m.uid === uid) ?? false;
 }
 
+/**
+ * Whether `uid` may have facts written: a member now, a former member (any earlier roster of this
+ * alliance, D107), or an open pending member of this workspace (`-id`, D106). Only facts are widened:
+ * roll calls and every other write keep `isMember`.
+ */
+async function mayHaveFacts(db: Db, access: WorkspaceAccess, uid: number): Promise<boolean> {
+  if (uid < 0) return (await findPending(db, access.workspaceId, { id: -uid })) !== null;
+  return (await isMember(db, access, uid)) || wasInRoster(db, access.unionId, uid);
+}
+
 const combine = (field: FactField, base: unknown, mine: unknown, theirs: unknown): unknown =>
   field === "notes"
     ? mergeNotes(base as string | null, (mine as string | null) ?? "", theirs as string | null) ||
@@ -189,7 +202,7 @@ function startsToday(value: unknown, now: Date, zone: string | undefined): unkno
 }
 
 /**
- * Writes each field in turn; null when `uid` is not in the workspace's own alliance. `zone` is the
+ * Writes each field in turn; null when `uid` may not have facts (`mayHaveFacts`). `zone` is the
  * server's (SERVER_TZ), for an away note's first day.
  */
 export async function saveFacts(
@@ -200,7 +213,7 @@ export async function saveFacts(
   now: Date,
   zone?: string,
 ): Promise<ChangeResult[] | null> {
-  if (!(await isMember(db, access, uid))) return null;
+  if (!(await mayHaveFacts(db, access, uid))) return null;
   const results: ChangeResult[] = [];
   for (const c of changes) results.push(await saveOne(db, access, uid, c, now, zone));
   return results;

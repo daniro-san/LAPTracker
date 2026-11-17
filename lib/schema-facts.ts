@@ -11,6 +11,7 @@ import {
   text,
   timestamp,
   unique,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 import { workspaces, workspaceUsers } from "./schema";
@@ -64,4 +65,34 @@ export const nameAliases = pgTable(
     confirmedAt: tstz("confirmed_at").notNull(),
   },
   (t) => [unique("name_aliases_workspace_key_unique").on(t.workspaceId, t.nameKey)],
+);
+
+/**
+ * A new member an officer added by hand before the roster lists them (D106). Their facts live in
+ * member_facts under the uid `-id` (game uids are positive), so one facts pipeline serves both. A roster
+ * read after `created_at` with exactly one member of the same name key and no facts moves those facts to
+ * that member and sets `matched_uid`; an officer can also link them by hand, or delete the row.
+ */
+export const pendingMembers = pgTable(
+  "pending_members",
+  {
+    id: serial("id").primaryKey(),
+    workspaceId: integer("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    nameKey: text("name_key").notNull(),
+    /** The add sheet's request id (D100); null when made from the screenshot import. */
+    requestId: text("request_id"),
+    createdBy: integer("created_by").references(() => workspaceUsers.id, { onDelete: "set null" }),
+    createdAt: tstz("created_at").notNull(),
+    matchedUid: big("matched_uid"),
+    matchedAt: tstz("matched_at"),
+  },
+  (t) => [
+    uniqueIndex("pending_members_request_unique").on(t.workspaceId, t.requestId),
+    uniqueIndex("pending_members_open_key_unique")
+      .on(t.workspaceId, t.nameKey)
+      .where(sql`${t.matchedUid} is null`),
+  ],
 );

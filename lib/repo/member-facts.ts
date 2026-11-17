@@ -90,12 +90,15 @@ export async function aliasesOf(db: Db, workspaceId: number): Promise<Map<string
   return new Map(rows.map((r) => [r.key, r.uid]));
 }
 
-/** Remembers what a person decided for each name key; a later decision replaces an earlier one. */
+/**
+ * Remembers what a person decided for each name key; a later decision replaces an earlier one. A null
+ * `confirmedBy` is a match the end-of-day roster made (D106).
+ */
 export async function saveAliases(
   db: Db,
   workspaceId: number,
   decided: readonly { nameKey: string; uid: number | null }[],
-  confirmedBy: number,
+  confirmedBy: number | null,
   now: Date,
 ): Promise<void> {
   // One row per key: Postgres refuses to update the same row twice in one statement.

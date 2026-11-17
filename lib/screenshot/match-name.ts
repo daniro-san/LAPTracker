@@ -95,6 +95,31 @@ function fuzzy(key: string, candidates: readonly NameCandidate[]): NameMatch {
 }
 
 /**
+ * Up to `n` candidates nearest to `raw`, however far, for a person to pick from when nothing matched
+ * (a "not found" row, a pending member to link, D106): edits between name keys over each candidate's
+ * names, nearest first, then by name. Never a match on its own.
+ */
+export function closestNames(
+  raw: string,
+  candidates: readonly NameCandidate[],
+  n: number,
+): NameSuggestion[] {
+  const key = nameKey(raw);
+  if (key === "") return [];
+  return candidates
+    .filter((c) => c.names.length > 0)
+    .map((c) => {
+      const near = c.names.map((name) => {
+        const other = nameKey(name);
+        return { uid: c.uid, name, distance: distance(key, other, key.length + other.length) };
+      });
+      return near.reduce((a, b) => (b.distance < a.distance ? b : a));
+    })
+    .sort((a, b) => a.distance - b.distance || a.name.localeCompare(b.name))
+    .slice(0, n);
+}
+
+/**
  * Matches `raw` to one candidate: the exact key of a current name, then of a past name, then a name
  * that is one part of a joined name (`Kasoar` for `Kasoar•Thorne`, or the other way round), each
  * only when exactly one member fits. Otherwise names within a few edits are suggested as `unsure`.

@@ -2,7 +2,7 @@
 
 // One row of a draft under review (issue 299): its label ("#2", the link target of "Row #2 needs a
 // member"), what the OCR read, a mark only when the member is uncertain or not found, a picker with the
-// closest names first, the value to fix, the parser's flags, and what is already known beside it: the
+// closest names first (and, for a row not found, "New member: <name>", D106), the value to fix, the parser's flags, and what is already known beside it: the
 // Alliance Duel points saved before, the game data for a check, a fact's previous value. A row can be
 // dropped. 44 px controls.
 import { chip, FIELD } from "@/lib/brand/components/controls";
@@ -13,6 +13,8 @@ import { factText, fillIn, groupedValue, type Words } from "./draft-known";
 
 export interface RowState {
   uid: number | null;
+  /** A row not found saved to a new member by this name, as the officer fixed it (D106). */
+  newName?: string | undefined;
   value: string;
   dropped: boolean;
   /** Member update: the version to save on, after "Use mine" answered a conflict. */
@@ -112,47 +114,114 @@ function RowHead({ row, label, w }: { row: ViewRow; label: string; w: Words }) {
   );
 }
 
-function RowInputs(props: {
+type InputProps = {
   id: string;
   sep: string;
   row: ViewRow;
   state: RowState;
   onChange: (next: RowState) => void;
   members: { uid: number; name: string }[];
+  /** New members waiting for the roster (D106). */
+  pending: { uid: number; name: string }[];
   w: Words;
   readOnly: boolean;
-}) {
+};
+
+const LINK =
+  "mt-1 inline-flex min-h-11 items-center text-body-sm font-medium underline underline-offset-4";
+
+/** The member: the closest names first, then everyone by name, then the new members waiting. */
+function MemberSelect(props: InputProps) {
   const { id, row, state, w } = props;
+  const option = (m: { uid: number; name: string }, key: string) => (
+    <option key={key} value={m.uid}>
+      {m.name}
+    </option>
+  );
+  return (
+    <label className="block text-body-sm" htmlFor={`${id}-m`}>
+      {w["shots.member"]}
+      <select
+        id={`${id}-m`}
+        value={state.uid ?? ""}
+        disabled={props.readOnly}
+        onChange={(e) =>
+          props.onChange({ ...state, uid: e.target.value ? Number(e.target.value) : null })
+        }
+        className={`${FIELD} mt-1 block`}
+      >
+        <option value="">{w["shots.pickMember"]}</option>
+        {row.suggestions.length > 0 && (
+          <optgroup label={w["shots.closest"]}>
+            {row.suggestions.map((s) => option(s, `s${s.uid}`))}
+          </optgroup>
+        )}
+        {props.members.map((m) => option(m, String(m.uid)))}
+        {props.pending.length > 0 && (
+          <optgroup label={w["shots.pendingGroup"]}>
+            {props.pending.map((m) => option(m, String(m.uid)))}
+          </optgroup>
+        )}
+      </select>
+    </label>
+  );
+}
+
+/** A row not found saved to a new member (D106): the name as read, to fix, and the way back. */
+function NewMemberName(props: InputProps & { name: string }) {
+  const { id, state, w } = props;
+  return (
+    <div className="text-body-sm">
+      <label className="block" htmlFor={`${id}-n`}>
+        {w["shots.newName"]}
+        <input
+          id={`${id}-n`}
+          value={props.name}
+          maxLength={64}
+          autoComplete="off"
+          translate="no"
+          disabled={props.readOnly}
+          onChange={(e) => props.onChange({ ...state, newName: e.target.value })}
+          className={`${FIELD} mt-1 block`}
+        />
+      </label>
+      <p className="mt-1 text-ink/80">{w["shots.newHelp"]}</p>
+      {!props.readOnly && (
+        <button
+          type="button"
+          onClick={() => props.onChange({ ...state, newName: undefined })}
+          className={LINK}
+        >
+          {w["shots.pickInstead"]}
+        </button>
+      )}
+    </div>
+  );
+}
+
+function RowInputs(props: InputProps) {
+  const { id, row, state, w } = props;
+  const offerNew = row.match.status === "none" && !props.readOnly && state.newName === undefined;
   return (
     <div className="mt-2 grid gap-2 sm:grid-cols-2">
-      <label className="block text-body-sm" htmlFor={`${id}-m`}>
-        {w["shots.member"]}
-        <select
-          id={`${id}-m`}
-          value={state.uid ?? ""}
-          disabled={props.readOnly}
-          onChange={(e) =>
-            props.onChange({ ...state, uid: e.target.value ? Number(e.target.value) : null })
-          }
-          className={`${FIELD} mt-1 block`}
-        >
-          <option value="">{w["shots.pickMember"]}</option>
-          {row.suggestions.length > 0 && (
-            <optgroup label={w["shots.closest"]}>
-              {row.suggestions.map((s) => (
-                <option key={`s${s.uid}`} value={s.uid}>
-                  {s.name}
-                </option>
-              ))}
-            </optgroup>
+      {state.newName === undefined ? (
+        <div>
+          <MemberSelect {...props} />
+          {offerNew && (
+            <button
+              type="button"
+              className={`mt-2 ${button}`}
+              onClick={() => props.onChange({ ...state, uid: null, newName: row.name })}
+            >
+              <span translate="no">
+                {fillIn(w["shots.newMember"], { name: isolate(row.name) })}
+              </span>
+            </button>
           )}
-          {props.members.map((m) => (
-            <option key={m.uid} value={m.uid}>
-              {m.name}
-            </option>
-          ))}
-        </select>
-      </label>
+        </div>
+      ) : (
+        <NewMemberName {...props} name={state.newName} />
+      )}
       <label className="block text-body-sm" htmlFor={`${id}-v`}>
         {w["shots.value"]}
         <input
@@ -181,6 +250,7 @@ export function DraftRowCard(props: {
   state: RowState;
   onChange: (next: RowState) => void;
   members: { uid: number; name: string }[];
+  pending: { uid: number; name: string }[];
   w: Words;
   sep: string;
   /** What is known for the picked member: "saved before: …", "we read …", a fact's previous value. */
@@ -207,7 +277,7 @@ export function DraftRowCard(props: {
         <button
           type="button"
           onClick={() => props.onChange({ ...state, dropped: !state.dropped })}
-          className="mt-1 inline-flex min-h-11 items-center text-body-sm font-medium underline underline-offset-4"
+          className={LINK}
         >
           {state.dropped ? w["shots.dropped"] : w["shots.drop"]}
         </button>

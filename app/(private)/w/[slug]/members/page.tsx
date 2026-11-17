@@ -2,18 +2,24 @@
 // first, then the list: compact rows, Check in and Needs help first, an instant search, filters and orders
 // (D98). The access check runs before anything is read (D71). The page sends each member's row once; the
 // list filters and orders them in the browser, and a member's details are read when their sheet opens.
+// Above the list, new members added by hand wait for the roster (D106; the page first matches them to
+// the newest roster); `?view=former` shows former members instead (D107).
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
+import type { ReactNode } from "react";
 
+import { chip } from "@/lib/brand/components/controls";
 import { fill } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
-import { requireWorkspace } from "@/lib/private/access";
+import { requireWorkspace, type WorkspaceAccess } from "@/lib/private/access";
 import { clockIn } from "@/lib/private/calendar-time";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import { LANGUAGES } from "@/lib/private/fact-fields";
+import { formerMembers } from "@/lib/private/former-members";
 import { toReviewCount } from "@/lib/private/import-view";
 import { cardFormats, type CardFormats } from "@/lib/private/member-card";
+import { factsOf } from "@/lib/private/member-facts";
 import {
   membersView,
   withListExtras,
@@ -22,15 +28,19 @@ import {
 } from "@/lib/private/members";
 import { needsAWord, pickOrder, pickQuery, whoOf } from "@/lib/private/members-list";
 import { plural, sheetHeader } from "@/lib/private/members-sheet";
+import { pendingMembers, reconcilePending } from "@/lib/private/pending-members";
 import { RENEW_MS } from "@/lib/private/session";
 import { SLUG } from "@/lib/private/sign-in";
 import { serverDay } from "@/lib/schedule";
 
 import { editorWords } from "../../../_ui/facts-form";
+import { FormerMembers } from "../../../_ui/FormerMembers";
 import { SignedInFrame, workspaceWords } from "../../../_ui/Frame";
+import { formerRow, lifecycleWords, pendingRow } from "../../../_ui/member-lifecycle-data";
 import { listRow, listWords } from "../../../_ui/member-list-data";
 import { MembersList } from "../../../_ui/MembersList";
 import { MembersSource } from "../../../_ui/MembersSource";
+import { PendingMembers } from "../../../_ui/PendingMembers";
 import { refuse } from "../../../_ui/refuse";
 
 function Thanks({ view, t, f }: { view: MembersView; t: WorkspaceDictionary; f: CardFormats }) {
@@ -81,6 +91,64 @@ function Legend({ t }: { t: WorkspaceDictionary }) {
   );
 }
 
+/** The open pending members and, when there are any, their facts (D106). */
+async function pendingRead(db: Parameters<typeof factsOf>[0], access: WorkspaceAccess) {
+  const pending = await pendingMembers(db, access);
+  return { former: [], pending, facts: pending.length > 0 ? await factsOf(db, access) : null };
+}
+
+/** The page's reads, after the access check: one view (members, or former members, D107). */
+async function readPage(
+  db: Parameters<typeof factsOf>[0],
+  p: {
+    slug: string;
+    jar: Parameters<typeof requireWorkspace>[2];
+    now: Date;
+    zone: string;
+    showFormer: boolean;
+  },
+) {
+  const { now, zone, showFormer } = p;
+  const access = await requireWorkspace(db, p.slug, p.jar, now, RENEW_MS);
+  if (!access.ok) return { access, waiting: 0, view: null, rows: [], lifecycle: null };
+  // D106: a roster read since a new member was added may now list them.
+  await reconcilePending(db, access, now);
+  const view = await membersView(db, access, now, zone);
+  return {
+    access,
+    waiting: await toReviewCount(db, access, now),
+    view,
+    // The list's own read (photos and past names); the card route never runs it (issue 337).
+    rows: showFormer ? [] : await withListExtras(db, access, view.members),
+    lifecycle: showFormer
+      ? { former: await formerMembers(db, access, zone), pending: [], facts: null }
+      : await pendingRead(db, access),
+  };
+}
+
+/** Members · Former members (D107): two links, the open one pressed. */
+function ViewSwitch({
+  slug,
+  former,
+  t,
+}: {
+  slug: string;
+  former: boolean;
+  t: WorkspaceDictionary;
+}) {
+  const link = (on: boolean, href: string, label: string) => (
+    <a href={href} aria-current={on ? "page" : undefined} className={`${chip(on)} justify-center`}>
+      {label}
+    </a>
+  );
+  return (
+    <nav aria-label={t["members.view.aria"]} className="mt-2 flex gap-2">
+      {link(!former, `/w/${slug}/members`, t["members.view.current"])}
+      {link(former, `/w/${slug}/members?view=former`, t["members.view.former"])}
+    </nav>
+  );
+}
+
 export default async function MembersPage({
   params,
   searchParams,
@@ -93,32 +161,39 @@ export default async function MembersPage({
   const jar = await cookies();
   const now = new Date();
   const env = getEnv();
+  const search = new URLSearchParams(
+    Object.entries(await searchParams).flatMap(([k, v]) => (typeof v === "string" ? [[k, v]] : [])),
+  );
+  const showFormer = search.get("view") === "former";
   // INVARIANT workspace.access-first: nothing private is read before this check.
-  const { access, view, rows, waiting } = await withPageDb(async (db) => {
-    const access = await requireWorkspace(db, slug, jar, now, RENEW_MS);
-    if (!access.ok) return { access, waiting: 0, view: null, rows: [] };
-    const view = await membersView(db, access, now, env.SERVER_TZ);
-    return {
-      access,
-      waiting: await toReviewCount(db, access, now),
-      view,
-      // The list's own read (photos and past names); the card route never runs it (issue 337).
-      rows: await withListExtras(db, access, view.members),
-    };
-  });
+  const { access, view, rows, waiting, lifecycle } = await withPageDb((db) =>
+    readPage(db, { slug, jar, now, zone: env.SERVER_TZ, showFormer }),
+  );
   if (!access.ok) {
     refuse(slug, access.reason, `/w/${slug}/members`);
     redirect(`/w/${slug}`);
   }
-  if (!view) notFound();
-  const search = new URLSearchParams(
-    Object.entries(await searchParams).flatMap(([k, v]) => (typeof v === "string" ? [[k, v]] : [])),
-  );
+  if (!view || !lifecycle) notFound();
   const { language, t } = await workspaceWords();
+  const f = cardFormats(language, env.SERVER_TZ, now);
+  const editor = {
+    slug,
+    words: editorWords(t),
+    language,
+    serverZone: env.SERVER_TZ,
+    used: view.zones,
+  };
   return (
     <SignedInFrame access={access} language={language} t={t} current="members" waiting={waiting}>
       <h1 className="font-display text-display-lg">{t["tab.members"]}</h1>
-      {view.readAt === null ? (
+      <ViewSwitch slug={slug} former={showFormer} t={t} />
+      {showFormer ? (
+        <FormerMembers
+          rows={lifecycle.former.map((m) => formerRow(m, t, f))}
+          words={lifecycleWords(t)}
+          editor={editor}
+        />
+      ) : view.readAt === null ? (
         <p className="mt-4 border border-rule px-4 py-5">{t["members.none"]}</p>
       ) : (
         <Roster
@@ -126,6 +201,16 @@ export default async function MembersPage({
           readAt={view.readAt}
           zone={env.SERVER_TZ}
           readHour={env.DAILY_ROSTER_AT}
+          pending={
+            <PendingMembers
+              rows={lifecycle.pending.map((p) =>
+                pendingRow(p, lifecycle.facts?.get(p.uid) ?? {}, view.readAt, t, f),
+              )}
+              roster={view.members.map((m) => ({ uid: m.uid, name: m.name }))}
+              words={lifecycleWords(t)}
+              editor={editor}
+            />
+          }
         />
       )}
       <p className="mt-6">
@@ -152,6 +237,8 @@ function Roster(props: {
   now: Date;
   zone: string;
   readHour: string;
+  /** New members waiting for the roster, and "Add a new member" (D106). */
+  pending: ReactNode;
 }) {
   const { slug, view, t, language, now, zone } = props;
   const f = cardFormats(language, zone, now);
@@ -184,6 +271,7 @@ function Roster(props: {
         )}
       </p>
       <Legend t={t} />
+      {props.pending}
       <MembersList
         rows={props.rows.map((m) => listRow(m, t, f))}
         early={view.early}
