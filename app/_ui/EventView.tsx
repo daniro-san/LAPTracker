@@ -5,6 +5,7 @@
 import type { NameHistoryEntry } from "@/lib/compute";
 import { fill, type Dictionary } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
+import { isOn } from "@/lib/flags";
 import type {
   Carried,
   getEventDetail,
@@ -121,8 +122,9 @@ function TitleBand({ copy }: { copy: Dictionary }) {
   );
 }
 
-/** The title row's controls: "⇄ Compare" (D57) and Exact numbers. */
-function TitleActions({
+/** The title row's controls: "⇄ Compare" (D57), the server balance link while its flag is on (D91), and
+ * Exact numbers. */
+async function TitleActions({
   events,
   eventId,
   copy,
@@ -134,7 +136,7 @@ function TitleActions({
   return (
     <div className="flex flex-wrap items-center gap-2">
       <CompareLink events={events} eventId={eventId} copy={copy} />
-      <BalanceLink copy={copy} />
+      {(await isOn("server-balance")) && <BalanceLink copy={copy} />}
       <ExactToggle />
     </div>
   );

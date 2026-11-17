@@ -9,7 +9,13 @@ import { POSTHOG_INGEST_HOST } from "./analytics/region";
 import { getEnv, type Env } from "./env";
 
 /** Every flag, by its exact key in PostHog. */
-export const FLAGS = ["merge-simulator", "chart-details", "kill-vs-might", "war-turnout"] as const;
+export const FLAGS = [
+  "merge-simulator",
+  "chart-details",
+  "kill-vs-might",
+  "war-turnout",
+  "server-balance",
+] as const;
 export type Flag = (typeof FLAGS)[number];
 
 /** The only id a flag read is made for: no visitor's id, cookie or address goes to PostHog. */
