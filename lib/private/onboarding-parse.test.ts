@@ -79,7 +79,6 @@ describe("the facts editor's main squad field (iPhone decimal keypad)", () => {
       "19.8": 19_800_000,
       "198": 198_000_000,
       "19,": 19_000_000,
-      "0": 0,
       "999.9": 999_900_000,
       "19800000": 19_800_000,
       "19.800.000": 19_800_000,
@@ -92,7 +91,8 @@ describe("the facts editor's main squad field (iPhone decimal keypad)", () => {
   });
 
   it("does not read 1000 or words as a might, and shows the M only for a short number", () => {
-    expect(mightIn("1000")).toBeNull();
+    for (const text of ["1000", "1.000", "1,000", "0", "-5", "1e6"])
+      expect(mightIn(text), text).toBeNull();
     expect(mightIn("lots")).toBeNull();
     expect(millionsIn("19,8")).toBe(19.8);
     expect(millionsIn("1000")).toBeNull();
