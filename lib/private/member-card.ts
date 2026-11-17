@@ -1,16 +1,20 @@
-// One member card's words, made on the server (issue 296): every number and date is formatted here, in
-// the officer's language, so the client list only lays strings out and its markup is sent once. No data
-// is "—", never 0.
-import { fill } from "@/lib/copy";
-import type { WorkspaceDictionary } from "@/lib/private/dictionary";
+// One member card's words, made on the server (issues 296, 337): every number and date is formatted here, in
+// the officer's language, so the browser only lays strings out. No data is "—", never 0. `memberCard` is the
+// read behind GET /api/w/[slug]/members/[uid]: one member of the workspace's own alliance, no photo read.
+import { compactLarge } from "../compact";
+import { fill } from "../copy";
+import type { Db } from "../db";
+import type { WorkspaceAccess } from "./access";
+import type { WorkspaceDictionary, WorkspaceLanguage } from "./dictionary";
 import {
   FACT_FIELDS,
   type FactField,
   type FactSource,
   type FactValues,
   type MemberFacts,
-} from "@/lib/private/fact-fields";
-import type { MemberRow } from "@/lib/private/members";
+} from "./fact-fields";
+import { factText, NONE } from "./fact-text";
+import { membersView, type MemberRow } from "./members";
 import {
   breakText,
   dayLabel,
@@ -19,9 +23,13 @@ import {
   statusOf,
   type Formats,
   type Status,
-} from "@/lib/private/members-sheet";
+} from "./members-sheet";
 
-import { factText, NONE } from "./fact-text";
+const exact = (n: number, language: string) =>
+  new Intl.NumberFormat(language, { maximumFractionDigits: 0 }).format(Math.abs(n));
+/** 61.2M (D78); below 1,000 the plain integer. */
+const compact = (n: number, language: string) =>
+  Math.abs(n) < 1000 ? exact(n, language) : compactLarge(n, language);
 
 export interface CardFormats extends Formats {
   /** 61.2M, 61,2M (D78). */
@@ -58,9 +66,37 @@ export interface CardData {
   autoStatus: string;
 }
 
-const or = (v: number | null, as: (n: number) => string) => (v === null ? NONE : as(v));
+/** Server days as dates in the officer's language; instants in server time (help.servertime). */
+export function cardFormats(
+  language: WorkspaceLanguage,
+  zone: string,
+  now: Date,
+): CardFormats & { time: (at: Date) => string } {
+  const options = { weekday: "short", day: "numeric", month: "short" } as const;
+  const day = new Intl.DateTimeFormat(language, { ...options, timeZone: "UTC" });
+  const instant = new Intl.DateTimeFormat(language, { ...options, timeZone: zone });
+  const hhmm = new Intl.DateTimeFormat(language, {
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+    timeZone: zone,
+  });
+  return {
+    date: (at) =>
+      typeof at === "string" ? day.format(new Date(`${at}T00:00:00Z`)) : instant.format(at),
+    number: (n) => exact(n, language),
+    compact: (n) => compact(n, language),
+    time: (at) => `${instant.format(at)} ${hhmm.format(at)}`,
+    language,
+    zone,
+    now,
+  };
+}
 
-function statusParts(m: MemberRow, t: WorkspaceDictionary, f: Formats) {
+export const or = (v: number | null, as: (n: number) => string) => (v === null ? NONE : as(v));
+
+/** The member's status, its label and the lines under it (the reasons with their evidence …). */
+export function statusParts(m: MemberRow, t: WorkspaceDictionary, f: Formats) {
   const status = statusOf(m);
   if (status === "checkin" || status === "help") {
     const label = t[status === "help" ? "status.help" : "status.checkin"];
@@ -86,6 +122,12 @@ export interface Shown {
   /** Alliance Duel points were saved from a photo for someone this week (issue 299). */
   duel: boolean;
 }
+
+export const shownOf = (members: MemberRow[]): Shown => ({
+  joined: members.some((m) => m.joinedAt !== null),
+  lastOnline: members.some((m) => m.lastOnlineAt !== null),
+  duel: members.some((m) => Object.keys(m.duel).length > 0),
+});
 
 const DUEL_DAYS = ["mon", "tue", "wed", "thu", "fri", "sat"] as const;
 
@@ -154,6 +196,7 @@ export function cardData(
     facts: [
       { game: true, text: fill(t["members.meta.level"], { n: or(m.sanctuary, String) }) },
       { game: true, text: fill(t["members.meta.might"], { v: or(m.might, f.compact) }) },
+      { game: true, text: fill(t["list.meta.kills"], { v: or(m.kills, f.compact) }) },
       { game: false, text: fill(t["members.meta.don"], { v: or(m.weekTotal, f.compact) }) },
       { game: false, text: fill(t["members.meta.act"], { v: or(m.activity, f.number) }) },
     ],
@@ -173,4 +216,18 @@ export function cardData(
     stored: m.facts,
     autoStatus: statusParts({ ...m, officerStatus: null }, t, f).label || NONE,
   };
+}
+
+/** One member's card in `language`, or null when the uid is not in the workspace's own alliance. */
+export async function memberCard(
+  db: Db,
+  access: WorkspaceAccess,
+  uid: number,
+  at: { now: Date; zone: string; language: WorkspaceLanguage; t: WorkspaceDictionary },
+): Promise<CardData | null> {
+  const view = await membersView(db, access, at.now, at.zone);
+  const member = view.members.find((m) => m.uid === uid);
+  if (!member) return null;
+  const f = cardFormats(at.language, at.zone, at.now);
+  return cardData(member, view.week, at.t, f, shownOf(view.members));
 }

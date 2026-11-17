@@ -5,10 +5,10 @@
 // the result with a link back to Members.
 import { buttonClass } from "@/lib/brand/components/Button";
 import type { FactField, FactValues } from "@/lib/private/fact-fields";
+import { dayFormat, factText } from "@/lib/private/fact-text";
 import { fillPlan } from "@/lib/private/import-plan";
 import type { ImportPreview, ImportResult, ImportRow } from "@/lib/private/sheet-import";
 
-import { dayFormat, factText } from "./fact-text";
 import { COLUMN_LABEL, counted, say, type ImportWords } from "./facts-form";
 
 /** "First Squad → Main squad (10.7 → 10.7M)", in the officer's language. */

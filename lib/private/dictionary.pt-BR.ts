@@ -3,12 +3,14 @@
 import type { WorkspaceDictionary } from "./dictionary";
 import { calendarPt } from "./dictionary.calendar.pt-BR";
 import { importPt } from "./dictionary.import";
+import { membersPt } from "./dictionary.members.pt-BR";
 import { noticesPt } from "./dictionary.notices";
 import { shotsPt } from "./dictionary.shots";
 import { theftsPt } from "./dictionary.thefts";
 
 export const pt: WorkspaceDictionary = {
   ...calendarPt,
+  ...membersPt,
   "app.name": "Mesa dos oficiais",
   "tab.aria": "Seções",
   "tab.home": "Início",
@@ -55,13 +57,9 @@ export const pt: WorkspaceDictionary = {
   "members.search.ph": "Nome (sem precisar de emoji)",
   "members.search.aria": "Buscar membros",
   "members.filter.aria": "Filtro",
-  "members.filter.all": "Todos",
-  "members.filter.new": "Novos",
-  "members.filter.checkin": "Ver como está",
-  "members.filter.missing": "Faltam dados",
   "members.filter.r4": "R4 e R5",
   "members.count": "{n} de {total} membros",
-  "members.empty": "Ninguém aqui bate. A vovó conferiu duas vezes.",
+  "members.empty": "Ninguém corresponde a esses filtros.",
   "members.copy": "Copiar para planilha",
   "members.copied": "Copiado",
   "members.copyFailed": "Não deu para copiar",
@@ -71,8 +69,6 @@ export const pt: WorkspaceDictionary = {
   "members.meta.might": "Might {v}",
   "members.meta.don": "Doações {v}",
   "members.meta.act": "Atividade {v}",
-  "members.details": "Detalhes",
-  "members.detailsOf": "Detalhes, {name}",
   "members.don.head": "Doações da semana · total {total}",
   "members.don.later": "ainda não lido",
   "members.don.none": "sem dados",
@@ -133,7 +129,6 @@ export const pt: WorkspaceDictionary = {
   "members.checkinCount.one": "{n} pessoa para ver como está",
   "members.checkinCount.other": "{n} pessoas para ver como estão",
   "members.checkinNone": "Todo mundo parece bem esta semana.",
-  "members.search.go": "Buscar",
   "reason.might.one": "might igual há {n} dia",
   "reason.might.other": "might igual há {n} dias",
   "reason.idle.one":

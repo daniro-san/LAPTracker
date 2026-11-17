@@ -2,7 +2,8 @@
 
 // The header's "Signed in as …" (issue 334) opens the officer's own settings: the name the desk shows,
 // "This is me" (their player in the alliance, suggested by the name matcher, D74) and the theme (the public
-// site's `theme` cookie, so one choice applies everywhere). The profile is read when the sheet opens.
+// site's `theme` cookie, so one choice applies everywhere) and which time comes first (issue 337: server
+// time or the officer's own, this browser only). The profile is read when the sheet opens.
 // Nothing in it is logged or tracked; /w is masked in session replay (D77).
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
@@ -12,10 +13,13 @@ import { Gear } from "@/lib/brand/components/Gear";
 import { RadioField } from "@/lib/brand/components/RadioField";
 import { Sheet } from "@/lib/brand/components/Sheet";
 import { Moon, setTheme, Sun, useThemeChoice } from "@/lib/brand/components/ThemeSwitch";
+import { fill } from "@/lib/copy";
+import { clockIn } from "@/lib/private/calendar-time";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import type { Profile } from "@/lib/private/profile";
 
 import { Me } from "./ThisIsMe";
+import { setClockChoice, useClockChoice, useMinute, useViewerZone } from "./YourTime";
 
 type Words = WorkspaceDictionary;
 
@@ -113,6 +117,41 @@ function ThemeChoice({ t }: { t: Words }) {
   );
 }
 
+/** Which time the desk shows first: server time (default) or the officer's own (this browser only). */
+function ClockChoiceField({ t }: { t: Words }) {
+  const choice = useClockChoice();
+  const zone = useViewerZone();
+  const minute = useMinute();
+  // "My time first (this phone: America/Sao Paulo, 22:33 now)", once the browser has said both.
+  const mine =
+    zone && minute !== null
+      ? fill(t["clock.mineHere"], {
+          zone: zone.replaceAll("_", " "),
+          time: clockIn(minute * 60_000, zone, "").time,
+        })
+      : t["clock.mine"];
+  const label = { server: t["clock.server"], mine };
+  return (
+    <div className="mt-4 border-t border-rule pt-4">
+      <fieldset className="grid gap-1.5" aria-describedby="profile-clock-help">
+        <legend className="mb-1 font-semibold">{t["clock.head"]}</legend>
+        {(["server", "mine"] as const).map((c) => (
+          <RadioField
+            key={c}
+            name="ws-clock"
+            checked={choice === c}
+            onChange={() => setClockChoice(c)}
+            label={label[c]}
+          />
+        ))}
+      </fieldset>
+      <p id="profile-clock-help" className="mt-1 text-body-sm text-ink/70">
+        {t["clock.help"]}
+      </p>
+    </div>
+  );
+}
+
 type Write =
   { action: "rename"; name: string } | { action: "link"; uid: number } | { action: "unlink" };
 
@@ -186,6 +225,7 @@ function Settings(props: {
         )}
       </section>
       <ThemeChoice t={t} />
+      <ClockChoiceField t={t} />
       <button type="button" onClick={onClose} className={buttonClass("primary", "mt-6 w-full")}>
         {t["intro.close"]}
       </button>

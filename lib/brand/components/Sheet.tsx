@@ -35,6 +35,7 @@ export function Sheet({
   labelledBy,
   describedBy,
   onCancel,
+  backdropCloses = false,
   children,
 }: {
   gate?: boolean;
@@ -44,6 +45,8 @@ export function Sheet({
   describedBy?: string;
   /** Escape. Without it the browser's own close is blocked: a sheet answers through its buttons. */
   onCancel?: () => void;
+  /** A tap on the backdrop, outside the card, also calls `onCancel` (a sheet of details, not a question). */
+  backdropCloses?: boolean;
   children: ReactNode;
 }) {
   const ref = useSheet(!gate);
@@ -57,6 +60,16 @@ export function Sheet({
       onCancel={(e) => {
         e.preventDefault();
         onCancel?.();
+      }}
+      onClick={(e) => {
+        if (!backdropCloses || e.target !== e.currentTarget) return;
+        const box = e.currentTarget.getBoundingClientRect();
+        const inside =
+          e.clientX >= box.left &&
+          e.clientX <= box.right &&
+          e.clientY >= box.top &&
+          e.clientY <= box.bottom;
+        if (!inside) onCancel?.();
       }}
       className={`${SHEET} ${gate ? GATE_CARD : MODAL_CARD}`}
     >

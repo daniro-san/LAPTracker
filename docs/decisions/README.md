@@ -105,3 +105,4 @@ The header text above is the old file's, kept as it was. The split it describes 
 - [D90 — Alliance page: standing against the server over time, a rank list with a small trend per row (2026-11-16, owner, 08zzzzp, issue #274)](D90-alliance-standing-against-the-server.md)
 - [D96 — Screenshot import: one door in (desk upload and a Discord message command), drafts every officer reviews, the picture never kept (2026-11-16, owner, 11k, issue #299)](D96-screenshot-import-drafts-and-discord-command.md)
 - [D97 — The thefts log: Secret Operations thefts per attacker, a follow-up per attacker, no list of our members (2026-11-16, owner, 11j, issue #321)](D97-the-thefts-log.md)
+- [D98 — Members list: compact rows, filters and orders in the browser, details read on open, and the Server time / My time switch (2026-11-17, owner, 11o, issue #337)](D98-members-list-filters-orders-and-the-clock-switch.md)

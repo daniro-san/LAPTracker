@@ -15,6 +15,7 @@ const member = (uid: number, fields: Partial<RosterMember> = {}): RosterMember =
   uid,
   name: `P${uid}`,
   power: 1000,
+  kills: null,
   lv: 25,
   rankCode: 103,
   rankLabel: "R3",

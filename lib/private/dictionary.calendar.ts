@@ -13,7 +13,7 @@ export const calendarEn = {
   "calendar.thisWeek": "This week",
   "calendar.today": "today (ST)",
   "calendar.legend":
-    "ST is server time, the game’s clock ({offset}). The second time is your own; +1 d means the next day.",
+    "ST is server time, the game’s clock ({offset}). The other time is your own; +1 d means the next day.",
   "calendar.kvk": "KvK = Kingdom War.",
   "calendar.st": "{time} ST",
   "calendar.stRange": "{from}–{to} ST",
