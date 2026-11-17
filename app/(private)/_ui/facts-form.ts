@@ -56,6 +56,8 @@ export const EDITOR_KEYS = [
   "facts.theirs",
   "facts.mine",
   "facts.until",
+  "facts.awayRange",
+  "facts.awayOrder",
   "status.break",
   "status.help",
   "src.message",
@@ -241,12 +243,29 @@ export function percentOf(typed: string): number | null | undefined {
   return n <= 100 ? n : undefined;
 }
 
-/** The away note as typed; null when nothing is. The first day is kept only when given (issue 298). */
-function awayOf(form: Form): FactValues["away"] | null {
+/**
+ * The away note as typed; null when nothing is, undefined when the first day is after the last (D103).
+ * The first day is kept only when given; the server sets it to the day of the save otherwise.
+ */
+function awayOf(form: Form): FactValues["away"] | null | undefined {
   const text = form.awayText.trim();
   if (!text && !form.awayFrom && !form.awayUntil) return null;
+  if (form.awayFrom && form.awayUntil && form.awayFrom > form.awayUntil) return undefined;
   return { text, ...(form.awayFrom && { from: form.awayFrom }), until: form.awayUntil || null };
 }
+
+/** Two away notes as the same note: field by field, a missing first day read as none. */
+const sameAway = (a: unknown, b: unknown) => {
+  const key = (v: unknown) => {
+    const n = v as FactValues["away"] | null;
+    return n ? [n.text, n.from ?? null, n.until ?? null].join("\u0000") : null;
+  };
+  return key(a) === key(b);
+};
+
+/** Whether a field's value is the stored one (an away note field by field). */
+const unchanged = (field: FactField, stored: unknown, value: unknown) =>
+  field === "away" ? sameAway(stored, value) : JSON.stringify(stored) === JSON.stringify(value);
 
 /** Each field's value from the form; `undefined` when what was typed is not a value. */
 export function valuesOf(
@@ -283,8 +302,7 @@ export function changesOf(
   const invalid = entries.filter(([, v]) => v === undefined).map(([field]) => field);
   const changes = entries.flatMap(([field, value]) => {
     const stored = facts[field];
-    if (value === undefined || JSON.stringify(stored?.value ?? null) === JSON.stringify(value))
-      return [];
+    if (value === undefined || unchanged(field, stored?.value ?? null, value)) return [];
     const source = fromMessage.has(field) ? ("message" as const) : ("officer" as const);
     return [{ field, version: stored?.version ?? 0, value, source }];
   });

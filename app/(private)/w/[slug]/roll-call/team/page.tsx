@@ -4,15 +4,19 @@
 import { notFound } from "next/navigation";
 
 import { fill } from "@/lib/copy";
-import { getEnv } from "@/lib/env";
-import { hhmm } from "@/lib/private/calendar-time";
 import { cardFormats } from "@/lib/private/member-card";
 import { teamView } from "@/lib/private/roll-call-view";
 import { callTitle } from "@/lib/private/roll-call-words";
 
 import { calendarWords } from "../../../../_ui/calendar-data";
 import { SignedInFrame } from "../../../../_ui/Frame";
-import { headerOf, occasionQuery, rollWords, teamRows } from "../../../../_ui/roll-call-data";
+import {
+  headerOf,
+  occasionQuery,
+  registrationText,
+  rollWords,
+  teamRows,
+} from "../../../../_ui/roll-call-data";
 import { occasionOf, openRollCall } from "../../../../_ui/roll-call-page";
 import { RollCallHead } from "../../../../_ui/RollCallHead";
 import { TeamPicker } from "../../../../_ui/TeamPicker";
@@ -30,7 +34,7 @@ export default async function TeamPage({
   const page = await openRollCall(
     params,
     `roll-call/team?${query}`,
-    async (db, access, _today, lang) => teamView(db, access, occasion, lang, getEnv().SERVER_TZ),
+    async (db, access, _today, lang, zone) => teamView(db, access, occasion, lang, zone),
   );
   const view = page.data;
   if (!view) notFound();
@@ -58,7 +62,7 @@ export default async function TeamPage({
         occasion={occasion}
         team={o.variant ?? ""}
         rows={teamRows(view.rows, t, f.compact)}
-        how={fill(t["roll.team.how"], { time: hhmm(o.placed?.minute ?? 0) })}
+        registration={registrationText(o.day, page.today, t)}
         away={view.away === 0 ? null : fill(t[`roll.team.away.${plural}`], { n: view.away })}
         words={rollWords(t)}
       />

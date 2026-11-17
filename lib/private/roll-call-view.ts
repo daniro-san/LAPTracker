@@ -36,8 +36,8 @@ export interface CallRow extends Member {
 }
 
 /** The members asked, each with their away state that day. */
-function asked(members: Member[], facts: Map<number, MemberFacts>, day: string) {
-  return members.map((m) => ({ ...m, away: awayOn(facts.get(m.uid), day) }));
+function asked(members: Member[], facts: Map<number, MemberFacts>, day: string, zone: string) {
+  return members.map((m) => ({ ...m, away: awayOn(facts.get(m.uid), day, zone) }));
 }
 
 /** A team's members by the roster's current names; one who left keeps the name they had when picked. */
@@ -60,8 +60,12 @@ export interface WeekItem {
   team: number | null;
 }
 
-/** The week's occasions from Monday `monday`: the Calendar's (KvK, Undead Siege, Elixir) and those added. */
-export async function weekItems(db: Db, access: WorkspaceAccess, monday: string) {
+/**
+ * The week's occasions from Monday `monday`: the Calendar's (KvK, Undead Siege, Elixir) and those added. A
+ * Calendar roll call whose week was skipped or moved out, or whose entry was deleted, shows with the added
+ * ones, on its own day, with its marks. `zone` is the server's (SERVER_TZ).
+ */
+export async function weekItems(db: Db, access: WorkspaceAccess, monday: string, zone: string) {
   const placed = (await calendarDays(db, access, monday, addDays(monday, 6))).filter(
     (p) => FROM_CALENDAR[p.entry.kind] !== undefined,
   );
@@ -80,11 +84,13 @@ export async function weekItems(db: Db, access: WorkspaceAccess, monday: string)
       marks.filter((m) => m.rollCallId === callId).map((m) => [m.uid, m.mark as Mark | null]),
     );
     const size = kind === "elixir" ? team.length : null;
-    return { callId, tally: tally(asked(members, facts, day), own), team: size };
+    return { callId, tally: tally(asked(members, facts, day, zone), own), team: size };
   };
+  const matched = new Set<number>();
   const linked = placed.map((p): WeekItem => {
     const kind = FROM_CALENDAR[p.entry.kind] as RollKind;
     const call = calls.find((c) => c.entryId === p.entry.id && c.week === p.week);
+    if (call) matched.add(call.id);
     return {
       key: `${p.entry.id}:${p.week}`,
       occasion: { entry: p.entry.id, week: p.week },
@@ -96,7 +102,7 @@ export async function weekItems(db: Db, access: WorkspaceAccess, monday: string)
     };
   });
   const added = calls
-    .filter((c) => c.entryId === null && c.day >= monday && c.day <= addDays(monday, 6))
+    .filter((c) => !matched.has(c.id) && c.day >= monday && c.day <= addDays(monday, 6))
     .map((c): WeekItem => ({
       key: `rc:${c.id}`,
       occasion: { id: c.id },
@@ -125,6 +131,7 @@ export async function callView(
   access: WorkspaceAccess,
   occasion: Occasion,
   language: string,
+  zone: string,
 ): Promise<CallView | null> {
   const opened = await openOccasion(db, access, occasion);
   if (!opened) return null;
@@ -138,7 +145,7 @@ export async function callView(
   const members = opened.kind === "elixir" ? teamMembers(team, roster) : roster;
   const byUid = new Map(marks.map((m) => [m.uid, m]));
   const own = new Map(marks.map((m) => [m.uid, m.mark as Mark | null]));
-  const rows = callOrder(asked(members, facts, opened.day), own, language).map((m) => ({
+  const rows = callOrder(asked(members, facts, opened.day, zone), own, language).map((m) => ({
     ...m,
     mark: own.get(m.uid) ?? null,
     version: byUid.get(m.uid)?.version ?? 0,
@@ -181,7 +188,8 @@ export async function teamView(
     endOfDayReads(db, access.unionId, 1),
     callsOfWeeks(db, access.workspaceId, [opened.week]),
   ]);
-  const elixir = calls.filter((c) => c.kind === "elixir");
+  // A roll call whose Calendar entry was deleted is not a team any more (as in setTeam).
+  const elixir = calls.filter((c) => c.kind === "elixir" && c.entryId !== null);
   const teams = await teamsOf(
     db,
     elixir.map((c) => c.id),
@@ -209,7 +217,7 @@ export async function teamView(
     };
   };
   const pickedUids = new Set(mine.map((t) => t.uid));
-  const free = asked(roster, facts, opened.day).filter((m) => !pickedUids.has(m.uid));
+  const free = asked(roster, facts, opened.day, serverZone).filter((m) => !pickedUids.has(m.uid));
   // The other team's members go last: they cannot be picked, so the suggestions read first.
   const open = teamOrder(
     free.filter((m) => m.away === null).map((m) => row(m, false)),

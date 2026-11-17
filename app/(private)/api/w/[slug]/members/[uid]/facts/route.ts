@@ -40,7 +40,7 @@ export async function POST(
     const access = await requireWorkspace(db, slug, requestCookies(request), ctx.now());
     if (!access.ok) return privateError(401, "signed_out");
     const results = await privately("member_facts.save", () =>
-      saveFacts(db, access, Number(uid), parsed.data.changes, ctx.now()),
+      saveFacts(db, access, Number(uid), parsed.data.changes, ctx.now(), ctx.env.SERVER_TZ),
     );
     if (!results) return privateError(404, "not_member");
     const status = results.some((r) => r.status === "conflict") ? 409 : 200;

@@ -22,9 +22,18 @@ export function markWord(mark: Mark, kind: RollKind, t: WorkspaceDictionary): st
   return t[`roll.${mark}.${SET[kind]}` as RollKey];
 }
 
-/** "No problem seen for the rest", "The rest did not join", "The rest took part". */
-export const restLabel = (kind: RollKind, t: WorkspaceDictionary) =>
-  t[`roll.rest.${REST[kind]}` as RollKey];
+/**
+ * "The rest" in words, with its count and its default: the button ("Mark the other 57 as took part") and
+ * the line after it ("57 marked as took part"), as templates with {n}. Null for plunders (none).
+ */
+export function restWords(kind: RollKind, t: WorkspaceDictionary) {
+  const mark = REST[kind];
+  if (mark === null) return null;
+  return {
+    button: t[`roll.rest.${mark}` as RollKey],
+    done: t[`roll.rest.done.${mark}` as RollKey],
+  };
+}
 
 /** "KvK shield", the Calendar's own title ("Undead Siege · Lv.4", "Elixir Scramble · Team A"), "Plunders". */
 export function callTitle(
@@ -37,16 +46,22 @@ export function callTitle(
   return t[`roll.kind.${o.kind}` as RollKey];
 }
 
-/** "Shield up 12 · No shield 2 · No problem seen 70 · Not set 10 · Away 3": zero "no problem seen" and away left out. */
-export function tallyLine(tally: Tally, kind: RollKind, t: WorkspaceDictionary): string {
+/**
+ * The counts, each its own unit (shown without a break inside): "2 of 58 marked", "Shield up 1",
+ * "No shield 1", "No problem seen 0" only when above zero, "Not set 56", "Away 3" only when above zero.
+ * "Not set" is always its own count, never part of the ✗ one (D75).
+ */
+export function tallyParts(tally: Tally, kind: RollKind, t: WorkspaceDictionary): string[] {
   const part = (word: string, n: number) => fill(t["roll.count"], { word, n });
+  const marked = tally.yes + tally.no + tally.assumed;
   return [
+    fill(t["roll.progress"], { n: marked, total: marked + tally.notSet }),
     part(markWord("yes", kind, t), tally.yes),
     part(markWord("no", kind, t), tally.no),
     ...(tally.assumed > 0 ? [part(t["roll.assumed"], tally.assumed)] : []),
     part(t["roll.notSet"], tally.notSet),
     ...(tally.away > 0 ? [part(t["roll.away"], tally.away)] : []),
-  ].join(" · ");
+  ];
 }
 
 /** "Ana marked “Did not join” just now. …", or that the mark was cleared: the 409's sentence. */

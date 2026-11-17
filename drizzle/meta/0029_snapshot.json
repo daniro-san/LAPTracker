@@ -1,5 +1,5 @@
 {
-  "id": "4f406fd5-9f09-4dfb-a9cc-868f791e5b71",
+  "id": "f8909cfc-4f5c-43ef-95e1-3625c5be8ead",
   "prevId": "8e6b04e9-d8a2-4dd5-9942-e89a54de5118",
   "version": "7",
   "dialect": "postgresql",
@@ -2372,6 +2372,34 @@
             }
           ],
           "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "roll_calls_added_unique": {
+          "name": "roll_calls_added_unique",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "kind",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "day",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"roll_calls\".\"request_id\" is not null",
           "concurrently": false,
           "method": "btree",
           "with": {}

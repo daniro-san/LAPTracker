@@ -6,6 +6,7 @@
 import { z } from "zod";
 
 import { requireWorkspace } from "@/lib/private/access";
+import { isDay } from "@/lib/private/calendar-time";
 import { WORKSPACE_LANG_COOKIE } from "@/lib/private/cookies";
 import { pickWorkspaceLanguage, WORKSPACE_DICTIONARIES } from "@/lib/private/dictionary";
 import {
@@ -15,15 +16,17 @@ import {
   privateError,
   requestCookies,
 } from "@/lib/private/http";
-import { addCall, markOne, markRest, setTeam, undoMarks } from "@/lib/private/roll-call";
+import { addCall, markOne, markRest, undoMarks } from "@/lib/private/roll-call";
 import { ADDED_KINDS, MARKS } from "@/lib/private/roll-call-rules";
+import { setTeam } from "@/lib/private/roll-call-team";
 import { staleSaid } from "@/lib/private/roll-call-words";
 import { SLUG } from "@/lib/private/sign-in";
 import { withContext } from "@/lib/route";
 
-const id = z.number().int().positive();
+/** A serial id (Postgres integer). */
+const id = z.number().int().positive().max(2147483647);
 const uid = z.number().int().positive().max(Number.MAX_SAFE_INTEGER);
-const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+const day = z.string().refine(isDay);
 const occasion = z.union([z.object({ id }).strict(), z.object({ entry: id, week: day }).strict()]);
 const uids = z.array(uid).min(1).max(150);
 const body = z.discriminatedUnion("action", [
@@ -63,7 +66,14 @@ const ok = (extra: object = {}) => Response.json({ ok: true, ...extra }, { heade
 const STATUS = { not_found: 404, not_member: 400, invalid: 400, full: 409, other_team: 409 };
 
 type Access = Extract<Awaited<ReturnType<typeof requireWorkspace>>, { ok: true }>;
-type Ctx = { db: Parameters<typeof addCall>[0]; access: Access; now: Date; request: Request };
+type Ctx = {
+  db: Parameters<typeof addCall>[0];
+  access: Access;
+  now: Date;
+  /** The server's zone (SERVER_TZ). */
+  zone: string;
+  request: Request;
+};
 
 /** A refused mark: the newer one, who set it and when, in the officer's words. */
 async function mark(input: Extract<Body, { action: "mark" }>, c: Ctx) {
@@ -100,7 +110,7 @@ async function run(input: Body, c: Ctx): Promise<Response> {
     default: {
       const done = await privately(`roll_call.${input.action}`, () =>
         input.action === "rest"
-          ? markRest(db, access, input, now)
+          ? markRest(db, access, input, { now, zone: c.zone })
           : undoMarks(db, access, input, now),
       );
       return done.ok ? ok(done) : privateError(STATUS[done.code], done.code);
@@ -122,6 +132,6 @@ export async function POST(
     const now = ctx.now();
     const access = await requireWorkspace(db, slug, jar, now);
     if (!access.ok) return privateError(401, "signed_out");
-    return run(parsed.data, { db, access, now, request });
+    return run(parsed.data, { db, access, now, zone: ctx.env.SERVER_TZ, request });
   });
 }

@@ -5,7 +5,6 @@
 import { notFound } from "next/navigation";
 
 import { fill } from "@/lib/copy";
-import { REST } from "@/lib/private/roll-call-rules";
 import { callView } from "@/lib/private/roll-call-view";
 import { callTitle } from "@/lib/private/roll-call-words";
 
@@ -32,8 +31,10 @@ export default async function MarkPage({
   const occasion = occasionOf(await searchParams);
   if (!occasion) notFound();
   const query = occasionQuery(occasion);
-  const page = await openRollCall(params, `roll-call/mark?${query}`, (db, access, _today, lang) =>
-    callView(db, access, occasion, lang),
+  const page = await openRollCall(
+    params,
+    `roll-call/mark?${query}`,
+    (db, access, _today, lang, zone) => callView(db, access, occasion, lang, zone),
   );
   const view = page.data;
   if (!view) notFound();
@@ -76,9 +77,10 @@ export default async function MarkPage({
           occasion={occasion}
           rows={markRows(view.rows, { t, language })}
           words={rollWords(t)}
-          marks={markWords(o.kind, REST[o.kind], t)}
+          marks={markWords(o.kind, t)}
           shield={o.kind === "shield"}
           language={language}
+          today={page.today}
         />
       )}
     </SignedInFrame>

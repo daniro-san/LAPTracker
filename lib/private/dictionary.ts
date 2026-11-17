@@ -209,6 +209,8 @@ const en = {
   "facts.away": "Away",
   "facts.notes": "Notes",
   "facts.until": "until {date}",
+  "facts.awayRange": "{from} – {to}",
+  "facts.awayOrder": "The first day must be on or before the last day.",
   "facts.edit": "Edit info",
   "facts.paste": "Paste what they told you",
   "facts.title": "Info: {name}",

@@ -1,13 +1,13 @@
 // roll_calls, roll_call_marks and roll_call_team (issue 298, D103): plain reads and writes, each inside one
 // workspace. Which marks a roll call takes, the version check and the words stay in lib/private.
-import { and, desc, eq, inArray, isNull, ne, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull, isNull, ne, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { rollCallMarks, rollCalls, rollCallTeam, workspaceUsers } from "../schema";
 
 export type RollCallRow = typeof rollCalls.$inferSelect;
 /** A connection or a transaction. */
-type Tx = Pick<Db, "select" | "insert" | "delete">;
+type Tx = Pick<Db, "select" | "insert" | "delete" | "execute">;
 
 export interface MarkRow {
   rollCallId: number;
@@ -138,16 +138,31 @@ export async function teamsOf(db: Pick<Db, "select">, callIds: number[]) {
     .orderBy(rollCallTeam.addedAt, rollCallTeam.uid);
 }
 
-/** Locks a roll call's row for the rest of the transaction, so team changes to it run one at a time. */
-export async function lockCall(tx: Tx, callId: number): Promise<void> {
-  await tx
-    .select({ id: rollCalls.id })
-    .from(rollCalls)
-    .where(eq(rollCalls.id, callId))
-    .for("update");
+/**
+ * Locks a workspace's Elixir Scramble week for the rest of the transaction (an advisory lock on a hash of
+ * the workspace and the week), so changes to its two teams run one at a time and a member cannot land on
+ * both.
+ */
+export async function lockWeek(tx: Tx, workspaceId: number, week: string): Promise<void> {
+  await tx.execute(
+    sql`select pg_advisory_xact_lock(hashtext(${`roll-call-team:${workspaceId}:${week}`}))`,
+  );
 }
 
-/** The members on the other Elixir Scramble teams of the same workspace and week, with their team. */
+/** Whether `uid` is on this Elixir Scramble team. */
+export async function teamHas(db: Db, callId: number, uid: number): Promise<boolean> {
+  const [row] = await db
+    .select({ uid: rollCallTeam.uid })
+    .from(rollCallTeam)
+    .where(and(eq(rollCallTeam.rollCallId, callId), eq(rollCallTeam.uid, uid)))
+    .limit(1);
+  return row !== undefined;
+}
+
+/**
+ * The members on the other Elixir Scramble teams of the same workspace and week, with their team. A roll
+ * call whose Calendar entry was deleted is not a team any more and is left out.
+ */
 export async function otherTeams(tx: Tx, call: RollCallRow) {
   return tx
     .select({ uid: rollCallTeam.uid, variant: rollCalls.variant })
@@ -159,6 +174,7 @@ export async function otherTeams(tx: Tx, call: RollCallRow) {
         eq(rollCalls.kind, "elixir"),
         eq(rollCalls.week, call.week),
         ne(rollCalls.id, call.id),
+        isNotNull(rollCalls.entryId),
       ),
     );
 }
@@ -167,8 +183,8 @@ export async function addToTeam(tx: Tx, rows: (typeof rollCallTeam.$inferInsert)
   if (rows.length > 0) await tx.insert(rollCallTeam).values(rows).onConflictDoNothing();
 }
 
-export async function removeFromTeam(tx: Tx, callId: number, uid: number) {
+export async function removeFromTeam(tx: Tx, callId: number, uids: number[]) {
   await tx
     .delete(rollCallTeam)
-    .where(and(eq(rollCallTeam.rollCallId, callId), eq(rollCallTeam.uid, uid)));
+    .where(and(eq(rollCallTeam.rollCallId, callId), inArray(rollCallTeam.uid, uids)));
 }

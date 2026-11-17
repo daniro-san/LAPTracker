@@ -7,16 +7,20 @@ import { openTestDb, truncateAll } from "../db.test-helpers";
 import { findWorkspaceBySlug, recordSignIn, saveWorkspace } from "../repo/workspaces";
 import { dailyReads, dailyRosters } from "../schema";
 import { requireWorkspace, type WorkspaceAccess } from "./access";
-import { createEntry } from "./calendar";
+import { createEntry, removeEntry } from "./calendar";
 import type { NewEntry } from "./calendar-model";
 import { saveFacts } from "./member-facts";
-import { addCall, markOne, markRest, setTeam, undoMarks, type Occasion } from "./roll-call";
-import { callView, teamView } from "./roll-call-view";
+import { addCall, markOne, markRest, undoMarks, type Occasion } from "./roll-call";
+import { setTeam } from "./roll-call-team";
+import { callView, teamView, weekItems } from "./roll-call-view";
 import { createSession } from "./session";
 
 const OGS = 67111155;
 const NOW = new Date("2026-11-16T12:00:00Z");
 const UIDS = [101, 102, 103, 104];
+/** The server's clock (SERVER_TZ), UTC−2. */
+const ZONE = "Etc/GMT+2";
+const CLOCK = { now: NOW, zone: ZONE };
 
 let db: Db;
 beforeAll(async () => {
@@ -78,7 +82,7 @@ const mark = (
 
 /** Each member's mark by uid (the page's own order is tested in roll-call-rules.test.ts). */
 const shown = async (access: WorkspaceAccess, occasion: Occasion) =>
-  (await callView(db, access, occasion, "en"))?.rows
+  (await callView(db, access, occasion, "en", ZONE))?.rows
     .map((r) => `${r.uid}:${r.mark ?? "-"}${r.away ? " away" : ""}`)
     .sort();
 
@@ -117,7 +121,7 @@ describe("roll call writes (issue 298)", () => {
     );
     const kvk = await calendarOccasion(ana, { kind: "kvk" });
     await mark(ana, kvk, 101, "no", 0);
-    const rest = await markRest(db, ana, { occasion: kvk, uids: UIDS }, NOW);
+    const rest = await markRest(db, ana, { occasion: kvk, uids: UIDS }, CLOCK);
     expect(rest).toMatchObject({
       ok: true,
       mark: "assumed",
@@ -143,7 +147,7 @@ describe("roll call writes (issue 298)", () => {
       minute: 1380,
       day: "2026-11-20",
     } as Partial<NewEntry>);
-    expect(await setTeam(db, ana, { occasion: a, uids: [101, 102], on: true }, NOW)).toEqual({
+    expect(await setTeam(db, ana, { occasion: a, uids: [101, 101, 102], on: true }, NOW)).toEqual({
       ok: true,
       added: [101, 102],
       count: 2,
@@ -152,10 +156,18 @@ describe("roll call writes (issue 298)", () => {
       ok: false,
       code: "other_team",
     });
-    const team = await teamView(db, ana, b, "en", "Etc/GMT+2");
+    // Two officers adding the same member to A and B at once: the week's lock lets one in.
+    const both = await Promise.all([
+      setTeam(db, ana, { occasion: a, uids: [103], on: true }, NOW),
+      setTeam(db, ana, { occasion: b, uids: [103], on: true }, NOW),
+    ]);
+    expect(both.filter((r) => r.ok)).toHaveLength(1);
+    await setTeam(db, ana, { occasion: a, uids: [103], on: false }, NOW);
+    await setTeam(db, ana, { occasion: b, uids: [103], on: false }, NOW);
+    const team = await teamView(db, ana, b, "en", ZONE);
     expect(team?.rows.find((r) => r.uid === 101)?.other).toBe("A");
     expect(await shown(ana, a)).toEqual(["101:-", "102:-"]);
-    const rest = await markRest(db, ana, { occasion: a, uids: UIDS }, NOW);
+    const rest = await markRest(db, ana, { occasion: a, uids: UIDS }, CLOCK);
     expect(rest).toMatchObject({ mark: "no", written: [{ uid: 101 }, { uid: 102 }] });
     // A newer roster of 30: the team stops at 20, then refuses one more.
     const more = Array.from({ length: 30 }, (_, i) => 201 + i);
@@ -182,14 +194,44 @@ describe("roll call writes (issue 298)", () => {
 
   it("opens the same hand-added roll call for a repeated request or the same kind and day", async () => {
     const ana = await signedIn("Ana");
+    const add = (kind: "plunder" | "raid", id = randomUUID()) =>
+      addCall(db, ana, { kind, day: "2026-11-18" }, id);
     const id = randomUUID();
-    const first = await addCall(db, ana, { kind: "plunder", day: "2026-11-18" }, id);
-    expect(await addCall(db, ana, { kind: "plunder", day: "2026-11-18" }, id)).toEqual(first);
-    expect(await addCall(db, ana, { kind: "plunder", day: "2026-11-18" }, randomUUID())).toEqual(
-      first,
+    const first = await add("plunder", id);
+    expect(await add("plunder", id)).toEqual(first);
+    // Two officers adding it at once: the unique index lets one in, the other opens it.
+    expect(await Promise.all([add("plunder"), add("plunder")])).toEqual([first, first]);
+    expect(await add("raid")).not.toEqual(first);
+    // Plunders have no "the rest" (owner, 2026-11-17).
+    const rest = await markRest(db, ana, { occasion: { id: first.id }, uids: UIDS }, CLOCK);
+    expect(rest).toEqual({ ok: false, code: "invalid" });
+  });
+
+  it("keeps a started roll call on the week when its Calendar entry is deleted, with its marks", async () => {
+    const ana = await signedIn("Ana");
+    const kvk = await calendarOccasion(ana, { kind: "kvk" });
+    await mark(ana, kvk, 101, "yes", 0);
+    await removeEntry(db, ana, { entry: kvk.entry, scope: "all", week: kvk.week });
+    const items = await weekItems(db, ana, kvk.week, ZONE);
+    expect(items.map((i) => [i.kind, i.placed, i.tally.yes, "id" in i.occasion])).toEqual([
+      ["shield", null, 1, true],
+    ]);
+  });
+
+  it("does not reach into the past: a note saved today without a first day leaves past roll calls alone", async () => {
+    const ana = await signedIn("Ana");
+    const past = await addCall(db, ana, { kind: "raid", day: "2026-11-14" }, randomUUID());
+    const note = { text: "", until: "2026-11-25" };
+    await saveFacts(
+      db,
+      ana,
+      104,
+      [{ field: "away", version: 0, value: note, source: "officer" }],
+      NOW,
+      ZONE,
     );
-    expect(await addCall(db, ana, { kind: "raid", day: "2026-11-18" }, randomUUID())).not.toEqual(
-      first,
-    );
+    expect(await shown(ana, { id: past.id })).toContain("104:-");
+    const today = await addCall(db, ana, { kind: "raid", day: "2026-11-16" }, randomUUID());
+    expect(await shown(ana, { id: today.id })).toContain("104:- away");
   });
 });

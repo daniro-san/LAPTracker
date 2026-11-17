@@ -35,7 +35,13 @@ export async function openRollCall<T>(
   params: Promise<{ slug: string }>,
   /** The page's path below the workspace, for the return after sign-in (D99). */
   path: string,
-  read: (db: Db, access: WorkspaceAccess, today: string, language: string) => Promise<T>,
+  read: (
+    db: Db,
+    access: WorkspaceAccess,
+    today: string,
+    language: string,
+    zone: string,
+  ) => Promise<T>,
 ) {
   const { slug } = await params;
   if (!SLUG.test(slug)) notFound();
@@ -50,7 +56,7 @@ export async function openRollCall<T>(
     if (!access.ok) return { access, data: null, waiting: 0 };
     return {
       access,
-      data: await read(db, access, today, language),
+      data: await read(db, access, today, language, env.SERVER_TZ),
       waiting: await toReviewCount(db, access, now),
     };
   });

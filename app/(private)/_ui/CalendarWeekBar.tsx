@@ -7,7 +7,7 @@ import { addDays } from "@/lib/private/calendar-time";
 import { calendarDates } from "@/lib/private/calendar-words";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 
-const LINK = `${chip()} min-w-11 justify-center font-semibold`;
+const LINK = `${chip()} min-w-12 justify-center font-semibold`;
 
 export function CalendarWeekBar(props: {
   href: (week: string) => string;
@@ -23,7 +23,9 @@ export function CalendarWeekBar(props: {
     <>
       <div className="mt-4 flex flex-wrap items-center gap-2">
         <a href={props.href(addDays(monday, -7))} aria-label={t["calendar.prev"]} className={LINK}>
-          <span aria-hidden="true">‹</span>
+          <span aria-hidden="true" className="text-[28px] leading-none">
+            ‹
+          </span>
         </a>
         <h2 className="min-w-0 flex-1 text-center font-subhead text-display-sm">
           {fill(t["calendar.week"], {
@@ -32,7 +34,9 @@ export function CalendarWeekBar(props: {
           })}
         </h2>
         <a href={props.href(addDays(monday, 7))} aria-label={t["calendar.next"]} className={LINK}>
-          <span aria-hidden="true">›</span>
+          <span aria-hidden="true" className="text-[28px] leading-none">
+            ›
+          </span>
         </a>
       </div>
       {monday !== props.thisWeek && (

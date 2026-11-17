@@ -51,7 +51,8 @@ lib/private/*.ts    the workspace (D71): requireWorkspace and its branded Worksp
                     dictionary.calendar*.ts (its words); its tables are in lib/schema-calendar.ts, its reads and
                     writes in lib/repo/calendar.ts.
                     The Roll call tab (D103): roll-call.ts (occasions and the writes: marks with their
-                    version check, "the rest" and its undo, hand-added roll calls, Elixir Scramble teams),
+                    version check, "the rest" and its undo, hand-added roll calls), roll-call-team.ts (Elixir
+                    Scramble teams under one lock per workspace and week),
                     roll-call-view.ts (the pages' reads), roll-call-rules.ts (pure, browser-safe: kinds,
                     marks, "the rest", counts, order, team suggestions), roll-call-words.ts,
                     dictionary.rollcall*.ts; tables in lib/schema-rollcall.ts, reads and writes in

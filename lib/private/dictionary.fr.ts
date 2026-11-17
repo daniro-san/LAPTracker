@@ -206,6 +206,8 @@ export const fr: WorkspaceDictionary = {
   "facts.away": "Absence",
   "facts.notes": "Notes",
   "facts.until": "jusqu’au {date}",
+  "facts.awayRange": "{from} – {to}",
+  "facts.awayOrder": "Le premier jour doit être le même que le dernier ou avant.",
   "facts.edit": "Modifier les infos",
   "facts.paste": "Coller ce qu’on vous a dit",
   "facts.title": "Infos : {name}",

@@ -214,6 +214,8 @@ function Status(p: FieldsProps) {
 
 function Notes(p: FieldsProps) {
   const { form, edit, words } = p;
+  // The first day after the last (D103): both days are marked, with the reason under them.
+  const daysBad = p.invalid.includes("away") || undefined;
   return (
     <>
       <Row {...p} field="away">
@@ -231,6 +233,7 @@ function Notes(p: FieldsProps) {
           <input
             type="date"
             value={form.awayFrom}
+            aria-invalid={daysBad}
             onChange={(e) => edit("away", { awayFrom: e.target.value })}
             className={`${INPUT} mt-1 block max-w-56`}
           />
@@ -240,10 +243,16 @@ function Notes(p: FieldsProps) {
           <input
             type="date"
             value={form.awayUntil}
+            aria-invalid={daysBad}
             onChange={(e) => edit("away", { awayUntil: e.target.value })}
             className={`${INPUT} mt-1 block max-w-56`}
           />
         </label>
+        {daysBad && (
+          <p role="alert" className="mt-1 text-body-sm font-semibold text-seal">
+            {words["facts.awayOrder"]}
+          </p>
+        )}
       </Row>
       <Row {...p} field="notes">
         <textarea

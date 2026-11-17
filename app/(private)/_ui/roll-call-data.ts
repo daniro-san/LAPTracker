@@ -8,9 +8,15 @@ import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dicti
 import type { RollWords } from "@/lib/private/dictionary.rollcall";
 import type { AwayNote } from "@/lib/private/fact-fields";
 import type { Occasion } from "@/lib/private/roll-call";
-import { awakeAt, TEAM_MAX, type Mark, type RollKind } from "@/lib/private/roll-call-rules";
+import {
+  awakeAt,
+  registrationOpen,
+  TEAM_MAX,
+  type Mark,
+  type RollKind,
+} from "@/lib/private/roll-call-rules";
 import type { CallRow, TeamRow, WeekItem } from "@/lib/private/roll-call-view";
-import { callTitle, markWord, restLabel, tallyLine } from "@/lib/private/roll-call-words";
+import { callTitle, markWord, restWords, tallyParts } from "@/lib/private/roll-call-words";
 
 import type { SHEET_KEYS } from "./sheet-words";
 
@@ -35,6 +41,10 @@ interface Ctx {
   zone: string;
 }
 
+/** "Registration closes Wednesday (ST)" until Wednesday of its game week, then "Registration closed". */
+export const registrationText = (day: string, today: string, t: WorkspaceDictionary) =>
+  t[registrationOpen(day, today) ? "roll.reg.open" : "roll.reg.closed"];
+
 export interface RollCard {
   key: string;
   title: string;
@@ -43,50 +53,52 @@ export interface RollCard {
   st: string | null;
   at: number | null;
   day: string;
-  /** Null for an Elixir Scramble team nobody is on yet: "Team A: 0/20" says it. */
-  counts: string | null;
+  /** Each count on its own ("2 of 58 marked", "Shield up 1" …); null for a team nobody is on yet. */
+  counts: string[] | null;
   /** "Team A: 6/20" for an Elixir Scramble team. */
   team: string | null;
+  /** An Elixir Scramble team's registration line. */
+  registration: string | null;
   markHref: string;
   teamHref: string | null;
 }
 
-export function rollCard(item: WeekItem, slug: string, { t, language, zone }: Ctx): RollCard {
-  const minute = item.placed?.minute ?? null;
+export function rollCard(item: WeekItem, slug: string, today: string, ctx: Ctx): RollCard {
+  const { t } = ctx;
   const query = occasionQuery(item.occasion);
+  const team = item.team === null ? null : teamLine(item, today, t);
   return {
     key: item.key,
     title: callTitle(item, t),
-    dayLabel: calendarDates(language).long(item.day),
-    st: minute === null ? null : stOf(item.placed?.entry.kind ?? "", minute, t),
-    at: minute === null ? null : zonedInstant(item.day, minute, zone),
+    ...headerOf(item, ctx),
     day: item.day,
-    counts: item.team === 0 ? null : tallyLine(item.tally, item.kind, t),
-    team:
-      item.team === null
-        ? null
-        : fill(t["roll.team.short"], { team: item.variant ?? "", n: item.team, max: TEAM_MAX }),
+    counts: item.team === 0 ? null : tallyParts(item.tally, item.kind, t),
+    team: team?.team ?? null,
+    registration: team?.registration ?? null,
     markHref: `/w/${slug}/roll-call/mark?${query}`,
-    teamHref: item.team === null || !item.placed ? null : `/w/${slug}/roll-call/team?${query}`,
+    teamHref: team && item.placed ? `/w/${slug}/roll-call/team?${query}` : null,
   };
 }
 
-/** The words of one kind's marks and of its "the rest". */
+/** An Elixir Scramble card's "Team A: 6/20" and its registration line. */
+const teamLine = (item: WeekItem, today: string, t: WorkspaceDictionary) => ({
+  team: fill(t["roll.team.short"], { team: item.variant ?? "", n: item.team ?? 0, max: TEAM_MAX }),
+  registration: registrationText(item.day, today, t),
+});
+
+/** The words of one kind's marks and of its "the rest" (templates with {n}; null for plunders). */
 export interface MarkWords {
   yes: string;
   no: string;
   assumed: string;
-  rest: string;
-  /** The word "the rest" writes. */
-  restWord: string;
+  rest: { button: string; done: string } | null;
 }
 
-export const markWords = (kind: RollKind, rest: Mark, t: WorkspaceDictionary): MarkWords => ({
+export const markWords = (kind: RollKind, t: WorkspaceDictionary): MarkWords => ({
   yes: markWord("yes", kind, t),
   no: markWord("no", kind, t),
   assumed: markWord("assumed", kind, t),
-  rest: restLabel(kind, t),
-  restWord: markWord(rest, kind, t),
+  rest: restWords(kind, t),
 });
 
 export interface MarkRowView {
@@ -118,15 +130,27 @@ export function markRows(rows: CallRow[], { t, language }: Omit<Ctx, "zone">): M
   }));
 }
 
+/** Where a team row is listed: the team, then daytime, no time zone, night, and the other team. */
+
+export type TeamGroup = "picked" | "day" | "noZone" | "night" | "other";
+
 export interface TeamRowView {
   uid: number;
   name: string;
-  picked: boolean;
+  group: TeamGroup;
   /** "On Team B" when the other team holds them that week. */
   other: string | null;
-  /** "14:00 for them · daytime · Active this week · Main squad 48.2M". */
+  /** One short line: "Daytime · 12:00 for them · Active · Squad 48.2M"; under "No time zone recorded"
+   * the clock part is left out. */
   why: string;
 }
+
+const groupOf = (r: TeamRow): TeamGroup => {
+  if (r.picked) return "picked";
+  if (r.other !== null) return "other";
+  const awake = awakeAt(r.theirMinute);
+  return awake === null ? "noZone" : awake ? "day" : "night";
+};
 
 export function teamRows(
   rows: TeamRow[],
@@ -136,19 +160,15 @@ export function teamRows(
   return rows.map((r) => {
     const awake = awakeAt(r.theirMinute);
     const time = r.theirMinute === null ? "" : hhmm(r.theirMinute);
-    const clock =
-      awake === null
-        ? t["roll.team.noZone"]
-        : fill(t[awake ? "roll.team.day" : "roll.team.night"], { time });
     const why = [
-      clock,
+      ...(awake === null ? [] : [fill(t[awake ? "roll.team.day" : "roll.team.night"], { time })]),
       ...(r.activeThisWeek ? [t["roll.team.active"]] : []),
       ...(r.squad === null ? [] : [fill(t["roll.team.squad"], { v: compact(r.squad) })]),
     ].join(" · ");
     return {
       uid: r.uid,
       name: r.name,
-      picked: r.picked,
+      group: groupOf(r),
       other: r.other === null ? null : fill(t["roll.team.inOther"], { team: r.other }),
       why,
     };

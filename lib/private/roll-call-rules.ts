@@ -2,6 +2,7 @@
 // each takes, what "the rest" becomes, the counts, and the Elixir Scramble team suggestions. People first
 // (D75): a member with no mark is "not set", which is never counted as a "no", never sorted last and never
 // a reason to look at anyone. Away members are left out of every roll call and every count of answers.
+import { addDays, mondayOf } from "./calendar-time";
 import { isDaytime } from "./members-list";
 
 /** KvK shield, Undead Siege (the issue's "raid"), plunders, an Elixir Scramble team. */
@@ -24,18 +25,26 @@ export type Mark = (typeof MARKS)[number];
 
 /**
  * What "the rest" becomes (owner, issue 298): the shield's rest is "no problem seen", never a silent "shield
- * up"; an Elixir Scramble team's rest did not join (its joiners are the few); an Undead Siege's and the
- * plunders' rest took part.
+ * up"; an Elixir Scramble team's rest did not join (its joiners are the few); an Undead Siege's rest took
+ * part. Plunders (plundering caravans or Black Ops) have no "the rest": each one is marked (owner,
+ * 2026-11-17).
  */
-export const REST: Readonly<Record<RollKind, Mark>> = {
+export const REST: Readonly<Record<RollKind, Mark | null>> = {
   shield: "assumed",
   elixir: "no",
   raid: "yes",
-  plunder: "yes",
+  plunder: null,
 };
 
 /** Players per Elixir Scramble team (the game's own limit). */
 export const TEAM_MAX = 20;
+
+/**
+ * Whether an Elixir Scramble's registration is still open on server day `today` (owner, 2026-11-17): open
+ * until Wednesday of the game week of `day` (the Scramble's day), closed from Thursday 00:00 ST. Team
+ * edits stay allowed either way.
+ */
+export const registrationOpen = (day: string, today: string) => today < addDays(mondayOf(day), 3);
 
 /** A tap marks ✓ or ✗, or clears; `assumed` comes only from the shield's "the rest". */
 export const tapMark = (mark: Mark | null) => mark === null || mark === "yes" || mark === "no";

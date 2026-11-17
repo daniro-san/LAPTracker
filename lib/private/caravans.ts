@@ -18,6 +18,8 @@ export async function caravanSuggestions(
   db: Db,
   access: WorkspaceAccess,
   caravans: readonly Placed[],
+  /** The server's zone (SERVER_TZ): an away note or a break counts from the day it was saved (D103). */
+  zone: string,
 ): Promise<Map<string, Suggestion[]>> {
   if (caravans.length === 0) return new Map();
   const [members, reads, facts, seats] = await Promise.all([
@@ -36,7 +38,7 @@ export async function caravanSuggestions(
     caravans.map((p) => {
       const key = `${p.entry.id}:${p.week}`;
       const candidates = members.map((m) => {
-        const away = awayOn(facts.get(m.uid), p.day) !== null;
+        const away = awayOn(facts.get(m.uid), p.day, zone) !== null;
         return { ...m, active: active.get(m.uid) ?? null, away };
       });
       const seated = [p.row?.coachUid, p.row?.secondUid].filter((u): u is number => u != null);

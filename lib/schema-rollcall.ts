@@ -52,6 +52,12 @@ export const rollCalls = pgTable(
     index("roll_calls_workspace_week_idx").on(t.workspaceId, t.week),
     uniqueIndex("roll_calls_entry_week_unique").on(t.entryId, t.week),
     uniqueIndex("roll_calls_request_unique").on(t.workspaceId, t.requestId),
+    // One hand-added roll call per kind and day. Only rows added by hand carry a request id: a Calendar
+    // roll call whose entry was deleted (entry_id set null) never collides with one, so the Calendar's
+    // delete cannot fail on this index.
+    uniqueIndex("roll_calls_added_unique")
+      .on(t.workspaceId, t.kind, t.day)
+      .where(sql`${t.requestId} is not null`),
     check("roll_calls_kind_check", sql`${t.kind} in ('shield', 'raid', 'plunder', 'elixir')`),
     check("roll_calls_variant_check", sql`${t.variant} in ('A', 'B')`),
   ],

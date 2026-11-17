@@ -16,6 +16,20 @@ import { Times } from "../../../_ui/YourTime";
 const LINK =
   "inline-flex min-h-11 items-center font-semibold text-plum underline underline-offset-4";
 
+/** The counts, each kept whole on one line; the line breaks only between them. */
+function Counts({ parts }: { parts: string[] }) {
+  return (
+    <p className="text-body-sm text-ink/80">
+      {parts.map((p, i) => (
+        <span key={p} className="whitespace-nowrap">
+          {i > 0 && " · "}
+          {p}
+        </span>
+      ))}
+    </p>
+  );
+}
+
 function Card({ c, words }: { c: RollCard; words: CalendarSheetWords }) {
   return (
     <li className="border-t border-rule py-3">
@@ -29,8 +43,13 @@ function Card({ c, words }: { c: RollCard; words: CalendarSheetWords }) {
         )}
       </p>
       <h2 className="font-subhead text-display-sm">{c.title}</h2>
-      {c.team && <p className="text-body-sm font-semibold">{c.team}</p>}
-      {c.counts && <p className="text-body-sm text-ink/80">{c.counts}</p>}
+      {c.team && (
+        <p className="text-body-sm">
+          <span className="font-semibold">{c.team}</span>
+          {c.registration && <span className="text-ink/80">{` · ${c.registration}`}</span>}
+        </p>
+      )}
+      {c.counts && <Counts parts={c.counts} />}
       <p className="flex flex-wrap gap-x-5">
         {c.teamHref && (
           <a href={c.teamHref} className={LINK}>
@@ -57,12 +76,12 @@ export default async function RollCallPage({
   const page = await openRollCall(
     params,
     `roll-call${week ? `?week=${week}` : ""}`,
-    (db, access, today) => weekItems(db, access, mondayOf(week ?? today)),
+    (db, access, today, _language, zone) => weekItems(db, access, mondayOf(week ?? today), zone),
   );
   const { access, slug, t, language, today } = page;
   const monday = mondayOf(week ?? today);
   const ctx = { t, language, zone: page.zone };
-  const cards = page.data.map((item) => rollCard(item, slug, ctx));
+  const cards = page.data.map((item) => rollCard(item, slug, today, ctx));
   const words = rollWords(t);
   const times = calendarWords(t);
   const day = monday === mondayOf(today) ? today : monday;

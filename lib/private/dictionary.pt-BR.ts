@@ -205,6 +205,8 @@ export const pt: WorkspaceDictionary = {
   "facts.away": "Ausência",
   "facts.notes": "Notas",
   "facts.until": "até {date}",
+  "facts.awayRange": "{from} – {to}",
+  "facts.awayOrder": "O primeiro dia tem que ser antes do último ou no mesmo dia.",
   "facts.edit": "Editar dados",
   "facts.paste": "Colar o que a pessoa disse",
   "facts.title": "Dados: {name}",

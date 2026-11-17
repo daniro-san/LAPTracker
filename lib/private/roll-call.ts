@@ -6,16 +6,13 @@
 // changed since. Only members of the workspace's own alliance are marked or picked.
 import type { Db } from "../db";
 import {
-  addToTeam,
   findAdded,
   findCall,
   insertCall,
   insertMarks,
-  lockCall,
   newestMark,
   newestMarks,
-  otherTeams,
-  removeFromTeam,
+  teamHas,
   teamsOf,
   type MarkRow,
   type RollCallRow,
@@ -26,15 +23,8 @@ import { calendarDays } from "./calendar";
 import type { Placed } from "./calendar-model";
 import { addDays, isDay, mondayOf } from "./calendar-time";
 import { awayOn } from "./fact-fields";
-import { factsOf } from "./member-facts";
-import {
-  FROM_CALENDAR,
-  REST,
-  tapMark,
-  TEAM_MAX,
-  type Mark,
-  type RollKind,
-} from "./roll-call-rules";
+import { factsOf, isMember } from "./member-facts";
+import { FROM_CALENDAR, REST, tapMark, type Mark, type RollKind } from "./roll-call-rules";
 
 /** A Calendar entry's week (`week` is the plan's Monday), or a roll call by its id. */
 export type Occasion = { id: number } | { entry: number; week: string };
@@ -89,7 +79,7 @@ export async function openOccasion(
 }
 
 /** The roll call's row; a Calendar occasion's is made on its first write. */
-async function ensureCall(db: Db, access: WorkspaceAccess, o: Opened): Promise<RollCallRow> {
+export async function ensureCall(db: Db, access: WorkspaceAccess, o: Opened): Promise<RollCallRow> {
   if (o.call) return o.call;
   const entryId = o.placed?.entry.id ?? 0;
   await insertCall(db, {
@@ -127,6 +117,12 @@ export type MarkResult =
   | Missing
   | { ok: false; code: "stale"; kind: RollKind; newest: MarkRow | null };
 
+/** Whether the roll call asks about `uid`: its Elixir Scramble team, or the alliance's roster. */
+async function asks(db: Db, o: Opened, inRoster: boolean, uid: number): Promise<boolean> {
+  if (o.kind !== "elixir") return inRoster;
+  return o.call !== null && (await teamHas(db, o.call.id, uid));
+}
+
 /** One member's mark (✓, ✗ or cleared), based on the version the officer saw. */
 export async function markOne(
   db: Db,
@@ -135,9 +131,12 @@ export async function markOne(
   now: Date,
 ): Promise<MarkResult> {
   if (!tapMark(input.mark)) return { ok: false, code: "invalid" };
-  const o = await openOccasion(db, access, input.occasion);
+  const [o, inRoster] = await Promise.all([
+    openOccasion(db, access, input.occasion),
+    isMember(db, access, input.uid),
+  ]);
   if (!o) return { ok: false, code: "not_found" };
-  if (!(await askedUids(db, access, o)).has(input.uid)) return { ok: false, code: "not_member" };
+  if (!(await asks(db, o, inRoster, input.uid))) return { ok: false, code: "not_member" };
   const call = await ensureCall(db, access, o);
   // INVARIANT roll-call.version-once: the unique (roll call, uid, version) lets one of two writes based
   // on the same version in; the other reads the winner and is refused unless it said the same.
@@ -159,22 +158,23 @@ export type Written = { ok: true; mark: Mark | null; written: { uid: number; ver
 
 /**
  * "The rest": every member in `uids` the roll call asks about, not away that day and with no mark, gets the
- * kind's rest mark (REST). A member someone marked meanwhile keeps that mark.
+ * kind's rest mark (REST). A member someone marked meanwhile keeps that mark. Plunders have none.
  */
 export async function markRest(
   db: Db,
   access: WorkspaceAccess,
   input: { occasion: Occasion; uids: number[] },
-  now: Date,
+  clock: { now: Date; zone: string },
 ): Promise<Written | Missing> {
   const o = await openOccasion(db, access, input.occasion);
   if (!o) return { ok: false, code: "not_found" };
+  const mark = REST[o.kind];
+  if (mark === null) return { ok: false, code: "invalid" };
   const [asked, facts] = await Promise.all([askedUids(db, access, o), factsOf(db, access)]);
   const call = await ensureCall(db, access, o);
   const marks = new Map((await newestMarks(db, [call.id])).map((m) => [m.uid, m]));
-  const mark = REST[o.kind];
   const rows = [...new Set(input.uids)]
-    .filter((uid) => asked.has(uid) && awayOn(facts.get(uid), o.day) === null)
+    .filter((uid) => asked.has(uid) && awayOn(facts.get(uid), o.day, clock.zone) === null)
     .filter((uid) => (marks.get(uid)?.mark ?? null) === null)
     .map((uid) => ({
       rollCallId: call.id,
@@ -182,7 +182,7 @@ export async function markRest(
       version: (marks.get(uid)?.version ?? 0) + 1,
       mark,
       writtenBy: access.user.id,
-      writtenAt: now,
+      writtenAt: clock.now,
     }));
   return { ok: true, mark, written: await insertMarks(db, rows) };
 }
@@ -211,7 +211,10 @@ export async function undoMarks(
   return { ok: true, mark: null, written: await insertMarks(db, rows) };
 }
 
-/** A roll call added by hand (KvK shield, Undead Siege, plunders): one per kind and day. */
+/**
+ * A roll call added by hand (KvK shield, Undead Siege, plunders): one per kind and day, held by a unique
+ * index on the hand-added rows; an add that loses to another officer's opens theirs.
+ */
 export async function addCall(
   db: Db,
   access: WorkspaceAccess,
@@ -220,8 +223,9 @@ export async function addCall(
   requestId: string,
 ): Promise<{ ok: true; id: number }> {
   const ws = access.workspaceId;
-  const found =
+  const existing = async () =>
     (await findCall(db, ws, { requestId })) ?? (await findAdded(db, ws, input.kind, input.day));
+  const found = await existing();
   if (found) return { ok: true, id: found.id };
   const id =
     (await insertCall(db, {
@@ -231,59 +235,7 @@ export async function addCall(
       week: mondayOf(input.day),
       requestId,
       createdBy: access.user.id,
-    })) ?? (await findCall(db, ws, { requestId }))?.id;
+    })) ?? (await existing())?.id;
   if (id === undefined) throw new Error("roll_call_request_lost");
   return { ok: true, id };
-}
-
-export type TeamResult =
-  | { ok: true; added: number[]; count: number }
-  | { ok: false; code: "not_found" | "not_member" | "full" | "other_team" };
-
-/**
- * Picks members for an Elixir Scramble team, in order, or takes one off (`on` false). A pick stops at
- * TEAM_MAX; a member on the other team that week is refused. One change at a time per team (row lock).
- */
-export async function setTeam(
-  db: Db,
-  access: WorkspaceAccess,
-  input: { occasion: Occasion; uids: number[]; on: boolean },
-  now: Date,
-): Promise<TeamResult> {
-  const o = await openOccasion(db, access, input.occasion);
-  if (!o?.placed || o.kind !== "elixir") return { ok: false, code: "not_found" };
-  const roster = new Map((await rosterOf(db, access)).map((m) => [m.uid, m.name]));
-  if (input.on && input.uids.some((uid) => !roster.has(uid))) {
-    return { ok: false, code: "not_member" };
-  }
-  const call = await ensureCall(db, access, o);
-  return db.transaction(async (tx) => {
-    await lockCall(tx, call.id);
-    const team = new Set((await teamsOf(tx, [call.id])).map((m) => m.uid));
-    if (!input.on) {
-      for (const uid of input.uids) await removeFromTeam(tx, call.id, uid);
-      return {
-        ok: true,
-        added: [],
-        count: [...team].filter((u) => !input.uids.includes(u)).length,
-      };
-    }
-    const elsewhere = new Set((await otherTeams(tx, call)).map((m) => m.uid));
-    const fresh = input.uids.filter((uid) => !team.has(uid));
-    const free = fresh.filter((uid) => !elsewhere.has(uid));
-    if (fresh.length > 0 && free.length === 0) return { ok: false, code: "other_team" };
-    if (free.length > 0 && team.size >= TEAM_MAX) return { ok: false, code: "full" };
-    const added = free.slice(0, TEAM_MAX - team.size);
-    await addToTeam(
-      tx,
-      added.map((uid) => ({
-        rollCallId: call.id,
-        uid,
-        name: roster.get(uid) ?? "",
-        addedBy: access.user.id,
-        addedAt: now,
-      })),
-    );
-    return { ok: true, added, count: team.size + added.length };
-  });
 }

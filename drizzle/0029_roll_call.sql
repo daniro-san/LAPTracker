@@ -43,4 +43,5 @@ ALTER TABLE "roll_calls" ADD CONSTRAINT "roll_calls_entry_id_calendar_entries_id
 ALTER TABLE "roll_calls" ADD CONSTRAINT "roll_calls_created_by_workspace_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."workspace_users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "roll_calls_workspace_week_idx" ON "roll_calls" USING btree ("workspace_id","week");--> statement-breakpoint
 CREATE UNIQUE INDEX "roll_calls_entry_week_unique" ON "roll_calls" USING btree ("entry_id","week");--> statement-breakpoint
-CREATE UNIQUE INDEX "roll_calls_request_unique" ON "roll_calls" USING btree ("workspace_id","request_id");
+CREATE UNIQUE INDEX "roll_calls_request_unique" ON "roll_calls" USING btree ("workspace_id","request_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "roll_calls_added_unique" ON "roll_calls" USING btree ("workspace_id","kind","day") WHERE "roll_calls"."request_id" is not null;

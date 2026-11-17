@@ -13,7 +13,7 @@ import { fill } from "@/lib/copy";
 import type { AwayNote } from "@/lib/private/fact-fields";
 import { searchRoster } from "@/lib/private/roster-search";
 
-import { Labeled, TextInput } from "./CalendarFields";
+import { FIELD, Labeled, TextInput } from "./CalendarFields";
 import type { MarkRowView, RollSheetWords } from "./roll-call-data";
 import { sheetWords } from "./sheet-words";
 import { RefusalLine, SIGNED_OUT } from "./SignedOut";
@@ -94,8 +94,9 @@ const dayText = (day: string | null | undefined, language: string) =>
 type Dates = { from: string; until: string; text: string };
 type Conflict = { value: AwayNote | null; version: number };
 
-const startOf = (note: AwayNote | null): Dates => ({
-  from: note?.from ?? "",
+/** The form as it opens: the member's note, or a new one starting today (D103: never in the past). */
+const startOf = (note: AwayNote | null, today: string): Dates => ({
+  from: note ? (note.from ?? "") : today,
   until: note?.until ?? "",
   text: note?.text ?? "",
 });
@@ -110,8 +111,9 @@ function useAwayForm(
   member: MarkRowView | null,
   words: RollSheetWords,
   done: () => void,
+  today: string,
 ) {
-  const start = startOf(member?.note ?? null);
+  const start = startOf(member?.note ?? null, today);
   const [dates, setDates] = useState(start);
   const [error, setError] = useState<string | null>(null);
   const [conflict, setConflict] = useState<Conflict | null>(null);
@@ -137,7 +139,9 @@ function useAwayForm(
   const set = (k: keyof Dates, v: string) => setDates((d) => ({ ...d, [k]: v }));
   const keys = Object.keys(start) as (keyof Dates)[];
   const dirty = member !== null && keys.some((k) => dates[k] !== start[k]);
-  return { dates, set, error, conflict, busy, save, clear: () => void send(null), dirty };
+  /** A member picked in the sheet: the form opens on their note. */
+  const load = (m: MarkRowView) => setDates(startOf(m.note, today));
+  return { dates, set, error, conflict, busy, save, clear: () => void send(null), dirty, load };
 }
 
 function AwayConflict(props: {
@@ -179,11 +183,11 @@ function AwayConflict(props: {
 }
 
 function AwayFields({ f, words }: { f: ReturnType<typeof useAwayForm>; words: RollSheetWords }) {
-  const field = (id: string, k: keyof Dates, label: string, date: boolean) => (
+  const day = (id: string, k: keyof Dates, label: string) => (
     <Labeled id={id} label={label}>
       <TextInput
         id={id}
-        {...(date ? { type: "date" } : { maxLength: 500 })}
+        type="date"
         value={f.dates[k]}
         onChange={(e) => f.set(k, e.target.value)}
       />
@@ -192,9 +196,18 @@ function AwayFields({ f, words }: { f: ReturnType<typeof useAwayForm>; words: Ro
   return (
     <>
       <p className="text-body-sm text-ink/75">{words["roll.away.help"]}</p>
-      {field("away-from", "from", words["roll.away.from"], true)}
-      {field("away-to", "until", words["roll.away.to"], true)}
-      {field("away-text", "text", words["roll.away.text"], false)}
+      {day("away-from", "from", words["roll.away.from"])}
+      {day("away-to", "until", words["roll.away.to"])}
+      <Labeled id="away-text" label={words["roll.away.text"]}>
+        <textarea
+          id="away-text"
+          rows={3}
+          maxLength={500}
+          value={f.dates.text}
+          onChange={(e) => f.set("text", e.target.value)}
+          className={`${FIELD} py-2`}
+        />
+      </Labeled>
     </>
   );
 }
@@ -205,6 +218,8 @@ export function AwaySheet(props: {
   rows: MarkRowView[];
   words: RollSheetWords;
   language: string;
+  /** Today's server day: a new note starts on it. */
+  today: string;
   onClose: () => void;
 }) {
   const { words } = props;
@@ -214,9 +229,20 @@ export function AwaySheet(props: {
     router.refresh();
     props.onClose();
   };
-  const f = useAwayForm(props.slug, member, words, done);
+  const f = useAwayForm(props.slug, member, words, done, props.today);
+  const pick = (m: MarkRowView) => {
+    setMember(m);
+    f.load(m);
+  };
   const editing = member !== null && f.conflict === null;
-  const title = member ? `${words["roll.away.title"]} · ${member.name}` : words["roll.away.title"];
+  const title = member ? (
+    <>
+      {`${words["roll.away.title"]} · `}
+      <bdi translate="no">{member.name}</bdi>
+    </>
+  ) : (
+    words["roll.away.title"]
+  );
   return (
     <Sheet
       labelledBy="away-title"
@@ -232,7 +258,7 @@ export function AwaySheet(props: {
       note={f.error && <RefusalLine text={f.error} className="mb-2 text-seal" />}
     >
       {member === null ? (
-        <Picker rows={props.rows} words={words} onPick={setMember} />
+        <Picker rows={props.rows} words={words} onPick={pick} />
       ) : (
         <>
           <AwayFields f={f} words={words} />

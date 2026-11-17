@@ -60,6 +60,9 @@ function AddSheet(props: {
         options={ADDED_KINDS.map((k) => ({ value: k, label: words[`roll.kind.${k}`] }))}
         onChange={setKind}
       />
+      {kind === "plunder" && (
+        <p className="mt-1 text-body-sm text-ink/75">{words["roll.add.plunderHint"]}</p>
+      )}
       <Labeled id="roll-day" label={words["roll.add.day"]}>
         <TextInput
           id="roll-day"
