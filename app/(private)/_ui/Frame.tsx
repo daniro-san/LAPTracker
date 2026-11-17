@@ -1,5 +1,5 @@
 // The workspace frame (D71, brand proposal): the burgundy header with the workspace name, the "?" that
-// opens the first-use cards (issue 312) and EN · PT · FR, the page, and, once signed in, the six bottom
+// opens the first-use cards (issue 312) and EN · PT · FR, the page, and, once signed in, the five bottom
 // tabs. Designed at 360 px; every control is 44 px or more.
 import { cookies, headers } from "next/headers";
 import type { ReactNode } from "react";
@@ -34,13 +34,10 @@ export async function workspaceWords(): Promise<{
   return { language, t: WORKSPACE_DICTIONARIES[language] };
 }
 
-const TABS: TabId[] = ["home", "members", "mark", "days", "notices", "review"];
-/** The tabs that exist so far; the other three come with their own issues and are shown as "soon". */
-const PATHS: Partial<Record<TabId, string>> = {
-  home: "",
-  members: "/members",
-  notices: "/notices",
-};
+const TABS: TabId[] = ["home", "members", "mark", "days", "review"];
+/** The tabs that exist so far; the others come with their own issues and are shown as "soon". Notices
+ * live inside Calendar (its Week · Caravans · Notices views, prototype v5), so it has no tab of its own. */
+const PATHS: Partial<Record<TabId, string>> = { home: "", members: "/members", days: "/calendar" };
 
 /** The Home tab's count of screenshot drafts waiting for review (issue 299), beside its label. */
 function Waiting({ n, t }: { n: number; t: WorkspaceDictionary }) {
@@ -75,22 +72,22 @@ function Tabs({
       aria-label={t["tab.aria"]}
       className="fixed inset-x-0 bottom-0 z-10 border-t border-rule bg-paper pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] [:root:has(form[data-notice-editor])_&]:hidden"
     >
-      <ul className="mx-auto grid max-w-[640px] grid-cols-6">
+      <ul className="mx-auto grid max-w-[640px] grid-cols-5">
         {TABS.map((id) => {
           const label = t[`tab.${id}`];
           const inside = (
             <>
               <TabIcon id={id} />
-              {/* Six tabs leave 60 px each at 360 px: a long word ("Acompanhar") wraps, without a
-                  hyphen, instead of running past the screen. */}
-              <span className="max-w-full text-[13px] leading-tight hyphens-none [overflow-wrap:anywhere]">
+              {/* Five tabs leave 72 px each at 360 px. 12 px fits the longest word ("Acompanhar") whole;
+                  a label of two words may take two lines, broken only between words. */}
+              <span className="max-w-full text-[12px] leading-tight hyphens-none [overflow-wrap:normal]">
                 {label}
               </span>
               {id === "home" && <Waiting n={waiting} t={t} />}
             </>
           );
           const box =
-            "relative flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 text-center";
+            "relative flex min-h-14 flex-col items-center justify-center gap-0.5 px-0.5 text-center";
           const path = PATHS[id];
           return (
             <li key={id}>

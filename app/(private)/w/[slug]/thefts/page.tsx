@@ -13,6 +13,7 @@ import { toReviewCount } from "@/lib/private/import-view";
 import { SLUG } from "@/lib/private/sign-in";
 import { theftsView } from "@/lib/private/thefts";
 
+import { CalendarNav } from "../../../_ui/CalendarNav";
 import { SignedInFrame, workspaceWords } from "../../../_ui/Frame";
 import { refuse } from "../../../_ui/refuse";
 import { theftCards, theftWords, type TheftFormats } from "../../../_ui/theft-data";
@@ -73,6 +74,8 @@ export default async function TheftsPage({ params }: { params: Promise<{ slug: s
   return (
     <SignedInFrame access={access} language={language} t={t} current="days" waiting={waiting}>
       <h1 className="font-display text-display-lg">{t["thefts.title"]}</h1>
+      {/* The thefts log is a view of the Calendar tab (Week · Caravans · Notices · Thefts, issue 300). */}
+      <CalendarNav slug={slug} current="thefts" t={t} />
       <p className="mt-1 text-body-sm text-ink/80">{t["thefts.timesNote"]}</p>
       <p className="mt-2 text-body-sm text-ink/80">{t["thefts.lead"]}</p>
       <TheftsBoard

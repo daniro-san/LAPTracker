@@ -86,14 +86,6 @@ function Home({
           {t["home.open"]}
         </a>
       </div>
-      {/* Until the Calendar tab (issue 300) links it from its own views. */}
-      <div className="mt-4 border border-rule px-4 py-5">
-        <p className="font-subhead text-display-sm">{t["thefts.title"]}</p>
-        <p className="mt-2 text-ink/80">{t["thefts.home"]}</p>
-        <a href={`/w/${slug}/thefts`} className={buttonClass("secondary", "mt-4")}>
-          {t["thefts.homeOpen"]}
-        </a>
-      </div>
     </section>
   );
 }

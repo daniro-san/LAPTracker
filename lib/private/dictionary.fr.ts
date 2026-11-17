@@ -1,12 +1,14 @@
 // The workspace dictionary in French (D71), split from dictionary.ts for its size; the keys follow `en`.
 // French puts a no-break space before : ? and !, and inside « ».
 import type { WorkspaceDictionary } from "./dictionary";
+import { calendarFr } from "./dictionary.calendar.fr";
 import { importFr } from "./dictionary.import";
 import { noticesFr } from "./dictionary.notices";
 import { shotsFr } from "./dictionary.shots.fr";
 import { theftsFr } from "./dictionary.thefts";
 
 export const fr: WorkspaceDictionary = {
+  ...calendarFr,
   "app.name": "Bureau des officiers",
   "tab.aria": "Sections",
   "tab.home": "Accueil",

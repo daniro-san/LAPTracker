@@ -9,8 +9,6 @@ export const theftsEn = {
   "thefts.lead":
     "Players who took quest rewards from our members. Use it to warn them or to talk to their alliance’s leaders.",
   "thefts.timesNote": "Times are server time. The week starts Monday.",
-  "thefts.home": "Who took quest rewards from our members in Secret Operations, by alliance.",
-  "thefts.homeOpen": "Open the thefts log",
   "thefts.add": "Add a theft",
   "thefts.empty": "No thefts logged yet. When a member reports one, add it here.",
   "thefts.week": "{n} this week",
@@ -76,8 +74,6 @@ export const theftsPt: TheftsWords = {
   "thefts.lead":
     "Jogadores que levaram Quest rewards dos nossos membros. Serve para avisar esses jogadores ou conversar com os líderes da aliança deles.",
   "thefts.timesNote": "Os horários são do servidor. A semana começa na segunda-feira.",
-  "thefts.home": "Quem levou Quest rewards dos nossos membros em Secret Operations, por aliança.",
-  "thefts.homeOpen": "Abrir o registro de roubos",
   "thefts.add": "Registrar um roubo",
   "thefts.empty": "Nenhum roubo registrado ainda. Quando um membro avisar, registre aqui.",
   "thefts.week": "{n} nesta semana",
@@ -142,9 +138,6 @@ export const theftsFr: TheftsWords = {
   "thefts.lead":
     "Les joueurs qui ont pris des récompenses de quête à nos membres. Pour les prévenir ou parler aux chefs de leur alliance.",
   "thefts.timesNote": "Les heures sont celles du serveur. La semaine commence le lundi.",
-  "thefts.home":
-    "Qui a pris des récompenses de quête à nos membres en Opération secrète, par alliance.",
-  "thefts.homeOpen": "Ouvrir le journal des vols",
   "thefts.add": "Ajouter un vol",
   "thefts.empty": "Aucun vol noté pour l’instant. Quand un membre en signale un, ajoutez-le ici.",
   "thefts.week": "{n} cette semaine",

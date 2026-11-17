@@ -14,8 +14,9 @@ import type { WorkspaceLanguage } from "@/lib/private/dictionary";
 import { FOLLOW_UP_STATES, type FollowUpState } from "@/lib/private/theft-groups";
 
 import { SourceBadge } from "./SourceBadge";
-import { postTheft, useViewerZone, viewerClock } from "./theft-client";
+import { postTheft, viewerClock } from "./theft-client";
 import type { AllianceCard, AttackerCard, EntryCard, TheftWords } from "./theft-data";
+import { useViewerZone } from "./YourTime";
 
 const STATE_TONE: Record<FollowUpState, string> = {
   open: "border-yarn text-yarn",

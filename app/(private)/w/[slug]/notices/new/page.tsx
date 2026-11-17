@@ -17,7 +17,7 @@ export default async function NewNoticePage({ params }: { params: Promise<{ slug
   const { access, waiting } = await noticePage(slug, async () => true);
   const { language, t } = await workspaceWords();
   return (
-    <SignedInFrame access={access} language={language} t={t} current="notices" waiting={waiting}>
+    <SignedInFrame access={access} language={language} t={t} current="days" waiting={waiting}>
       <p>
         <a
           href={`/w/${slug}/notices`}

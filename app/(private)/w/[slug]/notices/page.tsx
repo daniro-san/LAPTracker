@@ -6,6 +6,7 @@ import { fill } from "@/lib/copy";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
 import { noticesList, type NoticeSummary } from "@/lib/private/notices";
 
+import { CalendarNav } from "../../../_ui/CalendarNav";
 import { SignedInFrame, workspaceWords } from "../../../_ui/Frame";
 import { LANGUAGE_CODE } from "../../../_ui/languages";
 import { noticePage, noticeWords } from "../../../_ui/notice-pages";
@@ -56,8 +57,10 @@ export default async function NoticesPage({ params }: { params: Promise<{ slug: 
   const { language, t } = await workspaceWords();
   const words = noticeWords(language, t);
   return (
-    <SignedInFrame access={access} language={language} t={t} current="notices" waiting={waiting}>
+    <SignedInFrame access={access} language={language} t={t} current="days" waiting={waiting}>
       <h1 className="font-display text-display-lg">{t["tab.notices"]}</h1>
+      {/* Notices are a view of the Calendar tab (Week · Caravans · Notices, issue 300). */}
+      <CalendarNav slug={slug} current="notices" t={t} />
       <p className="mt-2 text-ink/80">{t["notices.lead"]}</p>
       <a
         href={`/w/${slug}/notices/new`}
