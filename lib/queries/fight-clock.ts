@@ -118,14 +118,21 @@ export const isDone = (e: Pick<EventSummary, "snapshots">) =>
  */
 export async function getFightClock(db: Db, now: Date, options: PulseOptions) {
   const listed = await listEvents(db);
-  const scheduled = listed.filter((e) => !e.manual).slice(0, FIGHT_CLOCK_EVENTS);
+  const allScheduled = listed.filter((e) => !e.manual);
+  const scheduled = allScheduled.slice(0, FIGHT_CLOCK_EVENTS);
   const pulses = await eventPulses(
     db,
     scheduled.map((e) => ({ id: e.id, done: isDone(e) })),
     options,
   );
-  const sampledAt = scheduled
-    .filter((_, i) => pulses[i]?.sampled)
+  // The first sampled event over every scheduled event, not only the ones shown: once the window slides, an
+  // older unsampled event must not name a later date.
+  const everSampled = await sampledEventIds(
+    db,
+    allScheduled.map((e) => e.id),
+  );
+  const sampledAt = allScheduled
+    .filter((e) => everSampled.has(e.id))
     .map((e) => e.eventAtUtc.getTime());
   const firstSampledAt = sampledAt.length ? new Date(Math.min(...sampledAt)) : null;
   const rows = scheduled.map((e, i): FightClockEvent => {

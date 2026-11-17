@@ -3,8 +3,8 @@
 // "Kill share vs might share" (issue 280, D83): one row per alliance with two marks on one percent axis,
 // a square for its share of the might at Start and a round one for its share of the kills gained, joined
 // by a line. Rows come biggest gap first. Only the first TOP rows whose kill share is above their might
-// share are shown, and the viewer's own wherever it is, until "Show all (n)" opens every row (owner, D83). The
-// ratio is shown only for an alliance with enough events, with its range; otherwise the gap in points.
+// share are shown, and the viewer's own wherever it is, until "Show all (n)" opens every row (owner, D83). Every
+// row's figure is the gap in points; the ratio is shown only as its range, for an alliance with enough events.
 // Marks and the line are plain HTML boxes (D68); every figure is also text. No member is named.
 import Link from "next/link";
 import { useState } from "react";
@@ -56,8 +56,6 @@ function Row({
   const l = copy.ledger;
   const lo = Math.min(r.mightShare, r.killShare);
   const hi = Math.max(r.mightShare, r.killShare);
-  const figure =
-    r.ratio !== null ? ratioText(r.ratio, locale) : pointsText(r.killShare - r.mightShare, locale);
   return (
     <li
       data-mine={mine ? "" : undefined}
@@ -71,8 +69,7 @@ function Row({
           <AllianceBadge badgeId={r.badgeId} />
           <span className="min-w-0 flex-1 truncate">{allianceLabel(r.tag, r.name)}</span>
           <span className="shrink-0 text-sm tabular-nums">
-            {figure}
-            {r.ratio === null && ` ${l.carriedPoints}`}
+            {pointsText(r.killShare - r.mightShare, locale)} {l.carriedPoints}
           </span>
         </span>
         {mine && <span className="mt-0.5 block text-xs font-medium text-yarn">{l.myAlliance}</span>}

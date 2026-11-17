@@ -84,7 +84,7 @@ export const es = {
       "Cambio desde Inicio en la lectura de {time}. El registro de arriba usa el Fin de {end}.",
     fightClock: "Reloj de combate del servidor",
     fightClockLead:
-      "Cuándo luchó el servidor, evento por evento. Cada casilla es un tramo de {min} minutos y su altura es la parte de los Kills del evento ganados en él. Los tramos se alinean con la hora del servidor, así que el mediodía es el mediodía en cada fila.",
+      "Los Kills de las alianzas seguidas, en tramos de {min} minutos, evento por evento. La altura de una casilla es su parte de los Kills dibujados de ese evento, desde el Inicio hasta su última lectura.",
     fightClockLink: "Comparar con otros eventos en el reloj de combate del servidor",
     fightClockShare: "Parte de los Kills",
     fightClockOutline: "Con contorno: los {span} minutos más intensos de cada evento",
@@ -93,7 +93,8 @@ export const es = {
       "Sin lecturas de {min} minutos para este evento (empiezan con el evento del {date})",
     fightClockOffNext:
       "Sin lecturas de {min} minutos para este evento (empiezan con el próximo evento)",
-    fightClockOffMissed: "No se tomaron lecturas de {min} minutos para este evento",
+    fightClockOffMissed:
+      "No se guardó ninguna lectura de {min} minutos utilizable para este evento.",
     fightClockOffWaiting: "Las lecturas de {min} minutos llegan mientras este evento está en curso",
     fightClockNone:
       "Las lecturas de {min} minutos de cada evento se dibujarán aquí, empezando por el próximo evento.",
@@ -128,7 +129,7 @@ export const es = {
     carriedTurnout: "{share} con Kills",
     carriedSpread: "{low}–{high} en {n} eventos",
     carriedRatioHelp:
-      "× es la parte de Kills dividida entre la parte de Might. Se muestra desde 3 eventos, con su rango; antes, la diferencia en puntos porcentuales.",
+      "pp es la parte de Kills menos la parte de Might. Desde 3 eventos, debajo se muestra el rango de la parte de Kills ÷ parte de Might en esos eventos.",
     carriedPoints: "pp",
   },
   compare: {
@@ -206,13 +207,13 @@ export const es = {
   balance: {
     title: "Balance del servidor",
     description:
-      "La parte de cada alianza seguida en el Might del servidor, y un armador de bloques hipotéticos.",
-    lead: "Ninguna alianza supera el {max} del Might del servidor; las {n} primeras suman el {top}.",
+      "La parte de cada alianza seguida en el Might de las alianzas seguidas, y un armador de bloques hipotéticos.",
+    lead: "Ninguna alianza supera el {max} del Might de las alianzas seguidas; las {n} primeras suman el {top}.",
     includes: "El Might incluye edificios y tecnología.",
     basis: "{n} alianzas seguidas, leídas el {date}.",
-    total: "Might total",
-    shares: "Reparto del Might",
-    bar: "Reparto del Might por alianza: {list}",
+    total: "Alianzas seguidas",
+    shares: "Reparto por alianza",
+    bar: "Reparto del Might de las alianzas seguidas por alianza: {list}",
     asOf: "al {date}",
     none: "Todavía no hay lecturas diarias.",
     builder: "Creador de bloques",
@@ -220,7 +221,7 @@ export const es = {
     builderHelp:
       "Toca A o B en una alianza para probar un bloque. Es aritmética, no un pronóstico ni un anuncio.",
     bloc: "Bloque {bloc}",
-    blocShare: "{share} del Might del servidor",
+    blocShare: "{share} del Might de las alianzas seguidas",
     blocAlliances: "Alianzas",
     blocEmpty: "Ninguna alianza todavía",
     noBloc: "Sin bloque",

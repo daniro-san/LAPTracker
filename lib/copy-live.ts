@@ -30,7 +30,7 @@ export const liveCopy = {
   /** The server fight clock (issue 284, D86): events side by side on their samples, one row each. `{min}` is the cadence. */
   fightClock: "Server fight clock",
   fightClockLead:
-    "When the server fought, event by event. Each box is one {min}-minute slot and its height is the share of the event's kills gained in it. Slots line up on the server clock, so noon is noon in every row.",
+    "The tracked alliances' kills, {min} minutes at a time, event by event. A box's height is its share of the kills drawn for that event, from the Start to its last reading.",
   /** The link from an event's "During the event" section. */
   fightClockLink: "Compare with other events on the server fight clock",
   fightClockShare: "Share of the kills",
@@ -40,7 +40,7 @@ export const liveCopy = {
   fightClockOffSince:
     "No {min}-minute readings for this event (they start with the event of {date})",
   fightClockOffNext: "No {min}-minute readings for this event (they start with the next event)",
-  fightClockOffMissed: "No {min}-minute readings were taken for this event",
+  fightClockOffMissed: "No usable {min}-minute readings were stored for this event.",
   fightClockOffWaiting: "The {min}-minute readings come in while this event runs",
   /** No event has readings yet. */
   fightClockNone:

@@ -13,7 +13,6 @@ const row = (unionId: number, over: Partial<CarriedRow> = {}): CarriedRow => ({
   badgeId: null,
   mightShare: 0.1,
   killShare: 0.2,
-  ratio: null,
   spread: null,
   turnout: null,
   ...over,
@@ -49,14 +48,16 @@ describe("WhoCarried", () => {
     });
   });
 
-  it("shows the ratio with its range for an alliance with enough events, else the gap in points", () => {
+  it("shows points on every row and the ratio only as a range from 3 events", () => {
     const html = render([
-      row(1, { ratio: 2.5, spread: { n: 4, low: 1.8, high: 2.9 } }),
-      row(2, { mightShare: 0.1, killShare: 0.161 }),
+      row(1, { mightShare: 0.1, killShare: 0.161, spread: { n: 4, low: 1.8, high: 2.9 } }),
+      row(2, { mightShare: 0.1, killShare: 0.14 }),
     ]);
-    expect(html).toContain("2.5×");
-    expect(html).toContain("1.8×–2.9× over 4 events");
+    expect(html.match(/\+\d+\.\d pts/g)).toHaveLength(2);
     expect(html).toContain("+6.1 pts");
+    expect(html).toContain("+4.0 pts");
+    expect(html).toContain("1.8×–2.9× over 4 events");
+    expect(html.match(/×/g)).toHaveLength(2);
   });
 
   it("lets a long tag and name shrink inside the row and links the row to the alliance's page", () => {

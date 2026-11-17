@@ -96,7 +96,7 @@ export const sv = {
     fewGainers: "få vinnare",
     fightClock: "Serverns stridsklocka",
     fightClockLead:
-      "När servern stridde, event för event. Varje ruta är en tidsruta på {min} minuter, och höjden visar andelen av eventets vunna Kills i den. Rutorna följer serverklockan, så middag är middag på varje rad.",
+      "De bevakade alliansernas Kills, {min} minuter i taget, event för event. En rutas höjd är dess andel av de Kills som ritats för eventet, från Början till dess sista avläsning.",
     fightClockLink: "Jämför med andra event på serverns stridsklocka",
     fightClockShare: "Andel av Kills",
     fightClockOutline: "Med kontur: de mest aktiva {span} minuterna i varje event",
@@ -105,7 +105,7 @@ export const sv = {
       "Inga {min}-minuters avläsningar för det här eventet (de börjar med eventet den {date})",
     fightClockOffNext:
       "Inga {min}-minuters avläsningar för det här eventet (de börjar med nästa event)",
-    fightClockOffMissed: "Inga {min}-minuters avläsningar togs för det här eventet",
+    fightClockOffMissed: "Inga användbara {min}-minuters avläsningar sparades för det här eventet.",
     fightClockOffWaiting: "{min}-minuters avläsningarna kommer in medan det här eventet pågår",
     fightClockNone: "Varje events {min}-minuters avläsningar ritas här, med början i nästa event.",
     comparePulseHelp:
@@ -127,7 +127,7 @@ export const sv = {
     carriedTurnout: "{share} med Kills",
     carriedSpread: "{low}–{high} över {n} event",
     carriedRatioHelp:
-      "× är Kills-andelen delat med Might-andelen. Den visas från 3 event, med spann; före det visas avståndet i %-enh.",
+      "%-enh. är Kills-andelen minus Might-andelen. Från 3 event visas under den spannet för Kills-andel ÷ Might-andel över dessa event.",
     carriedPoints: "%-enh.",
   },
   compare: {
@@ -149,13 +149,14 @@ export const sv = {
   },
   balance: {
     title: "Serverbalans",
-    description: "Varje bevakad allians andel av serverns Might, och en hypotetisk blockbyggare.",
-    lead: "Ingen allians har mer än {max} av serverns Might; de {n} främsta har {top}.",
+    description:
+      "Varje bevakad allians andel av de bevakade alliansernas Might, och en hypotetisk blockbyggare.",
+    lead: "Ingen allians har mer än {max} av de bevakade alliansernas Might; de {n} främsta har {top}.",
     includes: "Might inkluderar byggnader och teknik.",
     basis: "{n} bevakade allianser, lästa {date}.",
-    total: "Serverns Might",
-    shares: "Andel av Might",
-    bar: "Andel av Might per allians: {list}",
+    total: "Bevakade allianser",
+    shares: "Andel per allians",
+    bar: "Andel av de bevakade alliansernas Might per allians: {list}",
     asOf: "per {date}",
     none: "Inga dagsavläsningar än.",
     builder: "Blockbyggare",
@@ -163,7 +164,7 @@ export const sv = {
     builderHelp:
       "Tryck på A eller B vid en allians för att prova ett block. Det här är räkneexempel, inte en prognos och inget besked.",
     bloc: "Block {bloc}",
-    blocShare: "{share} av serverns Might",
+    blocShare: "{share} av de bevakade alliansernas Might",
     blocAlliances: "Allianser",
     blocEmpty: "Ingen allians än",
     noBloc: "Inte i ett block",
