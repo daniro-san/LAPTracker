@@ -71,7 +71,8 @@ export const nameAliases = pgTable(
  * A new member an officer added by hand before the roster lists them (D106). Their facts live in
  * member_facts under the uid `-id` (game uids are positive), so one facts pipeline serves both. A roster
  * read after `created_at` with exactly one member of the same name key and no facts moves those facts to
- * that member and sets `matched_uid`; an officer can also link them by hand, or delete the row.
+ * that member and sets `matched_uid`; an officer can also link them by hand. Delete sets `dismissed_at`
+ * and keeps the row with its facts and points (amendment 2026-11-17); adding the name again reopens it.
  */
 export const pendingMembers = pgTable(
   "pending_members",
@@ -88,11 +89,12 @@ export const pendingMembers = pgTable(
     createdAt: tstz("created_at").notNull(),
     matchedUid: big("matched_uid"),
     matchedAt: tstz("matched_at"),
+    dismissedAt: tstz("dismissed_at"),
   },
   (t) => [
     uniqueIndex("pending_members_request_unique").on(t.workspaceId, t.requestId),
     uniqueIndex("pending_members_open_key_unique")
       .on(t.workspaceId, t.nameKey)
-      .where(sql`${t.matchedUid} is null`),
+      .where(sql`${t.matchedUid} is null and ${t.dismissedAt} is null`),
   ],
 );

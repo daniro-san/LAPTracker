@@ -17,7 +17,8 @@ export interface Formats {
   zone: string;
 }
 
-type Counted = "reason.might" | "reason.idle" | "nodata.donations" | "members.checkinCount";
+type Counted =
+  "reason.might" | "reason.idle" | "nodata.donations" | "members.checkinCount" | "pending.toMatch";
 
 /** The singular or plural form of a counted phrase, by the language's own rule. */
 export function plural(t: WorkspaceDictionary, key: Counted, n: number, f: Formats): string {

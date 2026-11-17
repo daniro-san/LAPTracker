@@ -7,16 +7,19 @@
 // languages are combined by the server (and the editor says so); any other field shows both values with
 // "Keep <theirs>" and "Use <mine>". Every way of closing with unsaved changes asks first (the sheet frame).
 // Without a uid it is "Add a new member" (D106): a name field first, and Save makes the pending member.
+// A name that is already a current member's asks first: "Open" them, or "Add anyway" (2026-11-17).
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { track } from "@/lib/analytics/events";
-import { FIELD } from "@/lib/brand/components/controls";
+import { chip, FIELD } from "@/lib/brand/components/controls";
 import { Sheet } from "@/lib/brand/components/Sheet";
 import { isolate } from "@/lib/copy";
 import type { Fact, FactField, FactValues, MemberFacts } from "@/lib/private/fact-fields";
 import { dayFormat, factText, type FactTextFormat } from "@/lib/private/fact-text";
 import { mightIn, parseOnboarding } from "@/lib/private/onboarding-parse";
+import { sameName } from "@/lib/private/roster-search";
+import { nameKey } from "@/lib/screenshot/name-key";
 
 import { FactFields } from "./FactFields";
 import {
@@ -47,6 +50,8 @@ export interface EditorProps {
   language: string;
   serverZone: string;
   used: readonly string[];
+  /** A new member's: the newest roster, to say when the name typed is already a member's. */
+  members?: readonly { uid: number; name: string }[];
   onClose: () => void;
 }
 
@@ -175,10 +180,17 @@ function useSave(props: EditorProps, f: ReturnType<typeof useForm>) {
   return { invalid, conflicts, merged, state, close, settle, save, target };
 }
 
-/** "Add a new member": their name in the game, required (D106). */
-function NameField(props: { s: ReturnType<typeof useSave>; words: EditorProps["words"] }) {
+/** "Add a new member": their name in the game, required (D106), and the members who already have it. */
+function NameField(props: {
+  s: ReturnType<typeof useSave>;
+  words: EditorProps["words"];
+  slug: string;
+  taken: readonly { name: string }[];
+  onAnyway: () => void;
+}) {
   const { target } = props.s;
   const { words } = props;
+  const first = props.taken[0];
   return (
     <div className="mb-3">
       <p className="text-body-sm text-ink/80">{words["pending.addHelp"]}</p>
@@ -193,7 +205,9 @@ function NameField(props: { s: ReturnType<typeof useSave>; words: EditorProps["w
         autoComplete="off"
         translate="no"
         aria-invalid={target.nameMissing || undefined}
-        aria-describedby={target.nameMissing ? "pending-name-e" : undefined}
+        aria-describedby={
+          target.nameMissing ? "pending-name-e" : first ? "pending-taken" : undefined
+        }
         onChange={(e) => target.setName(e.target.value)}
         className={`${FIELD} mt-1`}
       />
@@ -202,8 +216,31 @@ function NameField(props: { s: ReturnType<typeof useSave>; words: EditorProps["w
           {words["pending.nameMissing"]}
         </p>
       )}
+      {first && (
+        <div id="pending-taken" role="status" className="mt-2 border-l-4 border-yarn pl-2">
+          <p translate="no">{say(words["pending.taken"], { name: isolate(first.name) })}</p>
+          <div className="mt-1 flex flex-wrap gap-2">
+            <a
+              href={`/w/${props.slug}/members?q=${encodeURIComponent(first.name)}`}
+              className={chip()}
+            >
+              {words["pending.open"]}
+            </a>
+            <button type="button" onClick={props.onAnyway} className={chip()}>
+              {words["pending.addAnyway"]}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
+}
+
+/** The members who already have the new member's name, until "Add anyway" for that name key. */
+function useTaken(name: string, members: NonNullable<EditorProps["members"]>) {
+  const [anyway, setAnyway] = useState<string | null>(null);
+  const key = nameKey(name);
+  return { members: key === anyway ? [] : sameName(name, members), anyway: () => setAnyway(key) };
 }
 
 export function FactsEditor(props: EditorProps) {
@@ -214,6 +251,8 @@ export function FactsEditor(props: EditorProps) {
   const pending = changesOf(values, f.stored, f.fromMessage);
   const adding = props.uid === null;
   const named = adding && s.target.name.trim() !== "";
+  // Only the add sheet is given the roster.
+  const taken = useTaken(s.target.name, props.members ?? []);
   const dirty = pending.changes.length > 0 || pending.invalid.length > 0 || named;
   const text: FactTextFormat = { language, now: new Date(), day: dayFormat(language), words };
   const conflictOf = (field: FactField) => {
@@ -239,12 +278,20 @@ export function FactsEditor(props: EditorProps) {
       primary={{
         label: words["facts.save"],
         onClick: () => void s.save(),
-        disabled: s.state === "saving" || s.conflicts.length > 0,
+        disabled: s.state === "saving" || s.conflicts.length > 0 || taken.members.length > 0,
         focus: props.mode === "edit" && !adding,
       }}
       note={<SaveNote s={s} words={words} />}
     >
-      {adding && <NameField s={s} words={words} />}
+      {adding && (
+        <NameField
+          s={s}
+          words={words}
+          slug={props.slug}
+          taken={taken.members}
+          onAnyway={taken.anyway}
+        />
+      )}
       <Paste words={words} language={language} open={props.mode === "paste"} onRead={f.read} />
       <FactFields
         form={f.form}

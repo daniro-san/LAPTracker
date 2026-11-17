@@ -153,16 +153,27 @@ describe("POST /api/w/[slug]/pending (D106)", () => {
     expect(moved).toEqual([{ uid: 101 }]);
   });
 
-  it("deletes a pending member with its facts and points (200), then 404", async () => {
+  it("deletes by dismissing (200): record, facts and points stay, then 404; re-adding reopens it", async () => {
     const uid = await pendingOfOgs();
     expect(await answer(await post({ action: "delete", uid }))).toEqual([200, { ok: true }]);
-    expect(await db.select().from(pendingMembers)).toEqual([]);
-    expect(await db.select().from(memberFacts)).toEqual([]);
-    expect(await db.select().from(allianceDuelPoints)).toEqual([]);
+    const [kept] = await db.select().from(pendingMembers);
+    expect(kept?.id).toBe(-uid);
+    expect(kept?.dismissedAt).not.toBeNull();
+    expect((await db.select().from(memberFacts)).map((f) => [f.uid, f.field])).toEqual([
+      [uid, "troopTier"],
+    ]);
+    expect(await db.select({ uid: allianceDuelPoints.uid }).from(allianceDuelPoints)).toEqual([
+      { uid },
+    ]);
     expect(await answer(await post({ action: "delete", uid }))).toEqual([
       404,
       { code: "not_found" },
     ]);
+    const again = (await (await post({ ...add(randomUUID()), changes: [] })).json()) as {
+      uid: number;
+    };
+    expect(again.uid).toBe(uid);
+    expect((await db.select().from(pendingMembers))[0]?.dismissedAt).toBeNull();
   });
 
   it("refuses another workspace's pending member in link, delete and the facts route", async () => {

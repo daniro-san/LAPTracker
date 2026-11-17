@@ -27,7 +27,7 @@ import {
   type Words,
 } from "./draft-known";
 import { DraftHeader, type ReviewText } from "./DraftHeader";
-import { DraftRowCard, type RowState } from "./DraftRowCard";
+import { DraftRowCard, takenBy, type RowState } from "./DraftRowCard";
 import { SecretOpsReview } from "./SecretOpsReview";
 
 const factOf = (view: DraftView, uid: number | null, field: PhotoFact | undefined) =>
@@ -65,6 +65,15 @@ const displayOrder = (view: DraftView) =>
 
 const labelOf = (view: DraftView, i: number) => `#${view.rows[i]?.rank ?? i + 1}`;
 
+/** What a kept row still needs, first thing first; null when it can be saved. */
+function rowNeeds(r: RowState, members: DraftView["members"]) {
+  if (r.uid === null && !r.newName?.trim()) return "member";
+  // A new member's name that a member already has, until "Add anyway" (D106, 2026-11-17).
+  if (takenBy(r, members).length > 0) return "taken";
+  if (r.value === "") return "value";
+  return r.conflict ? "conflict" : null;
+}
+
 /** Why Save is off: the first thing missing, in the order the officer sees it; null when it can save. */
 function whyNot(
   view: DraftView,
@@ -76,8 +85,7 @@ function whyNot(
   for (const i of order) {
     const r = rows[i];
     if (!r || r.dropped) continue;
-    const noMember = r.uid === null && !r.newName?.trim();
-    const key = noMember ? "member" : r.value === "" ? "value" : r.conflict ? "conflict" : null;
+    const key = rowNeeds(r, view.members);
     if (key)
       return { template: `shots.why.${key}`, row: { label: labelOf(view, i), href: `#row-${i}` } };
   }

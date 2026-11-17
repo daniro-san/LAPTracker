@@ -3,19 +3,22 @@
 // roster read after the pending member was added lists exactly one member with the same name key (the
 // sheet import's comparison form, or a remembered alias) who has no facts yet, the facts move to that
 // member with their versions and times, the name is remembered as an alias and the pending member is
-// marked matched. No match or several: it stays, and an officer links it by hand or deletes it. A fuzzy
-// match never merges.
+// marked matched. No match or several: it stays, "To match" (`toMatch`), and an officer links it by hand
+// or deletes it. Delete dismisses it and keeps its facts and points; adding the name again reopens it
+// (2026-11-17). A fuzzy match never merges.
 import type { Db } from "../db";
 import { newestRoster } from "../repo/import";
 import { aliasesOf, saveAliases } from "../repo/member-facts";
 import {
   claimPending,
-  deletePending,
+  dismissedPendings,
+  dismissPending,
   findPending,
   insertPending,
   moveDuelPoints,
   moveFacts,
   openPendings,
+  reopenDismissed,
   uidsWithFacts,
 } from "../repo/pending-members";
 import { anyRoster } from "../repo/workspace-any-roster";
@@ -42,8 +45,26 @@ export async function pendingMembers(db: Db, access: WorkspaceAccess): Promise<P
   }));
 }
 
+/** The open pending members a roster read at `rosterAt` came after, still with no single match. */
+export const toMatch = (pending: readonly Pending[], rosterAt: Date | null): Pending[] =>
+  rosterAt === null ? [] : pending.filter((p) => p.createdAt <= rosterAt);
+
+/** The pending members an officer deleted, kept with their facts (2026-11-17), newest first. */
+export async function dismissedMembers(
+  db: Db,
+  access: WorkspaceAccess,
+): Promise<(Pending & { dismissedAt: Date })[]> {
+  return (await dismissedPendings(db, access.workspaceId)).map((p) => ({
+    uid: pendingUid(p.id),
+    name: p.name,
+    createdAt: p.createdAt,
+    dismissedAt: p.dismissedAt,
+  }));
+}
+
 /**
- * The open pending member with this name's key, made when there is none; null for a name with no key.
+ * The open pending member with this name's key, else the dismissed one reopened, else a new one; null for
+ * a name with no key.
  * With a request id (the add sheet, D100), a repeat returns the first add's member as `repeat`.
  */
 export async function openPending(
@@ -61,6 +82,7 @@ export async function openPending(
   const row = { workspaceId: ws, name: name.trim(), nameKey: key, requestId, createdAt: now };
   const id =
     (await findPending(db, ws, { nameKey: key }))?.id ??
+    (await reopenDismissed(db, ws, key, { name: row.name, requestId, now })) ??
     (await insertPending(db, { ...row, createdBy: access.user.id })) ??
     // Another officer sent the same request, or added the same name, at the same moment: reuse theirs.
     (await theirs(db, ws, requestId, key));
@@ -169,9 +191,9 @@ export async function linkPending(
   return merged ? "ok" : "not_found";
 }
 
-/** Deletes an open pending member and what was saved for it. */
-export const removePending = (db: Db, access: WorkspaceAccess, pendingId: number) =>
-  deletePending(db, access.workspaceId, pendingId);
+/** Deletes an open pending member from the list: it is dismissed, its facts and points are kept. */
+export const removePending = (db: Db, access: WorkspaceAccess, pendingId: number, now: Date) =>
+  dismissPending(db, access.workspaceId, pendingId, now);
 
 /**
  * Matches each pending member added before the newest roster to the one member of that roster with the

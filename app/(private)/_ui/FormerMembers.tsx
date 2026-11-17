@@ -2,8 +2,8 @@
 
 // The Members tab's "Former members" view (D107): who an earlier roster listed and the newest does not,
 // newest leavers first, with a name search (accents and case do not matter) and 25 rows at a time. Each
-// row: the name, the day they were last seen, the last public might and kills, and what officers
-// recorded. A row opens a sheet whose facts can still be edited, so an officer can note why they left.
+// row: the name, the day they were last seen, the last public might and kills, the newest week of
+// Alliance Duel points saved for them, and what officers recorded. A row opens a sheet whose facts can still be edited, so an officer can note why they left.
 import { useState } from "react";
 
 import { Sheet } from "@/lib/brand/components/Sheet";
@@ -33,6 +33,11 @@ function FormerSheet(props: {
       <p translate="no" className="mt-1 text-body-sm tabular-nums">
         {row.numbers}
       </p>
+      {row.duel && (
+        <p translate="no" className="mt-1 text-body-sm tabular-nums">
+          {row.duel}
+        </p>
+      )}
       <Facts card={row} editor={props.editor} zoneNow={null} />
     </Sheet>
   );
@@ -89,6 +94,11 @@ export function FormerMembers(props: {
                   <span translate="no" className="text-body-sm tabular-nums">
                     {r.numbers}
                   </span>
+                  {r.duel && (
+                    <span translate="no" className="text-body-sm tabular-nums">
+                      {r.duel}
+                    </span>
+                  )}
                   {r.summary && (
                     <span className="line-clamp-2 text-body-sm text-ink/75">{r.summary}</span>
                   )}

@@ -8,6 +8,8 @@
 import { chip, FIELD } from "@/lib/brand/components/controls";
 import { isolate } from "@/lib/copy";
 import type { ViewRow } from "@/lib/private/import-view";
+import { sameName } from "@/lib/private/roster-search";
+import { nameKey } from "@/lib/screenshot/name-key";
 
 import { factText, fillIn, groupedValue, type Words } from "./draft-known";
 
@@ -15,6 +17,8 @@ export interface RowState {
   uid: number | null;
   /** A row not found saved to a new member by this name, as the officer fixed it (D106). */
   newName?: string | undefined;
+  /** The new name's key the officer said "Add anyway" for, though a member has it (2026-11-17). */
+  anyway?: string | undefined;
   value: string;
   dropped: boolean;
   /** Member update: the version to save on, after "Use mine" answered a conflict. */
@@ -26,6 +30,13 @@ export interface RowState {
 }
 
 const button = chip();
+
+/** The members who already have a new member's name, until the officer says "Add anyway" for it. */
+export function takenBy<M extends { name: string }>(state: RowState, members: readonly M[]): M[] {
+  const name = state.newName;
+  if (name === undefined || nameKey(name) === state.anyway) return [];
+  return sameName(name, members);
+}
 const factOr = (field: ViewRow["field"], v: number | null, sep: string) =>
   v === null ? "—" : factText(field, v, sep);
 
@@ -167,9 +178,12 @@ function MemberSelect(props: InputProps) {
   );
 }
 
-/** A row not found saved to a new member (D106): the name as read, to fix, and the way back. */
+/** A row not found saved to a new member (D106): the name as read, to fix, and the way back. A name a
+ * member already has asks first: "Pick them" (the only one, else the picker), or "Add anyway". */
 function NewMemberName(props: InputProps & { name: string }) {
   const { id, state, w } = props;
+  const taken = takenBy(state, props.members);
+  const first = taken[0];
   return (
     <div className="text-body-sm">
       <label className="block" htmlFor={`${id}-n`}>
@@ -185,7 +199,35 @@ function NewMemberName(props: InputProps & { name: string }) {
           className={`${FIELD} mt-1 block`}
         />
       </label>
-      <p className="mt-1 text-ink/80">{w["shots.newHelp"]}</p>
+      {first && !props.readOnly ? (
+        <div role="status" className="mt-2 border-l-4 border-yarn pl-2">
+          <p translate="no">{fillIn(w["shots.taken"], { name: isolate(first.name) })}</p>
+          <div className="mt-1 flex flex-wrap gap-2">
+            <button
+              type="button"
+              className={button}
+              onClick={() =>
+                props.onChange({
+                  ...state,
+                  newName: undefined,
+                  uid: taken.length === 1 ? first.uid : null,
+                })
+              }
+            >
+              {w["shots.pickThem"]}
+            </button>
+            <button
+              type="button"
+              className={button}
+              onClick={() => props.onChange({ ...state, anyway: nameKey(props.name) })}
+            >
+              {w["shots.addAnyway"]}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <p className="mt-1 text-ink/80">{w["shots.newHelp"]}</p>
+      )}
       {!props.readOnly && (
         <button
           type="button"

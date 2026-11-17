@@ -82,6 +82,9 @@ export const EDITOR_KEYS = [
   "pending.addHelp",
   "pending.name",
   "pending.nameMissing",
+  "pending.taken",
+  "pending.open",
+  "pending.addAnyway",
 ] as const;
 export type EditorWords = Pick<WorkspaceDictionary, (typeof EDITOR_KEYS)[number]>;
 

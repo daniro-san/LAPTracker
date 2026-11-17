@@ -1,7 +1,8 @@
 // POST /api/w/[slug]/pending — new members added by hand before the roster lists them (D106): add one with
 // its first facts (the add sheet's request id, D100), link one to a member of the newest roster, or delete
-// one. Same origin and JSON only (D71), zod-parsed, a session of this workspace (401 signed_out, D99). An
-// add whose facts met a newer save answers 409 with them, as the facts route does. Nothing is logged.
+// one (it is dismissed and kept with its facts, 2026-11-17). Same origin and JSON only (D71), zod-parsed,
+// a session of this workspace (401 signed_out, D99). An add whose facts met a newer save answers 409 with
+// them, as the facts route does. Nothing is logged.
 import { z } from "zod";
 
 import { requireWorkspace } from "@/lib/private/access";
@@ -71,7 +72,9 @@ export async function POST(
       if (linked === "ok") return answer(200, { ok: true });
       return privateError(linked === "not_member" ? 400 : 404, linked);
     }
-    const gone = await privately("pending.delete", () => removePending(db, access, -input.uid));
+    const gone = await privately("pending.delete", () =>
+      removePending(db, access, -input.uid, now),
+    );
     return gone ? answer(200, { ok: true }) : privateError(404, "not_found");
   });
 }

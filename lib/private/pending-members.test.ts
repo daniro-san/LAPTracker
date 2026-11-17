@@ -11,7 +11,13 @@ import { dailyReads, dailyRosters, memberFacts, pendingMembers as pendingTable }
 import { allianceDuelPoints } from "../schema-import";
 import { requireWorkspace, type WorkspaceAccess } from "./access";
 import { saveFacts, type FactChange } from "./member-facts";
-import { addPending, linkPending, pendingMembers, reconcilePending } from "./pending-members";
+import {
+  addPending,
+  linkPending,
+  pendingMembers,
+  reconcilePending,
+  toMatch,
+} from "./pending-members";
 import { createSession } from "./session";
 
 const OGS = 67111155;
@@ -119,6 +125,36 @@ describe("pending members and the roster (D106)", () => {
       "Zephyrine",
     ]);
     expect(await notesOf(14)).toHaveLength(1);
+  });
+
+  it("counts as To match once a roster read after the add still has no single match", async () => {
+    await added("Corvin");
+    // Added after tonight's read: not To match until a later read.
+    await added("Ilsa", new Date(ROSTER_AT.getTime() + 60_000));
+    await reconcilePending(db, ana, LATER);
+    expect(toMatch(await pendingMembers(db, ana), ROSTER_AT).map((p) => p.name)).toEqual([
+      "Corvin",
+    ]);
+
+    // The next night's read still lists two Corvins and no Ilsa.
+    const next = new Date(ROSTER_AT.getTime() + 86_400_000);
+    await db.insert(dailyReads).values({ day: "2026-11-17", startedAt: next, status: "complete" });
+    await db.insert(dailyRosters).values({
+      readDay: "2026-11-17",
+      unionId: OGS,
+      memberCount: ROSTER.length,
+      sourceUpdatedAt: next,
+      isFresh: true,
+      memberUids: ROSTER.map(([uid]) => uid),
+      memberNames: ROSTER.map(([, name]) => name),
+      memberPower: ROSTER.map(() => 1000),
+      memberKills: ROSTER.map(() => 0),
+    });
+    expect(await reconcilePending(db, ana, next)).toBe(0);
+    expect(toMatch(await pendingMembers(db, ana), next).map((p) => p.name)).toEqual([
+      "Corvin",
+      "Ilsa",
+    ]);
   });
 
   it("links by hand after a member's own facts: their versions follow the member's", async () => {

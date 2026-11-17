@@ -11,6 +11,7 @@ import {
   memberSnapshots,
   snapshots,
 } from "../schema";
+import { allianceDuelPoints } from "../schema-import";
 import { requireWorkspace, type WorkspaceAccess } from "./access";
 import { formerMembers } from "./former-members";
 import { saveFacts, type FactChange } from "./member-facts";
@@ -97,9 +98,17 @@ describe("former members (D107)", () => {
       [23, "Tobiah", "2026-11-13", 20_000_000],
     ]);
     expect(former[0]?.facts.notes?.value).toBe("moved server");
-    // Only the name, public might and kills, the last day seen and the facts (CLAUDE.md, D71).
+    // Only the name, public might and kills, the last day seen, the facts and Duel points (CLAUDE.md, D71).
     for (const m of former) {
-      expect(Object.keys(m).sort()).toEqual(["facts", "kills", "lastSeen", "might", "name", "uid"]);
+      expect(Object.keys(m).sort()).toEqual([
+        "duel",
+        "facts",
+        "kills",
+        "lastSeen",
+        "might",
+        "name",
+        "uid",
+      ]);
     }
     const sent = JSON.stringify(former);
     for (const leak of [
@@ -158,5 +167,32 @@ describe("former members (D107)", () => {
       }),
     ]);
     expect(JSON.stringify(former)).not.toContain("avatar");
+  });
+
+  it("shows the newest week of Alliance Duel points saved for them, as the member card does", async () => {
+    await read("2026-11-14", [
+      [21, "Wren", 40_000_000],
+      [22, "Ilsa", 30_000_000],
+    ]);
+    await read("2026-11-16", [[21, "Wren", 42_000_000]]);
+    const points = (week: string, day: "mon" | "tue" | "week", value: number) => ({
+      workspaceId: ana.workspaceId,
+      uid: 22,
+      week,
+      day,
+      points: value,
+      savedAt: NOW,
+    });
+    await db
+      .insert(allianceDuelPoints)
+      .values([
+        points("2026-11-02", "week", 9_000_000),
+        points("2026-11-09", "mon", 2_400_000),
+        points("2026-11-09", "tue", 3_100_000),
+        { ...points("2026-11-09", "week", 1), uid: 21 },
+      ]);
+
+    const [ilsa] = await formerMembers(db, ana, ZONE);
+    expect(ilsa?.duel).toEqual({ week: "2026-11-09", points: { mon: 2_400_000, tue: 3_100_000 } });
   });
 });

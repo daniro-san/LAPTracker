@@ -237,6 +237,18 @@ export async function duelWeek(db: Db, workspaceId: number, week: string) {
     .where(and(eq(allianceDuelPoints.workspaceId, workspaceId), eq(allianceDuelPoints.week, week)));
 }
 
+/** The Alliance Duel points of the newest week saved for each of `uids` (former members, D107). */
+export async function newestDuelWeeks(db: Db, workspaceId: number, uids: readonly number[]) {
+  const p = allianceDuelPoints;
+  const newest = sql`(select max(q.week) from alliance_duel_points q
+    where q.workspace_id = ${p.workspaceId} and q.uid = ${p.uid})`;
+  if (uids.length === 0) return [];
+  return db
+    .select({ uid: p.uid, week: p.week, day: p.day, points: p.points })
+    .from(p)
+    .where(and(eq(p.workspaceId, workspaceId), inArray(p.uid, [...uids]), eq(p.week, newest)));
+}
+
 export async function insertCheck(
   db: Db,
   row: Omit<typeof screenshotChecks.$inferInsert, "id">,
