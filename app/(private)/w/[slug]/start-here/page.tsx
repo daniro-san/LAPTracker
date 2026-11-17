@@ -90,6 +90,7 @@ export default async function StartHerePage({ params }: { params: Promise<{ slug
           saved: t["starthere.saved"],
           failed: t["starthere.failed"],
           conflict: t["starthere.conflict"],
+          missing: t["starthere.missing"],
           someone: t["starthere.someone"],
         }}
       />

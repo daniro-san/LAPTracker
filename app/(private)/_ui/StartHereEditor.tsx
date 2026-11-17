@@ -35,6 +35,8 @@ export interface StartHereWords {
   failed: string;
   /** "{name} saved the {lang} text while you were editing. …" */
   conflict: string;
+  /** "{lang} is missing {parts}." */
+  missing: string;
   someone: string;
 }
 
@@ -125,6 +127,8 @@ function Panel(props: {
   text: StartHereText;
   max: Record<Part, number>;
   words: StartHereWords;
+  /** Parts holding a translation not accepted yet: marked so the officer sees where it went. */
+  drafted: readonly Part[];
   onChange: (part: Part, value: string) => void;
 }) {
   const w = props.words;
@@ -144,11 +148,35 @@ function Panel(props: {
             maxLength={props.max[part]}
             rows={rows}
             onChange={(ev) => props.onChange(part, ev.target.value)}
-            className={`${FIELD} mt-1 text-base`}
+            className={`${FIELD} mt-1 text-base ${
+              props.drafted.includes(part) ? "bg-plum/10 ring-2 ring-plum" : ""
+            }`}
           />
         </label>
       ))}
     </div>
+  );
+}
+
+/** "PT is missing Who to ask": a part written in another language but empty in this one. */
+function Missing(props: { texts: Texts; languages: readonly NoticeLanguage[]; w: StartHereWords }) {
+  const { texts, languages, w } = props;
+  const lines = languages.flatMap((l) => {
+    const gaps = PARTS.filter(
+      ({ part }) =>
+        texts[l][part].trim() === "" && languages.some((o) => texts[o][part].trim() !== ""),
+    ).map(({ part }) => `“${w[part]}”`);
+    return gaps.length === 0
+      ? []
+      : [fill(w.missing, { lang: LANGUAGE_CODE[l], parts: gaps.join(", ") })];
+  });
+  if (lines.length === 0) return null;
+  return (
+    <ul className="mt-2 text-body-sm text-ink/80">
+      {lines.map((line) => (
+        <li key={line}>{line}</li>
+      ))}
+    </ul>
   );
 }
 
@@ -233,6 +261,7 @@ export function StartHereEditor(props: {
         label={w.languages}
         onPick={setActive}
       />
+      <Missing texts={texts} languages={languages} w={w} />
       <TranslateBar
         active={active}
         languages={languages}
@@ -246,6 +275,7 @@ export function StartHereEditor(props: {
         text={texts[active]}
         max={props.max}
         words={w}
+        drafted={tr.drafts[active]?.parts ?? []}
         onChange={(part, value) => {
           setState("idle");
           setTexts((x) => ({ ...x, [active]: { ...x[active], [part]: value } }));

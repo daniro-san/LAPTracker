@@ -6,6 +6,7 @@
 // editor. Nothing is saved until Save. A part over the translator's 3,000 characters is not sent.
 import { useState } from "react";
 
+import { buttonClass } from "@/lib/brand/components/Button";
 import { fill } from "@/lib/copy";
 import { DRAFT_LIMIT, type NoticeLanguage } from "@/lib/private/notice-rules";
 import type { StartHereText } from "@/lib/private/start-here";
@@ -34,8 +35,8 @@ export interface TranslateWords {
   failed: string;
 }
 
-/** A translated language: its text before the draft (for Undo), and whether it came back partly. */
-type Draft = { before: StartHereText; partly: boolean };
+/** A translated language: its text before the draft (for Undo), the parts filled, and "partly". */
+type Draft = { before: StartHereText; parts: Part[]; partly: boolean };
 
 export function useTranslate(
   slug: string,
@@ -76,7 +77,11 @@ export function useTranslate(
       ...Object.fromEntries(
         to.map((l) => [
           l,
-          { before: d[l]?.before ?? texts[l], partly: done.some((a) => a.partly.includes(l)) },
+          {
+            before: d[l]?.before ?? texts[l],
+            parts,
+            partly: done.some((a) => a.partly.includes(l)),
+          },
         ]),
       ),
     }));
@@ -140,7 +145,7 @@ export function TranslateBar(props: {
   );
 }
 
-/** In a translated language's tab: the draft mark, Accept and Undo, and "partly untranslated". */
+/** In a translated language's tab: the draft mark with Accept and Undo beside it, and "partly". */
 export function DraftLine(props: {
   language: NoticeLanguage;
   tr: Translate;
@@ -149,19 +154,26 @@ export function DraftLine(props: {
   const draft = props.tr.drafts[props.language];
   if (!draft) return null;
   const { words: w, tr, language } = props;
-  const small = "min-h-11 min-w-11 px-3 font-semibold underline underline-offset-4";
   return (
     <div className="mt-3 border-l-4 border-plum pl-3">
-      <p className="text-body-sm font-semibold text-plum">{w.draft}</p>
-      {draft.partly && <p className="text-body-sm">{w.partly}</p>}
-      <p className="flex flex-wrap gap-2">
-        <button type="button" onClick={() => tr.accept(language)} className={small}>
+      <p className="flex flex-wrap items-center gap-2">
+        <span className="text-body-sm font-semibold text-plum">{w.draft}</span>
+        <button
+          type="button"
+          onClick={() => tr.accept(language)}
+          className={buttonClass("primary")}
+        >
           {w.accept}
         </button>
-        <button type="button" onClick={() => tr.undo(language)} className={small}>
+        <button
+          type="button"
+          onClick={() => tr.undo(language)}
+          className={buttonClass("secondary")}
+        >
           {w.undo}
         </button>
       </p>
+      {draft.partly && <p className="mt-1 text-body-sm">{w.partly}</p>}
     </div>
   );
 }
