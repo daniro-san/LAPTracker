@@ -77,63 +77,56 @@ export function RosterPicker(props: {
   const found = searchRoster(query, props.roster);
   return (
     <Sheet labelledBy="pick-title" onCancel={props.onClose}>
-      <div className="max-h-[85dvh] overflow-y-auto">
-        <h2
-          id="pick-title"
-          data-initial-focus
-          tabIndex={-1}
-          className="font-subhead text-display-sm"
+      <h2 id="pick-title" data-initial-focus tabIndex={-1} className="font-subhead text-display-sm">
+        {fill(words["calendar.pick.title"], { role: props.role })}
+      </h2>
+      <Suggested {...props} />
+      {props.roster.length === 0 ? (
+        <p className="mt-3">{words["calendar.pick.noRoster"]}</p>
+      ) : (
+        <Labeled
+          id="pick-q"
+          label={words["calendar.pick.search"]}
+          hint={words["calendar.pick.hint"]}
         >
-          {fill(words["calendar.pick.title"], { role: props.role })}
-        </h2>
-        <Suggested {...props} />
-        {props.roster.length === 0 ? (
-          <p className="mt-3">{words["calendar.pick.noRoster"]}</p>
-        ) : (
-          <Labeled
+          <TextInput
             id="pick-q"
-            label={words["calendar.pick.search"]}
-            hint={words["calendar.pick.hint"]}
-          >
-            <TextInput
-              id="pick-q"
-              type="search"
-              autoComplete="off"
-              maxLength={64}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-            />
-          </Labeled>
-        )}
-        {query.trim() !== "" && found.length === 0 && (
-          <p className="mt-3">{words["calendar.pick.none"]}</p>
-        )}
-        <ul className="mt-2">
-          {found.map((m) => {
-            const taken = m.uid === props.taken?.uid;
-            return (
-              <li key={m.uid} className="border-t border-rule">
-                <button
-                  type="button"
-                  disabled={taken}
-                  onClick={() => props.onPick(m)}
-                  className="flex min-h-11 w-full items-center justify-between gap-3 py-2 text-left disabled:opacity-60"
-                >
-                  <span translate="no" className="min-w-0 truncate font-semibold">
-                    {m.name}
-                  </span>
-                  <span className="shrink-0 text-body-sm text-plum">
-                    {taken ? props.takenRole : words["calendar.pick.choose"]}
-                  </span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-        <button type="button" onClick={props.onClose} className={buttonClass("secondary", "mt-4")}>
-          {words["calendar.form.close"]}
-        </button>
-      </div>
+            type="search"
+            autoComplete="off"
+            maxLength={64}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        </Labeled>
+      )}
+      {query.trim() !== "" && found.length === 0 && (
+        <p className="mt-3">{words["calendar.pick.none"]}</p>
+      )}
+      <ul className="mt-2">
+        {found.map((m) => {
+          const taken = m.uid === props.taken?.uid;
+          return (
+            <li key={m.uid} className="border-t border-rule">
+              <button
+                type="button"
+                disabled={taken}
+                onClick={() => props.onPick(m)}
+                className="flex min-h-11 w-full items-center justify-between gap-3 py-2 text-left disabled:opacity-60"
+              >
+                <span translate="no" className="min-w-0 truncate font-semibold">
+                  {m.name}
+                </span>
+                <span className="shrink-0 text-body-sm text-plum">
+                  {taken ? props.takenRole : words["calendar.pick.choose"]}
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+      <button type="button" onClick={props.onClose} className={buttonClass("secondary", "mt-4")}>
+        {words["calendar.form.close"]}
+      </button>
     </Sheet>
   );
 }

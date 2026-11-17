@@ -23,6 +23,44 @@
   label:has(input:is([type="checkbox"], [type="radio"]):not(:disabled), select:not(:disabled)) {
     cursor: pointer;
   }
+
+  /* Form fields on iPhone (Safari, Brave): 16 px or more, or iOS zooms the page in on focus. */
+  input:not([type="checkbox"], [type="radio"], [type="range"], [type="file"]),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+  /* Date and time fields: iOS draws them as a centred pill with a minimum width of its own, which
+     pushes a sheet sideways. Here they fill their box like a text field, text on the left, 44 px tall,
+     in the border and background their class gives them. */
+  input:is([type="date"], [type="time"], [type="datetime-local"], [type="month"], [type="week"]) {
+    -webkit-appearance: none;
+    appearance: none;
+    display: block;
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    text-align: left;
+  }
+  ::-webkit-date-and-time-value {
+    text-align: left;
+  }
+  /* A native select ignores its min-height in WebKit (25 px tall): every select draws its own arrow. */
+  select:not([multiple]) {
+    -webkit-appearance: none;
+    appearance: none;
+    padding-right: 2rem;
+    background-image: var(--select-arrow);
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 12px 8px;
+  }
+}
+
+/* A modal sheet is open (lib/brand/components/Sheet.tsx): the page behind it does not scroll, and keeps
+   its place. iOS 16+ honours overflow on the root. */
+html:has(dialog:modal) {
+  overflow: hidden;
 }
 
 /* "Exact numbers" switch (app/_ui/Num.tsx): CSS only, so it needs no JavaScript and works on touch. */
@@ -387,14 +425,6 @@ body {
     border-image: var(--frame-field) 12 / 6px / 3px stretch;
     border-radius: 0;
     background-color: var(--paper);
-  }
-  select.drawn-field {
-    appearance: none;
-    padding-right: 2rem;
-    background-image: var(--select-arrow);
-    background-repeat: no-repeat;
-    background-position: right 0.75rem center;
-    background-size: 12px 8px;
   }
   .drawn-field:focus-visible,
   .drawn-check:focus-visible {

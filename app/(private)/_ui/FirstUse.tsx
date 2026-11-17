@@ -124,7 +124,7 @@ function Help({
       aria-modal="false"
       aria-labelledby="help-title"
       onKeyDown={(e) => e.key === "Escape" && onClose()}
-      className="fixed inset-x-0 bottom-0 z-40 max-h-[55vh] overflow-y-auto border-t border-rule bg-paper p-4 pb-[max(1rem,env(safe-area-inset-bottom))] text-ink shadow-[0_-8px_24px_var(--sheet-shadow)] sm:inset-x-auto sm:right-6 sm:bottom-6 sm:max-w-md sm:border"
+      className="fixed inset-x-0 bottom-0 z-40 max-h-[55dvh] overflow-x-hidden overflow-y-auto overscroll-contain border-t border-rule bg-paper p-4 pb-[max(1rem,env(safe-area-inset-bottom))] text-ink shadow-[0_-8px_24px_var(--sheet-shadow)] sm:inset-x-auto sm:right-6 sm:bottom-6 sm:max-w-md sm:border"
     >
       <h2 id="help-title" className="font-display text-display-md">
         {t["shell.help"]}
