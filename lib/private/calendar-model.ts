@@ -14,6 +14,19 @@ export const LEVEL_MAX = 10;
 /** Elixir Scramble's three Friday windows, server time, 30 minutes each (in-game screen, 2026-11-16). */
 export const ELIXIR_WINDOWS = [9 * 60, 18 * 60, 23 * 60] as const;
 export const ELIXIR_MINUTES = 30;
+/**
+ * The Alliance Duel's theme of each server day, Monday first, in the game's English (D52; owner,
+ * 2026-11-16). Fixed by the game, so a map in code, not an entry; Sunday has none.
+ */
+export const DUEL_DAYS = [
+  "Raven",
+  "Building",
+  "Research",
+  "Heroes",
+  "Training",
+  "Raid",
+  null,
+] as const;
 export const TITLE_MAX = 80;
 export const NOTES_MAX = 1000;
 

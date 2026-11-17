@@ -125,6 +125,11 @@ export function CalendarAgenda(props: {
                 <span className="text-body-sm font-semibold text-plum">{` · ${words["calendar.today"]}`}</span>
               )}
             </h2>
+            {d.duel && (
+              <p className="text-body-sm text-ink/70">
+                {words["calendar.duelDay"].replace("{theme}", d.duel)}
+              </p>
+            )}
             {d.items.length === 0 ? (
               <p className="border-t border-rule py-3 text-body-sm text-ink/70">
                 {words["calendar.nothing"]}

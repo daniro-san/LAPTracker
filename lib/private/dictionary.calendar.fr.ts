@@ -35,6 +35,7 @@ export const calendarFr: CalendarWords = {
   "calendar.title.undead": "Undead Siege · Lv.{level}",
   "calendar.title.elixir": "Elixir Scramble · Team {team}",
   "calendar.theme": "Semaine de l’Alliance Duel (AD) : {theme}",
+  "calendar.duelDay": "Jour d’AD : {theme}",
   "calendar.weekly": "Chaque semaine",
   "calendar.moved": "Déplacé depuis {when}",
   "calendar.forMembers": "Visible par les membres",

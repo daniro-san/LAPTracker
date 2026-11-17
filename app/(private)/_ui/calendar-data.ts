@@ -2,7 +2,7 @@
 // list (title, server time, the instant for the viewer's own clock, tags, the values its edit form starts
 // from), the week's days and the month overview. Dates and numbers are formatted here, never in the browser.
 import { fill } from "@/lib/copy";
-import type { Field, Kind, Placed } from "@/lib/private/calendar-model";
+import { DUEL_DAYS, type Field, type Kind, type Placed } from "@/lib/private/calendar-model";
 import { addDays, hhmm, mondayOf, weekdayIndex, zonedInstant } from "@/lib/private/calendar-time";
 import { calendarDates, stOf, titleOf } from "@/lib/private/calendar-words";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
@@ -146,6 +146,8 @@ export function agendaItem(p: Placed, ctx: CalendarCtx): AgendaItem {
 export interface AgendaDay {
   day: string;
   head: string;
+  /** The game's Alliance Duel theme of that weekday, or null (Sunday). */
+  duel: string | null;
   today: boolean;
   items: AgendaItem[];
 }
@@ -159,6 +161,7 @@ export function agendaWeek(placed: Placed[], monday: string, today: string, ctx:
     return {
       day,
       head: dates.long(day),
+      duel: DUEL_DAYS[i] ?? null,
       today: day === today,
       items: items.filter((x) => x.day === day && x.form.kind !== "duel"),
     };

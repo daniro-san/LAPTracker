@@ -35,6 +35,7 @@ export const calendarEn = {
   "calendar.title.undead": "Undead Siege · Lv.{level}",
   "calendar.title.elixir": "Elixir Scramble · Team {team}",
   "calendar.theme": "Alliance Duel (AD) week: {theme}",
+  "calendar.duelDay": "AD day: {theme}",
   "calendar.weekly": "Every week",
   "calendar.moved": "Moved from {when}",
   "calendar.forMembers": "Shown to members",
