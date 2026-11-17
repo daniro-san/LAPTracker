@@ -34,7 +34,7 @@ export async function getEventPage(
   shared: Shared = (_id, load) => load(db),
 ) {
   const events = await listEvents(db);
-  const homeId = homeEvent(events)?.id ?? null;
+  const homeId = homeEvent(events, new Date())?.id ?? null;
   const id = eventId ?? homeId;
   if (id === null) return { events, homeId, page: null };
   const detail = await getEventDetail(db, id);

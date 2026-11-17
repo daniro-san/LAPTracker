@@ -182,7 +182,7 @@ const loadAlliance = cache((eventId: number, unionId: number) =>
     return {
       detail,
       events,
-      homeId: homeEvent(events)?.id ?? null,
+      homeId: homeEvent(events, new Date())?.id ?? null,
       history,
       names: names.get(unionId) ?? [],
       ledger: ranks.get(unionId),
@@ -241,7 +241,7 @@ function crumbsFor(events: Events, eventId: number, label: string, clock: Clock,
   return [
     {
       key: "ledger",
-      href: eventId === homeEvent(events)?.id ? "/" : `/events/${eventId}`,
+      href: eventId === homeEvent(events, new Date())?.id ? "/" : `/events/${eventId}`,
       label: event ? `${copy.site.home} · ${clock.weekday(event.eventAtUtc)}` : copy.site.home,
     },
     { key: "alliance", label },
@@ -299,6 +299,7 @@ export default async function AlliancePage({ params }: { params: Params }) {
         <CaptureWindow
           before={phases.find((s) => s.phase === "before")}
           after={phases.find((s) => s.phase === "after")}
+          now={new Date()}
           clock={clock}
           copy={copy}
         />

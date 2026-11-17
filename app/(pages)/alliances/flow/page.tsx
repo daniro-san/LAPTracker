@@ -35,7 +35,7 @@ const load = cache((from: string | null, to: string | null) =>
       flowPage(db, new Date(), from !== null && to !== null ? { from, to } : null),
       listEvents(db),
     ]);
-    return { page, events, homeId: homeEvent(events)?.id ?? null };
+    return { page, events, homeId: homeEvent(events, new Date())?.id ?? null };
   }),
 );
 

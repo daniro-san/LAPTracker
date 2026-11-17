@@ -59,7 +59,7 @@ const load = cache((unionId: number, before: number | null, show: HistoryFilter 
       historyPage(db, unionId, before === null ? null : new Date(before), show),
       listEvents(db),
     ]);
-    return history && { history, events, homeId: homeEvent(events)?.id ?? null };
+    return history && { history, events, homeId: homeEvent(events, new Date())?.id ?? null };
   }),
 );
 

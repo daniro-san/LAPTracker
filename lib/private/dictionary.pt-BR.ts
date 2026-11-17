@@ -5,7 +5,7 @@ import { calendarPt } from "./dictionary.calendar.pt-BR";
 import { importPt } from "./dictionary.import";
 import { membersPt } from "./dictionary.members.pt-BR";
 import { noticesPt } from "./dictionary.notices";
-import { shotsPt } from "./dictionary.shots";
+import { shotsPt } from "./dictionary.shots.pt-BR";
 import { theftsPt } from "./dictionary.thefts";
 
 export const pt: WorkspaceDictionary = {
@@ -41,10 +41,16 @@ export const pt: WorkspaceDictionary = {
   "noaccess.public": "Ir para o Registro de eventos público",
   "shell.signedIn": "Conectado como {name}",
   "shell.signOut": "Sair",
-  "home.title": "Esta semana",
+  "home.title": "Agenda, membros e prints",
   "home.empty": "Nada aqui ainda. A chaleira está no fogo.",
-  "home.next":
-    "A aba Membros está pronta: o might, as doações e a atividade de cada membro, vindos do jogo.",
+  "home.next.head": "Hoje e amanhã",
+  "home.today": "Hoje",
+  "home.tomorrow": "Amanhã",
+  "home.next.none": "Nada na Agenda hoje nem amanhã.",
+  "home.calendar": "Abrir Agenda",
+  "home.members.head": "Membros nesta semana",
+  "home.notYet":
+    "Ainda não. Os agradecimentos e quem ver como está começam com a primeira leitura de fim de dia, pouco antes de o servidor virar o dia.",
   "home.open": "Abrir Membros",
   "shell.help": "Como funciona",
   "signin.howto": "Como colocar no seu celular",
@@ -151,6 +157,13 @@ export const pt: WorkspaceDictionary = {
   "intro.1.settings": "Toque no seu nome no topo para ver suas configurações.",
   "intro.only": "Só R4 · R5",
   "intro.2.more": "— quer dizer sem dados, e não entra em nenhuma conta.",
+  "intro.desk.title": "Agenda, prints e Discord",
+  "intro.desk.calendar":
+    "Agenda: o que vai acontecer, na hora do servidor e na sua hora. Avisos e Roubos são abas dentro dela.",
+  "intro.desk.shots":
+    "Início: Enviar prints de um ranking ou de um relatório do jogo. Confira cada um e salve.",
+  "intro.desk.discord":
+    "No Discord, numa mensagem com prints: Apps → Send to LAPTracker. Eles esperam no Início.",
   "intro.3.title": "Toda semana",
   "intro.3.body": "Abra Membros e comece pelo topo: agradeça a quem mais fez nesta semana.",
   "intro.3.more":

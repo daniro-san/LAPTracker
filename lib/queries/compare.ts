@@ -296,7 +296,7 @@ export const comparable = (e: Pick<EventSummary, "snapshots">) =>
  * with data before B. Shared by the alliance view and the player view (issue 199). */
 export async function comparePicks(db: Db, ids: { a: number | null; b: number | null }) {
   const events = await listEvents(db);
-  const homeId = homeEvent(events)?.id ?? null;
+  const homeId = homeEvent(events, new Date())?.id ?? null;
   const b = ids.b ?? homeId;
   const bAt = events.find((e) => e.id === b)?.eventAtUtc;
   const older = events.filter((e) => comparable(e) && bAt !== undefined && e.eventAtUtc < bAt);

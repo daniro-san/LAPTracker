@@ -7,6 +7,10 @@
  */
 export const RUN_STALE_AFTER_MS = 150_000;
 
+/** A run left `running` past RUN_STALE_AFTER_MS was killed: it never finishes, so it is not "updating now". */
+export const runAbandoned = (run: { status: string; startedAt: Date }, now: Date): boolean =>
+  run.status === "running" && now.getTime() - run.startedAt.getTime() >= RUN_STALE_AFTER_MS;
+
 /** Measured from the start of the run; the route's maxDuration is 120 s (docs/decisions/D25). */
 export const RUN_DEADLINE_MS = 100_000;
 

@@ -47,7 +47,7 @@ export default async function BalancePage({ searchParams }: { searchParams: Sear
     Promise.all([listEvents(db), powerBalance(db, new Date())]),
   );
   const { alliances, trend } = balance;
-  const homeId = homeEvent(events)?.id ?? null;
+  const homeId = homeEvent(events, new Date())?.id ?? null;
   const known = new Set(alliances.map((a) => a.unionId));
   const blocs = parseBlocs(first(sp.a), first(sp.b), known);
   const total = alliances.reduce((a, r) => a + r.might, 0);

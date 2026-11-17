@@ -149,7 +149,7 @@ export default async function FightClockPage() {
       <SiteHeader
         events={listed}
         currentId={null}
-        homeId={homeEvent(listed)?.id ?? null}
+        homeId={homeEvent(listed, new Date())?.id ?? null}
         clock={clock}
         copy={copy}
       />

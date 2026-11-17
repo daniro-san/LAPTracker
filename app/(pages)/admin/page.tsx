@@ -26,6 +26,7 @@ import { Chip } from "@/lib/brand/components/Chip";
 import { FactList } from "@/lib/brand/components/FactList";
 import { DroppedStitch, StitchedCheck } from "@/lib/brand/components/StatusIcons";
 import { TextLink } from "@/lib/brand/components/TextLink";
+import { runAbandoned } from "@/lib/compute";
 import { copy, fill } from "@/lib/copy";
 import { dailyReadEndsInDay } from "@/lib/daily-read";
 import { getEnv, type Env } from "@/lib/env";
@@ -273,7 +274,8 @@ export default async function AdminPage() {
             eventAt: nextRun.event.eventAtUtc,
           }
         }
-        recent={recent}
+        // A run left running past RUN_STALE_AFTER_MS is not under "Running now", so not "running" here.
+        recent={recent.map((r) => (runAbandoned(r, now) ? { ...r, status: "failed" } : r))}
         ticks={ticks}
         now={now}
         clock={clock}

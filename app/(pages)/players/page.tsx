@@ -41,7 +41,7 @@ export default async function PlayersPage({
       <SiteHeader
         events={events}
         currentId={null}
-        homeId={homeEvent(events)?.id ?? null}
+        homeId={homeEvent(events, new Date())?.id ?? null}
         section="players"
         clock={clock}
         copy={copy}

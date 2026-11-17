@@ -36,7 +36,7 @@ const load = cache((a: number | null, b: number | null) =>
       mergePage(db, a !== null && b !== null ? [a, b] : null, undefined, eventsRead),
       eventsRead,
     ]);
-    return { page, events, homeId: homeEvent(events)?.id ?? null };
+    return { page, events, homeId: homeEvent(events, new Date())?.id ?? null };
   }),
 );
 

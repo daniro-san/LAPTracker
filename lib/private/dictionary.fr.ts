@@ -40,10 +40,16 @@ export const fr: WorkspaceDictionary = {
   "noaccess.public": "Aller au Registre des événements public",
   "shell.signedIn": "Connecté en tant que {name}",
   "shell.signOut": "Se déconnecter",
-  "home.title": "Cette semaine",
+  "home.title": "Agenda, membres et captures",
   "home.empty": "Rien ici pour l’instant. La bouilloire est sur le feu.",
-  "home.next":
-    "L’onglet Membres est prêt : la might, les dons et l’activité de chaque membre, venus du jeu.",
+  "home.next.head": "Aujourd’hui et demain",
+  "home.today": "Aujourd’hui",
+  "home.tomorrow": "Demain",
+  "home.next.none": "Rien à l’agenda aujourd’hui ni demain.",
+  "home.calendar": "Ouvrir l’agenda",
+  "home.members.head": "Membres cette semaine",
+  "home.notYet":
+    "Pas encore. Les remerciements et les prises de nouvelles commencent avec le premier relevé de fin de journée, juste avant le changement de jour du serveur.",
   "home.open": "Ouvrir Membres",
   "shell.help": "Comment ça marche",
   "signin.howto": "Comment l’avoir sur votre téléphone",
@@ -151,6 +157,13 @@ export const fr: WorkspaceDictionary = {
   "intro.1.settings": "Touchez votre nom en haut pour vos réglages.",
   "intro.only": "R4 · R5 uniquement",
   "intro.2.more": "— veut dire pas de données ; elles n’entrent dans aucun calcul.",
+  "intro.desk.title": "Agenda, captures et Discord",
+  "intro.desk.calendar":
+    "Agenda : ce qui est prévu, en heure serveur et dans votre heure. Annonces et Vols sont des onglets de l’agenda.",
+  "intro.desk.shots":
+    "Accueil : Envoyer des captures d’un classement ou d’un rapport du jeu. Vérifiez chacune, puis enregistrez-la.",
+  "intro.desk.discord":
+    "Dans Discord, sur un message avec des captures : Applications → Send to LAPTracker. Elles attendent dans l’accueil.",
   "intro.3.title": "Chaque semaine",
   "intro.3.body":
     "Ouvrez Membres et commencez par le haut : remerciez ceux qui en ont fait le plus cette semaine.",

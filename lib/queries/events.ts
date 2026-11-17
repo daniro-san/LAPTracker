@@ -3,6 +3,7 @@
 // Test events (rehearsals) are not public (plan Phase 6): /admin reads them elsewhere.
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
 
+import { RUN_STALE_AFTER_MS, runAbandoned } from "../compute";
 import type { Db } from "../db";
 import { allianceSnapshots, events, snapshots } from "../schema";
 import { phaseColumn, phaseSnapshot, publicEvent } from "./visibility";
@@ -22,6 +23,7 @@ export async function listEvents(db: Db) {
       id: events.id,
       name: events.name,
       eventAtUtc: events.eventAtUtc,
+      afterAt: events.afterAt,
       isTest: events.isTest,
       manual: events.manual,
     })
@@ -52,14 +54,29 @@ export type EventSummary = Awaited<ReturnType<typeof listEvents>>[number];
 
 /**
  * The event `/` shows, from `listEvents` (newest first; D28): the newest real event with a complete
- * snapshot, else the newest event of any kind with one, else the newest real event, else the newest.
- * An upcoming event the tick created a day ahead has no data yet, so it does not take the home page.
+ * snapshot whose End is done or still to come, else the newest event of any kind like that, else the
+ * newest real event with a complete snapshot, else the newest event with one, else the newest real event,
+ * else the newest. An upcoming event the tick created a day ahead has no data yet, so it does not take the
+ * home page. An event whose End never came (not run, failed, or left running past RUN_STALE_AFTER_MS) has
+ * no result, so the last finished one keeps the home page (panel PD-3).
  */
 export function homeEvent<
-  E extends { manual: boolean; snapshots: Pick<EventSummary["snapshots"][number], "status">[] },
->(events: E[]): E | undefined {
+  E extends {
+    manual: boolean;
+    afterAt: Date;
+    snapshots: Pick<EventSummary["snapshots"][number], "phase" | "status" | "startedAt">[];
+  },
+>(events: E[], now: Date): E | undefined {
   const hasData = (e: E) => e.snapshots.some((s) => s.status === "complete");
+  const answered = (e: E) => {
+    const end = e.snapshots.find((s) => s.phase === "after");
+    if (!end) return now.getTime() < e.afterAt.getTime() + RUN_STALE_AFTER_MS;
+    if (end.status === "running") return !runAbandoned(end, now);
+    return end.status === "complete" || end.status === "partial";
+  };
   return (
+    events.find((e) => !e.manual && hasData(e) && answered(e)) ??
+    events.find((e) => hasData(e) && answered(e)) ??
     events.find((e) => !e.manual && hasData(e)) ??
     events.find(hasData) ??
     events.find((e) => !e.manual) ??

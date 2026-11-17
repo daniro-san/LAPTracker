@@ -5,13 +5,14 @@ import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 
 import { exact } from "@/app/_ui/format";
+import { buttonClass } from "@/lib/brand/components/Button";
 import { fill } from "@/lib/copy";
 import { withPageDb } from "@/lib/page";
 import { requireWorkspace } from "@/lib/private/access";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import type { ImportKind } from "@/lib/private/import-kinds";
 import { SAVED_KINDS } from "@/lib/private/import-save";
-import { draftView, toReviewCount, type DraftView } from "@/lib/private/import-view";
+import { draftView, toReview, type DraftView } from "@/lib/private/import-view";
 import { counted, kindLabel } from "@/lib/private/import-words";
 import { SLUG } from "@/lib/private/sign-in";
 
@@ -77,14 +78,14 @@ export default async function DraftPage({
   const jar = await cookies();
   const now = new Date();
   // INVARIANT workspace.access-first: nothing private is read before this check.
-  const { access, view, waiting } = await withPageDb(async (db) => {
+  const { access, view, open } = await withPageDb(async (db) => {
     const access = await requireWorkspace(db, slug, jar, now);
-    const waiting = access.ok ? await toReviewCount(db, access, now) : 0;
-    return {
-      access,
-      waiting,
-      view: access.ok ? await draftView(db, access, Number(id), now) : null,
-    };
+    if (!access.ok) return { access, open: [], view: null };
+    const [open, view] = await Promise.all([
+      toReview(db, access, now),
+      draftView(db, access, Number(id), now),
+    ]);
+    return { access, open, view };
   });
   if (!access.ok) {
     refuse(slug, access.reason);
@@ -95,8 +96,10 @@ export default async function DraftPage({
     ImportKind,
     string
   >;
+  // The other drafts waiting, in Home's order: once this one is saved or discarded, the next is one tap.
+  const others = open.filter((d) => d.id !== Number(id));
   return (
-    <SignedInFrame access={access} language={language} t={t} current="home" waiting={waiting}>
+    <SignedInFrame access={access} language={language} t={t} current="home" waiting={open.length}>
       <p>
         <a
           href={`/w/${slug}`}
@@ -110,7 +113,36 @@ export default async function DraftPage({
       ) : (
         <Draft view={view} t={t} language={language} slug={slug} kinds={kinds} />
       )}
+      {view?.status !== "open" && (
+        <NextDraft slug={slug} t={t} language={language} others={others} />
+      )}
     </SignedInFrame>
+  );
+}
+
+/** After a save or discard (or on a draft that is gone): "Next draft (n left) →", or Home when none is
+ * left (panel PD-4). */
+function NextDraft(props: {
+  slug: string;
+  t: WorkspaceDictionary;
+  language: WorkspaceLanguage;
+  others: { id: number }[];
+}) {
+  const { slug, t, others } = props;
+  const next = others[0];
+  const form =
+    new Intl.PluralRules(props.language).select(others.length) === "one" ? "one" : "other";
+  return (
+    <p className="mt-6">
+      <a
+        href={next ? `/w/${slug}/shots/${next.id}` : `/w/${slug}`}
+        className={buttonClass(next ? "primary" : "secondary", "w-full sm:w-auto")}
+      >
+        {next
+          ? `${fill(t[`shots.nextDraft.${form}`], { n: others.length })} →`
+          : t["shots.draft.back"]}
+      </a>
+    </p>
   );
 }
 

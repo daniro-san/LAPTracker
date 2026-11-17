@@ -152,4 +152,10 @@ export const shotsFr: ShotsWords = {
     "Changer le type relit les captures et efface vos corrections. Le changer ?",
   "shots.discord.unrecognised":
     "Non reconnue. Rien n’a été enregistré. Envoyez-la depuis le bureau pour choisir le type.",
+  "shots.nextDraft.one": "Brouillon suivant (encore {n})",
+  "shots.nextDraft.other": "Brouillon suivant (encore {n})",
+  "shots.check.head": "Comparé aux données du jeu",
+  "shots.check.match": "Identiques : {same} sur {compared}",
+  "shots.check.left": "Non comptés : {n} (pas de membre sûr, ou pas de données du jeu).",
+  "shots.check.save": "Enregistrer le décompte",
 };
