@@ -88,10 +88,7 @@ export function MineMark({ unionId }: { unionId: number }) {
   const copy = useCopy();
   if (useMyAlliance() !== unionId) return null;
   return (
-    <span
-      data-mine=""
-      className="ml-2 inline-block bg-yarn/15 px-1.5 text-xs font-medium text-plum"
-    >
+    <span data-mine="" className="ml-2 inline-block bg-yarn/15 px-1.5 text-xs font-medium text-ink">
       {copy.ledger.myAlliance}
     </span>
   );

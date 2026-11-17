@@ -13,6 +13,7 @@ import { requestLocale } from "./locale";
 import { MineMark } from "./MyAlliance";
 import { Num, Rank } from "./Num";
 import { AllianceBadge } from "./Pictures";
+import { StandingList } from "./StandingList";
 
 const MUTED = "text-ink/70";
 
@@ -39,8 +40,11 @@ function lead(row: StandingRow, s: Figures, clock: Clock, locale: string, copy: 
         })
       : null;
   // A short date can end with a full stop ("24. Okt."): the sentence's own full stop would double it.
-  return [rank, growth].filter(Boolean).join(" ").replace(/\.\./g, ".");
+  return noDoubleStop([rank, growth].filter(Boolean).join(" "));
 }
+
+/** A short date can end with a full stop ("23 окт."): the sentence's own full stop would double it. */
+const noDoubleStop = (text: string) => text.replace(/\.\./g, ".");
 
 const day = (d: string | undefined) => new Date(`${d}T12:00:00Z`);
 
@@ -73,7 +77,11 @@ function Row({
         <AllianceBadge badgeId={row.badgeId} />
         <span className="min-w-0 break-words">
           {label}
-          {own && <span className="sr-only"> · {copy.standing.thisAlliance}</span>}
+          {own && (
+            <span className="ml-2 inline-block border border-ink/40 px-1.5 text-xs font-medium">
+              {copy.standing.thisAlliance}
+            </span>
+          )}
           <MineMark unionId={row.unionId} />
         </span>
       </span>
@@ -116,7 +124,11 @@ function RanksTable({ s, clock, copy }: { s: Figures; clock: Clock; copy: Dictio
         {copy.ledger.details}
       </summary>
       <p className={`mb-1 text-xs ${MUTED}`}>
-        {fill(copy.standing.detailsHelp, { days: s.days.map((d) => clock.day(day(d))).join(", ") })}
+        {noDoubleStop(
+          fill(copy.standing.detailsHelp, {
+            days: s.days.map((d) => clock.day(day(d))).join(", "),
+          }),
+        )}
       </p>
       <table className="w-full border-collapse text-sm tabular-nums">
         <tbody>
@@ -161,26 +173,30 @@ function StandingBody({
         <>
           {own && <p className="mt-1 text-lg">{lead(own, standing, clock, locale, copy)}</p>}
           <p className={`mb-2 text-body-sm ${MUTED}`}>
-            {fill(copy.standing.help, { from: clock.day(day(standing.days[0])) })}
+            {noDoubleStop(fill(copy.standing.help, { from: clock.day(day(standing.days[0])) }))}
           </p>
-          <ol className="divide-y divide-rule border-y border-rule">
-            <li className="grid grid-cols-[4.5rem_minmax(0,1fr)] items-center gap-x-2 border-l-4 border-transparent px-1 py-1.5 text-sm font-medium tabular-nums sm:grid-cols-[4.5rem_minmax(0,1fr)_6rem_9rem_4.5rem]">
-              <span aria-hidden="true" />
-              <span className="min-w-0 break-words text-base">{copy.standing.server}</span>
-              <span className="col-start-2 flex flex-wrap gap-x-3 sm:contents">
-                <span className="sm:text-right">
-                  <Num n={standing.serverMight} />
+          <StandingList
+            own={unionId}
+            head={
+              <li className="grid grid-cols-[4.5rem_minmax(0,1fr)] items-center gap-x-2 border-l-4 border-transparent px-1 py-1.5 text-sm font-medium tabular-nums sm:grid-cols-[4.5rem_minmax(0,1fr)_6rem_9rem_4.5rem]">
+                <span aria-hidden="true" />
+                <span className="min-w-0 break-words text-base">{copy.standing.server}</span>
+                <span className="col-start-2 flex flex-wrap gap-x-3 sm:contents">
+                  <span className="sm:text-right">
+                    <Num n={standing.serverMight} />
+                  </span>
+                  <span className={`font-normal sm:text-right ${MUTED}`}>
+                    {standing.serverGrowth === null
+                      ? "—"
+                      : fill(copy.standing.growthSince, {
+                          growth: percentText(standing.serverGrowth, locale),
+                          from: clock.day(day(standing.days[0])),
+                        })}
+                  </span>
                 </span>
-                <span className={`font-normal sm:text-right ${MUTED}`}>
-                  {standing.serverGrowth === null
-                    ? "—"
-                    : fill(copy.standing.growthSince, {
-                        growth: percentText(standing.serverGrowth, locale),
-                        from: clock.day(day(standing.days[0])),
-                      })}
-                </span>
-              </span>
-            </li>
+              </li>
+            }
+          >
             {standing.rows.map((r) => (
               <Row
                 key={r.unionId}
@@ -192,7 +208,7 @@ function StandingBody({
                 copy={copy}
               />
             ))}
-          </ol>
+          </StandingList>
           <RanksTable s={standing} clock={clock} copy={copy} />
         </>
       )}
