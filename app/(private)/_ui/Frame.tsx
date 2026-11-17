@@ -47,7 +47,7 @@ function Tabs({ t, slug, current }: { t: WorkspaceDictionary; slug: string; curr
     // Hidden while a notice editor is open, so its save bar is never under the tabs (review of PR 344).
     <nav
       aria-label={t["tab.aria"]}
-      className="fixed inset-x-0 bottom-0 z-10 border-t border-rule bg-paper pb-[env(safe-area-inset-bottom)] [:root:has(form[data-notice-editor])_&]:hidden"
+      className="fixed inset-x-0 bottom-0 z-10 border-t border-rule bg-paper pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] [:root:has(form[data-notice-editor])_&]:hidden"
     >
       <ul className="mx-auto grid max-w-[640px] grid-cols-6">
         {TABS.map((id) => {
@@ -117,7 +117,7 @@ export async function Frame({
   const seen = !tabs || (await cookies()).get(WORKSPACE_INTRO_COOKIE)?.value === "1";
   return (
     <div lang={language} id="top" className={tabs ? "pb-20" : undefined}>
-      <header className="bg-burgundy text-wax-paper">
+      <header className="bg-burgundy pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)] text-wax-paper">
         <div className="mx-auto flex max-w-[960px] flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 sm:px-6">
           <div className="min-w-0 flex-1">
             <p className="font-display text-display-sm">{t["app.name"]}</p>
