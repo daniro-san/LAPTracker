@@ -1,13 +1,16 @@
 // The Calendar tab's own views (issue 300, prototype v5): Week · Caravans · Notices, as links, so the
-// address says which one is open. The thefts log (issue 321) adds a fourth. Every link is 44 px tall.
-import type { WorkspaceDictionary } from "@/lib/private/dictionary";
+// address says which one is open. Every link is 44 px tall; the columns follow the list's length.
+import type { WorkspaceDictionary, WorkspaceKey } from "@/lib/private/dictionary";
 
 export type CalendarView = "week" | "caravans" | "notices";
 
-const VIEWS: { id: CalendarView; path: string; key: `calendar.nav.${CalendarView}` }[] = [
-  { id: "week", path: "/calendar", key: "calendar.nav.week" },
-  { id: "caravans", path: "/calendar/caravans", key: "calendar.nav.caravans" },
-  { id: "notices", path: "/notices", key: "calendar.nav.notices" },
+/** Only the calendar's own views keep the week shown (`?week=`). */
+const VIEWS: { id: CalendarView; path: string; key: WorkspaceKey; keepsWeek: boolean }[] = [
+  { id: "week", path: "/calendar", key: "calendar.nav.week", keepsWeek: true },
+  { id: "caravans", path: "/calendar/caravans", key: "calendar.nav.caravans", keepsWeek: true },
+  { id: "notices", path: "/notices", key: "calendar.nav.notices", keepsWeek: false },
+  // The thefts log (issue 321, session 11j) goes here as the fourth view: add "thefts" to CalendarView and
+  // { id: "thefts", path: "/thefts", key: "thefts.nav", keepsWeek: false }.
 ];
 
 export function CalendarNav({
@@ -24,11 +27,14 @@ export function CalendarNav({
 }) {
   return (
     <nav aria-label={t["calendar.nav.aria"]} className="mt-3">
-      <ul className="grid grid-cols-3 border border-plum">
+      <ul
+        className="grid border border-plum"
+        style={{ gridTemplateColumns: `repeat(${VIEWS.length}, minmax(0, 1fr))` }}
+      >
         {VIEWS.map((v) => (
           <li key={v.id} className="min-w-0">
             <a
-              href={`/w/${slug}${v.path}${v.id === "notices" ? "" : query}`}
+              href={`/w/${slug}${v.path}${v.keepsWeek ? query : ""}`}
               aria-current={v.id === current ? "page" : undefined}
               className={`flex min-h-11 items-center justify-center px-1 text-center text-body-sm font-semibold ${
                 v.id === current ? "bg-plum text-paper" : "text-plum"
