@@ -1,7 +1,6 @@
 // A slim notice above the page while the upstream does not answer (docs/decisions/D27). Renders nothing when
 // all is well and when the status cannot be read; it has no controls, so there is nothing to dismiss.
 import { DroppedStitch } from "@/lib/brand/components/StatusIcons";
-import { fill } from "@/lib/copy";
 import { withPageDb } from "@/lib/page";
 import { getUpstreamStatus } from "@/lib/queries";
 
@@ -11,6 +10,8 @@ export async function UpstreamBanner() {
   const status = await withPageDb((db) => getUpstreamStatus(db, new Date())).catch(() => null);
   if (!status?.down) return null;
   const [clock, copy] = await Promise.all([requestClock(), requestCopy()]);
+  // Only the time stays on one line: a whole sentence kept together runs off a 360 px screen in PT and FR.
+  const [lead, tail = ""] = copy.upstream.lastFresh.split("{time}");
   return (
     <div
       role="status"
@@ -25,10 +26,9 @@ export async function UpstreamBanner() {
           <strong className="font-semibold">{copy.upstream.title}.</strong> {copy.upstream.body}
           {status.lastFreshAt && (
             <>
-              {" "}
-              <span className="whitespace-nowrap">
-                {fill(copy.upstream.lastFresh, { time: clock.at(status.lastFreshAt) })}
-              </span>
+              {` ${lead}`}
+              <span className="whitespace-nowrap">{clock.at(status.lastFreshAt)}</span>
+              {tail}
             </>
           )}
         </p>

@@ -5,7 +5,7 @@ import type { WorkspaceDictionary, WorkspaceLanguage } from "./dictionary";
 import type { DraftSummary, Outcome } from "./import";
 import type { ImportKind, Scope } from "./import-kinds";
 
-/** "Alliance Duel weekly"; "Alliance Duel — daily or weekly?" while the tab is only a guess. */
+/** "Alliance Duel weekly"; "Alliance Duel (daily or weekly?)" while the tab is only a guess. */
 export function kindLabel(
   t: WorkspaceDictionary,
   kind: ImportKind,

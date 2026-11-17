@@ -1,5 +1,7 @@
 // /w/[slug]: the access check first, then either the sign-in, or the signed-in shell with Home. A session
-// older than 24 hours goes through Discord again without a click (prompt=none, D71).
+// older than 24 hours goes through Discord again without a click (prompt=none, D71). Home is a short
+// digest of what the other tabs already work out (panel PD-1): today and tomorrow from the Calendar, who to
+// thank and how many to check in with from Members, then the screenshots to review.
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 
@@ -8,12 +10,21 @@ import { fill } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
 import { requireWorkspace } from "@/lib/private/access";
+import { calendarDays } from "@/lib/private/calendar";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import { MAX_PICTURES } from "@/lib/private/import";
 import { toReview, type ReviewItem } from "@/lib/private/import-view";
+import { cardFormats } from "@/lib/private/member-card";
+import { membersView, type MembersView } from "@/lib/private/members";
+import { whoOf } from "@/lib/private/members-list";
+import { plural } from "@/lib/private/members-sheet";
 import { SLUG } from "@/lib/private/sign-in";
+import { serverDay } from "@/lib/schedule";
 
+import { calendarWords, nextItems } from "../../_ui/calendar-data";
 import { Frame, SignedInFrame, workspaceWords } from "../../_ui/Frame";
+import { digestDays, type NextItem } from "../../_ui/home-digest";
+import { HomeNext } from "../../_ui/HomeNext";
 import { refuse } from "../../_ui/refuse";
 import { ToReview } from "../../_ui/ToReview";
 
@@ -48,44 +59,120 @@ function SignIn({ slug, t, error }: { slug: string; t: WorkspaceDictionary; erro
   );
 }
 
-function Home({
-  slug,
-  t,
-  language,
-  items,
-}: {
+const LINK =
+  "inline-flex min-h-11 items-center font-semibold text-plum underline underline-offset-4";
+
+/** Today and tomorrow from the Calendar, on the officer's own clock once the browser knows it. */
+function NextUp({ slug, t, items }: { slug: string; t: WorkspaceDictionary; items: NextItem[] }) {
+  return (
+    <section aria-labelledby="home-next" className="mt-4 border border-rule px-4 py-3">
+      <h2 id="home-next" className="font-subhead text-display-sm">
+        {t["home.next.head"]}
+      </h2>
+      <HomeNext
+        items={items}
+        serverZone={getEnv().SERVER_TZ}
+        renderedAt={Date.now()}
+        words={calendarWords(t)}
+        heads={{ today: t["home.today"], tomorrow: t["home.tomorrow"], none: t["home.next.none"] }}
+      />
+      <a href={`/w/${slug}/calendar`} className={LINK}>
+        {t["home.calendar"]}
+      </a>
+    </section>
+  );
+}
+
+/** Who to thank and how many to check in with, as Members shows them; "not yet" before the first
+ * end-of-day read, when nothing is computed (D75). */
+function MembersPart(props: {
+  slug: string;
+  t: WorkspaceDictionary;
+  language: WorkspaceLanguage;
+  view: MembersView;
+}) {
+  const { slug, t, language, view } = props;
+  const members = `/w/${slug}/members`;
+  const f = cardFormats(language, getEnv().SERVER_TZ, new Date());
+  // The top 3 donors; the most active when no donation was read this week.
+  const [key, thanks] =
+    view.thanks.donors.length > 0
+      ? (["thanks.donors", view.thanks.donors] as const)
+      : (["thanks.activity", view.thanks.activity] as const);
+  const checkins = view.members.filter((m) => whoOf(m).includes("checkin")).length;
+  return (
+    <section aria-labelledby="home-members" className="mt-4 border border-rule px-4 py-3">
+      <h2 id="home-members" className="font-subhead text-display-sm">
+        {t["home.members.head"]}
+      </h2>
+      {view.early ? (
+        <p className="mt-1">{t["home.notYet"]}</p>
+      ) : (
+        <>
+          {thanks.length > 0 && (
+            <div className="mt-1 max-w-sm">
+              <h3 className="text-body-sm font-semibold text-ink/75">{t[key]}</h3>
+              <ol>
+                {thanks.map((x) => (
+                  <li key={x.uid} className="flex justify-between gap-2">
+                    <span translate="no" className="min-w-0 truncate font-semibold">
+                      {x.name}
+                    </span>
+                    <span className="tabular-nums">{f.compact(x.value)}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
+          {checkins === 0 ? (
+            <p className="mt-1">{t["members.checkinNone"]}</p>
+          ) : (
+            <a href={`${members}?who=checkin`} className={LINK}>
+              {fill(plural(t, "members.checkinCount", checkins, f), { n: checkins })}
+            </a>
+          )}
+        </>
+      )}
+      <p>
+        <a href={members} className={LINK}>
+          {t["home.open"]}
+        </a>
+      </p>
+    </section>
+  );
+}
+
+function Home(props: {
   slug: string;
   t: WorkspaceDictionary;
   language: WorkspaceLanguage;
   items: ReviewItem[];
+  next: NextItem[];
+  view: MembersView;
 }) {
-  const zone = getEnv().SERVER_TZ;
+  const { slug, t, language } = props;
   const at = new Intl.DateTimeFormat(language, {
     weekday: "short",
     hour: "2-digit",
     minute: "2-digit",
     hourCycle: "h23",
-    timeZone: zone,
+    timeZone: getEnv().SERVER_TZ,
   });
   return (
     <section aria-labelledby="home">
       <h1 id="home" className="font-display text-display-lg">
         {t["home.title"]}
       </h1>
+      <NextUp slug={slug} t={t} items={props.next} />
+      <MembersPart slug={slug} t={t} language={language} view={props.view} />
       <ToReview
         slug={slug}
-        items={items}
+        items={props.items}
         t={t}
         language={language}
         maxPictures={MAX_PICTURES}
         when={(d) => fill(t["time.server"], { time: at.format(d) })}
       />
-      <div className="mt-4 border border-rule px-4 py-5">
-        <p className="text-ink/80">{t["home.next"]}</p>
-        <a href={`/w/${slug}/members`} className={buttonClass("secondary", "mt-4")}>
-          {t["home.open"]}
-        </a>
-      </div>
     </section>
   );
 }
@@ -101,14 +188,22 @@ export default async function WorkspacePage({
   if (!SLUG.test(slug)) notFound();
   const jar = await cookies();
   const now = new Date();
+  const zone = getEnv().SERVER_TZ;
+  const days = digestDays(serverDay(now, { SERVER_TZ: zone }));
   // INVARIANT workspace.access-first: nothing private is read before this check.
-  const { access, items } = await withPageDb(async (db) => {
+  const { access, items, placed, view } = await withPageDb(async (db) => {
     const access = await requireWorkspace(db, slug, jar, now);
-    return { access, items: access.ok ? await toReview(db, access, now) : [] };
+    if (!access.ok) return { access, items: [], placed: [], view: null };
+    const [items, placed, view] = await Promise.all([
+      toReview(db, access, now),
+      calendarDays(db, access, days.from, days.to),
+      membersView(db, access, now, zone),
+    ]);
+    return { access, items, placed, view };
   });
   if (!access.ok) refuse(slug, access.reason);
   const { language, t } = await workspaceWords();
-  if (!access.ok) {
+  if (!access.ok || !view) {
     const e = (await searchParams).e;
     const error = ERRORS.find((code) => code === e);
     return (
@@ -119,7 +214,14 @@ export default async function WorkspacePage({
   }
   return (
     <SignedInFrame access={access} language={language} t={t} current="home" waiting={items.length}>
-      <Home slug={slug} t={t} language={language} items={items} />
+      <Home
+        slug={slug}
+        t={t}
+        language={language}
+        items={items}
+        next={nextItems(placed, slug, { t, language, zone })}
+        view={view}
+      />
     </SignedInFrame>
   );
 }

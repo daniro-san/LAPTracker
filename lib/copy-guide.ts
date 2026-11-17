@@ -20,7 +20,8 @@ export const guideCopy = {
     },
     network: {
       meaning: "The request did not reach the game's API (DNS, TLS or a dropped connection).",
-      action: "It usually passes by itself. If it repeats for hours, their host may be down.",
+      action:
+        "It usually clears up by itself. If it keeps happening for hours, their host may be down.",
     },
     gateway: {
       meaning: "The game's API answered HTTP {status}, still after 3 retries.",

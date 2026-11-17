@@ -1,13 +1,20 @@
 "use client";
 
-// The notice editor (issues 304, 305, 293): the title, the three languages, "Show to members" and the end
-// date. Translate and Improve writing fill drafts in the page; nothing is saved until the officer presses
-// Save. A save sends only the fields that changed, each with the version the officer was looking at; when
-// someone else saved one first, the server refuses (409) and one banner at the top shows both versions.
-// While the form is open the bottom tabs are hidden (Frame), so the save bar is never under them.
+// The notice editor (issues 304, 305, 293, 363), top to bottom: the title, the language tabs with the text of
+// the tab in view, Translate and Improve writing, "Show to members" and the end date, then the save bar.
+// Translate and Improve writing fill drafts in the page; nothing is saved until the officer presses Save. A
+// save sends only the fields that changed, each with the version the officer was looking at; when someone
+// else saved one first, the server refuses (409) and one banner at the top shows both versions. While the
+// form is open the bottom tabs are hidden (Frame), so the save bar is never under them. Unsaved text is kept
+// on this device (an iPhone never warns before leaving), and the editor offers it back when it opens again.
 import { useEffect } from "react";
 
+import { buttonClass } from "@/lib/brand/components/Button";
+import { FIELD } from "@/lib/brand/components/controls";
+import { Notice } from "@/lib/brand/components/Notice";
+
 import { useEditor, type EditorProps } from "./notice-editor-state";
+import { NoticeActions } from "./NoticeActions";
 import { ConflictBanner } from "./NoticeBits";
 import { Flags, SaveBar } from "./NoticeEditorParts";
 import { LanguageField } from "./NoticeLanguageField";
@@ -19,12 +26,12 @@ export function NoticeEditor(p: EditorProps) {
   const { draft } = e;
   const { t } = p;
   useEffect(() => {
-    if (p.focus)
-      document.getElementById(`notice-${p.focus}-label`)?.scrollIntoView({ block: "start" });
+    if (p.focus) document.getElementById("notice-tabs")?.scrollIntoView({ block: "start" });
   }, [p.focus]);
   return (
     <form
       data-notice-editor=""
+      className="max-w-2xl"
       onSubmit={(event) => {
         event.preventDefault();
         void e.save();
@@ -40,6 +47,16 @@ export function NoticeEditor(p: EditorProps) {
           focusRef={e.banner}
         />
       )}
+      {e.restorable && (
+        <Notice tone="info" className="mt-3">
+          <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            {t["notices.restore.lead"]}
+            <button type="button" onClick={e.restore} className={buttonClass("secondary")}>
+              {t["notices.restore"]}
+            </button>
+          </span>
+        </Notice>
+      )}
       <label htmlFor="notice-title" className="mt-3 block font-semibold">
         {t["notices.title"]}
       </label>
@@ -48,36 +65,10 @@ export function NoticeEditor(p: EditorProps) {
         value={draft.values.title}
         maxLength={200}
         onChange={(ev) => e.set("title", ev.target.value)}
-        className="mt-1 block min-h-11 w-full border border-rule bg-paper px-3"
+        className={`${FIELD} mt-1 block`}
       />
-      {p.languages.map((language) => {
-        const others = p.languages.filter((l) => l !== language);
-        const stale =
-          p.stale.includes(language) &&
-          !draft.kept[language] &&
-          draft.values[language] === draft.base[language];
-        return (
-          <LanguageField
-            key={language}
-            language={language}
-            others={others}
-            value={draft.values[language]}
-            onChange={(v) => e.set(language, v)}
-            t={t}
-            viewer={p.viewer}
-            ai={p.ai}
-            busy={e.busy}
-            stale={stale ? { from: p.source } : null}
-            drafted={draft.undo[language] !== undefined}
-            partly={draft.partly[language] === true}
-            othersWritten={others.some((l) => draft.values[l].trim() !== "")}
-            onTranslate={(from, to) => void e.translate(from, to)}
-            onImprove={(tone) => void e.improve(language, tone)}
-            onUndo={() => e.undo(language)}
-            onKeep={() => e.keep(language)}
-          />
-        );
-      })}
+      <LanguageField p={p} e={e} />
+      <NoticeActions p={p} e={e} />
       <Flags e={e} t={t} />
       <SaveBar p={p} e={e} />
     </form>

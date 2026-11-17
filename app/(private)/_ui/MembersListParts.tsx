@@ -3,6 +3,7 @@
 // The Members list's pieces (issue 337): the slim sticky block (search, Filters, the two chips, the column
 // labels), the count line naming every filter on, with Clear filters and Copy, the "Not shown" lines, the
 // empty states and "Show more".
+import { chip } from "@/lib/brand/components/controls";
 import { fill } from "@/lib/copy";
 import { keepMembers, NO_QUERY, sheetFilters } from "@/lib/private/members-list";
 
@@ -16,9 +17,7 @@ const LINK =
 
 /** A toggle chip: plum when on, dashed when it would give no one. */
 export const chipClass = (on: boolean, zero: boolean) =>
-  `inline-flex min-h-11 items-center gap-1.5 border px-3 text-body-sm font-medium whitespace-nowrap ${
-    on ? "border-plum bg-plum text-paper" : zero ? "border-dashed border-rule" : "border-rule"
-  }`;
+  `${chip(on)} whitespace-nowrap ${zero && !on ? "text-ink/60" : ""}`;
 
 export function StickyBar(props: {
   s: ListState;

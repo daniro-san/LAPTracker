@@ -123,7 +123,7 @@ export const ko = {
     carriedTurnout: "처치가 늘어난 인원 {share}",
     carriedSpread: "{n}개 이벤트, {low}–{high}",
     carriedRatioHelp:
-      "%p는 처치 몫에서 전투력 몫을 뺀 값입니다. 3개 이벤트부터 그 아래에 해당 이벤트들의 처치 몫 ÷ 전투력 몫 범위가 보입니다.",
+      "%p는 처치 몫에서 전투력 몫을 뺀 값입니다. 이벤트가 3개 이상이면 그 아래 줄에 이벤트들의 처치 몫 ÷ 전투력 몫 범위가 보입니다.",
     carriedPoints: "%p",
   },
   compare: {
@@ -146,7 +146,7 @@ export const ko = {
   merge: {
     title: "합병 시뮬레이터",
     tag: "시뮬레이션, 계획이 아님",
-    lead: "두 연맹을 하나로 합치면 어떨지, 인원 상한에 비춰 봅니다. 연맹 합계만 보여 주며 멤버 이름은 나오지 않습니다.",
+    lead: "두 연맹을 하나로 합쳐 인원 상한과 비교합니다. 연맹 합계만 보여 주며 멤버 이름은 나오지 않습니다.",
     link: "합병 시뮬레이션",
     first: "첫 번째 연맹",
     second: "두 번째 연맹",
@@ -175,7 +175,7 @@ export const ko = {
   flow: {
     title: "멤버 흐름",
     tag: "숫자만",
-    lead: "추적 중인 연맹 사이에서 멤버들이 어디로 옮겨 갔는지 보여 줍니다. 첫째 날 각 멤버가 있던 연맹을 둘째 날과 비교합니다. 숫자만 보여 주며 멤버 이름은 나오지 않습니다.",
+    lead: "추적 중인 연맹 사이에서 멤버들이 첫째 날부터 둘째 날까지 어디로 옮겼는지 보여 줍니다. 멤버 이름은 나오지 않습니다.",
     from: "시작 날짜",
     to: "종료 날짜",
     action: "보기",
@@ -183,7 +183,7 @@ export const ko = {
     answerNone: "{from}부터 {to}까지 추적 중인 연맹 사이에 {min}명 이상의 이동은 없어요.",
     totals: "{min}명 이상의 이동 · 연맹 이동: {moved} · 신규: {arrived} · 탈퇴: {left}",
     small:
-      "{min}명 미만의 인원은 유지한 인원까지 숨기고 어떤 합계에도 넣지 않아요. 이 페이지가 작은 무리를 드러내지 않게요.",
+      "인원 {min}명 미만의 집계는 숨기고, 유지한 멤버를 포함해 모든 합계에서 뺍니다. 작은 무리를 보호하기 위해서예요.",
     rowNew: "신규",
     colLeft: "탈퇴",
     legend:
@@ -212,7 +212,7 @@ export const ko = {
     builder: "블록 짜기",
     hypothetical: "가상",
     builderHelp:
-      "연맹에서 A 또는 B를 눌러 블록을 시험해 보세요. 계산일 뿐이고, 예측도 공지도 아니에요.",
+      "연맹에서 A나 B를 눌러 블록을 시험해 보세요. 숫자만 더해 보는 거예요. 실제 블록을 예측하거나 알리는 게 아니에요.",
     bloc: "블록 {bloc}",
     blocShare: "추적 연맹 전투력의 {share}",
     blocAlliances: "연맹",
@@ -233,7 +233,7 @@ export const ko = {
     title: "시간에 따른 순위",
     help: "추적 중인 연맹을 날마다 읽은 전투력으로 순위 매기고, {from} 이후 변화를 보여 줍니다. 그날 읽지 못한 연맹은 빠집니다. 여기서 서버란 추적 연맹 합계를 뜻합니다.",
     lead: "{label}은(는) {to}에 전투력 기준 {rank}위, {from}에는 {before}위였습니다.",
-    leadGrowth: "그때 이후 전투력은 {growth} 변했고, 추적 연맹 합계는 {server} 변했습니다.",
+    leadGrowth: "그때 이후 전투력은 {growth} 변했습니다. 추적 연맹 합계는 {server} 변했습니다.",
     server: "추적 연맹 합계",
     growthSince: "{from} 이후 {growth}",
     trend: "{from} 순위 {first}, {to} 순위 {last}",
@@ -342,7 +342,7 @@ export const ko = {
     seen: "마지막 확인",
     limit: "처음 {n}명",
     noMatch: "장부에 그 이름의 플레이어가 없습니다.",
-    pending: "할머니가 장부를 넘기고 있어요…",
+    pending: "할머니가 장부에서 찾고 있어요…",
   },
   errors: {
     notFound: {
@@ -364,6 +364,6 @@ export const ko = {
     manualNotRun: "이 라운드는 아직 실행되지 않았어요. 관리자가 직접 시작합니다.",
     manualNoRows: "실행 결과가 없어요. 관리자가 다시 직접 실행합니다.",
     noEvents: "장부에 아직 이벤트가 없어요.",
-    noMembers: "해당하는 사람이 없어요. 할머니가 두 번 확인했어요.",
+    noMembers: "해당하는 사람이 없어요.",
   },
 } as const satisfies Translation;

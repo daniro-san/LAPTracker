@@ -4,12 +4,12 @@ import type { ShotsWords } from "./dictionary.shots";
 
 export const shotsFr: ShotsWords = {
   "shots.head": "À vérifier",
-  "shots.lead": "Les captures lues depuis le jeu attendent ici qu’un officier les enregistre.",
+  "shots.lead": "Les captures lues depuis le jeu attendent ici qu’un officier les vérifie.",
   "shots.nothingCounts": "Rien ici ne compte avant d’être enregistré.",
   "shots.none": "Rien à vérifier.",
   "shots.send": "Envoyer des captures",
   "shots.help":
-    "Classements : activez My Alliance d’abord. Plusieurs captures d’une longue liste font un seul brouillon. Les captures sont lues, puis oubliées.",
+    "Classements : activez My Alliance d’abord. Plusieurs captures d’une longue liste font un seul brouillon. Les captures ne sont pas gardées après lecture.",
   "shots.reading": "Lecture {n} sur {total}…",
   "shots.tooMany": "Envoyez au plus {n} captures à la fois.",
   "shots.readFailed": "Cette capture n’a pas pu être lue.",
@@ -19,6 +19,7 @@ export const shotsFr: ShotsWords = {
   "shots.open": "Vérifier",
   "shots.pickType": "Choisir le type",
   "shots.discard": "Écarter",
+  "shots.discardAsk": "Écarter ce brouillon ? Les lignes sont supprimées.",
   "shots.kind.alliance_duel": "Alliance Duel",
   "shots.kind.donation": "Dons",
   "shots.kind.might": "Might",
@@ -41,10 +42,9 @@ export const shotsFr: ShotsWords = {
   "shots.leftOut.other": "{n} lignes d’autres alliances ont été écartées : activez My Alliance.",
   "shots.lost.one": "{n} capture n’a pas pu être lue.",
   "shots.lost.other": "{n} captures n’ont pas pu être lues.",
-  "shots.unrecognised": "Non reconnue — rien n’a été enregistré.",
+  "shots.unrecognised": "Non reconnue. Rien n’a été enregistré.",
   "shots.map": "Cette capture ne contient rien que le bureau utilise. Rien n’a été enregistré.",
-  "shots.soon":
-    "Lu : {what}. L’enregistrement de ce type arrive bientôt ; rien n’a été enregistré.",
+  "shots.soon": "Lu : {what}. Ce type ne s’enregistre pas encore. Rien n’a été enregistré.",
   "shots.empty": "Lu : {what}, mais aucune ligne n’a pu être lue. Rien n’a été enregistré.",
   "shots.reply.read": "Lu : {what}, {counts}",
   "shots.reply.review": "Vérifier",
@@ -99,7 +99,7 @@ export const shotsFr: ShotsWords = {
   "shots.e.gone": "Ce brouillon n’existe plus : enregistré, écarté ou vieux de plus de 7 jours.",
   "shots.e.bad_rows":
     "Chaque ligne a besoin d’un membre, et chaque membre d’une seule ligne. Choisissez le membre ou retirez la ligne.",
-  "shots.e.cannot_save": "L’enregistrement de ce type arrive bientôt.",
+  "shots.e.cannot_save": "Ce type ne s’enregistre pas encore.",
   "shots.e.failed": "Impossible d’enregistrer. Réessayez.",
   "shots.duel.card": "Alliance Duel cette semaine",
   "shots.duel.dayValue": "{day} {v}",
@@ -140,7 +140,7 @@ export const shotsFr: ShotsWords = {
   "shots.why.victim": "Choisissez à qui est ce rapport.",
   "shots.why.attacker":
     "La ligne {row} a besoin du nom de l’attaquant. Saisissez-le, ou retirez la ligne.",
-  "shots.kindUnsure": "{kind} — du jour ou de la semaine ?",
+  "shots.kindUnsure": "{kind} (du jour ou de la semaine ?)",
   "shots.victimYou": "Réglé sur vous. Changez-le si ce rapport est celui de quelqu’un d’autre.",
   "shots.keptTheirs": "{theirs} gardé. Touchez pour utiliser {mine} à la place.",
   "shots.theftsSaved.one": "{n} vol enregistré.",
@@ -152,5 +152,11 @@ export const shotsFr: ShotsWords = {
   "shots.retypeConfirm":
     "Changer le type relit les captures et efface vos corrections. Le changer ?",
   "shots.discord.unrecognised":
-    "Non reconnue — rien n’a été enregistré. Envoyez-la depuis le bureau pour choisir le type.",
+    "Non reconnue. Rien n’a été enregistré. Envoyez-la depuis le bureau pour choisir le type.",
+  "shots.nextDraft.one": "Brouillon suivant (encore {n})",
+  "shots.nextDraft.other": "Brouillon suivant (encore {n})",
+  "shots.check.head": "Comparé aux données du jeu",
+  "shots.check.match": "Identiques : {same} sur {compared}",
+  "shots.check.left": "Non comptés : {n} (pas de membre sûr, ou pas de données du jeu).",
+  "shots.check.save": "Enregistrer le décompte",
 };

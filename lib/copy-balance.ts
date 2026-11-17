@@ -6,7 +6,7 @@ export const balanceCopy = {
   description:
     "Each tracked alliance's share of the tracked alliances' might, and a hypothetical bloc builder.",
   /** The first sentence: `{max}` is the greatest share rounded up to a whole percent, `{n}` is 3, `{top}` their share. */
-  lead: "No alliance holds more than {max} of the tracked alliances' might; the top {n} hold {top}.",
+  lead: "No alliance holds more than {max} of the tracked alliances' might. The top {n} hold {top}.",
   /** Under the lead: what is counted, in one line. */
   includes: "Might includes buildings and tech.",
   /** `{n}` tracked alliances, `{date}` the newest read. */
@@ -21,7 +21,7 @@ export const balanceCopy = {
   builder: "Bloc builder",
   hypothetical: "Hypothetical",
   builderHelp:
-    "Tap A or B on an alliance to try a bloc. This is arithmetic, not a forecast, and not an announcement.",
+    "Tap A or B on an alliance to try a bloc. It only adds up numbers. It does not predict or announce a real bloc.",
   bloc: "Bloc {bloc}",
   blocShare: "{share} of the tracked alliances' might",
   blocAlliances: "Alliances",

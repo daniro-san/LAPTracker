@@ -6,6 +6,7 @@
 // a 44 px button; a chosen one shows with "Change".
 import { useEffect, useMemo, useState } from "react";
 
+import { chip, FIELD } from "@/lib/brand/components/controls";
 import { fill } from "@/lib/copy";
 import { searchRoster } from "@/lib/private/roster-search";
 import type { AttackerOption } from "@/lib/private/thefts";
@@ -16,8 +17,8 @@ import type { TheftWords } from "./theft-data";
 export type Member = { uid: number; name: string };
 export type Attacker = AttackerOption | { typed: string; tag: string };
 
-const PICK = "flex min-h-11 w-full items-center border border-rule px-3 text-left";
-const FIELD = "drawn-field mt-1 min-h-11 w-full px-3";
+const PICK = `${chip()} flex w-full text-left text-body`;
+const INPUT = `${FIELD} mt-1`;
 
 /** The matcher's one match or suggestions first, then the roster search; at most six. */
 function memberCandidates(query: string, roster: readonly Member[]): Member[] {
@@ -168,7 +169,7 @@ function PlayerSearch({ slug, t, onChange }: AttackerProps) {
         autoComplete="off"
         aria-describedby="theft-attacker-help"
         onChange={(e) => setQuery(e.target.value)}
-        className={FIELD}
+        className={INPUT}
       />
       {hits === "searching" && <Status text={t["thefts.form.searching"]} />}
       {Array.isArray(hits) && hits.length === 0 && <Status text={t["thefts.form.noHit"]} />}
@@ -218,7 +219,7 @@ export function VictimField(props: {
         maxLength={64}
         autoComplete="off"
         onChange={(e) => setQuery(e.target.value)}
-        className={FIELD}
+        className={INPUT}
       />
       {query.trim() !== "" && found.length === 0 && <Status text={t["thefts.form.noMember"]} />}
       <ul className="mt-1 grid gap-1">

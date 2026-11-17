@@ -6,6 +6,7 @@
 import { useState } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
+import { Tag } from "@/lib/brand/components/Tag";
 import { fill } from "@/lib/copy";
 import type { NoticeLanguage } from "@/lib/private/notice-rules";
 
@@ -94,10 +95,10 @@ export function NoticeScreen(p: ScreenProps) {
       <h1 className="font-display text-display-lg break-words">{p.fields.title.value}</h1>
       <p className="mt-2 text-body-sm text-ink/80">{p.meta.written}</p>
       <p className="text-body-sm text-ink/80">{p.meta.changed}</p>
-      <ul className="mt-2 flex flex-wrap gap-2 text-body-sm">
+      <ul className="mt-2 flex flex-wrap gap-x-3">
         {p.meta.flags.map((flag) => (
-          <li key={flag} className="border border-rule px-2 py-0.5">
-            {flag}
+          <li key={flag}>
+            <Tag>{flag}</Tag>
           </li>
         ))}
       </ul>

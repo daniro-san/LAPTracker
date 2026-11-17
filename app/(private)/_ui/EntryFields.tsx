@@ -13,6 +13,7 @@ import type { CalendarWords } from "@/lib/private/dictionary.calendar";
 import type { AgendaItem } from "./calendar-data";
 import type { Draft, problems } from "./calendar-draft";
 import { Choice, FIELD, Labeled, TextInput } from "./CalendarFields";
+import { TimeInput } from "./TimeInput";
 import { useViewerZone, yourTime } from "./YourTime";
 
 export interface PartProps {
@@ -40,14 +41,16 @@ function VariantField({ d, set, words }: PartProps) {
 }
 
 function LevelField({ d, set, p, words }: PartProps) {
+  const bad = p.shown && Boolean(p.level);
   return (
     <Labeled
       id="cal-level"
       label={fill(words["calendar.form.level"], { max: LEVEL_MAX })}
-      error={p.shown && p.level ? words["calendar.form.needed"] : null}
+      error={bad ? words["calendar.form.needed"] : null}
     >
       <select
         id="cal-level"
+        aria-invalid={bad}
         value={d.level}
         onChange={(e) => set({ level: e.target.value })}
         className={FIELD}
@@ -63,15 +66,17 @@ function LevelField({ d, set, p, words }: PartProps) {
 
 function TitleField({ d, set, p, words }: PartProps) {
   const theme = d.kind === "duel";
+  const bad = p.shown && Boolean(p.title);
   return (
     <Labeled
       id="cal-title"
       label={words[theme ? "calendar.form.theme" : "calendar.form.name"]}
-      error={p.shown && p.title ? words["calendar.form.needed"] : null}
+      error={bad ? words["calendar.form.needed"] : null}
       hint={words[theme ? "calendar.form.themeHint" : "calendar.form.nameHint"]}
     >
       <TextInput
         id="cal-title"
+        aria-invalid={bad}
         maxLength={80}
         value={d.title}
         onChange={(e) => set({ title: e.target.value })}
@@ -122,13 +127,12 @@ export function TimeFields(props: PartProps & { zone: string }) {
         error={p.shown && p.time ? words["calendar.form.timeBad"] : null}
         hint={local ?? words["calendar.form.timeHint"]}
       >
-        <TextInput
+        <TimeInput
           id="cal-time"
-          inputMode="numeric"
-          autoComplete="off"
-          placeholder="21:00"
+          aria-describedby="cal-time-note"
+          aria-invalid={p.shown && Boolean(p.time)}
           value={d.time}
-          onChange={(e) => set({ time: e.target.value })}
+          onChange={(time) => set({ time })}
         />
       </Labeled>
     );

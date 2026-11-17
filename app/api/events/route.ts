@@ -10,7 +10,7 @@ const noQuery = z.object({}).strict();
 export function GET(request: Request): Promise<Response> {
   return withContext("/api/events", async (_ctx, db) => {
     if (!parseQuery(request, noQuery)) return errorResponse(400, "bad_request");
-    const events = (await listEvents(db)).map(({ isTest: _, ...e }) => e);
+    const events = (await listEvents(db)).map(({ isTest: _, afterAt: __, ...e }) => e);
     // Same short shared cache as /api/alliances/[unionId]/history: a visibility switch or rename
     // reaches the CDN copy within 5 minutes.
     return Response.json({ events }, { headers: { "Cache-Control": "public, s-maxage=300" } });

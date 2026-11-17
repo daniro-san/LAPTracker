@@ -10,6 +10,7 @@ import { LABEL } from "@/app/_ui/StatTable";
 import { GrannyEmpty } from "@/lib/brand/components/Mascot";
 import { TextLink } from "@/lib/brand/components/TextLink";
 import { fill } from "@/lib/copy";
+import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
 import { homeEvent, listEvents } from "@/lib/queries";
 import { searchPlayers, SEARCH_LIMIT } from "@/lib/queries/players";
@@ -41,7 +42,7 @@ export default async function PlayersPage({
       <SiteHeader
         events={events}
         currentId={null}
-        homeId={homeEvent(events)?.id ?? null}
+        homeId={homeEvent(events, new Date(), getEnv().SNAPSHOT_WINDOW_MIN)?.id ?? null}
         section="players"
         clock={clock}
         copy={copy}

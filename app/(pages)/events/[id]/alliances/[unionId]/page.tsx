@@ -35,6 +35,7 @@ import { LABEL, type StatMetric } from "@/app/_ui/StatTable";
 import { CaptureWindow, FreshDots, Legend, SideHead, type FreshState } from "@/app/_ui/Status";
 import { rankDelta } from "@/lib/compute";
 import type { Dictionary } from "@/lib/copy";
+import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
 import type { AllianceRow, HistoryRow, Ranks } from "@/lib/queries";
 import {
@@ -182,7 +183,7 @@ const loadAlliance = cache((eventId: number, unionId: number) =>
     return {
       detail,
       events,
-      homeId: homeEvent(events)?.id ?? null,
+      homeId: homeEvent(events, new Date(), getEnv().SNAPSHOT_WINDOW_MIN)?.id ?? null,
       history,
       names: names.get(unionId) ?? [],
       ledger: ranks.get(unionId),
@@ -233,15 +234,16 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   };
 }
 
-type Events = Awaited<ReturnType<typeof listEvents>>;
+type Loaded = NonNullable<Awaited<ReturnType<typeof loadAlliance>>>;
 
-/** `Ledger · Sat, Oct 31 › [TAG] Name`: back to the event, then this page. */
-function crumbsFor(events: Events, eventId: number, label: string, clock: Clock, copy: Dictionary) {
+/** `Ledger · Sat, Oct 31 › [TAG] Name`: back to the event (`/` when it is the home event), then this page. */
+function crumbsFor(data: Loaded, eventId: number, label: string, clock: Clock, copy: Dictionary) {
+  const { events, homeId } = data;
   const event = events.find((e) => e.id === eventId);
   return [
     {
       key: "ledger",
-      href: eventId === homeEvent(events)?.id ? "/" : `/events/${eventId}`,
+      href: eventId === homeId ? "/" : `/events/${eventId}`,
       label: event ? `${copy.site.home} · ${clock.weekday(event.eventAtUtc)}` : copy.site.home,
     },
     { key: "alliance", label },
@@ -271,7 +273,7 @@ export default async function AlliancePage({ params }: { params: Params }) {
     <>
       <SiteHeader events={events} currentId={eventId} homeId={homeId} clock={clock} copy={copy} />
       <main id="main" className="scroll-mt-20 mx-auto max-w-[960px] px-4 py-4 sm:px-6">
-        <Breadcrumbs crumbs={crumbsFor(events, eventId, label, clock, copy)} />
+        <Breadcrumbs crumbs={crumbsFor(data, eventId, label, clock, copy)} />
         <div
           id={TITLE_ID}
           className="flex scroll-mt-20 flex-wrap items-center justify-between gap-x-3 gap-y-2"
@@ -299,6 +301,7 @@ export default async function AlliancePage({ params }: { params: Params }) {
         <CaptureWindow
           before={phases.find((s) => s.phase === "before")}
           after={phases.find((s) => s.phase === "after")}
+          now={new Date()}
           clock={clock}
           copy={copy}
         />

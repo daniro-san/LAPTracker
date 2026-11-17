@@ -146,7 +146,7 @@ export async function Frame({
       id="top"
       className={tabs ? "pb-[calc(5rem+env(safe-area-inset-bottom))]" : undefined}
     >
-      <header className="bg-burgundy pt-[env(safe-area-inset-top)] [body:has([data-upstream-banner])_&]:pt-0 pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)] text-wax-paper">
+      <header className="bg-burgundy pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)] text-wax-paper">
         <div className="mx-auto flex max-w-[960px] flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 sm:px-6">
           <div className="min-w-0 flex-1">
             <p className="font-display text-display-sm">{t["app.name"]}</p>

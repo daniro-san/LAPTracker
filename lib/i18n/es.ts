@@ -129,7 +129,7 @@ export const es = {
     carriedTurnout: "{share} con Kills",
     carriedSpread: "{low}–{high} en {n} eventos",
     carriedRatioHelp:
-      "pp es la parte de Kills menos la parte de Might. Desde 3 eventos, debajo se muestra el rango de la parte de Kills ÷ parte de Might en esos eventos.",
+      "pp es la parte de Kills menos la parte de Might. Con 3 eventos o más, la línea de debajo muestra el rango de la parte de Kills ÷ la parte de Might en esos eventos.",
     carriedPoints: "pp",
   },
   compare: {
@@ -152,7 +152,7 @@ export const es = {
   merge: {
     title: "Simulador de fusión",
     tag: "Simulación, no un plan",
-    lead: "Qué serían dos alianzas juntas, frente al tope de Members. Solo totales de alianza, sin nombres de Members.",
+    lead: "Dos alianzas contadas como una y comparadas con el tope de Members. Solo totales de alianza, sin nombres de Members.",
     link: "Simular una fusión",
     first: "Primera alianza",
     second: "Segunda alianza",
@@ -181,7 +181,7 @@ export const es = {
   flow: {
     title: "Flujo de Members",
     tag: "Solo conteos",
-    lead: "Hacia dónde fueron los Members entre las alianzas seguidas: la alianza de cada uno el primer día, frente al segundo. Solo conteos, sin nombres de Members.",
+    lead: "Adónde pasaron los Members entre las alianzas seguidas, del primer día al segundo. No se nombra a ningún Member.",
     from: "Desde",
     to: "Hasta",
     action: "Mostrar",
@@ -191,7 +191,7 @@ export const es = {
     totals:
       "Movimientos de {min} o más · Cambiaron de alianza: {moved} · Nuevos: {arrived} · Salieron: {left}",
     small:
-      "Los recuentos de menos de {min} Members, incluidos los que se quedaron, se ocultan y no entran en ningún total, para que esta página no señale a grupos pequeños.",
+      "Los recuentos de menos de {min} Members se ocultan y no entran en ningún total, incluidos los Members que se quedaron. Así se protege a los grupos pequeños.",
     rowNew: "Nuevos",
     colLeft: "Salieron",
     legend:
@@ -209,7 +209,7 @@ export const es = {
     title: "Balance del servidor",
     description:
       "La parte de cada alianza seguida en el Might de las alianzas seguidas, y un armador de bloques hipotéticos.",
-    lead: "Ninguna alianza supera el {max} del Might de las alianzas seguidas; las {n} primeras suman el {top}.",
+    lead: "Ninguna alianza tiene más del {max} del Might de las alianzas seguidas. Las {n} primeras tienen el {top}.",
     includes: "El Might incluye edificios y tecnología.",
     basis: "{n} alianzas seguidas, leídas el {date}.",
     total: "Alianzas seguidas",
@@ -220,7 +220,7 @@ export const es = {
     builder: "Creador de bloques",
     hypothetical: "Hipotético",
     builderHelp:
-      "Toca A o B en una alianza para probar un bloque. Es aritmética, no un pronóstico ni un anuncio.",
+      "Toca A o B en una alianza para probar un bloque. Solo suma números. No predice ni anuncia un bloque real.",
     bloc: "Bloque {bloc}",
     blocShare: "{share} del Might de las alianzas seguidas",
     blocAlliances: "Alianzas",
@@ -242,7 +242,7 @@ export const es = {
     help: "Las alianzas seguidas ordenadas por Might según la lectura de cada día, con el cambio desde {from}. Un día en que no se leyó una alianza queda fuera. El servidor aquí es el total de las alianzas seguidas.",
     lead: "{label} estuvo {rank} por Might el {to} y {before} el {from}.",
     leadGrowth:
-      "Su Might cambió {growth} desde entonces; el total de las alianzas seguidas cambió {server}.",
+      "Su Might cambió {growth} desde entonces. El total de las alianzas seguidas cambió {server}.",
     server: "Alianzas seguidas",
     growthSince: "{growth} desde {from}",
     trend: "Puesto {first} el {from}, {last} el {to}",
@@ -351,7 +351,7 @@ export const es = {
     seen: "Visto",
     limit: "Primeros {n}",
     noMatch: "No hay ningún jugador con ese nombre en el registro.",
-    pending: "La abuela está hojeando el registro…",
+    pending: "La abuela está buscando en el registro…",
   },
   errors: {
     notFound: {
@@ -373,6 +373,6 @@ export const es = {
     manualNotRun: "Esta ronda aún no se ha lanzado. El admin la inicia a mano.",
     manualNoRows: "La ejecución no dejó nada. El admin la vuelve a lanzar a mano.",
     noEvents: "Aún no hay eventos en el registro.",
-    noMembers: "Nadie coincide. La abuela lo miró dos veces.",
+    noMembers: "Nadie coincide.",
   },
 } as const satisfies Translation;

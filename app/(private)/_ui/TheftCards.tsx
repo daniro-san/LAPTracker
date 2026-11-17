@@ -9,6 +9,7 @@ import { useState, type FormEvent } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
 import { RadioField } from "@/lib/brand/components/RadioField";
+import { Tag } from "@/lib/brand/components/Tag";
 import { fill } from "@/lib/copy";
 import type { WorkspaceLanguage } from "@/lib/private/dictionary";
 import { FOLLOW_UP_STATES, type FollowUpState } from "@/lib/private/theft-groups";
@@ -17,20 +18,18 @@ import { postTheft, viewerClock } from "./theft-client";
 import type { AllianceCard, AttackerCard, EntryCard, TheftWords } from "./theft-data";
 import { TimePair, useViewerZone } from "./YourTime";
 
-const STATE_TONE: Record<FollowUpState, string> = {
-  open: "border-yarn text-yarn",
-  talked: "border-plum text-plum",
-  resolved: "border-sage text-sage",
-};
+const STATE_TONE = {
+  open: "attention",
+  talked: "progress",
+  resolved: "neutral",
+} as const satisfies Record<FollowUpState, string>;
 
 type Shared = { slug: string; t: TheftWords; language: WorkspaceLanguage };
 
 function StateBadge({ card }: { card: AttackerCard }) {
   return (
-    <span
-      className={`inline-flex shrink-0 items-center rounded-xs border px-2 text-[12px] leading-5 font-semibold ${STATE_TONE[card.state]}`}
-    >
-      {card.badge}
+    <span className="shrink-0">
+      <Tag tone={STATE_TONE[card.state]}>{card.badge}</Tag>
     </span>
   );
 }
@@ -150,15 +149,11 @@ function Entry({ entry, slug, t, language }: Shared & { entry: EntryCard }) {
       {asking ? (
         <div className="mt-1 flex flex-wrap items-center gap-2">
           <span className="text-body-sm font-semibold">{t["thefts.removeAsk"]}</span>
-          <button type="button" onClick={() => void remove()} className={buttonClass("primary")}>
-            {t["thefts.removeYes"]}
-          </button>
-          <button
-            type="button"
-            onClick={() => setAsking(false)}
-            className={buttonClass("secondary")}
-          >
+          <button type="button" onClick={() => setAsking(false)} className={buttonClass("primary")}>
             {t["thefts.keep"]}
+          </button>
+          <button type="button" onClick={() => void remove()} className={buttonClass("secondary")}>
+            {t["thefts.removeYes"]}
           </button>
         </div>
       ) : (

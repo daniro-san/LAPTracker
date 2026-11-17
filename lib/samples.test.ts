@@ -81,7 +81,7 @@ const rowsByPhase = () =>
 /** What the public pages and routes show for the event, its alliances and a player. */
 async function pages(eventId: number) {
   const [page, history, index, chain, player] = await Promise.all([
-    getEventPage(db, eventId),
+    getEventPage(db, eventId, 45),
     memberHistory(db, IDS[0] as number),
     memberHistoryIndex(db, IDS[0] as number),
     allianceHistory(db, IDS[0] as number),

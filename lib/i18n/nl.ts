@@ -130,7 +130,7 @@ export const nl = {
     carriedTurnout: "{share} met Kills",
     carriedSpread: "{low}–{high} over {n} events",
     carriedRatioHelp:
-      "%-pt is het aandeel Kills min het aandeel Might. Vanaf 3 events staat eronder de bandbreedte van aandeel Kills ÷ aandeel Might over die events.",
+      "%-pt is het aandeel Kills min het aandeel Might. Bij 3 events of meer staat eronder de bandbreedte van aandeel Kills ÷ aandeel Might over die events.",
     carriedPoints: "%-pt",
   },
   compare: {
@@ -153,7 +153,7 @@ export const nl = {
   merge: {
     title: "Fusiesimulator",
     tag: "Simulatie, geen plan",
-    lead: "Hoe twee allianties samen zouden zijn, naast de ledengrens. Alleen totalen van de allianties, geen ledennamen.",
+    lead: "Twee allianties samen geteld en getoetst aan de ledengrens. Alleen totalen van de allianties, geen ledennamen.",
     link: "Simuleer een fusie",
     first: "Eerste alliantie",
     second: "Tweede alliantie",
@@ -182,7 +182,7 @@ export const nl = {
   flow: {
     title: "Ledenstroom",
     tag: "Alleen aantallen",
-    lead: "Waar leden naartoe gingen tussen de gevolgde allianties: de alliantie waarin elk lid op de eerste dag zat, naast de tweede dag. Alleen aantallen, geen ledennamen.",
+    lead: "Waar leden heen gingen tussen de gevolgde allianties, van de eerste dag naar de tweede. Geen enkel lid wordt genoemd.",
     from: "Van",
     to: "Naar",
     action: "Toon",
@@ -192,7 +192,7 @@ export const nl = {
     totals:
       "Verschuivingen van {min} of meer · Van alliantie gewisseld: {moved} · Nieuw: {arrived} · Weg: {left}",
     small:
-      "Aantallen onder de {min} leden, ook de gebleven, zijn verborgen en tellen in geen enkel totaal mee, zodat deze pagina geen kleine groepen uitlicht.",
+      "Aantallen onder {min} leden zijn verborgen en tellen in geen enkel totaal mee, ook de gebleven leden niet. Dit beschermt kleine groepen.",
     rowNew: "Nieuw",
     colLeft: "Weg",
     legend:
@@ -210,7 +210,7 @@ export const nl = {
     title: "Serverbalans",
     description:
       "Het aandeel van elke gevolgde alliantie in de might van de gevolgde allianties, en een hypothetische blokbouwer.",
-    lead: "Geen alliantie heeft meer dan {max} van de might van de gevolgde allianties; de top {n} hebben samen {top}.",
+    lead: "Geen alliantie heeft meer dan {max} van de might van de gevolgde allianties. De top {n} hebben samen {top}.",
     includes: "Might telt gebouwen en tech mee.",
     basis: "{n} gevolgde allianties, gemeten op {date}.",
     total: "Gevolgde allianties",
@@ -221,7 +221,7 @@ export const nl = {
     builder: "Blokbouwer",
     hypothetical: "Hypothetisch",
     builderHelp:
-      "Tik op A of B bij een alliantie om een blok te proberen. Dit is rekenwerk, geen voorspelling, en ook geen aankondiging.",
+      "Tik op A of B bij een alliantie om een blok te proberen. Het telt alleen getallen op. Het voorspelt of kondigt geen echt blok aan.",
     bloc: "Blok {bloc}",
     blocShare: "{share} van de might van de gevolgde allianties",
     blocAlliances: "Allianties",
@@ -243,7 +243,7 @@ export const nl = {
     help: "De gevolgde allianties gerangschikt op might, per dagelijkse meting, met de verandering sinds {from}. Een dag waarop een alliantie niet is gemeten, wordt weggelaten. De server is hier het totaal van de gevolgde allianties.",
     lead: "{label} stond op {to} {rank} op might en op {from} {before}.",
     leadGrowth:
-      "Haar might veranderde sindsdien {growth}; het totaal van de gevolgde allianties veranderde {server}.",
+      "Haar might veranderde sindsdien {growth}. Het totaal van de gevolgde allianties veranderde {server}.",
     server: "Gevolgde allianties",
     growthSince: "{growth} sinds {from}",
     trend: "Rang {first} op {from}, {last} op {to}",
@@ -352,7 +352,7 @@ export const nl = {
     seen: "Gezien",
     limit: "Eerste {n}",
     noMatch: "Geen speler met die naam in het logboek.",
-    pending: "Oma bladert door het logboek…",
+    pending: "Oma zoekt in het logboek…",
   },
   errors: {
     notFound: {
@@ -374,6 +374,6 @@ export const nl = {
     manualNotRun: "Deze ronde is nog niet gedraaid. De admin start hem met de hand.",
     manualNoRows: "De run leverde niets op. De admin draait hem opnieuw met de hand.",
     noEvents: "Nog geen events in het logboek.",
-    noMembers: "Niemand past hierbij. Oma heeft twee keer gekeken.",
+    noMembers: "Niemand past hierbij.",
   },
 } as const satisfies Translation;

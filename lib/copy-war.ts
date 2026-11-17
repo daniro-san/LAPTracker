@@ -41,7 +41,7 @@ export const warCopy = {
   carriedSpread: "{low}–{high} over {n} events",
   /** The figure's meaning, and when the ratio's range is shown. */
   carriedRatioHelp:
-    "pts is the kill share minus the might share. From 3 events, the range of kill share ÷ might share over those events is shown under it.",
+    "pts is the kill share minus the might share. With 3 events or more, the line under it shows the range of kill share ÷ might share across them.",
   /** After a gap in percentage points, `+6.1 pts`. */
   carriedPoints: "pts",
 } as const;

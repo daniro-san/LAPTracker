@@ -5,7 +5,7 @@ import { calendarPt } from "./dictionary.calendar.pt-BR";
 import { importPt } from "./dictionary.import";
 import { membersPt } from "./dictionary.members.pt-BR";
 import { noticesPt } from "./dictionary.notices";
-import { shotsPt } from "./dictionary.shots";
+import { shotsPt } from "./dictionary.shots.pt-BR";
 import { theftsPt } from "./dictionary.thefts";
 
 export const pt: WorkspaceDictionary = {
@@ -24,7 +24,7 @@ export const pt: WorkspaceDictionary = {
     "Para a liderança da aliança: entre com a conta do Discord que você usa no servidor da aliança.",
   "signin.button": "Entrar com o Discord",
   "signin.note":
-    "O Discord nos informa seu nome e seus cargos nesse servidor. Nada mais, e nada é publicado.",
+    "O Discord só compartilha seu nome e seus cargos nesse servidor. Nada é publicado.",
   "signin.e.denied": "O Discord não confirmou a entrada. Tente de novo.",
   "signin.e.discord": "O Discord não respondeu. Tente de novo em um minuto.",
   "signin.e.not_configured":
@@ -41,17 +41,22 @@ export const pt: WorkspaceDictionary = {
   "noaccess.public": "Ir para o Registro de eventos público",
   "shell.signedIn": "Conectado como {name}",
   "shell.signOut": "Sair",
-  "home.title": "Esta semana",
-  "home.empty": "Nada aqui ainda. A chaleira está no fogo.",
-  "home.next":
-    "A aba Membros está pronta: o might, as doações e a atividade de cada membro, vindos do jogo.",
+  "home.title": "Agenda, membros e prints",
+  "home.next.head": "Hoje e amanhã",
+  "home.today": "Hoje",
+  "home.tomorrow": "Amanhã",
+  "home.next.none": "Nada na Agenda hoje nem amanhã.",
+  "home.calendar": "Abrir Agenda",
+  "home.members.head": "Membros nesta semana",
+  "home.notYet":
+    "Ainda não. Os agradecimentos e quem ver como está começam com a primeira leitura de fim de dia, pouco antes de o servidor virar o dia.",
   "home.open": "Abrir Membros",
   "shell.help": "Como funciona",
   "signin.howto": "Como colocar no seu celular",
   "members.none":
     "Ainda não houve leitura de fim de dia. Os membros aparecem aqui depois da primeira, pouco antes de o servidor virar o dia.",
   "thanks.head": "Obrigado por esta semana",
-  "thanks.intro": "Alguns nomes se destacaram. Obrigado.",
+  "thanks.intro": "Agradeça a eles no jogo.",
   "thanks.donors": "Quem mais doou",
   "thanks.activity": "Mais ativos",
   "members.search.ph": "Nome (sem precisar de emoji)",
@@ -113,7 +118,7 @@ export const pt: WorkspaceDictionary = {
   "howto.title": "Como abrir a Mesa dos oficiais",
   "howto.lead": "Para os R4 e R5 da aliança. Fixe esta página no seu Discord.",
   "howto.after":
-    "Daí em diante, toque no ícone como em qualquer app. Você fica conectado por um dia; depois disso, o Discord confere seu cargo de novo.",
+    "A partir daí, abra pelo ícone, como qualquer app. Você fica conectado por um dia. Depois, o Discord confere seu cargo de novo.",
   "howto.open": "Abrir a Mesa dos oficiais",
   "time.server": "{time} hora do servidor",
   "tab.review": "Acompanhar",
@@ -124,8 +129,8 @@ export const pt: WorkspaceDictionary = {
   "members.legend": "Ver como está mostra o que vimos. — quer dizer sem dados.",
   "members.more": "Mais",
   "members.checkinHelp":
-    "Ver como está mostra o que vimos, para você puxar uma conversa amiga. Você decide o que fazer; nada é enviado nem muda sozinho.",
-  "members.nodataHelp": "— quer dizer sem dados. Fica fora de toda conta.",
+    "“Ver como está” quer dizer: pergunte como a pessoa está. Você decide o que fazer. O app não envia nem muda nada.",
+  "members.nodataHelp": "Dados que faltam ficam fora de todas as contas.",
   "members.checkinCount.one": "{n} pessoa para ver como está",
   "members.checkinCount.other": "{n} pessoas para ver como estão",
   "members.checkinNone": "Todo mundo parece bem esta semana.",
@@ -147,18 +152,30 @@ export const pt: WorkspaceDictionary = {
   "howto.iphone": "No iPhone",
   "howto.android": "No Android",
   "intro.1.body":
-    "O espaço da liderança para a aliança: quem está nela, o might, as doações e a atividade de cada um, preenchidos a partir do jogo. Substitui as planilhas.",
+    "Quem está na aliança, com o might, as doações e a atividade de cada membro, vindos do jogo. Use no lugar das planilhas.",
   "intro.1.settings": "Toque no seu nome no topo para ver suas configurações.",
   "intro.only": "Só R4 · R5",
   "intro.2.more": "— quer dizer sem dados, e não entra em nenhuma conta.",
+  "intro.desk.title": "Agenda, prints e Discord",
+  "intro.desk.calendar":
+    "Agenda: o que vai acontecer, na hora do servidor e na sua hora. Avisos e Roubos são abas dentro dela.",
+  "intro.desk.shots":
+    "Início: Enviar prints de um ranking ou de um relatório do jogo. Confira cada um e salve.",
+  "intro.desk.discord":
+    "No Discord, numa mensagem com prints: Apps → Send to LAPTracker. Eles esperam no Início.",
   "intro.3.title": "Toda semana",
-  "intro.3.body": "Abra Membros e comece pelo topo: agradeça quem mais ajudou na semana.",
+  "intro.3.body": "Abra Membros e comece pelo topo: agradeça a quem mais fez nesta semana.",
   "intro.3.more":
-    "Depois veja quem está com «Ver como está». O motivo aparece logo abaixo do nome, e quase sempre uma mensagem no jogo resolve.",
-  "intro.3.note": "O app não manda mensagem para ninguém: quem conversa é você.",
+    "Depois veja quem está marcado com “Ver como está”. O motivo aparece abaixo do nome. Muitas vezes basta uma mensagem curta no jogo.",
+  "intro.3.note": "O app nunca manda mensagem para ninguém. Você decide com quem falar.",
   "intro.3.last": "EN · PT · FR no topo muda o idioma. O botão ? mostra estes cartões de novo.",
   "intro.replay": "Ver de novo",
   "intro.close": "Fechar",
+  "sheet.close": "Fechar",
+  "sheet.cancel": "Cancelar",
+  "sheet.ask": "Descartar suas alterações?",
+  "sheet.keep": "Continuar editando",
+  "sheet.discard": "Descartar",
   "howto.signin.body":
     "Toque em “Entrar com o Discord”. O Discord pergunta se o LAPTracker pode ver seu nome e seus cargos no servidor da aliança: toque em Autorizar.",
   "howto.help": "Não consegue entrar? Peça ajuda a um R5 no Discord.",
@@ -188,7 +205,6 @@ export const pt: WorkspaceDictionary = {
   "facts.paste": "Colar o que a pessoa disse",
   "facts.title": "Dados: {name}",
   "facts.save": "Salvar",
-  "facts.cancel": "Cancelar",
   "facts.failed": "Não foi possível salvar. Tente de novo.",
   "facts.computed": "Automático (agora: {status})",
   "facts.awayText": "O que a pessoa disse",
@@ -216,9 +232,6 @@ export const pt: WorkspaceDictionary = {
   "src.unsaved": "desta mensagem · não salvo",
   "paste.found.one": "Encontrado {n} valor. Confira e salve.",
   "paste.found.other": "Encontrados {n} valores. Confira e salve.",
-  "facts.discard": "Descartar as alterações?",
-  "facts.discardYes": "Descartar",
-  "facts.discardNo": "Continuar editando",
   "profile.title": "Suas configurações",
   "profile.name": "Seu nome",
   "profile.nameHelp": "Aparece no topo da mesa (até 32 caracteres).",

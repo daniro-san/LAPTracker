@@ -8,6 +8,7 @@ import { makeClock, type Clock } from "./format";
 import { CaptureWindow, Legend, NextUpdate, StatusChips, type PhaseStatus } from "./Status";
 
 const clock = { at: () => "Nov 7, 10:00" } as unknown as Clock;
+const now = new Date("2026-11-07T15:01:00Z");
 const html = (manual: boolean) =>
   renderToStaticMarkup(
     createElement(NextUpdate, {
@@ -18,7 +19,9 @@ const html = (manual: boolean) =>
     }),
   );
 const counts = (stale: number, failed: number) =>
-  renderToStaticMarkup(createElement(StatusChips, { phases: [], stale, failed, clock, copy: en }));
+  renderToStaticMarkup(
+    createElement(StatusChips, { phases: [], stale, failed, now, clock, copy: en }),
+  );
 
 describe("StatusChips", () => {
   it("counts stale and failed rows apart, each only when there are some", () => {
@@ -31,14 +34,23 @@ describe("StatusChips", () => {
 });
 
 describe("StatusChips, running", () => {
+  const chip = (phases: PhaseStatus[], at = now) =>
+    renderToStaticMarkup(
+      createElement(StatusChips, { phases, stale: 0, failed: 0, now: at, clock, copy: en }),
+    );
   it("shows the Updating now chip while a phase runs, and Not updated yet with no phase", () => {
     const running = [phase("after", "running", "2026-11-07T15:00Z")];
-    const chip = (phases: PhaseStatus[]) =>
-      renderToStaticMarkup(
-        createElement(StatusChips, { phases, stale: 0, failed: 0, clock, copy: en }),
-      );
     expect(chip(running)).toContain("Updating now");
     expect(chip([])).toContain("Not updated yet");
+  });
+
+  it("says the update failed once a run is left running past RUN_STALE_AFTER_MS", () => {
+    const running = [phase("after", "running", "2026-11-07T15:00Z")];
+    // 2 min 29 s after its start the run may still finish; at 2 min 30 s it was killed.
+    expect(chip(running, new Date("2026-11-07T15:02:29Z"))).toContain("Updating now");
+    const stale = chip(running, new Date("2026-11-07T15:02:30Z"));
+    expect(stale).toContain("Last update failed at Nov 7, 10:00");
+    expect(stale).not.toContain("Updating now");
   });
 });
 
@@ -58,9 +70,15 @@ const phase = (phase: PhaseStatus["phase"], status: PhaseStatus["status"], at: s
   startedAt: new Date(at),
   finishedAt: status === "running" ? null : new Date(at),
 });
-const windowText = (before?: PhaseStatus, after?: PhaseStatus) =>
+const windowText = (before?: PhaseStatus, after?: PhaseStatus, at = now) =>
   renderToStaticMarkup(
-    createElement(CaptureWindow, { before, after, clock: makeClock("en", "Etc/GMT+2"), copy: en }),
+    createElement(CaptureWindow, {
+      before,
+      after,
+      now: at,
+      clock: makeClock("en", "Etc/GMT+2"),
+      copy: en,
+    }),
   )
     .replace(/<[^>]+>/g, " ")
     .replace(/\s+/g, " ")
@@ -92,6 +110,14 @@ describe("CaptureWindow", () => {
         phase("after", "running", "2026-11-07T15:00Z"),
       ),
     ).toBe("Start failed → End Updating now");
+  });
+
+  it("shows an End left running past RUN_STALE_AFTER_MS as failed", () => {
+    const start = phase("before", "complete", "2026-11-07T12:00Z");
+    const end = phase("after", "running", "2026-11-07T15:00Z");
+    expect(windowText(start, end, new Date("2026-11-08T09:00Z"))).toBe(
+      "Start 10:00 server time → End failed",
+    );
   });
 });
 

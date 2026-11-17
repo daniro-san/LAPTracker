@@ -23,6 +23,7 @@ import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { Legend } from "@/app/_ui/Status";
 import { fill, type Dictionary } from "@/lib/copy";
+import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
 import {
   getComparePage,
@@ -51,11 +52,11 @@ const uidOf = (raw: string | string[] | undefined) => {
 };
 
 const load = cache((a: number | null, b: number | null, unionId: number | null) =>
-  withPageDb((db) => getComparePage(db, { a, b, unionId })),
+  withPageDb((db) => getComparePage(db, { a, b, unionId }, getEnv().SNAPSHOT_WINDOW_MIN)),
 );
 
 const loadPlayer = cache((a: number | null, b: number | null, uid: number) =>
-  withPageDb((db) => getComparePlayerPage(db, { a, b, uid })),
+  withPageDb((db) => getComparePlayerPage(db, { a, b, uid }, getEnv().SNAPSHOT_WINDOW_MIN)),
 );
 
 /** The page's data: the player view when `player` is given, else the alliances (or one alliance). */

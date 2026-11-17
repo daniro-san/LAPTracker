@@ -23,6 +23,7 @@ import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { LABEL } from "@/app/_ui/StatTable";
 import { fill, type Dictionary } from "@/lib/copy";
+import { getEnv } from "@/lib/env";
 import { clockColumns, type OffReason } from "@/lib/fight-clock";
 import { homeEvent, type FightClockEvent } from "@/lib/queries";
 
@@ -149,7 +150,7 @@ export default async function FightClockPage() {
       <SiteHeader
         events={listed}
         currentId={null}
-        homeId={homeEvent(listed)?.id ?? null}
+        homeId={homeEvent(listed, new Date(), getEnv().SNAPSHOT_WINDOW_MIN)?.id ?? null}
         clock={clock}
         copy={copy}
       />

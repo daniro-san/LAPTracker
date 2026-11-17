@@ -243,7 +243,7 @@ describe("manual events (D28)", () => {
       detail: (await getEventDetail(db, id)) !== null,
       alliance: (await getAllianceDetail(db, id, 67111155)) !== null,
       chain: (await allianceHistory(db, 67111155)).map((h) => h.eventId),
-      home: (await getEventPage(db, null)).page?.detail.id,
+      home: (await getEventPage(db, null, 45)).page?.detail.id,
     });
 
     const states = [];

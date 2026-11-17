@@ -20,6 +20,7 @@ import { FreshDots, Legend } from "@/app/_ui/Status";
 import { RoleMark } from "@/lib/brand/components/RoleMark";
 import { TextLink } from "@/lib/brand/components/TextLink";
 import { fill, type Dictionary } from "@/lib/copy";
+import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
 import {
   homeEvent,
@@ -161,7 +162,7 @@ export default async function PlayerPage({ params }: { params: Params }) {
       <SiteHeader
         events={events}
         currentId={null}
-        homeId={homeEvent(events)?.id ?? null}
+        homeId={homeEvent(events, new Date(), getEnv().SNAPSHOT_WINDOW_MIN)?.id ?? null}
         section="players"
         clock={clock}
         copy={copy}

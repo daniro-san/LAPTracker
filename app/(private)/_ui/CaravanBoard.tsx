@@ -2,13 +2,15 @@
 
 // The week's Alliance Caravans and their picks (issue 300): one Coachman, plus a VIP or a Guardian, never
 // both (owner, 2026-11-16). Members come from the alliance's newest roster, found by typing part of a name.
-// The picker suggests up to three members first (issue 354); the full list is in name order.
+// The picker suggests up to three members first (issue 354); the full list is in name order. Removing a
+// pick asks first.
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import type { CalendarWords } from "@/lib/private/dictionary.calendar";
+import { buttonClass } from "@/lib/brand/components/Button";
+import { fill } from "@/lib/copy";
 
-import type { AgendaItem, Member, SuggestedMember } from "./calendar-data";
+import type { AgendaItem, CalendarSheetWords, Member, SuggestedMember } from "./calendar-data";
 import { refusalText, sendCalendar, type Stale } from "./calendar-send";
 import { useFreshOnReturn } from "./CalendarAgenda";
 import { Choice, ConflictBox } from "./CalendarFields";
@@ -19,51 +21,83 @@ type SeatKind = "vip" | "guardian";
 type Field = "coach" | "second";
 type Note = { key: string; error?: string; stale?: Stale[]; retry?: () => void };
 
+/** A button too small for a full one (DESIGN.md "Workspace components"): the soft drawn frame, plum. */
+const SMALL_BUTTON =
+  "drawn-frame-soft tint-button min-h-11 px-3 text-body-sm font-semibold text-plum disabled:opacity-50";
+
 function SeatRow(props: {
   role: string;
   member: Member | null;
-  words: CalendarWords;
+  words: CalendarSheetWords;
   busy: boolean;
   onChoose: () => void;
   onRemove: () => void;
 }) {
   const { words, member } = props;
+  const [asking, setAsking] = useState(false);
   return (
-    <div className="mt-3 flex flex-wrap items-center gap-2">
-      <p className="min-w-0 flex-1">
-        <span className="block text-body-sm text-ink/75">{props.role}</span>
-        {member ? (
-          <span translate="no" className="font-semibold">
-            {member.name}
-          </span>
-        ) : (
-          <span className="text-ink/70">{words["calendar.pick.empty"]}</span>
-        )}
-      </p>
-      <button
-        type="button"
-        disabled={props.busy}
-        onClick={props.onChoose}
-        className="min-h-11 border border-rule px-3 text-body-sm font-semibold"
-      >
-        {words[member ? "calendar.pick.change" : "calendar.pick.choose"]}
-      </button>
-      {member && (
+    <div className="mt-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <p className="min-w-0 flex-1">
+          <span className="block text-body-sm text-ink/75">{props.role}</span>
+          {member ? (
+            <span translate="no" className="font-semibold">
+              {member.name}
+            </span>
+          ) : (
+            <span className="text-ink/70">{words["calendar.pick.empty"]}</span>
+          )}
+        </p>
         <button
           type="button"
           disabled={props.busy}
-          onClick={props.onRemove}
-          className="min-h-11 px-2 text-body-sm font-semibold underline underline-offset-4"
+          onClick={props.onChoose}
+          className={SMALL_BUTTON}
         >
-          {words["calendar.pick.remove"]}
+          {words[member ? "calendar.pick.change" : "calendar.pick.choose"]}
         </button>
+        {member && !asking && (
+          <button
+            type="button"
+            disabled={props.busy}
+            onClick={() => setAsking(true)}
+            className="min-h-11 px-2 text-body-sm font-semibold underline underline-offset-4"
+          >
+            {words["calendar.pick.remove"]}
+          </button>
+        )}
+      </div>
+      {member && asking && (
+        <div
+          role="group"
+          aria-label={words["calendar.pick.remove"]}
+          className="mt-1 flex flex-wrap items-center gap-2"
+        >
+          <span className="text-body-sm font-semibold">
+            {fill(words["calendar.pick.removeAsk"], { name: member.name })}
+          </span>
+          <button type="button" onClick={() => setAsking(false)} className={buttonClass("primary")}>
+            {words["calendar.delete.keep"]}
+          </button>
+          <button
+            type="button"
+            disabled={props.busy}
+            onClick={() => {
+              setAsking(false);
+              props.onRemove();
+            }}
+            className={buttonClass("secondary")}
+          >
+            {words["calendar.pick.remove"]}
+          </button>
+        </div>
       )}
     </div>
   );
 }
 
 /** One field's save; a 409 keeps a retry with the newer version for "Use mine". */
-function useSeats(slug: string, words: CalendarWords) {
+function useSeats(slug: string, words: CalendarSheetWords) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<Note | null>(null);
@@ -104,7 +138,7 @@ function useSeats(slug: string, words: CalendarWords) {
 
 function CaravanCard(props: {
   item: AgendaItem;
-  words: CalendarWords;
+  words: CalendarSheetWords;
   seats: ReturnType<typeof useSeats>;
   onPick: (field: Field, kind: SeatKind) => void;
 }) {
@@ -180,7 +214,7 @@ export function CaravanBoard(props: {
   roster: Member[];
   /** Per caravan week (`entry:week`), up to three suggested members with their reasons. */
   suggested: Record<string, SuggestedMember[]>;
-  words: CalendarWords;
+  words: CalendarSheetWords;
   slug: string;
 }) {
   const { items, words } = props;

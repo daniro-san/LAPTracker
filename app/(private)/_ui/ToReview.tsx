@@ -49,6 +49,21 @@ export function ToReview(props: {
       </h2>
       <p className="mt-1">{t["shots.lead"]}</p>
       <p className="mt-1 text-body-sm text-ink/80">{t["shots.nothingCounts"]}</p>
+      {/* The door in comes first, so it does not sink under a long queue (panel PD-4, UI-8). */}
+      <SendScreenshots
+        slug={slug}
+        language={language}
+        w={Object.fromEntries(Object.entries(t).filter(([k]) => k.startsWith("shots.")))}
+        kinds={
+          Object.fromEntries(KINDS.map((k) => [k, t[`shots.kind.${k}`]])) as Record<
+            ImportKind,
+            string
+          >
+        }
+        picks={choices(t)}
+        maxPictures={props.maxPictures}
+        statusBar={STATUS_BAR}
+      />
       {items.length === 0 ? (
         <p className="mt-3">{t["shots.none"]}</p>
       ) : (
@@ -78,20 +93,6 @@ export function ToReview(props: {
           ))}
         </ul>
       )}
-      <SendScreenshots
-        slug={slug}
-        language={language}
-        w={Object.fromEntries(Object.entries(t).filter(([k]) => k.startsWith("shots.")))}
-        kinds={
-          Object.fromEntries(KINDS.map((k) => [k, t[`shots.kind.${k}`]])) as Record<
-            ImportKind,
-            string
-          >
-        }
-        picks={choices(t)}
-        maxPictures={props.maxPictures}
-        statusBar={STATUS_BAR}
-      />
     </section>
   );
 }

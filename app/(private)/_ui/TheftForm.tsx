@@ -2,19 +2,23 @@
 
 // "Add a theft" (issue 321), quick on a phone: who took it and the member it was taken from
 // (TheftFormFields.tsx), the report's server day and time with the viewer's own clock beside it, what was
-// taken, and an optional note. Every control is 44 px or more.
+// taken, and an optional note. Every control is 44 px or more; the time is typed as 24-hour text.
 import { useState, type FormEvent } from "react";
 
-import { buttonClass } from "@/lib/brand/components/Button";
+import { FIELD } from "@/lib/brand/components/controls";
 import { RadioField } from "@/lib/brand/components/RadioField";
 import { Sheet } from "@/lib/brand/components/Sheet";
+import { changedFrom } from "@/lib/brand/components/sheet-close";
 import { fill } from "@/lib/copy";
+import { hhmm, parseTime } from "@/lib/private/calendar-time";
 import type { WorkspaceLanguage } from "@/lib/private/dictionary";
 import { serverInstant } from "@/lib/schedule";
 
+import { sheetWords } from "./sheet-words";
 import { postTheft, viewerClock } from "./theft-client";
 import type { TheftWords } from "./theft-data";
 import { AttackerField, VictimField, type Attacker, type Member } from "./TheftFormFields";
+import { TimeInput } from "./TimeInput";
 import { useViewerZone } from "./YourTime";
 
 type FormProps = {
@@ -39,31 +43,26 @@ type WhenProps = Pick<FormProps, "t" | "language" | "serverZone"> & {
 /** The report's day and time in server time, and the same moment on the viewer's clock. */
 function When({ t, language, serverZone, day, time, setDay, setTime }: WhenProps) {
   const zone = useViewerZone();
-  const valid = /^\d{4}-\d{2}-\d{2}$/.test(day) && /^\d{2}:\d{2}$/.test(time);
-  const at = valid ? serverInstant(day, time, { SERVER_TZ: serverZone }).getTime() : NaN;
+  const minute = parseTime(time);
+  const valid = /^\d{4}-\d{2}-\d{2}$/.test(day) && minute !== null;
+  const at = valid ? serverInstant(day, hhmm(minute), { SERVER_TZ: serverZone }).getTime() : NaN;
   return (
     <fieldset className="mt-4">
       <legend className="font-semibold">{t["thefts.form.when"]}</legend>
-      <div className="mt-1 flex flex-wrap gap-2">
-        <label className="flex flex-col text-body-sm">
+      <div className="mt-1 grid grid-cols-2 gap-3">
+        <label className="flex min-w-0 flex-col text-body-sm">
           {t["thefts.form.day"]}
           <input
             type="date"
             required
             value={day}
             onChange={(e) => setDay(e.target.value)}
-            className="drawn-field min-h-11 px-3"
+            className={`${FIELD} mt-1`}
           />
         </label>
-        <label className="flex flex-col text-body-sm">
+        <label className="flex min-w-0 flex-col text-body-sm">
           {t["thefts.form.time"]}
-          <input
-            type="time"
-            required
-            value={time}
-            onChange={(e) => setTime(e.target.value.slice(0, 5))}
-            className="drawn-field min-h-11 px-3"
-          />
+          <TimeInput required value={time} onChange={setTime} className="mt-1" />
         </label>
       </div>
       <p className="mt-1 text-body-sm text-ink/75">{t["thefts.form.whenHelp"]}</p>
@@ -115,6 +114,8 @@ function useTheftForm(props: FormProps) {
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (!attacker) return setError(t["thefts.e.pick"]);
+    const minute = parseTime(time);
+    if (minute === null) return setError(t["thefts.e.bad_time"]);
     setBusy(true);
     const who =
       "typed" in attacker ? { name: attacker.typed, tag: attacker.tag } : { uid: attacker.uid };
@@ -123,7 +124,7 @@ function useTheftForm(props: FormProps) {
       attacker: who,
       victimUid: victim?.uid ?? null,
       day,
-      time,
+      time: hhmm(minute),
       stolen,
       note,
     };
@@ -133,24 +134,39 @@ function useTheftForm(props: FormProps) {
     setError(t[`thefts.e.${r}` as keyof TheftWords] ?? t["thefts.e.failed"]);
   };
   const fields = { attacker, setAttacker, victim, setVictim, day, setDay, time, setTime };
-  return { ...fields, stolen, setStolen, note, setNote, busy, error, submit };
+  const now = { attacker, victim, day, time, stolen, note };
+  const start: typeof now = {
+    ...props.start,
+    attacker: null,
+    victim: null,
+    stolen: "quest_rewards",
+    note: "",
+  };
+  const dirty = changedFrom(start, now);
+  return { ...fields, stolen, setStolen, note, setNote, busy, error, submit, dirty };
 }
 
 export function TheftForm(props: FormProps) {
   const { slug, t, onClose } = props;
   const f = useTheftForm(props);
   return (
-    <Sheet labelledBy="theft-add-title" onCancel={onClose}>
-      <form onSubmit={(e) => void f.submit(e)}>
-        <h2
-          id="theft-add-title"
-          tabIndex={-1}
-          data-initial-focus
-          className="font-display text-display-md"
-        >
-          {t["thefts.add"]}
-        </h2>
-        <div className="mt-4">
+    <Sheet
+      labelledBy="theft-add-title"
+      onCancel={onClose}
+      dirty={f.dirty}
+      title={t["thefts.add"]}
+      words={sheetWords(t)}
+      primary={{ label: t["thefts.form.save"], form: "theft-form", disabled: f.busy }}
+      note={
+        f.error && (
+          <p role="status" className="mb-2 text-body-sm font-semibold">
+            {f.error}
+          </p>
+        )
+      }
+    >
+      <form id="theft-form" onSubmit={(e) => void f.submit(e)}>
+        <div>
           <label htmlFor="theft-attacker" className="font-semibold">
             {t["thefts.form.attacker"]}
           </label>
@@ -173,22 +189,8 @@ export function TheftForm(props: FormProps) {
           maxLength={500}
           rows={2}
           onChange={(e) => f.setNote(e.target.value)}
-          className="drawn-field mt-1 w-full px-3 py-2"
+          className={`${FIELD} mt-1`}
         />
-        {/* Pinned to the bottom of the sheet, so Save is in reach at 360 px without scrolling. */}
-        <div className="sticky bottom-0 mt-2 border-t border-rule bg-paper pt-2 pb-1">
-          <p role="status" className="min-h-6 text-body-sm font-semibold">
-            {f.error}
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            <button type="submit" disabled={f.busy} className={buttonClass("primary")}>
-              {t["thefts.form.save"]}
-            </button>
-            <button type="button" onClick={onClose} className={buttonClass("secondary")}>
-              {t["thefts.form.cancel"]}
-            </button>
-          </div>
-        </div>
       </form>
     </Sheet>
   );

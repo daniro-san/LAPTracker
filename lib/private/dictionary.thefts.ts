@@ -52,7 +52,7 @@ export const theftsEn = {
   "thefts.form.noMember": "No one in the alliance has a name like that.",
   "thefts.form.when": "When, in server time, as the report shows it",
   "thefts.form.whenHelp":
-    "Starts at the server’s current time; change it to the time on the report.",
+    "It starts at the server’s current time. Change it to the time on the report.",
   "thefts.form.day": "Day",
   "thefts.form.time": "Time",
   "thefts.form.stolen": "What was taken",
@@ -63,7 +63,7 @@ export const theftsEn = {
   "thefts.e.bad_name": "Write the player’s name (1 to 32 characters).",
   "thefts.e.not_in_alliance": "That member is no longer in the alliance.",
   "thefts.e.bad_time": "Check the day and time: they can’t be later than now.",
-  "thefts.e.failed": "That didn’t save. Try again.",
+  "thefts.e.failed": "Could not save. Try again.",
 };
 
 type TheftsWords = Record<keyof typeof theftsEn, string>;
@@ -116,8 +116,7 @@ export const theftsPt: TheftsWords = {
   "thefts.form.victim": "Levado de (nosso membro)",
   "thefts.form.noMember": "Ninguém na aliança tem um nome assim.",
   "thefts.form.when": "Quando, na hora do servidor, como no relatório",
-  "thefts.form.whenHelp":
-    "Começa na hora atual do servidor; troque para a hora que está no relatório.",
+  "thefts.form.whenHelp": "Começa na hora atual do servidor. Troque para a hora do relatório.",
   "thefts.form.day": "Dia",
   "thefts.form.time": "Hora",
   "thefts.form.stolen": "O que foi levado",
@@ -129,7 +128,7 @@ export const theftsPt: TheftsWords = {
   "thefts.e.bad_name": "Escreva o nome do jogador (de 1 a 32 caracteres).",
   "thefts.e.not_in_alliance": "Esse membro não está mais na aliança.",
   "thefts.e.bad_time": "Confira o dia e a hora: não podem ser depois de agora.",
-  "thefts.e.failed": "Não foi salvo. Tente de novo.",
+  "thefts.e.failed": "Não foi possível salvar. Tente de novo.",
 };
 
 export const theftsFr: TheftsWords = {
@@ -181,7 +180,7 @@ export const theftsFr: TheftsWords = {
   "thefts.form.noMember": "Personne dans l’alliance n’a un nom comme celui-là.",
   "thefts.form.when": "Quand, en heure serveur, comme dans le rapport",
   "thefts.form.whenHelp":
-    "Commence à l’heure actuelle du serveur ; mettez l’heure qui figure dans le rapport.",
+    "L’heure actuelle du serveur est déjà mise. Remplacez-la par l’heure du rapport.",
   "thefts.form.day": "Jour",
   "thefts.form.time": "Heure",
   "thefts.form.stolen": "Ce qui a été pris",
@@ -192,5 +191,5 @@ export const theftsFr: TheftsWords = {
   "thefts.e.bad_name": "Écrivez le nom du joueur (de 1 à 32 caractères).",
   "thefts.e.not_in_alliance": "Ce membre n’est plus dans l’alliance.",
   "thefts.e.bad_time": "Vérifiez le jour et l’heure : ils ne peuvent pas être après maintenant.",
-  "thefts.e.failed": "Ce n’est pas enregistré. Réessayez.",
+  "thefts.e.failed": "Impossible d’enregistrer. Réessayez.",
 };

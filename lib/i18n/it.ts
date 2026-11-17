@@ -129,7 +129,7 @@ export const itIT = {
     carriedTurnout: "{share} con Kills",
     carriedSpread: "{low}–{high} su {n} eventi",
     carriedRatioHelp:
-      "pp è la quota di Kills meno la quota di Might. Da 3 eventi, sotto compare l’intervallo di quota di Kills ÷ quota di Might su quegli eventi.",
+      "pp è la quota di Kills meno la quota di Might. Con 3 eventi o più, la riga sotto mostra l’intervallo della quota di Kills ÷ quota di Might su quegli eventi.",
     carriedPoints: "pp",
   },
   compare: {
@@ -152,7 +152,7 @@ export const itIT = {
   merge: {
     title: "Simulatore di fusione",
     tag: "Simulazione, non un piano",
-    lead: "Come sarebbero due alleanze unite, confrontate con il limite di Members. Solo totali delle alleanze, nessun nome di membro.",
+    lead: "Due alleanze contate come una sola e confrontate con il limite di Members. Solo totali delle alleanze, nessun nome di membro.",
     link: "Simula una fusione",
     first: "Prima alleanza",
     second: "Seconda alleanza",
@@ -181,7 +181,7 @@ export const itIT = {
   flow: {
     title: "Flusso dei membri",
     tag: "Solo conteggi",
-    lead: "Dove sono andati i membri tra le alleanze seguite: l’alleanza in cui era ciascuno il primo giorno, confrontata con il secondo. Solo conteggi, nessun nome di membro.",
+    lead: "Dove si sono spostati i membri tra le alleanze seguite, dal primo giorno al secondo. Nessun membro viene nominato.",
     from: "Da",
     to: "A",
     action: "Mostra",
@@ -191,7 +191,7 @@ export const itIT = {
     totals:
       "Spostamenti di {min} o più · Cambio di alleanza: {moved} · Nuovi: {arrived} · Usciti: {left}",
     small:
-      "I numeri sotto {min} membri, compresi quelli rimasti, sono nascosti ed esclusi da ogni totale, così questa pagina non mette in evidenza i gruppi piccoli.",
+      "I conteggi sotto {min} membri sono nascosti e non entrano in nessun totale, compresi i membri rimasti. Così si proteggono i gruppi piccoli.",
     rowNew: "Nuovi",
     colLeft: "Usciti",
     legend:
@@ -209,7 +209,7 @@ export const itIT = {
     title: "Equilibrio del server",
     description:
       "Quota di ogni alleanza seguita sul Might delle alleanze seguite, e un costruttore di blocchi ipotetici.",
-    lead: "Nessuna alleanza supera il {max} del Might delle alleanze seguite; le prime {n} ne hanno {top}.",
+    lead: "Nessuna alleanza ha più del {max} del Might delle alleanze seguite. Le prime {n} ne hanno {top}.",
     includes: "Il Might include edifici e tecnologie.",
     basis: "{n} alleanze seguite, lette il {date}.",
     total: "Alleanze seguite",
@@ -220,7 +220,7 @@ export const itIT = {
     builder: "Costruttore blocchi",
     hypothetical: "Ipotetico",
     builderHelp:
-      "Tocca A o B su un’alleanza per provare un blocco. È aritmetica, non una previsione, né un annuncio.",
+      "Tocca A o B su un’alleanza per provare un blocco. Fa solo somme. Non prevede né annuncia un blocco reale.",
     bloc: "Blocco {bloc}",
     blocShare: "{share} del Might delle alleanze seguite",
     blocAlliances: "Alleanze",
@@ -242,7 +242,7 @@ export const itIT = {
     help: "Le alleanze seguite in classifica per Might, dalla lettura di ogni giorno, con la variazione dal {from}. Un giorno in cui un’alleanza non è stata letta viene escluso. Il server qui è il totale delle alleanze seguite.",
     lead: "{label} era {rank} per Might il {to} e {before} il {from}.",
     leadGrowth:
-      "Il suo Might è cambiato di {growth} da allora; il totale delle alleanze seguite è cambiato di {server}.",
+      "Il suo Might è cambiato di {growth} da allora. Il totale delle alleanze seguite è cambiato di {server}.",
     server: "Alleanze seguite",
     growthSince: "{growth} dal {from}",
     trend: "Posizione {first} il {from}, {last} il {to}",
@@ -351,7 +351,7 @@ export const itIT = {
     seen: "Visto",
     limit: "Primi {n}",
     noMatch: "Nessun giocatore con quel nome nel registro.",
-    pending: "La nonna sta sfogliando il registro…",
+    pending: "La nonna sta cercando nel registro…",
   },
   errors: {
     notFound: {
@@ -373,6 +373,6 @@ export const itIT = {
     manualNotRun: "Questo turno non è ancora partito. L’admin lo avvia a mano.",
     manualNoRows: "L’esecuzione non ha prodotto nulla. L’admin la rilancia a mano.",
     noEvents: "Ancora nessun evento nel registro.",
-    noMembers: "Nessuno corrisponde. La nonna ha controllato due volte.",
+    noMembers: "Nessuno corrisponde.",
   },
 } as const satisfies Translation;

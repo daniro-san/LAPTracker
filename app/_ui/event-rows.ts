@@ -198,7 +198,11 @@ export function comparisonRows(
     };
   });
   const order = (r: ComparisonRow) => r.rank ?? Number.MAX_SAFE_INTEGER;
-  return rows.sort((x, y) => order(x) - order(y) || x.tag.localeCompare(y.tag));
+  // Rows without a rank (no End yet) go by size: the newest might read, biggest first (panel PD-3).
+  const might = (r: ComparisonRow) => r.after?.totalPower ?? r.before?.totalPower ?? -1;
+  return rows.sort(
+    (x, y) => order(x) - order(y) || might(y) - might(x) || x.tag.localeCompare(y.tag),
+  );
 }
 
 /** The table's empty line. A manual round (D28) is never run by the tick, so it never promises an automatic update. */
