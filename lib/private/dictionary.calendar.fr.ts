@@ -13,7 +13,7 @@ export const calendarFr: CalendarWords = {
   "calendar.thisWeek": "Cette semaine",
   "calendar.today": "aujourd’hui (ST)",
   "calendar.legend":
-    "ST est l’heure serveur, l’horloge du jeu ({offset}). La deuxième heure est la vôtre ; +1 j veut dire le lendemain.",
+    "ST est l’heure serveur, l’horloge du jeu ({offset}). L’autre heure est la vôtre ; +1 j veut dire le lendemain.",
   "calendar.kvk": "KvK = Kingdom War.",
   "calendar.st": "{time} ST",
   "calendar.stRange": "{from}–{to} ST",

@@ -8,7 +8,8 @@
 import type { Db } from "../db";
 import { roleOf } from "../queries/leadership";
 import { mightUnchanged } from "../queries/might-unchanged";
-import { anyRoster, type AnyRoster } from "../repo/workspace-any-roster";
+import { photosOf, type Photo } from "../queries/photo";
+import { anyRoster, namesSeen, type AnyRoster } from "../repo/workspace-any-roster";
 import {
   endOfDayReads,
   firstSeenDays,
@@ -55,6 +56,8 @@ export interface MemberRow {
   rank: string | null;
   rankCode: number | null;
   might: number | null;
+  /** Lifetime kills from the read (public); null when not sent. */
+  kills: number | null;
   sanctuary: number | null;
   activity: number | null;
   honor: number | null;
@@ -180,6 +183,7 @@ function plainRow(m: RosterMember, week: string[], firstSeen: Map<number, string
     rank: rankOf(m),
     rankCode: m.rankCode,
     might: m.power,
+    kills: m.kills,
     sanctuary: m.lv,
     activity: null,
     honor: null,
@@ -263,4 +267,33 @@ export async function membersView(
     },
     zones: usedZones(facts),
   };
+}
+
+/** A member as the list page shows them: the photo and frame, and the names they used before here. */
+export type ListSource = MemberRow & { photo: Photo; pastNames: string[] };
+
+const NO_PHOTO: Photo = { hasAvatar: false, frameId: null };
+
+/**
+ * The list page's own read (issue 337), apart from `membersView` so the card route never runs it: each
+ * member's photo and frame (as the public pages show them) and their past names in this alliance's
+ * rosters, newest first.
+ */
+export async function withListExtras(
+  db: Db,
+  access: WorkspaceAccess,
+  members: MemberRow[],
+): Promise<ListSource[]> {
+  const [photos, names] = await Promise.all([
+    photosOf(
+      db,
+      members.map((m) => m.uid),
+    ),
+    namesSeen(db, access.unionId),
+  ]);
+  return members.map((m) => ({
+    ...m,
+    photo: photos.get(m.uid) ?? NO_PHOTO,
+    pastNames: (names.get(m.uid) ?? []).filter((n) => n !== m.name),
+  }));
 }

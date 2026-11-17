@@ -15,6 +15,28 @@ const securityHeaders = [
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
 ];
 
+// Tesseract.js's runtime dependencies and theirs (D74). Its worker thread `require`s them, and tracing
+// does not follow a worker thread: v5.8.1 shipped without bmp-js and the thread died at load. Each glob
+// goes through the pnpm link the worker resolves the package by, so the trace lists that link and the
+// package's files in the store (a glob of the store path alone would leave the link out).
+const PNPM = "./node_modules/.pnpm";
+export const OCR_RUNTIME = [
+  ...[
+    "bmp-js",
+    "idb-keyval",
+    "is-url",
+    "node-fetch",
+    "opencollective-postinstall",
+    "regenerator-runtime",
+    "tesseract.js-core",
+    "wasm-feature-detect",
+    "zlibjs",
+  ].map((name) => `${PNPM}/tesseract.js@*/node_modules/${name}/**`),
+  `${PNPM}/node-fetch@*/node_modules/whatwg-url/**`,
+  `${PNPM}/whatwg-url@*/node_modules/tr46/**`,
+  `${PNPM}/whatwg-url@*/node_modules/webidl-conversions/**`,
+];
+
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   // Without this, `next dev` writes AGENTS.md into the repo (issue 126).
@@ -23,17 +45,14 @@ const nextConfig: NextConfig = {
   skipTrailingSlashRedirect: true,
   env: { BUILD_VERSION: buildVersion(process.env) },
   // The OCR (D74, D96): Tesseract.js starts its worker from a file path at run time, so it is not bundled,
-  // and the routes that read pictures ship its worker, its WebAssembly core and the English data. Keys are
-  // route globs without the route group: `*` stands for [slug].
+  // and the routes that read pictures ship its worker, its runtime (OCR_RUNTIME: the WebAssembly core
+  // and the modules the worker requires) and the English data. Keys are route globs without the route
+  // group: `*` stands for [slug].
   serverExternalPackages: ["tesseract.js"],
   outputFileTracingIncludes: Object.fromEntries(
     ["/api/w/*/shots/read", "/api/discord/interactions"].map((route) => [
       route,
-      [
-        "./lib/screenshot/tessdata/**",
-        "./node_modules/tesseract.js/src/**",
-        "./node_modules/.pnpm/tesseract.js-core@*/node_modules/tesseract.js-core/**",
-      ],
+      ["./lib/screenshot/tessdata/**", "./node_modules/tesseract.js/src/**", ...OCR_RUNTIME],
     ]),
   ),
   async headers() {

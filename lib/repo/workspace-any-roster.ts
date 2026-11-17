@@ -22,6 +22,7 @@ interface Arrays {
   names: string[] | null;
   /** As text: Drizzle reads a null bigint element as 0, and a null might stays null (D15). */
   power: (string | null)[] | null;
+  kills: (string | null)[] | null;
 }
 
 const UNREAD = {
@@ -41,6 +42,7 @@ async function newestDaily(db: Db, unionId: number): Promise<Arrays | null> {
       uids: dailyRosters.memberUids,
       names: dailyRosters.memberNames,
       power: sql<(string | null)[]>`${dailyRosters.memberPower}::text[]`,
+      kills: sql<(string | null)[]>`${dailyRosters.memberKills}::text[]`,
     })
     .from(dailyRosters)
     .where(
@@ -66,6 +68,7 @@ async function newestSnapshot(db: Db, unionId: number, startOrEnd: boolean) {
       uids: allianceSnapshots.memberUids,
       names: allianceSnapshots.memberNames,
       power: sql<(string | null)[] | null>`${allianceSnapshots.memberPower}::text[]`,
+      kills: sql<(string | null)[] | null>`${allianceSnapshots.memberKills}::text[]`,
     })
     .from(allianceSnapshots)
     .innerJoin(snapshots, eq(snapshots.id, allianceSnapshots.snapshotId))
@@ -92,6 +95,7 @@ const memberRows = (db: Db, allianceSnapshotId: number) =>
       uid: memberSnapshots.uid,
       name: memberSnapshots.name,
       power: memberSnapshots.power,
+      kills: memberSnapshots.kills,
       lv: memberSnapshots.lv,
       rankCode: memberSnapshots.rankCode,
       rankLabel: memberSnapshots.rankLabel,
@@ -120,8 +124,7 @@ export async function anyRoster(db: Db, unionId: number): Promise<AnyRoster | nu
     return { at: newest.at as Date, members: ranked.map(member) };
   }
   const byUid = new Map(ranked.map((r) => [r.uid, r]));
-  const power = (v: string | null | undefined) =>
-    v === null || v === undefined ? null : Number(v);
+  const big = (v: string | null | undefined) => (v === null || v === undefined ? null : Number(v));
   return {
     at: newest.at as Date,
     members: (newest.uids ?? []).map((uid, i) => {
@@ -129,7 +132,8 @@ export async function anyRoster(db: Db, unionId: number): Promise<AnyRoster | nu
       return member({
         uid,
         name: newest.names?.[i] ?? "",
-        power: power(newest.power?.[i]),
+        power: big(newest.power?.[i]),
+        kills: big(newest.kills?.[i]),
         lv: r?.lv ?? null,
         rankCode: r?.rankCode ?? null,
         rankLabel: r?.rankLabel ?? null,
