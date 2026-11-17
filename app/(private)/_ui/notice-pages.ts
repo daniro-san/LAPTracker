@@ -16,7 +16,7 @@ import { RENEW_MS } from "@/lib/private/session";
 import { SLUG } from "@/lib/private/sign-in";
 import { serverDay } from "@/lib/schedule";
 
-import { LANGUAGE_CODE } from "./languages";
+import { LANGUAGE_CODE, LANGUAGE_NAME } from "./languages";
 import type { ReviewProps } from "./NoticeReviews";
 import { refuse } from "./refuse";
 
@@ -91,6 +91,8 @@ export function noticeWords(language: WorkspaceLanguage, t: WorkspaceDictionary)
     written: (name: string | null, at: Date) => fill(t["notices.written"], by(name, at)),
     /** "Rook" (isolated) or "an officer", and the time in server time. */
     by,
+    /** "Tue, Nov 17 19:08": a time where the page says once that times are server time. */
+    clock: (at: Date) => `${date.format(at)} ${hhmm.format(at)}`,
     changed: (name: string | null, at: Date) => fill(t["notices.changed"], by(name, at)),
   };
 }
@@ -117,7 +119,8 @@ export function reviewProps(
   reviews: Awaited<ReturnType<typeof noticeReviews>>,
   viewerId: number,
 ): ReviewProps {
-  const what = (l: NoticeLanguage | null) => (l ? LANGUAGE_CODE[l] : t["notices.review.all"]);
+  // The language by its name, or "the whole notice" (persona panel, 2026-11-17).
+  const what = (l: NoticeLanguage | null) => (l ? LANGUAGE_NAME[l] : t["notices.review.wholeIn"]);
   const sub = (r: ReviewView) => {
     const { when } = words.by(null, r.askedAt);
     if (r.reviewerId === null) return fill(t["notices.review.forTeam"], { when });
@@ -136,6 +139,9 @@ export function reviewProps(
           what: what(r.language),
         }),
         sub: sub(r),
+        approve: fill(t["notices.review.approve"], { what: what(r.language) }),
+        edit: fill(t["notices.review.edit"], { what: what(r.language) }),
+        jump: r.language && fill(t["notices.review.jump"], { what: what(r.language) }),
       })),
     done: reviews.list
       .flatMap((r) =>
@@ -143,7 +149,8 @@ export function reviewProps(
           ? [
               fill(t[`notices.review.${r.outcome.kind}`], {
                 what: what(r.language),
-                ...words.by(r.outcome.by, r.outcome.at),
+                name: words.by(r.outcome.by, r.outcome.at).name,
+                when: words.clock(r.outcome.at),
               }),
             ]
           : [],

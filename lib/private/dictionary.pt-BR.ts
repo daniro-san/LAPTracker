@@ -55,7 +55,7 @@ export const pt: WorkspaceDictionary = {
   "shell.stay": "Continuar conectado",
   "signedOut.text": "Você foi desconectado. Seu texto continua aqui.",
   "signedOut.link": "Entre de novo (abre uma nova aba) e depois tente de novo aqui.",
-  "home.title": "Agenda, membros e prints",
+  "home.title": "Início",
   "home.next.head": "Hoje e amanhã",
   "home.today": "Hoje",
   "home.tomorrow": "Amanhã",
@@ -63,7 +63,7 @@ export const pt: WorkspaceDictionary = {
   "home.calendar": "Abrir Agenda",
   "home.members.head": "Membros nesta semana",
   "home.notYet":
-    "Ainda não. Os agradecimentos e quem ver como está começam com a primeira atualização diária, pouco antes de o servidor virar o dia.",
+    "Nada ainda. Os agradecimentos e quem ver como está aparecem depois da primeira atualização diária.",
   "home.open": "Abrir Membros",
   "shell.help": "Como funciona",
   "signin.howto": "Como colocar no seu celular",

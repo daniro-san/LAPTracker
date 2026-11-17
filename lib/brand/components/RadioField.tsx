@@ -1,5 +1,6 @@
 // One option of an exclusive choice (DESIGN.md `radio-field`): a soft drawn frame around a native radio
-// (plum accent), its label and a one-line help. Use inside a <fieldset> with a <legend>; give every
+// (plum accent), its label and a one-line help. The chosen option is tinted plum, so a hovered row never
+// reads as a second choice. Use inside a <fieldset> with a <legend>; give every
 // option the same `name`. ≥ 44 px tall, the whole frame is the tap target.
 import type { InputHTMLAttributes, ReactNode } from "react";
 
@@ -13,7 +14,7 @@ export function RadioField({
 } & Omit<InputHTMLAttributes<HTMLInputElement>, "type" | "className">) {
   return (
     <label
-      className={`drawn-frame-soft tint-button flex min-h-11 gap-3 px-3 py-2 ${help ? "items-start" : "items-center"}`}
+      className={`drawn-frame-soft tint-button flex min-h-11 gap-3 px-3 py-2 has-[:checked]:bg-plum/10 ${help ? "items-start" : "items-center"}`}
     >
       {/* Centred on a one-line label; beside the label's first line when a help line follows. */}
       <input

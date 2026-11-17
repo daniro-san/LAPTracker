@@ -120,4 +120,4 @@ The header text above is the old file's, kept as it was. The split it describes 
 - [D109 — Member updates: the trend on the card, AD Tech 100 % complete, Paste updates, Read from a screenshot, and progress in the thanks (2026-11-17, owner, 11ab, issue 347; amends D80, D96, D104)](D109-member-updates-trend-paste-and-screenshot-text.md)
 - [D110 — Screenshots from anywhere: a tab's button starts its pictures as the tab's type, and Android shares screenshots to the installed desk (2026-11-17, owner, 11ac, issue 293; amends D96)](D110-screenshots-from-anywhere-and-the-android-share-target.md)
 - [D112 — picomatch ReDoS (GHSA-fc5q-39xc-vjpf) accepted as dev-only, dated exception (2026-11-17)](D112-picomatch-redos-accepted-as-dev-only.md)
-- [D113 — Notices: "Fit to 1,000", Translate localizes within the board's room, and review requests between officers (2026-11-17, 11ad, issue #402; amends D81)](D113-notice-fit-localize-and-review-requests.md)
+- [D113 — Notices: "Shorten to 1,000", Translate localizes within the board's room, and review requests between officers (2026-11-17, 11ad, issue #402; amends D81)](D113-notice-fit-localize-and-review-requests.md)

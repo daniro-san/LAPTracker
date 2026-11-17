@@ -202,9 +202,9 @@ export function LanguageField({ p, e }: { p: EditorProps; e: Editor }) {
           />
         </div>
         <div className="mt-1 flex items-start justify-between gap-3">
-          <OverLimit text={value} t={t} id="notice-over" />
+          <OverLimit text={value} t={t} language={p.viewer} id="notice-over" />
           <span className="shrink-0">
-            <Counter text={value} t={t} />
+            <Counter text={value} t={t} language={p.viewer} />
           </span>
         </div>
       </div>

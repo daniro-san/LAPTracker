@@ -157,5 +157,7 @@ export async function reviewsForMe(db: Db, access: WorkspaceAccess) {
     title: titles.get(r.noticeId) ?? "",
     language: r.language as NoticeLanguage | null,
     askedBy: r.askedBy,
+    /** Named for this officer; else a team request. */
+    forMe: r.reviewerId === access.user.id,
   }));
 }

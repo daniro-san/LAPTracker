@@ -1,7 +1,8 @@
 "use client";
 
-// Translate and Improve writing (issues 305, 363), side by side under the text of the tab in view, and "Fit to
-// 1,000" while that text is over the board's limit (D113): under them on a phone, beside them from 640 px.
+// Translate and Improve writing (issues 305, 363), side by side under the text of the tab in view, and
+// "Shorten to 1,000" while that text is over the board's limit (D113): then it is the main action, first and
+// across the row on a phone, first of three from 640 px.
 // Each is a two-line button that keeps its size while it works: Translate says where it goes ("to PT and
 // FR", or "from EN" for an empty tab); Improve writing shows the tone and opens a small sheet of the six
 // tones, where one tap asks for the draft; Fit says it keeps the key points. Under them: why they are off,
@@ -29,9 +30,6 @@ const TONE_WORDS: Record<Tone, WorkspaceKey> = {
   shorter: "notices.tone.shorter",
   fix: "notices.tone.fix",
 };
-
-const ACTION =
-  "drawn-frame frame-button flex min-h-14 min-w-0 flex-col items-center justify-center px-2 py-1 text-center leading-tight disabled:cursor-default disabled:opacity-50";
 
 function ToneSheet({
   p,
@@ -106,12 +104,17 @@ function actionsOf(p: EditorProps, e: Editor) {
   };
 }
 
-/** One of the two buttons: its name (or "Working…") over a smaller second line, at a size that never moves. */
+/** The frame of a two-line action; `primary` is "Shorten to 1,000" while the text is over the limit (D113). */
+const SHAPE =
+  "flex min-h-14 min-w-0 flex-col items-center justify-center px-2 py-1 text-center leading-tight disabled:cursor-default disabled:opacity-50";
+
+/** One of the buttons: its name (or "Working…") over a smaller second line, at a size that never moves. */
 function ActionButton({
   working,
   name,
   detail,
   t,
+  primary = false,
   className = "",
   ...rest
 }: {
@@ -119,11 +122,13 @@ function ActionButton({
   name: string;
   detail: ReactNode;
   t: EditorProps["t"];
+  primary?: boolean;
 } & ButtonHTMLAttributes<HTMLButtonElement>) {
+  const look = primary ? "ink-button" : "drawn-frame frame-button";
   return (
-    <button type="button" aria-busy={working} {...rest} className={`${ACTION} ${className}`}>
+    <button type="button" aria-busy={working} {...rest} className={`${look} ${SHAPE} ${className}`}>
       <span className="font-semibold">{working ? t["notices.working"] : name}</span>
-      <span className="text-[13px] text-ink/75">{detail}</span>
+      <span className={`text-[13px] ${primary ? "" : "text-ink/75"}`}>{detail}</span>
     </button>
   );
 }
@@ -211,7 +216,9 @@ export function NoticeActions({ p, e }: { p: EditorProps; e: Editor }) {
             disabled={off}
             {...described}
             onClick={() => void e.fit(language)}
-            className="col-span-2 sm:col-span-1"
+            primary
+            // The main action while the text is over: first, across the row on a phone.
+            className="order-first col-span-2 sm:col-span-1"
           />
         )}
       </div>

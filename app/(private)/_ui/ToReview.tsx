@@ -12,7 +12,7 @@ import type { ReviewItem } from "@/lib/private/import-view";
 import { draftCounts, kindLabel } from "@/lib/private/import-words";
 import type { reviewsForMe } from "@/lib/private/notice-reviews";
 
-import { LANGUAGE_CODE } from "./languages";
+import { LANGUAGE_NAME } from "./languages";
 import { SendScreenshots, type TypeChoice } from "./SendScreenshots";
 
 const KINDS: ImportKind[] = [
@@ -80,7 +80,7 @@ export function TabSend(props: {
   );
 }
 
-/** The notice review requests for this officer (D113), one link each to its notice. */
+/** The notice review requests for this officer (D113): "Ana asked you to review Français", the title under it. */
 function NoticeReviewLinks(props: {
   slug: string;
   t: WorkspaceDictionary;
@@ -89,18 +89,23 @@ function NoticeReviewLinks(props: {
   const { t } = props;
   if (props.reviews.length === 0) return null;
   return (
-    <ul className="mt-1">
+    <ul className="mt-3 space-y-2">
       {props.reviews.map((r) => (
         <li key={r.id}>
           <a
             href={`/w/${props.slug}/notices/${r.noticeId}`}
-            className="inline-flex min-h-11 items-center py-1 font-semibold text-plum underline underline-offset-4"
+            className="flex min-h-11 flex-col gap-0.5 border border-rule px-3 py-2"
           >
-            {fill(t["notices.review.home"], {
-              title: isolate(r.title),
-              what: r.language ? LANGUAGE_CODE[r.language] : t["notices.review.all"],
-              name: r.askedBy ? isolate(r.askedBy) : t["notices.someone"],
-            })}
+            <span className="font-semibold">
+              {fill(t[r.forMe ? "notices.review.home.you" : "notices.review.home.team"], {
+                name: r.askedBy ? isolate(r.askedBy) : t["notices.someone"],
+                what: r.language ? LANGUAGE_NAME[r.language] : t["notices.review.wholeIn"],
+              })}
+            </span>
+            <span className="text-body-sm text-ink/75">{isolate(r.title)}</span>
+            <span className="self-end text-body-sm font-semibold text-plum underline underline-offset-4">
+              {t["notices.review.open"]}
+            </span>
           </a>
         </li>
       ))}
@@ -115,7 +120,7 @@ export function ToReview(props: {
   language: WorkspaceLanguage;
   /** "2 new members to match" and its link to Members (D106, 2026-11-17); null when none. */
   toMatch: { line: string; href: string } | null;
-  /** The open notice review requests for this officer (D113): "Review “Garden rota” · PT, asked by Ana". */
+  /** The open notice review requests for this officer (D113). */
   reviews: Awaited<ReturnType<typeof reviewsForMe>>;
   /** "Mon 16 Nov 18:54 server time", per item. */
   when: (at: Date) => string;

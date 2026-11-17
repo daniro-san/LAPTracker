@@ -49,4 +49,4 @@ Why: the OGs leadership reads English, Portuguese or French, and posts each noti
 - **Analytics.** One more custom event (D77), `ws_notice_translated`, with no properties: Translate filled drafts. D77 itself is not edited.
 - **No new dependency.** Two `fetch` calls and `zod`, which the project already has.
 
-- **Amended 2026-11-17 (D113).** The notices' Translate uses a localizer prompt per target language with the 1,000-character room, and "Fit to 1,000" is a third action on the same route. Discord's translator keeps the prompt above.
+- **Amended 2026-11-17 (D113).** The notices' Translate uses a localizer prompt per target language with the 1,000-character room, and "Shorten to 1,000" is a third action on the same route. Discord's translator keeps the prompt above.

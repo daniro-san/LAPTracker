@@ -27,6 +27,10 @@ Issue #402 and the owner's comment of 2026-11-17. Branch `session/11ad-notice-fi
   - `member-session.test.ts`: the reviews route is added to the fixtures.
 - **Docs**: D113, the decisions index, a dated amendment line in D81, `docs/ARCHITECTURE.md`.
 
+- **Review round (PR #405: code review and persona panel)**, two commits after the rebase:
+  - Code review: To review's empty line and heading count include review requests. Undo after Fit on an accepted translation keeps its source. `canFit` counts trimmed text. The "edited" outcome is written in the save's transaction. The tab number is one SQL count. Home and the notice list every open request (only answered history is limited). The review route tests are split one per behaviour, with the other-workspace, blocked-officer, refused-save, not-yours-save and Fit-within-limit cases.
+  - Persona panel: languages by name ("Review asked by Ana · Français", "Approve Français", "Edit Français and save", "Jump to Français", a "Review waiting" tag on the card, "the whole notice"). To review rows read "Ana asked you to review Français" with the title under it. History reads "Rook approved Português · Tue, Nov 17 19:08", with "Times are server time." once. The ask sheet tints the chosen option and preselects a language opened from its card (new "Ask for a review" on each written language's card). Home's title is "Home" / "Início" / "Accueil", and "Nothing yet. Thanks and check-ins appear after the first daily update." "Shorten to 1,000" is the primary action when over, with "Keeps the key points. You can undo."; the over-limit line and the counter use the officer's thousands format. The ask sheet note and "Qualquer oficial" as given.
+
 ## Decisions
 - **Fit budgets 950, then 800.** The task gave no figure. Asking for a little under the limit first saves a retry when the model overshoots.
 - **A fitted fresh translation keeps its source** (coordinator's decision). The save takes the source's basis, so the other languages are not marked out of date. Fit on hand-written text behaves like Improve writing. Undo after Fit on a translation that was not yet accepted brings back the text from before the translation, as Undo after Improve writing does.
@@ -43,6 +47,7 @@ Issue #402 and the owner's comment of 2026-11-17. Branch `session/11ad-notice-fi
 
 ## Verified
 - **`pnpm check` exit 0** after the rebase: prettier, eslint, tsc, vitest (185 files: 183 passed, 2 skipped; 973 tests: 969 passed, 4 skipped), the drift check ("Everything's fine") and i18n (17 languages up to date).
+- **After the PR #405 review round**: `pnpm check` exit 0 (983 tests: 979 passed, 4 skipped). The rebuilt local e2e, with the harness moved to the new words (`scratchpad/11ad/e2e-r2.mjs`, `e2e-feed-r2.mjs`), passed **101 of 101** and **9 of 9**. That includes the card's "Ask for a review" opening the sheet with its language chosen, at 360 and 1280, light and dark, EN and PT. Shots: `scratchpad/11ad-shots/r2-*`.
 - **Tests added after the rebase**:
   - `desk-activity-feed.test.ts` (+1): the four feed lines in order. The save that came with an "edited" outcome is not a second line. Portuguese wording checked.
   - `notice-draft.test.ts` (+1): a fitted fresh translation keeps its source and English's basis, and Translate on that tab still refills it from English; Fit on hand-written English has no source.

@@ -9,6 +9,7 @@
 import { useState } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
+import { chip } from "@/lib/brand/components/controls";
 import { Tag } from "@/lib/brand/components/Tag";
 import { fill } from "@/lib/copy";
 import { discordPost, gameMail, gameNotice } from "@/lib/private/notice-formats";
@@ -21,7 +22,7 @@ import { Counter, OutOfDateTag, OverLimit } from "./NoticeBits";
 import { NoticeCalendarLink } from "./NoticeCalendarLink";
 import { NoticeEditor, type EditorProps } from "./NoticeEditor";
 import { NoticePublish, type PublishProps } from "./NoticePublish";
-import { ReviewRequests, ReviewSection, type ReviewProps } from "./NoticeReviews";
+import { AskSheet, ReviewRequests, ReviewSection, type ReviewProps } from "./NoticeReviews";
 
 export interface ScreenProps extends Omit<EditorProps, "focus" | "onClose" | "id"> {
   id: number;
@@ -64,10 +65,13 @@ function LanguageText({
   p,
   language,
   onEdit,
+  onAsk,
 }: {
   p: ScreenProps;
   language: NoticeLanguage;
   onEdit: () => void;
+  /** "Ask for a review" of this language (D113). */
+  onAsk: () => void;
 }) {
   const { t } = p;
   const field = p.fields[language];
@@ -86,8 +90,11 @@ function LanguageText({
               t={t}
             />
           )}
+          {p.reviews.open.some((r) => r.language === language) && (
+            <Tag tone="attention">{t["notices.review.waiting"]}</Tag>
+          )}
         </span>
-        <Counter text={field.value} t={t} />
+        <Counter text={field.value} t={t} language={p.viewer} />
       </div>
       {field.value === "" ? (
         <p className="mt-2 text-ink/70">{t["notices.missing"]}</p>
@@ -96,8 +103,11 @@ function LanguageText({
           <div lang={language} translate="no" className="mt-2 break-words whitespace-pre-wrap">
             {field.value}
           </div>
-          <OverLimit text={field.value} t={t} />
+          <OverLimit text={field.value} t={t} language={p.viewer} />
           <Copies p={p} language={language} />
+          <button type="button" aria-haspopup="dialog" onClick={onAsk} className={`${chip()} mt-2`}>
+            {t["notices.review.ask"]}
+          </button>
         </>
       )}
     </section>
@@ -109,6 +119,8 @@ export function NoticeScreen(p: ScreenProps) {
   const [editing, setEditing] = useState<NoticeLanguage | true | null>(null);
   /** The review request the editor was opened from, if any (D113). */
   const [review, setReview] = useState<number | undefined>(undefined);
+  /** The ask sheet: false when closed, else the language it opened with (null: the whole notice). */
+  const [asking, setAsking] = useState<NoticeLanguage | null | false>(false);
   const { t } = p;
   const written = p.languages.filter((l) => p.fields[l].value.trim() !== "");
   if (editing) {
@@ -161,9 +173,21 @@ export function NoticeScreen(p: ScreenProps) {
           p={p}
           language={language}
           onEdit={() => setEditing(language)}
+          onAsk={() => setAsking(language)}
         />
       ))}
-      <ReviewSection slug={p.slug} id={p.id} t={t} reviews={p.reviews} written={written} />
+      <ReviewSection t={t} reviews={p.reviews} onAsk={() => setAsking(null)} />
+      {asking !== false && (
+        <AskSheet
+          slug={p.slug}
+          id={p.id}
+          t={t}
+          officers={p.reviews.officers}
+          written={written}
+          initial={asking}
+          onClose={() => setAsking(false)}
+        />
+      )}
       <NoticePublish slug={p.slug} id={p.id} t={t} publish={p.publish} written={written} />
       <NoticeCalendarLink slug={p.slug} id={p.id} t={t} calendar={p.calendar} />
     </>

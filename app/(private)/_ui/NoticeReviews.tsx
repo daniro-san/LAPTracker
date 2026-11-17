@@ -1,11 +1,12 @@
 "use client";
 
 // Review requests on a notice (issue 402, D113). At the top of the read page, each open request: "Review
-// asked by Ana · PT" and who it is for; the officer it is for (or, for the team's, anyone but the asker)
-// gets Approve and "Edit and save", which opens the editor at that language. Lower down, the "Review"
-// section: the answered requests ("PT · Approved by Rook · …") and "Ask for a review", whose sheet picks
-// the whole notice or one language, and the whole team or one officer. Each write carries a request id
-// (D100). Nothing here blocks Publish.
+// asked by Ana · Français", who it is for, and "Jump to Français"; the officer it is for (or, for the team's,
+// anyone but the asker) gets "Approve Français" and "Edit Français and save", which opens the editor at that
+// language. Lower down, the "Review" section: the answered requests ("Rook approved Português · Tue 19:08")
+// and "Ask for a review". The ask sheet picks the whole notice or one language (preselected when opened from
+// a language), and the whole team or one officer. Each write carries a request id (D100). Nothing here blocks
+// Publish.
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -29,8 +30,12 @@ export interface ReviewProps {
     line: string;
     sub: string;
     mine: boolean;
+    /** "Approve Français", "Edit Français and save", and "Jump to Français" (null for the whole notice). */
+    approve: string;
+    edit: string;
+    jump: string | null;
   }[];
-  /** Answered requests: "PT · Approved by Rook · Tue, Nov 17 14:02 ST". */
+  /** Answered requests: "Rook approved Português · Tue, Nov 17 19:08", in server time. */
   done: string[];
   /** The officers a request can name, without the viewer, by the name they show. */
   officers: { id: number; name: string }[];
@@ -81,13 +86,21 @@ function OpenRequest(props: {
       <Notice tone="info">
         <p className="font-semibold">{request.line}</p>
         <p className="text-body-sm text-ink/75">{request.sub}</p>
+        {request.jump && request.language && (
+          <a
+            href={`#read-${request.language}`}
+            className="inline-flex min-h-11 items-center text-body-sm font-semibold text-plum underline underline-offset-4"
+          >
+            {request.jump}
+          </a>
+        )}
         {request.mine && (
-          <span className="mt-2 flex flex-wrap gap-2">
+          <span className="mt-1 flex flex-wrap gap-2">
             <button type="button" disabled={busy} onClick={() => void approve()} className={chip()}>
-              {t["notices.review.approve"]}
+              {request.approve}
             </button>
             <button type="button" onClick={props.onEdit} className={chip()}>
-              {t["notices.review.edit"]}
+              {request.edit}
             </button>
           </span>
         )}
@@ -179,17 +192,19 @@ function AskFields(props: {
   );
 }
 
-function AskSheet(props: {
+export function AskSheet(props: {
   slug: string;
   id: number;
   t: WorkspaceDictionary;
   officers: ReviewProps["officers"];
   written: NoticeLanguage[];
+  /** Opened from a language's card: that language is chosen; else the whole notice. */
+  initial: NoticeLanguage | null;
   onClose: () => void;
 }) {
   const { t } = props;
   const router = useRouter();
-  const [language, setLanguage] = useState<NoticeLanguage | null>(null);
+  const [language, setLanguage] = useState<NoticeLanguage | null>(props.initial);
   const [reviewer, setReviewer] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -212,7 +227,7 @@ function AskSheet(props: {
       onCancel={props.onClose}
       title={t["notices.review.ask"]}
       words={sheetWords(t)}
-      dirty={language !== null || reviewer !== null}
+      dirty={language !== props.initial || reviewer !== null}
       primary={{
         label: busy ? t["notices.review.sending"] : t["notices.review.send"],
         disabled: busy,
@@ -243,46 +258,36 @@ function AskSheet(props: {
   );
 }
 
-/** The "Review" section: the answered requests and "Ask for a review". */
+/** The "Review" section: the answered requests (times in server time, said once) and "Ask for a review". */
 export function ReviewSection(props: {
-  slug: string;
-  id: number;
   t: WorkspaceDictionary;
   reviews: ReviewProps;
-  written: NoticeLanguage[];
+  onAsk: () => void;
 }) {
   const { t, reviews } = props;
-  const [asking, setAsking] = useState(false);
   return (
     <section aria-labelledby="notice-review" className="mt-6 border-t border-rule pt-3">
       <h2 id="notice-review" className="font-subhead text-display-sm">
         {t["notices.review"]}
       </h2>
       {reviews.done.length > 0 && (
-        <ul className="mt-1 space-y-1 text-body-sm text-ink/80">
-          {reviews.done.map((line, i) => (
-            <li key={i}>{line}</li>
-          ))}
-        </ul>
+        <>
+          <ul className="mt-1 space-y-1 text-body-sm text-ink/80">
+            {reviews.done.map((line, i) => (
+              <li key={i}>{line}</li>
+            ))}
+          </ul>
+          <p className="mt-1 text-body-sm text-ink/70">{t["notices.review.times"]}</p>
+        </>
       )}
       <button
         type="button"
         aria-haspopup="dialog"
-        onClick={() => setAsking(true)}
+        onClick={props.onAsk}
         className={buttonClass("secondary", "mt-3")}
       >
         {t["notices.review.ask"]}
       </button>
-      {asking && (
-        <AskSheet
-          slug={props.slug}
-          id={props.id}
-          t={t}
-          officers={reviews.officers}
-          written={props.written}
-          onClose={() => setAsking(false)}
-        />
-      )}
     </section>
   );
 }
