@@ -95,7 +95,7 @@ export const pl = {
     fewGainers: "mało zdobywców",
     fightClock: "Zegar walk serwera",
     fightClockLead:
-      "Kiedy serwer walczył, wydarzenie po wydarzeniu. Każde pole to jeden przedział {min}-minutowy, a jego wysokość to udział wydarzenia w zdobytych w nim Kills. Przedziały ustawione są na zegarze serwera, więc południe to południe w każdym wierszu.",
+      "Kills śledzonych sojuszy, w przedziałach {min}-minutowych, wydarzenie po wydarzeniu. Wysokość pola to jego udział w narysowanych Kills tego wydarzenia, od Początku do ostatniego odczytu.",
     fightClockLink: "Porównaj z innymi wydarzeniami na zegarze walk serwera",
     fightClockShare: "Udział w Kills",
     fightClockOutline: "Obrysowane: najaktywniejsze {span} minut każdego wydarzenia",
@@ -104,7 +104,8 @@ export const pl = {
       "Brak odczytów {min}-minutowych w tym wydarzeniu (zaczynają się od wydarzenia z {date})",
     fightClockOffNext:
       "Brak odczytów {min}-minutowych w tym wydarzeniu (zaczynają się od następnego wydarzenia)",
-    fightClockOffMissed: "Odczytów {min}-minutowych nie wykonano w tym wydarzeniu",
+    fightClockOffMissed:
+      "Dla tego wydarzenia nie zapisano żadnych użytecznych odczytów {min}-minutowych.",
     fightClockOffWaiting: "Odczyty {min}-minutowe pojawiają się podczas trwania tego wydarzenia",
     fightClockNone:
       "Odczyty {min}-minutowe każdego wydarzenia pojawią się tutaj, zaczynając od następnego wydarzenia.",
@@ -128,7 +129,7 @@ export const pl = {
     carriedTurnout: "{share} ze zdobytymi Kills",
     carriedSpread: "{low}–{high} · wydarzeń: {n}",
     carriedRatioHelp:
-      "× to udział w Kills podzielony przez udział w Might. Pokazuje się od 3 wydarzeń, z zakresem; wcześniej jako różnica w punktach procentowych.",
+      "pkt proc. to udział w Kills minus udział w Might. Od 3 wydarzeń pod spodem pokazany jest zakres udziału w Kills ÷ udziału w Might z tych wydarzeń.",
     carriedPoints: "pkt proc.",
   },
   compare: {
@@ -187,9 +188,10 @@ export const pl = {
     answer: "Największy przepływ między {from} a {to}: {source} → {dest} ({n}).",
     answerNone:
       "Między {from} a {to} nie było przepływu {min} lub więcej członków między śledzonymi sojuszami.",
-    totals: "Zmiany sojuszu: {moved} · Nowi: {arrived} · Odeszli: {left}",
+    totals:
+      "Przepływy od {min} członków · Zmiany sojuszu: {moved} · Nowi: {arrived} · Odeszli: {left}",
     small:
-      "Przepływy mniejsze niż {min} członków są ukryte i nie wchodzą do żadnej sumy, żeby nikogo nie dało się wskazać w małej grupie.",
+      "Liczby poniżej {min} członków, także tych, którzy zostali, są ukryte i nie wchodzą do żadnej sumy, żeby ta strona nie wskazywała małych grup.",
     rowNew: "Nowi",
     colLeft: "Odeszli",
     legend:
@@ -206,13 +208,13 @@ export const pl = {
   balance: {
     title: "Równowaga serwera",
     description:
-      "Udział każdego śledzonego sojuszu w Might serwera oraz hipotetyczny kreator bloków.",
-    lead: "Żaden sojusz nie ma więcej niż {max} Might serwera; pierwsze {n} mają {top}.",
+      "Udział każdego śledzonego sojuszu w Might śledzonych sojuszy oraz hipotetyczny kreator bloków.",
+    lead: "Żaden sojusz nie ma więcej niż {max} Might śledzonych sojuszy; pierwsze {n} mają {top}.",
     includes: "Might liczy budynki i technologie.",
     basis: "Śledzone sojusze: {n}, odczyt z {date}.",
-    total: "Might serwera",
-    shares: "Udział w Might serwera",
-    bar: "Udział w Might serwera według sojuszu: {list}",
+    total: "Śledzone sojusze",
+    shares: "Udział według sojuszu",
+    bar: "Udział w Might śledzonych sojuszy według sojuszu: {list}",
     asOf: "stan na {date}",
     none: "Dziennych odczytów jeszcze nie ma.",
     builder: "Kreator bloków",
@@ -220,7 +222,7 @@ export const pl = {
     builderHelp:
       "Dotknij A albo B przy sojuszu, żeby wypróbować blok. To rachunek, nie prognoza i nie ogłoszenie.",
     bloc: "Blok {bloc}",
-    blocShare: "{share} Might serwera",
+    blocShare: "{share} Might śledzonych sojuszy",
     blocAlliances: "Sojusze",
     blocEmpty: "Jeszcze żaden sojusz",
     noBloc: "Poza blokiem",
@@ -238,10 +240,7 @@ export const pl = {
   standing: {
     title: "Miejsce w czasie",
     help: "Śledzone sojusze ułożone według Might z każdego dziennego odczytu, ze zmianą od {from}. Dzień, w którym sojusz nie został odczytany, jest pominięty. Serwer to tutaj suma śledzonych sojuszy.",
-    lead: "{label} zajmuje miejsce {rank} pod względem Might, {move} od {from}.",
-    up: "w górę: {n}",
-    down: "w dół: {n}",
-    held: "bez zmian",
+    lead: "{label} w dniu {to} zajmował miejsce {rank} pod względem Might, a w dniu {from} {before}.",
     leadGrowth: "Jego Might: {growth} od tego czasu; suma śledzonych sojuszy: {server}.",
     server: "Śledzone sojusze",
     growthSince: "{growth} od {from}",
@@ -249,6 +248,7 @@ export const pl = {
     thisAlliance: "Ten sojusz",
     detailsHelp: "Miejsce każdego dnia, od najstarszego: {days}.",
     few: "Za mało dziennych odczytów, żeby porównać sojusze.",
+    notRanked: "Bez miejsca w rankingu, brak użytecznego dziennego odczytu w tym okresie: {list}.",
   },
   history: {
     title: "Historia członków",

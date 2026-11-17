@@ -83,14 +83,15 @@ export const ptBR = {
     liveDone: "Mudança desde o Início, na leitura de {time}. O registro acima usa o Fim às {end}.",
     fightClock: "Relógio de lutas do servidor",
     fightClockLead:
-      "Quando o servidor lutou, evento por evento. Cada caixa é uma faixa de {min} minutos, e a altura é a fatia dos kills ganhos no evento nela. As faixas se alinham na hora do servidor, então meio-dia é meio-dia em todas as linhas.",
+      "Os kills das alianças acompanhadas, em intervalos de {min} minutos, evento por evento. A altura de uma caixa é a fatia dos kills desenhados daquele evento, do Início até a última leitura.",
     fightClockLink: "Comparar com outros eventos no relógio de lutas do servidor",
     fightClockShare: "Fatia dos kills",
     fightClockOutline: "Com contorno: os {span} minutos mais movimentados de cada evento",
     fightClockNoBusiest: "Poucas leituras para apontar os {span} minutos mais movimentados",
     fightClockOffSince: "Sem leituras de {min} minutos neste evento (começam no evento de {date})",
     fightClockOffNext: "Sem leituras de {min} minutos neste evento (começam no próximo evento)",
-    fightClockOffMissed: "Não foram feitas leituras de {min} minutos neste evento",
+    fightClockOffMissed:
+      "Nenhuma leitura utilizável de {min} minutos foi guardada para este evento.",
     fightClockOffWaiting: "As leituras de {min} minutos chegam enquanto este evento acontece",
     fightClockNone:
       "As leituras de {min} minutos de cada evento vão aparecer aqui, a partir do próximo evento.",
@@ -125,7 +126,7 @@ export const ptBR = {
     carriedTurnout: "{share} com kills",
     carriedSpread: "{low}–{high} em {n} eventos",
     carriedRatioHelp:
-      "× é a fatia de kills dividida pela fatia de might. Aparece a partir de 3 eventos, com a faixa; antes disso, a diferença em pontos percentuais.",
+      "pts é a fatia de kills menos a fatia de might. A partir de 3 eventos, a faixa de fatia de kills ÷ fatia de might nesses eventos aparece abaixo.",
     carriedPoints: "pts",
   },
   compare: {
@@ -184,9 +185,10 @@ export const ptBR = {
     answer: "Entre {from} e {to}, a maior mudança foi {source} → {dest} ({n}).",
     answerNone:
       "Entre {from} e {to}, nenhuma mudança de {min} ou mais Members entre as alianças acompanhadas.",
-    totals: "Mudaram de aliança: {moved} · Novos: {arrived} · Saíram: {left}",
+    totals:
+      "Mudanças de {min} ou mais · Mudaram de aliança: {moved} · Novos: {arrived} · Saíram: {left}",
     small:
-      "Mudanças de menos de {min} Members ficam ocultas e fora de todas as contagens, para que ninguém possa ser identificado num grupo pequeno.",
+      "Contagens abaixo de {min} Members, incluindo quem ficou, ficam ocultas e fora de todos os totais, para que esta página não aponte grupos pequenos.",
     rowNew: "Novo",
     colLeft: "Saiu",
     legend:
@@ -203,13 +205,13 @@ export const ptBR = {
   balance: {
     title: "Equilíbrio do servidor",
     description:
-      "A fatia do Might do servidor de cada aliança acompanhada, e um montador de blocos hipotético.",
-    lead: "Nenhuma aliança tem mais de {max} do Might do servidor; as {n} maiores têm {top}.",
+      "A fatia de cada aliança acompanhada no Might das alianças acompanhadas, e um montador de blocos hipotético.",
+    lead: "Nenhuma aliança tem mais de {max} do Might das alianças acompanhadas; as {n} maiores têm {top}.",
     includes: "O Might inclui construções e tecnologia.",
     basis: "{n} alianças acompanhadas, leitura de {date}.",
-    total: "Might do servidor",
-    shares: "Fatia do Might do servidor",
-    bar: "Fatia do Might do servidor por aliança: {list}",
+    total: "Alianças acompanhadas",
+    shares: "Fatia por aliança",
+    bar: "Fatia do Might das alianças acompanhadas por aliança: {list}",
     asOf: "de {date}",
     none: "Ainda não há leituras diárias.",
     builder: "Montar blocos",
@@ -217,7 +219,7 @@ export const ptBR = {
     builderHelp:
       "Toque em A ou B numa aliança para testar um bloco. É aritmética, não uma previsão e não um anúncio.",
     bloc: "Bloco {bloc}",
-    blocShare: "{share} do Might do servidor",
+    blocShare: "{share} do Might das alianças acompanhadas",
     blocAlliances: "Alianças",
     blocEmpty: "Nenhuma aliança ainda",
     noBloc: "Em nenhum bloco",
@@ -235,10 +237,7 @@ export const ptBR = {
   standing: {
     title: "Classificação ao longo do tempo",
     help: "As alianças acompanhadas, ordenadas por Might a partir da leitura de cada dia, com a mudança desde {from}. Um dia em que uma aliança não foi lida fica de fora. O servidor aqui é o total das alianças acompanhadas.",
-    lead: "{label} está em {rank} por Might, {move} desde {from}.",
-    up: "subiu {n} posições",
-    down: "caiu {n} posições",
-    held: "sem mudança",
+    lead: "{label} estava em {rank} por Might em {to} e em {before} em {from}.",
     leadGrowth:
       "O Might dela mudou {growth} desde então; o total das alianças acompanhadas mudou {server}.",
     server: "Alianças acompanhadas",
@@ -247,6 +246,7 @@ export const ptBR = {
     thisAlliance: "Esta aliança",
     detailsHelp: "Posição em cada dia, do mais antigo para o mais recente: {days}.",
     few: "Ainda não há leituras diárias suficientes para comparar as alianças.",
+    notRanked: "Fora da classificação, sem leitura diária útil neste período: {list}.",
   },
   history: {
     title: "Histórico de membros",

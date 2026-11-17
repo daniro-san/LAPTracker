@@ -1,6 +1,6 @@
 // Who carried the kingdom (#280, D83): per alliance, its share of the kills gained from Start to End next to
-// its share of the might at Start, and, once the alliance has `CARRIED_MIN_EVENTS` events, the ratio of the
-// two with its range. Alliance totals only (total_power, total_kills): no member row, no roster field.
+// its share of the might at Start, and, once the alliance has `CARRIED_MIN_EVENTS` events, the range of the
+// ratio of the two. Alliance totals only (total_power, total_kills): no member row, no roster field.
 import { and, desc, eq, inArray, isNull, lt } from "drizzle-orm";
 
 import { carriedShares, ratioSpread, type CarriedInput, type CarriedShare } from "../compute";
@@ -22,9 +22,7 @@ export interface CarriedRow {
   mightShare: number;
   /** 0 to 1, of the kills gained by the alliances counted. */
   killShare: number;
-  /** Kill share over might share; null until the alliance has `CARRIED_MIN_EVENTS` events. */
-  ratio: number | null;
-  /** The lowest and highest ratio over the alliance's events (this one included); null with `ratio`. */
+  /** The lowest and highest ratio (kill share over might share) over the alliance's events, this one included; null until it has `CARRIED_MIN_EVENTS` events. */
   spread: { n: number; low: number; high: number } | null;
   /** The alliance's members with kills gained and the members in both reads (#271); null without them. */
   turnout: { gainers: number; n: number } | null;
@@ -138,7 +136,6 @@ export async function whoCarried(
       badgeId: a.badgeId,
       mightShare: s.mightShare,
       killShare: s.killShare,
-      ratio: spread && s.ratio,
       spread,
       turnout: t ? { gainers: t.gainers, n: t.n } : null,
     };

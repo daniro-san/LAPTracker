@@ -84,7 +84,7 @@ export const de = {
       "Änderung seit Beginn bei der Messung um {time}. Die Tabelle oben rechnet mit dem Ende um {end}.",
     fightClock: "Kampfuhr des Servers",
     fightClockLead:
-      "Wann der Server gekämpft hat, Event für Event. Jeder Kasten ist ein Zeitfenster von {min} Minuten, seine Höhe ist der Anteil der im Event gewonnenen Kills. Die Zeitfenster richten sich nach der Serverzeit, daher ist Mittag in jeder Zeile Mittag.",
+      "Die Kills der erfassten Allianzen, je {min} Minuten, Event für Event. Die Höhe eines Kastens ist sein Anteil an den für dieses Event gezeichneten Kills, von Beginn bis zur letzten Messung.",
     fightClockLink: "Mit anderen Events auf der Kampfuhr des Servers vergleichen",
     fightClockShare: "Anteil an den Kills",
     fightClockOutline: "Umrandet: die aktivsten {span} Minuten jedes Events",
@@ -93,7 +93,8 @@ export const de = {
       "Keine {min}-Minuten-Messungen für dieses Event (sie beginnen mit dem Event vom {date})",
     fightClockOffNext:
       "Keine {min}-Minuten-Messungen für dieses Event (sie beginnen mit dem nächsten Event)",
-    fightClockOffMissed: "Für dieses Event wurden keine {min}-Minuten-Messungen gemacht",
+    fightClockOffMissed:
+      "Für dieses Event wurden keine brauchbaren {min}-Minuten-Messungen gespeichert.",
     fightClockOffWaiting: "Die {min}-Minuten-Messungen kommen, während dieses Event läuft",
     fightClockNone:
       "Die {min}-Minuten-Messungen jedes Events werden hier gezeichnet, beginnend mit dem nächsten Event.",
@@ -129,7 +130,7 @@ export const de = {
     carriedTurnout: "{share} mit gewonnenen Kills",
     carriedSpread: "{low}–{high} über {n} Events",
     carriedRatioHelp:
-      "× ist der Kills-Anteil geteilt durch den Might-Anteil. Er wird ab 3 Events mit seiner Spanne gezeigt; davor der Abstand in Prozentpunkten.",
+      "%-Pkt. ist der Kills-Anteil minus der Might-Anteil. Ab 3 Events wird darunter die Spanne aus Kills-Anteil ÷ Might-Anteil über diese Events gezeigt.",
     carriedPoints: "%-Pkt.",
   },
   compare: {
@@ -189,9 +190,10 @@ export const de = {
     answer: "Zwischen {from} und {to} war der größte Wechsel {source} → {dest} ({n}).",
     answerNone:
       "Zwischen {from} und {to} gab es keinen Wechsel von {min} oder mehr Members zwischen den erfassten Allianzen.",
-    totals: "Allianz gewechselt: {moved} · Neu: {arrived} · Ausgetreten: {left}",
+    totals:
+      "Wechsel ab {min} Members · Allianz gewechselt: {moved} · Neu: {arrived} · Ausgetreten: {left}",
     small:
-      "Wechsel von weniger als {min} Members sind ausgeblendet und in keiner Zahl enthalten, damit in einer kleinen Gruppe niemand erkennbar ist.",
+      "Zahlen unter {min} Members, auch Gebliebene, sind ausgeblendet und in keiner Summe enthalten, damit diese Seite keine kleinen Gruppen herausgreift.",
     rowNew: "Neu",
     colLeft: "Ausgetr.",
     legend:
@@ -208,13 +210,13 @@ export const de = {
   balance: {
     title: "Server-Balance",
     description:
-      "Anteil jeder erfassten Allianz am Server-Might und ein hypothetischer Blockrechner.",
-    lead: "Keine Allianz hält mehr als {max} des Server-Might; die Top {n} halten {top}.",
+      "Anteil jeder erfassten Allianz am Might der erfassten Allianzen und ein hypothetischer Blockrechner.",
+    lead: "Keine Allianz hält mehr als {max} des Might der erfassten Allianzen; die Top {n} halten {top}.",
     includes: "Might umfasst Gebäude und Technologie.",
     basis: "{n} erfasste Allianzen, Stand {date}.",
-    total: "Server-Might",
-    shares: "Anteil am Server-Might",
-    bar: "Anteil am Server-Might je Allianz: {list}",
+    total: "Erfasste Allianzen",
+    shares: "Anteil je Allianz",
+    bar: "Anteil am Might der erfassten Allianzen je Allianz: {list}",
     asOf: "Stand {date}",
     none: "Noch keine Tagesabrufe.",
     builder: "Blockrechner",
@@ -222,7 +224,7 @@ export const de = {
     builderHelp:
       "Tippe bei einer Allianz auf A oder B, um einen Block zu probieren. Das ist Rechnerei, keine Prognose und keine Ankündigung.",
     bloc: "Block {bloc}",
-    blocShare: "{share} des Server-Might",
+    blocShare: "{share} des Might der erfassten Allianzen",
     blocAlliances: "Allianzen",
     blocEmpty: "Noch keine Allianz",
     noBloc: "In keinem Block",
@@ -240,10 +242,7 @@ export const de = {
   standing: {
     title: "Rangverlauf",
     help: "Die erfassten Allianzen nach Might, aus jedem Tagesabruf, mit der Änderung seit {from}. Ein Tag, an dem eine Allianz nicht abgerufen wurde, fehlt. Der Server ist hier die Summe der erfassten Allianzen.",
-    lead: "Seit {from} ist {label} nach Might auf {rank}, {move}.",
-    up: "um {n} nach oben",
-    down: "um {n} nach unten",
-    held: "unverändert",
+    lead: "{label} war am {to} nach Might auf {rank} und am {from} auf {before}.",
     leadGrowth:
       "Das Might der Allianz hat sich seitdem um {growth} verändert; die Summe der erfassten Allianzen um {server}.",
     server: "Erfasste Allianzen",
@@ -252,6 +251,7 @@ export const de = {
     thisAlliance: "Diese Allianz",
     detailsHelp: "Rang an jedem Tag, der älteste zuerst: {days}.",
     few: "Noch nicht genug Tagesabrufe, um die Allianzen zu vergleichen.",
+    notRanked: "Nicht platziert, kein brauchbarer Tagesabruf in diesem Zeitraum: {list}.",
   },
   history: {
     title: "Mitgliederverlauf",

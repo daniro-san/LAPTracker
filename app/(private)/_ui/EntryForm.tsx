@@ -126,7 +126,7 @@ export function EntryForm(props: FormProps) {
   const kinds = KINDS.filter((k) => k !== "duel" || (mode.add && !mode.hasTheme));
   return (
     <Sheet labelledBy="cal-form-title" onCancel={props.onClose}>
-      <div className="max-h-[85dvh] overflow-y-auto pb-2">
+      <div className="pb-2">
         <h2
           id="cal-form-title"
           data-initial-focus

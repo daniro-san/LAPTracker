@@ -84,7 +84,7 @@ export const itIT = {
       "Variazione da Inizio alla lettura delle {time}. Il registro sopra usa la Fine alle {end}.",
     fightClock: "Orologio dei combattimenti del server",
     fightClockLead:
-      "Quando il server ha combattuto, evento per evento. Ogni casella è una fascia di {min} minuti e la sua altezza è la quota dei Kills guadagnati dall’evento in quella fascia. Le fasce si allineano sull’ora del server, quindi mezzogiorno è mezzogiorno in ogni riga.",
+      "I Kills delle alleanze seguite, {min} minuti alla volta, evento per evento. L’altezza di una casella è la sua quota dei Kills disegnati per quell’evento, dall’Inizio alla sua ultima lettura.",
     fightClockLink: "Confronta con altri eventi sull’orologio dei combattimenti del server",
     fightClockShare: "Quota dei Kills",
     fightClockOutline: "In contorno: i {span} minuti più intensi di ogni evento",
@@ -93,7 +93,8 @@ export const itIT = {
       "Nessuna lettura di {min} minuti per questo evento (iniziano con l’evento del {date})",
     fightClockOffNext:
       "Nessuna lettura di {min} minuti per questo evento (iniziano con il prossimo evento)",
-    fightClockOffMissed: "Per questo evento non sono state fatte letture di {min} minuti",
+    fightClockOffMissed:
+      "Per questo evento non è stata salvata alcuna lettura di {min} minuti utilizzabile.",
     fightClockOffWaiting: "Le letture di {min} minuti arrivano mentre questo evento è in corso",
     fightClockNone:
       "Le letture di {min} minuti di ogni evento saranno disegnate qui, a partire dal prossimo evento.",
@@ -128,7 +129,7 @@ export const itIT = {
     carriedTurnout: "{share} con Kills",
     carriedSpread: "{low}–{high} su {n} eventi",
     carriedRatioHelp:
-      "× è la quota di Kills divisa per la quota di Might. Si mostra da 3 eventi, con il suo intervallo; prima, la differenza in punti percentuali.",
+      "pp è la quota di Kills meno la quota di Might. Da 3 eventi, sotto compare l’intervallo di quota di Kills ÷ quota di Might su quegli eventi.",
     carriedPoints: "pp",
   },
   compare: {
@@ -187,9 +188,10 @@ export const itIT = {
     answer: "Tra il {from} e il {to}, lo spostamento più grande è stato {source} → {dest} ({n}).",
     answerNone:
       "Tra il {from} e il {to}, nessuno spostamento di {min} o più membri tra le alleanze seguite.",
-    totals: "Cambio di alleanza: {moved} · Nuovi: {arrived} · Usciti: {left}",
+    totals:
+      "Spostamenti di {min} o più · Cambio di alleanza: {moved} · Nuovi: {arrived} · Usciti: {left}",
     small:
-      "Gli spostamenti di meno di {min} membri sono nascosti ed esclusi da ogni totale, così nessuno può essere individuato in un gruppo piccolo.",
+      "I numeri sotto {min} membri, compresi quelli rimasti, sono nascosti ed esclusi da ogni totale, così questa pagina non mette in evidenza i gruppi piccoli.",
     rowNew: "Nuovi",
     colLeft: "Usciti",
     legend:
@@ -206,13 +208,13 @@ export const itIT = {
   balance: {
     title: "Equilibrio del server",
     description:
-      "Quota del Might del server di ogni alleanza seguita, e un costruttore di blocchi ipotetici.",
-    lead: "Nessuna alleanza supera il {max} del Might del server; le prime {n} ne hanno {top}.",
+      "Quota di ogni alleanza seguita sul Might delle alleanze seguite, e un costruttore di blocchi ipotetici.",
+    lead: "Nessuna alleanza supera il {max} del Might delle alleanze seguite; le prime {n} ne hanno {top}.",
     includes: "Il Might include edifici e tecnologie.",
     basis: "{n} alleanze seguite, lette il {date}.",
-    total: "Might totale",
-    shares: "Quota del Might",
-    bar: "Quota del Might del server per alleanza: {list}",
+    total: "Alleanze seguite",
+    shares: "Quota per alleanza",
+    bar: "Quota del Might delle alleanze seguite per alleanza: {list}",
     asOf: "dati del {date}",
     none: "Ancora nessuna lettura giornaliera.",
     builder: "Costruttore blocchi",
@@ -220,7 +222,7 @@ export const itIT = {
     builderHelp:
       "Tocca A o B su un’alleanza per provare un blocco. È aritmetica, non una previsione, né un annuncio.",
     bloc: "Blocco {bloc}",
-    blocShare: "{share} del Might del server",
+    blocShare: "{share} del Might delle alleanze seguite",
     blocAlliances: "Alleanze",
     blocEmpty: "Nessuna alleanza ancora",
     noBloc: "Fuori dai blocchi",
@@ -238,10 +240,7 @@ export const itIT = {
   standing: {
     title: "Graduatoria nel tempo",
     help: "Le alleanze seguite in classifica per Might, dalla lettura di ogni giorno, con la variazione dal {from}. Un giorno in cui un’alleanza non è stata letta viene escluso. Il server qui è il totale delle alleanze seguite.",
-    lead: "{label} è {rank} per Might, {move} dal {from}.",
-    up: "in salita di {n}",
-    down: "in discesa di {n}",
-    held: "invariato",
+    lead: "{label} era {rank} per Might il {to} e {before} il {from}.",
     leadGrowth:
       "Il suo Might è cambiato di {growth} da allora; il totale delle alleanze seguite è cambiato di {server}.",
     server: "Alleanze seguite",
@@ -250,6 +249,7 @@ export const itIT = {
     thisAlliance: "Questa alleanza",
     detailsHelp: "Posizione di ogni giorno, dal più vecchio: {days}.",
     few: "Ancora troppe poche letture giornaliere per confrontare le alleanze.",
+    notRanked: "Non in classifica, nessuna lettura giornaliera valida in questo periodo: {list}.",
   },
   history: {
     title: "Storico dei membri",

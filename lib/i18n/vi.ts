@@ -83,14 +83,14 @@ export const vi = {
     liveDone: "Thay đổi từ Bắt đầu tại lần đọc {time}. Bảng trên dùng Kết thúc lúc {end}.",
     fightClock: "Đồng hồ giao tranh máy chủ",
     fightClockLead:
-      "Máy chủ đánh nhau lúc nào, từng sự kiện một. Mỗi ô là một khung {min} phút, chiều cao là phần Tiêu diệt của sự kiện đó đạt được trong khung ấy. Các khung khớp theo giờ máy chủ, nên 12 giờ trưa luôn là 12 giờ trưa ở mọi hàng.",
+      "Phần Tiêu diệt của các liên minh theo dõi, mỗi {min} phút, từng sự kiện một. Chiều cao của ô là phần của nó trong số Tiêu diệt được vẽ cho sự kiện đó, từ Bắt đầu đến lần đọc cuối.",
     fightClockLink: "So với các sự kiện khác trên đồng hồ giao tranh máy chủ",
     fightClockShare: "Phần Tiêu diệt",
     fightClockOutline: "Viền: {span} phút sôi động nhất của mỗi sự kiện",
     fightClockNoBusiest: "Quá ít lần đọc để xác định {span} phút sôi động nhất",
     fightClockOffSince: "Sự kiện này không có lần đọc {min} phút (bắt đầu từ sự kiện ngày {date})",
     fightClockOffNext: "Sự kiện này không có lần đọc {min} phút (bắt đầu từ sự kiện kế tiếp)",
-    fightClockOffMissed: "Không có lần đọc {min} phút nào được ghi cho sự kiện này",
+    fightClockOffMissed: "Không có lần đọc {min} phút dùng được nào được lưu cho sự kiện này.",
     fightClockOffWaiting: "Các lần đọc {min} phút sẽ về trong lúc sự kiện này diễn ra",
     fightClockNone:
       "Lần đọc {min} phút của mỗi sự kiện sẽ được vẽ ở đây, bắt đầu từ sự kiện kế tiếp.",
@@ -126,7 +126,7 @@ export const vi = {
     carriedTurnout: "{share} có tiêu diệt tăng",
     carriedSpread: "{low}–{high} qua {n} sự kiện",
     carriedRatioHelp:
-      "× là phần tiêu diệt chia cho phần Lực Chiến. Hiển thị từ 3 sự kiện, kèm khoảng; trước đó, hiển thị chênh lệch theo điểm %.",
+      "điểm % là phần tiêu diệt trừ phần Lực Chiến. Từ 3 sự kiện, khoảng của phần tiêu diệt ÷ phần Lực Chiến qua các sự kiện đó hiện bên dưới.",
     carriedPoints: "điểm %",
   },
   compare: {
@@ -185,9 +185,9 @@ export const vi = {
     answer: "Từ {from} đến {to}, lần chuyển lớn nhất là {source} → {dest} ({n}).",
     answerNone:
       "Từ {from} đến {to}, không có lần chuyển nào từ {min} thành viên trở lên giữa các liên minh theo dõi.",
-    totals: "Đổi liên minh: {moved} · Mới: {arrived} · Rời: {left}",
+    totals: "Chuyển từ {min} trở lên · Đổi liên minh: {moved} · Mới: {arrived} · Rời: {left}",
     small:
-      "Các lần chuyển dưới {min} thành viên bị ẩn và không tính vào tổng nào, để không ai bị chỉ ra trong một nhóm nhỏ.",
+      "Số dưới {min} thành viên, kể cả người ở lại, bị ẩn và không tính vào tổng nào, để trang này không chỉ ra nhóm nhỏ.",
     rowNew: "Mới",
     colLeft: "Rời",
     legend:
@@ -204,13 +204,13 @@ export const vi = {
   balance: {
     title: "Cân bằng máy chủ",
     description:
-      "Phần Lực Chiến của mỗi liên minh theo dõi trên máy chủ, và công cụ dựng khối giả định.",
-    lead: "Không liên minh nào chiếm quá {max} Lực Chiến của máy chủ; top {n} chiếm {top}.",
+      "Phần của mỗi liên minh theo dõi trong Lực Chiến của các liên minh theo dõi, và công cụ dựng khối giả định.",
+    lead: "Không liên minh nào chiếm quá {max} Lực Chiến của các liên minh theo dõi; top {n} chiếm {top}.",
     includes: "Lực Chiến gồm công trình và công nghệ.",
     basis: "{n} liên minh theo dõi, đọc ngày {date}.",
-    total: "Tổng Lực Chiến",
-    shares: "Phần Lực Chiến máy chủ",
-    bar: "Phần Lực Chiến máy chủ theo liên minh: {list}",
+    total: "Liên minh theo dõi",
+    shares: "Phần theo liên minh",
+    bar: "Phần Lực Chiến của các liên minh theo dõi theo liên minh: {list}",
     asOf: "tính đến {date}",
     none: "Chưa có lần đọc hằng ngày.",
     builder: "Dựng khối",
@@ -218,7 +218,7 @@ export const vi = {
     builderHelp:
       "Chạm A hoặc B trên một liên minh để thử một khối. Đây là phép tính, không phải dự báo, cũng không phải thông báo.",
     bloc: "Khối {bloc}",
-    blocShare: "{share} Lực Chiến của máy chủ",
+    blocShare: "{share} Lực Chiến của các liên minh theo dõi",
     blocAlliances: "Liên minh",
     blocEmpty: "Chưa có liên minh",
     noBloc: "Không thuộc khối",
@@ -236,18 +236,16 @@ export const vi = {
   standing: {
     title: "Thứ hạng theo thời gian",
     help: "Các liên minh theo dõi xếp theo Lực Chiến từ lần đọc mỗi ngày, kèm thay đổi kể từ {from}. Ngày mà một liên minh không được đọc thì không tính. Máy chủ ở đây là tổng của các liên minh theo dõi.",
-    lead: "{label} đứng hạng {rank} theo Lực Chiến, {move} từ {from}.",
-    up: "lên {n} hạng",
-    down: "xuống {n} hạng",
-    held: "không đổi",
+    lead: "{label} đứng hạng {rank} theo Lực Chiến ngày {to} và {before} ngày {from}.",
     leadGrowth:
       "Lực Chiến của liên minh này đổi {growth} kể từ đó; tổng các liên minh theo dõi đổi {server}.",
-    server: "Máy chủ",
+    server: "Liên minh theo dõi",
     growthSince: "{growth} kể từ {from}",
     trend: "Hạng {first} ngày {from}, {last} ngày {to}",
     thisAlliance: "Liên minh này",
     detailsHelp: "Hạng mỗi ngày, cũ nhất trước: {days}.",
     few: "Chưa đủ lần đọc hằng ngày để so sánh các liên minh.",
+    notRanked: "Không xếp hạng, không có lần đọc hằng ngày dùng được trong giai đoạn này: {list}.",
   },
   history: {
     title: "Lịch sử thành viên",

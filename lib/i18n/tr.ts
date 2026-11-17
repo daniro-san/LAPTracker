@@ -85,7 +85,7 @@ export const tr = {
       "{time} okumasına göre Başlangıç’tan beri değişim. Yukarıdaki defter {end} itibarıyla Bitiş’i kullanır.",
     fightClock: "Sunucu savaş saati",
     fightClockLead:
-      "Sunucu, her etkinlikte ne zaman savaştı. Her kutu bir {min} dakikalık dilimdir; yüksekliği, etkinlikte o dilimde kazanılan Kills’in payıdır. Dilimler sunucu saatine göre dizilir, böylece öğle her satırda aynı hizaya gelir.",
+      "Takip edilen ittifakların Kills’i, {min} dakikalık dilimlerle, etkinlik etkinlik. Bir kutunun yüksekliği, o etkinlik için çizilen Kills içindeki payıdır; Başlangıç’tan son okumaya kadar.",
     fightClockLink: "Diğer etkinliklerle sunucu savaş saatinde karşılaştır",
     fightClockShare: "Kills payı",
     fightClockOutline: "Çerçeveli: her etkinliğin en yoğun {span} dakikası",
@@ -94,7 +94,7 @@ export const tr = {
       "Bu etkinlik için {min} dakikalık okuma yok ({date} tarihli etkinlikle başlarlar)",
     fightClockOffNext:
       "Bu etkinlik için {min} dakikalık okuma yok (bir sonraki etkinlikle başlarlar)",
-    fightClockOffMissed: "Bu etkinlik için {min} dakikalık okuma alınmadı",
+    fightClockOffMissed: "Bu etkinlik için kullanılabilir {min} dakikalık okuma saklanmadı.",
     fightClockOffWaiting: "{min} dakikalık okumalar bu etkinlik sürerken gelir",
     fightClockNone:
       "Her etkinliğin {min} dakikalık okumaları, bir sonraki etkinlikle başlayarak burada çizilir.",
@@ -129,7 +129,7 @@ export const tr = {
     carriedTurnout: "Kills kazanan {share}",
     carriedSpread: "{low}–{high}, {n} etkinlik üzerinden",
     carriedRatioHelp:
-      "× Kills payının Might payına bölümüdür. 3 etkinlikten itibaren aralığıyla gösterilir; ondan önce yüzde puan farkı gösterilir.",
+      "yp, Kills payı eksi Might payıdır. 3 etkinlikten itibaren altında, bu etkinliklerdeki Kills payı ÷ Might payı aralığı gösterilir.",
     carriedPoints: "yp",
   },
   compare: {
@@ -188,9 +188,10 @@ export const tr = {
     answer: "{from} ile {to} arasında en büyük geçiş {source} → {dest} ({n}).",
     answerNone:
       "{from} ile {to} arasında takip edilen ittifaklar arasında {min} veya daha fazla üyelik bir geçiş olmadı.",
-    totals: "İttifak değiştiren: {moved} · Yeni: {arrived} · Ayrılan: {left}",
+    totals:
+      "{min} veya daha fazla geçiş · İttifak değiştiren: {moved} · Yeni: {arrived} · Ayrılan: {left}",
     small:
-      "{min} üyeden az geçiş gizlenir ve hiçbir toplama katılmaz, böylece küçük bir grupta kimse seçilemez.",
+      "{min} üyeden az sayılar, kalanlar dahil, gizlenir ve hiçbir toplama katılmaz; böylece bu sayfa küçük grupları öne çıkarmaz.",
     rowNew: "Yeni",
     colLeft: "Ayrılan",
     legend:
@@ -207,13 +208,13 @@ export const tr = {
   balance: {
     title: "Sunucu dengesi",
     description:
-      "Takip edilen her ittifakın sunucu Might’ındaki payı ve varsayımsal bir blok kurucu.",
-    lead: "Hiçbir ittifak sunucu Might’ının {max} payından fazlasını tutmuyor; ilk {n} birlikte {top} tutuyor.",
+      "Takip edilen her ittifakın, takip edilen ittifakların Might’ındaki payı ve varsayımsal bir blok kurucu.",
+    lead: "Hiçbir ittifak, takip edilen ittifakların Might’ının {max} payından fazlasını tutmuyor; ilk {n} birlikte {top} tutuyor.",
     includes: "Might, binaları ve teknolojiyi içerir.",
     basis: "{n} takip edilen ittifak, {date} okuması.",
-    total: "Sunucu Might",
-    shares: "Sunucu Might payı",
-    bar: "İttifaka göre sunucu Might payı: {list}",
+    total: "Takipteki toplam",
+    shares: "İttifaka göre pay",
+    bar: "İttifaka göre takip edilen ittifakların Might payı: {list}",
     asOf: "{date} itibarıyla",
     none: "Henüz günlük okuma yok.",
     builder: "Blok kurucu",
@@ -221,7 +222,7 @@ export const tr = {
     builderHelp:
       "Bir ittifakta A ya da B’ye dokun, bir blok dene. Bu aritmetik, tahmin ya da duyuru değil.",
     bloc: "Blok {bloc}",
-    blocShare: "Sunucu Might payı: {share}",
+    blocShare: "Takip edilen ittifakların Might payı: {share}",
     blocAlliances: "İttifaklar",
     blocEmpty: "Henüz ittifak yok",
     noBloc: "Blokta değil",
@@ -239,10 +240,7 @@ export const tr = {
   standing: {
     title: "Zaman içinde durum",
     help: "Takip edilen ittifaklar, her günün okumasındaki Might’a göre sıralanır; {from} sonrası değişim de gösterilir. Bir ittifakın okunmadığı gün dışarıda bırakılır. Buradaki sunucu, takip edilen ittifakların toplamıdır.",
-    lead: "{label}, Might’a göre {rank}; {from} sonrası {move}.",
-    up: "{n} basamak yukarı",
-    down: "{n} basamak aşağı",
-    held: "değişmedi",
+    lead: "{label}, {to} günü Might’a göre {rank}, {from} günü {before} sıradaydı.",
     leadGrowth:
       "Ondan beri Might’ı {growth} değişti; takip edilen ittifakların toplamı {server} değişti.",
     server: "Takipteki toplam",
@@ -251,6 +249,7 @@ export const tr = {
     thisAlliance: "Bu ittifak",
     detailsHelp: "Her günkü sıra, en eskisi önce: {days}.",
     few: "İttifakları karşılaştırmak için henüz yeterli günlük okuma yok.",
+    notRanked: "Sıralanmadı, bu dönemde kullanılabilir günlük okuma yok: {list}.",
   },
   history: {
     title: "Üye geçmişi",

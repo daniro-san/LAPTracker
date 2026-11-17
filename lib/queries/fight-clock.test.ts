@@ -3,7 +3,13 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
 import { allianceSnapshots, events, snapshots } from "../schema";
-import { eventPulses, getFightClock, sampledEventIds, type PulseOptions } from "./fight-clock";
+import {
+  eventPulses,
+  FIGHT_CLOCK_EVENTS,
+  getFightClock,
+  sampledEventIds,
+  type PulseOptions,
+} from "./fight-clock";
 import { progressRows } from "./live";
 
 let db: Db;
@@ -190,6 +196,19 @@ describe("getFightClock", () => {
       [old, false],
     ]);
     expect(rows[1]?.off).toEqual({ kind: "since", at: at("2026-11-21", "14:00") });
+  });
+
+  it("takes the first sampled event over all scheduled events, also one older than the 12 shown", async () => {
+    const first = await seedEvent("2026-08-01", FIVE);
+    const unsampled: number[] = [];
+    for (let i = 1; i < FIGHT_CLOCK_EVENTS; i++) {
+      unsampled.push(await seedEvent(`2026-09-${String(i).padStart(2, "0")}`, []));
+    }
+    const later = await seedEvent("2026-10-01", FIVE);
+    const { events: rows } = await getFightClock(db, NOW, OPTIONS);
+    expect(rows.map((e) => e.id)).toEqual([later, ...unsampled.reverse()]);
+    expect(rows.map((e) => e.id)).not.toContain(first);
+    expect(rows.slice(1).every((e) => e.off?.kind === "missed")).toBe(true);
   });
 
   it("says the next event when no event is sampled, and that the readings are to come for one still ahead", async () => {

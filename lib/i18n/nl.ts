@@ -96,7 +96,7 @@ export const nl = {
     fewGainers: "weinig stijgers",
     fightClock: "Strijdklok server",
     fightClockLead:
-      "Wanneer de server vocht, event per event. Elk vakje is een slot van {min} minuten; de hoogte is het aandeel van de gewonnen Kills van het event in dat slot. De slots lopen gelijk met de servertijd, dus twaalf uur is in elke rij twaalf uur.",
+      "De Kills van de gevolgde allianties, {min} minuten per keer, event per event. De hoogte van een vakje is zijn aandeel in de voor dat event getekende Kills, van Begin tot de laatste meting.",
     fightClockLink: "Vergelijk met andere events op de strijdklok",
     fightClockShare: "Aandeel Kills",
     fightClockOutline: "Omlijnd: de drukste {span} minuten van elk event",
@@ -105,7 +105,8 @@ export const nl = {
       "Geen metingen van {min} minuten voor dit event (die beginnen bij het event van {date})",
     fightClockOffNext:
       "Geen metingen van {min} minuten voor dit event (die beginnen bij het volgende event)",
-    fightClockOffMissed: "Voor dit event zijn geen metingen van {min} minuten genomen",
+    fightClockOffMissed:
+      "Voor dit event zijn geen bruikbare metingen van {min} minuten opgeslagen.",
     fightClockOffWaiting: "De metingen van {min} minuten komen binnen terwijl dit event loopt",
     fightClockNone:
       "De metingen van {min} minuten van elk event komen hier, te beginnen bij het volgende event.",
@@ -129,7 +130,7 @@ export const nl = {
     carriedTurnout: "{share} met Kills",
     carriedSpread: "{low}–{high} over {n} events",
     carriedRatioHelp:
-      "× is het aandeel Kills gedeeld door het aandeel Might. Het wordt vanaf 3 events getoond, met de bandbreedte; daarvoor het verschil in procentpunten.",
+      "%-pt is het aandeel Kills min het aandeel Might. Vanaf 3 events staat eronder de bandbreedte van aandeel Kills ÷ aandeel Might over die events.",
     carriedPoints: "%-pt",
   },
   compare: {
@@ -188,9 +189,10 @@ export const nl = {
     answer: "Tussen {from} en {to} was de grootste verschuiving {source} → {dest} ({n}).",
     answerNone:
       "Tussen {from} en {to} geen verschuiving van {min} of meer leden tussen de gevolgde allianties.",
-    totals: "Van alliantie gewisseld: {moved} · Nieuw: {arrived} · Weg: {left}",
+    totals:
+      "Verschuivingen van {min} of meer · Van alliantie gewisseld: {moved} · Nieuw: {arrived} · Weg: {left}",
     small:
-      "Verschuivingen van minder dan {min} leden zijn verborgen en tellen in geen enkel totaal mee, zodat niemand uit een kleine groep herkend kan worden.",
+      "Aantallen onder de {min} leden, ook de gebleven, zijn verborgen en tellen in geen enkel totaal mee, zodat deze pagina geen kleine groepen uitlicht.",
     rowNew: "Nieuw",
     colLeft: "Weg",
     legend:
@@ -207,13 +209,13 @@ export const nl = {
   balance: {
     title: "Serverbalans",
     description:
-      "Het aandeel van elke gevolgde alliantie in de might van de server, en een hypothetische blokbouwer.",
-    lead: "Geen alliantie heeft meer dan {max} van de might van de server; de top {n} hebben samen {top}.",
+      "Het aandeel van elke gevolgde alliantie in de might van de gevolgde allianties, en een hypothetische blokbouwer.",
+    lead: "Geen alliantie heeft meer dan {max} van de might van de gevolgde allianties; de top {n} hebben samen {top}.",
     includes: "Might telt gebouwen en tech mee.",
     basis: "{n} gevolgde allianties, gemeten op {date}.",
-    total: "Totaal might",
-    shares: "Aandeel van de might",
-    bar: "Aandeel van de might per alliantie: {list}",
+    total: "Gevolgde allianties",
+    shares: "Aandeel per alliantie",
+    bar: "Aandeel van de might van de gevolgde allianties per alliantie: {list}",
     asOf: "stand {date}",
     none: "Nog geen dagelijkse metingen.",
     builder: "Blokbouwer",
@@ -221,7 +223,7 @@ export const nl = {
     builderHelp:
       "Tik op A of B bij een alliantie om een blok te proberen. Dit is rekenwerk, geen voorspelling, en ook geen aankondiging.",
     bloc: "Blok {bloc}",
-    blocShare: "{share} van de might van de server",
+    blocShare: "{share} van de might van de gevolgde allianties",
     blocAlliances: "Allianties",
     blocEmpty: "Nog geen alliantie",
     noBloc: "Niet in een blok",
@@ -239,10 +241,7 @@ export const nl = {
   standing: {
     title: "Stand door de tijd",
     help: "De gevolgde allianties gerangschikt op might, per dagelijkse meting, met de verandering sinds {from}. Een dag waarop een alliantie niet is gemeten, wordt weggelaten. De server is hier het totaal van de gevolgde allianties.",
-    lead: "{label} staat {rank} op might, {move} sinds {from}.",
-    up: "omhoog {n}",
-    down: "omlaag {n}",
-    held: "ongewijzigd",
+    lead: "{label} stond op {to} {rank} op might en op {from} {before}.",
     leadGrowth:
       "Haar might veranderde sindsdien {growth}; het totaal van de gevolgde allianties veranderde {server}.",
     server: "Gevolgde allianties",
@@ -251,6 +250,7 @@ export const nl = {
     thisAlliance: "Deze alliantie",
     detailsHelp: "Rang per dag, oudste eerst: {days}.",
     few: "Nog niet genoeg dagelijkse metingen om de allianties te vergelijken.",
+    notRanked: "Niet gerangschikt, geen bruikbare dagelijkse meting in deze periode: {list}.",
   },
   history: {
     title: "Ledengeschiedenis",

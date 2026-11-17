@@ -141,7 +141,7 @@ export function TheftForm(props: FormProps) {
   const f = useTheftForm(props);
   return (
     <Sheet labelledBy="theft-add-title" onCancel={onClose}>
-      <form onSubmit={(e) => void f.submit(e)} className="max-h-[80dvh] overflow-y-auto">
+      <form onSubmit={(e) => void f.submit(e)}>
         <h2
           id="theft-add-title"
           tabIndex={-1}

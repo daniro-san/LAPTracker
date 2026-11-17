@@ -84,14 +84,14 @@ export const ko = {
     liveDone: "{time} 읽기 기준 시작 이후 변화입니다. 위 장부는 {end} 종료 때 값을 씁니다.",
     fightClock: "서버 전투 시계",
     fightClockLead:
-      "서버가 이벤트마다 언제 싸웠는지 보여 줍니다. 칸 하나는 {min}분 구간이고, 높이는 이벤트 전체 획득 처치 중 그 구간에서 얻은 몫입니다. 구간은 서버 시계에 맞춰 나뉘므로 모든 줄에서 같은 자리는 같은 서버 시각입니다.",
+      "추적 중인 연맹의 처치를 {min}분씩, 이벤트마다 보여 줍니다. 칸의 높이는 그 이벤트에 대해 그린 처치 중 시작부터 마지막 기록까지에서 차지하는 몫입니다.",
     fightClockLink: "서버 전투 시계에서 다른 이벤트와 비교",
     fightClockShare: "처치 몫",
     fightClockOutline: "테두리: 이벤트마다 가장 바빴던 {span}분",
     fightClockNoBusiest: "가장 바빴던 {span}분을 가리기엔 기록이 너무 적어요.",
     fightClockOffSince: "이 이벤트에는 {min}분 기록이 없어요 ({date} 이벤트부터 있어요)",
     fightClockOffNext: "이 이벤트에는 {min}분 기록이 없어요 (다음 이벤트부터 있어요)",
-    fightClockOffMissed: "이 이벤트에는 {min}분 기록을 하지 않았어요.",
+    fightClockOffMissed: "이 이벤트에는 쓸 수 있는 {min}분 기록이 저장되지 않았어요.",
     fightClockOffWaiting: "{min}분 기록은 이 이벤트가 진행되는 동안 들어와요.",
     fightClockNone: "이벤트마다 {min}분 기록이 여기에 그려져요. 다음 이벤트부터 시작해요.",
     comparePulseHelp:
@@ -123,7 +123,7 @@ export const ko = {
     carriedTurnout: "처치가 늘어난 인원 {share}",
     carriedSpread: "{n}개 이벤트, {low}–{high}",
     carriedRatioHelp:
-      "×는 처치 몫을 전투력 몫으로 나눈 값입니다. 3개 이벤트부터 범위와 함께 보이고, 그 전에는 %p 차이로 보입니다.",
+      "%p는 처치 몫에서 전투력 몫을 뺀 값입니다. 3개 이벤트부터 그 아래에 해당 이벤트들의 처치 몫 ÷ 전투력 몫 범위가 보입니다.",
     carriedPoints: "%p",
   },
   compare: {
@@ -181,9 +181,9 @@ export const ko = {
     action: "보기",
     answer: "{from}부터 {to}까지 가장 큰 이동은 {source} → {dest} ({n})이에요.",
     answerNone: "{from}부터 {to}까지 추적 중인 연맹 사이에 {min}명 이상의 이동은 없어요.",
-    totals: "연맹 이동: {moved} · 신규: {arrived} · 탈퇴: {left}",
+    totals: "{min}명 이상의 이동 · 연맹 이동: {moved} · 신규: {arrived} · 탈퇴: {left}",
     small:
-      "{min}명 미만의 이동은 숨기고 어떤 합계에도 넣지 않아요. 작은 무리에서 누군지 알아볼 수 없게요.",
+      "{min}명 미만의 인원은 유지한 인원까지 숨기고 어떤 합계에도 넣지 않아요. 이 페이지가 작은 무리를 드러내지 않게요.",
     rowNew: "신규",
     colLeft: "탈퇴",
     legend:
@@ -199,13 +199,14 @@ export const ko = {
   },
   balance: {
     title: "서버 균형",
-    description: "추적 중인 각 연맹이 서버 전투력에서 차지하는 몫과 가상의 블록 짜기 도구.",
-    lead: "서버 전투력 중 {max} 초과를 차지한 연맹은 없어요. 상위 {n}개 연맹 합계는 {top}.",
+    description:
+      "추적 중인 각 연맹이 추적 중인 연맹 전투력에서 차지하는 몫과 가상의 블록 짜기 도구.",
+    lead: "추적 중인 연맹 전투력 중 {max} 초과를 차지한 연맹은 없어요. 상위 {n}개 연맹 합계는 {top}.",
     includes: "전투력에는 건물과 기술이 포함돼요.",
     basis: "추적 중인 연맹 {n}개, {date} 기준.",
-    total: "서버 전투력",
-    shares: "서버 전투력 점유율",
-    bar: "연맹별 서버 전투력 점유율: {list}",
+    total: "추적 연맹 합계",
+    shares: "연맹별 점유율",
+    bar: "연맹별 추적 연맹 전투력 점유율: {list}",
     asOf: "{date} 기준",
     none: "아직 일일 읽기가 없어요.",
     builder: "블록 짜기",
@@ -213,7 +214,7 @@ export const ko = {
     builderHelp:
       "연맹에서 A 또는 B를 눌러 블록을 시험해 보세요. 계산일 뿐이고, 예측도 공지도 아니에요.",
     bloc: "블록 {bloc}",
-    blocShare: "서버 전투력의 {share}",
+    blocShare: "추적 연맹 전투력의 {share}",
     blocAlliances: "연맹",
     blocEmpty: "아직 연맹이 없어요",
     noBloc: "블록에 없음",
@@ -231,10 +232,7 @@ export const ko = {
   standing: {
     title: "시간에 따른 순위",
     help: "추적 중인 연맹을 날마다 읽은 전투력으로 순위 매기고, {from} 이후 변화를 보여 줍니다. 그날 읽지 못한 연맹은 빠집니다. 여기서 서버란 추적 연맹 합계를 뜻합니다.",
-    lead: "{label}은(는) 전투력 기준 {rank}위, {from} 이후 {move}.",
-    up: "{n}계단 상승",
-    down: "{n}계단 하락",
-    held: "순위 변동 없음",
+    lead: "{label}은(는) {to}에 전투력 기준 {rank}위, {from}에는 {before}위였습니다.",
     leadGrowth: "그때 이후 전투력은 {growth} 변했고, 추적 연맹 합계는 {server} 변했습니다.",
     server: "추적 연맹 합계",
     growthSince: "{from} 이후 {growth}",
@@ -242,6 +240,7 @@ export const ko = {
     thisAlliance: "이 연맹",
     detailsHelp: "날마다 순위, 오래된 날부터: {days}.",
     few: "연맹을 비교하기엔 아직 일일 읽기가 부족해요.",
+    notRanked: "순위 제외, 이 기간에 쓸 수 있는 일일 읽기가 없음: {list}.",
   },
   history: {
     title: "멤버 이력",

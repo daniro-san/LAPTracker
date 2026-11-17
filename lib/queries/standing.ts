@@ -7,7 +7,7 @@ import { dailyAlliances } from "./balance";
 
 export type { Standing };
 
-/** The standing over the last 7 days of complete daily reads; null without two such days. */
+/** The standing over the 7 days up to the newest usable daily read; null without two complete days in it. */
 export async function allianceStanding(db: Db, now: Date): Promise<Standing | null> {
   return standing(await dailyAlliances(db, now));
 }

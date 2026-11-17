@@ -84,7 +84,7 @@ export const fr = {
       "Évolution depuis Début, au relevé de {time}. Le registre ci-dessus utilise la Fin à {end}.",
     fightClock: "Horloge des combats du serveur",
     fightClockLead:
-      "Quand le serveur a combattu, événement par événement. Chaque case est une tranche de {min} minutes, et sa hauteur est la part des Kills gagnés par l’événement dans cette tranche. Les tranches sont alignées sur l’heure serveur : midi est midi dans chaque ligne.",
+      "Les Kills des alliances suivies, par tranches de {min} minutes, événement par événement. La hauteur d’une case est sa part des Kills tracés pour cet événement, du Début à son dernier relevé.",
     fightClockLink: "Comparer avec les autres événements sur l’horloge des combats du serveur",
     fightClockShare: "Part des Kills",
     fightClockOutline: "En contour : les {span} minutes les plus actives de chaque événement",
@@ -93,7 +93,8 @@ export const fr = {
       "Pas de relevés de {min} minutes pour cet événement (ils commencent avec l’événement du {date})",
     fightClockOffNext:
       "Pas de relevés de {min} minutes pour cet événement (ils commencent avec le prochain événement)",
-    fightClockOffMissed: "Aucun relevé de {min} minutes n’a été pris pour cet événement",
+    fightClockOffMissed:
+      "Aucun relevé de {min} minutes utilisable n’a été enregistré pour cet événement.",
     fightClockOffWaiting:
       "Les relevés de {min} minutes arrivent pendant que cet événement se déroule",
     fightClockNone:
@@ -130,7 +131,7 @@ export const fr = {
     carriedTurnout: "{share} ont gagné des Kills",
     carriedSpread: "{low}–{high} sur {n} événements",
     carriedRatioHelp:
-      "× est la part des Kills divisée par la part du Might. Elle s’affiche à partir de 3 événements, avec sa fourchette ; avant, l’écart en pts.",
+      "pts est la part des Kills moins la part du Might. À partir de 3 événements, la fourchette de la part des Kills ÷ part du Might sur ces événements s’affiche en dessous.",
     carriedPoints: "pts",
   },
   compare: {
@@ -190,9 +191,10 @@ export const fr = {
     answer: "Entre {from} et {to}, le plus grand mouvement a été {source} → {dest} ({n}).",
     answerNone:
       "Entre {from} et {to}, aucun mouvement de {min} membres ou plus entre les alliances suivies.",
-    totals: "Changé d’alliance : {moved} · Nouveaux : {arrived} · Partis : {left}",
+    totals:
+      "Mouvements de {min} ou plus · Changé d’alliance : {moved} · Nouveaux : {arrived} · Partis : {left}",
     small:
-      "Les mouvements de moins de {min} membres sont masqués et exclus de tous les totaux, pour que personne ne puisse être repéré dans un petit groupe.",
+      "Les chiffres de moins de {min} membres, y compris ceux qui sont restés, sont masqués et exclus de tous les totaux, pour que cette page ne désigne pas de petits groupes.",
     rowNew: "Nouveaux",
     colLeft: "Partis",
     legend:
@@ -209,13 +211,13 @@ export const fr = {
   balance: {
     title: "Équilibre du serveur",
     description:
-      "La part de Might de chaque alliance suivie sur le serveur, et un constructeur de blocs hypothétique.",
-    lead: "Aucune alliance ne tient plus de {max} du Might du serveur ; les {n} premières en tiennent {top}.",
+      "La part de chaque alliance suivie dans le Might des alliances suivies, et un constructeur de blocs hypothétique.",
+    lead: "Aucune alliance ne tient plus de {max} du Might des alliances suivies ; les {n} premières en tiennent {top}.",
     includes: "Le Might inclut les bâtiments et la technologie.",
     basis: "{n} alliances suivies, relevées le {date}.",
-    total: "Might total",
-    shares: "Part du Might du serveur",
-    bar: "Part du Might du serveur par alliance : {list}",
+    total: "Alliances suivies",
+    shares: "Part par alliance",
+    bar: "Part du Might des alliances suivies par alliance : {list}",
     asOf: "au {date}",
     none: "Pas encore de relevés quotidiens.",
     builder: "Blocs simulés",
@@ -223,7 +225,7 @@ export const fr = {
     builderHelp:
       "Touchez A ou B sur une alliance pour essayer un bloc. C’est un calcul, pas une prévision, et pas une annonce.",
     bloc: "Bloc {bloc}",
-    blocShare: "{share} du Might du serveur",
+    blocShare: "{share} du Might des alliances suivies",
     blocAlliances: "Alliances",
     blocEmpty: "Aucune alliance pour l’instant",
     noBloc: "Hors bloc",
@@ -241,10 +243,7 @@ export const fr = {
   standing: {
     title: "Classement au fil du temps",
     help: "Les alliances suivies classées par Might d’après le relevé de chaque jour, avec l’évolution depuis le {from}. Un jour où une alliance n’a pas été relevée est laissé de côté. Ici, le serveur est le total des alliances suivies.",
-    lead: "{label} est {rank} par Might, {move} depuis le {from}.",
-    up: "en hausse de {n}",
-    down: "en baisse de {n}",
-    held: "sans changement",
+    lead: "{label} était {rank} par Might le {to} et {before} le {from}.",
     leadGrowth:
       "Son Might a évolué de {growth} depuis, et le total des alliances suivies de {server}.",
     server: "Alliances suivies",
@@ -253,6 +252,7 @@ export const fr = {
     thisAlliance: "Cette alliance",
     detailsHelp: "Rang chaque jour, du plus ancien au plus récent : {days}.",
     few: "Pas encore assez de relevés quotidiens pour comparer les alliances.",
+    notRanked: "Non classés, pas de relevé quotidien utilisable sur cette période : {list}.",
   },
   history: {
     title: "Historique des membres",
