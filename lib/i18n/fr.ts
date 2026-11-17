@@ -190,9 +190,10 @@ export const fr = {
     answer: "Entre {from} et {to}, le plus grand mouvement a été {source} → {dest} ({n}).",
     answerNone:
       "Entre {from} et {to}, aucun mouvement de {min} membres ou plus entre les alliances suivies.",
-    totals: "Changé d’alliance : {moved} · Nouveaux : {arrived} · Partis : {left}",
+    totals:
+      "Mouvements de {min} ou plus · Changé d’alliance : {moved} · Nouveaux : {arrived} · Partis : {left}",
     small:
-      "Les mouvements de moins de {min} membres sont masqués et exclus de tous les totaux, pour que personne ne puisse être repéré dans un petit groupe.",
+      "Les chiffres de moins de {min} membres, y compris ceux qui sont restés, sont masqués et exclus de tous les totaux, pour que cette page ne désigne pas de petits groupes.",
     rowNew: "Nouveaux",
     colLeft: "Partis",
     legend:
@@ -241,10 +242,7 @@ export const fr = {
   standing: {
     title: "Classement au fil du temps",
     help: "Les alliances suivies classées par Might d’après le relevé de chaque jour, avec l’évolution depuis le {from}. Un jour où une alliance n’a pas été relevée est laissé de côté. Ici, le serveur est le total des alliances suivies.",
-    lead: "{label} est {rank} par Might, {move} depuis le {from}.",
-    up: "en hausse de {n}",
-    down: "en baisse de {n}",
-    held: "sans changement",
+    lead: "{label} était {rank} par Might le {to} et {before} le {from}.",
     leadGrowth:
       "Son Might a évolué de {growth} depuis, et le total des alliances suivies de {server}.",
     server: "Alliances suivies",
@@ -253,6 +251,7 @@ export const fr = {
     thisAlliance: "Cette alliance",
     detailsHelp: "Rang chaque jour, du plus ancien au plus récent : {days}.",
     few: "Pas encore assez de relevés quotidiens pour comparer les alliances.",
+    notRanked: "Non classés, pas de relevé quotidien utilisable sur cette période : {list}.",
   },
   history: {
     title: "Historique des membres",

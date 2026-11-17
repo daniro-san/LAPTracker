@@ -63,6 +63,15 @@ describe("standing", () => {
     expect(standing(older)?.days[0]).toBe("2026-11-09");
   });
 
+  it("takes the 7 days to the newest read: an alliance with no read in it is named, one with a gap day drops that day", () => {
+    const dead = [read("2026-11-01", 4, 99), read("2026-11-02", 4, 99), ...rows];
+    const s = standing(dead.filter((r) => !(r.day === "2026-11-12" && r.unionId === 3)));
+    expect(s?.days).toEqual(["2026-11-09", "2026-11-16"]);
+    expect(s?.rows.map((r) => r.unionId)).toEqual([1, 3, 2]);
+    expect(s?.notRanked.map((a) => a.unionId)).toEqual([4]);
+    expect(s?.serverMight).toBe(114);
+  });
+
   it("is null with fewer than two days to compare", () => {
     expect(standing(rows.filter((r) => r.day === "2026-11-16"))).toBeNull();
     expect(standing([])).toBeNull();

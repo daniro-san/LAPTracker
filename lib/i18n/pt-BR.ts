@@ -184,9 +184,10 @@ export const ptBR = {
     answer: "Entre {from} e {to}, a maior mudança foi {source} → {dest} ({n}).",
     answerNone:
       "Entre {from} e {to}, nenhuma mudança de {min} ou mais Members entre as alianças acompanhadas.",
-    totals: "Mudaram de aliança: {moved} · Novos: {arrived} · Saíram: {left}",
+    totals:
+      "Mudanças de {min} ou mais · Mudaram de aliança: {moved} · Novos: {arrived} · Saíram: {left}",
     small:
-      "Mudanças de menos de {min} Members ficam ocultas e fora de todas as contagens, para que ninguém possa ser identificado num grupo pequeno.",
+      "Contagens abaixo de {min} Members, incluindo quem ficou, ficam ocultas e fora de todos os totais, para que esta página não aponte grupos pequenos.",
     rowNew: "Novo",
     colLeft: "Saiu",
     legend:
@@ -235,10 +236,7 @@ export const ptBR = {
   standing: {
     title: "Classificação ao longo do tempo",
     help: "As alianças acompanhadas, ordenadas por Might a partir da leitura de cada dia, com a mudança desde {from}. Um dia em que uma aliança não foi lida fica de fora. O servidor aqui é o total das alianças acompanhadas.",
-    lead: "{label} está em {rank} por Might, {move} desde {from}.",
-    up: "subiu {n} posições",
-    down: "caiu {n} posições",
-    held: "sem mudança",
+    lead: "{label} estava em {rank} por Might em {to} e em {before} em {from}.",
     leadGrowth:
       "O Might dela mudou {growth} desde então; o total das alianças acompanhadas mudou {server}.",
     server: "Alianças acompanhadas",
@@ -247,6 +245,7 @@ export const ptBR = {
     thisAlliance: "Esta aliança",
     detailsHelp: "Posição em cada dia, do mais antigo para o mais recente: {days}.",
     few: "Ainda não há leituras diárias suficientes para comparar as alianças.",
+    notRanked: "Fora da classificação, sem leitura diária útil neste período: {list}.",
   },
   history: {
     title: "Histórico de membros",

@@ -181,9 +181,9 @@ export const ko = {
     action: "보기",
     answer: "{from}부터 {to}까지 가장 큰 이동은 {source} → {dest} ({n})이에요.",
     answerNone: "{from}부터 {to}까지 추적 중인 연맹 사이에 {min}명 이상의 이동은 없어요.",
-    totals: "연맹 이동: {moved} · 신규: {arrived} · 탈퇴: {left}",
+    totals: "{min}명 이상의 이동 · 연맹 이동: {moved} · 신규: {arrived} · 탈퇴: {left}",
     small:
-      "{min}명 미만의 이동은 숨기고 어떤 합계에도 넣지 않아요. 작은 무리에서 누군지 알아볼 수 없게요.",
+      "{min}명 미만의 인원은 유지한 인원까지 숨기고 어떤 합계에도 넣지 않아요. 이 페이지가 작은 무리를 드러내지 않게요.",
     rowNew: "신규",
     colLeft: "탈퇴",
     legend:
@@ -231,10 +231,7 @@ export const ko = {
   standing: {
     title: "시간에 따른 순위",
     help: "추적 중인 연맹을 날마다 읽은 전투력으로 순위 매기고, {from} 이후 변화를 보여 줍니다. 그날 읽지 못한 연맹은 빠집니다. 여기서 서버란 추적 연맹 합계를 뜻합니다.",
-    lead: "{label}은(는) 전투력 기준 {rank}위, {from} 이후 {move}.",
-    up: "{n}계단 상승",
-    down: "{n}계단 하락",
-    held: "순위 변동 없음",
+    lead: "{label}은(는) {to}에 전투력 기준 {rank}위, {from}에는 {before}위였습니다.",
     leadGrowth: "그때 이후 전투력은 {growth} 변했고, 추적 연맹 합계는 {server} 변했습니다.",
     server: "추적 연맹 합계",
     growthSince: "{from} 이후 {growth}",
@@ -242,6 +239,7 @@ export const ko = {
     thisAlliance: "이 연맹",
     detailsHelp: "날마다 순위, 오래된 날부터: {days}.",
     few: "연맹을 비교하기엔 아직 일일 읽기가 부족해요.",
+    notRanked: "순위 제외, 이 기간에 쓸 수 있는 일일 읽기가 없음: {list}.",
   },
   history: {
     title: "멤버 이력",

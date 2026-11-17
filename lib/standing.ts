@@ -1,7 +1,8 @@
 // Standing against the server (D90, issue 274): each tracked alliance's rank by might over the last days,
 // its might growth and the tracked alliances' total growth beside it. Pure: daily alliance totals in,
-// figures out. Only days on which every listed alliance has a usable daily roster enter a rank series
-// (a day with fewer would rank a smaller server), as the balance trend does (D85).
+// figures out. The period is the 7 days up to the newest day with any usable read; the listed alliances
+// are those read in it, and only days on which every one of them has a usable daily roster enter a rank
+// series (a day with fewer would rank a smaller server), as the balance trend does (D85, D90 amendment).
 
 /** One usable daily roster's totals; the alliance's name and badge come from its newest row. */
 export interface StandingInput {
@@ -13,7 +14,7 @@ export interface StandingInput {
   might: number;
 }
 
-/** The period looks back this many days from the newest complete day. */
+/** The period looks back this many days from the newest day with a usable read. */
 export const STANDING_DAYS = 7;
 
 export interface StandingRow {
@@ -34,8 +35,10 @@ export interface StandingRow {
 }
 
 export interface Standing {
-  /** The period's days, oldest first; at least two. */
+  /** The period's complete days, oldest first; at least two. */
   days: string[];
+  /** Alliances read in the last 90 days but not in the period, by union id: left out of the ranks. */
+  notRanked: { unionId: number; tag: string | null; name: string | null }[];
   /** Rank 1 first. */
   rows: StandingRow[];
   /** The listed alliances' total might on the newest day. */
@@ -57,28 +60,41 @@ export const growthPercent = (first: number, last: number): number | null =>
 const DAY_MS = 86_400_000;
 const dayTime = (day: string) => Date.parse(`${day}T00:00:00Z`);
 
-/**
- * The standing over the last `STANDING_DAYS` days up to the newest complete day. The listed alliances are
- * those in `rows`; null when fewer than two complete days fall in the period (nothing to compare).
- */
-export function standing(rows: StandingInput[]): Standing | null {
+/** The reads of the 7 days up to the newest day with a usable read, by day; the alliances read in it, and
+ * each alliance's newest read (its name and badge) over every row. */
+function window(rows: StandingInput[]) {
+  const newestDay = rows.reduce((max, r) => (r.day > max ? r.day : max), "");
+  const since = dayTime(newestDay) - STANDING_DAYS * DAY_MS;
   const byDay = new Map<string, Map<number, StandingInput>>();
   const newest = new Map<number, StandingInput>();
+  const listedIds = new Set<number>();
   for (const r of rows) {
-    byDay.set(r.day, (byDay.get(r.day) ?? new Map()).set(r.unionId, r));
     const seen = newest.get(r.unionId);
     if (!seen || r.day > seen.day) newest.set(r.unionId, r);
+    if (dayTime(r.day) < since) continue;
+    byDay.set(r.day, (byDay.get(r.day) ?? new Map()).set(r.unionId, r));
+    listedIds.add(r.unionId);
   }
-  const listed = newest.size;
-  const complete = [...byDay.entries()]
-    .filter(([, day]) => day.size === listed)
+  return { byDay, newest, listedIds };
+}
+
+/**
+ * The standing over the 7 days up to the newest day with any usable read. The listed alliances are those
+ * with a read in that window; the period is its complete days. Null when fewer than two days are complete.
+ */
+export function standing(rows: StandingInput[]): Standing | null {
+  const { byDay, newest, listedIds } = window(rows);
+  const days = [...byDay.entries()]
+    .filter(([, day]) => day.size === listedIds.size)
     .map(([day]) => day)
     .sort();
-  const last = complete.at(-1);
-  if (last === undefined) return null;
-  const days = complete.filter((d) => dayTime(d) >= dayTime(last) - STANDING_DAYS * DAY_MS);
   const [first] = days;
-  if (first === undefined || days.length < 2) return null;
+  const last = days.at(-1);
+  if (first === undefined || last === undefined || days.length < 2) return null;
+  const notRanked = [...newest.values()]
+    .filter((r) => !listedIds.has(r.unionId))
+    .sort((a, b) => a.unionId - b.unionId)
+    .map(({ unionId, tag, name }) => ({ unionId, tag, name }));
   const rankings = days.map((d) => rankByMight([...(byDay.get(d)?.values() ?? [])]));
   const [rankFirst, rankLast] = [rankings[0], rankings.at(-1)];
   const [mightFirst, mightLast] = [byDay.get(first), byDay.get(last)];
@@ -103,6 +119,7 @@ export function standing(rows: StandingInput[]): Standing | null {
   const serverMight = total(mightLast);
   return {
     days,
+    notRanked,
     rows: out.sort((a, b) => a.rank - b.rank),
     serverMight,
     serverGrowth: growthPercent(total(mightFirst), serverMight),

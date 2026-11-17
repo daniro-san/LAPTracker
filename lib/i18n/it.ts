@@ -187,9 +187,10 @@ export const itIT = {
     answer: "Tra il {from} e il {to}, lo spostamento più grande è stato {source} → {dest} ({n}).",
     answerNone:
       "Tra il {from} e il {to}, nessuno spostamento di {min} o più membri tra le alleanze seguite.",
-    totals: "Cambio di alleanza: {moved} · Nuovi: {arrived} · Usciti: {left}",
+    totals:
+      "Spostamenti di {min} o più · Cambio di alleanza: {moved} · Nuovi: {arrived} · Usciti: {left}",
     small:
-      "Gli spostamenti di meno di {min} membri sono nascosti ed esclusi da ogni totale, così nessuno può essere individuato in un gruppo piccolo.",
+      "I numeri sotto {min} membri, compresi quelli rimasti, sono nascosti ed esclusi da ogni totale, così questa pagina non mette in evidenza i gruppi piccoli.",
     rowNew: "Nuovi",
     colLeft: "Usciti",
     legend:
@@ -238,10 +239,7 @@ export const itIT = {
   standing: {
     title: "Graduatoria nel tempo",
     help: "Le alleanze seguite in classifica per Might, dalla lettura di ogni giorno, con la variazione dal {from}. Un giorno in cui un’alleanza non è stata letta viene escluso. Il server qui è il totale delle alleanze seguite.",
-    lead: "{label} è {rank} per Might, {move} dal {from}.",
-    up: "in salita di {n}",
-    down: "in discesa di {n}",
-    held: "invariato",
+    lead: "{label} era {rank} per Might il {to} e {before} il {from}.",
     leadGrowth:
       "Il suo Might è cambiato di {growth} da allora; il totale delle alleanze seguite è cambiato di {server}.",
     server: "Alleanze seguite",
@@ -250,6 +248,7 @@ export const itIT = {
     thisAlliance: "Questa alleanza",
     detailsHelp: "Posizione di ogni giorno, dal più vecchio: {days}.",
     few: "Ancora troppe poche letture giornaliere per confrontare le alleanze.",
+    notRanked: "Non in classifica, nessuna lettura giornaliera valida in questo periodo: {list}.",
   },
   history: {
     title: "Storico dei membri",

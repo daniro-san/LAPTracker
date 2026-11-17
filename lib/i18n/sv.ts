@@ -181,10 +181,7 @@ export const sv = {
   standing: {
     title: "Ställningen över tid",
     help: "De bevakade allianserna placerade efter Might från varje dagsavläsning, med förändringen sedan {from}. En dag då en allians inte lästes räknas inte med. Servern här är de bevakade allianserna tillsammans.",
-    lead: "{label} är {rank} efter Might, {move} sedan {from}.",
-    up: "upp {n}",
-    down: "ner {n}",
-    held: "oförändrad",
+    lead: "{label} var {rank} efter Might den {to} och {before} den {from}.",
     leadGrowth:
       "Dess Might har ändrats {growth} sedan dess; de bevakade allianserna tillsammans har ändrats {server}.",
     server: "Bevakade allianser",
@@ -193,6 +190,7 @@ export const sv = {
     thisAlliance: "Den här alliansen",
     detailsHelp: "Placering varje dag, äldst först: {days}.",
     few: "Inte tillräckligt med dagsavläsningar för att jämföra allianserna än.",
+    notRanked: "Ej rankade, ingen användbar dagsavläsning under perioden: {list}.",
   },
   history: {
     title: "Medlemshistorik",
@@ -357,9 +355,10 @@ export const sv = {
     answer: "Mellan {from} och {to} var den största flytten {source} → {dest} ({n}).",
     answerNone:
       "Mellan {from} och {to} ingen flytt på {min} eller fler Members mellan de bevakade allianserna.",
-    totals: "Bytte allians: {moved} · Nya: {arrived} · Lämnade: {left}",
+    totals:
+      "Flyttar på {min} eller fler · Bytte allians: {moved} · Nya: {arrived} · Lämnade: {left}",
     small:
-      "Flyttar på färre än {min} Members döljs och räknas inte in i någon summa, så ingen kan pekas ut i en liten grupp.",
+      "Antal under {min} Members, även de som blev kvar, döljs och räknas inte in i någon summa, så att sidan inte pekar ut små grupper.",
     rowNew: "Nya",
     colLeft: "Lämnade",
     legend:

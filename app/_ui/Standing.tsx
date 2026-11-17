@@ -17,20 +17,16 @@ import { StandingList } from "./StandingList";
 
 const MUTED = "text-ink/70";
 
-/** `up 2`, `down 1` or `unchanged`. */
-const moveText = (move: number, copy: Dictionary) =>
-  move === 0
-    ? copy.standing.held
-    : fill(move > 0 ? copy.standing.up : copy.standing.down, { n: Math.abs(move) });
-
-/** `OGs is #4 by might, up 2 since Nov 9. Its might changed +3.1% since then; …`. */
+/** `OGs was #4 by might on Nov 16 and #6 on Nov 9. Its might changed +3.1% since then; …`. */
 function lead(row: StandingRow, s: Figures, clock: Clock, locale: string, copy: Dictionary) {
   const from = clock.day(day(s.days[0]));
+  const to = clock.day(day(s.days.at(-1)));
   const rank = fill(copy.standing.lead, {
     label: allianceLabel(row.tag ?? String(row.unionId), row.name),
     rank: `#${row.rank}`,
-    move: moveText(row.move, copy),
+    before: `#${row.ranks[0]}`,
     from,
+    to,
   });
   const growth =
     row.growth !== null && s.serverGrowth !== null
@@ -39,7 +35,7 @@ function lead(row: StandingRow, s: Figures, clock: Clock, locale: string, copy: 
           server: percentText(s.serverGrowth, locale),
         })
       : null;
-  return endDate([rank, growth].filter(Boolean).join(" "), from);
+  return endDate(endDate([rank, growth].filter(Boolean).join(" "), from), to);
 }
 
 /** A short date can end with a full stop ("23 окт."): where the sentence's own full stop follows the date,
@@ -148,6 +144,15 @@ function RanksTable({ s, clock, copy }: { s: Figures; clock: Clock; copy: Dictio
   );
 }
 
+/** The alliances read before the period but not in it, left out of the list. */
+function NotRanked({ list, copy }: { list: Figures["notRanked"]; copy: Dictionary }) {
+  if (list.length === 0) return null;
+  const names = list.map((a) => allianceLabel(a.tag ?? String(a.unionId), a.name)).join(", ");
+  return (
+    <p className={`mt-3 text-sm ${MUTED}`}>{fill(copy.standing.notRanked, { list: names })}</p>
+  );
+}
+
 function StandingBody({
   standing,
   unionId,
@@ -216,6 +221,7 @@ function StandingBody({
               ),
             }))}
           />
+          <NotRanked list={standing.notRanked} copy={copy} />
           <RanksTable s={standing} clock={clock} copy={copy} />
         </>
       )}

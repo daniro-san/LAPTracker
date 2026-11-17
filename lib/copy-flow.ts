@@ -14,11 +14,13 @@ export const flowCopy = {
   /** When no move is big enough to show: `{min}` is the smallest move shown. */
   answerNone:
     "Between {from} and {to}, no move of {min} or more members between the tracked alliances.",
-  /** The line under it, counts of the moves shown: between two tracked alliances, from outside them, out of them. */
-  totals: "Changed alliance: {moved} · New: {arrived} · Left: {left}",
+  /** The line under it, counts of the moves shown: between two tracked alliances, from outside them, out of
+   * them; `{min}` is the smallest move shown. Keep " · " between the parts: the page splits on it so each
+   * part stays on one line. */
+  totals: "Moves of {min} or more · Changed alliance: {moved} · New: {arrived} · Left: {left}",
   /** Said on the page: why some moves are missing. `{min}` is the smallest move shown. */
   small:
-    "Moves of fewer than {min} members are hidden and left out of every count, so nobody can be picked out of a small group.",
+    "Counts under {min} members, stays included, are hidden and left out of every total, so this page does not single out small groups.",
   /** The row for members in no tracked alliance on the first day, and the column for those in none on the second. */
   rowNew: "New",
   colLeft: "Left",
