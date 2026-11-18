@@ -35,11 +35,12 @@ describe("custom events (D77)", () => {
 
 describe("identify (D115)", () => {
   /** A fresh copy of the module with a loaded stand-in SDK in the given mode. */
-  async function loaded(cookieless: "always" | undefined) {
+  async function loaded(cookieless: "on_reject" | undefined, optedIn = false) {
     vi.resetModules();
     const events = await import("./events");
     const ph = {
       config: { cookieless_mode: cookieless },
+      has_opted_in_capturing: () => optedIn,
       get_distinct_id: () => "anon",
       identify: vi.fn(),
     };
@@ -55,6 +56,29 @@ describe("identify (D115)", () => {
       tier: "officer",
       workspace: "ogs",
     });
-    expect(await loaded("always")).not.toHaveBeenCalled();
+    // A public page load whose visitor has not said yes, then a client-side visit to the desk.
+    expect(await loaded("on_reject")).not.toHaveBeenCalled();
+    expect(await loaded("on_reject", true)).toHaveBeenCalled();
+  });
+});
+
+describe("the tracking plan (D115)", () => {
+  it("lists every browser event, every server event and every desk feature and action", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { DESK_ACTIONS, DESK_FEATURES } = await import("./server");
+    const { ANALYTICS_EVENTS } = await import("./events");
+    const plan = readFileSync("docs/analytics/tracking-plan.md", "utf8");
+    const named = [
+      ...ANALYTICS_EVENTS,
+      "$exception",
+      "$ai_generation",
+      "discord_command_used",
+      "ws_action",
+      ...DESK_FEATURES,
+      ...DESK_ACTIONS,
+    ];
+    expect(named.filter((name) => !plan.includes(`\`${name}\``))).toEqual([]);
+    // Every event the type allows is in the run-time list, so the check above covers them all.
+    expectTypeOf<AnalyticsEvent>().toEqualTypeOf<(typeof ANALYTICS_EVENTS)[number]>();
   });
 });

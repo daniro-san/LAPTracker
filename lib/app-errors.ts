@@ -2,9 +2,7 @@
 // onRequestError and from route handlers that caught one. `message` is our own words (kind and error
 // name, plan §12.3) and groups the rows; `detail` (D61) keeps the error's own message, stack start and
 // cause, redacted, for /admin/errors only. The admin alert adds the message's first line.
-import { after } from "next/server";
-
-import { captureServer } from "./analytics/server";
+import { captureServer, sendLater } from "./analytics/server";
 import { secretsOf, type AppContext } from "./app-context";
 import { appErrorMessage, createNotifier } from "./notify";
 import { redact } from "./redact";
@@ -56,15 +54,6 @@ export interface AppErrorEntry {
   kind: string;
   digest: string | null;
   error: unknown;
-}
-
-/** `send` after the response (`after`); outside a request (instrumentation, tests) it just starts it. */
-function sendLater(send: () => Promise<void>): void {
-  try {
-    after(send);
-  } catch {
-    void send();
-  }
 }
 
 export async function recordAppError(ctx: AppContext, entry: AppErrorEntry): Promise<void> {

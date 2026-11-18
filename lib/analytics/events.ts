@@ -42,6 +42,9 @@ export type ScreenshotKind =
   | "unrecognised"
   | "map";
 
+/** The members' board's sections (D105; `data-board-section` in BoardSections.tsx). */
+export type BoardSection = "week" | "notices" | "start_here";
+
 type NoProperties = Record<string, never>;
 
 export interface AnalyticsEvents {
@@ -81,10 +84,39 @@ export interface AnalyticsEvents {
   ws_notice_published: { audience: "members" | "leaders" };
   /** A roll call mark stored: one tap, or "the rest" for everyone left (D103). */
   ws_roll_call_marked: { how: "tap" | "rest" };
-  /** The weekly thanks shared (D114, issue 404): where to. Sent once that feature merges. */
+  /** The weekly thanks shared (D114, issue 404): posted to the board or Discord, or copied for the game. */
   ws_thanks_shared: { to: "game" | "discord" | "board" };
+  /** A members' board section came on screen, once per page load. */
+  ws_board_section_viewed: { board_section: BoardSection };
 }
 export type AnalyticsEvent = keyof AnalyticsEvents;
+
+/** Every event above, at run time: events.test.ts checks this list against the type and the tracking plan. */
+export const ANALYTICS_EVENTS = [
+  "ws_sign_in_completed",
+  "ws_first_use_done",
+  "ws_first_use_skipped",
+  "ws_copy_spreadsheet",
+  "ws_filter_used",
+  "ws_language_switched",
+  "ws_facts_saved",
+  "ws_sheet_imported",
+  "ws_notice_translated",
+  "ws_screenshot_sent",
+  "ws_draft_saved",
+  "ws_draft_discarded",
+  "ws_screenshot_failed",
+  "ws_updates_pasted",
+  "ws_text_read",
+  "ws_notice_fit",
+  "ws_notice_ai_failed",
+  "ws_review_requested",
+  "ws_review_approved",
+  "ws_notice_published",
+  "ws_roll_call_marked",
+  "ws_thanks_shared",
+  "ws_board_section_viewed",
+] as const satisfies readonly AnalyticsEvent[];
 
 /** The URL fragment the sign-in callback adds after a successful sign-in, when analytics is on. */
 export const SIGNED_IN_HASH = "#signed-in";
@@ -124,7 +156,8 @@ export function withPostHog(use: (ph: PostHog) => void): void {
  */
 export function identify(id: string, tier: "officer" | "member", workspace: string): void {
   withPostHog((ph) => {
-    if (ph.config.cookieless_mode === "always") return;
+    // Cookieless: a public page load whose visitor has not said yes (lib/analytics/posthog.ts isCookieless).
+    if (ph.config.cookieless_mode && !ph.has_opted_in_capturing()) return;
     if (ph.get_distinct_id() !== id) ph.identify(id, { tier, workspace });
   });
 }

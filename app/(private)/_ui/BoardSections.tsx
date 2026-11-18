@@ -155,7 +155,7 @@ export function Week(props: {
   const days = week.filter((d) => d.items.length > 0);
   // The page's title already says "This week": the section has no heading of its own.
   return (
-    <section aria-label={t["board.week"]} className="mt-4">
+    <section aria-label={t["board.week"]} data-board-section="week" className="mt-4">
       {theme && <p className="font-semibold">{titleOf(theme.entry, t)}</p>}
       <Strip t={t} language={language} today={today} days={week} />
       {days.length === 0 ? (
@@ -201,7 +201,7 @@ export function Notices(props: {
   const { t, language, notices } = props;
   const dates = calendarDates(language);
   return (
-    <section aria-labelledby="board-notices" className="mt-6">
+    <section aria-labelledby="board-notices" data-board-section="notices" className="mt-6">
       <h2 id="board-notices" className="font-subhead text-display-sm">
         {t["board.notices"]}
       </h2>
@@ -266,6 +266,7 @@ export function StartHere(props: {
   return (
     <section
       id="board-start"
+      data-board-section="start_here"
       aria-labelledby="board-start-title"
       className="drawn-card mt-6 scroll-mt-16 px-4 py-3"
     >

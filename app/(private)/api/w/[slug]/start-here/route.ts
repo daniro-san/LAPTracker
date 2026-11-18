@@ -3,6 +3,7 @@
 // language someone saved after the version the officer was looking at answers 409 with who and when, and
 // nothing is written (issue 293).
 import { requireWorkspace } from "@/lib/private/access";
+import { counted } from "@/lib/private/desk-action";
 import { isSameOriginJson, NO_STORE, privateError, requestCookies } from "@/lib/private/http";
 import { SLUG } from "@/lib/private/sign-in";
 import { saveStartHere, startHereSave } from "@/lib/private/start-here";
@@ -22,7 +23,10 @@ export async function POST(
     const access = await requireWorkspace(db, slug, requestCookies(request), now);
     if (!access.ok) return privateError(401, "signed_out");
     const result = await saveStartHere(db, access, parsed.data, now);
-    if (result.ok) return Response.json({ version: result.version }, { headers: NO_STORE });
+    if (result.ok) {
+      const saved = Response.json({ version: result.version }, { headers: NO_STORE });
+      return counted(ctx, access, "start_here", "edit", saved);
+    }
     return Response.json(
       { code: "conflict", conflicts: result.conflicts },
       { status: 409, headers: NO_STORE },

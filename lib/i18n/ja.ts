@@ -366,4 +366,11 @@ export const ja = {
     noEvents: "台帳にはまだイベントがありません。",
     noMembers: "該当するメンバーはいません。",
   },
+  consent: {
+    label: "アクセス解析",
+    body: "Cookie を使って訪問回数を数え、ページの使われ方を記録してもよいですか？入力した内容は記録しません。Cookie を使わない場合は訪問回数だけを数え、端末には何も保存しません。",
+    accept: "許可する",
+    decline: "許可しない",
+    choices: "アクセス解析の設定",
+  },
 } as const satisfies Translation;

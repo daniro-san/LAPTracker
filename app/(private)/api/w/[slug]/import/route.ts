@@ -5,6 +5,7 @@
 import { z } from "zod";
 
 import { requireWorkspace } from "@/lib/private/access";
+import { counted } from "@/lib/private/desk-action";
 import {
   isSameOriginJson,
   NO_STORE,
@@ -62,6 +63,12 @@ export async function POST(
       applyImport(db, access, csv, decisions, where),
     );
     if (typeof result === "string") return privateError(REFUSED[result], result);
-    return Response.json(result, { headers: NO_STORE });
+    return counted(
+      ctx,
+      access,
+      "sheet_import",
+      "import",
+      Response.json(result, { headers: NO_STORE }),
+    );
   });
 }

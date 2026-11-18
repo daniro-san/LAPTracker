@@ -64,3 +64,27 @@ Why: the owner found the PostHog data unusable. Every page load was a new person
   3. Vercel → laptracker → Settings → Environment Variables: `POSTHOG_PERSONAL_API_KEY` = that key, environment **Production** only, **Sensitive** on.
   4. After the next release: PostHog → Error tracking → Settings → Symbol sets lists the build's files; a new exception shows our file and function names.
 - **Checks.** `pnpm check`: the scrubber, the section, the pseudonymous id, the server payloads (no text in `$ai_generation`), the Groq observer, the proxy's IP header, the source-map step with and without the key, and the request-id fallback. On a local production build with a fake project key, a preload caught every PostHog request (nothing reached PostHog) and 25 of 25 checks passed: cookieless public views with nothing stored and no replay; the officer identified as `ws_…` with only `tier` and `workspace`; sections on desk views; replay on the desk with no IP on replay batches; a thrown `TypeError("No member 'Bramble' at 512, 384")` arrived as `No member '…' at #, #` with `section: notices`; `$ai_generation` from a Translate through a Groq stub with no text; events after sign-out not the officer's; the member identified on the board; no invented roster or officer name in any event; and no page error on the desk pages in Chromium and WebKit. Builds: without the key, 0 maps; with a fake key, 55 maps built, the CLI ran in its own dry-run mode (nothing sent), and 0 maps were left.
+
+**Amendment (owner, 2026-11-18, PR #415): the analytics question on public pages, and desk adoption events.** This replaces the "Unique users" lines above about `cookieless_mode: "always"` and "Cost: no replay on those page loads".
+
+- **The analytics question.** A page load that starts on a public page runs with `cookieless_mode: "on_reject"` and `opt_out_capturing_by_default: true`, and `persistence: "localStorage+cookie"`.
+  - **No answer, or "No thanks":** PostHog counts the visitor by the daily hash, stores nothing, and records nothing. Events go to `/ingest/c`, so only they carry the visitor's IP.
+  - **"Allow":** PostHog uses its cookie and local storage (`opt_in_capturing`, which also sends `$opt_in`), events go to `/ingest` with no IP, and the page is recorded in 25 % of page loads as D77 had it, with D77's masking.
+  - The answer is kept in this browser's local storage (`lap_analytics`, `granted` or `denied`, `lib/analytics/consent.ts`) only once the visitor answers. Before that, nothing is stored. An answer given on the bar applies to the page load at once (`answerConsent` in `lib/analytics/posthog.ts`).
+  - **The bar** (`app/_ui/AnalyticsConsent.tsx`): fixed to the bottom of the page, so nothing on the page moves when it appears (checked: the heading did not move). It shows on a public page until the visitor answers on this device, with "Allow" and "No thanks" of the same weight, 44 px high. The desk, the board and `/admin` never show it.
+    - The footer's "Analytics choices" (`AnalyticsChoices.tsx`) opens it again.
+    - Both appear only where analytics is on (production with `POSTHOG_KEY`).
+  - **Copy** (`copy.consent`): EN, PT-BR and FR as asked, and the other 14 public languages too, because D48's check requires every public key in every language.
+  - **Unchanged:** desk, board and `/admin` page loads (`memory` persistence, replay, no question). `identify` does nothing while a page load is cookieless (no answer or "No thanks", then a client-side visit to the desk).
+- **Desk adoption** (`docs/analytics/tracking-plan.md`):
+  - **`ws_action`:** every write route under `/api/w/[slug]` reports a 2xx answer through `counted` (`lib/private/desk-action.ts`) as `ws_action`, with `feature` and `action` from closed lists (`DESK_FEATURES`, `DESK_ACTIONS` in `lib/analytics/server.ts`).
+    - It is sent on the officer's pseudonymous id, the same id the page identifies, so funnels can mix browser and server events. It is sent after the response (`after`).
+    - A refused write is not counted. Nothing about what was written is sent.
+    - Server-side because it counts writes that were stored, which a click in the browser cannot tell.
+  - **`ws_board_section_viewed`** with `board_section` (`week`, `notices`, `start_here`): once per page load for each board section that comes on screen. The property is not named `section`, because `before_send` sets `section` to the tab.
+  - **Thanks:** `ws_thanks_shared` now also counts "Copy for the game" (`to: game`), through `CopyButton`'s `onCopied`.
+  - **The plan lists the questions and the insights and funnels to build.** `lib/analytics/events.test.ts` fails if an event, a desk feature or a desk action in the code is missing from the plan.
+- **Checks (2026-11-18).**
+  - `pnpm check` exits 0.
+  - Local production build with a fake project key, every PostHog request kept on the machine: the consent run passes 26 of 26 checks, and the earlier run passes 26 of 26 again.
+  - Screenshots of the bar at 360 and 1280, light and dark, EN and PT.

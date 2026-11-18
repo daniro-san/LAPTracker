@@ -262,6 +262,16 @@ export const en = {
     noEvents: "No events in the ledger yet.",
     noMembers: "Nobody here matches.",
   },
+  /** The analytics question on public pages (D115): a small bar at the bottom, answered once per device. */
+  consent: {
+    /** The bar's accessible name. */
+    label: "Analytics",
+    body: "Can we use a cookie to count your visits and record how pages are used? What you type is never recorded. Without it we only count visits, and nothing is stored on your device.",
+    accept: "Allow",
+    decline: "No thanks",
+    /** The footer link that asks again. */
+    choices: "Analytics choices",
+  },
 } as const;
 
 /** A page's words: `en`'s keys, any text. */

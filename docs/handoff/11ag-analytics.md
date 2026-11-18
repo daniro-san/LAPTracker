@@ -98,9 +98,32 @@
   - Local e2e on a fresh production build: **26 of 26** pass. The one new check: desk events carry no IP header, while the public view's events still do.
   - Privacy grep: 0 names of the OGs fixture roster in the diff.
 
+## Owner round (2026-11-18, PR 415)
+- **Consent bar on public pages.** Public page loads use `cookieless_mode: "on_reject"` with `opt_out_capturing_by_default`, so no answer counts as "no".
+  - **No answer or "No thanks":** cookieless, nothing stored, no replay, events on `/ingest/c`.
+  - **"Allow":** PostHog's cookie and storage, `$opt_in`, events on `/ingest` with no IP, and the 25 % public replay with D77's masking.
+  - The answer is kept in `localStorage.lap_analytics` (`lib/analytics/consent.ts`) only after the visitor answers. An answer applies at once (`answerConsent`).
+  - The bar is `app/_ui/AnalyticsConsent.tsx`, fixed at the bottom so nothing moves when it appears. "Analytics choices" in the footer (`AnalyticsChoices.tsx`) opens it again.
+  - Desk, board and `/admin` are unchanged and never show it. `identify` does nothing while a page load is cookieless.
+  - **Copy:** `copy.consent` in EN, PT-BR and FR, plus the other 14 public languages. D48's check requires every public key in every language; all 17 are stamped.
+- **Desk adoption:**
+  - `counted` (`lib/private/desk-action.ts`) is wired into every write route under `/api/w/[slug]` (17 routes): a 2xx answer sends `ws_action` with `feature` and `action` on the officer's pseudonymous id, after the response.
+  - `ws_board_section_viewed` (`board_section`: `week`, `notices`, `start_here`) comes from `BoardSectionsSeen.tsx`. The e2e caught that a property named `section` would be overwritten by `before_send`, so the property is `board_section`.
+  - "Copy for the game" in the thanks sheet now sends `ws_thanks_shared` with `to: game`.
+- **Tracking plan rewritten:** questions per event, the full `ws_action` feature × action table, and the insights and funnels to build (tabs opened, adoption by feature, screenshot funnel, notice funnel, board adoption, consent rate, Discord, errors, AI cost). A test fails if the code names an event, feature or action the plan does not list.
+- **Tests:**
+  - `lib/analytics/posthog.test.ts`: no answer, granted, answering on the bar, and desk loads unchanged.
+  - `lib/private/desk-action.test.ts`: counted on success only, on the pseudonymous id, with no name.
+  - `events.test.ts`: identify with `on_reject` (skipped unless opted in), and the plan check.
+- **Checks:**
+  - `pnpm check` exits 0: **191 files passed, 2 skipped; 1,015 tests passed, 4 skipped**.
+  - Local production build: the consent run (`e2e-consent.mjs`) passes **26 of 26**, and the earlier run passes 26 of 26 again. The consent run covers no layout shift, 44 px buttons and no sideways scroll at 360. It covers what is stored before an answer, after "No thanks" and after "Allow", and that replay is never sent after "No thanks". It also covers the footer link, `ws_action` from a desk write on the same id as the page's identify, and all three board sections.
+  - Screenshots: `consent-bar-{360,1280}-{light,dark}-{en,pt-BR}.png` in `/private/tmp/claude-502/-Users-danilordasilva-orca-workspaces-LAPTracker-unicornfish/147759e3-1cdb-4ccd-b74a-1001498a1e18/scratchpad/11ag-shots/`.
+  - Designer check: the PT text fits in four lines at 360, the buttons share the row evenly, and dark mode reads clearly. The bar covers the footer's last lines until answered, which is expected for a bottom bar.
+
 ## Open issues
-- Public-page replay is gone (cookieless mode cannot record). If the owner wants it back on some public loads, the only way is a consent choice (`cookieless_mode: "on_reject"`), which needs a banner and stores the choice in local storage.
-- With cookieless server hash mode on, PostHog strips the IP before GeoIP, so the web analytics world map stays empty for public pages.
+- The bar's 14 other languages were written in this session without the translate-copy skill's per-language glossary pass; a native check is worth doing.
+- With cookieless server hash mode on, PostHog strips the IP before GeoIP, so the web analytics world map stays empty for visitors who did not allow the cookie.
 - The scrubber keeps unquoted words. A name that some code puts into an error message without quotes would pass. No code does that today; errors are codes.
 - Caravans: the local data had no caravan this week, so the caravan form itself was not opened; the fix there is the same call in `EntryForm`.
 - Follow-up, not done: the issue's TypeErrors were never seen with a message. If one comes back after this release, its scrubbed message and `section` will now say which.

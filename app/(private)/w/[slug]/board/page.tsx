@@ -20,6 +20,7 @@ import { serverDay } from "@/lib/schedule";
 
 import { AnalyticsPerson } from "../../../_ui/AnalyticsPerson";
 import { LINK, Notices, StartHere, Week } from "../../../_ui/BoardSections";
+import { BoardSectionsSeen } from "../../../_ui/BoardSectionsSeen";
 import { BoardThanks } from "../../../_ui/BoardThanks";
 import { Frame, workspaceWords } from "../../../_ui/Frame";
 import { refuse } from "../../../_ui/refuse";
@@ -80,6 +81,7 @@ export default async function BoardPage({ params }: { params: Promise<{ slug: st
       {...(alliance && { subtitle: `${alliance.tag} · ${alliance.name}` })}
     >
       <BoardPerson env={env} access={access} />
+      <BoardSectionsSeen />
       {access.officer && (
         // A strip that stays on screen while scrolling, so a preview is never taken for the member view.
         <aside className="sticky top-0 z-20 -mx-4 -mt-5 mb-4 flex flex-wrap items-center justify-between gap-x-3 bg-plum px-4 py-1 text-paper sm:-mx-6 sm:px-6">

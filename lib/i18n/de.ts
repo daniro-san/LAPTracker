@@ -375,4 +375,11 @@ export const de = {
     noEvents: "Noch keine Events in der Chronik.",
     noMembers: "Hier passt niemand.",
   },
+  consent: {
+    label: "Statistik",
+    body: "Dürfen wir ein Cookie nutzen, um deine Besuche zu zählen und aufzuzeichnen, wie die Seiten genutzt werden? Was du tippst, wird nie aufgezeichnet. Ohne Cookie zählen wir nur die Besuche, und auf deinem Gerät wird nichts gespeichert.",
+    accept: "Erlauben",
+    decline: "Nein, danke",
+    choices: "Statistik-Einstellungen",
+  },
 } as const satisfies Translation;

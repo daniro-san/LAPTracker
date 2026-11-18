@@ -18,6 +18,7 @@ import {
   type WritingLanguage,
 } from "@/lib/ai/notice-writing";
 import { requireWorkspace } from "@/lib/private/access";
+import { counted } from "@/lib/private/desk-action";
 import { isSameOriginJson, NO_STORE, privateError, requestCookies } from "@/lib/private/http";
 import { privateLog } from "@/lib/private/log";
 import { DRAFT_LIMIT, NOTICE_LIMIT, noticeLength } from "@/lib/private/notice-rules";
@@ -108,13 +109,14 @@ export async function POST(
         retried: answers.filter((a) => a.retried).length,
         partly: answers.filter((a) => a.partly).length,
       });
-      return Response.json(
+      const drafts = Response.json(
         {
           drafts: Object.fromEntries(answers.map((a) => [a.to, a.text])),
           partly: answers.filter((a) => a.partly).map((a) => a.to),
         },
         { headers: NO_STORE },
       );
+      return counted(ctx, access, "notice_ai", ask.kind, drafts);
     } catch (error) {
       if (!(error instanceof ChatError)) throw error;
       privateLog(`notices.${ask.kind}.${error.kind}`, { ms: ctx.now().getTime() - started });

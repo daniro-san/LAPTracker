@@ -3,6 +3,7 @@
 // did it. A member update that another officer changed meanwhile gets 409 with the newer values (D80).
 // A Secret Ops save answers the thefts' counts (D97). Nothing counts before a save (D75).
 import { requireWorkspace } from "@/lib/private/access";
+import { counted } from "@/lib/private/desk-action";
 import {
   isSameOriginJson,
   NO_STORE,
@@ -55,7 +56,10 @@ export async function POST(
       workspace: access.workspaceId,
       ok: result.ok ? 1 : 0,
     });
-    if (result.ok) return Response.json(result, { headers: NO_STORE });
+    if (result.ok) {
+      const done = Response.json(result, { headers: NO_STORE });
+      return counted(ctx, access, "screenshot_draft", input.action, done);
+    }
     const { code, by = null, detail = null } = result;
     return Response.json({ code, by, detail }, { status: STATUS[code], headers: NO_STORE });
   });

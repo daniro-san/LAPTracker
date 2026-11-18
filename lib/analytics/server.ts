@@ -1,8 +1,13 @@
 // Events the server sends to PostHog (D115): route errors as codes, Groq calls as `$ai_generation` metadata,
-// and Discord command counts. A closed list, each with properties that are codes, enums or numbers: no name,
-// no text, no roster field, no member value, no secret. Production with POSTHOG_KEY only, as D77; anywhere
-// else nothing is sent. Every event has the fixed distinct id `laptracker-server` (as D91's flag read) and no
-// person profile. A failed or slow send is dropped: it never fails or holds up the request beyond SEND_MS.
+// Discord command counts, and the desk's writes (`ws_action`). A closed list, each with properties that are
+// codes, enums or numbers: no name, no text, no roster field, no member value, no secret. Production with
+// POSTHOG_KEY only, as D77; anywhere else nothing is sent. Events have the fixed distinct id
+// `laptracker-server` (as D91's flag read) and no person profile, except `ws_action`, which belongs to the
+// officer's pseudonymous id (lib/analytics/person.ts), the same one the desk's page identifies, so funnels
+// can mix the browser's events and the server's. A failed or slow send is dropped: it never fails or holds up
+// the request beyond SEND_MS.
+import { after } from "next/server";
+
 import { analyticsKey } from "./events";
 import { POSTHOG_INGEST_HOST } from "./region";
 
@@ -11,6 +16,58 @@ const SEND_MS = 2_000;
 
 /** The Groq failure codes (lib/ai/groq.ts `ChatFailure`), which lib/analytics may not import. */
 export type AiFailure = "timeout" | "busy" | "failed";
+
+/** The desk's features that write (docs/analytics/tracking-plan.md, "Desk actions"). */
+export const DESK_FEATURES = [
+  "calendar",
+  "theft",
+  "roll_call",
+  "follow_up",
+  "new_member",
+  "member_facts",
+  "sheet_import",
+  "notice",
+  "notice_ai",
+  "notice_review",
+  "notice_publish",
+  "screenshot",
+  "screenshot_draft",
+  "start_here",
+  "profile",
+  "thanks",
+] as const;
+export type DeskFeature = (typeof DESK_FEATURES)[number];
+
+/** What was done: the route's own action, as one word from this list. */
+export const DESK_ACTIONS = [
+  "add",
+  "edit",
+  "delete",
+  "save",
+  "discard",
+  "retype",
+  "read",
+  "paste",
+  "mark",
+  "rest",
+  "undo",
+  "team",
+  "record",
+  "link",
+  "unlink",
+  "rename",
+  "ask",
+  "approve",
+  "publish",
+  "share",
+  "take_down",
+  "draft",
+  "translate",
+  "improve",
+  "fit",
+  "import",
+] as const;
+export type DeskAction = (typeof DESK_ACTIONS)[number];
 
 export interface ServerEvents {
   /** A route or render error (lib/app-errors.ts): the error's class name and where, never its message. */
@@ -29,9 +86,16 @@ export interface ServerEvents {
   discord_command_used: {
     command: "send_to_laptracker" | "translate_for_me" | "translate_for_everyone";
   };
+  /** A desk write that went through (lib/private/desk-action.ts): which feature, which action. */
+  ws_action: { feature: DeskFeature; action: DeskAction };
 }
 export type ServerEvent = {
-  [E in keyof ServerEvents]: { event: E; properties: ServerEvents[E] };
+  [E in keyof ServerEvents]: {
+    event: E;
+    properties: ServerEvents[E];
+    /** `ws_action` only: the officer's pseudonymous id. */
+    person?: string;
+  };
 }[keyof ServerEvents];
 
 type Wire = Record<string, string | number | boolean | null | object[]>;
@@ -70,6 +134,15 @@ export function wireProperties(e: ServerEvent): Wire {
     }
     case "discord_command_used":
       return { ...base, command: e.properties.command };
+    case "ws_action":
+      // On the officer's person (no `$set`): the same person the desk's page identifies.
+      return {
+        $lib: "laptracker-server",
+        area: "workspace",
+        feature: e.properties.feature,
+        action: e.properties.action,
+        tier: "officer",
+      };
   }
 }
 
@@ -90,7 +163,7 @@ export async function captureServer(
   if (!key || events.length === 0) return;
   const batch = events.map((e) => ({
     event: e.event,
-    distinct_id: SERVER_DISTINCT_ID,
+    distinct_id: e.person ?? SERVER_DISTINCT_ID,
     timestamp: now.toISOString(),
     properties: wireProperties(e),
   }));
@@ -103,5 +176,14 @@ export async function captureServer(
     });
   } catch {
     // Analytics never breaks a request.
+  }
+}
+
+/** Runs `send` after the response (`after`); outside a request (instrumentation, tests) it just starts it. */
+export function sendLater(send: () => Promise<void>): void {
+  try {
+    after(send);
+  } catch {
+    void send();
   }
 }

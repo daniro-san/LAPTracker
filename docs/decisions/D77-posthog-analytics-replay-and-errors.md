@@ -45,3 +45,5 @@ The lockfile resolved four of posthog-js's dependencies to versions released les
 - "Public pages: a session is recorded in 25 % of page loads": cookieless mode cannot record, so a page load that starts on a public page is not recorded. The 25 % applies only to public pages reached from a page load that started on `/w` or `/admin`.
 - "the message is replaced by `[masked]`": exception messages are scrubbed in every area instead (digit runs, emails, query strings and quoted text go; the type, the words and the frames stay).
   Masking in replay is unchanged. Details, the tracking plan and the owner's steps: D115 and `docs/analytics/tracking-plan.md`.
+
+**Amendment (owner, 2026-11-18, D115):** public pages ask "Can we use a cookie…?" in a bar at the bottom. "Allow" brings back PostHog's cookie and storage and the 25 % public replay with this decision's masking; no answer or "No thanks" keeps the page load cookieless, with nothing stored and no replay. The desk, the board and `/admin` are unchanged. Details: D115's 2026-11-18 amendment.

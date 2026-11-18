@@ -2,15 +2,17 @@
 // loads a script from PostHog: exception capture is bundled here and the replay recorder is a chunk of our own,
 // fetched the first time a page is recorded. Requests go to /ingest, our own origin (lib/analytics/ingest.ts).
 //
-// No cookie or storage, no device model, no campaign parameters, no query string or hash in a URL. Who is
-// counted depends on where the page load starts (D115):
-// - a public page: PostHog's cookieless mode. PostHog's servers make the visitor's id from a daily-salted
-//   hash (IP, user agent, host), so daily unique visitors are real; no replay (cookieless mode refuses it);
-// - /w and /admin: `memory` persistence, a random id per page load, and replay. On the desk and the board,
-//   AnalyticsPerson calls identify with a pseudonymous id (lib/analytics/person.ts), never a name.
+// No device model, no campaign parameters, no query string or hash in a URL. Who is counted depends on where
+// the page load starts (D115):
+// - a public page: `cookieless_mode: "on_reject"`, answered by the visitor's choice (lib/analytics/consent.ts,
+//   the bar in AnalyticsConsent.tsx). No answer or "No thanks": rejected (`opt_out_capturing_by_default`),
+//   so PostHog's servers count the visitor by a daily-salted hash, nothing is stored and nothing is
+//   recorded. "Allow": PostHog's cookie and local storage, and replay in PUBLIC_REPLAY_SAMPLE of page loads;
+// - /w and /admin: `memory` persistence (no cookie or storage), a random id per page load, and replay. On the
+//   desk and the board, AnalyticsPerson calls identify with a pseudonymous id (lib/analytics/person.ts).
 //
-// Replay (owner, D77): the workspace and /admin always, public pages in PUBLIC_REPLAY_SAMPLE of page loads
-// that started on the workspace or /admin and then went to a public page.
+// Replay (owner, D77): the workspace and /admin always, public pages in PUBLIC_REPLAY_SAMPLE of page loads,
+// never while cookieless.
 // What is masked follows the DOM, not the URL, so it holds across client-side navigations: the /w/[slug] and
 // /admin layouts wrap their pages in MASK_CLASS, and under it every text, attribute (but styling and sizes),
 // image and form field is masked or blocked. Public game data outside it stays readable. Every input value
@@ -18,6 +20,7 @@
 import posthog, { type PostHog } from "posthog-js/no-external";
 import "posthog-js/dist/exception-autocapture";
 
+import { storeConsent, storedConsent, type Consent } from "./consent";
 import { COOKIELESS_PREFIX, POSTHOG_UI_HOST } from "./region";
 import { areaOf, MASK_CLASS, sanitiseEvent, withoutQuery } from "./sanitise";
 
@@ -33,17 +36,28 @@ const NO_AUTOCAPTURE = /^[a-z]+:\/\/[^/]+\/(?:admin|w)(?:[/?#]|$)/;
 const publicSampled = Math.random() < PUBLIC_REPLAY_SAMPLE;
 let recorder: Promise<unknown> | null = null;
 let recording = false;
-let cookieless = false;
+
+/** A cookieless load sends to its own path, so the proxy adds the visitor's IP to those events only. */
+const hostFor = (cookieless: boolean) => (cookieless ? `/ingest${COOKIELESS_PREFIX}` : "/ingest");
+
+/** True while PostHog counts this page load by the daily hash: it then stores and records nothing. */
+export function isCookieless(ph: PostHog): boolean {
+  return Boolean(ph.config.cookieless_mode) && !ph.has_opted_in_capturing();
+}
 
 /** `key` is the project API key, public by design: it is in every page's HTML. */
 export function startPostHog(key: string): PostHog {
-  cookieless = areaOf(location.pathname).area === "public";
+  const publicLoad = areaOf(location.pathname).area === "public";
+  const granted = publicLoad && storedConsent() === "granted";
   posthog.init(key, {
-    // A cookieless load sends to its own path, so the proxy adds the visitor's IP to those events only.
-    api_host: cookieless ? `/ingest${COOKIELESS_PREFIX}` : "/ingest",
+    api_host: hostFor(publicLoad && !granted),
     ui_host: POSTHOG_UI_HOST,
-    persistence: "memory",
-    ...(cookieless && { cookieless_mode: "always" as const }),
+    persistence: publicLoad ? "localStorage+cookie" : "memory",
+    ...(publicLoad && {
+      cookieless_mode: "on_reject" as const,
+      // No answer counts as "no": cookieless, nothing stored, until the visitor says yes.
+      opt_out_capturing_by_default: true,
+    }),
     // Profiles only for the desk's and the board's pseudonymous ids; every other event is personless.
     person_profiles: "identified_only",
     disableDeviceModel: true,
@@ -83,13 +97,31 @@ export function startPostHog(key: string): PostHog {
     },
     before_send: (event) => sanitiseEvent(event, location.pathname),
   });
+  // PostHog keeps its own record of a "yes"; ours decides, so a cleared or partial store asks again.
+  if (granted && !posthog.has_opted_in_capturing()) posthog.opt_in_capturing();
   return posthog;
+}
+
+/** The visitor answered the bar: kept on the device, and applied to this page load when it can be. */
+export function answerConsent(ph: PostHog, consent: Consent): void {
+  storeConsent(consent);
+  // Only a public page load has the choice; a desk or /admin load keeps its own mode until the next load.
+  if (ph.config.cookieless_mode !== "on_reject") return;
+  if (consent === "granted") {
+    ph.opt_in_capturing();
+    ph.set_config({ api_host: hostFor(false) });
+  } else {
+    ph.opt_out_capturing();
+    ph.set_config({ api_host: hostFor(true) });
+    recording = false;
+  }
+  followPath(ph, location.pathname);
 }
 
 /** Records the page or not, by its area; called on the first page and on every client-side navigation. */
 export function followPath(ph: PostHog, path: string): void {
   // Cookieless mode has no session, so it records nothing, whatever the area.
-  const wanted = !cookieless && (areaOf(path).area !== "public" || publicSampled);
+  const wanted = !isCookieless(ph) && (areaOf(path).area !== "public" || publicSampled);
   if (wanted === recording) return;
   recording = wanted;
   if (!wanted) {

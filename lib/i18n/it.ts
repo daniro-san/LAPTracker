@@ -376,4 +376,11 @@ export const itIT = {
     noEvents: "Ancora nessun evento nel registro.",
     noMembers: "Nessuno corrisponde.",
   },
+  consent: {
+    label: "Statistiche",
+    body: "Possiamo usare un cookie per contare le tue visite e registrare come vengono usate le pagine? Ciò che scrivi non viene mai registrato. Senza, contiamo solo le visite e sul tuo dispositivo non viene salvato nulla.",
+    accept: "Consenti",
+    decline: "No, grazie",
+    choices: "Scelte sulle statistiche",
+  },
 } as const satisfies Translation;
