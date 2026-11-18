@@ -105,7 +105,7 @@ const LINK =
 /** Today and tomorrow from the Calendar, on the officer's own clock once the browser knows it. */
 function NextUp({ slug, t, items }: { slug: string; t: WorkspaceDictionary; items: NextItem[] }) {
   return (
-    <section aria-labelledby="home-next" className="mt-4 border border-rule px-4 py-3">
+    <section aria-labelledby="home-next" className="drawn-card mt-4 px-4 py-3">
       <h2 id="home-next" className="font-subhead text-display-sm">
         {t["home.next.head"]}
       </h2>

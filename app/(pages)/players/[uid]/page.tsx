@@ -100,7 +100,7 @@ function Summary({
   ];
   const state = { isFresh: current.isFresh, updatedAt: current.updatedAt, failed: false };
   return (
-    <section aria-label={l.player} className="border border-rule">
+    <section aria-label={l.player} className="drawn-card">
       <dl className="grid grid-cols-3 divide-x divide-rule">
         {figures.map((f) => (
           <div key={f.label} className="min-w-0 px-2 py-2 sm:px-4">

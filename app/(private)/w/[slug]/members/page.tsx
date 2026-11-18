@@ -156,7 +156,7 @@ export default async function MembersPage({
           editor={editor}
         />
       ) : view.readAt === null ? (
-        <p className="mt-4 border border-rule px-4 py-5">{t["members.none"]}</p>
+        <p className="drawn-card mt-4 px-4 py-5">{t["members.none"]}</p>
       ) : (
         <Roster
           {...{ slug, view, rows, t, language, search, now }}

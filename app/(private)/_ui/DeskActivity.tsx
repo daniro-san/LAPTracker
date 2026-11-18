@@ -62,7 +62,7 @@ export function RecentActivity(props: {
   const first = items.slice(0, ACTIVITY_SHOWN);
   const more = items.slice(ACTIVITY_SHOWN);
   return (
-    <section aria-labelledby="home-activity" className="mt-4 border border-rule px-4 py-3">
+    <section aria-labelledby="home-activity" className="drawn-card mt-4 px-4 py-3">
       <h2 id="home-activity" className="font-subhead text-display-sm">
         {t["activity.head"]}
       </h2>

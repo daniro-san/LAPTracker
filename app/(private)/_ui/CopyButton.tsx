@@ -11,12 +11,15 @@ export function CopyButton({
   labels,
   event,
   className = "",
+  describedBy,
 }: {
   text: string;
   labels: { copy: string; copied: string; failed: string };
   event?: "ws_copy_spreadsheet";
   /** Extra classes, such as full width in the thanks sheet (D114). */
   className?: string;
+  /** The id of the line that says what this copy holds (a notice's three copies, D116). */
+  describedBy?: string;
 }) {
   const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -29,6 +32,7 @@ export function CopyButton({
   return (
     <button
       type="button"
+      aria-describedby={describedBy}
       onClick={() => {
         if (event) track(event);
         // Inside a promise, so a missing clipboard (an insecure page) also lands in "failed".

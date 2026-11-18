@@ -9,7 +9,7 @@ import { withPageDb } from "@/lib/page";
 import { requireWorkspace } from "@/lib/private/access";
 import { agoText } from "@/lib/private/calendar-words";
 import { toReviewCount } from "@/lib/private/import-view";
-import { DRAFT_LIMIT, NOTICE_LANGUAGES } from "@/lib/private/notice-rules";
+import { NOTICE_LANGUAGES } from "@/lib/private/notice-rules";
 import { RENEW_MS } from "@/lib/private/session";
 import { SLUG } from "@/lib/private/sign-in";
 import { START_HERE_MAX, startHereEdit } from "@/lib/private/start-here";
@@ -63,36 +63,8 @@ export default async function StartHerePage({ params }: { params: Promise<{ slug
         versions={edit.versions}
         max={START_HERE_MAX}
         ai={getAppContext().ai !== null}
-        translate={{
-          button: t["notices.translate"],
-          to: t["notices.translate.to"],
-          working: t["notices.working"],
-          draft: t["notices.draft.translate"],
-          accept: t["notices.accept"],
-          undo: t["notices.undo"],
-          partly: t["notices.draft.partly"],
-          off: t["notices.ai.off"],
-          tooLong: fill(t["notices.ai.tooLong"], { limit: DRAFT_LIMIT }),
-          timeout: t["notices.ai.timeout"],
-          busy: t["notices.ai.busy"],
-          failed: t["notices.ai.failed"],
-        }}
-        words={{
-          glossary: t["board.start.glossary"],
-          rules: t["board.start.rules"],
-          ask: t["board.start.ask"],
-          glossaryHelp: t["starthere.glossary.help"],
-          rulesHelp: t["starthere.rules.help"],
-          askHelp: t["starthere.ask.help"],
-          languages: t["notices.languages"],
-          save: t["starthere.save"],
-          saving: t["starthere.saving"],
-          saved: t["starthere.saved"],
-          failed: t["starthere.failed"],
-          conflict: t["starthere.conflict"],
-          missing: t["starthere.missing"],
-          someone: t["starthere.someone"],
-        }}
+        t={t}
+        viewer={language}
       />
     </SignedInFrame>
   );

@@ -129,7 +129,7 @@ export function ToReview(props: {
   // Screenshot drafts and the notice reviews for this officer (D113).
   const waiting = items.length + props.reviews.length;
   return (
-    <section aria-labelledby="to-review" className="mt-4 border border-rule px-4 py-4">
+    <section aria-labelledby="to-review" className="drawn-card mt-4 px-4 py-4">
       <h2 id="to-review" className="font-subhead text-display-sm">
         {t["shots.head"]}
         {waiting > 0 && <span className="ml-2 tabular-nums text-plum">{waiting}</span>}

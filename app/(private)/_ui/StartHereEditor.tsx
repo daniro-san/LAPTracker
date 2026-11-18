@@ -1,174 +1,76 @@
 "use client";
 
-// The officers' Start here editor (D105): one tab per language, EN · PT · FR, each with the glossary, the
-// rules and who to ask. Save sends only the languages changed, with the version each was opened at; a
-// language another officer saved since is refused (409) and nothing is written. Marked `data-unsaved` while
-// it holds changes, so Sign out asks first (D99). Translate (StartHereTranslate.tsx) fills the other
-// languages as drafts to accept or undo.
-import { useRef, useState, type KeyboardEvent } from "react";
-
-import { tabAfter } from "@/app/_ui/Movers";
-import { buttonClass } from "@/lib/brand/components/Button";
+// The officers' Start here editor (D105), built on the notices editor's parts (LanguageEditorParts.tsx, D116):
+// the EN · PT · FR tabs with their state, "may be out of date" with "Update from …" and "Keep as is", the
+// draft's mark with Accept and Undo, Translate and Improve writing under the text, and the sticky save bar.
+// Each tab holds the glossary, the rules and who to ask. Translate and Improve writing send each part of the
+// language that has text through the notices' draft route; nothing is saved until Save. Save sends only the
+// languages changed (and the source of a translation, start-here-draft.ts), each with the version it was
+// opened at; a language another officer saved since is refused (409) and nothing is written. Marked
+// `data-unsaved` while it holds changes, so Sign out asks first (D99); `data-notice-editor` hides the bottom
+// tabs, as in the notices editor, so the save bar is never under them.
 import { FIELD } from "@/lib/brand/components/controls";
-import { fill, isolate } from "@/lib/copy";
-import type { NoticeLanguage } from "@/lib/private/notice-rules";
-import type { StartHereText } from "@/lib/private/start-here";
+import { Notice } from "@/lib/brand/components/Notice";
+import { fill } from "@/lib/copy";
+import type {
+  WorkspaceDictionary,
+  WorkspaceKey,
+  WorkspaceLanguage,
+} from "@/lib/private/dictionary";
+import { DRAFT_LIMIT, type NoticeLanguage } from "@/lib/private/notice-rules";
 
+import { SaveBar } from "./EditorSaveBar";
+import {
+  ActionButton,
+  ActionNote,
+  AI_REASON_ID,
+  DraftMark,
+  ImproveButton,
+  LanguageTabs,
+} from "./LanguageEditorParts";
 import { LANGUAGE_CODE, LANGUAGE_NAME } from "./languages";
-import { RefusalLine, SIGNED_OUT } from "./SignedOut";
-import { TranslateBar, useTranslate, type TranslateWords } from "./StartHereTranslate";
+import { smallButton, StaleLine } from "./NoticeBits";
+import { RefusalLine } from "./SignedOut";
+import {
+  newestSaved,
+  PARTS,
+  shDirty,
+  shDraftKind,
+  shTabState,
+  shTranslatePlan,
+  written,
+  type Part,
+  type ShDraft,
+  type Texts,
+} from "./start-here-draft";
+import { useStartHere, type StartHere } from "./start-here-editor-state";
 
-type Part = keyof StartHereText;
-type Texts = Record<NoticeLanguage, StartHereText>;
-
-export interface StartHereWords {
-  glossary: string;
-  rules: string;
-  ask: string;
-  glossaryHelp: string;
-  rulesHelp: string;
-  askHelp: string;
-  languages: string;
-  save: string;
-  saving: string;
-  saved: string;
-  failed: string;
-  /** "{name} saved the {lang} text while you were editing. …" */
-  conflict: string;
-  /** "{lang} is missing {parts}." */
-  missing: string;
-  someone: string;
-}
-
-const PARTS: { part: Part; rows: number }[] = [
-  { part: "glossary", rows: 8 },
-  { part: "rules", rows: 10 },
-  { part: "ask", rows: 4 },
-];
-
-/** POST the changed languages: the save's version, or the line to show (SIGNED_OUT on 401). */
-async function post(
-  slug: string,
-  changes: { language: NoticeLanguage; version: number; text: StartHereText }[],
-  w: StartHereWords,
-): Promise<{ version: number } | { error: string }> {
-  try {
-    const res = await fetch(`/api/w/${slug}/start-here`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ changes }),
-    });
-    if (res.ok) return (await res.json()) as { version: number };
-    if (res.status === 401) return { error: SIGNED_OUT };
-    const body = (await res.json().catch(() => ({}))) as {
-      conflicts?: { language: NoticeLanguage; by: string | null }[];
-    };
-    const first = body.conflicts?.[0];
-    if (!first) return { error: w.failed };
-    const name = isolate(first.by ?? w.someone);
-    return { error: fill(w.conflict, { name, lang: LANGUAGE_NAME[first.language] }) };
-  } catch {
-    return { error: w.failed };
-  }
-}
-
-/** EN · PT · FR as WAI-ARIA tabs (arrow keys, Home, End), with a dot on a language that holds changes. */
-function TabBar(props: {
+export interface StartHereProps {
+  slug: string;
+  /** False without the translator's key (D81): Translate and Improve writing are off and say why. */
+  ai: boolean;
   languages: readonly NoticeLanguage[];
-  active: NoticeLanguage;
-  changed: readonly NoticeLanguage[];
-  label: string;
-  onPick: (l: NoticeLanguage) => void;
-}) {
-  const { languages, active } = props;
-  const buttons = useRef<(HTMLButtonElement | null)[]>([]);
-  const onKey = (ev: KeyboardEvent, i: number) => {
-    const next = tabAfter(ev.key, i, languages.length);
-    const language = next === null ? undefined : languages[next];
-    if (next === null || !language) return;
-    ev.preventDefault();
-    props.onPick(language);
-    buttons.current[next]?.focus();
-  };
-  return (
-    <div role="tablist" aria-label={props.label} className="grid grid-cols-3 border-b border-rule">
-      {languages.map((l, i) => (
-        <button
-          key={l}
-          ref={(el) => {
-            buttons.current[i] = el;
-          }}
-          id={`sh-tab-${l}`}
-          type="button"
-          role="tab"
-          aria-selected={l === active}
-          aria-controls="sh-panel"
-          tabIndex={l === active ? 0 : -1}
-          onClick={() => props.onPick(l)}
-          onKeyDown={(ev) => onKey(ev, i)}
-          className="tint-button min-h-12 px-1 font-semibold aria-selected:bg-plum/10 aria-selected:shadow-[inset_0_-3px_0_var(--color-plum)]"
-        >
-          <span aria-hidden="true">{LANGUAGE_CODE[l]}</span>
-          <span className="sr-only">{LANGUAGE_NAME[l]}</span>
-          {props.changed.includes(l) && (
-            <span aria-hidden="true" className="ml-1 text-plum">
-              •
-            </span>
-          )}
-        </button>
-      ))}
-    </div>
-  );
+  first: NoticeLanguage;
+  texts: Texts;
+  versions: Record<NoticeLanguage, number>;
+  max: Record<Part, number>;
+  t: WorkspaceDictionary;
+  viewer: WorkspaceLanguage;
 }
 
-/** The tab in view: the glossary, the rules and who to ask, each with its help line. */
-function Panel(props: {
-  language: NoticeLanguage;
-  text: StartHereText;
-  max: Record<Part, number>;
-  words: StartHereWords;
-  /** Parts holding a translation not accepted yet: marked so the officer sees where it went. */
-  drafted: readonly Part[];
-  onChange: (part: Part, value: string) => void;
-}) {
-  const w = props.words;
-  return (
-    <div
-      id="sh-panel"
-      role="tabpanel"
-      aria-labelledby={`sh-tab-${props.language}`}
-      lang={props.language}
-    >
-      {PARTS.map(({ part, rows }) => (
-        <label key={part} className="mt-4 block">
-          <span className="font-semibold">{w[part]}</span>
-          <span className="block text-body-sm text-ink/75">{w[`${part}Help`]}</span>
-          <textarea
-            value={props.text[part]}
-            maxLength={props.max[part]}
-            rows={rows}
-            onChange={(ev) => props.onChange(part, ev.target.value)}
-            className={`${FIELD} mt-1 text-base ${
-              props.drafted.includes(part) ? "bg-plum/10 ring-2 ring-plum" : ""
-            }`}
-          />
-        </label>
-      ))}
-    </div>
-  );
-}
+const ROWS: Record<Part, number> = { glossary: 8, rules: 10, ask: 4 };
 
 /** "PT is missing Who to ask": a part written in another language but empty in this one. */
-function Missing(props: { texts: Texts; languages: readonly NoticeLanguage[]; w: StartHereWords }) {
-  const { texts, languages, w } = props;
+function Missing({ d, p }: { d: ShDraft; p: StartHereProps }) {
+  const { t, languages } = p;
   const lines = languages.flatMap((l) => {
     const gaps = PARTS.filter(
-      ({ part }) =>
-        texts[l][part].trim() === "" && languages.some((o) => texts[o][part].trim() !== ""),
-    ).map(({ part }) => `“${w[part]}”`);
+      (part) =>
+        d.values[l][part].trim() === "" && languages.some((o) => d.values[o][part].trim() !== ""),
+    ).map((part) => `“${t[`board.start.${part}`]}”`);
     return gaps.length === 0
       ? []
-      : [fill(w.missing, { lang: LANGUAGE_CODE[l], parts: gaps.join(", ") })];
+      : [fill(t["starthere.missing"], { lang: LANGUAGE_CODE[l], parts: gaps.join(", ") })];
   });
   if (lines.length === 0) return null;
   return (
@@ -180,113 +82,160 @@ function Missing(props: { texts: Texts; languages: readonly NoticeLanguage[]; w:
   );
 }
 
-/** The outcome line and Save. */
-function SaveBar(props: {
-  error: string | null;
-  done: boolean;
-  off: boolean;
-  busy: boolean;
-  w: StartHereWords;
-}) {
-  const { w } = props;
+type Editor = StartHere;
+
+/** The tab in view: out of date, the draft's mark, and the three parts with their help lines. */
+function Panel({ p, e }: { p: StartHereProps; e: Editor }) {
+  const { t } = p;
+  const { draft: d, active: language } = e;
+  const source = newestSaved(d);
+  const drafted = d.parts[language] ?? [];
+  return (
+    <div id="sh-panel" role="tabpanel" aria-labelledby={`sh-tab-${language}`}>
+      {shTabState(d, language) === "stale" && (
+        <StaleLine t={t}>
+          {p.ai && source && source !== language && (
+            <button
+              type="button"
+              disabled={e.busy !== null}
+              onClick={() => void e.translate(source, [language])}
+              className={smallButton("text-plum")}
+            >
+              {fill(t["notices.updateFrom"], { lang: LANGUAGE_NAME[source] })}
+            </button>
+          )}
+          <button type="button" onClick={() => e.keep(language)} className={smallButton()}>
+            {t["notices.keep"]}
+          </button>
+        </StaleLine>
+      )}
+      <DraftMark
+        t={t}
+        viewer={p.viewer}
+        kind={shDraftKind(d, language)}
+        partly={d.partly[language] === true}
+        onAccept={() => e.accept(language)}
+        onUndo={() => e.undo(language)}
+      />
+      <div lang={language}>
+        {PARTS.map((part) => (
+          <label key={part} className="mt-4 block">
+            <span className="font-semibold">{t[`board.start.${part}`]}</span>
+            <span className="block text-body-sm text-ink/75">{t[`starthere.${part}.help`]}</span>
+            <textarea
+              value={d.values[language][part]}
+              maxLength={p.max[part]}
+              rows={ROWS[part]}
+              onChange={(ev) => e.set(part, ev.target.value)}
+              className={`${FIELD} mt-1 text-base ${
+                drafted.includes(part) ? "bg-plum/10 ring-2 ring-plum" : ""
+              }`}
+            />
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Translate and Improve writing under the text, as in the notices editor, and the line under them. */
+function Actions({ p, e }: { p: StartHereProps; e: Editor }) {
+  const { t, languages } = p;
+  const { draft: d, active: language } = e;
+  const plan = shTranslatePlan(d, language, languages, e.wroteIn);
+  const shown = plan ?? { from: language, to: languages.filter((l) => l !== language) };
+  const codes = new Intl.ListFormat(p.viewer, { type: "conjunction" }).format(
+    shown.to.map((l) => LANGUAGE_CODE[l]),
+  );
+  const longest = Math.max(
+    ...PARTS.flatMap((part) => [
+      d.values[language][part].length,
+      d.values[shown.from][part].length,
+    ]),
+  );
+  const reason: WorkspaceKey | null = !p.ai
+    ? "notices.ai.off"
+    : longest > DRAFT_LIMIT
+      ? "notices.ai.tooLong"
+      : null;
+  const off = reason !== null || e.busy !== null;
+  const described = reason ? { "aria-describedby": AI_REASON_ID } : {};
+  const replaces = plan?.from === language && plan.to.some((l) => written(d.values[l]));
   return (
     <>
-      {props.error && (
-        <RefusalLine text={props.error} className="mt-3 text-body-sm font-semibold" />
-      )}
-      {props.done && (
-        <p role="status" className="mt-3 text-body-sm">
-          {w.saved}
-        </p>
-      )}
-      <button
-        type="submit"
-        disabled={props.off || props.busy}
-        className={buttonClass("primary", "mt-4 w-full sm:w-auto disabled:opacity-60")}
-      >
-        {props.busy ? w.saving : w.save}
-      </button>
+      <div className="mt-3 grid grid-cols-2 gap-2 sm:max-w-md">
+        <ActionButton
+          t={t}
+          working={e.busy === "translate"}
+          name={t["notices.translate"]}
+          detail={
+            shown.from === language
+              ? fill(t["notices.translate.to"], { list: codes })
+              : fill(t["notices.translate.from"], { lang: LANGUAGE_CODE[shown.from] })
+          }
+          disabled={off || plan === null}
+          {...described}
+          onClick={() => plan && void e.translate(plan.from, plan.to)}
+        />
+        <ImproveButton
+          t={t}
+          working={e.busy === "improve"}
+          disabled={off || !written(d.values[language])}
+          described={described}
+          onImprove={(tone) => void e.improve(language, tone)}
+        />
+      </div>
+      <ActionNote t={t} reason={reason} message={e.aiMessage} replaces={replaces} />
     </>
   );
 }
 
-export function StartHereEditor(props: {
-  slug: string;
-  /** False without the translator's key (D81): Translate is off and says why. */
-  ai: boolean;
-  translate: TranslateWords;
-  languages: readonly NoticeLanguage[];
-  first: NoticeLanguage;
-  texts: Texts;
-  versions: Record<NoticeLanguage, number>;
-  max: Record<Part, number>;
-  words: StartHereWords;
-}) {
-  const { words: w, languages } = props;
-  const [saved, setSaved] = useState(props.texts);
-  const [texts, setTexts] = useState(props.texts);
-  const [versions, setVersions] = useState(props.versions);
-  const [active, setActive] = useState(props.first);
-  // An error carries the line to show (SIGNED_OUT on 401).
-  const [state, setState] = useState<"idle" | "saving" | "saved" | { error: string }>("idle");
-  const changed = languages.filter((l) =>
-    PARTS.some(({ part }) => texts[l][part] !== saved[l][part]),
-  );
-  const tr = useTranslate(props.slug, languages, texts, setTexts);
-
-  async function save() {
-    setState("saving");
-    const changes = changed.map((l) => ({ language: l, version: versions[l], text: texts[l] }));
-    const result = await post(props.slug, changes, w);
-    if ("error" in result) return setState({ error: result.error });
-    setSaved((x) => ({ ...x, ...Object.fromEntries(changed.map((l) => [l, texts[l]])) }));
-    setVersions((v) => ({ ...v, ...Object.fromEntries(changed.map((l) => [l, result.version])) }));
-    tr.clear();
-    setState("saved");
-  }
-
+export function StartHereEditor(p: StartHereProps) {
+  const { t } = p;
+  const e = useStartHere(p);
+  const dirty = shDirty(e.draft);
+  const { saveState } = e;
   return (
     <form
       onSubmit={(ev) => {
         ev.preventDefault();
-        void save();
+        void e.save();
       }}
-      data-unsaved={changed.length > 0 ? "" : undefined}
-      className="mt-4 max-w-2xl"
+      data-notice-editor=""
+      data-unsaved={dirty ? "" : undefined}
+      className="max-w-2xl"
     >
-      <TabBar
-        languages={languages}
-        active={active}
-        changed={changed}
-        label={w.languages}
-        onPick={setActive}
+      <LanguageTabs
+        id="sh"
+        t={t}
+        languages={p.languages}
+        active={e.active}
+        stateOf={(l) => shTabState(e.draft, l)}
+        onPick={e.setActive}
       />
-      <Missing texts={texts} languages={languages} w={w} />
-      <TranslateBar
-        active={active}
-        languages={languages}
-        ai={props.ai}
-        tr={tr}
-        words={props.translate}
-        text={texts[active]}
-      />
-      <Panel
-        language={active}
-        text={texts[active]}
-        max={props.max}
-        words={w}
-        drafted={tr.drafts[active]?.parts ?? []}
-        onChange={(part, value) => {
-          setState("idle");
-          setTexts((x) => ({ ...x, [active]: { ...x[active], [part]: value } }));
-        }}
-      />
+      <Missing d={e.draft} p={p} />
+      <Panel p={p} e={e} />
+      <Actions p={p} e={e} />
       <SaveBar
-        error={typeof state === "object" ? state.error : null}
-        done={state === "saved" && changed.length === 0}
-        off={changed.length === 0}
-        busy={state === "saving"}
-        w={w}
+        t={t}
+        viewer={p.viewer}
+        drafts={Object.keys(e.draft.undo).length}
+        saving={e.busy === "save"}
+        busy={e.busy !== null}
+        note={
+          typeof saveState === "object" ? (
+            <RefusalLine text={saveState.error} className="mb-2 text-body-sm font-semibold" />
+          ) : (
+            saveState === "saved" &&
+            !dirty && (
+              <Notice tone="ok" className="mb-2">
+                {t["starthere.saved"]}
+              </Notice>
+            )
+          )
+        }
+        ask={dirty}
+        onLeave={() => window.location.assign(`/w/${p.slug}/board`)}
       />
     </form>
   );

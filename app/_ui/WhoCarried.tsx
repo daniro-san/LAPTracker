@@ -127,7 +127,7 @@ export function WhoCarried({ eventId, carried }: { eventId: number; carried: Car
       </h2>
       <p className="text-body-sm text-ink/70">{l.carriedHelp}</p>
       <p className="mb-2 mt-1 text-body-sm text-ink/70">{l.carriedRatioHelp}</p>
-      <div className="border border-rule px-3 py-2">
+      <div className="drawn-card px-3 py-2">
         <p className="text-body-sm">
           {fill(l.carriedTotal, {
             n: totals.alliances,

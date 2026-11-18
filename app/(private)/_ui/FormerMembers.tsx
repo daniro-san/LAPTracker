@@ -67,7 +67,7 @@ export function FormerMembers(props: {
     <section aria-label={t["members.view.former"]} className="mt-3">
       <p className="text-body-sm text-ink/80">{t["former.lead"]}</p>
       {rows.length === 0 ? (
-        <p className="mt-4 border border-rule px-4 py-5">{t["former.none"]}</p>
+        <p className="drawn-card mt-4 px-4 py-5">{t["former.none"]}</p>
       ) : (
         <>
           <div

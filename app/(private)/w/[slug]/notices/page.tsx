@@ -25,7 +25,7 @@ function Card({
   return (
     <a
       href={`/w/${slug}/notices/${notice.id}`}
-      className="block min-h-11 border border-rule px-4 py-3 hover:border-plum"
+      className="drawn-card tint-button block min-h-11 px-4 py-3"
     >
       <span className="block font-subhead text-display-sm break-words text-plum underline-offset-4">
         {notice.title}
@@ -69,7 +69,7 @@ export default async function NoticesPage({ params }: { params: Promise<{ slug: 
         {t["notices.write"]}
       </a>
       {list.length === 0 ? (
-        <p className="mt-4 border border-rule px-4 py-5">{t["notices.empty"]}</p>
+        <p className="drawn-card mt-4 px-4 py-5">{t["notices.empty"]}</p>
       ) : (
         <ul className="mt-4 grid gap-3 sm:grid-cols-2">
           {list.map((notice) => (

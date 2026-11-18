@@ -83,7 +83,7 @@ function Thefts(props: { slug: string; thefts: AttackerGroup[]; t: WorkspaceDict
   return (
     <section
       id="follow-up-thefts"
-      className="mt-6 scroll-mt-4"
+      className="drawn-card mt-6 scroll-mt-4 px-4 pt-3"
       aria-labelledby="follow-up-thefts-h"
     >
       <h2 id="follow-up-thefts-h" className="font-subhead text-display-sm">
