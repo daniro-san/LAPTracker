@@ -61,6 +61,7 @@ export const DESK_ACTIONS = [
   "publish",
   "share",
   "take_down",
+  "restore",
   "draft",
   "translate",
   "improve",

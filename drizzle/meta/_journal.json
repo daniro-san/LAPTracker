@@ -281,6 +281,13 @@
       "when": 1794951277567,
       "tag": "0039_thanks_shares",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1795001412558,
+      "tag": "0040_notice_delete",
+      "breakpoints": true
     }
   ]
 }

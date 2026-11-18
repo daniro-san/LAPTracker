@@ -6,7 +6,7 @@
 // asks before throwing changes away. Save and Cancel sit as in every sheet: Save first and widest. The bar
 // itself is shared with Start here (EditorSaveBar.tsx, D116).
 import { CheckField } from "@/lib/brand/components/CheckField";
-import { FIELD } from "@/lib/brand/components/controls";
+import { chip, FIELD } from "@/lib/brand/components/controls";
 import { Notice } from "@/lib/brand/components/Notice";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
 import type { NoticeField } from "@/lib/private/notice-rules";
@@ -73,9 +73,22 @@ export function SaveBar({ p, e }: { p: EditorProps; e: Editor }) {
           <SignedOutNote className="mb-2" />
         ) : (
           e.message && (
-            <Notice tone="fail" className="mb-2">
-              {t[e.message]}
-            </Notice>
+            <div className="mb-2">
+              <Notice tone={e.message === "notices.trash.restored" ? "ok" : "fail"}>
+                {t[e.message]}
+              </Notice>
+              {/* The notice is in the trash (D118): any officer may take it out, then save. */}
+              {e.trashed && (
+                <button
+                  type="button"
+                  disabled={e.busy !== null}
+                  onClick={() => void e.restoreFromTrash()}
+                  className={`${chip()} mt-2`}
+                >
+                  {t["notices.trash.restore"]}
+                </button>
+              )}
+            </div>
           )
         )
       }
