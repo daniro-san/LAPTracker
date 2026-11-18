@@ -5,7 +5,7 @@
 // footer's "Analytics choices" asks for it. "Allow" and "No thanks" weigh the same. The desk, the board and
 // /admin never show it. The root layout renders it only when analytics is on (D77).
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { useCopy } from "@/app/_ui/LocaleProvider";
 import {
@@ -29,14 +29,19 @@ function answer(consent: Consent) {
 export function AnalyticsConsent() {
   const copy = useCopy().consent;
   const pathname = usePathname();
-  const [open, setOpen] = useState(false);
+  /** `first`: shown on its own, focus stays on the page; `asked`: opened from the footer, focus moves here. */
+  const [open, setOpen] = useState<false | "first" | "asked">(false);
+  const firstButton = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     // After hydration: the answer lives in this browser only, so the server always renders no bar.
-    if (storedConsent() === null) setOpen(true);
-    const ask = () => setOpen(true);
+    if (storedConsent() === null) setOpen("first");
+    const ask = () => setOpen("asked");
     addEventListener(ASK_CONSENT_EVENT, ask);
     return () => removeEventListener(ASK_CONSENT_EVENT, ask);
   }, []);
+  useEffect(() => {
+    if (open === "asked") firstButton.current?.focus();
+  }, [open]);
   if (!open || areaOf(pathname).area !== "public") return null;
   const choose = (consent: Consent) => {
     answer(consent);
@@ -51,6 +56,7 @@ export function AnalyticsConsent() {
         <p className="text-body-sm sm:flex-1">{copy.body}</p>
         <div className="flex gap-2 sm:shrink-0">
           <button
+            ref={firstButton}
             type="button"
             onClick={() => choose("granted")}
             className={buttonClass("secondary", "flex-1 sm:flex-none")}

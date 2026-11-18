@@ -37,6 +37,9 @@ const publicSampled = Math.random() < PUBLIC_REPLAY_SAMPLE;
 let recorder: Promise<unknown> | null = null;
 let recording = false;
 
+/** Where posthog-js keeps a public page load's opt-in or opt-out; never the record desk loads read. */
+export const PUBLIC_CONSENT_RECORD = "lap_ph_public_consent";
+
 /** A cookieless load sends to its own path, so the proxy adds the visitor's IP to those events only. */
 const hostFor = (cookieless: boolean) => (cookieless ? `/ingest${COOKIELESS_PREFIX}` : "/ingest");
 
@@ -57,6 +60,9 @@ export function startPostHog(key: string): PostHog {
       cookieless_mode: "on_reject" as const,
       // No answer counts as "no": cookieless, nothing stored, until the visitor says yes.
       opt_out_capturing_by_default: true,
+      // Its own consent record: a "no" here must never reach a desk or /admin load, which reads the
+      // default record on every load and would capture nothing at all.
+      consent_persistence_name: PUBLIC_CONSENT_RECORD,
     }),
     // Profiles only for the desk's and the board's pseudonymous ids; every other event is personless.
     person_profiles: "identified_only",

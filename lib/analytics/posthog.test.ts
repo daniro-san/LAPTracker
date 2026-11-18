@@ -4,18 +4,28 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const sdk = vi.hoisted(() => {
   const state = { optedIn: false };
+  /** posthog-js's consent records on the device, by name: they outlive a page load. */
+  const records = new Map<string, number>();
+  const record = (key = "phc_test") =>
+    (ph.config.consent_persistence_name as string | undefined) ?? `__ph_opt_in_out_${key}`;
   const ph = {
     state,
+    records,
     config: {} as Record<string, unknown>,
     init: vi.fn((_key: string, config: Record<string, unknown>) => {
       ph.config = { ...config };
+      state.optedIn = records.get(record()) === 1;
     }),
     has_opted_in_capturing: () => state.optedIn,
+    /** posthog-js without a cookieless mode captures nothing once its record says "out". */
+    is_capturing: () => Boolean(ph.config.cookieless_mode) || records.get(record()) !== 0,
     opt_in_capturing: vi.fn(() => {
       state.optedIn = true;
+      records.set(record(), 1);
     }),
     opt_out_capturing: vi.fn(() => {
       state.optedIn = false;
+      records.set(record(), 0);
     }),
     set_config: vi.fn((c: Record<string, unknown>) => Object.assign(ph.config, c)),
     startSessionRecording: vi.fn(),
@@ -82,6 +92,20 @@ describe("public page loads (D115)", () => {
     expect(sdk.opt_out_capturing).toHaveBeenCalled();
     expect(sdk.config.api_host).toBe("/ingest/c");
     expect(m.isCookieless(ph)).toBe(true);
+  });
+});
+
+describe("one browser, public page first (D115)", () => {
+  it("a No thanks on a public page leaves the next desk load capturing and recording", async () => {
+    sdk.records.clear();
+    const first = await start("/players", null);
+    first.m.answerConsent(first.ph, "denied");
+    expect([...sdk.records.keys()]).toEqual(["lap_ph_public_consent"]);
+    const desk = await start("/w/ogs/members", "denied");
+    expect(sdk.is_capturing()).toBe(true);
+    desk.m.followPath(desk.ph, "/w/ogs/members");
+    await settle();
+    expect(sdk.startSessionRecording).toHaveBeenCalledWith(true);
   });
 });
 

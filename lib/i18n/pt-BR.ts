@@ -372,9 +372,9 @@ export const ptBR = {
   },
   consent: {
     label: "Estatísticas",
-    body: "Podemos usar um cookie para contar suas visitas e registrar como as páginas são usadas? O que você digita nunca é registrado. Sem ele, só contamos as visitas, e nada fica salvo no seu aparelho.",
+    body: "Podemos usar um cookie para contar suas visitas e registrar como as páginas são usadas? O que você digita nunca é registrado. Sem ele, só contamos as visitas, e nenhum cookie de rastreamento é salvo.",
     accept: "Permitir",
     decline: "Não, obrigado",
-    choices: "Escolhas de estatísticas",
+    choices: "Preferências de estatísticas",
   },
 } as const satisfies Translation;

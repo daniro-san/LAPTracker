@@ -375,7 +375,7 @@ export const pl = {
   },
   consent: {
     label: "Statystyki",
-    body: "Czy możemy użyć pliku cookie, aby liczyć Twoje wizyty i zapisywać, jak używane są strony? To, co wpisujesz, nigdy nie jest zapisywane. Bez niego liczymy tylko wizyty i nic nie zostaje na Twoim urządzeniu.",
+    body: "Czy możemy użyć pliku cookie, aby liczyć Twoje wizyty i zapisywać, jak używane są strony? To, co wpisujesz, nigdy nie jest zapisywane. Bez niego liczymy tylko wizyty i nie zapisujemy żadnego śledzącego pliku cookie.",
     accept: "Zezwól",
     decline: "Nie, dziękuję",
     choices: "Ustawienia statystyk",

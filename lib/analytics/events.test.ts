@@ -56,9 +56,9 @@ describe("identify (D115)", () => {
       tier: "officer",
       workspace: "ogs",
     });
-    // A public page load whose visitor has not said yes, then a client-side visit to the desk.
+    // A public page load, then a client-side visit to the desk: never, whether or not the visitor allowed.
     expect(await loaded("on_reject")).not.toHaveBeenCalled();
-    expect(await loaded("on_reject", true)).toHaveBeenCalled();
+    expect(await loaded("on_reject", true)).not.toHaveBeenCalled();
   });
 });
 

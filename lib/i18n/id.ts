@@ -376,7 +376,7 @@ export const idID = {
   },
   consent: {
     label: "Statistik",
-    body: "Bolehkah kami memakai cookie untuk menghitung kunjunganmu dan mencatat cara halaman dipakai? Apa yang kamu ketik tidak pernah dicatat. Tanpa cookie, kami hanya menghitung kunjungan dan tidak ada yang disimpan di perangkatmu.",
+    body: "Bolehkah kami memakai cookie untuk menghitung kunjunganmu dan mencatat cara halaman dipakai? Apa yang kamu ketik tidak pernah dicatat. Tanpa cookie, kami hanya menghitung kunjungan dan tidak ada cookie pelacak yang disimpan.",
     accept: "Izinkan",
     decline: "Tidak, terima kasih",
     choices: "Pilihan statistik",

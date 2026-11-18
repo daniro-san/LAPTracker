@@ -32,7 +32,7 @@
 - **Docs:** D115, a D77 amendment, the decisions index, ARCHITECTURE and `.env.example` (`POSTHOG_PERSONAL_API_KEY`).
 
 ## Decisions
-- **Cookieless only for page loads that start on a public page.** posthog-js refuses session replay in `cookieless_mode: "always"`, and the mode cannot change after `init`. So the mode is chosen per page load from the first page's area, which keeps replay on the desk and `/admin` (D77). Cost: public pages are no longer recorded at 25 %.
+- **The consent mode only for page loads that start on a public page.** posthog-js cannot record while cookieless, and the mode cannot change after `init`. So the mode is chosen per page load from the first page's area: public loads use `cookieless_mode: "on_reject"` (cookieless until the visitor says "Allow", then the 25 % public replay of D77), and desk and `/admin` loads keep `memory` persistence and replay (owner round below).
 - **The salt is derived from `CRON_SECRET` through an HMAC** with a fixed purpose string, so the owner has no new secret to set. Rotating `CRON_SECRET` makes new ids.
 - **The CLI, not `@posthog/nextjs-config`.** The plugin adds a webpack plugin this Turbopack build does not use and three more packages, and its newest release is under two weeks old. The CLI runs only when the key is set; its binary is downloaded on first run, because the postinstall is denied (D10).
 - **A failed upload does not fail the build.** The site ships with minified stacks, and the build log says so.
@@ -87,7 +87,7 @@
   - Tested: `(reading 'Bramble')`, `(setting 'DragonSlayer99')` and `(evaluating 'byName.Bramble')` become `'…'`; `(reading 'map')` stays.
 - **`scripts/sourcemaps.ts`:** the CLI gets only `PATH`, `HOME` and the `POSTHOG_CLI_*` variables, with a 120 s timeout. A timeout is logged ("upload stopped after 120 s") and the build goes on.
   - Tests: `DATABASE_URL` and `CRON_SECRET` do not reach the child's env; a timeout still deletes the maps.
-- **`identify()`** does nothing when `cookieless_mode` is `"always"`. One test: with a stand-in SDK it is called on a desk load and not on a cookieless one.
+- **`identify()`** does nothing whenever `cookieless_mode` is set, so on any page load that started on a public page (third round). One test: with a stand-in SDK it is called on a desk load and not on a public-started one, allowed or not.
 - **IP only for cookieless loads:** the proxy can tell. A cookieless page load uses `api_host` `/ingest/c`, with the prefix in `lib/analytics/region.ts`, which the browser bundle may import. `ingest.ts` strips `/c` and adds `x-forwarded-for` only there. Recorded in D115 and the D77 amendment.
 - **Server `$exception`:** sent for every error before the per-second insert gate, through `after()`, so the error path does not wait. Outside a request it is just started.
 - **Tests added:**
@@ -120,6 +120,25 @@
   - Local production build: the consent run (`e2e-consent.mjs`) passes **26 of 26**, and the earlier run passes 26 of 26 again. The consent run covers no layout shift, 44 px buttons and no sideways scroll at 360. It covers what is stored before an answer, after "No thanks" and after "Allow", and that replay is never sent after "No thanks". It also covers the footer link, `ws_action` from a desk write on the same id as the page's identify, and all three board sections.
   - Screenshots: `consent-bar-{360,1280}-{light,dark}-{en,pt-BR}.png` in `/private/tmp/claude-502/-Users-danilordasilva-orca-workspaces-LAPTracker-unicornfish/147759e3-1cdb-4ccd-b74a-1001498a1e18/scratchpad/11ag-shots/`.
   - Designer check: the PT text fits in four lines at 360, the buttons share the row evenly, and dark mode reads clearly. The bar covers the footer's last lines until answered, which is expected for a bottom bar.
+
+## Review round 3 (PR 415)
+- **Fixed, HIGH:** a "No thanks" on a public page switched off analytics on the desk and `/admin`. `opt_out_capturing()` wrote posthog-js's default consent record (`__ph_opt_in_out_<token>`), which desk loads read too. Public loads now keep their own record (`consent_persistence_name: "lap_ph_public_consent"`, `PUBLIC_CONSENT_RECORD` in `lib/analytics/posthog.ts`), so the two never share one.
+  - Test: the SDK stand-in keeps consent records by name as posthog-js does. A denial on a public load, then a desk load: it still captures and records.
+  - e2e in one browser profile (`e2e-oneprofile.mjs`), **9 of 9**:
+    - public page, "No thanks": only `lap_analytics` and `lap_ph_public_consent` were stored, and no `__ph_opt_in_out_*` record;
+    - then the desk in the same profile: a page view (not cookieless), `$identify`, replay batches and an exception were all sent;
+    - the footer link put focus on "Allow", and `/admin` showed no "Analytics choices".
+  - The consent run and the earlier run pass 26 of 26 each again. `pnpm check` exits 0: **194 files passed, 2 skipped; 1,025 tests passed, 4 skipped**.
+- Rebased on `origin/dev` (e42bcefe, #414); the decisions index kept both lines.
+- **`identify`** is skipped whenever `cookieless_mode` is set, so a public load whose visitor allowed never ties PostHog's stored id to an officer.
+- **"Analytics choices"** is hidden on `/admin` (`SiteFooter` `choices={false}`).
+- **Focus:** when the footer opens the bar, focus moves to its first button.
+- **`ws_action`:**
+  - `shots/read` is now `screenshot` / `read_text`: a picture read to text for a paste box, nothing saved. The plan says so, and that a saved screenshot is `screenshot_draft` / `save`.
+  - A replayed request id is still counted again. It is not cheap to avoid: the lib functions answer a replay exactly like the first write, so no route knows. Noted in the plan.
+- **Copy:**
+  - The bar says "no tracking cookie is stored" instead of "nothing is stored on your device", in all 17 languages.
+  - PT's link reads "Preferências de estatísticas".
 
 ## Open issues
 - The bar's 14 other languages were written in this session without the translate-copy skill's per-language glossary pass; a native check is worth doing.

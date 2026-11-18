@@ -378,7 +378,7 @@ export const itIT = {
   },
   consent: {
     label: "Statistiche",
-    body: "Possiamo usare un cookie per contare le tue visite e registrare come vengono usate le pagine? Ciò che scrivi non viene mai registrato. Senza, contiamo solo le visite e sul tuo dispositivo non viene salvato nulla.",
+    body: "Possiamo usare un cookie per contare le tue visite e registrare come vengono usate le pagine? Ciò che scrivi non viene mai registrato. Senza, contiamo solo le visite e non viene salvato alcun cookie di tracciamento.",
     accept: "Consenti",
     decline: "No, grazie",
     choices: "Scelte sulle statistiche",

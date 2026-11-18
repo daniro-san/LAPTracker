@@ -46,7 +46,7 @@ export const DESK_ACTIONS = [
   "save",
   "discard",
   "retype",
-  "read",
+  "read_text",
   "paste",
   "mark",
   "rest",

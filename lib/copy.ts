@@ -266,7 +266,7 @@ export const en = {
   consent: {
     /** The bar's accessible name. */
     label: "Analytics",
-    body: "Can we use a cookie to count your visits and record how pages are used? What you type is never recorded. Without it we only count visits, and nothing is stored on your device.",
+    body: "Can we use a cookie to count your visits and record how pages are used? What you type is never recorded. Without it we only count visits, and no tracking cookie is stored.",
     accept: "Allow",
     decline: "No thanks",
     /** The footer link that asks again. */

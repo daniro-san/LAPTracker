@@ -375,7 +375,7 @@ export const nl = {
   },
   consent: {
     label: "Statistieken",
-    body: "Mogen we een cookie gebruiken om je bezoeken te tellen en vast te leggen hoe de pagina’s worden gebruikt? Wat je typt, wordt nooit vastgelegd. Zonder cookie tellen we alleen bezoeken en wordt er niets op je apparaat opgeslagen.",
+    body: "Mogen we een cookie gebruiken om je bezoeken te tellen en vast te leggen hoe de pagina’s worden gebruikt? Wat je typt, wordt nooit vastgelegd. Zonder cookie tellen we alleen bezoeken en wordt er geen trackingcookie opgeslagen.",
     accept: "Toestaan",
     decline: "Nee, bedankt",
     choices: "Keuzes voor statistieken",

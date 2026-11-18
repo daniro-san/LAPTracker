@@ -12,9 +12,12 @@ import { AnalyticsChoices } from "./AnalyticsChoices";
 export function SiteFooter({
   ornament = "yarn",
   copy,
+  choices = true,
 }: {
   ornament?: "yarn" | "granny";
   copy: Dictionary;
+  /** "Analytics choices" (D115); false on /admin, which never asks the question. */
+  choices?: boolean;
 }) {
   return (
     <footer
@@ -34,7 +37,7 @@ export function SiteFooter({
         <p>{copy.site.disclaimer}</p>
       </details>
       {/* Only where the analytics question exists: production with POSTHOG_KEY (D77, D115). */}
-      {analyticsKey(process.env) && <AnalyticsChoices label={copy.consent.choices} />}
+      {choices && analyticsKey(process.env) && <AnalyticsChoices label={copy.consent.choices} />}
       <p className="mt-1 text-right text-xs text-ink/65 tabular-nums">
         {process.env.BUILD_VERSION}
       </p>

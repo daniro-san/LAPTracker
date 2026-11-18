@@ -375,7 +375,7 @@ export const tr = {
   },
   consent: {
     label: "İstatistik",
-    body: "Ziyaretlerini saymak ve sayfaların nasıl kullanıldığını kaydetmek için bir çerez kullanabilir miyiz? Yazdıkların asla kaydedilmez. Çerez olmadan yalnızca ziyaretleri sayarız ve cihazında hiçbir şey saklanmaz.",
+    body: "Ziyaretlerini saymak ve sayfaların nasıl kullanıldığını kaydetmek için bir çerez kullanabilir miyiz? Yazdıkların asla kaydedilmez. Çerez olmadan yalnızca ziyaretleri sayarız ve hiçbir izleme çerezi saklanmaz.",
     accept: "İzin ver",
     decline: "Hayır, teşekkürler",
     choices: "İstatistik tercihleri",

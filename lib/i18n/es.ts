@@ -376,7 +376,7 @@ export const es = {
   },
   consent: {
     label: "Estadísticas",
-    body: "¿Podemos usar una cookie para contar tus visitas y registrar cómo se usan las páginas? Lo que escribes nunca se registra. Sin ella solo contamos las visitas, y no se guarda nada en tu dispositivo.",
+    body: "¿Podemos usar una cookie para contar tus visitas y registrar cómo se usan las páginas? Lo que escribes nunca se registra. Sin ella solo contamos las visitas, y no se guarda ninguna cookie de seguimiento.",
     accept: "Permitir",
     decline: "No, gracias",
     choices: "Opciones de estadísticas",

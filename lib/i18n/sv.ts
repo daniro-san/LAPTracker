@@ -373,7 +373,7 @@ export const sv = {
   },
   consent: {
     label: "Statistik",
-    body: "Får vi använda en kaka för att räkna dina besök och registrera hur sidorna används? Det du skriver registreras aldrig. Utan den räknar vi bara besök, och inget sparas på din enhet.",
+    body: "Får vi använda en kaka för att räkna dina besök och registrera hur sidorna används? Det du skriver registreras aldrig. Utan den räknar vi bara besök, och ingen spårningskaka sparas.",
     accept: "Tillåt",
     decline: "Nej tack",
     choices: "Val för statistik",

@@ -60,7 +60,7 @@ export async function POST(
       ctx,
       access,
       "screenshot",
-      "read",
+      "read_text",
       Response.json({ lines }, { headers: NO_STORE }),
     );
   });
