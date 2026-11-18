@@ -1,6 +1,7 @@
 // POST /api/w/[slug]/notices/picture/remove {id} — removes a notice's picture (D119). A write: same origin,
 // JSON, a valid officer session (401 signed_out, D99). Removing a picture that is already gone answers ok, so
-// a retry after a lost answer does no harm.
+// a retry after a lost answer does no harm. A notice in the trash answers 410 notice_deleted
+// (D118), so the editor offers to restore it.
 import { z } from "zod";
 
 import { requireWorkspace } from "@/lib/private/access";
@@ -24,7 +25,9 @@ export async function POST(
   return withContext("/api/w/[slug]/notices/picture/remove", async (ctx, db) => {
     const access = await requireWorkspace(db, slug, requestCookies(request), ctx.now());
     if (!access.ok) return privateError(401, "signed_out");
-    await removePicture(db, access, parsed.data.id);
+    if ((await removePicture(db, access, parsed.data.id)) === "notice_deleted") {
+      return privateError(410, "notice_deleted");
+    }
     const removed = Response.json({ ok: true }, { headers: NO_STORE });
     return counted(ctx, access, "notice", "delete", removed);
   });

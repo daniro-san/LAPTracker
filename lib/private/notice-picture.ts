@@ -5,6 +5,7 @@
 import { createHash } from "node:crypto";
 
 import type { Db } from "../db";
+import { noticeIsDeleted } from "../repo/notice-deletes";
 import {
   deletePicture,
   pictureBytes,
@@ -51,14 +52,20 @@ export function checkPicture(
   return { ok: true, type, ...size };
 }
 
-/** Stores or replaces the notice's picture after the check; "not_found" for no such notice. */
+/**
+ * Stores or replaces the notice's picture after the check; "not_found" for no such notice, "notice_deleted"
+ * for one in the trash (D118), so the editor offers to restore it.
+ */
 export async function savePicture(
   db: Db,
   access: WorkspaceAccess,
   noticeId: number,
   bytes: Uint8Array,
   now: Date,
-): Promise<{ ok: true; picture: PictureView } | { ok: false; code: PictureRefusal | "not_found" }> {
+): Promise<
+  | { ok: true; picture: PictureView }
+  | { ok: false; code: PictureRefusal | "not_found" | "notice_deleted" }
+> {
   const checked = checkPicture(bytes);
   if (!checked.ok) return checked;
   const { type, width, height } = checked;
@@ -72,12 +79,17 @@ export async function savePicture(
     access.user.id,
     now,
   );
-  if (!saved) return { ok: false, code: "not_found" };
-  return { ok: true, picture: pictureView({ noticeId, ...facts }) };
+  if (saved) return { ok: true, picture: pictureView({ noticeId, ...facts }) };
+  const trashed = await noticeIsDeleted(db, access.workspaceId, noticeId);
+  return { ok: false, code: trashed ? "notice_deleted" : "not_found" };
 }
 
-export const removePicture = (db: Db, access: WorkspaceAccess, noticeId: number) =>
-  deletePicture(db, access.workspaceId, noticeId);
+/** Removes the notice's picture; "notice_deleted" for a notice in the trash (D118), whose picture stays. */
+export async function removePicture(db: Db, access: WorkspaceAccess, noticeId: number) {
+  if (await noticeIsDeleted(db, access.workspaceId, noticeId)) return "notice_deleted";
+  await deletePicture(db, access.workspaceId, noticeId);
+  return "ok";
+}
 
 /**
  * GET /img/notice/[id]: the picture's facts when this browser's session may see the notice, else null (the

@@ -14,6 +14,7 @@
   - `POST /api/w/[slug]/notices/picture?id=N`, with the picture as the body: add or replace.
   - `POST /api/w/[slug]/notices/picture/remove {id}`: remove.
   - Both need same origin and an officer session (401 `signed_out`). Both are counted as `notice` `add` / `delete` (D115).
+  - A notice in the trash (D118) gets 410 `notice_deleted` from both. Save then shows D118's "Restore from trash?", and the held picture change goes in with the next Save after the restore.
 - **Serving.** `GET /img/notice/[id]` (`app/(private)/img/notice/[id]/route.ts`):
   - an officer of the notice's workspace gets the picture; a member gets it only while the board shows the notice (`boardShowsNotice`);
   - another workspace, a signed-out browser, a deleted notice (D118) and a missing picture all get the same 404;
@@ -29,7 +30,7 @@
   - ARCHITECTURE lists the new modules and the `/img/notice` handler.
 
 ## Decisions
-- **Stacked on #418 (11aj, D118).** The orchestrator said #418 merges first, and it is a soft delete with Undo. A deleted notice's picture is therefore kept (Undo brings it back) but never served, posted or replaced: the reads and the write join `live`.
+- **Built on #418 (D118, merged into dev).** It is a soft delete with Undo. A deleted notice's picture is therefore kept (Undo brings it back) but never served, posted or replaced: the reads and the write join `live`.
 - **Where the picture shows.** On the notice page it sits under the title. On the board it sits in the card, after the end-date line and before the text.
 - **Size on screen.** Height is capped at 24 rem on phones and 28 rem from 640 px; the image itself opens at full size. This came from the 1280 px screenshot, where the picture pushed Edit below the fold.
 - **No request id for the picture write.** There is one row per notice (primary key), so a retry stores the same picture once. D100's rule is about duplicates.
@@ -44,11 +45,10 @@
 ## Verified
 - **`pnpm check`.**
   - prettier, eslint and tsc pass.
-  - vitest: 200 files, 1,050 tests. 1,044 passed and 4 skipped in the full run.
-  - Two unrelated slow tests timed out under load (load average 44–51): `lib/private/thefts.test.ts` at 18 s and `app/img/preview/player/[uid]/route.test.ts` at 14 s. Both pass alone (11 of 11).
+  - vitest, after the rebase on dev with #418: 198 files passed, 2 skipped; 1,047 tests passed, 4 skipped. An earlier run under load (load average 44–51) timed out two unrelated tests, `lib/private/thefts.test.ts` and `app/img/preview/player/[uid]/route.test.ts`; both passed alone, and the last full run passed.
   - The drift check ("Everything's fine") and the i18n check ("17 languages up to date") pass.
 - **New tests.**
-  - `notices/picture/route.test.ts`: a GIF sent as `image/png` is refused; over 400 KB and over 1600 px are refused; a valid picture is stored once and Replace overwrites it.
+  - `notices/picture/route.test.ts`: a GIF sent as `image/png` is refused; over 400 KB and over 1600 px are refused; a valid picture is stored once and Replace overwrites it; a notice in the trash answers 410 to upload and remove, and takes the picture once restored.
   - `img/notice/[id]/route.test.ts`: an officer gets it with `private, no-cache` and an ETag that answers 304; a member gets it only for a board notice; another workspace's officer and a signed-out browser get 404; a deleted notice's picture is 404 for both.
   - `notices/publish/route.test.ts`, one more test: the multipart body carries the file, the `attachment://` embed and empty `allowed_mentions`.
   - `lib/private/notice-picture-rules.test.ts`: `fitWithin` and the order of the attempts.
@@ -68,14 +68,13 @@
   - No WebKit run: Playwright WebKit is not installed here.
 
 ## Open issues
-- A notice deleted by another officer while this officer holds a picture change: Save sends the picture first, gets 404 and shows "The picture was not saved…" rather than #418's "Restore from trash?". Without a picture change the restore offer works as before.
 - Storage grows with use. At 30 pictures a month: about 12 MB a month at the cap, about 90 MB a year at a typical 250 KB. Neon Free is 1 GB, and the Friday check warns at 700 MB. A later session could drop pictures of notices ended long ago; nothing removes them now.
 - Android's share target (D110) cannot add a picture to a notice yet.
 - The Translate and Improve tools leave the picture alone, as asked. Nothing describes the picture to members who use a screen reader beyond "Picture for “<title>”".
 
 ## Next
 - Model/effort: keep. One feature with a migration, two routes, an image route, a browser resize, a Discord change and an e2e fitted one sitting.
-- What the owner must do first: review and merge after #418 (and #416). The migration runs with the deploy; the orchestrator renumbers it to 0042. No setting or service is needed.
+- What the owner must do first: review and merge after #416. The migration runs with the deploy; the orchestrator renumbers it to 0042. No setting or service is needed.
 - Plan change: none (the workspace track has no prompt in `docs/SESSION_PLAYBOOK.md`).
 
 <adjustments>

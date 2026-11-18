@@ -24,7 +24,7 @@ Why: officers want to show a map, a schedule or a game screen with a notice. The
 - The size the header states (`pictureSize`, which now reads a PNG's IHDR too), at most 1600 px a side: 422 `too_big_sides`. A header whose size cannot be read is `wrong_type`.
 - The server does not decode the pixels. A file with a valid header but broken data is stored and simply does not draw.
 
-**Writes.** `POST /api/w/[slug]/notices/picture?id=N` with the picture as the body (same origin, a picture content type, an officer session, 401 `signed_out` per D99) adds or replaces it. `POST /api/w/[slug]/notices/picture/remove {id}` removes it. One row per notice, so a retry stores the same picture once; no request id is needed (D100's rule is about duplicates, which the primary key rules out). A deleted notice (D118) takes no new picture: 404.
+**Writes.** `POST /api/w/[slug]/notices/picture?id=N` with the picture as the body (same origin, a picture content type, an officer session, 401 `signed_out` per D99) adds or replaces it. `POST /api/w/[slug]/notices/picture/remove {id}` removes it. One row per notice, so a retry stores the same picture once; no request id is needed (D100's rule is about duplicates, which the primary key rules out). A notice in the trash (D118) takes no picture change: both routes answer 410 `notice_deleted`, and the editor shows D118's "Restore from trash?" as it does for a text save. The held picture change stays in the editor and goes in with the next Save after the restore.
 
 **Serving: `/img/notice/[id]`** (`app/(private)/img/notice/[id]/route.ts`, in the private group so it may use lib/private; the address has no slug).
 

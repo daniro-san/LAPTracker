@@ -2,7 +2,8 @@
 // picture itself, already resized and re-encoded in the browser; the server checks it again (magic bytes, at
 // most 400 KB, at most 1600 px a side) and never trusts the request's content type. Same origin, a picture
 // content type, a valid officer session (401 signed_out, D99). One row per notice, so a retry replaces the
-// picture with the same bytes and stores nothing twice (D100). Answers the picture's address and size.
+// picture with the same bytes and stores nothing twice (D100). Answers the picture's address and size;
+// a notice in the trash answers 410 notice_deleted (D118).
 import { requireWorkspace } from "@/lib/private/access";
 import { counted } from "@/lib/private/desk-action";
 import {
@@ -17,7 +18,14 @@ import { MAX_PICTURE_BYTES } from "@/lib/private/notice-picture-rules";
 import { SLUG } from "@/lib/private/sign-in";
 import { withContext } from "@/lib/route";
 
-const STATUS = { empty: 400, too_large: 413, wrong_type: 415, too_big_sides: 422, not_found: 404 };
+const STATUS = {
+  empty: 400,
+  too_large: 413,
+  wrong_type: 415,
+  too_big_sides: 422,
+  not_found: 404,
+  notice_deleted: 410,
+};
 
 export async function POST(
   request: Request,

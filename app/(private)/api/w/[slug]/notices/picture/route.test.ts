@@ -1,6 +1,7 @@
 // A notice's picture upload (D119): the server checks the bytes itself, whatever the request's content type
 // says. A picture that is not WebP, JPEG or PNG, one over 400 KB or one over 1600 px a side is refused and
-// nothing is stored; a valid one is stored once per notice, and Replace overwrites it.
+// nothing is stored; a valid one is stored once per notice, and Replace overwrites it. A notice in the trash
+// (D118) answers 410 notice_deleted, so the editor offers to restore it; after the restore the picture goes in.
 import { randomUUID } from "node:crypto";
 
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
@@ -23,6 +24,8 @@ vi.mock("@/lib/app-context", async (original) => ({
 
 const { POST: save } = await import("../route");
 const { POST } = await import("./route");
+const { POST: remove } = await import("./remove/route");
+const { POST: trash } = await import("../delete/route");
 
 let db: Db;
 let token: string;
@@ -109,5 +112,30 @@ describe("POST /api/w/[slug]/notices/picture", () => {
     const rows = await db.select().from(noticePictures);
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({ noticeId: id, type: "image/png", width: 300, height: 200 });
+  });
+
+  it("answers 410 notice_deleted for a notice in the trash, and takes the picture once it is restored (D118)", async () => {
+    const id = await notice();
+    const json = async (route: typeof POST, path: string, body: object) =>
+      (
+        await route(
+          new Request(`https://laptracker.test/api/w/ogs/notices/${path}`, {
+            method: "POST",
+            headers: headers("application/json"),
+            body: JSON.stringify(body),
+          }),
+          { params: Promise.resolve({ slug: "ogs" }) },
+        )
+      ).status;
+    expect(await json(trash, "delete", { id, requestId: randomUUID() })).toBe(200);
+    expect(await upload(id, pngHeader(40, 30))).toEqual({
+      status: 410,
+      json: { code: "notice_deleted" },
+    });
+    expect(await json(remove, "picture/remove", { id })).toBe(410);
+    const restore = { id, requestId: randomUUID(), restore: true };
+    expect(await json(trash, "delete", restore)).toBe(200);
+    expect((await upload(id, pngHeader(40, 30))).status).toBe(200);
+    expect(await db.select().from(noticePictures)).toHaveLength(1);
   });
 });

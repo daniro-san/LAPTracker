@@ -88,11 +88,16 @@ export async function saveWithPicture(
   changes: Change[],
   requestId: string,
 ): Promise<SavedAnswer> {
-  const refused = (failed: PictureFailure, saved: boolean): SavedAnswer => ({
-    ok: false,
-    conflicts: null,
-    picture: failed === "signedOut.text" || !saved ? failed : "notices.picture.notSent",
-  });
+  const refused = (failed: PictureFailure, saved: boolean): SavedAnswer =>
+    // The notice is in the trash (D118): the text save's own answer, so the editor offers to restore it.
+    // The picture change stays held and goes in with the next Save.
+    failed === "deleted"
+      ? { ok: false, conflicts: null, signedOut: false, deleted: true }
+      : {
+          ok: false,
+          conflicts: null,
+          picture: failed === "signedOut.text" || !saved ? failed : "notices.picture.notSent",
+        };
   const before = p.id !== null ? await picture.apply(p.slug, p.id) : null;
   if (before) return refused(before, false);
   const answer =

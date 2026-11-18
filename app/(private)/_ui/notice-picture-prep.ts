@@ -39,10 +39,15 @@ export async function preparePicture(file: File): Promise<Blob | null> {
   }
 }
 
-export type PictureFailure = "signedOut.text" | "notices.picture.failed";
+/** Why a picture write failed; "deleted": the notice is in the trash (410 notice_deleted, D118). */
+export type PictureFailure = "signedOut.text" | "notices.picture.failed" | "deleted";
 
 const failure = (e: unknown): PictureFailure =>
-  isSignedOut(e) ? "signedOut.text" : "notices.picture.failed";
+  isSignedOut(e)
+    ? "signedOut.text"
+    : e instanceof Error && e.message === "410"
+      ? "deleted"
+      : "notices.picture.failed";
 
 /** Uploads the prepared picture to notice `id`; its address and size, or why not. */
 export async function uploadPicture(
