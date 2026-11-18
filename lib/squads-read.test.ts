@@ -11,8 +11,13 @@ import { factVersion, insertFact } from "./repo/member-facts";
 import { getSquadRead, latestSquads } from "./repo/squads";
 import { saveWorkspace } from "./repo/workspaces";
 import { dailyReads, dailyRosters, runLogs } from "./schema";
-import { memberSquads } from "./schema-squads";
-import type { PlayerSquadsInput, SquadInput } from "./sources/types";
+import { memberSquads, squadReads } from "./schema-squads";
+import {
+  QuotaExhaustedError,
+  UpstreamError,
+  type PlayerSquadsInput,
+  type SquadInput,
+} from "./sources/types";
 import { runSquadsBatch, type SquadsDeps } from "./squads-read";
 
 const CFG = { ...TEST_ENV, SAMPLE_EVERY_MIN: 15 };
@@ -179,5 +184,89 @@ describe("the squads read (D117)", () => {
       version: 1,
       source: "officer",
     });
+  });
+});
+
+describe("the squads read's batches and claim (D117)", () => {
+  /** A running day whose batch was claimed `ago` ms before THU.now, past uid 1. */
+  async function runningDay(ago: number) {
+    await dayRead(THU.day, [1, 2, 3], 900);
+    await db.insert(squadReads).values({
+      day: THU.day,
+      unionId: OWN_ALLIANCE_ID,
+      status: "running",
+      startedAt: new Date(THU.now.getTime() - 300_000),
+      batchAt: new Date(THU.now.getTime() - ago),
+      members: 3,
+      afterUid: 1,
+      callsUsed: 1,
+      quotaRemaining: 850,
+    });
+  }
+
+  it("stops the day at a 429", async () => {
+    await dayRead(THU.day, [1, 2, 3], 900);
+    const d = deps(THU.now);
+    const ok = d.v1.fetchPlayer;
+    d.v1.fetchPlayer = async (uid, onAttempt, ...rest) => {
+      if (uid === 2) {
+        onAttempt?.(0);
+        throw new QuotaExhaustedError("429 on /players/2");
+      }
+      return ok(uid, onAttempt, ...rest);
+    };
+    expect(await runSquadsBatch(d, db)).toMatchObject({ status: "stopped", calls: 2 });
+    expect(await getSquadRead(db, THU.day)).toMatchObject({ reason: "quota_429", afterUid: 2 });
+    expect(await runSquadsBatch(d, db)).toEqual({ kind: "idle" });
+  });
+
+  it("retries a 502 member once after the pass, and not a second time", async () => {
+    await dayRead(THU.day, [1, 2, 3], 900);
+    const d = deps(THU.now);
+    const ok = d.v1.fetchPlayer;
+    d.v1.fetchPlayer = async (uid, onAttempt, ...rest) => {
+      if (uid !== 2) return ok(uid, onAttempt, ...rest);
+      onAttempt?.(0);
+      d.calls.push(uid);
+      throw new UpstreamError(502);
+    };
+    expect(await runSquadsBatch(d, db)).toMatchObject({ status: "done", calls: 4 });
+    expect(d.calls).toEqual([1, 2, 3, 2]);
+    expect(await getSquadRead(db, THU.day)).toMatchObject({ failed: 2, retryUids: [] });
+  });
+
+  it("goes on from the cursor in the next batch without reading anyone again", async () => {
+    await dayRead(THU.day, [1, 2, 3], 900);
+    // Member 2's answer never comes: the deadline cuts the first batch after its call was sent.
+    const first = { ...deps(THU.now), deadlineMs: 300 };
+    const ok = first.v1.fetchPlayer;
+    first.v1.fetchPlayer = async (uid, onAttempt, signal, options) => {
+      if (uid !== 2) return ok(uid, onAttempt, signal, options);
+      onAttempt?.(0);
+      first.calls.push(uid);
+      return new Promise((_, reject) =>
+        signal?.addEventListener("abort", () => reject(signal.reason)),
+      );
+    };
+    expect(await runSquadsBatch(first, db)).toMatchObject({ status: "running", more: true });
+    expect(await getSquadRead(db, THU.day)).toMatchObject({ afterUid: 2, callsUsed: 2, failed: 1 });
+    const second = deps(new Date(THU.now.getTime() + 2_000));
+    expect(await runSquadsBatch(second, db)).toMatchObject({ status: "done", calls: 1 });
+    expect([...first.calls, ...second.calls]).toEqual([1, 2, 3]);
+  });
+
+  it("refuses a second caller while a batch holds the claim", async () => {
+    await runningDay(10_000);
+    const d = deps(THU.now);
+    expect(await runSquadsBatch(d, db)).toEqual({ kind: "idle" });
+    expect(d.calls).toEqual([]);
+  });
+
+  it("takes over a stale claim (a killed batch) and goes on after its cursor", async () => {
+    await runningDay(200_000);
+    const d = deps(THU.now);
+    expect(await runSquadsBatch(d, db)).toMatchObject({ status: "done", calls: 2 });
+    expect(d.calls).toEqual([2, 3]);
+    expect(await getSquadRead(db, THU.day)).toMatchObject({ callsUsed: 3, batchAt: null });
   });
 });

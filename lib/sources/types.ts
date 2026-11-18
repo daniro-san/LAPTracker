@@ -54,7 +54,7 @@ export interface HeroInput {
   id: number;
   lv: number | null;
   star: number | null;
-  /** Quality: higher is rarer (legendary before epic). */
+  /** Rarity: 3 R, 4 SSR, 5 UR (owner, 2026-11-18); the same for every copy of a hero. */
   q: number | null;
   awaken: number | null;
 }

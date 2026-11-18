@@ -73,6 +73,11 @@ export const squadReads = pgTable(
     members: integer("members").notNull(),
     /** The uid read last; the next batch goes on from the next higher uid. */
     afterUid: big("after_uid"),
+    /** Members whose call failed with a 5xx or no answer, retried once after the pass (owner, 2026-11-18). */
+    retryUids: big("retry_uids")
+      .array()
+      .notNull()
+      .default(sql`'{}'::bigint[]`),
     callsUsed: integer("calls_used").notNull().default(0),
     withSquads: integer("with_squads").notNull().default(0),
     failed: integer("failed").notNull().default(0),

@@ -19,7 +19,7 @@ const SQUAD: StoredSquad = {
   power: 61_234_567,
   soldiers: 4000,
   soldierLoad: 3800,
-  heroes: [hero(10010, 60, 9, 4), hero(10005, 80, 22, 5), hero(99999, 50, 4, 3)],
+  heroes: [hero(10010, 60, 9, 4), hero(10005, 150, 50, 5), hero(99999, 50, 4, 3)],
   seenAt: new Date("2026-11-16T20:00:00Z"),
   readAt: new Date("2026-11-17T01:40:00Z"),
 };
@@ -31,7 +31,11 @@ const NAMES = new Map([
 function render(language: "en" | "pt-BR", squads: StoredSquad[]) {
   const t = WORKSPACE_DICTIONARIES[language];
   const card = squadsCardOf(squads, NAMES, t, cardFormats(language, "Etc/GMT+2", NOW));
-  return renderToStaticMarkup(createElement(MemberSquads, { squads: card }));
+  // React marks the joins between text parts with empty comments.
+  return renderToStaticMarkup(createElement(MemberSquads, { squads: card })).replaceAll(
+    "<!-- -->",
+    "",
+  );
 }
 
 describe("the member card's squads (D117)", () => {
@@ -41,12 +45,14 @@ describe("the member card's squads (D117)", () => {
     expect(html).toContain("Squad 2");
     expect(html).toContain("Might 61.2M");
     expect(html).toContain("seen Mon, Nov 16");
-    // Legendary (q 5) first, then epic; floor(22 / 5) = 4 stars.
+    // UR (q 5) first, then SSR (q 4), then R; floor(50 / 5) = 10 stars, shown as one star and the count.
     expect(html.indexOf("Kesso")).toBeLessThan(html.indexOf("Ilvane"));
+    expect(html.indexOf(">UR<")).toBeLessThan(html.indexOf(">SSR<"));
+    expect(html.indexOf(">SSR<")).toBeLessThan(html.indexOf(">R<"));
     expect(html).toContain('src="/img/hero/10005"');
-    expect(html).toContain("Lv 80");
-    expect(html).toContain('aria-label="4 stars"');
-    expect(html).toContain("★★★★<");
+    expect(html).toContain("Lv 150");
+    expect(html).toContain('aria-label="10 stars">★10<');
+    expect(html).toContain('aria-label="1 star">★1<');
     // 99999 is not in the catalog: a plain box and "Unknown hero", never a picture request.
     expect(html).toContain("Unknown hero");
     expect(html).not.toContain("/img/hero/99999");
@@ -56,8 +62,8 @@ describe("the member card's squads (D117)", () => {
     const html = render("pt-BR", [SQUAD]);
     expect(html).toContain("Esquadrões (do tracker)");
     expect(html).toContain("Esquadrão 2");
-    expect(html).toContain("Nv 80");
-    expect(html).toContain('aria-label="4 estrelas"');
+    expect(html).toContain("Nv 150");
+    expect(html).toContain('aria-label="10 estrelas"');
     expect(render("en", [])).toContain("The tracker has not seen their squads yet.");
     expect(render("en", [])).not.toContain("<img");
   });

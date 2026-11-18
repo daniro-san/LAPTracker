@@ -17,7 +17,7 @@
 - **Hero pictures.** `/img/hero/[id]` serves only ids in `hero_catalog`. It fetches `/static/heroes/<id>.png` from the tracker site's origin, redraws it at 80 px and caches it for 30 days. The catalog is refreshed by the day's first batch when it is older than 20 hours.
 - **Card.** A "Squads (from the tracker)" section after Member info (`MemberSquads.tsx`, `lib/private/member-squads.ts`):
   - each squad's might and "seen {date}";
-  - its heroes with picture, name, level and `floor(star/5)` stars, legendary first;
+  - its heroes with picture, name, R / SSR / UR, level and `floor(star/5)` stars as "★10", UR first (see the review round);
   - a plain box and "Unknown hero" for an id outside the catalog;
   - one quiet line when the tracker has seen no squad.
   - `HeroPicture` is in `app/_ui/Pictures.tsx`.
@@ -54,21 +54,46 @@
   - The real `POST /api/squads-read`: a wrong secret gets 401. The first call answered 200 `done` with 40 calls in 20.6 s; the next call answered 204.
   - The stand-in saw 40 player requests, all without `fresh`, and 1 catalog request.
   - DB: 35 members with squads, 46 squad rows, 34 tracker versions, quota left 830. The officer's newer 41M value stayed. An officer's older 30M value got version 2, 43.7M "from the tracker".
-  - Playwright Chrome: **70 of 70 checks pass**. They cover the hero route (one 200, three 404s); at 360 and 1280, light and dark, EN and PT: the heading, squad, might, seen date, level and unknown hero, the stars' label, 7 pictures loaded and none for the unknown id, legendary first, nothing overflowing, the officer value kept, and no request leaving our origin; the Quillon card ("43.7M, +13.7M this week, from the tracker"); and the empty line.
+  - Playwright Chrome (first round, before the review round): **70 of 70 checks pass**. They covered the hero route (one 200, three 404s); at 360 and 1280, light and dark, EN and PT: the heading, squad, might, seen date, level and unknown hero, the stars' label, 7 pictures loaded and none for the unknown id, legendary first, nothing overflowing, the officer value kept, and no request leaving our origin; the Quillon card ("43.7M, +13.7M this week, from the tracker"); and the empty line.
   - The design pass found "Lv / 80 ★★★★" wrapping in the 3-column grid at 1280. Fixed (the text column takes the free width, the level line does not wrap), rebuilt, and re-checked: 70 of 70.
 - Privacy grep of the diff against the 101 names of the OGs fixture: 0 hits.
 - Screenshots (not committed) in `/private/tmp/claude-502/-Users-danilordasilva-orca-workspaces-LAPTracker-unicornfish/147759e3-1cdb-4ccd-b74a-1001498a1e18/scratchpad/11ai-shots/`: `squads-{360,1280}-{light,dark}-{en,pt}`, `card-{360,1280}-{light,dark}-{en,pt}`, `card-quillon-tracker-360-light-en`, `squads-none-360-light-en`.
 
+## Review round (PR 416, 2026-11-18)
+Input: the PR review, a one-off real read of all 100 OGs members that the orchestrator ran with the owner's leave (aggregated, no names; I made no upstream call), and the owner's answers.
+
+- **Crash safety.** After every call, the cursor, the retry list, the calls used, the counts and the quota left are saved in one update guarded by the batch's claim (`updateClaimedSquadRead`). A killed function cannot make the next batch read a member again. A batch whose claim was taken over as stale stops writing and answers idle.
+- **Deadline.** The 100 s now count from before the claim and the hero catalog refresh.
+- **Deadline before a call.** A call the deadline cut before it was sent does not move the cursor; that member stays for the next batch.
+- **Retry** (owner). After the pass, each member whose call failed with a 5xx or got no answer gets one more call. A 429 or another 4xx is never retried. The 120 cap now counts every call of the day, retries included, and the reserve applies to retries too. Migration `0041_squad_retries` adds `squad_reads.retry_uids`.
+- **`seen_at`.** All-digit strings are read as epoch seconds. A sighting is stored as at most our read time.
+- **Card.**
+  - Each hero gets an R / SSR / UR tag (`q` 3 / 4 / 5, owner), UR first.
+  - Stars show as "★10" (one star and the count), because ten drawn stars overflowed at 360.
+  - Two columns at every width: the sheet is about 440 px wide on a desktop, and three columns wrapped "★10" under the level.
+  - "Lv 150" fits.
+- **`tick.yml`.** The loop also stops when the answer says `"more":false`.
+- **`awaken`** stays stored and is not shown (owner: show it once the server is about 120 days old).
+- **Thanks** (owner). A tracker version counts toward the thanks only at 5 % growth or more, like any version. `progressOf` already did this for every source; a test now pins it for tracker versions.
+- **D117 updated.** The measured facts from the real read; the `cached` wording now says only what was observed (84 of 95 `cached: false`, median age 0 s), not a claim about the maintainer's game account; R/SSR/UR replaces "legendary/epic" everywhere.
+- **New tests:**
+  - in `lib/squads-read.test.ts`: a 429 stops the day; a 502 member is retried once and not again; the next batch goes on from the cursor without re-reading; a second caller is refused while a claim is held; a stale claim is taken over;
+  - in `lib/private/fact-trend.test.ts`: tracker versions are thanked only at 5 % or more;
+  - an all-digit `seen_at` in `v1-player.test.ts`;
+  - "Lv 150", "★10" and UR before SSR before R in `MemberSquads.test.ts`.
+- **Verified (r2).** `pnpm check` exits 0 (190 files, 1017 tests passed, 4 skipped) before the last layout change.
+  - **e2e** on a new production build, with a tracker stand-in shaped like the real read: up to 4 squads of 5 heroes (one of 4), star up to 50, level up to 150, `q` 3/4/5 fixed per hero, `ue` −1, `seen_at` in epoch seconds 0.2–1.3 days old. It answers 502 once for two members.
+  - The real route made 42 calls for 40 members, retried 2, `retry_uids` came back empty, status `done`, then 204. 1 catalog request; no `fresh`.
+  - Playwright Chrome: **86 of 86 checks pass**, before and after the two-column change. The checks cover 18 hero pictures in 4 squads, UR first with "★10", R/SSR/UR tags, every hero line inside its column, and nothing overflowing, at 360 and 1280, light and dark, EN and PT.
+
 ## Open issues
 - WebKit (iPhone 390) did not run: the sign-in click timed out in Playwright WebKit on localhost (`w.state_bad` in the app log), as in earlier sessions.
-- `seen_at`'s real format is not known (the spike did not record it). Seconds, milliseconds and ISO strings are all read; check one stored row after the first production night.
-- Hero quality `q` is assumed "higher is rarer" for the legendary-first order; not confirmed against the site.
-- Quillon's card says "+13.7M this week" because the tracker version counts as progress in D109's trend. The thanks list (D114) will also thank tracker-driven growth. This looks intended (people first), but the owner may want tracker versions left out of the thanks.
 - Follow-up, not done: the `/admin` daily run page does not label the squads lines specially. They show as plain log lines.
 
 ## Next
 - Model/effort: keep. The scope fit one session.
-- What the owner must do first: merge. The release applies migration `0040_squads` (three new tables and a widened check). No environment change. The `tick.yml` change takes effect from `main`. On the first night, look at `/admin/runs/daily/[day]` for the `squads.batch` line and its `quota_remaining`.
+- What the owner must do first: merge. The release applies migrations `0040_squads` (three new tables and a widened check) and `0041_squad_retries` (one column). No environment change. The `tick.yml` change takes effect from `main`. On the first night, look at `/admin/runs/daily/[day]` for the `squads.batch` line, its `retried` and its `quota_remaining`.
+- Later (owner, 2026-11-18): show `awaken` on the card once the server is about 120 days old. It is already stored on every squad row (`member_squads.heroes[].awaken`); only `lib/private/member-squads.ts` and `MemberSquads.tsx` need to show it.
 - Plan change: none (the workspace track has no prompt in `docs/SESSION_PLAYBOOK.md`).
 
 <adjustments>

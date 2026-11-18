@@ -38,7 +38,7 @@ jobs:
           echo "$path -> HTTP $code"
           case "$code" in 2??) ;; *) exit 1 ;; esac
       # The nightly squads read (D117): the app decides whether a batch is due (204 when not); each 200
-      # is one batch, so call again while batches remain, at most 4 times.
+      # is one batch, so call again while it answers `"more":true`, at most 4 times.
       - name: Squads read
         if: ${{ (inputs.phase || 'tick') == 'tick' }}
         env:
@@ -46,8 +46,9 @@ jobs:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           for i in 1 2 3 4; do
-            code=$(curl -sS --max-time 150 -X POST -o /dev/null -w "%{http_code}" \
+            code=$(curl -sS --max-time 150 -X POST -o squads.json -w "%{http_code}" \
               -H "Authorization: Bearer $CRON_SECRET" "$APP_URL/api/squads-read") || { echo "squads-read -> curl failed"; exit 1; }
             echo "/api/squads-read -> HTTP $code"
             case "$code" in 200) ;; 2??) break ;; *) exit 1 ;; esac
+            grep -q '"more":true' squads.json || break
           done

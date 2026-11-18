@@ -70,10 +70,13 @@ describe("v1.fetchPlayer (D117)", () => {
         squads: [
           { squad: 1, power: 5, seen_at: "2026-11-16T20:00:00Z" },
           { squad: 3, power: 7, heroes: [{ id: 10010 }] },
+          { squad: 4, power: 9, seen_at: "1763340000" },
         ],
       }),
     );
     const { squads } = await fetchPlayer(501);
+    // An all-digit string is epoch seconds, as the number always was (2026-11-18).
+    expect(squads[2]?.seenAt).toEqual(new Date(1_763_340_000 * 1000));
     expect(squads[0]).toMatchObject({
       soldiers: null,
       soldierLoad: null,

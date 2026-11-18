@@ -77,12 +77,22 @@ export async function claimSquadBatch(
   return row ?? null;
 }
 
-export async function updateSquadRead(
+/**
+ * Writes a batch's progress (after each call) or its end, only while the batch still holds the day's
+ * claim (`batch_at` = the time it claimed). False when a later caller took the claim over as stale.
+ */
+export async function updateClaimedSquadRead(
   db: Db,
   day: string,
+  claimedAt: Date,
   patch: Partial<typeof squadReads.$inferInsert>,
-): Promise<void> {
-  await db.update(squadReads).set(patch).where(eq(squadReads.day, day));
+): Promise<boolean> {
+  const rows = await db
+    .update(squadReads)
+    .set(patch)
+    .where(and(eq(squadReads.day, day), eq(squadReads.batchAt, claimedAt)))
+    .returning({ day: squadReads.day });
+  return rows.length > 0;
 }
 
 /** The newest stored row of each squad number of one member, squad 1 first. */
@@ -129,7 +139,9 @@ export async function storeSquads(
   readAt: Date,
 ): Promise<number> {
   const newest = new Map((await latestSquads(db, unionId, uid)).map((s) => [s.squad, s]));
-  const rows = squads
+  // A sighting is never later than our read (a clock ahead upstream would make it so).
+  const clamped = squads.map((s) => (s.seenAt && s.seenAt > readAt ? { ...s, seenAt: readAt } : s));
+  const rows = clamped
     .filter((s) => !sameAs(newest.get(s.squad), s))
     .map((s) => ({
       unionId,

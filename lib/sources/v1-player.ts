@@ -31,7 +31,10 @@ export const playerSchema = z.object({
 
 function seenAt(v: number | string | null | undefined): Date | null {
   if (v === null || v === undefined) return null;
-  const at = typeof v === "number" ? new Date(v < 1e12 ? v * 1000 : v) : new Date(v);
+  // Measured 2026-11-18 (100 members): always an integer in epoch seconds. An all-digit string is read
+  // as that number.
+  const n = typeof v === "number" ? v : /^\d+$/.test(v) ? Number(v) : null;
+  const at = n !== null ? new Date(n < 1e12 ? n * 1000 : n) : new Date(v);
   return Number.isNaN(at.getTime()) ? null : at;
 }
 

@@ -18,11 +18,16 @@ export interface HeroCard {
   name: string;
   /** "Lv 80"; null when the tracker sent no level. */
   level: string | null;
-  /** Whole stars as the site shows them: floor(star / 5). */
+  /** The game's rarity from `q` (3 R, 4 SSR, 5 UR, owner 2026-11-18); null for any other value. */
+  rarity: Rarity | null;
+  /** Whole stars as the site shows them: floor(star / 5), 0–10. */
   stars: number;
   /** "4 stars", for screen readers. */
   starsLabel: string;
 }
+
+export type Rarity = "R" | "SSR" | "UR";
+const RARITY: Record<number, Rarity> = { 3: "R", 4: "SSR", 5: "UR" };
 
 export interface SquadCard {
   squad: number;
@@ -47,7 +52,7 @@ export interface SquadFormats {
   language: string;
 }
 
-/** Legendary before epic (quality), then more stars, then a higher level: the tracker site's order. */
+/** UR, then SSR, then R (`q`), then more stars, then a higher level: the tracker site's order. */
 const byRank = (a: StoredSquad["heroes"][number], b: StoredSquad["heroes"][number]) =>
   (b.q ?? 0) - (a.q ?? 0) || (b.star ?? 0) - (a.star ?? 0) || (b.lv ?? 0) - (a.lv ?? 0);
 
@@ -65,6 +70,7 @@ function heroCard(
     known: name !== undefined,
     name: name ?? t["squads.unknownHero"],
     level: h.lv === null ? null : fill(t["squads.level"], { n: h.lv }),
+    rarity: (h.q !== null && RARITY[h.q]) || null,
     stars,
     starsLabel: fill(t[`squads.stars.${plural}`], { n: stars }),
   };
