@@ -27,11 +27,11 @@ export function MemberSquads({ squads }: { squads: SquadsCard }) {
                   {s.heroes.map((h, i) => (
                     <li key={`${h.id}-${i}`} className="flex min-w-0 items-center gap-2">
                       <HeroPicture id={h.id} known={h.known} />
-                      <span className="min-w-0 text-body-sm leading-tight">
+                      <span className="min-w-0 flex-1 text-body-sm leading-tight">
                         <span translate="no" className="block break-words">
                           {h.name}
                         </span>
-                        <span className="block text-[12px] text-ink/75 tabular-nums">
+                        <span className="block text-[12px] whitespace-nowrap text-ink/75 tabular-nums">
                           {h.level}
                           {h.stars > 0 && (
                             <span role="img" aria-label={h.starsLabel} className="ml-1">
