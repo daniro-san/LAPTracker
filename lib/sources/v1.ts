@@ -11,6 +11,7 @@ import {
   type CallOptions,
   NotFoundError,
   type OnAttempt,
+  type PlayerSquadsInput,
   type Quota,
   QuotaExhaustedError,
   RequestError,
@@ -18,6 +19,7 @@ import {
   type UpstreamDetail,
   UpstreamError,
 } from "./types";
+import { playerSchema, toPlayerSquads } from "./v1-player";
 
 const MAX_IN_FLIGHT = 4;
 const BACKOFF_MS = [1000, 2000, 4000] as const;
@@ -192,4 +194,17 @@ export async function fetchQuota(
   const response = await request("/quota", onAttempt, signal, options);
   const { data } = await readBody(response, quotaResponseSchema, "v1.schema");
   return data.quota;
+}
+
+export async function fetchPlayer(
+  uid: number,
+  onAttempt?: OnAttempt,
+  signal?: AbortSignal,
+  options?: CallOptions,
+): Promise<PlayerSquadsInput> {
+  // D117: no `fresh`: the tracker's cached copy (up to 60 minutes old) is enough for squads, and the
+  // maintainer's game account makes no live read for it.
+  const response = await request(`/players/${uid}`, onAttempt, signal, options);
+  const { data } = await readBody(response, playerSchema, "v1.schema");
+  return toPlayerSquads(data);
 }

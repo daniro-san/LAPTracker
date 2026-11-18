@@ -19,6 +19,7 @@ import { factText, NONE } from "./fact-text";
 import { cardBase, lastTwo, TREND_FIELDS, type Progress, type TrendField } from "./fact-trend";
 import { followUpsOf } from "./follow-up";
 import { historyLine } from "./follow-up-rules";
+import { squadsCard, type SquadsCard } from "./member-squads";
 import { membersView, type MemberRow } from "./members";
 import {
   breakText,
@@ -76,6 +77,8 @@ export interface CardData {
   autoStatus: string;
   /** The officers' follow-ups (issue 340), newest first: "Talked Mon 16 Nov: … · Ana". */
   followUps: { head: string; lines: string[] };
+  /** The squads the tracker saw (D117); set by memberCard. */
+  squads?: SquadsCard;
 }
 
 /** Server days as dates in the officer's language; instants in server time (help.servertime). */
@@ -283,5 +286,9 @@ export async function memberCard(
   const week = Object.fromEntries(
     TREND_FIELDS.map((field) => [field, cardBase(versions, uid, field, today, at.zone)]),
   );
-  return cardData(member, view.week, at.t, f, shownOf(view.members), lines, previous, week);
+  const squads = await squadsCard(db, access, uid, at.t, f);
+  return {
+    ...cardData(member, view.week, at.t, f, shownOf(view.members), lines, previous, week),
+    squads,
+  };
 }

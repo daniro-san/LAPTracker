@@ -75,6 +75,11 @@ export function fakeV1(alliance: (id: number, call: number) => Outcome, remainin
       if (outcome instanceof Error) throw outcome;
       return outcome;
     },
+    // The squads read (D117) replaces this where it is tested; nothing else calls it.
+    fetchPlayer: async (uid: number, onAttempt?: OnAttempt) => {
+      onAttempt?.(0);
+      return { uid, squads: [], quota: null };
+    },
   };
   return v1;
 }

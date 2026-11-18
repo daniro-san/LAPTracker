@@ -12,6 +12,7 @@ import { noticesFr } from "./dictionary.notices";
 import { rollFr } from "./dictionary.rollcall.fr";
 import { shareFr } from "./dictionary.share";
 import { shotsFr } from "./dictionary.shots.fr";
+import { squadsFr } from "./dictionary.squads";
 import { theftsFr } from "./dictionary.thefts";
 import { translateFr } from "./dictionary.translate";
 
@@ -284,4 +285,5 @@ export const fr: WorkspaceDictionary = {
   ...followUpFr,
   ...activityFr,
   ...shareFr,
+  ...squadsFr,
 };

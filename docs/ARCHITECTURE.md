@@ -111,6 +111,11 @@ lib/schedule.ts     pure: SERVER_TZ ↔ UTC, scheduled events and their times, F
 lib/tick.ts         the tick's decision: create the scheduled event's row, run the one due phase (from events.before_at/
                     after_at), a due sample (D69), the Friday check, a REHEARSAL_AT slot, the daily roster read.
 lib/daily-read.ts   the daily roster read (D60, D72): quota check, /v1 rosters as arrays (and raw_json) into daily_rosters; not an event.
+lib/squads-read.ts  the nightly squads read (D117): batches of /v1/players for OWN_ALLIANCE_ID after the daily read, via
+                    POST /api/squads-read; squads into member_squads (lib/repo/squads.ts, lib/schema-squads.ts), the
+                    tracker's "Main squad might" versions through lib/repo/member-facts.ts, the hero catalog
+                    (lib/heroes.ts, lib/repo/hero-catalog.ts). lib/squads.ts: its pure rules (reserve, main squad,
+                    version rule). The card's words: lib/private/member-squads.ts.
 lib/rehearsal.ts    rehearsal creation (guards, retention) and the pure verdict.
 lib/auth.ts         Bearer CRON_SECRET / x-edit-pin in constant time; the Postgres-backed rate limiter.
 lib/run.ts          what a route runs: executeSnapshot and the tick's executeSample (D69) (finalise + logger
@@ -119,7 +124,8 @@ lib/route.ts, lib/app-context.ts, lib/app-errors.ts
                     the route shell (one DB per request, closed on every path; errors become a code),
                     the outside world in one object (env, clock, adapters, fetch, openDb, eventCache), app_errors.
 config/alliances.ts the 20 tracked alliances, by union_id
-app/img/*           /img/badge/[id] and /img/avatar/[uid]: upstream images served from our origin (D22), via lib/images.ts.
+app/img/*           /img/badge/[id] and /img/avatar/[uid]: upstream images served from our origin (D22), via lib/images.ts;
+                    /img/hero/[id] (D117) only for ids in hero_catalog.
 app/ingest/*        PostHog's same-origin proxy (D77), via lib/analytics/ingest.ts.
 lib/analytics/*.ts  PostHog (D77): the typed custom events (events.ts), the browser SDK and replay switch (posthog.ts),
                     before_send (sanitise.ts, pure), the /ingest forwarding (ingest.ts) and the region (region.ts).

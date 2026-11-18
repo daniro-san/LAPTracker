@@ -83,6 +83,8 @@ export async function getDailyRead(db: Db, day: string) {
       finishedAt: dailyReads.finishedAt,
       callsUsed: dailyReads.callsUsed,
       error: dailyReads.error,
+      // The squads read starts from what the day's read left (D117).
+      quotaRemainingBefore: dailyReads.quotaRemainingBefore,
     })
     .from(dailyReads)
     .where(eq(dailyReads.day, day));

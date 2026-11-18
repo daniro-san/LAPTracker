@@ -9,6 +9,7 @@ export default defineConfig({
     "./lib/schema-thefts.ts",
     "./lib/schema-import.ts",
     "./lib/schema-board.ts",
+    "./lib/schema-squads.ts",
   ],
   out: "./drizzle",
 });

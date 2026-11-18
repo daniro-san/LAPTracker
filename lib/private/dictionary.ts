@@ -15,6 +15,7 @@ import { pt } from "./dictionary.pt-BR";
 import { rollEn } from "./dictionary.rollcall";
 import { shareEn } from "./dictionary.share";
 import { shotsEn } from "./dictionary.shots";
+import { squadsEn } from "./dictionary.squads";
 import { theftsEn } from "./dictionary.thefts";
 import { translateEn } from "./dictionary.translate";
 
@@ -264,6 +265,7 @@ const en = {
   ...followUpEn,
   ...activityEn,
   ...shareEn,
+  ...squadsEn,
 } as const;
 
 export type WorkspaceKey = keyof typeof en;
