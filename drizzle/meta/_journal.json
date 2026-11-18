@@ -288,6 +288,13 @@
       "when": 1795001412558,
       "tag": "0040_notice_delete",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1795004969182,
+      "tag": "0041_squads",
+      "breakpoints": true
     }
   ]
 }

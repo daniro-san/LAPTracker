@@ -100,6 +100,26 @@ describe("the week's progress in the thanks (D109, weekly baseline D114)", () =>
     ]);
   });
 
+  it("thanks a tracker version only at 5% or more, as any other (D117)", () => {
+    const tracker = (uid: number, version: number, value: number, at: string): FactRow => ({
+      ...row(uid, "squadMight", version, value, at),
+      source: "tracker",
+    });
+    const history = [
+      // Ana: an officer's 10.0M, then the tracker's 10.4M this week (+4 %): the card changes, no thanks.
+      row(1, "squadMight", 1, 10_000_000, "2026-11-12"),
+      tracker(1, 2, 10_400_000, "2026-11-17"),
+      // Bo: the tracker's 10.0M, then 10.6M this week (+6 %): thanked.
+      tracker(2, 1, 10_000_000, "2026-11-12"),
+      tracker(2, 2, 10_600_000, "2026-11-17"),
+    ];
+    const members = [
+      { uid: 1, name: "Ana" },
+      { uid: 2, name: "Bo" },
+    ];
+    expect(progressOf(history, members, MONDAY, ZONE).map((p) => p.name)).toEqual(["Bo"]);
+  });
+
   it("covers last week on a Monday, without the Monday's own saves, and this week otherwise", () => {
     expect(thanksWeek("2026-11-22")).toBe("2026-11-16"); // Sunday: this week
     expect(thanksWeek("2026-11-23")).toBe("2026-11-16"); // Monday: last week

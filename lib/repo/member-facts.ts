@@ -11,7 +11,7 @@ export interface FactRow {
   field: string;
   version: number;
   value: unknown;
-  source: "message" | "officer" | "sheet";
+  source: "message" | "officer" | "sheet" | "tracker";
   writtenAt: Date;
 }
 

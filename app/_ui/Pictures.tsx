@@ -130,3 +130,18 @@ export function PlayerAvatar({
     </span>
   );
 }
+
+/** A hero's picture (D117) at 40 px; a hero outside the catalog, or a picture that fails, is a plain box. */
+export function HeroPicture({ id, known }: { id: number; known: boolean }) {
+  const box = "size-10 shrink-0 rounded-[3px]";
+  const placeholder = <span aria-hidden="true" className={`${box} border border-rule`} />;
+  if (!known) return placeholder;
+  return (
+    <Picture
+      src={`/img/hero/${id}`}
+      n={40}
+      className={`${box} object-contain`}
+      fallback={placeholder}
+    />
+  );
+}

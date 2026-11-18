@@ -49,6 +49,34 @@ export interface AllianceSnapshotInput {
   raw: unknown;
 }
 
+/** One hero of a squad as /v1/players sends it (D117); `star` is the raw value, the site shows floor(star / 5). */
+export interface HeroInput {
+  id: number;
+  lv: number | null;
+  star: number | null;
+  /** Rarity: 3 R, 4 SSR, 5 UR (owner, 2026-11-18); the same for every copy of a hero. */
+  q: number | null;
+  awaken: number | null;
+}
+
+/** One squad the tracker has seen (D117). Only seen squads come back, so a list is partial. */
+export interface SquadInput {
+  squad: number;
+  power: number;
+  soldiers: number | null;
+  soldierLoad: number | null;
+  /** When the tracker saw it; null when not sent. */
+  seenAt: Date | null;
+  heroes: HeroInput[];
+}
+
+/** The squads of one player from GET /v1/players/{uid} (D117): nothing else of the body is kept. */
+export interface PlayerSquadsInput {
+  uid: Uid;
+  squads: SquadInput[];
+  quota: Quota | null;
+}
+
 export interface RanksBoard {
   /** The older of the two boards' pulled_at. */
   pulledAt: Date;
@@ -80,6 +108,13 @@ export interface V1Source {
     options?: CallOptions,
   ): Promise<AllianceSnapshotInput>;
   fetchQuota(onAttempt?: OnAttempt, signal?: AbortSignal, options?: CallOptions): Promise<Quota>;
+  /** GET /v1/players/{uid}, the tracker's cached copy (no `fresh`), squads only (D117). */
+  fetchPlayer(
+    uid: Uid,
+    onAttempt?: OnAttempt,
+    signal?: AbortSignal,
+    options?: CallOptions,
+  ): Promise<PlayerSquadsInput>;
 }
 
 export interface InternalSource {
