@@ -86,6 +86,12 @@ Input: the PR review, a one-off real read of all 100 OGs members that the orches
   - The real route made 42 calls for 40 members, retried 2, `retry_uids` came back empty, status `done`, then 204. 1 catalog request; no `fresh`.
   - Playwright Chrome: **86 of 86 checks pass**, before and after the two-column change. The checks cover 18 hero pictures in 4 squads, UR first with "★10", R/SSR/UR tags, every hero line inside its column, and nothing overflowing, at 360 and 1280, light and dark, EN and PT.
 
+## Re-review fixes (2026-11-18)
+- **A call the deadline cut after it was sent** now puts the member on the retry list (the owner's one retry), within the cap and the reserve. The test "goes on from the cursor…" now expects calls 1, 2, 3, then 2 again, and an empty retry list at the end.
+- **Progress is saved as soon as the answer is in**, before `storeSquads` and `writeMight`. A function killed while storing cannot make the next batch call that member again.
+- **The hero catalog refresh** moved from `lib/squads-read.ts` to `lib/heroes.ts` (`refreshHeroCatalog`), to keep the run under the 300-line limit.
+- **New test:** a sighting later than our read is stored as our read time.
+
 ## Rebase (2026-11-18)
 - Rebased onto dev at c79c37f3 (#414, #415). The only conflict was `docs/decisions/README.md`; both sides were kept (D115, D116, then D117).
 - The two unshipped migrations were folded into one: `0040_squads` from a single `pnpm db:generate` after restoring dev's journal.

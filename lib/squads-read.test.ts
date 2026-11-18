@@ -158,6 +158,17 @@ describe("the squads read (D117)", () => {
     expect(await db.select().from(memberSquads)).toHaveLength(3);
   });
 
+  it("stores a sighting later than our read as our read time", async () => {
+    await dayRead(THU.day, [7], 900);
+    // THU.now is 2026-11-20T01:39Z; the tracker claims a sighting a day later.
+    await runSquadsBatch(
+      deps(THU.now, () => [sq(1, 5_000_000, "2026-11-21T01:39:00Z")]),
+      db,
+    );
+    const [stored] = await latestSquads(db, OWN_ALLIANCE_ID, 7);
+    expect(stored?.seenAt).toEqual(THU.now);
+  });
+
   it("writes the strongest squad as a tracker version, and leaves an officer's newer value", async () => {
     await insertFact(db, {
       workspaceId: ws,
@@ -235,9 +246,9 @@ describe("the squads read's batches and claim (D117)", () => {
     expect(await getSquadRead(db, THU.day)).toMatchObject({ failed: 2, retryUids: [] });
   });
 
-  it("goes on from the cursor in the next batch without reading anyone again", async () => {
+  it("goes on from the cursor in the next batch, and gives a call the deadline cut its one retry", async () => {
     await dayRead(THU.day, [1, 2, 3], 900);
-    // Member 2's answer never comes: the deadline cuts the first batch after its call was sent.
+    // Member 2's first answer never comes: the deadline cuts the first batch after its call was sent.
     const first = { ...deps(THU.now), deadlineMs: 300 };
     const ok = first.v1.fetchPlayer;
     first.v1.fetchPlayer = async (uid, onAttempt, signal, options) => {
@@ -249,10 +260,17 @@ describe("the squads read's batches and claim (D117)", () => {
       );
     };
     expect(await runSquadsBatch(first, db)).toMatchObject({ status: "running", more: true });
-    expect(await getSquadRead(db, THU.day)).toMatchObject({ afterUid: 2, callsUsed: 2, failed: 1 });
+    expect(await getSquadRead(db, THU.day)).toMatchObject({
+      afterUid: 2,
+      callsUsed: 2,
+      failed: 1,
+      retryUids: [2],
+    });
+    // The next batch reads 3, then retries 2 once; nobody else is called again.
     const second = deps(new Date(THU.now.getTime() + 2_000));
-    expect(await runSquadsBatch(second, db)).toMatchObject({ status: "done", calls: 1 });
-    expect([...first.calls, ...second.calls]).toEqual([1, 2, 3]);
+    expect(await runSquadsBatch(second, db)).toMatchObject({ status: "done", calls: 2 });
+    expect([...first.calls, ...second.calls]).toEqual([1, 2, 3, 2]);
+    expect(await getSquadRead(db, THU.day)).toMatchObject({ callsUsed: 4, retryUids: [] });
   });
 
   it("refuses a second caller while a batch holds the claim", async () => {

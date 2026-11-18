@@ -4,6 +4,9 @@
 // only for ids in the stored catalog.
 import { z } from "zod";
 
+import type { Db } from "./db";
+import type { Logger } from "./logger";
+import { catalogUpdatedAt, saveHeroCatalog } from "./repo/hero-catalog";
 import { USER_AGENT } from "./sources/shared";
 
 /** A hero id names one picture; pictures change rarely, so a month in every cache. */
@@ -52,4 +55,26 @@ export async function fetchHeroCatalog(
   } catch (e) {
     return { failure: e instanceof Error ? e.name : "error" };
   }
+}
+
+/**
+ * The squads read's first batch of the day (D117): the catalog again when it is empty or older than
+ * CATALOG_MAX_AGE_MS. A failure keeps the old one. One `squads.heroes` line: the count or the failure.
+ */
+export async function refreshHeroCatalog(
+  db: Db,
+  siteBaseUrl: string,
+  doFetch: typeof fetch,
+  now: Date,
+  log: Logger,
+): Promise<void> {
+  const at = await catalogUpdatedAt(db);
+  if (at && now.getTime() - at.getTime() < CATALOG_MAX_AGE_MS) return;
+  const result = await fetchHeroCatalog(siteBaseUrl, doFetch);
+  if ("failure" in result) {
+    await log.warn("squads.heroes", { failure: result.failure });
+    return;
+  }
+  await saveHeroCatalog(db, result.heroes, now);
+  await log.info("squads.heroes", { heroes: result.heroes.length });
 }

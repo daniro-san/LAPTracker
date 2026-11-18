@@ -11,10 +11,9 @@ import { ALLIANCES, OWN_ALLIANCE_ID } from "../config/alliances";
 import { RUN_DEADLINE_MS, RUN_STALE_AFTER_MS } from "./compute";
 import type { Db } from "./db";
 import type { Env } from "./env";
-import { CATALOG_MAX_AGE_MS, fetchHeroCatalog } from "./heroes";
+import { refreshHeroCatalog } from "./heroes";
 import { createRunLogger, type RunLogger } from "./logger";
 import { getDailyRead } from "./repo/daily-reads";
-import { catalogUpdatedAt, saveHeroCatalog } from "./repo/hero-catalog";
 import { factVersion, insertFact } from "./repo/member-facts";
 import { insertRunLog } from "./repo/run-logs";
 import {
@@ -29,7 +28,13 @@ import {
   type SquadRead,
 } from "./repo/squads";
 import { dailyReadDue, endsInServerDay } from "./schedule";
-import { QuotaExhaustedError, RequestError, UpstreamError, type V1Source } from "./sources/types";
+import {
+  QuotaExhaustedError,
+  RequestError,
+  UpstreamError,
+  type PlayerSquadsInput,
+  type V1Source,
+} from "./sources/types";
 import {
   mainSquad,
   SQUAD_CALLS_MAX,
@@ -150,22 +155,8 @@ async function start(
   };
   if (!(await startSquadRead(db, row))) return null;
   if (reason) await log.warn("squads.skip", { reason, quota_remaining: remaining, required });
-  else await refreshCatalog(deps, db, log);
+  else await refreshHeroCatalog(db, deps.env.LAP_SITE_BASE_URL, deps.fetch, now, log);
   return { ...row, afterUid: null, retryUids: [], callsUsed: 0, withSquads: 0, failed: 0 };
-}
-
-/** The hero catalog, when it is empty or older than CATALOG_MAX_AGE_MS. A failure keeps the old one. */
-async function refreshCatalog(deps: SquadsDeps, db: Db, log: RunLogger): Promise<void> {
-  const now = deps.now();
-  const at = await catalogUpdatedAt(db);
-  if (at && now.getTime() - at.getTime() < CATALOG_MAX_AGE_MS) return;
-  const result = await fetchHeroCatalog(deps.env.LAP_SITE_BASE_URL, deps.fetch);
-  if ("failure" in result) {
-    await log.warn("squads.heroes", { failure: result.failure });
-    return;
-  }
-  await saveHeroCatalog(db, result.heroes, now);
-  await log.info("squads.heroes", { heroes: result.heroes.length });
 }
 
 const sleep = (ms: number, signal: AbortSignal) =>
@@ -219,11 +210,11 @@ async function readBatch(
   for (let call = nextCall(todo, b); call; call = nextCall(todo, b)) {
     b.stop = stopReason(row.callsUsed + b.calls, cap, b.remaining, run.reserve);
     if (b.stop || signal.aborted) break;
+    const save = () => updateClaimedSquadRead(db, row.day, claimedAt, progress(row, b));
+    const outcome = await readOne(deps, db, { ...call, workspaceId, signal }, b, save);
     // Cut by the deadline before it was sent: the member stays for the next batch.
-    if (!(await readOne(deps, db, { ...call, workspaceId, signal }, b))) break;
-    // INVARIANT squads.once-per-member: the cursor and the counts are saved after every call, so a
-    // killed function never makes the next batch read a member again.
-    if (!(await updateClaimedSquadRead(db, row.day, claimedAt, progress(row, b)))) {
+    if (outcome === "unsent") break;
+    if (outcome === "lost") {
       // A later caller took the claim as stale: it owns the day now.
       await log.shutdown();
       return { kind: "idle" };
@@ -257,42 +248,63 @@ function stopReason(calls: number, cap: number, remaining: number | null, reserv
 const retryable = (e: unknown) =>
   e instanceof RequestError || (e instanceof UpstreamError && e.status >= 500);
 
+/** "unsent": the deadline came before the call; "lost": the claim was taken over; "done": go on. */
+type CallOutcome = "unsent" | "lost" | "done";
+
 /**
- * One call for one member (the adapter itself never retries it), the squads stored, the main squad's
- * version when due. In the pass, a 5xx or network failure puts the member on the retry list; a retry
- * takes them off it whatever its answer. False when the call was never sent (the deadline came first):
- * then nothing moves.
+ * One call for one member (the adapter itself never retries it), then the squads stored and the main
+ * squad's version when due. In the pass, a 5xx, no answer, or the deadline cutting a call already sent
+ * puts the member on the retry list; a retry takes them off it whatever its answer. `save` writes the
+ * cursor and the counts under the batch's claim.
  */
 async function readOne(
   deps: SquadsDeps,
   db: Db,
   call: { uid: number; retry: boolean; workspaceId: number | null; signal: AbortSignal },
   b: Batch,
-): Promise<boolean> {
+  save: () => Promise<boolean>,
+): Promise<CallOutcome> {
   let sent = false;
   const onAttempt = () => {
     sent = true;
     b.calls++;
   };
+  let player: PlayerSquadsInput;
   try {
-    const player = await deps.v1.fetchPlayer(call.uid, onAttempt, call.signal, { maxRetries: 0 });
-    b.remaining = player.quota?.remaining ?? (b.remaining === null ? null : b.remaining - 1);
-    b.read++;
-    if (player.squads.length > 0) b.withSquads++;
-    const now = deps.now();
-    await storeSquads(db, OWN_ALLIANCE_ID, call.uid, player.squads, now);
-    if (call.workspaceId !== null && (await writeMight(db, call.workspaceId, call.uid, now)))
-      b.might++;
+    player = await deps.v1.fetchPlayer(call.uid, onAttempt, call.signal, { maxRetries: 0 });
   } catch (e) {
-    if (!sent) return false;
-    // A 429 ends the day's read: the quota is spent. A 502 (5 to 6 of 100 members on 2026-11-18) gets one
-    // retry after the pass; if that fails too, the member's stored squads stay as they are until tomorrow.
-    if (e instanceof QuotaExhaustedError) b.stop = "quota_429";
-    else b.failed++;
-    if (!call.retry && retryable(e)) b.retryUids.push(call.uid);
+    if (!sent) return "unsent";
+    failedCall(e, call, b);
+    moveOn(call, b);
+    return (await save()) ? "done" : "lost";
   }
+  b.remaining = player.quota?.remaining ?? (b.remaining === null ? null : b.remaining - 1);
+  b.read++;
+  if (player.squads.length > 0) b.withSquads++;
   moveOn(call, b);
-  return true;
+  // INVARIANT squads.once-per-member: the cursor and the call are saved as soon as the answer is in, so a
+  // function killed while storing never makes the next batch call this member again.
+  if (!(await save())) return "lost";
+  const now = deps.now();
+  await storeSquads(db, OWN_ALLIANCE_ID, call.uid, player.squads, now);
+  if (call.workspaceId !== null && (await writeMight(db, call.workspaceId, call.uid, now)))
+    b.might++;
+  return "done";
+}
+
+/**
+ * A call that was sent and failed. A 429 ends the day's read: the quota is spent. A 5xx (5 to 6 of 100
+ * members on 2026-11-18), no answer, or the run's deadline cutting the call gets one retry after the pass
+ * (owner); if that fails too, the member's stored squads stay as they are until tomorrow.
+ */
+function failedCall(
+  e: unknown,
+  call: { uid: number; retry: boolean; signal: AbortSignal },
+  b: Batch,
+) {
+  if (e instanceof QuotaExhaustedError) b.stop = "quota_429";
+  else b.failed++;
+  if (!call.retry && (retryable(e) || call.signal.aborted)) b.retryUids.push(call.uid);
 }
 
 /** INVARIANT squads.once-per-member: one call in the pass, at most one retry, whatever the answers. */
