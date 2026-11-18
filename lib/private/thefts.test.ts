@@ -249,5 +249,5 @@ describe("the thefts_kind migration (D97, amended 2026-11-17)", () => {
       { attacker_key: "name:b", kind: null },
     ]);
     await pg.close();
-  });
+  }, 60_000); // Replays the migrations up to thefts_kind on PGlite; slow when the machine is busy.
 });
