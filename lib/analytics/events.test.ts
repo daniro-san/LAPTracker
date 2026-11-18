@@ -1,6 +1,7 @@
 // The custom events' properties are closed lists of words, never a free string or a number: checked by tsc
 // (`pnpm typecheck` compiles this file), so a property that could carry a name or typed text fails `pnpm check`.
-import { describe, expectTypeOf, it } from "vitest";
+import type { PostHog } from "posthog-js";
+import { describe, expect, expectTypeOf, it, vi } from "vitest";
 
 import { track, type AnalyticsEvent, type AnalyticsEvents } from "./events";
 
@@ -29,5 +30,31 @@ describe("custom events (D77)", () => {
     track("ws_review_requested", { scope: "notice", to: "Ana" as string });
     // @ts-expect-error no member value rides on a mark
     track("ws_roll_call_marked", { how: "tap", uid: 4242 });
+  });
+});
+
+describe("identify (D115)", () => {
+  /** A fresh copy of the module with a loaded stand-in SDK in the given mode. */
+  async function loaded(cookieless: "always" | undefined) {
+    vi.resetModules();
+    const events = await import("./events");
+    const ph = {
+      config: { cookieless_mode: cookieless },
+      get_distinct_id: () => "anon",
+      identify: vi.fn(),
+    };
+    events.loadAnalytics(async () => ph as unknown as PostHog);
+    await Promise.resolve();
+    await Promise.resolve();
+    events.identify("ws_0123", "officer", "ogs");
+    return ph.identify;
+  }
+
+  it("names the person on a desk page load, and never on a cookieless one", async () => {
+    expect(await loaded(undefined)).toHaveBeenCalledWith("ws_0123", {
+      tier: "officer",
+      workspace: "ogs",
+    });
+    expect(await loaded("always")).not.toHaveBeenCalled();
   });
 });

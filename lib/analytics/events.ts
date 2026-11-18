@@ -118,10 +118,13 @@ export function withPostHog(use: (ph: PostHog) => void): void {
 
 /**
  * The desk's or the board's person (D115): `id` is the pseudonymous id from lib/analytics/person.ts, the
- * properties only the tier and the slug. Again on every page load: nothing is stored on the device.
+ * properties only the tier and the slug. Again on every page load: nothing is stored on the device. Not on
+ * a cookieless page load (one that started on a public page and moved to the desk): a lasting id there
+ * would undo what cookieless mode is for, so those events stay counted by the daily hash.
  */
 export function identify(id: string, tier: "officer" | "member", workspace: string): void {
   withPostHog((ph) => {
+    if (ph.config.cookieless_mode === "always") return;
     if (ph.get_distinct_id() !== id) ph.identify(id, { tier, workspace });
   });
 }

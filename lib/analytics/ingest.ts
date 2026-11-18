@@ -1,12 +1,13 @@
 // PostHog's same-origin reverse proxy (D77): /ingest/<path> goes to PostHog's US cloud, so the page's CSP keeps
 // `connect-src 'self'`. A route handler, not a next.config rewrite: a rewrite forwards every request header, so
 // the browser's cookies (the workspace and /admin sessions among them) would reach PostHog. Only the body, its
-// type and encoding, PostHog's own query string and our origin are sent, and on the events paths the visitor's
-// IP as `x-forwarded-for` (D115): PostHog's cookieless mode needs it for the daily hash that counts unique
-// visitors, then drops it; the project discards IPs (D77). Replay batches and the remote config carry no IP.
+// type and encoding, PostHog's own query string and our origin are sent. A cookieless page load (D115) sends
+// to /ingest/c/… instead (lib/analytics/posthog.ts): only its events carry the visitor's IP as
+// `x-forwarded-for`, which PostHog's cookieless mode needs for the daily hash, then drops; the project
+// discards IPs (D77). Desk and /admin events, replay batches and the remote config carry no IP.
 // Only the paths the SDK uses are forwarded, and a body over MAX_BODY_BYTES is refused.
 import { clientIp } from "../auth";
-import { POSTHOG_ASSETS_HOST, POSTHOG_INGEST_HOST } from "./region";
+import { COOKIELESS_PREFIX, POSTHOG_ASSETS_HOST, POSTHOG_INGEST_HOST } from "./region";
 
 const PREFIX = "/ingest";
 const FORWARDED = ["content-type", "content-encoding"];
@@ -53,7 +54,9 @@ function relay(answer: Response, method: string): Response {
 
 export async function forwardToPostHog(request: Request): Promise<Response> {
   const url = new URL(request.url);
-  const path = url.pathname.slice(PREFIX.length);
+  const rest = url.pathname.slice(PREFIX.length);
+  const cookieless = rest.startsWith(`${COOKIELESS_PREFIX}/`);
+  const path = cookieless ? rest.slice(COOKIELESS_PREFIX.length) : rest;
   const route = ROUTES.find((r) => r.method === request.method && r.path.test(path));
   if (!route) return status(404);
   if (Number(request.headers.get("content-length") ?? 0) > MAX_BODY_BYTES) return status(413);
@@ -62,7 +65,7 @@ export async function forwardToPostHog(request: Request): Promise<Response> {
   try {
     const answer = await fetch(`${route.host}${path}${url.search}`, {
       method: request.method,
-      headers: upstreamHeaders(request, url.origin, route.ip === true),
+      headers: upstreamHeaders(request, url.origin, cookieless && route.ip === true),
       ...(body && { body }),
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });

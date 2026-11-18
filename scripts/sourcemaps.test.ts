@@ -61,4 +61,42 @@ describe("finishSourceMaps (D115)", () => {
     expect(said).not.toContain("phx_test");
     expect(existsSync(join(dir, "chunks", "a.js.map"))).toBe(false);
   });
+
+  it("gives the CLI only PATH, HOME and POSTHOG_CLI_*: never the database URL or other secrets", () => {
+    const run = vi.fn<Runner>(() => 0);
+    finishSourceMaps(
+      {
+        POSTHOG_PERSONAL_API_KEY: "phx_test",
+        PATH: "/usr/bin",
+        HOME: "/home/build",
+        POSTHOG_CLI_DRY_RUN: "true",
+        DATABASE_URL: "postgres://lap:secret@db.example/lap",
+        CRON_SECRET: "c".repeat(32),
+      },
+      built(),
+      run,
+    );
+    const env = run.mock.calls[0]?.[1] ?? {};
+    expect(env).not.toHaveProperty("DATABASE_URL");
+    expect(env).not.toHaveProperty("CRON_SECRET");
+    expect(env).not.toHaveProperty("POSTHOG_PERSONAL_API_KEY");
+    expect(Object.keys(env).sort()).toEqual([
+      "HOME",
+      "PATH",
+      "POSTHOG_CLI_API_KEY",
+      "POSTHOG_CLI_DRY_RUN",
+      "POSTHOG_CLI_HOST",
+      "POSTHOG_CLI_PROJECT_ID",
+    ]);
+  });
+
+  it("does not fail the build when the upload times out, and still deletes the maps", () => {
+    const said = finishSourceMaps(
+      { POSTHOG_PERSONAL_API_KEY: "phx_test" },
+      built(),
+      () => "timeout",
+    );
+    expect(said).toBe("source maps: upload stopped after 120 s; 1 left-over map files deleted");
+    expect(existsSync(join(dir, "chunks", "a.js.map"))).toBe(false);
+  });
 });

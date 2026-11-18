@@ -7,7 +7,8 @@
 //   `other` for anything else), so page views answer "which tabs are used" (D115);
 // - exception messages scrubbed in every area (D115, replacing D77's "[masked]" on the workspace and /admin):
 //   the type, the words and the stack frames stay; digit runs, emails, URLs' query strings and quoted text go.
-//   Quoted text stays only where the engine quotes code: "(reading 'map')", "(evaluating 'a.b')".
+//   Quoted text stays only where the engine quotes a built-in member: "(reading 'map')", never
+//   "(reading 'Bramble')".
 export type Area = "public" | "workspace" | "admin";
 
 type Props = Record<string, unknown>;
@@ -35,11 +36,38 @@ const HREF_IN_CHAIN = /(href=")([^"?#]*)[^"]*"/g;
 /** A URL or a path inside free text, such as an exception message. */
 const URL_IN_TEXT = /((?:[a-z][a-z\d+.-]*:\/\/|\/)[^\s?#"'<>]*)[?#][^\s"'<>]*/gi;
 const EMAIL = /[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g;
-/** Text between straight, typographic or back quotes. */
-const QUOTED = /(["'`‘“])([^"'`’”]*)(["'`’”])/g;
+/**
+ * Text between quotes, each closed by its own kind: "…", '…', `…`, ‘…’ or “…”. A quote with a letter or
+ * digit on its outer side is an apostrophe (can't, it's, Ana’s), not a delimiter.
+ */
+const QUOTED = /(?<![\p{L}\p{N}_])(?:(["'`])([^]*?)\1|‘([^]*?)’|“([^]*?)”)(?![\p{L}\p{N}_])/gu;
 /** A property path an engine quotes: map, a.b, a[0], a.b(). */
 const CODE = /^[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*|\[\d+\])*(?:\(\))?$/;
 const CODE_BEFORE = /(?:reading|setting|evaluating) $/;
+/**
+ * Built-in members an engine names in "(reading 'map')": the only quoted words kept. Anything else in
+ * quotes may be a name ("(reading 'Bramble')", a field keyed by a name), so it goes.
+ */
+const BUILT_IN = new Set(
+  (
+    "map filter find findIndex forEach reduce some every includes indexOf length push pop shift " +
+    "unshift slice splice sort concat join split trim replace replaceAll toString toLowerCase " +
+    "toUpperCase toFixed toISOString getTime localeCompare startsWith endsWith padStart at flat " +
+    "flatMap then catch finally keys values entries get set has add delete size call apply bind " +
+    "name id type value current children props style focus blur close showModal randomUUID " +
+    "getRandomValues clipboard writeText json text status ok headers body data target " +
+    "addEventListener removeEventListener querySelector closest contains getBoundingClientRect " +
+    "scrollIntoView preventDefault stopPropagation parentNode documentElement crypto navigator " +
+    "window document localStorage sessionStorage"
+  ).split(" "),
+);
+/** Each part of the path is a built-in member, an index, or a one-letter minified variable. */
+const builtInPath = (inner: string) =>
+  CODE.test(inner) &&
+  inner
+    .split(/[.[\]()]+/)
+    .filter(Boolean)
+    .every((part) => BUILT_IN.has(part) || /^\d+$/.test(part) || /^[a-z]$/.test(part));
 /** Around a kept piece's letter while digits are scrubbed: U+2063, removed from the message first. */
 const MARK = String.fromCharCode(0x2063);
 /** Pieces of code kept per message, one letter each (a–z); past that, quoted code is scrubbed too. */
@@ -87,15 +115,15 @@ export function scrubMessage(text: string): string {
     .replaceAll(MARK, "")
     .replace(URL_IN_TEXT, "$1")
     .replace(EMAIL, "[email]")
-    .replace(
-      QUOTED,
-      (all, open: string, inner: string, close: string, at: number, whole: string) => {
-        const code = CODE.test(inner) && CODE_BEFORE.test(whole.slice(Math.max(0, at - 11), at));
-        if (!code || held.length === MAX_HELD) return `${open}…${close}`;
-        held.push(all);
-        return `${MARK}${String.fromCharCode(97 + held.length - 1)}${MARK}`;
-      },
-    );
+    .replace(QUOTED, (all: string, ...groups: unknown[]) => {
+      const inner = String(groups[1] ?? groups[2] ?? groups[3] ?? "");
+      const at = groups[4] as number;
+      const whole = groups[5] as string;
+      const code = builtInPath(inner) && CODE_BEFORE.test(whole.slice(Math.max(0, at - 11), at));
+      if (!code || held.length === MAX_HELD) return `${all.at(0)}…${all.at(-1)}`;
+      held.push(all);
+      return `${MARK}${String.fromCharCode(97 + held.length - 1)}${MARK}`;
+    });
   return quoted
     .replace(/\d+/g, "#")
     .split(MARK)

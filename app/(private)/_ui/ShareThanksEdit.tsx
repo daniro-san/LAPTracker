@@ -6,11 +6,13 @@
 // tap takes a new id. A share that went through says where, and its button rests.
 import { useState } from "react";
 
+import { track } from "@/lib/analytics/events";
 import { fill } from "@/lib/copy";
 import { gameNotice } from "@/lib/private/notice-formats";
 import { NOTICE_LIMIT, noticeLength, type NoticeLanguage } from "@/lib/private/notice-rules";
 
 import { CopyButton } from "./CopyButton";
+import { newRequestId } from "./request-id";
 import type { ShareThanksProps } from "./share-thanks-data";
 import { ERROR, TextField, Way, type State, type Texts } from "./ShareThanksParts";
 import { RefusalLine, SIGNED_OUT } from "./SignedOut";
@@ -55,8 +57,8 @@ function useShare(
   const [state, setState] = useState<Record<Target, State>>({ discord: "idle", board: "idle" });
   const [error, setError] = useState<Record<Target, string | null>>({ discord: null, board: null });
   const [ids, setIds] = useState(() => ({
-    discord: crypto.randomUUID(),
-    board: crypto.randomUUID(),
+    discord: newRequestId(),
+    board: newRequestId(),
   }));
   const share = async (target: Target) => {
     const texts = Object.fromEntries(Object.entries(props.texts).map(([l, t]) => [l, t.trim()]));
@@ -75,8 +77,11 @@ function useShare(
       requestId: ids[target],
     });
     setState((s) => ({ ...s, [target]: answer === "ok" ? "done" : "idle" }));
-    if (answer === "ok") return props.onShared();
-    if (answer === "failed") setIds((i) => ({ ...i, [target]: crypto.randomUUID() }));
+    if (answer === "ok") {
+      track("ws_thanks_shared", { to: target });
+      return props.onShared();
+    }
+    if (answer === "failed") setIds((i) => ({ ...i, [target]: newRequestId() }));
     setError((e) => ({ ...e, [target]: refusal(answer, target, words) }));
   };
   return { state, error, share };
@@ -156,6 +161,7 @@ export function ShareThanksEdit(
             copied: words["share.copied"],
             failed: words["share.copyFailed"],
           }}
+          onCopied={() => track("ws_thanks_shared", { to: "game" })}
           className="w-full justify-center"
         />
       </div>

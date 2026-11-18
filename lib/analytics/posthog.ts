@@ -18,7 +18,7 @@
 import posthog, { type PostHog } from "posthog-js/no-external";
 import "posthog-js/dist/exception-autocapture";
 
-import { POSTHOG_UI_HOST } from "./region";
+import { COOKIELESS_PREFIX, POSTHOG_UI_HOST } from "./region";
 import { areaOf, MASK_CLASS, sanitiseEvent, withoutQuery } from "./sanitise";
 
 /** Share of public page loads whose session is recorded; the free plan's recordings go to the workspace first. */
@@ -39,7 +39,8 @@ let cookieless = false;
 export function startPostHog(key: string): PostHog {
   cookieless = areaOf(location.pathname).area === "public";
   posthog.init(key, {
-    api_host: "/ingest",
+    // A cookieless load sends to its own path, so the proxy adds the visitor's IP to those events only.
+    api_host: cookieless ? `/ingest${COOKIELESS_PREFIX}` : "/ingest",
     ui_host: POSTHOG_UI_HOST,
     persistence: "memory",
     ...(cookieless && { cookieless_mode: "always" as const }),

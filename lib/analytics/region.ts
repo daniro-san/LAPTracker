@@ -8,3 +8,5 @@ export const POSTHOG_INGEST_HOST = `https://${POSTHOG_REGION}.i.posthog.com`;
 export const POSTHOG_ASSETS_HOST = `https://${POSTHOG_REGION}-assets.i.posthog.com`;
 /** The dashboard, for links the SDK builds (never requested by the browser). */
 export const POSTHOG_UI_HOST = `https://${POSTHOG_REGION}.posthog.com`;
+/** The cookieless page loads' own path under /ingest (D115): the proxy forwards the visitor's IP only there. */
+export const COOKIELESS_PREFIX = "/c";

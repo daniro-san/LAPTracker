@@ -109,12 +109,22 @@ describe("PostHog before_send (D77)", () => {
     expect(out).toMatchObject({ area: "workspace", workspace: "ogs", section: "thefts" });
   });
 
-  it("keeps the code an engine quotes, and nothing else in quotes", () => {
+  it("keeps only the built-in members an engine quotes, and nothing else in quotes", () => {
     expect(scrubMessage("Cannot read properties of undefined (reading 'map')")).toBe(
       "Cannot read properties of undefined (reading 'map')",
     );
-    expect(scrubMessage("undefined is not an object (evaluating 'a.rows[0].name')")).toBe(
-      "undefined is not an object (evaluating 'a.rows[0].name')",
+    expect(scrubMessage("undefined is not an object (evaluating 'e.children[0].length')")).toBe(
+      "undefined is not an object (evaluating 'e.children[0].length')",
+    );
+    // A name in the engine's own quotes goes too: an object keyed by names, a field named after a player.
+    expect(scrubMessage("Cannot read properties of undefined (reading 'Bramble')")).toBe(
+      "Cannot read properties of undefined (reading '…')",
+    );
+    expect(scrubMessage("Cannot set properties of null (setting 'DragonSlayer99')")).toBe(
+      "Cannot set properties of null (setting '…')",
+    );
+    expect(scrubMessage("undefined is not an object (evaluating 'byName.Bramble')")).toBe(
+      "undefined is not an object (evaluating '…')",
     );
     expect(scrubMessage("crypto.randomUUID is not a function")).toBe(
       "crypto.randomUUID is not a function",
@@ -127,5 +137,13 @@ describe("PostHog before_send (D77)", () => {
     expect(scrubMessage("Loading chunk 4521 failed: https://x.app/_next/a.js?dpl=9")).toBe(
       "Loading chunk # failed: https://x.app/_next/a.js",
     );
+  });
+
+  it("closes each quote with its own kind and takes an apostrophe inside a word for one", () => {
+    expect(scrubMessage(`can't access property "Bramble", x is undefined`)).toBe(
+      `can't access property "…", x is undefined`,
+    );
+    expect(scrubMessage("it's 'Ana'")).toBe("it's '…'");
+    expect(scrubMessage("Ana’s ‘Bramble’ and `Quill`")).toBe("Ana’s ‘…’ and `…`");
   });
 });
