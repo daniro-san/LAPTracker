@@ -36,7 +36,7 @@ export function onDeskNow(db: Db, access: WorkspaceAccess, now: Date): Promise<s
 type What =
   /** `uids`: members saved one at a time; `batch`: members of batch saves (a sheet import). */
   | { kind: "facts"; uids: number[]; batch: number }
-  | { kind: "noticeSaved" | "noticePosted"; noticeId: number }
+  | { kind: "noticeSaved" | "noticePosted" | "noticeDeleted"; noticeId: number }
   | { kind: "draft"; draft: Pick<DraftDone, "kind" | "scope" | "source"> }
   | { kind: "entry" | "entryEdit"; entry: Pick<EntryDone, "kind" | "variant" | "level" | "title"> }
   | { kind: "marks"; call: Pick<MarksDone, "kind" | "variant">; rest: boolean }
@@ -55,12 +55,18 @@ export type ActivityItem = { at: Date; who: string } & (
       What,
       {
         kind:
-          "facts" | "followUp" | "noticeSaved" | "noticePosted" | "reviewAsked" | "reviewAnswered";
+          | "facts"
+          | "followUp"
+          | "noticeSaved"
+          | "noticePosted"
+          | "noticeDeleted"
+          | "reviewAsked"
+          | "reviewAnswered";
       }
     >
   | { kind: "facts"; member: string | null; members: number }
   | ({ kind: "followUp"; member: string | null } & Pick<FollowUpDone, "action" | "until">)
-  | { kind: "noticeSaved" | "noticePosted"; title: string }
+  | { kind: "noticeSaved" | "noticePosted" | "noticeDeleted"; title: string }
   /** `reviewer` null: the whole team (D113). */
   | { kind: "reviewAsked"; title: string; language: string | null; reviewer: string | null }
   | ({ kind: "reviewAnswered"; title: string } & Pick<ReviewAnsweredDone, "outcome" | "language">)
@@ -122,6 +128,7 @@ function merge(rows: Awaited<ReturnType<typeof activityRows>>): Raw[] {
     })),
     ...rows.noticeSaves.map((r) => ({ ...r, kind: "noticeSaved" as const })),
     ...rows.noticePosts.map((r) => ({ ...r, kind: "noticePosted" as const })),
+    ...rows.noticeDeletes.map((r) => ({ ...r, kind: "noticeDeleted" as const })),
     ...rows.drafts.map(({ by, at, ...draft }) => ({ by, at, kind: "draft" as const, draft })),
     ...rows.entries.map(({ by, at, ...entry }) => ({ by, at, kind: "entry" as const, entry })),
     ...rows.entryEdits.map(({ by, at, ...entry }) => ({
@@ -198,7 +205,8 @@ export async function recentActivity(
   const [officers, members, titles] = await Promise.all([
     officerNames(db, ws, [...new Set([...lines.map((r) => r.by), ...reviewers])]),
     memberNames(db, ws, access.unionId, [...new Set(uids)]),
-    noticeTitles(db, ws, [...new Set(ids)]),
+    // A deleted notice keeps its last title here (D118): its earlier lines and its delete name it.
+    noticeTitles(db, ws, [...new Set(ids)], true),
   ]);
   return lines.flatMap((r): ActivityItem[] => {
     const who = officers.get(r.by);

@@ -5,6 +5,7 @@
 import { z } from "zod";
 
 import type { Db } from "../db";
+import { markNoticeDeleted, unmarkNoticeDeleted } from "../repo/notice-deletes";
 import {
   HISTORY_LIMIT,
   noticeEditRows,
@@ -159,6 +160,41 @@ export async function noticeHistory(
     versions: versionsOf(rows),
     cut: rows.length === HISTORY_LIMIT ? HISTORY_LIMIT : undefined,
   };
+}
+
+/** How long the officer who deleted a notice may still take it back (D118); the page offers it for less. */
+export const UNDO_MS = 60_000;
+
+/** A delete's body (D118): the notice and the delete sheet's request id (D100); `undo` takes it back. */
+export const noticeDelete = z
+  .object({
+    id: z.number().int().positive(),
+    requestId: z.uuid(),
+    undo: z.literal(true).optional(),
+  })
+  .strict();
+
+/**
+ * Deletes a notice of the workspace (D118), or undoes the officer's own delete made under the same request
+ * id in the last UNDO_MS. "not_found": no such notice to delete, or nothing of this officer's to undo.
+ */
+export async function deleteNotice(
+  db: Db,
+  access: WorkspaceAccess,
+  input: z.infer<typeof noticeDelete>,
+  now: Date,
+): Promise<"ok" | "not_found"> {
+  const d = {
+    workspaceId: access.workspaceId,
+    id: input.id,
+    userId: access.user.id,
+    requestId: input.requestId,
+    now,
+  };
+  const done = input.undo
+    ? await unmarkNoticeDeleted(db, d, new Date(now.getTime() - UNDO_MS))
+    : await markNoticeDeleted(db, d);
+  return done ? "ok" : "not_found";
 }
 
 /** A field someone else saved after the version the officer was looking at. */

@@ -2,7 +2,7 @@
 // with each field's newest edit, and a save in one transaction. The save locks the notice's row, so two officers saving the same notice at once are
 // taken one after the other and the second sees the first one's versions. What a save may write is
 // decided in lib/private (`decide`), which sees the current values under that lock.
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
 import type { Db } from "../db";
@@ -28,6 +28,9 @@ export interface NoticeRecord {
   fields: FieldRow[];
 }
 
+/** Not deleted (D118): every read and write of a notice goes through this, except Home's activity. */
+export const live = isNull(notices.deletedAt);
+
 const creator = alias(workspaceUsers, "creator");
 const updater = alias(workspaceUsers, "updater");
 
@@ -45,7 +48,11 @@ function noticeRows(db: Db, workspaceId: number, id?: number) {
     .leftJoin(creator, eq(creator.id, notices.createdBy))
     .leftJoin(updater, eq(updater.id, notices.updatedBy))
     .where(
-      and(eq(notices.workspaceId, workspaceId), id === undefined ? undefined : eq(notices.id, id)),
+      and(
+        eq(notices.workspaceId, workspaceId),
+        live,
+        id === undefined ? undefined : eq(notices.id, id),
+      ),
     )
     .orderBy(desc(notices.updatedAt), desc(notices.id));
 }
@@ -159,11 +166,15 @@ export function noticeEditRows(db: Db, workspaceId: number, noticeId: number): P
     .limit(HISTORY_LIMIT);
 }
 
-/** The current title of each of these notices of the workspace, by id (D102: the calendar's links). */
+/**
+ * The current title of each of these notices of the workspace, by id (D102: the calendar's links). A deleted
+ * notice has none (D118), unless `deleted`: Home's activity names a deleted notice by its last title.
+ */
 export async function noticeTitles(
   db: Db,
   workspaceId: number,
   ids: number[],
+  deleted = false,
 ): Promise<Map<number, string>> {
   if (ids.length === 0) return new Map();
   const rows = await db
@@ -172,11 +183,13 @@ export async function noticeTitles(
       title: noticeEdits.value,
     })
     .from(noticeEdits)
+    .innerJoin(notices, eq(notices.id, noticeEdits.noticeId))
     .where(
       and(
         eq(noticeEdits.workspaceId, workspaceId),
         inArray(noticeEdits.noticeId, ids),
         eq(noticeEdits.field, "title"),
+        deleted ? undefined : live,
       ),
     )
     .orderBy(noticeEdits.noticeId, desc(noticeEdits.id));
@@ -188,7 +201,7 @@ export async function noticeInWorkspace(db: Db, workspaceId: number, id: number)
   const [row] = await db
     .select({ id: notices.id })
     .from(notices)
-    .where(and(eq(notices.workspaceId, workspaceId), eq(notices.id, id)));
+    .where(and(eq(notices.workspaceId, workspaceId), eq(notices.id, id), live));
   return row !== undefined;
 }
 
@@ -234,7 +247,7 @@ export async function writeNotice<R>(
       const [locked] = await tx
         .select({ id: notices.id })
         .from(notices)
-        .where(and(eq(notices.id, noticeId), eq(notices.workspaceId, workspaceId)))
+        .where(and(eq(notices.id, noticeId), eq(notices.workspaceId, workspaceId), live))
         .for("update");
       if (!locked) return null;
     }
@@ -302,6 +315,7 @@ export async function newestNoticeValues(
     .where(
       and(
         eq(noticeEdits.workspaceId, workspaceId),
+        live,
         inArray(noticeEdits.field, [...fields]),
         ids ? inArray(noticeEdits.noticeId, [...ids]) : undefined,
       ),

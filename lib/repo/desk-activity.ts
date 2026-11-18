@@ -81,6 +81,7 @@ export interface ActivityRows extends ReviewRows {
   facts: FactsDone[];
   noticeSaves: NoticeDone[];
   noticePosts: NoticeDone[];
+  noticeDeletes: NoticeDone[];
   drafts: DraftDone[];
   entries: EntryDone[];
   entryEdits: EntryDone[];
@@ -107,7 +108,8 @@ function factSaves(db: Db, ws: number, from: Date, n: number) {
     .limit(n);
 }
 
-type OwnKind = "noticeSaved" | "noticePosted" | "draft" | "entry" | "newMember" | "followUp";
+type OwnKind =
+  "noticeSaved" | "noticePosted" | "noticeDeleted" | "draft" | "entry" | "newMember" | "followUp";
 
 /** One row of the small sources' read; the columns each kind does not use are null. */
 type SmallRow = {
@@ -124,7 +126,7 @@ type SmallRow = {
 
 /**
  * The small sources in one read (one connection): notice saves (one per save of any number of fields),
- * notice posts, saved drafts, calendar entries added, new members added by hand, and follow-up records
+ * notice posts, notices deleted (D118; an undone delete is not one), saved drafts, calendar entries added, new members added by hand, and follow-up records
  * (not `withdrawn`, and not one an Undo cancelled), notice review requests and their outcomes (D113), and
  * the weekly thanks shared or taken down (D114). Each part is its own newest `n` since `from`; `n` bounds
  * the rows returned, not the rows a part scans.
@@ -143,6 +145,11 @@ async function smallSources(db: Db, ws: number, from: Date, n: number): Promise<
       where p.workspace_id = ${ws} and p.status = 'posted' and p.published_by is not null
         and p.published_at >= ${since}
       order by p.published_at desc limit ${n})
+    union all
+    (select 'noticeDeleted', n.deleted_by, n.deleted_at, n.id, null, null, null, null, null
+      from notices n
+      where n.workspace_id = ${ws} and n.deleted_at >= ${since} and n.deleted_by is not null
+      order by n.deleted_at desc limit ${n})
     union all
     (select 'draft', d.done_by, d.done_at, null, d.kind, d.scope, null, d.source, null
       from screenshot_drafts d
@@ -249,17 +256,12 @@ function split(rows: SmallRow[]) {
     rows
       .filter((r) => r.kind === kind)
       .map((r) => ({ ...r, by: Number(r.by), at: new Date(r.at) }));
+  const notice = (kind: "noticeSaved" | "noticePosted" | "noticeDeleted") =>
+    of(kind).map(({ by, at, notice_id }) => ({ by, at, noticeId: Number(notice_id) }));
   return {
-    noticeSaves: of("noticeSaved").map(({ by, at, notice_id }) => ({
-      by,
-      at,
-      noticeId: Number(notice_id),
-    })),
-    noticePosts: of("noticePosted").map(({ by, at, notice_id }) => ({
-      by,
-      at,
-      noticeId: Number(notice_id),
-    })),
+    noticeSaves: notice("noticeSaved"),
+    noticePosts: notice("noticePosted"),
+    noticeDeletes: notice("noticeDeleted"),
     drafts: of("draft").map(({ by, at, a, b, title }) => ({
       by,
       at,

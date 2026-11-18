@@ -1,5 +1,5 @@
 // The notices library's tables (issue 304, D81), apart from lib/schema.ts for its size. drizzle.config.ts lists
-// this file; migration 0021 creates the first two tables, 0028 the publishes (D102).
+// this file; migration 0021 creates the first two tables, 0028 the publishes (D102); deleted_* columns, D118.
 import { sql } from "drizzle-orm";
 import {
   check,
@@ -33,6 +33,13 @@ export const notices = pgTable(
     updatedAt: tstz("updated_at").notNull(),
     /** The new-notice editor's request id (D100): a retry of the same first Save finds this notice. */
     requestId: text("request_id"),
+    /**
+     * Deleted (D118): who and when, under the delete sheet's request id (D100). A deleted notice leaves every
+     * list and read; its row and edits stay, so its title at the time is kept. Undo clears `deleted_at`.
+     */
+    deletedAt: tstz("deleted_at"),
+    deletedBy: integer("deleted_by").references(() => workspaceUsers.id, { onDelete: "set null" }),
+    deleteRequestId: text("delete_request_id"),
   },
   (t) => [
     index("notices_workspace_idx").on(t.workspaceId),

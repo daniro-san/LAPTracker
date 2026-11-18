@@ -3,7 +3,8 @@
 // One notice (issue 304): read it in each language, copy it in each place's format (the game's notice board,
 // the game's mail, Discord; issue 345), or edit it. A language that may be out of date carries an "Out of
 // date" tag, which opens the editor at that language; "Update from …" and "Keep as is" are there, behind the
-// editor's save and its checks. Under the languages: "Publish to Discord" and the calendar link (D102).
+// editor's save and its checks. Under the languages: "Publish to Discord" and the calendar link (D102), and
+// at the foot "Delete notice" (D118).
 // Review requests (D113): the open ones at the top, where "Edit and save" opens the editor for that request,
 // and the "Review" section with "Ask for a review" before Discord.
 import { useState } from "react";
@@ -20,6 +21,7 @@ import { LANGUAGE_NAME } from "./languages";
 import type { NoticeCalendar } from "./notice-calendar";
 import { Counter, OutOfDateTag, OverLimit } from "./NoticeBits";
 import { NoticeCalendarLink } from "./NoticeCalendarLink";
+import { NoticeDelete } from "./NoticeDelete";
 import { NoticeEditor, type EditorProps } from "./NoticeEditor";
 import { NoticePublish, type PublishProps } from "./NoticePublish";
 import { AskSheet, ReviewRequests, ReviewSection, type ReviewProps } from "./NoticeReviews";
@@ -227,6 +229,7 @@ export function NoticeScreen(p: ScreenProps) {
       )}
       <NoticePublish slug={p.slug} id={p.id} t={t} publish={p.publish} written={written} />
       <NoticeCalendarLink slug={p.slug} id={p.id} t={t} calendar={p.calendar} />
+      <NoticeDelete slug={p.slug} id={p.id} title={p.fields.title.value} t={t} />
     </>
   );
 }

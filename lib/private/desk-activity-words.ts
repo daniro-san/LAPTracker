@@ -125,9 +125,6 @@ export function activityLine(
       return factsLine(t, who, item);
     case "followUp":
       return followUpLine(t, who, item, language);
-    case "noticeSaved":
-    case "noticePosted":
-      return fill(t[`activity.${item.kind}`], { who, title: isolate(item.title) });
     case "draft":
       return draftLine(t, who, item);
     case "entry":
@@ -140,9 +137,11 @@ export function activityLine(
       return countLine(t, who, item);
     case "thanks":
       return fill(t[`activity.thanks.${item.target}`], { who });
-    // The rest: a review request or its outcome (D113).
+    // The rest is about a notice: saved, posted, deleted (D118), or a review request or its outcome (D113).
     default:
-      return reviewLine(t, who, item);
+      return item.kind === "reviewAsked" || item.kind === "reviewAnswered"
+        ? reviewLine(t, who, item)
+        : fill(t[`activity.${item.kind}`], { who, title: isolate(item.title) });
   }
 }
 

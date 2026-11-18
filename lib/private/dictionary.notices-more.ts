@@ -50,6 +50,17 @@ export const noticesMoreEn = {
   "notices.calendar.unlink": "Remove link",
   "notices.calendar.unlinkOf": "Remove the link to {title}",
   "notices.calendar.failed": "Could not change the link. Try again.",
+  "notices.delete": "Delete notice",
+  "notices.delete.ask": "Delete this notice?",
+  "notices.delete.where":
+    "It leaves the notices list, the Members’ board, the Calendar and review requests.",
+  "notices.delete.discord":
+    "If it was published to Discord, it stays in Discord. Delete it there yourself if you need to.",
+  "notices.delete.confirm": "Delete",
+  "notices.delete.deleting": "Deleting…",
+  "notices.delete.failed": "Could not delete the notice. Try again.",
+  "notices.deleted": "Notice deleted.",
+  "notices.delete.undoFailed": "Could not undo. The notice stays deleted.",
 } as const;
 
 export const noticesMorePt: Record<keyof typeof noticesMoreEn, string> = {
@@ -102,6 +113,17 @@ export const noticesMorePt: Record<keyof typeof noticesMoreEn, string> = {
   "notices.calendar.unlink": "Remover ligação",
   "notices.calendar.unlinkOf": "Remover a ligação com {title}",
   "notices.calendar.failed": "Não foi possível mudar a ligação. Tente de novo.",
+  "notices.delete": "Apagar aviso",
+  "notices.delete.ask": "Apagar este aviso?",
+  "notices.delete.where":
+    "Ele sai da lista de avisos, do Mural dos membros, do Calendário e dos pedidos de revisão.",
+  "notices.delete.discord":
+    "Se ele foi publicado no Discord, continua no Discord. Apague por lá se precisar.",
+  "notices.delete.confirm": "Apagar",
+  "notices.delete.deleting": "Apagando…",
+  "notices.delete.failed": "Não foi possível apagar o aviso. Tente de novo.",
+  "notices.deleted": "Aviso apagado.",
+  "notices.delete.undoFailed": "Não foi possível desfazer. O aviso continua apagado.",
 };
 
 export const noticesMoreFr: Record<keyof typeof noticesMoreEn, string> = {
@@ -155,4 +177,15 @@ export const noticesMoreFr: Record<keyof typeof noticesMoreEn, string> = {
   "notices.calendar.unlink": "Retirer le lien",
   "notices.calendar.unlinkOf": "Retirer le lien avec {title}",
   "notices.calendar.failed": "Impossible de changer le lien. Réessayez.",
+  "notices.delete": "Supprimer l’annonce",
+  "notices.delete.ask": "Supprimer cette annonce ?",
+  "notices.delete.where":
+    "Elle quitte la liste des annonces, le Tableau des membres, le Calendrier et les demandes de relecture.",
+  "notices.delete.discord":
+    "Si elle a été publiée sur Discord, elle y reste. Supprimez-la là-bas vous-même si besoin.",
+  "notices.delete.confirm": "Supprimer",
+  "notices.delete.deleting": "Suppression…",
+  "notices.delete.failed": "Impossible de supprimer l’annonce. Réessayez.",
+  "notices.deleted": "Annonce supprimée.",
+  "notices.delete.undoFailed": "Impossible de défaire. L’annonce reste supprimée.",
 };
