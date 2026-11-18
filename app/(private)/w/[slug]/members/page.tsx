@@ -17,7 +17,7 @@ import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dicti
 import { LANGUAGES } from "@/lib/private/fact-fields";
 import { formerMembers } from "@/lib/private/former-members";
 import { toReviewCount } from "@/lib/private/import-view";
-import { cardFormats, progressText, type CardFormats } from "@/lib/private/member-card";
+import { cardFormats } from "@/lib/private/member-card";
 import {
   membersView,
   progressHistory,
@@ -46,56 +46,11 @@ import { listRow, listWords } from "../../../_ui/member-list-data";
 import { MembersHead } from "../../../_ui/MembersHead";
 import { MembersList } from "../../../_ui/MembersList";
 import { MembersSource } from "../../../_ui/MembersSource";
+import { MembersThanks } from "../../../_ui/MembersThanks";
 import { PasteUpdates } from "../../../_ui/PasteUpdates";
 import { PendingMembers } from "../../../_ui/PendingMembers";
 import { refuse } from "../../../_ui/refuse";
-
-/** Top donors and most active; then progress this week, in name order, not a ranking (D109). */
-function Thanks({ view, t, f }: { view: MembersView; t: WorkspaceDictionary; f: CardFormats }) {
-  const rows = (["donors", "activity"] as const).filter((k) => view.thanks[k].length > 0);
-  const progress = view.thanks.progress;
-  if (rows.length === 0 && progress.length === 0) return null;
-  return (
-    <section aria-labelledby="thanks" className="mt-4 border border-rule px-4 py-3">
-      <h2 id="thanks" className="font-subhead text-display-sm">
-        {t["thanks.head"]}
-      </h2>
-      <p className="text-body-sm">{t["thanks.intro"]}</p>
-      <div className="mt-2 grid grid-cols-2 gap-x-4">
-        {rows.map((k) => (
-          <div key={k} className="min-w-0 border-t border-rule pt-1">
-            <h3 className="text-body-sm font-semibold text-ink/75">{t[`thanks.${k}`]}</h3>
-            <ol className="text-body-sm">
-              {view.thanks[k].map((x) => (
-                <li key={x.uid} className="flex justify-between gap-2">
-                  <span translate="no" className="min-w-0 truncate font-semibold">
-                    {x.name}
-                  </span>
-                  <span className="tabular-nums">{f.compact(x.value)}</span>
-                </li>
-              ))}
-            </ol>
-          </div>
-        ))}
-      </div>
-      {progress.length > 0 && (
-        <div className="mt-2 border-t border-rule pt-1">
-          <h3 className="text-body-sm font-semibold text-ink/75">{t["thanks.progress"]}</h3>
-          <ul className="text-body-sm">
-            {progress.map((p) => (
-              <li key={p.uid}>
-                <bdi translate="no" className="font-semibold">
-                  {p.name}
-                </bdi>{" "}
-                {progressText(p, t)}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </section>
-  );
-}
+import { shareThanksProps } from "../../../_ui/share-thanks-data";
 
 function Legend({ t }: { t: WorkspaceDictionary }) {
   return (
@@ -267,7 +222,12 @@ function Roster(props: {
       <p className="mt-1 text-body-sm text-ink/80">
         {fill(t["members.week"], { from: f.date(from), to: f.date(to) })}
       </p>
-      <Thanks view={view} t={t} f={f} />
+      <MembersThanks
+        view={view}
+        t={t}
+        f={f}
+        share={shareThanksProps({ slug, t, language, view, today })}
+      />
       {/* Before the first end-of-day read nothing is computed, so nothing is said about check-ins. */}
       <p className={view.early ? "hidden" : "mt-3"}>
         {checkins === 0 ? (

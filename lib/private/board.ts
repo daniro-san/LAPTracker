@@ -1,11 +1,14 @@
 // The members' board's read (D105, issue 331). It takes a BoardAccess, never a WorkspaceAccess, and returns
 // only what members may see: the calendar entries an officer marked "Members can see this" (kind, title,
 // time, notes, link; no caravan seats, no author), the notices marked "Show to members" whose end day has not
-// passed (title, end day, text per language; no author), and Start here. Nothing about any person.
+// passed (title, end day, text per language; no author), and Start here. Nothing about any person, except
+// the weekly thank-you an officer chose to put there (D114, amending D105): its text per language, its week
+// and the officer's name as its signature; never a value, a ranking or who was left out.
 import type { Db } from "../db";
 import { calendarRows } from "../repo/calendar";
 import { newestNoticeValues } from "../repo/notices";
 import { readStartHere } from "../repo/start-here";
+import { boardThanks, type BoardThanksRow } from "../repo/thanks";
 import type { StartHereText } from "../schema-board";
 import type { BoardAccess } from "./access";
 import { layOut, type EntryRow } from "./calendar-model";
@@ -39,6 +42,8 @@ export interface BoardView {
   entries: BoardEntry[];
   notices: BoardNotice[];
   startHere: Partial<Record<NoticeLanguage, StartHereText>>;
+  /** The weekly thank-you card, until the next one or a Take down (D114). */
+  thanks: BoardThanksRow | null;
 }
 
 /** Notices marked for members whose end day is not before `today` (a server day), newest change first. */
@@ -77,10 +82,11 @@ async function memberNotices(db: Db, workspaceId: number, today: string): Promis
 export async function boardView(db: Db, access: BoardAccess, today: string): Promise<BoardView> {
   const monday = mondayOf(today);
   const last = addDays(today, BOARD_DAYS - 1);
-  const [{ entries, rows }, notices, record] = await Promise.all([
+  const [{ entries, rows }, notices, record, thanks] = await Promise.all([
     calendarRows(db, access.workspaceId, monday, monday, last),
     memberNotices(db, access.workspaceId, today),
     readStartHere(db, access.workspaceId),
+    boardThanks(db, access.workspaceId),
   ]);
   const visible = new Set(notices.map((n) => n.id));
   const placed = layOut(entries, rows, monday, last).filter(
@@ -105,5 +111,6 @@ export async function boardView(db: Db, access: BoardAccess, today: string): Pro
     })),
     notices,
     startHere: record?.texts ?? {},
+    thanks,
   };
 }

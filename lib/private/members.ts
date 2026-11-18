@@ -23,7 +23,7 @@ import {
 import { serverDay } from "../schedule";
 import type { WorkspaceAccess } from "./access";
 import { awayUntil, type MemberFacts, type OfficerStatus } from "./fact-fields";
-import { progressOf, TREND_FIELDS, type Progress } from "./fact-trend";
+import { progressOf, thanksWeek, TREND_FIELDS, type Progress } from "./fact-trend";
 import { duelSaved } from "./import-save";
 import type { DuelSaved } from "./import-view";
 import { factsOf, usedZones } from "./member-facts";
@@ -296,7 +296,8 @@ export async function membersView(
     thanks: {
       donors: topOf(counted, (m) => m.weekTotal),
       activity: topOf(counted, (m) => m.activity),
-      progress: history ? progressOf(history, counted, week[0] as string, zone) : [],
+      // The week the thanks cover (D114): this game week, or last week on a Monday.
+      progress: history ? progressOf(history, counted, thanksWeek(today), zone) : [],
     },
     zones: usedZones(facts, [...newest.members.map((m) => m.uid), ...pending]),
     facts,

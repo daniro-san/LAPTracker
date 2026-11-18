@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import type { FactRow } from "../repo/member-facts";
 import { WORKSPACE_DICTIONARIES } from "./dictionary";
-import { progressOf } from "./fact-trend";
+import { cardBase, lastTwo, progressOf, thanksWeek, weekBase } from "./fact-trend";
 import { cardFormats, factLines, progressText } from "./member-card";
 
 const ZONE = "Etc/GMT+2";
@@ -60,8 +60,8 @@ describe("the card's trend (D109)", () => {
   });
 });
 
-describe("the week's progress in the thanks (D109)", () => {
-  it("names AD Tech reaching 100% and main squad up 5% or more over the card's version before", () => {
+describe("the week's progress in the thanks (D109, weekly baseline D114)", () => {
+  it("names AD Tech reaching 100% and main squad up 5% or more over the value before the week", () => {
     const history = [
       // Bo: AD Tech 90 → 100 at the very first hour of the week (Mon 00:00 server time).
       row(2, "adTech", 1, 90, "2026-11-12"),
@@ -76,21 +76,70 @@ describe("the week's progress in the thanks (D109)", () => {
       // Di: AD Tech reached 100 one hour before the week began (Sun 23:00 server time).
       row(4, "adTech", 1, 80, "2026-11-05"),
       row(4, "adTech", 2, 100, "2026-11-16T01:00:00Z"),
-      // Ed: +8% over the week before, but only +3.8% over the version before (as the card shows it).
+      // Ed: two saves this week, 10.0M → 10.3M → 10.6M: +6% against the week start, though each step
+      // is only about +3%.
       row(5, "squadMight", 1, 10_000_000, "2026-11-12"),
-      row(5, "squadMight", 2, 10_400_000, "2026-11-16"),
-      row(5, "squadMight", 3, 10_800_000, "2026-11-17"),
+      row(5, "squadMight", 2, 10_300_000, "2026-11-16"),
+      row(5, "squadMight", 3, 10_600_000, "2026-11-17"),
+      // Fy: a first-ever value this week, then +10%: nothing from before the week to compare with.
+      row(6, "squadMight", 1, 10_000_000, "2026-11-16"),
+      row(6, "squadMight", 2, 11_000_000, "2026-11-17"),
     ];
-    const members = ["Bo", "Ana", "Cy", "Di", "Ed"].map((name, i) => ({
-      uid: [2, 1, 3, 4, 5][i] as number,
+    const members = ["Bo", "Ana", "Cy", "Di", "Ed", "Fy"].map((name, i) => ({
+      uid: [2, 1, 3, 4, 5, 6][i] as number,
       name,
     }));
     const progress = progressOf(history, members, MONDAY, ZONE);
-    expect(progress.map((p) => p.name)).toEqual(["Ana", "Bo"]);
+    expect(progress.map((p) => p.name)).toEqual(["Ana", "Bo", "Ed"]);
+    expect(progress.find((p) => p.name === "Ed")?.squadGrowth).toBeCloseTo(0.06);
     const t = WORKSPACE_DICTIONARIES.en;
     expect(progress.map((p) => progressText(p, t))).toEqual([
       "grew their main squad",
       "finished AD Tech",
+      "grew their main squad",
     ]);
+  });
+
+  it("covers last week on a Monday, without the Monday's own saves, and this week otherwise", () => {
+    expect(thanksWeek("2026-11-22")).toBe("2026-11-16"); // Sunday: this week
+    expect(thanksWeek("2026-11-23")).toBe("2026-11-16"); // Monday: last week
+    expect(thanksWeek("2026-11-24")).toBe("2026-11-23"); // Tuesday: this week
+    const history = [
+      row(1, "squadMight", 1, 10_000_000, "2026-11-12"),
+      row(1, "squadMight", 2, 10_600_000, "2026-11-20"),
+      // Saved on Monday 23rd (server time): next week's, not read for the week of the 16th.
+      row(1, "squadMight", 3, 9_000_000, "2026-11-23T12:00:00Z"),
+    ];
+    const ana = [{ uid: 1, name: "Ana" }];
+    expect(progressOf(history, ana, thanksWeek("2026-11-23"), ZONE).map((p) => p.name)).toEqual([
+      "Ana",
+    ]);
+  });
+
+  it("puts the same comparison on the card: the change this week, else since the version before", () => {
+    const history = [
+      row(5, "squadMight", 1, 10_000_000, "2026-11-12"),
+      row(5, "squadMight", 2, 10_300_000, "2026-11-16"),
+      row(5, "squadMight", 3, 10_600_000, "2026-11-17"),
+    ];
+    const on = (today: string) => ({
+      squadMight: cardBase(history, 5, "squadMight", today, ZONE),
+    });
+    const previous = { squadMight: lastTwo(history, 5, "squadMight")?.before ?? null };
+    const facts = { squadMight: fact(10_600_000, 3) };
+    const t = WORKSPACE_DICTIONARIES.en;
+    const f = cardFormats("en", ZONE, NOW);
+    expect(factLines(facts, t, f, previous, on("2026-11-17"))[0]?.change).toBe("+600K this week");
+    // The next Monday the thanks still cover last week, and so does the card.
+    expect(factLines(facts, t, f, previous, on("2026-11-23"))[0]?.change).toBe("+600K last week");
+    // From Tuesday, with no new version: back to "since" the version before.
+    expect(on("2026-11-24").squadMight).toBeNull();
+    expect(factLines(facts, t, f, previous, on("2026-11-24"))[0]?.change).toBe(
+      "+300K since Nov 16",
+    );
+    // A version saved on that Monday belongs to the new week, not to last week's thanks.
+    const monday = [...history, row(5, "squadMight", 4, 10_700_000, "2026-11-23T12:00:00Z")];
+    expect(weekBase(monday, 5, "squadMight", MONDAY, ZONE)).toBeNull();
+    expect(cardBase(monday, 5, "squadMight", "2026-11-23", ZONE)?.last).toBe(false);
   });
 });

@@ -121,3 +121,4 @@ The header text above is the old file's, kept as it was. The split it describes 
 - [D110 — Screenshots from anywhere: a tab's button starts its pictures as the tab's type, and Android shares screenshots to the installed desk (2026-11-17, owner, 11ac, issue 293; amends D96)](D110-screenshots-from-anywhere-and-the-android-share-target.md)
 - [D112 — picomatch ReDoS (GHSA-fc5q-39xc-vjpf) accepted as dev-only, dated exception (2026-11-17)](D112-picomatch-redos-accepted-as-dev-only.md)
 - [D113 — Notices: "Shorten to 1,000", Translate localizes within the board's room, and review requests between officers (2026-11-17, 11ad, issue #402; amends D81)](D113-notice-fit-localize-and-review-requests.md)
+- [D114 — Share the thanks: a weekly baseline, the weekly appreciation post (game, Discord, members' board) and a thank-you card on the board (2026-11-17, owner, 11ae, issue 404; amends D105, D109)](D114-share-the-weekly-thanks.md)

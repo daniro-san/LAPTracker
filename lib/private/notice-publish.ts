@@ -93,9 +93,9 @@ function send(
 
 /**
  * Posts each message in turn; a forum's first one opens the post, the rest go into it. Stops when the
- * budget is spent, which leaves the publish failed.
+ * budget is spent, which leaves the publish failed. Also posts the weekly thanks (D114).
  */
-async function post(
+export async function postMessages(
   doFetch: typeof fetch,
   channel: Channel,
   title: string,
@@ -154,7 +154,7 @@ export async function publishNotice(
   const sections = languages.map((l) => ({ name: deps.names[l], text: notice.fields[l].value }));
   const messages = discordMessages(title, sections, !channel.forum);
   const started = Date.now();
-  const { sent, status } = await post(deps.fetch, channel, title, messages);
+  const { sent, status } = await postMessages(deps.fetch, channel, title, messages);
   const done = sent === messages.length;
   await finishPublish(db, claim.row.id, done ? "posted" : "failed", sent);
   const ms = Date.now() - started;

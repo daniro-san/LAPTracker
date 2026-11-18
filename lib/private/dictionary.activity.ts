@@ -33,6 +33,9 @@ export const activityEn = {
   "activity.thefts.other": "{who} added {n} thefts to the log",
   "activity.newMember": "{who} added {member} as a new member",
   "activity.newMembers": "{who} added {n} new members",
+  "activity.thanks.discord": "{who} shared the thanks on Discord",
+  "activity.thanks.board": "{who} shared the thanks on the members’ board",
+  "activity.thanks.down": "{who} took the thanks down from the members’ board",
 };
 
 type ActivityWords = Record<keyof typeof activityEn, string>;
@@ -69,6 +72,9 @@ export const activityPt: ActivityWords = {
   "activity.thefts.other": "{who} anotou {n} roubos no registro",
   "activity.newMember": "{who} adicionou {member} como novo membro",
   "activity.newMembers": "{who} adicionou {n} novos membros",
+  "activity.thanks.discord": "{who} compartilhou os agradecimentos no Discord",
+  "activity.thanks.board": "{who} compartilhou os agradecimentos no mural dos membros",
+  "activity.thanks.down": "{who} tirou os agradecimentos do mural dos membros",
 };
 
 export const activityFr: ActivityWords = {
@@ -103,4 +109,7 @@ export const activityFr: ActivityWords = {
   "activity.thefts.other": "{who} a noté {n} vols dans le registre",
   "activity.newMember": "{who} a ajouté {member} comme nouveau membre",
   "activity.newMembers": "{who} a ajouté {n} nouveaux membres",
+  "activity.thanks.discord": "{who} a partagé les remerciements sur Discord",
+  "activity.thanks.board": "{who} a partagé les remerciements sur le tableau des membres",
+  "activity.thanks.down": "{who} a retiré les remerciements du tableau des membres",
 };

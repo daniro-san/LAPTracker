@@ -74,6 +74,10 @@ const FIXTURES: Record<string, Partial<Record<Method, Fixture>>> = {
       },
     },
   },
+  "thanks/draft/route.ts": {
+    POST: { body: { people: [{ name: "Ana", did: ["squad"] }], lastWeek: false } },
+  },
+  "thanks/route.ts": { POST: { body: { action: "take_down", id: 1 } } },
   "thefts/route.ts": { GET: { query: "?q=ab" }, POST: { body: { action: "remove", id: 1 } } },
 };
 
