@@ -131,9 +131,20 @@ export function PlayerAvatar({
   );
 }
 
-/** A hero's picture (D117) at 40 px; a hero outside the catalog, or a picture that fails, is a plain box. */
-export function HeroPicture({ id, known }: { id: number; known: boolean }) {
-  const box = "size-10 shrink-0 rounded-[3px]";
+/**
+ * A hero's picture (D117) at 40 px; a hero outside the catalog, or a picture that fails, is a plain box.
+ * `frame` is the rarity's border class (SR blue, SSR purple, UR gold), when the rarity is known.
+ */
+export function HeroPicture({
+  id,
+  known,
+  frame,
+}: {
+  id: number;
+  known: boolean;
+  frame?: string | undefined;
+}) {
+  const box = `size-10 shrink-0 rounded-[3px] ${frame ?? ""}`;
   const placeholder = <span aria-hidden="true" className={`${box} border border-rule`} />;
   if (!known) return placeholder;
   return (

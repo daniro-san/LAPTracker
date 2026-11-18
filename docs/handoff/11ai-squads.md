@@ -115,6 +115,35 @@ UI only; the read and the quota logic are unchanged.
 - Rebased again onto dev at 589d44b8 (#418, D118). `docs/decisions/README.md` keeps D117 and D118. #418 took migration 0040, so dev's journal and `0040_snapshot.json` were restored and the squads migration was generated again as `0041_squads`.
 - D115's conventions: `ws_action` is for desk write routes under `/api/w/[slug]`, and cron routes (the tick, the daily read) send no server event. So `POST /api/squads-read` sends none. Its errors already reach PostHog as `$exception` through `withContext` and `recordAppError`.
 
+## Amendment: rarity, stars and no top hero (owner's game screenshots, 2026-11-18; branch `fix/squads-rarity-stars`)
+This came after #416 merged: a new branch cut from `origin/dev` at 83057751. It changes the card only, and D117 has a dated amendment.
+
+- **SR / SSR / UR.** `q` 3 is SR (it said R before), 4 SSR, 5 UR. This is renamed in the code, the words, the tests, D117 and `lib/sources/types.ts`.
+- **Game colours.** The rarity tag is SR blue, SSR purple and UR gold, and the hero picture gets a 2 px frame in the same colour.
+  - New tokens `--rarity-sr`, `--rarity-ssr` and `--rarity-ur` in `lib/brand/tokens.css`, with light and dark values, recorded in DESIGN.md.
+  - Every pair is 4.5:1 or more as 12 px semibold text on paper and on the strongest squad's tint (lowest 5.0:1).
+- **Stars.** The star level is 0–10 (`floor(star / 5)`), drawn as the game's five icons.
+  - Levels 1–5 are yellow. Levels 6–10 turn icons red from the left (level 7: 2 red, 3 yellow).
+  - The next icon is partly filled, `(star % 5) / 5`, in the colour it will take (`starIcons`).
+  - New tokens `--star-yellow` and `--star-red`, 3:1 or more as graphics, light and dark. The red is not the warning `seal`.
+  - Screen readers hear "Star level 7 of 10" / "Nível de estrela 7 de 10" / "Niveau d’étoile 7 sur 10".
+  - The owner first asked for 0–5 stars at `star / 10`, then corrected it to this before it was built; only the corrected form is in the code.
+- **Top hero removed.** At the owner's request: the mark, the rule line, its words in three languages, its test and its D117 text. `/v1/players` sends no per-hero power (the game shows one, for example 1,031,107), so any hero ranking would be a guess. Heroes keep the site's order inside each squad: UR, SSR, SR, then the raw `star`, then level.
+- **Tests** (`MemberSquads.test.ts`):
+  - SR, SSR and UR in order, each tag in its colour class;
+  - `starIcons` for star 0 (all empty), 22 (4 yellow and the fifth 40 % yellow), 25 (5 yellow), 35 (2 red, 3 yellow) and 50 (5 red), with the five labels "Star level 0/4/5/7/10 of 10";
+  - the Portuguese label.
+- **Verified.** `pnpm check` exits 0. The e2e ran on a production build with the real `POST /api/squads-read` against the tracker stand-in, which had partial star values (17, 22, 47): 42 calls, two 502s retried once. Playwright Chrome passed **199 of 199** checks for Bramble (4 squads) and Pemberly (3), at 360 and 1280, light and dark, EN and PT. They cover:
+  - one strongest squad with its word;
+  - no top hero;
+  - SR, SSR and UR tags in their colours and no "R";
+  - five star icons for every hero, and the first hero is UR with "Star level 10 of 10";
+  - the change lines;
+  - every picture loaded;
+  - every hero line inside its column, nothing overflowing, and no request leaving our origin.
+- **Design pass.** At 360, each hero is name, then "UR Lv 150", then the star row, which fits two columns. The partial stars read as part-filled in both themes. Red and yellow are told apart by hue in both themes. The rarity frames show around real pictures; the stand-in's pictures are solid squares, so the frames look heavier in the screenshots than they will on real art.
+- **Screenshots** in `/private/tmp/claude-502/-Users-danilordasilva-orca-workspaces-LAPTracker-unicornfish/147759e3-1cdb-4ccd-b74a-1001498a1e18/scratchpad/11ai-fix-shots/`: `squads-{bramble-4sq,pemberly-3sq}-{360,1280}-{light,dark}-{en,pt}`, `card-…`, `squads-none-360-light-en`.
+
 ## Open issues
 - WebKit (iPhone 390) did not run: the sign-in click timed out in Playwright WebKit on localhost (`w.state_bad` in the app log), as in earlier sessions.
 - Follow-up, not done: the `/admin` daily run page does not label the squads lines specially. They show as plain log lines.

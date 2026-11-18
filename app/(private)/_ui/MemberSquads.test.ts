@@ -1,5 +1,5 @@
 // The member card's "Squads (from the tracker)" (D117): each squad's might and "seen" date, its heroes in
-// the site's order with picture, name, level and whole stars, a plain box for a hero outside the catalog,
+// the site's order with picture, name, SR/SSR/UR and the game's star icons, a plain box for a hero outside the catalog,
 // and one quiet line when the tracker has seen no squad. Invented values.
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 
 import { WORKSPACE_DICTIONARIES } from "@/lib/private/dictionary";
 import { cardFormats } from "@/lib/private/member-card";
-import { squadsCardOf, type StoredSquad } from "@/lib/private/member-squads";
+import { squadsCardOf, starIcons, type StoredSquad } from "@/lib/private/member-squads";
 
 import { MemberSquads } from "./MemberSquads";
 
@@ -55,14 +55,17 @@ describe("the member card's squads (D117)", () => {
     expect(html).toContain("Squad 2");
     expect(html).toContain("Might 61.2M");
     expect(html).toContain("seen Mon, Nov 16");
-    // UR (q 5) first, then SSR (q 4), then R; floor(50 / 5) = 10 stars, shown as one star and the count.
+    // UR (q 5) first, then SSR (q 4), then SR (q 3), each tag in its game colour.
     expect(html.indexOf("Kesso")).toBeLessThan(html.indexOf("Ilvane"));
     expect(html.indexOf(">UR<")).toBeLessThan(html.indexOf(">SSR<"));
-    expect(html.indexOf(">SSR<")).toBeLessThan(html.indexOf(">R<"));
+    expect(html.indexOf(">SSR<")).toBeLessThan(html.indexOf(">SR<"));
+    expect(html).toContain('class="font-semibold text-rarity-ur">UR<');
+    expect(html).toContain('class="font-semibold text-rarity-sr">SR<');
     expect(html).toContain('src="/img/hero/10005"');
     expect(html).toContain("Lv 150");
-    expect(html).toContain('aria-label="10 stars">★10<');
-    expect(html).toContain('aria-label="1 star">★1<');
+    // star 50 is level 10; star 4 is level 0 with a part of the first star.
+    expect(html).toContain('aria-label="Star level 10 of 10"');
+    expect(html).toContain('aria-label="Star level 0 of 10"');
     // 99999 is not in the catalog: a plain box and "Unknown hero", never a picture request.
     expect(html).toContain("Unknown hero");
     expect(html).not.toContain("/img/hero/99999");
@@ -73,7 +76,7 @@ describe("the member card's squads (D117)", () => {
     expect(html).toContain("Esquadrões (do tracker)");
     expect(html).toContain("Esquadrão 2");
     expect(html).toContain("Nv 150");
-    expect(html).toContain('aria-label="10 estrelas"');
+    expect(html).toContain('aria-label="Nível de estrela 10 de 10"');
     expect(render("en", [])).toContain("The tracker has not seen their squads yet.");
     expect(render("en", [])).not.toContain("<img");
   });
@@ -96,24 +99,26 @@ describe("the member card's squads (D117)", () => {
     expect(html.split(">Strongest<")).toHaveLength(2);
   });
 
-  it("marks one top hero: rarity first, then stars, then level", () => {
-    const card = squadsCardOf(
-      only([
-        // An SSR with every star loses to any UR.
-        squad(1, 10_000_000, [hero(10010, 150, 50, 4)]),
-        // Two URs with the same stars: the higher level wins.
-        squad(2, 9_000_000, [hero(10005, 10, 20, 5), hero(10021, 90, 20, 5)]),
-        squad(3, 8_000_000, [hero(10033, 140, 15, 5)]),
-      ]),
-      NAMES,
-      EN,
-      F,
-    );
-    const tops = card.squads.flatMap((s) =>
-      s.heroes.filter((h) => h.top).map((h) => [s.squad, h.id]),
-    );
-    expect(tops).toEqual([[2, 10021]]);
-    expect(card.topRule).toContain("UR, then SSR, then R");
+  it("draws the game's five stars: yellow for levels 1–5, red from the left for 6–10, the next one in part", () => {
+    const look = (star: number) =>
+      starIcons(star).map((i) => (i.next ? `${i.base}+${i.next}:${i.part}` : i.base));
+    expect(look(0)).toEqual(["empty", "empty", "empty", "empty", "empty"]);
+    // 22: level 4, and 2 of the 5 steps toward level 5 fill the fifth star in yellow.
+    expect(look(22)).toEqual(["yellow", "yellow", "yellow", "yellow", "empty+yellow:0.4"]);
+    expect(look(25)).toEqual(["yellow", "yellow", "yellow", "yellow", "yellow"]);
+    // 35: level 7, two red then three yellow.
+    expect(look(35)).toEqual(["red", "red", "yellow", "yellow", "yellow"]);
+    expect(look(50)).toEqual(["red", "red", "red", "red", "red"]);
+    const label = (star: number) =>
+      squadsCardOf(only([squad(1, 1, [hero(10005, 1, star, 5)])]), NAMES, EN, F).squads[0]
+        ?.heroes[0]?.starsLabel;
+    expect([0, 22, 25, 35, 50].map(label)).toEqual([
+      "Star level 0 of 10",
+      "Star level 4 of 10",
+      "Star level 5 of 10",
+      "Star level 7 of 10",
+      "Star level 10 of 10",
+    ]);
   });
 
   it("says what changed since the row before, and nothing when there is none", () => {

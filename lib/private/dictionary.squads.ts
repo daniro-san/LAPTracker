@@ -10,13 +10,9 @@ export const squadsEn = {
   "squads.might": "Might {v}",
   "squads.seen": "seen {date}",
   "squads.level": "Lv {n}",
-  "squads.stars.one": "{n} star",
-  "squads.stars.other": "{n} stars",
+  "squads.starLevel": "Star level {n} of 10",
   "squads.unknownHero": "Unknown hero",
   "squads.strongest": "Strongest",
-  "squads.topHero": "Top hero",
-  "squads.topRule":
-    "Top hero: the rarest (UR, then SSR, then R), then the most stars, then the highest level.",
   "squads.change": "{delta} since {date}",
   "squads.heroesChanged": "Heroes changed",
 };
@@ -30,13 +26,9 @@ export const squadsPt: typeof squadsEn = {
   "squads.might": "Might {v}",
   "squads.seen": "visto em {date}",
   "squads.level": "Nv {n}",
-  "squads.stars.one": "{n} estrela",
-  "squads.stars.other": "{n} estrelas",
+  "squads.starLevel": "Nível de estrela {n} de 10",
   "squads.unknownHero": "Herói desconhecido",
   "squads.strongest": "Mais forte",
-  "squads.topHero": "Melhor herói",
-  "squads.topRule":
-    "Melhor herói: o mais raro (UR, depois SSR, depois R), depois o com mais estrelas, depois o de nível mais alto.",
   "squads.change": "{delta} desde {date}",
   "squads.heroesChanged": "Os heróis mudaram",
 };
@@ -50,13 +42,9 @@ export const squadsFr: typeof squadsEn = {
   "squads.might": "Might {v}",
   "squads.seen": "vue le {date}",
   "squads.level": "Niv. {n}",
-  "squads.stars.one": "{n} étoile",
-  "squads.stars.other": "{n} étoiles",
+  "squads.starLevel": "Niveau d’étoile {n} sur 10",
   "squads.unknownHero": "Héros inconnu",
   "squads.strongest": "La plus forte",
-  "squads.topHero": "Meilleur héros",
-  "squads.topRule":
-    "Meilleur héros : le plus rare (UR, puis SSR, puis R), puis celui qui a le plus d’étoiles, puis le niveau le plus haut.",
   "squads.change": "{delta} depuis le {date}",
   "squads.heroesChanged": "Les héros ont changé",
 };
