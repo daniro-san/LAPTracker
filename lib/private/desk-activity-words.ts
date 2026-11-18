@@ -2,7 +2,12 @@
 // language. Every name and title goes through isolate(), so a right-to-left name cannot reorder the line.
 import { fill, isolate } from "../copy";
 import { agoText, calendarDates, titleOf } from "./calendar-words";
-import type { ActivityItem } from "./desk-activity";
+import {
+  COUNTED_RUNS,
+  type ActivityItem,
+  type ActivityLine,
+  type ActivityPage,
+} from "./desk-activity";
 import type { WorkspaceDictionary, WorkspaceKey, WorkspaceLanguage } from "./dictionary";
 import type { ImportKind, Scope } from "./import-kinds";
 import { kindLabel } from "./import-words";
@@ -152,3 +157,47 @@ export const activityAgo = (
   language: WorkspaceLanguage,
   t: WorkspaceDictionary,
 ) => agoText(at.toISOString(), now, language, t["calendar.conflict.justNow"]);
+
+const counted = (kind: ActivityItem["kind"]): kind is (typeof COUNTED_RUNS)[number] =>
+  (COUNTED_RUNS as readonly string[]).includes(kind);
+
+/**
+ * A line of the feed as one sentence. A run of calendar entries, notice saves or screenshots says how many
+ * ("Rook added 6 entries to the Calendar"); a run of member saves, thefts or new members says what it holds.
+ */
+export function feedLine(line: ActivityLine, t: WorkspaceDictionary, language: WorkspaceLanguage) {
+  const { item } = line;
+  if (line.run.length === 0 || !counted(item.kind)) return activityLine(item, t, language);
+  return fill(t[`activity.run.${item.kind}`], { who: isolate(item.who), n: line.n });
+}
+
+/** One line as the client draws it: its words and time, and a run's own lines (empty for one action). */
+export interface ActivityView {
+  text: string;
+  at: string;
+  ago: string;
+  run: { text: string; at: string; ago: string }[];
+}
+
+/** A page of the feed in the officer's language, made on the server; `next` is the cursor in ms. */
+export interface ActivityPageView {
+  lines: ActivityView[];
+  next: number | null;
+}
+
+export function activityView(
+  page: ActivityPage,
+  t: WorkspaceDictionary,
+  language: WorkspaceLanguage,
+  now: Date,
+): ActivityPageView {
+  const when = (at: Date) => ({ at: at.toISOString(), ago: activityAgo(at, now, language, t) });
+  return {
+    lines: page.lines.map((line) => ({
+      text: feedLine(line, t, language),
+      ...when(line.item.at),
+      run: line.run.map((item) => ({ text: activityLine(item, t, language), ...when(item.at) })),
+    })),
+    next: page.next?.getTime() ?? null,
+  };
+}
