@@ -7,6 +7,7 @@
 import { ChatError } from "@/lib/ai/groq";
 import { WRITING_LANGUAGES } from "@/lib/ai/notice-writing";
 import { requireWorkspace } from "@/lib/private/access";
+import { counted } from "@/lib/private/desk-action";
 import { isSameOriginJson, NO_STORE, privateError, requestCookies } from "@/lib/private/http";
 import { privateLog } from "@/lib/private/log";
 import { SLUG } from "@/lib/private/sign-in";
@@ -43,7 +44,13 @@ export async function POST(
         ms: ctx.now().getTime() - started,
         people: parsed.data.people.length,
       });
-      return Response.json({ texts }, { headers: NO_STORE });
+      return counted(
+        ctx,
+        access,
+        "thanks",
+        "draft",
+        Response.json({ texts }, { headers: NO_STORE }),
+      );
     } catch (error) {
       if (!(error instanceof ChatError)) throw error;
       privateLog(`thanks.draft.${error.kind}`, { ms: ctx.now().getTime() - started });

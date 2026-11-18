@@ -6,6 +6,7 @@
 // deletes the draft and before a change of type throws the officer's fixes away.
 import { useState } from "react";
 
+import { track, type ScreenshotKind } from "@/lib/analytics/events";
 import { buttonClass } from "@/lib/brand/components/Button";
 import { isolate } from "@/lib/copy";
 
@@ -16,7 +17,11 @@ import { SIGNED_OUT, SignedOutNote } from "./SignedOut";
 export type Answer = { ok: boolean; data: Record<string, unknown> };
 
 /** Posts a decision on the draft at the version the officer opened; says why when it is refused. */
-export function useDraftActions(slug: string, view: { id: number; version: number }, w: Words) {
+export function useDraftActions(
+  slug: string,
+  view: { id: number; version: number; kind: ScreenshotKind },
+  w: Words,
+) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   async function act(body: object): Promise<Answer> {
@@ -29,6 +34,9 @@ export function useDraftActions(slug: string, view: { id: number; version: numbe
         body: JSON.stringify({ version: view.version, ...body }),
       });
       const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+      if (res.ok && "action" in body && body.action === "discard") {
+        track("ws_draft_discarded", { kind: view.kind });
+      }
       if (res.status === 401) setMessage(SIGNED_OUT);
       else if (!res.ok) {
         const template = w[`shots.e.${String(data.code)}`] ?? w["shots.e.failed"];

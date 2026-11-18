@@ -6,6 +6,7 @@
 import { z } from "zod";
 
 import { requireWorkspace } from "@/lib/private/access";
+import { counted } from "@/lib/private/desk-action";
 import {
   isSameOriginJson,
   NO_STORE,
@@ -63,18 +64,22 @@ export async function POST(
       const added = await privately("pending.add", () => addPending(db, access, input, clock));
       if (!added) return privateError(400, "bad_name");
       const conflict = added.results.some((r) => r.status === "conflict");
-      return answer(conflict ? 409 : 200, { ok: true, ...added });
+      const made = answer(conflict ? 409 : 200, { ok: true, ...added });
+      return counted(ctx, access, "new_member", "add", made);
     }
     if (input.action === "link") {
       const linked = await privately("pending.link", () =>
         linkPending(db, access, -input.uid, input.to, now),
       );
-      if (linked === "ok") return answer(200, { ok: true });
+      if (linked === "ok")
+        return counted(ctx, access, "new_member", "link", answer(200, { ok: true }));
       return privateError(linked === "not_member" ? 400 : 404, linked);
     }
     const gone = await privately("pending.delete", () =>
       removePending(db, access, -input.uid, now),
     );
-    return gone ? answer(200, { ok: true }) : privateError(404, "not_found");
+    return gone
+      ? counted(ctx, access, "new_member", "delete", answer(200, { ok: true }))
+      : privateError(404, "not_found");
   });
 }

@@ -2,16 +2,22 @@
 // content's way (DESIGN.md ornament budget): the yarn ball by default, the Granny Doctor on the error
 // and player pages. Under the byline, the disclaimer as one short line with the full text behind a
 // "More" disclosure (UX review N9), then the live version (D59), inlined at build time by next.config.ts.
+import { analyticsKey } from "@/lib/analytics/events";
 import { GrannyStanding } from "@/lib/brand/components/Mascot";
 import { YarnCorner } from "@/lib/brand/components/YarnCorner";
 import type { Dictionary } from "@/lib/copy";
 
+import { AnalyticsChoices } from "./AnalyticsChoices";
+
 export function SiteFooter({
   ornament = "yarn",
   copy,
+  choices = true,
 }: {
   ornament?: "yarn" | "granny";
   copy: Dictionary;
+  /** "Analytics choices" (D115); false on /admin, which never asks the question. */
+  choices?: boolean;
 }) {
   return (
     <footer
@@ -30,6 +36,8 @@ export function SiteFooter({
         </summary>
         <p>{copy.site.disclaimer}</p>
       </details>
+      {/* Only where the analytics question exists: production with POSTHOG_KEY (D77, D115). */}
+      {choices && analyticsKey(process.env) && <AnalyticsChoices label={copy.consent.choices} />}
       <p className="mt-1 text-right text-xs text-ink/65 tabular-nums">
         {process.env.BUILD_VERSION}
       </p>

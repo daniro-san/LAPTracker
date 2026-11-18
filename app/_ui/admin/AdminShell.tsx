@@ -39,7 +39,7 @@ export async function AdminShell({ title, children }: { title: string; children?
           <PinGate ended={session === "none" ? null : session} />
         )}
       </main>
-      <SiteFooter copy={copy} />
+      <SiteFooter copy={copy} choices={false} />
     </div>
   );
 }

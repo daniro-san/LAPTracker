@@ -6,6 +6,7 @@
 //     card members see until the next thanks or a Take down.
 //   {action: "take_down", id}: hides the board's card; not_found for another workspace's or a Discord share.
 import { requireWorkspace } from "@/lib/private/access";
+import { counted } from "@/lib/private/desk-action";
 import {
   isSameOriginJson,
   NO_STORE,
@@ -42,7 +43,13 @@ export async function POST(
     if (ask.action === "take_down") {
       const done = await takeDownThanks(db, access, ask.id, now);
       return done
-        ? Response.json({ ok: true }, { headers: NO_STORE })
+        ? counted(
+            ctx,
+            access,
+            "thanks",
+            "take_down",
+            Response.json({ ok: true }, { headers: NO_STORE }),
+          )
         : privateError(404, "not_found");
     }
     const result = await privately("thanks.share", () =>
@@ -55,6 +62,12 @@ export async function POST(
     );
     if (!result.ok) return privateError(STATUS[result.code], result.code);
     const { id, target, at } = result.row;
-    return Response.json({ id, target, at }, { headers: NO_STORE });
+    return counted(
+      ctx,
+      access,
+      "thanks",
+      "share",
+      Response.json({ id, target, at }, { headers: NO_STORE }),
+    );
   });
 }

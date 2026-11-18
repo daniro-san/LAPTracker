@@ -364,4 +364,11 @@ export const ko = {
     noEvents: "장부에 아직 이벤트가 없어요.",
     noMembers: "해당하는 사람이 없어요.",
   },
+  consent: {
+    label: "통계",
+    body: "쿠키를 사용해 방문 횟수를 세고 페이지 사용 방식을 기록해도 될까요? 입력한 내용은 절대 기록하지 않습니다. 쿠키가 없으면 방문 횟수만 세며, 추적 쿠키는 저장되지 않습니다.",
+    accept: "허용",
+    decline: "괜찮습니다",
+    choices: "통계 설정",
+  },
 } as const satisfies Translation;

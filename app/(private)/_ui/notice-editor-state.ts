@@ -38,6 +38,7 @@ import {
   withRestored,
 } from "./notice-draft";
 import { keepKey, readKept, restorable, writeKept } from "./notice-keep";
+import { newRequestId } from "./request-id";
 
 export interface EditorProps {
   slug: string;
@@ -153,12 +154,20 @@ function aiAsks(run: (ask: DraftAsk) => Promise<void>, values: Record<NoticeFiel
   };
 }
 
+/** Translate and Fit used, and an AI button that gave no draft (D115); a signed-out answer is not counted. */
+function trackAsk(ask: DraftAsk, answer: Awaited<ReturnType<typeof askDraft>>) {
+  if ("failed" in answer) {
+    if (answer.failed !== "signedOut.text") track("ws_notice_ai_failed", { action: ask.kind });
+  } else if (ask.kind === "translate") track("ws_notice_translated");
+  else if (ask.kind === "fit") track("ws_notice_fit");
+}
+
 export function useEditor(p: EditorProps) {
   const router = useRouter();
   const [draft, setDraft] = useState(() => startDraft(p.fields));
   const [conflicts, setConflicts] = useState<Conflict[]>([]);
   // One per open editor (D100): a new notice's Save retried after a lost answer stores one notice.
-  const [requestId] = useState(() => crypto.randomUUID());
+  const [requestId] = useState(() => newRequestId());
   /** The action running now, if any: every AI button and Save wait for it. */
   const [busy, setBusy] = useState<DraftAsk["kind"] | "save" | null>(null);
   const [message, setMessage] = useState<WorkspaceKey | null>(null);
@@ -179,9 +188,9 @@ export function useEditor(p: EditorProps) {
     setAiMessage(null);
     const answer = await askDraft(p.slug, ask);
     setBusy(null);
+    trackAsk(ask, answer);
     if ("failed" in answer) return setAiMessage({ language: askTab(ask), key: answer.failed });
     setDraft((d) => withDrafts(d, answer.drafts, ask, answer.partly));
-    if (ask.kind === "translate") track("ws_notice_translated");
   };
   const save = async () => {
     if (conflicts.length > 0) return showBanner();

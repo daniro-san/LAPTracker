@@ -7,6 +7,8 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { forgetPerson } from "@/lib/analytics/events";
+
 import { AskSheet } from "./AskSheet";
 import { forgetAllKept } from "./notice-keep";
 
@@ -23,6 +25,8 @@ export function SignOutButton({
   async function signOut() {
     setBusy(true);
     forgetAllKept();
+    // D115: events after sign-out belong to no one.
+    forgetPerson();
     try {
       await fetch(`/api/w/${slug}/logout`, {
         method: "POST",

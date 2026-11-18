@@ -10,12 +10,15 @@ export function CopyButton({
   text,
   labels,
   event,
+  onCopied,
   className = "",
   describedBy,
 }: {
   text: string;
   labels: { copy: string; copied: string; failed: string };
   event?: "ws_copy_spreadsheet";
+  /** Called once the text is on the clipboard (D115: the thanks copied for the game). */
+  onCopied?: () => void;
   /** Extra classes, such as full width in the thanks sheet (D114). */
   className?: string;
   /** The id of the line that says what this copy holds (a notice's three copies, D116). */
@@ -39,7 +42,10 @@ export function CopyButton({
         void Promise.resolve()
           .then(() => navigator.clipboard.writeText(text))
           .then(
-            () => done("copied"),
+            () => {
+              done("copied");
+              onCopied?.();
+            },
             () => done("failed"),
           );
       }}

@@ -42,6 +42,9 @@ export type ScreenshotKind =
   | "unrecognised"
   | "map";
 
+/** The members' board's sections (D105; `data-board-section` in BoardSections.tsx). */
+export type BoardSection = "week" | "notices" | "start_here";
+
 type NoProperties = Record<string, never>;
 
 export interface AnalyticsEvents {
@@ -61,8 +64,59 @@ export interface AnalyticsEvents {
   ws_screenshot_sent: { kind: ScreenshotKind };
   /** A draft saved: its type only. */
   ws_draft_saved: { kind: ScreenshotKind };
+  // D115, docs/analytics/tracking-plan.md: each answers one product question there.
+  /** A draft discarded from its review: its type only. */
+  ws_draft_discarded: { kind: ScreenshotKind };
+  /** "Send screenshots" made no draft: no picture read (`read`), or the drafts' request failed (`drafts`). */
+  ws_screenshot_failed: { stage: "read" | "drafts" };
+  /** Members' "Paste updates" → Check: a draft made, no line with a name and a value, or the request failed. */
+  ws_updates_pasted: { outcome: "draft" | "nothing" | "failed" };
+  /** "Read from a screenshot" beside a paste box: where, and whether text came back. */
+  ws_text_read: { place: "paste_updates" | "facts"; outcome: "read" | "failed" | "busy" };
+  /** A notice's "Fit to 1,000" filled a draft (D113). */
+  ws_notice_fit: NoProperties;
+  /** Translate, Improve writing or Fit gave no draft. */
+  ws_notice_ai_failed: { action: "translate" | "improve" | "fit" };
+  /** A review asked (D113): for the whole notice or one language, from the team or one officer. */
+  ws_review_requested: { scope: "notice" | "language"; to: "team" | "officer" };
+  ws_review_approved: NoProperties;
+  /** "Publish to Discord" posted (D102): the notice's audience only. */
+  ws_notice_published: { audience: "members" | "leaders" };
+  /** A roll call mark stored: one tap, or "the rest" for everyone left (D103). */
+  ws_roll_call_marked: { how: "tap" | "rest" };
+  /** The weekly thanks shared (D114, issue 404): posted to the board or Discord, or copied for the game. */
+  ws_thanks_shared: { to: "game" | "discord" | "board" };
+  /** A members' board section came on screen, once per page load. */
+  ws_board_section_viewed: { board_section: BoardSection };
 }
 export type AnalyticsEvent = keyof AnalyticsEvents;
+
+/** Every event above, at run time: events.test.ts checks this list against the type and the tracking plan. */
+export const ANALYTICS_EVENTS = [
+  "ws_sign_in_completed",
+  "ws_first_use_done",
+  "ws_first_use_skipped",
+  "ws_copy_spreadsheet",
+  "ws_filter_used",
+  "ws_language_switched",
+  "ws_facts_saved",
+  "ws_sheet_imported",
+  "ws_notice_translated",
+  "ws_screenshot_sent",
+  "ws_draft_saved",
+  "ws_draft_discarded",
+  "ws_screenshot_failed",
+  "ws_updates_pasted",
+  "ws_text_read",
+  "ws_notice_fit",
+  "ws_notice_ai_failed",
+  "ws_review_requested",
+  "ws_review_approved",
+  "ws_notice_published",
+  "ws_roll_call_marked",
+  "ws_thanks_shared",
+  "ws_board_section_viewed",
+] as const satisfies readonly AnalyticsEvent[];
 
 /** The URL fragment the sign-in callback adds after a successful sign-in, when analytics is on. */
 export const SIGNED_IN_HASH = "#signed-in";
@@ -92,6 +146,26 @@ export function loadAnalytics(load: () => Promise<PostHog>): void {
 export function withPostHog(use: (ph: PostHog) => void): void {
   if (client instanceof Promise) void client.then((ph) => ph && use(ph));
   else if (client) use(client);
+}
+
+/**
+ * The desk's or the board's person (D115): `id` is the pseudonymous id from lib/analytics/person.ts, the
+ * properties only the tier and the slug. Again on every page load: nothing is stored on the device. Never on
+ * a page load that started on a public page and moved to the desk, whatever the visitor answered: cookieless,
+ * a lasting id would undo the mode; after "Allow", the officer would be tied to the id PostHog stores.
+ */
+export function identify(id: string, tier: "officer" | "member", workspace: string): void {
+  withPostHog((ph) => {
+    // Any page load that started on a public page: cookieless, or one whose visitor said "Allow". There
+    // PostHog keeps an id on the device, and an officer's pseudonymous id must never be tied to it.
+    if (ph.config.cookieless_mode) return;
+    if (ph.get_distinct_id() !== id) ph.identify(id, { tier, workspace });
+  });
+}
+
+/** Sign-out: the next events on this page load belong to no one (D115). */
+export function forgetPerson(): void {
+  withPostHog((ph) => ph.reset());
 }
 
 export function track<E extends AnalyticsEvent>(

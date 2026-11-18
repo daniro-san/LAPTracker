@@ -3,6 +3,7 @@
 // back. The picture is read in memory and not kept. Officers of the workspace only (D71). Also "Read from a
 // screenshot" beside the facts' paste boxes (D109): one read at a time per officer, else 429 `busy`.
 import { requireWorkspace } from "@/lib/private/access";
+import { counted } from "@/lib/private/desk-action";
 import {
   isSameOriginPicture,
   NO_STORE,
@@ -55,6 +56,12 @@ export async function POST(
     }
     if (!lines) return privateError(422, "refused");
     privateLog("w.import.read", { workspace: access.workspaceId, lines: lines.length });
-    return Response.json({ lines }, { headers: NO_STORE });
+    return counted(
+      ctx,
+      access,
+      "screenshot",
+      "read_text",
+      Response.json({ lines }, { headers: NO_STORE }),
+    );
   });
 }

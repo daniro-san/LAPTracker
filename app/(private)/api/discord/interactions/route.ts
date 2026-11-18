@@ -4,6 +4,7 @@
 // sees, then reads the pictures after the response (`after`) and edits that reply.
 import { after } from "next/server";
 
+import { captureServer } from "@/lib/analytics/server";
 import { handleInteraction } from "@/lib/private/discord-interaction";
 import { runTranslation } from "@/lib/private/discord-translate-run";
 import { NO_STORE, privateError } from "@/lib/private/http";
@@ -39,6 +40,17 @@ export async function POST(request: Request): Promise<Response> {
       origin,
       Boolean(ctx.env.DISCORD_BOT_TOKEN),
     );
+    // D115: which command, nothing about the message, the sender or the server.
+    const command =
+      handled.status !== 200
+        ? null
+        : handled.job
+          ? ("send_to_laptracker" as const)
+          : handled.translation && (`translate_for_${handled.translation.mode}` as const);
+    if (command) {
+      const used = { event: "discord_command_used", properties: { command } } as const;
+      after(() => captureServer(ctx.env, ctx.fetch, [used]));
+    }
     if (handled.status === 200 && handled.job) {
       const job = handled.job;
       const deps = {

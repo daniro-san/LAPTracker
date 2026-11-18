@@ -9,6 +9,7 @@ import { fill, isolate } from "@/lib/copy";
 import { requireWorkspace } from "@/lib/private/access";
 import { isDay } from "@/lib/private/calendar-time";
 import { WORKSPACE_LANG_COOKIE } from "@/lib/private/cookies";
+import { counted } from "@/lib/private/desk-action";
 import { pickWorkspaceLanguage, WORKSPACE_DICTIONARIES } from "@/lib/private/dictionary";
 import type { FactValues } from "@/lib/private/fact-fields";
 import { factText } from "@/lib/private/fact-text";
@@ -65,7 +66,10 @@ export async function POST(
           ? undoFollowUp(db, access, input, { now, zone })
           : recordFollowUp(db, access, input, { now, zone }),
     );
-    if (result.ok) return Response.json({ ok: true }, { headers: NO_STORE });
+    if (result.ok) {
+      const done = Response.json({ ok: true }, { headers: NO_STORE });
+      return counted(ctx, access, "follow_up", input.action === "undo" ? "undo" : "record", done);
+    }
     if (result.code === "not_found") return privateError(409, result.code);
     if (result.code !== "stale") return privateError(400, result.code);
     const language = pickWorkspaceLanguage(

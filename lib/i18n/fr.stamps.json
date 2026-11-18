@@ -302,5 +302,10 @@
   "empty.manualNotRun": "31e5ffce",
   "empty.manualNoRows": "66b970a5",
   "empty.noEvents": "d8f3e761",
-  "empty.noMembers": "e4575670"
+  "empty.noMembers": "e4575670",
+  "consent.label": "94c116ee",
+  "consent.body": "374d9e56",
+  "consent.accept": "e213c161",
+  "consent.decline": "49780701",
+  "consent.choices": "6d3163e6"
 }

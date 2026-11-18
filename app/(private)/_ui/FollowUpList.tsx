@@ -13,6 +13,7 @@ import { fill, isolate } from "@/lib/copy";
 
 import type { FollowUpWords } from "./follow-up-words";
 import { RecordSheet, send, type FollowUpRow } from "./FollowUpSheet";
+import { newRequestId } from "./request-id";
 
 export type { FollowUpRow };
 
@@ -111,7 +112,7 @@ export function FollowUpList(props: {
     router.refresh();
   };
   const talked = async (row: FollowUpRow) => {
-    const requestId = crypto.randomUUID();
+    const requestId = newRequestId();
     setBusy(row.uid);
     const body = { uid: row.uid, action: "talked", note: "", until: null, version: 0, requestId };
     const r = await send(slug, body);
@@ -124,7 +125,7 @@ export function FollowUpList(props: {
       uid: done.uid,
       action: "undo",
       target: done.requestId,
-      requestId: crypto.randomUUID(),
+      requestId: newRequestId(),
     });
     setDone({ ...done, state: r?.status === 200 ? "undone" : "failed" });
     router.refresh();

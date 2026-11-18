@@ -9,6 +9,7 @@
 // an iPhone. `link`: a text link above the editor's main "Fill the fields" button.
 import { useRef, useState } from "react";
 
+import { track } from "@/lib/analytics/events";
 import { buttonClass } from "@/lib/brand/components/Button";
 import { STATUS_BAR_ASPECT, STATUS_BAR_SHARE } from "@/lib/screenshot/status-bar";
 
@@ -62,6 +63,8 @@ async function readPictures(slug: string, files: File[]) {
 
 export function ReadScreenshot(props: {
   slug: string;
+  /** Where the control sits, for the `ws_text_read` event only (D115). */
+  place: "paste_updates" | "facts";
   words: ShotWords;
   multiple?: boolean;
   link?: boolean;
@@ -82,6 +85,10 @@ export function ReadScreenshot(props: {
     if (why === SIGNED_OUT) setError(SIGNED_OUT);
     else if (why === "busy") setError(words.busy);
     else if (why === "failed" || text === "") setError(words.failed);
+    if (why !== SIGNED_OUT) {
+      const outcome = why === "busy" ? "busy" : text === "" ? "failed" : "read";
+      track("ws_text_read", { place: props.place, outcome });
+    }
     setBusy(false);
     if (input.current) input.current.value = "";
   }
