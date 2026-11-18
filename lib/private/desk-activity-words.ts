@@ -142,7 +142,7 @@ export function activityLine(
       return countLine(t, who, item);
     case "thanks":
       return fill(t[`activity.thanks.${item.target}`], { who });
-    // The rest is about a notice: saved, posted, deleted (D118), or a review request or its outcome (D113).
+    // The rest is about a notice: saved, posted, deleted (D118), given a picture (D119), or a review request or its outcome (D113).
     default:
       return item.kind === "reviewAsked" || item.kind === "reviewAnswered"
         ? reviewLine(t, who, item)

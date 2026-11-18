@@ -3,6 +3,7 @@
 import { sql } from "drizzle-orm";
 import {
   check,
+  customType,
   index,
   integer,
   pgTable,
@@ -175,5 +176,49 @@ export const noticeReviewOutcomes = pgTable(
     uniqueIndex("notice_review_outcomes_review_unique").on(t.reviewId),
     uniqueIndex("notice_review_outcomes_request_unique").on(t.workspaceId, t.requestId),
     check("notice_review_outcomes_outcome_check", sql`${t.outcome} in ('approved', 'edited')`),
+  ],
+);
+
+/** Postgres bytea as bytes (D119): Neon's driver gives a Buffer, PGlite a Uint8Array; both are Uint8Array. */
+const bytea = customType<{ data: Uint8Array; driverData: Uint8Array }>({
+  dataType: () => "bytea",
+  toDriver: (value) => Buffer.from(value.buffer, value.byteOffset, value.byteLength),
+});
+
+/**
+ * A notice's one picture (D119), shared by every language: the bytes the browser resized and re-encoded,
+ * checked again on the server (WebP, JPEG or PNG; at most 400 KB and 1600 px a side). One row per notice:
+ * Replace overwrites it, Remove deletes it. A deleted notice (D118) keeps it for Undo, but it is not served
+ * or posted. `hash` is the bytes' SHA-256 (hex, first 16), the picture's ETag and the version in its URL.
+ */
+export const noticePictures = pgTable(
+  "notice_pictures",
+  {
+    noticeId: integer("notice_id")
+      .primaryKey()
+      .references(() => notices.id, { onDelete: "cascade" }),
+    workspaceId: integer("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    data: bytea("data").notNull(),
+    type: text("type").notNull(),
+    width: integer("width").notNull(),
+    height: integer("height").notNull(),
+    bytes: integer("bytes").notNull(),
+    hash: text("hash").notNull(),
+    addedBy: integer("added_by").references(() => workspaceUsers.id, { onDelete: "set null" }),
+    addedAt: tstz("added_at").notNull(),
+  },
+  (t) => [
+    index("notice_pictures_workspace_added_idx").on(t.workspaceId, t.addedAt),
+    check(
+      "notice_pictures_type_check",
+      sql`${t.type} in ('image/webp', 'image/jpeg', 'image/png')`,
+    ),
+    check("notice_pictures_bytes_check", sql`${t.bytes} between 1 and 409600`),
+    check(
+      "notice_pictures_side_check",
+      sql`${t.width} between 1 and 1600 and ${t.height} between 1 and 1600`,
+    ),
   ],
 );

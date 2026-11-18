@@ -53,6 +53,8 @@ const FIXTURES: Record<string, Partial<Record<Method, Fixture>>> = {
     POST: { body: { kind: "translate", from: "en", to: ["fr"], text: "Hello" } },
   },
   "notices/delete/route.ts": { POST: { body: { id: 1, requestId: ID } } },
+  "notices/picture/remove/route.ts": { POST: { body: { id: 1 } } },
+  "notices/picture/route.ts": { POST: { picture: true, query: "?id=1" } },
   "notices/publish/route.ts": { POST: { body: { id: 1, languages: ["en"], requestId: ID } } },
   "notices/reviews/route.ts": {
     POST: { body: { action: "ask", notice: 1, language: null, reviewer: null, requestId: ID } },

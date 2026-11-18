@@ -1,4 +1,4 @@
-// A JPEG's or WebP's width and height from its header, read before anything decodes it (issue 299 review):
+// A JPEG's, WebP's or PNG's width and height from its header, read before anything decodes it (issue 299 review):
 // Tesseract's image library would otherwise allocate a picture of any size it is sent. Pure.
 
 export interface PictureSize {
@@ -35,11 +35,17 @@ function webpSize(b: Buffer): PictureSize | null {
   return null;
 }
 
-/** The size a JPEG or WebP says it has; null for any other format or a header that cannot be read. */
+/** The size a JPEG, WebP or PNG says it has; null for any other format or a header that cannot be read. */
 export function pictureSize(image: Uint8Array): PictureSize | null {
   const b = Buffer.from(image.buffer, image.byteOffset, image.byteLength);
   try {
     if (b[0] === 0xff && b[1] === 0xd8) return jpegSize(b);
+    // A PNG's first chunk is IHDR (D119: a notice picture may be a PNG).
+    if (b[0] === 0x89 && b.toString("latin1", 1, 4) === "PNG") {
+      return b.toString("latin1", 12, 16) === "IHDR"
+        ? { width: b.readUInt32BE(16), height: b.readUInt32BE(20) }
+        : null;
+    }
     if (b.toString("latin1", 0, 4) === "RIFF" && b.toString("latin1", 8, 12) === "WEBP") {
       return webpSize(b);
     }

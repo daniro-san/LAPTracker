@@ -1,11 +1,13 @@
 // The members' board's read (D105, issue 331). It takes a BoardAccess, never a WorkspaceAccess, and returns
 // only what members may see: the calendar entries an officer marked "Members can see this" (kind, title,
 // time, notes, link; no caravan seats, no author), the notices marked "Show to members" whose end day has not
-// passed (title, end day, text per language; no author), and Start here. Nothing about any person, except
-// the weekly thank-you an officer chose to put there (D114, amending D105): its text per language, its week
-// and the officer's name as its signature; never a value, a ranking or who was left out.
+// passed (title, end day, text per language, its picture's address (D119); no author), and Start here.
+// Nothing about any person, except the weekly thank-you an officer chose to put there (D114, amending D105):
+// its text per language, its week and the officer's name as its signature; never a value, a ranking or who
+// was left out.
 import type { Db } from "../db";
 import { calendarRows } from "../repo/calendar";
+import { pictureFacts } from "../repo/notice-pictures";
 import { newestNoticeValues } from "../repo/notices";
 import { readStartHere } from "../repo/start-here";
 import { boardThanks, type BoardThanksRow } from "../repo/thanks";
@@ -13,6 +15,7 @@ import type { StartHereText } from "../schema-board";
 import type { BoardAccess } from "./access";
 import { layOut, type EntryRow } from "./calendar-model";
 import { addDays, mondayOf } from "./calendar-time";
+import { pictureView, type PictureView } from "./notice-picture-rules";
 import { NOTICE_LANGUAGES, staleOf, type NoticeLanguage } from "./notice-rules";
 
 /** How many days "This week" shows: today and the six after it. */
@@ -36,6 +39,8 @@ export interface BoardNotice {
   texts: Partial<Record<NoticeLanguage, string>>;
   /** Written languages behind the newest one ("may be out of date", D81's basis). */
   stale: NoticeLanguage[];
+  /** The notice's picture (D119), served by /img/notice/[id]. */
+  picture: PictureView | null;
 }
 
 export interface BoardView {
@@ -46,8 +51,8 @@ export interface BoardView {
   thanks: BoardThanksRow | null;
 }
 
-/** Notices marked for members whose end day is not before `today` (a server day), newest change first. */
-async function memberNotices(db: Db, workspaceId: number, today: string): Promise<BoardNotice[]> {
+/** The notices the board shows: marked for members, end day not before `today`; newest change first. */
+async function shownNotices(db: Db, workspaceId: number, today: string) {
   const flags = await newestNoticeValues(db, workspaceId, ["for_members", "ends_on"]);
   const byId = new Map<number, { show: boolean; endsOn: string; at: Date }>();
   for (const f of flags) {
@@ -56,11 +61,32 @@ async function memberNotices(db: Db, workspaceId: number, today: string): Promis
     if (f.field === "ends_on") n.endsOn = f.value;
     byId.set(f.noticeId, n);
   }
-  const shown = [...byId]
+  return [...byId]
     .filter(([, n]) => n.show && (n.endsOn === "" || n.endsOn >= today))
     .sort(([a, x], [b, y]) => y.at.getTime() - x.at.getTime() || b - a);
+}
+
+/**
+ * Whether the board shows this notice on `today` (D119).
+ * INVARIANT board.picture-shown: a member reaches a notice's picture only while the board shows the notice.
+ */
+export async function boardShowsNotice(
+  db: Db,
+  access: BoardAccess,
+  noticeId: number,
+  today: string,
+): Promise<boolean> {
+  return (await shownNotices(db, access.workspaceId, today)).some(([id]) => id === noticeId);
+}
+
+/** Notices marked for members whose end day is not before `today` (a server day), newest change first. */
+async function memberNotices(db: Db, workspaceId: number, today: string): Promise<BoardNotice[]> {
+  const shown = await shownNotices(db, workspaceId, today);
   const ids = shown.map(([id]) => id);
-  const values = await newestNoticeValues(db, workspaceId, ["title", ...NOTICE_LANGUAGES], ids);
+  const [values, pictures] = await Promise.all([
+    newestNoticeValues(db, workspaceId, ["title", ...NOTICE_LANGUAGES], ids),
+    pictureFacts(db, workspaceId, ids),
+  ]);
   return shown.map(([id, n]) => {
     const mine = values.filter((v) => v.noticeId === id);
     const texts: BoardNotice["texts"] = {};
@@ -74,7 +100,15 @@ async function memberNotices(db: Db, workspaceId: number, today: string): Promis
       }
     }
     const title = mine.find((v) => v.field === "title")?.value ?? "";
-    return { id, title, endsOn: n.endsOn || null, texts, stale: staleOf(bases) };
+    const picture = pictures.get(id);
+    return {
+      id,
+      title,
+      endsOn: n.endsOn || null,
+      texts,
+      stale: staleOf(bases),
+      picture: picture ? pictureView(picture) : null,
+    };
   });
 }
 

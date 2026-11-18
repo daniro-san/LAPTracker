@@ -1,6 +1,7 @@
-// "Publish to Discord" (issue 345, D102): a notice goes to its audience's channel, never to the other; a
-// repeat of the same request id posts nothing more; no message can mention anyone; a forum channel gets a
-// post named after the notice with the rest inside it; without a channel nothing is sent. A refusal is a
+// "Publish to Discord" (issue 345, D102): a notice goes to its audience's channel, never to the other;
+// its picture goes with the first message (D119); a repeat of the same request id posts nothing more; no
+// message can mention anyone; a forum channel gets a post named after the notice with the rest inside it;
+// without a channel nothing is sent. A refusal is a
 // failed publish; a claim still running answers 409, one stuck over 2 minutes counts as failed; a second
 // publish to the same audience within 30 s is refused; another workspace's notice is not found.
 import { randomUUID } from "node:crypto";
@@ -14,7 +15,7 @@ import type { Db } from "@/lib/db";
 import { openTestDb, truncateAll } from "@/lib/db.test-helpers";
 import { createSession, SESSION_COOKIE } from "@/lib/private/session";
 import { workspaces, workspaceUsers } from "@/lib/schema";
-import { noticePublishes } from "@/lib/schema-notices";
+import { noticePictures, noticePublishes } from "@/lib/schema-notices";
 
 const holder = vi.hoisted(() => ({ ctx: null as AppContext | null }));
 vi.mock("@/lib/app-context", async (original) => ({
@@ -37,7 +38,7 @@ const env = (forum: boolean) => ({
 });
 
 let db: Db;
-let sent: { url: string; body: Record<string, unknown> }[];
+let sent: { url: string; body: Record<string, unknown>; file?: File }[];
 beforeAll(async () => {
   db = await openTestDb();
 });
@@ -59,7 +60,14 @@ function use(e: AppContext["env"], refuse = false) {
   holder.ctx = {
     ...testContext(db, e).ctx,
     fetch: async (input, init) => {
-      sent.push({ url: String(input), body: JSON.parse(String(init?.body)) });
+      const form = init?.body instanceof FormData ? init.body : null;
+      const json = form ? form.get("payload_json") : init?.body;
+      const file = form?.get("files[0]");
+      sent.push({
+        url: String(input),
+        body: JSON.parse(String(json)),
+        ...(file instanceof File && { file }),
+      });
       if (refuse) return new Response(null, { status: 500 });
       return Response.json({ id: `m${sent.length}`, channel_id: "900" });
     },
@@ -143,6 +151,32 @@ describe("POST /api/w/[slug]/notices/publish", () => {
     // The same request again (a double tap): the first answer, nothing posted.
     expect((await publish(token, id, requestId)).status).toBe(200);
     expect(sent).toHaveLength(1);
+  });
+
+  it("sends the notice's picture as an attachment the first message's embed shows (D119)", async () => {
+    const token = await officer();
+    const id = await notice(token, true);
+    const data = new Uint8Array([0x52, 0x49, 0x46, 0x46, 1, 2, 3]);
+    await db.insert(noticePictures).values({
+      noticeId: id,
+      workspaceId: 1,
+      data,
+      type: "image/webp",
+      width: 10,
+      height: 10,
+      bytes: data.length,
+      hash: "abc",
+      addedAt: T0,
+    });
+    expect((await publish(token, id)).status).toBe(200);
+    expect(sent[0]?.body).toMatchObject({
+      allowed_mentions: { parse: [] },
+      embeds: [{ image: { url: "attachment://notice.webp" } }],
+      attachments: [{ id: 0, filename: "notice.webp" }],
+    });
+    expect(sent[0]?.file?.name).toBe("notice.webp");
+    expect(sent[0]?.file?.type).toBe("image/webp");
+    expect(new Uint8Array(await (sent[0]?.file as File).arrayBuffer())).toEqual(data);
   });
 
   it("posts a leadership notice to the leaders' channel", async () => {

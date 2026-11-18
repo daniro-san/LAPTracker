@@ -42,7 +42,10 @@ export function onDeskNow(db: Db, access: WorkspaceAccess, now: Date): Promise<s
 type What =
   /** `uids`: members saved one at a time; `batch`: members of batch saves (a sheet import). */
   | { kind: "facts"; uids: number[]; batch: number }
-  | { kind: "noticeSaved" | "noticePosted" | "noticeDeleted" | "noticeRestored"; noticeId: number }
+  | {
+      kind: "noticeSaved" | "noticePosted" | "noticeDeleted" | "noticeRestored" | "noticePicture";
+      noticeId: number;
+    }
   | { kind: "draft"; draft: Pick<DraftDone, "kind" | "scope" | "source"> }
   | { kind: "entry" | "entryEdit"; entry: Pick<EntryDone, "kind" | "variant" | "level" | "title"> }
   | { kind: "marks"; call: Pick<MarksDone, "kind" | "variant">; rest: boolean }
@@ -67,13 +70,17 @@ export type ActivityItem = { at: Date; who: string } & (
           | "noticePosted"
           | "noticeDeleted"
           | "noticeRestored"
+          | "noticePicture"
           | "reviewAsked"
           | "reviewAnswered";
       }
     >
   | { kind: "facts"; member: string | null; members: number }
   | ({ kind: "followUp"; member: string | null } & Pick<FollowUpDone, "action" | "until">)
-  | { kind: "noticeSaved" | "noticePosted" | "noticeDeleted" | "noticeRestored"; title: string }
+  | {
+      kind: "noticeSaved" | "noticePosted" | "noticeDeleted" | "noticeRestored" | "noticePicture";
+      title: string;
+    }
   /** `reviewer` null: the whole team (D113). */
   | { kind: "reviewAsked"; title: string; language: string | null; reviewer: string | null }
   | ({ kind: "reviewAnswered"; title: string } & Pick<ReviewAnsweredDone, "outcome" | "language">)
@@ -204,6 +211,7 @@ function merge(rows: ActivityRows, after: number | null): Raw[] {
     ...rows.noticePosts.map((r) => ({ ...r, kind: "noticePosted" as const })),
     ...rows.noticeDeletes.map((r) => ({ ...r, kind: "noticeDeleted" as const })),
     ...rows.noticeRestores.map((r) => ({ ...r, kind: "noticeRestored" as const })),
+    ...rows.noticePictures.map((r) => ({ ...r, kind: "noticePicture" as const })),
     ...rows.drafts.map(({ by, at, ...draft }) => ({ by, at, kind: "draft" as const, draft })),
     ...rows.entries.map(({ by, at, ...entry }) => ({ by, at, kind: "entry" as const, entry })),
     ...rows.entryEdits.map(({ by, at, ...entry }) => ({
