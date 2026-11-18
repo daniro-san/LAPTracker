@@ -12,7 +12,7 @@
   - the cap is one call per roster member, at most 120 a day;
   - `mainSquad` picks the strongest squad;
   - `trackerMightWrite` is the version rule.
-- **Storage.** `member_squads` is append-only. A row is added only when a squad changed. A squad missing from a response is never touched. `hero_catalog` holds hero ids and names. Migration `0040_squads` (from `pnpm db:generate`) also adds `tracker` to `member_facts_source_check`.
+- **Storage.** `member_squads` is append-only. A row is added only when a squad changed. A squad missing from a response is never touched. `hero_catalog` holds hero ids and names. Migration `0041_squads` (from `pnpm db:generate`) also adds `tracker` to `member_facts_source_check`.
 - **"Main squad might".** A new version with source `tracker` ("from the tracker" / "do tracker" / "du tracker"), written through `lib/repo/member-facts.ts` with `written_by` null.
 - **Hero pictures.** `/img/hero/[id]` serves only ids in `hero_catalog`. It fetches `/static/heroes/<id>.png` from the tracker site's origin, redraws it at 80 px and caches it for 30 days. The catalog is refreshed by the day's first batch when it is older than 20 hours.
 - **Card.** A "Squads (from the tracker)" section after Member info (`MemberSquads.tsx`, `lib/private/member-squads.ts`):
@@ -65,7 +65,7 @@ Input: the PR review, a one-off real read of all 100 OGs members that the orches
 - **Crash safety.** After every call, the cursor, the retry list, the calls used, the counts and the quota left are saved in one update guarded by the batch's claim (`updateClaimedSquadRead`). A killed function cannot make the next batch read a member again. A batch whose claim was taken over as stale stops writing and answers idle.
 - **Deadline.** The 100 s now count from before the claim and the hero catalog refresh.
 - **Deadline before a call.** A call the deadline cut before it was sent does not move the cursor; that member stays for the next batch.
-- **Retry** (owner). After the pass, each member whose call failed with a 5xx or got no answer gets one more call. A 429 or another 4xx is never retried. The 120 cap now counts every call of the day, retries included, and the reserve applies to retries too. The list is `squad_reads.retry_uids`, in the one migration `0040_squads` (the two migrations were folded into one before shipping).
+- **Retry** (owner). After the pass, each member whose call failed with a 5xx or got no answer gets one more call. A 429 or another 4xx is never retried. The 120 cap now counts every call of the day, retries included, and the reserve applies to retries too. The list is `squad_reads.retry_uids`, in the one migration `0041_squads` (the two migrations were folded into one before shipping).
 - **`seen_at`.** All-digit strings are read as epoch seconds. A sighting is stored as at most our read time.
 - **Card.**
   - Each hero gets an R / SSR / UR tag (`q` 3 / 4 / 5, owner), UR first.
@@ -94,7 +94,8 @@ Input: the PR review, a one-off real read of all 100 OGs members that the orches
 
 ## Rebase (2026-11-18)
 - Rebased onto dev at c79c37f3 (#414, #415). The only conflict was `docs/decisions/README.md`; both sides were kept (D115, D116, then D117).
-- The two unshipped migrations were folded into one: `0040_squads` from a single `pnpm db:generate` after restoring dev's journal.
+- The two unshipped migrations were folded into one, from a single `pnpm db:generate` after restoring dev's journal.
+- Rebased again onto dev at 589d44b8 (#418, D118). `docs/decisions/README.md` keeps D117 and D118. #418 took migration 0040, so dev's journal and `0040_snapshot.json` were restored and the squads migration was generated again as `0041_squads`.
 - D115's conventions: `ws_action` is for desk write routes under `/api/w/[slug]`, and cron routes (the tick, the daily read) send no server event. So `POST /api/squads-read` sends none. Its errors already reach PostHog as `$exception` through `withContext` and `recordAppError`.
 
 ## Open issues
@@ -103,7 +104,7 @@ Input: the PR review, a one-off real read of all 100 OGs members that the orches
 
 ## Next
 - Model/effort: keep. The scope fit one session.
-- What the owner must do first: merge. The release applies migration `0040_squads` (three new tables, the retry list among them, and a widened check). No environment change. The `tick.yml` change takes effect from `main`. On the first night, look at `/admin/runs/daily/[day]` for the `squads.batch` line, its `retried` and its `quota_remaining`.
+- What the owner must do first: merge. The release applies migration `0041_squads` (three new tables, the retry list among them, and a widened check). No environment change. The `tick.yml` change takes effect from `main`. On the first night, look at `/admin/runs/daily/[day]` for the `squads.batch` line, its `retried` and its `quota_remaining`.
 - Later (owner, 2026-11-18): show `awaken` on the card once the server is about 120 days old. It is already stored on every squad row (`member_squads.heroes[].awaken`); only `lib/private/member-squads.ts` and `MemberSquads.tsx` need to show it.
 - Plan change: none (the workspace track has no prompt in `docs/SESSION_PLAYBOOK.md`).
 

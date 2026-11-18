@@ -46,7 +46,7 @@ Why: spike #409 found that `GET /v1/players/{uid}` (the documented API) returns 
 - A read adds a row only when the squad differs from that member's newest row of the same number (another `seen_at`, power or heroes), so an unchanged squad is stored once.
 - A squad missing from a later response is never deleted or changed. The card shows each number's newest row.
 - `squad_reads`: one row per server day with the status (`running`, `done`, `stopped`, `skipped`), the members, the cursor, calls used, members with squads, failed calls, the quota left and the reason. Counts and codes only.
-- Migration `0040_squads` (`pnpm db:generate`); it also widens `member_facts_source_check` with `tracker`.
+- Migration `0041_squads` (`pnpm db:generate`); it also widens `member_facts_source_check` with `tracker`.
 
 **Logs.** `run_logs` lines under the day (`read_day`), so `/admin/runs/daily/[day]` lists them after the read's own lines:
 
