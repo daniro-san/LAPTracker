@@ -8,6 +8,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { track } from "@/lib/analytics/events";
 import { buttonClass } from "@/lib/brand/components/Button";
 import { CheckField } from "@/lib/brand/components/CheckField";
 import { Notice } from "@/lib/brand/components/Notice";
@@ -86,6 +87,7 @@ function PublishSheet(props: PublishProps & { channel: string; onClose: () => vo
     setBusy(false);
     if (answer === "failed") setRequestId(crypto.randomUUID());
     if (answer !== "ok") return setError(answer);
+    track("ws_notice_published", { audience: props.publish.audience });
     props.onClose();
     router.refresh();
   };

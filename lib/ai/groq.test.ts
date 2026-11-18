@@ -2,7 +2,7 @@
 import { describe, expect, it } from "vitest";
 
 import { DO_NOT_TRANSLATE } from "./glossary";
-import { ChatError, GROQ_CHAT_URL, groqChat, TEMPERATURE } from "./groq";
+import { ChatError, GROQ_CHAT_URL, groqChat, TEMPERATURE, type Generation } from "./groq";
 import {
   fitSystem,
   fitText,
@@ -122,6 +122,37 @@ describe("groqChat (D81)", () => {
     );
     expect(error).toBeInstanceOf(ChatError);
     expect((error as ChatError).kind).toBe("timeout");
+  });
+
+  it("hands each request's metadata to the observer: tokens, fallback, error code, never text or key (D115)", async () => {
+    const counted: Answer = () =>
+      Response.json({
+        choices: [{ finish_reason: "stop", message: { content: "Ralliement" } }],
+        usage: { prompt_tokens: 210, completion_tokens: 95 },
+      });
+    const seen: Generation[][] = [];
+    const observe = async (g: Generation[]) => void seen.push(g);
+    const { fetcher } = fake(status(429), counted);
+    await translateText(groqChat("gsk_test", fetcher, undefined, observe), "en", "fr", TEXT);
+    expect(seen).toHaveLength(1);
+    expect(seen[0]?.map(({ latencyMs: _, ...g }) => g)).toEqual([
+      {
+        model: "openai/gpt-oss-120b",
+        inputTokens: null,
+        outputTokens: null,
+        fallback: false,
+        error: "busy",
+      },
+      {
+        model: "qwen/qwen3.8-27b",
+        inputTokens: 210,
+        outputTokens: 95,
+        fallback: true,
+        error: null,
+      },
+    ]);
+    const sent = JSON.stringify(seen);
+    for (const text of ["Ralliement", "Rally", "gsk_test", "OGs"]) expect(sent).not.toContain(text);
   });
 });
 

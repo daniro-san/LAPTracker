@@ -5,7 +5,9 @@ import { cookies, headers } from "next/headers";
 import type { ReactNode } from "react";
 
 import { ALLIANCES } from "@/config/alliances";
+import { analyticsPerson } from "@/lib/analytics/person";
 import { fill, isolate } from "@/lib/copy";
+import { getEnv } from "@/lib/env";
 import type { WorkspaceAccess } from "@/lib/private/access";
 import { WORKSPACE_INTRO_COOKIE, WORKSPACE_LANG_COOKIE } from "@/lib/private/cookies";
 import {
@@ -15,6 +17,7 @@ import {
   type WorkspaceLanguage,
 } from "@/lib/private/dictionary";
 
+import { AnalyticsPerson } from "./AnalyticsPerson";
 import { FirstUse } from "./FirstUse";
 import { LanguageSwitch } from "./LanguageSwitch";
 import { ProfileSheet } from "./ProfileSheet";
@@ -201,6 +204,11 @@ export function SignedInFrame({
 }) {
   const alliance = ALLIANCES.find((a) => a.unionId === access.unionId);
   const name = access.user.displayName ?? "";
+  const person = analyticsPerson(getEnv(), {
+    userId: access.user.id,
+    tier: "officer",
+    workspace: access.slug,
+  });
   const account = (
     <>
       <ProfileSheet
@@ -229,6 +237,7 @@ export function SignedInFrame({
         account={account}
         {...(alliance && { subtitle: `${alliance.tag} · ${alliance.name}` })}
       >
+        {person && <AnalyticsPerson {...person} />}
         {children}
       </Frame>
     </SignedOutProvider>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { MASKED_MESSAGE, sanitiseEvent } from "./sanitise";
+import { sanitiseEvent, scrubMessage } from "./sanitise";
 
 const HOST = "https://laptracker-inky.vercel.app";
 
@@ -54,48 +54,78 @@ describe("PostHog before_send (D77)", () => {
   });
 
   it("names the area and the workspace from the event's own path, else the page's", () => {
-    const area = (path: string, current = "/") =>
+    const area = (path: string, current = "/"): Record<string, unknown> =>
       sanitiseEvent({ event: "$pageview", properties: { $pathname: path } }, current).properties;
     expect(area("/")).toMatchObject({ area: "public" });
     expect(area("/players/42")).toMatchObject({ area: "public" });
     expect(area("/admin/members")).toMatchObject({ area: "admin" });
     expect(area("/w/ogs/members")).toMatchObject({ area: "workspace", workspace: "ogs" });
     expect(area("/")).not.toHaveProperty("workspace");
+    expect(area("/")).not.toHaveProperty("section");
+    // D115: the tab, from a closed list, never a member id or a draft number.
+    expect(area("/w/ogs").section).toBe("home");
+    expect(area("/w/ogs/members/12345").section).toBe("members");
+    expect(area("/w/ogs/board").section).toBe("board");
+    expect(area("/w/ogs/12345").section).toBe("other");
+    expect(area("/admin").section).toBe("home");
     const snapshot = sanitiseEvent({ event: "$snapshot", properties: {} }, "/w/ogs?e=denied");
     expect(snapshot.properties).toMatchObject({ area: "workspace", workspace: "ogs" });
   });
 
-  it("replaces exception messages on the workspace and /admin, and cuts URLs in public ones", () => {
-    const exception = (path: string) =>
-      sanitiseEvent(
-        {
-          event: "$exception",
-          properties: {
-            $pathname: path,
-            $exception_list: [
-              {
-                type: "Error",
-                value: "Ana at 512, 384 failed: /api/x?token=1",
-                stacktrace: { frames: [{ filename: `${HOST}/_next/static/a.js?v=1`, lineno: 3 }] },
-              },
-            ],
-            $exception_values: ["Ana at 512, 384 failed"],
-          },
-        },
-        path,
-      ).properties;
-    const masked = exception("/w/ogs");
-    expect(masked.$exception_list).toEqual([
+  it("scrubs exception messages in every area and keeps the type, the words and the frames (D115)", () => {
+    const out = sanitiseEvent(
       {
-        type: "Error",
-        value: MASKED_MESSAGE,
-        stacktrace: { frames: [{ filename: `${HOST}/_next/static/a.js`, lineno: 3 }] },
+        event: "$exception",
+        properties: {
+          $pathname: "/w/ogs/thefts",
+          $exception_list: [
+            {
+              type: "TypeError",
+              value: "Member 'Ana' at 512, 384 failed: /api/x?token=1",
+              stacktrace: {
+                frames: [
+                  { filename: `${HOST}/_next/static/a.js?v=1`, lineno: 3, function: "TheftForm" },
+                ],
+              },
+            },
+          ],
+          $exception_values: ["Member 'Ana' at 512, 384 failed"],
+          $exception_message: "mail ana.lee@example.com",
+        },
+      },
+      "/w/ogs/thefts",
+    ).properties;
+    expect(out.$exception_list).toEqual([
+      {
+        type: "TypeError",
+        value: "Member '…' at #, # failed: /api/x",
+        stacktrace: {
+          frames: [{ filename: `${HOST}/_next/static/a.js`, lineno: 3, function: "TheftForm" }],
+        },
       },
     ]);
-    expect(masked.$exception_values).toEqual([MASKED_MESSAGE]);
-    expect(exception("/admin").$exception_list).toMatchObject([{ value: MASKED_MESSAGE }]);
-    expect(exception("/players").$exception_list).toMatchObject([
-      { value: "Ana at 512, 384 failed: /api/x" },
-    ]);
+    expect(out.$exception_values).toEqual(["Member '…' at #, # failed"]);
+    expect(out.$exception_message).toBe("mail [email]");
+    expect(out).toMatchObject({ area: "workspace", workspace: "ogs", section: "thefts" });
+  });
+
+  it("keeps the code an engine quotes, and nothing else in quotes", () => {
+    expect(scrubMessage("Cannot read properties of undefined (reading 'map')")).toBe(
+      "Cannot read properties of undefined (reading 'map')",
+    );
+    expect(scrubMessage("undefined is not an object (evaluating 'a.rows[0].name')")).toBe(
+      "undefined is not an object (evaluating 'a.rows[0].name')",
+    );
+    expect(scrubMessage("crypto.randomUUID is not a function")).toBe(
+      "crypto.randomUUID is not a function",
+    );
+    expect(scrubMessage("(reading 'Ana Lee')")).toBe("(reading '…')");
+    expect(scrubMessage("No row for “Ana” in Thefts")).toBe("No row for “…” in Thefts");
+    expect(scrubMessage('Unexpected token "Ž" in JSON at position 12')).toBe(
+      'Unexpected token "…" in JSON at position #',
+    );
+    expect(scrubMessage("Loading chunk 4521 failed: https://x.app/_next/a.js?dpl=9")).toBe(
+      "Loading chunk # failed: https://x.app/_next/a.js",
+    );
   });
 });

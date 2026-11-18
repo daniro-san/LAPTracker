@@ -7,16 +7,18 @@ import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 
 import { ALLIANCES } from "@/config/alliances";
+import { analyticsPerson } from "@/lib/analytics/person";
 import { fill, isolate } from "@/lib/copy";
-import { getEnv } from "@/lib/env";
+import { getEnv, type Env } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
-import { requireBoard } from "@/lib/private/access";
+import { requireBoard, type BoardAccess } from "@/lib/private/access";
 import { boardView } from "@/lib/private/board";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
 import { noticeChannels } from "@/lib/private/notice-publish";
 import { SLUG } from "@/lib/private/sign-in";
 import { serverDay } from "@/lib/schedule";
 
+import { AnalyticsPerson } from "../../../_ui/AnalyticsPerson";
 import { LINK, Notices, StartHere, Week } from "../../../_ui/BoardSections";
 import { BoardThanks } from "../../../_ui/BoardThanks";
 import { Frame, workspaceWords } from "../../../_ui/Frame";
@@ -40,6 +42,13 @@ function Account(props: { officer: boolean; name: string; slug: string; t: Works
       />
     </>
   );
+}
+
+/** The board's visitor to PostHog by a pseudonymous id (D115), when analytics is on. */
+function BoardPerson({ env, access }: { env: Env; access: BoardAccess }) {
+  const tier = access.officer ? "officer" : "member";
+  const person = analyticsPerson(env, { userId: access.userId, tier, workspace: access.slug });
+  return person && <AnalyticsPerson {...person} />;
 }
 
 export default async function BoardPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -70,6 +79,7 @@ export default async function BoardPage({ params }: { params: Promise<{ slug: st
       account={account}
       {...(alliance && { subtitle: `${alliance.tag} · ${alliance.name}` })}
     >
+      <BoardPerson env={env} access={access} />
       {access.officer && (
         // A strip that stays on screen while scrolling, so a preview is never taken for the member view.
         <aside className="sticky top-0 z-20 -mx-4 -mt-5 mb-4 flex flex-wrap items-center justify-between gap-x-3 bg-plum px-4 py-1 text-paper sm:-mx-6 sm:px-6">

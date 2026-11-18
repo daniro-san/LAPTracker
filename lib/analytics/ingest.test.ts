@@ -23,17 +23,22 @@ describe("/ingest proxy (D77)", () => {
         }),
       );
 
-    expect((await post("/e/?ver=1.444.4")).status).toBe(200);
-    expect((await post("/s/")).status).toBe(200);
+    const visitor = { "x-real-ip": "203.0.113.7", "user-agent": "Mozilla/5.0", referer: SITE };
+    expect((await post("/e/?ver=1.444.4", visitor)).status).toBe(200);
+    expect((await post("/s/", visitor)).status).toBe(200);
     expect(upstream.mock.calls.map(([url]) => url)).toEqual([
       "https://us.i.posthog.com/e/?ver=1.444.4",
       "https://us.i.posthog.com/s/",
     ]);
-    const sent = upstream.mock.calls[0]?.[1];
-    expect(Object.fromEntries(new Headers(sent?.headers).entries())).toEqual({
+    const headersOf = (i: number) =>
+      Object.fromEntries(new Headers(upstream.mock.calls[i]?.[1]?.headers).entries());
+    // D115: the events carry the visitor's IP for the cookieless daily hash; replay batches do not.
+    expect(headersOf(0)).toEqual({
       "content-type": "text/plain",
       origin: SITE,
+      "x-forwarded-for": "203.0.113.7",
     });
+    expect(headersOf(1)).toEqual({ "content-type": "text/plain", origin: SITE });
 
     upstream.mockClear();
     expect((await post("/api/projects/")).status).toBe(404);

@@ -2,10 +2,15 @@
 // loads a script from PostHog: exception capture is bundled here and the replay recorder is a chunk of our own,
 // fetched the first time a page is recorded. Requests go to /ingest, our own origin (lib/analytics/ingest.ts).
 //
-// Nothing identifies the visitor: no identify, no person profile, no cookie or storage (`memory`: a new
-// anonymous id per page load), no device model, no campaign parameters, no query string or hash in a URL.
+// No cookie or storage, no device model, no campaign parameters, no query string or hash in a URL. Who is
+// counted depends on where the page load starts (D115):
+// - a public page: PostHog's cookieless mode. PostHog's servers make the visitor's id from a daily-salted
+//   hash (IP, user agent, host), so daily unique visitors are real; no replay (cookieless mode refuses it);
+// - /w and /admin: `memory` persistence, a random id per page load, and replay. On the desk and the board,
+//   AnalyticsPerson calls identify with a pseudonymous id (lib/analytics/person.ts), never a name.
 //
-// Replay (owner, D77): the workspace and /admin always, public pages in PUBLIC_REPLAY_SAMPLE of page loads.
+// Replay (owner, D77): the workspace and /admin always, public pages in PUBLIC_REPLAY_SAMPLE of page loads
+// that started on the workspace or /admin and then went to a public page.
 // What is masked follows the DOM, not the URL, so it holds across client-side navigations: the /w/[slug] and
 // /admin layouts wrap their pages in MASK_CLASS, and under it every text, attribute (but styling and sizes),
 // image and form field is masked or blocked. Public game data outside it stays readable. Every input value
@@ -28,14 +33,18 @@ const NO_AUTOCAPTURE = /^[a-z]+:\/\/[^/]+\/(?:admin|w)(?:[/?#]|$)/;
 const publicSampled = Math.random() < PUBLIC_REPLAY_SAMPLE;
 let recorder: Promise<unknown> | null = null;
 let recording = false;
+let cookieless = false;
 
 /** `key` is the project API key, public by design: it is in every page's HTML. */
 export function startPostHog(key: string): PostHog {
+  cookieless = areaOf(location.pathname).area === "public";
   posthog.init(key, {
     api_host: "/ingest",
     ui_host: POSTHOG_UI_HOST,
     persistence: "memory",
-    person_profiles: "never",
+    ...(cookieless && { cookieless_mode: "always" as const }),
+    // Profiles only for the desk's and the board's pseudonymous ids; every other event is personless.
+    person_profiles: "identified_only",
     disableDeviceModel: true,
     save_campaign_params: false,
     disable_capture_url_hashes: true,
@@ -78,7 +87,8 @@ export function startPostHog(key: string): PostHog {
 
 /** Records the page or not, by its area; called on the first page and on every client-side navigation. */
 export function followPath(ph: PostHog, path: string): void {
-  const wanted = areaOf(path).area !== "public" || publicSampled;
+  // Cookieless mode has no session, so it records nothing, whatever the area.
+  const wanted = !cookieless && (areaOf(path).area !== "public" || publicSampled);
   if (wanted === recording) return;
   recording = wanted;
   if (!wanted) {

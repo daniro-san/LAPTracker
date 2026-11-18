@@ -1,6 +1,7 @@
 // What a route handler needs from the outside world, in one place. The real one reads the env,
 // the clock, the adapters and Neon; route tests replace this module (vi.mock) with fakes and PGlite.
-import { groqChat, type ChatModel } from "./ai/groq";
+import { groqChat, type ChatModel, type Generation } from "./ai/groq";
+import { captureServer } from "./analytics/server";
 import { openDb, type Db } from "./db";
 import { getEnv, type Env } from "./env";
 import { nextEventCache, type EventCache } from "./event-cache";
@@ -21,17 +22,30 @@ export interface AppContext {
   ai: ChatModel | null;
 }
 
+/** Each Groq request's metadata to PostHog (D115): one trace id per completion, no text, no key. */
+const observeAi =
+  (env: Env, send: typeof fetch) =>
+  (generations: Generation[]): Promise<void> => {
+    const traceId = crypto.randomUUID();
+    return captureServer(
+      env,
+      send,
+      generations.map((g) => ({ event: "$ai_generation", properties: { ...g, traceId } })),
+    );
+  };
+
 export function getAppContext(): AppContext {
   const env = getEnv();
+  const send: typeof fetch = (input, init) => fetch(input, init);
   return {
     env,
     now: () => new Date(),
     v1,
     internal,
-    fetch: (input, init) => fetch(input, init),
+    fetch: send,
     openDb: () => openDb(),
     eventCache: nextEventCache,
-    ai: env.GROQ_API_KEY ? groqChat(env.GROQ_API_KEY, (input, init) => fetch(input, init)) : null,
+    ai: env.GROQ_API_KEY ? groqChat(env.GROQ_API_KEY, send, undefined, observeAi(env, send)) : null,
   };
 }
 

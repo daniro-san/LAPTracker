@@ -2,6 +2,7 @@
 // onRequestError and from route handlers that caught one. `message` is our own words (kind and error
 // name, plan §12.3) and groups the rows; `detail` (D61) keeps the error's own message, stack start and
 // cause, redacted, for /admin/errors only. The admin alert adds the message's first line.
+import { captureServer } from "./analytics/server";
 import { secretsOf, type AppContext } from "./app-context";
 import { appErrorMessage, createNotifier } from "./notify";
 import { redact } from "./redact";
@@ -62,6 +63,12 @@ export async function recordAppError(ctx: AppContext, entry: AppErrorEntry): Pro
   const message = `${entry.kind} ${entry.error instanceof Error ? entry.error.name : "unknown"}`;
   const detail = appErrorDetail(entry.error, secretsOf(ctx.env));
   console.error("app.error", { route: entry.route, message, digest: entry.digest, detail });
+  // PostHog's error tracking too (D115): codes only, the error's class name, where and the route pattern.
+  // Never `detail`, which may hold a message built from private data (D71).
+  const name = entry.error instanceof Error ? entry.error.name : "unknown";
+  await captureServer(ctx.env, ctx.fetch, [
+    { event: "$exception", properties: { name, kind: entry.kind, route: entry.route } },
+  ]);
   let opened: ReturnType<AppContext["openDb"]> | null = null;
   try {
     opened = ctx.openDb();

@@ -4,7 +4,10 @@
 // outside the request's language, so it stays English.
 import "./globals.css";
 
+import { useEffect } from "react";
+
 import { ErrorPage, primaryAction } from "@/app/_ui/ErrorPage";
+import { withPostHog } from "@/lib/analytics/events";
 import { CrackedBottle } from "@/lib/brand/components/Vignettes";
 import { fontVariables } from "@/lib/brand/fonts";
 import { en } from "@/lib/copy";
@@ -12,11 +15,16 @@ import { en } from "@/lib/copy";
 const t = en.errors.server;
 
 export default function GlobalError({
+  error,
   reset,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  // As app/error.tsx (D115): the root boundary's errors reach PostHog only from here.
+  useEffect(() => {
+    withPostHog((ph) => ph.captureException(error, { boundary: "root" }));
+  }, [error]);
   return (
     <html lang="en" className={fontVariables}>
       <body className="min-h-screen bg-paper font-body text-ink antialiased">

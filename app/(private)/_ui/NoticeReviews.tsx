@@ -10,6 +10,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { track } from "@/lib/analytics/events";
 import { buttonClass } from "@/lib/brand/components/Button";
 import { chip } from "@/lib/brand/components/controls";
 import { Notice } from "@/lib/brand/components/Notice";
@@ -78,7 +79,10 @@ function OpenRequest(props: {
     setError(null);
     const answer = await send(props.slug, { action: "approve", review: request.id, requestId });
     setBusy(false);
-    if (answer === "ok") return router.refresh();
+    if (answer === "ok") {
+      track("ws_review_approved");
+      return router.refresh();
+    }
     setError(answer);
   };
   return (
@@ -217,6 +221,10 @@ export function AskSheet(props: {
     const answer = await send(props.slug, body);
     setBusy(false);
     if (answer !== "ok") return setError(answer);
+    track("ws_review_requested", {
+      scope: language === null ? "notice" : "language",
+      to: reviewer === null ? "team" : "officer",
+    });
     props.onClose();
     router.refresh();
   };

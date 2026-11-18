@@ -101,6 +101,7 @@ function useSend(props: SendProps) {
       router.refresh();
     } catch (e) {
       setUnsent({ pages, lost, ...(pick && { pick }), ...(preset && { preset }) });
+      if (!isSignedOut(e)) track("ws_screenshot_failed", { stage: "drafts" });
       setError(isSignedOut(e) ? SIGNED_OUT : (w["shots.e.failed"] ?? ""));
     }
   }
@@ -124,7 +125,10 @@ function useSend(props: SendProps) {
     const { pages, signedOut } = await readAll(files, slug, props.statusBar, setProgress);
     setProgress(null);
     if (signedOut) return setError(SIGNED_OUT);
-    if (pages.length === 0) return setError(w["shots.readFailed"] ?? "");
+    if (pages.length === 0) {
+      track("ws_screenshot_failed", { stage: "read" });
+      return setError(w["shots.readFailed"] ?? "");
+    }
     await makeDrafts(pages, files.length - pages.length, undefined, preset);
   }
   return { progress, busy, result, setResult, error, unsent, makeDrafts, run, send };

@@ -23,5 +23,11 @@ describe("custom events (D77)", () => {
     track("ws_copy_spreadsheet", { name: "Ana" });
     // @ts-expect-error no extra property next to the closed one
     track("ws_language_switched", { language: "fr", text: "Ana" });
+    // D115's events: enums only, so no count of members, no name and no value.
+    track("ws_review_requested", { scope: "language", to: "team" });
+    // @ts-expect-error a reviewer's name is not a target
+    track("ws_review_requested", { scope: "notice", to: "Ana" as string });
+    // @ts-expect-error no member value rides on a mark
+    track("ws_roll_call_marked", { how: "tap", uid: 4242 });
   });
 });

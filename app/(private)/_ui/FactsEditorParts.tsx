@@ -50,6 +50,7 @@ export function Paste(props: {
       {/* The picture's text goes into the box and is read at once; the officer still checks and saves. */}
       <ReadScreenshot
         slug={props.slug}
+        place="facts"
         link
         words={shotWords(words)}
         onText={(read) => {
