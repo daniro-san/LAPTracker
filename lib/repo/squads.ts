@@ -114,6 +114,39 @@ export async function latestSquads(db: Db, unionId: number, uid: number): Promis
     .orderBy(asc(s.squad), desc(s.readAt), desc(s.id));
 }
 
+/**
+ * Each squad number's newest row and the row before it (null when there is none), squad 1 first: the
+ * card's "what changed and when". A row is stored only when the squad changed, so a member has few.
+ */
+export async function squadPairs(
+  db: Db,
+  unionId: number,
+  uid: number,
+): Promise<{ latest: StoredSquad; previous: StoredSquad | null }[]> {
+  const s = memberSquads;
+  const rows = await db
+    .select({
+      uid: s.uid,
+      squad: s.squad,
+      power: s.power,
+      soldiers: s.soldiers,
+      soldierLoad: s.soldierLoad,
+      heroes: s.heroes,
+      seenAt: s.seenAt,
+      readAt: s.readAt,
+    })
+    .from(s)
+    .where(and(eq(s.unionId, unionId), eq(s.uid, uid)))
+    .orderBy(asc(s.squad), desc(s.readAt), desc(s.id));
+  const pairs = new Map<number, { latest: StoredSquad; previous: StoredSquad | null }>();
+  for (const row of rows) {
+    const pair = pairs.get(row.squad);
+    if (!pair) pairs.set(row.squad, { latest: row, previous: null });
+    else pair.previous ??= row;
+  }
+  return [...pairs.values()];
+}
+
 const heroesOf = (squad: SquadInput): StoredHero[] =>
   squad.heroes.map((h) => ({ id: h.id, lv: h.lv, star: h.star, q: h.q, awaken: h.awaken }));
 

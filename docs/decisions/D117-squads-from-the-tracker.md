@@ -77,6 +77,14 @@ No uid, name or squad value is logged. The lines are not `v1.fetch`, so the read
 - one line under the heading: "The tracker lists only the squads it has seen."
 - with no squad stored: "The tracker has not seen their squads yet."
 
+**At a glance** (owner, 2026-11-18). Four squads are normal (players buy a pack for a fourth), so a member has 3 or 4, and officers look for the strongest squad and for what changed and when.
+
+- **Every stored squad, in squad-number order** (1 to 4), each number's newest row.
+- **The strongest squad** is the one with the highest power, the lower number on a tie: the same squad whose power is "Main squad might" (`mainSquad`). It sits in the soft drawn frame with a 5 % plum tint and carries the word "Strongest" / "Mais forte" / "La plus forte" beside its name. The word carries the meaning, never the tint alone.
+- **The top hero.** One hero per member carries "Top hero" / "Melhor herói" / "Meilleur héros". The tracker gives no hero power, so the rule is the site's order across all the member's squads: the rarest (UR, then SSR, then R), then the most stars, then the highest level; on a full tie, the one in the lower squad. The rule is said in one line under the heading, so nothing depends on hovering.
+- **What changed and when.** Under each squad, after "seen {date}": when an earlier stored row of that squad exists, the power change since it, "+1.20M since Sun, Nov 15" (D78's compact numbers; the date is that row's sighting, else our read of it), and "Heroes changed" when the heroes, a hero's level or a hero's stars differ. A drop reads "−400K since …" in the same plain ink, never in red (D75). With no earlier row, nothing more is said. The read is `squadPairs` (each squad's newest row and the one before it).
+- It fits 360 px with 4 squads of 5 heroes, in two hero columns.
+
 These are plain information: a squad the tracker has not seen asks nothing of anyone (D75). Read in `lib/private/member-squads.ts` by `access.unionId` only (D71). Words in `lib/private/dictionary.squads.ts` (EN, PT-BR, FR).
 
 **Hero pictures** (D22's rule, owner comment on #413).

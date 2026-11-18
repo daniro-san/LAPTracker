@@ -92,6 +92,23 @@ Input: the PR review, a one-off real read of all 100 OGs members that the orches
 - **The hero catalog refresh** moved from `lib/squads-read.ts` to `lib/heroes.ts` (`refreshHeroCatalog`), to keep the run under the 300-line limit.
 - **New test:** a sighting later than our read is stored as our read time.
 
+## The card at a glance (owner, 2026-11-18)
+UI only; the read and the quota logic are unchanged.
+
+- **Every stored squad** (3 or 4 for most members), in squad-number order.
+- **The strongest squad** (the highest power; the lower number on a tie, as `mainSquad`, so it is the "Main squad might" squad) sits in the soft drawn frame with a 5 % plum tint and carries "Strongest" / "Mais forte" / "La plus forte". The word carries the meaning, never the tint alone.
+- **One top hero per member** carries "Top hero" / "Melhor herói" / "Meilleur héros". The rule is UR, then SSR, then R, then the most stars, then the highest level; on a full tie, the lower squad's. It is said in one line under the heading (nothing is hover-only) and in D117.
+- **What changed and when.** Under "seen {date}", when an earlier stored row of that squad exists: "+1.20M since Sun, Nov 15" in D78's compact numbers (so "1.20M", not "1.2M"), plus "Heroes changed" when a hero, a hero's level or a hero's stars differ. A drop reads "−400K since …" in plain ink, never red (D75). With no earlier row, nothing more is shown.
+- **The read.** `squadPairs` (`lib/repo/squads.ts`) gives each squad's newest row and the one before it; `lib/private/member-squads.ts` makes the words; `MemberSquads.tsx` lays them out. New words in `dictionary.squads.ts` (EN, PT, FR).
+- **Tests** in `MemberSquads.test.ts`: the strongest squad (one, the lower number on a tie, four squads in squad order); the top hero (rarity before stars, level breaks a tie, the rule is said); the change line (a rise with "Heroes changed", a drop with a minus, nothing without an earlier row).
+- **Verified.**
+  - `pnpm check` exits 0: 200 files, 1061 tests passed (4 skipped).
+  - e2e on a production build with the real `POST /api/squads-read` against the tracker stand-in: 42 calls, two 502s retried once, `done`. Then an earlier row for squads 1 and 2 of Bramble (4 squads) and Pemberly (3 squads).
+  - Playwright Chrome passed **167 of 167** checks, at 360 and 1280, light and dark, EN and PT, for both members. They cover squad order; one strongest squad (1) with its word; one top hero (Kesso, UR, Lv 150, ★10); the rule line; "+1.20M since", "−400K since" and "Heroes changed"; the stars' label; every picture loaded and none for an unknown id; every hero line inside its column; nothing overflowing; no request leaving our origin. Also Quillon's tracker version, Bramble's officer value kept, and Wynnie's empty line.
+  - Design pass: the seen date and the change first shared one wrapping line that began with "·" after the wrap; they are now two lines.
+  - Screenshots: `squads-{bramble-4sq,pemberly-3sq}-{360,1280}-{light,dark}-{en,pt}`, `card-…`, `squads-none-360-light-en` in `11ai-shots/`.
+- **WebKit** was not run (the localhost sign-in times out there, as before). The orchestrator's restart wiped the earlier e2e files and screenshots in the scratchpad; the harness was rebuilt and all the screenshots above are from this round.
+
 ## Rebase (2026-11-18)
 - Rebased onto dev at c79c37f3 (#414, #415). The only conflict was `docs/decisions/README.md`; both sides were kept (D115, D116, then D117).
 - The two unshipped migrations were folded into one, from a single `pnpm db:generate` after restoring dev's journal.

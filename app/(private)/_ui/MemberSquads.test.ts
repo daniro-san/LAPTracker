@@ -28,9 +28,19 @@ const NAMES = new Map([
   [10010, "Ilvane"],
 ]);
 
+const F = cardFormats("en", "Etc/GMT+2", NOW);
+const EN = WORKSPACE_DICTIONARIES.en;
+const only = (squads: StoredSquad[]) => squads.map((latest) => ({ latest, previous: null }));
+const squad = (n: number, power: number, heroes = SQUAD.heroes): StoredSquad => ({
+  ...SQUAD,
+  squad: n,
+  power,
+  heroes,
+});
+
 function render(language: "en" | "pt-BR", squads: StoredSquad[]) {
   const t = WORKSPACE_DICTIONARIES[language];
-  const card = squadsCardOf(squads, NAMES, t, cardFormats(language, "Etc/GMT+2", NOW));
+  const card = squadsCardOf(only(squads), NAMES, t, cardFormats(language, "Etc/GMT+2", NOW));
   // React marks the joins between text parts with empty comments.
   return renderToStaticMarkup(createElement(MemberSquads, { squads: card })).replaceAll(
     "<!-- -->",
@@ -66,5 +76,65 @@ describe("the member card's squads (D117)", () => {
     expect(html).toContain('aria-label="10 estrelas"');
     expect(render("en", [])).toContain("The tracker has not seen their squads yet.");
     expect(render("en", [])).not.toContain("<img");
+  });
+
+  it("marks one strongest squad, the lower number on a tie, and lists all four in squad order", () => {
+    const squads = [
+      squad(3, 8_000_000),
+      squad(4, 12_000_000),
+      squad(1, 10_000_000),
+      squad(2, 12_000_000),
+    ];
+    const card = squadsCardOf(only(squads), NAMES, EN, F);
+    expect(card.squads.map((s) => [s.squad, s.strongest])).toEqual([
+      [1, false],
+      [2, true],
+      [3, false],
+      [4, false],
+    ]);
+    const html = render("en", squads);
+    expect(html.split(">Strongest<")).toHaveLength(2);
+  });
+
+  it("marks one top hero: rarity first, then stars, then level", () => {
+    const card = squadsCardOf(
+      only([
+        // An SSR with every star loses to any UR.
+        squad(1, 10_000_000, [hero(10010, 150, 50, 4)]),
+        // Two URs with the same stars: the higher level wins.
+        squad(2, 9_000_000, [hero(10005, 10, 20, 5), hero(10021, 90, 20, 5)]),
+        squad(3, 8_000_000, [hero(10033, 140, 15, 5)]),
+      ]),
+      NAMES,
+      EN,
+      F,
+    );
+    const tops = card.squads.flatMap((s) =>
+      s.heroes.filter((h) => h.top).map((h) => [s.squad, h.id]),
+    );
+    expect(tops).toEqual([[2, 10021]]);
+    expect(card.topRule).toContain("UR, then SSR, then R");
+  });
+
+  it("says what changed since the row before, and nothing when there is none", () => {
+    const before: StoredSquad = {
+      ...squad(1, 10_000_000),
+      heroes: [hero(10005, 149, 50, 5)],
+      seenAt: new Date("2026-11-15T20:00:00Z"),
+    };
+    const after = { ...squad(1, 11_200_000), heroes: [hero(10005, 150, 50, 5)] };
+    const [grew] = squadsCardOf([{ latest: after, previous: before }], NAMES, EN, F).squads;
+    expect(grew).toMatchObject({
+      change: "+1.20M since Sun, Nov 15",
+      heroesChanged: "Heroes changed",
+    });
+    // The same heroes say nothing; a drop is said the same way, with a minus and no warning.
+    const higher = { ...before, power: 10_400_000 };
+    const [rose] = squadsCardOf([{ latest: higher, previous: before }], NAMES, EN, F).squads;
+    expect(rose).toMatchObject({ change: "+400K since Sun, Nov 15", heroesChanged: null });
+    const [lower] = squadsCardOf([{ latest: before, previous: higher }], NAMES, EN, F).squads;
+    expect(lower?.change).toBe("−400K since Sun, Nov 15");
+    const [first] = squadsCardOf(only([after]), NAMES, EN, F).squads;
+    expect(first).toMatchObject({ change: null, heroesChanged: null });
   });
 });
