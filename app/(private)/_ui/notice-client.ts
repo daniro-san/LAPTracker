@@ -43,11 +43,25 @@ async function post(path: string, body: unknown): Promise<{ status: number; json
   }
 }
 
-/** `conflicts: null`: refused for another reason; `signedOut` when it was the session (D99). */
+/**
+ * `conflicts: null`: refused for another reason; `signedOut` when it was the session (D99), `deleted` when
+ * the notice is in the trash (410 notice_deleted, D118).
+ */
 export type SaveAnswer =
   | { ok: true; id: number }
   | { ok: false; conflicts: Conflict[] }
-  | { ok: false; conflicts: null; signedOut: boolean };
+  | { ok: false; conflicts: null; signedOut: boolean; deleted: boolean };
+
+/** Delete, Undo or Restore from trash (D118): "ok", or the refusal's code ("lost" when no answer came). */
+export async function sendDelete(
+  slug: string,
+  body: { id: number; requestId: string; undo?: true; restore?: true },
+): Promise<string> {
+  const { status, json } = await post(`/api/w/${slug}/notices/delete`, body);
+  if (status === 200) return "ok";
+  if (status === 0) return "lost";
+  return (json as { code?: string } | null)?.code ?? "failed";
+}
 
 export async function saveNotice(
   slug: string,
@@ -66,7 +80,7 @@ export async function saveNotice(
   const body = json as { id?: number; conflicts?: Conflict[] } | null;
   if (status === 200 && typeof body?.id === "number") return { ok: true, id: body.id };
   if (status === 409) return { ok: false, conflicts: body?.conflicts ?? [] };
-  return { ok: false, conflicts: null, signedOut: status === 401 };
+  return { ok: false, conflicts: null, signedOut: status === 401, deleted: status === 410 };
 }
 
 export type DraftAsk =

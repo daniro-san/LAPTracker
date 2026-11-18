@@ -5,7 +5,12 @@
 import { z } from "zod";
 
 import type { Db } from "../db";
-import { markNoticeDeleted, unmarkNoticeDeleted } from "../repo/notice-deletes";
+import {
+  markNoticeDeleted,
+  noticeIsDeleted,
+  restoreDeletedNotice,
+  unmarkNoticeDeleted,
+} from "../repo/notice-deletes";
 import {
   HISTORY_LIMIT,
   noticeEditRows,
@@ -165,18 +170,24 @@ export async function noticeHistory(
 /** How long the officer who deleted a notice may still take it back (D118); the page offers it for less. */
 export const UNDO_MS = 60_000;
 
-/** A delete's body (D118): the notice and the delete sheet's request id (D100); `undo` takes it back. */
+/**
+ * A delete's body (D118): the notice and the request id (D100); `undo` takes the officer's own delete back,
+ * `restore` takes a deleted notice out of the trash.
+ */
 export const noticeDelete = z
   .object({
     id: z.number().int().positive(),
     requestId: z.uuid(),
     undo: z.literal(true).optional(),
+    restore: z.literal(true).optional(),
   })
-  .strict();
+  .strict()
+  .refine((b) => !(b.undo && b.restore));
 
 /**
  * Deletes a notice of the workspace (D118), or undoes the officer's own delete made under the same request
- * id in the last UNDO_MS. "not_found": no such notice to delete, or nothing of this officer's to undo.
+ * id in the last UNDO_MS, or restores a deleted notice (any officer, any time). "not_found": no such notice
+ * to delete, nothing of this officer's to undo, or nothing in the trash to restore.
  */
 export async function deleteNotice(
   db: Db,
@@ -191,9 +202,11 @@ export async function deleteNotice(
     requestId: input.requestId,
     now,
   };
-  const done = input.undo
-    ? await unmarkNoticeDeleted(db, d, new Date(now.getTime() - UNDO_MS))
-    : await markNoticeDeleted(db, d);
+  const done = input.restore
+    ? await restoreDeletedNotice(db, d)
+    : input.undo
+      ? await unmarkNoticeDeleted(db, d, new Date(now.getTime() - UNDO_MS))
+      : await markNoticeDeleted(db, d);
   return done ? "ok" : "not_found";
 }
 
@@ -208,7 +221,8 @@ export interface Conflict {
 
 export type SaveResult =
   | { ok: true; id: number }
-  | { ok: false; reason: "not_found" | "no_title" }
+  /** `notice_deleted`: the notice is in the trash (D118); the editor offers to restore it. */
+  | { ok: false; reason: "not_found" | "notice_deleted" | "no_title" }
   | { ok: false; reason: "conflict"; conflicts: Conflict[] };
 
 /** Saves `changes` to notice `id`, or makes a new notice when `id` is null (it needs a title). */
@@ -253,7 +267,10 @@ export async function saveNotice(
     },
     after,
   );
-  if (result === null) return { ok: false, reason: "not_found" };
+  if (result === null) {
+    const trashed = id !== null && (await noticeIsDeleted(db, access.workspaceId, id));
+    return { ok: false, reason: trashed ? "notice_deleted" : "not_found" };
+  }
   if ("refuse" in result) return { ok: false, reason: "conflict", conflicts: result.refuse };
   return { ok: true, id: result.id };
 }

@@ -22,6 +22,7 @@ import {
 import {
   askDraft,
   saveNotice,
+  sendDelete,
   type Conflict,
   type DraftAsk,
   type HistoryItem,
@@ -162,6 +163,34 @@ function trackAsk(ask: DraftAsk, answer: Awaited<ReturnType<typeof askDraft>>) {
   else if (ask.kind === "fit") track("ws_notice_fit");
 }
 
+type Busy = DraftAsk["kind"] | "save" | "restore" | null;
+
+/**
+ * The save bar's note, and "Restore from trash?" after a save found the notice deleted (D118): any officer
+ * may restore it. The draft stays in the editor (and on the device), so Save then keeps the officer's text.
+ */
+function useSaveNote(p: EditorProps, setBusy: (busy: Busy) => void) {
+  const [message, setMessage] = useState<WorkspaceKey | null>(null);
+  /** The last save found the notice in the trash: the save bar offers the restore. */
+  const [trashed, setTrashed] = useState(false);
+  const restoreFromTrash = async () => {
+    if (p.id === null) return;
+    setBusy("restore");
+    const body = { id: p.id, requestId: newRequestId(), restore: true as const };
+    const answer = await sendDelete(p.slug, body);
+    setBusy(null);
+    if (answer === "ok") setTrashed(false);
+    const failed = answer === "signed_out" ? "signedOut.text" : "notices.trash.failed";
+    setMessage(answer === "ok" ? "notices.trash.restored" : failed);
+  };
+  /** A save refused for another reason than a conflict. */
+  const refused = (answer: { signedOut: boolean; deleted: boolean }) => {
+    setTrashed(answer.deleted);
+    setMessage(answer.signedOut ? "signedOut.text" : "notices.saveFailed");
+  };
+  return { message, setMessage, trashed, restoreFromTrash, refused };
+}
+
 export function useEditor(p: EditorProps) {
   const router = useRouter();
   const [draft, setDraft] = useState(() => startDraft(p.fields));
@@ -169,8 +198,7 @@ export function useEditor(p: EditorProps) {
   // One per open editor (D100): a new notice's Save retried after a lost answer stores one notice.
   const [requestId] = useState(() => newRequestId());
   /** The action running now, if any: every AI button and Save wait for it. */
-  const [busy, setBusy] = useState<DraftAsk["kind"] | "save" | null>(null);
-  const [message, setMessage] = useState<WorkspaceKey | null>(null);
+  const [busy, setBusy] = useState<Busy>(null);
   const [aiMessage, setAiMessage] = useState<AiMessage | null>(null);
   const [active, setActive] = useState<NoticeLanguage>(p.focus ?? p.languages[0] ?? "en");
   /** "Restore this version" was pressed: the editor says what to do next until the draft is saved. */
@@ -180,6 +208,7 @@ export function useEditor(p: EditorProps) {
   const { banner, showBanner } = useBanner(conflicts);
   const dirty = changesOf(draft).length > 0;
   const leaving = useLeaveWarning(dirty);
+  const note = useSaveNote(p, setBusy);
   const kept = useNoticeKept(p, draft.values, dirty, (values) =>
     setDraft((d) => ({ ...d, values })),
   );
@@ -194,11 +223,11 @@ export function useEditor(p: EditorProps) {
   };
   const save = async () => {
     if (conflicts.length > 0) return showBanner();
-    if (draft.values.title.trim() === "") return setMessage("notices.noTitle");
+    if (draft.values.title.trim() === "") return note.setMessage("notices.noTitle");
     const changes = changesOf(draft);
     if (changes.length === 0) return p.onClose?.();
     setBusy("save");
-    setMessage(null);
+    note.setMessage(null);
     const answer = await saveNotice(p.slug, p.id, changes, requestId, p.review ?? null);
     setBusy(null);
     if (answer.ok) {
@@ -208,14 +237,13 @@ export function useEditor(p: EditorProps) {
       else router.refresh();
       return;
     }
-    if (answer.conflicts) setConflicts(answer.conflicts);
-    else setMessage(answer.signedOut ? "signedOut.text" : "notices.saveFailed");
+    if (answer.conflicts) return setConflicts(answer.conflicts);
+    note.refused(answer);
   };
   return {
     draft,
     conflicts,
     busy,
-    message,
     /** The error shows only on the tab it was asked from, even when the answer comes after a switch. */
     aiMessage: aiMessage?.language === active ? aiMessage.key : null,
     active,
@@ -225,6 +253,7 @@ export function useEditor(p: EditorProps) {
     dirty,
     leaving,
     save,
+    ...note,
     ...kept,
     set: (field: NoticeField, value: string) => {
       if (isNoticeLanguage(field)) setWroteIn(field);

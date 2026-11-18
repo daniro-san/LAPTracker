@@ -15,6 +15,7 @@ import {
 import { thefts } from "../schema-thefts";
 import { reviewParts, reviewRows, type ReviewKind, type ReviewRows } from "./desk-activity-reviews";
 import { thanksParts, type ThanksDone } from "./desk-activity-thanks";
+import { trashParts, trashRows, type TrashKind, type TrashRows } from "./desk-activity-trash";
 import { usable } from "./workspace-rosters";
 
 /** The officers, other than `me`, whose desk session was seen since `since` and is still open. */
@@ -77,11 +78,10 @@ export type FollowUpDone = Done & {
 };
 export type TheftsDone = Done & { count: number };
 export type NewMemberDone = Done & { name: string };
-export interface ActivityRows extends ReviewRows {
+export interface ActivityRows extends ReviewRows, TrashRows {
   facts: FactsDone[];
   noticeSaves: NoticeDone[];
   noticePosts: NoticeDone[];
-  noticeDeletes: NoticeDone[];
   drafts: DraftDone[];
   entries: EntryDone[];
   entryEdits: EntryDone[];
@@ -108,12 +108,11 @@ function factSaves(db: Db, ws: number, from: Date, n: number) {
     .limit(n);
 }
 
-type OwnKind =
-  "noticeSaved" | "noticePosted" | "noticeDeleted" | "draft" | "entry" | "newMember" | "followUp";
+type OwnKind = "noticeSaved" | "noticePosted" | "draft" | "entry" | "newMember" | "followUp";
 
 /** One row of the small sources' read; the columns each kind does not use are null. */
 type SmallRow = {
-  kind: OwnKind | ReviewKind | "thanks";
+  kind: OwnKind | ReviewKind | TrashKind | "thanks";
   by: number | string;
   at: Date | string;
   notice_id: number | null;
@@ -126,7 +125,7 @@ type SmallRow = {
 
 /**
  * The small sources in one read (one connection): notice saves (one per save of any number of fields),
- * notice posts, notices deleted (D118; an undone delete is not one), saved drafts, calendar entries added, new members added by hand, and follow-up records
+ * notice posts, notices deleted and restored from the trash (D118; an undone delete is not one), saved drafts, calendar entries added, new members added by hand, and follow-up records
  * (not `withdrawn`, and not one an Undo cancelled), notice review requests and their outcomes (D113), and
  * the weekly thanks shared or taken down (D114). Each part is its own newest `n` since `from`; `n` bounds
  * the rows returned, not the rows a part scans.
@@ -145,11 +144,6 @@ async function smallSources(db: Db, ws: number, from: Date, n: number): Promise<
       where p.workspace_id = ${ws} and p.status = 'posted' and p.published_by is not null
         and p.published_at >= ${since}
       order by p.published_at desc limit ${n})
-    union all
-    (select 'noticeDeleted', n.deleted_by, n.deleted_at, n.id, null, null, null, null, null
-      from notices n
-      where n.workspace_id = ${ws} and n.deleted_at >= ${since} and n.deleted_by is not null
-      order by n.deleted_at desc limit ${n})
     union all
     (select 'draft', d.done_by, d.done_at, null, d.kind, d.scope, null, d.source, null
       from screenshot_drafts d
@@ -177,7 +171,8 @@ async function smallSources(db: Db, ws: number, from: Date, n: number): Promise<
           order by x.id limit 1), '') <> 'withdrawn'
       order by f.written_at desc limit ${n})
     ${reviewParts(ws, since, n)}
-    ${thanksParts(ws, since, n)}`);
+    ${thanksParts(ws, since, n)}
+    ${trashParts(ws, since, n)}`);
   return result.rows;
 }
 
@@ -256,12 +251,12 @@ function split(rows: SmallRow[]) {
     rows
       .filter((r) => r.kind === kind)
       .map((r) => ({ ...r, by: Number(r.by), at: new Date(r.at) }));
-  const notice = (kind: "noticeSaved" | "noticePosted" | "noticeDeleted") =>
+  const notice = (kind: "noticeSaved" | "noticePosted" | TrashKind) =>
     of(kind).map(({ by, at, notice_id }) => ({ by, at, noticeId: Number(notice_id) }));
   return {
     noticeSaves: notice("noticeSaved"),
     noticePosts: notice("noticePosted"),
-    noticeDeletes: notice("noticeDeleted"),
+    ...trashRows(notice),
     drafts: of("draft").map(({ by, at, a, b, title }) => ({
       by,
       at,

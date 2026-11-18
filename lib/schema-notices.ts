@@ -40,6 +40,12 @@ export const notices = pgTable(
     deletedAt: tstz("deleted_at"),
     deletedBy: integer("deleted_by").references(() => workspaceUsers.id, { onDelete: "set null" }),
     deleteRequestId: text("delete_request_id"),
+    /** The last restore from the trash (D118): any officer, after the Undo window, under its request id. */
+    restoredAt: tstz("restored_at"),
+    restoredBy: integer("restored_by").references(() => workspaceUsers.id, {
+      onDelete: "set null",
+    }),
+    restoreRequestId: text("restore_request_id"),
   },
   (t) => [
     index("notices_workspace_idx").on(t.workspaceId),

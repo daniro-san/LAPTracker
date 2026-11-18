@@ -52,6 +52,8 @@ export async function POST(
         { status: 409, headers: NO_STORE },
       );
     }
-    return privateError(result.reason === "not_found" ? 404 : 400, result.reason);
+    // A notice in the trash answers 410 notice_deleted, so the editor can offer to restore it (D118).
+    const status = { not_found: 404, notice_deleted: 410, no_title: 400 }[result.reason];
+    return privateError(status, result.reason);
   });
 }

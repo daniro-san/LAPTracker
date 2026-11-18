@@ -16,6 +16,8 @@ import { boardView } from "@/lib/private/board";
 import { recentActivity } from "@/lib/private/desk-activity";
 import { activityLine } from "@/lib/private/desk-activity-words";
 import { WORKSPACE_DICTIONARIES } from "@/lib/private/dictionary";
+import { toReviewCount } from "@/lib/private/import-view";
+import { publishNotice } from "@/lib/private/notice-publish";
 import { reviewsForMe } from "@/lib/private/notice-reviews";
 import { noticeDetail, noticesList, titlesOf, UNDO_MS } from "@/lib/private/notices";
 import { createSession, SESSION_COOKIE } from "@/lib/private/session";
@@ -111,11 +113,35 @@ async function seenIn(id: number) {
     board: (await boardView(db, board, "2026-11-17")).notices.some((n) => n.id === id),
     calendar: (await titlesOf(db, a, [id])).has(id),
     review: (await reviewsForMe(db, await access("Rook"))).some((r) => r.noticeId === id),
+    /** The Home tab's number for Rook (D113): only this notice's request can count. */
+    count: (await toReviewCount(db, await access("Rook"), T0)) > 0,
   };
 }
 
-const EVERYWHERE = { list: true, page: true, board: true, calendar: true, review: true };
-const NOWHERE = { list: false, page: false, board: false, calendar: false, review: false };
+const NAMES = { en: "English", "pt-BR": "Português", fr: "Français" };
+
+const EVERYWHERE = {
+  list: true,
+  page: true,
+  board: true,
+  calendar: true,
+  review: true,
+  count: true,
+};
+const NOWHERE = {
+  list: false,
+  page: false,
+  board: false,
+  calendar: false,
+  review: false,
+  count: false,
+};
+
+/** Rook's activity lines on Home, in English. */
+const lines = async () =>
+  (await recentActivity(db, await access("Rook"), clock.now)).map((item) =>
+    activityLine(item, WORKSPACE_DICTIONARIES.en, "en"),
+  );
 
 describe("deleting a notice (D118)", () => {
   it("takes it out of every list, once per request id", async () => {
@@ -135,9 +161,11 @@ describe("deleting a notice (D118)", () => {
     // A repeat of the same request answers as the first; another delete finds nothing to delete.
     expect((await remove("Ana", { id, requestId })).status).toBe(200);
     expect((await remove("Rook", { id, requestId: randomUUID() })).status).toBe(404);
-    // Nothing reaches it any more: a save is refused as for a notice that does not exist.
-    const save = { id, changes: [{ field: "en", value: "Again.", version: 0 }] };
-    expect((await call(SAVE, "notices", "Ana", save)).status).toBe(404);
+    // Nor is it published: refused before the channel (none is set up here) is even looked at.
+    const deps = { fetch, now: T0, channels: { members: null, leaders: null }, names: NAMES };
+    const input = { id, languages: ["en" as const], requestId: randomUUID() };
+    const published = await publishNotice(db, await access("Ana"), input, deps);
+    expect(published).toEqual({ ok: false, code: "not_found" });
   });
 
   it("is refused to a member's session with 401 signed_out", async () => {
@@ -154,7 +182,7 @@ describe("deleting a notice (D118)", () => {
     expect((await remove("Nia", { id, requestId: randomUUID() })).status).toBe(404);
     expect((await remove("Nia", { id, requestId: randomUUID() }, "ogs")).status).toBe(401);
     // No review was asked here.
-    expect(await seenIn(id)).toEqual({ ...EVERYWHERE, review: false });
+    expect(await seenIn(id)).toEqual({ ...EVERYWHERE, review: false, count: false });
   });
 
   it("comes back with the deleter's Undo, only theirs and only for a while", async () => {
@@ -179,12 +207,54 @@ describe("deleting a notice (D118)", () => {
     const requestId = randomUUID();
     clock.now = new Date(T0.getTime() + 60_000);
     await remove("Ana", { id, requestId });
-    const lines = async () =>
-      (await recentActivity(db, await access("Rook"), clock.now)).map((item) =>
-        activityLine(item, WORKSPACE_DICTIONARIES.en, "en"),
-      );
     expect((await lines())[0]).toBe("⁨Ana⁩ deleted the notice “⁨Test notice⁩”");
     await remove("Ana", { id, requestId, undo: true });
     expect((await lines()).some((l) => l.includes("deleted"))).toBe(false);
+  });
+
+  it("does not delete again when its request is replayed after Undo", async () => {
+    const id = await notice();
+    const requestId = randomUUID();
+    await remove("Ana", { id, requestId });
+    await remove("Ana", { id, requestId, undo: true });
+    clock.now = new Date(T0.getTime() + 60_000);
+    // A late retry of the first delete (a lost answer, a back-and-forward) answers as it did, and writes nothing.
+    expect((await remove("Ana", { id, requestId })).status).toBe(200);
+    expect((await seenIn(id)).list).toBe(true);
+    expect((await lines()).some((l) => l.includes("deleted"))).toBe(false);
+  });
+});
+
+describe("restoring a notice from the trash (D118)", () => {
+  const save = (id: number, value: string) =>
+    call(SAVE, "notices", "Rook", { id, changes: [{ field: "en", value, version: 0 }] });
+
+  it("a save to a deleted notice answers 410 notice_deleted, to an unknown one 404", async () => {
+    const id = await notice();
+    await remove("Ana", { id, requestId: randomUUID() });
+    const res = await save(id, "Rook's text.");
+    expect(res.status).toBe(410);
+    expect(await res.json()).toEqual({ code: "notice_deleted" });
+    expect((await save(id + 100, "Elsewhere.")).status).toBe(404);
+  });
+
+  it("is open to another officer after the Undo window, recorded, and then the save goes through", async () => {
+    const id = await notice();
+    await remove("Ana", { id, requestId: randomUUID() });
+    clock.now = new Date(T0.getTime() + UNDO_MS + 60_000);
+    const requestId = randomUUID();
+    expect((await remove("Rook", { id, requestId, restore: true })).status).toBe(200);
+    // A repeat of the same restore changes nothing; a restore of a live notice finds nothing to restore.
+    expect((await remove("Rook", { id, requestId, restore: true })).status).toBe(200);
+    expect((await remove("Rook", { id, requestId: randomUUID(), restore: true })).status).toBe(404);
+    expect((await seenIn(id)).list).toBe(true);
+    expect((await lines())[0]).toBe("⁨Rook⁩ restored the notice “⁨Test notice⁩”");
+    // The officer's text, kept in the editor, now saves.
+    const version = (await noticeDetail(db, await access("Rook"), id))?.fields.en.version ?? 0;
+    const saved = await call(SAVE, "notices", "Rook", {
+      id,
+      changes: [{ field: "en", value: "Rook's text.", version }],
+    });
+    expect(saved.status).toBe(200);
   });
 });

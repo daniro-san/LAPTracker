@@ -1,5 +1,5 @@
 {
-  "id": "27045a58-b09c-48ef-9517-319af634bcba",
+  "id": "f535312b-b1cc-4cef-80b5-e424fcf20bb6",
   "prevId": "e2f4754b-db8b-4c09-93a3-cdf1c963b739",
   "version": "7",
   "dialect": "postgresql",
@@ -3514,6 +3514,24 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "restored_at": {
+          "name": "restored_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "restored_by": {
+          "name": "restored_by",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "restore_request_id": {
+          "name": "restore_request_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -3600,6 +3618,19 @@
           "tableTo": "workspace_users",
           "columnsFrom": [
             "deleted_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "notices_restored_by_workspace_users_id_fk": {
+          "name": "notices_restored_by_workspace_users_id_fk",
+          "tableFrom": "notices",
+          "tableTo": "workspace_users",
+          "columnsFrom": [
+            "restored_by"
           ],
           "columnsTo": [
             "id"

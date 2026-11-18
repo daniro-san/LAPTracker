@@ -57,6 +57,10 @@ export const noticesMoreEn = {
   "notices.delete.discord":
     "If it was published to Discord, it stays in Discord. Delete it there yourself if you need to.",
   "notices.delete.confirm": "Delete",
+  "notices.delete.keep": "Keep it",
+  "notices.trash.restore": "Restore from trash?",
+  "notices.trash.restored": "Restored. Save to keep your text.",
+  "notices.trash.failed": "Could not restore the notice. Try again.",
   "notices.delete.deleting": "Deleting…",
   "notices.delete.failed": "Could not delete the notice. Try again.",
   "notices.deleted": "Notice deleted.",
@@ -120,6 +124,10 @@ export const noticesMorePt: Record<keyof typeof noticesMoreEn, string> = {
   "notices.delete.discord":
     "Se ele foi publicado no Discord, continua no Discord. Apague por lá se precisar.",
   "notices.delete.confirm": "Apagar",
+  "notices.delete.keep": "Manter",
+  "notices.trash.restore": "Restaurar da lixeira?",
+  "notices.trash.restored": "Restaurado. Salve para manter seu texto.",
+  "notices.trash.failed": "Não foi possível restaurar o aviso. Tente de novo.",
   "notices.delete.deleting": "Apagando…",
   "notices.delete.failed": "Não foi possível apagar o aviso. Tente de novo.",
   "notices.deleted": "Aviso apagado.",
@@ -184,6 +192,10 @@ export const noticesMoreFr: Record<keyof typeof noticesMoreEn, string> = {
   "notices.delete.discord":
     "Si elle a été publiée sur Discord, elle y reste. Supprimez-la là-bas vous-même si besoin.",
   "notices.delete.confirm": "Supprimer",
+  "notices.delete.keep": "La garder",
+  "notices.trash.restore": "Restaurer depuis la corbeille ?",
+  "notices.trash.restored": "Restaurée. Enregistrez pour garder votre texte.",
+  "notices.trash.failed": "Impossible de restaurer l’annonce. Réessayez.",
   "notices.delete.deleting": "Suppression…",
   "notices.delete.failed": "Impossible de supprimer l’annonce. Réessayez.",
   "notices.deleted": "Annonce supprimée.",
