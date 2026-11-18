@@ -49,12 +49,12 @@ export interface AllianceSnapshotInput {
   raw: unknown;
 }
 
-/** One hero of a squad as /v1/players sends it (D117); `star` is the raw value, the site shows floor(star / 5). */
+/** One hero of a squad as /v1/players sends it (D117); `star` is the raw value, 0–50: star level floor(star / 5). */
 export interface HeroInput {
   id: number;
   lv: number | null;
   star: number | null;
-  /** Rarity: 3 R, 4 SSR, 5 UR (owner, 2026-11-18); the same for every copy of a hero. */
+  /** Rarity: 3 SR, 4 SSR, 5 UR (owner, 2026-11-18); the same for every copy of a hero. */
   q: number | null;
   awaken: number | null;
 }

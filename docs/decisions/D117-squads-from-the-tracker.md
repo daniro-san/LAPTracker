@@ -18,8 +18,8 @@ Why: spike #409 found that `GET /v1/players/{uid}` (the documented API) returns 
 - Every 200 had a `squads` key. 34 of the 95 members had an empty list. The rest had 1–4 squads (9 had 1, 11 had 2, 31 had 3, 10 had 4), numbered 1–4. Every squad had 5 heroes except one with 4.
 - Squad keys: `squad`, `power`, `soldiers`, `soldier_load`, `heroes`, `sid`, `seen_at`. Hero keys: `id`, `lv`, `star`, `q`, `awaken`, `honor`, `ue`.
 - `seen_at` was always an integer in epoch seconds, 0.2–1.3 days old. Squad power ran 2.0M–21.0M.
-- `q` took only 3, 4 and 5, always the same for one hero id. The owner (2026-11-18): rarity runs R < SSR < UR, so 3 is R, 4 is SSR, 5 is UR.
-- `star` ran 0–50 (97 heroes at 50), so `floor(star / 5)` is 0–10 stars. `lv` ran 1–145; the owner says it goes up to 150, and the card fits "Lv 150".
+- `q` took only 3, 4 and 5, always the same for one hero id: 3 is SR, 4 is SSR, 5 is UR (the owner's game screenshots; see the amendment below).
+- `star` ran 0–50 (97 heroes at 50), so the star level `floor(star / 5)` is 0–10. `lv` ran 1–145; the owner says it goes up to 150, and the card fits "Lv 150".
 - `awaken` was always 0 and `ue` always −1: neither is shown. `awaken` is stored with the squad, to be shown once the server is about 120 days old (owner, 2026-11-18); `honor` and `ue` are not stored.
 - All 30 hero ids seen were in the 34-hero catalog.
 
@@ -73,7 +73,7 @@ No uid, name or squad value is logged. The lines are not `v1.fetch`, so the read
 **The member card.** A "Squads (from the tracker)" section after Member info:
 
 - each squad: "Squad 2", "Might 61.2M", "seen Mon, Nov 16";
-- its heroes, UR first, then SSR, then R, then by stars and level (the site's order): the picture, the name from the catalog, the rarity tag (R / SSR / UR), "Lv 150" and the stars as one star and the count, "★10" (`floor(star / 5)`, with "10 stars" for screen readers). Ten stars drawn one by one did not fit a hero's column at 360 px;
+- its heroes, UR first, then SSR, then SR, then by the raw `star` and level (the site's order): the picture with a thin frame in its rarity's colour, the name from the catalog, the rarity tag (SR / SSR / UR) in the game's colours, "Lv 150", and the game's five star icons (see the amendment below);
 - one line under the heading: "The tracker lists only the squads it has seen."
 - with no squad stored: "The tracker has not seen their squads yet."
 
@@ -81,7 +81,6 @@ No uid, name or squad value is logged. The lines are not `v1.fetch`, so the read
 
 - **Every stored squad, in squad-number order** (1 to 4), each number's newest row.
 - **The strongest squad** is the one with the highest power, the lower number on a tie: the same squad whose power is "Main squad might" (`mainSquad`). It sits in the soft drawn frame with a 5 % plum tint and carries the word "Strongest" / "Mais forte" / "La plus forte" beside its name. The word carries the meaning, never the tint alone.
-- **The top hero.** One hero per member carries "Top hero" / "Melhor herói" / "Meilleur héros". The tracker gives no hero power, so the rule is the site's order across all the member's squads: the rarest (UR, then SSR, then R), then the most stars, then the highest level; on a full tie, the one in the lower squad. The rule is said in one line under the heading, so nothing depends on hovering.
 - **What changed and when.** Under each squad, after "seen {date}": when an earlier stored row of that squad exists, the power change since it, "+1.20M since Sun, Nov 15" (D78's compact numbers; the date is that row's sighting, else our read of it), and "Heroes changed" when the heroes, a hero's level or a hero's stars differ. A drop reads "−400K since …" in the same plain ink, never in red (D75). With no earlier row, nothing more is said. The read is `squadPairs` (each squad's newest row and the one before it).
 - It fits 360 px with 4 squads of 5 heroes, in two hero columns.
 
@@ -95,3 +94,13 @@ These are plain information: a squad the tracker has not seen asks nothing of an
 - The card asks for a picture only for a catalog hero. Any other id, or a picture that fails, is a plain bordered box with "Unknown hero".
 
 **Privacy.** Squads are workspace-only data of the own alliance (D71): no public page, query, Discord message, AI request or shared cache reads them. The image route serves a hero's picture, which is the tracker's public asset, not member data.
+
+**Amendment 2026-11-18 (owner, from game screenshots; branch `fix/squads-rarity-stars`).**
+
+- **Rarity is SR / SSR / UR**, not R / SSR / UR. In the game a `q` 3 hero shows "SR", a `q` 4 hero "SSR", a `q` 5 hero "UR". The order stays UR, SSR, SR.
+- **The game's colours.** The tag is drawn in SR blue, SSR purple and UR gold, and the hero's picture gets a 2 px frame in the same colour. These are tokens `--rarity-sr`, `--rarity-ssr` and `--rarity-ur` in `lib/brand/tokens.css`, with a light and a dark value (DESIGN.md "Rarity"). As 12 px semibold text each keeps 4.5:1 on paper and on the strongest squad's tint; the lowest is UR in light on the tint, 5.0:1. The letters always say the rarity, so the colour never carries it alone.
+- **Stars as the game draws them.** The star level is 0–10 (`floor(star / 5)`), and the game always draws 5 star icons. Levels 1–5 fill them yellow from the left. Levels 6–10 turn them red from the left: level 7 is 2 red and 3 yellow, level 10 is 5 red. `star` has 5 sub-steps per level, so the next icon is partly filled, `(star % 5) / 5`, in the colour it will become (`starIcons`, `lib/private/member-squads.ts`).
+  - The colours are tokens `--star-yellow` and `--star-red`, each 3:1 or more against paper and the tint, light and dark (small graphics). The red is not the seal red of warnings; the five icons together read as stars, not as an error (D75).
+  - Screen readers hear "Star level 7 of 10" / "Nível de estrela 7 de 10" / "Niveau d’étoile 7 sur 10", so the colours carry nothing alone.
+  - This replaces "★10" (one star and the count).
+- **No top hero.** The "Top hero" mark (one hero per member, ranked by rarity, then stars, then level), its rule line, its words in the three languages and its test are removed at the owner's request. The game shows a power per hero (for example 1,031,107), but `/v1/players` does not send it, so any ranking of heroes would be a guess. The card is about the squads: every squad, the strongest one framed and tagged, and what changed.
