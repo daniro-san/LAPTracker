@@ -171,7 +171,7 @@ function CheckReview(props: Props) {
         readOnly={readOnly || busy}
         retype={(kind) => retype(kind, scope)}
       />
-      <section aria-labelledby="check-head" className="mt-4 border border-rule px-4 py-3">
+      <section aria-labelledby="check-head" className="drawn-card mt-4 px-4 py-3">
         <h2 id="check-head" className="font-subhead text-display-sm">
           {w["shots.check.head"]}
         </h2>

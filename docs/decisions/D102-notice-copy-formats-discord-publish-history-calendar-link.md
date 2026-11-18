@@ -34,3 +34,5 @@ Why: the leadership pastes each notice in three places, the game's notice board,
 **Images: not built.** No storage for pictures exists: D02 keeps Postgres for rows and rules out Blob for them, and neither `BLOB_READ_WRITE_TOKEN` nor any other storage variable is set. Vercel Blob would be a new dependency and service, which this session was told not to add. So a notice still has no image and the publish sends text only. Choosing a storage (Postgres `bytea` with a size cap, or Vercel Blob) is the owner's call.
 
 **Not done here.** The read page keeps its stacked languages (no tabs). The Discord copy is not split: a language over 2,000 characters after escaping is too long to paste as one message.
+
+**Amendment (2026-11-17, 11ah, D116).** Each copy button has a line under it, always shown, that says what it copies: "Cut to 1,000 characters, the game's limit.", "The whole text, never cut.", "Title in bold, formatted for Discord. Pings no one." (PT and FR to match). The labels are unchanged.

@@ -1,6 +1,7 @@
 // The members' board's sections (D105, issue 331), rendered on the server: this week's member-marked events
-// on the viewer's clock with server time beside them, the notices marked for members, and Start here. Texts
-// written in several languages show the viewer's first, the others one tap away (BoardText.tsx).
+// as a strip of seven days and a card per day with events, each event's time first on the viewer's clock
+// with server time under it (D116); the notices marked for members; and Start here. Texts written in
+// several languages show the viewer's first, the others one tap away (BoardText.tsx).
 import { fill } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
 import { BOARD_DAYS, type BoardEntry, type BoardNotice } from "@/lib/private/board";
@@ -10,7 +11,7 @@ import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dicti
 import { NOTICE_LANGUAGES, type NoticeLanguage } from "@/lib/private/notice-rules";
 import type { StartHereText } from "@/lib/private/start-here";
 
-import { BoardTime } from "./BoardParts";
+import { BoardTimeColumn } from "./BoardParts";
 import { LanguageTag, LINK, linkLabel, TEXT, Translated } from "./BoardText";
 import { calendarWords } from "./calendar-data";
 
@@ -26,12 +27,12 @@ function Entry(props: {
   const { item, t, zone } = props;
   const { entry } = item;
   const title = props.notices.get(item.noticeId ?? -1);
+  // The time first, in its own column, the viewer's clock large (D116); an entry with no time spans both.
   return (
-    <li className="border-t border-rule py-2 first:border-t-0">
-      <p className="font-semibold">{titleOf(entry, t)}</p>
+    <li className="grid grid-cols-[6rem_minmax(0,1fr)] gap-x-3 border-t border-rule py-3 first:border-t-0">
       {item.minute !== null && (
         <p>
-          <BoardTime
+          <BoardTimeColumn
             st={stOf(entry.kind, item.minute, t)}
             at={zonedInstant(item.day, item.minute, zone)}
             day={item.day}
@@ -40,6 +41,20 @@ function Entry(props: {
           />
         </p>
       )}
+      <div className={item.minute === null ? "col-span-2" : "min-w-0"}>
+        <p className="font-semibold">{titleOf(entry, t)}</p>
+        <EntryMore item={item} t={t} title={title} />
+      </div>
+    </li>
+  );
+}
+
+/** An entry's notes, link and linked notice, under its title. */
+function EntryMore(props: { item: BoardEntry; t: WorkspaceDictionary; title: string | undefined }) {
+  const { item, t, title } = props;
+  const { entry } = item;
+  return (
+    <>
       {entry.notes && <p className={`mt-1 ${TEXT}`}>{entry.notes}</p>}
       {entry.link && (
         <a href={entry.link} target="_blank" rel="noopener noreferrer" className={LINK}>
@@ -57,7 +72,66 @@ function Entry(props: {
           </a>
         </p>
       )}
-    </li>
+    </>
+  );
+}
+
+/**
+ * The seven days as a strip (D116): weekday and date, a dot per event (three at most) and the count for
+ * screen readers. A day with events jumps to its card; today is filled plum. Days with nothing planned stay
+ * quiet, never empty boxes to fill.
+ */
+function Strip(props: {
+  t: WorkspaceDictionary;
+  language: WorkspaceLanguage;
+  today: string;
+  days: { day: string; items: BoardEntry[] }[];
+}) {
+  const { t, language, today } = props;
+  const dates = calendarDates(language);
+  const number = new Intl.DateTimeFormat(language, { day: "numeric", timeZone: "UTC" });
+  const plural = new Intl.PluralRules(language);
+  return (
+    <ol aria-label={t["board.days"]} className="mt-3 grid grid-cols-7 gap-0.5">
+      {props.days.map(({ day, items }) => {
+        const n = items.length;
+        const now = day === today;
+        const look = now ? "bg-plum text-paper" : n > 0 ? "bg-plum/10 text-plum" : "text-ink/70";
+        const said = `${dates.long(day)}${now ? ` · ${t["board.today"]}` : ""} · ${
+          n > 0
+            ? fill(t[`board.events.${plural.select(n) === "one" ? "one" : "other"}`], { n })
+            : t["board.free"]
+        }`;
+        const inside = (
+          <>
+            <span aria-hidden="true" className="text-[12px] leading-tight">
+              {dates.weekday(day)}
+            </span>
+            <span aria-hidden="true" className="text-lg leading-tight font-semibold tabular-nums">
+              {number.format(new Date(`${day}T00:00:00Z`))}
+            </span>
+            <span aria-hidden="true" className="flex h-2 gap-0.5">
+              {Array.from({ length: Math.min(n, 3) }, (_, i) => (
+                <span key={i} className={`size-1.5 rounded-full ${now ? "bg-paper" : "bg-plum"}`} />
+              ))}
+            </span>
+            <span className="sr-only">{said}</span>
+          </>
+        );
+        const box = `flex min-h-16 flex-col items-center justify-center gap-0.5 px-0.5 ${look}`;
+        return (
+          <li key={day}>
+            {n > 0 ? (
+              <a href={`#day-${day}`} className={`${box} tint-button underline-offset-4`}>
+                {inside}
+              </a>
+            ) : (
+              <span className={box}>{inside}</span>
+            )}
+          </li>
+        );
+      })}
+    </ol>
   );
 }
 
@@ -74,23 +148,28 @@ export function Week(props: {
   const titles = new Map(props.notices.map((n) => [n.id, n.title]));
   // This week's Alliance Duel theme, whose Monday may have passed, goes above the days.
   const theme = entries.find((e) => e.entry.kind === "duel" && e.day < today);
-  const days = Array.from({ length: BOARD_DAYS }, (_, i) => addDays(today, i))
-    .map((day) => ({ day, items: entries.filter((e) => e.day === day) }))
-    .filter((d) => d.items.length > 0);
+  const week = Array.from({ length: BOARD_DAYS }, (_, i) => addDays(today, i)).map((day) => ({
+    day,
+    items: entries.filter((e) => e.day === day),
+  }));
+  const days = week.filter((d) => d.items.length > 0);
   // The page's title already says "This week": the section has no heading of its own.
   return (
     <section aria-label={t["board.week"]} className="mt-4">
       {theme && <p className="font-semibold">{titleOf(theme.entry, t)}</p>}
+      <Strip t={t} language={language} today={today} days={week} />
       {days.length === 0 ? (
-        <p className="mt-1">{t["board.week.none"]}</p>
+        <p className="mt-3">{t["board.week.none"]}</p>
       ) : (
         <>
-          <p className="mt-1 text-body-sm text-ink/75">{t["board.times"]}</p>
+          <p className="mt-3 text-body-sm text-ink/75">{t["board.times"]}</p>
           {days.map(({ day, items }) => (
-            <div key={day} className="mt-3 border border-rule px-4 py-2">
-              <h2 className="font-semibold">
+            <div key={day} id={`day-${day}`} className="drawn-card mt-4 scroll-mt-16 px-4 pt-3">
+              <h2 className="font-subhead text-display-sm">
                 {dates.long(day)}
-                {day === today && <span className="text-plum">{` · ${t["board.today"]}`}</span>}
+                {day === today && (
+                  <span className="text-body-sm font-semibold text-plum">{` · ${t["board.today"]}`}</span>
+                )}
               </h2>
               <ul>
                 {items.map((item) => (
@@ -132,7 +211,7 @@ export function Notices(props: {
           key={n.id}
           id={`notice-${n.id}`}
           aria-labelledby={`notice-${n.id}-title`}
-          className="mt-3 scroll-mt-16 border border-rule px-4 py-3"
+          className="drawn-card mt-4 scroll-mt-16 px-4 py-3"
         >
           <h3 id={`notice-${n.id}-title`} translate="no" className="font-semibold">
             {n.title}
@@ -188,7 +267,7 @@ export function StartHere(props: {
     <section
       id="board-start"
       aria-labelledby="board-start-title"
-      className="mt-6 scroll-mt-16 border border-rule px-4 py-3"
+      className="drawn-card mt-6 scroll-mt-16 px-4 py-3"
     >
       <h2 id="board-start-title" className="font-subhead text-display-sm">
         {t["board.start"]}

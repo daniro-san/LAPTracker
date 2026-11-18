@@ -45,7 +45,7 @@ export function TheftsBoard(props: {
         />
       )}
       {alliances.length === 0 ? (
-        <p className="mt-4 border border-rule px-4 py-5">{props.t["thefts.empty"]}</p>
+        <p className="drawn-card mt-4 px-4 py-5">{props.t["thefts.empty"]}</p>
       ) : (
         <TheftCards alliances={alliances} slug={props.slug} t={props.t} language={props.language} />
       )}

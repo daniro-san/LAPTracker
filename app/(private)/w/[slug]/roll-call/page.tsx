@@ -35,7 +35,7 @@ function Counts({ parts }: { parts: string[] }) {
 
 function Card({ c, words }: { c: RollCard; words: CalendarSheetWords }) {
   return (
-    <li className="border-t border-rule py-3">
+    <li className="drawn-card mt-4 px-4 py-3">
       <p className="text-body-sm">
         {c.dayLabel}
         {c.st && c.at !== null && (
@@ -101,9 +101,9 @@ export default async function RollCallPage({
         offset={offsetLabel(page.zone, page.now.getTime())}
       />
       {cards.length === 0 ? (
-        <p className="mt-3 border-t border-rule py-3">{t["roll.none"]}</p>
+        <p className="drawn-card mt-4 px-4 py-3">{t["roll.none"]}</p>
       ) : (
-        <ul className="mt-3">
+        <ul>
           {cards.map((c) => (
             <Card key={c.key} c={c} words={times} />
           ))}

@@ -59,7 +59,7 @@ export function HistoryCardView({
   copy: Dictionary;
 }) {
   return (
-    <li className="mb-3 border border-rule">
+    <li className="drawn-card mb-3">
       <details className="group/card">
         <CardHead entry={entry} clock={clock} copy={copy} />
         <LazyCardBody

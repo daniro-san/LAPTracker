@@ -18,7 +18,7 @@ export function MembersThanks(props: {
   const progress = view.thanks.progress;
   if (rows.length === 0 && progress.length === 0) return null;
   return (
-    <section aria-labelledby="thanks" className="mt-4 border border-rule px-4 py-3">
+    <section aria-labelledby="thanks" className="drawn-card mt-4 px-4 py-3">
       <h2 id="thanks" className="font-subhead text-display-sm">
         {t["thanks.head"]}
       </h2>

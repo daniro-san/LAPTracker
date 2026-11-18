@@ -157,7 +157,7 @@ export function Movers({ scopes }: { scopes: MoverScope[] }) {
         <LookMark className="size-6 shrink-0 text-plum" />
         {copy.ledger.movers}
       </h2>
-      <div className="border border-rule">
+      <div className="drawn-card">
         <div
           role="tablist"
           aria-labelledby={`${id}-h`}

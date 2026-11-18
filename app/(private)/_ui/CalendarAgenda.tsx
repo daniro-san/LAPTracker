@@ -151,7 +151,7 @@ function Day(props: {
 }) {
   const { d, words } = props;
   return (
-    <li id={`d-${d.day}`} className="scroll-mt-4 pt-3">
+    <li id={`d-${d.day}`} className="drawn-card mt-4 scroll-mt-4 px-4 pt-3">
       <h2 className="font-subhead text-display-sm">
         {d.head}
         {d.today && (

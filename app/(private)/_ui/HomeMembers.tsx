@@ -64,7 +64,7 @@ export function HomeMembers(props: {
   const today = serverDay(now, getEnv());
   const sharing = view.thanks.progress.length > 0 || nudge;
   return (
-    <section aria-labelledby="home-members" className="mt-4 border border-rule px-4 py-3">
+    <section aria-labelledby="home-members" className="drawn-card mt-4 px-4 py-3">
       <h2 id="home-members" className="font-subhead text-display-sm">
         {t["home.members.head"]}
       </h2>

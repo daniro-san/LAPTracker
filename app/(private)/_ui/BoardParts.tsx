@@ -1,14 +1,17 @@
 "use client";
 
-// The members' board's two client parts (D105): a time on the viewer's own clock with server time beside it,
-// and one text in several languages as tabs, the viewer's language first, the others one tap away. Both
-// render server time and the first tab on the server, so server and browser HTML never differ.
+// The members' board's two client parts (D105): an event's time column, the viewer's own clock first and
+// large with server time under it (D116), and one text in several languages as tabs, the viewer's language
+// first, the others one tap away. Both render server time and the first tab on the server, so server and
+// browser HTML never differ.
 import { useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 
 import { tabAfter } from "@/app/_ui/Movers";
+import { fill } from "@/lib/copy";
+import { clockIn } from "@/lib/private/calendar-time";
 import type { CalendarWords } from "@/lib/private/dictionary.calendar";
 
-import { useViewerZone, yourTime } from "./YourTime";
+import { useViewerZone } from "./YourTime";
 
 /** The zone's short name in the viewer's language ("BRT", "GMT-3"); "" when the browser gives none. */
 function zoneName(zone: string, at: number, language: string): string {
@@ -16,8 +19,29 @@ function zoneName(zone: string, at: number, language: string): string {
   return parts.formatToParts(at).find((p) => p.type === "timeZoneName")?.value ?? "";
 }
 
-/** "15:00 your time (BRT) · 16:00 ST": the viewer's clock first, once the browser knows its zone. */
-export function BoardTime(props: {
+/**
+ * The viewer's clock for a time, in parts for the board's time column (D116): "15:00", "your time (BRT)",
+ * and "+1 d" when that is another day on the viewer's clock.
+ */
+export function ownClock(
+  at: number,
+  day: string,
+  zone: string,
+  language: string,
+  words: CalendarWords,
+) {
+  const { time, shift } = clockIn(at, zone, day);
+  const name = zoneName(zone, at, language);
+  const label = fill(words["calendar.yours"], { time: "" }).trim();
+  const mark = shift > 0 ? words["calendar.nextDay"] : shift < 0 ? words["calendar.prevDay"] : "";
+  return { time, label, zone: name ? `(${name})` : "", mark };
+}
+
+/**
+ * The board's time column: the viewer's own time large, "your time (BRT)" under it, then server time. Server
+ * time alone until the browser knows its zone, so server and browser HTML never differ.
+ */
+export function BoardTimeColumn(props: {
   st: string;
   at: number;
   day: string;
@@ -25,15 +49,19 @@ export function BoardTime(props: {
   words: CalendarWords;
 }) {
   const zone = useViewerZone();
-  if (!zone) return <span className="font-bold tabular-nums">{props.st}</span>;
-  // "15:00 your time (+1 d)" gets the zone's name after "your time": "15:00 your time (BRT) (+1 d)".
-  const name = zoneName(zone, props.at, props.language);
-  const [time, ...shift] = yourTime(props.at, props.day, zone, props.words).split(" (");
-  const mine = [`${time}${name ? ` (${name})` : ""}`, ...shift].join(" (");
+  if (!zone)
+    return <span className="block text-lg leading-tight font-bold tabular-nums">{props.st}</span>;
+  const own = ownClock(props.at, props.day, zone, props.language, props.words);
   return (
     <>
-      <span className="font-bold tabular-nums">{mine}</span>
-      <span className="text-ink/75">{` · ${props.st}`}</span>
+      <span className="block text-lg leading-tight font-bold tabular-nums">
+        {own.time}
+        {own.mark && <span className="ml-1 text-body-sm font-semibold">{own.mark}</span>}
+      </span>
+      <span className="block text-[13px] leading-tight">
+        {own.label} <span className="whitespace-nowrap">{own.zone}</span>
+      </span>
+      <span className="block text-[13px] leading-tight text-ink/75 tabular-nums">{props.st}</span>
     </>
   );
 }

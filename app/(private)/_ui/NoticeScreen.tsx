@@ -33,31 +33,62 @@ export interface ScreenProps extends Omit<EditorProps, "focus" | "onClose" | "id
   reviews: ReviewProps;
 }
 
-/** The three copies of one language: the game's notice board (cut to fit), the game's mail, Discord. */
-function Copies({ p, language }: { p: ScreenProps; language: NoticeLanguage }) {
-  const { t } = p;
-  const text = p.fields[language].value;
+/**
+ * The three copies of one language: the game's notice board (cut to fit), the game's mail, Discord. Each
+ * button has one line under it, always shown, that says what it copies (D116).
+ */
+export function Copies(p: {
+  t: ScreenProps["t"];
+  viewer: ScreenProps["viewer"];
+  language: NoticeLanguage;
+  title: string;
+  text: string;
+}) {
+  const { t, language, text } = p;
   const board = gameNotice(text);
   const words = (copy: string, copied = t["members.copied"]) => ({
     copy,
     copied,
     failed: t["members.copyFailed"],
   });
+  const limit = new Intl.NumberFormat(p.viewer).format(NOTICE_LIMIT);
+  const copies = [
+    {
+      id: "notice",
+      text: board.text,
+      labels: words(
+        t["notices.copy.notice"],
+        board.cut ? fill(t["notices.copied.cut"], { limit: NOTICE_LIMIT }) : undefined,
+      ),
+      help: fill(t["notices.copy.notice.help"], { limit }),
+    },
+    {
+      id: "mail",
+      text: gameMail(text),
+      labels: words(t["notices.copy.mail"]),
+      help: t["notices.copy.mail.help"],
+    },
+    {
+      id: "discord",
+      text: discordPost(p.title, text),
+      labels: words(t["notices.copy.discord"]),
+      help: t["notices.copy.discord.help"],
+    },
+  ];
   return (
-    <div className="mt-3 flex flex-wrap gap-2">
-      <CopyButton
-        text={board.text}
-        labels={words(
-          t["notices.copy.notice"],
-          board.cut ? fill(t["notices.copied.cut"], { limit: NOTICE_LIMIT }) : undefined,
-        )}
-      />
-      <CopyButton text={gameMail(text)} labels={words(t["notices.copy.mail"])} />
-      <CopyButton
-        text={discordPost(p.fields.title.value, text)}
-        labels={words(t["notices.copy.discord"])}
-      />
-    </div>
+    <ul className="mt-3 grid gap-3 sm:grid-cols-3">
+      {copies.map((c) => {
+        const id = `copy-${language}-${c.id}`;
+        return (
+          <li key={c.id} className="flex flex-col items-start gap-1">
+            <CopyButton text={c.text} labels={c.labels} describedBy={id} />
+            <p id={id} className="text-body-sm text-ink/75">
+              {c.help}
+            </p>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
@@ -104,7 +135,13 @@ function LanguageText({
             {field.value}
           </div>
           <OverLimit text={field.value} t={t} language={p.viewer} />
-          <Copies p={p} language={language} />
+          <Copies
+            t={t}
+            viewer={p.viewer}
+            language={language}
+            title={p.fields.title.value}
+            text={field.value}
+          />
           <button type="button" aria-haspopup="dialog" onClick={onAsk} className={`${chip()} mt-2`}>
             {t["notices.review.ask"]}
           </button>

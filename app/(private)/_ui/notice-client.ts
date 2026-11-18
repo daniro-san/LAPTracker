@@ -70,8 +70,8 @@ export async function saveNotice(
 }
 
 export type DraftAsk =
-  | { kind: "translate"; from: NoticeLanguage; to: NoticeLanguage[]; text: string }
-  | { kind: "improve"; language: NoticeLanguage; tone: string; text: string }
+  | { kind: "translate"; from: NoticeLanguage; to: NoticeLanguage[]; text: string; limit?: number }
+  | { kind: "improve"; language: NoticeLanguage; tone: string; text: string; limit?: number }
   | { kind: "fit"; language: NoticeLanguage; text: string };
 
 /** A Translate, Improve writing or Fit answer: each language's draft, and those still partly untranslated. */

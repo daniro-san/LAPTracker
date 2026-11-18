@@ -91,6 +91,9 @@ function Row(props: {
   );
 }
 
+/** A group of the week's list, in the drawn card (D116). */
+const GROUP = "drawn-card mt-4 px-4 pt-3";
+
 export function FollowUpList(props: {
   slug: string;
   groups: FollowUpGroup[];
@@ -130,7 +133,7 @@ export function FollowUpList(props: {
     <>
       <DoneLine done={done} words={words} onUndo={undo} />
       {props.groups.map((g) => (
-        <section key={g.id} className="mt-4" aria-labelledby={`follow-up-${g.id}`}>
+        <section key={g.id} className={GROUP} aria-labelledby={`follow-up-${g.id}`}>
           <h2 id={`follow-up-${g.id}`} className="font-subhead text-display-sm">
             {g.title}
           </h2>

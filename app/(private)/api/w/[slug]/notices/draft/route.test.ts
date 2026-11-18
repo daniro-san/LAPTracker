@@ -113,6 +113,24 @@ describe("POST /api/w/[slug]/notices/draft", () => {
     expect(fr).toContain("a French-speaking officer of the alliance");
   });
 
+  it("gives Translate and Improve writing a Start here part's own cap when sent, up to the largest (D116)", async () => {
+    const systems: string[] = [];
+    withAi({
+      complete: async ({ system }) => {
+        systems.push(system);
+        return system.includes("Brazilian Portuguese") ? "Regras da aliança." : "Règles.";
+      },
+    });
+    expect((await draft({ ...TRANSLATE, limit: 3000 })).status).toBe(200);
+    const improve = { kind: "improve", language: "en", tone: "warmer", text: "Be kind." };
+    expect((await draft({ ...improve, limit: 1500 })).status).toBe(200);
+    expect(systems.filter((s) => s.includes("Stay within 3000 characters"))).toHaveLength(2);
+    expect(systems.at(-1)).toContain("Stay under 1500 characters");
+    expect(systems.some((s) => s.includes("1000 characters"))).toBe(false);
+    for (const limit of [0, 2.5, 4001])
+      expect((await draft({ ...TRANSLATE, limit })).status).toBe(400);
+  });
+
   it("Fit: refused with 400 for text within the limit, counted after trimming", async () => {
     const asked: string[] = [];
     withAi({
