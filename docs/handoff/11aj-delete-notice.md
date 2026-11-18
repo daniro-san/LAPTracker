@@ -16,6 +16,8 @@
   - Undo: only the officer who deleted, with the same request id, within 60 s.
   - Restore: any officer of the workspace, at any time, on a deleted notice; who, when and its request id are recorded. A repeat answers 200 and writes nothing.
   - The log carries `notices.deleted`, `notices.delete.undone` and `notices.restored`, with no fields.
+  - Analytics (D115, after the rebase on #415): a 2xx is counted through `counted` as `ws_action` `notice` / `delete`, `undo` or `restore`. `restore` is new in `DESK_ACTIONS` (`lib/analytics/server.ts`). The `notice` row in `docs/analytics/tracking-plan.md` lists the three actions and the `/notices/delete` route; the plan's test checks every action against the plan.
+  - The page makes its request ids with `newRequestId()` (`request-id.ts`, D115), also for the restore.
 - **Save route.** A save to a deleted notice answers 410 `notice_deleted`; an unknown notice stays 404 `not_found`.
 - **UI.**
   - `app/(private)/_ui/NoticeDelete.tsx`: "Delete notice" at the foot of a notice's page asks with `AskSheet`. The question shows the title, where the notice leaves, and the Discord line. "Keep it" is the main button and has the focus; "Delete" follows in seal.
@@ -45,7 +47,12 @@
 - **The first round's sheet** had Delete as the main button. It is now `AskSheet`, per DESIGN.md "Question", which wins over the brief's "main then Cancel".
 
 ## Verified
-- `pnpm check` exits 0: prettier, eslint, tsc, vitest **189 files passed, 2 skipped; 1,012 tests passed, 4 skipped**, the drift gate and the i18n check ("17 languages up to date").
+- After the rebase on `origin/dev` (#414, #415), `pnpm check` exits 0: prettier, eslint, tsc, vitest **195 files passed, 2 skipped; 1,034 tests passed, 4 skipped**, the drift gate and the i18n check ("17 languages up to date"). The one conflict, `notice-editor-state.ts`, kept #415's `trackAsk` and `newRequestId` beside this branch's `useSaveNote`; the shared draft-keep and leave warning are unchanged.
+- **Short e2e after the rebase: 11 of 11 checks pass**, on a fresh local database with an invented 20-member roster:
+  - the question names the notice and gives "Keep it" the focus;
+  - after the delete, the library line and Home's delete line;
+  - Undo returns to the notice and removes the line, and Back shows no stale line;
+  - the restore: Wren deletes while Ana edits; Save offers "Restore from trash?"; the text stays; Save keeps it; Home reads "Ana restored the notice".
 - `app/(private)/api/w/[slug]/notices/delete/route.test.ts`, 8 tests:
   - the delete hides the notice from the library, its page, the board, the Calendar title, To review and the To review tab's number. Publishing it is refused (`not_found`), and a repeat is idempotent;
   - a member session gets 401 `signed_out`;
@@ -56,7 +63,7 @@
   - a save to a deleted notice answers 410 `notice_deleted`, and to an unknown one 404;
   - another officer restores after the Undo window: a repeat is idempotent, a restore of a live notice is 404, Home reads "Rook restored the notice “…”", and the officer's save then goes through.
 - `member-session.test.ts` has a fixture for the new route.
-- **Local e2e: 51 of 51 checks pass.** Production build on :3997 (another worktree's app held :3987), own local Postgres on :55337 with 41 migrations, the DB bridge, a Discord sign-in stand-in, an invented 40-member roster. No upstream, Groq or Discord call. Checks:
+- **Local e2e before the rebase: 51 of 51 checks pass.** Production build on :3997 (another worktree's app held :3987), own local Postgres on :55337 with 41 migrations, the DB bridge, a Discord sign-in stand-in, an invented 40-member roster. No upstream, Groq or Discord call. Checks:
   - before the delete: the board and To review show the notice;
   - the question: the button and its buttons are at least 44 px; "Keep it" has the focus; Delete follows it and is drawn in seal; Keep it keeps the notice;
   - after the delete: the library line with Undo; the notice is gone from the library, the board and To review; its page is a 404; the other officer's Home shows "Ana deleted the notice";
@@ -65,7 +72,10 @@
   - restore: Ana edits while Wren deletes; Save shows "Restore from trash?"; the restore keeps her text in the editor; Save then stores it; Wren's Home reads "Ana restored the notice";
   - no session gets 401 `signed_out`;
   - no sideways scroll in any of the 8 screenshot modes.
-- **Screenshots.** 34 shots: the page foot, the question, the library line and Home at 360 and 1280, light and dark, EN and PT, plus the editor before and after "Restore from trash?" (360, light, EN). They are in `/private/tmp/claude-502/-Users-danilordasilva-orca-workspaces-LAPTracker-unicornfish/147759e3-1cdb-4ccd-b74a-1001498a1e18/scratchpad/11aj-shots/` (not committed). Reviewed: the PT question wraps cleanly at 360, and Delete reads in seal in light and dark. No WebKit run: Playwright WebKit is not installed here.
+- **Screenshots.**
+  - Before the rebase: 34 shots of the page foot, the question, the library line and Home at 360 and 1280, light and dark, EN and PT, plus the editor before and after "Restore from trash?". Reviewed: the PT question wraps cleanly at 360, and Delete reads in seal in light and dark.
+  - Those files were lost when the scratchpad was cleared on an Orca restart. The short e2e after the rebase made two new shots, the library line and the restored editor (360, light, EN), in `/private/tmp/claude-502/-Users-danilordasilva-orca-workspaces-LAPTracker-unicornfish/147759e3-1cdb-4ccd-b74a-1001498a1e18/scratchpad/11aj-shots/` (not committed).
+  - No WebKit run: Playwright WebKit is not installed here.
 
 ## Open issues
 - An officer can still open the edit form of a Calendar entry linked to a deleted notice. The form keeps the old id, and saving other fields works. Re-picking a notice offers only live ones. The owner accepted this.
