@@ -11,6 +11,7 @@ import {
   restoreDeletedNotice,
   unmarkNoticeDeleted,
 } from "../repo/notice-deletes";
+import { keptBy } from "../repo/notice-picture-cleanup";
 import { pictureFacts } from "../repo/notice-pictures";
 import {
   HISTORY_LIMIT,
@@ -140,9 +141,10 @@ export async function noticeDetail(
   access: WorkspaceAccess,
   id: number,
 ): Promise<NoticeDetail | null> {
-  const [record, pictures] = await Promise.all([
+  const [record, pictures, kept] = await Promise.all([
     workspaceNotice(db, access.workspaceId, id),
     pictureFacts(db, access.workspaceId, [id]),
+    keptBy(db, access.workspaceId, id),
   ]);
   if (!record) return null;
   const picture = pictures.get(id);
@@ -159,7 +161,7 @@ export async function noticeDetail(
       ]),
     ) as NoticeDetail["fields"],
     stale: staleLanguages(state),
-    picture: picture ? pictureView(picture) : null,
+    picture: picture ? { ...pictureView(picture), kept } : null,
   };
 }
 

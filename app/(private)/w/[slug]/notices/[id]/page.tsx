@@ -55,10 +55,12 @@ export default async function NoticePage({
   const nameOf = (a: string) =>
     channels[a === "members" ? "members" : "leaders"]?.name.replace(/^#/, "") ?? null;
   const channel = nameOf(audience);
-  // A new version of any field or of the picture (D119) remounts the screen, so a save or a refresh closes the
-  // editor.
-  const versions = Object.values(notice.fields).map((f) => f.version);
-  const key = [...versions, notice.picture?.src].join(".");
+  // A new version of any field remounts the screen, so a save or a refresh closes the editor. A picture
+  // change does not (D119): the editor closes itself after a picture-only save, and stays open, in step with
+  // the stored picture, when the text save after it fails.
+  const key = Object.values(notice.fields)
+    .map((f) => f.version)
+    .join(".");
   return (
     <SignedInFrame access={access} language={language} t={t} current="days" waiting={waiting}>
       <p>

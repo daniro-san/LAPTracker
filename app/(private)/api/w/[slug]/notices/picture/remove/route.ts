@@ -25,10 +25,12 @@ export async function POST(
   return withContext("/api/w/[slug]/notices/picture/remove", async (ctx, db) => {
     const access = await requireWorkspace(db, slug, requestCookies(request), ctx.now());
     if (!access.ok) return privateError(401, "signed_out");
-    if ((await removePicture(db, access, parsed.data.id)) === "notice_deleted") {
-      return privateError(410, "notice_deleted");
-    }
+    const result = await removePicture(db, access, parsed.data.id);
+    if (result === "notice_deleted") return privateError(410, "notice_deleted");
     const removed = Response.json({ ok: true }, { headers: NO_STORE });
-    return counted(ctx, access, "notice", "delete", removed);
+    // Counted only when a picture was really removed (review of PR 422).
+    return result === "removed"
+      ? counted(ctx, access, "notice", "picture_remove", removed)
+      : removed;
   });
 }

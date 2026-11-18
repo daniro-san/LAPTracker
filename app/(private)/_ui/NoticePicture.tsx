@@ -4,7 +4,7 @@
 // Undo, held until Save (notice-picture-state.ts); on the notice page and the members' board, the picture
 // itself. The file picker is the hidden input that "Send screenshots" uses (ScreenshotPicker.tsx), one
 // picture at a time.
-import { useRef } from "react";
+import { useRef, type ReactNode } from "react";
 
 import { Notice } from "@/lib/brand/components/Notice";
 import { fill } from "@/lib/copy";
@@ -51,11 +51,14 @@ export function PictureField({
   title,
   busy,
   t,
+  children,
 }: {
   picture: PictureDraft;
   title: string;
   busy: boolean;
   t: WorkspaceDictionary;
+  /** The "Kept" mark of a kept picture (D119). */
+  children?: ReactNode;
 }) {
   const input = useRef<HTMLInputElement>(null);
   const off = busy || picture.preparing;
@@ -66,6 +69,7 @@ export function PictureField({
         {t["notices.picture"]}
       </h2>
       <p className="text-body-sm text-ink/70">{t["notices.picture.help"]}</p>
+      {children}
       <input
         ref={input}
         type="file"

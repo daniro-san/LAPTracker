@@ -1,7 +1,8 @@
 // A notice's picture upload (D119): the server checks the bytes itself, whatever the request's content type
-// says. A picture that is not WebP, JPEG or PNG, one over 400 KB or one over 1600 px a side is refused and
-// nothing is stored; a valid one is stored once per notice, and Replace overwrites it. A notice in the trash
-// (D118) answers 410 notice_deleted, so the editor offers to restore it; after the restore the picture goes in.
+// says. A picture that is not WebP, JPEG or PNG, one over 400 KB, one over 1600 px a side or an animated one
+// is refused and nothing is stored; a valid PNG or WebP is stored once per notice, and Replace overwrites it.
+// An officer of another workspace can neither add nor remove one. A notice in the trash (D118) answers 410
+// notice_deleted, so the editor offers to restore it; after the restore the picture goes in.
 import { randomUUID } from "node:crypto";
 
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
@@ -11,7 +12,7 @@ import { testContext } from "@/lib/app-context.test-helpers";
 import { T0 } from "@/lib/collector.test-helpers";
 import type { Db } from "@/lib/db";
 import { openTestDb, truncateAll } from "@/lib/db.test-helpers";
-import { pngHeader } from "@/lib/private/notice-picture.test-helpers";
+import { apngHeader, pngHeader, webpHeader } from "@/lib/private/notice-picture.test-helpers";
 import { createSession, SESSION_COOKIE } from "@/lib/private/session";
 import { workspaces, workspaceUsers } from "@/lib/schema";
 import { noticePictures } from "@/lib/schema-notices";
@@ -28,53 +29,64 @@ const { POST: remove } = await import("./remove/route");
 const { POST: trash } = await import("../delete/route");
 
 let db: Db;
-let token: string;
+/** An officer of ogs (workspace 1) and one of nse (workspace 2). */
+const tokens = { ogs: "", nse: "" };
 beforeAll(async () => {
   db = await openTestDb();
 });
 beforeEach(async () => {
   await truncateAll(db);
-  await db
-    .insert(workspaces)
-    .values({ unionId: 67111155, slug: "ogs", discordGuildId: "1", leaderRoleIds: ["2"] });
+  await db.insert(workspaces).values([
+    { unionId: 67111155, slug: "ogs", discordGuildId: "1", leaderRoleIds: ["2"] },
+    { unionId: 67109944, slug: "nse", discordGuildId: "3", leaderRoleIds: ["4"] },
+  ]);
   holder.ctx = testContext(db).ctx;
-  const [user] = await db
-    .insert(workspaceUsers)
-    .values({ workspaceId: 1, discordUserId: "id-rook", displayName: "Rook" })
-    .returning({ id: workspaceUsers.id });
-  token = (await createSession(db, 1, user?.id ?? 0, T0, null, "officer")).token;
+  for (const [workspaceId, slug] of [
+    [1, "ogs"],
+    [2, "nse"],
+  ] as const) {
+    const [user] = await db
+      .insert(workspaceUsers)
+      .values({ workspaceId, discordUserId: `id-rook-${slug}`, displayName: "Rook" })
+      .returning({ id: workspaceUsers.id });
+    tokens[slug] = (await createSession(db, workspaceId, user?.id ?? 0, T0, null, "officer")).token;
+  }
 });
 
-const headers = (type: string) => ({
+type Slug = keyof typeof tokens;
+const headers = (type: string, slug: Slug = "ogs") => ({
   origin: "https://laptracker.test",
   "content-type": type,
-  cookie: `${SESSION_COOKIE}=${token}`,
+  cookie: `${SESSION_COOKIE}=${tokens[slug]}`,
 });
+const params = (slug: Slug) => ({ params: Promise.resolve({ slug }) });
 
-async function notice(): Promise<number> {
-  const body = {
-    requestId: randomUUID(),
-    changes: [{ field: "title", value: "Rota", version: 0 }],
-  };
-  const response = await save(
-    new Request("https://laptracker.test/api/w/ogs/notices", {
-      method: "POST",
-      headers: headers("application/json"),
-      body: JSON.stringify(body),
-    }),
-    { params: Promise.resolve({ slug: "ogs" }) },
-  );
-  return ((await response.json()) as { id: number }).id;
+async function json(route: typeof POST, path: string, body: object, slug: Slug = "ogs") {
+  const request = new Request(`https://laptracker.test/api/w/${slug}/notices/${path}`, {
+    method: "POST",
+    headers: headers("application/json", slug),
+    body: JSON.stringify(body),
+  });
+  const response = await route(request, params(slug));
+  return { status: response.status, json: (await response.json()) as Record<string, unknown> };
 }
 
-async function upload(id: number, bytes: Uint8Array, type = "image/png") {
+const notice = async () =>
+  (
+    await json(save, "", {
+      requestId: randomUUID(),
+      changes: [{ field: "title", value: "Rota", version: 0 }],
+    })
+  ).json.id as number;
+
+async function upload(id: number, bytes: Uint8Array, type = "image/png", slug: Slug = "ogs") {
   const response = await POST(
-    new Request(`https://laptracker.test/api/w/ogs/notices/picture?id=${id}`, {
+    new Request(`https://laptracker.test/api/w/${slug}/notices/picture?id=${id}`, {
       method: "POST",
-      headers: headers(type),
+      headers: { ...headers(type, slug), "content-length": String(bytes.length) },
       body: new Uint8Array(bytes),
     }),
-    { params: Promise.resolve({ slug: "ogs" }) },
+    params(slug),
   );
   return { status: response.status, json: (await response.json()) as Record<string, unknown> };
 }
@@ -102,6 +114,24 @@ describe("POST /api/w/[slug]/notices/picture", () => {
     expect(await db.select().from(noticePictures)).toEqual([]);
   });
 
+  it("refuses an animated WebP", async () => {
+    const id = await notice();
+    expect(await upload(id, webpHeader(400, 300, true), "image/webp")).toEqual({
+      status: 422,
+      json: { code: "animated" },
+    });
+    expect(await db.select().from(noticePictures)).toEqual([]);
+  });
+
+  it("refuses an animated PNG", async () => {
+    const id = await notice();
+    expect(await upload(id, apngHeader(400, 300))).toEqual({
+      status: 422,
+      json: { code: "animated" },
+    });
+    expect(await db.select().from(noticePictures)).toEqual([]);
+  });
+
   it("stores a valid picture once per notice, and Replace overwrites it", async () => {
     const id = await notice();
     const first = await upload(id, pngHeader(1600, 900));
@@ -114,27 +144,35 @@ describe("POST /api/w/[slug]/notices/picture", () => {
     expect(rows[0]).toMatchObject({ noticeId: id, type: "image/png", width: 300, height: 200 });
   });
 
+  it("stores a WebP", async () => {
+    const id = await notice();
+    const stored = await upload(id, webpHeader(1200, 1600), "image/webp");
+    expect(stored).toMatchObject({ status: 200, json: { width: 1200, height: 1600 } });
+    const [row] = await db.select().from(noticePictures);
+    expect(row).toMatchObject({ type: "image/webp", bytes: 30 });
+  });
+
+  it("lets no officer of another workspace add or remove a picture", async () => {
+    const id = await notice();
+    expect(await upload(id, pngHeader(40, 30), "image/png", "nse")).toEqual({
+      status: 404,
+      json: { code: "not_found" },
+    });
+    expect((await upload(id, pngHeader(40, 30))).status).toBe(200);
+    expect((await json(remove, "picture/remove", { id }, "nse")).status).toBe(200);
+    expect(await db.select().from(noticePictures)).toHaveLength(1);
+  });
+
   it("answers 410 notice_deleted for a notice in the trash, and takes the picture once it is restored (D118)", async () => {
     const id = await notice();
-    const json = async (route: typeof POST, path: string, body: object) =>
-      (
-        await route(
-          new Request(`https://laptracker.test/api/w/ogs/notices/${path}`, {
-            method: "POST",
-            headers: headers("application/json"),
-            body: JSON.stringify(body),
-          }),
-          { params: Promise.resolve({ slug: "ogs" }) },
-        )
-      ).status;
-    expect(await json(trash, "delete", { id, requestId: randomUUID() })).toBe(200);
+    expect((await json(trash, "delete", { id, requestId: randomUUID() })).status).toBe(200);
     expect(await upload(id, pngHeader(40, 30))).toEqual({
       status: 410,
       json: { code: "notice_deleted" },
     });
-    expect(await json(remove, "picture/remove", { id })).toBe(410);
+    expect((await json(remove, "picture/remove", { id })).status).toBe(410);
     const restore = { id, requestId: randomUUID(), restore: true };
-    expect(await json(trash, "delete", restore)).toBe(200);
+    expect((await json(trash, "delete", restore)).status).toBe(200);
     expect((await upload(id, pngHeader(40, 30))).status).toBe(200);
     expect(await db.select().from(noticePictures)).toHaveLength(1);
   });

@@ -1,7 +1,7 @@
 // notice_pictures (D119): a notice's one picture. The write replaces it, the remove deletes it, and the reads
 // take the workspace id, so a picture is reached only from its own workspace. The bytes are read only when
 // they are served or posted; every other read takes the picture's facts alone.
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { workspaces } from "../schema";
@@ -30,7 +30,10 @@ const facts = {
   hash: noticePictures.hash,
 };
 
-/** Stores or replaces the notice's picture; false when the workspace has no such notice. */
+/**
+ * Stores or replaces the notice's picture; null when the workspace has no such live notice. The same bytes
+ * again (a retry, or the same file) write nothing, so the picture keeps its clock: `changed` is false.
+ */
 export async function putPicture(
   db: Db,
   workspaceId: number,
@@ -38,18 +41,33 @@ export async function putPicture(
   picture: PictureWrite,
   userId: number,
   now: Date,
-): Promise<boolean> {
+  /** "Use in another notice": the notice the bytes came from (D119). */
+  copiedFrom: number | null = null,
+): Promise<{ changed: boolean } | null> {
   const [notice] = await db
-    .select({ id: notices.id })
+    .select({ id: notices.id, hash: noticePictures.hash })
     .from(notices)
+    .leftJoin(noticePictures, eq(noticePictures.noticeId, notices.id))
     .where(and(eq(notices.workspaceId, workspaceId), eq(notices.id, noticeId), live));
-  if (!notice) return false;
-  const row = { ...picture, workspaceId, noticeId, addedBy: userId, addedAt: now };
+  if (!notice) return null;
+  if (notice.hash === picture.hash) return { changed: false };
+  // A new picture, or a copy, starts its own clock: not kept, not warned (D119).
+  const row = {
+    ...picture,
+    workspaceId,
+    noticeId,
+    addedBy: userId,
+    addedAt: now,
+    copiedFrom,
+    keptBy: null,
+    keptAt: null,
+    warnedAt: null,
+  };
   await db
     .insert(noticePictures)
     .values(row)
     .onConflictDoUpdate({ target: noticePictures.noticeId, set: row });
-  return true;
+  return { changed: true };
 }
 
 /** Removes the notice's picture; false when it had none. */
@@ -107,31 +125,4 @@ export async function pictureOwner(
     .innerJoin(notices, eq(notices.id, noticePictures.noticeId))
     .where(and(eq(noticePictures.noticeId, noticeId), live));
   return row ?? null;
-}
-
-/** A picture is kept this many days after its notice's end day (D119, owner 2026-11-18). */
-export const PICTURE_KEEP_DAYS = 90;
-
-/**
- * The weekly cleanup (D119), every workspace at once: deletes the picture of each notice whose end day (its
- * newest `ends_on`) is more than PICTURE_KEEP_DAYS before `today` (a server day, YYYY-MM-DD). A notice with
- * no end day keeps its picture. The notice and its text stay; a picture can be added again. Returns how
- * many pictures were deleted.
- */
-export async function pruneEndedPictures(db: Db, today: string): Promise<number> {
-  const day = 24 * 60 * 60_000;
-  const cutoff = new Date(Date.parse(`${today}T00:00:00Z`) - PICTURE_KEEP_DAYS * day)
-    .toISOString()
-    .slice(0, 10);
-  const result = await db.execute<{ notice_id: number }>(sql`
-    delete from notice_pictures g
-    using (
-      select distinct on (e.notice_id) e.notice_id, e.value
-      from notice_edits e
-      where e.field = 'ends_on'
-      order by e.notice_id, e.id desc
-    ) last
-    where last.notice_id = g.notice_id and last.value <> '' and last.value < ${cutoff}
-    returning g.notice_id`);
-  return result.rows.length;
 }

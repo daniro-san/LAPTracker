@@ -21,6 +21,8 @@ export interface PictureView {
   src: string;
   width: number;
   height: number;
+  /** "Keep" (D119): who kept it and when; only on the desk's notice reads. */
+  kept?: { by: string | null; at: Date } | null;
 }
 
 export const pictureView = (p: {

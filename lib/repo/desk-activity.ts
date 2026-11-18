@@ -288,7 +288,7 @@ function split(rows: SmallRow[]) {
     noticeSaves: notice("noticeSaved"),
     noticePosts: notice("noticePosted"),
     ...trashRows(notice),
-    ...picture.rows(notice),
+    ...picture.rows(notice, of("noticePictureReused")),
     drafts: of("draft").map(({ by, at, a, b, title }) => ({
       by,
       at,

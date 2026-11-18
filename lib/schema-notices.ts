@@ -208,6 +208,16 @@ export const noticePictures = pgTable(
     hash: text("hash").notNull(),
     addedBy: integer("added_by").references(() => workspaceUsers.id, { onDelete: "set null" }),
     addedAt: tstz("added_at").notNull(),
+    /** "Use in another notice": the notice it was copied from (D119); the copy has its own clock. */
+    copiedFrom: integer("copied_from").references(() => notices.id, { onDelete: "set null" }),
+    /** "Keep" (D119): never cleaned while set; who and when. */
+    keptBy: integer("kept_by").references(() => workspaceUsers.id, { onDelete: "set null" }),
+    keptAt: tstz("kept_at"),
+    /**
+     * When the weekly job first found the picture within 7 days of its due day and Home began to warn
+     * (D119); cleared if its notice's end day moves away. It is deleted only 7 days after this.
+     */
+    warnedAt: tstz("warned_at"),
   },
   (t) => [
     index("notice_pictures_workspace_added_idx").on(t.workspaceId, t.addedAt),
@@ -220,5 +230,7 @@ export const noticePictures = pgTable(
       "notice_pictures_side_check",
       sql`${t.width} between 1 and 1600 and ${t.height} between 1 and 1600`,
     ),
+    // The stored bytes themselves, not only the `bytes` column (review of PR 422).
+    check("notice_pictures_data_check", sql`octet_length(${t.data}) between 1 and 409600`),
   ],
 );

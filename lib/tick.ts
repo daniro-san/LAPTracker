@@ -17,7 +17,7 @@ import { dailyReadMessage } from "./notify-daily";
 import { createRehearsal, type RehearsalResult } from "./rehearsal";
 import { claimAlert, TICK_SILENCE_ALERT } from "./repo/app-errors";
 import { claimQuotaCheck, duePhases, dueSample, findOrCreateEvent } from "./repo/events";
-import { pruneEndedPictures } from "./repo/notice-pictures";
+import { pruneEndedPictures } from "./repo/notice-picture-cleanup";
 import { claimSlot, setSlotOutcome } from "./repo/rehearsals";
 import { latestTickAt } from "./repo/ticks";
 import { executeSample, executeSnapshot, quotaReport, type RunOutcome } from "./run";
@@ -133,8 +133,16 @@ export async function runTick(ctx: AppContext, db: Db, origin: string): Promise<
     const event = await findOrCreateEvent(db, nextEvent(now, ctx.env));
     if (await claimQuotaCheck(db, event.id, now)) {
       const report = await quotaReport(ctx, db, { always: true });
-      // The weekly cleanup of notice pictures past their end day (D119): the count only.
-      const picturesPruned = await pruneEndedPictures(db, serverDay(now, ctx.env));
+      // The weekly cleanup of notice pictures (D119): deletes the warned ones, warns the next. The count only.
+      // A failure is logged by its code and never fails the Friday check (review of PR 422).
+      const picturesPruned = await pruneEndedPictures(db, serverDay(now, ctx.env), now).catch(
+        (error: unknown) => {
+          console.error("notices.pictures.prune_failed", {
+            code: error instanceof Error ? error.name : "unknown",
+          });
+          return 0;
+        },
+      );
       console.info("notices.pictures.pruned", { count: picturesPruned });
       return {
         kind: "quota-check",

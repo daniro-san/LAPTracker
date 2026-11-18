@@ -41,8 +41,31 @@ Why: officers want to show a map, a schedule or a game screen with a notice. The
 
 **Home's activity (D108 amended).** One line: "Ana added a picture to “Rota”" (PT "Ana adicionou uma imagem a “…”", FR "Ana a ajouté une image à l’annonce « … »"), from `added_by`/`added_at`. A replace is the same line at its new time; a removal has none.
 
-**Weekly cleanup (owner, 2026-11-18).** Once a week, right after the Friday check claims its run (`lib/tick.ts`, no new cron), `pruneEndedPictures` (`lib/repo/notice-pictures.ts`) deletes the picture of every notice, in every workspace, whose end day (its newest `ends_on`) is more than 90 days before the server day (`PICTURE_KEEP_DAYS`). A notice that ended exactly 90 days ago keeps it until the next week. A notice with no end day is never cleaned. The notice and its text stay, and an officer can add a picture again. The log line is `notices.pictures.pruned` with the count only, and the tick's answer carries `pictures_pruned`. This keeps the table to roughly the last few months of pictures instead of growing for ever.
-
 **Words.** PT says "imagem", not "print": a print is a screenshot read for data (D110).
 
 **Not now.** The Android share target (D110) does not offer a notice picture yet; a later session can add "Add to a notice" there.
+
+**Weekly cleanup, with a warning first (owner, 2026-11-18; migration `0043_notice_picture_cleanup`).**
+
+- **Due.** A picture is due once its notice's end day (the newest `ends_on`) is more than 90 days before the server day (`PICTURE_KEEP_DAYS`, `lib/repo/notice-picture-cleanup.ts`). A notice with no end day is never cleaned. The notice and its text always stay, and a picture can be added again.
+- **Warning on Home.** From 7 days before a picture is due (`WARN_DAYS`), Home shows a card: "The pictures of 3 notices will be deleted after Nov 25: “A”, “B”, “C”." with "Review them" (one picture: "The picture of “A” will be deleted after …"). The card names three notices and says "and N more" for the rest. The date is the earliest day after which one may go.
+- **Review list** (`/w/[slug]/notices/pictures`): each due picture with a thumbnail, its notice's title (a link) and "Deleted after {date}", the soonest first. Three actions, each a 44 px button:
+  - **Keep.** The picture is never cleaned. Who and when are stored (`kept_by`, `kept_at`). The editor's picture part shows "Kept · Ana kept it on Nov 18. The weekly cleanup never deletes it." with "Stop keeping", which takes effect at once.
+  - **Download.** `/img/notice/[id]?download=1` sends the file as an attachment, for officers only.
+  - **Use in another notice.** Pick a live notice of the same workspace; the bytes are copied to it (`copied_from`), replacing its picture if it had one. The copy has its own clock: not kept, not warned.
+- **The 7 days are real.** The weekly job, right after the Friday check claims its run (`lib/tick.ts`, no new cron), works in three steps:
+  1. It deletes only due, unkept pictures whose warning began at least 7 days ago (`warned_at`).
+  2. It records `warned_at` for the unkept pictures now within 7 days of being due.
+  3. It clears `warned_at` when an end day moves away, so a later warning starts its own 7 days.
+
+  So a picture that becomes due is never deleted in the week it does. A replaced picture, a copy, Keep and Stop keeping all start the clock again. The date the card shows is never earlier than the real deletion, which comes at the first weekly run on or after it.
+
+- **Logs.** The job logs `notices.pictures.pruned` with the count only. A failure logs `notices.pictures.prune_failed` with the error's class name and returns 0, so the Friday check never answers 500. The tick's answer carries `pictures_pruned`.
+- **Home's activity.** "Ana kept the picture of “…”" (PT "manteve a imagem de", FR "a gardé l’image de l’annonce") and "Ana used the picture of “A” in “B”" (PT "usou a imagem de … em …", FR "a utilisé l’image de … dans …"). A copy does not also read "added a picture".
+- **Analytics** (D115; review of PR 422). Picture changes count under `notice` with their own actions: `picture_add`, `picture_remove`, `picture_keep`, `picture_unkeep`, `picture_reuse`, `picture_download`. Each counts only when a row really changed: the same bytes again, a remove with nothing to remove, or a keep of a kept picture is not counted. See docs/analytics/tracking-plan.md.
+
+**Amendments after the review of PR 422 (2026-11-18).**
+
+- **Uploads.** The upload route reads the body only with a `Content-Length` of at most 400 KB: 411 `length_required` without one, 413 over it. Animated pictures are refused (422 `animated`): a WebP whose VP8X header sets the animation flag, or a PNG with an `acTL` chunk. A check constraint, `octet_length(data) between 1 and 409600`, guards the stored bytes themselves.
+- **Decoding.** The browser decodes straight at the upload size (`createImageBitmap` with `resizeWidth` and `resizeHeight` from the header's size, swapped for a JPEG whose EXIF orientation turns it a quarter turn), so a 48 MP photo is never decoded at full size on a low-end phone. `pictureSize` (`lib/screenshot/picture-size.ts`) is browser-safe now.
+- **Half-saves in the editor.** When the picture went in and the text save after it fails, the editor holds no picture change any more and reads the stored picture again, so it stays in step. A picture-only save closes the editor. A refused picture (413, 415, 422) reads "This picture could not be used. Try another one." rather than "Press Save to try again".

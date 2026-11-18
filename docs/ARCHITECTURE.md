@@ -55,8 +55,10 @@ lib/private/*.ts    the workspace (D71): requireWorkspace and its branded Worksp
                     its table in lib/repo/notice-publishes.ts.
                     D119: notice-picture.ts (the server's check of a notice's picture, its save and remove, and
                     who may be served it), notice-picture-rules.ts (pure, browser-safe: the caps and the browser's
-                    resize plan), notice-publish-body.ts (a Discord post's body, multipart with the picture); its table in
-                    lib/repo/notice-pictures.ts.
+                    resize plan), notice-publish-body.ts (a Discord post's body, multipart with the picture),
+                    notice-picture-due.ts (the weekly cleanup's warning list for Home and its review page; Keep and
+                    "Use in another notice"); its table in lib/repo/notice-pictures.ts, the cleanup, its warning,
+                    Keep and the copy in lib/repo/notice-picture-cleanup.ts.
                     D113: notice-reviews.ts (review requests: ask, approve, close as edited from a save, the
                     notice's list and Home's "To review"); its tables in lib/repo/notice-reviews.ts.
                     The Calendar tab (issue 300): calendar.ts (reads and the field-level writes with their

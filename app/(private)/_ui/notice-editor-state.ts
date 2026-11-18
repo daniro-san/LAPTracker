@@ -194,6 +194,16 @@ function useSaveNote(p: EditorProps, setBusy: (busy: Busy) => void) {
   return { message, setMessage, trashed, restoreFromTrash, refused };
 }
 
+/**
+ * After a save: a new notice opens its page; a saved one is read again and the editor closes. A text change
+ * also remounts the screen (its key); a picture-only save does not, so the editor closes itself (D119).
+ */
+function afterSave(router: ReturnType<typeof useRouter>, p: EditorProps, id: number) {
+  if (p.id === null) return router.push(`/w/${p.slug}/notices/${id}`);
+  router.refresh();
+  p.onClose?.();
+}
+
 /** `picture`: the notice's picture held in the editor (D119), sent with Save. */
 export function useEditor(p: EditorProps, picture: PictureDraft) {
   const router = useRouter();
@@ -237,9 +247,7 @@ export function useEditor(p: EditorProps, picture: PictureDraft) {
     if (answer.ok) {
       leaving.current = true;
       kept.forget();
-      if (p.id === null) router.push(`/w/${p.slug}/notices/${answer.id}`);
-      else router.refresh();
-      return;
+      return afterSave(router, p, answer.id);
     }
     if (answer.conflicts) return setConflicts(answer.conflicts);
     if ("picture" in answer) return note.setMessage(answer.picture);

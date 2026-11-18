@@ -118,6 +118,21 @@ function reviewLine(
   return fill(t["activity.reviewAsked"], { who, title, what, reviewer: isolate(item.reviewer) });
 }
 
+/** A line about a notice, with its title. */
+function noticeLine(
+  t: WorkspaceDictionary,
+  who: string,
+  item: Extract<ActivityItem, { title: string }>,
+): string {
+  if (item.kind === "reviewAsked" || item.kind === "reviewAnswered")
+    return reviewLine(t, who, item);
+  const title = isolate(item.title);
+  if (item.kind === "noticePictureReused") {
+    return fill(t["activity.noticePictureReused"], { who, from: isolate(item.from), title });
+  }
+  return fill(t[`activity.${item.kind}`], { who, title });
+}
+
 /** What the officer did, as one sentence, without the time. */
 export function activityLine(
   item: ActivityItem,
@@ -142,11 +157,10 @@ export function activityLine(
       return countLine(t, who, item);
     case "thanks":
       return fill(t[`activity.thanks.${item.target}`], { who });
-    // The rest is about a notice: saved, posted, deleted (D118), given a picture (D119), or a review request or its outcome (D113).
+    // The rest is about a notice: saved, posted, deleted (D118), its picture added, kept or used in another
+    // notice (D119), or a review request or its outcome (D113).
     default:
-      return item.kind === "reviewAsked" || item.kind === "reviewAnswered"
-        ? reviewLine(t, who, item)
-        : fill(t[`activity.${item.kind}`], { who, title: isolate(item.title) });
+      return noticeLine(t, who, item);
   }
 }
 

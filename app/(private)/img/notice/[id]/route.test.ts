@@ -1,7 +1,7 @@
 // GET /img/notice/[id] (D119): the picture only after the notice's own access check. An officer of its
 // workspace gets it, with a private cache header and an ETag that answers 304; a member only while the
-// members' board shows the notice; an officer of another workspace and a signed-out browser get a 404, and
-// so does everyone once the notice is deleted (D118).
+// members' board shows the notice, so not after its end day. An officer of another workspace and a
+// signed-out browser get a 404, and so does everyone after Remove or once the notice is deleted (D118).
 import { randomUUID } from "node:crypto";
 
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
@@ -14,6 +14,7 @@ import { openTestDb, truncateAll } from "@/lib/db.test-helpers";
 import { pngHeader } from "@/lib/private/notice-picture.test-helpers";
 import { createSession, SESSION_COOKIE } from "@/lib/private/session";
 import { workspaces, workspaceUsers } from "@/lib/schema";
+import { noticePictures } from "@/lib/schema-notices";
 
 const holder = vi.hoisted(() => ({ ctx: null as AppContext | null }));
 vi.mock("@/lib/app-context", async (original) => ({
@@ -22,7 +23,8 @@ vi.mock("@/lib/app-context", async (original) => ({
 }));
 
 const { POST: save } = await import("../../../api/w/[slug]/notices/route");
-const { POST: remove } = await import("../../../api/w/[slug]/notices/delete/route");
+const { POST: trash } = await import("../../../api/w/[slug]/notices/delete/route");
+const { POST: removePicture } = await import("../../../api/w/[slug]/notices/picture/remove/route");
 const { POST: upload } = await import("../../../api/w/[slug]/notices/picture/route");
 const { GET } = await import("./route");
 
@@ -63,19 +65,21 @@ const at = (path: string, token: string, type = "application/json") => ({
 });
 const slug = { params: Promise.resolve({ slug: "ogs" }) };
 
-/** A notice with a picture; `members` sets "Show to members". */
-async function pictured(token: string, members: boolean): Promise<number> {
+/** A notice with a picture; `members` sets "Show to members", `endsOn` its end day. */
+async function pictured(token: string, members: boolean, endsOn = ""): Promise<number> {
   const changes = [
     { field: "title", value: "Rota", version: 0 },
     { field: "en", value: "Water the roses.", version: 0 },
     { field: "for_members", value: String(members), version: 0 },
+    { field: "ends_on", value: endsOn, version: 0 },
   ];
   const made = at("notices", token);
   const body = JSON.stringify({ requestId: randomUUID(), changes });
   const res = await save(new Request(made.url, { method: "POST", ...made, body }), slug);
   const { id } = (await res.json()) as { id: number };
   const put = at(`notices/picture?id=${id}`, token, "image/png");
-  await upload(new Request(put.url, { method: "POST", ...put, body: pngHeader(40, 30) }), slug);
+  const headers = { ...put.headers, "content-length": "33" };
+  await upload(new Request(put.url, { method: "POST", headers, body: pngHeader(40, 30) }), slug);
   return id;
 }
 
@@ -107,6 +111,28 @@ describe("GET /img/notice/[id]", () => {
     expect((await view(await pictured(officer, false), member)).status).toBe(404);
   });
 
+  it("refuses a member once the notice's end day has passed", async () => {
+    const officer = await session(1, "Rook", "officer");
+    const member = await session(1, "Pip", "member");
+    // T0 is 2026-11-07: the board shows a notice through its end day, not after it.
+    expect((await view(await pictured(officer, true, "2026-11-07"), member)).status).toBe(200);
+    expect((await view(await pictured(officer, true, "2026-11-06"), member)).status).toBe(404);
+  });
+
+  it("is gone once Remove takes the picture away", async () => {
+    const officer = await session(1, "Rook", "officer");
+    const id = await pictured(officer, true);
+    const del = at("notices/picture/remove", officer);
+    const body = JSON.stringify({ id });
+    const removed = await removePicture(
+      new Request(del.url, { method: "POST", ...del, body }),
+      slug,
+    );
+    expect(removed.status).toBe(200);
+    expect(await db.select().from(noticePictures)).toEqual([]);
+    expect((await view(id, officer)).status).toBe(404);
+  });
+
   it("refuses another workspace's officer and a signed-out browser", async () => {
     const id = await pictured(await session(1, "Rook", "officer"), true);
     expect((await view(id, await session(2, "Wren", "officer"))).status).toBe(404);
@@ -119,9 +145,9 @@ describe("GET /img/notice/[id]", () => {
     const id = await pictured(officer, true);
     const del = at("notices/delete", officer);
     const body = JSON.stringify({ id, requestId: randomUUID() });
-    expect(
-      (await remove(new Request(del.url, { method: "POST", ...del, body }), slug)).status,
-    ).toBe(200);
+    expect((await trash(new Request(del.url, { method: "POST", ...del, body }), slug)).status).toBe(
+      200,
+    );
     expect((await view(id, officer)).status).toBe(404);
     expect((await view(id, member)).status).toBe(404);
   });

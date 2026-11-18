@@ -21,6 +21,7 @@ import { Flags, SaveBar } from "./NoticeEditorParts";
 import { NoticeHistory } from "./NoticeHistory";
 import { LanguageField } from "./NoticeLanguageField";
 import { PictureField } from "./NoticePicture";
+import { KeptMark } from "./NoticePictureKept";
 
 export type { EditorProps } from "./notice-editor-state";
 
@@ -84,7 +85,11 @@ export function NoticeEditor(p: EditorProps) {
       />
       <LanguageField p={p} e={e} />
       <NoticeActions p={p} e={e} />
-      <PictureField picture={picture} title={draft.values.title} busy={e.busy !== null} t={t} />
+      <PictureField picture={picture} title={draft.values.title} busy={e.busy !== null} t={t}>
+        {p.id !== null && p.picture?.kept && picture.pending === "keep" && (
+          <KeptMark slug={p.slug} id={p.id} kept={p.picture.kept} t={t} language={p.viewer} />
+        )}
+      </PictureField>
       <Flags e={e} t={t} />
       <NoticeHistory p={p} e={e} />
       <SaveBar p={p} e={e} />

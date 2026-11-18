@@ -1,28 +1,37 @@
-// The weekly cleanup of notice pictures (D119): a picture whose notice ended more than 90 days ago is
-// deleted; one that ended exactly 90 days ago, and one whose notice has no end day, stay. The notice and
-// its text stay, and a picture can be added again.
+// The weekly cleanup of notice pictures and its warning (D119, owner 2026-11-18): Home lists a picture from 7
+// days before it is due; a kept picture is never cleaned; a due picture is deleted only once its warning is 7
+// days old; "Use in another notice" copies the bytes to the other notice with its own clock. Also Home's
+// "added a picture" line.
 import { randomUUID } from "node:crypto";
 
-import { beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
-import { pruneEndedPictures } from "../repo/notice-pictures";
+import { pruneEndedPictures, shiftDay } from "../repo/notice-picture-cleanup";
 import { findWorkspaceBySlug, recordSignIn, saveWorkspace } from "../repo/workspaces";
 import { noticePictures } from "../schema-notices";
 import { requireWorkspace, type WorkspaceAccess } from "./access";
+import { recentActivity } from "./desk-activity";
 import { savePicture } from "./notice-picture";
+import { keepPicture, picturesDue, reusePicture } from "./notice-picture-due";
 import { pngHeader } from "./notice-picture.test-helpers";
-import { noticeDetail, saveNotice } from "./notices";
+import { saveNotice } from "./notices";
 import { createSession } from "./session";
 
+/** Noon UTC is the same day in server time (UTC-2). */
 const NOW = new Date("2026-11-18T12:00:00Z");
 const TODAY = "2026-11-18";
+const UTC = { SERVER_TZ: "UTC" };
+const DAY = 24 * 60 * 60_000;
+const later = (days: number) => new Date(NOW.getTime() + days * DAY);
 
 let db: Db;
 let officer: WorkspaceAccess;
 beforeAll(async () => {
   db = await openTestDb();
+});
+beforeEach(async () => {
   await truncateAll(db);
   await saveWorkspace(db, {
     unionId: 67111155,
@@ -38,29 +47,78 @@ beforeAll(async () => {
   officer = access;
 });
 
-/** A notice ending on `endsOn` ("" for none), with a picture. */
-async function pictured(endsOn: string): Promise<number> {
+/** A notice titled `title`, ending on `endsOn` ("" for none), with a picture of `width` px. */
+async function pictured(title: string, endsOn: string, width = 40): Promise<number> {
   const changes = [
-    { field: "title" as const, value: `Rota ${endsOn || "open"}`, version: 0 },
+    { field: "title" as const, value: title, version: 0 },
     { field: "en" as const, value: "Water the roses.", version: 0 },
     { field: "ends_on" as const, value: endsOn, version: 0 },
   ];
   const saved = await saveNotice(db, officer, null, changes, NOW, randomUUID());
   if (!saved.ok) throw new Error("notice not saved");
-  expect((await savePicture(db, officer, saved.id, pngHeader(40, 30), NOW)).ok).toBe(true);
+  expect((await savePicture(db, officer, saved.id, pngHeader(width, 30), NOW)).ok).toBe(true);
   return saved.id;
 }
 
-describe("the weekly notice picture cleanup (D119)", () => {
-  it("deletes pictures of notices ended over 90 days ago, keeps the rest and the text", async () => {
-    const old = await pictured("2026-08-19");
-    const edge = await pictured("2026-08-20");
-    const open = await pictured("");
-    expect(await pruneEndedPictures(db, TODAY)).toBe(1);
-    const left = await db.select({ id: noticePictures.noticeId }).from(noticePictures);
-    expect(left.map((r) => r.id).sort()).toEqual([edge, open].sort());
-    const notice = await noticeDetail(db, officer, old);
-    expect(notice).toMatchObject({ picture: null, fields: { en: { value: "Water the roses." } } });
-    expect((await savePicture(db, officer, old, pngHeader(40, 30), NOW)).ok).toBe(true);
+const stored = async () =>
+  (await db.select({ id: noticePictures.noticeId }).from(noticePictures)).map((r) => r.id).sort();
+
+describe("the weekly notice picture cleanup and its warning (D119)", () => {
+  it("lists a picture from 7 days before it is due, the soonest first", async () => {
+    // Due when the end day is more than 90 days ago: 2026-08-25 is due on Nov 24, six days ahead.
+    await pictured("Garden rota", shiftDay(TODAY, -85));
+    await pictured("Due in a week", shiftDay(TODAY, -84));
+    await pictured("Due in eight days", shiftDay(TODAY, -83));
+    await pictured("No end", "");
+    const due = await picturesDue(db, officer, NOW, UTC);
+    expect(due.map((d) => d.title)).toEqual(["Garden rota", "Due in a week"]);
+    // Not warned yet: the earliest deletion is 7 days from today, so "after" today + 6.
+    expect(due.map((d) => d.after)).toEqual([shiftDay(TODAY, 6), shiftDay(TODAY, 6)]);
+  });
+
+  it("never cleans a kept picture", async () => {
+    const id = await pictured("Old map", shiftDay(TODAY, -200));
+    expect(await keepPicture(db, officer, id, true, NOW)).toEqual({ changed: true });
+    for (const days of [0, 7, 14, 21]) {
+      expect(await pruneEndedPictures(db, shiftDay(TODAY, days), later(days))).toBe(0);
+    }
+    expect(await stored()).toEqual([id]);
+    expect(await picturesDue(db, officer, NOW, UTC)).toEqual([]);
+  });
+
+  it("deletes a due picture only once its warning is 7 days old, and keeps the notice text", async () => {
+    const id = await pictured("Old map", shiftDay(TODAY, -200));
+    const open = await pictured("No end", "");
+    expect(await pruneEndedPictures(db, TODAY, NOW)).toBe(0);
+    expect(await pruneEndedPictures(db, shiftDay(TODAY, 6), later(6))).toBe(0);
+    expect(await pruneEndedPictures(db, shiftDay(TODAY, 7), later(7))).toBe(1);
+    expect(await stored()).toEqual([open]);
+    const [row] = await db.select().from(noticePictures);
+    expect(row?.noticeId).toBe(open);
+    expect((await savePicture(db, officer, id, pngHeader(40, 30), later(7))).ok).toBe(true);
+  });
+
+  it("copies a picture to another notice, which gets its own clock", async () => {
+    const from = await pictured("Old map", shiftDay(TODAY, -200), 41);
+    const to = await pictured("New rota", "");
+    await pruneEndedPictures(db, TODAY, NOW);
+    expect(await reusePicture(db, officer, from, to, later(1))).toEqual({ changed: true });
+    const rows = await db.select().from(noticePictures);
+    const copy = rows.find((r) => r.noticeId === to);
+    const source = rows.find((r) => r.noticeId === from);
+    expect(copy).toMatchObject({ copiedFrom: from, width: 41, hash: source?.hash, warnedAt: null });
+    expect(Buffer.from(copy?.data ?? []).equals(Buffer.from(source?.data ?? []))).toBe(true);
+    const lines = await recentActivity(db, officer, later(1));
+    expect(lines).toContainEqual(
+      expect.objectContaining({ kind: "noticePictureReused", from: "Old map", title: "New rota" }),
+    );
+  });
+
+  it("says on Home who added a picture to which notice", async () => {
+    await pictured("Garden rota", "");
+    const lines = await recentActivity(db, officer, later(1));
+    expect(lines).toContainEqual(
+      expect.objectContaining({ kind: "noticePicture", who: "Rook", title: "Garden rota" }),
+    );
   });
 });

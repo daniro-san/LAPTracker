@@ -1,6 +1,7 @@
 // The notice editor's picture (D119): Add, Replace and Remove are held in the editor like its text, with a
 // preview, and nothing reaches the server until Save. Save then sends them (`saveWithPicture`): before the text for
 // a saved notice, after it for a new one, which needs the notice's id first.
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import type { WorkspaceKey } from "@/lib/private/dictionary";
@@ -19,6 +20,7 @@ import {
 type Pending = { kind: "keep" } | { kind: "add"; blob: Blob; url: string } | { kind: "remove" };
 
 export function usePictureDraft(saved: PictureView | null) {
+  const router = useRouter();
   const [pending, setPending] = useState<Pending>({ kind: "keep" });
   const [preparing, setPreparing] = useState(false);
   /** The picture could not be read or made small enough. */
@@ -58,8 +60,9 @@ export function usePictureDraft(saved: PictureView | null) {
       setPending({ kind: "keep" });
     },
     /**
-     * Sends the held change to notice `id`; why it failed, or null. The change stays held until the page
-     * reloads after the save: sending it again stores the same picture once (one row per notice).
+     * Sends the held change to notice `id`; why it failed, or null. Once it went through, the change is no
+     * longer held and the page reads the saved picture again, so a text save that fails after it leaves the
+     * editor in step with what is stored (review of PR 422).
      */
     apply: async (slug: string, id: number): Promise<PictureFailure | null> => {
       if (pending.kind === "keep") return null;
@@ -67,7 +70,10 @@ export function usePictureDraft(saved: PictureView | null) {
         pending.kind === "add"
           ? await uploadPicture(slug, id, pending.blob)
           : await removePicture(slug, id);
-      return "failed" in answer && answer.failed ? answer.failed : null;
+      if ("failed" in answer && answer.failed) return answer.failed;
+      setPending({ kind: "keep" });
+      router.refresh();
+      return null;
     },
   };
 }
@@ -96,7 +102,8 @@ export async function saveWithPicture(
       : {
           ok: false,
           conflicts: null,
-          picture: failed === "signedOut.text" || !saved ? failed : "notices.picture.notSent",
+          picture:
+            failed !== "notices.picture.failed" || !saved ? failed : "notices.picture.notSent",
         };
   const before = p.id !== null ? await picture.apply(p.slug, p.id) : null;
   if (before) return refused(before, false);

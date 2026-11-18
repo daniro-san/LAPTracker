@@ -67,6 +67,12 @@ export const DESK_ACTIONS = [
   "improve",
   "fit",
   "import",
+  "picture_add",
+  "picture_remove",
+  "picture_keep",
+  "picture_unkeep",
+  "picture_download",
+  "picture_reuse",
 ] as const;
 export type DeskAction = (typeof DESK_ACTIONS)[number];
 
