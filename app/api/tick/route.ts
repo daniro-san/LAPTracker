@@ -43,6 +43,7 @@ export function POST(request: Request): Promise<Response> {
           action: "quota-check",
           event_id: tick.eventId,
           remaining: tick.remaining,
+          pictures_pruned: tick.picturesPruned,
         });
       case "rehearsal":
         return Response.json({

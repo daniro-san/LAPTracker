@@ -17,6 +17,7 @@ import { dailyReadMessage } from "./notify-daily";
 import { createRehearsal, type RehearsalResult } from "./rehearsal";
 import { claimAlert, TICK_SILENCE_ALERT } from "./repo/app-errors";
 import { claimQuotaCheck, duePhases, dueSample, findOrCreateEvent } from "./repo/events";
+import { pruneEndedPictures } from "./repo/notice-pictures";
 import { claimSlot, setSlotOutcome } from "./repo/rehearsals";
 import { latestTickAt } from "./repo/ticks";
 import { executeSample, executeSnapshot, quotaReport, type RunOutcome } from "./run";
@@ -27,6 +28,7 @@ import {
   nextEvent,
   quotaCheckDue,
   rehearsalSlotsDue,
+  serverDay,
   slotOf,
 } from "./schedule";
 
@@ -34,7 +36,7 @@ export type TickOutcome =
   | { kind: "idle" }
   | { kind: "run"; outcome: RunOutcome }
   | { kind: "sample"; slotAt: Date; outcome: RunOutcome }
-  | { kind: "quota-check"; eventId: number; remaining: number | null }
+  | { kind: "quota-check"; eventId: number; remaining: number | null; picturesPruned: number }
   | { kind: "rehearsal"; slotAt: Date; result: RehearsalResult }
   | { kind: "daily-read"; summary: DailyReadSummary };
 
@@ -131,7 +133,15 @@ export async function runTick(ctx: AppContext, db: Db, origin: string): Promise<
     const event = await findOrCreateEvent(db, nextEvent(now, ctx.env));
     if (await claimQuotaCheck(db, event.id, now)) {
       const report = await quotaReport(ctx, db, { always: true });
-      return { kind: "quota-check", eventId: event.id, remaining: report.remaining };
+      // The weekly cleanup of notice pictures past their end day (D119): the count only.
+      const picturesPruned = await pruneEndedPictures(db, serverDay(now, ctx.env));
+      console.info("notices.pictures.pruned", { count: picturesPruned });
+      return {
+        kind: "quota-check",
+        eventId: event.id,
+        remaining: report.remaining,
+        picturesPruned,
+      };
     }
   }
 

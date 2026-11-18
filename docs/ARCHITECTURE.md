@@ -115,7 +115,8 @@ lib/discord-send.ts, lib/discord-format.ts, lib/event-image.tsx
                     time formats, and the event picture drawn with next/og (D58).
 lib/schedule.ts     pure: SERVER_TZ ↔ UTC, scheduled events and their times, Friday-check and rehearsal slots.
 lib/tick.ts         the tick's decision: create the scheduled event's row, run the one due phase (from events.before_at/
-                    after_at), a due sample (D69), the Friday check, a REHEARSAL_AT slot, the daily roster read.
+                    after_at), a due sample (D69), the Friday check (and after it the weekly notice picture cleanup, D119),
+                    a REHEARSAL_AT slot, the daily roster read.
 lib/daily-read.ts   the daily roster read (D60, D72): quota check, /v1 rosters as arrays (and raw_json) into daily_rosters; not an event.
 lib/squads-read.ts  the nightly squads read (D117): batches of /v1/players for OWN_ALLIANCE_ID after the daily read, each
                     started by a tick in the window after its answer (lib/squads-tick.ts, `after`), POST

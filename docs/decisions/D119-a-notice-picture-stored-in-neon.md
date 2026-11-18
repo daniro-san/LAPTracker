@@ -6,7 +6,7 @@ Why: officers want to show a map, a schedule or a game screen with a notice. The
 
 **Storage: Neon, not Vercel Blob.**
 
-- A new table, `notice_pictures` (migration `notice_pictures`): `notice_id` (primary key, `cascade`), `workspace_id`, the bytes in a `bytea` column, `type`, `width`, `height`, `bytes`, `hash` (the bytes' SHA-256, first 16 hex characters), `added_by`, `added_at`. Check constraints repeat the caps: type in WebP/JPEG/PNG, 1–409,600 bytes, 1–1600 px a side.
+- A new table, `notice_pictures` (migration `0042_notice_pictures`): `notice_id` (primary key, `cascade`), `workspace_id`, the bytes in a `bytea` column, `type`, `width`, `height`, `bytes`, `hash` (the bytes' SHA-256, first 16 hex characters), `added_by`, `added_at`. Check constraints repeat the caps: type in WebP/JPEG/PNG, 1–409,600 bytes, 1–1600 px a side.
 - Why not Blob (cost check on the issue, 2026-11-18, Vercel's Blob pricing): Hobby includes 1 GB stored, 10 GB transfer, 2,000 uploads and 10,000 uncached reads a month, never charges, and stops Blob for 30 days when a limit is passed. Our estimate, a few dozen notices a month at about 200–300 KB each, is about 10 MB a month: about 1 % of those limits. Both options are free. Neon needs no new dependency, no token and nothing for the owner to set up, and the picture stays behind the same access check as the notice, so Neon was chosen.
 - Neon's budget: Neon Free is 1 GB per project; the Friday check warns above 700 MB (plan §6.1). At 30 pictures a month at the 400 KB cap, the table grows at most about 12 MB a month (about 145 MB a year); at a typical 250 KB, about 90 MB a year. Each view of a picture is read from Neon (5 GB transfer a month on Free); the ETag below makes a repeat view a 304 without the bytes.
 - No drizzle `bytea` column in drizzle-orm 0.45: a `customType` in `lib/schema-notices.ts`.
@@ -40,6 +40,8 @@ Why: officers want to show a map, a schedule or a game screen with a notice. The
 - Publish to Discord (D102 amended): the picture goes with the first message, as a multipart webhook upload (`payload_json` and `files[0]`), with an embed whose image is `attachment://notice.webp` (or `.jpg`, `.png`). `allowed_mentions` stays empty. The log line adds `pictures: 0|1`.
 
 **Home's activity (D108 amended).** One line: "Ana added a picture to “Rota”" (PT "Ana adicionou uma imagem a “…”", FR "Ana a ajouté une image à l’annonce « … »"), from `added_by`/`added_at`. A replace is the same line at its new time; a removal has none.
+
+**Weekly cleanup (owner, 2026-11-18).** Once a week, right after the Friday check claims its run (`lib/tick.ts`, no new cron), `pruneEndedPictures` (`lib/repo/notice-pictures.ts`) deletes the picture of every notice, in every workspace, whose end day (its newest `ends_on`) is more than 90 days before the server day (`PICTURE_KEEP_DAYS`). A notice that ended exactly 90 days ago keeps it until the next week. A notice with no end day is never cleaned. The notice and its text stay, and an officer can add a picture again. The log line is `notices.pictures.pruned` with the count only, and the tick's answer carries `pictures_pruned`. This keeps the table to roughly the last few months of pictures instead of growing for ever.
 
 **Words.** PT says "imagem", not "print": a print is a screenshot read for data (D110).
 

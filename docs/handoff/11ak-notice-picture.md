@@ -1,7 +1,7 @@
 # 11ak — A notice carries one picture (issue 419, D119)
 
 ## Built
-- **Storage.** A new table, `notice_pictures` (migration `0041_notice_pictures`; the orchestrator renumbers it): one row per notice, the bytes in `bytea` (a drizzle `customType`), with type, size, a 16-character SHA-256 hash, who and when. Check constraints repeat the caps: WebP, JPEG or PNG; 1–409,600 bytes; 1–1600 px a side.
+- **Storage.** A new table, `notice_pictures` (migration `0042_notice_pictures`, after `0041_squads`): one row per notice, the bytes in `bytea` (a drizzle `customType`), with type, size, a 16-character SHA-256 hash, who and when. Check constraints repeat the caps: WebP, JPEG or PNG; 1–409,600 bytes; 1–1600 px a side.
 - **Browser processing** (`app/(private)/_ui/notice-picture-prep.ts`, plan in `lib/private/notice-picture-rules.ts`):
   - `createImageBitmap` decodes the file, and a canvas draws it at most 1600 px on its long side;
   - it is re-encoded as WebP, or JPEG where WebP encoding is missing. This drops EXIF and location;
@@ -23,6 +23,7 @@
   - a saved notice sends the picture before the text;
   - a new notice sends it after the text, and a retried Save finds the same notice by its request id.
 - **Shown** on the notice page under the title (a link to full size), on the members' board in the notice card, and in Publish to Discord. Discord gets a multipart webhook post: `payload_json` and `files[0]`, with an embed image `attachment://notice.webp`, on the first message only. The log adds `pictures: 0|1`.
+- **Weekly cleanup** (owner's decision, 2026-11-18). Right after the Friday check claims its weekly run (`lib/tick.ts`, no new cron), `pruneEndedPictures` deletes the picture of each notice whose end day passed more than 90 days ago. Notices with no end day are never cleaned; the text stays and a picture can be added again. It logs `notices.pictures.pruned` with the count only, and the tick answers `pictures_pruned`.
 - **Home.** One activity line: "Ana added a picture to “…”" (PT "adicionou uma imagem a", FR "a ajouté une image à l’annonce"). It is read from `lib/repo/desk-activity-pictures.ts`, a part of the small-sources union.
 - **Docs.**
   - D119 records the storage choice, the cost reasoning from the issue, the caps and the access rule;
@@ -45,13 +46,14 @@
 ## Verified
 - **`pnpm check`.**
   - prettier, eslint and tsc pass.
-  - vitest, after the rebase on dev with #418: 198 files passed, 2 skipped; 1,047 tests passed, 4 skipped. An earlier run under load (load average 44–51) timed out two unrelated tests, `lib/private/thefts.test.ts` and `app/img/preview/player/[uid]/route.test.ts`; both passed alone, and the last full run passed.
+  - vitest, after the rebase on dev with #418 and #416: 204 files passed, 2 skipped; 1,075 tests passed, 4 skipped. An earlier run under load (load average 44–51) timed out two unrelated tests, `lib/private/thefts.test.ts` and `app/img/preview/player/[uid]/route.test.ts`; both passed alone, and the last full run passed.
   - The drift check ("Everything's fine") and the i18n check ("17 languages up to date") pass.
 - **New tests.**
   - `notices/picture/route.test.ts`: a GIF sent as `image/png` is refused; over 400 KB and over 1600 px are refused; a valid picture is stored once and Replace overwrites it; a notice in the trash answers 410 to upload and remove, and takes the picture once restored.
   - `img/notice/[id]/route.test.ts`: an officer gets it with `private, no-cache` and an ETag that answers 304; a member gets it only for a board notice; another workspace's officer and a signed-out browser get 404; a deleted notice's picture is 404 for both.
   - `notices/publish/route.test.ts`, one more test: the multipart body carries the file, the `attachment://` embed and empty `allowed_mentions`.
   - `lib/private/notice-picture-rules.test.ts`: `fitWithin` and the order of the attempts.
+  - `lib/private/notice-picture.test.ts`: the cleanup deletes a picture whose notice ended 91 days ago, keeps one at exactly 90 days and one with no end day, leaves the text, and a picture can be added again.
   - `member-session.test.ts` has fixtures for both new routes. `board.test.ts` expects `picture: null`.
 - **Local e2e: 12 of 12 checks pass.** Setup: production build on :3998, its own Postgres on :55347 (42 migrations), the DB bridge, a Discord sign-in stand-in and a webhook stand-in, with an invented 20-member roster. No upstream, Groq or Discord call.
   - The upload was an invented 4000 × 3000 PNG of 26,077,595 bytes (generated, not a screenshot). It was stored as WebP, 1600 × 1200, **268,554 bytes**, with no `Exif` block in the stored bytes.
@@ -68,13 +70,13 @@
   - No WebKit run: Playwright WebKit is not installed here.
 
 ## Open issues
-- Storage grows with use. At 30 pictures a month: about 12 MB a month at the cap, about 90 MB a year at a typical 250 KB. Neon Free is 1 GB, and the Friday check warns at 700 MB. A later session could drop pictures of notices ended long ago; nothing removes them now.
+- Storage: the weekly cleanup removes pictures 90 days after their notice ends, but notices with no end day keep theirs. At 30 pictures a month at a typical 250 KB that is about 7.5 MB a month before cleanup. Neon Free is 1 GB, and the Friday check warns at 700 MB.
 - Android's share target (D110) cannot add a picture to a notice yet.
 - The Translate and Improve tools leave the picture alone, as asked. Nothing describes the picture to members who use a screen reader beyond "Picture for “<title>”".
 
 ## Next
 - Model/effort: keep. One feature with a migration, two routes, an image route, a browser resize, a Discord change and an e2e fitted one sitting.
-- What the owner must do first: review and merge after #416. The migration runs with the deploy; the orchestrator renumbers it to 0042. No setting or service is needed.
+- What the owner must do first: review and merge. The migration (`0042_notice_pictures`) runs with the deploy. No setting or service is needed.
 - Plan change: none (the workspace track has no prompt in `docs/SESSION_PLAYBOOK.md`).
 
 <adjustments>

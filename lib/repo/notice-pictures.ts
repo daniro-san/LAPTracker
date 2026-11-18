@@ -1,7 +1,7 @@
 // notice_pictures (D119): a notice's one picture. The write replaces it, the remove deletes it, and the reads
 // take the workspace id, so a picture is reached only from its own workspace. The bytes are read only when
 // they are served or posted; every other read takes the picture's facts alone.
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { workspaces } from "../schema";
@@ -107,4 +107,31 @@ export async function pictureOwner(
     .innerJoin(notices, eq(notices.id, noticePictures.noticeId))
     .where(and(eq(noticePictures.noticeId, noticeId), live));
   return row ?? null;
+}
+
+/** A picture is kept this many days after its notice's end day (D119, owner 2026-11-18). */
+export const PICTURE_KEEP_DAYS = 90;
+
+/**
+ * The weekly cleanup (D119), every workspace at once: deletes the picture of each notice whose end day (its
+ * newest `ends_on`) is more than PICTURE_KEEP_DAYS before `today` (a server day, YYYY-MM-DD). A notice with
+ * no end day keeps its picture. The notice and its text stay; a picture can be added again. Returns how
+ * many pictures were deleted.
+ */
+export async function pruneEndedPictures(db: Db, today: string): Promise<number> {
+  const day = 24 * 60 * 60_000;
+  const cutoff = new Date(Date.parse(`${today}T00:00:00Z`) - PICTURE_KEEP_DAYS * day)
+    .toISOString()
+    .slice(0, 10);
+  const result = await db.execute<{ notice_id: number }>(sql`
+    delete from notice_pictures g
+    using (
+      select distinct on (e.notice_id) e.notice_id, e.value
+      from notice_edits e
+      where e.field = 'ends_on'
+      order by e.notice_id, e.id desc
+    ) last
+    where last.notice_id = g.notice_id and last.value <> '' and last.value < ${cutoff}
+    returning g.notice_id`);
+  return result.rows.length;
 }
