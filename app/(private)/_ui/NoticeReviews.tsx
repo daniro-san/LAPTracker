@@ -20,6 +20,7 @@ import type { WorkspaceDictionary } from "@/lib/private/dictionary";
 import type { NoticeLanguage } from "@/lib/private/notice-rules";
 
 import { LANGUAGE_NAME } from "./languages";
+import { newRequestId } from "./request-id";
 import { sheetWords } from "./sheet-words";
 import { RefusalLine, SIGNED_OUT } from "./SignedOut";
 
@@ -71,7 +72,7 @@ function OpenRequest(props: {
   const { t, request } = props;
   const router = useRouter();
   // One per request shown (D100): a double tap or a retry after a lost answer approves once.
-  const [requestId] = useState(() => crypto.randomUUID());
+  const [requestId] = useState(() => newRequestId());
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const approve = async () => {
@@ -213,7 +214,7 @@ export function AskSheet(props: {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // One per opened sheet (D100): a double tap or a retry stores one request.
-  const [requestId] = useState(() => crypto.randomUUID());
+  const [requestId] = useState(() => newRequestId());
   const ask = async () => {
     setBusy(true);
     setError(null);

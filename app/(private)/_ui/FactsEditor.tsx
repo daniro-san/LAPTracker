@@ -33,6 +33,7 @@ import {
   type Form,
 } from "./facts-form";
 import { Conflict, Paste, SaveNote } from "./FactsEditorParts";
+import { newRequestId } from "./request-id";
 import { sheetWords } from "./sheet-words";
 import { SIGNED_OUT, SignedOutNote } from "./SignedOut";
 
@@ -88,7 +89,7 @@ function useForm(props: EditorProps) {
 function useTarget(props: EditorProps) {
   const [uid, setUid] = useState(props.uid);
   const [name, setName] = useState(props.name);
-  const [requestId] = useState(() => crypto.randomUUID());
+  const [requestId] = useState(() => newRequestId());
   const [nameMissing, setNameMissing] = useState(false);
   /** False, and the name's error shown, when a new member has no name yet. */
   const named = () => {

@@ -22,6 +22,7 @@ import { FactsEditor } from "./FactsEditor";
 import type { DismissedRow, LifecycleWords, PendingRow } from "./member-lifecycle-data";
 import { Facts, factsActions, type EditorContext, type FactsMode } from "./MemberCards";
 import { PendingLink, type RosterName } from "./PendingLink";
+import { newRequestId } from "./request-id";
 import { sheetWords } from "./sheet-words";
 import { SIGNED_OUT, SignedOutNote } from "./SignedOut";
 
@@ -227,7 +228,7 @@ function Dismissed({ rows, words: t, slug }: { rows: DismissedRow[]; words: Word
               onClick={() =>
                 void back.run({
                   action: "add",
-                  requestId: crypto.randomUUID(),
+                  requestId: newRequestId(),
                   name: r.name,
                   changes: [],
                 })

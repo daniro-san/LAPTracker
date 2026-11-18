@@ -26,6 +26,7 @@ import { refusalText, sendCalendar, type Stale } from "./calendar-send";
 import { Choice, ConflictBox, FIELD, Labeled, TextInput } from "./CalendarFields";
 import { DeleteArea } from "./DeleteArea";
 import { KindFields, RepeatFields, TimeFields, type PartProps } from "./EntryFields";
+import { newRequestId } from "./request-id";
 import { sheetWords } from "./sheet-words";
 import { RefusalLine } from "./SignedOut";
 
@@ -49,7 +50,7 @@ function useSave(props: FormProps, d: Draft) {
   const [error, setError] = useState<string | null>(null);
   const [stale, setStale] = useState<{ conflicts: Stale[]; changes: Change[] } | null>(null);
   // One per open add sheet (D100): a retry after a lost answer adds nothing new.
-  const [requestId] = useState(() => crypto.randomUUID());
+  const [requestId] = useState(() => newRequestId());
   async function send(changes: Change[] | null) {
     setBusy(true);
     setError(null);

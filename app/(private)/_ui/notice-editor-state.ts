@@ -38,6 +38,7 @@ import {
   withRestored,
 } from "./notice-draft";
 import { keepKey, readKept, restorable, writeKept } from "./notice-keep";
+import { newRequestId } from "./request-id";
 
 export interface EditorProps {
   slug: string;
@@ -166,7 +167,7 @@ export function useEditor(p: EditorProps) {
   const [draft, setDraft] = useState(() => startDraft(p.fields));
   const [conflicts, setConflicts] = useState<Conflict[]>([]);
   // One per open editor (D100): a new notice's Save retried after a lost answer stores one notice.
-  const [requestId] = useState(() => crypto.randomUUID());
+  const [requestId] = useState(() => newRequestId());
   /** The action running now, if any: every AI button and Save wait for it. */
   const [busy, setBusy] = useState<DraftAsk["kind"] | "save" | null>(null);
   const [message, setMessage] = useState<WorkspaceKey | null>(null);

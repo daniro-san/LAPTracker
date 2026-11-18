@@ -18,6 +18,7 @@ import type { WorkspaceDictionary, WorkspaceKey } from "@/lib/private/dictionary
 import type { NoticeLanguage } from "@/lib/private/notice-rules";
 
 import { LANGUAGE_NAME } from "./languages";
+import { newRequestId } from "./request-id";
 import { sheetWords } from "./sheet-words";
 import { RefusalLine, SIGNED_OUT } from "./SignedOut";
 
@@ -77,7 +78,7 @@ function PublishSheet(props: PublishProps & { channel: string; onClose: () => vo
   const [error, setError] = useState<string | null>(null);
   // One per opened sheet (D100): a double tap or a retry after a lost answer posts once. A refusal from
   // Discord ("failed") ends that request, so the next Post gets a new one.
-  const [requestId, setRequestId] = useState(() => crypto.randomUUID());
+  const [requestId, setRequestId] = useState(() => newRequestId());
   const post = async () => {
     if (chosen.length === 0) return setError("no_text");
     setBusy(true);
@@ -85,7 +86,7 @@ function PublishSheet(props: PublishProps & { channel: string; onClose: () => vo
     const languages = props.written.filter((l) => chosen.includes(l));
     const answer = await send(props.slug, { id: props.id, languages, requestId });
     setBusy(false);
-    if (answer === "failed") setRequestId(crypto.randomUUID());
+    if (answer === "failed") setRequestId(newRequestId());
     if (answer !== "ok") return setError(answer);
     track("ws_notice_published", { audience: props.publish.audience });
     props.onClose();
