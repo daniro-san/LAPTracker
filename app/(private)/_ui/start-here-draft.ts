@@ -153,20 +153,42 @@ export const shSet = (
 });
 
 /**
- * The languages changed or kept, with the source of each translation among them and, for a kept language,
- * the newest saved one it was kept against: the save sends these, so they share one version.
+ * The languages changed or kept, and what goes along so they share one version: the source of each
+ * translation, and, when a language is kept or translated, every saved language that is up to date now (at
+ * the newest version). A language edited by hand and saved alone goes alone, so the others read as behind.
  */
 export function shChanges(d: ShDraft): NoticeLanguage[] {
   const changed = NOTICE_LANGUAGES.filter(
     (l) => !same(d.values[l], d.base[l]) || d.kept[l] === true,
   );
   const newest = newestSaved(d);
+  const current = NOTICE_LANGUAGES.filter(
+    (l) => newest !== null && written(d.base[l]) && d.versions[l] === d.versions[newest],
+  );
   const along = changed.flatMap((l) => {
-    const against = d.kept[l] && newest ? [newest] : [];
     const source = d.from[l];
-    return source ? [...against, source] : against;
+    const joined = d.kept[l] || source ? current : [];
+    return source ? [...joined, source] : joined;
   });
   return NOTICE_LANGUAGES.filter((l) => changed.includes(l) || along.includes(l));
+}
+
+/** The nine texts as one flat record ("en.glossary", …), the shape kept on the device (notice-keep.ts). */
+export type ShField = `${NoticeLanguage}.${Part}`;
+export const SH_FIELDS: ShField[] = NOTICE_LANGUAGES.flatMap((l) =>
+  PARTS.map((p): ShField => `${l}.${p}`),
+);
+export const flatTexts = (texts: Texts): Record<ShField, string> =>
+  Object.fromEntries(
+    NOTICE_LANGUAGES.flatMap((l) => PARTS.map((p) => [`${l}.${p}`, texts[l][p]])),
+  ) as Record<ShField, string>;
+export function textsOf(flat: Record<ShField, string>): Texts {
+  const one = (l: NoticeLanguage) => ({
+    glossary: flat[`${l}.glossary`],
+    rules: flat[`${l}.rules`],
+    ask: flat[`${l}.ask`],
+  });
+  return { en: one("en"), "pt-BR": one("pt-BR"), fr: one("fr") };
 }
 
 /** The text differs from the saved one somewhere (Cancel asks first; Sign out asks first). */

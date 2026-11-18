@@ -9,6 +9,7 @@
 // opened at; a language another officer saved since is refused (409) and nothing is written. Marked
 // `data-unsaved` while it holds changes, so Sign out asks first (D99); `data-notice-editor` hides the bottom
 // tabs, as in the notices editor, so the save bar is never under them.
+import { buttonClass } from "@/lib/brand/components/Button";
 import { FIELD } from "@/lib/brand/components/controls";
 import { Notice } from "@/lib/brand/components/Notice";
 import { fill } from "@/lib/copy";
@@ -34,7 +35,6 @@ import { RefusalLine } from "./SignedOut";
 import {
   newestSaved,
   PARTS,
-  shDirty,
   shDraftKind,
   shTabState,
   shTranslatePlan,
@@ -193,8 +193,7 @@ function Actions({ p, e }: { p: StartHereProps; e: Editor }) {
 export function StartHereEditor(p: StartHereProps) {
   const { t } = p;
   const e = useStartHere(p);
-  const dirty = shDirty(e.draft);
-  const { saveState } = e;
+  const { saveState, dirty } = e;
   return (
     <form
       onSubmit={(ev) => {
@@ -205,6 +204,16 @@ export function StartHereEditor(p: StartHereProps) {
       data-unsaved={dirty ? "" : undefined}
       className="max-w-2xl"
     >
+      {e.restorable && (
+        <Notice tone="info" className="mt-3">
+          <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            {t["notices.restore.lead"]}
+            <button type="button" onClick={e.restore} className={buttonClass("secondary")}>
+              {t["notices.restore"]}
+            </button>
+          </span>
+        </Notice>
+      )}
       <LanguageTabs
         id="sh"
         t={t}
@@ -234,8 +243,13 @@ export function StartHereEditor(p: StartHereProps) {
             )
           )
         }
-        ask={dirty}
-        onLeave={() => window.location.assign(`/w/${p.slug}/board`)}
+        // Leaving also forgets the text kept on this device, so it asks while that is on offer too.
+        ask={dirty || e.restorable}
+        onLeave={() => {
+          e.leaving.current = true;
+          e.forget();
+          window.location.assign(`/w/${p.slug}/board`);
+        }}
       />
     </form>
   );

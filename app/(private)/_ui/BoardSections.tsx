@@ -96,7 +96,7 @@ function Strip(props: {
       {props.days.map(({ day, items }) => {
         const n = items.length;
         const now = day === today;
-        const look = now ? "bg-plum text-paper" : n > 0 ? "bg-plum/10 text-plum" : "text-ink/60";
+        const look = now ? "bg-plum text-paper" : n > 0 ? "bg-plum/10 text-plum" : "text-ink/70";
         const said = `${dates.long(day)}${now ? ` · ${t["board.today"]}` : ""} · ${
           n > 0
             ? fill(t[`board.events.${plural.select(n) === "one" ? "one" : "other"}`], { n })

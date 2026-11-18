@@ -3,7 +3,7 @@
 // the save with its version check, the conflict banner (shown and focused; Save brings it back), "Keep as is",
 // a warning before the page is left with unsaved text, and that text kept on this device (notice-keep.ts).
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { Tone } from "@/lib/ai/notice-writing";
 import { track } from "@/lib/analytics/events";
@@ -14,6 +14,7 @@ import type {
 } from "@/lib/private/dictionary";
 import {
   isNoticeLanguage,
+  NOTICE_FIELDS,
   type NoticeField,
   type NoticeLanguage,
 } from "@/lib/private/notice-rules";
@@ -61,8 +62,11 @@ export interface EditorProps {
   review?: number | undefined;
 }
 
-/** Warns before the page is left while `dirty`, unless the returned flag says the officer chose to leave. */
-function useLeaveWarning(dirty: boolean) {
+/**
+ * Warns before the page is left while `dirty`, unless the returned flag says the officer chose to leave.
+ * Start here uses it too (D116).
+ */
+export function useLeaveWarning(dirty: boolean) {
   const allowed = useRef(false);
   useEffect(() => {
     if (!dirty) return;
@@ -76,20 +80,22 @@ function useLeaveWarning(dirty: boolean) {
 }
 
 /**
- * The unsaved text on this device: read once the editor is in the page (undefined until then), offered
- * back while nothing new is typed, written while the draft differs from the saved notice.
+ * The unsaved text on this device under `key`: read once the editor is in the page (undefined until then),
+ * offered back while nothing new is typed, written while the draft differs from what the editor opened with
+ * (`opened`, stable between renders). `fields` are the record's keys. Start here uses it too (D116).
  */
-function useKept(
-  p: EditorProps,
-  values: Record<NoticeField, string>,
+export function useKept<F extends string>(
+  key: string,
+  fields: readonly F[],
+  opened: Record<F, string>,
+  values: Record<F, string>,
   dirty: boolean,
-  put: (values: Record<NoticeField, string>) => void,
+  put: (values: Record<F, string>) => void,
 ) {
-  const key = keepKey(p.slug, p.id);
-  const [offer, setOffer] = useState<Record<NoticeField, string> | null | undefined>(undefined);
+  const [offer, setOffer] = useState<Record<F, string> | null | undefined>(undefined);
   useEffect(() => {
-    setOffer(restorable(readKept(key), startDraft(p.fields).values));
-  }, [key, p.fields]);
+    setOffer(restorable(readKept(key), opened, fields));
+  }, [key, opened, fields]);
   useEffect(() => {
     if (dirty) writeKept(key, values);
     else if (offer === null) writeKept(key, null);
@@ -104,6 +110,17 @@ function useKept(
     },
     forget: () => writeKept(key, null),
   };
+}
+
+/** The notice's text kept on this device (notice-keep.ts), against the fields it opened with. */
+function useNoticeKept(
+  p: EditorProps,
+  values: Record<NoticeField, string>,
+  dirty: boolean,
+  put: (values: Record<NoticeField, string>) => void,
+) {
+  const opened = useMemo(() => startDraft(p.fields).values, [p.fields]);
+  return useKept(keepKey(p.slug, p.id), NOTICE_FIELDS, opened, values, dirty, put);
 }
 
 /** Why the last Translate or Improve writing gave no draft, and the tab it was asked from. */
@@ -154,7 +171,9 @@ export function useEditor(p: EditorProps) {
   const { banner, showBanner } = useBanner(conflicts);
   const dirty = changesOf(draft).length > 0;
   const leaving = useLeaveWarning(dirty);
-  const kept = useKept(p, draft.values, dirty, (values) => setDraft((d) => ({ ...d, values })));
+  const kept = useNoticeKept(p, draft.values, dirty, (values) =>
+    setDraft((d) => ({ ...d, values })),
+  );
   const run = async (ask: DraftAsk) => {
     setBusy(ask.kind);
     setAiMessage(null);

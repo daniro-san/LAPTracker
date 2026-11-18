@@ -34,27 +34,50 @@ Closes #393; part of #293. Rules applied: D71, D75, D99, D100, D102, D105. New d
 ## Deviations
 - The task said "D116 if a decision is needed". A decision was needed, because the Start here out-of-date rule and the board layout both change D105.
 - Owner scope addition mid-session: drawn frames on the public pages too. I framed the ledger, alliance and player pages only. The server balance, merge and flow pages are left for #412 or a later pass.
-- Start here does not carry over the notices editor's device-kept unsaved text or its warning before leaving the page. Both are separate features, not shared components. Sign out still asks first.
+
+## Review round (PR 414)
+- **Regression fixed: each Start here part keeps its own room.**
+  - Before the fix, Translate and Improve writing on Start here went through the notices' draft route, which told the model "Stay within 1000 characters". A 3,000-character rules part came back cut to about 1,000, with no warning.
+  - The route now takes an optional `limit` on `translate` and `improve`. Zod checks it at the boundary: a positive integer no higher than the largest Start here cap (4,000).
+  - Start here sends each part's cap (4,000, 3,000 or 1,500). Notices send none and keep 1,000.
+- **Out-of-date rule tightened.**
+  - Before the fix, "Keep as is" saved the kept language only with the newest one. With three written languages, the third then read as out of date. "Update from …" had the same gap.
+  - Now a kept or translated save also carries every saved language that is at the newest version (`shChanges`).
+- **Contrast.** The board strip's quiet weekday is `text-ink/70` (was `/60`, about 4.17:1).
+- **Start here keeps unsaved text on the device and warns before the page is left**, for parity with the notices editor (owner's answer). It uses the notices editor's own hooks:
+  - `useKept` and `useLeaveWarning` are exported from `notice-editor-state.ts`, and `useKept` now takes a key, a field list and the opened values;
+  - `notice-keep.ts` now works over any field list;
+  - Start here's nine texts are one record under `lap:notice:<slug>:start-here`, so sign-out clears them too.
+- **Owner's answers.** Frames on the balance, merge and flow pages wait for #412. Old "out of date" marks stay, cleared with one tap; no migration.
 
 ## Verified
-- **`pnpm check` exits 0 after rebasing on #407.** Prettier, eslint, tsc, and vitest **188 files passed, 2 skipped; 999 tests passed, 4 skipped**. The drift gate passes, and i18n reports "17 languages up to date".
-- **New tests** (5):
+- **`pnpm check` exits 0 after the review round** (rebased on #407). Prettier, eslint, tsc, and vitest **188 files passed, 2 skipped; 1,003 tests passed, 4 skipped**. The drift gate passes, and i18n reports "17 languages up to date".
+- **New tests** (9, four of them from the review round):
   - `app/(private)/_ui/NoticeScreen.test.ts`: the three copy lines render in EN, and in FR with the French number format; each line is tied to its button.
-  - `app/(private)/_ui/StartHereEditor.test.ts`, 3 tests:
+  - `app/(private)/api/w/[slug]/notices/draft/route.test.ts`, one more test: a translate with `limit: 3000` and an improve with `limit: 1500` reach the prompts as "Stay within 3000 characters" and "Stay under 1500 characters", and never 1,000. A limit of 0, 2.5 or 4001 answers 400.
+  - `app/(private)/_ui/StartHereEditor.test.ts`, 4 tests:
     - the shared tabs render as `sh-tab-en`, `sh-tab-pt-BR` and `sh-tab-fr` with the states Written, Out of date and Empty, along with Translate ("to PT and FR") and Improve writing;
     - Translate fills drafts, Accept keeps one, Undo restores the other, and the source is saved with the translation;
-    - "Keep as is" saves the language with the newest one.
-  - `app/(private)/_ui/BoardSections.test.ts` (PGlite): the week shows member-marked entries only, the strip has 7 days with links on the 2 days that have events, and 23:00 ST reads 22:00 on a São Paulo clock. Its workspace setup is in `lib/private/board.test-helpers.ts`, because UI tests may not import `lib/repo`.
-- **Local e2e: 35 of 35 checks pass.**
+    - "Keep as is" saves the language with the newest one;
+    - after "Keep as is" and Save (`shSaved(kept, shChanges(kept), 3)`), every one of three written languages reads Written. This test exposed the gap fixed in `shChanges`.
+  - `app/(private)/_ui/BoardSections.test.ts` (PGlite), 3 tests on one rendered week:
+    - only member-marked entries are shown;
+    - the strip has 7 days, with links on the 2 days that have events;
+    - 23:00 ST reads 22:00 on a São Paulo clock.
+
+    The `NOW` comment now says 12:00 UTC, which is 10:00 on the server's clock. Its workspace setup is in `lib/private/board.test-helpers.ts`, because UI tests may not import `lib/repo`.
+- **Local e2e: 40 of 40 checks pass** (the first round had 35; the review round added 5).
   - Setup: production build (`next start` on :3977), own local Postgres on :55237 with 39 migrations, the bridge, and stand-ins for Discord sign-in and Groq. No upstream, Groq or Discord call.
   - Start here:
     - tabs Empty, then Written after typing;
     - Translate "to PT and FR" turns PT and FR into drafts, with each part translated on its own;
+    - the Groq stand-in recorded the rooms the prompts asked for: 4000, 4000, 3000, 3000 (glossary and rules, into PT and into FR), and never 1000;
     - Accept and Undo work;
     - Save works, and nothing is out of date after a reload;
     - a PT-only save marks EN out of date, with "Update from Português" and "Keep as is";
     - "Keep as is" followed by Save clears the mark;
     - Improve writing (Warmer) makes a draft, and Undo removes it;
+    - unsaved text: a reload asks first (a `beforeunload` dialog); "Restore unsaved text" is then offered and puts the text back; after Cancel and Discard, nothing is offered;
     - no target is under 44 px.
   - Copy lines: shown in EN, PT and FR, with 9 described buttons on the notice.
   - Board as a member, in EN, PT and FR:
@@ -71,8 +94,8 @@ Closes #393; part of #293. Rules applied: D71, D75, D99, D100, D102, D105. New d
 - **Privacy grep.** 1,555 added lines checked against the 101 names of the OGs fixture roster. The one hit is a substring of the identifier "wroteIn", a false positive.
 
 ## Open issues
-- Start here records saved before this change may show a language as out of date: for example, EN saved alone and PT saved later as its translation. One tap on "Keep as is" followed by Save clears it.
-- The server balance, merge and flow pages still use plain 1 px rules on their cards.
+- Start here records saved before this change may show a language as out of date: for example, EN saved alone and PT saved later as its translation. One tap on "Keep as is" followed by Save clears it. The owner chose no migration.
+- The server balance, merge and flow pages still use plain 1 px rules on their cards. The owner chose to wait for #412.
 - PT's "Sejam gentis" e2e text is test data in the local database only.
 
 ## Next
@@ -83,7 +106,8 @@ Closes #393; part of #293. Rules applied: D71, D75, D99, D100, D102, D105. New d
 <adjustments>
 - New section cards use `drawn-card`, not `border border-rule`. A card never sits inside a card; rows inside keep hairlines.
 - A new language editor should draw `LanguageTabs`, `DraftMark`, `ActionButton`, `ImproveButton`, `ActionNote` (`LanguageEditorParts.tsx`) and `SaveBar` (`EditorSaveBar.tsx`), and use `planTranslate` for Translate.
-- Start here's out-of-date rule lives in `start-here-draft.ts` (`staleSaved`, `shChanges`). Any other writer to `start_here` must save a translation together with its source, or it will mark languages out of date.
+- Start here's out-of-date rule lives in `start-here-draft.ts` (`staleSaved`, `shChanges`). Any other writer to `start_here` must save a translation or a kept language together with the languages that are up to date, or it will mark languages out of date.
+- The draft route's `limit` (translate, improve) lets a caller give its own room, up to 4,000 characters. A new caller other than notices must send its cap.
 - A UI test that needs a workspace and sessions should use a `lib/private/*.test-helpers.ts` helper (for example `board.test-helpers.ts`). UI tests may not import `lib/repo`.
 </adjustments>
 

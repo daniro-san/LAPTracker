@@ -8,6 +8,7 @@ import {
   shAccept,
   shChanges,
   shKeep,
+  shSaved,
   shTabState,
   shTranslatePlan,
   shUndo,
@@ -92,5 +93,17 @@ describe("the Start here editor on the notices editor's parts (D116)", () => {
     const kept = shKeep(saved, "en");
     expect(shTabState(kept, "en")).toBe("written");
     expect(shChanges(kept)).toEqual(["en", "pt-BR"]);
+  });
+
+  it("after Keep as is and Save, every written language is written, none out of date", () => {
+    const kept = shKeep(
+      startShDraft(
+        { en: text("Old glossary."), "pt-BR": text("Glossário novo."), fr: text("Glossaire.") },
+        { en: 1, "pt-BR": 2, fr: 2 },
+      ),
+      "en",
+    );
+    const after = shSaved(kept, shChanges(kept), 3);
+    for (const l of LANGUAGES) expect(shTabState(after, l)).toBe("written");
   });
 });
