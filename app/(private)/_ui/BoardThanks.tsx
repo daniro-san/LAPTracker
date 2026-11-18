@@ -28,7 +28,8 @@ function withBoldNames(line: string, names: readonly string[]): ReactNode[] {
   );
   return line.split(pattern).map((part, i) =>
     known.includes(part) ? (
-      <strong key={i} className="font-bold">
+      // Alegreya is loaded at 400 only: the name takes the loaded bold of Alegreya Sans.
+      <strong key={i} className="font-subhead font-bold">
         <bdi>{part}</bdi>
       </strong>
     ) : (

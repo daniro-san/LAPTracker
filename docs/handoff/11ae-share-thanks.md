@@ -50,8 +50,35 @@ Includes the owner's two additions of 2026-11-17: the Sunday and Monday nudge, a
 - Screenshots (not committed) in `/private/tmp/claude-502/-Users-danilordasilva-orca-workspaces-LAPTracker-unicornfish/147759e3-1cdb-4ccd-b74a-1001498a1e18/scratchpad/11ae-shots/`: `board-card-360-{light,dark}-{en,pt}`, `board-{360,1280}-{light,dark}-{en,pt}`, `board-card-preview-360-light-en`, `board-takedown-ask-360-light-en`, `board-after-takedown-360-light-en`, `share-{pick,edit,done}-360-light-en`, `share-edit-360-light-pt-tab`, `share-{pick,edit}-360-dark-pt`, `members-360-light-en`, `card-trend-360-light-en`, `home-360-light-en`.
 - Designer pass: the first card left the bottom-left corner empty, and a second sign-off typed into the text repeated the signature. I added the yarn ball beside the signature, and the e2e now edits the closing line instead. Nothing overflows at 360.
 
+## Review round 2 (PR 407)
+The code review and a persona panel (the alliance leader, a member, a copywriter). D114's "Review round" section lists each change.
+- **Rebase.** Onto dev at f7c163ab (#405). The migration is now `0039_thanks_shares` from `pnpm db:generate`, after dev's `0038_notice_reviews`. Conflicts kept both sides: Home now reads the review requests and the nudge together. In the feed, the thanks rows moved to `lib/repo/desk-activity-thanks.ts`, beside dev's `desk-activity-reviews.ts`.
+- **Code review.**
+  - The draft route counts three units against D101's `quota` and answers 429 `busy` past it.
+  - Sharing the same week to the same place within 30 s answers 409 `recent`, with its own line.
+  - A claim still `posting` after `STUCK_MS` counts as `failed`.
+  - On a Monday the card compares with the thanked week ("+600K last week", `cardBase`).
+- **Persona musts.**
+  - The prompt is rewritten (first person, one varied thought per person, banned stock phrases, no invented events).
+  - Each ticked person has an optional "A few words about them" field (80 characters). A person with no deed and no note gets a plain thank-you.
+  - The textarea opens at the top and grows up to 60 % of the screen.
+  - The members' board is the one filled button, then Discord and Copy, all full width.
+  - The signature drops the rank tag and is in ink (15.9:1 in dark).
+  - The seal is whole, the yarn ball is larger, the names are bold (Alegreya Sans bold, since Alegreya is loaded at 400 only), each person is on their own line with a gap, and Take down sits under the card.
+  - The PT and EN button and help words are the panel's.
+- **Nice-to-haves done.** "Draft it for me" / "I'll write it". A "Posted" line per channel, with only that button resting (as before). "Say thanks to" in its own block on Home and Members. "Everyone looks fine this week." is hidden on Home beside it.
+- **Not done.** The board preview strip still wraps at 360 px (D105's own words).
+- **Verified (r2).**
+  - `pnpm check` exits 0: 185 files, 994 tests passed (4 skipped).
+  - New or changed tests:
+    - `thanks.test.ts` (9): no name or number, notes and "no reason given"; a dropped or invented placeholder rejects; names with `{1}` or `@here` survive the draft, the record and the Discord post; the copy limit; once per id with no pings; the 30 s cooldown; a failed post, then a retry with a new id, and a stuck claim; take-down refuses another workspace's share and a Discord share; the nudge.
+    - `fact-trend.test.ts`: the Monday card ("+600K last week", and a Monday version belongs to the new week).
+    - `BoardThanks.test.ts`: bold names and a signature without "(R4)".
+  - Short e2e on a production build (local DB; Discord, webhook and Groq stand-ins, nothing real called): **28 of 28** checks pass. They cover "Say thanks to"; the new pick help; four note fields; Bramble's note used; no repeated line endings and no stock phrase; Groq got 3 requests with no name or number; the editor at the top and grown, and at the top after a language switch; board, then Discord, then Copy, with the board as the one primary; one Discord message with no pings; no sideways scroll; a second draft within the minute refused as busy; the second Discord post refused (cooldown); the card in EN and PT, light and dark: signed "Ana", names in bold, signature contrast 15.9:1; the PT panel words.
+  - Screenshots: `r2-*` in `11ae-shots/`.
+
 ## Open issues
-- The counter reads "564 of 1000 characters" without a thousands separator, as D102's "first 1000 characters" does.
+- The counter reads "319 of 1000 characters" without a thousands separator, as D102's "first 1000 characters" does.
 - The nudge cannot be seen live on a Tuesday; the test covers Sunday and Monday.
 - A first-ever value saved this week and then raised the same week shows "+X since {date}" on the card but gets no thanks (D75, as the issue asks).
 - WebKit was not run this session.

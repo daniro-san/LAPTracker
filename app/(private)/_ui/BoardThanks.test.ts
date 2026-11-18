@@ -119,7 +119,7 @@ describe("the thank-you card on the members' board (D114)", () => {
     });
     // The name in bold, and the signature without the rank tag.
     expect(pt.html).toContain(
-      'Obrigado, <strong class="font-bold"><bdi>Bramble</bdi></strong>, de coração.',
+      'Obrigado, <strong class="font-subhead font-bold"><bdi>Bramble</bdi></strong>, de coração.',
     );
     expect(pt.html).toContain('Com carinho, <bdi translate="no">Rook</bdi>');
     expect(pt.html).not.toContain("Tirar do mural");
