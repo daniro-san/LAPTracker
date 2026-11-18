@@ -65,7 +65,7 @@ Input: the PR review, a one-off real read of all 100 OGs members that the orches
 - **Crash safety.** After every call, the cursor, the retry list, the calls used, the counts and the quota left are saved in one update guarded by the batch's claim (`updateClaimedSquadRead`). A killed function cannot make the next batch read a member again. A batch whose claim was taken over as stale stops writing and answers idle.
 - **Deadline.** The 100 s now count from before the claim and the hero catalog refresh.
 - **Deadline before a call.** A call the deadline cut before it was sent does not move the cursor; that member stays for the next batch.
-- **Retry** (owner). After the pass, each member whose call failed with a 5xx or got no answer gets one more call. A 429 or another 4xx is never retried. The 120 cap now counts every call of the day, retries included, and the reserve applies to retries too. Migration `0041_squad_retries` adds `squad_reads.retry_uids`.
+- **Retry** (owner). After the pass, each member whose call failed with a 5xx or got no answer gets one more call. A 429 or another 4xx is never retried. The 120 cap now counts every call of the day, retries included, and the reserve applies to retries too. The list is `squad_reads.retry_uids`, in the one migration `0040_squads` (the two migrations were folded into one before shipping).
 - **`seen_at`.** All-digit strings are read as epoch seconds. A sighting is stored as at most our read time.
 - **Card.**
   - Each hero gets an R / SSR / UR tag (`q` 3 / 4 / 5, owner), UR first.
@@ -86,13 +86,18 @@ Input: the PR review, a one-off real read of all 100 OGs members that the orches
   - The real route made 42 calls for 40 members, retried 2, `retry_uids` came back empty, status `done`, then 204. 1 catalog request; no `fresh`.
   - Playwright Chrome: **86 of 86 checks pass**, before and after the two-column change. The checks cover 18 hero pictures in 4 squads, UR first with "★10", R/SSR/UR tags, every hero line inside its column, and nothing overflowing, at 360 and 1280, light and dark, EN and PT.
 
+## Rebase (2026-11-18)
+- Rebased onto dev at c79c37f3 (#414, #415). The only conflict was `docs/decisions/README.md`; both sides were kept (D115, D116, then D117).
+- The two unshipped migrations were folded into one: `0040_squads` from a single `pnpm db:generate` after restoring dev's journal.
+- D115's conventions: `ws_action` is for desk write routes under `/api/w/[slug]`, and cron routes (the tick, the daily read) send no server event. So `POST /api/squads-read` sends none. Its errors already reach PostHog as `$exception` through `withContext` and `recordAppError`.
+
 ## Open issues
 - WebKit (iPhone 390) did not run: the sign-in click timed out in Playwright WebKit on localhost (`w.state_bad` in the app log), as in earlier sessions.
 - Follow-up, not done: the `/admin` daily run page does not label the squads lines specially. They show as plain log lines.
 
 ## Next
 - Model/effort: keep. The scope fit one session.
-- What the owner must do first: merge. The release applies migrations `0040_squads` (three new tables and a widened check) and `0041_squad_retries` (one column). No environment change. The `tick.yml` change takes effect from `main`. On the first night, look at `/admin/runs/daily/[day]` for the `squads.batch` line, its `retried` and its `quota_remaining`.
+- What the owner must do first: merge. The release applies migration `0040_squads` (three new tables, the retry list among them, and a widened check). No environment change. The `tick.yml` change takes effect from `main`. On the first night, look at `/admin/runs/daily/[day]` for the `squads.batch` line, its `retried` and its `quota_remaining`.
 - Later (owner, 2026-11-18): show `awaken` on the card once the server is about 120 days old. It is already stored on every squad row (`member_squads.heroes[].awaken`); only `lib/private/member-squads.ts` and `MemberSquads.tsx` need to show it.
 - Plan change: none (the workspace track has no prompt in `docs/SESSION_PLAYBOOK.md`).
 

@@ -26,6 +26,7 @@ CREATE TABLE "squad_reads" (
 	"finished_at" timestamp with time zone,
 	"members" integer NOT NULL,
 	"after_uid" bigint,
+	"retry_uids" bigint[] DEFAULT '{}'::bigint[] NOT NULL,
 	"calls_used" integer DEFAULT 0 NOT NULL,
 	"with_squads" integer DEFAULT 0 NOT NULL,
 	"failed" integer DEFAULT 0 NOT NULL,

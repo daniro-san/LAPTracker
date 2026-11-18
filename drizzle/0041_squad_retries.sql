@@ -1,1 +1,0 @@
-ALTER TABLE "squad_reads" ADD COLUMN "retry_uids" bigint[] DEFAULT '{}'::bigint[] NOT NULL;
