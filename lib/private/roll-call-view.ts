@@ -1,9 +1,17 @@
 // What the Roll call pages read (issue 298, D103), inside one workspace (D71): the week's occasions with
 // their counts, one roll call's rows, and an Elixir Scramble team with its suggestions. Away members (an
 // away note running on the occasion's day, or On a break, D80) are left out of the answers. Weekly
-// activity stays in here: the team page gets "active this week" and the order, never the number (D76).
+// activity stays in here: the team page gets "active this week" and the order, never the number (D76). A
+// deleted roll call is in none of these reads; an archived one is only in the archived list (D120).
 import type { Db } from "../db";
-import { callsOfWeeks, newestMarks, teamsOf } from "../repo/roll-call";
+import {
+  archivedCalls,
+  archivedCount,
+  callsOfWeeks,
+  newestMarks,
+  teamsOf,
+  type RollCallRow,
+} from "../repo/roll-call";
 import { endOfDayReads } from "../repo/workspace-rosters";
 import type { WorkspaceAccess } from "./access";
 import { calendarDays } from "./calendar";
@@ -60,24 +68,16 @@ export interface WeekItem {
   team: number | null;
 }
 
-/**
- * The week's occasions from Monday `monday`: the Calendar's (KvK, Undead Siege, Cheese Trap, Elixir) and
- * those added. A Calendar roll call whose week was skipped or moved out, or whose entry was deleted, shows with the added
- * ones, on its own day, with its marks. `zone` is the server's (SERVER_TZ).
- */
-export async function weekItems(db: Db, access: WorkspaceAccess, monday: string, zone: string) {
-  const placed = (await calendarDays(db, access, monday, addDays(monday, 6))).filter(
-    (p) => FROM_CALENDAR[p.entry.kind] !== undefined,
-  );
-  const weeks = [...new Set([monday, ...placed.map((p) => p.week)])];
-  const [calls, roster, facts] = await Promise.all([
-    callsOfWeeks(db, access.workspaceId, weeks),
+/** Each roll call's counts, from its marks and (Elixir Scramble) its team, away members left out. */
+async function counter(db: Db, access: WorkspaceAccess, calls: RollCallRow[], zone: string) {
+  const ids = calls.map((c) => c.id);
+  const [roster, facts, marks, teams] = await Promise.all([
     rosterOf(db, access),
     factsOf(db, access),
+    newestMarks(db, ids),
+    teamsOf(db, ids),
   ]);
-  const ids = calls.map((c) => c.id);
-  const [marks, teams] = await Promise.all([newestMarks(db, ids), teamsOf(db, ids)]);
-  const counted = (callId: number | null, kind: RollKind, day: string) => {
+  return (callId: number | null, kind: RollKind, day: string) => {
     const team = teams.filter((t) => t.rollCallId === callId);
     const members = kind === "elixir" ? teamMembers(team, roster) : roster;
     const own = new Map(
@@ -86,12 +86,28 @@ export async function weekItems(db: Db, access: WorkspaceAccess, monday: string,
     const size = kind === "elixir" ? team.length : null;
     return { callId, tally: tally(asked(members, facts, day, zone), own), team: size };
   };
+}
+
+/**
+ * The week's occasions from Monday `monday`: the Calendar's (KvK, Undead Siege, Cheese Trap, Elixir) and
+ * those added. A Calendar roll call whose week was skipped or moved out, or whose entry was deleted, shows with the added
+ * ones, on its own day, with its marks. An archived roll call is left out, a Calendar one with it (D120).
+ * `zone` is the server's (SERVER_TZ).
+ */
+export async function weekItems(db: Db, access: WorkspaceAccess, monday: string, zone: string) {
+  const placed = (await calendarDays(db, access, monday, addDays(monday, 6))).filter(
+    (p) => FROM_CALENDAR[p.entry.kind] !== undefined,
+  );
+  const weeks = [...new Set([monday, ...placed.map((p) => p.week)])];
+  const calls = await callsOfWeeks(db, access.workspaceId, weeks);
+  const counted = await counter(db, access, calls, zone);
   const matched = new Set<number>();
-  const linked = placed.map((p): WeekItem => {
+  const linked = placed.flatMap((p): WeekItem[] => {
     const kind = FROM_CALENDAR[p.entry.kind] as RollKind;
     const call = calls.find((c) => c.entryId === p.entry.id && c.week === p.week);
     if (call) matched.add(call.id);
-    return {
+    if (call?.archivedAt) return [];
+    const item: WeekItem = {
       key: `${p.entry.id}:${p.week}`,
       occasion: { entry: p.entry.id, week: p.week },
       kind,
@@ -100,21 +116,38 @@ export async function weekItems(db: Db, access: WorkspaceAccess, monday: string,
       placed: p,
       ...counted(call?.id ?? null, kind, p.day),
     };
+    return [item];
   });
   const added = calls
-    .filter((c) => !matched.has(c.id) && c.day >= monday && c.day <= addDays(monday, 6))
-    .map((c): WeekItem => ({
-      key: `rc:${c.id}`,
-      occasion: { id: c.id },
-      kind: c.kind as RollKind,
-      variant: c.variant,
-      day: c.day,
-      placed: null,
-      ...counted(c.id, c.kind as RollKind, c.day),
-    }));
+    .filter((c) => !matched.has(c.id) && !c.archivedAt)
+    .filter((c) => c.day >= monday && c.day <= addDays(monday, 6))
+    .map((c) => byId(c, counted));
   return [...linked, ...added].sort(
     (a, b) => a.day.localeCompare(b.day) || (a.placed?.minute ?? -1) - (b.placed?.minute ?? -1),
   );
+}
+
+/** A roll call by its id, on its own day, without its Calendar entry's time. */
+const byId = (c: RollCallRow, counted: Awaited<ReturnType<typeof counter>>): WeekItem => ({
+  key: `rc:${c.id}`,
+  occasion: { id: c.id },
+  kind: c.kind as RollKind,
+  variant: c.variant,
+  day: c.day,
+  placed: null,
+  ...counted(c.id, c.kind as RollKind, c.day),
+});
+
+/** The archived roll calls (D120), the newest day first, each with its counts. */
+export async function archivedItems(db: Db, access: WorkspaceAccess, zone: string) {
+  const calls = await archivedCalls(db, access.workspaceId);
+  const counted = await counter(db, access, calls, zone);
+  return calls.map((c) => byId(c, counted));
+}
+
+/** How many roll calls of the week from Monday `monday` are archived: the week's hint to Archived (D120). */
+export function archivedInWeek(db: Db, access: WorkspaceAccess, monday: string) {
+  return archivedCount(db, access.workspaceId, monday, addDays(monday, 6));
 }
 
 export interface CallView {

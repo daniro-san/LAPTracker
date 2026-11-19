@@ -48,17 +48,32 @@ export const rollCalls = pgTable(
     requestId: text("request_id"),
     createdBy: integer("created_by").references(() => workspaceUsers.id, { onDelete: "set null" }),
     createdAt: tstz("created_at").notNull().defaultNow(),
+    /**
+     * Deleted (D120): who and when, under the delete question's request id (D100). A deleted roll call
+     * leaves every list, count and Home; its marks never count. Undo clears `deleted_at`.
+     */
+    deletedAt: tstz("deleted_at"),
+    deletedBy: integer("deleted_by").references(() => workspaceUsers.id, { onDelete: "set null" }),
+    deleteRequestId: text("delete_request_id"),
+    /** Archived (D120): off the week's list, under "Archived"; Unarchive clears both. */
+    archivedAt: tstz("archived_at"),
+    archivedBy: integer("archived_by").references(() => workspaceUsers.id, {
+      onDelete: "set null",
+    }),
   },
   (t) => [
     index("roll_calls_workspace_week_idx").on(t.workspaceId, t.week),
-    uniqueIndex("roll_calls_entry_week_unique").on(t.entryId, t.week),
+    // Live roll calls only (D120): after a delete, the Calendar occasion starts again empty.
+    uniqueIndex("roll_calls_entry_week_unique")
+      .on(t.entryId, t.week)
+      .where(sql`${t.deletedAt} is null`),
     uniqueIndex("roll_calls_request_unique").on(t.workspaceId, t.requestId),
     // One hand-added roll call per kind and day. Only rows added by hand carry a request id: a Calendar
     // roll call whose entry was deleted (entry_id set null) never collides with one, so the Calendar's
     // delete cannot fail on this index.
     uniqueIndex("roll_calls_added_unique")
       .on(t.workspaceId, t.kind, t.day)
-      .where(sql`${t.requestId} is not null`),
+      .where(sql`${t.requestId} is not null and ${t.deletedAt} is null`),
     check(
       "roll_calls_kind_check",
       sql`${t.kind} in ('shield', 'raid', 'plunder', 'elixir', 'cheese')`,

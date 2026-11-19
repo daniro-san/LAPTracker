@@ -101,6 +101,30 @@ export const rollEn = {
   "roll.team.isFull": "Team is full",
   "roll.reg.open": "Registration closes Wednesday (ST)",
   "roll.reg.closed": "Registration closed",
+  "roll.delete": "Delete roll call",
+  "roll.delete.ask": "Delete this roll call?",
+  "roll.delete.where":
+    "It leaves the roll call list, its counts and Home. Its marks stop counting anywhere.",
+  "roll.delete.calendar": "The Calendar entry stays, and its roll call starts again empty.",
+  "roll.delete.keep": "Keep it",
+  "roll.delete.confirm": "Delete",
+  "roll.delete.deleting": "Deleting…",
+  "roll.delete.failed": "Not deleted. Check the connection and try again.",
+  "roll.deleted": "Roll call deleted.",
+  "roll.delete.undo": "Undo",
+  "roll.delete.undoFailed": "Could not undo. The roll call stays deleted.",
+  "roll.archive": "Archive",
+  "roll.unarchive": "Unarchive",
+  "roll.archive.hint":
+    "Done with it? Archive takes it off the week’s list and keeps it under Archived.",
+  "roll.archive.failed": "Not saved. Check the connection and try again.",
+  "roll.archived": "Archived",
+  "roll.filter.aria": "Which roll calls",
+  "roll.filter.week": "Active",
+  "roll.filter.archived": "Archived",
+  "roll.archived.none": "No archived roll calls. Archive one from its page when it is done.",
+  "roll.archived.week.one": "1 archived roll call this week ›",
+  "roll.archived.week.other": "{n} archived roll calls this week ›",
 } as const;
 
 export type RollKey = keyof typeof rollEn;

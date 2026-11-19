@@ -1,6 +1,7 @@
 // The top of a roll call page (issue 298): back to the week's roll calls, the occasion's title, its day and
 // time (ST and the officer's own), and for an Elixir Scramble team its two steps, Team and Roll call, as
 // links (44 px, the open one marked).
+import { Tag } from "@/lib/brand/components/Tag";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
 
 import type { CalendarSheetWords } from "./calendar-data";
@@ -20,6 +21,8 @@ export function RollCallHead(props: {
   at: number | null;
   /** The Elixir Scramble steps: hrefs, and which one is open. */
   steps: { team: string; call: string; open: "team" | "call" } | null;
+  /** "Archived" under the day line (D120). */
+  archived?: boolean;
 }) {
   const { t, steps } = props;
   return (
@@ -39,6 +42,11 @@ export function RollCallHead(props: {
           </>
         )}
       </p>
+      {props.archived && (
+        <p className="mt-1">
+          <Tag>{t["roll.archived"]}</Tag>
+        </p>
+      )}
       {steps && (
         <nav aria-label={t["roll.nav.aria"]} className="mt-2 border-b border-rule">
           <ul className="grid grid-cols-2">

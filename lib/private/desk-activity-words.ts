@@ -75,13 +75,14 @@ function draftLine(
   return fill(t["activity.draft"], { who, kind });
 }
 
-/** Marks in a roll call: "the rest" when one action wrote several. */
+/** Marks in a roll call ("the rest" when one action wrote several), or a roll call deleted or archived. */
 function marksLine(
   t: WorkspaceDictionary,
   who: string,
-  item: Extract<ActivityItem, { kind: "marks" }>,
+  item: Extract<ActivityItem, { kind: "marks" | "callDeleted" | "callArchived" }>,
 ): string {
   const call = callTitle({ ...item.call, kind: item.call.kind as RollKind, placed: null }, t);
+  if (item.kind !== "marks") return fill(t[`activity.${item.kind}`], { who, call });
   return fill(t[item.rest ? "activity.marksRest" : "activity.marks"], { who, call });
 }
 
@@ -140,6 +141,8 @@ export function activityLine(
   language: WorkspaceLanguage,
 ): string {
   const who = isolate(item.who);
+  // Marks, or a roll call deleted or archived (D120).
+  if ("call" in item) return marksLine(t, who, item);
   switch (item.kind) {
     case "facts":
       return factsLine(t, who, item);
@@ -150,8 +153,6 @@ export function activityLine(
     case "entry":
     case "entryEdit":
       return fill(t[`activity.${item.kind}`], { who, entry: isolate(titleOf(item.entry, t)) });
-    case "marks":
-      return marksLine(t, who, item);
     case "thefts":
     case "newMember":
       return countLine(t, who, item);

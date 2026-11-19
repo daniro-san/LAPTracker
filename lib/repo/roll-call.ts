@@ -1,11 +1,14 @@
 // roll_calls, roll_call_marks and roll_call_team (issue 298, D103): plain reads and writes, each inside one
-// workspace. Which marks a roll call takes, the version check and the words stay in lib/private.
-import { and, desc, eq, inArray, isNotNull, isNull, ne, sql } from "drizzle-orm";
+// workspace. Which marks a roll call takes, the version check and the words stay in lib/private. Every read
+// here leaves out a deleted roll call (`live`, D120).
+import { and, desc, eq, gte, inArray, isNotNull, isNull, lte, ne, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { rollCallMarks, rollCalls, rollCallTeam, workspaceUsers } from "../schema";
 
 export type RollCallRow = typeof rollCalls.$inferSelect;
+/** Not deleted (D120): a deleted roll call leaves every list, count and Home. */
+export const live = isNull(rollCalls.deletedAt);
 /** A connection or a transaction. */
 type Tx = Pick<Db, "select" | "insert" | "delete" | "execute">;
 
@@ -42,7 +45,7 @@ export async function findCall(
   const [row] = await db
     .select()
     .from(rollCalls)
-    .where(and(eq(rollCalls.workspaceId, workspaceId), match))
+    .where(and(eq(rollCalls.workspaceId, workspaceId), match, live))
     .limit(1);
   return row ?? null;
 }
@@ -63,6 +66,7 @@ export async function findAdded(
         eq(rollCalls.kind, kind),
         eq(rollCalls.day, day),
         isNull(rollCalls.entryId),
+        live,
       ),
     )
     .orderBy(rollCalls.id)
@@ -83,13 +87,39 @@ export async function insertCall(
   return row?.id ?? null;
 }
 
-/** Every roll call of the weeks that start on these Mondays. */
+/** Every roll call of the weeks that start on these Mondays, archived ones included. */
 export async function callsOfWeeks(db: Db, workspaceId: number, weeks: string[]) {
   return db
     .select()
     .from(rollCalls)
-    .where(and(eq(rollCalls.workspaceId, workspaceId), inArray(rollCalls.week, weeks)))
+    .where(and(eq(rollCalls.workspaceId, workspaceId), inArray(rollCalls.week, weeks), live))
     .orderBy(rollCalls.day, rollCalls.id);
+}
+
+/** How many roll calls on these days (`from` to `to`) are archived (D120). */
+export async function archivedCount(db: Db, workspaceId: number, from: string, to: string) {
+  const [row] = await db
+    .select({ n: sql<number>`count(*)`.mapWith(Number) })
+    .from(rollCalls)
+    .where(
+      and(
+        eq(rollCalls.workspaceId, workspaceId),
+        isNotNull(rollCalls.archivedAt),
+        live,
+        gte(rollCalls.day, from),
+        lte(rollCalls.day, to),
+      ),
+    );
+  return row?.n ?? 0;
+}
+
+/** The archived roll calls (D120), the newest day first. */
+export async function archivedCalls(db: Db, workspaceId: number) {
+  return db
+    .select()
+    .from(rollCalls)
+    .where(and(eq(rollCalls.workspaceId, workspaceId), isNotNull(rollCalls.archivedAt), live))
+    .orderBy(desc(rollCalls.day), desc(rollCalls.id));
 }
 
 /** The newest mark of each member in each of these roll calls. */
@@ -175,6 +205,7 @@ export async function otherTeams(tx: Tx, call: RollCallRow) {
         eq(rollCalls.week, call.week),
         ne(rollCalls.id, call.id),
         isNotNull(rollCalls.entryId),
+        live,
       ),
     );
 }
