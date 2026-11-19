@@ -34,6 +34,10 @@ export interface BoardData {
   spares: BoardSpare[];
   names: Record<number, string>;
   share: ShareWords;
+  /** "8.00M": the enemy might the stored plan was made at, when it is not the current one. */
+  madeFor: string | null;
+  /** The enemy might is carried over from an earlier siege and not saved for this one. */
+  carried: boolean;
 }
 
 /** Only the garrison words, for the client component. */
@@ -75,5 +79,7 @@ export function boardData(
     })),
     names: view.names,
     share: shareWordsOf(view, t, language),
+    madeFor: view.madeFor === null ? null : mightText(view.madeFor, language),
+    carried: view.carriedFrom !== null,
   };
 }

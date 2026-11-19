@@ -7,7 +7,8 @@
 //     helper's strongest squad, roster members only).
 //   {action: "post", entry, week, channel, requestId}: the plan to the members' (default) or the leaders'
 //     Discord channel (D102's webhook),
-//     once per request id (D100); 409 no_enemy_might, not_set_up or posting, 502 failed.
+//     once per request id (D100); 409 no_enemy_might, not_saved (the enemy might is carried over from an
+//     earlier siege and not saved for this one), not_set_up or posting, 502 failed.
 // The lib calls run in `privately`, so an error leaves as a code; nothing about members is logged.
 import { requireWorkspace } from "@/lib/private/access";
 import { WORKSPACE_LANG_COOKIE } from "@/lib/private/cookies";
@@ -31,6 +32,7 @@ const STATUS = {
   invalid: 400,
   stale: 409,
   no_enemy_might: 409,
+  not_saved: 409,
   not_set_up: 409,
   posting: 409,
   failed: 502,

@@ -110,6 +110,28 @@
   - Design review: the PT text wraps cleanly at 360, the channel choice reads as two clear options at 1280, and the cards are two columns at 1280.
 - **Privacy:** the diff was compared with the 129 names in the OGs fixture: 0 hits. The real screenshot stays in the scratchpad.
 
+## Review round (PR 431, 2026-11-19)
+
+The review found no privacy leak. It found places where the screen, Copy and Discord could disagree. Fixed (D121 has a dated amendment):
+
+- The board is keyed on the enemy might, so a new one shows the new suggestion.
+- Each save of the pairs stores the enemy might it was made at (`pairs_enemy_might`, in the regenerated `0045_garrison`).
+  - When the enemy might changes, the page says "This plan was made for an enemy might of {old}. Start again from the suggestion?".
+  - Pairs for members who no longer need help are dropped.
+- The garrison choices are off while a change saves.
+- Post:
+  - is off after a failed save;
+  - is refused (`not_saved`) and off with its reason while the enemy might is only carried over;
+  - keeps one request id until `failed` or a channel change;
+  - `finishPost` checks the request id.
+- "No squad data" sorts by name then uid. "Not set up" names the chosen channel.
+- **Tests:**
+  - an unedited plan follows 8M → 7M to the 7M suggestion, with "made for" and the dropped pair after edits;
+  - the same request id posts once, and a carried-over value is `not_saved`;
+  - the route refuses the kept squad, a non-roster member and a squad lent twice (400; new `garrison/route.test.ts`).
+  - The DB test's Wynnie now has one 8.2M squad (close at 8M, fine at 7M).
+- `pnpm check` exits 0 (counts in the commit reply). The browser e2e was not re-run for this round. The changes are guarded by the tests above and by tsc and eslint.
+
 ## Open issues
 
 - The parser reads the game's English "Enemy Might". If officers play in another language, its words need adding.

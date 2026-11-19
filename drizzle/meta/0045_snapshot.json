@@ -1,5 +1,5 @@
 {
-  "id": "1900c048-3eca-4b51-a764-f95abd3da9cb",
+  "id": "74a0a326-8427-4430-80cb-9478957a9dbf",
   "prevId": "1906fec0-0573-4dae-84af-90b18f89d01d",
   "version": "7",
   "dialect": "postgresql",
@@ -2476,6 +2476,12 @@
         "pairs": {
           "name": "pairs",
           "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pairs_enemy_might": {
+          "name": "pairs_enemy_might",
+          "type": "bigint",
           "primaryKey": false,
           "notNull": false
         },

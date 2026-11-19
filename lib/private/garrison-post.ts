@@ -14,7 +14,10 @@ import { postMessages, STUCK_MS, type Channels } from "./notice-publish";
 
 export type PostResult =
   | { ok: true; at: Date; rev: number }
-  | { ok: false; code: "not_found" | "no_enemy_might" | "not_set_up" | "posting" | "failed" };
+  | {
+      ok: false;
+      code: "not_found" | "no_enemy_might" | "not_saved" | "not_set_up" | "posting" | "failed";
+    };
 
 export interface PostDeps {
   fetch: typeof fetch;
@@ -44,6 +47,8 @@ export async function postGarrison(
   if (!read) return { ok: false, code: "not_found" };
   const { view } = read;
   if (view.enemyMight === null) return { ok: false, code: "no_enemy_might" };
+  // A value carried over from an earlier siege is not this siege's until an officer saves it.
+  if (view.carriedFrom !== null) return { ok: false, code: "not_saved" };
   const channel = deps.channels[input.channel];
   if (!channel) return { ok: false, code: "not_set_up" };
   const siege = { workspaceId: access.workspaceId, entryId: input.entry, week: input.week };
@@ -61,7 +66,7 @@ export async function postGarrison(
   const messages = discordMessages(title, [{ name: "", text }], !channel.forum);
   const { sent } = await postMessages(deps.fetch, channel, title, messages);
   const done = sent === messages.length;
-  await finishPost(db, row.id, done ? "posted" : "failed");
+  await finishPost(db, row.id, input.requestId, done ? "posted" : "failed");
   privateLog(done ? "garrison.post" : "garrison.post.failed", {
     sent,
     of: messages.length,

@@ -87,18 +87,24 @@ export async function saveEnemy(
 }
 
 /**
- * Writes the pairs when the stored plan is still at `rev` (0: not saved yet). Null when another save
- * came first: the officer's version is stale.
+ * Writes the pairs, and the enemy might `t` they were made at, when the stored plan is still at `rev`
+ * (0: not saved yet). Null when another save came first: the officer's version is stale.
  */
 export async function savePlan(
   db: Db,
   s: Siege,
   rev: number,
-  pairs: GarrisonPair[],
-  by: number | null,
+  plan: { pairs: GarrisonPair[]; t: number | null },
+  by: number,
   now: Date,
 ): Promise<GarrisonRow | null> {
-  const set = { pairs, rev: rev + 1, savedBy: by, savedAt: now };
+  const set = {
+    pairs: plan.pairs,
+    pairsEnemyMight: plan.t,
+    rev: rev + 1,
+    savedBy: by,
+    savedAt: now,
+  };
   const [row] =
     rev === 0
       ? await db
@@ -149,9 +155,21 @@ export async function claimPost(
   return row ?? null;
 }
 
-export async function finishPost(db: Db, id: number, status: "posted" | "failed"): Promise<void> {
+/** Ends the post claimed for `requestId`; a later claim by another request is left alone. */
+export async function finishPost(
+  db: Db,
+  id: number,
+  requestId: string,
+  status: "posted" | "failed",
+): Promise<void> {
   await db
     .update(garrisonPlans)
     .set({ postStatus: status })
-    .where(and(eq(garrisonPlans.id, id), eq(garrisonPlans.postStatus, "posting")));
+    .where(
+      and(
+        eq(garrisonPlans.id, id),
+        eq(garrisonPlans.postRequestId, requestId),
+        eq(garrisonPlans.postStatus, "posting"),
+      ),
+    );
 }

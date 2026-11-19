@@ -65,6 +65,8 @@ function MemberCard(props: {
   data: BoardData;
   pairs: GarrisonPair[];
   words: GarrisonWords;
+  /** A change is being saved: the next one waits, so it never starts from a stale version. */
+  saving: boolean;
   onPick: (value: string) => void;
 }) {
   const { m, data, pairs, words } = props;
@@ -93,6 +95,7 @@ function MemberCard(props: {
       <select
         id={id}
         value={mine ? key(mine.helper, mine.squad) : ""}
+        disabled={props.saving}
         onChange={(e) => props.onPick(e.target.value)}
         className={`${FIELD} mt-1`}
       >
@@ -226,7 +229,8 @@ function ShareBar(props: {
           entry={data.entry}
           week={data.week}
           words={words}
-          busy={plan.state === "saving"}
+          busy={plan.state === "saving" || plan.state === "failed"}
+          blocked={data.carried ? words["garrison.post.saveEnemy"] : null}
           posted={props.posted}
           channels={props.channels}
         />
@@ -236,6 +240,21 @@ function ShareBar(props: {
 }
 
 const NEEDS = ["help", "close", "unknown"] as const;
+
+/** "Start again from the suggestion": saves the suggestion, then reads the page again (D121). */
+function Reset({ plan, data, words }: { plan: Plan; data: BoardData; words: GarrisonWords }) {
+  const router = useRouter();
+  return (
+    <button
+      type="button"
+      disabled={plan.state === "saving"}
+      onClick={() => void plan.change(data.suggested).then(() => router.refresh())}
+      className={buttonClass("secondary")}
+    >
+      {words["garrison.reset"]}
+    </button>
+  );
+}
 
 export function GarrisonBoard(props: {
   slug: string;
@@ -259,12 +278,21 @@ export function GarrisonBoard(props: {
       data={data}
       pairs={plan.pairs}
       words={words}
+      saving={plan.state === "saving"}
       onPick={pick(m.uid)}
     />
   );
   return (
     <>
       <ShareBar {...props} plan={plan} />
+      {data.madeFor && (
+        <div role="status" className="mt-3 border-l-4 border-yarn pl-3">
+          <p className="font-semibold">{fill(words["garrison.madeFor"], { old: data.madeFor })}</p>
+          <p className="mt-2">
+            <Reset plan={plan} data={data} words={words} />
+          </p>
+        </div>
+      )}
       <p className="mt-3 text-body-sm">{words["garrison.order"]}</p>
       {NEEDS.map((need) => {
         const list = data.members.filter((m) => m.need === need);
@@ -281,14 +309,7 @@ export function GarrisonBoard(props: {
       })}
       <Spares data={data} pairs={plan.pairs} words={words} />
       <p className="mt-6">
-        <button
-          type="button"
-          disabled={plan.state === "saving"}
-          onClick={() => void plan.change(data.suggested)}
-          className={buttonClass("secondary")}
-        >
-          {words["garrison.reset"]}
-        </button>
+        <Reset plan={plan} data={data} words={words} />
       </p>
     </>
   );

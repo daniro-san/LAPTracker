@@ -21,7 +21,10 @@ import { createSession } from "./session";
 const OGS = 67111155;
 const NOW = new Date("2026-11-16T12:00:00Z");
 const WEEK = "2026-11-16";
-/** Bramble lends; Quillon and Wynnie need help. Activity 4242 orders them and must never be shared. */
+/**
+ * Bramble lends; Quillon needs help and Wynnie (8.2M) is close at 8M, fine at 7M. Activity 4242 orders
+ * them and must never be shared.
+ */
 const ROSTER = [
   { uid: 101, nick_name: "Bramble", power: 90e6, active: 10 },
   { uid: 102, nick_name: "Quillon", power: 30e6, active: 4242 },
@@ -65,7 +68,7 @@ beforeEach(async () => {
       squad(101, 2, 12e6),
       squad(101, 3, 11e6),
       squad(102, 1, 6e6),
-      squad(103, 1, 7e6),
+      squad(103, 1, 8.2e6),
     ]);
   const ws = await findWorkspaceBySlug(db, "ogs");
   const userId = await recordSignIn(db, ws?.id ?? 0, "ogs-ana", "Ana", NOW);
@@ -146,31 +149,61 @@ describe("the garrison plan", () => {
     });
   });
 
-  it("posts names and squad might to the chosen channel, and nothing it was ordered by", async () => {
+  it("follows a new enemy might: an unedited plan is the new suggestion, an edited one says what it was made for", async () => {
+    const at8 = await garrisonView(db, access, entry, WEEK);
+    expect(at8?.view.pairs).toHaveLength(2);
+    expect(await saveEnemyMight(db, access, enemy(WEEK, 1, 7_000_000), NOW)).toMatchObject({
+      ok: true,
+    });
+    // Unedited: Wynnie (8.2M) no longer needs help at 7M, so the 7M suggestion is the plan.
+    const at7 = await garrisonView(db, access, entry, WEEK);
+    expect(at7?.view.pairs).toEqual([{ helper: 101, squad: 2, member: 102 }]);
+    expect(at7?.view.madeFor).toBeNull();
+    // Edited at 7M, then the enemy might goes back to 8M: the plan says so, and keeps its pairs.
+    const pairs = [{ helper: 101, squad: 3, member: 102 }];
+    await saveGarrison(db, access, { action: "save", entry, week: WEEK, rev: 0, pairs }, NOW);
+    await saveEnemyMight(db, access, enemy(WEEK, 2, 8_000_000), NOW);
+    const back = await garrisonView(db, access, entry, WEEK);
+    expect(back?.view).toMatchObject({ madeFor: 7_000_000, pairs });
+    // Edited at 8M, then 7M: Wynnie's pair goes, as she no longer needs help.
+    const both = [...pairs, { helper: 101, squad: 2, member: 103 }];
+    await saveGarrison(db, access, { action: "save", entry, week: WEEK, rev: 1, pairs: both }, NOW);
+    await saveEnemyMight(db, access, enemy(WEEK, 3, 7_000_000), NOW);
+    const dropped = await garrisonView(db, access, entry, WEEK);
+    expect(dropped?.view).toMatchObject({ madeFor: 8_000_000, pairs });
+  });
+
+  it("posts names and squad might to the chosen channel once per request id, and nothing it was ordered by", async () => {
     const sent: { url: string; body: string }[] = [];
     const fetch = (async (url: string, init: RequestInit) => {
       sent.push({ url, body: String(init.body) });
       return Response.json({ id: "1" });
     }) as typeof globalThis.fetch;
     const hook = (name: string) => ({ url: `https://discord.test/${name}`, name, forum: false });
-    const result = await postGarrison(
-      db,
-      access,
-      { action: "post", entry, week: WEEK, channel: "leaders", requestId: randomUUID() },
-      {
-        fetch,
-        now: NOW,
-        channels: { members: hook("members"), leaders: hook("leaders") },
-        t: WORKSPACE_DICTIONARIES.en,
-        language: "en",
-      },
-    );
-    expect(result.ok).toBe(true);
+    const post = (week: string, requestId: string) =>
+      postGarrison(
+        db,
+        access,
+        { action: "post", entry, week, channel: "leaders", requestId },
+        {
+          fetch,
+          now: NOW,
+          channels: { members: hook("members"), leaders: hook("leaders") },
+          t: WORKSPACE_DICTIONARIES.en,
+          language: "en",
+        },
+      );
+    const id = randomUUID();
+    expect((await post(WEEK, id)).ok).toBe(true);
+    expect((await post(WEEK, id)).ok).toBe(true);
     expect(sent.map((s) => s.url.split("?")[0])).toEqual(["https://discord.test/leaders"]);
     const content = (JSON.parse(sent[0]?.body ?? "{}") as { content: string }).content;
     expect(content).toContain("Enemy might 8.00M");
     expect(content).toContain("Bramble → Quillon: squad 2, 12.0M");
     expect(content).toContain("Bramble → Wynnie: squad 3, 11.0M");
     expect(content).not.toMatch(/4242|activ|grow|took part|90\.0M|30\.0M/i);
+    // Next week's enemy might is only carried over: nothing is posted until it is saved.
+    expect(await post("2026-11-23", randomUUID())).toEqual({ ok: false, code: "not_saved" });
+    expect(sent).toHaveLength(1);
   });
 });

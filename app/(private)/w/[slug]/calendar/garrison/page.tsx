@@ -79,7 +79,9 @@ export default async function GarrisonPage({
       {view.enemyMight === null ? (
         <p className="mt-4 border-t border-rule py-3">{t["garrison.enemyNone"]}</p>
       ) : (
+        // A new enemy might makes a new suggestion: the board starts again from the server's plan.
         <GarrisonBoard
+          key={view.enemyMight}
           slug={slug}
           data={boardData(view, t, language)}
           words={words}

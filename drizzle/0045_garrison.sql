@@ -7,6 +7,7 @@ CREATE TABLE "garrison_plans" (
 	"enemy_rev" integer DEFAULT 0 NOT NULL,
 	"enemy_history" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"pairs" jsonb,
+	"pairs_enemy_might" bigint,
 	"rev" integer DEFAULT 0 NOT NULL,
 	"saved_by" integer,
 	"saved_at" timestamp with time zone,

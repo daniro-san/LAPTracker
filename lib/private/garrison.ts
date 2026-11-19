@@ -105,6 +105,8 @@ export interface GarrisonView {
   names: Record<number, string>;
   /** The stored plan's version; 0 while it is the suggestion. */
   rev: number;
+  /** The enemy might the stored pairs were made at, when it is not the current one; else null. */
+  madeFor: number | null;
   posted: Date | null;
 }
 
@@ -145,7 +147,7 @@ function membersOf(members: PlanMember[], t: number): GarrisonMember[] {
   });
   const unknown = members
     .filter((m) => m.squads.length === 0)
-    .sort((a, b) => a.name.localeCompare(b.name, "en"));
+    .sort((a, b) => a.name.localeCompare(b.name, "en") || a.uid - b.uid);
   return [...helpOrder(members, t), ...unknown].map(view);
 }
 
@@ -184,9 +186,7 @@ export async function garrisonView(
     readSignals(db, access, week).then((s) => planMembers(db, access, s)),
     findPlan(db, siege),
   ]);
-  // A siege with no enemy might of its own starts from the last one saved (owner, 2026-11-19).
-  const carried = row?.enemyMight == null ? await lastEnemyMight(db, siege) : null;
-  const t = row?.enemyMight ?? carried?.value ?? null;
+  const { t, carried } = await thresholdOf(db, siege, row);
   const view: GarrisonView = {
     placed,
     enemyMight: t,
@@ -194,8 +194,15 @@ export async function garrisonView(
     ...(t === null ? EMPTY : planOf(members, row, t)),
     names: Object.fromEntries(members.map((m) => [m.uid, m.name])),
     ...storedOf(row),
+    madeFor: row?.pairs && row.pairsEnemyMight !== t ? row.pairsEnemyMight : null,
   };
   return { view, row };
+}
+
+/** The siege's enemy might; a siege with none of its own starts from the last one saved (owner, 2026-11-19). */
+async function thresholdOf(db: Db, siege: Siege, row: GarrisonRow | null) {
+  const carried = row?.enemyMight == null ? await lastEnemyMight(db, siege) : null;
+  return { t: row?.enemyMight ?? carried?.value ?? null, carried };
 }
 
 const EMPTY = { members: [], spares: [], pairs: [], suggested: [] };
@@ -203,8 +210,11 @@ const EMPTY = { members: [], spares: [], pairs: [], suggested: [] };
 /** Who needs help, the spares and the pairs at enemy might `t`: the stored pairs, else the suggestion. */
 function planOf(members: PlanMember[], row: GarrisonRow | null, t: number) {
   const suggested = suggestPairs(members, t);
-  // A stored pair whose member or squad has left the roster is dropped, so a save never trips on it.
-  const pairs = row?.pairs ? row.pairs.filter((p) => pairsOk([p], members)) : suggested;
+  // A stored pair is dropped when its member or squad has left the roster (a save would trip on it), or
+  // when its member no longer needs help at this enemy might.
+  const helped = new Set(membersOf(members, t).map((m) => m.uid));
+  const kept = (p: GarrisonPair) => pairsOk([p], members) && helped.has(p.member);
+  const pairs = row?.pairs ? row.pairs.filter(kept) : suggested;
   return { members: membersOf(members, t), spares: sparesIn(members, t, pairs), pairs, suggested };
 }
 
@@ -231,7 +241,9 @@ export async function saveGarrison(
     return { ok: false, code: "invalid" };
   }
   const siege = siegeKey(access, input.entry, input.week);
-  const row = await savePlan(db, siege, input.rev, input.pairs, access.user.id, now);
+  const { t } = await thresholdOf(db, siege, await findPlan(db, siege));
+  const plan = { pairs: input.pairs, t };
+  const row = await savePlan(db, siege, input.rev, plan, access.user.id, now);
   return row ? { ok: true, rev: row.rev } : { ok: false, code: "stale" };
 }
 

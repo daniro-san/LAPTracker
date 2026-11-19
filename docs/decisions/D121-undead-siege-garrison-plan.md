@@ -72,3 +72,16 @@ Why: before an Undead Siege, leadership finds the members with three or four str
 - Words in `lib/private/dictionary.garrison.ts` (EN, PT-BR, FR).
 
 **Privacy.** The signals are read in `lib/private` for the workspace's own alliance only (D71, D76). They never leave it as values: not to the page, a log, an AI request, Discord or analytics. Squads stay workspace-only data (D117).
+
+**Amendment (2026-11-19, PR 431 review): the screen, Copy and Discord always show the same plan.**
+
+- **A new enemy might makes a new suggestion on screen.** The page's board is keyed on the enemy might, so it starts again from the server's plan.
+- **A plan remembers the enemy might it was made at** (`pairs_enemy_might`, written with every save of the pairs).
+  - When the enemy might changes, the page says "This plan was made for an enemy might of {old}. Start again from the suggestion?" with that button.
+  - Stored pairs whose member no longer needs help at the new enemy might are dropped from the plan shown, copied and posted.
+- **One change at a time.** The garrison choices are off while a change is saved, so a quick second change never starts from an old version.
+- **Post only what is saved.**
+  - Post is off after a failed save, until a save goes through.
+  - Post is refused (409 `not_saved`) while the enemy might is carried over from an earlier siege and not saved for this one. The page turns Post off and says "Save the enemy might for this siege before you post."
+- **One request id per choice.** The page keeps one id and makes a new one only after `failed` or another channel, so a double tap posts once. The end of a post is written only for the request that claimed it.
+- "No squad data" is in name order, then uid. "Not set up" names the chosen channel.

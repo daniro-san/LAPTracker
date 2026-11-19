@@ -167,6 +167,8 @@ export const garrisonPlans = pgTable(
     enemyRev: integer("enemy_rev").notNull().default(0),
     enemyHistory: jsonb("enemy_history").$type<EnemyMightSave[]>().notNull().default([]),
     pairs: jsonb("pairs").$type<GarrisonPair[]>(),
+    /** The enemy might the pairs were saved at: a later change of it asks to start again. */
+    pairsEnemyMight: big("pairs_enemy_might"),
     rev: integer("rev").notNull().default(0),
     /** The officer's last save of the pairs; null for a plan stored only to post the suggestion. */
     savedBy: integer("saved_by").references(() => workspaceUsers.id, { onDelete: "set null" }),
