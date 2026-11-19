@@ -157,8 +157,9 @@ export async function workspaceDumps(
         ([, col]) => !omit.has(col.name) && !NEVER.has(col.name),
       );
       const first = kept[0]?.[1] as PgColumn;
+      // Only the columns downloaded: a notice picture's bytes are never read here (review of PR 449).
       const rows = (await db
-        .select()
+        .select(Object.fromEntries(kept))
         .from(t.table)
         .where(ownedBy(t, ws))
         .orderBy(asc(first))) as Record<string, unknown>[];
@@ -175,17 +176,33 @@ export async function workspaceDumps(
   );
 }
 
-/** A notice's picture as a file: newest first, so the newest fit when the download is near its limit. */
-export async function noticePictureFiles(db: Db, workspaceId: number) {
+/**
+ * The notices' pictures without their bytes: newest first, so the newest fit when the download is near its
+ * limit, with each one's size in the database (`octet_length`), checked before its bytes are read.
+ */
+export async function noticePictureList(db: Db, workspaceId: number) {
   return db
     .select({
       noticeId: noticePictures.noticeId,
       type: noticePictures.type,
-      data: noticePictures.data,
+      size: sql<number>`octet_length(${noticePictures.data})`.mapWith(Number),
     })
     .from(noticePictures)
     .where(eq(noticePictures.workspaceId, workspaceId))
     .orderBy(desc(noticePictures.addedAt), asc(noticePictures.noticeId));
+}
+
+/** One notice picture's bytes, read only once it is known to fit. */
+export async function noticePictureBytes(
+  db: Db,
+  workspaceId: number,
+  noticeId: number,
+): Promise<Uint8Array | null> {
+  const [row] = await db
+    .select({ data: noticePictures.data })
+    .from(noticePictures)
+    .where(and(eq(noticePictures.workspaceId, workspaceId), eq(noticePictures.noticeId, noticeId)));
+  return row?.data ?? null;
 }
 
 /** Every workspace user's name (chosen, else Discord's), for the officer columns. */

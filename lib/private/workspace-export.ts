@@ -11,7 +11,8 @@ import {
   claimDataEvent,
   dropDataEvent,
   newMemberNames,
-  noticePictureFiles,
+  noticePictureBytes,
+  noticePictureList,
   peopleNames,
   workspaceDumps,
   type TableDump,
@@ -29,7 +30,7 @@ import { formerMembers } from "./former-members";
 export const EXPORT_MAX_BYTES = 4_400_000;
 /** Room kept for the README, written last because it names the pictures left out. */
 const README_ROOM = 64_000;
-/** Downloads a day per workspace (D125), counted in auth_attempts like Translate's daily cap. */
+/** Downloads per workspace in a rolling 24 hours from the first (D125), counted in auth_attempts. */
 export const EXPORTS_PER_DAY = 3;
 const DAY_MS = 24 * 60 * 60_000;
 
@@ -48,19 +49,26 @@ const BOM = "\uFEFF";
 const text = new TextEncoder();
 
 /** One cell. A text a spreadsheet would run as a formula (= + - @) is kept as text with a leading '. */
-function cell(value: unknown): string {
+function cell(value: unknown, separator: string): string {
   let s: string;
   if (value === null || value === undefined) s = "";
   else if (value instanceof Date) s = value.toISOString();
   else if (typeof value === "object") s = JSON.stringify(value);
   else s = String(value);
   if (typeof value === "string" && /^[=+\-@\t\r]/.test(s)) s = `'${s}`;
-  return /[",\r\n]/.test(s) ? `"${s.replaceAll('"', '""')}"` : s;
+  const quote = s.includes(separator) || /["\r\n]/.test(s);
+  return quote ? `"${s.replaceAll('"', '""')}"` : s;
 }
 
+/**
+ * The separator Excel expects where each language is spoken (owner, 2026-11-19): ";" in Brazil and France,
+ * whose decimal comma makes ";" their list separator, "," in English.
+ */
+export const CSV_SEPARATOR: Record<WorkspaceLanguage, string> = { en: ",", "pt-BR": ";", fr: ";" };
+
 /** A CSV file: a BOM, the header, then one line per row, CRLF as Excel writes them. */
-function csv(columns: string[], rows: unknown[][]): Uint8Array {
-  const lines = [columns, ...rows].map((r) => r.map(cell).join(","));
+function csv(columns: string[], rows: unknown[][], separator: string): Uint8Array {
+  const lines = [columns, ...rows].map((r) => r.map((v) => cell(v, separator)).join(separator));
   return text.encode(`${BOM}${lines.join("\r\n")}\r\n`);
 }
 
@@ -190,21 +198,28 @@ async function buildZip(
     activity,
   ];
   const packed: Packed[] = sheets.map((s) =>
-    pack({ name: `${s.file}.csv`, data: csv(s.columns, s.rows), compress: true }),
+    pack({
+      name: `${s.file}.csv`,
+      data: csv(s.columns, s.rows, CSV_SEPARATOR[words.language]),
+      compress: true,
+    }),
   );
   let size = ZIP_END_SIZE + README_ROOM;
   for (const p of packed) size += zipEntrySize(p.name.toString(), p.stored.byteLength);
   if (size > EXPORT_MAX_BYTES) return null;
-  const pictures = await noticePictureFiles(db, ws.id);
+  // One picture's bytes in memory at a time, read only when its size fits what is left.
+  const pictures = await noticePictureList(db, ws.id);
   let left = 0;
   for (const pic of pictures) {
     const name = `pictures/notice-${pic.noticeId}.${EXTENSION[pic.type] ?? "bin"}`;
-    const add = zipEntrySize(name, pic.data.byteLength);
-    if (size + add > EXPORT_MAX_BYTES) {
+    const add = zipEntrySize(name, pic.size);
+    const data =
+      size + add > EXPORT_MAX_BYTES ? null : await noticePictureBytes(db, ws.id, pic.noticeId);
+    if (!data) {
       left += 1;
       continue;
     }
-    packed.push(pack({ name, data: pic.data, compress: false }));
+    packed.push(pack({ name, data, compress: false }));
     size += add;
   }
   const facts = { alliance: words.alliance, who: access.user.displayName ?? "", now: words.now };
@@ -218,8 +233,9 @@ export type ExportResult =
   | { ok: false; code: "rate_limited" | "too_large" };
 
 /**
- * One download, under the request id the officer's tap made (D100): a repeat of it is not counted again.
- * At most EXPORTS_PER_DAY a day per workspace; a refused one frees its request id and leaves no Home line.
+ * One download, under the request id the officer's tap made (D100): a repeat of it adds no second Home line,
+ * but its ZIP counts. At most EXPORTS_PER_DAY in a rolling 24 hours per workspace; a refused one frees its
+ * request id and leaves no Home line.
  */
 export async function downloadData(
   db: Db,
@@ -228,16 +244,17 @@ export async function downloadData(
   words: ExportWords,
 ): Promise<ExportResult> {
   const event = { workspaceId: access.workspaceId, by: access.user.id, at: words.now, requestId };
-  if (await claimDataEvent(db, { ...event, action: "download" })) {
-    const count = await recordFailure(db, exportLimitKey(access.workspaceId), DAY_MS, words.now);
-    if (count > EXPORTS_PER_DAY) {
-      await dropDataEvent(db, access.workspaceId, requestId);
-      return { ok: false, code: "rate_limited" };
-    }
+  const claimed = await claimDataEvent(db, { ...event, action: "download" });
+  // Every ZIP built counts, a repeated request id's too (review of PR 449): the id only keeps Home to one
+  // line per download.
+  const count = await recordFailure(db, exportLimitKey(access.workspaceId), DAY_MS, words.now);
+  if (count > EXPORTS_PER_DAY) {
+    if (claimed) await dropDataEvent(db, access.workspaceId, requestId);
+    return { ok: false, code: "rate_limited" };
   }
   const built = await buildZip(db, access, words);
   if (!built) {
-    await dropDataEvent(db, access.workspaceId, requestId);
+    if (claimed) await dropDataEvent(db, access.workspaceId, requestId);
     return { ok: false, code: "too_large" };
   }
   const filename = `${access.slug}-data-${words.now.toISOString().slice(0, 10)}.zip`;

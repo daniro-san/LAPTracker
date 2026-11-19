@@ -58,9 +58,7 @@ export const workspaceTombstones = pgTable("workspace_tombstones", {
   unionId: bigint("union_id", { mode: "number" }).notNull(),
   /** "TAG · Name" when the alliance is tracked, else null. */
   alliance: text("alliance"),
-  /** The officer's name when the job ran; null when the site's owner asked, or the officer had no name. */
-  requestedBy: text("requested_by"),
-  /** The site's owner asked, on /admin. */
+  /** Who asked: the site's owner on /admin (true) or an officer (false), never the officer's name. */
   byOwner: boolean("by_owner").notNull(),
   requestedAt: tstz("requested_at").notNull(),
   purgedAt: tstz("purged_at").notNull(),

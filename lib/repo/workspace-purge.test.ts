@@ -2,7 +2,7 @@
 // and leaves a tombstone; another workspace and the public rosters stay. The list of owned tables covers
 // every table with a workspace_id column, so a table added later cannot be left behind.
 import { count, getTableColumns, getTableName, is } from "drizzle-orm";
-import { PgTable } from "drizzle-orm/pg-core";
+import { getTableConfig, PgTable } from "drizzle-orm/pg-core";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import type { Db } from "../db";
@@ -17,7 +17,13 @@ import * as squads from "../schema-squads";
 import * as thefts from "../schema-thefts";
 import { seedEverything, seedRoster, seedWorkspace, SEED_AT } from "../workspace-data.test-helpers";
 import { ownedBy, WORKSPACE_TABLES } from "./workspace-data";
-import { askDeletion, DELETION_GRACE_MS, purgeDueWorkspaces } from "./workspace-purge";
+import {
+  askDeletion,
+  cancelDeletion,
+  DELETION_GRACE_MS,
+  purgeDueWorkspaces,
+  purgeWorkspace,
+} from "./workspace-purge";
 
 let db: Db;
 beforeAll(async () => {
@@ -40,15 +46,32 @@ async function rowsOf(ws: { id: number; unionId: number }) {
 }
 
 describe("the workspace purge (D125)", () => {
-  it("lists every table with a workspace_id column among the workspace's tables", () => {
+  it("lists every table with a workspace_id column, or a foreign key into a listed table", () => {
     const modules = [schema, board, imports, keys, notices, retention, squads, thefts];
-    const tables = modules.flatMap((m) => Object.values(m).filter((v) => is(v, PgTable)));
-    const owned = new Set(WORKSPACE_TABLES.map((t) => t.table));
+    const tables = [
+      ...new Set(modules.flatMap((m) => Object.values(m).filter((v) => is(v, PgTable)))),
+    ];
+    const owned = new Set<unknown>(WORKSPACE_TABLES.map((t) => t.table));
+    const pointsIn = (t: PgTable) =>
+      getTableConfig(t).foreignKeys.some((fk) => owned.has(fk.reference().foreignTable));
     const missing = tables.filter(
       (t) =>
-        !owned.has(t) && Object.values(getTableColumns(t)).some((c) => c.name === "workspace_id"),
+        !owned.has(t) &&
+        (Object.values(getTableColumns(t)).some((c) => c.name === "workspace_id") || pointsIn(t)),
     );
     expect(missing.map(getTableName)).toEqual([]);
+  });
+
+  it("keeps a workspace whose deletion was cancelled after the job listed it", async () => {
+    const nse = await seedWorkspace(db, "nse", 67109944);
+    await askDeletion(db, nse.workspaceId, nse.officer, SEED_AT);
+    // The job listed it as due; an officer cancels before its transaction locks the row.
+    await cancelDeletion(db, nse.workspaceId);
+    expect(await purgeWorkspace(db, nse.workspaceId, later(DELETION_GRACE_MS))).toBeNull();
+    expect(await db.select({ slug: schema.workspaces.slug }).from(schema.workspaces)).toEqual([
+      { slug: "nse" },
+    ]);
+    expect(await db.select().from(retention.workspaceTombstones)).toEqual([]);
   });
 
   it("deletes every owned row after the 14 days, leaves a tombstone, and touches nothing else", async () => {
@@ -66,6 +89,7 @@ describe("the workspace purge (D125)", () => {
     expect(await purgeDueWorkspaces(db, later(DELETION_GRACE_MS - 60_000))).toEqual({
       workspaces: 0,
       rows: 0,
+      failed: [],
     });
     const done = await purgeDueWorkspaces(db, later(DELETION_GRACE_MS));
     expect(done.workspaces).toBe(1);
@@ -85,7 +109,6 @@ describe("the workspace purge (D125)", () => {
         slug: "nse",
         unionId: 67109944,
         alliance: expect.stringContaining("·") as string,
-        requestedBy: "Officer nse",
         byOwner: false,
         requestedAt: SEED_AT,
         purgedAt: later(DELETION_GRACE_MS),

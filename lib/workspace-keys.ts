@@ -162,7 +162,7 @@ async function opened(db: Db, secret: string, r: SealedKey, now: Date): Promise<
 /**
  * The squads reads due at `now`, own alliance first. A workspace without a usable key of its own is not
  * read, except the own alliance's, on LAP_API_KEY, while it has no saved key or the feature is off
- * (no WORKSPACE_KEYS_SECRET). A key sealed under another master key is skipped and not written.
+ * (no WORKSPACE_KEYS_SECRET). With no workspace of its own (D125: deleted), the own alliance is not read. A key sealed under another master key is skipped and not written.
  */
 export async function squadTargets(
   db: Db,
@@ -172,8 +172,9 @@ export async function squadTargets(
   const rows = await sealedKeys(db);
   const own = rows.find((r) => r.unionId === OWN_ALLIANCE_ID);
   const targets: SquadTarget[] = [];
-  if (!secret || !own?.ciphertext) {
-    targets.push({ unionId: OWN_ALLIANCE_ID, workspaceId: own?.workspaceId ?? null, key: null });
+  // D125: without a workspace (none yet, or deleted) the own alliance's squads are not read at all.
+  if (own && (!secret || !own.ciphertext)) {
+    targets.push({ unionId: OWN_ALLIANCE_ID, workspaceId: own.workspaceId, key: null });
   }
   if (!secret) return targets;
   for (const r of rows) {

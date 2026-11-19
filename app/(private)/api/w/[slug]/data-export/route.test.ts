@@ -151,9 +151,10 @@ describe("POST /api/w/[slug]/data-export (D125)", () => {
     expect(files.get("pictures/notice-1.png")).toEqual(Buffer.from(PICTURE));
     const csv = (name: string) => files.get(name)?.toString("utf8") ?? "";
     // UTF-8 with a BOM, names instead of ids, and the README in the officer's language.
-    expect(csv("notice-texts.csv").startsWith("\uFEFFid,notice_id,workspace_id")).toBe(true);
+    // Portuguese and French files use ";", as Excel expects there (owner, 2026-11-19).
+    expect(csv("notice-texts.csv").startsWith("\uFEFFid;notice_id;workspace_id")).toBe(true);
     expect(csv("notice-texts.csv")).toContain("Olá, aliança");
-    expect(csv("member-facts.csv")).toContain("101,Ana Example,notes");
+    expect(csv("member-facts.csv")).toContain("101;Ana Example;notes");
     expect(csv("member-facts.csv")).toContain("Officer nse");
     expect(csv("thefts.csv").split("\r\n")).toHaveLength(3);
     expect(csv("thefts-deleted.csv").split("\r\n")).toHaveLength(3);
@@ -171,7 +172,7 @@ describe("POST /api/w/[slug]/data-export (D125)", () => {
     }
     for (const [name, data] of files) {
       if (!name.endsWith(".csv")) continue;
-      const header = data.toString("utf8").slice(1).split("\r\n")[0]?.split(",") ?? [];
+      const header = data.toString("utf8").slice(1).split("\r\n")[0]?.split(";") ?? [];
       const banned = [
         "x",
         "y",
@@ -194,15 +195,21 @@ describe("POST /api/w/[slug]/data-export (D125)", () => {
     expect(lines.filter((l) => l.action === "download")).toEqual([]);
   });
 
-  it("allows 3 downloads a day per workspace; a repeated request id is not counted again", async () => {
+  it("allows 3 ZIPs in 24 hours per workspace, a repeated request id's included", async () => {
     const first = ID();
+    const english = await post(tokens.officer, first);
+    expect(english.status).toBe(200);
+    // English files keep ",".
+    const people = unzip(new Uint8Array(await english.arrayBuffer())).get("people.csv");
+    expect(people?.toString("utf8").startsWith("\uFEFFid,workspace_id,")).toBe(true);
+    // The same request again builds a ZIP, so it counts; it adds no second Home line.
     expect((await post(tokens.officer, first)).status).toBe(200);
-    expect((await post(tokens.officer, first)).status).toBe(200);
-    expect((await post(tokens.officer)).status).toBe(200);
     expect((await post(tokens.officer)).status).toBe(200);
     const fourth = await post(tokens.officer);
     expect([fourth.status, await fourth.json()]).toEqual([429, { code: "rate_limited" }]);
+    const replay = await post(tokens.officer, first);
+    expect([replay.status, await replay.json()]).toEqual([429, { code: "rate_limited" }]);
     const lines = await db.select().from(workspaceDataEvents);
-    expect(lines.filter((l) => l.action === "download")).toHaveLength(3);
+    expect(lines.filter((l) => l.action === "download")).toHaveLength(2);
   });
 });

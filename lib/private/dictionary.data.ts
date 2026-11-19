@@ -8,9 +8,10 @@ export const dataEn = {
   "data.download": "Download our data",
   "data.downloading": "Preparing the file…",
   "data.downloadHelp":
-    "A ZIP of spreadsheet files (CSV) and a README that names each file. Map positions, online status, photos and the tracker key are left out. Up to 3 downloads a day.",
+    "A ZIP of spreadsheet files (CSV) and a README that names each file. Map positions, online status, photos and the tracker key are left out. Up to 3 downloads in 24 hours.",
   "data.downloaded": "Downloaded. Look in your downloads.",
-  "data.rateLimited": "Your alliance has downloaded its data 3 times today. Try again tomorrow.",
+  "data.rateLimited":
+    "Your alliance has downloaded its data 3 times in the last 24 hours. You can download again 24 hours after the first of them.",
   "data.tooLarge": "The data is too large for one file. Ask the site’s owner.",
   "data.failed": "Could not download. Try again.",
   "delete.head": "Delete this workspace",
@@ -42,7 +43,7 @@ export const dataEn = {
   "readme.title": "{alliance}: data from the Officers’ Desk",
   "readme.made": "Downloaded on {date} (UTC) by {who}.",
   "readme.open":
-    "Each .csv file opens in a spreadsheet (UTF-8, comma-separated). If Excel puts everything in one column, use Data > From Text/CSV.",
+    "Each .csv file opens in a spreadsheet (UTF-8, comma-separated, as Excel in English expects). If Excel puts everything in one column, use Data > From Text/CSV.",
   "readme.times":
     "Times are in UTC (ISO 8601). Columns that say who did something (created_by, written_by, deleted_by…) hold the person’s name.",
   "readme.deleted":
@@ -100,9 +101,10 @@ export const dataPt: typeof dataEn = {
   "data.download": "Baixar nossos dados",
   "data.downloading": "Preparando o arquivo…",
   "data.downloadHelp":
-    "Um ZIP com arquivos de planilha (CSV) e um LEIAME que explica cada arquivo. Posições no mapa, status online, fotos e a chave do tracker ficam de fora. Até 3 downloads por dia.",
+    "Um ZIP com arquivos de planilha (CSV) e um LEIAME que explica cada arquivo. Posições no mapa, status online, fotos e a chave do tracker ficam de fora. Até 3 downloads em 24 horas.",
   "data.downloaded": "Baixado. Veja nos seus downloads.",
-  "data.rateLimited": "Sua aliança já baixou os dados 3 vezes hoje. Tente de novo amanhã.",
+  "data.rateLimited":
+    "Sua aliança já baixou os dados 3 vezes nas últimas 24 horas. Dá para baixar de novo 24 horas depois do primeiro desses downloads.",
   "data.tooLarge": "Os dados são grandes demais para um arquivo. Fale com o dono do site.",
   "data.failed": "Não foi possível baixar. Tente de novo.",
   "delete.head": "Excluir este espaço de trabalho",
@@ -135,7 +137,7 @@ export const dataPt: typeof dataEn = {
   "readme.title": "{alliance}: dados da Mesa dos oficiais",
   "readme.made": "Baixado em {date} (UTC) por {who}.",
   "readme.open":
-    "Cada arquivo .csv abre numa planilha (UTF-8, separado por vírgulas). Se o Excel puser tudo numa coluna, use Dados > De Texto/CSV.",
+    "Cada arquivo .csv abre numa planilha (UTF-8, separado por ponto e vírgula, como o Excel em português espera). Se tudo ficar numa coluna, use Dados > De Texto/CSV e escolha ponto e vírgula.",
   "readme.times":
     "Os horários estão em UTC (ISO 8601). As colunas que dizem quem fez algo (created_by, written_by, deleted_by…) trazem o nome da pessoa.",
   "readme.deleted":
@@ -194,10 +196,10 @@ export const dataFr: typeof dataEn = {
   "data.download": "Télécharger nos données",
   "data.downloading": "Préparation du fichier…",
   "data.downloadHelp":
-    "Un ZIP de fichiers de tableur (CSV) et un LISEZMOI qui présente chaque fichier. Les positions sur la carte, le statut en ligne, les photos et la clé du tracker sont exclus. Jusqu’à 3 téléchargements par jour.",
+    "Un ZIP de fichiers de tableur (CSV) et un LISEZMOI qui présente chaque fichier. Les positions sur la carte, le statut en ligne, les photos et la clé du tracker sont exclus. Jusqu’à 3 téléchargements en 24 heures.",
   "data.downloaded": "Téléchargé. Regardez dans vos téléchargements.",
   "data.rateLimited":
-    "Votre alliance a déjà téléchargé ses données 3 fois aujourd’hui. Réessayez demain.",
+    "Votre alliance a déjà téléchargé ses données 3 fois ces dernières 24 heures. Vous pourrez télécharger à nouveau 24 heures après le premier de ces téléchargements.",
   "data.tooLarge":
     "Les données sont trop lourdes pour un seul fichier. Demandez au propriétaire du site.",
   "data.failed": "Téléchargement impossible. Réessayez.",
@@ -231,7 +233,7 @@ export const dataFr: typeof dataEn = {
   "readme.title": "{alliance} : données du Bureau des officiers",
   "readme.made": "Téléchargé le {date} (UTC) par {who}.",
   "readme.open":
-    "Chaque fichier .csv s’ouvre dans un tableur (UTF-8, séparé par des virgules). Si Excel met tout dans une colonne, utilisez Données > À partir d’un fichier texte/CSV.",
+    "Chaque fichier .csv s’ouvre dans un tableur (UTF-8, séparé par des points-virgules, comme Excel en français l’attend). Si tout se met dans une colonne, utilisez Données > À partir d’un fichier texte/CSV et choisissez le point-virgule.",
   "readme.times":
     "Les heures sont en UTC (ISO 8601). Les colonnes qui disent qui a fait quelque chose (created_by, written_by, deleted_by…) donnent le nom de la personne.",
   "readme.deleted":

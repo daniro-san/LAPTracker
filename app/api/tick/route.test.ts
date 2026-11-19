@@ -14,7 +14,15 @@ import {
 import { ago, fakeV1, IDS, minutes, roster } from "@/lib/collector.test-helpers";
 import type { Db } from "@/lib/db";
 import { openTestDb, truncateAll } from "@/lib/db.test-helpers";
-import { dailyReads, dailyRosters, events, rehearsalSlots, snapshots, tickLog } from "@/lib/schema";
+import {
+  dailyReads,
+  dailyRosters,
+  events,
+  rehearsalSlots,
+  snapshots,
+  tickLog,
+  workspaces,
+} from "@/lib/schema";
 import { squadReads } from "@/lib/schema-squads";
 
 const holder = vi.hoisted(() => ({ ctx: null as AppContext | null }));
@@ -291,6 +299,10 @@ describe("POST /api/tick", () => {
 
   it("starts the night's squads batch after a due tick's answer, and none on a tick outside the window", async () => {
     // D117, amendment 2026-11-19: cron-job.org's ticks at :00/:15/:30/:45 carry the squads read.
+    // D125: the own alliance is read only while it has a workspace.
+    await db
+      .insert(workspaces)
+      .values({ unionId: OWN_ALLIANCE_ID, slug: "ogs", discordGuildId: "1", leaderRoleIds: ["2"] });
     const { ctx, clock } = testContext(db);
     holder.ctx = ctx;
     const players: number[] = [];

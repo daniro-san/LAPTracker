@@ -88,7 +88,10 @@ async function dailyRead(
 /** The daily job of D125: counts only in the log, and a failure never fails the day's read. */
 async function purgeWorkspaces(db: Db, now: Date): Promise<void> {
   try {
-    console.info("workspaces.purged", await purgeDueWorkspaces(db, now));
+    const { workspaces, rows, failed } = await purgeDueWorkspaces(db, now);
+    console.info("workspaces.purged", { workspaces, rows, failed: failed.length });
+    // One workspace's failure stops none of the others: each is logged by its error class.
+    for (const code of failed) console.error("workspaces.purge_failed", { code, workspaces, rows });
   } catch (error: unknown) {
     console.error("workspaces.purge_failed", {
       code: error instanceof Error ? error.name : "unknown",

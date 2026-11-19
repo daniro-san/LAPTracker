@@ -103,7 +103,7 @@ export const workspacesAdminCopy = {
     cancelled: "Deletion cancelled.",
     deleted: "Deleted workspaces",
     deletedHelp:
-      "What is left of a deleted workspace: its address, its alliance and who asked. No member data.",
+      "What is left of a deleted workspace: its address, its alliance and whether you or an officer asked. No names, no member data.",
     tombstone: "/w/{slug} · {alliance} · asked by {who} on {asked} · deleted on {purged}",
   },
   saved: "Saved.",

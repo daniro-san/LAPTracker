@@ -1,5 +1,5 @@
 {
-  "id": "14f28cc5-42fc-4cd2-9da1-0028f6e2bd15",
+  "id": "2c23da71-1b53-4293-97c7-9f1875183217",
   "prevId": "364b0a92-82fd-447b-ac00-965d6a522064",
   "version": "7",
   "dialect": "postgresql",
@@ -6007,12 +6007,6 @@
         },
         "alliance": {
           "name": "alliance",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "requested_by": {
-          "name": "requested_by",
           "type": "text",
           "primaryKey": false,
           "notNull": false

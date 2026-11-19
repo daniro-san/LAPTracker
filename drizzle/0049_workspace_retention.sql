@@ -13,7 +13,6 @@ CREATE TABLE "workspace_tombstones" (
 	"slug" text NOT NULL,
 	"union_id" bigint NOT NULL,
 	"alliance" text,
-	"requested_by" text,
 	"by_owner" boolean NOT NULL,
 	"requested_at" timestamp with time zone NOT NULL,
 	"purged_at" timestamp with time zone NOT NULL

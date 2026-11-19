@@ -2,6 +2,7 @@
 // data), and the squads read on each workspace's own key only. A 401 marks the key invalid and stops that
 // workspace's reads; a 429 marks it out of quota until the reset; neither falls back to LAP_API_KEY, which
 // only the own alliance (OGs) uses, and only until its officers save a key.
+import { eq } from "drizzle-orm";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { OWN_ALLIANCE_ID } from "../config/alliances";
@@ -13,7 +14,7 @@ import { createRunLogger } from "./logger";
 import { insertRunLog } from "./repo/run-logs";
 import { keyFacts, storeKey } from "./repo/workspace-keys";
 import { saveWorkspace } from "./repo/workspaces";
-import { appErrors, dailyReads, dailyRosters, runLogs } from "./schema";
+import { appErrors, dailyReads, dailyRosters, runLogs, workspaces } from "./schema";
 import { workspaceKeys } from "./schema-keys";
 import { v1 } from "./sources";
 import { QuotaExhaustedError, UpstreamError, type CallOptions } from "./sources/types";
@@ -163,6 +164,14 @@ describe("the squads read on each workspace's own key (D124)", () => {
     const own = deps(FRI.now);
     await runSquadsBatch(own.d, db);
     expect(own.calls.map((c) => c.key)).toEqual([OGS_KEY, OGS_KEY, OGS_KEY, OGS_KEY]);
+  });
+
+  it("reads nothing for OGs once its workspace is deleted (D125)", async () => {
+    await dayRead(THU.day);
+    await db.delete(workspaces).where(eq(workspaces.id, ws.ogs));
+    const { d, calls } = deps(THU.now);
+    await runSquadsBatch(d, db);
+    expect(calls.filter((c) => c.key === undefined)).toEqual([]);
   });
 
   it("reads another workspace on its own key only, never on LAP_API_KEY", async () => {

@@ -47,7 +47,7 @@ function Deleted({ rows }: { rows: Awaited<ReturnType<typeof listTombstones>> })
             {fill(d.tombstone, {
               slug: r.slug,
               alliance: r.alliance ?? String(r.unionId),
-              who: r.byOwner ? d.owner : (r.requestedBy ?? d.officer),
+              who: r.byOwner ? d.owner : d.officer,
               asked: day(r.requestedAt),
               purged: day(r.purgedAt),
             })}
