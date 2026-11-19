@@ -104,6 +104,13 @@ describe("the squads read (D117)", () => {
     expect(d.calls).toEqual([1, 2, 3]);
 
     await truncateAll(db);
+    // D125: the own alliance is read only while it has a workspace.
+    await saveWorkspace(db, {
+      unionId: OWN_ALLIANCE_ID,
+      slug: "ogs",
+      discordGuildId: "1",
+      leaderRoleIds: ["2"],
+    });
     await dayRead(
       THU.day,
       Array.from({ length: 130 }, (_, i) => i + 1),

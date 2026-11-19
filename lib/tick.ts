@@ -1,7 +1,8 @@
 // The scheduler's decision (plan §3.1), event-driven: scheduled events' rows are created from the env a
 // day ahead; every event (scheduled or rehearsal) carries its own before_at/after_at; one action per tick.
 // Between an event's Before and After, a sample every SAMPLE_EVERY_MIN (D69), only when no phase is due.
-// The daily roster read (D60) comes last, when nothing else is due.
+// The daily roster read (D60) comes last, when nothing else is due; after the day's first one, the workspaces
+// whose deletion grace ended are deleted (D125).
 import { DAILY_ROSTER_IDS } from "../config/alliances";
 import { secretsOf, type AppContext } from "./app-context";
 import { RUN_DEADLINE_MS } from "./compute";
@@ -20,6 +21,7 @@ import { claimQuotaCheck, duePhases, dueSample, findOrCreateEvent } from "./repo
 import { pruneEndedPictures } from "./repo/notice-picture-cleanup";
 import { claimSlot, setSlotOutcome } from "./repo/rehearsals";
 import { latestTickAt } from "./repo/ticks";
+import { purgeDueWorkspaces } from "./repo/workspace-purge";
 import { executeSample, executeSnapshot, quotaReport, type RunOutcome } from "./run";
 import {
   dailyReadDue,
@@ -71,15 +73,30 @@ async function dailyRead(
   // INVARIANT daily-read.ends-before-midnight
   if (!due || !endsInServerDay(now, RUN_DEADLINE_MS, ctx.env)) return null;
   const deps = { v1: ctx.v1, now: ctx.now, secrets: secretsOf(ctx.env) };
-  const summary =
-    (await runDailyRead(deps, db, due.day, DAILY_ROSTER_IDS)) ??
-    (await autoRetryDailyRead(deps, db, due.day, DAILY_ROSTER_IDS));
+  const first = await runDailyRead(deps, db, due.day, DAILY_ROSTER_IDS);
+  // D125: once a day, after the day's first read, the workspaces whose 14 days ended are deleted.
+  if (first) await purgeWorkspaces(db, ctx.now());
+  const summary = first ?? (await autoRetryDailyRead(deps, db, due.day, DAILY_ROSTER_IDS));
   if (!summary) return null;
   if (summary.status !== "complete") {
     const at = discordClock(ctx.env.SERVER_TZ).stamp(ctx.now());
     await createNotifier(ctx.env, ctx.fetch).admin(dailyReadMessage(summary, at, origin));
   }
   return { kind: "daily-read", summary };
+}
+
+/** The daily job of D125: counts only in the log, and a failure never fails the day's read. */
+async function purgeWorkspaces(db: Db, now: Date): Promise<void> {
+  try {
+    const { workspaces, rows, failed } = await purgeDueWorkspaces(db, now);
+    console.info("workspaces.purged", { workspaces, rows, failed: failed.length });
+    // One workspace's failure stops none of the others: each is logged by its error class.
+    for (const code of failed) console.error("workspaces.purge_failed", { code, workspaces, rows });
+  } catch (error: unknown) {
+    console.error("workspaces.purge_failed", {
+      code: error instanceof Error ? error.name : "unknown",
+    });
+  }
 }
 
 /** The due sample of the slot holding now (D69), or null: a slot no tick took is not caught up.

@@ -22,7 +22,7 @@ import { AnalyticsPerson } from "../../../_ui/AnalyticsPerson";
 import { LINK, Notices, StartHere, Week } from "../../../_ui/BoardSections";
 import { BoardSectionsSeen } from "../../../_ui/BoardSectionsSeen";
 import { BoardThanks } from "../../../_ui/BoardThanks";
-import { Frame, workspaceWords } from "../../../_ui/Frame";
+import { DeletionNotice, Frame, workspaceWords } from "../../../_ui/Frame";
 import { refuse } from "../../../_ui/refuse";
 import { SignOutButton } from "../../../_ui/SignOutButton";
 
@@ -94,6 +94,13 @@ export default async function BoardPage({ params }: { params: Promise<{ slug: st
           </a>
         </aside>
       )}
+      <DeletionNotice
+        slug={slug}
+        purgeAfter={access.purgeAfter}
+        officer={access.officer}
+        t={t}
+        language={language}
+      />
       <h1 className="font-display text-display-lg">{t["board.title"]}</h1>
       <p className="mt-1">
         {t["board.lead"]}{" "}

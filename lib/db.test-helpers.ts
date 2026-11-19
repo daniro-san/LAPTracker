@@ -16,6 +16,6 @@ export async function openTestDb(): Promise<Db> {
 
 export async function truncateAll(db: Db): Promise<void> {
   await db.execute(
-    sql`truncate workspace_sessions, workspace_users, workspaces, player_frames, daily_rosters, daily_reads, run_logs, member_snapshots, alliance_snapshots, snapshots, events, auth_attempts, app_errors, app_alerts, tick_log, member_squads, hero_catalog restart identity cascade`,
+    sql`truncate workspace_sessions, workspace_users, workspaces, player_frames, daily_rosters, daily_reads, run_logs, member_snapshots, alliance_snapshots, snapshots, events, auth_attempts, app_errors, app_alerts, tick_log, member_squads, hero_catalog, workspace_tombstones restart identity cascade`,
   );
 }
