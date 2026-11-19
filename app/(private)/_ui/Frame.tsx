@@ -2,7 +2,8 @@
 // opens the first-use cards (issue 312) and EN · PT · FR, the page, and, once signed in, the five
 // destinations: bottom tabs below 768, the side rail from 768 and the labelled sidebar with each
 // destination's views from 1280 (AppShell, D122). Designed at 360 px; every control is 44 px or more.
-// Pages keep the 960 px width until each is laid out for the wider widths (D122 rollout).
+// Pages keep the 960 px width until each is laid out for the wider widths (D122 rollout); a page laid out
+// passes `wide`.
 import { cookies, headers } from "next/headers";
 import type { ReactNode } from "react";
 
@@ -49,6 +50,7 @@ export async function Frame({
   subtitle,
   account,
   tabs,
+  wide = false,
   children,
 }: {
   language: WorkspaceLanguage;
@@ -61,6 +63,8 @@ export async function Frame({
   account?: ReactNode;
   /** Signed in: the destinations with `current` open (and `view` inside it), and the first-use cards. */
   tabs?: { slug: string; current: TabId; view?: DeskView; waiting: number };
+  /** The page is laid out on the layout components (D122): the full width, not the 960 px fallback. */
+  wide?: boolean;
   children: ReactNode;
 }) {
   const seen = !tabs || (await cookies()).get(WORKSPACE_INTRO_COOKIE)?.value === "1";
@@ -84,7 +88,7 @@ export async function Frame({
       lang={language}
       barClass="bg-burgundy text-wax-paper"
       bar={bar}
-      legacyWidth
+      legacyWidth={!wide}
       {...(tabs && {
         tabs: <Tabs t={t} slug={tabs.slug} current={tabs.current} waiting={tabs.waiting} />,
         rail: <SideNav t={t} {...tabs} wide={false} />,
@@ -107,6 +111,7 @@ export function SignedInFrame({
   t,
   current: at,
   waiting,
+  wide = false,
   children,
 }: {
   access: WorkspaceAccess;
@@ -115,6 +120,8 @@ export function SignedInFrame({
   /** The open destination, or one of its views (its destination is open, and the view marked). */
   current: TabId | DeskView;
   waiting: number;
+  /** Laid out for the wider widths (D122); see `Frame`. */
+  wide?: boolean;
   children: ReactNode;
 }) {
   const view = at in VIEW_TAB ? (at as DeskView) : undefined;
@@ -161,6 +168,7 @@ export function SignedInFrame({
         t={t}
         tabs={{ slug: access.slug, current, waiting, ...(view && { view }) }}
         account={account}
+        wide={wide}
         {...(alliance && { subtitle: `${alliance.tag} · ${alliance.name}` })}
       >
         {person && <AnalyticsPerson {...person} />}

@@ -2,7 +2,8 @@
 // column (1/3) on the right, divided by a 2 px ink rule; one column below. The HTML order is the phone order
 // (`marginFirst` puts the margin first there, as the alliance figures before the member list); grid areas
 // put the margin on the right at every width that has one, so it is never on the left. `even` makes two
-// equal columns from 768 for a pair of blocks of the same weight.
+// equal columns from 768 for a pair of blocks of the same weight. The rule runs the full height of the
+// spread; with `stickyMargin` only the notes inside it stick.
 import type { ReactNode } from "react";
 
 export function Spread({
@@ -20,10 +21,8 @@ export function Spread({
 }) {
   const mainBox = <div className="min-w-0 lg:[grid-area:main]">{main}</div>;
   const marginBox = (
-    <div
-      className={`min-w-0 lg:border-l-2 lg:border-ink lg:pl-6 lg:[grid-area:margin] ${stickyMargin ? "lg:sticky lg:top-4 lg:self-start" : ""}`}
-    >
-      {margin}
+    <div className="min-w-0 lg:border-l-2 lg:border-ink lg:pl-6 lg:[grid-area:margin]">
+      <div className={stickyMargin ? "lg:sticky lg:top-4" : undefined}>{margin}</div>
     </div>
   );
   return (
