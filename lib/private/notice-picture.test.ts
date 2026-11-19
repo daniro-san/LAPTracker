@@ -4,6 +4,7 @@
 // "added a picture" line, which pages with the feed's cursor (D108) without repeating.
 import { randomUUID } from "node:crypto";
 
+import { eq } from "drizzle-orm";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import type { Db } from "../db";
@@ -16,7 +17,7 @@ import { activityPage } from "./desk-activity";
 import { savePicture } from "./notice-picture";
 import { keepPicture, picturesDue, reusePicture } from "./notice-picture-due";
 import { pngHeader } from "./notice-picture.test-helpers";
-import { saveNotice } from "./notices";
+import { deleteNotice, noticeDetail, saveNotice } from "./notices";
 import { createSession } from "./session";
 
 /** Noon UTC is the same day in server time (UTC-2). */
@@ -149,5 +150,48 @@ describe("the weekly notice picture cleanup and its warning (D119)", () => {
     }
     const lines = (await feed(later(1), 2)).filter((l) => l.kind === "noticePicture");
     expect(lines.map((l) => ("title" in l ? l.title : "")).sort()).toEqual(titles);
+  });
+
+  it("neither warns about nor deletes the picture of a notice in the trash, and a restore brings it back", async () => {
+    const id = await pictured("Old map", shiftDay(TODAY, -200));
+    await pruneEndedPictures(db, TODAY, NOW);
+    await deleteNotice(db, officer, { id, requestId: randomUUID() }, later(1));
+    for (const days of [7, 14]) {
+      expect(await pruneEndedPictures(db, shiftDay(TODAY, days), later(days))).toBe(0);
+    }
+    const [warned] = await db.select().from(noticePictures);
+    expect(warned?.warnedAt).toBeNull();
+    await deleteNotice(db, officer, { id, requestId: randomUUID(), restore: true }, later(15));
+    expect(await stored()).toEqual([id]);
+    expect((await picturesDue(db, officer, later(15), UTC)).map((d) => d.noticeId)).toEqual([id]);
+  });
+
+  it("restarts the 7 days when the end day moves away and back", async () => {
+    const endsOn = shiftDay(TODAY, -200);
+    const id = await pictured("Old map", endsOn);
+    await pruneEndedPictures(db, TODAY, NOW);
+    for (const value of ["", endsOn]) {
+      const version = (await noticeDetail(db, officer, id))?.fields.ends_on.version ?? 0;
+      const saved = await saveNotice(
+        db,
+        officer,
+        id,
+        [{ field: "ends_on", value, version }],
+        later(6),
+      );
+      expect(saved.ok).toBe(true);
+    }
+    expect(await pruneEndedPictures(db, shiftDay(TODAY, 7), later(7))).toBe(0);
+    expect(await pruneEndedPictures(db, shiftDay(TODAY, 13), later(13))).toBe(0);
+    expect(await pruneEndedPictures(db, shiftDay(TODAY, 14), later(14))).toBe(1);
+  });
+
+  it("does not copy the picture of a notice in the trash", async () => {
+    const from = await pictured("Old map", "");
+    const to = await pictured("New rota", "", 41);
+    await deleteNotice(db, officer, { id: from, requestId: randomUUID() }, NOW);
+    expect(await reusePicture(db, officer, from, to, later(1))).toBeNull();
+    const [row] = await db.select().from(noticePictures).where(eq(noticePictures.noticeId, to));
+    expect(row?.width).toBe(41);
   });
 });

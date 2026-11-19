@@ -7,8 +7,9 @@ import { and, eq, isNotNull, isNull, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { workspaceUsers } from "../schema";
-import { noticePictures } from "../schema-notices";
+import { noticePictures, notices } from "../schema-notices";
 import { putPicture } from "./notice-pictures";
+import { live } from "./notices";
 
 /** A picture is kept this many days after its notice's end day. */
 export const PICTURE_KEEP_DAYS = 90;
@@ -36,25 +37,30 @@ const dueFrom = (today: string) => shiftDay(today, -(PICTURE_KEEP_DAYS + 1));
 /**
  * The weekly job, every workspace at once, at `now` (server day `today`). First it deletes the due, unkept
  * pictures warned at least WARN_DAYS ago; then it starts the warning of the unkept pictures due within
- * WARN_DAYS, and ends it for those whose end day moved away. Returns how many pictures were deleted.
+ * WARN_DAYS, and ends it for those whose end day moved away or whose notice is in the trash (D118): a
+ * deleted notice's picture is neither warned about nor deleted, and a restore brings it back. A save that
+ * changes a notice's end day also ends its warning (`writeNotice`). Returns how many pictures were deleted.
  * INVARIANT pictures.warned-first: no picture is deleted unless Home warned about it WARN_DAYS before.
  */
 export async function pruneEndedPictures(db: Db, today: string, now: Date): Promise<number> {
   const warnedBy = new Date(now.getTime() - WARN_DAYS * DAY_MS).toISOString();
   const deleted = await db.execute<{ notice_id: number }>(sql`
-    delete from notice_pictures g using ${endDays} last
-    where last.notice_id = g.notice_id and last.ends_on <> '' and last.ends_on <= ${dueFrom(today)}
+    delete from notice_pictures g using ${endDays} last, notices n
+    where last.notice_id = g.notice_id and n.id = g.notice_id and n.deleted_at is null
+      and last.ends_on <> '' and last.ends_on <= ${dueFrom(today)}
       and g.kept_at is null and g.warned_at is not null and g.warned_at <= ${warnedBy}
     returning g.notice_id`);
   await db.execute(sql`
-    update notice_pictures g set warned_at = ${now.toISOString()} from ${endDays} last
-    where last.notice_id = g.notice_id and last.ends_on <> '' and last.ends_on <= ${warnFrom(today)}
+    update notice_pictures g set warned_at = ${now.toISOString()} from ${endDays} last, notices n
+    where last.notice_id = g.notice_id and n.id = g.notice_id and n.deleted_at is null
+      and last.ends_on <> '' and last.ends_on <= ${warnFrom(today)}
       and g.kept_at is null and g.warned_at is null`);
   await db.execute(sql`
     update notice_pictures g set warned_at = null
     where g.warned_at is not null and (g.kept_at is not null or not exists (
-      select 1 from ${endDays} last
-      where last.notice_id = g.notice_id and last.ends_on <> '' and last.ends_on <= ${warnFrom(today)}))`);
+      select 1 from ${endDays} last join notices n on n.id = last.notice_id
+      where last.notice_id = g.notice_id and n.deleted_at is null
+        and last.ends_on <> '' and last.ends_on <= ${warnFrom(today)}))`);
   return deleted.rows.length;
 }
 
@@ -174,7 +180,11 @@ export async function copyPicture(
       hash: noticePictures.hash,
     })
     .from(noticePictures)
-    .where(and(eq(noticePictures.workspaceId, workspaceId), eq(noticePictures.noticeId, from)));
+    .innerJoin(notices, eq(notices.id, noticePictures.noticeId))
+    // A deleted notice's picture (D118) is not copied.
+    .where(
+      and(eq(noticePictures.workspaceId, workspaceId), eq(noticePictures.noticeId, from), live),
+    );
   if (!source || from === to) return null;
   return putPicture(db, workspaceId, to, source, userId, now, from);
 }

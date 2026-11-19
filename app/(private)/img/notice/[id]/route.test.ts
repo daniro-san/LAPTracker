@@ -83,10 +83,11 @@ async function pictured(token: string, members: boolean, endsOn = ""): Promise<n
   return id;
 }
 
-async function view(id: number, token: string | null, etag?: string) {
+async function view(id: number, token: string | null, etag?: string, query = "") {
   const headers: Record<string, string> = token ? { cookie: `${SESSION_COOKIE}=${token}` } : {};
   if (etag) headers["if-none-match"] = etag;
-  const res = await GET(new Request(`https://laptracker.test/img/notice/${id}`, { headers }), {
+  const url = `https://laptracker.test/img/notice/${id}${query}`;
+  const res = await GET(new Request(url, { headers }), {
     params: Promise.resolve({ id: String(id) }),
   });
   return { status: res.status, headers: res.headers, bytes: (await res.arrayBuffer()).byteLength };
@@ -150,5 +151,18 @@ describe("GET /img/notice/[id]", () => {
     );
     expect((await view(id, officer)).status).toBe(404);
     expect((await view(id, member)).status).toBe(404);
+  });
+
+  it("sends Download to an officer as a file, and refuses it to a member", async () => {
+    const officer = await session(1, "Rook", "officer");
+    const member = await session(1, "Pip", "member");
+    const id = await pictured(officer, true);
+    const saved = await view(id, officer, undefined, "?download=1");
+    expect(saved).toMatchObject({ status: 200, bytes: 33 });
+    expect(saved.headers.get("content-disposition")).toBe(
+      `attachment; filename="notice-${id}.png"`,
+    );
+    expect(saved.headers.get("x-content-type-options")).toBe("nosniff");
+    expect((await view(id, member, undefined, "?download=1")).status).toBe(404);
   });
 });

@@ -26,6 +26,7 @@ vi.mock("@/lib/app-context", async (original) => ({
 const { POST: save } = await import("../route");
 const { POST } = await import("./route");
 const { POST: remove } = await import("./remove/route");
+const { POST: reuse } = await import("./reuse/route");
 const { POST: trash } = await import("../delete/route");
 
 let db: Db;
@@ -160,6 +161,17 @@ describe("POST /api/w/[slug]/notices/picture", () => {
     });
     expect((await upload(id, pngHeader(40, 30))).status).toBe(200);
     expect((await json(remove, "picture/remove", { id }, "nse")).status).toBe(200);
+    expect(await db.select().from(noticePictures)).toHaveLength(1);
+  });
+
+  it("refuses to copy a picture into or out of another workspace", async () => {
+    const from = await notice();
+    const to = await notice();
+    expect((await upload(from, pngHeader(40, 30))).status).toBe(200);
+    expect(await json(reuse, "picture/reuse", { from, to }, "nse")).toEqual({
+      status: 404,
+      json: { code: "not_found" },
+    });
     expect(await db.select().from(noticePictures)).toHaveLength(1);
   });
 

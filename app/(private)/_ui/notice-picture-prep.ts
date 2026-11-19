@@ -39,19 +39,31 @@ function quarterTurn(b: Uint8Array): boolean {
   return false;
 }
 
-/**
- * The file decoded straight at its upload size when its header says it (a 48 MP photo is never decoded at
- * full size on a low-end phone, review of PR 422), else as it is.
- */
-async function decode(file: File): Promise<ImageBitmap | null> {
+/** The size to decode at, from the header (a quarter-turned JPEG's swapped); null when none is needed. */
+async function uploadSize(
+  file: File,
+): Promise<{ resizeWidth: number; resizeHeight: number } | null> {
   const head = new Uint8Array(await file.slice(0, HEADER_BYTES).arrayBuffer());
   const raw = pictureSize(head);
   const turned = raw && head[0] === 0xff && quarterTurn(head);
   const size = turned ? { width: raw.height, height: raw.width } : raw;
   const fit = size && fitWithin(size.width, size.height);
-  const resize =
-    fit && size.width > fit.width ? { resizeWidth: fit.width, resizeHeight: fit.height } : {};
-  return createImageBitmap(file, { ...resize, resizeQuality: "high" }).catch(() => null);
+  return fit && size.width > fit.width
+    ? { resizeWidth: fit.width, resizeHeight: fit.height }
+    : null;
+}
+
+/**
+ * The file decoded straight at its upload size when its header says it (a 48 MP photo is never decoded at
+ * full size on a low-end phone, review of PR 422), else as it is.
+ */
+async function decode(file: File): Promise<ImageBitmap | null> {
+  // Odd metadata never blocks a good photo: without a size read, the file is decoded as it is.
+  const size = await uploadSize(file).catch(() => null);
+  const resized = size
+    ? await createImageBitmap(file, { ...size, resizeQuality: "high" }).catch(() => null)
+    : null;
+  return resized ?? createImageBitmap(file).catch(() => null);
 }
 
 /** The picture ready to upload, or null when it cannot be read or made small enough. */

@@ -69,3 +69,8 @@ Why: officers want to show a map, a schedule or a game screen with a notice. The
 - **Uploads.** The upload route reads the body only with a `Content-Length` of at most 400 KB: 411 `length_required` without one, 413 over it. Animated pictures are refused (422 `animated`): a WebP whose VP8X header sets the animation flag, or a PNG with an `acTL` chunk. A check constraint, `octet_length(data) between 1 and 409600`, guards the stored bytes themselves.
 - **Decoding.** The browser decodes straight at the upload size (`createImageBitmap` with `resizeWidth` and `resizeHeight` from the header's size, swapped for a JPEG whose EXIF orientation turns it a quarter turn), so a 48 MP photo is never decoded at full size on a low-end phone. `pictureSize` (`lib/screenshot/picture-size.ts`) is browser-safe now.
 - **Half-saves in the editor.** When the picture went in and the text save after it fails, the editor holds no picture change any more and reads the stored picture again, so it stays in step. A picture-only save closes the editor. A refused picture (413, 415, 422) reads "This picture could not be used. Try another one." rather than "Press Save to try again".
+- **Re-review (2026-11-19).**
+  - The cleanup's three steps (warn, delete, clear) require a live notice: a picture in the trash (D118) is neither warned about nor deleted, its warning ends, and a restore brings it back with a fresh clock.
+  - A notice save that changes `ends_on` ends its picture's warning, in the same transaction (`writeNotice`). A date moved away and back restarts the 7 days.
+  - "Use in another notice" copies only from a live notice.
+  - The browser's header and EXIF read is wrapped: a failure there, or a failed resized decode, falls back to a plain `createImageBitmap(file)`.
