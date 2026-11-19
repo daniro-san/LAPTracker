@@ -150,8 +150,8 @@ export const calendarFr: CalendarWords = {
   "calendar.month.title": "{month} (ST)",
   "calendar.suggest.head": "Suggestions",
   "calendar.suggest.how":
-    "D’abord les plus actifs de la semaine, puis ceux qui attendent depuis le plus longtemps un rôle de caravane. Pas suggérés : les membres absents et ceux qui ont eu un rôle de caravane ces 7 derniers jours.",
-  "calendar.suggest.active": "Actif cette semaine",
+    "D’abord ceux qui ont le plus de points de quêtes du jour cette semaine, puis ceux qui attendent depuis le plus longtemps un rôle de caravane. Pas suggérés : les membres absents et ceux qui ont eu un rôle de caravane ces 7 derniers jours.",
+  "calendar.suggest.active": "Quêtes du jour faites cette semaine",
   "calendar.suggest.last.one": "dernier rôle il y a {n} jour",
   "calendar.suggest.last.other": "dernier rôle il y a {n} jours",
   "calendar.suggest.never": "aucun rôle de caravane pour l’instant",

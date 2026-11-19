@@ -36,6 +36,7 @@ import {
   missingOf,
   topOf,
   weekDonations,
+  weekQuestPoints,
   weekTotal,
   type DayValue,
   type Idle,
@@ -96,7 +97,7 @@ export interface MembersView {
   /** The game week of the newest read, Monday to Sunday (server days). */
   week: string[];
   members: MemberRow[];
-  /** Top donors and most active, and who made progress this week (AD Tech 100 %, main squad, D109). */
+  /** Top donors and quest points this week, and who made progress (AD Tech 100 %, main squad, D109). */
   thanks: { donors: Thank[]; activity: Thank[]; progress: Progress[] };
   /** The time zones the members have, most used first (the picker lists them first). */
   zones: string[];
@@ -295,7 +296,7 @@ export async function membersView(
     members,
     thanks: {
       donors: topOf(counted, (m) => m.weekTotal),
-      activity: topOf(counted, (m) => m.activity),
+      activity: topOf(counted, (m) => weekQuestPoints(reads, m.uid)),
       // The week the thanks cover (D114): this game week, or last week on a Monday.
       progress: history ? progressOf(history, counted, thanksWeek(today), zone) : [],
     },

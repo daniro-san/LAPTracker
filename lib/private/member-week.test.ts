@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { RosterMember, RosterRead } from "../repo/workspace-rosters";
+import { signalsOf } from "./garrison-signals";
 import {
   gameWeek,
   idleRun,
@@ -8,6 +9,7 @@ import {
   missingOf,
   topOf,
   weekDonations,
+  weekQuestPoints,
   weekTotal,
 } from "./member-week";
 
@@ -63,23 +65,57 @@ describe("the game week's donations (issue #296)", () => {
   });
 });
 
-describe("the offline proxy (D75)", () => {
-  it("is a reason after 2 days of unchanged activity and donations, with Monday's reset ignored", () => {
+describe("the week's daily quest points (D127)", () => {
+  it("sums the days of the newest read's game week, so thanks and picks never hang on one day", () => {
+    // Sunday 8 is the week before; on Wednesday 11, the newest read, member 1 has no quests yet.
     const reads = [
-      read("2026-11-07", [member(1, { active: 50 }), member(2, { active: 50 }), member(3)]),
-      read("2026-11-08", [member(1, { active: 50 }), member(2, { active: 50 }), member(3)]),
-      // Monday: the weekly activity starts again from 0.
-      read("2026-11-09", [member(1), member(2, { active: 10 }), member(3, { active: null })]),
-      read("2026-11-10", [member(1), member(2, { active: 10 }), member(3)]),
+      read("2026-11-08", [member(1, { active: 999 }), member(2, { active: 999 })]),
+      read("2026-11-09", [member(1, { active: 700 }), member(2, { active: null })]),
+      read("2026-11-10", [member(1, { active: 300 }), member(2, { active: null })]),
+      read("2026-11-11", [member(1, { active: null }), member(2, { active: null })]),
     ];
 
-    expect(idleRun(reads, 1)).toEqual({ days: 3, activity: 0, donated: 0 });
-    // Member 2 was active on Monday; member 3's Monday is unknown, which never counts.
+    expect(weekQuestPoints(reads, 1)).toBe(1000);
+    expect(weekQuestPoints(reads, 2)).toBeNull();
+    // The garrison's "active" signal reads the same week.
+    expect([1, 2].map((uid) => signalsOf(reads, [])(uid).active)).toEqual([true, null]);
+  });
+});
+
+describe("the offline proxy (D75, D127)", () => {
+  const none = { active: null, dailyTech: null };
+
+  it("is a reason after 3 end-of-day reads in a row with no quest points and no donations", () => {
+    const reads = [
+      read("2026-11-09", [member(1, { active: 700 }), member(2, none)]),
+      read("2026-11-10", [member(1, none), member(2, none)]),
+      read("2026-11-11", [member(1, none), member(2, { active: null, dailyTech: 500 })]),
+      read("2026-11-12", [member(1, none), member(2, none)]),
+    ];
+
+    expect(idleRun(reads, 1)).toEqual({ days: 3 });
+    // Member 2 donated on the 11th: one read with nothing is not enough.
     expect(idleRun(reads, 2)).toBeNull();
-    expect(idleRun(reads, 3)).toBeNull();
-    // One unchanged day is not enough, and a day with no read ends the run.
-    expect(idleRun(reads.slice(2), 1)).toBeNull();
-    expect(idleRun([reads[0], reads[1], reads[3]] as RosterRead[], 1)).toBeNull();
+  });
+
+  it("does not count across a failed read", () => {
+    // The read of the 11th failed, so it is not among the reads: two runs of two, never one of four.
+    const reads = ["2026-11-09", "2026-11-10", "2026-11-12", "2026-11-13"].map((day) =>
+      read(day, [member(1, none)]),
+    );
+
+    expect(idleRun(reads, 1)).toBeNull();
+    expect(idleRun([...reads, read("2026-11-14", [member(1, none)])], 1)).toEqual({ days: 3 });
+  });
+
+  it("does not fire for a new member that the earlier reads do not list", () => {
+    const reads = [
+      read("2026-11-10", [member(1)]),
+      read("2026-11-11", [member(1), member(2, none)]),
+      read("2026-11-12", [member(1), member(2, none)]),
+    ];
+
+    expect(idleRun(reads, 2)).toBeNull();
   });
 });
 

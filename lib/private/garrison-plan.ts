@@ -17,7 +17,7 @@ export interface Squad {
 }
 
 /**
- * What the suggestion order reads (D76, D103, D109): weekly activity above zero, might grown over the last
+ * What the suggestion order reads (D76, D103, D109, D127): the week's daily quest points above zero, might grown over the last
  * one to two weeks, and a "took part" mark in a recent Undead Siege roll call. Null is unknown.
  */
 export interface Signals {

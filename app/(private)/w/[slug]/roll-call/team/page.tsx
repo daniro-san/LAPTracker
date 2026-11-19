@@ -1,6 +1,6 @@
 // /w/[slug]/roll-call/team (issue 298): an Elixir Scramble team, `?entry=&week=` of its Calendar entry. Up
-// to 20 players, suggested by who is awake at the window, then this week's activity, then main squad might
-// (owner, issue 298). Activity stays on the server (D76): the page gets the order and "Active this week".
+// to 20 players, suggested by who is awake at the window, then this week's daily quest points, then main squad might
+// (owner, issue 298). Quest points stay on the server (D76): the page gets the order and "Quests this week".
 import { notFound } from "next/navigation";
 
 import { fill } from "@/lib/copy";
