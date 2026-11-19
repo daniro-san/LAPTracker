@@ -16,7 +16,7 @@ export function SiteFooter({
 }: {
   ornament?: "yarn" | "granny";
   copy: Dictionary;
-  /** "Analytics choices" (D115); false on /admin, which never asks the question. */
+  /** "Cookie settings" (D115); false on /admin, which never asks the question. */
   choices?: boolean;
 }) {
   return (

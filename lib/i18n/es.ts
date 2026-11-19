@@ -375,10 +375,10 @@ export const es = {
     noMembers: "Nadie coincide.",
   },
   consent: {
-    label: "Estadísticas",
-    body: "¿Podemos usar una cookie para contar tus visitas y registrar cómo se usan las páginas? Lo que escribes nunca se registra. Sin ella solo contamos las visitas, y no se guarda ninguna cookie de seguimiento.",
-    accept: "Permitir",
-    decline: "No, gracias",
-    choices: "Opciones de estadísticas",
+    label: "Cookies",
+    body: "Usamos cookies para ver cómo se usa el sitio. Puedes rechazarlas: sin ellas, solo contamos las visitas.",
+    accept: "Aceptar",
+    decline: "Rechazar",
+    choices: "Configurar cookies",
   },
 } as const satisfies Translation;

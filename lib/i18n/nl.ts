@@ -374,10 +374,10 @@ export const nl = {
     noMembers: "Niemand past hierbij.",
   },
   consent: {
-    label: "Statistieken",
-    body: "Mogen we een cookie gebruiken om je bezoeken te tellen en vast te leggen hoe de pagina’s worden gebruikt? Wat je typt, wordt nooit vastgelegd. Zonder cookie tellen we alleen bezoeken en wordt er geen trackingcookie opgeslagen.",
-    accept: "Toestaan",
-    decline: "Nee, bedankt",
-    choices: "Keuzes voor statistieken",
+    label: "Cookies",
+    body: "We gebruiken cookies om te zien hoe de site wordt gebruikt. Je kunt weigeren: zonder cookies tellen we alleen bezoeken.",
+    accept: "Accepteren",
+    decline: "Weigeren",
+    choices: "Cookie-instellingen",
   },
 } as const satisfies Translation;

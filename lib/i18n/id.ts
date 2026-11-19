@@ -375,10 +375,10 @@ export const idID = {
     noMembers: "Tidak ada yang cocok di sini.",
   },
   consent: {
-    label: "Statistik",
-    body: "Bolehkah kami memakai cookie untuk menghitung kunjunganmu dan mencatat cara halaman dipakai? Apa yang kamu ketik tidak pernah dicatat. Tanpa cookie, kami hanya menghitung kunjungan dan tidak ada cookie pelacak yang disimpan.",
-    accept: "Izinkan",
-    decline: "Tidak, terima kasih",
-    choices: "Pilihan statistik",
+    label: "Cookie",
+    body: "Kami memakai cookie untuk melihat cara situs ini dipakai. Kamu bisa menolak: tanpa cookie, kami hanya menghitung kunjungan.",
+    accept: "Terima",
+    decline: "Tolak",
+    choices: "Pengaturan cookie",
   },
 } as const satisfies Translation;

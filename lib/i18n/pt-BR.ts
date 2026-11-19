@@ -371,10 +371,10 @@ export const ptBR = {
     noMembers: "Ninguém aqui corresponde.",
   },
   consent: {
-    label: "Estatísticas",
-    body: "Podemos usar um cookie para contar suas visitas e registrar como as páginas são usadas? O que você digita nunca é registrado. Sem ele, só contamos as visitas, e nenhum cookie de rastreamento é salvo.",
-    accept: "Permitir",
-    decline: "Não, obrigado",
-    choices: "Preferências de estatísticas",
+    label: "Cookies",
+    body: "Usamos cookies para entender como o site é usado. Pode recusar: sem eles, só contamos as visitas.",
+    accept: "Aceitar",
+    decline: "Recusar",
+    choices: "Configurar cookies",
   },
 } as const satisfies Translation;

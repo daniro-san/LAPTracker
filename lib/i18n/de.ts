@@ -376,10 +376,10 @@ export const de = {
     noMembers: "Hier passt niemand.",
   },
   consent: {
-    label: "Statistik",
-    body: "Dürfen wir ein Cookie nutzen, um deine Besuche zu zählen und aufzuzeichnen, wie die Seiten genutzt werden? Was du tippst, wird nie aufgezeichnet. Ohne Cookie zählen wir nur die Besuche, und es wird kein Tracking-Cookie gespeichert.",
-    accept: "Erlauben",
-    decline: "Nein, danke",
-    choices: "Statistik-Einstellungen",
+    label: "Cookies",
+    body: "Wir nutzen Cookies, um zu sehen, wie die Seite genutzt wird. Du kannst ablehnen: Ohne sie zählen wir nur die Besuche.",
+    accept: "Akzeptieren",
+    decline: "Ablehnen",
+    choices: "Cookie-Einstellungen",
   },
 } as const satisfies Translation;

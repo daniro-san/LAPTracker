@@ -265,12 +265,12 @@ export const en = {
   /** The analytics question on public pages (D115): a small bar at the bottom, answered once per device. */
   consent: {
     /** The bar's accessible name. */
-    label: "Analytics",
-    body: "Can we use a cookie to count your visits and record how pages are used? What you type is never recorded. Without it we only count visits, and no tracking cookie is stored.",
-    accept: "Allow",
-    decline: "No thanks",
+    label: "Cookies",
+    body: "We use cookies to see how the site is used. You can say no; we'll still count visits without them.",
+    accept: "Accept",
+    decline: "Decline",
     /** The footer link that asks again. */
-    choices: "Analytics choices",
+    choices: "Cookie settings",
   },
 } as const;
 
