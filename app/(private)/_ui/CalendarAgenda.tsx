@@ -69,6 +69,11 @@ function Roles({
         <a href={`/w/${slug}/roll-call/mark?${query}`} className={LINK}>
           {words["calendar.rollCall"]}
         </a>
+        {item.form.kind === "undead" && (
+          <a href={`/w/${slug}/calendar/garrison?${query}`} className={LINK}>
+            {words["calendar.garrison"]}
+          </a>
+        )}
       </p>
     );
   }

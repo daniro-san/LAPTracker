@@ -48,7 +48,7 @@ export interface Opened {
   placed: Placed | null;
 }
 
-async function placedOf(db: Db, access: WorkspaceAccess, entry: number, week: string) {
+export async function placedOf(db: Db, access: WorkspaceAccess, entry: number, week: string) {
   const days = await calendarDays(db, access, week, addDays(week, 6));
   return days.find((p) => p.entry.id === entry && p.week === week) ?? null;
 }

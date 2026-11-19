@@ -16,7 +16,6 @@ import {
   type FollowUpDone,
   type MarksDone,
 } from "../repo/desk-activity";
-import type { CallDone } from "../repo/desk-activity-calls";
 import { memberNames } from "../repo/desk-activity-names";
 import type { ReviewAnsweredDone, ReviewAskedDone } from "../repo/desk-activity-reviews";
 import { SAVED_DRAFT_KEEP_MS } from "../repo/import";
@@ -58,7 +57,9 @@ type What =
   | { kind: "entry" | "entryEdit"; entry: Pick<EntryDone, "kind" | "variant" | "level" | "title"> }
   | { kind: "marks"; call: Pick<MarksDone, "kind" | "variant">; rest: boolean }
   /** A roll call deleted or archived (D120), never folded into another line. */
-  | Omit<CallDone, "by" | "at">
+  | Omit<ActivityRows["callDeletes"][number], "by" | "at">
+  /** A garrison plan saved or posted (D121), never folded into another line. */
+  | Omit<ActivityRows["garrisonSaves"][number], "by" | "at">
   | ({ kind: "followUp" } & Pick<FollowUpDone, "uid" | "action" | "until">)
   | { kind: "thefts"; count: number }
   | { kind: "newMember"; names: string[] }
@@ -249,7 +250,7 @@ function merge(rows: ActivityRows, after: number | null): Raw[] {
       kind: "marks" as const,
       call,
     })),
-    ...[rows.callDeletes, rows.callArchives].flat(),
+    ...[rows.callDeletes, rows.callArchives, rows.garrisonSaves, rows.garrisonPosts].flat(),
     ...rows.followUps.map((r) => ({ ...r, kind: "followUp" as const })),
     ...rows.thefts.map((r) => ({ ...r, kind: "thefts" as const })),
     ...rows.newMembers.map(({ by, at, name }) => ({
