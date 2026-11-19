@@ -43,24 +43,29 @@ export function ServerForm(props: {
   const [busy, setBusy] = useState(false);
   const [said, setSaid] = useState("");
   const value = serverValue(text);
-  const submit = async (e: FormEvent) => {
-    e.preventDefault();
+  // A number, or null for "not known" (an officer's word, which replaces the inferred server).
+  const send = async (server: number | null) => {
     setBusy(true);
-    const r = await postTheft(props.slug, { action: "server", attacker: card.key, server: value });
+    const r = await postTheft(props.slug, { action: "server", attacker: card.key, server });
     setBusy(false);
     setSaid(r === "ok" ? t["thefts.saved"] : r === SIGNED_OUT ? SIGNED_OUT : t["thefts.e.failed"]);
+    if (r === "ok" && server === null) setText("");
     if (r === "ok") router.refresh();
+  };
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    if (typeof value === "number") void send(value);
   };
   const id = `server-${card.key}`;
   return (
-    <form onSubmit={(e) => void submit(e)} className="mt-3 border-t border-rule pt-3">
+    <form onSubmit={submit} className="mt-3 border-t border-rule pt-3">
       <label htmlFor={id} className="block font-semibold">
         {t["thefts.server.label"]}
       </label>
       <p id={`${id}-help`} className="text-body-sm text-ink/80">
         {fill(t["thefts.server.help"], { server: props.server })}
       </p>
-      <div className="mt-1 flex items-center gap-2">
+      <div className="mt-1 flex flex-wrap items-center gap-2">
         <input
           id={id}
           value={text}
@@ -73,11 +78,21 @@ export function ServerForm(props: {
         />
         <button
           type="submit"
-          disabled={busy || value === undefined || value === card.server.value}
+          disabled={busy || typeof value !== "number" || value === card.server.value}
           className={buttonClass("secondary")}
         >
           {t["thefts.save"]}
         </button>
+        {!card.server.notKnown && (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void send(null)}
+            className="inline-flex min-h-11 items-center text-body-sm font-semibold text-plum underline underline-offset-4"
+          >
+            {t["thefts.server.notKnown"]}
+          </button>
+        )}
       </div>
       {said === SIGNED_OUT ? (
         <SignedOutNote />

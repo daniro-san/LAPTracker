@@ -43,6 +43,24 @@ Issue #321. Decisions: dated amendments to D97 and D108 (no new number). Base: `
   - **Follow-up tab** (`lib/private/follow-up.ts`, `app/(private)/w/[slug]/follow-up/page.tsx`): lists every attacker whose step is not Resolved, and each line names the current step (yarn only while Open or Open again). D104 amendment. Test in `lib/private/follow-up.test.ts`: Open and Warned are listed, Resolved is not.
   - **Stolen items:** the recorded OCR of real reports (fixtures 53 and 54) reads the item pictures as noise ("AZ)", "rari", "RHee"), so a parser would only fit a text format I made up. Instead `thefts.items` (plain text, nullable, in the same migration) holds what the officer types under each theft in the screenshot review ("What was taken (optional, from the report’s pictures)", max 200). It travels through `import-input.ts` (zod), `import.ts` (`ReportEntry`), `import-kinds.ts` (`ReviewedEntry`) and `saveSecretOpsDraft`. The card's entry shows "Taken: …" ("Levado: …", "Pris : …"). The report test in `thefts.test.ts` checks the trimmed text is stored, and stays null when left empty. D97 amendment.
 
+- **Review round (PR #440 at 73e489f5):**
+  - Server inference: only `thefts.roster_exact` entries infer 325. These are an officer's pick, or a screenshot entry with the player's current name and the same tag exactly. Fuzzy, tagless or other-case matches keep the uid but leave the server not known (`thefts-import.ts` `trackedPlayer`/`attackerFields`).
+  - Officer's server per attacker in the new `theft_attackers` table, apart from the entries, so a delete and its Undo cannot change it. "Mark as not known" stores null and hides an inferred 325. The field is pre-filled only with an officer's number.
+  - Contact: a tracked alliance only when an attacker on our server carries its tag exactly.
+  - Leader: R5 of the newest read among the last 4 public events, shown "as of {day}".
+  - Steps: `requestId` (D100, `newRequestId`) and `expected` (the newest change id the card saw). A retry adds nothing; a stale step answers 409 `conflict`, and the card reloads with "Another officer changed the step first…".
+  - The warning is decided in `theft-data.ts` (only on our server), so it is tested there.
+  - Migration `0047_theft_steps_server` regenerated: it adds `theft_attackers`, `thefts.roster_exact` and `theft_follow_ups.request_id`, and drops nothing on dev. Its last statement, written by hand under the generated SQL, marks typed entries with a uid as exact.
+  - Tests:
+    - `theft-groups.test.ts`: officer's server vs inferred vs not known; reopening after Warned and after Retaliated;
+    - `theft-data.test.ts`: the warning only on our server;
+    - `thefts-follow.test.ts` (new; the done_when tests moved here, with shared setup in `thefts.test-helpers.ts`): retry and conflict; exact vs tagless vs other-case screenshot matches; the contact not shown for a tag that differs in case;
+    - `leadership.test.ts`: the read's date and the 4-event lookback;
+    - `route.test.ts`: `action: "server"` gives 400 for 0, 404 for an unknown or deleted attacker, and stores null as not known.
+
+  - `app/(private)/api/w/[slug]/record-delete.test.ts` (D123) sends a step with `requestId` and `expected` now.
+  - Verified: `pnpm check` exits 0: vitest 214 files passed, 2 skipped; 1158 tests passed, 4 skipped; drift gate "Everything's fine"; i18n "17 languages up to date". The browser e2e was not re-run for this round.
+
 ## Decisions
 - **Steps stay per attacker**, not per incident. D97 (owner, 2026-11-16) made the follow-up per attacker, and officers act on a player or an alliance, not on one row. "Reported" is the existing Open state. Any step can be picked at any time; nothing advances on its own (D75).
 - **A name is never put on our server from its tag alone.** Tags are not unique across servers, so only a uid match (tracked roster) or an officer's entry sets 325.

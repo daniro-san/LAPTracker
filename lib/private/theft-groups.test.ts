@@ -22,7 +22,7 @@ function entry(key: string, tag: string, at: string | null, victim: number | nul
     attackerKey: key,
     attackerName: key.slice(key.indexOf(":") + 1),
     attackerTag: tag,
-    attackerServer: null,
+    rosterExact: false,
     kind: "ops",
     victimUid: victim,
     victimName: victim === null ? null : `member${victim}`,
@@ -32,7 +32,9 @@ function entry(key: string, tag: string, at: string | null, victim: number | nul
   };
 }
 
+let changeId = 0;
 const change = (state: FollowUpState, at: string): FollowUpChange => ({
+  id: (changeId += 1),
   attackerKey: "uid:1",
   state,
   note: null,
@@ -71,20 +73,27 @@ describe("the thefts log's groups (issue 321)", () => {
     expect(stene.entries.map((e) => e.at)).toEqual([new Date("2026-11-19T10:00:00Z"), null]);
   });
 
-  it("gives each attacker a server: the newest one set, else ours for a tracked player", () => {
+  it("gives each attacker a server: an officer's, else ours only for an exact roster match", () => {
     const entries = [
-      entry("uid:1", "NSE", "2026-11-17T10:00:00Z", 11),
+      { ...entry("uid:1", "NSE", "2026-11-17T10:00:00Z", 11), rosterExact: true },
+      // A uid from a fuzzy or tagless screenshot match is not enough to say "our server".
+      entry("uid:2", "NSE", "2026-11-17T11:00:00Z", 11),
       entry("name:pebblewick", "QRX", "2026-11-16T10:00:00Z", 11),
-      { ...entry("name:pebblewick", "QRX", "2026-11-18T10:00:00Z", 12), attackerServer: 412 },
-      entry("name:fernby", "", "2026-11-18T11:00:00Z", 12),
+      // An officer said "not known": the inferred 325 no longer shows.
+      { ...entry("uid:3", "NSE", "2026-11-18T10:00:00Z", 12), rosterExact: true },
     ];
-    const servers = groupThefts(entries, [], WEEK)
+    const officer = new Map([
+      ["name:pebblewick", 412],
+      ["uid:3", null],
+    ]);
+    const servers = groupThefts(entries, [], WEEK, officer)
       .flatMap((g) => g.attackers)
-      .map((a) => [a.key, a.server]);
+      .map((a) => [a.key, [a.server, a.serverSet]]);
     expect(Object.fromEntries(servers)).toEqual({
-      "uid:1": 325,
-      "name:pebblewick": 412,
-      "name:fernby": null,
+      "uid:1": [325, false],
+      "uid:2": [null, false],
+      "name:pebblewick": [412, true],
+      "uid:3": [null, true],
     });
   });
 });
@@ -116,6 +125,15 @@ describe("an attacker's follow-up (issue 321)", () => {
       reopened: true,
     });
     expect(followUpOf(resolved, theft(null)).state).toBe("resolved");
+    // A theft after Warned or Retaliated opens it again too (D97, amended 2026-11-19).
+    for (const step of ["warned", "retaliated"] as const) {
+      const done = [change(step, "2026-11-17T12:00:00Z")];
+      expect(followUpOf(done, theft("2026-11-18T09:00:00Z"))).toMatchObject({
+        state: "open",
+        last: { state: step },
+        reopened: true,
+      });
+    }
     // An officer can set it back to open by hand; that is not a reopening.
     const reset = [...resolved, change("open", "2026-11-20T12:00:00Z")];
     expect(followUpOf(reset, theft("2026-11-17T10:00:00Z"))).toMatchObject({

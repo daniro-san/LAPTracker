@@ -62,15 +62,26 @@ export async function rolesOf(
 }
 
 /**
- * Each alliance's leader by union id: the R5 of its newest public Before or After read that lists one (the
- * thefts log's "whom to contact", issue 321). An alliance with no such read has no entry.
+ * Each alliance's leader by union id: the R5 of its newest public Before or After read that lists one,
+ * among the last `RECENT_EVENTS` public events, with when that read started (the thefts log's "whom to
+ * contact", issue 321). An alliance with no such read has no entry: an older leader may have stepped down.
  */
-export async function leaderNames(db: Db, unionIds: number[]): Promise<Map<number, string>> {
+export async function leaderNames(
+  db: Db,
+  unionIds: number[],
+): Promise<Map<number, { name: string; at: Date }>> {
   if (unionIds.length === 0) return new Map();
+  const recent = db
+    .select({ id: events.id })
+    .from(events)
+    .where(publicEvent)
+    .orderBy(desc(events.eventAtUtc))
+    .limit(RECENT_EVENTS);
   const rows = await db
     .selectDistinctOn([allianceSnapshots.unionId], {
       unionId: allianceSnapshots.unionId,
       name: memberSnapshots.name,
+      at: snapshots.startedAt,
     })
     .from(memberSnapshots)
     .innerJoin(allianceSnapshots, eq(allianceSnapshots.id, memberSnapshots.allianceSnapshotId))
@@ -80,10 +91,14 @@ export async function leaderNames(db: Db, unionIds: number[]): Promise<Map<numbe
       and(
         inArray(allianceSnapshots.unionId, unionIds),
         eq(memberSnapshots.rankCode, LEADER),
+        inArray(events.id, recent),
         publicEvent,
         phaseSnapshot,
       ),
     )
     .orderBy(allianceSnapshots.unionId, desc(snapshots.startedAt));
-  return new Map(rows.map((r) => [r.unionId, r.name]));
+  return new Map(rows.map((r) => [r.unionId, { name: r.name, at: r.at }]));
 }
+
+/** How many of the newest public events `leaderNames` looks back over. */
+const RECENT_EVENTS = 4;

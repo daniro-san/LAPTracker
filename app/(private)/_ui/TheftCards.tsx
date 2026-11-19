@@ -16,6 +16,7 @@ import type { WorkspaceLanguage } from "@/lib/private/dictionary";
 import { FOLLOW_UP_STATES, type FollowUpState } from "@/lib/private/theft-groups";
 
 import { DeleteButton } from "./DeleteRecord";
+import { newRequestId } from "./request-id";
 import { SIGNED_OUT, SignedOutNote } from "./SignedOut";
 import { postTheft, viewerClock } from "./theft-client";
 import type { AllianceCard, AttackerCard, EntryCard, TheftWords } from "./theft-data";
@@ -74,14 +75,24 @@ function FollowUpForm({ card, slug, t }: Shared & { card: AttackerCard }) {
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [said, setSaid] = useState("");
+  // D100: one request id per step until it is stored, so a retry after a lost answer adds nothing.
+  const [requestId, setRequestId] = useState(newRequestId);
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setBusy(true);
-    const r = await postTheft(slug, { action: "follow", attacker: card.key, state, note });
+    const body = { action: "follow", attacker: card.key, state, note, requestId };
+    const r = await postTheft(slug, { ...body, expected: card.lastId });
     setBusy(false);
-    setSaid(r === "ok" ? t["thefts.saved"] : r === SIGNED_OUT ? SIGNED_OUT : t["thefts.e.failed"]);
-    if (r === "ok") {
-      setNote("");
+    const words = {
+      ok: t["thefts.saved"],
+      conflict: t["thefts.e.conflict"],
+      [SIGNED_OUT]: SIGNED_OUT,
+    };
+    setSaid(words[r as keyof typeof words] ?? t["thefts.e.failed"]);
+    // Stored, or another officer's step came first (the page now shows theirs): the next save is a new step.
+    if (r === "ok" || r === "conflict") {
+      if (r === "ok") setNote("");
+      setRequestId(newRequestId());
       router.refresh();
     }
   };

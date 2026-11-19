@@ -1,5 +1,5 @@
 {
-  "id": "823eef36-e44b-4923-a8e1-729703dc8bb4",
+  "id": "8a3a0033-4e31-48dd-88a5-08e6bc56c076",
   "prevId": "f867174d-af50-453c-b387-38786ab02623",
   "version": "7",
   "dialect": "postgresql",
@@ -4169,6 +4169,84 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.theft_attackers": {
+      "name": "theft_attackers",
+      "schema": "",
+      "columns": {
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "attacker_key": {
+          "name": "attacker_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "server": {
+          "name": "server",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "set_by": {
+          "name": "set_by",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "set_at": {
+          "name": "set_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "theft_attackers_workspace_id_workspaces_id_fk": {
+          "name": "theft_attackers_workspace_id_workspaces_id_fk",
+          "tableFrom": "theft_attackers",
+          "tableTo": "workspaces",
+          "columnsFrom": [
+            "workspace_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "theft_attackers_set_by_workspace_users_id_fk": {
+          "name": "theft_attackers_set_by_workspace_users_id_fk",
+          "tableFrom": "theft_attackers",
+          "tableTo": "workspace_users",
+          "columnsFrom": [
+            "set_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "theft_attackers_workspace_id_attacker_key_pk": {
+          "name": "theft_attackers_workspace_id_attacker_key_pk",
+          "columns": [
+            "workspace_id",
+            "attacker_key"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.theft_follow_ups": {
       "name": "theft_follow_ups",
       "schema": "",
@@ -4214,6 +4292,12 @@
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true
+        },
+        "request_id": {
+          "name": "request_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -4240,6 +4324,27 @@
             }
           ],
           "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "theft_follow_ups_request_unique": {
+          "name": "theft_follow_ups_request_unique",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "request_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -4330,11 +4435,12 @@
           "primaryKey": false,
           "notNull": true
         },
-        "attacker_server": {
-          "name": "attacker_server",
-          "type": "integer",
+        "roster_exact": {
+          "name": "roster_exact",
+          "type": "boolean",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true,
+          "default": false
         },
         "kind": {
           "name": "kind",

@@ -45,7 +45,11 @@ export function reportInstant(at: string | null, readAt: Date, zone: string): Da
   return isRealDay(day) ? serverInstant(day, hhmm, { SERVER_TZ: zone }) : null;
 }
 
-/** A tracked player when the name matches exactly one (D74) and the read tag, if any, is theirs. */
+/**
+ * A tracked player when the name matches exactly one (D74) and the read tag, if any, is theirs. `exact`
+ * only for the player's current name with the same tag read (case and all): only then is the attacker
+ * taken to be on our server (D97, amended 2026-11-19). A segment, a past name or a missing tag is not.
+ */
 function trackedPlayer(entry: SecretOpsEntry, players: readonly ServerPlayer[]) {
   const match = matchName(
     entry.name,
@@ -53,9 +57,24 @@ function trackedPlayer(entry: SecretOpsEntry, players: readonly ServerPlayer[]) 
   );
   if (match.status !== "matched") return null;
   const player = players.find((p) => p.uid === match.uid);
-  return player && (entry.tag === "" || player.tag.toLowerCase() === entry.tag.toLowerCase())
-    ? player
-    : null;
+  if (!player || (entry.tag !== "" && player.tag.toLowerCase() !== entry.tag.toLowerCase())) {
+    return null;
+  }
+  return { player, exact: match.via === "current" && entry.tag === player.tag };
+}
+
+/** The attacker as stored: the tracked player when one matches, else the name and tag as reviewed. */
+function attackerFields(e: SecretOpsEntry, players: readonly ServerPlayer[]) {
+  const found = trackedPlayer(e, players);
+  const player = found?.player;
+  const [name, tag] = player ? [player.name, player.tag] : [e.name, e.tag];
+  return {
+    attackerKey: attackerKeyOf(player?.uid ?? null, name),
+    attackerUid: player?.uid ?? null,
+    attackerName: name,
+    attackerTag: tag,
+    rosterExact: found?.exact ?? false,
+  };
 }
 
 const sameTheft = (a: Omit<NewTheft, "workspaceId">, b: Omit<NewTheft, "workspaceId">) =>
@@ -93,26 +112,19 @@ export async function saveSecretOpsDraft(
   const others = players.filter((p) => p.unionId !== access.unionId);
   const rows = thefts
     .filter((e) => !isOwn(e))
-    .map((e): NewTheft => {
-      const player = trackedPlayer(e, others);
-      const [name, tag] = player ? [player.name, player.tag] : [e.name, e.tag];
-      return {
-        workspaceId: access.workspaceId,
-        at: reportInstant(e.at, draft.readAt, clock.zone),
-        attackerKey: attackerKeyOf(player?.uid ?? null, name),
-        attackerUid: player?.uid ?? null,
-        attackerName: name,
-        attackerTag: tag,
-        kind: "ops",
-        victimUid: victim?.uid ?? null,
-        victimName: victim?.name ?? null,
-        source: "photo",
-        items: e.items?.trim() || null,
-        note: null,
-        createdBy: access.user.id,
-        createdAt: clock.now,
-      };
-    });
+    .map((e): NewTheft => ({
+      workspaceId: access.workspaceId,
+      at: reportInstant(e.at, draft.readAt, clock.zone),
+      ...attackerFields(e, others),
+      kind: "ops",
+      victimUid: victim?.uid ?? null,
+      victimName: victim?.name ?? null,
+      source: "photo",
+      items: e.items?.trim() || null,
+      note: null,
+      createdBy: access.user.id,
+      createdAt: clock.now,
+    }));
   const fresh = rows.filter(
     (row, i) =>
       rows.slice(0, i + 1).filter((r) => sameTheft(r, row)).length >

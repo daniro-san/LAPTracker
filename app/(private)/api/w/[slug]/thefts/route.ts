@@ -59,6 +59,14 @@ const body = z.discriminatedUnion("action", [
       attacker,
       state: z.enum(FOLLOW_UP_STATES),
       note,
+      requestId: z.uuid(),
+      // The newest step the officer saw (null: none); another officer's newer step makes this a 409.
+      expected: z
+        .number()
+        .int()
+        .positive()
+        .max(2 ** 31 - 1)
+        .nullable(),
     })
     .strict(),
   z
@@ -107,10 +115,13 @@ export async function POST(request: Request, { params }: Params): Promise<Respon
         case "follow":
           return setFollowUp(db, access, input, now);
         case "server":
-          return setServer(db, access, input);
+          return setServer(db, access, input, now);
       }
     });
-    if (result !== "ok") return privateError(result === "not_found" ? 404 : 400, result);
+    if (result !== "ok") {
+      const status = result === "not_found" ? 404 : result === "conflict" ? 409 : 400;
+      return privateError(status, result);
+    }
     // ws_action (D115, D123): the deleter's Undo is undo_delete; an attacker's server is an edit.
     const action =
       input.action === "remove"

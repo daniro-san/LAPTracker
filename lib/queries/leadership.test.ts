@@ -125,7 +125,19 @@ describe("leaderNames (issue 321)", () => {
     await db
       .insert(memberSnapshots)
       .values({ ...rank(15, 105, "R5"), allianceSnapshotId: row?.id ?? 0 });
-    expect([...(await leaderNames(db, [1, 2]))]).toEqual([[1, "M15"]]);
+    expect([...(await leaderNames(db, [1, 2]))]).toEqual([[1, { name: "M15", at }]]);
+    // Four newer public events: that read is no longer among the last four, so no leader is named.
+    for (const day of [25, 26, 27, 28]) {
+      const when = new Date(Date.UTC(2026, 9, day, 14));
+      await db.insert(events).values({
+        name: `E${day}`,
+        eventAtUtc: when,
+        allianceIds: [9],
+        beforeAt: when,
+        afterAt: when,
+      });
+    }
+    expect(await leaderNames(db, [1])).toEqual(new Map());
   });
 });
 

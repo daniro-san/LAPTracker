@@ -257,7 +257,14 @@ describe("a deleted record leaves every read, and Home says who deleted it (D123
     const [row] = await db.select({ key: thefts.attackerKey }).from(thefts);
     await post("thefts", TYPES.thefts.remove(id, randomUUID()));
     expect(await TYPES.thefts.shown()).toBe(0);
-    const follow = { action: "follow", attacker: row?.key, state: "talked", note: "" };
+    const follow = {
+      action: "follow",
+      attacker: row?.key,
+      state: "talked",
+      note: "",
+      requestId: randomUUID(),
+      expected: null,
+    };
     expect((await post("thefts", follow)).status).toBe(404);
     const kinds = await homeKinds();
     expect([kinds.includes("theftDeleted"), kinds.includes("thefts")]).toEqual([true, false]);

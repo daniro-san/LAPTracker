@@ -1,10 +1,10 @@
 // thefts and theft_follow_ups (issue 321, D97): plain reads and writes, each inside one workspace. Which
 // entries are kept, and what counts, is decided in lib/private.
-import { and, asc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { workspaceUsers } from "../schema";
-import { theftFollowUps, thefts } from "../schema-thefts";
+import { theftAttackers, theftFollowUps, thefts } from "../schema-thefts";
 import { live } from "./trash";
 
 export type TheftRow = typeof thefts.$inferSelect;
@@ -71,30 +71,86 @@ export async function hasAttacker(db: Db, workspaceId: number, key: string): Pro
   return row !== undefined;
 }
 
-/** Sets the server on every entry of one attacker, inside its own workspace; false when there is none. */
+/**
+ * An attacker's server as an officer set it, kept per attacker (not on the entries, so a delete and its
+ * Undo cannot change it). `server` null: the officer said "not known".
+ */
 export async function setAttackerServer(
+  db: Db,
+  row: {
+    workspaceId: number;
+    attackerKey: string;
+    server: number | null;
+    setBy: number;
+    setAt: Date;
+  },
+): Promise<void> {
+  const { server, setBy, setAt } = row;
+  await db
+    .insert(theftAttackers)
+    .values(row)
+    .onConflictDoUpdate({
+      target: [theftAttackers.workspaceId, theftAttackers.attackerKey],
+      set: { server, setBy, setAt },
+    });
+}
+
+/** The servers officers set, by attacker key (null: "not known"). An attacker with no row is not here. */
+export async function attackerServers(
+  db: Db,
+  workspaceId: number,
+): Promise<Map<string, number | null>> {
+  const rows = await db
+    .select({ key: theftAttackers.attackerKey, server: theftAttackers.server })
+    .from(theftAttackers)
+    .where(eq(theftAttackers.workspaceId, workspaceId));
+  return new Map(rows.map((r) => [r.key, r.server]));
+}
+
+/** Whether a step with this request id was already stored (D100). */
+export async function followUpRequested(
+  db: Db,
+  workspaceId: number,
+  requestId: string,
+): Promise<boolean> {
+  const rows = await db
+    .select({ id: theftFollowUps.id })
+    .from(theftFollowUps)
+    .where(
+      and(eq(theftFollowUps.workspaceId, workspaceId), eq(theftFollowUps.requestId, requestId)),
+    );
+  return rows.length > 0;
+}
+
+/** The id of an attacker's newest step; null when none was set. */
+export async function latestFollowUpId(
   db: Db,
   workspaceId: number,
   key: string,
-  server: number | null,
-): Promise<boolean> {
-  const changed = await db
-    .update(thefts)
-    .set({ attackerServer: server })
-    .where(and(eq(thefts.workspaceId, workspaceId), eq(thefts.attackerKey, key), live(thefts)))
-    .returning({ id: thefts.id });
-  return changed.length > 0;
+): Promise<number | null> {
+  const [row] = await db
+    .select({ id: theftFollowUps.id })
+    .from(theftFollowUps)
+    .where(and(eq(theftFollowUps.workspaceId, workspaceId), eq(theftFollowUps.attackerKey, key)))
+    .orderBy(desc(theftFollowUps.id))
+    .limit(1);
+  return row?.id ?? null;
 }
 
+/** One step with its request id; a send that arrived at the same moment wins the unique index. */
 export async function insertFollowUp(
   db: Db,
   row: Omit<typeof theftFollowUps.$inferInsert, "id">,
 ): Promise<void> {
-  await db.insert(theftFollowUps).values(row);
+  await db
+    .insert(theftFollowUps)
+    .values(row)
+    .onConflictDoNothing({ target: [theftFollowUps.workspaceId, theftFollowUps.requestId] });
 }
 
 /** One follow-up change, with the name the officer who made it shows in the desk (D87). */
 export interface FollowUpRow {
+  id: number;
   attackerKey: string;
   state: (typeof theftFollowUps.$inferSelect)["state"];
   note: string | null;
@@ -106,6 +162,7 @@ export interface FollowUpRow {
 export async function listFollowUps(db: Db, workspaceId: number): Promise<FollowUpRow[]> {
   const rows = await db
     .select({
+      id: theftFollowUps.id,
       attackerKey: theftFollowUps.attackerKey,
       state: theftFollowUps.state,
       note: theftFollowUps.note,
