@@ -66,26 +66,30 @@ html:has(dialog:modal) {
   overflow: hidden;
 }
 
-/* Scrollbars (DESIGN.md "Workspace components"): the page's, a sheet's and a pane's (D122) are thin, a muted ink thumb on
+/* Scrollbars (DESIGN.md "Workspace components"): the page's, a sheet's, a pane's and a sticky margin
+   column's (D122) are thin, a muted ink thumb on
    no track, in light and dark (--ink flips). Never hidden: on a desktop the bar is how a sheet shows it
    scrolls. Chrome and Firefox read scrollbar-width/-color; Safari reads the ::-webkit-scrollbar rules. */
 html,
 dialog,
-[data-sheet-pane] {
+[data-sheet-pane],
+[data-margin-pane] {
   --scrollbar-thumb: color-mix(in srgb, var(--ink) 35%, transparent);
   scrollbar-width: thin;
   scrollbar-color: var(--scrollbar-thumb) transparent;
 }
 html::-webkit-scrollbar,
 dialog::-webkit-scrollbar,
-[data-sheet-pane]::-webkit-scrollbar {
+[data-sheet-pane]::-webkit-scrollbar,
+[data-margin-pane]::-webkit-scrollbar {
   width: 8px;
   height: 8px;
   background: transparent;
 }
 html::-webkit-scrollbar-thumb,
 dialog::-webkit-scrollbar-thumb,
-[data-sheet-pane]::-webkit-scrollbar-thumb {
+[data-sheet-pane]::-webkit-scrollbar-thumb,
+[data-margin-pane]::-webkit-scrollbar-thumb {
   background: var(--scrollbar-thumb);
 }
 

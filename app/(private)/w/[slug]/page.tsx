@@ -197,6 +197,7 @@ function Home(props: {
       <Spread
         even
         stickyMargin
+        marginLabelledBy="home-activity home-members"
         main={
           <>
             <KeyCard slug={slug} t={t} state={props.desk.key} />
