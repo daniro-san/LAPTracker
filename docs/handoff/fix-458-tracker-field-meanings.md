@@ -111,4 +111,4 @@ Issue 458. Branch `fix/tracker-field-meanings`, cut from `origin/dev` at 89050e4
 - Seed for Members shots with the D127 shapes: scratchpad `458/seed.mjs`.
 </adjustments>
 
-PR: (added by the orchestrator)
+https://github.com/daniro-san/LAPTracker/pull/480
