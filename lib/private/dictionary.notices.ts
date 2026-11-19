@@ -1,12 +1,16 @@
 // The notices library's words (issue 304) in English, Brazilian Portuguese and French: one module that the
 // three workspace dictionaries spread, so the notices keys stay together. French puts a no-break space
 // before : ; ! and ?. The words added in issue 345 are in dictionary.notices-more.ts.
+import { noticesCleanupEn, noticesCleanupFr, noticesCleanupPt } from "./dictionary.notices-cleanup";
 import { noticesMoreEn, noticesMoreFr, noticesMorePt } from "./dictionary.notices-more";
+import { noticesPictureEn, noticesPictureFr, noticesPicturePt } from "./dictionary.notices-picture";
 import { noticesReviewEn, noticesReviewFr, noticesReviewPt } from "./dictionary.notices-review";
 
 export const noticesEn = {
   ...noticesMoreEn,
   ...noticesReviewEn,
+  ...noticesPictureEn,
+  ...noticesCleanupEn,
   "tab.notices": "Notices",
   "notices.lead":
     "Write a notice once. Each officer reads it in their own language. Copy it into the game or Discord.",
@@ -95,6 +99,8 @@ export type NoticesKey = keyof typeof noticesEn;
 export const noticesPt: Record<NoticesKey, string> = {
   ...noticesMorePt,
   ...noticesReviewPt,
+  ...noticesPicturePt,
+  ...noticesCleanupPt,
   "tab.notices": "Avisos",
   "notices.lead":
     "Escreva o aviso uma vez. Cada oficial lê no próprio idioma. Copie para o jogo ou o Discord.",
@@ -184,6 +190,8 @@ export const noticesPt: Record<NoticesKey, string> = {
 export const noticesFr: Record<NoticesKey, string> = {
   ...noticesMoreFr,
   ...noticesReviewFr,
+  ...noticesPictureFr,
+  ...noticesCleanupFr,
   "tab.notices": "Annonces",
   "notices.lead":
     "Écrivez l’annonce une fois. Chaque officier la lit dans sa langue. Copiez-la dans le jeu ou sur Discord.",

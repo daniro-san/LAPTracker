@@ -47,6 +47,9 @@ const nextConfig: NextConfig = {
   // PostHog's paths end in a slash (/ingest/e/, D77); proxy.ts keeps the slash redirect for every other path.
   skipTrailingSlashRedirect: true,
   env: { BUILD_VERSION: buildVersion(process.env) },
+  // Browser source maps only for PostHog's error tracking (D115): built when the upload key is set, then
+  // uploaded and deleted by scripts/sourcemaps.ts, so no map is ever served.
+  productionBrowserSourceMaps: Boolean(process.env.POSTHOG_PERSONAL_API_KEY),
   // The OCR (D74, D96): Tesseract.js starts its worker from a file path at run time, so it is not bundled,
   // and the routes that read pictures ship its worker, its runtime (OCR_RUNTIME: the WebAssembly core
   // and the modules the worker requires) and the English data. Keys are route globs without the route

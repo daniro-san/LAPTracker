@@ -31,7 +31,6 @@ export default async function NoticePage({
   const id = /^[1-9]\d{0,8}$/.test(raw) ? Number(raw) : null;
   if (id === null) notFound();
   const { language, t } = await workspaceWords();
-  const today = serverDay(new Date(), getEnv());
   const { access, data, waiting } = await noticePage(
     slug,
     async (db, a) => {
@@ -40,7 +39,7 @@ export default async function NoticePage({
       const [history, last, calendar, reviews] = await Promise.all([
         noticeHistory(db, a, id),
         lastPublish(db, a, id),
-        noticeCalendar(db, a, id, today, { t, language }),
+        noticeCalendar(db, a, id, serverDay(new Date(), getEnv()), { t, language }),
         noticeReviews(db, a, id),
       ]);
       return { notice, history, last, calendar, reviews };
@@ -56,7 +55,9 @@ export default async function NoticePage({
   const nameOf = (a: string) =>
     channels[a === "members" ? "members" : "leaders"]?.name.replace(/^#/, "") ?? null;
   const channel = nameOf(audience);
-  // A new version of any field remounts the screen, so a save or a refresh closes the editor.
+  // A new version of any field remounts the screen, so a save or a refresh closes the editor. A picture
+  // change does not (D119): the editor closes itself after a picture-only save, and stays open, in step with
+  // the stored picture, when the text save after it fails.
   const key = Object.values(notice.fields)
     .map((f) => f.version)
     .join(".");
@@ -75,6 +76,7 @@ export default async function NoticePage({
         slug={slug}
         id={notice.id}
         fields={notice.fields}
+        picture={notice.picture}
         stale={notice.stale}
         t={t}
         viewer={language}

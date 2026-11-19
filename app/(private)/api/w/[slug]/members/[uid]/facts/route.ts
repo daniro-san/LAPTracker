@@ -6,6 +6,7 @@
 import { z } from "zod";
 
 import { requireWorkspace } from "@/lib/private/access";
+import { counted } from "@/lib/private/desk-action";
 import {
   isSameOriginJson,
   NO_STORE,
@@ -46,6 +47,7 @@ export async function POST(
     );
     if (!results) return privateError(404, "not_member");
     const status = results.some((r) => r.status === "conflict") ? 409 : 200;
-    return Response.json({ results }, { status, headers: NO_STORE });
+    const saved = Response.json({ results }, { status, headers: NO_STORE });
+    return counted(ctx, access, "member_facts", "save", saved);
   });
 }

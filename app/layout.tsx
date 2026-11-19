@@ -7,6 +7,7 @@ import { analyticsKey } from "@/lib/analytics/events";
 import { fontVariables } from "@/lib/brand/fonts";
 import { readTheme } from "@/lib/brand/theme";
 
+import { AnalyticsConsent } from "./_ui/AnalyticsConsent";
 import { requestCopy, requestLanguage } from "./_ui/locale";
 import { LocaleProvider } from "./_ui/LocaleProvider";
 import { PostHogAnalytics } from "./_ui/PostHogAnalytics";
@@ -40,6 +41,8 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       <body className="min-h-screen bg-paper font-body text-ink antialiased">
         <LocaleProvider locale={locale} copy={copy}>
           {children}
+          {/* The analytics question on public pages (D115), where analytics is on. */}
+          {posthogKey && <AnalyticsConsent />}
         </LocaleProvider>
         {/* Production deployment only: not previews, `next dev`, `next start` or tests (D36). */}
         {production && <VercelInsights />}

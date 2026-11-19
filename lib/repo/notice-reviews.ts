@@ -6,7 +6,7 @@ import { alias, type AnyPgColumn } from "drizzle-orm/pg-core";
 
 import type { Db } from "../db";
 import { workspaceSessions, workspaceUsers } from "../schema";
-import { noticeReviewOutcomes, noticeReviews } from "../schema-notices";
+import { noticeReviewOutcomes, noticeReviews, notices } from "../schema-notices";
 
 export interface ReviewRow {
   id: number;
@@ -26,6 +26,9 @@ export interface ReviewRow {
 
 /** A save's transaction or the database: the outcome of an edit is written in the save's (D113). */
 export type Tx = Pick<Db, "select" | "insert">;
+
+/** The request's notice, not deleted (D118): a deleted notice's requests leave every list. */
+const ofLiveNotice = and(eq(notices.id, noticeReviews.noticeId), isNull(notices.deletedAt));
 
 const asker = alias(workspaceUsers, "asker");
 const reviewer = alias(workspaceUsers, "reviewer");
@@ -50,6 +53,7 @@ function reviewRows(db: Tx, workspaceId: number, where: SQL) {
       outcomeAt: noticeReviewOutcomes.at,
     })
     .from(noticeReviews)
+    .innerJoin(notices, ofLiveNotice)
     .leftJoin(noticeReviewOutcomes, eq(noticeReviewOutcomes.reviewId, noticeReviews.id))
     .leftJoin(asker, eq(asker.id, noticeReviews.askedBy))
     .leftJoin(reviewer, eq(reviewer.id, noticeReviews.reviewerId))
@@ -134,6 +138,7 @@ export async function openReviewCount(db: Db, workspaceId: number, userId: numbe
   const [row] = await db
     .select({ n: count() })
     .from(noticeReviews)
+    .innerJoin(notices, ofLiveNotice)
     .leftJoin(noticeReviewOutcomes, eq(noticeReviewOutcomes.reviewId, noticeReviews.id))
     .where(and(eq(noticeReviews.workspaceId, workspaceId), openFor(userId)));
   return row?.n ?? 0;

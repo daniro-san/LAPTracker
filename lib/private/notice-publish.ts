@@ -8,10 +8,12 @@ import { z } from "zod";
 
 import type { Db } from "../db";
 import type { Env } from "../env";
+import { pictureBytes } from "../repo/notice-pictures";
 import { claimPublish, finishPublish, lastPosted, type PublishRow } from "../repo/notice-publishes";
 import type { WorkspaceAccess } from "./access";
 import { privateLog } from "./log";
 import { discordMessages, threadName } from "./notice-formats";
+import { bodyOf, type PostedPicture } from "./notice-publish-body";
 import { NOTICE_LANGUAGES, type NoticeLanguage } from "./notice-rules";
 import { noticeDetail } from "./notices";
 
@@ -70,7 +72,7 @@ export interface PublishDeps {
 function send(
   doFetch: typeof fetch,
   channel: Channel,
-  content: string,
+  message: { content: string; picture: PostedPicture | null },
   thread: string | null,
   title: string,
   /** Milliseconds left in the publish's budget. */
@@ -78,35 +80,39 @@ function send(
 ) {
   const url = `${channel.url}?wait=true${thread ? `&thread_id=${thread}` : ""}`;
   const opens = channel.forum && thread === null;
-  const body = {
-    content,
+  const payload = {
+    content: message.content,
     allowed_mentions: { parse: [] },
     ...(opens && { thread_name: threadName(title) }),
   };
   return doFetch(url, {
     method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(body),
+    ...bodyOf(payload, message.picture),
     signal: AbortSignal.timeout(Math.min(SEND_TIMEOUT_MS, left)),
   }).catch(() => null);
 }
 
 /**
  * Posts each message in turn; a forum's first one opens the post, the rest go into it. Stops when the
- * budget is spent, which leaves the publish failed.
+ * budget is spent, which leaves the publish failed. Also posts the weekly thanks (D114). A notice's picture
+ * goes with the first message (D119).
  */
-async function post(
+export async function postMessages(
   doFetch: typeof fetch,
   channel: Channel,
   title: string,
   messages: string[],
+  picture: PostedPicture | null = null,
 ): Promise<{ sent: number; status: number | null }> {
   const deadline = Date.now() + BUDGET_MS;
   let thread: string | null = null;
+  /** Only the first message carries the picture. */
+  let attached = picture;
   for (const [i, content] of messages.entries()) {
     const left = deadline - Date.now();
     if (left <= 0) return { sent: i, status: null };
-    const res = await send(doFetch, channel, content, thread, title, left);
+    const res = await send(doFetch, channel, { content, picture: attached }, thread, title, left);
+    attached = null;
     if (!res?.ok) return { sent: i, status: res?.status ?? null };
     if (channel.forum && i === 0) {
       const made = (await res.json().catch(() => null)) as { channel_id?: unknown } | null;
@@ -153,8 +159,9 @@ export async function publishNotice(
   const title = notice.fields.title.value;
   const sections = languages.map((l) => ({ name: deps.names[l], text: notice.fields[l].value }));
   const messages = discordMessages(title, sections, !channel.forum);
+  const picture = await pictureBytes(db, access.workspaceId, input.id);
   const started = Date.now();
-  const { sent, status } = await post(deps.fetch, channel, title, messages);
+  const { sent, status } = await postMessages(deps.fetch, channel, title, messages, picture);
   const done = sent === messages.length;
   await finishPublish(db, claim.row.id, done ? "posted" : "failed", sent);
   const ms = Date.now() - started;
@@ -162,7 +169,8 @@ export async function publishNotice(
     privateLog("notices.publish.failed", { http: status ?? 0, sent, of: messages.length, ms });
     return { ok: false, code: "failed" };
   }
-  privateLog("notices.publish.ok", { messages: sent, languages: languages.length, ms });
+  const pictures = picture ? 1 : 0;
+  privateLog("notices.publish.ok", { messages: sent, languages: languages.length, pictures, ms });
   return { ok: true, row: { ...claim.row, status: "posted" } };
 }
 

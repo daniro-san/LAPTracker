@@ -10,6 +10,7 @@ import { Sheet } from "@/lib/brand/components/Sheet";
 import { ADDED_KINDS } from "@/lib/private/roll-call-rules";
 
 import { Choice, Labeled, TextInput } from "./CalendarFields";
+import { newRequestId } from "./request-id";
 import { sendRoll } from "./roll-call-client";
 import type { RollSheetWords } from "./roll-call-data";
 import { sheetWords } from "./sheet-words";
@@ -24,7 +25,7 @@ function AddSheet(props: {
   onClose: () => void;
 }) {
   const { words } = props;
-  const [requestId] = useState(() => crypto.randomUUID());
+  const [requestId] = useState(() => newRequestId());
   const [kind, setKind] = useState<Kind>("shield");
   const [day, setDay] = useState(props.day);
   const [busy, setBusy] = useState(false);

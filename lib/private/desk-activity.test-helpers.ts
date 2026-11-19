@@ -5,8 +5,8 @@ import { truncateAll } from "../db.test-helpers";
 import { findWorkspaceBySlug, recordSignIn, saveWorkspace } from "../repo/workspaces";
 import { dailyReads, dailyRosters } from "../schema";
 import { requireBoard, requireWorkspace, type WorkspaceAccess } from "./access";
-import type { ActivityItem } from "./desk-activity";
-import { activityLine } from "./desk-activity-words";
+import { activityPage, type ActivityLine } from "./desk-activity";
+import { feedLine } from "./desk-activity-words";
 import { WORKSPACE_DICTIONARIES, type WorkspaceLanguage } from "./dictionary";
 import { createSession } from "./session";
 
@@ -60,8 +60,10 @@ export async function browser(
   return { userId, visit, board };
 }
 
+/** The feed's newest `size` lines at `now` (server time UTC), as Home reads its first page. */
+export const recentActivity = async (db: Db, access: WorkspaceAccess, now: Date, size = 40) =>
+  (await activityPage(db, access, { now, zone: "UTC" }, null, size)).lines;
+
 /** The feed's lines in English (or `language`), without the isolation marks. */
-export const linesOf = (items: ActivityItem[], language: WorkspaceLanguage = "en") =>
-  items.map((i) =>
-    activityLine(i, WORKSPACE_DICTIONARIES[language], language).replace(/[⁨⁩]/g, ""),
-  );
+export const linesOf = (lines: ActivityLine[], language: WorkspaceLanguage = "en") =>
+  lines.map((l) => feedLine(l, WORKSPACE_DICTIONARIES[language], language).replace(/[⁨⁩]/g, ""));

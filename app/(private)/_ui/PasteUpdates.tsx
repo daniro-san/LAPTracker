@@ -54,14 +54,17 @@ export function PasteUpdates({ slug, words }: { slug: string; words: UpdatesWord
     try {
       const id = await makeDraft(slug, text);
       if (id === null) {
+        track("ws_updates_pasted", { outcome: "nothing" });
         setError(words["updates.nothing"]);
         setBusy(false);
         return;
       }
-      track("ws_screenshot_sent", { kind: "member_update" });
+      // D115: its own event, no longer counted as a screenshot sent.
+      track("ws_updates_pasted", { outcome: "draft" });
       // A full load: the open sheet owns a history entry, and its close would undo a soft navigation.
       window.location.assign(`/w/${slug}/shots/${id}`);
     } catch (e) {
+      if (!isSignedOut(e)) track("ws_updates_pasted", { outcome: "failed" });
       setError(isSignedOut(e) ? SIGNED_OUT : words["updates.failed"]);
       setBusy(false);
     }
@@ -105,6 +108,7 @@ export function PasteUpdates({ slug, words }: { slug: string; words: UpdatesWord
           />
           <ReadScreenshot
             slug={slug}
+            place="paste_updates"
             multiple
             words={shotWords(words)}
             onText={(read) => setText((was) => (was.trim() === "" ? read : `${was}\n${read}`))}

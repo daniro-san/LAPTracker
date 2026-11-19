@@ -17,6 +17,7 @@ import {
   type MarkRow,
   type RollCallRow,
 } from "../repo/roll-call";
+import { markCallDeleted, setCallArchived, unmarkCallDeleted } from "../repo/roll-call-deletes";
 import { anyRoster } from "../repo/workspace-any-roster";
 import type { WorkspaceAccess } from "./access";
 import { calendarDays } from "./calendar";
@@ -247,4 +248,40 @@ export async function addCall(
     })) ?? (await existing())?.id;
   if (id === undefined) throw new Error("roll_call_request_lost");
   return { ok: true, id };
+}
+
+/** How long the server takes back an officer's own delete (D120); the page offers Undo for less. */
+export const UNDO_MS = 60_000;
+
+/**
+ * Deletes a roll call of the workspace (D120), or undoes the officer's own delete made under the same
+ * request id in the last UNDO_MS. "not_found": no such roll call to delete, or nothing of this officer's
+ * to undo.
+ */
+export async function deleteCall(
+  db: Db,
+  access: WorkspaceAccess,
+  input: { id: number; requestId: string; undo?: true | undefined },
+  now: Date,
+): Promise<"ok" | "not_found"> {
+  const c = { workspaceId: access.workspaceId, id: input.id, userId: access.user.id, now };
+  const done = input.undo
+    ? await unmarkCallDeleted(
+        db,
+        { ...c, requestId: input.requestId },
+        new Date(now.getTime() - UNDO_MS),
+      )
+    : await markCallDeleted(db, { ...c, requestId: input.requestId });
+  return done ? "ok" : "not_found";
+}
+
+/** Archives (`on`) or unarchives a roll call of the workspace (D120); "not_found" when there is none. */
+export async function archiveCall(
+  db: Db,
+  access: WorkspaceAccess,
+  input: { id: number; on: boolean },
+  now: Date,
+): Promise<"ok" | "not_found"> {
+  const c = { workspaceId: access.workspaceId, id: input.id, userId: access.user.id, now };
+  return (await setCallArchived(db, { ...c, on: input.on })) ? "ok" : "not_found";
 }

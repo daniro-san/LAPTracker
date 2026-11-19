@@ -3,7 +3,8 @@
 // One notice (issue 304): read it in each language, copy it in each place's format (the game's notice board,
 // the game's mail, Discord; issue 345), or edit it. A language that may be out of date carries an "Out of
 // date" tag, which opens the editor at that language; "Update from …" and "Keep as is" are there, behind the
-// editor's save and its checks. Under the languages: "Publish to Discord" and the calendar link (D102).
+// editor's save and its checks. The picture (D119) under the title. Under the languages: "Publish to Discord" and the calendar link (D102), and
+// at the foot "Delete notice" (D118).
 // Review requests (D113): the open ones at the top, where "Edit and save" opens the editor for that request,
 // and the "Review" section with "Ask for a review" before Discord.
 import { useState } from "react";
@@ -20,7 +21,9 @@ import { LANGUAGE_NAME } from "./languages";
 import type { NoticeCalendar } from "./notice-calendar";
 import { Counter, OutOfDateTag, OverLimit } from "./NoticeBits";
 import { NoticeCalendarLink } from "./NoticeCalendarLink";
+import { NoticeDelete } from "./NoticeDelete";
 import { NoticeEditor, type EditorProps } from "./NoticeEditor";
+import { NoticeImage } from "./NoticePicture";
 import { NoticePublish, type PublishProps } from "./NoticePublish";
 import { AskSheet, ReviewRequests, ReviewSection, type ReviewProps } from "./NoticeReviews";
 
@@ -33,31 +36,62 @@ export interface ScreenProps extends Omit<EditorProps, "focus" | "onClose" | "id
   reviews: ReviewProps;
 }
 
-/** The three copies of one language: the game's notice board (cut to fit), the game's mail, Discord. */
-function Copies({ p, language }: { p: ScreenProps; language: NoticeLanguage }) {
-  const { t } = p;
-  const text = p.fields[language].value;
+/**
+ * The three copies of one language: the game's notice board (cut to fit), the game's mail, Discord. Each
+ * button has one line under it, always shown, that says what it copies (D116).
+ */
+export function Copies(p: {
+  t: ScreenProps["t"];
+  viewer: ScreenProps["viewer"];
+  language: NoticeLanguage;
+  title: string;
+  text: string;
+}) {
+  const { t, language, text } = p;
   const board = gameNotice(text);
   const words = (copy: string, copied = t["members.copied"]) => ({
     copy,
     copied,
     failed: t["members.copyFailed"],
   });
+  const limit = new Intl.NumberFormat(p.viewer).format(NOTICE_LIMIT);
+  const copies = [
+    {
+      id: "notice",
+      text: board.text,
+      labels: words(
+        t["notices.copy.notice"],
+        board.cut ? fill(t["notices.copied.cut"], { limit: NOTICE_LIMIT }) : undefined,
+      ),
+      help: fill(t["notices.copy.notice.help"], { limit }),
+    },
+    {
+      id: "mail",
+      text: gameMail(text),
+      labels: words(t["notices.copy.mail"]),
+      help: t["notices.copy.mail.help"],
+    },
+    {
+      id: "discord",
+      text: discordPost(p.title, text),
+      labels: words(t["notices.copy.discord"]),
+      help: t["notices.copy.discord.help"],
+    },
+  ];
   return (
-    <div className="mt-3 flex flex-wrap gap-2">
-      <CopyButton
-        text={board.text}
-        labels={words(
-          t["notices.copy.notice"],
-          board.cut ? fill(t["notices.copied.cut"], { limit: NOTICE_LIMIT }) : undefined,
-        )}
-      />
-      <CopyButton text={gameMail(text)} labels={words(t["notices.copy.mail"])} />
-      <CopyButton
-        text={discordPost(p.fields.title.value, text)}
-        labels={words(t["notices.copy.discord"])}
-      />
-    </div>
+    <ul className="mt-3 grid gap-3 sm:grid-cols-3">
+      {copies.map((c) => {
+        const id = `copy-${language}-${c.id}`;
+        return (
+          <li key={c.id} className="flex flex-col items-start gap-1">
+            <CopyButton text={c.text} labels={c.labels} describedBy={id} />
+            <p id={id} className="text-body-sm text-ink/75">
+              {c.help}
+            </p>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
@@ -104,7 +138,13 @@ function LanguageText({
             {field.value}
           </div>
           <OverLimit text={field.value} t={t} language={p.viewer} />
-          <Copies p={p} language={language} />
+          <Copies
+            t={t}
+            viewer={p.viewer}
+            language={language}
+            title={p.fields.title.value}
+            text={field.value}
+          />
           <button type="button" aria-haspopup="dialog" onClick={onAsk} className={`${chip()} mt-2`}>
             {t["notices.review.ask"]}
           </button>
@@ -151,6 +191,7 @@ export function NoticeScreen(p: ScreenProps) {
           </li>
         ))}
       </ul>
+      {p.picture && <NoticeImage picture={p.picture} title={p.fields.title.value} t={t} />}
       <button
         type="button"
         onClick={() => setEditing(true)}
@@ -190,6 +231,7 @@ export function NoticeScreen(p: ScreenProps) {
       )}
       <NoticePublish slug={p.slug} id={p.id} t={t} publish={p.publish} written={written} />
       <NoticeCalendarLink slug={p.slug} id={p.id} t={t} calendar={p.calendar} />
+      <NoticeDelete slug={p.slug} id={p.id} title={p.fields.title.value} t={t} />
     </>
   );
 }

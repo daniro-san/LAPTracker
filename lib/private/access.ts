@@ -65,6 +65,8 @@ export type BoardAccess = {
   /** True for an officer's session: the board shows the officer's way back to the desk. */
   readonly officer: boolean;
   readonly name: string | null;
+  /** The workspace user, only for the pseudonymous analytics id (D115); no read takes it. */
+  readonly userId: number;
   readonly [boardBrand]: true;
 };
 
@@ -177,6 +179,7 @@ export async function requireBoard(
     guildId: workspace.discordGuildId,
     officer,
     name: session.chosenName ?? session.displayName,
+    userId: session.userId,
   };
   return fields as BoardAccess;
 }

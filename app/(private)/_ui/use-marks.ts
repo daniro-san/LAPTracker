@@ -7,6 +7,7 @@
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
+import { track } from "@/lib/analytics/events";
 import type { Occasion } from "@/lib/private/roll-call";
 import { toggled, type Mark } from "@/lib/private/roll-call-rules";
 
@@ -49,6 +50,7 @@ export function useMarks(slug: string, occasion: Occasion, rows: MarkRowView[], 
         slug,
         { action: "mark", occasion, uid, mark, version: base(uid) },
       );
+      if (status === 200) track("ws_roll_call_marked", { how: "tap" });
       if (status === 200 || status === 409) {
         const version = json.version ?? 0;
         confirmed.current.set(uid, version);
@@ -92,7 +94,11 @@ export function useMarks(slug: string, occasion: Occasion, rows: MarkRowView[], 
     notes,
     error,
     tap,
-    rest: (uids: number[]) => bulk({ action: "rest", uids }),
+    rest: async (uids: number[]) => {
+      const written = await bulk({ action: "rest", uids });
+      if (written) track("ws_roll_call_marked", { how: "rest" });
+      return written;
+    },
     undo: (items: Written) => bulk({ action: "undo", items }),
   };
 }

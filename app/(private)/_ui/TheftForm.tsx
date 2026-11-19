@@ -14,6 +14,7 @@ import type { WorkspaceLanguage } from "@/lib/private/dictionary";
 import { THEFT_KINDS, type TheftKind } from "@/lib/private/theft-groups";
 import { serverInstant } from "@/lib/schedule";
 
+import { newRequestId } from "./request-id";
 import { sheetWords } from "./sheet-words";
 import { RefusalLine, SIGNED_OUT } from "./SignedOut";
 import { postTheft, viewerClock } from "./theft-client";
@@ -115,7 +116,7 @@ function useTheftForm(props: FormProps) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   // One per open sheet (D100): a retry after a lost answer adds nothing new.
-  const [requestId] = useState(() => crypto.randomUUID());
+  const [requestId] = useState(() => newRequestId());
   const { slug, t } = props;
   const submit = async (e: FormEvent) => {
     e.preventDefault();

@@ -2,7 +2,8 @@
 // docs/decisions/: the ranks board (a cross-check, never in a delta) and the live: true roster as a
 // per-alliance fallback when /v1 fails. The site's refresh endpoint answers 403 "Refresh only from the
 // site": the maintainer closed it on purpose. This file has no refresh function and must never get
-// one, and it never sends Origin, Referer or cookies. GET only.
+// one, and it never sends Origin, Referer or cookies. GET only. Squads (D117) come from the documented
+// /v1/players, not from here: the site's arena endpoint (raven, arena teams) is not used.
 import { z } from "zod";
 
 import { getSourceEnv } from "../env";

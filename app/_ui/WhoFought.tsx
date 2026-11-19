@@ -135,7 +135,7 @@ export function WhoFought({ eventId, lists }: { eventId: number; lists: TurnoutL
       <p className="mb-2 text-body-sm text-ink/70">
         {lists.soFar ? l.foughtSoFarHelp : l.foughtHelp}
       </p>
-      <div className="grid gap-x-6 border border-rule px-3 py-2 lg:grid-cols-2">
+      <div className="drawn-card grid gap-x-6 px-3 py-2 lg:grid-cols-2">
         <BarList title={l.withKills} entries={withKills} eventId={eventId} mine={mine} />
         <BarList
           title={l.topShare}

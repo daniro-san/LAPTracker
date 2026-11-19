@@ -1,14 +1,21 @@
-// POST /api/tick — the scheduler's entry point (plan §3.1). GitHub Actions calls it every 15 min,
-// every day; it does at most one thing per call and answers 204 when nothing is due.
+// POST /api/tick — the scheduler's entry point (plan §3.1). cron-job.org calls it every 15 min, every day
+// (D30; tick.yml is a second path); it does at most one thing per call and answers 204 when nothing is
+// due. Inside the daily read's window it also starts the night's next squads batch after its answer
+// (D117, amendment 2026-11-19).
 import { z } from "zod";
 
 import { authorize } from "@/lib/auth";
 import { finishTick, startTick } from "@/lib/repo/ticks";
 import { errorResponse, parseQuery, withContext } from "@/lib/route";
 import { runResponse } from "@/lib/run-response";
+import { scheduleSquadsBatch } from "@/lib/squads-tick";
 import { runTick } from "@/lib/tick";
 
-export const maxDuration = 120;
+/**
+ * The tick's own work (at most RUN_DEADLINE_MS, 100 s, plus its writes) and, after the answer, a squads
+ * batch (another 100 s at most) share one function run: 300 s, the Vercel Hobby maximum with Fluid compute.
+ */
+export const maxDuration = 300;
 
 const noQuery = z.object({}).strict();
 
@@ -22,6 +29,9 @@ export function POST(request: Request): Promise<Response> {
     const heartbeat = await startTick(db, ctx.now());
     const tick = await runTick(ctx, db, new URL(request.url).origin);
     await finishTick(db, heartbeat, ctx.now(), tick.kind);
+    // After the answer, so cron-job.org's 30 s timeout never waits for it. The claim makes it safe beside
+    // POST /api/squads-read (tick.yml, or by hand): one batch at a time per night.
+    scheduleSquadsBatch(ctx);
     switch (tick.kind) {
       case "idle":
         return new Response(null, { status: 204 });
@@ -33,6 +43,7 @@ export function POST(request: Request): Promise<Response> {
           action: "quota-check",
           event_id: tick.eventId,
           remaining: tick.remaining,
+          pictures_pruned: tick.picturesPruned,
         });
       case "rehearsal":
         return Response.json({

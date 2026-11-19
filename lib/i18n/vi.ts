@@ -368,4 +368,11 @@ export const vi = {
     noEvents: "Chưa có sự kiện nào trong sổ.",
     noMembers: "Không có ai ở đây khớp.",
   },
+  consent: {
+    label: "Thống kê",
+    body: "Chúng tôi có thể dùng cookie để đếm lượt truy cập của bạn và ghi lại cách các trang được dùng không? Những gì bạn gõ không bao giờ được ghi lại. Không có cookie, chúng tôi chỉ đếm lượt truy cập và không lưu cookie theo dõi nào.",
+    accept: "Cho phép",
+    decline: "Không, cảm ơn",
+    choices: "Lựa chọn thống kê",
+  },
 } as const satisfies Translation;

@@ -215,11 +215,34 @@ export function translatePlan(
   languages: NoticeLanguage[],
   wroteIn: NoticeLanguage | null,
 ): { from: NoticeLanguage; to: NoticeLanguage[] } | null {
-  const has = (l: NoticeLanguage) => d.values[l].trim() !== "";
   const translation = draftKind(d, active) === "translate" || (d.fitted[active] && d.from[active]);
-  if (has(active) && !translation)
-    return { from: active, to: languages.filter((l) => l !== active) };
-  const from = [d.from[active]?.language, wroteIn, ...languages].find(
+  return planTranslate({
+    active,
+    languages,
+    wroteIn,
+    has: (l) => d.values[l].trim() !== "",
+    translation: Boolean(translation),
+    source: d.from[active]?.language,
+  });
+}
+
+/**
+ * translatePlan's rule for any editor with one text per language (the notices) or several (Start here, D116):
+ * `has` says whether a language holds text, `translation` whether the active tab holds a draft from
+ * Translate, and `source` the language that draft came from.
+ */
+export function planTranslate(x: {
+  active: NoticeLanguage;
+  languages: readonly NoticeLanguage[];
+  wroteIn: NoticeLanguage | null;
+  has: (l: NoticeLanguage) => boolean;
+  translation: boolean;
+  source: NoticeLanguage | undefined;
+}): { from: NoticeLanguage; to: NoticeLanguage[] } | null {
+  const { active, has } = x;
+  if (has(active) && !x.translation)
+    return { from: active, to: x.languages.filter((l) => l !== active) };
+  const from = [x.source, x.wroteIn, ...x.languages].find(
     (l): l is NoticeLanguage => l !== undefined && l !== null && l !== active && has(l),
   );
   return from ? { from, to: [active] } : null;

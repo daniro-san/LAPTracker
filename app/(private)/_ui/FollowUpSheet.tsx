@@ -14,6 +14,7 @@ import { FOLLOW_UP_ACTIONS, type FollowUpAction } from "@/lib/private/follow-up-
 
 import { FIELD, Labeled, TextInput } from "./CalendarFields";
 import type { FollowUpWords } from "./follow-up-words";
+import { newRequestId } from "./request-id";
 import { sheetWords } from "./sheet-words";
 import { RefusalLine, SIGNED_OUT } from "./SignedOut";
 
@@ -62,7 +63,7 @@ type Stale = { said: string; version: number };
 /** The sheet's answers, its check and its save. */
 function useRecord(props: SheetProps) {
   const { row, words } = props;
-  const [requestId] = useState(() => crypto.randomUUID());
+  const [requestId] = useState(() => newRequestId());
   const [action, setAction] = useState<FollowUpAction | null>(null);
   const [backOn, setBackOn] = useState("");
   const [note, setNote] = useState("");

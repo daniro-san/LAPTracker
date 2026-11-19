@@ -10,6 +10,7 @@ import { createEntry, editEntry, removeEntry } from "@/lib/private/calendar";
 import { fieldChange, newEntry } from "@/lib/private/calendar-model";
 import { conflictSaid, conflictYours } from "@/lib/private/calendar-words";
 import { WORKSPACE_LANG_COOKIE } from "@/lib/private/cookies";
+import { counted } from "@/lib/private/desk-action";
 import { pickWorkspaceLanguage, WORKSPACE_DICTIONARIES } from "@/lib/private/dictionary";
 import {
   isSameOriginJson,
@@ -64,15 +65,17 @@ export async function POST(
       const made = await privately("calendar.create", () =>
         createEntry(db, access, input.entry, input.requestId),
       );
-      if (made.ok) return ok({ id: made.id });
+      if (made.ok) return counted(ctx, access, "calendar", "add", ok({ id: made.id }));
       return privateError(made.code === "invalid" ? 400 : 409, made.code);
     }
     if (input.action === "delete") {
       const done = await privately("calendar.remove", () => removeEntry(db, access, input));
-      return done === "ok" ? ok() : privateError(404, done);
+      return done === "ok"
+        ? counted(ctx, access, "calendar", "delete", ok())
+        : privateError(404, done);
     }
     const result = await privately("calendar.edit", () => editEntry(db, access, input, now));
-    if (result.ok) return ok();
+    if (result.ok) return counted(ctx, access, "calendar", "edit", ok());
     if (result.code !== "stale") return privateError(STATUS[result.code], result.code);
     const language = pickWorkspaceLanguage(
       jar.get(WORKSPACE_LANG_COOKIE)?.value,

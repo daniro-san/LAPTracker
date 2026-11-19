@@ -37,7 +37,8 @@ export const memberFacts = pgTable(
     field: text("field").notNull(),
     version: integer("version").notNull(),
     value: jsonb("value"),
-    source: text("source", { enum: ["message", "officer", "sheet"] }).notNull(),
+    // "tracker": the strongest squad the tracker saw, written by the nightly squads read (D117).
+    source: text("source", { enum: ["message", "officer", "sheet", "tracker"] }).notNull(),
     writtenBy: integer("written_by").references(() => workspaceUsers.id, { onDelete: "set null" }),
     writtenAt: tstz("written_at").notNull(),
   },
@@ -45,7 +46,10 @@ export const memberFacts = pgTable(
     unique("member_facts_version_unique").on(t.workspaceId, t.uid, t.field, t.version),
     // Home's recent activity (D108) reads the newest saves.
     index("member_facts_workspace_written_idx").on(t.workspaceId, t.writtenAt),
-    check("member_facts_source_check", sql`${t.source} in ('message', 'officer', 'sheet')`),
+    check(
+      "member_facts_source_check",
+      sql`${t.source} in ('message', 'officer', 'sheet', 'tracker')`,
+    ),
   ],
 );
 

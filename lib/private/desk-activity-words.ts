@@ -2,7 +2,12 @@
 // language. Every name and title goes through isolate(), so a right-to-left name cannot reorder the line.
 import { fill, isolate } from "../copy";
 import { agoText, calendarDates, titleOf } from "./calendar-words";
-import type { ActivityItem } from "./desk-activity";
+import {
+  COUNTED_RUNS,
+  type ActivityItem,
+  type ActivityLine,
+  type ActivityPage,
+} from "./desk-activity";
 import type { WorkspaceDictionary, WorkspaceKey, WorkspaceLanguage } from "./dictionary";
 import type { ImportKind, Scope } from "./import-kinds";
 import { kindLabel } from "./import-words";
@@ -70,13 +75,14 @@ function draftLine(
   return fill(t["activity.draft"], { who, kind });
 }
 
-/** Marks in a roll call: "the rest" when one action wrote several. */
+/** Marks in a roll call ("the rest" when one action wrote several), or a roll call deleted or archived. */
 function marksLine(
   t: WorkspaceDictionary,
   who: string,
-  item: Extract<ActivityItem, { kind: "marks" }>,
+  item: Extract<ActivityItem, { kind: "marks" | "callDeleted" | "callArchived" }>,
 ): string {
   const call = callTitle({ ...item.call, kind: item.call.kind as RollKind, placed: null }, t);
+  if (item.kind !== "marks") return fill(t[`activity.${item.kind}`], { who, call });
   return fill(t[item.rest ? "activity.marksRest" : "activity.marks"], { who, call });
 }
 
@@ -113,6 +119,21 @@ function reviewLine(
   return fill(t["activity.reviewAsked"], { who, title, what, reviewer: isolate(item.reviewer) });
 }
 
+/** A line about a notice, with its title. */
+function noticeLine(
+  t: WorkspaceDictionary,
+  who: string,
+  item: Extract<ActivityItem, { title: string }>,
+): string {
+  if (item.kind === "reviewAsked" || item.kind === "reviewAnswered")
+    return reviewLine(t, who, item);
+  const title = isolate(item.title);
+  if (item.kind === "noticePictureReused") {
+    return fill(t["activity.noticePictureReused"], { who, from: isolate(item.from), title });
+  }
+  return fill(t[`activity.${item.kind}`], { who, title });
+}
+
 /** What the officer did, as one sentence, without the time. */
 export function activityLine(
   item: ActivityItem,
@@ -120,27 +141,27 @@ export function activityLine(
   language: WorkspaceLanguage,
 ): string {
   const who = isolate(item.who);
+  // Marks, or a roll call deleted or archived (D120).
+  if ("call" in item) return marksLine(t, who, item);
   switch (item.kind) {
     case "facts":
       return factsLine(t, who, item);
     case "followUp":
       return followUpLine(t, who, item, language);
-    case "noticeSaved":
-    case "noticePosted":
-      return fill(t[`activity.${item.kind}`], { who, title: isolate(item.title) });
     case "draft":
       return draftLine(t, who, item);
     case "entry":
     case "entryEdit":
       return fill(t[`activity.${item.kind}`], { who, entry: isolate(titleOf(item.entry, t)) });
-    case "marks":
-      return marksLine(t, who, item);
     case "thefts":
     case "newMember":
       return countLine(t, who, item);
-    // The rest: a review request or its outcome (D113).
+    case "thanks":
+      return fill(t[`activity.thanks.${item.target}`], { who });
+    // The rest is about a notice: saved, posted, deleted (D118), its picture added, kept or used in another
+    // notice (D119), or a review request or its outcome (D113).
     default:
-      return reviewLine(t, who, item);
+      return noticeLine(t, who, item);
   }
 }
 
@@ -151,3 +172,48 @@ export const activityAgo = (
   language: WorkspaceLanguage,
   t: WorkspaceDictionary,
 ) => agoText(at.toISOString(), now, language, t["calendar.conflict.justNow"]);
+
+const counted = (kind: ActivityItem["kind"]): kind is (typeof COUNTED_RUNS)[number] =>
+  (COUNTED_RUNS as readonly string[]).includes(kind);
+
+/**
+ * A line of the feed as one sentence. A run of calendar entries, notice saves or screenshots says how many
+ * lines it opens to ("Rook added 6 entries to the Calendar"); a run of member saves, thefts or new members
+ * says what it holds.
+ */
+export function feedLine(line: ActivityLine, t: WorkspaceDictionary, language: WorkspaceLanguage) {
+  const { item } = line;
+  if (line.run.length === 0 || !counted(item.kind)) return activityLine(item, t, language);
+  return fill(t[`activity.run.${item.kind}`], { who: isolate(item.who), n: line.run.length });
+}
+
+/** One line as the client draws it: its words and time, and a run's own lines (empty for one action). */
+export interface ActivityView {
+  text: string;
+  at: string;
+  ago: string;
+  run: { text: string; at: string; ago: string }[];
+}
+
+/** A page of the feed in the officer's language, made on the server; `next` is the cursor in ms. */
+export interface ActivityPageView {
+  lines: ActivityView[];
+  next: number | null;
+}
+
+export function activityView(
+  page: ActivityPage,
+  t: WorkspaceDictionary,
+  language: WorkspaceLanguage,
+  now: Date,
+): ActivityPageView {
+  const when = (at: Date) => ({ at: at.toISOString(), ago: activityAgo(at, now, language, t) });
+  return {
+    lines: page.lines.map((line) => ({
+      text: feedLine(line, t, language),
+      ...when(line.item.at),
+      run: line.run.map((item) => ({ text: activityLine(item, t, language), ...when(item.at) })),
+    })),
+    next: page.next?.getTime() ?? null,
+  };
+}

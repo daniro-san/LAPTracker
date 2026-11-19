@@ -157,7 +157,7 @@ function CaravanCard(props: {
     }
   };
   return (
-    <section aria-labelledby={`car-${item.key}`} className="mt-4 border border-rule px-3 py-3">
+    <section aria-labelledby={`car-${item.key}`} className="drawn-card mt-4 px-3 py-3">
       <h2 id={`car-${item.key}`} className="font-subhead text-display-sm">
         {item.dayLabel}
       </h2>
@@ -223,7 +223,7 @@ export function CaravanBoard(props: {
     null,
   );
   if (items.length === 0) {
-    return <p className="mt-4 border border-rule px-4 py-5">{words["calendar.caravans.none"]}</p>;
+    return <p className="drawn-card mt-4 px-4 py-5">{words["calendar.caravans.none"]}</p>;
   }
   const role = (k: SeatKind) => words[`calendar.role.${k}`];
   return (

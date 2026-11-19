@@ -203,6 +203,9 @@ importers:
       '@eslint/js':
         specifier: 10.0.1
         version: 10.0.1(eslint@10.14.0(jiti@2.7.0))
+      '@posthog/cli':
+        specifier: 0.19.0
+        version: 0.19.0
       '@tailwindcss/postcss':
         specifier: 4.3.5
         version: 4.3.5
@@ -1038,6 +1041,11 @@ packages:
 
   '@posthog/browser-common@0.10.8':
     resolution: {integrity: sha512-TQmqLVNFoKaL4dDV5Q8AScX2dIwdq8By2cj2KU1hMGe88tn7Usbf3U/hv5okhobEojntqJeslPIRBrG79Su+vg==}
+
+  '@posthog/cli@0.19.0':
+    resolution: {integrity: sha512-2fh0UepeCIjyW9MJR0lpMfxaGIgQMj30nI8Nn+wR78Rghk9kJMolxwmh2XaQkOKws4IpuV3y3G2dF2BW8D22iQ==}
+    engines: {node: '>=14.14', npm: '>=6'}
+    hasBin: true
 
   '@posthog/core@1.68.0':
     resolution: {integrity: sha512-5kjPcLquzj47qBGn52+7RRXrJJvrTHaRKgxV9izYPFzoVFEftFqSXYZF/ug+yialxDU73dR9apyi+mSaAeaXPw==}
@@ -2935,6 +2943,10 @@ snapshots:
       preact: 10.29.8
     transitivePeerDependencies:
       - preact-render-to-string
+
+  '@posthog/cli@0.19.0':
+    dependencies:
+      detect-libc: 2.1.2
 
   '@posthog/core@1.68.0':
     dependencies:

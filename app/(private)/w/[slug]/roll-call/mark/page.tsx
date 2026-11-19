@@ -1,7 +1,8 @@
 // /w/[slug]/roll-call/mark (issue 298): one roll call, `?entry=&week=` for a Calendar entry's week or `?id=`
 // for one added by hand. Its rows in the order they keep while marking, away members apart (D80), and an
 // Elixir Scramble roll call over its team only. Reading this page writes nothing: a Calendar roll call is
-// stored with its first mark.
+// stored with its first mark. A saved roll call can be archived or deleted at the foot (D120); a deleted
+// one is a 404 here.
 import { notFound } from "next/navigation";
 
 import { fill } from "@/lib/copy";
@@ -19,6 +20,7 @@ import {
 } from "../../../../_ui/roll-call-data";
 import { occasionOf, openRollCall } from "../../../../_ui/roll-call-page";
 import { RollCallHead } from "../../../../_ui/RollCallHead";
+import { RollCallManage } from "../../../../_ui/RollCallManage";
 import { RollCallMarks } from "../../../../_ui/RollCallMarks";
 
 export default async function MarkPage({
@@ -42,13 +44,16 @@ export default async function MarkPage({
   const o = view.opened;
   const elixir = o.kind === "elixir" && o.placed !== null;
   const head = headerOf(o, { t, language, zone: page.zone });
+  const words = rollWords(t);
+  const title = callTitle(o, t);
   return (
     <SignedInFrame access={access} language={language} t={t} current="mark" waiting={page.waiting}>
       <RollCallHead
         t={t}
         times={calendarWords(t)}
         backHref={`/w/${slug}/roll-call?week=${o.week}`}
-        title={callTitle(o, t)}
+        title={title}
+        archived={!!o.call?.archivedAt}
         {...head}
         day={o.day}
         steps={
@@ -76,11 +81,23 @@ export default async function MarkPage({
           slug={slug}
           occasion={occasion}
           rows={markRows(view.rows, { t, language })}
-          words={rollWords(t)}
+          words={words}
           marks={markWords(o.kind, t)}
           shield={o.kind === "shield"}
           language={language}
           today={page.today}
+        />
+      )}
+      {o.call && (
+        <RollCallManage
+          slug={slug}
+          id={o.call.id}
+          title={title}
+          dayLabel={head.dayLabel}
+          week={o.week}
+          calendar={o.placed !== null}
+          archived={o.call.archivedAt !== null}
+          words={words}
         />
       )}
     </SignedInFrame>

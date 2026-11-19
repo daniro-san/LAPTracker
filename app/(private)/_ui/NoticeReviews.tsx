@@ -10,6 +10,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { track } from "@/lib/analytics/events";
 import { buttonClass } from "@/lib/brand/components/Button";
 import { chip } from "@/lib/brand/components/controls";
 import { Notice } from "@/lib/brand/components/Notice";
@@ -19,6 +20,7 @@ import type { WorkspaceDictionary } from "@/lib/private/dictionary";
 import type { NoticeLanguage } from "@/lib/private/notice-rules";
 
 import { LANGUAGE_NAME } from "./languages";
+import { newRequestId } from "./request-id";
 import { sheetWords } from "./sheet-words";
 import { RefusalLine, SIGNED_OUT } from "./SignedOut";
 
@@ -70,7 +72,7 @@ function OpenRequest(props: {
   const { t, request } = props;
   const router = useRouter();
   // One per request shown (D100): a double tap or a retry after a lost answer approves once.
-  const [requestId] = useState(() => crypto.randomUUID());
+  const [requestId] = useState(() => newRequestId());
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const approve = async () => {
@@ -78,7 +80,10 @@ function OpenRequest(props: {
     setError(null);
     const answer = await send(props.slug, { action: "approve", review: request.id, requestId });
     setBusy(false);
-    if (answer === "ok") return router.refresh();
+    if (answer === "ok") {
+      track("ws_review_approved");
+      return router.refresh();
+    }
     setError(answer);
   };
   return (
@@ -209,7 +214,7 @@ export function AskSheet(props: {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // One per opened sheet (D100): a double tap or a retry stores one request.
-  const [requestId] = useState(() => crypto.randomUUID());
+  const [requestId] = useState(() => newRequestId());
   const ask = async () => {
     setBusy(true);
     setError(null);
@@ -217,6 +222,10 @@ export function AskSheet(props: {
     const answer = await send(props.slug, body);
     setBusy(false);
     if (answer !== "ok") return setError(answer);
+    track("ws_review_requested", {
+      scope: language === null ? "notice" : "language",
+      to: reviewer === null ? "team" : "officer",
+    });
     props.onClose();
     router.refresh();
   };

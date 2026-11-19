@@ -153,7 +153,7 @@ export async function PlayerProgress({ progress, clock }: { progress: Progress; 
       {readings.length < 2 ? (
         <p className={`text-sm ${MUTED}`}>{l.progressEmpty}</p>
       ) : (
-        <div className="border border-rule p-3">
+        <div className="drawn-card p-3">
           <p className="mb-3">{summaryText(progress, clock, locale, copy)}</p>
           <h3 className={`mb-1 ${LABEL}`}>{l.might}</h3>
           <LineChart points={pointsOf(readings, "power")} label={l.might} {...chart} />

@@ -10,10 +10,19 @@ export function CopyButton({
   text,
   labels,
   event,
+  onCopied,
+  className = "",
+  describedBy,
 }: {
   text: string;
   labels: { copy: string; copied: string; failed: string };
   event?: "ws_copy_spreadsheet";
+  /** Called once the text is on the clipboard (D115: the thanks copied for the game). */
+  onCopied?: () => void;
+  /** Extra classes, such as full width in the thanks sheet (D114). */
+  className?: string;
+  /** The id of the line that says what this copy holds (a notice's three copies, D116). */
+  describedBy?: string;
 }) {
   const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -26,17 +35,21 @@ export function CopyButton({
   return (
     <button
       type="button"
+      aria-describedby={describedBy}
       onClick={() => {
         if (event) track(event);
         // Inside a promise, so a missing clipboard (an insecure page) also lands in "failed".
         void Promise.resolve()
           .then(() => navigator.clipboard.writeText(text))
           .then(
-            () => done("copied"),
+            () => {
+              done("copied");
+              onCopied?.();
+            },
             () => done("failed"),
           );
       }}
-      className="drawn-frame-soft tint-button inline-flex min-h-11 items-center gap-1 px-3 text-sm font-medium text-plum"
+      className={`drawn-frame-soft tint-button inline-flex min-h-11 items-center gap-1 px-3 text-sm font-medium text-plum ${className}`}
     >
       <span aria-hidden="true">⧉</span>
       <span aria-live="polite">

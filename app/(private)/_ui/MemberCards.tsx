@@ -10,6 +10,7 @@ import type { CardData } from "@/lib/private/member-card";
 
 import { SOURCE_KEY } from "./facts-form";
 import { FactsEditor, type EditorProps } from "./FactsEditor";
+import { MemberSquads } from "./MemberSquads";
 
 export const STATUS_TONE = {
   help: "font-semibold text-yarn",
@@ -149,6 +150,7 @@ function Details({ card, editor, zoneNow, mode, onEditorClose }: CardProps) {
         mode={mode}
         onEditorClose={onEditorClose}
       />
+      {card.squads && <MemberSquads squads={card.squads} />}
     </div>
   );
 }

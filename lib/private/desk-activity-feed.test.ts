@@ -1,4 +1,4 @@
-// Home's recent activity (D108), second part: grouping, saved drafts past their 7 days, Undo, the cap.
+// Home's recent activity (D108), second part: grouping, saved drafts past their 7 days, Undo.
 import { randomUUID } from "node:crypto";
 
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
@@ -7,6 +7,7 @@ import type { Db } from "../db";
 import { openTestDb } from "../db.test-helpers";
 import { openDrafts } from "../repo/import";
 import { memberFacts, memberFollowUps, pendingMembers } from "../schema";
+import { thanksShares, thanksTakedowns } from "../schema-board";
 import { screenshotDrafts } from "../schema-import";
 import {
   noticeEdits,
@@ -16,8 +17,14 @@ import {
   notices,
 } from "../schema-notices";
 import type { WorkspaceAccess } from "./access";
-import { ACTIVITY_MAX, recentActivity } from "./desk-activity";
-import { ago, browser, freshWorkspace, linesOf, NOW } from "./desk-activity.test-helpers";
+import {
+  ago,
+  browser,
+  freshWorkspace,
+  linesOf,
+  NOW,
+  recentActivity,
+} from "./desk-activity.test-helpers";
 
 let db: Db;
 let ws: number;
@@ -238,21 +245,37 @@ describe("recent activity", () => {
     );
   });
 
-  it("holds at most ACTIVITY_MAX lines", async () => {
+  it("says where the thanks were shared, and who took them down; a failed post is not a line", async () => {
     const a = (await browser(db, ws, "Ana")).userId;
-    await db.insert(memberFollowUps).values(
-      Array.from({ length: ACTIVITY_MAX + 5 }, (_, i) => ({
-        workspaceId: ws,
-        uid: 1000 + i,
-        action: "talked" as const,
-        writtenBy: a,
-        writtenAt: ago(i + 1),
-        requestId: randomUUID(),
-      })),
-    );
+    const share = (target: string, status: string, at: Date) => ({
+      workspaceId: ws,
+      requestId: randomUUID(),
+      target,
+      week: "2026-11-16",
+      texts: { en: "Thank you, Bramble." },
+      names: ["Bramble"],
+      status,
+      sharedBy: a,
+      sharedAt: at,
+    });
+    const [, board] = await db
+      .insert(thanksShares)
+      .values([
+        share("discord", "posted", ago(30)),
+        share("board", "posted", ago(20)),
+        share("discord", "failed", ago(15)),
+      ])
+      .returning({ id: thanksShares.id });
+    await db
+      .insert(thanksTakedowns)
+      .values({ shareId: board?.id ?? 0, takenBy: a, takenAt: ago(5) });
     const me = (await browser(db, ws, "Rook")).visit(NOW);
     const items = await recentActivity(db, (await me) as WorkspaceAccess, NOW);
-    expect(items).toHaveLength(ACTIVITY_MAX);
-    expect(linesOf(items)[0]).toBe("Ana talked to a member");
+    expect(linesOf(items)).toEqual([
+      "Ana took the thanks down from the members’ board",
+      "Ana shared the thanks on the members’ board",
+      "Ana shared the thanks on Discord",
+    ]);
+    expect(linesOf(items, "pt-BR")[2]).toBe("Ana compartilhou os agradecimentos no Discord");
   });
 });

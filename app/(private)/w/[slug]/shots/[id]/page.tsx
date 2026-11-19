@@ -112,7 +112,7 @@ export default async function DraftPage({
         </a>
       </p>
       {view === null ? (
-        <p className="mt-4 border border-rule px-4 py-5">{t["shots.e.gone"]}</p>
+        <p className="drawn-card mt-4 px-4 py-5">{t["shots.e.gone"]}</p>
       ) : (
         <Draft view={view} t={t} language={language} slug={slug} kinds={kinds} />
       )}

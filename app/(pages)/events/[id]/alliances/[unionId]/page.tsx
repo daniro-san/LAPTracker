@@ -119,7 +119,7 @@ function Summary({
   const { before, after } = detail;
   const ranks = rankPairs(detail, ledger, canDelta);
   return (
-    <section aria-label={copy.ledger.alliance} className="border border-rule">
+    <section aria-label={copy.ledger.alliance} className="drawn-card">
       <dl className="grid grid-cols-3 divide-x divide-rule">
         {metrics.map((m) => (
           <div key={m.label} className="min-w-0 px-2 py-2 sm:px-4">

@@ -13,30 +13,48 @@ import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
 import { requireWorkspace } from "@/lib/private/access";
 import { calendarDays } from "@/lib/private/calendar";
-import { onDeskNow, recentActivity, type ActivityItem } from "@/lib/private/desk-activity";
+import {
+  ACTIVITY_FIRST,
+  activityPage,
+  onDeskNow,
+  type ActivityPage,
+} from "@/lib/private/desk-activity";
+import { activityView } from "@/lib/private/desk-activity-words";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import { toReview, type ReviewItem } from "@/lib/private/import-view";
-import { cardFormats, progressText } from "@/lib/private/member-card";
+import { cardFormats } from "@/lib/private/member-card";
 import { membersView, progressHistory, type MembersView } from "@/lib/private/members";
-import { needsAWord, whoOf } from "@/lib/private/members-list";
-import { plural } from "@/lib/private/members-sheet";
+import { picturesDue, type DueItem } from "@/lib/private/notice-picture-due";
 import { reviewsForMe } from "@/lib/private/notice-reviews";
 import { matchOnRead, toMatch } from "@/lib/private/pending-members";
 import { RENEW_MS } from "@/lib/private/session";
 import { returnPath, SLUG } from "@/lib/private/sign-in";
+import { thanksNudge } from "@/lib/private/thanks";
 import { serverDay } from "@/lib/schedule";
 
 import { calendarWords, nextItems } from "../../_ui/calendar-data";
 import { OnDesk, RecentActivity } from "../../_ui/DeskActivity";
 import { Frame, SignedInFrame, workspaceWords } from "../../_ui/Frame";
 import { digestDays, type NextItem } from "../../_ui/home-digest";
+import { HomeMembers } from "../../_ui/HomeMembers";
 import { HomeNext } from "../../_ui/HomeNext";
 import { toMatchLine } from "../../_ui/member-lifecycle-data";
+import { PicturesDueCard } from "../../_ui/PicturesDue";
 import { nextQuery, refuse } from "../../_ui/refuse";
 import { sharedLines } from "../../_ui/share-lines";
 import { ToReview } from "../../_ui/ToReview";
 
 const ERRORS = ["denied", "discord", "not_configured"] as const;
+/** What Home reads when the visitor is not signed in: nothing. */
+const NONE = {
+  items: [],
+  placed: [],
+  view: null,
+  toMatch: 0,
+  desk: null,
+  reviews: [],
+  nudge: false,
+};
 type SignInError = (typeof ERRORS)[number];
 
 function SignIn({
@@ -95,7 +113,7 @@ const LINK =
 /** Today and tomorrow from the Calendar, on the officer's own clock once the browser knows it. */
 function NextUp({ slug, t, items }: { slug: string; t: WorkspaceDictionary; items: NextItem[] }) {
   return (
-    <section aria-labelledby="home-next" className="mt-4 border border-rule px-4 py-3">
+    <section aria-labelledby="home-next" className="drawn-card mt-4 px-4 py-3">
       <h2 id="home-next" className="font-subhead text-display-sm">
         {t["home.next.head"]}
       </h2>
@@ -113,80 +131,6 @@ function NextUp({ slug, t, items }: { slug: string; t: WorkspaceDictionary; item
   );
 }
 
-/** Who to thank and how many to check in with, as Members shows them; "not yet" before the first
- * end-of-day read, when nothing is computed (D75). */
-function MembersPart(props: {
-  slug: string;
-  t: WorkspaceDictionary;
-  language: WorkspaceLanguage;
-  view: MembersView;
-}) {
-  const { slug, t, language, view } = props;
-  const members = `/w/${slug}/members`;
-  const f = cardFormats(language, getEnv().SERVER_TZ, new Date());
-  // The top 3 donors; the most active when no donation was read this week.
-  const [key, thanks] =
-    view.thanks.donors.length > 0
-      ? (["thanks.donors", view.thanks.donors] as const)
-      : (["thanks.activity", view.thanks.activity] as const);
-  const checkins = view.members.filter((m) => needsAWord(whoOf(m))).length;
-  return (
-    <section aria-labelledby="home-members" className="mt-4 border border-rule px-4 py-3">
-      <h2 id="home-members" className="font-subhead text-display-sm">
-        {t["home.members.head"]}
-      </h2>
-      {view.early ? (
-        <p className="mt-1">{t["home.notYet"]}</p>
-      ) : (
-        <>
-          {thanks.length > 0 && (
-            <div className="mt-1 max-w-sm">
-              <h3 className="text-body-sm font-semibold text-ink/75">{t[key]}</h3>
-              <ol>
-                {thanks.map((x) => (
-                  <li key={x.uid} className="flex justify-between gap-2">
-                    <span translate="no" className="min-w-0 truncate font-semibold">
-                      {x.name}
-                    </span>
-                    <span className="tabular-nums">{f.compact(x.value)}</span>
-                  </li>
-                ))}
-              </ol>
-            </div>
-          )}
-          {/* D109: AD Tech done or main squad grown this week, as on Members (name order). */}
-          {view.thanks.progress.length > 0 && (
-            <p className="mt-1 max-w-sm text-body-sm">
-              <span className="font-semibold text-ink/75">{t["thanks.progress"]}: </span>
-              {view.thanks.progress.map((p, i) => (
-                <span key={p.uid}>
-                  {i > 0 && "; "}
-                  <bdi translate="no" className="font-semibold">
-                    {p.name}
-                  </bdi>{" "}
-                  {progressText(p, t)}
-                </span>
-              ))}
-            </p>
-          )}
-          {checkins === 0 ? (
-            <p className="mt-1">{t["members.checkinNone"]}</p>
-          ) : (
-            <a href={`${members}?order=rank#ml-heading`} className={LINK}>
-              {fill(plural(t, "members.checkinCount", checkins, f), { n: checkins })}
-            </a>
-          )}
-        </>
-      )}
-      <p>
-        <a href={members} className={LINK}>
-          {t["home.open"]}
-        </a>
-      </p>
-    </section>
-  );
-}
-
 function Home(props: {
   slug: string;
   t: WorkspaceDictionary;
@@ -196,10 +140,13 @@ function Home(props: {
   view: MembersView;
   /** New members a roster read since their add could not match (D106, 2026-11-17). */
   toMatch: number;
-  /** D108: the other officers on the desk now, and what officers did lately. */
-  desk: { names: string[]; activity: ActivityItem[]; now: Date };
+  /** D108: the other officers on the desk now, and what officers did lately; D119: the notice pictures
+   * the weekly cleanup deletes soon. */
+  desk: { names: string[]; activity: ActivityPage; now: Date; due: DueItem[] };
   shared: string[] | null;
   reviews: Awaited<ReturnType<typeof reviewsForMe>>;
+  /** Sunday or Monday, and the week's thanks not shared yet (D114). */
+  nudge: boolean;
 }) {
   const { slug, t, language } = props;
   const f = cardFormats(language, getEnv().SERVER_TZ, new Date());
@@ -225,7 +172,8 @@ function Home(props: {
       )}
       <OnDesk names={props.desk.names} t={t} language={language} />
       <NextUp slug={slug} t={t} items={props.next} />
-      <MembersPart slug={slug} t={t} language={language} view={props.view} />
+      <HomeMembers slug={slug} t={t} language={language} view={props.view} nudge={props.nudge} />
+      <PicturesDueCard slug={slug} t={t} language={language} items={props.desk.due} />
       <ToReview
         slug={slug}
         items={props.items}
@@ -239,7 +187,11 @@ function Home(props: {
         reviews={props.reviews}
         when={(d) => fill(t["time.server"], { time: at.format(d) })}
       />
-      <RecentActivity items={props.desk.activity} t={t} language={language} now={props.desk.now} />
+      <RecentActivity
+        slug={slug}
+        first={activityView(props.desk.activity, t, language, props.desk.now)}
+        t={t}
+      />
     </section>
   );
 }
@@ -253,10 +205,10 @@ export default async function WorkspacePage({
 }) {
   const { slug } = await params;
   if (!SLUG.test(slug)) notFound();
-  const jar = await cookies();
   const now = new Date();
   const zone = getEnv().SERVER_TZ;
-  const days = digestDays(serverDay(now, { SERVER_TZ: zone }));
+  const today = serverDay(now, { SERVER_TZ: zone });
+  const days = digestDays(today);
   // INVARIANT workspace.access-first: nothing private is read before this check.
   const {
     access,
@@ -266,23 +218,25 @@ export default async function WorkspacePage({
     toMatch: unmatched,
     desk,
     reviews,
+    nudge,
   } = await withPageDb(async (db) => {
-    const access = await requireWorkspace(db, slug, jar, now, RENEW_MS);
-    if (!access.ok)
-      return { access, items: [], placed: [], view: null, toMatch: 0, desk: null, reviews: [] };
+    const access = await requireWorkspace(db, slug, await cookies(), now, RENEW_MS);
+    if (!access.ok) return { access, ...NONE };
     // D106: a roster read since a new member was added may now list them, as on Members.
     const pending = await matchOnRead(db, access, now);
-    const [items, placed, view, names, activity, reviews] = await Promise.all([
+    const [items, placed, view, names, activity, reviews, due] = await Promise.all([
       toReview(db, access, now),
       calendarDays(db, access, days.from, days.to),
       progressHistory(db, access).then((history) => membersView(db, access, now, zone, history)),
       onDeskNow(db, access, now),
-      recentActivity(db, access, now),
+      activityPage(db, access, { now, zone }, null, ACTIVITY_FIRST),
       reviewsForMe(db, access),
+      picturesDue(db, access, now, { SERVER_TZ: zone }),
     ]);
-    const desk = { names, activity, now };
+    const desk = { names, activity, now, due };
+    const nudge = await thanksNudge(db, access, today);
     const unmatched = toMatch(pending, view.readAt).length;
-    return { access, items, placed, view, toMatch: unmatched, desk, reviews };
+    return { access, items, placed, view, toMatch: unmatched, desk, reviews, nudge };
   });
   const query = await searchParams;
   // The page a refused visitor asked for (refuse.ts), kept through the sign-in.
@@ -323,6 +277,7 @@ export default async function WorkspacePage({
         desk={desk}
         shared={shared}
         reviews={reviews}
+        nudge={nudge}
       />
     </SignedInFrame>
   );

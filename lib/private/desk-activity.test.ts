@@ -18,8 +18,15 @@ import { screenshotDrafts } from "../schema-import";
 import { noticeEdits, notices } from "../schema-notices";
 import { thefts } from "../schema-thefts";
 import type { WorkspaceAccess } from "./access";
-import { onDeskNow, recentActivity } from "./desk-activity";
-import { ago, browser, freshWorkspace, linesOf, NOW } from "./desk-activity.test-helpers";
+import { onDeskNow } from "./desk-activity";
+import {
+  ago,
+  browser,
+  freshWorkspace,
+  linesOf,
+  NOW,
+  recentActivity,
+} from "./desk-activity.test-helpers";
 
 let db: Db;
 let ws: number;

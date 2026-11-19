@@ -5,6 +5,7 @@
 import { z } from "zod";
 
 import { requireWorkspace } from "@/lib/private/access";
+import { counted } from "@/lib/private/desk-action";
 import {
   isSameOriginJson,
   NO_STORE,
@@ -95,6 +96,13 @@ export async function POST(request: Request, { params }: Params): Promise<Respon
           ? await privately("thefts.remove", () => removeTheft(db, access, input.id))
           : await privately("thefts.follow", () => setFollowUp(db, access, input, now));
     if (result !== "ok") return privateError(result === "not_found" ? 404 : 400, result);
-    return Response.json({ ok: true }, { headers: NO_STORE });
+    const action = input.action === "add" ? "add" : input.action === "remove" ? "delete" : "record";
+    return counted(
+      ctx,
+      access,
+      "theft",
+      action,
+      Response.json({ ok: true }, { headers: NO_STORE }),
+    );
   });
 }

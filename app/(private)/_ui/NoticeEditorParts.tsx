@@ -3,18 +3,15 @@
 // The notice editor's lower parts (issue 304): "Show to members" (the one on/off control, `check-field`, as
 // in the Calendar) and the end date; and the save bar, which stays at the bottom of the screen (the tab bar
 // is hidden while editing), with how many drafts are left to check, the last error, Save, and Cancel, which
-// asks before throwing changes away. Save and Cancel sit as in every sheet: Save first and widest.
-import { useState } from "react";
-
-import { buttonClass } from "@/lib/brand/components/Button";
+// asks before throwing changes away. Save and Cancel sit as in every sheet: Save first and widest. The bar
+// itself is shared with Start here (EditorSaveBar.tsx, D116).
 import { CheckField } from "@/lib/brand/components/CheckField";
-import { FIELD } from "@/lib/brand/components/controls";
+import { chip, FIELD } from "@/lib/brand/components/controls";
 import { Notice } from "@/lib/brand/components/Notice";
-import { fill } from "@/lib/copy";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
 import type { NoticeField } from "@/lib/private/notice-rules";
 
-import { AskSheet } from "./AskSheet";
+import { SaveBar as SharedSaveBar } from "./EditorSaveBar";
 import type { Editor, EditorProps } from "./notice-editor-state";
 import { smallButton } from "./NoticeBits";
 import { SignedOutNote } from "./SignedOut";
@@ -58,9 +55,6 @@ export function Flags({ e, t }: { e: Editor; t: WorkspaceDictionary }) {
 
 export function SaveBar({ p, e }: { p: EditorProps; e: Editor }) {
   const { t } = p;
-  const [asking, setAsking] = useState(false);
-  const drafts = Object.keys(e.draft.undo).length;
-  const form = new Intl.PluralRules(p.viewer).select(drafts) === "one" ? "one" : "other";
   const leave = () => {
     e.leaving.current = true;
     e.forget();
@@ -68,49 +62,39 @@ export function SaveBar({ p, e }: { p: EditorProps; e: Editor }) {
     else window.location.assign(`/w/${p.slug}/notices`);
   };
   return (
-    <div className="sticky bottom-0 z-[5] -mx-4 mt-4 border-t border-rule bg-paper px-4 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:-mx-6 sm:px-6">
-      {e.message === "signedOut.text" ? (
-        <SignedOutNote className="mb-2" />
-      ) : (
-        e.message && (
-          <Notice tone="fail" className="mb-2">
-            {t[e.message]}
-          </Notice>
+    <SharedSaveBar
+      t={t}
+      viewer={p.viewer}
+      drafts={Object.keys(e.draft.undo).length}
+      saving={e.busy === "save"}
+      busy={e.busy !== null}
+      note={
+        e.message === "signedOut.text" ? (
+          <SignedOutNote className="mb-2" />
+        ) : (
+          e.message && (
+            <div className="mb-2">
+              <Notice tone={e.message === "notices.trash.restored" ? "ok" : "fail"}>
+                {t[e.message]}
+              </Notice>
+              {/* The notice is in the trash (D118): any officer may take it out, then save. */}
+              {e.trashed && (
+                <button
+                  type="button"
+                  disabled={e.busy !== null}
+                  onClick={() => void e.restoreFromTrash()}
+                  className={`${chip()} mt-2`}
+                >
+                  {t["notices.trash.restore"]}
+                </button>
+              )}
+            </div>
+          )
         )
-      )}
-      {/* Always in the page, so a screen reader hears its text change; out of sight while empty. */}
-      <p
-        aria-live="polite"
-        className={drafts > 0 ? "mb-1 text-body-sm font-semibold text-plum" : "sr-only"}
-      >
-        {drafts > 0 ? fill(t[`notices.drafts.${form}`], { n: drafts }) : ""}
-      </p>
-      <div className="flex gap-3">
-        <button
-          type="submit"
-          disabled={e.busy !== null}
-          className={buttonClass("primary", "flex-1 sm:flex-none")}
-        >
-          {e.busy === "save" ? t["notices.saving"] : t["notices.save"]}
-        </button>
-        <button
-          type="button"
-          // Leaving also forgets the text kept on this device, so it asks while that is on offer too.
-          onClick={() => (e.dirty || e.restorable ? setAsking(true) : leave())}
-          className={buttonClass("secondary")}
-        >
-          {t["sheet.cancel"]}
-        </button>
-      </div>
-      {asking && (
-        <AskSheet
-          id="notice-discard"
-          question={t["sheet.ask"]}
-          yes={t["sheet.discard"]}
-          no={t["sheet.keep"]}
-          onAnswer={(yes) => (yes ? leave() : setAsking(false))}
-        />
-      )}
-    </div>
+      }
+      // Leaving also forgets the text kept on this device, so it asks while that is on offer too.
+      ask={e.dirty || e.restorable}
+      onLeave={leave}
+    />
   );
 }

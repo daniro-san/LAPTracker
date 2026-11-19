@@ -13,6 +13,7 @@ import { fill, isolate } from "@/lib/copy";
 
 import type { FollowUpWords } from "./follow-up-words";
 import { RecordSheet, send, type FollowUpRow } from "./FollowUpSheet";
+import { newRequestId } from "./request-id";
 
 export type { FollowUpRow };
 
@@ -91,6 +92,9 @@ function Row(props: {
   );
 }
 
+/** A group of the week's list, in the drawn card (D116). */
+const GROUP = "drawn-card mt-4 px-4 pt-3";
+
 export function FollowUpList(props: {
   slug: string;
   groups: FollowUpGroup[];
@@ -108,7 +112,7 @@ export function FollowUpList(props: {
     router.refresh();
   };
   const talked = async (row: FollowUpRow) => {
-    const requestId = crypto.randomUUID();
+    const requestId = newRequestId();
     setBusy(row.uid);
     const body = { uid: row.uid, action: "talked", note: "", until: null, version: 0, requestId };
     const r = await send(slug, body);
@@ -121,7 +125,7 @@ export function FollowUpList(props: {
       uid: done.uid,
       action: "undo",
       target: done.requestId,
-      requestId: crypto.randomUUID(),
+      requestId: newRequestId(),
     });
     setDone({ ...done, state: r?.status === 200 ? "undone" : "failed" });
     router.refresh();
@@ -130,7 +134,7 @@ export function FollowUpList(props: {
     <>
       <DoneLine done={done} words={words} onUndo={undo} />
       {props.groups.map((g) => (
-        <section key={g.id} className="mt-4" aria-labelledby={`follow-up-${g.id}`}>
+        <section key={g.id} className={GROUP} aria-labelledby={`follow-up-${g.id}`}>
           <h2 id={`follow-up-${g.id}`} className="font-subhead text-display-sm">
             {g.title}
           </h2>
