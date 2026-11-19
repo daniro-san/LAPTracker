@@ -92,3 +92,16 @@ Why: the alliance uses a flag-reaction bot ("Jake Translation") whose output is 
   - The text is read back from the reply's embed, as Post reads the picker's; nothing is stored. Mentions, links and custom emoji are masked again before the request; every reply and edit sends `allowed_mentions: { parse: [] }`.
   - The source of a press is the text shown, in the language its button names (`from`), not the original message, which the app does not keep. So English → Português → English shows Portuguese translated back, not the original words.
 - Logs stay codes and numbers: a press logs `discord.translate.me` like the command.
+
+**Amendment (2026-11-19, 11ao, issue 394): the asker reads why there is no thread, and private channels need the bot added.** On the owner's test in a private leadership channel, "In a thread" posted in the channel with "Posted in the channel: the bot can’t open threads here." A private channel hides itself from every role the channel does not add, the bot's role included.
+
+- **The line names what is missing**, from Discord's JSON error code on the failed thread call, in the asker's language (EN, PT-BR, FR):
+  - 50001 Missing Access: "Posted in the channel: the bot can’t see this channel. In the channel’s settings → Permissions, add LAPTracker with View Channel, Send Messages, Create Public Threads and Send Messages in Threads."
+  - 50013 Missing Permissions: "Posted in the channel: the bot is missing a permission here. In the channel’s settings → Permissions, give LAPTracker Create Public Threads and Send Messages in Threads."
+  - 50024 (a forum post, a message inside a thread, another channel type Discord refuses): "Posted in the channel: Discord doesn’t allow a thread on a message in this kind of channel."
+  - 160006 (the channel's active-thread limit): "Posted in the channel: this channel has reached Discord’s limit of active threads. Archive a few threads, then try again."
+  - Any other answer, no answer, or no bot token: the old line, "Posted in the channel: the bot can’t open threads here."
+  - 160004 is unchanged: the bot posts in the thread the message already has.
+- **Logs**: `discord.translate.thread_refused` now carries Discord's `code` beside the HTTP `status`. Numbers only; no text, name or id.
+- **Read Message History stays out of the install URL.** Discord's documentation for "Start Thread from Message" (`POST /channels/{channel.id}/messages/{message.id}/threads`, read 2026-11-19) lists no required permission and never mentions Read Message History; the docs tie that permission only to replies and message references (codes 160002, 160009). The integer stays 309,237,648,384. If a private channel with the bot added still answers 50001, Read Message History (65536) is the next thing to try, and the integer becomes 309,237,713,920.
+- **Owner step 4 (each private channel where officers translate):** Edit Channel → Permissions → Add members or roles → LAPTracker (the bot's role), then allow View Channel, Send Messages, Create Public Threads and Send Messages in Threads. Public channels need nothing: the server-wide install covers them.

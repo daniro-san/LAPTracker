@@ -111,12 +111,48 @@ describe("posting for everyone: a thread or the channel", () => {
     expect(calls.filter((c) => c.path === `/channels/${MESSAGE}/messages`)).toHaveLength(2);
   });
 
-  it("falls back to the channel, and says so, when the bot cannot open a thread", async () => {
-    const { calls, fetcher } = discordStub(Response.json({ code: 50013 }, { status: 403 }));
-    await runTranslation(deps(fetcher, "bot-token-for-tests"), job("thread"));
-    const followUp = calls.find((c) => c.method === "POST" && c.path === "/webhooks/900/itok");
-    expect(followUp?.body.embeds).toHaveLength(2);
-    expect(lastLine(calls)).toBe("Posted in the channel: the bot can’t open threads here.");
+  it.each([
+    [
+      50001,
+      403,
+      "Posted in the channel: the bot can’t see this channel. In the channel’s settings → Permissions, add LAPTracker with View Channel, Send Messages, Create Public Threads and Send Messages in Threads.",
+    ],
+    [
+      50013,
+      403,
+      "Posted in the channel: the bot is missing a permission here. In the channel’s settings → Permissions, give LAPTracker Create Public Threads and Send Messages in Threads.",
+    ],
+    [
+      50024,
+      400,
+      "Posted in the channel: Discord doesn’t allow a thread on a message in this kind of channel.",
+    ],
+    [
+      160006,
+      400,
+      "Posted in the channel: this channel has reached Discord’s limit of active threads. Archive a few threads, then try again.",
+    ],
+    [undefined, 500, "Posted in the channel: the bot can’t open threads here."],
+  ])(
+    "Discord refuses the thread (code %s): posted in the channel, and says why",
+    async (code, status, line) => {
+      const { calls, fetcher } = discordStub(Response.json({ code }, { status }));
+      await runTranslation(deps(fetcher, "bot-token-for-tests"), job("thread"));
+      const followUp = calls.find((c) => c.method === "POST" && c.path === "/webhooks/900/itok");
+      expect(followUp?.body.embeds).toHaveLength(2);
+      expect(lastLine(calls)).toBe(line);
+    },
+  );
+
+  it("says why in the asker's language", async () => {
+    const { calls, fetcher } = discordStub(Response.json({ code: 50001 }, { status: 403 }));
+    await runTranslation(deps(fetcher, "bot-token-for-tests"), {
+      ...job("thread"),
+      language: "pt-BR",
+    });
+    expect(lastLine(calls)).toContain(
+      "Nas configurações do canal → Permissões, adicione o LAPTracker",
+    );
   });
 
   it("posts only the languages the thread did not take in the channel, and says exactly that", async () => {
