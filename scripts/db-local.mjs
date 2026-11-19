@@ -2,13 +2,14 @@
 //   start   — initdb into .pglocal/ on first use, start it on 127.0.0.1 at DATABASE_URL's port, create the database
 //   stop    — stop it
 //   migrate — apply drizzle/ through psql, in journal order
-//   check   — only the host check below (run before `pnpm db:local:seed`)
+//   check   — the host check below, then that the bridge is listening (run before `pnpm db:local:seed`)
 // Every command refuses unless DATABASE_URL's host is exactly localhost or 127.0.0.1: `db:seed --reset`
 // truncates, so a hosted URL must never get this far. The Postgres binaries (initdb, pg_ctl, psql) come
 // from the machine, not from npm.
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { appendFileSync, existsSync, readFileSync, realpathSync } from "node:fs";
+import { connect } from "node:net";
 import { join } from "node:path";
 import { pathToFileURL, URL } from "node:url";
 
@@ -129,6 +130,20 @@ function migrate(url) {
   );
 }
 
+// The seed reaches the cluster only through the bridge. Without it the driver fails with an empty error,
+// and the seed prints only its first query, the `--reset` truncate (issue #320).
+function checkBridge() {
+  const port = Number(process.env.DB_LOCAL_BRIDGE_PORT || 54321);
+  const socket = connect(port, "127.0.0.1");
+  socket.on("connect", () => socket.end());
+  socket.on("error", () => {
+    console.error(
+      `db:local: no bridge on 127.0.0.1:${port}; run \`pnpm db:local:bridge\` in another terminal first`,
+    );
+    process.exit(1);
+  });
+}
+
 // Only as the entry point. realpath: argv[1] can be a symlinked path (import.meta.url never is), and that
 // must not skip the check. existsSync: under the preload, argv[1] may be no file at all.
 const entry = process.argv[1];
@@ -144,7 +159,8 @@ if (entry && existsSync(entry) && import.meta.url === pathToFileURL(realpathSync
   if (command === "start") start(url);
   else if (command === "stop") run("pg_ctl", ["-D", DATA_DIR, "-m", "fast", "stop"]);
   else if (command === "migrate") migrate(url);
-  else if (command !== "check") {
+  else if (command === "check") checkBridge();
+  else {
     console.error("db:local: expected start, stop, migrate or check");
     process.exit(2);
   }
