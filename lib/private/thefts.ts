@@ -5,7 +5,6 @@
 import type { Db } from "../db";
 import { serverPlayers } from "../queries/server-players";
 import {
-  deleteTheft,
   hasAttacker,
   insertFollowUp,
   insertRequestedTheft,
@@ -13,8 +12,10 @@ import {
   listThefts,
   theftRequested,
 } from "../repo/thefts";
+import { softDelete, undoDelete } from "../repo/trash";
 import { latestRoster } from "../repo/workspace-rosters";
 import { serverDay, serverInstant } from "../schedule";
+import { thefts } from "../schema-thefts";
 import { nameKey } from "../screenshot/name-key";
 import type { WorkspaceAccess } from "./access";
 import { gameWeek, nextDay } from "./member-week";
@@ -199,12 +200,19 @@ export async function addTheft(
   return "ok";
 }
 
+/**
+ * Deletes one entry of the workspace's log (D123), or with `undo` takes the officer's own delete made under
+ * the same request id back within UNDO_MS. "not_found": no such entry, or nothing of this officer's to undo.
+ */
 export async function removeTheft(
   db: Db,
   access: WorkspaceAccess,
-  id: number,
+  input: { id: number; requestId: string; undo?: true | undefined },
+  now: Date,
 ): Promise<"ok" | "not_found"> {
-  return (await deleteTheft(db, access.workspaceId, id)) ? "ok" : "not_found";
+  const c = { workspaceId: access.workspaceId, userId: access.user.id, now, ...input };
+  const done = input.undo ? await undoDelete(db, thefts, c) : await softDelete(db, thefts, c);
+  return done ? "ok" : "not_found";
 }
 
 /** "To follow up": a new state and note for an attacker of this workspace's log, kept with who and when. */

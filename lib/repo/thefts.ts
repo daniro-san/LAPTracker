@@ -5,6 +5,7 @@ import { and, asc, eq } from "drizzle-orm";
 import type { Db } from "../db";
 import { workspaceUsers } from "../schema";
 import { theftFollowUps, thefts } from "../schema-thefts";
+import { live } from "./trash";
 
 export type TheftRow = typeof thefts.$inferSelect;
 export type NewTheft = Omit<typeof thefts.$inferInsert, "id">;
@@ -42,29 +43,20 @@ export async function insertRequestedTheft(
   return made.length > 0;
 }
 
-/** The workspace's thefts, oldest entry first. */
+/** The workspace's thefts not deleted (D123), oldest entry first. */
 export function listThefts(db: Db, workspaceId: number): Promise<TheftRow[]> {
   return db
     .select()
     .from(thefts)
-    .where(eq(thefts.workspaceId, workspaceId))
+    .where(and(eq(thefts.workspaceId, workspaceId), live(thefts)))
     .orderBy(asc(thefts.id));
-}
-
-/** Removes one entry, only inside its own workspace; false when there is none. */
-export async function deleteTheft(db: Db, workspaceId: number, id: number): Promise<boolean> {
-  const gone = await db
-    .delete(thefts)
-    .where(and(eq(thefts.id, id), eq(thefts.workspaceId, workspaceId)))
-    .returning({ id: thefts.id });
-  return gone.length > 0;
 }
 
 export async function hasAttacker(db: Db, workspaceId: number, key: string): Promise<boolean> {
   const [row] = await db
     .select({ id: thefts.id })
     .from(thefts)
-    .where(and(eq(thefts.workspaceId, workspaceId), eq(thefts.attackerKey, key)))
+    .where(and(eq(thefts.workspaceId, workspaceId), eq(thefts.attackerKey, key), live(thefts)))
     .limit(1);
   return row !== undefined;
 }

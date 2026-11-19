@@ -48,6 +48,13 @@ export const thefts = pgTable(
     createdAt: tstz("created_at").notNull(),
     /** The add sheet's request id (D100): a retry of the same add finds this row instead of a second. */
     requestId: text("request_id"),
+    /**
+     * Deleted (D123): who and when, under the delete question's request id (D100). A deleted theft leaves
+     * the log, its counts, the Follow-up tab and Home. Undo clears `deleted_at`.
+     */
+    deletedAt: tstz("deleted_at"),
+    deletedBy: integer("deleted_by").references(() => workspaceUsers.id, { onDelete: "set null" }),
+    deleteRequestId: text("delete_request_id"),
   },
   (t) => [
     index("thefts_workspace_attacker_idx").on(t.workspaceId, t.attackerKey),

@@ -45,3 +45,5 @@ Why: officers made test roll calls and could not remove them (owner, 2026-11-18)
 **Home (D108).** Two more parts of the small sources' read (`lib/repo/desk-activity-calls.ts`): "Ana deleted the roll call “KvK shield”" (PT "apagou a chamada", FR "a supprimé l’appel") and "Ana archived the roll call “…”" (PT "arquivou a chamada", FR "a archivé l’appel"). An undone delete or an unarchived roll call has no line; a deleted roll call's archive line goes with it. Both parts take the feed's page cursor (`< before`, D108 paging). A delete or an archive is never grouped into a run, and each line carries its roll call's id, so two roll calls of the same kind deleted one after the other stay two lines.
 
 **Analytics (D115).** `ws_action` `roll_call` with `delete`, `undo_delete` (the rest's undo stays `undo`), `archive` and `unarchive`.
+
+**Amendment 2026-11-19 (D123, issue 427).** The delete and Undo now run on the shared soft delete (`lib/repo/trash.ts`), with the roll call's own Undo rule (`placeFree`); `lib/repo/roll-call-deletes.ts` keeps only that rule and Archive. The page uses the shared `DeleteButton` and `UndoLine`. Nothing changes for officers.

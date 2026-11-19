@@ -323,6 +323,13 @@
       "when": 1795093072424,
       "tag": "0045_garrison",
       "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1795095563826,
+      "tag": "0046_record_delete",
+      "breakpoints": true
     }
   ]
 }

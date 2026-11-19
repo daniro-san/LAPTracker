@@ -14,6 +14,7 @@ import { fill } from "@/lib/copy";
 import type { WorkspaceLanguage } from "@/lib/private/dictionary";
 import { FOLLOW_UP_STATES, type FollowUpState } from "@/lib/private/theft-groups";
 
+import { DeleteButton } from "./DeleteRecord";
 import { SIGNED_OUT, SignedOutNote } from "./SignedOut";
 import { postTheft, viewerClock } from "./theft-client";
 import type { AllianceCard, AttackerCard, EntryCard, TheftWords } from "./theft-data";
@@ -25,7 +26,13 @@ const STATE_TONE = {
   resolved: "neutral",
 } as const satisfies Record<FollowUpState, string>;
 
-type Shared = { slug: string; t: TheftWords; language: WorkspaceLanguage };
+type Shared = {
+  slug: string;
+  t: TheftWords;
+  language: WorkspaceLanguage;
+  /** After this officer's delete (D123): the page offers Undo. */
+  onDeleted: (id: number, requestId: string) => void;
+};
 
 function StateBadge({ card }: { card: AttackerCard }) {
   return (
@@ -123,62 +130,54 @@ function FollowUpForm({ card, slug, t }: Shared & { card: AttackerCard }) {
   );
 }
 
-function Entry({ entry, slug, t, language }: Shared & { entry: EntryCard }) {
+function Entry({ entry, slug, t, language, onDeleted }: Shared & { entry: EntryCard }) {
   const router = useRouter();
   const zone = useViewerZone();
-  const [asking, setAsking] = useState(false);
-  const [failed, setFailed] = useState<string | null>(null);
-  const remove = async () => {
-    const r = await postTheft(slug, { action: "remove", id: entry.id });
-    setFailed(r === "ok" || r === "not_found" ? null : r);
-    if (r === "ok" || r === "not_found") router.refresh();
-  };
+  const when = (
+    <TimePair
+      st={entry.server}
+      mine={
+        zone && entry.at !== null && entry.day !== null
+          ? fill(t["thefts.yours"], { time: viewerClock(entry.at, entry.day, zone, language) })
+          : null
+      }
+    />
+  );
+  const what = (
+    <>
+      <bdi translate="no">{entry.victim}</bdi> · {entry.kind}
+    </>
+  );
   return (
     <li className="border-t border-rule py-2">
-      <p className="tabular-nums">
-        <TimePair
-          st={entry.server}
-          mine={
-            zone && entry.at !== null && entry.day !== null
-              ? fill(t["thefts.yours"], { time: viewerClock(entry.at, entry.day, zone, language) })
-              : null
-          }
-        />
-      </p>
-      <p>
-        <bdi translate="no">{entry.victim}</bdi> · {entry.kind}
-      </p>
+      <p className="tabular-nums">{when}</p>
+      <p>{what}</p>
       {/* "Typed by an officer" is the default and says nothing; a photo is a plain word. */}
       {entry.source === "photo" && <p className="mt-1 text-[12px] text-ink/70">{t["src.photo"]}</p>}
       {entry.note && <p className="mt-1 text-body-sm">{entry.note}</p>}
-      {asking ? (
-        <div className="mt-1 flex flex-wrap items-center gap-2">
-          <span className="text-body-sm font-semibold">{t["thefts.removeAsk"]}</span>
-          <button type="button" onClick={() => setAsking(false)} className={buttonClass("primary")}>
-            {t["thefts.keep"]}
-          </button>
-          <button type="button" onClick={() => void remove()} className={buttonClass("secondary")}>
-            {t["thefts.removeYes"]}
-          </button>
-        </div>
-      ) : (
-        <button
-          type="button"
-          onClick={() => setAsking(true)}
-          className="mt-1 inline-flex min-h-11 items-center text-body-sm font-semibold text-plum underline underline-offset-4"
+      <div className="mt-1">
+        <DeleteButton
+          id={`theft-delete-ask-${entry.id}`}
+          words={{
+            label: t["thefts.remove"],
+            ask: t["thefts.removeAsk"],
+            confirm: t["thefts.removeYes"],
+            deleting: t["thefts.removing"],
+            keep: t["thefts.keep"],
+            failed: t["thefts.e.failed"],
+          }}
+          send={(requestId) => postTheft(slug, { action: "remove", id: entry.id, requestId })}
+          // Someone else's delete first: it is gone either way, with nothing of this officer's to undo.
+          onDeleted={(requestId) => {
+            if (requestId) onDeleted(entry.id, requestId);
+            router.refresh();
+          }}
         >
-          {t["thefts.remove"]}
-        </button>
-      )}
-      {failed === SIGNED_OUT ? (
-        <SignedOutNote />
-      ) : (
-        failed && (
-          <p role="status" className="text-body-sm">
-            {t["thefts.e.failed"]}
-          </p>
-        )
-      )}
+          <p className="mt-3 tabular-nums">{when}</p>
+          <p className="font-semibold">{what}</p>
+          <p className="mt-2">{t["thefts.removeWhere"]}</p>
+        </DeleteButton>
+      </div>
     </li>
   );
 }

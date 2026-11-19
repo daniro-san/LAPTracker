@@ -24,7 +24,7 @@ import {
 } from "./calendar-draft";
 import { refusalText, sendCalendar, type Stale } from "./calendar-send";
 import { Choice, ConflictBox, FIELD, Labeled, TextInput } from "./CalendarFields";
-import { DeleteArea } from "./DeleteArea";
+import { DeleteArea, type DeletedEntry } from "./DeleteArea";
 import { KindFields, RepeatFields, TimeFields, type PartProps } from "./EntryFields";
 import { newRequestId } from "./request-id";
 import { sheetWords } from "./sheet-words";
@@ -40,6 +40,8 @@ export interface FormProps {
   /** Add: the day it starts on, and whether the week already has its Alliance Duel theme. Edit: the entry. */
   mode: { add: true; day: string; hasTheme: boolean } | { add: false; item: AgendaItem };
   onDone: () => void;
+  /** A delete took the whole entry (D123): the Calendar offers Undo. */
+  onDeleted: (d: DeletedEntry) => void;
   onClose: () => void;
 }
 
@@ -216,7 +218,15 @@ export function EntryForm(props: FormProps) {
           onMine={save.mine}
         />
       )}
-      {item && <DeleteArea item={item} words={words} slug={props.slug} onDone={props.onDone} />}
+      {item && (
+        <DeleteArea
+          item={item}
+          words={words}
+          slug={props.slug}
+          onDone={props.onDone}
+          onDeleted={props.onDeleted}
+        />
+      )}
     </Sheet>
   );
 }

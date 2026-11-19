@@ -103,6 +103,13 @@ export const calendarEn = {
   "calendar.delete.one": "Skip the week of {date}",
   "calendar.delete.after": "End it from this week on",
   "calendar.delete.keep": "Keep it",
+  "calendar.delete.where":
+    "It leaves the Calendar, the Members’ board and Home. Its roll calls stay.",
+  "calendar.delete.deleting": "Deleting…",
+  "calendar.delete.failed": "Could not delete the event. Try again.",
+  "calendar.deleted": "Event deleted.",
+  "calendar.undo": "Undo",
+  "calendar.undoFailed": "Could not undo. The event stays deleted.",
   "calendar.conflict.title": "Someone changed this first",
   "calendar.conflict.line": "{name} changed {field} to “{value}” {ago}.",
   "calendar.conflict.someone": "Another officer",

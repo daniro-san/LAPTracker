@@ -5,7 +5,7 @@
 // today, and entries already started are greyed. The page reads again when it comes back into view (owner
 // rule, issue 293: freshness without realtime).
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
 import { chip } from "@/lib/brand/components/controls";
@@ -15,6 +15,7 @@ import { mondayOf } from "@/lib/private/calendar-time";
 import { FROM_CALENDAR } from "@/lib/private/roll-call-rules";
 
 import type { AgendaDay, AgendaItem, CalendarSheetWords } from "./calendar-data";
+import { EntryUndoLine, type DeletedEntry } from "./DeleteArea";
 import { EntryForm, type FormProps } from "./EntryForm";
 import { Times } from "./YourTime";
 
@@ -153,6 +154,8 @@ function Day(props: {
   words: CalendarSheetWords;
   slug: string;
   onEdit: (item: AgendaItem) => void;
+  /** "Event deleted." with Undo, in the day the deleted entry was on (D123). */
+  undo: ReactNode;
 }) {
   const { d, words } = props;
   return (
@@ -185,6 +188,7 @@ function Day(props: {
           ))}
         </ul>
       )}
+      {props.undo && <div className="pb-3">{props.undo}</div>}
     </li>
   );
 }
@@ -203,12 +207,24 @@ export function CalendarAgenda(props: {
   const { words } = props;
   const router = useRouter();
   const [open, setOpen] = useState<FormProps["mode"] | null>(null);
+  /** The officer's last whole-entry delete (D123), while the Calendar offers Undo. */
+  const [deleted, setDeleted] = useState<{ entry: DeletedEntry; day: string } | null>(null);
   useFreshOnReturn();
   // This week opens at today (its #d-<day> anchor), unless the address already names a place.
   const today = props.days.find((d) => d.today)?.day;
   useEffect(() => {
     if (today && !window.location.hash) document.getElementById(`d-${today}`)?.scrollIntoView();
   }, [today]);
+  const undo = deleted && (
+    <EntryUndoLine
+      key={deleted.entry.requestId}
+      {...{ deleted: deleted.entry, words, slug: props.slug }}
+      onUndone={() => {
+        setDeleted(null);
+        router.refresh();
+      }}
+    />
+  );
   const done = () => {
     setOpen(null);
     router.refresh();
@@ -222,6 +238,7 @@ export function CalendarAgenda(props: {
       >
         {words["calendar.add"]}
       </button>
+      {deleted && !props.days.some((d) => d.day === deleted.day) && undo}
       {props.theme && (
         <ul className="mt-4">
           <Item
@@ -240,6 +257,7 @@ export function CalendarAgenda(props: {
             words={words}
             slug={props.slug}
             onEdit={(item) => setOpen({ add: false, item })}
+            undo={deleted?.day === d.day && undo}
           />
         ))}
       </ol>
@@ -251,6 +269,7 @@ export function CalendarAgenda(props: {
           notices={props.notices}
           mode={open}
           onDone={done}
+          onDeleted={(entry) => setDeleted({ entry, day: open.add ? open.day : open.item.day })}
           onClose={() => setOpen(null)}
         />
       )}

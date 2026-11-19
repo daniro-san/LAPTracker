@@ -25,3 +25,5 @@ Why: in Secret Operations, players can take a member's quest rewards. The leader
 - **The screenshot import.** `saveSecretOpsDraft` saves every kept entry as `ops`, an entry whose sentence was unreadable (`kind: null` from the parser) too: it came from a Secret Ops report. Help is still left out.
 - **Display.** An entry's line reads "Taken from Marigold · Ops"; a row without a type shows "—" (D75: missing data is not a fault). The alliance and attacker counts are not split by type.
 - **Not changed.** The page title ("Secret Operations thefts"), its lead ("took quest rewards") and the glossary's "theft" still describe Secret Operations only; the owner has not said whether they should name the other types.
+
+**Amendment 2026-11-19 (D123, issue 427).** An entry is no longer removed for good. "Delete" asks with the shared question ("Delete this theft?", "Keep it" first), soft-deletes the entry with who, when and the request id, and the log offers Undo for 10 s (60 s on the server). A deleted theft leaves the log, its counts, the Follow-up tab and an attacker's follow-up; Home says "… deleted a theft from the log".

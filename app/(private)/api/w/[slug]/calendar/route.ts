@@ -1,12 +1,13 @@
 // POST /api/w/[slug]/calendar — the Calendar tab's writes (issue 300): add an entry, change fields of one
-// (each with the version the officer saw), or delete it. A write: same origin and a JSON body (D71). A
+// (each with the version the officer saw), or delete it (a whole entry softly, with a short Undo, D123). A write: same origin and a JSON body (D71). A
 // field changed by someone else since answers 409 with its newer value in the officer's words (issue 293).
 // The lib calls run in `privately`, so an error reaches app_errors as its code alone, never with what an
 // officer typed.
 import { z } from "zod";
 
 import { requireWorkspace } from "@/lib/private/access";
-import { createEntry, editEntry, removeEntry } from "@/lib/private/calendar";
+import { createEntry, editEntry } from "@/lib/private/calendar";
+import { removeEntry } from "@/lib/private/calendar-delete";
 import { fieldChange, newEntry } from "@/lib/private/calendar-model";
 import { conflictSaid, conflictYours } from "@/lib/private/calendar-words";
 import { WORKSPACE_LANG_COOKIE } from "@/lib/private/cookies";
@@ -39,6 +40,8 @@ const body = z.discriminatedUnion("action", [
       entry: id,
       scope: z.enum(["all", "one", "after"]),
       week: z.string(),
+      requestId: z.uuid(),
+      undo: z.literal(true).optional(),
     })
     .strict(),
 ]);
@@ -69,10 +72,11 @@ export async function POST(
       return privateError(made.code === "invalid" ? 400 : 409, made.code);
     }
     if (input.action === "delete") {
-      const done = await privately("calendar.remove", () => removeEntry(db, access, input));
-      return done === "ok"
-        ? counted(ctx, access, "calendar", "delete", ok())
-        : privateError(404, done);
+      const done = await privately("calendar.remove", () => removeEntry(db, access, input, now));
+      if (done === "not_found") return privateError(404, done);
+      // The whole entry went (D123): the page offers Undo, counted as undo_delete (D115).
+      const answer = done === "deleted" ? ok({ deleted: true }) : ok();
+      return counted(ctx, access, "calendar", input.undo ? "undo_delete" : "delete", answer);
     }
     const result = await privately("calendar.edit", () => editEntry(db, access, input, now));
     if (result.ok) return counted(ctx, access, "calendar", "edit", ok());

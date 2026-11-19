@@ -1,6 +1,7 @@
 // POST /api/w/[slug]/pending — new members added by hand before the roster lists them (D106): add one with
 // its first facts (the add sheet's request id, D100), link one to a member of the newest roster, or delete
-// one (it is dismissed and kept with its facts, 2026-11-17). Same origin and JSON only (D71), zod-parsed,
+// one (it is dismissed and kept with its facts, 2026-11-17), or take the officer's own delete back for a
+// short while (D123: the delete question's request id makes a repeat change nothing). Same origin and JSON only (D71), zod-parsed,
 // a session of this workspace (401 signed_out, D99). An add whose facts met a newer save answers 409 with
 // them, as the facts route does. Nothing is logged.
 import { z } from "zod";
@@ -40,7 +41,14 @@ const body = z.discriminatedUnion("action", [
       to: z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
     })
     .strict(),
-  z.object({ action: z.literal("delete"), uid: pending }).strict(),
+  z
+    .object({
+      action: z.literal("delete"),
+      uid: pending,
+      requestId: z.uuid(),
+      undo: z.literal(true).optional(),
+    })
+    .strict(),
 ]);
 
 const answer = (status: number, data: object) => Response.json(data, { status, headers: NO_STORE });
@@ -75,11 +83,19 @@ export async function POST(
         return counted(ctx, access, "new_member", "link", answer(200, { ok: true }));
       return privateError(linked === "not_member" ? 400 : 404, linked);
     }
+    const { requestId, undo } = input;
     const gone = await privately("pending.delete", () =>
-      removePending(db, access, -input.uid, now),
+      removePending(db, access, { pendingId: -input.uid, requestId, undo }, now),
     );
+    // ws_action (D115, D123): new_member / delete, or undo_delete for the deleter's Undo.
     return gone
-      ? counted(ctx, access, "new_member", "delete", answer(200, { ok: true }))
+      ? counted(
+          ctx,
+          access,
+          "new_member",
+          undo ? "undo_delete" : "delete",
+          answer(200, { ok: true }),
+        )
       : privateError(404, "not_found");
   });
 }

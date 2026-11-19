@@ -27,7 +27,7 @@ const open = (workspaceId: number) =>
   and(
     eq(pendingMembers.workspaceId, workspaceId),
     isNull(pendingMembers.matchedUid),
-    isNull(pendingMembers.dismissedAt),
+    isNull(pendingMembers.deletedAt),
   );
 
 /** Deleted by an officer and kept (2026-11-17). */
@@ -35,7 +35,7 @@ const dismissed = (workspaceId: number) =>
   and(
     eq(pendingMembers.workspaceId, workspaceId),
     isNull(pendingMembers.matchedUid),
-    isNotNull(pendingMembers.dismissedAt),
+    isNotNull(pendingMembers.deletedAt),
   );
 
 /** The workspace's pending members neither matched nor dismissed, oldest first. */
@@ -53,10 +53,10 @@ export async function dismissedPendings(
   workspaceId: number,
 ): Promise<(PendingRow & { dismissedAt: Date })[]> {
   const rows = await db
-    .select({ ...columns, dismissedAt: pendingMembers.dismissedAt })
+    .select({ ...columns, dismissedAt: pendingMembers.deletedAt })
     .from(pendingMembers)
     .where(dismissed(workspaceId))
-    .orderBy(desc(pendingMembers.dismissedAt), desc(pendingMembers.id));
+    .orderBy(desc(pendingMembers.deletedAt), desc(pendingMembers.id));
   return rows.map((r) => ({ ...r, dismissedAt: r.dismissedAt as Date }));
 }
 
@@ -74,13 +74,13 @@ export async function reopenDismissed(
     .select({ id: pendingMembers.id })
     .from(pendingMembers)
     .where(and(dismissed(workspaceId), eq(pendingMembers.nameKey, nameKey)))
-    .orderBy(desc(pendingMembers.dismissedAt), desc(pendingMembers.id))
+    .orderBy(desc(pendingMembers.deletedAt), desc(pendingMembers.id))
     .limit(1);
   if (!last) return null;
   const [row] = await db
     .update(pendingMembers)
     .set({
-      dismissedAt: null,
+      deletedAt: null,
       name: again.name,
       createdAt: again.now,
       ...(again.requestId !== null && { requestId: again.requestId }),
@@ -163,20 +163,8 @@ export async function moveDuelPoints(db: Db, workspaceId: number, from: number, 
     .where(and(eq(allianceDuelPoints.workspaceId, workspaceId), eq(allianceDuelPoints.uid, from)));
 }
 
-/** Dismisses an open pending member; its row, facts and points stay. False when there is none. */
-export async function dismissPending(
-  db: Db,
-  workspaceId: number,
-  id: number,
-  now: Date,
-): Promise<boolean> {
-  const gone = await db
-    .update(pendingMembers)
-    .set({ dismissedAt: now })
-    .where(and(open(workspaceId), eq(pendingMembers.id, id)))
-    .returning({ id: pendingMembers.id });
-  return gone.length > 0;
-}
+/** Only a pending member not matched yet can be deleted or brought back by Undo (D123). */
+export const unmatched = isNull(pendingMembers.matchedUid);
 
 /** Which of `uids` have any fact version in the workspace (a facts history). */
 export async function uidsWithFacts(

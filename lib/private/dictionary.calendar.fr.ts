@@ -105,6 +105,13 @@ export const calendarFr: CalendarWords = {
   "calendar.delete.one": "Sauter la semaine du {date}",
   "calendar.delete.after": "Arrêter à partir de cette semaine",
   "calendar.delete.keep": "Le garder",
+  "calendar.delete.where":
+    "Il quitte l’agenda, le Tableau des membres et l’Accueil. Ses appels restent.",
+  "calendar.delete.deleting": "Suppression…",
+  "calendar.delete.failed": "Impossible de supprimer l’événement. Réessayez.",
+  "calendar.deleted": "Événement supprimé.",
+  "calendar.undo": "Défaire",
+  "calendar.undoFailed": "Impossible de défaire. L’événement reste supprimé.",
   "calendar.conflict.title": "Quelqu’un a changé ceci avant vous",
   "calendar.conflict.line": "{name} a changé {field} en « {value} » {ago}.",
   "calendar.conflict.someone": "Un autre officier",

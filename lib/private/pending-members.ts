@@ -12,7 +12,6 @@ import { aliasesOf, saveAliases } from "../repo/member-facts";
 import {
   claimPending,
   dismissedPendings,
-  dismissPending,
   findPending,
   insertPending,
   moveDuelPoints,
@@ -20,8 +19,11 @@ import {
   openPendings,
   reopenDismissed,
   uidsWithFacts,
+  unmatched,
 } from "../repo/pending-members";
+import { softDelete, undoDelete } from "../repo/trash";
 import { anyRoster } from "../repo/workspace-any-roster";
+import { pendingMembers as pendingTable } from "../schema";
 import { nameKey } from "../screenshot/name-key";
 import type { WorkspaceAccess } from "./access";
 import type { FactField, MemberFacts } from "./fact-fields";
@@ -203,9 +205,27 @@ export async function linkPending(
   return merged ? "ok" : "not_found";
 }
 
-/** Deletes an open pending member from the list: it is dismissed, its facts and points are kept. */
-export const removePending = (db: Db, access: WorkspaceAccess, pendingId: number, now: Date) =>
-  dismissPending(db, access.workspaceId, pendingId, now);
+/**
+ * Deletes an open pending member from the list (D123): it is dismissed with who, when and the request id,
+ * and its facts and points are kept. With `undo`, takes the officer's own delete back within UNDO_MS.
+ */
+export async function removePending(
+  db: Db,
+  access: WorkspaceAccess,
+  input: { pendingId: number; requestId: string; undo?: true | undefined },
+  now: Date,
+): Promise<boolean> {
+  const c = {
+    workspaceId: access.workspaceId,
+    id: input.pendingId,
+    userId: access.user.id,
+    requestId: input.requestId,
+    now,
+  };
+  return input.undo
+    ? undoDelete(db, pendingTable, c, unmatched)
+    : softDelete(db, pendingTable, c, unmatched);
+}
 
 /**
  * Matches each pending member added before the newest roster to the one member of that roster with the

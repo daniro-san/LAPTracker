@@ -2,7 +2,7 @@
 // what officers did, read from the histories the desk already keeps. Five reads at once, each returning at
 // most the newest `n` actions per source since `from` and before a page's cursor; lib/private merges them.
 // Only who, when and which thing: never a member field's value, a follow-up note or a theft's note or people.
-import { and, desc, eq, gt, gte, isNotNull, lt, ne, sql } from "drizzle-orm";
+import { and, desc, eq, gt, gte, isNotNull, isNull, lt, ne, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { memberFacts, workspaceSessions, workspaceUsers } from "../schema";
@@ -131,10 +131,10 @@ type SmallRow = {
 
 /**
  * The small sources in one read (one connection): notice saves (one per save of any number of fields),
- * notice posts, notices deleted and restored from the trash (D118; an undone delete is not one), saved drafts, calendar entries added, new members added by hand, and follow-up records
+ * notice posts, notices deleted and restored from the trash (D118; an undone delete is not one), Calendar entries, thefts and new members deleted (D123), saved drafts, calendar entries added, new members added by hand, and follow-up records
  * (not `withdrawn`, and not one an Undo cancelled), notice review requests and their outcomes (D113), and
  * the weekly thanks shared or taken down (D114), notice pictures added (D119), and roll calls deleted or archived (D120). Each part is its own newest `n` since `from`; `n` bounds
- * the rows returned, not the rows a part scans.
+ * the rows returned, not the rows a part scans. A deleted entry or new member has no "added" line.
  */
 async function smallSources(
   db: Db,
@@ -166,13 +166,13 @@ async function smallSources(
     (select 'entry', c.created_by, c.created_at, null, c.kind, c.variant, c.level, c.title, null
       from calendar_entries c
       where c.workspace_id = ${ws} and c.created_by is not null and c.created_at >= ${since}
-        and c.created_at < ${before}
+        and c.created_at < ${before} and c.deleted_at is null
       order by c.created_at desc limit ${n})
     union all
     (select 'newMember', m.created_by, m.created_at, null, null, null, null, m.name, null
       from pending_members m
       where m.workspace_id = ${ws} and m.created_by is not null and m.created_at >= ${since}
-        and m.created_at < ${before}
+        and m.created_at < ${before} and m.dismissed_at is null
       order by m.created_at desc limit ${n})
     union all
     (select 'followUp', f.written_by, f.written_at, null, f.action, f.until, null, null, f.uid
@@ -224,6 +224,7 @@ async function entriesEdited(
     select x.by, x.at, c.kind, c.variant, c.level, c.title
     from x join calendar_entries c on c.id = x.id
     where x.by is not null and x.at >= ${from.toISOString()} and x.at < ${before}
+      and c.deleted_at is null
     group by x.id, x.by, x.at, c.kind, c.variant, c.level, c.title
     order by x.at desc limit ${n}`);
   return result.rows.map((r) => ({ ...r, by: Number(r.by), at: new Date(r.at) }));
@@ -271,6 +272,7 @@ function theftsAdded(db: Db, ws: number, [from, before]: Span, n: number) {
     .where(
       and(
         eq(t.workspaceId, ws),
+        isNull(t.deletedAt),
         isNotNull(t.createdBy),
         gte(t.createdAt, from),
         lt(t.createdAt, sql`${before}::timestamptz`),
@@ -292,7 +294,7 @@ function split(rows: SmallRow[]) {
   return {
     noticeSaves: notice("noticeSaved"),
     noticePosts: notice("noticePosted"),
-    ...trashRows(notice),
+    ...trashRows(notice, of),
     ...picture.rows(notice, of("noticePictureReused")),
     drafts: of("draft").map(({ by, at, a, b, title }) => ({
       by,

@@ -1,9 +1,14 @@
 // calendar_entries and calendar_occurrences (issue 300): plain reads and writes, each inside one workspace.
-// What a change means, its version check and its words stay in lib/private.
+// What a change means, its version check and its words stay in lib/private. Every read of an entry leaves out
+// a deleted one (`entryLive`, D123): its weeks stay but show nowhere.
 import { and, eq, gte, inArray, isNotNull, isNull, lte, notInArray, or, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { calendarEntries, calendarOccurrences, workspaceUsers } from "../schema";
+import { live } from "./trash";
+
+/** Not deleted (D123). */
+const entryLive = live(calendarEntries);
 
 type EntryRow = typeof calendarEntries.$inferSelect;
 type OccurrenceRow = typeof calendarOccurrences.$inferSelect;
@@ -29,6 +34,7 @@ export async function calendarRows(
       .where(
         and(
           eq(calendarEntries.workspaceId, workspaceId),
+          entryLive,
           lte(calendarEntries.day, to),
           or(isNull(calendarEntries.lastWeek), gte(calendarEntries.lastWeek, week0)),
         ),
@@ -55,6 +61,7 @@ export async function calendarRows(
     .where(
       and(
         eq(calendarEntries.workspaceId, workspaceId),
+        entryLive,
         inArray(calendarEntries.id, missing),
         known.length > 0 ? notInArray(calendarEntries.id, known) : undefined,
       ),
@@ -107,6 +114,7 @@ export async function findTheme(
         eq(calendarEntries.workspaceId, workspaceId),
         eq(calendarEntries.kind, "duel"),
         eq(calendarEntries.day, monday),
+        entryLive,
       ),
     );
   return row?.id ?? null;
@@ -116,7 +124,9 @@ export async function findEntry(tx: Tx, workspaceId: number, id: number, lock = 
   const query = tx
     .select()
     .from(calendarEntries)
-    .where(and(eq(calendarEntries.workspaceId, workspaceId), eq(calendarEntries.id, id)));
+    .where(
+      and(eq(calendarEntries.workspaceId, workspaceId), eq(calendarEntries.id, id), entryLive),
+    );
   const [row] = lock ? await query.for("update") : await query;
   return row ?? null;
 }
@@ -162,12 +172,6 @@ export async function updateWeekRow(
   await tx.update(calendarOccurrences).set(set).where(eq(calendarOccurrences.id, id));
 }
 
-export async function deleteEntry(db: Db, workspaceId: number, id: number): Promise<void> {
-  await db
-    .delete(calendarEntries)
-    .where(and(eq(calendarEntries.workspaceId, workspaceId), eq(calendarEntries.id, id)));
-}
-
 /** The shown name of each of these officers of the workspace: the chosen one, else the Discord one. */
 export async function officerNames(
   db: Db,
@@ -204,6 +208,7 @@ export async function caravanSeats(db: Db, workspaceId: number) {
       and(
         eq(calendarOccurrences.workspaceId, workspaceId),
         eq(calendarEntries.kind, "caravan"),
+        entryLive,
         eq(calendarOccurrences.cancelled, false),
         or(isNotNull(calendarOccurrences.coachUid), isNotNull(calendarOccurrences.secondUid)),
       ),
@@ -216,6 +221,10 @@ export async function entriesOfNotice(db: Db, workspaceId: number, noticeId: num
     .select()
     .from(calendarEntries)
     .where(
-      and(eq(calendarEntries.workspaceId, workspaceId), eq(calendarEntries.noticeId, noticeId)),
+      and(
+        eq(calendarEntries.workspaceId, workspaceId),
+        eq(calendarEntries.noticeId, noticeId),
+        entryLive,
+      ),
     );
 }

@@ -67,8 +67,10 @@ lib/private/*.ts    the workspace (D71): requireWorkspace and its branded Worksp
                     calendar-time.ts (pure, browser-safe: server days, ST and the viewer's clock, on
                     lib/schedule's `serverInstant`), calendar-words.ts (titles, dates, the 409 sentence),
                     caravan-suggest.ts (pure: the caravan suggestions' ranking) and caravans.ts (their read),
-                    dictionary.calendar*.ts (its words); its tables are in lib/schema-calendar.ts, its reads and
-                    writes in lib/repo/calendar.ts.
+                    calendar-delete.ts (skip, end or delete an entry), dictionary.calendar*.ts (its words); its
+                    tables are in lib/schema-calendar.ts, its reads and writes in lib/repo/calendar.ts.
+                    D123: every officer-owned record is deleted through lib/repo/trash.ts (soft delete, the
+                    deleter's Undo, restore) and keeps `live(table)` on its other reads.
                     The Roll call tab (D103): roll-call.ts (occasions and the writes: marks with their
                     version check, "the rest" and its undo, hand-added roll calls), roll-call-team.ts (Elixir
                     Scramble teams under one lock per workspace and week),

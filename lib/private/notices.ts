@@ -5,12 +5,6 @@
 import { z } from "zod";
 
 import type { Db } from "../db";
-import {
-  markNoticeDeleted,
-  noticeIsDeleted,
-  restoreDeletedNotice,
-  unmarkNoticeDeleted,
-} from "../repo/notice-deletes";
 import { keptBy } from "../repo/notice-picture-cleanup";
 import { pictureFacts } from "../repo/notice-pictures";
 import {
@@ -23,6 +17,8 @@ import {
   type FieldRow,
   type NoticeListRow,
 } from "../repo/notices";
+import { isDeleted, restoreDeleted, softDelete, undoDelete } from "../repo/trash";
+import { notices } from "../schema-notices";
 import type { WorkspaceAccess } from "./access";
 import { versionsOf, type NoticeVersion } from "./notice-history";
 import { pictureView, type PictureView } from "./notice-picture-rules";
@@ -179,7 +175,7 @@ export async function noticeHistory(
 }
 
 /** How long the officer who deleted a notice may still take it back (D118); the page offers it for less. */
-export const UNDO_MS = 60_000;
+export { UNDO_MS } from "../repo/trash";
 
 /**
  * A delete's body (D118): the notice and the request id (D100); `undo` takes the officer's own delete back,
@@ -214,10 +210,10 @@ export async function deleteNotice(
     now,
   };
   const done = input.restore
-    ? await restoreDeletedNotice(db, d)
+    ? await restoreDeleted(db, notices, d)
     : input.undo
-      ? await unmarkNoticeDeleted(db, d, new Date(now.getTime() - UNDO_MS))
-      : await markNoticeDeleted(db, d);
+      ? await undoDelete(db, notices, d)
+      : await softDelete(db, notices, d);
   return done ? "ok" : "not_found";
 }
 
@@ -279,7 +275,7 @@ export async function saveNotice(
     after,
   );
   if (result === null) {
-    const trashed = id !== null && (await noticeIsDeleted(db, access.workspaceId, id));
+    const trashed = id !== null && (await isDeleted(db, notices, access.workspaceId, id));
     return { ok: false, reason: trashed ? "notice_deleted" : "not_found" };
   }
   if ("refuse" in result) return { ok: false, reason: "conflict", conflicts: result.refuse };
