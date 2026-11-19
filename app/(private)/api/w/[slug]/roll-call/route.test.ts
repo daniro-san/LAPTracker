@@ -12,7 +12,7 @@ import { createEntry } from "@/lib/private/calendar";
 import type { NewEntry } from "@/lib/private/calendar-model";
 import { recentActivity } from "@/lib/private/desk-activity.test-helpers";
 import { UNDO_MS } from "@/lib/private/roll-call";
-import { archivedItems, callView, weekItems } from "@/lib/private/roll-call-view";
+import { archivedInWeek, archivedItems, callView, weekItems } from "@/lib/private/roll-call-view";
 import { createSession, SESSION_COOKIE } from "@/lib/private/session";
 import { dailyReads, dailyRosters, workspaces, workspaceUsers } from "@/lib/schema";
 
@@ -214,12 +214,15 @@ describe("deleting and archiving a roll call (issue 424, D120)", () => {
     });
   });
 
-  it("refuses a member's delete (401) and another workspace's (404)", async () => {
+  it("refuses a member's delete or archive (401) and another workspace's (404)", async () => {
     const id = await marked();
     const member = await post(remove(id, randomUUID()), { who: "Mo" });
     expect([member.status, await member.json()]).toEqual([401, { code: "signed_out" }]);
     const rival = await post(remove(id, randomUUID()), { who: "Zed", slug: "rivals" });
     expect([rival.status, await rival.json()]).toEqual([404, { code: "not_found" }]);
+    const archive = { action: "archive", id, on: true };
+    expect((await post(archive, { who: "Mo" })).status).toBe(401);
+    expect((await post(archive, { who: "Zed", slug: "rivals" })).status).toBe(404);
     expect((await week())[0]?.callId).toBe(id);
   });
 
@@ -234,6 +237,20 @@ describe("deleting and archiving a roll call (issue 424, D120)", () => {
     await post(remove(id, late), { who: "Ana" });
     clock.now = new Date(T0.getTime() + UNDO_MS + 1);
     expect((await post(remove(id, late, true), { who: "Ana" })).status).toBe(404);
+    // A new roll call took its place: the Calendar week marked again, or the same Cheese Trap day added.
+    await post(mark(101, "yes", 0), { who: "Bo" });
+    const kvkAgain = (await week())[0]?.callId ?? 0;
+    const taken = randomUUID();
+    await post(remove(kvkAgain, taken), { who: "Ana" });
+    await post(mark(101, "no", 0), { who: "Bo" });
+    expect((await post(remove(kvkAgain, taken, true), { who: "Ana" })).status).toBe(404);
+    const cheese = { action: "add", kind: "cheese", day: "2026-11-04" };
+    const made = await post({ ...cheese, requestId: randomUUID() }, { who: "Ana" });
+    const { id: trap } = (await made.json()) as { id: number };
+    const gone = randomUUID();
+    await post(remove(trap, gone), { who: "Ana" });
+    await post({ ...cheese, requestId: randomUUID() }, { who: "Bo" });
+    expect((await post(remove(trap, gone, true), { who: "Ana" })).status).toBe(404);
   });
 
   it("a replay of a delete after its Undo deletes nothing", async () => {
@@ -253,11 +270,53 @@ describe("deleting and archiving a roll call (issue 424, D120)", () => {
     expect((await archive(true)).status).toBe(200);
     expect((await archive(true)).status).toBe(200);
     expect((await week()).map((i) => i.callId)).toEqual([null]);
+    expect(await archivedInWeek(db, await access(), WEEK)).toBe(1);
     expect((await archivedItems(db, await access(), zone())).map((i) => i.callId)).toEqual([id]);
     const kinds = (await recentActivity(db, await access(), T0)).map((l) => l.item.kind);
     expect(kinds).toContain("callArchived");
     expect((await archive(false)).status).toBe(200);
     expect((await week()).map((i) => i.callId)).toEqual([id, null]);
     expect(await archivedItems(db, await access(), zone())).toEqual([]);
+  });
+
+  it("a deleted hand-added roll call frees its kind and day", async () => {
+    const cheese = { action: "add", kind: "cheese", day: "2026-11-04" };
+    const first = await post({ ...cheese, requestId: randomUUID() }, { who: "Ana" });
+    const { id } = (await first.json()) as { id: number };
+    await post(remove(id, randomUUID()), { who: "Ana" });
+    const next = await post({ ...cheese, requestId: randomUUID() }, { who: "Bo" });
+    const fresh = (await next.json()) as { id: number };
+    expect([next.status, fresh.id === id]).toEqual([200, false]);
+  });
+
+  it("a deleted Elixir Scramble team no longer holds its members from the other team", async () => {
+    const team = async (variant: string) => {
+      const entry = { kind: "elixir", variant, day: "2026-11-06", minute: 1080, notes: null };
+      const made = await createEntry(
+        db,
+        await access(),
+        { ...entry, link: null, forMembers: false, notice: null, weekly: false } as NewEntry,
+        randomUUID(),
+      );
+      if (!made.ok) throw new Error(made.code);
+      return { entry: made.id, week: WEEK };
+    };
+    const [a, b] = [await team("A"), await team("B")];
+    const pick = (occasion: object) =>
+      post({ action: "team", occasion, uids: [101], on: true }, { who: "Ana" });
+    expect((await pick(a)).status).toBe(200);
+    expect((await pick(b)).status).toBe(409);
+    const teamA = (await week()).find((i) => i.variant === "A")?.callId ?? 0;
+    await post(remove(teamA, randomUUID()), { who: "Ana" });
+    expect((await pick(b)).status).toBe(200);
+  });
+
+  it("refuses the undo of “the rest” on a deleted roll call", async () => {
+    const id = await marked();
+    const rest = await post({ action: "rest", occasion: { id }, uids: [102] }, { who: "Ana" });
+    const { written } = (await rest.json()) as { written: { uid: number; version: number }[] };
+    await post(remove(id, randomUUID()), { who: "Ana" });
+    const undo = await post({ action: "undo", occasion: { id }, items: written }, { who: "Ana" });
+    expect([undo.status, await undo.json()]).toEqual([404, { code: "not_found" }]);
   });
 });

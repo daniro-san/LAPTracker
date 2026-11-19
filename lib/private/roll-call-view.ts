@@ -6,6 +6,7 @@
 import type { Db } from "../db";
 import {
   archivedCalls,
+  archivedCount,
   callsOfWeeks,
   newestMarks,
   teamsOf,
@@ -142,6 +143,11 @@ export async function archivedItems(db: Db, access: WorkspaceAccess, zone: strin
   const calls = await archivedCalls(db, access.workspaceId);
   const counted = await counter(db, access, calls, zone);
   return calls.map((c) => byId(c, counted));
+}
+
+/** How many roll calls of the week from Monday `monday` are archived: the week's hint to Archived (D120). */
+export function archivedInWeek(db: Db, access: WorkspaceAccess, monday: string) {
+  return archivedCount(db, access.workspaceId, monday, addDays(monday, 6));
 }
 
 export interface CallView {

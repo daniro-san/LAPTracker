@@ -131,4 +131,6 @@ export const rollFr: RollWords = {
   "roll.filter.week": "Actifs",
   "roll.filter.archived": "Archivés",
   "roll.archived.none": "Aucun appel archivé. Archivez-en un depuis sa page une fois terminé.",
+  "roll.archived.week.one": "1 appel archivé cette semaine ›",
+  "roll.archived.week.other": "{n} appels archivés cette semaine ›",
 };

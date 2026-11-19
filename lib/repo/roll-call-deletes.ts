@@ -42,13 +42,29 @@ export async function markCallDeleted(
 /**
  * Undoes the officer's own delete made under `requestId` since `since` (D120). A repeat of an Undo that
  * worked is true again. False otherwise: someone else's, too late, or a new roll call took its place
- * meanwhile (the same Calendar week, or the same kind and day added by hand).
+ * meanwhile (the same Calendar week, or the same kind and day added by hand). A new roll call made at the
+ * same instant passes the check and then fails the live unique index (23505): that is a refusal too.
  */
 export async function unmarkCallDeleted(
   db: Db,
   c: CallChange & { requestId: string },
   since: Date,
 ): Promise<boolean> {
+  try {
+    return await undelete(db, c, since);
+  } catch (error) {
+    if (pgCode(error) === "23505") return false;
+    throw error;
+  }
+}
+
+/** The Postgres error code, on the error or on the driver error it wraps. */
+const pgCode = (e: unknown) => {
+  const err = e as { code?: unknown; cause?: { code?: unknown } } | null;
+  return err?.code ?? err?.cause?.code;
+};
+
+async function undelete(db: Db, c: CallChange & { requestId: string }, since: Date) {
   const [done] = await db
     .update(rollCalls)
     .set({ deletedAt: null })

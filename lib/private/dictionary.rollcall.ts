@@ -116,13 +116,15 @@ export const rollEn = {
   "roll.archive": "Archive",
   "roll.unarchive": "Unarchive",
   "roll.archive.hint":
-    "Done with it? Archive takes it off the week's list and keeps it under Archived.",
+    "Done with it? Archive takes it off the week’s list and keeps it under Archived.",
   "roll.archive.failed": "Not saved. Check the connection and try again.",
   "roll.archived": "Archived",
   "roll.filter.aria": "Which roll calls",
   "roll.filter.week": "Active",
   "roll.filter.archived": "Archived",
   "roll.archived.none": "No archived roll calls. Archive one from its page when it is done.",
+  "roll.archived.week.one": "1 archived roll call this week ›",
+  "roll.archived.week.other": "{n} archived roll calls this week ›",
 } as const;
 
 export type RollKey = keyof typeof rollEn;

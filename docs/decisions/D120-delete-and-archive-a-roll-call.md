@@ -19,7 +19,7 @@ Why: officers made test roll calls and could not remove them (owner, 2026-11-18)
 
 - `roll_calls_entry_week_unique` (entry, week): after a Calendar roll call is deleted, its Calendar entry stays, and the week's occasion starts again as a new, empty roll call with its first mark. The question says so ("The Calendar entry stays, and its roll call starts again empty.").
 - `roll_calls_added_unique` (workspace, kind, day, hand-added): after a test roll call is deleted, a real one can be added on the same kind and day.
-- Undo is refused (404) when a new live roll call took the deleted one's place meanwhile (the same Calendar week, or the same kind and day added by hand); the list then says "Could not undo. The roll call stays deleted."
+- Undo is refused (404) when a new live roll call took the deleted one's place meanwhile (the same Calendar week, or the same kind and day added by hand); the list then says "Could not undo. The roll call stays deleted." A new roll call made at the same instant as the Undo passes that check and then fails the live unique index; the unique violation (23505) is answered as the same refusal, never a 500.
 
 **Delete and Undo** (`POST /api/w/[slug]/roll-call`, `{action: "delete", id, requestId, undo?}`).
 
@@ -35,10 +35,11 @@ Why: officers made test roll calls and could not remove them (owner, 2026-11-18)
 
 **The pages.**
 
-- At the foot of a roll call's page, under a rule: "Done with it? Archive takes it off the week's list and keeps it under Archived.", an "Archive" chip (or "Unarchive" when archived), and "Delete roll call", a text button in seal (44 px).
+- At the foot of a roll call's page, under a rule: "Done with it? Archive takes it off the week’s list and keeps it under Archived.", an "Archive" chip (or "Unarchive" when archived), and "Delete roll call", a text button in seal (44 px).
 - Delete asks with `AskSheet`: "Delete this roll call?", its title and day, "It leaves the roll call list, its counts and Home. Its marks stop counting anywhere.", and for a Calendar one the line above. "Keep it" (PT "Manter", FR "Le garder") is the main button and has the focus; "Delete" follows in seal.
 - After Delete, the week's list replaces the page in the history (`location.replace` after the question's own entry is stepped off, as D118), so Back does not land on a 404. The list says "Roll call deleted." with Undo; the URL carries the id and the request id. Undo replaces the list's entry with the roll call's page (`router.replace`).
 - The Roll call tab has two filter links under the intro: "Active" (the week, as before) and "Archived" (`?archived=1`): every archived roll call, the newest day first, each with its counts, by its id. The week bar and "Add a roll call" are on Active only. Empty: "No archived roll calls. Archive one from its page when it is done."
+- A week that has archived roll calls says so under its cards, as a link to the Archived list: "1 archived roll call this week ›" / "2 archived roll calls this week ›" (PT "… chamadas arquivadas nesta semana ›", FR "… appels archivés cette semaine ›"). It counts the roll calls whose day falls in that week. Review, 2026-11-19: this keeps an officer from adding again an occasion they archived.
 - An archived Calendar roll call on the Archived list has the kind's title and its day, without the Calendar entry's title or time (one Calendar read per week would be needed); its page has both.
 
 **Home (D108).** Two more parts of the small sources' read (`lib/repo/desk-activity-calls.ts`): "Ana deleted the roll call “KvK shield”" (PT "apagou a chamada", FR "a supprimé l’appel") and "Ana archived the roll call “…”" (PT "arquivou a chamada", FR "a archivé l’appel"). An undone delete or an unarchived roll call has no line; a deleted roll call's archive line goes with it. Both parts take the feed's page cursor (`< before`, D108 paging). A delete or an archive is never grouped into a run, and each line carries its roll call's id, so two roll calls of the same kind deleted one after the other stay two lines.

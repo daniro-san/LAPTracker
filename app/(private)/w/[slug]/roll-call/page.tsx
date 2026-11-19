@@ -7,9 +7,12 @@
 import { Fragment } from "react";
 
 import { chip } from "@/lib/brand/components/controls";
+import { fill } from "@/lib/copy";
+import type { Db } from "@/lib/db";
+import type { WorkspaceAccess } from "@/lib/private/access";
 import { isDay, mondayOf, offsetLabel } from "@/lib/private/calendar-time";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
-import { archivedItems, weekItems } from "@/lib/private/roll-call-view";
+import { archivedInWeek, archivedItems, weekItems } from "@/lib/private/roll-call-view";
 
 import { AddRollCall } from "../../../_ui/AddRollCall";
 import { calendarWords, type CalendarSheetWords } from "../../../_ui/calendar-data";
@@ -114,6 +117,37 @@ function justDeleted({ deleted, undo }: Search) {
     : null;
 }
 
+/**
+ * The Archived list, or the week from the Monday of `day` with how many of its roll calls are archived (so
+ * an officer does not add again what they archived, D120).
+ */
+async function listOf(
+  db: Db,
+  access: WorkspaceAccess,
+  zone: string,
+  archived: boolean,
+  day: string,
+) {
+  if (archived) return { items: await archivedItems(db, access, zone), archivedHere: 0 };
+  const [items, archivedHere] = await Promise.all([
+    weekItems(db, access, mondayOf(day), zone),
+    archivedInWeek(db, access, mondayOf(day)),
+  ]);
+  return { items, archivedHere };
+}
+
+/** "2 archived roll calls this week ›", to the Archived list; nothing when none is. */
+function ArchivedHint({ slug, n, t }: { slug: string; n: number; t: WorkspaceDictionary }) {
+  if (n === 0) return null;
+  return (
+    <p className="mt-3">
+      <a href={`/w/${slug}/roll-call?archived=1`} className={LINK}>
+        {fill(t[n === 1 ? "roll.archived.week.one" : "roll.archived.week.other"], { n })}
+      </a>
+    </p>
+  );
+}
+
 export default async function RollCallPage({
   params,
   searchParams,
@@ -129,15 +163,12 @@ export default async function RollCallPage({
   const page = await openRollCall(
     params,
     archived ? "roll-call?archived=1" : `roll-call${week ? `?week=${week}` : ""}`,
-    (db, access, today, _language, zone) =>
-      archived
-        ? archivedItems(db, access, zone)
-        : weekItems(db, access, mondayOf(week ?? today), zone),
+    (db, access, today, _language, zone) => listOf(db, access, zone, archived, week ?? today),
   );
   const { access, slug, t, language, today } = page;
   const monday = mondayOf(week ?? today);
   const ctx = { t, language, zone: page.zone };
-  const cards = page.data.map((item) => rollCard(item, slug, today, ctx));
+  const cards = page.data.items.map((item) => rollCard(item, slug, today, ctx));
   const words = rollWords(t);
   const times = calendarWords(t);
   const day = monday === mondayOf(today) ? today : monday;
@@ -168,6 +199,7 @@ export default async function RollCallPage({
           ))}
         </ul>
       )}
+      <ArchivedHint slug={slug} n={page.data.archivedHere} t={t} />
       {!archived && (
         <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2">
           <AddRollCall slug={slug} day={day} words={words} />

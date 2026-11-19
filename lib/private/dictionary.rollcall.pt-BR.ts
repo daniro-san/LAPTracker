@@ -127,4 +127,6 @@ export const rollPt: RollWords = {
   "roll.filter.week": "Ativas",
   "roll.filter.archived": "Arquivadas",
   "roll.archived.none": "Nenhuma chamada arquivada. Arquive uma pela página dela quando terminar.",
+  "roll.archived.week.one": "1 chamada arquivada nesta semana ›",
+  "roll.archived.week.other": "{n} chamadas arquivadas nesta semana ›",
 };

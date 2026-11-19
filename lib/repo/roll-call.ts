@@ -1,7 +1,7 @@
 // roll_calls, roll_call_marks and roll_call_team (issue 298, D103): plain reads and writes, each inside one
 // workspace. Which marks a roll call takes, the version check and the words stay in lib/private. Every read
 // here leaves out a deleted roll call (`live`, D120).
-import { and, desc, eq, inArray, isNotNull, isNull, ne, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, isNotNull, isNull, lte, ne, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { rollCallMarks, rollCalls, rollCallTeam, workspaceUsers } from "../schema";
@@ -94,6 +94,23 @@ export async function callsOfWeeks(db: Db, workspaceId: number, weeks: string[])
     .from(rollCalls)
     .where(and(eq(rollCalls.workspaceId, workspaceId), inArray(rollCalls.week, weeks), live))
     .orderBy(rollCalls.day, rollCalls.id);
+}
+
+/** How many roll calls on these days (`from` to `to`) are archived (D120). */
+export async function archivedCount(db: Db, workspaceId: number, from: string, to: string) {
+  const [row] = await db
+    .select({ n: sql<number>`count(*)`.mapWith(Number) })
+    .from(rollCalls)
+    .where(
+      and(
+        eq(rollCalls.workspaceId, workspaceId),
+        isNotNull(rollCalls.archivedAt),
+        live,
+        gte(rollCalls.day, from),
+        lte(rollCalls.day, to),
+      ),
+    );
+  return row?.n ?? 0;
 }
 
 /** The archived roll calls (D120), the newest day first. */

@@ -13,6 +13,8 @@
   - `RollCallManage.tsx` sits at the foot of a roll call's page. It has the archive hint, Archive/Unarchive and "Delete roll call". The delete question uses `AskSheet` with "Keep it" first and Delete in seal. A Calendar roll call's question adds that the entry stays.
   - The list shows "Roll call deleted." with Undo for 10 s (`RollCallDeletedLine`).
   - The roll call's page shows an "Archived" tag.
+  - A week with archived roll calls says "1 archived roll call this week ›" under its cards, linking to Archived (review, 2026-11-19), so an officer does not add again what they archived.
+- Review fix (2026-11-19): `unmarkCallDeleted` answers a unique violation (23505) as a refusal. A roll call made at the same instant as the Undo would otherwise turn it into a 500.
   - The Roll call tab has an Active / Archived filter (`?archived=1`).
   - Words are in EN, PT-BR and FR.
 - Docs: D120. Dated amendments to D103 and D108, the README index, and the tracking plan's `roll_call` row.
@@ -34,13 +36,16 @@
 
 ## Verified
 
-- `pnpm check` exits 0: prettier, eslint, tsc, vitest **200 files passed, 2 skipped; 1,066 tests passed, 4 skipped**, the drift gate, and i18n ("17 languages up to date").
-- `app/(private)/api/w/[slug]/roll-call/route.test.ts` has 5 new tests:
-  - a delete removes the roll call from the week, its page, marking and Home, and the Calendar week starts again at version 1;
-  - a member gets 401, and another workspace's officer gets 404;
-  - Undo works for the deleter only, and not after `UNDO_MS`;
+- After the rebase on `origin/dev` (#426, #428) and the review fixes, `pnpm check` exits 0: prettier, eslint, tsc, vitest **203 files passed, 2 skipped; 1,077 tests passed, 4 skipped**, the drift gate, and i18n ("17 languages up to date").
+- `app/(private)/api/w/[slug]/roll-call/route.test.ts` has 8 new tests:
+  - a delete removes the roll call from the week, its page, marking and Home, and the Calendar week starts again at version 1. Two KvK shields deleted one after the other are two Home lines;
+  - a member's delete or archive gets 401, and another workspace's gets 404;
+  - Undo works for the deleter only, and not after `UNDO_MS`. It is refused (404) when the Calendar week was marked again after the delete, or a Cheese Trap was added again on the same day;
   - a replay after Undo deletes nothing;
-  - archive takes the roll call off the week into Archived, a repeat answers 200, Home shows the archive line, and Unarchive brings it back.
+  - archive takes the roll call off the week into Archived, a repeat answers 200, the week counts 1 archived, Home shows the archive line, and Unarchive brings it back;
+  - a deleted hand-added roll call frees its kind and day: a new add answers 200 with a new id;
+  - a deleted Elixir Scramble team no longer holds its members: a pick on the other team, refused (409) before, then answers 200;
+  - "the rest"'s undo on a deleted roll call answers 404.
 - **Local e2e: 44 of 44 checks pass.** It ran on a production build on :3997 with this worktree's own Postgres on :55337 (43 migrations), the DB bridge, a Discord sign-in stand-in and an invented 20-member roster. No upstream, Groq or Discord call was made. It checked:
   - 44 px targets;
   - the question: "Keep it" has the focus, Delete is drawn in seal, and Keep it keeps the roll call;
