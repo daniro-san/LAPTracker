@@ -43,6 +43,7 @@ export function pendingRow(
     factLines: factLines(facts, t, f),
     stored: facts,
     autoStatus: NONE,
+    noData: t["nodata.mark"],
     unmatched: tried ? fill(t["pending.unmatched"], { date: f.date(rosterAt) }) : null,
     toMatch: tried,
   };
@@ -104,6 +105,7 @@ export function formerRow(m: FormerMember, t: WorkspaceDictionary, f: CardFormat
     factLines: lines,
     stored: m.facts,
     autoStatus: NONE,
+    noData: t["nodata.mark"],
     lastSeen: fill(t["former.lastSeen"], { date: f.date(m.lastSeen) }),
     numbers: [
       fill(t["members.meta.might"], { v: or(m.might, f.compact) }),

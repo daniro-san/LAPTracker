@@ -68,6 +68,8 @@ export interface CardData {
   /** The reasons with their evidence, or when a new member was first seen. */
   statusLines: string[];
   donationsHead: string;
+  /** "No data": the name of the marker drawn where a value is "—". */
+  noData: string;
   days: { weekday: string; day: string; value: string; said: string; none: boolean }[];
   details: { label: string; value: string }[];
   factLines: FactLine[];
@@ -247,6 +249,7 @@ export function cardData(
     statusLabel: label,
     statusLines: lines,
     donationsHead: fill(t["members.don.head"], { total: or(m.weekTotal, f.number) }),
+    noData: t["nodata.mark"],
     days: m.donations.map((v, i) => {
       const { weekday, day } = dayLabel(week, i, t);
       const value = typeof v === "number" ? f.number(v) : v === null ? NONE : "";
