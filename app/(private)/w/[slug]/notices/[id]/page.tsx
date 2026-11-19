@@ -62,7 +62,7 @@ export default async function NoticePage({
     .map((f) => f.version)
     .join(".");
   return (
-    <SignedInFrame access={access} language={language} t={t} current="days" waiting={waiting}>
+    <SignedInFrame access={access} language={language} t={t} current="notices" waiting={waiting}>
       <p>
         <a
           href={`/w/${slug}/notices`}

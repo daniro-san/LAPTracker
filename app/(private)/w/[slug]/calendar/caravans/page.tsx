@@ -45,7 +45,13 @@ export default async function CaravansPage({
   // Name order, not might order: the picker is not a ranking (D75).
   const roster = [...page.data.roster].sort((a, b) => a.name.localeCompare(b.name, language));
   return (
-    <SignedInFrame access={access} language={language} t={t} current="days" waiting={page.waiting}>
+    <SignedInFrame
+      access={access}
+      language={language}
+      t={t}
+      current="caravans"
+      waiting={page.waiting}
+    >
       <h1 className="font-display text-display-lg">{t["tab.days"]}</h1>
       <CalendarNav slug={slug} current="caravans" t={t} query={`?week=${monday}`} />
       <CalendarWeekBar

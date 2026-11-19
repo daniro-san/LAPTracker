@@ -76,7 +76,7 @@ export default async function NoticesPage({
   const { language, t } = await workspaceWords();
   const words = noticeWords(language, t);
   return (
-    <SignedInFrame access={access} language={language} t={t} current="days" waiting={waiting}>
+    <SignedInFrame access={access} language={language} t={t} current="notices" waiting={waiting}>
       <h1 className="font-display text-display-lg">{t["tab.notices"]}</h1>
       {/* Notices are a view of the Calendar tab (Week · Caravans · Notices, issue 300). */}
       <CalendarNav slug={slug} current="notices" t={t} />
