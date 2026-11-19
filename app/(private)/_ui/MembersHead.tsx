@@ -21,7 +21,8 @@ function ViewSwitch({
     </a>
   );
   return (
-    <nav aria-label={t["members.view.aria"]} className="mt-2 flex gap-2">
+    // From 1280 the sidebar lists Former members (D122), so this switch is hidden there.
+    <nav aria-label={t["members.view.aria"]} className="mt-2 flex gap-2 xl:hidden">
       {link(!former, `/w/${slug}/members`, t["members.view.current"])}
       {link(former, `/w/${slug}/members?view=former`, t["members.view.former"])}
     </nav>

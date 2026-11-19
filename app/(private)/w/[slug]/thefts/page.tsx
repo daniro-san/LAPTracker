@@ -74,7 +74,7 @@ export default async function TheftsPage({ params }: { params: Promise<{ slug: s
   const words = theftWords(t);
   const f = formats(language, zone);
   return (
-    <SignedInFrame access={access} language={language} t={t} current="days" waiting={waiting}>
+    <SignedInFrame access={access} language={language} t={t} current="thefts" waiting={waiting}>
       <h1 className="font-display text-display-lg">{t["thefts.title"]}</h1>
       {/* The thefts log is a view of the Calendar tab (Week · Caravans · Notices · Thefts, issue 300). */}
       <CalendarNav slug={slug} current="thefts" t={t} />

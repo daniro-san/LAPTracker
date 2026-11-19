@@ -25,7 +25,7 @@ export default async function PicturesDuePage({ params }: { params: Promise<{ sl
     "/pictures",
   );
   return (
-    <SignedInFrame access={access} language={language} t={t} current="days" waiting={waiting}>
+    <SignedInFrame access={access} language={language} t={t} current="notices" waiting={waiting}>
       <p>
         <a
           href={`/w/${slug}/notices`}

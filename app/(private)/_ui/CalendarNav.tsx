@@ -26,7 +26,8 @@ export function CalendarNav({
   query?: string;
 }) {
   return (
-    <nav aria-label={t["calendar.nav.aria"]} className="mt-3">
+    // From 1280 the sidebar lists these views and "See what members see" (D122), so this copy is hidden.
+    <nav aria-label={t["calendar.nav.aria"]} className="mt-3 xl:hidden">
       <ul
         className="grid border border-plum"
         style={{ gridTemplateColumns: `repeat(${VIEWS.length}, minmax(0, 1fr))` }}
