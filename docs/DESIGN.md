@@ -86,9 +86,16 @@ spacing:
   section: 48px
 
 layout:
-  # D122. Widths are the viewport; Tailwind breakpoints sm 640, md 768, lg 1024, xl 1440.
+  # D122. Widths are the viewport; Tailwind breakpoints sm 640, md 768, lg 1024, xl 1280 (default), wide 1440.
   breakpoints:
-    { phone: 360px, cards-to-table: 640px, tablet: 768px, laptop: 1024px, desktop: 1440px }
+    {
+      phone: 360px,
+      cards-to-table: 640px,
+      tablet: 768px,
+      laptop: 1024px,
+      sidebar: 1280px,
+      wide: 1440px,
+    }
   margin: { phone: 16px, tablet: 24px, laptop: 24px, desktop: 32px }
   gutter: { phone: 16px, tablet: 16px, laptop: 24px, desktop: 24px }
   page-max: 1200px
@@ -296,15 +303,16 @@ Rules separate levels where weight and colour are not enough: a hairline (`{colo
 
 ### Layout system (D122)
 
-Mobile first does not mean phone only (owner, 2026-11-17, issue 412). A page is designed at 360 px and then laid out again at 768, 1024 and 1440, so tablets and laptops use their width and pages get shorter. One system for the desk, the members' board and the public pages, built from the layout components below, never from per-page grid classes.
+Mobile first does not mean phone only (owner, 2026-11-17, issue 412). A page is designed at 360 px and then laid out again at 768, 1024, 1280 and 1440, so tablets and laptops use their width and pages get shorter. One system for the desk, the members' board and the public pages, built from the layout components below, never from per-page grid classes.
 
-**Widths.** Tailwind `sm` 640 stays the cards-to-table switch; `md` 768, `lg` 1024 and `xl` 1440 are the layout steps (`xl` is redefined from 1280 in `tokens.css`; nothing used it).
+**Widths.** Tailwind `sm` 640 stays the cards-to-table switch; `md` 768, `lg` 1024 and `xl` 1280 (Tailwind's default, kept) are the layout steps; one added breakpoint, `wide` 1440 (`--breakpoint-wide: 90rem` in `tokens.css`), is used only for the extra table columns and the 32 px margin. Amended 2026-11-19 (coordinator, under the owner's carte blanche): the sidebar starts at 1280, not 1440, because most laptops are 1280–1439 wide.
 
 | Width       | Desk navigation                         | Margin | Gutter | Content                                                                |
 | ----------- | --------------------------------------- | ------ | ------ | ---------------------------------------------------------------------- |
 | 360 – 767   | bottom tabs (today's five)              | 16     | 16     | one column; cards; `stat-card`s below 640                              |
 | 768 – 1023  | 88 px rail, icon over a label (2 lines) | 24     | 16     | one column, but paired blocks sit two-up (`Split even`, `CardGrid`)    |
-| 1024 – 1439 | 88 px rail                              | 24     | 24     | the ledger spread (main 2/3, margin column 1/3) or master-detail (7/5) |
+| 1024 – 1279 | 88 px rail                              | 24     | 24     | the ledger spread (main 2/3, margin column 1/3) or master-detail (7/5) |
+| 1280 – 1439 | 224 px labelled sidebar with sub-views  | 24     | 24     | the same                                                               |
 | ≥ 1440      | 224 px labelled sidebar with sub-views  | 32     | 24     | the same, content up to 1200 px; extra table columns appear            |
 
 - **Page width.** Content is at most 1200 px (`--page-max`), centred in what the navigation leaves. Prose (notices, Start here, help lines, a member's notes) stays within 65 characters (`--measure`, Baymard: 50–75), and a form within 560 px (`--form-max`), wherever the column is wider. Nothing is stretched to the edge of a 1440 screen.
@@ -312,12 +320,12 @@ Mobile first does not mean phone only (owner, 2026-11-17, issue 412). A page is 
 - **The ledger spread.** At ≥ 1024 a page is a main column (2/3) and a margin column (1/3) on its right, divided by a 2 px ink rule, like the written page and the margin of a ledger. The main column holds the one dominant thing of the page (the ledger, the member list, the week, the notice being written) in drawn cards. The margin column holds what is read beside it — the figures, leadership, biggest changes, legend, counts, recent activity — as **margin notes**: no frame, a ruled head (`{typography.label}` over a 2 px ink rule) and hairline rows. The margin column is sticky when it is shorter than the main column. The HTML order is always the phone order; grid areas move the margin column to the right, so a phone, a screen reader and the keyboard read the same order everywhere. The margin column is never on the left.
 - **One dominant thing per page.** No row of equal-weight KPI tiles, no three equal cards across, no hero. If two blocks compete, one goes into the margin column.
 - **Master-detail** (Members, Follow-up, Former members). At ≥ 1024 the list (7/12) and the open item (5/12, sticky) sit side by side; the open row is tinted plum 10 % with a 3 px plum bar; the open item is in the URL (`?m=<uid>`), so back and a shared link work. Below 1024 the same item opens in the `Sheet`, as today. The detail pane is the sheet's content: one component, two containers. With nothing open the pane shows one muted line ("Pick a member to see their info."), never an empty frame.
-- **Tables grow by priority.** A `ResponsiveTable` declares each column's priority: always, from 640, from 1024, from 1440. Cards below 640; at ≥ 1024 the head row is sticky; at ≥ 1440 the low-priority columns appear (on Members: roll calls, main squad, last talk). The name column never wraps a tag under itself; it truncates nothing either: the name wraps, tags and numbers do not.
+- **Tables grow by priority.** A `ResponsiveTable` declares each column's priority: always, from 640, from 1024, from 1440 (`wide`). Cards below 640; at ≥ 1024 the head row is sticky; at ≥ 1440 the low-priority columns appear (on Members: roll calls, main squad, last talk). The name column never wraps a tag under itself; it truncates nothing either: the name wraps, tags and numbers do not.
 - **Page head.** Title and meta line on the left; the page's actions on the right from 768, on one row. Below 768 the one primary action shows and the rest go under "More ▾" (a `<details>` menu of 44 px rows), so the first content row of a phone screen is the content, not six rows of buttons.
 - **Nothing short wraps** (persona panel, round 2). A change keeps its arrow, value and percent on one line (`nowrap`; the percent goes under the whole change, never under half of it); a time, a count tag and a row's tag do not wrap; a long name ends in an ellipsis before its tag drops to a second line, and its full text is the link's accessible name. A row of sort or filter chips is one row that scrolls sideways inside itself when it is wider than its column (the existing `member-filter` rule, now at every width), so no chip sits alone on a second line. Page actions that do not fit beside the title take their own row under it (1024–1279 on the desk). A card's link ("Open Calendar") goes to the card's foot below 768, so the title keeps the line.
 - **Even rhythm in the margin column**: 32 px above every margin note's head; a group of people in the margin (Leadership) is a list, and two-up only where each cell is at least 200 px wide, with the name on the first line and the role and figures under it.
 - **Touch stays.** Rows are 44 px or taller at every width: tablets and touch laptops use the wide layouts too. No density switch, no hover-only control, no tooltip.
-- **Desk navigation.** The five tabs stay the five destinations. On the rail and the sidebar the tab keeps its icon and word; the sidebar also lists each tab's views (Members: Former members; Calendar: Caravans, Notices, Thefts) and "Members' board" under a "Members see" label. Below 1440 the views are reached by the in-page `view-switch` as today. The public pages keep their header: they have no destinations to rail.
+- **Desk navigation.** The five tabs stay the five destinations. On the rail and the sidebar the tab keeps its icon and word; the sidebar also lists each tab's views (Members: Former members; Calendar: Caravans, Notices, Thefts) and "Members' board" under a "Members see" label. Below 1280 the views are reached by the in-page `view-switch` as today. The public pages keep their header: they have no destinations to rail.
 - **Charts at wide widths (D68).** A chart takes the width of its column, never the page: in the main column at most 8 of 12 columns, in the margin column its full width. Height steps with width: `h-32` up to 1023, 160 px from 1024; `small` stays `h-16`. Labels stay HTML, numbers stay beside the chart; where the margin column exists, the chart's numbers (summary line or readings table) sit beside it rather than under Details. HTML bars (`server-pulse`) keep at most 24 px per bar and a 2 px gap; with more width they do not get fatter, the busiest span gets more room for its words. A tap target is still 44 px, so a wider chart does not add tap points.
 - **Measured before and after** (11ap audit, seed data, light, EN): the public alliance page is 7,497 px tall at 360, 4,052 at 768 and 3,857 at 1024 and 1440 because it never uses more than 960 px; the mock of the spread is 1,819 at 1024 and 1,746 at 1440. Desk Members is 2,378 px at every width from 768 up, its list one 960 px column with two numbers.
 - **Touch**: every interactive element ≥ 44 px; focus ring `{colors.plum}` 2 px with 2 px offset; on a Details bar (the `details-bar` class) the ring goes round the framed "Details ▾" control only, never the whole bar (issue 125); everything reachable by keyboard.
@@ -408,7 +416,7 @@ Ornament budget: header lace border, one footer corner per page (the yarn ball, 
 
 The layout system above, as components in `lib/brand/components/layout/`, shared by the desk, the members' board, /admin and the public pages. They are presentational server components: words come in as props (each caller passes its own dictionary's strings), they read no data and import nothing from `app/` or `lib/private`. A page composes them; a page adds no `grid-cols-*`, `max-w-*` or breakpoint classes of its own for its frame (cards and rows inside keep theirs). Planned, not built yet: the rollout plan is in `docs/handoff/11ap-layout-system.md`.
 
-- **`AppShell`** — the page frame: the bar (`header` or the desk header, passed in), the navigation for the width (bottom tabs below 768, `NavRail` 768–1439, `NavSidebar` from 1440; the desk passes its tabs, the public site passes none) and `<main id="main">` with the margins and `--page-max`. Replaces the four copies of `mx-auto max-w-[960px] px-4 sm:px-6` (`Frame`, `EventView`, the alliance and player pages) and the header's own copy. Keeps the safe-area insets and the bottom padding for the tabs.
+- **`AppShell`** — the page frame: the bar (`header` or the desk header, passed in), the navigation for the width (bottom tabs below 768, `NavRail` 768–1279, `NavSidebar` from 1280; the desk passes its tabs, the public site passes none) and `<main id="main">` with the margins and `--page-max`. Replaces the four copies of `mx-auto max-w-[960px] px-4 sm:px-6` (`Frame`, `EventView`, the alliance and player pages) and the header's own copy. Keeps the safe-area insets and the bottom padding for the tabs.
 - **`NavRail` / `NavSidebar`** — the desk's five tabs on the side: the same `TabIcon`s, the current one with a 3 px plum bar on its left edge and a plum 8 % tint, `aria-current="page"`, every item 44 px or more (rail items 64 px tall, the word on up to two lines, `hyphens: none`); the Home count badge as on the tabs. `NavSidebar` adds each tab's views as 44 px indented links and a "Members see" group. Sticky, full height, a hairline on the content side. Hidden while a notice editor is open, as the tabs are.
 - **`PageHead`** — title (`display-lg`), one meta line, optional breadcrumbs above, and an `actions` slot: on one row at the right from 768; below 768 the `primary` action shows and the rest go into `MoreMenu`.
 - **`MoreMenu`** — a `<details>` labelled "More" (the caller's word) with a ▾, opening a framed list of 44 px rows; closes on choice and on Escape. For secondary page actions on phones only; never for navigation.
@@ -416,7 +424,7 @@ The layout system above, as components in `lib/brand/components/layout/`, shared
 - **`MarginNote`** — a block in the margin column: a ruled head (label type over a 2 px ink rule, an optional control at its right) and the body in hairline rows; no frame, no padding box. Below 1024, where there is no margin column, the same block wears the `drawn-card` frame (`asCard`), so a phone still sees cards.
 - **`CardGrid`** — equal cards in columns: `repeat(auto-fill, minmax(min(100%, var(--card-min)), 1fr))` with the gutter; one column at 360, two at 768, three only where cards are short (notices, roll call kinds). Reading order is row by row, so it is for items without an order; ordered lists (the members, a week's days) stay one list.
 - **`MasterDetail`** — `list` and `detail` slots, the open item from the URL. Below 1024 it renders only the list and the caller's `Sheet` opens the detail; from 1024 the detail pane is sticky beside the list (7/5) with the open row marked by the caller (`aria-current="true"` on the row).
-- **`ResponsiveTable`** — the `stat-table` rule made general: columns with `priority` (`always`, `sm`, `lg`, `xl`), a card renderer for below 640, a sticky head row from 1024, numerals right-aligned and tabular, rows ≥ 44 px. `StatTable`, the members list, the run trace and the history tables move onto it.
+- **`ResponsiveTable`** — the `stat-table` rule made general: columns with `priority` (`always`, `sm`, `lg`, `wide`), a card renderer for below 640, a sticky head row from 1024, numerals right-aligned and tabular, rows ≥ 44 px. `StatTable`, the members list, the run trace and the history tables move onto it.
 - **`Measure`** — wraps prose to `--measure` (65ch) and forms to `--form-max`; used by notices, Start here, how-to, the PIN gate and every sheet's body when it shows in a pane.
 
 ## Workspace components
@@ -457,7 +465,7 @@ Short, dry, grandmotherly. Written in English; the public pages also read in 17 
 - Lead with paper and ink; let plum, seal and yarn each mean one thing.
 - Keep every number in `{typography.numeral}`, right-aligned, compact, full value on tap.
 - Put craft in the margins: header, corner, seals, empty states, error pages.
-- Design at 360 px first, then lay the page out again at 768, 1024 and 1440 (D122); screenshot 360 / 768 / 1024 / 1440 in both modes.
+- Design at 360 px first, then lay the page out again at 768, 1024, 1280 and 1440 (D122); screenshot 360 / 768 / 1024 / 1280 / 1440 in both modes.
 - Change this file in the same commit as the tokens when a decision changes.
 - Run the ten-second test with a real member who reads no English before calling a page done.
 
@@ -475,5 +483,5 @@ Short, dry, grandmotherly. Written in English; the public pages also read in 17 
 
 - `lib/brand/tokens.css` is the only place a colour literal appears: a test greps `app/` and `lib/brand/components/` for `#[0-9a-f]{3,6}` and `rgb(` and fails on any hit.
 - Fonts load from `next/font/google`; no other `@font-face`. The one exception is the Discord event picture, which reads the TTFs in `lib/brand/fonts/` (D58).
-- Screenshots at 360 / 768 / 1024 / 1440 in both modes for every page a session touches, attached to the PR (D122; was 360 / 390 / 1280).
+- Screenshots at 360 / 768 / 1024 / 1280 / 1440 in both modes for every page a session touches, attached to the PR (D122; was 360 / 390 / 1280).
 - The `frontend-design` skill, when available, is opened with this file as the brief.

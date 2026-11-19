@@ -19,14 +19,15 @@
 ## Decisions
 
 - D122. Summary:
-  - widths 360 / 768 / 1024 / 1440, with Tailwind `xl` redefined to 1440 (it is unused today);
+  - widths 360 / 768 / 1024 / 1280 / 1440: Tailwind `xl` stays 1280, and a `wide` breakpoint at 1440 is added for the extra table columns only (amended, see below);
   - content at most 1200 px;
-  - desk navigation: bottom tabs below 768, then an 88 px rail up to 1439, then a 224 px sidebar with the sub-views;
+  - desk navigation: bottom tabs below 768, then an 88 px rail up to 1279, then a 224 px sidebar with the sub-views from 1280;
   - the ledger spread from 1024: main 2/3, and a margin column of unframed margin notes on the right, behind a 2 px ink rule, sticky;
   - master-detail from 1024 for Members, Follow-up and Former members;
   - table columns by priority;
   - one primary action plus "More ▾" on phones;
   - rows stay ≥ 44 px, and there is no density mode.
+- **Amended after the mocks (coordinator, 2026-11-19, under the owner's carte blanche):** the sidebar starts at 1280, not 1440; public pages keep their header with no side nav; the members' board gets the spread; no compact density mode; Calendar and Notices are mocked inside rollout PR 4. All recorded in D122's amendment.
 - The spread is the brand's answer to "generic AI design": a ledger page and its margin notes, instead of a sidebar and a grid of equal cards.
 
 ## Deviations
@@ -92,7 +93,7 @@
 
 Each PR, as a rule:
 
-- before and after full-page shots at 360 / 768 / 1024 / 1440, light and dark, EN and PT, with the heights table;
+- before and after full-page shots at 360 / 768 / 1024 / 1280 / 1440, light and dark, EN and PT, with the heights table;
 - no sideways scroll at any width;
 - a persona panel (the same four) on the after shots before merging;
 - reads stay in `lib/queries` and `lib/private` as today. Layout only: no data or copy change beyond the new "More", "Pick a member…" and margin-note heads, in EN, PT-BR and FR (and the 17 public languages for public strings, via the translate-copy skill).
@@ -100,7 +101,7 @@ Each PR, as a rule:
 Card frames (#393, D116) are already shipped, so nothing waits on them.
 
 1. **Foundation.**
-   - Tokens in `tokens.css`: `--breakpoint-xl: 90rem`, `--page-max`, `--measure`, `--form-max`, `--rail`, `--sidebar`, `--card-min`.
+   - Tokens in `tokens.css`: `--breakpoint-wide: 90rem` (`xl` stays 1280), `--page-max`, `--measure`, `--form-max`, `--rail`, `--sidebar`, `--card-min`.
    - `lib/brand/components/layout/`: `AppShell`, `NavRail`, `NavSidebar`, `PageHead`, `MoreMenu`, `Spread`, `MarginNote`, `CardGrid`, `Measure`.
    - Each component is shown on `/brand`.
    - `Frame`, `SiteHeader`, `EventView` and the alliance and player pages move onto `AppShell` with a `legacyWidth` (960) prop, so nothing else moves yet. The desk gets the rail and the sidebar.
@@ -130,11 +131,11 @@ Card frames (#393, D116) are already shipped, so nothing waits on them.
   - Members master-detail touches the sheet, history, the URL and the list state together. 11y and 11z show that changes there need the most review rounds.
 - What the owner must do first:
   - Read D122 and look at the round 2 mocks.
-  - Answer the open questions in the PR. The sidebar starts at 1440, which leaves 1280–1439 laptops on the rail.
+  - Nothing more: the coordinator answered the open questions on 2026-11-19 (D122 amendment).
 - Plan change: none. The workspace track has no prompt in `docs/SESSION_PLAYBOOK.md`, and this work runs from issue 412.
 
 <adjustments>
-- `xl` (1280) and `2xl` are used nowhere in `app/` or `lib/`, and `md` is used once and `lg` four times. So redefining `xl` to 1440 breaks nothing. Grep again before PR 1.
+- `xl` (1280) and `2xl` are used nowhere in `app/` or `lib/`, and `md` is used once and `lg` four times. `xl` keeps its default 1280 (the sidebar); add `--breakpoint-wide: 90rem` for 1440. Grep again before PR 1.
 - Four places repeat the 960 px container: `app/(private)/_ui/Frame.tsx`, `app/_ui/EventView.tsx`, `app/(pages)/players/[uid]/page.tsx` and `app/(pages)/events/[id]/alliances/[unionId]/page.tsx`. `SiteHeader` and `SiteFooter` have their own copy. These are the `AppShell` swap points.
 - The desk tabs are in `Frame.tsx` (`Tabs`, `TABS`, `PATHS`). The rail and sidebar take the same list. Keep the Home count badge and the rule that hides the tabs while a notice editor is open.
 - The fixture-based seed shows real player names on public pages. For screenshots, run the uid-based rename SQL in the 11ap scratchpad (`11ap/rename.sql`) after `db:local:seed`.

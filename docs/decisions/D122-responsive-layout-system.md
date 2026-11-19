@@ -23,8 +23,8 @@ Why: the owner's critique of the whole app (2026-11-17, issue 412). Every page i
 
 **Decision.**
 
-- **Widths:** 360 (design base), 640 (cards to table, unchanged), 768, 1024, 1440. Tailwind `md` 768, `lg` 1024, and `xl` redefined to 1440 (unused today). Margins 16 / 24 / 24 / 32, gutters 16 / 16 / 24 / 24, content at most 1200 px, prose 65ch, forms 560 px.
-- **Desk navigation:** bottom tabs below 768; an 88 px rail (icon over word) from 768 to 1439; a 224 px labelled sidebar from 1440 that also lists each tab's views and the members' board. Same five destinations everywhere. The public pages keep their header.
+- **Widths:** 360 (design base), 640 (cards to table, unchanged), 768, 1024, 1440. Tailwind `md` 768, `lg` 1024, and `xl` redefined to 1440 (unused today) — amended below: `xl` stays 1280 and `wide` 1440 is added. Margins 16 / 24 / 24 / 32, gutters 16 / 16 / 24 / 24, content at most 1200 px, prose 65ch, forms 560 px.
+- **Desk navigation:** bottom tabs below 768; an 88 px rail (icon over word) from 768 to 1439; a 224 px labelled sidebar from 1440 (amended below: from 1280) that also lists each tab's views and the members' board. Same five destinations everywhere. The public pages keep their header.
 - **The ledger spread** from 1024: a main column (2/3) for the page's one dominant thing, in drawn cards, and a margin column (1/3) on the right for what is read beside it, as unframed margin notes with ruled heads, divided by a 2 px ink rule, sticky when shorter. HTML order is the phone order; the margin column is never on the left. This is the brand's answer to "generic": a ledger page with its margin, not a sidebar and a grid of equal cards.
 - **Master-detail** from 1024 for Members, Follow-up and Former members (list 7/12, the open item 5/12, sticky, in the URL as `?m=`); the sheet below 1024.
 - **Tables** grow by column priority (640, 1024, 1440), head row sticky from 1024. Rows stay ≥ 44 px at every width: no density mode, because tablets and touch laptops get the wide layouts.
@@ -40,5 +40,13 @@ Why: the owner's critique of the whole app (2026-11-17, issue 412). Every page i
 - Resolved in round 2: margin column right everywhere with HTML in phone order; unframed margin notes with ruled heads and the pen rule; one primary action plus More on phones; 7/5 split, marked open row, sticky detail, extra columns only from 1440; rail until 1439 and the sidebar from 1440; summary and leadership side by side at 768.
 - Round 2: the R4 accepted; the designer, the R5 and the member accepted with small changes, now rules in DESIGN.md ("Nothing short wraps", "Even rhythm in the margin column"): changes on one line, leadership two-up only at 200 px cells, 32 px above margin heads, actions on their own row on the desk from 1024 to 1279, chips in one scrolling row.
 - Still open: Calendar and Notices were not mocked, and the rail's two-line labels were not seen in PT and FR. Each is checked by the persona panel in its own rollout PR before merging.
+
+**Amendment, 2026-11-19 (coordinator, under the owner's carte blanche on validated work, after the round 2 mocks).**
+
+1. The desk sidebar starts at **1280**, not 1440: most laptops are 1280–1439 wide. The rail runs from 768 to 1279. Tailwind's `xl` stays at its default 1280 (no redefinition); one breakpoint is added, `wide` 1440 (`--breakpoint-wide: 90rem`), used only for the extra table columns (priority `wide`) and the 32 px margin. Screenshots for a touched page are 360 / 768 / 1024 / 1280 / 1440. The "actions on their own row" rule keeps its 1024–1279 range, which is now the rail's.
+2. The public pages keep their header; no side navigation (as decided above).
+3. The members' board gets the spread: the week strip and events in the main column; notices, Start here and the thank-you note in the margin column.
+4. No compact density mode (as decided above).
+5. Calendar and Notices are mocked and shown to the persona panel inside rollout PR 4, as planned.
 
 **Not done.** No density switch, no collapsible sidebar, no column chooser for tables, no drag to resize panes: each can be added when a page needs it. The public pages get no side navigation. Nothing changes below 768 except the "More ▾" menu and the nowrap rules.
