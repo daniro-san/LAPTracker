@@ -108,7 +108,7 @@ describe("the offline proxy (D75, D127)", () => {
     expect(idleRun([...reads, read("2026-11-14", [member(1, none)])], 1)).toEqual({ days: 3 });
   });
 
-  it("does not fire for a new member that the earlier reads do not list", () => {
+  it("does not count a read that does not list the member", () => {
     const reads = [
       read("2026-11-10", [member(1)]),
       read("2026-11-11", [member(1), member(2, none)]),
@@ -124,7 +124,7 @@ describe("missing data", () => {
     expect(missingOf(member(1), [100, 200, "later"])).toEqual({ fields: [], days: 0 });
     expect(
       missingOf(member(2, { power: null, lv: null, active: null }), [null, 200, null, "later"]),
-    ).toEqual({ fields: ["might", "sanctuary", "activity", "donations"], days: 2 });
+    ).toEqual({ fields: ["might", "sanctuary", "donations"], days: 2 });
   });
 });
 

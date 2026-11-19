@@ -104,7 +104,7 @@ const en = {
   "members.nodata": "No data: {list}",
   "nodata.might": "might",
   "nodata.sanctuary": "Sanctuary",
-  "nodata.activity": "daily quest points",
+  "members.noQuests": "No daily quests on {day}",
   "status.fine": "Fine",
   "status.checkin": "Check in",
   "reason.kvk": "no kills gained in Kingdom War (KvK) on {date}",

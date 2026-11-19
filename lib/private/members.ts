@@ -63,7 +63,10 @@ export interface MemberRow {
   /** Lifetime kills from the read (public); null when not sent. */
   kills: number | null;
   sanctuary: number | null;
+  /** Daily quest points in the newest end-of-day read (D127); null when it sent none. */
   activity: number | null;
+  /** The newest read's server day when it sent no daily quest points: none that day (D127). */
+  noQuestsOn: string | null;
   honor: number | null;
   donations: DayValue[];
   weekTotal: number | null;
@@ -151,7 +154,9 @@ const onBreak = (p: ReturnType<typeof factsPart>) =>
 function rowOf(m: RosterMember, week: string[], s: Signals): MemberRow {
   const newest = s.reads.at(-1) as RosterRead;
   const donations = weekDonations(s.reads, week, m.uid);
-  const idle = idleRun(s.reads, m.uid);
+  const isNew = isNewMember(s.firstSeen.get(m.uid), s.oldest, newest.day);
+  // D127: a new member never gets the offline signal.
+  const idle = isNew ? null : idleRun(s.reads, m.uid);
   const flat = s.unchanged.get(m.uid);
   const part = factsPart(m.uid, s);
   // D75: a member away is left out of every comparison, so never a reason to check in.
@@ -168,6 +173,7 @@ function rowOf(m: RosterMember, week: string[], s: Signals): MemberRow {
   return {
     ...plainRow(m, week, s.firstSeen),
     activity: m.active,
+    noQuestsOn: m.active === null ? newest.day : null,
     honor: m.dailyHonor,
     donations,
     weekTotal: weekTotal(donations),
@@ -176,7 +182,7 @@ function rowOf(m: RosterMember, week: string[], s: Signals): MemberRow {
     mapX: m.x,
     mapY: m.y,
     duel: s.duel.get(m.uid) ?? {},
-    isNew: isNewMember(s.firstSeen.get(m.uid), s.oldest, newest.day),
+    isNew,
     reasons,
     missing: missing.fields,
     missingDays: missing.days,
@@ -196,6 +202,7 @@ function plainRow(m: RosterMember, week: string[], firstSeen: Map<number, string
     kills: m.kills,
     sanctuary: m.lv,
     activity: null,
+    noQuestsOn: null,
     honor: null,
     donations: week.map(() => null),
     weekTotal: null,

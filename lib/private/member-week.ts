@@ -108,9 +108,12 @@ export function isNewMember(
   return dayMs(newest) - dayMs(firstSeen) < NEW_MEMBER_DAYS * DAY_MS;
 }
 
-export type MissingField = "might" | "sanctuary" | "activity" | "donations";
+export type MissingField = "might" | "sanctuary" | "donations";
 
-/** What the newest read did not tell about a member, and the days of the week so far with no donations. */
+/**
+ * What the newest read did not tell about a member, and the days of the week so far with no donations.
+ * A null `active` is not missing (D127): the read lists the member, so it is no daily quests that day.
+ */
 export function missingOf(
   m: RosterMember,
   days: DayValue[],
@@ -119,7 +122,6 @@ export function missingOf(
   const fields: MissingField[] = [];
   if (m.power === null) fields.push("might");
   if (m.lv === null) fields.push("sanctuary");
-  if (m.active === null) fields.push("activity");
   if (noDays > 0) fields.push("donations");
   return { fields, days: noDays };
 }

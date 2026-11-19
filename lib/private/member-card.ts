@@ -129,8 +129,12 @@ export function statusParts(m: MemberRow, t: WorkspaceDictionary, f: Formats) {
     return { status, label: t["members.new"], lines: seen };
   }
   const label = status === "nodata" ? missingText(m, t, f) : t["status.fine"];
-  return { status, label, lines: [] };
+  return { status, label, lines: noQuestsLine(m, t, f) };
 }
+
+/** D127: no daily quests on a read that lists the member is a fact of that day, never missing data. */
+const noQuestsLine = (m: MemberRow, t: WorkspaceDictionary, f: Formats) =>
+  m.noQuestsOn ? [fill(t["members.noQuests"], { day: f.date(m.noQuestsOn) })] : [];
 
 /** Rows empty for the whole alliance (Joined and Last online, sent as null since 2026-11-16) are left out. */
 export interface Shown {

@@ -20,6 +20,7 @@ const member = (over: Partial<ListSource> = {}): ListSource => ({
   kills: null,
   sanctuary: 29,
   activity: 214,
+  noQuestsOn: null,
   honor: 300,
   donations: [5150, "later", "later", "later", "later", "later", "later"],
   weekTotal: 5150,
@@ -67,5 +68,10 @@ describe("a list row", () => {
     expect(listRow(member(), t, f).statusLine).toBe("");
     const checkin = listRow(member({ reasons: [{ kind: "might", days: 9 }] }), t, f);
     expect(checkin.statusLine).toBe("Check in · might unchanged for 9 days");
+  });
+
+  it("says a day with no daily quests as a fact of that day, not as missing data (D127)", () => {
+    const row = listRow(member({ activity: null, noQuestsOn: "2026-11-16" }), t, f);
+    expect([row.status, row.statusLine]).toEqual(["fine", "No daily quests on Mon, Nov 16"]);
   });
 });

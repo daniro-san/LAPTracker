@@ -100,7 +100,7 @@ export const fr: WorkspaceDictionary = {
   "members.nodata": "Pas de données : {list}",
   "nodata.might": "might",
   "nodata.sanctuary": "Sanctuary",
-  "nodata.activity": "points de quêtes du jour",
+  "members.noQuests": "Pas de quêtes du jour le {day}",
   "status.fine": "Bien",
   "status.checkin": "À contacter",
   "reason.kvk": "aucun kill gagné en Kingdom War (KvK) le {date}",
