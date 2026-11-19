@@ -67,7 +67,16 @@ export const actionBody = z.discriminatedUnion("action", [
         .object({
           victimUid: uid.nullable(),
           entries: z
-            .array(z.object({ row: z.number().int().min(0), name: z.string().max(64) }).strict())
+            .array(
+              z
+                .object({
+                  row: z.number().int().min(0),
+                  name: z.string().max(64),
+                  // What was taken, typed from the report's pictures of the items (D97).
+                  items: z.string().max(200).optional(),
+                })
+                .strict(),
+            )
             .max(200),
         })
         .strict()

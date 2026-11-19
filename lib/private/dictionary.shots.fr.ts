@@ -134,6 +134,7 @@ export const shotsFr: ShotsWords = {
   "shots.victim": "À qui est ce rapport ?",
   "shots.victimHelp": "Le rapport ne le dit pas. Choisissez le membre qui a été volé.",
   "shots.attacker": "Attaquant",
+  "shots.items": "Ce qui a été pris (facultatif, d’après les images du rapport)",
   "shots.entry.theft": "a volé des récompenses de quête",
   "shots.entry.help": "a aidé (pas enregistré)",
   "shots.entry.unknown": "phrase illisible",

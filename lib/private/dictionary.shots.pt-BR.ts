@@ -127,6 +127,7 @@ export const shotsPt: ShotsWords = {
   "shots.victim": "De quem é o relatório?",
   "shots.victimHelp": "O relatório não diz. Escolha o membro que foi roubado.",
   "shots.attacker": "Atacante",
+  "shots.items": "O que foi levado (opcional, pelas imagens do relatório)",
   "shots.entry.theft": "roubou recompensas de missão",
   "shots.entry.help": "ajudou (não é salvo)",
   "shots.entry.unknown": "frase ilegível",

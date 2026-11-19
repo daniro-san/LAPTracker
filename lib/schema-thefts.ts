@@ -3,10 +3,12 @@
 import { sql } from "drizzle-orm";
 import {
   bigint,
+  boolean,
   check,
   index,
   integer,
   pgTable,
+  primaryKey,
   serial,
   text,
   timestamp,
@@ -37,12 +39,20 @@ export const thefts = pgTable(
     attackerName: text("attacker_name").notNull(),
     /** The attacker's alliance tag; "" when not known. */
     attackerTag: text("attacker_tag").notNull(),
+    /**
+     * The attacker is a player of a tracked alliance, picked by an officer or matched exactly on a screenshot
+     * (the current name and the same tag), so on our server unless an officer says otherwise (D97, amended
+     * 2026-11-19). A fuzzy or tagless match leaves it false.
+     */
+    rosterExact: boolean("roster_exact").notNull().default(false),
     /** The theft's type (D97, amended 2026-11-17); null on rows saved before the type was asked. */
     kind: text("kind", { enum: ["tile_hit", "ops", "caravan", "sanctuary"] }),
     /** The member it was taken from, in the workspace's own alliance; null when not known. */
     victimUid: big("victim_uid"),
     victimName: text("victim_name"),
     source: text("source", { enum: ["photo", "typed"] }).notNull(),
+    /** What was taken, as the officer wrote it from the report (D97, amended 2026-11-19); null when not given. */
+    items: text("items"),
     note: text("note"),
     createdBy: integer("created_by").references(() => workspaceUsers.id, { onDelete: "set null" }),
     createdAt: tstz("created_at").notNull(),
@@ -69,7 +79,8 @@ export const thefts = pgTable(
 );
 
 /**
- * "To follow up", per attacker (issue 321): every change an officer makes is a row (who and when), and the
+ * "To follow up", per attacker (issue 321), in steps: open, warned, talked, retaliated, resolved (D97,
+ * amended 2026-11-19). Every change an officer makes is a row (who and when), and the
  * newest row of an attacker is its state. No row means open.
  */
 export const theftFollowUps = pgTable(
@@ -80,13 +91,40 @@ export const theftFollowUps = pgTable(
       .notNull()
       .references(() => workspaces.id, { onDelete: "cascade" }),
     attackerKey: text("attacker_key").notNull(),
-    state: text("state", { enum: ["open", "talked", "resolved"] }).notNull(),
+    state: text("state", {
+      enum: ["open", "warned", "talked", "retaliated", "resolved"],
+    }).notNull(),
     note: text("note"),
     changedBy: integer("changed_by").references(() => workspaceUsers.id, { onDelete: "set null" }),
     changedAt: tstz("changed_at").notNull(),
+    /** The step's request id (D100): a retry of the same step finds this row instead of adding a second. */
+    requestId: text("request_id"),
   },
   (t) => [
     index("theft_follow_ups_workspace_attacker_idx").on(t.workspaceId, t.attackerKey, t.id),
-    check("theft_follow_ups_state_check", sql`${t.state} in ('open', 'talked', 'resolved')`),
+    uniqueIndex("theft_follow_ups_request_unique").on(t.workspaceId, t.requestId),
+    check(
+      "theft_follow_ups_state_check",
+      sql`${t.state} in ('open', 'warned', 'talked', 'retaliated', 'resolved')`,
+    ),
   ],
+);
+
+/**
+ * An attacker's server as an officer set it (D97, amended 2026-11-19), one row per attacker, apart from the
+ * entries so a deleted and restored entry cannot change it. `server` null: an officer said "not known".
+ * No row: nothing set, and the server is inferred from an exact roster match, if any.
+ */
+export const theftAttackers = pgTable(
+  "theft_attackers",
+  {
+    workspaceId: integer("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    attackerKey: text("attacker_key").notNull(),
+    server: integer("server"),
+    setBy: integer("set_by").references(() => workspaceUsers.id, { onDelete: "set null" }),
+    setAt: tstz("set_at").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.workspaceId, t.attackerKey] })],
 );

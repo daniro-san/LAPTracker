@@ -23,8 +23,10 @@ export function TheftsBoard(props: {
   roster: { uid: number; name: string }[];
   start: { day: string; time: string };
   serverZone: string;
+  /** Our server's number, for the server field's hint. */
+  server: number;
 }) {
-  const { alliances, ...form } = props;
+  const { alliances, server, ...form } = props;
   const { t, slug } = props;
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -80,6 +82,7 @@ export function TheftsBoard(props: {
           slug={slug}
           t={t}
           language={props.language}
+          server={server}
           onDeleted={(id, requestId, key) => setDeleted({ id, requestId, key })}
           undo={line && deleted && inCard ? { key: deleted.key, line } : null}
         />

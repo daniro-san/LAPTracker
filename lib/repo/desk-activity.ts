@@ -2,16 +2,16 @@
 // what officers did, read from the histories the desk already keeps. Five reads at once, each returning at
 // most the newest `n` actions per source since `from` and before a page's cursor; lib/private merges them.
 // Only who, when and which thing: never a member field's value, a follow-up note or a theft's note or people.
-import { and, desc, eq, gt, gte, isNotNull, isNull, lt, ne, sql } from "drizzle-orm";
+import { and, desc, eq, gt, gte, isNotNull, lt, ne, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { memberFacts, workspaceSessions, workspaceUsers } from "../schema";
-import { thefts } from "../schema-thefts";
 import { callParts, callRows, type CallKind, type CallRows } from "./desk-activity-calls";
 import * as garrison from "./desk-activity-garrison";
 import * as picture from "./desk-activity-pictures";
 import { reviewParts, reviewRows, type ReviewKind, type ReviewRows } from "./desk-activity-reviews";
 import { thanksParts, type ThanksDone } from "./desk-activity-thanks";
+import * as theftLog from "./desk-activity-thefts";
 import { trashParts, trashRows, type TrashKind, type TrashRows } from "./desk-activity-trash";
 
 /** The officers, other than `me`, whose desk session was seen since `since` and is still open. */
@@ -68,13 +68,15 @@ export type EntryDone = Done & {
 export type MarksDone = Done & { kind: string; variant: string | null; rest: boolean };
 /** A follow-up record: the choice and, for a break, the last day away; never the note. */
 export type FollowUpDone = Done & {
+  kind: "followUp";
   uid: number;
   action: "talked" | "break" | "help" | "fine";
   until: string | null;
 };
-export type TheftsDone = Done & { count: number };
+export type TheftsDone = Done & { kind: "thefts"; count: number };
 export type NewMemberDone = Done & { name: string };
-export interface ActivityRows extends ReviewRows, TrashRows, picture.Rows, CallRows, garrison.Rows {
+export interface ActivityRows
+  extends ReviewRows, TrashRows, picture.Rows, CallRows, garrison.Rows, theftLog.Rows {
   facts: FactsDone[];
   noticeSaves: NoticeDone[];
   noticePosts: NoticeDone[];
@@ -118,7 +120,15 @@ type OwnKind = "noticeSaved" | "noticePosted" | "draft" | "entry" | "newMember" 
 
 /** One row of the small sources' read; the columns each kind does not use are null. */
 type SmallRow = {
-  kind: OwnKind | ReviewKind | TrashKind | picture.Kind | CallKind | garrison.Kind | "thanks";
+  kind:
+    | OwnKind
+    | ReviewKind
+    | TrashKind
+    | picture.Kind
+    | CallKind
+    | garrison.Kind
+    | theftLog.Kind
+    | "thanks";
   by: number | string;
   at: Date | string;
   notice_id: number | null;
@@ -133,7 +143,7 @@ type SmallRow = {
  * The small sources in one read (one connection): notice saves (one per save of any number of fields),
  * notice posts, notices deleted and restored from the trash (D118; an undone delete is not one), Calendar entries, thefts and new members deleted (D123), saved drafts, calendar entries added, new members added by hand, and follow-up records
  * (not `withdrawn`, and not one an Undo cancelled), notice review requests and their outcomes (D113), and
- * the weekly thanks shared or taken down (D114), notice pictures added (D119), and roll calls deleted or archived (D120). Each part is its own newest `n` since `from`; `n` bounds
+ * the weekly thanks shared or taken down (D114), notice pictures added (D119), roll calls deleted or archived (D120), and the thefts log's steps (D97). Each part is its own newest `n` since `from`; `n` bounds
  * the rows returned, not the rows a part scans. A deleted entry or new member has no "added" line.
  */
 async function smallSources(
@@ -189,7 +199,8 @@ async function smallSources(
     ${trashParts(ws, since, before, n)}
     ${picture.parts(ws, since, before, n)}
     ${callParts(ws, since, before, n)}
-    ${garrison.parts(ws, since, before, n)}`);
+    ${garrison.parts(ws, since, before, n)}
+    ${theftLog.parts(ws, since, before, n)}`);
   return result.rows;
 }
 
@@ -264,25 +275,6 @@ async function marksWritten(
   return result.rows.map((r) => ({ ...r, by: Number(r.by), at: new Date(r.at) }));
 }
 
-function theftsAdded(db: Db, ws: number, [from, before]: Span, n: number) {
-  const t = thefts;
-  return db
-    .select({ by: t.createdBy, at: t.createdAt, count: sql<number>`count(*)`.mapWith(Number) })
-    .from(t)
-    .where(
-      and(
-        eq(t.workspaceId, ws),
-        isNull(t.deletedAt),
-        isNotNull(t.createdBy),
-        gte(t.createdAt, from),
-        lt(t.createdAt, sql`${before}::timestamptz`),
-      ),
-    )
-    .groupBy(t.createdBy, t.createdAt)
-    .orderBy(desc(t.createdAt))
-    .limit(n);
-}
-
 /** Splits the small sources' rows by kind, typed. */
 function split(rows: SmallRow[]) {
   const of = <K extends SmallRow["kind"]>(kind: K) =>
@@ -314,6 +306,7 @@ function split(rows: SmallRow[]) {
     newMembers: of("newMember").map(({ by, at, title }) => ({ by, at, name: title ?? "" })),
     ...reviewRows(of("reviewAsked"), of("reviewAnswered")),
     followUps: of("followUp").map(({ by, at, a, b, uid }) => ({
+      kind: "followUp" as const,
       by,
       at,
       uid: Number(uid),
@@ -323,6 +316,7 @@ function split(rows: SmallRow[]) {
     thanks: of("thanks").map(({ by, at, a }) => ({ by, at, target: a as ThanksDone["target"] })),
     ...callRows(of),
     ...garrison.rows(of),
+    ...theftLog.rows(of),
   };
 }
 
@@ -345,7 +339,7 @@ export async function activityRows(
     smallSources(...args),
     entriesEdited(...args),
     marksWritten(...args),
-    theftsAdded(...args),
+    theftLog.added(...args),
   ]);
   return { ...split(small), facts: known(facts), entryEdits: edits, marks, thefts: known(stolen) };
 }

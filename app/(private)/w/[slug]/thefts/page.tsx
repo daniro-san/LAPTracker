@@ -5,6 +5,7 @@
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 
+import { SERVER } from "@/config/alliances";
 import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
 import { requireWorkspace } from "@/lib/private/access";
@@ -86,7 +87,8 @@ export default async function TheftsPage({ params }: { params: Promise<{ slug: s
         slug={slug}
         t={words}
         language={language}
-        alliances={theftCards(view.groups, words, f)}
+        alliances={theftCards(view.groups, words, f, { tag: view.ownTag, zone })}
+        server={SERVER}
         roster={view.roster}
         start={{ day: f.day(now), time: f.hhmm(now) }}
         serverZone={zone}

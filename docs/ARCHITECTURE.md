@@ -83,8 +83,9 @@ lib/private/*.ts    the workspace (D71): requireWorkspace and its branded Worksp
                     dictionary.board.ts; its table in lib/schema-board.ts, read and written in lib/repo/start-here.ts.
                     The thefts log (D97): thefts.ts (its read and writes, the attacker search), theft-groups.ts
                     (pure: attacker key, groups and counts, follow-up state), thefts-import.ts (the screenshot
-                    import's save hook for Secret Ops reports), dictionary.thefts.ts (its words); tables in
-                    lib/schema-thefts.ts, reads and writes in lib/repo/thefts.ts.
+                    import's save hook for Secret Ops reports), theft-warning.ts (pure: the warning to paste,
+                    in en/pt/fr), dictionary.thefts.ts (its words); tables in lib/schema-thefts.ts, reads and
+                    writes in lib/repo/thefts.ts; a tracked alliance's leader from lib/queries/leadership.ts.
                     The Follow-up tab (D104): follow-up.ts (the week's list from membersView and theftsView,
                     and the officers' records, with On a break and Needs help through member facts),
                     follow-up-rules.ts (pure: who is on the list, resolved for the week, the history line),

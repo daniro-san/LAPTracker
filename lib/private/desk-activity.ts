@@ -62,6 +62,8 @@ type What =
   /** A garrison plan saved or posted (D121), never folded into another line. */
   | Omit<ActivityRows["garrisonSaves"][number], "by" | "at">
   | DeleteLine
+  /** A step set on an attacker of the thefts log (D97), never folded into another line. */
+  | Omit<ActivityRows["theftSteps"][number], "by" | "at">
   | ({ kind: "followUp" } & Pick<FollowUpDone, "uid" | "action" | "until">)
   | { kind: "thefts"; count: number }
   | { kind: "newMember"; names: string[] }
@@ -254,8 +256,7 @@ function merge(rows: ActivityRows, after: number | null): Raw[] {
     })),
     ...[rows.callDeletes, rows.callArchives, rows.garrisonSaves, rows.garrisonPosts].flat(),
     ...[rows.entryDeletes, rows.theftDeletes, rows.newMemberDeletes].flat(),
-    ...rows.followUps.map((r) => ({ ...r, kind: "followUp" as const })),
-    ...rows.thefts.map((r) => ({ ...r, kind: "thefts" as const })),
+    ...[rows.followUps, rows.thefts, rows.theftSteps].flat(),
     ...rows.newMembers.map(({ by, at, name }) => ({
       by,
       at,

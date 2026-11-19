@@ -19,6 +19,8 @@ import { DraftHeader, type ReviewText } from "./DraftHeader";
 
 interface Entry {
   name: string;
+  /** What was taken, typed from the report's item pictures, which the OCR cannot read (D97). */
+  items: string;
   dropped: boolean;
 }
 
@@ -50,18 +52,31 @@ function EntryCard(props: {
         {at && ` · ${fillIn(w["shots.at"], { at })}`}
       </p>
       {!entry.dropped && kind !== "help" && (
-        <label className="mt-1 block text-body-sm" htmlFor={`entry-${props.i}`}>
-          {w["shots.attacker"]}
-          <input
-            id={`entry-${props.i}`}
-            value={entry.name}
-            maxLength={64}
-            translate="no"
-            disabled={props.readOnly}
-            onChange={(e) => props.onChange({ ...entry, name: e.target.value })}
-            className={`${FIELD} mt-1 block`}
-          />
-        </label>
+        <>
+          <label className="mt-1 block text-body-sm" htmlFor={`entry-${props.i}`}>
+            {w["shots.attacker"]}
+            <input
+              id={`entry-${props.i}`}
+              value={entry.name}
+              maxLength={64}
+              translate="no"
+              disabled={props.readOnly}
+              onChange={(e) => props.onChange({ ...entry, name: e.target.value })}
+              className={`${FIELD} mt-1 block`}
+            />
+          </label>
+          <label className="mt-2 block text-body-sm" htmlFor={`items-${props.i}`}>
+            {w["shots.items"]}
+            <input
+              id={`items-${props.i}`}
+              value={entry.items}
+              maxLength={200}
+              disabled={props.readOnly}
+              onChange={(e) => props.onChange({ ...entry, items: e.target.value })}
+              className={`${FIELD} mt-1 block`}
+            />
+          </label>
+        </>
       )}
       {!props.readOnly && kind !== "help" && (
         <button
@@ -162,15 +177,18 @@ export function SecretOpsReview(props: {
   const router = useRouter();
   const [victim, setVictim] = useState<number | null>(view.victim);
   const [entries, setEntries] = useState<Entry[]>(
-    view.rows.map((r) => ({ name: r.name, dropped: false })),
+    view.rows.map((r) => ({ name: r.name, items: "", dropped: false })),
   );
   const [saved, setSaved] = useState<Saved | null>(null);
   const { busy, message, act } = useDraftActions(slug, view, w);
   const readOnly = view.status !== "open" || !view.canSave || saved !== null;
-  const kept = entries.flatMap((e, row) => (e.dropped ? [] : [{ row, name: e.name.trim() }]));
+  const kept = entries.flatMap((e, row) =>
+    e.dropped ? [] : [{ row, name: e.name.trim(), items: e.items.trim() }],
+  );
   const why = whyNot(view, victim, kept, w);
   const touched =
-    victim !== view.victim || entries.some((e, i) => e.dropped || e.name !== view.rows[i]?.name);
+    victim !== view.victim ||
+    entries.some((e, i) => e.dropped || e.items !== "" || e.name !== view.rows[i]?.name);
 
   async function save() {
     const report = { victimUid: victim, entries: kept };

@@ -1,9 +1,10 @@
 "use client";
 
-// The thefts log's list (issue 321): one section per attacker alliance, one card per attacker with this
-// week's and all-time counts and the state of the talks with their alliance; a card opens to the members
-// it was taken from (by name, D75: only inside an attacker's card), the talks with their history, and each
-// entry. Nothing is hover-only; every control is 44 px or more.
+// The thefts log's list (issue 321): one section per attacker alliance (with whom to contact when it is a
+// tracked alliance of our server), one card per attacker with this week's and all-time counts, their
+// server and the step we are at; a card opens to the members it was taken from (by name, D75: only inside
+// an attacker's card), the steps with their history, the attacker's server, the warning to paste for a
+// player of our server, and each entry. Nothing is hover-only; every control is 44 px or more.
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent, type ReactNode } from "react";
 
@@ -15,14 +16,18 @@ import type { WorkspaceLanguage } from "@/lib/private/dictionary";
 import { FOLLOW_UP_STATES, type FollowUpState } from "@/lib/private/theft-groups";
 
 import { DeleteButton } from "./DeleteRecord";
+import { newRequestId } from "./request-id";
 import { SIGNED_OUT, SignedOutNote } from "./SignedOut";
 import { postTheft, viewerClock } from "./theft-client";
 import type { AllianceCard, AttackerCard, EntryCard, TheftWords } from "./theft-data";
+import { ServerForm, Warning } from "./TheftAttackerTools";
 import { TimePair, useViewerZone } from "./YourTime";
 
 const STATE_TONE = {
   open: "attention",
+  warned: "progress",
   talked: "progress",
+  retaliated: "progress",
   resolved: "neutral",
 } as const satisfies Record<FollowUpState, string>;
 
@@ -30,6 +35,8 @@ type Shared = {
   slug: string;
   t: TheftWords;
   language: WorkspaceLanguage;
+  /** Our server's number, for the server field's hint. */
+  server: number;
   /** After this officer's delete (D123): the page offers Undo, in the attacker's card (`key`). */
   onDeleted: (id: number, requestId: string, key: string) => void;
   /** "Theft deleted." with Undo, drawn in the card of the attacker `key`. */
@@ -68,14 +75,24 @@ function FollowUpForm({ card, slug, t }: Shared & { card: AttackerCard }) {
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [said, setSaid] = useState("");
+  // D100: one request id per step until it is stored, so a retry after a lost answer adds nothing.
+  const [requestId, setRequestId] = useState(newRequestId);
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setBusy(true);
-    const r = await postTheft(slug, { action: "follow", attacker: card.key, state, note });
+    const body = { action: "follow", attacker: card.key, state, note, requestId };
+    const r = await postTheft(slug, { ...body, expected: card.lastId });
     setBusy(false);
-    setSaid(r === "ok" ? t["thefts.saved"] : r === SIGNED_OUT ? SIGNED_OUT : t["thefts.e.failed"]);
-    if (r === "ok") {
-      setNote("");
+    const words = {
+      ok: t["thefts.saved"],
+      conflict: t["thefts.e.conflict"],
+      [SIGNED_OUT]: SIGNED_OUT,
+    };
+    setSaid(words[r as keyof typeof words] ?? t["thefts.e.failed"]);
+    // Stored, or another officer's step came first (the page now shows theirs): the next save is a new step.
+    if (r === "ok" || r === "conflict") {
+      if (r === "ok") setNote("");
+      setRequestId(newRequestId());
       router.refresh();
     }
   };
@@ -157,6 +174,7 @@ function Entry(props: Shared & { entry: EntryCard; attacker: string }) {
       <p>{what}</p>
       {/* "Typed by an officer" is the default and says nothing; a photo is a plain word. */}
       {entry.source === "photo" && <p className="mt-1 text-[12px] text-ink/70">{t["src.photo"]}</p>}
+      {entry.items && <p className="mt-1 text-body-sm">{entry.items}</p>}
       {entry.note && <p className="mt-1 text-body-sm">{entry.note}</p>}
       <div className="mt-1">
         <DeleteButton
@@ -197,6 +215,13 @@ function Attacker({ card, ...shared }: Shared & { card: AttackerCard }) {
           <StateBadge card={card} />
         </span>
         <span className="text-body-sm tabular-nums">{card.counts}</span>
+        {card.server.same ? (
+          <span>
+            <Tag tone="attention">{card.server.text}</Tag>
+          </span>
+        ) : (
+          <span className="text-body-sm text-ink/75">{card.server.text}</span>
+        )}
         <span className="text-body-sm font-semibold text-plum underline underline-offset-4">
           {t["thefts.details"]} ▾
         </span>
@@ -214,6 +239,10 @@ function Attacker({ card, ...shared }: Shared & { card: AttackerCard }) {
           </p>
         )}
         <FollowUpForm card={card} {...shared} />
+        {card.warnings && (
+          <Warning warnings={card.warnings} t={t} language={shared.language} id={card.key} />
+        )}
+        <ServerForm card={card} slug={shared.slug} t={t} server={shared.server} />
         <ol className="mt-3">
           {card.entries.map((e) => (
             <Entry key={e.id} entry={e} attacker={card.key} {...shared} />
@@ -235,6 +264,17 @@ export function TheftCards({ alliances, ...shared }: Shared & { alliances: Allia
             {a.tag}
           </h2>
           <p className="text-body-sm tabular-nums text-ink/80">{a.counts}</p>
+          {a.contact && (
+            <p className="text-body-sm">
+              {a.contact.line}{" "}
+              <a
+                href={a.contact.href}
+                className="inline-flex min-h-11 items-center font-semibold text-plum underline underline-offset-4"
+              >
+                {a.contact.link}
+              </a>
+            </p>
+          )}
           <ul className="mt-2 grid gap-2 sm:grid-cols-2">
             {a.attackers.map((card) => (
               // The Follow-up tab links each open attacker here (issue 340).

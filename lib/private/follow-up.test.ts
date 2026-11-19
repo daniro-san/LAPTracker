@@ -6,6 +6,7 @@ import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
 import { findWorkspaceBySlug, recordSignIn, saveWorkspace } from "../repo/workspaces";
 import { dailyReads, dailyRosters, memberFollowUps } from "../schema";
+import { theftFollowUps, thefts } from "../schema-thefts";
 import { requireWorkspace, type WorkspaceAccess } from "./access";
 import { WORKSPACE_DICTIONARIES } from "./dictionary";
 import {
@@ -204,5 +205,50 @@ describe("the Follow-up list (issue 340, D104)", () => {
     // A second undo of the same record finds nothing to withdraw.
     const again = { ...undo, requestId: randomUUID() };
     expect(await undoFollowUp(db, ana, again, CLOCK)).toEqual({ ok: false, code: "not_found" });
+  });
+});
+
+describe("thefts on the Follow-up list (D104, amended 2026-11-19)", () => {
+  it("lists every attacker at any step until Resolved", async () => {
+    const ana = await signedIn("Ana");
+    const at = new Date("2026-11-18T12:00:00Z");
+    const theft = (name: string) => ({
+      workspaceId: ana.workspaceId,
+      at,
+      attackerKey: `name:${name.toLowerCase()}`,
+      attackerName: name,
+      attackerTag: "QRX",
+      kind: "ops" as const,
+      source: "typed" as const,
+      createdAt: at,
+    });
+    // Thornwick's only theft was deleted (D123): it is not on the list, whatever its step.
+    await db
+      .insert(thefts)
+      .values([
+        theft("Pebblewick"),
+        theft("Fernby"),
+        theft("Ashlock"),
+        { ...theft("Thornwick"), deletedAt: NOW, deletedBy: ana.user.id },
+      ]);
+    const step = (key: string, state: "warned" | "resolved") => ({
+      workspaceId: ana.workspaceId,
+      attackerKey: key,
+      state,
+      changedBy: ana.user.id,
+      changedAt: NOW,
+    });
+    await db
+      .insert(theftFollowUps)
+      .values([
+        step("name:fernby", "warned"),
+        step("name:ashlock", "resolved"),
+        step("name:thornwick", "warned"),
+      ]);
+    const listedThefts = (await followUpView(db, ana, NOW, CLOCK.zone)).thefts;
+    expect(listedThefts.map((a) => [a.name, a.followUp.state]).sort()).toEqual([
+      ["Fernby", "warned"],
+      ["Pebblewick", "open"],
+    ]);
   });
 });

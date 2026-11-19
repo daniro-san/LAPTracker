@@ -5,77 +5,23 @@ import { PGlite } from "@electric-sql/pglite";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import type { Db } from "../db";
-import { openTestDb, truncateAll } from "../db.test-helpers";
+import { openTestDb } from "../db.test-helpers";
 import { listThefts } from "../repo/thefts";
-import { findWorkspaceBySlug, recordSignIn, saveWorkspace } from "../repo/workspaces";
-import { dailyReads, dailyRosters } from "../schema";
 import { parseSecretOpsReport } from "../screenshot/parse-secret-ops";
-import { requireWorkspace, type WorkspaceAccess } from "./access";
-import { createSession } from "./session";
+import type { WorkspaceAccess } from "./access";
 import { addTheft, findAttackers, removeTheft, setFollowUp, theftsView } from "./thefts";
 import { reportInstant, saveSecretOpsDraft } from "./thefts-import";
-
-const OGS = 67111155;
-const NSE = 67109944;
-const URSA = 67110320;
-/** A tracked alliance (TmS's id) whose newest roster reads RPD, the tag the committed report (image 54) names. */
-const RPD = 67110584;
-const NOW = new Date("2026-11-16T12:00:00Z");
-const CLOCK = { now: NOW, zone: "Etc/GMT+2" };
+import { CLOCK, NOW, seedThefts, signedIn as signIn, typed } from "./thefts.test-helpers";
 
 let db: Db;
 beforeAll(async () => {
   db = await openTestDb();
 });
 beforeEach(async () => {
-  await truncateAll(db);
-  await saveWorkspace(db, { unionId: OGS, slug: "ogs", discordGuildId: "1", leaderRoleIds: ["2"] });
-  await saveWorkspace(db, { unionId: NSE, slug: "nse", discordGuildId: "3", leaderRoleIds: ["4"] });
-  await roster(OGS, "OGs", "2026-11-15", { 11: "Seesky", 12: "DoctorHouse1387", 13: "Grimbald" });
-  await roster(NSE, "NSE", "2026-11-14", { 21: "Grimm", 22: "Gremlin" });
-  await roster(NSE, "NSE", "2026-11-15", { 21: "Grimmer", 22: "Gremlin" });
-  await roster(URSA, "URSA", "2026-11-15", { 31: "Agrim" });
-  await roster(RPD, "RPD", "2026-11-15", { 41: "Golgsunny" });
+  await seedThefts(db);
 });
 
-/** One alliance's daily roster: uid → name (D60). */
-async function roster(unionId: number, tag: string, day: string, names: Record<number, string>) {
-  const uids = Object.keys(names).map(Number);
-  await db
-    .insert(dailyReads)
-    .values({ day, startedAt: NOW, status: "complete" })
-    .onConflictDoNothing();
-  await db.insert(dailyRosters).values({
-    readDay: day,
-    unionId,
-    tag,
-    memberCount: uids.length,
-    isFresh: true,
-    memberUids: uids,
-    memberNames: uids.map((u) => names[u] ?? ""),
-    memberPower: uids.map(() => 1000),
-    memberKills: uids.map(() => 0),
-  });
-}
-
-async function signedIn(slug: string): Promise<WorkspaceAccess> {
-  const ws = await findWorkspaceBySlug(db, slug);
-  const userId = await recordSignIn(db, ws?.id ?? 0, `officer-${slug}`, "Ana", NOW);
-  const { token } = await createSession(db, ws?.id ?? 0, userId, NOW, null, "officer");
-  const access = await requireWorkspace(db, slug, { get: () => ({ value: token }) }, NOW);
-  if (!access.ok) throw new Error(`no access to ${slug}`);
-  return access;
-}
-
-const typed = (attacker: { uid: number } | { name: string; tag: string }, victimUid: number) => ({
-  attacker,
-  victimUid,
-  day: "2026-11-15",
-  time: "13:46",
-  kind: "caravan" as const,
-  note: "",
-  requestId: randomUUID(),
-});
+const signedIn = (slug: string): Promise<WorkspaceAccess> => signIn(db, slug);
 
 describe("the attacker search (issue 321)", () => {
   it("finds players of the other tracked alliances by their newest names, exact first", async () => {
@@ -209,7 +155,13 @@ describe("thefts between two workspaces (D71)", () => {
     expect(await removeTheft(db, nse, { id: row?.id ?? 0, requestId: randomUUID() }, NOW)).toBe(
       "not_found",
     );
-    const follow = { attacker: "uid:21", state: "talked" as const, note: "" };
+    const follow = {
+      attacker: "uid:21",
+      state: "talked" as const,
+      note: "",
+      requestId: randomUUID(),
+      expected: null,
+    };
     expect(await setFollowUp(db, nse, follow, NOW)).toBe("not_found");
     expect(await setFollowUp(db, ogs, follow, NOW)).toBe("ok");
     const [group] = (await theftsView(db, ogs, CLOCK)).groups;

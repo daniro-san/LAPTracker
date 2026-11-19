@@ -330,6 +330,13 @@
       "when": 1795095563826,
       "tag": "0046_record_delete",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1795116740464,
+      "tag": "0047_theft_steps_server",
+      "breakpoints": true
     }
   ]
 }

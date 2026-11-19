@@ -2,15 +2,21 @@
 // grouped by the attacker's alliance and by attacker, with "to follow up" per attacker. The
 // attackers are looked up in the public read model of the tracked alliances' rosters (names and tags only);
 // the victims in the workspace's own alliance (D71: union_id = access.unionId). Nothing here is logged.
+import { ALLIANCES, SERVER } from "../../config/alliances";
 import type { Db } from "../db";
+import { leaderNames } from "../queries/leadership";
 import { serverPlayers } from "../queries/server-players";
 import {
+  attackerServers,
+  followUpRequested,
   hasAttacker,
   insertFollowUp,
   insertRequestedTheft,
+  latestFollowUpId,
   listFollowUps,
   listThefts,
   noTwin,
+  setAttackerServer,
   theftRequested,
 } from "../repo/thefts";
 import { softDelete, undoDelete } from "../repo/trash";
@@ -85,8 +91,19 @@ export async function findAttackers(
     .map(({ p }) => ({ uid: p.uid, name: p.name, tag: p.tag }));
 }
 
+/** Whom to contact about an alliance of our server that we track: its public page and its leader. */
+export interface Contact {
+  unionId: number;
+  name: string;
+  /** The R5 of the alliance's newest public read with ranks (of the last 4 events), and that read's time. */
+  leader: { name: string; at: Date } | null;
+}
+
 export interface TheftsView {
-  groups: AllianceGroup[];
+  /** `contact` only for a tracked alliance with an attacker on our server. */
+  groups: (AllianceGroup & { contact: Contact | null })[];
+  /** The workspace's own alliance tag, for the warning message. */
+  ownTag: string;
   /** The game week now is in (Monday 00:00 to the next Monday, server time). */
   week: { from: Date; to: Date };
   /** The alliance's newest roster, for the victim picker. */
@@ -104,10 +121,11 @@ export async function theftsView(
     from: serverInstant(days[0] as string, "00:00", cfg),
     to: serverInstant(nextDay(days[6] as string), "00:00", cfg),
   };
-  const [rows, changes, roster] = await Promise.all([
+  const [rows, changes, roster, servers] = await Promise.all([
     listThefts(db, access.workspaceId),
     listFollowUps(db, access.workspaceId),
     latestRoster(db, access.unionId),
+    attackerServers(db, access.workspaceId),
   ]);
   const entries: TheftEntry[] = rows.map((r) => ({
     id: r.id,
@@ -115,14 +133,34 @@ export async function theftsView(
     attackerKey: r.attackerKey,
     attackerName: r.attackerName,
     attackerTag: r.attackerTag,
+    rosterExact: r.rosterExact,
     kind: r.kind,
     victimUid: r.victimUid,
     victimName: r.victimName,
     source: r.source,
+    items: r.items,
     note: r.note,
   }));
+  const groups = groupThefts(entries, changes, week, servers);
+  // A tracked alliance (never our own) is one to contact when one of its attackers is on our server and
+  // carries its tag exactly: tags are case-sensitive and not unique (config/alliances.ts).
+  const trackedOf = (g: AllianceGroup) =>
+    ALLIANCES.find(
+      (t) =>
+        t.unionId !== access.unionId &&
+        g.attackers.some((a) => a.server === SERVER && a.tag === t.tag),
+    );
+  const leaders = await leaderNames(
+    db,
+    groups.flatMap((g) => trackedOf(g)?.unionId ?? []),
+  );
   return {
-    groups: groupThefts(entries, changes, week),
+    groups: groups.map((g) => {
+      const t = trackedOf(g);
+      const leader = t ? (leaders.get(t.unionId) ?? null) : null;
+      return { ...g, contact: t ? { unionId: t.unionId, name: t.name, leader } : null };
+    }),
+    ownTag: ALLIANCES.find((a) => a.unionId === access.unionId)?.tag ?? "",
     week,
     roster: roster.map((m) => ({ uid: m.uid, name: m.name })),
   };
@@ -189,6 +227,8 @@ export async function addTheft(
     attackerUid: attacker.uid,
     attackerName: attacker.name,
     attackerTag: attacker.tag,
+    // An officer picked the player from a tracked roster: on our server (D97, amended 2026-11-19).
+    rosterExact: attacker.uid !== null,
     kind: input.kind,
     victimUid: victim?.uid ?? null,
     victimName: victim?.name ?? null,
@@ -219,20 +259,53 @@ export async function removeTheft(
 }
 
 /** "To follow up": a new state and note for an attacker of this workspace's log, kept with who and when. */
+/**
+ * A step for an attacker of this workspace's log, kept with who and when. `expected` is the newest change
+ * the officer saw (null: none): when another officer changed the step first, nothing is written
+ * ("conflict", 409). A retry with the same request id (D100) adds nothing.
+ */
 export async function setFollowUp(
   db: Db,
   access: WorkspaceAccess,
-  input: { attacker: string; state: FollowUpState; note: string },
+  input: {
+    attacker: string;
+    state: FollowUpState;
+    note: string;
+    requestId: string;
+    expected: number | null;
+  },
   now: Date,
-): Promise<"ok" | "not_found"> {
-  if (!(await hasAttacker(db, access.workspaceId, input.attacker))) return "not_found";
+): Promise<"ok" | "not_found" | "conflict"> {
+  const ws = access.workspaceId;
+  if (await followUpRequested(db, ws, input.requestId)) return "ok";
+  if (!(await hasAttacker(db, ws, input.attacker))) return "not_found";
+  if ((await latestFollowUpId(db, ws, input.attacker)) !== input.expected) return "conflict";
   await insertFollowUp(db, {
-    workspaceId: access.workspaceId,
+    workspaceId: ws,
     attackerKey: input.attacker,
     state: input.state,
     note: cleanNote(input.note),
     changedBy: access.user.id,
     changedAt: now,
+    requestId: input.requestId,
+  });
+  return "ok";
+}
+
+/** An attacker's server as an officer sets it (null: "not known"), kept per attacker. */
+export async function setServer(
+  db: Db,
+  access: WorkspaceAccess,
+  input: { attacker: string; server: number | null },
+  now: Date,
+): Promise<"ok" | "not_found"> {
+  if (!(await hasAttacker(db, access.workspaceId, input.attacker))) return "not_found";
+  await setAttackerServer(db, {
+    workspaceId: access.workspaceId,
+    attackerKey: input.attacker,
+    server: input.server,
+    setBy: access.user.id,
+    setAt: now,
   });
   return "ok";
 }
