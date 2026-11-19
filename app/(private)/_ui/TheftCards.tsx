@@ -5,7 +5,7 @@
 // it was taken from (by name, D75: only inside an attacker's card), the talks with their history, and each
 // entry. Nothing is hover-only; every control is 44 px or more.
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
 import { RadioField } from "@/lib/brand/components/RadioField";
@@ -30,8 +30,10 @@ type Shared = {
   slug: string;
   t: TheftWords;
   language: WorkspaceLanguage;
-  /** After this officer's delete (D123): the page offers Undo. */
-  onDeleted: (id: number, requestId: string) => void;
+  /** After this officer's delete (D123): the page offers Undo, in the attacker's card (`key`). */
+  onDeleted: (id: number, requestId: string, key: string) => void;
+  /** "Theft deleted." with Undo, drawn in the card of the attacker `key`. */
+  undo: { key: string; line: ReactNode } | null;
 };
 
 function StateBadge({ card }: { card: AttackerCard }) {
@@ -130,7 +132,8 @@ function FollowUpForm({ card, slug, t }: Shared & { card: AttackerCard }) {
   );
 }
 
-function Entry({ entry, slug, t, language, onDeleted }: Shared & { entry: EntryCard }) {
+function Entry(props: Shared & { entry: EntryCard; attacker: string }) {
+  const { entry, slug, t, language, onDeleted } = props;
   const router = useRouter();
   const zone = useViewerZone();
   const when = (
@@ -169,7 +172,7 @@ function Entry({ entry, slug, t, language, onDeleted }: Shared & { entry: EntryC
           send={(requestId) => postTheft(slug, { action: "remove", id: entry.id, requestId })}
           // Someone else's delete first: it is gone either way, with nothing of this officer's to undo.
           onDeleted={(requestId) => {
-            if (requestId) onDeleted(entry.id, requestId);
+            if (requestId) onDeleted(entry.id, requestId, props.attacker);
             router.refresh();
           }}
         >
@@ -213,9 +216,11 @@ function Attacker({ card, ...shared }: Shared & { card: AttackerCard }) {
         <FollowUpForm card={card} {...shared} />
         <ol className="mt-3">
           {card.entries.map((e) => (
-            <Entry key={e.id} entry={e} {...shared} />
+            <Entry key={e.id} entry={e} attacker={card.key} {...shared} />
           ))}
         </ol>
+        {/* The officer keeps their place: the Undo line is where the theft was (review, 2026-11-19). */}
+        {shared.undo?.key === card.key && shared.undo.line}
       </div>
     </details>
   );

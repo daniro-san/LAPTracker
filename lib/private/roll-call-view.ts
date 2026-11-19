@@ -9,6 +9,7 @@ import {
   archivedCount,
   callsOfWeeks,
   newestMarks,
+  teamCalls,
   teamsOf,
   type RollCallRow,
 } from "../repo/roll-call";
@@ -215,14 +216,13 @@ export async function teamView(
 ) {
   const opened = await openOccasion(db, access, occasion);
   if (!opened?.placed || opened.kind !== "elixir") return null;
-  const [roster, facts, reads, calls] = await Promise.all([
+  const [roster, facts, reads, elixir] = await Promise.all([
     rosterOf(db, access),
     factsOf(db, access),
     endOfDayReads(db, access.unionId, 1),
-    callsOfWeeks(db, access.workspaceId, [opened.week]),
+    teamCalls(db, access.workspaceId, opened.week),
   ]);
-  // A roll call whose Calendar entry was deleted is not a team any more (as in setTeam).
-  const elixir = calls.filter((c) => c.kind === "elixir" && c.entryId !== null);
+  // A roll call whose Calendar entry was deleted is not a team any more (as in setTeam, D123).
   const teams = await teamsOf(
     db,
     elixir.map((c) => c.id),

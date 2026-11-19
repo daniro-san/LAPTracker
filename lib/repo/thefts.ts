@@ -1,6 +1,6 @@
 // thefts and theft_follow_ups (issue 321, D97): plain reads and writes, each inside one workspace. Which
 // entries are kept, and what counts, is decided in lib/private.
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { workspaceUsers } from "../schema";
@@ -42,6 +42,16 @@ export async function insertRequestedTheft(
     .returning({ id: thefts.id });
   return made.length > 0;
 }
+
+/**
+ * A deleted theft's Undo rule (D123): no live theft of the same attacker, member and time took its place
+ * meanwhile (the same report imported or typed again), so Undo never makes a double.
+ */
+export const noTwin = sql`not exists (select 1 from thefts o
+  where o.workspace_id = ${thefts.workspaceId} and o.id <> ${thefts.id} and o.deleted_at is null
+    and o.attacker_key = ${thefts.attackerKey}
+    and o.victim_uid is not distinct from ${thefts.victimUid}
+    and o.at is not distinct from ${thefts.at})`;
 
 /** The workspace's thefts not deleted (D123), oldest entry first. */
 export function listThefts(db: Db, workspaceId: number): Promise<TheftRow[]> {

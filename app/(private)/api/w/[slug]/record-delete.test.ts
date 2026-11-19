@@ -31,6 +31,7 @@ const ROUTES = {
   calendar: await import("./calendar/route"),
   thefts: await import("./thefts/route"),
   pending: await import("./pending/route"),
+  "roll-call": await import("./roll-call/route"),
 };
 
 const OGS = 67111155;
@@ -166,42 +167,45 @@ const TYPES = {
     }),
     shown: async () => (await pendingMembers(db, await access())).length,
   },
-} satisfies Record<Route, unknown>;
+} satisfies Record<Exclude<Route, "roll-call">, unknown>;
 
-describe.each(Object.keys(TYPES) as Route[])("deleting a record: %s (D123)", (type) => {
-  const t = TYPES[type];
+describe.each(Object.keys(TYPES) as (keyof typeof TYPES)[])(
+  "deleting a record: %s (D123)",
+  (type) => {
+    const t = TYPES[type];
 
-  it("refuses a member (401) and another workspace's officer (404)", async () => {
-    const id = await t.add();
-    expect((await post(type, t.remove(id, randomUUID()), "Mo")).status).toBe(401);
-    expect((await post(type, t.remove(id, randomUUID()), "Zed")).status).toBe(404);
-    expect(await t.shown()).toBe(1);
-  });
+    it("refuses a member (401) and another workspace's officer (404)", async () => {
+      const id = await t.add();
+      expect((await post(type, t.remove(id, randomUUID()), "Mo")).status).toBe(401);
+      expect((await post(type, t.remove(id, randomUUID()), "Zed")).status).toBe(404);
+      expect(await t.shown()).toBe(1);
+    });
 
-  it("Undo brings it back, for the officer who deleted, within UNDO_MS", async () => {
-    const id = await t.add();
-    const requestId = randomUUID();
-    expect((await post(type, t.remove(id, requestId))).status).toBe(200);
-    expect(await t.shown()).toBe(0);
-    expect((await post(type, t.remove(id, requestId, true), "Bo")).status).toBe(404);
-    expect((await post(type, t.remove(id, requestId, true))).status).toBe(200);
-    expect(await t.shown()).toBe(1);
-    const late = randomUUID();
-    await post(type, t.remove(id, late));
-    clock.now = new Date(T0.getTime() + UNDO_MS + 1);
-    expect((await post(type, t.remove(id, late, true))).status).toBe(404);
-    expect(await t.shown()).toBe(0);
-  });
+    it("Undo brings it back, for the officer who deleted, within UNDO_MS", async () => {
+      const id = await t.add();
+      const requestId = randomUUID();
+      expect((await post(type, t.remove(id, requestId))).status).toBe(200);
+      expect(await t.shown()).toBe(0);
+      expect((await post(type, t.remove(id, requestId, true), "Bo")).status).toBe(404);
+      expect((await post(type, t.remove(id, requestId, true))).status).toBe(200);
+      expect(await t.shown()).toBe(1);
+      const late = randomUUID();
+      await post(type, t.remove(id, late));
+      clock.now = new Date(T0.getTime() + UNDO_MS + 1);
+      expect((await post(type, t.remove(id, late, true))).status).toBe(404);
+      expect(await t.shown()).toBe(0);
+    });
 
-  it("a replay of a delete after its Undo deletes nothing", async () => {
-    const id = await t.add();
-    const requestId = randomUUID();
-    await post(type, t.remove(id, requestId));
-    await post(type, t.remove(id, requestId, true));
-    expect((await post(type, t.remove(id, requestId))).status).toBe(200);
-    expect(await t.shown()).toBe(1);
-  });
-});
+    it("a replay of a delete after its Undo deletes nothing", async () => {
+      const id = await t.add();
+      const requestId = randomUUID();
+      await post(type, t.remove(id, requestId));
+      await post(type, t.remove(id, requestId, true));
+      expect((await post(type, t.remove(id, requestId))).status).toBe(200);
+      expect(await t.shown()).toBe(1);
+    });
+  },
+);
 
 describe("a deleted record leaves every read, and Home says who deleted it (D123)", () => {
   it("a Calendar entry: off the Calendar, its edits refused, its lines gone; two deletes, two lines", async () => {
@@ -216,6 +220,21 @@ describe("a deleted record leaves every read, and Home says who deleted it (D123
     const kinds = await homeKinds();
     expect(kinds.filter((k) => k === "entryDeleted")).toHaveLength(2);
     expect(kinds).not.toContain("entry");
+  });
+
+  it("a deleted Elixir Scramble entry no longer holds its team's members", async () => {
+    const team = async (variant: string) => {
+      const entry = { kind: "elixir", variant, day: "2026-11-06", minute: 1080 };
+      const made = await post("calendar", { action: "create", entry, requestId: randomUUID() });
+      return made.json.id as number;
+    };
+    const [a, b] = [await team("A"), await team("B")];
+    const pick = (entry: number) =>
+      post("roll-call", { action: "team", occasion: { entry, week: WEEK }, uids: [101], on: true });
+    expect((await pick(a)).status).toBe(200);
+    expect((await pick(b)).status).toBe(409);
+    await post("calendar", TYPES.calendar.remove(a, randomUUID()));
+    expect((await pick(b)).status).toBe(200);
   });
 
   it("a deleted Alliance Duel theme frees its week; Undo is then refused", async () => {
@@ -242,6 +261,15 @@ describe("a deleted record leaves every read, and Home says who deleted it (D123
     expect((await post("thefts", follow)).status).toBe(404);
     const kinds = await homeKinds();
     expect([kinds.includes("theftDeleted"), kinds.includes("thefts")]).toEqual([true, false]);
+  });
+
+  it("a theft's Undo is refused when the same theft was added again meanwhile", async () => {
+    const id = await TYPES.thefts.add();
+    const requestId = randomUUID();
+    await post("thefts", TYPES.thefts.remove(id, requestId));
+    await TYPES.thefts.add();
+    expect((await post("thefts", TYPES.thefts.remove(id, requestId, true))).status).toBe(404);
+    expect(await TYPES.thefts.shown()).toBe(1);
   });
 
   it("a new member: off the list, kept under Removed; Home has the delete, not the add", async () => {

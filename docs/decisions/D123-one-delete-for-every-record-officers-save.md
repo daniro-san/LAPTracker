@@ -67,13 +67,19 @@ Chosen because the code had no way back for them. Calendar entries and thefts we
 - A delete that takes the whole entry is soft: a one-off's Delete, `all`, or a weekly entry ended from its first week. "Skip the week of …" and "End it from this week on" from a later week are unchanged. They change the entry, and the entry stays.
 - `live` is on every read of `calendar_entries` in `lib/repo/calendar.ts`: the days' read (Calendar, Home, the members' board, roll calls, the garrison page), `findEntry` (an edit, a skip or a garrison save answers 404, "Someone deleted this event."), the week's theme, caravan seats, and a notice's linked entries.
 - Its weeks, its roll calls and its garrison plan stay. A roll call of a deleted entry shows with the added ones, on its own day (as after D120's Calendar delete). Undo brings the entry back with all of them.
+- **The live-entry rule (PR review, 2026-11-19).** The hard delete used to cascade (`entry_id` set null), and code read "`entry_id` is null" as "the entry is gone". A soft-deleted entry keeps its id on its rows, so these reads now ask for a live entry instead (`exists … calendar_entries … deleted_at is null`):
+  - an Elixir Scramble team holds its members only while its entry is live (`otherTeams`, and the team picker's `teamCalls`), so a deleted entry's team frees them for the other team;
+  - a roll call counts as added by hand when it has no live entry (`findAdded`), as after the old cascade;
+  - the next siege's enemy might carries over only from a live entry's siege (`lastEnemyMight`).
+  - Checked and already live through `lib/repo/calendar.ts`: the Calendar's days (roll call placement, the garrison page, the board), caravan seats, a notice's linked entries, and Home's garrison lines.
 - Body: `{action: "delete", entry, scope, week, requestId, undo?}`. A whole-entry delete answers `{ok: true, deleted: true}`, and the Calendar then says "Event deleted." with Undo inside the card of the day the entry was on. The Calendar opens at today, so a line at the top of the page would be off screen (review, 2026-11-19). The Undo resends the same body with `undo: true`.
 - The one-off's question: "Delete this event?", its title, day and time, "It leaves the Calendar, the Members’ board and Home. Its roll calls stay." (PT "Ele sai da Agenda, do Mural dos membros e do Início. As chamadas dele continuam.", FR "Il quitte l’agenda, le Tableau des membres et l’Accueil. Ses appels restent."). A weekly entry keeps its inline choices: skip a week, or end the repeat.
 
 **Thefts.**
 
 - "Delete" (was "Remove") on each entry opens "Delete this theft?" with the entry's time, member and type, and "It leaves the log, its counts and the Follow-up tab." The answers are "Keep it" and "Delete" (PT "Apagar este roubo?", "Manter", "Apagar"; FR "Supprimer ce vol ?", "Le garder", "Supprimer").
-- The log then says "Theft deleted." with Undo.
+- The log then says "Theft deleted." with Undo, in the attacker's card, so the officer keeps their place; when the deleted theft was the attacker's last, the card goes and the line shows above the log (PR review, 2026-11-19).
+- Undo is refused when a live theft of the same attacker, member and time was added meanwhile (`noTwin`): the same report imported or typed again would otherwise become a double.
 - `live` is on `listThefts` and `hasAttacker`. The log, its week and all-time counts, the Follow-up tab's thefts and an attacker's follow-up leave a deleted theft out. A follow-up on an attacker whose only theft was deleted answers 404. The screenshot import's duplicate check sees live thefts only, so a deleted theft sent again is added again.
 - Body: `{action: "remove", id, requestId, undo?}`.
 

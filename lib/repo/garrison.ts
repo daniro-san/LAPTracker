@@ -4,7 +4,7 @@
 import { and, desc, eq, isNotNull, isNull, lt, ne, or, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
-import { garrisonPlans, type GarrisonPair } from "../schema";
+import { calendarEntries, garrisonPlans, type GarrisonPair } from "../schema";
 
 export type GarrisonRow = typeof garrisonPlans.$inferSelect;
 /** One siege: the workspace, the Undead Siege entry and the plan's Monday. */
@@ -33,7 +33,10 @@ export async function ensurePlan(db: Db, s: Siege): Promise<GarrisonRow | null> 
   return findPlan(db, s);
 }
 
-/** The newest enemy might saved for an earlier siege of the workspace: the next siege starts from it. */
+/**
+ * The newest enemy might saved for an earlier siege of the workspace: the next siege starts from it. A
+ * deleted Calendar entry's sieges are left out (D123).
+ */
 export async function lastEnemyMight(
   db: Db,
   s: Siege,
@@ -41,9 +44,11 @@ export async function lastEnemyMight(
   const [row] = await db
     .select({ value: garrisonPlans.enemyMight, week: garrisonPlans.week })
     .from(garrisonPlans)
+    .innerJoin(calendarEntries, eq(calendarEntries.id, garrisonPlans.entryId))
     .where(
       and(
         eq(garrisonPlans.workspaceId, s.workspaceId),
+        isNull(calendarEntries.deletedAt),
         lt(garrisonPlans.week, s.week),
         isNotNull(garrisonPlans.enemyMight),
       ),

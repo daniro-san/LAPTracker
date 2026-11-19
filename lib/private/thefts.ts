@@ -10,6 +10,7 @@ import {
   insertRequestedTheft,
   listFollowUps,
   listThefts,
+  noTwin,
   theftRequested,
 } from "../repo/thefts";
 import { softDelete, undoDelete } from "../repo/trash";
@@ -211,7 +212,9 @@ export async function removeTheft(
   now: Date,
 ): Promise<"ok" | "not_found"> {
   const c = { workspaceId: access.workspaceId, userId: access.user.id, now, ...input };
-  const done = input.undo ? await undoDelete(db, thefts, c) : await softDelete(db, thefts, c);
+  const done = input.undo
+    ? await undoDelete(db, thefts, c, noTwin)
+    : await softDelete(db, thefts, c);
   return done ? "ok" : "not_found";
 }
 

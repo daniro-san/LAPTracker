@@ -2,7 +2,7 @@
 
 // The thefts page's body (issue 321): "Add a theft", which opens the form sheet, then the log grouped by
 // alliance and attacker. After a save the server renders the page again. After a delete, "Theft deleted."
-// with Undo (D123).
+// with Undo (D123) in the attacker's card, or above the log when the card went with it.
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -28,15 +28,29 @@ export function TheftsBoard(props: {
   const { t, slug } = props;
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [deleted, setDeleted] = useState<{ id: number; requestId: string } | null>(null);
+  const [deleted, setDeleted] = useState<{ id: number; requestId: string; key: string } | null>(
+    null,
+  );
   const undo = async () => {
     if (!deleted) return false;
-    const answer = await postTheft(slug, { action: "remove", ...deleted, undo: true });
+    const { id, requestId } = deleted;
+    const answer = await postTheft(slug, { action: "remove", id, requestId, undo: true });
     if (answer !== "ok") return false;
     setDeleted(null);
     router.refresh();
     return true;
   };
+  const line = deleted && (
+    <UndoLine
+      key={deleted.requestId}
+      done={t["thefts.removed"]}
+      undo={t["thefts.undo"]}
+      failed={t["thefts.undoFailed"]}
+      onUndo={undo}
+    />
+  );
+  // The attacker's last theft takes its card with it: then the line shows above the log.
+  const inCard = alliances.some((a) => a.attackers.some((c) => c.key === deleted?.key));
   return (
     <>
       <button
@@ -47,15 +61,7 @@ export function TheftsBoard(props: {
       >
         {t["thefts.add"]}
       </button>
-      {deleted && (
-        <UndoLine
-          key={deleted.requestId}
-          done={t["thefts.removed"]}
-          undo={t["thefts.undo"]}
-          failed={t["thefts.undoFailed"]}
-          onUndo={undo}
-        />
-      )}
+      {line && !inCard && line}
       {open && (
         <TheftForm
           {...form}
@@ -74,7 +80,8 @@ export function TheftsBoard(props: {
           slug={slug}
           t={t}
           language={props.language}
-          onDeleted={(id, requestId) => setDeleted({ id, requestId })}
+          onDeleted={(id, requestId, key) => setDeleted({ id, requestId, key })}
+          undo={line && deleted && inCard ? { key: deleted.key, line } : null}
         />
       )}
     </>
