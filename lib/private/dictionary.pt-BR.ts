@@ -11,6 +11,7 @@ import { lifecyclePt } from "./dictionary.lifecycle";
 import { membersPt } from "./dictionary.members.pt-BR";
 import { noticesPt } from "./dictionary.notices";
 import { rollPt } from "./dictionary.rollcall.pt-BR";
+import { settingsPt } from "./dictionary.settings";
 import { sharePt } from "./dictionary.share";
 import { shotsPt } from "./dictionary.shots.pt-BR";
 import { squadsPt } from "./dictionary.squads";
@@ -288,4 +289,5 @@ export const pt: WorkspaceDictionary = {
   ...sharePt,
   ...squadsPt,
   ...garrisonPt,
+  ...settingsPt,
 };

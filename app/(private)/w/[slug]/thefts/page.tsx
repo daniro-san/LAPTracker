@@ -5,6 +5,7 @@
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 
+import { SERVER } from "@/config/alliances";
 import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
 import { requireWorkspace } from "@/lib/private/access";
@@ -74,7 +75,7 @@ export default async function TheftsPage({ params }: { params: Promise<{ slug: s
   const words = theftWords(t);
   const f = formats(language, zone);
   return (
-    <SignedInFrame access={access} language={language} t={t} current="days" waiting={waiting}>
+    <SignedInFrame access={access} language={language} t={t} current="thefts" waiting={waiting}>
       <h1 className="font-display text-display-lg">{t["thefts.title"]}</h1>
       {/* The thefts log is a view of the Calendar tab (Week · Caravans · Notices · Thefts, issue 300). */}
       <CalendarNav slug={slug} current="thefts" t={t} />
@@ -86,7 +87,8 @@ export default async function TheftsPage({ params }: { params: Promise<{ slug: s
         slug={slug}
         t={words}
         language={language}
-        alliances={theftCards(view.groups, words, f)}
+        alliances={theftCards(view.groups, words, f, { tag: view.ownTag, zone })}
+        server={SERVER}
         roster={view.roster}
         start={{ day: f.day(now), time: f.hhmm(now) }}
         serverZone={zone}

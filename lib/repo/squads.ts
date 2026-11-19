@@ -3,7 +3,7 @@
 import { and, asc, desc, eq, isNull, lt, or } from "drizzle-orm";
 
 import type { Db } from "../db";
-import { dailyRosters, workspaces } from "../schema";
+import { dailyRosters } from "../schema";
 import { memberSquads, squadReads, type StoredHero } from "../schema-squads";
 import type { SquadInput } from "../sources/types";
 
@@ -29,21 +29,21 @@ export async function dayRosterUids(
   return row?.uids ?? null;
 }
 
-/** The workspace of an alliance (D71), or null when it has none. */
-export async function workspaceIdOf(db: Db, unionId: number): Promise<number | null> {
-  const [row] = await db
-    .select({ id: workspaces.id })
-    .from(workspaces)
-    .where(eq(workspaces.unionId, unionId));
-  return row?.id ?? null;
-}
+/** One day's read of one alliance. */
+const of = (day: string, unionId: number) =>
+  and(eq(squadReads.day, day), eq(squadReads.unionId, unionId));
 
-export async function getSquadRead(db: Db, day: string): Promise<SquadRead | null> {
-  const [row] = await db.select().from(squadReads).where(eq(squadReads.day, day));
+/** The day's read of one alliance (D124: each workspace with a key has its own). */
+export async function getSquadRead(
+  db: Db,
+  day: string,
+  unionId: number,
+): Promise<SquadRead | null> {
+  const [row] = await db.select().from(squadReads).where(of(day, unionId));
   return row ?? null;
 }
 
-/** The day's first batch: true for exactly one caller. */
+/** The day's first batch of an alliance: true for exactly one caller. */
 export async function startSquadRead(
   db: Db,
   row: typeof squadReads.$inferInsert,
@@ -60,6 +60,7 @@ export async function startSquadRead(
 export async function claimSquadBatch(
   db: Db,
   day: string,
+  unionId: number,
   now: Date,
   staleBefore: Date,
 ): Promise<SquadRead | null> {
@@ -68,7 +69,7 @@ export async function claimSquadBatch(
     .set({ batchAt: now })
     .where(
       and(
-        eq(squadReads.day, day),
+        of(day, unionId),
         eq(squadReads.status, "running"),
         or(isNull(squadReads.batchAt), lt(squadReads.batchAt, staleBefore)),
       ),
@@ -84,13 +85,14 @@ export async function claimSquadBatch(
 export async function updateClaimedSquadRead(
   db: Db,
   day: string,
+  unionId: number,
   claimedAt: Date,
   patch: Partial<typeof squadReads.$inferInsert>,
 ): Promise<boolean> {
   const rows = await db
     .update(squadReads)
     .set(patch)
-    .where(and(eq(squadReads.day, day), eq(squadReads.batchAt, claimedAt)))
+    .where(and(of(day, unionId), eq(squadReads.batchAt, claimedAt)))
     .returning({ day: squadReads.day });
   return rows.length > 0;
 }

@@ -26,6 +26,14 @@ export const translateEn = {
   "translate.discord.postedThread": "Posted in the message’s thread.",
   "translate.discord.posted": "Posted in the channel.",
   "translate.discord.noThread": "Posted in the channel: the bot can’t open threads here.",
+  "translate.discord.noThreadAccess":
+    "Posted in the channel: the bot can’t see this channel. In the channel’s settings → Permissions, add LAPTracker with View Channel, Send Messages, Create Public Threads and Send Messages in Threads.",
+  "translate.discord.noThreadPermission":
+    "Posted in the channel: the bot is missing a permission here. In the channel’s settings → Permissions, give LAPTracker Create Public Threads and Send Messages in Threads.",
+  "translate.discord.noThreadType":
+    "Posted in the channel: Discord doesn’t allow a thread on a message in this kind of channel.",
+  "translate.discord.noThreadLimit":
+    "Posted in the channel: this channel has reached Discord’s limit of active threads. Archive a few threads, then try again.",
   "translate.discord.nothing": "Nothing to post: the message is already in the chosen languages.",
   "translate.discord.notYours": "Only the person who opened this menu can use it.",
   "translate.discord.chooseThread":
@@ -67,6 +75,14 @@ export const translatePt: TranslateWords = {
   "translate.discord.postedThread": "Publicado no tópico da mensagem.",
   "translate.discord.posted": "Publicado no canal.",
   "translate.discord.noThread": "Publicado no canal: o bot não pode abrir tópicos aqui.",
+  "translate.discord.noThreadAccess":
+    "Publicado no canal: o bot não consegue ver este canal. Nas configurações do canal → Permissões, adicione o LAPTracker com Ver canal, Enviar mensagens, Criar tópicos públicos e Enviar mensagens em tópicos.",
+  "translate.discord.noThreadPermission":
+    "Publicado no canal: falta uma permissão ao bot aqui. Nas configurações do canal → Permissões, dê ao LAPTracker Criar tópicos públicos e Enviar mensagens em tópicos.",
+  "translate.discord.noThreadType":
+    "Publicado no canal: o Discord não permite tópico numa mensagem deste tipo de canal.",
+  "translate.discord.noThreadLimit":
+    "Publicado no canal: este canal chegou ao limite de tópicos ativos do Discord. Arquive alguns tópicos e tente de novo.",
   "translate.discord.nothing": "Nada para publicar: a mensagem já está nos idiomas escolhidos.",
   "translate.discord.notYours": "Só quem abriu este menu pode usá-lo.",
   "translate.discord.chooseThread":
@@ -109,6 +125,14 @@ export const translateFr: TranslateWords = {
   "translate.discord.posted": "Publié dans le salon.",
   "translate.discord.noThread": "Publié dans le salon : le bot ne peut pas ouvrir de fils ici.",
   "translate.discord.nothing": "Rien à publier : le message est déjà dans les langues choisies.",
+  "translate.discord.noThreadAccess":
+    "Publié dans le salon : le bot ne voit pas ce salon. Dans les paramètres du salon → Permissions, ajoutez LAPTracker avec Voir le salon, Envoyer des messages, Créer des fils publics et Envoyer des messages dans les fils.",
+  "translate.discord.noThreadPermission":
+    "Publié dans le salon : il manque une permission au bot ici. Dans les paramètres du salon → Permissions, donnez à LAPTracker Créer des fils publics et Envoyer des messages dans les fils.",
+  "translate.discord.noThreadType":
+    "Publié dans le salon : Discord n’autorise pas de fil sur un message dans ce type de salon.",
+  "translate.discord.noThreadLimit":
+    "Publié dans le salon : ce salon a atteint la limite de fils actifs de Discord. Archivez quelques fils, puis réessayez.",
   "translate.discord.notYours": "Seule la personne qui a ouvert ce menu peut l’utiliser.",
   "translate.discord.chooseThread":
     "Choisissez les langues, puis appuyez sur Publier. La traduction est publiée dans un fil du message, pour tous.",

@@ -29,6 +29,8 @@ export interface WorkspaceView extends WorkspaceSettings {
   alliance: string;
   sessions: number;
   allowlist: string[];
+  /** "Tracker key: set · invalid (2 hours ago)" or "Tracker key: not set" (D124). */
+  trackerKey: string;
   /** Who has an open session, for "Sign out users". */
   people: SignOutPerson[];
 }
@@ -107,6 +109,7 @@ function WorkspaceList({
           <p className="text-body-sm break-words text-ink/80">
             {t.allowlist}: {w.allowlist.length === 0 ? t.allowlistNone : w.allowlist.join(", ")}
           </p>
+          <p className="text-body-sm break-words text-ink/80">{w.trackerKey}</p>
           <p className="mt-2">
             <button type="button" onClick={() => onSignOut(w)} className={buttonClass("secondary")}>
               {t.signOutUsers.button}

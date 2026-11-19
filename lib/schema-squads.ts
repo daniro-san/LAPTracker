@@ -10,6 +10,7 @@ import {
   integer,
   jsonb,
   pgTable,
+  primaryKey,
   serial,
   text,
   timestamp,
@@ -54,14 +55,15 @@ export const memberSquads = pgTable(
 );
 
 /**
- * The squads read of one server day (D117): batches across calls, the last uid done, what it cost and
- * why it stopped. Counts and codes only: no names, no squad values.
+ * The squads read of one server day and alliance (D117; D124: one per workspace with a key, each on its
+ * own key and quota): batches across calls, the last uid done, what it cost and why it stopped. Counts
+ * and codes only: no names, no squad values.
  */
 export const squadReads = pgTable(
   "squad_reads",
   {
     day: date("day", { mode: "string" })
-      .primaryKey()
+      .notNull()
       .references(() => dailyReads.day),
     unionId: big("union_id").notNull(),
     status: text("status", { enum: ["running", "done", "stopped", "skipped"] }).notNull(),
@@ -87,6 +89,7 @@ export const squadReads = pgTable(
     reason: text("reason"),
   },
   (t) => [
+    primaryKey({ name: "squad_reads_day_union_pk", columns: [t.day, t.unionId] }),
     check(
       "squad_reads_status_check",
       sql`${t.status} in ('running', 'done', 'stopped', 'skipped')`,

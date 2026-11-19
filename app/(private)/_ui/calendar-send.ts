@@ -12,7 +12,8 @@ export interface Stale {
   /** "You had “Lv.9”." */
   yours: string;
 }
-export type Sent = { ok: true } | { ok: false; code: string; conflicts: Stale[] };
+/** `deleted`: a delete took the whole entry (D123), so the page offers Undo. */
+export type Sent = { ok: true; deleted: boolean } | { ok: false; code: string; conflicts: Stale[] };
 
 export async function sendCalendar(slug: string, body: object): Promise<Sent> {
   try {
@@ -21,8 +22,12 @@ export async function sendCalendar(slug: string, body: object): Promise<Sent> {
       headers: { "content-type": "application/json" },
       body: JSON.stringify(body),
     });
-    const json = (await res.json().catch(() => ({}))) as { code?: string; conflicts?: Stale[] };
-    if (res.ok) return { ok: true };
+    const json = (await res.json().catch(() => ({}))) as {
+      code?: string;
+      conflicts?: Stale[];
+      deleted?: boolean;
+    };
+    if (res.ok) return { ok: true, deleted: json.deleted === true };
     return { ok: false, code: json.code ?? "failed", conflicts: json.conflicts ?? [] };
   } catch {
     return { ok: false, code: "failed", conflicts: [] };

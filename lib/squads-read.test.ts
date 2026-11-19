@@ -88,6 +88,8 @@ function deps(now: Date, squads: (uid: number) => SquadInput[] = () => [], remai
         const quota = { limit: 1000, used: 1000 - remaining, remaining: --remaining };
         return { uid, squads: squads(uid), quota };
       },
+      // On LAP_API_KEY the run starts from the day's read: no /quota call (D117).
+      fetchQuota: () => Promise.reject(new Error("no quota call on LAP_API_KEY")),
     },
   };
   return d;
@@ -111,7 +113,7 @@ describe("the squads read (D117)", () => {
     expect(await runSquadsBatch(big, db)).toMatchObject({ status: "stopped", calls: 120 });
     expect(await runSquadsBatch(big, db)).toEqual({ kind: "idle" });
     expect(big.calls).toHaveLength(120);
-    expect((await getSquadRead(db, THU.day))?.reason).toBe("cap");
+    expect((await getSquadRead(db, THU.day, OWN_ALLIANCE_ID))?.reason).toBe("cap");
   });
 
   it("skips Friday night when the KvK's reserve would be cut, says why, and logs no member", async () => {
@@ -120,7 +122,10 @@ describe("the squads read (D117)", () => {
     const d = deps(FRI.now);
     expect(await runSquadsBatch(d, db)).toMatchObject({ status: "skipped", calls: 0 });
     expect(d.calls).toEqual([]);
-    expect(await getSquadRead(db, FRI.day)).toMatchObject({ reason: "quota", quotaRemaining: 459 });
+    expect(await getSquadRead(db, FRI.day, OWN_ALLIANCE_ID)).toMatchObject({
+      reason: "quota",
+      quotaRemaining: 459,
+    });
     const lines = await db.select().from(runLogs);
     expect(lines.map((l) => [l.code, l.unionId, l.data])).toEqual([
       ["squads.skip", null, { reason: "quota", quota_remaining: 459, required: 3 + 100 + 365 }],
@@ -135,7 +140,10 @@ describe("the squads read (D117)", () => {
     // The first answer says 100 left: one more call would leave 99, under the margin of 100.
     const d = deps(THU.now, () => [], 101);
     expect(await runSquadsBatch(d, db)).toMatchObject({ status: "stopped", calls: 1 });
-    expect(await getSquadRead(db, THU.day)).toMatchObject({ reason: "quota", quotaRemaining: 100 });
+    expect(await getSquadRead(db, THU.day, OWN_ALLIANCE_ID)).toMatchObject({
+      reason: "quota",
+      quotaRemaining: 100,
+    });
   });
 
   it("keeps a squad a later response leaves out, and stores an unchanged squad once", async () => {
@@ -227,7 +235,10 @@ describe("the squads read's batches and claim (D117)", () => {
       return ok(uid, onAttempt, ...rest);
     };
     expect(await runSquadsBatch(d, db)).toMatchObject({ status: "stopped", calls: 2 });
-    expect(await getSquadRead(db, THU.day)).toMatchObject({ reason: "quota_429", afterUid: 2 });
+    expect(await getSquadRead(db, THU.day, OWN_ALLIANCE_ID)).toMatchObject({
+      reason: "quota_429",
+      afterUid: 2,
+    });
     expect(await runSquadsBatch(d, db)).toEqual({ kind: "idle" });
   });
 
@@ -243,7 +254,10 @@ describe("the squads read's batches and claim (D117)", () => {
     };
     expect(await runSquadsBatch(d, db)).toMatchObject({ status: "done", calls: 4 });
     expect(d.calls).toEqual([1, 2, 3, 2]);
-    expect(await getSquadRead(db, THU.day)).toMatchObject({ failed: 2, retryUids: [] });
+    expect(await getSquadRead(db, THU.day, OWN_ALLIANCE_ID)).toMatchObject({
+      failed: 2,
+      retryUids: [],
+    });
   });
 
   it("goes on from the cursor in the next batch, and gives a call the deadline cut its one retry", async () => {
@@ -260,7 +274,7 @@ describe("the squads read's batches and claim (D117)", () => {
       );
     };
     expect(await runSquadsBatch(first, db)).toMatchObject({ status: "running", more: true });
-    expect(await getSquadRead(db, THU.day)).toMatchObject({
+    expect(await getSquadRead(db, THU.day, OWN_ALLIANCE_ID)).toMatchObject({
       afterUid: 2,
       callsUsed: 2,
       failed: 1,
@@ -270,7 +284,10 @@ describe("the squads read's batches and claim (D117)", () => {
     const second = deps(new Date(THU.now.getTime() + 2_000));
     expect(await runSquadsBatch(second, db)).toMatchObject({ status: "done", calls: 2 });
     expect([...first.calls, ...second.calls]).toEqual([1, 2, 3, 2]);
-    expect(await getSquadRead(db, THU.day)).toMatchObject({ callsUsed: 4, retryUids: [] });
+    expect(await getSquadRead(db, THU.day, OWN_ALLIANCE_ID)).toMatchObject({
+      callsUsed: 4,
+      retryUids: [],
+    });
   });
 
   it("refuses a second caller while a batch holds the claim", async () => {
@@ -285,6 +302,9 @@ describe("the squads read's batches and claim (D117)", () => {
     const d = deps(THU.now);
     expect(await runSquadsBatch(d, db)).toMatchObject({ status: "done", calls: 2 });
     expect(d.calls).toEqual([2, 3]);
-    expect(await getSquadRead(db, THU.day)).toMatchObject({ callsUsed: 3, batchAt: null });
+    expect(await getSquadRead(db, THU.day, OWN_ALLIANCE_ID)).toMatchObject({
+      callsUsed: 3,
+      batchAt: null,
+    });
   });
 });

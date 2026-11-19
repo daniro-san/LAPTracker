@@ -1,6 +1,7 @@
 // /api/w/[slug]/thefts (issue 321): the thefts log. GET ?q= finds attackers among the players of the
-// other tracked alliances; POST, a write (same origin, JSON), adds a typed theft, removes an entry, or
-// sets an attacker's follow-up. Every answer is { ok: true }, the players found, or a code. The work runs
+// other tracked alliances; POST, a write (same origin, JSON), adds a typed theft, deletes an entry (or takes
+// the officer's own delete back for a short while, D123), sets an attacker's follow-up step, or sets an
+// attacker's server. Every answer is { ok: true }, the players found, or a code. The work runs
 // in `privately`, so an error reaches app_errors as its code alone, never with what an officer typed.
 import { z } from "zod";
 
@@ -15,13 +16,14 @@ import {
 } from "@/lib/private/http";
 import { SLUG } from "@/lib/private/sign-in";
 import { FOLLOW_UP_STATES, THEFT_KINDS } from "@/lib/private/theft-groups";
-import { addTheft, findAttackers, removeTheft, setFollowUp } from "@/lib/private/thefts";
+import { addTheft, findAttackers, removeTheft, setFollowUp, setServer } from "@/lib/private/thefts";
 import { parseQuery, withContext } from "@/lib/route";
 
 const ROUTE = "/api/w/[slug]/thefts";
 
 const uid = z.number().int().positive().max(Number.MAX_SAFE_INTEGER);
 const note = z.string().max(500);
+const attacker = z.string().min(1).max(200);
 
 const body = z.discriminatedUnion("action", [
   z
@@ -47,14 +49,31 @@ const body = z.discriminatedUnion("action", [
         .int()
         .positive()
         .max(2 ** 31 - 1),
+      requestId: z.uuid(),
+      undo: z.literal(true).optional(),
     })
     .strict(),
   z
     .object({
       action: z.literal("follow"),
-      attacker: z.string().min(1).max(200),
+      attacker,
       state: z.enum(FOLLOW_UP_STATES),
       note,
+      requestId: z.uuid(),
+      // The newest step the officer saw (null: none); another officer's newer step makes this a 409.
+      expected: z
+        .number()
+        .int()
+        .positive()
+        .max(2 ** 31 - 1)
+        .nullable(),
+    })
+    .strict(),
+  z
+    .object({
+      action: z.literal("server"),
+      attacker,
+      server: z.number().int().min(1).max(99_999).nullable(),
     })
     .strict(),
 ]);
@@ -87,16 +106,29 @@ export async function POST(request: Request, { params }: Params): Promise<Respon
     const now = ctx.now();
     const access = await requireWorkspace(db, slug, requestCookies(request), now);
     if (!access.ok) return privateError(401, "signed_out");
-    const result =
-      input.action === "add"
-        ? await privately("thefts.add", () =>
-            addTheft(db, access, input, { now, zone: ctx.env.SERVER_TZ }),
-          )
-        : input.action === "remove"
-          ? await privately("thefts.remove", () => removeTheft(db, access, input.id))
-          : await privately("thefts.follow", () => setFollowUp(db, access, input, now));
-    if (result !== "ok") return privateError(result === "not_found" ? 404 : 400, result);
-    const action = input.action === "add" ? "add" : input.action === "remove" ? "delete" : "record";
+    const result = await privately(`thefts.${input.action}`, () => {
+      switch (input.action) {
+        case "add":
+          return addTheft(db, access, input, { now, zone: ctx.env.SERVER_TZ });
+        case "remove":
+          return removeTheft(db, access, input, now);
+        case "follow":
+          return setFollowUp(db, access, input, now);
+        case "server":
+          return setServer(db, access, input, now);
+      }
+    });
+    if (result !== "ok") {
+      const status = result === "not_found" ? 404 : result === "conflict" ? 409 : 400;
+      return privateError(status, result);
+    }
+    // ws_action (D115, D123): the deleter's Undo is undo_delete; an attacker's server is an edit.
+    const action =
+      input.action === "remove"
+        ? input.undo
+          ? "undo_delete"
+          : "delete"
+        : ({ add: "add", follow: "record", server: "edit" } as const)[input.action];
     return counted(
       ctx,
       access,

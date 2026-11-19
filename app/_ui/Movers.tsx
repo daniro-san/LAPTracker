@@ -37,7 +37,7 @@ function Row({ m }: { m: MoverItem }) {
         )}
         {m.badgeId !== undefined && <AllianceBadge badgeId={m.badgeId} />}
         <span className="flex min-w-0 flex-1 flex-wrap items-baseline justify-between gap-x-2">
-          <span className="min-w-0 max-w-full truncate">
+          <span className="min-w-0 max-w-full break-words">
             {m.label}
             {m.tag && <span className="text-sm text-ink/70"> [{m.tag}]</span>}
           </span>
@@ -188,7 +188,7 @@ export function Movers({ scopes }: { scopes: MoverScope[] }) {
           id={`${id}-panel`}
           role="tabpanel"
           aria-labelledby={`${id}-${current?.key}`}
-          className="grid gap-x-6 px-3 py-2 sm:grid-cols-2"
+          className="grid grid-cols-1 gap-x-6 px-3 py-2 sm:grid-cols-2"
         >
           {current && current.up !== null && (
             <p className="flex items-baseline gap-1 pt-1 sm:hidden">

@@ -63,14 +63,21 @@ export const calendarEntries = pgTable(
     requestId: text("request_id"),
     /** The notice that goes with this entry (D102), linked from either side; cleared when it is deleted. */
     noticeId: integer("notice_id").references(() => notices.id, { onDelete: "set null" }),
+    /**
+     * Deleted (D123): who and when, under the delete question's request id (D100). A deleted entry leaves
+     * the Calendar, the board, Home and every other read; its rows stay. Undo clears `deleted_at`.
+     */
+    deletedAt: tstz("deleted_at"),
+    deletedBy: integer("deleted_by").references(() => workspaceUsers.id, { onDelete: "set null" }),
+    deleteRequestId: text("delete_request_id"),
   },
   (t) => [
     index("calendar_entries_workspace_day_idx").on(t.workspaceId, t.day),
     uniqueIndex("calendar_entries_request_unique").on(t.workspaceId, t.requestId),
-    // One Alliance Duel theme per week.
+    // One live Alliance Duel theme per week: a deleted one frees its week (D123).
     uniqueIndex("calendar_entries_duel_week_unique")
       .on(t.workspaceId, t.day)
-      .where(sql`${t.kind} = 'duel'`),
+      .where(sql`${t.kind} = 'duel' and ${t.deletedAt} is null`),
     check(
       "calendar_entries_kind_check",
       sql`${t.kind} in ('caravan', 'cheese', 'undead', 'elixir', 'kvk', 'duel', 'other')`,

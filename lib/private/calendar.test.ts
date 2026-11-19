@@ -7,7 +7,8 @@ import { openTestDb, truncateAll } from "../db.test-helpers";
 import { findWorkspaceBySlug, recordSignIn, saveWorkspace } from "../repo/workspaces";
 import { calendarEntries, calendarOccurrences, dailyReads, dailyRosters } from "../schema";
 import { requireWorkspace, type WorkspaceAccess } from "./access";
-import { calendarDays, createEntry, editEntry, removeEntry } from "./calendar";
+import { calendarDays, createEntry, editEntry } from "./calendar";
+import { removeEntry } from "./calendar-delete";
 import {
   DUEL_DAYS,
   fieldChange,
@@ -138,8 +139,20 @@ describe("the workspace calendar (issue 300)", () => {
     // Every week to Wednesday 18:00: the moved weeks stay where they were put. Then the 14th is skipped,
     // and the weeks from the 21st on are ended.
     await edit(ogs, id, null, { field: "slot", value: { weekday: 2, minute: 1080 }, version: 0 });
-    expect(await removeEntry(db, ogs, { entry: id, scope: "one", week: "2026-12-14" })).toBe("ok");
-    await removeEntry(db, ogs, { entry: id, scope: "after", week: "2026-12-21" });
+    expect(
+      await removeEntry(
+        db,
+        ogs,
+        { entry: id, scope: "one", week: "2026-12-14", requestId: randomUUID() },
+        NOW,
+      ),
+    ).toBe("ok");
+    await removeEntry(
+      db,
+      ogs,
+      { entry: id, scope: "after", week: "2026-12-21", requestId: randomUUID() },
+      NOW,
+    );
     expect(await shown(ogs, "2026-11-16", "2027-01-03")).toEqual([
       "2026-11-18 1080",
       "2026-11-24 1200 moved",
@@ -228,9 +241,14 @@ describe("the workspace calendar (issue 300)", () => {
       ok: false,
       code: "not_found",
     });
-    expect(await removeEntry(db, nse, { entry: id, scope: "all", week: "2026-11-16" })).toBe(
-      "not_found",
-    );
+    expect(
+      await removeEntry(
+        db,
+        nse,
+        { entry: id, scope: "all", week: "2026-11-16", requestId: randomUUID() },
+        NOW,
+      ),
+    ).toBe("not_found");
     expect(await calendarDays(db, ogs, "2026-11-16", "2026-11-22")).toHaveLength(1);
   });
   it("links only a notice of its own workspace (D102)", async () => {

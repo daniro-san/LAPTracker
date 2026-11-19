@@ -3,8 +3,9 @@
 // New members added by hand, waiting for the roster (D106), above the Members list: "Add a new member"
 // (the facts editor with a name field), and each one waiting, tagged "New · waiting for tonight's roster".
 // A row opens its sheet: the facts to edit like any member's ("Edit info" and "Paste what they told you"
-// in the sticky bar), then "Link to a member" (the closest names first) and Remove, which asks first, in
-// the content: a bar holds two buttons. On top, the ones "To match": a roster read since their add had
+// in the sticky bar), then "Link to a member" (the closest names first) and Remove, which asks first with
+// the shared delete (DeleteRecord, D123), in the content: a bar holds two buttons; the list then offers Undo
+// for a short while. On top, the ones "To match": a roster read since their add had
 // no single match, each with "Link to a member". Below, "Dismissed": the deleted ones, kept with their
 // info (2026-11-17).
 import { useRouter } from "next/navigation";
@@ -17,11 +18,11 @@ import { Tag } from "@/lib/brand/components/Tag";
 import { fill, isolate } from "@/lib/copy";
 import { NONE } from "@/lib/private/fact-text";
 
-import { AskSheet } from "./AskSheet";
 import { FactsEditor } from "./FactsEditor";
 import type { DismissedRow, LifecycleWords, PendingRow } from "./member-lifecycle-data";
 import { Facts, factsActions, type EditorContext, type FactsMode } from "./MemberCards";
 import { PendingLink, type RosterName } from "./PendingLink";
+import { PendingRemove, PendingUndoLine, sendPending, type Removed } from "./PendingRemove";
 import { newRequestId } from "./request-id";
 import { sheetWords } from "./sheet-words";
 import { SIGNED_OUT, SignedOutNote } from "./SignedOut";
@@ -34,13 +35,8 @@ function useAction(slug: string, onDone: () => void) {
   const [state, setState] = useState<"idle" | "busy" | "failed" | typeof SIGNED_OUT>("idle");
   const run = async (body: object) => {
     setState("busy");
-    const res = await fetch(`/api/w/${slug}/pending`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(body),
-    }).catch(() => null);
-    if (res?.status === 401) return setState(SIGNED_OUT);
-    if (!res?.ok) return setState("failed");
+    const answer = await sendPending(slug, body);
+    if (answer !== "ok") return setState(answer === SIGNED_OUT ? SIGNED_OUT : "failed");
     router.refresh();
     onDone();
   };
@@ -53,9 +49,11 @@ function PendingSheet(props: {
   words: Words;
   editor: EditorContext;
   onClose: () => void;
+  onRemoved: (r: Removed | null) => void;
 }) {
   const { row, words: t } = props;
-  const [step, setStep] = useState<"link" | "delete" | null>(null);
+  const router = useRouter();
+  const [step, setStep] = useState<"link" | null>(null);
   const [mode, setMode] = useState<FactsMode>(null);
   const action = useAction(props.editor.slug, props.onClose);
   return (
@@ -75,7 +73,7 @@ function PendingSheet(props: {
         mode={mode}
         onEditorClose={() => setMode(null)}
       />
-      <div className="mt-4 flex flex-wrap gap-2 border-t border-rule pt-3">
+      <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-rule pt-3">
         <button
           type="button"
           disabled={action.state === "busy"}
@@ -84,14 +82,16 @@ function PendingSheet(props: {
         >
           {t["pending.link"]}
         </button>
-        <button
-          type="button"
-          disabled={action.state === "busy"}
-          onClick={() => setStep("delete")}
-          className={buttonClass("secondary")}
-        >
-          {t["pending.delete"]}
-        </button>
+        <PendingRemove
+          row={row}
+          words={t}
+          slug={props.editor.slug}
+          onRemoved={(r) => {
+            props.onRemoved(r);
+            router.refresh();
+            props.onClose();
+          }}
+        />
       </div>
       {action.state === "failed" && (
         <p role="alert" className="mt-2 font-semibold text-seal">
@@ -109,18 +109,6 @@ function PendingSheet(props: {
             void action.run({ action: "link", uid: row.uid, to });
           }}
           onClose={() => setStep(null)}
-        />
-      )}
-      {step === "delete" && (
-        <AskSheet
-          id="pending-delete-ask"
-          question={fill(t["pending.deleteAsk"], { name: isolate(row.name) })}
-          yes={t["pending.delete"]}
-          no={t["pending.keep"]}
-          onAnswer={(yes) => {
-            setStep(null);
-            if (yes) void action.run({ action: "delete", uid: row.uid });
-          }}
         />
       )}
     </Sheet>
@@ -262,6 +250,7 @@ export function PendingMembers(props: {
   const { rows, words: t } = props;
   const [open, setOpen] = useState<number | null>(null);
   const [adding, setAdding] = useState(false);
+  const [removed, setRemoved] = useState<Removed | null>(null);
   const row = rows.find((r) => r.uid === open);
   const waiting = rows.filter((r) => !r.toMatch);
   return (
@@ -288,11 +277,18 @@ export function PendingMembers(props: {
           ))}
         </ul>
       )}
+      {removed && (
+        <PendingUndoLine
+          key={removed.requestId}
+          {...{ removed, words: t, slug: props.editor.slug }}
+          onUndone={() => setRemoved(null)}
+        />
+      )}
       <button
         type="button"
         aria-haspopup="dialog"
         onClick={() => setAdding(true)}
-        className={buttonClass("secondary", rows.length > 0 ? "mt-2" : "")}
+        className={buttonClass("secondary", rows.length > 0 || removed ? "mt-2" : "")}
       >
         {t["pending.add"]}
       </button>
@@ -316,6 +312,7 @@ export function PendingMembers(props: {
           words={t}
           editor={props.editor}
           onClose={() => setOpen(null)}
+          onRemoved={setRemoved}
         />
       )}
     </section>

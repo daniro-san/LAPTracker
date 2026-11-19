@@ -17,8 +17,10 @@ import {
   type MarkRow,
   type RollCallRow,
 } from "../repo/roll-call";
-import { markCallDeleted, setCallArchived, unmarkCallDeleted } from "../repo/roll-call-deletes";
+import { placeFree, setCallArchived } from "../repo/roll-call-deletes";
+import { softDelete, undoDelete } from "../repo/trash";
 import { anyRoster } from "../repo/workspace-any-roster";
+import { rollCalls } from "../schema";
 import type { WorkspaceAccess } from "./access";
 import { calendarDays } from "./calendar";
 import type { Placed } from "./calendar-model";
@@ -251,12 +253,12 @@ export async function addCall(
 }
 
 /** How long the server takes back an officer's own delete (D120); the page offers Undo for less. */
-export const UNDO_MS = 60_000;
+export { UNDO_MS } from "../repo/trash";
 
 /**
  * Deletes a roll call of the workspace (D120), or undoes the officer's own delete made under the same
- * request id in the last UNDO_MS. "not_found": no such roll call to delete, or nothing of this officer's
- * to undo.
+ * request id in the last UNDO_MS, unless a new roll call took its place. "not_found": no such roll call to
+ * delete, or nothing of this officer's to undo.
  */
 export async function deleteCall(
   db: Db,
@@ -265,13 +267,10 @@ export async function deleteCall(
   now: Date,
 ): Promise<"ok" | "not_found"> {
   const c = { workspaceId: access.workspaceId, id: input.id, userId: access.user.id, now };
+  const change = { ...c, requestId: input.requestId };
   const done = input.undo
-    ? await unmarkCallDeleted(
-        db,
-        { ...c, requestId: input.requestId },
-        new Date(now.getTime() - UNDO_MS),
-      )
-    : await markCallDeleted(db, { ...c, requestId: input.requestId });
+    ? await undoDelete(db, rollCalls, change, placeFree)
+    : await softDelete(db, rollCalls, change);
   return done ? "ok" : "not_found";
 }
 

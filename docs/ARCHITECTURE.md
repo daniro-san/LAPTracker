@@ -67,8 +67,10 @@ lib/private/*.ts    the workspace (D71): requireWorkspace and its branded Worksp
                     calendar-time.ts (pure, browser-safe: server days, ST and the viewer's clock, on
                     lib/schedule's `serverInstant`), calendar-words.ts (titles, dates, the 409 sentence),
                     caravan-suggest.ts (pure: the caravan suggestions' ranking) and caravans.ts (their read),
-                    dictionary.calendar*.ts (its words); its tables are in lib/schema-calendar.ts, its reads and
-                    writes in lib/repo/calendar.ts.
+                    calendar-delete.ts (skip, end or delete an entry), dictionary.calendar*.ts (its words); its
+                    tables are in lib/schema-calendar.ts, its reads and writes in lib/repo/calendar.ts.
+                    D123: every officer-owned record is deleted through lib/repo/trash.ts (soft delete, the
+                    deleter's Undo, restore) and keeps `live(table)` on its other reads.
                     The Roll call tab (D103): roll-call.ts (occasions and the writes: marks with their
                     version check, "the rest" and its undo, hand-added roll calls), roll-call-team.ts (Elixir
                     Scramble teams under one lock per workspace and week),
@@ -81,8 +83,9 @@ lib/private/*.ts    the workspace (D71): requireWorkspace and its branded Worksp
                     dictionary.board.ts; its table in lib/schema-board.ts, read and written in lib/repo/start-here.ts.
                     The thefts log (D97): thefts.ts (its read and writes, the attacker search), theft-groups.ts
                     (pure: attacker key, groups and counts, follow-up state), thefts-import.ts (the screenshot
-                    import's save hook for Secret Ops reports), dictionary.thefts.ts (its words); tables in
-                    lib/schema-thefts.ts, reads and writes in lib/repo/thefts.ts.
+                    import's save hook for Secret Ops reports), theft-warning.ts (pure: the warning to paste,
+                    in en/pt/fr), dictionary.thefts.ts (its words); tables in lib/schema-thefts.ts, reads and
+                    writes in lib/repo/thefts.ts; a tracked alliance's leader from lib/queries/leadership.ts.
                     The Follow-up tab (D104): follow-up.ts (the week's list from membersView and theftsView,
                     and the officers' records, with On a break and Needs help through member facts),
                     follow-up-rules.ts (pure: who is on the list, resolved for the week, the history line),
@@ -125,7 +128,14 @@ lib/squads-read.ts  the nightly squads read (D117): batches of /v1/players for O
                     /api/squads-read the backup; squads into member_squads (lib/repo/squads.ts, lib/schema-squads.ts), the
                     tracker's "Main squad might" versions through lib/repo/member-facts.ts, the hero catalog
                     (lib/heroes.ts, lib/repo/hero-catalog.ts). lib/squads.ts: its pure rules (reserve, main squad,
-                    version rule). The card's words: lib/private/member-squads.ts.
+                    version rule). The card's words: lib/private/member-squads.ts. lib/squads-call.ts: one call
+                    of a batch (split for size). D124: each workspace with a key of its own is read on that key.
+lib/workspace-keys.ts each workspace's own tracker key (D124): sealed with AES-256-GCM under WORKSPACE_KEYS_SECRET
+                    (the workspace id as associated data), opened only here at call time, "Test the key"
+                    (`checkKey`), the status rule and which squads reads use which key (`squadTargets`). Tables in
+                    lib/schema-keys.ts, read and written in lib/repo/workspace-keys.ts; the officers' screen in
+                    lib/private/tracker-key.ts (Alliance settings, /w/[slug]/settings); Home's line in
+                    lib/repo/desk-activity-key.ts.
 lib/rehearsal.ts    rehearsal creation (guards, retention) and the pure verdict.
 lib/auth.ts         Bearer CRON_SECRET / x-edit-pin in constant time; the Postgres-backed rate limiter.
 lib/run.ts          what a route runs: executeSnapshot and the tick's executeSample (D69) (finalise + logger

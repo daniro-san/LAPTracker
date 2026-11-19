@@ -75,6 +75,20 @@ export const workspacesAdminCopy = {
     pinStays:
       "Your /admin PIN is not a workspace session and stays unlocked. If you are also signed in to /w/{slug} with Discord, that session ends too.",
   },
+  /** The workspace's own tracker key (D124): its officers set it; /admin sees only this. */
+  key: {
+    unset: "Tracker key: not set",
+    set: "Tracker key: set · {status} ({when})",
+    status: {
+      unset: "not set",
+      ok: "working",
+      invalid: "refused by the tracker, reads paused",
+      out_of_quota: "out of quota until 00:00 UTC",
+      reenter: "needs to be entered again",
+    },
+    rotation:
+      "Changing WORKSPACE_KEYS_SECRET makes every saved tracker key need to be entered again.",
+  },
   saved: "Saved.",
   ended: "Sessions ended: {n}.",
   errors: {

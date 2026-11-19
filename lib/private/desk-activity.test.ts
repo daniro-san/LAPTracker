@@ -16,7 +16,7 @@ import {
 } from "../schema";
 import { screenshotDrafts } from "../schema-import";
 import { noticeEdits, notices } from "../schema-notices";
-import { thefts } from "../schema-thefts";
+import { theftFollowUps, thefts } from "../schema-thefts";
 import type { WorkspaceAccess } from "./access";
 import { onDeskNow } from "./desk-activity";
 import {
@@ -238,5 +238,45 @@ describe("recent activity", () => {
     ]);
     expect(plain("fr")[1]).toBe("Wren a mis Thistle en pause jusqu’au 24\u00a0nov.");
     expect(plain("en").join(" ")).not.toMatch(/private-note/);
+  });
+});
+
+describe("recent activity: the thefts log's steps (D97, amended 2026-11-19)", () => {
+  it("says which step an officer set, never the attacker or the note, and not for a deleted theft", async () => {
+    const a = (await browser(db, ws, "Ana")).userId;
+    // Two attackers, theft rows with no officer (no "added" line); Fernby's was deleted (D123).
+    const theft = (name: string) => ({
+      workspaceId: ws,
+      attackerKey: `name:${name.toLowerCase()}`,
+      attackerName: name,
+      attackerTag: "QRX",
+      source: "typed" as const,
+      createdAt: ago(60),
+    });
+    await db
+      .insert(thefts)
+      .values([theft("Pebblewick"), { ...theft("Fernby"), deletedAt: ago(30) }]);
+    const step = (key: string, state: "warned" | "resolved", at: Date) => ({
+      workspaceId: ws,
+      attackerKey: key,
+      state,
+      note: "private-note",
+      changedBy: a,
+      changedAt: at,
+    });
+    await db
+      .insert(theftFollowUps)
+      .values([
+        step("name:pebblewick", "warned", ago(20)),
+        step("name:pebblewick", "resolved", ago(5)),
+        step("name:fernby", "resolved", ago(10)),
+      ]);
+    const me = (await browser(db, ws, "Rook")).visit(NOW);
+    const lines = linesOf(await recentActivity(db, (await me) as WorkspaceAccess, NOW), "en");
+    expect(lines).toEqual([
+      "Ana marked an attacker in the thefts log “Resolved”",
+      "Ana marked an attacker in the thefts log “Warned the player”",
+    ]);
+    expect(lines.join(" ")).not.toMatch(/private-note|pebblewick/i);
   });
 });

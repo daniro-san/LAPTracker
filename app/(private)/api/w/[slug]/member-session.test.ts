@@ -39,7 +39,7 @@ const ID = "00000000-0000-4000-8000-000000000001";
 const FIXTURES: Record<string, Partial<Record<Method, Fixture>>> = {
   "activity/route.ts": { GET: { query: "?before=1763640000000" } },
   "calendar/route.ts": {
-    POST: { body: { action: "delete", entry: 1, scope: "all", week: "2026-11-16" } },
+    POST: { body: { action: "delete", entry: 1, scope: "all", week: "2026-11-16", requestId: ID } },
   },
   "follow-up/route.ts": {
     POST: { body: { uid: 1, action: "talked", note: "", until: null, version: 0, requestId: ID } },
@@ -67,7 +67,7 @@ const FIXTURES: Record<string, Partial<Record<Method, Fixture>>> = {
   "notices/route.ts": {
     POST: { body: { changes: [{ field: "title", value: "x", version: 0 }], requestId: ID } },
   },
-  "pending/route.ts": { POST: { body: { action: "delete", uid: -1 } } },
+  "pending/route.ts": { POST: { body: { action: "delete", uid: -1, requestId: ID } } },
   "profile/route.ts": { GET: {}, POST: { body: { action: "unlink" } } },
   "roll-call/route.ts": {
     POST: { body: { action: "add", kind: "cheese", day: "2026-11-16", requestId: ID } },
@@ -87,7 +87,11 @@ const FIXTURES: Record<string, Partial<Record<Method, Fixture>>> = {
     POST: { body: { people: [{ name: "Ana", did: ["squad"] }], lastWeek: false } },
   },
   "thanks/route.ts": { POST: { body: { action: "take_down", id: 1 } } },
-  "thefts/route.ts": { GET: { query: "?q=ab" }, POST: { body: { action: "remove", id: 1 } } },
+  "thefts/route.ts": {
+    GET: { query: "?q=ab" },
+    POST: { body: { action: "remove", id: 1, requestId: ID } },
+  },
+  "tracker-key/route.ts": { POST: { body: { action: "remove", requestId: ID } } },
 };
 
 const ROUTES = readdirSync(import.meta.dirname, { recursive: true, encoding: "utf8" })

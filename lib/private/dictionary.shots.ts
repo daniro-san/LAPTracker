@@ -131,6 +131,7 @@ export const shotsEn = {
   "shots.victim": "Whose report is it?",
   "shots.victimHelp": "The report does not say. Pick the member who was robbed.",
   "shots.attacker": "Attacker",
+  "shots.items": "What was taken (optional, from the report’s pictures)",
   "shots.entry.theft": "stole quest rewards",
   "shots.entry.help": "helped (not saved)",
   "shots.entry.unknown": "sentence not readable",

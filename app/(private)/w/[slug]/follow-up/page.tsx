@@ -100,8 +100,9 @@ function Thefts(props: { slug: string; thefts: AttackerGroup[]; t: WorkspaceDict
                 {a.tag ? `[${isolate(a.tag)}] ` : ""}
                 <bdi>{a.name}</bdi>
               </span>
-              <span className="text-yarn">
-                {` · ${t[a.followUp.reopened ? "thefts.state.reopened" : "thefts.state.open"]}`}
+              {/* The step they are at; yarn while nothing is done yet (D104, amended 2026-11-19). */}
+              <span className={a.followUp.state === "open" ? "text-yarn" : undefined}>
+                {` · ${a.followUp.reopened ? t["thefts.state.reopened"] : t[`thefts.state.${a.followUp.state}`]}`}
               </span>
               {a.week > 0 && <span>{` · ${fill(t["thefts.week"], { n: a.week })}`}</span>}
             </a>

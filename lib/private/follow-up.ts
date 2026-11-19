@@ -60,7 +60,10 @@ export async function followUpView(
     early: members.early,
     week: gameWeek(today),
     items: worklist(members.members, resolvedBy(rows)),
-    thefts: thefts.groups.flatMap((g) => g.attackers).filter((a) => a.followUp.state === "open"),
+    // Every attacker not yet resolved, whatever step they are at (D104, amended 2026-11-19).
+    thefts: thefts.groups
+      .flatMap((g) => g.attackers)
+      .filter((a) => a.followUp.state !== "resolved"),
   };
 }
 

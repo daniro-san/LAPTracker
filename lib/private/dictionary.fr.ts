@@ -11,6 +11,7 @@ import { lifecycleFr } from "./dictionary.lifecycle";
 import { membersFr } from "./dictionary.members.fr";
 import { noticesFr } from "./dictionary.notices";
 import { rollFr } from "./dictionary.rollcall.fr";
+import { settingsFr } from "./dictionary.settings";
 import { shareFr } from "./dictionary.share";
 import { shotsFr } from "./dictionary.shots.fr";
 import { squadsFr } from "./dictionary.squads";
@@ -288,4 +289,5 @@ export const fr: WorkspaceDictionary = {
   ...shareFr,
   ...squadsFr,
   ...garrisonFr,
+  ...settingsFr,
 };

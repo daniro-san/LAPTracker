@@ -4,7 +4,7 @@ import type { Db } from "../db";
 import { openTestDb } from "../db.test-helpers";
 import { allianceSnapshots, events, memberSnapshots, snapshots } from "../schema";
 import { findBlockedKeys } from "./blocked-keys";
-import { roleOf, rolesOf } from "./leadership";
+import { leaderNames, roleOf, rolesOf } from "./leadership";
 import { playerHistory } from "./players";
 
 const rank = (uid: number, rankCode: number, rankLabel: string) => ({
@@ -103,6 +103,41 @@ describe("rolesOf", () => {
   it("leaves an untitled R4 and lower ranks unmarked", () => {
     expect(roleOf(104, "R4")).toBeNull();
     expect(roleOf(103, "R3")).toBeNull();
+  });
+});
+
+describe("leaderNames (issue 321)", () => {
+  it("names the R5 of the newest public read by alliance, and no one for an alliance without ranks", async () => {
+    // A later read of alliance 1 where M15 now holds R5.
+    const at = new Date(Date.UTC(2026, 9, 24, 14));
+    const [event] = await db
+      .insert(events)
+      .values({ name: "Later", eventAtUtc: at, allianceIds: [1], beforeAt: at, afterAt: at })
+      .returning({ id: events.id });
+    const [snap] = await db
+      .insert(snapshots)
+      .values({ eventId: event?.id ?? 0, phase: "after", startedAt: at, status: "complete" })
+      .returning({ id: snapshots.id });
+    const [row] = await db
+      .insert(allianceSnapshots)
+      .values({ snapshotId: snap?.id ?? 0, unionId: 1, source: "v1", isFresh: true })
+      .returning({ id: allianceSnapshots.id });
+    await db
+      .insert(memberSnapshots)
+      .values({ ...rank(15, 105, "R5"), allianceSnapshotId: row?.id ?? 0 });
+    expect([...(await leaderNames(db, [1, 2]))]).toEqual([[1, { name: "M15", at }]]);
+    // Four newer public events: that read is no longer among the last four, so no leader is named.
+    for (const day of [25, 26, 27, 28]) {
+      const when = new Date(Date.UTC(2026, 9, day, 14));
+      await db.insert(events).values({
+        name: `E${day}`,
+        eventAtUtc: when,
+        allianceIds: [9],
+        beforeAt: when,
+        afterAt: when,
+      });
+    }
+    expect(await leaderNames(db, [1])).toEqual(new Map());
   });
 });
 

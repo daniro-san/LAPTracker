@@ -1,9 +1,12 @@
 // /admin's Workspaces card (D71, D73): each workspace's settings, its allowlist and how many sessions are
-// open, and who holds them (for "Sign out users", D105). Owner only (PIN); no roster data.
+// open, and who holds them (for "Sign out users", D105), and whether its own tracker key is set and its
+// status (D124: never the key, its last 4 characters or its quota). Owner only (PIN); no roster data.
 import { and, asc, count, eq, gt, max, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
+import { allKeyFacts } from "../repo/workspace-keys";
 import { workspaces, workspaceSessions, workspaceUsers } from "../schema";
+import type { KeyStatus } from "../schema-keys";
 
 export interface AdminWorkspace {
   id: number;
@@ -17,6 +20,11 @@ export interface AdminWorkspace {
   allowlist: { discordUserId: string; expiresAt: Date | null }[];
   /** Each person with an open session: officer if any of their open sessions is an officer's. */
   signedIn: SignedInPerson[];
+  /**
+   * The workspace's own tracker key (D124): set or not, its last status and when, and which master key
+   * sealed it (a fingerprint, not a secret), so the page can show `reenter` without a write.
+   */
+  trackerKey: { set: boolean; status: KeyStatus; statusAt: Date | null; masterFp: string | null };
 }
 
 export interface SignedInPerson {
@@ -29,7 +37,7 @@ export interface SignedInPerson {
 }
 
 export async function listWorkspaces(db: Db, now: Date): Promise<AdminWorkspace[]> {
-  const [rows, sessions, allowed, people] = await Promise.all([
+  const [rows, sessions, allowed, people, keys] = await Promise.all([
     db.select().from(workspaces).orderBy(asc(workspaces.slug)),
     db
       .select({
@@ -69,6 +77,7 @@ export async function listWorkspaces(db: Db, now: Date): Promise<AdminWorkspace[
       .where(gt(workspaceSessions.expiresAt, now))
       .groupBy(workspaceSessions.workspaceId, workspaceUsers.id)
       .orderBy(sql`max(${workspaceSessions.checkedAt}) desc`, asc(workspaceUsers.id)),
+    allKeyFacts(db),
   ]);
   return rows.map((w) => ({
     id: w.id,
@@ -89,5 +98,11 @@ export async function listWorkspaces(db: Db, now: Date): Promise<AdminWorkspace[
         tier: p.officer ? ("officer" as const) : ("member" as const),
         lastSeen: new Date(p.lastSeen ?? 0),
       })),
+    trackerKey: {
+      set: keys.get(w.id)?.set ?? false,
+      status: keys.get(w.id)?.status ?? "unset",
+      statusAt: keys.get(w.id)?.statusAt ?? null,
+      masterFp: keys.get(w.id)?.masterFp ?? null,
+    },
   }));
 }

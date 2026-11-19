@@ -102,7 +102,9 @@ describe("a row not found saved to a new member (D106)", () => {
       source: "officer",
     };
     await saveFacts(db, ana, uid, [first], NOW);
-    expect(await removePending(db, ana, -uid, NOW)).toBe(true);
+    expect(await removePending(db, ana, { pendingId: -uid, requestId: randomUUID() }, NOW)).toBe(
+      true,
+    );
 
     // The import sends version 0: the officer saw no facts for a member not found.
     expect(await save("Main squad 9.8 M", "Zephyrine", 0)).toEqual({ ok: true });

@@ -6,6 +6,7 @@ import { copy, fill } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
 import { listWorkspaces } from "@/lib/queries/workspaces";
+import { masterFingerprint } from "@/lib/workspace-keys";
 
 import { DiscordCommandCard, type GuildView } from "./DiscordCommandCard";
 import { AdminSection } from "./parts";
@@ -24,6 +25,10 @@ function seen(at: Date, now: Date): string {
 
 export async function Workspaces({ now }: { now: Date }) {
   const rows = await withPageDb((db) => listWorkspaces(db, now));
+  // D124: a key sealed under another master key reads "needs to be entered again", worked out from its
+  // fingerprint, with no write and no tracker call. /admin never sees a key.
+  const secret = getEnv().WORKSPACE_KEYS_SECRET;
+  const current = secret ? masterFingerprint(secret) : null;
   const views = rows.map((w) => {
     const alliance = ALLIANCES.find((a) => a.unionId === w.unionId);
     return {
@@ -39,6 +44,14 @@ export async function Workspaces({ now }: { now: Date }) {
         (a) =>
           `${a.discordUserId}${a.expiresAt ? ` ${fill(t.until, { date: a.expiresAt.toISOString().slice(0, 10) })}` : ""}`,
       ),
+      // D124: set or not and the status only; /admin cannot read, change or remove the key.
+      trackerKey: w.trackerKey.set
+        ? fill(t.key.set, {
+            status:
+              t.key.status[w.trackerKey.masterFp === current ? w.trackerKey.status : "reenter"],
+            when: w.trackerKey.statusAt ? seen(w.trackerKey.statusAt, now) : "",
+          })
+        : t.key.unset,
       people: w.signedIn.map((p) => ({
         id: p.userId,
         name: p.name ?? t.signOutUsers.noName,
@@ -58,6 +71,7 @@ export async function Workspaces({ now }: { now: Date }) {
   return (
     <>
       <AdminSection id="workspaces" title={t.title} help={t.help}>
+        <p className="mb-4 text-body-sm text-ink/80">{t.key.rotation}</p>
         <WorkspacesCard workspaces={views} />
       </AdminSection>
       <AdminSection id="discord" title={t.command.title} help={t.command.help}>

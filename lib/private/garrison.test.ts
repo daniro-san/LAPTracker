@@ -13,6 +13,7 @@ import { dailyReads, dailyRosters } from "../schema";
 import { memberSquads } from "../schema-squads";
 import { requireWorkspace, type WorkspaceAccess } from "./access";
 import { createEntry } from "./calendar";
+import { removeEntry } from "./calendar-delete";
 import { WORKSPACE_DICTIONARIES } from "./dictionary";
 import { garrisonView, saveEnemyMight, saveGarrison } from "./garrison";
 import { postGarrison } from "./garrison-post";
@@ -102,6 +103,27 @@ const enemy = (week: string, version: number, value: number) =>
   ({ action: "enemy", entry, week, version, value }) as const;
 
 describe("the garrison plan", () => {
+  it("never carries over the enemy might of a deleted siege (D123)", async () => {
+    const gone = { entry, scope: "all", week: WEEK, requestId: randomUUID() } as const;
+    expect(await removeEntry(db, access, gone, NOW)).toBe("deleted");
+    const siege = {
+      kind: "undead",
+      level: 6,
+      day: "2026-11-28",
+      minute: 720,
+      notes: null,
+    } as const;
+    const made = await createEntry(
+      db,
+      access,
+      { ...siege, link: null, forMembers: false, notice: null, weekly: true },
+      randomUUID(),
+    );
+    if (!made.ok) throw new Error(made.code);
+    const next = await garrisonView(db, access, made.id, "2026-11-23");
+    expect(next?.view).toMatchObject({ enemyMight: null, carriedFrom: null });
+  });
+
   it("keeps each siege's own enemy might and history, and starts the next siege from the last", async () => {
     const NEXT = "2026-11-23";
     const next = await garrisonView(db, access, entry, NEXT);

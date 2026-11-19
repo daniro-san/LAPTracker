@@ -109,6 +109,13 @@ const lifecycleEditorWords = (t: WorkspaceDictionary, readAt: string) => ({
   "pending.addHelp": fill(t["pending.addHelp"], { time: readAt }),
 });
 
+/** The query's single values (a repeated key is left out). */
+function plainSearch(query: Record<string, string | string[] | undefined>): URLSearchParams {
+  return new URLSearchParams(
+    Object.entries(query).flatMap(([k, v]) => (typeof v === "string" ? [[k, v]] : [])),
+  );
+}
+
 export default async function MembersPage({
   params,
   searchParams,
@@ -121,10 +128,9 @@ export default async function MembersPage({
   const jar = await cookies();
   const now = new Date();
   const env = getEnv();
-  const search = new URLSearchParams(
-    Object.entries(await searchParams).flatMap(([k, v]) => (typeof v === "string" ? [[k, v]] : [])),
-  );
-  const showFormer = search.get("view") === "former";
+  const search = plainSearch(await searchParams);
+  const at = search.get("view") === "former" ? "former" : "members";
+  const showFormer = at === "former";
   // INVARIANT workspace.access-first: nothing private is read before this check.
   const { access, view, rows, waiting, lifecycle } = await withPageDb((db) =>
     readPage(db, { slug, jar, now, zone: env.SERVER_TZ, showFormer }),
@@ -144,7 +150,7 @@ export default async function MembersPage({
     used: view.zones,
   };
   return (
-    <SignedInFrame access={access} language={language} t={t} current="members" waiting={waiting}>
+    <SignedInFrame access={access} language={language} t={t} current={at} waiting={waiting}>
       <h1 className="font-display text-display-lg">{t["tab.members"]}</h1>
       <MembersHead slug={slug} former={showFormer} t={t} language={language} />
       {/* The page's one main action (D109): new values for several members at once. */}
