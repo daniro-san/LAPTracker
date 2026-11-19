@@ -61,7 +61,7 @@ Why: officers want to show a map, a schedule or a game screen with a notice. The
   So a picture that becomes due is never deleted in the week it does. A replaced picture, a copy, Keep and Stop keeping all start the clock again. The date the card shows is never earlier than the real deletion, which comes at the first weekly run on or after it.
 
 - **Logs.** The job logs `notices.pictures.pruned` with the count only. A failure logs `notices.pictures.prune_failed` with the error's class name and returns 0, so the Friday check never answers 500. The tick's answer carries `pictures_pruned`.
-- **Home's activity.** "Ana kept the picture of “…”" (PT "manteve a imagem de", FR "a gardé l’image de l’annonce") and "Ana used the picture of “A” in “B”" (PT "usou a imagem de … em …", FR "a utilisé l’image de … dans …"). A copy does not also read "added a picture".
+- **Home's activity.** "Ana kept the picture of “…”" (PT "manteve a imagem de", FR "a gardé l’image de l’annonce") and "Ana used the picture of “A” in “B”" (PT "usou a imagem de … em …", FR "a utilisé l’image de … dans …"). A copy does not also read "added a picture". Each picture part of the feed takes the page's cursor (D108, #426): `added_at < before`, or `kept_at < before` for Keep, so no picture line repeats from page to page.
 - **Analytics** (D115; review of PR 422). Picture changes count under `notice` with their own actions: `picture_add`, `picture_remove`, `picture_keep`, `picture_unkeep`, `picture_reuse`, `picture_download`. Each counts only when a row really changed: the same bytes again, a remove with nothing to remove, or a keep of a kept picture is not counted. See docs/analytics/tracking-plan.md.
 
 **Amendments after the review of PR 422 (2026-11-18).**

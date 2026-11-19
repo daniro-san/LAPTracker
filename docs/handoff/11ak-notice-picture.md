@@ -30,6 +30,7 @@
   - **Deletion:** the weekly job, right after the Friday check claims its run, records when each warning began (`warned_at`). It deletes only due, unkept pictures warned at least 7 days earlier, and clears a warning when an end day moves away.
   - **Logs:** the count only. A failure logs its class name and returns 0, so the Friday check never answers 500.
   - **Home:** "Ana kept the picture of “…”" and "Ana used the picture of “A” in “B”".
+  - **Paging (rebased on #426):** each picture part of Home's feed is bounded by the page's cursor (`added_at < before`, `kept_at < before`). A test pages five picture lines two at a time and finds each once; without the bound it fails.
 - **Review fixes for PR 422:**
   - **Migration:** 0042 is unchanged, as pushed; 0043 adds the new columns and `octet_length(data) between 1 and 409600`.
   - **Uploads:** 411 without `Content-Length`, 413 over 400 KB, both before the body is read. Animated pictures are refused (422 `animated`): a VP8X with the animation flag, or a PNG with `acTL`.

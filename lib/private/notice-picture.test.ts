@@ -1,7 +1,7 @@
 // The weekly cleanup of notice pictures and its warning (D119, owner 2026-11-18): Home lists a picture from 7
 // days before it is due; a kept picture is never cleaned; a due picture is deleted only once its warning is 7
 // days old; "Use in another notice" copies the bytes to the other notice with its own clock. Also Home's
-// "added a picture" line.
+// "added a picture" line, which pages with the feed's cursor (D108) without repeating.
 import { randomUUID } from "node:crypto";
 
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
@@ -12,7 +12,7 @@ import { pruneEndedPictures, shiftDay } from "../repo/notice-picture-cleanup";
 import { findWorkspaceBySlug, recordSignIn, saveWorkspace } from "../repo/workspaces";
 import { noticePictures } from "../schema-notices";
 import { requireWorkspace, type WorkspaceAccess } from "./access";
-import { recentActivity } from "./desk-activity";
+import { activityPage } from "./desk-activity";
 import { savePicture } from "./notice-picture";
 import { keepPicture, picturesDue, reusePicture } from "./notice-picture-due";
 import { pngHeader } from "./notice-picture.test-helpers";
@@ -58,6 +58,19 @@ async function pictured(title: string, endsOn: string, width = 40): Promise<numb
   if (!saved.ok) throw new Error("notice not saved");
   expect((await savePicture(db, officer, saved.id, pngHeader(width, 30), NOW)).ok).toBe(true);
   return saved.id;
+}
+
+/** Every line of the feed at `at`, page by page through the cursor, `size` lines a page. */
+async function feed(at: Date, size = 40) {
+  const items = [];
+  let before: Date | null = null;
+  for (let page = 0; page < 50; page++) {
+    const read = await activityPage(db, officer, { now: at, zone: "UTC" }, before, size);
+    items.push(...read.lines.map((l) => l.item));
+    if (!read.next) return items;
+    before = read.next;
+  }
+  throw new Error("the feed never ended");
 }
 
 const stored = async () =>
@@ -108,17 +121,33 @@ describe("the weekly notice picture cleanup and its warning (D119)", () => {
     const source = rows.find((r) => r.noticeId === from);
     expect(copy).toMatchObject({ copiedFrom: from, width: 41, hash: source?.hash, warnedAt: null });
     expect(Buffer.from(copy?.data ?? []).equals(Buffer.from(source?.data ?? []))).toBe(true);
-    const lines = await recentActivity(db, officer, later(1));
-    expect(lines).toContainEqual(
+    expect(await feed(later(1))).toContainEqual(
       expect.objectContaining({ kind: "noticePictureReused", from: "Old map", title: "New rota" }),
     );
   });
 
   it("says on Home who added a picture to which notice", async () => {
     await pictured("Garden rota", "");
-    const lines = await recentActivity(db, officer, later(1));
-    expect(lines).toContainEqual(
+    expect(await feed(later(1))).toContainEqual(
       expect.objectContaining({ kind: "noticePicture", who: "Rook", title: "Garden rota" }),
     );
+  });
+
+  it("pages picture lines with the feed's cursor, each once", async () => {
+    const titles = ["Rota A", "Rota B", "Rota C", "Rota D", "Rota E"];
+    for (const [i, title] of titles.entries()) {
+      const changes = [{ field: "title" as const, value: title, version: 0 }];
+      const saved = await saveNotice(db, officer, null, changes, NOW, randomUUID());
+      if (!saved.ok) throw new Error("notice not saved");
+      await savePicture(
+        db,
+        officer,
+        saved.id,
+        pngHeader(40 + i, 30),
+        new Date(NOW.getTime() + (i + 1) * 60_000),
+      );
+    }
+    const lines = (await feed(later(1), 2)).filter((l) => l.kind === "noticePicture");
+    expect(lines.map((l) => ("title" in l ? l.title : "")).sort()).toEqual(titles);
   });
 });
