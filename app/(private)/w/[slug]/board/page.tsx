@@ -47,9 +47,14 @@ function Account(props: { officer: boolean; name: string; slug: string; t: Works
 }
 
 /** A strip that stays on screen while scrolling, so a preview is never taken for the member view. */
+/**
+ * A strip that stays on screen while scrolling, so a preview is never taken for the member view. Edge to
+ * edge while the page fills the window; from 1024, where the page is narrower than the window, its edges
+ * are the content column's (issue 412 UX pass).
+ */
 function PreviewStrip({ slug, t }: { slug: string; t: WorkspaceDictionary }) {
   return (
-    <aside className="sticky top-0 z-20 -mx-4 -mt-5 mb-4 flex flex-wrap items-center justify-between gap-x-3 bg-plum px-4 py-1 text-paper sm:-mx-6 sm:px-6">
+    <aside className="sticky top-0 z-20 -mx-4 -mt-5 mb-4 flex flex-wrap items-center justify-between gap-x-3 bg-plum px-4 py-1 text-paper sm:-mx-6 sm:px-6 lg:mx-0 lg:px-3">
       <p className="py-2 font-semibold">{t["board.preview"]}</p>
       <a
         href={`/w/${slug}`}
