@@ -111,8 +111,9 @@ lib/schedule.ts     pure: SERVER_TZ ↔ UTC, scheduled events and their times, F
 lib/tick.ts         the tick's decision: create the scheduled event's row, run the one due phase (from events.before_at/
                     after_at), a due sample (D69), the Friday check, a REHEARSAL_AT slot, the daily roster read.
 lib/daily-read.ts   the daily roster read (D60, D72): quota check, /v1 rosters as arrays (and raw_json) into daily_rosters; not an event.
-lib/squads-read.ts  the nightly squads read (D117): batches of /v1/players for OWN_ALLIANCE_ID after the daily read, via
-                    POST /api/squads-read; squads into member_squads (lib/repo/squads.ts, lib/schema-squads.ts), the
+lib/squads-read.ts  the nightly squads read (D117): batches of /v1/players for OWN_ALLIANCE_ID after the daily read, each
+                    started by a tick in the window after its answer (lib/squads-tick.ts, `after`), POST
+                    /api/squads-read the backup; squads into member_squads (lib/repo/squads.ts, lib/schema-squads.ts), the
                     tracker's "Main squad might" versions through lib/repo/member-facts.ts, the hero catalog
                     (lib/heroes.ts, lib/repo/hero-catalog.ts). lib/squads.ts: its pure rules (reserve, main squad,
                     version rule). The card's words: lib/private/member-squads.ts.

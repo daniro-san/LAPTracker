@@ -1,7 +1,8 @@
 // The nightly squads read (D117, issue 413): after the day's roster read (D72), one GET /v1/players/{uid}
 // per member of OWN_ALLIANCE_ID's roster, the tracker's cached copy (no `fresh`), sequential and paced. It
-// runs in batches of at most RUN_DEADLINE_MS: POST /api/squads-read takes the next batch, and the tick
-// workflow calls it again while batches remain. Each batch starts only when it ends inside the server day
+// runs in batches of at most RUN_DEADLINE_MS: each cron-job.org tick in the window starts the next batch
+// after its answer (lib/squads-tick.ts); POST /api/squads-read (tick.yml, or by hand) is the backup path,
+// and the claim keeps the two from overlapping. Each batch starts only when it ends inside the server day
 // (nothing after 23:58:20). The run never spends below `squadsReserve` (the event's quota day keeps its
 // reads), makes one call per member in the pass plus at most one retry for a 5xx or no answer (the
 // cursor and the retry list are saved after every call, under the batch's claim), and never makes more
