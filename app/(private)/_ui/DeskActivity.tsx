@@ -1,6 +1,9 @@
-// Home's "On the desk now" line and "Recent activity" feed (D108). Server-rendered: the line sits under the
-// title, the feed closes the page. The feed's first page is made here; ActivityFeed reads the next pages
+// Home's "On the desk now" line and "Recent activity" feed (D108). Server-rendered: one margin note of
+// Home's spread (D122), the line as its first row, then the feed. The feed's first page is made here; ActivityFeed reads the next pages
 // and opens a run's lines in place (2026-11-18).
+import type { ReactNode } from "react";
+
+import { MarginNote } from "@/lib/brand/components/layout/MarginNote";
 import type { ActivityPageView } from "@/lib/private/desk-activity-words";
 import { namesList } from "@/lib/private/desk-activity-words";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
@@ -15,7 +18,7 @@ export function OnDesk(props: {
 }) {
   const { names, t } = props;
   return (
-    <p className="mt-2 text-body-sm">
+    <p className="py-2 text-body-sm">
       <span className="font-semibold text-ink/75">{t["desk.now"]}</span>
       <span aria-hidden="true"> · </span>
       {names.length > 0 ? (
@@ -34,15 +37,15 @@ export function RecentActivity(props: {
   slug: string;
   first: ActivityPageView;
   t: WorkspaceDictionary;
+  /** The row above the feed: "On the desk now". */
+  lead: ReactNode;
 }) {
   const { first, t } = props;
   return (
-    <section aria-labelledby="home-activity" className="drawn-card mt-4 px-4 py-3">
-      <h2 id="home-activity" className="font-subhead text-display-sm">
-        {t["activity.head"]}
-      </h2>
+    <MarginNote id="home-activity" title={t["activity.head"]}>
+      {props.lead}
       {first.lines.length === 0 ? (
-        <p className="mt-1">{t["activity.none"]}</p>
+        <p className="py-2">{t["activity.none"]}</p>
       ) : (
         <ActivityFeed
           slug={props.slug}
@@ -54,6 +57,6 @@ export function RecentActivity(props: {
           }}
         />
       )}
-    </section>
+    </MarginNote>
   );
 }

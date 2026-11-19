@@ -12,12 +12,15 @@ export interface HeadAction extends PageAction {
 }
 
 export function PageHead({
+  id,
   title,
   meta,
   crumbs,
   actions = [],
   moreLabel,
 }: {
+  /** The title's id, for a section's `aria-labelledby`. */
+  id?: string;
   title: ReactNode;
   meta?: ReactNode;
   crumbs?: ReactNode;
@@ -31,7 +34,9 @@ export function PageHead({
       {crumbs}
       <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
         <div className="min-w-0 flex-[1_1_16rem]">
-          <h1 className="font-display text-display-lg">{title}</h1>
+          <h1 id={id} className="font-display text-display-lg">
+            {title}
+          </h1>
           {meta && <div className="mt-1 text-body-sm text-ink/70">{meta}</div>}
         </div>
         {actions.length > 0 && (

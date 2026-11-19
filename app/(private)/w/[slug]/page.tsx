@@ -4,11 +4,14 @@
 // thank and how many to check in with from Members, then the screenshots to review and the new members to
 // match (D106), and the notice reviews asked of this officer (D113). Like Members, it first matches new
 // members to the newest roster. D124: a card asks for the alliance's own tracker key, or says why it is
-// paused.
+// paused. D122: from 1024 the ledger spread, the cards to act on in the main column and the notes to read
+// beside them (recent activity with who is on the desk now, then members this week) in the margin column.
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 
 import { buttonClass } from "@/lib/brand/components/Button";
+import { PageHead } from "@/lib/brand/components/layout/PageHead";
+import { Spread } from "@/lib/brand/components/layout/Spread";
 import { fill } from "@/lib/copy";
 import type { Db } from "@/lib/db";
 import { getEnv } from "@/lib/env";
@@ -116,7 +119,7 @@ const LINK =
 /** Today and tomorrow from the Calendar, on the officer's own clock once the browser knows it. */
 function NextUp({ slug, t, items }: { slug: string; t: WorkspaceDictionary; items: NextItem[] }) {
   return (
-    <section aria-labelledby="home-next" className="drawn-card mt-4 px-4 py-3">
+    <section aria-labelledby="home-next" className="drawn-card mt-4 px-4 py-3 first:mt-0">
       <h2 id="home-next" className="font-subhead text-display-sm">
         {t["home.next.head"]}
       </h2>
@@ -139,7 +142,7 @@ function KeyCard({ slug, t, state }: { slug: string; t: WorkspaceDictionary; sta
   if (state === "off" || state === "ok") return null;
   const fix = state === "invalid" || state === "out_of_quota" || state === "reenter";
   return (
-    <section aria-labelledby="home-key" className="drawn-card mt-4 px-4 py-3">
+    <section aria-labelledby="home-key" className="drawn-card mt-4 px-4 py-3 first:mt-0">
       <h2 id="home-key" className="font-subhead text-display-sm">
         {t[fix ? "key.card.fix" : "key.card.add"]}
       </h2>
@@ -179,39 +182,55 @@ function Home(props: {
   });
   return (
     <section aria-labelledby="home">
-      <h1 id="home" className="font-display text-display-lg">
-        {t["home.title"]}
-      </h1>
+      <PageHead id="home" title={t["home.title"]} />
       {/* What became of a share from the phone (D110): first, where the person lands. */}
       {props.shared && (
-        <div role="status" className="mt-3 border-l-4 border-plum pl-3">
+        <div role="status" className="mb-4 border-l-4 border-plum pl-3">
           {props.shared.map((line) => (
             <p key={line}>{line}</p>
           ))}
         </div>
       )}
-      <OnDesk names={props.desk.names} t={t} language={language} />
-      <KeyCard slug={slug} t={t} state={props.desk.key} />
-      <NextUp slug={slug} t={t} items={props.next} />
-      <HomeMembers slug={slug} t={t} language={language} view={props.view} nudge={props.nudge} />
-      <PicturesDueCard slug={slug} t={t} language={language} items={props.desk.due} />
-      <ToReview
-        slug={slug}
-        items={props.items}
-        t={t}
-        language={language}
-        toMatch={
-          props.toMatch > 0
-            ? { line: toMatchLine(props.toMatch, t, f), href: `/w/${slug}/members#to-match` }
-            : null
+      <Spread
+        even
+        stickyMargin
+        main={
+          <>
+            <KeyCard slug={slug} t={t} state={props.desk.key} />
+            <NextUp slug={slug} t={t} items={props.next} />
+            <PicturesDueCard slug={slug} t={t} language={language} items={props.desk.due} />
+            <ToReview
+              slug={slug}
+              items={props.items}
+              t={t}
+              language={language}
+              toMatch={
+                props.toMatch > 0
+                  ? { line: toMatchLine(props.toMatch, t, f), href: `/w/${slug}/members#to-match` }
+                  : null
+              }
+              reviews={props.reviews}
+              when={(d) => fill(t["time.server"], { time: at.format(d) })}
+            />
+          </>
         }
-        reviews={props.reviews}
-        when={(d) => fill(t["time.server"], { time: at.format(d) })}
-      />
-      <RecentActivity
-        slug={slug}
-        first={activityView(props.desk.activity, t, language, props.desk.now)}
-        t={t}
+        margin={
+          <>
+            <RecentActivity
+              slug={slug}
+              first={activityView(props.desk.activity, t, language, props.desk.now)}
+              t={t}
+              lead={<OnDesk names={props.desk.names} t={t} language={language} />}
+            />
+            <HomeMembers
+              slug={slug}
+              t={t}
+              language={language}
+              view={props.view}
+              nudge={props.nudge}
+            />
+          </>
+        }
       />
     </section>
   );
@@ -293,7 +312,7 @@ export default async function WorkspacePage({
   // The Home tab's number: drafts and the notice reviews waiting for this officer (D113).
   const waiting = items.length + reviews.length;
   return (
-    <SignedInFrame access={access} language={language} t={t} current="home" waiting={waiting}>
+    <SignedInFrame access={access} language={language} t={t} current="home" waiting={waiting} wide>
       <Home
         slug={slug}
         t={t}

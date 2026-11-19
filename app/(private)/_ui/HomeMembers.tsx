@@ -1,6 +1,8 @@
 // Home's members box (panel PD-1), rendered on the server: who to thank and how many to check in with, as
 // Members shows them; "not yet" before the first end-of-day read, when nothing is computed (D75). Under the
 // week's progress, "Share the thanks" (D114), with a gentle line on Sunday and Monday until it is shared.
+// A margin note of Home's spread (D122): a card below 1024, unframed hairline rows beside the main column.
+import { MarginNote } from "@/lib/brand/components/layout/MarginNote";
 import { fill } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
@@ -23,7 +25,7 @@ function SayThanks(props: {
 }) {
   const { t, view } = props;
   return (
-    <div className="mt-3 border-t border-rule pt-2">
+    <div className="py-2">
       {view.thanks.progress.length > 0 && (
         <p className="max-w-sm text-body-sm">
           <span className="font-semibold text-ink/75">{t["thanks.progress"]} </span>
@@ -64,16 +66,13 @@ export function HomeMembers(props: {
   const today = serverDay(now, getEnv());
   const sharing = view.thanks.progress.length > 0 || nudge;
   return (
-    <section aria-labelledby="home-members" className="drawn-card mt-4 px-4 py-3">
-      <h2 id="home-members" className="font-subhead text-display-sm">
-        {t["home.members.head"]}
-      </h2>
+    <MarginNote id="home-members" title={t["home.members.head"]}>
       {view.early ? (
-        <p className="mt-1">{t["home.notYet"]}</p>
+        <p className="py-2">{t["home.notYet"]}</p>
       ) : (
         <>
           {thanks.length > 0 && (
-            <div className="mt-1 max-w-sm">
+            <div className="max-w-sm py-2">
               <h3 className="text-body-sm font-semibold text-ink/75">{t[key]}</h3>
               <ol>
                 {thanks.map((x) => (
@@ -92,11 +91,13 @@ export function HomeMembers(props: {
           )}
           {/* "Everyone looks fine" is left out beside the thanks block, where it reads as noise (D114). */}
           {checkins === 0 ? (
-            !sharing && <p className="mt-1">{t["members.checkinNone"]}</p>
+            !sharing && <p className="py-2">{t["members.checkinNone"]}</p>
           ) : (
-            <a href={`${members}?order=rank#ml-heading`} className={LINK}>
-              {fill(plural(t, "members.checkinCount", checkins, f), { n: checkins })}
-            </a>
+            <p>
+              <a href={`${members}?order=rank#ml-heading`} className={LINK}>
+                {fill(plural(t, "members.checkinCount", checkins, f), { n: checkins })}
+              </a>
+            </p>
           )}
         </>
       )}
@@ -105,6 +106,6 @@ export function HomeMembers(props: {
           {t["home.open"]}
         </a>
       </p>
-    </section>
+    </MarginNote>
   );
 }

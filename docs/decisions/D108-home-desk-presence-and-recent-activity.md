@@ -76,3 +76,5 @@ Title → "On the desk now" line → Today and tomorrow → Members this week �
 - No live refresh: both parts are as of the page load.
 
 **Amendment 2026-11-19 (D123, issue 427).** Three more lines, each never grouped and each bound by the page cursor: a Calendar entry deleted, a theft deleted (never whose or by whom) and a new member removed. A deleted Calendar entry's add, edit and garrison lines, a deleted theft's add line and a removed new member's add line leave the feed; an Undo brings them back.
+
+**Amendment 2026-11-19 (D122 rollout PR 2, 11at, issue 412).** "On the desk now" is no longer a line under the Home title: it is the first row of the "Recent activity" margin note. From 1024 that note heads Home's margin column beside the cards; below 1024 it follows To review. The words are unchanged.

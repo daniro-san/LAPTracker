@@ -44,7 +44,7 @@ export function PicturesDueCard(props: {
     named.join(", ") + (more > 0 ? ` ${fill(t["notices.pictures.more"], { n: more })}` : "");
   const date = dayOf(first.after, props.language);
   return (
-    <section aria-labelledby="pictures-due" className="drawn-card mt-6 px-4 py-3">
+    <section aria-labelledby="pictures-due" className="drawn-card mt-6 px-4 py-3 first:mt-0">
       <h2 id="pictures-due" className="font-semibold">
         {t["notices.pictures.cardTitle"]}
       </h2>
