@@ -163,12 +163,13 @@ const counted = (kind: ActivityItem["kind"]): kind is (typeof COUNTED_RUNS)[numb
 
 /**
  * A line of the feed as one sentence. A run of calendar entries, notice saves or screenshots says how many
- * ("Rook added 6 entries to the Calendar"); a run of member saves, thefts or new members says what it holds.
+ * lines it opens to ("Rook added 6 entries to the Calendar"); a run of member saves, thefts or new members
+ * says what it holds.
  */
 export function feedLine(line: ActivityLine, t: WorkspaceDictionary, language: WorkspaceLanguage) {
   const { item } = line;
   if (line.run.length === 0 || !counted(item.kind)) return activityLine(item, t, language);
-  return fill(t[`activity.run.${item.kind}`], { who: isolate(item.who), n: line.n });
+  return fill(t[`activity.run.${item.kind}`], { who: isolate(item.who), n: line.run.length });
 }
 
 /** One line as the client draws it: its words and time, and a run's own lines (empty for one action). */

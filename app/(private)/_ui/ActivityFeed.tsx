@@ -66,19 +66,28 @@ export function ActivityFeed(props: {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const moreButton = useRef<HTMLButtonElement>(null);
+  const lessButton = useRef<HTMLButtonElement>(null);
 
   const more = async () => {
+    const cursor = list.next;
     setBusy(true);
     setError(null);
-    const res = await fetch(`/api/w/${props.slug}/activity?before=${list.next}`).catch(() => null);
+    const res = await fetch(`/api/w/${props.slug}/activity?before=${cursor}`).catch(() => null);
     setBusy(false);
-    if (res?.ok) return setList(withPage(list, (await res.json()) as ActivityPageView));
+    if (res?.ok) {
+      const page = (await res.json()) as ActivityPageView;
+      // A page that answers a cursor the list has moved from (Show less meanwhile) is dropped.
+      flushSync(() => setList((now) => (now.next === cursor ? withPage(now, page) : now)));
+      // The last page took "Show more" away: the focus goes to "Show less".
+      if (!moreButton.current) lessButton.current?.focus();
+      return;
+    }
     const code = res ? ((await res.json().catch(() => ({}))) as { code?: string }).code : undefined;
     setError(code === SIGNED_OUT ? code : words.failed);
   };
   const less = () => {
     flushSync(() => {
-      setList(collapsed(list));
+      setList(collapsed);
       setError(null);
     });
     moreButton.current?.focus();
@@ -105,7 +114,7 @@ export function ActivityFeed(props: {
             </button>
           )}
           {list.more.length > 0 && (
-            <button type="button" onClick={less} className={TEXT_BUTTON}>
+            <button ref={lessButton} type="button" onClick={less} className={TEXT_BUTTON}>
               {words.less}
             </button>
           )}

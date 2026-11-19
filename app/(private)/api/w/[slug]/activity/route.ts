@@ -13,9 +13,12 @@ import { NO_STORE, privateError, privately, requestCookies } from "@/lib/private
 import { SLUG } from "@/lib/private/sign-in";
 import { parseQuery, withContext } from "@/lib/route";
 
-const query = z
-  .object({ before: z.coerce.number().int().positive().max(Number.MAX_SAFE_INTEGER) })
-  .strict();
+/**
+ * The cursor in ms, at most the end of year 9999: a later Date writes a six-digit year Postgres cannot
+ * read, so a larger cursor is a 400, never an error.
+ */
+const LAST_MS = Date.UTC(9999, 11, 31, 23, 59, 59, 999);
+const query = z.object({ before: z.coerce.number().int().positive().max(LAST_MS) }).strict();
 
 export async function GET(
   request: Request,

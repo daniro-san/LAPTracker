@@ -8,8 +8,10 @@ import type { Db } from "../db";
 import { openTestDb } from "../db.test-helpers";
 import { memberFollowUps } from "../schema";
 import { calendarEntries } from "../schema-calendar";
+import { noticeEdits, noticePublishes, notices } from "../schema-notices";
+import { thefts } from "../schema-thefts";
 import type { WorkspaceAccess } from "./access";
-import { ACTIVITY_PAGE, activityPage, type ActivityPage } from "./desk-activity";
+import { ACTIVITY_PAGE, activityPage, type ActivityLine, type ActivityPage } from "./desk-activity";
 import {
   ago,
   browser,
@@ -79,23 +81,117 @@ describe("recent activity pages", () => {
         requestId: randomUUID(),
       })),
     );
-    const me = (await (await browser(db, ws, "Rook")).visit(NOW)) as WorkspaceAccess;
-    const seen: Date[] = [];
-    let before: Date | null = null;
-    let pages = 0;
-    do {
-      const page: ActivityPage = await activityPage(
-        db,
-        me,
-        { now: NOW, zone: "UTC" },
-        before,
-        ACTIVITY_PAGE,
-      );
-      seen.push(...page.lines.map((l) => l.item.at));
-      before = page.next;
-      pages += 1;
-    } while (before && pages < 10);
+    const { lines, pages } = await everyPage("Rook");
     expect(pages).toBeGreaterThan(2);
-    expect(seen).toEqual(times);
+    expect(lines.map((l) => l.item.at)).toEqual(times);
+  });
+
+  it("pages two sources together when only one fills its read", async () => {
+    const a = (await browser(db, ws, "Ana")).userId;
+    const w = (await browser(db, ws, "Wren")).userId;
+    // Ana's 45 follow-ups on odd minutes; Wren's 10 thefts on every fourth even minute, each between two of Ana's.
+    const talks = Array.from({ length: 45 }, (_, i) => ago(2 * i + 1));
+    const stolen = Array.from({ length: 10 }, (_, k) => ago(4 * k + 2));
+    await db.insert(memberFollowUps).values(
+      talks.map((at, i) => ({
+        workspaceId: ws,
+        uid: 1000 + i,
+        action: "talked" as const,
+        writtenBy: a,
+        writtenAt: at,
+        requestId: randomUUID(),
+      })),
+    );
+    await db.insert(thefts).values(
+      stolen.map((at) => ({
+        workspaceId: ws,
+        attackerKey: "name:raider",
+        attackerName: "Raider",
+        attackerTag: "XYZ",
+        source: "typed" as const,
+        createdBy: w,
+        createdAt: at,
+      })),
+    );
+    const { lines } = await everyPage("Rook");
+    const all = [...talks, ...stolen].sort((x, y) => y.getTime() - x.getTime());
+    expect(lines.map((l) => l.item.at)).toEqual(all);
+    expect(linesOf(lines).filter((l) => l === "Wren added a theft to the log")).toHaveLength(10);
+  });
+
+  it("never folds two posts in a row into one line", async () => {
+    const a = (await browser(db, ws, "Ana")).userId;
+    for (const [title, at] of [
+      ["Garden rota", ago(10)],
+      ["Market day", ago(11)],
+    ] as const) {
+      const [notice] = await db
+        .insert(notices)
+        .values({ workspaceId: ws, createdAt: ago(90), updatedAt: ago(90) })
+        .returning();
+      const noticeId = notice?.id ?? 0;
+      await db
+        .insert(noticeEdits)
+        .values({ noticeId, workspaceId: ws, field: "title", value: title, editedAt: ago(90) });
+      await db.insert(noticePublishes).values({
+        workspaceId: ws,
+        noticeId,
+        requestId: randomUUID(),
+        audience: "members",
+        languages: "en",
+        status: "posted",
+        publishedBy: a,
+        publishedAt: at,
+      });
+    }
+    const me = (await browser(db, ws, "Rook")).visit(NOW);
+    expect(linesOf(await recentActivity(db, (await me) as WorkspaceAccess, NOW))).toEqual([
+      "Ana posted the notice “Garden rota” on Discord",
+      "Ana posted the notice “Market day” on Discord",
+    ]);
+  });
+
+  it("shows a run longer than one read as two lines on two pages, each action once", async () => {
+    const r = (await browser(db, ws, "Rook")).userId;
+    const times = Array.from({ length: 50 }, (_, i) => ago(i + 1));
+    await db.insert(calendarEntries).values(
+      times.map((at, i) => ({
+        workspaceId: ws,
+        kind: "other",
+        title: `Drill ${i}`,
+        day: "2026-11-22",
+        minute: 1200,
+        createdBy: r,
+        createdAt: at,
+      })),
+    );
+    const { lines, pages } = await everyPage("Wren");
+    expect(pages).toBe(2);
+    expect(linesOf(lines)).toEqual([
+      "Rook added 39 entries to the Calendar",
+      "Rook added 11 entries to the Calendar",
+    ]);
+    expect(lines.flatMap((l) => l.run.map((one) => one.at))).toEqual(times);
   });
 });
+
+/** Every page of the feed as `who` sees it, read with the cursor until there is none. */
+async function everyPage(who: string) {
+  const me = (await (await browser(db, ws, who)).visit(NOW)) as WorkspaceAccess;
+  const lines: ActivityLine[] = [];
+  let before: Date | null = null;
+  let pages = 0;
+  do {
+    const page: ActivityPage = await activityPage(
+      db,
+      me,
+      { now: NOW, zone: "UTC" },
+      before,
+      ACTIVITY_PAGE,
+    );
+    lines.push(...page.lines);
+    before = page.next;
+    pages += 1;
+  } while (before && pages < 10);
+  return { lines, pages };
+}

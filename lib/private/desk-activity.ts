@@ -96,7 +96,7 @@ const instant = (r: Raw) => `${r.by}@${r.at.getTime()}`;
 /** What makes two lines the same: the action and its object, without the time. */
 const sameKey = (r: Raw) => JSON.stringify({ ...r, at: 0 });
 
-/** Kinds whose run line counts its different lines: "Rook added 6 entries to the Calendar". */
+/** Kinds whose run line counts the lines it opens to: "Rook added 6 entries to the Calendar". */
 export const COUNTED_RUNS = ["entry", "entryEdit", "noticeSaved", "draft"] as const;
 /**
  * Kinds whose consecutive lines by one officer become one line: the counted ones, and member info saves,
@@ -172,19 +172,21 @@ function horizon(rows: ActivityRows, n: number): number | null {
 /**
  * The first `size` lines and where the next page starts. An instant is never split between two pages, so
  * a page starting strictly before the cursor has no line twice and misses none. When a source was read
- * short and the read ran out, the last run may go on in rows not read yet: it waits for the next page.
+ * short (`after`, its horizon) and the read ran out, the last run may go on in rows not read yet: it waits
+ * for the next page, unless it is the only line. A run longer than one read then shows as two lines on two
+ * pages. A page with no line newer than the horizon goes on from the horizon itself.
  */
-function cut(all: Run[], size: number, short: boolean): { page: Run[]; next: Date | null } {
+function cut(all: Run[], size: number, after: number | null): { page: Run[]; next: Date | null } {
+  const short = after !== null;
+  if (all.length === 0) return { page: [], next: short ? new Date(after + 1) : null };
   let end = Math.min(size, all.length);
   if (short && end === all.length && end > 1) end -= 1;
-  for (let next = all[end]; next && next.head.at >= (all[end - 1]?.oldest ?? next.head.at);) {
-    end += 1;
-    next = all[end];
-  }
-  const last = all[end - 1];
+  // `end` is at least 1 from here: the page has a last line.
+  const lastOf = () => all[end - 1] as Run;
+  while (end < all.length && (all[end] as Run).head.at >= lastOf().oldest) end += 1;
   return {
     page: all.slice(0, end),
-    next: last && (end < all.length || short) ? last.oldest : null,
+    next: end < all.length || short ? lastOf().oldest : null,
   };
 }
 
@@ -288,13 +290,11 @@ function itemOf(
 }
 
 /**
- * One line of the feed. `run` holds the lines of a grouped run, newest first (empty for a single action),
- * and `n` how many different things the run's lines are about.
+ * One line of the feed. `run` holds the lines of a grouped run, newest first (empty for a single action).
  */
 export interface ActivityLine {
   item: ActivityItem;
   run: ActivityItem[];
-  n: number;
 }
 
 /** A page of the feed, and the cursor of the next one (null: nothing older in the two weeks). */
@@ -318,7 +318,7 @@ export async function activityPage(
   const from = new Date(now.getTime() - ACTIVITY_WINDOW_MS);
   const rows = await activityRows(db, ws, from, before, PER_SOURCE);
   const after = horizon(rows, PER_SOURCE);
-  const { page, next } = cut(runs(merge(rows, after), zone), size, after !== null);
+  const { page, next } = cut(runs(merge(rows, after), zone), size, after);
   const lines = page.flatMap((r) => r.lines);
   const uids = lines.flatMap((r) =>
     r.kind === "followUp" ? [r.uid] : r.kind === "facts" ? r.uids : [],
@@ -339,7 +339,7 @@ export async function activityPage(
       const item = itemOf(r.head, names);
       if (!item) return [];
       const run = r.lines.length > 1 ? r.lines.flatMap((l) => itemOf(l, names) ?? []) : [];
-      return [{ item, run, n: new Set(r.lines.map(sameKey)).size }];
+      return [{ item, run }];
     }),
     next,
   };
