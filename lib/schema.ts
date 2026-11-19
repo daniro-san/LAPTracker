@@ -329,6 +329,14 @@ export const workspaces = pgTable("workspaces", {
     .notNull()
     .default(sql`'{}'::text[]`),
   createdAt: tstz("created_at").notNull().defaultNow(),
+  /**
+   * "Delete this workspace" (D125): when it was asked, by which workspace user (null: the site's owner on
+   * /admin; no foreign key, the row goes with the workspace), and the instant after which the daily job
+   * deletes it, 14 days later. All three null: no deletion asked. Cancel clears them.
+   */
+  deletionRequestedAt: tstz("deletion_requested_at"),
+  deletionRequestedBy: integer("deletion_requested_by"),
+  purgeAfter: tstz("purge_after"),
 });
 
 /**

@@ -5,7 +5,7 @@ import { ALLIANCES } from "@/config/alliances";
 import { copy, fill } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
-import { listWorkspaces } from "@/lib/queries/workspaces";
+import { listTombstones, listWorkspaces, type AdminWorkspace } from "@/lib/queries/workspaces";
 import { masterFingerprint } from "@/lib/workspace-keys";
 
 import { DiscordCommandCard, type GuildView } from "./DiscordCommandCard";
@@ -23,8 +23,45 @@ function seen(at: Date, now: Date): string {
   return ago.format(Math.round(minutes / 1440), "day");
 }
 
+const day = (at: Date) => at.toISOString().slice(0, 10);
+
+/** D125: "Deletion asked by an officer on … · deleted after …", or null when none is asked. */
+function deletionLine(deletion: AdminWorkspace["deletion"]): string | null {
+  if (!deletion) return null;
+  const d = t.deletion;
+  const who = deletion.byOwner ? d.owner : (deletion.by ?? d.officer);
+  return fill(d.line, { who, asked: day(deletion.askedAt), date: day(deletion.purgeAfter) });
+}
+
+/** The workspaces the daily job deleted (D125): what is left of each, no member data. */
+function Deleted({ rows }: { rows: Awaited<ReturnType<typeof listTombstones>> }) {
+  if (rows.length === 0) return null;
+  const d = t.deletion;
+  return (
+    <div className="mt-6">
+      <h3 className="font-subhead text-display-sm">{d.deleted}</h3>
+      <p className="text-body-sm text-ink/70">{d.deletedHelp}</p>
+      <ul className="mt-2 grid gap-2 text-body-sm break-words">
+        {rows.map((r) => (
+          <li key={r.id}>
+            {fill(d.tombstone, {
+              slug: r.slug,
+              alliance: r.alliance ?? String(r.unionId),
+              who: r.byOwner ? d.owner : (r.requestedBy ?? d.officer),
+              asked: day(r.requestedAt),
+              purged: day(r.purgedAt),
+            })}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export async function Workspaces({ now }: { now: Date }) {
-  const rows = await withPageDb((db) => listWorkspaces(db, now));
+  const [rows, deleted] = await withPageDb((db) =>
+    Promise.all([listWorkspaces(db, now), listTombstones(db)]),
+  );
   // D124: a key sealed under another master key reads "needs to be entered again", worked out from its
   // fingerprint, with no write and no tracker call. /admin never sees a key.
   const secret = getEnv().WORKSPACE_KEYS_SECRET;
@@ -52,6 +89,7 @@ export async function Workspaces({ now }: { now: Date }) {
             when: w.trackerKey.statusAt ? seen(w.trackerKey.statusAt, now) : "",
           })
         : t.key.unset,
+      deletion: deletionLine(w.deletion),
       people: w.signedIn.map((p) => ({
         id: p.userId,
         name: p.name ?? t.signOutUsers.noName,
@@ -73,6 +111,7 @@ export async function Workspaces({ now }: { now: Date }) {
       <AdminSection id="workspaces" title={t.title} help={t.help}>
         <p className="mb-4 text-body-sm text-ink/80">{t.key.rotation}</p>
         <WorkspacesCard workspaces={views} />
+        <Deleted rows={deleted} />
       </AdminSection>
       <AdminSection id="discord" title={t.command.title} help={t.command.help}>
         <DiscordCommandCard

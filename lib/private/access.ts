@@ -27,6 +27,8 @@ export type WorkspaceAccess = {
   readonly workspaceId: number;
   readonly unionId: number;
   readonly slug: string;
+  /** "Delete this workspace" (D125): when the daily job deletes it, or null when no deletion is asked. */
+  readonly purgeAfter: Date | null;
   /** displayName: the name the officer chose, else the one from Discord. playerUid: "This is me" (issue 334). */
   readonly user: {
     readonly id: number;
@@ -62,6 +64,8 @@ export type BoardAccess = {
   readonly slug: string;
   /** The workspace's Discord server, for the link to it. */
   readonly guildId: string;
+  /** "Delete this workspace" (D125): when the daily job deletes it, or null when no deletion is asked. */
+  readonly purgeAfter: Date | null;
   /** True for an officer's session: the board shows the officer's way back to the desk. */
   readonly officer: boolean;
   readonly name: string | null;
@@ -177,6 +181,7 @@ export async function requireBoard(
     unionId: workspace.unionId,
     slug: workspace.slug,
     guildId: workspace.discordGuildId,
+    purgeAfter: workspace.purgeAfter,
     officer,
     name: session.chosenName ?? session.displayName,
     userId: session.userId,
@@ -188,7 +193,7 @@ type Granted = Omit<WorkspaceAccess, "ok" | "user" | typeof accessBrand>;
 
 /** The one place the brand is set: a workspace and the person who passed its door. */
 function grant(
-  workspace: { id: number; unionId: number; slug: string },
+  workspace: { id: number; unionId: number; slug: string; purgeAfter?: Date | null },
   user: WorkspaceAccess["user"],
 ): WorkspaceAccess {
   const fields: Granted & Pick<WorkspaceAccess, "ok" | "user"> = {
@@ -196,6 +201,7 @@ function grant(
     workspaceId: workspace.id,
     unionId: workspace.unionId,
     slug: workspace.slug,
+    purgeAfter: workspace.purgeAfter ?? null,
     user,
   };
   return fields as WorkspaceAccess;

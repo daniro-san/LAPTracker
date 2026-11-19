@@ -11,6 +11,7 @@ export default defineConfig({
     "./lib/schema-board.ts",
     "./lib/schema-squads.ts",
     "./lib/schema-keys.ts",
+    "./lib/schema-retention.ts",
   ],
   out: "./drizzle",
 });

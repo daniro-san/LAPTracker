@@ -92,6 +92,8 @@ const FIXTURES: Record<string, Partial<Record<Method, Fixture>>> = {
     POST: { body: { action: "remove", id: 1, requestId: ID } },
   },
   "tracker-key/route.ts": { POST: { body: { action: "remove", requestId: ID } } },
+  "data-export/route.ts": { POST: { body: { requestId: ID } } },
+  "workspace-deletion/route.ts": { POST: { body: { action: "cancel", requestId: ID } } },
 };
 
 const ROUTES = readdirSync(import.meta.dirname, { recursive: true, encoding: "utf8" })

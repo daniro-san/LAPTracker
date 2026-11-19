@@ -89,6 +89,23 @@ export const workspacesAdminCopy = {
     rotation:
       "Changing WORKSPACE_KEYS_SECRET makes every saved tracker key need to be entered again.",
   },
+  /** "Delete this workspace" (D125): the same 14 days as an officer's, and its officers can cancel. */
+  deletion: {
+    line: "Deletion asked by {who} on {asked} · deleted after {date}",
+    owner: "you",
+    officer: "an officer",
+    ask: "Delete in 14 days",
+    askConfirm:
+      "Delete /w/{slug} after 14 days? Its officers see a banner with the date and can cancel. Public data (the Event Ledger and the alliance's pages) stays.",
+    cancel: "Cancel the deletion",
+    cancelConfirm: "Cancel the deletion of /w/{slug}?",
+    asked: "Deletion asked: after {date}.",
+    cancelled: "Deletion cancelled.",
+    deleted: "Deleted workspaces",
+    deletedHelp:
+      "What is left of a deleted workspace: its address, its alliance and who asked. No member data.",
+    tombstone: "/w/{slug} · {alliance} · asked by {who} on {asked} · deleted on {purged}",
+  },
   saved: "Saved.",
   ended: "Sessions ended: {n}.",
   errors: {
@@ -96,6 +113,7 @@ export const workspacesAdminCopy = {
     slug_taken: "Another workspace has this address.",
     expiry_past: "The date has to be in the future.",
     workspace_not_found: "That workspace no longer exists.",
+    no_workspace: "That workspace no longer exists.",
     no_session: "That person has no open session in this workspace now.",
     unauthorized: "Wrong PIN.",
     rate_limited: "Too many attempts. Wait a few minutes.",

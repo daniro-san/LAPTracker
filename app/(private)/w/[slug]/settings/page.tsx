@@ -1,5 +1,6 @@
-// /w/[slug]/settings: Alliance settings (D124, issue 438). For now one part, the alliance's own tracker key:
-// its state, last 4 characters and quota left, and Save and test, Replace and Remove. Officers only: a
+// /w/[slug]/settings: Alliance settings (D124, issue 438). The alliance's own tracker key: its state, last 4
+// characters and quota left, and Save and test, Replace and Remove. Then the alliance's data (D125): "Download
+// our data" and "Delete this workspace". Officers only: a
 // member's session goes to the board (refuse.ts). The key itself never reaches the page.
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
@@ -13,10 +14,12 @@ import { toReviewCount } from "@/lib/private/import-view";
 import { RENEW_MS } from "@/lib/private/session";
 import { SLUG } from "@/lib/private/sign-in";
 import { trackerKeyView } from "@/lib/private/tracker-key";
+import { DELETION_GRACE_MS } from "@/lib/private/workspace-deletion";
 
-import { SignedInFrame, workspaceWords } from "../../../_ui/Frame";
+import { deletionDate, SignedInFrame, workspaceWords } from "../../../_ui/Frame";
 import { refuse } from "../../../_ui/refuse";
 import { TrackerKeyForm } from "../../../_ui/TrackerKeyForm";
+import { WorkspaceDataForm } from "../../../_ui/WorkspaceDataForm";
 
 export default async function SettingsPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -68,6 +71,12 @@ export default async function SettingsPage({ params }: { params: Promise<{ slug:
           t={t}
         />
       </section>
+      <WorkspaceDataForm
+        slug={slug}
+        t={t}
+        graceDate={deletionDate(new Date(now.getTime() + DELETION_GRACE_MS), language)}
+        deletionDate={access.purgeAfter ? deletionDate(access.purgeAfter, language) : null}
+      />
     </SignedInFrame>
   );
 }

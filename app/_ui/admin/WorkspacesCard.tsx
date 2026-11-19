@@ -11,6 +11,7 @@ import { useState } from "react";
 import { buttonClass } from "@/lib/brand/components/Button";
 import { copy, fill } from "@/lib/copy";
 
+import { ConfirmSheet } from "./ConfirmSheet";
 import { Result } from "./outcome";
 import { forgetPin, PinSheet, savedPin } from "./PinSheet";
 import { SignOutUsersSheet, type SignOutChoice, type SignOutPerson } from "./SignOutUsersSheet";
@@ -31,6 +32,8 @@ export interface WorkspaceView extends WorkspaceSettings {
   allowlist: string[];
   /** "Tracker key: set · invalid (2 hours ago)" or "Tracker key: not set" (D124). */
   trackerKey: string;
+  /** "Deletion asked by … · deleted after …" (D125), or null when none is asked. */
+  deletion: string | null;
   /** Who has an open session, for "Sign out users". */
   people: SignOutPerson[];
 }
@@ -81,12 +84,16 @@ function fields(e: React.FormEvent<HTMLFormElement>): Record<string, string> {
   return Object.fromEntries(new FormData(e.currentTarget)) as Record<string, string>;
 }
 
+type Deletion = { w: WorkspaceView; action: "ask" | "cancel" };
+
 function WorkspaceList({
   workspaces,
   onSignOut,
+  onDeletion,
 }: {
   workspaces: WorkspaceView[];
   onSignOut: (w: WorkspaceView) => void;
+  onDeletion: (d: Deletion) => void;
 }) {
   if (workspaces.length === 0) return <p className="text-ink/70">{t.none}</p>;
   return (
@@ -110,9 +117,17 @@ function WorkspaceList({
             {t.allowlist}: {w.allowlist.length === 0 ? t.allowlistNone : w.allowlist.join(", ")}
           </p>
           <p className="text-body-sm break-words text-ink/80">{w.trackerKey}</p>
-          <p className="mt-2">
+          {w.deletion && <p className="text-body-sm font-semibold text-seal">{w.deletion}</p>}
+          <p className="mt-2 flex flex-wrap gap-2">
             <button type="button" onClick={() => onSignOut(w)} className={buttonClass("secondary")}>
               {t.signOutUsers.button}
+            </button>
+            <button
+              type="button"
+              onClick={() => onDeletion({ w, action: w.deletion ? "cancel" : "ask" })}
+              className={buttonClass("secondary", w.deletion ? "" : "text-seal")}
+            >
+              {w.deletion ? t.deletion.cancel : t.deletion.ask}
             </button>
           </p>
         </li>
@@ -163,6 +178,18 @@ function AllowForm({ workspaces, run }: { workspaces: WorkspaceView[]; run: Run 
 export function WorkspacesCard({ workspaces }: { workspaces: WorkspaceView[] }) {
   const { run, message, sheet } = usePinCall();
   const [signingOut, setSigningOut] = useState<WorkspaceView | null>(null);
+  const [deleting, setDeleting] = useState<Deletion | null>(null);
+  const deletion = ({ w, action }: Deletion) => {
+    setDeleting(null);
+    run({
+      url: "/api/admin/workspaces/deletion",
+      body: { workspace_id: w.id, action },
+      ok: (a) =>
+        action === "cancel"
+          ? t.deletion.cancelled
+          : fill(t.deletion.asked, { date: String(a.purge_after ?? "").slice(0, 10) }),
+    });
+  };
   const signOut = (w: WorkspaceView, choice: SignOutChoice) => {
     setSigningOut(null);
     run({
@@ -177,7 +204,7 @@ export function WorkspacesCard({ workspaces }: { workspaces: WorkspaceView[] }) 
   return (
     <div>
       {message && <Result message={message} />}
-      <WorkspaceList workspaces={workspaces} onSignOut={setSigningOut} />
+      <WorkspaceList workspaces={workspaces} onSignOut={setSigningOut} onDeletion={setDeleting} />
       <WorkspaceForm workspaces={workspaces} run={run} />
       {workspaces.length > 0 && <AllowForm workspaces={workspaces} run={run} />}
       {signingOut && (
@@ -186,6 +213,14 @@ export function WorkspacesCard({ workspaces }: { workspaces: WorkspaceView[] }) 
           people={signingOut.people}
           onCancel={() => setSigningOut(null)}
           onConfirm={(choice) => signOut(signingOut, choice)}
+        />
+      )}
+      {deleting && (
+        <ConfirmSheet
+          text={fill(deleting.action === "ask" ? t.deletion.askConfirm : t.deletion.cancelConfirm, {
+            slug: deleting.w.slug,
+          })}
+          onAnswer={(yes) => (yes ? deletion(deleting) : setDeleting(null))}
         />
       )}
       {sheet}
