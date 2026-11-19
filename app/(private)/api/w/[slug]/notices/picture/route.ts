@@ -44,7 +44,7 @@ export async function POST(
   if (!/^\d+$/.test(length) || Number(length) > MAX_PICTURE_BYTES) {
     return privateError(413, "too_large");
   }
-  return withContext("/api/w/[slug]/notices/picture", async (ctx, db) => {
+  return withContext("/api/w/[slug]/notices/picture", slug, async (ctx, db) => {
     const now = ctx.now();
     const access = await requireWorkspace(db, slug, requestCookies(request), now);
     if (!access.ok) return privateError(401, "signed_out");

@@ -67,7 +67,8 @@ export async function POST(request: Request): Promise<Response> {
     if (handled.status === 200 && handled.translation) {
       const job = handled.translation;
       const deps = {
-        ai: ctx.ai,
+        // Issue 452: each `$ai_generation` says which workspace's server asked.
+        ai: ctx.ai?.(job.workspace) ?? null,
         fetch: ctx.fetch,
         discordBase: ctx.env.DISCORD_API_BASE_URL,
         botToken: ctx.env.DISCORD_BOT_TOKEN,

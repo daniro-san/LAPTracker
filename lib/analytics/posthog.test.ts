@@ -30,6 +30,7 @@ const sdk = vi.hoisted(() => {
     set_config: vi.fn((c: Record<string, unknown>) => Object.assign(ph.config, c)),
     startSessionRecording: vi.fn(),
     stopSessionRecording: vi.fn(),
+    unregister: vi.fn(),
   };
   return ph;
 });
@@ -118,5 +119,16 @@ describe("desk and /admin page loads (D115)", () => {
     m.followPath(ph, "/w/ogs/members");
     await settle();
     expect(sdk.startSessionRecording).toHaveBeenCalledWith(true);
+  });
+
+  it("drop the workspace and alliance on a page outside the workspace; a public load is never touched (issue 452)", async () => {
+    const desk = await start("/w/ogs/members", null);
+    desk.m.followPath(desk.ph, "/w/ogs/members");
+    expect(sdk.unregister).not.toHaveBeenCalled();
+    desk.m.followPath(desk.ph, "/players");
+    expect(sdk.unregister.mock.calls).toEqual([["workspace"], ["alliance"]]);
+    const cookieless = await start("/players", null);
+    cookieless.m.followPath(cookieless.ph, "/players");
+    expect(sdk.unregister).not.toHaveBeenCalled();
   });
 });

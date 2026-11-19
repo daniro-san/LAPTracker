@@ -9,15 +9,15 @@ const SECRET = "s".repeat(32);
 const ACCESS = {
   ok: true,
   workspaceId: 1,
-  unionId: 2,
+  unionId: 67111155,
   slug: "ogs",
   user: { id: 42, displayName: "Wren", playerUid: 900 },
 } as unknown as WorkspaceAccess;
 
 afterEach(() => vi.restoreAllMocks());
 
-describe("counted (D115)", () => {
-  it("sends feature and action on the officer's pseudonymous id for a success, nothing for a refusal", async () => {
+describe("counted (D115, issue 452)", () => {
+  it("sends feature, action, workspace and alliance on the officer's pseudonymous id for a success, nothing for a refusal", async () => {
     const fetcher = vi.fn<typeof fetch>(async () => new Response("{}"));
     const ctx = {
       env: { CRON_SECRET: SECRET, VERCEL_ENV: "production", POSTHOG_KEY: "phc_test" },
@@ -40,6 +40,8 @@ describe("counted (D115)", () => {
       feature: "calendar",
       action: "add",
       tier: "officer",
+      workspace: "ogs",
+      alliance: "OGs",
     });
     expect(JSON.stringify(sent)).not.toMatch(/Wren|"42"|900/);
   });

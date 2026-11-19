@@ -1,9 +1,16 @@
 // The desk's adoption (D115): every write an officer makes that went through becomes one `ws_action` event
-// (feature and action, two words from closed lists) on the officer's pseudonymous id, after the response.
-// Nothing about what was written: no member, value, name or text. Off unless analytics is (D77).
+// (feature and action, two words from closed lists, and the workspace and its alliance's tag, issue 452) on
+// the officer's pseudonymous id, after the response. Nothing about what was written: no member, value, name
+// or text. Off unless analytics is (D77).
 import { analyticsKey } from "../analytics/events";
 import { analyticsPersonId } from "../analytics/person";
-import { captureServer, sendLater, type DeskAction, type DeskFeature } from "../analytics/server";
+import {
+  captureServer,
+  eventWorkspace,
+  sendLater,
+  type DeskAction,
+  type DeskFeature,
+} from "../analytics/server";
 import type { AppContext } from "../app-context";
 import type { WorkspaceAccess } from "./access";
 
@@ -19,7 +26,12 @@ export function counted(
   const person = analyticsPersonId(access.user.id, ctx.env.CRON_SECRET);
   sendLater(() =>
     captureServer(ctx.env, ctx.fetch, [
-      { event: "ws_action", person, properties: { feature, action } },
+      {
+        event: "ws_action",
+        person,
+        properties: { feature, action },
+        where: eventWorkspace(access),
+      },
     ]),
   );
   return response;

@@ -162,7 +162,8 @@ export function SignedInFrame({
   const person = analyticsPerson(getEnv(), {
     userId: access.user.id,
     tier: "officer",
-    workspace: access.slug,
+    slug: access.slug,
+    unionId: access.unionId,
   });
   const account = (
     <>

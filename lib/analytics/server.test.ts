@@ -1,7 +1,13 @@
 // The server's PostHog events (D115), with a stand-in fetch: nothing leaves the machine.
 import { describe, expect, it, vi } from "vitest";
 
-import { captureServer, SERVER_DISTINCT_ID, wireProperties, type ServerEvent } from "./server";
+import {
+  captureServer,
+  eventWorkspace,
+  SERVER_DISTINCT_ID,
+  wireProperties,
+  type ServerEvent,
+} from "./server";
 
 const ON = { VERCEL_ENV: "production", POSTHOG_KEY: "phc_test" };
 const EVENTS: ServerEvent[] = [
@@ -68,5 +74,15 @@ describe("server events (D115)", () => {
       route: "/w/[slug]",
     });
     expect(command).toMatchObject({ command: "translate_for_me" });
+  });
+
+  it("say which workspace and alliance they came from, and only then (issue 452)", () => {
+    const where = eventWorkspace({ slug: "ogs", unionId: 67111155 });
+    expect(where).toEqual({ workspace: "ogs", alliance: "OGs" });
+    for (const e of EVENTS) expect(wireProperties({ ...e, where })).toMatchObject(where);
+    for (const props of EVENTS.map(wireProperties)) {
+      expect(props).not.toHaveProperty("workspace");
+      expect(props).not.toHaveProperty("alliance");
+    }
   });
 });

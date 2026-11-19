@@ -68,6 +68,7 @@ export async function allKeyFacts(db: Db): Promise<Map<number, KeyFacts>> {
 
 export interface SealedKey {
   workspaceId: number;
+  slug: string;
   unionId: number;
   ciphertext: string | null;
   nonce: string | null;
@@ -81,6 +82,7 @@ export async function sealedKeys(db: Db): Promise<SealedKey[]> {
   const rows = await db
     .select({
       workspaceId: workspaces.id,
+      slug: workspaces.slug,
       unionId: workspaces.unionId,
       ciphertext: workspaceKeys.ciphertext,
       nonce: workspaceKeys.nonce,

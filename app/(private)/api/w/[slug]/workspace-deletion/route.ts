@@ -19,7 +19,7 @@ export async function POST(
   const parsed = deletionInput.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return privateError(400, "bad_request");
   const input = parsed.data;
-  return withContext("/api/w/[slug]/workspace-deletion", async (ctx, db) => {
+  return withContext("/api/w/[slug]/workspace-deletion", slug, async (ctx, db) => {
     const now = ctx.now();
     const access = await requireWorkspace(db, slug, requestCookies(request), now);
     if (!access.ok) return privateError(401, "signed_out");

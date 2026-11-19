@@ -23,7 +23,7 @@ export async function GET(
     jar.get(WORKSPACE_LANG_COOKIE)?.value,
     request.headers.get("accept-language"),
   );
-  return withContext("/api/w/[slug]/members/[uid]", async (ctx, db) => {
+  return withContext("/api/w/[slug]/members/[uid]", slug, async (ctx, db) => {
     const access = await requireWorkspace(db, slug, jar, ctx.now());
     if (!access.ok) return privateError(401, "signed_out");
     const card = await privately("members.card", () =>

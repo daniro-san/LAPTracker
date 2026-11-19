@@ -48,7 +48,12 @@ function Account(props: { officer: boolean; name: string; slug: string; t: Works
 /** The board's visitor to PostHog by a pseudonymous id (D115), when analytics is on. */
 function BoardPerson({ env, access }: { env: Env; access: BoardAccess }) {
   const tier = access.officer ? "officer" : "member";
-  const person = analyticsPerson(env, { userId: access.userId, tier, workspace: access.slug });
+  const person = analyticsPerson(env, {
+    userId: access.userId,
+    tier,
+    slug: access.slug,
+    unionId: access.unionId,
+  });
   return person && <AnalyticsPerson {...person} />;
 }
 

@@ -87,7 +87,7 @@ export async function GET(request: Request, { params }: Params): Promise<Respons
   if (!SLUG.test(slug)) return privateError(404, "not_found");
   const query = parseQuery(request, search);
   if (!query) return privateError(400, "bad_request");
-  return withContext(ROUTE, async (ctx, db) => {
+  return withContext(ROUTE, slug, async (ctx, db) => {
     const access = await requireWorkspace(db, slug, requestCookies(request), ctx.now());
     if (!access.ok) return privateError(401, "signed_out");
     const players = await privately("thefts.search", () => findAttackers(db, access, query.q));
@@ -102,7 +102,7 @@ export async function POST(request: Request, { params }: Params): Promise<Respon
   const parsed = body.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return privateError(400, "bad_request");
   const input = parsed.data;
-  return withContext(ROUTE, async (ctx, db) => {
+  return withContext(ROUTE, slug, async (ctx, db) => {
     const now = ctx.now();
     const access = await requireWorkspace(db, slug, requestCookies(request), now);
     if (!access.ok) return privateError(401, "signed_out");

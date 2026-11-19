@@ -1,10 +1,11 @@
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { ADMIN_WEBHOOK, testContext } from "./app-context.test-helpers";
+import { ADMIN_WEBHOOK, TEST_ENV, testContext } from "./app-context.test-helpers";
 import { recordAppError } from "./app-errors";
 import { minutes, T0 } from "./collector.test-helpers";
 import { openTestDb, truncateAll } from "./db.test-helpers";
 import { claimAppErrorAlert } from "./repo/app-errors";
+import { workspaces } from "./schema";
 
 const db = await openTestDb();
 const HOUR = 60 * 60_000;
@@ -30,6 +31,39 @@ describe("app-error alert", () => {
       });
     }
     expect(posts.filter((p) => p.url === ADMIN_WEBHOOK)).toHaveLength(3);
+  });
+
+  it("sends $exception with the workspace and alliance under a workspace's slug, none for an unknown one (issue 452)", async () => {
+    await db
+      .insert(workspaces)
+      .values({ unionId: 67111155, slug: "ogs", discordGuildId: "1", leaderRoleIds: ["2"] });
+    const { ctx, posts } = testContext(db, {
+      ...TEST_ENV,
+      VERCEL_ENV: "production",
+      POSTHOG_KEY: "phc_test",
+    });
+    const sent = () =>
+      posts
+        .filter((p) => p.url === "https://us.i.posthog.com/batch/")
+        .map((p) => (p.body.batch as { properties: Record<string, unknown> }[])[0]?.properties);
+    for (const [slug, route] of [
+      ["ogs", "/w/[slug]/thefts"],
+      ["nope", "/api/w/[slug]/calendar"],
+    ] as const) {
+      await recordAppError(ctx, {
+        route,
+        kind: "render",
+        digest: null,
+        error: new TypeError(),
+        slug,
+      });
+    }
+    await vi.waitFor(() => expect(sent()).toHaveLength(2));
+    const known = sent().find((p) => p?.route === "/w/[slug]/thefts");
+    const unknown = sent().find((p) => p?.route === "/api/w/[slug]/calendar");
+    expect(known).toMatchObject({ workspace: "ogs", alliance: "OGs" });
+    expect(unknown).not.toHaveProperty("workspace");
+    expect(unknown).not.toHaveProperty("alliance");
   });
 
   it("gives the claim to exactly one of two concurrent callers", async () => {

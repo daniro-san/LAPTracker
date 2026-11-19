@@ -7,6 +7,7 @@
 // (translate-limits.ts), and the log holds codes only. Each step answers Discord within 3 s; the
 // translating runs after (discord-translate-run.ts).
 import { WRITING_LANGUAGES, type WritingLanguage } from "../ai/notice-writing";
+import { eventWorkspace, type EventWorkspace } from "../analytics/server";
 import type { Db } from "../db";
 import { findWorkspaceByGuild } from "../repo/import";
 import {
@@ -49,6 +50,14 @@ export interface TranslationJob {
   pressed?: boolean;
   /** "Translate for everyone" only: where to post, and the picker to show again on a failure. */
   post?: { where: Where; channelId: string; link: string; picker: Picker; places: Where[] };
+  /** The server's workspace, found by its guild, for `$ai_generation` (issue 452); null once it is gone. */
+  workspace: EventWorkspace | null;
+}
+
+/** The workspace of the server a press came from, for analytics only. */
+async function workspaceOfGuild(db: Db, guildId: string | undefined) {
+  const workspace = guildId ? await findWorkspaceByGuild(db, guildId) : null;
+  return workspace && eventWorkspace(workspace);
 }
 
 export interface TranslateAnswer {
@@ -154,6 +163,7 @@ export async function translateCommand(
       ...checked,
       webhook: input.webhook,
       userId: input.userId,
+      workspace: eventWorkspace(workspace),
     },
   };
 }
@@ -188,6 +198,7 @@ async function switchLanguage(
       webhook: input.webhook,
       userId: pressed.userId,
       pressed: true,
+      workspace: await workspaceOfGuild(db, input.guildId),
     },
   };
 }
@@ -295,6 +306,7 @@ async function post(
         picker,
         places,
       },
+      workspace: await workspaceOfGuild(db, input.guildId),
     },
   };
 }

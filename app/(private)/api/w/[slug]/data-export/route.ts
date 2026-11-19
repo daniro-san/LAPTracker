@@ -27,7 +27,7 @@ export async function POST(
   if (!isSameOriginJson(request)) return privateError(403, "forbidden");
   const parsed = body.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return privateError(400, "bad_request");
-  return withContext("/api/w/[slug]/data-export", async (ctx, db) => {
+  return withContext("/api/w/[slug]/data-export", slug, async (ctx, db) => {
     const now = ctx.now();
     const cookies = requestCookies(request);
     const access = await requireWorkspace(db, slug, cookies, now);

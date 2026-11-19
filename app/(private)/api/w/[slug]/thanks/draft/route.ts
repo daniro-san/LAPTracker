@@ -6,6 +6,7 @@
 // never the text or a name.
 import { ChatError } from "@/lib/ai/groq";
 import { WRITING_LANGUAGES } from "@/lib/ai/notice-writing";
+import { eventWorkspace } from "@/lib/analytics/server";
 import { requireWorkspace } from "@/lib/private/access";
 import { counted } from "@/lib/private/desk-action";
 import { isSameOriginJson, NO_STORE, privateError, requestCookies } from "@/lib/private/http";
@@ -29,10 +30,10 @@ export async function POST(
   if (!isSameOriginJson(request)) return privateError(403, "forbidden");
   const parsed = draftInput.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return privateError(400, "bad_request");
-  return withContext("/api/w/[slug]/thanks/draft", async (ctx, db) => {
+  return withContext("/api/w/[slug]/thanks/draft", slug, async (ctx, db) => {
     const access = await requireWorkspace(db, slug, requestCookies(request), ctx.now());
     if (!access.ok) return privateError(401, "signed_out");
-    const ai = ctx.ai;
+    const ai = ctx.ai?.(eventWorkspace(access));
     if (!ai) return privateError(503, "not_set_up");
     // One unit per language, counted before Groq is asked, with D101's per-person and per-day limits.
     const refused = await quota(db, `desk:${access.user.id}`, WRITING_LANGUAGES.length, ctx.now());

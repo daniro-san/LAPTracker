@@ -38,7 +38,7 @@ beforeEach(async () => {
 
 /** The context with `ai` as the Groq stand-in (null: no key). */
 const withAi = (ai: ChatModel | null) => {
-  holder.ctx = { ...testContext(db).ctx, ai };
+  holder.ctx = { ...testContext(db).ctx, ai: ai && (() => ai) };
 };
 
 function draft(body: object, signedIn = true) {

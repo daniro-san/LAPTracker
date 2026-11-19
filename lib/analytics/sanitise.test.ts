@@ -72,6 +72,23 @@ describe("PostHog before_send (D77)", () => {
     expect(snapshot.properties).toMatchObject({ area: "workspace", workspace: "ogs" });
   });
 
+  it("sends no workspace or alliance off the workspace, whatever the SDK still holds (issue 452)", () => {
+    const held = { workspace: "ogs", alliance: "OGs" };
+    for (const path of ["/players", "/admin/members"]) {
+      const out = sanitiseEvent(
+        { event: "$pageview", properties: { ...held, $pathname: path } },
+        path,
+      );
+      expect(out.properties).not.toHaveProperty("workspace");
+      expect(out.properties).not.toHaveProperty("alliance");
+    }
+    const desk = sanitiseEvent(
+      { event: "$pageview", properties: { ...held, $pathname: "/w/ogs/thefts" } },
+      "/",
+    );
+    expect(desk.properties).toMatchObject({ workspace: "ogs", alliance: "OGs" });
+  });
+
   it("scrubs exception messages in every area and keeps the type, the words and the frames (D115)", () => {
     const out = sanitiseEvent(
       {

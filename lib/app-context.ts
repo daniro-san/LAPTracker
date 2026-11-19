@@ -1,7 +1,7 @@
 // What a route handler needs from the outside world, in one place. The real one reads the env,
 // the clock, the adapters and Neon; route tests replace this module (vi.mock) with fakes and PGlite.
 import { groqChat, type ChatModel, type Generation } from "./ai/groq";
-import { captureServer } from "./analytics/server";
+import { captureServer, type EventWorkspace } from "./analytics/server";
 import { openDb, type Db } from "./db";
 import { getEnv, type Env } from "./env";
 import { nextEventCache, type EventCache } from "./event-cache";
@@ -18,25 +18,33 @@ export interface AppContext {
   openDb: () => { db: Db; close: () => Promise<void> };
   /** The event page's shared cache; a write that changes an event invalidates it (issue 327). */
   eventCache: EventCache;
-  /** The notices' Translate and Improve writing (D81); null without GROQ_API_KEY. */
-  ai: ChatModel | null;
+  /**
+   * The notices' Translate and Improve writing (D81), for the workspace that asks (issue 452: its slug and
+   * tag go on each `$ai_generation`; null when a Discord server's workspace is gone); null without GROQ_API_KEY.
+   */
+  ai: ((where: EventWorkspace | null) => ChatModel) | null;
 }
 
 /** Each Groq request's metadata to PostHog (D115): one trace id per completion, no text, no key. */
 const observeAi =
-  (env: Env, send: typeof fetch) =>
+  (env: Env, send: typeof fetch, where: EventWorkspace | null) =>
   (generations: Generation[]): Promise<void> => {
     const traceId = crypto.randomUUID();
     return captureServer(
       env,
       send,
-      generations.map((g) => ({ event: "$ai_generation", properties: { ...g, traceId } })),
+      generations.map((g) => ({
+        event: "$ai_generation",
+        properties: { ...g, traceId },
+        ...(where && { where }),
+      })),
     );
   };
 
 export function getAppContext(): AppContext {
   const env = getEnv();
   const send: typeof fetch = (input, init) => fetch(input, init);
+  const groqKey = env.GROQ_API_KEY;
   return {
     env,
     now: () => new Date(),
@@ -45,7 +53,7 @@ export function getAppContext(): AppContext {
     fetch: send,
     openDb: () => openDb(),
     eventCache: nextEventCache,
-    ai: env.GROQ_API_KEY ? groqChat(env.GROQ_API_KEY, send, undefined, observeAi(env, send)) : null,
+    ai: groqKey ? (where) => groqChat(groqKey, send, undefined, observeAi(env, send, where)) : null,
   };
 }
 

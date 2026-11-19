@@ -105,3 +105,17 @@ Why: the owner found the PostHog data unusable. Every page load was a new person
 - The footer link: "Cookie settings" (was "Analytics choices").
 
 This replaces the 2026-11-18 review line that the bar says "no tracking cookie is stored", and the bar no longer says that typed text is never recorded. Neither behaviour changed: only the wording did. PT-BR and FR are the owner's wording; the other 14 public languages say the same thing and are stamped (D48). The layout is unchanged: text above the two buttons on phones, one row from 640 px. At 360 px the bar is 118 px high in EN and PT (158 px with the old text) and 138 px in FR (178 px); at 1280 px it stays 69 px.
+
+**Amendment (owner, 2026-11-19, issue #452, `session/11ax-analytics-alliance`): every event says which alliance it came from.** The slug was only a person property, which holds the latest value and cannot split events. Now every event from a workspace carries two plain properties: `workspace` (the slug) and `alliance` (the public tag from `config/alliances.ts`). No PostHog groups: they are a paid add-on. Neither value is personal data. Member names, uids and Discord ids are still never sent.
+
+- **Browser.** Desk and board page loads register both as super properties (`registerWorkspace`, from `AnalyticsPerson`).
+  - Sign-out unregisters them before `reset`.
+  - A client-side visit off `/w/<slug>` unregisters them, and `before_send` removes both from any event off `/w/<slug>`, so public and `/admin` events never carry them.
+  - A page load that started on a public page never registers them, as it never identifies, so cookieless loads are unchanged.
+- **Server.**
+  - `ws_action` always.
+  - `$exception` when the route is under `/w/[slug]` or `/api/w/[slug]` and the slug names a workspace. `withContext` takes the slug on those routes; instrumentation reads it from the request path. The workspace is looked up after the response.
+  - `$ai_generation`: `AppContext.ai` is now made for the asking workspace. Discord Translate finds the workspace by the guild id.
+- **The squads read** sends no PostHog event. Its count lines in run_logs (`squads.batch`, `squads.skip`) now carry `workspace` and `alliance` too.
+- `discord_command_used` is unchanged: the issue did not list it.
+- The tracking plan's test fails if a table row naming a `ws_*` event does not list `workspace` and `alliance`. The plan has a "By alliance" section with the insights to build.

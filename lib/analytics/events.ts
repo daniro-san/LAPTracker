@@ -166,9 +166,26 @@ export function identify(id: string, tier: "officer" | "member", workspace: stri
   });
 }
 
-/** Sign-out: the next events on this page load belong to no one (D115). */
+/** The super properties that say which alliance an event came from (issue 452). */
+export const WORKSPACE_PROPERTIES = ["workspace", "alliance"] as const;
+
+/**
+ * The desk's or the board's workspace (issue 452): its slug and its alliance's public tag ride on every later
+ * event of this page load, until sign-out or a page outside it. Never on a page load that started on a public
+ * page (as `identify`): its PostHog store may outlive the page load, and a cookieless one stays untouched.
+ */
+export function registerWorkspace(workspace: string, alliance: string | null): void {
+  withPostHog((ph) => {
+    if (!ph.config.cookieless_mode) ph.register({ workspace, alliance });
+  });
+}
+
+/** Sign-out: the next events on this page load belong to no one and no workspace (D115, issue 452). */
 export function forgetPerson(): void {
-  withPostHog((ph) => ph.reset());
+  withPostHog((ph) => {
+    for (const property of WORKSPACE_PROPERTIES) ph.unregister(property);
+    ph.reset();
+  });
 }
 
 export function track<E extends AnalyticsEvent>(
