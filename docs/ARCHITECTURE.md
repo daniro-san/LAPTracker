@@ -128,7 +128,14 @@ lib/squads-read.ts  the nightly squads read (D117): batches of /v1/players for O
                     /api/squads-read the backup; squads into member_squads (lib/repo/squads.ts, lib/schema-squads.ts), the
                     tracker's "Main squad might" versions through lib/repo/member-facts.ts, the hero catalog
                     (lib/heroes.ts, lib/repo/hero-catalog.ts). lib/squads.ts: its pure rules (reserve, main squad,
-                    version rule). The card's words: lib/private/member-squads.ts.
+                    version rule). The card's words: lib/private/member-squads.ts. lib/squads-call.ts: one call
+                    of a batch (split for size). D124: each workspace with a key of its own is read on that key.
+lib/workspace-keys.ts each workspace's own tracker key (D124): sealed with AES-256-GCM under WORKSPACE_KEYS_SECRET
+                    (the workspace id as associated data), opened only here at call time, "Test the key"
+                    (`checkKey`), the status rule and which squads reads use which key (`squadTargets`). Tables in
+                    lib/schema-keys.ts, read and written in lib/repo/workspace-keys.ts; the officers' screen in
+                    lib/private/tracker-key.ts (Alliance settings, /w/[slug]/settings); Home's line in
+                    lib/repo/desk-activity-key.ts.
 lib/rehearsal.ts    rehearsal creation (guards, retention) and the pure verdict.
 lib/auth.ts         Bearer CRON_SECRET / x-edit-pin in constant time; the Postgres-backed rate limiter.
 lib/run.ts          what a route runs: executeSnapshot and the tick's executeSample (D69) (finalise + logger

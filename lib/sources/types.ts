@@ -97,6 +97,8 @@ export interface CallOptions {
   timeoutMs?: number | undefined;
   /** Replaces MAX_RETRIES: 0 sends the call once. */
   maxRetries?: number | undefined;
+  /** A workspace's own tracker key (D124), in place of LAP_API_KEY; decrypted by the caller at call time. */
+  apiKey?: string | undefined;
 }
 
 export interface V1Source {

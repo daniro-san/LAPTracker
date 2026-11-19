@@ -140,7 +140,7 @@ async function request(
   const { timeoutMs, maxRetries } = withDefaults(options);
   const env = getSourceEnv();
   const headers = {
-    Authorization: `Bearer ${env.LAP_API_KEY}`,
+    Authorization: `Bearer ${options.apiKey ?? env.LAP_API_KEY}`,
     "User-Agent": USER_AGENT,
     Accept: "application/json",
   };

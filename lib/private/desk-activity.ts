@@ -69,7 +69,8 @@ type What =
   | { kind: "newMember"; names: string[] }
   | ({ kind: "reviewAsked" } & Pick<ReviewAskedDone, "noticeId" | "language" | "reviewerId">)
   | ({ kind: "reviewAnswered" } & Pick<ReviewAnsweredDone, "noticeId" | "outcome" | "language">)
-  | { kind: "thanks"; target: "discord" | "board" | "down" };
+  | { kind: "thanks"; target: "discord" | "board" | "down" }
+  | Omit<ActivityRows["keyChanges"][number], "by" | "at">;
 
 type Raw = What & { by: number; at: Date };
 
@@ -256,7 +257,7 @@ function merge(rows: ActivityRows, after: number | null): Raw[] {
     })),
     ...[rows.callDeletes, rows.callArchives, rows.garrisonSaves, rows.garrisonPosts].flat(),
     ...[rows.entryDeletes, rows.theftDeletes, rows.newMemberDeletes].flat(),
-    ...[rows.followUps, rows.thefts, rows.theftSteps].flat(),
+    ...[rows.followUps, rows.thefts, rows.theftSteps, rows.keyChanges].flat(),
     ...rows.newMembers.map(({ by, at, name }) => ({
       by,
       at,

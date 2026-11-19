@@ -8,6 +8,7 @@ import type { Db } from "../db";
 import { memberFacts, workspaceSessions, workspaceUsers } from "../schema";
 import { callParts, callRows, type CallKind, type CallRows } from "./desk-activity-calls";
 import * as garrison from "./desk-activity-garrison";
+import * as key from "./desk-activity-key";
 import * as picture from "./desk-activity-pictures";
 import { reviewParts, reviewRows, type ReviewKind, type ReviewRows } from "./desk-activity-reviews";
 import { thanksParts, type ThanksDone } from "./desk-activity-thanks";
@@ -88,6 +89,7 @@ export interface ActivityRows
   thefts: TheftsDone[];
   newMembers: NewMemberDone[];
   thanks: ThanksDone[];
+  keyChanges: key.KeyDone[];
 }
 
 /** The page's bounds: since `from`, and before `before` (an ISO time, or "infinity" for the first page). */
@@ -118,17 +120,11 @@ function factSaves(db: Db, ws: number, [from, before]: Span, n: number) {
 
 type OwnKind = "noticeSaved" | "noticePosted" | "draft" | "entry" | "newMember" | "followUp";
 
+type PartKind = ReviewKind | TrashKind | picture.Kind | CallKind | garrison.Kind | key.Kind;
+
 /** One row of the small sources' read; the columns each kind does not use are null. */
 type SmallRow = {
-  kind:
-    | OwnKind
-    | ReviewKind
-    | TrashKind
-    | picture.Kind
-    | CallKind
-    | garrison.Kind
-    | theftLog.Kind
-    | "thanks";
+  kind: OwnKind | PartKind | theftLog.Kind | "thanks";
   by: number | string;
   at: Date | string;
   notice_id: number | null;
@@ -200,7 +196,8 @@ async function smallSources(
     ${picture.parts(ws, since, before, n)}
     ${callParts(ws, since, before, n)}
     ${garrison.parts(ws, since, before, n)}
-    ${theftLog.parts(ws, since, before, n)}`);
+    ${theftLog.parts(ws, since, before, n)}
+    ${key.parts(ws, since, before, n)}`);
   return result.rows;
 }
 
@@ -314,6 +311,7 @@ function split(rows: SmallRow[]) {
       until: b,
     })),
     thanks: of("thanks").map(({ by, at, a }) => ({ by, at, target: a as ThanksDone["target"] })),
+    ...key.rows(of),
     ...callRows(of),
     ...garrison.rows(of),
     ...theftLog.rows(of),

@@ -3,15 +3,17 @@
 // digest of what the other tabs already work out (panel PD-1): today and tomorrow from the Calendar, who to
 // thank and how many to check in with from Members, then the screenshots to review and the new members to
 // match (D106), and the notice reviews asked of this officer (D113). Like Members, it first matches new
-// members to the newest roster.
+// members to the newest roster. D124: a card asks for the alliance's own tracker key, or says why it is
+// paused.
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 
 import { buttonClass } from "@/lib/brand/components/Button";
 import { fill } from "@/lib/copy";
+import type { Db } from "@/lib/db";
 import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
-import { requireWorkspace } from "@/lib/private/access";
+import { requireWorkspace, type WorkspaceAccess } from "@/lib/private/access";
 import { calendarDays } from "@/lib/private/calendar";
 import {
   ACTIVITY_FIRST,
@@ -30,6 +32,7 @@ import { matchOnRead, toMatch } from "@/lib/private/pending-members";
 import { RENEW_MS } from "@/lib/private/session";
 import { returnPath, SLUG } from "@/lib/private/sign-in";
 import { thanksNudge } from "@/lib/private/thanks";
+import { trackerKeyView, type KeyState } from "@/lib/private/tracker-key";
 import { serverDay } from "@/lib/schedule";
 
 import { calendarWords, nextItems } from "../../_ui/calendar-data";
@@ -131,6 +134,23 @@ function NextUp({ slug, t, items }: { slug: string; t: WorkspaceDictionary; item
   );
 }
 
+/** D124: no key of the alliance's own (or the site's key meanwhile), or a key the tracker paused. */
+function KeyCard({ slug, t, state }: { slug: string; t: WorkspaceDictionary; state: KeyState }) {
+  if (state === "off" || state === "ok") return null;
+  const fix = state === "invalid" || state === "out_of_quota" || state === "reenter";
+  return (
+    <section aria-labelledby="home-key" className="drawn-card mt-4 px-4 py-3">
+      <h2 id="home-key" className="font-subhead text-display-sm">
+        {t[fix ? "key.card.fix" : "key.card.add"]}
+      </h2>
+      <p className="mt-1">{t[`key.card.${state}`]}</p>
+      <a href={`/w/${slug}/settings`} className={LINK}>
+        {t["settings.link"]}
+      </a>
+    </section>
+  );
+}
+
 function Home(props: {
   slug: string;
   t: WorkspaceDictionary;
@@ -141,8 +161,8 @@ function Home(props: {
   /** New members a roster read since their add could not match (D106, 2026-11-17). */
   toMatch: number;
   /** D108: the other officers on the desk now, and what officers did lately; D119: the notice pictures
-   * the weekly cleanup deletes soon. */
-  desk: { names: string[]; activity: ActivityPage; now: Date; due: DueItem[] };
+   * the weekly cleanup deletes soon; D124: the alliance's own tracker key. */
+  desk: { names: string[]; activity: ActivityPage; now: Date; due: DueItem[]; key: KeyState };
   shared: string[] | null;
   reviews: Awaited<ReturnType<typeof reviewsForMe>>;
   /** Sunday or Monday, and the week's thanks not shared yet (D114). */
@@ -171,6 +191,7 @@ function Home(props: {
         </div>
       )}
       <OnDesk names={props.desk.names} t={t} language={language} />
+      <KeyCard slug={slug} t={t} state={props.desk.key} />
       <NextUp slug={slug} t={t} items={props.next} />
       <HomeMembers slug={slug} t={t} language={language} view={props.view} nudge={props.nudge} />
       <PicturesDueCard slug={slug} t={t} language={language} items={props.desk.due} />
@@ -195,6 +216,13 @@ function Home(props: {
     </section>
   );
 }
+
+/** Home's two notes after its digest: D119's pictures due for the cleanup, and D124's tracker key. */
+const cards = (db: Db, access: WorkspaceAccess, now: Date, zone: string) =>
+  Promise.all([
+    picturesDue(db, access, now, { SERVER_TZ: zone }),
+    trackerKeyView(db, access, getEnv(), now).then((v) => v.state),
+  ]);
 
 export default async function WorkspacePage({
   params,
@@ -224,16 +252,16 @@ export default async function WorkspacePage({
     if (!access.ok) return { access, ...NONE };
     // D106: a roster read since a new member was added may now list them, as on Members.
     const pending = await matchOnRead(db, access, now);
-    const [items, placed, view, names, activity, reviews, due] = await Promise.all([
+    const [items, placed, view, names, activity, reviews, [due, key]] = await Promise.all([
       toReview(db, access, now),
       calendarDays(db, access, days.from, days.to),
       progressHistory(db, access).then((history) => membersView(db, access, now, zone, history)),
       onDeskNow(db, access, now),
       activityPage(db, access, { now, zone }, null, ACTIVITY_FIRST),
       reviewsForMe(db, access),
-      picturesDue(db, access, now, { SERVER_TZ: zone }),
+      cards(db, access, now, zone),
     ]);
-    const desk = { names, activity, now, due };
+    const desk = { names, activity, now, due, key };
     const nudge = await thanksNudge(db, access, today);
     const unmatched = toMatch(pending, view.readAt).length;
     return { access, items, placed, view, toMatch: unmatched, desk, reviews, nudge };
