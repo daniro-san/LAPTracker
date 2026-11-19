@@ -9,6 +9,16 @@ export const garrisonEn = {
   "garrison.enemy": "Enemy might",
   "garrison.enemyNone": "Set the enemy might from the siege screen to see who needs help.",
   "garrison.enemySave": "Save enemy might",
+  "garrison.enemyHint":
+    "From the siege screen, in millions, like 11.5. Each siege keeps its own; you can change it until the siege, and the last one saved counts.",
+  "garrison.enemyBad": "Write the enemy might like 11.5.",
+  "garrison.enemyCarried":
+    "Carried over from the siege in the week of {date}. Save it if it is still right.",
+  "garrison.enemyStale": "Another officer changed the enemy might first. It is now {value}.",
+  "garrison.enemyNotFound": "Couldn’t find “Enemy Might” in this picture. Type it instead.",
+  "garrison.channel": "Post to",
+  "garrison.channel.members": "Members’ channel ({name})",
+  "garrison.channel.leaders": "Leaders’ channel ({name})",
   "garrison.help.head": "Needs help ({n})",
   "garrison.help.hint": "No squad at the enemy might or above.",
   "garrison.help.none": "Nobody needs help at this enemy might.",
@@ -65,6 +75,15 @@ export const garrisonPt: GarrisonWords = {
   "garrison.enemyNone":
     "Informe o might do inimigo da tela do cerco para ver quem precisa de ajuda.",
   "garrison.enemySave": "Salvar might do inimigo",
+  "garrison.enemyHint":
+    "Da tela do cerco, em milhões, como 11,5. Cada cerco tem o seu; dá para mudar até o cerco, e vale o último salvo.",
+  "garrison.enemyBad": "Escreva o might do inimigo como 11,5.",
+  "garrison.enemyCarried": "Trazido do cerco da semana de {date}. Salve se ainda estiver certo.",
+  "garrison.enemyStale": "Outro oficial mudou o might do inimigo antes. Agora é {value}.",
+  "garrison.enemyNotFound": "Não achei “Enemy Might” neste print. Digite o valor.",
+  "garrison.channel": "Publicar em",
+  "garrison.channel.members": "Canal dos membros ({name})",
+  "garrison.channel.leaders": "Canal da liderança ({name})",
   "garrison.help.head": "Precisam de ajuda ({n})",
   "garrison.help.hint": "Nenhum esquadrão no might do inimigo ou acima.",
   "garrison.help.none": "Ninguém precisa de ajuda com esse might do inimigo.",
@@ -118,6 +137,17 @@ export const garrisonFr: GarrisonWords = {
   "garrison.enemyNone":
     "Indiquez le might ennemi de l’écran du siège pour voir qui a besoin d’aide.",
   "garrison.enemySave": "Enregistrer le might ennemi",
+  "garrison.enemyHint":
+    "Sur l’écran du siège, en millions, comme 11,5. Chaque siège a le sien ; modifiable jusqu’au siège, la dernière valeur enregistrée compte.",
+  "garrison.enemyBad": "Écrivez le might ennemi comme 11,5.",
+  "garrison.enemyCarried":
+    "Repris du siège de la semaine du {date}. Enregistrez-le s’il est toujours juste.",
+  "garrison.enemyStale":
+    "Un autre officier a modifié le might ennemi avant vous. Il vaut maintenant {value}.",
+  "garrison.enemyNotFound": "« Enemy Might » introuvable sur cette capture. Saisissez-le.",
+  "garrison.channel": "Publier dans",
+  "garrison.channel.members": "Salon des membres ({name})",
+  "garrison.channel.leaders": "Salon des responsables ({name})",
   "garrison.help.head": "Besoin d’aide ({n})",
   "garrison.help.hint": "Aucune escouade au niveau du might ennemi ou au-dessus.",
   "garrison.help.none": "Personne n’a besoin d’aide avec ce might ennemi.",

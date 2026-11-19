@@ -70,10 +70,6 @@ export const calendarEn = {
   "calendar.form.window": "Window (ST)",
   "calendar.form.which": "Which one",
   "calendar.form.level": "Level, 1 to {max}",
-  "calendar.form.enemyMight": "Enemy might",
-  "calendar.form.enemyMightHint":
-    "From the siege screen, in millions, like 11.5. You can change it until the siege; the last one saved counts.",
-  "calendar.form.enemyMightBad": "Write the enemy might like 11.5.",
   "calendar.form.team": "Team",
   "calendar.form.name": "Name",
   "calendar.form.nameHint": "For example: alliance meeting",
@@ -115,7 +111,6 @@ export const calendarEn = {
   "calendar.field.slot": "the weekly day and time",
   "calendar.field.when": "this week’s day and time",
   "calendar.field.level": "the level",
-  "calendar.field.enemyMight": "the enemy might",
   "calendar.field.variant": "which one",
   "calendar.field.title": "the name",
   "calendar.field.notes": "the notes",

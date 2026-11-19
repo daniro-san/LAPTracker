@@ -55,7 +55,7 @@ function usePlan(slug: string, data: BoardData) {
     setState(json?.code === "stale" ? "stale" : json?.code === SIGNED_OUT ? SIGNED_OUT : "failed");
     if (json?.code === "stale") router.refresh();
   }
-  return { pairs, rev, setRev, state, change };
+  return { pairs, rev, state, change };
 }
 
 const key = (helper: number, squad: number) => `${helper}:${squad}`;
@@ -188,6 +188,7 @@ function ShareBar(props: {
   data: BoardData;
   words: GarrisonWords;
   posted: string | null;
+  channels: Record<"members" | "leaders", string | null>;
   plan: Plan;
 }) {
   const { data, words, plan } = props;
@@ -209,7 +210,7 @@ function ShareBar(props: {
           {words[line]}
         </p>
       )}
-      <div className="mt-2 flex flex-wrap gap-2">
+      <p className="mt-2">
         <CopyButton
           text={text}
           labels={{
@@ -218,6 +219,8 @@ function ShareBar(props: {
             failed: words["garrison.copyFailed"],
           }}
         />
+      </p>
+      <div className="mt-2 flex flex-wrap gap-2">
         <GarrisonPost
           slug={props.slug}
           entry={data.entry}
@@ -225,7 +228,7 @@ function ShareBar(props: {
           words={words}
           busy={plan.state === "saving"}
           posted={props.posted}
-          onPosted={plan.setRev}
+          channels={props.channels}
         />
       </div>
     </div>
@@ -239,6 +242,7 @@ export function GarrisonBoard(props: {
   data: BoardData;
   words: GarrisonWords;
   posted: string | null;
+  channels: Record<"members" | "leaders", string | null>;
 }) {
   const { data, words } = props;
   const plan = usePlan(props.slug, data);

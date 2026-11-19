@@ -5,7 +5,14 @@
 import { z } from "zod";
 
 import type { Db } from "../db";
-import { findPlan, savePlan, type GarrisonRow } from "../repo/garrison";
+import {
+  findPlan,
+  lastEnemyMight,
+  saveEnemy,
+  savePlan,
+  type GarrisonRow,
+  type Siege,
+} from "../repo/garrison";
 import { allLatestSquads } from "../repo/squads";
 import { latestRoster } from "../repo/workspace-rosters";
 import type { WorkspaceAccess } from "./access";
@@ -31,8 +38,21 @@ const id = z.number().int().positive();
 const MONDAY = z.string().refine((d) => isDay(d) && mondayOf(d) === d);
 const pair = z.object({ helper: id, squad: z.number().int().min(1).max(9), member: id }).strict();
 
-/** The page's writes: save the edited pairs (with the version seen), or post the plan to Discord. */
+/**
+ * The page's writes: set the siege's enemy might, save the edited pairs (each with the version seen), or
+ * post the plan to the members' or the leaders' Discord channel.
+ */
 export const garrisonInput = z.discriminatedUnion("action", [
+  z
+    .object({
+      action: z.literal("enemy"),
+      entry: id,
+      week: MONDAY,
+      version: z.number().int().min(0),
+      /** The game's number in full: 11.5M is 11500000. */
+      value: z.number().int().positive().max(1e11),
+    })
+    .strict(),
   z
     .object({
       action: z.literal("save"),
@@ -42,7 +62,15 @@ export const garrisonInput = z.discriminatedUnion("action", [
       pairs: z.array(pair).max(200),
     })
     .strict(),
-  z.object({ action: z.literal("post"), entry: id, week: MONDAY, requestId: z.uuid() }).strict(),
+  z
+    .object({
+      action: z.literal("post"),
+      entry: id,
+      week: MONDAY,
+      channel: z.enum(["members", "leaders"]).default("members"),
+      requestId: z.uuid(),
+    })
+    .strict(),
 ]);
 export type GarrisonInput = z.infer<typeof garrisonInput>;
 
@@ -60,8 +88,11 @@ export interface GarrisonMember {
 
 export interface GarrisonView {
   placed: Placed;
+  /** This siege's enemy might, else the last one saved for an earlier siege (`carriedFrom`). */
   enemyMight: number | null;
-  /** The enemy might's version, for its 409 check (issue 293). */
+  /** The week of the earlier siege the enemy might comes from; null when this siege has its own. */
+  carriedFrom: string | null;
+  /** This siege's enemy might version, for its 409 check (issue 293). */
   version: number;
   /** "Needs help" then "close" in the suggestion order, then "no squad data" by name. */
   members: GarrisonMember[];
@@ -133,6 +164,12 @@ function sparesIn(members: PlanMember[], t: number, pairs: GarrisonPair[]) {
     .map((s) => ({ ...s, name: name.get(s.helper) ?? "" }));
 }
 
+const siegeKey = (access: WorkspaceAccess, entry: number, week: string): Siege => ({
+  workspaceId: access.workspaceId,
+  entryId: entry,
+  week,
+});
+
 /** The page's view, or null when the entry is not an Undead Siege of this workspace in that week. */
 export async function garrisonView(
   db: Db,
@@ -142,28 +179,41 @@ export async function garrisonView(
 ): Promise<{ view: GarrisonView; row: GarrisonRow | null } | null> {
   const placed = await siegeOf(db, access, entry, week);
   if (!placed) return null;
+  const siege = siegeKey(access, entry, week);
   const [members, row] = await Promise.all([
     readSignals(db, access, week).then((s) => planMembers(db, access, s)),
-    findPlan(db, access.workspaceId, entry, week),
+    findPlan(db, siege),
   ]);
-  const t = placed.entry.enemyMight;
-  // A stored pair whose member or squad has left the roster is dropped, so a save never trips on it.
-  const suggested = t === null ? [] : suggestPairs(members, t);
-  const pairs = row ? row.pairs.filter((p) => pairsOk([p], members)) : suggested;
+  // A siege with no enemy might of its own starts from the last one saved (owner, 2026-11-19).
+  const carried = row?.enemyMight == null ? await lastEnemyMight(db, siege) : null;
+  const t = row?.enemyMight ?? carried?.value ?? null;
   const view: GarrisonView = {
     placed,
     enemyMight: t,
-    version: placed.entry.edits.enemyMight?.v ?? 0,
-    members: t === null ? [] : membersOf(members, t),
-    spares: t === null ? [] : sparesIn(members, t, pairs),
-    pairs,
-    suggested,
+    carriedFrom: carried?.week ?? null,
+    ...(t === null ? EMPTY : planOf(members, row, t)),
     names: Object.fromEntries(members.map((m) => [m.uid, m.name])),
-    rev: row?.rev ?? 0,
-    posted: row?.postStatus === "posted" ? row.postedAt : null,
+    ...storedOf(row),
   };
   return { view, row };
 }
+
+const EMPTY = { members: [], spares: [], pairs: [], suggested: [] };
+
+/** Who needs help, the spares and the pairs at enemy might `t`: the stored pairs, else the suggestion. */
+function planOf(members: PlanMember[], row: GarrisonRow | null, t: number) {
+  const suggested = suggestPairs(members, t);
+  // A stored pair whose member or squad has left the roster is dropped, so a save never trips on it.
+  const pairs = row?.pairs ? row.pairs.filter((p) => pairsOk([p], members)) : suggested;
+  return { members: membersOf(members, t), spares: sparesIn(members, t, pairs), pairs, suggested };
+}
+
+/** The stored versions and the last post. */
+const storedOf = (row: GarrisonRow | null) => ({
+  version: row?.enemyRev ?? 0,
+  rev: row?.rev ?? 0,
+  posted: row?.postStatus === "posted" ? row.postedAt : null,
+});
 
 export type SaveResult =
   { ok: true; rev: number } | { ok: false; code: "not_found" | "invalid" | "stale" };
@@ -180,7 +230,27 @@ export async function saveGarrison(
   if (!pairsOk(input.pairs, await planMembers(db, access, null))) {
     return { ok: false, code: "invalid" };
   }
-  const plan = { workspaceId: access.workspaceId, entryId: input.entry, week: input.week };
-  const row = await savePlan(db, plan, input.rev, input.pairs, access.user.id, now);
+  const siege = siegeKey(access, input.entry, input.week);
+  const row = await savePlan(db, siege, input.rev, input.pairs, access.user.id, now);
   return row ? { ok: true, rev: row.rev } : { ok: false, code: "stale" };
+}
+
+export type EnemyResult =
+  | { ok: true; version: number }
+  | { ok: false; code: "not_found" }
+  | { ok: false; code: "stale"; value: number | null };
+
+/** Sets this siege's enemy might over version `version`; every save stays in its history. */
+export async function saveEnemyMight(
+  db: Db,
+  access: WorkspaceAccess,
+  input: Extract<GarrisonInput, { action: "enemy" }>,
+  now: Date,
+): Promise<EnemyResult> {
+  if (!(await siegeOf(db, access, input.entry, input.week)))
+    return { ok: false, code: "not_found" };
+  const siege = siegeKey(access, input.entry, input.week);
+  const row = await saveEnemy(db, siege, input.version, input.value, access.user.id, now);
+  if (row) return { ok: true, version: row.enemyRev };
+  return { ok: false, code: "stale", value: (await findPlan(db, siege))?.enemyMight ?? null };
 }

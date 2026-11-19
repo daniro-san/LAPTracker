@@ -9,12 +9,10 @@ import { fill } from "@/lib/copy";
 import { ELIXIR_WINDOWS, LEVEL_MAX, type Kind } from "@/lib/private/calendar-kinds";
 import { hhmm, parseTime, zonedInstant } from "@/lib/private/calendar-time";
 import type { CalendarWords } from "@/lib/private/dictionary.calendar";
-import { millionsIn } from "@/lib/private/onboarding-parse";
 
 import type { AgendaItem } from "./calendar-data";
 import type { Draft, problems } from "./calendar-draft";
 import { Choice, FIELD, Labeled, TextInput } from "./CalendarFields";
-import { SuffixInput } from "./SuffixInput";
 import { TimeInput } from "./TimeInput";
 import { useViewerZone, yourTime } from "./YourTime";
 
@@ -66,30 +64,6 @@ function LevelField({ d, set, p, words }: PartProps) {
   );
 }
 
-/** Undead Siege's enemy might (D121), typed in millions: the garrison plan's threshold. */
-function EnemyMightField({ d, set, p, words }: PartProps) {
-  const bad = p.shown && Boolean(p.enemyMight);
-  return (
-    <Labeled
-      id="cal-enemy"
-      label={words["calendar.form.enemyMight"]}
-      error={bad ? words["calendar.form.enemyMightBad"] : null}
-      hint={words["calendar.form.enemyMightHint"]}
-    >
-      <SuffixInput
-        id="cal-enemy"
-        aria-describedby="cal-enemy-note"
-        aria-invalid={bad}
-        inputMode="decimal"
-        value={d.enemyMight}
-        suffix={millionsIn(d.enemyMight) === null ? null : "M"}
-        onChange={(e) => set({ enemyMight: e.target.value })}
-        className="max-w-40"
-      />
-    </Labeled>
-  );
-}
-
 function TitleField({ d, set, p, words }: PartProps) {
   const theme = d.kind === "duel";
   const bad = p.shown && Boolean(p.title);
@@ -114,7 +88,7 @@ function TitleField({ d, set, p, words }: PartProps) {
 const PARTS: Record<Kind, ((props: PartProps) => ReactNode)[]> = {
   caravan: [],
   cheese: [VariantField, LevelField],
-  undead: [LevelField, EnemyMightField],
+  undead: [LevelField],
   elixir: [VariantField],
   kvk: [],
   duel: [TitleField],

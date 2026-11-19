@@ -54,14 +54,6 @@ export async function pickableMembers(
   return (await latestRoster(db, access.unionId)).map(({ uid, name }) => ({ uid, name }));
 }
 
-/** A timed entry's own fields: which one, the level, an Undead Siege's enemy might (D121), the name. */
-const kindColumns = (input: Exclude<NewEntry, { kind: "duel" }>) => ({
-  variant: "variant" in input ? input.variant : null,
-  level: "level" in input ? input.level : null,
-  enemyMight: "enemyMight" in input ? input.enemyMight : null,
-  title: "title" in input ? input.title : null,
-});
-
 export async function createEntry(
   db: Db,
   access: WorkspaceAccess,
@@ -96,7 +88,9 @@ export async function createEntry(
   } else {
     values = {
       ...base,
-      ...kindColumns(input),
+      variant: "variant" in input ? input.variant : null,
+      level: "level" in input ? input.level : null,
+      title: "title" in input ? input.title : null,
       day: input.day,
       minute: input.minute,
       weekly: input.weekly,

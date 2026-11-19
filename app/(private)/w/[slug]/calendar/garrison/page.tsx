@@ -5,10 +5,11 @@
 import { notFound } from "next/navigation";
 
 import { fill } from "@/lib/copy";
+import { getEnv } from "@/lib/env";
 import { calendarDates, titleOf } from "@/lib/private/calendar-words";
 import { garrisonView } from "@/lib/private/garrison";
+import { noticeChannels } from "@/lib/private/notice-publish";
 
-import { calendarWords } from "../../../../_ui/calendar-data";
 import { SignedInFrame } from "../../../../_ui/Frame";
 import { boardData, garrisonWords } from "../../../../_ui/garrison-data";
 import { GarrisonBoard } from "../../../../_ui/GarrisonBoard";
@@ -44,6 +45,8 @@ export default async function GarrisonPage({
     minute: "2-digit",
     timeZone: page.zone,
   });
+  // Only the channels' names reach the page, never their webhooks (D102).
+  const channels = noticeChannels(getEnv(), slug);
   const posted = view.posted && fill(t["garrison.postedAt"], { when: when.format(view.posted) });
   return (
     <SignedInFrame access={access} language={language} t={t} current="days" waiting={page.waiting}>
@@ -60,10 +63,18 @@ export default async function GarrisonPage({
       <GarrisonEnemy
         slug={slug}
         entry={view.placed.entry.id}
+        week={view.placed.week}
         value={view.enemyMight}
         version={view.version}
+        carriedFrom={view.carriedFrom && calendarDates(language).short(view.carriedFrom)}
         words={words}
-        calendar={calendarWords(t)}
+        shot={{
+          read: t["shot.read"],
+          reading: t["shot.reading"],
+          failed: t["shot.failed"],
+          busy: t["shot.busy"],
+          notKept: t["shot.notKept"],
+        }}
       />
       {view.enemyMight === null ? (
         <p className="mt-4 border-t border-rule py-3">{t["garrison.enemyNone"]}</p>
@@ -73,6 +84,10 @@ export default async function GarrisonPage({
           data={boardData(view, t, language)}
           words={words}
           posted={posted}
+          channels={{
+            members: channels.members?.name ?? null,
+            leaders: channels.leaders?.name ?? null,
+          }}
         />
       )}
     </SignedInFrame>

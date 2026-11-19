@@ -1,6 +1,7 @@
-// The garrison plan against the database (issue 423, D121): an officer's edited plan is stored per siege
-// and read back, a save over an older version is refused, and the Discord post carries names and squad
-// might only, never the activity it was ordered by.
+// The garrison plan against the database (issue 423, D121): each siege keeps its own enemy might and its
+// history, and the next one starts from the last; an officer's edited plan is stored per siege and read
+// back, a save over an older version is refused; and the post goes to the chosen Discord channel with names
+// and squad might only, never the activity it was ordered by.
 import { randomUUID } from "node:crypto";
 
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
@@ -13,7 +14,7 @@ import { memberSquads } from "../schema-squads";
 import { requireWorkspace, type WorkspaceAccess } from "./access";
 import { createEntry } from "./calendar";
 import { WORKSPACE_DICTIONARIES } from "./dictionary";
-import { garrisonView, saveGarrison } from "./garrison";
+import { garrisonView, saveEnemyMight, saveGarrison } from "./garrison";
 import { postGarrison } from "./garrison-post";
 import { createSession } from "./session";
 
@@ -78,22 +79,53 @@ beforeEach(async () => {
     {
       kind: "undead",
       level: 6,
-      enemyMight: 8_000_000,
       day: "2026-11-21",
       minute: 720,
       notes: null,
       link: null,
       forMembers: false,
       notice: null,
-      weekly: false,
+      weekly: true,
     },
     randomUUID(),
   );
   if (!made.ok) throw new Error(made.code);
   entry = made.id;
+  const set = await saveEnemyMight(db, access, enemy(WEEK, 0, 8_000_000), NOW);
+  if (!set.ok) throw new Error(set.code);
 });
 
+const enemy = (week: string, version: number, value: number) =>
+  ({ action: "enemy", entry, week, version, value }) as const;
+
 describe("the garrison plan", () => {
+  it("keeps each siege's own enemy might and history, and starts the next siege from the last", async () => {
+    const NEXT = "2026-11-23";
+    const next = await garrisonView(db, access, entry, NEXT);
+    expect(next?.view).toMatchObject({ enemyMight: 8_000_000, carriedFrom: WEEK, version: 0 });
+    expect(await saveEnemyMight(db, access, enemy(NEXT, 0, 9_500_000), NOW)).toEqual({
+      ok: true,
+      version: 1,
+    });
+    expect(await saveEnemyMight(db, access, enemy(WEEK, 1, 11_500_000), NOW)).toEqual({
+      ok: true,
+      version: 2,
+    });
+    // An officer who saw version 1 is refused, with the newer value.
+    expect(await saveEnemyMight(db, access, enemy(WEEK, 1, 7_000_000), NOW)).toEqual({
+      ok: false,
+      code: "stale",
+      value: 11_500_000,
+    });
+    const [week, later] = await Promise.all([
+      garrisonView(db, access, entry, WEEK),
+      garrisonView(db, access, entry, NEXT),
+    ]);
+    expect(week?.view).toMatchObject({ enemyMight: 11_500_000, carriedFrom: null });
+    expect(later?.view).toMatchObject({ enemyMight: 9_500_000, carriedFrom: null });
+    expect(week?.row?.enemyHistory.map((s) => s.value)).toEqual([8_000_000, 11_500_000]);
+  });
+
   it("keeps the officer's edited pairs and refuses a save over an older version", async () => {
     const first = await garrisonView(db, access, entry, WEEK);
     // The suggestion: Quillon (active) first gets the strongest spare, squad 2.
@@ -114,27 +146,28 @@ describe("the garrison plan", () => {
     });
   });
 
-  it("posts names and squad might to Discord, and nothing it was ordered by", async () => {
-    const sent: string[] = [];
-    const fetch = (async (_url: string, init: RequestInit) => {
-      sent.push(String(init.body));
+  it("posts names and squad might to the chosen channel, and nothing it was ordered by", async () => {
+    const sent: { url: string; body: string }[] = [];
+    const fetch = (async (url: string, init: RequestInit) => {
+      sent.push({ url, body: String(init.body) });
       return Response.json({ id: "1" });
     }) as typeof globalThis.fetch;
-    const channel = { url: "https://discord.test/hook", name: "members", forum: false };
+    const hook = (name: string) => ({ url: `https://discord.test/${name}`, name, forum: false });
     const result = await postGarrison(
       db,
       access,
-      { action: "post", entry, week: WEEK, requestId: randomUUID() },
+      { action: "post", entry, week: WEEK, channel: "leaders", requestId: randomUUID() },
       {
         fetch,
         now: NOW,
-        channels: { members: channel, leaders: null },
+        channels: { members: hook("members"), leaders: hook("leaders") },
         t: WORKSPACE_DICTIONARIES.en,
         language: "en",
       },
     );
     expect(result.ok).toBe(true);
-    const content = (JSON.parse(sent.join("")) as { content: string }).content;
+    expect(sent.map((s) => s.url.split("?")[0])).toEqual(["https://discord.test/leaders"]);
+    const content = (JSON.parse(sent[0]?.body ?? "{}") as { content: string }).content;
     expect(content).toContain("Enemy might 8.00M");
     expect(content).toContain("Bramble → Quillon: squad 2, 12.0M");
     expect(content).toContain("Bramble → Wynnie: squad 3, 11.0M");

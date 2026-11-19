@@ -1,9 +1,9 @@
-// "Post to Discord" for a garrison plan (D121): the plan as officers left it (else the suggestion, stored
-// first) goes to the members' channel through the notices' webhook code (D102), once per request id
-// (D100), with no mention allowed. The text carries names and squad might only (D71, D76); the log, codes
-// and counts.
+// "Post to Discord" for a garrison plan (D121): the plan as officers left it (else the suggestion) goes to
+// the channel the officer chose, the members' (the default) or the leaders', through the notices' webhook
+// code (D102), once per request id (D100), with no mention allowed. The text carries names and squad might
+// only (D71, D76); the log, codes and counts.
 import type { Db } from "../db";
-import { claimPost, findPlan, finishPost, savePlan, type GarrisonRow } from "../repo/garrison";
+import { claimPost, ensurePlan, findPlan, finishPost, type GarrisonRow } from "../repo/garrison";
 import type { WorkspaceAccess } from "./access";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "./dictionary";
 import { garrisonView, type GarrisonInput } from "./garrison";
@@ -44,18 +44,17 @@ export async function postGarrison(
   if (!read) return { ok: false, code: "not_found" };
   const { view } = read;
   if (view.enemyMight === null) return { ok: false, code: "no_enemy_might" };
-  const channel = deps.channels.members;
+  const channel = deps.channels[input.channel];
   if (!channel) return { ok: false, code: "not_set_up" };
-  const where = { workspaceId: access.workspaceId, entryId: input.entry, week: input.week };
-  // The suggestion is stored as it is posted, so the post has a row to claim; no officer saved it.
-  const stored = () => findPlan(db, where.workspaceId, where.entryId, where.week);
-  const row =
-    read.row ?? (await savePlan(db, where, 0, view.pairs, null, deps.now)) ?? (await stored());
+  const siege = { workspaceId: access.workspaceId, entryId: input.entry, week: input.week };
+  // A siege with no row yet gets an empty one, so the post has a row to claim.
+  const row = read.row ?? (await ensurePlan(db, siege));
   if (!row) return { ok: false, code: "failed" };
   // INVARIANT garrison.post-once: a double tap or a retry with the same request id posts nothing more.
   const stuck = new Date(deps.now.getTime() - STUCK_MS);
-  const claimed = await claimPost(db, row.id, input.requestId, access.user.id, deps.now, stuck);
-  if (!claimed) return earlier(await stored(), input.requestId, deps.now);
+  const post = { requestId: input.requestId, channel: input.channel, by: access.user.id };
+  const claimed = await claimPost(db, row.id, post, deps.now, stuck);
+  if (!claimed) return earlier(await findPlan(db, siege), input.requestId, deps.now);
   const words = shareWordsOf(view, deps.t, deps.language);
   const [title = "", ...head] = words.head;
   const text = garrisonText(view, { ...words, head }, deps.language);

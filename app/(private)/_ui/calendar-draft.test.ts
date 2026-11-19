@@ -10,7 +10,6 @@ const moved = (): FormValues => ({
   kind: "caravan",
   variant: null,
   level: null,
-  enemyMight: null,
   title: "",
   notes: "",
   link: "",

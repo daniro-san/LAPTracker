@@ -135,6 +135,19 @@ export function pairsOk(
   );
 }
 
+const UNITS: Record<string, number> = { k: 1e3, m: 1e6, b: 1e9 };
+
+/**
+ * The enemy might in a picture of the Undead Siege screen, in full ("Enemy Might: 11.5M" is 11500000);
+ * null when the text has none. The OCR may drop the colon or a space, or misread a letter of "Might".
+ */
+export function enemyMightIn(text: string): number | null {
+  const found = /enemy\W{0,3}m\w{2,5}\W{0,3}(\d{1,4}(?:[.,]\d{1,3})?)\s?([kmb])\b/i.exec(text);
+  if (!found) return null;
+  const [, digits = "", unit = ""] = found;
+  return Math.round(Number(digits.replace(",", ".")) * (UNITS[unit.toLowerCase()] ?? 0)) || null;
+}
+
 /** The share's words: its heading lines and one line per pair, "{helper} → {member}: squad {n}, {might}". */
 export interface ShareWords {
   head: string[];

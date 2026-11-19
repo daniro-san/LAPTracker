@@ -1,5 +1,5 @@
 {
-  "id": "23798fd4-0a4b-4c16-8a1b-a0ff15837815",
+  "id": "1900c048-3eca-4b51-a764-f95abd3da9cb",
   "prevId": "1906fec0-0573-4dae-84af-90b18f89d01d",
   "version": "7",
   "dialect": "postgresql",
@@ -2022,12 +2022,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "enemy_might": {
-          "name": "enemy_might",
-          "type": "bigint",
-          "primaryKey": false,
-          "notNull": false
-        },
         "title": {
           "name": "title",
           "type": "text",
@@ -2248,10 +2242,6 @@
         "calendar_entries_variant_check": {
           "name": "calendar_entries_variant_check",
           "value": "\"calendar_entries\".\"variant\" in ('I', 'II', 'A', 'B')"
-        },
-        "calendar_entries_enemy_might_check": {
-          "name": "calendar_entries_enemy_might_check",
-          "value": "\"calendar_entries\".\"enemy_might\" is null or (\"calendar_entries\".\"kind\" = 'undead' and \"calendar_entries\".\"enemy_might\" > 0)"
         }
       },
       "isRLSEnabled": false
@@ -2463,11 +2453,31 @@
           "primaryKey": false,
           "notNull": true
         },
+        "enemy_might": {
+          "name": "enemy_might",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "enemy_rev": {
+          "name": "enemy_rev",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "enemy_history": {
+          "name": "enemy_history",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
         "pairs": {
           "name": "pairs",
           "type": "jsonb",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "rev": {
           "name": "rev",
@@ -2486,7 +2496,7 @@
           "name": "saved_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "post_request_id": {
           "name": "post_request_id",
@@ -2496,6 +2506,12 @@
         },
         "post_status": {
           "name": "post_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "post_channel": {
+          "name": "post_channel",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -2600,6 +2616,14 @@
         "garrison_plans_post_status_check": {
           "name": "garrison_plans_post_status_check",
           "value": "\"garrison_plans\".\"post_status\" in ('posting', 'posted', 'failed')"
+        },
+        "garrison_plans_post_channel_check": {
+          "name": "garrison_plans_post_channel_check",
+          "value": "\"garrison_plans\".\"post_channel\" in ('members', 'leaders')"
+        },
+        "garrison_plans_enemy_might_check": {
+          "name": "garrison_plans_enemy_might_check",
+          "value": "\"garrison_plans\".\"enemy_might\" > 0"
         }
       },
       "isRLSEnabled": false

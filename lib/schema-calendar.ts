@@ -47,8 +47,6 @@ export const calendarEntries = pgTable(
     /** Cheese Trap I or II; Elixir Scramble team A or B. */
     variant: text("variant"),
     level: smallint("level"),
-    /** Undead Siege: the enemy might the officer set last (D121), the garrison plan's threshold. */
-    enemyMight: big("enemy_might"),
     title: text("title"),
     notes: text("notes"),
     link: text("link"),
@@ -81,10 +79,6 @@ export const calendarEntries = pgTable(
     check("calendar_entries_time_check", sql`(${t.minute} is null) = (${t.kind} = 'duel')`),
     check("calendar_entries_level_check", sql`${t.level} between 1 and 99`),
     check("calendar_entries_variant_check", sql`${t.variant} in ('I', 'II', 'A', 'B')`),
-    check(
-      "calendar_entries_enemy_might_check",
-      sql`${t.enemyMight} is null or (${t.kind} = 'undead' and ${t.enemyMight} > 0)`,
-    ),
   ],
 );
 
@@ -144,10 +138,19 @@ export interface GarrisonPair {
   member: number;
 }
 
+/** One save of a siege's enemy might (D121): the value in full, who saved it and when (ISO). */
+export interface EnemyMightSave {
+  value: number;
+  by: number;
+  at: string;
+}
+
 /**
- * An Undead Siege's garrison plan as officers left it (D121), one per entry and week (the plan's Monday,
- * as a roll call's). `rev` counts saves, for the 409 check. The post to Discord is claimed here once per
- * request id (D100); `post_status` is posting, posted or failed.
+ * One Undead Siege (an entry's week, the plan's Monday, as a roll call's) and its garrison plan (D121).
+ * The enemy might is this siege's own: `enemy_rev` counts its saves for the 409 check, and every save is
+ * appended to `enemy_history`. `pairs` is null while the plan is the suggestion; `rev` counts its saves.
+ * The post to Discord is claimed here once per request id (D100); `post_status` is posting, posted or
+ * failed, and `post_channel` the channel chosen.
  */
 export const garrisonPlans = pgTable(
   "garrison_plans",
@@ -160,13 +163,17 @@ export const garrisonPlans = pgTable(
       .notNull()
       .references(() => calendarEntries.id, { onDelete: "cascade" }),
     week: day("week").notNull(),
-    pairs: jsonb("pairs").$type<GarrisonPair[]>().notNull(),
+    enemyMight: big("enemy_might"),
+    enemyRev: integer("enemy_rev").notNull().default(0),
+    enemyHistory: jsonb("enemy_history").$type<EnemyMightSave[]>().notNull().default([]),
+    pairs: jsonb("pairs").$type<GarrisonPair[]>(),
     rev: integer("rev").notNull().default(0),
-    /** The officer's last save; null for a plan stored only to post the suggestion. */
+    /** The officer's last save of the pairs; null for a plan stored only to post the suggestion. */
     savedBy: integer("saved_by").references(() => workspaceUsers.id, { onDelete: "set null" }),
-    savedAt: tstz("saved_at").notNull(),
+    savedAt: tstz("saved_at"),
     postRequestId: text("post_request_id"),
     postStatus: text("post_status"),
+    postChannel: text("post_channel"),
     postedBy: integer("posted_by").references(() => workspaceUsers.id, { onDelete: "set null" }),
     postedAt: tstz("posted_at"),
   },
@@ -177,5 +184,7 @@ export const garrisonPlans = pgTable(
       "garrison_plans_post_status_check",
       sql`${t.postStatus} in ('posting', 'posted', 'failed')`,
     ),
+    check("garrison_plans_post_channel_check", sql`${t.postChannel} in ('members', 'leaders')`),
+    check("garrison_plans_enemy_might_check", sql`${t.enemyMight} > 0`),
   ],
 );

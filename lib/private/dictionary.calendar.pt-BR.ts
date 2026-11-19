@@ -70,10 +70,6 @@ export const calendarPt: CalendarWords = {
   "calendar.form.window": "Janela (ST)",
   "calendar.form.which": "Qual",
   "calendar.form.level": "Nível, de 1 a {max}",
-  "calendar.form.enemyMight": "Might do inimigo",
-  "calendar.form.enemyMightHint":
-    "Da tela do cerco, em milhões, como 11,5. Dá para mudar até o cerco; vale o último salvo.",
-  "calendar.form.enemyMightBad": "Escreva o might do inimigo como 11,5.",
   "calendar.form.team": "Equipe",
   "calendar.form.name": "Nome",
   "calendar.form.nameHint": "Por exemplo: reunião da aliança",
@@ -115,7 +111,6 @@ export const calendarPt: CalendarWords = {
   "calendar.field.slot": "o dia e a hora de toda semana",
   "calendar.field.when": "o dia e a hora desta semana",
   "calendar.field.level": "o nível",
-  "calendar.field.enemyMight": "o might do inimigo",
   "calendar.field.variant": "qual",
   "calendar.field.title": "o nome",
   "calendar.field.notes": "as notas",

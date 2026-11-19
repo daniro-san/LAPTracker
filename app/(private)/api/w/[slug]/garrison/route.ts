@@ -1,16 +1,19 @@
 // POST /api/w/[slug]/garrison — an Undead Siege's garrison plan (issue 423, D121). Officers only (401
 // signed_out, D99); same origin and JSON (D71).
+//   {action: "enemy", entry, week, version, value}: this siege's enemy might over version `version`; 409
+//     stale with the newer value when another officer saved first.
 //   {action: "save", entry, week, rev, pairs}: the officer's pairs over version `rev`; 409 stale when
 //     another officer saved first, 400 invalid when a pair breaks a rule (one squad per member, never the
 //     helper's strongest squad, roster members only).
-//   {action: "post", entry, week, requestId}: the plan to the members' Discord channel (D102's webhook),
+//   {action: "post", entry, week, channel, requestId}: the plan to the members' (default) or the leaders'
+//     Discord channel (D102's webhook),
 //     once per request id (D100); 409 no_enemy_might, not_set_up or posting, 502 failed.
 // The lib calls run in `privately`, so an error leaves as a code; nothing about members is logged.
 import { requireWorkspace } from "@/lib/private/access";
 import { WORKSPACE_LANG_COOKIE } from "@/lib/private/cookies";
 import { counted } from "@/lib/private/desk-action";
 import { pickWorkspaceLanguage, WORKSPACE_DICTIONARIES } from "@/lib/private/dictionary";
-import { garrisonInput, saveGarrison } from "@/lib/private/garrison";
+import { garrisonInput, saveEnemyMight, saveGarrison } from "@/lib/private/garrison";
 import { postGarrison } from "@/lib/private/garrison-post";
 import {
   isSameOriginJson,
@@ -51,6 +54,15 @@ export async function POST(
     const now = ctx.now();
     const access = await requireWorkspace(db, slug, jar, now);
     if (!access.ok) return privateError(401, "signed_out");
+    if (input.action === "enemy") {
+      const set = await privately("garrison.enemy", () => saveEnemyMight(db, access, input, now));
+      if (set.ok) {
+        const body = Response.json({ ok: true, version: set.version }, { headers: NO_STORE });
+        return counted(ctx, access, "garrison", "edit", body);
+      }
+      if (set.code === "not_found") return privateError(404, set.code);
+      return Response.json({ code: "stale", value: set.value }, { status: 409, headers: NO_STORE });
+    }
     if (input.action === "save") {
       const saved = await privately("garrison.save", () => saveGarrison(db, access, input, now));
       if (!saved.ok) return privateError(STATUS[saved.code], saved.code);

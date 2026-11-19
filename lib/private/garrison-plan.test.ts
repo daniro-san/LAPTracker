@@ -3,6 +3,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  enemyMightIn,
   helpOrder,
   needOf,
   pairsOk,
@@ -56,6 +57,20 @@ describe("the garrison plan", () => {
     const lent = { helper: 1, squad: 2, member: 2 };
     expect(pairsOk([lent, { helper: 1, squad: 2, member: 3 }], members)).toBe(false);
     expect(pairsOk([{ helper: 1, squad: 1, member: 2 }], members)).toBe(false);
+  });
+
+  it("reads the enemy might from the siege screen's text", () => {
+    // An invented reading of the Undead Siege screen, shaped like the OCR's plain-grey output.
+    const read = [
+      "= Event",
+      "Warrior Blight Cheese Trap Undead Siege",
+      "Enemy Might: 11.5M",
+      "Territory Level Required LV.21",
+      "Select Difficulty Level",
+    ].join("\n");
+    expect(enemyMightIn(read)).toBe(11_500_000);
+    expect(enemyMightIn("Enemy Miqht 9,8 M")).toBe(9_800_000);
+    expect(enemyMightIn("Territory Level Required LV.21")).toBeNull();
   });
 
   it("serves active and growing members first, and missing data never pushes anyone down", () => {

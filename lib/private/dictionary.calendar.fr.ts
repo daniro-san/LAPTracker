@@ -71,10 +71,6 @@ export const calendarFr: CalendarWords = {
   "calendar.form.window": "Créneau (ST)",
   "calendar.form.which": "Lequel",
   "calendar.form.level": "Niveau, de 1 à {max}",
-  "calendar.form.enemyMight": "Might ennemi",
-  "calendar.form.enemyMightHint":
-    "Sur l’écran du siège, en millions, comme 11,5. Modifiable jusqu’au siège ; la dernière valeur enregistrée compte.",
-  "calendar.form.enemyMightBad": "Écrivez le might ennemi comme 11,5.",
   "calendar.form.team": "Équipe",
   "calendar.form.name": "Nom",
   "calendar.form.nameHint": "Par exemple : réunion d’alliance",
@@ -117,7 +113,6 @@ export const calendarFr: CalendarWords = {
   "calendar.field.slot": "le jour et l’heure de chaque semaine",
   "calendar.field.when": "le jour et l’heure de cette semaine",
   "calendar.field.level": "le niveau",
-  "calendar.field.enemyMight": "le might ennemi",
   "calendar.field.variant": "lequel",
   "calendar.field.title": "le nom",
   "calendar.field.notes": "les notes",

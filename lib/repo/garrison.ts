@@ -1,58 +1,116 @@
-// garrison_plans (D121): an Undead Siege's garrison plan as officers left it, one per entry and week, and
-// the claim of its post to Discord. Plain reads and writes inside one workspace; the rules are in
-// lib/private/garrison.ts.
-import { and, eq, isNull, lt, ne, or, sql } from "drizzle-orm";
+// garrison_plans (D121): one Undead Siege (an entry's week) with its own enemy might and its history, its
+// garrison plan as officers left it, and the claim of its post to Discord. Plain reads and writes inside
+// one workspace; the rules are in lib/private/garrison.ts.
+import { and, desc, eq, isNotNull, isNull, lt, ne, or, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { garrisonPlans, type GarrisonPair } from "../schema";
 
 export type GarrisonRow = typeof garrisonPlans.$inferSelect;
+/** One siege: the workspace, the Undead Siege entry and the plan's Monday. */
+export interface Siege {
+  workspaceId: number;
+  entryId: number;
+  week: string;
+}
 
-const at = (workspaceId: number, entryId: number, week: string) =>
+const at = (s: Siege) =>
   and(
-    eq(garrisonPlans.workspaceId, workspaceId),
-    eq(garrisonPlans.entryId, entryId),
-    eq(garrisonPlans.week, week),
+    eq(garrisonPlans.workspaceId, s.workspaceId),
+    eq(garrisonPlans.entryId, s.entryId),
+    eq(garrisonPlans.week, s.week),
   );
+const target = [garrisonPlans.entryId, garrisonPlans.week];
 
-export async function findPlan(
+export async function findPlan(db: Db, s: Siege): Promise<GarrisonRow | null> {
+  const [row] = await db.select().from(garrisonPlans).where(at(s));
+  return row ?? null;
+}
+
+/** The siege's row, made empty first when there is none (the post claims it). */
+export async function ensurePlan(db: Db, s: Siege): Promise<GarrisonRow | null> {
+  await db.insert(garrisonPlans).values(s).onConflictDoNothing();
+  return findPlan(db, s);
+}
+
+/** The newest enemy might saved for an earlier siege of the workspace: the next siege starts from it. */
+export async function lastEnemyMight(
   db: Db,
-  workspaceId: number,
-  entryId: number,
-  week: string,
-): Promise<GarrisonRow | null> {
+  s: Siege,
+): Promise<{ value: number; week: string } | null> {
   const [row] = await db
-    .select()
+    .select({ value: garrisonPlans.enemyMight, week: garrisonPlans.week })
     .from(garrisonPlans)
-    .where(at(workspaceId, entryId, week));
+    .where(
+      and(
+        eq(garrisonPlans.workspaceId, s.workspaceId),
+        lt(garrisonPlans.week, s.week),
+        isNotNull(garrisonPlans.enemyMight),
+      ),
+    )
+    .orderBy(desc(garrisonPlans.week), desc(garrisonPlans.id))
+    .limit(1);
+  return row?.value == null ? null : { value: row.value, week: row.week };
+}
+
+/**
+ * Writes the siege's enemy might when its version is still `version`, and appends it to the history.
+ * Null when another save came first.
+ */
+export async function saveEnemy(
+  db: Db,
+  s: Siege,
+  version: number,
+  value: number,
+  by: number,
+  now: Date,
+): Promise<GarrisonRow | null> {
+  const save = [{ value, by, at: now.toISOString() }];
+  const set = {
+    enemyMight: value,
+    enemyRev: version + 1,
+    enemyHistory: sql`${garrisonPlans.enemyHistory} || ${JSON.stringify(save)}::jsonb`,
+  };
+  const [row] =
+    version === 0
+      ? await db
+          .insert(garrisonPlans)
+          .values({ ...s, enemyMight: value, enemyRev: 1, enemyHistory: save })
+          .onConflictDoUpdate({ target, set, setWhere: eq(garrisonPlans.enemyRev, 0) })
+          .returning()
+      : await db
+          .update(garrisonPlans)
+          .set(set)
+          .where(and(at(s), eq(garrisonPlans.enemyRev, version)))
+          .returning();
   return row ?? null;
 }
 
 /**
- * Writes the pairs when the stored plan is still at `rev` (0: none stored yet). Null when another save
+ * Writes the pairs when the stored plan is still at `rev` (0: not saved yet). Null when another save
  * came first: the officer's version is stale.
  */
 export async function savePlan(
   db: Db,
-  plan: { workspaceId: number; entryId: number; week: string },
+  s: Siege,
   rev: number,
   pairs: GarrisonPair[],
   by: number | null,
   now: Date,
 ): Promise<GarrisonRow | null> {
-  if (rev === 0) {
-    const [made] = await db
-      .insert(garrisonPlans)
-      .values({ ...plan, pairs, rev: 1, savedBy: by, savedAt: now })
-      .onConflictDoNothing()
-      .returning();
-    return made ?? null;
-  }
-  const [row] = await db
-    .update(garrisonPlans)
-    .set({ pairs, rev: rev + 1, savedBy: by, savedAt: now })
-    .where(and(at(plan.workspaceId, plan.entryId, plan.week), eq(garrisonPlans.rev, rev)))
-    .returning();
+  const set = { pairs, rev: rev + 1, savedBy: by, savedAt: now };
+  const [row] =
+    rev === 0
+      ? await db
+          .insert(garrisonPlans)
+          .values({ ...s, ...set })
+          .onConflictDoUpdate({ target, set, setWhere: eq(garrisonPlans.rev, 0) })
+          .returning()
+      : await db
+          .update(garrisonPlans)
+          .set(set)
+          .where(and(at(s), eq(garrisonPlans.rev, rev)))
+          .returning();
   return row ?? null;
 }
 
@@ -63,18 +121,23 @@ export async function savePlan(
 export async function claimPost(
   db: Db,
   id: number,
-  requestId: string,
-  by: number,
+  post: { requestId: string; channel: "members" | "leaders"; by: number },
   now: Date,
   stuckBefore: Date,
 ): Promise<GarrisonRow | null> {
   const [row] = await db
     .update(garrisonPlans)
-    .set({ postRequestId: requestId, postStatus: "posting", postedBy: by, postedAt: now })
+    .set({
+      postRequestId: post.requestId,
+      postStatus: "posting",
+      postChannel: post.channel,
+      postedBy: post.by,
+      postedAt: now,
+    })
     .where(
       and(
         eq(garrisonPlans.id, id),
-        or(isNull(garrisonPlans.postRequestId), ne(garrisonPlans.postRequestId, requestId)),
+        or(isNull(garrisonPlans.postRequestId), ne(garrisonPlans.postRequestId, post.requestId)),
         or(
           isNull(garrisonPlans.postStatus),
           ne(garrisonPlans.postStatus, "posting"),
@@ -90,5 +153,5 @@ export async function finishPost(db: Db, id: number, status: "posted" | "failed"
   await db
     .update(garrisonPlans)
     .set({ postStatus: status })
-    .where(and(eq(garrisonPlans.id, id), sql`${garrisonPlans.postStatus} = 'posting'`));
+    .where(and(eq(garrisonPlans.id, id), eq(garrisonPlans.postStatus, "posting")));
 }

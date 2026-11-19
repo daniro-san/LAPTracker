@@ -3,7 +3,6 @@
 // checks it all again (lib/private/calendar-model.ts); this is for words next to the field.
 import { ELIXIR_WINDOWS, LEVEL_MAX, type Kind } from "@/lib/private/calendar-kinds";
 import { hhmm, parseTime, weekdayIndex } from "@/lib/private/calendar-time";
-import { mightIn } from "@/lib/private/onboarding-parse";
 
 import type { FormValues } from "./calendar-data";
 
@@ -11,8 +10,6 @@ export interface Draft {
   kind: Kind;
   variant: string;
   level: string;
-  /** Undead Siege: the enemy might as typed, in millions ("11.5"), D121. */
-  enemyMight: string;
   title: string;
   notes: string;
   link: string;
@@ -36,7 +33,6 @@ export function draftOf(form: FormValues | null, day: string): Draft {
       kind: "caravan",
       variant: "",
       level: "",
-      enemyMight: "",
       title: "",
       notes: "",
       link: "",
@@ -52,7 +48,6 @@ export function draftOf(form: FormValues | null, day: string): Draft {
     ...form,
     variant: form.variant ?? "",
     level: form.level === null ? "" : String(form.level),
-    enemyMight: form.enemyMight === null ? "" : String(form.enemyMight / 1e6),
     notice: form.notice === null ? "" : String(form.notice),
     time: form.minute === null ? "" : hhmm(form.minute),
     scope: "one",
@@ -73,22 +68,10 @@ export function withKind(d: Draft, kind: Kind): Draft {
 
 const isLink = (s: string) => /^https?:\/\/\S+$/i.test(s) && URL.canParse(s);
 
-/** The enemy might typed, in full; null when the field is empty or cannot be read. */
-const enemyMightOf = (d: Draft) => (d.enemyMight.trim() === "" ? null : mightIn(d.enemyMight));
-const mightBad = (d: Draft) =>
-  d.kind === "undead" && d.enemyMight.trim() !== "" && !enemyMightOf(d);
-
 /** What keeps the draft from being saved, per field. */
-export function problems(d: Draft): {
-  time?: true;
-  title?: true;
-  level?: true;
-  link?: true;
-  enemyMight?: true;
-} {
+export function problems(d: Draft): { time?: true; title?: true; level?: true; link?: true } {
   const level = Number(d.level);
   return {
-    ...(mightBad(d) && { enemyMight: true }),
     ...(d.kind !== "duel" && parseTime(d.time) === null && { time: true }),
     ...(HAS_TITLE.includes(d.kind) && d.title.trim() === "" && { title: true }),
     ...(HAS_LEVEL.includes(d.kind) &&
@@ -116,7 +99,6 @@ export function newEntryOf(d: Draft): Record<string, unknown> {
     weekly: d.weekly,
     ...(VARIANT[d.kind] && { variant: d.variant }),
     ...(HAS_LEVEL.includes(d.kind) && { level: Number(d.level) }),
-    ...(d.kind === "undead" && { enemyMight: enemyMightOf(d) }),
     ...(d.kind === "other" && { title: d.title.trim() }),
   };
 }
@@ -135,9 +117,6 @@ function plainFields(d: Draft, f: FormValues): [string, unknown, unknown][] {
       : []),
     ...(HAS_LEVEL.includes(f.kind)
       ? [["level", Number(d.level), f.level] as [string, unknown, unknown]]
-      : []),
-    ...(f.kind === "undead"
-      ? [["enemyMight", enemyMightOf(d), f.enemyMight] as [string, unknown, unknown]]
       : []),
     ...(HAS_TITLE.includes(f.kind)
       ? [["title", d.title.trim(), f.title] as [string, unknown, unknown]]
