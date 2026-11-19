@@ -5,6 +5,7 @@ import { activityFr } from "./dictionary.activity";
 import { boardFr } from "./dictionary.board";
 import { calendarFr } from "./dictionary.calendar.fr";
 import { dataFr } from "./dictionary.data";
+import { featuresFr } from "./dictionary.features";
 import { followUpFr } from "./dictionary.followup";
 import { garrisonFr } from "./dictionary.garrison";
 import { importFr } from "./dictionary.import";
@@ -293,4 +294,5 @@ export const fr: WorkspaceDictionary = {
   ...garrisonFr,
   ...settingsFr,
   ...dataFr,
+  ...featuresFr,
 };

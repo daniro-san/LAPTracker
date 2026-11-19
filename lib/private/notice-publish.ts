@@ -11,6 +11,7 @@ import type { Env } from "../env";
 import { pictureBytes } from "../repo/notice-pictures";
 import { claimPublish, finishPublish, lastPosted, type PublishRow } from "../repo/notice-publishes";
 import type { WorkspaceAccess } from "./access";
+import { featureOn } from "./features";
 import { privateLog } from "./log";
 import { discordMessages, threadName } from "./notice-formats";
 import { bodyOf, type PostedPicture } from "./notice-publish-body";
@@ -159,7 +160,10 @@ export async function publishNotice(
   const title = notice.fields.title.value;
   const sections = languages.map((l) => ({ name: deps.names[l], text: notice.fields[l].value }));
   const messages = discordMessages(title, sections, !channel.forum);
-  const picture = await pictureBytes(db, access.workspaceId, input.id);
+  // D126: with notice pictures turned off, the picture stays stored and is not posted.
+  const picture = featureOn(access, "notice_pictures")
+    ? await pictureBytes(db, access.workspaceId, input.id)
+    : null;
   const started = Date.now();
   const { sent, status } = await postMessages(deps.fetch, channel, title, messages, picture);
   const done = sent === messages.length;

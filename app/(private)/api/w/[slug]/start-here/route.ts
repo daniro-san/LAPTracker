@@ -4,6 +4,7 @@
 // nothing is written (issue 293).
 import { requireWorkspace } from "@/lib/private/access";
 import { counted } from "@/lib/private/desk-action";
+import { featureOn } from "@/lib/private/features";
 import { isSameOriginJson, NO_STORE, privateError, requestCookies } from "@/lib/private/http";
 import { SLUG } from "@/lib/private/sign-in";
 import { saveStartHere, startHereSave } from "@/lib/private/start-here";
@@ -22,6 +23,7 @@ export async function POST(
     const now = ctx.now();
     const access = await requireWorkspace(db, slug, requestCookies(request), now);
     if (!access.ok) return privateError(401, "signed_out");
+    if (!featureOn(access, "board")) return privateError(403, "turned_off");
     const result = await saveStartHere(db, access, parsed.data, now);
     if (result.ok) {
       const saved = Response.json({ version: result.version }, { headers: NO_STORE });

@@ -8,6 +8,7 @@ import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
 import { requireWorkspace, type WorkspaceAccess } from "@/lib/private/access";
 import { isDay, mondayOf, offsetLabel } from "@/lib/private/calendar-time";
+import { featureOn } from "@/lib/private/features";
 import { toReviewCount } from "@/lib/private/import-view";
 import { RENEW_MS } from "@/lib/private/session";
 import { SLUG } from "@/lib/private/sign-in";
@@ -16,6 +17,11 @@ import { serverDay } from "@/lib/schedule";
 import type { CalendarCtx } from "./calendar-data";
 import { workspaceWords } from "./Frame";
 import { refuse } from "./refuse";
+import { turnedOffPage } from "./TurnedOff";
+
+/** D126: Caravans turned off for the alliance; then the view reads nothing of its own. */
+const turnedOff = (access: WorkspaceAccess, view: string) =>
+  view === "calendar/caravans" && !featureOn(access, "caravans");
 
 export async function openCalendar<T>(
   params: Promise<{ slug: string }>,
@@ -36,10 +42,11 @@ export async function openCalendar<T>(
   const { access, data, waiting } = await withPageDb(async (db) => {
     const access = await requireWorkspace(db, slug, jar, now, RENEW_MS);
     if (!access.ok) return { access, data: null, waiting: 0 };
+    const on = !turnedOff(access, view);
     // The Home tab's count of screenshot drafts waiting for review (issue 299), for the frame.
     return {
       access,
-      data: await read(db, access, monday),
+      data: on ? await read(db, access, monday) : null,
       waiting: await toReviewCount(db, access, now),
     };
   });
@@ -52,6 +59,8 @@ export async function openCalendar<T>(
   const ctx: CalendarCtx = { t, language, zone: env.SERVER_TZ };
   return {
     access,
+    /** D126: the page to show instead when the view is turned off for the alliance. */
+    off: view === "calendar/caravans" ? turnedOffPage(access, "caravans", waiting) : null,
     data: data as T,
     waiting,
     slug,

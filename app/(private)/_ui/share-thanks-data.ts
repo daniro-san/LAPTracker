@@ -19,6 +19,8 @@ import { SHEET_KEYS } from "./sheet-words";
 const SHARE_KEYS = [
   ...(Object.keys(shareEn).filter((k) => k.startsWith("share.")) as (keyof typeof shareEn)[]),
   ...SHEET_KEYS,
+  // D126: the alliance's daily limit for writing help is used up.
+  "features.cap.ai" as const,
 ];
 export type ShareWords = Pick<WorkspaceDictionary, (typeof SHARE_KEYS)[number]>;
 

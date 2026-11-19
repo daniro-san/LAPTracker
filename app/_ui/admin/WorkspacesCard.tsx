@@ -10,11 +10,13 @@ import { useState } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
 import { copy, fill } from "@/lib/copy";
+import type { Allowance } from "@/lib/workspace-features";
 
 import { ConfirmSheet } from "./ConfirmSheet";
 import { Result } from "./outcome";
 import { forgetPin, PinSheet, savedPin } from "./PinSheet";
 import { SignOutUsersSheet, type SignOutChoice, type SignOutPerson } from "./SignOutUsersSheet";
+import { PausedSwitches, WorkspaceFeatures, type FeaturesView } from "./WorkspaceFeatures";
 import {
   Field,
   FIELD,
@@ -36,6 +38,8 @@ export interface WorkspaceView extends WorkspaceSettings {
   deletion: string | null;
   /** Who has an open session, for "Sign out users". */
   people: SignOutPerson[];
+  /** D126: its feature switches, daily caps and today's use. */
+  features: FeaturesView;
 }
 
 function usePinCall() {
@@ -90,10 +94,14 @@ function WorkspaceList({
   workspaces,
   onSignOut,
   onDeletion,
+  paused,
+  run,
 }: {
   workspaces: WorkspaceView[];
   onSignOut: (w: WorkspaceView) => void;
   onDeletion: (d: Deletion) => void;
+  paused: Allowance[];
+  run: Run;
 }) {
   if (workspaces.length === 0) return <p className="text-ink/70">{t.none}</p>;
   return (
@@ -130,6 +138,12 @@ function WorkspaceList({
               {w.deletion ? t.deletion.cancel : t.deletion.ask}
             </button>
           </p>
+          <WorkspaceFeatures
+            w={w}
+            others={workspaces.filter((o) => o.id !== w.id)}
+            paused={paused}
+            run={run}
+          />
         </li>
       ))}
     </ul>
@@ -175,7 +189,14 @@ function AllowForm({ workspaces, run }: { workspaces: WorkspaceView[]; run: Run 
   );
 }
 
-export function WorkspacesCard({ workspaces }: { workspaces: WorkspaceView[] }) {
+export function WorkspacesCard({
+  workspaces,
+  paused,
+}: {
+  workspaces: WorkspaceView[];
+  /** D126: the paid allowances the owner paused for every workspace. */
+  paused: Allowance[];
+}) {
   const { run, message, sheet } = usePinCall();
   const [signingOut, setSigningOut] = useState<WorkspaceView | null>(null);
   const [deleting, setDeleting] = useState<Deletion | null>(null);
@@ -204,7 +225,14 @@ export function WorkspacesCard({ workspaces }: { workspaces: WorkspaceView[] }) 
   return (
     <div>
       {message && <Result message={message} />}
-      <WorkspaceList workspaces={workspaces} onSignOut={setSigningOut} onDeletion={setDeleting} />
+      <PausedSwitches paused={paused} run={run} />
+      <WorkspaceList
+        workspaces={workspaces}
+        onSignOut={setSigningOut}
+        onDeletion={setDeleting}
+        paused={paused}
+        run={run}
+      />
       <WorkspaceForm workspaces={workspaces} run={run} />
       {workspaces.length > 0 && <AllowForm workspaces={workspaces} run={run} />}
       {signingOut && (

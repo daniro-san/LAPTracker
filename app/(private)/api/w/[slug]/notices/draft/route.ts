@@ -20,6 +20,7 @@ import {
 import { eventWorkspace } from "@/lib/analytics/server";
 import { requireWorkspace } from "@/lib/private/access";
 import { counted } from "@/lib/private/desk-action";
+import { featureOn, useAllowance } from "@/lib/private/features";
 import { isSameOriginJson, NO_STORE, privateError, requestCookies } from "@/lib/private/http";
 import { privateLog } from "@/lib/private/log";
 import { DRAFT_LIMIT, NOTICE_LIMIT, noticeLength } from "@/lib/private/notice-rules";
@@ -62,6 +63,12 @@ const body = z.discriminatedUnion("kind", [
 type Answer = { to: WritingLanguage; text: string; retried: boolean; partly: boolean };
 
 const FAILURE = { timeout: 504, busy: 429, failed: 502 } as const;
+/** Each kind's switch (D126). */
+const SWITCH = {
+  translate: "notice_translate",
+  improve: "notice_improve",
+  fit: "notice_fit",
+} as const;
 
 export async function POST(
   request: Request,
@@ -78,6 +85,11 @@ export async function POST(
     const ai = ctx.ai?.(eventWorkspace(access));
     if (!ai) return privateError(503, "not_set_up");
     const ask = parsed.data;
+    if (!featureOn(access, SWITCH[ask.kind])) return privateError(403, "turned_off");
+    // D126: one unit per text asked of the model (Translate: one per language), before it is asked.
+    const units = ask.kind === "translate" ? ask.to.length : 1;
+    if ((await useAllowance(db, access, "ai", units, ctx.now())) !== "ok")
+      return privateError(429, "cap_reached");
     const started = ctx.now().getTime();
     try {
       let answers: Answer[];

@@ -36,6 +36,7 @@ export default async function CaravansPage({
     },
     "calendar/caravans",
   );
+  if (page.off) return page.off;
   const { access, slug, monday, ctx } = page;
   const { t, language } = ctx;
   const caravans = page.data.caravans.map((p) => agendaItem(p, ctx));
@@ -53,7 +54,13 @@ export default async function CaravansPage({
       waiting={page.waiting}
     >
       <h1 className="font-display text-display-lg">{t["tab.days"]}</h1>
-      <CalendarNav slug={slug} current="caravans" t={t} query={`?week=${monday}`} />
+      <CalendarNav
+        slug={slug}
+        current="caravans"
+        t={t}
+        on={access.features.on}
+        query={`?week=${monday}`}
+      />
       <CalendarWeekBar
         href={(w) => `/w/${slug}/calendar/caravans?week=${w}`}
         monday={monday}

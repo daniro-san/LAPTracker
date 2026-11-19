@@ -74,7 +74,7 @@ export function LanguageField({ p, e }: { p: EditorProps; e: Editor }) {
       <div id="notice-panel" role="tabpanel" aria-labelledby={`notice-tab-${language}`}>
         {stale && (
           <StaleLine t={t}>
-            {p.ai && from && (
+            {p.ai && !p.aiOff?.includes("translate") && from && (
               <button
                 type="button"
                 disabled={e.busy !== null}

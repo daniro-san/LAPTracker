@@ -42,6 +42,9 @@ import { keepKey, readKept, restorable, writeKept } from "./notice-keep";
 import { saveWithPicture, type PictureDraft } from "./notice-picture-state";
 import { newRequestId } from "./request-id";
 
+/** The three writing helps, each with its own switch (D126). */
+export type AiKind = "translate" | "improve" | "fit";
+
 export interface EditorProps {
   slug: string;
   id: number | null;
@@ -50,6 +53,8 @@ export interface EditorProps {
   t: WorkspaceDictionary;
   viewer: WorkspaceLanguage;
   ai: boolean;
+  /** The writing helps the site's owner turned off for the alliance (D126): their buttons are left out. */
+  aiOff?: readonly AiKind[] | undefined;
   /** The viewer's language first. */
   languages: NoticeLanguage[];
   /** The language a stale one is updated from (the newest text). */
@@ -65,6 +70,8 @@ export interface EditorProps {
   review?: number | undefined;
   /** The notice's saved picture (D119); none for a new notice. */
   picture?: PictureView | null | undefined;
+  /** Notice pictures turned off for the alliance (D126): no picture field; a stored picture stays. */
+  pictureOff?: boolean | undefined;
 }
 
 /**

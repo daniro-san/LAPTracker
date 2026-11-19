@@ -5,7 +5,9 @@ import { createHash } from "node:crypto";
 
 import type { Db } from "../db";
 import { currentCount, DAY_KEY_PREFIX, recordFailure } from "../repo/auth-attempts";
+import type { Allowance } from "../workspace-features";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "./dictionary";
+import { useAllowance, type WithFeatures } from "./features";
 import { privateLog } from "./log";
 import { mask, MAX_TRANSLATE_CHARS } from "./translate-message";
 
@@ -25,10 +27,17 @@ const personKey = (userId: string) =>
   `translate:${createHash("sha256").update(userId).digest("hex").slice(0, 32)}`;
 
 /**
- * Counts `units` (languages) for the person and the day, or says which limit they would pass: then
- * nothing is counted.
+ * Counts `units` (languages) for the person and the day, and against the workspace's own daily allowance
+ * when given (D126), or says which limit they would pass: then nothing is counted. The workspace's count
+ * is the last check, made and counted in one statement.
  */
-export async function quota(db: Db, userId: string, units: number, now: Date) {
+export async function quota(
+  db: Db,
+  userId: string,
+  units: number,
+  now: Date,
+  workspace?: { ws: WithFeatures; allowance: Allowance },
+) {
   const person = personKey(userId);
   if ((await currentCount(db, person, MINUTE_MS, now)) + units > TRANSLATE_PER_MINUTE) {
     privateLog("discord.translate.limited");
@@ -38,15 +47,19 @@ export async function quota(db: Db, userId: string, units: number, now: Date) {
     privateLog("discord.translate.paused");
     return "day" as const;
   }
+  if (workspace && (await useAllowance(db, workspace.ws, workspace.allowance, units, now)) !== "ok")
+    return "cap" as const;
   await recordFailure(db, person, MINUTE_MS, now, units);
   await recordFailure(db, DAY_KEY, DAY_MS, now, units);
   return "ok" as const;
 }
 
-export const quotaLine = (t: WorkspaceDictionary, refused: "person" | "day") =>
-  refused === "day"
-    ? t["translate.discord.paused"]
-    : t["translate.discord.tooMany"].replace("{limit}", String(TRANSLATE_PER_MINUTE));
+export const quotaLine = (t: WorkspaceDictionary, refused: "person" | "day" | "cap") =>
+  refused === "cap"
+    ? t["features.cap.translate"]
+    : refused === "day"
+      ? t["translate.discord.paused"]
+      : t["translate.discord.tooMany"].replace("{limit}", String(TRANSLATE_PER_MINUTE));
 
 /** The message's text, checked and masked; or the line that says why it cannot be translated. */
 export function checkedText(

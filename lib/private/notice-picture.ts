@@ -17,6 +17,7 @@ import { notices } from "../schema-notices";
 import { isAnimated, pictureSize } from "../screenshot/picture-size";
 import { requireBoard, requireWorkspace, type CookieReader, type WorkspaceAccess } from "./access";
 import { boardShowsNotice } from "./board";
+import { featureOn, type WithFeatures } from "./features";
 import {
   MAX_PICTURE_BYTES,
   MAX_PICTURE_SIDE,
@@ -113,10 +114,12 @@ export async function servablePicture(
   const owner = await pictureOwner(db, noticeId);
   if (!owner) return null;
   const officer = await requireWorkspace(db, owner.slug, cookies, now);
-  if (officer.ok) return { ...owner, officer };
+  // D126: a picture stays stored while notice pictures or notices are off, and is not served.
+  const shown = (ws: WithFeatures) => featureOn(ws, "notice_pictures") && featureOn(ws, "notices");
+  if (officer.ok) return shown(officer) ? { ...owner, officer } : null;
   if (officer.reason !== "member") return null;
   const member = await requireBoard(db, owner.slug, cookies, now);
-  if (!member.ok) return null;
+  if (!member.ok || !shown(member)) return null;
   return (await boardShowsNotice(db, member, noticeId, today)) ? { ...owner, officer: null } : null;
 }
 

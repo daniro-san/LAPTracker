@@ -6,6 +6,7 @@ import { z } from "zod";
 
 import { requireWorkspace } from "@/lib/private/access";
 import { counted } from "@/lib/private/desk-action";
+import { featureOn } from "@/lib/private/features";
 import { isSameOriginJson, NO_STORE, privateError, requestCookies } from "@/lib/private/http";
 import { removePicture } from "@/lib/private/notice-picture";
 import { SLUG } from "@/lib/private/sign-in";
@@ -25,6 +26,7 @@ export async function POST(
   return withContext("/api/w/[slug]/notices/picture/remove", slug, async (ctx, db) => {
     const access = await requireWorkspace(db, slug, requestCookies(request), ctx.now());
     if (!access.ok) return privateError(401, "signed_out");
+    if (!featureOn(access, "notice_pictures")) return privateError(403, "turned_off");
     const result = await removePicture(db, access, parsed.data.id);
     if (result === "notice_deleted") return privateError(410, "notice_deleted");
     const removed = Response.json({ ok: true }, { headers: NO_STORE });

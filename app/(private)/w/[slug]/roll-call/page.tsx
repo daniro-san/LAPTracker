@@ -148,6 +148,10 @@ function ArchivedHint({ slug, n, t }: { slug: string; n: number; t: WorkspaceDic
   );
 }
 
+/** The page's own path, for the return after sign-in (D99). */
+const pathOf = (archived: boolean, week: string | null) =>
+  archived ? "roll-call?archived=1" : `roll-call${week ? `?week=${week}` : ""}`;
+
 export default async function RollCallPage({
   params,
   searchParams,
@@ -160,11 +164,10 @@ export default async function RollCallPage({
   const week = typeof asked === "string" && isDay(asked) ? asked : null;
   const archived = search.archived === "1";
   const just = justDeleted(search);
-  const page = await openRollCall(
-    params,
-    archived ? "roll-call?archived=1" : `roll-call${week ? `?week=${week}` : ""}`,
-    (db, access, today, _language, zone) => listOf(db, access, zone, archived, week ?? today),
+  const page = await openRollCall(params, pathOf(archived, week), (db, access, today, _l, zone) =>
+    listOf(db, access, zone, archived, week ?? today),
   );
+  if (page.off) return page.off;
   const { access, slug, t, language, today } = page;
   const monday = mondayOf(week ?? today);
   const ctx = { t, language, zone: page.zone };

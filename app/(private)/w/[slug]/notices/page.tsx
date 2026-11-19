@@ -72,14 +72,15 @@ export default async function NoticesPage({
     UUID.test(undo)
       ? { id: Number(deleted), requestId: undo }
       : null;
-  const { access, data: list, waiting } = await noticePage(slug, noticesList, "");
+  const { access, data: list, waiting, off } = await noticePage(slug, noticesList, "");
+  if (off) return off;
   const { language, t } = await workspaceWords();
   const words = noticeWords(language, t);
   return (
     <SignedInFrame access={access} language={language} t={t} current="notices" waiting={waiting}>
       <h1 className="font-display text-display-lg">{t["tab.notices"]}</h1>
       {/* Notices are a view of the Calendar tab (Week · Caravans · Notices, issue 300). */}
-      <CalendarNav slug={slug} current="notices" t={t} />
+      <CalendarNav slug={slug} current="notices" t={t} on={access.features.on} />
       <p className="mt-2 text-ink/80">{t["notices.lead"]}</p>
       <a
         href={`/w/${slug}/notices/new`}

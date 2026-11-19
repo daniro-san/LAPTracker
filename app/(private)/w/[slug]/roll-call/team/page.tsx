@@ -37,7 +37,7 @@ export default async function TeamPage({
     async (db, access, _today, lang, zone) => teamView(db, access, occasion, lang, zone),
   );
   const view = page.data;
-  if (!view) notFound();
+  if (!view) return page.off ?? notFound();
   const { access, slug, t, language } = page;
   const o = view.opened;
   const f = cardFormats(language, page.zone, page.now);

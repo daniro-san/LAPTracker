@@ -14,6 +14,7 @@ import { withPageDb } from "@/lib/page";
 import { requireBoard, type BoardAccess } from "@/lib/private/access";
 import { boardView } from "@/lib/private/board";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
+import { featureOn } from "@/lib/private/features";
 import { noticeChannels } from "@/lib/private/notice-publish";
 import { SLUG } from "@/lib/private/sign-in";
 import { serverDay } from "@/lib/schedule";
@@ -45,6 +46,22 @@ function Account(props: { officer: boolean; name: string; slug: string; t: Works
   );
 }
 
+/** D126: the board is turned off; an officer gets the way back to the desk. */
+function BoardOff(props: { officer: boolean; slug: string; t: WorkspaceDictionary }) {
+  const { t } = props;
+  return (
+    <section className="drawn-card max-w-xl px-4 py-3" role="status">
+      <p className="font-semibold">{t["features.off.board"]}</p>
+      <p className="mt-2 text-body-sm text-ink/80">{t["features.off.kept"]}</p>
+      {props.officer && (
+        <a href={`/w/${props.slug}`} className={LINK}>
+          {t["board.preview.back"]}
+        </a>
+      )}
+    </section>
+  );
+}
+
 /** The board's visitor to PostHog by a pseudonymous id (D115), when analytics is on. */
 function BoardPerson({ env, access }: { env: Env; access: BoardAccess }) {
   const tier = access.officer ? "officer" : "member";
@@ -67,24 +84,37 @@ export default async function BoardPage({ params }: { params: Promise<{ slug: st
   // INVARIANT workspace.access-first: nothing private is read before this check.
   const { access, view } = await withPageDb(async (db) => {
     const access = await requireBoard(db, slug, jar, now);
-    return { access, view: access.ok ? await boardView(db, access, today) : null };
+    if (!access.ok || !featureOn(access, "board")) return { access, view: null };
+    const view = await boardView(db, access, today);
+    // D126: with notices off, the board shows none (they stay stored).
+    return { access, view: featureOn(access, "notices") ? view : { ...view, notices: [] } };
   });
-  if (!access.ok || !view) {
-    if (!access.ok) refuse(slug, access.reason, `/w/${slug}/board`);
+  if (!access.ok) {
+    refuse(slug, access.reason, `/w/${slug}/board`);
     redirect(`/w/${slug}`);
   }
   const { language, t } = await workspaceWords();
   const alliance = ALLIANCES.find((a) => a.unionId === access.unionId);
   const account = <Account officer={access.officer} name={access.name ?? ""} slug={slug} t={t} />;
+  const frame = {
+    language,
+    t,
+    title: t["board.name"],
+    account,
+    ...(alliance && { subtitle: `${alliance.tag} · ${alliance.name}` }),
+  };
+  // D126: the board turned off for the alliance: one calm line; nothing was deleted.
+  if (!featureOn(access, "board")) {
+    return (
+      <Frame {...frame}>
+        <BoardOff officer={access.officer} slug={slug} t={t} />
+      </Frame>
+    );
+  }
+  if (!view) redirect(`/w/${slug}`);
   const linked = new Set(view.entries.flatMap((e) => (e.noticeId === null ? [] : [e.noticeId])));
   return (
-    <Frame
-      language={language}
-      t={t}
-      title={t["board.name"]}
-      account={account}
-      {...(alliance && { subtitle: `${alliance.tag} · ${alliance.name}` })}
-    >
+    <Frame {...frame}>
       <BoardPerson env={env} access={access} />
       <BoardSectionsSeen />
       {access.officer && (

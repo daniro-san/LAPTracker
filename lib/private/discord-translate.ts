@@ -17,6 +17,7 @@ import {
   type WorkspaceLanguage,
 } from "./dictionary";
 import { DEFERRED_REPLY, EPHEMERAL, REPLY, UPDATE, type Webhook } from "./discord-api";
+import { featureOn, featuresById, type WithFeatures } from "./features";
 import { privateLog } from "./log";
 import { checkedText, quota, quotaLine } from "./translate-limits";
 import {
@@ -82,6 +83,21 @@ const privateReply = (content: string): TranslateAnswer => ({
   body: { type: REPLY, data: { content, flags: EPHEMERAL } },
 });
 
+/** The server's workspace with the features the owner has on for it (D126), or null. */
+async function guildWorkspace(db: Db, guildId: string | undefined): Promise<WithFeatures | null> {
+  const workspace = guildId ? await findWorkspaceByGuild(db, guildId) : null;
+  return workspace && { workspaceId: workspace.id, features: await featuresById(db, workspace.id) };
+}
+
+const COMMAND = { me: "discord_translate_me", everyone: "discord_translate_everyone" } as const;
+
+/** Turned off for the alliance (D126): said at once, before anything is counted or translated. */
+function turnedOff(ws: WithFeatures, mode: "me" | "everyone"): boolean {
+  if (featureOn(ws, COMMAND[mode])) return false;
+  privateLog("discord.translate.turned_off");
+  return true;
+}
+
 const jumpLink = (input: TranslateInput, messageId: string) =>
   `https://discord.com/channels/${input.guildId}/${input.channelId}/${messageId}`;
 
@@ -125,11 +141,12 @@ export async function translateCommand(
 ): Promise<TranslateAnswer> {
   const language = pickWorkspaceLanguage(undefined, input.locale ?? null);
   const t = WORKSPACE_DICTIONARIES[language];
-  const workspace = input.guildId ? await findWorkspaceByGuild(db, input.guildId) : null;
-  if (!workspace || !input.userId || !input.channelId) {
+  const ws = await guildWorkspace(db, input.guildId);
+  if (!ws || !input.userId || !input.channelId) {
     privateLog("discord.translate.refused");
     return privateReply(t["shots.discord.noDesk"]);
   }
+  if (turnedOff(ws, mode)) return privateReply(t["features.off.command"]);
   const places = placesFor(input.permissions, input.bot);
   if (mode === "everyone" && places.length === 0)
     return privateReply(t["translate.discord.cantPost"]);
@@ -151,7 +168,7 @@ export async function translateCommand(
     );
     return { body: { type: REPLY, data: { ...already, flags: EPHEMERAL } } };
   }
-  const refused = await quota(db, input.userId, 1, now);
+  const refused = await quota(db, input.userId, 1, now, { ws, allowance: "translate" });
   if (refused !== "ok") return privateReply(quotaLine(t, refused));
   return {
     body: { type: DEFERRED_REPLY, data: { flags: EPHEMERAL } },
@@ -183,9 +200,12 @@ async function switchLanguage(
   const language = pickWorkspaceLanguage(undefined, input.locale ?? null);
   const t = WORKSPACE_DICTIONARIES[language];
   const refuse = (content: string) => ({ body: { type: UPDATE, data: { content } } });
+  const ws = await guildWorkspace(db, input.guildId);
+  if (!ws) return refuse(t["shots.discord.noDesk"]);
+  if (turnedOff(ws, "me")) return refuse(t["features.off.command"]);
   const checked = checkedText(t, language, shownText);
   if ("refused" in checked) return refuse(checked.refused);
-  const refused = await quota(db, pressed.userId, 1, now);
+  const refused = await quota(db, pressed.userId, 1, now, { ws, allowance: "translate" });
   if (refused !== "ok") return refuse(quotaLine(t, refused));
   return {
     body: { type: UPDATE, data: { content: t["translate.discord.working"], components: [] } },
@@ -284,9 +304,15 @@ async function post(
   const t = WORKSPACE_DICTIONARIES[language];
   const refuse = (content: string) => ({ body: { type: UPDATE, data: { content } } });
   if (!places.includes(picker.where)) return refuse(t["translate.discord.cantPost"]);
+  const ws = await guildWorkspace(db, input.guildId);
+  if (!ws) return refuse(t["shots.discord.noDesk"]);
+  if (turnedOff(ws, "everyone")) return refuse(t["features.off.command"]);
   const checked = checkedText(t, language, shownText);
   if ("refused" in checked) return refuse(checked.refused);
-  const refused = await quota(db, picker.userId, picker.to.length, now);
+  const refused = await quota(db, picker.userId, picker.to.length, now, {
+    ws,
+    allowance: "translate",
+  });
   if (refused !== "ok") return refuse(quotaLine(t, refused));
   return {
     body: { type: UPDATE, data: { content: t["translate.discord.working"], components: [] } },

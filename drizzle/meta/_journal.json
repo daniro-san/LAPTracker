@@ -351,6 +351,13 @@
       "when": 1795123806265,
       "tag": "0049_workspace_retention",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1795126747854,
+      "tag": "0050_workspace_features",
+      "breakpoints": true
     }
   ]
 }

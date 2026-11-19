@@ -5,6 +5,7 @@ import { calendarDays } from "@/lib/private/calendar";
 import { addDays, mondayOf, weekDays } from "@/lib/private/calendar-time";
 import { calendarDates } from "@/lib/private/calendar-words";
 import { noticesList, titlesOf } from "@/lib/private/notices";
+import { FEATURES } from "@/lib/workspace-features";
 
 import { agendaWeek, calendarWords, monthCells } from "../../../_ui/calendar-data";
 import { openCalendar } from "../../../_ui/calendar-page";
@@ -55,7 +56,13 @@ export default async function CalendarPage({
   return (
     <SignedInFrame access={access} language={language} t={t} current="days" waiting={page.waiting}>
       <h1 className="font-display text-display-lg">{t["tab.days"]}</h1>
-      <CalendarNav slug={slug} current="week" t={t} query={`?week=${monday}`} />
+      <CalendarNav
+        slug={slug}
+        current="week"
+        t={t}
+        on={access.features.on}
+        query={`?week=${monday}`}
+      />
       <CalendarWeekBar
         href={href}
         monday={monday}
@@ -78,6 +85,7 @@ export default async function CalendarPage({
         zone={ctx.zone}
         notices={notices}
         addDay={today >= monday && today <= sunday ? today : monday}
+        off={FEATURES.filter((f) => !access.features.on.has(f))}
       />
     </SignedInFrame>
   );

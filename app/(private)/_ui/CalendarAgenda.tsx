@@ -5,7 +5,14 @@
 // today, and entries already started are greyed. The page reads again when it comes back into view (owner
 // rule, issue 293: freshness without realtime).
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
 import { chip } from "@/lib/brand/components/controls";
@@ -13,6 +20,7 @@ import { Tag } from "@/lib/brand/components/Tag";
 import { fill } from "@/lib/copy";
 import { mondayOf } from "@/lib/private/calendar-time";
 import { FROM_CALENDAR } from "@/lib/private/roll-call-rules";
+import type { Feature } from "@/lib/workspace-features";
 
 import type { AgendaDay, AgendaItem, CalendarSheetWords } from "./calendar-data";
 import { EntryUndoLine, type DeletedEntry } from "./DeleteArea";
@@ -30,6 +38,9 @@ export function useFreshOnReturn() {
     return () => document.removeEventListener("visibilitychange", back);
   }, [router]);
 }
+
+/** The features turned off for the workspace (D126): their links are left out of the week. */
+const Off = createContext<readonly Feature[]>([]);
 
 let loadedAt: number | null = null;
 const subscribe = () => () => {};
@@ -57,20 +68,24 @@ function Roles({
   words: CalendarSheetWords;
   slug: string;
 }) {
+  const off = useContext(Off);
+  const roll = !off.includes("roll_call");
   if (item.roles) return <p className="text-body-sm">{item.roles}</p>;
   if (FROM_CALENDAR[item.form.kind]) {
     const query = `entry=${item.entry}&week=${item.week}`;
     return (
       <p className="flex flex-wrap gap-x-5">
-        {item.form.kind === "elixir" && (
+        {roll && item.form.kind === "elixir" && (
           <a href={`/w/${slug}/roll-call/team?${query}`} className={LINK}>
             {words["calendar.pickTeam"]}
           </a>
         )}
-        <a href={`/w/${slug}/roll-call/mark?${query}`} className={LINK}>
-          {words["calendar.rollCall"]}
-        </a>
-        {item.form.kind === "undead" && (
+        {roll && (
+          <a href={`/w/${slug}/roll-call/mark?${query}`} className={LINK}>
+            {words["calendar.rollCall"]}
+          </a>
+        )}
+        {item.form.kind === "undead" && !off.includes("garrison") && (
           <a href={`/w/${slug}/calendar/garrison?${query}`} className={LINK}>
             {words["calendar.garrison"]}
           </a>
@@ -78,7 +93,7 @@ function Roles({
       </p>
     );
   }
-  if (item.form.kind !== "caravan") return null;
+  if (item.form.kind !== "caravan" || off.includes("caravans")) return null;
   return (
     <a
       href={`/w/${slug}/calendar/caravans?week=${mondayOf(item.day)}#car-${item.key}`}
@@ -96,6 +111,7 @@ function Item(props: {
   onEdit: () => void;
 }) {
   const { item, words } = props;
+  const notices = !useContext(Off).includes("notices");
   const now = useLoadedAt();
   const past = now !== null && item.at !== null && item.at < now;
   return (
@@ -109,7 +125,7 @@ function Item(props: {
         <p className="font-semibold">{item.title}</p>
         <Roles item={item} words={words} slug={props.slug} />
         {item.notes && <p className="text-body-sm whitespace-pre-line text-ink/85">{item.notes}</p>}
-        {item.notice && (
+        {item.notice && notices && (
           <a
             href={`/w/${props.slug}/notices/${item.notice.id}`}
             className="inline-flex min-h-11 items-center font-semibold text-plum underline underline-offset-4"
@@ -203,6 +219,8 @@ export function CalendarAgenda(props: {
   notices: FormProps["notices"];
   /** The day "Add an event" starts on: today in this week, else its Monday. */
   addDay: string;
+  /** The features turned off for the workspace (D126). */
+  off: readonly Feature[];
 }) {
   const { words } = props;
   const router = useRouter();
@@ -230,7 +248,7 @@ export function CalendarAgenda(props: {
     router.refresh();
   };
   return (
-    <>
+    <Off.Provider value={props.off}>
       <button
         type="button"
         onClick={() => setOpen({ add: true, day: props.addDay, hasTheme: props.theme !== null })}
@@ -273,6 +291,6 @@ export function CalendarAgenda(props: {
           onClose={() => setOpen(null)}
         />
       )}
-    </>
+    </Off.Provider>
   );
 }

@@ -7,6 +7,7 @@ import { z } from "zod";
 
 import { requireWorkspace } from "@/lib/private/access";
 import { counted } from "@/lib/private/desk-action";
+import { featureOn } from "@/lib/private/features";
 import { isSameOriginJson, NO_STORE, privateError, requestCookies } from "@/lib/private/http";
 import { reusePicture } from "@/lib/private/notice-picture-due";
 import { SLUG } from "@/lib/private/sign-in";
@@ -30,6 +31,7 @@ export async function POST(
     const now = ctx.now();
     const access = await requireWorkspace(db, slug, requestCookies(request), now);
     if (!access.ok) return privateError(401, "signed_out");
+    if (!featureOn(access, "notice_pictures")) return privateError(403, "turned_off");
     const { from, to } = parsed.data;
     const result = await reusePicture(db, access, from, to, now);
     if (!result) return privateError(404, "not_found");

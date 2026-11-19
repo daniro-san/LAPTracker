@@ -5,6 +5,7 @@
 // `?text=plain` reads the picture in plain grey only, for the garrison plan's enemy might (D121).
 import { requireWorkspace } from "@/lib/private/access";
 import { counted } from "@/lib/private/desk-action";
+import { featureOn } from "@/lib/private/features";
 import {
   isSameOriginPicture,
   NO_STORE,
@@ -39,6 +40,7 @@ export async function POST(
   return withContext("/api/w/[slug]/shots/read", slug, async (ctx, db) => {
     const access = await requireWorkspace(db, slug, requestCookies(request), ctx.now());
     if (!access.ok) return privateError(401, "signed_out");
+    if (!featureOn(access, "ocr")) return privateError(403, "turned_off");
     const officer = access.user.id;
     // One reading at a time per officer, shared with the phone's share (D109, D110).
     if (!startReading(officer)) return privateError(429, "busy");

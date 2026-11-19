@@ -5,6 +5,7 @@ import { activityPt } from "./dictionary.activity";
 import { boardPt } from "./dictionary.board";
 import { calendarPt } from "./dictionary.calendar.pt-BR";
 import { dataPt } from "./dictionary.data";
+import { featuresPt } from "./dictionary.features";
 import { followUpPt } from "./dictionary.followup";
 import { garrisonPt } from "./dictionary.garrison";
 import { importPt } from "./dictionary.import";
@@ -293,4 +294,5 @@ export const pt: WorkspaceDictionary = {
   ...garrisonPt,
   ...settingsPt,
   ...dataPt,
+  ...featuresPt,
 };

@@ -26,6 +26,7 @@ import {
 } from "@/lib/private/desk-activity";
 import { activityView } from "@/lib/private/desk-activity-words";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
+import { featureOn } from "@/lib/private/features";
 import { toReview, type ReviewItem } from "@/lib/private/import-view";
 import { cardFormats } from "@/lib/private/member-card";
 import { membersView, progressHistory, type MembersView } from "@/lib/private/members";
@@ -236,10 +237,13 @@ function Home(props: {
   );
 }
 
-/** Home's two notes after its digest: D119's pictures due for the cleanup, and D124's tracker key. */
+/** Home's two notes after its digest: D119's pictures due for the cleanup, and D124's tracker key. D126:
+ * no pictures due while notices or their pictures are turned off for the alliance. */
 const cards = (db: Db, access: WorkspaceAccess, now: Date, zone: string) =>
   Promise.all([
-    picturesDue(db, access, now, { SERVER_TZ: zone }),
+    featureOn(access, "notices") && featureOn(access, "notice_pictures")
+      ? picturesDue(db, access, now, { SERVER_TZ: zone })
+      : [],
     trackerKeyView(db, access, getEnv(), now).then((v) => v.state),
   ]);
 
@@ -277,7 +281,7 @@ export default async function WorkspacePage({
       progressHistory(db, access).then((history) => membersView(db, access, now, zone, history)),
       onDeskNow(db, access, now),
       activityPage(db, access, { now, zone }, null, ACTIVITY_FIRST),
-      reviewsForMe(db, access),
+      featureOn(access, "notices") ? reviewsForMe(db, access) : [],
       cards(db, access, now, zone),
     ]);
     const desk = { names, activity, now, due, key };
