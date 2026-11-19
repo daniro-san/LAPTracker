@@ -32,6 +32,7 @@ const en = {
   "tab.aria": "Sections",
   "tab.home": "Home",
   "tab.members": "Members",
+  "desk.more": "More",
   "tab.mark": "Roll call",
   "tab.days": "Calendar",
   "tab.soon": "Soon",

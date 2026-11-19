@@ -2,8 +2,8 @@
 
 // The Members list's state (issue 337): the query and the order, how deep "Show more" went, and what they
 // give: the members kept, each option's count and the groups in order. The address follows the query and
-// the order (replaceState); only the order is remembered on this browser (localStorage, which may be
-// missing: then it lasts until the page is left).
+// the order (replaceState), keeping the open member (`m`, D122); only the order is remembered on this
+// browser (localStorage, which may be missing: then it lasts until the page is left).
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 
 import { track, type MemberFilter } from "@/lib/analytics/events";
@@ -23,6 +23,7 @@ import {
 } from "@/lib/private/members-list";
 
 import type { ListRow } from "./member-list-data";
+import { shown } from "./open-member";
 
 export const PAGE = 25;
 const ORDER_KEY = "ws.members.order";
@@ -51,12 +52,15 @@ const needsWord = (r: ListRow) => needsAWord(r.who);
 /** The address follows the list; it is written again after a sheet's history entry is taken off. */
 function useAddress(address: string) {
   useEffect(() => {
-    const write = () =>
+    const write = () => {
+      const m = new URLSearchParams(window.location.search).get("m");
+      const query = [address, m !== null && `m=${encodeURIComponent(m)}`].filter(Boolean).join("&");
       window.history.replaceState(
         window.history.state,
         "",
-        `${window.location.pathname}${address ? `?${address}` : ""}`,
+        `${window.location.pathname}${query ? `?${query}` : ""}`,
       );
+    };
     write();
     window.addEventListener("popstate", write);
     return () => window.removeEventListener("popstate", write);
@@ -119,7 +123,7 @@ export function useMembersList(props: {
   useAddress(queryString(query, order));
   useEffect(() => {
     if (focusFrom.current === null) return;
-    document.querySelector<HTMLElement>(`[data-row="${focusFrom.current}"]`)?.focus();
+    shown(`[data-row="${focusFrom.current}"]`)?.focus();
     focusFrom.current = null;
   }, [depth]);
 

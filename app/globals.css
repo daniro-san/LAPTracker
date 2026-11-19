@@ -66,23 +66,26 @@ html:has(dialog:modal) {
   overflow: hidden;
 }
 
-/* Scrollbars (DESIGN.md "Workspace components"): the page's and a sheet's are thin, a muted ink thumb on
+/* Scrollbars (DESIGN.md "Workspace components"): the page's, a sheet's and a pane's (D122) are thin, a muted ink thumb on
    no track, in light and dark (--ink flips). Never hidden: on a desktop the bar is how a sheet shows it
    scrolls. Chrome and Firefox read scrollbar-width/-color; Safari reads the ::-webkit-scrollbar rules. */
 html,
-dialog {
+dialog,
+[data-sheet-pane] {
   --scrollbar-thumb: color-mix(in srgb, var(--ink) 35%, transparent);
   scrollbar-width: thin;
   scrollbar-color: var(--scrollbar-thumb) transparent;
 }
 html::-webkit-scrollbar,
-dialog::-webkit-scrollbar {
+dialog::-webkit-scrollbar,
+[data-sheet-pane]::-webkit-scrollbar {
   width: 8px;
   height: 8px;
   background: transparent;
 }
 html::-webkit-scrollbar-thumb,
-dialog::-webkit-scrollbar-thumb {
+dialog::-webkit-scrollbar-thumb,
+[data-sheet-pane]::-webkit-scrollbar-thumb {
   background: var(--scrollbar-thumb);
 }
 
@@ -597,4 +600,19 @@ body {
 .text-link-stretch:active,
 .text-link-stretch[data-state="press"] {
   position: static;
+}
+
+/* More ▾ (D122, MoreMenu): a page action inside the menu is one of its 44 px rows, not a framed button in
+   a framed list; the same node is a framed button in the page head from 768. Outside the layers, so it
+   outranks the button's own utilities (justify-center). */
+[data-more-list] .frame-button {
+  width: 100%;
+  justify-content: flex-start;
+  background: transparent;
+}
+[data-more-list] .frame-button::before {
+  display: none;
+}
+[data-more-list] .frame-button:not(:disabled):hover {
+  background: color-mix(in srgb, var(--plum) 10%, var(--paper));
 }

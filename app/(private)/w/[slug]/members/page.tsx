@@ -3,11 +3,14 @@
 // (D98). The access check runs before anything is read (D71). The page sends each member's row once; the
 // list filters and orders them in the browser, and a member's details are read when their sheet opens.
 // Above the list, new members added by hand wait for the roster (D106; the page first matches them to
-// the newest roster); `?view=former` shows former members instead (D107).
+// the newest roster); `?view=former` shows former members instead (D107). Laid out as list and detail
+// (D122): the open member is in the address (`?m=`) and beside the list from 1024; the page head holds
+// "Paste updates" and "Add a new member" (More on a phone).
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import type { ReactNode } from "react";
 
+import { PageHead } from "@/lib/brand/components/layout/PageHead";
 import { fill } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
@@ -27,7 +30,12 @@ import {
 } from "@/lib/private/members";
 import { needsAWord, pickOrder, pickQuery, whoOf } from "@/lib/private/members-list";
 import { plural, sheetHeader } from "@/lib/private/members-sheet";
-import { dismissedMembers, matchOnRead, toMatch } from "@/lib/private/pending-members";
+import {
+  dismissedMembers,
+  matchOnRead,
+  toMatch,
+  type Pending,
+} from "@/lib/private/pending-members";
 import { RENEW_MS } from "@/lib/private/session";
 import { SLUG } from "@/lib/private/sign-in";
 import { serverDay } from "@/lib/schedule";
@@ -44,11 +52,12 @@ import {
 } from "../../../_ui/member-lifecycle-data";
 import { listRow, listWords } from "../../../_ui/member-list-data";
 import { MembersHead } from "../../../_ui/MembersHead";
-import { MembersList } from "../../../_ui/MembersList";
+import { MembersRoster } from "../../../_ui/MembersRoster";
 import { MembersSource } from "../../../_ui/MembersSource";
 import { MembersThanks } from "../../../_ui/MembersThanks";
+import { ActionButton, PageActions } from "../../../_ui/PageActions";
 import { PasteUpdates } from "../../../_ui/PasteUpdates";
-import { PendingMembers } from "../../../_ui/PendingMembers";
+import type { PendingProps } from "../../../_ui/PendingMembers";
 import { refuse } from "../../../_ui/refuse";
 import { shareThanksProps } from "../../../_ui/share-thanks-data";
 
@@ -116,6 +125,39 @@ function plainSearch(query: Record<string, string | string[] | undefined>): URLS
   );
 }
 
+/** The page head's actions (D122): the page's one main action (D109), new values for several members at
+ * once; then a new member (D106). Each opens its sheet, held once (PageActions). */
+const headActions = (t: WorkspaceDictionary) => [
+  {
+    key: "paste",
+    primary: true,
+    node: <ActionButton id="paste-updates" label={t["updates.open"]} variant="primary" />,
+  },
+  {
+    key: "add",
+    node: <ActionButton id="add-member" label={t["pending.add"]} variant="secondary" />,
+  },
+];
+
+/** New members waiting for the roster, the ones to match and the removed ones (D106). */
+function pendingProps(
+  view: MembersView,
+  readAt: Date,
+  lifecycle: { pending: Pending[]; dismissed: (Pending & { dismissedAt: Date })[] },
+  t: WorkspaceDictionary,
+  f: ReturnType<typeof cardFormats>,
+  editor: PendingProps["editor"],
+): PendingProps {
+  return {
+    rows: lifecycle.pending.map((p) => pendingRow(p, view.facts.get(p.uid) ?? {}, readAt, t, f)),
+    toMatchLine: toMatchLine(toMatch(lifecycle.pending, readAt).length, t, f),
+    dismissed: lifecycle.dismissed.map((p) => dismissedRow(p, view.facts.get(p.uid) ?? {}, t, f)),
+    roster: view.members.map((m) => ({ uid: m.uid, name: m.name })),
+    words: lifecycleWords(t),
+    editor,
+  };
+}
+
 export default async function MembersPage({
   params,
   searchParams,
@@ -149,50 +191,52 @@ export default async function MembersPage({
     serverZone: env.SERVER_TZ,
     used: view.zones,
   };
+  const roster = !showFormer && view.readAt !== null;
+  // At the end of the list's column, so nothing follows the list and its pane (D122).
+  const importLink = (
+    <p className="mt-6">
+      <a
+        href={`/w/${slug}/import`}
+        className="inline-flex min-h-11 items-center text-body-sm font-semibold text-plum underline underline-offset-4"
+      >
+        {t["members.import"]}
+      </a>
+    </p>
+  );
   return (
-    <SignedInFrame access={access} language={language} t={t} current={at} waiting={waiting}>
-      <h1 className="font-display text-display-lg">{t["tab.members"]}</h1>
-      <MembersHead slug={slug} former={showFormer} t={t} language={language} />
-      {/* The page's one main action (D109): new values for several members at once. */}
-      {!showFormer && view.readAt !== null && <PasteUpdates slug={slug} words={updatesWords(t)} />}
-      {showFormer ? (
-        <FormerMembers
-          rows={lifecycle.former.map((m) => formerRow(m, t, f))}
-          words={lifecycleWords(t)}
-          editor={editor}
+    <SignedInFrame access={access} language={language} t={t} current={at} waiting={waiting} wide>
+      <PageActions>
+        <PageHead
+          title={t["tab.members"]}
+          actions={roster ? headActions(t) : []}
+          moreLabel={t["desk.more"]}
         />
-      ) : view.readAt === null ? (
-        <p className="drawn-card mt-4 px-4 py-5">{t["members.none"]}</p>
-      ) : (
-        <Roster
-          {...{ slug, view, rows, t, language, search, now }}
-          readAt={view.readAt}
-          zone={env.SERVER_TZ}
-          readHour={env.DAILY_ROSTER_AT}
-          pending={
-            <PendingMembers
-              rows={lifecycle.pending.map((p) =>
-                pendingRow(p, view.facts.get(p.uid) ?? {}, view.readAt, t, f),
-              )}
-              toMatchLine={toMatchLine(toMatch(lifecycle.pending, view.readAt).length, t, f)}
-              dismissed={lifecycle.dismissed.map((p) =>
-                dismissedRow(p, view.facts.get(p.uid) ?? {}, t, f),
-              )}
-              roster={view.members.map((m) => ({ uid: m.uid, name: m.name }))}
-              words={lifecycleWords(t)}
-              editor={editor}
-            />
-          }
-        />
-      )}
-      <p className="mt-6">
-        <a
-          href={`/w/${slug}/import`}
-          className="inline-flex min-h-11 items-center text-body-sm font-semibold text-plum underline underline-offset-4"
-        >
-          {t["members.import"]}
-        </a>
-      </p>
+        <MembersHead slug={slug} former={showFormer} t={t} language={language} />
+        {roster && <PasteUpdates slug={slug} words={updatesWords(t)} />}
+        {showFormer ? (
+          <FormerMembers
+            rows={lifecycle.former.map((m) => formerRow(m, t, f))}
+            words={lifecycleWords(t)}
+            editor={editor}
+            initialOpen={search.get("m")}
+            foot={importLink}
+          />
+        ) : view.readAt === null ? (
+          <>
+            <p className="drawn-card mt-4 px-4 py-5">{t["members.none"]}</p>
+            {importLink}
+          </>
+        ) : (
+          <Roster
+            {...{ slug, view, rows, t, language, search, now, editor }}
+            foot={importLink}
+            readAt={view.readAt}
+            zone={env.SERVER_TZ}
+            readHour={env.DAILY_ROSTER_AT}
+            pending={pendingProps(view, view.readAt, lifecycle, t, f, editor)}
+          />
+        )}
+      </PageActions>
     </SignedInFrame>
   );
 }
@@ -209,15 +253,18 @@ function Roster(props: {
   now: Date;
   zone: string;
   readHour: string;
-  /** New members waiting for the roster, and "Add a new member" (D106). */
-  pending: ReactNode;
+  /** New members waiting for the roster (D106). */
+  pending: PendingProps;
+  editor: PendingProps["editor"];
+  /** "Import the old spreadsheets", at the end of the list's column. */
+  foot: ReactNode;
 }) {
   const { slug, view, t, language, now, zone } = props;
   const f = cardFormats(language, zone, now);
   const today = serverDay(now, { SERVER_TZ: zone });
   const checkins = view.members.filter((m) => needsAWord(whoOf(m))).length;
   const [from, to] = [view.week[0] ?? "", view.week[6] ?? ""];
-  return (
+  const lead = (
     <>
       <MembersSource
         t={t}
@@ -248,20 +295,28 @@ function Roster(props: {
         )}
       </p>
       <Legend t={t} />
-      {props.pending}
-      <MembersList
-        rows={props.rows.map((m) => listRow(m, t, f))}
-        early={view.early}
-        words={listWords(t)}
-        language={language}
-        editor={{ slug, words: editorWords(t), language, serverZone: zone, used: view.zones }}
-        initialQuery={pickQuery(props.search, LANGUAGES)}
-        initialOrder={pickOrder(props.search.get("order"))}
-        today={today}
-        hour={Number(clockIn(now.getTime(), zone, today).time.slice(0, 2))}
-        serverZone={zone}
-        sheetHeader={sheetHeader(view.week, t)}
-      />
     </>
+  );
+  return (
+    <MembersRoster
+      lead={lead}
+      pending={props.pending}
+      editor={props.editor}
+      foot={props.foot}
+      initialOpen={props.search.get("m")}
+      pick={t["members.pick"]}
+      list={{
+        rows: props.rows.map((m) => listRow(m, t, f)),
+        early: view.early,
+        words: listWords(t),
+        language,
+        initialQuery: pickQuery(props.search, LANGUAGES),
+        initialOrder: pickOrder(props.search.get("order")),
+        today,
+        hour: Number(clockIn(now.getTime(), zone, today).time.slice(0, 2)),
+        serverZone: zone,
+        sheetHeader: sheetHeader(view.week, t),
+      }}
+    />
   );
 }

@@ -26,6 +26,7 @@ export const pt: WorkspaceDictionary = {
   "tab.aria": "Seções",
   "tab.home": "Início",
   "tab.members": "Membros",
+  "desk.more": "Mais",
   "tab.mark": "Chamada",
   "tab.days": "Agenda",
   "tab.soon": "Em breve",

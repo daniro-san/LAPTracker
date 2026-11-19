@@ -30,7 +30,7 @@ export function MoreMenu({ label, children }: { label: string; children: ReactNo
       </summary>
       <div
         data-more-list
-        className="drawn-card absolute inset-x-0 top-full z-20 mt-2 flex flex-col bg-paper py-1 [&>*]:flex [&>*]:min-h-11 [&>*]:items-center [&>*]:px-3"
+        className="drawn-card absolute inset-x-0 top-full z-20 mt-2 flex flex-col bg-paper py-1 shadow-[0_8px_24px_var(--sheet-shadow)] [&>*]:flex [&>*]:min-h-11 [&>*]:items-center [&>*]:px-3"
       >
         {children}
       </div>
