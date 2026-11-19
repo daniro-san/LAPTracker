@@ -37,6 +37,8 @@ const link = z
 const uid = z.number().int().positive();
 /** The notice that goes with the entry (D102); the workspace's own, checked on write. */
 const notice = z.number().int().positive().nullable();
+/** An Undead Siege's enemy might (D121): the game's number in full, 11.5M as 11500000; null for none. */
+const enemyMight = z.number().int().positive().max(1e11).nullable();
 
 const shared = {
   day,
@@ -51,7 +53,9 @@ const timed = { ...shared, minute, weekly: z.boolean().default(false) };
 export const newEntry = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("caravan"), ...timed }).strict(),
   z.object({ kind: z.literal("cheese"), variant: z.enum(["I", "II"]), level, ...timed }).strict(),
-  z.object({ kind: z.literal("undead"), level, ...timed }).strict(),
+  z
+    .object({ kind: z.literal("undead"), level, enemyMight: enemyMight.default(null), ...timed })
+    .strict(),
   z
     .object({
       kind: z.literal("elixir"),
@@ -78,6 +82,7 @@ const change = <F extends string, V extends z.ZodType>(field: F, value: V) =>
 export const fieldChange = z.discriminatedUnion("field", [
   change("slot", z.object({ weekday: z.number().int().min(0).max(6), minute }).strict()),
   change("level", level),
+  change("enemyMight", enemyMight),
   change("variant", z.enum(["I", "II", "A", "B"])),
   change("title", title),
   change("notes", notes),
@@ -112,6 +117,7 @@ const FITS: Record<Field, Fits> = {
   when: (e, v: { minute: number } | null) =>
     e.kind !== "duel" && (v === null || timeFits(e.kind, v.minute)),
   level: (e) => e.kind === "cheese" || e.kind === "undead",
+  enemyMight: (e) => e.kind === "undead",
   variant: (e, v: string) => (VARIANTS[e.kind] ?? []).includes(v),
   title: (e) => e.kind === "other" || e.kind === "duel",
   coach: (e) => e.kind === "caravan",

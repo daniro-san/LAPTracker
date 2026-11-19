@@ -35,6 +35,7 @@ export const DESK_FEATURES = [
   "start_here",
   "profile",
   "thanks",
+  "garrison",
 ] as const;
 export type DeskFeature = (typeof DESK_FEATURES)[number];
 

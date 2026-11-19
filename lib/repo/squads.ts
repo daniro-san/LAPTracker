@@ -147,6 +147,19 @@ export async function squadPairs(
   return [...pairs.values()];
 }
 
+/** Every member's newest stored row of each squad number, power only: the garrison plan's read (D121). */
+export async function allLatestSquads(
+  db: Db,
+  unionId: number,
+): Promise<{ uid: number; squad: number; power: number }[]> {
+  const s = memberSquads;
+  return db
+    .selectDistinctOn([s.uid, s.squad], { uid: s.uid, squad: s.squad, power: s.power })
+    .from(s)
+    .where(eq(s.unionId, unionId))
+    .orderBy(asc(s.uid), asc(s.squad), desc(s.readAt), desc(s.id));
+}
+
 const heroesOf = (squad: SquadInput): StoredHero[] =>
   squad.heroes.map((h) => ({ id: h.id, lv: h.lv, star: h.star, q: h.q, awaken: h.awaken }));
 

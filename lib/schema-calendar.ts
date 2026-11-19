@@ -47,6 +47,8 @@ export const calendarEntries = pgTable(
     /** Cheese Trap I or II; Elixir Scramble team A or B. */
     variant: text("variant"),
     level: smallint("level"),
+    /** Undead Siege: the enemy might the officer set last (D121), the garrison plan's threshold. */
+    enemyMight: big("enemy_might"),
     title: text("title"),
     notes: text("notes"),
     link: text("link"),
@@ -79,6 +81,10 @@ export const calendarEntries = pgTable(
     check("calendar_entries_time_check", sql`(${t.minute} is null) = (${t.kind} = 'duel')`),
     check("calendar_entries_level_check", sql`${t.level} between 1 and 99`),
     check("calendar_entries_variant_check", sql`${t.variant} in ('I', 'II', 'A', 'B')`),
+    check(
+      "calendar_entries_enemy_might_check",
+      sql`${t.enemyMight} is null or (${t.kind} = 'undead' and ${t.enemyMight} > 0)`,
+    ),
   ],
 );
 
@@ -127,6 +133,49 @@ export const calendarOccurrences = pgTable(
     check(
       "calendar_occurrences_two_people_check",
       sql`${t.coachUid} is null or ${t.secondUid} is null or ${t.coachUid} <> ${t.secondUid}`,
+    ),
+  ],
+);
+
+/** One garrison pair (D121): the helper's spare squad (its number) lent to one member. */
+export interface GarrisonPair {
+  helper: number;
+  squad: number;
+  member: number;
+}
+
+/**
+ * An Undead Siege's garrison plan as officers left it (D121), one per entry and week (the plan's Monday,
+ * as a roll call's). `rev` counts saves, for the 409 check. The post to Discord is claimed here once per
+ * request id (D100); `post_status` is posting, posted or failed.
+ */
+export const garrisonPlans = pgTable(
+  "garrison_plans",
+  {
+    id: serial("id").primaryKey(),
+    workspaceId: integer("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    entryId: integer("entry_id")
+      .notNull()
+      .references(() => calendarEntries.id, { onDelete: "cascade" }),
+    week: day("week").notNull(),
+    pairs: jsonb("pairs").$type<GarrisonPair[]>().notNull(),
+    rev: integer("rev").notNull().default(0),
+    /** The officer's last save; null for a plan stored only to post the suggestion. */
+    savedBy: integer("saved_by").references(() => workspaceUsers.id, { onDelete: "set null" }),
+    savedAt: tstz("saved_at").notNull(),
+    postRequestId: text("post_request_id"),
+    postStatus: text("post_status"),
+    postedBy: integer("posted_by").references(() => workspaceUsers.id, { onDelete: "set null" }),
+    postedAt: tstz("posted_at"),
+  },
+  (t) => [
+    unique("garrison_plans_entry_week_unique").on(t.entryId, t.week),
+    index("garrison_plans_workspace_idx").on(t.workspaceId),
+    check(
+      "garrison_plans_post_status_check",
+      sql`${t.postStatus} in ('posting', 'posted', 'failed')`,
     ),
   ],
 );

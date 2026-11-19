@@ -23,6 +23,8 @@ export interface FormValues {
   kind: Kind;
   variant: string | null;
   level: number | null;
+  /** Undead Siege: the enemy might in full (D121). */
+  enemyMight: number | null;
   title: string;
   notes: string;
   link: string;
@@ -124,6 +126,7 @@ function formOf(p: Placed, plannedDay: string, language: WorkspaceLanguage): For
     kind: e.kind as Kind,
     variant: e.variant,
     level: e.level,
+    enemyMight: e.enemyMight,
     title: e.title ?? "",
     notes: e.notes ?? "",
     link: e.link ?? "",

@@ -152,6 +152,8 @@ export function activityLine(
       return draftLine(t, who, item);
     case "entry":
     case "entryEdit":
+    case "garrisonSaved":
+    case "garrisonPosted":
       return fill(t[`activity.${item.kind}`], { who, entry: isolate(titleOf(item.entry, t)) });
     case "thefts":
     case "newMember":

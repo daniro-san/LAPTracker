@@ -1,6 +1,7 @@
 // The calendar's words, made on the server in the officer's language (issue 300): an entry's title, a
 // server day and time, and the sentence a refused edit (409) shows. Dates never end a sentence, so PT and
 // FR never print "nov..". Numbers and dates stay out of client components (no Node/Chrome Intl drift).
+import { compactLarge } from "../compact";
 import { fill, isolate } from "../copy";
 import type { Conflict } from "./calendar";
 import type { EntryRow } from "./calendar-model";
@@ -122,6 +123,7 @@ function valueText(c: Conflict, t: WorkspaceDictionary, language: WorkspaceLangu
   if (typeof v === "boolean") return t[v ? "calendar.value.on" : "calendar.value.off"];
   if (typeof v === "object") return objectText(c.field, v, t, language);
   if (c.field === "notice") return t["calendar.value.linked"];
+  if (c.field === "enemyMight") return compactLarge(Number(v), language);
   return c.field === "level" ? `Lv.${v}` : String(v).slice(0, 80);
 }
 
