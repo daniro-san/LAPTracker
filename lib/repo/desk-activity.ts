@@ -7,6 +7,7 @@ import { and, desc, eq, gt, gte, isNotNull, lt, ne, sql } from "drizzle-orm";
 import type { Db } from "../db";
 import { memberFacts, workspaceSessions, workspaceUsers } from "../schema";
 import { thefts } from "../schema-thefts";
+import { callParts, callRows, type CallKind, type CallRows } from "./desk-activity-calls";
 import * as picture from "./desk-activity-pictures";
 import { reviewParts, reviewRows, type ReviewKind, type ReviewRows } from "./desk-activity-reviews";
 import { thanksParts, type ThanksDone } from "./desk-activity-thanks";
@@ -72,7 +73,7 @@ export type FollowUpDone = Done & {
 };
 export type TheftsDone = Done & { count: number };
 export type NewMemberDone = Done & { name: string };
-export interface ActivityRows extends ReviewRows, TrashRows, picture.Rows {
+export interface ActivityRows extends ReviewRows, TrashRows, picture.Rows, CallRows {
   facts: FactsDone[];
   noticeSaves: NoticeDone[];
   noticePosts: NoticeDone[];
@@ -116,7 +117,7 @@ type OwnKind = "noticeSaved" | "noticePosted" | "draft" | "entry" | "newMember" 
 
 /** One row of the small sources' read; the columns each kind does not use are null. */
 type SmallRow = {
-  kind: OwnKind | ReviewKind | TrashKind | picture.Kind | "thanks";
+  kind: OwnKind | ReviewKind | TrashKind | picture.Kind | CallKind | "thanks";
   by: number | string;
   at: Date | string;
   notice_id: number | null;
@@ -131,7 +132,7 @@ type SmallRow = {
  * The small sources in one read (one connection): notice saves (one per save of any number of fields),
  * notice posts, notices deleted and restored from the trash (D118; an undone delete is not one), saved drafts, calendar entries added, new members added by hand, and follow-up records
  * (not `withdrawn`, and not one an Undo cancelled), notice review requests and their outcomes (D113), and
- * the weekly thanks shared or taken down (D114), notice pictures added (D119). Each part is its own newest `n` since `from`; `n` bounds
+ * the weekly thanks shared or taken down (D114), notice pictures added (D119), and roll calls deleted or archived (D120). Each part is its own newest `n` since `from`; `n` bounds
  * the rows returned, not the rows a part scans.
  */
 async function smallSources(
@@ -185,7 +186,8 @@ async function smallSources(
     ${reviewParts(ws, since, before, n)}
     ${thanksParts(ws, since, before, n)}
     ${trashParts(ws, since, before, n)}
-    ${picture.parts(ws, since, before, n)}`);
+    ${picture.parts(ws, since, before, n)}
+    ${callParts(ws, since, before, n)}`);
   return result.rows;
 }
 
@@ -246,7 +248,8 @@ async function marksWritten(
     with g as (
       select m.roll_call_id, m.written_by, m.written_at, count(*) > 1 as rest
       from roll_call_marks m join roll_calls c on c.id = m.roll_call_id
-      where c.workspace_id = ${ws} and m.written_by is not null and m.mark is not null
+      where c.workspace_id = ${ws} and c.deleted_at is null
+        and m.written_by is not null and m.mark is not null
         and m.written_at >= ${from.toISOString()}
       group by m.roll_call_id, m.written_by, m.written_at
     )
@@ -314,6 +317,7 @@ function split(rows: SmallRow[]) {
       until: b,
     })),
     thanks: of("thanks").map(({ by, at, a }) => ({ by, at, target: a as ThanksDone["target"] })),
+    ...callRows(of),
   };
 }
 

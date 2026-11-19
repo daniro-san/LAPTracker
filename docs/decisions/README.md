@@ -127,3 +127,4 @@ The header text above is the old file's, kept as it was. The split it describes 
 - [D117 — Squads from the tracker: a nightly /v1/players read for the own alliance, append-only squads, hero pictures, and "Main squad might" from the tracker (2026-11-17, owner, 11ai, issue 413; amends D80)](D117-squads-from-the-tracker.md)
 - [D118 — Delete a notice: a soft delete with who, when and the title kept, a short Undo, a restore from the trash, and lines on Home (2026-11-18, owner, 11aj, issue 411; amends D108)](D118-delete-a-notice.md)
 - [D119 — A notice carries one picture, stored in Neon (bytea, 400 KB, 1600 px), resized in the browser, served only behind the notice's own access (2026-11-18, owner, 11ak, issue 419; amends D102, D105, D108, D110)](D119-a-notice-picture-stored-in-neon.md)
+- [D120 — Delete a roll call (with a short Undo) and archive one (2026-11-19, owner, 11am, issue 424; amends D103 and D108)](D120-delete-and-archive-a-roll-call.md)
