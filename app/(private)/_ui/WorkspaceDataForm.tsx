@@ -181,17 +181,21 @@ export function WorkspaceDataForm(props: {
   graceDate: string;
   /** When the asked deletion happens, or null when none is asked. */
   deletionDate: string | null;
+  /** "Download our data" is on for the alliance (D126); off, its card is left out. */
+  download: boolean;
 }) {
   const { slug, t } = props;
   return (
     <>
-      <section aria-labelledby="workspace-data" className="drawn-card mt-4 max-w-2xl px-4 py-3">
-        <h2 id="workspace-data" className="font-subhead text-display-sm">
-          {t["data.head"]}
-        </h2>
-        <p className="mt-1">{t["data.lead"]}</p>
-        <Download slug={slug} t={t} />
-      </section>
+      {props.download && (
+        <section aria-labelledby="workspace-data" className="drawn-card mt-4 max-w-2xl px-4 py-3">
+          <h2 id="workspace-data" className="font-subhead text-display-sm">
+            {t["data.head"]}
+          </h2>
+          <p className="mt-1">{t["data.lead"]}</p>
+          <Download slug={slug} t={t} />
+        </section>
+      )}
       <section
         aria-labelledby="workspace-delete-head"
         className="drawn-card mt-4 max-w-2xl px-4 py-3"

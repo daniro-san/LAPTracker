@@ -7,6 +7,7 @@
 //   {action: "take_down", id}: hides the board's card; not_found for another workspace's or a Discord share.
 import { requireWorkspace } from "@/lib/private/access";
 import { counted } from "@/lib/private/desk-action";
+import { featureOn } from "@/lib/private/features";
 import {
   isSameOriginJson,
   NO_STORE,
@@ -40,6 +41,9 @@ export async function POST(
     const access = await requireWorkspace(db, slug, requestCookies(request), now);
     if (!access.ok) return privateError(401, "signed_out");
     const ask = parsed.data;
+    // D126: nothing is put on a members' board that is turned off.
+    if (ask.action === "share" && ask.target === "board" && !featureOn(access, "board"))
+      return privateError(403, "turned_off");
     if (ask.action === "take_down") {
       const done = await takeDownThanks(db, access, ask.id, now);
       return done

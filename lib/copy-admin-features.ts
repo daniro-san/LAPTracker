@@ -27,6 +27,7 @@ export const featuresAdminCopy = {
     discord_translate_everyone: "Translate for everyone",
     squads: "Squads read (on its own key)",
     notice_pictures: "Notice pictures (Neon storage)",
+    export: "Download our data",
   },
   on: "On",
   off: "Off",

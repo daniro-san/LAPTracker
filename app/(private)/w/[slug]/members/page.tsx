@@ -18,6 +18,7 @@ import { requireWorkspace } from "@/lib/private/access";
 import { clockIn } from "@/lib/private/calendar-time";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import { LANGUAGES } from "@/lib/private/fact-fields";
+import { thanksSwitches } from "@/lib/private/features";
 import { formerMembers } from "@/lib/private/former-members";
 import { toReviewCount } from "@/lib/private/import-view";
 import { cardFormats } from "@/lib/private/member-card";
@@ -59,7 +60,7 @@ import { ActionButton, PageActions } from "../../../_ui/PageActions";
 import { PasteUpdates } from "../../../_ui/PasteUpdates";
 import type { PendingProps } from "../../../_ui/PendingMembers";
 import { refuse } from "../../../_ui/refuse";
-import { shareThanksProps } from "../../../_ui/share-thanks-data";
+import { shareThanksProps, type ThanksSwitches } from "../../../_ui/share-thanks-data";
 
 function Legend({ t }: { t: WorkspaceDictionary }) {
   return (
@@ -92,7 +93,8 @@ async function readPage(
 ) {
   const { now, zone, showFormer } = p;
   const access = await requireWorkspace(db, p.slug, p.jar, now, RENEW_MS);
-  if (!access.ok) return { access, waiting: 0, view: null, rows: [], lifecycle: null };
+  if (!access.ok)
+    return { access, waiting: 0, view: null, rows: [], lifecycle: null, switches: NO_SWITCHES };
   // D106: a roster read since a new member was added may now list them.
   const pending = await matchOnRead(db, access, now);
   const view = await membersView(db, access, now, zone, await progressHistory(db, access));
@@ -100,6 +102,8 @@ async function readPage(
     access,
     waiting: await toReviewCount(db, access, now),
     view,
+    // D126: the thanks sheet's switches.
+    switches: thanksSwitches(access),
     // The list's own read (photos and past names); the card route never runs it (issue 337).
     rows: showFormer ? [] : await withListExtras(db, access, view.members),
     lifecycle: showFormer
@@ -111,6 +115,9 @@ async function readPage(
         },
   };
 }
+
+/** Refused: nothing is shown, so nothing is switched on. */
+const NO_SWITCHES: ThanksSwitches = { board: false, writing: false };
 
 /** The editor's words; the add sheet says when the nightly roster is read (D106). */
 const lifecycleEditorWords = (t: WorkspaceDictionary, readAt: string) => ({
@@ -174,7 +181,7 @@ export default async function MembersPage({
   const at = search.get("view") === "former" ? "former" : "members";
   const showFormer = at === "former";
   // INVARIANT workspace.access-first: nothing private is read before this check.
-  const { access, view, rows, waiting, lifecycle } = await withPageDb((db) =>
+  const { access, view, rows, waiting, lifecycle, switches } = await withPageDb((db) =>
     readPage(db, { slug, jar, now, zone: env.SERVER_TZ, showFormer }),
   );
   if (!access.ok) {
@@ -228,7 +235,7 @@ export default async function MembersPage({
           </>
         ) : (
           <Roster
-            {...{ slug, view, rows, t, language, search, now, editor }}
+            {...{ slug, view, rows, t, language, search, now, editor, switches }}
             foot={importLink}
             readAt={view.readAt}
             zone={env.SERVER_TZ}
@@ -258,12 +265,15 @@ function Roster(props: {
   editor: PendingProps["editor"];
   /** "Import the old spreadsheets", at the end of the list's column. */
   foot: ReactNode;
+  /** D126: the thanks sheet's switches. */
+  switches: ThanksSwitches;
 }) {
   const { slug, view, t, language, now, zone } = props;
   const f = cardFormats(language, zone, now);
   const today = serverDay(now, { SERVER_TZ: zone });
   const checkins = view.members.filter((m) => needsAWord(whoOf(m))).length;
   const [from, to] = [view.week[0] ?? "", view.week[6] ?? ""];
+  const share = shareThanksProps({ slug, t, language, view, today, switches: props.switches });
   const lead = (
     <>
       <MembersSource
@@ -275,12 +285,7 @@ function Roster(props: {
       <p className="mt-1 text-body-sm text-ink/80">
         {fill(t["members.week"], { from: f.date(from), to: f.date(to) })}
       </p>
-      <MembersThanks
-        view={view}
-        t={t}
-        f={f}
-        share={shareThanksProps({ slug, t, language, view, today })}
-      />
+      <MembersThanks view={view} t={t} f={f} share={share} />
       {/* Before the first end-of-day read nothing is computed, so nothing is said about check-ins. */}
       <p className={view.early ? "hidden" : "mt-3"}>
         {checkins === 0 ? (

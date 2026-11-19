@@ -9,7 +9,7 @@ import { WRITING_LANGUAGES } from "@/lib/ai/notice-writing";
 import { eventWorkspace } from "@/lib/analytics/server";
 import { requireWorkspace } from "@/lib/private/access";
 import { counted } from "@/lib/private/desk-action";
-import { featureOn } from "@/lib/private/features";
+import { featureOn, giveBackAllowance } from "@/lib/private/features";
 import { isSameOriginJson, NO_STORE, privateError, requestCookies } from "@/lib/private/http";
 import { privateLog } from "@/lib/private/log";
 import { SLUG } from "@/lib/private/sign-in";
@@ -39,7 +39,9 @@ export async function POST(
     if (!featureOn(access, "thanks_draft")) return privateError(403, "turned_off");
     // One unit per language, counted before Groq is asked, with D101's per-person and per-day limits and
     // the workspace's own AI allowance (D126).
-    const refused = await quota(db, `desk:${access.user.id}`, WRITING_LANGUAGES.length, ctx.now(), {
+    const countedAt = ctx.now();
+    const units = WRITING_LANGUAGES.length;
+    const refused = await quota(db, `desk:${access.user.id}`, units, countedAt, {
       ws: access,
       allowance: "ai",
     });
@@ -61,6 +63,8 @@ export async function POST(
       );
     } catch (error) {
       if (!(error instanceof ChatError)) throw error;
+      // D126: the model did not answer, so the alliance's daily count gets these units back.
+      await giveBackAllowance(db, access, "ai", units, countedAt);
       privateLog(`thanks.draft.${error.kind}`, { ms: ctx.now().getTime() - started });
       return privateError(FAILURE[error.kind], error.kind);
     }

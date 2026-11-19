@@ -26,7 +26,7 @@ import {
 } from "@/lib/private/desk-activity";
 import { activityView } from "@/lib/private/desk-activity-words";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
-import { featureOn } from "@/lib/private/features";
+import { featureOn, thanksSwitches } from "@/lib/private/features";
 import { toReview, type ReviewItem } from "@/lib/private/import-view";
 import { cardFormats } from "@/lib/private/member-card";
 import { membersView, progressHistory, type MembersView } from "@/lib/private/members";
@@ -156,7 +156,8 @@ function KeyCard({ slug, t, state }: { slug: string; t: WorkspaceDictionary; sta
 }
 
 function Home(props: {
-  slug: string;
+  /** The workspace; its switches decide what the thanks sheet offers (D126). */
+  access: WorkspaceAccess;
   t: WorkspaceDictionary;
   language: WorkspaceLanguage;
   items: ReviewItem[];
@@ -172,7 +173,8 @@ function Home(props: {
   /** Sunday or Monday, and the week's thanks not shared yet (D114). */
   nudge: boolean;
 }) {
-  const { slug, t, language } = props;
+  const { t, language } = props;
+  const slug = props.access.slug;
   const f = cardFormats(language, getEnv().SERVER_TZ, new Date());
   const at = new Intl.DateTimeFormat(language, {
     weekday: "short",
@@ -229,6 +231,7 @@ function Home(props: {
               language={language}
               view={props.view}
               nudge={props.nudge}
+              switches={thanksSwitches(props.access)}
             />
           </>
         }
@@ -237,13 +240,10 @@ function Home(props: {
   );
 }
 
-/** Home's two notes after its digest: D119's pictures due for the cleanup, and D124's tracker key. D126:
- * no pictures due while notices or their pictures are turned off for the alliance. */
+/** Home's two notes after its digest: D119's pictures due for the cleanup, and D124's tracker key. */
 const cards = (db: Db, access: WorkspaceAccess, now: Date, zone: string) =>
   Promise.all([
-    featureOn(access, "notices") && featureOn(access, "notice_pictures")
-      ? picturesDue(db, access, now, { SERVER_TZ: zone })
-      : [],
+    picturesDue(db, access, now, { SERVER_TZ: zone }),
     trackerKeyView(db, access, getEnv(), now).then((v) => v.state),
   ]);
 
@@ -318,7 +318,7 @@ export default async function WorkspacePage({
   return (
     <SignedInFrame access={access} language={language} t={t} current="home" waiting={waiting} wide>
       <Home
-        slug={slug}
+        access={access}
         t={t}
         language={language}
         items={items}

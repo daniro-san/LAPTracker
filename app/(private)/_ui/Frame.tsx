@@ -168,14 +168,54 @@ export function SignedInFrame({
   const view = at in VIEW_TAB ? (at as DeskView) : undefined;
   const current = view ? VIEW_TAB[view] : (at as TabId);
   const alliance = ALLIANCES.find((a) => a.unionId === access.unionId);
-  const name = access.user.displayName ?? "";
   const person = analyticsPerson(getEnv(), {
     userId: access.user.id,
     tier: "officer",
     slug: access.slug,
     unionId: access.unionId,
   });
-  const account = (
+  return (
+    <SignedOutProvider slug={access.slug} text={t["signedOut.text"]} link={t["signedOut.link"]}>
+      <Frame
+        language={language}
+        t={t}
+        tabs={{
+          slug: access.slug,
+          current,
+          waiting,
+          on: access.features.on,
+          ...(view && { view }),
+        }}
+        account={<Account access={access} language={language} t={t} />}
+        wide={wide}
+        {...(alliance && { subtitle: `${alliance.tag} · ${alliance.name}` })}
+      >
+        {person && <AnalyticsPerson {...person} />}
+        <DeletionNotice
+          slug={access.slug}
+          purgeAfter={access.purgeAfter}
+          officer
+          t={t}
+          language={language}
+        />
+        {children}
+      </Frame>
+    </SignedOutProvider>
+  );
+}
+
+/** "Signed in as …" with the officer's profile, Alliance settings and Sign out. */
+function Account({
+  access,
+  language,
+  t,
+}: {
+  access: WorkspaceAccess;
+  language: WorkspaceLanguage;
+  t: WorkspaceDictionary;
+}) {
+  const name = access.user.displayName ?? "";
+  return (
     <>
       <ProfileSheet
         slug={access.slug}
@@ -202,33 +242,5 @@ export function SignedInFrame({
         />
       </span>
     </>
-  );
-  return (
-    <SignedOutProvider slug={access.slug} text={t["signedOut.text"]} link={t["signedOut.link"]}>
-      <Frame
-        language={language}
-        t={t}
-        tabs={{
-          slug: access.slug,
-          current,
-          waiting,
-          on: access.features.on,
-          ...(view && { view }),
-        }}
-        account={account}
-        wide={wide}
-        {...(alliance && { subtitle: `${alliance.tag} · ${alliance.name}` })}
-      >
-        {person && <AnalyticsPerson {...person} />}
-        <DeletionNotice
-          slug={access.slug}
-          purgeAfter={access.purgeAfter}
-          officer
-          t={t}
-          language={language}
-        />
-        {children}
-      </Frame>
-    </SignedOutProvider>
   );
 }

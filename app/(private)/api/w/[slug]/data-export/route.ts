@@ -9,6 +9,7 @@ import { requireWorkspace } from "@/lib/private/access";
 import { WORKSPACE_LANG_COOKIE } from "@/lib/private/cookies";
 import { counted } from "@/lib/private/desk-action";
 import { pickWorkspaceLanguage, WORKSPACE_DICTIONARIES } from "@/lib/private/dictionary";
+import { featureOn } from "@/lib/private/features";
 import { isSameOriginJson, NO_STORE, privateError, requestCookies } from "@/lib/private/http";
 import { SLUG } from "@/lib/private/sign-in";
 import { downloadData } from "@/lib/private/workspace-export";
@@ -32,6 +33,7 @@ export async function POST(
     const cookies = requestCookies(request);
     const access = await requireWorkspace(db, slug, cookies, now);
     if (!access.ok) return privateError(401, "signed_out");
+    if (!featureOn(access, "export")) return privateError(403, "turned_off");
     const language = pickWorkspaceLanguage(
       cookies.get(WORKSPACE_LANG_COOKIE)?.value,
       request.headers.get("accept-language"),

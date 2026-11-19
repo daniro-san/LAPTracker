@@ -2,6 +2,7 @@
 // calls and thefts, imports, and the key and data requests. Invented names and values only.
 import type { Db } from "./db";
 import { memberFollowUps, rollCallMarks, rollCalls, rollCallTeam } from "./schema";
+import { workspaceFeatures, workspaceUsage } from "./schema-features";
 import {
   allianceDuelPoints,
   discordPictures,
@@ -196,4 +197,7 @@ export async function seedKeyAndData(db: Db, ws: number, unionId: number, office
     at: SEED_AT,
     requestId: `data-${ws}`,
   });
+  // D126: the owner's switches and the day's count.
+  await db.insert(workspaceFeatures).values({ workspaceId: ws, off: ["thefts"] });
+  await db.insert(workspaceUsage).values({ workspaceId: ws, allowance: "ai", day: DAY, used: 3 });
 }

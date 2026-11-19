@@ -10,7 +10,7 @@ export const FEATURE_GROUPS = {
   tabs: ["roll_call", "garrison", "thefts", "follow_up", "caravans", "notices", "board"],
   ai: ["notice_translate", "notice_improve", "notice_fit", "thanks_draft", "ocr"],
   discord: ["discord_send", "discord_translate_me", "discord_translate_everyone"],
-  data: ["squads", "notice_pictures"],
+  data: ["squads", "notice_pictures", "export"],
 } as const;
 export type FeatureGroup = keyof typeof FEATURE_GROUPS;
 export type Feature = (typeof FEATURE_GROUPS)[FeatureGroup][number];

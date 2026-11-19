@@ -5,6 +5,7 @@
 // notes for the officers, nothing is sent, no ranking, a warm line when nobody is on it.
 import { fill, isolate } from "@/lib/copy";
 import type { WorkspaceDictionary, WorkspaceKey } from "@/lib/private/dictionary";
+import { featureOn } from "@/lib/private/features";
 import { followUpView, type FollowUpView } from "@/lib/private/follow-up";
 import type { WorkItem } from "@/lib/private/follow-up-rules";
 import { cardFormats } from "@/lib/private/member-card";
@@ -120,7 +121,11 @@ export default async function FollowUpPage({ params }: { params: Promise<{ slug:
   const page = await openRollCall<FollowUpView>(
     params,
     "follow-up",
-    (db, access, _today, _l, zone) => followUpView(db, access, new Date(), zone),
+    async (db, access, _today, _l, zone) => {
+      const view = await followUpView(db, access, new Date(), zone);
+      // D126: with the thefts log off, its section and links are left out (the thefts stay stored).
+      return featureOn(access, "thefts") ? view : { ...view, thefts: [] };
+    },
     "follow_up",
   );
   if (page.off) return page.off;

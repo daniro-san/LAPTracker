@@ -11,7 +11,7 @@ import { analyticsPerson } from "@/lib/analytics/person";
 import { fill, isolate } from "@/lib/copy";
 import { getEnv, type Env } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
-import { requireBoard, type BoardAccess } from "@/lib/private/access";
+import { requireBoard, type BoardAccess, type CookieReader } from "@/lib/private/access";
 import { boardView } from "@/lib/private/board";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
 import { featureOn } from "@/lib/private/features";
@@ -46,6 +46,21 @@ function Account(props: { officer: boolean; name: string; slug: string; t: Works
   );
 }
 
+/** A strip that stays on screen while scrolling, so a preview is never taken for the member view. */
+function PreviewStrip({ slug, t }: { slug: string; t: WorkspaceDictionary }) {
+  return (
+    <aside className="sticky top-0 z-20 -mx-4 -mt-5 mb-4 flex flex-wrap items-center justify-between gap-x-3 bg-plum px-4 py-1 text-paper sm:-mx-6 sm:px-6">
+      <p className="py-2 font-semibold">{t["board.preview"]}</p>
+      <a
+        href={`/w/${slug}`}
+        className="inline-flex min-h-11 items-center font-semibold underline underline-offset-4"
+      >
+        {t["board.preview.back"]}
+      </a>
+    </aside>
+  );
+}
+
 /** D126: the board is turned off; an officer gets the way back to the desk. */
 function BoardOff(props: { officer: boolean; slug: string; t: WorkspaceDictionary }) {
   const { t } = props;
@@ -74,6 +89,19 @@ function BoardPerson({ env, access }: { env: Env; access: BoardAccess }) {
   return person && <AnalyticsPerson {...person} />;
 }
 
+/**
+ * INVARIANT workspace.access-first: nothing private is read before the access check. D126: the board's
+ * read only while the board is on, and with notices off it shows none (they stay stored).
+ */
+function readBoard(slug: string, jar: CookieReader, now: Date, today: string) {
+  return withPageDb(async (db) => {
+    const access = await requireBoard(db, slug, jar, now);
+    if (!access.ok || !featureOn(access, "board")) return { access, view: null };
+    const view = await boardView(db, access, today);
+    return { access, view: featureOn(access, "notices") ? view : { ...view, notices: [] } };
+  });
+}
+
 export default async function BoardPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   if (!SLUG.test(slug)) notFound();
@@ -81,14 +109,7 @@ export default async function BoardPage({ params }: { params: Promise<{ slug: st
   const now = new Date();
   const env = getEnv();
   const today = serverDay(now, env);
-  // INVARIANT workspace.access-first: nothing private is read before this check.
-  const { access, view } = await withPageDb(async (db) => {
-    const access = await requireBoard(db, slug, jar, now);
-    if (!access.ok || !featureOn(access, "board")) return { access, view: null };
-    const view = await boardView(db, access, today);
-    // D126: with notices off, the board shows none (they stay stored).
-    return { access, view: featureOn(access, "notices") ? view : { ...view, notices: [] } };
-  });
+  const { access, view } = await readBoard(slug, jar, now, today);
   if (!access.ok) {
     refuse(slug, access.reason, `/w/${slug}/board`);
     redirect(`/w/${slug}`);
@@ -117,18 +138,7 @@ export default async function BoardPage({ params }: { params: Promise<{ slug: st
     <Frame {...frame}>
       <BoardPerson env={env} access={access} />
       <BoardSectionsSeen />
-      {access.officer && (
-        // A strip that stays on screen while scrolling, so a preview is never taken for the member view.
-        <aside className="sticky top-0 z-20 -mx-4 -mt-5 mb-4 flex flex-wrap items-center justify-between gap-x-3 bg-plum px-4 py-1 text-paper sm:-mx-6 sm:px-6">
-          <p className="py-2 font-semibold">{t["board.preview"]}</p>
-          <a
-            href={`/w/${slug}`}
-            className="inline-flex min-h-11 items-center font-semibold underline underline-offset-4"
-          >
-            {t["board.preview.back"]}
-          </a>
-        </aside>
-      )}
+      {access.officer && <PreviewStrip slug={slug} t={t} />}
       <DeletionNotice
         slug={slug}
         purgeAfter={access.purgeAfter}

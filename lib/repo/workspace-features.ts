@@ -1,7 +1,7 @@
 // workspace_features, workspace_usage and allowance_pauses (D126): each workspace's switches and daily caps,
 // what it used of each allowance per UTC day, and the owner's global pauses. Counts only: nothing here says
 // who asked or what was asked.
-import { asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { workspaces } from "../schema";
@@ -145,6 +145,29 @@ export async function spend(
     returning used`);
   const [row] = result.rows;
   return row ? Number(row.used) : null;
+}
+
+/**
+ * Gives back `units` counted on `day` whose request failed (D126, owner 2026-11-19): one statement, never
+ * below 0, so concurrent give-backs and counts stay exact.
+ */
+export async function giveBack(
+  db: Db,
+  workspaceId: number,
+  allowance: Allowance,
+  day: string,
+  units: number,
+): Promise<void> {
+  await db
+    .update(workspaceUsage)
+    .set({ used: sql`greatest(${workspaceUsage.used} - ${units}, 0)` })
+    .where(
+      and(
+        eq(workspaceUsage.workspaceId, workspaceId),
+        eq(workspaceUsage.allowance, allowance),
+        eq(workspaceUsage.day, day),
+      ),
+    );
 }
 
 /** Each workspace's use of each allowance on `day`, for /admin. */

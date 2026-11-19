@@ -20,7 +20,7 @@ import {
 import { eventWorkspace } from "@/lib/analytics/server";
 import { requireWorkspace } from "@/lib/private/access";
 import { counted } from "@/lib/private/desk-action";
-import { featureOn, useAllowance } from "@/lib/private/features";
+import { featureOn, giveBackAllowance, useAllowance } from "@/lib/private/features";
 import { isSameOriginJson, NO_STORE, privateError, requestCookies } from "@/lib/private/http";
 import { privateLog } from "@/lib/private/log";
 import { DRAFT_LIMIT, NOTICE_LIMIT, noticeLength } from "@/lib/private/notice-rules";
@@ -88,9 +88,10 @@ export async function POST(
     if (!featureOn(access, SWITCH[ask.kind])) return privateError(403, "turned_off");
     // D126: one unit per text asked of the model (Translate: one per language), before it is asked.
     const units = ask.kind === "translate" ? ask.to.length : 1;
-    if ((await useAllowance(db, access, "ai", units, ctx.now())) !== "ok")
+    const countedAt = ctx.now();
+    if ((await useAllowance(db, access, "ai", units, countedAt)) !== "ok")
       return privateError(429, "cap_reached");
-    const started = ctx.now().getTime();
+    const started = countedAt.getTime();
     try {
       let answers: Answer[];
       if (ask.kind === "translate") {
@@ -132,6 +133,8 @@ export async function POST(
       return counted(ctx, access, "notice_ai", ask.kind, drafts);
     } catch (error) {
       if (!(error instanceof ChatError)) throw error;
+      // D126: the model did not answer, so the alliance's daily count gets these units back.
+      await giveBackAllowance(db, access, "ai", units, countedAt);
       privateLog(`notices.${ask.kind}.${error.kind}`, { ms: ctx.now().getTime() - started });
       return privateError(FAILURE[error.kind], error.kind);
     }
