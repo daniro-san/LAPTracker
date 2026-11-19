@@ -4,8 +4,8 @@
 // sees, then reads the pictures after the response (`after`) and edits that reply.
 import { after } from "next/server";
 
-import { captureServer } from "@/lib/analytics/server";
-import { handleInteraction } from "@/lib/private/discord-interaction";
+import { captureServer, eventWorkspace, type ServerEvent } from "@/lib/analytics/server";
+import { handleInteraction, type Handled } from "@/lib/private/discord-interaction";
 import { runTranslation } from "@/lib/private/discord-translate-run";
 import { NO_STORE, privateError } from "@/lib/private/http";
 import { runJob } from "@/lib/private/import-discord";
@@ -19,6 +19,27 @@ import { withContext } from "@/lib/route";
 export const maxDuration = 90;
 /** An interaction with its resolved message is a few KB; anything this large is not Discord's. */
 const MAX_BODY = 256 * 1024;
+
+/**
+ * D115: which command, nothing about the message or the sender; issue 452: the server's workspace and
+ * alliance tag, never its guild id. Null when no command was accepted.
+ */
+function commandUsed(handled: Handled): ServerEvent | null {
+  if (handled.status !== 200) return null;
+  const event = "discord_command_used";
+  if (handled.job) {
+    const where = eventWorkspace(handled.job.access);
+    return { event, properties: { command: "send_to_laptracker" }, where };
+  }
+  const translation = handled.translation;
+  if (!translation) return null;
+  const where = translation.workspace;
+  return {
+    event,
+    properties: { command: `translate_for_${translation.mode}` },
+    ...(where && { where }),
+  };
+}
 
 export async function POST(request: Request): Promise<Response> {
   if (Number(request.headers.get("content-length") ?? 0) > MAX_BODY) {
@@ -40,17 +61,8 @@ export async function POST(request: Request): Promise<Response> {
       origin,
       Boolean(ctx.env.DISCORD_BOT_TOKEN),
     );
-    // D115: which command, nothing about the message, the sender or the server.
-    const command =
-      handled.status !== 200
-        ? null
-        : handled.job
-          ? ("send_to_laptracker" as const)
-          : handled.translation && (`translate_for_${handled.translation.mode}` as const);
-    if (command) {
-      const used = { event: "discord_command_used", properties: { command } } as const;
-      after(() => captureServer(ctx.env, ctx.fetch, [used]));
-    }
+    const used = commandUsed(handled);
+    if (used) after(() => captureServer(ctx.env, ctx.fetch, [used]));
     if (handled.status === 200 && handled.job) {
       const job = handled.job;
       const deps = {
@@ -67,7 +79,8 @@ export async function POST(request: Request): Promise<Response> {
     if (handled.status === 200 && handled.translation) {
       const job = handled.translation;
       const deps = {
-        ai: ctx.ai,
+        // Issue 452: each `$ai_generation` says which workspace's server asked.
+        ai: ctx.ai?.(job.workspace) ?? null,
         fetch: ctx.fetch,
         discordBase: ctx.env.DISCORD_API_BASE_URL,
         botToken: ctx.env.DISCORD_BOT_TOKEN,

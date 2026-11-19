@@ -17,6 +17,7 @@ import {
   WRITING_LANGUAGES,
   type WritingLanguage,
 } from "@/lib/ai/notice-writing";
+import { eventWorkspace } from "@/lib/analytics/server";
 import { requireWorkspace } from "@/lib/private/access";
 import { counted } from "@/lib/private/desk-action";
 import { isSameOriginJson, NO_STORE, privateError, requestCookies } from "@/lib/private/http";
@@ -71,10 +72,10 @@ export async function POST(
   if (!isSameOriginJson(request)) return privateError(403, "forbidden");
   const parsed = body.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return privateError(400, "bad_request");
-  return withContext("/api/w/[slug]/notices/draft", async (ctx, db) => {
+  return withContext("/api/w/[slug]/notices/draft", slug, async (ctx, db) => {
     const access = await requireWorkspace(db, slug, requestCookies(request), ctx.now());
     if (!access.ok) return privateError(401, "signed_out");
-    const ai = ctx.ai;
+    const ai = ctx.ai?.(eventWorkspace(access));
     if (!ai) return privateError(503, "not_set_up");
     const ask = parsed.data;
     const started = ctx.now().getTime();

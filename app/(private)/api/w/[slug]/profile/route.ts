@@ -28,7 +28,7 @@ type Params = { params: Promise<{ slug: string }> };
 export async function GET(request: Request, { params }: Params): Promise<Response> {
   const { slug } = await params;
   if (!SLUG.test(slug)) return privateError(404, "not_found");
-  return withContext(ROUTE, async (ctx, db) => {
+  return withContext(ROUTE, slug, async (ctx, db) => {
     const access = await requireWorkspace(db, slug, requestCookies(request), ctx.now());
     if (!access.ok) return privateError(401, "signed_out");
     return Response.json(await profileView(db, access), { headers: NO_STORE });
@@ -42,7 +42,7 @@ export async function POST(request: Request, { params }: Params): Promise<Respon
   const parsed = body.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return privateError(400, "bad_request");
   const input = parsed.data;
-  return withContext(ROUTE, async (ctx, db) => {
+  return withContext(ROUTE, slug, async (ctx, db) => {
     const access = await requireWorkspace(db, slug, requestCookies(request), ctx.now());
     if (!access.ok) return privateError(401, "signed_out");
     const result =

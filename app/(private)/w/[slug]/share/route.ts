@@ -69,7 +69,7 @@ export async function POST(
   const home = `/w/${slug}`;
   // Headers other than a browser-made share or our own page: a page that says so, not a JSON code.
   if (!isShareTarget(request)) return go(`${home}?shared=failed`);
-  return withContext("/w/[slug]/share", async (ctx, db) => {
+  return withContext("/w/[slug]/share", slug, async (ctx, db) => {
     const now = ctx.now();
     const access = await requireWorkspace(db, slug, requestCookies(request), now);
     // Home shows the sign-in, sends a member to the board and an ended session through Discord.
@@ -101,7 +101,13 @@ export async function POST(
       return go(`${home}?shared=done&made=${made}&none=${none}`);
     } catch (error) {
       // A code only (privately): app_errors and the admin alert get it, as a /shots/read failure does.
-      await recordAppError(ctx, { route: "/w/[slug]/share", kind: "route", digest: null, error });
+      await recordAppError(ctx, {
+        route: "/w/[slug]/share",
+        kind: "route",
+        digest: null,
+        error,
+        slug,
+      });
       return go(`${home}?shared=failed`);
     } finally {
       endReading(access.user.id);

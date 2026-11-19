@@ -4,10 +4,12 @@
 // POSTHOG_KEY only, as D77; anywhere else nothing is sent. Events have the fixed distinct id
 // `laptracker-server` (as D91's flag read) and no person profile, except `ws_action`, which belongs to the
 // officer's pseudonymous id (lib/analytics/person.ts), the same one the desk's page identifies, so funnels
-// can mix the browser's events and the server's. A failed or slow send is dropped: it never fails or holds up
+// can mix the browser's events and the server's. Events from a workspace say which one (issue 452): its slug
+// and its alliance's public tag, never a person. A failed or slow send is dropped: it never fails or holds up
 // the request beyond SEND_MS.
 import { after } from "next/server";
 
+import { ALLIANCES } from "../../config/alliances";
 import { analyticsKey } from "./events";
 import { POSTHOG_INGEST_HOST } from "./region";
 
@@ -84,6 +86,22 @@ export const DESK_ACTIONS = [
 ] as const;
 export type DeskAction = (typeof DESK_ACTIONS)[number];
 
+/**
+ * Which alliance an event came from (issue 452): the workspace's slug and its alliance's public tag (null
+ * only if the alliance left config/alliances.ts). Neither is personal data. No PostHog groups (a paid add-on).
+ */
+export interface EventWorkspace {
+  workspace: string;
+  alliance: string | null;
+}
+
+export function eventWorkspace(w: { slug: string; unionId: number }): EventWorkspace {
+  return {
+    workspace: w.slug,
+    alliance: ALLIANCES.find((a) => a.unionId === w.unionId)?.tag ?? null,
+  };
+}
+
 export interface ServerEvents {
   /** A route or render error (lib/app-errors.ts): the error's class name and where, never its message. */
   $exception: { name: string; kind: string; route: string };
@@ -110,13 +128,21 @@ export type ServerEvent = {
     properties: ServerEvents[E];
     /** `ws_action` only: the officer's pseudonymous id. */
     person?: string;
-  };
+  } & (E extends "ws_action"
+    ? { where: EventWorkspace }
+    : // `$exception` under /w/[slug] or /api/w/[slug]; `$ai_generation` for a workspace's request;
+      // `discord_command_used` from a workspace's Discord server.
+      { where?: EventWorkspace });
 }[keyof ServerEvents];
 
 type Wire = Record<string, string | number | boolean | null | object[]>;
 
-/** The PostHog properties of one event; exported for the tests. */
+/** The PostHog properties of one event, with its `workspace` and `alliance` when it has them; for the tests. */
 export function wireProperties(e: ServerEvent): Wire {
+  return { ...ownProperties(e), ...e.where };
+}
+
+function ownProperties(e: ServerEvent): Wire {
   const base: Wire = { $process_person_profile: false, $lib: "laptracker-server" };
   switch (e.event) {
     case "$exception":

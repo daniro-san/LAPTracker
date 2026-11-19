@@ -52,7 +52,7 @@ export async function POST(
   if (!parsed.success) return privateError(400, "bad_request");
   const input = parsed.data;
   const jar = requestCookies(request);
-  return withContext("/api/w/[slug]/garrison", async (ctx, db) => {
+  return withContext("/api/w/[slug]/garrison", slug, async (ctx, db) => {
     const now = ctx.now();
     const access = await requireWorkspace(db, slug, jar, now);
     if (!access.ok) return privateError(401, "signed_out");

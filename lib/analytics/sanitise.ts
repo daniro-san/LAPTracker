@@ -2,7 +2,8 @@
 // - no query string and no hash in any URL-like property, as D36 does for Vercel's scripts (`/players?q=<name>`
 //   would carry a typed name), and none of the properties the SDK reads from a query string;
 // - `area` (public, workspace or admin) and, on /w/<slug>, `workspace`, read from the event's own path, so an
-//   event sent during a client-side navigation never carries the previous page's area;
+//   event sent during a client-side navigation never carries the previous page's area; anywhere else, no
+//   `workspace` or `alliance` (issue 452);
 // - on /w/<slug> and /admin, `section`: the page's first segment from a closed list ("home" for the root,
 //   `other` for anything else), so page views answer "which tabs are used" (D115);
 // - exception messages scrubbed in every area (D115, replacing D77's "[masked]" on the workspace and /admin):
@@ -188,6 +189,12 @@ export function sanitiseEvent<T extends Captured>(event: T, currentPath: string)
   const properties = cutProps(event.properties);
   properties.area = area;
   if (workspace) properties.workspace = workspace;
+  else {
+    // Issue 452: off /w/<slug>, no workspace or alliance, whatever the SDK still holds (a public page's
+    // view is captured before followPath unregisters them).
+    delete properties.workspace;
+    delete properties.alliance;
+  }
   if (section) properties.section = section;
   return {
     ...event,

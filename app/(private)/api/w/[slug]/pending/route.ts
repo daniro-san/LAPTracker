@@ -63,7 +63,7 @@ export async function POST(
   const parsed = body.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return privateError(400, "bad_request");
   const input = parsed.data;
-  return withContext("/api/w/[slug]/pending", async (ctx, db) => {
+  return withContext("/api/w/[slug]/pending", slug, async (ctx, db) => {
     const access = await requireWorkspace(db, slug, requestCookies(request), ctx.now());
     if (!access.ok) return privateError(401, "signed_out");
     const now = ctx.now();

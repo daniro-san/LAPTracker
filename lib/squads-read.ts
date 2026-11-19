@@ -11,6 +11,7 @@
 // calls in a day than SQUAD_CALLS_MAX, retries included. Its log lines are counts, the quota left and
 // reasons: no names, no squads.
 import { ALLIANCES } from "../config/alliances";
+import { eventWorkspace } from "./analytics/server";
 import { RUN_DEADLINE_MS, RUN_STALE_AFTER_MS } from "./compute";
 import type { Db } from "./db";
 import type { Env } from "./env";
@@ -59,8 +60,14 @@ export type SquadsOutcome =
   | { kind: "idle" }
   | { kind: "batch"; day: string; status: SquadRead["status"]; calls: number; more: boolean };
 
-/** A workspace key's lines carry its alliance (`union_id`); the own alliance's on our key keep D117's. */
-const whose = (target: SquadTarget) => (target.key ? { union_id: target.unionId } : {});
+/**
+ * A workspace key's lines carry its alliance (`union_id`); the own alliance's on our key keep D117's. Every
+ * line says which workspace and alliance it counts (issue 452): the slug and the public tag.
+ */
+const whose = (target: SquadTarget) => ({
+  ...(target.key && { union_id: target.unionId }),
+  ...eventWorkspace(target),
+});
 
 /** The run's lines; a workspace key is masked in them too, on top of lib/redact's `lap_` rule. */
 const logger = (deps: SquadsDeps, db: Db, day: string, target: SquadTarget) =>

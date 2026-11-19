@@ -62,7 +62,50 @@ describe("identify (D115)", () => {
   });
 });
 
+describe("the workspace on every event (issue 452)", () => {
+  it("is registered on a desk page load, never on one that started on a public page, and sign-out clears it", async () => {
+    const loaded = async (cookieless: "on_reject" | undefined) => {
+      vi.resetModules();
+      const events = await import("./events");
+      const props = new Map<string, unknown>();
+      const ph = {
+        config: { cookieless_mode: cookieless },
+        register: (p: Record<string, unknown>) => {
+          for (const [k, v] of Object.entries(p)) props.set(k, v);
+        },
+        unregister: (name: string) => props.delete(name),
+        // posthog-js's reset clears them too; this stand-in does not, so the test sees sign-out's own step.
+        reset: vi.fn(),
+      };
+      events.loadAnalytics(async () => ph as unknown as PostHog);
+      await Promise.resolve();
+      await Promise.resolve();
+      events.registerWorkspace("ogs", "OGs");
+      return { events, props: () => Object.fromEntries(props), ph };
+    };
+    const desk = await loaded(undefined);
+    expect(desk.props()).toEqual({ workspace: "ogs", alliance: "OGs" });
+    desk.events.forgetPerson();
+    expect(desk.props()).toEqual({});
+    expect(desk.ph.reset).toHaveBeenCalled();
+    expect((await loaded("on_reject")).props()).toEqual({});
+  });
+});
+
 describe("the tracking plan (D115)", () => {
+  it("lists `workspace` and `alliance` on every ws_* event (issue 452)", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { ANALYTICS_EVENTS } = await import("./events");
+    const plan = readFileSync("docs/analytics/tracking-plan.md", "utf8");
+    // The event tables' rows: every row that names a ws_* event lists both properties.
+    const rows = plan.split("\n").filter((line) => line.startsWith("|"));
+    for (const name of [...ANALYTICS_EVENTS, "ws_action"]) {
+      const naming = rows.filter((row) => row.includes(`\`${name}\``));
+      expect(naming, name).not.toEqual([]);
+      for (const row of naming) expect(row, name).toMatch(/`workspace`.*`alliance`/);
+    }
+  });
+
   it("lists every browser event, every server event and every desk feature and action", async () => {
     const { readFileSync } = await import("node:fs");
     const { DESK_ACTIONS, DESK_FEATURES } = await import("./server");

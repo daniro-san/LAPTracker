@@ -36,7 +36,7 @@ export async function POST(
   if (Number(request.headers.get("content-length") ?? 0) > MAX_UPLOAD) {
     return privateError(413, "too_large");
   }
-  return withContext("/api/w/[slug]/shots/read", async (ctx, db) => {
+  return withContext("/api/w/[slug]/shots/read", slug, async (ctx, db) => {
     const access = await requireWorkspace(db, slug, requestCookies(request), ctx.now());
     if (!access.ok) return privateError(401, "signed_out");
     const officer = access.user.id;

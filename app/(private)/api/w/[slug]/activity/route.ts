@@ -33,7 +33,7 @@ export async function GET(
     jar.get(WORKSPACE_LANG_COOKIE)?.value,
     request.headers.get("accept-language"),
   );
-  return withContext("/api/w/[slug]/activity", async (ctx, db) => {
+  return withContext("/api/w/[slug]/activity", slug, async (ctx, db) => {
     const now = ctx.now();
     const access = await requireWorkspace(db, slug, jar, now);
     if (!access.ok) return privateError(401, "signed_out");

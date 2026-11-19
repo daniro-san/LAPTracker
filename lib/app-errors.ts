@@ -2,11 +2,13 @@
 // onRequestError and from route handlers that caught one. `message` is our own words (kind and error
 // name, plan §12.3) and groups the rows; `detail` (D61) keeps the error's own message, stack start and
 // cause, redacted, for /admin/errors only. The admin alert adds the message's first line.
-import { captureServer, sendLater } from "./analytics/server";
+import { analyticsKey } from "./analytics/events";
+import { captureServer, eventWorkspace, sendLater, type EventWorkspace } from "./analytics/server";
 import { secretsOf, type AppContext } from "./app-context";
 import { appErrorMessage, createNotifier } from "./notify";
 import { redact } from "./redact";
 import { claimAppErrorAlert, insertAppError } from "./repo/app-errors";
+import { findWorkspaceBySlug } from "./repo/workspaces";
 
 const MESSAGE_CHARS = 500;
 const STACK_LINES = 12;
@@ -54,19 +56,39 @@ export interface AppErrorEntry {
   kind: string;
   digest: string | null;
   error: unknown;
+  /** Under /w/[slug] or /api/w/[slug]: the slug from the request, for PostHog only (issue 452). */
+  slug?: string;
+}
+
+/** The workspace a slug names, for analytics; null when none does or the database does not answer. */
+async function workspaceOf(ctx: AppContext, slug: string): Promise<EventWorkspace | null> {
+  let opened: ReturnType<AppContext["openDb"]> | null = null;
+  try {
+    opened = ctx.openDb();
+    const workspace = await findWorkspaceBySlug(opened.db, slug);
+    return workspace && eventWorkspace(workspace);
+  } catch {
+    return null;
+  } finally {
+    await opened?.close();
+  }
 }
 
 export async function recordAppError(ctx: AppContext, entry: AppErrorEntry): Promise<void> {
   const now = ctx.now();
   const name = entry.error instanceof Error ? entry.error.name : "unknown";
   // PostHog's error tracking (D115), every error, before the per-second gate below, which only spares the
-  // database: codes only, the error's class name, where and the route pattern. Never `detail`, which may hold
-  // a message built from private data (D71). Sent after the response, so the error path never waits for it.
-  sendLater(() =>
-    captureServer(ctx.env, ctx.fetch, [
-      { event: "$exception", properties: { name, kind: entry.kind, route: entry.route } },
-    ]),
-  );
+  // database: codes only, the error's class name, where and the route pattern, and under a workspace its
+  // slug and tag (issue 452), only for a slug a workspace has. Never `detail`, which may hold a message built
+  // from private data (D71). Sent after the response, so the error path never waits for it.
+  const slug = entry.slug;
+  sendLater(async () => {
+    const where = slug && analyticsKey(ctx.env) ? await workspaceOf(ctx, slug) : null;
+    const properties = { name, kind: entry.kind, route: entry.route };
+    await captureServer(ctx.env, ctx.fetch, [
+      { event: "$exception", properties, ...(where && { where }) },
+    ]);
+  });
   if (now.getTime() - lastInsertAt < MIN_INSERT_GAP_MS) return;
   lastInsertAt = now.getTime();
   const message = `${entry.kind} ${name}`;

@@ -139,6 +139,8 @@ export interface OpenKey {
 export interface SquadTarget {
   unionId: number;
   workspaceId: number | null;
+  /** The workspace's slug, for the run's log lines (issue 452). */
+  slug: string;
   key: OpenKey | null;
 }
 
@@ -174,13 +176,18 @@ export async function squadTargets(
   const targets: SquadTarget[] = [];
   // D125: without a workspace (none yet, or deleted) the own alliance's squads are not read at all.
   if (own && (!secret || !own.ciphertext)) {
-    targets.push({ unionId: OWN_ALLIANCE_ID, workspaceId: own.workspaceId, key: null });
+    targets.push({
+      unionId: OWN_ALLIANCE_ID,
+      workspaceId: own.workspaceId,
+      slug: own.slug,
+      key: null,
+    });
   }
   if (!secret) return targets;
   for (const r of rows) {
     const key = await opened(db, secret, r, now);
     if (!key) continue;
-    const target = { unionId: r.unionId, workspaceId: r.workspaceId, key };
+    const target = { unionId: r.unionId, workspaceId: r.workspaceId, slug: r.slug, key };
     if (r.unionId === OWN_ALLIANCE_ID) targets.unshift(target);
     else targets.push(target);
   }

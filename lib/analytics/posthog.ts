@@ -21,6 +21,7 @@ import posthog, { type PostHog } from "posthog-js/no-external";
 import "posthog-js/dist/exception-autocapture";
 
 import { storeConsent, storedConsent, type Consent } from "./consent";
+import { WORKSPACE_PROPERTIES } from "./events";
 import { COOKIELESS_PREFIX, POSTHOG_UI_HOST } from "./region";
 import { areaOf, MASK_CLASS, sanitiseEvent, withoutQuery } from "./sanitise";
 
@@ -124,8 +125,14 @@ export function answerConsent(ph: PostHog, consent: Consent): void {
   followPath(ph, location.pathname);
 }
 
-/** Records the page or not, by its area; called on the first page and on every client-side navigation. */
+/**
+ * Records the page or not, by its area; called on the first page and on every client-side navigation. Off the
+ * workspace, events carry no workspace (issue 452); a page load that started on a public page never had one.
+ */
 export function followPath(ph: PostHog, path: string): void {
+  if (!ph.config.cookieless_mode && areaOf(path).area !== "workspace") {
+    for (const property of WORKSPACE_PROPERTIES) ph.unregister(property);
+  }
   // Cookieless mode has no session, so it records nothing, whatever the area.
   const wanted = !isCookieless(ph) && (areaOf(path).area !== "public" || publicSampled);
   if (wanted === recording) return;

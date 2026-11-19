@@ -135,7 +135,18 @@ describe("the squads read (D117)", () => {
     });
     const lines = await db.select().from(runLogs);
     expect(lines.map((l) => [l.code, l.unionId, l.data])).toEqual([
-      ["squads.skip", null, { reason: "quota", quota_remaining: 459, required: 3 + 100 + 365 }],
+      [
+        "squads.skip",
+        null,
+        // Issue 452: which workspace and alliance the line counts.
+        {
+          workspace: "ogs",
+          alliance: "OGs",
+          reason: "quota",
+          quota_remaining: 459,
+          required: 3 + 100 + 365,
+        },
+      ],
     ]);
     // The same quota on a Thursday night leaves only the margin: the read runs.
     await dayRead(THU.day, [1, 2, 3], 480);
