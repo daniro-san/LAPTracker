@@ -22,6 +22,7 @@ import {
 } from "@/lib/private/dictionary";
 
 import { AnalyticsPerson } from "./AnalyticsPerson";
+import { DeletionBanner } from "./DeletionBanner";
 import { type DeskView, SideNav, Tabs, VIEW_TAB } from "./DeskNav";
 import { FirstUse } from "./FirstUse";
 import { LanguageSwitch } from "./LanguageSwitch";
@@ -100,6 +101,36 @@ export async function Frame({
   );
 }
 
+/** A deletion's date in the officer's language: "3 December 2026" (UTC, as the daily job counts it). */
+export function deletionDate(at: Date, language: WorkspaceLanguage): string {
+  const style = { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" } as const;
+  return new Intl.DateTimeFormat(language, style).format(at);
+}
+
+/**
+ * The 14 days before the workspace is deleted (D125), on every desk and board page: the date, and for an
+ * officer "Cancel the deletion". Nothing when no deletion is asked.
+ */
+export function DeletionNotice(props: {
+  slug: string;
+  purgeAfter: Date | null;
+  officer: boolean;
+  t: WorkspaceDictionary;
+  language: WorkspaceLanguage;
+}) {
+  const { t, purgeAfter } = props;
+  if (!purgeAfter) return null;
+  const date = deletionDate(purgeAfter, props.language);
+  const words = {
+    line: fill(t[props.officer ? "deletion.banner" : "deletion.board"], { date }),
+    more: props.officer ? t["deletion.more"] : "",
+    cancel: t["deletion.cancel"],
+    cancelled: t["deletion.cancelled"],
+    failed: t["deletion.failed"],
+  };
+  return <DeletionBanner slug={props.slug} words={words} officer={props.officer} />;
+}
+
 /**
  * The frame once signed in: the alliance under the name, "Signed in as … · Sign out", the tabs with the
  * count of screenshot drafts waiting for review on Home (`waiting`, read by the page in its own
@@ -172,6 +203,13 @@ export function SignedInFrame({
         {...(alliance && { subtitle: `${alliance.tag} · ${alliance.name}` })}
       >
         {person && <AnalyticsPerson {...person} />}
+        <DeletionNotice
+          slug={access.slug}
+          purgeAfter={access.purgeAfter}
+          officer
+          t={t}
+          language={language}
+        />
         {children}
       </Frame>
     </SignedOutProvider>

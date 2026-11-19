@@ -1,12 +1,13 @@
 // /admin's Workspaces card (D71, D73): each workspace's settings, its allowlist and how many sessions are
 // open, and who holds them (for "Sign out users", D105), and whether its own tracker key is set and its
 // status (D124: never the key, its last 4 characters or its quota). Owner only (PIN); no roster data.
-import { and, asc, count, eq, gt, max, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, getTableColumns, gt, max, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { allKeyFacts } from "../repo/workspace-keys";
 import { workspaces, workspaceSessions, workspaceUsers } from "../schema";
 import type { KeyStatus } from "../schema-keys";
+import { workspaceTombstones } from "../schema-retention";
 
 export interface AdminWorkspace {
   id: number;
@@ -25,6 +26,11 @@ export interface AdminWorkspace {
    * sealed it (a fingerprint, not a secret), so the page can show `reenter` without a write.
    */
   trackerKey: { set: boolean; status: KeyStatus; statusAt: Date | null; masterFp: string | null };
+  /**
+   * "Delete this workspace" (D125): null when not asked; else when, by whom (the officer's name, null for
+   * the site's owner) and the instant after which the daily job deletes it.
+   */
+  deletion: { askedAt: Date; byOwner: boolean; by: string | null; purgeAfter: Date } | null;
 }
 
 export interface SignedInPerson {
@@ -36,9 +42,26 @@ export interface SignedInPerson {
   lastSeen: Date;
 }
 
+/** D125: the name of the officer who asked to delete the workspace (null: the owner, or none asked). */
+const asker = sql<
+  string | null
+>`(select coalesce(u.chosen_name, u.display_name) from workspace_users u where u.id = ${workspaces.deletionRequestedBy})`;
+
+/** D125: the deletion asked, or null. */
+function deletionOf(
+  w: typeof workspaces.$inferSelect & { asker: string | null },
+): AdminWorkspace["deletion"] {
+  if (!w.purgeAfter || !w.deletionRequestedAt) return null;
+  const byOwner = w.deletionRequestedBy === null;
+  return { askedAt: w.deletionRequestedAt, byOwner, by: w.asker, purgeAfter: w.purgeAfter };
+}
+
 export async function listWorkspaces(db: Db, now: Date): Promise<AdminWorkspace[]> {
   const [rows, sessions, allowed, people, keys] = await Promise.all([
-    db.select().from(workspaces).orderBy(asc(workspaces.slug)),
+    db
+      .select({ ...getTableColumns(workspaces), asker })
+      .from(workspaces)
+      .orderBy(asc(workspaces.slug)),
     db
       .select({
         workspaceId: workspaceSessions.workspaceId,
@@ -104,5 +127,11 @@ export async function listWorkspaces(db: Db, now: Date): Promise<AdminWorkspace[
       statusAt: keys.get(w.id)?.statusAt ?? null,
       masterFp: keys.get(w.id)?.masterFp ?? null,
     },
+    deletion: deletionOf(w),
   }));
+}
+
+/** The workspaces the daily job deleted (D125), newest first: address, alliance, who asked, when. */
+export function listTombstones(db: Db) {
+  return db.select().from(workspaceTombstones).orderBy(desc(workspaceTombstones.purgedAt));
 }

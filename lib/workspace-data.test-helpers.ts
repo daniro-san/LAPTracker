@@ -1,0 +1,149 @@
+// Test-only (D125): one workspace with a row in every table it owns (lib/repo/workspace-data.ts), a deleted
+// record where a table keeps them, a sealed key and a session, and a roster whose raw_json carries the
+// private fields with marker values. Invented names and values only.
+import type { Db } from "./db";
+import {
+  calendarEntries,
+  calendarOccurrences,
+  dailyReads,
+  dailyRosters,
+  garrisonPlans,
+  memberFacts,
+  nameAliases,
+  pendingMembers,
+  workspaces,
+  workspaceSessions,
+  workspaceUsers,
+} from "./schema";
+import { startHere, thanksShares, thanksTakedowns } from "./schema-board";
+import {
+  DAY,
+  id,
+  SEED_AT,
+  seedCallsAndThefts,
+  seedImports,
+  seedKeyAndData,
+  seedNotices,
+  WEEK,
+} from "./workspace-seed-parts.test-helpers";
+
+export { KEY_MARKER, PICTURE, SEED_AT } from "./workspace-seed-parts.test-helpers";
+
+/** Values that must never leave in a download: the roster's private fields (x, y, last online, photo). */
+export const PRIVATE_MARKERS = ["98765", "54321", "1763337600", "avatar.example.test"];
+
+/** The day's roster of the alliance, with every private field the upstream sends, in raw_json. */
+export async function seedRoster(db: Db, unionId: number) {
+  await db.insert(dailyReads).values({ day: DAY, startedAt: SEED_AT, status: "complete" });
+  await db.insert(dailyRosters).values({
+    readDay: DAY,
+    unionId,
+    memberCount: 1,
+    sourceUpdatedAt: SEED_AT,
+    isFresh: true,
+    memberUids: [101],
+    memberNames: ["Ana Example"],
+    memberPower: [1000],
+    memberKills: [10],
+    rawJson: {
+      members: [
+        {
+          uid: 101,
+          nick_name: "Ana Example",
+          x: 98765,
+          y: 54321,
+          online: true,
+          last_online_at: 1763337600,
+          avatar_url: "https://avatar.example.test/a.png",
+        },
+      ],
+    },
+  });
+}
+
+/** A workspace and its officer, with a session row (a route test makes its own cookie's session). */
+export async function seedWorkspace(db: Db, slug: string, unionId: number) {
+  const [w] = await db
+    .insert(workspaces)
+    .values({ unionId, slug, discordGuildId: "1", leaderRoleIds: ["2"] })
+    .returning({ id: workspaces.id });
+  const workspaceId = w?.id ?? 0;
+  const [u] = await db
+    .insert(workspaceUsers)
+    .values({ workspaceId, discordUserId: `discord-${slug}`, displayName: `Officer ${slug}` })
+    .returning({ id: workspaceUsers.id });
+  const officer = u?.id ?? 0;
+  await db.insert(workspaceSessions).values({
+    tokenHash: `session-hash-${slug}`,
+    workspaceId,
+    workspaceUserId: officer,
+    createdAt: SEED_AT,
+    expiresAt: new Date(SEED_AT.getTime() + 86_400_000),
+  });
+  return { workspaceId, unionId, officer };
+}
+
+/** A row in every table the workspace owns (the squads rows need `seedRoster`'s daily read first). */
+export async function seedEverything(
+  db: Db,
+  { workspaceId: ws, unionId, officer }: { workspaceId: number; unionId: number; officer: number },
+) {
+  const by = { createdBy: officer, createdAt: SEED_AT };
+  const gone = { deletedAt: SEED_AT, deletedBy: officer, deleteRequestId: `gone-${ws}` };
+  await db.insert(memberFacts).values({
+    workspaceId: ws,
+    uid: 101,
+    field: "notes",
+    version: 1,
+    value: "Kind and steady",
+    source: "officer",
+    writtenBy: officer,
+    writtenAt: SEED_AT,
+  });
+  await db.insert(pendingMembers).values([
+    { workspaceId: ws, name: "Brin New", nameKey: "brin new", ...by },
+    { workspaceId: ws, name: "Cale Gone", nameKey: "cale gone", ...by, ...gone },
+  ]);
+  await db
+    .insert(nameAliases)
+    .values({ workspaceId: ws, nameKey: "ana", uid: 101, confirmedAt: SEED_AT });
+  const entry = id(
+    await db
+      .insert(calendarEntries)
+      .values([
+        { workspaceId: ws, kind: "undead", level: 5, day: DAY, minute: 600, ...by },
+        { workspaceId: ws, kind: "other", title: "Old plan", day: DAY, minute: 60, ...by, ...gone },
+      ])
+      .returning({ id: calendarEntries.id }),
+  );
+  await db
+    .insert(calendarOccurrences)
+    .values({ workspaceId: ws, entryId: entry, week: WEEK, cancelled: true });
+  await db
+    .insert(garrisonPlans)
+    .values({ workspaceId: ws, entryId: entry, week: WEEK, enemyMight: 1000 });
+  await seedNotices(db, ws, officer);
+  await seedCallsAndThefts(db, ws, officer);
+  const share = id(
+    await db
+      .insert(thanksShares)
+      .values({
+        workspaceId: ws,
+        requestId: `thanks-${ws}`,
+        target: "board",
+        week: WEEK,
+        texts: { en: "Thank you all" },
+        names: ["Ana Example"],
+        status: "posted",
+        sharedAt: SEED_AT,
+      })
+      .returning({ id: thanksShares.id }),
+  );
+  await db.insert(thanksTakedowns).values({ shareId: share, takenAt: SEED_AT });
+  await db.insert(startHere).values({
+    workspaceId: ws,
+    texts: { en: { glossary: "Words", rules: "Be kind", ask: "Ask us" } },
+  });
+  await seedImports(db, ws);
+  await seedKeyAndData(db, ws, unionId, officer);
+}

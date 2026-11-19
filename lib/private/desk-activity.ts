@@ -26,8 +26,6 @@ import type { WorkspaceAccess } from "./access";
 
 /** "On the desk now": a session seen in the last ten minutes. */
 export const ON_DESK_MS = 10 * 60_000;
-/** The feed looks back two weeks: as long as a saved draft's row is kept (D108). */
-export const ACTIVITY_WINDOW_MS = SAVED_DRAFT_KEEP_MS;
 /** Home shows the first ACTIVITY_FIRST lines; each "Show more" reads ACTIVITY_PAGE more. */
 export const ACTIVITY_FIRST = 6;
 export const ACTIVITY_PAGE = 20;
@@ -70,7 +68,8 @@ type What =
   | ({ kind: "reviewAsked" } & Pick<ReviewAskedDone, "noticeId" | "language" | "reviewerId">)
   | ({ kind: "reviewAnswered" } & Pick<ReviewAnsweredDone, "noticeId" | "outcome" | "language">)
   | { kind: "thanks"; target: "discord" | "board" | "down" }
-  | Omit<ActivityRows["keyChanges"][number], "by" | "at">;
+  | Omit<ActivityRows["keyChanges"][number], "by" | "at">
+  | Omit<ActivityRows["dataEvents"][number], "by" | "at">;
 
 type Raw = What & { by: number; at: Date };
 
@@ -257,7 +256,7 @@ function merge(rows: ActivityRows, after: number | null): Raw[] {
     })),
     ...[rows.callDeletes, rows.callArchives, rows.garrisonSaves, rows.garrisonPosts].flat(),
     ...[rows.entryDeletes, rows.theftDeletes, rows.newMemberDeletes].flat(),
-    ...[rows.followUps, rows.thefts, rows.theftSteps, rows.keyChanges].flat(),
+    ...[rows.followUps, rows.thefts, rows.theftSteps, rows.keyChanges, rows.dataEvents].flat(),
     ...rows.newMembers.map(({ by, at, name }) => ({
       by,
       at,
@@ -352,7 +351,8 @@ export async function activityPage(
   size: number,
 ): Promise<ActivityPage> {
   const ws = access.workspaceId;
-  const from = new Date(now.getTime() - ACTIVITY_WINDOW_MS);
+  // The feed looks back two weeks: as long as a saved draft's row is kept (D108).
+  const from = new Date(now.getTime() - SAVED_DRAFT_KEEP_MS);
   const rows = await activityRows(db, ws, from, before, PER_SOURCE);
   const after = horizon(rows, PER_SOURCE);
   const { page, next } = cut(runs(merge(rows, after), zone), size, after);

@@ -37,6 +37,7 @@ export const DESK_FEATURES = [
   "thanks",
   "garrison",
   "tracker_key",
+  "workspace_data",
 ] as const;
 export type DeskFeature = (typeof DESK_FEATURES)[number];
 
@@ -78,6 +79,8 @@ export const DESK_ACTIONS = [
   "picture_unkeep",
   "picture_download",
   "picture_reuse",
+  "download",
+  "cancel",
 ] as const;
 export type DeskAction = (typeof DESK_ACTIONS)[number];
 
