@@ -53,6 +53,10 @@ const FIXTURES: Record<string, Partial<Record<Method, Fixture>>> = {
     POST: { body: { kind: "translate", from: "en", to: ["fr"], text: "Hello" } },
   },
   "notices/delete/route.ts": { POST: { body: { id: 1, requestId: ID } } },
+  "notices/picture/keep/route.ts": { POST: { body: { id: 1, keep: true } } },
+  "notices/picture/remove/route.ts": { POST: { body: { id: 1 } } },
+  "notices/picture/reuse/route.ts": { POST: { body: { from: 1, to: 2 } } },
+  "notices/picture/route.ts": { POST: { picture: true, query: "?id=1" } },
   "notices/publish/route.ts": { POST: { body: { id: 1, languages: ["en"], requestId: ID } } },
   "notices/reviews/route.ts": {
     POST: { body: { action: "ask", notice: 1, language: null, reviewer: null, requestId: ID } },
@@ -111,6 +115,8 @@ beforeEach(async () => {
 function call(handler: Handler, method: Method, fixture: Fixture, token: string | null) {
   const headers = new Headers({ origin: ORIGIN, "sec-fetch-site": "same-origin" });
   headers.set("content-type", fixture.picture ? "image/png" : "application/json");
+  // A picture is sent with its size, as a browser does (the notice picture route needs it, D119).
+  if (fixture.picture) headers.set("content-length", "4");
   if (token) headers.set("cookie", `${SESSION_COOKIE}=${token}`);
   const body = fixture.picture ? new Uint8Array([137, 80, 78, 71]) : JSON.stringify(fixture.body);
   const request = new Request(`${ORIGIN}/api/w/ogs/x${fixture.query ?? ""}`, {

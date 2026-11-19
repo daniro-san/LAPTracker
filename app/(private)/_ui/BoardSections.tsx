@@ -14,6 +14,7 @@ import type { StartHereText } from "@/lib/private/start-here";
 import { BoardTimeColumn } from "./BoardParts";
 import { LanguageTag, LINK, linkLabel, TEXT, Translated } from "./BoardText";
 import { calendarWords } from "./calendar-data";
+import { NoticeImage } from "./NoticePicture";
 
 export { LINK } from "./BoardText";
 
@@ -225,6 +226,7 @@ export function Notices(props: {
             <LanguageTag t={t} language={language} written={Object.keys(n.texts)} />
           </p>
           {props.linked.has(n.id) && <p className="text-body-sm">{t["board.seeEvent"]}</p>}
+          {n.picture && <NoticeImage picture={n.picture} title={n.title} t={t} />}
           <Translated
             id={`notice-${n.id}`}
             t={t}

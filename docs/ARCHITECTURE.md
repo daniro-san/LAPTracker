@@ -10,6 +10,8 @@ app/(private)/*     the workspace (D71): pages under w/[slug], handlers under ap
                     signature instead of a session, then the officer rule; D96).
                     Two handlers sit under w/[slug]: the desk's own web manifest (manifest.webmanifest) and
                     its share target (share, POST; D110).
+                    One handler sits under img: /img/notice/[id], a notice's picture behind the notice's own
+                    access (an officer, or a member while the board shows it; D119).
                     Reaches data only through lib/private, after requireWorkspace.
 lib/collector.ts    domain: runSnapshot, freshness check, per-alliance fallback, resume logic.
 lib/compute.ts      pure functions only — sums, deltas, freshness predicate, roster diff; no IO, no Date.now() (passed in).
@@ -51,6 +53,12 @@ lib/private/*.ts    the workspace (D71): requireWorkspace and its branded Worksp
                     fields), notice-publish.ts ("Publish to Discord": channel by audience from
                     WORKSPACE_DISCORD_WEBHOOKS, the once-per-request claim, the posts through AppContext.fetch);
                     its table in lib/repo/notice-publishes.ts.
+                    D119: notice-picture.ts (the server's check of a notice's picture, its save and remove, and
+                    who may be served it), notice-picture-rules.ts (pure, browser-safe: the caps and the browser's
+                    resize plan), notice-publish-body.ts (a Discord post's body, multipart with the picture),
+                    notice-picture-due.ts (the weekly cleanup's warning list for Home and its review page; Keep and
+                    "Use in another notice"); its table in lib/repo/notice-pictures.ts, the cleanup, its warning,
+                    Keep and the copy in lib/repo/notice-picture-cleanup.ts.
                     D113: notice-reviews.ts (review requests: ask, approve, close as edited from a save, the
                     notice's list and Home's "To review"); its tables in lib/repo/notice-reviews.ts.
                     The Calendar tab (issue 300): calendar.ts (reads and the field-level writes with their
@@ -109,7 +117,8 @@ lib/discord-send.ts, lib/discord-format.ts, lib/event-image.tsx
                     time formats, and the event picture drawn with next/og (D58).
 lib/schedule.ts     pure: SERVER_TZ ↔ UTC, scheduled events and their times, Friday-check and rehearsal slots.
 lib/tick.ts         the tick's decision: create the scheduled event's row, run the one due phase (from events.before_at/
-                    after_at), a due sample (D69), the Friday check, a REHEARSAL_AT slot, the daily roster read.
+                    after_at), a due sample (D69), the Friday check (and after it the weekly notice picture cleanup, D119),
+                    a REHEARSAL_AT slot, the daily roster read.
 lib/daily-read.ts   the daily roster read (D60, D72): quota check, /v1 rosters as arrays (and raw_json) into daily_rosters; not an event.
 lib/squads-read.ts  the nightly squads read (D117): batches of /v1/players for OWN_ALLIANCE_ID after the daily read, each
                     started by a tick in the window after its answer (lib/squads-tick.ts, `after`), POST

@@ -104,6 +104,7 @@ describe("the members' board (D105)", () => {
         endsOn: "2026-11-20",
         texts: { en: "Caravan times in English" },
         stale: [],
+        picture: null,
       },
     ]);
     expect(JSON.stringify(view)).not.toMatch(/Ana|createdBy|coach|edits/);

@@ -24,6 +24,7 @@ import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dicti
 import { toReview, type ReviewItem } from "@/lib/private/import-view";
 import { cardFormats } from "@/lib/private/member-card";
 import { membersView, progressHistory, type MembersView } from "@/lib/private/members";
+import { picturesDue, type DueItem } from "@/lib/private/notice-picture-due";
 import { reviewsForMe } from "@/lib/private/notice-reviews";
 import { matchOnRead, toMatch } from "@/lib/private/pending-members";
 import { RENEW_MS } from "@/lib/private/session";
@@ -38,6 +39,7 @@ import { digestDays, type NextItem } from "../../_ui/home-digest";
 import { HomeMembers } from "../../_ui/HomeMembers";
 import { HomeNext } from "../../_ui/HomeNext";
 import { toMatchLine } from "../../_ui/member-lifecycle-data";
+import { PicturesDueCard } from "../../_ui/PicturesDue";
 import { nextQuery, refuse } from "../../_ui/refuse";
 import { sharedLines } from "../../_ui/share-lines";
 import { ToReview } from "../../_ui/ToReview";
@@ -138,8 +140,9 @@ function Home(props: {
   view: MembersView;
   /** New members a roster read since their add could not match (D106, 2026-11-17). */
   toMatch: number;
-  /** D108: the other officers on the desk now, and what officers did lately. */
-  desk: { names: string[]; activity: ActivityPage; now: Date };
+  /** D108: the other officers on the desk now, and what officers did lately; D119: the notice pictures
+   * the weekly cleanup deletes soon. */
+  desk: { names: string[]; activity: ActivityPage; now: Date; due: DueItem[] };
   shared: string[] | null;
   reviews: Awaited<ReturnType<typeof reviewsForMe>>;
   /** Sunday or Monday, and the week's thanks not shared yet (D114). */
@@ -170,6 +173,7 @@ function Home(props: {
       <OnDesk names={props.desk.names} t={t} language={language} />
       <NextUp slug={slug} t={t} items={props.next} />
       <HomeMembers slug={slug} t={t} language={language} view={props.view} nudge={props.nudge} />
+      <PicturesDueCard slug={slug} t={t} language={language} items={props.desk.due} />
       <ToReview
         slug={slug}
         items={props.items}
@@ -201,7 +205,6 @@ export default async function WorkspacePage({
 }) {
   const { slug } = await params;
   if (!SLUG.test(slug)) notFound();
-  const jar = await cookies();
   const now = new Date();
   const zone = getEnv().SERVER_TZ;
   const today = serverDay(now, { SERVER_TZ: zone });
@@ -217,19 +220,20 @@ export default async function WorkspacePage({
     reviews,
     nudge,
   } = await withPageDb(async (db) => {
-    const access = await requireWorkspace(db, slug, jar, now, RENEW_MS);
+    const access = await requireWorkspace(db, slug, await cookies(), now, RENEW_MS);
     if (!access.ok) return { access, ...NONE };
     // D106: a roster read since a new member was added may now list them, as on Members.
     const pending = await matchOnRead(db, access, now);
-    const [items, placed, view, names, activity, reviews] = await Promise.all([
+    const [items, placed, view, names, activity, reviews, due] = await Promise.all([
       toReview(db, access, now),
       calendarDays(db, access, days.from, days.to),
       progressHistory(db, access).then((history) => membersView(db, access, now, zone, history)),
       onDeskNow(db, access, now),
       activityPage(db, access, { now, zone }, null, ACTIVITY_FIRST),
       reviewsForMe(db, access),
+      picturesDue(db, access, now, { SERVER_TZ: zone }),
     ]);
-    const desk = { names, activity, now };
+    const desk = { names, activity, now, due };
     const nudge = await thanksNudge(db, access, today);
     const unmatched = toMatch(pending, view.readAt).length;
     return { access, items, placed, view, toMatch: unmatched, desk, reviews, nudge };

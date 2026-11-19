@@ -3,7 +3,7 @@
 // One notice (issue 304): read it in each language, copy it in each place's format (the game's notice board,
 // the game's mail, Discord; issue 345), or edit it. A language that may be out of date carries an "Out of
 // date" tag, which opens the editor at that language; "Update from …" and "Keep as is" are there, behind the
-// editor's save and its checks. Under the languages: "Publish to Discord" and the calendar link (D102), and
+// editor's save and its checks. The picture (D119) under the title. Under the languages: "Publish to Discord" and the calendar link (D102), and
 // at the foot "Delete notice" (D118).
 // Review requests (D113): the open ones at the top, where "Edit and save" opens the editor for that request,
 // and the "Review" section with "Ask for a review" before Discord.
@@ -23,6 +23,7 @@ import { Counter, OutOfDateTag, OverLimit } from "./NoticeBits";
 import { NoticeCalendarLink } from "./NoticeCalendarLink";
 import { NoticeDelete } from "./NoticeDelete";
 import { NoticeEditor, type EditorProps } from "./NoticeEditor";
+import { NoticeImage } from "./NoticePicture";
 import { NoticePublish, type PublishProps } from "./NoticePublish";
 import { AskSheet, ReviewRequests, ReviewSection, type ReviewProps } from "./NoticeReviews";
 
@@ -190,6 +191,7 @@ export function NoticeScreen(p: ScreenProps) {
           </li>
         ))}
       </ul>
+      {p.picture && <NoticeImage picture={p.picture} title={p.fields.title.value} t={t} />}
       <button
         type="button"
         onClick={() => setEditing(true)}

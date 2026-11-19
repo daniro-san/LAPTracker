@@ -11,6 +11,8 @@ import {
   restoreDeletedNotice,
   unmarkNoticeDeleted,
 } from "../repo/notice-deletes";
+import { keptBy } from "../repo/notice-picture-cleanup";
+import { pictureFacts } from "../repo/notice-pictures";
 import {
   HISTORY_LIMIT,
   noticeEditRows,
@@ -23,6 +25,7 @@ import {
 } from "../repo/notices";
 import type { WorkspaceAccess } from "./access";
 import { versionsOf, type NoticeVersion } from "./notice-history";
+import { pictureView, type PictureView } from "./notice-picture-rules";
 import {
   isNoticeLanguage,
   NOTICE_FIELDS,
@@ -95,6 +98,8 @@ export interface NoticeDetail extends NoticeSummary {
   createdBy: string | null;
   fields: Record<NoticeField, { value: string; version: number }>;
   stale: NoticeLanguage[];
+  /** The notice's picture (D119). */
+  picture: PictureView | null;
 }
 
 const stateOf = (rows: FieldRow[]): NoticeState =>
@@ -136,8 +141,13 @@ export async function noticeDetail(
   access: WorkspaceAccess,
   id: number,
 ): Promise<NoticeDetail | null> {
-  const record = await workspaceNotice(db, access.workspaceId, id);
+  const [record, pictures, kept] = await Promise.all([
+    workspaceNotice(db, access.workspaceId, id),
+    pictureFacts(db, access.workspaceId, [id]),
+    keptBy(db, access.workspaceId, id),
+  ]);
   if (!record) return null;
+  const picture = pictures.get(id);
   const state = stateOf(record.fields);
   const fields = record.fields.map((f) => ({ ...f, written: f.value !== "" }));
   return {
@@ -151,6 +161,7 @@ export async function noticeDetail(
       ]),
     ) as NoticeDetail["fields"],
     stale: staleLanguages(state),
+    picture: picture ? { ...pictureView(picture), kept } : null,
   };
 }
 

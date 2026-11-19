@@ -36,3 +36,5 @@ Why: the leadership pastes each notice in three places, the game's notice board,
 **Not done here.** The read page keeps its stacked languages (no tabs). The Discord copy is not split: a language over 2,000 characters after escaping is too long to paste as one message.
 
 **Amendment (2026-11-17, 11ah, D116).** Each copy button has a line under it, always shown, that says what it copies: "Cut to 1,000 characters, the game's limit.", "The whole text, never cut.", "Title in bold, formatted for Discord. Pings no one." (PT and FR to match). The labels are unchanged.
+
+- Amendment (2026-11-18, 11ak, issue 419, D119): a notice with a picture posts it with the first message, as a webhook multipart attachment with an embed pointing at `attachment://notice.<ext>`; `allowed_mentions` stays empty.

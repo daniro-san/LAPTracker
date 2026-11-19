@@ -7,7 +7,7 @@ import { alias } from "drizzle-orm/pg-core";
 
 import type { Db } from "../db";
 import { workspaceUsers } from "../schema";
-import { noticeEdits, notices } from "../schema-notices";
+import { noticeEdits, noticePictures, notices } from "../schema-notices";
 
 /** A field's newest edit: its id is the field's version. */
 export interface FieldRow {
@@ -283,6 +283,13 @@ export async function writeNotice<R>(
       })),
     );
     await tx.update(notices).set({ updatedBy: userId, updatedAt: now }).where(eq(notices.id, id));
+    // A new end day ends the picture's cleanup warning (D119): moved away and back, the 7 days start again.
+    if (decision.write.some((e) => e.field === "ends_on")) {
+      await tx
+        .update(noticePictures)
+        .set({ warnedAt: null })
+        .where(eq(noticePictures.noticeId, id));
+    }
     await after?.(tx, id);
     return { id };
   });

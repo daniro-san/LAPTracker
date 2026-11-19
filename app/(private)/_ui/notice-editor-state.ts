@@ -12,6 +12,7 @@ import type {
   WorkspaceKey,
   WorkspaceLanguage,
 } from "@/lib/private/dictionary";
+import type { PictureView } from "@/lib/private/notice-picture-rules";
 import {
   isNoticeLanguage,
   NOTICE_FIELDS,
@@ -21,7 +22,6 @@ import {
 
 import {
   askDraft,
-  saveNotice,
   sendDelete,
   type Conflict,
   type DraftAsk,
@@ -39,6 +39,7 @@ import {
   withRestored,
 } from "./notice-draft";
 import { keepKey, readKept, restorable, writeKept } from "./notice-keep";
+import { saveWithPicture, type PictureDraft } from "./notice-picture-state";
 import { newRequestId } from "./request-id";
 
 export interface EditorProps {
@@ -62,6 +63,8 @@ export interface EditorProps {
   onClose?: (() => void) | undefined;
   /** Opened from a review request (D113): Save closes it as "Edited by …". */
   review?: number | undefined;
+  /** The notice's saved picture (D119); none for a new notice. */
+  picture?: PictureView | null | undefined;
 }
 
 /**
@@ -191,7 +194,18 @@ function useSaveNote(p: EditorProps, setBusy: (busy: Busy) => void) {
   return { message, setMessage, trashed, restoreFromTrash, refused };
 }
 
-export function useEditor(p: EditorProps) {
+/**
+ * After a save: a new notice opens its page; a saved one is read again and the editor closes. A text change
+ * also remounts the screen (its key); a picture-only save does not, so the editor closes itself (D119).
+ */
+function afterSave(router: ReturnType<typeof useRouter>, p: EditorProps, id: number) {
+  if (p.id === null) return router.push(`/w/${p.slug}/notices/${id}`);
+  router.refresh();
+  p.onClose?.();
+}
+
+/** `picture`: the notice's picture held in the editor (D119), sent with Save. */
+export function useEditor(p: EditorProps, picture: PictureDraft) {
   const router = useRouter();
   const [draft, setDraft] = useState(() => startDraft(p.fields));
   const [conflicts, setConflicts] = useState<Conflict[]>([]);
@@ -206,7 +220,7 @@ export function useEditor(p: EditorProps) {
   /** The tab the officer last typed in: where Translate fills an empty tab from. */
   const [wroteIn, setWroteIn] = useState<NoticeLanguage | null>(p.source);
   const { banner, showBanner } = useBanner(conflicts);
-  const dirty = changesOf(draft).length > 0;
+  const dirty = changesOf(draft).length > 0 || picture.changed;
   const leaving = useLeaveWarning(dirty);
   const note = useSaveNote(p, setBusy);
   const kept = useNoticeKept(p, draft.values, dirty, (values) =>
@@ -225,19 +239,18 @@ export function useEditor(p: EditorProps) {
     if (conflicts.length > 0) return showBanner();
     if (draft.values.title.trim() === "") return note.setMessage("notices.noTitle");
     const changes = changesOf(draft);
-    if (changes.length === 0) return p.onClose?.();
+    if (changes.length === 0 && !picture.changed) return p.onClose?.();
     setBusy("save");
     note.setMessage(null);
-    const answer = await saveNotice(p.slug, p.id, changes, requestId, p.review ?? null);
+    const answer = await saveWithPicture(p, picture, changes, requestId);
     setBusy(null);
     if (answer.ok) {
       leaving.current = true;
       kept.forget();
-      if (p.id === null) router.push(`/w/${p.slug}/notices/${answer.id}`);
-      else router.refresh();
-      return;
+      return afterSave(router, p, answer.id);
     }
     if (answer.conflicts) return setConflicts(answer.conflicts);
+    if ("picture" in answer) return note.setMessage(answer.picture);
     note.refused(answer);
   };
   return {

@@ -1,7 +1,7 @@
 "use client";
 
 // The notice editor (issues 304, 305, 293, 363), top to bottom: the title, the language tabs with the text of
-// the tab in view, Translate and Improve writing, "Show to members" and the end date, then the save bar.
+// the tab in view, Translate and Improve writing, the picture (D119), "Show to members" and the end date, then the save bar.
 // Translate and Improve writing fill drafts in the page; nothing is saved until the officer presses Save. A
 // save sends only the fields that changed, each with the version the officer was looking at; when someone
 // else saved one first, the server refuses (409) and one banner at the top shows both versions. While the
@@ -14,16 +14,20 @@ import { FIELD } from "@/lib/brand/components/controls";
 import { Notice } from "@/lib/brand/components/Notice";
 
 import { useEditor, type EditorProps } from "./notice-editor-state";
+import { usePictureDraft } from "./notice-picture-state";
 import { NoticeActions } from "./NoticeActions";
 import { ConflictBanner } from "./NoticeBits";
 import { Flags, SaveBar } from "./NoticeEditorParts";
 import { NoticeHistory } from "./NoticeHistory";
 import { LanguageField } from "./NoticeLanguageField";
+import { PictureField } from "./NoticePicture";
+import { KeptMark } from "./NoticePictureKept";
 
 export type { EditorProps } from "./notice-editor-state";
 
 export function NoticeEditor(p: EditorProps) {
-  const e = useEditor(p);
+  const picture = usePictureDraft(p.picture ?? null);
+  const e = useEditor(p, picture);
   const { draft } = e;
   const { t } = p;
   useEffect(() => {
@@ -81,6 +85,11 @@ export function NoticeEditor(p: EditorProps) {
       />
       <LanguageField p={p} e={e} />
       <NoticeActions p={p} e={e} />
+      <PictureField picture={picture} title={draft.values.title} busy={e.busy !== null} t={t}>
+        {p.id !== null && p.picture?.kept && picture.pending === "keep" && (
+          <KeptMark slug={p.slug} id={p.id} kept={p.picture.kept} t={t} language={p.viewer} />
+        )}
+      </PictureField>
       <Flags e={e} t={t} />
       <NoticeHistory p={p} e={e} />
       <SaveBar p={p} e={e} />

@@ -42,7 +42,17 @@ export function onDeskNow(db: Db, access: WorkspaceAccess, now: Date): Promise<s
 type What =
   /** `uids`: members saved one at a time; `batch`: members of batch saves (a sheet import). */
   | { kind: "facts"; uids: number[]; batch: number }
-  | { kind: "noticeSaved" | "noticePosted" | "noticeDeleted" | "noticeRestored"; noticeId: number }
+  | {
+      kind:
+        | "noticeSaved"
+        | "noticePosted"
+        | "noticeDeleted"
+        | "noticeRestored"
+        | "noticePicture"
+        | "noticePictureKept";
+      noticeId: number;
+    }
+  | { kind: "noticePictureReused"; noticeId: number; fromId: number }
   | { kind: "draft"; draft: Pick<DraftDone, "kind" | "scope" | "source"> }
   | { kind: "entry" | "entryEdit"; entry: Pick<EntryDone, "kind" | "variant" | "level" | "title"> }
   | { kind: "marks"; call: Pick<MarksDone, "kind" | "variant">; rest: boolean }
@@ -67,13 +77,27 @@ export type ActivityItem = { at: Date; who: string } & (
           | "noticePosted"
           | "noticeDeleted"
           | "noticeRestored"
+          | "noticePicture"
+          | "noticePictureKept"
+          | "noticePictureReused"
           | "reviewAsked"
           | "reviewAnswered";
       }
     >
   | { kind: "facts"; member: string | null; members: number }
   | ({ kind: "followUp"; member: string | null } & Pick<FollowUpDone, "action" | "until">)
-  | { kind: "noticeSaved" | "noticePosted" | "noticeDeleted" | "noticeRestored"; title: string }
+  | {
+      kind:
+        | "noticeSaved"
+        | "noticePosted"
+        | "noticeDeleted"
+        | "noticeRestored"
+        | "noticePicture"
+        | "noticePictureKept";
+      title: string;
+    }
+  /** D119: `title` got the copy of the picture of `from`. */
+  | { kind: "noticePictureReused"; title: string; from: string }
   /** `reviewer` null: the whole team (D113). */
   | { kind: "reviewAsked"; title: string; language: string | null; reviewer: string | null }
   | ({ kind: "reviewAnswered"; title: string } & Pick<ReviewAnsweredDone, "outcome" | "language">)
@@ -204,6 +228,9 @@ function merge(rows: ActivityRows, after: number | null): Raw[] {
     ...rows.noticePosts.map((r) => ({ ...r, kind: "noticePosted" as const })),
     ...rows.noticeDeletes.map((r) => ({ ...r, kind: "noticeDeleted" as const })),
     ...rows.noticeRestores.map((r) => ({ ...r, kind: "noticeRestored" as const })),
+    ...rows.noticePictures.map((r) => ({ ...r, kind: "noticePicture" as const })),
+    ...rows.noticePicturesKept.map((r) => ({ ...r, kind: "noticePictureKept" as const })),
+    ...rows.noticePicturesReused.map((r) => ({ ...r, kind: "noticePictureReused" as const })),
     ...rows.drafts.map(({ by, at, ...draft }) => ({ by, at, kind: "draft" as const, draft })),
     ...rows.entries.map(({ by, at, ...entry }) => ({ by, at, kind: "entry" as const, entry })),
     ...rows.entryEdits.map(({ by, at, ...entry }) => ({
@@ -257,6 +284,10 @@ function noticeItem(
   if (line.kind === "reviewAsked") {
     const reviewer = line.reviewerId === null ? null : (officers.get(line.reviewerId) ?? null);
     return { kind: "reviewAsked", at: line.at, who, title, language: line.language, reviewer };
+  }
+  if (line.kind === "noticePictureReused") {
+    const from = titles.get(line.fromId) ?? "";
+    return { kind: "noticePictureReused", at: line.at, who, title, from };
   }
   return { kind: line.kind, at: line.at, who, title };
 }
@@ -323,7 +354,9 @@ export async function activityPage(
   const uids = lines.flatMap((r) =>
     r.kind === "followUp" ? [r.uid] : r.kind === "facts" ? r.uids : [],
   );
-  const ids = lines.flatMap((r) => ("noticeId" in r ? [r.noticeId] : []));
+  const ids = lines.flatMap((r) =>
+    "fromId" in r ? [r.noticeId, r.fromId] : "noticeId" in r ? [r.noticeId] : [],
+  );
   const reviewers = lines.flatMap((r) =>
     r.kind === "reviewAsked" && r.reviewerId !== null ? [r.reviewerId] : [],
   );
