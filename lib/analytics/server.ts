@@ -130,7 +130,8 @@ export type ServerEvent = {
     person?: string;
   } & (E extends "ws_action"
     ? { where: EventWorkspace }
-    : // `$exception` under /w/[slug] or /api/w/[slug]; `$ai_generation` for a workspace's request.
+    : // `$exception` under /w/[slug] or /api/w/[slug]; `$ai_generation` for a workspace's request;
+      // `discord_command_used` from a workspace's Discord server.
       { where?: EventWorkspace });
 }[keyof ServerEvents];
 

@@ -19,13 +19,14 @@
     - `instrumentation.ts` reads it from the request path when the route path contains `/w/[slug]`. The route path is the source file's, e.g. `/(private)/w/[slug]/thefts/page`; checked in the build.
   - `$ai_generation`: `AppContext.ai` is now `((where) => ChatModel) | null`. The notice and thanks draft routes call `ctx.ai?.(eventWorkspace(access))`.
   - Discord Translate: `TranslationJob.workspace` is set from the workspace the command already found by guild. A language button and a "for everyone" post look the workspace up by `input.guildId`. The interactions route builds the model with `ctx.ai?.(job.workspace)`.
+  - `discord_command_used` (owner, 2026-11-19): the interactions route adds the workspace from the import job's access, or from the translation job's `workspace`. It never sends the guild id.
   - Squads read: the run_logs lines `squads.batch` and `squads.skip` carry `workspace` and `alliance`, from `SquadTarget.slug`. `sealedKeys` now selects the slug.
 - **Tracking plan** (`docs/analytics/tracking-plan.md`):
   - A rule on which events carry the two values.
   - `workspace` and `alliance` in every table row that names a `ws_*` event.
   - A `ws_action` row in "Server-side signals".
-  - The new properties on `$exception` and `$ai_generation`.
-  - A note on the squads lines and on `discord_command_used`.
+  - The new properties on `$exception`, `$ai_generation` and `discord_command_used`.
+  - A note on the squads lines.
   - A "By alliance (issue 452)" section of insights: adoption, features, tabs, board adoption, AI calls and tokens (#450), and errors, each broken down by `alliance`.
 - **D115**: a dated amendment for issue 452.
 - **Tests** (one per stated behaviour):
@@ -40,7 +41,8 @@
 
 ## Decisions
 
-- **`/api/w/[slug]` counts as "under `/w/[slug]`"** for `$exception`. The issue names `/w/[slug]`, but the desk's server errors happen mostly in its API routes, and the issue's title asks for every event.
+- **`/api/w/[slug]` counts as "under `/w/[slug]`"** for `$exception` (confirmed by the owner, 2026-11-19).
+- **`discord_command_used` carries both values** (owner, 2026-11-19), although the issue did not list it.
 - **The slug is checked against the database before it is sent.** `recordAppError` sends `workspace` only for a slug that names a workspace, so text typed into a URL never reaches PostHog as a workspace.
 - **`before_send` removes both values outside `/w/<slug>`, `/admin` included**, as well as the unregister the issue asks for. Without it, the first public `$pageview` after a client-side visit from the desk would carry them.
 - **"Squads read counts" = the run_logs lines.** The squads read sends no PostHog event (11ai handoff), so its count lines got both values. No PostHog event was added.
@@ -50,7 +52,6 @@
 
 - **Replays**: the issue says replays carry both values. posthog-js puts no super property on `$snapshot` batches: they carry only `distinct_id` (checked in posthog-js 1.444.4 and in the e2e). Replay batches keep `workspace` from the path (`before_send`) but not `alliance`. A recording is found by alliance through its session's other events, which all carry it. The plan says so.
 - **Signed out on `/w/<slug>`**: after sign-out, events still carry `workspace` from the path, because `before_send` has added it since D115. They lose `alliance` and the officer's id. The issue's "unregister on sign-out" holds for the registered values.
-- **`discord_command_used`** has no workspace. The issue did not list it. The plan says so.
 
 ## Verified
 
@@ -65,7 +66,7 @@
   - `$exception` from a real render error on `/w/ogs/thefts`, through instrumentation, carries both values.
   - A client-side visit from the desk to `/players` (Next's router, same page load): the `$pageview` there carries neither value.
   - Sign-out, then an error thrown in the page: the browser `$exception` has no `alliance` and is not on the officer's id.
-  - A signed Discord "Translate for me" from the workspace's guild: `$ai_generation` carries both values, and `discord_command_used` is unchanged.
+  - A signed Discord "Translate for me" from the workspace's guild: `$ai_generation` and `discord_command_used` carry both values.
   - No page error on the desk.
   - Across every caught request: no invented name (Ana, Wrenna, Thistle, Pip), no Discord user id, no guild id, no interaction token.
 - Scripts and results are not committed. They are in `/private/tmp/claude-502/-Users-danilordasilva-orca-workspaces-LAPTracker-unicornfish/147759e3-1cdb-4ccd-b74a-1001498a1e18/scratchpad/11ax/`: `e2e.mjs`, `e2e-results.txt`, `preload.mjs`, `make-env.mjs`, `seed.sql`, `start.sh`, `build.log` and `check.log`.
@@ -73,8 +74,6 @@
 
 ## Open issues
 
-- **posthog-js drops events from automated browsers.** It checks `navigator.webdriver` and the user agent. The e2e hides both in an init script (test harness only). A later analytics e2e needs the same, or it catches no browser events.
-- **`discord_command_used`** could carry the workspace at no cost: the command's handler already has it. That is a follow-up if the owner wants it.
 - **An extra database connection per server error under a workspace.** It opens after the response, only with analytics on. If the database is down, the lookup fails and the event goes without the values.
 
 ## Next
@@ -82,6 +81,7 @@
 - Model/effort: keep. One sitting covered the code, the tests and a 37-check e2e.
 - What the owner must do first: merge and release. Then, in PostHog project 741657, build the insights in the plan's "By alliance" section. Events from before the release have no `alliance`.
 - Plan change: none. The workspace track has no prompt in `docs/SESSION_PLAYBOOK.md`.
+- **Rule for every later analytics e2e** (owner, 2026-11-19; also in D115): posthog-js drops every event from a browser that looks automated. It checks `navigator.webdriver` and the user agent. Hide `navigator.webdriver` (and `navigator.userAgentData`) in an init script, and use a normal browser user agent. Without both, the e2e catches no browser events. For replay to start, the stand-in remote config must also include `sessionRecording.endpoint`.
 
 <adjustments>
 - A new server event sent for a workspace must pass `where: eventWorkspace(access)`. `ws_action` already requires it in the type.

@@ -117,5 +117,8 @@ This replaces the 2026-11-18 review line that the bar says "no tracking cookie i
   - `$exception` when the route is under `/w/[slug]` or `/api/w/[slug]` and the slug names a workspace. `withContext` takes the slug on those routes; instrumentation reads it from the request path. The workspace is looked up after the response.
   - `$ai_generation`: `AppContext.ai` is now made for the asking workspace. Discord Translate finds the workspace by the guild id.
 - **The squads read** sends no PostHog event. Its count lines in run_logs (`squads.batch`, `squads.skip`) now carry `workspace` and `alliance` too.
-- `discord_command_used` is unchanged: the issue did not list it.
+- `discord_command_used` carries them too when the command came from a workspace's Discord server (owner, 2026-11-19). It never carries the guild id.
 - The tracking plan's test fails if a table row naming a `ws_*` event does not list `workspace` and `alliance`. The plan has a "By alliance" section with the insights to build.
+- Replay batches (`$snapshot`) get no super properties from posthog-js, so they keep only `workspace` from the path. A recording is found by alliance through its session's other events.
+- **Verification note for every later analytics e2e (owner, 2026-11-19).** posthog-js drops every event from a browser that looks automated. It checks `navigator.webdriver` and the user agent. An e2e must hide `navigator.webdriver` (and `navigator.userAgentData`) in an init script and use a normal browser user agent, or it catches no browser events. The 11ax check also needs a remote config with `sessionRecording.endpoint` for replay to start.
+- **Checks (2026-11-19).** `pnpm check` exits 0. On a local production build with every PostHog request caught, 37 of 37 checks pass: desk, board, `ws_action`, `$ai_generation`, `$exception` from a route and from a page render, a public visit, sign-out, Discord Translate, and no invented name or Discord id in any request.
