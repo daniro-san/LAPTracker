@@ -11,13 +11,14 @@ export const parts = (ws: number, since: string, before: string, n: number) => s
     union all
     (select 'garrisonSaved', g.saved_by, g.saved_at, null, c.kind, c.variant, c.level, c.title, null
       from garrison_plans g join calendar_entries c on c.id = g.entry_id
-      where g.workspace_id = ${ws} and g.saved_by is not null
+      where g.workspace_id = ${ws} and g.saved_by is not null and c.deleted_at is null
         and g.saved_at >= ${since} and g.saved_at < ${before}
       order by g.saved_at desc limit ${n})
     union all
     (select 'garrisonPosted', g.posted_by, g.posted_at, null, c.kind, c.variant, c.level, c.title, null
       from garrison_plans g join calendar_entries c on c.id = g.entry_id
       where g.workspace_id = ${ws} and g.post_status = 'posted' and g.posted_by is not null
+        and c.deleted_at is null
         and g.posted_at >= ${since} and g.posted_at < ${before}
       order by g.posted_at desc limit ${n})`;
 

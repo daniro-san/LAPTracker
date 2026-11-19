@@ -79,7 +79,7 @@ export const nameAliases = pgTable(
  * member_facts under the uid `-id` (game uids are positive), so one facts pipeline serves both. A roster
  * read after `created_at` with exactly one member of the same name key and no facts moves those facts to
  * that member and sets `matched_uid`; an officer can also link them by hand. Delete sets `dismissed_at`
- * and keeps the row with its facts and points (amendment 2026-11-17); adding the name again reopens it.
+ * (with who and the request id, D123) and keeps the row with its facts and points (amendment 2026-11-17); adding the name again reopens it.
  */
 export const pendingMembers = pgTable(
   "pending_members",
@@ -96,12 +96,18 @@ export const pendingMembers = pgTable(
     createdAt: tstz("created_at").notNull(),
     matchedUid: big("matched_uid"),
     matchedAt: tstz("matched_at"),
-    dismissedAt: tstz("dismissed_at"),
+    /**
+     * Deleted (D123; "dismissed" in D106's words, hence the column's name): who and when, under the delete
+     * question's request id (D100). Undo clears it; adding the name again reopens the row.
+     */
+    deletedAt: tstz("dismissed_at"),
+    deletedBy: integer("deleted_by").references(() => workspaceUsers.id, { onDelete: "set null" }),
+    deleteRequestId: text("delete_request_id"),
   },
   (t) => [
     uniqueIndex("pending_members_request_unique").on(t.workspaceId, t.requestId),
     uniqueIndex("pending_members_open_key_unique")
       .on(t.workspaceId, t.nameKey)
-      .where(sql`${t.matchedUid} is null and ${t.dismissedAt} is null`),
+      .where(sql`${t.matchedUid} is null and ${t.deletedAt} is null`),
   ],
 );

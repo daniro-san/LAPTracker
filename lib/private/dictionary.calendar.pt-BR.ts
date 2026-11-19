@@ -103,6 +103,13 @@ export const calendarPt: CalendarWords = {
   "calendar.delete.one": "Pular a semana de {date}",
   "calendar.delete.after": "Encerrar a partir desta semana",
   "calendar.delete.keep": "Manter",
+  "calendar.delete.where":
+    "Ele sai da Agenda, do Mural dos membros e do Início. As chamadas dele continuam.",
+  "calendar.delete.deleting": "Apagando…",
+  "calendar.delete.failed": "Não foi possível apagar o evento. Tente de novo.",
+  "calendar.deleted": "Evento apagado.",
+  "calendar.undo": "Desfazer",
+  "calendar.undoFailed": "Não foi possível desfazer. O evento continua apagado.",
   "calendar.conflict.title": "Alguém mudou isto antes",
   "calendar.conflict.line": "{name} mudou {field} para “{value}” {ago}.",
   "calendar.conflict.someone": "Outro oficial",

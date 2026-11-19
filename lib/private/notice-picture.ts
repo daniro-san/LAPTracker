@@ -5,7 +5,6 @@
 import { createHash } from "node:crypto";
 
 import type { Db } from "../db";
-import { noticeIsDeleted } from "../repo/notice-deletes";
 import {
   deletePicture,
   pictureBytes,
@@ -13,6 +12,8 @@ import {
   putPicture,
   type PictureFacts,
 } from "../repo/notice-pictures";
+import { isDeleted } from "../repo/trash";
+import { notices } from "../schema-notices";
 import { isAnimated, pictureSize } from "../screenshot/picture-size";
 import { requireBoard, requireWorkspace, type CookieReader, type WorkspaceAccess } from "./access";
 import { boardShowsNotice } from "./board";
@@ -82,7 +83,7 @@ export async function savePicture(
   );
   if (saved)
     return { ok: true, picture: pictureView({ noticeId, ...facts }), changed: saved.changed };
-  const trashed = await noticeIsDeleted(db, access.workspaceId, noticeId);
+  const trashed = await isDeleted(db, notices, access.workspaceId, noticeId);
   return { ok: false, code: trashed ? "notice_deleted" : "not_found" };
 }
 
@@ -91,7 +92,7 @@ export async function savePicture(
  * trash (D118), whose picture stays.
  */
 export async function removePicture(db: Db, access: WorkspaceAccess, noticeId: number) {
-  if (await noticeIsDeleted(db, access.workspaceId, noticeId)) return "notice_deleted";
+  if (await isDeleted(db, notices, access.workspaceId, noticeId)) return "notice_deleted";
   return (await deletePicture(db, access.workspaceId, noticeId)) ? "removed" : "none";
 }
 

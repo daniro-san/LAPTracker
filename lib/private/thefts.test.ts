@@ -206,7 +206,9 @@ describe("thefts between two workspaces (D71)", () => {
     const [row] = await listThefts(db, ogs.workspaceId);
     expect(row?.attackerKey).toBe("uid:21");
     expect((await theftsView(db, nse, CLOCK)).groups).toEqual([]);
-    expect(await removeTheft(db, nse, row?.id ?? 0)).toBe("not_found");
+    expect(await removeTheft(db, nse, { id: row?.id ?? 0, requestId: randomUUID() }, NOW)).toBe(
+      "not_found",
+    );
     const follow = { attacker: "uid:21", state: "talked" as const, note: "" };
     expect(await setFollowUp(db, nse, follow, NOW)).toBe("not_found");
     expect(await setFollowUp(db, ogs, follow, NOW)).toBe("ok");
@@ -217,7 +219,9 @@ describe("thefts between two workspaces (D71)", () => {
       total: 1,
       followUp: { state: "talked", last: { by: "Ana" } },
     });
-    expect(await removeTheft(db, ogs, row?.id ?? 0)).toBe("ok");
+    expect(await removeTheft(db, ogs, { id: row?.id ?? 0, requestId: randomUUID() }, NOW)).toBe(
+      "ok",
+    );
     expect(await listThefts(db, ogs.workspaceId)).toEqual([]);
   });
 });

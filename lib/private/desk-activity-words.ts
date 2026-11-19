@@ -143,6 +143,10 @@ export function activityLine(
   const who = isolate(item.who);
   // Marks, or a roll call deleted or archived (D120).
   if ("call" in item) return marksLine(t, who, item);
+  // A Calendar entry added, changed or deleted (D123), or its garrison plan saved or posted (D121).
+  if ("entry" in item) {
+    return fill(t[`activity.${item.kind}`], { who, entry: isolate(titleOf(item.entry, t)) });
+  }
   switch (item.kind) {
     case "facts":
       return factsLine(t, who, item);
@@ -150,14 +154,14 @@ export function activityLine(
       return followUpLine(t, who, item, language);
     case "draft":
       return draftLine(t, who, item);
-    case "entry":
-    case "entryEdit":
-    case "garrisonSaved":
-    case "garrisonPosted":
-      return fill(t[`activity.${item.kind}`], { who, entry: isolate(titleOf(item.entry, t)) });
     case "thefts":
     case "newMember":
       return countLine(t, who, item);
+    // D123: a theft's people are never named; a new member's name as typed is.
+    case "theftDeleted":
+      return fill(t["activity.theftDeleted"], { who });
+    case "newMemberDeleted":
+      return fill(t["activity.newMemberDeleted"], { who, member: isolate(item.name) });
     case "thanks":
       return fill(t[`activity.thanks.${item.target}`], { who });
     // The rest is about a notice: saved, posted, deleted (D118), its picture added, kept or used in another

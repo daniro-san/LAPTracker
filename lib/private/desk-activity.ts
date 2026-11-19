@@ -18,6 +18,7 @@ import {
 } from "../repo/desk-activity";
 import { memberNames } from "../repo/desk-activity-names";
 import type { ReviewAnsweredDone, ReviewAskedDone } from "../repo/desk-activity-reviews";
+import type { DeleteLine } from "../repo/desk-activity-trash";
 import { SAVED_DRAFT_KEEP_MS } from "../repo/import";
 import { noticeTitles } from "../repo/notices";
 import { serverDay } from "../schedule";
@@ -60,6 +61,7 @@ type What =
   | Omit<ActivityRows["callDeletes"][number], "by" | "at">
   /** A garrison plan saved or posted (D121), never folded into another line. */
   | Omit<ActivityRows["garrisonSaves"][number], "by" | "at">
+  | DeleteLine
   | ({ kind: "followUp" } & Pick<FollowUpDone, "uid" | "action" | "until">)
   | { kind: "thefts"; count: number }
   | { kind: "newMember"; names: string[] }
@@ -251,6 +253,7 @@ function merge(rows: ActivityRows, after: number | null): Raw[] {
       call,
     })),
     ...[rows.callDeletes, rows.callArchives, rows.garrisonSaves, rows.garrisonPosts].flat(),
+    ...[rows.entryDeletes, rows.theftDeletes, rows.newMemberDeletes].flat(),
     ...rows.followUps.map((r) => ({ ...r, kind: "followUp" as const })),
     ...rows.thefts.map((r) => ({ ...r, kind: "thefts" as const })),
     ...rows.newMembers.map(({ by, at, name }) => ({
@@ -300,11 +303,7 @@ function noticeItem(
 /** A source line as a feed line with its names; null when the officer's account is gone. */
 function itemOf(
   r: Raw,
-  names: {
-    officers: Map<number, string>;
-    members: Map<number, string>;
-    titles: Map<number, string>;
-  },
+  names: Record<"officers" | "members" | "titles", Map<number, string>>,
 ): ActivityItem | null {
   const who = names.officers.get(r.by);
   if (!who) return null;

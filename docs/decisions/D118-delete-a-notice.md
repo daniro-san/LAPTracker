@@ -44,3 +44,5 @@ Why: officers wrote test notices and had no way to remove them. The owner asked 
 - In the editor, a save that answers `notice_deleted` shows "Could not save. Try again." with a "Restore from trash?" chip (PT "Restaurar da lixeira?", FR "Restaurer depuis la corbeille ?"). The chip restores the notice and says "Restored. Save to keep your text." The draft never leaves the editor (and the device keeps it, D102), so the next Save keeps the officer's text.
 
 **Not done.** No list of deleted notices, no way into the trash other than a refused save, nothing removed from Discord.
+
+**Amendment 2026-11-19 (D123, issue 427).** The delete, Undo and restore now run on the shared soft delete (`lib/repo/trash.ts`), and the page on the shared `DeleteButton` and `UndoLine` (`app/(private)/_ui/DeleteRecord.tsx`). `lib/repo/notice-deletes.ts` is gone. Nothing changes for officers: the same words, request ids, URLs, 60 s and 10 s.

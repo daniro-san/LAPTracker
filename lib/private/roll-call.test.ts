@@ -7,7 +7,8 @@ import { openTestDb, truncateAll } from "../db.test-helpers";
 import { findWorkspaceBySlug, recordSignIn, saveWorkspace } from "../repo/workspaces";
 import { dailyReads, dailyRosters, rollCalls, rollCallMarks } from "../schema";
 import { requireWorkspace, type WorkspaceAccess } from "./access";
-import { createEntry, removeEntry } from "./calendar";
+import { createEntry } from "./calendar";
+import { removeEntry } from "./calendar-delete";
 import type { NewEntry } from "./calendar-model";
 import { WORKSPACE_DICTIONARIES } from "./dictionary";
 import { saveFacts } from "./member-facts";
@@ -250,7 +251,12 @@ describe("roll call writes (issue 298)", () => {
     const ana = await signedIn("Ana");
     const cheese = await calendarOccasion(ana, cheeseTrap("II"));
     await mark(ana, cheese, 101, "yes", 0);
-    await removeEntry(db, ana, { entry: cheese.entry, scope: "all", week: cheese.week });
+    await removeEntry(
+      db,
+      ana,
+      { entry: cheese.entry, scope: "all", week: cheese.week, requestId: randomUUID() },
+      NOW,
+    );
     const [item, ...more] = await weekItems(db, ana, cheese.week, ZONE);
     expect([item?.kind, item?.placed, item?.tally.yes, more.length]).toEqual([
       "cheese",
@@ -288,7 +294,12 @@ describe("roll call writes (issue 298)", () => {
     const ana = await signedIn("Ana");
     const kvk = await calendarOccasion(ana, { kind: "kvk" });
     await mark(ana, kvk, 101, "yes", 0);
-    await removeEntry(db, ana, { entry: kvk.entry, scope: "all", week: kvk.week });
+    await removeEntry(
+      db,
+      ana,
+      { entry: kvk.entry, scope: "all", week: kvk.week, requestId: randomUUID() },
+      NOW,
+    );
     const items = await weekItems(db, ana, kvk.week, ZONE);
     expect(items.map((i) => [i.kind, i.placed, i.tally.yes, "id" in i.occasion])).toEqual([
       ["shield", null, 1, true],

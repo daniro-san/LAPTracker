@@ -9,6 +9,12 @@ import { rollCallMarks, rollCalls, rollCallTeam, workspaceUsers } from "../schem
 export type RollCallRow = typeof rollCalls.$inferSelect;
 /** Not deleted (D120): a deleted roll call leaves every list, count and Home. */
 export const live = isNull(rollCalls.deletedAt);
+/**
+ * Its Calendar entry is there and not deleted (D123). A deleted entry keeps its id on the roll call (a soft
+ * delete, not the old cascade), so `entry_id is null` no longer says the entry is gone.
+ */
+const entryLive = sql`exists (select 1 from calendar_entries c
+  where c.id = ${rollCalls.entryId} and c.deleted_at is null)`;
 /** A connection or a transaction. */
 type Tx = Pick<Db, "select" | "insert" | "delete" | "execute">;
 
@@ -50,7 +56,7 @@ export async function findCall(
   return row ?? null;
 }
 
-/** A roll call added by hand for this kind and day (no Calendar entry), so a second add opens it. */
+/** A roll call added by hand for this kind and day (no live Calendar entry), so a second add opens it. */
 export async function findAdded(
   db: Db,
   workspaceId: number,
@@ -65,7 +71,7 @@ export async function findAdded(
         eq(rollCalls.workspaceId, workspaceId),
         eq(rollCalls.kind, kind),
         eq(rollCalls.day, day),
-        isNull(rollCalls.entryId),
+        sql`not ${entryLive}`,
         live,
       ),
     )
@@ -94,6 +100,22 @@ export async function callsOfWeeks(db: Db, workspaceId: number, weeks: string[])
     .from(rollCalls)
     .where(and(eq(rollCalls.workspaceId, workspaceId), inArray(rollCalls.week, weeks), live))
     .orderBy(rollCalls.day, rollCalls.id);
+}
+
+/** The week's Elixir Scramble teams: its roll calls whose Calendar entry is live (D123). */
+export async function teamCalls(db: Db, workspaceId: number, week: string) {
+  return db
+    .select()
+    .from(rollCalls)
+    .where(
+      and(
+        eq(rollCalls.workspaceId, workspaceId),
+        eq(rollCalls.kind, "elixir"),
+        eq(rollCalls.week, week),
+        live,
+        entryLive,
+      ),
+    );
 }
 
 /** How many roll calls on these days (`from` to `to`) are archived (D120). */
@@ -204,7 +226,7 @@ export async function otherTeams(tx: Tx, call: RollCallRow) {
         eq(rollCalls.kind, "elixir"),
         eq(rollCalls.week, call.week),
         ne(rollCalls.id, call.id),
-        isNotNull(rollCalls.entryId),
+        entryLive,
         live,
       ),
     );

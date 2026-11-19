@@ -1,6 +1,6 @@
 // /api/w/[slug]/thefts (issue 321): the thefts log. GET ?q= finds attackers among the players of the
-// other tracked alliances; POST, a write (same origin, JSON), adds a typed theft, removes an entry, or
-// sets an attacker's follow-up. Every answer is { ok: true }, the players found, or a code. The work runs
+// other tracked alliances; POST, a write (same origin, JSON), adds a typed theft, deletes an entry (or takes
+// the officer's own delete back for a short while, D123), or sets an attacker's follow-up. Every answer is { ok: true }, the players found, or a code. The work runs
 // in `privately`, so an error reaches app_errors as its code alone, never with what an officer typed.
 import { z } from "zod";
 
@@ -47,6 +47,8 @@ const body = z.discriminatedUnion("action", [
         .int()
         .positive()
         .max(2 ** 31 - 1),
+      requestId: z.uuid(),
+      undo: z.literal(true).optional(),
     })
     .strict(),
   z
@@ -93,10 +95,18 @@ export async function POST(request: Request, { params }: Params): Promise<Respon
             addTheft(db, access, input, { now, zone: ctx.env.SERVER_TZ }),
           )
         : input.action === "remove"
-          ? await privately("thefts.remove", () => removeTheft(db, access, input.id))
+          ? await privately("thefts.remove", () => removeTheft(db, access, input, now))
           : await privately("thefts.follow", () => setFollowUp(db, access, input, now));
     if (result !== "ok") return privateError(result === "not_found" ? 404 : 400, result);
-    const action = input.action === "add" ? "add" : input.action === "remove" ? "delete" : "record";
+    // ws_action (D115, D123): the deleter's Undo is undo_delete.
+    const action =
+      input.action === "add"
+        ? "add"
+        : input.action === "follow"
+          ? "record"
+          : input.undo
+            ? "undo_delete"
+            : "delete";
     return counted(
       ctx,
       access,

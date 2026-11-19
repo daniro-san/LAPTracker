@@ -5,7 +5,6 @@
 import type { Db } from "../db";
 import {
   calendarRows,
-  deleteEntry,
   entriesOfNotice,
   findByRequest,
   findEntry,
@@ -299,32 +298,6 @@ async function conflicts(
       at: edit?.at ?? null,
     };
   });
-}
-
-/**
- * Deletes: `all` the entry, `one` only its week (a weekly entry keeps its other weeks), `after` its week
- * and every later one (from its first week, that is the whole entry).
- */
-export async function removeEntry(
-  db: Db,
-  access: WorkspaceAccess,
-  request: { entry: number; scope: "all" | "one" | "after"; week: string },
-): Promise<"ok" | "not_found"> {
-  const { entry: id, scope, week } = request;
-  const entry = await findEntry(db, access.workspaceId, id);
-  if (!entry) return "not_found";
-  if (scope !== "all" && (!isDay(week) || !inPlan(entry, week))) return "not_found";
-  if (scope === "all" || !entry.weekly || (scope === "after" && week <= firstWeek(entry))) {
-    await deleteEntry(db, access.workspaceId, id);
-  } else if (scope === "after") {
-    await updateEntry(db, id, { lastWeek: addDays(week, -7) });
-  } else {
-    await db.transaction(async (tx) => {
-      const row = await lockWeekRow(tx, access.workspaceId, id, week);
-      await updateWeekRow(tx, row.id, { cancelled: true });
-    });
-  }
-  return "ok";
 }
 
 /** The calendar entries linked to a notice (D102), for its page. */

@@ -1,10 +1,11 @@
 // thefts and theft_follow_ups (issue 321, D97): plain reads and writes, each inside one workspace. Which
 // entries are kept, and what counts, is decided in lib/private.
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { workspaceUsers } from "../schema";
 import { theftFollowUps, thefts } from "../schema-thefts";
+import { live } from "./trash";
 
 export type TheftRow = typeof thefts.$inferSelect;
 export type NewTheft = Omit<typeof thefts.$inferInsert, "id">;
@@ -42,29 +43,30 @@ export async function insertRequestedTheft(
   return made.length > 0;
 }
 
-/** The workspace's thefts, oldest entry first. */
+/**
+ * A deleted theft's Undo rule (D123): no live theft of the same attacker, member and time took its place
+ * meanwhile (the same report imported or typed again), so Undo never makes a double.
+ */
+export const noTwin = sql`not exists (select 1 from thefts o
+  where o.workspace_id = ${thefts.workspaceId} and o.id <> ${thefts.id} and o.deleted_at is null
+    and o.attacker_key = ${thefts.attackerKey}
+    and o.victim_uid is not distinct from ${thefts.victimUid}
+    and o.at is not distinct from ${thefts.at})`;
+
+/** The workspace's thefts not deleted (D123), oldest entry first. */
 export function listThefts(db: Db, workspaceId: number): Promise<TheftRow[]> {
   return db
     .select()
     .from(thefts)
-    .where(eq(thefts.workspaceId, workspaceId))
+    .where(and(eq(thefts.workspaceId, workspaceId), live(thefts)))
     .orderBy(asc(thefts.id));
-}
-
-/** Removes one entry, only inside its own workspace; false when there is none. */
-export async function deleteTheft(db: Db, workspaceId: number, id: number): Promise<boolean> {
-  const gone = await db
-    .delete(thefts)
-    .where(and(eq(thefts.id, id), eq(thefts.workspaceId, workspaceId)))
-    .returning({ id: thefts.id });
-  return gone.length > 0;
 }
 
 export async function hasAttacker(db: Db, workspaceId: number, key: string): Promise<boolean> {
   const [row] = await db
     .select({ id: thefts.id })
     .from(thefts)
-    .where(and(eq(thefts.workspaceId, workspaceId), eq(thefts.attackerKey, key)))
+    .where(and(eq(thefts.workspaceId, workspaceId), eq(thefts.attackerKey, key), live(thefts)))
     .limit(1);
   return row !== undefined;
 }
