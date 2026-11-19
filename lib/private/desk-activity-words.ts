@@ -164,6 +164,8 @@ export function activityLine(
       return fill(t["activity.newMemberDeleted"], { who, member: isolate(item.name) });
     case "thanks":
       return fill(t[`activity.thanks.${item.target}`], { who });
+    case "theftStep":
+      return fill(t["activity.theftStep"], { who, state: t[`thefts.state.${item.state}`] });
     // The rest is about a notice: saved, posted, deleted (D118), its picture added, kept or used in another
     // notice (D119), or a review request or its outcome (D113).
     default:

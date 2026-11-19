@@ -1,10 +1,12 @@
 // Alliance leadership: who holds R5 and who holds a titled R4 in a stored roster. Reads only the two
 // rank columns of member_snapshots (filled by the collector from /v1 `rank_code` / `rank_label`),
-// for the R5 and R4 rows alone; never raw_json or any other roster field.
-import { and, inArray } from "drizzle-orm";
+// for the R5 and R4 rows alone (and the R5's public name for `leaderNames`); never raw_json or any other
+// roster field.
+import { and, desc, eq, inArray } from "drizzle-orm";
 
 import type { Db } from "../db";
-import { memberSnapshots } from "../schema";
+import { allianceSnapshots, events, memberSnapshots, snapshots } from "../schema";
+import { phaseSnapshot, publicEvent } from "./visibility";
 
 /** The R5 leader, or an R4 officer with the title the game gives (`R4 · Diplomat` → `Diplomat`). */
 export type Role = { kind: "leader" } | { kind: "officer"; title: string };
@@ -57,4 +59,31 @@ export async function rolesOf(
     out.set(r.allianceSnapshotId, byUid);
   }
   return out;
+}
+
+/**
+ * Each alliance's leader by union id: the R5 of its newest public Before or After read that lists one (the
+ * thefts log's "whom to contact", issue 321). An alliance with no such read has no entry.
+ */
+export async function leaderNames(db: Db, unionIds: number[]): Promise<Map<number, string>> {
+  if (unionIds.length === 0) return new Map();
+  const rows = await db
+    .selectDistinctOn([allianceSnapshots.unionId], {
+      unionId: allianceSnapshots.unionId,
+      name: memberSnapshots.name,
+    })
+    .from(memberSnapshots)
+    .innerJoin(allianceSnapshots, eq(allianceSnapshots.id, memberSnapshots.allianceSnapshotId))
+    .innerJoin(snapshots, eq(snapshots.id, allianceSnapshots.snapshotId))
+    .innerJoin(events, eq(events.id, snapshots.eventId))
+    .where(
+      and(
+        inArray(allianceSnapshots.unionId, unionIds),
+        eq(memberSnapshots.rankCode, LEADER),
+        publicEvent,
+        phaseSnapshot,
+      ),
+    )
+    .orderBy(allianceSnapshots.unionId, desc(snapshots.startedAt));
+  return new Map(rows.map((r) => [r.unionId, r.name]));
 }

@@ -208,6 +208,9 @@ export function summaryOf(rows: StoredRow[]): Pick<DraftSummary, "rows" | "doubt
 }
 
 /** What a Save sends: the tab, the duel's day and week, and one value per member after the fixes. */
+/** A kept report entry, by its row: the attacker as fixed, and what was taken as typed (D97). */
+type ReportEntry = { row: number; name: string; items?: string | undefined };
+
 export interface SaveInput {
   version: number;
   scope: Scope | null;
@@ -227,7 +230,7 @@ export interface SaveInput {
     version?: number | undefined;
   }[];
   /** Secret Ops report: whose report it is, and each entry kept (by its row) with its attacker as fixed. */
-  report?: { victimUid: number | null; entries: { row: number; name: string }[] } | undefined;
+  report?: { victimUid: number | null; entries: ReportEntry[] } | undefined;
 }
 
 export type SaveResult =
@@ -314,9 +317,9 @@ export async function saveDraft(
 /** A Secret Ops report's entries as kept, with their attackers as the officer fixed them; null when unusable. */
 function reportOf(rows: StoredRow[], report: SaveInput["report"]): Saving["secretOps"] {
   if (!report) return null;
-  const entries = report.entries.map(({ row, name }) => {
+  const entries = report.entries.map(({ row, name, items }) => {
     const entry = rows[row]?.entry;
-    return entry ? { ...entry, name } : null;
+    return entry ? { ...entry, name, items } : null;
   });
   return entries.every((e) => e !== null) ? { victimUid: report.victimUid, entries } : null;
 }

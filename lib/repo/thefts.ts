@@ -71,6 +71,21 @@ export async function hasAttacker(db: Db, workspaceId: number, key: string): Pro
   return row !== undefined;
 }
 
+/** Sets the server on every entry of one attacker, inside its own workspace; false when there is none. */
+export async function setAttackerServer(
+  db: Db,
+  workspaceId: number,
+  key: string,
+  server: number | null,
+): Promise<boolean> {
+  const changed = await db
+    .update(thefts)
+    .set({ attackerServer: server })
+    .where(and(eq(thefts.workspaceId, workspaceId), eq(thefts.attackerKey, key), live(thefts)))
+    .returning({ id: thefts.id });
+  return changed.length > 0;
+}
+
 export async function insertFollowUp(
   db: Db,
   row: Omit<typeof theftFollowUps.$inferInsert, "id">,
@@ -81,7 +96,7 @@ export async function insertFollowUp(
 /** One follow-up change, with the name the officer who made it shows in the desk (D87). */
 export interface FollowUpRow {
   attackerKey: string;
-  state: "open" | "talked" | "resolved";
+  state: (typeof theftFollowUps.$inferSelect)["state"];
   note: string | null;
   changedAt: Date;
   by: string | null;

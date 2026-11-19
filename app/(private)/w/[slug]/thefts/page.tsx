@@ -5,6 +5,7 @@
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 
+import { SERVER } from "@/config/alliances";
 import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
 import { requireWorkspace } from "@/lib/private/access";
@@ -12,6 +13,7 @@ import type { WorkspaceLanguage } from "@/lib/private/dictionary";
 import { toReviewCount } from "@/lib/private/import-view";
 import { RENEW_MS } from "@/lib/private/session";
 import { SLUG } from "@/lib/private/sign-in";
+import { theftWarnings } from "@/lib/private/theft-warning";
 import { theftsView } from "@/lib/private/thefts";
 
 import { CalendarNav } from "../../../_ui/CalendarNav";
@@ -86,7 +88,19 @@ export default async function TheftsPage({ params }: { params: Promise<{ slug: s
         slug={slug}
         t={words}
         language={language}
-        alliances={theftCards(view.groups, words, f)}
+        alliances={theftCards(view.groups, words, f, (a) =>
+          a.server === SERVER
+            ? theftWarnings({
+                name: a.name,
+                tag: view.ownTag,
+                server: SERVER,
+                count: a.total,
+                lastAt: a.lastAt,
+                zone,
+              })
+            : null,
+        )}
+        server={SERVER}
         roster={view.roster}
         start={{ day: f.day(now), time: f.hhmm(now) }}
         serverZone={zone}

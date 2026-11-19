@@ -2,7 +2,9 @@
 // grouped by the attacker's alliance and by attacker, with "to follow up" per attacker. The
 // attackers are looked up in the public read model of the tracked alliances' rosters (names and tags only);
 // the victims in the workspace's own alliance (D71: union_id = access.unionId). Nothing here is logged.
+import { ALLIANCES, SERVER } from "../../config/alliances";
 import type { Db } from "../db";
+import { leaderNames } from "../queries/leadership";
 import { serverPlayers } from "../queries/server-players";
 import {
   hasAttacker,
@@ -11,6 +13,7 @@ import {
   listFollowUps,
   listThefts,
   noTwin,
+  setAttackerServer,
   theftRequested,
 } from "../repo/thefts";
 import { softDelete, undoDelete } from "../repo/trash";
@@ -85,8 +88,19 @@ export async function findAttackers(
     .map(({ p }) => ({ uid: p.uid, name: p.name, tag: p.tag }));
 }
 
+/** Whom to contact about an alliance of our server that we track: its public page and its leader. */
+export interface Contact {
+  unionId: number;
+  name: string;
+  /** The R5 of the alliance's newest public read with ranks; null when none has one. */
+  leader: string | null;
+}
+
 export interface TheftsView {
-  groups: AllianceGroup[];
+  /** `contact` only for a tracked alliance with an attacker on our server. */
+  groups: (AllianceGroup & { contact: Contact | null })[];
+  /** The workspace's own alliance tag, for the warning message. */
+  ownTag: string;
   /** The game week now is in (Monday 00:00 to the next Monday, server time). */
   week: { from: Date; to: Date };
   /** The alliance's newest roster, for the victim picker. */
@@ -115,14 +129,33 @@ export async function theftsView(
     attackerKey: r.attackerKey,
     attackerName: r.attackerName,
     attackerTag: r.attackerTag,
+    attackerServer: r.attackerServer,
     kind: r.kind,
     victimUid: r.victimUid,
     victimName: r.victimName,
     source: r.source,
+    items: r.items,
     note: r.note,
   }));
+  const groups = groupThefts(entries, changes, week);
+  // A tracked alliance (never our own) is one to contact once one of its attackers is on our server.
+  const trackedOf = (g: AllianceGroup) =>
+    g.attackers.some((a) => a.server === SERVER)
+      ? ALLIANCES.find(
+          (a) => a.unionId !== access.unionId && a.tag.toLowerCase() === g.tag.toLowerCase(),
+        )
+      : undefined;
+  const leaders = await leaderNames(
+    db,
+    groups.flatMap((g) => trackedOf(g)?.unionId ?? []),
+  );
   return {
-    groups: groupThefts(entries, changes, week),
+    groups: groups.map((g) => {
+      const a = trackedOf(g);
+      const leader = a ? (leaders.get(a.unionId) ?? null) : null;
+      return { ...g, contact: a ? { unionId: a.unionId, name: a.name, leader } : null };
+    }),
+    ownTag: ALLIANCES.find((a) => a.unionId === access.unionId)?.tag ?? "",
     week,
     roster: roster.map((m) => ({ uid: m.uid, name: m.name })),
   };
@@ -235,4 +268,14 @@ export async function setFollowUp(
     changedAt: now,
   });
   return "ok";
+}
+
+/** An attacker's server, set on all their entries in this workspace's log; null clears it. */
+export async function setServer(
+  db: Db,
+  access: WorkspaceAccess,
+  input: { attacker: string; server: number | null },
+): Promise<"ok" | "not_found"> {
+  const changed = await setAttackerServer(db, access.workspaceId, input.attacker, input.server);
+  return changed ? "ok" : "not_found";
 }

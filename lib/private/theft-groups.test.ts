@@ -22,10 +22,12 @@ function entry(key: string, tag: string, at: string | null, victim: number | nul
     attackerKey: key,
     attackerName: key.slice(key.indexOf(":") + 1),
     attackerTag: tag,
+    attackerServer: null,
     kind: "ops",
     victimUid: victim,
     victimName: victim === null ? null : `member${victim}`,
     source: "typed",
+    items: null,
     note: null,
   };
 }
@@ -67,6 +69,23 @@ describe("the thefts log's groups (issue 321)", () => {
     expect(stene.victims).toEqual([{ uid: 11, name: "member11", count: 1 }]);
     // Newest first; the entry whose time was not read comes last.
     expect(stene.entries.map((e) => e.at)).toEqual([new Date("2026-11-19T10:00:00Z"), null]);
+  });
+
+  it("gives each attacker a server: the newest one set, else ours for a tracked player", () => {
+    const entries = [
+      entry("uid:1", "NSE", "2026-11-17T10:00:00Z", 11),
+      entry("name:pebblewick", "QRX", "2026-11-16T10:00:00Z", 11),
+      { ...entry("name:pebblewick", "QRX", "2026-11-18T10:00:00Z", 12), attackerServer: 412 },
+      entry("name:fernby", "", "2026-11-18T11:00:00Z", 12),
+    ];
+    const servers = groupThefts(entries, [], WEEK)
+      .flatMap((g) => g.attackers)
+      .map((a) => [a.key, a.server]);
+    expect(Object.fromEntries(servers)).toEqual({
+      "uid:1": 325,
+      "name:pebblewick": 412,
+      "name:fernby": null,
+    });
   });
 });
 

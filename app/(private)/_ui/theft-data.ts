@@ -1,9 +1,12 @@
 // The thefts log's words per card (issue 321), made on the server in the officer's language: server times,
 // counts and labels. The client list (TheftCards.tsx) only lays them out, and adds the viewer's own clock
 // after hydration, so server and browser HTML never differ.
+import { SERVER } from "@/config/alliances";
 import { fill, isolate } from "@/lib/copy";
 import type { WorkspaceDictionary, WorkspaceKey } from "@/lib/private/dictionary";
 import type { AllianceGroup, AttackerGroup, FollowUpState } from "@/lib/private/theft-groups";
+import type { WarningLanguage } from "@/lib/private/theft-warning";
+import type { Contact } from "@/lib/private/thefts";
 
 type TheftKey = Extract<WorkspaceKey, `thefts.${string}` | `sheet.${string}`>;
 export type TheftWords = Record<TheftKey | "time.server" | "src.photo", string>;
@@ -29,6 +32,8 @@ export interface EntryCard {
   /** "Ops"; "—" on rows saved before the type was asked (D75). */
   kind: string;
   source: "photo" | "typed";
+  /** "Taken: 1.2M food, 300K wood"; null when not given. */
+  items: string | null;
   note: string | null;
 }
 
@@ -48,12 +53,18 @@ export interface AttackerCard {
   /** The changes before the newest, newest first: "Talked to their leaders · Set by Ana, …". */
   earlier: { text: string; note: string | null }[];
   victims: { uid: number; name: string; count: number }[];
+  /** "Our server · #<n>", "Server #<n>" or "Server not known"; `same` when it is our server. */
+  server: { text: string; same: boolean; value: number | null };
+  /** The warning to paste, per language; null unless the attacker is on our server. */
+  warnings: Record<WarningLanguage, string> | null;
   entries: EntryCard[];
 }
 
 export interface AllianceCard {
   tag: string;
   counts: string;
+  /** Whom to contact: the leader line and the alliance's public page; null when not one we track. */
+  contact: { line: string; href: string; link: string } | null;
   attackers: AttackerCard[];
 }
 
@@ -80,7 +91,35 @@ function counts(
   ].join(" · ");
 }
 
-function attackerCard(a: AttackerGroup, t: TheftWords, f: TheftFormats): AttackerCard {
+function serverOf(server: number | null, t: TheftWords): AttackerCard["server"] {
+  const same = server === SERVER;
+  const text =
+    server === null
+      ? t["thefts.server.unknown"]
+      : fill(t[same ? "thefts.server.same" : "thefts.server.other"], { server });
+  return { text, same, value: server };
+}
+
+function contactOf(contact: Contact | null, t: TheftWords): AllianceCard["contact"] {
+  if (!contact) return null;
+  return {
+    line: contact.leader
+      ? fill(t["thefts.contact.leader"], { leader: isolate(contact.leader) })
+      : t["thefts.contact.noLeader"],
+    href: `/alliances/${contact.unionId}/history`,
+    link: fill(t["thefts.contact.page"], { alliance: isolate(contact.name) }),
+  };
+}
+
+/** The warning to paste for an attacker on our server, in each language (theft-warning.ts). */
+export type WarningsOf = (a: AttackerGroup) => Record<WarningLanguage, string> | null;
+
+function attackerCard(
+  a: AttackerGroup,
+  t: TheftWords,
+  f: TheftFormats,
+  warn: WarningsOf,
+): AttackerCard {
   const { last, reopened, state, earlier } = a.followUp;
   const server = (at: Date) => fill(t["time.server"], { time: f.when(at) });
   const changed = (c: { by: string | null; changedAt: Date }) =>
@@ -111,6 +150,8 @@ function attackerCard(a: AttackerGroup, t: TheftWords, f: TheftFormats): Attacke
       note: c.note,
     })),
     victims: a.victims,
+    server: serverOf(a.server, t),
+    warnings: warn(a),
     entries: a.entries.map((e) => ({
       id: e.id,
       server: e.at ? server(e.at) : t["thefts.noTime"],
@@ -121,19 +162,22 @@ function attackerCard(a: AttackerGroup, t: TheftWords, f: TheftFormats): Attacke
         : t["thefts.noVictim"],
       kind: e.kind ? t[`thefts.kind.${e.kind}`] : "—",
       source: e.source,
+      items: e.items ? fill(t["thefts.items"], { items: e.items }) : null,
       note: e.note,
     })),
   };
 }
 
 export function theftCards(
-  groups: AllianceGroup[],
+  groups: (AllianceGroup & { contact: Contact | null })[],
   t: TheftWords,
   f: TheftFormats,
+  warn: WarningsOf,
 ): AllianceCard[] {
   return groups.map((g) => ({
     tag: g.tag ? `[${g.tag}]` : t["thefts.noTag"],
     counts: counts(g, t, f),
-    attackers: g.attackers.map((a) => attackerCard(a, t, f)),
+    contact: contactOf(g.contact, t),
+    attackers: g.attackers.map((a) => attackerCard(a, t, f, warn)),
   }));
 }

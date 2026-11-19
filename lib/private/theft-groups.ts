@@ -1,9 +1,11 @@
 // The thefts log's arithmetic (issue 321, D97), pure: who an entry's attacker is, the entries grouped by the
 // attacker's alliance and by attacker with this week's and all-time counts, and each attacker's "to follow
 // up" state. Counts per victim exist only inside an attacker's group (D75: no list of our members).
+import { SERVER } from "../../config/alliances";
 import { nameKey } from "../screenshot/name-key";
 
-export const FOLLOW_UP_STATES = ["open", "talked", "resolved"] as const;
+/** The steps of the talks with an attacker's alliance, in order (D97, amended 2026-11-19). */
+export const FOLLOW_UP_STATES = ["open", "warned", "talked", "retaliated", "resolved"] as const;
 export type FollowUpState = (typeof FOLLOW_UP_STATES)[number];
 
 /** A theft's type, as the add sheet offers it (D97, amended 2026-11-17). */
@@ -22,11 +24,15 @@ export interface TheftEntry {
   attackerKey: string;
   attackerName: string;
   attackerTag: string;
+  /** The server an officer set for the attacker; null when not set. */
+  attackerServer: number | null;
   /** Null on rows saved before the type was asked. */
   kind: TheftKind | null;
   victimUid: number | null;
   victimName: string | null;
   source: "photo" | "typed";
+  /** What was taken, as the officer wrote it; null when not given. */
+  items: string | null;
   note: string | null;
 }
 
@@ -92,6 +98,11 @@ export interface AttackerGroup extends Counts {
   /** The name and tag of the newest entry. */
   name: string;
   tag: string;
+  /**
+   * The attacker's server: the newest one an officer set, else our server for a player found in a tracked
+   * alliance's roster (every tracked alliance is on it), else null (not known).
+   */
+  server: number | null;
   /** Known victims, by name (D75: never ranked by how often). */
   victims: Victim[];
   followUp: FollowUp;
@@ -143,6 +154,9 @@ function attackerOf(
     key: newest.attackerKey,
     name: newest.attackerName,
     tag: newest.attackerTag,
+    server:
+      sorted.find((e) => e.attackerServer !== null)?.attackerServer ??
+      (newest.attackerKey.startsWith("uid:") ? SERVER : null),
     week: sorted.filter(inWeek).length,
     total: sorted.length,
     lastAt: sorted.find((e) => e.at !== null)?.at ?? null,

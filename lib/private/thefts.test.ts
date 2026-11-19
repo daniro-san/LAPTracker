@@ -12,7 +12,7 @@ import { dailyReads, dailyRosters } from "../schema";
 import { parseSecretOpsReport } from "../screenshot/parse-secret-ops";
 import { requireWorkspace, type WorkspaceAccess } from "./access";
 import { createSession } from "./session";
-import { addTheft, findAttackers, removeTheft, setFollowUp, theftsView } from "./thefts";
+import { addTheft, findAttackers, removeTheft, setFollowUp, setServer, theftsView } from "./thefts";
 import { reportInstant, saveSecretOpsDraft } from "./thefts-import";
 
 const OGS = 67111155;
@@ -223,6 +223,73 @@ describe("thefts between two workspaces (D71)", () => {
       "ok",
     );
     expect(await listThefts(db, ogs.workspaceId)).toEqual([]);
+  });
+});
+
+/** An invented Secret Ops report as OCR lines: three thefts and one help from our own member. */
+const REPORT = [
+  "[NSE]Gremlin 11-15 13:46",
+  "a dérobé vos récompenses de quête",
+  "[QRX]Pebblewick 11-15 12:10",
+  "a dérobé vos récompenses de quête",
+  "[OGs]Grimbald",
+  "vous a aidé à obtenir vos récompenses de quête 11-15 11:00",
+  "[ZZT]Fernby 11-14 22:05",
+  "a dérobé vos récompenses de quête",
+];
+
+describe("three thefts from a report (issue 321's done_when)", () => {
+  it("say which attackers are on our server and which tracked alliance to contact", async () => {
+    const [ogs, nse] = [await signedIn("ogs"), await signedIn("nse")];
+    // The officer types what was taken from the report's item pictures (the OCR cannot read them).
+    const entries = parseSecretOpsReport(REPORT).map((e, i) =>
+      i === 0 ? { ...e, items: " 1.2M food, 300K wood " } : e,
+    );
+    const draft = { victimUid: 11, readAt: NOW, entries };
+    expect(await saveSecretOpsDraft(db, ogs, draft, CLOCK)).toMatchObject({ saved: 3 });
+    const stored = await listThefts(db, ogs.workspaceId);
+    expect(stored.map((r) => [r.attackerName, r.items])).toEqual([
+      ["Gremlin", "1.2M food, 300K wood"],
+      ["Pebblewick", null],
+      ["Fernby", null],
+    ]);
+    // From the player's profile: Pebblewick is on our server, Fernby on the enemy's. Not from NSE's desk.
+    const pebblewick = { attacker: "name:pebblewick", server: 325 };
+    expect(await setServer(db, nse, pebblewick)).toBe("not_found");
+    expect(await setServer(db, ogs, pebblewick)).toBe("ok");
+    expect(await setServer(db, ogs, { attacker: "name:fernby", server: 412 })).toBe("ok");
+    const view = await theftsView(db, ogs, CLOCK);
+    const shown = view.groups.map((g) => [g.tag, g.attackers.map((a) => a.server), g.contact]);
+    expect(shown).toEqual([
+      // A tracked alliance of our server: its page and its leader (no public read with ranks here).
+      ["NSE", [325], { unionId: NSE, name: "Natural Selection", leader: null }],
+      // On our server but not tracked: no page to link.
+      ["QRX", [325], null],
+      ["ZZT", [412], null],
+    ]);
+    expect(view.ownTag).toBe("OGs");
+  });
+
+  it("follows an attacker through the five steps to resolved, each with who and when", async () => {
+    const ogs = await signedIn("ogs");
+    expect(await addTheft(db, ogs, typed({ uid: 22 }, 11), CLOCK)).toBe("ok");
+    const steps = ["warned", "talked", "retaliated", "resolved"] as const;
+    for (const [i, state] of steps.entries()) {
+      const at = new Date(NOW.getTime() + i * 60_000);
+      expect(await setFollowUp(db, ogs, { attacker: "uid:22", state, note: "" }, at)).toBe("ok");
+    }
+    const [group] = (await theftsView(db, ogs, CLOCK)).groups;
+    const { followUp } = group?.attackers[0] ?? {};
+    expect(followUp?.state).toBe("resolved");
+    expect(followUp?.last).toMatchObject({
+      by: "Ana",
+      changedAt: new Date(NOW.getTime() + 180_000),
+    });
+    expect(followUp?.earlier.map((c) => [c.state, c.by])).toEqual([
+      ["retaliated", "Ana"],
+      ["talked", "Ana"],
+      ["warned", "Ana"],
+    ]);
   });
 });
 

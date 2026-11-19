@@ -9,6 +9,9 @@ import type { SecretOpsEntry } from "../screenshot/parse-secret-ops";
 import { STATUS_BAR_ASPECT, STATUS_BAR_SHARE } from "../screenshot/prepare";
 import type { WorkspaceAccess } from "./access";
 
+/** A report's entry after review: as read or fixed, with what was taken when the officer wrote it. */
+export type ReviewedEntry = SecretOpsEntry & { items?: string | undefined };
+
 export type ImportKind = Exclude<ScreenKind, "map">;
 export type Scope = "daily" | "weekly";
 
@@ -53,7 +56,7 @@ export interface Saving {
     version?: number | undefined;
   }[];
   /** Secret Ops report: whose report it is, and the entries kept with their attackers as fixed. */
-  secretOps: { victimUid: number | null; entries: SecretOpsEntry[] } | null;
+  secretOps: { victimUid: number | null; entries: ReviewedEntry[] } | null;
   userId: number;
   now: Date;
   /** SERVER_TZ: a report's times are server times. */

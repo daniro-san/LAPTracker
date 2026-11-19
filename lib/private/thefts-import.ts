@@ -12,6 +12,7 @@ import { matchName } from "../screenshot/match-name";
 import { nameKey } from "../screenshot/name-key";
 import type { SecretOpsEntry } from "../screenshot/parse-secret-ops";
 import type { WorkspaceAccess } from "./access";
+import type { ReviewedEntry } from "./import-kinds";
 import { attackerKeyOf } from "./theft-groups";
 import { isRealDay, type Clock } from "./thefts";
 
@@ -21,8 +22,8 @@ export interface SecretOpsDraft {
   victimUid: number | null;
   /** When the picture was read: the year of the report's "MM-DD HH:MM" times comes from it. */
   readAt: Date;
-  /** The entries kept, as the parser gave them or as the officer corrected them. */
-  entries: readonly SecretOpsEntry[];
+  /** The entries kept, as the parser gave them or as the officer corrected them, with what was taken. */
+  entries: readonly ReviewedEntry[];
 }
 
 export interface SecretOpsSaved {
@@ -106,6 +107,7 @@ export async function saveSecretOpsDraft(
         victimUid: victim?.uid ?? null,
         victimName: victim?.name ?? null,
         source: "photo",
+        items: e.items?.trim() || null,
         note: null,
         createdBy: access.user.id,
         createdAt: clock.now,
