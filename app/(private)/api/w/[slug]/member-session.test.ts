@@ -37,6 +37,7 @@ const EXCLUDED = new Set(["login/route.ts", "logout/route.ts"]);
 
 const ID = "00000000-0000-4000-8000-000000000001";
 const FIXTURES: Record<string, Partial<Record<Method, Fixture>>> = {
+  "activity/route.ts": { GET: { query: "?before=1763640000000" } },
   "calendar/route.ts": {
     POST: { body: { action: "delete", entry: 1, scope: "all", week: "2026-11-16" } },
   },

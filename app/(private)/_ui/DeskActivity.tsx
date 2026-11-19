@@ -1,10 +1,11 @@
 // Home's "On the desk now" line and "Recent activity" feed (D108). Server-rendered: the line sits under the
-// title, the feed closes the page. "Show more" is a <details>, so it works without script and is never
-// hover-only; its summary is a 44 px target.
-import type { ActivityItem } from "@/lib/private/desk-activity";
-import { ACTIVITY_SHOWN } from "@/lib/private/desk-activity";
-import { activityAgo, activityLine, namesList } from "@/lib/private/desk-activity-words";
+// title, the feed closes the page. The feed's first page is made here; ActivityFeed reads the next pages
+// and opens a run's lines in place (2026-11-18).
+import type { ActivityPageView } from "@/lib/private/desk-activity-words";
+import { namesList } from "@/lib/private/desk-activity-words";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
+
+import { ActivityFeed } from "./ActivityFeed";
 
 /** "On the desk now: Ana and Wren", or "Nobody else right now." */
 export function OnDesk(props: {
@@ -28,56 +29,30 @@ export function OnDesk(props: {
   );
 }
 
-function Lines(props: {
-  items: ActivityItem[];
-  t: WorkspaceDictionary;
-  language: WorkspaceLanguage;
-  now: Date;
-}) {
-  return (
-    <ul className="mt-1 divide-y divide-rule">
-      {props.items.map((item, i) => (
-        <li key={`${item.at.getTime()}-${i}`} className="py-2">
-          {activityLine(item, props.t, props.language)}
-          <span className="whitespace-nowrap text-body-sm text-ink/70">
-            {" · "}
-            <time dateTime={item.at.toISOString()}>
-              {activityAgo(item.at, props.now, props.language, props.t)}
-            </time>
-          </span>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-/** The newest things officers did, newest first; the rest under "Show more". */
+/** The newest things officers did, newest first; older pages under "Show more". */
 export function RecentActivity(props: {
-  items: ActivityItem[];
+  slug: string;
+  first: ActivityPageView;
   t: WorkspaceDictionary;
-  language: WorkspaceLanguage;
-  now: Date;
 }) {
-  const { items, t } = props;
-  const first = items.slice(0, ACTIVITY_SHOWN);
-  const more = items.slice(ACTIVITY_SHOWN);
+  const { first, t } = props;
   return (
     <section aria-labelledby="home-activity" className="drawn-card mt-4 px-4 py-3">
       <h2 id="home-activity" className="font-subhead text-display-sm">
         {t["activity.head"]}
       </h2>
-      {items.length === 0 ? (
+      {first.lines.length === 0 ? (
         <p className="mt-1">{t["activity.none"]}</p>
       ) : (
-        <Lines {...props} items={first} />
-      )}
-      {more.length > 0 && (
-        <details className="group border-t border-rule">
-          <summary className="inline-flex min-h-11 cursor-pointer items-center font-semibold text-plum underline underline-offset-4 group-open:hidden">
-            {t["activity.more"]}
-          </summary>
-          <Lines {...props} items={more} />
-        </details>
+        <ActivityFeed
+          slug={props.slug}
+          first={first}
+          words={{
+            more: t["activity.more"],
+            less: t["activity.less"],
+            failed: t["activity.moreFailed"],
+          }}
+        />
       )}
     </section>
   );

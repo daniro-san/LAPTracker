@@ -3,17 +3,19 @@
 // not one: Undo clears `deleted_at`.
 import { sql } from "drizzle-orm";
 
-/** The two parts, each its own newest `n` since `since`, in the union's columns. */
-export const trashParts = (ws: number, since: string, n: number) => sql`
+/** The two parts, each its own newest `n` since `since` and before `before`, in the union's columns. */
+export const trashParts = (ws: number, since: string, before: string, n: number) => sql`
     union all
     (select 'noticeDeleted', n.deleted_by, n.deleted_at, n.id, null, null, null, null, null
       from notices n
-      where n.workspace_id = ${ws} and n.deleted_at >= ${since} and n.deleted_by is not null
+      where n.workspace_id = ${ws} and n.deleted_at >= ${since} and n.deleted_at < ${before}
+        and n.deleted_by is not null
       order by n.deleted_at desc limit ${n})
     union all
     (select 'noticeRestored', n.restored_by, n.restored_at, n.id, null, null, null, null, null
       from notices n
-      where n.workspace_id = ${ws} and n.restored_at >= ${since} and n.restored_by is not null
+      where n.workspace_id = ${ws} and n.restored_at >= ${since} and n.restored_at < ${before}
+        and n.restored_by is not null
       order by n.restored_at desc limit ${n})`;
 
 export type TrashKind = "noticeDeleted" | "noticeRestored";

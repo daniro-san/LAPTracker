@@ -1,4 +1,4 @@
-// Home's recent activity (D108), second part: grouping, saved drafts past their 7 days, Undo, the cap.
+// Home's recent activity (D108), second part: grouping, saved drafts past their 7 days, Undo.
 import { randomUUID } from "node:crypto";
 
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
@@ -17,8 +17,14 @@ import {
   notices,
 } from "../schema-notices";
 import type { WorkspaceAccess } from "./access";
-import { ACTIVITY_MAX, recentActivity } from "./desk-activity";
-import { ago, browser, freshWorkspace, linesOf, NOW } from "./desk-activity.test-helpers";
+import {
+  ago,
+  browser,
+  freshWorkspace,
+  linesOf,
+  NOW,
+  recentActivity,
+} from "./desk-activity.test-helpers";
 
 let db: Db;
 let ws: number;
@@ -271,23 +277,5 @@ describe("recent activity", () => {
       "Ana shared the thanks on Discord",
     ]);
     expect(linesOf(items, "pt-BR")[2]).toBe("Ana compartilhou os agradecimentos no Discord");
-  });
-
-  it("holds at most ACTIVITY_MAX lines", async () => {
-    const a = (await browser(db, ws, "Ana")).userId;
-    await db.insert(memberFollowUps).values(
-      Array.from({ length: ACTIVITY_MAX + 5 }, (_, i) => ({
-        workspaceId: ws,
-        uid: 1000 + i,
-        action: "talked" as const,
-        writtenBy: a,
-        writtenAt: ago(i + 1),
-        requestId: randomUUID(),
-      })),
-    );
-    const me = (await browser(db, ws, "Rook")).visit(NOW);
-    const items = await recentActivity(db, (await me) as WorkspaceAccess, NOW);
-    expect(items).toHaveLength(ACTIVITY_MAX);
-    expect(linesOf(items)[0]).toBe("Ana talked to a member");
   });
 });

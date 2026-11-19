@@ -13,8 +13,8 @@ import type { Db } from "@/lib/db";
 import { openTestDb, truncateAll } from "@/lib/db.test-helpers";
 import { requireBoard, requireWorkspace } from "@/lib/private/access";
 import { boardView } from "@/lib/private/board";
-import { recentActivity } from "@/lib/private/desk-activity";
-import { activityLine } from "@/lib/private/desk-activity-words";
+import { feedLine } from "@/lib/private/desk-activity-words";
+import { recentActivity } from "@/lib/private/desk-activity.test-helpers";
 import { WORKSPACE_DICTIONARIES } from "@/lib/private/dictionary";
 import { toReviewCount } from "@/lib/private/import-view";
 import { publishNotice } from "@/lib/private/notice-publish";
@@ -139,8 +139,8 @@ const NOWHERE = {
 
 /** Rook's activity lines on Home, in English. */
 const lines = async () =>
-  (await recentActivity(db, await access("Rook"), clock.now)).map((item) =>
-    activityLine(item, WORKSPACE_DICTIONARIES.en, "en"),
+  (await recentActivity(db, await access("Rook"), clock.now)).map((line) =>
+    feedLine(line, WORKSPACE_DICTIONARIES.en, "en"),
   );
 
 describe("deleting a notice (D118)", () => {

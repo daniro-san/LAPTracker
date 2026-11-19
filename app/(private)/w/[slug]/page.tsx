@@ -13,7 +13,13 @@ import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
 import { requireWorkspace } from "@/lib/private/access";
 import { calendarDays } from "@/lib/private/calendar";
-import { onDeskNow, recentActivity, type ActivityItem } from "@/lib/private/desk-activity";
+import {
+  ACTIVITY_FIRST,
+  activityPage,
+  onDeskNow,
+  type ActivityPage,
+} from "@/lib/private/desk-activity";
+import { activityView } from "@/lib/private/desk-activity-words";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import { toReview, type ReviewItem } from "@/lib/private/import-view";
 import { cardFormats } from "@/lib/private/member-card";
@@ -133,7 +139,7 @@ function Home(props: {
   /** New members a roster read since their add could not match (D106, 2026-11-17). */
   toMatch: number;
   /** D108: the other officers on the desk now, and what officers did lately. */
-  desk: { names: string[]; activity: ActivityItem[]; now: Date };
+  desk: { names: string[]; activity: ActivityPage; now: Date };
   shared: string[] | null;
   reviews: Awaited<ReturnType<typeof reviewsForMe>>;
   /** Sunday or Monday, and the week's thanks not shared yet (D114). */
@@ -177,7 +183,11 @@ function Home(props: {
         reviews={props.reviews}
         when={(d) => fill(t["time.server"], { time: at.format(d) })}
       />
-      <RecentActivity items={props.desk.activity} t={t} language={language} now={props.desk.now} />
+      <RecentActivity
+        slug={slug}
+        first={activityView(props.desk.activity, t, language, props.desk.now)}
+        t={t}
+      />
     </section>
   );
 }
@@ -216,7 +226,7 @@ export default async function WorkspacePage({
       calendarDays(db, access, days.from, days.to),
       progressHistory(db, access).then((history) => membersView(db, access, now, zone, history)),
       onDeskNow(db, access, now),
-      recentActivity(db, access, now),
+      activityPage(db, access, { now, zone }, null, ACTIVITY_FIRST),
       reviewsForMe(db, access),
     ]);
     const desk = { names, activity, now };
