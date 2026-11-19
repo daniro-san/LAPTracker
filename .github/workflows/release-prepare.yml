@@ -18,6 +18,7 @@ on:
 permissions:
   contents: write # generate-notes is a POST and needs it; nothing here pushes, tags or releases
   pull-requests: write
+  actions: write # starts ci on dev: a PR opened with GITHUB_TOKEN does not trigger pull_request runs
 
 jobs:
   prepare:
@@ -64,3 +65,7 @@ jobs:
           url=$(gh pr create --base main --head dev --title "release: $next" --body-file notes.md)
           echo "Opened $url ($latest -> $next, $ahead commits)."
           echo "Opened $url ($latest -> $next, $ahead commits)." >> "$GITHUB_STEP_SUMMARY"
+
+          # ci runs only on pull_request since #444, and a PR opened with GITHUB_TOKEN gets its run held for
+          # approval. workflow_dispatch is allowed from GITHUB_TOKEN and reports the "check" the main ruleset needs.
+          gh workflow run ci.yml --ref dev
