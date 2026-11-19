@@ -23,6 +23,8 @@ export const calendarEn = {
   "calendar.add": "Add an event",
   "calendar.edit": "Edit",
   "calendar.editOf": "Edit: {title}",
+  "calendar.deleteOf": "Delete: {title}",
+  "calendar.toToday": "Today",
   "calendar.kind.caravan": "Alliance Caravan",
   "calendar.kind.cheese": "Cheese Trap",
   "calendar.kind.undead": "Undead Siege",
