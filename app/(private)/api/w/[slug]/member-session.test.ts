@@ -91,6 +91,7 @@ const FIXTURES: Record<string, Partial<Record<Method, Fixture>>> = {
     GET: { query: "?q=ab" },
     POST: { body: { action: "remove", id: 1, requestId: ID } },
   },
+  "tracker-key/route.ts": { POST: { body: { action: "remove", requestId: ID } } },
 };
 
 const ROUTES = readdirSync(import.meta.dirname, { recursive: true, encoding: "utf8" })

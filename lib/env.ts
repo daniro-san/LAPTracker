@@ -119,6 +119,12 @@ export const envSchema = z.object({
   // "Publish to Discord" for notices (D102). Optional: without it, or without a workspace's channel, the
   // button says the channel is not set up and nothing is posted.
   WORKSPACE_DISCORD_WEBHOOKS: optional(workspaceWebhooks),
+  // The master key that encrypts each workspace's own tracker key (D124): 32 bytes, base64 (`openssl rand
+  // -base64 32`). A secret. Optional: without it no workspace key is saved or used, and only the own
+  // alliance's workspace reads its squads, on LAP_API_KEY.
+  WORKSPACE_KEYS_SECRET: optional(
+    z.string().regex(/^[A-Za-z0-9+/]{43}=$/, "expected 32 bytes, base64 (openssl rand -base64 32)"),
+  ),
 });
 
 export type Env = z.infer<typeof envSchema>;

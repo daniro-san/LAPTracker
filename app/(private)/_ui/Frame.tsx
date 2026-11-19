@@ -73,7 +73,7 @@ export async function Frame({
       {tabs && <FirstUse t={t} seen={seen} />}
       <LanguageSwitch current={language} label={t["lang.aria"]} />
       {account && (
-        <div className="flex min-w-0 basis-full items-center justify-between gap-x-2 border-t border-wax-paper/25 pt-1 text-body-sm">
+        <div className="flex min-w-0 basis-full flex-wrap items-center justify-between gap-x-2 border-t border-wax-paper/25 pt-1 text-body-sm">
           {account}
         </div>
       )}
@@ -135,14 +135,23 @@ export function SignedInFrame({
         name={name}
         label={fill(t["shell.signedIn"], { name: isolate(name) })}
       />
-      <SignOutButton
-        slug={access.slug}
-        words={{
-          label: t["shell.signOut"],
-          ask: t["shell.signOutAsk"],
-          stay: t["shell.stay"],
-        }}
-      />
+      <span className="ml-auto flex shrink-0 items-center">
+        {/* D124: the alliance's own settings (the tracker key), apart from the officer's own. */}
+        <a
+          href={`/w/${access.slug}/settings`}
+          className="inline-flex min-h-11 items-center px-2 text-body-sm font-semibold whitespace-nowrap underline underline-offset-4"
+        >
+          {t["settings.link"]}
+        </a>
+        <SignOutButton
+          slug={access.slug}
+          words={{
+            label: t["shell.signOut"],
+            ask: t["shell.signOutAsk"],
+            stay: t["shell.stay"],
+          }}
+        />
+      </span>
     </>
   );
   return (

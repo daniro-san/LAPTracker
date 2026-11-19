@@ -61,6 +61,7 @@ export function secretsOf(env: Env): string[] {
     env.DISCORD_CLIENT_SECRET,
     env.DISCORD_BOT_TOKEN,
     env.GROQ_API_KEY,
+    env.WORKSPACE_KEYS_SECRET,
     ...Object.values(env.WORKSPACE_DISCORD_WEBHOOKS ?? {}).flatMap((w) =>
       [w.members?.url, w.leaders?.url].filter((u) => u !== undefined),
     ),

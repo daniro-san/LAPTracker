@@ -134,6 +134,16 @@ function noticeLine(
   return fill(t[`activity.${item.kind}`], { who, title });
 }
 
+/** The weekly thanks shared or taken down (D114), or the tracker key saved or removed (D124). */
+function plainLine(
+  t: WorkspaceDictionary,
+  who: string,
+  item: Extract<ActivityItem, { kind: "thanks" | "trackerKey" }>,
+): string {
+  if (item.kind === "thanks") return fill(t[`activity.thanks.${item.target}`], { who });
+  return fill(t[`activity.key.${item.action}`], { who });
+}
+
 /** What the officer did, as one sentence, without the time. */
 export function activityLine(
   item: ActivityItem,
@@ -162,14 +172,12 @@ export function activityLine(
       return fill(t["activity.theftDeleted"], { who });
     case "newMemberDeleted":
       return fill(t["activity.newMemberDeleted"], { who, member: isolate(item.name) });
-    case "thanks":
-      return fill(t[`activity.thanks.${item.target}`], { who });
     case "theftStep":
       return fill(t["activity.theftStep"], { who, state: t[`thefts.state.${item.state}`] });
     // The rest is about a notice: saved, posted, deleted (D118), its picture added, kept or used in another
-    // notice (D119), or a review request or its outcome (D113).
+    // notice (D119), or a review request or its outcome (D113); else the thanks or the tracker key.
     default:
-      return noticeLine(t, who, item);
+      return "title" in item ? noticeLine(t, who, item) : plainLine(t, who, item);
   }
 }
 
