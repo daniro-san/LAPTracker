@@ -68,24 +68,29 @@ export function resolveFeatures(
   return { on: new Set(on), caps: settings.caps };
 }
 
-export const isFeature = (value: string): value is Feature =>
-  (FEATURES as readonly string[]).includes(value);
+/** Notice pictures are shown, warned about and cleaned up only while both notices and pictures are on. */
+export const picturesShown = (on: ReadonlySet<Feature>) =>
+  on.has("notices") && on.has("notice_pictures");
 
-/** Only known features survive a stored list: a key removed from the catalog is dropped, not served. */
-export const knownFeatures = (stored: readonly string[]): Feature[] => stored.filter(isFeature);
+/**
+ * A workspace's settings from its stored switches (null: no row yet). A feature with no stored key (one
+ * added to the catalog after the owner's last change) keeps the workspace's default, so a new paid feature
+ * starts off for every workspace but the own alliance; a stored key no longer in the catalog is ignored.
+ */
+export function storedSettings(
+  unionId: number,
+  switches: Readonly<Record<string, boolean>> | null,
+  caps: FeatureSettings["caps"],
+): FeatureSettings {
+  const defaults = defaultSettings(unionId);
+  if (switches === null) return defaults;
+  const isOff = (f: Feature) => (f in switches ? switches[f] === false : defaults.off.includes(f));
+  return { off: FEATURES.filter(isOff), caps };
+}
+
+/** Every catalog switch of `settings`, on or off: what "Copy settings from" stores. */
+export const switchMap = (settings: FeatureSettings): Record<string, boolean> =>
+  Object.fromEntries(FEATURES.map((f) => [f, !settings.off.includes(f)]));
 
 /** The UTC day a count belongs to: every allowance starts again at 00:00 UTC. */
 export const usageDay = (now: Date): string => now.toISOString().slice(0, 10);
-
-/** The settings with `feature` turned on or off (the owner's switch on /admin). */
-export function switched(s: FeatureSettings, feature: Feature, on: boolean): FeatureSettings {
-  const off = s.off.filter((f) => f !== feature);
-  return { ...s, off: on ? off : [...off, feature] };
-}
-
-/** The settings with a new daily cap for `allowance` (null: no cap). */
-export const capped = (
-  s: FeatureSettings,
-  allowance: Allowance,
-  cap: number | null,
-): FeatureSettings => ({ ...s, caps: { ...s.caps, [allowance]: cap } });

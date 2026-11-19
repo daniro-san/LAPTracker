@@ -40,7 +40,11 @@ export async function POST(
   return withContext("/api/w/[slug]/shots/read", slug, async (ctx, db) => {
     const access = await requireWorkspace(db, slug, requestCookies(request), ctx.now());
     if (!access.ok) return privateError(401, "signed_out");
-    if (!featureOn(access, "ocr")) return privateError(403, "turned_off");
+    // D126: the switch turns off "Read from a screenshot" (`button=1`) only; "Send screenshots", the
+    // phone's share and Secret Ops keep reading pictures.
+    const params = new URL(request.url).searchParams;
+    if (params.get("button") === "1" && !featureOn(access, "ocr"))
+      return privateError(403, "turned_off");
     const officer = access.user.id;
     // One reading at a time per officer, shared with the phone's share (D109, D110).
     if (!startReading(officer)) return privateError(429, "busy");
@@ -52,7 +56,7 @@ export async function POST(
       // app_errors keeps the code only, e.g. w.import.read_failed:reader:MODULE_NOT_FOUND.
       lines = await privately(
         (error) => failureCode("w.import.read_failed", error),
-        () => readUpload(bytes, false, new URL(request.url).searchParams.get("text") === "plain"),
+        () => readUpload(bytes, false, params.get("text") === "plain"),
       );
     } finally {
       endReading(officer);

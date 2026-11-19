@@ -49,7 +49,9 @@ async function readPictures(slug: string, files: File[], query: string) {
   for (const file of files) {
     try {
       const png = await toPng(file, STATUS_BAR);
-      const read = (await post(`/api/w/${slug}/shots/read${query}`, png, "image/png")) as {
+      // `button=1`: this is "Read from a screenshot", the one use of the reader its switch turns off (D126).
+      const url = `/api/w/${slug}/shots/read${query ? `${query}&` : "?"}button=1`;
+      const read = (await post(url, png, "image/png")) as {
         lines: string[];
       };
       pages.push(read.lines);

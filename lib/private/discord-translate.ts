@@ -9,7 +9,7 @@
 import { WRITING_LANGUAGES, type WritingLanguage } from "../ai/notice-writing";
 import { eventWorkspace, type EventWorkspace } from "../analytics/server";
 import type { Db } from "../db";
-import { findWorkspaceByGuild } from "../repo/import";
+import { findWorkspaceByGuild } from "../repo/workspaces";
 import {
   pickWorkspaceLanguage,
   WORKSPACE_DICTIONARIES,
@@ -74,6 +74,8 @@ export interface TranslateInput {
   locale: string | undefined;
   /** The person's permissions in this channel, as Discord resolved them (decimal). */
   permissions: string | undefined;
+  /** The person's roles in the server: which workspace it is when two share one (D126). */
+  roles?: readonly string[] | undefined;
   webhook: Webhook;
   /** Whether DISCORD_BOT_TOKEN is set, so the bot can open threads. */
   bot: boolean;
@@ -84,8 +86,10 @@ const privateReply = (content: string): TranslateAnswer => ({
 });
 
 /** The server's workspace with the features the owner has on for it (D126), or null. */
-async function guildWorkspace(db: Db, guildId: string | undefined): Promise<WithFeatures | null> {
-  const workspace = guildId ? await findWorkspaceByGuild(db, guildId) : null;
+async function guildWorkspace(db: Db, input: TranslateInput): Promise<WithFeatures | null> {
+  const workspace = input.guildId
+    ? await findWorkspaceByGuild(db, input.guildId, input.roles)
+    : null;
   return workspace && { workspaceId: workspace.id, features: await featuresById(db, workspace.id) };
 }
 
@@ -141,7 +145,7 @@ export async function translateCommand(
 ): Promise<TranslateAnswer> {
   const language = pickWorkspaceLanguage(undefined, input.locale ?? null);
   const t = WORKSPACE_DICTIONARIES[language];
-  const ws = await guildWorkspace(db, input.guildId);
+  const ws = await guildWorkspace(db, input);
   if (!ws || !input.userId || !input.channelId) {
     privateLog("discord.translate.refused");
     return privateReply(t["shots.discord.noDesk"]);
@@ -200,7 +204,7 @@ async function switchLanguage(
   const language = pickWorkspaceLanguage(undefined, input.locale ?? null);
   const t = WORKSPACE_DICTIONARIES[language];
   const refuse = (content: string) => ({ body: { type: UPDATE, data: { content } } });
-  const ws = await guildWorkspace(db, input.guildId);
+  const ws = await guildWorkspace(db, input);
   if (!ws) return refuse(t["shots.discord.noDesk"]);
   if (turnedOff(ws, "me")) return refuse(t["features.off.command"]);
   const checked = checkedText(t, language, shownText);
@@ -304,7 +308,7 @@ async function post(
   const t = WORKSPACE_DICTIONARIES[language];
   const refuse = (content: string) => ({ body: { type: UPDATE, data: { content } } });
   if (!places.includes(picker.where)) return refuse(t["translate.discord.cantPost"]);
-  const ws = await guildWorkspace(db, input.guildId);
+  const ws = await guildWorkspace(db, input);
   if (!ws) return refuse(t["shots.discord.noDesk"]);
   if (turnedOff(ws, "everyone")) return refuse(t["features.off.command"]);
   const checked = checkedText(t, language, shownText);

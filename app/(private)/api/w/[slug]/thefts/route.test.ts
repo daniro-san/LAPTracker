@@ -130,7 +130,7 @@ describe("the thefts log turned off for the workspace (D126)", () => {
       );
     };
     expect(await nav()).toContain("/w/ogs/thefts");
-    await db.insert(workspaceFeatures).values({ workspaceId: 1, off: ["thefts"] });
+    await db.insert(workspaceFeatures).values({ workspaceId: 1, switches: { thefts: false } });
     expect(await nav()).not.toContain("/w/ogs/thefts");
     expect(await add("ops")).toBe(403);
     expect(await db.select().from(thefts)).toEqual([]);

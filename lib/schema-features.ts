@@ -1,8 +1,18 @@
 // Per-workspace feature switches and daily caps (D126), apart from lib/schema.ts for its size; drizzle.config.ts
-// lists this file too. A workspace without a row has its defaults (lib/workspace-features.ts): no data
-// migration is needed, and the own alliance keeps everything on with no cap.
+// lists this file too. A workspace without a row, and a feature without a key in `switches` (one added to the
+// catalog later), has its defaults (lib/workspace-features.ts): no data migration is needed, the own alliance
+// keeps everything on with no cap, and a future paid feature starts off for any other workspace.
 import { sql } from "drizzle-orm";
-import { check, date, integer, pgTable, primaryKey, text, timestamp } from "drizzle-orm/pg-core";
+import {
+  check,
+  date,
+  integer,
+  jsonb,
+  pgTable,
+  primaryKey,
+  text,
+  timestamp,
+} from "drizzle-orm/pg-core";
 
 import { workspaces } from "./schema";
 
@@ -13,8 +23,8 @@ export const workspaceFeatures = pgTable(
     workspaceId: integer("workspace_id")
       .primaryKey()
       .references(() => workspaces.id, { onDelete: "cascade" }),
-    /** The features turned off (lib/workspace-features.ts keys). */
-    off: text("off").array().notNull(),
+    /** Each switch the owner set, by its lib/workspace-features.ts key: true on, false off. */
+    switches: jsonb("switches").$type<Record<string, boolean>>().notNull(),
     /** Groq requests a UTC day; null: no cap. */
     aiPerDay: integer("ai_per_day"),
     /** Discord translations (languages) a UTC day; null: no cap. */

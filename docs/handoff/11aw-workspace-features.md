@@ -42,6 +42,14 @@
   - Each workspace card has a "Features: n of 18 on · AI today · translations today" disclosure. Inside: the grouped one-tap switches, the two caps with "Today: 12 of 50", and "Copy settings from" (asked first).
   - Above the list, "Paid features, every workspace" has Pause and Resume for AI and for Discord Translate.
   - Each change sends `ws_action` `features` / `turn_on|turn_off|cap|copy|pause|resume`, with no person and `area` admin.
+- **Review of PR #463, fixed:**
+  - Two workspaces on one Discord server: `findWorkspaceByGuild` (moved to `lib/repo/workspaces.ts`) takes the one whose leadership roles the person has, else member roles, else the lowest id. It serves the import command and both Translate commands.
+  - `ocr` off turns off only the D109 button (its request carries `button=1`); "Send screenshots", the phone's share and Secret Ops keep reading.
+  - The weekly picture cleanup skips a workspace with notices or pictures off and clears its warnings. Switching either feature, or a copy, clears them too, so a full 7-day warning comes again.
+  - Storage is a switch map (`switches` jsonb), not an off list. A key it lacks keeps its default, so a future paid feature starts off for non-OGs workspaces with a row. A switch is one statement (`switches || jsonb_build_object(...)`), a cap sets its own column, and copy writes every catalog key. /admin's switches and pause buttons are disabled until a press is answered and the page refreshed (`useTransition`).
+  - Calendar: the entry sheet offers no Caravan while Caravans is off (a new entry starts on the first kind offered). With Notices off it has no notice link, and the page does not read `noticesList`.
+  - A partly failed request gives back only the failed texts' units (`settled` in `lib/private/features.ts`; the notice Translate and the thanks draft).
+  - Tests: the thanks draft route (turned off, cap, partial give-back), the guild pick, `squadTargets` with squads off, `/img/notice` 404 while off, the cleanup while off, `giveBack` at 0, a missing catalog key's default, and `schema-features` in the purge guard.
 - **Docs:**
   - D126 and its index line.
   - Dated amendments in D101 and D124.
@@ -64,6 +72,7 @@
   - **Caravans:** the Caravans view, and adding or picking caravans. Existing caravan entries stay on the week.
   - **Squads:** the nightly read only. Stored squads are still shown.
   - **Notice pictures:** the picture field, serving pictures, and posting them to Discord. Stored pictures stay.
+- **The storage moved from an off list to a switch map** (review of #463). The migration is still only `0050_workspace_features`, regenerated from dev's journal; it was never merged, so no data needs moving.
 - **Only the AI allowance is given back on a Groq failure** (the owner's answer named the AI count). Discord translations keep D101's rule: nothing is given back, neither D101's own counters nor the `translate` allowance. An answer that came back, even Shorten's `still_over`, stays counted.
 - **The `ws_action` feature is named `features`, not `workspace_features`.** The longer name widened the tracking-plan table, and prettier then rewrote every row of it (a merge conflict with #449).
 
@@ -84,9 +93,9 @@
 
 ## Verified
 
-- After the rebase on dev (#449 merged), `pnpm check` passes: prettier, eslint, tsc, 222 test files (1,195 tests), migration drift, i18n.
+- After the review fixes, `pnpm check` passes: prettier, eslint, tsc, 223 test files (1,202 tests), migration drift, i18n.
 - All 51 migrations, `0049_workspace_retention` and `0050_workspace_features` included, applied from an empty local Postgres 18 (`pnpm db:local:migrate`).
-- The e2e below passed again, 100 of 100, on a production build of the rebased branch. A second e2e passed 10 of 10 at EN light 360 and PT dark 1280:
+- The e2e below passed again, 100 of 100, on a production build after the review fixes (switch map storage, atomic switches, busy chips). A second e2e passed 10 of 10 at EN light 360 and PT dark 1280:
   - "Download our data" is on by default;
   - with export off, the card is gone and `data-export` answers 403 `turned_off`;
   - Follow-up links to the thefts log while thefts is on, and has no thefts link while it is off.

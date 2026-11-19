@@ -6,11 +6,11 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { OWN_ALLIANCE_ID } from "../../config/alliances";
 import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
-import { changeSettings, setPaused } from "../repo/workspace-features";
+import { setCap, setPaused } from "../repo/workspace-features";
 import { saveWorkspace } from "../repo/workspaces";
-import { allowancePauses } from "../schema-features";
-import { capped, FEATURES, SPENDS } from "../workspace-features";
-import { featuresBySlug, useAllowance } from "./features";
+import { allowancePauses, workspaceUsage } from "../schema-features";
+import { FEATURES, SPENDS, storedSettings } from "../workspace-features";
+import { featuresBySlug, giveBackAllowance, useAllowance } from "./features";
 
 const NOW = new Date("2026-11-19T23:59:00Z");
 const NEXT_DAY = new Date("2026-11-20T00:01:00Z");
@@ -65,7 +65,7 @@ describe("defaults (D126)", () => {
 
 describe("useAllowance (D126)", () => {
   const ws = async (cap: number | null) => {
-    await changeSettings(db, 1, (s) => capped(s, "ai", cap), NOW);
+    await setCap(db, 1, "ai", cap, NOW);
     return { workspaceId: 1, features: await served("ogs") };
   };
 
@@ -95,5 +95,30 @@ describe("useAllowance (D126)", () => {
       Array.from({ length: 4 }, () => useAllowance(db, open, "ai", 1, NOW)),
     );
     expect(free.every((a) => a === "ok")).toBe(true);
+  });
+
+  it("gives units back without going below 0, so they can be spent again", async () => {
+    const holder = await ws(2);
+    expect(await useAllowance(db, holder, "ai", 2, NOW)).toBe("ok");
+    await giveBackAllowance(db, holder, "ai", 1, NOW);
+    expect(await useAllowance(db, holder, "ai", 1, NOW)).toBe("ok");
+    expect(await useAllowance(db, holder, "ai", 1, NOW)).toBe("cap_reached");
+    await giveBackAllowance(db, holder, "ai", 5, NOW);
+    expect(await db.select({ used: workspaceUsage.used }).from(workspaceUsage)).toEqual([
+      { used: 0 },
+    ]);
+  });
+});
+
+describe("a feature added to the catalog later (D126)", () => {
+  it("keeps the workspace's default: off for a paid one in a workspace that has a row, on for OGs", () => {
+    // A row saved before `notice_fit` existed: only its own keys.
+    const saved = { notice_translate: true, roll_call: false };
+    const caps = { ai: null, translate: null };
+    const nse = storedSettings(67109944, saved, caps);
+    expect(nse.off).toContain("notice_fit");
+    expect(nse.off).toContain("roll_call");
+    expect(nse.off).not.toContain("notice_translate");
+    expect(storedSettings(OWN_ALLIANCE_ID, saved, caps).off).toEqual(["roll_call"]);
   });
 });

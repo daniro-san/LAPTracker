@@ -10,9 +10,16 @@ import { z } from "zod";
 import { captureServer, sendLater, type DeskAction } from "@/lib/analytics/server";
 import type { AppContext } from "@/lib/app-context";
 import { authorize } from "@/lib/auth";
-import { changeSettings, setPaused, settingsById } from "@/lib/repo/workspace-features";
+import type { Db } from "@/lib/db";
+import {
+  copySettings,
+  setCap,
+  setPaused,
+  setSwitch,
+  settingsById,
+} from "@/lib/repo/workspace-features";
 import { errorResponse, withContext } from "@/lib/route";
-import { ALLOWANCES, capped, FEATURES, switched, type Feature } from "@/lib/workspace-features";
+import { ALLOWANCES, FEATURES, type Feature } from "@/lib/workspace-features";
 
 const id = z.number().int().positive();
 const allowance = z.enum(ALLOWANCES);
@@ -47,6 +54,26 @@ function done(ctx: AppContext, action: DeskAction): Response {
   return Response.json({ ok: true });
 }
 
+type Change = Exclude<z.infer<typeof body>, { action: "pause" }>;
+
+/**
+ * One workspace's change, each one statement (D126): two quick taps never undo each other. The action to
+ * count, or the status to refuse with (400 a copy onto itself, 404 no such workspace).
+ */
+async function change(db: Db, b: Change, now: Date): Promise<DeskAction | 400 | 404> {
+  if (b.action === "copy") {
+    if (b.from_id === b.workspace_id) return 400;
+    const from = await settingsById(db, b.from_id);
+    if (!from) return 404;
+    return (await copySettings(db, b.workspace_id, from.settings, now)) ? "copy" : 404;
+  }
+  if (b.action === "cap") {
+    return (await setCap(db, b.workspace_id, b.allowance, b.cap, now)) ? "cap" : 404;
+  }
+  const action = b.on ? "turn_on" : "turn_off";
+  return (await setSwitch(db, b.workspace_id, b.feature, b.on, now)) ? action : 404;
+}
+
 export function POST(request: Request): Promise<Response> {
   return withContext("/api/admin/workspaces/features", async (ctx, db) => {
     const auth = await authorize(request.headers, db, ctx, { cron: false, pin: true });
@@ -59,20 +86,9 @@ export function POST(request: Request): Promise<Response> {
       await setPaused(db, b.allowance, b.paused, now);
       return done(ctx, b.paused ? "pause" : "resume");
     }
-    if (b.action === "copy") {
-      if (b.from_id === b.workspace_id) return errorResponse(400, "bad_request");
-      const from = await settingsById(db, b.from_id);
-      if (!from) return errorResponse(404, "workspace_not_found");
-      const copied = await changeSettings(db, b.workspace_id, () => from.settings, now);
-      return copied ? done(ctx, "copy") : errorResponse(404, "workspace_not_found");
-    }
-    const changed = await changeSettings(
-      db,
-      b.workspace_id,
-      (s) => (b.action === "switch" ? switched(s, b.feature, b.on) : capped(s, b.allowance, b.cap)),
-      now,
-    );
-    if (!changed) return errorResponse(404, "workspace_not_found");
-    return done(ctx, b.action === "cap" ? "cap" : b.on ? "turn_on" : "turn_off");
+    const result = await change(db, b, now);
+    if (result === 400) return errorResponse(400, "bad_request");
+    if (result === 404) return errorResponse(404, "workspace_not_found");
+    return done(ctx, result);
   });
 }

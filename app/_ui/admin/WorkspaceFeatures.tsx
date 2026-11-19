@@ -38,6 +38,7 @@ function Group(props: {
   view: FeaturesView;
   paused: Allowance[];
   run: Run;
+  busy: boolean;
 }) {
   return (
     <fieldset className="mt-3">
@@ -52,6 +53,7 @@ function Group(props: {
               <button
                 type="button"
                 aria-pressed={on}
+                disabled={props.busy}
                 className={chip(on)}
                 onClick={() =>
                   props.run({
@@ -160,6 +162,8 @@ export function WorkspaceFeatures(props: {
   others: { id: number; slug: string }[];
   paused: Allowance[];
   run: Run;
+  /** A press is on its way: the switches wait for it (D126). */
+  busy: boolean;
 }) {
   const { id, features: view } = props.w;
   const on = FEATURES.filter((f) => !view.off.includes(f)).length;
@@ -180,6 +184,7 @@ export function WorkspaceFeatures(props: {
           view={view}
           paused={props.paused}
           run={props.run}
+          busy={props.busy}
         />
       ))}
       <h4 className="mt-4 font-semibold">{t.caps.head}</h4>
@@ -197,7 +202,15 @@ export function WorkspaceFeatures(props: {
 }
 
 /** The owner's pause of each paid allowance, for every workspace at once. */
-export function PausedSwitches({ paused, run }: { paused: Allowance[]; run: Run }) {
+export function PausedSwitches({
+  paused,
+  run,
+  busy,
+}: {
+  paused: Allowance[];
+  run: Run;
+  busy: boolean;
+}) {
   return (
     <section aria-labelledby="paused-head" className="mb-4 border-b border-rule pb-4">
       <h3 id="paused-head" className="font-subhead text-display-sm">
@@ -217,6 +230,7 @@ export function PausedSwitches({ paused, run }: { paused: Allowance[]; run: Run 
               </span>
               <button
                 type="button"
+                disabled={busy}
                 className={buttonClass("secondary")}
                 onClick={() =>
                   run({

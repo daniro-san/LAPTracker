@@ -17,6 +17,26 @@ export async function findWorkspaceBySlug(db: Db, slug: string): Promise<Workspa
   return row ?? null;
 }
 
+/**
+ * The workspace whose Discord server this is: the Discord command's way in; null when none. Two workspaces
+ * may share a server (D126): the one whose leadership roles the person has, else whose member roles, else
+ * the oldest (lowest id), so the answer never depends on the database's row order.
+ */
+export async function findWorkspaceByGuild(db: Db, guildId: string, roles: readonly string[] = []) {
+  const rows = await db
+    .select()
+    .from(workspaces)
+    .where(eq(workspaces.discordGuildId, guildId))
+    .orderBy(asc(workspaces.id));
+  const has = (ids: string[]) => ids.some((id) => roles.includes(id));
+  return (
+    rows.find((w) => has(w.leaderRoleIds)) ??
+    rows.find((w) => has(w.memberRoleIds)) ??
+    rows[0] ??
+    null
+  );
+}
+
 /** Every workspace's Discord server id, once each: where /admin registers the Discord command (D96). */
 export async function workspaceGuildIds(db: Db): Promise<string[]> {
   const rows = await db

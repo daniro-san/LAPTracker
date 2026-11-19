@@ -198,6 +198,6 @@ export async function seedKeyAndData(db: Db, ws: number, unionId: number, office
     requestId: `data-${ws}`,
   });
   // D126: the owner's switches and the day's count.
-  await db.insert(workspaceFeatures).values({ workspaceId: ws, off: ["thefts"] });
+  await db.insert(workspaceFeatures).values({ workspaceId: ws, switches: { thefts: false } });
   await db.insert(workspaceUsage).values({ workspaceId: ws, allowance: "ai", day: DAY, used: 3 });
 }

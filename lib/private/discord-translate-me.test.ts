@@ -5,11 +5,10 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
 import { currentCount, recordFailure } from "../repo/auth-attempts";
-import { changeSettings } from "../repo/workspace-features";
+import { setCap, setSwitch } from "../repo/workspace-features";
 import { saveWorkspace } from "../repo/workspaces";
 import { authAttempts } from "../schema";
 import { workspaceUsage } from "../schema-features";
-import { capped, switched } from "../workspace-features";
 import { translateCommand, translateComponent, type TranslateInput } from "./discord-translate";
 import { TRANSLATE_PER_DAY, TRANSLATE_PER_MINUTE } from "./translate-limits";
 
@@ -130,13 +129,8 @@ describe("the alliance's own switches and daily cap (D126)", () => {
     );
 
   it("a command turned off answers the line at once and counts nothing", async () => {
-    await changeSettings(
-      db,
-      1,
-      (s) =>
-        switched(switched(s, "discord_translate_me", false), "discord_translate_everyone", false),
-      NOW,
-    );
+    await setSwitch(db, 1, "discord_translate_me", false, NOW);
+    await setSwitch(db, 1, "discord_translate_everyone", false, NOW);
     const me = await command("me", { locale: "fr" });
     expect(me.translation).toBeUndefined();
     expect(contentOf(me)).toBe("Cette commande est désactivée pour votre alliance.");
@@ -155,8 +149,25 @@ describe("the alliance's own switches and daily cap (D126)", () => {
     expect(await db.select().from(workspaceUsage)).toEqual([]);
   });
 
+  it("on a server two workspaces share, takes the one whose roles the person has, else the oldest", async () => {
+    await saveWorkspace(db, {
+      unionId: 67109944,
+      slug: "nse",
+      discordGuildId: "1544808864262914060",
+      leaderRoleIds: ["1600000000000000900"],
+      memberRoleIds: ["1600000000000000901"],
+    });
+    // The sister workspace is new, so its Discord Translate is off; OGs' is on.
+    const ogs = await command("me", { locale: "fr", roles: ["1571951836724990113"] });
+    expect(ogs.translation).toBeDefined();
+    expect(contentOf(await command("me", { locale: "fr", roles: ["1600000000000000901"] }))).toBe(
+      "Cette commande est désactivée pour votre alliance.",
+    );
+    expect((await command("me", { locale: "fr", roles: [] })).translation).toBeDefined();
+  });
+
   it("past the alliance's daily cap, says it is used up and when it resets", async () => {
-    await changeSettings(db, 1, (s) => capped(s, "translate", 1), NOW);
+    await setCap(db, 1, "translate", 1, NOW);
     expect((await command("me", { locale: "fr" })).translation).toBeDefined();
     expect(contentOf(await command("me", { locale: "pt-BR", userId: OTHER }))).toBe(
       "O limite diário desta aliança para traduções acabou. Ele volta às 00:00 UTC.",

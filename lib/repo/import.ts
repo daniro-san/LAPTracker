@@ -4,7 +4,7 @@
 import { and, desc, eq, gt, inArray, isNull, lte, ne, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
-import { dailyRosters, workspaces, workspaceUsers } from "../schema";
+import { dailyRosters, workspaceUsers } from "../schema";
 import {
   allianceDuelPoints,
   discordPictures,
@@ -313,12 +313,6 @@ export async function pastNames(
         sql`, `,
       )})`);
   return result.rows.map((r) => ({ uid: Number(r.uid), name: r.name }));
-}
-
-/** The workspace whose Discord server this is: the Discord command's way in; null when none. */
-export async function findWorkspaceByGuild(db: Db, guildId: string) {
-  const [row] = await db.select().from(workspaces).where(eq(workspaces.discordGuildId, guildId));
-  return row ?? null;
 }
 
 /**

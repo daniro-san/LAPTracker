@@ -20,7 +20,7 @@ import {
 import { eventWorkspace } from "@/lib/analytics/server";
 import { requireWorkspace } from "@/lib/private/access";
 import { counted } from "@/lib/private/desk-action";
-import { featureOn, giveBackAllowance, useAllowance } from "@/lib/private/features";
+import { featureOn, giveBackAllowance, settled, useAllowance } from "@/lib/private/features";
 import { isSameOriginJson, NO_STORE, privateError, requestCookies } from "@/lib/private/http";
 import { privateLog } from "@/lib/private/log";
 import { DRAFT_LIMIT, NOTICE_LIMIT, noticeLength } from "@/lib/private/notice-rules";
@@ -92,14 +92,17 @@ export async function POST(
     if ((await useAllowance(db, access, "ai", units, countedAt)) !== "ok")
       return privateError(429, "cap_reached");
     const started = countedAt.getTime();
+    let failed = units;
     try {
       let answers: Answer[];
       if (ask.kind === "translate") {
-        answers = await Promise.all(
+        // A language the model did not answer is given back alone; the others were spent (D126).
+        answers = await settled(
           ask.to.map(async (to) => ({
             to,
             ...(await translateText(ai, ask.from, to, ask.text, ask.limit ?? NOTICE_LIMIT)),
           })),
+          (n) => (failed = n),
         );
       } else if (ask.kind === "improve") {
         const improved = await improveText(
@@ -134,7 +137,7 @@ export async function POST(
     } catch (error) {
       if (!(error instanceof ChatError)) throw error;
       // D126: the model did not answer, so the alliance's daily count gets these units back.
-      await giveBackAllowance(db, access, "ai", units, countedAt);
+      await giveBackAllowance(db, access, "ai", failed, countedAt);
       privateLog(`notices.${ask.kind}.${error.kind}`, { ms: ctx.now().getTime() - started });
       return privateError(FAILURE[error.kind], error.kind);
     }

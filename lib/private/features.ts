@@ -73,6 +73,20 @@ export async function useAllowance(
 }
 
 /**
+ * Every text asked of the model at once (one unit each), or the first failure once all have settled, after
+ * `onFailed` heard how many failed: only those units are given back, the answered ones were spent.
+ */
+export async function settled<T>(asks: Promise<T>[], onFailed: (n: number) => void): Promise<T[]> {
+  const results = await Promise.allSettled(asks);
+  const failed = results.flatMap((r) => (r.status === "rejected" ? [r.reason as unknown] : []));
+  if (failed.length > 0) {
+    onFailed(failed.length);
+    throw failed[0];
+  }
+  return results.flatMap((r) => (r.status === "fulfilled" ? [r.value] : []));
+}
+
+/**
  * Gives back the units `useAllowance` counted at `countedAt` when the model did not answer (busy, timeout,
  * failed): the owner's limit was not spent, so the alliance's count is not either (owner, 2026-11-19).
  */

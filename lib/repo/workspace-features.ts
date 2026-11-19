@@ -1,16 +1,19 @@
 // workspace_features, workspace_usage and allowance_pauses (D126): each workspace's switches and daily caps,
 // what it used of each allowance per UTC day, and the owner's global pauses. Counts only: nothing here says
-// who asked or what was asked.
+// who asked or what was asked. Every change the owner makes is one statement, so quick taps on /admin
+// never undo each other.
 import { and, asc, eq, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { workspaces } from "../schema";
 import { allowancePauses, workspaceFeatures, workspaceUsage } from "../schema-features";
+import { noticePictures } from "../schema-notices";
 import {
   ALLOWANCES,
-  defaultSettings,
-  knownFeatures,
+  storedSettings,
+  switchMap,
   type Allowance,
+  type Feature,
   type FeatureSettings,
 } from "../workspace-features";
 
@@ -24,7 +27,7 @@ export interface WorkspaceSettings {
 const COLUMNS = {
   workspaceId: workspaces.id,
   unionId: workspaces.unionId,
-  off: workspaceFeatures.off,
+  switches: workspaceFeatures.switches,
   aiPerDay: workspaceFeatures.aiPerDay,
   translatePerDay: workspaceFeatures.translatePerDay,
 };
@@ -32,21 +35,19 @@ const COLUMNS = {
 type Row = {
   workspaceId: number;
   unionId: number;
-  off: string[] | null;
+  switches: Record<string, boolean> | null;
   aiPerDay: number | null;
   translatePerDay: number | null;
 };
 
-function settingsOf(row: Row): WorkspaceSettings {
-  const settings =
-    row.off === null
-      ? defaultSettings(row.unionId)
-      : {
-          off: knownFeatures(row.off),
-          caps: { ai: row.aiPerDay, translate: row.translatePerDay },
-        };
-  return { workspaceId: row.workspaceId, unionId: row.unionId, settings };
-}
+const settingsOf = (row: Row): WorkspaceSettings => ({
+  workspaceId: row.workspaceId,
+  unionId: row.unionId,
+  settings: storedSettings(row.unionId, row.switches, {
+    ai: row.aiPerDay,
+    translate: row.translatePerDay,
+  }),
+});
 
 const withSettings = (db: Db) =>
   db
@@ -64,7 +65,7 @@ export async function settingsById(db: Db, workspaceId: number): Promise<Workspa
   return row ? settingsOf(row) : null;
 }
 
-/** Every workspace's settings, for /admin and the squads read. */
+/** Every workspace's settings, for /admin, the squads read and the picture cleanup. */
 export async function allSettings(db: Db): Promise<WorkspaceSettings[]> {
   const rows = await withSettings(db).orderBy(asc(workspaces.id));
   return rows.map(settingsOf);
@@ -76,35 +77,98 @@ export async function pausedAllowances(db: Db): Promise<Allowance[]> {
   return ALLOWANCES.filter((a) => rows.some((r) => r.allowance === a));
 }
 
-export async function saveSettings(
+/**
+ * Upserts the workspace's row in one statement: `insert` holds the new row (only for a workspace that
+ * exists), `update` what changes on a row already there. False: no such workspace.
+ */
+async function upsert(
+  db: Db,
+  workspaceId: number,
+  insert: { switches: unknown; ai?: unknown; translate?: unknown },
+  update: unknown,
+  now: Date,
+): Promise<boolean> {
+  const result = await db.execute<{ workspace_id: number }>(sql`
+    insert into ${workspaceFeatures} (workspace_id, switches, ai_per_day, translate_per_day, updated_at)
+    select id, ${insert.switches}, ${insert.ai ?? sql`null`}, ${insert.translate ?? sql`null`},
+      ${now.toISOString()}::timestamptz
+    from ${workspaces} where id = ${workspaceId}
+    on conflict (workspace_id) do update set ${update}, updated_at = excluded.updated_at
+    returning workspace_id`);
+  return result.rows.length > 0;
+}
+
+/** D119's warnings start again from nothing when notices or their pictures are switched (D126). */
+async function restartPictureWarnings(db: Db, workspaceId: number): Promise<void> {
+  await db
+    .update(noticePictures)
+    .set({ warnedAt: null })
+    .where(eq(noticePictures.workspaceId, workspaceId));
+}
+
+/** One switch on or off: that key alone changes; the others keep what they were, or their defaults. */
+export async function setSwitch(
+  db: Db,
+  workspaceId: number,
+  feature: Feature,
+  on: boolean,
+  now: Date,
+): Promise<boolean> {
+  const value = sql`jsonb_build_object(${feature}::text, ${on}::boolean)`;
+  const done = await upsert(
+    db,
+    workspaceId,
+    { switches: value },
+    sql`switches = ${workspaceFeatures}.switches || excluded.switches`,
+    now,
+  );
+  if (done && (feature === "notices" || feature === "notice_pictures")) {
+    await restartPictureWarnings(db, workspaceId);
+  }
+  return done;
+}
+
+/** One daily cap (null: no cap); the switches are left as they are. */
+export async function setCap(
+  db: Db,
+  workspaceId: number,
+  allowance: Allowance,
+  cap: number | null,
+  now: Date,
+): Promise<boolean> {
+  const column = sql.raw(allowance === "ai" ? "ai_per_day" : "translate_per_day");
+  const value = sql`${cap}::int`;
+  return upsert(
+    db,
+    workspaceId,
+    { switches: sql`'{}'::jsonb`, [allowance]: value },
+    sql`${column} = excluded.${column}`,
+    now,
+  );
+}
+
+/** "Copy settings from": every catalog switch and both caps of `settings`, as served. */
+export async function copySettings(
   db: Db,
   workspaceId: number,
   settings: FeatureSettings,
   now: Date,
-): Promise<void> {
-  const values = {
-    off: [...settings.off],
-    aiPerDay: settings.caps.ai,
-    translatePerDay: settings.caps.translate,
-    updatedAt: now,
-  };
-  await db
-    .insert(workspaceFeatures)
-    .values({ workspaceId, ...values })
-    .onConflictDoUpdate({ target: workspaceFeatures.workspaceId, set: values });
-}
-
-/** Applies `change` to the workspace's settings (its defaults when it has none yet); false: no such workspace. */
-export async function changeSettings(
-  db: Db,
-  workspaceId: number,
-  change: (settings: FeatureSettings) => FeatureSettings,
-  now: Date,
 ): Promise<boolean> {
-  const found = await settingsById(db, workspaceId);
-  if (!found) return false;
-  await saveSettings(db, workspaceId, change(found.settings), now);
-  return true;
+  const values = {
+    switches: sql`${JSON.stringify(switchMap(settings))}::jsonb`,
+    ai: sql`${settings.caps.ai}::int`,
+    translate: sql`${settings.caps.translate}::int`,
+  };
+  const done = await upsert(
+    db,
+    workspaceId,
+    values,
+    sql`switches = excluded.switches, ai_per_day = excluded.ai_per_day,
+      translate_per_day = excluded.translate_per_day`,
+    now,
+  );
+  if (done) await restartPictureWarnings(db, workspaceId);
+  return done;
 }
 
 export async function setPaused(

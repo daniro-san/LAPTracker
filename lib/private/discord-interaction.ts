@@ -10,8 +10,8 @@ import { z } from "zod";
 
 import { IMPORT_COMMAND, TRANSLATE_FOR_EVERYONE, TRANSLATE_FOR_ME } from "../app-commands";
 import type { Db } from "../db";
-import { claimPictures, findWorkspaceByGuild, picturesDrafts, recordOfficer } from "../repo/import";
-import { findWorkspaceUser } from "../repo/workspaces";
+import { claimPictures, picturesDrafts, recordOfficer } from "../repo/import";
+import { findWorkspaceByGuild, findWorkspaceUser } from "../repo/workspaces";
 import { officerAccess, type WorkspaceAccess } from "./access";
 import {
   pickWorkspaceLanguage,
@@ -157,7 +157,7 @@ function parse(body: string): Interaction | null {
 async function officerOf(db: Db, interaction: Interaction, now: Date) {
   const member = interaction.member;
   const workspace = interaction.guild_id
-    ? await findWorkspaceByGuild(db, interaction.guild_id)
+    ? await findWorkspaceByGuild(db, interaction.guild_id, member?.roles)
     : null;
   if (!workspace || !member) return { refused: "shots.discord.noDesk" as const };
   const known = await findWorkspaceUser(db, workspace.id, member.user.id);
@@ -249,6 +249,7 @@ const translateInput = (i: Interaction, bot: boolean) => ({
   userId: i.member?.user.id,
   locale: i.locale,
   permissions: i.member?.permissions,
+  roles: i.member?.roles,
   webhook: { applicationId: i.application_id, token: i.token },
   bot,
 });

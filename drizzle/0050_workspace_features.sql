@@ -6,7 +6,7 @@ CREATE TABLE "allowance_pauses" (
 --> statement-breakpoint
 CREATE TABLE "workspace_features" (
 	"workspace_id" integer PRIMARY KEY NOT NULL,
-	"off" text[] NOT NULL,
+	"switches" jsonb NOT NULL,
 	"ai_per_day" integer,
 	"translate_per_day" integer,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,

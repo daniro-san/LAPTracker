@@ -4,6 +4,7 @@
 import { calendarDays } from "@/lib/private/calendar";
 import { addDays, mondayOf, weekDays } from "@/lib/private/calendar-time";
 import { calendarDates } from "@/lib/private/calendar-words";
+import { featureOn } from "@/lib/private/features";
 import { noticesList, titlesOf } from "@/lib/private/notices";
 import { FEATURES } from "@/lib/workspace-features";
 
@@ -35,7 +36,8 @@ export default async function CalendarPage({
       const grid = gridOf(monday);
       const [placed, notices] = await Promise.all([
         calendarDays(db, access, grid.from, grid.to),
-        noticesList(db, access),
+        // D126: no notice to link while notices are turned off.
+        featureOn(access, "notices") ? noticesList(db, access) : [],
       ]);
       // The linked notices' titles by id: a link to a notice outside the newest 200 keeps its title.
       const linked = placed.flatMap((p) => (p.entry.noticeId === null ? [] : [p.entry.noticeId]));

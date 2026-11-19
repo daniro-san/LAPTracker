@@ -284,7 +284,7 @@ export function CalendarAgenda(props: {
           words={words}
           slug={props.slug}
           zone={props.zone}
-          notices={props.notices}
+          {...{ notices: props.notices, off: props.off }}
           mode={open}
           onDone={done}
           onDeleted={(entry) => setDeleted({ entry, day: open.add ? open.day : open.item.day })}

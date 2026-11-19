@@ -1,5 +1,5 @@
 {
-  "id": "5e0da0be-5f12-4b5e-8c85-4cd8203b0f37",
+  "id": "442dc662-6cf9-4270-a5b3-9b3d8e6d4e97",
   "prevId": "2c23da71-1b53-4293-97c7-9f1875183217",
   "version": "7",
   "dialect": "postgresql",
@@ -6078,9 +6078,9 @@
           "primaryKey": true,
           "notNull": true
         },
-        "off": {
-          "name": "off",
-          "type": "text[]",
+        "switches": {
+          "name": "switches",
+          "type": "jsonb",
           "primaryKey": false,
           "notNull": true
         },
