@@ -2,6 +2,7 @@
 // sends it as PNG, without the phone's status bar and scaled down; the OCR reads it and its text lines come
 // back. The picture is read in memory and not kept. Officers of the workspace only (D71). Also "Read from a
 // screenshot" beside the facts' paste boxes (D109): one read at a time per officer, else 429 `busy`.
+// `?text=plain` reads the picture in plain grey only, for the garrison plan's enemy might (D121).
 import { requireWorkspace } from "@/lib/private/access";
 import { counted } from "@/lib/private/desk-action";
 import {
@@ -49,7 +50,7 @@ export async function POST(
       // app_errors keeps the code only, e.g. w.import.read_failed:reader:MODULE_NOT_FOUND.
       lines = await privately(
         (error) => failureCode("w.import.read_failed", error),
-        () => readUpload(bytes),
+        () => readUpload(bytes, false, new URL(request.url).searchParams.get("text") === "plain"),
       );
     } finally {
       endReading(officer);

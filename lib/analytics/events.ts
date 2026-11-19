@@ -72,7 +72,10 @@ export interface AnalyticsEvents {
   /** Members' "Paste updates" → Check: a draft made, no line with a name and a value, or the request failed. */
   ws_updates_pasted: { outcome: "draft" | "nothing" | "failed" };
   /** "Read from a screenshot" beside a paste box: where, and whether text came back. */
-  ws_text_read: { place: "paste_updates" | "facts"; outcome: "read" | "failed" | "busy" };
+  ws_text_read: {
+    place: "paste_updates" | "facts" | "garrison";
+    outcome: "read" | "failed" | "busy";
+  };
   /** A notice's "Fit to 1,000" filled a draft (D113). */
   ws_notice_fit: NoProperties;
   /** Translate, Improve writing or Fit gave no draft. */

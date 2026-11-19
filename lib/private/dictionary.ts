@@ -6,6 +6,7 @@ import { boardEn } from "./dictionary.board";
 import { calendarEn } from "./dictionary.calendar";
 import { followUpEn } from "./dictionary.followup";
 import { fr } from "./dictionary.fr";
+import { garrisonEn } from "./dictionary.garrison";
 import { importEn } from "./dictionary.import";
 import { lifecycleEn } from "./dictionary.lifecycle";
 import { membersEn } from "./dictionary.members";
@@ -266,6 +267,7 @@ const en = {
   ...activityEn,
   ...shareEn,
   ...squadsEn,
+  ...garrisonEn,
 } as const;
 
 export type WorkspaceKey = keyof typeof en;

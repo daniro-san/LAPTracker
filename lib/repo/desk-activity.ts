@@ -8,6 +8,7 @@ import type { Db } from "../db";
 import { memberFacts, workspaceSessions, workspaceUsers } from "../schema";
 import { thefts } from "../schema-thefts";
 import { callParts, callRows, type CallKind, type CallRows } from "./desk-activity-calls";
+import * as garrison from "./desk-activity-garrison";
 import * as picture from "./desk-activity-pictures";
 import { reviewParts, reviewRows, type ReviewKind, type ReviewRows } from "./desk-activity-reviews";
 import { thanksParts, type ThanksDone } from "./desk-activity-thanks";
@@ -73,7 +74,7 @@ export type FollowUpDone = Done & {
 };
 export type TheftsDone = Done & { count: number };
 export type NewMemberDone = Done & { name: string };
-export interface ActivityRows extends ReviewRows, TrashRows, picture.Rows, CallRows {
+export interface ActivityRows extends ReviewRows, TrashRows, picture.Rows, CallRows, garrison.Rows {
   facts: FactsDone[];
   noticeSaves: NoticeDone[];
   noticePosts: NoticeDone[];
@@ -117,7 +118,7 @@ type OwnKind = "noticeSaved" | "noticePosted" | "draft" | "entry" | "newMember" 
 
 /** One row of the small sources' read; the columns each kind does not use are null. */
 type SmallRow = {
-  kind: OwnKind | ReviewKind | TrashKind | picture.Kind | CallKind | "thanks";
+  kind: OwnKind | ReviewKind | TrashKind | picture.Kind | CallKind | garrison.Kind | "thanks";
   by: number | string;
   at: Date | string;
   notice_id: number | null;
@@ -187,7 +188,8 @@ async function smallSources(
     ${thanksParts(ws, since, before, n)}
     ${trashParts(ws, since, before, n)}
     ${picture.parts(ws, since, before, n)}
-    ${callParts(ws, since, before, n)}`);
+    ${callParts(ws, since, before, n)}
+    ${garrison.parts(ws, since, before, n)}`);
   return result.rows;
 }
 
@@ -318,6 +320,7 @@ function split(rows: SmallRow[]) {
     })),
     thanks: of("thanks").map(({ by, at, a }) => ({ by, at, target: a as ThanksDone["target"] })),
     ...callRows(of),
+    ...garrison.rows(of),
   };
 }
 

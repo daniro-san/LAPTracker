@@ -130,3 +130,63 @@ export const calendarOccurrences = pgTable(
     ),
   ],
 );
+
+/** One garrison pair (D121): the helper's spare squad (its number) lent to one member. */
+export interface GarrisonPair {
+  helper: number;
+  squad: number;
+  member: number;
+}
+
+/** One save of a siege's enemy might (D121): the value in full, who saved it and when (ISO). */
+export interface EnemyMightSave {
+  value: number;
+  by: number;
+  at: string;
+}
+
+/**
+ * One Undead Siege (an entry's week, the plan's Monday, as a roll call's) and its garrison plan (D121).
+ * The enemy might is this siege's own: `enemy_rev` counts its saves for the 409 check, and every save is
+ * appended to `enemy_history`. `pairs` is null while the plan is the suggestion; `rev` counts its saves.
+ * The post to Discord is claimed here once per request id (D100); `post_status` is posting, posted or
+ * failed, and `post_channel` the channel chosen.
+ */
+export const garrisonPlans = pgTable(
+  "garrison_plans",
+  {
+    id: serial("id").primaryKey(),
+    workspaceId: integer("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    entryId: integer("entry_id")
+      .notNull()
+      .references(() => calendarEntries.id, { onDelete: "cascade" }),
+    week: day("week").notNull(),
+    enemyMight: big("enemy_might"),
+    enemyRev: integer("enemy_rev").notNull().default(0),
+    enemyHistory: jsonb("enemy_history").$type<EnemyMightSave[]>().notNull().default([]),
+    pairs: jsonb("pairs").$type<GarrisonPair[]>(),
+    /** The enemy might the pairs were saved at: a later change of it asks to start again. */
+    pairsEnemyMight: big("pairs_enemy_might"),
+    rev: integer("rev").notNull().default(0),
+    /** The officer's last save of the pairs; null for a plan stored only to post the suggestion. */
+    savedBy: integer("saved_by").references(() => workspaceUsers.id, { onDelete: "set null" }),
+    savedAt: tstz("saved_at"),
+    postRequestId: text("post_request_id"),
+    postStatus: text("post_status"),
+    postChannel: text("post_channel"),
+    postedBy: integer("posted_by").references(() => workspaceUsers.id, { onDelete: "set null" }),
+    postedAt: tstz("posted_at"),
+  },
+  (t) => [
+    unique("garrison_plans_entry_week_unique").on(t.entryId, t.week),
+    index("garrison_plans_workspace_idx").on(t.workspaceId),
+    check(
+      "garrison_plans_post_status_check",
+      sql`${t.postStatus} in ('posting', 'posted', 'failed')`,
+    ),
+    check("garrison_plans_post_channel_check", sql`${t.postChannel} in ('members', 'leaders')`),
+    check("garrison_plans_enemy_might_check", sql`${t.enemyMight} > 0`),
+  ],
+);

@@ -130,6 +130,7 @@ export const calendarEn = {
   "calendar.month.count.other": "{n} events",
   "calendar.roles.choose": "Choose roles ›",
   "calendar.rollCall": "Roll call ›",
+  "calendar.garrison": "Garrison plan ›",
   "calendar.pickTeam": "Pick the team ›",
   "calendar.delete.weekly": "Skip or delete",
   "calendar.delete.askWeekly": "Skip one week, or end the repeat?",

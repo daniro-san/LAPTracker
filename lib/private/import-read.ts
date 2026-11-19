@@ -67,9 +67,18 @@ export function endReading(officer: number): void {
  * shared from the phone (D110) still has it. Null when the picture's size is refused (no pixels, too
  * many, or a size its header does not state).
  */
-export async function readUpload(image: Uint8Array, statusBar = false): Promise<string[] | null> {
+export async function readUpload(
+  image: Uint8Array,
+  statusBar = false,
+  /**
+   * Read in plain grey only (D121): the Undead Siege's "Enemy Might" sits on the scene's art, which the
+   * row flattening wipes out, and that screen is not one the classifier knows.
+   */
+  plain = false,
+): Promise<string[] | null> {
   const reader = await openOcr();
   try {
+    if (plain) return await reader.read(await reader.toPng(image), { statusBar, flatten: false });
     return (await readScreen(reader, image, { statusBar })).lines;
   } catch (error) {
     if (error instanceof ImageRefusedError) return null;

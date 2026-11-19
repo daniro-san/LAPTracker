@@ -40,12 +40,12 @@ export const shotWords = (w: Record<ShotKey, string>): ShotWords => ({
 });
 
 /** Each picture's lines in turn; on a failure, the pages read before it and why it stopped. */
-async function readPictures(slug: string, files: File[]) {
+async function readPictures(slug: string, files: File[], query: string) {
   const pages: string[][] = [];
   for (const file of files) {
     try {
       const png = await toPng(file, STATUS_BAR);
-      const read = (await post(`/api/w/${slug}/shots/read`, png, "image/png")) as {
+      const read = (await post(`/api/w/${slug}/shots/read${query}`, png, "image/png")) as {
         lines: string[];
       };
       pages.push(read.lines);
@@ -64,7 +64,9 @@ async function readPictures(slug: string, files: File[]) {
 export function ReadScreenshot(props: {
   slug: string;
   /** Where the control sits, for the `ws_text_read` event only (D115). */
-  place: "paste_updates" | "facts";
+  place: "paste_updates" | "facts" | "garrison";
+  /** Added to the read's address: "?text=plain" for the garrison plan's enemy might (D121). */
+  query?: string;
   words: ShotWords;
   multiple?: boolean;
   link?: boolean;
@@ -79,7 +81,7 @@ export function ReadScreenshot(props: {
   async function read(files: File[]) {
     setBusy(true);
     setError(null);
-    const { pages, why } = await readPictures(props.slug, files);
+    const { pages, why } = await readPictures(props.slug, files, props.query ?? "");
     const text = pictureText(pages);
     if (text !== "") props.onText(text);
     if (why === SIGNED_OUT) setError(SIGNED_OUT);
