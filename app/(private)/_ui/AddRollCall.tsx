@@ -1,6 +1,6 @@
 "use client";
 
-// "Add a roll call" (issue 298): a KvK shield, an Undead Siege or a Cheese Trap on a day, for an occasion the
+// "Add a roll call" (issue 298): a Raid Shield, an Undead Siege or a Cheese Trap on a day, for an occasion the
 // Calendar does not hold. The sheet makes one request id when it opens (D100), so a retry after a lost
 // answer opens the same roll call; a second add of the same kind and day opens the first one too.
 import { useState } from "react";
