@@ -96,3 +96,12 @@ Why: the owner found the PostHog data unusable. Every page load was a new person
 - **"Analytics choices"** is not shown on `/admin`. Opening the bar from the footer moves focus to its first button.
 - **`ws_action`:** `shots/read` counts as `screenshot` / `read_text`. A request replayed with the same id is counted again, because the routes cannot tell a replay apart.
 - **Copy:** the bar says "no tracking cookie is stored".
+
+**Amendment (owner, 2026-11-19, `fix/cookie-bar-copy`): shorter bar copy.** The owner found the question clumsy and asked for the short, direct wording most sites use. The bar's English is now:
+
+- Text: "We use cookies to see how the site is used. You can say no; we'll still count visits without them."
+- Buttons: "Accept" and "Decline" (were "Allow" and "No thanks"). They keep the same style, side by side, 44 px high.
+- The bar's accessible name: "Cookies" (was "Analytics").
+- The footer link: "Cookie settings" (was "Analytics choices").
+
+This replaces the 2026-11-18 review line that the bar says "no tracking cookie is stored", and the bar no longer says that typed text is never recorded. Neither behaviour changed: only the wording did. PT-BR and FR are the owner's wording; the other 14 public languages say the same thing and are stamped (D48). The layout is unchanged: text above the two buttons on phones, one row from 640 px. At 360 px the bar is 118 px high in EN and PT (158 px with the old text) and 138 px in FR (178 px); at 1280 px it stays 69 px.

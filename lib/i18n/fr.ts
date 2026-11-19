@@ -376,10 +376,10 @@ export const fr = {
     noMembers: "Personne ne correspond ici.",
   },
   consent: {
-    label: "Statistiques",
-    body: "Pouvons-nous utiliser un cookie pour compter vos visites et enregistrer l’usage des pages ? Ce que vous tapez n’est jamais enregistré. Sans lui, nous comptons seulement les visites, et aucun cookie de suivi n’est enregistré.",
-    accept: "Autoriser",
-    decline: "Non merci",
-    choices: "Choix des statistiques",
+    label: "Cookies",
+    body: "Nous utilisons des cookies pour comprendre comment le site est utilisé. Vous pouvez refuser : sans eux, nous comptons seulement les visites.",
+    accept: "Accepter",
+    decline: "Refuser",
+    choices: "Paramètres des cookies",
   },
 } as const satisfies Translation;

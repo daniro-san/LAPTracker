@@ -365,10 +365,10 @@ export const ko = {
     noMembers: "해당하는 사람이 없어요.",
   },
   consent: {
-    label: "통계",
-    body: "쿠키를 사용해 방문 횟수를 세고 페이지 사용 방식을 기록해도 될까요? 입력한 내용은 절대 기록하지 않습니다. 쿠키가 없으면 방문 횟수만 세며, 추적 쿠키는 저장되지 않습니다.",
-    accept: "허용",
-    decline: "괜찮습니다",
-    choices: "통계 설정",
+    label: "쿠키",
+    body: "사이트 이용 방식을 파악하려고 쿠키를 사용합니다. 거부할 수 있으며, 그 경우 방문 횟수만 셉니다.",
+    accept: "수락",
+    decline: "거부",
+    choices: "쿠키 설정",
   },
 } as const satisfies Translation;

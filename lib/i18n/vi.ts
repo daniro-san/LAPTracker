@@ -369,10 +369,10 @@ export const vi = {
     noMembers: "Không có ai ở đây khớp.",
   },
   consent: {
-    label: "Thống kê",
-    body: "Chúng tôi có thể dùng cookie để đếm lượt truy cập của bạn và ghi lại cách các trang được dùng không? Những gì bạn gõ không bao giờ được ghi lại. Không có cookie, chúng tôi chỉ đếm lượt truy cập và không lưu cookie theo dõi nào.",
-    accept: "Cho phép",
-    decline: "Không, cảm ơn",
-    choices: "Lựa chọn thống kê",
+    label: "Cookie",
+    body: "Chúng tôi dùng cookie để biết trang web được dùng thế nào. Bạn có thể từ chối: không có cookie, chúng tôi chỉ đếm lượt truy cập.",
+    accept: "Chấp nhận",
+    decline: "Từ chối",
+    choices: "Cài đặt cookie",
   },
 } as const satisfies Translation;
