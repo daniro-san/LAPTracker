@@ -42,7 +42,7 @@ async function seed() {
   ] as const) {
     const [w] = await db
       .insert(workspaces)
-      .values({ unionId, slug, discordGuildId: "1", leaderRoleIds: ["2"] })
+      .values({ unionId, slug, discordGuildId: String(unionId), leaderRoleIds: ["2"] })
       .returning({ id: workspaces.id });
     const id = w?.id ?? 0;
     const users: Record<string, number> = {};

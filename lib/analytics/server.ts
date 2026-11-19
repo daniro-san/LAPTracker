@@ -137,7 +137,9 @@ export type ServerEvent = {
     /** `ws_action` only: the officer's pseudonymous id; none for the owner's /admin changes (D126). */
     person?: string;
   } & (E extends "ws_action"
-    ? { where: EventWorkspace }
+    ? // An officer's write names its workspace; the owner's /admin change (D126, no person) names the
+      // workspace it changed, and a global pause none.
+      { person: string; where: EventWorkspace } | { person?: undefined; where?: EventWorkspace }
     : // `$exception` under /w/[slug] or /api/w/[slug]; `$ai_generation` for a workspace's request;
       // `discord_command_used` from a workspace's Discord server.
       { where?: EventWorkspace });

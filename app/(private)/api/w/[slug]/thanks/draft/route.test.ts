@@ -46,7 +46,7 @@ beforeEach(async () => {
       return "Thank you, {1}.";
     },
   };
-  holder.ctx = { ...testContext(db).ctx, ai };
+  holder.ctx = { ...testContext(db).ctx, ai: () => ai };
 });
 
 const draft = () =>

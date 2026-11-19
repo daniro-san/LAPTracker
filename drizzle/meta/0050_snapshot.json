@@ -1,5 +1,5 @@
 {
-  "id": "442dc662-6cf9-4270-a5b3-9b3d8e6d4e97",
+  "id": "5658f305-ff1d-4102-a273-01f4f940357f",
   "prevId": "2c23da71-1b53-4293-97c7-9f1875183217",
   "version": "7",
   "dialect": "postgresql",
@@ -2024,6 +2024,13 @@
           "nullsNotDistinct": false,
           "columns": [
             "union_id"
+          ]
+        },
+        "workspaces_discord_guild_id_unique": {
+          "name": "workspaces_discord_guild_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "discord_guild_id"
           ]
         }
       },

@@ -20,12 +20,14 @@ import {
 /** A workspace's stored settings, or its defaults when the owner never changed any. */
 export interface WorkspaceSettings {
   workspaceId: number;
+  slug: string;
   unionId: number;
   settings: FeatureSettings;
 }
 
 const COLUMNS = {
   workspaceId: workspaces.id,
+  slug: workspaces.slug,
   unionId: workspaces.unionId,
   switches: workspaceFeatures.switches,
   aiPerDay: workspaceFeatures.aiPerDay,
@@ -34,6 +36,7 @@ const COLUMNS = {
 
 type Row = {
   workspaceId: number;
+  slug: string;
   unionId: number;
   switches: Record<string, boolean> | null;
   aiPerDay: number | null;
@@ -42,6 +45,7 @@ type Row = {
 
 const settingsOf = (row: Row): WorkspaceSettings => ({
   workspaceId: row.workspaceId,
+  slug: row.slug,
   unionId: row.unionId,
   settings: storedSettings(row.unionId, row.switches, {
     ai: row.aiPerDay,

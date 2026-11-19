@@ -8,7 +8,7 @@
 //   {kind: "fit", language, text}
 import { z } from "zod";
 
-import { ChatError } from "@/lib/ai/groq";
+import { ChatError, type ChatModel } from "@/lib/ai/groq";
 import {
   fitText,
   improveText,
@@ -70,6 +70,33 @@ const SWITCH = {
   fit: "notice_fit",
 } as const;
 
+/** The model's drafts for `ask`; null when Shorten came back over the limit both times (D113). */
+async function draftsFor(
+  ai: ChatModel,
+  ask: z.infer<typeof body>,
+  onFailed: (n: number) => void,
+): Promise<Answer[] | null> {
+  if (ask.kind === "translate") {
+    // A language the model did not answer is given back alone; the others were spent (D126).
+    return settled(
+      ask.to.map(async (to) => ({
+        to,
+        ...(await translateText(ai, ask.from, to, ask.text, ask.limit ?? NOTICE_LIMIT)),
+      })),
+      onFailed,
+    );
+  }
+  if (ask.kind === "improve") {
+    const limit = ask.limit ?? NOTICE_LIMIT;
+    const improved = await improveText(ai, ask.language, ask.tone, ask.text, limit);
+    return [{ to: ask.language, text: improved, retried: false, partly: false }];
+  }
+  const fitted = await fitText(ai, ask.language, ask.text, NOTICE_LIMIT, noticeLength);
+  return (
+    fitted && [{ to: ask.language, text: fitted.text, retried: fitted.retried, partly: false }]
+  );
+}
+
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ slug: string }> },
@@ -94,32 +121,10 @@ export async function POST(
     const started = countedAt.getTime();
     let failed = units;
     try {
-      let answers: Answer[];
-      if (ask.kind === "translate") {
-        // A language the model did not answer is given back alone; the others were spent (D126).
-        answers = await settled(
-          ask.to.map(async (to) => ({
-            to,
-            ...(await translateText(ai, ask.from, to, ask.text, ask.limit ?? NOTICE_LIMIT)),
-          })),
-          (n) => (failed = n),
-        );
-      } else if (ask.kind === "improve") {
-        const improved = await improveText(
-          ai,
-          ask.language,
-          ask.tone,
-          ask.text,
-          ask.limit ?? NOTICE_LIMIT,
-        );
-        answers = [{ to: ask.language, text: improved, retried: false, partly: false }];
-      } else {
-        const fitted = await fitText(ai, ask.language, ask.text, NOTICE_LIMIT, noticeLength);
-        if (!fitted) {
-          privateLog("notices.fit.still_over", { ms: ctx.now().getTime() - started });
-          return privateError(422, "still_over");
-        }
-        answers = [{ to: ask.language, text: fitted.text, retried: fitted.retried, partly: false }];
+      const answers = await draftsFor(ai, ask, (n) => (failed = n));
+      if (!answers) {
+        privateLog("notices.fit.still_over", { ms: ctx.now().getTime() - started });
+        return privateError(422, "still_over");
       }
       privateLog(`notices.${ask.kind}.ok`, {
         ms: ctx.now().getTime() - started,

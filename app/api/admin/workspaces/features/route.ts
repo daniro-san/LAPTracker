@@ -7,7 +7,14 @@
 // `features` and no person (area admin).
 import { z } from "zod";
 
-import { captureServer, sendLater, type DeskAction } from "@/lib/analytics/server";
+import {
+  captureServer,
+  eventWorkspace,
+  sendLater,
+  type DeskAction,
+  type EventWorkspace,
+  type ServerEvent,
+} from "@/lib/analytics/server";
 import type { AppContext } from "@/lib/app-context";
 import { authorize } from "@/lib/auth";
 import type { Db } from "@/lib/db";
@@ -44,12 +51,16 @@ const body = z.discriminatedUnion("action", [
   z.object({ action: z.literal("pause"), allowance, paused: z.boolean() }).strict(),
 ]);
 
-/** `{ok: true}`, counted as the owner's change (after the response; nothing when analytics is off). */
-function done(ctx: AppContext, action: DeskAction): Response {
-  const event = {
+/**
+ * `{ok: true}`, counted as the owner's change, with the workspace it changed (none for a global pause);
+ * after the response, nothing when analytics is off.
+ */
+function done(ctx: AppContext, action: DeskAction, where?: EventWorkspace): Response {
+  const event: ServerEvent = {
     event: "ws_action",
     properties: { feature: "features", action },
-  } as const;
+    ...(where && { where }),
+  };
   sendLater(() => captureServer(ctx.env, ctx.fetch, [event]));
   return Response.json({ ok: true });
 }
@@ -60,18 +71,28 @@ type Change = Exclude<z.infer<typeof body>, { action: "pause" }>;
  * One workspace's change, each one statement (D126): two quick taps never undo each other. The action to
  * count, or the status to refuse with (400 a copy onto itself, 404 no such workspace).
  */
-async function change(db: Db, b: Change, now: Date): Promise<DeskAction | 400 | 404> {
+async function change(
+  db: Db,
+  b: Change,
+  now: Date,
+): Promise<{ action: DeskAction; where: EventWorkspace } | 400 | 404> {
+  const target = await settingsById(db, b.workspace_id);
+  if (!target) return 404;
+  const where = eventWorkspace(target);
   if (b.action === "copy") {
     if (b.from_id === b.workspace_id) return 400;
     const from = await settingsById(db, b.from_id);
     if (!from) return 404;
-    return (await copySettings(db, b.workspace_id, from.settings, now)) ? "copy" : 404;
+    return (await copySettings(db, b.workspace_id, from.settings, now))
+      ? { action: "copy", where }
+      : 404;
   }
   if (b.action === "cap") {
-    return (await setCap(db, b.workspace_id, b.allowance, b.cap, now)) ? "cap" : 404;
+    const capped = await setCap(db, b.workspace_id, b.allowance, b.cap, now);
+    return capped ? { action: "cap", where } : 404;
   }
   const action = b.on ? "turn_on" : "turn_off";
-  return (await setSwitch(db, b.workspace_id, b.feature, b.on, now)) ? action : 404;
+  return (await setSwitch(db, b.workspace_id, b.feature, b.on, now)) ? { action, where } : 404;
 }
 
 export function POST(request: Request): Promise<Response> {
@@ -89,6 +110,6 @@ export function POST(request: Request): Promise<Response> {
     const result = await change(db, b, now);
     if (result === 400) return errorResponse(400, "bad_request");
     if (result === 404) return errorResponse(404, "workspace_not_found");
-    return done(ctx, result);
+    return done(ctx, result.action, result.where);
   });
 }

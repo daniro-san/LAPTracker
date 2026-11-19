@@ -121,7 +121,7 @@ describe("sharing the thanks (D114)", () => {
     await saveWorkspace(db, {
       unionId,
       slug,
-      discordGuildId: "1",
+      discordGuildId: String(unionId),
       leaderRoleIds: ["2"],
       memberRoleIds: ["3"],
     });

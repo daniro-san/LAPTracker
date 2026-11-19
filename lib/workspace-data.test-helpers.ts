@@ -65,7 +65,7 @@ export async function seedRoster(db: Db, unionId: number) {
 export async function seedWorkspace(db: Db, slug: string, unionId: number) {
   const [w] = await db
     .insert(workspaces)
-    .values({ unionId, slug, discordGuildId: "1", leaderRoleIds: ["2"] })
+    .values({ unionId, slug, discordGuildId: String(unionId), leaderRoleIds: ["2"] })
     .returning({ id: workspaces.id });
   const workspaceId = w?.id ?? 0;
   const [u] = await db

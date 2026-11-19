@@ -55,12 +55,6 @@ export interface TranslationJob {
   workspace: EventWorkspace | null;
 }
 
-/** The workspace of the server a press came from, for analytics only. */
-async function workspaceOfGuild(db: Db, guildId: string | undefined) {
-  const workspace = guildId ? await findWorkspaceByGuild(db, guildId) : null;
-  return workspace && eventWorkspace(workspace);
-}
-
 export interface TranslateAnswer {
   body: unknown;
   translation?: TranslationJob;
@@ -74,8 +68,6 @@ export interface TranslateInput {
   locale: string | undefined;
   /** The person's permissions in this channel, as Discord resolved them (decimal). */
   permissions: string | undefined;
-  /** The person's roles in the server: which workspace it is when two share one (D126). */
-  roles?: readonly string[] | undefined;
   webhook: Webhook;
   /** Whether DISCORD_BOT_TOKEN is set, so the bot can open threads. */
   bot: boolean;
@@ -85,12 +77,18 @@ const privateReply = (content: string): TranslateAnswer => ({
   body: { type: REPLY, data: { content, flags: EPHEMERAL } },
 });
 
-/** The server's workspace with the features the owner has on for it (D126), or null. */
-async function guildWorkspace(db: Db, input: TranslateInput): Promise<WithFeatures | null> {
-  const workspace = input.guildId
-    ? await findWorkspaceByGuild(db, input.guildId, input.roles)
-    : null;
-  return workspace && { workspaceId: workspace.id, features: await featuresById(db, workspace.id) };
+/**
+ * The server's workspace with the features the owner has on for it (D126), and how analytics names it
+ * (issue 452); null when the server has none.
+ */
+async function guildWorkspace(
+  db: Db,
+  input: TranslateInput,
+): Promise<(WithFeatures & { event: EventWorkspace }) | null> {
+  const workspace = input.guildId ? await findWorkspaceByGuild(db, input.guildId) : null;
+  if (!workspace) return null;
+  const features = await featuresById(db, workspace.id);
+  return { workspaceId: workspace.id, features, event: eventWorkspace(workspace) };
 }
 
 const COMMAND = { me: "discord_translate_me", everyone: "discord_translate_everyone" } as const;
@@ -184,7 +182,7 @@ export async function translateCommand(
       ...checked,
       webhook: input.webhook,
       userId: input.userId,
-      workspace: eventWorkspace(workspace),
+      workspace: ws.event,
     },
   };
 }
@@ -222,7 +220,7 @@ async function switchLanguage(
       webhook: input.webhook,
       userId: pressed.userId,
       pressed: true,
-      workspace: await workspaceOfGuild(db, input.guildId),
+      workspace: ws.event,
     },
   };
 }
@@ -336,7 +334,7 @@ async function post(
         picker,
         places,
       },
-      workspace: await workspaceOfGuild(db, input.guildId),
+      workspace: ws.event,
     },
   };
 }

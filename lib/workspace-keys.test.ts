@@ -45,7 +45,12 @@ beforeEach(async () => {
     ["ogs", OWN_ALLIANCE_ID],
     ["other", OTHER],
   ] as const) {
-    await saveWorkspace(db, { unionId, slug: name, discordGuildId: "1", leaderRoleIds: ["2"] });
+    await saveWorkspace(db, {
+      unionId,
+      slug: name,
+      discordGuildId: String(unionId),
+      leaderRoleIds: ["2"],
+    });
     const row = await db.query.workspaces.findFirst({
       where: (w, { eq }) => eq(w.unionId, unionId),
     });

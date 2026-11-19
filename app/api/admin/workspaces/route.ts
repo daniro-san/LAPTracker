@@ -37,7 +37,7 @@ export function POST(request: Request): Promise<Response> {
       leaderRoleIds: [...new Set(b.leader_role_ids)],
       memberRoleIds: [...new Set(b.member_role_ids)],
     });
-    if (result === "slug_taken") return errorResponse(409, "slug_taken");
+    if (result !== "ok") return errorResponse(409, result);
     return Response.json({ ok: true });
   });
 }

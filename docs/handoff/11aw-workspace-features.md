@@ -43,13 +43,13 @@
   - Above the list, "Paid features, every workspace" has Pause and Resume for AI and for Discord Translate.
   - Each change sends `ws_action` `features` / `turn_on|turn_off|cap|copy|pause|resume`, with no person and `area` admin.
 - **Review of PR #463, fixed:**
-  - Two workspaces on one Discord server: `findWorkspaceByGuild` (moved to `lib/repo/workspaces.ts`) takes the one whose leadership roles the person has, else member roles, else the lowest id. It serves the import command and both Translate commands.
+  - One workspace per Discord server (owner rule, 2026-11-19): `workspaces.discord_guild_id` is unique (in `0050_workspace_features`), and `/admin` answers `409 guild_taken`, "Another workspace already uses this Discord server.", before the insert. `findWorkspaceByGuild` (moved to `lib/repo/workspaces.ts`) finds the one workspace, for the import command and both Translate commands. An earlier fix in this round picked among several workspaces by the person's roles; it was dropped for this rule.
   - `ocr` off turns off only the D109 button (its request carries `button=1`); "Send screenshots", the phone's share and Secret Ops keep reading.
   - The weekly picture cleanup skips a workspace with notices or pictures off and clears its warnings. Switching either feature, or a copy, clears them too, so a full 7-day warning comes again.
   - Storage is a switch map (`switches` jsonb), not an off list. A key it lacks keeps its default, so a future paid feature starts off for non-OGs workspaces with a row. A switch is one statement (`switches || jsonb_build_object(...)`), a cap sets its own column, and copy writes every catalog key. /admin's switches and pause buttons are disabled until a press is answered and the page refreshed (`useTransition`).
   - Calendar: the entry sheet offers no Caravan while Caravans is off (a new entry starts on the first kind offered). With Notices off it has no notice link, and the page does not read `noticesList`.
   - A partly failed request gives back only the failed texts' units (`settled` in `lib/private/features.ts`; the notice Translate and the thanks draft).
-  - Tests: the thanks draft route (turned off, cap, partial give-back), the guild pick, `squadTargets` with squads off, `/img/notice` 404 while off, the cleanup while off, `giveBack` at 0, a missing catalog key's default, and `schema-features` in the purge guard.
+  - Tests: the thanks draft route (turned off, cap, partial give-back), `guild_taken` on `/admin` and the unique index, `squadTargets` with squads off, `/img/notice` 404 while off, the cleanup while off, `giveBack` at 0, a missing catalog key's default, and `schema-features` in the purge guard.
 - **Docs:**
   - D126 and its index line.
   - Dated amendments in D101 and D124.
@@ -93,7 +93,7 @@
 
 ## Verified
 
-- After the review fixes, `pnpm check` passes: prettier, eslint, tsc, 223 test files (1,202 tests), migration drift, i18n.
+- After the review fixes (the unique Discord server included), `pnpm check` passes: prettier, eslint, tsc, 223 test files (1,208 tests), migration drift, i18n. The PGlite tests apply every migration, so the new route test also shows the unique index refusing a second workspace on one server.
 - All 51 migrations, `0049_workspace_retention` and `0050_workspace_features` included, applied from an empty local Postgres 18 (`pnpm db:local:migrate`).
 - The e2e below passed again, 100 of 100, on a production build after the review fixes (switch map storage, atomic switches, busy chips). A second e2e passed 10 of 10 at EN light 360 and PT dark 1280:
   - "Download our data" is on by default;
@@ -122,7 +122,8 @@
 
 - A Secret Ops screenshot still saves its thefts while the thefts log is off (the import is a free feature; the rows stay hidden until thefts is on again).
 - Read from a screenshot keeps its button while off; a press says it is turned off.
-- The ws_action event for /admin carries no person. Admin changes are therefore not tied to the admin page's replay id.
+- The ws_action event for /admin carries no person; since the rebase on #452 it names the workspace it changed (none for a global pause). Admin changes are therefore not tied to the admin page's replay id.
+- `0050_workspace_features` adds a unique index on `workspaces.discord_guild_id`. It fails if production already has two workspaces with one Discord server id. The owner's rule says there are none; check the /admin Workspaces list before the release.
 
 ## Next
 
