@@ -104,3 +104,18 @@ These are plain information: a squad the tracker has not seen asks nothing of an
   - Screen readers hear "Star level 7 of 10" / "Nível de estrela 7 de 10" / "Niveau d’étoile 7 sur 10", so the colours carry nothing alone.
   - This replaces "★10" (one star and the count).
 - **No top hero.** The "Top hero" mark (one hero per member, ranked by rarity, then stars, then level), its rule line, its words in the three languages and its test are removed at the owner's request. The game shows a power per hero (for example 1,031,107), but `/v1/players` does not send it, so any ranking of heroes would be a guess. The card is about the squads: every squad, the strongest one framed and tagged, and what changed.
+
+**Amendment 2026-11-19 (orchestrator, before the next release; branch `fix/squads-from-tick`): the tick starts the batches.**
+
+- **Why.** The squads read was chained from `tick.yml`, but GitHub's schedule fires only about 3 times a day at random times (recent runs 02:01, 20:41, 12:20, 03:49 UTC). The real scheduler is cron-job.org's "Vercel Ticker" (D30): `POST /api/tick` every 15 minutes at :00, :15, :30 and :45, with a 30 s timeout. A batch would almost never have landed in the 23:30–23:58:20 ST window.
+- **Rule.** `/api/tick` starts the next squads batch after its answer (`after`, `lib/squads-tick.ts`) whenever one is due: inside the daily read's window and ending before 00:00 ST (`squadsBatchDue`, the same `dailyReadDue` and `endsInServerDay(now, RUN_DEADLINE_MS)` as `runSquadsBatch`).
+  - The batch opens its own database connection, because the request's connection closes with the answer.
+  - It runs `runSquadsBatch` unchanged: the claim, the progress saved after every call, the 120-call cap, the KvK reserve and the 100 s deadline.
+  - An error becomes an `app_errors` row (route `/api/tick`, kind `after`), a code only.
+  - cron-job.org gets its answer first, so its 30 s timeout never waits for the batch.
+- **`maxDuration` of `/api/tick` is 300 s** (was 120, D6). One function run holds the tick's own work (at most 100 s plus its writes, for example the 23:30 daily read) and, after the answer, one batch (at most 100 s). 300 s is the Vercel Hobby maximum with Fluid compute.
+- **Two batches a night.** The 23:30 tick runs the daily read, answers, then starts batch 1. The 23:45 tick starts batch 2. A tick at 00:00 is on the next server day, so it starts nothing.
+  - At the current pace, 500 ms between calls plus about 1 s per call and a few database writes, a call takes about 1.5 s. So a batch holds about 64–66 calls, and two batches about 130.
+  - A night needs about 100 members plus 5–6 retries, about 106 calls, so it fits with about 20 calls to spare.
+  - It stops fitting once a call takes more than about 1.4 s on average (106 calls over 200 s). Then the rest of the roster waits for tomorrow; nothing breaks, and the day's row says how far it got. The gap was not shortened.
+- **The backup path stays.** `POST /api/squads-read` stays for manual runs, and `tick.yml`'s step stays for whenever GitHub's schedule does fire in the window. The claim makes any two callers safe together: one batch at a time, and nobody is read twice.

@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { OWN_ALLIANCE_ID } from "@/config/alliances";
 import type { AppContext } from "@/lib/app-context";
 import {
   ADMIN_WEBHOOK,
@@ -14,11 +15,18 @@ import { ago, fakeV1, IDS, minutes, roster } from "@/lib/collector.test-helpers"
 import type { Db } from "@/lib/db";
 import { openTestDb, truncateAll } from "@/lib/db.test-helpers";
 import { dailyReads, dailyRosters, events, rehearsalSlots, snapshots, tickLog } from "@/lib/schema";
+import { squadReads } from "@/lib/schema-squads";
 
 const holder = vi.hoisted(() => ({ ctx: null as AppContext | null }));
 vi.mock("@/lib/app-context", async (original) => ({
   ...(await original<typeof import("@/lib/app-context")>()),
   getAppContext: () => holder.ctx,
+}));
+// Work after the answer (`after`) needs a Next request; here it is kept to be run by the test.
+const later = vi.hoisted(() => [] as (() => Promise<void>)[]);
+vi.mock("next/server", async (original) => ({
+  ...(await original<typeof import("next/server")>()),
+  after: (task: () => Promise<void>) => void later.push(task),
 }));
 
 const { POST } = await import("./route");
@@ -33,6 +41,7 @@ beforeAll(async () => {
 });
 beforeEach(async () => {
   await truncateAll(db);
+  later.length = 0;
 });
 
 describe("POST /api/tick", () => {
@@ -278,5 +287,30 @@ describe("POST /api/tick", () => {
     // Tue 00:07 server is inside Monday's 23:30 + 45 min window, but on Tuesday.
     expect(await at("2026-11-10T02:07")).toEqual({ answer: 204, calls: [] });
     expect(await days()).toEqual([]);
+  });
+
+  it("starts the night's squads batch after a due tick's answer, and none on a tick outside the window", async () => {
+    // D117, amendment 2026-11-19: cron-job.org's ticks at :00/:15/:30/:45 carry the squads read.
+    const { ctx, clock } = testContext(db);
+    holder.ctx = ctx;
+    const players: number[] = [];
+    ctx.v1.fetchPlayer = async (uid, onAttempt) => {
+      onAttempt?.(0);
+      players.push(uid);
+      return { uid, squads: [], quota: null };
+    };
+    clock.now = new Date("2026-11-10T13:00:00Z"); // Tuesday 11:00 server time: nothing due
+    expect((await tick()).status).toBe(204);
+    expect(later).toHaveLength(0);
+
+    clock.now = new Date("2026-11-11T01:30:00Z"); // Tuesday 23:30 server time: the daily read answers
+    expect((await tick()).status).toBe(200);
+    expect(later).toHaveLength(1);
+    expect(players).toEqual([]); // nothing before the answer
+    await later[0]?.();
+    const own = (OWN_ALLIANCE_ID * 10 + 1) as number;
+    expect(players).toEqual([own, own + 1, own + 2]);
+    const [read] = await db.select().from(squadReads);
+    expect(read).toMatchObject({ day: "2026-11-10", status: "done", callsUsed: 3 });
   });
 });

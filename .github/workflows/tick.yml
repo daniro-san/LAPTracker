@@ -37,7 +37,9 @@ jobs:
             -H "Authorization: Bearer $CRON_SECRET" "$APP_URL$path") || { echo "$path -> curl failed"; exit 1; }
           echo "$path -> HTTP $code"
           case "$code" in 2??) ;; *) exit 1 ;; esac
-      # The nightly squads read (D117): the app decides whether a batch is due (204 when not); each 200
+      # Backup path for the nightly squads read (D117): /api/tick, called by cron-job.org (D30), starts the
+      # batches itself; this step only helps when GitHub's schedule happens to fire in the window, or on a
+      # manual run. The app decides whether a batch is due (204 when not); each 200
       # is one batch, so call again while it answers `"more":true`, at most 4 times.
       - name: Squads read
         if: ${{ (inputs.phase || 'tick') == 'tick' }}
