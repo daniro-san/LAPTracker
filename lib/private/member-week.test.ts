@@ -6,6 +6,7 @@ import {
   gameWeek,
   idleRun,
   isNewMember,
+  OFFLINE_GRACE_DAYS,
   missingOf,
   topOf,
   weekDonations,
@@ -37,7 +38,7 @@ const read = (day: string, members: RosterMember[]): RosterRead => ({
 });
 
 describe("the game week's donations (issue #296)", () => {
-  it("sums the days with data, Monday to Sunday; a day with no read or no value is no data and not counted", () => {
+  it("sums the days with data, Monday to Sunday; a read with no value is none that day, a day with no read is no data (D127)", () => {
     // Sunday 8 is the week before; Wednesday's value is null; Thursday has no read; Friday is the newest.
     const reads = [
       read("2026-11-08", [member(1, { dailyTech: 999 })]),
@@ -59,7 +60,7 @@ describe("the game week's donations (issue #296)", () => {
       "2026-11-14",
       "2026-11-15",
     ]);
-    expect(days).toEqual([100, 250, null, null, 300, "later", "later"]);
+    expect(days).toEqual([100, 250, "none", null, 300, "later", "later"]);
     expect(weekTotal(days)).toBe(650);
     expect(weekTotal([null, null, "later"])).toBeNull();
   });
@@ -133,6 +134,9 @@ describe("new members", () => {
     expect(isNewMember("2026-11-10", "2026-11-01", "2026-11-15")).toBe(true);
     expect(isNewMember("2026-11-01", "2026-11-01", "2026-11-15")).toBe(false);
     expect(isNewMember("2026-11-01", "2026-10-01", "2026-11-15")).toBe(false);
+    // The offline signal's grace is 7 days (D127): 5 days in is still settling, 10 days in is not.
+    expect(isNewMember("2026-11-10", "2026-11-01", "2026-11-15", OFFLINE_GRACE_DAYS)).toBe(true);
+    expect(isNewMember("2026-11-05", "2026-11-01", "2026-11-15", OFFLINE_GRACE_DAYS)).toBe(false);
 
     const rows = [
       { uid: 1, name: "Old", isNew: false, total: 500 },

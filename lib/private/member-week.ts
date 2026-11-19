@@ -33,8 +33,12 @@ export function gameWeek(day: string): string[] {
   return Array.from({ length: 7 }, (_, i) => isoDay(monday + i * DAY_MS));
 }
 
-/** A day's value: a number, null for no data (no read, or the game sent none), "later" for not read yet. */
-export type DayValue = number | null | "later";
+/**
+ * A day's value: a number; "none" when that day's read lists the member and the game sent null, nothing
+ * that day (D127); null for no data (no read, or a read that does not list the member); "later" for not
+ * read yet.
+ */
+export type DayValue = number | "none" | null | "later";
 
 /** Per day of `week`, the member's `field` in that day's end-of-day read. */
 function weekDays(
@@ -46,8 +50,8 @@ function weekDays(
   const newest = reads.at(-1)?.day ?? "";
   return week.map((day) => {
     if (day > newest) return "later";
-    const read = reads.find((r) => r.day === day);
-    return read?.members.find((m) => m.uid === uid)?.[field] ?? null;
+    const member = reads.find((r) => r.day === day)?.members.find((m) => m.uid === uid);
+    return member ? (member[field] ?? "none") : null;
   });
 }
 
@@ -95,24 +99,28 @@ export function idleRun(reads: RosterRead[], uid: number): Idle | null {
   return days < IDLE_READS ? null : { days };
 }
 
+/** D127: a member first seen less than this many days ago never gets the offline signal (owner, 2026-11-20). */
+export const OFFLINE_GRACE_DAYS = 7;
+
 /**
- * New: first seen in the alliance after its oldest usable roster, and less than NEW_MEMBER_DAYS before
- * the newest read. A member already in the oldest roster predates the records, so is not new.
+ * New: first seen in the alliance after its oldest usable roster, and less than `days` (NEW_MEMBER_DAYS
+ * by default) before the newest read. A member already in the oldest roster predates the records, so is not new.
  */
 export function isNewMember(
   firstSeen: string | undefined,
   oldest: string,
   newest: string,
+  days: number = NEW_MEMBER_DAYS,
 ): boolean {
   if (firstSeen === undefined || firstSeen <= oldest) return false;
-  return dayMs(newest) - dayMs(firstSeen) < NEW_MEMBER_DAYS * DAY_MS;
+  return dayMs(newest) - dayMs(firstSeen) < days * DAY_MS;
 }
 
 export type MissingField = "might" | "sanctuary" | "donations";
 
 /**
- * What the newest read did not tell about a member, and the days of the week so far with no donations.
- * A null `active` is not missing (D127): the read lists the member, so it is no daily quests that day.
+ * What the newest read did not tell about a member, and the days of the week so far with no read of them.
+ * A null `active` or `daily_tech` on a read that lists the member is not missing (D127): it is none that day.
  */
 export function missingOf(
   m: RosterMember,

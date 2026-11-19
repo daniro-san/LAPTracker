@@ -17,17 +17,18 @@ Issue 458. Branch `fix/tracker-field-meanings`, cut from `origin/dev` at 89050e4
   - Each read must be of the server day after the one before it, and must list the member.
   - `endOfDayReads` returns only successful reads, so a failed read is a missing day and ends the run.
   - The Monday reset logic is gone.
-  - A new member (first seen less than 14 days ago) never gets the signal: `rowOf` in `members.ts` skips `idleRun` when `isNew` (owner, 2026-11-19).
+  - A member first seen less than 7 days ago (`OFFLINE_GRACE_DAYS`) never gets the signal: `rowOf` in `members.ts` skips `idleRun` for them (owner, 2026-11-19; 7 days on 2026-11-20). The "New" tag keeps 14 days.
   - The evidence is now `{ days }`: the number of reads in the run, so 3 for the first day it fires. The old rule reported 2 for the same 3 reads.
 - **Week-based thanks and picks.** `weekQuestPoints(reads, uid)` adds up `active` over the end-of-day reads of the newest read's game week (Monday to Sunday). It returns null when no day has a number. It is used by:
   - the Members thanks "Daily quest points" (`members.ts`);
   - caravan suggestions (`caravans.ts`, which now reads `WEEK_READS = 7` reads, not 1);
   - Elixir team picks (`roll-call-view.ts`, 7 reads);
   - the garrison "active" signal (`garrison-signals.ts`, which already read 15).
-- **No daily quests is a fact, not missing data** (owner, 2026-11-19). The read runs at the end of the server day, so a null `active` on it means none that day.
-  - `missingOf` no longer lists `activity`, so a null `active` alone never makes the status "No data".
-  - `MemberRow.noQuestsOn` holds the newest read's server day when it sent no quest points.
-  - The list row and the card say "No daily quests on {day}" (`members.noQuests`: "Sem missões diárias em {day}", "Pas de quêtes du jour le {day}") in the status's muted tone. A Fine row shows only that line. `nodata.activity` is removed.
+- **No daily quests or no donations is a fact, not missing data** (owner, 2026-11-19). The read runs at the end of the server day, so a null `active` or `daily_tech` on it means none that day.
+  - `missingOf` no longer lists `activity`. A read that lists the member with a null value gives the new `DayValue` `"none"`, so "No data: donations on {n} days" counts only days with no read of the member.
+  - `MemberRow.noQuestsOn` and `noDonationsOn` hold the newest read's server day when it sent none.
+  - The list row and the card say, in the status's muted tone: "No daily quests on {day}", "No donations on {day}", or both in one line, "No quests or donations on {day}" (`members.noQuests`, `members.noDonations`, `members.noQuestsOrDonations`, in PT-BR and FR as the owner gave them). A Fine row shows only that line. `nodata.activity` is removed.
+  - In the card's week of donations, a day whose read sent none shows a muted "none" / "nada" / "rien" (`members.don.nothing`); "—" is only for a day with no read. It is never 0 and never in the total.
   - "—" and "No data" stay for what no read told: a day with no read, might or Sanctuary not sent.
 - **Docs.**
   - New decision D127.
@@ -63,7 +64,8 @@ Issue 458. Branch `fix/tracker-field-meanings`, cut from `origin/dev` at 89050e4
     - `weekQuestPoints` sums Monday to the newest read, leaves out last week's Sunday, and returns null when no day has a number; the garrison `signalsOf` reads the same week.
   - `members.test.ts`: a new member with 3 reads with nothing gets no reason, while an older member with the same reads gets `{ kind: "idle", days: 3 }` (folded into the away-note test: the file is at the 300-line lint limit). The thanks use the week. Monday's quest points (50) and donations count on Thursday, when the newest read is null.
   - `members-sheet.test.ts`: the spreadsheet headers are the new labels.
-  - `member-list-data.test.ts`: a Fine member with no quest points shows "No daily quests on Mon, Nov 16".
+  - `member-list-data.test.ts`: a Fine member with no quest points shows "No daily quests on Mon, Nov 16"; with no donations, "No donations on …"; with neither, "No quests or donations on …".
+  - `member-week.test.ts` (donations): a read with a null value is `"none"`, a day with no read is null.
 - **Local e2e** on a production build (:3986), with this worktree's Postgres 18 (50 migrations) and the Discord sign-in stand-in. Every https call was blocked, and no upstream, Discord or Groq call was made.
   - Seed: an invented 36-member roster on 4 server days. Three members have nothing on the last 3 reads; every fifth member has no quests yet on the newest read; one member joined 2 days ago with nothing yet.
   - **73 of 73 checks pass**, at 360 and 1280, light and dark, EN and PT-BR:
@@ -79,7 +81,7 @@ Issue 458. Branch `fix/tracker-field-meanings`, cut from `origin/dev` at 89050e4
 
 ## Open issues
 
-- Donations: `weekDonations` still shows a null `daily_tech` on a read as "—" and counts it under "No data: donations on {n} days", the same as a day with no read. Under D127 that null means "none that day". The owner's answer covered quest points only, so I left donations as they were.
+- The week's donation total (list column "Donated this week", card head) is still "—" when no day of the week has a number, also when every read sent none. Showing 0 there would go against "never 0"; the owner can decide the wording.
 - The card shows "Daily quest points" twice: once in the meta line (`members.meta.act`) and once in the details (`sheet.activity`). This was already the case with "Activity" and "Activity this week".
 - `roll.filter.week` ("Active" / "Ativas" / "Actifs") is a roll-call filter label not tied to `active`, so it is unchanged.
 - PT and FR names for "Alliance Help" and "daily quests" are my translations; the game's English labels are "Alliance Help" and "Daily Alliance Coin". The owner may send the game's PT and FR screens so the terms can be aligned with them (D52).

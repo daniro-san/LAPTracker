@@ -21,6 +21,7 @@ const member = (over: Partial<ListSource> = {}): ListSource => ({
   sanctuary: 29,
   activity: 214,
   noQuestsOn: null,
+  noDonationsOn: null,
   honor: 300,
   donations: [5150, "later", "later", "later", "later", "later", "later"],
   weekTotal: 5150,
@@ -73,5 +74,14 @@ describe("a list row", () => {
   it("says a day with no daily quests as a fact of that day, not as missing data (D127)", () => {
     const row = listRow(member({ activity: null, noQuestsOn: "2026-11-16" }), t, f);
     expect([row.status, row.statusLine]).toEqual(["fine", "No daily quests on Mon, Nov 16"]);
+  });
+
+  it("says a day with no donations the same way, and both in one line when both (D127)", () => {
+    const day = "2026-11-16";
+    const line = (over: Partial<ListSource>) => listRow(member(over), t, f).statusLine;
+    expect(line({ noDonationsOn: day, donations: ["none"] })).toBe("No donations on Mon, Nov 16");
+    expect(line({ noQuestsOn: day, noDonationsOn: day, donations: ["none"] })).toBe(
+      "No quests or donations on Mon, Nov 16",
+    );
   });
 });

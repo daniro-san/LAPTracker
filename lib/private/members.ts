@@ -34,6 +34,7 @@ import {
   isNewMember,
   KVK_REASON_ON,
   missingOf,
+  OFFLINE_GRACE_DAYS,
   topOf,
   weekDonations,
   weekQuestPoints,
@@ -67,6 +68,8 @@ export interface MemberRow {
   activity: number | null;
   /** The newest read's server day when it sent no daily quest points: none that day (D127). */
   noQuestsOn: string | null;
+  /** The newest read's server day when it sent no donations: none that day (D127). */
+  noDonationsOn: string | null;
   honor: number | null;
   donations: DayValue[];
   weekTotal: number | null;
@@ -80,7 +83,7 @@ export interface MemberRow {
   isNew: boolean;
   reasons: Reason[];
   missing: MissingField[];
-  /** Days of the week so far with no donations data. */
+  /** Days of the week so far with no read of the member (no donations data). */
   missingDays: number;
   /** The officers' facts about the member (#297). */
   facts: MemberFacts;
@@ -154,9 +157,11 @@ const onBreak = (p: ReturnType<typeof factsPart>) =>
 function rowOf(m: RosterMember, week: string[], s: Signals): MemberRow {
   const newest = s.reads.at(-1) as RosterRead;
   const donations = weekDonations(s.reads, week, m.uid);
-  const isNew = isNewMember(s.firstSeen.get(m.uid), s.oldest, newest.day);
-  // D127: a new member never gets the offline signal.
-  const idle = isNew ? null : idleRun(s.reads, m.uid);
+  const firstSeen = s.firstSeen.get(m.uid);
+  const isNew = isNewMember(firstSeen, s.oldest, newest.day);
+  // D127: a member first seen less than OFFLINE_GRACE_DAYS ago never gets the offline signal.
+  const settling = isNewMember(firstSeen, s.oldest, newest.day, OFFLINE_GRACE_DAYS);
+  const idle = settling ? null : idleRun(s.reads, m.uid);
   const flat = s.unchanged.get(m.uid);
   const part = factsPart(m.uid, s);
   // D75: a member away is left out of every comparison, so never a reason to check in.
@@ -174,6 +179,7 @@ function rowOf(m: RosterMember, week: string[], s: Signals): MemberRow {
     ...plainRow(m, week, s.firstSeen),
     activity: m.active,
     noQuestsOn: m.active === null ? newest.day : null,
+    noDonationsOn: m.dailyTech === null ? newest.day : null,
     honor: m.dailyHonor,
     donations,
     weekTotal: weekTotal(donations),
@@ -203,6 +209,7 @@ function plainRow(m: RosterMember, week: string[], firstSeen: Map<number, string
     sanctuary: m.lv,
     activity: null,
     noQuestsOn: null,
+    noDonationsOn: null,
     honor: null,
     donations: week.map(() => null),
     weekTotal: null,

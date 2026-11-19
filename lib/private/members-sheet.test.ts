@@ -26,6 +26,7 @@ const m: MemberRow = {
   sanctuary: 29,
   activity: 214,
   noQuestsOn: null,
+  noDonationsOn: null,
   honor: 300,
   donations: [5150, null, 4000, "later", "later", "later", "later"],
   weekTotal: 9150,
