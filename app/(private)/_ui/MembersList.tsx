@@ -4,9 +4,16 @@
 // and two chips in a slim sticky block, and the rest in the "Filter and order" sheet. Everything runs in
 // the browser over the rows the page sent; filters and the order are kept in the address (a reload or a
 // shared link shows the same list), and only the order is remembered on this browser. In the default
-// order, Check in and Needs help come first under their own heading. A row opens the member's sheet.
+// order, Check in and Needs help come first under their own heading. A row opens the member: in the
+// sheet below 1024, in the pane beside the list from 1024 (MembersRoster, D122). Below 640 the rows are
+// cards; from 640 each group is a table whose columns grow with the width (ResponsiveTable), Up and Down
+// step through the rows, and from 1024 the row the focus lands on opens.
 import { useState } from "react";
 
+import {
+  ResponsiveTable,
+  type Column as TableColumn,
+} from "@/lib/brand/components/layout/ResponsiveTable";
 import { fill, isolate } from "@/lib/copy";
 import { clockIn, hhmm } from "@/lib/private/calendar-time";
 import type { WorkspaceLanguage } from "@/lib/private/dictionary";
@@ -19,12 +26,11 @@ import {
 } from "@/lib/private/members-list";
 
 import type { ListRow, ListWords } from "./member-list-data";
-import type { EditorContext } from "./MemberCards";
-import { MemberListRow, toAskText, type Column } from "./MemberListRow";
+import { MemberCell, MemberListRow, toAskText, type Column, type RowProps } from "./MemberListRow";
 import { useMembersList, type ListState } from "./members-list-state";
 import { MembersFilters } from "./MembersFilters";
-import { MemberSheet } from "./MemberSheet";
 import { CountLine, Empty, More, StickyBar } from "./MembersListParts";
+import { stepRow } from "./open-member";
 import { useMinute } from "./YourTime";
 
 const COLUMN: Record<Order, Column> = {
@@ -59,7 +65,6 @@ export interface MembersListProps {
   rows: ListRow[];
   words: ListWords;
   language: WorkspaceLanguage;
-  editor: EditorContext;
   /** From the address the page was opened with. */
   initialQuery: MemberQuery;
   initialOrder: Order | null;
@@ -71,6 +76,14 @@ export interface MembersListProps {
   early: boolean;
   /** "Copy for spreadsheet"'s header row. */
   sheetHeader: string;
+}
+
+/** The open member, kept by the page's roster (`?m=`, D122). */
+export interface OpenProps {
+  open: number | null;
+  /** From 1024 (null until the browser says). */
+  wide: boolean | null;
+  onOpen: (uid: number, step?: boolean) => void;
 }
 
 const WHO_KEY: Record<Who, keyof ListWords> = {
@@ -99,8 +112,8 @@ function pillsOf(s: ListState, t: ListWords, language: WorkspaceLanguage): strin
   ].filter((p): p is string => typeof p === "string");
 }
 
-/** One row with its second lines: the past name the search found, what to ask, their time. */
-function useRows(s: ListState, props: MembersListProps, onOpen: (uid: number) => void) {
+/** One row's props with its second lines: the past name the search found, what to ask, their time. */
+function useRows(s: ListState, props: MembersListProps & OpenProps) {
   const t = props.words;
   const minute = useMinute();
   const theirTime = (r: ListRow) => {
@@ -114,26 +127,74 @@ function useRows(s: ListState, props: MembersListProps, onOpen: (uid: number) =>
     if (minute === null) return null;
     return fill(t["list.theirNow"], { time: clockIn(minute * 60_000, r.zone, props.today).time });
   };
-  return (r: ListRow, index: number) => {
+  return (r: ListRow, index: number): RowProps => {
     const was = pastMatch(r, s.query.q);
-    return (
-      <MemberListRow
-        key={r.uid}
-        row={r}
-        column={COLUMN[s.order]}
-        words={t}
-        was={was && fill(t["list.was"], { name: isolate(was) })}
-        toAsk={s.query.ask ? toAskText(r, t) : null}
-        theirTime={theirTime(r)}
-        index={index}
-        onOpen={() => onOpen(r.uid)}
-      />
-    );
+    return {
+      row: r,
+      column: COLUMN[s.order],
+      words: t,
+      was: was && fill(t["list.was"], { name: isolate(was) }),
+      toAsk: s.query.ask ? toAskText(r, t) : null,
+      theirTime: theirTime(r),
+      index,
+      sheet: props.wide !== true,
+      onOpen: () => props.onOpen(r.uid),
+    };
   };
 }
 
+const NUMBERS: Column[] = ["might", "kills", "squad"];
+
+/** The name; the order's number and the week's donations always; the other two numbers from 1440. The
+ * numbers' widths are set, so the groups' tables line up one under another. */
+function columnsOf(column: Column, t: ListWords): TableColumn<RowProps>[] {
+  const number = (c: Column, wide: boolean): TableColumn<RowProps> => ({
+    key: c,
+    head: t[`list.col.${c}`],
+    cell: (p) => <span className="whitespace-nowrap">{p.row.text[c]}</span>,
+    numeric: true,
+    width: c === "squad" ? "w-28" : "w-20",
+    ...(wide && { priority: "wide" as const }),
+  });
+  return [
+    { key: "name", head: t["tab.members"], cell: (p) => <MemberCell {...p} /> },
+    number(column, false),
+    {
+      key: "donated",
+      head: t["list.col.week"],
+      cell: (p) => <span className="whitespace-nowrap">{p.row.text.donated}</span>,
+      numeric: true,
+      width: "w-20",
+    },
+    ...NUMBERS.filter((c) => c !== column).map((c) => number(c, true)),
+  ];
+}
+
+/** One group of rows: cards below 640, a table from 640. */
+function Group(p: { caption: string; rows: RowProps[]; open: number | null; t: ListWords }) {
+  const column = p.rows[0]?.column ?? "might";
+  return (
+    <ResponsiveTable
+      compact
+      caption={p.caption}
+      columns={columnsOf(column, p.t)}
+      rows={p.rows}
+      rowKey={(r) => String(r.row.uid)}
+      card={(r) => <MemberListRow {...r} />}
+      isOpen={(r) => r.row.uid === p.open}
+      onRow={(r) => r.onOpen()}
+    />
+  );
+}
+
 /** The heading (Check in and Needs help) and the groups, within "Show more"'s depth. */
-function Sections({ s, t, row }: { s: ListState; t: ListWords; row: ReturnType<typeof useRows> }) {
+function Sections(p: {
+  s: ListState;
+  t: ListWords;
+  row: ReturnType<typeof useRows>;
+  open: number | null;
+}) {
+  const { s, t, row } = p;
   let left = s.depth;
   const take = (rows: ListRow[]) => {
     const start = s.depth - left;
@@ -152,10 +213,10 @@ function Sections({ s, t, row }: { s: ListState; t: ListWords; row: ReturnType<t
     <>
       {heading.length > 0 && (
         <section aria-labelledby="ml-heading" className="mt-3">
-          <h2 id="ml-heading" className="font-subhead text-display-sm">
+          <h2 id="ml-heading" className="mb-1 font-subhead text-display-sm">
             {t["list.heading"]}
           </h2>
-          <ul className="mt-1">{heading}</ul>
+          <Group caption={t["list.heading"]} rows={heading} open={p.open} t={t} />
         </section>
       )}
       {s.groups.map((g) => {
@@ -164,8 +225,8 @@ function Sections({ s, t, row }: { s: ListState; t: ListWords; row: ReturnType<t
         const head = label(g.key, g.rows.length);
         return (
           <section key={g.key} aria-label={head ?? undefined} className="mt-2">
-            {head && <h2 className="mt-3 text-body-sm font-semibold text-ink/80">{head}</h2>}
-            <ul>{shown}</ul>
+            {head && <h2 className="mt-3 mb-1 text-body-sm font-semibold text-ink/80">{head}</h2>}
+            <Group caption={head ?? t["tab.members"]} rows={shown} open={p.open} t={t} />
           </section>
         );
       })}
@@ -180,17 +241,22 @@ function copyText(s: ListState, header: string): string {
   return [header, ...rows.map((r) => r.sheet)].join("\n");
 }
 
-export function MembersList(props: MembersListProps) {
+export function MembersList(props: MembersListProps & OpenProps) {
   const { rows, words: t } = props;
   // The sheet frame gives each sheet its history entry: the phone's back button closes it.
   const [filters, setFilters] = useState(false);
-  const [member, setMember] = useState<number | null>(null);
   const s = useMembersList({ ...props, sheetOpen: filters });
-  const row = useRows(s, props, setMember);
+  const row = useRows(s, props);
   const all = s.heading.length + s.groups.reduce((n, g) => n + g.rows.length, 0);
-  const open = rows.find((r) => r.uid === member);
   return (
-    <>
+    // The table's head row sticks under the search bar (its height from 640: two 44 px rows, padding, rule).
+    <div
+      className="[--table-head-top:calc(7rem+1px)]"
+      onKeyDown={(e) => {
+        const uid = stepRow(e);
+        if (uid !== null && props.wide) props.onOpen(uid, true);
+      }}
+    >
       <StickyBar s={s} t={t} column={COLUMN[s.order]} onFilters={() => setFilters(true)} />
       <CountLine
         s={s}
@@ -200,19 +266,10 @@ export function MembersList(props: MembersListProps) {
         copy={copyText(s, props.sheetHeader)}
       />
       <Empty s={s} t={t} rows={rows} />
-      <Sections s={s} t={t} row={row} />
+      <Sections s={s} t={t} row={row} open={props.open} />
       <More s={s} t={t} left={all - s.depth} />
       {filters && s.sheet && <Filters s={s} props={props} onClose={() => setFilters(false)} />}
-      {open && (
-        <MemberSheet
-          row={open}
-          version={rows}
-          words={t}
-          editor={props.editor}
-          onClose={() => setMember(null)}
-        />
-      )}
-    </>
+    </div>
   );
 }
 

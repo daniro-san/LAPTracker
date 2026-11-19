@@ -5,24 +5,18 @@
 // goes back to what opened it; a child marked `data-initial-focus` gets the first focus (put it on the safe
 // answer), else the title. `gate` is the same card left open in the page flow, under a heading, for a page
 // that is locked until it is answered. Below 640 px a sheet pinned to the bottom; at ≥ 640 px a centred
-// card (modal) or a card in the flow (gate).
+// card (modal) or a card in the flow (gate). `pane` is the same frame drawn in the page, not a dialog: the
+// open item of a master-detail list from 1024 (D122), its own scroller with the thin scrollbar.
 //
 // The frame (DESIGN.md "Workspace components"): with `title`, a sticky title row with a 44 px Close (×);
 // with `primary`, a sticky bar at the bottom: the main action first and widest, Cancel after it. Every way
 // of closing — Close, Cancel, Escape, the backdrop, the phone's back gesture — asks "Discard your changes?"
 // first while `dirty`. A modal sheet owns one history entry, so back closes the sheet, not the page. A
 // focused field is scrolled clear of the bar and of the iPhone keyboard (revealFocused).
-import {
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type MouseEvent,
-  type ReactNode,
-} from "react";
+import { useLayoutEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
 
-import { buttonClass } from "./Button";
 import { backdropTap, closeStep, outside, pageSheets } from "./sheet-close";
+import { Bar, SAFE_BOTTOM, TitleRow } from "./sheet-parts";
 
 // iPhone (Safari, Brave): the sheet is its own only scroller, never wider than the screen, below the
 // notch, and a scroll that reaches its end stays in it. Long names, links and zone ids wrap. The page
@@ -33,7 +27,6 @@ const SHEET = `fixed inset-x-0 bottom-0 top-auto z-50 m-0 w-full max-w-none bord
 const MODAL_CARD =
   "sm:inset-0 sm:m-auto sm:h-fit sm:max-h-[calc(100dvh-3rem)] sm:max-w-md sm:border";
 const GATE_CARD = "sm:static sm:mt-6 sm:border sm:shadow-none";
-const SAFE_BOTTOM = "pb-[max(1rem,env(safe-area-inset-bottom))] sm:pb-6";
 
 /** The frame's own words, in the viewer's language. */
 export interface SheetWords {
@@ -114,106 +107,6 @@ function useSheet(modal: boolean, onBack: () => "closed" | "stay") {
   return ref;
 }
 
-function action(a: SheetAction, variant: "primary" | "secondary", extra: string) {
-  return (
-    <button
-      type={a.form ? "submit" : "button"}
-      form={a.form}
-      disabled={a.disabled}
-      onClick={a.onClick}
-      {...(a.focus && { "data-initial-focus": true })}
-      className={buttonClass(variant, extra)}
-    >
-      {a.label}
-    </button>
-  );
-}
-
-/** The sticky bottom bar: the question while asking, else the note and the actions, main action first. */
-function Bar(props: {
-  words: SheetWords | undefined;
-  asking: boolean;
-  note: ReactNode;
-  primary: SheetAction | undefined;
-  secondary: SheetAction | undefined;
-  onClose: () => void;
-  onKeep: () => void;
-  onDiscard: () => void;
-}) {
-  const { words, asking } = props;
-  const keep = useRef<HTMLButtonElement>(null);
-  useEffect(() => {
-    if (asking) keep.current?.focus();
-  }, [asking]);
-  if (!asking && !props.primary) return null;
-  const cancel = words && { label: words.cancel, onClick: props.onClose };
-  const secondary = props.secondary ?? cancel;
-  return (
-    <div
-      data-sheet-bar
-      className={`sticky bottom-0 z-10 border-t border-rule bg-paper px-4 pt-3 sm:px-6 ${SAFE_BOTTOM}`}
-    >
-      {asking && words ? (
-        <>
-          <p role="alert" className="mb-2 font-semibold">
-            {words.ask}
-          </p>
-          <div className="flex gap-3">
-            <button
-              ref={keep}
-              type="button"
-              onClick={props.onKeep}
-              className={buttonClass("primary", "flex-1")}
-            >
-              {words.keep}
-            </button>
-            <button type="button" onClick={props.onDiscard} className={buttonClass("secondary")}>
-              {words.discard}
-            </button>
-          </div>
-        </>
-      ) : (
-        <>
-          {props.note}
-          <div className="flex gap-3">
-            {props.primary && action(props.primary, "primary", "flex-1")}
-            {secondary && action(secondary, "secondary", "")}
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
-/** The sticky title row: the sheet's name, and Close (×) at the right, 44 px. */
-function TitleRow(props: {
-  id: string;
-  title: ReactNode;
-  close: string | undefined;
-  onClose: () => void;
-}) {
-  return (
-    <div className="sticky top-0 z-10 flex items-start gap-2 border-b border-rule bg-paper py-1 pr-1 pl-4 sm:pr-3 sm:pl-6">
-      <h2
-        id={props.id}
-        tabIndex={-1}
-        data-sheet-title
-        className="min-w-0 flex-1 py-2 font-display text-display-sm"
-      >
-        {props.title}
-      </h2>
-      <button
-        type="button"
-        aria-label={props.close}
-        onClick={props.onClose}
-        className="tint-button grid size-11 shrink-0 place-items-center text-[28px] leading-none text-plum"
-      >
-        <span aria-hidden="true">×</span>
-      </button>
-    </div>
-  );
-}
-
 /** The content's padding: the title row and the bottom bar bring their own. */
 const bodyClass = (framed: boolean, bar: boolean) =>
   `px-4 pt-4 sm:px-6 ${framed ? "" : "sm:pt-6"} ${bar ? "pb-4" : SAFE_BOTTOM}`;
@@ -238,6 +131,8 @@ function useClose(dirty: boolean, onCancel: (() => void) | undefined) {
 
 export interface SheetProps {
   gate?: boolean;
+  /** Drawn in the page beside a list (D122 master-detail): no dialog, no history entry, no backdrop. */
+  pane?: boolean;
   role?: "alertdialog";
   /** The id of the element that names the sheet (with `title`, the title row's heading gets it). */
   labelledBy: string;
@@ -260,12 +155,78 @@ export interface SheetProps {
 }
 
 export function Sheet(props: SheetProps) {
-  const { gate = false, title, words, primary, onCancel } = props;
-  const c = useClose(props.dirty ?? false, onCancel);
+  return props.pane ? <Pane {...props} /> : <DialogSheet {...props} />;
+}
+
+/** The frame's parts in either container: the title row, the content, the bar. */
+function Parts({
+  props,
+  c,
+  stack,
+}: {
+  props: SheetProps;
+  c: ReturnType<typeof useClose>;
+  stack?: boolean;
+}) {
+  const framed = props.title !== undefined;
+  return (
+    <>
+      {framed && (
+        <TitleRow
+          id={props.labelledBy}
+          title={props.title}
+          close={props.words?.close}
+          onClose={c.close}
+        />
+      )}
+      <div className={bodyClass(framed, props.primary !== undefined || c.asking)}>
+        {props.children}
+      </div>
+      <Bar
+        words={props.words}
+        asking={c.asking}
+        note={props.note}
+        primary={props.primary}
+        secondary={props.secondary}
+        onClose={c.close}
+        onKeep={c.keep}
+        onDiscard={() => props.onCancel?.()}
+        {...(stack && { stack })}
+      />
+    </>
+  );
+}
+
+/**
+ * The frame as a pane: the title row and the bar stick inside it while its content scrolls. It is at most
+ * the window's height less its 8 px from the top and the page's 20 px bottom padding (with room to spare),
+ * so at the end of a list the sticky pane is never pushed up past its title. The drawn frame is on the
+ * outer box: inside a scroller it would scroll away with the content.
+ */
+function Pane(props: SheetProps) {
+  const c = useClose(props.dirty ?? false, props.onCancel);
+  return (
+    <section
+      aria-labelledby={props.labelledBy}
+      aria-describedby={props.describedBy}
+      className="drawn-card bg-paper"
+    >
+      <div
+        data-sheet-pane
+        className="max-h-[calc(100dvh-2.5rem)] overflow-x-hidden overflow-y-auto overscroll-contain wrap-anywhere"
+      >
+        <Parts props={props} c={c} stack />
+      </div>
+    </section>
+  );
+}
+
+function DialogSheet(props: SheetProps) {
+  const { gate = false } = props;
+  const c = useClose(props.dirty ?? false, props.onCancel);
   const ref = useSheet(!gate, c.close);
   const pressedOutside = useRef(false);
-  const framed = title !== undefined;
-  const bar = primary !== undefined || c.asking;
+  const framed = props.title !== undefined;
   return (
     <dialog
       ref={ref}
@@ -297,20 +258,7 @@ export function Sheet(props: SheetProps) {
       }}
       className={`${SHEET} ${gate ? GATE_CARD : MODAL_CARD}`}
     >
-      {framed && (
-        <TitleRow id={props.labelledBy} title={title} close={words?.close} onClose={c.close} />
-      )}
-      <div className={bodyClass(framed, bar)}>{props.children}</div>
-      <Bar
-        words={words}
-        asking={c.asking}
-        note={props.note}
-        primary={primary}
-        secondary={props.secondary}
-        onClose={c.close}
-        onKeep={c.keep}
-        onDiscard={() => onCancel?.()}
-      />
+      <Parts props={props} c={c} />
     </dialog>
   );
 }

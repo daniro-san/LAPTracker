@@ -32,7 +32,8 @@ export function StickyBar(props: {
     { id: "ask", label: t["list.ask"], n: s.chips.ask, pressed: s.query.ask === "any" },
   ] as const;
   return (
-    <div className="sticky top-0 z-[5] -mx-4 mt-4 border-b border-rule bg-paper px-4 py-2 sm:-mx-6 sm:px-6">
+    // Out to the page's margins up to 1023; inside the list's column beside the pane from 1024 (D122).
+    <div className="sticky top-0 z-[5] -mx-4 mt-4 border-b border-rule bg-paper px-4 py-2 md:-mx-6 md:px-6 lg:mx-0 lg:px-0">
       <div className="flex gap-2" role="search">
         <input
           type="search"
@@ -51,8 +52,9 @@ export function StickyBar(props: {
           {on > 0 ? fill(t["list.filtersN"], { n: on }) : t["list.filters"]}
         </button>
       </div>
+      {/* One row that scrolls inside itself when it is wider than the column (D122). */}
       <div
-        className="mt-2 flex items-center gap-2"
+        className="mt-2 flex items-center gap-2 overflow-x-auto [&>*]:shrink-0"
         role="group"
         aria-label={t["members.filter.aria"]}
       >
@@ -71,8 +73,11 @@ export function StickyBar(props: {
           </button>
         ))}
       </div>
-      {/* The rows' column labels, over every row while the list scrolls. */}
-      <div className="mt-1 flex justify-end gap-2 pr-1 text-[13px] text-ink/75" aria-hidden="true">
+      {/* The cards' column labels, over every row while the list scrolls; from 640 the table's head row. */}
+      <div
+        className="mt-1 flex justify-end gap-2 pr-1 text-[13px] text-ink/75 sm:hidden"
+        aria-hidden="true"
+      >
         <span className={`${COLUMN_WIDTH[props.column]} text-right`}>
           {t[`list.col.${props.column}`]}
         </span>

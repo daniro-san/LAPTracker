@@ -58,6 +58,7 @@ export function listRow(m: ListSource, t: WorkspaceDictionary, f: CardFormats): 
 
 const LIST_KEYS = [
   ...(Object.keys(membersEn) as (keyof typeof membersEn)[]),
+  "tab.members",
   "members.search.ph",
   "members.search.aria",
   "members.filter.aria",
