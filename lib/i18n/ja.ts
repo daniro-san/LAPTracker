@@ -367,10 +367,10 @@ export const ja = {
     noMembers: "該当するメンバーはいません。",
   },
   consent: {
-    label: "アクセス解析",
-    body: "Cookie を使って訪問回数を数え、ページの使われ方を記録してもよいですか？入力した内容は記録しません。Cookie を使わない場合は訪問回数だけを数え、トラッキング Cookie は保存しません。",
-    accept: "許可する",
-    decline: "許可しない",
-    choices: "アクセス解析の設定",
+    label: "Cookie",
+    body: "サイトの使われ方を知るために Cookie を使います。拒否もできます。その場合は訪問回数だけを数えます。",
+    accept: "同意する",
+    decline: "拒否する",
+    choices: "Cookie の設定",
   },
 } as const satisfies Translation;

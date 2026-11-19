@@ -2,7 +2,7 @@
 
 // The analytics question (D115): a bar fixed to the bottom of a public page, so nothing on the page moves when
 // it appears. It shows on a public page until the visitor answers on this device, and again when the
-// footer's "Analytics choices" asks for it. "Allow" and "No thanks" weigh the same. The desk, the board and
+// footer's "Cookie settings" asks for it. "Accept" and "Decline" weigh the same. The desk, the board and
 // /admin never show it. The root layout renders it only when analytics is on (D77).
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";

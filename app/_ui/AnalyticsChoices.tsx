@@ -1,6 +1,6 @@
 "use client";
 
-// The footer's "Analytics choices" (D115): opens the analytics question again (AnalyticsConsent.tsx).
+// The footer's "Cookie settings" (D115): opens the analytics question again (AnalyticsConsent.tsx).
 import { ASK_CONSENT_EVENT } from "@/lib/analytics/consent";
 
 export function AnalyticsChoices({ label }: { label: string }) {

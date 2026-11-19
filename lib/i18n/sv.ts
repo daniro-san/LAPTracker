@@ -372,10 +372,10 @@ export const sv = {
     none: "Färre än två dagar har en användbar daglig uppdatering än.",
   },
   consent: {
-    label: "Statistik",
-    body: "Får vi använda en kaka för att räkna dina besök och registrera hur sidorna används? Det du skriver registreras aldrig. Utan den räknar vi bara besök, och ingen spårningskaka sparas.",
-    accept: "Tillåt",
-    decline: "Nej tack",
-    choices: "Val för statistik",
+    label: "Kakor",
+    body: "Vi använder kakor för att se hur webbplatsen används. Du kan tacka nej: utan dem räknar vi bara besök.",
+    accept: "Godkänn",
+    decline: "Avvisa",
+    choices: "Inställningar för kakor",
   },
 } as const satisfies Translation;

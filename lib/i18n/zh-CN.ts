@@ -359,10 +359,10 @@ export const zhCN = {
     noMembers: "这里没有符合条件的人。",
   },
   consent: {
-    label: "统计",
-    body: "我们可以使用 Cookie 来统计你的访问次数并记录页面的使用情况吗？你输入的内容永远不会被记录。如果不用 Cookie，我们只统计访问次数，不会保存任何跟踪 Cookie。",
-    accept: "允许",
-    decline: "不用了，谢谢",
-    choices: "统计设置",
+    label: "Cookie",
+    body: "我们使用 Cookie 来了解网站的使用情况。你可以拒绝：不用 Cookie 时，我们只统计访问次数。",
+    accept: "接受",
+    decline: "拒绝",
+    choices: "Cookie 设置",
   },
 } as const satisfies Translation;
