@@ -4,7 +4,7 @@ Why: officers made test roll calls and could not remove them (owner, 2026-11-18)
 
 **Shape: a soft delete and an archive on the roll call's row.**
 
-- Five nullable columns on `roll_calls` (migration `roll_call_delete`): `deleted_at`, `deleted_by` (the officer, `set null` if the account goes) and `delete_request_id` (the question's request id, D100); `archived_at` and `archived_by`.
+- Five nullable columns on `roll_calls` (migration `0044_roll_call_delete`): `deleted_at`, `deleted_by` (the officer, `set null` if the account goes) and `delete_request_id` (the question's request id, D100); `archived_at` and `archived_by`.
 - The row, its marks and its Elixir Scramble team stay. Undo clears `deleted_at`; Unarchive clears both archive columns.
 - No restore from a trash and no list of deleted roll calls (D118 has one for notices; the issue did not ask for it here).
 

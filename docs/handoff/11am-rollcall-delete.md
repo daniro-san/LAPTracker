@@ -2,7 +2,7 @@
 
 ## Built
 
-- Migration `0042_roll_call_delete` (the orchestrator renumbers if needed). It adds `deleted_at`, `deleted_by`, `delete_request_id`, `archived_at` and `archived_by` to `roll_calls`. The unique indexes on (entry, week) and on hand-added (workspace, kind, day) now cover live rows only.
+- Migration `0044_roll_call_delete`, generated after #422 (0042, 0043) merged. It adds `deleted_at`, `deleted_by`, `delete_request_id`, `archived_at` and `archived_by` to `roll_calls`. The unique indexes on (entry, week) and on hand-added (workspace, kind, day) now cover live rows only.
 - `lib/repo/roll-call.ts`: a `live` condition (`deleted_at is null`) on every read of `roll_calls` (`findCall`, `findAdded`, `callsOfWeeks`, `otherTeams`), and a new `archivedCalls`.
 - `lib/repo/roll-call-deletes.ts`: the delete (replay-safe under its request id, also after an Undo), the Undo (only the officer who deleted, within 60 s, and not when a new live roll call took the deleted one's place), and archive/unarchive.
 - `lib/private/roll-call.ts`: `deleteCall`, `archiveCall`, `UNDO_MS`.
@@ -36,7 +36,7 @@
 
 ## Verified
 
-- After the rebase on `origin/dev` (#426, #428) and the review fixes, `pnpm check` exits 0: prettier, eslint, tsc, vitest **203 files passed, 2 skipped; 1,077 tests passed, 4 skipped**, the drift gate, and i18n ("17 languages up to date").
+- After the rebase on `origin/dev` (#426, #428, #422), the review fixes and the 0044 migration, `pnpm check` exits 0: prettier, eslint, tsc, vitest **207 files passed, 2 skipped; 1,109 tests passed, 4 skipped**, the drift gate, and i18n ("17 languages up to date").
 - `app/(private)/api/w/[slug]/roll-call/route.test.ts` has 8 new tests:
   - a delete removes the roll call from the week, its page, marking and Home, and the Calendar week starts again at version 1. Two KvK shields deleted one after the other are two Home lines;
   - a member's delete or archive gets 401, and another workspace's gets 404;
@@ -61,7 +61,7 @@
 - The Archived list has no cap. Archived roll calls grow by a few a week; a cap or paging can come later if the list gets long.
 - A replay of an *add* whose roll call was deleted afterwards would hit the request-id index and answer 500. In practice this cannot happen, because a request id belongs to one open add sheet.
 - Rebased on `origin/dev` with #426 (activity paging). The delete and archive parts take the `< before` cursor. Each line carries the roll call's id, so the feed's repeat rule never folds two different roll calls into one line; neither kind is in `GROUPED`.
-- The migration stays `0042_roll_call_delete` for now. After #422 (0042, 0043) merges, it must be regenerated as 0044.
+- Rebased again after #422 merged: the migration was regenerated with `pnpm db:generate` as `0044_roll_call_delete` (same SQL). Home now also has #422's picture sources beside the roll call ones.
 
 ## Next
 
