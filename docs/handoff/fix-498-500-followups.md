@@ -94,4 +94,4 @@
 - `insertNewWorkspace` and `insertFirstOfficer` in `lib/repo/workspaces.ts` are the writes any future "create a workspace" path should reuse.
 </adjustments>
 
-PR: (added by the orchestrator)
+https://github.com/daniro-san/LAPTracker/pull/502
