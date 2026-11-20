@@ -99,4 +99,4 @@ Issue #459. Decision: [D133](../decisions/D133-every-alliance-from-the-ranks-boa
 - The fixture board's top 20 equals D4's old list exactly. Checked: `fixtureBoard()` in `scripts/seed-data.ts`.
 </adjustments>
 
-PR: (added by the orchestrator)
+https://github.com/daniro-san/LAPTracker/pull/508
