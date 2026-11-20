@@ -5,7 +5,11 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
 import { currentCount, recordFailure } from "../repo/auth-attempts";
-import { translateComponent, type TranslateInput } from "./discord-translate";
+import { setCap, setSwitch } from "../repo/workspace-features";
+import { saveWorkspace } from "../repo/workspaces";
+import { authAttempts } from "../schema";
+import { workspaceUsage } from "../schema-features";
+import { translateCommand, translateComponent, type TranslateInput } from "./discord-translate";
 import { TRANSLATE_PER_DAY, TRANSLATE_PER_MINUTE } from "./translate-limits";
 
 // Invented server, people and message (D101, amended 2026-11-17).
@@ -20,6 +24,13 @@ beforeAll(async () => {
 });
 beforeEach(async () => {
   await truncateAll(db);
+  // A press checks its server's workspace and switches again (D126).
+  await saveWorkspace(db, {
+    unionId: 67111155,
+    slug: "ogs",
+    discordGuildId: "1544808864262914060",
+    leaderRoleIds: ["1571951836724990113"],
+  });
 });
 
 const input = (over: Partial<TranslateInput> = {}): TranslateInput => ({
@@ -104,5 +115,45 @@ describe("Translate for me: a language button", () => {
       type: 7,
       data: { content: "Translations are paused for today. Try again tomorrow." },
     });
+  });
+});
+
+describe("the alliance's own switches and daily cap (D126)", () => {
+  const command = (mode: "me" | "everyone", over: Partial<TranslateInput> = {}) =>
+    translateCommand(
+      db,
+      mode,
+      input(over),
+      { messageId: "1600000000000000055", content: ENGLISH },
+      NOW,
+    );
+
+  it("a command turned off answers the line at once and counts nothing", async () => {
+    await setSwitch(db, 1, "discord_translate_me", false, NOW);
+    await setSwitch(db, 1, "discord_translate_everyone", false, NOW);
+    const me = await command("me", { locale: "fr" });
+    expect(me.translation).toBeUndefined();
+    expect(contentOf(me)).toBe("Cette commande est désactivée pour votre alliance.");
+    expect(contentOf(await command("everyone", { permissions: "2048" }))).toBe(
+      "This command is turned off for your alliance.",
+    );
+    const pressed = await translateComponent(
+      db,
+      input(),
+      { customId: `tm:p:e:${ASKER}`, values: undefined, shownText: ENGLISH, owner: ASKER },
+      NOW,
+    );
+    expect(pressed?.translation).toBeUndefined();
+    expect(contentOf(pressed)).toBe("This command is turned off for your alliance.");
+    expect(await db.select().from(authAttempts)).toEqual([]);
+    expect(await db.select().from(workspaceUsage)).toEqual([]);
+  });
+
+  it("past the alliance's daily cap, says it is used up and when it resets", async () => {
+    await setCap(db, 1, "translate", 1, NOW);
+    expect((await command("me", { locale: "fr" })).translation).toBeDefined();
+    expect(contentOf(await command("me", { locale: "pt-BR", userId: OTHER }))).toBe(
+      "O limite diário desta aliança para traduções acabou. Ele volta às 00:00 UTC.",
+    );
   });
 });

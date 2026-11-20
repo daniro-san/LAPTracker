@@ -40,6 +40,8 @@ export const DESK_FEATURES = [
   "garrison",
   "tracker_key",
   "workspace_data",
+  // D126: the owner's switches, caps and pauses on /admin (no person: `area` is `admin`).
+  "features",
 ] as const;
 export type DeskFeature = (typeof DESK_FEATURES)[number];
 
@@ -83,6 +85,12 @@ export const DESK_ACTIONS = [
   "picture_reuse",
   "download",
   "cancel",
+  "turn_on",
+  "turn_off",
+  "cap",
+  "copy",
+  "pause",
+  "resume",
 ] as const;
 export type DeskAction = (typeof DESK_ACTIONS)[number];
 
@@ -126,10 +134,12 @@ export type ServerEvent = {
   [E in keyof ServerEvents]: {
     event: E;
     properties: ServerEvents[E];
-    /** `ws_action` only: the officer's pseudonymous id. */
+    /** `ws_action` only: the officer's pseudonymous id; none for the owner's /admin changes (D126). */
     person?: string;
   } & (E extends "ws_action"
-    ? { where: EventWorkspace }
+    ? // An officer's write names its workspace; the owner's /admin change (D126, no person) names the
+      // workspace it changed, and a global pause none.
+      { person: string; where: EventWorkspace } | { person?: undefined; where?: EventWorkspace }
     : // `$exception` under /w/[slug] or /api/w/[slug]; `$ai_generation` for a workspace's request;
       // `discord_command_used` from a workspace's Discord server.
       { where?: EventWorkspace });
@@ -176,6 +186,11 @@ function ownProperties(e: ServerEvent): Wire {
     case "discord_command_used":
       return { ...base, command: e.properties.command };
     case "ws_action":
+      // The owner's /admin changes (D126) carry no person: the server's fixed id, `area` admin.
+      if (!e.person) {
+        const { feature, action } = e.properties;
+        return { $lib: "laptracker-server", area: "admin", feature, action };
+      }
       // On the officer's person (no `$set`): the same person the desk's page identifies.
       return {
         $lib: "laptracker-server",

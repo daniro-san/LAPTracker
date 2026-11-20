@@ -29,10 +29,13 @@ export default async function GarrisonPage({
   const occasion = occasionOf(await searchParams);
   if (!occasion || !("entry" in occasion)) notFound();
   const query = `entry=${occasion.entry}&week=${occasion.week}`;
-  const page = await openRollCall(params, `calendar/garrison?${query}`, (db, access) =>
-    garrisonView(db, access, occasion.entry, occasion.week),
+  const page = await openRollCall(
+    params,
+    `calendar/garrison?${query}`,
+    (db, access) => garrisonView(db, access, occasion.entry, occasion.week),
+    "garrison",
   );
-  if (!page.data) notFound();
+  if (!page.data) return page.off ?? notFound();
   const { view } = page.data;
   const { access, slug, t, language } = page;
   const words = garrisonWords(t);
@@ -74,6 +77,7 @@ export default async function GarrisonPage({
           failed: t["shot.failed"],
           busy: t["shot.busy"],
           notKept: t["shot.notKept"],
+          off: t["features.off.read"],
         }}
       />
       {view.enemyMight === null ? (

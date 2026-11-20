@@ -39,7 +39,7 @@ export default async function MarkPage({
     (db, access, _today, lang, zone) => callView(db, access, occasion, lang, zone),
   );
   const view = page.data;
-  if (!view) notFound();
+  if (!view) return page.off ?? notFound();
   const { access, slug, t, language } = page;
   const o = view.opened;
   const elixir = o.kind === "elixir" && o.placed !== null;

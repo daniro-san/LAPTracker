@@ -14,6 +14,7 @@ import { serverDay } from "@/lib/schedule";
 import { SignedInFrame, workspaceWords } from "../../../../_ui/Frame";
 import { noticeCalendar } from "../../../../_ui/notice-calendar";
 import {
+  editorSwitches,
   languagesFor,
   noticePage,
   noticeWords,
@@ -31,7 +32,7 @@ export default async function NoticePage({
   const id = /^[1-9]\d{0,8}$/.test(raw) ? Number(raw) : null;
   if (id === null) notFound();
   const { language, t } = await workspaceWords();
-  const { access, data, waiting } = await noticePage(
+  const { access, data, waiting, off } = await noticePage(
     slug,
     async (db, a) => {
       const notice = await noticeDetail(db, a, id);
@@ -46,7 +47,7 @@ export default async function NoticePage({
     },
     `/${id}`,
   );
-  if (!data) notFound();
+  if (!data) return off ?? notFound();
   const { notice, history, last, calendar, reviews } = data;
   const words = noticeWords(language, t);
   const languages = languagesFor(language);
@@ -76,7 +77,7 @@ export default async function NoticePage({
         slug={slug}
         id={notice.id}
         fields={notice.fields}
-        picture={notice.picture}
+        {...editorSwitches(access, notice.picture)}
         stale={notice.stale}
         t={t}
         viewer={language}

@@ -58,3 +58,21 @@ describe("POST /api/admin/workspaces: member roles (D105, amended 2026-11-17)", 
     expect(await memberRoles()).toEqual([[]]);
   });
 });
+
+describe("POST /api/admin/workspaces: one workspace per Discord server (D126)", () => {
+  it("refuses a second alliance on a server already taken, in words and in the database", async () => {
+    expect((await post(TEST_PIN, { ...base, member_role_ids: [] })).status).toBe(200);
+    const other = { ...base, union_id: 67109944, slug: "nse", member_role_ids: [] };
+    const taken = await post(TEST_PIN, other);
+    expect([taken.status, await taken.json()]).toEqual([409, { code: "guild_taken" }]);
+    await expect(
+      db.insert(workspaces).values({
+        unionId: 67109944,
+        slug: "nse",
+        discordGuildId: base.discord_guild_id,
+        leaderRoleIds: base.leader_role_ids,
+      }),
+    ).rejects.toThrow();
+    expect((await db.select().from(workspaces)).map((w) => w.slug)).toEqual(["ogs"]);
+  });
+});

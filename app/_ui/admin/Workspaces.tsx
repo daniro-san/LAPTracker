@@ -5,7 +5,9 @@ import { ALLIANCES } from "@/config/alliances";
 import { copy, fill } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
+import { adminFeatures } from "@/lib/queries/workspace-features";
 import { listTombstones, listWorkspaces, type AdminWorkspace } from "@/lib/queries/workspaces";
+import { defaultSettings } from "@/lib/workspace-features";
 import { masterFingerprint } from "@/lib/workspace-keys";
 
 import { DiscordCommandCard, type GuildView } from "./DiscordCommandCard";
@@ -59,8 +61,8 @@ function Deleted({ rows }: { rows: Awaited<ReturnType<typeof listTombstones>> })
 }
 
 export async function Workspaces({ now }: { now: Date }) {
-  const [rows, deleted] = await withPageDb((db) =>
-    Promise.all([listWorkspaces(db, now), listTombstones(db)]),
+  const [rows, deleted, features] = await withPageDb((db) =>
+    Promise.all([listWorkspaces(db, now), listTombstones(db), adminFeatures(db, now)]),
   );
   // D124: a key sealed under another master key reads "needs to be entered again", worked out from its
   // fingerprint, with no write and no tracker call. /admin never sees a key.
@@ -96,6 +98,11 @@ export async function Workspaces({ now }: { now: Date }) {
         tier: p.tier,
         seen: fill(t.signOutUsers.seen, { ago: seen(p.lastSeen, now) }),
       })),
+      // D126: a workspace always has settings (its defaults until changed).
+      features: {
+        ...(features.settings.get(w.id) ?? defaultSettings(w.unionId)),
+        used: features.usage.get(w.id) ?? { ai: 0, translate: 0 },
+      },
     };
   });
   const guilds: GuildView[] = [...new Set(rows.map((w) => w.discordGuildId))].map((guild) => ({
@@ -110,7 +117,7 @@ export async function Workspaces({ now }: { now: Date }) {
     <>
       <AdminSection id="workspaces" title={t.title} help={t.help}>
         <p className="mb-4 text-body-sm text-ink/80">{t.key.rotation}</p>
-        <WorkspacesCard workspaces={views} />
+        <WorkspacesCard workspaces={views} paused={features.paused} />
         <Deleted rows={deleted} />
       </AdminSection>
       <AdminSection id="discord" title={t.command.title} help={t.command.help}>

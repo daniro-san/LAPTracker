@@ -9,6 +9,7 @@ import { WRITING_LANGUAGES } from "@/lib/ai/notice-writing";
 import { eventWorkspace } from "@/lib/analytics/server";
 import { requireWorkspace } from "@/lib/private/access";
 import { counted } from "@/lib/private/desk-action";
+import { featureOn, giveBackAllowance } from "@/lib/private/features";
 import { isSameOriginJson, NO_STORE, privateError, requestCookies } from "@/lib/private/http";
 import { privateLog } from "@/lib/private/log";
 import { SLUG } from "@/lib/private/sign-in";
@@ -35,12 +36,21 @@ export async function POST(
     if (!access.ok) return privateError(401, "signed_out");
     const ai = ctx.ai?.(eventWorkspace(access));
     if (!ai) return privateError(503, "not_set_up");
-    // One unit per language, counted before Groq is asked, with D101's per-person and per-day limits.
-    const refused = await quota(db, `desk:${access.user.id}`, WRITING_LANGUAGES.length, ctx.now());
+    if (!featureOn(access, "thanks_draft")) return privateError(403, "turned_off");
+    // One unit per language, counted before Groq is asked, with D101's per-person and per-day limits and
+    // the workspace's own AI allowance (D126).
+    const countedAt = ctx.now();
+    const units = WRITING_LANGUAGES.length;
+    const refused = await quota(db, `desk:${access.user.id}`, units, countedAt, {
+      ws: access,
+      allowance: "ai",
+    });
+    if (refused === "cap") return privateError(429, "cap_reached");
     if (refused !== "ok") return privateError(429, "busy");
     const started = ctx.now().getTime();
+    let failed: number = units;
     try {
-      const texts = await draftThanks(ai, parsed.data);
+      const texts = await draftThanks(ai, parsed.data, (n) => (failed = n));
       privateLog("thanks.draft.ok", {
         ms: ctx.now().getTime() - started,
         people: parsed.data.people.length,
@@ -54,6 +64,8 @@ export async function POST(
       );
     } catch (error) {
       if (!(error instanceof ChatError)) throw error;
+      // D126: the model did not answer, so the alliance's daily count gets these units back.
+      await giveBackAllowance(db, access, "ai", failed, countedAt);
       privateLog(`thanks.draft.${error.kind}`, { ms: ctx.now().getTime() - started });
       return privateError(FAILURE[error.kind], error.kind);
     }

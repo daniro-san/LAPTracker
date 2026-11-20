@@ -4,7 +4,9 @@
 import { calendarDays } from "@/lib/private/calendar";
 import { addDays, mondayOf, weekDays } from "@/lib/private/calendar-time";
 import { calendarDates } from "@/lib/private/calendar-words";
+import { featureOn } from "@/lib/private/features";
 import { noticesList, titlesOf } from "@/lib/private/notices";
+import { FEATURES } from "@/lib/workspace-features";
 
 import { agendaWeek, calendarWords, monthCells } from "../../../_ui/calendar-data";
 import { openCalendar } from "../../../_ui/calendar-page";
@@ -34,7 +36,8 @@ export default async function CalendarPage({
       const grid = gridOf(monday);
       const [placed, notices] = await Promise.all([
         calendarDays(db, access, grid.from, grid.to),
-        noticesList(db, access),
+        // D126: no notice to link while notices are turned off.
+        featureOn(access, "notices") ? noticesList(db, access) : [],
       ]);
       // The linked notices' titles by id: a link to a notice outside the newest 200 keeps its title.
       const linked = placed.flatMap((p) => (p.entry.noticeId === null ? [] : [p.entry.noticeId]));
@@ -55,7 +58,13 @@ export default async function CalendarPage({
   return (
     <SignedInFrame access={access} language={language} t={t} current="days" waiting={page.waiting}>
       <h1 className="font-display text-display-lg">{t["tab.days"]}</h1>
-      <CalendarNav slug={slug} current="week" t={t} query={`?week=${monday}`} />
+      <CalendarNav
+        slug={slug}
+        current="week"
+        t={t}
+        on={access.features.on}
+        query={`?week=${monday}`}
+      />
       <CalendarWeekBar
         href={href}
         monday={monday}
@@ -78,6 +87,7 @@ export default async function CalendarPage({
         zone={ctx.zone}
         notices={notices}
         addDay={today >= monday && today <= sunday ? today : monday}
+        off={FEATURES.filter((f) => !access.features.on.has(f))}
       />
     </SignedInFrame>
   );

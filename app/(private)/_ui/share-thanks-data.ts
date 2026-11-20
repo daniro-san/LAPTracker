@@ -19,6 +19,8 @@ import { SHEET_KEYS } from "./sheet-words";
 const SHARE_KEYS = [
   ...(Object.keys(shareEn).filter((k) => k.startsWith("share.")) as (keyof typeof shareEn)[]),
   ...SHEET_KEYS,
+  // D126: the alliance's daily limit for writing help is used up.
+  "features.cap.ai" as const,
 ];
 export type ShareWords = Pick<WorkspaceDictionary, (typeof SHARE_KEYS)[number]>;
 
@@ -41,8 +43,10 @@ export interface ShareThanksProps {
   roster: { uid: number; name: string }[];
   /** The members' Discord channel's name, without "#"; null when none is set up. */
   channel: string | null;
-  /** Writing help is on (GROQ_API_KEY). */
+  /** Writing help is on (GROQ_API_KEY, and the thanks draft's switch, D126). */
   ai: boolean;
+  /** The members' board is on for the alliance (D126): the sheet offers it. */
+  board: boolean;
   /** The longest "few words about them" the draft takes. */
   noteLimit: number;
 }
@@ -53,6 +57,12 @@ export function weekRange(monday: string, t: WorkspaceDictionary, language: Work
   return fill(t["share.range"], { from: dayMonth(monday), to: dayMonth(addDays(monday, 6)) });
 }
 
+/** The switches the thanks sheet follows (D126); plain booleans, so they reach client components. */
+export interface ThanksSwitches {
+  board: boolean;
+  writing: boolean;
+}
+
 /** The sheet's props; the members' channel and the writing help come from the environment. */
 export function shareThanksProps(p: {
   slug: string;
@@ -60,6 +70,8 @@ export function shareThanksProps(p: {
   language: WorkspaceLanguage;
   view: MembersView;
   today: string;
+  /** D126: the board and the thanks draft, as switched for the alliance. */
+  switches: ThanksSwitches;
 }): ShareThanksProps {
   const { t } = p;
   const monday = thanksWeek(p.today);
@@ -83,7 +95,8 @@ export function shareThanksProps(p: {
     })),
     roster: p.view.members.map((m) => ({ uid: m.uid, name: m.name })),
     channel: noticeChannels(getEnv(), p.slug).members?.name ?? null,
-    ai: getAppContext().ai !== null,
+    ai: getAppContext().ai !== null && p.switches.writing,
+    board: p.switches.board,
     noteLimit: NOTE_LIMIT,
   };
 }

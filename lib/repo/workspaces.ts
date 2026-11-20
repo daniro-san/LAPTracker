@@ -17,6 +17,15 @@ export async function findWorkspaceBySlug(db: Db, slug: string): Promise<Workspa
   return row ?? null;
 }
 
+/**
+ * The workspace whose Discord server this is: the Discord command's way in; null when none. A server has at
+ * most one workspace (unique `discord_guild_id`, D126).
+ */
+export async function findWorkspaceByGuild(db: Db, guildId: string) {
+  const [row] = await db.select().from(workspaces).where(eq(workspaces.discordGuildId, guildId));
+  return row ?? null;
+}
+
 /** Every workspace's Discord server id, once each: where /admin registers the Discord command (D96). */
 export async function workspaceGuildIds(db: Db): Promise<string[]> {
   const rows = await db
@@ -36,12 +45,22 @@ export interface WorkspaceInput {
 }
 
 /** One workspace per alliance: a second save for the same union id edits it. */
-export async function saveWorkspace(db: Db, input: WorkspaceInput): Promise<"ok" | "slug_taken"> {
-  const [taken] = await db
-    .select({ id: workspaces.id })
+export async function saveWorkspace(
+  db: Db,
+  input: WorkspaceInput,
+): Promise<"ok" | "slug_taken" | "guild_taken"> {
+  const others = await db
+    .select({ slug: workspaces.slug, guild: workspaces.discordGuildId })
     .from(workspaces)
-    .where(and(eq(workspaces.slug, input.slug), ne(workspaces.unionId, input.unionId)));
-  if (taken) return "slug_taken";
+    .where(
+      and(
+        ne(workspaces.unionId, input.unionId),
+        or(eq(workspaces.slug, input.slug), eq(workspaces.discordGuildId, input.discordGuildId)),
+      ),
+    );
+  if (others.some((w) => w.slug === input.slug)) return "slug_taken";
+  // D126: one workspace per Discord server (also a unique index), so a command finds one workspace.
+  if (others.length > 0) return "guild_taken";
   const { slug, discordGuildId, leaderRoleIds } = input;
   const memberRoleIds = input.memberRoleIds ?? [];
   await db

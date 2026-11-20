@@ -10,6 +10,7 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
 import { pruneEndedPictures, shiftDay } from "../repo/notice-picture-cleanup";
+import { setSwitch } from "../repo/workspace-features";
 import { findWorkspaceBySlug, recordSignIn, saveWorkspace } from "../repo/workspaces";
 import { noticePictures } from "../schema-notices";
 import { requireWorkspace, type WorkspaceAccess } from "./access";
@@ -193,5 +194,17 @@ describe("the weekly notice picture cleanup and its warning (D119)", () => {
     expect(await reusePicture(db, officer, from, to, later(1))).toBeNull();
     const [row] = await db.select().from(noticePictures).where(eq(noticePictures.noticeId, to));
     expect(row?.width).toBe(41);
+  });
+
+  it("deletes nothing while pictures are turned off, and warns 7 days again once they are on (D126)", async () => {
+    const id = await pictured("Old map", shiftDay(TODAY, -200));
+    await pruneEndedPictures(db, TODAY, NOW);
+    await setSwitch(db, officer.workspaceId, "notice_pictures", false, later(1));
+    expect(await pruneEndedPictures(db, shiftDay(TODAY, 7), later(7))).toBe(0);
+    expect(await stored()).toEqual([id]);
+    await setSwitch(db, officer.workspaceId, "notice_pictures", true, later(10));
+    expect(await pruneEndedPictures(db, shiftDay(TODAY, 10), later(10))).toBe(0);
+    expect(await pruneEndedPictures(db, shiftDay(TODAY, 16), later(16))).toBe(0);
+    expect(await pruneEndedPictures(db, shiftDay(TODAY, 17), later(17))).toBe(1);
   });
 });

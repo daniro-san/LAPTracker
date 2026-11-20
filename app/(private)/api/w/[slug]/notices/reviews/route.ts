@@ -5,6 +5,7 @@
 //   {action: "approve", review, requestId}  → 200, 404, 403 not_reviewer, 409 closed
 import { requireWorkspace } from "@/lib/private/access";
 import { counted } from "@/lib/private/desk-action";
+import { featureOn } from "@/lib/private/features";
 import { isSameOriginJson, NO_STORE, privateError, requestCookies } from "@/lib/private/http";
 import { privateLog } from "@/lib/private/log";
 import { answerReview, askReview, reviewBody } from "@/lib/private/notice-reviews";
@@ -26,6 +27,7 @@ export async function POST(
     const now = ctx.now();
     const access = await requireWorkspace(db, slug, requestCookies(request), now);
     if (!access.ok) return privateError(401, "signed_out");
+    if (!featureOn(access, "notices")) return privateError(403, "turned_off");
     const body = parsed.data;
     if (body.action === "ask") {
       const asked = await askReview(db, access, body, body.requestId, now);

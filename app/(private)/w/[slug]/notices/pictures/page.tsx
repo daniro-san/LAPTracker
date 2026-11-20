@@ -13,7 +13,7 @@ import { PicturesDueList } from "../../../../_ui/PicturesDue";
 export default async function PicturesDuePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const { language, t } = await workspaceWords();
-  const { access, data, waiting } = await noticePage(
+  const { access, data, waiting, off } = await noticePage(
     slug,
     async (db, a) => {
       const [due, notices] = await Promise.all([
@@ -24,6 +24,7 @@ export default async function PicturesDuePage({ params }: { params: Promise<{ sl
     },
     "/pictures",
   );
+  if (off) return off;
   return (
     <SignedInFrame access={access} language={language} t={t} current="notices" waiting={waiting}>
       <p>

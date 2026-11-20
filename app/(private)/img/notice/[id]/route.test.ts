@@ -14,6 +14,7 @@ import { openTestDb, truncateAll } from "@/lib/db.test-helpers";
 import { pngHeader } from "@/lib/private/notice-picture.test-helpers";
 import { createSession, SESSION_COOKIE } from "@/lib/private/session";
 import { workspaces, workspaceUsers } from "@/lib/schema";
+import { workspaceFeatures } from "@/lib/schema-features";
 import { noticePictures } from "@/lib/schema-notices";
 
 const holder = vi.hoisted(() => ({ ctx: null as AppContext | null }));
@@ -164,5 +165,18 @@ describe("GET /img/notice/[id]", () => {
     );
     expect(saved.headers.get("x-content-type-options")).toBe("nosniff");
     expect((await view(id, member, undefined, "?download=1")).status).toBe(404);
+  });
+
+  it("is a 404 to everyone while notice pictures are turned off, and back once on (D126)", async () => {
+    const officer = await session(1, "Rook", "officer");
+    const member = await session(1, "Pip", "member");
+    const id = await pictured(officer, true);
+    await db
+      .insert(workspaceFeatures)
+      .values({ workspaceId: 1, switches: { notice_pictures: false } });
+    expect((await view(id, officer)).status).toBe(404);
+    expect((await view(id, member)).status).toBe(404);
+    await db.delete(workspaceFeatures);
+    expect((await view(id, officer)).status).toBe(200);
   });
 });

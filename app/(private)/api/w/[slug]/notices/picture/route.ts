@@ -7,6 +7,7 @@
 // notice in the trash answers 410 notice_deleted (D118).
 import { requireWorkspace } from "@/lib/private/access";
 import { counted } from "@/lib/private/desk-action";
+import { featureOn } from "@/lib/private/features";
 import {
   isSameOriginPicture,
   NO_STORE,
@@ -48,6 +49,7 @@ export async function POST(
     const now = ctx.now();
     const access = await requireWorkspace(db, slug, requestCookies(request), now);
     if (!access.ok) return privateError(401, "signed_out");
+    if (!featureOn(access, "notice_pictures")) return privateError(403, "turned_off");
     const bytes = new Uint8Array(await request.arrayBuffer());
     const result = await privately("notices.picture", () =>
       savePicture(db, access, Number(raw), bytes, now),

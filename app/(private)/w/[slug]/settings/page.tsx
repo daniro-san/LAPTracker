@@ -10,6 +10,7 @@ import { fill } from "@/lib/copy";
 import { withPageDb } from "@/lib/page";
 import { requireWorkspace } from "@/lib/private/access";
 import { agoText } from "@/lib/private/calendar-words";
+import { featureOn } from "@/lib/private/features";
 import { toReviewCount } from "@/lib/private/import-view";
 import { RENEW_MS } from "@/lib/private/session";
 import { SLUG } from "@/lib/private/sign-in";
@@ -76,6 +77,7 @@ export default async function SettingsPage({ params }: { params: Promise<{ slug:
         t={t}
         graceDate={deletionDate(new Date(now.getTime() + DELETION_GRACE_MS), language)}
         deletionDate={access.purgeAfter ? deletionDate(access.purgeAfter, language) : null}
+        download={featureOn(access, "export")}
       />
     </SignedInFrame>
   );

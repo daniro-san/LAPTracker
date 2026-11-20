@@ -13,6 +13,7 @@ import {
 import { closestNames } from "../screenshot/match-name";
 import type { WorkspaceAccess } from "./access";
 import type { MemberFacts } from "./fact-fields";
+import { featureOn } from "./features";
 import { summaryOf, type DraftSummary } from "./import";
 import type { ImportKind, PhotoFact, Scope } from "./import-kinds";
 import { canSave, duelSaved, oursFor } from "./import-save";
@@ -63,7 +64,8 @@ export async function toReview(db: Db, access: WorkspaceAccess, now: Date): Prom
 export const toReviewCount = async (db: Db, access: WorkspaceAccess, now: Date) => {
   const [drafts, reviews] = await Promise.all([
     countOpenDrafts(db, access.workspaceId, now),
-    reviewsForMeCount(db, access),
+    // D126: no review requests count while notices are turned off for the alliance.
+    featureOn(access, "notices") ? reviewsForMeCount(db, access) : 0,
   ]);
   return drafts + reviews;
 };

@@ -2,6 +2,7 @@
 // words made here (dates in the officer's language, times in server time), and the language order.
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
+import type { ReactNode } from "react";
 
 import { fill, isolate } from "@/lib/copy";
 import type { Db } from "@/lib/db";
@@ -9,6 +10,7 @@ import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
 import { requireWorkspace, type WorkspaceAccess } from "@/lib/private/access";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
+import { featureOn, writingOff } from "@/lib/private/features";
 import { toReviewCount } from "@/lib/private/import-view";
 import type { noticeReviews, ReviewView } from "@/lib/private/notice-reviews";
 import { NOTICE_LANGUAGES, type NoticeLanguage } from "@/lib/private/notice-rules";
@@ -19,6 +21,7 @@ import { serverDay } from "@/lib/schedule";
 import { LANGUAGE_CODE, LANGUAGE_NAME } from "./languages";
 import type { ReviewProps } from "./NoticeReviews";
 import { refuse } from "./refuse";
+import { turnedOffPage } from "./TurnedOff";
 
 /** Checks access first, then reads; a refused visitor goes where `refuse` sends them, else to the sign-in. */
 export async function noticePage<T>(
@@ -26,7 +29,7 @@ export async function noticePage<T>(
   read: (db: Db, access: WorkspaceAccess) => Promise<T>,
   /** The page's path below /notices, for the return after sign-in (D99): "", "/new" or "/<id>". */
   sub: string,
-): Promise<{ access: WorkspaceAccess; data: T; waiting: number }> {
+): Promise<{ access: WorkspaceAccess; data: T; waiting: number; off: ReactNode }> {
   if (!SLUG.test(slug)) notFound();
   const jar = await cookies();
   // INVARIANT workspace.access-first: nothing private is read before this check.
@@ -34,14 +37,27 @@ export async function noticePage<T>(
     const now = new Date();
     const access = await requireWorkspace(db, slug, jar, now, RENEW_MS);
     if (!access.ok) return access;
+    const waiting = await toReviewCount(db, access, now);
+    // D126: notices turned off for the alliance: nothing of theirs is read; the page shows `off`.
+    const off = turnedOffPage(access, "notices", waiting);
+    if (off) return { access, data: null as T, waiting, off };
     // The Home tab's count of screenshot drafts (issue 299), in this page's own read.
-    return { access, data: await read(db, access), waiting: await toReviewCount(db, access, now) };
+    return { access, data: await read(db, access), waiting, off };
   });
   if ("reason" in page) {
     refuse(slug, page.reason, `/w/${slug}/notices${sub}`);
     redirect(`/w/${slug}`);
   }
   return page;
+}
+
+/**
+ * The editor's switches (D126): the notice's picture and its field only while notice pictures are on (a
+ * stored picture stays), and the writing helps turned off for the alliance.
+ */
+export function editorSwitches<P>(access: WorkspaceAccess, picture: P | null) {
+  const pictures = featureOn(access, "notice_pictures");
+  return { picture: pictures ? picture : null, pictureOff: !pictures, aiOff: writingOff(access) };
 }
 
 /** The flags, "written by" and "last change" lines, made on the server in the officer's language. */

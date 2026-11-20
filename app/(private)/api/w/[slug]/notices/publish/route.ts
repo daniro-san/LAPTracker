@@ -5,6 +5,7 @@
 // audience in the last 30 s), failed (Discord refused, timed out or ran past the budget).
 import { requireWorkspace } from "@/lib/private/access";
 import { counted } from "@/lib/private/desk-action";
+import { featureOn } from "@/lib/private/features";
 import {
   isSameOriginJson,
   NO_STORE,
@@ -43,6 +44,7 @@ export async function POST(
     const now = ctx.now();
     const access = await requireWorkspace(db, slug, requestCookies(request), now);
     if (!access.ok) return privateError(401, "signed_out");
+    if (!featureOn(access, "notices")) return privateError(403, "turned_off");
     const result = await privately("notices.publish", () =>
       publishNotice(db, access, parsed.data, {
         fetch: ctx.fetch,

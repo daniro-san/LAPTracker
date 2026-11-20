@@ -1,10 +1,12 @@
 // The desk's five destinations (D71) for each width (D122): the bottom tabs below 768, the side rail from
-// 768 and the labelled sidebar with each destination's views from 1280. Frame puts them in AppShell.
+// 768 and the labelled sidebar with each destination's views from 1280. Frame puts them in AppShell. A
+// destination or view the site's owner turned off for the alliance is left out (D126).
 import type { NavItem } from "@/lib/brand/components/layout/layout-rules";
 import { NavRail } from "@/lib/brand/components/layout/NavRail";
 import { NavSidebar } from "@/lib/brand/components/layout/NavSidebar";
 import { fill } from "@/lib/copy";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
+import type { Feature } from "@/lib/workspace-features";
 
 import { TabIcon, type TabId } from "./TabIcon";
 
@@ -17,6 +19,19 @@ const PATHS: Partial<Record<TabId, string>> = {
   mark: "/roll-call",
   days: "/calendar",
   review: "/follow-up",
+};
+
+/** The switch each destination or view belongs to (D126); the others are always there. */
+const FEATURE_OF: Partial<Record<TabId | DeskView, Feature>> = {
+  mark: "roll_call",
+  review: "follow_up",
+  caravans: "caravans",
+  notices: "notices",
+  thefts: "thefts",
+};
+const shown = (on: ReadonlySet<Feature>) => (id: TabId | DeskView) => {
+  const feature = FEATURE_OF[id];
+  return !feature || on.has(feature);
 };
 
 /** The Home tab's count: screenshot drafts (issue 299) and notice reviews for this officer (D113). Over the
@@ -53,20 +68,26 @@ export const VIEW_TAB: Record<DeskView, TabId> = {
   thefts: "days",
 };
 
-/** The five destinations for the rail and the sidebar, with the sidebar's views. */
-function navItems(t: WorkspaceDictionary, slug: string): NavItem<TabId>[] {
+/** The destinations for the rail and the sidebar, with the sidebar's views. */
+function navItems(
+  t: WorkspaceDictionary,
+  slug: string,
+  on: ReadonlySet<Feature>,
+): NavItem<TabId>[] {
   const base = `/w/${slug}`;
   const views: Partial<Record<TabId, NavItem["views"]>> = {
     members: [
       { id: "former", label: t["members.view.former"], href: `${base}/members?view=former` },
     ],
-    days: [
-      { id: "caravans", label: t["calendar.nav.caravans"], href: `${base}/calendar/caravans` },
-      { id: "notices", label: t["calendar.nav.notices"], href: `${base}/notices` },
-      { id: "thefts", label: t["thefts.nav"], href: `${base}/thefts` },
-    ],
+    days: (
+      [
+        { id: "caravans", label: t["calendar.nav.caravans"], href: `${base}/calendar/caravans` },
+        { id: "notices", label: t["calendar.nav.notices"], href: `${base}/notices` },
+        { id: "thefts", label: t["thefts.nav"], href: `${base}/thefts` },
+      ] as const
+    ).filter((v) => shown(on)(v.id)),
   };
-  return TABS.map((id) => {
+  return TABS.filter(shown(on)).map((id) => {
     const path = PATHS[id];
     return {
       id,
@@ -84,6 +105,7 @@ export function SideNav({
   view,
   waiting,
   wide,
+  on,
 }: {
   t: WorkspaceDictionary;
   slug: string;
@@ -91,10 +113,12 @@ export function SideNav({
   view?: DeskView;
   waiting: number;
   wide: boolean;
+  /** The features on for this workspace (D126). */
+  on: ReadonlySet<Feature>;
 }) {
   const props = {
     label: t["tab.aria"],
-    items: navItems(t, slug),
+    items: navItems(t, slug, on),
     current,
     icons: Object.fromEntries(TABS.map((id) => [id, <TabIcon key={id} id={id} />])),
     soon: t["tab.soon"],
@@ -106,9 +130,11 @@ export function SideNav({
       {...(view && { view })}
       badges={{ home: <Waiting n={waiting} t={t} inline /> }}
       footer={
-        <a href={`/w/${slug}/board`} className="text-link inline-flex min-h-11 items-center">
-          {t["board.seeMembers"]}
-        </a>
+        on.has("board") && (
+          <a href={`/w/${slug}/board`} className="text-link inline-flex min-h-11 items-center">
+            {t["board.seeMembers"]}
+          </a>
+        )
       }
     />
   );
@@ -119,20 +145,26 @@ export function Tabs({
   slug,
   current,
   waiting,
+  on,
 }: {
   t: WorkspaceDictionary;
   slug: string;
   current: TabId;
   waiting: number;
+  on: ReadonlySet<Feature>;
 }) {
+  const tabs = TABS.filter(shown(on));
   return (
     // Hidden while a notice editor is open, so its save bar is never under the tabs (review of PR 344).
     <nav
       aria-label={t["tab.aria"]}
       className="fixed inset-x-0 bottom-0 z-10 border-t border-rule bg-paper pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] [:root:has(form[data-notice-editor])_&]:hidden"
     >
-      <ul className="mx-auto grid max-w-[640px] grid-cols-5">
-        {TABS.map((id) => {
+      <ul
+        className="mx-auto grid max-w-[640px]"
+        style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}
+      >
+        {tabs.map((id) => {
           const label = t[`tab.${id}`];
           const inside = (
             <>

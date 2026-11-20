@@ -10,6 +10,8 @@ import {
   touchSession,
   type WorkspaceRow,
 } from "../repo/workspaces";
+import type { WorkspaceFeatures } from "../workspace-features";
+import { featuresBySlug } from "./features";
 import {
   CHECK_MS,
   hashToken,
@@ -35,6 +37,8 @@ export type WorkspaceAccess = {
     readonly displayName: string | null;
     readonly playerUid: number | null;
   };
+  /** The features the owner has on for this workspace, and its daily caps (D126). */
+  readonly features: WorkspaceFeatures;
   readonly [accessBrand]: true;
 };
 
@@ -71,6 +75,8 @@ export type BoardAccess = {
   readonly name: string | null;
   /** The workspace user, only for the pseudonymous analytics id (D115); no read takes it. */
   readonly userId: number;
+  /** D126: the board itself, and its notices, can be turned off. */
+  readonly features: WorkspaceFeatures;
   readonly [boardBrand]: true;
 };
 
@@ -88,18 +94,19 @@ async function openSession(
   db: Db,
   slug: string,
   cookies: CookieReader,
-): Promise<{ workspace: WorkspaceRow; session: Session } | Refusal> {
+): Promise<{ workspace: WorkspaceRow; session: Session; features: WorkspaceFeatures } | Refusal> {
   const token = cookies.get(SESSION_COOKIE)?.value;
-  // Both reads at once; the refusals keep their order (no workspace, then no session).
-  const [workspace, session] = await Promise.all([
+  // The reads at once; the refusals keep their order (no workspace, then no session).
+  const [workspace, session, features] = await Promise.all([
     findWorkspaceBySlug(db, slug),
     token ? findSession(db, hashToken(token)) : null,
+    featuresBySlug(db, slug),
   ]);
-  if (!workspace) return refuse("no_workspace");
+  if (!workspace || !features) return refuse("no_workspace");
   if (!session) return refuse("signed_out");
   // INVARIANT workspace.session-bound: a session of one workspace opens no other.
   if (session.workspaceId !== workspace.id) return refuse("other_workspace");
-  return { workspace, session };
+  return { workspace, session, features };
 }
 
 /** Why a found session is not served at `now` (ended, blocked, its role check too old), or null. */
@@ -134,7 +141,7 @@ export async function requireWorkspace(
 ): Promise<WorkspaceAccess | Refusal> {
   const found = await openSession(db, slug, cookies);
   if ("ok" in found) return found;
-  const { workspace, session } = found;
+  const { workspace, session, features } = found;
   // INVARIANT workspace.member-board-only: only an officer's session opens an officer page, route or API;
   // a member's, or any other tier, does not (D105).
   if (session.tier !== "officer") return refuse("member");
@@ -145,11 +152,15 @@ export async function requireWorkspace(
   if (!session.seenAt || session.seenAt < since) {
     await touchSession(db, session.tokenHash, now, since);
   }
-  return grant(workspace, {
-    id: session.userId,
-    displayName: session.chosenName ?? session.displayName,
-    playerUid: session.playerUid,
-  });
+  return grant(
+    workspace,
+    {
+      id: session.userId,
+      displayName: session.chosenName ?? session.displayName,
+      playerUid: session.playerUid,
+    },
+    features,
+  );
 }
 
 /**
@@ -167,7 +178,7 @@ export async function requireBoard(
 ): Promise<BoardAccess | Refusal> {
   const found = await openSession(db, slug, cookies);
   if ("ok" in found) return found;
-  const { workspace, session } = found;
+  const { workspace, session, features } = found;
   const officer = session.tier === "officer";
   // INVARIANT workspace.member-recheck: a member's role is confirmed again at least once a day, and no
   // member's session is served while the workspace has no member role.
@@ -185,24 +196,27 @@ export async function requireBoard(
     officer,
     name: session.chosenName ?? session.displayName,
     userId: session.userId,
+    features,
   };
   return fields as BoardAccess;
 }
 
-type Granted = Omit<WorkspaceAccess, "ok" | "user" | typeof accessBrand>;
+type Granted = Omit<WorkspaceAccess, "ok" | "user" | "features" | typeof accessBrand>;
 
-/** The one place the brand is set: a workspace and the person who passed its door. */
+/** The one place the brand is set: a workspace, the person who passed its door, and its features. */
 function grant(
   workspace: { id: number; unionId: number; slug: string; purgeAfter?: Date | null },
   user: WorkspaceAccess["user"],
+  features: WorkspaceFeatures,
 ): WorkspaceAccess {
-  const fields: Granted & Pick<WorkspaceAccess, "ok" | "user"> = {
+  const fields: Granted & Pick<WorkspaceAccess, "ok" | "user" | "features"> = {
     ok: true,
     workspaceId: workspace.id,
     unionId: workspace.unionId,
     slug: workspace.slug,
     purgeAfter: workspace.purgeAfter ?? null,
     user,
+    features,
   };
   return fields as WorkspaceAccess;
 }
@@ -220,12 +234,17 @@ export function officerAccess(
     chosenName: string | null;
     playerUid: number | null;
   },
+  features: WorkspaceFeatures,
 ): WorkspaceAccess {
-  return grant(workspace, {
-    id: officer.id,
-    displayName: officer.chosenName ?? officer.displayName,
-    playerUid: officer.playerUid,
-  });
+  return grant(
+    workspace,
+    {
+      id: officer.id,
+      displayName: officer.chosenName ?? officer.displayName,
+      playerUid: officer.playerUid,
+    },
+    features,
+  );
 }
 
 /** Sign out: ends this browser's session, only when it is a valid one of this workspace. */

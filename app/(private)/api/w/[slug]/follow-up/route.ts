@@ -13,6 +13,7 @@ import { counted } from "@/lib/private/desk-action";
 import { pickWorkspaceLanguage, WORKSPACE_DICTIONARIES } from "@/lib/private/dictionary";
 import type { FactValues } from "@/lib/private/fact-fields";
 import { factText } from "@/lib/private/fact-text";
+import { featureOn } from "@/lib/private/features";
 import { recordFollowUp, undoFollowUp } from "@/lib/private/follow-up";
 import { FOLLOW_UP_ACTIONS } from "@/lib/private/follow-up-rules";
 import {
@@ -57,6 +58,7 @@ export async function POST(
     const now = ctx.now();
     const access = await requireWorkspace(db, slug, jar, now);
     if (!access.ok) return privateError(401, "signed_out");
+    if (!featureOn(access, "follow_up")) return privateError(403, "turned_off");
     const zone = ctx.env.SERVER_TZ;
     const input = parsed.data;
     const result = await privately(

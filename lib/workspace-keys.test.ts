@@ -12,6 +12,7 @@ import type { Db } from "./db";
 import { openTestDb, truncateAll } from "./db.test-helpers";
 import { createRunLogger } from "./logger";
 import { insertRunLog } from "./repo/run-logs";
+import { setSwitch } from "./repo/workspace-features";
 import { keyFacts, storeKey } from "./repo/workspace-keys";
 import { saveWorkspace } from "./repo/workspaces";
 import { appErrors, dailyReads, dailyRosters, runLogs, workspaces } from "./schema";
@@ -19,7 +20,7 @@ import { workspaceKeys } from "./schema-keys";
 import { v1 } from "./sources";
 import { QuotaExhaustedError, UpstreamError, type CallOptions } from "./sources/types";
 import { runSquadsBatch, type SquadsDeps } from "./squads-read";
-import { checkKey, openKey, sealKey } from "./workspace-keys";
+import { checkKey, openKey, sealKey, squadTargets } from "./workspace-keys";
 
 /** Invented, low-entropy values: never real keys. */
 const SECRET = Buffer.alloc(32, 7).toString("base64");
@@ -44,7 +45,12 @@ beforeEach(async () => {
     ["ogs", OWN_ALLIANCE_ID],
     ["other", OTHER],
   ] as const) {
-    await saveWorkspace(db, { unionId, slug: name, discordGuildId: "1", leaderRoleIds: ["2"] });
+    await saveWorkspace(db, {
+      unionId,
+      slug: name,
+      discordGuildId: String(unionId),
+      leaderRoleIds: ["2"],
+    });
     const row = await db.query.workspaces.findFirst({
       where: (w, { eq }) => eq(w.unionId, unionId),
     });
@@ -172,6 +178,19 @@ describe("the squads read on each workspace's own key (D124)", () => {
     const { d, calls } = deps(THU.now);
     await runSquadsBatch(d, db);
     expect(calls.filter((c) => c.key === undefined)).toEqual([]);
+  });
+
+  it("reads no workspace whose squads read the owner turned off, and its squads stay (D126)", async () => {
+    await dayRead(THU.day);
+    await saveKey(ws.other, THEIR_KEY);
+    await setSwitch(db, ws.other, "squads", false, THU.now);
+    await setSwitch(db, ws.ogs, "squads", false, THU.now);
+    expect(await squadTargets(db, SECRET, THU.now)).toEqual([]);
+    const { d, calls } = deps(THU.now);
+    await runSquadsBatch(d, db);
+    expect(calls).toEqual([]);
+    await setSwitch(db, ws.other, "squads", true, THU.now);
+    expect((await squadTargets(db, SECRET, THU.now)).map((t) => t.workspaceId)).toEqual([ws.other]);
   });
 
   it("reads another workspace on its own key only, never on LAP_API_KEY", async () => {

@@ -103,6 +103,10 @@ export async function askDraft(
   const body = json as Partial<DraftAnswer> | null;
   if (status === 200 && body?.drafts) return { drafts: body.drafts, partly: body.partly ?? [] };
   if (status === 401) return { failed: "signedOut.text" };
+  // D126: turned off for the alliance, or its daily limit used up.
+  const code = (json as { code?: unknown } | null)?.code;
+  if (code === "turned_off") return { failed: "features.off.writing" };
+  if (code === "cap_reached") return { failed: "features.cap.ai" };
   if (status === 422) return { failed: "notices.fit.failed" };
   if (status === 504) return { failed: "notices.ai.timeout" };
   if (status === 429) return { failed: "notices.ai.busy" };

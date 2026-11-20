@@ -30,6 +30,7 @@ import {
   LanguageTabs,
 } from "./LanguageEditorParts";
 import { LANGUAGE_CODE, LANGUAGE_NAME } from "./languages";
+import type { AiKind } from "./notice-editor-state";
 import { smallButton, StaleLine } from "./NoticeBits";
 import { RefusalLine } from "./SignedOut";
 import {
@@ -49,6 +50,8 @@ export interface StartHereProps {
   slug: string;
   /** False without the translator's key (D81): Translate and Improve writing are off and say why. */
   ai: boolean;
+  /** The writing helps the site's owner turned off for the alliance (D126): their buttons are left out. */
+  aiOff?: readonly AiKind[] | undefined;
   languages: readonly NoticeLanguage[];
   first: NoticeLanguage;
   texts: Texts;
@@ -94,7 +97,7 @@ function Panel({ p, e }: { p: StartHereProps; e: Editor }) {
     <div id="sh-panel" role="tabpanel" aria-labelledby={`sh-tab-${language}`}>
       {shTabState(d, language) === "stale" && (
         <StaleLine t={t}>
-          {p.ai && source && source !== language && (
+          {p.ai && !p.aiOff?.includes("translate") && source && source !== language && (
             <button
               type="button"
               disabled={e.busy !== null}
@@ -138,15 +141,42 @@ function Panel({ p, e }: { p: StartHereProps; e: Editor }) {
   );
 }
 
+/** Where Translate goes from the tab in view: "to PT and FR", or "from EN" for an empty tab. */
+function translateWhere(
+  p: StartHereProps,
+  language: NoticeLanguage,
+  shown: { from: NoticeLanguage; to: NoticeLanguage[] },
+) {
+  const codes = new Intl.ListFormat(p.viewer, { type: "conjunction" }).format(
+    shown.to.map((l) => LANGUAGE_CODE[l]),
+  );
+  return shown.from === language
+    ? fill(p.t["notices.translate.to"], { list: codes })
+    : fill(p.t["notices.translate.from"], { lang: LANGUAGE_CODE[shown.from] });
+}
+
+/** Translate would turn text already in the other languages into drafts. */
+const replacesText = (
+  plan: ReturnType<typeof shTranslatePlan>,
+  language: NoticeLanguage,
+  d: ShDraft,
+) => plan?.from === language && plan.to.some((l) => written(d.values[l]));
+
 /** Translate and Improve writing under the text, as in the notices editor, and the line under them. */
 function Actions({ p, e }: { p: StartHereProps; e: Editor }) {
+  const hidden = p.aiOff ?? [];
+  // D126: both writing helps turned off for the alliance: only the line that says so.
+  if (p.ai && hidden.includes("translate") && hidden.includes("improve")) {
+    return <ActionNote t={p.t} reason="features.off.writing" message={null} replaces={false} />;
+  }
+  return <Helps p={p} e={e} hidden={hidden} />;
+}
+
+function Helps({ p, e, hidden }: { p: StartHereProps; e: Editor; hidden: readonly AiKind[] }) {
   const { t, languages } = p;
   const { draft: d, active: language } = e;
   const plan = shTranslatePlan(d, language, languages, e.wroteIn);
   const shown = plan ?? { from: language, to: languages.filter((l) => l !== language) };
-  const codes = new Intl.ListFormat(p.viewer, { type: "conjunction" }).format(
-    shown.to.map((l) => LANGUAGE_CODE[l]),
-  );
   const longest = Math.max(
     ...PARTS.flatMap((part) => [
       d.values[language][part].length,
@@ -160,30 +190,30 @@ function Actions({ p, e }: { p: StartHereProps; e: Editor }) {
       : null;
   const off = reason !== null || e.busy !== null;
   const described = reason ? { "aria-describedby": AI_REASON_ID } : {};
-  const replaces = plan?.from === language && plan.to.some((l) => written(d.values[l]));
+  const replaces = replacesText(plan, language, d);
   return (
     <>
       <div className="mt-3 grid grid-cols-2 gap-2 sm:max-w-md">
-        <ActionButton
-          t={t}
-          working={e.busy === "translate"}
-          name={t["notices.translate"]}
-          detail={
-            shown.from === language
-              ? fill(t["notices.translate.to"], { list: codes })
-              : fill(t["notices.translate.from"], { lang: LANGUAGE_CODE[shown.from] })
-          }
-          disabled={off || plan === null}
-          {...described}
-          onClick={() => plan && void e.translate(plan.from, plan.to)}
-        />
-        <ImproveButton
-          t={t}
-          working={e.busy === "improve"}
-          disabled={off || !written(d.values[language])}
-          described={described}
-          onImprove={(tone) => void e.improve(language, tone)}
-        />
+        {!hidden.includes("translate") && (
+          <ActionButton
+            t={t}
+            working={e.busy === "translate"}
+            name={t["notices.translate"]}
+            detail={translateWhere(p, language, shown)}
+            disabled={off || plan === null}
+            {...described}
+            onClick={() => plan && void e.translate(plan.from, plan.to)}
+          />
+        )}
+        {!hidden.includes("improve") && (
+          <ImproveButton
+            t={t}
+            working={e.busy === "improve"}
+            disabled={off || !written(d.values[language])}
+            described={described}
+            onImprove={(tone) => void e.improve(language, tone)}
+          />
+        )}
       </div>
       <ActionNote t={t} reason={reason} message={e.aiMessage} replaces={replaces} />
     </>

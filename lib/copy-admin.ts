@@ -1,5 +1,6 @@
 // The admin area's text (app/(pages)/admin/*, app/_ui/admin/*), re-exported as `copy.admin` from
 // lib/copy.ts. Sentences are allowed here (DESIGN.md: the grandma voice lives in the admin area).
+import { featuresAdminCopy } from "./copy-admin-features";
 import { workspacesAdminCopy } from "./copy-admin-workspaces";
 import { guideCopy } from "./copy-guide";
 
@@ -308,4 +309,5 @@ export const adminCopy = {
   },
   guide: guideCopy,
   workspaces: workspacesAdminCopy,
+  features: featuresAdminCopy,
 };

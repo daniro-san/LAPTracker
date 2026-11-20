@@ -14,6 +14,7 @@ import {
 import { noticeTitles } from "../repo/notices";
 import { serverDay, type ScheduleConfig } from "../schedule";
 import type { WorkspaceAccess } from "./access";
+import { featureOn } from "./features";
 import { pictureView, type PictureView } from "./notice-picture-rules";
 
 export interface DueItem {
@@ -31,6 +32,8 @@ export async function picturesDue(
   now: Date,
   cfg: Pick<ScheduleConfig, "SERVER_TZ">,
 ): Promise<DueItem[]> {
+  // D126: none while notices or their pictures are turned off for the alliance (the pictures stay).
+  if (!featureOn(access, "notices") || !featureOn(access, "notice_pictures")) return [];
   const today = serverDay(now, cfg);
   const due = await duePictures(db, access.workspaceId, today);
   const titles = await noticeTitles(db, access.workspaceId, [

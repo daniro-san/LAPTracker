@@ -20,6 +20,7 @@ import {
   type WorkspaceDictionary,
   type WorkspaceLanguage,
 } from "@/lib/private/dictionary";
+import type { Feature } from "@/lib/workspace-features";
 
 import { AnalyticsPerson } from "./AnalyticsPerson";
 import { DeletionBanner } from "./DeletionBanner";
@@ -62,8 +63,15 @@ export async function Frame({
   subtitle?: string;
   /** "Signed in as … · Sign out", once signed in. */
   account?: ReactNode;
-  /** Signed in: the destinations with `current` open (and `view` inside it), and the first-use cards. */
-  tabs?: { slug: string; current: TabId; view?: DeskView; waiting: number };
+  /** Signed in: the destinations with `current` open (and `view` inside it), and the first-use cards;
+   * `on`: the features on for the workspace, so a turned-off destination is left out (D126). */
+  tabs?: {
+    slug: string;
+    current: TabId;
+    view?: DeskView;
+    waiting: number;
+    on: ReadonlySet<Feature>;
+  };
   /** The page is laid out on the layout components (D122): the full width, not the 960 px fallback. */
   wide?: boolean;
   children: ReactNode;
@@ -91,7 +99,9 @@ export async function Frame({
       bar={bar}
       legacyWidth={!wide}
       {...(tabs && {
-        tabs: <Tabs t={t} slug={tabs.slug} current={tabs.current} waiting={tabs.waiting} />,
+        tabs: (
+          <Tabs t={t} slug={tabs.slug} current={tabs.current} waiting={tabs.waiting} on={tabs.on} />
+        ),
         rail: <SideNav t={t} {...tabs} wide={false} />,
         sidebar: <SideNav t={t} {...tabs} wide />,
       })}
@@ -158,14 +168,54 @@ export function SignedInFrame({
   const view = at in VIEW_TAB ? (at as DeskView) : undefined;
   const current = view ? VIEW_TAB[view] : (at as TabId);
   const alliance = ALLIANCES.find((a) => a.unionId === access.unionId);
-  const name = access.user.displayName ?? "";
   const person = analyticsPerson(getEnv(), {
     userId: access.user.id,
     tier: "officer",
     slug: access.slug,
     unionId: access.unionId,
   });
-  const account = (
+  return (
+    <SignedOutProvider slug={access.slug} text={t["signedOut.text"]} link={t["signedOut.link"]}>
+      <Frame
+        language={language}
+        t={t}
+        tabs={{
+          slug: access.slug,
+          current,
+          waiting,
+          on: access.features.on,
+          ...(view && { view }),
+        }}
+        account={<Account access={access} language={language} t={t} />}
+        wide={wide}
+        {...(alliance && { subtitle: `${alliance.tag} · ${alliance.name}` })}
+      >
+        {person && <AnalyticsPerson {...person} />}
+        <DeletionNotice
+          slug={access.slug}
+          purgeAfter={access.purgeAfter}
+          officer
+          t={t}
+          language={language}
+        />
+        {children}
+      </Frame>
+    </SignedOutProvider>
+  );
+}
+
+/** "Signed in as …" with the officer's profile, Alliance settings and Sign out. */
+function Account({
+  access,
+  language,
+  t,
+}: {
+  access: WorkspaceAccess;
+  language: WorkspaceLanguage;
+  t: WorkspaceDictionary;
+}) {
+  const name = access.user.displayName ?? "";
+  return (
     <>
       <ProfileSheet
         slug={access.slug}
@@ -192,27 +242,5 @@ export function SignedInFrame({
         />
       </span>
     </>
-  );
-  return (
-    <SignedOutProvider slug={access.slug} text={t["signedOut.text"]} link={t["signedOut.link"]}>
-      <Frame
-        language={language}
-        t={t}
-        tabs={{ slug: access.slug, current, waiting, ...(view && { view }) }}
-        account={account}
-        wide={wide}
-        {...(alliance && { subtitle: `${alliance.tag} · ${alliance.name}` })}
-      >
-        {person && <AnalyticsPerson {...person} />}
-        <DeletionNotice
-          slug={access.slug}
-          purgeAfter={access.purgeAfter}
-          officer
-          t={t}
-          language={language}
-        />
-        {children}
-      </Frame>
-    </SignedOutProvider>
   );
 }

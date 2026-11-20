@@ -92,7 +92,18 @@ function EntryCard(props: {
 }
 
 /** "Saved 4 thefts. Left out: 1 help, 2 already in the log." — only the reasons that apply. */
-function SavedThefts({ saved, slug, w }: { saved: Saved; slug: string; w: Words }) {
+function SavedThefts({
+  saved,
+  slug,
+  w,
+  link,
+}: {
+  saved: Saved;
+  slug: string;
+  w: Words;
+  /** D126: false while the thefts log is turned off for the alliance. */
+  link: boolean;
+}) {
   const n = saved.saved;
   const list = (["help", "own", "duplicate"] as const)
     .filter((k) => saved.left[k] > 0)
@@ -104,12 +115,14 @@ function SavedThefts({ saved, slug, w }: { saved: Saved; slug: string; w: Words 
         {fillIn(w[n === 1 ? "shots.theftsSaved.one" : "shots.theftsSaved.other"], { n })}
         {list && ` ${fillIn(w["shots.leftOut.list"], { list })}`}
       </p>
-      <a
-        href={`/w/${slug}/thefts`}
-        className="inline-flex min-h-11 items-center font-semibold text-plum underline underline-offset-4"
-      >
-        {w["shots.openThefts"]}
-      </a>
+      {link && (
+        <a
+          href={`/w/${slug}/thefts`}
+          className="inline-flex min-h-11 items-center font-semibold text-plum underline underline-offset-4"
+        >
+          {w["shots.openThefts"]}
+        </a>
+      )}
     </div>
   );
 }
@@ -172,6 +185,7 @@ export function SecretOpsReview(props: {
   kinds: Record<ImportKind, string>;
   saveKinds: ImportKind[];
   text: ReviewText;
+  thefts: boolean;
 }) {
   const { view, w, slug } = props;
   const router = useRouter();
@@ -232,7 +246,7 @@ export function SecretOpsReview(props: {
         ))}
       </ul>
       <Message text={message} />
-      {saved && <SavedThefts saved={saved} slug={slug} w={w} />}
+      {saved && <SavedThefts saved={saved} slug={slug} w={w} link={props.thefts} />}
       {!readOnly && (
         <Actions
           w={w}

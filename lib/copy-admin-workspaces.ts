@@ -111,6 +111,7 @@ export const workspacesAdminCopy = {
   errors: {
     bad_request: "Check the fields: an id is 17 to 20 digits.",
     slug_taken: "Another workspace has this address.",
+    guild_taken: "Another workspace already uses this Discord server.",
     expiry_past: "The date has to be in the future.",
     workspace_not_found: "That workspace no longer exists.",
     no_workspace: "That workspace no longer exists.",

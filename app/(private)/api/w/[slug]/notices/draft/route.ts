@@ -8,7 +8,7 @@
 //   {kind: "fit", language, text}
 import { z } from "zod";
 
-import { ChatError } from "@/lib/ai/groq";
+import { ChatError, type ChatModel } from "@/lib/ai/groq";
 import {
   fitText,
   improveText,
@@ -20,6 +20,7 @@ import {
 import { eventWorkspace } from "@/lib/analytics/server";
 import { requireWorkspace } from "@/lib/private/access";
 import { counted } from "@/lib/private/desk-action";
+import { featureOn, giveBackAllowance, settled, useAllowance } from "@/lib/private/features";
 import { isSameOriginJson, NO_STORE, privateError, requestCookies } from "@/lib/private/http";
 import { privateLog } from "@/lib/private/log";
 import { DRAFT_LIMIT, NOTICE_LIMIT, noticeLength } from "@/lib/private/notice-rules";
@@ -62,6 +63,39 @@ const body = z.discriminatedUnion("kind", [
 type Answer = { to: WritingLanguage; text: string; retried: boolean; partly: boolean };
 
 const FAILURE = { timeout: 504, busy: 429, failed: 502 } as const;
+/** Each kind's switch (D126). */
+const SWITCH = {
+  translate: "notice_translate",
+  improve: "notice_improve",
+  fit: "notice_fit",
+} as const;
+
+/** The model's drafts for `ask`; null when Shorten came back over the limit both times (D113). */
+async function draftsFor(
+  ai: ChatModel,
+  ask: z.infer<typeof body>,
+  onFailed: (n: number) => void,
+): Promise<Answer[] | null> {
+  if (ask.kind === "translate") {
+    // A language the model did not answer is given back alone; the others were spent (D126).
+    return settled(
+      ask.to.map(async (to) => ({
+        to,
+        ...(await translateText(ai, ask.from, to, ask.text, ask.limit ?? NOTICE_LIMIT)),
+      })),
+      onFailed,
+    );
+  }
+  if (ask.kind === "improve") {
+    const limit = ask.limit ?? NOTICE_LIMIT;
+    const improved = await improveText(ai, ask.language, ask.tone, ask.text, limit);
+    return [{ to: ask.language, text: improved, retried: false, partly: false }];
+  }
+  const fitted = await fitText(ai, ask.language, ask.text, NOTICE_LIMIT, noticeLength);
+  return (
+    fitted && [{ to: ask.language, text: fitted.text, retried: fitted.retried, partly: false }]
+  );
+}
 
 export async function POST(
   request: Request,
@@ -78,32 +112,19 @@ export async function POST(
     const ai = ctx.ai?.(eventWorkspace(access));
     if (!ai) return privateError(503, "not_set_up");
     const ask = parsed.data;
-    const started = ctx.now().getTime();
+    if (!featureOn(access, SWITCH[ask.kind])) return privateError(403, "turned_off");
+    // D126: one unit per text asked of the model (Translate: one per language), before it is asked.
+    const units = ask.kind === "translate" ? ask.to.length : 1;
+    const countedAt = ctx.now();
+    if ((await useAllowance(db, access, "ai", units, countedAt)) !== "ok")
+      return privateError(429, "cap_reached");
+    const started = countedAt.getTime();
+    let failed = units;
     try {
-      let answers: Answer[];
-      if (ask.kind === "translate") {
-        answers = await Promise.all(
-          ask.to.map(async (to) => ({
-            to,
-            ...(await translateText(ai, ask.from, to, ask.text, ask.limit ?? NOTICE_LIMIT)),
-          })),
-        );
-      } else if (ask.kind === "improve") {
-        const improved = await improveText(
-          ai,
-          ask.language,
-          ask.tone,
-          ask.text,
-          ask.limit ?? NOTICE_LIMIT,
-        );
-        answers = [{ to: ask.language, text: improved, retried: false, partly: false }];
-      } else {
-        const fitted = await fitText(ai, ask.language, ask.text, NOTICE_LIMIT, noticeLength);
-        if (!fitted) {
-          privateLog("notices.fit.still_over", { ms: ctx.now().getTime() - started });
-          return privateError(422, "still_over");
-        }
-        answers = [{ to: ask.language, text: fitted.text, retried: fitted.retried, partly: false }];
+      const answers = await draftsFor(ai, ask, (n) => (failed = n));
+      if (!answers) {
+        privateLog("notices.fit.still_over", { ms: ctx.now().getTime() - started });
+        return privateError(422, "still_over");
       }
       privateLog(`notices.${ask.kind}.ok`, {
         ms: ctx.now().getTime() - started,
@@ -120,6 +141,8 @@ export async function POST(
       return counted(ctx, access, "notice_ai", ask.kind, drafts);
     } catch (error) {
       if (!(error instanceof ChatError)) throw error;
+      // D126: the model did not answer, so the alliance's daily count gets these units back.
+      await giveBackAllowance(db, access, "ai", failed, countedAt);
       privateLog(`notices.${ask.kind}.${error.kind}`, { ms: ctx.now().getTime() - started });
       return privateError(FAILURE[error.kind], error.kind);
     }

@@ -52,8 +52,9 @@ function useWrite(props: ShareThanksProps, chosen: (SharePerson & { note: string
     setBusy(false);
     if (typeof answer !== "string") return setTexts(answer);
     if (answer === SIGNED_OUT) return setNote(SIGNED_OUT);
-    if (answer === "not_set_up") {
-      setNote(words["share.ai.off"]);
+    // D126: turned off for the alliance reads like no writing help; a used-up daily limit says so.
+    if (answer === "not_set_up" || answer === "turned_off" || answer === "cap_reached") {
+      setNote(words[answer === "cap_reached" ? "features.cap.ai" : "share.ai.off"]);
       return setTexts(EMPTY);
     }
     setNote(words[answer === "busy" ? "share.ai.busy" : "share.ai.failed"]);

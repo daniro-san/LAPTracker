@@ -8,8 +8,10 @@ import { and, eq, isNotNull, isNull, sql } from "drizzle-orm";
 import type { Db } from "../db";
 import { workspaceUsers } from "../schema";
 import { noticePictures, notices } from "../schema-notices";
+import { resolveFeatures, picturesShown } from "../workspace-features";
 import { putPicture } from "./notice-pictures";
 import { live } from "./notices";
+import { allSettings } from "./workspace-features";
 
 /** A picture is kept this many days after its notice's end day. */
 export const PICTURE_KEEP_DAYS = 90;
@@ -44,17 +46,28 @@ const dueFrom = (today: string) => shiftDay(today, -(PICTURE_KEEP_DAYS + 1));
  */
 export async function pruneEndedPictures(db: Db, today: string, now: Date): Promise<number> {
   const warnedBy = new Date(now.getTime() - WARN_DAYS * DAY_MS).toISOString();
+  // D126: a workspace with notices or their pictures turned off sees no warning, so nothing of it is
+  // deleted or warned about; its warnings start again from nothing once both are on.
+  const off = (await allSettings(db))
+    .filter((w) => !picturesShown(resolveFeatures(w.settings, []).on))
+    .map((w) => sql`${w.workspaceId}`);
+  const skip = off.length > 0 ? sql`and g.workspace_id not in (${sql.join(off, sql`, `)})` : sql``;
+  if (off.length > 0) {
+    await db.execute(sql`
+      update notice_pictures g set warned_at = null
+      where g.warned_at is not null and g.workspace_id in (${sql.join(off, sql`, `)})`);
+  }
   const deleted = await db.execute<{ notice_id: number }>(sql`
     delete from notice_pictures g using ${endDays} last, notices n
     where last.notice_id = g.notice_id and n.id = g.notice_id and n.deleted_at is null
       and last.ends_on <> '' and last.ends_on <= ${dueFrom(today)}
-      and g.kept_at is null and g.warned_at is not null and g.warned_at <= ${warnedBy}
+      and g.kept_at is null and g.warned_at is not null and g.warned_at <= ${warnedBy} ${skip}
     returning g.notice_id`);
   await db.execute(sql`
     update notice_pictures g set warned_at = ${now.toISOString()} from ${endDays} last, notices n
     where last.notice_id = g.notice_id and n.id = g.notice_id and n.deleted_at is null
       and last.ends_on <> '' and last.ends_on <= ${warnFrom(today)}
-      and g.kept_at is null and g.warned_at is null`);
+      and g.kept_at is null and g.warned_at is null ${skip}`);
   await db.execute(sql`
     update notice_pictures g set warned_at = null
     where g.warned_at is not null and (g.kept_at is not null or not exists (

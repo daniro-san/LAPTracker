@@ -5,6 +5,7 @@
 // Discord stays there. → 200, 404 not_found.
 import { requireWorkspace } from "@/lib/private/access";
 import { counted } from "@/lib/private/desk-action";
+import { featureOn } from "@/lib/private/features";
 import { isSameOriginJson, NO_STORE, privateError, requestCookies } from "@/lib/private/http";
 import { privateLog } from "@/lib/private/log";
 import { deleteNotice, noticeDelete } from "@/lib/private/notices";
@@ -24,6 +25,7 @@ export async function POST(
     const now = ctx.now();
     const access = await requireWorkspace(db, slug, requestCookies(request), now);
     if (!access.ok) return privateError(401, "signed_out");
+    if (!featureOn(access, "notices")) return privateError(403, "turned_off");
     const result = await deleteNotice(db, access, parsed.data, now);
     if (result !== "ok") return privateError(404, result);
     const { undo, restore } = parsed.data;

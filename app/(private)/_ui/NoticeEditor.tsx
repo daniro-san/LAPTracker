@@ -25,6 +25,25 @@ import { KeptMark } from "./NoticePictureKept";
 
 export type { EditorProps } from "./notice-editor-state";
 
+/** The notice's picture (D119), with "Kept" while the weekly cleanup would take it. */
+function Picture({
+  p,
+  e,
+  picture,
+}: {
+  p: EditorProps;
+  e: ReturnType<typeof useEditor>;
+  picture: ReturnType<typeof usePictureDraft>;
+}) {
+  return (
+    <PictureField picture={picture} title={e.draft.values.title} busy={e.busy !== null} t={p.t}>
+      {p.id !== null && p.picture?.kept && picture.pending === "keep" && (
+        <KeptMark slug={p.slug} id={p.id} kept={p.picture.kept} t={p.t} language={p.viewer} />
+      )}
+    </PictureField>
+  );
+}
+
 export function NoticeEditor(p: EditorProps) {
   const picture = usePictureDraft(p.picture ?? null);
   const e = useEditor(p, picture);
@@ -85,11 +104,7 @@ export function NoticeEditor(p: EditorProps) {
       />
       <LanguageField p={p} e={e} />
       <NoticeActions p={p} e={e} />
-      <PictureField picture={picture} title={draft.values.title} busy={e.busy !== null} t={t}>
-        {p.id !== null && p.picture?.kept && picture.pending === "keep" && (
-          <KeptMark slug={p.slug} id={p.id} kept={p.picture.kept} t={t} language={p.viewer} />
-        )}
-      </PictureField>
+      {!p.pictureOff && <Picture p={p} e={e} picture={picture} />}
       <Flags e={e} t={t} />
       <NoticeHistory p={p} e={e} />
       <SaveBar p={p} e={e} />

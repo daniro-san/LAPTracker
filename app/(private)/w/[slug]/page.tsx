@@ -26,6 +26,7 @@ import {
 } from "@/lib/private/desk-activity";
 import { activityView } from "@/lib/private/desk-activity-words";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
+import { featureOn, thanksSwitches } from "@/lib/private/features";
 import { toReview, type ReviewItem } from "@/lib/private/import-view";
 import { cardFormats } from "@/lib/private/member-card";
 import { membersView, progressHistory, type MembersView } from "@/lib/private/members";
@@ -155,7 +156,8 @@ function KeyCard({ slug, t, state }: { slug: string; t: WorkspaceDictionary; sta
 }
 
 function Home(props: {
-  slug: string;
+  /** The workspace; its switches decide what the thanks sheet offers (D126). */
+  access: WorkspaceAccess;
   t: WorkspaceDictionary;
   language: WorkspaceLanguage;
   items: ReviewItem[];
@@ -171,7 +173,8 @@ function Home(props: {
   /** Sunday or Monday, and the week's thanks not shared yet (D114). */
   nudge: boolean;
 }) {
-  const { slug, t, language } = props;
+  const { t, language } = props;
+  const slug = props.access.slug;
   const f = cardFormats(language, getEnv().SERVER_TZ, new Date());
   const at = new Intl.DateTimeFormat(language, {
     weekday: "short",
@@ -228,6 +231,7 @@ function Home(props: {
               language={language}
               view={props.view}
               nudge={props.nudge}
+              switches={thanksSwitches(props.access)}
             />
           </>
         }
@@ -277,7 +281,7 @@ export default async function WorkspacePage({
       progressHistory(db, access).then((history) => membersView(db, access, now, zone, history)),
       onDeskNow(db, access, now),
       activityPage(db, access, { now, zone }, null, ACTIVITY_FIRST),
-      reviewsForMe(db, access),
+      featureOn(access, "notices") ? reviewsForMe(db, access) : [],
       cards(db, access, now, zone),
     ]);
     const desk = { names, activity, now, due, key };
@@ -314,7 +318,7 @@ export default async function WorkspacePage({
   return (
     <SignedInFrame access={access} language={language} t={t} current="home" waiting={waiting} wide>
       <Home
-        slug={slug}
+        access={access}
         t={t}
         language={language}
         items={items}
