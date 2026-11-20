@@ -9,8 +9,11 @@ export type WorkspaceRow = typeof workspaces.$inferSelect;
 /** "officer": the desk (D71). "member": the members' board only (D105). */
 export type SessionTier = "officer" | "member";
 
-/** A workspace's address, /w/<slug>: lowercase letters, digits and dashes; "auth" is the callback's. */
-export const WORKSPACE_SLUG = /^(?!auth$)[a-z0-9][a-z0-9-]{1,31}$/;
+/**
+ * A workspace's address, /w/<slug>: lowercase letters, digits and dashes; "auth" is the callback's, "invite"
+ * and "request" are a new alliance's pages (D130).
+ */
+export const WORKSPACE_SLUG = /^(?!(?:auth|invite|request)$)[a-z0-9][a-z0-9-]{1,31}$/;
 
 export async function findWorkspaceBySlug(db: Db, slug: string): Promise<WorkspaceRow | null> {
   const [row] = await db.select().from(workspaces).where(eq(workspaces.slug, slug));

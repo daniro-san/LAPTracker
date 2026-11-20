@@ -14,6 +14,7 @@ import { defaultSettings, resolveFeatures, type FeatureSettings } from "@/lib/wo
 import { keyUsable, masterFingerprint } from "@/lib/workspace-keys";
 
 import { DiscordCommandCard, type GuildView } from "./DiscordCommandCard";
+import { Invites } from "./Invites";
 import { AdminSection } from "./parts";
 import { SquadsCard, type SquadsRowView } from "./SquadsCard";
 import { WorkspacesCard } from "./WorkspacesCard";
@@ -220,6 +221,7 @@ export async function Workspaces({ now }: { now: Date }) {
         <WorkspacesCard workspaces={views} paused={features.paused} />
         <Deleted rows={deleted} />
       </AdminSection>
+      <Invites now={now} unionIds={rows.map((w) => w.unionId)} />
       <AdminSection id="squads" title={t.squads.title} help={t.squads.help}>
         <SquadsCard day={squadsDay} rows={squadsRows({ rows, squads, settingsOf, current, now })} />
       </AdminSection>

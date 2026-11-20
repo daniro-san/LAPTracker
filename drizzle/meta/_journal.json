@@ -365,6 +365,13 @@
       "when": 1795143191707,
       "tag": "0051_workspace_discord",
       "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1795146810316,
+      "tag": "0052_alliance_invites",
+      "breakpoints": true
     }
   ]
 }

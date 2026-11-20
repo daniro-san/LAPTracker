@@ -85,6 +85,18 @@ Insights:
 | Does a new alliance get its Discord set up?                    | `ws_bot_installed`, `ws_webhook_set`                                                                   | `channel`: `leaders`, `members` (never the URL or the channel name); `workspace`, `alliance`                                                                                                              | Alliance settings → Discord (D129, issue 486) |
 | Are the Members tools used?                                    | `ws_filter_used`, `ws_copy_spreadsheet`, `ws_facts_saved`, `ws_sheet_imported`, `ws_language_switched` | `filter`; `language`; `workspace`, `alliance`                                                                                                                                                             | D77, D80, D98                                 |
 
+### A new alliance's way in (D130, issue 453)
+
+Sent from /w/request, /w/invite and /admin, before the workspace exists. `before_send` adds no `workspace` there (`/w/invite` and `/w/request` are not a slug).
+
+| Product question                                        | Event                                     | Properties                                                                                                                              | Sent from                                                  |
+| ------------------------------------------------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| Do alliances ask for a Desk, and does the roster agree? | `ws_access_requested`                     | `claimed_role`: `r5`, `r4`; `roster_match`: `found`, `not_found` (never the name); `workspace`, `alliance`: not sent (no workspace yet) | "Request an Officers' Desk" sent                           |
+| Does the owner answer?                                  | `admin_workspace_approved`                | none; `workspace`, `alliance`: not sent                                                                                                 | /admin: an invite link made, or a request approved         |
+| Is the invite opened, and does it end in a Desk?        | `ws_invite_opened`, `ws_invite_completed` | `roles_created`: true when the roles were created on the page rather than picked; `workspace`, `alliance`: not sent (no workspace yet)  | /w/invite: before sign-in; after "Open our Officers' Desk" |
+
+Funnel (issue 486): `ws_access_requested` → `admin_workspace_approved` → `ws_invite_opened` → `ws_invite_completed` → `ws_bot_installed` → `ws_webhook_set`, within 14 days.
+
 Insights:
 
 - **Tabs opened** — Trends, `$pageview` with `area = workspace`, breakdown `section`, weekly, total and unique users.
