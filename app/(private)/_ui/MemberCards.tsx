@@ -1,15 +1,23 @@
 "use client";
 
 // A member's card (issue 296), shown in the Members list's sheet (issue 337): the server makes its words
-// (lib/private/member-card.ts) and this lays them out: the status with its evidence, the game's numbers, the
-// donations per day and the other details. The officers' member facts (issue 297) are listed with their
-// source; "Edit info" and "Paste what they told you" sit in the sheet's sticky bar (factsActions) and open
-// the editor. Nothing is hover-only.
+// (lib/private/member-card.ts) and this lays them out. Issue 461 (D136): a short header (the status when it
+// says something, the stat strip, their time and languages, where they came from) over four tabs, so no
+// view is a long scroll: Overview (the reasons, the last 7 days, this week's Alliance Duel), Info (the
+// officers' member facts with their sources and the details, two columns from 768), Squads (D117) and
+// History (follow-up notes, earlier values). "Edit info" and "Paste what they told you" sit in the sheet's
+// sticky bar (factsActions) and open the editor whatever the tab. Nothing is hover-only.
+import { useState } from "react";
+
+import { chip } from "@/lib/brand/components/controls";
 import type { SheetAction } from "@/lib/brand/components/Sheet";
+import { Tag } from "@/lib/brand/components/Tag";
 import type { CardData } from "@/lib/private/member-card";
 
 import { SOURCE_KEY } from "./facts-form";
 import { FactsEditor, type EditorProps } from "./FactsEditor";
+import { CardTabs, panelId, tabId, useCardTab } from "./MemberCardTabs";
+import { MemberLastDays } from "./MemberLastDays";
 import { MemberSquads } from "./MemberSquads";
 import { withNoData } from "./NoData";
 
@@ -59,6 +67,79 @@ export type FactsCard = Pick<
   "uid" | "name" | "factLines" | "stored" | "autoStatus" | "noData"
 >;
 
+/** The facts editor, a sheet of its own, while the sheet's bar has it open. */
+function Editor({
+  card,
+  editor,
+  mode,
+  onEditorClose,
+}: { card: FactsCard; editor: EditorContext } & Editing) {
+  if (!mode) return null;
+  return (
+    <FactsEditor
+      {...editor}
+      uid={card.uid}
+      name={card.name}
+      facts={card.stored}
+      autoStatus={card.autoStatus}
+      mode={mode}
+      onClose={onEditorClose}
+    />
+  );
+}
+
+/**
+ * The member facts with their sources. `dates` shows when Main squad and AD Tech were saved; `grid` lays
+ * them in two columns from 768 (the member card's Info tab), label over value.
+ */
+function FactList({
+  card,
+  editor,
+  zoneNow,
+  dates,
+  grid,
+}: {
+  card: FactsCard;
+  editor: EditorContext;
+  zoneNow: string | null;
+  dates: boolean;
+  grid?: boolean;
+}) {
+  const { words } = editor;
+  return (
+    <dl className={`mt-1 text-body-sm ${grid ? "md:grid md:grid-cols-2 md:gap-x-4" : ""}`}>
+      {card.factLines.map((l) => (
+        <div
+          key={l.field}
+          className={`border-t border-rule py-2 ${grid ? "md:block" : ""} flex justify-between gap-3`}
+        >
+          <dt className="shrink-0 text-ink/75">{l.label}</dt>
+          <dd
+            className={`min-w-0 text-right break-words whitespace-pre-line ${grid ? "md:text-left" : ""}`}
+          >
+            <span className="tabular-nums">{withNoData(l.value, card.noData)}</span>
+            {/* D109: the change since the version before, on its own muted line. */}
+            {l.change && <span className="block text-ink/75 tabular-nums">{l.change}</span>}
+            {l.field === "timeZone" && l.source && zoneNow && (
+              <span className="block text-ink/75">{zoneNow}</span>
+            )}
+            {/* "Typed by an officer" is the default and says nothing; the others are plain words. */}
+            {l.source && l.source !== "officer" && (
+              <span className="ml-2 inline-block text-[12px] text-ink/70">
+                {words[SOURCE_KEY[l.source]]}
+              </span>
+            )}
+            {/* When it was saved: plain information, never a warning (D109). */}
+            {dates && l.updated && (
+              <span className="block text-[12px] text-ink/70">{l.updated}</span>
+            )}
+          </dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
 /** The member facts with their sources, and the editor while the sheet's bar has it open. */
 export function Facts({
   card,
@@ -71,133 +152,171 @@ export function Facts({
   editor: EditorContext;
   zoneNow: string | null;
 } & Editing) {
-  const { words } = editor;
   return (
     <section className="mt-3 border-t border-rule pt-3">
-      <h3 className="text-body-sm font-semibold">{words["facts.head"]}</h3>
-      <dl className="mt-1 text-body-sm">
-        {card.factLines.map((l) => (
-          <div key={l.field} className="flex justify-between gap-3 border-t border-rule py-2">
-            <dt className="shrink-0 text-ink/75">{l.label}</dt>
-            <dd className="min-w-0 text-right break-words whitespace-pre-line">
-              <span className="tabular-nums">{withNoData(l.value, card.noData)}</span>
-              {/* D109: the change since the version before, on its own muted line ("+400K since Nov 10",
-                  "+5 points since Nov 10", "Complete"). */}
-              {l.change && <span className="block text-ink/75 tabular-nums">{l.change}</span>}
-              {l.field === "timeZone" && l.source && zoneNow && (
-                <span className="block text-ink/75">{zoneNow}</span>
-              )}
-              {/* "Typed by an officer" is the default and says nothing; the others are plain words. */}
-              {l.source && l.source !== "officer" && (
-                <span className="ml-2 inline-block text-[12px] text-ink/70">
-                  {words[SOURCE_KEY[l.source]]}
-                </span>
-              )}
-              {/* When it was saved: plain information, never a warning (D109). */}
-              {l.updated && <span className="block text-[12px] text-ink/70">{l.updated}</span>}
-            </dd>
-          </div>
-        ))}
-      </dl>
-      {mode && (
-        <FactsEditor
-          {...editor}
-          uid={card.uid}
-          name={card.name}
-          facts={card.stored}
-          autoStatus={card.autoStatus}
-          mode={mode}
-          onClose={onEditorClose}
-        />
-      )}
+      <h3 className="text-body-sm font-semibold">{editor.words["facts.head"]}</h3>
+      <FactList card={card} editor={editor} zoneNow={zoneNow} dates />
+      <Editor card={card} editor={editor} mode={mode} onEditorClose={onEditorClose} />
     </section>
   );
 }
 
-function Details({ card, editor, zoneNow, mode, onEditorClose }: CardProps) {
+/** Status, the stat strip, their time and languages, and where they came from: the same on every tab. */
+function Header({ card, zoneNow }: { card: CardData; zoneNow: string | null }) {
   return (
-    <div className="border-t border-rule px-3 py-3">
-      <p className="text-body-sm font-semibold">{card.donationsHead}</p>
-      <ol className="mt-2 grid grid-cols-7 gap-0.5 text-center text-[13px] leading-5 tabular-nums">
-        {card.days.map((d) => (
-          <li key={`${d.weekday}${d.day}`} aria-label={d.said} className="border border-rule py-1">
-            <span aria-hidden="true" className="block whitespace-nowrap text-ink/70">
-              {d.weekday}
-            </span>
-            <span aria-hidden="true" className="block whitespace-nowrap text-ink/70">
-              {d.day}
-            </span>
-            <span
-              aria-hidden="true"
-              className={`block min-h-5 whitespace-nowrap ${d.none ? "text-ink/60" : ""}`}
-            >
-              {withNoData(d.value, card.noData)}
-            </span>
-          </li>
-        ))}
-      </ol>
-      <dl className="mt-3 text-body-sm">
-        {card.details.map((d) => (
-          <div
-            key={d.label}
-            className="flex justify-between gap-3 border-t border-rule py-2 first:border-t-0"
+    <div className="px-3 pb-3">
+      {card.statusLabel && (
+        <p className="text-body-sm">
+          <span className={STATUS_TONE[card.status]}>{card.statusLabel}</span>
+        </p>
+      )}
+      <p className="flex flex-wrap gap-x-3 text-body-sm tabular-nums">
+        {card.facts.map((f) => (
+          <span
+            key={f.text}
+            className="inline-block whitespace-nowrap"
+            {...(f.game && { translate: "no" as const })}
           >
-            <dt className="text-ink/75">{d.label}</dt>
-            <dd className="text-right tabular-nums">{withNoData(d.value, card.noData)}</dd>
-          </div>
+            {withNoData(f.text, card.noData)}
+          </span>
         ))}
-      </dl>
-      <Facts
-        card={card}
-        editor={editor}
-        zoneNow={zoneNow}
-        mode={mode}
-        onEditorClose={onEditorClose}
-      />
-      {card.squads && <MemberSquads squads={card.squads} />}
+      </p>
+      {(zoneNow || card.languages.length > 0) && (
+        <p className="mt-1 flex flex-wrap items-baseline gap-x-3 text-body-sm">
+          {zoneNow && <span className="text-ink/75 tabular-nums">{zoneNow}</span>}
+          {card.languages.map((code) => (
+            <Tag key={code}>{code}</Tag>
+          ))}
+        </p>
+      )}
+      {card.origin.map((line) => (
+        <p key={line} className="mt-1 text-body-sm text-ink/80">
+          {line}
+        </p>
+      ))}
     </div>
   );
 }
 
-/** The opened member: the status with its evidence and the game's numbers, then the details and facts. */
-export function MemberCard(props: CardProps) {
-  const { card } = props;
+function Overview({ card }: { card: CardData }) {
   return (
     <>
-      <div className="px-3 pb-3">
-        <p className="text-body-sm">
-          <span className={STATUS_TONE[card.status]}>{card.statusLabel}</span>
+      {card.statusLines.length > 0 && (
+        <ul className="mt-3 text-body-sm">
           {card.statusLines.map((line) => (
-            <span key={line} className="block">
-              {line}
-            </span>
+            <li key={line}>{line}</li>
           ))}
-        </p>
-        <p className="mt-1 flex flex-wrap gap-x-3 text-body-sm tabular-nums">
-          {card.facts.map((f) => (
-            <span
-              key={f.text}
-              className="inline-block whitespace-nowrap"
-              {...(f.game && { translate: "no" as const })}
-            >
-              {withNoData(f.text, card.noData)}
-            </span>
-          ))}
-        </p>
-        {card.followUps.lines.length > 0 && (
-          <section className="mt-3 border-t border-rule pt-2">
-            <h3 className="text-body-sm font-semibold">{card.followUps.head}</h3>
-            <ul className="text-body-sm whitespace-pre-line">
-              {card.followUps.lines.map((line, i) => (
-                <li key={i} className="py-1">
-                  {line}
-                </li>
-              ))}
-            </ul>
-          </section>
+        </ul>
+      )}
+      {card.days ? (
+        <MemberLastDays days={card.days} />
+      ) : (
+        <p className="mt-3 text-body-sm text-ink/75">{card.daysEarly}</p>
+      )}
+      {card.duel && <Details rows={[card.duel]} noData={card.noData} />}
+    </>
+  );
+}
+
+function Details({ rows, noData }: { rows: CardData["details"]; noData: string }) {
+  return (
+    <dl className="mt-3 text-body-sm">
+      {rows.map((d) => (
+        <div key={d.label} className="flex justify-between gap-3 border-t border-rule py-2">
+          <dt className="text-ink/75">{d.label}</dt>
+          <dd className="text-right tabular-nums">{withNoData(d.value, noData)}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+function Info({ card, editor }: Pick<CardProps, "card" | "editor">) {
+  const [dates, setDates] = useState(false);
+  const dated = card.factLines.some((l) => l.updated);
+  return (
+    <>
+      {card.toAsk && <p className="mt-3 text-body-sm">{card.toAsk}</p>}
+      <section className="mt-3">
+        <h3 className="text-body-sm font-semibold">{editor.words["facts.head"]}</h3>
+        {/* "their time now" is in the header already. */}
+        <FactList card={card} editor={editor} zoneNow={null} dates={dates} grid />
+        {dated && (
+          <button
+            type="button"
+            aria-pressed={dates}
+            onClick={() => setDates((d) => !d)}
+            className={`${chip(dates)} mt-1`}
+          >
+            {dates ? card.dates.hide : card.dates.show}
+          </button>
         )}
+      </section>
+      <Details rows={card.details} noData={card.noData} />
+      <MapPosition map={card.map} noData={card.noData} />
+    </>
+  );
+}
+
+/** Map position stays hidden until asked for (D136): D71 allows it, people first. */
+function MapPosition({ map, noData }: { map: CardData["map"]; noData: string }) {
+  const [open, setOpen] = useState(false);
+  if (open) return <Details rows={[map]} noData={noData} />;
+  return (
+    <button type="button" onClick={() => setOpen(true)} className={`${chip()} mt-1`}>
+      {map.show}
+    </button>
+  );
+}
+
+function History({ card }: { card: CardData }) {
+  const parts = [card.followUps, card.versions].filter((p) => p.lines.length > 0);
+  if (parts.length === 0)
+    return <p className="mt-3 text-body-sm text-ink/75">{card.versions.none}</p>;
+  return (
+    <>
+      {parts.map((p) => (
+        <section key={p.head} className="mt-3">
+          <h3 className="text-body-sm font-semibold">{p.head}</h3>
+          <ul className="text-body-sm whitespace-pre-line">
+            {p.lines.map((line, i) => (
+              <li key={i} className="border-t border-rule py-1.5 tabular-nums">
+                {line}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+    </>
+  );
+}
+
+/** The opened member: the header, then the four tabs and the open one's panel. */
+export function MemberCard(props: CardProps) {
+  const { card } = props;
+  const [tab, setTab] = useCardTab();
+  return (
+    <>
+      <Header card={card} zoneNow={props.zoneNow} />
+      <CardTabs card={card} active={tab} onPick={setTab} />
+      <div
+        id={panelId(card.uid)}
+        role="tabpanel"
+        aria-labelledby={tabId(card.uid, tab)}
+        tabIndex={0}
+        className="px-3 pb-3"
+      >
+        {tab === "overview" && <Overview card={card} />}
+        {tab === "info" && <Info card={card} editor={props.editor} />}
+        {tab === "squads" && card.squads && <MemberSquads squads={card.squads} />}
+        {tab === "history" && <History card={card} />}
       </div>
-      <Details {...props} />
+      <Editor
+        card={card}
+        editor={props.editor}
+        mode={props.mode}
+        onEditorClose={props.onEditorClose}
+      />
     </>
   );
 }

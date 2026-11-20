@@ -1,6 +1,9 @@
 // The member card's "Squads (from the tracker)" (issue 413, D117): each stored squad's newest row, its
-// might and heroes with name, rarity, level and star level, when the tracker saw it and what changed since
-// the row before, as words in the officer's language. The strongest squad is marked (owner, 2026-11-18).
+// might and heroes with name, rarity, level, star level and Hall of Honor level, when the tracker saw it
+// (server time, and the instant for the viewer's own clock) and what changed since the row before, as words
+// in the officer's language. The strongest squad is marked (owner, 2026-11-18). Heroes keep the API's
+// order, which is the game's slot order (owner, 2026-11-20, issue 461; D136): 5 slots, a missing one empty.
+// Troops are never read here (owner, issue 461).
 // Only the workspace's own alliance (access.unionId, D71). Pictures come from /img/hero/[id], and only for
 // heroes in the catalog; any other id is a plain placeholder.
 import { fill } from "../copy";
@@ -9,6 +12,7 @@ import { heroNames } from "../repo/hero-catalog";
 import { squadPairs, type StoredSquad } from "../repo/squads";
 import { mainSquad } from "../squads";
 import type { WorkspaceAccess } from "./access";
+import { dayIn } from "./calendar-time";
 import type { WorkspaceDictionary } from "./dictionary";
 
 export type { StoredSquad };
@@ -71,7 +75,12 @@ export interface HeroCard {
   stars: StarIcon[];
   /** "Star level 7 of 10": the meaning without the colours. */
   starsLabel: string;
+  /** "Honor 42": the Hall of Honor level; null at 0 (most heroes) and on rows stored before D132. */
+  honor: string | null;
 }
+
+/** A squad always has 5 slots (owner, 2026-11-20); the API's `heroes[]` order is the game's slot order. */
+export const SLOTS = 5;
 
 export interface SquadCard {
   squad: number;
@@ -79,18 +88,31 @@ export interface SquadCard {
   might: string;
   /** The highest power of the member's squads: its power is "Main squad might". */
   strongest: boolean;
-  /** "seen Tue, Nov 17"; null when the tracker sent no time. */
+  /** "seen Tue, Nov 17, 22:32 ST"; null when the tracker sent no time. */
   seen: string | null;
+  /** The sighting's instant (ms) and its server day, for the viewer's own clock beside it; null with no time. */
+  seenAt: { at: number; day: string } | null;
+  /** "8 h ago", "2 days ago": how old the sighting is when the card is made; null with no time. */
+  age: string | null;
   /** "+1.20M since Mon, Nov 16" against the row before; null when there is none or the power is the same. */
   change: string | null;
   /** "Heroes changed" when the row before had other heroes, levels or stars; else null. */
   heroesChanged: string | null;
-  heroes: HeroCard[];
+  /** The 5 slots in the game's order (top centre, middle right, middle left, centre, bottom right). */
+  slots: (HeroCard | null)[];
+  /** "1 slot empty", plain information (D75); null when all 5 are filled. */
+  empty: string | null;
 }
 
 export interface SquadsCard {
   head: string;
   help: string;
+  /** "3 squads seen · last Thu, Nov 19"; null with none. */
+  summary: string | null;
+  /** "Slot {n}" for the list in slot order, and the words of the viewer's clock ("01:32 your time"). */
+  slotWord: string;
+  emptySlot: string;
+  clock: { yours: string; nextDay: string; prevDay: string };
   strongestTag: string;
   /** The line shown when the tracker has seen none of their squads. */
   none: string;
@@ -100,14 +122,16 @@ export interface SquadsCard {
 export interface SquadFormats {
   compact: (n: number) => string;
   date: (at: Date) => string;
+  /** "Thu, Nov 19 22:32" on the server's clock. */
+  time: (at: Date) => string;
   language: string;
+  /** The server's time zone (SERVER_TZ). */
+  zone: string;
+  /** When the card is made, for each sighting's age. */
+  now: Date;
 }
 
 type Hero = StoredSquad["heroes"][number];
-
-/** UR, then SSR, then SR (`q`), then more stars (the raw `star`), then a higher level: the site's order. */
-const byRank = (a: Hero, b: Hero) =>
-  (b.q ?? 0) - (a.q ?? 0) || (b.star ?? 0) - (a.star ?? 0) || (b.lv ?? 0) - (a.lv ?? 0);
 
 function heroCard(h: Hero, names: Map<number, string>, t: WorkspaceDictionary): HeroCard {
   const name = names.get(h.id);
@@ -119,6 +143,7 @@ function heroCard(h: Hero, names: Map<number, string>, t: WorkspaceDictionary): 
     rarity: (h.q !== null && RARITY[h.q]) || null,
     stars: starIcons(h.star),
     starsLabel: fill(t["squads.starLevel"], { n: starLevel(h.star) }),
+    honor: h.honor ? fill(t["squads.honor"], { n: h.honor }) : null,
   };
 }
 
@@ -128,6 +153,14 @@ const heroesKey = (heroes: readonly Hero[]) =>
     .sort((a, b) => a.id - b.id)
     .map((h) => `${h.id}:${h.lv}:${h.star}`)
     .join(";");
+
+/** "8 h ago" under 2 days, then "3 days ago": plain information, never a warning (D75). */
+function ageOf(at: Date, t: WorkspaceDictionary, now: Date): string {
+  const hours = Math.max(0, Math.floor((now.getTime() - at.getTime()) / 3_600_000));
+  return hours < 48
+    ? fill(t["squads.age.hours"], { n: hours })
+    : fill(t["squads.age.days"], { n: Math.floor(hours / 24) });
+}
 
 /** "+1.20M since …" or "−400K since …", in plain ink (D75: a drop is information, not a warning). */
 function changeLine(p: SquadPair, t: WorkspaceDictionary, f: SquadFormats): string | null {
@@ -148,15 +181,26 @@ function squadCard(
 ): SquadCard {
   const s = p.latest;
   const changed = p.previous && heroesKey(p.previous.heroes) !== heroesKey(s.heroes);
+  const slots = Array.from({ length: SLOTS }, (_, i) => {
+    const h = s.heroes[i];
+    return h ? heroCard(h, names, t) : null;
+  });
+  const empty = slots.filter((h) => h === null).length;
   return {
     squad: s.squad,
     title: fill(t["squads.name"], { n: s.squad }),
     might: fill(t["squads.might"], { v: f.compact(s.power) }),
     strongest,
-    seen: s.seenAt ? fill(t["squads.seen"], { date: f.date(s.seenAt) }) : null,
+    seen: s.seenAt ? fill(t["squads.seen"], { date: f.time(s.seenAt) }) : null,
+    seenAt: s.seenAt ? { at: s.seenAt.getTime(), day: dayIn(f.zone, s.seenAt.getTime()) } : null,
+    age: s.seenAt ? ageOf(s.seenAt, t, f.now) : null,
     change: changeLine(p, t, f),
     heroesChanged: changed ? t["squads.heroesChanged"] : null,
-    heroes: [...s.heroes].sort(byRank).map((h) => heroCard(h, names, t)),
+    slots,
+    empty:
+      empty === 0
+        ? null
+        : fill(t[empty === 1 ? "squads.empty.one" : "squads.empty.other"], { n: empty }),
   };
 }
 
@@ -169,9 +213,25 @@ export function squadsCardOf(
 ): SquadsCard {
   const sorted = [...pairs].sort((a, b) => a.latest.squad - b.latest.squad);
   const strongest = mainSquad(sorted.map((p) => p.latest))?.squad ?? null;
+  const last = sorted
+    .map((p) => p.latest.seenAt ?? p.latest.readAt)
+    .reduce<Date | null>((a, b) => (a && a > b ? a : b), null);
   return {
     head: t["squads.head"],
     help: t["squads.help"],
+    summary: last
+      ? fill(t[sorted.length === 1 ? "squads.summary.one" : "squads.summary.other"], {
+          n: sorted.length,
+          date: f.date(last),
+        })
+      : null,
+    slotWord: t["squads.slot"],
+    emptySlot: t["squads.emptySlot"],
+    clock: {
+      yours: t["calendar.yours"],
+      nextDay: t["calendar.nextDay"],
+      prevDay: t["calendar.prevDay"],
+    },
     strongestTag: t["squads.strongest"],
     none: t["squads.none"],
     squads: sorted.map((p) => squadCard(p, p.latest.squad === strongest, names, t, f)),

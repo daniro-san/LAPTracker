@@ -47,3 +47,5 @@ Why: officers get new main squad and AD Tech values from members whenever someon
 **Amendment (2026-11-19, 11an, issue 423, D121): a plain-grey reading.** `POST /api/w/[slug]/shots/read?text=plain` reads the picture in plain grey only, with no row flattening. The garrison plan's "Read from a screenshot" uses it, because the Undead Siege screen's "Enemy Might" sits on the scene's art, which the flattening wipes out. Without the query the reader is unchanged. `ws_text_read` gets the place `garrison`.
 
 **Amendment 2026-11-19 (D122 rollout PR 3, 11av, issue 412).** "Paste updates" is the page head's main action on Members: at the right of the title from 768, and the one action shown beside "More" on a phone, above "Send a screenshot" and the Members / Former members tabs. It is still the page's one primary action; its words and its sheet are unchanged.
+
+**Amendment 2026-11-20 (owner, issue 461; D136).** On the member card, "Updated …" under Main squad and AD Tech shows only after "Show when each was updated" on the Info tab. The change line ("+400K since Nov 10") is unchanged. Pending and former members' cards keep showing "Updated …".
