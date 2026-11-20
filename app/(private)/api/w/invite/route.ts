@@ -38,7 +38,11 @@ export async function POST(request: Request): Promise<Response> {
       return Response.json({ slug: result.slug }, { headers });
     }
     return Response.json(
-      { roles: result.roles ?? null, gave: result.gave ?? null },
+      {
+        roles: result.roles ?? null,
+        gave: result.gave ?? null,
+        member_failed: result.memberFailed ?? null,
+      },
       { headers: NO_STORE },
     );
   });

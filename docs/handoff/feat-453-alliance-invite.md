@@ -48,7 +48,14 @@
 
 ## Verified
 
-- Tests, 14 new:
+- **After the PR 499 review** (see the D130 amendment): 4 more tests.
+  - `invite-isolation.test.ts`: a second account on the same invite can neither pick a server nor finish. This holds through the repository's claim-bound writes, and also after the second account picked.
+  - `access-request.test.ts`: an address's refused requests do not count toward the site's 30.
+  - `invite.test.ts`: the expiry test now signs in and picks a server first, so the expiry is what refuses (`closed`). Also new: a refused member role is reported, and a retry reuses the leadership role (no duplicate).
+  - `route.test.ts`: two quick approves make one link, and the request points at that open invite.
+  - The invite-related tests are 24 of 24. For the full `pnpm check`, see the fix commit's report.
+  - The e2e was not rerun after these fixes. They change server writes and one copy line; the tests above cover them.
+- Tests, 14 new before the review:
   - `lib/private/invite.test.ts` (5);
   - `lib/private/access-request.test.ts` (3);
   - `lib/private/invite-isolation.test.ts` (3, the issue 471 suite: a taken server is refused; an invite never attaches to another workspace, its alliance's or one on a server taken meanwhile, with Bravo's rows identical; a status secret opens only its own request);

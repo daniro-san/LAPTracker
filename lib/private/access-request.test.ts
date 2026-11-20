@@ -7,9 +7,16 @@ import { T0 } from "../collector.test-helpers";
 import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
 import { createInvite, decideRequest } from "../repo/alliance-invites";
+import { currentCount } from "../repo/auth-attempts";
 import { dailyReads, dailyRosters, workspaces } from "../schema";
 import { accessRequests } from "../schema-invites";
-import { continueRequest, PER_IP_DAY, requestView, submitRequest } from "./access-request";
+import {
+  continueRequest,
+  PER_IP_DAY,
+  requestView,
+  SITE_KEY,
+  submitRequest,
+} from "./access-request";
 import { inviteFrom } from "./invite";
 import { WACK } from "./invite.test-helpers";
 
@@ -81,6 +88,11 @@ describe("Request a Desk (D130)", () => {
       leaderRoleIds: [],
     });
     expect(await ask("Late", "203.0.113.22")).toEqual({ ok: false, code: "has_desk" });
+  });
+
+  it("does not count an address's refused requests toward the site's daily limit", async () => {
+    for (let i = 0; i < PER_IP_DAY + 3; i++) await ask(`Name ${i}`);
+    expect(await currentCount(db, SITE_KEY, 24 * 60 * 60_000, T0)).toBe(PER_IP_DAY);
   });
 
   it("shows the requester its answer, and once approved its status secret opens the invite", async () => {

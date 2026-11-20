@@ -106,11 +106,38 @@ export async function claimInvite(
   return rows.length > 0;
 }
 
-export async function pickGuild(db: Db, id: number, guildId: string, now: Date): Promise<void> {
-  await db
+/** The account and the claim a step was checked against: the write holds only while both still stand. */
+export interface Claimant {
+  discordId: string;
+  claimHash: string;
+}
+
+/**
+ * INVARIANT invite.claimant-bound: a step writes only while the invite is open and still claimed by the same
+ * account with the same claim, so a second account that signed in meanwhile makes it change nothing.
+ */
+const heldBy = (id: number, who: Claimant, now: Date) =>
+  and(
+    eq(allianceInvites.id, id),
+    openAt(now),
+    eq(allianceInvites.claimedBy, who.discordId),
+    eq(allianceInvites.claimHash, who.claimHash),
+  );
+
+/** The server picked; false when the invite closed or another account claimed it meanwhile. */
+export async function pickGuild(
+  db: Db,
+  id: number,
+  who: Claimant,
+  guildId: string,
+  now: Date,
+): Promise<boolean> {
+  const rows = await db
     .update(allianceInvites)
     .set({ guildId })
-    .where(and(eq(allianceInvites.id, id), openAt(now)));
+    .where(heldBy(id, who, now))
+    .returning({ id: allianceInvites.id });
+  return rows.length > 0;
 }
 
 export interface InvitedWorkspace {
@@ -123,6 +150,8 @@ export interface InvitedWorkspace {
   /** The person who used the link: an officer through the allowlist, with no end (D130). */
   discordUserId: string;
   displayName: string;
+  /** The claim the step was checked against (invite.claimant-bound). */
+  claimHash: string;
 }
 
 /**
@@ -152,7 +181,7 @@ async function useInvite(tx: Db, w: InvitedWorkspace, now: Date) {
   const used = await tx
     .update(allianceInvites)
     .set({ usedAt: now, createdSlug: w.slug, guilds: null })
-    .where(and(eq(allianceInvites.id, w.inviteId), openAt(now)))
+    .where(heldBy(w.inviteId, { discordId: w.discordUserId, claimHash: w.claimHash }, now))
     .returning({ id: allianceInvites.id });
   if (used.length === 0) return { ok: false as const, code: "closed" as const };
   const [ws] = await tx
@@ -239,6 +268,31 @@ export async function decideRequest(
     .where(and(eq(accessRequests.id, id), isNull(accessRequests.decision)))
     .returning({ id: accessRequests.id });
   return rows.length > 0;
+}
+
+/**
+ * "Approve and make the link", in one transaction: the request is marked approved only while undecided (the
+ * row lock makes a second, quick approve wait and then find it decided), and only then is its link made and
+ * tied to it. So a second approve makes no link and cancels none, and the request never points at a
+ * cancelled invite.
+ */
+export async function approveRequest(
+  db: Db,
+  id: number,
+  now: Date,
+): Promise<{ ok: true; credential: string; expiresAt: Date } | { ok: false; code: "decided" }> {
+  return db.transaction(async (raw) => {
+    const tx = raw as unknown as Db;
+    const [req] = await tx
+      .update(accessRequests)
+      .set({ decision: "approved", decidedAt: now })
+      .where(and(eq(accessRequests.id, id), isNull(accessRequests.decision)))
+      .returning({ unionId: accessRequests.unionId });
+    if (!req) return { ok: false as const, code: "decided" as const };
+    const made = await createInvite(tx, req.unionId, now);
+    await tx.update(accessRequests).set({ inviteId: made.id }).where(eq(accessRequests.id, id));
+    return { ok: true as const, credential: made.credential, expiresAt: made.expiresAt };
+  });
 }
 
 /** Deletes what is older than KEEP_MS past its end: decided requests, and closed invites. */

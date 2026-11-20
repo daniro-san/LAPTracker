@@ -153,15 +153,39 @@ describe("the invite link (D130)", () => {
 
   it("expires after 7 days", async () => {
     const b = await openedInvite(db);
+    await signInThrough(db, b);
+    await inviteStep(db, deps(), b.jar, { action: "server", guild_id: GUILD });
     const later = new Date(T0.getTime() + INVITE_MS);
     expect(await inviteView(db, b.jar, env, later)).toEqual({
       state: "closed",
       why: "expired",
       slug: null,
     });
+    // Signed in, with a server: only the expiry refuses.
     expect(await inviteStep(db, deps(later), b.jar, { action: "roles" })).toEqual({
       ok: false,
-      code: "signed_out",
+      code: "closed",
     });
+  });
+
+  it("reports a member role Discord refused, and a retry reuses the leadership role made before", async () => {
+    const b = await openedInvite(db);
+    await signInThrough(db, b);
+    await inviteStep(db, deps(), b.jar, { action: "server", guild_id: GUILD });
+    const create = {
+      action: "create_roles",
+      leader: "[WACK] Leadership",
+      member: "[WACK] Members",
+      give_me: false,
+    } as const;
+    discord.refuse = "[WACK] Members";
+    const first = await inviteStep(db, deps(), b.jar, create);
+    expect(first).toMatchObject({ ok: true, memberFailed: "no_permission" });
+    discord.refuse = null;
+    const again = await inviteStep(db, deps(), b.jar, create);
+    expect(again).toMatchObject({ ok: true, memberFailed: null });
+    expect(discord.created.map((r) => r.name)).toEqual(["[WACK] Leadership", "[WACK] Members"]);
+    const leaderId = discord.created[0]?.id;
+    expect("roles" in again && again.roles?.[0]?.id).toBe(leaderId);
   });
 });

@@ -63,7 +63,8 @@ lib/private/*.ts    the workspace (D71): requireWorkspace and its branded Worksp
                     the bot's role reads and writes), access-request.ts ("Request an Officers' Desk" and its
                     roster check); tables in lib/schema-invites.ts, read and written in
                     lib/repo/alliance-invites.ts; /admin's read in lib/queries/alliance-invites.ts, its route
-                    app/api/admin/invites, and the admin channel's line in lib/notify-request.ts.
+                    app/api/admin/invites with its actions in lib/admin-invites.ts, and the admin channel's
+                    line in lib/notify-request.ts.
                     D119: notice-picture.ts (the server's check of a notice's picture, its save and remove, and
                     who may be served it), notice-picture-rules.ts (pure, browser-safe: the caps and the browser's
                     resize plan), notice-publish-body.ts (a Discord post's body, multipart with the picture),

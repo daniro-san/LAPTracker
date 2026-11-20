@@ -32,23 +32,28 @@ export const discord = {
   canManageRoles: true,
   calls: [] as { method: string; url: string; body: string }[],
   account: HER,
+  /** Roles created through the bot, listed by later reads. */
+  created: [] as ReturnType<typeof role>[],
+  /** A role name Discord refuses to create (403). */
+  refuse: null as string | null,
   reset() {
     this.botIn = true;
     this.canManageRoles = true;
     this.calls = [];
     this.account = HER;
+    this.created = [];
+    this.refuse = null;
   },
 };
 
-const role = (id: string, name: string, position: number) => ({
-  id,
-  name,
-  color: 0x8e44ad,
-  position,
-  managed: false,
-});
+function role(id: string, name: string, position: number) {
+  return { id, name, color: 0x8e44ad, position, managed: false };
+}
 
-/** The bot's roles: read (403 while the bot is out), or one created (403 without Manage Roles). */
+/**
+ * The bot's roles: read (403 while the bot is out), or one created (403 without Manage Roles, or for the
+ * name `discord.refuse`).
+ */
 function rolesAnswer(guild: string, method: string, body: string): Response {
   if (method === "GET") {
     if (!discord.botIn) return new Response("", { status: 403 });
@@ -56,11 +61,16 @@ function rolesAnswer(guild: string, method: string, body: string): Response {
       role(guild, "@everyone", 0),
       role(R5_ROLE, "R5", 3),
       role(MEMBER_ROLE, "Members", 1),
+      ...discord.created,
     ]);
   }
-  if (!discord.canManageRoles) return Response.json({ code: 50013 }, { status: 403 });
   const name = (JSON.parse(body) as { name: string }).name;
-  return Response.json(role(`70000000000000030${discord.calls.length % 10}`, name, 2));
+  if (!discord.canManageRoles || name === discord.refuse) {
+    return Response.json({ code: 50013 }, { status: 403 });
+  }
+  const made = role(`70000000000000030${discord.created.length}`, name, 2);
+  discord.created.push(made);
+  return Response.json(made);
 }
 
 export const stub: typeof fetch = async (input, init) => {

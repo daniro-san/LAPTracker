@@ -69,6 +69,8 @@ export const inviteFr: typeof inviteEn = {
   "invite.create.button": "Créer les rôles",
   "invite.create.creating": "Création…",
   "invite.create.made": "Créés : {list}. Ils sont cochés plus haut.",
+  "invite.create.memberFailed":
+    "Discord n’a pas créé le rôle des membres. Touchez à nouveau Créer les rôles : le rôle de la direction est gardé, il n’est pas créé deux fois.",
   "invite.create.gaveRefused":
     "LAPTracker n’a pas pu vous donner le rôle : son propre rôle est plus bas que ce rôle dans la liste de Discord. Vous entrez quand même avec cette invitation. Donnez-vous le rôle sur Discord plus tard.",
   "invite.create.noPermission":

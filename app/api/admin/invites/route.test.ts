@@ -82,4 +82,27 @@ describe("POST /api/admin/invites (D130)", () => {
       "has_workspace",
     );
   });
+
+  it("makes one link for two quick approves, and the request keeps pointing at an open invite", async () => {
+    const request = {
+      unionId: WACK,
+      playerName: "Vellamo Rook",
+      claimedRole: "r4" as const,
+      rosterMatch: "found" as const,
+      rosterRank: "R4",
+      rosterSeenAt: new Date(),
+    };
+    await insertRequest(db, request, new Date());
+    const [row] = await db.select().from(accessRequests);
+    const both = await Promise.all([
+      post(TEST_PIN, { action: "approve", request_id: row?.id }),
+      post(TEST_PIN, { action: "approve", request_id: row?.id }),
+    ]);
+    expect(both.map((a) => a.status).sort()).toEqual([200, 409]);
+    const invites = await db.select().from(allianceInvites);
+    expect(invites).toHaveLength(1);
+    const [after] = await db.select().from(accessRequests);
+    expect(after?.inviteId).toBe(invites[0]?.id);
+    expect(invites[0]?.cancelledAt).toBeNull();
+  });
 });

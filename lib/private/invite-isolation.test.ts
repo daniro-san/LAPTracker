@@ -7,15 +7,19 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { T0 } from "../collector.test-helpers";
 import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
+import { createInvitedWorkspace, pickGuild } from "../repo/alliance-invites";
 import { saveWorkspace } from "../repo/workspaces";
 import { workspaces } from "../schema";
+import { allianceInvites } from "../schema-invites";
 import { ownedRows } from "../workspace-data.test-helpers";
 import { requestView, submitRequest } from "./access-request";
 import { inviteStep, type InviteInput } from "./invite-steps";
 import {
+  browser,
   deps,
   discord,
   GUILD,
+  INVITE_COOKIE,
   OTHER_GUILD,
   openedInvite,
   R5_ROLE,
@@ -71,6 +75,51 @@ describe("a new alliance's way in, between workspaces (issue 471, D130)", () => 
     expect(await inviteStep(db, deps(), wack.jar, finish)).toEqual({ ok: false, code: "taken" });
     await db.update(workspaces).set({ discordGuildId: OTHER_GUILD });
     expect(await ownedRows(db, bravo)).toEqual(before);
+    expect(await db.select({ slug: workspaces.slug }).from(workspaces)).toEqual([
+      { slug: "bravo" },
+    ]);
+  });
+
+  it("binds each step to the account that claimed the invite: a second account can neither pick nor finish", async () => {
+    const first = await openedInvite(db);
+    await signInThrough(db, first);
+    // The first account's claim, as a step read it, before a second account signs in on the same invite.
+    const [seen] = await db.select().from(allianceInvites);
+    const firstClaim = { discordId: seen?.claimedBy ?? "", claimHash: seen?.claimHash ?? "" };
+    const second = browser();
+    second.take([`${INVITE_COOKIE}=${first.cookies.get(INVITE_COOKIE)}`]);
+    discord.account = "700000000000000002";
+    await signInThrough(db, second);
+    // A write checked against the first claim changes nothing once the second holds it.
+    expect(await pickGuild(db, seen?.id ?? 0, firstClaim, GUILD, T0)).toBe(false);
+    const made = await createInvitedWorkspace(
+      db,
+      {
+        inviteId: seen?.id ?? 0,
+        unionId: WACK,
+        slug: "wack",
+        guildId: GUILD,
+        leaderRoleIds: [R5_ROLE],
+        memberRoleIds: [],
+        discordUserId: firstClaim.discordId,
+        displayName: "first",
+        claimHash: firstClaim.claimHash,
+      },
+      T0,
+    );
+    expect(made).toEqual({ ok: false, code: "closed" });
+    // Once the second account picked the server, the first browser gets nowhere either.
+    expect(await inviteStep(db, deps(), second.jar, { action: "server", guild_id: GUILD })).toEqual(
+      {
+        ok: true,
+      },
+    );
+    for (const step of [{ action: "server", guild_id: GUILD } as const, finish]) {
+      expect(await inviteStep(db, deps(), first.jar, step)).toEqual({
+        ok: false,
+        code: "signed_out",
+      });
+    }
     expect(await db.select({ slug: workspaces.slug }).from(workspaces)).toEqual([
       { slug: "bravo" },
     ]);

@@ -81,7 +81,13 @@ export type StepCode =
   | "unreachable";
 
 export type StepResult =
-  | { ok: true; roles?: GuildRole[]; gave?: "ok" | "refused" | "unreachable" | null }
+  | {
+      ok: true;
+      roles?: GuildRole[];
+      gave?: "ok" | "refused" | "unreachable" | null;
+      /** The leadership role was made (or found) but Discord refused the member role. */
+      memberFailed?: "no_permission" | "unreachable" | null;
+    }
   | { ok: true; slug: string; cookie: string }
   | { ok: false; code: StepCode };
 
@@ -122,8 +128,23 @@ async function chooseServer(db: Db, row: InviteRow, guildId: string, now: Date) 
   if (!(row.guilds ?? []).some((g) => g.id === guildId)) return no("not_yours");
   const taken = await takenWorkspaceKeys(db);
   if (taken.some((w) => w.guild === guildId)) return no("taken");
-  await pickGuild(db, row.id, guildId, now);
+  // A second account that signed in meanwhile holds the claim now: this write changes nothing.
+  if (!(await pickGuild(db, row.id, claimant(row), guildId, now))) return no("signed_out");
   return { ok: true as const };
+}
+
+/** Who the step was checked against: the account and claim of the row read with this browser's cookie. */
+const claimant = (row: InviteRow) => ({
+  discordId: row.claimedBy ?? "",
+  claimHash: row.claimHash ?? "",
+});
+
+/** The role of that exact name already in the server (a retry, or one made in Discord), else a new one. */
+async function roleNamed(deps: StepDeps, guildId: string, existing: GuildRole[], name: string) {
+  const found = existing.find((r) => r.name === name);
+  return found
+    ? { ok: true as const, role: found }
+    : createRole(deps.env, deps.fetch, guildId, name);
 }
 
 async function makeRoles(
@@ -132,12 +153,13 @@ async function makeRoles(
   guildId: string,
   input: Extract<InviteInput, { action: "create_roles" }>,
 ): Promise<StepResult> {
-  const leader = await createRole(deps.env, deps.fetch, guildId, input.leader);
+  const listed = await guildRoles(deps.env, deps.fetch, guildId);
+  if (!listed.ok) return listed;
+  const leader = await roleNamed(deps, guildId, listed.roles, input.leader);
   if (!leader.ok) return no(leader.code);
-  const member = input.member
-    ? await createRole(deps.env, deps.fetch, guildId, input.member)
-    : null;
+  const member = input.member ? await roleNamed(deps, guildId, listed.roles, input.member) : null;
   const roles = [leader.role, ...(member?.ok ? [member.role] : [])];
+  const memberFailed = member && !member.ok ? member.code : null;
   const gave =
     input.give_me && row.claimedBy
       ? await giveRole(deps.env, deps.fetch, {
@@ -147,7 +169,7 @@ async function makeRoles(
         })
       : null;
   privateLog("w.invite.roles_created", { invite: row.id, roles: roles.length });
-  return { ok: true, roles, gave };
+  return { ok: true, roles, gave, memberFailed };
 }
 
 /** The workspace's address: the tag in lowercase letters and digits, then -2 … -9 while it is taken. */
@@ -189,6 +211,7 @@ async function finish(
       memberRoleIds: members,
       discordUserId: row.claimedBy ?? "",
       displayName: row.claimedName ?? "",
+      claimHash: row.claimHash ?? "",
     },
     deps.now,
   );

@@ -32,6 +32,7 @@ const DAY_MS = 24 * 60 * 60_000;
 /** Per address and per day; and for the whole site per day, so a flood cannot bury real requests. */
 export const PER_IP_DAY = 3;
 export const SITE_DAY = 30;
+export const SITE_KEY = `${DAY_KEY_PREFIX}request:site`;
 const CREDENTIAL = /^(\d{1,9})\.([A-Za-z0-9_-]{43})$/;
 
 export const requestInput = z
@@ -99,9 +100,11 @@ export async function submitRequest(
 ): Promise<Submitted> {
   const taken = await takenWorkspaceKeys(db);
   if (taken.some((w) => w.unionId === input.union_id)) return { ok: false, code: "has_desk" };
+  // The address first: one that is over its own limit never uses up the site's 30.
   const mine = await recordFailure(db, `${DAY_KEY_PREFIX}request:ip:${ip}`, DAY_MS, now);
-  const all = await recordFailure(db, `${DAY_KEY_PREFIX}request:site`, DAY_MS, now);
-  if (mine > PER_IP_DAY || all > SITE_DAY) return { ok: false, code: "rate_limited" };
+  if (mine > PER_IP_DAY) return { ok: false, code: "rate_limited" };
+  const all = await recordFailure(db, SITE_KEY, DAY_MS, now);
+  if (all > SITE_DAY) return { ok: false, code: "rate_limited" };
   await purgeOldInvites(db, now);
   const roster = await rosterCheck(db, input.union_id, input.name);
   const credential = await insertRequest(

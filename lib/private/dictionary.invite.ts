@@ -65,6 +65,8 @@ export const inviteEn = {
   "invite.create.button": "Create the roles",
   "invite.create.creating": "Creating…",
   "invite.create.made": "Created: {list}. They are picked above.",
+  "invite.create.memberFailed":
+    "Discord did not create the member role. Tap Create the roles again: the leadership role is kept, not made twice.",
   "invite.create.gaveRefused":
     "LAPTracker could not give you the role: its own role is lower than that role in Discord’s list. You still get in through this invite. Give yourself the role in Discord later.",
   "invite.create.noPermission":
@@ -187,6 +189,8 @@ export const invitePt: typeof inviteEn = {
   "invite.create.button": "Criar os cargos",
   "invite.create.creating": "Criando…",
   "invite.create.made": "Criados: {list}. Já estão marcados acima.",
+  "invite.create.memberFailed":
+    "O Discord não criou o cargo dos membros. Toque de novo em Criar os cargos: o cargo da liderança é mantido, não é criado duas vezes.",
   "invite.create.gaveRefused":
     "O LAPTracker não conseguiu dar o cargo a você: o cargo dele está abaixo desse cargo na lista do Discord. Você entra mesmo assim por este convite. Depois, dê o cargo para a sua conta no Discord.",
   "invite.create.noPermission":

@@ -137,9 +137,14 @@ function CreateRoles(props: {
     props.onMade(made);
     const list = made.map((r) => r.name).join(", ");
     const refused = answer.body.gave === "refused" || answer.body.gave === "unreachable";
+    const lines = [
+      fill(t["invite.create.made"], { list }),
+      answer.body.member_failed ? t["invite.create.memberFailed"] : "",
+      refused ? t["invite.create.gaveRefused"] : "",
+    ];
     setNote({
-      ok: true,
-      text: `${fill(t["invite.create.made"], { list })}${refused ? ` ${t["invite.create.gaveRefused"]}` : ""}`,
+      ok: !answer.body.member_failed,
+      text: lines.filter(Boolean).join(" "),
     });
   };
   return (
