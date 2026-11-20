@@ -87,6 +87,8 @@ export interface CardData {
   /** This week's Alliance Duel from screenshots (issue 299), when any was saved this week. */
   duel: { label: string; value: string } | null;
   details: { label: string; value: string }[];
+  /** Map position, behind "Show map position" on the Info tab. */
+  map: { label: string; value: string; show: string };
   /** "Still to ask: time zone, languages"; null when every fact is recorded. */
   toAsk: string | null;
   /** The earlier value of each fact, newest first: "Main squad might: 18.1M · Tue, Nov 10". */
@@ -189,15 +191,16 @@ function detailsOf(m: MemberRow, t: WorkspaceDictionary, f: CardFormats, shown: 
     ...(shown.joined ? [{ label: t["sheet.joined"], value: date(m.joinedAt) }] : []),
     { label: t["sheet.seen"], value: m.seenSince ? f.date(m.seenSince) : NONE },
     ...(shown.lastOnline ? [{ label: t["sheet.lastOnline"], value: date(m.lastOnlineAt) }] : []),
-    {
-      label: t["sheet.map"],
-      value:
-        m.mapX === null || m.mapY === null
-          ? NONE
-          : fill(t["sheet.mapValue"], { x: m.mapX, y: m.mapY }),
-    },
   ];
 }
+
+/** Map position, shown on the Info tab only after "Show map position" (D136: D71 allows it, people first). */
+const mapOf = (m: MemberRow, t: WorkspaceDictionary) => ({
+  label: t["sheet.map"],
+  value:
+    m.mapX === null || m.mapY === null ? NONE : fill(t["sheet.mapValue"], { x: m.mapX, y: m.mapY }),
+  show: t["card.info.showMap"],
+});
 
 /**
  * The facts with their value; Status only when an officer set one (otherwise the card's status says it).
@@ -295,6 +298,7 @@ export function cardData(
     daysEarly: t["card.days.early"],
     duel: shown.duel ? duel : null,
     details: detailsOf(m, t, f, shown),
+    map: mapOf(m, t),
     toAsk: toAskLine(m.facts, t),
     factLines: factLines(m.facts, t, f, x.previous, x.thisWeek),
     stored: m.facts,

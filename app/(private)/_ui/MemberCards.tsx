@@ -253,7 +253,19 @@ function Info({ card, editor }: Pick<CardProps, "card" | "editor">) {
         )}
       </section>
       <Details rows={card.details} noData={card.noData} />
+      <MapPosition map={card.map} noData={card.noData} />
     </>
+  );
+}
+
+/** Map position stays hidden until asked for (D136): D71 allows it, people first. */
+function MapPosition({ map, noData }: { map: CardData["map"]; noData: string }) {
+  const [open, setOpen] = useState(false);
+  if (open) return <Details rows={[map]} noData={noData} />;
+  return (
+    <button type="button" onClick={() => setOpen(true)} className={`${chip()} mt-1`}>
+      {map.show}
+    </button>
   );
 }
 

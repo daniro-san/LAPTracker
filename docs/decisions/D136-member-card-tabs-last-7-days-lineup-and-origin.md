@@ -22,7 +22,7 @@ Why: the owner, 2026-11-19: the member card is one long column of label/value ro
 - This week's Alliance Duel from screenshots, when any was saved this week (issue 299).
 - Before the alliance's first end-of-day read: "The last 7 days come with the first daily update."
 
-**Info**: "Still to ask: …" (Members' "Missing info", `factsToAsk`), the member facts with their sources (two columns from 768, label over value), then Seen since, Joined and Last online only while the API sends them (D71, unchanged), and Map position (D71 allows it on the desk; copies and exports still leave it out). "Updated …" under Main squad and AD Tech shows only after "Show when each was updated" (a `chip`, `aria-pressed`); pending and former members' cards keep showing it as before.
+**Info**: "Still to ask: …" (Members' "Missing info", `factsToAsk`), the member facts with their sources (two columns from 768, label over value), then Seen since, Joined and Last online only while the API sends them (D71, unchanged), and, behind a "Show map position" button (a 44 px `chip`), the Map position: hidden until an officer taps it, every time the card opens. D71 allows it on the desk, but people come first (orchestrator, 2026-11-20, after the persona panel). Copies and exports still leave it out. "Updated …" under Main squad and AD Tech shows only after "Show when each was updated" (a `chip`, `aria-pressed`); pending and former members' cards keep showing it as before.
 
 **Squads** (amends D117's card section):
 
@@ -40,10 +40,10 @@ Why: the owner, 2026-11-19: the member card is one long column of label/value ro
 
 **Words** in `lib/private/dictionary.card.ts` and `dictionary.squads.ts` (EN, PT-BR, FR). The card's old "Donations this week · total …" strip, its "Daily quest points" and "Alliance Help coins today" rows, and the strip's donations and quest points are replaced by the last 7 days.
 
-**Tests:** `lib/private/member-days.test.ts` (the 7 days, none and no data, averages, coins against 1,000, might since); `lib/private/member-origin.test.ts` (order and join day, nothing made up; both sources from PGlite); `app/(private)/_ui/MemberSquads.test.ts` (slot order, 5 slots, Honor, the server clock, the list for screen readers, no troops).
+**Tests:** `lib/private/member-days.test.ts` (the 7 days, none and no data, averages, coins against 1,000, might since); `lib/private/member-origin.test.ts` (order and join day, nothing made up; both sources from PGlite); `app/(private)/_ui/MemberSquads.test.ts` (slot order, 5 slots, Honor, the server clock, the list for screen readers, no troops); `lib/private/member-card.test.ts` (map position out of the shown details, behind its button).
 
 **Persona panel** (2026-11-20; an R4, a regular member's point of view, product strategy; invented-data screenshots plus six real `/v1/players` reads seen locally and deleted after). All three: accept with changes.
 
 - Applied: "Honor N" only above 0; each sighting's age; "their time now" once.
 - Facts from the real reads: the history rows reach back 6–13 days (40 rows a read) and named only this alliance for all six, so "Came from" rests mainly on our daily rosters of other alliances; squad numbers have gaps (squads 1 and 4 seen; 1 and 3 seen), shown as the game numbers them.
-- Not changed, for the owner: "Troops" (the officers' troop tier fact, T1–T12, D80) reads like the troop counts the owner ruled out, in Info and in "Still to ask"; "none" / "nada" next to the no-data mark (D127's word); map position shown on Info by default (D71 allows it).
+- Decided by the orchestrator (2026-11-20): "Troops" stays, in Info and in "Still to ask": it is the troop tier fact (T1–T12, D80) on the owner's own list of facts to ask, not a troop count. "none" stays beside the no-data mark (D127). Map position goes behind "Show map position" on Info.

@@ -18,7 +18,7 @@ Issue 461. Decision D136 (amends D109, D117, D127). Branch `feat/member-card-tab
 - **Info**:
   - "Still to ask: …";
   - the facts in two columns from 768, with "Updated …" only after "Show when each was updated";
-  - Seen since, Joined and Last online while the API sends them, and Map position.
+  - Seen since, Joined and Last online while the API sends them, and Map position behind a "Show map position" button (44 px), hidden by default.
 - **Squads** (`MemberSquads.tsx`, `lib/private/member-squads.ts`):
   - "3 squads seen · last Thu, Nov 19";
   - per squad, "seen … 22:32 ST · 00:32 your time (+1 d) · 8 h ago";
@@ -40,6 +40,7 @@ Issue 461. Decision D136 (amends D109, D117, D127). Branch `feat/member-card-tab
 - An average counts only the days with a number. "none" days and days with no read never lower it, and the day count is shown beside it.
 - "Remembered per officer" is read as "per officer's browser" (`localStorage`, like the clock choice). There is no server-side setting.
 - When a squad has fewer than 5 heroes, the empty slots are the last ones. The API sends only the heroes it has, so the real gap cannot be placed.
+- The orchestrator decided the panel's three open points (2026-11-20): "Troops" stays (the troop tier fact the owner asks for, not a count); "none" stays beside the no-data mark; map position goes behind "Show map position".
 - "Honor N" shows only above 0 (persona panel). Each sighting's age is plain muted text (persona panel). The owner said the age of a sighting matters.
 
 ## Deviations
@@ -51,10 +52,11 @@ Issue 461. Decision D136 (amends D109, D117, D127). Branch `feat/member-card-tab
 
 ## Verified
 
-- `pnpm check` passes: Prettier, ESLint, tsc, Vitest (1,333 tests in 252 files, 4 skipped), drift and i18n.
+- `pnpm check` passes: Prettier, ESLint, tsc, Vitest (1,334 tests in 253 files, 4 skipped), drift and i18n.
 - **New tests**, about one per behaviour:
   - `lib/private/member-days.test.ts` (2): the 7 days with numbers, "none" and no data; averages, the coins scale and might since.
   - `lib/private/member-origin.test.ts` (2): order, the move day and the join day, with nothing made up; both sources read from PGlite.
+- `lib/private/member-card.test.ts` (1): map position is out of the shown details, behind its button. The "Show map position" button came after the e2e below; the e2e's Info check saw the map row shown by default and was not re-run, so the button itself is checked by this test and `pnpm check` only.
 - **Updated**: `app/(private)/_ui/MemberSquads.test.ts` (6): slot order, 5 slots, Honor only above 0, the server clock and the age, the list for screen readers, and no troop field.
 - **Workspace suites**: `lib/private`, `app/(private)` and `lib/queries` all pass (138 files, 713 tests, before the panel fixes).
 - **Local production build** (`next build` + `next start`, local Postgres 18 with all 58 migrations), invented data:
@@ -88,9 +90,6 @@ Issue 461. Decision D136 (amends D109, D117, D127). Branch `feat/member-card-tab
 
 ## Open issues
 
-- **For the owner**: "Troops" (the officers' troop-tier fact, T1–T12, D80) reads like the troop counts you ruled out. Two personas flagged it in Info and in "Still to ask". Rename it ("Troop tier"), or drop it from "Still to ask"?
-- **For the owner**: "none" / "nada" (D127's word) sits next to the no-data mark. The member persona read "nada" as a judgement. Keep it?
-- **For the owner**: Map position shows on Info by default (D71 allows it). The member persona asked for it behind a tap.
 - **Data limit**: history rows reach back only about 40 rows (6–13 days). So "Came from" mostly rests on our daily rosters of other alliances. With D133's wider set, those reach further.
 - **Performance, follow-up**: `rosterSightings` filters `daily_rosters` with `uid = any(member_uids)` and no index on the array. That is fine at today's size (about 20–40 alliances a day). Watch it as D133 adds alliances. A GIN index would fix it.
 - **Members list, follow-up**: the list still sorts by Might with a Donated column. The member persona read that as a ranking. Not in this issue.
@@ -98,7 +97,7 @@ Issue 461. Decision D136 (amends D109, D117, D127). Branch `feat/member-card-tab
 ## Next
 
 - Model/effort: keep.
-- **Owner first**: answer the Troops question above, then build #460 ("Copy a hello", the ready message), which plugs into the Overview and the sticky bar.
+- **Owner first**: build #460 ("Copy a hello", the ready message), which plugs into the Overview and the sticky bar.
 - Plan change: none.
 
 <adjustments>
