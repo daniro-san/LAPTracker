@@ -293,6 +293,9 @@ Words already used in `lib/i18n/tr.ts`. Reuse them so the pages stay consistent;
 | move (a member changing alliance) | geçiş                           | `flow.answer`, `flow.small`, `flow.outside` — a member's change of alliance between two days                                      |
 | Daily update                      | Günlük okuma                    | `history.daily` — the once-a-day read of the member lists; the one name for it in every key                                       |
 | defender (a player's role)        | savunucu                        | `ledger.carriedHelp` — a player who gains no Kills, like a support player (destek oyuncusu)                                       |
+| statement (alliance's text)       | Açıklama                        | `statement.title`, `statement.by` — the alliance's own in-game text, never translated                                             |
+| joining                           | Katılım                         | `statement.joining`, `statement.open`, `statement.byApplication` — how a player joins an alliance                                 |
+| free seat                         | boş koltuk                      | `statement.seats`, `statement.seatOne` — a place left under the Members cap                                                       |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

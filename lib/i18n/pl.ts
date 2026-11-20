@@ -249,6 +249,20 @@ export const pl = {
     notRanked:
       "Bez miejsca w rankingu, brak użytecznej dziennej aktualizacji w tym okresie: {list}.",
   },
+  statement: {
+    title: "Oświadczenie i dołączanie",
+    joining: "Dołączanie",
+    by: "Napisane przez sojusz w grze",
+    open: "Przyjmuje nowych",
+    byApplication: "Po zgłoszeniu",
+    might: "{might} Might",
+    hq: "HQ {level}",
+    seats: "Wolne miejsca: {n} ({members}/{capacity})",
+    seatOne: "Wolne miejsce: 1 ({members}/{capacity})",
+    full: "Brak miejsc ({members}/{capacity})",
+    showAll: "Pokaż wszystko",
+    showLess: "Pokaż mniej",
+  },
   history: {
     title: "Historia członków",
     lead: "Każda karta porównuje listę członków z poprzednim odczytem. Kto doszedł i odszedł w międzyczasie, nie jest widoczny.",
