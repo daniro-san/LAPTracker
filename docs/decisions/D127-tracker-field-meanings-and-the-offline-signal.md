@@ -36,7 +36,7 @@ Why: on 2026-11-19 the owner and a guest alliance's leader checked the tracker's
 - "Day's honor" → "Alliance Help coins today (max 1,000)".
 - "Active this week" → "Did daily quests this week" on caravan suggestions and garrison cards; "Active" → "Quests this week" on team picks; the caravan and team help lines say "most daily quest points this week".
 
-**A day with no daily quests or no donations is a fact, not missing data.** The owner's 2026-11-19 answer covered daily quest points only; extending the rule to donations (`daily_tech`) is the builder's, pending the owner's confirmation. The read runs at the end of the server day (about 23:30 ST, D72), so a null `active` or `daily_tech` on it means none that day.
+**A day with no daily quests or no donations is a fact, not missing data.** The owner decided it for daily quest points on 2026-11-19 and confirmed the same rule for donations (`daily_tech`) on 2026-11-20. The read runs at the end of the server day (about 23:30 ST, D72), so a null `active` or `daily_tech` on it means none that day.
 
 - Neither is in the Members tab's "No data" list (`missingOf`), and neither makes a member's status "No data". "No data: donations on {n} days" counts only the days with no read of the member.
 - The list row and the card say, in the status's muted text and never as a warning, with `{day}` the newest read's server day:
