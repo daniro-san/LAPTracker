@@ -22,6 +22,7 @@ import {
   workspaceUsers,
 } from "../schema";
 import { startHere, thanksShares, thanksTakedowns } from "../schema-board";
+import { workspaceDiscord, workspaceWebhooks } from "../schema-discord";
 import { workspaceFeatures, workspaceUsage } from "../schema-features";
 import {
   allianceDuelPoints,
@@ -58,7 +59,8 @@ export interface WorkspaceTable {
 }
 
 /**
- * In the download's order. Never downloaded: sessions (token hashes), the sealed tracker key (D124),
+ * In the download's order. Never downloaded: sessions (token hashes), the sealed tracker key (D124) and
+ * webhooks (D129),
  * Discord's message ids of pictures already read (D100) and the squads reads' counts. People leave out
  * their Discord id; a notice picture's bytes go as files, not in a cell.
  */
@@ -99,6 +101,9 @@ export const WORKSPACE_TABLES: readonly WorkspaceTable[] = [
   { file: "data-requests", table: workspaceDataEvents, scope: "workspace" },
   { file: null, table: workspaceSessions, scope: "workspace" },
   { file: null, table: workspaceKeys, scope: "workspace" },
+  // D129: the sealed webhooks, like the key, and the bot's and commands' state in the server.
+  { file: null, table: workspaceWebhooks, scope: "workspace" },
+  { file: null, table: workspaceDiscord, scope: "workspace" },
   // D126: the owner's switches and the daily counts are the owner's settings, not the alliance's data.
   { file: null, table: workspaceFeatures, scope: "workspace" },
   { file: null, table: workspaceUsage, scope: "workspace" },

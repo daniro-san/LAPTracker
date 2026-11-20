@@ -1,6 +1,6 @@
 // workspaces, workspace_users and workspace_sessions (D71): what /admin writes, and the plain reads and
 // writes lib/private builds on. Who gets in, and the WorkspaceAccess brand, stay in lib/private.
-import { and, asc, eq, gt, isNull, lt, lte, ne, or, sql } from "drizzle-orm";
+import { and, eq, gt, isNull, lt, lte, ne, or, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { workspaces, workspaceSessions, workspaceUsers } from "../schema";
@@ -24,15 +24,6 @@ export async function findWorkspaceBySlug(db: Db, slug: string): Promise<Workspa
 export async function findWorkspaceByGuild(db: Db, guildId: string) {
   const [row] = await db.select().from(workspaces).where(eq(workspaces.discordGuildId, guildId));
   return row ?? null;
-}
-
-/** Every workspace's Discord server id, once each: where /admin registers the Discord command (D96). */
-export async function workspaceGuildIds(db: Db): Promise<string[]> {
-  const rows = await db
-    .selectDistinct({ guildId: workspaces.discordGuildId })
-    .from(workspaces)
-    .orderBy(asc(workspaces.discordGuildId));
-  return rows.map((r) => r.guildId);
 }
 
 export interface WorkspaceInput {

@@ -25,7 +25,12 @@ const ALGORITHM = "aes-256-gcm";
 const NONCE_BYTES = 12;
 const TAG_BYTES = 16;
 
-const aad = (workspaceId: number) => Buffer.from(`laptracker/workspace-key/${workspaceId}`);
+/**
+ * The associated data: what the secret is for and whose it is. A tracker key is `workspace-key`; a webhook
+ * is `webhook-leaders` or `webhook-members` (D129), so a sealed value opens only in its own row and place.
+ */
+const aad = (workspaceId: number, purpose: string) =>
+  Buffer.from(`laptracker/${purpose}/${workspaceId}`);
 const masterKey = (secret: string) => Buffer.from(secret, "base64");
 
 export interface Sealed {
@@ -48,10 +53,11 @@ export function sealKey(
   secret: string,
   workspaceId: number,
   key: string,
+  purpose = "workspace-key",
 ): Sealed & { masterFp: string; last4: string } {
   const nonce = randomBytes(NONCE_BYTES);
   const cipher = createCipheriv(ALGORITHM, masterKey(secret), nonce, { authTagLength: TAG_BYTES });
-  cipher.setAAD(aad(workspaceId));
+  cipher.setAAD(aad(workspaceId, purpose));
   const body = Buffer.concat([cipher.update(key, "utf8"), cipher.final(), cipher.getAuthTag()]);
   return {
     ciphertext: body.toString("base64"),
@@ -62,7 +68,12 @@ export function sealKey(
 }
 
 /** The key, or a throw when the master key, the workspace or the bytes are not the ones it was sealed with. */
-export function openKey(secret: string, workspaceId: number, sealed: Sealed): string {
+export function openKey(
+  secret: string,
+  workspaceId: number,
+  sealed: Sealed,
+  purpose = "workspace-key",
+): string {
   const body = Buffer.from(sealed.ciphertext, "base64");
   const decipher = createDecipheriv(
     ALGORITHM,
@@ -70,7 +81,7 @@ export function openKey(secret: string, workspaceId: number, sealed: Sealed): st
     Buffer.from(sealed.nonce, "base64"),
     { authTagLength: TAG_BYTES },
   );
-  decipher.setAAD(aad(workspaceId));
+  decipher.setAAD(aad(workspaceId, purpose));
   decipher.setAuthTag(body.subarray(body.length - TAG_BYTES));
   return Buffer.concat([
     decipher.update(body.subarray(0, body.length - TAG_BYTES)),

@@ -14,8 +14,8 @@ import { withPageDb } from "@/lib/page";
 import { requireBoard, type BoardAccess, type CookieReader } from "@/lib/private/access";
 import { boardView } from "@/lib/private/board";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
+import { channelNames } from "@/lib/private/discord-webhooks";
 import { featureOn } from "@/lib/private/features";
-import { noticeChannels } from "@/lib/private/notice-publish";
 import { SLUG } from "@/lib/private/sign-in";
 import { serverDay } from "@/lib/schedule";
 
@@ -101,9 +101,15 @@ function BoardPerson({ env, access }: { env: Env; access: BoardAccess }) {
 function readBoard(slug: string, jar: CookieReader, now: Date, today: string) {
   return withPageDb(async (db) => {
     const access = await requireBoard(db, slug, jar, now);
-    if (!access.ok || !featureOn(access, "board")) return { access, view: null };
+    if (!access.ok || !featureOn(access, "board")) return { access, view: null, channel: null };
     const view = await boardView(db, access, today);
-    return { access, view: featureOn(access, "notices") ? view : { ...view, notices: [] } };
+    // D129: the members' channel's name only, the workspace's own or else the site's.
+    const channel = (await channelNames(db, access, getEnv())).members;
+    return {
+      access,
+      view: featureOn(access, "notices") ? view : { ...view, notices: [] },
+      channel,
+    };
   });
 }
 
@@ -114,7 +120,7 @@ export default async function BoardPage({ params }: { params: Promise<{ slug: st
   const now = new Date();
   const env = getEnv();
   const today = serverDay(now, env);
-  const { access, view } = await readBoard(slug, jar, now, today);
+  const { access, view, channel } = await readBoard(slug, jar, now, today);
   if (!access.ok) {
     refuse(slug, access.reason, `/w/${slug}/board`);
     redirect(`/w/${slug}`);
@@ -172,7 +178,7 @@ export default async function BoardPage({ params }: { params: Promise<{ slug: st
         t={t}
         language={language}
         texts={view.startHere}
-        channel={noticeChannels(env, slug).members?.name ?? null}
+        channel={channel}
         guildId={access.guildId}
         edit={access.officer ? `/w/${slug}/start-here` : null}
       />

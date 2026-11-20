@@ -2,6 +2,7 @@
 // calls and thefts, imports, and the key and data requests. Invented names and values only.
 import type { Db } from "./db";
 import { memberFollowUps, rollCallMarks, rollCalls, rollCallTeam } from "./schema";
+import { workspaceDiscord, workspaceWebhooks } from "./schema-discord";
 import { workspaceFeatures, workspaceUsage } from "./schema-features";
 import {
   allianceDuelPoints,
@@ -200,4 +201,20 @@ export async function seedKeyAndData(db: Db, ws: number, unionId: number, office
   // D126: the owner's switches and the day's count.
   await db.insert(workspaceFeatures).values({ workspaceId: ws, switches: { thefts: false } });
   await db.insert(workspaceUsage).values({ workspaceId: ws, allowance: "ai", day: DAY, used: 3 });
+  // D129: a sealed webhook (never downloaded, like the key) and the bot seen with its commands.
+  await db.insert(workspaceWebhooks).values({
+    workspaceId: ws,
+    channel: "members",
+    ciphertext: KEY_MARKER,
+    nonce: "NONCE-MARKER",
+    masterFp: "fp-marker",
+    name: "town-square",
+    forum: false,
+    savedBy: officer,
+    savedAt: SEED_AT,
+    requestId: `hook-${ws}`,
+  });
+  await db
+    .insert(workspaceDiscord)
+    .values({ workspaceId: ws, botSeenAt: SEED_AT, commands: [], commandsAt: SEED_AT });
 }

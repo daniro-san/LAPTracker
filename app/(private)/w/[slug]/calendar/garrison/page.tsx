@@ -7,8 +7,8 @@ import { notFound } from "next/navigation";
 import { fill } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
 import { calendarDates, titleOf } from "@/lib/private/calendar-words";
+import { channelNames } from "@/lib/private/discord-webhooks";
 import { garrisonView } from "@/lib/private/garrison";
-import { noticeChannels } from "@/lib/private/notice-publish";
 
 import { SignedInFrame } from "../../../../_ui/Frame";
 import { boardData, garrisonWords } from "../../../../_ui/garrison-data";
@@ -32,11 +32,15 @@ export default async function GarrisonPage({
   const page = await openRollCall(
     params,
     `calendar/garrison?${query}`,
-    (db, access) => garrisonView(db, access, occasion.entry, occasion.week),
+    async (db, access) => {
+      const garrison = await garrisonView(db, access, occasion.entry, occasion.week);
+      // Only the channels' names reach the page, never their webhooks (D102, D129).
+      return garrison && { ...garrison, channels: await channelNames(db, access, getEnv()) };
+    },
     "garrison",
   );
   if (!page.data) return page.off ?? notFound();
-  const { view } = page.data;
+  const { view, channels } = page.data;
   const { access, slug, t, language } = page;
   const words = garrisonWords(t);
   const day = view.placed.day;
@@ -48,8 +52,6 @@ export default async function GarrisonPage({
     minute: "2-digit",
     timeZone: page.zone,
   });
-  // Only the channels' names reach the page, never their webhooks (D102).
-  const channels = noticeChannels(getEnv(), slug);
   const posted = view.posted && fill(t["garrison.postedAt"], { when: when.format(view.posted) });
   return (
     <SignedInFrame access={access} language={language} t={t} current="days" waiting={page.waiting}>
@@ -91,8 +93,8 @@ export default async function GarrisonPage({
           words={words}
           posted={posted}
           channels={{
-            members: channels.members?.name ?? null,
-            leaders: channels.leaders?.name ?? null,
+            members: channels.members,
+            leaders: channels.leaders,
           }}
         />
       )}

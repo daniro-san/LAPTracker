@@ -91,6 +91,10 @@ export interface AnalyticsEvents {
   ws_thanks_shared: { to: "game" | "discord" | "board" };
   /** A members' board section came on screen, once per page load. */
   ws_board_section_viewed: { board_section: BoardSection };
+  /** Alliance settings' Check found the bot in the alliance's Discord server for the first time (D129). */
+  ws_bot_installed: NoProperties;
+  /** A notice channel's webhook saved in Alliance settings (D129): which channel only, never the URL. */
+  ws_webhook_set: { channel: "leaders" | "members" };
 }
 export type AnalyticsEvent = keyof AnalyticsEvents;
 
@@ -119,6 +123,8 @@ export const ANALYTICS_EVENTS = [
   "ws_roll_call_marked",
   "ws_thanks_shared",
   "ws_board_section_viewed",
+  "ws_bot_installed",
+  "ws_webhook_set",
 ] as const satisfies readonly AnalyticsEvent[];
 
 /** The URL fragment the sign-in callback adds after a successful sign-in, when analytics is on. */

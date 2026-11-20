@@ -1,13 +1,13 @@
 // "Publish to Discord" (issue 345, D102): posts a notice, in the languages the officer chose, to the
-// channel its audience names in WORKSPACE_DISCORD_WEBHOOKS: a members notice to the members' channel, a
-// leadership one to the leaders'. Never guessed, never hard-coded. Once per request id (D100): the claim
+// channel its audience names: a members notice to the members' channel, a leadership one to the leaders'.
+// The channels are the workspace's own, saved in Alliance settings (D129), or WORKSPACE_DISCORD_WEBHOOKS
+// until it saves one. Never guessed, never hard-coded. Once per request id (D100): the claim
 // comes before the first post. `allowed_mentions` is empty on every message, so a notice never pings
 // anyone. The log carries codes and numbers only; the webhook URL never leaves this module but in the
 // request to Discord.
 import { z } from "zod";
 
 import type { Db } from "../db";
-import type { Env } from "../env";
 import { pictureBytes } from "../repo/notice-pictures";
 import { claimPublish, finishPublish, lastPosted, type PublishRow } from "../repo/notice-publishes";
 import type { WorkspaceAccess } from "./access";
@@ -30,16 +30,8 @@ export interface Channel {
   name: string;
   forum: boolean;
 }
+/** The workspace's two notice channels (discord-webhooks.ts `noticeChannels`); null where none is set up. */
 export type Channels = Record<Audience, Channel | null>;
-
-/** The workspace's two notice channels; null where none is set up. */
-export function noticeChannels(
-  env: Pick<Env, "WORKSPACE_DISCORD_WEBHOOKS">,
-  slug: string,
-): Channels {
-  const set = env.WORKSPACE_DISCORD_WEBHOOKS?.[slug];
-  return { members: set?.members ?? null, leaders: set?.leaders ?? null };
-}
 
 export const audienceOf = (forMembers: boolean): Audience => (forMembers ? "members" : "leaders");
 
