@@ -103,4 +103,4 @@ Issue #412, rollout PR 4, the notices part. Owner: "the notices page is still ba
 - The read page's panel is already capped at `max-w-2xl`. The spread's main column should drop that cap when it lands.
 </adjustments>
 
-PR: (added by the orchestrator)
+https://github.com/daniro-san/LAPTracker/pull/510
