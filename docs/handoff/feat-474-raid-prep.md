@@ -96,4 +96,4 @@
 - Readers of shield data go through `lib/private/raid-prep.ts` (`prepView`). A member's newest reading in a window comes from `shieldReadings` in `lib/repo/shield-checks.ts`.
 </adjustments>
 
-PR: (added by the orchestrator)
+https://github.com/daniro-san/LAPTracker/pull/517
