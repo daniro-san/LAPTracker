@@ -6,7 +6,8 @@ import { notFound } from "next/navigation";
 
 import { getAppContext } from "@/lib/app-context";
 import { getEnv } from "@/lib/env";
-import { audienceOf, lastPublish, noticeChannels } from "@/lib/private/notice-publish";
+import { channelNames } from "@/lib/private/discord-webhooks";
+import { audienceOf, lastPublish } from "@/lib/private/notice-publish";
 import { noticeReviews } from "@/lib/private/notice-reviews";
 import { noticeDetail, noticeHistory } from "@/lib/private/notices";
 import { serverDay } from "@/lib/schedule";
@@ -37,24 +38,25 @@ export default async function NoticePage({
     async (db, a) => {
       const notice = await noticeDetail(db, a, id);
       if (!notice) return null;
-      const [history, last, calendar, reviews] = await Promise.all([
+      const [history, last, calendar, reviews, channels] = await Promise.all([
         noticeHistory(db, a, id),
         lastPublish(db, a, id),
         noticeCalendar(db, a, id, serverDay(new Date(), getEnv()), { t, language }),
         noticeReviews(db, a, id),
+        // Only the channels' names reach the page, never their webhooks (D102, D129).
+        channelNames(db, a, getEnv()),
       ]);
-      return { notice, history, last, calendar, reviews };
+      return { notice, history, last, calendar, reviews, channels };
     },
     `/${id}`,
   );
   if (!data) return off ?? notFound();
-  const { notice, history, last, calendar, reviews } = data;
+  const { notice, history, last, calendar, reviews, channels } = data;
   const words = noticeWords(language, t);
   const languages = languagesFor(language);
   const audience = audienceOf(notice.forMembers);
-  const channels = noticeChannels(getEnv(), slug);
   const nameOf = (a: string) =>
-    channels[a === "members" ? "members" : "leaders"]?.name.replace(/^#/, "") ?? null;
+    channels[a === "members" ? "members" : "leaders"]?.replace(/^#/, "") ?? null;
   const channel = nameOf(audience);
   // A new version of any field remounts the screen, so a save or a refresh closes the editor. A picture
   // change does not (D119): the editor closes itself after a picture-only save, and stays open, in step with

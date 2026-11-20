@@ -50,9 +50,21 @@ lib/private/*.ts    the workspace (D71): requireWorkspace and its branded Worksp
                     the save's version check); its table reads and writes are in lib/repo/notices.ts.
                     D102: notice-formats.ts (pure: the game notice, game mail and Discord copies, Discord's
                     messages), notice-history.ts (pure: saves from notice_edits, the text before, a version's
-                    fields), notice-publish.ts ("Publish to Discord": channel by audience from
-                    WORKSPACE_DISCORD_WEBHOOKS, the once-per-request claim, the posts through AppContext.fetch);
-                    its table in lib/repo/notice-publishes.ts.
+                    fields), notice-publish.ts ("Publish to Discord": channel by audience, the once-per-request
+                    claim, the posts through AppContext.fetch); its table in lib/repo/notice-publishes.ts.
+                    D129: discord-webhooks.ts (the two notice channels: the workspace's own webhooks, checked
+                    with Discord, sealed like D124's key and opened only there; WORKSPACE_DISCORD_WEBHOOKS as the
+                    fallback), discord-setup.ts (the bot's install link and Check); tables in lib/schema-discord.ts,
+                    read and written in lib/repo/workspace-discord.ts.
+                    D130, a new alliance's way in (pages /w/invite and /w/request, handlers under api/w/invite and
+                    api/w/request): invite.ts (the link's cookie, who may use it, the page's view), invite-sign-in.ts
+                    (Discord with `identify guilds` through the one callback), invite-steps.ts (the server, the
+                    roles, creating them, and the workspace made), invite-discord.ts (the server list's filter and
+                    the bot's role reads and writes), access-request.ts ("Request an Officers' Desk" and its
+                    roster check); tables in lib/schema-invites.ts, read and written in
+                    lib/repo/alliance-invites.ts; /admin's read in lib/queries/alliance-invites.ts, its route
+                    app/api/admin/invites with its actions in lib/admin-invites.ts, and the admin channel's
+                    line in lib/notify-request.ts.
                     D119: notice-picture.ts (the server's check of a notice's picture, its save and remove, and
                     who may be served it), notice-picture-rules.ts (pure, browser-safe: the caps and the browser's
                     resize plan), notice-publish-body.ts (a Discord post's body, multipart with the picture),
@@ -130,6 +142,9 @@ lib/squads-read.ts  the nightly squads read (D117): batches of /v1/players for O
                     (lib/heroes.ts, lib/repo/hero-catalog.ts). lib/squads.ts: its pure rules (reserve, main squad,
                     version rule). The card's words: lib/private/member-squads.ts. lib/squads-call.ts: one call
                     of a batch (split for size). D124: each workspace with a key of its own is read on that key.
+lib/workspace-commands.ts which message commands each workspace's server has (D129): only those turned on,
+                    registered by lib/app-commands.ts and recorded per workspace; used by /admin, Alliance
+                    settings and a switch change on /admin.
 lib/workspace-keys.ts each workspace's own tracker key (D124): sealed with AES-256-GCM under WORKSPACE_KEYS_SECRET
                     (the workspace id as associated data), opened only here at call time, "Test the key"
                     (`checkKey`), the status rule and which squads reads use which key (`squadTargets`). Tables in

@@ -3,11 +3,12 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { AppContext } from "@/lib/app-context";
-import { TEST_PIN, testContext } from "@/lib/app-context.test-helpers";
+import { TEST_ENV, TEST_PIN, testContext } from "@/lib/app-context.test-helpers";
 import type { Db } from "@/lib/db";
 import { openTestDb, truncateAll } from "@/lib/db.test-helpers";
 import { settingsById } from "@/lib/repo/workspace-features";
 import { saveWorkspace } from "@/lib/repo/workspaces";
+import { workspaceDiscord } from "@/lib/schema-discord";
 import { workspaceFeatures } from "@/lib/schema-features";
 
 const holder = vi.hoisted(() => ({ ctx: null as AppContext | null }));
@@ -87,5 +88,37 @@ describe("POST /api/admin/workspaces/features (D126)", () => {
     expect((await post(TEST_PIN, { action: "copy", workspace_id: 3, from_id: 99 })).status).toBe(
       404,
     );
+  });
+
+  it("re-registers a server that had commands without the one turned off; leaves others alone (D129)", async () => {
+    const ctx = testContext(db, {
+      ...TEST_ENV,
+      DISCORD_CLIENT_ID: "900000000000000505",
+      DISCORD_CLIENT_SECRET: "client-secret-for-tests",
+    }).ctx;
+    const puts: { url: string; body: unknown }[] = [];
+    ctx.fetch = async (input, init) => {
+      if (String(input).endsWith("/oauth2/token")) return Response.json({ access_token: "b" });
+      puts.push({ url: String(input), body: JSON.parse(String(init?.body)) });
+      return Response.json([]);
+    };
+    holder.ctx = ctx;
+    // OGs' server had all three commands; nse's never had any.
+    const all = ["Send to LAPTracker", "Translate for me", "Translate for everyone"];
+    await db.insert(workspaceDiscord).values({ workspaceId: 1, commands: all });
+    const off = (id: number) =>
+      post(TEST_PIN, {
+        action: "switch",
+        workspace_id: id,
+        feature: "discord_translate_me",
+        on: false,
+      });
+    expect((await off(1)).status).toBe(200);
+    expect((await off(2)).status).toBe(200);
+    expect(puts.map((p) => p.url.split("/guilds/")[1])).toEqual(["1/commands"]);
+    expect(puts[0]?.body).toEqual([
+      { name: "Send to LAPTracker", type: 3 },
+      { name: "Translate for everyone", type: 3 },
+    ]);
   });
 });

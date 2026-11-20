@@ -14,6 +14,7 @@ import { requireWorkspace } from "@/lib/private/access";
 import { WORKSPACE_LANG_COOKIE } from "@/lib/private/cookies";
 import { counted } from "@/lib/private/desk-action";
 import { pickWorkspaceLanguage, WORKSPACE_DICTIONARIES } from "@/lib/private/dictionary";
+import { noticeChannels } from "@/lib/private/discord-webhooks";
 import { featureOn } from "@/lib/private/features";
 import { garrisonInput, saveEnemyMight, saveGarrison } from "@/lib/private/garrison";
 import { postGarrison } from "@/lib/private/garrison-post";
@@ -24,7 +25,6 @@ import {
   privateError,
   requestCookies,
 } from "@/lib/private/http";
-import { noticeChannels } from "@/lib/private/notice-publish";
 import { SLUG } from "@/lib/private/sign-in";
 import { withContext } from "@/lib/route";
 
@@ -77,11 +77,11 @@ export async function POST(
       jar.get(WORKSPACE_LANG_COOKIE)?.value,
       request.headers.get("accept-language"),
     );
-    const posted = await privately("garrison.post", () =>
+    const posted = await privately("garrison.post", async () =>
       postGarrison(db, access, input, {
         fetch: ctx.fetch,
         now,
-        channels: noticeChannels(ctx.env, slug),
+        channels: await noticeChannels(db, access, ctx.env),
         t: WORKSPACE_DICTIONARIES[language],
         language,
       }),

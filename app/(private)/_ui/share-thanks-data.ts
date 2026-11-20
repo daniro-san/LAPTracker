@@ -3,7 +3,6 @@
 // did in words; the roster's names let the officer add someone. No value, no ranking (D75).
 import { getAppContext } from "@/lib/app-context";
 import { fill } from "@/lib/copy";
-import { getEnv } from "@/lib/env";
 import { addDays, mondayOf } from "@/lib/private/calendar-time";
 import { calendarDates } from "@/lib/private/calendar-words";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
@@ -11,7 +10,6 @@ import { shareEn } from "@/lib/private/dictionary.share";
 import { thanksWeek } from "@/lib/private/fact-trend";
 import { progressText } from "@/lib/private/member-card";
 import type { MembersView } from "@/lib/private/members";
-import { noticeChannels } from "@/lib/private/notice-publish";
 import { NOTE_LIMIT } from "@/lib/private/thanks";
 
 import { SHEET_KEYS } from "./sheet-words";
@@ -57,10 +55,14 @@ export function weekRange(monday: string, t: WorkspaceDictionary, language: Work
   return fill(t["share.range"], { from: dayMonth(monday), to: dayMonth(addDays(monday, 6)) });
 }
 
-/** The switches the thanks sheet follows (D126); plain booleans, so they reach client components. */
+/**
+ * The switches the thanks sheet follows (D126), plain booleans so they reach client components, and the
+ * members' Discord channel's name (D129: read with the page's data, never its webhook).
+ */
 export interface ThanksSwitches {
   board: boolean;
   writing: boolean;
+  channel: string | null;
 }
 
 /** The sheet's props; the members' channel and the writing help come from the environment. */
@@ -94,7 +96,7 @@ export function shareThanksProps(p: {
       line: progressText(x, t),
     })),
     roster: p.view.members.map((m) => ({ uid: m.uid, name: m.name })),
-    channel: noticeChannels(getEnv(), p.slug).members?.name ?? null,
+    channel: p.switches.channel,
     ai: getAppContext().ai !== null && p.switches.writing,
     board: p.switches.board,
     noteLimit: NOTE_LIMIT,

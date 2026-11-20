@@ -14,6 +14,7 @@ import { defaultSettings, resolveFeatures, type FeatureSettings } from "@/lib/wo
 import { keyUsable, masterFingerprint } from "@/lib/workspace-keys";
 
 import { DiscordCommandCard, type GuildView } from "./DiscordCommandCard";
+import { Invites } from "./Invites";
 import { AdminSection } from "./parts";
 import { SquadsCard, type SquadsRowView } from "./SquadsCard";
 import { WorkspacesCard } from "./WorkspacesCard";
@@ -37,6 +38,23 @@ function deletionLine(deletion: AdminWorkspace["deletion"]): string | null {
   const d = t.deletion;
   const who = deletion.byOwner ? d.owner : (deletion.by ?? d.officer);
   return fill(d.line, { who, asked: day(deletion.askedAt), date: day(deletion.purgeAfter) });
+}
+
+/**
+ * D129: the bot seen or not, the commands registered (or not), and each channel's webhook: set by the
+ * workspace, `env` while WORKSPACE_DISCORD_WEBHOOKS still covers it, or not set. Never a webhook.
+ */
+function discordLine(w: AdminWorkspace, site: Partial<Record<string, unknown>> | undefined) {
+  const d = t.discord;
+  const hook = (c: "leaders" | "members") =>
+    w.discord.webhooks.includes(c) ? d.set : site?.[c] ? d.site : d.unset;
+  const commands = w.discord.commands;
+  return fill(d.line, {
+    bot: w.discord.botSeen ? d.botSeen : d.botUnseen,
+    commands: commands === null ? d.noCommands : commands.length ? commands.join(", ") : d.noneOn,
+    leaders: hook("leaders"),
+    members: hook("members"),
+  });
 }
 
 /** The workspaces the daily job deleted (D125): what is left of each, no member data. */
@@ -175,6 +193,7 @@ export async function Workspaces({ now }: { now: Date }) {
           })
         : t.key.unset,
       deletion: deletionLine(w.deletion),
+      discord: discordLine(w, getEnv().WORKSPACE_DISCORD_WEBHOOKS?.[w.slug]),
       people: w.signedIn.map((p) => ({
         id: p.userId,
         name: p.name ?? t.signOutUsers.noName,
@@ -202,6 +221,7 @@ export async function Workspaces({ now }: { now: Date }) {
         <WorkspacesCard workspaces={views} paused={features.paused} />
         <Deleted rows={deleted} />
       </AdminSection>
+      <Invites now={now} unionIds={rows.map((w) => w.unionId)} />
       <AdminSection id="squads" title={t.squads.title} help={t.squads.help}>
         <SquadsCard day={squadsDay} rows={squadsRows({ rows, squads, settingsOf, current, now })} />
       </AdminSection>

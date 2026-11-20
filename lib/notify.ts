@@ -110,7 +110,7 @@ export function createNotifier(env: NotifyEnv, fetchFn: typeof fetch): Notifier 
  * Text people type (a round's name; an alliance's tag and name, typed in game) shows literally:
  * Discord markdown is backslash-escaped and mentions get a zero-width space after the `@`.
  */
-const escapeDiscord = (text: string) =>
+export const escapeDiscord = (text: string) =>
   text
     .replace(/[\\*_~`|>[\]]/g, "\\$&")
     .replace(/@(everyone|here)/g, "@\u200b$1")

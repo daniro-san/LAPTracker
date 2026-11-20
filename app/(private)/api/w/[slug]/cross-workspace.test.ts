@@ -14,7 +14,9 @@ import { pngHeader } from "@/lib/private/notice-picture.test-helpers";
 import { ownedRows } from "@/lib/workspace-data.test-helpers";
 
 import {
+  ALPHA,
   type Ask,
+  BRAVO,
   call,
   eventWorkspaces,
   type Ids,
@@ -208,5 +210,33 @@ describe("Alpha's officer naming Bravo's records (issue 471)", () => {
     await new Promise((r) => setTimeout(r, 0));
     expect(new Set(eventWorkspaces(two))).toEqual(new Set(["ws_action:alpha"]));
     expect(eventWorkspaces(two)).toHaveLength(6);
+  });
+
+  it("cannot save a webhook of Bravo's server, and Check asks about Alpha's server only (D129)", async () => {
+    const ctx = holder.ctx as AppContext;
+    Object.assign(ctx.env, {
+      WORKSPACE_KEYS_SECRET: Buffer.alloc(32, 5).toString("base64"),
+      DISCORD_CLIENT_ID: "900000000000000505",
+      DISCORD_CLIENT_SECRET: "client-secret-for-tests",
+      DISCORD_BOT_TOKEN: "bot-token-for-tests-only",
+    });
+    const asked: string[] = [];
+    // Discord's stub: every webhook belongs to Bravo's server; the bot is in no server.
+    ctx.fetch = async (input) => {
+      asked.push(String(input));
+      if (String(input).includes("/webhooks/")) return Response.json({ guild_id: String(BRAVO) });
+      return new Response("", { status: 403 });
+    };
+    const before = await ownedRows(db, b.workspace);
+    const url = `https://discord.com/api/webhooks/900000000000000303/${"bravo-test-".repeat(3)}`;
+    const save = { action: "webhook", channel: "members", url, name: "x", forum: false };
+    const saved = await call(two, "discord", { body: { ...save, requestId: randomUUID() } });
+    expect([saved.status, saved.json.code]).toEqual([422, "wrong_server"]);
+    const checked = await call(two, "discord", { body: { action: "check" } });
+    expect([checked.status, checked.json.code]).toEqual([409, "bot_missing"]);
+    expect(asked.filter((u) => u.includes("/guilds/"))).toEqual([
+      `${ctx.env.DISCORD_API_BASE_URL}/guilds/${ALPHA}`,
+    ]);
+    expect(await ownedRows(db, b.workspace)).toEqual(before);
   });
 });

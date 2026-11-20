@@ -89,6 +89,20 @@ export const workspacesAdminCopy = {
     rotation:
       "Changing WORKSPACE_KEYS_SECRET makes every saved tracker key need to be entered again.",
   },
+  /**
+   * The workspace's own Discord set-up (D129): its officers add the bot, check it and save the webhooks in
+   * Alliance settings; /admin sees only whether each is done, never a webhook.
+   */
+  discord: {
+    line: "Discord: {bot} · commands: {commands} · leaders' webhook: {leaders} · members' webhook: {members}",
+    botSeen: "bot in server",
+    botUnseen: "bot not checked",
+    noCommands: "not registered",
+    noneOn: "none on",
+    set: "set",
+    site: "env",
+    unset: "not set",
+  },
   /** "Delete this workspace" (D125): the same 14 days as an officer's, and its officers can cancel. */
   deletion: {
     line: "Deletion asked by {who} on {asked} · deleted after {date}",
@@ -124,7 +138,7 @@ export const workspacesAdminCopy = {
   /** The Discord section: the app's three message commands, registered in each workspace's server (D96, D101). */
   command: {
     title: "Discord",
-    help: "Adds 'Send to LAPTracker', 'Translate for me' and 'Translate for everyone' to the Apps menu of each workspace's Discord server. Run it again after the commands change.",
+    help: "Adds 'Send to LAPTracker', 'Translate for me' and 'Translate for everyone' to the Apps menu of each workspace's Discord server, only those turned on for that workspace. Officers can also do it from Alliance settings. Run it again after the commands change.",
     register: "Register the Discord command",
     noCredentials: "The Discord app credentials are not set.",
     noGuild: "No workspace has a Discord server yet.",

@@ -13,6 +13,8 @@ export default defineConfig({
     "./lib/schema-keys.ts",
     "./lib/schema-retention.ts",
     "./lib/schema-features.ts",
+    "./lib/schema-discord.ts",
+    "./lib/schema-invites.ts",
   ],
   out: "./drizzle",
 });

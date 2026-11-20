@@ -103,6 +103,8 @@ const sectionOf = (segment: string | undefined) =>
 export function areaOf(path: string): { area: Area; workspace?: string; section?: string } {
   const admin = /^\/admin(?:\/([^/]*)|$)/.exec(path);
   if (admin) return { area: "admin", section: sectionOf(admin[1]) };
+  // D130: /w/invite and /w/request are a new alliance's pages, not a workspace's.
+  if (/^\/w\/(?:invite|request)(?:\/|$)/.test(path)) return { area: "workspace" };
   const desk = /^\/w\/([^/]+)(?:\/([^/]*))?/.exec(path);
   return desk?.[1]
     ? { area: "workspace", workspace: desk[1], section: sectionOf(desk[2]) }

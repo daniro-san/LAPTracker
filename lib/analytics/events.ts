@@ -91,6 +91,18 @@ export interface AnalyticsEvents {
   ws_thanks_shared: { to: "game" | "discord" | "board" };
   /** A members' board section came on screen, once per page load. */
   ws_board_section_viewed: { board_section: BoardSection };
+  /** Alliance settings' Check found the bot in the alliance's Discord server for the first time (D129). */
+  ws_bot_installed: NoProperties;
+  /** A notice channel's webhook saved in Alliance settings (D129): which channel only, never the URL. */
+  ws_webhook_set: { channel: "leaders" | "members" };
+  /** "Request a Desk" sent (D130): the rank claimed and whether the newest roster has the name; never the name. */
+  ws_access_requested: { claimed_role: "r5" | "r4"; roster_match: "found" | "not_found" };
+  /** The owner made an invite link on /admin, for an alliance or by approving its request (D130). */
+  admin_workspace_approved: NoProperties;
+  /** An invite link opened, before its Discord sign-in (D130). */
+  ws_invite_opened: NoProperties;
+  /** An invite used: the workspace made; whether the roles were created there rather than picked. */
+  ws_invite_completed: { roles_created: boolean };
 }
 export type AnalyticsEvent = keyof AnalyticsEvents;
 
@@ -119,6 +131,12 @@ export const ANALYTICS_EVENTS = [
   "ws_roll_call_marked",
   "ws_thanks_shared",
   "ws_board_section_viewed",
+  "ws_bot_installed",
+  "ws_webhook_set",
+  "ws_access_requested",
+  "admin_workspace_approved",
+  "ws_invite_opened",
+  "ws_invite_completed",
 ] as const satisfies readonly AnalyticsEvent[];
 
 /** The URL fragment the sign-in callback adds after a successful sign-in, when analytics is on. */

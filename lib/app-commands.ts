@@ -5,6 +5,7 @@
 import { z } from "zod";
 
 import type { Env } from "./env";
+import type { Feature } from "./workspace-features";
 
 export const IMPORT_COMMAND = { name: "Send to LAPTracker", type: 3 } as const;
 export const TRANSLATE_FOR_ME = { name: "Translate for me", type: 3 } as const;
@@ -12,6 +13,27 @@ export const TRANSLATE_FOR_EVERYONE = { name: "Translate for everyone", type: 3 
 
 /** Every command of the app. Discord's PUT replaces a guild's whole set, so they are registered together. */
 export const APP_COMMANDS = [IMPORT_COMMAND, TRANSLATE_FOR_ME, TRANSLATE_FOR_EVERYONE] as const;
+export type AppCommand = (typeof APP_COMMANDS)[number];
+
+/** The D126 switch behind each command. */
+const COMMAND_FEATURE: Record<AppCommand["name"], Feature> = {
+  [IMPORT_COMMAND.name]: "discord_send",
+  [TRANSLATE_FOR_ME.name]: "discord_translate_me",
+  [TRANSLATE_FOR_EVERYONE.name]: "discord_translate_everyone",
+};
+
+/**
+ * The commands a workspace's server gets: only those whose feature is on (issue 483, D129). A command
+ * turned off is not registered at all, so nobody sees it in Discord's Apps menu.
+ */
+export const commandsFor = (on: ReadonlySet<Feature>): AppCommand[] =>
+  APP_COMMANDS.filter((c) => on.has(COMMAND_FEATURE[c.name]));
+
+/** One server and the commands it should have; an empty list removes every command of the app there. */
+export interface CommandTarget {
+  guildId: string;
+  commands: readonly AppCommand[];
+}
 
 const TIMEOUT_MS = 10_000;
 
@@ -47,14 +69,15 @@ async function clientToken(
 }
 
 /**
- * Registers APP_COMMANDS in each guild, where the app is installed with `applications.commands`: the
- * app's client-credentials grant (scope `applications.commands.update`), no bot token, then Discord's bulk
- * overwrite (PUT), so each guild's commands become exactly these. Used by `pnpm discord:register` and /admin.
+ * Registers each target's commands in its guild, where the app is installed with `applications.commands`:
+ * the app's client-credentials grant (scope `applications.commands.update`), no bot token, then Discord's
+ * bulk overwrite (PUT), so each guild's commands become exactly the target's (none: all removed). Used by
+ * `pnpm discord:register`, /admin and Alliance settings (lib/workspace-commands.ts).
  */
 export async function registerAppCommands(
   env: Pick<Env, "DISCORD_CLIENT_ID" | "DISCORD_CLIENT_SECRET" | "DISCORD_API_BASE_URL">,
   fetcher: typeof fetch,
-  guildIds: readonly string[],
+  targets: readonly CommandTarget[],
 ): Promise<RegisterResult> {
   const id = env.DISCORD_CLIENT_ID;
   const secret = env.DISCORD_CLIENT_SECRET;
@@ -68,11 +91,11 @@ export async function registerAppCommands(
   const token = await clientToken(send, id, secret);
   if ("status" in token) return { ok: false, code: "discord_token", status: token.status };
   const guilds = await Promise.all(
-    guildIds.map(async (guildId) => {
+    targets.map(async ({ guildId, commands }) => {
       const res = await send(`/applications/${id}/guilds/${guildId}/commands`, {
         method: "PUT",
         headers: { authorization: `Bearer ${token.bearer}`, "content-type": "application/json" },
-        body: JSON.stringify(APP_COMMANDS),
+        body: JSON.stringify(commands),
       });
       return { guildId, status: res?.status ?? 0 };
     }),

@@ -30,12 +30,13 @@ export function authorizeUrl(
   redirectUri: string,
   state: string,
   silent: boolean,
+  scope: string = SCOPES,
 ): string {
   const query = new URLSearchParams({
     client_id: config.clientId,
     response_type: "code",
     redirect_uri: redirectUri,
-    scope: SCOPES,
+    scope,
     state,
     prompt: silent ? "none" : "consent",
   });
@@ -43,11 +44,14 @@ export function authorizeUrl(
 }
 
 const tokenSchema = z.object({ access_token: z.string().min(1) });
-const userSchema = z.object({
-  id: z.string().regex(/^\d{1,20}$/),
-  username: z.string(),
-  global_name: z.string().nullish(),
-});
+/** Who the account is: its id and the name to show (Discord's display name, else its username). */
+export const userSchema = z
+  .object({
+    id: z.string().regex(/^\d{1,20}$/),
+    username: z.string(),
+    global_name: z.string().nullish(),
+  })
+  .transform((u) => ({ id: u.id, name: u.global_name ?? u.username }));
 const memberSchema = z.object({ nick: z.string().nullish(), roles: z.array(z.string()) });
 
 export type DiscordMember =
@@ -63,7 +67,11 @@ export type DiscordMember =
 const NOT_FOUND = Symbol("404");
 
 /** A 2xx answer's JSON; NOT_FOUND for a 404; null for any other status, a timeout or a network error. */
-async function readJson(fetcher: typeof fetch, url: string, init: RequestInit): Promise<unknown> {
+export async function readJson(
+  fetcher: typeof fetch,
+  url: string,
+  init: RequestInit,
+): Promise<unknown> {
   try {
     const res = await fetcher(url, { ...init, signal: AbortSignal.timeout(TIMEOUT_MS) });
     if (res.status === 404) return NOT_FOUND;
@@ -81,6 +89,35 @@ export async function readMember(
   redirectUri: string,
   guildId: string,
 ): Promise<DiscordMember> {
+  const get = await exchangeCode(fetcher, config, code, redirectUri);
+  if (!get) return { ok: false, code: "discord_token" };
+  const user = userSchema.safeParse(await get("/users/@me"));
+  if (!user.success) return { ok: false, code: "discord_user" };
+
+  const body = await get(`/users/@me/guilds/${encodeURIComponent(guildId)}/member`);
+  const name = user.data.name;
+  // Discord answers 404 (Unknown Guild) when the account is not in the server.
+  if (body === NOT_FOUND) return { ok: true, userId: user.data.id, displayName: name, roles: null };
+  const member = memberSchema.safeParse(body);
+  if (!member.success) return { ok: false, code: "discord_member" };
+  return {
+    ok: true,
+    userId: user.data.id,
+    displayName: member.data.nick ?? name,
+    roles: member.data.roles,
+  };
+}
+
+/**
+ * The code exchange: a reader of Discord paths with the account's token, or null when Discord refused the
+ * code. The token serves this request only and is never stored.
+ */
+export async function exchangeCode(
+  fetcher: typeof fetch,
+  config: DiscordConfig,
+  code: string,
+  redirectUri: string,
+): Promise<((path: string) => Promise<unknown>) | null> {
   const basic = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString("base64");
   const token = tokenSchema.safeParse(
     await readJson(fetcher, `${config.baseUrl}/oauth2/token`, {
@@ -96,25 +133,9 @@ export async function readMember(
       }),
     }),
   );
-  if (!token.success) return { ok: false, code: "discord_token" };
-
-  const get = (path: string) =>
+  if (!token.success) return null;
+  return (path: string) =>
     readJson(fetcher, `${config.baseUrl}${path}`, {
       headers: { authorization: `Bearer ${token.data.access_token}` },
     });
-  const user = userSchema.safeParse(await get("/users/@me"));
-  if (!user.success) return { ok: false, code: "discord_user" };
-
-  const body = await get(`/users/@me/guilds/${encodeURIComponent(guildId)}/member`);
-  const name = user.data.global_name ?? user.data.username;
-  // Discord answers 404 (Unknown Guild) when the account is not in the server.
-  if (body === NOT_FOUND) return { ok: true, userId: user.data.id, displayName: name, roles: null };
-  const member = memberSchema.safeParse(body);
-  if (!member.success) return { ok: false, code: "discord_member" };
-  return {
-    ok: true,
-    userId: user.data.id,
-    displayName: member.data.nick ?? name,
-    roles: member.data.roles,
-  };
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { IMPORT_COMMAND, registerAppCommands } from "./app-commands";
+import { APP_COMMANDS, commandsFor, IMPORT_COMMAND, registerAppCommands } from "./app-commands";
 
 const env = {
   DISCORD_CLIENT_ID: "900000000000000001",
@@ -9,6 +9,7 @@ const env = {
 };
 const OGS = "1544808864262914060";
 const OTHER = "1544808864262914061";
+const all = (guildId: string) => ({ guildId, commands: APP_COMMANDS });
 
 describe("registerAppCommands (D96, D101)", () => {
   it("takes a client-credentials token, then PUTs the three commands in each guild and returns each status", async () => {
@@ -23,7 +24,7 @@ describe("registerAppCommands (D96, D101)", () => {
         : Response.json({ message: "Missing Access", code: 50001 }, { status: 403 });
     });
 
-    const result = await registerAppCommands(env, fetcher as typeof fetch, [OGS, OTHER]);
+    const result = await registerAppCommands(env, fetcher as typeof fetch, [OGS, OTHER].map(all));
 
     expect(result).toEqual({
       ok: true,
@@ -72,7 +73,7 @@ describe("registerAppCommands (D96, D101)", () => {
       const result = await registerAppCommands(
         { ...env, [missing]: undefined },
         fetcher as typeof fetch,
-        [OGS],
+        [OGS].map(all),
       );
       expect(result).toEqual({ ok: false, code: "no_credentials" });
     }
@@ -80,7 +81,7 @@ describe("registerAppCommands (D96, D101)", () => {
   });
   it("answers the token's refusal or no answer as discord_token, with no PUT", async () => {
     const refused = vi.fn(async () => new Response("", { status: 401 }));
-    expect(await registerAppCommands(env, refused as typeof fetch, [OGS])).toEqual({
+    expect(await registerAppCommands(env, refused as typeof fetch, [OGS].map(all))).toEqual({
       ok: false,
       code: "discord_token",
       status: 401,
@@ -89,11 +90,20 @@ describe("registerAppCommands (D96, D101)", () => {
     const down = vi.fn(async () => {
       throw new TypeError("fetch failed");
     });
-    expect(await registerAppCommands(env, down as typeof fetch, [OGS])).toEqual({
+    expect(await registerAppCommands(env, down as typeof fetch, [OGS].map(all))).toEqual({
       ok: false,
       code: "discord_token",
       status: 0,
     });
     expect(down).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("commandsFor (issue 483, D129)", () => {
+  it("keeps only the commands whose feature is on", () => {
+    expect(commandsFor(new Set(["discord_send", "squads"])).map((c) => c.name)).toEqual([
+      "Send to LAPTracker",
+    ]);
+    expect(commandsFor(new Set())).toEqual([]);
   });
 });

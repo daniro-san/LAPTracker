@@ -4,6 +4,7 @@
 import { and, asc, count, desc, eq, getTableColumns, gt, max, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
+import { allDiscordStates, allWebhookChannels } from "../repo/workspace-discord";
 import { allKeyFacts } from "../repo/workspace-keys";
 import { workspaces, workspaceSessions, workspaceUsers } from "../schema";
 import type { KeyStatus } from "../schema-keys";
@@ -31,6 +32,11 @@ export interface AdminWorkspace {
    * the site's owner) and the instant after which the daily job deletes it.
    */
   deletion: { askedAt: Date; byOwner: boolean; by: string | null; purgeAfter: Date } | null;
+  /**
+   * D129: whether the bot was seen in the server, the commands registered there (null: never) and which
+   * notice channels have a webhook saved by the workspace. Never a webhook.
+   */
+  discord: { botSeen: boolean; commands: string[] | null; webhooks: string[] };
 }
 
 export interface SignedInPerson {
@@ -56,8 +62,22 @@ function deletionOf(
   return { askedAt: w.deletionRequestedAt, byOwner, by: w.asker, purgeAfter: w.purgeAfter };
 }
 
+/** D129: one workspace's bot, commands and saved webhook channels. */
+function discordOf(
+  id: number,
+  states: Awaited<ReturnType<typeof allDiscordStates>>,
+  hooks: Awaited<ReturnType<typeof allWebhookChannels>>,
+): AdminWorkspace["discord"] {
+  const state = states.get(id);
+  return {
+    botSeen: Boolean(state?.botSeenAt),
+    commands: state?.commands ?? null,
+    webhooks: hooks.filter((h) => h.workspaceId === id).map((h) => h.channel),
+  };
+}
+
 export async function listWorkspaces(db: Db, now: Date): Promise<AdminWorkspace[]> {
-  const [rows, sessions, allowed, people, keys] = await Promise.all([
+  const [rows, sessions, allowed, people, keys, discord, hooks] = await Promise.all([
     db
       .select({ ...getTableColumns(workspaces), asker })
       .from(workspaces)
@@ -101,6 +121,8 @@ export async function listWorkspaces(db: Db, now: Date): Promise<AdminWorkspace[
       .groupBy(workspaceSessions.workspaceId, workspaceUsers.id)
       .orderBy(sql`max(${workspaceSessions.checkedAt}) desc`, asc(workspaceUsers.id)),
     allKeyFacts(db),
+    allDiscordStates(db),
+    allWebhookChannels(db),
   ]);
   return rows.map((w) => ({
     id: w.id,
@@ -128,6 +150,7 @@ export async function listWorkspaces(db: Db, now: Date): Promise<AdminWorkspace[
       masterFp: keys.get(w.id)?.masterFp ?? null,
     },
     deletion: deletionOf(w),
+    discord: discordOf(w.id, discord, hooks),
   }));
 }
 
