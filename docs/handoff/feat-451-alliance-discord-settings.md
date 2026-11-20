@@ -67,7 +67,7 @@
   - a red style for Remove;
   - a "send a test message next" hint after saving;
   - a note that command names stay in English.
-- The Check rate limit is 5 per hour. The product persona found "wait an hour" harsh. It is unchanged.
+- The Check rate limit is 5 per 15 minutes (the orchestrator loosened it from 5 per hour, as the product persona suggested).
 - The new-alliance guide is outside the repo. Steps 6 and 7 still need the new wording.
 - Retiring `WORKSPACE_DISCORD_WEBHOOKS`: once OGs shows both channels "set" on /admin, delete the variable and redeploy.
 - Not checked against real Discord: the webhook `GET` answer shape (`guild_id`), and a bot guild read answering 403 or 404 when the bot is absent. Both follow Discord's documentation.
