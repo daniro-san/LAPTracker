@@ -105,6 +105,28 @@ function Roles({
   );
 }
 
+/** The entry's notice (while notices are on, D126) and link: one row with a gap, wrapping, because side by
+ * side they once read as one link (issue 412 UX pass). */
+function EntryLinks(props: { item: AgendaItem; words: CalendarSheetWords; slug: string }) {
+  const { item, words } = props;
+  const notice = !useContext(Off).includes("notices") ? item.notice : null;
+  if (!notice && !item.link) return null;
+  return (
+    <p className="flex flex-wrap gap-x-5">
+      {notice && (
+        <a href={`/w/${props.slug}/notices/${notice.id}`} className={LINK}>
+          {fill(words["calendar.notice"], { title: notice.title })}
+        </a>
+      )}
+      {item.link && (
+        <a href={item.link} target="_blank" rel="noreferrer nofollow" className={LINK}>
+          {words["calendar.link"]}
+        </a>
+      )}
+    </p>
+  );
+}
+
 function Item(props: {
   item: AgendaItem;
   words: CalendarSheetWords;
@@ -115,7 +137,6 @@ function Item(props: {
   onDone: () => void;
 }) {
   const { item, words } = props;
-  const notices = !useContext(Off).includes("notices");
   const now = useLoadedAt();
   const past = now !== null && item.at !== null && item.at < now;
   return (
@@ -129,21 +150,7 @@ function Item(props: {
         <p className="font-semibold">{item.title}</p>
         <Roles item={item} words={words} slug={props.slug} />
         {item.notes && <p className="text-body-sm whitespace-pre-line text-ink/85">{item.notes}</p>}
-        {/* One row with a gap, wrapping: side by side they once read as one link (issue 412 UX pass). */}
-        {((item.notice && notices) || item.link) && (
-          <p className="flex flex-wrap gap-x-5">
-            {item.notice && notices && (
-              <a href={`/w/${props.slug}/notices/${item.notice.id}`} className={LINK}>
-                {fill(words["calendar.notice"], { title: item.notice.title })}
-              </a>
-            )}
-            {item.link && (
-              <a href={item.link} target="_blank" rel="noreferrer nofollow" className={LINK}>
-                {words["calendar.link"]}
-              </a>
-            )}
-          </p>
-        )}
+        <EntryLinks item={item} words={words} slug={props.slug} />
         {item.tags.length > 0 && (
           <ul className="mt-1 flex flex-wrap gap-x-3">
             {item.tags.map((tag) => (

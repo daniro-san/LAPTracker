@@ -257,8 +257,7 @@ export default async function WorkspacePage({
 }) {
   const { slug } = await params;
   if (!SLUG.test(slug)) notFound();
-  const now = new Date();
-  const zone = getEnv().SERVER_TZ;
+  const [now, zone] = [new Date(), getEnv().SERVER_TZ];
   const today = serverDay(now, { SERVER_TZ: zone });
   const days = digestDays(today);
   // INVARIANT workspace.access-first: nothing private is read before this check.
@@ -291,8 +290,7 @@ export default async function WorkspacePage({
     return { access, items, placed, view, toMatch: unmatched, desk, reviews, nudge };
   });
   const query = await searchParams;
-  // The page a refused visitor asked for (refuse.ts), kept through the sign-in.
-  // After a share that was not kept, the sign-in comes back to say so (D110).
+  // The page asked for (refuse.ts), kept through the sign-in; after a lost share, it says so (D110).
   const asked = query.shared === "again" ? `/w/${slug}?shared=again` : null;
   const back = returnPath(slug, typeof query.next === "string" ? query.next : asked);
   // Only a renewal goes on to `back`: signed out, Home shows the sign-in itself.
