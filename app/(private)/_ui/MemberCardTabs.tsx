@@ -1,48 +1,48 @@
 "use client";
 
 // The member card's four tabs (issue 461, D136): Overview · Info · Squads · History, the WAI-ARIA tabs
-// pattern (arrow keys, Home and End move and pick). The tab an officer last picked is remembered on this
-// browser (localStorage, as the clock choice) and read only after hydration, so server and browser HTML
-// never differ. Four across at 360 px, each 44 px or taller; nothing is hover-only.
-import { useRef, useSyncExternalStore, type KeyboardEvent } from "react";
+// pattern (arrow keys, Home and End move and pick). The open tab is React state; the browser's storage only
+// remembers the last pick, best effort (localStorage, as the clock choice), so a tap opens its tab even when
+// storage is blocked. The card is drawn only in the browser, after its read, so the remembered tab is read
+// when it first renders. Four across at 360 px, each 44 px or taller; nothing is hover-only.
+import { useRef, useState, type KeyboardEvent } from "react";
 
 import { tabAfter } from "@/app/_ui/Movers";
 import { CARD_TABS, type CardTab } from "@/lib/private/dictionary.card";
 import type { CardData } from "@/lib/private/member-card";
 
 const TAB_KEY = "ws.cardTab";
-const listeners = new Set<() => void>();
 
-function readTab(): CardTab {
+/** What the tabs need of the browser's storage: localStorage, or a stand-in in tests. */
+export type TabStore = Pick<Storage, "getItem" | "setItem">;
+
+const browserStore = (): TabStore | null =>
+  typeof localStorage === "undefined" ? null : localStorage;
+
+/** The remembered tab; Overview when none was picked, or storage is missing or blocked. */
+export function rememberedTab(store: TabStore | null): CardTab {
   try {
-    const saved = localStorage.getItem(TAB_KEY);
+    const saved = store?.getItem(TAB_KEY);
     return CARD_TABS.find((t) => t === saved) ?? "overview";
   } catch {
     return "overview";
   }
 }
 
-function subscribe(listener: () => void) {
-  listeners.add(listener);
-  window.addEventListener("storage", listener);
-  return () => {
-    listeners.delete(listener);
-    window.removeEventListener("storage", listener);
-  };
+/** A pick: the tab to open, remembered when storage lets it. Never throws. */
+export function pickTab(next: CardTab, store: TabStore | null): CardTab {
+  try {
+    store?.setItem(TAB_KEY, next);
+  } catch {
+    // Private mode or blocked storage: the tab still opens, and is not remembered.
+  }
+  return next;
 }
 
-/** The open tab, remembered per browser; Overview until hydration and when none was picked. */
+/** The open tab, in state, starting from the one remembered on this browser. */
 export function useCardTab(): [CardTab, (tab: CardTab) => void] {
-  const tab = useSyncExternalStore(subscribe, readTab, () => "overview" as const);
-  const pick = (next: CardTab) => {
-    try {
-      localStorage.setItem(TAB_KEY, next);
-    } catch {
-      // Private mode or blocked storage: the tab still opens, and is not remembered.
-    }
-    for (const listener of listeners) listener();
-  };
-  return [tab, pick];
+  const [tab, setTab] = useState<CardTab>(() => rememberedTab(browserStore()));
+  return [tab, (next) => setTab(pickTab(next, browserStore()))];
 }
 
 export const tabId = (uid: number, tab: CardTab) => `card-${uid}-tab-${tab}`;

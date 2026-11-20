@@ -39,7 +39,7 @@ Why: on 2026-11-19 the owner and a guest alliance's leader checked the tracker's
 **A day with no daily quests or no donations is a fact, not missing data.** The owner decided it for daily quest points on 2026-11-19 and confirmed the same rule for donations (`daily_tech`) on 2026-11-20. The read runs at the end of the server day (about 23:30 ST, D72), so a null `active` or `daily_tech` on it means none that day.
 
 - Neither is in the Members tab's "No data" list (`missingOf`), and neither makes a member's status "No data". "No data: donations on {n} days" counts only the days with no read of the member.
-- The list row and the card say, in the status's muted text and never as a warning, with `{day}` the newest read's server day:
+- The list row says, in the status's muted text and never as a warning, with `{day}` the newest read's server day (since D136, 2026-11-20, the card no longer has this line: its "Last 7 days" shows that day as "none"):
   - "No daily quests on {day}" ("Sem missões diárias em {day}", "Pas de quêtes du jour le {day}");
   - "No donations on {day}" ("Sem doações em {day}", "Pas de dons le {day}");
   - both in one line: "No quests or donations on {day}" ("Sem missões nem doações em {day}", "Ni quêtes ni dons le {day}").

@@ -303,6 +303,7 @@ export function MemberCard(props: CardProps) {
         id={panelId(card.uid)}
         role="tabpanel"
         aria-labelledby={tabId(card.uid, tab)}
+        tabIndex={0}
         className="px-3 pb-3"
       >
         {tab === "overview" && <Overview card={card} />}

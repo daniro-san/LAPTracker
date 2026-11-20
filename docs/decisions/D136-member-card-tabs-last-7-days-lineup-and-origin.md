@@ -13,7 +13,7 @@ Why: the owner, 2026-11-19: the member card is one long column of label/value ro
   - Names come from the alliance labels (D133); a tag from a history row is the tag the alliance had that day. A sighting in no alliance (id 0) is left out.
   - Desk only. Public pages keep D89's counts.
 
-**The tabs** (`MemberCardTabs.tsx`): Overview · Info · Squads · History, four across at 360 px, each 44 px tall, the WAI-ARIA tabs pattern. The last tab picked is remembered on that browser (`localStorage` `ws.cardTab`, read after hydration like the clock choice), so "remembered per officer" means per officer's browser. "Edit info" and "Paste what they told you" stay in the sheet's sticky bar and open the editor on any tab.
+**The tabs** (`MemberCardTabs.tsx`): Overview · Info · Squads · History, four across at 360 px, each 44 px tall, the WAI-ARIA tabs pattern. The last tab picked is remembered on that browser (`localStorage` `ws.cardTab`, best effort; the open tab itself is React state, see below), so "remembered per officer" means per officer's browser. "Edit info" and "Paste what they told you" stay in the sheet's sticky bar and open the editor on any tab.
 
 **Overview**: the Follow-up reasons with their evidence (as before), then:
 
@@ -36,14 +36,20 @@ Why: the owner, 2026-11-19: the member card is one long column of label/value ro
 
 **Not built here** (depend on the open issue 460): the Overview's #460 action and "Copy a hello" in the sticky bar, and the ready message beside "Still to ask". Roll call marks and thanks in History have no per-member read yet; left for a follow-up.
 
+**Deferred: the avatar in the header.** The issue's header has the avatar beside the name, rank and stat strip. The card still shows the avatar and rank in their own row above the header (`MemberSheet.tsx`), as before; folding them into the header is left for a follow-up.
+
+**Shields are not on the card.** The card shows no shield data, so "map seen HH:MM" (`player_reads.map_updated_at`, D132) has nowhere to go here yet. It comes with the shield read (#474), with the same two-clock code as the squads' "seen" line.
+
+**The tabs keep their state in React.** A tap always opens its tab; `localStorage` only remembers the last pick, best effort, so blocked storage (private mode) never freezes the tabs. The tab panel takes the keyboard focus (`tabIndex` 0), since a panel such as History may hold nothing focusable.
+
 **Privacy.** The card route's answer has no `avatar_url`, `online`, `last_online_at` or troop field (checked in the e2e). Map position and Joined/Last online are unchanged from D71. The new public query selects only an alliance id and a read day. The origin lines read `player_history` by `access.unionId` only.
 
 **Words** in `lib/private/dictionary.card.ts` and `dictionary.squads.ts` (EN, PT-BR, FR). The card's old "Donations this week · total …" strip, its "Daily quest points" and "Alliance Help coins today" rows, and the strip's donations and quest points are replaced by the last 7 days.
 
-**Tests:** `lib/private/member-days.test.ts` (the 7 days, none and no data, averages, coins against 1,000, might since); `lib/private/member-origin.test.ts` (order and join day, nothing made up; both sources from PGlite); `app/(private)/_ui/MemberSquads.test.ts` (slot order, 5 slots, Honor, the server clock, the list for screen readers, no troops); `lib/private/member-card.test.ts` (map position out of the shown details, behind its button).
+**Tests:** `lib/private/member-days.test.ts` (the 7 days, none and no data, averages, coins against 1,000, might since); `lib/private/member-origin.test.ts` (order and join day, nothing made up; both sources from PGlite); `app/(private)/_ui/MemberSquads.test.ts` (slot order, 5 slots, Honor, the server clock, the list for screen readers, no troops); `lib/private/member-card.test.ts` (map position out of the shown details, behind its button); `app/(private)/_ui/MemberCardTabs.test.ts` (a pick opens its tab with storage blocked).
 
 **Persona panel** (2026-11-20; an R4, a regular member's point of view, product strategy; invented-data screenshots plus six real `/v1/players` reads seen locally and deleted after). All three: accept with changes.
 
 - Applied: "Honor N" only above 0; each sighting's age; "their time now" once.
 - Facts from the real reads: the history rows reach back 6–13 days (40 rows a read) and named only this alliance for all six, so "Came from" rests mainly on our daily rosters of other alliances; squad numbers have gaps (squads 1 and 4 seen; 1 and 3 seen), shown as the game numbers them.
-- Decided by the orchestrator (2026-11-20): "Troops" stays, in Info and in "Still to ask": it is the troop tier fact (T1–T12, D80) on the owner's own list of facts to ask, not a troop count. "none" stays beside the no-data mark (D127). Map position goes behind "Show map position" on Info.
+- Decided by the owner (2026-11-20, relayed by the orchestrator): "Troops" stays, in Info and in "Still to ask": it is the troop tier fact (T1–T12, D80) on the owner's own list of facts to ask, not a troop count. "none" stays beside the no-data mark (D127). Map position goes behind "Show map position" on Info.

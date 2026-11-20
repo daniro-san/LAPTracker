@@ -9,7 +9,7 @@ Issue 461. Decision D136 (amends D109, D117, D127). Branch `feat/member-card-tab
   - the stat strip: Might · Main squad · Kills · Sanctuary;
   - "their time now 05:57" and language tags;
   - "Came from [TAG] Name · joined us Fri, Nov 13" and "Before that: …", or "Came from: not known".
-- **Tabs** Overview · Info · Squads · History (`MemberCardTabs.tsx`): the WAI-ARIA tabs pattern, four across at 360 px, each 44 px tall. The last tab picked is kept in `localStorage` (`ws.cardTab`).
+- **Tabs** Overview · Info · Squads · History (`MemberCardTabs.tsx`): the WAI-ARIA tabs pattern, four across at 360 px, each 44 px tall. The open tab is React state; `localStorage` (`ws.cardTab`) only remembers the last pick, best effort, so blocked storage never freezes the tabs (review of PR 514). The panel has `tabIndex` 0 for keyboard users.
 - **Overview**:
   - the Follow-up reasons with their evidence;
   - "Last 7 days" (`lib/private/member-days.ts`, `MemberLastDays.tsx`): daily quest points, Alliance Help coins (max 1,000) and donations as HTML bars (D68), with the number under each bar, the no-data mark or "none", and "Average 589 · 4 days";
@@ -40,22 +40,24 @@ Issue 461. Decision D136 (amends D109, D117, D127). Branch `feat/member-card-tab
 - An average counts only the days with a number. "none" days and days with no read never lower it, and the day count is shown beside it.
 - "Remembered per officer" is read as "per officer's browser" (`localStorage`, like the clock choice). There is no server-side setting.
 - When a squad has fewer than 5 heroes, the empty slots are the last ones. The API sends only the heroes it has, so the real gap cannot be placed.
-- The orchestrator decided the panel's three open points (2026-11-20): "Troops" stays (the troop tier fact the owner asks for, not a count); "none" stays beside the no-data mark; map position goes behind "Show map position".
+- The owner decided the panel's three open points (2026-11-20, relayed by the orchestrator): "Troops" stays (the troop tier fact the owner asks for, not a count); "none" stays beside the no-data mark; map position goes behind "Show map position".
 - "Honor N" shows only above 0 (persona panel). Each sighting's age is plain muted text (persona panel). The owner said the age of a sighting matters.
 
 ## Deviations
 
 - **Not built, waiting on #460 (open):** the Overview's #460 action, "Copy a hello" in the sticky bar, and the ready message beside "Still to ask".
 - **Not built, no reader yet:** History has no roll call marks or thanks. Neither has a per-member read today.
-- **Shields:** the card shows no shield data, so "map seen HH:MM" has nowhere to go here. `player_reads.map_updated_at` is not read by this change.
+- **Shields:** the card shows no shield data, so "map seen HH:MM" has nowhere to go here yet; it comes with #474. `player_reads.map_updated_at` is not read by this change.
+- **Header avatar, deferred:** the avatar and rank stay in their own row above the header (`MemberSheet.tsx`), not beside the stat strip as the issue draws it.
 - **Screenshots:** 768 and 1024 (asked for by the issue and the preamble) were not taken. The orchestrator asked for 360, 640 and 1280.
 
 ## Verified
 
-- `pnpm check` passes: Prettier, ESLint, tsc, Vitest (1,334 tests in 253 files, 4 skipped), drift and i18n.
+- `pnpm check` passes: Prettier, ESLint, tsc, Vitest (1,335 tests in 254 files, 4 skipped), drift and i18n.
 - **New tests**, about one per behaviour:
   - `lib/private/member-days.test.ts` (2): the 7 days with numbers, "none" and no data; averages, the coins scale and might since.
   - `lib/private/member-origin.test.ts` (2): order, the move day and the join day, with nothing made up; both sources read from PGlite.
+- `app/(private)/_ui/MemberCardTabs.test.ts` (1): a pick opens its tab with storage blocked, and is remembered when storage works (the review's frozen-tabs bug). Also not covered by the e2e below.
 - `lib/private/member-card.test.ts` (1): map position is out of the shown details, behind its button. The "Show map position" button came after the e2e below; the e2e's Info check saw the map row shown by default and was not re-run, so the button itself is checked by this test and `pnpm check` only.
 - **Updated**: `app/(private)/_ui/MemberSquads.test.ts` (6): slot order, 5 slots, Honor only above 0, the server clock and the age, the list for screen readers, and no troop field.
 - **Workspace suites**: `lib/private`, `app/(private)` and `lib/queries` all pass (138 files, 713 tests, before the panel fixes).
