@@ -175,6 +175,8 @@ Words already used in `lib/i18n/de.ts`. Reuse them so the pages stay consistent;
 | New / Left / Stayed                   | Neu / Ausgetr. / Geblieben             | `flow.rowNew`, `flow.colLeft` (Ausgetr. as a column head), `flow.stayed` — the flow matrix                                                   |
 | Statement / Joining / seat            | Erklärung / Beitritt / Platz           | `statement.title`, `statement.by` (the alliance's own text) / `statement.joining`, `statement.open` / `statement.seats`, `statement.seatOne` |
 | Alliance officers                     | Allianz-Offiziere                      | `site.signInFooter` — the officers and members who sign in with Discord                                                                      |
+| Ranks board                           | Rangliste                              | `alliances.asOf`, `alliances.board`, `alliances.boardMight` — the game's ranks board, dated                                                  |
+| Read every day / lookup               | Täglich abgerufen / Abruf              | `alliances.tracked`, `alliances.get*`, `alliances.usedUp` — the daily read of an alliance's details                                          |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

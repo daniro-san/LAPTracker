@@ -6,7 +6,6 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 
-import { ALLIANCES } from "@/config/alliances";
 import { analyticsPerson } from "@/lib/analytics/person";
 import { fill, isolate } from "@/lib/copy";
 import { getEnv, type Env } from "@/lib/env";
@@ -73,7 +72,7 @@ function BoardPerson({ env, access }: { env: Env; access: BoardAccess }) {
     userId: access.userId,
     tier,
     slug: access.slug,
-    unionId: access.unionId,
+    alliance: access.alliance,
   });
   return person && <AnalyticsPerson {...person} />;
 }
@@ -119,7 +118,7 @@ export default async function BoardPage({ params }: { params: Promise<{ slug: st
     notFound();
   }
   const { language, t } = await workspaceWords();
-  const alliance = ALLIANCES.find((a) => a.unionId === access.unionId);
+  const { alliance } = access;
   const account = <Account officer={access.officer} name={access.name ?? ""} slug={slug} t={t} />;
   const frame = {
     language,

@@ -172,12 +172,13 @@ export async function chooserView(db: Db, jar: CookieList, now: Date): Promise<C
     if (r.expiresAt.getTime() <= now.getTime() || r.blocked) return false;
     return r.tier === "officer" || r.memberRoleIds.length > 0;
   });
-  return open
-    .map((r) => ({
+  const listed = await Promise.all(
+    open.map(async (r) => ({
       slug: r.slug,
-      ...allianceOf(r.unionId),
+      ...(await allianceOf(db, r.unionId)),
       tier: r.tier,
       href: r.tier === "member" ? `/w/${r.slug}/board` : `/w/${r.slug}`,
-    }))
-    .sort((a, b) => a.tag.localeCompare(b.tag));
+    })),
+  );
+  return listed.sort((a, b) => a.tag.localeCompare(b.tag));
 }

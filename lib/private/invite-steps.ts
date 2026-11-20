@@ -88,7 +88,7 @@ export type StepResult =
       /** The leadership role was made (or found) but Discord refused the member role. */
       memberFailed?: "no_permission" | "unreachable" | null;
     }
-  | { ok: true; slug: string; cookie: string; unionId: number }
+  | { ok: true; slug: string; cookie: string; unionId: number; tag: string; name: string }
   | { ok: false; code: StepCode };
 
 const no = (code: StepCode) => ({ ok: false as const, code });
@@ -199,7 +199,8 @@ async function finish(
   const leaders = [...new Set(input.leader_role_ids)];
   const members = [...new Set(input.member_role_ids)];
   if (![...leaders, ...members].every((id) => ids.has(id))) return no("bad_role");
-  const slug = slugFor(allianceOf(row.unionId).tag, row.unionId, new Set(taken.map((w) => w.slug)));
+  const { tag, name } = await allianceOf(db, row.unionId);
+  const slug = slugFor(tag, row.unionId, new Set(taken.map((w) => w.slug)));
   const made = await createInvitedWorkspace(
     db,
     {
@@ -226,5 +227,7 @@ async function finish(
     slug,
     cookie: sessionCookie(slug, session.token, session.expiresAt, deps.now),
     unionId: row.unionId,
+    tag,
+    name,
   };
 }

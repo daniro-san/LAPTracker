@@ -4,7 +4,6 @@
 // The answer is the file itself, under Vercel's 4.5 MB response limit.
 import { z } from "zod";
 
-import { ALLIANCES } from "@/config/alliances";
 import { requireWorkspace } from "@/lib/private/access";
 import { WORKSPACE_LANG_COOKIE } from "@/lib/private/cookies";
 import { counted } from "@/lib/private/desk-action";
@@ -38,7 +37,7 @@ export async function POST(
       cookies.get(WORKSPACE_LANG_COOKIE)?.value,
       request.headers.get("accept-language"),
     );
-    const alliance = ALLIANCES.find((a) => a.unionId === access.unionId);
+    const { alliance } = access;
     const words = {
       now,
       zone: ctx.env.SERVER_TZ,

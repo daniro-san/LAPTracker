@@ -10,6 +10,7 @@ import { z } from "zod";
 
 import { IMPORT_COMMAND, TRANSLATE_FOR_EVERYONE, TRANSLATE_FOR_ME } from "../app-commands";
 import type { Db } from "../db";
+import { allianceLabelOf } from "../repo/alliances";
 import { claimPictures, picturesDrafts, recordOfficer } from "../repo/import";
 import { findWorkspaceByGuild, findWorkspaceUser } from "../repo/workspaces";
 import { officerAccess, type WorkspaceAccess } from "./access";
@@ -169,7 +170,11 @@ async function officerOf(db: Db, interaction: Interaction, now: Date) {
   const officer = await privately("discord_officer", () =>
     recordOfficer(db, workspace.id, member.user.id, name),
   );
-  return { access: officerAccess(workspace, officer, await featuresById(db, workspace.id)) };
+  const [features, alliance] = await Promise.all([
+    featuresById(db, workspace.id),
+    allianceLabelOf(db, workspace.unionId),
+  ]);
+  return { access: officerAccess(workspace, officer, features, alliance) };
 }
 
 /** Which of the app's commands this is, or null. */

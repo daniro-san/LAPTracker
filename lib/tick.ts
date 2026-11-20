@@ -3,7 +3,6 @@
 // Between an event's Before and After, a sample every SAMPLE_EVERY_MIN (D69), only when no phase is due.
 // The daily roster read (D60) comes last, when nothing else is due; after the day's first one, the workspaces
 // whose deletion grace ended are deleted (D125).
-import { DAILY_ROSTER_IDS } from "../config/alliances";
 import { secretsOf, type AppContext } from "./app-context";
 import { RUN_DEADLINE_MS } from "./compute";
 import { autoRetryDailyRead, runDailyRead, type DailyReadSummary } from "./daily-read";
@@ -34,6 +33,7 @@ import {
   serverDay,
   slotOf,
 } from "./schedule";
+import { dayTargets, trackedChangeMessage } from "./tracked";
 
 export type TickOutcome =
   | { kind: "idle" }
@@ -74,11 +74,17 @@ async function dailyRead(
   // INVARIANT daily-read.ends-before-midnight
   if (!due || !endsInServerDay(now, RUN_DEADLINE_MS, ctx.env)) return null;
   const deps = { v1: ctx.v1, now: ctx.now, secrets: secretsOf(ctx.env) };
-  const first = await runDailyRead(deps, db, due.day, DAILY_ROSTER_IDS);
+  // D133: the day's ranks board and tracked set first (no quota), then the set and the
+  // workspaces' alliances.
+  const keys = { internal: ctx.internal, now: ctx.now, secret: ctx.env.WORKSPACE_KEYS_SECRET };
+  const { set, targets } = await dayTargets(keys, db, due.day);
+  const change = set && (await trackedChangeMessage(db, set, origin));
+  if (change) await createNotifier(ctx.env, ctx.fetch).admin(change);
+  const first = await runDailyRead(deps, db, due.day, targets);
   // D125: once a day, after the day's first read, the workspaces whose 14 days ended are deleted; D132:
   // and the player reads' raw bodies older than 90 days are cleared.
   if (first) await purgeWorkspaces(db, ctx.now());
-  const summary = first ?? (await autoRetryDailyRead(deps, db, due.day, DAILY_ROSTER_IDS));
+  const summary = first ?? (await autoRetryDailyRead(deps, db, due.day, targets));
   if (!summary) return null;
   if (summary.status !== "complete") {
     const at = discordClock(ctx.env.SERVER_TZ).stamp(ctx.now());

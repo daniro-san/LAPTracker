@@ -85,5 +85,11 @@ export const discordCopy = {
     /** A day that fell short can be retried on /admin (D67); a partial one also links the reads list. */
     dailyRetry: "[Retry on /admin ↗](<{url}>)",
     dailyRuns: "[Daily reads ↗](<{url}>)",
+    /** D133: the day's top 20 by board might changed. One line in, one line out, only those that apply. */
+    trackedChange: "↕ Tracked alliances {day} (top {n} by board might) · [/admin ↗](<{url}>)",
+    trackedIn: "＋ In: {list}",
+    trackedOut: "－ Out: {list}",
+    /** The board could not be read: the newest set is kept for the day. */
+    trackedKept: "⚠ Ranks board unreadable {day}: yesterday's tracked alliances are kept.",
   },
 };

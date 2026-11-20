@@ -37,7 +37,7 @@ export async function POST(request: Request): Promise<Response> {
     if (!result.ok) return privateError(STATUS[result.code], result.code);
     if ("slug" in result) {
       await createNotifier(ctx.env, ctx.fetch)
-        .admin(deskMadeMessage({ unionId: result.unionId, slug: result.slug }))
+        .admin(deskMadeMessage(result))
         .catch(() => null);
       const headers = new Headers(NO_STORE);
       headers.append("Set-Cookie", result.cookie);

@@ -175,7 +175,14 @@ lib/run.ts          what a route runs: executeSnapshot and the tick's executeSam
 lib/route.ts, lib/app-context.ts, lib/app-errors.ts
                     the route shell (one DB per request, closed on every path; errors become a code),
                     the outside world in one object (env, clock, adapters, fetch, openDb, eventCache), app_errors.
-config/alliances.ts the 20 tracked alliances, by union_id
+config/alliances.ts the server, TRACKED_COUNT (20), LOOKUPS_PER_DAY (30) and the own alliance (D133: no fixed list).
+lib/tracked.ts      the day's ranks board and tracked set before the daily read (D133): the board stored, its top 20 by
+                    might claimed once a day, the admin line on a change; `dayTargets` adds the workspaces' alliances
+                    with their keys (`dailyTargets` in lib/workspace-keys.ts). Tables in lib/schema-alliances.ts, read
+                    and written in lib/repo/alliances.ts; the collector's alliance list in lib/collector-ids.ts.
+lib/lookup.ts       "Get today's details" (D133): one /v1 read of an alliance outside the daily read, once per alliance per
+                    server day (lib/repo/alliance-lookups.ts), stored through lib/daily-rows.ts as that day's roster.
+                    Public read model: lib/queries/alliance-list.ts (/alliances, the board line, the button's state).
 app/img/*           /img/badge/[id] and /img/avatar/[uid]: upstream images served from our origin (D22), via lib/images.ts;
                     /img/hero/[id] (D117) only for ids in hero_catalog.
 app/ingest/*        PostHog's same-origin proxy (D77), via lib/analytics/ingest.ts.

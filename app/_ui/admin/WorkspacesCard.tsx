@@ -20,6 +20,7 @@ import { PausedSwitches, WorkspaceFeatures, type FeaturesView } from "./Workspac
 import {
   Field,
   FIELD,
+  type AllianceChoice,
   WorkspaceForm,
   type Call,
   type Run,
@@ -204,9 +205,11 @@ function AllowForm({ workspaces, run }: { workspaces: WorkspaceView[]; run: Run 
 
 export function WorkspacesCard({
   workspaces,
+  alliances,
   paused,
 }: {
   workspaces: WorkspaceView[];
+  alliances: AllianceChoice[];
   /** D126: the paid allowances the owner paused for every workspace. */
   paused: Allowance[];
 }) {
@@ -247,7 +250,7 @@ export function WorkspacesCard({
         run={run}
         busy={busy}
       />
-      <WorkspaceForm workspaces={workspaces} run={run} />
+      <WorkspaceForm workspaces={workspaces} alliances={alliances} run={run} />
       {workspaces.length > 0 && <AllowForm workspaces={workspaces} run={run} />}
       {signingOut && (
         <SignOutUsersSheet

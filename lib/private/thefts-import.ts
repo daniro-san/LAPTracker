@@ -2,7 +2,6 @@
 // reviewed the entries `parseSecretOpsReport` (D74) read from a member's report, and Save turns them into
 // thefts marked "from a photo". Until then nothing counts (D75). The draft list, its review screen and the
 // one-save-wins version belong to the import; this takes the reviewed draft only.
-import { ALLIANCES } from "../../config/alliances";
 import type { Db } from "../db";
 import { serverPlayers, type ServerPlayer } from "../queries/server-players";
 import { insertThefts, listThefts, type NewTheft } from "../repo/thefts";
@@ -105,7 +104,7 @@ export async function saveSecretOpsDraft(
   ]);
   const victim = roster.find((m) => m.uid === draft.victimUid) ?? null;
   if (draft.victimUid !== null && !victim) return "not_in_alliance";
-  const ownTag = nameKey(ALLIANCES.find((a) => a.unionId === access.unionId)?.tag ?? "");
+  const ownTag = nameKey(access.alliance?.tag ?? "");
   const members = roster.map((m) => ({ uid: m.uid, names: [m.name] }));
   const isOwn = (e: SecretOpsEntry) =>
     (ownTag !== "" && nameKey(e.tag) === ownTag) || matchName(e.name, members).status === "matched";

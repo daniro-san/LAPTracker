@@ -229,6 +229,8 @@ Words already used in `lib/i18n/zh-CN.ts`. Reuse them so the pages stay consiste
 | Tracked alliances         | 追踪联盟                | `standing.server` — the total row; also `standing.leadGrowth`, `standing.help`                 |
 | Member flow               | 成员流向                | `flow.title` — the page: members moved between tracked alliances, day to day                   |
 | Statement                 | 宣言                    | `statement.title` — the alliance's own in-game text, shown as written                          |
+| Ranks board               | 排行榜                  | `alliances.*` — the server's list of alliances by might and kills                              |
+| Lookup                    | 查询                    | `alliances.get*`, `alliances.usedUp` — one day's fetch of an alliance's details                |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

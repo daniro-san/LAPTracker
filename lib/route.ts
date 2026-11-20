@@ -31,6 +31,21 @@ export async function withContext(
   }
 }
 
+/**
+ * A public write from our own page (D133's lookup): Origin equal to the app's, Sec-Fetch-Site same-origin when
+ * the browser sends it, and a JSON body, which a cross-site form cannot send without a CORS preflight. The
+ * same rule as the workspace's writes (lib/private/http.ts), which public routes may not import (D71).
+ */
+export function isSameOriginJson(request: Request): boolean {
+  const site = request.headers.get("sec-fetch-site");
+  const type = request.headers.get("content-type") ?? "";
+  return (
+    request.headers.get("origin") === new URL(request.url).origin &&
+    (site === null || site === "same-origin") &&
+    type.split(";")[0]?.trim() === "application/json"
+  );
+}
+
 /** The query string through `schema` (strict: unknown keys fail); null when it doesn't parse. */
 export function parseQuery<T extends z.ZodType>(request: Request, schema: T): z.infer<T> | null {
   const query = Object.fromEntries(new URL(request.url).searchParams);
