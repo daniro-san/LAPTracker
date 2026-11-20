@@ -8,6 +8,7 @@ import { notFound } from "next/navigation";
 
 import { getAppContext } from "@/lib/app-context";
 import { fill } from "@/lib/copy";
+import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
 import { requireWorkspace } from "@/lib/private/access";
 import { agoText } from "@/lib/private/calendar-words";
@@ -64,6 +65,7 @@ export default async function SettingsPage({ params }: { params: Promise<{ slug:
         <p className="mt-1">{t["key.lead"]}</p>
         <TrackerKeyForm
           slug={slug}
+          keyPage={new URL("/account", getEnv().LAP_API_BASE_URL).href}
           view={{
             state: view.state,
             last4: view.last4,

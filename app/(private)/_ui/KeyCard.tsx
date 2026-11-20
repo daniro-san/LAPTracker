@@ -30,7 +30,7 @@ export function KeyCard({
         <>
           <p className="mt-1">{t["key.card.where"]}</p>
           <a
-            href={new URL("/account", getEnv().LAP_SITE_BASE_URL).href}
+            href={new URL("/account", getEnv().LAP_API_BASE_URL).href}
             target="_blank"
             rel="noopener noreferrer"
             className={LINK}

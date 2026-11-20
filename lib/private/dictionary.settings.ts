@@ -27,6 +27,8 @@ export const settingsEn = {
   "key.label": "Your tracker key",
   "key.help":
     "It starts with lap_. Saving tests it with one call on this key’s quota. It is stored encrypted and never shown again.",
+  "key.get": "Don’t have a key yet?",
+  "key.getLink": "Get yours on the tracker",
   "key.save": "Save and test",
   "key.saving": "Testing the key…",
   "key.replace": "Replace",
@@ -52,8 +54,8 @@ export const settingsEn = {
   "key.card.out_of_quota":
     "Your key has no quota left today. Squads start again after the reset at 00:00 UTC.",
   "key.card.where":
-    "To get a key: sign in on the tracker’s account page with Patreon, then copy the key that starts with lap_.",
-  "key.card.whereLink": "Open the tracker’s account page",
+    "To get a key: sign in with Patreon on the tracker’s API page and create one; it starts with lap_. A free account gets 1,000 calls a day, a paid membership 2,000.",
+  "key.card.whereLink": "Open the tracker’s API page",
   "activity.key.set": "{who} updated the tracker key",
   "activity.key.removed": "{who} removed the tracker key",
   // D129: Alliance settings → Discord.
@@ -86,6 +88,8 @@ export const settingsPt: typeof settingsEn = {
   "key.label": "Sua chave do tracker",
   "key.help":
     "Começa com lap_. Ao salvar, ela é testada com uma chamada na cota desta chave. Fica guardada criptografada e nunca é mostrada de novo.",
+  "key.get": "Ainda não tem chave?",
+  "key.getLink": "Pegue a sua no tracker",
   "key.save": "Salvar e testar",
   "key.saving": "Testando a chave…",
   "key.replace": "Trocar",
@@ -112,8 +116,8 @@ export const settingsPt: typeof settingsEn = {
   "key.card.out_of_quota":
     "Sua chave está sem cota hoje. Os esquadrões voltam depois do reinício às 00:00 UTC.",
   "key.card.where":
-    "Para pegar uma chave: entre na página da conta do tracker com o Patreon e copie a chave que começa com lap_.",
-  "key.card.whereLink": "Abrir a página da conta do tracker",
+    "Para pegar uma chave: entre com o Patreon na página da API do tracker e crie uma; ela começa com lap_. A conta grátis tem 1.000 chamadas por dia, o apoio pago 2.000.",
+  "key.card.whereLink": "Abrir a página da API do tracker",
   "activity.key.set": "{who} atualizou a chave do tracker",
   "activity.key.removed": "{who} removeu a chave do tracker",
   // D129: Alliance settings → Discord.
@@ -146,6 +150,8 @@ export const settingsFr: typeof settingsEn = {
   "key.label": "Votre clé du tracker",
   "key.help":
     "Elle commence par lap_. L’enregistrer la teste avec un appel sur le quota de cette clé. Elle est stockée chiffrée et n’est plus jamais affichée.",
+  "key.get": "Pas encore de clé ?",
+  "key.getLink": "Obtenez la vôtre sur le tracker",
   "key.save": "Enregistrer et tester",
   "key.saving": "Test de la clé…",
   "key.replace": "Remplacer",
@@ -173,8 +179,8 @@ export const settingsFr: typeof settingsEn = {
   "key.card.out_of_quota":
     "Votre clé n’a plus de quota aujourd’hui. Les escouades reprennent après la remise à zéro à 00:00 UTC.",
   "key.card.where":
-    "Pour obtenir une clé : connectez-vous avec Patreon sur la page de compte du tracker, puis copiez la clé qui commence par lap_.",
-  "key.card.whereLink": "Ouvrir la page de compte du tracker",
+    "Pour obtenir une clé : connectez-vous avec Patreon sur la page API du tracker et créez-en une ; elle commence par lap_. Un compte gratuit a 1 000 appels par jour, un abonnement payant 2 000.",
+  "key.card.whereLink": "Ouvrir la page API du tracker",
   "activity.key.set": "{who} a mis à jour la clé du tracker",
   "activity.key.removed": "{who} a retiré la clé du tracker",
   // D129: Alliance settings → Discord.

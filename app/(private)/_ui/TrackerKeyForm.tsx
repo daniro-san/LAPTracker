@@ -94,6 +94,7 @@ function KeyActions(props: {
 /** The password field and Save and test; Cancel when a key is already saved (Replace). */
 function KeyEntry(props: {
   t: WorkspaceDictionary;
+  keyPage: string;
   busy: boolean;
   onSave: (key: string) => Promise<boolean>;
   onCancel: (() => void) | null;
@@ -111,6 +112,17 @@ function KeyEntry(props: {
       </label>
       <p id="tracker-key-help" className="text-body-sm text-ink/70">
         {t["key.help"]}
+      </p>
+      <p className="text-body-sm">
+        {t["key.get"]}{" "}
+        <a
+          href={props.keyPage}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex min-h-11 items-center font-semibold text-plum underline underline-offset-4"
+        >
+          {t["key.getLink"]}
+        </a>
       </p>
       <input
         id="tracker-key-input"
@@ -138,15 +150,15 @@ function KeyEntry(props: {
   );
 }
 
-export function TrackerKeyForm({
-  slug,
-  view,
-  t,
-}: {
+interface FormProps {
   slug: string;
+  /** The tracker's API page, where a key is made (sign in with Patreon). */
+  keyPage: string;
   view: View;
   t: WorkspaceDictionary;
-}) {
+}
+
+export function TrackerKeyForm({ slug, keyPage, view, t }: FormProps) {
   const router = useRouter();
   const set = view.last4 !== null;
   const [editing, setEditing] = useState(!set);
@@ -200,6 +212,7 @@ export function TrackerKeyForm({
       {editing && (
         <KeyEntry
           t={t}
+          keyPage={keyPage}
           busy={busy}
           onSave={save}
           onCancel={set ? () => (setEditing(false), setNote(null)) : null}
