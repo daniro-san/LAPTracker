@@ -1,6 +1,8 @@
 // /w/[slug]/settings: Alliance settings (D124, issue 438). The alliance's own tracker key: its state, last 4
-// characters and quota left, and Save and test, Replace and Remove, with today's squads read (D132). Then Discord (D129): add the bot, Check,
-// and the two notice channels' webhooks. Then the alliance's data (D125): "Download our data" and "Delete
+// characters and quota left, and Save and test, Replace and Remove, with today's squads read (D132). Then
+// Features (D134): what the alliance turns on, of what the site's owner allows, with the tracker calls it
+// spends. Then Discord (D129): add the bot, Check, and the two notice channels' webhooks. Then the
+// alliance's data (D125): "Download our data" and "Delete
 // this workspace". Officers only: a member's session goes to the board (refuse.ts). Neither the key nor a
 // webhook URL ever reaches the page.
 import { cookies } from "next/headers";
@@ -8,9 +10,11 @@ import { notFound } from "next/navigation";
 
 import { getAppContext } from "@/lib/app-context";
 import { fill } from "@/lib/copy";
-import { getEnv } from "@/lib/env";
+import type { Db } from "@/lib/db";
+import { getEnv, type Env } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
-import { requireWorkspace } from "@/lib/private/access";
+import { requireWorkspace, type WorkspaceAccess } from "@/lib/private/access";
+import { allianceFeaturesView } from "@/lib/private/alliance-features";
 import { agoText } from "@/lib/private/calendar-words";
 import { botView } from "@/lib/private/discord-setup";
 import { webhookViews } from "@/lib/private/discord-webhooks";
@@ -22,6 +26,7 @@ import { squadsToday, type SquadsToday } from "@/lib/private/squads-today";
 import { trackerKeyView } from "@/lib/private/tracker-key";
 import { DELETION_GRACE_MS } from "@/lib/private/workspace-deletion";
 
+import { AllianceFeatures } from "../../../_ui/AllianceFeatures";
 import { DiscordSection } from "../../../_ui/DiscordSection";
 import { deletionDate, SignedInFrame, workspaceWords } from "../../../_ui/Frame";
 import { refuse } from "../../../_ui/refuse";
@@ -53,6 +58,19 @@ function squadsLine(
   return `${today} · ${fill(t["squads.todayNext"], { at: serverClock(timeZone, s.nextAt) })}`;
 }
 
+/** Everything the page shows, read after requireWorkspace, in parallel. */
+async function readSettings(db: Db, access: WorkspaceAccess, env: Env, now: Date) {
+  const [view, waiting, bot, channels, squads, features] = await Promise.all([
+    trackerKeyView(db, access, env, now),
+    toReviewCount(db, access, now),
+    botView(db, access, env),
+    webhookViews(db, access, env),
+    featureOn(access, "squads") ? squadsToday(db, access, env, now) : null,
+    allianceFeaturesView(db, access),
+  ]);
+  return { view, waiting, bot, channels, squads, features };
+}
+
 export default async function SettingsPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   if (!SLUG.test(slug)) notFound();
@@ -60,23 +78,15 @@ export default async function SettingsPage({ params }: { params: Promise<{ slug:
   const now = new Date();
   const { env } = getAppContext();
   // INVARIANT workspace.access-first: nothing private is read before this check.
-  const { access, view, waiting, bot, channels, squads } = await withPageDb(async (db) => {
+  const { access, page } = await withPageDb(async (db) => {
     const access = await requireWorkspace(db, slug, jar, now, RENEW_MS);
-    if (!access.ok)
-      return { access, view: null, waiting: 0, bot: null, channels: [], squads: null };
-    const [view, waiting, bot, channels, squads] = await Promise.all([
-      trackerKeyView(db, access, env, now),
-      toReviewCount(db, access, now),
-      botView(db, access, env),
-      webhookViews(db, access, env),
-      featureOn(access, "squads") ? squadsToday(db, access, env, now) : null,
-    ]);
-    return { access, view, waiting, bot, channels, squads };
+    return { access, page: access.ok ? await readSettings(db, access, env, now) : null };
   });
-  if (!access.ok || !view || !bot) {
+  if (!access.ok || !page) {
     if (!access.ok) refuse(slug, access.reason, `/w/${slug}/settings`);
     notFound();
   }
+  const { view, waiting, bot, channels, squads, features } = page;
   const { language, t } = await workspaceWords();
   const checked = view.checkedAt
     ? fill(t["key.checked"], {
@@ -111,6 +121,9 @@ export default async function SettingsPage({ params }: { params: Promise<{ slug:
           <p className="mt-3 text-body-sm tabular-nums">{squadsLine(squads, t, env.SERVER_TZ)}</p>
         )}
       </section>
+      {features.groups.length > 0 && (
+        <AllianceFeatures slug={slug} view={features} language={language} t={t} />
+      )}
       <DiscordSection
         slug={slug}
         bot={bot}

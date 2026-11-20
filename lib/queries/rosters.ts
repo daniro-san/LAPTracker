@@ -1,10 +1,10 @@
 // Members who joined / left per alliance between an event's two snapshots (main table, plan Phase 5).
 // Selects uid pairs only; the diff is compute.rosterDiff, matched by uid.
-import { eq, inArray } from "drizzle-orm";
+import { and, desc, eq, gt, inArray } from "drizzle-orm";
 
 import { rosterDiff } from "../compute";
 import type { Db } from "../db";
-import { allianceSnapshots, memberSnapshots } from "../schema";
+import { allianceSnapshots, dailyRosters, memberSnapshots } from "../schema";
 
 export type RosterChange = { joined: number; left: number };
 
@@ -40,4 +40,24 @@ export async function rosterChanges(
     changes.set(unionId, { joined: diff.joined.length, left: diff.left.length });
   }
   return changes;
+}
+
+/**
+ * Each alliance's member count from its newest daily read that counted members (D60), for the tracker-call
+ * estimates (D134). An alliance with none is absent.
+ */
+export async function latestMemberCounts(
+  db: Db,
+  unionIds: readonly number[],
+): Promise<Map<number, number>> {
+  if (unionIds.length === 0) return new Map();
+  const rows = await db
+    .selectDistinctOn([dailyRosters.unionId], {
+      unionId: dailyRosters.unionId,
+      members: dailyRosters.memberCount,
+    })
+    .from(dailyRosters)
+    .where(and(inArray(dailyRosters.unionId, [...unionIds]), gt(dailyRosters.memberCount, 0)))
+    .orderBy(dailyRosters.unionId, desc(dailyRosters.readDay));
+  return new Map(rows.map((r) => [r.unionId, r.members ?? 0]));
 }

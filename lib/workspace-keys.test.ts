@@ -12,7 +12,7 @@ import type { Db } from "./db";
 import { openTestDb, truncateAll } from "./db.test-helpers";
 import { createRunLogger } from "./logger";
 import { insertRunLog } from "./repo/run-logs";
-import { setSwitch } from "./repo/workspace-features";
+import { setAllianceSwitch, setSwitch } from "./repo/workspace-features";
 import { keyFacts, storeKey } from "./repo/workspace-keys";
 import { saveWorkspace } from "./repo/workspaces";
 import { appErrors, dailyReads, dailyRosters, runLogs, workspaces } from "./schema";
@@ -53,11 +53,12 @@ beforeEach(async () => {
       discordGuildId: String(unionId),
       leaderRoleIds: ["2"],
     });
-    const row = await db.query.workspaces.findFirst({
-      where: (w, { eq }) => eq(w.unionId, unionId),
-    });
+    const [row] = await db.select().from(workspaces).where(eq(workspaces.unionId, unionId));
     ws[name] = row?.id ?? 0;
   }
+  // D134: the other alliance's squads read is allowed by the owner and turned on by its officers.
+  await setSwitch(db, ws.other, "squads", true, new Date(0));
+  await setAllianceSwitch(db, ws.other, "squads", true, new Date(0));
 });
 
 /** The day's read, with OGs' members 1–3 and the other alliance's 11–13. */
