@@ -88,6 +88,10 @@ export const dataEn = {
   "data.file.alliance-duel-points": "Alliance Duel points saved from screenshots.",
   "data.file.screenshot-checks": "Rankings checked against the tracker: counts only.",
   "data.file.squads": "Squads read from the tracker.",
+  "data.file.player-reads":
+    "Each read of a member on the tracker: shield, map time, might, kills, language, server and VIP.",
+  "data.file.player-history":
+    "Each member’s might, kills and alliance over time, as the tracker keeps them.",
   "data.file.tracker-key-changes": "Who saved or removed the tracker key (never the key).",
   "data.file.data-requests": "Downloads of this data, and deletions asked or cancelled.",
   "data.file.activity": "Home’s recent activity of the last two weeks, as Home says it.",
@@ -182,6 +186,10 @@ export const dataPt: typeof dataEn = {
   "data.file.alliance-duel-points": "Pontos do Alliance Duel salvos de prints.",
   "data.file.screenshot-checks": "Rankings conferidos com o tracker: só contagens.",
   "data.file.squads": "Esquadrões lidos do tracker.",
+  "data.file.player-reads":
+    "Cada leitura de um membro no tracker: escudo, hora do mapa, poder, abates, idioma, servidor e VIP.",
+  "data.file.player-history":
+    "Poder, abates e aliança de cada membro ao longo do tempo, como o tracker guarda.",
   "data.file.tracker-key-changes": "Quem salvou ou removeu a chave do tracker (nunca a chave).",
   "data.file.data-requests": "Downloads destes dados e exclusões pedidas ou canceladas.",
   "data.file.activity":
@@ -283,6 +291,10 @@ export const dataFr: typeof dataEn = {
     "Les points de l’Alliance Duel enregistrés depuis des captures.",
   "data.file.screenshot-checks": "Les classements comparés au tracker : des nombres seulement.",
   "data.file.squads": "Les escouades lues sur le tracker.",
+  "data.file.player-reads":
+    "Chaque lecture d’un membre sur le tracker : bouclier, heure de la carte, puissance, éliminations, langue, serveur et VIP.",
+  "data.file.player-history":
+    "Puissance, éliminations et alliance de chaque membre au fil du temps, comme le tracker les garde.",
   "data.file.tracker-key-changes": "Qui a enregistré ou retiré la clé du tracker (jamais la clé).",
   "data.file.data-requests":
     "Les téléchargements de ces données, et les suppressions demandées ou annulées.",

@@ -1,7 +1,7 @@
 "use client";
 
-// /admin's squads read card (D117, amendment 2026-11-19b): each workspace's progress in this quota day and
-// a button that starts its batches now, outside the nightly window, plus one for every workspace. The
+// /admin's squads read card (D117, amendment 2026-11-19b; D132): each workspace's queue in this quota day
+// and a button that runs its next batches now instead of at the next tick, plus one for every workspace. The
 // press sends the PIN as x-edit-pin, like the other admin buttons; the batches run after the answer, so
 // the page is refreshed and the owner reloads later to see how far they got.
 import { useRouter } from "next/navigation";

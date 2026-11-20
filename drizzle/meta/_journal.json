@@ -372,6 +372,13 @@
       "when": 1795146810316,
       "tag": "0052_alliance_invites",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1795154507241,
+      "tag": "0053_squads_queue_player_reads",
+      "breakpoints": true
     }
   ]
 }

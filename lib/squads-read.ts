@@ -1,26 +1,25 @@
-// The nightly squads read (D117, issue 413): after the day's roster read (D72), one GET /v1/players/{uid}
-// per member of each read alliance's roster, the tracker's cached copy (no `fresh`), sequential and paced.
-// D124: OWN_ALLIANCE_ID on LAP_API_KEY until its officers save their own key, and every workspace with a
-// usable key of its own on that key and its quota only, each alliance's batch alongside the others. It
-// runs in batches of at most RUN_DEADLINE_MS: each cron-job.org tick in the window starts the next batch
-// after its answer (lib/squads-tick.ts); POST /api/squads-read (tick.yml, or by hand) is the backup path,
-// and the claim keeps the two from overlapping. Each batch starts only when it ends inside the server day
-// (nothing after 23:58:20). /admin's "Run the squads read now" (`force`) starts them outside that window,
-// on the row of the same quota day, with every other rule unchanged (D117, amendment 2026-11-19b). The
-// run never spends below `squadsReserve` (the event's quota day keeps its reads), makes one call per
-// member in the pass plus at most one retry for a 5xx or no answer (the cursor and the retry list are
-// saved after every call, under the batch's claim), and never makes more calls in a day than
-// SQUAD_CALLS_MAX, retries included. Its log lines are counts, the quota left and
-// reasons: no names, no squads.
+// The squads read (D117, issue 413) as a daily queue (D132, issue 472): after the day's roster read (D72),
+// every member of each read alliance's roster is queued for that quota day (00:00 UTC), and every
+// cron-job.org tick reads a small batch of each alliance's queue after its answer (lib/squads-tick.ts):
+// at most SQUADS_BATCH_CALLS calls and SQUADS_BATCH_MS, one GET /v1/players/{uid} per member, the tracker's
+// cached copy (no `fresh`), sequential and paced. D124: OWN_ALLIANCE_ID on LAP_API_KEY until its officers
+// save their own key, and every workspace with a usable key of its own on that key and its quota only,
+// each alliance's batch alongside the others. A 5xx or no answer sends the member to the back of the queue
+// (at most 3 attempts a day); one answer per member a day. On LAP_API_KEY nothing runs during the
+// scheduled event's Before/After window, and the run never spends below `squadsReserve`: it waits, and
+// goes on once the event's reads no longer need the quota. Never more than SQUAD_CALLS_MAX calls a day.
+// /admin's "Run the squads read now" and POST /api/squads-read run the same batches on the same queue.
+// Log lines are counts, the quota left and reasons: no names, no squads.
 import { ALLIANCES } from "../config/alliances";
 import { eventWorkspace } from "./analytics/server";
-import { RUN_DEADLINE_MS, RUN_STALE_AFTER_MS } from "./compute";
+import { RUN_STALE_AFTER_MS } from "./compute";
 import type { Db } from "./db";
 import type { Env } from "./env";
 import { refreshHeroCatalog } from "./heroes";
 import { createRunLogger, type LogData, type RunLogger } from "./logger";
 import { getDailyRead } from "./repo/daily-reads";
 import { insertRunLog } from "./repo/run-logs";
+import { dueMembers, queueCounts, queueMembers, saveCall } from "./repo/squad-queue";
 import {
   claimSquadBatch,
   dayRosterUids,
@@ -30,11 +29,14 @@ import {
   type SquadRead,
 } from "./repo/squads";
 import { markKey } from "./repo/workspace-keys";
+import { inEventWindow } from "./schedule";
 import type { V1Source } from "./sources/types";
 import {
   SQUAD_CALLS_MAX,
+  SQUADS_BATCH_CALLS,
+  SQUADS_BATCH_MS,
   SQUADS_SAFETY_MARGIN,
-  squadsBatchDay,
+  squadsQueueDay,
   squadsReserve,
   type SquadsConfig,
 } from "./squads";
@@ -53,14 +55,11 @@ export interface SquadsDeps {
   secrets?: readonly string[];
   /** Tests pass 0. */
   paceMs?: number;
-  /** RUN_DEADLINE_MS; tests pass a short one to end a batch mid-roster. */
+  /** SQUADS_BATCH_MS; tests pass a short one to end a batch mid-queue. */
   deadlineMs?: number;
 }
 
-/**
- * An /admin press (D117, amendment 2026-11-19b): `force` replaces only the nightly window check with
- * `forcedSquadsDay`; `unionId` reads one workspace's alliance, else every alliance due.
- */
+/** An /admin press (D117, amendment 2026-11-19b): `force` marks its lines; `unionId` reads one alliance. */
 export interface SquadsRun {
   force?: boolean;
   unionId?: number;
@@ -104,10 +103,10 @@ const logger = (
   );
 
 /**
- * The next batch of today's squads read of each alliance due (squadTargets: the own alliance first), or
- * idle: outside the daily read's window (unless forced), too close to the server reset, before the day's
- * read finished, or when every alliance's day is done or has a batch running. The outcome is the first
- * alliance's status, with every batch's calls, and `more` when any has members left.
+ * The next batch of each alliance's queue of the current quota day, or idle: a batch would cross the
+ * quota reset, the day's read has not finished, or every alliance's day is over, waiting or has a batch
+ * running. The outcome is the first alliance's status, with every batch's calls, and `more` when any has
+ * members whose turn has come.
  */
 export async function runSquadsBatch(
   deps: SquadsDeps,
@@ -115,17 +114,20 @@ export async function runSquadsBatch(
   run: SquadsRun = {},
 ): Promise<SquadsOutcome> {
   const now = deps.now();
-  const forced = run.force === true;
-  const day = squadsBatchDay(now, deps.env, forced);
+  const day = squadsQueueDay(now, deps.env);
   if (!day) return { kind: "idle" };
   const daily = await getDailyRead(db, day);
   if (!daily || daily.status === "running") return { kind: "idle" };
+  // INVARIANT squads.event-pause: on LAP_API_KEY nothing runs from the event's Before until its After's
+  // window closes (samples included); a workspace key funds none of our event reads (D124).
+  const eventOn = inEventWindow(now, deps.env);
   // INVARIANT keys.own-quota-only: a workspace is read only on its own key; LAP_API_KEY only for the own
   // alliance (D124).
   const targets = (await squadTargets(db, deps.env.WORKSPACE_KEYS_SECRET, now)).filter(
-    (t) => run.unionId === undefined || t.unionId === run.unionId,
+    (t) => (run.unionId === undefined || t.unionId === run.unionId) && (t.key || !eventOn),
   );
-  // Each alliance on its own key and quota, at once: one alliance's 100 s never waits for another's.
+  const forced = run.force === true;
+  // Each alliance on its own key and quota, at once: one alliance's batch never waits for another's.
   const outcomes = await Promise.all(
     targets.map((target) => targetBatch(deps, db, { day, daily, target, forced })),
   );
@@ -156,29 +158,37 @@ async function targetBatch(
   const reserve = target.key
     ? SQUADS_SAFETY_MARGIN
     : squadsReserve(now, deps.env, ALLIANCES.length);
-  // INVARIANT run.deadline-100s: counted from before the claim and the catalog, so the whole batch stays
-  // inside the route's maxDuration.
+  // Counted from before the claim and the catalog, so the whole batch stays well inside maxDuration.
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), deps.deadlineMs ?? RUN_DEADLINE_MS);
+  const timer = setTimeout(() => controller.abort(), deps.deadlineMs ?? SQUADS_BATCH_MS);
   try {
     const stale = new Date(now.getTime() - RUN_STALE_AFTER_MS);
     const row = existing
       ? await claimSquadBatch(db, day, target.unionId, now, stale)
-      : await start(deps, db, log, { ...run, uids, reserve, signal: controller.signal });
+      : await start(deps, db, log, { ...run, uids, signal: controller.signal });
     if (!row || row.status !== "running") {
       await log.shutdown();
       return row
         ? { kind: "batch", day, status: row.status, calls: row.callsUsed, more: false }
         : { kind: "idle" };
     }
-    const batch = { row, uids, reserve, target, signal: controller.signal };
+    // The day's roster is in the queue: a no-op once it is, and the first batch's work otherwise. Members
+    // of the roster go before anyone who joined later or waits for another attempt.
+    await queueMembers(db, { day, unionId: target.unionId }, uids, row.startedAt);
+    const batch = {
+      row,
+      reserve,
+      target,
+      rosterAt: run.daily.startedAt,
+      signal: controller.signal,
+    };
     return await readBatch(deps, db, log, batch);
   } finally {
     clearTimeout(timer);
   }
 }
 
-/** The day's first batch of an alliance: the claim, the quota guard for the whole run, the hero catalog. */
+/** The day's first batch of an alliance: the claim, its starting quota, the hero catalog. */
 async function start(
   deps: SquadsDeps,
   db: Db,
@@ -186,7 +196,6 @@ async function start(
   run: {
     day: string;
     uids: number[];
-    reserve: number;
     daily: StartDaily;
     target: SquadTarget;
     signal: AbortSignal;
@@ -199,10 +208,9 @@ async function start(
   if (!(await startSquadRead(db, { ...base, status: "running", batchAt: now }))) return null;
   const quota = await startQuota(deps, db, { ...run, key: target.key });
   const { remaining } = quota;
-  const required = Math.min(run.uids.length, SQUAD_CALLS_MAX) + run.reserve;
-  // INVARIANT squads.keeps-event-reserve
-  const reason =
-    quota.reason ?? (remaining === null ? "quota_unknown" : remaining < required ? "quota" : null);
+  // A key that cannot read today, or a quota nobody knows, skips the day. Too little quota is not a
+  // skip any more (D132): the reserve guard before each call waits, and the queue goes on later.
+  const reason = quota.reason ?? (remaining === null ? "quota_unknown" : null);
   const patch = {
     status: reason ? ("skipped" as const) : ("running" as const),
     batchAt: reason ? null : now,
@@ -213,10 +221,9 @@ async function start(
   };
   await updateClaimedSquadRead(db, run.day, target.unionId, now, patch);
   if (reason) {
-    const data = { ...whose(target), reason, quota_remaining: remaining, required };
-    await log.warn("squads.skip", data);
+    await log.warn("squads.skip", { ...whose(target), reason, quota_remaining: remaining });
   } else await refreshHeroCatalog(db, deps.env.LAP_SITE_BASE_URL, deps.fetch, now, log);
-  return { ...base, ...patch, afterUid: null, retryUids: [], withSquads: 0, failed: 0 };
+  return { ...base, ...patch, withSquads: 0, failed: 0 };
 }
 
 const sleep = (ms: number, signal: AbortSignal) =>
@@ -226,21 +233,9 @@ const sleep = (ms: number, signal: AbortSignal) =>
     signal.addEventListener("abort", () => (clearTimeout(timer), resolve()), { once: true });
   });
 
-/** The members after `afterUid` (uid order) not read yet in this pass. */
-const leftOf = (todo: readonly number[], b: Batch) =>
-  todo.filter((uid) => b.afterUid === null || uid > b.afterUid);
-
-/** The next call: the pass in uid order, then each member whose call failed with a 5xx or no answer, once. */
-function nextCall(todo: readonly number[], b: Batch): { uid: number; retry: boolean } | null {
-  const [main] = leftOf(todo, b);
-  if (main !== undefined) return { uid: main, retry: false };
-  const [again] = b.retryUids;
-  return again === undefined ? null : { uid: again, retry: true };
-}
-
 /**
- * Reads members after `row.afterUid` (uid order), then retries the pass's 5xx and network failures once,
- * until done, the cap, the reserve, a 429 or the deadline.
+ * Reads the members whose turn has come, the longest waiting first, until the batch's size, the day's cap,
+ * the reserve, a 429 or a key problem, or the deadline.
  */
 async function readBatch(
   deps: SquadsDeps,
@@ -248,37 +243,39 @@ async function readBatch(
   log: RunLogger,
   run: {
     row: SquadRead;
-    uids: number[];
     reserve: number;
     target: SquadTarget;
+    rosterAt: Date;
     signal: AbortSignal;
   },
 ): Promise<SquadsOutcome> {
   const { row, target, signal } = run;
   // The claim this batch holds: every write below is guarded by it.
   const claimedAt = row.batchAt as Date;
-  // INVARIANT squads.calls-capped: every call of the day counts, retries included.
-  const cap = SQUAD_CALLS_MAX;
-  const todo = [...run.uids].sort((a, b) => a - b);
+  const q = { day: row.day, unionId: target.unionId };
+  const due = await dueMembers(db, q, deps.now(), SQUADS_BATCH_CALLS);
   const b: Batch = {
     calls: 0,
     read: 0,
     withSquads: 0,
     failed: 0,
     might: 0,
+    joined: 0,
     remaining: row.quotaRemaining,
-    afterUid: row.afterUid,
-    retryUids: [...row.retryUids],
-    retried: 0,
     stop: null,
   };
-  for (let call = nextCall(todo, b); call; call = nextCall(todo, b)) {
-    b.stop = stopReason(row.callsUsed + b.calls, cap, b.remaining, run.reserve);
-    if (b.stop || signal.aborted) break;
-    const save = () =>
-      updateClaimedSquadRead(db, row.day, target.unionId, claimedAt, progress(row, b));
-    const outcome = await readOne(deps, db, { ...call, target, signal }, b, save);
-    // Cut by the deadline before it was sent: the member stays for the next batch.
+  let wait: string | null = null;
+  for (const member of due) {
+    const why = stopReason(row.callsUsed + b.calls, b.remaining, run.reserve);
+    // INVARIANT squads.calls-capped ends the day; the reserve only waits (D132).
+    if (why === "cap") b.stop = why;
+    wait = why === "quota" ? why : null;
+    if (why || signal.aborted) break;
+    const save = (m: Parameters<typeof saveCall>[3]) =>
+      saveCall(db, { ...q, claimedAt }, progress(row, b), m);
+    const call = { ...member, target, signal, day: row.day, rosterAt: run.rosterAt };
+    const outcome = await readOne(deps, db, call, b, save);
+    // Cut by the deadline before it was sent: the member keeps its turn for the next batch.
     if (outcome === "unsent") break;
     if (outcome === "lost") {
       // A later caller took the claim as stale: it owns the day now.
@@ -288,13 +285,11 @@ async function readBatch(
     if (b.stop) break;
     await sleep(deps.paceMs ?? PACE_MS, signal);
   }
-  return finishBatch(deps, db, log, { row, todo, b, claimedAt, target });
+  return finishBatch(deps, db, log, { row, b, wait, claimedAt, target });
 }
 
 /** The day's totals after this batch's calls so far. */
 const progress = (row: SquadRead, b: Batch) => ({
-  afterUid: b.afterUid,
-  retryUids: b.retryUids,
   callsUsed: row.callsUsed + b.calls,
   withSquads: row.withSquads + b.withSquads,
   failed: row.failed + b.failed,
@@ -302,9 +297,9 @@ const progress = (row: SquadRead, b: Batch) => ({
 });
 
 /** Why the next call may not be made: the day's cap, or a call that would cut into the reserve. */
-function stopReason(calls: number, cap: number, remaining: number | null, reserve: number) {
+function stopReason(calls: number, remaining: number | null, reserve: number) {
   // INVARIANT squads.calls-capped
-  if (calls >= cap) return "cap";
+  if (calls >= SQUAD_CALLS_MAX) return "cap";
   // INVARIANT squads.keeps-event-reserve
   if (remaining !== null && remaining - 1 < reserve) return "quota";
   return null;
@@ -314,48 +309,66 @@ async function finishBatch(
   deps: SquadsDeps,
   db: Db,
   log: RunLogger,
-  done: { row: SquadRead; todo: number[]; b: Batch; claimedAt: Date; target: SquadTarget },
+  done: { row: SquadRead; b: Batch; wait: string | null; claimedAt: Date; target: SquadTarget },
 ): Promise<SquadsOutcome> {
-  const { row, todo, b, target } = done;
-  const left = leftOf(todo, b).length + b.retryUids.length;
-  const status = b.stop ? "stopped" : left === 0 ? "done" : "running";
-  const finished = status === "running" ? null : deps.now();
+  const { row, b, target } = done;
+  const now = deps.now();
+  // The queue holds at least the day's roster by now.
+  const [counts = { waiting: 0, dueNow: 0 }] = await queueCounts(db, row.day, now, target.unionId);
+  const status = b.stop ? "stopped" : counts.waiting === 0 ? "done" : "running";
+  const reason = b.stop ?? done.wait;
   const released = await updateClaimedSquadRead(db, row.day, target.unionId, done.claimedAt, {
     ...progress(row, b),
     status,
-    // Released, so the next call takes the next batch at once.
+    // Released, so the next tick (or a press) takes the next batch.
     batchAt: null,
-    finishedAt: finished,
-    reason: b.stop,
+    finishedAt: status === "running" ? null : now,
+    reason,
   });
   if (!released) {
     await log.shutdown();
     return { kind: "idle" };
   }
-  // The key's quota left, for its Settings screen; an empty one waits for the reset (D124). A 401 or a
-  // 429 already marked the key in failedCall.
-  const marked = b.stop === "key_invalid" || b.stop === "quota_429";
-  if (target.key && b.remaining !== null && !marked) {
-    const empty = b.remaining <= 0;
-    const patch = {
-      quotaRemaining: b.remaining,
-      ...(empty && { status: "out_of_quota" as const }),
-    };
-    await markKey(db, target.key.workspaceId, target.key.nonce, patch, deps.now());
-  }
-  await log[b.stop ? "warn" : "info"]("squads.batch", {
+  await keepKeyQuota(deps, db, target, b);
+  // A batch that made no call and ended nothing (a wait for the reserve or for a retry's turn) logs
+  // nothing: the next tick tries again.
+  if (b.calls > 0 || status !== "running")
+    await logBatch(log, target, b, { status, left: counts.waiting, reason });
+  await log.shutdown();
+  const more = status === "running" && counts.dueNow > 0 && done.wait === null;
+  return { kind: "batch", day: row.day, status, calls: b.calls, more };
+}
+
+/** The batch's `squads.batch` line: counts, the quota left and a reason; never a member. */
+function logBatch(
+  log: RunLogger,
+  target: SquadTarget,
+  b: Batch,
+  end: { status: string; left: number; reason: string | null },
+) {
+  return log[b.stop ? "warn" : "info"]("squads.batch", {
     ...whose(target),
-    status,
+    status: end.status,
     calls: b.calls,
     players: b.read,
     with_squads: b.withSquads,
     failed: b.failed,
-    retried: b.retried,
+    joined: b.joined,
     might_written: b.might,
-    left,
+    left: end.left,
     quota_remaining: b.remaining,
-    ...(b.stop && { reason: b.stop }),
+    ...(end.reason && { reason: end.reason }),
   });
-  await log.shutdown();
-  return { kind: "batch", day: row.day, status, calls: b.calls, more: status === "running" };
+}
+
+/**
+ * The key's quota left, for its Settings screen; an empty one waits for the reset (D124). A 401 or a 429
+ * already marked the key in the failed call.
+ */
+async function keepKeyQuota(deps: SquadsDeps, db: Db, target: SquadTarget, b: Batch) {
+  const marked = b.stop === "key_invalid" || b.stop === "quota_429";
+  if (!target.key || b.remaining === null || marked || b.calls === 0) return;
+  const empty = b.remaining <= 0;
+  const patch = { quotaRemaining: b.remaining, ...(empty && { status: "out_of_quota" as const }) };
+  await markKey(db, target.key.workspaceId, target.key.nonce, patch, deps.now());
 }

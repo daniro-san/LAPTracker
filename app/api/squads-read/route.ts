@@ -1,4 +1,4 @@
-// POST /api/squads-read — the next batch of the nightly squads read (D117). The backup path: /api/tick
+// POST /api/squads-read — the next batch of the day's squads queue (D117, D132). The backup path: /api/tick
 // starts the batches itself (amendment 2026-11-19); tick.yml calls this after its own runs, and it can be
 // called by hand. 204 when nothing is due; the claim keeps it from overlapping the tick's batch. Bearer
 // CRON_SECRET only.

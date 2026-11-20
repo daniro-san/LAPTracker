@@ -11,6 +11,7 @@ import {
   type OnAttempt,
   type V1Source,
 } from "./sources/types";
+import { playerAnswer } from "./squads.test-helpers";
 
 export const T0 = new Date("2026-11-07T12:00:00Z");
 export const EVENT_ID = 1;
@@ -78,7 +79,7 @@ export function fakeV1(alliance: (id: number, call: number) => Outcome, remainin
     // The squads read (D117) replaces this where it is tested; nothing else calls it.
     fetchPlayer: async (uid: number, onAttempt?: OnAttempt) => {
       onAttempt?.(0);
-      return { uid, squads: [], quota: null };
+      return playerAnswer(uid);
     },
   };
   return v1;

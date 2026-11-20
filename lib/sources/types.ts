@@ -57,6 +57,15 @@ export interface HeroInput {
   /** Rarity: 3 SR, 4 SSR, 5 UR (owner, 2026-11-18); the same for every copy of a hero. */
   q: number | null;
   awaken: number | null;
+  /** The hero's Hall of Honor level (D132). */
+  honor: number | null;
+}
+
+/** One troop kind of a squad (D132): type id, tier and count. */
+export interface TroopInput {
+  id: number;
+  tier: number | null;
+  n: number | null;
 }
 
 /** One squad the tracker has seen (D117). Only seen squads come back, so a list is partial. */
@@ -68,13 +77,54 @@ export interface SquadInput {
   /** When the tracker saw it; null when not sent. */
   seenAt: Date | null;
   heroes: HeroInput[];
+  troops: TroopInput[];
 }
 
-/** The squads of one player from GET /v1/players/{uid} (D117): nothing else of the body is kept. */
+/**
+ * The fields of a /v1/players body kept as columns (D132). Never x, y, online, last_online_at or
+ * avatar_url. `unionId` is the alliance the body names.
+ */
+export interface PlayerFacts {
+  shielding: number | null;
+  shieldType: number | null;
+  mapUpdatedAt: Date | null;
+  lastSeenAt: Date | null;
+  language: string | null;
+  power: number | null;
+  kills: number | null;
+  unionId: UnionId | null;
+  sid: number | null;
+  homeSid: number | null;
+  vip: number | null;
+}
+
+/** One row of the body's `history[]` (D132), keyed by `t` (its `observed_at`); never x or y. */
+export interface HistoryInput {
+  t: Date;
+  power: number | null;
+  kills: number | null;
+  level: number | null;
+  vip: number | null;
+  unionId: UnionId | null;
+  unionAbbr: string | null;
+  sid: number | null;
+  changeFlags: string | null;
+  nick: string | null;
+}
+
+/**
+ * One GET /v1/players/{uid} answer (D117, D132): the squads, the facts and history kept, and `raw`, the
+ * body less `alliance_members`. `roster`: the uids of the body's alliance roster and when the tracker
+ * updated that alliance, used only to queue members who joined during the day (D132); never stored.
+ */
 export interface PlayerSquadsInput {
   uid: Uid;
   squads: SquadInput[];
   quota: Quota | null;
+  facts: PlayerFacts;
+  history: HistoryInput[];
+  raw: Record<string, unknown>;
+  roster: { unionId: UnionId; updatedAt: Date; uids: Uid[] } | null;
 }
 
 export interface RanksBoard {
@@ -110,7 +160,7 @@ export interface V1Source {
     options?: CallOptions,
   ): Promise<AllianceSnapshotInput>;
   fetchQuota(onAttempt?: OnAttempt, signal?: AbortSignal, options?: CallOptions): Promise<Quota>;
-  /** GET /v1/players/{uid}, the tracker's cached copy (no `fresh`), squads only (D117). */
+  /** GET /v1/players/{uid}, the tracker's cached copy (no `fresh`): squads (D117) and the read (D132). */
   fetchPlayer(
     uid: Uid,
     onAttempt?: OnAttempt,

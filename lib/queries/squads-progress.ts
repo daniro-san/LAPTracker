@@ -1,23 +1,30 @@
-// /admin's squads read progress (D117, amendment 2026-11-19b): each workspace alliance's row of one day,
-// as counts only (how far the pass got, retries waiting, failed calls, the quota left, the last batch's
-// time). Owner only
-// (PIN); no uid, name or squad.
+// /admin's squads read progress (D117, amendment 2026-11-19b; D132): each workspace alliance's day of the
+// queue, as counts only (members read, waiting to retry, failed, when the next try comes, the quota left,
+// the last batch's time). Owner only (PIN); no uid, name or squad.
 import { and, eq, max, sql } from "drizzle-orm";
 
 import { RUN_STALE_AFTER_MS } from "../compute";
 import type { Db } from "../db";
-import { dailyRosters, runLogs, workspaces } from "../schema";
+import { queueCounts } from "../repo/squad-queue";
+import { runLogs, workspaces } from "../schema";
 import { squadReads } from "../schema-squads";
 
 export interface SquadsProgress {
   unionId: number;
   status: "running" | "done" | "stopped" | "skipped";
-  /** Members the pass has called, in uid order (a failed call counts: its retry comes after the pass). */
-  reached: number;
+  /** Members read today: one answer each. */
+  read: number;
+  /** Members in the day's queue (members who joined during the day included). */
   members: number;
-  /** Members whose call failed in the pass and wait for their one retry. */
+  /** Members waiting for another attempt after a 5xx or no answer. */
   retrying: number;
+  /** Members not read yet and not given up on: their turn has come (`dueNow`) or comes at `nextAt`. */
+  waiting: number;
+  dueNow: number;
+  /** Members not read today: 3 attempts without an answer, or a failure not tried again. */
   failed: number;
+  /** When the next waiting member's turn comes, when it is later than now. */
+  nextAt: Date | null;
   quotaRemaining: number | null;
   reason: string | null;
   /** A batch holds the day's claim now. */
@@ -27,12 +34,9 @@ export interface SquadsProgress {
 }
 
 export async function squadsProgress(db: Db, day: string, now: Date): Promise<SquadsProgress[]> {
-  const [rows, rosters, batches] = await Promise.all([
+  const [rows, queues, batches] = await Promise.all([
     db.select().from(squadReads).where(eq(squadReads.day, day)),
-    db
-      .select({ unionId: dailyRosters.unionId, uids: dailyRosters.memberUids })
-      .from(dailyRosters)
-      .where(eq(dailyRosters.readDay, day)),
+    queueCounts(db, day, now),
     // Each line names its workspace by slug (issue 452).
     db
       .select({ unionId: workspaces.unionId, at: max(runLogs.at) })
@@ -43,15 +47,27 @@ export async function squadsProgress(db: Db, day: string, now: Date): Promise<Sq
   ]);
   const stale = now.getTime() - RUN_STALE_AFTER_MS;
   return rows.map((r) => {
-    const uids = rosters.find((x) => x.unionId === r.unionId)?.uids ?? [];
-    const after = r.afterUid;
+    // A row with no queue yet: the day's first batch was skipped before it made one.
+    const none = {
+      done: 0,
+      members: r.members,
+      retrying: 0,
+      waiting: 0,
+      dueNow: 0,
+      failed: 0,
+      nextAt: null,
+    };
+    const q = queues.find((x) => x.unionId === r.unionId) ?? none;
     return {
       unionId: r.unionId,
       status: r.status,
-      reached: after === null ? 0 : uids.filter((uid) => uid <= after).length,
-      members: r.members,
-      retrying: r.retryUids.length,
-      failed: r.failed,
+      read: q.done,
+      members: q.members,
+      retrying: q.retrying,
+      waiting: q.waiting,
+      dueNow: q.dueNow,
+      failed: q.failed,
+      nextAt: q.nextAt,
       quotaRemaining: r.quotaRemaining,
       reason: r.reason,
       batchRunning: r.batchAt !== null && r.batchAt.getTime() > stale,

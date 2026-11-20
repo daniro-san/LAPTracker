@@ -59,6 +59,15 @@ export const settingsEn = {
   "key.card.whereLink": "Open the tracker’s API page",
   "activity.key.set": "{who} updated the tracker key",
   "activity.key.removed": "{who} removed the tracker key",
+  // D132: today's squads read, under the key.
+  "squads.today": "Squads today: {read} of {members} read · {retrying} waiting to try again",
+  "squads.todayNext": "next try at {at} ST",
+  "squads.todayNone": "Squads today: not started yet. They are read after the daily roster.",
+  "squads.todayStopped": "Squads today: {read} of {members} read · stopped: {why}",
+  "squads.todayStoppedNone": "Squads today: stopped: {why}",
+  "squads.stop.key": "the tracker refused the key",
+  "squads.stop.limit": "the limit is reached until 00:00 UTC",
+  "squads.stop.cap": "today’s 120 reads are used",
   // D129: Alliance settings → Discord.
   ...discordEn,
   ...inviteEn,
@@ -122,6 +131,15 @@ export const settingsPt: typeof settingsEn = {
   "key.card.whereLink": "Abrir a página da API do tracker",
   "activity.key.set": "{who} atualizou a chave do tracker",
   "activity.key.removed": "{who} removeu a chave do tracker",
+  "squads.today":
+    "Esquadrões hoje: {read} de {members} lidos · {retrying} esperando nova tentativa",
+  "squads.todayNext": "próxima tentativa às {at} ST",
+  "squads.todayNone": "Esquadrões hoje: ainda não começou. Eles são lidos depois da lista diária.",
+  "squads.todayStopped": "Esquadrões hoje: {read} de {members} lidos · parado: {why}",
+  "squads.todayStoppedNone": "Esquadrões hoje: parado: {why}",
+  "squads.stop.key": "o tracker recusou a chave",
+  "squads.stop.limit": "o limite foi atingido até 00:00 UTC",
+  "squads.stop.cap": "as 120 leituras de hoje foram usadas",
   // D129: Alliance settings → Discord.
   ...discordPt,
   ...invitePt,
@@ -186,6 +204,16 @@ export const settingsFr: typeof settingsEn = {
   "key.card.whereLink": "Ouvrir la page API du tracker",
   "activity.key.set": "{who} a mis à jour la clé du tracker",
   "activity.key.removed": "{who} a retiré la clé du tracker",
+  "squads.today":
+    "Escouades aujourd’hui : {read} sur {members} lues · {retrying} en attente d’un nouvel essai",
+  "squads.todayNext": "prochain essai à {at} ST",
+  "squads.todayStopped": "Escouades aujourd’hui : {read} sur {members} lues · arrêté : {why}",
+  "squads.todayStoppedNone": "Escouades aujourd’hui : arrêté : {why}",
+  "squads.stop.key": "le tracker a refusé la clé",
+  "squads.stop.limit": "la limite est atteinte jusqu’à 00:00 UTC",
+  "squads.stop.cap": "les 120 lectures du jour sont utilisées",
+  "squads.todayNone":
+    "Escouades aujourd’hui : pas encore commencé. Elles sont lues après la liste quotidienne.",
   // D129: Alliance settings → Discord.
   ...discordFr,
   ...inviteFr,

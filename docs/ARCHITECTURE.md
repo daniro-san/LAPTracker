@@ -136,9 +136,10 @@ lib/tick.ts         the tick's decision: create the scheduled event's row, run t
                     after_at), a due sample (D69), the Friday check (and after it the weekly notice picture cleanup, D119),
                     a REHEARSAL_AT slot, the daily roster read.
 lib/daily-read.ts   the daily roster read (D60, D72): quota check, /v1 rosters as arrays (and raw_json) into daily_rosters; not an event.
-lib/squads-read.ts  the nightly squads read (D117): batches of /v1/players for OWN_ALLIANCE_ID after the daily read, each
-                    started by a tick in the window after its answer (lib/squads-tick.ts, `after`), POST
-                    /api/squads-read the backup; squads into member_squads (lib/repo/squads.ts, lib/schema-squads.ts), the
+lib/squads-read.ts  the squads read (D117) as a daily queue (D132): small batches of /v1/players from each alliance's
+                    queue of the quota day (lib/repo/squad-queue.ts), one started by every tick after its answer
+                    (lib/squads-tick.ts, `after`), POST /api/squads-read the backup; each answer into player_reads and
+                    player_history (lib/repo/player-reads.ts), squads into member_squads (lib/repo/squads.ts, lib/schema-squads.ts), the
                     tracker's "Main squad might" versions through lib/repo/member-facts.ts, the hero catalog
                     (lib/heroes.ts, lib/repo/hero-catalog.ts). lib/squads.ts: its pure rules (reserve, main squad,
                     version rule). The card's words: lib/private/member-squads.ts. lib/squads-call.ts: one call

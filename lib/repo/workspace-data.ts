@@ -40,7 +40,7 @@ import {
   notices,
 } from "../schema-notices";
 import { workspaceDataEvents, type DataAction } from "../schema-retention";
-import { memberSquads, squadReads } from "../schema-squads";
+import { memberSquads, playerHistory, playerReads, squadQueue, squadReads } from "../schema-squads";
 import { theftAttackers, theftFollowUps, thefts } from "../schema-thefts";
 
 /**
@@ -97,6 +97,10 @@ export const WORKSPACE_TABLES: readonly WorkspaceTable[] = [
   { file: "alliance-duel-points", table: allianceDuelPoints, scope: "workspace" },
   { file: "screenshot-checks", table: screenshotChecks, scope: "workspace" },
   { file: "squads", table: memberSquads, scope: "union" },
+  // D132: every tracker read of a member as its columns, and the history rows. The raw bodies stay out:
+  // about 90 days of them would pass the download's 4.4 MB, and they hold private fields (D71).
+  { file: "player-reads", table: playerReads, scope: "union", omit: ["raw_json"] },
+  { file: "player-history", table: playerHistory, scope: "union" },
   { file: "tracker-key-changes", table: workspaceKeyChanges, scope: "workspace" },
   { file: "data-requests", table: workspaceDataEvents, scope: "workspace" },
   { file: null, table: workspaceSessions, scope: "workspace" },
@@ -109,6 +113,7 @@ export const WORKSPACE_TABLES: readonly WorkspaceTable[] = [
   { file: null, table: workspaceUsage, scope: "workspace" },
   { file: null, table: discordPictures, scope: "workspace" },
   { file: null, table: squadReads, scope: "union" },
+  { file: null, table: squadQueue, scope: "union" },
 ];
 
 /** Never downloaded from any table, whatever the list says (CLAUDE.md, D71, D22). */

@@ -1,17 +1,15 @@
-// POST /api/admin/squads-read — /admin's "Run the squads read now" (D117, amendment 2026-11-19b): the
-// squads read outside the nightly window, for one workspace (`?union=`) or all, started after the answer
-// on the tick's path (squadsBatch → runSquadsBatch with `force`), one batch after another while another
-// whole batch fits in maxDuration. Only the window check changes: the claim, the per-call save, the
-// 120-call cap, the reserve and each workspace's own key (D124) stay. It reads the row of the current
-// quota day, so a press and the nightly batches never read a member twice in a UTC day. Refused during the
-// scheduled event's Before/After window and when a batch would cross the 00:00 UTC quota reset. PIN only,
-// with the PIN's rate limiter. The answer names the workspaces whose batches start; /admin shows their
-// progress.
+// POST /api/admin/squads-read — /admin's "Run the squads read now" (D117, amendment 2026-11-19b; D132):
+// the next batches of the day's squads queue now, without waiting for the next tick, for one workspace
+// (`?union=`) or all, started after the answer on the tick's path (squadsBatch → runSquadsBatch with
+// `force`), one batch after another while members' turns have come and another whole batch fits in
+// maxDuration. The same queue, claim, per-call save, 120-call cap, reserve and keys (D124) as the tick's,
+// so a press and the ticks never read a member twice in a quota day. Refused during the scheduled event's
+// Before/After window and when a batch would cross the 00:00 UTC quota reset. PIN only, with the PIN's
+// rate limiter. The answer names the workspaces whose batches start; /admin shows their progress.
 import { after } from "next/server";
 import { z } from "zod";
 
 import { authorize } from "@/lib/auth";
-import { RUN_DEADLINE_MS } from "@/lib/compute";
 import { getDailyRead } from "@/lib/repo/daily-reads";
 import { errorResponse, parseQuery, withContext } from "@/lib/route";
 import { forcedSquadsDay } from "@/lib/squads";
@@ -41,7 +39,7 @@ export function POST(request: Request): Promise<Response> {
     const q = parseQuery(request, query);
     if (!q) return errorResponse(400, "bad_request");
     const now = ctx.now();
-    const forced = forcedSquadsDay(now, ctx.env, RUN_DEADLINE_MS);
+    const forced = forcedSquadsDay(now, ctx.env);
     if ("refused" in forced) return errorResponse(409, forced.refused);
     const daily = await getDailyRead(db, forced.day);
     if (!daily || daily.status === "running") return errorResponse(409, "daily_read_pending");

@@ -24,6 +24,7 @@ import {
   workspaces,
 } from "@/lib/schema";
 import { squadReads } from "@/lib/schema-squads";
+import { playerAnswer } from "@/lib/squads.test-helpers";
 
 const holder = vi.hoisted(() => ({ ctx: null as AppContext | null }));
 vi.mock("@/lib/app-context", async (original) => ({
@@ -297,8 +298,8 @@ describe("POST /api/tick", () => {
     expect(await days()).toEqual([]);
   });
 
-  it("starts the night's squads batch after a due tick's answer, and none on a tick outside the window", async () => {
-    // D117, amendment 2026-11-19: cron-job.org's ticks at :00/:15/:30/:45 carry the squads read.
+  it("starts a squads batch after every tick's answer, which reads nothing before the day's read", async () => {
+    // D117, amendment 2026-11-19; D132: cron-job.org's ticks at :00/:15/:30/:45 carry the squads queue.
     // D125: the own alliance is read only while it has a workspace.
     await db
       .insert(workspaces)
@@ -309,17 +310,19 @@ describe("POST /api/tick", () => {
     ctx.v1.fetchPlayer = async (uid, onAttempt) => {
       onAttempt?.(0);
       players.push(uid);
-      return { uid, squads: [], quota: null };
+      return playerAnswer(uid);
     };
-    clock.now = new Date("2026-11-10T13:00:00Z"); // Tuesday 11:00 server time: nothing due
+    clock.now = new Date("2026-11-10T13:00:00Z"); // Tuesday 11:00 server time: no day's read yet
     expect((await tick()).status).toBe(204);
-    expect(later).toHaveLength(0);
+    expect(later).toHaveLength(1);
+    await later[0]?.();
+    expect(players).toEqual([]);
 
     clock.now = new Date("2026-11-11T01:30:00Z"); // Tuesday 23:30 server time: the daily read answers
     expect((await tick()).status).toBe(200);
-    expect(later).toHaveLength(1);
+    expect(later).toHaveLength(2);
     expect(players).toEqual([]); // nothing before the answer
-    await later[0]?.();
+    await later[1]?.();
     const own = (OWN_ALLIANCE_ID * 10 + 1) as number;
     expect(players).toEqual([own, own + 1, own + 2]);
     const [read] = await db.select().from(squadReads);
