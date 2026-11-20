@@ -119,3 +119,36 @@ These are plain information: a squad the tracker has not seen asks nothing of an
   - A night needs about 100 members plus 5–6 retries, about 106 calls, so it fits with about 20 calls to spare.
   - It stops fitting once a call takes more than about 1.4 s on average (106 calls over 200 s). Then the rest of the roster waits for tomorrow; nothing breaks, and the day's row says how far it got. The gap was not shortened.
 - **The backup path stays.** `POST /api/squads-read` stays for manual runs, and `tick.yml`'s step stays for whenever GitHub's schedule does fire in the window. The claim makes any two callers safe together: one batch at a time, and nobody is read twice.
+
+**Amendment 2026-11-19b (owner, to check the read without waiting for the night; branch `feat/admin-run-squads-now`, part of issue 472): /admin can start the read now.**
+
+- **Why.** The owner wants to run the squads read once by hand to check it. Until now a batch ran only in the nightly window, and `POST /api/squads-read` answered 204 at any other time.
+- **The button.** /admin has a "Squads read" section after Workspaces. It has a "Run the squads read now" button for each workspace (`POST /api/admin/squads-read?union=<id>`) and one for all workspaces (no `union`).
+  - PIN only, through `authorize`: `timingSafeEqual` on a hash, and the PIN's own rate limiter, as for /admin's other buttons. There is no separate limit on presses: the claim, the day's cap and the reserve already bound what presses can spend.
+- **What a press does.** The route answers 202 with the day and the workspaces whose batches start. The batches then run after the answer (`after`), through `squadsBatch` → `runSquadsBatch` with `force`, on their own database connection. An error becomes an `app_errors` row of route `/api/admin/squads-read`.
+  - One batch after another while members are left and another whole batch (100 s) would end by 240 s; the route's `maxDuration` is 300 s. A batch that made no call ends the press too. The tick still runs one batch.
+- **Only the window check changes.** `force` replaces "inside the daily read's window and ending before 00:00 server time" with `forcedSquadsDay`. Everything else is unchanged:
+  - the day's read must be done (not missing, not `running`);
+  - the claim and the per-call progress save;
+  - the 120-call cap, retries included;
+  - the reserve: the margin, plus the KvK reserve on `LAP_API_KEY`;
+  - D124's keys: each workspace on its own key, and OGs on `LAP_API_KEY` only until it has its own;
+  - D117's one retry and no `fresh`;
+  - the 100 s deadline of each batch.
+- **Which row: the quota day's** (`quotaDayRead`, `lib/schedule.ts`). A press reads the row of the daily read whose `DAILY_ROSTER_AT` falls on the current UTC day. That is the same row the nightly batches of that quota day use.
+  - With the server at UTC−2 and 23:30, a press at 13:00 server time on Friday goes on with Thursday's read (Friday 01:30 UTC). It takes the members after that row's cursor and the retry list.
+  - So a press and the nightly batches never read a member twice in one UTC day, and the day's cap counts both.
+  - Between 22:00 and the end of the daily read (server time), the quota day's read has not run yet, and a press answers 409 `daily_read_pending`.
+- **When a press is refused** (409, no batch):
+  - `event_window`: from the scheduled event's Before until its After's window closes (`inEventWindow`);
+  - `quota_reset`: a 100 s batch would end after 00:00 UTC, so its calls would land on the next quota day under this day's row. Each later batch of the press checks this again;
+  - `daily_read_pending`;
+  - `no_target`: no workspace (or not that one) has the squads read on (D126) and a key the read can use (D124).
+- **Progress on /admin.** The section lists the workspaces the read takes (`squadTargets`' rule: the squads read on (D126), and a key the read can use (D124), worked out from the key's status without opening it) and any workspace with a row that day. For each, the quota day's row shows:
+  - its state: not read yet, a batch running now, more to read, done, or stopped or skipped with the reason;
+  - "Read N of M · R waiting to retry · F failed · quota left Q". N is the roster members up to the cursor. R is the retry list. F is the failed calls, retries included;
+  - "Last batch …": the newest `squads.batch` line of that workspace.
+  - Counts only (`lib/queries/squads-progress.ts`). The button reads "Run the squads read now" before the first batch and "Run the next batch" while members are left and no batch holds the claim. It is hidden when the day is done, stopped or skipped.
+- **The tick does not continue a forced run.** A press does not change when the tick starts batches: only inside the nightly window. Outside it, what one press leaves takes another press.
+- **Logs.** A pressed batch's `squads.batch` line carries `forced: true`, besides D117's counts. No uid, name or squad.
+- **Known limit.** On `LAP_API_KEY`, a press starts from the last quota number the day's row (or the daily read) saved. That number can be hours old by then. Calls spent in between (an /admin Retry, a rehearsal) come out of the safety margin, which exists for them. From the first answer on, each response's `quota.remaining` guards every call.

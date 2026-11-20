@@ -4,13 +4,14 @@
 // night's next squads batch itself, after its answer (`after`), on its own database connection: the
 // request's connection is closed with the response. Same claim and guards as /api/squads-read
 // (runSquadsBatch): the per-call progress save, the day's 120 calls, the KvK reserve, the 100 s deadline.
+// /admin's "Run the squads read now" takes the same path (D117, amendment 2026-11-19b).
 import { after } from "next/server";
 
 import { secretsOf, type AppContext } from "./app-context";
 import { recordAppError } from "./app-errors";
 import { RUN_DEADLINE_MS } from "./compute";
 import { dailyReadDue, endsInServerDay, type ScheduleConfig } from "./schedule";
-import { runSquadsBatch } from "./squads-read";
+import { runSquadsBatch, type SquadsRun } from "./squads-read";
 
 /**
  * A squads batch may start at `now`: inside the daily read's window (DAILY_ROSTER_AT + 45 min) and ending
@@ -20,8 +21,21 @@ import { runSquadsBatch } from "./squads-read";
 export const squadsBatchDue = (now: Date, cfg: ScheduleConfig): boolean =>
   dailyReadDue(now, cfg) !== null && endsInServerDay(now, RUN_DEADLINE_MS, cfg);
 
-/** One batch on its own connection; an error becomes an app_errors row (a code, never a member). */
-export async function squadsBatch(ctx: AppContext): Promise<void> {
+/**
+ * /admin's press (D117, amendment 2026-11-19b): forced batches, one workspace's or all, on the route's
+ * app_errors rows; a further batch starts while members are left and it would end within `budgetMs`.
+ */
+export interface SquadsPress {
+  run: SquadsRun;
+  route: string;
+  budgetMs: number;
+}
+
+/**
+ * The tick's one batch, or a press's batches, on its own connection; an error becomes an app_errors row (a
+ * code, never a member).
+ */
+export async function squadsBatch(ctx: AppContext, press?: SquadsPress): Promise<void> {
   const { db, close } = ctx.openDb();
   try {
     const deps = {
@@ -31,9 +45,16 @@ export async function squadsBatch(ctx: AppContext): Promise<void> {
       env: ctx.env,
       secrets: secretsOf(ctx.env),
     };
-    await runSquadsBatch(deps, db);
+    const startedAt = ctx.now().getTime();
+    for (;;) {
+      const outcome = await runSquadsBatch(deps, db, press?.run);
+      // A batch that made no call ends the press too: the next one would not get further.
+      if (!press || outcome.kind === "idle" || !outcome.more || outcome.calls === 0) break;
+      if (ctx.now().getTime() - startedAt + RUN_DEADLINE_MS > press.budgetMs) break;
+    }
   } catch (error) {
-    await recordAppError(ctx, { route: "/api/tick", kind: "after", digest: null, error });
+    const route = press?.route ?? "/api/tick";
+    await recordAppError(ctx, { route, kind: "after", digest: null, error });
   } finally {
     await close();
   }

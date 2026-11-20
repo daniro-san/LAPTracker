@@ -1,8 +1,16 @@
 // The squads read's rules (D117), pure: no IO, `now` passed in. The quota it must leave, which squad is
 // the main one, and when the tracker's main squad becomes a new version of "Main squad might".
 import { requiredQuota } from "./budget";
+import { RUN_DEADLINE_MS } from "./compute";
 import type { Env } from "./env";
-import { nextEvent, type ScheduleConfig } from "./schedule";
+import {
+  dailyReadDue,
+  endsInServerDay,
+  inEventWindow,
+  nextEvent,
+  quotaDayRead,
+  type ScheduleConfig,
+} from "./schedule";
 
 /** Calls the squads read always leaves on its quota day, for an /admin Retry, a rehearsal and slack. */
 export const SQUADS_SAFETY_MARGIN = 100;
@@ -37,6 +45,34 @@ export function eventReserve(now: Date, cfg: SquadsConfig, alliances: number): n
  */
 export const squadsReserve = (now: Date, cfg: SquadsConfig, alliances: number): number =>
   SQUADS_SAFETY_MARGIN + eventReserve(now, cfg, alliances);
+
+/**
+ * The day an /admin press reads outside the nightly window (D117, amendment 2026-11-19b), or why not now.
+ * It is the read of `now`'s quota day (`quotaDayRead`), so a press and the nightly batches share one row:
+ * its cursor, its retry list and its cap. Never during the scheduled event's Before/After window, and only
+ * when a batch of `runMs` ends before the next quota reset (00:00 UTC), so every call lands on that day.
+ */
+export function forcedSquadsDay(
+  now: Date,
+  cfg: ScheduleConfig,
+  runMs: number,
+): { day: string } | { refused: "event_window" | "quota_reset" } {
+  if (inEventWindow(now, cfg)) return { refused: "event_window" };
+  const reset = Date.parse(`${utcDate(now)}T00:00:00Z`) + 86_400_000;
+  if (now.getTime() + runMs > reset) return { refused: "quota_reset" };
+  return { day: quotaDayRead(now, cfg) };
+}
+
+/** The day a squads batch reads at `now`, or null: the nightly window's, or for a press the quota day's. */
+export function squadsBatchDay(now: Date, cfg: ScheduleConfig, force: boolean): string | null {
+  if (force) {
+    const forced = forcedSquadsDay(now, cfg, RUN_DEADLINE_MS);
+    return "day" in forced ? forced.day : null;
+  }
+  const due = dailyReadDue(now, cfg);
+  // INVARIANT daily-read.ends-before-midnight, for the squads too: a batch ends before 00:00.
+  return due && endsInServerDay(now, RUN_DEADLINE_MS, cfg) ? due.day : null;
+}
 
 export interface SquadSeen {
   squad: number;

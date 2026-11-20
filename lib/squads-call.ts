@@ -1,6 +1,7 @@
-// One call of the nightly squads read (D117), split from lib/squads-read.ts for size: the call on its
-// target's key (D124), what a failure does (one retry for a 5xx or no answer; a 429, or a workspace key's
-// 401, ends the day and marks that key), the squads stored and the tracker's "Main squad might" version.
+// One call of the nightly squads read (D117), split from lib/squads-read.ts for size: the quota a run
+// starts from, the call on its target's key (D124), what a failure does (one retry for a 5xx or no answer;
+// a 429, or a workspace key's 401, ends the day and marks that key), the squads stored and the tracker's
+// "Main squad might" version.
 import type { Db } from "./db";
 import { factVersion, insertFact } from "./repo/member-facts";
 import { latestSquads, storeSquads } from "./repo/squads";
@@ -13,7 +14,47 @@ import {
 } from "./sources/types";
 import { mainSquad, trackerMightWrite } from "./squads";
 import type { SquadsDeps } from "./squads-read";
-import { forbidden, keyStatusOf, type SquadTarget } from "./workspace-keys";
+import { forbidden, keyStatusOf, type OpenKey, type SquadTarget } from "./workspace-keys";
+
+/** What the day's roster read left: where a run on LAP_API_KEY starts its quota from. */
+export type StartDaily = { quotaRemainingBefore: number | null; callsUsed: number };
+
+/**
+ * The quota the day's run starts from. On LAP_API_KEY no call: the day's read left this much, at most (its
+ * own calls counted after its check). On a workspace key, one /quota call on that key only; its answer
+ * (or its 401 or 429) is the key's status.
+ */
+export async function startQuota(
+  deps: SquadsDeps,
+  db: Db,
+  run: { daily: StartDaily; key: OpenKey | null; signal: AbortSignal },
+): Promise<{ remaining: number | null; calls: number; reason: string | null }> {
+  const { key } = run;
+  if (!key) {
+    const { quotaRemainingBefore: before, callsUsed } = run.daily;
+    return { remaining: before === null ? null : before - callsUsed, calls: 0, reason: null };
+  }
+  const now = deps.now();
+  try {
+    const quota = await deps.v1.fetchQuota(undefined, run.signal, {
+      apiKey: key.apiKey,
+      maxRetries: 0,
+    });
+    const empty = quota.remaining <= 0;
+    const status = empty ? "out_of_quota" : "ok";
+    await markKey(db, key.workspaceId, key.nonce, { status, quotaRemaining: quota.remaining }, now);
+    return { remaining: quota.remaining, calls: 1, reason: empty ? "key_out_of_quota" : null };
+  } catch (e) {
+    const status = keyStatusOf(e);
+    if (status) {
+      const patch = { status, ...(status === "out_of_quota" && { quotaRemaining: 0 }) };
+      await markKey(db, key.workspaceId, key.nonce, patch, now);
+    }
+    // A 403 stops the night without marking the key; a 5xx or no answer leaves the quota unknown.
+    const other = forbidden(e) ? "key_forbidden" : "quota_unknown";
+    return { remaining: null, calls: 1, reason: status ? `key_${status}` : other };
+  }
+}
 
 /** One batch's counts, carried into the day's row. */
 export interface Batch {
