@@ -20,9 +20,10 @@ import { botView } from "@/lib/private/discord-setup";
 import { webhookViews } from "@/lib/private/discord-webhooks";
 import { featureOn } from "@/lib/private/features";
 import { toReviewCount } from "@/lib/private/import-view";
+import { serverClock } from "@/lib/private/read-status";
 import { RENEW_MS } from "@/lib/private/session";
 import { SLUG } from "@/lib/private/sign-in";
-import { squadsToday, type SquadsToday } from "@/lib/private/squads-today";
+import { squadsReader, squadsToday, type SquadsToday } from "@/lib/private/squads-today";
 import { trackerKeyView } from "@/lib/private/tracker-key";
 import { DELETION_GRACE_MS } from "@/lib/private/workspace-deletion";
 
@@ -32,13 +33,6 @@ import { deletionDate, SignedInFrame, workspaceWords } from "../../../_ui/Frame"
 import { refuse } from "../../../_ui/refuse";
 import { TrackerKeyForm } from "../../../_ui/TrackerKeyForm";
 import { WorkspaceDataForm } from "../../../_ui/WorkspaceDataForm";
-
-/** The key states whose squads are read today (D124): the site's key, or a working key of their own. */
-const READING = new Set(["site", "ok", "out_of_quota"]);
-
-/** "02:15" on the server's clock. */
-const serverClock = (timeZone: string, at: Date) =>
-  new Intl.DateTimeFormat("en-GB", { timeZone, hour: "2-digit", minute: "2-digit" }).format(at);
 
 /** "Squads today: 98 of 101 read · 3 waiting to try again · next try at 02:15 ST" (D132). */
 function squadsLine(
@@ -65,7 +59,9 @@ async function readSettings(db: Db, access: WorkspaceAccess, env: Env, now: Date
     toReviewCount(db, access, now),
     botView(db, access, env),
     webhookViews(db, access, env),
-    featureOn(access, "squads") ? squadsToday(db, access, env, now) : null,
+    squadsReader(db, access, env, now).then((key) =>
+      key ? squadsToday(db, access, env, now) : null,
+    ),
     allianceFeaturesView(db, access),
   ]);
   return { view, waiting, bot, channels, squads, features };
@@ -94,7 +90,14 @@ export default async function SettingsPage({ params }: { params: Promise<{ slug:
       })
     : null;
   return (
-    <SignedInFrame access={access} language={language} t={t} current="home" waiting={waiting}>
+    <SignedInFrame
+      access={access}
+      language={language}
+      t={t}
+      current="home"
+      waiting={waiting}
+      keyShown
+    >
       <h1 className="font-display text-display-lg">{t["settings.title"]}</h1>
       <section aria-labelledby="tracker-key" className="drawn-card mt-4 max-w-2xl px-4 py-3">
         <h2 id="tracker-key" className="font-subhead text-display-sm">
@@ -117,7 +120,7 @@ export default async function SettingsPage({ params }: { params: Promise<{ slug:
           }}
           t={t}
         />
-        {squads && READING.has(view.state) && (
+        {squads && (
           <p className="mt-3 text-body-sm tabular-nums">{squadsLine(squads, t, env.SERVER_TZ)}</p>
         )}
       </section>

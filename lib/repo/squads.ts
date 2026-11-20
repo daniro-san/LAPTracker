@@ -30,6 +30,20 @@ export async function dayRosterUids(
   return row?.uids ?? null;
 }
 
+/** Whether the day's read kept the alliance's roster (D135): "ok", "failed" (an error row) or null (none). */
+export async function dayRosterState(
+  db: Db,
+  day: string,
+  unionId: number,
+): Promise<"ok" | "failed" | null> {
+  const [row] = await db
+    .select({ error: dailyRosters.error })
+    .from(dailyRosters)
+    .where(and(eq(dailyRosters.readDay, day), eq(dailyRosters.unionId, unionId)));
+  if (!row) return null;
+  return row.error === null ? "ok" : "failed";
+}
+
 /** One day's read of one alliance. */
 const of = (day: string, unionId: number) =>
   and(eq(squadReads.day, day), eq(squadReads.unionId, unionId));

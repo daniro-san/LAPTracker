@@ -96,6 +96,7 @@ const FIXTURES: Record<string, Partial<Record<Method, Fixture>>> = {
   "discord/route.ts": { POST: { body: { action: "check" } } },
   "features/route.ts": { POST: { body: { feature: "thefts", on: false } } },
   "data-export/route.ts": { POST: { body: { requestId: ID } } },
+  "read-status/route.ts": { GET: {} },
   "workspace-deletion/route.ts": { POST: { body: { action: "cancel", requestId: ID } } },
 };
 

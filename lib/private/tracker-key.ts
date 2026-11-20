@@ -12,6 +12,7 @@ import {
   clearKey,
   dropKeyChange,
   keyFacts,
+  type KeyFacts,
   recordKeyChange,
   storeKey,
 } from "../repo/workspace-keys";
@@ -55,9 +56,17 @@ export async function trackerKeyView(
   env: Pick<Env, "WORKSPACE_KEYS_SECRET">,
   now: Date,
 ): Promise<TrackerKeyView> {
-  const facts = await keyFacts(db, access.workspaceId);
+  return keyViewOf(access, await keyFacts(db, access.workspaceId), env.WORKSPACE_KEYS_SECRET, now);
+}
+
+/** The same, from the key's facts already read (the read status bar reads them once, D135). */
+export function keyViewOf(
+  access: Pick<WorkspaceAccess, "unionId">,
+  facts: KeyFacts,
+  secret: string | undefined,
+  now: Date,
+): TrackerKeyView {
   const site = access.unionId === OWN_ALLIANCE_ID;
-  const secret = env.WORKSPACE_KEYS_SECRET;
   if (!secret) return { state: "off", last4: null, quotaRemaining: null, checkedAt: null };
   if (!facts.set) {
     const state = site ? "site" : "none";
