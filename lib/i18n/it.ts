@@ -251,6 +251,20 @@ export const itIT = {
     notRanked:
       "Non in classifica, nessun aggiornamento giornaliero utilizzabile in questo periodo: {list}.",
   },
+  statement: {
+    title: "Dichiarazione e iscrizione",
+    joining: "Iscrizione",
+    by: "Scritto dall’alleanza in gioco",
+    open: "Iscrizione libera",
+    byApplication: "Su domanda",
+    might: "{might} di Might",
+    hq: "HQ {level}",
+    seats: "{n} posti liberi ({members}/{capacity})",
+    seatOne: "1 posto libero ({members}/{capacity})",
+    full: "Al completo ({members}/{capacity})",
+    showAll: "Mostra tutto",
+    showLess: "Mostra meno",
+  },
   history: {
     title: "Storico dei membri",
     lead: "Ogni scheda confronta l’elenco dei membri con quello dell’aggiornamento precedente. I cambi intermedi non si vedono.",

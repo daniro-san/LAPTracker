@@ -1,6 +1,7 @@
 // The daily roster read (D60, issue 197): once a day, at the end of the server day (D72), the tick reads
 // DAILY_ROSTER_IDS through /v1 and stores each roster as uid/name/power/kills arrays, for the member history
-// page, plus the trimmed response in raw_json, which no read model selects. It is not an event: no events
+// page, plus the trimmed response in raw_json, of which a read model selects only the statement and joining
+// fields (D128). It is not an event: no events
 // row, no snapshot, no Discord message beyond one admin line when it falls short. No internal fallback
 // (D5 covers event snapshots only): a missed alliance is a gap in the history. It writes run_logs lines
 // under its day (`read_day`) with the collector's codes, so /admin/runs/daily/[day] shows its calls.
@@ -64,7 +65,8 @@ function dataRow(a: AllianceSnapshotInput, now: Date): NewDailyRoster {
     // Arrays keep a null power or kills as null (D15); Drizzle types the elements as numbers.
     memberPower: a.members.map((m) => m.power) as number[],
     memberKills: a.members.map((m) => m.kills) as number[],
-    // Every roster field, as event snapshots keep it (plan §6); never selected by a read model (D72).
+    // Every roster field, as event snapshots keep it (plan §6). A read model selects only the statement and
+    // joining fields (D128); no roster field (D72).
     rawJson: trimRaw(a.raw),
   };
 }

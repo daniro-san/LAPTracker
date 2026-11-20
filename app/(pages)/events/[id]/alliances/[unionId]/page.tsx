@@ -5,21 +5,16 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 
-import {
-  ACROSS_ID,
-  AcrossEvents,
-  inEventMarked,
-  NameTimeline,
-  TITLE_ID,
-} from "@/app/_ui/AcrossEvents";
+import { ACROSS_ID, AcrossEvents, NameTimeline, TITLE_ID } from "@/app/_ui/AcrossEvents";
+import { showsMemberMark, totalsMetrics } from "@/app/_ui/alliance-totals";
 import { AllianceLinks } from "@/app/_ui/AllianceLinks";
+import { AllianceStatementCard } from "@/app/_ui/AllianceStatement";
 import { Breadcrumbs } from "@/app/_ui/Breadcrumbs";
 import { DetailTable, figureRows, type RankPair } from "@/app/_ui/DetailLines";
-import { fellWithLeavers } from "@/app/_ui/event-rows";
 import { ExactToggle } from "@/app/_ui/ExactToggle";
 import { allianceLabel, type Clock } from "@/app/_ui/format";
 import { Leadership } from "@/app/_ui/Leadership";
-import { requestClock, requestCopy } from "@/app/_ui/locale";
+import { requestClock, requestCopy, requestLocale } from "@/app/_ui/locale";
 import { canCompare, leadership, memberViews, withRoles } from "@/app/_ui/member-views";
 import { MembersExplorer } from "@/app/_ui/MembersExplorer";
 import { memberScope } from "@/app/_ui/mover-lists";
@@ -37,10 +32,11 @@ import { rankDelta } from "@/lib/compute";
 import type { Dictionary } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
-import type { AllianceRow, HistoryRow, Ranks } from "@/lib/queries";
+import type { AllianceRow, Ranks } from "@/lib/queries";
 import {
   allianceHistory,
   allianceNames,
+  allianceStatement,
   eventRanks,
   getAllianceDetail,
   homeEvent,
@@ -55,37 +51,6 @@ const fresh = (a: AllianceRow | null): FreshState | null =>
 
 type Detail = NonNullable<Awaited<ReturnType<typeof getAllianceDetail>>>;
 type Ledger = Partial<Record<"before" | "after", Ranks>> | undefined;
-
-function totalsMetric(
-  label: string,
-  before: number | null | undefined,
-  after: number | null | undefined,
-  canDelta: boolean,
-  left = 0,
-): StatMetric {
-  const [b, a] = [before ?? null, after ?? null];
-  const delta = canDelta && a !== null && b !== null ? a - b : null;
-  return { label, value: a ?? b, delta, base: b, memberMark: fellWithLeavers(delta, left) };
-}
-
-/** The page shows a `*`: on the summary, or on a change inside an event under Across events. */
-const showsMemberMark = (metrics: StatMetric[], history: HistoryRow[]) =>
-  metrics.some((m) => m.memberMark) || inEventMarked(history);
-
-/** `left`: members of the Before roster gone from the After roster (0 when the rosters cannot be compared). */
-function totalsMetrics(
-  { before, after }: Detail,
-  canDelta: boolean,
-  left: number,
-  copy: Dictionary,
-): StatMetric[] {
-  const l = copy.ledger;
-  return [
-    totalsMetric(l.might, before?.totalPower, after?.totalPower, canDelta, left),
-    totalsMetric(l.kills, before?.totalKills, after?.totalKills, canDelta, left),
-    totalsMetric(l.members, before?.memberCount, after?.memberCount, canDelta),
-  ];
-}
 
 function rankPairs(detail: Detail, ledger: Ledger, canMove: boolean) {
   const pair = (before: number | null | undefined, after: number | null | undefined): RankPair => ({
@@ -173,11 +138,12 @@ const loadAlliance = cache((eventId: number, unionId: number) =>
   withPageDb(async (db) => {
     const detail = await getAllianceDetail(db, eventId, unionId);
     if (!detail) return null;
-    const [events, history, names, ranks] = await Promise.all([
+    const [events, history, names, ranks, statement] = await Promise.all([
       listEvents(db),
       allianceHistory(db, unionId),
       allianceNames(db, [unionId]),
       eventRanks(db, eventId),
+      allianceStatement(db, unionId),
     ]);
     const phases = events.find((e) => e.id === eventId)?.snapshots ?? [];
     return {
@@ -187,6 +153,7 @@ const loadAlliance = cache((eventId: number, unionId: number) =>
       history,
       names: names.get(unionId) ?? [],
       ledger: ranks.get(unionId),
+      statement,
       phases,
       movers: await memberMovers(db, phases, unionId),
     };
@@ -254,13 +221,14 @@ export default async function AlliancePage({ params }: { params: Params }) {
   const ids = await idsOf(params);
   if (!ids) notFound();
   const { eventId, unionId } = ids;
-  const [data, clock, copy] = await Promise.all([
+  const [data, clock, copy, locale] = await Promise.all([
     loadAlliance(eventId, unionId),
     requestClock(),
     requestCopy(),
+    requestLocale(),
   ]);
   if (!data) notFound();
-  const { detail, events, homeId, history, names, ledger, phases, movers } = data;
+  const { detail, events, homeId, history, names, ledger, statement, phases, movers } = data;
   const now = detail.after ?? detail.before;
   const label = allianceLabel(now?.tag ?? String(unionId), now?.name ?? null);
   const canDelta = usable(detail.before) && usable(detail.after);
@@ -315,6 +283,7 @@ export default async function AlliancePage({ params }: { params: Params }) {
           clock={clock}
           copy={copy}
         />
+        <AllianceStatementCard statement={statement} clock={clock} locale={locale} copy={copy} />
         <Leadership members={leadership(views(detail))} />
         <Movers scopes={[memberScope(movers, null)]} />
         <h2 className="mb-2 mt-8 font-subhead text-display-md">{copy.ledger.members}</h2>

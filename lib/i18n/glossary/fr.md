@@ -71,6 +71,9 @@ Words already used in `lib/i18n/fr.ts`. Reuse them so the pages stay consistent;
 | daily update                  | mise à jour quotidienne               | `balance.*`, `flow.*`, `standing.*`, `history.daily` — the once-a-day read of the member lists; one fixed phrase in every key, never `relevé` |
 | Biggest changes in this event | Plus fortes évolutions de l’événement | `ledger.movers` — section heading: the biggest gains and losses in one event (replaces `Grandma noticed`)                                     |
 
+| Joining | Adhésion | `statement.joining`, `statement.open` (Adhésion libre), `statement.byApplication` (Sur candidature) — how a player joins an alliance |
+| Statement | Déclaration | `statement.title` — the alliance's own in-game text; the words around it are ours |
+
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.
 - A non-breaking space (U+00A0) goes before `:`.

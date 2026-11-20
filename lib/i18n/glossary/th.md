@@ -168,6 +168,8 @@ Words already used in `lib/i18n/th.ts`. Reuse them so the pages stay consistent;
 | Bloc (a group of alliances)         | กลุ่ม                         | `balance.bloc`, `balance.addTo`, `balance.clear` — the bloc builder                                                  |
 | Tracked alliances                   | พันธมิตรที่ติดตาม             | `standing.server`, `standing.help` — the alliances the ledger reads; the server here is their total                  |
 | Member flow                         | การย้ายของสมาชิก              | `flow.title` — moves of members between tracked alliances across two days                                            |
+| Statement (alliance's in-game text) | คำประกาศ                      | `statement.title` — the alliance's own declaration, shown on the alliance page                                       |
+| Joining                             | การเข้าร่วม                   | `statement.joining`, `statement.title` — how a player joins an alliance                                              |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

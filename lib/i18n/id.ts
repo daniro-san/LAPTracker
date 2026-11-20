@@ -250,6 +250,20 @@ export const idID = {
     notRanked:
       "Tidak diberi peringkat, tidak ada pembacaan harian yang bisa dipakai pada periode ini: {list}.",
   },
+  statement: {
+    title: "Pernyataan dan cara bergabung",
+    joining: "Cara bergabung",
+    by: "Ditulis aliansi di dalam game",
+    open: "Terbuka untuk bergabung",
+    byApplication: "Lewat permohonan",
+    might: "{might} might",
+    hq: "HQ {level}",
+    seats: "{n} kursi kosong ({members}/{capacity})",
+    seatOne: "1 kursi kosong ({members}/{capacity})",
+    full: "Penuh ({members}/{capacity})",
+    showAll: "Tampilkan semua",
+    showLess: "Lebih sedikit",
+  },
   history: {
     title: "Riwayat anggota",
     lead: "Setiap kartu membandingkan daftar anggota dengan yang sebelumnya. Siapa pun yang masuk lalu keluar di antaranya tidak terlihat.",
