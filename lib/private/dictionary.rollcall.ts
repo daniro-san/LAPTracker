@@ -55,7 +55,8 @@ export const rollEn = {
   "roll.button": "{word}: {name}",
   "roll.team.counter": "Team {team}: {n}/{max}",
   "roll.team.fill": "Add the first {n} suggested",
-  "roll.team.how": "Best picks first: awake at game time, then active this week, then strongest.",
+  "roll.team.how":
+    "Best picks first: within their usual hours at game time, then active this week, then strongest.",
   "roll.team.pick": "Pick",
   "roll.team.picked": "Picked",
   "roll.team.inOther": "On Team {team}",

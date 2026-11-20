@@ -6,7 +6,7 @@
 // the question's request id (D100), and the Calendar then offers Undo. The same question opens from the edit
 // sheet and from the Delete beside Edit in a day card (`inCard`, issue 412 UX pass); from a card, a weekly
 // entry's choices are asked in a sheet of their own.
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
 import { Sheet } from "@/lib/brand/components/Sheet";
@@ -148,6 +148,7 @@ function WeeklyChoices(props: {
       type="button"
       data-initial-focus
       onClick={props.onKeep}
+      disabled={props.busy}
       className={buttonClass(inCard ? "primary" : "secondary", "justify-start")}
     >
       {words["calendar.delete.keep"]}
@@ -198,6 +199,11 @@ function WeeklyDelete(props: {
   const askId = inCard ? `cal-delete-ask-${item.key}` : "cal-delete-ask";
   /** The open question's request id (D100), new for each opening; null when closed. */
   const [asking, setAsking] = useState<string | null>(null);
+  /** Whether the card's sheet is still open when the answer comes (Escape or Back may close it first). */
+  const open = useRef(false);
+  useEffect(() => {
+    open.current = asking !== null;
+  }, [asking]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   async function remove(scope: Scope, requestId: string) {
@@ -212,8 +218,9 @@ function WeeklyDelete(props: {
         if (sent.ok && sent.deleted) props.onDeleted(props.request(scope, requestId));
         props.onDone();
       };
-      // From a card, the question's sheet steps off its history entry first, as DeleteButton does.
-      if (!inCard) return done();
+      // From a card, the question's sheet steps off its history entry first, as DeleteButton does. A sheet
+      // already closed while the delete was being sent has no entry left to step off.
+      if (!inCard || !open.current) return done();
       window.addEventListener("popstate", done, { once: true });
       return setAsking(null);
     }

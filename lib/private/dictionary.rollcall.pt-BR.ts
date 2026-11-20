@@ -58,7 +58,7 @@ export const rollPt: RollWords = {
   "roll.team.counter": "Team {team}: {n}/{max}",
   "roll.team.fill": "Adicionar os {n} primeiros sugeridos",
   "roll.team.how":
-    "Melhores primeiro: acordados na hora do jogo, depois ativos nesta semana, depois os mais fortes.",
+    "Melhores primeiro: no horário comum deles na hora do jogo, depois ativos nesta semana, depois os mais fortes.",
   "roll.team.pick": "Escolher",
   "roll.team.picked": "Escolhido",
   "roll.team.inOther": "No Team {team}",

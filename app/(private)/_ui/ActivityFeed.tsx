@@ -106,6 +106,13 @@ export function ActivityFeed(props: {
           foot while the lines run past it (issue 412 UX pass). */}
       {(list.next !== null || list.more.length > 0) && (
         <div className="flex flex-wrap gap-x-6 border-t border-rule bg-paper lg:sticky lg:bottom-0">
+          {/* A failed "Show more" says so next to the button, in view at the margin's foot. */}
+          {error && (
+            <RefusalLine
+              text={error}
+              className="mt-2 w-full border-l-4 border-seal pl-3 text-body-sm font-semibold"
+            />
+          )}
           {list.next !== null && (
             <button
               ref={moreButton}
@@ -123,12 +130,6 @@ export function ActivityFeed(props: {
             </button>
           )}
         </div>
-      )}
-      {error && (
-        <RefusalLine
-          text={error}
-          className="mt-2 border-l-4 border-seal pl-3 text-body-sm font-semibold"
-        />
       )}
     </>
   );
