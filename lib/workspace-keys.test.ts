@@ -17,9 +17,11 @@ import { keyFacts, storeKey } from "./repo/workspace-keys";
 import { saveWorkspace } from "./repo/workspaces";
 import { appErrors, dailyReads, dailyRosters, runLogs, workspaces } from "./schema";
 import { workspaceKeys } from "./schema-keys";
+import { playerReads } from "./schema-squads";
 import { v1 } from "./sources";
 import { QuotaExhaustedError, UpstreamError, type CallOptions } from "./sources/types";
 import { runSquadsBatch, type SquadsDeps } from "./squads-read";
+import { playerAnswer } from "./squads.test-helpers";
 import { checkKey, openKey, sealKey, squadTargets } from "./workspace-keys";
 
 /** Invented, low-entropy values: never real keys. */
@@ -107,7 +109,7 @@ function deps(now: Date, fail: (uid: number) => Error | null = () => null) {
         calls.push({ uid, key: options?.apiKey });
         const e = fail(uid);
         if (e) throw e;
-        return { uid, squads: [], quota: null };
+        return playerAnswer(uid);
       },
       fetchQuota: async (onAttempt, _signal, options?: CallOptions) => {
         onAttempt?.(0);
@@ -216,6 +218,9 @@ describe("the squads read on each workspace's own key (D124)", () => {
       [1, 2, 3],
       [11, 12, 13],
     ]);
+    // D132: each answer is kept under the alliance whose key read it.
+    const kept = await db.select().from(playerReads).orderBy(playerReads.uid);
+    expect(kept.map((r) => r.unionId === OTHER)).toEqual([false, false, false, true, true, true]);
 
     // OGs' sealed key copied into the other workspace's row: it opens for neither, and is not spent there.
     const [own] = await db

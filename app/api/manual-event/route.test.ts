@@ -21,6 +21,11 @@ vi.mock("@/lib/app-context", async (original) => ({
   ...(await original<typeof import("@/lib/app-context")>()),
   getAppContext: () => holder.ctx,
 }));
+// Every tick starts a squads batch after its answer (D132), which needs a Next request: not run here.
+vi.mock("next/server", async (original) => ({
+  ...(await original<typeof import("next/server")>()),
+  after: () => undefined,
+}));
 
 const manualRoute = await import("./route");
 const settingsRoute = await import("./settings/route");

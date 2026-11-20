@@ -59,6 +59,10 @@ export const settingsEn = {
   "key.card.whereLink": "Open the tracker’s API page",
   "activity.key.set": "{who} updated the tracker key",
   "activity.key.removed": "{who} removed the tracker key",
+  // D132: today's squads read, under the key.
+  "squads.today": "Squads today: {read} of {members} read · {retrying} waiting to try again",
+  "squads.todayNext": "next try at {at} ST",
+  "squads.todayNone": "Squads today: not started yet. They are read after the daily roster.",
   // D129: Alliance settings → Discord.
   ...discordEn,
   ...inviteEn,
@@ -122,6 +126,10 @@ export const settingsPt: typeof settingsEn = {
   "key.card.whereLink": "Abrir a página da API do tracker",
   "activity.key.set": "{who} atualizou a chave do tracker",
   "activity.key.removed": "{who} removeu a chave do tracker",
+  "squads.today":
+    "Esquadrões hoje: {read} de {members} lidos · {retrying} esperando nova tentativa",
+  "squads.todayNext": "próxima tentativa às {at} ST",
+  "squads.todayNone": "Esquadrões hoje: ainda não começou. Eles são lidos depois da lista diária.",
   // D129: Alliance settings → Discord.
   ...discordPt,
   ...invitePt,
@@ -186,6 +194,11 @@ export const settingsFr: typeof settingsEn = {
   "key.card.whereLink": "Ouvrir la page API du tracker",
   "activity.key.set": "{who} a mis à jour la clé du tracker",
   "activity.key.removed": "{who} a retiré la clé du tracker",
+  "squads.today":
+    "Escouades aujourd’hui : {read} sur {members} lues · {retrying} en attente d’un nouvel essai",
+  "squads.todayNext": "prochain essai à {at} ST",
+  "squads.todayNone":
+    "Escouades aujourd’hui : pas encore commencé. Elles sont lues après la liste quotidienne.",
   // D129: Alliance settings → Discord.
   ...discordFr,
   ...inviteFr,

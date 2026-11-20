@@ -19,6 +19,7 @@ import { createRehearsal, type RehearsalResult } from "./rehearsal";
 import { claimAlert, TICK_SILENCE_ALERT } from "./repo/app-errors";
 import { claimQuotaCheck, duePhases, dueSample, findOrCreateEvent } from "./repo/events";
 import { pruneEndedPictures } from "./repo/notice-picture-cleanup";
+import { clearOldPlayerRaw } from "./repo/player-reads";
 import { claimSlot, setSlotOutcome } from "./repo/rehearsals";
 import { latestTickAt } from "./repo/ticks";
 import { purgeDueWorkspaces } from "./repo/workspace-purge";
@@ -74,7 +75,8 @@ async function dailyRead(
   if (!due || !endsInServerDay(now, RUN_DEADLINE_MS, ctx.env)) return null;
   const deps = { v1: ctx.v1, now: ctx.now, secrets: secretsOf(ctx.env) };
   const first = await runDailyRead(deps, db, due.day, DAILY_ROSTER_IDS);
-  // D125: once a day, after the day's first read, the workspaces whose 14 days ended are deleted.
+  // D125: once a day, after the day's first read, the workspaces whose 14 days ended are deleted; D132:
+  // and the player reads' raw bodies older than 90 days are cleared.
   if (first) await purgeWorkspaces(db, ctx.now());
   const summary = first ?? (await autoRetryDailyRead(deps, db, due.day, DAILY_ROSTER_IDS));
   if (!summary) return null;
@@ -85,7 +87,10 @@ async function dailyRead(
   return { kind: "daily-read", summary };
 }
 
-/** The daily job of D125: counts only in the log, and a failure never fails the day's read. */
+/**
+ * The daily jobs of D125 and D132 (raw bodies past 90 days): counts only in the log, and a failure never
+ * fails the day's read.
+ */
 async function purgeWorkspaces(db: Db, now: Date): Promise<void> {
   try {
     const { workspaces, rows, failed } = await purgeDueWorkspaces(db, now);
@@ -94,6 +99,13 @@ async function purgeWorkspaces(db: Db, now: Date): Promise<void> {
     for (const code of failed) console.error("workspaces.purge_failed", { code, workspaces, rows });
   } catch (error: unknown) {
     console.error("workspaces.purge_failed", {
+      code: error instanceof Error ? error.name : "unknown",
+    });
+  }
+  try {
+    console.info("players.raw_cleared", { reads: await clearOldPlayerRaw(db, now) });
+  } catch (error: unknown) {
+    console.error("players.raw_clear_failed", {
       code: error instanceof Error ? error.name : "unknown",
     });
   }

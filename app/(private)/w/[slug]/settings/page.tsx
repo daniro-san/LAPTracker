@@ -1,5 +1,5 @@
 // /w/[slug]/settings: Alliance settings (D124, issue 438). The alliance's own tracker key: its state, last 4
-// characters and quota left, and Save and test, Replace and Remove. Then Discord (D129): add the bot, Check,
+// characters and quota left, and Save and test, Replace and Remove, with today's squads read (D132). Then Discord (D129): add the bot, Check,
 // and the two notice channels' webhooks. Then the alliance's data (D125): "Download our data" and "Delete
 // this workspace". Officers only: a member's session goes to the board (refuse.ts). Neither the key nor a
 // webhook URL ever reaches the page.
@@ -18,6 +18,7 @@ import { featureOn } from "@/lib/private/features";
 import { toReviewCount } from "@/lib/private/import-view";
 import { RENEW_MS } from "@/lib/private/session";
 import { SLUG } from "@/lib/private/sign-in";
+import { squadsToday, type SquadsToday } from "@/lib/private/squads-today";
 import { trackerKeyView } from "@/lib/private/tracker-key";
 import { DELETION_GRACE_MS } from "@/lib/private/workspace-deletion";
 
@@ -27,6 +28,26 @@ import { refuse } from "../../../_ui/refuse";
 import { TrackerKeyForm } from "../../../_ui/TrackerKeyForm";
 import { WorkspaceDataForm } from "../../../_ui/WorkspaceDataForm";
 
+/** The key states whose squads are read today (D124): the site's key, or a working key of their own. */
+const READING = new Set(["site", "ok", "out_of_quota"]);
+
+/** "02:15" on the server's clock. */
+const serverClock = (timeZone: string, at: Date) =>
+  new Intl.DateTimeFormat("en-GB", { timeZone, hour: "2-digit", minute: "2-digit" }).format(at);
+
+/** "Squads today: 98 of 101 read · 3 waiting to try again · next try at 02:15 ST" (D132). */
+function squadsLine(
+  s: SquadsToday,
+  t: Awaited<ReturnType<typeof workspaceWords>>["t"],
+  timeZone: string,
+): string {
+  const today = s.started
+    ? fill(t["squads.today"], { read: s.read, members: s.members, retrying: s.retrying })
+    : t["squads.todayNone"];
+  if (!s.nextAt) return today;
+  return `${today} · ${fill(t["squads.todayNext"], { at: serverClock(timeZone, s.nextAt) })}`;
+}
+
 export default async function SettingsPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   if (!SLUG.test(slug)) notFound();
@@ -34,16 +55,18 @@ export default async function SettingsPage({ params }: { params: Promise<{ slug:
   const now = new Date();
   const { env } = getAppContext();
   // INVARIANT workspace.access-first: nothing private is read before this check.
-  const { access, view, waiting, bot, channels } = await withPageDb(async (db) => {
+  const { access, view, waiting, bot, channels, squads } = await withPageDb(async (db) => {
     const access = await requireWorkspace(db, slug, jar, now, RENEW_MS);
-    if (!access.ok) return { access, view: null, waiting: 0, bot: null, channels: [] };
-    const [view, waiting, bot, channels] = await Promise.all([
+    if (!access.ok)
+      return { access, view: null, waiting: 0, bot: null, channels: [], squads: null };
+    const [view, waiting, bot, channels, squads] = await Promise.all([
       trackerKeyView(db, access, env, now),
       toReviewCount(db, access, now),
       botView(db, access, env),
       webhookViews(db, access, env),
+      featureOn(access, "squads") ? squadsToday(db, access, env, now) : null,
     ]);
-    return { access, view, waiting, bot, channels };
+    return { access, view, waiting, bot, channels, squads };
   });
   if (!access.ok || !view || !bot) {
     if (!access.ok) refuse(slug, access.reason, `/w/${slug}/settings`);
@@ -79,6 +102,9 @@ export default async function SettingsPage({ params }: { params: Promise<{ slug:
           }}
           t={t}
         />
+        {squads && READING.has(view.state) && (
+          <p className="mt-3 text-body-sm tabular-nums">{squadsLine(squads, t, env.SERVER_TZ)}</p>
+        )}
       </section>
       <DiscordSection
         slug={slug}

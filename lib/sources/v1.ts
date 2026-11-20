@@ -205,6 +205,6 @@ export async function fetchPlayer(
   // D117: no `fresh`: the tracker's cached copy (up to 60 minutes old) is enough for squads, and the
   // maintainer's game account makes no live read for it.
   const response = await request(`/players/${uid}`, onAttempt, signal, options);
-  const { data } = await readBody(response, playerSchema, "v1.schema");
-  return toPlayerSquads(data);
+  const { data, raw } = await readBody(response, playerSchema, "v1.schema");
+  return toPlayerSquads(data, raw);
 }

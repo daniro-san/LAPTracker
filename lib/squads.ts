@@ -1,22 +1,27 @@
-// The squads read's rules (D117), pure: no IO, `now` passed in. The quota it must leave, which squad is
-// the main one, and when the tracker's main squad becomes a new version of "Main squad might".
+// The squads read's rules (D117, D132), pure: no IO, `now` passed in. The quota it must leave, the day's
+// queue and its batches, which squad is the main one, and when the tracker's main squad becomes a new
+// version of "Main squad might".
 import { requiredQuota } from "./budget";
-import { RUN_DEADLINE_MS } from "./compute";
 import type { Env } from "./env";
-import {
-  dailyReadDue,
-  endsInServerDay,
-  inEventWindow,
-  nextEvent,
-  quotaDayRead,
-  type ScheduleConfig,
-} from "./schedule";
+import { inEventWindow, nextEvent, quotaDayRead, type ScheduleConfig } from "./schedule";
 
 /** Calls the squads read always leaves on its quota day, for an /admin Retry, a rehearsal and slack. */
 export const SQUADS_SAFETY_MARGIN = 100;
 
 /** The most /v1/players calls one day's squads read makes, whatever the roster says. */
 export const SQUAD_CALLS_MAX = 120;
+
+/** D132: the most calls one batch makes (about 25 at the current pace of about 1.5 s a call). */
+export const SQUADS_BATCH_CALLS = 25;
+
+/** D132: one batch's deadline, counted from before its claim: well inside the tick's maxDuration. */
+export const SQUADS_BATCH_MS = 60_000;
+
+/** D132: a member is called at most this many times in a quota day (a 5xx or no answer is tried again). */
+export const SQUADS_ATTEMPTS_MAX = 3;
+
+/** D132: a member whose call failed goes to the back of the queue, no sooner than a later tick. */
+export const SQUADS_RETRY_AFTER_MS = 15 * 60_000;
 
 export type SquadsConfig = ScheduleConfig & Pick<Env, "SAMPLE_EVERY_MIN">;
 
@@ -47,31 +52,41 @@ export const squadsReserve = (now: Date, cfg: SquadsConfig, alliances: number): 
   SQUADS_SAFETY_MARGIN + eventReserve(now, cfg, alliances);
 
 /**
- * The day an /admin press reads outside the nightly window (D117, amendment 2026-11-19b), or why not now.
- * It is the read of `now`'s quota day (`quotaDayRead`), so a press and the nightly batches share one row:
- * its cursor, its retry list and its cap. Never during the scheduled event's Before/After window, and only
- * when a batch of `runMs` ends before the next quota reset (00:00 UTC), so every call lands on that day.
+ * The day whose queue a batch reads at `now` (D132): the daily read of `now`'s quota day (`quotaDayRead`),
+ * so the tick, a press and the backup route share one row, one queue and one cap. Null when a batch would
+ * end after the next quota reset (00:00 UTC): every call lands on the day it is counted under.
+ */
+export function squadsQueueDay(now: Date, cfg: ScheduleConfig): string | null {
+  const reset = Date.parse(`${utcDate(now)}T00:00:00Z`) + 86_400_000;
+  return now.getTime() + SQUADS_BATCH_MS > reset ? null : quotaDayRead(now, cfg);
+}
+
+/**
+ * The day an /admin press reads (D117, amendment 2026-11-19b; D132), or why not now: the queue's day, never
+ * during the scheduled event's Before/After window.
  */
 export function forcedSquadsDay(
   now: Date,
   cfg: ScheduleConfig,
-  runMs: number,
 ): { day: string } | { refused: "event_window" | "quota_reset" } {
   if (inEventWindow(now, cfg)) return { refused: "event_window" };
-  const reset = Date.parse(`${utcDate(now)}T00:00:00Z`) + 86_400_000;
-  if (now.getTime() + runMs > reset) return { refused: "quota_reset" };
-  return { day: quotaDayRead(now, cfg) };
+  const day = squadsQueueDay(now, cfg);
+  return day ? { day } : { refused: "quota_reset" };
 }
 
-/** The day a squads batch reads at `now`, or null: the nightly window's, or for a press the quota day's. */
-export function squadsBatchDay(now: Date, cfg: ScheduleConfig, force: boolean): string | null {
-  if (force) {
-    const forced = forcedSquadsDay(now, cfg, RUN_DEADLINE_MS);
-    return "day" in forced ? forced.day : null;
-  }
-  const due = dailyReadDue(now, cfg);
-  // INVARIANT daily-read.ends-before-midnight, for the squads too: a batch ends before 00:00.
-  return due && endsInServerDay(now, RUN_DEADLINE_MS, cfg) ? due.day : null;
+/**
+ * What becomes of a member whose call failed (D132): a 5xx, no answer or a call the deadline cut goes to
+ * the back of the queue, until its third attempt; anything else is not tried again that day.
+ */
+export function afterFailure(
+  attempts: number,
+  retryable: boolean,
+  now: Date,
+): { state: "waiting" | "failed"; attempts: number; dueAt: Date } {
+  const tried = attempts + 1;
+  const again = retryable && tried < SQUADS_ATTEMPTS_MAX;
+  const dueAt = again ? new Date(now.getTime() + SQUADS_RETRY_AFTER_MS) : now;
+  return { state: again ? "waiting" : "failed", attempts: tried, dueAt };
 }
 
 export interface SquadSeen {

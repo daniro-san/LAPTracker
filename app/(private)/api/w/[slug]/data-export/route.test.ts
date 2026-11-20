@@ -150,6 +150,8 @@ describe("POST /api/w/[slug]/data-export (D125)", () => {
       "alliance-duel-points",
       "screenshot-checks",
       "squads",
+      "player-reads",
+      "player-history",
       "tracker-key-changes",
       "data-requests",
       "former-members",

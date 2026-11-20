@@ -24,7 +24,7 @@ const body = (extra: Record<string, unknown>) =>
   respond(JSON.stringify({ uid: 501, ...REST, ...extra, quota: QUOTA }));
 
 describe("v1.fetchPlayer (D117)", () => {
-  it("reads the squads with their heroes, from the cached copy, and keeps nothing else", async () => {
+  it("reads the squads with their heroes and troops, from the cached copy", async () => {
     const fetch = mockFetch(
       body({
         squads: [
@@ -36,13 +36,14 @@ describe("v1.fetchPlayer (D117)", () => {
             sid: 77,
             seen_at: 1_763_340_000,
             heroes: [{ id: 10005, lv: 80, star: 22, q: 5, awaken: 1, honor: 3, ue: 0 }],
+            troops: [{ id: 1009, tier: 9, n: 2150 }],
           },
         ],
       }),
     );
     const player = await fetchPlayer(501);
     expect(fetch.mock.calls[0]?.[0]).toBe("https://v1.test/v1/players/501");
-    expect(player).toEqual({
+    expect(player).toMatchObject({
       uid: 501,
       quota: QUOTA,
       squads: [
@@ -52,10 +53,57 @@ describe("v1.fetchPlayer (D117)", () => {
           soldiers: 4000,
           soldierLoad: 3800,
           seenAt: new Date(1_763_340_000 * 1000),
-          heroes: [{ id: 10005, lv: 80, star: 22, q: 5, awaken: 1 }],
+          heroes: [{ id: 10005, lv: 80, star: 22, q: 5, awaken: 1, honor: 3 }],
+          troops: [{ id: 1009, tier: 9, n: 2150 }],
         },
       ],
     });
+  });
+
+  it("keeps the facts, the history rows and the body less alliance_members (D132)", async () => {
+    mockFetch(
+      body({
+        shielding: 1,
+        shield_type: 0,
+        map_updated_at: 1_763_340_000.5,
+        language: "pt",
+        power: 81_000_000,
+        union_id: 777,
+        home_sid: 325,
+        vip: "twelve",
+        x: 98765,
+        avatar_url: "https://avatar.example.test/a.png",
+        alliance: { updated_at: 1_763_340_100 },
+        history: [
+          { observed_at: 1_763_300_000, power: 80e6, kills: 9, union_abbr: "INV", x: 1, y: 2 },
+          { power: 1 },
+        ],
+      }),
+    );
+    const player = await fetchPlayer(501);
+    expect(player.facts).toMatchObject({
+      shielding: 1,
+      shieldType: 0,
+      mapUpdatedAt: new Date(1_763_340_000_500),
+      language: "pt",
+      unionId: 777,
+      homeSid: 325,
+      // A field of another type is null; it never fails the read.
+      vip: null,
+    });
+    // The row without `observed_at` is dropped; x and y are not kept in a row.
+    expect(player.history).toEqual([
+      expect.objectContaining({ t: new Date(1_763_300_000_000), power: 80e6, unionAbbr: "INV" }),
+    ]);
+    expect(player.history[0]).not.toHaveProperty("x");
+    // The roster's uids only, for the queue; the body keeps everything but the roster.
+    expect(player.roster).toEqual({
+      unionId: 777,
+      updatedAt: new Date(1_763_340_100_000),
+      uids: [9],
+    });
+    expect(player.raw).not.toHaveProperty("alliance_members");
+    expect(player.raw).toMatchObject({ nick: "Invented", shielding: 1 });
   });
 
   it("answers no squads when the field is absent or null", async () => {

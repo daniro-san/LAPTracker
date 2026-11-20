@@ -25,6 +25,7 @@ import {
 } from "@/lib/schema";
 import { workspaceKeyChanges, workspaceKeys } from "@/lib/schema-keys";
 import { runSquadsBatch } from "@/lib/squads-read";
+import { playerAnswer } from "@/lib/squads.test-helpers";
 
 const holder = vi.hoisted(() => ({ ctx: null as AppContext | null }));
 vi.mock("@/lib/app-context", async (original) => ({
@@ -201,7 +202,7 @@ describe("POST /api/w/[slug]/tracker-key (D124)", () => {
           fetchPlayer: async (uid, onAttempt) => {
             onAttempt?.(0);
             if (uid === 11) throw new Error(`no answer for /players/${uid} on ${THEIR_KEY}-2`);
-            return { uid, squads: [], quota: null };
+            return playerAnswer(uid);
           },
         },
       },

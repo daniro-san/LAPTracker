@@ -4,6 +4,7 @@
 // amendment 2026-11-19b).
 import { ALLIANCES, OWN_ALLIANCE_ID } from "@/config/alliances";
 import { copy, fill } from "@/lib/copy";
+import { discordClock } from "@/lib/discord-format";
 import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
 import { squadsProgress, type SquadsProgress } from "@/lib/queries/squads-progress";
@@ -113,23 +114,40 @@ function squadsRow(
 ): SquadsRowView {
   const s = t.squads;
   if (!p) return { unionId, alliance, lines: [s.none], action: "run" };
-  const state = p.batchRunning
-    ? s.batchRunning
-    : fill(s.status[p.status], { reason: p.reason ?? "" });
   const progress = fill(s.progress, {
-    reached: p.reached,
+    read: p.read,
     members: p.members,
     retrying: p.retrying,
     failed: p.failed,
     quota: p.quotaRemaining ?? s.quotaUnknown,
   });
+  // D132: everyone left waits for a later turn: the state says so, with the time; nothing to press.
+  const idle = p.status === "running" && !p.batchRunning;
+  const later = idle && p.dueNow === 0 && p.nextAt !== null;
   const last = p.lastBatchAt ? [fill(s.lastBatch, { ago: seen(p.lastBatchAt, now) })] : [];
   return {
     unionId,
     alliance,
-    lines: [state, progress, ...last],
-    action: p.status === "running" && !p.batchRunning ? "next" : null,
+    lines: [stateLine(p, later), progress, ...nextLine(p, later), ...last],
+    action: idle && !later ? "next" : null,
   };
+}
+
+/** "HH:MM" on the server's clock. */
+const serverTime = (at: Date) => discordClock(getEnv().SERVER_TZ).time(at);
+
+/** The day's state: a batch running, everyone left waiting for a later try, or the row's status. */
+function stateLine(p: SquadsProgress, later: boolean): string {
+  const s = t.squads;
+  if (p.batchRunning) return s.batchRunning;
+  if (later && p.nextAt)
+    return fill(s.waitingLater, { waiting: p.waiting, at: serverTime(p.nextAt) });
+  return fill(s.status[p.status], { reason: p.reason ?? "" });
+}
+
+/** D132: when the next waiting member's turn comes, unless the state line already says it. */
+function nextLine(p: SquadsProgress, later: boolean): string[] {
+  return p.nextAt && !later ? [fill(t.squads.nextTry, { at: serverTime(p.nextAt) })] : [];
 }
 
 /** The workspaces the squads read takes, or that have a row in the quota day, as SquadsCard's rows. */
