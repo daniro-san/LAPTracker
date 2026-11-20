@@ -1,0 +1,224 @@
+// The officers' Insights page's read (issue 489): the workspace's own alliance's end-of-day reads (D72),
+// the day each member was first seen, the officers' break notes (D75: members on a break and new members
+// are left out of the effort comparison), and for the people who joined or left, the public daily rosters
+// of the other alliances we read and the alliance tags in our members' own /v1/players history rows (D132,
+// D136). Everything is already stored: no upstream call. x, y, online, last_online_at and joined_at are
+// never used; avatar_url is never read.
+import { and, eq, inArray, isNotNull } from "drizzle-orm";
+
+import type { Db } from "../db";
+import { sightingsElsewhere } from "../queries/roster-stays";
+import { allianceLabels, type AllianceLabel } from "../repo/alliances";
+import { endOfDayReads, firstSeenDays } from "../repo/workspace-rosters";
+import { serverDay } from "../schedule";
+import { playerHistory } from "../schema-squads";
+import type { WorkspaceAccess } from "./access";
+import { addDays, dayIn } from "./calendar-time";
+import { awayUntil } from "./fact-fields";
+import {
+  bandsOf,
+  cameFrom,
+  EFFORT_MIN_READS,
+  EFFORT_READS,
+  effortsOf,
+  movesOf,
+  newcomersOf,
+  pulseView,
+  PULSE_WEEKS,
+  quietOf,
+  tenureOf,
+  wentTo,
+  type Band,
+  type Effort,
+  type Elsewhere,
+  type Place,
+  type PulseView,
+} from "./insights-rules";
+import { factsOf } from "./member-facts";
+import { isNewMember } from "./member-week";
+
+/** End-of-day reads fetched: the PULSE_WEEKS weeks and the read before them, the base of the first move. */
+const READS = PULSE_WEEKS * 7 + 1;
+/** How far back before the first change another alliance's rosters are searched for where someone was. */
+const SIGHTING_DAYS = 60;
+
+export interface InsightsView {
+  /** The newest read's day; null before the alliance's first end-of-day read. */
+  newest: string | null;
+  pulse: PulseView | null;
+  effort: {
+    /** The reads averaged over: the first and last day, and how many. */
+    from: string;
+    to: string;
+    reads: number;
+    members: number;
+    /** Left out of the comparison (D75): new, on a break, no might in the newest read. */
+    leftOut: { fresh: number; away: number; noMight: number };
+    bands: Band[];
+    quiet: Effort[];
+  } | null;
+  flow: {
+    /** The first day a change can be seen (the second read in the window). */
+    from: string;
+    reads: number;
+    weeks: { monday: string; joined: number; left: number }[];
+    cameFrom: Place[];
+    wentTo: Place[];
+    /** Members first seen under 14, 30, 90 days ago, more, and since our first read (its day). */
+    tenure: ReturnType<typeof tenureOf>;
+    firstRead: string;
+    newcomers: ReturnType<typeof newcomersOf>;
+  } | null;
+  labels: Map<number, AllianceLabel>;
+  /** The newest read's members, for the thanks sheet's "Add someone else". */
+  roster: { uid: number; name: string }[];
+}
+
+/** The alliance tags our members' history rows carried, by day (D132; this alliance's rows only). */
+async function historyTags(db: Db, access: WorkspaceAccess, uids: number[], zone: string) {
+  if (uids.length === 0) return [];
+  const rows = await db
+    .select({
+      uid: playerHistory.uid,
+      t: playerHistory.t,
+      unionId: playerHistory.playerUnionId,
+      tag: playerHistory.unionAbbr,
+    })
+    .from(playerHistory)
+    .where(
+      and(
+        eq(playerHistory.unionId, access.unionId),
+        inArray(playerHistory.uid, uids),
+        isNotNull(playerHistory.playerUnionId),
+      ),
+    );
+  return rows.map((h) => ({
+    uid: h.uid,
+    day: dayIn(zone, h.t.getTime()),
+    unionId: h.unionId as number,
+    tag: h.tag || null,
+  }));
+}
+
+type Reads = Awaited<ReturnType<typeof endOfDayReads>>;
+type Facts = Awaited<ReturnType<typeof factsOf>>;
+
+/** Effort in each quarter of might; new members and members on a break are left out (D75). */
+function effortPart(
+  reads: Reads,
+  firstSeen: Map<number, string>,
+  oldest: string,
+  facts: Facts,
+  today: string,
+): InsightsView["effort"] {
+  const newest = reads.at(-1) as Reads[number];
+  const away = new Set(
+    newest.members
+      .filter((m) => {
+        const f = facts.get(m.uid);
+        return f?.status?.value === "break" || awayUntil(f?.away?.value, today) !== null;
+      })
+      .map((m) => m.uid),
+  );
+  const fresh = new Set(
+    newest.members
+      .filter((m) => !away.has(m.uid) && isNewMember(firstSeen.get(m.uid), oldest, newest.day))
+      .map((m) => m.uid),
+  );
+  const efforts = effortsOf(reads, new Set([...away, ...fresh]));
+  const recent = reads.slice(-EFFORT_READS);
+  // Too few reads: no groups and no names (persona panel: one day says too little about anyone).
+  const enough = recent.length >= EFFORT_MIN_READS;
+  return {
+    from: recent[0]?.day ?? newest.day,
+    to: newest.day,
+    reads: recent.length,
+    members: efforts.length,
+    leftOut: {
+      fresh: fresh.size,
+      away: away.size,
+      noMight: newest.members.filter(
+        (m) => m.power === null && !away.has(m.uid) && !fresh.has(m.uid),
+      ).length,
+    },
+    bands: enough ? bandsOf(efforts) : [],
+    quiet: enough ? quietOf(efforts) : [],
+  };
+}
+
+/** Joined and left per week of the pulse, where people came from and went, tenure and newcomers. */
+async function flowPart(
+  db: Db,
+  access: WorkspaceAccess,
+  reads: Reads,
+  weeks: string[],
+  firstSeen: Map<number, string>,
+  oldest: string,
+  zone: string,
+) {
+  const newest = reads.at(-1) as Reads[number];
+  const from = reads.find((r, i) => i > 0 && r.day >= (weeks[0] ?? ""))?.day ?? newest.day;
+  const moves = movesOf(reads, from);
+  const moved = [...new Set([...moves.joined, ...moves.left].map((m) => m.uid))];
+  const [rosters, tags] = await Promise.all([
+    sightingsElsewhere(db, moved, access.unionId, addDays(from, -SIGHTING_DAYS)),
+    historyTags(db, access, [...new Set(moves.joined.map((j) => j.uid))], zone),
+  ]);
+  const seen: Elsewhere[] = [...rosters, ...tags];
+  const came = cameFrom(moves.joined, seen, access.unionId);
+  const went = wentTo(moves.left, seen, access.unionId);
+  const labels = await allianceLabels(db, [
+    ...new Set([...came, ...went].map((p) => p.unionId).filter((id) => id > 0)),
+  ]);
+  const inWeek = (list: { day: string }[], monday: string) =>
+    list.filter((m) => m.day >= monday && m.day < addDays(monday, 7)).length;
+  const flow: InsightsView["flow"] = {
+    from,
+    reads: reads.filter((r) => r.day >= from).length,
+    weeks: weeks.map((monday) => ({
+      monday,
+      joined: inWeek(moves.joined, monday),
+      left: inWeek(moves.left, monday),
+    })),
+    cameFrom: came,
+    wentTo: went,
+    tenure: tenureOf(
+      newest.members.map((m) => m.uid),
+      firstSeen,
+      oldest,
+      newest.day,
+    ),
+    firstRead: oldest,
+    newcomers: newcomersOf(reads, firstSeen, oldest),
+  };
+  return { flow, labels };
+}
+
+/** The Insights page of the workspace's own alliance, as of `now`; `zone` is the server's (SERVER_TZ). */
+export async function insightsView(
+  db: Db,
+  access: WorkspaceAccess,
+  now: Date,
+  zone: string,
+): Promise<InsightsView> {
+  const [reads, firstSeen, facts] = await Promise.all([
+    endOfDayReads(db, access.unionId, READS),
+    firstSeenDays(db, access.unionId),
+    factsOf(db, access),
+  ]);
+  const newest = reads.at(-1);
+  if (!newest)
+    return { newest: null, pulse: null, effort: null, flow: null, labels: new Map(), roster: [] };
+  const oldest = [...firstSeen.values()].reduce((a, b) => (b < a ? b : a), newest.day);
+  const pulse = pulseView(reads);
+  const weeks = (pulse?.weeks ?? []).map((w) => w.monday);
+  const { flow, labels } = await flowPart(db, access, reads, weeks, firstSeen, oldest, zone);
+  return {
+    newest: newest.day,
+    pulse,
+    effort: effortPart(reads, firstSeen, oldest, facts, serverDay(now, { SERVER_TZ: zone })),
+    flow,
+    labels,
+    roster: newest.members.map((m) => ({ uid: m.uid, name: m.name })),
+  };
+}

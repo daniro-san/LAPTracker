@@ -6,8 +6,11 @@
 import { ChatError, type ChatModel } from "./groq";
 import { plainText, wrap, type WritingLanguage } from "./notice-writing";
 
-/** What a person did in the week: grew their main squad, finished AD Tech. */
-export type Deed = "squad" | "ad";
+/**
+ * What a person did in the week: grew their main squad, finished AD Tech, or kept up their daily quests and
+ * donations (Insights' "Quiet contributors", issue 489).
+ */
+export type Deed = "squad" | "ad" | "steady";
 
 /** One person as the model sees them: the week's deeds, and the officer's few words ("" when none). */
 export interface Person {
@@ -23,9 +26,21 @@ const NAME: Record<WritingLanguage, string> = {
 
 /** The deeds in each language, the alliance's own words (the thanks box says the same). */
 const DEEDS: Record<WritingLanguage, Record<Deed, string>> = {
-  en: { squad: "grew their main squad", ad: "finished AD Tech" },
-  "pt-BR": { squad: "aumentou o esquadrão principal", ad: "terminou o AD Tech" },
-  fr: { squad: "a fait grandir son escouade principale", ad: "a terminé l’AD Tech" },
+  en: {
+    squad: "grew their main squad",
+    ad: "finished AD Tech",
+    steady: "kept up their daily quests and donations",
+  },
+  "pt-BR": {
+    squad: "aumentou o esquadrão principal",
+    ad: "terminou o AD Tech",
+    steady: "manteve as missões diárias e as doações",
+  },
+  fr: {
+    squad: "a fait grandir son escouade principale",
+    ad: "a terminé l’AD Tech",
+    steady: "a tenu ses quêtes du jour et ses dons",
+  },
 };
 
 /** Written without digits: the request carries no number at all (D114). */
