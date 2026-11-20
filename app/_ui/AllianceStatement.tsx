@@ -31,14 +31,20 @@ function seats(members: number, capacity: number, c: Dictionary["statement"]) {
   return fill(template, { n, members: `${members}`, capacity: `${capacity}` });
 }
 
-/** The joining line's parts, `By application`, `8.00M+ might`, `HQ 14+`, `Full (100/100)`; a missing
+/** A game minimum is a round number: `8M`, not D78's `8.00M` (owner, 2026-11-20); `8.5M` keeps its digit. */
+const roundMinimum = (n: number, locale: string): string =>
+  compact(n, locale)
+    .replace(/([.,]\d*?)0+(?=\D*$)/, "$1")
+    .replace(/[.,](?=\D*$)/, "");
+
+/** The joining line's parts, `By application`, `8M+ might`, `HQ 14+`, `Full (100/100)`; a missing
  * part is left out. The `+` marks a minimum; a symbol, so it stays here, not in the copy. */
 export function joiningParts(s: AllianceStatement, locale: string, copy: Dictionary): string[] {
   const c = copy.statement;
   const mode = s.open === null ? null : s.open ? c.open : c.byApplication;
   return [
     mode,
-    s.minMight !== null && fill(c.might, { might: `${compact(s.minMight, locale)}+` }),
+    s.minMight !== null && fill(c.might, { might: `${roundMinimum(s.minMight, locale)}+` }),
     s.minHq !== null && fill(c.hq, { level: `${s.minHq}+` }),
     s.members !== null && s.capacity !== null && seats(s.members, s.capacity, c),
   ].filter((part): part is string => Boolean(part));

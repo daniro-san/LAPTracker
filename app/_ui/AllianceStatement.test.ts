@@ -34,7 +34,7 @@ describe("joiningParts", () => {
 
   it("by application: compact might, HQ level and one free seat", () => {
     expect(line({ ...base, members: 99 })).toBe(
-      "By application · 8.00M+ might · HQ 14+ · 1 seat open (99/100)",
+      "By application · 8M+ might · HQ 14+ · 1 seat open (99/100)",
     );
   });
 
