@@ -11,9 +11,9 @@ export const chooserEn = {
   "chooser.list": "Signed in on this device",
   "chooser.again": "Missing an alliance? You may be in it with another Discord account.",
   "chooser.none":
-    "Your Discord account isn’t in any alliance on LAPTracker yet. Ask your leadership for the link.",
+    "We didn’t find an alliance for this Discord account yet. Ask your alliance’s leadership whether it uses LAPTracker.",
   "chooser.leader": "Leading an alliance?",
-  "chooser.request": "No Desk yet? Request one",
+  "chooser.request": "Request an Officers’ Desk for your alliance",
 };
 
 export const chooserPt: typeof chooserEn = {
@@ -26,9 +26,9 @@ export const chooserPt: typeof chooserEn = {
   "chooser.list": "Conectadas neste aparelho",
   "chooser.again": "Falta uma aliança? Talvez você esteja nela com outra conta do Discord.",
   "chooser.none":
-    "Sua conta do Discord ainda não está em nenhuma aliança no LAPTracker. Peça o link à liderança.",
+    "Ainda não achamos uma aliança para esta conta do Discord. Pergunte à liderança da sua aliança se ela usa o LAPTracker.",
   "chooser.leader": "Lidera uma aliança?",
-  "chooser.request": "Ainda sem Mesa? Peça uma",
+  "chooser.request": "Peça uma Mesa dos oficiais para sua aliança",
 };
 
 export const chooserFr: typeof chooserEn = {
@@ -41,7 +41,7 @@ export const chooserFr: typeof chooserEn = {
   "chooser.list": "Connectées sur cet appareil",
   "chooser.again": "Il manque une alliance ? Vous y êtes peut-être avec un autre compte Discord.",
   "chooser.none":
-    "Votre compte Discord n’est encore dans aucune alliance sur LAPTracker. Demandez le lien à vos dirigeants.",
+    "Nous n’avons pas encore trouvé d’alliance pour ce compte Discord. Demandez aux dirigeants de votre alliance s’ils utilisent LAPTracker.",
   "chooser.leader": "Vous dirigez une alliance ?",
-  "chooser.request": "Pas encore de Bureau ? Demandez-en un",
+  "chooser.request": "Demander un Bureau des officiers pour votre alliance",
 };

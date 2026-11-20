@@ -23,7 +23,7 @@ Why: with more than one alliance, people need a way in from the public site, not
 - **Where it lands.**
   - Exactly one: straight there, the desk for an officer, the board for a member.
   - Several: `/w`, which lists them.
-  - None: `/w?e=none`, "Your Discord account isn't in any alliance on LAPTracker yet. Ask your leadership for the link." (the issue's words).
+  - None: `/w?e=none`, "We didn't find an alliance for this Discord account yet. Ask your alliance's leadership whether it uses LAPTracker." The issue's "Ask your leadership for the link" was changed after the persona panel, since members get in through their role, not a link.
   - Discord refused or did not answer: D73's `signin.e.*` lines.
 - **The list** ("Signed in on this device", `chooserView`) is read from this browser's own session cookies only, never from Discord.
   - One row per open session: the alliance's tag and name, "Officers' Desk" or "Members' board", one tap to open it.
@@ -31,7 +31,7 @@ Why: with more than one alliance, people need a way in from the public site, not
   - A cookie whose name is another workspace's lists nothing.
   - A blocked person's session, an ended session, and a member's session in a workspace whose board is closed are left out.
   - Under the list: "Missing an alliance? You may be in it with another Discord account." and the sign-in again.
-- **"Leading an alliance?"** with "No Desk yet? Request one" links to `/w/request` (D130). This is the first public link to it.
+- **"Leading an alliance?"** with "Request an Officers' Desk for your alliance" links to `/w/request` (D130). The panel found the first wording, "No Desk yet? Request one", read as two questions in a row. This is the first public link to it.
 - The page bar says "LAPTracker", not "Officers' Desk", since members sign in here too (persona panel).
 - Analytics: `/w` is the `workspace` area with no `workspace` property (`areaOf`), like `/w/invite`. A sign-in that made a session adds D77's `#signed-in` fragment to the landing page.
 - `proxy.ts` now sets `private, no-store` on `/w` and `/api/w` themselves, not only below them.
