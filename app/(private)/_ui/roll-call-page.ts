@@ -18,7 +18,6 @@ import { serverDay } from "@/lib/schedule";
 
 import { workspaceWords } from "./Frame";
 import { refuse } from "./refuse";
-import { turnedOffPage } from "./TurnedOff";
 
 type Search = Record<string, string | string[] | undefined>;
 
@@ -70,11 +69,10 @@ export async function openRollCall<T>(
     refuse(slug, access.reason, `/w/${slug}/${path}`);
     redirect(`/w/${slug}`);
   }
-  /** D126: the page to show instead when its feature is turned off for the alliance. */
-  const off = turnedOffPage(access, feature, waiting);
+  // D126: a page turned off for the alliance is not there: its address goes to Home.
+  if (!featureOn(access, feature)) redirect(`/w/${slug}`);
   return {
     access,
-    off,
     data: data as T,
     waiting,
     slug,

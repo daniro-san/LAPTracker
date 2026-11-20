@@ -2,7 +2,7 @@
 export const featuresAdminCopy = {
   summary: "Features: {on} of {all} on",
   usage: "AI today: {ai} · translations today: {translate}",
-  help: "Turn a feature off for this alliance: its tab or button goes away, and its address says it is turned off for the alliance. Nothing is deleted: turning it on again shows everything as it was. One tap each.",
+  help: "Turn a feature off for this alliance: its tab or button goes away, and its address goes to Home. Nothing is deleted: turning it on again shows everything as it was. One tap each.",
   groups: {
     tabs: "Tabs",
     ai: "AI (your Groq limit)",

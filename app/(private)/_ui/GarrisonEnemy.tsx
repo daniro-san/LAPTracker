@@ -27,7 +27,8 @@ interface Props {
   /** "Sat, Nov 14" when the value is carried over from an earlier siege. */
   carriedFrom: string | null;
   words: GarrisonWords;
-  shot: ShotWords;
+  /** null: reading screenshots is turned off for the alliance (D126), and the button is left out. */
+  shot: ShotWords | null;
 }
 
 /** Saving the enemy might typed in `text` (in millions), and what went wrong. */
@@ -112,14 +113,16 @@ export function GarrisonEnemy(props: Props) {
           {fill(words["garrison.enemyCarried"], { date: props.carriedFrom })}
         </p>
       )}
-      <ReadScreenshot
-        slug={props.slug}
-        place="garrison"
-        query="?text=plain"
-        words={props.shot}
-        link
-        onText={readText}
-      />
+      {props.shot && (
+        <ReadScreenshot
+          slug={props.slug}
+          place="garrison"
+          query="?text=plain"
+          words={props.shot}
+          link
+          onText={readText}
+        />
+      )}
       {error && (
         <RefusalLine text={error} className="mt-2 border-l-4 border-seal pl-3 text-body-sm" />
       )}

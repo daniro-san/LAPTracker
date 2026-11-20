@@ -22,6 +22,8 @@ export interface SaveState {
 export function Paste(props: {
   slug: string;
   words: EditorWords;
+  /** False while reading screenshots is turned off for the alliance (D126): no "Read from a screenshot". */
+  shots: boolean;
   language: string;
   open: boolean;
   onRead: (text: string) => number;
@@ -48,16 +50,18 @@ export function Paste(props: {
         className={`${FIELD} mt-2`}
       />
       {/* The picture's text goes into the box and is read at once; the officer still checks and saves. */}
-      <ReadScreenshot
-        slug={props.slug}
-        place="facts"
-        link
-        words={shotWords(words)}
-        onText={(read) => {
-          setText(read);
-          setFound(props.onRead(read));
-        }}
-      />
+      {props.shots && (
+        <ReadScreenshot
+          slug={props.slug}
+          place="facts"
+          link
+          words={shotWords(words)}
+          onText={(read) => {
+            setText(read);
+            setFound(props.onRead(read));
+          }}
+        />
+      )}
       <button
         type="button"
         onClick={() => setFound(props.onRead(text))}

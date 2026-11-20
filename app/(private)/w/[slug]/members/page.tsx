@@ -14,12 +14,12 @@ import { PageHead } from "@/lib/brand/components/layout/PageHead";
 import { fill } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
-import { requireWorkspace } from "@/lib/private/access";
+import { requireWorkspace, type WorkspaceAccess } from "@/lib/private/access";
 import { clockIn } from "@/lib/private/calendar-time";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
 import { channelNames } from "@/lib/private/discord-webhooks";
 import { LANGUAGES } from "@/lib/private/fact-fields";
-import { thanksSwitches } from "@/lib/private/features";
+import { featureOn, thanksSwitches } from "@/lib/private/features";
 import { formerMembers } from "@/lib/private/former-members";
 import { toReviewCount } from "@/lib/private/import-view";
 import { cardFormats } from "@/lib/private/member-card";
@@ -123,10 +123,13 @@ async function readPage(
 /** Refused: nothing is shown, so nothing is switched on. */
 const NO_SWITCHES: ThanksSwitches = { board: false, writing: false, channel: null };
 
-/** The editor's words; the add sheet says when the nightly roster is read (D106). */
-const lifecycleEditorWords = (t: WorkspaceDictionary, readAt: string) => ({
-  ...editorWords(t),
-  "pending.addHelp": fill(t["pending.addHelp"], { time: readAt }),
+/**
+ * The editor's words, the add sheet saying when the nightly roster is read (D106), and whether "Read from a
+ * screenshot" is there (D126: left out while reading screenshots is turned off for the alliance).
+ */
+const lifecycleEditor = (t: WorkspaceDictionary, readAt: string, access: WorkspaceAccess) => ({
+  words: { ...editorWords(t), "pending.addHelp": fill(t["pending.addHelp"], { time: readAt }) },
+  shots: featureOn(access, "ocr"),
 });
 
 /** The query's single values (a repeated key is left out). */
@@ -197,7 +200,7 @@ export default async function MembersPage({
   const f = cardFormats(language, env.SERVER_TZ, now);
   const editor = {
     slug,
-    words: lifecycleEditorWords(t, env.DAILY_ROSTER_AT),
+    ...lifecycleEditor(t, env.DAILY_ROSTER_AT, access),
     language,
     serverZone: env.SERVER_TZ,
     used: view.zones,
@@ -223,7 +226,7 @@ export default async function MembersPage({
           moreLabel={t["desk.more"]}
         />
         <MembersHead slug={slug} former={showFormer} t={t} language={language} />
-        {roster && <PasteUpdates slug={slug} words={updatesWords(t)} />}
+        {roster && <PasteUpdates slug={slug} words={updatesWords(t)} shots={editor.shots} />}
         {showFormer ? (
           <FormerMembers
             rows={lifecycle.former.map((m) => formerRow(m, t, f))}

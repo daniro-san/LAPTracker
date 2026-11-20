@@ -165,10 +165,8 @@ const replacesText = (
 /** Translate and Improve writing under the text, as in the notices editor, and the line under them. */
 function Actions({ p, e }: { p: StartHereProps; e: Editor }) {
   const hidden = p.aiOff ?? [];
-  // D126: both writing helps turned off for the alliance: only the line that says so.
-  if (p.ai && hidden.includes("translate") && hidden.includes("improve")) {
-    return <ActionNote t={p.t} reason="features.off.writing" message={null} replaces={false} />;
-  }
+  // D126: both writing helps turned off for the alliance: no buttons and no line.
+  if (p.ai && hidden.includes("translate") && hidden.includes("improve")) return null;
   return <Helps p={p} e={e} hidden={hidden} />;
 }
 
