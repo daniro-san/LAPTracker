@@ -37,7 +37,7 @@ const day = (status: "running" | "stopped", reason: string | null) =>
 describe("squadsToday (D132)", () => {
   it("gives the next try while the day runs", async () => {
     await day("running", null);
-    expect(await squadsToday(db, { unionId: UNION }, TEST_ENV, NOW)).toMatchObject({
+    expect(await squadsToday(db, { unionId: UNION }, TEST_ENV, NOW, "own")).toMatchObject({
       read: 1,
       members: 2,
       retrying: 1,
@@ -48,7 +48,7 @@ describe("squadsToday (D132)", () => {
 
   it("says why a stopped day stopped, with no next try", async () => {
     await day("stopped", "key_invalid");
-    expect(await squadsToday(db, { unionId: UNION }, TEST_ENV, NOW)).toMatchObject({
+    expect(await squadsToday(db, { unionId: UNION }, TEST_ENV, NOW, "own")).toMatchObject({
       read: 1,
       nextAt: null,
       stopped: "key",

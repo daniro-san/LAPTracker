@@ -16,8 +16,15 @@ import { lastPublish } from "@/lib/private/notice-publish";
 import { noticeReviews } from "@/lib/private/notice-reviews";
 import { noticeDetail, noticeHistory } from "@/lib/private/notices";
 import { callView } from "@/lib/private/roll-call-view";
+import { quotaDayRead } from "@/lib/schedule";
+import { dailyReads } from "@/lib/schema";
+import { workspaceKeys } from "@/lib/schema-keys";
+import { squadQueue, squadReads } from "@/lib/schema-squads";
+import { masterFingerprint } from "@/lib/workspace-keys";
 
 import {
+  ALPHA,
+  BRAVO,
   call,
   type Ids,
   idsOf,
@@ -86,5 +93,38 @@ describe("the desk's pages given Bravo's ids, for Alpha's officer (issue 471)", 
     const text = JSON.stringify(page.json);
     expect(text).toContain("Officer alpha");
     expect(text).not.toMatch(/Officer bravo|Bravo plan|Bravo rules|Bravo old|Bryn Later/);
+  });
+
+  it("the read status bar carries each workspace's own squads counts, and no uid (D135)", async () => {
+    // Both keys sealed under the current master key, so both squads reads run on their own keys.
+    const secret = Buffer.alloc(32, 7).toString("base64");
+    const ctx = holder.ctx as AppContext;
+    holder.ctx = { ...ctx, env: { ...ctx.env, WORKSPACE_KEYS_SECRET: secret } };
+    await db.update(workspaceKeys).set({ masterFp: masterFingerprint(secret) });
+    const day = quotaDayRead(SEED_AT, ctx.env);
+    await db.insert(dailyReads).values({ day, startedAt: SEED_AT, status: "complete" });
+    const queue = async (unionId: number, members: number, done: number) => {
+      const base = { day, unionId };
+      await db
+        .insert(squadReads)
+        .values({ ...base, status: "running", startedAt: SEED_AT, members });
+      const uids = Array.from({ length: members }, (_, i) => 7000 + i);
+      await db.insert(squadQueue).values(
+        uids.map((uid, i) => ({
+          ...base,
+          uid,
+          state: i < done ? ("done" as const) : ("waiting" as const),
+          dueAt: SEED_AT,
+        })),
+      );
+    };
+    await queue(ALPHA, 3, 2);
+    await queue(BRAVO, 9, 7);
+    const ours = JSON.stringify((await call(two, "read-status", {})).json);
+    expect(ours).toContain("Squads: 2 of 3 read");
+    expect(ours).not.toMatch(/of 9|7000|Bea Invented|Ana Example/);
+    const theirs = JSON.stringify((await call(two, "read-status", { who: "bravo" })).json);
+    expect(theirs).toContain("Squads: 7 of 9 read");
+    expect(theirs).not.toContain("of 3 read");
   });
 });

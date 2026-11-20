@@ -2,7 +2,9 @@
 // one module the three workspace dictionaries spread. Plain information: a squad the tracker has not seen
 // is not a gap anyone has to fill (D75). "Might" stays the game's word. The member card's tabs and other
 // new parts (issue 461) come in with them, from dictionary.card.ts.
+// The desk's read status bar (D135) rides along: `dictionary.status.ts`.
 import { cardEn, cardFr, cardPt } from "./dictionary.card";
+import { statusEn, statusFr, statusPt } from "./dictionary.status";
 
 export const squadsEn = {
   ...cardEn,
@@ -28,6 +30,7 @@ export const squadsEn = {
   "squads.strongest": "Strongest",
   "squads.change": "{delta} since {date}",
   "squads.heroesChanged": "Heroes changed",
+  ...statusEn,
 };
 
 export const squadsPt: typeof squadsEn = {
@@ -54,6 +57,7 @@ export const squadsPt: typeof squadsEn = {
   "squads.strongest": "Mais forte",
   "squads.change": "{delta} desde {date}",
   "squads.heroesChanged": "Os heróis mudaram",
+  ...statusPt,
 };
 
 export const squadsFr: typeof squadsEn = {
@@ -80,4 +84,5 @@ export const squadsFr: typeof squadsEn = {
   "squads.strongest": "La plus forte",
   "squads.change": "{delta} depuis le {date}",
   "squads.heroesChanged": "Les héros ont changé",
+  ...statusFr,
 };

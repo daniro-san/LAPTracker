@@ -262,12 +262,28 @@ export async function dailyIds(
   return [...new Set([...tracked, ...workspaces.map((r) => r.unionId)])];
 }
 
+/**
+ * INVARIANT squads.key-rule (D132, issue 507): whose key reads an alliance's squads, from its key's stored
+ * facts without opening it. "site": LAP_API_KEY, for the own alliance only, while it has no saved key or the
+ * keys are off (no WORKSPACE_KEYS_SECRET). "own": a saved key the current master key sealed whose status
+ * reads (`ok`, or `out_of_quota`, which reads again after the reset). Null: nobody reads them. The squads
+ * read (`squadTargets`) and the desk's progress lines (Alliance settings, the read status bar) follow it.
+ */
+export function squadsKey(
+  r: { unionId: number; set: boolean; masterFp: string | null; status: KeyStatus },
+  secret: string | undefined,
+): "site" | "own" | null {
+  if (!secret || !r.set) return r.unionId === OWN_ALLIANCE_ID ? "site" : null;
+  if (r.masterFp !== masterFingerprint(secret)) return null;
+  return r.status === "ok" || r.status === "out_of_quota" ? "own" : null;
+}
+
 async function keyTargets(db: Db, secret: string | undefined, now: Date): Promise<SquadTarget[]> {
   const rows = await sealedKeys(db);
   const own = rows.find((r) => r.unionId === OWN_ALLIANCE_ID);
   const targets: SquadTarget[] = [];
   // D125: without a workspace (none yet, or deleted) the own alliance's squads are not read at all.
-  if (own && (!secret || !own.ciphertext)) {
+  if (own && squadsKey({ ...own, set: own.ciphertext !== null }, secret) === "site") {
     targets.push({
       unionId: OWN_ALLIANCE_ID,
       workspaceId: own.workspaceId,

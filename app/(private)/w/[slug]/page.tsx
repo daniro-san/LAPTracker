@@ -288,9 +288,9 @@ export default async function WorkspacePage({
     );
   }
   // The Home tab's number: drafts and the notice reviews waiting for this officer (D113).
-  const waiting = items.length + reviews.length;
+  const frame = { access, language, t, waiting: items.length + reviews.length };
   return (
-    <SignedInFrame access={access} language={language} t={t} current="home" waiting={waiting} wide>
+    <SignedInFrame {...frame} current="home" wide keyShown>
       <Home
         access={access}
         t={t}

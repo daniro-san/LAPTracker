@@ -1,13 +1,17 @@
-// Today's squads read for the desk's Alliance settings (D132, issue 472): how far this workspace's queue
-// got in the current quota day, counts only, and why it stopped when it did. The workspace comes from the
-// session (`access.unionId`).
+// Today's squads read for the desk's Alliance settings and read status bar (D132, issue 472; D135, issue
+// 478): how far this workspace's queue got in the current quota day, counts only, and why it stopped when it
+// did. The workspace comes from the session (`access.unionId`).
 import type { Db } from "../db";
 import type { Env } from "../env";
 import { queueCounts } from "../repo/squad-queue";
 import { getSquadRead } from "../repo/squads";
+import { keyFacts } from "../repo/workspace-keys";
 import { quotaDayRead } from "../schedule";
+import type { squadReads } from "../schema-squads";
 import { stopKind } from "../squads";
+import { squadsKey } from "../workspace-keys";
 import type { WorkspaceAccess } from "./access";
+import { featureOn } from "./features";
 
 export interface SquadsToday {
   /** False before the day's first batch: no queue yet. */
@@ -15,10 +19,35 @@ export interface SquadsToday {
   read: number;
   members: number;
   retrying: number;
+  /** Members not read today: 3 attempts without an answer, or a failure not tried again. */
+  failed: number;
+  /** Waiting members whose turn has come. */
+  dueNow: number;
   /** When the next waiting member's turn comes, when it is later than `now`; null once the day stopped. */
   nextAt: Date | null;
   /** Why nobody more is read today: the key was refused, the limit is reached, or the day's cap. */
   stopped: ReturnType<typeof stopKind>;
+  /** The day's row: its state, when it started and ended, and its reason code; null before the first batch. */
+  day: Pick<
+    typeof squadReads.$inferSelect,
+    "status" | "startedAt" | "finishedAt" | "reason"
+  > | null;
+  /** The key that reads them (`squadsKey`): the site's, or the alliance's own. */
+  key: "site" | "own";
+}
+
+/**
+ * Whose key reads this workspace's squads today, or null when they are not read: the feature is off (D126,
+ * D134) or no key can read them (`squadsKey`, the squads read's own rule).
+ */
+export async function squadsReader(
+  db: Db,
+  access: Pick<WorkspaceAccess, "unionId" | "workspaceId" | "features">,
+  env: Pick<Env, "WORKSPACE_KEYS_SECRET">,
+): Promise<"site" | "own" | null> {
+  if (!featureOn(access, "squads")) return null;
+  const facts = await keyFacts(db, access.workspaceId);
+  return squadsKey({ ...facts, unionId: access.unionId }, env.WORKSPACE_KEYS_SECRET);
 }
 
 export async function squadsToday(
@@ -26,6 +55,7 @@ export async function squadsToday(
   access: Pick<WorkspaceAccess, "unionId">,
   env: Pick<Env, "SERVER_TZ" | "DAILY_ROSTER_AT">,
   now: Date,
+  key: "site" | "own",
 ): Promise<SquadsToday> {
   const day = quotaDayRead(now, env);
   const [[q], row] = await Promise.all([
@@ -34,13 +64,27 @@ export async function squadsToday(
   ]);
   const over = row?.status === "stopped" || row?.status === "skipped";
   const stopped = over ? stopKind(row.reason) : null;
-  if (!q) return { started: false, read: 0, members: 0, retrying: 0, nextAt: null, stopped };
+  const dayRow = row
+    ? {
+        status: row.status,
+        startedAt: row.startedAt,
+        finishedAt: row.finishedAt,
+        reason: row.reason,
+      }
+    : null;
+  const base = { stopped, day: dayRow, key };
+  if (!q) {
+    const none = { read: 0, members: 0, retrying: 0, failed: 0, dueNow: 0, nextAt: null };
+    return { ...base, ...none, started: false };
+  }
   return {
+    ...base,
     started: true,
     read: q.done,
     members: q.members,
     retrying: q.retrying,
+    failed: q.failed,
+    dueNow: q.dueNow,
     nextAt: over ? null : q.nextAt,
-    stopped,
   };
 }
