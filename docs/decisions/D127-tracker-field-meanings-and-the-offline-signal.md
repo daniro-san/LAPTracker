@@ -45,3 +45,5 @@ Why: on 2026-11-19 the owner and a guest alliance's leader checked the tracker's
   - both in one line: "No quests or donations on {day}" ("Sem missões nem doações em {day}", "Ni quêtes ni dons le {day}").
 - In the card's week of donations, a day whose read sent none shows "none" ("nada", "rien"), muted (`DayValue` `"none"`); it is never 0 and never in the week's total.
 - "—" and "No data" stay for what no read told: a day with no read, might or Sanctuary not sent.
+
+**Amendment 2026-11-20 (owner, issue 461; D136): the member card's days.** The card's week of donations and its "Daily quest points {v}" and "Alliance Help coins today (max 1,000)" rows are replaced by "Last 7 days": the 7 server days up to the newest read, a row each for daily quest points, Alliance Help coins and donations. The rules above hold there: "none" on a read that lists the member with nothing sent, "—" (the no-data mark) for a day with no read, neither ever 0, and each row's average counts only the days with a number. "No data: donations on {n} days" stays on the Members list but is no longer a headline on the card.

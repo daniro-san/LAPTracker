@@ -1,13 +1,18 @@
 // One member card's words, made on the server (issues 296, 337): every number and date is formatted here, in
 // the officer's language, so the browser only lays strings out. No data is "—", never 0. `memberCard` is the
 // read behind GET /api/w/[slug]/members/[uid]: one member of the workspace's own alliance, no photo read.
+// Issue 461 (D136): a header (status, the stat strip, languages, where they came from) over four tabs:
+// Overview (reasons, the last 7 days, might since, this week's Alliance Duel), Info (facts and details),
+// Squads (D117) and History (follow-up notes, earlier values).
 import { compactLarge } from "../compact";
 import { fill } from "../copy";
 import type { Db } from "../db";
-import { factHistory } from "../repo/member-facts";
+import { factHistory, type FactRow } from "../repo/member-facts";
+import { endOfDayReads } from "../repo/workspace-rosters";
 import type { WorkspaceAccess } from "./access";
 import { dayIn } from "./calendar-time";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "./dictionary";
+import type { CardTab } from "./dictionary.card";
 import {
   FACT_FIELDS,
   type FactField,
@@ -19,12 +24,13 @@ import { factText, NONE } from "./fact-text";
 import { cardBase, lastTwo, TREND_FIELDS, type Progress, type TrendField } from "./fact-trend";
 import { followUpsOf } from "./follow-up";
 import { historyLine } from "./follow-up-rules";
+import { daysFormats, duelText, toAskLine, versionLines } from "./member-card-parts";
+import { daysCard, lastDays, LAST_DAYS, type DaysCard, type LastDays } from "./member-days";
+import { memberOrigin } from "./member-origin";
 import { squadsCard, type SquadsCard } from "./member-squads";
-import type { DayValue } from "./member-week";
 import { membersView, type MemberRow } from "./members";
 import {
   breakText,
-  dayLabel,
   missingText,
   reasonText,
   statusOf,
@@ -62,17 +68,31 @@ export interface CardData {
   uid: number;
   name: string;
   rank: string;
-  /** Sanctuary, might, donations, activity; the game's terms are not translated by the browser. */
+  /** Might · Main squad · Kills · Sanctuary; the game's terms are not translated by the browser. */
   facts: { text: string; game: boolean }[];
+  /** The languages they speak, as codes ("EN", "PT"), for the header's chips. */
+  languages: string[];
+  /** "Came from [TAG] Name · joined us Wed, Nov 18", "Before that: …", or "Came from: not known". */
+  origin: string[];
   status: Status;
+  /** Empty for Fine and for "No data" (missing data is "—" in its own place, never a headline, #461). */
   statusLabel: string;
   /** The reasons with their evidence, or when a new member was first seen. */
   statusLines: string[];
-  donationsHead: string;
   /** "No data": the name of the marker drawn where a value is "—". */
   noData: string;
-  days: { weekday: string; day: string; value: string; said: string; none: boolean }[];
+  /** The last 7 days; null before the alliance's first end-of-day read (`daysEarly` says so). */
+  days: DaysCard | null;
+  daysEarly: string;
+  /** This week's Alliance Duel from screenshots (issue 299), when any was saved this week. */
+  duel: { label: string; value: string } | null;
   details: { label: string; value: string }[];
+  /** "Still to ask: time zone, languages"; null when every fact is recorded. */
+  toAsk: string | null;
+  /** The earlier value of each fact, newest first: "Main squad might: 18.1M · Tue, Nov 10". */
+  versions: { head: string; lines: string[]; none: string };
+  tabs: { label: string; names: Record<CardTab, string> };
+  dates: { show: string; hide: string };
   factLines: FactLine[];
   /** The member facts as stored, with their versions, for the editor. */
   stored: MemberFacts;
@@ -149,31 +169,6 @@ function quietDayLine(m: MemberRow, t: WorkspaceDictionary, f: Formats): string[
   return [fill(t[key], { day: f.date(day) })];
 }
 
-/** One day of the week's donations: "—" only for a day with no read; "none" when the read sent none (D127). */
-function dayCell(
-  v: DayValue,
-  label: { weekday: string; day: string },
-  t: WorkspaceDictionary,
-  f: Formats,
-): CardData["days"][number] {
-  const value =
-    typeof v === "number"
-      ? f.number(v)
-      : v === "none"
-        ? t["members.don.nothing"]
-        : v === null
-          ? NONE
-          : "";
-  const said =
-    typeof v === "number" || v === "none"
-      ? value
-      : v === null
-        ? t["members.don.none"]
-        : t["members.don.later"];
-  const none = v === null || v === "none";
-  return { ...label, value, said: `${label.weekday} ${label.day}: ${said}`, none };
-}
-
 /** Rows empty for the whole alliance (Joined and Last online, sent as null since 2026-11-16) are left out. */
 export interface Shown {
   joined: boolean;
@@ -188,25 +183,9 @@ export const shownOf = (members: MemberRow[]): Shown => ({
   duel: members.some((m) => Object.keys(m.duel).length > 0),
 });
 
-const DUEL_DAYS = ["mon", "tue", "wed", "thu", "fri", "sat"] as const;
-
-/** "12,401,468 · Mon 2.4M · Tue 3.1M": the week's points, then each day saved; "—" when none was. */
-function duelText(m: MemberRow, t: WorkspaceDictionary, f: CardFormats): string {
-  const days = DUEL_DAYS.flatMap((d) => {
-    const v = m.duel[d];
-    return v === undefined
-      ? []
-      : [fill(t["shots.duel.dayValue"], { day: t[`day.${d}`], v: f.compact(v) })];
-  });
-  const week = m.duel.week;
-  return [week === undefined ? NONE : f.number(week), ...days].join(" · ");
-}
-
 function detailsOf(m: MemberRow, t: WorkspaceDictionary, f: CardFormats, shown: Shown) {
   const date = (at: Date | null) => (at ? f.date(at) : NONE);
   return [
-    { label: t["sheet.activity"], value: or(m.activity, f.number) },
-    { label: t["sheet.honor"], value: or(m.honor, f.number) },
     ...(shown.joined ? [{ label: t["sheet.joined"], value: date(m.joinedAt) }] : []),
     { label: t["sheet.seen"], value: m.seenSince ? f.date(m.seenSince) : NONE },
     ...(shown.lastOnline ? [{ label: t["sheet.lastOnline"], value: date(m.lastOnlineAt) }] : []),
@@ -217,9 +196,6 @@ function detailsOf(m: MemberRow, t: WorkspaceDictionary, f: CardFormats, shown: 
           ? NONE
           : fill(t["sheet.mapValue"], { x: m.mapX, y: m.mapY }),
     },
-    ...(shown.duel
-      ? [{ label: `${t["shots.duel.card"]} · ${t["src.photo"]}`, value: duelText(m, t, f) }]
-      : []),
   ];
 }
 
@@ -265,39 +241,80 @@ export function progressText(p: Progress, t: WorkspaceDictionary): string {
 const isTrend = (field: FactField): field is TrendField =>
   (TREND_FIELDS as readonly string[]).includes(field);
 
+/** What the card adds to the member's row: read by `memberCard`; none in a bare `cardData`. */
+export interface CardExtras {
+  followUps: string[];
+  previous: Previous;
+  thisWeek: WeekBase;
+  days: LastDays | null;
+  origin: string[];
+  /** Every version of the member's facts, oldest first per field. */
+  history: readonly FactRow[];
+}
+
+const NO_EXTRAS: CardExtras = {
+  followUps: [],
+  previous: {},
+  thisWeek: {},
+  days: null,
+  origin: [],
+  history: [],
+};
+
+/** The header shows a status only when it says something: not Fine, and not "No data" (#461). */
+const HEADLINE: readonly Status[] = ["checkin", "help", "break", "new"];
+
 export function cardData(
   m: MemberRow,
-  week: string[],
   t: WorkspaceDictionary,
   f: CardFormats,
   shown: Shown,
-  followUps: string[] = [],
-  previous: Previous = {},
-  thisWeek: WeekBase = {},
+  x: CardExtras = NO_EXTRAS,
 ): CardData {
   const { status, label, lines } = statusParts(m, t, f);
+  const headline = HEADLINE.includes(status);
+  const squad = m.facts.squadMight?.value ?? null;
+  const duel = { label: `${t["shots.duel.card"]} · ${t["src.photo"]}`, value: duelText(m, t, f) };
   return {
     uid: m.uid,
     name: m.name,
     rank: m.rank ?? NONE,
     facts: [
-      { game: true, text: fill(t["members.meta.level"], { n: or(m.sanctuary, String) }) },
       { game: true, text: fill(t["members.meta.might"], { v: or(m.might, f.compact) }) },
+      { game: false, text: fill(t["card.strip.squad"], { v: or(squad, f.compact) }) },
       { game: true, text: fill(t["list.meta.kills"], { v: or(m.kills, f.compact) }) },
-      { game: false, text: fill(t["members.meta.don"], { v: or(m.weekTotal, f.compact) }) },
-      { game: false, text: fill(t["members.meta.act"], { v: or(m.activity, f.number) }) },
+      { game: true, text: fill(t["members.meta.level"], { n: or(m.sanctuary, String) }) },
     ],
+    languages: (m.facts.languages?.value ?? []).map((code) => code.toUpperCase()),
+    origin: x.origin,
     status,
-    statusLabel: label,
-    statusLines: lines,
-    donationsHead: fill(t["members.don.head"], { total: or(m.weekTotal, f.number) }),
+    statusLabel: headline ? label : "",
+    statusLines: headline ? lines : [],
     noData: t["nodata.mark"],
-    days: m.donations.map((v, i) => dayCell(v, dayLabel(week, i, t), t, f)),
+    days: x.days ? daysCard(x.days, t, daysFormats(t, f)) : null,
+    daysEarly: t["card.days.early"],
+    duel: shown.duel ? duel : null,
     details: detailsOf(m, t, f, shown),
-    factLines: factLines(m.facts, t, f, previous, thisWeek),
+    toAsk: toAskLine(m.facts, t),
+    factLines: factLines(m.facts, t, f, x.previous, x.thisWeek),
     stored: m.facts,
     autoStatus: statusParts({ ...m, officerStatus: null }, t, f).label || NONE,
-    followUps: { head: t["followup.cardHead"], lines: followUps },
+    followUps: { head: t["followup.cardHead"], lines: x.followUps },
+    versions: {
+      head: t["card.history.versions"],
+      lines: versionLines(x.history, t, f),
+      none: t["card.history.none"],
+    },
+    tabs: {
+      label: t["card.tabs"],
+      names: {
+        overview: t["card.tab.overview"],
+        info: t["card.tab.info"],
+        squads: t["card.tab.squads"],
+        history: t["card.tab.history"],
+      },
+    },
+    dates: { show: t["card.info.dates"], hide: t["card.info.hideDates"] },
   };
 }
 
@@ -308,26 +325,34 @@ export async function memberCard(
   uid: number,
   at: { now: Date; zone: string; language: WorkspaceLanguage; t: WorkspaceDictionary },
 ): Promise<CardData | null> {
-  const [view, history, versions] = await Promise.all([
+  const [view, followUps, history, reads] = await Promise.all([
     membersView(db, access, at.now, at.zone),
     followUpsOf(db, access, uid),
-    factHistory(db, access.workspaceId, TREND_FIELDS, uid),
+    factHistory(db, access.workspaceId, FACT_FIELDS, uid),
+    endOfDayReads(db, access.unionId, LAST_DAYS),
   ]);
   const member = view.members.find((m) => m.uid === uid);
   if (!member) return null;
   const f = cardFormats(at.language, at.zone, at.now);
-  const lines = history.map((row) => historyLine(row, at.t, f.date, f.date));
   const previous = Object.fromEntries(
-    TREND_FIELDS.map((field) => [field, lastTwo(versions, uid, field)?.before ?? null]),
+    TREND_FIELDS.map((field) => [field, lastTwo(history, uid, field)?.before ?? null]),
   );
   // This game week, or on a Monday the week the thanks cover (D114).
   const today = dayIn(at.zone, at.now.getTime());
-  const week = Object.fromEntries(
-    TREND_FIELDS.map((field) => [field, cardBase(versions, uid, field, today, at.zone)]),
+  const thisWeek = Object.fromEntries(
+    TREND_FIELDS.map((field) => [field, cardBase(history, uid, field, today, at.zone)]),
   );
-  const squads = await squadsCard(db, access, uid, at.t, f);
-  return {
-    ...cardData(member, view.week, at.t, f, shownOf(view.members), lines, previous, week),
-    squads,
-  };
+  const [squads, origin] = await Promise.all([
+    squadsCard(db, access, uid, at.t, f),
+    memberOrigin(db, access, uid, at.zone, at.t, f.date),
+  ]);
+  const card = cardData(member, at.t, f, shownOf(view.members), {
+    followUps: followUps.map((row) => historyLine(row, at.t, f.date, f.date)),
+    previous,
+    thisWeek,
+    days: lastDays(reads, uid),
+    origin,
+    history,
+  });
+  return { ...card, squads };
 }
