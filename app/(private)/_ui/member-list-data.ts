@@ -19,7 +19,7 @@ export interface ListRow extends ListMember {
   photo: Photo;
   text: { might: string; kills: string; squad: string; donated: string };
   status: Status;
-  /** "Check in · might unchanged for 16 days", "On a break until Fri 20 Nov"; empty when Fine. */
+  /** "Check in · might unchanged for 16 days", "No daily quests on Wed, Nov 18"; empty when Fine. */
   statusLine: string;
   /** The member as a tab-separated line for "Copy for spreadsheet". */
   sheet: string;
@@ -39,7 +39,8 @@ const rankShort = (m: ListSource) =>
 
 export function listRow(m: ListSource, t: WorkspaceDictionary, f: CardFormats): ListRow {
   const { status, label, lines } = statusParts(m, t, f);
-  const quiet = status === "fine" || status === "none";
+  // Fine says nothing on the list; its lines (no daily quests that day) still show, muted.
+  const shown = status === "none" ? [] : status === "fine" ? lines : [label, ...lines];
   return {
     ...listMember(m),
     rankShort: rankShort(m),
@@ -51,7 +52,7 @@ export function listRow(m: ListSource, t: WorkspaceDictionary, f: CardFormats): 
       donated: or(m.weekTotal, f.compact),
     },
     status,
-    statusLine: quiet ? "" : [label, ...lines].join(" · "),
+    statusLine: shown.join(" · "),
     sheet: sheetRow(m, t, f),
   };
 }

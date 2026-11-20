@@ -85,3 +85,8 @@ Why: before an Undead Siege, leadership finds the members with three or four str
   - Post is refused (409 `not_saved`) while the enemy might is carried over from an earlier siege and not saved for this one. The page turns Post off and says "Save the enemy might for this siege before you post."
 - **One request id per choice.** The page keeps one id and makes a new one only after `failed` or another channel, so a double tap posts once. The end of a post is written only for the request that claimed it.
 - "No squad data" is in name order, then uid. "Not set up" names the chosen channel.
+
+**Amendment (2026-11-19, D127, issue 458): the "active" signal reads the week's daily quest points.**
+
+- `active` is daily quest points, not weekly. The signal is now the member's `active` added up over the end-of-day reads of the newest read's game week (`weekQuestPoints`), above 0; null when no day has a number.
+- The card word is "Did daily quests this week" ("Fez missões diárias nesta semana", "Quêtes du jour faites cette semaine") instead of "Active this week".

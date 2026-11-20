@@ -283,7 +283,7 @@ export interface SuggestedMember extends Member {
   why: string;
 }
 
-/** "Active this week · last role 12 days ago", or the role part alone (D75: nothing about inactivity). */
+/** "Did daily quests this week · last role 12 days ago", or the role part alone (D75: nothing about inactivity). */
 export function suggestionWords(
   list: readonly Suggestion[],
   { t, language }: Pick<CalendarCtx, "t" | "language">,

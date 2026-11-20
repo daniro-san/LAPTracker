@@ -34,8 +34,10 @@ import {
   isNewMember,
   KVK_REASON_ON,
   missingOf,
+  OFFLINE_GRACE_DAYS,
   topOf,
   weekDonations,
+  weekQuestPoints,
   weekTotal,
   type DayValue,
   type Idle,
@@ -62,7 +64,12 @@ export interface MemberRow {
   /** Lifetime kills from the read (public); null when not sent. */
   kills: number | null;
   sanctuary: number | null;
+  /** Daily quest points in the newest end-of-day read (D127); null when it sent none. */
   activity: number | null;
+  /** The newest read's server day when it sent no daily quest points: none that day (D127). */
+  noQuestsOn: string | null;
+  /** The newest read's server day when it sent no donations: none that day (D127). */
+  noDonationsOn: string | null;
   honor: number | null;
   donations: DayValue[];
   weekTotal: number | null;
@@ -76,7 +83,7 @@ export interface MemberRow {
   isNew: boolean;
   reasons: Reason[];
   missing: MissingField[];
-  /** Days of the week so far with no donations data. */
+  /** Days of the week so far with no read of the member (no donations data). */
   missingDays: number;
   /** The officers' facts about the member (#297). */
   facts: MemberFacts;
@@ -96,7 +103,7 @@ export interface MembersView {
   /** The game week of the newest read, Monday to Sunday (server days). */
   week: string[];
   members: MemberRow[];
-  /** Top donors and most active, and who made progress this week (AD Tech 100 %, main squad, D109). */
+  /** Top donors and quest points this week, and who made progress (AD Tech 100 %, main squad, D109). */
   thanks: { donors: Thank[]; activity: Thank[]; progress: Progress[] };
   /** The time zones the members have, most used first (the picker lists them first). */
   zones: string[];
@@ -150,7 +157,11 @@ const onBreak = (p: ReturnType<typeof factsPart>) =>
 function rowOf(m: RosterMember, week: string[], s: Signals): MemberRow {
   const newest = s.reads.at(-1) as RosterRead;
   const donations = weekDonations(s.reads, week, m.uid);
-  const idle = idleRun(s.reads, m.uid);
+  const firstSeen = s.firstSeen.get(m.uid);
+  const isNew = isNewMember(firstSeen, s.oldest, newest.day);
+  // D127: a member first seen less than OFFLINE_GRACE_DAYS ago never gets the offline signal.
+  const settling = isNewMember(firstSeen, s.oldest, newest.day, OFFLINE_GRACE_DAYS);
+  const idle = settling ? null : idleRun(s.reads, m.uid);
   const flat = s.unchanged.get(m.uid);
   const part = factsPart(m.uid, s);
   // D75: a member away is left out of every comparison, so never a reason to check in.
@@ -167,6 +178,8 @@ function rowOf(m: RosterMember, week: string[], s: Signals): MemberRow {
   return {
     ...plainRow(m, week, s.firstSeen),
     activity: m.active,
+    noQuestsOn: m.active === null ? newest.day : null,
+    noDonationsOn: m.dailyTech === null ? newest.day : null,
     honor: m.dailyHonor,
     donations,
     weekTotal: weekTotal(donations),
@@ -175,7 +188,7 @@ function rowOf(m: RosterMember, week: string[], s: Signals): MemberRow {
     mapX: m.x,
     mapY: m.y,
     duel: s.duel.get(m.uid) ?? {},
-    isNew: isNewMember(s.firstSeen.get(m.uid), s.oldest, newest.day),
+    isNew,
     reasons,
     missing: missing.fields,
     missingDays: missing.days,
@@ -195,6 +208,8 @@ function plainRow(m: RosterMember, week: string[], firstSeen: Map<number, string
     kills: m.kills,
     sanctuary: m.lv,
     activity: null,
+    noQuestsOn: null,
+    noDonationsOn: null,
     honor: null,
     donations: week.map(() => null),
     weekTotal: null,
@@ -295,7 +310,7 @@ export async function membersView(
     members,
     thanks: {
       donors: topOf(counted, (m) => m.weekTotal),
-      activity: topOf(counted, (m) => m.activity),
+      activity: topOf(counted, (m) => weekQuestPoints(reads, m.uid)),
       // The week the thanks cover (D114): this game week, or last week on a Monday.
       progress: history ? progressOf(history, counted, thanksWeek(today), zone) : [],
     },

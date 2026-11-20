@@ -148,8 +148,8 @@ export const calendarPt: CalendarWords = {
   "calendar.month.title": "{month} (ST)",
   "calendar.suggest.head": "Sugestões",
   "calendar.suggest.how":
-    "Primeiro os mais ativos da semana, depois quem espera há mais tempo por uma função na caravana. Não aparecem: membros ausentes e quem teve uma função na caravana nos últimos 7 dias.",
-  "calendar.suggest.active": "Ativo nesta semana",
+    "Primeiro quem fez mais pontos de missões diárias na semana, depois quem espera há mais tempo por uma função na caravana. Não aparecem: membros ausentes e quem teve uma função na caravana nos últimos 7 dias.",
+  "calendar.suggest.active": "Fez missões diárias nesta semana",
   "calendar.suggest.last.one": "última função há {n} dia",
   "calendar.suggest.last.other": "última função há {n} dias",
   "calendar.suggest.never": "nenhuma função na caravana ainda",

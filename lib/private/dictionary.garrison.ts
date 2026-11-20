@@ -29,7 +29,7 @@ export const garrisonEn = {
   "garrison.order":
     "Members who are active, growing or took part in a recent siege get a squad first. Missing data never counts against anyone.",
   "garrison.strongest": "Strongest squad {might}",
-  "garrison.why.active": "Active this week",
+  "garrison.why.active": "Did daily quests this week",
   "garrison.why.growing": "Growing",
   "garrison.why.tookPart": "Took part in a recent siege",
   "garrison.pick": "Garrison squad for {name}",
@@ -99,7 +99,7 @@ export const garrisonPt: GarrisonWords = {
   "garrison.order":
     "Quem está ativo, crescendo ou participou de um cerco recente recebe primeiro. Falta de dados nunca conta contra ninguém.",
   "garrison.strongest": "Esquadrão mais forte {might}",
-  "garrison.why.active": "Ativo nesta semana",
+  "garrison.why.active": "Fez missões diárias nesta semana",
   "garrison.why.growing": "Crescendo",
   "garrison.why.tookPart": "Participou de um cerco recente",
   "garrison.pick": "Esquadrão de guarnição para {name}",
@@ -168,7 +168,7 @@ export const garrisonFr: GarrisonWords = {
   "garrison.order":
     "Les membres actifs, en progression ou présents à un siège récent sont servis en premier. Une donnée manquante ne compte jamais contre personne.",
   "garrison.strongest": "Escouade la plus forte {might}",
-  "garrison.why.active": "Actif cette semaine",
+  "garrison.why.active": "Quêtes du jour faites cette semaine",
   "garrison.why.growing": "En progression",
   "garrison.why.tookPart": "Présent à un siège récent",
   "garrison.pick": "Escouade de garnison pour {name}",

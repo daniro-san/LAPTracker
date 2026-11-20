@@ -1,5 +1,5 @@
 // Caravan suggestions (issues 300, 354), pure: up to three members for an Alliance Caravan's seats. Most
-// active this week first (the roster's weekly `active`, D71/D76: the workspace's own alliance only, never
+// daily quest points this week first (`active` summed over the week, D127; D71/D76: own alliance only, never
 // logged), then whoever waited longest since their last caravan role; a member who never had one waited
 // longest. Not suggested: members away on that day (D80), anyone with a caravan role in the 7 days up to
 // it, and anyone already seated on this caravan. People-first (D75): the reasons say what is good, never
@@ -13,7 +13,7 @@ export const RECENT_DAYS = 7;
 export interface Candidate {
   uid: number;
   name: string;
-  /** Weekly activity from the newest end-of-day read; null when not known. */
+  /** Daily quest points summed over the game week (D127); null when not known. */
   active: number | null;
   /** On a break, or an away note that runs on the caravan's day. */
   away: boolean;
@@ -29,7 +29,7 @@ export interface Role {
 export interface Suggestion {
   uid: number;
   name: string;
-  /** True only when this week's activity is known and above zero. */
+  /** True only when the week's daily quest points are known and above zero. */
   activeThisWeek: boolean;
   /** Days since the last caravan role before this one; null for no role yet. */
   lastRoleDays: number | null;

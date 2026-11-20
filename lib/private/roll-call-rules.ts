@@ -101,7 +101,7 @@ export interface TeamCandidate {
   name: string;
   /** Their clock's minute at the window's start; null when no time zone is recorded. */
   theirMinute: number | null;
-  /** Weekly activity from the newest end-of-day read; null when not known. */
+  /** Daily quest points summed over the game week (D127); null when not known. */
   active: number | null;
   /** Main squad might (a fact); null when not recorded. */
   squad: number | null;
@@ -114,7 +114,7 @@ export const awakeAt = (minute: number | null): boolean | null =>
 /**
  * The team suggestions' order (owner, issue 298): daytime for them at the window first, then those with no time
  * zone recorded (missing data is never held against anyone, D75), then night; within each, the most
- * active this week, then the strongest main squad; unknown values after known ones; then by name.
+ * daily quest points this week, then the strongest main squad; unknown values after known ones; then by name.
  */
 export function teamOrder<C extends TeamCandidate>(
   candidates: readonly C[],

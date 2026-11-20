@@ -20,6 +20,7 @@ import { cardBase, lastTwo, TREND_FIELDS, type Progress, type TrendField } from 
 import { followUpsOf } from "./follow-up";
 import { historyLine } from "./follow-up-rules";
 import { squadsCard, type SquadsCard } from "./member-squads";
+import type { DayValue } from "./member-week";
 import { membersView, type MemberRow } from "./members";
 import {
   breakText,
@@ -129,7 +130,48 @@ export function statusParts(m: MemberRow, t: WorkspaceDictionary, f: Formats) {
     return { status, label: t["members.new"], lines: seen };
   }
   const label = status === "nodata" ? missingText(m, t, f) : t["status.fine"];
-  return { status, label, lines: [] };
+  return { status, label, lines: quietDayLine(m, t, f) };
+}
+
+/**
+ * D127: no daily quests or no donations on a read that lists the member is a fact of that day, never
+ * missing data: one line, both in one when both.
+ */
+function quietDayLine(m: MemberRow, t: WorkspaceDictionary, f: Formats): string[] {
+  const day = m.noQuestsOn ?? m.noDonationsOn;
+  if (day === null) return [];
+  const key =
+    m.noQuestsOn && m.noDonationsOn
+      ? "members.noQuestsOrDonations"
+      : m.noQuestsOn
+        ? "members.noQuests"
+        : "members.noDonations";
+  return [fill(t[key], { day: f.date(day) })];
+}
+
+/** One day of the week's donations: "—" only for a day with no read; "none" when the read sent none (D127). */
+function dayCell(
+  v: DayValue,
+  label: { weekday: string; day: string },
+  t: WorkspaceDictionary,
+  f: Formats,
+): CardData["days"][number] {
+  const value =
+    typeof v === "number"
+      ? f.number(v)
+      : v === "none"
+        ? t["members.don.nothing"]
+        : v === null
+          ? NONE
+          : "";
+  const said =
+    typeof v === "number" || v === "none"
+      ? value
+      : v === null
+        ? t["members.don.none"]
+        : t["members.don.later"];
+  const none = v === null || v === "none";
+  return { ...label, value, said: `${label.weekday} ${label.day}: ${said}`, none };
 }
 
 /** Rows empty for the whole alliance (Joined and Last online, sent as null since 2026-11-16) are left out. */
@@ -250,13 +292,7 @@ export function cardData(
     statusLines: lines,
     donationsHead: fill(t["members.don.head"], { total: or(m.weekTotal, f.number) }),
     noData: t["nodata.mark"],
-    days: m.donations.map((v, i) => {
-      const { weekday, day } = dayLabel(week, i, t);
-      const value = typeof v === "number" ? f.number(v) : v === null ? NONE : "";
-      const said =
-        typeof v === "number" ? value : v === null ? t["members.don.none"] : t["members.don.later"];
-      return { weekday, day, value, said: `${weekday} ${day}: ${said}`, none: v === null };
-    }),
+    days: m.donations.map((v, i) => dayCell(v, dayLabel(week, i, t), t, f)),
     details: detailsOf(m, t, f, shown),
     factLines: factLines(m.facts, t, f, previous, thisWeek),
     stored: m.facts,

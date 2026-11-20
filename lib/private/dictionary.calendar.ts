@@ -148,8 +148,8 @@ export const calendarEn = {
   "calendar.month.title": "{month} (ST)",
   "calendar.suggest.head": "Suggested",
   "calendar.suggest.how":
-    "Most active this week first, then whoever waited longest for a caravan role. Not suggested: members away, and anyone with a caravan role in the last 7 days.",
-  "calendar.suggest.active": "Active this week",
+    "Most daily quest points this week first, then whoever waited longest for a caravan role. Not suggested: members away, and anyone with a caravan role in the last 7 days.",
+  "calendar.suggest.active": "Did daily quests this week",
   "calendar.suggest.last.one": "last role {n} day ago",
   "calendar.suggest.last.other": "last role {n} days ago",
   "calendar.suggest.never": "no caravan role yet",
