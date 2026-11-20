@@ -25,6 +25,8 @@ export const th = {
     skip: "ข้ามไปยังสมุด",
     disclaimerShort: "ทำโดยแฟนเกม ไม่เกี่ยวข้องกับ 37Games, Eyu หรือ Last Asylum Plague.",
     disclaimerMore: "เพิ่มเติม",
+    signIn: "เข้าสู่ระบบ",
+    signInFooter: "เจ้าหน้าที่และสมาชิกพันธมิตร: เข้าสู่ระบบ",
   },
   ledger: {
     rank: "อันดับ",

@@ -33,7 +33,7 @@ export function proxy(request: NextRequest): NextResponse {
   }
   const res = respond(request);
   // The workspace (D71): no shared or browser cache keeps a private page or answer.
-  if (/^\/(api\/)?w\//.test(request.nextUrl.pathname)) {
+  if (/^\/(api\/)?w(\/|$)/.test(request.nextUrl.pathname)) {
     res.headers.set("Cache-Control", "private, no-store");
   }
   return res;

@@ -25,6 +25,8 @@ export const zhCN = {
     skip: "跳到账本",
     disclaimerShort: "粉丝自制。与 37Games、Eyu 或 Last Asylum Plague 无关。",
     disclaimerMore: "更多",
+    signIn: "登录",
+    signInFooter: "联盟官员与成员：登录",
   },
   ledger: {
     rank: "排名",

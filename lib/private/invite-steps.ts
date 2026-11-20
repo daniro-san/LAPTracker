@@ -27,7 +27,7 @@ import {
 } from "./invite";
 import { createRole, giveRole, guildRoles, type GuildRole } from "./invite-discord";
 import { privateLog } from "./log";
-import { createSession } from "./session";
+import { createSession, sessionCookie } from "./session";
 
 const snowflake = z.string().regex(/^\d{17,20}$/);
 const roleName = z.string().trim().min(1).max(100);
@@ -221,5 +221,10 @@ async function finish(
   await syncCommands(db, deps, { only: [made.workspaceId] }).catch(() => null);
   const session = await createSession(db, made.workspaceId, made.userId, deps.now, null, "officer");
   privateLog("w.invite.used", { invite: row.id, workspace: made.workspaceId });
-  return { ok: true, slug, cookie: session.cookie, unionId: row.unionId };
+  return {
+    ok: true,
+    slug,
+    cookie: sessionCookie(slug, session.token, session.expiresAt, deps.now),
+    unionId: row.unionId,
+  };
 }

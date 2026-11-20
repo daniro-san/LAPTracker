@@ -25,6 +25,8 @@ export const nl = {
     skip: "Naar het logboek",
     disclaimerShort: "Door fans gemaakt. Niet gelieerd aan 37Games, Eyu of Last Asylum Plague.",
     disclaimerMore: "Meer",
+    signIn: "Inloggen",
+    signInFooter: "Allianceofficieren en leden: inloggen",
   },
   ledger: {
     rank: "Rang",

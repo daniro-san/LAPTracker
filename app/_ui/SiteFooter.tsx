@@ -27,6 +27,12 @@ export function SiteFooter({
       <p className="text-right text-body-sm text-ink/70">
         {copy.site.ledger} · {copy.site.byline}
       </p>
+      {/* D131: the way in to an alliance's Officers' Desk or members' board. */}
+      <p className="text-right text-body-sm">
+        <a href="/w" className="inline-flex min-h-11 items-center underline underline-offset-2">
+          {copy.site.signInFooter}
+        </a>
+      </p>
       <p className="mt-1 ml-auto max-w-[60ch] text-right text-xs text-ink/65">
         {copy.site.disclaimerShort}
       </p>

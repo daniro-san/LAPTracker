@@ -132,6 +132,7 @@ Words already used in `lib/i18n/ko.ts`. Reuse them so the pages stay consistent;
 | Member flow               | 멤버 흐름              | `flow.title` — members who moved between tracked alliances                                                         |
 | New (no tracked alliance) | 신규                   | `flow.rowNew`, `flow.legend` — a member in no tracked alliance on the From day                                     |
 | Statement                 | 선언                   | `statement.title` — the alliance's own in-game text, never translated; the card around it                          |
+| Sign in                   | 로그인                 | `site.signIn`, `site.signInFooter` — the header and footer links to the Discord sign-in                            |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

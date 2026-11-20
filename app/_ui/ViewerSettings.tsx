@@ -175,7 +175,20 @@ function Panel({ publicPage }: { publicPage: boolean }) {
           ))}
         </select>
       </label>
+      {publicPage && <SignInRow label={requestCopy.site.signInFooter} />}
     </div>
+  );
+}
+
+/** Below 640 px the header has no room for "Sign in" (D131): it is here, and in the footer. */
+function SignInRow({ label }: { label: string }) {
+  return (
+    <a
+      href="/w"
+      className="flex min-h-11 items-center border-t border-rule pt-2 font-medium underline underline-offset-4 sm:hidden"
+    >
+      {label}
+    </a>
   );
 }
 

@@ -25,6 +25,8 @@ export const vi = {
     skip: "Đến phần sổ",
     disclaimerShort: "Do người hâm mộ làm. Không liên kết với 37Games, Eyu hay Last Asylum Plague.",
     disclaimerMore: "Xem thêm",
+    signIn: "Đăng nhập",
+    signInFooter: "Cán bộ và thành viên liên minh: đăng nhập",
   },
   ledger: {
     rank: "Hạng",

@@ -25,6 +25,8 @@ export const sv = {
     skip: "Hoppa till loggen",
     disclaimerShort: "Fanprojekt. Inte kopplat till 37Games, Eyu eller Last Asylum Plague.",
     disclaimerMore: "Mer",
+    signIn: "Logga in",
+    signInFooter: "Allianschefer och medlemmar: logga in",
   },
   ledger: {
     rank: "Placering",

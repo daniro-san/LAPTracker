@@ -26,6 +26,8 @@ export const tr = {
     disclaimerShort:
       "Hayran yapımı. 37Games, Eyu ya da Last Asylum Plague ile bağlantılı değildir.",
     disclaimerMore: "Devamı",
+    signIn: "Giriş yap",
+    signInFooter: "İttifak yetkilileri ve üyeler: giriş yap",
   },
   ledger: {
     rank: "Sıra",

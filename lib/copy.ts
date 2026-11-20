@@ -43,6 +43,10 @@ export const en = {
     disclaimerShort: "Fan-made. Not affiliated with 37Games, Eyu or Last Asylum Plague.",
     /** The footer's disclosure that opens the full `disclaimer`. */
     disclaimerMore: "More",
+    /** The header's quiet link to /w, where alliance officers and members sign in with Discord (D131). */
+    signIn: "Sign in",
+    /** The same link in the footer, saying who it is for. */
+    signInFooter: "Alliance officers and members: sign in",
   },
   /** The words of one data row, at every depth. */
   ledger: {

@@ -18,8 +18,8 @@ import {
   RENEW_MS,
   SEEN_EVERY_MS,
   revokeSession,
-  SESSION_COOKIE,
   sessionState,
+  sessionToken,
 } from "./session";
 
 declare const accessBrand: unique symbol;
@@ -95,7 +95,7 @@ async function openSession(
   slug: string,
   cookies: CookieReader,
 ): Promise<{ workspace: WorkspaceRow; session: Session; features: WorkspaceFeatures } | Refusal> {
-  const token = cookies.get(SESSION_COOKIE)?.value;
+  const token = sessionToken(cookies, slug)?.value;
   // The reads at once; the refusals keep their order (no workspace, then no session).
   const [workspace, session, features] = await Promise.all([
     findWorkspaceBySlug(db, slug),
@@ -247,18 +247,22 @@ export function officerAccess(
   );
 }
 
-/** Sign out: ends this browser's session, only when it is a valid one of this workspace. */
+/**
+ * Sign out: ends this browser's session, only when it is a valid one of this workspace. Returns the name of
+ * the cookie that carried it, to clear (D131), or null.
+ */
 export async function signOut(
   db: Db,
   slug: string,
   cookies: CookieReader,
   now: Date,
-): Promise<boolean> {
+): Promise<string | null> {
   // A session waiting for its role check (D99) can still be ended, and so can a member's (D105).
   const found = await openSession(db, slug, cookies);
-  if ("ok" in found) return false;
+  const carried = sessionToken(cookies, slug);
+  if ("ok" in found || !carried) return null;
   const { workspace, session } = found;
-  if (await servedOrNot(db, workspace, session, now, Number.POSITIVE_INFINITY)) return false;
-  await revokeSession(db, workspace.id, cookies.get(SESSION_COOKIE)?.value ?? "");
-  return true;
+  if (await servedOrNot(db, workspace, session, now, Number.POSITIVE_INFINITY)) return null;
+  await revokeSession(db, workspace.id, carried.value);
+  return carried.name;
 }

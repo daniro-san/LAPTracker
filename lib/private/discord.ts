@@ -93,17 +93,24 @@ export async function readMember(
   if (!get) return { ok: false, code: "discord_token" };
   const user = userSchema.safeParse(await get("/users/@me"));
   if (!user.success) return { ok: false, code: "discord_user" };
+  return memberIn(get, guildId, user.data);
+}
 
+/** The account's roles and name in `guildId`, read with its token (`get`, from exchangeCode). */
+export async function memberIn(
+  get: (path: string) => Promise<unknown>,
+  guildId: string,
+  user: { id: string; name: string },
+): Promise<DiscordMember> {
   const body = await get(`/users/@me/guilds/${encodeURIComponent(guildId)}/member`);
-  const name = user.data.name;
   // Discord answers 404 (Unknown Guild) when the account is not in the server.
-  if (body === NOT_FOUND) return { ok: true, userId: user.data.id, displayName: name, roles: null };
+  if (body === NOT_FOUND) return { ok: true, userId: user.id, displayName: user.name, roles: null };
   const member = memberSchema.safeParse(body);
   if (!member.success) return { ok: false, code: "discord_member" };
   return {
     ok: true,
-    userId: user.data.id,
-    displayName: member.data.nick ?? name,
+    userId: user.id,
+    displayName: member.data.nick ?? user.name,
     roles: member.data.roles,
   };
 }

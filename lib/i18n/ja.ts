@@ -25,6 +25,8 @@ export const ja = {
     skip: "台帳へスキップ",
     disclaimerShort: "ファン制作。37Games、Eyu、Last Asylum Plague とは提携していません。",
     disclaimerMore: "詳細",
+    signIn: "サインイン",
+    signInFooter: "同盟の役員とメンバー：サインイン",
   },
   ledger: {
     rank: "順位",

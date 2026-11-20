@@ -25,6 +25,8 @@ export const pl = {
     skip: "Przejdź do księgi",
     disclaimerShort: "Fanowski projekt. Nie jest powiązany z 37Games, Eyu ani Last Asylum Plague.",
     disclaimerMore: "Więcej",
+    signIn: "Zaloguj się",
+    signInFooter: "Oficerowie i członkowie sojuszy: zaloguj się",
   },
   ledger: {
     rank: "Miejsce",

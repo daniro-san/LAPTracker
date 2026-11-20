@@ -25,6 +25,8 @@ export const fr = {
     skip: "Aller au registre",
     disclaimerShort: "Projet de fans. Non affilié à 37Games, Eyu ni Last Asylum Plague.",
     disclaimerMore: "Plus",
+    signIn: "Connexion",
+    signInFooter: "Officiers et membres d’alliance : se connecter",
   },
   ledger: {
     rank: "Rang",

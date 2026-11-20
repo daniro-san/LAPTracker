@@ -25,6 +25,8 @@ export const de = {
     skip: "Zur Chronik springen",
     disclaimerShort: "Fan-Projekt. Nicht verbunden mit 37Games, Eyu oder Last Asylum Plague.",
     disclaimerMore: "Mehr",
+    signIn: "Anmelden",
+    signInFooter: "Allianz-Offiziere und Mitglieder: anmelden",
   },
   ledger: {
     rank: "Rang",
