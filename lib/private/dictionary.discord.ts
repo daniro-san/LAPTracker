@@ -26,7 +26,7 @@ export const discordEn = {
   "discord.check.unreachable": "Discord did not answer. Try again in a minute.",
   "discord.check.failed":
     "The bot is in your server, but Discord did not take the commands. Try again in a minute.",
-  "discord.check.rateLimited": "Too many checks just now. Wait an hour, then try again.",
+  "discord.check.rateLimited": "Too many checks just now. Wait 15 minutes, then try again.",
   "discord.check.off": "The bot is not set up on this site yet. Ask the site’s owner.",
   "discord.private":
     "Only if a channel is private: for the commands to post there, open the channel’s settings → Permissions → add LAPTracker, then allow View Channel, Send Messages, Create Public Threads and Send Messages in Threads.",
@@ -110,7 +110,7 @@ export const discordPt: typeof discordEn = {
   "discord.check.unreachable": "O Discord não respondeu. Tente de novo em um minuto.",
   "discord.check.failed":
     "O bot está no seu servidor, mas o Discord não aceitou os comandos. Tente de novo em um minuto.",
-  "discord.check.rateLimited": "Muitas conferências agora. Espere uma hora e tente de novo.",
+  "discord.check.rateLimited": "Muitas conferências agora. Espere 15 minutos e tente de novo.",
   "discord.check.off": "O bot ainda não está configurado neste site. Fale com o dono do site.",
   "discord.private":
     "Só se um canal for privado: para os comandos postarem nele, abra as configurações do canal → Permissões → adicione o LAPTracker e permita Ver canal, Enviar mensagens, Criar tópicos públicos e Enviar mensagens em tópicos.",

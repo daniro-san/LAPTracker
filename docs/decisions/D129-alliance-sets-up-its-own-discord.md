@@ -10,7 +10,7 @@ Why: until now the owner sent each alliance the bot's install link, registered t
    - 403 or 404: 409 `bot_missing`, "The bot is not in your server yet: tap Add LAPTracker to Discord in step 1 first." Nothing is registered.
    - No answer or another status: 503 `unreachable`.
    - Then the commands that are on for the workspace (D126: `discord_send`, `discord_translate_me`, `discord_translate_everyone`, less a paused allowance) are registered in that server only, through D96's client-credentials `PUT` (`lib/workspace-commands.ts` → `registerAppCommands`). What Discord took is recorded in `workspace_discord.commands`. A refused `PUT`: 502 `commands_failed`.
-   - At most 5 checks an hour per workspace (`auth_attempts`, key `botcheck:ws:<id>`), refused ones included: each check is up to three Discord calls.
+   - At most 5 checks every 15 minutes per workspace (`auth_attempts`, key `botcheck:ws:<id>`), refused ones included: each check is up to three Discord calls.
    - Without the bot token or the app's credentials: 503 `bot_off`, and the step says the bot is not set up on this site.
    - Then D101's note on private channels: add LAPTracker to the channel's permissions.
 3. **Channels for notices**: the leaders' and members' channels of "Publish to Discord" (D102), the garrison post (D121) and the weekly thanks (D114). Each card shows "Set · #name", "Set up by the site's owner · #name" (the env fallback), "Not set yet", or "This webhook needs to be pasted again" (sealed under another master key).

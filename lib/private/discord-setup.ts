@@ -17,9 +17,9 @@ import type { WorkspaceAccess } from "./access";
  */
 export const BOT_PERMISSIONS = "309237648384";
 
-/** At most 5 checks an hour per workspace: each makes up to three Discord calls. */
+/** At most 5 checks every 15 minutes per workspace: each makes up to three Discord calls (owner's call, 2026-11-20). */
 export const CHECKS = 5;
-export const CHECK_WINDOW_MS = 60 * 60_000;
+export const CHECK_WINDOW_MS = 15 * 60_000;
 const TIMEOUT_MS = 10_000;
 
 type DiscordEnv = Pick<
@@ -75,7 +75,7 @@ export async function botView(db: Db, access: WorkspaceAccess, env: DiscordEnv):
 }
 
 /**
- * bot_off: no bot token or app credentials on this site. rate_limited: past CHECKS this hour. bot_missing:
+ * bot_off: no bot token or app credentials on this site. rate_limited: past CHECKS in the window. bot_missing:
  * Discord says the bot is not in the server. unreachable: no clear answer. commands_failed: the bot is in,
  * but Discord refused the commands.
  */

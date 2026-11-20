@@ -28,7 +28,7 @@ export const discordFr: typeof discordEn = {
   "discord.check.failed":
     "Le bot est sur votre serveur, mais Discord n’a pas accepté les commandes. Réessayez dans une minute.",
   "discord.check.rateLimited":
-    "Trop de vérifications pour l’instant. Attendez une heure, puis réessayez.",
+    "Trop de vérifications pour l’instant. Attendez 15 minutes, puis réessayez.",
   "discord.check.off":
     "Le bot n’est pas encore configuré sur ce site. Demandez au propriétaire du site.",
   "discord.private":
