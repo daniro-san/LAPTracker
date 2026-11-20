@@ -41,7 +41,7 @@ export const featuresAdminCopy = {
     discord_translate_me: "Translate for me",
     discord_translate_everyone: "Translate for everyone",
     squads: "Squads read (own key)",
-    shield_check: "Raid Shield check (own key; not built yet, issue 474)",
+    shield_check: "Raid Shield check (own key)",
     notice_pictures: "Notice pictures (Neon storage)",
     export: "Download our data",
   },

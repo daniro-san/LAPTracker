@@ -28,11 +28,12 @@ export function POST(request: Request): Promise<Response> {
     // INVARIANT tick.heartbeat-after-auth: a 401 is not a heartbeat (D45); the row goes in before
     // the work, so a killed function still leaves one, with no finished_at.
     const heartbeat = await startTick(db, ctx.now());
-    const tick = await runTick(ctx, db, new URL(request.url).origin);
+    const origin = new URL(request.url).origin;
+    const tick = await runTick(ctx, db, origin);
     await finishTick(db, heartbeat, ctx.now(), tick.kind);
     // After the answer, so cron-job.org's 30 s timeout never waits for it. The claim makes it safe beside
     // POST /api/squads-read (tick.yml, or by hand): one batch at a time per alliance.
-    scheduleSquadsBatch(ctx);
+    scheduleSquadsBatch(ctx, origin);
     switch (tick.kind) {
       case "idle":
         return new Response(null, { status: 204 });

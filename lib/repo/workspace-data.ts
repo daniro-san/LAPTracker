@@ -40,6 +40,7 @@ import {
   notices,
 } from "../schema-notices";
 import { workspaceDataEvents, type DataAction } from "../schema-retention";
+import { shieldChecks, shieldQueue, shieldSettings } from "../schema-shield";
 import { memberSquads, playerHistory, playerReads, squadQueue, squadReads } from "../schema-squads";
 import { theftAttackers, theftFollowUps, thefts } from "../schema-thefts";
 
@@ -114,6 +115,11 @@ export const WORKSPACE_TABLES: readonly WorkspaceTable[] = [
   { file: null, table: discordPictures, scope: "workspace" },
   { file: null, table: squadReads, scope: "union" },
   { file: null, table: squadQueue, scope: "union" },
+  // D137: the Raid Shield check's settings, its reads' state and the morning queue: counts and codes, as
+  // the squads read's rows; the shield facts themselves are in player-reads.csv.
+  { file: null, table: shieldSettings, scope: "workspace" },
+  { file: null, table: shieldChecks, scope: "union" },
+  { file: null, table: shieldQueue, scope: "union" },
 ];
 
 /** Never downloaded from any table, whatever the list says (CLAUDE.md, D71, D22). */

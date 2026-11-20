@@ -144,24 +144,42 @@ export async function archivedCalls(db: Db, workspaceId: number) {
     .orderBy(desc(rollCalls.day), desc(rollCalls.id));
 }
 
-/** The newest mark of each member in each of these roll calls. */
-export async function newestMarks(db: Db, callIds: number[]): Promise<MarkRow[]> {
+/** Which mark of a member: the roll call's own (`main`), or Raid prep's squads off the wall (D137). */
+export type MarkPart = "main" | "wall";
+
+/** The newest mark of each member in each of these roll calls, of one part (the roll call's own by default). */
+export async function newestMarks(
+  db: Db,
+  callIds: number[],
+  part: MarkPart = "main",
+): Promise<MarkRow[]> {
   if (callIds.length === 0) return [];
   return db
     .selectDistinctOn([rollCallMarks.rollCallId, rollCallMarks.uid], markColumns)
     .from(rollCallMarks)
     .leftJoin(workspaceUsers, eq(workspaceUsers.id, rollCallMarks.writtenBy))
-    .where(inArray(rollCallMarks.rollCallId, callIds))
+    .where(and(inArray(rollCallMarks.rollCallId, callIds), eq(rollCallMarks.part, part)))
     .orderBy(rollCallMarks.rollCallId, rollCallMarks.uid, desc(rollCallMarks.version));
 }
 
-/** One member's newest mark in a roll call, or null before the first. */
-export async function newestMark(db: Db, callId: number, uid: number): Promise<MarkRow | null> {
+/** One member's newest mark of one part in a roll call, or null before the first. */
+export async function newestMark(
+  db: Db,
+  callId: number,
+  uid: number,
+  part: MarkPart = "main",
+): Promise<MarkRow | null> {
   const [row] = await db
     .select(markColumns)
     .from(rollCallMarks)
     .leftJoin(workspaceUsers, eq(workspaceUsers.id, rollCallMarks.writtenBy))
-    .where(and(eq(rollCallMarks.rollCallId, callId), eq(rollCallMarks.uid, uid)))
+    .where(
+      and(
+        eq(rollCallMarks.rollCallId, callId),
+        eq(rollCallMarks.uid, uid),
+        eq(rollCallMarks.part, part),
+      ),
+    )
     .orderBy(desc(rollCallMarks.version))
     .limit(1);
   return row ?? null;

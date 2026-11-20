@@ -1,0 +1,158 @@
+"use client";
+
+// One member on Raid prep (issue 474, D137): the name, the tracker's line with the map scan's time on both
+// clocks, the Shield pair and the Squads off the wall pair (each ✓ / ✗, 48 px, the same button again
+// clears), and the ready private message in the member's language with only the parts not yet ✓. The
+// tracker's line is a hint (D75): "not seen yet" is never shown as a ✗.
+import { useState } from "react";
+
+import { chip, FIELD } from "@/lib/brand/components/controls";
+import { Tag } from "@/lib/brand/components/Tag";
+import { fill, isolate } from "@/lib/copy";
+import { PREP_MESSAGE, type PrepMessageWords } from "@/lib/private/dictionary.raidprep";
+import type { Mark } from "@/lib/private/roll-call-rules";
+
+import type { CalendarSheetWords } from "./calendar-data";
+import type { PrepRowView, PrepTrackerView } from "./prep-data";
+import type { MarkRowView, MarkWords, RollSheetWords } from "./roll-call-data";
+import { Times } from "./YourTime";
+
+/** The message: only the parts not yet ✓, then "bring your troops home", in the member's language. */
+export function prepMessage(
+  w: PrepMessageWords,
+  name: string,
+  when: "reset" | "kvk",
+  done: { shield: boolean; wall: boolean },
+): string {
+  const parts = [...(done.shield ? [] : [w.shield]), ...(done.wall ? [] : [w.wall]), w.home];
+  const last = parts.pop() as string;
+  const list = parts.length ? `${parts.join(", ")} ${w.and} ${last}` : last;
+  return fill(w.text, { name, when: w[when], parts: list });
+}
+
+function Pair(props: {
+  label: string;
+  name: string;
+  mark: Mark | null;
+  words: { yes: string; no: string };
+  button: string;
+  onTap: (tapped: "yes" | "no") => void;
+}) {
+  return (
+    <div className="min-w-0">
+      <p className="text-body-sm text-ink/80">{props.label}</p>
+      <div className="mt-0.5 flex gap-2">
+        {(["yes", "no"] as const).map((v) => (
+          <button
+            key={v}
+            type="button"
+            aria-pressed={props.mark === v}
+            aria-label={fill(props.button, { word: props.words[v], name: isolate(props.name) })}
+            onClick={() => props.onTap(v)}
+            className={`${chip(props.mark === v)} min-h-12 min-w-12 shrink-0 justify-center text-[22px]`}
+          >
+            <span aria-hidden="true">{v === "yes" ? "✓" : "✗"}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TrackerLines({ tr, times }: { tr: PrepTrackerView; times: CalendarSheetWords }) {
+  return (
+    <>
+      <p className="text-body-sm">
+        <span className={tr.on ? "font-semibold text-plum" : "text-ink/80"}>{tr.text}</span>
+        {tr.map && (
+          <>
+            {" · "}
+            <Times st={tr.map.st} at={tr.map.at} day={tr.map.day} words={times} />
+          </>
+        )}
+      </p>
+      {tr.detail && <p className="text-body-sm text-ink/75">{tr.detail}</p>}
+      {tr.lost && <p className="text-body-sm text-ink/80">{tr.lost}</p>}
+      {tr.mayEnd && <Tag tone="attention">{tr.mayEnd}</Tag>}
+    </>
+  );
+}
+
+function MessageBox(props: { text: string; head: string; words: RollSheetWords }) {
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(props.text);
+      setCopied(true);
+    } catch {
+      setCopied(false);
+    }
+  };
+  return (
+    <details className="mt-1" onToggle={() => setCopied(false)}>
+      <summary className="flex min-h-11 cursor-pointer items-center text-body-sm font-semibold text-plum underline underline-offset-4">
+        {props.words["roll.prep.message"]}
+      </summary>
+      <p className="text-body-sm text-ink/80">{props.head}</p>
+      <textarea readOnly value={props.text} rows={3} className={`${FIELD} mt-1 text-[16px]`} />
+      <button type="button" onClick={() => void copy()} className={`${chip()} mt-1`}>
+        {props.words[copied ? "roll.prep.copied" : "roll.prep.copy"]}
+      </button>
+    </details>
+  );
+}
+
+export function RaidPrepRow(props: {
+  row: MarkRowView;
+  prep: PrepRowView | undefined;
+  shield: Mark | null;
+  wall: Mark | null;
+  note: string | undefined;
+  when: "reset" | "kvk";
+  words: RollSheetWords;
+  marks: MarkWords;
+  times: CalendarSheetWords;
+  onShield: (tapped: "yes" | "no") => void;
+  onWall: (tapped: "yes" | "no") => void;
+}) {
+  const { row, prep, words } = props;
+  const done = { shield: props.shield === "yes", wall: props.wall === "yes" };
+  const language = prep?.language ?? "en";
+  const text = prepMessage(PREP_MESSAGE[language], row.name, props.when, done);
+  const head = fill(words["roll.prep.messageFor"], {
+    name: isolate(row.name),
+    language: prep?.languageName ?? "",
+  });
+  return (
+    <li className="border-t border-rule py-2">
+      <p translate="no" className="truncate font-semibold">
+        <bdi>{row.name}</bdi>
+      </p>
+      {prep?.tracker && <TrackerLines tr={prep.tracker} times={props.times} />}
+      {props.note && <p className="text-body-sm font-semibold text-yarn">{props.note}</p>}
+      <div className="mt-1 grid grid-cols-2 gap-2">
+        <Pair
+          label={words["roll.prep.shield"]}
+          name={row.name}
+          mark={props.shield}
+          words={props.marks}
+          button={words["roll.button"]}
+          onTap={props.onShield}
+        />
+        <Pair
+          label={words["roll.prep.wall"]}
+          name={row.name}
+          mark={props.wall}
+          words={{ yes: words["roll.prep.wall.yes"], no: words["roll.prep.wall.no"] }}
+          button={words["roll.button"]}
+          onTap={props.onWall}
+        />
+      </div>
+      {done.shield && done.wall ? (
+        <p className="mt-1 text-body-sm text-ink/75">{words["roll.prep.allSet"]}</p>
+      ) : (
+        <MessageBox text={text} head={head} words={words} />
+      )}
+    </li>
+  );
+}

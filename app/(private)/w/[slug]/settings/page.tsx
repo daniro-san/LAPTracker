@@ -1,7 +1,7 @@
 // /w/[slug]/settings: Alliance settings (D124, issue 438). The alliance's own tracker key: its state, last 4
 // characters and quota left, and Save and test, Replace and Remove, with today's squads read (D132). Then
 // Features (D134): what the alliance turns on, of what the site's owner allows, with the tracker calls it
-// spends. Then Discord (D129): add the bot, Check, and the two notice channels' webhooks. Then the
+// spends. Then the Raid Shield check's own settings while it is on (D137). Then Discord (D129): add the bot, Check, and the two notice channels' webhooks. Then the
 // alliance's data (D125): "Download our data" and "Delete
 // this workspace". Officers only: a member's session goes to the board (refuse.ts). Neither the key nor a
 // webhook URL ever reaches the page.
@@ -16,12 +16,14 @@ import { withPageDb } from "@/lib/page";
 import { requireWorkspace, type WorkspaceAccess } from "@/lib/private/access";
 import { allianceFeaturesView } from "@/lib/private/alliance-features";
 import { agoText } from "@/lib/private/calendar-words";
+import type { WorkspaceLanguage } from "@/lib/private/dictionary";
 import { botView } from "@/lib/private/discord-setup";
 import { webhookViews } from "@/lib/private/discord-webhooks";
 import { featureOn } from "@/lib/private/features";
 import { toReviewCount } from "@/lib/private/import-view";
 import { serverClock } from "@/lib/private/read-status";
 import { RENEW_MS } from "@/lib/private/session";
+import { MORNING_CHOICES, shieldSettingsView } from "@/lib/private/shield-settings";
 import { SLUG } from "@/lib/private/sign-in";
 import { squadsReader, squadsToday, type SquadsToday } from "@/lib/private/squads-today";
 import { trackerKeyView } from "@/lib/private/tracker-key";
@@ -30,6 +32,7 @@ import { DELETION_GRACE_MS } from "@/lib/private/workspace-deletion";
 import { AllianceFeatures } from "../../../_ui/AllianceFeatures";
 import { DiscordSection } from "../../../_ui/DiscordSection";
 import { deletionDate, SignedInFrame, workspaceWords } from "../../../_ui/Frame";
+import { RaidPrepSettings } from "../../../_ui/RaidPrepSettings";
 import { refuse } from "../../../_ui/refuse";
 import { TrackerKeyForm } from "../../../_ui/TrackerKeyForm";
 import { WorkspaceDataForm } from "../../../_ui/WorkspaceDataForm";
@@ -52,9 +55,18 @@ function squadsLine(
   return `${today} · ${fill(t["squads.todayNext"], { at: serverClock(timeZone, s.nextAt) })}`;
 }
 
+/** The leaders' channel can take the Raid Shield check's message (D129, D137). */
+const canPost = (channels: Awaited<ReturnType<typeof webhookViews>>) =>
+  channels.some((c) => c.channel === "leaders" && (c.state === "set" || c.state === "site"));
+
 /** Everything the page shows, read after requireWorkspace, in parallel. */
-async function readSettings(db: Db, access: WorkspaceAccess, env: Env, now: Date) {
-  const [view, waiting, bot, channels, squads, features] = await Promise.all([
+async function readSettings(
+  db: Db,
+  access: WorkspaceAccess,
+  ctx: { env: Env; now: Date; language: WorkspaceLanguage },
+) {
+  const { env, now } = ctx;
+  const [view, waiting, bot, channels, squads, features, shield] = await Promise.all([
     trackerKeyView(db, access, env, now),
     toReviewCount(db, access, now),
     botView(db, access, env),
@@ -63,8 +75,9 @@ async function readSettings(db: Db, access: WorkspaceAccess, env: Env, now: Date
       key ? squadsToday(db, access, env, now) : null,
     ),
     allianceFeaturesView(db, access),
+    shieldSettingsView(db, access, ctx.language),
   ]);
-  return { view, waiting, bot, channels, squads, features };
+  return { view, waiting, bot, channels, squads, features, shield };
 }
 
 export default async function SettingsPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -73,17 +86,18 @@ export default async function SettingsPage({ params }: { params: Promise<{ slug:
   const jar = await cookies();
   const now = new Date();
   const { env } = getAppContext();
+  const { language, t } = await workspaceWords();
   // INVARIANT workspace.access-first: nothing private is read before this check.
   const { access, page } = await withPageDb(async (db) => {
     const access = await requireWorkspace(db, slug, jar, now, RENEW_MS);
-    return { access, page: access.ok ? await readSettings(db, access, env, now) : null };
+    const ctx = { env, now, language };
+    return { access, page: access.ok ? await readSettings(db, access, ctx) : null };
   });
   if (!access.ok || !page) {
     if (!access.ok) refuse(slug, access.reason, `/w/${slug}/settings`);
     notFound();
   }
-  const { view, waiting, bot, channels, squads, features } = page;
-  const { language, t } = await workspaceWords();
+  const { view, waiting, bot, channels, squads, features, shield } = page;
   const checked = view.checkedAt
     ? fill(t["key.checked"], {
         when: agoText(view.checkedAt.toISOString(), now, language, t["calendar.conflict.justNow"]),
@@ -126,6 +140,15 @@ export default async function SettingsPage({ params }: { params: Promise<{ slug:
       </section>
       {features.groups.length > 0 && (
         <AllianceFeatures slug={slug} view={features} language={language} t={t} />
+      )}
+      {shield && (
+        <RaidPrepSettings
+          slug={slug}
+          view={shield}
+          choices={MORNING_CHOICES}
+          leaders={canPost(channels)}
+          t={t}
+        />
       )}
       <DiscordSection
         slug={slug}

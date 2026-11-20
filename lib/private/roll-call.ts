@@ -14,6 +14,7 @@ import {
   newestMarks,
   teamHas,
   teamsOf,
+  type MarkPart,
   type MarkRow,
   type RollCallRow,
 } from "../repo/roll-call";
@@ -135,32 +136,56 @@ async function asks(db: Db, o: Opened, inRoster: boolean, uid: number): Promise<
   return o.call !== null && (await teamHas(db, o.call.id, uid));
 }
 
-/** One member's mark (✓, ✗ or cleared), based on the version the officer saw. */
-export async function markOne(
+/** The occasion a mark goes to, or why it cannot be marked. */
+async function openForMark(
   db: Db,
   access: WorkspaceAccess,
-  input: { occasion: Occasion; uid: number; mark: Mark | null; version: number },
-  now: Date,
-): Promise<MarkResult> {
+  input: { occasion: Occasion; uid: number; mark: Mark | null },
+  part: MarkPart,
+): Promise<{ ok: true; o: Opened } | Missing> {
   if (!tapMark(input.mark)) return { ok: false, code: "invalid" };
   const [o, inRoster] = await Promise.all([
     openOccasion(db, access, input.occasion),
     isMember(db, access, input.uid),
   ]);
   if (!o) return { ok: false, code: "not_found" };
+  if (part === "wall" && o.kind !== "shield") return { ok: false, code: "invalid" };
   if (!(await asks(db, o, inRoster, input.uid))) return { ok: false, code: "not_member" };
+  return { ok: true, o };
+}
+
+/**
+ * One member's mark (✓, ✗ or cleared), based on the version the officer saw. `part` `wall` is Raid prep's
+ * second mark, squads off the wall (D137): only on a Raid prep (`shield`) roll call.
+ */
+export async function markOne(
+  db: Db,
+  access: WorkspaceAccess,
+  input: {
+    occasion: Occasion;
+    uid: number;
+    mark: Mark | null;
+    version: number;
+    part?: MarkPart | undefined;
+  },
+  now: Date,
+): Promise<MarkResult> {
+  const part = input.part ?? "main";
+  const opened = await openForMark(db, access, input, part);
+  if (!opened.ok) return opened;
+  const { o } = opened;
   const call = await ensureCall(db, access, o);
-  // INVARIANT roll-call.version-once: the unique (roll call, uid, version) lets one of two writes based
-  // on the same version in; the other reads the winner and is refused unless it said the same.
+  // INVARIANT roll-call.version-once: the unique (roll call, uid, part, version) lets one of two writes
+  // based on the same version in; the other reads the winner and is refused unless it said the same.
   for (;;) {
-    const newest = await newestMark(db, call.id, input.uid);
+    const newest = await newestMark(db, call.id, input.uid, part);
     const at = newest?.version ?? 0;
     if (at !== input.version) {
       return (newest?.mark ?? null) === input.mark
         ? { ok: true, version: at }
         : { ok: false, code: "stale", kind: o.kind, newest };
     }
-    const row = { rollCallId: call.id, uid: input.uid, version: at + 1, mark: input.mark };
+    const row = { rollCallId: call.id, uid: input.uid, part, version: at + 1, mark: input.mark };
     const [done] = await insertMarks(db, [{ ...row, writtenBy: access.user.id, writtenAt: now }]);
     if (done) return { ok: true, version: done.version };
   }

@@ -8,8 +8,15 @@ import { after } from "next/server";
 
 import { secretsOf, type AppContext } from "./app-context";
 import { recordAppError } from "./app-errors";
+import { shieldTick } from "./shield-tick";
 import { SQUADS_BATCH_MS, squadsQueueDay } from "./squads";
 import { runSquadsBatch, type SquadsRun } from "./squads-read";
+
+/**
+ * D137: what the tick's `after` may spend in all, from its start: the tick's own work takes at most 100 s of
+ * the function's 300 s, so this leaves room to spare.
+ */
+export const AFTER_BUDGET_MS = 180_000;
 
 /**
  * /admin's press (D117, amendment 2026-11-19b): batches of one workspace or all, on the route's
@@ -26,7 +33,12 @@ export interface SquadsPress {
  * The tick's one batch, or a press's batches, on its own connection; an error becomes an app_errors row (a
  * code, never a member).
  */
-export async function squadsBatch(ctx: AppContext, press?: SquadsPress): Promise<void> {
+export async function squadsBatch(
+  ctx: AppContext,
+  press?: SquadsPress,
+  /** The tick's origin: set, the Raid Shield check's due read runs after the batch (D137). */
+  origin?: string,
+): Promise<void> {
   const { db, close } = ctx.openDb();
   try {
     const deps = {
@@ -43,6 +55,8 @@ export async function squadsBatch(ctx: AppContext, press?: SquadsPress): Promise
       if (!press || outcome.kind === "idle" || !outcome.more || outcome.calls === 0) break;
       if (ctx.now().getTime() - startedAt + SQUADS_BATCH_MS > press.budgetMs) break;
     }
+    if (origin !== undefined)
+      await shieldTick({ ...deps, origin }, db, startedAt + AFTER_BUDGET_MS);
   } catch (error) {
     const route = press?.route ?? "/api/tick";
     await recordAppError(ctx, { route, kind: "after", digest: null, error });
@@ -53,11 +67,11 @@ export async function squadsBatch(ctx: AppContext, press?: SquadsPress): Promise
 
 /**
  * Starts a batch after the tick's answer on every tick (D132), unless one would cross the quota reset at
- * 00:00 UTC; true when it was scheduled. runSquadsBatch then waits for the day's read, takes the claim
+ * 00:00 UTC, and the Raid Shield check's due read after it (D137); true when it was scheduled. runSquadsBatch then waits for the day's read, takes the claim
  * and finds nothing to do on most ticks of a day.
  */
-export function scheduleSquadsBatch(ctx: AppContext): boolean {
+export function scheduleSquadsBatch(ctx: AppContext, origin: string): boolean {
   if (!squadsQueueDay(ctx.now(), ctx.env)) return false;
-  after(() => squadsBatch(ctx));
+  after(() => squadsBatch(ctx, undefined, origin));
   return true;
 }

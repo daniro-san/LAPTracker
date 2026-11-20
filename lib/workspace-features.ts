@@ -38,8 +38,9 @@ export const SPENDS: Partial<Record<Feature, Allowance>> = {
 /**
  * The features that spend tracker calls on the alliance's own key (D124, D134): each one's calls per member,
  * measured, and whether it runs every quota day or once a week. Squads: 106–107 calls for 101 members in the
- * read of 2026-11-18 (one per member plus about 5 % retries, D132). Raid Shield check (issue 474, not built
- * yet): two reads of every member on Friday night, server time, in Saturday's UTC quota day.
+ * read of 2026-11-18 (one per member plus about 5 % retries, D132). Raid Shield check (issue 474, D137): two
+ * reads of every member, Friday 23:30 ST and Saturday morning, both in Saturday's UTC quota day; with the
+ * squads read on, Friday's read is that day's squads read, so only the morning read is extra.
  */
 export const TRACKER_CALLS: Partial<Record<Feature, { perMember: number; weekly: boolean }>> = {
   squads: { perMember: 1.06, weekly: false },
@@ -67,7 +68,9 @@ export function trackerEstimate(
     { perMember: number; weekly: boolean },
   ][]) {
     if (!on.has(f)) continue;
-    const n = Math.ceil(members * calls.perMember);
+    // D137: Friday's shield read is the squads read of that quota day when both are on.
+    const per = f === "shield_check" && on.has("squads") ? calls.perMember / 2 : calls.perMember;
+    const n = Math.ceil(members * per);
     if (calls.weekly) weekly += n;
     else daily += n;
   }

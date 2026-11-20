@@ -85,8 +85,8 @@ export interface AnalyticsEvents {
   ws_review_approved: NoProperties;
   /** "Publish to Discord" posted (D102): the notice's audience only. */
   ws_notice_published: { audience: "members" | "leaders" };
-  /** A roll call mark stored: one tap, or "the rest" for everyone left (D103). */
-  ws_roll_call_marked: { how: "tap" | "rest" };
+  /** A roll call mark stored: one tap, "the rest" for everyone left (D103), or the tracker's (D137). */
+  ws_roll_call_marked: { how: "tap" | "rest" | "tracker" };
   /** The weekly thanks shared (D114, issue 404): posted to the board or Discord, or copied for the game. */
   ws_thanks_shared: { to: "game" | "discord" | "board" };
   /** A members' board section came on screen, once per page load. */

@@ -56,7 +56,7 @@ function MarkRow(props: {
   );
 }
 
-function AwayGroup(props: {
+export function AwayGroup(props: {
   rows: MarkRowView[];
   words: RollSheetWords;
   onOpen: (row: MarkRowView) => void;
@@ -91,7 +91,7 @@ function AwayGroup(props: {
  * Above the rows: "2 of 58 marked" (with "Undo the rest" while it applies), the ✓ / ✗ words and "Tap ✓ or
  * ✗. Tap again to clear."; why not set never counts and how rows are ordered sit under "How this works".
  */
-function Intro(props: {
+export function Intro(props: {
   marked: number;
   total: number;
   words: RollSheetWords;
@@ -127,7 +127,7 @@ function Intro(props: {
   );
 }
 
-function SearchBar(props: {
+export function SearchBar(props: {
   q: string;
   words: RollSheetWords;
   onQ: (q: string) => void;
@@ -155,7 +155,7 @@ function SearchBar(props: {
 }
 
 /** The rows in the order the page opened with; members new to this read go after them. */
-function useOrder(rows: MarkRowView[]) {
+export function useOrder(rows: MarkRowView[]) {
   const [order] = useState(() => rows.map((r) => r.uid));
   const byUid = new Map(rows.map((r) => [r.uid, r]));
   return [...order, ...rows.map((r) => r.uid).filter((u) => !order.includes(u))]

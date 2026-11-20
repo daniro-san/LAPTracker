@@ -171,8 +171,8 @@ describe("recent activity", () => {
       "Wren added a theft to the log",
       "Ana saved a screenshot: Secret Ops report",
       "Wren marked Thistle as needing help",
-      "Ana finished the roll call “Raid Shield”",
-      "Ana took the roll call “Raid Shield”",
+      "Ana finished the roll call “Raid prep”",
+      "Ana took the roll call “Raid prep”",
       "Wren updated Bramble’s info",
       "Ana saved the notice “Weekly schedule”",
     ]);

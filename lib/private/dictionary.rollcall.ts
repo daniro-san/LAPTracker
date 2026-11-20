@@ -1,9 +1,12 @@
 // The Roll call tab's words in English (issue 298), split from dictionary.ts for its size; dictionary.ts
 // spreads them in, and the pt-BR and fr files follow these keys. Game names stay as the game writes them in
 // every language (D52): KvK, Undead Siege, Cheese Trap, Elixir Scramble, Team A. "Not set" is never "missed" (D75).
+import { prepEn } from "./dictionary.raidprep";
+
 export const rollEn = {
+  ...prepEn,
   "roll.intro": "Mark who took part. A blank mark never counts against anyone.",
-  "roll.kind.shield": "Raid Shield",
+  "roll.kind.shield": "Raid prep",
   "roll.kind.raid": "Undead Siege",
   "roll.kind.plunder": "Plunders",
   "roll.kind.elixir": "Elixir Scramble",
