@@ -54,15 +54,15 @@ function TrackerBar(props: {
       {head.hint && <p className="mt-1 text-body-sm text-ink/80">{head.hint}</p>}
       {acceptable.length > 0 && (
         <>
+          <p className="mt-2 text-body-sm text-ink/75">{words["roll.prep.acceptHelp"]}</p>
           <button
             type="button"
             disabled={busy}
             onClick={() => void accept()}
-            className={`${chip()} mt-2`}
+            className={`${chip()} mt-1`}
           >
             {fill(words["roll.prep.accept"], { n: acceptable.length })}
           </button>
-          <p className="text-body-sm text-ink/75">{words["roll.prep.acceptHelp"]}</p>
         </>
       )}
       {done && (
@@ -109,6 +109,16 @@ function PrepList(props: {
 
 const WALL = { part: "wall" };
 
+/**
+ * The order the page opens with (D103: not set first, never moved by a tap): among the not-set rows, the
+ * tracker's hints first (not seen yet, then may end before KvK, then no reading, then seen).
+ */
+const ordered = (rows: MarkRowView[], prep: Record<number, PrepRowView>) =>
+  rows
+    .map((row, i) => ({ row, i, key: (row.mark === null ? 0 : 10) + (prep[row.uid]?.rank ?? 2) }))
+    .sort((a, b) => a.key - b.key || a.i - b.i)
+    .map((x) => x.row);
+
 /** The marks of the squads-off-the-wall part, as the rows' versions for useMarks. */
 const wallRowsOf = (rows: MarkRowView[], prep: Record<number, PrepRowView>) =>
   rows.map((r) => ({
@@ -135,12 +145,14 @@ export function RaidPrepMarks(props: {
   const m = useMarks(props.slug, props.occasion, props.rows, failed);
   const w = useMarks(props.slug, props.occasion, wallRowsOf(props.rows, prep), failed, WALL);
   const r = useRest(m, marks, words);
-  const all = useOrder(props.rows);
+  const all = useOrder(ordered(props.rows, prep));
   const [q, setQ] = useState("");
   const [away, setAway] = useState<AwayWho | null>(null);
   const asked = all.filter((row) => row.away === null);
   const awayRows = all.filter((row) => row.away !== null);
   const notSet = asked.filter((row) => m.shown(row.uid).mark === null);
+  // "No problem seen" is never given to someone the tracker did not see with a shield (D137).
+  const rest = notSet.filter((row) => prep[row.uid]?.tracker?.on !== false);
   const needle = fold(q.trim());
   const found = asked.filter((row) => needle === "" || fold(row.name).includes(needle));
   const error = m.error ?? w.error;
@@ -173,11 +185,12 @@ export function RaidPrepMarks(props: {
       <AwayGroup rows={awayRows} words={words} onOpen={setAway} />
       <RestBar
         left={notSet.length}
+        rest={rest.length}
         away={awayRows.length}
         words={words}
         marks={marks}
         r={r}
-        onRest={() => void r.rest(notSet.map((row) => row.uid))}
+        onRest={() => void r.rest(rest.map((row) => row.uid))}
       />
       {away && (
         <AwaySheet

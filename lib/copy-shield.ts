@@ -7,7 +7,7 @@ export type ShieldLanguage = (typeof SHIELD_LANGUAGES)[number];
 
 export interface ShieldPostWords {
   title: string;
-  /** "{time}: {n} of {total} shielded" for one read. */
+  /** "{time}: {n} of {total} with a shield seen" for one read. */
   read: string;
   /** "· {n} not read" after a read, when some members have no reading. */
   unread: string;
@@ -24,7 +24,7 @@ export interface ShieldPostWords {
 export const SHIELD_POST: Record<ShieldLanguage, ShieldPostWords> = {
   en: {
     title: "**Raid Shield check**",
-    read: "{day} {time} ST: {n} of {total} shielded",
+    read: "{day} {time} ST: {n} of {total} with a shield seen",
     unread: "{n} not read",
     notSeen: "Not seen yet: {names}",
     notSeenMorning: "Not seen this morning: {names}",
@@ -36,7 +36,7 @@ export const SHIELD_POST: Record<ShieldLanguage, ShieldPostWords> = {
   },
   "pt-BR": {
     title: "**Conferência do Escudo de raid**",
-    read: "{day} {time} ST: {n} de {total} com escudo",
+    read: "{day} {time} ST: {n} de {total} com escudo visto",
     unread: "{n} sem leitura",
     notSeen: "Ainda sem escudo visto: {names}",
     notSeenMorning: "Sem escudo visto hoje de manhã: {names}",
@@ -48,7 +48,7 @@ export const SHIELD_POST: Record<ShieldLanguage, ShieldPostWords> = {
   },
   fr: {
     title: "**Vérification du Bouclier de raid**",
-    read: "{day} {time} ST : {n} sur {total} avec bouclier",
+    read: "{day} {time} ST : {n} sur {total} avec un bouclier vu",
     unread: "{n} sans lecture",
     notSeen: "Pas encore vu : {names}",
     notSeenMorning: "Pas vu ce matin : {names}",

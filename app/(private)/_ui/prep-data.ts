@@ -21,6 +21,8 @@ export interface PrepTrackerView {
 
 export interface PrepRowView {
   tracker: PrepTrackerView | null;
+  /** Where the row goes among the not-set ones: not seen first, then may end before KvK, no reading, seen. */
+  rank: number;
   wall: { mark: "yes" | "no" | null; version: number };
   language: MessageLanguage;
   languageName: string;
@@ -72,6 +74,12 @@ function trackerView(h: TrackerHint, t: WorkspaceDictionary, zone: string): Prep
   };
 }
 
+const rankOf = (h: TrackerHint | null) => {
+  if (!h) return 2;
+  if (h.suggestion === "not_seen") return 0;
+  return h.mayEndBeforeKvk ? 1 : 3;
+};
+
 export function prepRows(
   view: PrepView,
   t: WorkspaceDictionary,
@@ -82,6 +90,7 @@ export function prepRows(
       uid,
       {
         tracker: r.tracker && trackerView(r.tracker, t, zone),
+        rank: rankOf(r.tracker),
         wall: { mark: r.wall.mark as "yes" | "no" | null, version: r.wall.version },
         language: r.language,
         languageName: t[`roll.prep.lang.${r.language}`],
@@ -99,7 +108,12 @@ export function prepHead(view: PrepView, t: WorkspaceDictionary): PrepHeadView {
     const unread = view.members - c.read;
     return [unread > 0 ? `${text} · ${fill(t["roll.prep.read.unread"], { n: unread })}` : text];
   };
+  const rows = [...view.rows.values()];
+  const notSeen = rows.filter((r) => r.tracker?.suggestion === "not_seen").length;
+  const mayEnd = rows.filter((r) => r.tracker?.mayEndBeforeKvk).length;
+  const reads = view.night || view.morning;
   const lines = [
+    ...(reads ? [fill(t["roll.prep.attention"], { n: notSeen, m: mayEnd })] : []),
     ...line("roll.prep.read.night", view.night),
     ...line("roll.prep.read.morning", view.morning),
   ];

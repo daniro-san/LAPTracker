@@ -20,6 +20,7 @@ export const prepEn = {
   "roll.prep.read.none":
     "The tracker reads every member on Friday from 23:30 ST, and again on Saturday at {time} ST.",
   "roll.prep.read.unread": "{n} not read yet",
+  "roll.prep.attention": "{n} not seen yet · {m} may end before KvK",
   "roll.prep.hint":
     "The tracker sees a shield at its map scan, every 1 to 7 hours. A shield turned on after the scan shows as “not seen yet”: a hint, never a ✗.",
   "roll.prep.accept": "Accept the tracker's ({n})",
@@ -67,6 +68,7 @@ export const prepPt: PrepWords = {
   "roll.prep.read.none":
     "O tracker lê todos os membros na sexta a partir das 23:30 ST, e de novo no sábado às {time} ST.",
   "roll.prep.read.unread": "{n} ainda sem leitura",
+  "roll.prep.attention": "{n} ainda sem escudo visto · {m} podem acabar antes do KvK",
   "roll.prep.hint":
     "O tracker vê o escudo na varredura do mapa, a cada 1 a 7 horas. Um escudo ligado depois da varredura aparece como “ainda sem escudo visto”: uma dica, nunca um ✗.",
   "roll.prep.accept": "Aceitar o do tracker ({n})",
@@ -112,6 +114,7 @@ export const prepFr: PrepWords = {
   "roll.prep.read.none":
     "Le tracker lit chaque membre le vendredi à partir de 23:30 ST, puis le samedi à {time} ST.",
   "roll.prep.read.unread": "{n} pas encore lus",
+  "roll.prep.attention": "{n} pas encore vus · {m} peuvent finir avant le KvK",
   "roll.prep.hint":
     "Le tracker voit un bouclier lors de son scan de la carte, toutes les 1 à 7 heures. Un bouclier activé après le scan apparaît comme « pas encore de bouclier vu » : un indice, jamais un ✗.",
   "roll.prep.accept": "Accepter le tracker ({n})",
@@ -150,6 +153,7 @@ export const PREP_MESSAGE = {
     reset: "before the reset",
     kvk: "before KvK starts at 12:00 ST",
     shield: "turn on your shield",
+    check: "check your shield is still on",
     wall: "take your squads off the wall",
     home: "bring your troops home",
     and: "and",
@@ -159,6 +163,7 @@ export const PREP_MESSAGE = {
     reset: "antes do reset",
     kvk: "antes do KvK começar às 12:00 ST",
     shield: "ligue o seu escudo",
+    check: "confira se o seu escudo continua ligado",
     wall: "tire os seus esquadrões da muralha",
     home: "traga as suas tropas para casa",
     and: "e",
@@ -168,6 +173,7 @@ export const PREP_MESSAGE = {
     reset: "avant le reset",
     kvk: "avant le début du KvK à 12:00 ST",
     shield: "activer ton bouclier",
+    check: "vérifier que ton bouclier est toujours actif",
     wall: "retirer tes escouades du mur",
     home: "ramener tes troupes à la maison",
     and: "et",

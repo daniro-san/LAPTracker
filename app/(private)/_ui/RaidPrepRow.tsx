@@ -17,14 +17,18 @@ import type { PrepRowView, PrepTrackerView } from "./prep-data";
 import type { MarkRowView, MarkWords, RollSheetWords } from "./roll-call-data";
 import { Times } from "./YourTime";
 
-/** The message: only the parts not yet ✓, then "bring your troops home", in the member's language. */
+/**
+ * The message: only the parts not yet ✓, then "bring your troops home", in the member's language. When the
+ * tracker saw a shield, the shield part asks to check it is still on rather than to turn it on.
+ */
 export function prepMessage(
   w: PrepMessageWords,
   name: string,
   when: "reset" | "kvk",
-  done: { shield: boolean; wall: boolean },
+  done: { shield: boolean; wall: boolean; seen: boolean },
 ): string {
-  const parts = [...(done.shield ? [] : [w.shield]), ...(done.wall ? [] : [w.wall]), w.home];
+  const shield = done.seen ? w.check : w.shield;
+  const parts = [...(done.shield ? [] : [shield]), ...(done.wall ? [] : [w.wall]), w.home];
   const last = parts.pop() as string;
   const list = parts.length ? `${parts.join(", ")} ${w.and} ${last}` : last;
   return fill(w.text, { name, when: w[when], parts: list });
@@ -41,7 +45,7 @@ function Pair(props: {
   return (
     <div className="min-w-0">
       <p className="text-body-sm text-ink/80">{props.label}</p>
-      <div className="mt-0.5 flex gap-2">
+      <div className="mt-0.5 flex gap-3">
         {(["yes", "no"] as const).map((v) => (
           <button
             key={v}
@@ -63,7 +67,7 @@ function TrackerLines({ tr, times }: { tr: PrepTrackerView; times: CalendarSheet
   return (
     <>
       <p className="text-body-sm">
-        <span className={tr.on ? "font-semibold text-plum" : "text-ink/80"}>{tr.text}</span>
+        <span className={tr.on ? "text-ink/80" : "font-semibold text-yarn"}>{tr.text}</span>
         {tr.map && (
           <>
             {" · "}
@@ -72,7 +76,7 @@ function TrackerLines({ tr, times }: { tr: PrepTrackerView; times: CalendarSheet
         )}
       </p>
       {tr.detail && <p className="text-body-sm text-ink/75">{tr.detail}</p>}
-      {tr.lost && <p className="text-body-sm text-ink/80">{tr.lost}</p>}
+      {tr.lost && <p className="text-body-sm font-semibold text-yarn">{tr.lost}</p>}
       {tr.mayEnd && <Tag tone="attention">{tr.mayEnd}</Tag>}
     </>
   );
@@ -102,6 +106,22 @@ function MessageBox(props: { text: string; head: string; words: RollSheetWords }
   );
 }
 
+/** The row's message and its heading ("Message for Ana, in Portuguese"). */
+function messageOf(
+  prep: PrepRowView | undefined,
+  name: string,
+  when: "reset" | "kvk",
+  done: { shield: boolean; wall: boolean; seen: boolean },
+  words: RollSheetWords,
+) {
+  const text = prepMessage(PREP_MESSAGE[prep?.language ?? "en"], name, when, done);
+  const head = fill(words["roll.prep.messageFor"], {
+    name: isolate(name),
+    language: prep?.languageName ?? "",
+  });
+  return { text, head };
+}
+
 export function RaidPrepRow(props: {
   row: MarkRowView;
   prep: PrepRowView | undefined;
@@ -116,13 +136,12 @@ export function RaidPrepRow(props: {
   onWall: (tapped: "yes" | "no") => void;
 }) {
   const { row, prep, words } = props;
-  const done = { shield: props.shield === "yes", wall: props.wall === "yes" };
-  const language = prep?.language ?? "en";
-  const text = prepMessage(PREP_MESSAGE[language], row.name, props.when, done);
-  const head = fill(words["roll.prep.messageFor"], {
-    name: isolate(row.name),
-    language: prep?.languageName ?? "",
-  });
+  const done = {
+    shield: props.shield === "yes",
+    wall: props.wall === "yes",
+    seen: prep?.tracker?.on ?? false,
+  };
+  const message = messageOf(prep, row.name, props.when, done, words);
   return (
     <li className="border-t border-rule py-2">
       <p translate="no" className="truncate font-semibold">
@@ -130,7 +149,7 @@ export function RaidPrepRow(props: {
       </p>
       {prep?.tracker && <TrackerLines tr={prep.tracker} times={props.times} />}
       {props.note && <p className="text-body-sm font-semibold text-yarn">{props.note}</p>}
-      <div className="mt-1 grid grid-cols-2 gap-2">
+      <div className="mt-1 grid max-w-md grid-cols-2 gap-3">
         <Pair
           label={words["roll.prep.shield"]}
           name={row.name}
@@ -151,7 +170,7 @@ export function RaidPrepRow(props: {
       {done.shield && done.wall ? (
         <p className="mt-1 text-body-sm text-ink/75">{words["roll.prep.allSet"]}</p>
       ) : (
-        <MessageBox text={text} head={head} words={words} />
+        <MessageBox text={message.text} head={message.head} words={words} />
       )}
     </li>
   );

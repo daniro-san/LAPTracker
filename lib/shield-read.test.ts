@@ -170,7 +170,7 @@ describe("the Raid Shield check's reads (D137)", () => {
     await tick(d);
     expect(d.posts).toHaveLength(1);
     expect(d.posts[0]?.method).toBe("POST");
-    expect(d.posts[0]?.content).toContain("23:39 ST: 2 of 4 shielded");
+    expect(d.posts[0]?.content).toContain("23:39 ST: 2 of 4 with a shield seen");
     expect(d.posts[0]?.content).toContain("Not seen yet: Wren2, Wren4");
     d.at = SAT;
     await tick(d);
