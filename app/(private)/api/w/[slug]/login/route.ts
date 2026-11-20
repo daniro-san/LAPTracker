@@ -19,7 +19,7 @@ export async function GET(
   const { slug } = await params;
   const parsed = parseQuery(request, query);
   if (!SLUG.test(slug) || !parsed) return privateError(404, "not_found");
-  return withContext("/api/w/[slug]/login", async (ctx, db) => {
+  return withContext("/api/w/[slug]/login", slug, async (ctx, db) => {
     const deps = { env: ctx.env, fetch: ctx.fetch, now: ctx.now() };
     const origin = new URL(request.url).origin;
     const step = await startSignIn(db, deps, slug, origin, parsed.silent === "1", parsed.next);

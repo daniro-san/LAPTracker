@@ -16,7 +16,7 @@ export async function register(): Promise<void> {
   }
 }
 
-export const onRequestError: Instrumentation.onRequestError = async (error, _request, context) => {
+export const onRequestError: Instrumentation.onRequestError = async (error, request, context) => {
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
   const [{ getAppContext }, { recordAppError }] = await Promise.all([
     import("./lib/app-context"),
@@ -29,10 +29,16 @@ export const onRequestError: Instrumentation.onRequestError = async (error, _req
     typeof error.digest === "string"
       ? error.digest
       : null;
+  // Issue 452: under /w/[slug] or /api/w/[slug], the slug from the path (PostHog's event only). The route
+  // path is the source file's ("/(private)/w/[slug]/thefts/page"), so the pattern is looked for anywhere.
+  const slug = /\/w\/\[slug\]/.test(context.routePath)
+    ? /^\/(?:api\/)?w\/([^/?#]+)/.exec(request.path)?.[1]
+    : undefined;
   await recordAppError(getAppContext(), {
     route: context.routePath,
     kind: context.routeType,
     digest,
     error,
+    ...(slug && { slug }),
   });
 };

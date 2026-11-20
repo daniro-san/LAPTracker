@@ -14,6 +14,7 @@ import { openTestDb, truncateAll } from "@/lib/db.test-helpers";
 import { pngHeader } from "@/lib/private/notice-picture.test-helpers";
 import { createSession, SESSION_COOKIE } from "@/lib/private/session";
 import { workspaces, workspaceUsers } from "@/lib/schema";
+import { workspaceFeatures } from "@/lib/schema-features";
 import { noticePictures } from "@/lib/schema-notices";
 
 const holder = vi.hoisted(() => ({ ctx: null as AppContext | null }));
@@ -42,7 +43,13 @@ beforeEach(async () => {
       leaderRoleIds: ["2"],
       memberRoleIds: ["3"],
     },
-    { unionId: 67109944, slug: "nse", discordGuildId: "4", leaderRoleIds: ["5"] },
+    {
+      unionId: 67109944,
+      slug: "nse",
+      discordGuildId: "4",
+      leaderRoleIds: ["5"],
+      memberRoleIds: ["6"],
+    },
   ]);
   holder.ctx = testContext(db).ctx;
 });
@@ -134,9 +141,12 @@ describe("GET /img/notice/[id]", () => {
     expect((await view(id, officer)).status).toBe(404);
   });
 
-  it("refuses another workspace's officer and a signed-out browser", async () => {
+  it("refuses another workspace's officer and member, and a signed-out browser (issue 471)", async () => {
     const id = await pictured(await session(1, "Rook", "officer"), true);
     expect((await view(id, await session(2, "Wren", "officer"))).status).toBe(404);
+    // The notice is on its own board today: a member of the other workspace still gets nothing.
+    expect((await view(id, await session(1, "Ivy", "member"))).status).toBe(200);
+    expect((await view(id, await session(2, "Fen", "member"))).status).toBe(404);
     expect((await view(id, null)).status).toBe(404);
   });
 
@@ -164,5 +174,18 @@ describe("GET /img/notice/[id]", () => {
     );
     expect(saved.headers.get("x-content-type-options")).toBe("nosniff");
     expect((await view(id, member, undefined, "?download=1")).status).toBe(404);
+  });
+
+  it("is a 404 to everyone while notice pictures are turned off, and back once on (D126)", async () => {
+    const officer = await session(1, "Rook", "officer");
+    const member = await session(1, "Pip", "member");
+    const id = await pictured(officer, true);
+    await db
+      .insert(workspaceFeatures)
+      .values({ workspaceId: 1, switches: { notice_pictures: false } });
+    expect((await view(id, officer)).status).toBe(404);
+    expect((await view(id, member)).status).toBe(404);
+    await db.delete(workspaceFeatures);
+    expect((await view(id, officer)).status).toBe(200);
   });
 });

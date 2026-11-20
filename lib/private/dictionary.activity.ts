@@ -4,7 +4,6 @@
 // before : and inside « ».
 export const activityEn = {
   "desk.now": "On the desk now",
-  "desk.alone": "Just you.",
   "activity.head": "Recent activity",
   "activity.none": "No activity yet. Saved notices, roll calls and calendar changes show up here.",
   "activity.more": "Show more",
@@ -61,7 +60,6 @@ type ActivityWords = Record<keyof typeof activityEn, string>;
 
 export const activityPt: ActivityWords = {
   "desk.now": "Na Mesa agora",
-  "desk.alone": "Só você.",
   "activity.head": "Atividade recente",
   "activity.none":
     "Nenhuma atividade ainda. Avisos salvos, chamadas e mudanças na Agenda aparecem aqui.",
@@ -117,7 +115,6 @@ export const activityPt: ActivityWords = {
 
 export const activityFr: ActivityWords = {
   "desk.now": "Au bureau maintenant",
-  "desk.alone": "Il n’y a que vous.",
   "activity.head": "Activité récente",
   "activity.none":
     "Aucune activité pour l’instant. Les annonces enregistrées, les appels et les changements d’agenda s’affichent ici.",

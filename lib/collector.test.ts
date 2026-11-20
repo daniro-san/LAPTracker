@@ -47,6 +47,9 @@ describe("runSnapshot", () => {
     expect(first?.members).toHaveLength(3);
     expect(first?.row.raw).toEqual({
       union_id: FIRST,
+      // The alliance's statement stays (D128); server_badge_url, quota and frame_url go.
+      bulletin: "free text",
+      declaration: "free text",
       badge_url: "u",
       members: [{ uid: 1, avatar_url: "u", x: 1 }],
     });

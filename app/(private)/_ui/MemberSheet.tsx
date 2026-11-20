@@ -5,7 +5,8 @@
 // list's page (D71). It reads again when the list's rows change (after the facts editor saved and the
 // page refreshed), keeping what it shows until the new card arrives. Close (×) at the top, Escape, the
 // backdrop and the phone's back button close it (the sheet frame). Once the card is read, the sticky bar
-// holds "Edit info" and "Paste what they told you", so they stay in view while the card scrolls.
+// holds "Edit info" and "Paste what they told you", so they stay in view while the card scrolls. From 1024
+// the same sheet is the pane beside the list (`pane`, D122).
 import { useEffect, useState } from "react";
 
 import { PlayerAvatar } from "@/app/_ui/Pictures";
@@ -38,6 +39,8 @@ export function MemberSheet(props: {
   words: ListWords;
   editor: EditorContext;
   onClose: () => void;
+  /** Beside the list from 1024 (D122), not a dialog. */
+  pane: boolean;
 }) {
   const { row, words: t, editor } = props;
   const [card, setCard] = useState<{
@@ -65,6 +68,7 @@ export function MemberSheet(props: {
       : null;
   return (
     <Sheet
+      pane={props.pane}
       labelledBy="member-sheet-title"
       onCancel={props.onClose}
       title={<span translate="no">{row.name}</span>}

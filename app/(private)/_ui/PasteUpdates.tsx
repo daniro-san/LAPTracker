@@ -5,15 +5,15 @@
 // become a member-update draft, read by the same reader and name matcher as a chat screenshot, and the
 // officer lands on its review: each line before → after, the member to confirm, then Save. Nothing is
 // saved before that. The button stays busy until the draft exists (D100's desk rule), so a second tap
-// cannot make a second draft.
+// cannot make a second draft. The page head's button opens it (PageActions, D122).
 import { useState } from "react";
 
 import { track } from "@/lib/analytics/events";
-import { buttonClass } from "@/lib/brand/components/Button";
 import { FIELD } from "@/lib/brand/components/controls";
 import { Sheet } from "@/lib/brand/components/Sheet";
 
 import type { UpdatesWords } from "./facts-form";
+import { usePageAction } from "./PageActions";
 import { ReadScreenshot, shotWords } from "./ReadScreenshot";
 import { isSignedOut, post } from "./screenshot-upload";
 import { sheetWords } from "./sheet-words";
@@ -43,7 +43,7 @@ async function makeDraft(slug: string, text: string): Promise<number | null> {
 }
 
 export function PasteUpdates({ slug, words }: { slug: string; words: UpdatesWords }) {
-  const [open, setOpen] = useState(false);
+  const [open, close] = usePageAction("paste-updates");
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -71,52 +71,43 @@ export function PasteUpdates({ slug, words }: { slug: string; words: UpdatesWord
   }
 
   return (
-    <div className="mt-3">
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className={buttonClass("primary", "w-full sm:w-auto")}
+    open && (
+      <Sheet
+        labelledBy="updates-title"
+        onCancel={() => {
+          close();
+          setText("");
+          setError(null);
+        }}
+        dirty={text.trim() !== ""}
+        title={words["updates.open"]}
+        words={sheetWords(words)}
+        primary={{
+          label: words["updates.read"],
+          onClick: () => void check(),
+          disabled: busy || text.trim() === "",
+        }}
       >
-        {words["updates.open"]}
-      </button>
-      {open && (
-        <Sheet
-          labelledBy="updates-title"
-          onCancel={() => {
-            setOpen(false);
-            setText("");
-            setError(null);
-          }}
-          dirty={text.trim() !== ""}
-          title={words["updates.open"]}
-          words={sheetWords(words)}
-          primary={{
-            label: words["updates.read"],
-            onClick: () => void check(),
-            disabled: busy || text.trim() === "",
-          }}
-        >
-          <p className="text-body-sm text-ink/80">{words["updates.help"]}</p>
-          <textarea
-            data-initial-focus
-            aria-label={words["updates.open"]}
-            value={text}
-            rows={8}
-            maxLength={20_000}
-            onChange={(e) => setText(e.target.value)}
-            className={`${FIELD} mt-2`}
-          />
-          <ReadScreenshot
-            slug={slug}
-            place="paste_updates"
-            multiple
-            words={shotWords(words)}
-            onText={(read) => setText((was) => (was.trim() === "" ? read : `${was}\n${read}`))}
-          />
-          <p className="mt-2 text-body-sm text-ink/80">{words["updates.after"]}</p>
-          {error && <RefusalLine text={error} className="mt-2 text-seal" />}
-        </Sheet>
-      )}
-    </div>
+        <p className="text-body-sm text-ink/80">{words["updates.help"]}</p>
+        <textarea
+          data-initial-focus
+          aria-label={words["updates.open"]}
+          value={text}
+          rows={8}
+          maxLength={20_000}
+          onChange={(e) => setText(e.target.value)}
+          className={`${FIELD} mt-2`}
+        />
+        <ReadScreenshot
+          slug={slug}
+          place="paste_updates"
+          multiple
+          words={shotWords(words)}
+          onText={(read) => setText((was) => (was.trim() === "" ? read : `${was}\n${read}`))}
+        />
+        <p className="mt-2 text-body-sm text-ink/80">{words["updates.after"]}</p>
+        {error && <RefusalLine text={error} className="mt-2 text-seal" />}
+      </Sheet>
+    )
   );
 }

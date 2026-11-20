@@ -5,6 +5,7 @@ export const lifecycleEn = {
   "members.view.aria": "Which members",
   "members.view.current": "Members",
   "members.view.former": "Former members",
+  "members.pick": "Pick a member to see their info.",
   "pending.head": "New members",
   "pending.add": "Add a new member",
   "pending.addHelp":
@@ -73,6 +74,7 @@ export const lifecyclePt: Record<LifecycleKey, string> = {
   "members.view.aria": "Quais membros",
   "members.view.current": "Membros",
   "members.view.former": "Ex-membros",
+  "members.pick": "Escolha um membro para ver as informações.",
   "pending.head": "Membros novos",
   "pending.add": "Adicionar membro novo",
   "pending.addHelp":
@@ -139,6 +141,7 @@ export const lifecycleFr: Record<LifecycleKey, string> = {
   "members.view.aria": "Quels membres",
   "members.view.current": "Membres",
   "members.view.former": "Anciens membres",
+  "members.pick": "Choisissez un membre pour voir ses infos.",
   "pending.head": "Nouveaux membres",
   "pending.add": "Ajouter un nouveau membre",
   "pending.addHelp":

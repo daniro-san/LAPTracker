@@ -125,6 +125,8 @@ type Props = {
   saveKinds: ImportKind[];
   text: ReviewText;
   sep: string;
+  /** D126: the thefts log is on, so a Secret Ops save links to it. */
+  thefts: boolean;
 };
 
 export function DraftReview(props: Props) {

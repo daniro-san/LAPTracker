@@ -27,14 +27,23 @@ function actionsOf(p: EditorProps, e: Editor) {
     shown.to.map((l) => LANGUAGE_CODE[l]),
   );
   const longest = Math.max(e.draft.values[language].length, e.draft.values[shown.from].length);
+  const hidden = p.aiOff ?? [];
+  const show = {
+    translate: !hidden.includes("translate"),
+    improve: !hidden.includes("improve"),
+    fit: canFit(e.draft, language) && !hidden.includes("fit"),
+  };
   const reason: WorkspaceKey | null = !p.ai
     ? "notices.ai.off"
-    : longest > DRAFT_LIMIT
-      ? "notices.ai.tooLong"
-      : null;
+    : !show.translate && !show.improve && !show.fit
+      ? "features.off.writing"
+      : longest > DRAFT_LIMIT
+        ? "notices.ai.tooLong"
+        : null;
   return {
     plan,
     reason,
+    show,
     where:
       shown.from === language
         ? fill(t["notices.translate.to"], { list: codes })
@@ -47,31 +56,39 @@ function actionsOf(p: EditorProps, e: Editor) {
 export function NoticeActions({ p, e }: { p: EditorProps; e: Editor }) {
   const { t } = p;
   const language = e.active;
-  const { plan, reason, where, replaces } = actionsOf(p, e);
+  const { plan, reason, where, replaces, show } = actionsOf(p, e);
   const off = reason !== null || e.busy !== null;
   const described = reason ? { "aria-describedby": AI_REASON_ID } : {};
-  const over = canFit(e.draft, language);
+  const over = show.fit;
+  // D126: every writing help turned off for the alliance: only the line that says so.
+  if (reason === "features.off.writing") {
+    return <ActionNote t={t} reason={reason} message={null} replaces={false} />;
+  }
   return (
     <>
       <div
         className={`mt-3 grid grid-cols-2 gap-2 ${over ? "sm:max-w-xl sm:grid-cols-3" : "sm:max-w-md"}`}
       >
-        <ActionButton
-          t={t}
-          working={e.busy === "translate"}
-          name={t["notices.translate"]}
-          detail={where}
-          disabled={off || plan === null}
-          {...described}
-          onClick={() => plan && void e.translate(plan.from, plan.to)}
-        />
-        <ImproveButton
-          t={t}
-          working={e.busy === "improve"}
-          disabled={off || e.draft.values[language].trim() === ""}
-          described={described}
-          onImprove={(tone) => void e.improve(language, tone)}
-        />
+        {show.translate && (
+          <ActionButton
+            t={t}
+            working={e.busy === "translate"}
+            name={t["notices.translate"]}
+            detail={where}
+            disabled={off || plan === null}
+            {...described}
+            onClick={() => plan && void e.translate(plan.from, plan.to)}
+          />
+        )}
+        {show.improve && (
+          <ImproveButton
+            t={t}
+            working={e.busy === "improve"}
+            disabled={off || e.draft.values[language].trim() === ""}
+            described={described}
+            onImprove={(tone) => void e.improve(language, tone)}
+          />
+        )}
         {over && (
           <ActionButton
             t={t}

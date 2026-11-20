@@ -22,6 +22,7 @@ import {
   workspaceUsers,
 } from "../schema";
 import { startHere, thanksShares, thanksTakedowns } from "../schema-board";
+import { workspaceFeatures, workspaceUsage } from "../schema-features";
 import {
   allianceDuelPoints,
   discordPictures,
@@ -98,6 +99,9 @@ export const WORKSPACE_TABLES: readonly WorkspaceTable[] = [
   { file: "data-requests", table: workspaceDataEvents, scope: "workspace" },
   { file: null, table: workspaceSessions, scope: "workspace" },
   { file: null, table: workspaceKeys, scope: "workspace" },
+  // D126: the owner's switches and the daily counts are the owner's settings, not the alliance's data.
+  { file: null, table: workspaceFeatures, scope: "workspace" },
+  { file: null, table: workspaceUsage, scope: "workspace" },
   { file: null, table: discordPictures, scope: "workspace" },
   { file: null, table: squadReads, scope: "union" },
 ];

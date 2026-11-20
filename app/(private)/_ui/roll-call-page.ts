@@ -9,6 +9,7 @@ import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
 import { requireWorkspace, type WorkspaceAccess } from "@/lib/private/access";
 import { isDay, mondayOf } from "@/lib/private/calendar-time";
+import { featureOn } from "@/lib/private/features";
 import { toReviewCount } from "@/lib/private/import-view";
 import type { Occasion } from "@/lib/private/roll-call";
 import { RENEW_MS } from "@/lib/private/session";
@@ -17,6 +18,7 @@ import { serverDay } from "@/lib/schedule";
 
 import { workspaceWords } from "./Frame";
 import { refuse } from "./refuse";
+import { turnedOffPage } from "./TurnedOff";
 
 type Search = Record<string, string | string[] | undefined>;
 
@@ -42,6 +44,8 @@ export async function openRollCall<T>(
     language: string,
     zone: string,
   ) => Promise<T>,
+  /** D126: the switch this page belongs to. */
+  feature: "roll_call" | "garrison" | "follow_up" = "roll_call",
 ) {
   const { slug } = await params;
   if (!SLUG.test(slug)) notFound();
@@ -54,9 +58,11 @@ export async function openRollCall<T>(
   const { access, data, waiting } = await withPageDb(async (db) => {
     const access = await requireWorkspace(db, slug, jar, now, RENEW_MS);
     if (!access.ok) return { access, data: null, waiting: 0 };
+    // D126: a page turned off for the alliance reads nothing of its own.
+    const on = featureOn(access, feature);
     return {
       access,
-      data: await read(db, access, today, language, env.SERVER_TZ),
+      data: on ? await read(db, access, today, language, env.SERVER_TZ) : null,
       waiting: await toReviewCount(db, access, now),
     };
   });
@@ -64,5 +70,18 @@ export async function openRollCall<T>(
     refuse(slug, access.reason, `/w/${slug}/${path}`);
     redirect(`/w/${slug}`);
   }
-  return { access, data: data as T, waiting, slug, today, now, language, t, zone: env.SERVER_TZ };
+  /** D126: the page to show instead when its feature is turned off for the alliance. */
+  const off = turnedOffPage(access, feature, waiting);
+  return {
+    access,
+    off,
+    data: data as T,
+    waiting,
+    slug,
+    today,
+    now,
+    language,
+    t,
+    zone: env.SERVER_TZ,
+  };
 }

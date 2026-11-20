@@ -10,6 +10,7 @@ import type { Db } from "@/lib/db";
 import { openTestDb, truncateAll } from "@/lib/db.test-helpers";
 import { createSession, SESSION_COOKIE } from "@/lib/private/session";
 import { workspaces, workspaceUsers } from "@/lib/schema";
+import { workspaceUsage } from "@/lib/schema-features";
 
 const holder = vi.hoisted(() => ({ ctx: null as AppContext | null }));
 vi.mock("@/lib/app-context", async (original) => ({
@@ -38,7 +39,7 @@ beforeEach(async () => {
 
 /** The context with `ai` as the Groq stand-in (null: no key). */
 const withAi = (ai: ChatModel | null) => {
-  holder.ctx = { ...testContext(db).ctx, ai };
+  holder.ctx = { ...testContext(db).ctx, ai: ai && (() => ai) };
 };
 
 function draft(body: object, signedIn = true) {
@@ -169,5 +170,15 @@ describe("POST /api/w/[slug]/notices/draft", () => {
     const over = await draft({ kind: "fit", language: "fr", text: long });
     expect([over.status, await over.json()]).toEqual([422, { code: "still_over" }]);
     expect(asked).toHaveLength(4);
+  });
+
+  it("gives the alliance's daily AI count back when the model does not answer (D126)", async () => {
+    const used = async () => (await db.select().from(workspaceUsage)).map((r) => r.used);
+    withAi({ complete: async () => "Rally às 18:00 ST." });
+    expect((await draft(TRANSLATE)).status).toBe(200);
+    expect(await used()).toEqual([2]);
+    withAi({ complete: () => Promise.reject(new ChatError("busy")) });
+    expect((await draft(TRANSLATE)).status).toBe(429);
+    expect(await used()).toEqual([2]);
   });
 });

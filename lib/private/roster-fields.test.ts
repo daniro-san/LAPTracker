@@ -73,4 +73,14 @@ describe("roster fields kept for the workspace (D71)", () => {
       });
     expect(offenders).toEqual([]);
   });
+
+  it("are never kept in a cache shared between workspaces or viewers (issue 471)", () => {
+    // Next's data cache (unstable_cache, "use cache", tags) and React's cache serve one value to every
+    // request; the workspace reads each request's own rows instead.
+    const shared =
+      /["']next\/cache["']|unstable_cache|["']use cache["']|\bcacheTag\b|import\s*{[^}]*\bcache\b[^}]*}\s*from\s*["']react["']/;
+    const files = ["app/(private)", "lib/private", "lib/repo"].flatMap(sources);
+    expect(files.length).toBeGreaterThan(100);
+    expect(files.filter((f) => shared.test(readFileSync(join(ROOT, f), "utf8")))).toEqual([]);
+  });
 });

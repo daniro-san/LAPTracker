@@ -8,9 +8,11 @@ import { createCipheriv, createDecipheriv, createHmac, randomBytes } from "node:
 
 import { OWN_ALLIANCE_ID } from "../config/alliances";
 import type { Db } from "./db";
+import { allSettings } from "./repo/workspace-features";
 import { markKey, sealedKeys, type SealedKey } from "./repo/workspace-keys";
 import type { KeyStatus } from "./schema-keys";
 import { QuotaExhaustedError, UpstreamError, type V1Source } from "./sources/types";
+import { resolveFeatures } from "./workspace-features";
 
 /**
  * A tracker key as the site issues it: `lap_` and 43 characters today (measured on our own key by length
@@ -139,6 +141,8 @@ export interface OpenKey {
 export interface SquadTarget {
   unionId: number;
   workspaceId: number | null;
+  /** The workspace's slug, for the run's log lines (issue 452). */
+  slug: string;
   key: OpenKey | null;
 }
 
@@ -162,25 +166,39 @@ async function opened(db: Db, secret: string, r: SealedKey, now: Date): Promise<
 /**
  * The squads reads due at `now`, own alliance first. A workspace without a usable key of its own is not
  * read, except the own alliance's, on LAP_API_KEY, while it has no saved key or the feature is off
- * (no WORKSPACE_KEYS_SECRET). With no workspace of its own (D125: deleted), the own alliance is not read. A key sealed under another master key is skipped and not written.
+ * (no WORKSPACE_KEYS_SECRET). With no workspace of its own (D125: deleted), the own alliance is not read. A key sealed under another master key is skipped and not written. D126: a
+ * workspace whose squads read the owner turned off is not read either; its stored squads stay.
  */
 export async function squadTargets(
   db: Db,
   secret: string | undefined,
   now: Date,
 ): Promise<SquadTarget[]> {
+  const [targets, settings] = await Promise.all([keyTargets(db, secret, now), allSettings(db)]);
+  const off = settings
+    .filter((w) => !resolveFeatures(w.settings, []).on.has("squads"))
+    .map((w) => w.unionId);
+  return targets.filter((t) => !off.includes(t.unionId));
+}
+
+async function keyTargets(db: Db, secret: string | undefined, now: Date): Promise<SquadTarget[]> {
   const rows = await sealedKeys(db);
   const own = rows.find((r) => r.unionId === OWN_ALLIANCE_ID);
   const targets: SquadTarget[] = [];
   // D125: without a workspace (none yet, or deleted) the own alliance's squads are not read at all.
   if (own && (!secret || !own.ciphertext)) {
-    targets.push({ unionId: OWN_ALLIANCE_ID, workspaceId: own.workspaceId, key: null });
+    targets.push({
+      unionId: OWN_ALLIANCE_ID,
+      workspaceId: own.workspaceId,
+      slug: own.slug,
+      key: null,
+    });
   }
   if (!secret) return targets;
   for (const r of rows) {
     const key = await opened(db, secret, r, now);
     if (!key) continue;
-    const target = { unionId: r.unionId, workspaceId: r.workspaceId, key };
+    const target = { unionId: r.unionId, workspaceId: r.workspaceId, slug: r.slug, key };
     if (r.unionId === OWN_ALLIANCE_ID) targets.unshift(target);
     else targets.push(target);
   }

@@ -4,6 +4,7 @@
 // nothing is written (issue 293).
 import { requireWorkspace } from "@/lib/private/access";
 import { counted } from "@/lib/private/desk-action";
+import { featureOn } from "@/lib/private/features";
 import { isSameOriginJson, NO_STORE, privateError, requestCookies } from "@/lib/private/http";
 import { SLUG } from "@/lib/private/sign-in";
 import { saveStartHere, startHereSave } from "@/lib/private/start-here";
@@ -18,10 +19,11 @@ export async function POST(
   if (!isSameOriginJson(request)) return privateError(403, "forbidden");
   const parsed = startHereSave.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return privateError(400, "bad_request");
-  return withContext("/api/w/[slug]/start-here", async (ctx, db) => {
+  return withContext("/api/w/[slug]/start-here", slug, async (ctx, db) => {
     const now = ctx.now();
     const access = await requireWorkspace(db, slug, requestCookies(request), now);
     if (!access.ok) return privateError(401, "signed_out");
+    if (!featureOn(access, "board")) return privateError(403, "turned_off");
     const result = await saveStartHere(db, access, parsed.data, now);
     if (result.ok) {
       const saved = Response.json({ version: result.version }, { headers: NO_STORE });

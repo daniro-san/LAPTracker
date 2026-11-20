@@ -10,6 +10,7 @@ import { fill, isolate } from "@/lib/copy";
 import { withPageDb } from "@/lib/page";
 import { requireWorkspace } from "@/lib/private/access";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
+import { featureOn } from "@/lib/private/features";
 import type { ImportKind } from "@/lib/private/import-kinds";
 import { SAVED_KINDS } from "@/lib/private/import-save";
 import { draftView, toReview, type DraftView } from "@/lib/private/import-view";
@@ -114,7 +115,14 @@ export default async function DraftPage({
       {view === null ? (
         <p className="drawn-card mt-4 px-4 py-5">{t["shots.e.gone"]}</p>
       ) : (
-        <Draft view={view} t={t} language={language} slug={slug} kinds={kinds} />
+        <Draft
+          view={view}
+          t={t}
+          language={language}
+          slug={slug}
+          kinds={kinds}
+          thefts={featureOn(access, "thefts")}
+        />
       )}
       {view?.status !== "open" && (
         <NextDraft slug={slug} t={t} language={language} others={others} />
@@ -155,6 +163,7 @@ function Draft(props: {
   language: WorkspaceLanguage;
   slug: string;
   kinds: Record<ImportKind, string>;
+  thefts: boolean;
 }) {
   const { view, t, language } = props;
   const by = view.doneBy ?? t["shots.someone"];
@@ -204,6 +213,7 @@ function Draft(props: {
         saveKinds={SAVED_KINDS}
         text={reviewText(view, t, language)}
         sep={exact(1000, language).replace(/\d/g, "")}
+        thefts={props.thefts}
       />
     </>
   );

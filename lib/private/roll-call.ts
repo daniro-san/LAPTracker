@@ -224,7 +224,7 @@ export async function undoMarks(
 }
 
 /**
- * A roll call added by hand (KvK shield, Undead Siege, Cheese Trap): one per kind and day, held by a unique
+ * A roll call added by hand (Raid Shield, Undead Siege, Cheese Trap): one per kind and day, held by a unique
  * index on the hand-added rows; an add that loses to another officer's opens theirs.
  */
 export async function addCall(

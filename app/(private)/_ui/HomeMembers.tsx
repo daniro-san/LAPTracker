@@ -13,7 +13,7 @@ import { plural } from "@/lib/private/members-sheet";
 import { serverDay } from "@/lib/schedule";
 
 import { LINK } from "./BoardText";
-import { shareThanksProps, type ShareThanksProps } from "./share-thanks-data";
+import { shareThanksProps, type ShareThanksProps, type ThanksSwitches } from "./share-thanks-data";
 import { ShareThanks } from "./ShareThanks";
 
 /** D109's progress in name order, its own block under the top lists, with "Share the thanks" (D114). */
@@ -52,6 +52,8 @@ export function HomeMembers(props: {
   view: MembersView;
   /** Sunday or Monday, and the week's thanks not shared yet (D114). */
   nudge: boolean;
+  /** D126: the thanks sheet's switches. */
+  switches: ThanksSwitches;
 }) {
   const { slug, t, language, view, nudge } = props;
   const members = `/w/${slug}/members`;
@@ -87,7 +89,10 @@ export function HomeMembers(props: {
             </div>
           )}
           {sharing && (
-            <SayThanks {...props} share={shareThanksProps({ slug, t, language, view, today })} />
+            <SayThanks
+              {...props}
+              share={shareThanksProps({ slug, t, language, view, today, switches: props.switches })}
+            />
           )}
           {/* "Everyone looks fine" is left out beside the thanks block, where it reads as noise (D114). */}
           {checkins === 0 ? (

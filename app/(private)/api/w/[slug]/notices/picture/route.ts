@@ -7,6 +7,7 @@
 // notice in the trash answers 410 notice_deleted (D118).
 import { requireWorkspace } from "@/lib/private/access";
 import { counted } from "@/lib/private/desk-action";
+import { featureOn } from "@/lib/private/features";
 import {
   isSameOriginPicture,
   NO_STORE,
@@ -44,10 +45,11 @@ export async function POST(
   if (!/^\d+$/.test(length) || Number(length) > MAX_PICTURE_BYTES) {
     return privateError(413, "too_large");
   }
-  return withContext("/api/w/[slug]/notices/picture", async (ctx, db) => {
+  return withContext("/api/w/[slug]/notices/picture", slug, async (ctx, db) => {
     const now = ctx.now();
     const access = await requireWorkspace(db, slug, requestCookies(request), now);
     if (!access.ok) return privateError(401, "signed_out");
+    if (!featureOn(access, "notice_pictures")) return privateError(403, "turned_off");
     const bytes = new Uint8Array(await request.arrayBuffer());
     const result = await privately("notices.picture", () =>
       savePicture(db, access, Number(raw), bytes, now),

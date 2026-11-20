@@ -30,8 +30,8 @@ beforeAll(async () => {
   db = await openTestDb();
 });
 
-/** An end-of-day read: uid → weekly activity, with nothing donated. */
-async function endOfDay(day: string, members: Record<number, number>) {
+/** An end-of-day read: uid → daily quest points (null: none that day), with nothing donated. */
+async function endOfDay(day: string, members: Record<number, number | null>) {
   const uids = Object.keys(members).map(Number);
   const at = new Date(`${day}T23:37:00-02:00`);
   await db.insert(dailyReads).values({ day, startedAt: at, status: "complete" });
@@ -53,7 +53,7 @@ async function endOfDay(day: string, members: Record<number, number>) {
         lv: 25,
         rank_code: 103,
         rank_label: "R3",
-        daily_tech: 0,
+        daily_tech: null,
         active: members[uid],
       })),
     },
@@ -63,10 +63,10 @@ async function endOfDay(day: string, members: Record<number, number>) {
 beforeEach(async () => {
   await truncateAll(db);
   await saveWorkspace(db, { unionId: OGS, slug: "ogs", discordGuildId: "1", leaderRoleIds: ["2"] });
-  // 101 holds still for three reads (the offline proxy, D75); 102 grows; 103 joins on the 18th (new).
-  await endOfDay("2026-11-17", { 101: 5, 102: 10 });
-  await endOfDay("2026-11-18", { 101: 5, 102: 20, 103: 1 });
-  await endOfDay("2026-11-19", { 101: 5, 102: 30, 103: 2 });
+  // 101 has no quests and no donations on three reads (the offline proxy, D127); 103 joins on the 18th (new).
+  await endOfDay("2026-11-17", { 101: null, 102: 10 });
+  await endOfDay("2026-11-18", { 101: null, 102: 20, 103: 1 });
+  await endOfDay("2026-11-19", { 101: null, 102: 30, 103: 2 });
 });
 
 async function signedIn(name: string): Promise<WorkspaceAccess> {
@@ -157,10 +157,10 @@ describe("the Follow-up list (issue 340, D104)", () => {
     const ana = await signedIn("Ana");
     await recordFollowUp(db, ana, input(101, { action: "help" }), CLOCK);
     expect((await listed(ana)).map(([uid]) => uid)).toEqual([103]);
-    // Next week 101 still holds still: Sat and Sun the same, Monday's reset compared with 0.
-    await endOfDay("2026-11-21", { 101: 5 });
-    await endOfDay("2026-11-22", { 101: 5 });
-    await endOfDay("2026-11-23", { 101: 0 });
+    // Next week 101 still has no quests and no donations: Saturday, Sunday and Monday.
+    await endOfDay("2026-11-21", { 101: null });
+    await endOfDay("2026-11-22", { 101: null });
+    await endOfDay("2026-11-23", { 101: null });
     expect(await listed(ana, new Date("2026-11-24T12:00:00Z"))).toEqual([[101, true, []]]);
   });
 

@@ -10,8 +10,8 @@ import { z } from "zod";
 
 import { IMPORT_COMMAND, TRANSLATE_FOR_EVERYONE, TRANSLATE_FOR_ME } from "../app-commands";
 import type { Db } from "../db";
-import { claimPictures, findWorkspaceByGuild, picturesDrafts, recordOfficer } from "../repo/import";
-import { findWorkspaceUser } from "../repo/workspaces";
+import { claimPictures, picturesDrafts, recordOfficer } from "../repo/import";
+import { findWorkspaceByGuild, findWorkspaceUser } from "../repo/workspaces";
 import { officerAccess, type WorkspaceAccess } from "./access";
 import {
   pickWorkspaceLanguage,
@@ -29,6 +29,7 @@ import {
   REPLY,
 } from "./discord-api";
 import { translateCommand, translateComponent, type TranslationJob } from "./discord-translate";
+import { featureOn, featuresById } from "./features";
 import { privately } from "./http";
 import { DRAFT_DAYS } from "./import";
 import { privateLog } from "./log";
@@ -168,7 +169,7 @@ async function officerOf(db: Db, interaction: Interaction, now: Date) {
   const officer = await privately("discord_officer", () =>
     recordOfficer(db, workspace.id, member.user.id, name),
   );
-  return { access: officerAccess(workspace, officer) };
+  return { access: officerAccess(workspace, officer, await featuresById(db, workspace.id)) };
 }
 
 /** Which of the app's commands this is, or null. */
@@ -284,6 +285,11 @@ async function command(
   if ("refused" in officer) {
     privateLog("w.import.discord_refused");
     return reply(t[officer.refused]);
+  }
+  // D126: turned off for this alliance: nothing is claimed or read.
+  if (!featureOn(officer.access, "discord_send")) {
+    privateLog("w.import.discord_off");
+    return reply(t["features.off.command"]);
   }
   const message = targetMessage(interaction);
   const pictures = (message?.attachments ?? []).filter(isPicture);

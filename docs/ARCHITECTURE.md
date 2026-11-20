@@ -143,6 +143,14 @@ lib/repo/workspace-data.ts  everything a workspace owns (D125), in one list (`WO
                     cancel in lib/private/workspace-deletion.ts; tables in lib/schema-retention.ts; Home's lines in
                     lib/repo/desk-activity-data.ts.
 lib/zip.ts          pure: a ZIP writer with no dependency (deflate and CRC-32 from node:zlib), for D125's download.
+lib/workspace-features.ts the owner's per-workspace feature switches and daily caps (D126): the catalog by group, which
+                    are paid and which allowance each spends, each workspace's defaults (OGs everything on, others
+                    the paid ones off), the global pause, and the pure changes /admin makes. Shared by /admin,
+                    lib/private and the squads read (`squadTargets`). Tables in lib/schema-features.ts, read and
+                    written in lib/repo/workspace-features.ts (the daily count is one atomic insert … on
+                    conflict … where used + units <= cap); /admin's read in lib/queries/workspace-features.ts;
+                    lib/private/features.ts holds `featureOn` and `useAllowance`, on the features
+                    `requireWorkspace`, `requireBoard` and the Discord commands read with the workspace.
 lib/rehearsal.ts    rehearsal creation (guards, retention) and the pure verdict.
 lib/auth.ts         Bearer CRON_SECRET / x-edit-pin in constant time; the Postgres-backed rate limiter.
 lib/run.ts          what a route runs: executeSnapshot and the tick's executeSample (D69) (finalise + logger

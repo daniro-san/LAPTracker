@@ -5,6 +5,7 @@
 // Discord stays there. → 200, 404 not_found.
 import { requireWorkspace } from "@/lib/private/access";
 import { counted } from "@/lib/private/desk-action";
+import { featureOn } from "@/lib/private/features";
 import { isSameOriginJson, NO_STORE, privateError, requestCookies } from "@/lib/private/http";
 import { privateLog } from "@/lib/private/log";
 import { deleteNotice, noticeDelete } from "@/lib/private/notices";
@@ -20,10 +21,11 @@ export async function POST(
   if (!isSameOriginJson(request)) return privateError(403, "forbidden");
   const parsed = noticeDelete.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return privateError(400, "bad_request");
-  return withContext("/api/w/[slug]/notices/delete", async (ctx, db) => {
+  return withContext("/api/w/[slug]/notices/delete", slug, async (ctx, db) => {
     const now = ctx.now();
     const access = await requireWorkspace(db, slug, requestCookies(request), now);
     if (!access.ok) return privateError(401, "signed_out");
+    if (!featureOn(access, "notices")) return privateError(403, "turned_off");
     const result = await deleteNotice(db, access, parsed.data, now);
     if (result !== "ok") return privateError(404, result);
     const { undo, restore } = parsed.data;

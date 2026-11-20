@@ -6,7 +6,7 @@ import { addDays, mondayOf } from "./calendar-time";
 import { isDaytime } from "./members-list";
 
 /**
- * KvK shield, Undead Siege (the issue's "raid"), plunders, an Elixir Scramble team, Cheese Trap. Plunders
+ * Raid Shield, Undead Siege (the issue's "raid"), plunders, an Elixir Scramble team, Cheese Trap. Plunders
  * are no longer added (owner, 2026-11-17); the kind stays so the ones already saved read as before.
  */
 export const ROLL_KINDS = ["shield", "raid", "plunder", "elixir", "cheese"] as const;
@@ -23,7 +23,7 @@ export const FROM_CALENDAR: Readonly<Record<string, RollKind>> = {
   cheese: "cheese",
 };
 
-/** `assumed` is "no problem seen": the KvK shield's answer for the rest, not checked one by one. */
+/** `assumed` is "no problem seen": the Raid Shield's answer for the rest, not checked one by one. */
 export const MARKS = ["yes", "no", "assumed"] as const;
 export type Mark = (typeof MARKS)[number];
 
@@ -101,20 +101,20 @@ export interface TeamCandidate {
   name: string;
   /** Their clock's minute at the window's start; null when no time zone is recorded. */
   theirMinute: number | null;
-  /** Weekly activity from the newest end-of-day read; null when not known. */
+  /** Daily quest points summed over the game week (D127); null when not known. */
   active: number | null;
   /** Main squad might (a fact); null when not recorded. */
   squad: number | null;
 }
 
-/** "Daytime for them" as the Members list says it (D98); null with no time zone recorded. */
+/** "Within their usual hours" as the Members list says it (D98); null with no time zone recorded. */
 export const awakeAt = (minute: number | null): boolean | null =>
   minute === null ? null : isDaytime(minute);
 
 /**
  * The team suggestions' order (owner, issue 298): daytime for them at the window first, then those with no time
  * zone recorded (missing data is never held against anyone, D75), then night; within each, the most
- * active this week, then the strongest main squad; unknown values after known ones; then by name.
+ * daily quest points this week, then the strongest main squad; unknown values after known ones; then by name.
  */
 export function teamOrder<C extends TeamCandidate>(
   candidates: readonly C[],

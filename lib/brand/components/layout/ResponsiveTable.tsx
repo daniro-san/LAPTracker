@@ -1,7 +1,10 @@
 // A table that grows with the width (DESIGN.md "Layout system", D122): cards below 640 from the caller's
 // card renderer; a table from 640 whose columns appear by priority (640, 1024, 1440); the head row sticky
-// from 1024; numbers right-aligned and tabular; rows 44 px or taller. The open row (master-detail) is tinted
-// plum with a 3 px bar and carries aria-current.
+// (under the caller's own sticky bar: `--table-head-top`, 0 by default); numbers right-aligned and
+// tabular; rows 44 px or taller. The open row (master-detail) is tinted plum with a 3 px bar and carries
+// aria-current. With `onRow` a press anywhere on a row opens it; the row's own control (a button in a
+// cell, which the keyboard reaches) does the same by its click bubbling to the row. `compact` cards are
+// rows of a list divided by hairlines (people), not spaced cards.
 import type { ReactNode } from "react";
 
 import { cellClass, type ColumnPriority } from "./layout-rules";
@@ -12,6 +15,8 @@ export interface Column<Row> {
   cell: (row: Row) => ReactNode;
   priority?: ColumnPriority;
   numeric?: boolean;
+  /** A width class for the head cell ("w-20"), so tables shown one under another line up. */
+  width?: string;
 }
 
 export function ResponsiveTable<Row>({
@@ -21,6 +26,8 @@ export function ResponsiveTable<Row>({
   rowKey,
   card,
   isOpen,
+  onRow,
+  compact = false,
 }: {
   /** The table's name for screen readers. */
   caption: string;
@@ -30,11 +37,13 @@ export function ResponsiveTable<Row>({
   /** One row as a card, below 640. */
   card: (row: Row) => ReactNode;
   isOpen?: (row: Row) => boolean;
+  onRow?: (row: Row) => void;
+  compact?: boolean;
 }) {
   const align = (c: Column<Row>) => (c.numeric ? "text-right tabular-nums" : "text-left");
   return (
     <>
-      <ul className="flex flex-col gap-3 sm:hidden" aria-label={caption}>
+      <ul className={`flex flex-col ${compact ? "" : "gap-3"} sm:hidden`} aria-label={caption}>
         {rows.map((row) => (
           <li key={rowKey(row)} aria-current={isOpen?.(row) ? "true" : undefined}>
             {card(row)}
@@ -49,7 +58,7 @@ export function ResponsiveTable<Row>({
               <th
                 key={c.key}
                 scope="col"
-                className={`${cellClass(c.priority ?? "always")} ${align(c)} border-b border-ink bg-paper px-2 py-2 text-label font-semibold tracking-[0.04em] text-ink/75 uppercase lg:sticky lg:top-0`}
+                className={`${cellClass(c.priority ?? "always")} ${align(c)} ${c.width ?? ""} sticky top-[var(--table-head-top,0px)] z-[4] border-b whitespace-nowrap border-ink bg-paper px-2 py-2 text-label font-semibold tracking-[0.04em] text-ink/75 uppercase`}
               >
                 {c.head}
               </th>
@@ -63,11 +72,14 @@ export function ResponsiveTable<Row>({
               <tr
                 key={rowKey(row)}
                 aria-current={open ? "true" : undefined}
-                className={
+                onClick={onRow && (() => onRow(row))}
+                className={`${onRow ? "cursor-pointer" : ""} ${
                   open
-                    ? "bg-plum/10 [&>td:first-child]:shadow-[inset_3px_0_0_var(--plum)]"
-                    : undefined
-                }
+                    ? "bg-plum/15 [&>td:first-child]:shadow-[inset_3px_0_0_var(--plum)]"
+                    : onRow
+                      ? "hover:bg-plum/5"
+                      : ""
+                }`}
               >
                 {columns.map((c) => (
                   <td

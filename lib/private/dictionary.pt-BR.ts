@@ -5,6 +5,7 @@ import { activityPt } from "./dictionary.activity";
 import { boardPt } from "./dictionary.board";
 import { calendarPt } from "./dictionary.calendar.pt-BR";
 import { dataPt } from "./dictionary.data";
+import { featuresPt } from "./dictionary.features";
 import { followUpPt } from "./dictionary.followup";
 import { garrisonPt } from "./dictionary.garrison";
 import { importPt } from "./dictionary.import";
@@ -27,6 +28,7 @@ export const pt: WorkspaceDictionary = {
   "tab.aria": "Seções",
   "tab.home": "Início",
   "tab.members": "Membros",
+  "desk.more": "Mais",
   "tab.mark": "Chamada",
   "tab.days": "Agenda",
   "tab.soon": "Em breve",
@@ -77,7 +79,7 @@ export const pt: WorkspaceDictionary = {
   "thanks.head": "Destaques da semana",
   "thanks.intro": "Agradeça a eles no jogo.",
   "thanks.donors": "Quem mais doou",
-  "thanks.activity": "Mais ativos",
+  "thanks.activity": "Pontos de missões diárias",
   "members.search.ph": "Nome (sem precisar de emoji)",
   "members.search.aria": "Buscar membros",
   "members.filter.aria": "Filtro",
@@ -92,14 +94,17 @@ export const pt: WorkspaceDictionary = {
   "members.meta.level": "Sanctuary {n}",
   "members.meta.might": "Might {v}",
   "members.meta.don": "Doações {v}",
-  "members.meta.act": "Atividade {v}",
+  "members.meta.act": "Pontos de missões diárias {v}",
   "members.don.head": "Doações da semana · total {total}",
   "members.don.later": "ainda sem atualização",
   "members.don.none": "sem dados",
+  "members.don.nothing": "nada",
   "members.nodata": "Sem dados: {list}",
   "nodata.might": "might",
   "nodata.sanctuary": "Sanctuary",
-  "nodata.activity": "atividade",
+  "members.noQuests": "Sem missões diárias em {day}",
+  "members.noDonations": "Sem doações em {day}",
+  "members.noQuestsOrDonations": "Sem missões nem doações em {day}",
   "status.fine": "Tudo bem",
   "status.checkin": "Ver como está",
   "reason.kvk": "nenhum kill ganho na Kingdom War (KvK) em {date}",
@@ -108,8 +113,8 @@ export const pt: WorkspaceDictionary = {
   "sheet.might": "Might",
   "sheet.sanctuary": "Sanctuary",
   "sheet.total": "Total da semana",
-  "sheet.activity": "Atividade da semana",
-  "sheet.honor": "Honra do dia",
+  "sheet.activity": "Pontos de missões diárias",
+  "sheet.honor": "Moedas de Ajuda da aliança hoje (máx. 1.000)",
   "sheet.joined": "Entrou em",
   "sheet.seen": "Visto desde",
   "sheet.status": "Situação",
@@ -144,10 +149,10 @@ export const pt: WorkspaceDictionary = {
   "members.lead": "Atualizado uma vez por dia, pouco antes de o servidor virar o dia.",
   "members.lastRead": "Última atualização: {when}",
   "members.week": "Semana: {from} – {to}",
-  "members.legend": "— quer dizer sem dados.",
   "members.more": "O que as etiquetas querem dizer",
   "members.checkinHelp": "“Ver como está”: pergunte como a pessoa está. Você decide o que fazer.",
-  "members.nodataHelp": "Dados que faltam ficam fora de todas as contas.",
+  "members.nodataHelp": "Ainda sem dados. Dados que faltam nunca contam contra ninguém.",
+  "nodata.mark": "Sem dados",
   "members.checkinCount.one": "{n} pessoa para ver como está ou ajudar",
   "members.checkinCount.other": "{n} pessoas para ver como estão ou ajudar",
   "members.checkinNone": "Todo mundo parece bem esta semana.",
@@ -170,7 +175,8 @@ export const pt: WorkspaceDictionary = {
     "Quem está na aliança, com o might, as doações e a atividade de cada membro, vindos do jogo. Use no lugar das planilhas.",
   "intro.1.settings": "Toque no seu nome no topo para ver suas configurações.",
   "intro.only": "Só R4 · R5",
-  "intro.2.more": "— quer dizer sem dados, e não entra em nenhuma conta.",
+  "intro.2.more":
+    "Um círculo pontilhado quer dizer que ainda não há dados. Dados que faltam nunca contam contra ninguém.",
   "intro.desk.title": "Agenda, prints e Discord",
   "intro.desk.calendar":
     "Agenda: o que vai acontecer, na hora do servidor e na sua hora. Avisos e Roubos são abas dentro dela.",
@@ -292,4 +298,5 @@ export const pt: WorkspaceDictionary = {
   ...garrisonPt,
   ...settingsPt,
   ...dataPt,
+  ...featuresPt,
 };

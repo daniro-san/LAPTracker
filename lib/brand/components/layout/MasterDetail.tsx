@@ -23,7 +23,7 @@ export function MasterDetail({
       <div className="min-w-0">{list}</div>
       <aside
         aria-label={detailLabel}
-        className="hidden min-w-0 lg:sticky lg:top-4 lg:block lg:self-start"
+        className="hidden min-w-0 lg:sticky lg:top-2 lg:block lg:self-start"
       >
         {detail ?? <p className="py-4 text-body-sm text-ink/70">{empty}</p>}
       </aside>

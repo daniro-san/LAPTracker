@@ -10,24 +10,21 @@ import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dicti
 
 import { ActivityFeed } from "./ActivityFeed";
 
-/** "On the desk now: Ana and Wren", or "Nobody else right now." */
+/** "On the desk now · Ana and Wren"; no row when no other officer is on the desk (D108, 2026-11-19). */
 export function OnDesk(props: {
   names: string[];
   t: WorkspaceDictionary;
   language: WorkspaceLanguage;
 }) {
   const { names, t } = props;
+  if (names.length === 0) return null;
   return (
     <p className="py-2 text-body-sm">
       <span className="font-semibold text-ink/75">{t["desk.now"]}</span>
       <span aria-hidden="true"> · </span>
-      {names.length > 0 ? (
-        <span translate="no" className="font-semibold">
-          {namesList(names, props.language)}
-        </span>
-      ) : (
-        <span className="text-ink/75">{t["desk.alone"]}</span>
-      )}
+      <span translate="no" className="font-semibold">
+        {namesList(names, props.language)}
+      </span>
     </p>
   );
 }
@@ -37,7 +34,7 @@ export function RecentActivity(props: {
   slug: string;
   first: ActivityPageView;
   t: WorkspaceDictionary;
-  /** The row above the feed: "On the desk now". */
+  /** The row above the feed: "On the desk now", or null when the officer is alone. */
   lead: ReactNode;
 }) {
   const { first, t } = props;

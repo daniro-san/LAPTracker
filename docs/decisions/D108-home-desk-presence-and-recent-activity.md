@@ -80,3 +80,5 @@ Title → "On the desk now" line → Today and tomorrow → Members this week �
 **Amendment 2026-11-19 (D123, issue 427).** Three more lines, each never grouped and each bound by the page cursor: a Calendar entry deleted, a theft deleted (never whose or by whom) and a new member removed. A deleted Calendar entry's add, edit and garrison lines, a deleted theft's add line and a removed new member's add line leave the feed; an Undo brings them back.
 
 **Amendment 2026-11-19 (D122 rollout PR 2, 11at, issue 412).** "On the desk now" is no longer a line under the Home title: it is the first row of the "Recent activity" margin note. From 1024 that note heads Home's margin column beside the cards; below 1024 it follows To review. The words are unchanged.
+
+**Amendment 2026-11-19 (owner, issue 412 UX pass).** When no other officer is on the desk, the "On the desk now" row is not shown at all. "On the desk now · Just you." told the officer they were alone, which reads odd. The row shows only when at least one other officer was seen in the last ten minutes. The words "Just you." / "Só você." / "Il n’y a que vous." (`desk.alone`) are removed.

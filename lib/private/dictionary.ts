@@ -5,6 +5,7 @@ import { activityEn } from "./dictionary.activity";
 import { boardEn } from "./dictionary.board";
 import { calendarEn } from "./dictionary.calendar";
 import { dataEn } from "./dictionary.data";
+import { featuresEn } from "./dictionary.features";
 import { followUpEn } from "./dictionary.followup";
 import { fr } from "./dictionary.fr";
 import { garrisonEn } from "./dictionary.garrison";
@@ -33,6 +34,7 @@ const en = {
   "tab.aria": "Sections",
   "tab.home": "Home",
   "tab.members": "Members",
+  "desk.more": "More",
   "tab.mark": "Roll call",
   "tab.days": "Calendar",
   "tab.soon": "Soon",
@@ -80,7 +82,7 @@ const en = {
   "thanks.head": "Top this week",
   "thanks.intro": "Thank them in the game.",
   "thanks.donors": "Top donors",
-  "thanks.activity": "Most active",
+  "thanks.activity": "Daily quest points",
   "members.search.ph": "Name (no emoji needed)",
   "members.search.aria": "Search members",
   "members.filter.aria": "Filter",
@@ -95,14 +97,17 @@ const en = {
   "members.meta.level": "Sanctuary {n}",
   "members.meta.might": "Might {v}",
   "members.meta.don": "Donations {v}",
-  "members.meta.act": "Activity {v}",
+  "members.meta.act": "Daily quest points {v}",
   "members.don.head": "Donations this week · total {total}",
   "members.don.later": "no update yet",
   "members.don.none": "no data",
+  "members.don.nothing": "none",
   "members.nodata": "No data: {list}",
   "nodata.might": "might",
   "nodata.sanctuary": "Sanctuary",
-  "nodata.activity": "activity",
+  "members.noQuests": "No daily quests on {day}",
+  "members.noDonations": "No donations on {day}",
+  "members.noQuestsOrDonations": "No quests or donations on {day}",
   "status.fine": "Fine",
   "status.checkin": "Check in",
   "reason.kvk": "no kills gained in Kingdom War (KvK) on {date}",
@@ -111,8 +116,8 @@ const en = {
   "sheet.might": "Might",
   "sheet.sanctuary": "Sanctuary",
   "sheet.total": "Week total",
-  "sheet.activity": "Activity this week",
-  "sheet.honor": "Day’s honor",
+  "sheet.activity": "Daily quest points",
+  "sheet.honor": "Alliance Help coins today (max 1,000)",
   "sheet.joined": "Joined",
   "sheet.seen": "Seen since",
   "sheet.status": "Status",
@@ -147,10 +152,10 @@ const en = {
   "members.lead": "Updated once a day, just before the server resets.",
   "members.lastRead": "Last update: {when}",
   "members.week": "Week: {from} – {to}",
-  "members.legend": "— means no data.",
   "members.more": "What the labels mean",
   "members.checkinHelp": "Check in: ask how they are. You decide what to do.",
-  "members.nodataHelp": "Missing data is left out of every count.",
+  "members.nodataHelp": "No data yet. Missing data never counts against anyone.",
+  "nodata.mark": "No data",
   "members.checkinCount.one": "{n} person to check in with or help",
   "members.checkinCount.other": "{n} people to check in with or help",
   "members.checkinNone": "Everyone looks fine this week.",
@@ -173,7 +178,7 @@ const en = {
     "Who is in the alliance, with each member’s might, donations and activity, from the game. Use it instead of the spreadsheets.",
   "intro.1.settings": "Tap your name at the top for your settings.",
   "intro.only": "R4 · R5 only",
-  "intro.2.more": "— means no data, and it is left out of every count.",
+  "intro.2.more": "A dotted circle means no data yet. Missing data never counts against anyone.",
   "intro.desk.title": "Calendar, screenshots and Discord",
   "intro.desk.calendar":
     "Calendar: what is on, in server time and in your time. Notices and Thefts are tabs inside it.",
@@ -272,6 +277,7 @@ const en = {
   ...garrisonEn,
   ...settingsEn,
   ...dataEn,
+  ...featuresEn,
 } as const;
 
 export type WorkspaceKey = keyof typeof en;

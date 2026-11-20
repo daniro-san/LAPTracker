@@ -26,9 +26,11 @@ const NOW = new Date("2026-11-16T12:00:00Z");
 const ZONE = "Etc/GMT+2";
 const DAY = 86_400_000;
 const dayOf = (n: number) => new Date(Date.UTC(2026, 10, 9) + n * DAY).toISOString().slice(0, 10);
+/** A member on an end-of-day read with no daily quests and no donations that day (D127). */
+const NONE = { tech: null, active: null };
 
 /** uid → the roster fields the read keeps; a member's might and kills arrays come from the same values. */
-type Members = Record<number, { tech?: number | null; active?: number; power?: number }>;
+type Members = Record<number, { tech?: number | null; active?: number | null; power?: number }>;
 
 let db: Db;
 beforeAll(async () => {
@@ -79,7 +81,8 @@ async function endOfDay(unionId: number, day: string, members: Members, extra: o
           rank_code: 103,
           rank_label: "R3",
           daily_tech: members[uid]?.tech ?? null,
-          active: members[uid]?.active ?? 10 + Number(day.slice(8)),
+          active:
+            members[uid]?.active === undefined ? 10 + Number(day.slice(8)) : members[uid].active,
           avatar_url: "https://phs-image.globallap.com/a.png",
         })),
         ...extra,
@@ -191,9 +194,10 @@ const fact = (access: WorkspaceAccess, uid: number, change: FactChange) =>
 
 describe("member facts on the Members tab (#297)", () => {
   it("puts a member with an away note that still runs on a break: no reasons, no thanks", async () => {
-    // Members 1 and 2 both kept their activity and donations for 3 end-of-day reads.
-    for (const n of [1, 2, 3])
-      await endOfDay(OGS, dayOf(n), { 1: { tech: 900, active: 50 }, 2: { tech: 5, active: 50 } });
+    // Members 1 and 2 donated on Monday, then had no quests and no donations on 3 end-of-day reads.
+    // Member 3 is new (first seen Tuesday) with the same 3 reads.
+    await endOfDay(OGS, dayOf(0), { 1: { tech: 900, active: 50 }, 2: { tech: 5, active: 50 } });
+    for (const n of [1, 2, 3]) await endOfDay(OGS, dayOf(n), { 1: NONE, 2: NONE, 3: NONE });
     const ogs = await signedIn("ogs");
     const away = { text: "travelling", until: "2026-11-20" };
     await fact(ogs, 1, { field: "away", version: 0, value: away, source: "officer" });
@@ -206,15 +210,19 @@ describe("member facts on the Members tab (#297)", () => {
       [],
       "break",
     ]);
-    expect(two?.reasons.map((r) => r.kind)).toEqual(["idle"]);
+    expect(two?.reasons).toEqual([{ kind: "idle", days: 3 }]);
+    // D127: a new member never gets the offline signal.
+    expect(view.members.find((m) => m.uid === 3)).toMatchObject({ isNew: true, reasons: [] });
+    // The thanks use the week (D127): Monday's donations and quest points count on Thursday.
     expect(view.thanks.donors.map((t) => t.uid)).toEqual([2]);
+    expect(view.thanks.activity).toEqual([{ uid: 2, name: "P2", value: 50 }]);
   });
 
   it("shows an officer's status instead of the computed one; On a break also clears reasons and thanks", async () => {
-    // All three kept activity and donations for 3 reads; 2 donated the most.
-    const same = (tech: number) => ({ tech, active: 50 });
-    for (const n of [1, 2, 3])
-      await endOfDay(OGS, dayOf(n), { 1: same(900), 2: same(5000), 3: same(5) });
+    // All three donated on Monday (2 the most), then had no quests and no donations on 3 reads.
+    const monday = (tech: number) => ({ tech, active: 50 });
+    await endOfDay(OGS, dayOf(0), { 1: monday(900), 2: monday(5000), 3: monday(5) });
+    for (const n of [1, 2, 3]) await endOfDay(OGS, dayOf(n), { 1: NONE, 2: NONE, 3: NONE });
     const ogs = await signedIn("ogs");
     await fact(ogs, 1, { field: "status", version: 0, value: "help", source: "officer" });
     await fact(ogs, 2, { field: "status", version: 0, value: "break", source: "officer" });

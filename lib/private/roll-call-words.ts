@@ -37,7 +37,7 @@ export function restWords(kind: RollKind, t: WorkspaceDictionary) {
 }
 
 /**
- * "KvK shield", the Calendar's own title ("Undead Siege · Lv.4", "Cheese Trap I · Lv.7", "Elixir Scramble ·
+ * "Raid Shield", the Calendar's own title ("Undead Siege · Lv.4", "Cheese Trap I · Lv.7", "Elixir Scramble ·
  * Team A"), else the kind ("Cheese Trap", "Plunders").
  */
 export function callTitle(

@@ -200,7 +200,7 @@ describe("deleting and archiving a roll call (issue 424, D120)", () => {
     expect(await callView(db, await access(), { id }, "en", zone())).toBeNull();
     const again = await post({ ...mark(101, "no", 1), occasion: { id } }, { who: "Ana" });
     expect([again.status, await again.json()]).toEqual([404, { code: "not_found" }]);
-    // A second KvK shield deleted right after is its own line: deletes never group (D108).
+    // A second Raid Shield deleted right after is its own line: deletes never group (D108).
     const shield = { action: "add", kind: "shield", day: "2026-11-04", requestId: randomUUID() };
     const { id: other } = (await (await post(shield, { who: "Ana" })).json()) as { id: number };
     await post(remove(other, randomUUID()), { who: "Ana" });

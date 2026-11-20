@@ -1,7 +1,7 @@
 // The Caravans view's suggestions (issues 300, 354): the workspace's own roster (newest roster for who is in
-// the alliance, the newest end-of-day read for weekly activity), the away notes and statuses of member facts
-// (D80), and every caravan seat taken in the calendar. `active` stays in here and in the pure ranking: the
-// page gets only names and a reason (D71, D76).
+// the alliance, the end-of-day reads of the game week for daily quest points, D127), the away notes and
+// statuses of member facts (D80), and every caravan seat taken in the calendar. `active` stays in here and in
+// the pure ranking: the page gets only names and a reason (D71, D76).
 import type { Db } from "../db";
 import { caravanSeats } from "../repo/calendar";
 import { endOfDayReads } from "../repo/workspace-rosters";
@@ -12,6 +12,7 @@ import { addDays, weekdayIndex } from "./calendar-time";
 import { suggest, type Role, type Suggestion } from "./caravan-suggest";
 import { awayOn } from "./fact-fields";
 import { factsOf } from "./member-facts";
+import { WEEK_READS, weekQuestPoints } from "./member-week";
 
 /** Per caravan week (`entry:week`), its suggestions; caravans only. */
 export async function caravanSuggestions(
@@ -24,11 +25,10 @@ export async function caravanSuggestions(
   if (caravans.length === 0) return new Map();
   const [members, reads, facts, seats] = await Promise.all([
     pickableMembers(db, access),
-    endOfDayReads(db, access.unionId, 1),
+    endOfDayReads(db, access.unionId, WEEK_READS),
     factsOf(db, access),
     caravanSeats(db, access.workspaceId),
   ]);
-  const active = new Map((reads[0]?.members ?? []).map((m) => [m.uid, m.active]));
   const roles: Role[] = seats.flatMap((s) => {
     const day = s.movedTo ?? addDays(s.week, weekdayIndex(s.planned));
     const key = `${s.entryId}:${s.week}`;
@@ -39,7 +39,7 @@ export async function caravanSuggestions(
       const key = `${p.entry.id}:${p.week}`;
       const candidates = members.map((m) => {
         const away = awayOn(facts.get(m.uid), p.day, zone) !== null;
-        return { ...m, active: active.get(m.uid) ?? null, away };
+        return { ...m, active: weekQuestPoints(reads, m.uid), away };
       });
       const seated = [p.row?.coachUid, p.row?.secondUid].filter((u): u is number => u != null);
       return [key, suggest(candidates, roles, { key, day: p.day, seated })];

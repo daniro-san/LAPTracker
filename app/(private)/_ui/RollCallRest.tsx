@@ -47,7 +47,11 @@ export function useRest(m: ReturnType<typeof useMarks>, marks: MarkWords, words:
   return { text: last?.text ?? null, fresh, busy, undoable, rest, undo };
 }
 
-/** The sticky bar above the tabs. */
+/**
+ * The sticky bar: above the bottom tabs below 768, at the window's foot from 768, where the tabs are a rail
+ * (D122; until then it floated 60 px up the list, issue 412 UX pass). It spans the content's width on solid
+ * paper with a 2 px ink rule on top, so the rows that pass under it end at a clear edge.
+ */
 export function RestBar(props: {
   left: number;
   away: number;
@@ -62,7 +66,7 @@ export function RestBar(props: {
       ? fill(words["roll.leftAway"], { n: left, away: props.away })
       : fill(words["roll.left"], { n: left });
   return (
-    <div className="sticky bottom-[calc(3.5rem+4px+env(safe-area-inset-bottom))] z-[5] mt-4 border-t border-rule bg-paper py-2">
+    <div className="sticky bottom-[calc(3.5rem+4px+env(safe-area-inset-bottom))] z-10 -mx-4 mt-4 border-t-2 border-ink bg-paper px-4 py-2 sm:-mx-6 sm:px-6 md:bottom-0 md:pb-[max(0.5rem,env(safe-area-inset-bottom))]">
       {r.fresh && r.text ? (
         <p role="status" className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <span>{r.text}</span>

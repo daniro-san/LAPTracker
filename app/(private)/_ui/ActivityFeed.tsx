@@ -78,8 +78,10 @@ export function ActivityFeed(props: {
       const page = (await res.json()) as ActivityPageView;
       // A page that answers a cursor the list has moved from (Show less meanwhile) is dropped.
       flushSync(() => setList((now) => (now.next === cursor ? withPage(now, page) : now)));
-      // The last page took "Show more" away: the focus goes to "Show less".
-      if (!moreButton.current) lessButton.current?.focus();
+      // The button was off while it read, which drops the focus: it goes back to "Show more", or to "Show
+      // less" once the last page took "Show more" away. Without scrolling: the new lines stay where the
+      // officer reads (issue 412 UX pass).
+      (moreButton.current ?? lessButton.current)?.focus({ preventScroll: true });
       return;
     }
     const code = res ? ((await res.json().catch(() => ({}))) as { code?: string }).code : undefined;
@@ -100,8 +102,17 @@ export function ActivityFeed(props: {
           <Line key={`${line.at}-${i}`} line={line} />
         ))}
       </ul>
+      {/* From 1024, in the sticky margin that scrolls on its own, the two buttons stay in view at its
+          foot while the lines run past it (issue 412 UX pass). */}
       {(list.next !== null || list.more.length > 0) && (
-        <div className="flex flex-wrap gap-x-6 border-t border-rule">
+        <div className="flex flex-wrap gap-x-6 border-t border-rule bg-paper lg:sticky lg:bottom-0">
+          {/* A failed "Show more" says so next to the button, in view at the margin's foot. */}
+          {error && (
+            <RefusalLine
+              text={error}
+              className="mt-2 w-full border-l-4 border-seal pl-3 text-body-sm font-semibold"
+            />
+          )}
           {list.next !== null && (
             <button
               ref={moreButton}
@@ -119,12 +130,6 @@ export function ActivityFeed(props: {
             </button>
           )}
         </div>
-      )}
-      {error && (
-        <RefusalLine
-          text={error}
-          className="mt-2 border-l-4 border-seal pl-3 text-body-sm font-semibold"
-        />
       )}
     </>
   );

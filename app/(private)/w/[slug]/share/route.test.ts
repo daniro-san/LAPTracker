@@ -46,7 +46,7 @@ function share(token: string | null, files: File[], site = "none") {
 }
 
 let db: Db;
-const tokens = { officer: "", member: "" };
+const tokens = { officer: "", member: "", other: "" };
 beforeAll(async () => {
   db = await openTestDb();
 });
@@ -55,16 +55,25 @@ beforeEach(async () => {
   reads.calls = [];
   reads.fail = false;
   holder.ctx = testContext(db).ctx;
-  const [ws] = await db
+  const [ogs, bravo] = await db
     .insert(workspaces)
-    .values({ unionId: 67111155, slug: "ogs", discordGuildId: "1", leaderRoleIds: ["2"] })
+    .values([
+      { unionId: 67111155, slug: "ogs", discordGuildId: "1", leaderRoleIds: ["2"] },
+      // Another workspace, on another Discord server (issue 471).
+      { unionId: 900_002, slug: "bravo", discordGuildId: "3", leaderRoleIds: ["4"] },
+    ])
     .returning({ id: workspaces.id });
-  for (const tier of ["officer", "member"] as const) {
+  for (const [name, ws, tier] of [
+    ["officer", ogs, "officer"],
+    ["member", ogs, "member"],
+    ["other", bravo, "officer"],
+  ] as const) {
+    const workspaceId = ws?.id ?? 0;
     const [user] = await db
       .insert(workspaceUsers)
-      .values({ workspaceId: ws?.id ?? 0, discordUserId: `ogs-${tier}`, displayName: tier })
+      .values({ workspaceId, discordUserId: `ws-${name}`, displayName: name })
       .returning({ id: workspaceUsers.id });
-    tokens[tier] = (await createSession(db, ws?.id ?? 0, user?.id ?? 0, T0, null, tier)).token;
+    tokens[name] = (await createSession(db, workspaceId, user?.id ?? 0, T0, null, tier)).token;
   }
 });
 
@@ -83,11 +92,11 @@ describe("the phone's share target (D110)", () => {
     ]);
   });
 
-  it("refuses a member or no session: no reading, no draft, on to the sign-in", async () => {
-    const member = await share(tokens.member, [picture()]);
-    const none = await share(null, [picture()]);
-    expect([member.status, member.headers.get("location")]).toEqual([303, "/w/ogs?shared=again"]);
-    expect([none.status, none.headers.get("location")]).toEqual([303, "/w/ogs?shared=again"]);
+  it("refuses a member, another workspace's officer or no session: no reading, no draft, on to the sign-in", async () => {
+    for (const token of [tokens.member, tokens.other, null]) {
+      const res = await share(token, [picture()]);
+      expect([res.status, res.headers.get("location")]).toEqual([303, "/w/ogs?shared=again"]);
+    }
     expect(reads.calls).toEqual([]);
     expect(await db.select().from(screenshotDrafts)).toEqual([]);
   });

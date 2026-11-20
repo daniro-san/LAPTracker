@@ -1,7 +1,10 @@
 // Test-only (D125): one workspace with a row in every table it owns (lib/repo/workspace-data.ts), a deleted
 // record where a table keeps them, a sealed key and a session, and a roster whose raw_json carries the
 // private fields with marker values. Invented names and values only.
+import { eq, getTableName } from "drizzle-orm";
+
 import type { Db } from "./db";
+import { ownedBy, WORKSPACE_TABLES } from "./repo/workspace-data";
 import {
   calendarEntries,
   calendarOccurrences,
@@ -31,6 +34,15 @@ export { KEY_MARKER, PICTURE, SEED_AT } from "./workspace-seed-parts.test-helper
 
 /** Values that must never leave in a download: the roster's private fields (x, y, last online, photo). */
 export const PRIVATE_MARKERS = ["98765", "54321", "1763337600", "avatar.example.test"];
+
+/** Every row the workspace owns (D125's list) and its own row, as JSON: to show none of it changed. */
+export async function ownedRows(db: Db, ws: { id: number; unionId: number }) {
+  const out: Record<string, unknown> = {};
+  for (const t of WORKSPACE_TABLES)
+    out[getTableName(t.table)] = await db.select().from(t.table).where(ownedBy(t, ws));
+  out.workspace = await db.select().from(workspaces).where(eq(workspaces.id, ws.id));
+  return JSON.parse(JSON.stringify(out)) as unknown;
+}
 
 /** The day's roster of the alliance, with every private field the upstream sends, in raw_json. */
 export async function seedRoster(db: Db, unionId: number) {
@@ -65,7 +77,7 @@ export async function seedRoster(db: Db, unionId: number) {
 export async function seedWorkspace(db: Db, slug: string, unionId: number) {
   const [w] = await db
     .insert(workspaces)
-    .values({ unionId, slug, discordGuildId: "1", leaderRoleIds: ["2"] })
+    .values({ unionId, slug, discordGuildId: String(unionId), leaderRoleIds: ["2"] })
     .returning({ id: workspaces.id });
   const workspaceId = w?.id ?? 0;
   const [u] = await db

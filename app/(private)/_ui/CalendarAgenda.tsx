@@ -1,21 +1,30 @@
 "use client";
 
 // The Calendar tab's week, day by day (issue 300): every entry with its server time (ST) and the officer's
-// own time, its tags and an Edit button; "Add an event" opens the same sheet empty. This week opens at
-// today, and entries already started are greyed. The page reads again when it comes back into view (owner
-// rule, issue 293: freshness without realtime).
+// own time, its tags, Edit and Delete; "Add an event" opens the same sheet empty. The page opens at the top,
+// with "Add an event" and "Today ↓" in its head row (owner, issue 412 UX pass); only an address that names a
+// day (#d-<day>) or an Undo line scrolls. Entries already started are greyed. The page reads again when it
+// comes back into view (owner rule, issue 293: freshness without realtime).
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from "react";
 
-import { buttonClass } from "@/lib/brand/components/Button";
 import { chip } from "@/lib/brand/components/controls";
 import { Tag } from "@/lib/brand/components/Tag";
 import { fill } from "@/lib/copy";
 import { mondayOf } from "@/lib/private/calendar-time";
 import { FROM_CALENDAR } from "@/lib/private/roll-call-rules";
+import type { Feature } from "@/lib/workspace-features";
 
 import type { AgendaDay, AgendaItem, CalendarSheetWords } from "./calendar-data";
-import { EntryUndoLine, type DeletedEntry } from "./DeleteArea";
+import { HeadRow } from "./CalendarHead";
+import { DeleteArea, EntryUndoLine, type DeletedEntry } from "./DeleteArea";
 import { EntryForm, type FormProps } from "./EntryForm";
 import { Times } from "./YourTime";
 
@@ -30,6 +39,9 @@ export function useFreshOnReturn() {
     return () => document.removeEventListener("visibilitychange", back);
   }, [router]);
 }
+
+/** The features turned off for the workspace (D126): their links are left out of the week. */
+const Off = createContext<readonly Feature[]>([]);
 
 let loadedAt: number | null = null;
 const subscribe = () => () => {};
@@ -57,20 +69,24 @@ function Roles({
   words: CalendarSheetWords;
   slug: string;
 }) {
+  const off = useContext(Off);
+  const roll = !off.includes("roll_call");
   if (item.roles) return <p className="text-body-sm">{item.roles}</p>;
   if (FROM_CALENDAR[item.form.kind]) {
     const query = `entry=${item.entry}&week=${item.week}`;
     return (
       <p className="flex flex-wrap gap-x-5">
-        {item.form.kind === "elixir" && (
+        {roll && item.form.kind === "elixir" && (
           <a href={`/w/${slug}/roll-call/team?${query}`} className={LINK}>
             {words["calendar.pickTeam"]}
           </a>
         )}
-        <a href={`/w/${slug}/roll-call/mark?${query}`} className={LINK}>
-          {words["calendar.rollCall"]}
-        </a>
-        {item.form.kind === "undead" && (
+        {roll && (
+          <a href={`/w/${slug}/roll-call/mark?${query}`} className={LINK}>
+            {words["calendar.rollCall"]}
+          </a>
+        )}
+        {item.form.kind === "undead" && !off.includes("garrison") && (
           <a href={`/w/${slug}/calendar/garrison?${query}`} className={LINK}>
             {words["calendar.garrison"]}
           </a>
@@ -78,7 +94,7 @@ function Roles({
       </p>
     );
   }
-  if (item.form.kind !== "caravan") return null;
+  if (item.form.kind !== "caravan" || off.includes("caravans")) return null;
   return (
     <a
       href={`/w/${slug}/calendar/caravans?week=${mondayOf(item.day)}#car-${item.key}`}
@@ -89,11 +105,36 @@ function Roles({
   );
 }
 
+/** The entry's notice (while notices are on, D126) and link: one row with a gap, wrapping, because side by
+ * side they once read as one link (issue 412 UX pass). */
+function EntryLinks(props: { item: AgendaItem; words: CalendarSheetWords; slug: string }) {
+  const { item, words } = props;
+  const notice = !useContext(Off).includes("notices") ? item.notice : null;
+  if (!notice && !item.link) return null;
+  return (
+    <p className="flex flex-wrap gap-x-5">
+      {notice && (
+        <a href={`/w/${props.slug}/notices/${notice.id}`} className={LINK}>
+          {fill(words["calendar.notice"], { title: notice.title })}
+        </a>
+      )}
+      {item.link && (
+        <a href={item.link} target="_blank" rel="noreferrer nofollow" className={LINK}>
+          {words["calendar.link"]}
+        </a>
+      )}
+    </p>
+  );
+}
+
 function Item(props: {
   item: AgendaItem;
   words: CalendarSheetWords;
   slug: string;
   onEdit: () => void;
+  /** After a delete from the card (D123): the entry and the request, for the Undo line. */
+  onDeleted: (d: DeletedEntry) => void;
+  onDone: () => void;
 }) {
   const { item, words } = props;
   const now = useLoadedAt();
@@ -109,24 +150,7 @@ function Item(props: {
         <p className="font-semibold">{item.title}</p>
         <Roles item={item} words={words} slug={props.slug} />
         {item.notes && <p className="text-body-sm whitespace-pre-line text-ink/85">{item.notes}</p>}
-        {item.notice && (
-          <a
-            href={`/w/${props.slug}/notices/${item.notice.id}`}
-            className="inline-flex min-h-11 items-center font-semibold text-plum underline underline-offset-4"
-          >
-            {fill(words["calendar.notice"], { title: item.notice.title })}
-          </a>
-        )}
-        {item.link && (
-          <a
-            href={item.link}
-            target="_blank"
-            rel="noreferrer nofollow"
-            className="inline-flex min-h-11 items-center font-semibold text-plum underline underline-offset-4"
-          >
-            {words["calendar.link"]}
-          </a>
-        )}
+        <EntryLinks item={item} words={words} slug={props.slug} />
         {item.tags.length > 0 && (
           <ul className="mt-1 flex flex-wrap gap-x-3">
             {item.tags.map((tag) => (
@@ -137,14 +161,24 @@ function Item(props: {
           </ul>
         )}
       </div>
-      <button
-        type="button"
-        onClick={props.onEdit}
-        aria-label={fill(words["calendar.editOf"], { title: item.title })}
-        className={`${chip()} min-w-11 shrink-0 justify-center font-semibold text-plum`}
-      >
-        {words["calendar.edit"]}
-      </button>
+      <div className="flex shrink-0 flex-col items-end gap-1">
+        <button
+          type="button"
+          onClick={props.onEdit}
+          aria-label={fill(words["calendar.editOf"], { title: item.title })}
+          className={`${chip()} min-w-11 justify-center font-semibold text-plum`}
+        >
+          {words["calendar.edit"]}
+        </button>
+        <DeleteArea
+          item={item}
+          words={words}
+          slug={props.slug}
+          onDone={props.onDone}
+          onDeleted={props.onDeleted}
+          inCard
+        />
+      </div>
     </li>
   );
 }
@@ -154,13 +188,16 @@ function Day(props: {
   words: CalendarSheetWords;
   slug: string;
   onEdit: (item: AgendaItem) => void;
+  onDeleted: (d: DeletedEntry) => void;
+  onDone: () => void;
   /** "Event deleted." with Undo, in the day the deleted entry was on (D123). */
   undo: ReactNode;
 }) {
   const { d, words } = props;
   return (
     <li id={`d-${d.day}`} className="drawn-card mt-4 scroll-mt-4 px-4 pt-3">
-      <h2 className="font-subhead text-display-sm">
+      {/* "Today ↓" moves the focus here, so the keyboard goes on from today's entries. */}
+      <h2 id={`d-${d.day}-head`} tabIndex={-1} className="font-subhead text-display-sm">
         {d.head}
         {d.today && (
           <span className="text-body-sm font-semibold text-plum">{` · ${words["calendar.today"]}`}</span>
@@ -184,6 +221,8 @@ function Day(props: {
               words={words}
               slug={props.slug}
               onEdit={() => props.onEdit(item)}
+              onDeleted={props.onDeleted}
+              onDone={props.onDone}
             />
           ))}
         </ul>
@@ -193,7 +232,7 @@ function Day(props: {
   );
 }
 
-export function CalendarAgenda(props: {
+interface AgendaProps {
   days: AgendaDay[];
   theme: AgendaItem | null;
   words: CalendarSheetWords;
@@ -203,18 +242,22 @@ export function CalendarAgenda(props: {
   notices: FormProps["notices"];
   /** The day "Add an event" starts on: today in this week, else its Monday. */
   addDay: string;
-}) {
+  /** The features turned off for the workspace (D126). */
+  off: readonly Feature[];
+  /** The page's title, at the start of the head row. */
+  head: ReactNode;
+  /** What sits between the head row and the days: the views, the week bar, the month. */
+  children: ReactNode;
+}
+
+export function CalendarAgenda(props: AgendaProps) {
   const { words } = props;
   const router = useRouter();
   const [open, setOpen] = useState<FormProps["mode"] | null>(null);
   /** The officer's last whole-entry delete (D123), while the Calendar offers Undo. */
   const [deleted, setDeleted] = useState<{ entry: DeletedEntry; day: string } | null>(null);
   useFreshOnReturn();
-  // This week opens at today (its #d-<day> anchor), unless the address already names a place.
   const today = props.days.find((d) => d.today)?.day;
-  useEffect(() => {
-    if (today && !window.location.hash) document.getElementById(`d-${today}`)?.scrollIntoView();
-  }, [today]);
   const undo = deleted && (
     <EntryUndoLine
       key={deleted.entry.requestId}
@@ -229,15 +272,19 @@ export function CalendarAgenda(props: {
     setOpen(null);
     router.refresh();
   };
+  const fromCard = (day: string) => ({
+    onDeleted: (entry: DeletedEntry) => setDeleted({ entry, day }),
+    onDone: () => router.refresh(),
+  });
   return (
-    <>
-      <button
-        type="button"
-        onClick={() => setOpen({ add: true, day: props.addDay, hasTheme: props.theme !== null })}
-        className={buttonClass("primary", "mt-4 w-full sm:w-auto")}
-      >
-        {words["calendar.add"]}
-      </button>
+    <Off.Provider value={props.off}>
+      <HeadRow
+        head={props.head}
+        today={today}
+        words={words}
+        onAdd={() => setOpen({ add: true, day: props.addDay, hasTheme: props.theme !== null })}
+      />
+      {props.children}
       {deleted && !props.days.some((d) => d.day === deleted.day) && undo}
       {props.theme && (
         <ul className="mt-4">
@@ -246,6 +293,7 @@ export function CalendarAgenda(props: {
             words={words}
             slug={props.slug}
             onEdit={() => setOpen({ add: false, item: props.theme as AgendaItem })}
+            {...fromCard(props.theme.day)}
           />
         </ul>
       )}
@@ -257,6 +305,7 @@ export function CalendarAgenda(props: {
             words={words}
             slug={props.slug}
             onEdit={(item) => setOpen({ add: false, item })}
+            {...fromCard(d.day)}
             undo={deleted?.day === d.day && undo}
           />
         ))}
@@ -266,13 +315,13 @@ export function CalendarAgenda(props: {
           words={words}
           slug={props.slug}
           zone={props.zone}
-          notices={props.notices}
+          {...{ notices: props.notices, off: props.off }}
           mode={open}
           onDone={done}
           onDeleted={(entry) => setDeleted({ entry, day: open.add ? open.day : open.item.day })}
           onClose={() => setOpen(null)}
         />
       )}
-    </>
+    </Off.Provider>
   );
 }

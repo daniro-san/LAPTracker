@@ -5,6 +5,7 @@
 // `?text=plain` reads the picture in plain grey only, for the garrison plan's enemy might (D121).
 import { requireWorkspace } from "@/lib/private/access";
 import { counted } from "@/lib/private/desk-action";
+import { featureOn } from "@/lib/private/features";
 import {
   isSameOriginPicture,
   NO_STORE,
@@ -36,9 +37,14 @@ export async function POST(
   if (Number(request.headers.get("content-length") ?? 0) > MAX_UPLOAD) {
     return privateError(413, "too_large");
   }
-  return withContext("/api/w/[slug]/shots/read", async (ctx, db) => {
+  return withContext("/api/w/[slug]/shots/read", slug, async (ctx, db) => {
     const access = await requireWorkspace(db, slug, requestCookies(request), ctx.now());
     if (!access.ok) return privateError(401, "signed_out");
+    // D126: the switch turns off "Read from a screenshot" (`button=1`) only; "Send screenshots", the
+    // phone's share and Secret Ops keep reading pictures.
+    const params = new URL(request.url).searchParams;
+    if (params.get("button") === "1" && !featureOn(access, "ocr"))
+      return privateError(403, "turned_off");
     const officer = access.user.id;
     // One reading at a time per officer, shared with the phone's share (D109, D110).
     if (!startReading(officer)) return privateError(429, "busy");
@@ -50,7 +56,7 @@ export async function POST(
       // app_errors keeps the code only, e.g. w.import.read_failed:reader:MODULE_NOT_FOUND.
       lines = await privately(
         (error) => failureCode("w.import.read_failed", error),
-        () => readUpload(bytes, false, new URL(request.url).searchParams.get("text") === "plain"),
+        () => readUpload(bytes, false, params.get("text") === "plain"),
       );
     } finally {
       endReading(officer);

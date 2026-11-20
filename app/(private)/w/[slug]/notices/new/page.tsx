@@ -5,7 +5,7 @@ import { NOTICE_FIELDS } from "@/lib/private/notice-rules";
 
 import { SignedInFrame, workspaceWords } from "../../../../_ui/Frame";
 import type { NoticeFields } from "../../../../_ui/notice-client";
-import { languagesFor, noticePage } from "../../../../_ui/notice-pages";
+import { editorSwitches, languagesFor, noticePage } from "../../../../_ui/notice-pages";
 import { NoticeEditor } from "../../../../_ui/NoticeEditor";
 
 const EMPTY = Object.fromEntries(
@@ -14,7 +14,8 @@ const EMPTY = Object.fromEntries(
 
 export default async function NewNoticePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const { access, waiting } = await noticePage(slug, async () => true, "/new");
+  const { access, waiting, off } = await noticePage(slug, async () => true, "/new");
+  if (off) return off;
   const { language, t } = await workspaceWords();
   return (
     <SignedInFrame access={access} language={language} t={t} current="notices" waiting={waiting}>
@@ -35,6 +36,7 @@ export default async function NewNoticePage({ params }: { params: Promise<{ slug
         t={t}
         viewer={language}
         ai={getAppContext().ai !== null}
+        {...editorSwitches(access, null)}
         languages={languagesFor(language)}
         source={null}
       />

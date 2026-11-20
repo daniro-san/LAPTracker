@@ -5,7 +5,7 @@
 // officer typed.
 import { z } from "zod";
 
-import { requireWorkspace } from "@/lib/private/access";
+import { requireWorkspace, type WorkspaceAccess } from "@/lib/private/access";
 import { createEntry, editEntry } from "@/lib/private/calendar";
 import { removeEntry } from "@/lib/private/calendar-delete";
 import { fieldChange, newEntry } from "@/lib/private/calendar-model";
@@ -13,6 +13,7 @@ import { conflictSaid, conflictYours } from "@/lib/private/calendar-words";
 import { WORKSPACE_LANG_COOKIE } from "@/lib/private/cookies";
 import { counted } from "@/lib/private/desk-action";
 import { pickWorkspaceLanguage, WORKSPACE_DICTIONARIES } from "@/lib/private/dictionary";
+import { featureOn } from "@/lib/private/features";
 import {
   isSameOriginJson,
   NO_STORE,
@@ -60,10 +61,11 @@ export async function POST(
   if (!parsed.success) return privateError(400, "bad_request");
   const input = parsed.data;
   const jar = requestCookies(request);
-  return withContext("/api/w/[slug]/calendar", async (ctx, db) => {
+  return withContext("/api/w/[slug]/calendar", slug, async (ctx, db) => {
     const now = ctx.now();
     const access = await requireWorkspace(db, slug, jar, now);
     if (!access.ok) return privateError(401, "signed_out");
+    if (caravansOff(input, access)) return privateError(403, "turned_off");
     if (input.action === "create") {
       const made = await privately("calendar.create", () =>
         createEntry(db, access, input.entry, input.requestId),
@@ -81,17 +83,34 @@ export async function POST(
     const result = await privately("calendar.edit", () => editEntry(db, access, input, now));
     if (result.ok) return counted(ctx, access, "calendar", "edit", ok());
     if (result.code !== "stale") return privateError(STATUS[result.code], result.code);
-    const language = pickWorkspaceLanguage(
-      jar.get(WORKSPACE_LANG_COOKIE)?.value,
-      request.headers.get("accept-language"),
-    );
-    const t = WORKSPACE_DICTIONARIES[language];
-    const conflicts = result.conflicts.map((c) => ({
-      field: c.field,
-      version: c.version,
-      said: conflictSaid(c, t, language, now),
-      yours: conflictYours(c, t, language),
-    }));
-    return Response.json({ code: "stale", conflicts }, { status: 409, headers: NO_STORE });
+    return stale(result.conflicts, request, now);
   });
+}
+
+/** D126: while Caravans is off, no caravan is added and no Coachman or second seat is picked. */
+function caravansOff(input: z.infer<typeof body>, access: WorkspaceAccess): boolean {
+  const caravan =
+    input.action === "create"
+      ? input.entry.kind === "caravan"
+      : input.action === "edit" &&
+        input.changes.some((c) => c.field === "coach" || c.field === "second");
+  return caravan && !featureOn(access, "caravans");
+}
+
+type Conflicts = Extract<Awaited<ReturnType<typeof editEntry>>, { code: "stale" }>["conflicts"];
+
+/** 409: each field someone else changed, in the officer's words. */
+function stale(conflicts: Conflicts, request: Request, now: Date): Response {
+  const language = pickWorkspaceLanguage(
+    requestCookies(request).get(WORKSPACE_LANG_COOKIE)?.value,
+    request.headers.get("accept-language"),
+  );
+  const t = WORKSPACE_DICTIONARIES[language];
+  const said = conflicts.map((c) => ({
+    field: c.field,
+    version: c.version,
+    said: conflictSaid(c, t, language, now),
+    yours: conflictYours(c, t, language),
+  }));
+  return Response.json({ code: "stale", conflicts: said }, { status: 409, headers: NO_STORE });
 }

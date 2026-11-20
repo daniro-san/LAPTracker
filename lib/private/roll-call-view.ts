@@ -1,8 +1,9 @@
 // What the Roll call pages read (issue 298, D103), inside one workspace (D71): the week's occasions with
 // their counts, one roll call's rows, and an Elixir Scramble team with its suggestions. Away members (an
-// away note running on the occasion's day, or On a break, D80) are left out of the answers. Weekly
-// activity stays in here: the team page gets "active this week" and the order, never the number (D76). A
-// deleted roll call is in none of these reads; an archived one is only in the archived list (D120).
+// away note running on the occasion's day, or On a break, D80) are left out of the answers. The week's
+// daily quest points (D127) stay in here: the team page gets "Quests this week" and the order, never the
+// number (D76). A deleted roll call is in none of these reads; an archived one is only in the archived list
+// (D120).
 import type { Db } from "../db";
 import {
   archivedCalls,
@@ -20,6 +21,7 @@ import type { Placed } from "./calendar-model";
 import { addDays } from "./calendar-time";
 import { awayOn, type AwayNote, type MemberFacts } from "./fact-fields";
 import { factsOf } from "./member-facts";
+import { WEEK_READS, weekQuestPoints } from "./member-week";
 import { clockAt } from "./members-list";
 import { openOccasion, rosterOf, type Occasion, type Opened } from "./roll-call";
 import {
@@ -219,7 +221,7 @@ export async function teamView(
   const [roster, facts, reads, elixir] = await Promise.all([
     rosterOf(db, access),
     factsOf(db, access),
-    endOfDayReads(db, access.unionId, 1),
+    endOfDayReads(db, access.unionId, WEEK_READS),
     teamCalls(db, access.workspaceId, opened.week),
   ]);
   // A roll call whose Calendar entry was deleted is not a team any more (as in setTeam, D123).
@@ -232,7 +234,6 @@ export async function teamView(
   const other = new Map(
     teams.filter((t) => t.rollCallId !== opened.call?.id).map((t) => [t.uid, t.rollCallId]),
   );
-  const active = new Map((reads[0]?.members ?? []).map((m) => [m.uid, m.active]));
   const clock = clockAt(opened.day, serverZone);
   const hour = Math.floor((opened.placed.minute ?? 0) / 60);
   const row = (m: Member, picked: boolean) => {
@@ -245,7 +246,7 @@ export async function teamView(
       picked,
       other: otherCall === undefined ? null : (variantOf.get(otherCall) ?? null),
       theirMinute: zone === null ? null : clock(zone, hour),
-      active: active.get(m.uid) ?? null,
+      active: weekQuestPoints(reads, m.uid),
       squad: f?.squadMight?.value ?? null,
     };
   };

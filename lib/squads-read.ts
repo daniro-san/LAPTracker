@@ -5,17 +5,20 @@
 // runs in batches of at most RUN_DEADLINE_MS: each cron-job.org tick in the window starts the next batch
 // after its answer (lib/squads-tick.ts); POST /api/squads-read (tick.yml, or by hand) is the backup path,
 // and the claim keeps the two from overlapping. Each batch starts only when it ends inside the server day
-// (nothing after 23:58:20). The run never spends below `squadsReserve` (the event's quota day keeps its
-// reads), makes one call per member in the pass plus at most one retry for a 5xx or no answer (the
-// cursor and the retry list are saved after every call, under the batch's claim), and never makes more
-// calls in a day than SQUAD_CALLS_MAX, retries included. Its log lines are counts, the quota left and
+// (nothing after 23:58:20). /admin's "Run the squads read now" (`force`) starts them outside that window,
+// on the row of the same quota day, with every other rule unchanged (D117, amendment 2026-11-19b). The
+// run never spends below `squadsReserve` (the event's quota day keeps its reads), makes one call per
+// member in the pass plus at most one retry for a 5xx or no answer (the cursor and the retry list are
+// saved after every call, under the batch's claim), and never makes more calls in a day than
+// SQUAD_CALLS_MAX, retries included. Its log lines are counts, the quota left and
 // reasons: no names, no squads.
 import { ALLIANCES } from "../config/alliances";
+import { eventWorkspace } from "./analytics/server";
 import { RUN_DEADLINE_MS, RUN_STALE_AFTER_MS } from "./compute";
 import type { Db } from "./db";
 import type { Env } from "./env";
 import { refreshHeroCatalog } from "./heroes";
-import { createRunLogger, type RunLogger } from "./logger";
+import { createRunLogger, type LogData, type RunLogger } from "./logger";
 import { getDailyRead } from "./repo/daily-reads";
 import { insertRunLog } from "./repo/run-logs";
 import {
@@ -27,17 +30,16 @@ import {
   type SquadRead,
 } from "./repo/squads";
 import { markKey } from "./repo/workspace-keys";
-import { dailyReadDue, endsInServerDay } from "./schedule";
 import type { V1Source } from "./sources/types";
-import { SQUAD_CALLS_MAX, SQUADS_SAFETY_MARGIN, squadsReserve, type SquadsConfig } from "./squads";
-import { readOne, type Batch } from "./squads-call";
 import {
-  forbidden,
-  keyStatusOf,
-  squadTargets,
-  type OpenKey,
-  type SquadTarget,
-} from "./workspace-keys";
+  SQUAD_CALLS_MAX,
+  SQUADS_SAFETY_MARGIN,
+  squadsBatchDay,
+  squadsReserve,
+  type SquadsConfig,
+} from "./squads";
+import { readOne, startQuota, type Batch, type StartDaily } from "./squads-call";
+import { squadTargets, type SquadTarget } from "./workspace-keys";
 
 /** The gap between two calls: gentle on the tracker. */
 export const PACE_MS = 500;
@@ -55,43 +57,77 @@ export interface SquadsDeps {
   deadlineMs?: number;
 }
 
+/**
+ * An /admin press (D117, amendment 2026-11-19b): `force` replaces only the nightly window check with
+ * `forcedSquadsDay`; `unionId` reads one workspace's alliance, else every alliance due.
+ */
+export interface SquadsRun {
+  force?: boolean;
+  unionId?: number;
+}
+
 export type SquadsOutcome =
   | { kind: "idle" }
   | { kind: "batch"; day: string; status: SquadRead["status"]; calls: number; more: boolean };
 
-/** A workspace key's lines carry its alliance (`union_id`); the own alliance's on our key keep D117's. */
-const whose = (target: SquadTarget) => (target.key ? { union_id: target.unionId } : {});
+/**
+ * A workspace key's lines carry its alliance (`union_id`); the own alliance's on our key keep D117's. Every
+ * line says which workspace and alliance it counts (issue 452): the slug and the public tag.
+ */
+const whose = (target: SquadTarget) => ({
+  ...(target.key && { union_id: target.unionId }),
+  ...eventWorkspace(target),
+});
 
-/** The run's lines; a workspace key is masked in them too, on top of lib/redact's `lap_` rule. */
-const logger = (deps: SquadsDeps, db: Db, day: string, target: SquadTarget) =>
+/**
+ * The run's lines; a workspace key is masked in them too, on top of lib/redact's `lap_` rule. A press's
+ * lines carry `forced: true` (D117, amendment 2026-11-19b).
+ */
+const logger = (
+  deps: SquadsDeps,
+  db: Db,
+  run: { day: string; target: SquadTarget; forced: boolean },
+) =>
   createRunLogger(
-    { insertRunLog: (line) => insertRunLog(db, line) },
     {
-      readDay: day,
-      secrets: [...(deps.secrets ?? []), ...(target.key ? [target.key.apiKey] : [])],
+      insertRunLog: (line) =>
+        insertRunLog(
+          db,
+          run.forced ? { ...line, data: { ...(line.data as LogData), forced: true } } : line,
+        ),
+    },
+    {
+      readDay: run.day,
+      secrets: [...(deps.secrets ?? []), ...(run.target.key ? [run.target.key.apiKey] : [])],
       now: deps.now,
     },
   );
 
 /**
  * The next batch of today's squads read of each alliance due (squadTargets: the own alliance first), or
- * idle: outside the daily read's window, too close to the server reset, before the day's read finished,
- * or when every alliance's day is done or has a batch running. The outcome is the first alliance's
- * status, with every batch's calls, and `more` when any has members left.
+ * idle: outside the daily read's window (unless forced), too close to the server reset, before the day's
+ * read finished, or when every alliance's day is done or has a batch running. The outcome is the first
+ * alliance's status, with every batch's calls, and `more` when any has members left.
  */
-export async function runSquadsBatch(deps: SquadsDeps, db: Db): Promise<SquadsOutcome> {
+export async function runSquadsBatch(
+  deps: SquadsDeps,
+  db: Db,
+  run: SquadsRun = {},
+): Promise<SquadsOutcome> {
   const now = deps.now();
-  const due = dailyReadDue(now, deps.env);
-  // INVARIANT daily-read.ends-before-midnight, for the squads too: a batch ends before 00:00.
-  if (!due || !endsInServerDay(now, RUN_DEADLINE_MS, deps.env)) return { kind: "idle" };
-  const daily = await getDailyRead(db, due.day);
+  const forced = run.force === true;
+  const day = squadsBatchDay(now, deps.env, forced);
+  if (!day) return { kind: "idle" };
+  const daily = await getDailyRead(db, day);
   if (!daily || daily.status === "running") return { kind: "idle" };
   // INVARIANT keys.own-quota-only: a workspace is read only on its own key; LAP_API_KEY only for the own
   // alliance (D124).
-  const targets = await squadTargets(db, deps.env.WORKSPACE_KEYS_SECRET, now);
+  const targets = (await squadTargets(db, deps.env.WORKSPACE_KEYS_SECRET, now)).filter(
+    (t) => run.unionId === undefined || t.unionId === run.unionId,
+  );
   // Each alliance on its own key and quota, at once: one alliance's 100 s never waits for another's.
   const outcomes = await Promise.all(
-    targets.map((target) => targetBatch(deps, db, { day: due.day, daily, target })),
+    targets.map((target) => targetBatch(deps, db, { day, daily, target, forced })),
   );
   const ran = outcomes.filter((o) => o.kind === "batch");
   const [first] = ran;
@@ -100,18 +136,16 @@ export async function runSquadsBatch(deps: SquadsDeps, db: Db): Promise<SquadsOu
   return { ...first, calls, more: ran.some((o) => o.more) };
 }
 
-type StartDaily = { quotaRemainingBefore: number | null; callsUsed: number };
-
 /** One alliance's next batch, on its target's key. */
 async function targetBatch(
   deps: SquadsDeps,
   db: Db,
-  run: { day: string; daily: StartDaily; target: SquadTarget },
+  run: { day: string; daily: StartDaily; target: SquadTarget; forced: boolean },
 ): Promise<SquadsOutcome> {
   const { day, target } = run;
   const now = deps.now();
   const uids = await dayRosterUids(db, day, target.unionId);
-  const log = logger(deps, db, day, target);
+  const log = logger(deps, db, run);
   const existing = await getSquadRead(db, day, target.unionId);
   if (!uids) {
     if (!existing) await log.warn("squads.skip", { ...whose(target), reason: "no_roster" });
@@ -141,43 +175,6 @@ async function targetBatch(
     return await readBatch(deps, db, log, batch);
   } finally {
     clearTimeout(timer);
-  }
-}
-
-/**
- * The quota the day's run starts from. On LAP_API_KEY no call: the day's read left this much, at most (its
- * own calls counted after its check). On a workspace key, one /quota call on that key only; its answer
- * (or its 401 or 429) is the key's status.
- */
-async function startQuota(
-  deps: SquadsDeps,
-  db: Db,
-  run: { daily: StartDaily; key: OpenKey | null; signal: AbortSignal },
-): Promise<{ remaining: number | null; calls: number; reason: string | null }> {
-  const { key } = run;
-  if (!key) {
-    const { quotaRemainingBefore: before, callsUsed } = run.daily;
-    return { remaining: before === null ? null : before - callsUsed, calls: 0, reason: null };
-  }
-  const now = deps.now();
-  try {
-    const quota = await deps.v1.fetchQuota(undefined, run.signal, {
-      apiKey: key.apiKey,
-      maxRetries: 0,
-    });
-    const empty = quota.remaining <= 0;
-    const status = empty ? "out_of_quota" : "ok";
-    await markKey(db, key.workspaceId, key.nonce, { status, quotaRemaining: quota.remaining }, now);
-    return { remaining: quota.remaining, calls: 1, reason: empty ? "key_out_of_quota" : null };
-  } catch (e) {
-    const status = keyStatusOf(e);
-    if (status) {
-      const patch = { status, ...(status === "out_of_quota" && { quotaRemaining: 0 }) };
-      await markKey(db, key.workspaceId, key.nonce, patch, now);
-    }
-    // A 403 stops the night without marking the key; a 5xx or no answer leaves the quota unknown.
-    const other = forbidden(e) ? "key_forbidden" : "quota_unknown";
-    return { remaining: null, calls: 1, reason: status ? `key_${status}` : other };
   }
 }
 

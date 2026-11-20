@@ -16,19 +16,29 @@ describe("analyticsPersonId (D115)", () => {
     expect(id).not.toContain("42");
   });
 
-  it("carries only the id, the tier and the slug, and is off without production analytics", () => {
-    const person = analyticsPerson(ON, { userId: 42, tier: "member", workspace: "ogs" });
-    expect(person).toEqual({ id: analyticsPersonId(42, SECRET), tier: "member", workspace: "ogs" });
+  it("carries only the id, the tier, the slug and the alliance's tag, and is off without production analytics", () => {
+    const person = analyticsPerson(ON, {
+      userId: 42,
+      tier: "member",
+      slug: "ogs",
+      unionId: 67111155,
+    });
+    expect(person).toEqual({
+      id: analyticsPersonId(42, SECRET),
+      tier: "member",
+      workspace: "ogs",
+      alliance: "OGs",
+    });
     expect(
       analyticsPerson(
         { ...ON, VERCEL_ENV: "preview" },
-        { userId: 42, tier: "officer", workspace: "ogs" },
+        { userId: 42, tier: "officer", slug: "ogs", unionId: 67111155 },
       ),
     ).toBeNull();
     expect(
       analyticsPerson(
         { CRON_SECRET: SECRET, VERCEL_ENV: "production" },
-        { userId: 42, tier: "officer", workspace: "ogs" },
+        { userId: 42, tier: "officer", slug: "ogs", unionId: 67111155 },
       ),
     ).toBeNull();
   });

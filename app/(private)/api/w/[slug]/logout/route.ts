@@ -20,7 +20,7 @@ export async function POST(
   if (!body.safeParse(await request.json().catch(() => null)).success) {
     return privateError(400, "bad_request");
   }
-  return withContext("/api/w/[slug]/logout", async (ctx, db) => {
+  return withContext("/api/w/[slug]/logout", slug, async (ctx, db) => {
     const ended = await signOut(db, slug, requestCookies(request), ctx.now());
     if (!ended) return privateError(401, "signed_out");
     return Response.json(

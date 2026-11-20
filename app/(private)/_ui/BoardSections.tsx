@@ -12,6 +12,7 @@ import { NOTICE_LANGUAGES, type NoticeLanguage } from "@/lib/private/notice-rule
 import type { StartHereText } from "@/lib/private/start-here";
 
 import { BoardTimeColumn } from "./BoardParts";
+import { Clamped } from "./BoardParts";
 import { LanguageTag, LINK, linkLabel, TEXT, Translated } from "./BoardText";
 import { calendarWords } from "./calendar-data";
 import { NoticeImage } from "./NoticePicture";
@@ -201,6 +202,7 @@ export function Notices(props: {
 }) {
   const { t, language, notices } = props;
   const dates = calendarDates(language);
+  const more = { more: t["board.more"], less: t["board.less"] };
   return (
     <section aria-labelledby="board-notices" data-board-section="notices" className="mt-6">
       <h2 id="board-notices" className="font-subhead text-display-sm">
@@ -233,11 +235,7 @@ export function Notices(props: {
             language={language}
             written={Object.keys(n.texts)}
             stale={n.stale}
-            body={(l) => (
-              <p translate="no" className={`mt-1 ${TEXT}`}>
-                {n.texts[l]}
-              </p>
-            )}
+            body={(l) => <Clamped text={n.texts[l] ?? ""} className={`mt-1 ${TEXT}`} {...more} />}
           />
         </article>
       ))}
@@ -261,6 +259,7 @@ export function StartHere(props: {
   edit: string | null;
 }) {
   const { t, texts, channel } = props;
+  const more = { more: t["board.more"], less: t["board.less"] };
   const written = NOTICE_LANGUAGES.filter((l) => {
     const x = texts[l];
     return x !== undefined && (x.glossary || x.rules || x.ask) !== "";
@@ -289,9 +288,7 @@ export function StartHere(props: {
               texts[l]?.[part] ? (
                 <div key={part} className="mt-2">
                   <h3 className="font-semibold">{t[head]}</h3>
-                  <p translate="no" className={TEXT}>
-                    {texts[l]?.[part]}
-                  </p>
+                  <Clamped text={texts[l]?.[part] ?? ""} className={TEXT} {...more} />
                 </div>
               ) : null,
             )

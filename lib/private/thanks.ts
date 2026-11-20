@@ -13,6 +13,7 @@ import { claimShare, finishShare, takeDown, weekShared, type ShareRow } from "..
 import type { WorkspaceAccess } from "./access";
 import { isDay, weekdayIndex } from "./calendar-time";
 import { appreciationDay, thanksWeek } from "./fact-trend";
+import { settled } from "./features";
 import { privateLog } from "./log";
 import { discordMessages } from "./notice-formats";
 import { postMessages, STUCK_MS, type Channels } from "./notice-publish";
@@ -82,14 +83,17 @@ export type ShareInput = Extract<z.infer<typeof thanksInput>, { action: "share" 
 export async function draftThanks(
   model: ChatModel,
   input: DraftInput,
+  /** How many languages the model did not answer (D126: only those units are given back). */
+  onFailed: (n: number) => void = () => undefined,
 ): Promise<Record<NoticeLanguage, string>> {
   const people: Person[] = input.people.map((p) => ({ did: p.did, note: p.note ?? "" }));
   const names = input.people.map((p) => p.name);
-  const texts = await Promise.all(
+  const texts = await settled(
     WRITING_LANGUAGES.map(async (l) => {
       const draft = await writeThanks(model, l, people, input.lastWeek);
       return [l, withNames(draft, names)] as const;
     }),
+    onFailed,
   );
   return Object.fromEntries(texts) as Record<NoticeLanguage, string>;
 }

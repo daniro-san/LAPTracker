@@ -12,6 +12,7 @@ import type { Db } from "./db";
 import { openTestDb, truncateAll } from "./db.test-helpers";
 import { createRunLogger } from "./logger";
 import { insertRunLog } from "./repo/run-logs";
+import { setSwitch } from "./repo/workspace-features";
 import { keyFacts, storeKey } from "./repo/workspace-keys";
 import { saveWorkspace } from "./repo/workspaces";
 import { appErrors, dailyReads, dailyRosters, runLogs, workspaces } from "./schema";
@@ -19,7 +20,7 @@ import { workspaceKeys } from "./schema-keys";
 import { v1 } from "./sources";
 import { QuotaExhaustedError, UpstreamError, type CallOptions } from "./sources/types";
 import { runSquadsBatch, type SquadsDeps } from "./squads-read";
-import { checkKey, openKey, sealKey } from "./workspace-keys";
+import { checkKey, openKey, sealKey, squadTargets } from "./workspace-keys";
 
 /** Invented, low-entropy values: never real keys. */
 const SECRET = Buffer.alloc(32, 7).toString("base64");
@@ -44,7 +45,12 @@ beforeEach(async () => {
     ["ogs", OWN_ALLIANCE_ID],
     ["other", OTHER],
   ] as const) {
-    await saveWorkspace(db, { unionId, slug: name, discordGuildId: "1", leaderRoleIds: ["2"] });
+    await saveWorkspace(db, {
+      unionId,
+      slug: name,
+      discordGuildId: String(unionId),
+      leaderRoleIds: ["2"],
+    });
     const row = await db.query.workspaces.findFirst({
       where: (w, { eq }) => eq(w.unionId, unionId),
     });
@@ -174,6 +180,19 @@ describe("the squads read on each workspace's own key (D124)", () => {
     expect(calls.filter((c) => c.key === undefined)).toEqual([]);
   });
 
+  it("reads no workspace whose squads read the owner turned off, and its squads stay (D126)", async () => {
+    await dayRead(THU.day);
+    await saveKey(ws.other, THEIR_KEY);
+    await setSwitch(db, ws.other, "squads", false, THU.now);
+    await setSwitch(db, ws.ogs, "squads", false, THU.now);
+    expect(await squadTargets(db, SECRET, THU.now)).toEqual([]);
+    const { d, calls } = deps(THU.now);
+    await runSquadsBatch(d, db);
+    expect(calls).toEqual([]);
+    await setSwitch(db, ws.other, "squads", true, THU.now);
+    expect((await squadTargets(db, SECRET, THU.now)).map((t) => t.workspaceId)).toEqual([ws.other]);
+  });
+
   it("reads another workspace on its own key only, never on LAP_API_KEY", async () => {
     await dayRead(THU.day);
     await saveKey(ws.other, THEIR_KEY);
@@ -183,6 +202,36 @@ describe("the squads read on each workspace's own key (D124)", () => {
     expect(theirs).toEqual(["quota", 11, 12, 13].map((uid) => ({ uid, key: THEIR_KEY })));
     // LAP_API_KEY made OGs' calls only.
     expect(calls.filter((c) => c.key === undefined).map((c) => c.uid)).toEqual([1, 2, 3]);
+  });
+
+  it("never spends one workspace's key on another's members, even with its sealed row copied over (issue 471)", async () => {
+    await dayRead(THU.day);
+    await saveKey(ws.ogs, OGS_KEY);
+    await saveKey(ws.other, THEIR_KEY);
+    const members = (calls: { uid: number | "quota"; key: string | undefined }[], key: string) =>
+      calls.filter((c) => c.key === key && c.uid !== "quota").map((c) => c.uid);
+    const both = deps(THU.now);
+    await runSquadsBatch(both.d, db);
+    expect([members(both.calls, OGS_KEY), members(both.calls, THEIR_KEY)]).toEqual([
+      [1, 2, 3],
+      [11, 12, 13],
+    ]);
+
+    // OGs' sealed key copied into the other workspace's row: it opens for neither, and is not spent there.
+    const [own] = await db
+      .select()
+      .from(workspaceKeys)
+      .where(eq(workspaceKeys.workspaceId, ws.ogs));
+    await db
+      .update(workspaceKeys)
+      .set({ ciphertext: own?.ciphertext, nonce: own?.nonce })
+      .where(eq(workspaceKeys.workspaceId, ws.other));
+    await dayRead(FRI.day);
+    const copied = deps(FRI.now);
+    await runSquadsBatch(copied.d, db);
+    expect(members(copied.calls, OGS_KEY)).toEqual([1, 2, 3]);
+    expect(copied.calls.filter((c) => typeof c.uid === "number" && c.uid > 10)).toEqual([]);
+    expect((await keyFacts(db, ws.other)).status).toBe("reenter");
   });
 
   it("marks the key invalid on a 401 and stops that workspace's reads", async () => {

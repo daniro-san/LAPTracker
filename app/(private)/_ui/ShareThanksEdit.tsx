@@ -91,6 +91,41 @@ function useShare(
  * Step two: the text, then the ways to share it. The members' board is the one main action; Discord and
  * Copy for the game follow, all full width. A way that went through rests; the others stay open.
  */
+/** "On the members' board" (D114), with the board's link once it is there. */
+function BoardWay(p: {
+  slug: string;
+  words: Words;
+  state: State;
+  error: string | null;
+  disabled: boolean;
+  onShare: () => void;
+}) {
+  const { words } = p;
+  return (
+    <Way
+      primary
+      label={words["share.board"]}
+      busy={words["share.posting"]}
+      where={words["share.board.where"]}
+      done={
+        <>
+          {words["share.board.done"]}{" "}
+          <a
+            href={`/w/${p.slug}/board`}
+            className="inline-flex min-h-11 items-center text-plum underline underline-offset-4"
+          >
+            {words["share.board.see"]}
+          </a>
+        </>
+      }
+      state={p.state}
+      error={p.error}
+      disabled={p.disabled}
+      onShare={p.onShare}
+    />
+  );
+}
+
 export function ShareThanksEdit(
   props: ShareThanksProps & {
     names: string[];
@@ -118,27 +153,17 @@ export function ShareThanksEdit(
         onTexts={props.onTexts}
       />
       <h3 className="mt-4 font-subhead text-display-sm">{words["share.where"]}</h3>
-      <Way
-        primary
-        label={words["share.board"]}
-        busy={words["share.posting"]}
-        where={words["share.board.where"]}
-        done={
-          <>
-            {words["share.board.done"]}{" "}
-            <a
-              href={`/w/${props.slug}/board`}
-              className="inline-flex min-h-11 items-center text-plum underline underline-offset-4"
-            >
-              {words["share.board.see"]}
-            </a>
-          </>
-        }
-        state={state.board}
-        error={error.board}
-        disabled={tooLong}
-        onShare={() => void share("board")}
-      />
+      {/* D126: left out while the members' board is turned off for the alliance. */}
+      {props.board && (
+        <BoardWay
+          slug={props.slug}
+          words={words}
+          state={state.board}
+          error={error.board}
+          disabled={tooLong}
+          onShare={() => void share("board")}
+        />
+      )}
       <Way
         label={words["share.discord"]}
         busy={words["share.posting"]}

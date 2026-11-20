@@ -11,6 +11,7 @@ import { changedFrom } from "@/lib/brand/components/sheet-close";
 import { isolate } from "@/lib/copy";
 import { KINDS } from "@/lib/private/calendar-kinds";
 import type { CalendarKey } from "@/lib/private/dictionary.calendar";
+import type { Feature } from "@/lib/workspace-features";
 
 import type { AgendaItem, CalendarSheetWords } from "./calendar-data";
 import {
@@ -37,6 +38,8 @@ export interface FormProps {
   zone: string;
   /** The workspace's notices, newest change first: the "Notice" choice (D102). */
   notices: { id: number; title: string }[];
+  /** The features turned off for the workspace (D126): no caravan to add, no notice to link. */
+  off: readonly Feature[];
   /** Add: the day it starts on, and whether the week already has its Alliance Duel theme. Edit: the entry. */
   mode: { add: true; day: string; hasTheme: boolean } | { add: false; item: AgendaItem };
   onDone: () => void;
@@ -152,10 +155,25 @@ function CommonFields({ d, set, p, words }: PartProps) {
   );
 }
 
+/** The kinds the sheet offers: one Alliance Duel theme a week, and no caravan while Caravans is off (D126). */
+const kindsFor = (props: FormProps) =>
+  KINDS.filter(
+    (k) =>
+      (k !== "duel" || (props.mode.add && !props.mode.hasTheme)) &&
+      (k !== "caravan" || !props.off.includes("caravans")),
+  );
+
+/** A new entry starts on the first kind offered. */
+function startDraft(props: FormProps, item: AgendaItem | null): Draft {
+  const draft = draftOf(item?.form ?? null, props.mode.add ? props.mode.day : "");
+  const [first] = kindsFor(props);
+  return item || !first || draft.kind === first ? draft : withKind(draft, first);
+}
+
 export function EntryForm(props: FormProps) {
   const { words, mode } = props;
   const item = mode.add ? null : mode.item;
-  const [start] = useState<Draft>(() => draftOf(item?.form ?? null, mode.add ? mode.day : ""));
+  const [start] = useState<Draft>(() => startDraft(props, item));
   const [d, setDraft] = useState<Draft>(start);
   const [shown, setShown] = useState(false);
   const save = useSave(props, d);
@@ -165,7 +183,7 @@ export function EntryForm(props: FormProps) {
     p: { ...problems(d), shown },
     words,
   };
-  const kinds = KINDS.filter((k) => k !== "duel" || (mode.add && !mode.hasTheme));
+  const kinds = kindsFor(props);
   return (
     <Sheet
       labelledBy="cal-form-title"
@@ -208,7 +226,9 @@ export function EntryForm(props: FormProps) {
       <TimeFields {...part} zone={props.zone} />
       <RepeatFields {...part} item={item} />
       <CommonFields {...part} />
-      <NoticeChoice {...part} notices={props.notices} current={item?.notice ?? null} />
+      {!props.off.includes("notices") && (
+        <NoticeChoice {...part} notices={props.notices} current={item?.notice ?? null} />
+      )}
       {save.stale && (
         <ConflictBox
           conflicts={save.stale.conflicts}

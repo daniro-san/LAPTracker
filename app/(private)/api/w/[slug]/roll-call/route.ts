@@ -12,6 +12,7 @@ import { isDay } from "@/lib/private/calendar-time";
 import { WORKSPACE_LANG_COOKIE } from "@/lib/private/cookies";
 import { counted } from "@/lib/private/desk-action";
 import { pickWorkspaceLanguage, WORKSPACE_DICTIONARIES } from "@/lib/private/dictionary";
+import { featureOn } from "@/lib/private/features";
 import {
   isSameOriginJson,
   NO_STORE,
@@ -162,10 +163,11 @@ export async function POST(
   const parsed = body.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return privateError(400, "bad_request");
   const jar = requestCookies(request);
-  return withContext("/api/w/[slug]/roll-call", async (ctx, db) => {
+  return withContext("/api/w/[slug]/roll-call", slug, async (ctx, db) => {
     const now = ctx.now();
     const access = await requireWorkspace(db, slug, jar, now);
     if (!access.ok) return privateError(401, "signed_out");
+    if (!featureOn(access, "roll_call")) return privateError(403, "turned_off");
     const answer = await run(parsed.data, { db, access, now, zone: ctx.env.SERVER_TZ, request });
     return counted(ctx, access, "roll_call", deskAction(parsed.data), answer);
   });

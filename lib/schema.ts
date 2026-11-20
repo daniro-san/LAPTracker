@@ -321,7 +321,8 @@ export const workspaces = pgTable("workspaces", {
   id: serial("id").primaryKey(),
   slug: text("slug").notNull().unique(),
   unionId: big("union_id").notNull().unique(),
-  discordGuildId: text("discord_guild_id").notNull(),
+  /** One workspace per Discord server (D126): the Discord commands find the workspace by it. */
+  discordGuildId: text("discord_guild_id").notNull().unique(),
   leaderRoleIds: text("leader_role_ids").array().notNull(),
   /** Members' board roles (D105, amended 2026-11-17): empty means no member session, the board is closed. */
   memberRoleIds: text("member_role_ids")

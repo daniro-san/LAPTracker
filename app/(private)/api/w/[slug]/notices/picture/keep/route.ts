@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import { requireWorkspace } from "@/lib/private/access";
 import { counted } from "@/lib/private/desk-action";
+import { featureOn } from "@/lib/private/features";
 import { isSameOriginJson, NO_STORE, privateError, requestCookies } from "@/lib/private/http";
 import { keepPicture } from "@/lib/private/notice-picture-due";
 import { SLUG } from "@/lib/private/sign-in";
@@ -21,10 +22,11 @@ export async function POST(
   if (!isSameOriginJson(request)) return privateError(403, "forbidden");
   const parsed = input.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return privateError(400, "bad_request");
-  return withContext("/api/w/[slug]/notices/picture/keep", async (ctx, db) => {
+  return withContext("/api/w/[slug]/notices/picture/keep", slug, async (ctx, db) => {
     const now = ctx.now();
     const access = await requireWorkspace(db, slug, requestCookies(request), now);
     if (!access.ok) return privateError(401, "signed_out");
+    if (!featureOn(access, "notice_pictures")) return privateError(403, "turned_off");
     const { id, keep } = parsed.data;
     const result = await keepPicture(db, access, id, keep, now);
     if (!result) return privateError(404, "not_found");

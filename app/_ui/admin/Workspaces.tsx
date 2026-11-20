@@ -1,15 +1,21 @@
 // /admin's Workspaces section (D71, D73): reads the workspaces after the page's own isAdmin() check and
 // hands them, as words, to the card that edits them; then the Discord section (D96), which registers the
-// "Send to LAPTracker" command in their servers.
-import { ALLIANCES } from "@/config/alliances";
+// "Send to LAPTracker" command in their servers; then the squads read's progress and its button (D117,
+// amendment 2026-11-19b).
+import { ALLIANCES, OWN_ALLIANCE_ID } from "@/config/alliances";
 import { copy, fill } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
+import { squadsProgress, type SquadsProgress } from "@/lib/queries/squads-progress";
+import { adminFeatures } from "@/lib/queries/workspace-features";
 import { listTombstones, listWorkspaces, type AdminWorkspace } from "@/lib/queries/workspaces";
-import { masterFingerprint } from "@/lib/workspace-keys";
+import { quotaDayRead } from "@/lib/schedule";
+import { defaultSettings, resolveFeatures, type FeatureSettings } from "@/lib/workspace-features";
+import { keyUsable, masterFingerprint } from "@/lib/workspace-keys";
 
 import { DiscordCommandCard, type GuildView } from "./DiscordCommandCard";
 import { AdminSection } from "./parts";
+import { SquadsCard, type SquadsRowView } from "./SquadsCard";
 import { WorkspacesCard } from "./WorkspacesCard";
 
 const t = copy.admin.workspaces;
@@ -58,21 +64,100 @@ function Deleted({ rows }: { rows: Awaited<ReturnType<typeof listTombstones>> })
   );
 }
 
+function allianceLabel(unionId: number): string {
+  const alliance = ALLIANCES.find((a) => a.unionId === unionId);
+  return alliance ? `${alliance.tag} · ${alliance.name}` : String(unionId);
+}
+
+/**
+ * squadTargets' rule, from the key's status without opening it: the squads read is on (D126), and the
+ * workspace is the own alliance with no key of its own (or keys are off: no `current` fingerprint), or its
+ * key is usable now (D124).
+ */
+function squadsOn(
+  w: AdminWorkspace,
+  settings: FeatureSettings,
+  current: string | null,
+  now: Date,
+): boolean {
+  if (!resolveFeatures(settings, []).on.has("squads")) return false;
+  const k = w.trackerKey;
+  if (k.set && current) return k.masterFp === current && keyUsable(k.status, k.statusAt, now);
+  return w.unionId === OWN_ALLIANCE_ID;
+}
+
+/** One workspace's squads read of this quota day in words, and what its button does. */
+function squadsRow(
+  unionId: number,
+  alliance: string,
+  p: SquadsProgress | undefined,
+  now: Date,
+): SquadsRowView {
+  const s = t.squads;
+  if (!p) return { unionId, alliance, lines: [s.none], action: "run" };
+  const state = p.batchRunning
+    ? s.batchRunning
+    : fill(s.status[p.status], { reason: p.reason ?? "" });
+  const progress = fill(s.progress, {
+    reached: p.reached,
+    members: p.members,
+    retrying: p.retrying,
+    failed: p.failed,
+    quota: p.quotaRemaining ?? s.quotaUnknown,
+  });
+  const last = p.lastBatchAt ? [fill(s.lastBatch, { ago: seen(p.lastBatchAt, now) })] : [];
+  return {
+    unionId,
+    alliance,
+    lines: [state, progress, ...last],
+    action: p.status === "running" && !p.batchRunning ? "next" : null,
+  };
+}
+
+/** The workspaces the squads read takes, or that have a row in the quota day, as SquadsCard's rows. */
+function squadsRows(page: {
+  rows: AdminWorkspace[];
+  squads: SquadsProgress[];
+  settingsOf: (w: AdminWorkspace) => FeatureSettings;
+  current: string | null;
+  now: Date;
+}): SquadsRowView[] {
+  const { squads, current, now } = page;
+  return page.rows
+    .filter(
+      (w) =>
+        squadsOn(w, page.settingsOf(w), current, now) ||
+        squads.some((p) => p.unionId === w.unionId),
+    )
+    .map((w) => {
+      const p = squads.find((x) => x.unionId === w.unionId);
+      return squadsRow(w.unionId, allianceLabel(w.unionId), p, now);
+    });
+}
+
 export async function Workspaces({ now }: { now: Date }) {
-  const [rows, deleted] = await withPageDb((db) =>
-    Promise.all([listWorkspaces(db, now), listTombstones(db)]),
+  const squadsDay = quotaDayRead(now, getEnv());
+  const [rows, deleted, features, squads] = await withPageDb((db) =>
+    Promise.all([
+      listWorkspaces(db, now),
+      listTombstones(db),
+      adminFeatures(db, now),
+      squadsProgress(db, squadsDay, now),
+    ]),
   );
   // D124: a key sealed under another master key reads "needs to be entered again", worked out from its
   // fingerprint, with no write and no tracker call. /admin never sees a key.
   const secret = getEnv().WORKSPACE_KEYS_SECRET;
   const current = secret ? masterFingerprint(secret) : null;
+  // D126: a workspace always has settings (its defaults until changed).
+  const settingsOf = (w: AdminWorkspace) =>
+    features.settings.get(w.id) ?? defaultSettings(w.unionId);
   const views = rows.map((w) => {
-    const alliance = ALLIANCES.find((a) => a.unionId === w.unionId);
     return {
       id: w.id,
       unionId: w.unionId,
       slug: w.slug,
-      alliance: alliance ? `${alliance.tag} · ${alliance.name}` : String(w.unionId),
+      alliance: allianceLabel(w.unionId),
       guild: w.discordGuildId,
       roles: w.leaderRoleIds.join(", "),
       memberRoles: w.memberRoleIds.join(", "),
@@ -96,6 +181,10 @@ export async function Workspaces({ now }: { now: Date }) {
         tier: p.tier,
         seen: fill(t.signOutUsers.seen, { ago: seen(p.lastSeen, now) }),
       })),
+      features: {
+        ...settingsOf(w),
+        used: features.usage.get(w.id) ?? { ai: 0, translate: 0 },
+      },
     };
   });
   const guilds: GuildView[] = [...new Set(rows.map((w) => w.discordGuildId))].map((guild) => ({
@@ -110,8 +199,11 @@ export async function Workspaces({ now }: { now: Date }) {
     <>
       <AdminSection id="workspaces" title={t.title} help={t.help}>
         <p className="mb-4 text-body-sm text-ink/80">{t.key.rotation}</p>
-        <WorkspacesCard workspaces={views} />
+        <WorkspacesCard workspaces={views} paused={features.paused} />
         <Deleted rows={deleted} />
+      </AdminSection>
+      <AdminSection id="squads" title={t.squads.title} help={t.squads.help}>
+        <SquadsCard day={squadsDay} rows={squadsRows({ rows, squads, settingsOf, current, now })} />
       </AdminSection>
       <AdminSection id="discord" title={t.command.title} help={t.command.help}>
         <DiscordCommandCard

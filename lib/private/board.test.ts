@@ -13,6 +13,7 @@ import { newEntry } from "./calendar-model";
 import { saveNotice } from "./notices";
 import { createSession } from "./session";
 import { saveStartHere } from "./start-here";
+import { shareThanks } from "./thanks";
 
 /** Monday, Nov 16, 10:00 server time. */
 const NOW = new Date("2026-11-16T12:00:00Z");
@@ -151,6 +152,60 @@ describe("the members' board (D105)", () => {
       // today + 6 is in, today + 7 is not.
       ["2026-11-28", "other", "Day six"],
     ]);
+  });
+
+  it("shows a member only their own workspace's notices, Calendar, Start here and thanks (issue 471)", async () => {
+    await saveWorkspace(db, {
+      unionId: 900_002,
+      slug: "bravo",
+      discordGuildId: "9",
+      leaderRoleIds: ["8"],
+      memberRoleIds: ["7"],
+    });
+    const bravo = await findWorkspaceBySlug(db, "bravo");
+    const userId = await recordSignIn(db, bravo?.id ?? 0, "id-Vex", "Vex", NOW);
+    const { token: vex } = await createSession(db, bravo?.id ?? 0, userId, NOW, null, "officer");
+    const theirs = await requireWorkspace(db, "bravo", { get: () => ({ value: vex }) }, NOW);
+    if (!theirs.ok) throw new Error("no access");
+    const ana = await officer("Ana");
+    for (const [by, name] of [
+      [ana, "Ours"],
+      [theirs, "Theirs"],
+    ] as const) {
+      await notice(by, `${name} notice`, true, "2026-11-20");
+      await entry(by, { kind: "other", day: TODAY, minute: 60, title: name, forMembers: true });
+      const text = { glossary: "", rules: `${name} rules`, ask: "" };
+      await saveStartHere(db, by, { changes: [{ language: "en", version: 0, text }] }, NOW);
+      const share = {
+        action: "share" as const,
+        target: "board" as const,
+        week: "2026-11-09",
+        title: `${name} thanks`,
+        texts: { en: `${name} thanks you` },
+        names: [],
+        requestId: randomUUID(),
+      };
+      const names = { en: "English", "pt-BR": "Português", fr: "Français" };
+      const deps = { fetch, now: NOW, channels: { members: null, leaders: null }, names };
+      expect((await shareThanks(db, by, share, deps)).ok).toBe(true);
+    }
+
+    const token = await session("Rio", "member");
+    const access = await requireBoard(db, "ogs", { get: () => ({ value: token }) }, NOW);
+    if (!access.ok) throw new Error("no board");
+    const view = JSON.stringify(await boardView(db, access, TODAY));
+    expect(view).toContain("Ours notice");
+    expect(view).toContain("Ours rules");
+    expect(view).toContain("Ours thanks you");
+    expect(view).not.toContain("Theirs");
+    // The member's session opens neither the other workspace's board nor its desk.
+    const cookie = { get: () => ({ value: token }) };
+    for (const door of [requireBoard, requireWorkspace]) {
+      expect(await door(db, "bravo", cookie, NOW)).toEqual({
+        ok: false,
+        reason: "other_workspace",
+      });
+    }
   });
 
   it("keeps a notice that ends today and hides one that ended yesterday", async () => {

@@ -6,15 +6,17 @@
 // (WorkspaceForm.tsx), and a form that adds an allowlist entry. Each press sends the PIN as
 // x-edit-pin, like the run buttons, and shows the outcome in words.
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
 import { copy, fill } from "@/lib/copy";
+import type { Allowance } from "@/lib/workspace-features";
 
 import { ConfirmSheet } from "./ConfirmSheet";
 import { Result } from "./outcome";
 import { forgetPin, PinSheet, savedPin } from "./PinSheet";
 import { SignOutUsersSheet, type SignOutChoice, type SignOutPerson } from "./SignOutUsersSheet";
+import { PausedSwitches, WorkspaceFeatures, type FeaturesView } from "./WorkspaceFeatures";
 import {
   Field,
   FIELD,
@@ -36,13 +38,20 @@ export interface WorkspaceView extends WorkspaceSettings {
   deletion: string | null;
   /** Who has an open session, for "Sign out users". */
   people: SignOutPerson[];
+  /** D126: its feature switches, daily caps and today's use. */
+  features: FeaturesView;
 }
 
 function usePinCall() {
   const router = useRouter();
   const [message, setMessage] = useState<string | null>(null);
   const [pending, setPending] = useState<Call | null>(null);
+  // D126: a press is busy until its answer came and the page shows it again, so a quick second tap on a
+  // switch never sends what the page showed before the first one.
+  const [sending, setSending] = useState(false);
+  const [refreshing, refresh] = useTransition();
   async function send(call: Call, pin: string) {
+    setSending(true);
     try {
       const res = await fetch(call.url, {
         method: "POST",
@@ -53,9 +62,11 @@ function usePinCall() {
       if (res.status === 401) forgetPin();
       const code = String(answer.code ?? "failed") as keyof typeof t.errors;
       setMessage(res.ok ? `✓ ${call.ok(answer)}` : `✗ ${t.errors[code] ?? t.errors.failed}`);
-      if (res.ok) router.refresh();
+      if (res.ok) refresh(() => router.refresh());
     } catch {
       setMessage(`✗ ${t.errors.failed}`);
+    } finally {
+      setSending(false);
     }
   }
   const run = (call: Call) => {
@@ -73,7 +84,7 @@ function usePinCall() {
       }}
     />
   );
-  return { run, message, sheet };
+  return { run, message, sheet, busy: sending || refreshing };
 }
 
 const saved = () => t.saved;
@@ -90,10 +101,16 @@ function WorkspaceList({
   workspaces,
   onSignOut,
   onDeletion,
+  paused,
+  run,
+  busy,
 }: {
   workspaces: WorkspaceView[];
   onSignOut: (w: WorkspaceView) => void;
   onDeletion: (d: Deletion) => void;
+  paused: Allowance[];
+  run: Run;
+  busy: boolean;
 }) {
   if (workspaces.length === 0) return <p className="text-ink/70">{t.none}</p>;
   return (
@@ -130,6 +147,13 @@ function WorkspaceList({
               {w.deletion ? t.deletion.cancel : t.deletion.ask}
             </button>
           </p>
+          <WorkspaceFeatures
+            w={w}
+            others={workspaces.filter((o) => o.id !== w.id)}
+            paused={paused}
+            run={run}
+            busy={busy}
+          />
         </li>
       ))}
     </ul>
@@ -175,8 +199,15 @@ function AllowForm({ workspaces, run }: { workspaces: WorkspaceView[]; run: Run 
   );
 }
 
-export function WorkspacesCard({ workspaces }: { workspaces: WorkspaceView[] }) {
-  const { run, message, sheet } = usePinCall();
+export function WorkspacesCard({
+  workspaces,
+  paused,
+}: {
+  workspaces: WorkspaceView[];
+  /** D126: the paid allowances the owner paused for every workspace. */
+  paused: Allowance[];
+}) {
+  const { run, message, sheet, busy } = usePinCall();
   const [signingOut, setSigningOut] = useState<WorkspaceView | null>(null);
   const [deleting, setDeleting] = useState<Deletion | null>(null);
   const deletion = ({ w, action }: Deletion) => {
@@ -204,7 +235,15 @@ export function WorkspacesCard({ workspaces }: { workspaces: WorkspaceView[] }) 
   return (
     <div>
       {message && <Result message={message} />}
-      <WorkspaceList workspaces={workspaces} onSignOut={setSigningOut} onDeletion={setDeleting} />
+      <PausedSwitches paused={paused} run={run} busy={busy} />
+      <WorkspaceList
+        workspaces={workspaces}
+        onSignOut={setSigningOut}
+        onDeletion={setDeleting}
+        paused={paused}
+        run={run}
+        busy={busy}
+      />
       <WorkspaceForm workspaces={workspaces} run={run} />
       {workspaces.length > 0 && <AllowForm workspaces={workspaces} run={run} />}
       {signingOut && (

@@ -48,7 +48,7 @@ export async function POST(
   const parsed = body.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return privateError(400, "bad_request");
   const { csv, apply, decisions } = parsed.data;
-  return withContext("/api/w/[slug]/import", async (ctx, db) => {
+  return withContext("/api/w/[slug]/import", slug, async (ctx, db) => {
     const access = await requireWorkspace(db, slug, requestCookies(request), ctx.now());
     if (!access.ok) return privateError(401, "signed_out");
     const where = { now: ctx.now(), serverZone: ctx.env.SERVER_TZ };

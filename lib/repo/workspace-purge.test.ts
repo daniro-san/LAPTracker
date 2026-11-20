@@ -9,13 +9,20 @@ import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
 import * as schema from "../schema";
 import * as board from "../schema-board";
+import * as features from "../schema-features";
 import * as imports from "../schema-import";
 import * as keys from "../schema-keys";
 import * as notices from "../schema-notices";
 import * as retention from "../schema-retention";
 import * as squads from "../schema-squads";
 import * as thefts from "../schema-thefts";
-import { seedEverything, seedRoster, seedWorkspace, SEED_AT } from "../workspace-data.test-helpers";
+import {
+  ownedRows,
+  seedEverything,
+  seedRoster,
+  seedWorkspace,
+  SEED_AT,
+} from "../workspace-data.test-helpers";
 import { ownedBy, WORKSPACE_TABLES } from "./workspace-data";
 import {
   askDeletion,
@@ -47,7 +54,7 @@ async function rowsOf(ws: { id: number; unionId: number }) {
 
 describe("the workspace purge (D125)", () => {
   it("lists every table with a workspace_id column, or a foreign key into a listed table", () => {
-    const modules = [schema, board, imports, keys, notices, retention, squads, thefts];
+    const modules = [schema, board, features, imports, keys, notices, retention, squads, thefts];
     const tables = [
       ...new Set(modules.flatMap((m) => Object.values(m).filter((v) => is(v, PgTable)))),
     ];
@@ -83,6 +90,7 @@ describe("the workspace purge (D125)", () => {
     await askDeletion(db, nse.workspaceId, nse.officer, SEED_AT);
     const a = { id: nse.workspaceId, unionId: nse.unionId };
     const b = { id: ogs.workspaceId, unionId: ogs.unionId };
+    const untouched = await ownedRows(db, b);
     // Every owned table has a row to delete, so the check below means something.
     expect(Object.entries(await rowsOf(a)).filter(([, n]) => n === 0)).toEqual([]);
 
@@ -97,6 +105,8 @@ describe("the workspace purge (D125)", () => {
 
     expect(Object.entries(await rowsOf(a)).filter(([, n]) => n > 0)).toEqual([]);
     expect(Object.entries(await rowsOf(b)).filter(([, n]) => n === 0)).toEqual([]);
+    // Issue 471: not one of the other workspace's rows changed.
+    expect(await ownedRows(db, b)).toEqual(untouched);
     expect(await db.select({ slug: schema.workspaces.slug }).from(schema.workspaces)).toEqual([
       { slug: "ogs" },
     ]);

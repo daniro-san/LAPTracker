@@ -5,6 +5,7 @@
 //   {action: "approve", review, requestId}  → 200, 404, 403 not_reviewer, 409 closed
 import { requireWorkspace } from "@/lib/private/access";
 import { counted } from "@/lib/private/desk-action";
+import { featureOn } from "@/lib/private/features";
 import { isSameOriginJson, NO_STORE, privateError, requestCookies } from "@/lib/private/http";
 import { privateLog } from "@/lib/private/log";
 import { answerReview, askReview, reviewBody } from "@/lib/private/notice-reviews";
@@ -22,10 +23,11 @@ export async function POST(
   if (!isSameOriginJson(request)) return privateError(403, "forbidden");
   const parsed = reviewBody.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return privateError(400, "bad_request");
-  return withContext("/api/w/[slug]/notices/reviews", async (ctx, db) => {
+  return withContext("/api/w/[slug]/notices/reviews", slug, async (ctx, db) => {
     const now = ctx.now();
     const access = await requireWorkspace(db, slug, requestCookies(request), now);
     if (!access.ok) return privateError(401, "signed_out");
+    if (!featureOn(access, "notices")) return privateError(403, "turned_off");
     const body = parsed.data;
     if (body.action === "ask") {
       const asked = await askReview(db, access, body, body.requestId, now);

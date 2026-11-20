@@ -184,6 +184,7 @@ Words already used in `lib/i18n/id.ts`. Reuse them so the pages stay consistent;
 | Defender                              | pemain bertahan                     | `ledger.carriedHelp` — a player who gains no Kills, like a support                             |
 | Tracked alliances                     | Aliansi dilacak                     | `standing.server` — the alliances the ledger reads; prose says "aliansi yang dilacak"          |
 | Daily update                          | pembacaan harian                    | `history.daily`, `flow.*`, `balance.*`, `standing.*` — the once-a-day read of the member lists |
+| Seats open                            | kursi kosong                        | `statement.seats`, `statement.seatOne` — free places in an alliance                            |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

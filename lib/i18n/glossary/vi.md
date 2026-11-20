@@ -41,6 +41,8 @@ Words already used in `lib/i18n/vi.ts`. Reuse them so the pages stay consistent;
 | Standing                  | thứ hạng                     | `standing.title`, `standing.trend`, `standing.lead` — an alliance's rank by might over time                        |
 | Tracked alliances         | Liên minh theo dõi           | `standing.server`, `balance.total` — the sum of the tracked alliances, never the server                            |
 | daily update              | lần đọc hằng ngày            | `flow.notCounted`, `balance.trendHelp`, `standing.help`, `history.daily` — the once-a-day read of the member lists |
+| Statement                 | Tuyên bố                     | `statement.title` — the alliance's own in-game text, not ours                                                      |
+| seat                      | chỗ trống                    | `statement.seats`, `statement.seatOne` — a free place in the alliance                                              |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

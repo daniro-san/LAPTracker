@@ -49,7 +49,7 @@ describe("roll call rules (issue 298)", () => {
     ]);
   });
 
-  it("offers KvK shield, Undead Siege and Cheese Trap by hand, no longer plunders (2026-11-17)", () => {
+  it("offers Raid Shield, Undead Siege and Cheese Trap by hand, no longer plunders (2026-11-17)", () => {
     expect(ADDED_KINDS).toEqual(["shield", "raid", "cheese"]);
   });
 

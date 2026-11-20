@@ -26,9 +26,12 @@ export interface ShotWords {
   failed: string;
   busy: string;
   notKept: string;
+  /** Reading screenshots turned off for the alliance (D126). */
+  off: string;
 }
 
-type ShotKey = "shot.read" | "shot.reading" | "shot.failed" | "shot.busy" | "shot.notKept";
+type ShotKey =
+  "shot.read" | "shot.reading" | "shot.failed" | "shot.busy" | "shot.notKept" | "features.off.read";
 
 /** The control's words, from the editor's or Paste updates' words. */
 export const shotWords = (w: Record<ShotKey, string>): ShotWords => ({
@@ -37,6 +40,7 @@ export const shotWords = (w: Record<ShotKey, string>): ShotWords => ({
   failed: w["shot.failed"],
   busy: w["shot.busy"],
   notKept: w["shot.notKept"],
+  off: w["features.off.read"],
 });
 
 /** Each picture's lines in turn; on a failure, the pages read before it and why it stopped. */
@@ -45,16 +49,21 @@ async function readPictures(slug: string, files: File[], query: string) {
   for (const file of files) {
     try {
       const png = await toPng(file, STATUS_BAR);
-      const read = (await post(`/api/w/${slug}/shots/read${query}`, png, "image/png")) as {
+      // `button=1`: this is "Read from a screenshot", the one use of the reader its switch turns off (D126).
+      const url = `/api/w/${slug}/shots/read${query ? `${query}&` : "?"}button=1`;
+      const read = (await post(url, png, "image/png")) as {
         lines: string[];
       };
       pages.push(read.lines);
     } catch (e) {
+      const status = e instanceof Error ? e.message : "";
       const why = isSignedOut(e)
         ? SIGNED_OUT
-        : e instanceof Error && e.message === "429"
+        : status === "429"
           ? "busy"
-          : "failed";
+          : status === "403"
+            ? "off"
+            : "failed";
       return { pages, why } as const;
     }
   }
@@ -86,6 +95,7 @@ export function ReadScreenshot(props: {
     if (text !== "") props.onText(text);
     if (why === SIGNED_OUT) setError(SIGNED_OUT);
     else if (why === "busy") setError(words.busy);
+    else if (why === "off") setError(words.off);
     else if (why === "failed" || text === "") setError(words.failed);
     if (why !== SIGNED_OUT) {
       const outcome = why === "busy" ? "busy" : text === "" ? "failed" : "read";

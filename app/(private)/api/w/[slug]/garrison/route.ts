@@ -14,6 +14,7 @@ import { requireWorkspace } from "@/lib/private/access";
 import { WORKSPACE_LANG_COOKIE } from "@/lib/private/cookies";
 import { counted } from "@/lib/private/desk-action";
 import { pickWorkspaceLanguage, WORKSPACE_DICTIONARIES } from "@/lib/private/dictionary";
+import { featureOn } from "@/lib/private/features";
 import { garrisonInput, saveEnemyMight, saveGarrison } from "@/lib/private/garrison";
 import { postGarrison } from "@/lib/private/garrison-post";
 import {
@@ -52,10 +53,11 @@ export async function POST(
   if (!parsed.success) return privateError(400, "bad_request");
   const input = parsed.data;
   const jar = requestCookies(request);
-  return withContext("/api/w/[slug]/garrison", async (ctx, db) => {
+  return withContext("/api/w/[slug]/garrison", slug, async (ctx, db) => {
     const now = ctx.now();
     const access = await requireWorkspace(db, slug, jar, now);
     if (!access.ok) return privateError(401, "signed_out");
+    if (!featureOn(access, "garrison")) return privateError(403, "turned_off");
     if (input.action === "enemy") {
       const set = await privately("garrison.enemy", () => saveEnemyMight(db, access, input, now));
       if (set.ok) {

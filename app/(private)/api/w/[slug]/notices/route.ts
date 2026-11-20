@@ -5,6 +5,7 @@
 // not the officer's, or that someone already answered, stays as it was, and the save still counts.
 import { requireWorkspace } from "@/lib/private/access";
 import { counted } from "@/lib/private/desk-action";
+import { featureOn } from "@/lib/private/features";
 import { isSameOriginJson, NO_STORE, privateError, requestCookies } from "@/lib/private/http";
 import { answerReview } from "@/lib/private/notice-reviews";
 import { noticeSave, saveNotice } from "@/lib/private/notices";
@@ -20,10 +21,11 @@ export async function POST(
   if (!isSameOriginJson(request)) return privateError(403, "forbidden");
   const parsed = noticeSave.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return privateError(400, "bad_request");
-  return withContext("/api/w/[slug]/notices", async (ctx, db) => {
+  return withContext("/api/w/[slug]/notices", slug, async (ctx, db) => {
     const now = ctx.now();
     const access = await requireWorkspace(db, slug, requestCookies(request), now);
     if (!access.ok) return privateError(401, "signed_out");
+    if (!featureOn(access, "notices")) return privateError(403, "turned_off");
     const { id, changes, requestId, review } = parsed.data;
     const close =
       review &&

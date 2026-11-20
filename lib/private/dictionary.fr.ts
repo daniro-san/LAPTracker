@@ -5,6 +5,7 @@ import { activityFr } from "./dictionary.activity";
 import { boardFr } from "./dictionary.board";
 import { calendarFr } from "./dictionary.calendar.fr";
 import { dataFr } from "./dictionary.data";
+import { featuresFr } from "./dictionary.features";
 import { followUpFr } from "./dictionary.followup";
 import { garrisonFr } from "./dictionary.garrison";
 import { importFr } from "./dictionary.import";
@@ -27,6 +28,7 @@ export const fr: WorkspaceDictionary = {
   "tab.aria": "Sections",
   "tab.home": "Accueil",
   "tab.members": "Membres",
+  "desk.more": "Plus",
   "tab.mark": "Appel",
   "tab.days": "Agenda",
   "tab.soon": "Bientôt",
@@ -76,7 +78,7 @@ export const fr: WorkspaceDictionary = {
   "thanks.head": "Les meilleurs de la semaine",
   "thanks.intro": "Remerciez-les dans le jeu.",
   "thanks.donors": "Plus gros donateurs",
-  "thanks.activity": "Les plus actifs",
+  "thanks.activity": "Points de quêtes du jour",
   "members.search.ph": "Nom (sans les émojis)",
   "members.search.aria": "Chercher un membre",
   "members.filter.aria": "Filtre",
@@ -91,14 +93,17 @@ export const fr: WorkspaceDictionary = {
   "members.meta.level": "Sanctuary {n}",
   "members.meta.might": "Might {v}",
   "members.meta.don": "Dons {v}",
-  "members.meta.act": "Activité {v}",
+  "members.meta.act": "Points de quêtes du jour {v}",
   "members.don.head": "Dons de la semaine · total {total}",
   "members.don.later": "pas encore de mise à jour",
   "members.don.none": "pas de données",
+  "members.don.nothing": "rien",
   "members.nodata": "Pas de données : {list}",
   "nodata.might": "might",
   "nodata.sanctuary": "Sanctuary",
-  "nodata.activity": "activité",
+  "members.noQuests": "Pas de quêtes du jour le {day}",
+  "members.noDonations": "Pas de dons le {day}",
+  "members.noQuestsOrDonations": "Ni quêtes ni dons le {day}",
   "status.fine": "Bien",
   "status.checkin": "À contacter",
   "reason.kvk": "aucun kill gagné en Kingdom War (KvK) le {date}",
@@ -107,8 +112,8 @@ export const fr: WorkspaceDictionary = {
   "sheet.might": "Might",
   "sheet.sanctuary": "Sanctuary",
   "sheet.total": "Total de la semaine",
-  "sheet.activity": "Activité de la semaine",
-  "sheet.honor": "Honneur du jour",
+  "sheet.activity": "Points de quêtes du jour",
+  "sheet.honor": "Pièces d’Aide d’alliance aujourd’hui (max 1 000)",
   "sheet.joined": "Arrivée",
   "sheet.seen": "Vu depuis",
   "sheet.status": "Situation",
@@ -143,11 +148,12 @@ export const fr: WorkspaceDictionary = {
   "members.lead": "Mis à jour une fois par jour, juste avant le changement de jour du serveur.",
   "members.lastRead": "Dernière mise à jour : {when}",
   "members.week": "Semaine : {from} – {to}",
-  "members.legend": "— veut dire pas de données.",
   "members.more": "Ce que veulent dire les étiquettes",
   "members.checkinHelp":
     "« À contacter » : demandez comment va la personne. Vous décidez quoi faire.",
-  "members.nodataHelp": "Les données manquantes n’entrent dans aucun calcul.",
+  "members.nodataHelp":
+    "Pas encore de données. Les données manquantes ne comptent jamais contre personne.",
+  "nodata.mark": "Pas de données",
   "members.checkinCount.one": "{n} membre à contacter ou à aider",
   "members.checkinCount.other": "{n} membres à contacter ou à aider",
   "members.checkinNone": "Tout le monde a l’air bien cette semaine.",
@@ -170,7 +176,8 @@ export const fr: WorkspaceDictionary = {
     "Qui est dans l’alliance, avec le Might, les dons et l’activité de chaque membre, tirés du jeu. Utilisez-le à la place des tableurs.",
   "intro.1.settings": "Touchez votre nom en haut pour vos réglages.",
   "intro.only": "R4 · R5 uniquement",
-  "intro.2.more": "— veut dire pas de données ; elles n’entrent dans aucun calcul.",
+  "intro.2.more":
+    "Un cercle en pointillés veut dire pas encore de données. Les données manquantes ne comptent jamais contre personne.",
   "intro.desk.title": "Agenda, captures et Discord",
   "intro.desk.calendar":
     "Agenda : ce qui est prévu, en heure serveur et dans votre heure. Annonces et Vols sont des onglets de l’agenda.",
@@ -292,4 +299,5 @@ export const fr: WorkspaceDictionary = {
   ...garrisonFr,
   ...settingsFr,
   ...dataFr,
+  ...featuresFr,
 };
