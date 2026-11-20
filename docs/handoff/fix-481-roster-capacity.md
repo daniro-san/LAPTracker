@@ -59,4 +59,4 @@ Issue 481. Branch `fix/roster-over-capacity`, cut from `origin/dev` at 99da9705.
 - Use the body's `capacity`, never 100. Some older servers allow 120.
 </adjustments>
 
-PR: (added by the orchestrator)
+https://github.com/daniro-san/LAPTracker/pull/520
