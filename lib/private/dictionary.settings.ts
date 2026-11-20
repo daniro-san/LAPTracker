@@ -3,6 +3,8 @@
 // characters, its status and the quota it has left. French puts a no-break space before : and inside « ».
 import { discordEn, discordPt } from "./dictionary.discord";
 import { discordFr } from "./dictionary.discord-fr";
+import { inviteEn, invitePt } from "./dictionary.invite";
+import { inviteFr } from "./dictionary.invite-fr";
 
 export const settingsEn = {
   "settings.link": "Alliance settings",
@@ -53,6 +55,7 @@ export const settingsEn = {
   "activity.key.removed": "{who} removed the tracker key",
   // D129: Alliance settings → Discord.
   ...discordEn,
+  ...inviteEn,
 };
 
 export const settingsPt: typeof settingsEn = {
@@ -109,6 +112,7 @@ export const settingsPt: typeof settingsEn = {
   "activity.key.removed": "{who} removeu a chave do tracker",
   // D129: Alliance settings → Discord.
   ...discordPt,
+  ...invitePt,
 };
 
 export const settingsFr: typeof settingsEn = {
@@ -166,4 +170,5 @@ export const settingsFr: typeof settingsEn = {
   "activity.key.removed": "{who} a retiré la clé du tracker",
   // D129: Alliance settings → Discord.
   ...discordFr,
+  ...inviteFr,
 };

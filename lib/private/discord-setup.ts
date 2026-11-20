@@ -37,12 +37,16 @@ const ready = (env: DiscordEnv) =>
  * Discord's install page for this workspace's server only (`guild_id` with `disable_guild_select`), or null
  * while the app's id is not set. The client id is public.
  */
-export function installUrl(env: DiscordEnv, guildId: string): string | null {
+export function installUrl(
+  env: DiscordEnv,
+  guildId: string,
+  permissions: string = BOT_PERMISSIONS,
+): string | null {
   if (!env.DISCORD_CLIENT_ID) return null;
   const query = new URLSearchParams({
     client_id: env.DISCORD_CLIENT_ID,
     scope: "bot applications.commands",
-    permissions: BOT_PERMISSIONS,
+    permissions,
     guild_id: guildId,
     disable_guild_select: "true",
   });
