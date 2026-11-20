@@ -132,15 +132,6 @@ export async function trackedAllianceIds(db: Db): Promise<number[]> {
   return rows.map((r) => r.unionId);
 }
 
-/** The alliances the daily read covers on `day` (D133): the day's set (else the newest) and every workspace's. */
-export async function dailyIds(db: Db, day: string): Promise<number[]> {
-  const [set, rows] = await Promise.all([
-    trackedSetOf(db, day),
-    db.select({ unionId: workspaces.unionId }).from(workspaces),
-  ]);
-  return [...(set?.allianceIds ?? (await trackedAllianceIds(db))), ...rows.map((r) => r.unionId)];
-}
-
 /** Each id's newest label: the board's, else the newest daily roster's; ids with neither are left out. */
 export async function allianceLabels(
   db: Reader,

@@ -1,7 +1,8 @@
 // The comparison page for one event: `/` and `/events/[id]` render this (plan Phase 5, 5f). Top to
 // bottom: ledger title and byline, the event's date, the status strip and legend, then every alliance by
-// rank. Quota, run errors and the run buttons live on /admin. The game's own board is not shown (owner,
-// 2026-11-05): it is still collected as a cross-check but never feeds a number on the page.
+// rank. Quota, run errors and the run buttons live on /admin. The game's own board feeds no number on this
+// page (owner, 2026-11-05): here it is only a cross-check. D133 shows its numbers on /alliances and each
+// alliance's own page, labelled "Ranks board", and this page links there.
 import { TextLink } from "@/lib/brand/components/TextLink";
 import type { NameHistoryEntry } from "@/lib/compute";
 import { fill, type Dictionary } from "@/lib/copy";

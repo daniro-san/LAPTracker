@@ -5,10 +5,9 @@ import { desc, eq, max } from "drizzle-orm";
 
 import { LOOKUPS_PER_DAY } from "../../config/alliances";
 import type { Db } from "../db";
-import { lookupOf, lookupsOn, type LookupStatus } from "../repo/alliance-lookups";
+import { lookupOf, lookupsOn, shownStatus, type LookupStatus } from "../repo/alliance-lookups";
 import {
   allianceLabels,
-  dailyIds,
   knownAlliances,
   recentTrackedSets,
   trackedAllianceIds,
@@ -18,6 +17,7 @@ import {
 import { inEventWindow, serverDay, type ScheduleConfig } from "../schedule";
 import { events } from "../schema";
 import { allianceBoard } from "../schema-alliances";
+import { dailyIds } from "../workspace-keys";
 
 export { knownAlliances, type AllianceLabel };
 
@@ -133,17 +133,20 @@ export async function detailsState(
   db: Db,
   unionId: number,
   now: Date,
-  cfg: ScheduleConfig,
+  cfg: ScheduleConfig & { WORKSPACE_KEYS_SECRET?: string | undefined },
 ): Promise<DetailsState> {
   const day = serverDay(now, cfg);
   const [daily, lookup, today] = await Promise.all([
-    dailyIds(db, day),
+    dailyIds(db, day, cfg.WORKSPACE_KEYS_SECRET, now),
     lookupOf(db, unionId, day),
     lookupsOn(db, day),
   ]);
   return {
     daily: daily.includes(unionId),
-    lookup: lookup && { status: lookup.status, at: lookup.finishedAt ?? lookup.claimedAt },
+    lookup: lookup && {
+      status: shownStatus(lookup, now),
+      at: lookup.finishedAt ?? lookup.claimedAt,
+    },
     usedUp: today.length >= LOOKUPS_PER_DAY,
     eventWindow: inEventWindow(now, cfg),
   };
@@ -169,5 +172,7 @@ export async function adminTracked(db: Db, n: number, now: Date, cfg: ScheduleCo
   const ids = [
     ...new Set([...sets.flatMap((s) => s.allianceIds), ...lookups.map((l) => l.unionId)]),
   ];
-  return { days, lookups, labels: await allianceLabels(db, ids) };
+  // A claim a killed function left running reads as failed (LOOKUP_STALE_AFTER_MS).
+  const shown = lookups.map((l) => ({ ...l, status: shownStatus(l, now) }));
+  return { days, lookups: shown, labels: await allianceLabels(db, ids) };
 }

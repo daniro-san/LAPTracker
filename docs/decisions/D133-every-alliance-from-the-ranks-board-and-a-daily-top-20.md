@@ -1,10 +1,11 @@
-## D133 — Every alliance from the ranks board, a top 20 recomputed every day, and "Get today's details" for the rest (2026-11-20, owner, issue 459; supersedes D4's fixed list; amends D60, D69, D72, D85, D89, D90, D97, D124, D130)
+## D133 — Every alliance from the ranks board, a top 20 recomputed every day, and "Get today's details" for the rest (2026-11-20, owner, issue 459; supersedes D4's fixed list; widens D5's use of the ranks board; amends D60, D69, D72, D85, D89, D90, D97, D124, D130)
 
 Why: `config/alliances.ts` held 20 fixed union ids (D4). Changing them needed a code change and a redeploy, an alliance that climbed into the top 20 was missed, and one that dropped out kept being read. The owner (issue 459, 2026-11-19 and 2026-11-20): follow every alliance on the server, recompute the top 20 every day, show every alliance publicly, and let any visitor get one day's details of an alliance outside the 20.
 
 **The ranks board, every server day** (`lib/tracked.ts`, `lib/repo/alliances.ts`, `lib/schema-alliances.ts`, migration `0054_all_alliances`).
 
-- The tick reads the board right before the daily read, in its window (23:30 ST), through `lib/sources/internal.ts` `fetchRanks`, the use D5 already allows. It spends no quota. Its use is not widened: the same endpoint, GET only, no Origin, Referer or cookies.
+- The tick reads the board right before the daily read, in its window (23:30 ST), through `lib/sources/internal.ts` `fetchRanks`. It spends no quota.
+- **This widens D5, by the owner's decision (2026-11-19, issue #459).** D5 allowed the ranks board only as a cross-check that never feeds a number on a page. From D133 the board also picks the tracked set, and its might, kills and places are shown on `/alliances` and on each alliance's page, labelled "Ranks board". They still never enter a delta: event and history numbers come from rosters only. The endpoint and its rules are unchanged: the same `GET /servers/catalog/<server>/ranks`, no refresh call, no Origin, Referer or cookies.
 - The board's rows now also give each alliance's `abbr`, `name` and `badge_id`. The parser reads them as optional, so a board without them still parses. `avatar_url` is not read.
 - Stored once per server day:
   - `alliance_board`: one row per alliance, with the board's might and kills and its places on both boards. The tag and name history comes from these rows.
@@ -54,10 +55,12 @@ Why: `config/alliances.ts` held 20 fixed union ids (D4). Changing them needed a 
 
 - **Once per alliance per server day, for the whole site.** The press claims (alliance, server day) in `alliance_lookups`, under one lock per day, so two presses at the same second make one claim. INVARIANT `lookups.once-per-alliance-day`.
 - **What it reads**: one `GET /v1/alliances/{id}` on `LAP_API_KEY`, without `fresh` (the tracker's cached copy, `CallOptions.fresh: false`), never retried.
-- **The quota guard** comes before it: one `/v1/quota` call, never retried. The read goes ahead only when D117's reserve stays intact after it: `remaining − 1 ≥ squadsReserve(now, 20)`, which is the 100-call margin plus the KvK's reads on its quota day. INVARIANT `lookups.keeps-event-reserve`. So a lookup costs at most 2 calls.
+- **The quota guard** comes before it, inside the claim's lock: one `/v1/quota` call, never retried. The read goes ahead only when D117's reserve stays intact after it and after every lookup of the day still in flight: `remaining − 1 − in flight ≥ squadsReserve(now, 20)`, which is the 100-call margin plus the KvK's reads on its quota day. So parallel lookups cannot together go below it. INVARIANT `lookups.keeps-event-reserve`. A lookup costs at most 2 calls.
+- **Time**: each of the two calls is cut at 10 s (`LOOKUP_CALL_TIMEOUT_MS`), so a lookup ends well inside the route's 30 s `maxDuration`. A claim still "running" 5 minutes after it was made (`LOOKUP_STALE_AFTER_MS`) belongs to a killed function: the page and /admin show it as failed, and it no longer counts as in flight.
+- **"Read daily" is one rule** (`dailyKeyRule` in `lib/workspace-keys.ts`, INVARIANT `daily.one-rule`): the daily read's targets and the button's "daily" refusal use it, so a workspace's alliance whose saved key cannot be used now is not read daily, shows the button, and says "Details for this alliance aren't read every day."
 - **Refusals**:
   - Refused with no call: an alliance the daily read covers (`daily`); inside the scheduled event's window (`event_window`, INVARIANT `lookups.not-in-event-window`); past `LOOKUPS_PER_DAY` (30) claims in the day (`cap`, INVARIANT `lookups.daily-cap`).
-  - Kept for the day: a refusal after the claim (`quota`, or a failed read) keeps the claim, so the alliance waits until tomorrow.
+  - Kept for the day: a refusal after the claim keeps it, so the alliance waits until tomorrow. A quota refusal is stored as `refused` (migration `0055_lookup_refused`) and the page says "Today's lookups are used up, try again tomorrow."; a failed call is `failed` and the page says "Today's lookup didn't work. Try again tomorrow."
 - **Storage**: the roster is stored as a daily roster of that server day (D72), through the same `dataRow`. Every later visitor sees it in the history and the statement, and D71's rules hold: x, y, online and last_online_at stay in raw_json.
   - Its freshness is judged against 60 minutes, the tracker's cache life (D64), not 20, because the read asked for the cached copy.
   - `daily_rosters.read_day` no longer references `daily_reads`: a lookup's day may have no daily read yet.

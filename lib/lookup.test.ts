@@ -10,8 +10,9 @@ import { TEST_ENV } from "./app-context.test-helpers";
 import { BOARD_EXTRA, fakeInternal, fakeV1, IDS, roster } from "./collector.test-helpers";
 import type { Db } from "./db";
 import { openTestDb, truncateAll } from "./db.test-helpers";
-import { lookupAlliance } from "./lookup";
+import { LOOKUP_CALL_TIMEOUT_MS, lookupAlliance } from "./lookup";
 import { memberHistoryIndex } from "./queries";
+import { detailsState } from "./queries/alliance-list";
 import { claimTrackedSet, storeBoard } from "./repo/alliances";
 import { dailyRosters } from "./schema";
 import { allianceLookups } from "./schema-alliances";
@@ -62,7 +63,9 @@ describe("Get today's details (D133)", () => {
 
     expect(codes.sort()).toEqual(["done", "taken"]);
     expect(v1.calls).toEqual([OTHER]);
-    expect(options).toEqual([{ fresh: false, maxRetries: 0 }]);
+    // Each call cut at 10 s and never retried, so the lookup ends inside the route's 30 s.
+    expect(options).toEqual([{ fresh: false, maxRetries: 0, timeoutMs: LOOKUP_CALL_TIMEOUT_MS }]);
+    expect(LOOKUP_CALL_TIMEOUT_MS * 2).toBeLessThanOrEqual(20_000);
     const rows = await db.select().from(dailyRosters);
     expect(rows.map((r) => [r.readDay, r.unionId, r.isFresh])).toEqual([[DAY, OTHER, true]]);
     expect((await memberHistoryIndex(db, OTHER, { before: null }))?.entries).toHaveLength(1);
@@ -94,5 +97,36 @@ describe("Get today's details (D133)", () => {
     expect(v1.calls).toEqual([]);
     const [used] = await db.select({ n: count() }).from(dailyRosters);
     expect(used?.n).toBe(0);
+    // Stored as its own state: visitors read "used up", not "failed".
+    expect((await detailsState(db, SECOND, THU, deps(v1).env)).lookup?.status).toBe("refused");
+  });
+
+  it("counts the lookups still in flight against the reserve, inside the claim's lock", async () => {
+    // 101 left: one read keeps the reserve of 100, a second one at the same time would not.
+    const { v1 } = source(101);
+    const slow = v1.fetchAlliance;
+    v1.fetchAlliance = async (...args) => {
+      await new Promise((r) => setTimeout(r, 50));
+      return slow(...args);
+    };
+
+    const codes = await Promise.all([
+      lookupAlliance(deps(v1), db, OTHER),
+      lookupAlliance(deps(v1), db, SECOND),
+    ]);
+
+    expect(codes.sort()).toEqual(["done", "quota"]);
+    expect(v1.calls).toHaveLength(1);
+  });
+
+  it("shows a claim a killed function left running as failed after five minutes, and stops counting it", async () => {
+    const stuck = { unionId: OTHER, day: DAY, claimedAt: THU, status: "running" as const };
+    await db.insert(allianceLookups).values(stuck);
+    const later = new Date(THU.getTime() + 6 * 60_000);
+    const { v1 } = source(101);
+
+    expect((await detailsState(db, OTHER, THU, deps(v1).env)).lookup?.status).toBe("running");
+    expect((await detailsState(db, OTHER, later, deps(v1).env)).lookup?.status).toBe("failed");
+    expect(await lookupAlliance(deps(v1, later), db, SECOND)).toBe("done");
   });
 });

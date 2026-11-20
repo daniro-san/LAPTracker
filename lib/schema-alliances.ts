@@ -74,8 +74,9 @@ export const allianceLookups = pgTable(
     day: date("day", { mode: "string" }).notNull(),
     claimedAt: tstz("claimed_at").notNull(),
     finishedAt: tstz("finished_at"),
-    /** "running" while the call is out; "done" with a roster stored; "failed": the call or the quota rule. */
-    status: text("status", { enum: ["running", "done", "failed"] }).notNull(),
+    /** "running" while the calls are out; "done" with a roster stored; "refused": the quota rule (D117's reserve)
+     * said no; "failed": a call failed. A "running" claim older than LOOKUP_STALE_AFTER_MS reads as failed. */
+    status: text("status", { enum: ["running", "done", "refused", "failed"] }).notNull(),
     callsUsed: integer("calls_used").notNull().default(0),
     quotaRemaining: integer("quota_remaining"),
     /** A code ("quota", "v1 502"), never a message from upstream. */
@@ -84,6 +85,9 @@ export const allianceLookups = pgTable(
   (t) => [
     primaryKey({ columns: [t.unionId, t.day] }),
     index("alliance_lookups_day_idx").on(t.day),
-    check("alliance_lookups_status_check", sql`${t.status} in ('running', 'done', 'failed')`),
+    check(
+      "alliance_lookups_status_check",
+      sql`${t.status} in ('running', 'done', 'refused', 'failed')`,
+    ),
   ],
 );

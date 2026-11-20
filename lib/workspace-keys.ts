@@ -8,7 +8,7 @@ import { createCipheriv, createDecipheriv, createHmac, randomBytes } from "node:
 
 import { OWN_ALLIANCE_ID } from "../config/alliances";
 import type { Db } from "./db";
-import { allianceLabels } from "./repo/alliances";
+import { allianceLabels, trackedAllianceIds, trackedSetOf } from "./repo/alliances";
 import { allSettings } from "./repo/workspace-features";
 import { markKey, sealedKeys, type SealedKey } from "./repo/workspace-keys";
 import type { KeyStatus } from "./schema-keys";
@@ -219,15 +219,47 @@ export async function dailyTargets(
 ): Promise<DailyTarget[]> {
   const targets: DailyTarget[] = tracked.map((unionId) => ({ unionId, key: null }));
   for (const r of await sealedKeys(db)) {
-    if (tracked.includes(r.unionId)) continue;
-    if (!secret || !r.ciphertext) {
+    const rule = dailyKeyRule(r, secret, now, tracked);
+    if (rule === "ours" && !tracked.includes(r.unionId))
       targets.push({ unionId: r.unionId, key: null });
-      continue;
-    }
+    if (rule !== "own" || !secret) continue;
     const key = await opened(db, secret, r, now);
     if (key) targets.push({ unionId: r.unionId, key });
   }
   return targets;
+}
+
+/**
+ * INVARIANT daily.one-rule (D133): how a workspace's alliance is in the daily read, from its key's stored
+ * facts without opening it. "ours": in the tracked set, or no saved key (or the keys off); "own": a usable
+ * key sealed under the current master key; "skip": a saved key that cannot be used now (never ours).
+ */
+export function dailyKeyRule(
+  r: Pick<SealedKey, "unionId" | "ciphertext" | "masterFp" | "status" | "statusAt">,
+  secret: string | undefined,
+  now: Date,
+  tracked: readonly number[],
+): "ours" | "own" | "skip" {
+  if (tracked.includes(r.unionId) || !secret || !r.ciphertext) return "ours";
+  if (r.masterFp !== masterFingerprint(secret)) return "skip";
+  return keyUsable(r.status, r.statusAt, now) ? "own" : "skip";
+}
+
+/**
+ * The alliances the daily read covers on `day`, by the same rule as `dailyTargets` without opening a key:
+ * the day's set (else the newest) and every workspace's alliance the rule does not skip. The lookup and
+ * its button read this (D133).
+ */
+export async function dailyIds(
+  db: Db,
+  day: string,
+  secret: string | undefined,
+  now: Date,
+): Promise<number[]> {
+  const [set, rows] = await Promise.all([trackedSetOf(db, day), sealedKeys(db)]);
+  const tracked = set?.allianceIds ?? (await trackedAllianceIds(db));
+  const workspaces = rows.filter((r) => dailyKeyRule(r, secret, now, tracked) !== "skip");
+  return [...new Set([...tracked, ...workspaces.map((r) => r.unionId)])];
 }
 
 async function keyTargets(db: Db, secret: string | undefined, now: Date): Promise<SquadTarget[]> {

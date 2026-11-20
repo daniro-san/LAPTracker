@@ -79,7 +79,7 @@ export async function TrackedCard({ now, clock }: { now: Date; clock: Clock }) {
                     time: clock.hhmm(l.claimedAt),
                     state:
                       l.status === "failed"
-                        ? fill(t.state.failed, { error: l.error ?? "" })
+                        ? fill(t.state.failed, { error: l.error ?? "stopped" })
                         : t.state[l.status],
                   })}
                 </li>

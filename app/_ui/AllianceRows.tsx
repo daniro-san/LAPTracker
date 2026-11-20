@@ -90,6 +90,7 @@ export function boardLine(
 export function detailsView(s: DetailsState, clock: Clock): DetailsView | null {
   if (s.daily) return null;
   if (s.lookup?.status === "done") return { state: "got", time: clock.time(s.lookup.at) };
+  if (s.lookup?.status === "refused") return { state: "usedUp" };
   if (s.lookup) return { state: s.lookup.status === "running" ? "running" : "failed" };
   if (s.eventWindow) return { state: "eventPause" };
   return s.usedUp ? { state: "usedUp" } : { state: "button" };

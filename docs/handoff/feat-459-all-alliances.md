@@ -28,7 +28,7 @@ Issue #459. Decision: [D133](../decisions/D133-every-alliance-from-the-ranks-boa
 - **/admin** has a new "Tracked alliances" card: the newest set, the last 7 days' changes, and today's lookups with their calls.
 - **Labels.** Workspaces, invites and "Request an Officers' Desk" accept any alliance we know. `WorkspaceAccess.alliance` and `BoardAccess.alliance` carry the label, and the desk header, thefts, import and analytics use it.
 - **Copy.** `lib/copy-alliances.ts` holds the public words, translated into all 17 languages and stamped. `lib/copy-admin-tracked.ts` and the Discord lines are English only.
-- **Migration** `0054_all_alliances`: four tables, and `daily_rosters.read_day` loses its foreign key to `daily_reads`. A lookup's day may have no daily read yet.
+- **Migration** `0054_all_alliances`: four tables, and `daily_rosters.read_day` loses its foreign key to `daily_reads`. A lookup's day may have no daily read yet. Then `0055_lookup_refused` adds the lookup status `refused` (review of PR #508).
 - **Tests (11 new):**
   - `lib/tracked.test.ts` (3): the board once a day with who came in and went out; a failed board keeps the set; the daily targets and keys.
   - `lib/lookup.test.ts` (3): two presses make one cached read stored as the day's roster; the refusals with no call; the reserve refusal keeps the claim.
@@ -67,7 +67,7 @@ Issue #459. Decision: [D133](../decisions/D133-every-alliance-from-the-ranks-boa
 
 ## Verified
 
-- `pnpm check` passes after the rebase onto `origin/dev` (#502–#506): prettier, eslint, tsc, vitest (1310 passed, 4 skipped, 248 files), drift, and i18n (17 languages up to date).
+- `pnpm check` passes after the rebase onto `origin/dev` (#502–#506) and the review fixes: prettier, eslint, tsc, vitest (1312 passed, 4 skipped, 248 files), drift, and i18n (17 languages up to date).
 - **Rebase.** The decision was renumbered D131 → D133, because D131 (sign-in chooser) and D132 (squads queue) landed first. The migration was regenerated as `0054_all_alliances`, after D132's `0053_squads_queue_player_reads`, with the same SQL as before. Two things from dev that still read the old list now use the board's labels: D131's chooser (`allianceOf(db, …)`) and the "Desk made" admin line (`deskMadeMessage` takes the label from the invite step).
 - **Squads (D132).** The queue's alliances are `squadTargets`, the workspaces, and each is in the daily read every day, so the queue always has the day's roster. A lookup queues nothing and writes no `player_reads` row, because a workspace's alliance is never looked up. `squadsReserve` uses `TRACKED_COUNT`. Squads targets carry the alliance's label, so analytics `alliance` stays set.
 - **Local production build** (`next build` and `next start`), on a private Postgres 18 cluster in the scratchpad with the 54 migrations of the pre-rebase base and the WebSocket bridge. The API and site base URLs pointed at 127.0.0.1:9, so no upstream call was possible. No real quota was spent anywhere in this work.
@@ -75,6 +75,15 @@ Issue #459. Decision: [D133](../decisions/D133-every-alliance-from-the-ranks-boa
 - **Live press** on an alliance with no lookup: the route answered 409 `failed` (the upstream was unreachable), the page showed "Today's lookup didn't work. Try again tomorrow.", and a reload kept that state (the claim held).
 - **Screenshots:** 7 pages × 360/768/1280 × light/dark × EN/PT-BR, 75 PNGs in the scratchpad (`e2e/shots-final`). 0 horizontal overflow. 0 visible links or buttons under 44 px in `main`. The unknown id is a 404.
 - The diff contains no names from the fixture rosters. Test and seed names are invented. The only real alliance id used in a test is OGs, in `internal.test.ts` against the existing fixture.
+
+- **Review of PR #508 (approve with comments), fixed:**
+  - Each lookup call is cut at 10 s (`LOOKUP_CALL_TIMEOUT_MS`, never retried), so a lookup ends inside the route's 30 s. A claim still "running" 5 minutes after it was made (`LOOKUP_STALE_AFTER_MS`) reads as failed on the page and on /admin, and no longer counts as in flight.
+  - "Read daily" is one rule, `dailyKeyRule` in `lib/workspace-keys.ts`. `dailyTargets` and `dailyIds` (the button's "daily" refusal, moved from `lib/repo/alliances.ts`) both use it, so a workspace alliance whose saved key cannot be used shows the button.
+  - D133 now says plainly that it widens D5 by the owner's decision (2026-11-19, #459). D5 has a dated note, and `EventView.tsx`'s header and `.claude/rules/collector.md` match.
+  - A quota refusal is stored as its own status, `refused` (migration `0055_lookup_refused`, generated), and shows "Today's lookups are used up", not "failed".
+  - The D117 reserve check runs inside the claim's lock and counts the day's lookups still in flight: `remaining − 1 − in flight ≥ squadsReserve`. A `/quota` call that fails keeps the claim as `failed`.
+  - Tests: three new ones in `lib/lookup.test.ts` (in-flight lookups against the reserve; a stale claim; the refused state, inside the quota test) and the shared rule in `lib/tracked.test.ts`.
+  - Left for the coordinator's follow-up: lookups on `/admin/runs`, the other missing tests, the per-address counting in the route, the home page count query, the extra query on private requests, and `isSameOriginJson`.
 
 ## Open issues
 

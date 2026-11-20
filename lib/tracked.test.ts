@@ -12,7 +12,7 @@ import { storeKey } from "./repo/workspace-keys";
 import { saveWorkspace } from "./repo/workspaces";
 import { UpstreamError } from "./sources/types";
 import { dayTargets, trackedChangeMessage, trackedSetFor } from "./tracked";
-import { sealKey } from "./workspace-keys";
+import { dailyIds, sealKey } from "./workspace-keys";
 
 const DAY = "2026-11-19";
 const YESTERDAY = "2026-11-18";
@@ -97,5 +97,10 @@ describe("the day's tracked set (D133)", () => {
       [own, THEIR_KEY],
       [none, null],
     ]);
+    // One rule (D133): the alliance whose saved key cannot be used is not read daily, so its page offers the
+    // lookup; the button's list and the read's targets agree.
+    const daily = await dailyIds(db, DAY, SECRET, T0);
+    expect(daily.toSorted()).toEqual(targets.map((t) => t.unionId).toSorted());
+    expect(daily).not.toContain(broken);
   });
 });

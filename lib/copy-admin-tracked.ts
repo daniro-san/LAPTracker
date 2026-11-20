@@ -25,7 +25,12 @@ export const trackedAdminCopy = {
   lookupsCount: "{n} of {max} · {calls} calls",
   /** One lookup: `[ABC] Alpha · 14:05 · done`. */
   lookup: "{alliance} · {time} · {state}",
-  state: { running: "running", done: "done", failed: "failed ({error})" },
+  state: {
+    running: "running",
+    done: "done",
+    refused: "refused: the quota reserve",
+    failed: "failed ({error})",
+  },
   noLookup: "No lookup today.",
 } as const;
 
