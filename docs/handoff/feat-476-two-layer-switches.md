@@ -120,4 +120,4 @@
 - #485: per-workspace estimates already exist (`trackerEstimate` plus `latestMemberCounts`). Reuse them.
 </adjustments>
 
-PR: (added by the orchestrator)
+https://github.com/daniro-san/LAPTracker/pull/511
