@@ -1,6 +1,7 @@
 // D105: a member's session opens the members' board only. Every officer handler under /api/w/[slug] gets a
 // minimal valid request (FIXTURES), so it passes its own checks (origin, body, query) and reaches the session
-// check. Then no session and a member's session must both get 401 signed_out, and an officer's must not.
+// check. Then no session, a member's session and another workspace's officer's session (D71, issue 471) must
+// all get 401 signed_out, and an officer's must not.
 // Routes are found by walking this folder: a new route without a fixture, or one that answers before its
 // session check, fails here.
 import { readdirSync } from "node:fs";
@@ -101,23 +102,32 @@ const ROUTES = readdirSync(import.meta.dirname, { recursive: true, encoding: "ut
   .sort();
 
 let db: Db;
-const tokens = { officer: "", member: "" };
+const tokens = { officer: "", member: "", other: "" };
 beforeAll(async () => {
   db = await openTestDb();
 });
 beforeEach(async () => {
   await truncateAll(db);
   holder.ctx = testContext(db).ctx;
-  const [ws] = await db
+  const [ogs, bravo] = await db
     .insert(workspaces)
-    .values({ unionId: 67111155, slug: "ogs", discordGuildId: "1", leaderRoleIds: ["2"] })
+    .values([
+      { unionId: 67111155, slug: "ogs", discordGuildId: "1", leaderRoleIds: ["2"] },
+      // Another workspace, on another Discord server (issue 471).
+      { unionId: 900_002, slug: "bravo", discordGuildId: "3", leaderRoleIds: ["4"] },
+    ])
     .returning({ id: workspaces.id });
-  for (const tier of ["officer", "member"] as const) {
+  for (const [name, ws, tier] of [
+    ["officer", ogs, "officer"],
+    ["member", ogs, "member"],
+    ["other", bravo, "officer"],
+  ] as const) {
+    const workspaceId = ws?.id ?? 0;
     const [user] = await db
       .insert(workspaceUsers)
-      .values({ workspaceId: ws?.id ?? 0, discordUserId: `ogs-${tier}`, displayName: tier })
+      .values({ workspaceId, discordUserId: `ws-${name}`, displayName: name })
       .returning({ id: workspaceUsers.id });
-    tokens[tier] = (await createSession(db, ws?.id ?? 0, user?.id ?? 0, T0, null, tier)).token;
+    tokens[name] = (await createSession(db, workspaceId, user?.id ?? 0, T0, null, tier)).token;
   }
 });
 
@@ -142,30 +152,41 @@ describe("a member's session on the officers' API (D105)", () => {
     expect(ROUTES.filter((f) => !(f in FIXTURES))).toEqual([]);
   });
 
-  it.each(ROUTES)("%s refuses no session and a member's session alike", async (file) => {
-    const mod = (await import(/* @vite-ignore */ `./${file}`)) as Partial<Record<Method, Handler>>;
-    const exported = METHODS.filter((m) => mod[m]);
-    expect(exported.length, file).toBeGreaterThan(0);
-    // Every handler the route exports has a fixture, so none is skipped.
-    expect(
-      exported.filter((m) => !FIXTURES[file]?.[m]),
-      file,
-    ).toEqual([]);
-    for (const method of exported) {
-      const handler = mod[method] as Handler;
-      const fixture = FIXTURES[file]?.[method] as Fixture;
-      for (const token of [null, tokens.member]) {
-        const res = await call(handler, method, fixture, token);
-        const who = `${file} ${method} ${token ? "member" : "no session"}`;
-        expect([res.status, await res.json()], who).toEqual([401, { code: "signed_out" }]);
+  it.each(ROUTES)(
+    "%s refuses no session, a member's and another workspace's alike",
+    async (file) => {
+      const mod = (await import(/* @vite-ignore */ `./${file}`)) as Partial<
+        Record<Method, Handler>
+      >;
+      const exported = METHODS.filter((m) => mod[m]);
+      expect(exported.length, file).toBeGreaterThan(0);
+      // Every handler the route exports has a fixture, so none is skipped.
+      expect(
+        exported.filter((m) => !FIXTURES[file]?.[m]),
+        file,
+      ).toEqual([]);
+      for (const method of exported) {
+        const handler = mod[method] as Handler;
+        const fixture = FIXTURES[file]?.[method] as Fixture;
+        for (const [who, token] of [
+          ["no session", null],
+          ["member", tokens.member],
+          ["another workspace's officer", tokens.other],
+        ] as const) {
+          const res = await call(handler, method, fixture, token);
+          expect([res.status, await res.json()], `${file} ${method} ${who}`).toEqual([
+            401,
+            { code: "signed_out" },
+          ]);
+        }
+        // The same request passes the session check for an officer: the refusal above is the tier's.
+        if (fixture.officer !== false) {
+          const res = await call(handler, method, fixture, tokens.officer);
+          expect(res.status, `${file} ${method} officer`).not.toBe(401);
+        }
       }
-      // The same request passes the session check for an officer: the refusal above is the tier's.
-      if (fixture.officer !== false) {
-        const res = await call(handler, method, fixture, tokens.officer);
-        expect(res.status, `${file} ${method} officer`).not.toBe(401);
-      }
-    }
-  });
+    },
+  );
 
   it("refuses a member's Start here save that an officer's session saves", async () => {
     const { POST } = (await import("./start-here/route")) as { POST: Handler };

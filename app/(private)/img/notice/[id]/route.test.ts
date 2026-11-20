@@ -43,7 +43,13 @@ beforeEach(async () => {
       leaderRoleIds: ["2"],
       memberRoleIds: ["3"],
     },
-    { unionId: 67109944, slug: "nse", discordGuildId: "4", leaderRoleIds: ["5"] },
+    {
+      unionId: 67109944,
+      slug: "nse",
+      discordGuildId: "4",
+      leaderRoleIds: ["5"],
+      memberRoleIds: ["6"],
+    },
   ]);
   holder.ctx = testContext(db).ctx;
 });
@@ -135,9 +141,12 @@ describe("GET /img/notice/[id]", () => {
     expect((await view(id, officer)).status).toBe(404);
   });
 
-  it("refuses another workspace's officer and a signed-out browser", async () => {
+  it("refuses another workspace's officer and member, and a signed-out browser (issue 471)", async () => {
     const id = await pictured(await session(1, "Rook", "officer"), true);
     expect((await view(id, await session(2, "Wren", "officer"))).status).toBe(404);
+    // The notice is on its own board today: a member of the other workspace still gets nothing.
+    expect((await view(id, await session(1, "Ivy", "member"))).status).toBe(200);
+    expect((await view(id, await session(2, "Fen", "member"))).status).toBe(404);
     expect((await view(id, null)).status).toBe(404);
   });
 

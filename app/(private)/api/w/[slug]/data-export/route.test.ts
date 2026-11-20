@@ -11,7 +11,7 @@ import { TEST_ENV, testContext } from "@/lib/app-context.test-helpers";
 import type { Db } from "@/lib/db";
 import { openTestDb, truncateAll } from "@/lib/db.test-helpers";
 import { createSession, SESSION_COOKIE } from "@/lib/private/session";
-import { workspaceUsers } from "@/lib/schema";
+import { dailyRosters, workspaceUsers } from "@/lib/schema";
 import { workspaceDataEvents } from "@/lib/schema-retention";
 import {
   KEY_MARKER,
@@ -40,7 +40,10 @@ const tokens = { officer: "", member: "", other: "" };
 beforeAll(async () => {
   db = await openTestDb();
 });
-beforeEach(async () => {
+beforeEach(() => seed());
+
+/** nse with a row in every table it owns; ogs empty, or with rows of its own too (`other`). */
+async function seed(other = false) {
   await truncateAll(db);
   const test = testContext(db, TEST_ENV);
   test.clock.now = SEED_AT;
@@ -58,7 +61,19 @@ beforeEach(async () => {
   tokens.officer = await session(nse.workspaceId, nse.officer, "officer");
   tokens.member = await session(nse.workspaceId, member?.id ?? 0, "member");
   tokens.other = await session(ogs.workspaceId, ogs.officer, "officer");
-});
+  if (!other) return;
+  await db.insert(dailyRosters).values({
+    readDay: "2026-11-18",
+    unionId: ogs.unionId,
+    memberCount: 1,
+    isFresh: true,
+    memberUids: [202],
+    memberNames: ["Bea Invented"],
+    memberPower: [2000],
+    memberKills: [20],
+  });
+  await seedEverything(db, ogs);
+}
 
 const post = (token: string, requestId = ID(), lang = "en") =>
   route.POST(
@@ -184,6 +199,29 @@ describe("POST /api/w/[slug]/data-export (D125)", () => {
       ];
       expect(header.filter((c) => banned.includes(c))).toEqual([]);
     }
+  });
+
+  it("holds the same bytes whether or not another workspace has rows of its own (issue 471)", async () => {
+    const requestId = ID();
+    const alone = unzip(
+      new Uint8Array(await (await post(tokens.officer, requestId)).arrayBuffer()),
+    );
+    await seed(true);
+    const res = await post(tokens.officer, requestId);
+    const beside = unzip(new Uint8Array(await res.arrayBuffer()));
+    expect([...beside.keys()]).toEqual([...alone.keys()]);
+    // Seeded columns left to the database's now() or a random request id differ between the two seeds, and
+    // the download's own line takes the next serial id after ogs's rows; a row of ogs's would add a line.
+    const text = (data?: Buffer) =>
+      data
+        ?.toString("utf8")
+        .replace(/^\d+(?=[,;])/gm, "<id>")
+        .replace(/\d{4}-\d\d-\d\dT[\d:.]+Z/g, "<time>")
+        .replace(/[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}/g, "<uuid>");
+    for (const [name, data] of alone) expect(text(beside.get(name)), name).toBe(text(data));
+    expect(Buffer.concat([...beside.values()]).toString("utf8")).not.toMatch(
+      /Bea Invented|Officer ogs/,
+    );
   });
 
   it("refuses a member's session and another workspace's officer, and records nothing", async () => {
