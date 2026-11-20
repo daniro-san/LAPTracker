@@ -207,6 +207,33 @@ export function slotOf(at: Date, everyMin: number): Date {
   return new Date(Math.floor(at.getTime() / ms) * ms);
 }
 
+/**
+ * The daily read whose DAILY_ROSTER_AT falls on `now`'s quota day (a UTC day): the day a squads read
+ * pressed at `now` counts under, the same row as that quota day's nightly read (D117, amendment
+ * 2026-11-19b). With the server at UTC−2 and 23:30, a press at 14:00 server time belongs to last
+ * night's read.
+ */
+export function quotaDayRead(
+  now: Date,
+  cfg: Pick<ScheduleConfig, "SERVER_TZ" | "DAILY_ROSTER_AT">,
+) {
+  const utcDay = now.toISOString().slice(0, 10);
+  const today = wallClock(now, cfg.SERVER_TZ);
+  // Daily reads are a day apart and today's is within a day of `now`: one of these three is on its UTC day.
+  const day = [-1, 0, 1]
+    .map((n) => addDays(today, n))
+    .find((d) =>
+      zonedToUtc(d, cfg.DAILY_ROSTER_AT, cfg.SERVER_TZ).toISOString().startsWith(utcDay),
+    );
+  return isoDate(day ?? today);
+}
+
+/** True from the scheduled event's Before until its After's window closes. */
+export function inEventWindow(now: Date, cfg: ScheduleConfig): boolean {
+  const e = currentEvent(now, cfg);
+  return now >= e.beforeAt && now.getTime() < e.afterAt.getTime() + windowMs(cfg);
+}
+
 /** The server date `now` falls on, as a daily read's `day` ("2026-11-12"). */
 export const serverDay = (now: Date, cfg: Pick<ScheduleConfig, "SERVER_TZ">) =>
   isoDate(wallClock(now, cfg.SERVER_TZ));
