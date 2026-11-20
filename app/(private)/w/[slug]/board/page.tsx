@@ -102,9 +102,12 @@ function readBoard(slug: string, jar: CookieReader, now: Date, today: string) {
   return withPageDb(async (db) => {
     const access = await requireBoard(db, slug, jar, now);
     if (!access.ok || !featureOn(access, "board")) return { access, view: null, channel: null };
-    const view = await boardView(db, access, today);
     // D129: the members' channel's name only, the workspace's own or else the site's.
-    const channel = (await channelNames(db, access, getEnv())).members;
+    const [view, channels] = await Promise.all([
+      boardView(db, access, today),
+      channelNames(db, access, getEnv()),
+    ]);
+    const channel = channels.members;
     return {
       access,
       view: featureOn(access, "notices") ? view : { ...view, notices: [] },

@@ -26,8 +26,8 @@ import {
   settingsById,
 } from "@/lib/repo/workspace-features";
 import { errorResponse, withContext } from "@/lib/route";
-import { syncCommands } from "@/lib/workspace-commands";
-import { ALLOWANCES, FEATURE_GROUPS, FEATURES, type Feature } from "@/lib/workspace-features";
+import { changesCommands, syncCommands } from "@/lib/workspace-commands";
+import { ALLOWANCES, FEATURES, type Feature } from "@/lib/workspace-features";
 
 const id = z.number().int().positive();
 const allowance = z.enum(ALLOWANCES);
@@ -117,8 +117,6 @@ export function POST(request: Request): Promise<Response> {
   });
 }
 
-const COMMAND_FEATURES: readonly Feature[] = FEATURE_GROUPS.discord;
-
 /**
  * D129, issue 483: after a change that can add or remove a Discord command, each server that had the app's
  * commands gets exactly those now on, so a command turned off disappears from Discord. A server that never
@@ -126,11 +124,7 @@ const COMMAND_FEATURES: readonly Feature[] = FEATURE_GROUPS.discord;
  * route still answers a stale command with its "turned off" line).
  */
 async function commandsFollow(ctx: AppContext, db: Db, b: z.infer<typeof body>, now: Date) {
-  const touches =
-    b.action === "copy" ||
-    (b.action === "switch" && COMMAND_FEATURES.includes(b.feature)) ||
-    (b.action === "pause" && b.allowance === "translate");
-  if (!touches) return;
+  if (!changesCommands(b)) return;
   const scope = b.action === "pause" ? {} : { only: [b.workspace_id] };
   await syncCommands(db, { env: ctx.env, fetch: ctx.fetch, now }, { ...scope, registered: true });
 }

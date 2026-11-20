@@ -62,9 +62,10 @@ lib/private/*.ts    the workspace (D71): requireWorkspace and its branded Worksp
                     roles, creating them, and the workspace made), invite-discord.ts (the server list's filter and
                     the bot's role reads and writes), access-request.ts ("Request an Officers' Desk" and its
                     roster check); tables in lib/schema-invites.ts, read and written in
-                    lib/repo/alliance-invites.ts; /admin's read in lib/queries/alliance-invites.ts, its route
+                    lib/repo/alliance-invites.ts (the workspace and its first officer through
+                    lib/repo/workspaces.ts); /admin's read in lib/queries/alliance-invites.ts, its route
                     app/api/admin/invites with its actions in lib/admin-invites.ts, and the admin channel's
-                    line in lib/notify-request.ts.
+                    lines (a request, a Desk made) in lib/notify-request.ts.
                     D119: notice-picture.ts (the server's check of a notice's picture, its save and remove, and
                     who may be served it), notice-picture-rules.ts (pure, browser-safe: the caps and the browser's
                     resize plan), notice-publish-body.ts (a Discord post's body, multipart with the picture),
@@ -144,7 +145,7 @@ lib/squads-read.ts  the nightly squads read (D117): batches of /v1/players for O
                     of a batch (split for size). D124: each workspace with a key of its own is read on that key.
 lib/workspace-commands.ts which message commands each workspace's server has (D129): only those turned on,
                     registered by lib/app-commands.ts and recorded per workspace; used by /admin, Alliance
-                    settings and a switch change on /admin.
+                    settings and a switch change on /admin (`changesCommands`: which changes re-register).
 lib/workspace-keys.ts each workspace's own tracker key (D124): sealed with AES-256-GCM under WORKSPACE_KEYS_SECRET
                     (the workspace id as associated data), opened only here at call time, "Test the key"
                     (`checkKey`), the status rule and which squads reads use which key (`squadTargets`). Tables in

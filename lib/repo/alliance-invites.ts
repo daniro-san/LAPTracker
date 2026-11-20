@@ -6,7 +6,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { and, eq, gt, isNotNull, isNull, lt, or } from "drizzle-orm";
 
 import type { Db } from "../db";
-import { workspaces, workspaceUsers } from "../schema";
+import { workspaces } from "../schema";
 import {
   accessRequests,
   allianceInvites,
@@ -14,13 +14,17 @@ import {
   type InviteGuild,
   type RosterMatch,
 } from "../schema-invites";
+import { insertFirstOfficer, insertNewWorkspace } from "./workspaces";
 
 export type InviteRow = typeof allianceInvites.$inferSelect;
 export type RequestRow = typeof accessRequests.$inferSelect;
 
 /** An invite link works for 7 days (issue 453). */
 export const INVITE_MS = 7 * 24 * 60 * 60_000;
-/** Decided requests, and used, cancelled or expired invites, are deleted this long after (issue 453). */
+/**
+ * Decided requests, and used, cancelled or expired invites, are deleted this long after (issue 453); a request
+ * never answered, this long after it was sent (issue 500).
+ */
 export const KEEP_MS = 30 * 24 * 60 * 60_000;
 
 export const sha256 = (text: string) => createHash("sha256").update(text).digest("hex");
@@ -184,32 +188,17 @@ async function useInvite(tx: Db, w: InvitedWorkspace, now: Date) {
     .where(heldBy(w.inviteId, { discordId: w.discordUserId, claimHash: w.claimHash }, now))
     .returning({ id: allianceInvites.id });
   if (used.length === 0) return { ok: false as const, code: "closed" as const };
-  const [ws] = await tx
-    .insert(workspaces)
-    .values({
-      unionId: w.unionId,
-      slug: w.slug,
-      discordGuildId: w.guildId,
-      leaderRoleIds: w.leaderRoleIds,
-      memberRoleIds: w.memberRoleIds,
-    })
-    .onConflictDoNothing()
-    .returning({ id: workspaces.id });
-  if (!ws) throw new Taken();
-  const [user] = await tx
-    .insert(workspaceUsers)
-    .values({
-      workspaceId: ws.id,
-      discordUserId: w.discordUserId,
-      displayName: w.displayName,
-      lastLoginAt: now,
-      allowlisted: true,
-      allowlistAddedBy: "invite",
-      allowlistExpiresAt: null,
-    })
-    .returning({ id: workspaceUsers.id });
-  if (!user) throw new Error("workspace user insert returned no row");
-  return { ok: true as const, workspaceId: ws.id, userId: user.id };
+  const workspaceId = await insertNewWorkspace(tx, {
+    unionId: w.unionId,
+    slug: w.slug,
+    discordGuildId: w.guildId,
+    leaderRoleIds: w.leaderRoleIds,
+    memberRoleIds: w.memberRoleIds,
+  });
+  if (workspaceId === null) throw new Taken();
+  const who = { discordUserId: w.discordUserId, displayName: w.displayName };
+  const userId = await insertFirstOfficer(tx, workspaceId, who, now);
+  return { ok: true as const, workspaceId, userId };
 }
 
 /** The addresses and servers already used, and the alliances that have a workspace. */
@@ -295,12 +284,17 @@ export async function approveRequest(
   });
 }
 
-/** Deletes what is older than KEEP_MS past its end: decided requests, and closed invites. */
+/** Deletes what is older than KEEP_MS past its end: requests decided or never answered, and closed invites. */
 export async function purgeOldInvites(db: Db, now: Date): Promise<void> {
   const before = new Date(now.getTime() - KEEP_MS);
   await db
     .delete(accessRequests)
-    .where(and(isNotNull(accessRequests.decidedAt), lt(accessRequests.decidedAt, before)));
+    .where(
+      or(
+        and(isNotNull(accessRequests.decidedAt), lt(accessRequests.decidedAt, before)),
+        and(isNull(accessRequests.decidedAt), lt(accessRequests.createdAt, before)),
+      ),
+    );
   await db
     .delete(allianceInvites)
     .where(

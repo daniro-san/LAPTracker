@@ -77,11 +77,11 @@ export interface WebhookView {
 }
 
 function viewOf(env: Secret, slug: string, c: WebhookChannel, row?: WebhookFacts): WebhookView {
-  const usable = row && env.WORKSPACE_KEYS_SECRET;
-  if (usable && row.masterFp === masterFingerprint(env.WORKSPACE_KEYS_SECRET as string)) {
+  const secret = env.WORKSPACE_KEYS_SECRET;
+  if (row && secret && row.masterFp === masterFingerprint(secret)) {
     return { channel: c, state: "set", name: row.name, forum: row.forum, savedAt: row.savedAt };
   }
-  if (usable)
+  if (row && secret)
     return { channel: c, state: "reenter", name: row.name, forum: row.forum, savedAt: null };
   const site = env.WORKSPACE_DISCORD_WEBHOOKS?.[slug]?.[c];
   if (site) return { channel: c, state: "site", name: site.name, forum: site.forum, savedAt: null };

@@ -51,6 +51,9 @@ export const settingsEn = {
   "key.card.invalid": "The tracker refused your key, so squads are paused. Replace it.",
   "key.card.out_of_quota":
     "Your key has no quota left today. Squads start again after the reset at 00:00 UTC.",
+  "key.card.where":
+    "To get a key: sign in on the tracker’s account page with Patreon, then copy the key that starts with lap_.",
+  "key.card.whereLink": "Open the tracker’s account page",
   "activity.key.set": "{who} updated the tracker key",
   "activity.key.removed": "{who} removed the tracker key",
   // D129: Alliance settings → Discord.
@@ -108,6 +111,9 @@ export const settingsPt: typeof settingsEn = {
   "key.card.invalid": "O tracker recusou sua chave, então os esquadrões estão pausados. Troque-a.",
   "key.card.out_of_quota":
     "Sua chave está sem cota hoje. Os esquadrões voltam depois do reinício às 00:00 UTC.",
+  "key.card.where":
+    "Para pegar uma chave: entre na página da conta do tracker com o Patreon e copie a chave que começa com lap_.",
+  "key.card.whereLink": "Abrir a página da conta do tracker",
   "activity.key.set": "{who} atualizou a chave do tracker",
   "activity.key.removed": "{who} removeu a chave do tracker",
   // D129: Alliance settings → Discord.
@@ -166,6 +172,9 @@ export const settingsFr: typeof settingsEn = {
     "Le tracker a refusé votre clé, les escouades sont donc en pause. Remplacez-la.",
   "key.card.out_of_quota":
     "Votre clé n’a plus de quota aujourd’hui. Les escouades reprennent après la remise à zéro à 00:00 UTC.",
+  "key.card.where":
+    "Pour obtenir une clé : connectez-vous avec Patreon sur la page de compte du tracker, puis copiez la clé qui commence par lap_.",
+  "key.card.whereLink": "Ouvrir la page de compte du tracker",
   "activity.key.set": "{who} a mis à jour la clé du tracker",
   "activity.key.removed": "{who} a retiré la clé du tracker",
   // D129: Alliance settings → Discord.

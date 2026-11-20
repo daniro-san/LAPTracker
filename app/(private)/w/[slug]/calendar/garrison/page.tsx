@@ -5,7 +5,9 @@
 import { notFound } from "next/navigation";
 
 import { fill } from "@/lib/copy";
+import type { Db } from "@/lib/db";
 import { getEnv } from "@/lib/env";
+import type { WorkspaceAccess } from "@/lib/private/access";
 import { calendarDates, titleOf } from "@/lib/private/calendar-words";
 import { channelNames } from "@/lib/private/discord-webhooks";
 import { garrisonView } from "@/lib/private/garrison";
@@ -18,6 +20,15 @@ import { occasionOf, openRollCall } from "../../../../_ui/roll-call-page";
 
 const LINK =
   "inline-flex min-h-11 items-center font-semibold text-plum underline underline-offset-4";
+
+/** The plan, and only its channels' names, never their webhooks (D102, D129); both read at once. */
+async function readGarrison(db: Db, access: WorkspaceAccess, entry: number, week: string) {
+  const [garrison, channels] = await Promise.all([
+    garrisonView(db, access, entry, week),
+    channelNames(db, access, getEnv()),
+  ]);
+  return garrison && { ...garrison, channels };
+}
 
 export default async function GarrisonPage({
   params,
@@ -32,11 +43,7 @@ export default async function GarrisonPage({
   const page = await openRollCall(
     params,
     `calendar/garrison?${query}`,
-    async (db, access) => {
-      const garrison = await garrisonView(db, access, occasion.entry, occasion.week);
-      // Only the channels' names reach the page, never their webhooks (D102, D129).
-      return garrison && { ...garrison, channels: await channelNames(db, access, getEnv()) };
-    },
+    (db, access) => readGarrison(db, access, occasion.entry, occasion.week),
     "garrison",
   );
   if (!page.data) return page.off ?? notFound();
