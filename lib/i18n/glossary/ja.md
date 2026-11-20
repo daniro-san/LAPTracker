@@ -132,6 +132,7 @@ Words already used in `lib/i18n/ja.ts`. Reuse them so the pages stay consistent;
 | Bloc                      | ブロック                  | `balance.bloc`, `addTo`, `clear` — a hypothetical group of alliances (D85)                                                                    |
 | Standing over time        | 順位の推移                | `standing.title`, `standing.*` — the alliance's rank by might on each day                                                                     |
 | Statement                 | 声明                      | `statement.title` — the alliance's own in-game declaration, shown as written                                                                  |
+| Sign in                   | サインイン                | `site.signIn`, `site.signInFooter` — the Discord sign-in link for officers and members                                                        |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

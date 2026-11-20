@@ -26,6 +26,8 @@ export const ko = {
     disclaimerShort:
       "팬이 만든 사이트입니다. 37Games, Eyu, Last Asylum Plague와 제휴되어 있지 않습니다.",
     disclaimerMore: "더 보기",
+    signIn: "로그인",
+    signInFooter: "연맹 간부와 멤버: 로그인",
   },
   ledger: {
     rank: "순위",

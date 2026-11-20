@@ -26,6 +26,8 @@ export const idID = {
     disclaimerShort:
       "Buatan penggemar. Tidak berafiliasi dengan 37Games, Eyu, atau Last Asylum Plague.",
     disclaimerMore: "Selengkapnya",
+    signIn: "Masuk",
+    signInFooter: "Petinggi dan anggota aliansi: masuk",
   },
   ledger: {
     rank: "Peringkat",

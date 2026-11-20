@@ -25,7 +25,7 @@ export async function POST(
     if (!ended) return privateError(401, "signed_out");
     return Response.json(
       { ok: true },
-      { headers: { ...NO_STORE, "Set-Cookie": clearSessionCookie() } },
+      { headers: { ...NO_STORE, "Set-Cookie": clearSessionCookie(ended) } },
     );
   });
 }

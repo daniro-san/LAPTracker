@@ -73,6 +73,8 @@ Words already used in `lib/i18n/fr.ts`. Reuse them so the pages stay consistent;
 
 | Joining | Adhésion | `statement.joining`, `statement.open` (Adhésion libre), `statement.byApplication` (Sur candidature) — how a player joins an alliance |
 | Statement | Déclaration | `statement.title` — the alliance's own in-game text; the words around it are ours |
+| Sign in | Connexion | `site.signIn` — the header link to the Discord sign-in (noun, one word); `site.signInFooter` uses `se connecter` after the colon |
+| Alliance officers | Officiers d’alliance | `site.signInFooter` — the alliance's officers, who sign in to the workspace |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

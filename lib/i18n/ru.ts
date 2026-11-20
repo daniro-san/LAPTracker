@@ -25,6 +25,8 @@ export const ru = {
     skip: "Перейти к журналу",
     disclaimerShort: "Фанатский проект. Не связан с 37Games, Eyu или Last Asylum Plague.",
     disclaimerMore: "Подробнее",
+    signIn: "Войти",
+    signInFooter: "Офицеры и участники альянсов: войти",
   },
   ledger: {
     rank: "Место",

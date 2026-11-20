@@ -25,6 +25,8 @@ export const itIT = {
     skip: "Vai al registro",
     disclaimerShort: "Progetto di fan. Non affiliato a 37Games, Eyu o Last Asylum Plague.",
     disclaimerMore: "Altro",
+    signIn: "Accedi",
+    signInFooter: "Ufficiali e membri delle alleanze: accedi",
   },
   ledger: {
     rank: "Posizione",

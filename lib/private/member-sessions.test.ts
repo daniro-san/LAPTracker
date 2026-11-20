@@ -15,7 +15,8 @@ import {
 } from "../repo/workspaces";
 import { workspaceSessions, workspaceUsers } from "../schema";
 import { requireBoard, requireWorkspace } from "./access";
-import { CHECK_MS } from "./session";
+import { chooserView } from "./chooser";
+import { CHECK_MS, sessionCookieName } from "./session";
 import { jar, location, MEMBER_ID, MEMBER_ROLE, R4, signInWith } from "./sign-in.test-helpers";
 
 let db: Db;
@@ -164,5 +165,35 @@ describe("member sessions (D105)", () => {
     expect(rows.map((r) => r.workspaceId).sort()).toEqual(
       [await workspaceId("ogs"), await workspaceId("bravo")].sort(),
     );
+  });
+
+  it("keeps one cookie per workspace in one browser, and a cookie renamed to the other workspace opens and lists nothing (D131, issue 471)", async () => {
+    await saveWorkspace(db, {
+      unionId: 67109944,
+      slug: "bravo",
+      discordGuildId: "400000000000000002",
+      leaderRoleIds: [R4],
+      memberRoleIds: [MEMBER_ROLE],
+    });
+    const desk = await signIn("ogs", "officer");
+    const board = await signIn("bravo", "member");
+    const both = new Map([
+      [sessionCookieName("ogs"), desk.token ?? ""],
+      [sessionCookieName("bravo"), board.token ?? ""],
+    ]);
+    const browser = (cookies: Map<string, string>) => ({
+      get: (name: string) => (cookies.has(name) ? { value: cookies.get(name) ?? "" } : undefined),
+      getAll: () => [...cookies].map(([name, value]) => ({ name, value })),
+    });
+    // Signing in to the second workspace kept the first (D73's limit is gone).
+    expect((await requireWorkspace(db, "ogs", browser(both), T0)).ok).toBe(true);
+    expect((await requireBoard(db, "bravo", browser(both), T0)).ok).toBe(true);
+    expect((await chooserView(db, browser(both), T0)).map((r) => r.slug)).toEqual(["bravo", "ogs"]);
+    // OGs' officer token under Bravo's cookie name: Bravo refuses it, and the chooser lists nothing.
+    const swapped = browser(new Map([[sessionCookieName("bravo"), desk.token ?? ""]]));
+    const refused = { ok: false, reason: "other_workspace" };
+    expect(await requireWorkspace(db, "bravo", swapped, T0)).toEqual(refused);
+    expect(await requireBoard(db, "bravo", swapped, T0)).toEqual(refused);
+    expect(await chooserView(db, swapped, T0)).toEqual([]);
   });
 });

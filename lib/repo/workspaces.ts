@@ -1,6 +1,6 @@
 // workspaces, workspace_users and workspace_sessions (D71): what /admin writes, and the plain reads and
 // writes lib/private builds on. Who gets in, and the WorkspaceAccess brand, stay in lib/private.
-import { and, eq, gt, isNull, lt, lte, ne, or, sql } from "drizzle-orm";
+import { and, eq, gt, inArray, isNull, lt, lte, ne, or, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { workspaces, workspaceSessions, workspaceUsers } from "../schema";
@@ -247,6 +247,35 @@ export async function findSession(db: Db, tokenHash: string) {
     .innerJoin(workspaceUsers, eq(workspaceUsers.id, workspaceSessions.workspaceUserId))
     .where(eq(workspaceSessions.tokenHash, tokenHash));
   return row ?? null;
+}
+
+/** The workspaces on these Discord servers (D131): the chooser matches the account's servers here only. */
+export async function workspacesOnServers(db: Db, guildIds: string[]): Promise<WorkspaceRow[]> {
+  if (guildIds.length === 0) return [];
+  return db
+    .select()
+    .from(workspaces)
+    .where(inArray(workspaces.discordGuildId, guildIds))
+    .orderBy(workspaces.slug);
+}
+
+/** The sessions with these token hashes and their workspace: what one browser holds (D131's chooser). */
+export async function sessionsByHashes(db: Db, tokenHashes: string[]) {
+  if (tokenHashes.length === 0) return [];
+  return db
+    .select({
+      tokenHash: workspaceSessions.tokenHash,
+      slug: workspaces.slug,
+      unionId: workspaces.unionId,
+      memberRoleIds: workspaces.memberRoleIds,
+      tier: workspaceSessions.tier,
+      expiresAt: workspaceSessions.expiresAt,
+      blocked: workspaceUsers.blocked,
+    })
+    .from(workspaceSessions)
+    .innerJoin(workspaces, eq(workspaces.id, workspaceSessions.workspaceId))
+    .innerJoin(workspaceUsers, eq(workspaceUsers.id, workspaceSessions.workspaceUserId))
+    .where(inArray(workspaceSessions.tokenHash, tokenHashes));
 }
 
 /**
