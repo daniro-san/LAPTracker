@@ -22,11 +22,11 @@ const SHARE_KEYS = [
 ];
 export type ShareWords = Pick<WorkspaceDictionary, (typeof SHARE_KEYS)[number]>;
 
-/** One person the post may name: what they did ("squad", "ad"), and the same in words. */
+/** One person the post may name: what they did ("squad", "ad", "steady"), and the same in words. */
 export interface SharePerson {
   uid: number;
   name: string;
-  did: ("squad" | "ad")[];
+  did: ("squad" | "ad" | "steady")[];
   line: string;
 }
 
@@ -65,16 +65,36 @@ export interface ThanksSwitches {
   channel: string | null;
 }
 
-/** The sheet's props; the members' channel and the writing help come from the environment. */
-export function shareThanksProps(p: {
+interface ShareInput {
   slug: string;
   t: WorkspaceDictionary;
   language: WorkspaceLanguage;
-  view: MembersView;
   today: string;
   /** D126: the board and the thanks draft, as switched for the alliance. */
   switches: ThanksSwitches;
-}): ShareThanksProps {
+}
+
+/** The sheet's props; the members' channel and the writing help come from the environment. */
+export function shareThanksProps(p: ShareInput & { view: MembersView }): ShareThanksProps {
+  return sharePropsFor({
+    ...p,
+    people: p.view.thanks.progress.map((x) => ({
+      uid: x.uid,
+      name: x.name,
+      did: [
+        ...(x.squadGrowth !== null ? ["squad" as const] : []),
+        ...(x.adDone ? ["ad" as const] : []),
+      ],
+      line: progressText(x, p.t),
+    })),
+    roster: p.view.members.map((m) => ({ uid: m.uid, name: m.name })),
+  });
+}
+
+/** The same sheet for any list of people, ticked, and the roster to add from (Insights, issue 489). */
+export function sharePropsFor(
+  p: ShareInput & { people: SharePerson[]; roster: { uid: number; name: string }[] },
+): ShareThanksProps {
   const { t } = p;
   const monday = thanksWeek(p.today);
   return {
@@ -86,16 +106,8 @@ export function shareThanksProps(p: {
       range: weekRange(monday, t, p.language),
       lastWeek: monday !== mondayOf(p.today),
     },
-    people: p.view.thanks.progress.map((x) => ({
-      uid: x.uid,
-      name: x.name,
-      did: [
-        ...(x.squadGrowth !== null ? ["squad" as const] : []),
-        ...(x.adDone ? ["ad" as const] : []),
-      ],
-      line: progressText(x, t),
-    })),
-    roster: p.view.members.map((m) => ({ uid: m.uid, name: m.name })),
+    people: p.people,
+    roster: p.roster,
     channel: p.switches.channel,
     ai: getAppContext().ai !== null && p.switches.writing,
     board: p.switches.board,

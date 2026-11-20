@@ -225,7 +225,7 @@ export default async function MembersPage({
           actions={roster ? headActions(t) : []}
           moreLabel={t["desk.more"]}
         />
-        <MembersHead slug={slug} former={showFormer} t={t} language={language} />
+        <MembersHead access={access} former={showFormer} t={t} language={language} />
         {roster && <PasteUpdates slug={slug} words={updatesWords(t)} shots={editor.shots} />}
         {showFormer ? (
           <FormerMembers

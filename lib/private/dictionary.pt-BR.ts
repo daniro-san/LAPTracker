@@ -9,6 +9,7 @@ import { featuresPt } from "./dictionary.features";
 import { followUpPt } from "./dictionary.followup";
 import { garrisonPt } from "./dictionary.garrison";
 import { importPt } from "./dictionary.import";
+import { insightsPt } from "./dictionary.insights";
 import { lifecyclePt } from "./dictionary.lifecycle";
 import { membersPt } from "./dictionary.members.pt-BR";
 import { noticesPt } from "./dictionary.notices";
@@ -288,6 +289,7 @@ export const pt: WorkspaceDictionary = {
   ...translatePt,
   ...boardPt,
   ...followUpPt,
+  ...insightsPt,
   ...activityPt,
   ...sharePt,
   ...squadsPt,

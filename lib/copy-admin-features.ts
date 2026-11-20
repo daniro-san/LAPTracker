@@ -29,6 +29,7 @@ export const featuresAdminCopy = {
     garrison: "Garrison plan",
     thefts: "Thefts",
     follow_up: "Follow-up",
+    insights: "Insights",
     caravans: "Caravans",
     notices: "Notices",
     board: "Members' board",

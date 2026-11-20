@@ -9,6 +9,7 @@ import { featuresFr } from "./dictionary.features";
 import { followUpFr } from "./dictionary.followup";
 import { garrisonFr } from "./dictionary.garrison";
 import { importFr } from "./dictionary.import";
+import { insightsFr } from "./dictionary.insights";
 import { lifecycleFr } from "./dictionary.lifecycle";
 import { membersFr } from "./dictionary.members.fr";
 import { noticesFr } from "./dictionary.notices";
@@ -289,6 +290,7 @@ export const fr: WorkspaceDictionary = {
   ...translateFr,
   ...boardFr,
   ...followUpFr,
+  ...insightsFr,
   ...activityFr,
   ...shareFr,
   ...squadsFr,

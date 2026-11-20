@@ -25,6 +25,7 @@ const PATHS: Partial<Record<TabId, string>> = {
 const FEATURE_OF: Partial<Record<TabId | DeskView, Feature>> = {
   mark: "roll_call",
   review: "follow_up",
+  insights: "insights",
   caravans: "caravans",
   notices: "notices",
   thefts: "thefts",
@@ -60,9 +61,10 @@ function Waiting({
 }
 
 /** A view of a destination, open on this page (the sidebar marks it, D122), and its destination. */
-export type DeskView = "former" | "caravans" | "notices" | "thefts";
+export type DeskView = "former" | "insights" | "caravans" | "notices" | "thefts";
 export const VIEW_TAB: Record<DeskView, TabId> = {
   former: "members",
+  insights: "members",
   caravans: "days",
   notices: "days",
   thefts: "days",
@@ -76,9 +78,12 @@ function navItems(
 ): NavItem<TabId>[] {
   const base = `/w/${slug}`;
   const views: Partial<Record<TabId, NavItem["views"]>> = {
-    members: [
-      { id: "former", label: t["members.view.former"], href: `${base}/members?view=former` },
-    ],
+    members: (
+      [
+        { id: "former", label: t["members.view.former"], href: `${base}/members?view=former` },
+        { id: "insights", label: t["members.view.insights"], href: `${base}/insights` },
+      ] as const
+    ).filter((v) => shown(on)(v.id)),
     days: (
       [
         { id: "caravans", label: t["calendar.nav.caravans"], href: `${base}/calendar/caravans` },

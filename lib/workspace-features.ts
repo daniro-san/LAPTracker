@@ -8,7 +8,16 @@ import { OWN_ALLIANCE_ID } from "../config/alliances";
 
 /** The switches, in /admin's groups. */
 export const FEATURE_GROUPS = {
-  tabs: ["roll_call", "garrison", "thefts", "follow_up", "caravans", "notices", "board"],
+  tabs: [
+    "roll_call",
+    "garrison",
+    "thefts",
+    "follow_up",
+    "insights",
+    "caravans",
+    "notices",
+    "board",
+  ],
   ai: ["notice_translate", "notice_improve", "notice_fit", "thanks_draft", "ocr"],
   discord: ["discord_send", "discord_translate_me", "discord_translate_everyone"],
   data: ["squads", "shield_check", "notice_pictures", "export"],

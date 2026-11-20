@@ -68,3 +68,5 @@ Why: the owner liked "Worth a thank-you" (D109) and asked to make it sharable an
 - **Card.** The signature is the officer's name without a rank tag such as "(R4)", in ink (AA in dark mode). The wax seal sits whole on the card's top edge; the yarn ball is larger. Each line of the letter is its own paragraph with a small gap, and the names the officer ticked are in bold. "Take down" sits under the card, away from the signature.
 - **Home and Members.** "Worth a thank-you" reads "Say thanks to" ("Agradeça a", "Dites merci à"), in its own block under the top lists. On Home, "Everyone looks fine this week." is left out while that block shows.
 - **Not done:** the board's preview strip still wraps to two lines at 360 px (D105's words).
+
+- **Amendment 2026-11-20 (D139, issue 489).** The Insights page's "Quiet contributors" open the same sheet with them ticked, under a third deed, `steady` ("kept up their daily quests and donations"); `did` takes up to 3 deeds. There the pick help reads "The quiet contributors are ticked. Untick anyone you'd rather not name."; Members and Home keep the line above.
