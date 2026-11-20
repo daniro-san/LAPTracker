@@ -2,7 +2,8 @@
 // workspace's server only the commands turned on; a webhook is saved only after Discord says it belongs to
 // this server, sealed, and never answered back; a repeat makes no second check; publishing uses the saved
 // webhook over WORKSPACE_DISCORD_WEBHOOKS, which stays the fallback; the test message pings no one. Discord is
-// a stub: no real call is made. Invented ids and tokens only.
+// a stub: no real call is made. Invented ids and tokens only. Issue 498: the Check/save/test limits, the install
+// link's lock on this server, and a saved webhook after a master key change.
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { AppContext } from "@/lib/app-context";
@@ -11,7 +12,8 @@ import { T0 } from "@/lib/collector.test-helpers";
 import type { Db } from "@/lib/db";
 import { openTestDb, truncateAll } from "@/lib/db.test-helpers";
 import { requireWorkspace } from "@/lib/private/access";
-import { noticeChannels } from "@/lib/private/discord-webhooks";
+import { botView } from "@/lib/private/discord-setup";
+import { noticeChannels, webhookViews } from "@/lib/private/discord-webhooks";
 import { createSession, SESSION_COOKIE } from "@/lib/private/session";
 import { workspaces, workspaceUsers } from "@/lib/schema";
 import { workspaceDiscord, workspaceWebhooks } from "@/lib/schema-discord";
@@ -51,6 +53,8 @@ let workspaceId = 0;
 /** Every call the stub received, and whether the bot is in the server. */
 let calls: { method: string; url: string; body: string }[] = [];
 let botIn = false;
+/** What Discord answers a PUT of commands. */
+let putStatus = 200;
 
 function stubDiscord(): typeof fetch {
   return async (input, init) => {
@@ -58,6 +62,7 @@ function stubDiscord(): typeof fetch {
     const method = init?.method ?? "GET";
     calls.push({ method, url, body: typeof init?.body === "string" ? init.body : "" });
     if (url.endsWith("/oauth2/token")) return Response.json({ access_token: "bearer-test" });
+    if (method === "PUT") return new Response("", { status: putStatus });
     if (url.endsWith(`/guilds/${GUILD}`)) {
       return botIn ? Response.json({ id: GUILD }) : new Response("", { status: 403 });
     }
@@ -77,6 +82,7 @@ beforeEach(async () => {
   holder.ctx = ctx;
   calls = [];
   botIn = false;
+  putStatus = 200;
   const [ws] = await db
     .insert(workspaces)
     .values({ unionId: 67109944, slug: "nse", discordGuildId: GUILD, leaderRoleIds: ["2"] })
@@ -195,5 +201,51 @@ describe("POST /api/w/[slug]/discord (D129)", () => {
     expect(JSON.parse(calls[0]?.body ?? "")).toMatchObject({ allowed_mentions: { parse: [] } });
     expect(JSON.stringify(log.mock.calls)).not.toContain("ours-test");
     log.mockRestore();
+  });
+
+  it("allows 5 Checks, 10 saves and 5 test messages per 15 minutes, refused ones included", async () => {
+    for (let i = 0; i < 5; i++) expect((await post({ action: "check" })).status).toBe(409);
+    expect((await post({ action: "check" })).status).toBe(429);
+    for (let i = 0; i < 10; i++) expect((await save(THEIRS)).status).toBe(422);
+    expect((await save(OURS)).status).toBe(429);
+    // The leaders' channel has no webhook, here or in the site's variable.
+    for (let i = 0; i < 5; i++) {
+      expect((await post({ action: "test", channel: "leaders" })).status).toBe(409);
+    }
+    expect((await post({ action: "test", channel: "leaders" })).status).toBe(429);
+    expect(await db.select().from(workspaceWebhooks)).toEqual([]);
+  });
+
+  it("answers commands_failed when Discord refuses the commands, recording none", async () => {
+    botIn = true;
+    putStatus = 500;
+    const res = await post({ action: "check" });
+    expect([res.status, await res.json()]).toEqual([
+      502,
+      { code: "commands_failed", firstSeen: true },
+    ]);
+    const [state] = await db.select().from(workspaceDiscord);
+    expect(state?.commands).toBeNull();
+  });
+
+  it("builds an install link for this server only, with D101's permissions", async () => {
+    const link = new URL((await botView(db, await access(), ENV)).installUrl ?? "");
+    expect(link.origin + link.pathname).toBe("https://discord.test/api/oauth2/authorize");
+    expect(Object.fromEntries(link.searchParams)).toEqual({
+      client_id: ENV.DISCORD_CLIENT_ID,
+      scope: "bot applications.commands",
+      permissions: "309237648384",
+      guild_id: GUILD,
+      disable_guild_select: "true",
+    });
+  });
+
+  it("asks for a saved webhook again after the master key changes, never using the site's", async () => {
+    await save(OURS);
+    const rotated = { ...ENV, WORKSPACE_KEYS_SECRET: Buffer.alloc(32, 7).toString("base64") };
+    const views = await webhookViews(db, await access(), rotated);
+    expect(views.find((v) => v.channel === "members")?.state).toBe("reenter");
+    // The site's variable has a members' webhook, and it is not used in place of the saved one.
+    expect((await noticeChannels(db, await access(), rotated)).members).toBeNull();
   });
 });

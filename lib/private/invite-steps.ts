@@ -27,7 +27,7 @@ import {
 } from "./invite";
 import { createRole, giveRole, guildRoles, type GuildRole } from "./invite-discord";
 import { privateLog } from "./log";
-import { createSession } from "./session";
+import { createSession, sessionCookie } from "./session";
 
 const snowflake = z.string().regex(/^\d{17,20}$/);
 const roleName = z.string().trim().min(1).max(100);
@@ -88,7 +88,7 @@ export type StepResult =
       /** The leadership role was made (or found) but Discord refused the member role. */
       memberFailed?: "no_permission" | "unreachable" | null;
     }
-  | { ok: true; slug: string; cookie: string }
+  | { ok: true; slug: string; cookie: string; unionId: number; tag: string; name: string }
   | { ok: false; code: StepCode };
 
 const no = (code: StepCode) => ({ ok: false as const, code });
@@ -199,7 +199,8 @@ async function finish(
   const leaders = [...new Set(input.leader_role_ids)];
   const members = [...new Set(input.member_role_ids)];
   if (![...leaders, ...members].every((id) => ids.has(id))) return no("bad_role");
-  const slug = slugFor(allianceOf(row.unionId).tag, row.unionId, new Set(taken.map((w) => w.slug)));
+  const { tag, name } = await allianceOf(db, row.unionId);
+  const slug = slugFor(tag, row.unionId, new Set(taken.map((w) => w.slug)));
   const made = await createInvitedWorkspace(
     db,
     {
@@ -221,5 +222,12 @@ async function finish(
   await syncCommands(db, deps, { only: [made.workspaceId] }).catch(() => null);
   const session = await createSession(db, made.workspaceId, made.userId, deps.now, null, "officer");
   privateLog("w.invite.used", { invite: row.id, workspace: made.workspaceId });
-  return { ok: true, slug, cookie: session.cookie };
+  return {
+    ok: true,
+    slug,
+    cookie: sessionCookie(slug, session.token, session.expiresAt, deps.now),
+    unionId: row.unionId,
+    tag,
+    name,
+  };
 }

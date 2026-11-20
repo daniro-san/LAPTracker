@@ -181,7 +181,9 @@ export async function fetchAlliance(
 ): Promise<AllianceSnapshotInput> {
   // D64: a live game lookup, not the API's cached copy. Its cache keeps a copy up to 60 minutes, past
   // our 20-minute freshness rule; a live read costs the same request and takes about 1-2 s.
-  const response = await request(`/alliances/${id}?fresh=1`, onAttempt, signal, options);
+  // D133: "Get today's details" asks for the cached copy (`fresh: false`).
+  const query = options?.fresh === false ? "" : "?fresh=1";
+  const response = await request(`/alliances/${id}${query}`, onAttempt, signal, options);
   const { data, raw } = await readBody(response, allianceSchema, "v1.schema");
   return toSnapshotInput(data, { cached: data.cached, quota: data.quota, raw });
 }
@@ -205,6 +207,6 @@ export async function fetchPlayer(
   // D117: no `fresh`: the tracker's cached copy (up to 60 minutes old) is enough for squads, and the
   // maintainer's game account makes no live read for it.
   const response = await request(`/players/${uid}`, onAttempt, signal, options);
-  const { data } = await readBody(response, playerSchema, "v1.schema");
-  return toPlayerSquads(data);
+  const { data, raw } = await readBody(response, playerSchema, "v1.schema");
+  return toPlayerSquads(data, raw);
 }

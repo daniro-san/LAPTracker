@@ -62,9 +62,10 @@ lib/private/*.ts    the workspace (D71): requireWorkspace and its branded Worksp
                     roles, creating them, and the workspace made), invite-discord.ts (the server list's filter and
                     the bot's role reads and writes), access-request.ts ("Request an Officers' Desk" and its
                     roster check); tables in lib/schema-invites.ts, read and written in
-                    lib/repo/alliance-invites.ts; /admin's read in lib/queries/alliance-invites.ts, its route
+                    lib/repo/alliance-invites.ts (the workspace and its first officer through
+                    lib/repo/workspaces.ts); /admin's read in lib/queries/alliance-invites.ts, its route
                     app/api/admin/invites with its actions in lib/admin-invites.ts, and the admin channel's
-                    line in lib/notify-request.ts.
+                    lines (a request, a Desk made) in lib/notify-request.ts.
                     D119: notice-picture.ts (the server's check of a notice's picture, its save and remove, and
                     who may be served it), notice-picture-rules.ts (pure, browser-safe: the caps and the browser's
                     resize plan), notice-publish-body.ts (a Discord post's body, multipart with the picture),
@@ -135,16 +136,17 @@ lib/tick.ts         the tick's decision: create the scheduled event's row, run t
                     after_at), a due sample (D69), the Friday check (and after it the weekly notice picture cleanup, D119),
                     a REHEARSAL_AT slot, the daily roster read.
 lib/daily-read.ts   the daily roster read (D60, D72): quota check, /v1 rosters as arrays (and raw_json) into daily_rosters; not an event.
-lib/squads-read.ts  the nightly squads read (D117): batches of /v1/players for OWN_ALLIANCE_ID after the daily read, each
-                    started by a tick in the window after its answer (lib/squads-tick.ts, `after`), POST
-                    /api/squads-read the backup; squads into member_squads (lib/repo/squads.ts, lib/schema-squads.ts), the
+lib/squads-read.ts  the squads read (D117) as a daily queue (D132): small batches of /v1/players from each alliance's
+                    queue of the quota day (lib/repo/squad-queue.ts), one started by every tick after its answer
+                    (lib/squads-tick.ts, `after`), POST /api/squads-read the backup; each answer into player_reads and
+                    player_history (lib/repo/player-reads.ts), squads into member_squads (lib/repo/squads.ts, lib/schema-squads.ts), the
                     tracker's "Main squad might" versions through lib/repo/member-facts.ts, the hero catalog
                     (lib/heroes.ts, lib/repo/hero-catalog.ts). lib/squads.ts: its pure rules (reserve, main squad,
                     version rule). The card's words: lib/private/member-squads.ts. lib/squads-call.ts: one call
                     of a batch (split for size). D124: each workspace with a key of its own is read on that key.
 lib/workspace-commands.ts which message commands each workspace's server has (D129): only those turned on,
                     registered by lib/app-commands.ts and recorded per workspace; used by /admin, Alliance
-                    settings and a switch change on /admin.
+                    settings and a switch change on /admin (`changesCommands`: which changes re-register).
 lib/workspace-keys.ts each workspace's own tracker key (D124): sealed with AES-256-GCM under WORKSPACE_KEYS_SECRET
                     (the workspace id as associated data), opened only here at call time, "Test the key"
                     (`checkKey`), the status rule and which squads reads use which key (`squadTargets`). Tables in
@@ -173,7 +175,14 @@ lib/run.ts          what a route runs: executeSnapshot and the tick's executeSam
 lib/route.ts, lib/app-context.ts, lib/app-errors.ts
                     the route shell (one DB per request, closed on every path; errors become a code),
                     the outside world in one object (env, clock, adapters, fetch, openDb, eventCache), app_errors.
-config/alliances.ts the 20 tracked alliances, by union_id
+config/alliances.ts the server, TRACKED_COUNT (20), LOOKUPS_PER_DAY (30) and the own alliance (D133: no fixed list).
+lib/tracked.ts      the day's ranks board and tracked set before the daily read (D133): the board stored, its top 20 by
+                    might claimed once a day, the admin line on a change; `dayTargets` adds the workspaces' alliances
+                    with their keys (`dailyTargets` in lib/workspace-keys.ts). Tables in lib/schema-alliances.ts, read
+                    and written in lib/repo/alliances.ts; the collector's alliance list in lib/collector-ids.ts.
+lib/lookup.ts       "Get today's details" (D133): one /v1 read of an alliance outside the daily read, once per alliance per
+                    server day (lib/repo/alliance-lookups.ts), stored through lib/daily-rows.ts as that day's roster.
+                    Public read model: lib/queries/alliance-list.ts (/alliances, the board line, the button's state).
 app/img/*           /img/badge/[id] and /img/avatar/[uid]: upstream images served from our origin (D22), via lib/images.ts;
                     /img/hero/[id] (D117) only for ids in hero_catalog.
 app/ingest/*        PostHog's same-origin proxy (D77), via lib/analytics/ingest.ts.

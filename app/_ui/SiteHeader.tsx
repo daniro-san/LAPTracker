@@ -192,6 +192,15 @@ export function SiteHeader({
                 copy={copy}
               />
             )}
+            {/* D131: a quiet way in for alliance officers and members, from 640 px (below it, in the gear). */}
+            {publicPage && (
+              <a
+                href="/w"
+                className="hidden min-h-11 items-center px-2 text-sm font-medium whitespace-nowrap underline underline-offset-4 sm:flex"
+              >
+                {copy.site.signIn}
+              </a>
+            )}
             <ViewerSettings publicPage={publicPage} />
           </div>
         </div>

@@ -210,35 +210,47 @@ export function InviteRoles(props: {
   };
   return (
     <Step id="invite-roles" head={t["invite.roles.head"]} t={t}>
-      {roles.length === 0 ? (
-        <p className="mt-1">{t["invite.roles.none"]}</p>
-      ) : (
-        <>
-          <RoleList
-            legend={t["invite.roles.leaders"]}
-            help={t["invite.roles.leadersHelp"]}
-            roles={roles}
-            chosen={leaders}
-            toggle={(id) => setLeaders(flip(leaders, id))}
+      {/* Issue 500: below 640 px, "Create the roles" comes before the two role lists. */}
+      <div className="flex flex-col">
+        <div>
+          {roles.length === 0 ? (
+            <p className="mt-1">{t["invite.roles.none"]}</p>
+          ) : (
+            <>
+              <RoleList
+                legend={t["invite.roles.leaders"]}
+                help={t["invite.roles.leadersHelp"]}
+                roles={roles}
+                chosen={leaders}
+                toggle={(id) => setLeaders(flip(leaders, id))}
+              />
+              <RoleList
+                legend={t["invite.roles.members"]}
+                help={t["invite.roles.membersHelp"]}
+                roles={roles}
+                chosen={members}
+                toggle={(id) => setMembers(flip(members, id))}
+              />
+            </>
+          )}
+          <p className="mt-3 text-body-sm text-ink/75">{t["invite.roles.assign"]}</p>
+          <button
+            type="button"
+            onClick={() => void props.reload()}
+            className={buttonClass("secondary", "mt-2")}
+          >
+            {t["invite.roles.reload"]}
+          </button>
+        </div>
+        <div className="max-sm:order-first">
+          <CreateRoles
+            t={t}
+            tag={props.tag}
+            rolesInstallUrl={props.rolesInstallUrl}
+            onMade={onMade}
           />
-          <RoleList
-            legend={t["invite.roles.members"]}
-            help={t["invite.roles.membersHelp"]}
-            roles={roles}
-            chosen={members}
-            toggle={(id) => setMembers(flip(members, id))}
-          />
-        </>
-      )}
-      <p className="mt-3 text-body-sm text-ink/75">{t["invite.roles.assign"]}</p>
-      <button
-        type="button"
-        onClick={() => void props.reload()}
-        className={buttonClass("secondary", "mt-2")}
-      >
-        {t["invite.roles.reload"]}
-      </button>
-      <CreateRoles t={t} tag={props.tag} rolesInstallUrl={props.rolesInstallUrl} onMade={onMade} />
+        </div>
+      </div>
       <Finish t={t} leaders={leaders} members={members} created={created} />
     </Step>
   );

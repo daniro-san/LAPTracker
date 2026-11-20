@@ -143,7 +143,7 @@ describe("workspace sign-in (D71)", () => {
     const step = await finishSignIn(db, deps(), {
       query,
       stateCookie: state,
-      sessionCookie: undefined,
+      cookies: jar(undefined),
       ip: "198.51.100.1",
       origin: ORIGIN,
     });
@@ -244,7 +244,7 @@ describe("workspace sign-in (D71)", () => {
     await allowUser(db, await workspaceId("ogs"), MEMBER_ID, entryEnds, "admin");
     const { step, token } = await signIn("ogs", "member");
     const cookie = step.kind === "redirect" ? step.cookies.join(" ") : "";
-    expect(cookie).toContain(`${SESSION_COOKIE}=${token}; Path=/; Max-Age=7200;`);
+    expect(cookie).toContain(`${SESSION_COOKIE}.ogs=${token}; Path=/; Max-Age=7200;`);
     const after = new Date(entryEnds.getTime() + 1);
     expect(await requireWorkspace(db, "ogs", jar(token), after)).toEqual({
       ok: false,
@@ -280,7 +280,7 @@ describe("two workspaces stay apart (D71)", () => {
 
   it("does not end a session when it signs out under another workspace's slug", async () => {
     const { token } = await signIn("ogs", "officer");
-    expect(await signOut(db, "nse", jar(token), T0)).toBe(false);
+    expect(await signOut(db, "nse", jar(token), T0)).toBeNull();
     expect((await requireWorkspace(db, "ogs", jar(token), T0)).ok).toBe(true);
   });
 

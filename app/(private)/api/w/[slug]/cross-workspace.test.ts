@@ -212,6 +212,23 @@ describe("Alpha's officer naming Bravo's records (issue 471)", () => {
     expect(eventWorkspaces(two)).toHaveLength(6);
   });
 
+  it("turns Alpha's own features on or off, never Bravo's (D134)", async () => {
+    const before = await ownedRows(db, b.workspace);
+    const off = { body: { feature: "thefts", on: false } };
+    expect((await call(two, "features", off)).status).toBe(200);
+    // Alpha's officer's session sent to Bravo's address is no session there.
+    const alphaEverywhere = { ...two, token: { alpha: two.token.alpha, bravo: two.token.alpha } };
+    const there = await call(alphaEverywhere, "features", { ...off, who: "bravo" });
+    expect([there.status, there.json.code]).toEqual([401, "signed_out"]);
+    expect(await ownedRows(db, b.workspace)).toEqual(before);
+    const alpha = await idsOf(db, "alpha");
+    expect(await ownedRows(db, alpha.workspace)).toMatchObject({
+      workspace_features: [{ allianceSwitches: expect.objectContaining({ thefts: false }) }],
+    });
+    await new Promise((r) => setTimeout(r, 0));
+    expect(eventWorkspaces(two)).toEqual(["ws_action:alpha"]);
+  });
+
   it("cannot save a webhook of Bravo's server, and Check asks about Alpha's server only (D129)", async () => {
     const ctx = holder.ctx as AppContext;
     Object.assign(ctx.env, {

@@ -1,7 +1,7 @@
 // Per-workspace feature switches and daily caps (D126), apart from lib/schema.ts for its size; drizzle.config.ts
-// lists this file too. A workspace without a row, and a feature without a key in `switches` (one added to the
-// catalog later), has its defaults (lib/workspace-features.ts): no data migration is needed, the own alliance
-// keeps everything on with no cap, and a future paid feature starts off for any other workspace.
+// lists this file too. A workspace without a row, and a key missing from its maps, has its defaults
+// (lib/workspace-features.ts, D134): the own alliance keeps everything on with no cap, any other follows
+// /admin's "Defaults for new alliances".
 import { sql } from "drizzle-orm";
 import {
   check,
@@ -17,26 +17,45 @@ import {
 import { workspaces } from "./schema";
 
 /** One row per workspace once the owner changed something on /admin. */
-export const workspaceFeatures = pgTable(
-  "workspace_features",
+export const workspaceFeatures = pgTable("workspace_features", {
+  workspaceId: integer("workspace_id")
+    .primaryKey()
+    .references(() => workspaces.id, { onDelete: "cascade" }),
+  /** Each switch the owner set, by its lib/workspace-features.ts key: true allowed, false not. */
+  switches: jsonb("switches").$type<Record<string, boolean>>().notNull(),
+  /**
+   * Each daily cap the owner set (D134): `ai` Groq requests, `translate` Discord languages a UTC day; a
+   * number, or null for no cap. A missing key follows the defaults.
+   */
+  caps: jsonb("caps")
+    .$type<Partial<Record<"ai" | "translate", number | null>>>()
+    .notNull()
+    .default({}),
+  /** Each switch the alliance's officers set in Alliance settings (D134): true on, false off. */
+  allianceSwitches: jsonb("alliance_switches")
+    .$type<Record<string, boolean>>()
+    .notNull()
+    .default({}),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/**
+ * /admin's "Defaults for new alliances" (D134): one row, only the values the owner set; a missing key keeps
+ * lib/workspace-features.ts's CODE_DEFAULTS. Every workspace but the own alliance follows it where it has no
+ * override of its own.
+ */
+export const featureDefaults = pgTable(
+  "feature_defaults",
   {
-    workspaceId: integer("workspace_id")
-      .primaryKey()
-      .references(() => workspaces.id, { onDelete: "cascade" }),
-    /** Each switch the owner set, by its lib/workspace-features.ts key: true on, false off. */
-    switches: jsonb("switches").$type<Record<string, boolean>>().notNull(),
-    /** Groq requests a UTC day; null: no cap. */
-    aiPerDay: integer("ai_per_day"),
-    /** Discord translations (languages) a UTC day; null: no cap. */
-    translatePerDay: integer("translate_per_day"),
+    id: integer("id").primaryKey().default(1),
+    switches: jsonb("switches").$type<Record<string, boolean>>().notNull().default({}),
+    caps: jsonb("caps")
+      .$type<Partial<Record<"ai" | "translate", number | null>>>()
+      .notNull()
+      .default({}),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [
-    check(
-      "workspace_features_caps_check",
-      sql`coalesce(${t.aiPerDay}, 0) >= 0 and coalesce(${t.translatePerDay}, 0) >= 0`,
-    ),
-  ],
+  (t) => [check("feature_defaults_one_row", sql`${t.id} = 1`)],
 );
 
 /** How much of each allowance a workspace used on a UTC day: counts only, nothing about what was asked. */

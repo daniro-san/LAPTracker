@@ -3,12 +3,16 @@
 // or declined with the owner's reason. Nothing of any other request is read.
 import { cookies } from "next/headers";
 
-import { ALLIANCES } from "@/config/alliances";
 import { buttonClass } from "@/lib/brand/components/Button";
 import { Measure } from "@/lib/brand/components/layout/Measure";
 import { fill } from "@/lib/copy";
 import { withPageDb } from "@/lib/page";
-import { REQUEST_COOKIE, requestView, type RequestView } from "@/lib/private/access-request";
+import {
+  REQUEST_COOKIE,
+  requestChoices,
+  requestView,
+  type RequestView,
+} from "@/lib/private/access-request";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
 
 import { Frame, workspaceWords } from "../../../_ui/Frame";
@@ -56,7 +60,9 @@ export default async function RequestPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const jar = await cookies();
-  const view = await withPageDb((db) => requestView(db, jar.get(REQUEST_COOKIE)?.value));
+  const [view, alliances] = await withPageDb((db) =>
+    Promise.all([requestView(db, jar.get(REQUEST_COOKIE)?.value), requestChoices(db)]),
+  );
   const { language, t } = await workspaceWords();
   const badLink = (await searchParams).e === "link";
   return (
@@ -73,13 +79,7 @@ export default async function RequestPage({
           <>
             <h1 className="font-display text-display-lg">{t["request.title"]}</h1>
             <p className="mt-2">{t["request.lead"]}</p>
-            <RequestForm
-              t={t}
-              alliances={ALLIANCES.map((a) => ({
-                unionId: a.unionId,
-                label: `[${a.tag}] ${a.name}`,
-              }))}
-            />
+            <RequestForm t={t} alliances={alliances} />
           </>
         )}
       </Measure>

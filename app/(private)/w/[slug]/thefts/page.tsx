@@ -22,7 +22,6 @@ import { refuse } from "../../../_ui/refuse";
 import { theftCards, theftWords, type TheftFormats } from "../../../_ui/theft-data";
 import { TheftsBoard } from "../../../_ui/TheftsBoard";
 import { TabSend } from "../../../_ui/ToReview";
-import { TurnedOff } from "../../../_ui/TurnedOff";
 
 /** Server-time dates in the officer's language ("Sun 15 Nov 13:46"), the server day, and "HH:MM". */
 function formats(
@@ -76,8 +75,8 @@ export default async function TheftsPage({ params }: { params: Promise<{ slug: s
     refuse(slug, access.reason, `/w/${slug}/thefts`);
     redirect(`/w/${slug}`);
   }
-  if (!featureOn(access, "thefts"))
-    return <TurnedOff access={access} feature="thefts" waiting={waiting} />;
+  // D126: turned off for the alliance, the page is not there: its address goes to Home.
+  if (!featureOn(access, "thefts")) redirect(`/w/${slug}`);
   if (!view) notFound();
   const { language, t } = await workspaceWords();
   const words = theftWords(t);

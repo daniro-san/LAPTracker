@@ -8,7 +8,8 @@ import { memberSquads, squadReads, type StoredHero } from "../schema-squads";
 import type { SquadInput } from "../sources/types";
 
 export type SquadRead = typeof squadReads.$inferSelect;
-export type StoredSquad = Omit<typeof memberSquads.$inferSelect, "id" | "unionId">;
+/** A stored squad as the card and the main squad read it: troops are stored, never read back (D132). */
+export type StoredSquad = Omit<typeof memberSquads.$inferSelect, "id" | "unionId" | "troops">;
 
 /** The uids of the alliance's roster in the day's read, or null when the read kept none for it. */
 export async function dayRosterUids(
@@ -163,9 +164,19 @@ export async function allLatestSquads(
 }
 
 const heroesOf = (squad: SquadInput): StoredHero[] =>
-  squad.heroes.map((h) => ({ id: h.id, lv: h.lv, star: h.star, q: h.q, awaken: h.awaken }));
+  squad.heroes.map((h) => ({
+    id: h.id,
+    lv: h.lv,
+    star: h.star,
+    q: h.q,
+    awaken: h.awaken,
+    honor: h.honor,
+  }));
 
-/** The heroes as one string in a fixed field order: jsonb gives the keys back in its own order. */
+/**
+ * The heroes as one string in a fixed field order: jsonb gives the keys back in its own order. `honor`
+ * is left out, so rows stored before D132 (without it) still match an unchanged squad.
+ */
 const heroesKey = (heroes: readonly StoredHero[]) =>
   heroes.map((h) => [h.id, h.lv, h.star, h.q, h.awaken].join(",")).join(";");
 
@@ -199,6 +210,7 @@ export async function storeSquads(
       soldiers: s.soldiers === null ? null : Math.round(s.soldiers),
       soldierLoad: s.soldierLoad === null ? null : Math.round(s.soldierLoad),
       heroes: heroesOf(s),
+      troops: s.troops,
       seenAt: s.seenAt,
       readAt,
     }));

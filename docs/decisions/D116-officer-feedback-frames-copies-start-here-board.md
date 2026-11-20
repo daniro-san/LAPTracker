@@ -36,3 +36,5 @@ PT and FR to match. The button labels do not change. The three sit in one column
 - Still read-only, nothing about any person, EN · PT · FR.
 
 **Not built:** frames on the server balance, merge and flow pages; Start here counters per part. Start here records saved before this change may show a language as out of date; one tap on "Keep as is" and Save clears it, with no migration (owner, review of PR 414).
+
+**Amendment, 2026-11-20 (issue 412).** The tabs' "Empty" now reads "Missing" ("Faltando", "Manquant") in both editors, and the tab strip moved to `LanguageTabs.tsx`, which a notice's read page uses too, with the states Reviewed and Translated (AI) on notices only (D113's amendment of the same day).

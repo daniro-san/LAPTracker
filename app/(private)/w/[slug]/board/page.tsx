@@ -6,7 +6,6 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 
-import { ALLIANCES } from "@/config/alliances";
 import { analyticsPerson } from "@/lib/analytics/person";
 import { fill, isolate } from "@/lib/copy";
 import { getEnv, type Env } from "@/lib/env";
@@ -66,22 +65,6 @@ function PreviewStrip({ slug, t }: { slug: string; t: WorkspaceDictionary }) {
   );
 }
 
-/** D126: the board is turned off; an officer gets the way back to the desk. */
-function BoardOff(props: { officer: boolean; slug: string; t: WorkspaceDictionary }) {
-  const { t } = props;
-  return (
-    <section className="drawn-card max-w-xl px-4 py-3" role="status">
-      <p className="font-semibold">{t["features.off.board"]}</p>
-      <p className="mt-2 text-body-sm text-ink/80">{t["features.off.kept"]}</p>
-      {props.officer && (
-        <a href={`/w/${props.slug}`} className={LINK}>
-          {t["board.preview.back"]}
-        </a>
-      )}
-    </section>
-  );
-}
-
 /** The board's visitor to PostHog by a pseudonymous id (D115), when analytics is on. */
 function BoardPerson({ env, access }: { env: Env; access: BoardAccess }) {
   const tier = access.officer ? "officer" : "member";
@@ -89,7 +72,7 @@ function BoardPerson({ env, access }: { env: Env; access: BoardAccess }) {
     userId: access.userId,
     tier,
     slug: access.slug,
-    unionId: access.unionId,
+    alliance: access.alliance,
   });
   return person && <AnalyticsPerson {...person} />;
 }
@@ -102,9 +85,12 @@ function readBoard(slug: string, jar: CookieReader, now: Date, today: string) {
   return withPageDb(async (db) => {
     const access = await requireBoard(db, slug, jar, now);
     if (!access.ok || !featureOn(access, "board")) return { access, view: null, channel: null };
-    const view = await boardView(db, access, today);
     // D129: the members' channel's name only, the workspace's own or else the site's.
-    const channel = (await channelNames(db, access, getEnv())).members;
+    const [view, channels] = await Promise.all([
+      boardView(db, access, today),
+      channelNames(db, access, getEnv()),
+    ]);
+    const channel = channels.members;
     return {
       access,
       view: featureOn(access, "notices") ? view : { ...view, notices: [] },
@@ -125,8 +111,14 @@ export default async function BoardPage({ params }: { params: Promise<{ slug: st
     refuse(slug, access.reason, `/w/${slug}/board`);
     redirect(`/w/${slug}`);
   }
+  // D126: the board turned off for the alliance is not there. An officer goes to Home; a member has
+  // nothing else here, so the standard not-found page.
+  if (!featureOn(access, "board")) {
+    if (access.officer) redirect(`/w/${slug}`);
+    notFound();
+  }
   const { language, t } = await workspaceWords();
-  const alliance = ALLIANCES.find((a) => a.unionId === access.unionId);
+  const { alliance } = access;
   const account = <Account officer={access.officer} name={access.name ?? ""} slug={slug} t={t} />;
   const frame = {
     language,
@@ -135,14 +127,6 @@ export default async function BoardPage({ params }: { params: Promise<{ slug: st
     account,
     ...(alliance && { subtitle: `${alliance.tag} · ${alliance.name}` }),
   };
-  // D126: the board turned off for the alliance: one calm line; nothing was deleted.
-  if (!featureOn(access, "board")) {
-    return (
-      <Frame {...frame}>
-        <BoardOff officer={access.officer} slug={slug} t={t} />
-      </Frame>
-    );
-  }
   if (!view) redirect(`/w/${slug}`);
   const linked = new Set(view.entries.flatMap((e) => (e.noticeId === null ? [] : [e.noticeId])));
   return (

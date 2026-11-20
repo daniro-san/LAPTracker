@@ -24,6 +24,14 @@ export function sumPower(members: readonly { power: number | null }[]): number {
   return members.reduce((total, m) => total + (m.power ?? 0), 0);
 }
 
+/** The tracked set from a ranks board (D133): the `n` ids with the most might, a tie to the lower id. */
+export function topByPower(power: ReadonlyMap<number, number>, n: number): number[] {
+  return [...power.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0] - b[0])
+    .slice(0, n)
+    .map(([id]) => id);
+}
+
 /** INVARIANT freshness.20-min (§3.7): fresh when `now − updatedAt ≤ maxAgeMs`; unknown is stale. */
 export function isFresh(now: Date, updatedAt: Date | null, maxAgeMs: number): boolean {
   return updatedAt !== null && now.getTime() - updatedAt.getTime() <= maxAgeMs;

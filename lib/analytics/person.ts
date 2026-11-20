@@ -26,7 +26,7 @@ export function analyticsPersonId(userId: number, secret: string): string {
 /** What the page hands AnalyticsPerson, or null when analytics is off (D77: production with POSTHOG_KEY). */
 export function analyticsPerson(
   env: { CRON_SECRET: string; VERCEL_ENV?: string | undefined; POSTHOG_KEY?: string | undefined },
-  user: { userId: number; tier: Tier; slug: string; unionId: number },
+  user: { userId: number; tier: Tier; slug: string; alliance: { tag: string | null } | null },
 ): AnalyticsPersonProps | null {
   if (!analyticsKey(env)) return null;
   return {

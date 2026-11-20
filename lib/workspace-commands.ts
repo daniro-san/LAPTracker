@@ -3,12 +3,40 @@
 // which servers have them. Alliance settings registers one workspace's after its officers add the bot; /admin's
 // button registers every workspace's; a change of a switch or a pause re-registers the servers that had
 // commands, so a command turned off disappears from Discord's Apps menu.
-import { commandsFor, registerAppCommands, type RegisterResult } from "./app-commands";
+import {
+  COMMAND_FEATURE,
+  commandsFor,
+  registerAppCommands,
+  type RegisterResult,
+} from "./app-commands";
 import type { Db } from "./db";
 import type { Env } from "./env";
 import { allDiscordStates, recordCommands, workspaceGuilds } from "./repo/workspace-discord";
 import { allSettings, pausedAllowances } from "./repo/workspace-features";
-import { resolveFeatures } from "./workspace-features";
+import { resolveFeatures, SPENDS, type Allowance, type Feature } from "./workspace-features";
+
+const COMMAND_FEATURES: readonly Feature[] = Object.values(COMMAND_FEATURE);
+
+/**
+ * A change of D126's settings, as far as the Discord commands care: the owner's on /admin (a switch, a
+ * default for new alliances, a copy, a cap, a pause) or the alliance's own switch (D134).
+ */
+export type SettingsChange =
+  | { action: "switch" | "default_switch"; feature: Feature }
+  | { action: "copy" }
+  | { action: "cap" | "default_cap" }
+  | { action: "pause"; allowance: Allowance };
+
+/**
+ * Whether the change can add or remove a Discord command, so the servers that had commands are registered
+ * again: a command's switch, a copy of every switch, or a pause of an allowance a command spends. A cap
+ * changes no command.
+ */
+export const changesCommands = (c: SettingsChange): boolean =>
+  c.action === "copy" ||
+  ((c.action === "switch" || c.action === "default_switch") &&
+    COMMAND_FEATURES.includes(c.feature)) ||
+  (c.action === "pause" && COMMAND_FEATURES.some((f) => SPENDS[f] === c.allowance));
 
 export interface CommandDeps {
   env: Pick<Env, "DISCORD_CLIENT_ID" | "DISCORD_CLIENT_SECRET" | "DISCORD_API_BASE_URL">;

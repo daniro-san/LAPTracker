@@ -3,6 +3,7 @@
 // through `grant`. Every private query takes one, so the workspace id never comes from a request. A member's
 // session never gets one: `requireBoard` gives it a BoardAccess, which opens only the members' board.
 import type { Db } from "../db";
+import { workspaceAllianceLabel, type AllianceLabel } from "../repo/alliances";
 import {
   deleteSession,
   findSession,
@@ -18,8 +19,8 @@ import {
   RENEW_MS,
   SEEN_EVERY_MS,
   revokeSession,
-  SESSION_COOKIE,
   sessionState,
+  sessionToken,
 } from "./session";
 
 declare const accessBrand: unique symbol;
@@ -39,6 +40,8 @@ export type WorkspaceAccess = {
   };
   /** The features the owner has on for this workspace, and its daily caps (D126). */
   readonly features: WorkspaceFeatures;
+  /** The alliance's newest tag and name (D133: from the ranks board); null when nothing names it yet. */
+  readonly alliance: AllianceLabel | null;
   readonly [accessBrand]: true;
 };
 
@@ -77,6 +80,8 @@ export type BoardAccess = {
   readonly userId: number;
   /** D126: the board itself, and its notices, can be turned off. */
   readonly features: WorkspaceFeatures;
+  /** The alliance's newest tag and name (D133); null when nothing names it yet. */
+  readonly alliance: AllianceLabel | null;
   readonly [boardBrand]: true;
 };
 
@@ -94,19 +99,28 @@ async function openSession(
   db: Db,
   slug: string,
   cookies: CookieReader,
-): Promise<{ workspace: WorkspaceRow; session: Session; features: WorkspaceFeatures } | Refusal> {
-  const token = cookies.get(SESSION_COOKIE)?.value;
+): Promise<
+  | {
+      workspace: WorkspaceRow;
+      session: Session;
+      features: WorkspaceFeatures;
+      alliance: AllianceLabel | null;
+    }
+  | Refusal
+> {
+  const token = sessionToken(cookies, slug)?.value;
   // The reads at once; the refusals keep their order (no workspace, then no session).
-  const [workspace, session, features] = await Promise.all([
+  const [workspace, session, features, alliance] = await Promise.all([
     findWorkspaceBySlug(db, slug),
     token ? findSession(db, hashToken(token)) : null,
     featuresBySlug(db, slug),
+    workspaceAllianceLabel(db, slug),
   ]);
   if (!workspace || !features) return refuse("no_workspace");
   if (!session) return refuse("signed_out");
   // INVARIANT workspace.session-bound: a session of one workspace opens no other.
   if (session.workspaceId !== workspace.id) return refuse("other_workspace");
-  return { workspace, session, features };
+  return { workspace, session, features, alliance };
 }
 
 /** Why a found session is not served at `now` (ended, blocked, its role check too old), or null. */
@@ -141,7 +155,7 @@ export async function requireWorkspace(
 ): Promise<WorkspaceAccess | Refusal> {
   const found = await openSession(db, slug, cookies);
   if ("ok" in found) return found;
-  const { workspace, session, features } = found;
+  const { workspace, session, features, alliance } = found;
   // INVARIANT workspace.member-board-only: only an officer's session opens an officer page, route or API;
   // a member's, or any other tier, does not (D105).
   if (session.tier !== "officer") return refuse("member");
@@ -160,6 +174,7 @@ export async function requireWorkspace(
       playerUid: session.playerUid,
     },
     features,
+    alliance,
   );
 }
 
@@ -178,7 +193,7 @@ export async function requireBoard(
 ): Promise<BoardAccess | Refusal> {
   const found = await openSession(db, slug, cookies);
   if ("ok" in found) return found;
-  const { workspace, session, features } = found;
+  const { workspace, session, features, alliance } = found;
   const officer = session.tier === "officer";
   // INVARIANT workspace.member-recheck: a member's role is confirmed again at least once a day, and no
   // member's session is served while the workspace has no member role.
@@ -197,19 +212,21 @@ export async function requireBoard(
     name: session.chosenName ?? session.displayName,
     userId: session.userId,
     features,
+    alliance,
   };
   return fields as BoardAccess;
 }
 
-type Granted = Omit<WorkspaceAccess, "ok" | "user" | "features" | typeof accessBrand>;
+type Granted = Omit<WorkspaceAccess, "ok" | "user" | "features" | "alliance" | typeof accessBrand>;
 
 /** The one place the brand is set: a workspace, the person who passed its door, and its features. */
 function grant(
   workspace: { id: number; unionId: number; slug: string; purgeAfter?: Date | null },
   user: WorkspaceAccess["user"],
   features: WorkspaceFeatures,
+  alliance: AllianceLabel | null,
 ): WorkspaceAccess {
-  const fields: Granted & Pick<WorkspaceAccess, "ok" | "user" | "features"> = {
+  const fields: Granted & Pick<WorkspaceAccess, "ok" | "user" | "features" | "alliance"> = {
     ok: true,
     workspaceId: workspace.id,
     unionId: workspace.unionId,
@@ -217,6 +234,7 @@ function grant(
     purgeAfter: workspace.purgeAfter ?? null,
     user,
     features,
+    alliance,
   };
   return fields as WorkspaceAccess;
 }
@@ -235,6 +253,7 @@ export function officerAccess(
     playerUid: number | null;
   },
   features: WorkspaceFeatures,
+  alliance: AllianceLabel | null = null,
 ): WorkspaceAccess {
   return grant(
     workspace,
@@ -244,21 +263,26 @@ export function officerAccess(
       playerUid: officer.playerUid,
     },
     features,
+    alliance,
   );
 }
 
-/** Sign out: ends this browser's session, only when it is a valid one of this workspace. */
+/**
+ * Sign out: ends this browser's session, only when it is a valid one of this workspace. Returns the name of
+ * the cookie that carried it, to clear (D131), or null.
+ */
 export async function signOut(
   db: Db,
   slug: string,
   cookies: CookieReader,
   now: Date,
-): Promise<boolean> {
+): Promise<string | null> {
   // A session waiting for its role check (D99) can still be ended, and so can a member's (D105).
   const found = await openSession(db, slug, cookies);
-  if ("ok" in found) return false;
+  const carried = sessionToken(cookies, slug);
+  if ("ok" in found || !carried) return null;
   const { workspace, session } = found;
-  if (await servedOrNot(db, workspace, session, now, Number.POSITIVE_INFINITY)) return false;
-  await revokeSession(db, workspace.id, cookies.get(SESSION_COOKIE)?.value ?? "");
-  return true;
+  if (await servedOrNot(db, workspace, session, now, Number.POSITIVE_INFINITY)) return null;
+  await revokeSession(db, workspace.id, carried.value);
+  return carried.name;
 }

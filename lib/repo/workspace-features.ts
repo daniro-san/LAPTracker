@@ -1,28 +1,44 @@
-// workspace_features, workspace_usage and allowance_pauses (D126): each workspace's switches and daily caps,
-// what it used of each allowance per UTC day, and the owner's global pauses. Counts only: nothing here says
-// who asked or what was asked. Every change the owner makes is one statement, so quick taps on /admin
-// never undo each other.
-import { and, asc, eq, sql } from "drizzle-orm";
+// workspace_features, feature_defaults, workspace_usage and allowance_pauses (D126, D134): each workspace's
+// overrides (the owner's switches and caps, and its officers' own switches), the defaults for new alliances,
+// what each workspace used of each allowance per UTC day, and the owner's global pauses. Counts only:
+// nothing here says who asked or what was asked. Every change is one statement, so quick taps never undo
+// each other.
+import { and, asc, eq, inArray, ne, sql } from "drizzle-orm";
 
+import { OWN_ALLIANCE_ID } from "../../config/alliances";
 import type { Db } from "../db";
 import { workspaces } from "../schema";
-import { allowancePauses, workspaceFeatures, workspaceUsage } from "../schema-features";
+import {
+  allowancePauses,
+  featureDefaults,
+  workspaceFeatures,
+  workspaceUsage,
+} from "../schema-features";
 import { noticePictures } from "../schema-notices";
 import {
   ALLOWANCES,
+  NO_DEFAULTS,
+  ownerDefaults,
   storedSettings,
-  switchMap,
   type Allowance,
   type Feature,
   type FeatureSettings,
+  type OwnerSettings,
+  type StoredDefaults,
+  type StoredOverrides,
 } from "../workspace-features";
 
-/** A workspace's stored settings, or its defaults when the owner never changed any. */
+/**
+ * A workspace's settings as served (its overrides over the defaults), with the owner's defaults for it and
+ * its stored overrides, so /admin can say "Default (on)" or "Changed: off" (D134).
+ */
 export interface WorkspaceSettings {
   workspaceId: number;
   slug: string;
   unionId: number;
   settings: FeatureSettings;
+  defaults: OwnerSettings;
+  stored: StoredOverrides;
 }
 
 const COLUMNS = {
@@ -30,8 +46,10 @@ const COLUMNS = {
   slug: workspaces.slug,
   unionId: workspaces.unionId,
   switches: workspaceFeatures.switches,
-  aiPerDay: workspaceFeatures.aiPerDay,
-  translatePerDay: workspaceFeatures.translatePerDay,
+  caps: workspaceFeatures.caps,
+  alliance: workspaceFeatures.allianceSwitches,
+  defaultSwitches: featureDefaults.switches,
+  defaultCaps: featureDefaults.caps,
 };
 
 type Row = {
@@ -39,25 +57,36 @@ type Row = {
   slug: string;
   unionId: number;
   switches: Record<string, boolean> | null;
-  aiPerDay: number | null;
-  translatePerDay: number | null;
+  caps: StoredDefaults["caps"] | null;
+  alliance: Record<string, boolean> | null;
+  defaultSwitches: Record<string, boolean> | null;
+  defaultCaps: StoredDefaults["caps"] | null;
 };
 
-const settingsOf = (row: Row): WorkspaceSettings => ({
-  workspaceId: row.workspaceId,
-  slug: row.slug,
-  unionId: row.unionId,
-  settings: storedSettings(row.unionId, row.switches, {
-    ai: row.aiPerDay,
-    translate: row.translatePerDay,
-  }),
-});
+const settingsOf = (row: Row): WorkspaceSettings => {
+  const defaults = { switches: row.defaultSwitches ?? {}, caps: row.defaultCaps ?? {} };
+  const stored = {
+    switches: row.switches ?? {},
+    caps: row.caps ?? {},
+    alliance: row.alliance ?? {},
+  };
+  return {
+    workspaceId: row.workspaceId,
+    slug: row.slug,
+    unionId: row.unionId,
+    settings: storedSettings(row.unionId, stored, defaults),
+    defaults: ownerDefaults(row.unionId, defaults),
+    stored,
+  };
+};
 
+// The defaults row (one at most) joins every workspace, so a read stays one query.
 const withSettings = (db: Db) =>
   db
     .select(COLUMNS)
     .from(workspaces)
-    .leftJoin(workspaceFeatures, eq(workspaceFeatures.workspaceId, workspaces.id));
+    .leftJoin(workspaceFeatures, eq(workspaceFeatures.workspaceId, workspaces.id))
+    .leftJoin(featureDefaults, sql`true`);
 
 export async function settingsBySlug(db: Db, slug: string): Promise<WorkspaceSettings | null> {
   const [row] = await withSettings(db).where(eq(workspaces.slug, slug));
@@ -75,27 +104,50 @@ export async function allSettings(db: Db): Promise<WorkspaceSettings[]> {
   return rows.map(settingsOf);
 }
 
+/** /admin's "Defaults for new alliances" as stored: only the values the owner set. */
+export async function storedDefaults(db: Db): Promise<StoredDefaults> {
+  const [row] = await db
+    .select({ switches: featureDefaults.switches, caps: featureDefaults.caps })
+    .from(featureDefaults);
+  return row ?? NO_DEFAULTS;
+}
+
 /** The allowances the owner paused for every workspace. */
 export async function pausedAllowances(db: Db): Promise<Allowance[]> {
   const rows = await db.select({ allowance: allowancePauses.allowance }).from(allowancePauses);
   return ALLOWANCES.filter((a) => rows.some((r) => r.allowance === a));
 }
 
+type MapColumn = "switches" | "caps" | "alliance_switches";
+
 /**
- * Upserts the workspace's row in one statement: `insert` holds the new row (only for a workspace that
- * exists), `update` what changes on a row already there. False: no such workspace.
+ * Changes one key of one map of the workspace's row, in one statement (D126): `{set}` merges the value in,
+ * "reset" takes the key out, so it follows the defaults again. The row is made for a workspace that exists.
+ * False: no such workspace.
  */
-async function upsert(
+async function changeKey(
   db: Db,
   workspaceId: number,
-  insert: { switches: unknown; ai?: unknown; translate?: unknown },
-  update: unknown,
+  column: MapColumn,
+  key: string,
+  value: { set: boolean | number | null } | "reset",
   now: Date,
 ): Promise<boolean> {
+  const col = sql.raw(column);
+  const entry =
+    value === "reset"
+      ? sql`'{}'::jsonb`
+      : sql`jsonb_build_object(${key}::text, ${JSON.stringify(value.set)}::jsonb)`;
+  const update =
+    value === "reset"
+      ? sql`${col} = ${workspaceFeatures}.${col} - ${key}::text`
+      : sql`${col} = ${workspaceFeatures}.${col} || excluded.${col}`;
+  // `switches` has no default: a new row made by another map starts it empty.
+  const switches = column === "switches" ? sql`` : sql`, switches`;
+  const empty = column === "switches" ? sql`` : sql`, '{}'::jsonb`;
   const result = await db.execute<{ workspace_id: number }>(sql`
-    insert into ${workspaceFeatures} (workspace_id, switches, ai_per_day, translate_per_day, updated_at)
-    select id, ${insert.switches}, ${insert.ai ?? sql`null`}, ${insert.translate ?? sql`null`},
-      ${now.toISOString()}::timestamptz
+    insert into ${workspaceFeatures} (workspace_id, ${col}${switches}, updated_at)
+    select id, ${entry}${empty}, ${now.toISOString()}::timestamptz
     from ${workspaces} where id = ${workspaceId}
     on conflict (workspace_id) do update set ${update}, updated_at = excluded.updated_at
     returning workspace_id`);
@@ -110,69 +162,117 @@ async function restartPictureWarnings(db: Db, workspaceId: number): Promise<void
     .where(eq(noticePictures.workspaceId, workspaceId));
 }
 
-/** One switch on or off: that key alone changes; the others keep what they were, or their defaults. */
+const picturesSwitch = (f: Feature) => f === "notices" || f === "notice_pictures";
+
+/**
+ * The owner allows a feature or not (`on`), or `null`: back to the default (D134). That key alone changes;
+ * the others keep what they were, or their defaults.
+ */
 export async function setSwitch(
+  db: Db,
+  workspaceId: number,
+  feature: Feature,
+  on: boolean | null,
+  now: Date,
+): Promise<boolean> {
+  const value = on === null ? "reset" : { set: on };
+  const done = await changeKey(db, workspaceId, "switches", feature, value, now);
+  if (done && picturesSwitch(feature)) await restartPictureWarnings(db, workspaceId);
+  return done;
+}
+
+/** One daily cap (a number, or null for no cap), or "reset": back to the default (D134). */
+export async function setCap(
+  db: Db,
+  workspaceId: number,
+  allowance: Allowance,
+  cap: number | null | "reset",
+  now: Date,
+): Promise<boolean> {
+  const value = cap === "reset" ? "reset" : { set: cap };
+  return changeKey(db, workspaceId, "caps", allowance, value, now);
+}
+
+/** The alliance's officers turn an allowed feature on or off in Alliance settings (D134). */
+export async function setAllianceSwitch(
   db: Db,
   workspaceId: number,
   feature: Feature,
   on: boolean,
   now: Date,
 ): Promise<boolean> {
-  const value = sql`jsonb_build_object(${feature}::text, ${on}::boolean)`;
-  const done = await upsert(
-    db,
-    workspaceId,
-    { switches: value },
-    sql`switches = ${workspaceFeatures}.switches || excluded.switches`,
-    now,
-  );
-  if (done && (feature === "notices" || feature === "notice_pictures")) {
-    await restartPictureWarnings(db, workspaceId);
-  }
+  const done = await changeKey(db, workspaceId, "alliance_switches", feature, { set: on }, now);
+  if (done && picturesSwitch(feature)) await restartPictureWarnings(db, workspaceId);
   return done;
 }
 
-/** One daily cap (null: no cap); the switches are left as they are. */
-export async function setCap(
-  db: Db,
-  workspaceId: number,
-  allowance: Allowance,
-  cap: number | null,
-  now: Date,
-): Promise<boolean> {
-  const column = sql.raw(allowance === "ai" ? "ai_per_day" : "translate_per_day");
-  const value = sql`${cap}::int`;
-  return upsert(
-    db,
-    workspaceId,
-    { switches: sql`'{}'::jsonb`, [allowance]: value },
-    sql`${column} = excluded.${column}`,
-    now,
-  );
-}
-
-/** "Copy settings from": every catalog switch and both caps of `settings`, as served. */
+/**
+ * "Copy settings from": the owner's switches and caps replaced by `overrides` (what differs from the
+ * target's own defaults, workspace-features.ts `copiedOverrides`). The alliance's own switches stay.
+ */
 export async function copySettings(
   db: Db,
   workspaceId: number,
-  settings: FeatureSettings,
+  overrides: StoredDefaults,
   now: Date,
 ): Promise<boolean> {
-  const values = {
-    switches: sql`${JSON.stringify(switchMap(settings))}::jsonb`,
-    ai: sql`${settings.caps.ai}::int`,
-    translate: sql`${settings.caps.translate}::int`,
-  };
-  const done = await upsert(
-    db,
-    workspaceId,
-    values,
-    sql`switches = excluded.switches, ai_per_day = excluded.ai_per_day,
-      translate_per_day = excluded.translate_per_day`,
-    now,
-  );
+  const switches = sql`${JSON.stringify(overrides.switches)}::jsonb`;
+  const caps = sql`${JSON.stringify(overrides.caps)}::jsonb`;
+  const result = await db.execute<{ workspace_id: number }>(sql`
+    insert into ${workspaceFeatures} (workspace_id, switches, caps, updated_at)
+    select id, ${switches}, ${caps}, ${now.toISOString()}::timestamptz
+    from ${workspaces} where id = ${workspaceId}
+    on conflict (workspace_id) do update
+      set switches = excluded.switches, caps = excluded.caps, updated_at = excluded.updated_at
+    returning workspace_id`);
+  const done = result.rows.length > 0;
   if (done) await restartPictureWarnings(db, workspaceId);
   return done;
+}
+
+/**
+ * One default for new alliances (D134): a switch (allowed or not) or a cap (a number, or null for no cap).
+ * Every workspace with no value of its own for that key follows it at once; the others keep theirs.
+ */
+export async function setDefault(
+  db: Db,
+  column: "switches" | "caps",
+  key: string,
+  value: boolean | number | null,
+  now: Date,
+): Promise<void> {
+  const col = sql.raw(column);
+  const entry = sql`jsonb_build_object(${key}::text, ${JSON.stringify(value)}::jsonb)`;
+  await db.execute(sql`
+    insert into ${featureDefaults} (id, ${col}, updated_at)
+    values (1, ${entry}, ${now.toISOString()}::timestamptz)
+    on conflict (id) do update
+      set ${col} = ${featureDefaults}.${col} || excluded.${col}, updated_at = excluded.updated_at`);
+  if (column === "switches" && picturesSwitch(key as Feature)) {
+    await restartFollowersWarnings(db, key);
+  }
+}
+
+/**
+ * D119's warnings start again in every workspace that follows the default for `key` (notices or notice
+ * pictures), as when the owner switches one workspace (D126): every one but the own alliance, which ignores
+ * the defaults, and those with a value of their own.
+ */
+async function restartFollowersWarnings(db: Db, key: string): Promise<void> {
+  const followers = db
+    .select({ id: workspaces.id })
+    .from(workspaces)
+    .leftJoin(workspaceFeatures, eq(workspaceFeatures.workspaceId, workspaces.id))
+    .where(
+      and(
+        ne(workspaces.unionId, OWN_ALLIANCE_ID),
+        sql`not coalesce(jsonb_exists(${workspaceFeatures.switches}, ${key}::text), false)`,
+      ),
+    );
+  await db
+    .update(noticePictures)
+    .set({ warnedAt: null })
+    .where(inArray(noticePictures.workspaceId, followers));
 }
 
 export async function setPaused(

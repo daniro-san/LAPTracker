@@ -94,6 +94,7 @@ const FIXTURES: Record<string, Partial<Record<Method, Fixture>>> = {
   },
   "tracker-key/route.ts": { POST: { body: { action: "remove", requestId: ID } } },
   "discord/route.ts": { POST: { body: { action: "check" } } },
+  "features/route.ts": { POST: { body: { feature: "thefts", on: false } } },
   "data-export/route.ts": { POST: { body: { requestId: ID } } },
   "workspace-deletion/route.ts": { POST: { body: { action: "cancel", requestId: ID } } },
 };

@@ -35,15 +35,15 @@ function actionsOf(p: EditorProps, e: Editor) {
   };
   const reason: WorkspaceKey | null = !p.ai
     ? "notices.ai.off"
-    : !show.translate && !show.improve && !show.fit
-      ? "features.off.writing"
-      : longest > DRAFT_LIMIT
-        ? "notices.ai.tooLong"
-        : null;
+    : longest > DRAFT_LIMIT
+      ? "notices.ai.tooLong"
+      : null;
   return {
     plan,
     reason,
     show,
+    /** D126: every writing help turned off for the alliance: no buttons and no line. */
+    none: p.ai && !Object.values(show).some(Boolean),
     where:
       shown.from === language
         ? fill(t["notices.translate.to"], { list: codes })
@@ -56,14 +56,11 @@ function actionsOf(p: EditorProps, e: Editor) {
 export function NoticeActions({ p, e }: { p: EditorProps; e: Editor }) {
   const { t } = p;
   const language = e.active;
-  const { plan, reason, where, replaces, show } = actionsOf(p, e);
+  const { plan, reason, where, replaces, show, none } = actionsOf(p, e);
   const off = reason !== null || e.busy !== null;
   const described = reason ? { "aria-describedby": AI_REASON_ID } : {};
   const over = show.fit;
-  // D126: every writing help turned off for the alliance: only the line that says so.
-  if (reason === "features.off.writing") {
-    return <ActionNote t={t} reason={reason} message={null} replaces={false} />;
-  }
+  if (none) return null;
   return (
     <>
       <div

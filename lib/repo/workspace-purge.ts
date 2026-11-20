@@ -4,10 +4,10 @@
 // the rosters and the alliance's public pages are not the workspace's.
 import { and, asc, count, eq, inArray, isNotNull, isNull, lte } from "drizzle-orm";
 
-import { ALLIANCES } from "../../config/alliances";
 import type { Db } from "../db";
 import { authAttempts, workspaces, workspaceUsers } from "../schema";
 import { workspaceTombstones } from "../schema-retention";
+import { allianceLabelOf } from "./alliances";
 import { DAY_KEY_PREFIX } from "./auth-attempts";
 import { ownedBy, WORKSPACE_TABLES } from "./workspace-data";
 
@@ -95,7 +95,7 @@ export async function purgeWorkspace(db: Db, id: number, now: Date): Promise<num
     ];
     await tx.delete(authAttempts).where(inArray(authAttempts.key, counters));
     await tx.delete(workspaces).where(eq(workspaces.id, w.id));
-    const alliance = ALLIANCES.find((a) => a.unionId === w.unionId);
+    const alliance = await allianceLabelOf(tx, w.unionId);
     // Who asked: the owner or an officer, never the officer's name (review of PR 449).
     await tx.insert(workspaceTombstones).values({
       slug: w.slug,

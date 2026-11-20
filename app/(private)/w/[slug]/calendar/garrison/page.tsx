@@ -5,9 +5,12 @@
 import { notFound } from "next/navigation";
 
 import { fill } from "@/lib/copy";
+import type { Db } from "@/lib/db";
 import { getEnv } from "@/lib/env";
+import type { WorkspaceAccess } from "@/lib/private/access";
 import { calendarDates, titleOf } from "@/lib/private/calendar-words";
 import { channelNames } from "@/lib/private/discord-webhooks";
+import { featureOn } from "@/lib/private/features";
 import { garrisonView } from "@/lib/private/garrison";
 
 import { SignedInFrame } from "../../../../_ui/Frame";
@@ -18,6 +21,15 @@ import { occasionOf, openRollCall } from "../../../../_ui/roll-call-page";
 
 const LINK =
   "inline-flex min-h-11 items-center font-semibold text-plum underline underline-offset-4";
+
+/** The plan, and only its channels' names, never their webhooks (D102, D129); both read at once. */
+async function readGarrison(db: Db, access: WorkspaceAccess, entry: number, week: string) {
+  const [garrison, channels] = await Promise.all([
+    garrisonView(db, access, entry, week),
+    channelNames(db, access, getEnv()),
+  ]);
+  return garrison && { ...garrison, channels };
+}
 
 export default async function GarrisonPage({
   params,
@@ -32,14 +44,10 @@ export default async function GarrisonPage({
   const page = await openRollCall(
     params,
     `calendar/garrison?${query}`,
-    async (db, access) => {
-      const garrison = await garrisonView(db, access, occasion.entry, occasion.week);
-      // Only the channels' names reach the page, never their webhooks (D102, D129).
-      return garrison && { ...garrison, channels: await channelNames(db, access, getEnv()) };
-    },
+    (db, access) => readGarrison(db, access, occasion.entry, occasion.week),
     "garrison",
   );
-  if (!page.data) return page.off ?? notFound();
+  if (!page.data) notFound();
   const { view, channels } = page.data;
   const { access, slug, t, language } = page;
   const words = garrisonWords(t);
@@ -73,14 +81,18 @@ export default async function GarrisonPage({
         version={view.version}
         carriedFrom={view.carriedFrom && calendarDates(language).short(view.carriedFrom)}
         words={words}
-        shot={{
-          read: t["shot.read"],
-          reading: t["shot.reading"],
-          failed: t["shot.failed"],
-          busy: t["shot.busy"],
-          notKept: t["shot.notKept"],
-          off: t["features.off.read"],
-        }}
+        // D126: no "Read from a screenshot" while reading screenshots is turned off for the alliance.
+        shot={
+          featureOn(access, "ocr")
+            ? {
+                read: t["shot.read"],
+                reading: t["shot.reading"],
+                failed: t["shot.failed"],
+                busy: t["shot.busy"],
+                notKept: t["shot.notKept"],
+              }
+            : null
+        }
       />
       {view.enemyMight === null ? (
         <p className="mt-4 border-t border-rule py-3">{t["garrison.enemyNone"]}</p>

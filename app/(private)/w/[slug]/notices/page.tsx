@@ -72,8 +72,7 @@ export default async function NoticesPage({
     UUID.test(undo)
       ? { id: Number(deleted), requestId: undo }
       : null;
-  const { access, data: list, waiting, off } = await noticePage(slug, noticesList, "");
-  if (off) return off;
+  const { access, data: list, waiting } = await noticePage(slug, noticesList, "");
   const { language, t } = await workspaceWords();
   const words = noticeWords(language, t);
   return (

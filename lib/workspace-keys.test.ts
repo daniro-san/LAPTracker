@@ -12,14 +12,16 @@ import type { Db } from "./db";
 import { openTestDb, truncateAll } from "./db.test-helpers";
 import { createRunLogger } from "./logger";
 import { insertRunLog } from "./repo/run-logs";
-import { setSwitch } from "./repo/workspace-features";
+import { setAllianceSwitch, setSwitch } from "./repo/workspace-features";
 import { keyFacts, storeKey } from "./repo/workspace-keys";
 import { saveWorkspace } from "./repo/workspaces";
 import { appErrors, dailyReads, dailyRosters, runLogs, workspaces } from "./schema";
 import { workspaceKeys } from "./schema-keys";
+import { playerReads } from "./schema-squads";
 import { v1 } from "./sources";
 import { QuotaExhaustedError, UpstreamError, type CallOptions } from "./sources/types";
 import { runSquadsBatch, type SquadsDeps } from "./squads-read";
+import { playerAnswer } from "./squads.test-helpers";
 import { checkKey, openKey, sealKey, squadTargets } from "./workspace-keys";
 
 /** Invented, low-entropy values: never real keys. */
@@ -51,11 +53,12 @@ beforeEach(async () => {
       discordGuildId: String(unionId),
       leaderRoleIds: ["2"],
     });
-    const row = await db.query.workspaces.findFirst({
-      where: (w, { eq }) => eq(w.unionId, unionId),
-    });
+    const [row] = await db.select().from(workspaces).where(eq(workspaces.unionId, unionId));
     ws[name] = row?.id ?? 0;
   }
+  // D134: the other alliance's squads read is allowed by the owner and turned on by its officers.
+  await setSwitch(db, ws.other, "squads", true, new Date(0));
+  await setAllianceSwitch(db, ws.other, "squads", true, new Date(0));
 });
 
 /** The day's read, with OGs' members 1–3 and the other alliance's 11–13. */
@@ -107,7 +110,7 @@ function deps(now: Date, fail: (uid: number) => Error | null = () => null) {
         calls.push({ uid, key: options?.apiKey });
         const e = fail(uid);
         if (e) throw e;
-        return { uid, squads: [], quota: null };
+        return playerAnswer(uid);
       },
       fetchQuota: async (onAttempt, _signal, options?: CallOptions) => {
         onAttempt?.(0);
@@ -216,6 +219,9 @@ describe("the squads read on each workspace's own key (D124)", () => {
       [1, 2, 3],
       [11, 12, 13],
     ]);
+    // D132: each answer is kept under the alliance whose key read it.
+    const kept = await db.select().from(playerReads).orderBy(playerReads.uid);
+    expect(kept.map((r) => r.unionId === OTHER)).toEqual([false, false, false, true, true, true]);
 
     // OGs' sealed key copied into the other workspace's row: it opens for neither, and is not spent there.
     const [own] = await db

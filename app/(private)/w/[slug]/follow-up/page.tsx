@@ -128,7 +128,6 @@ export default async function FollowUpPage({ params }: { params: Promise<{ slug:
     },
     "follow_up",
   );
-  if (page.off) return page.off;
   const { access, slug, t, language, today, data } = page;
   const f = cardFormats(language, page.zone, page.now);
   const groups = groupsOf(data.items, t, f);

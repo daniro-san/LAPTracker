@@ -49,7 +49,7 @@ describe("the Start here editor on the notices editor's parts (D116)", () => {
     ]);
     expect(tabs[0]).toContain("Written");
     expect(tabs[1]).toContain("Out of date");
-    expect(tabs[2]).toContain("Empty");
+    expect(tabs[2]).toContain("Missing");
     expect(html).toContain("to PT and FR");
     expect(html).toContain("Improve writing");
     expect(html).toContain("data-notice-editor");

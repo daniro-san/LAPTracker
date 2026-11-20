@@ -4,11 +4,12 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { ALLIANCES } from "../config/alliances";
+import { TRACKED_COUNT } from "../config/alliances";
 import { runSnapshot } from "../lib/collector";
 import { consoleLogger } from "../lib/logger";
 import { createMemoryRepo } from "../lib/repo/memory";
 import { internal, v1 } from "../lib/sources";
+import { fixtureBoard } from "./seed-data";
 
 const phase = process.argv[process.argv.indexOf("--phase") + 1];
 if (phase !== "before" && phase !== "after") {
@@ -50,7 +51,11 @@ globalThis.fetch = async (input) => {
   return json(JSON.stringify({ ...roster, updated_at: Math.floor(now.getTime() / 1000) - 30 }));
 };
 
-const repo = createMemoryRepo([{ id: 1, allianceIds: ALLIANCES.map((a) => a.unionId) }]);
+// D133: the tracked set is the fixture board's top TRACKED_COUNT; the Before copies it onto the event.
+const tracked = fixtureBoard()
+  .slice(0, TRACKED_COUNT)
+  .map((r) => r.id);
+const repo = createMemoryRepo([{ id: 1, allianceIds: phase === "after" ? tracked : [] }], tracked);
 const summary = await runSnapshot(1, phase, {
   v1,
   internal,

@@ -164,6 +164,8 @@ Words already used in `lib/i18n/es.ts`. Reuse them so the pages stay consistent;
 | From / To                             | Desde / Hasta                           | `flow.from`, `flow.to` — the two day pickers on the member flow page                           |
 | Daily update                          | actualización diaria                    | `history.daily`, `flow.*`, `balance.*`, `standing.*` — the once-a-day read of the member lists |
 | Seats open                            | plazas libres                           | `statement.seats`, `statement.seatOne` — free places in an alliance                            |
+| Sign in                               | Iniciar sesión                          | `site.signIn`, `site.signInFooter` — the header and footer links to the Discord sign-in        |
+| Ranks board                           | tablero de ranking                      | `alliances.*` — the server's alliance board by might                                           |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

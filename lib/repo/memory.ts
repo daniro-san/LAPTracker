@@ -49,7 +49,12 @@ function claim(
   return current.id;
 }
 
-export function createMemoryRepo(seedEvents: EventRow[] = []): Repo & { tables: MemoryTables } {
+/** `tracked`: the tracked set a Before copies (D133); `labels`: the alliances' tags and names. */
+export function createMemoryRepo(
+  seedEvents: EventRow[] = [],
+  tracked: number[] = [],
+  labels: Map<number, { tag: string | null; name: string | null }> = new Map(),
+): Repo & { tables: MemoryTables } {
   const tables: MemoryTables = {
     events: new Map(seedEvents.map((e) => [e.id, { ...e }])),
     snapshots: [],
@@ -122,5 +127,7 @@ export function createMemoryRepo(seedEvents: EventRow[] = []): Repo & { tables: 
         callsUsed: s.callsUsed + result.callsUsed,
       });
     },
+    trackedAllianceIds: async () => [...tracked],
+    allianceLabels: async (ids) => new Map([...labels].filter(([id]) => ids.includes(id))),
   };
 }

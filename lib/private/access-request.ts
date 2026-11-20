@@ -5,7 +5,6 @@
 // requester's way back to the answer is a random status secret, in a cookie and a link they can keep.
 import { z } from "zod";
 
-import { ALLIANCES } from "../../config/alliances";
 import { IP_LIMIT, IP_WINDOW_MS, secretEquals } from "../auth";
 import type { Db } from "../db";
 import {
@@ -16,6 +15,7 @@ import {
   takenWorkspaceKeys,
   type RequestRow,
 } from "../repo/alliance-invites";
+import { isKnownAlliance, knownAlliances } from "../repo/alliances";
 import { currentCount, DAY_KEY_PREFIX, recordFailure } from "../repo/auth-attempts";
 import { anyRoster } from "../repo/workspace-any-roster";
 import { latestRoster } from "../repo/workspace-rosters";
@@ -37,10 +37,8 @@ const CREDENTIAL = /^(\d{1,9})\.([A-Za-z0-9_-]{43})$/;
 
 export const requestInput = z
   .object({
-    union_id: z
-      .number()
-      .int()
-      .refine((id) => ALLIANCES.some((a) => a.unionId === id)),
+    // D133: any alliance we know (the ranks board, or a daily roster), checked in submitRequest.
+    union_id: z.number().int().positive(),
     name: z.string().trim().min(1).max(40),
     role: z.enum(["r5", "r4"]),
   })
@@ -90,7 +88,7 @@ export type Submitted =
       };
       seenAt: Date | null;
     }
-  | { ok: false; code: "rate_limited" | "has_desk" };
+  | { ok: false; code: "rate_limited" | "has_desk" | "unknown_alliance" };
 
 export async function submitRequest(
   db: Db,
@@ -98,6 +96,7 @@ export async function submitRequest(
   ip: string,
   now: Date,
 ): Promise<Submitted> {
+  if (!(await isKnownAlliance(db, input.union_id))) return { ok: false, code: "unknown_alliance" };
   const taken = await takenWorkspaceKeys(db);
   if (taken.some((w) => w.unionId === input.union_id)) return { ok: false, code: "has_desk" };
   // The address first: one that is over its own limit never uses up the site's 30.
@@ -113,7 +112,7 @@ export async function submitRequest(
     now,
   );
   privateLog("w.request.sent", { found: roster.rosterMatch === "found" ? 1 : 0 });
-  const { tag, name } = allianceOf(input.union_id);
+  const { tag, name } = await allianceOf(db, input.union_id);
   return {
     ok: true,
     credential,
@@ -155,12 +154,20 @@ export type RequestView = {
   credential: string;
 } | null;
 
+/** The form's alliances (D133): every alliance we know, `[TAG] Name`, by tag. */
+export async function requestChoices(db: Db): Promise<{ unionId: number; label: string }[]> {
+  return (await knownAlliances(db)).map((a) => ({
+    unionId: a.unionId,
+    label: [a.tag && `[${a.tag}]`, a.name].filter(Boolean).join(" ") || String(a.unionId),
+  }));
+}
+
 /** /w/request: the browser's own request and its answer, nothing of any other. */
 export async function requestView(db: Db, value: string | undefined): Promise<RequestView> {
   const row = await requestFrom(db, value);
   if (!row || !value) return null;
   return {
-    alliance: allianceOf(row.unionId),
+    alliance: await allianceOf(db, row.unionId),
     player: row.playerName,
     state: row.decision === null ? "waiting" : row.decision,
     reason: row.declineReason,

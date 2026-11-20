@@ -3,20 +3,21 @@
 // a page; every card starts closed and loads its contents when opened. With a filter on, every card is
 // diffed here to know which match. No event in the URL: the
 // history belongs to none, so the header's selector reads "All events".
-// A union id with no usable roster is a 404.
+// D133: it is also the page of an alliance outside the home event: its ranks board line, and for one the daily
+// read does not cover, "Get today's details" and its statement. A union id with no usable roster and on no
+// ranks board is a 404.
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 
+import { AllianceHead } from "@/app/_ui/AllianceHead";
 import { Breadcrumbs } from "@/app/_ui/Breadcrumbs";
 import { EmptyState } from "@/app/_ui/EmptyState";
-import { ExactToggle } from "@/app/_ui/ExactToggle";
 import { allianceLabel } from "@/app/_ui/format";
-import { requestClock, requestCopy } from "@/app/_ui/locale";
+import { requestClock, requestCopy, requestLocale } from "@/app/_ui/locale";
 import { HISTORY_FILTERS, matchesFilter, type HistoryFilter } from "@/app/_ui/member-history";
 import { HistoryCardView } from "@/app/_ui/MemberHistory";
-import { AllianceBadge } from "@/app/_ui/Pictures";
 import { previewImage } from "@/app/_ui/preview";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
@@ -25,7 +26,19 @@ import type { Dictionary } from "@/lib/copy";
 import type { Db } from "@/lib/db";
 import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
-import { homeEvent, listEvents, memberHistory, memberHistoryIndex } from "@/lib/queries";
+import {
+  allianceStatement,
+  homeEvent,
+  listEvents,
+  memberHistory,
+  memberHistoryIndex,
+} from "@/lib/queries";
+import {
+  allianceOnBoard,
+  detailsState,
+  eventAllianceIds,
+  type BoardAlliance,
+} from "@/lib/queries/alliance-list";
 
 type Params = Promise<{ unionId: string }>;
 type Search = Promise<Record<string, string | string[] | undefined>>;
@@ -54,19 +67,41 @@ async function historyPage(
   return memberHistoryIndex(db, unionId, { before });
 }
 
+/** An alliance with no usable roster yet, named by its board row (D133). */
+const noHistory = (unionId: number, b: BoardAlliance) => ({
+  unionId,
+  tag: b.tag,
+  name: b.name,
+  badgeId: b.badgeId,
+  older: null,
+  entries: [],
+});
+
 const load = cache((unionId: number, before: number | null, show: HistoryFilter | null) =>
   withPageDb(async (db) => {
-    const [history, events] = await Promise.all([
+    const now = new Date();
+    const env = getEnv();
+    const [history, events, board, details] = await Promise.all([
       historyPage(db, unionId, before === null ? null : new Date(before), show),
       listEvents(db),
+      allianceOnBoard(db, unionId),
+      detailsState(db, unionId, now, env),
     ]);
-    return (
-      history && {
-        history,
-        events,
-        homeId: homeEvent(events, new Date(), getEnv().SNAPSHOT_WINDOW_MIN)?.id ?? null,
-      }
-    );
+    if (!history && !board) return null;
+    const homeId = homeEvent(events, now, env.SNAPSHOT_WINDOW_MIN)?.id ?? null;
+    const [statement, homeIds] = await Promise.all([
+      details.daily ? null : allianceStatement(db, unionId),
+      homeId === null ? ([] as number[]) : eventAllianceIds(db, homeId),
+    ]);
+    return {
+      history: history ?? (board && noHistory(unionId, board)),
+      events,
+      homeId,
+      inHome: homeIds.includes(unionId),
+      board,
+      details,
+      statement,
+    };
   }),
 );
 
@@ -97,7 +132,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const inputs = await inputsOf(params, searchParams);
   const data = inputs && (await load(inputs.unionId, inputs.before, inputs.show));
-  if (!data) return {};
+  if (!data?.history) return {};
   const copy = await requestCopy();
   const { tag, name, unionId, badgeId } = data.history;
   const label = allianceLabel(tag ?? String(unionId), name);
@@ -190,15 +225,18 @@ export default async function MemberHistoryPage({
 }) {
   const inputs = await inputsOf(params, searchParams);
   if (!inputs) notFound();
-  const [data, clock, copy] = await Promise.all([
+  const [data, clock, copy, locale] = await Promise.all([
     load(inputs.unionId, inputs.before, inputs.show),
     requestClock(),
     requestCopy(),
+    requestLocale(),
   ]);
-  if (!data) notFound();
-  const { history, events, homeId } = data;
+  if (!data?.history) notFound();
+  const { history, events, homeId, inHome } = data;
   const { unionId, show } = { ...inputs, unionId: history.unionId };
   const label = allianceLabel(history.tag ?? String(unionId), history.name);
+  // Never read: the page says so plainly, with no filters to pick (D133).
+  const none = history.entries.length === 0 && show === null && inputs.before === null;
   return (
     <>
       <SiteHeader events={events} currentId={null} homeId={homeId} clock={clock} copy={copy} />
@@ -206,25 +244,31 @@ export default async function MemberHistoryPage({
         <Breadcrumbs
           crumbs={[
             { key: "ledger", href: "/", label: copy.site.home },
-            ...(homeId === null
-              ? []
-              : [{ key: "alliance", href: `/events/${homeId}/alliances/${unionId}`, label }]),
+            homeId !== null && inHome
+              ? { key: "alliance", href: `/events/${homeId}/alliances/${unionId}`, label }
+              : { key: "alliances", href: "/alliances", label: copy.alliances.title },
             { key: "history", label: copy.history.title },
           ]}
         />
-        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-          <div className="flex min-w-0 items-center gap-3">
-            <AllianceBadge badgeId={history.badgeId} size="md" />
-            <h1 className="min-w-0 break-words font-display text-display-lg leading-tight">
-              {label}
-            </h1>
-          </div>
-          <ExactToggle />
-        </div>
-        <p className="mb-3 mt-1 text-body-sm text-ink/70">{copy.history.lead}</p>
-        <Filters unionId={unionId} show={show} copy={copy} />
+        <AllianceHead
+          unionId={unionId}
+          label={label}
+          badgeId={history.badgeId}
+          board={data.board}
+          details={data.details}
+          statement={data.statement}
+          clock={clock}
+          locale={locale}
+          copy={copy}
+        />
+        {!none && (
+          <>
+            <p className="mb-3 mt-1 text-body-sm text-ink/70">{copy.history.lead}</p>
+            <Filters unionId={unionId} show={show} copy={copy} />
+          </>
+        )}
         {history.entries.length === 0 ? (
-          <EmptyState>{copy.history.none}</EmptyState>
+          <EmptyState>{none ? copy.alliances.noRoster : copy.history.none}</EmptyState>
         ) : (
           <ul>
             {history.entries.map((e) => (

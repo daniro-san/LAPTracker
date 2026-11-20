@@ -2,18 +2,26 @@
 // hands them, as words, to the card that edits them; then the Discord section (D96), which registers the
 // "Send to LAPTracker" command in their servers; then the squads read's progress and its button (D117,
 // amendment 2026-11-19b).
-import { ALLIANCES, OWN_ALLIANCE_ID } from "@/config/alliances";
+import { OWN_ALLIANCE_ID } from "@/config/alliances";
 import { copy, fill } from "@/lib/copy";
+import { discordClock } from "@/lib/discord-format";
 import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
+import { knownAlliances } from "@/lib/queries/alliance-list";
 import { squadsProgress, type SquadsProgress } from "@/lib/queries/squads-progress";
-import { adminFeatures } from "@/lib/queries/workspace-features";
+import { adminFeatures, type AdminFeatures } from "@/lib/queries/workspace-features";
 import { listTombstones, listWorkspaces, type AdminWorkspace } from "@/lib/queries/workspaces";
 import { quotaDayRead } from "@/lib/schedule";
-import { defaultSettings, resolveFeatures, type FeatureSettings } from "@/lib/workspace-features";
+import { stopKind } from "@/lib/squads";
+import {
+  newAllianceDefaults,
+  resolveFeatures,
+  type FeatureSettings,
+} from "@/lib/workspace-features";
 import { keyUsable, masterFingerprint } from "@/lib/workspace-keys";
 
 import { DiscordCommandCard, type GuildView } from "./DiscordCommandCard";
+import { featuresView, settingsFor } from "./features-view";
 import { Invites } from "./Invites";
 import { AdminSection } from "./parts";
 import { SquadsCard, type SquadsRowView } from "./SquadsCard";
@@ -82,10 +90,9 @@ function Deleted({ rows }: { rows: Awaited<ReturnType<typeof listTombstones>> })
   );
 }
 
-function allianceLabel(unionId: number): string {
-  const alliance = ALLIANCES.find((a) => a.unionId === unionId);
-  return alliance ? `${alliance.tag} · ${alliance.name}` : String(unionId);
-}
+/** `TAG · Name` for a select or a line; the id when nothing names it (D133). */
+export const choiceLabel = (a: { unionId: number; tag: string | null; name: string | null }) =>
+  a.tag || a.name ? [a.tag, a.name].filter(Boolean).join(" · ") : String(a.unionId);
 
 /**
  * squadTargets' rule, from the key's status without opening it: the squads read is on (D126), and the
@@ -113,38 +120,61 @@ function squadsRow(
 ): SquadsRowView {
   const s = t.squads;
   if (!p) return { unionId, alliance, lines: [s.none], action: "run" };
-  const state = p.batchRunning
-    ? s.batchRunning
-    : fill(s.status[p.status], { reason: p.reason ?? "" });
   const progress = fill(s.progress, {
-    reached: p.reached,
+    read: p.read,
     members: p.members,
     retrying: p.retrying,
     failed: p.failed,
     quota: p.quotaRemaining ?? s.quotaUnknown,
   });
+  // D132: everyone left waits for a later turn: the state says so, with the time; nothing to press.
+  const idle = p.status === "running" && !p.batchRunning;
+  const later = idle && p.dueNow === 0 && p.nextAt !== null;
   const last = p.lastBatchAt ? [fill(s.lastBatch, { ago: seen(p.lastBatchAt, now) })] : [];
   return {
     unionId,
     alliance,
-    lines: [state, progress, ...last],
-    action: p.status === "running" && !p.batchRunning ? "next" : null,
+    lines: [stateLine(p, later), progress, ...nextLine(p, later), ...last],
+    action: idle && !later ? "next" : null,
   };
+}
+
+/** "HH:MM" on the server's clock. */
+const serverTime = (at: Date) => discordClock(getEnv().SERVER_TZ).time(at);
+
+/** The day's state: a batch running, everyone left waiting for a later try, or the row's status. */
+function stateLine(p: SquadsProgress, later: boolean): string {
+  const s = t.squads;
+  if (p.batchRunning) return s.batchRunning;
+  if (later && p.nextAt)
+    return fill(s.waitingLater, { waiting: p.waiting, at: serverTime(p.nextAt) });
+  const kind = stopKind(p.reason);
+  return fill(s.status[p.status], { reason: kind ? s.reasons[kind] : (p.reason ?? "") });
+}
+
+/**
+ * D132: when the next waiting member's turn comes, unless the state line already says it. Only while the
+ * day runs: a stopped day has no next try.
+ */
+function nextLine(p: SquadsProgress, later: boolean): string[] {
+  if (p.status !== "running" || !p.nextAt || later) return [];
+  return [fill(t.squads.nextTry, { at: serverTime(p.nextAt) })];
 }
 
 /** The workspaces the squads read takes, or that have a row in the quota day, as SquadsCard's rows. */
 function squadsRows(page: {
   rows: AdminWorkspace[];
   squads: SquadsProgress[];
-  settingsOf: (w: AdminWorkspace) => FeatureSettings;
+  features: AdminFeatures;
   current: string | null;
   now: Date;
+  allianceLabel: (unionId: number) => string;
 }): SquadsRowView[] {
-  const { squads, current, now } = page;
+  const { squads, current, now, allianceLabel } = page;
   return page.rows
     .filter(
       (w) =>
-        squadsOn(w, page.settingsOf(w), current, now) ||
+        squadsOn(w, settingsFor(page.features, w), current, now) ||
         squads.some((p) => p.unionId === w.unionId),
     )
     .map((w) => {
@@ -155,62 +185,56 @@ function squadsRows(page: {
 
 export async function Workspaces({ now }: { now: Date }) {
   const squadsDay = quotaDayRead(now, getEnv());
-  const [rows, deleted, features, squads] = await withPageDb((db) =>
+  const [rows, deleted, features, squads, known] = await withPageDb((db) =>
     Promise.all([
       listWorkspaces(db, now),
       listTombstones(db),
       adminFeatures(db, now),
       squadsProgress(db, squadsDay, now),
+      knownAlliances(db),
     ]),
   );
+  const choices = known.map((a) => ({ unionId: a.unionId, label: choiceLabel(a) }));
+  const allianceLabel = (id: number) => choices.find((c) => c.unionId === id)?.label ?? String(id);
   // D124: a key sealed under another master key reads "needs to be entered again", worked out from its
   // fingerprint, with no write and no tracker call. /admin never sees a key.
   const secret = getEnv().WORKSPACE_KEYS_SECRET;
   const current = secret ? masterFingerprint(secret) : null;
-  // D126: a workspace always has settings (its defaults until changed).
-  const settingsOf = (w: AdminWorkspace) =>
-    features.settings.get(w.id) ?? defaultSettings(w.unionId);
-  const views = rows.map((w) => {
-    return {
-      id: w.id,
-      unionId: w.unionId,
-      slug: w.slug,
-      alliance: allianceLabel(w.unionId),
-      guild: w.discordGuildId,
-      roles: w.leaderRoleIds.join(", "),
-      memberRoles: w.memberRoleIds.join(", "),
-      sessions: w.openSessions,
-      allowlist: w.allowlist.map(
-        (a) =>
-          `${a.discordUserId}${a.expiresAt ? ` ${fill(t.until, { date: a.expiresAt.toISOString().slice(0, 10) })}` : ""}`,
-      ),
-      // D124: set or not and the status only; /admin cannot read, change or remove the key.
-      trackerKey: w.trackerKey.set
-        ? fill(t.key.set, {
-            status:
-              t.key.status[w.trackerKey.masterFp === current ? w.trackerKey.status : "reenter"],
-            when: w.trackerKey.statusAt ? seen(w.trackerKey.statusAt, now) : "",
-          })
-        : t.key.unset,
-      deletion: deletionLine(w.deletion),
-      discord: discordLine(w, getEnv().WORKSPACE_DISCORD_WEBHOOKS?.[w.slug]),
-      people: w.signedIn.map((p) => ({
-        id: p.userId,
-        name: p.name ?? t.signOutUsers.noName,
-        tier: p.tier,
-        seen: fill(t.signOutUsers.seen, { ago: seen(p.lastSeen, now) }),
-      })),
-      features: {
-        ...settingsOf(w),
-        used: features.usage.get(w.id) ?? { ai: 0, translate: 0 },
-      },
-    };
-  });
+  const views = rows.map((w) => ({
+    id: w.id,
+    unionId: w.unionId,
+    slug: w.slug,
+    alliance: allianceLabel(w.unionId),
+    guild: w.discordGuildId,
+    roles: w.leaderRoleIds.join(", "),
+    memberRoles: w.memberRoleIds.join(", "),
+    sessions: w.openSessions,
+    allowlist: w.allowlist.map(
+      (a) =>
+        `${a.discordUserId}${a.expiresAt ? ` ${fill(t.until, { date: a.expiresAt.toISOString().slice(0, 10) })}` : ""}`,
+    ),
+    // D124: set or not and the status only; /admin cannot read, change or remove the key.
+    trackerKey: w.trackerKey.set
+      ? fill(t.key.set, {
+          status: t.key.status[w.trackerKey.masterFp === current ? w.trackerKey.status : "reenter"],
+          when: w.trackerKey.statusAt ? seen(w.trackerKey.statusAt, now) : "",
+        })
+      : t.key.unset,
+    deletion: deletionLine(w.deletion),
+    discord: discordLine(w, getEnv().WORKSPACE_DISCORD_WEBHOOKS?.[w.slug]),
+    people: w.signedIn.map((p) => ({
+      id: p.userId,
+      name: p.name ?? t.signOutUsers.noName,
+      tier: p.tier,
+      seen: fill(t.signOutUsers.seen, { ago: seen(p.lastSeen, now) }),
+    })),
+    features: featuresView(features, w),
+  }));
   const guilds: GuildView[] = [...new Set(rows.map((w) => w.discordGuildId))].map((guild) => ({
     guild,
     name: rows
       .filter((w) => w.discordGuildId === guild)
-      .map((w) => ALLIANCES.find((a) => a.unionId === w.unionId)?.tag ?? w.slug)
+      .map((w) => known.find((a) => a.unionId === w.unionId)?.tag ?? w.slug)
       .join(" · "),
   }));
   const env = getEnv();
@@ -218,12 +242,20 @@ export async function Workspaces({ now }: { now: Date }) {
     <>
       <AdminSection id="workspaces" title={t.title} help={t.help}>
         <p className="mb-4 text-body-sm text-ink/80">{t.key.rotation}</p>
-        <WorkspacesCard workspaces={views} paused={features.paused} />
+        <WorkspacesCard
+          workspaces={views}
+          alliances={choices}
+          paused={features.paused}
+          defaults={newAllianceDefaults(features.defaults)}
+        />
         <Deleted rows={deleted} />
       </AdminSection>
-      <Invites now={now} unionIds={rows.map((w) => w.unionId)} />
+      <Invites now={now} unionIds={rows.map((w) => w.unionId)} known={known} />
       <AdminSection id="squads" title={t.squads.title} help={t.squads.help}>
-        <SquadsCard day={squadsDay} rows={squadsRows({ rows, squads, settingsOf, current, now })} />
+        <SquadsCard
+          day={squadsDay}
+          rows={squadsRows({ rows, squads, features, current, now, allianceLabel })}
+        />
       </AdminSection>
       <AdminSection id="discord" title={t.command.title} help={t.command.help}>
         <DiscordCommandCard

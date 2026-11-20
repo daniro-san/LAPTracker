@@ -1,20 +1,13 @@
 "use client";
 
 // What the two language editors share (D116): the notices editor (issues 304, 305, 363, D113) and Start here
-// (D105). The language tabs with each tab's state (empty, written, a draft to check, may be out of date); a
+// (D105). The language tabs are LanguageTabs.tsx; here: a
 // draft's mark with Accept and Undo; the two-line Translate / Improve writing / Fit buttons; Improve writing's
 // sheet of tones; and the line under the buttons. The sticky save bar is EditorSaveBar.tsx. Each editor keeps
 // its own state and save; these parts only draw it, so both look and behave the same. Every control is 44 px
-// or more; nothing is hover-only. The tabs follow the WAI-ARIA pattern (arrow keys, Home, End).
-import {
-  useRef,
-  useState,
-  type ButtonHTMLAttributes,
-  type KeyboardEvent,
-  type ReactNode,
-} from "react";
+// or more; nothing is hover-only.
+import { useState, type ButtonHTMLAttributes, type ReactNode } from "react";
 
-import { tabAfter } from "@/app/_ui/Movers";
 import type { Tone } from "@/lib/ai/notice-writing";
 import { Sheet } from "@/lib/brand/components/Sheet";
 import { fill } from "@/lib/copy";
@@ -23,96 +16,11 @@ import type {
   WorkspaceKey,
   WorkspaceLanguage,
 } from "@/lib/private/dictionary";
-import { DRAFT_LIMIT, NOTICE_LIMIT, type NoticeLanguage } from "@/lib/private/notice-rules";
+import { DRAFT_LIMIT, NOTICE_LIMIT } from "@/lib/private/notice-rules";
 
-import { LANGUAGE_CODE, LANGUAGE_NAME } from "./languages";
-import type { TabState } from "./notice-draft";
 import { smallButton } from "./NoticeBits";
 import { sheetWords } from "./sheet-words";
 import { SignedOutNote } from "./SignedOut";
-
-const STATE_WORD = {
-  draft: "notices.draft.pill",
-  stale: "notices.outOfDate",
-  written: "notices.tab.written",
-  empty: "notices.tab.empty",
-} as const;
-
-/** A dot before the state word for the two that ask for a look: a draft, and out of date. */
-const DOT: Partial<Record<TabState, string>> = { draft: "bg-plum", stale: "bg-yarn" };
-
-/**
- * EN · PT · FR as tabs, each with its state. `id` names the parts: `${id}-tabs`, `${id}-tab-${language}`,
- * and the panel the editor draws, `${id}-panel`.
- */
-export function LanguageTabs(props: {
-  id: string;
-  t: WorkspaceDictionary;
-  languages: readonly NoticeLanguage[];
-  active: NoticeLanguage;
-  stateOf: (language: NoticeLanguage) => TabState;
-  onPick: (language: NoticeLanguage) => void;
-}) {
-  const { id, t, languages } = props;
-  const buttons = useRef<(HTMLButtonElement | null)[]>([]);
-  const onKey = (ev: KeyboardEvent, i: number) => {
-    const next = tabAfter(ev.key, i, languages.length);
-    const language = next === null ? undefined : languages[next];
-    if (next === null || !language) return;
-    ev.preventDefault();
-    props.onPick(language);
-    buttons.current[next]?.focus();
-  };
-  return (
-    <div
-      id={`${id}-tabs`}
-      role="tablist"
-      aria-label={t["notices.languages"]}
-      className="mt-5 grid scroll-mt-4 grid-cols-3 border-b border-rule"
-    >
-      {languages.map((language, i) => {
-        const state = props.stateOf(language);
-        const selected = language === props.active;
-        return (
-          <button
-            key={language}
-            ref={(el) => {
-              buttons.current[i] = el;
-            }}
-            id={`${id}-tab-${language}`}
-            type="button"
-            role="tab"
-            aria-selected={selected}
-            aria-controls={`${id}-panel`}
-            tabIndex={selected ? 0 : -1}
-            onClick={() => props.onPick(language)}
-            onKeyDown={(ev) => onKey(ev, i)}
-            className="tint-button flex min-h-14 flex-col items-center justify-center px-1 text-center aria-selected:bg-plum/10 aria-selected:shadow-[inset_0_-3px_0_var(--color-plum)]"
-          >
-            <span className="sr-only">{LANGUAGE_NAME[language]}</span>
-            <span aria-hidden="true" className="font-semibold">
-              {LANGUAGE_CODE[language]}
-            </span>
-            <span
-              className={`flex items-center gap-1 text-[12px] leading-tight ${
-                state === "draft"
-                  ? "font-semibold text-plum"
-                  : state === "stale"
-                    ? "font-semibold text-yarn"
-                    : "text-ink/70"
-              }`}
-            >
-              {DOT[state] && (
-                <span aria-hidden="true" className={`size-2 rounded-full ${DOT[state]}`} />
-              )}
-              {t[STATE_WORD[state]]}
-            </span>
-          </button>
-        );
-      })}
-    </div>
-  );
-}
 
 export type DraftKind = "translate" | "improve" | "fit" | "restore";
 

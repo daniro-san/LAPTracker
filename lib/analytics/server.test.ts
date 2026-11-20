@@ -77,7 +77,7 @@ describe("server events (D115)", () => {
   });
 
   it("say which workspace and alliance they came from, and only then (issue 452)", () => {
-    const where = eventWorkspace({ slug: "ogs", unionId: 67111155 });
+    const where = eventWorkspace({ slug: "ogs", alliance: { tag: "OGs" } });
     expect(where).toEqual({ workspace: "ogs", alliance: "OGs" });
     for (const e of EVENTS) expect(wireProperties({ ...e, where })).toMatchObject(where);
     for (const props of EVENTS.map(wireProperties)) {

@@ -7,6 +7,7 @@ import { captureServer, eventWorkspace, sendLater, type EventWorkspace } from ".
 import { secretsOf, type AppContext } from "./app-context";
 import { appErrorMessage, createNotifier } from "./notify";
 import { redact } from "./redact";
+import { allianceLabelOf } from "./repo/alliances";
 import { claimAppErrorAlert, insertAppError } from "./repo/app-errors";
 import { findWorkspaceBySlug } from "./repo/workspaces";
 
@@ -66,7 +67,9 @@ async function workspaceOf(ctx: AppContext, slug: string): Promise<EventWorkspac
   try {
     opened = ctx.openDb();
     const workspace = await findWorkspaceBySlug(opened.db, slug);
-    return workspace && eventWorkspace(workspace);
+    if (!workspace) return null;
+    const alliance = await allianceLabelOf(opened.db, workspace.unionId);
+    return eventWorkspace({ slug: workspace.slug, alliance });
   } catch {
     return null;
   } finally {

@@ -11,6 +11,7 @@ const ACCESS = {
   workspaceId: 1,
   unionId: 67111155,
   slug: "ogs",
+  alliance: { tag: "OGs", name: "OldGrandmas", badgeId: null },
   user: { id: 42, displayName: "Wren", playerUid: 900 },
 } as unknown as WorkspaceAccess;
 

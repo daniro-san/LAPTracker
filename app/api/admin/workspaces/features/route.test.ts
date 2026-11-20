@@ -81,13 +81,39 @@ describe("POST /api/admin/workspaces/features (D126)", () => {
     expect((await settingsOf(3))?.caps.ai).toBe(40);
     // From OGs, which never had a row: everything on, no cap.
     await post(TEST_PIN, { action: "copy", workspace_id: 3, from_id: 1 });
-    expect(await settingsOf(3)).toEqual({ off: [], caps: { ai: null, translate: null } });
+    // The alliance's own switches are not copied: its tracker features wait for its officers.
+    expect(await settingsOf(3)).toEqual({
+      off: [],
+      caps: { ai: null, translate: null },
+      allianceOff: ["squads", "shield_check"],
+    });
     expect((await post(TEST_PIN, { action: "copy", workspace_id: 3, from_id: 3 })).status).toBe(
       400,
     );
     expect((await post(TEST_PIN, { action: "copy", workspace_id: 3, from_id: 99 })).status).toBe(
       404,
     );
+  });
+
+  it("stores only what differs from the defaults, and Reset follows the default again (D134)", async () => {
+    const stored = async () => (await settingsById(db, 2))?.stored;
+    await post(TEST_PIN, { action: "switch", workspace_id: 2, feature: "squads", on: true });
+    await post(TEST_PIN, { action: "cap", workspace_id: 2, allowance: "ai", cap: 40 });
+    expect(await stored()).toMatchObject({ switches: { squads: true }, caps: { ai: 40 } });
+    // Thefts allowed is the default already: nothing is stored.
+    await post(TEST_PIN, { action: "switch", workspace_id: 2, feature: "thefts", on: true });
+    await post(TEST_PIN, { action: "switch", workspace_id: 2, feature: "squads", on: null });
+    await post(TEST_PIN, { action: "cap", workspace_id: 2, allowance: "ai", cap: "default" });
+    expect(await stored()).toMatchObject({ switches: {}, caps: {} });
+    // A new default reaches nse (on the default) and abc, but OGs keeps everything on.
+    await post(TEST_PIN, { action: "default_switch", feature: "squads", on: true });
+    await post(TEST_PIN, { action: "default_cap", allowance: "translate", cap: null });
+    expect((await settingsOf(2))?.off).not.toContain("squads");
+    expect((await settingsOf(3))?.caps.translate).toBeNull();
+    expect((await settingsOf(1))?.off).toEqual([]);
+    expect(
+      (await post("", { action: "default_switch", feature: "squads", on: false })).status,
+    ).toBe(401);
   });
 
   it("re-registers a server that had commands without the one turned off; leaves others alone (D129)", async () => {

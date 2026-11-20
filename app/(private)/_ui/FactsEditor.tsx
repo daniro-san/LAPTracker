@@ -48,6 +48,8 @@ export interface EditorProps {
   /** "paste" opens with the paste box ready. */
   mode: "edit" | "paste";
   words: EditorWords;
+  /** False while reading screenshots is turned off for the alliance (D126). */
+  shots: boolean;
   language: string;
   serverZone: string;
   used: readonly string[];
@@ -307,6 +309,7 @@ export function FactsEditor(props: EditorProps) {
       <Paste
         slug={props.slug}
         words={words}
+        shots={props.shots}
         language={language}
         open={props.mode === "paste"}
         onRead={f.read}

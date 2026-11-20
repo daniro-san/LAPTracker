@@ -3,7 +3,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { ALLIANCES } from "../config/alliances";
+import { TRACKED_COUNT } from "../config/alliances";
 import { frameId, photoUrl } from "../lib/sources/shared";
 
 export interface BaseMember {
@@ -28,13 +28,28 @@ export interface BaseAlliance {
 
 const FIXTURES = join(import.meta.dirname, "../fixtures");
 
+/** The fixture ranks board's alliances, by might (D133): the top TRACKED_COUNT are the tracked set. */
+export function fixtureBoard(): { id: number; score: string; abbr: string; name: string }[] {
+  const body = JSON.parse(
+    readFileSync(join(FIXTURES, "ranks-325-20261104T201831Z/ranks.json"), "utf8"),
+  ) as {
+    boards: { slug: string; rows: { id: number; score: string; abbr: string; name: string }[] }[];
+  };
+  const rows = body.boards.find((b) => b.slug === "alliance_power")?.rows ?? [];
+  return [...rows].sort((a, b) => Number(b.score) - Number(a.score));
+}
+
 /**
- * Fixture rosters of the tracked alliances (config/alliances.ts) by union_id: fixtures/v1-ids/<id>.json,
- * else the latest fixtures/v1-<ts>/alliance-<id>.json. Bodies of untracked alliances (TRM, 404) stay in
- * fixtures/ for the parser tests and are skipped here, so the seed ranks run to #20 as the config does.
+ * Fixture rosters of the tracked alliances (the fixture board's top TRACKED_COUNT, D133) by union_id:
+ * fixtures/v1-ids/<id>.json, else the latest fixtures/v1-<ts>/alliance-<id>.json. Bodies of other alliances
+ * stay in fixtures/ for the parser tests and are skipped here.
  */
 export function loadBase(): BaseAlliance[] {
-  const tracked = new Set<number>(ALLIANCES.map((a) => a.unionId));
+  const tracked = new Set(
+    fixtureBoard()
+      .slice(0, TRACKED_COUNT)
+      .map((r) => r.id),
+  );
   const bodies = new Map<number, Record<string, unknown>>();
   for (const dir of readdirSync(FIXTURES)
     .filter((d) => d.startsWith("v1-"))

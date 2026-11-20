@@ -1,8 +1,10 @@
 "use client";
 
-// /admin's feature switches (D126), in each workspace's card: the switches by group, one tap each; the two
-// daily caps with today's use; "Copy settings from" another workspace (asked first). Above the list, the
-// global pause of each paid allowance. Every press sends the PIN as x-edit-pin through the card's `run`.
+// /admin's feature switches (D126, D134), in each workspace's card: the switches by group, one tap each, each
+// saying "Default (on)" or "Changed: off" with "Reset to default" when changed, and whether the alliance
+// turned an allowed one off; the two daily caps with today's use; the tracker calls the alliance's choices
+// spend; "Copy settings from" another workspace (asked first). Above the list, the global pause of each paid
+// allowance (the "Defaults for new alliances" are FeatureDefaults.tsx). Every press sends the PIN as x-edit-pin through `run`.
 import { useState } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
@@ -11,9 +13,9 @@ import { copy, fill } from "@/lib/copy";
 import {
   ALLOWANCES,
   FEATURE_GROUPS,
-  FEATURES,
   SPENDS,
   type Allowance,
+  type Feature,
   type FeatureGroup,
 } from "@/lib/workspace-features";
 
@@ -23,77 +25,93 @@ import { Field, FIELD, type Run } from "./WorkspaceForm";
 const t = copy.admin.features;
 const URL = "/api/admin/workspaces/features";
 const saved = () => t.saved;
+const GROUPS = Object.keys(FEATURE_GROUPS) as FeatureGroup[];
 
 /** One workspace's switches as /admin shows them. */
 export interface FeaturesView {
+  /** Not allowed by the owner. */
   off: readonly string[];
+  /** The owner's values that differ from the defaults (stored overrides). */
+  changed: readonly string[];
+  /** Allowed, but turned off by the alliance's officers (D134). */
+  allianceOff: readonly string[];
+  /** On now: allowed, turned on by the alliance, not paused. */
+  on: number;
   caps: Record<Allowance, number | null>;
+  defaultCaps: Record<Allowance, number | null>;
+  changedCaps: readonly Allowance[];
   /** Today's (UTC) use of each allowance. */
   used: Record<Allowance, number>;
+  /** "Tracker calls with the alliance's choices: about …" */
+  estimate: string;
 }
 
-function Group(props: {
+const capText = (cap: number | null) => (cap === null ? t.caps.none : String(cap));
+
+function Switch(props: {
   id: number;
-  group: FeatureGroup;
+  feature: Feature;
   view: FeaturesView;
   paused: Allowance[];
   run: Run;
   busy: boolean;
 }) {
+  const { feature, view } = props;
+  const on = !view.off.includes(feature);
+  const changed = view.changed.includes(feature);
+  const spends = SPENDS[feature];
+  const state = fill(changed ? t.changed : t.byDefault, { value: on ? t.on : t.off });
+  const send = (value: boolean | null) =>
+    props.run({
+      url: URL,
+      body: { action: "switch", workspace_id: props.id, feature, on: value },
+      ok: saved,
+    });
   return (
-    <fieldset className="mt-3">
-      <legend className="text-body-sm font-semibold">{t.groups[props.group]}</legend>
-      <ul className="mt-1 flex flex-wrap gap-2">
-        {FEATURE_GROUPS[props.group].map((feature) => {
-          const on = !props.view.off.includes(feature);
-          const spends = SPENDS[feature];
-          const paused = spends !== undefined && props.paused.includes(spends);
-          return (
-            <li key={feature}>
-              <button
-                type="button"
-                aria-pressed={on}
-                disabled={props.busy}
-                className={chip(on)}
-                onClick={() =>
-                  props.run({
-                    url: URL,
-                    body: { action: "switch", workspace_id: props.id, feature, on: !on },
-                    ok: saved,
-                  })
-                }
-              >
-                {`${t.names[feature]}: ${on ? t.on : t.off}`}
-              </button>
-              {paused && <span className="block text-body-sm text-seal">{t.pausedAll}</span>}
-            </li>
-          );
-        })}
-      </ul>
-    </fieldset>
+    <li className="flex flex-wrap items-center gap-x-2 gap-y-1">
+      <button
+        type="button"
+        aria-pressed={on}
+        disabled={props.busy}
+        className={chip(on)}
+        onClick={() => send(!on)}
+      >
+        {`${t.names[feature]}: ${state}`}
+      </button>
+      {changed && (
+        <button type="button" disabled={props.busy} className={chip()} onClick={() => send(null)}>
+          {t.reset}
+        </button>
+      )}
+      {on && view.allianceOff.includes(feature) && (
+        <span className="text-body-sm text-ink/80">{t.allianceOff}</span>
+      )}
+      {spends !== undefined && props.paused.includes(spends) && (
+        <span className="text-body-sm text-seal">{t.pausedAll}</span>
+      )}
+    </li>
   );
 }
 
 function Cap(props: { id: number; allowance: Allowance; view: FeaturesView; run: Run }) {
-  const cap = props.view.caps[props.allowance];
-  const used = props.view.used[props.allowance];
+  const { allowance, view } = props;
+  const cap = view.caps[allowance];
+  const used = view.used[allowance];
+  const changed = view.changedCaps.includes(allowance);
+  const send = (value: number | null | "default") =>
+    props.run({
+      url: URL,
+      body: { action: "cap", workspace_id: props.id, allowance, cap: value },
+      ok: saved,
+    });
   const save = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const value = String(new FormData(e.currentTarget).get("cap") ?? "").trim();
-    props.run({
-      url: URL,
-      body: {
-        action: "cap",
-        workspace_id: props.id,
-        allowance: props.allowance,
-        cap: value === "" ? null : Number(value),
-      },
-      ok: saved,
-    });
+    send(value === "" ? null : Number(value));
   };
   return (
     <form onSubmit={save} className="grid gap-2 sm:max-w-xs">
-      <Field label={t.caps[props.allowance]}>
+      <Field label={t.caps[allowance]}>
         <input
           name="cap"
           inputMode="numeric"
@@ -105,11 +123,25 @@ function Cap(props: { id: number; allowance: Allowance; view: FeaturesView; run:
         />
       </Field>
       <p className="text-body-sm text-ink/80">
+        {fill(changed ? t.changed : t.byDefault, { value: capText(cap) })}
+        {changed && ` · ${fill(t.caps.defaultIs, { value: capText(view.defaultCaps[allowance]) })}`}
+        <br />
         {cap === null ? fill(t.caps.today, { used }) : fill(t.caps.todayOf, { used, cap })}
       </p>
-      <button type="submit" className={buttonClass("secondary")}>
-        {t.caps.save}
-      </button>
+      <div className="flex flex-wrap gap-2">
+        <button type="submit" className={buttonClass("secondary")}>
+          {t.caps.save}
+        </button>
+        {changed && (
+          <button
+            type="button"
+            className={buttonClass("secondary")}
+            onClick={() => send("default")}
+          >
+            {t.reset}
+          </button>
+        )}
+      </div>
     </form>
   );
 }
@@ -166,32 +198,41 @@ export function WorkspaceFeatures(props: {
   busy: boolean;
 }) {
   const { id, features: view } = props.w;
-  const on = FEATURES.filter((f) => !view.off.includes(f)).length;
+  const all = GROUPS.reduce((n, g) => n + FEATURE_GROUPS[g].length, 0);
   return (
     <details className="mt-2 border-t border-rule pt-1">
       <summary className="flex min-h-11 cursor-pointer flex-wrap items-center gap-x-2 font-semibold">
-        <span>{fill(t.summary, { on, all: FEATURES.length })}</span>
+        <span>{fill(t.summary, { on: view.on, all })}</span>
         <span className="text-body-sm font-normal text-ink/80">
           {fill(t.usage, { ai: view.used.ai, translate: view.used.translate })}
         </span>
+        <span className="basis-full text-body-sm font-normal">{view.estimate}</span>
       </summary>
       <p className="text-body-sm text-ink/80">{t.help}</p>
-      {(Object.keys(FEATURE_GROUPS) as FeatureGroup[]).map((group) => (
-        <Group
-          key={group}
-          id={id}
-          group={group}
-          view={view}
-          paused={props.paused}
-          run={props.run}
-          busy={props.busy}
-        />
+      {GROUPS.map((group) => (
+        <fieldset key={group} className="mt-3">
+          <legend className="text-body-sm font-semibold">{t.groups[group]}</legend>
+          {group === "data" && <p className="text-body-sm text-ink/80">{t.callsHelp}</p>}
+          <ul className="mt-1 grid gap-2">
+            {FEATURE_GROUPS[group].map((feature) => (
+              <Switch
+                key={feature}
+                id={id}
+                feature={feature}
+                view={view}
+                paused={props.paused}
+                run={props.run}
+                busy={props.busy}
+              />
+            ))}
+          </ul>
+        </fieldset>
       ))}
       <h4 className="mt-4 font-semibold">{t.caps.head}</h4>
       <p className="text-body-sm text-ink/80">{t.caps.help}</p>
       <div className="mt-2 grid gap-4 sm:grid-cols-2">
         {ALLOWANCES.map((a) => (
-          <Cap key={a} id={id} allowance={a} view={view} run={props.run} />
+          <Cap key={`${a}:${view.caps[a]}`} id={id} allowance={a} view={view} run={props.run} />
         ))}
       </div>
       {props.others.length > 0 && (

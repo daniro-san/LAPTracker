@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { ALLIANCES } from "../config/alliances";
 import { MAX_UPSTREAM_CALLS, RUN_DEADLINE_MS, runSnapshot } from "./collector";
 import {
   ago,
@@ -8,6 +7,7 @@ import {
   fakeInternal,
   fakeV1,
   IDS,
+  LABELS,
   makeDeps,
   minutes,
   roster,
@@ -98,7 +98,7 @@ describe("runSnapshot", () => {
     expect(stored?.members).toEqual([]);
     expect(summary.status).toBe("partial");
     expect(summary.failed).toEqual([
-      { unionId: FIRST, tag: "NSE", error: "v1 http 503; internal not live" },
+      { unionId: FIRST, tag: LABELS.get(FIRST)?.tag, error: "v1 http 503; internal not live" },
     ]);
   });
 
@@ -120,7 +120,7 @@ describe("runSnapshot", () => {
     expect(summary.failed).toEqual(
       missing.map((id) => ({
         unionId: id,
-        tag: ALLIANCES.find((a) => a.unionId === id)?.tag,
+        tag: LABELS.get(id)?.tag,
         error: "not fetched: quota exhausted (429)",
       })),
     );

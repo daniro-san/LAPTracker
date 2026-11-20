@@ -9,6 +9,7 @@ import type { Db } from "@/lib/db";
 import { openTestDb, truncateAll } from "@/lib/db.test-helpers";
 import { dailyReads, dailyRosters, runLogs, workspaces } from "@/lib/schema";
 import { squadReads } from "@/lib/schema-squads";
+import { playerAnswer } from "@/lib/squads.test-helpers";
 
 const holder = vi.hoisted(() => ({ ctx: null as AppContext | null }));
 vi.mock("@/lib/app-context", async (original) => ({
@@ -65,7 +66,7 @@ beforeEach(async () => {
   ctx.v1.fetchPlayer = async (uid, onAttempt) => {
     onAttempt?.(0);
     players.push(uid);
-    return { uid, squads: [], quota: null };
+    return playerAnswer(uid);
   };
   holder.ctx = ctx;
 });
@@ -98,20 +99,20 @@ describe("POST /api/admin/squads-read", () => {
       onAttempt?.(0);
       players.push(uid);
       clock.now = new Date(clock.now.getTime() + 100_000);
-      return { uid, squads: [], quota: null };
+      return playerAnswer(uid);
     };
     expect((await press()).status).toBe(202);
     await later[0]?.();
-    // Batch 1 ends at 100 s and batch 2 fits by 240 s; after batch 2 (200 s) a third would not.
+    // Batch 1 ends at 100 s and a 60 s batch 2 fits by 240 s; after batch 2 (200 s) a third would not.
     expect(players).toEqual([1, 2]);
     const [read] = await db.select().from(squadReads);
-    expect(read).toMatchObject({ status: "running", afterUid: 2, callsUsed: 2, batchAt: null });
+    expect(read).toMatchObject({ status: "running", callsUsed: 2, batchAt: null });
   });
 
   it("refuses during the event's Before/After window and just before the quota reset", async () => {
     clock.now = new Date("2026-11-21T13:00:00Z"); // Saturday 11:00 server time, inside the KvK's window
     expect(await (await press()).json()).toEqual({ code: "event_window" });
-    clock.now = new Date("2026-11-20T23:59:00Z"); // a 100 s batch would end after 00:00 UTC
+    clock.now = new Date("2026-11-20T23:59:30Z"); // a 60 s batch would end after 00:00 UTC
     expect(await (await press()).json()).toEqual({ code: "quota_reset" });
     expect(later).toHaveLength(0);
   });

@@ -4,7 +4,10 @@
 //   {action: "roles"}                                  the server's roles through the bot
 //   {action: "create_roles", leader, member, give_me}  create the two roles (needs Manage Roles)
 //   {action: "finish", leader_role_ids, member_role_ids}  make the workspace and sign her in
-// Answers carry codes, role names and colours only; "finish" sets the officer's session cookie.
+// Answers carry codes, role names and colours only; "finish" sets the officer's session cookie, and the owner
+// gets one line in the admin Discord channel (issue 500).
+import { createNotifier } from "@/lib/notify";
+import { deskMadeMessage } from "@/lib/notify-request";
 import { isSameOriginJson, NO_STORE, privateError, requestCookies } from "@/lib/private/http";
 import { inviteInput, inviteStep, type StepCode } from "@/lib/private/invite-steps";
 import { withContext } from "@/lib/route";
@@ -33,6 +36,9 @@ export async function POST(request: Request): Promise<Response> {
     const result = await inviteStep(db, deps, requestCookies(request), parsed.data);
     if (!result.ok) return privateError(STATUS[result.code], result.code);
     if ("slug" in result) {
+      await createNotifier(ctx.env, ctx.fetch)
+        .admin(deskMadeMessage(result))
+        .catch(() => null);
       const headers = new Headers(NO_STORE);
       headers.append("Set-Cookie", result.cookie);
       return Response.json({ slug: result.slug }, { headers });

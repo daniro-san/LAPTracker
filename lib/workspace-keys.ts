@@ -8,6 +8,7 @@ import { createCipheriv, createDecipheriv, createHmac, randomBytes } from "node:
 
 import { OWN_ALLIANCE_ID } from "../config/alliances";
 import type { Db } from "./db";
+import { allianceLabels, trackedAllianceIds, trackedSetOf } from "./repo/alliances";
 import { allSettings } from "./repo/workspace-features";
 import { markKey, sealedKeys, type SealedKey } from "./repo/workspace-keys";
 import type { KeyStatus } from "./schema-keys";
@@ -152,8 +153,9 @@ export interface OpenKey {
 export interface SquadTarget {
   unionId: number;
   workspaceId: number | null;
-  /** The workspace's slug, for the run's log lines (issue 452). */
+  /** The workspace's slug and its alliance's label, for the run's log lines (issue 452, D133). */
   slug: string;
+  alliance?: { tag: string | null } | null;
   key: OpenKey | null;
 }
 
@@ -189,7 +191,75 @@ export async function squadTargets(
   const off = settings
     .filter((w) => !resolveFeatures(w.settings, []).on.has("squads"))
     .map((w) => w.unionId);
-  return targets.filter((t) => !off.includes(t.unionId));
+  const on = targets.filter((t) => !off.includes(t.unionId));
+  const labels = await allianceLabels(
+    db,
+    on.map((t) => t.unionId),
+  );
+  return on.map((t) => ({ ...t, alliance: labels.get(t.unionId) ?? null }));
+}
+
+/** One alliance of the daily read (D133) and the key it spends: null is LAP_API_KEY. */
+export interface DailyTarget {
+  unionId: number;
+  key: OpenKey | null;
+}
+
+/**
+ * The daily read's alliances: the tracked set on LAP_API_KEY (D124: a public read), then every workspace's
+ * alliance outside it, on its own key when it saved one (INVARIANT keys.own-quota-only). A workspace with no
+ * saved key, or with the keys off (no WORKSPACE_KEYS_SECRET), is read on LAP_API_KEY. A saved key that cannot
+ * be used now (invalid, out of quota, sealed under another master key) leaves that alliance out: never ours.
+ */
+export async function dailyTargets(
+  db: Db,
+  secret: string | undefined,
+  now: Date,
+  tracked: readonly number[],
+): Promise<DailyTarget[]> {
+  const targets: DailyTarget[] = tracked.map((unionId) => ({ unionId, key: null }));
+  for (const r of await sealedKeys(db)) {
+    const rule = dailyKeyRule(r, secret, now, tracked);
+    if (rule === "ours" && !tracked.includes(r.unionId))
+      targets.push({ unionId: r.unionId, key: null });
+    if (rule !== "own" || !secret) continue;
+    const key = await opened(db, secret, r, now);
+    if (key) targets.push({ unionId: r.unionId, key });
+  }
+  return targets;
+}
+
+/**
+ * INVARIANT daily.one-rule (D133): how a workspace's alliance is in the daily read, from its key's stored
+ * facts without opening it. "ours": in the tracked set, or no saved key (or the keys off); "own": a usable
+ * key sealed under the current master key; "skip": a saved key that cannot be used now (never ours).
+ */
+export function dailyKeyRule(
+  r: Pick<SealedKey, "unionId" | "ciphertext" | "masterFp" | "status" | "statusAt">,
+  secret: string | undefined,
+  now: Date,
+  tracked: readonly number[],
+): "ours" | "own" | "skip" {
+  if (tracked.includes(r.unionId) || !secret || !r.ciphertext) return "ours";
+  if (r.masterFp !== masterFingerprint(secret)) return "skip";
+  return keyUsable(r.status, r.statusAt, now) ? "own" : "skip";
+}
+
+/**
+ * The alliances the daily read covers on `day`, by the same rule as `dailyTargets` without opening a key:
+ * the day's set (else the newest) and every workspace's alliance the rule does not skip. The lookup and
+ * its button read this (D133).
+ */
+export async function dailyIds(
+  db: Db,
+  day: string,
+  secret: string | undefined,
+  now: Date,
+): Promise<number[]> {
+  const [set, rows] = await Promise.all([trackedSetOf(db, day), sealedKeys(db)]);
+  const tracked = set?.allianceIds ?? (await trackedAllianceIds(db));
+  const workspaces = rows.filter((r) => dailyKeyRule(r, secret, now, tracked) !== "skip");
+  return [...new Set([...tracked, ...workspaces.map((r) => r.unionId)])];
 }
 
 async function keyTargets(db: Db, secret: string | undefined, now: Date): Promise<SquadTarget[]> {

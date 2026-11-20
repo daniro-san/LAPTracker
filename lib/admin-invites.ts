@@ -8,7 +8,6 @@
 // past its decision or end.
 import { z } from "zod";
 
-import { ALLIANCES } from "../config/alliances";
 import type { Db } from "./db";
 import {
   approveRequest,
@@ -19,16 +18,15 @@ import {
   purgeOldInvites,
   takenWorkspaceKeys,
 } from "./repo/alliance-invites";
+import { isKnownAlliance } from "./repo/alliances";
 
 const id = z.number().int().positive();
 export const adminInviteInput = z.discriminatedUnion("action", [
   z
     .object({
       action: z.literal("create"),
-      union_id: z
-        .number()
-        .int()
-        .refine((u) => ALLIANCES.some((a) => a.unionId === u)),
+      // D133: any alliance we know, checked in adminInviteAction.
+      union_id: z.number().int().positive(),
     })
     .strict(),
   z.object({ action: z.literal("cancel"), invite_id: id }).strict(),
@@ -45,11 +43,28 @@ export type AdminInviteInput = z.infer<typeof adminInviteInput>;
 
 export type AdminInviteResult =
   | { ok: true; link?: string; expiresAt?: Date }
-  | { ok: false; status: 404 | 409; code: "not_found" | "decided" | "has_workspace" };
+  | {
+      ok: false;
+      status: 400 | 404 | 409;
+      code: "bad_request" | "not_found" | "decided" | "has_workspace";
+    };
 
 const hasWorkspace = async (db: Db, unionId: number) =>
   (await takenWorkspaceKeys(db)).some((w) => w.unionId === unionId);
 const linkOf = (origin: string, credential: string) => `${origin}/api/w/invite/${credential}`;
+
+/** "Create the invite link": an alliance we know (D133) with no workspace yet. */
+async function create(
+  db: Db,
+  unionId: number,
+  now: Date,
+  origin: string,
+): Promise<AdminInviteResult> {
+  if (!(await isKnownAlliance(db, unionId))) return { ok: false, status: 400, code: "bad_request" };
+  if (await hasWorkspace(db, unionId)) return { ok: false, status: 409, code: "has_workspace" };
+  const made = await createInvite(db, unionId, now);
+  return { ok: true, link: linkOf(origin, made.credential), expiresAt: made.expiresAt };
+}
 
 export async function adminInviteAction(
   db: Db,
@@ -62,12 +77,7 @@ export async function adminInviteAction(
     if (await cancelInvite(db, input.invite_id, now)) return { ok: true };
     return { ok: false, status: 404, code: "not_found" };
   }
-  if (input.action === "create") {
-    if (await hasWorkspace(db, input.union_id))
-      return { ok: false, status: 409, code: "has_workspace" };
-    const made = await createInvite(db, input.union_id, now);
-    return { ok: true, link: linkOf(origin, made.credential), expiresAt: made.expiresAt };
-  }
+  if (input.action === "create") return create(db, input.union_id, now, origin);
   const req = await findRequest(db, input.request_id);
   if (!req) return { ok: false, status: 404, code: "not_found" };
   if (req.decision !== null) return { ok: false, status: 409, code: "decided" };

@@ -6,10 +6,10 @@
 // or blocked roster key is selected, and nothing per member is returned.
 import { and, desc, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm";
 
-import { ALLIANCES } from "../../config/alliances";
 import { sumPower } from "../compute";
 import type { Db } from "../db";
 import { mergedCapacity, simulateMerge, type MergeResult } from "../merge";
+import { trackedAllianceIds } from "../repo/alliances";
 import { allianceSnapshots, dailyRosters, events, memberSnapshots, snapshots } from "../schema";
 import { listEvents } from "./events";
 import { dailyFit, eventFit, numbers } from "./history-readings";
@@ -58,8 +58,6 @@ const shown = ({ unionId, tag, name, at, power, members }: Head): MergeAlliance 
   power,
   members,
 });
-
-const TRACKED = ALLIANCES.map((a) => a.unionId);
 
 /** How many of the newest events are searched for an alliance's turnout before it shows none. */
 const TURNOUT_EVENTS = 3;
@@ -199,18 +197,18 @@ async function latestTurnouts(
 /**
  * The simulator's page data. `pair` is the two chosen union ids; null gives only the choices. A chosen id
  * with no usable roster among the tracked alliances yields `merge: null` too, and the caller checks the
- * ids against `alliances`. `tracked` defaults to the tracked list; tests pass their own. `events` is the
+ * ids against `alliances`. `tracked` defaults to today's tracked set (D133); tests pass their own. `events` is the
  * page's own event list (or its read on its way), so the list is not read twice. `turnout` false (its flag
  * off, D91) skips the turnout read: every side's `turnout` is null.
  */
 export async function mergePage(
   db: Db,
   pair: readonly [number, number] | null,
-  tracked: readonly number[] = TRACKED,
+  tracked?: readonly number[],
   events?: Events | PromiseLike<Events>,
   turnout: boolean | PromiseLike<boolean> = true,
 ): Promise<MergePage> {
-  const heads = await newestHeads(db, [...tracked]);
+  const heads = await newestHeads(db, [...(tracked ?? (await trackedAllianceIds(db)))]);
   const alliances = [...heads.values()]
     .map(shown)
     .sort((p, q) => (q.power ?? 0) - (p.power ?? 0) || p.unionId - q.unionId);

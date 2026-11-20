@@ -17,7 +17,6 @@ import { serverDay } from "@/lib/schedule";
 import type { CalendarCtx } from "./calendar-data";
 import { workspaceWords } from "./Frame";
 import { refuse } from "./refuse";
-import { turnedOffPage } from "./TurnedOff";
 
 /** D126: Caravans turned off for the alliance; then the view reads nothing of its own. */
 const turnedOff = (access: WorkspaceAccess, view: string) =>
@@ -55,12 +54,12 @@ export async function openCalendar<T>(
     refuse(slug, access.reason, `/w/${slug}/${view}${week}`);
     redirect(`/w/${slug}`);
   }
+  // D126: a view turned off for the alliance is not there: its address goes to Home.
+  if (turnedOff(access, view)) redirect(`/w/${slug}`);
   const { language, t } = await workspaceWords();
   const ctx: CalendarCtx = { t, language, zone: env.SERVER_TZ };
   return {
     access,
-    /** D126: the page to show instead when the view is turned off for the alliance. */
-    off: view === "calendar/caravans" ? turnedOffPage(access, "caravans", waiting) : null,
     data: data as T,
     waiting,
     slug,

@@ -20,7 +20,7 @@ import {
   notices,
 } from "./schema-notices";
 import { workspaceDataEvents } from "./schema-retention";
-import { memberSquads, squadReads } from "./schema-squads";
+import { memberSquads, playerHistory, playerReads, squadQueue, squadReads } from "./schema-squads";
 import { theftAttackers, theftFollowUps, thefts } from "./schema-thefts";
 
 export const SEED_AT = new Date("2026-11-18T12:00:00Z");
@@ -175,6 +175,33 @@ export async function seedKeyAndData(db: Db, ws: number, unionId: number, office
   await db
     .insert(squadReads)
     .values({ day: DAY, unionId, status: "done", startedAt: SEED_AT, members: 1 });
+  // D132: the queue, and a player read whose raw body holds the private markers (scrubbed on download).
+  await db
+    .insert(squadQueue)
+    .values({ day: DAY, unionId, uid: 101, state: "done", attempts: 1, dueAt: SEED_AT });
+  await db.insert(playerReads).values({
+    unionId,
+    uid: 101,
+    readAt: SEED_AT,
+    rawJson: {
+      uid: 101,
+      x: 98765,
+      y: 54321,
+      online: true,
+      last_online_at: 1763337600,
+      avatar_url: "https://avatar.example.test/a.png",
+      history: [{ observed_at: 1763300000, x: 98765, y: 54321 }],
+    },
+    shielding: 1,
+    language: "en",
+  });
+  await db.insert(playerHistory).values({
+    unionId,
+    uid: 101,
+    t: SEED_AT,
+    power: 10,
+    unionAbbr: "INV",
+  });
   await db.insert(workspaceKeyChanges).values({
     workspaceId: ws,
     action: "set",

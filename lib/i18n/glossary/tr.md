@@ -296,6 +296,8 @@ Words already used in `lib/i18n/tr.ts`. Reuse them so the pages stay consistent;
 | statement (alliance's text)       | Açıklama                        | `statement.title`, `statement.by` — the alliance's own in-game text, never translated                                             |
 | joining                           | Katılım                         | `statement.joining`, `statement.open`, `statement.byApplication` — how a player joins an alliance                                 |
 | free seat                         | boş koltuk                      | `statement.seats`, `statement.seatOne` — a place left under the Members cap                                                       |
+| Ranks board                       | sıralama tablosu                | `alliances.*` — the server's board of alliances by Might, with the Kills rank                                                     |
+| lookup (an alliance's details)    | sorgu                           | `alliances.*` — one fetch of an alliance's details for the day                                                                    |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

@@ -30,6 +30,8 @@ export interface RequestRowView {
   alliance: string;
   line: string;
   roster: string;
+  /** A claimed R5 that the roster lists as R4, highlighted; null otherwise. */
+  warning: string | null;
   /** "Approved 20 Nov" once answered; null while waiting. */
   decided: string | null;
 }
@@ -155,6 +157,7 @@ function RequestRow({ r, run }: { r: RequestRowView; run: (c: Call) => void }) {
     <li className="grid gap-2 border-t border-ink/15 py-3">
       <p className="break-words font-semibold">{r.line}</p>
       <p className="text-body-sm">{r.roster}</p>
+      {r.warning && <p className="text-body-sm font-semibold text-plum">{r.warning}</p>}
       {r.decided ? (
         <p className="text-body-sm text-ink/75">{r.decided}</p>
       ) : (
@@ -208,6 +211,8 @@ export function InvitesCard(props: {
   alliances: { unionId: number; label: string }[];
   invites: InviteRowView[];
   requests: RequestRowView[];
+  /** "Showing the newest 50…" when there are more requests; null otherwise. */
+  more: string | null;
 }) {
   const call = usePinPost();
   const [cancelling, setCancelling] = useState<InviteRowView | null>(null);
@@ -223,6 +228,7 @@ export function InvitesCard(props: {
           ))}
         </ul>
       )}
+      {props.more && <p className="text-body-sm text-ink/75">{props.more}</p>}
       <h3 className="mt-6 font-subhead text-display-sm">{t.create.head}</h3>
       <CreateForm alliances={props.alliances} run={call.run} />
       {call.link && <LinkBox link={call.link} />}

@@ -69,6 +69,10 @@ Words already used in `lib/i18n/ru.ts`. Reuse them so the pages stay consistent;
 | pts (percentage points)       | п.п.                           | `ledger.carriedPoints`, `ledger.carriedRatioHelp` — the gap between two shares              |
 | Standing over time            | Места во времени               | `standing.title` — the alliance's rank by might on each day                                 |
 | Member flow                   | Переходы участников            | `flow.title` — the page title; moves between tracked alliances                              |
+| Sign in                       | Войти                          | `site.signIn`, `site.signInFooter` — the link to the Discord sign-in                        |
+| Officers                      | Офицеры                        | `site.signInFooter` — alliance officers, with members                                       |
+| Ranks board                   | доска мест                     | `alliances.asOf`, `alliances.board`, `alliances.boardMight` — the server's ranking by might |
+| Lookup                        | запрос                         | `alliances.get*`, `alliances.usedUp`, `alliances.failed` — one fetch of an alliance's data  |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

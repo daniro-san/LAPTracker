@@ -5,11 +5,12 @@
 // outcome; no Discord line, the owner sees it on the page.
 import { z } from "zod";
 
-import { DAILY_ROSTER_IDS } from "@/config/alliances";
 import { secretsOf } from "@/lib/app-context";
 import { authorize } from "@/lib/auth";
 import { retryDailyRead } from "@/lib/daily-read";
 import { errorResponse, parseQuery, withContext } from "@/lib/route";
+import { serverDay } from "@/lib/schedule";
+import { dayTargets } from "@/lib/tracked";
 
 export const maxDuration = 120;
 
@@ -21,7 +22,10 @@ export function POST(request: Request): Promise<Response> {
     if (!auth.ok) return errorResponse(auth.status, auth.code);
     if (!parseQuery(request, noQuery)) return errorResponse(400, "bad_request");
     const deps = { v1: ctx.v1, now: ctx.now, secrets: secretsOf(ctx.env) };
-    const summary = await retryDailyRead(deps, db, ctx.env, DAILY_ROSTER_IDS);
+    // D133: today's tracked set (read from the board if the tick has not yet) and the workspaces' alliances.
+    const keys = { internal: ctx.internal, now: ctx.now, secret: ctx.env.WORKSPACE_KEYS_SECRET };
+    const { targets } = await dayTargets(keys, db, serverDay(ctx.now(), ctx.env));
+    const summary = await retryDailyRead(deps, db, ctx.env, targets);
     if (summary === "too-late") return errorResponse(409, "daily_read_too_late");
     if (!summary) return errorResponse(409, "daily_read_not_retryable");
     return Response.json({

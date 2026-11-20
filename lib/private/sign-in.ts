@@ -21,9 +21,10 @@ import {
   type WorkspaceRow,
   type WorkspaceUserRow,
 } from "../repo/workspaces";
+import type { CookieReader } from "./access";
 import { authorizeUrl, discordConfig, readMember, type DiscordMember } from "./discord";
 import { privateLog } from "./log";
-import { cookieAttributes, renewOrCreate, revokeSession } from "./session";
+import { cookieAttributes, renewOrCreate, revokeSession, sessionToken } from "./session";
 
 export const STATE_COOKIE = "__Host-lap_ws_state";
 export const STATE_MS = 10 * 60_000;
@@ -92,8 +93,8 @@ export async function startSignIn(
 export interface CallbackInput {
   query: URLSearchParams;
   stateCookie: string | undefined;
-  /** The browser's workspace session cookie, if any: renewed in place when the role still holds. */
-  sessionCookie: string | undefined;
+  /** The browser's cookies: its session of the workspace, if any, is renewed in place when the role holds. */
+  cookies: CookieReader;
   ip: string;
   origin: string;
 }
@@ -127,10 +128,11 @@ export async function finishSignIn(db: Db, deps: SignInDeps, input: CallbackInpu
   if (!config) return go(`/w/${slug}?e=not_configured`);
   const workspace = await findWorkspaceBySlug(db, slug);
   if (!workspace) return go(`/w/${slug}`);
+  const token = sessionToken(input.cookies, slug)?.value;
   // INVARIANT workspace.renewal-or-out: a trip through Discord that does not end in admit() ends the
   // browser's session here, so a page whose session waits for its check shows the sign-in, not a loop.
   const out = async (location: string) => {
-    if (input.sessionCookie) await revokeSession(db, workspace.id, input.sessionCookie);
+    if (token) await revokeSession(db, workspace.id, token);
     return go(location);
   };
   const code = input.query.get("code");
@@ -152,12 +154,23 @@ export async function finishSignIn(db: Db, deps: SignInDeps, input: CallbackInpu
     privateLog("w.no_access", { workspace: workspace.id });
     return out(`/w/${workspace.slug}/no-access?why=${refusal.why}`);
   }
-  return admit(db, workspace, member, refusal, {
+  const made = await admit(db, workspace, member, refusal, {
     now: deps.now,
-    analytics: analyticsKey(deps.env) !== undefined,
-    token: input.sessionCookie,
+    token,
     back: state.back,
   });
+  return landing(deps.env, made.home, [made.cookie]);
+}
+
+/**
+ * The redirect after a sign-in, with the session cookies it made. With analytics on and a session made, a
+ * fragment that never reaches a server: the page counts the sign-in and removes it (D77). A renewal is not
+ * a sign-in.
+ */
+export function landing(env: Env, to: string, cookies: (string | null)[]): Step {
+  const made = cookies.filter((c): c is string => c !== null);
+  const hash = made.length > 0 && analyticsKey(env) !== undefined ? SIGNED_IN_HASH : "";
+  return go(`${to}${hash}`, [clearState, ...made]);
 }
 
 /**
@@ -183,14 +196,14 @@ export function refusalOf(
   return notMember ? "not_member" : "no_role";
 }
 
-type Admission = { why: null; endsBy: Date | null; viaRole: boolean; tier: SessionTier };
+export type Admission = { why: null; endsBy: Date | null; viaRole: boolean; tier: SessionTier };
 
 /** Whether the member's roles (null: not in the server) include one of `ids`. */
 const holdsAny = (roles: string[] | null, ids: string[]) =>
   roles?.some((r) => ids.includes(r)) ?? false;
 
 /** The refusal, or the session's tier and the end the allowlist puts on it (null otherwise). */
-async function refusalFor(
+export async function refusalFor(
   db: Db,
   workspace: WorkspaceRow,
   member: Extract<DiscordMember, { ok: true }>,
@@ -212,27 +225,28 @@ async function refusalFor(
   return { why: null, endsBy, viaRole, tier: "officer" };
 }
 
-async function admit(
+/**
+ * The person passed: stored, and the browser's session of this workspace renewed or made. Returns the cookie
+ * to set (null when the browser's stays) and where to land: `back` (the page asked for) or the desk for an
+ * officer, always the board for a member (D105).
+ */
+export async function admit(
   db: Db,
   workspace: WorkspaceRow,
   member: Extract<DiscordMember, { ok: true }>,
   { endsBy, viaRole, tier }: Admission,
-  o: { now: Date; analytics: boolean; token: string | undefined; back: string | null },
-): Promise<Step> {
+  o: { now: Date; token: string | undefined; back: string | null },
+): Promise<{ cookie: string | null; home: string }> {
   // Only people who get in are stored: a refused account leaves no row.
   const userId = await recordSignIn(db, workspace.id, member.userId, member.displayName, o.now);
-  const ids = { workspaceId: workspace.id, workspaceUserId: userId, tier };
+  const ids = { slug: workspace.slug, workspaceId: workspace.id, workspaceUserId: userId, tier };
   const cookie = await renewOrCreate(db, o.token, ids, o.now, endsBy);
   privateLog(cookie ? "w.sign_in" : "w.renewed", {
     workspace: workspace.id,
     via_role: viaRole ? 1 : 0,
     member: tier === "member" ? 1 : 0,
   });
-  // With analytics on, a fragment that never reaches a server: the page counts the sign-in and removes it
-  // (D77). A renewal is not a sign-in. A member always lands on the board (D105).
-  const hash = cookie && o.analytics ? SIGNED_IN_HASH : "";
   const home =
     tier === "member" ? `/w/${workspace.slug}/board` : (o.back ?? `/w/${workspace.slug}`);
-  const to = `${home}${hash}`;
-  return go(to, cookie ? [clearState, cookie] : [clearState]);
+  return { cookie, home };
 }

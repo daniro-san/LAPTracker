@@ -1,11 +1,14 @@
 // The comparison page for one event: `/` and `/events/[id]` render this (plan Phase 5, 5f). Top to
 // bottom: ledger title and byline, the event's date, the status strip and legend, then every alliance by
-// rank. Quota, run errors and the run buttons live on /admin. The game's own board is not shown (owner,
-// 2026-11-05): it is still collected as a cross-check but never feeds a number on the page.
+// rank. Quota, run errors and the run buttons live on /admin. The game's own board feeds no number on this
+// page (owner, 2026-11-05): here it is only a cross-check. D133 shows its numbers on /alliances and each
+// alliance's own page, labelled "Ranks board", and this page links there.
+import { TextLink } from "@/lib/brand/components/TextLink";
 import type { NameHistoryEntry } from "@/lib/compute";
 import { fill, type Dictionary } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
 import { isOn } from "@/lib/flags";
+import { withPageDb } from "@/lib/page";
 import type {
   Carried,
   getEventDetail,
@@ -14,6 +17,7 @@ import type {
   RosterChange,
   TurnoutLists,
 } from "@/lib/queries";
+import { boardCount } from "@/lib/queries/alliance-list";
 import type { getEventPage } from "@/lib/queries/event-page";
 import { nextEvent } from "@/lib/schedule";
 
@@ -142,6 +146,20 @@ async function TitleActions({
   );
 }
 
+/** Under the ledger: the way to every alliance on the server (D133); none before the first board. */
+async function AllAlliancesLink({ copy }: { copy: Dictionary }) {
+  const n = await withPageDb(boardCount);
+  if (n === 0) return null;
+  return (
+    <p className="mt-2">
+      <TextLink href="/alliances" className="inline-flex min-h-11 items-center text-sm font-medium">
+        {fill(copy.alliances.link, { n })}
+        <span aria-hidden="true">&nbsp;→</span>
+      </TextLink>
+    </p>
+  );
+}
+
 /** The event's date (and name) with the compare and exact-numbers controls. */
 function EventHead({
   detail,
@@ -219,7 +237,6 @@ export async function EventView({
     loadProgress(detail, now),
   ]);
   const rows = comparisonRows(detail.snapshots, changes, names, ranks, copy);
-  const worst = rows.map((r) => worstOf(fresh(r.before), fresh(r.after)));
   const moverScopes = moverScopesOf(movers, detail.id, changes, copy);
   const liveProps = { eventId: detail.id, rows, endAt: endTime(detail), clock, copy, locale };
   const hasMovers = moverScopes.some((s) => Object.values(s.lists).some((l) => l && l.length > 0));
@@ -232,7 +249,7 @@ export async function EventView({
         {progress && <LiveStrip {...liveProps} progress={progress} />}
         <TopStatus
           detail={detail}
-          worst={worst}
+          worst={rows.map((r) => worstOf(fresh(r.before), fresh(r.after)))}
           hasMovers={hasMovers}
           live={progress?.live === true}
           hasDuring={progress !== null && !progress.live && progress.readings > 0}
@@ -250,6 +267,7 @@ export async function EventView({
           empty={emptyLine(detail.manual, detail.snapshots.length, copy)}
           copy={copy}
         />
+        <AllAlliancesLink copy={copy} />
         <NextUpdate
           at={nextUpdateAt(
             detail.snapshots.map((s) => s.phase),

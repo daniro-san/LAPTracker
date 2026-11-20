@@ -2,10 +2,11 @@
 // grouped by the attacker's alliance and by attacker, with "to follow up" per attacker. The
 // attackers are looked up in the public read model of the tracked alliances' rosters (names and tags only);
 // the victims in the workspace's own alliance (D71: union_id = access.unionId). Nothing here is logged.
-import { ALLIANCES, SERVER } from "../../config/alliances";
+import { SERVER } from "../../config/alliances";
 import type { Db } from "../db";
 import { leaderNames } from "../queries/leadership";
 import { serverPlayers } from "../queries/server-players";
+import { allianceLabels, trackedAllianceIds } from "../repo/alliances";
 import {
   attackerServers,
   followUpRequested,
@@ -143,11 +144,19 @@ export async function theftsView(
   }));
   const groups = groupThefts(entries, changes, week, servers);
   // A tracked alliance (never our own) is one to contact when one of its attackers is on our server and
-  // carries its tag exactly: tags are case-sensitive and not unique (config/alliances.ts).
+  // carries its tag exactly: tags are case-sensitive and not unique. Today's tracked set (D133).
+  const trackedIds = await trackedAllianceIds(db);
+  const labels = await allianceLabels(db, trackedIds);
+  const tracked = trackedIds.map((unionId) => ({
+    unionId,
+    tag: labels.get(unionId)?.tag ?? null,
+    name: labels.get(unionId)?.name ?? "",
+  }));
   const trackedOf = (g: AllianceGroup) =>
-    ALLIANCES.find(
+    tracked.find(
       (t) =>
         t.unionId !== access.unionId &&
+        t.tag !== null &&
         g.attackers.some((a) => a.server === SERVER && a.tag === t.tag),
     );
   const leaders = await leaderNames(
@@ -160,7 +169,7 @@ export async function theftsView(
       const leader = t ? (leaders.get(t.unionId) ?? null) : null;
       return { ...g, contact: t ? { unionId: t.unionId, name: t.name, leader } : null };
     }),
-    ownTag: ALLIANCES.find((a) => a.unionId === access.unionId)?.tag ?? "",
+    ownTag: access.alliance?.tag ?? "",
     week,
     roster: roster.map((m) => ({ uid: m.uid, name: m.name })),
   };

@@ -4,7 +4,7 @@ import { TEST_ENV } from "../app-context.test-helpers";
 import { T0 } from "../collector.test-helpers";
 import type { Db } from "../db";
 import type { CookieReader } from "./access";
-import { SESSION_COOKIE } from "./session";
+import { SESSION_COOKIE, sessionCookieName } from "./session";
 import { finishSignIn, startSignIn, STATE_COOKIE, type Step } from "./sign-in";
 
 export const ORIGIN = "https://laptracker.test";
@@ -82,9 +82,9 @@ export async function signInWith(
   const step = await finishSignIn(db, deps(now, more), {
     query,
     stateCookie: state,
-    sessionCookie: o.session,
+    cookies: jar(o.session),
     ip: "198.51.100.1",
     origin: ORIGIN,
   });
-  return { step, token: cookieValue(step, SESSION_COOKIE) };
+  return { step, token: cookieValue(step, sessionCookieName(slug)) };
 }

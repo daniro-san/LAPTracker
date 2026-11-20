@@ -26,7 +26,7 @@ export const STATUS_TONE = {
 /** What every card's editor shares: the workspace, the words, the server's zone, the zones in use. */
 export type EditorContext = Pick<
   EditorProps,
-  "slug" | "words" | "language" | "serverZone" | "used"
+  "slug" | "words" | "shots" | "language" | "serverZone" | "used"
 >;
 
 /** Which way into the facts editor is open, if any. */

@@ -160,11 +160,11 @@ export const workspacesAdminCopy = {
       failed: "Could not reach the server. Try again.",
     },
   },
-  /** The squads read started by hand, outside its nightly window (D117, amendment 2026-11-19b). */
+  /** The squads read's daily queue and a press that runs its next batches now (D117, amendment 2026-11-19b; D132). */
   squads: {
     title: "Squads read",
-    help: "Starts the squads read now instead of waiting for the night. One press reads for up to 4 minutes. Same rules as the nightly read: each workspace's own key, at most 120 calls a day, the quota reserve, nobody read twice in a quota day. Not during an event's Before/After window.",
-    day: "This quota day's read: {day}. The nightly read uses the same one.",
+    help: "Every 15-minute tick reads a small batch of each workspace's squads queue. A press reads the next batches now instead of waiting for the tick, for up to 4 minutes. Same rules either way: each workspace's own key, at most 120 calls a day, the quota reserve, one read per member a day, at most 3 tries each. Not during an event's Before/After window.",
+    day: "This quota day's queue: {day}. The ticks use the same one.",
     runAll: "Run the squads read now for all workspaces",
     run: "Run the squads read now",
     next: "Run the next batch",
@@ -173,7 +173,9 @@ export const workspacesAdminCopy = {
     empty: "No workspace has the squads read on.",
     batchRunning: "A batch is running now.",
     progress:
-      "Read {reached} of {members} · {retrying} waiting to retry · {failed} failed · quota left {quota}",
+      "Squads today: {read} of {members} read · {retrying} waiting to retry · {failed} not read · quota left {quota}",
+    nextTry: "Next try at {at} server time.",
+    waitingLater: "{waiting} waiting to try again · next try at {at} ST",
     quotaUnknown: "unknown",
     lastBatch: "Last batch {ago}.",
     status: {
@@ -181,6 +183,12 @@ export const workspacesAdminCopy = {
       done: "Done.",
       stopped: "Stopped: {reason}.",
       skipped: "Skipped: {reason}.",
+    },
+    /** D132: a stop reason in words; any other reason shows as its code. */
+    reasons: {
+      key: "the tracker refused the key",
+      limit: "the limit is reached until 00:00 UTC",
+      cap: "the day's 120 calls are used",
     },
     started: "Started for {list}. Reload in a few minutes to see how far it got.",
     errors: {

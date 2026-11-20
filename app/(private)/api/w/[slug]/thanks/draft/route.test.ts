@@ -73,13 +73,13 @@ describe("POST /api/w/[slug]/thanks/draft and the alliance's switches (D126)", (
     expect([off.status, await off.json()]).toEqual([403, { code: "turned_off" }]);
 
     // Three languages do not fit a cap of 2: nothing is asked or counted.
-    await db.update(workspaceFeatures).set({ switches: {}, aiPerDay: 2 });
+    await db.update(workspaceFeatures).set({ switches: {}, caps: { ai: 2 } });
     const capped = await draft();
     expect([capped.status, await capped.json()]).toEqual([429, { code: "cap_reached" }]);
     expect(asked).toEqual([]);
     expect(await used()).toEqual([]);
 
-    await db.update(workspaceFeatures).set({ aiPerDay: null });
+    await db.update(workspaceFeatures).set({ caps: {} });
     expect((await draft()).status).toBe(429);
     expect(asked.length).toBeGreaterThanOrEqual(3);
     // English and Portuguese answered and stay counted; French failed and was given back.

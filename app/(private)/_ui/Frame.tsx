@@ -7,7 +7,6 @@
 import { cookies, headers } from "next/headers";
 import type { ReactNode } from "react";
 
-import { ALLIANCES } from "@/config/alliances";
 import { analyticsPerson } from "@/lib/analytics/person";
 import { AppShell } from "@/lib/brand/components/layout/AppShell";
 import { fill, isolate } from "@/lib/copy";
@@ -167,12 +166,12 @@ export function SignedInFrame({
 }) {
   const view = at in VIEW_TAB ? (at as DeskView) : undefined;
   const current = view ? VIEW_TAB[view] : (at as TabId);
-  const alliance = ALLIANCES.find((a) => a.unionId === access.unionId);
+  const { alliance } = access;
   const person = analyticsPerson(getEnv(), {
     userId: access.user.id,
     tier: "officer",
     slug: access.slug,
-    unionId: access.unionId,
+    alliance,
   });
   return (
     <SignedOutProvider slug={access.slug} text={t["signedOut.text"]} link={t["signedOut.link"]}>

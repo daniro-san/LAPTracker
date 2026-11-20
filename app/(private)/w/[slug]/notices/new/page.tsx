@@ -14,8 +14,7 @@ const EMPTY = Object.fromEntries(
 
 export default async function NewNoticePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const { access, waiting, off } = await noticePage(slug, async () => true, "/new");
-  if (off) return off;
+  const { access, waiting } = await noticePage(slug, async () => true, "/new");
   const { language, t } = await workspaceWords();
   return (
     <SignedInFrame access={access} language={language} t={t} current="notices" waiting={waiting}>

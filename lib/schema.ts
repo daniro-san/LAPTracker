@@ -277,7 +277,7 @@ export const dailyReads = pgTable(
 );
 
 /**
- * One alliance's roster from a daily read (D60): the members as four parallel arrays (uid, name, power,
+ * One alliance's roster from a daily read (D60), or from "Get today's details" (D133): the members as four parallel arrays (uid, name, power,
  * kills; a null power or kills stays null, D15) that the member history reads, and the trimmed response
  * in raw_json (D72), which keeps every roster field (daily_tech among them) and which no read model,
  * route, page, log or message selects. Error rows and rows from before D72 have none.
@@ -286,9 +286,9 @@ export const dailyRosters = pgTable(
   "daily_rosters",
   {
     id: serial("id").primaryKey(),
-    readDay: date("read_day", { mode: "string" })
-      .notNull()
-      .references(() => dailyReads.day),
+    // No foreign key to daily_reads since D133: "Get today's details" stores its roster here under a day the
+    // daily read may not have claimed yet.
+    readDay: date("read_day", { mode: "string" }).notNull(),
     unionId: big("union_id").notNull(),
     tag: text("tag"),
     name: text("name"),

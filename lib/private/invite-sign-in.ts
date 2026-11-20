@@ -58,8 +58,15 @@ export interface InviteCallback {
   origin: string;
 }
 
-/** D73's state rule: past the IP's limit, or a state that is not the cookie's (counted), is refused. */
-async function stateRefusal(db: Db, input: InviteCallback, now: Date): Promise<Step | null> {
+/**
+ * D73's state rule: past the IP's limit, or a state that is not the cookie's (counted), is refused. Also the
+ * sign-in chooser's (D131).
+ */
+export async function stateRefusal(
+  db: Db,
+  input: Pick<InviteCallback, "query" | "stateCookie" | "ip">,
+  now: Date,
+): Promise<Step | null> {
   const ipKey = `w:ip:${input.ip}`;
   if ((await currentCount(db, ipKey, IP_WINDOW_MS, now)) >= IP_LIMIT) {
     return { kind: "refused", status: 429, code: "rate_limited" };

@@ -1,5 +1,5 @@
 // Test-only fakes for the collector's Deps: v1 and internal sources, a settable clock, a silent logger.
-import { ALLIANCES } from "../config/alliances";
+import { TRACKED_COUNT } from "../config/alliances";
 import type { Deps } from "./collector";
 import { sumKills, sumPower } from "./compute";
 import type { Logger } from "./logger";
@@ -11,10 +11,18 @@ import {
   type OnAttempt,
   type V1Source,
 } from "./sources/types";
+import { playerAnswer } from "./squads.test-helpers";
 
 export const T0 = new Date("2026-11-07T12:00:00Z");
 export const EVENT_ID = 1;
-export const IDS: number[] = ALLIANCES.map((a) => a.unionId);
+/** The tracked set in tests (D133): 20 invented ids, the board's top 20 by might in this order. */
+export const IDS: number[] = Array.from({ length: TRACKED_COUNT }, (_, i) => 67_120_001 + i);
+/** Alliances on the board below the top 20: never read by the daily read or an event. */
+export const BOARD_EXTRA: number[] = [67_120_101, 67_120_102, 67_120_103];
+/** Each id's tag on the fake board: "T" and its last three digits, as `roster` names it. */
+export const LABELS = new Map(
+  [...IDS, ...BOARD_EXTRA].map((id) => [id, { tag: `T${id % 1000}`, name: `Alliance ${id}` }]),
+);
 export const minutes = (n: number) => n * 60_000;
 export const ago = (now: Date, ms: number) => new Date(now.getTime() - ms);
 
@@ -78,7 +86,7 @@ export function fakeV1(alliance: (id: number, call: number) => Outcome, remainin
     // The squads read (D117) replaces this where it is tested; nothing else calls it.
     fetchPlayer: async (uid: number, onAttempt?: OnAttempt) => {
       onAttempt?.(0);
-      return { uid, squads: [], quota: null };
+      return playerAnswer(uid);
     },
   };
   return v1;
@@ -88,11 +96,17 @@ export function fakeInternal(alliance: (id: number) => Outcome = () => new NotLi
   const calls: number[] = [];
   const internal: InternalSource & { calls: number[] } = {
     calls,
-    fetchRanks: async () => ({
-      pulledAt: ago(T0, minutes(240)),
-      power: new Map(IDS.map((id) => [id, 5_000_000])),
-      kills: new Map(IDS.map((id) => [id, 700])),
-    }),
+    fetchRanks: async () => {
+      const all = [...IDS, ...BOARD_EXTRA];
+      return {
+        pulledAt: ago(T0, minutes(240)),
+        power: new Map(all.map((id, i) => [id, 5_000_000 - i * 1000])),
+        kills: new Map(all.map((id) => [id, 700])),
+        labels: new Map(
+          all.map((id) => [id, { tag: `T${id % 1000}`, name: `Alliance ${id}`, badgeId: 110 }]),
+        ),
+      };
+    },
     fetchAlliance: async (id: number) => {
       calls.push(id);
       const outcome = alliance(id);
@@ -116,7 +130,7 @@ export function makeDeps(
   allianceIds = IDS,
 ) {
   const clock = { now: T0 };
-  const repo = createMemoryRepo([{ id: EVENT_ID, allianceIds }]);
+  const repo = createMemoryRepo([{ id: EVENT_ID, allianceIds }], IDS, LABELS);
   const deps: Deps = { v1, internal, repo, logger: silentLogger, now: () => clock.now };
   return { deps, repo, clock };
 }

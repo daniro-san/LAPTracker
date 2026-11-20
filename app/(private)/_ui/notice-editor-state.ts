@@ -50,6 +50,9 @@ export interface EditorProps {
   id: number | null;
   fields: NoticeFields;
   stale: NoticeLanguage[];
+  /** The saved languages that came from Translate, and those a review approved since (issue 412). */
+  translated?: NoticeLanguage[] | undefined;
+  reviewed?: NoticeLanguage[] | undefined;
   t: WorkspaceDictionary;
   viewer: WorkspaceLanguage;
   ai: boolean;
@@ -61,6 +64,8 @@ export interface EditorProps {
   source: NoticeLanguage | null;
   /** Opened from the read page's "Out of date" tag: this language is brought into view. */
   focus?: NoticeLanguage | undefined;
+  /** Opened with Edit from the read page: the tab in view there, without scrolling to it (issue 412). */
+  start?: NoticeLanguage | undefined;
   /** The notice's saves, newest first (D102); none for a new notice. */
   history?: HistoryItem[] | undefined;
   /** More edits exist than `history` holds: how many of the newest it holds. */
@@ -221,7 +226,9 @@ export function useEditor(p: EditorProps, picture: PictureDraft) {
   /** The action running now, if any: every AI button and Save wait for it. */
   const [busy, setBusy] = useState<Busy>(null);
   const [aiMessage, setAiMessage] = useState<AiMessage | null>(null);
-  const [active, setActive] = useState<NoticeLanguage>(p.focus ?? p.languages[0] ?? "en");
+  const [active, setActive] = useState<NoticeLanguage>(
+    p.focus ?? p.start ?? p.languages[0] ?? "en",
+  );
   /** "Restore this version" was pressed: the editor says what to do next until the draft is saved. */
   const [restored, setRestored] = useState(false);
   /** The tab the officer last typed in: where Translate fills an empty tab from. */

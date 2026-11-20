@@ -1,6 +1,7 @@
 // Alliance settings and the tracker key (D124, issue 438) in English, Brazilian Portuguese and French: one
 // module the three workspace dictionaries spread. The key itself is never shown: only its last 4
 // characters, its status and the quota it has left. French puts a no-break space before : and inside « ».
+import { chooserEn, chooserFr, chooserPt } from "./dictionary.chooser";
 import { discordEn, discordPt } from "./dictionary.discord";
 import { discordFr } from "./dictionary.discord-fr";
 import { inviteEn, invitePt } from "./dictionary.invite";
@@ -27,6 +28,8 @@ export const settingsEn = {
   "key.label": "Your tracker key",
   "key.help":
     "It starts with lap_. Saving tests it with one call on this key’s quota. It is stored encrypted and never shown again.",
+  "key.get": "Don’t have a key yet?",
+  "key.getLink": "Get yours on the tracker",
   "key.save": "Save and test",
   "key.saving": "Testing the key…",
   "key.replace": "Replace",
@@ -51,11 +54,24 @@ export const settingsEn = {
   "key.card.invalid": "The tracker refused your key, so squads are paused. Replace it.",
   "key.card.out_of_quota":
     "Your key has no quota left today. Squads start again after the reset at 00:00 UTC.",
+  "key.card.where":
+    "To get a key: sign in with Patreon on the tracker’s API page and create one; it starts with lap_. A free account gets 1,000 calls a day, a paid membership 2,000.",
+  "key.card.whereLink": "Open the tracker’s API page",
   "activity.key.set": "{who} updated the tracker key",
   "activity.key.removed": "{who} removed the tracker key",
+  // D132: today's squads read, under the key.
+  "squads.today": "Squads today: {read} of {members} read · {retrying} waiting to try again",
+  "squads.todayNext": "next try at {at} ST",
+  "squads.todayNone": "Squads today: not started yet. They are read after the daily roster.",
+  "squads.todayStopped": "Squads today: {read} of {members} read · stopped: {why}",
+  "squads.todayStoppedNone": "Squads today: stopped: {why}",
+  "squads.stop.key": "the tracker refused the key",
+  "squads.stop.limit": "the limit is reached until 00:00 UTC",
+  "squads.stop.cap": "today’s 120 reads are used",
   // D129: Alliance settings → Discord.
   ...discordEn,
   ...inviteEn,
+  ...chooserEn,
 };
 
 export const settingsPt: typeof settingsEn = {
@@ -83,6 +99,8 @@ export const settingsPt: typeof settingsEn = {
   "key.label": "Sua chave do tracker",
   "key.help":
     "Começa com lap_. Ao salvar, ela é testada com uma chamada na cota desta chave. Fica guardada criptografada e nunca é mostrada de novo.",
+  "key.get": "Ainda não tem chave?",
+  "key.getLink": "Pegue a sua no tracker",
   "key.save": "Salvar e testar",
   "key.saving": "Testando a chave…",
   "key.replace": "Trocar",
@@ -108,11 +126,24 @@ export const settingsPt: typeof settingsEn = {
   "key.card.invalid": "O tracker recusou sua chave, então os esquadrões estão pausados. Troque-a.",
   "key.card.out_of_quota":
     "Sua chave está sem cota hoje. Os esquadrões voltam depois do reinício às 00:00 UTC.",
+  "key.card.where":
+    "Para pegar uma chave: entre com o Patreon na página da API do tracker e crie uma; ela começa com lap_. A conta grátis tem 1.000 chamadas por dia, o apoio pago 2.000.",
+  "key.card.whereLink": "Abrir a página da API do tracker",
   "activity.key.set": "{who} atualizou a chave do tracker",
   "activity.key.removed": "{who} removeu a chave do tracker",
+  "squads.today":
+    "Esquadrões hoje: {read} de {members} lidos · {retrying} esperando nova tentativa",
+  "squads.todayNext": "próxima tentativa às {at} ST",
+  "squads.todayNone": "Esquadrões hoje: ainda não começou. Eles são lidos depois da lista diária.",
+  "squads.todayStopped": "Esquadrões hoje: {read} de {members} lidos · parado: {why}",
+  "squads.todayStoppedNone": "Esquadrões hoje: parado: {why}",
+  "squads.stop.key": "o tracker recusou a chave",
+  "squads.stop.limit": "o limite foi atingido até 00:00 UTC",
+  "squads.stop.cap": "as 120 leituras de hoje foram usadas",
   // D129: Alliance settings → Discord.
   ...discordPt,
   ...invitePt,
+  ...chooserPt,
 };
 
 export const settingsFr: typeof settingsEn = {
@@ -140,6 +171,8 @@ export const settingsFr: typeof settingsEn = {
   "key.label": "Votre clé du tracker",
   "key.help":
     "Elle commence par lap_. L’enregistrer la teste avec un appel sur le quota de cette clé. Elle est stockée chiffrée et n’est plus jamais affichée.",
+  "key.get": "Pas encore de clé ?",
+  "key.getLink": "Obtenez la vôtre sur le tracker",
   "key.save": "Enregistrer et tester",
   "key.saving": "Test de la clé…",
   "key.replace": "Remplacer",
@@ -166,9 +199,23 @@ export const settingsFr: typeof settingsEn = {
     "Le tracker a refusé votre clé, les escouades sont donc en pause. Remplacez-la.",
   "key.card.out_of_quota":
     "Votre clé n’a plus de quota aujourd’hui. Les escouades reprennent après la remise à zéro à 00:00 UTC.",
+  "key.card.where":
+    "Pour obtenir une clé : connectez-vous avec Patreon sur la page API du tracker et créez-en une ; elle commence par lap_. Un compte gratuit a 1 000 appels par jour, un abonnement payant 2 000.",
+  "key.card.whereLink": "Ouvrir la page API du tracker",
   "activity.key.set": "{who} a mis à jour la clé du tracker",
   "activity.key.removed": "{who} a retiré la clé du tracker",
+  "squads.today":
+    "Escouades aujourd’hui : {read} sur {members} lues · {retrying} en attente d’un nouvel essai",
+  "squads.todayNext": "prochain essai à {at} ST",
+  "squads.todayStopped": "Escouades aujourd’hui : {read} sur {members} lues · arrêté : {why}",
+  "squads.todayStoppedNone": "Escouades aujourd’hui : arrêté : {why}",
+  "squads.stop.key": "le tracker a refusé la clé",
+  "squads.stop.limit": "la limite est atteinte jusqu’à 00:00 UTC",
+  "squads.stop.cap": "les 120 lectures du jour sont utilisées",
+  "squads.todayNone":
+    "Escouades aujourd’hui : pas encore commencé. Elles sont lues après la liste quotidienne.",
   // D129: Alliance settings → Discord.
   ...discordFr,
   ...inviteFr,
+  ...chooserFr,
 };

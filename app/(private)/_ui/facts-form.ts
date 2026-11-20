@@ -76,7 +76,6 @@ export const EDITOR_KEYS = [
   "shot.failed",
   "shot.busy",
   "shot.notKept",
-  "features.off.read",
   "tz.choose",
   "tz.search",
   "tz.searchAria",
@@ -113,7 +112,6 @@ const UPDATES_KEYS = [
   "shot.failed",
   "shot.busy",
   "shot.notKept",
-  "features.off.read",
 ] as const;
 export type UpdatesWords = Pick<WorkspaceDictionary, (typeof UPDATES_KEYS)[number]>;
 

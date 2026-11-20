@@ -372,6 +372,41 @@
       "when": 1795146810316,
       "tag": "0052_alliance_invites",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1795154507241,
+      "tag": "0053_squads_queue_player_reads",
+      "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1795159175858,
+      "tag": "0054_all_alliances",
+      "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1795160718686,
+      "tag": "0055_lookup_refused",
+      "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1795161389549,
+      "tag": "0056_notice_translated",
+      "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1795161965329,
+      "tag": "0057_two_layer_switches",
+      "breakpoints": true
     }
   ]
 }

@@ -70,3 +70,5 @@ Why: the desk opens to other alliances (issue 438). Today the squads read (D117)
 **Amendment (2026-11-19, 11aw, issue 450): the squads read can be turned off per workspace (D126).** `squadTargets` leaves out a workspace whose "Squads read" switch the owner turned off on /admin; its stored squads stay. OGs keeps the read on by default.
 
 **Amendment (2026-11-20, issue 451, D129).** `sealKey` and `openKey` take the secret's purpose as part of the associated data: a tracker key stays `laptracker/workspace-key/<id>` (rows already saved open as before); a notice webhook is `laptracker/webhook-<channel>/<id>`. Changing `WORKSPACE_KEYS_SECRET` also makes every saved webhook need to be pasted again.
+
+**Amendment (2026-11-20, D133, issue 459).** A workspace's alliance outside the tracked set is now in the daily read, on its own key when it saved a usable one. Without a saved key, or with the keys off, it is read on `LAP_API_KEY`. With a saved key that cannot be used now, it is not read, and never on ours. A 401 or 429 on that key marks the key and fails only that alliance. The tracked alliances' daily read stays on our key.
