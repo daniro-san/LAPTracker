@@ -55,4 +55,4 @@ Issue 483. Owner, 2026-11-20: a feature the owner turned off for an alliance is 
 - Only these feature-related words remain in `lib/private/dictionary.features.ts`: `features.off.command` (the stale Discord command) and `features.cap.ai` / `features.cap.translate`.
 </adjustments>
 
-PR: (added by the orchestrator)
+https://github.com/daniro-san/LAPTracker/pull/506
