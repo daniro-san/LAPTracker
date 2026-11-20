@@ -41,4 +41,4 @@
 - `squadsProgress` already gives the counts a desk status bar (issue 478) would need: reached, members, retrying, failed, batch running, last batch.
 </adjustments>
 
-PR: (added by the orchestrator)
+https://github.com/daniro-san/LAPTracker/pull/482
