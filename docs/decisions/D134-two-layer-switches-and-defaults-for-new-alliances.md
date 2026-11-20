@@ -46,7 +46,11 @@ Why: the owner (issue 476, 2026-11-20) wants every feature that spends quota to 
   - /admin shows the same line on each workspace's card. It counts what is on now, both layers and the pauses.
 - Today's use stays where it is: the key card's "Quota left", and D132's "Squads today" progress line beside it.
 - **Details lookups spend no tracker call today.** D98's member details are read from our own database on open, so they are not in the catalog. A future feature that calls the tracker adds a `TRACKER_CALLS` entry and is a switch.
-- **Not done here:** enemy KvK reads (issue 306) and our own key's planned use on /admin. Both are left for issues 306 and 485. The squads read's own cap stays 120 calls a day (D117, D132); there is no per-workspace tracker-call cap yet.
+- **Not done here, tracked elsewhere:**
+  - enemy KvK reads: issue 306;
+  - our own key's planned use on /admin: issue 485;
+  - a per-workspace cap on tracker calls: a line in issue 485. Until then, the squads read's own cap stays 120 calls a day (D117, D132).
+- **When a default for notices or notice pictures changes**, D119's warnings start again in every workspace that follows it (every one but OGs and those with a value of their own), as the owner's switch on one workspace does (D126). A picture is never deleted without a full 7-day warning on Home.
 
 **Existing workspaces after the release.** An alliance other than OGs with no override of its own follows the new defaults.
 
@@ -64,6 +68,8 @@ Why: the owner (issue 476, 2026-11-20) wants every feature that spends quota to 
 
 **Tests.**
 
+- `lib/private/notice-picture.test.ts`: a default that turns pictures off and on between two cleanups gives the picture a fresh 7-day warning.
+- `lib/repo/workspace-features-migration.test.ts`: migration 0057 moves each cap that was set into the `caps` map, from rows seeded under the 0056 schema, and leaves out the caps that were null.
 - `lib/private/features.test.ts`:
   - a changed default moves the workspaces on it and never one with its own value, nor OGs;
   - a feature is on only when both layers say on;
@@ -73,7 +79,7 @@ Why: the owner (issue 476, 2026-11-20) wants every feature that spends quota to 
   - Reset;
   - the defaults route and its PIN.
 - `app/(private)/api/w/[slug]/features/route.test.ts`:
-  - only allowed features are listed and can be turned on;
+  - only allowed features are listed and can be turned on, and the answer carries the switch as stored;
   - the estimate from the newest roster;
   - the rate limit and a missing session.
 - The issue 471 isolation suite: Alpha's officer changes only Alpha's switches, Alpha's session at Bravo's address is `401 signed_out`, and only Alpha is counted.

@@ -75,7 +75,7 @@ export async function allianceFeaturesView(
 
 /**
  * The officers' switch. rate_limited: past SWITCHES in the window. not_allowed: the owner did not allow the
- * feature (a stale page). A Discord command's switch registers the alliance's commands again when its server
+ * feature (a stale page). Through: the alliance's switch as stored after the save. A Discord command's switch registers the alliance's commands again when its server
  * had them (D129), so a command turned off leaves the Apps menu.
  */
 export async function setAllianceFeature(
@@ -83,7 +83,7 @@ export async function setAllianceFeature(
   access: WorkspaceAccess,
   input: z.infer<typeof allianceFeatureInput>,
   deps: CommandDeps,
-): Promise<{ ok: true } | { ok: false; code: "rate_limited" | "not_allowed" }> {
+): Promise<{ ok: true; on: boolean } | { ok: false; code: "rate_limited" | "not_allowed" }> {
   const tries = await recordFailure(
     db,
     `features:ws:${access.workspaceId}`,
@@ -99,5 +99,7 @@ export async function setAllianceFeature(
   if (changesCommands({ action: "switch", feature: input.feature })) {
     await syncCommands(db, deps, { only: [access.workspaceId], registered: true });
   }
-  return { ok: true };
+  // The switch as stored now, read back: what the page shows after the save.
+  const saved = await settingsById(db, access.workspaceId);
+  return { ok: true, on: !saved?.settings.allianceOff.includes(input.feature) };
 }

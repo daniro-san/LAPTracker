@@ -13,6 +13,26 @@ import type { WorkspaceDictionary } from "@/lib/private/dictionary";
 
 import { RefusalLine, SIGNED_OUT } from "./SignedOut";
 
+/**
+ * POST /api/w/[slug]/features. `saved`: the switch as the server stored it, or null when refused; `code`: the
+ * refusal's code ("failed" for no answer).
+ */
+async function postSwitch(
+  slug: string,
+  feature: string,
+  on: boolean,
+): Promise<{ saved: boolean | null; code: string | null }> {
+  const res = await fetch(`/api/w/${slug}/features`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ feature, on }),
+  }).catch(() => null);
+  const body = (await res?.json().catch(() => ({}))) as
+    { code?: unknown; on?: unknown } | undefined;
+  if (res?.ok && typeof body?.on === "boolean") return { saved: body.on, code: null };
+  return { saved: null, code: typeof body?.code === "string" ? body.code : "failed" };
+}
+
 export function AllianceFeatures({
   slug,
   view,
@@ -27,24 +47,19 @@ export function AllianceFeatures({
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // The box shows the tap at once; a refusal puts it back. After a save, the refreshed page agrees with it.
+  // The box shows the tap at once; a refusal puts it back, and a save shows the value the server stored.
   const [tapped, setTapped] = useState<{ feature: string; on: boolean } | null>(null);
   const n = (x: number) => new Intl.NumberFormat(language).format(x);
   const turn = async (feature: string, on: boolean) => {
     setBusy(true);
     setError(null);
     setTapped({ feature, on });
-    const res = await fetch(`/api/w/${slug}/features`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ feature, on }),
-    }).catch(() => null);
-    const code =
-      res && !res.ok
-        ? String(((await res.json().catch(() => ({}))) as { code?: unknown }).code)
-        : null;
+    const { saved, code } = await postSwitch(slug, feature, on);
     setBusy(false);
-    if (res?.ok) return router.refresh();
+    if (saved !== null) {
+      setTapped({ feature, on: saved });
+      return router.refresh();
+    }
     setTapped(null);
     if (code === SIGNED_OUT) return setError(SIGNED_OUT);
     setError(t[code === "rate_limited" ? "switches.rateLimited" : "switches.failed"]);

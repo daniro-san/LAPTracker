@@ -80,7 +80,9 @@ describe("POST /api/w/[slug]/features (D134)", () => {
 
     await allowSquads();
     expect(await listed()).toContain("squads");
-    expect((await post({ feature: "squads", on: true })).status).toBe(200);
+    // The answer carries the switch as stored, which the page shows after the save.
+    const saved = await post({ feature: "squads", on: true });
+    expect([saved.status, await saved.json()]).toEqual([200, { ok: true, on: true }]);
     expect((await featuresBySlug(db, "nse"))?.on.has("squads")).toBe(true);
     expect((await post({ feature: "thefts", on: false })).status).toBe(200);
     expect((await featuresBySlug(db, "nse"))?.on.has("thefts")).toBe(false);

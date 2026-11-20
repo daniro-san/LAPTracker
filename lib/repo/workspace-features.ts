@@ -3,8 +3,9 @@
 // what each workspace used of each allowance per UTC day, and the owner's global pauses. Counts only:
 // nothing here says who asked or what was asked. Every change is one statement, so quick taps never undo
 // each other.
-import { and, asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, ne, sql } from "drizzle-orm";
 
+import { OWN_ALLIANCE_ID } from "../../config/alliances";
 import type { Db } from "../db";
 import { workspaces } from "../schema";
 import {
@@ -247,6 +248,31 @@ export async function setDefault(
     values (1, ${entry}, ${now.toISOString()}::timestamptz)
     on conflict (id) do update
       set ${col} = ${featureDefaults}.${col} || excluded.${col}, updated_at = excluded.updated_at`);
+  if (column === "switches" && picturesSwitch(key as Feature)) {
+    await restartFollowersWarnings(db, key);
+  }
+}
+
+/**
+ * D119's warnings start again in every workspace that follows the default for `key` (notices or notice
+ * pictures), as when the owner switches one workspace (D126): every one but the own alliance, which ignores
+ * the defaults, and those with a value of their own.
+ */
+async function restartFollowersWarnings(db: Db, key: string): Promise<void> {
+  const followers = db
+    .select({ id: workspaces.id })
+    .from(workspaces)
+    .leftJoin(workspaceFeatures, eq(workspaceFeatures.workspaceId, workspaces.id))
+    .where(
+      and(
+        ne(workspaces.unionId, OWN_ALLIANCE_ID),
+        sql`not coalesce(jsonb_exists(${workspaceFeatures.switches}, ${key}::text), false)`,
+      ),
+    );
+  await db
+    .update(noticePictures)
+    .set({ warnedAt: null })
+    .where(inArray(noticePictures.workspaceId, followers));
 }
 
 export async function setPaused(

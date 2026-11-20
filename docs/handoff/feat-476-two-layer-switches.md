@@ -36,7 +36,7 @@
 
 ## Decisions
 
-- **D134**, written up in `docs/decisions/`. D132 and D133 are reserved by open PRs.
+- **D134**, written up in `docs/decisions/`.
 - **Every catalog feature has both layers**, tabs included. The alliance's switch is on by default, except for features that spend tracker calls: those wait for the officers, so a new alliance spends no tracker call until both layers say on. OGs: everything on, as before.
 - **OGs ignores the defaults panel**: everything allowed, no caps, from code, as in D126.
 - **The code's default caps are 20 Groq texts and 20 Discord languages a day.** The owner asked for "a small number".
@@ -57,7 +57,7 @@
 
 ## Verified
 
-- `pnpm check`: the gates passed except one test that expected nse's squads read on by default. That test now turns it on. The final run is reported in the commit message and the report.
+- **`pnpm check` passes** after the review fixes: Prettier, ESLint, typecheck, Vitest (1,328 tests in 250 files), drift and i18n.
 - **New tests**:
   - `lib/private/features.test.ts`: a default change moves only workspaces on it; both layers; the estimate.
   - Admin route test: only differences stored; Reset; defaults and their PIN.
@@ -65,7 +65,7 @@
   - The issue 471 isolation suite: Alpha changes only its own switches; Alpha's session at Bravo's address is `401`; only Alpha is counted.
   - The member-session fixture for the new route.
 - **Updated tests**: `workspace-keys.test.ts` and `tracker-key/route.test.ts`. Squads is now off by default for non-OGs, so their setup turns it on.
-- **Migrations**: all 54 applied to an empty local Postgres 18.
+- **Migrations**: all 58 applied to an empty local Postgres 18. A seeded test proves 0057's cap step: caps set under the 0056 schema move into the `caps` map, and nulls are left out.
 - **Local production build**: `next build` and `next start`, local Postgres, invented data (OGs with 101 members; guest "wolf" with 87 members, squads allowed and on, Thefts off by the alliance, defaults with Download off and an AI cap of 30). **116 of 116 checks pass**:
   - each settings page answers 200, with no sideways scroll and no private field in the HTML, at 360 and 1280, light and dark, EN and PT (FR at 360);
   - the estimate reads 93 a day for 87 members;
@@ -92,6 +92,16 @@
 - No upstream, Discord or PostHog call was made.
 
 ## Open issues
+
+- **Review of PR 511**, fixed here:
+  - a changed default for notices or notice pictures restarts the picture warnings of every workspace on it (`setDefault`);
+  - a seeded test covers 0057's cap step;
+  - after a save, the checkbox shows the switch as the server stored it;
+  - D134 points the parts not done to issues 306 and 485.
+- **Left for a follow-up the orchestrator files**:
+  - tests for re-registering the Discord commands after a switch;
+  - moving the "a value equal to its default is no override" rule out of the /admin route into the repo;
+  - the review's suggestions.
 
 - **After the release**, every alliance other than OGs without its own value has its squads read off, and its caps become 20. The owner allows squads on its card, and its officers turn it on in Alliance settings.
 - A row written earlier by "Copy settings from" has every switch stored, so the card shows "Changed" even for values equal to the default. "Reset to default" clears each one.

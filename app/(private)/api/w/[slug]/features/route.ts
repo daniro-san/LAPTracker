@@ -1,6 +1,6 @@
 // POST /api/w/[slug]/features — Alliance settings → Features (D134, issue 476). Officers only: same origin,
 // JSON, an officer's session (a member's answers 401 signed_out, D99). {feature, on}: the alliance turns an
-// allowed feature on or off. 403 not_allowed: the site's owner does not allow it; 429 rate_limited. Each
+// allowed feature on or off; the answer is `{ok, on}`, the switch as stored. 403 not_allowed: the site's owner does not allow it; 429 rate_limited. Each
 // switch that went through counts as `ws_action` `features` / `turn_on` or `turn_off`.
 import { requireWorkspace } from "@/lib/private/access";
 import { allianceFeatureInput, setAllianceFeature } from "@/lib/private/alliance-features";
@@ -31,7 +31,7 @@ export async function POST(
       now,
     });
     if (!done.ok) return privateError(STATUS[done.code], done.code);
-    const body = Response.json({ ok: true }, { headers: NO_STORE });
+    const body = Response.json({ ok: true, on: done.on }, { headers: NO_STORE });
     return counted(ctx, access, "features", input.on ? "turn_on" : "turn_off", body);
   });
 }
