@@ -16,7 +16,7 @@ export const APP_COMMANDS = [IMPORT_COMMAND, TRANSLATE_FOR_ME, TRANSLATE_FOR_EVE
 export type AppCommand = (typeof APP_COMMANDS)[number];
 
 /** The D126 switch behind each command. */
-const COMMAND_FEATURE: Record<AppCommand["name"], Feature> = {
+export const COMMAND_FEATURE: Record<AppCommand["name"], Feature> = {
   [IMPORT_COMMAND.name]: "discord_send",
   [TRANSLATE_FOR_ME.name]: "discord_translate_me",
   [TRANSLATE_FOR_EVERYONE.name]: "discord_translate_everyone",

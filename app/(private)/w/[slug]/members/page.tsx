@@ -98,16 +98,16 @@ async function readPage(
     return { access, waiting: 0, view: null, rows: [], lifecycle: null, switches: NO_SWITCHES };
   // D106: a roster read since a new member was added may now list them.
   const pending = await matchOnRead(db, access, now);
-  const view = await membersView(db, access, now, zone, await progressHistory(db, access));
+  const [view, channels] = await Promise.all([
+    progressHistory(db, access).then((history) => membersView(db, access, now, zone, history)),
+    channelNames(db, access, getEnv()),
+  ]);
   return {
     access,
     waiting: await toReviewCount(db, access, now),
     view,
     // D126: the thanks sheet's switches.
-    switches: {
-      ...thanksSwitches(access),
-      channel: (await channelNames(db, access, getEnv())).members,
-    },
+    switches: { ...thanksSwitches(access), channel: channels.members },
     // The list's own read (photos and past names); the card route never runs it (issue 337).
     rows: showFormer ? [] : await withListExtras(db, access, view.members),
     lifecycle: showFormer
