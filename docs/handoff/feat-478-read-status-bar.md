@@ -46,7 +46,7 @@
 
 ## Verified
 
-- **`pnpm check` passes**: Prettier, ESLint, typecheck, Vitest (1,344 tests in 253 files, 4 skipped, after the review fixes), drift and i18n.
+- **`pnpm check` passes**: Prettier, ESLint, typecheck, Vitest (1,351 tests in 257 files, 4 skipped, after the review fixes and the rebase onto PR 514), drift and i18n.
 - **New and extended tests**:
   - `lib/private/read-status.test.ts`: 6 tests, one per state (running with moving counts, done, paused and stopped at the limit, skipped, key, late roster and nothing to say);
   - the issue 471 suite (`cross-workspace-reads.test.ts`): each workspace's bar carries its own counts, and no uid or name;
