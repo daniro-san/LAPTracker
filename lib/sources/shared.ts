@@ -72,7 +72,10 @@ export function toSnapshotInput(
   roster: Roster,
   extra: { cached: boolean | null; quota: Quota | null; raw: unknown },
 ): AllianceSnapshotInput {
-  const members = roster.members.map((m) => ({
+  // Issue 481: the tracker once listed 101 of 100, the extra one with an empty rank. A member sent with
+  // `rank_code: null` and no `rank_label` is not one of the read's members; the body (`raw`) keeps them.
+  const ranked = roster.members.filter((m) => !(m.rank_code === null && !m.rank_label));
+  const members = ranked.map((m) => ({
     uid: m.uid,
     name: m.nick_name,
     power: m.power,
@@ -87,7 +90,7 @@ export function toSnapshotInput(
     unionId: roster.union_id,
     tag: roster.abbr,
     name: roster.name,
-    memberCount: roster.member_count,
+    memberCount: roster.member_count - (roster.members.length - ranked.length),
     capacity: roster.capacity ?? null,
     totalPower: roster.power,
     // INVARIANT total-kills-is-roster-sum
@@ -97,6 +100,7 @@ export function toSnapshotInput(
     level: roster.level,
     badgeId: roster.badge_id ?? null,
     sourceUpdatedAt: roster.updated_at === null ? null : new Date(roster.updated_at * 1000),
+    listed: roster.members.length,
     ...extra,
   };
 }

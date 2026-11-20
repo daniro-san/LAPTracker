@@ -74,6 +74,8 @@ export async function allianceStatement(
     .limit(1);
   if (!row) return null;
   const text = [row.declaration, row.bulletin].find((t) => t?.trim()) ?? null;
+  const members = count(row.members);
+  const capacity = count(row.capacity);
   return {
     day: row.day,
     text: text?.trim() ?? null,
@@ -81,7 +83,8 @@ export async function allianceStatement(
     open: row.auto === null ? null : row.auto === "true",
     minMight: count(row.power) || null,
     minHq: count(row.castle) || null,
-    members: count(row.members),
-    capacity: count(row.capacity),
+    // Issue 481: the tracker once sent 101 of 100; the card never shows more than the capacity.
+    members: members !== null && capacity !== null ? Math.min(members, capacity) : members,
+    capacity,
   };
 }

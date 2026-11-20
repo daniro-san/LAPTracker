@@ -7,9 +7,11 @@
 // lookup ends well inside the route's maxDuration (30 s). A claim a killed function left "running" reads as
 // failed after LOOKUP_STALE_AFTER_MS (lib/repo/alliance-lookups.ts).
 import { LOOKUPS_PER_DAY, TRACKED_COUNT } from "../config/alliances";
+import { logRosterCheck } from "./collector-log";
 import { dataRow } from "./daily-rows";
 import type { Db } from "./db";
 import type { Env } from "./env";
+import { consoleLogger } from "./logger";
 import { claimLookup, finishLookup, type QuotaGate } from "./repo/alliance-lookups";
 import { isKnownAlliance } from "./repo/alliances";
 import { storeDailyRoster } from "./repo/daily-reads";
@@ -76,6 +78,7 @@ export async function lookupAlliance(deps: Deps, db: Db, unionId: number): Promi
     });
   try {
     const a = await deps.v1.fetchAlliance(unionId, undefined, undefined, { ...CALL, fresh: false });
+    await logRosterCheck(consoleLogger, a);
     await storeDailyRoster(db, day, dataRow(a, deps.now(), LOOKUP_FRESH_MAX_AGE_MS));
     await recordFrames(db, a.members, a.sourceUpdatedAt);
     await finish("done", a.quota?.remaining ?? claim.remaining, null);

@@ -9,8 +9,12 @@ import { autoRetryDailyRead, runDailyRead } from "./daily-read";
 import type { Db } from "./db";
 import { openTestDb, truncateAll } from "./db.test-helpers";
 import { BLOCKED_ROSTER_KEYS, findBlockedKeys, memberHistoryCard } from "./queries";
-import { dailyReads, dailyRosters, playerFrames } from "./schema";
+import { allianceStatement } from "./queries/statement";
+import { dayRosterUids } from "./repo/squads";
+import { endOfDayReads } from "./repo/workspace-rosters";
+import { dailyReads, dailyRosters, playerFrames, runLogs } from "./schema";
 import { alliances } from "./schema-alliances";
+import { toSnapshotInput } from "./sources/shared";
 import { UpstreamError } from "./sources/types";
 
 let db: Db;
@@ -103,6 +107,81 @@ describe("runDailyRead (D60)", () => {
     const card = await memberHistoryCard(db, id, at);
     expect(card?.roster).toHaveLength(3);
     expect(findBlockedKeys(card)).toEqual([]);
+  });
+});
+
+describe("a roster above its capacity (issue 481)", () => {
+  const [id = 0] = IDS;
+  const day = "2026-11-10";
+  /** An invented /v1 body of `n` members; the last `unranked` have an empty rank. */
+  function body(n: number, capacity: number, unranked: number) {
+    const members = Array.from({ length: n }, (_, i) => {
+      const ranked = i < n - unranked;
+      return {
+        uid: id * 1000 + i,
+        nick_name: `Member ${i + 1}`,
+        power: 1_000_000,
+        kills: 10,
+        lv: 30,
+        rank_code: ranked ? 101 : null,
+        rank_label: ranked ? "R1" : "",
+      };
+    });
+    const at = ago(T0, minutes(1)).getTime() / 1000;
+    return {
+      union_id: id,
+      abbr: "INV",
+      name: "Invented",
+      power: n * 1_000_000,
+      member_count: n,
+      capacity,
+      level: 10,
+      rank: { rank: 1 },
+      updated_at: at,
+      members,
+    };
+  }
+  /** One daily read of the body; what the Members tab, the squads queue, the card and the log see. */
+  async function read(b: ReturnType<typeof body>) {
+    const a = toSnapshotInput(b, {
+      cached: false,
+      quota: { limit: 1000, used: 0, remaining: 900 },
+      raw: b,
+    });
+    await runDailyRead(deps(fakeV1(() => a)), db, day, ours([id]));
+    const [row] = await db
+      .select({ memberCount: dailyRosters.memberCount })
+      .from(dailyRosters)
+      .where(eq(dailyRosters.unionId, id));
+    const [members] = await endOfDayReads(db, id, 1);
+    const lines = await db.select().from(runLogs).where(eq(runLogs.code, "roster.over_capacity"));
+    return {
+      memberCount: row?.memberCount,
+      membersTab: members?.members.length,
+      queue: (await dayRosterUids(db, day, id))?.length,
+      card: (await allianceStatement(db, id))?.members,
+      lines: lines.map((l) => l.data),
+    };
+  }
+
+  it("keeps a 101/100 read without its unranked member, and logs the counts", async () => {
+    expect(await read(body(101, 100, 1))).toEqual({
+      memberCount: 100,
+      membersTab: 100,
+      queue: 100,
+      card: 100,
+      lines: [{ union_id: id, members: 101, capacity: 100, unranked: 1 }],
+    });
+  });
+
+  it("leaves a full 120/120 alliance untouched", async () => {
+    expect(await read(body(120, 120, 0))).toEqual({
+      memberCount: 120,
+      membersTab: 120,
+      queue: 120,
+      card: 120,
+      lines: [],
+    });
   });
 });
 

@@ -36,7 +36,10 @@ export interface AllianceSnapshotInput {
   totalPower: number;
   /** sum(members.kills), nulls as 0. INVARIANT total-kills-is-roster-sum */
   totalKills: number;
+  /** The ranked members: the body's members less those with an empty rank (issue 481). */
   members: MemberInput[];
+  /** How many members the body listed, the unranked ones included; absent when built by hand. */
+  listed?: number;
   serverRank: number | null;
   level: number | null;
   /** One of the preset emblems (101–110 seen); served only via /img/badge/[id] (D22). */

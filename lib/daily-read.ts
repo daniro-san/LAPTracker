@@ -8,6 +8,7 @@
 import { TRACKED_COUNT } from "../config/alliances";
 import { dailyReadQuota } from "./budget";
 import { MAX_UPSTREAM_CALLS, RUN_DEADLINE_MS } from "./collector";
+import { logRosterCheck } from "./collector-log";
 import { failedList, FRESH_MAX_AGE_MS } from "./collector-rows";
 import { isFresh, RUN_STALE_AFTER_MS } from "./compute";
 import { dataRow, errorRow } from "./daily-rows";
@@ -109,6 +110,7 @@ async function readOne(read: Read, db: Db, id: number): Promise<void> {
     );
     if (read.abort !== null) return;
     await logFetch(read, started, call, { cached: a.cached, quota: a.quota?.remaining ?? null });
+    await logRosterCheck(read.log, a);
     const row = dataRow(a, now());
     if (!row.isFresh) await read.log.warn("stale", { union_id: id });
     read.rows.push(row);
