@@ -10,6 +10,7 @@ import { fill } from "@/lib/copy";
 
 import type { ListRow, ListWords } from "./member-list-data";
 import { STATUS_TONE } from "./MemberCards";
+import { withNoData } from "./NoData";
 
 /** Which number the row shows first: the order's own, else might. */
 export type Column = "might" | "kills" | "squad";
@@ -93,11 +94,11 @@ export function MemberListRow(props: RowProps) {
             className={`${COLUMN_WIDTH[props.column]} shrink-0 text-right text-body-sm font-medium tabular-nums`}
           >
             <span className="sr-only">{`${t[`list.col.${props.column}`]} `}</span>
-            {row.text[props.column]}
+            {withNoData(row.text[props.column], t["nodata.mark"])}
           </span>
           <span className="w-12 shrink-0 text-right text-body-sm text-ink/80 tabular-nums">
             <span className="sr-only">{`${t["list.col.donated"]} `}</span>
-            {row.text.donated}
+            {withNoData(row.text.donated, t["nodata.mark"])}
           </span>
         </span>
         <Lines {...props} />

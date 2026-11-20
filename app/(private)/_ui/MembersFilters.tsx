@@ -49,7 +49,7 @@ export interface FilterProps {
   onClose: () => void;
 }
 
-/** "Daytime for them · 28": a count always follows its words. */
+/** "Within their usual hours · 28": a count always follows its words. */
 const counted = (label: string, n: number | string) => (
   <span>
     {label} <span className="text-ink/70 tabular-nums">· {n}</span>

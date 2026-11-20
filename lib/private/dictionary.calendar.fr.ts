@@ -23,6 +23,8 @@ export const calendarFr: CalendarWords = {
   "calendar.add": "Ajouter un événement",
   "calendar.edit": "Modifier",
   "calendar.editOf": "Modifier : {title}",
+  "calendar.deleteOf": "Supprimer : {title}",
+  "calendar.toToday": "Aujourd’hui",
   "calendar.kind.caravan": "Alliance Caravan",
   "calendar.kind.cheese": "Cheese Trap",
   "calendar.kind.undead": "Undead Siege",

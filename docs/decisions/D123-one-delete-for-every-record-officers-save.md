@@ -113,3 +113,8 @@ Chosen because the code had no way back for them. Calendar entries and thefts we
 - `alliance_duel_points`: delete a wrong day's save.
 - "Restore from trash?" for Calendar entries, thefts and new members when an officer saves over a deleted one (D118 has it for notices). Today an edit of a deleted entry says "Someone deleted this event."
 - A list of what is in the trash, for any type.
+
+**Amendment 2026-11-19 (owner, issue 412 UX pass): the Calendar opens at the top, and Delete sits beside Edit.**
+
+- **Opening.** The Calendar no longer scrolls to today when it loads: an officer landed mid-page and could not find "Add an event". It opens at the top, with "Add an event" in the page's head row. Beside it, a "Today ↓" chip (PT "Hoje ↓", FR "Aujourd’hui ↓", only while the week shown holds today) is a link to today's day card that also moves the focus to that day's heading. Only an address that names a day (`#d-<day>`) or an Undo line scrolls: the Undo line still brings itself into view in its day card ("The Calendar opens at today" above no longer holds; the line's own scroll is why it stays in view).
+- **Delete beside Edit.** Every entry in a day card has a quiet 44 px "Delete" under its Edit, named "Delete: <title>" for screen readers (PT "Apagar: …", FR "Supprimer : …"). It opens the same question as the edit sheet's (`DeleteArea`): a one-off asks with the shared `DeleteButton` ("Keep it" first, Delete in seal); a weekly entry asks, in a sheet of its own, the edit sheet's choices: skip the week of <date>, or end it from this week on (from its first week this deletes the whole entry), with "Keep it" first. "Event deleted." with Undo then shows in that day's card, as after a delete from the sheet.

@@ -22,7 +22,7 @@ export type Who = (typeof WHO)[number];
 export const ORDERS = ["rank", "might", "might-asc", "kills", "kills-asc", "squad"] as const;
 export type Order = (typeof ORDERS)[number];
 
-/** "Daytime for them" is 08:00–22:59 on the member's own clock; anything else is night (owner, 2026-11-17). */
+/** "Within their usual hours" (once "Daytime") is 08:00–22:59 on the member's own clock; anything else is night (owner, 2026-11-17). */
 export const DAY_FROM = 8 * 60;
 export const DAY_TO = 23 * 60;
 

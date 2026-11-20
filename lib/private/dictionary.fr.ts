@@ -145,11 +145,12 @@ export const fr: WorkspaceDictionary = {
   "members.lead": "Mis à jour une fois par jour, juste avant le changement de jour du serveur.",
   "members.lastRead": "Dernière mise à jour : {when}",
   "members.week": "Semaine : {from} – {to}",
-  "members.legend": "— veut dire pas de données.",
   "members.more": "Ce que veulent dire les étiquettes",
   "members.checkinHelp":
     "« À contacter » : demandez comment va la personne. Vous décidez quoi faire.",
-  "members.nodataHelp": "Les données manquantes n’entrent dans aucun calcul.",
+  "members.nodataHelp":
+    "Pas encore de données. Les données manquantes ne comptent jamais contre personne.",
+  "nodata.mark": "Pas de données",
   "members.checkinCount.one": "{n} membre à contacter ou à aider",
   "members.checkinCount.other": "{n} membres à contacter ou à aider",
   "members.checkinNone": "Tout le monde a l’air bien cette semaine.",
@@ -172,7 +173,8 @@ export const fr: WorkspaceDictionary = {
     "Qui est dans l’alliance, avec le Might, les dons et l’activité de chaque membre, tirés du jeu. Utilisez-le à la place des tableurs.",
   "intro.1.settings": "Touchez votre nom en haut pour vos réglages.",
   "intro.only": "R4 · R5 uniquement",
-  "intro.2.more": "— veut dire pas de données ; elles n’entrent dans aucun calcul.",
+  "intro.2.more":
+    "Un cercle en pointillés veut dire pas encore de données. Les données manquantes ne comptent jamais contre personne.",
   "intro.desk.title": "Agenda, captures et Discord",
   "intro.desk.calendar":
     "Agenda : ce qui est prévu, en heure serveur et dans votre heure. Annonces et Vols sont des onglets de l’agenda.",

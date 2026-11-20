@@ -72,6 +72,7 @@ const LIST_KEYS = [
   "status.checkin",
   "status.help",
   "status.break",
+  "nodata.mark",
   ...SHEET_KEYS,
 ] as const satisfies readonly WorkspaceKey[];
 

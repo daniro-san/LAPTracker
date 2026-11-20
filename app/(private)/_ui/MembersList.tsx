@@ -30,6 +30,7 @@ import { MemberCell, MemberListRow, toAskText, type Column, type RowProps } from
 import { useMembersList, type ListState } from "./members-list-state";
 import { MembersFilters } from "./MembersFilters";
 import { CountLine, Empty, More, StickyBar } from "./MembersListParts";
+import { withNoData } from "./NoData";
 import { stepRow } from "./open-member";
 import { useMinute } from "./YourTime";
 
@@ -151,7 +152,9 @@ function columnsOf(column: Column, t: ListWords): TableColumn<RowProps>[] {
   const number = (c: Column, wide: boolean): TableColumn<RowProps> => ({
     key: c,
     head: t[`list.col.${c}`],
-    cell: (p) => <span className="whitespace-nowrap">{p.row.text[c]}</span>,
+    cell: (p) => (
+      <span className="whitespace-nowrap">{withNoData(p.row.text[c], t["nodata.mark"])}</span>
+    ),
     numeric: true,
     width: c === "squad" ? "w-28" : "w-20",
     ...(wide && { priority: "wide" as const }),
@@ -162,7 +165,11 @@ function columnsOf(column: Column, t: ListWords): TableColumn<RowProps>[] {
     {
       key: "donated",
       head: t["list.col.week"],
-      cell: (p) => <span className="whitespace-nowrap">{p.row.text.donated}</span>,
+      cell: (p) => (
+        <span className="whitespace-nowrap">
+          {withNoData(p.row.text.donated, t["nodata.mark"])}
+        </span>
+      ),
       numeric: true,
       width: "w-20",
     },

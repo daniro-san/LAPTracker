@@ -3,8 +3,12 @@
 // (`marginFirst` puts the margin first there, as the alliance figures before the member list); grid areas
 // put the margin on the right at every width that has one, so it is never on the left. `even` makes two
 // equal columns from 768 for a pair of blocks of the same weight. The rule runs the full height of the
-// spread; with `stickyMargin` only the notes inside it stick.
+// spread; with `stickyMargin` only the notes inside it stick, in a `MarginPane` that fits the window and
+// scrolls on its own, so a note that grows ("Show more") never makes the page longer than its main column
+// (issue 412 UX pass). `marginLabelledBy` names that pane by its notes' heads.
 import type { ReactNode } from "react";
+
+import { MarginPane } from "./MarginPane";
 
 export function Spread({
   main,
@@ -12,17 +16,20 @@ export function Spread({
   marginFirst = false,
   stickyMargin = false,
   even = false,
+  marginLabelledBy,
 }: {
   main: ReactNode;
   margin: ReactNode;
   marginFirst?: boolean;
   stickyMargin?: boolean;
   even?: boolean;
+  /** The ids of the margin notes' heads (a sticky margin that scrolls is a region they name). */
+  marginLabelledBy?: string;
 }) {
   const mainBox = <div className="min-w-0 lg:[grid-area:main]">{main}</div>;
   const marginBox = (
     <div className="min-w-0 lg:border-l-2 lg:border-ink lg:pl-6 lg:[grid-area:margin]">
-      <div className={stickyMargin ? "lg:sticky lg:top-4" : undefined}>{margin}</div>
+      {stickyMargin ? <MarginPane labelledBy={marginLabelledBy}>{margin}</MarginPane> : margin}
     </div>
   );
   return (

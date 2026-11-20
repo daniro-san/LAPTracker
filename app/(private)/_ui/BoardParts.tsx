@@ -1,10 +1,10 @@
 "use client";
 
-// The members' board's two client parts (D105): an event's time column, the viewer's own clock first and
-// large with server time under it (D116), and one text in several languages as tabs, the viewer's language
-// first, the others one tap away. Both render server time and the first tab on the server, so server and
-// browser HTML never differ.
-import { useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+// The members' board's client parts (D105): an event's time column, the viewer's own clock first and
+// large with server time under it (D116); one text in several languages as tabs, the viewer's language
+// first, the others one tap away; and a long text cut to about six lines. They render server time, the
+// first tab and the cut on the server, so server and browser HTML never differ.
+import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 
 import { tabAfter } from "@/app/_ui/Movers";
 import { fill } from "@/lib/copy";
@@ -131,5 +131,62 @@ export function LanguageTabs({
         {shown.body}
       </div>
     </div>
+  );
+}
+
+/** How many lines a long text shows before "Read more". */
+const CLAMP_LINES = 6;
+
+/**
+ * A long text cut to about six lines with a fade, opened in place by "Read more" and closed by "Show less"
+ * (owner, issue 412 UX pass): a notice that fills the page pushes everything else down. The line breaks
+ * stay. The cut is there from the first render, so the page does not jump; a short text never shows the
+ * button or the fade. A size watch decides, so a language tab or a turned phone decides again.
+ */
+export function Clamped(props: { text: string; className: string; more: string; less: string }) {
+  const id = useId();
+  const box = useRef<HTMLDivElement>(null);
+  const inner = useRef<HTMLParagraphElement>(null);
+  const [long, setLong] = useState(false);
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    const el = inner.current;
+    const outer = box.current;
+    if (!el || !outer) return;
+    const watch = new ResizeObserver(() => {
+      const line = parseFloat(getComputedStyle(outer).lineHeight) || 24;
+      setLong(el.offsetHeight > line * CLAMP_LINES + 2);
+    });
+    watch.observe(el);
+    return () => watch.disconnect();
+  }, []);
+  const cut = !open;
+  return (
+    <>
+      <div
+        ref={box}
+        id={id}
+        className={
+          cut
+            ? `max-h-[6lh] overflow-hidden ${long ? "[mask-image:linear-gradient(to_bottom,#000_55%,transparent)]" : ""}`
+            : undefined
+        }
+      >
+        <p ref={inner} translate="no" className={props.className}>
+          {props.text}
+        </p>
+      </div>
+      {long && (
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-controls={id}
+          onClick={() => setOpen((o) => !o)}
+          className="inline-flex min-h-11 items-center font-semibold text-plum underline underline-offset-4"
+        >
+          {open ? props.less : props.more}
+        </button>
+      )}
+    </>
   );
 }

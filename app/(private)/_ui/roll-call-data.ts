@@ -140,7 +140,7 @@ export interface TeamRowView {
   group: TeamGroup;
   /** "On Team B" when the other team holds them that week. */
   other: string | null;
-  /** One short line: "Daytime · 12:00 for them · Active · Squad 48.2M"; under "No time zone recorded"
+  /** One short line: "12:00 their time · within 08–23 · Active · Squad 48.2M"; under "No time zone recorded"
    * the clock part is left out. */
   why: string;
 }

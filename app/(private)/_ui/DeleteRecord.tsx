@@ -42,6 +42,10 @@ export function DeleteButton(props: {
   onDeleted: (requestId: string | null) => void;
   /** What the question says under it: which record, where it leaves. */
   children?: ReactNode;
+  /** The button's look when it is not the seal text button (a Calendar day card's quiet Delete). */
+  className?: string;
+  /** The button's accessible name when its label alone does not say which record ("Delete: Bear hunt"). */
+  ariaLabel?: string;
 }) {
   const { words: t } = props;
   /** The open question's request id (D100), new for each opening; null when closed. */
@@ -66,11 +70,14 @@ export function DeleteButton(props: {
       <button
         type="button"
         aria-haspopup="dialog"
+        aria-label={props.ariaLabel}
         onClick={() => {
           setBusy(false);
           setAsking(newRequestId());
         }}
-        className="min-h-11 px-1 font-semibold text-seal underline underline-offset-4"
+        className={
+          props.className ?? "min-h-11 px-1 font-semibold text-seal underline underline-offset-4"
+        }
       >
         {t.label}
       </button>
@@ -114,7 +121,7 @@ export function UndoLine(props: {
   const [state, setState] = useState<"shown" | "busy" | "failed" | "closed">("shown");
   const line = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    // The delete may have been made further down a long page (the Calendar opens at today): bring it in view.
+    // The delete may have been made further down a long page (a Calendar day card): bring it in view.
     line.current?.scrollIntoView({ block: "nearest" });
     const timer = setTimeout(() => setState((s) => (s === "shown" ? "closed" : s)), UNDO_SHOWN_MS);
     return () => clearTimeout(timer);

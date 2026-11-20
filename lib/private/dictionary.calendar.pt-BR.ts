@@ -22,6 +22,8 @@ export const calendarPt: CalendarWords = {
   "calendar.add": "Adicionar um evento",
   "calendar.edit": "Editar",
   "calendar.editOf": "Editar: {title}",
+  "calendar.deleteOf": "Apagar: {title}",
+  "calendar.toToday": "Hoje",
   "calendar.kind.caravan": "Alliance Caravan",
   "calendar.kind.cheese": "Cheese Trap",
   "calendar.kind.undead": "Undead Siege",

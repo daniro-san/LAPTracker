@@ -146,10 +146,10 @@ export const pt: WorkspaceDictionary = {
   "members.lead": "Atualizado uma vez por dia, pouco antes de o servidor virar o dia.",
   "members.lastRead": "Última atualização: {when}",
   "members.week": "Semana: {from} – {to}",
-  "members.legend": "— quer dizer sem dados.",
   "members.more": "O que as etiquetas querem dizer",
   "members.checkinHelp": "“Ver como está”: pergunte como a pessoa está. Você decide o que fazer.",
-  "members.nodataHelp": "Dados que faltam ficam fora de todas as contas.",
+  "members.nodataHelp": "Ainda sem dados. Dados que faltam nunca contam contra ninguém.",
+  "nodata.mark": "Sem dados",
   "members.checkinCount.one": "{n} pessoa para ver como está ou ajudar",
   "members.checkinCount.other": "{n} pessoas para ver como estão ou ajudar",
   "members.checkinNone": "Todo mundo parece bem esta semana.",
@@ -172,7 +172,8 @@ export const pt: WorkspaceDictionary = {
     "Quem está na aliança, com o might, as doações e a atividade de cada membro, vindos do jogo. Use no lugar das planilhas.",
   "intro.1.settings": "Toque no seu nome no topo para ver suas configurações.",
   "intro.only": "Só R4 · R5",
-  "intro.2.more": "— quer dizer sem dados, e não entra em nenhuma conta.",
+  "intro.2.more":
+    "Um círculo pontilhado quer dizer que ainda não há dados. Dados que faltam nunca contam contra ninguém.",
   "intro.desk.title": "Agenda, prints e Discord",
   "intro.desk.calendar":
     "Agenda: o que vai acontecer, na hora do servidor e na sua hora. Avisos e Roubos são abas dentro dela.",

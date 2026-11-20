@@ -11,6 +11,7 @@ import type { CardData } from "@/lib/private/member-card";
 import { SOURCE_KEY } from "./facts-form";
 import { FactsEditor, type EditorProps } from "./FactsEditor";
 import { MemberSquads } from "./MemberSquads";
+import { withNoData } from "./NoData";
 
 export const STATUS_TONE = {
   help: "font-semibold text-yarn",
@@ -53,7 +54,10 @@ export function factsActions(
 }
 
 /** What the facts section needs: also a pending or former member's (D106, D107), who have no card. */
-export type FactsCard = Pick<CardData, "uid" | "name" | "factLines" | "stored" | "autoStatus">;
+export type FactsCard = Pick<
+  CardData,
+  "uid" | "name" | "factLines" | "stored" | "autoStatus" | "noData"
+>;
 
 /** The member facts with their sources, and the editor while the sheet's bar has it open. */
 export function Facts({
@@ -76,7 +80,7 @@ export function Facts({
           <div key={l.field} className="flex justify-between gap-3 border-t border-rule py-2">
             <dt className="shrink-0 text-ink/75">{l.label}</dt>
             <dd className="min-w-0 text-right break-words whitespace-pre-line">
-              <span className="tabular-nums">{l.value}</span>
+              <span className="tabular-nums">{withNoData(l.value, card.noData)}</span>
               {/* D109: the change since the version before, on its own muted line ("+400K since Nov 10",
                   "+5 points since Nov 10", "Complete"). */}
               {l.change && <span className="block text-ink/75 tabular-nums">{l.change}</span>}
@@ -127,7 +131,7 @@ function Details({ card, editor, zoneNow, mode, onEditorClose }: CardProps) {
               aria-hidden="true"
               className={`block min-h-5 whitespace-nowrap ${d.none ? "text-ink/60" : ""}`}
             >
-              {d.value}
+              {withNoData(d.value, card.noData)}
             </span>
           </li>
         ))}
@@ -139,7 +143,7 @@ function Details({ card, editor, zoneNow, mode, onEditorClose }: CardProps) {
             className="flex justify-between gap-3 border-t border-rule py-2 first:border-t-0"
           >
             <dt className="text-ink/75">{d.label}</dt>
-            <dd className="text-right tabular-nums">{d.value}</dd>
+            <dd className="text-right tabular-nums">{withNoData(d.value, card.noData)}</dd>
           </div>
         ))}
       </dl>
@@ -176,7 +180,7 @@ export function MemberCard(props: CardProps) {
               className="inline-block whitespace-nowrap"
               {...(f.game && { translate: "no" as const })}
             >
-              {f.text}
+              {withNoData(f.text, card.noData)}
             </span>
           ))}
         </p>

@@ -56,6 +56,7 @@ import { MembersHead } from "../../../_ui/MembersHead";
 import { MembersRoster } from "../../../_ui/MembersRoster";
 import { MembersSource } from "../../../_ui/MembersSource";
 import { MembersThanks } from "../../../_ui/MembersThanks";
+import { NoData } from "../../../_ui/NoData";
 import { ActionButton, PageActions } from "../../../_ui/PageActions";
 import { PasteUpdates } from "../../../_ui/PasteUpdates";
 import type { PendingProps } from "../../../_ui/PendingMembers";
@@ -65,16 +66,15 @@ import { shareThanksProps, type ThanksSwitches } from "../../../_ui/share-thanks
 function Legend({ t }: { t: WorkspaceDictionary }) {
   return (
     <details className="mt-3 text-body-sm text-ink/80">
-      <summary className="flex min-h-11 cursor-pointer flex-wrap items-center gap-x-2 py-2">
-        <span>{t["members.legend"]}</span>
-        <span className="font-semibold text-plum underline underline-offset-4">
-          {t["members.more"]}
-        </span>
+      <summary className="inline-flex min-h-11 cursor-pointer items-center py-2 font-semibold text-plum underline underline-offset-4">
+        {t["members.more"]}
       </summary>
       <div className="space-y-1 pb-2">
         <p>{t["members.checkinHelp"]}</p>
         <p>{t["list.askHelp"]}</p>
-        <p>{t["members.nodataHelp"]}</p>
+        <p>
+          <NoData label={t["nodata.mark"]} /> {t["members.nodataHelp"]}
+        </p>
       </div>
     </details>
   );

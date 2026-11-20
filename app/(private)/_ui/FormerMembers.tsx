@@ -14,6 +14,7 @@ import { fold } from "@/lib/private/members-list";
 
 import type { FormerRow, LifecycleWords } from "./member-lifecycle-data";
 import { Facts, factsActions, type EditorContext, type FactsMode } from "./MemberCards";
+import { withNoData } from "./NoData";
 import { shown, stepRow, useOpenMember } from "./open-member";
 import { OPEN_ROW } from "./PendingMembers";
 import { sheetWords } from "./sheet-words";
@@ -40,7 +41,7 @@ function FormerSheet(props: {
     >
       <p className="text-body-sm">{row.lastSeen}</p>
       <p translate="no" className="mt-1 text-body-sm tabular-nums">
-        {row.numbers}
+        {withNoData(row.numbers, row.noData)}
       </p>
       {row.duel && (
         <p translate="no" className="mt-1 text-body-sm tabular-nums">
@@ -84,7 +85,7 @@ function FormerRowButton(p: {
         <span className="shrink-0 text-body-sm text-ink/80">{r.lastSeen}</span>
       </span>
       <span translate="no" className="text-body-sm tabular-nums">
-        {r.numbers}
+        {withNoData(r.numbers, r.noData)}
       </span>
       {r.duel && (
         <span translate="no" className="text-body-sm tabular-nums">

@@ -57,28 +57,6 @@ export default async function CalendarPage({
   const href = (w: string) => `/w/${slug}/calendar?week=${w}`;
   return (
     <SignedInFrame access={access} language={language} t={t} current="days" waiting={page.waiting}>
-      <h1 className="font-display text-display-lg">{t["tab.days"]}</h1>
-      <CalendarNav
-        slug={slug}
-        current="week"
-        t={t}
-        on={access.features.on}
-        query={`?week=${monday}`}
-      />
-      <CalendarWeekBar
-        href={href}
-        monday={monday}
-        thisWeek={page.thisWeek}
-        t={t}
-        language={language}
-        offset={page.offset}
-      />
-      <MonthGrid
-        title={month.title}
-        cells={month.cells}
-        weekdays={weekDays(monday).map(calendarDates(language).weekday)}
-        more={t["calendar.month.more"]}
-      />
       <CalendarAgenda
         days={days}
         theme={theme}
@@ -88,7 +66,30 @@ export default async function CalendarPage({
         notices={notices}
         addDay={today >= monday && today <= sunday ? today : monday}
         off={FEATURES.filter((f) => !access.features.on.has(f))}
-      />
+        head={<h1 className="font-display text-display-lg">{t["tab.days"]}</h1>}
+      >
+        <CalendarNav
+          slug={slug}
+          current="week"
+          t={t}
+          on={access.features.on}
+          query={`?week=${monday}`}
+        />
+        <CalendarWeekBar
+          href={href}
+          monday={monday}
+          thisWeek={page.thisWeek}
+          t={t}
+          language={language}
+          offset={page.offset}
+        />
+        <MonthGrid
+          title={month.title}
+          cells={month.cells}
+          weekdays={weekDays(monday).map(calendarDates(language).weekday)}
+          more={t["calendar.month.more"]}
+        />
+      </CalendarAgenda>
     </SignedInFrame>
   );
 }
