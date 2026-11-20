@@ -97,4 +97,4 @@
 - Use the same null rule as D139.
 </adjustments>
 
-PR: (added by the orchestrator)
+https://github.com/daniro-san/LAPTracker/pull/522
