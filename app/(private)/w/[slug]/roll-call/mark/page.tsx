@@ -2,15 +2,22 @@
 // for one added by hand. Its rows in the order they keep while marking, away members apart (D80), and an
 // Elixir Scramble roll call over its team only. Reading this page writes nothing: a Calendar roll call is
 // stored with its first mark. A saved roll call can be archived or deleted at the foot (D120); a deleted
-// one is a 404 here.
+// one is a 404 here. A Raid Shield roll call is Raid prep (D137): two marks per member and the tracker's
+// shield readings while the Raid Shield check is on.
 import { notFound } from "next/navigation";
 
 import { fill } from "@/lib/copy";
+import type { Db } from "@/lib/db";
+import type { WorkspaceAccess } from "@/lib/private/access";
+import { prepView } from "@/lib/private/raid-prep";
+import type { Occasion } from "@/lib/private/roll-call";
 import { callView } from "@/lib/private/roll-call-view";
 import { callTitle } from "@/lib/private/roll-call-words";
 
 import { calendarWords } from "../../../../_ui/calendar-data";
 import { SignedInFrame } from "../../../../_ui/Frame";
+import { prepHead, prepRows } from "../../../../_ui/prep-data";
+import { RaidPrepMarks } from "../../../../_ui/RaidPrepMarks";
 import {
   headerOf,
   markRows,
@@ -22,6 +29,49 @@ import { occasionOf, openRollCall } from "../../../../_ui/roll-call-page";
 import { RollCallHead } from "../../../../_ui/RollCallHead";
 import { RollCallManage } from "../../../../_ui/RollCallManage";
 import { RollCallMarks } from "../../../../_ui/RollCallMarks";
+
+/** The roll call's rows, and Raid prep's part for a Raid Shield roll call (D137). */
+async function readMark(
+  db: Db,
+  access: WorkspaceAccess,
+  occasion: Occasion,
+  lang: string,
+  zone: string,
+) {
+  const call = await callView(db, access, occasion, lang, zone);
+  const prep =
+    call?.opened.kind === "shield"
+      ? await prepView(db, access, call.opened, { zone, now: new Date() })
+      : null;
+  return call && { ...call, prep };
+}
+
+type Page = Awaited<ReturnType<typeof openRollCall<Awaited<ReturnType<typeof readMark>>>>>;
+
+/** The rows: Raid prep's two marks for a Raid Shield roll call (D137), else the roll call's one. */
+function Marks(props: { view: NonNullable<Page["data"]>; page: Page; occasion: Occasion }) {
+  const { view, page, occasion } = props;
+  const { slug, t, language } = page;
+  const o = view.opened;
+  const common = {
+    slug,
+    occasion,
+    rows: markRows(view.rows, { t, language }),
+    words: rollWords(t),
+    marks: markWords(o.kind, t),
+    language,
+    today: page.today,
+  };
+  if (!view.prep) return <RollCallMarks {...common} shield={o.kind === "shield"} />;
+  return (
+    <RaidPrepMarks
+      {...common}
+      prep={prepRows(view.prep, t, page.zone)}
+      head={prepHead(view.prep, t)}
+      times={calendarWords(t)}
+    />
+  );
+}
 
 export default async function MarkPage({
   params,
@@ -36,7 +86,7 @@ export default async function MarkPage({
   const page = await openRollCall(
     params,
     `roll-call/mark?${query}`,
-    (db, access, _today, lang, zone) => callView(db, access, occasion, lang, zone),
+    (db, access, _today, lang, zone) => readMark(db, access, occasion, lang, zone),
   );
   const view = page.data;
   if (!view) notFound();
@@ -77,16 +127,7 @@ export default async function MarkPage({
           </a>
         </p>
       ) : (
-        <RollCallMarks
-          slug={slug}
-          occasion={occasion}
-          rows={markRows(view.rows, { t, language })}
-          words={words}
-          marks={markWords(o.kind, t)}
-          shield={o.kind === "shield"}
-          language={language}
-          today={page.today}
-        />
+        <Marks view={view} page={page} occasion={occasion} />
       )}
       {o.call && (
         <RollCallManage

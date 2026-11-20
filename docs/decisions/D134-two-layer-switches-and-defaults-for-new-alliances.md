@@ -84,3 +84,5 @@ Why: the owner (issue 476, 2026-11-20) wants every feature that spends quota to 
   - the rate limit and a missing session.
 - The issue 471 isolation suite: Alpha's officer changes only Alpha's switches, Alpha's session at Bravo's address is `401 signed_out`, and only Alpha is counted.
 - The member-session suite has the new route's fixture.
+
+**Amendment (2026-11-20, owner, issue 474, D137): the Raid Shield check is built.** /admin no longer says "not built yet, issue 474". Its estimate is one read per member when the squads read is on (Friday's read is the squads read), two when it is off: about 206 calls on Saturday's quota day for 100 members with both on. See D137.

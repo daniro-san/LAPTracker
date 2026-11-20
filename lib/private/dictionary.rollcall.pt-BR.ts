@@ -1,9 +1,11 @@
 // The Roll call tab's words in Brazilian Portuguese (issue 298); the keys follow dictionary.rollcall.ts.
+import { prepPt } from "./dictionary.raidprep";
 import type { RollWords } from "./dictionary.rollcall";
 
 export const rollPt: RollWords = {
+  ...prepPt,
   "roll.intro": "Marque quem participou. Uma marca em branco nunca conta contra ninguém.",
-  "roll.kind.shield": "Escudo de raid",
+  "roll.kind.shield": "Preparação do raid",
   "roll.kind.raid": "Undead Siege",
   "roll.kind.plunder": "Saques",
   "roll.kind.elixir": "Elixir Scramble",

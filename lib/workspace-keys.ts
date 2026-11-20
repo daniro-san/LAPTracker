@@ -179,16 +179,18 @@ async function opened(db: Db, secret: string, r: SealedKey, now: Date): Promise<
  * The squads reads due at `now`, own alliance first. A workspace without a usable key of its own is not
  * read, except the own alliance's, on LAP_API_KEY, while it has no saved key or the feature is off
  * (no WORKSPACE_KEYS_SECRET). With no workspace of its own (D125: deleted), the own alliance is not read. A key sealed under another master key is skipped and not written. D126: a
- * workspace whose squads read the owner turned off is not read either; its stored squads stay.
+ * workspace whose squads read the owner turned off is not read either; its stored squads stay. D137: the
+ * Raid Shield check's reads take the workspaces whose `shield_check` is on instead.
  */
 export async function squadTargets(
   db: Db,
   secret: string | undefined,
   now: Date,
+  feature: "squads" | "shield_check" = "squads",
 ): Promise<SquadTarget[]> {
   const [targets, settings] = await Promise.all([keyTargets(db, secret, now), allSettings(db)]);
   const off = settings
-    .filter((w) => !resolveFeatures(w.settings, []).on.has("squads"))
+    .filter((w) => !resolveFeatures(w.settings, []).on.has(feature))
     .map((w) => w.unionId);
   const on = targets.filter((t) => !off.includes(t.unionId));
   const labels = await allianceLabels(

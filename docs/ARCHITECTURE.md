@@ -144,6 +144,12 @@ lib/squads-read.ts  the squads read (D117) as a daily queue (D132): small batche
                     (lib/heroes.ts, lib/repo/hero-catalog.ts). lib/squads.ts: its pure rules (reserve, main squad,
                     version rule). The card's words: lib/private/member-squads.ts. lib/squads-call.ts: one call
                     of a batch (split for size). D124: each workspace with a key of its own is read on that key.
+lib/shield-read.ts  the Raid Shield check (D137): Friday 23:30–00:00 ST, the squads queue read as a burst
+                    (`SquadsRun.shield`); Saturday from the alliance's time until 12:00 ST, every member once more
+                    from `shield_queue` (lib/repo/shield-checks.ts, lib/schema-shield.ts). Run by lib/shield-tick.ts
+                    in the tick's `after`, after the squads batch. Its rules: lib/shield-check.ts (pure). The
+                    leaders' channel summary: lib/shield-post.ts, words in lib/copy-shield.ts. The desk's Raid
+                    prep: lib/private/raid-prep.ts; its settings: lib/private/shield-settings.ts.
 lib/workspace-commands.ts which message commands each workspace's server has (D129): only those turned on,
                     registered by lib/app-commands.ts and recorded per workspace; used by /admin, Alliance
                     settings and a switch change on /admin (`changesCommands`: which changes re-register).

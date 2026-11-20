@@ -68,6 +68,12 @@ function attacks(ours: number): Step[] {
       ["roll-call", { body: { action: "rest", occasion, uids: [202] } }],
       ["roll-call", { body: { action: "undo", occasion, items: [{ uid: 101, version: 1 }] } }],
       ["roll-call", { body: { action: "team", occasion, uids: [202], on: true } }],
+      // D137: Raid prep's squads off the wall, and "Accept the tracker's".
+      [
+        "roll-call",
+        { body: { action: "mark", occasion, uid: 202, mark: "yes", version: 0, part: "wall" } },
+      ],
+      ["roll-call", { body: { action: "accept", occasion, uids: [202] } }],
     ]),
     ["roll-call", { body: { action: "delete", id: call0, requestId: id() } }],
     ["roll-call", { body: { action: "archive", id: call0, on: true } }],

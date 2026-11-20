@@ -20,8 +20,10 @@ export interface Shown {
   version: number;
 }
 type Written = { uid: number; version: number }[];
+type Rows = Pick<MarkRowView, "uid" | "mark" | "version">[];
 
-export function useMarks(slug: string, occasion: Occasion, rows: MarkRowView[], failed: string) {
+/** `extra` `{ part: "wall" }`: Raid prep's second mark, squads off the wall (D137). */
+export function useMarks(slug: string, occasion: Occasion, rows: Rows, failed: string, extra = {}) {
   const router = useRouter();
   const [local, setLocal] = useState<Record<number, Shown>>({});
   const [notes, setNotes] = useState<Record<number, string>>({});
@@ -46,9 +48,10 @@ export function useMarks(slug: string, occasion: Occasion, rows: MarkRowView[], 
     put(uid, { mark, version: before.version });
     setError(null);
     const run = async () => {
+      const body = { action: "mark", occasion, uid, mark, version: base(uid), ...extra };
       const { status, json } = await sendRoll<{ version: number; mark: Mark | null; said: string }>(
         slug,
-        { action: "mark", occasion, uid, mark, version: base(uid) },
+        body,
       );
       if (status === 200) track("ws_roll_call_marked", { how: "tap" });
       if (status === 200 || status === 409) {
@@ -99,6 +102,8 @@ export function useMarks(slug: string, occasion: Occasion, rows: MarkRowView[], 
       if (written) track("ws_roll_call_marked", { how: "rest" });
       return written;
     },
+    /** D137: "Accept the tracker's" and other writes of many marks: the stored ones, or null. */
+    bulk,
     undo: (items: Written) => bulk({ action: "undo", items }),
   };
 }

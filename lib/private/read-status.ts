@@ -5,7 +5,8 @@
 // - the tracker key needs to be entered again (D124 `invalid` or `reenter`), with a link to Alliance settings;
 // - today's roster read failed, or is not in after its window closed: the cards keep the last numbers;
 // - the squads read (D132), while its feature is on and a key reads it (`squadsReader`): running, paused,
-//   done (for 30 minutes), stopped or skipped (until the quota day ends).
+//   done (for 30 minutes), stopped or skipped (until the quota day ends);
+// - the Raid Shield check (D137), while it is on: running, then done until KvK starts (shield-status.ts).
 import { getAppContext } from "../app-context";
 import { fill } from "../copy";
 import type { Db } from "../db";
@@ -20,6 +21,7 @@ import { dailyKeyRule, dailyTracked } from "../workspace-keys";
 import type { WorkspaceAccess } from "./access";
 import type { WorkspaceDictionary } from "./dictionary";
 import { privateLog } from "./log";
+import { shieldStatus } from "./shield-status";
 import { squadsReaderOf, squadsToday, type SquadsToday } from "./squads-today";
 import { keyViewOf } from "./tracker-key";
 
@@ -27,7 +29,7 @@ import { keyViewOf } from "./tracker-key";
 export const DONE_SHOWN_MS = 30 * 60_000;
 
 export interface StatusLine {
-  id: "key" | "roster" | "squads";
+  id: "key" | "roster" | "squads" | "shield";
   text: string;
   /** progress: under way (a pulse dot); quiet: done or paused; attention: stopped, failed or a key to fix. */
   tone: "progress" | "quiet" | "attention";
@@ -62,12 +64,13 @@ export async function readStatus(
 ): Promise<ReadStatus> {
   const day = quotaDayRead(now, env);
   // One read of the key's facts serves the key line, the squads rule and the daily read's rule.
-  const [facts, squads, roster, daily, tracked] = await Promise.all([
+  const [facts, squads, roster, daily, tracked, shield] = await Promise.all([
     keyFacts(db, access.workspaceId),
     squadsToday(db, access, env, now),
     dayRosterState(db, day, access.unionId),
     getDailyRead(db, day),
     dailyTracked(db, day),
+    shieldStatus(db, access, env, now, t),
   ]);
   const secret = env.WORKSPACE_KEYS_SECRET;
   const key = keyViewOf(access, facts, secret, now);
@@ -81,6 +84,7 @@ export async function readStatus(
     key.state === "invalid" || key.state === "reenter" ? keyLine(key.state, t) : null,
     skipped ? null : rosterLine(day, roster, daily?.status === "running", w),
     reader && squads.day ? squadsLine(squads, squads.day, w) : null,
+    shield && shieldLine(shield),
   ].filter((d): d is Dated => d !== null);
   const lines = dated.sort((a, b) => b.at - a.at).map((d) => d.line);
   return { lines, running: lines.some((l) => l.tone === "progress") };
@@ -136,6 +140,12 @@ function rosterLine(
   const text = reader ? `${said} · ${t["status.roster.squadsWait"]}` : said;
   return { at: readAt, line: { id: "roster", text, tone: "attention" } };
 }
+/** The Raid Shield check's line (D137): under way, or done until KvK starts. */
+const shieldLine = (s: NonNullable<Awaited<ReturnType<typeof shieldStatus>>>): Dated => ({
+  at: s.at,
+  line: { id: "shield", text: s.text, tone: s.running ? "progress" : "quiet" },
+});
+
 type Day = NonNullable<SquadsToday["day"]>;
 
 /** The squads read's line, or null when it was done over 30 minutes ago. */

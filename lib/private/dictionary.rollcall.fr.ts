@@ -1,10 +1,12 @@
 // The Roll call tab's words in French (issue 298); the keys follow dictionary.rollcall.ts. A no-break space
 // goes before : ; ? ! and inside « ».
+import { prepFr } from "./dictionary.raidprep";
 import type { RollWords } from "./dictionary.rollcall";
 
 export const rollFr: RollWords = {
+  ...prepFr,
   "roll.intro": "Marquez qui a participé. Une marque vide ne compte jamais contre personne.",
-  "roll.kind.shield": "Bouclier de raid",
+  "roll.kind.shield": "Préparation du raid",
   "roll.kind.raid": "Undead Siege",
   "roll.kind.plunder": "Pillages",
   "roll.kind.elixir": "Elixir Scramble",

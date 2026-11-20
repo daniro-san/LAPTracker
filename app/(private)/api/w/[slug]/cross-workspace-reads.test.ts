@@ -2,6 +2,8 @@
 // its history, posts and reviews, a draft, a roll call, a garrison plan, a member card), and Home's activity
 // pages. Each finds nothing of Bravo's. The pages call these reads after requireWorkspace, with the id from
 // the address. Invented names only.
+import { randomUUID } from "node:crypto";
+
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { AppContext } from "@/lib/app-context";
@@ -15,11 +17,13 @@ import { memberCard } from "@/lib/private/member-card";
 import { lastPublish } from "@/lib/private/notice-publish";
 import { noticeReviews } from "@/lib/private/notice-reviews";
 import { noticeDetail, noticeHistory } from "@/lib/private/notices";
+import { prepView } from "@/lib/private/raid-prep";
+import { addCall, openOccasion } from "@/lib/private/roll-call";
 import { callView } from "@/lib/private/roll-call-view";
 import { quotaDayRead } from "@/lib/schedule";
 import { dailyReads } from "@/lib/schema";
 import { workspaceKeys } from "@/lib/schema-keys";
-import { squadQueue, squadReads } from "@/lib/schema-squads";
+import { playerReads, squadQueue, squadReads } from "@/lib/schema-squads";
 import { masterFingerprint } from "@/lib/workspace-keys";
 
 import {
@@ -83,6 +87,32 @@ describe("the desk's pages given Bravo's ids, for Alpha's officer (issue 471)", 
     const at = { now: SEED_AT, zone: ZONE, language: "en" as const, t: WORKSPACE_DICTIONARIES.en };
     expect(await memberCard(db, a, 202, at)).toBeNull();
     expect(await memberCard(db, a, 101, at)).not.toBeNull();
+  });
+
+  it("show Alpha's Raid prep with Alpha's tracker readings only (D137)", async () => {
+    // Friday 23:31 ST: Bravo's member seen with a shield, Alpha's member not.
+    const night = new Date("2026-11-21T01:31:00Z");
+    await db.insert(playerReads).values([
+      { unionId: BRAVO, uid: 202, readAt: night, shielding: 1, shieldType: 0, mapUpdatedAt: night },
+      { unionId: ALPHA, uid: 101, readAt: night, shielding: 0, mapUpdatedAt: night },
+    ]);
+    const on = {
+      ...a,
+      features: { ...a.features, on: new Set([...a.features.on, "shield_check"]) },
+    };
+    const occasion = await addCall(
+      db,
+      on as WorkspaceAccess,
+      { kind: "shield", day: "2026-11-21" },
+      randomUUID(),
+    );
+    const opened = await openOccasion(db, on as WorkspaceAccess, occasion);
+    const view = await prepView(db, on as WorkspaceAccess, opened as NonNullable<typeof opened>, {
+      zone: ZONE,
+      now: night,
+    });
+    expect(view.rows.has(202)).toBe(false);
+    expect(view.night).toMatchObject({ read: 1, on: 0 });
   });
 
   it("Home's activity pages carry Alpha's lines only", async () => {
