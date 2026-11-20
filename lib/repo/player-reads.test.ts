@@ -2,6 +2,7 @@
 // alliance, and the daily clean-up clears raw bodies past 90 days while their columns stay.
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
+import { appErrorDetail } from "../app-errors";
 import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
 import { playerHistory, playerReads } from "../schema-squads";
@@ -40,6 +41,26 @@ describe("player reads (D132)", () => {
     expect(await storePlayerRead(db, 900002, read([4]), NOW)).toBe(1);
     expect(await db.select().from(playerHistory)).toHaveLength(5);
     expect(await db.select().from(playerReads)).toHaveLength(3);
+  });
+
+  it("lets a failed write carry its class and code only, never a field of the body (D71)", async () => {
+    const raw = {
+      uid: 7,
+      x: 98765,
+      y: 54321,
+      online: true,
+      avatar_url: "https://avatar.example.test",
+    };
+    // A sid out of the integer range makes the insert fail inside Postgres.
+    const facts = { ...playerAnswer(7).facts, sid: 1e12 };
+    const error = await storePlayerRead(db, 900001, playerAnswer(7, [], null, { raw, facts }), NOW)
+      .then(() => null)
+      .catch((e: unknown) => e as Error);
+    expect(error?.message).toBe("player_reads.write_failed Error 22003");
+    expect(error?.cause).toBeUndefined();
+    // What app_errors and console.error would keep of it.
+    const kept = JSON.stringify(appErrorDetail(error, []));
+    for (const marker of ["98765", "54321", "avatar", "online"]) expect(kept).not.toContain(marker);
   });
 
   it("clears raw bodies older than 90 days and keeps their columns", async () => {

@@ -149,20 +149,23 @@ async function keep(db: Db, call: Call, player: PlayerSquadsInput, now: Date, b:
     b.might++;
 }
 
-/** Why a failed call ends the day: a 429, or on a workspace key a 401 or a 403; null: it does not. */
-function stopOn(e: unknown, status: string | null, onKey: boolean): string | null {
+/** Why a failed call ends the day: a 429, a 401 or a 403, on any key; null: it does not. */
+function stopOn(e: unknown): string | null {
   if (e instanceof QuotaExhaustedError) return "quota_429";
-  if (status === "invalid") return "key_invalid";
-  return onKey && forbidden(e) ? "key_forbidden" : null;
+  // D132: on any key, LAP_API_KEY included: a refused key would fail every member up to the cap.
+  if (e instanceof UpstreamError && e.status === 401) return "key_invalid";
+  return forbidden(e) ? "key_forbidden" : null;
 }
 
 /**
  * A call that was sent and failed. A 429 ends the day's read: the quota is spent until the reset. On a
  * workspace key a 401 ends it too, and the key is marked `invalid` (or `out_of_quota` after the 429): that
  * workspace's reads stop until an officer replaces the key or the quota resets, and never go on on our
- * key (D124). A 403 on a workspace key ends that day's read and leaves the key's status as it is. A 5xx,
- * no answer, or the batch's deadline cutting the call sends the member to the back of the queue, until
- * its third attempt (D132); any other failure is not tried again today. The member's row after the call.
+ * key (D124). A 403 ends that day's read and leaves the key's status as it is. On LAP_API_KEY a 401 or a
+ * 403 ends the day too (D132). A 5xx, no answer, or the batch's deadline cutting the call sends the member
+ * to the back of the queue, until its third attempt (D132); any other failure is not tried again today.
+ * The member's row after the call. A day that stops leaves the member waiting with no later turn: the
+ * day is over, and the next quota day has a new queue.
  */
 async function failedCall(
   deps: SquadsDeps,
@@ -178,11 +181,13 @@ async function failedCall(
     const patch = { status, ...(status === "out_of_quota" && { quotaRemaining: 0 }) };
     await markKey(db, key.workspaceId, key.nonce, patch, now);
   }
-  const stop = stopOn(e, status, key !== null);
-  if (stop) b.stop = stop;
-  else b.failed++;
-  // A day that stops keeps the member waiting: nothing more is called today anyway.
-  const again = stop !== null || retryable(e) || call.signal.aborted;
+  const stop = stopOn(e);
+  if (stop) {
+    b.stop = stop;
+    return { uid: call.uid, state: "waiting", attempts: call.attempts + 1, dueAt: now };
+  }
+  b.failed++;
+  const again = retryable(e) || call.signal.aborted;
   return { uid: call.uid, ...afterFailure(call.attempts, again, now) };
 }
 

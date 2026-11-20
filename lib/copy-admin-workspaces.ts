@@ -184,6 +184,12 @@ export const workspacesAdminCopy = {
       stopped: "Stopped: {reason}.",
       skipped: "Skipped: {reason}.",
     },
+    /** D132: a stop reason in words; any other reason shows as its code. */
+    reasons: {
+      key: "the tracker refused the key",
+      limit: "the limit is reached until 00:00 UTC",
+      cap: "the day's 120 calls are used",
+    },
     started: "Started for {list}. Reload in a few minutes to see how far it got.",
     errors: {
       event_window: "Not now: an event's Before/After window is open.",

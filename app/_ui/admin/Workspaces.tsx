@@ -11,6 +11,7 @@ import { squadsProgress, type SquadsProgress } from "@/lib/queries/squads-progre
 import { adminFeatures } from "@/lib/queries/workspace-features";
 import { listTombstones, listWorkspaces, type AdminWorkspace } from "@/lib/queries/workspaces";
 import { quotaDayRead } from "@/lib/schedule";
+import { stopKind } from "@/lib/squads";
 import { defaultSettings, resolveFeatures, type FeatureSettings } from "@/lib/workspace-features";
 import { keyUsable, masterFingerprint } from "@/lib/workspace-keys";
 
@@ -142,12 +143,17 @@ function stateLine(p: SquadsProgress, later: boolean): string {
   if (p.batchRunning) return s.batchRunning;
   if (later && p.nextAt)
     return fill(s.waitingLater, { waiting: p.waiting, at: serverTime(p.nextAt) });
-  return fill(s.status[p.status], { reason: p.reason ?? "" });
+  const kind = stopKind(p.reason);
+  return fill(s.status[p.status], { reason: kind ? s.reasons[kind] : (p.reason ?? "") });
 }
 
-/** D132: when the next waiting member's turn comes, unless the state line already says it. */
+/**
+ * D132: when the next waiting member's turn comes, unless the state line already says it. Only while the
+ * day runs: a stopped day has no next try.
+ */
 function nextLine(p: SquadsProgress, later: boolean): string[] {
-  return p.nextAt && !later ? [fill(t.squads.nextTry, { at: serverTime(p.nextAt) })] : [];
+  if (p.status !== "running" || !p.nextAt || later) return [];
+  return [fill(t.squads.nextTry, { at: serverTime(p.nextAt) })];
 }
 
 /** The workspaces the squads read takes, or that have a row in the quota day, as SquadsCard's rows. */

@@ -75,6 +75,17 @@ export function forcedSquadsDay(
 }
 
 /**
+ * Why a stopped or skipped day reads nobody more today, in the words /admin and Settings use (D132): the
+ * tracker refused the key, the quota is spent until 00:00 UTC, or the day's 120 calls are used. Null for
+ * any other reason (shown as its code on /admin).
+ */
+export function stopKind(reason: string | null): "key" | "limit" | "cap" | null {
+  if (reason === "key_invalid" || reason === "key_forbidden") return "key";
+  if (reason === "quota_429" || reason === "key_out_of_quota") return "limit";
+  return reason === "cap" ? "cap" : null;
+}
+
+/**
  * What becomes of a member whose call failed (D132): a 5xx, no answer or a call the deadline cut goes to
  * the back of the queue, until its third attempt; anything else is not tried again that day.
  */

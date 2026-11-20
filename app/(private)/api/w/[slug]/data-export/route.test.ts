@@ -176,6 +176,10 @@ describe("POST /api/w/[slug]/data-export (D125)", () => {
     expect(csv("thefts.csv").split("\r\n")).toHaveLength(3);
     expect(csv("thefts-deleted.csv").split("\r\n")).toHaveLength(3);
     expect(csv("README.txt")).toContain("Arquivos");
+    // D132: a tracker read goes as its columns; its raw body (90 days of them) stays out.
+    const reads = csv("player-reads.csv").slice(1).split("\r\n")[0]?.split(";") ?? [];
+    expect(reads).toContain("shielding");
+    expect(reads).not.toContain("raw_json");
     // No byte of any file: the private roster fields, the sealed key, sessions or Discord ids.
     const all = Buffer.concat([...files.values()]).toString("latin1");
     for (const marker of [

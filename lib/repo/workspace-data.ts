@@ -97,9 +97,9 @@ export const WORKSPACE_TABLES: readonly WorkspaceTable[] = [
   { file: "alliance-duel-points", table: allianceDuelPoints, scope: "workspace" },
   { file: "screenshot-checks", table: screenshotChecks, scope: "workspace" },
   { file: "squads", table: memberSquads, scope: "union" },
-  // D132: every tracker read of a member, its raw body less the private fields (scrubbed below), and the
-  // history rows.
-  { file: "player-reads", table: playerReads, scope: "union" },
+  // D132: every tracker read of a member as its columns, and the history rows. The raw bodies stay out:
+  // about 90 days of them would pass the download's 4.4 MB, and they hold private fields (D71).
+  { file: "player-reads", table: playerReads, scope: "union", omit: ["raw_json"] },
   { file: "player-history", table: playerHistory, scope: "union" },
   { file: "tracker-key-changes", table: workspaceKeyChanges, scope: "workspace" },
   { file: "data-requests", table: workspaceDataEvents, scope: "workspace" },
@@ -118,15 +118,6 @@ export const WORKSPACE_TABLES: readonly WorkspaceTable[] = [
 
 /** Never downloaded from any table, whatever the list says (CLAUDE.md, D71, D22). */
 const NEVER = new Set<string>([...BLOCKED_ROSTER_KEYS, "avatar_url"]);
-
-/** A raw upstream body as downloaded (D132): every key in NEVER dropped, at any depth. */
-function scrubbed(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(scrubbed);
-  if (typeof value !== "object" || value === null || value instanceof Date) return value;
-  return Object.fromEntries(
-    Object.entries(value).flatMap(([k, v]) => (NEVER.has(k) ? [] : [[k, scrubbed(v)]])),
-  );
-}
 
 const columnsOf = (table: PgTable) => getTableColumns(table) as Record<string, PgColumn>;
 
@@ -193,11 +184,7 @@ export async function workspaceDumps(
         columns,
         officerColumns: columns.filter((name) => officers.has(name)),
         deletedColumn: kept.find(([key]) => key === "deletedAt")?.[1].name ?? null,
-        rows: rows.map((row) =>
-          kept.map(([key, col]) =>
-            col.name === "raw_json" ? scrubbed(row[key] ?? null) : (row[key] ?? null),
-          ),
-        ),
+        rows: rows.map((row) => kept.map(([key]) => row[key] ?? null)),
       };
     }),
   );

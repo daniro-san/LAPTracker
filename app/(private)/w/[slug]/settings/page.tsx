@@ -41,6 +41,11 @@ function squadsLine(
   t: Awaited<ReturnType<typeof workspaceWords>>["t"],
   timeZone: string,
 ): string {
+  if (s.stopped) {
+    const why = t[`squads.stop.${s.stopped}`];
+    if (!s.started) return fill(t["squads.todayStoppedNone"], { why });
+    return fill(t["squads.todayStopped"], { read: s.read, members: s.members, why });
+  }
   const today = s.started
     ? fill(t["squads.today"], { read: s.read, members: s.members, retrying: s.retrying })
     : t["squads.todayNone"];

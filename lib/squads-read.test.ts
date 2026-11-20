@@ -248,6 +248,16 @@ describe("the queue's retries, newcomers and claim (D132)", () => {
     expect(d.calls).toEqual([1, 2]);
   });
 
+  it("stops the day at a 401 or a 403 on our own key, not member by member up to the cap", async () => {
+    for (const [day, status] of [[THU.day, 401] as const, [FRI.day, 403] as const]) {
+      await dayRead(day, range(30), 2000);
+      const d = deps(day === THU.day ? THU.now : FRI.now, () => new UpstreamError(status));
+      expect(await runSquadsBatch(d, db)).toMatchObject({ status: "stopped", calls: 1 });
+      const why = (await getSquadRead(db, day, OWN_ALLIANCE_ID))?.reason;
+      expect(why).toBe(status === 401 ? "key_invalid" : "key_forbidden");
+    }
+  });
+
   it("sends a 502 member to the back of the queue, tries again on a later tick, 3 times at most", async () => {
     await dayRead(THU.day, [1, 2, 3], 900);
     const d = deps(THU.now, (uid) => (uid === 2 ? new UpstreamError(502) : {}));
@@ -283,18 +293,10 @@ describe("the queue's retries, newcomers and claim (D132)", () => {
 
   it("refuses a second caller while a batch holds the claim, and takes over a stale one", async () => {
     await dayRead(THU.day, [1, 2, 3], 900);
-    const claimed = (ago: number) => ({
-      day: THU.day,
-      unionId: OWN_ALLIANCE_ID,
-      status: "running" as const,
-      startedAt: later(THU.now, -300_000),
-      batchAt: later(THU.now, -ago),
-      members: 3,
-      callsUsed: 1,
-      quotaRemaining: 850,
-    });
-    await db.insert(squadReads).values(claimed(10_000));
     const dueAt = later(THU.now, -300_000);
+    const run = { status: "running" as const, startedAt: dueAt, members: 3, callsUsed: 1 };
+    const batchAt = later(THU.now, -10_000);
+    await db.insert(squadReads).values({ day: THU.day, unionId: OWN_ALLIANCE_ID, ...run, batchAt });
     await db.insert(squadQueue).values([
       { day: THU.day, unionId: OWN_ALLIANCE_ID, uid: 1, state: "done", attempts: 1, dueAt },
       { day: THU.day, unionId: OWN_ALLIANCE_ID, uid: 2, dueAt },

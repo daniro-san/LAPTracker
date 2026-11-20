@@ -89,7 +89,7 @@ export const dataEn = {
   "data.file.screenshot-checks": "Rankings checked against the tracker: counts only.",
   "data.file.squads": "Squads read from the tracker.",
   "data.file.player-reads":
-    "Each read of a member on the tracker: shield, map time, might, kills, language and the full answer for 90 days (map positions and online status left out).",
+    "Each read of a member on the tracker: shield, map time, might, kills, language, server and VIP.",
   "data.file.player-history":
     "Each member’s might, kills and alliance over time, as the tracker keeps them.",
   "data.file.tracker-key-changes": "Who saved or removed the tracker key (never the key).",
@@ -187,7 +187,7 @@ export const dataPt: typeof dataEn = {
   "data.file.screenshot-checks": "Rankings conferidos com o tracker: só contagens.",
   "data.file.squads": "Esquadrões lidos do tracker.",
   "data.file.player-reads":
-    "Cada leitura de um membro no tracker: escudo, hora do mapa, poder, abates, idioma e a resposta completa por 90 dias (sem posição no mapa nem status online).",
+    "Cada leitura de um membro no tracker: escudo, hora do mapa, poder, abates, idioma, servidor e VIP.",
   "data.file.player-history":
     "Poder, abates e aliança de cada membro ao longo do tempo, como o tracker guarda.",
   "data.file.tracker-key-changes": "Quem salvou ou removeu a chave do tracker (nunca a chave).",
@@ -292,7 +292,7 @@ export const dataFr: typeof dataEn = {
   "data.file.screenshot-checks": "Les classements comparés au tracker : des nombres seulement.",
   "data.file.squads": "Les escouades lues sur le tracker.",
   "data.file.player-reads":
-    "Chaque lecture d’un membre sur le tracker : bouclier, heure de la carte, puissance, éliminations, langue et la réponse complète pendant 90 jours (sans position sur la carte ni statut en ligne).",
+    "Chaque lecture d’un membre sur le tracker : bouclier, heure de la carte, puissance, éliminations, langue, serveur et VIP.",
   "data.file.player-history":
     "Puissance, éliminations et alliance de chaque membre au fil du temps, comme le tracker les garde.",
   "data.file.tracker-key-changes": "Qui a enregistré ou retiré la clé du tracker (jamais la clé).",
