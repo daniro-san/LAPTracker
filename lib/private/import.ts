@@ -1,7 +1,6 @@
 // The screenshot import (issue 299, D96): pictures read by the OCR become drafts that every officer of the
 // workspace reviews. Nothing counts before Save (D75), the first save wins, and a draft lasts 7 days. No
 // picture reaches this module: only each picture's OCR text lines, which the draft keeps.
-import { ALLIANCES } from "../../config/alliances";
 import type { Db } from "../db";
 import {
   closeDraft,
@@ -115,8 +114,7 @@ function screenOf(c: Classified, pick?: Screen, preset?: Screen): Screen | "map"
   return c.kind === null ? (preset ?? null) : { kind: c.kind, scope: c.scope };
 }
 
-export const ownTag = (access: WorkspaceAccess) =>
-  ALLIANCES.find((a) => a.unionId === access.unionId)?.tag ?? "";
+export const ownTag = (access: WorkspaceAccess) => access.alliance?.tag ?? "";
 
 /**
  * Drafts from pictures sent together. Pictures of one kind (and tab) merge into one draft: the pages of

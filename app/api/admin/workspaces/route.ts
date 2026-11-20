@@ -1,20 +1,18 @@
 // POST /api/admin/workspaces {union_id, slug, discord_guild_id, leader_role_ids, member_role_ids} — /admin's
 // Workspaces card (D71, D73, D105): registers an alliance's workspace, or edits it (one per alliance). PIN only. The
-// alliance must be tracked (config/alliances.ts); Discord ids are snowflakes, kept as text.
+// alliance must be one we know (D133: on the ranks board or in a daily roster); Discord ids are snowflakes, kept
+// as text.
 import { z } from "zod";
 
-import { ALLIANCES } from "@/config/alliances";
 import { authorize } from "@/lib/auth";
+import { isKnownAlliance } from "@/lib/repo/alliances";
 import { saveWorkspace, WORKSPACE_SLUG } from "@/lib/repo/workspaces";
 import { errorResponse, withContext } from "@/lib/route";
 
 const snowflake = z.string().regex(/^\d{17,20}$/);
 const body = z
   .object({
-    union_id: z
-      .number()
-      .int()
-      .refine((id) => ALLIANCES.some((a) => a.unionId === id)),
+    union_id: z.number().int().positive(),
     slug: z.string().regex(WORKSPACE_SLUG),
     discord_guild_id: snowflake,
     leader_role_ids: z.array(snowflake).min(1).max(20),
@@ -30,6 +28,7 @@ export function POST(request: Request): Promise<Response> {
     const parsed = body.safeParse(await request.json().catch(() => null));
     if (!parsed.success) return errorResponse(400, "bad_request");
     const b = parsed.data;
+    if (!(await isKnownAlliance(db, b.union_id))) return errorResponse(400, "bad_request");
     const result = await saveWorkspace(db, {
       unionId: b.union_id,
       slug: b.slug,

@@ -2,11 +2,12 @@
 // hands them, as words, to the card that edits them; then the Discord section (D96), which registers the
 // "Send to LAPTracker" command in their servers; then the squads read's progress and its button (D117,
 // amendment 2026-11-19b).
-import { ALLIANCES, OWN_ALLIANCE_ID } from "@/config/alliances";
+import { OWN_ALLIANCE_ID } from "@/config/alliances";
 import { copy, fill } from "@/lib/copy";
 import { discordClock } from "@/lib/discord-format";
 import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
+import { knownAlliances } from "@/lib/queries/alliance-list";
 import { squadsProgress, type SquadsProgress } from "@/lib/queries/squads-progress";
 import { adminFeatures } from "@/lib/queries/workspace-features";
 import { listTombstones, listWorkspaces, type AdminWorkspace } from "@/lib/queries/workspaces";
@@ -84,10 +85,9 @@ function Deleted({ rows }: { rows: Awaited<ReturnType<typeof listTombstones>> })
   );
 }
 
-function allianceLabel(unionId: number): string {
-  const alliance = ALLIANCES.find((a) => a.unionId === unionId);
-  return alliance ? `${alliance.tag} · ${alliance.name}` : String(unionId);
-}
+/** `TAG · Name` for a select or a line; the id when nothing names it (D133). */
+export const choiceLabel = (a: { unionId: number; tag: string | null; name: string | null }) =>
+  a.tag || a.name ? [a.tag, a.name].filter(Boolean).join(" · ") : String(a.unionId);
 
 /**
  * squadTargets' rule, from the key's status without opening it: the squads read is on (D126), and the
@@ -163,8 +163,9 @@ function squadsRows(page: {
   settingsOf: (w: AdminWorkspace) => FeatureSettings;
   current: string | null;
   now: Date;
+  allianceLabel: (unionId: number) => string;
 }): SquadsRowView[] {
-  const { squads, current, now } = page;
+  const { squads, current, now, allianceLabel } = page;
   return page.rows
     .filter(
       (w) =>
@@ -179,14 +180,17 @@ function squadsRows(page: {
 
 export async function Workspaces({ now }: { now: Date }) {
   const squadsDay = quotaDayRead(now, getEnv());
-  const [rows, deleted, features, squads] = await withPageDb((db) =>
+  const [rows, deleted, features, squads, known] = await withPageDb((db) =>
     Promise.all([
       listWorkspaces(db, now),
       listTombstones(db),
       adminFeatures(db, now),
       squadsProgress(db, squadsDay, now),
+      knownAlliances(db),
     ]),
   );
+  const choices = known.map((a) => ({ unionId: a.unionId, label: choiceLabel(a) }));
+  const allianceLabel = (id: number) => choices.find((c) => c.unionId === id)?.label ?? String(id);
   // D124: a key sealed under another master key reads "needs to be entered again", worked out from its
   // fingerprint, with no write and no tracker call. /admin never sees a key.
   const secret = getEnv().WORKSPACE_KEYS_SECRET;
@@ -194,47 +198,44 @@ export async function Workspaces({ now }: { now: Date }) {
   // D126: a workspace always has settings (its defaults until changed).
   const settingsOf = (w: AdminWorkspace) =>
     features.settings.get(w.id) ?? defaultSettings(w.unionId);
-  const views = rows.map((w) => {
-    return {
-      id: w.id,
-      unionId: w.unionId,
-      slug: w.slug,
-      alliance: allianceLabel(w.unionId),
-      guild: w.discordGuildId,
-      roles: w.leaderRoleIds.join(", "),
-      memberRoles: w.memberRoleIds.join(", "),
-      sessions: w.openSessions,
-      allowlist: w.allowlist.map(
-        (a) =>
-          `${a.discordUserId}${a.expiresAt ? ` ${fill(t.until, { date: a.expiresAt.toISOString().slice(0, 10) })}` : ""}`,
-      ),
-      // D124: set or not and the status only; /admin cannot read, change or remove the key.
-      trackerKey: w.trackerKey.set
-        ? fill(t.key.set, {
-            status:
-              t.key.status[w.trackerKey.masterFp === current ? w.trackerKey.status : "reenter"],
-            when: w.trackerKey.statusAt ? seen(w.trackerKey.statusAt, now) : "",
-          })
-        : t.key.unset,
-      deletion: deletionLine(w.deletion),
-      discord: discordLine(w, getEnv().WORKSPACE_DISCORD_WEBHOOKS?.[w.slug]),
-      people: w.signedIn.map((p) => ({
-        id: p.userId,
-        name: p.name ?? t.signOutUsers.noName,
-        tier: p.tier,
-        seen: fill(t.signOutUsers.seen, { ago: seen(p.lastSeen, now) }),
-      })),
-      features: {
-        ...settingsOf(w),
-        used: features.usage.get(w.id) ?? { ai: 0, translate: 0 },
-      },
-    };
-  });
+  const views = rows.map((w) => ({
+    id: w.id,
+    unionId: w.unionId,
+    slug: w.slug,
+    alliance: allianceLabel(w.unionId),
+    guild: w.discordGuildId,
+    roles: w.leaderRoleIds.join(", "),
+    memberRoles: w.memberRoleIds.join(", "),
+    sessions: w.openSessions,
+    allowlist: w.allowlist.map(
+      (a) =>
+        `${a.discordUserId}${a.expiresAt ? ` ${fill(t.until, { date: a.expiresAt.toISOString().slice(0, 10) })}` : ""}`,
+    ),
+    // D124: set or not and the status only; /admin cannot read, change or remove the key.
+    trackerKey: w.trackerKey.set
+      ? fill(t.key.set, {
+          status: t.key.status[w.trackerKey.masterFp === current ? w.trackerKey.status : "reenter"],
+          when: w.trackerKey.statusAt ? seen(w.trackerKey.statusAt, now) : "",
+        })
+      : t.key.unset,
+    deletion: deletionLine(w.deletion),
+    discord: discordLine(w, getEnv().WORKSPACE_DISCORD_WEBHOOKS?.[w.slug]),
+    people: w.signedIn.map((p) => ({
+      id: p.userId,
+      name: p.name ?? t.signOutUsers.noName,
+      tier: p.tier,
+      seen: fill(t.signOutUsers.seen, { ago: seen(p.lastSeen, now) }),
+    })),
+    features: {
+      ...settingsOf(w),
+      used: features.usage.get(w.id) ?? { ai: 0, translate: 0 },
+    },
+  }));
   const guilds: GuildView[] = [...new Set(rows.map((w) => w.discordGuildId))].map((guild) => ({
     guild,
     name: rows
       .filter((w) => w.discordGuildId === guild)
-      .map((w) => ALLIANCES.find((a) => a.unionId === w.unionId)?.tag ?? w.slug)
+      .map((w) => known.find((a) => a.unionId === w.unionId)?.tag ?? w.slug)
       .join(" · "),
   }));
   const env = getEnv();
@@ -242,12 +243,15 @@ export async function Workspaces({ now }: { now: Date }) {
     <>
       <AdminSection id="workspaces" title={t.title} help={t.help}>
         <p className="mb-4 text-body-sm text-ink/80">{t.key.rotation}</p>
-        <WorkspacesCard workspaces={views} paused={features.paused} />
+        <WorkspacesCard workspaces={views} alliances={choices} paused={features.paused} />
         <Deleted rows={deleted} />
       </AdminSection>
-      <Invites now={now} unionIds={rows.map((w) => w.unionId)} />
+      <Invites now={now} unionIds={rows.map((w) => w.unionId)} known={known} />
       <AdminSection id="squads" title={t.squads.title} help={t.squads.help}>
-        <SquadsCard day={squadsDay} rows={squadsRows({ rows, squads, settingsOf, current, now })} />
+        <SquadsCard
+          day={squadsDay}
+          rows={squadsRows({ rows, squads, settingsOf, current, now, allianceLabel })}
+        />
       </AdminSection>
       <AdminSection id="discord" title={t.command.title} help={t.command.help}>
         <DiscordCommandCard

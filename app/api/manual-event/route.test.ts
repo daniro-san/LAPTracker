@@ -8,7 +8,7 @@ import {
   TEST_PIN,
   testContext,
 } from "@/lib/app-context.test-helpers";
-import { minutes } from "@/lib/collector.test-helpers";
+import { IDS, minutes } from "@/lib/collector.test-helpers";
 import type { Db } from "@/lib/db";
 import { openTestDb, truncateAll } from "@/lib/db.test-helpers";
 import { getEventDetail, listEvents } from "@/lib/queries";
@@ -32,6 +32,8 @@ const settingsRoute = await import("./settings/route");
 const renameRoute = await import("./rename/route");
 const snapshotRoute = await import("../snapshot/route");
 const tickRoute = await import("../tick/route");
+/** A tracked alliance (D133: the fake board's top 20); the Before copies it onto every round. */
+const [ALLY = 0] = IDS;
 
 const create = (pin = TEST_PIN) =>
   manualRoute.POST(
@@ -207,7 +209,7 @@ describe("manual events (D28)", () => {
     await run(`phase=before&event=${id}`);
 
     const detail = await getEventDetail(db, id);
-    const history = await allianceHistory(db, 67111155);
+    const history = await allianceHistory(db, ALLY);
 
     expect(detail?.snapshots[0]?.alliances.length).toBeGreaterThan(0);
     expect(history).toEqual([]);
@@ -229,7 +231,7 @@ describe("manual events (D28)", () => {
       [id, "before", "complete"],
       [id + 1, "before", "complete"],
     ]);
-    const history = await allianceHistory(db, 67111155);
+    const history = await allianceHistory(db, ALLY);
     expect(history.map((h) => h.eventId)).toEqual([id + 1]);
     expect(history[0]?.previous).toBeNull();
   });
@@ -246,8 +248,8 @@ describe("manual events (D28)", () => {
     const view = async () => ({
       listed: (await listEvents(db)).some((e) => e.id === id),
       detail: (await getEventDetail(db, id)) !== null,
-      alliance: (await getAllianceDetail(db, id, 67111155)) !== null,
-      chain: (await allianceHistory(db, 67111155)).map((h) => h.eventId),
+      alliance: (await getAllianceDetail(db, id, ALLY)) !== null,
+      chain: (await allianceHistory(db, ALLY)).map((h) => h.eventId),
       home: (await getEventPage(db, null, 45)).page?.detail.id,
     });
 
@@ -262,7 +264,7 @@ describe("manual events (D28)", () => {
       { listed: true, detail: true, alliance: true, chain: [scheduled], home: scheduled },
       { listed: true, detail: true, alliance: true, chain: [id, scheduled], home: scheduled },
     ]);
-    const history = await allianceHistory(db, 67111155);
+    const history = await allianceHistory(db, ALLY);
     expect(history[1]?.previous).not.toBeNull();
   });
 

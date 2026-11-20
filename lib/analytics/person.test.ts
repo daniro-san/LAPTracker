@@ -21,7 +21,7 @@ describe("analyticsPersonId (D115)", () => {
       userId: 42,
       tier: "member",
       slug: "ogs",
-      unionId: 67111155,
+      alliance: { tag: "OGs" },
     });
     expect(person).toEqual({
       id: analyticsPersonId(42, SECRET),
@@ -32,13 +32,13 @@ describe("analyticsPersonId (D115)", () => {
     expect(
       analyticsPerson(
         { ...ON, VERCEL_ENV: "preview" },
-        { userId: 42, tier: "officer", slug: "ogs", unionId: 67111155 },
+        { userId: 42, tier: "officer", slug: "ogs", alliance: { tag: "OGs" } },
       ),
     ).toBeNull();
     expect(
       analyticsPerson(
         { CRON_SECRET: SECRET, VERCEL_ENV: "production" },
-        { userId: 42, tier: "officer", slug: "ogs", unionId: 67111155 },
+        { userId: 42, tier: "officer", slug: "ogs", alliance: { tag: "OGs" } },
       ),
     ).toBeNull();
   });

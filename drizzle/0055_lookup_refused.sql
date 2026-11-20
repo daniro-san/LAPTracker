@@ -1,0 +1,2 @@
+ALTER TABLE "alliance_lookups" DROP CONSTRAINT "alliance_lookups_status_check";--> statement-breakpoint
+ALTER TABLE "alliance_lookups" ADD CONSTRAINT "alliance_lookups_status_check" CHECK ("alliance_lookups"."status" in ('running', 'done', 'refused', 'failed'));

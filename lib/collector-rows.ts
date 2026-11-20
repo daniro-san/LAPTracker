@@ -1,5 +1,4 @@
 // Domain: the rows the collector stores per alliance (data from a source, or an error placeholder).
-import { ALLIANCES } from "../config/alliances";
 import { isFresh } from "./compute";
 import { trimRaw } from "./raw-json";
 import type { AllianceRow, AllianceRowStatus } from "./repo";
@@ -37,8 +36,12 @@ export function dataRow(
   };
 }
 
-export function errorRow(unionId: number, error: string): AllianceRow {
-  const label = ALLIANCES.find((a) => a.unionId === unionId);
+/** `label`: the alliance's newest tag and name (D133: from the board), so a failed row still names it. */
+export function errorRow(
+  unionId: number,
+  error: string,
+  label?: { tag: string | null; name: string | null },
+): AllianceRow {
   return {
     unionId,
     tag: label?.tag ?? null,
@@ -59,8 +62,13 @@ export function errorRow(unionId: number, error: string): AllianceRow {
   };
 }
 
-/** Rows with an error, then the alliances the run never reached (429, quota, cap, deadline). */
-export function failedList(rows: AllianceRowStatus[], ids: number[], error: string | null) {
+/** Rows with an error, then the alliances the run never reached (429, quota, cap, deadline), with `tags`. */
+export function failedList(
+  rows: AllianceRowStatus[],
+  ids: number[],
+  error: string | null,
+  tags: ReadonlyMap<number, string | null>,
+) {
   return [
     ...rows.flatMap((r) =>
       r.error === null ? [] : [{ unionId: r.unionId, tag: r.tag, error: r.error }],
@@ -70,7 +78,7 @@ export function failedList(rows: AllianceRowStatus[], ids: number[], error: stri
       .filter((id) => !rows.some((r) => r.unionId === id))
       .map((unionId) => ({
         unionId,
-        tag: ALLIANCES.find((a) => a.unionId === unionId)?.tag ?? null,
+        tag: tags.get(unionId) ?? null,
         error: `not fetched: ${error}`,
       })),
   ];

@@ -10,6 +10,7 @@ import { getSourceEnv } from "../env";
 import { readBody, rosterFields, TIMEOUT_MS, toSnapshotInput, USER_AGENT } from "./shared";
 import {
   type AllianceSnapshotInput,
+  type BoardLabel,
   NotFoundError,
   NotLiveError,
   type RanksBoard,
@@ -27,7 +28,16 @@ const allianceSchema = z.discriminatedUnion("live", [
 const boardSchema = z.object({
   slug: z.string(),
   pulled_at: z.number(),
-  rows: z.array(z.object({ id: z.number().int(), score: z.string().regex(/^\d+$/) })),
+  rows: z.array(
+    z.object({
+      id: z.number().int(),
+      score: z.string().regex(/^\d+$/),
+      // The alliance's label as the board shows it (D133); optional, so a board without them still parses.
+      abbr: z.string().nullish(),
+      name: z.string().nullish(),
+      badge_id: z.number().int().nullish(),
+    }),
+  ),
 });
 const ranksSchema = z.object({ boards: z.array(boardSchema) });
 
@@ -65,9 +75,17 @@ export async function fetchRanks(server: number): Promise<RanksBoard> {
     throw new SchemaError("internal.schema", ["boards.alliance_power|alliance_kills"]);
   const toMap = (board: z.infer<typeof boardSchema>) =>
     new Map(board.rows.map((row) => [row.id, Number(row.score)]));
+  const labels = new Map<number, BoardLabel>();
+  for (const row of [...kills.rows, ...power.rows])
+    labels.set(row.id, {
+      tag: row.abbr || null,
+      name: row.name || null,
+      badgeId: row.badge_id || null,
+    });
   return {
     pulledAt: new Date(Math.min(power.pulled_at, kills.pulled_at) * 1000),
     power: toMap(power),
     kills: toMap(kills),
+    labels,
   };
 }

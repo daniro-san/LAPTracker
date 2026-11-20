@@ -6,7 +6,7 @@
 // there is one import path.
 // `{name}` is a placeholder filled by `fill()`; labels on public pages are at most two words. Symbols
 // (signs, arrows, `#`) stay in the components so the blank dictionary keeps them visible.
-import { adminCopy } from "./copy-admin";
+import { adminCopy } from "./copy-admin-tracked";
 import { balanceCopy } from "./copy-balance";
 import { brandCopy } from "./copy-brand";
 import { discordCopy } from "./copy-discord";
@@ -14,7 +14,7 @@ import { flowCopy } from "./copy-flow";
 import { liveCopy } from "./copy-live";
 import { mergeCopy } from "./copy-merge";
 import { standingCopy } from "./copy-standing";
-import { statementCopy } from "./copy-statement";
+import { alliancesCopy, statementCopy } from "./copy-statement";
 import { warCopy } from "./copy-war";
 
 /** The public pages' strings in English: the source every other language's dictionary follows. */
@@ -129,6 +129,8 @@ export const en = {
   standing: standingCopy,
   /** The alliance page's statement and joining card (D128, #479). */
   statement: statementCopy,
+  /** Every alliance on the server (D133, #459): the list, the ledger's link, "Get today's details". */
+  alliances: alliancesCopy,
   /** Member history (D60, #197): an alliance's rosters over time, each compared with the one before. */
   history: {
     title: "Member history",

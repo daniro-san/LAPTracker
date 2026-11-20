@@ -1,18 +1,19 @@
 // The daily roster read (D60, issue 197): once a day, at the end of the server day (D72), the tick reads
-// DAILY_ROSTER_IDS through /v1 and stores each roster as uid/name/power/kills arrays, for the member history
-// page, plus the trimmed response in raw_json, of which a read model selects only the statement and joining
-// fields (D128). It is not an event: no events
+// the day's tracked set and every workspace's alliance (D133; `dailyTargets`) through /v1 and stores each
+// roster as uid/name/power/kills arrays, for the member history page, plus the trimmed response in raw_json,
+// of which a read model selects only the statement and joining fields (D128). It is not an event: no events
 // row, no snapshot, no Discord message beyond one admin line when it falls short. No internal fallback
 // (D5 covers event snapshots only): a missed alliance is a gap in the history. It writes run_logs lines
 // under its day (`read_day`) with the collector's codes, so /admin/runs/daily/[day] shows its calls.
-import { ALLIANCES } from "../config/alliances";
+import { TRACKED_COUNT } from "../config/alliances";
 import { dailyReadQuota } from "./budget";
 import { MAX_UPSTREAM_CALLS, RUN_DEADLINE_MS } from "./collector";
 import { failedList, FRESH_MAX_AGE_MS } from "./collector-rows";
 import { isFresh, RUN_STALE_AFTER_MS } from "./compute";
+import { dataRow, errorRow } from "./daily-rows";
 import type { Db } from "./db";
 import { createRunLogger, type RunLogger } from "./logger";
-import { trimRaw } from "./raw-json";
+import { allianceLabels } from "./repo/alliances";
 import {
   claimAutoRetry,
   claimDailyRead,
@@ -26,9 +27,11 @@ import {
 } from "./repo/daily-reads";
 import { recordFrames } from "./repo/player-frames";
 import { insertRunLog } from "./repo/run-logs";
+import { markKey } from "./repo/workspace-keys";
 import { endsInServerDay, serverDay, type ScheduleConfig } from "./schedule";
 import { QuotaExhaustedError, type AllianceSnapshotInput, type V1Source } from "./sources/types";
 import { describe, httpStatusOf, upstreamDetail } from "./upstream-errors";
+import { keyStatusOf, type DailyTarget, type OpenKey } from "./workspace-keys";
 
 const CONCURRENCY = 4;
 
@@ -45,45 +48,6 @@ class CallCapError extends Error {
   override name = "CallCapError";
 }
 
-const tagOf = (unionId: number) => ALLIANCES.find((a) => a.unionId === unionId)?.tag ?? null;
-
-function dataRow(a: AllianceSnapshotInput, now: Date): NewDailyRoster {
-  return {
-    unionId: a.unionId,
-    tag: a.tag,
-    name: a.name,
-    memberCount: a.memberCount,
-    totalPower: a.totalPower,
-    totalKills: a.totalKills,
-    badgeId: a.badgeId ?? null,
-    sourceUpdatedAt: a.sourceUpdatedAt,
-    // INVARIANT freshness.20-min: the same rule as event snapshots.
-    isFresh: isFresh(now, a.sourceUpdatedAt, FRESH_MAX_AGE_MS),
-    error: null,
-    memberUids: a.members.map((m) => m.uid),
-    memberNames: a.members.map((m) => m.name),
-    // Arrays keep a null power or kills as null (D15); Drizzle types the elements as numbers.
-    memberPower: a.members.map((m) => m.power) as number[],
-    memberKills: a.members.map((m) => m.kills) as number[],
-    // Every roster field, as event snapshots keep it (plan §6). A read model selects only the statement and
-    // joining fields (D128); no roster field (D72).
-    rawJson: trimRaw(a.raw),
-  };
-}
-
-/** `e` is the failure itself: its upstream detail (D61) goes on the row for /admin/runs. */
-const errorRow = (unionId: number, error: string, e: unknown): NewDailyRoster => ({
-  unionId,
-  tag: tagOf(unionId),
-  isFresh: false,
-  error,
-  errorDetail: upstreamDetail(e),
-  memberUids: [],
-  memberNames: [],
-  memberPower: [],
-  memberKills: [],
-});
-
 /** `secrets` (secretsOf(env)) are masked in the run_logs lines; tests may leave them out. */
 type Deps = { v1: V1Source; now: () => Date; secrets?: readonly string[] };
 
@@ -97,6 +61,9 @@ interface Read {
   rows: NewDailyRoster[];
   /** Each read roster's members and upstream time, for the players' current frames (D65). */
   frames: { members: AllianceSnapshotInput["members"]; seenAt: Date | null }[];
+  /** The alliances read on a workspace's own key (D124, D133); the others on LAP_API_KEY. */
+  keys: Map<number, OpenKey>;
+  tags: Map<number, string | null>;
 }
 
 /** INVARIANT calls.max-upstream: every /v1 attempt, quota check and retries included. */
@@ -128,12 +95,18 @@ async function logFetch(
 }
 
 /** One alliance: its row, and its v1.fetch (and stale) line. A call the deadline cut writes neither. */
-async function readOne(read: Read, id: number): Promise<void> {
+async function readOne(read: Read, db: Db, id: number): Promise<void> {
   const { v1, now } = read.deps;
   const started = now();
   const call = { endpoint: "alliance", unionId: id } as const;
+  const key = read.keys.get(id);
   try {
-    const a = await v1.fetchAlliance(id, attemptHook(read, id), read.controller.signal);
+    const a = await v1.fetchAlliance(
+      id,
+      attemptHook(read, id),
+      read.controller.signal,
+      key && { apiKey: key.apiKey },
+    );
     if (read.abort !== null) return;
     await logFetch(read, started, call, { cached: a.cached, quota: a.quota?.remaining ?? null });
     const row = dataRow(a, now());
@@ -143,15 +116,27 @@ async function readOne(read: Read, id: number): Promise<void> {
   } catch (e) {
     if (read.controller.signal.aborted) return;
     await logFetch(read, started, call, { error: e });
-    if (e instanceof QuotaExhaustedError || e instanceof CallCapError) {
-      read.abort ??= describe(e);
-      return;
-    }
-    read.rows.push(errorRow(id, `v1 ${describe(e)}`, e));
+    await failOne(read, db, id, e);
   }
 }
 
-/** The quota check and its v1.fetch line; null when the read may not start, with why. */
+/** A failed read. A workspace key's 401 or 429 is that key's (D124): it marks the key and fails this alliance
+ * only. A 429 on ours, or the call cap, stops the read. Anything else is the alliance's error row. */
+async function failOne(read: Read, db: Db, id: number, e: unknown): Promise<void> {
+  const key = read.keys.get(id);
+  const status = key ? keyStatusOf(e) : null;
+  if (key && status) {
+    const quota = status === "out_of_quota" ? { quotaRemaining: 0 } : {};
+    await markKey(db, key.workspaceId, key.nonce, { status, ...quota }, read.deps.now());
+  } else if (e instanceof QuotaExhaustedError || e instanceof CallCapError) {
+    read.abort ??= describe(e);
+    return;
+  }
+  read.rows.push(errorRow(id, read.tags.get(id) ?? null, `v1 ${describe(e)}`, e));
+}
+
+/** The quota check and its v1.fetch line; null when the read may not start, with why. `n`: the reads on
+ * LAP_API_KEY. */
 async function checkQuota(read: Read, n: number): Promise<string | null> {
   const started = read.deps.now();
   const call = { endpoint: "quota", unionId: null } as const;
@@ -165,20 +150,20 @@ async function checkQuota(read: Read, n: number): Promise<string | null> {
     return `quota: ${describe(e)}`;
   }
   // INVARIANT budget.daily-keeps-event-reserve
-  const needed = dailyReadQuota(n, ALLIANCES.length);
+  const needed = dailyReadQuota(n, TRACKED_COUNT);
   if (read.remaining >= needed) return null;
   await read.log.error("quota", { remaining: read.remaining, required: needed });
   return `quota: remaining ${read.remaining} < required ${needed}`;
 }
 
 /** The quota check, then the rosters; returns the reason the read stopped short, else null. */
-async function readRosters(read: Read, ids: readonly number[]): Promise<string | null> {
-  const quotaError = await checkQuota(read, ids.length);
+async function readRosters(read: Read, db: Db, ids: readonly number[]): Promise<string | null> {
+  const quotaError = await checkQuota(read, ids.filter((id) => !read.keys.has(id)).length);
   if (quotaError) return quotaError;
   const queue = [...ids];
   const worker = async () => {
     for (let id = queue.shift(); id !== undefined && read.abort === null; id = queue.shift())
-      await readOne(read, id);
+      await readOne(read, db, id);
   };
   await Promise.all(Array.from({ length: CONCURRENCY }, worker));
   return read.abort;
@@ -209,11 +194,12 @@ export async function runDailyRead(
   deps: Deps,
   db: Db,
   day: string,
-  ids: readonly number[],
+  targets: readonly DailyTarget[],
 ): Promise<DailyReadSummary | null> {
   const now = deps.now();
   if (!(await claimDailyRead(db, day, now))) return null;
-  return readDay(deps, db, day, ids, now, { toRead: ids, code: "daily.start" });
+  const ids = targets.map((t) => t.unionId);
+  return readDay(deps, db, day, targets, now, { toRead: ids, code: "daily.start" });
 }
 
 /** A daily read, or /admin's Retry of it, may start at `now`: a run of up to RUN_DEADLINE_MS ends inside
@@ -229,7 +215,7 @@ export async function retryDailyRead(
   deps: Deps,
   db: Db,
   cfg: Pick<ScheduleConfig, "SERVER_TZ">,
-  ids: readonly number[],
+  targets: readonly DailyTarget[],
 ): Promise<DailyReadSummary | "too-late" | null> {
   const now = deps.now();
   // INVARIANT daily-read.ends-before-midnight: a Retry that could run past 00:00 would store rosters
@@ -239,7 +225,8 @@ export async function retryDailyRead(
   // INVARIANT run.stale-after-150s: the snapshots' rule for a killed run.
   const staleBefore = new Date(now.getTime() - RUN_STALE_AFTER_MS);
   if (!(await reclaimDailyRead(db, day, now, staleBefore))) return null;
-  return readDay(deps, db, day, ids, now, { toRead: ids, code: "daily.start" });
+  const ids = targets.map((t) => t.unionId);
+  return readDay(deps, db, day, targets, now, { toRead: ids, code: "daily.start" });
 }
 
 /** A later tick, not a second caller of the same one: ticks are 15 minutes apart (D26). */
@@ -255,8 +242,9 @@ export async function autoRetryDailyRead(
   deps: Deps,
   db: Db,
   day: string,
-  ids: readonly number[],
+  targets: readonly DailyTarget[],
 ): Promise<DailyReadSummary | null> {
+  const ids = targets.map((t) => t.unionId);
   const read = new Set(
     (await dailyRosterStates(db, day)).filter((r) => r.error === null).map((r) => r.unionId),
   );
@@ -268,22 +256,22 @@ export async function autoRetryDailyRead(
   const now = deps.now();
   const startedBefore = new Date(now.getTime() - AUTO_RETRY_AFTER_MS);
   if (!(await claimAutoRetry(db, day, now, startedBefore))) return null;
-  return readDay(deps, db, day, ids, now, {
+  return readDay(deps, db, day, targets, now, {
     toRead: missing,
     code: "daily.auto-retry",
     keptJudgedAt: before.startedAt,
   });
 }
 
-/** `startedAt` is this read's start as the claim stored it. `ids` are the day's alliances, which the
- * outcome is judged on; `toRead` the ones this attempt reads: all of them, or for the tick's automatic
+/** `startedAt` is this read's start as the claim stored it. `targets` are the day's alliances, which the
+ * outcome is judged on (a lookup's roster stored under the same day is not one of them, D133); `toRead` the ones this attempt reads: all of them, or for the tick's automatic
  * retry only the ones without a roster (D72); `code` names the attempt's first log line;
  * `keptJudgedAt`, the automatic retry's only, is the start of the read it completes. */
 async function readDay(
   deps: Deps,
   db: Db,
   day: string,
-  ids: readonly number[],
+  targets: readonly DailyTarget[],
   startedAt: Date,
   attempt: {
     toRead: readonly number[];
@@ -291,10 +279,15 @@ async function readDay(
     keptJudgedAt?: Date;
   },
 ): Promise<DailyReadSummary> {
+  const ids = targets.map((t) => t.unionId);
+  const keys = new Map(targets.flatMap((t) => (t.key ? [[t.unionId, t.key] as const] : [])));
+  // A workspace key is masked in this read's lines like ours (D124).
+  const secrets = [...(deps.secrets ?? []), ...[...keys.values()].map((k) => k.apiKey)];
   const log = createRunLogger(
     { insertRunLog: (line) => insertRunLog(db, line) },
-    { readDay: day, secrets: deps.secrets ?? [], now: deps.now },
+    { readDay: day, secrets, now: deps.now },
   );
+  const labels = await allianceLabels(db, ids);
   await log.info(attempt.code, { alliances: attempt.toRead.length });
   const read: Read = {
     deps,
@@ -305,14 +298,16 @@ async function readDay(
     remaining: null,
     rows: [],
     frames: [],
+    keys,
+    tags: new Map(ids.map((id) => [id, labels.get(id)?.tag ?? null])),
   };
-  const error = await withDeadline(read, readRosters(read, attempt.toRead));
+  const error = await withDeadline(read, readRosters(read, db, attempt.toRead));
   if (error === "deadline") await log.warn("run.deadline", { calls_used: read.calls });
   else if (error && !error.startsWith("quota")) await log.error("abort", { reason: error });
   for (const row of [...read.rows]) await storeDailyRoster(db, day, row);
   for (const f of read.frames) await recordFrames(db, f.members, f.seenAt);
   // The day's rows, not this attempt's: after a retry they include the rosters it kept (D67).
-  const rows = await dailyRosterStates(db, day);
+  const rows = (await dailyRosterStates(db, day)).filter((r) => ids.includes(r.unionId));
   const ok = rows.filter((r) => r.error === null);
   // INVARIANT freshness.20-min, for the day: a roster kept from an earlier read is stale in the day's
   // outcome once it is more than 20 minutes older than this read's start, or, for the tick's automatic
@@ -339,7 +334,7 @@ async function readDay(
   await log.shutdown();
   // Error rows, then the alliances the read never reached (deadline, 429, call cap, quota rule),
   // named as the collector names them, so the admin line accounts for every alliance.
-  const failed = failedList(rows, [...ids], error);
+  const failed = failedList(rows, [...ids], error, read.tags);
   return {
     day,
     status,

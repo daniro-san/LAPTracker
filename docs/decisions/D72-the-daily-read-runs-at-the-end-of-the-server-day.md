@@ -31,3 +31,5 @@ Why: `daily_tech` ("tech points donated today", API docs) is a counter of the se
   - OGs (101 members): `pg_column_size(raw_json)` = 9,305 bytes per day (38,885 bytes as text; Postgres compresses it).
   - 19 rosters: average 8,309 bytes, largest 10,076.
   - For 20 alliances a year: 20 × 8,309 × 365 ≈ 61 MB (≈ 68 MB at OGs' size), on top of D60's member arrays (≈ 2.7 KB per roster, ≈ 20 MB a year).
+
+**Amendment (2026-11-20, D133, issue 459).** The ranks board is read right before the day's read, in its window. A workspace's alliance outside the top 20 is read on its own key when it saved one. `daily_rosters.read_day` no longer references `daily_reads`, because a lookup's roster may come before the day's read. The storage estimate above is for 20 alliances: each workspace outside them and each lookup add about 8 KB a day.

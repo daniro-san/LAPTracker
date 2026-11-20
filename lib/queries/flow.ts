@@ -5,7 +5,6 @@
 // and every total and the order of the rows are made of the cells kept, so no hidden move can be subtracted out.
 import { and, desc, gte, inArray } from "drizzle-orm";
 
-import { ALLIANCES } from "../../config/alliances";
 import type { Db } from "../db";
 import {
   activityOrder,
@@ -16,6 +15,7 @@ import {
   type FlowCell,
   type FlowSummary,
 } from "../flow";
+import { trackedAllianceIds } from "../repo/alliances";
 import { dailyRosters } from "../schema";
 import { dailyFit } from "./history-readings";
 
@@ -24,7 +24,6 @@ export const FLOW_DAYS = 90;
 /** The default start is the read this many days before the newest one. */
 export const FLOW_DEFAULT_SPAN = 7;
 
-const TRACKED = ALLIANCES.map((a) => a.unionId);
 const DAY_MS = 86_400_000;
 
 export interface FlowAlliance {
@@ -66,8 +65,10 @@ export async function flowPage(
   db: Db,
   now: Date,
   period: { from: string; to: string } | null,
-  tracked: readonly number[] = TRACKED,
+  // The tracked set of today (D133); tests pass their own.
+  only?: readonly number[],
 ): Promise<FlowPage> {
+  const tracked = only ?? (await trackedAllianceIds(db));
   const since = new Date(now.getTime() - FLOW_DAYS * DAY_MS).toISOString().slice(0, 10);
   const dayRows = await db
     .selectDistinct({ day: dailyRosters.readDay })

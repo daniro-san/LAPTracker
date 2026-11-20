@@ -1,8 +1,8 @@
 // Domain: runSnapshot, freshness check, per-alliance fallback, resume logic (plan Phase 3).
 // Everything it touches comes in through Deps (plan §11.1); time comes from deps.now.
-import { ALLIANCES, SERVER } from "../config/alliances";
 import { requiredQuota, sampleQuota } from "./budget";
 import { claim, RunRefusedError } from "./collector-claim";
+import { allianceIds, fetchBoard } from "./collector-ids";
 import { logV1Fetch } from "./collector-log";
 import { dataRow, errorRow, failedList } from "./collector-rows";
 import { callOptions, SAMPLE_DEADLINE_MS } from "./collector-sample";
@@ -69,6 +69,8 @@ interface Run {
   /** The quota check's remaining: the run's starting point for the rehearsal's quota-drop check. */
   quotaBefore: number | null;
   board: RanksBoard | null;
+  /** The run's alliances' newest tags and names (D133), for the rows and the summary of those that failed. */
+  labels: Map<number, { tag: string | null; name: string | null }>;
   abort: string | null;
   capped: boolean;
   /** Aborts every in-flight /v1 call when the deadline is reached. */
@@ -110,16 +112,6 @@ function noteQuota(run: Run, remaining: number | undefined) {
   run.lowest = { remaining, calls: run.calls };
 }
 
-async function allianceIds(deps: Deps, eventId: number, phase: SnapshotPhase): Promise<number[]> {
-  const event = await deps.repo.getEvent(eventId);
-  if (!event) throw new RunRefusedError("no-event");
-  // INVARIANT event.after-uses-event-copy: BEFORE copies the config; AFTER and a sample never read it.
-  if (phase !== "before") return event.allianceIds;
-  const ids = ALLIANCES.map((a) => a.unionId);
-  await deps.repo.setEventAllianceIds(eventId, ids);
-  return ids;
-}
-
 /** Returns an error line when the run must not fetch rosters, else null. */
 async function checkQuota(run: Run, idCount: number): Promise<string | null> {
   const started = run.deps.now();
@@ -144,28 +136,19 @@ async function checkQuota(run: Run, idCount: number): Promise<string | null> {
   }
 }
 
-async function fetchBoard(deps: Deps): Promise<RanksBoard | null> {
-  try {
-    return await deps.internal.fetchRanks(SERVER);
-  } catch (e) {
-    // The board is a cross-check only (§3.5): its failure never changes the status.
-    await deps.logger.warn("board.failed", { error: describe(e) });
-    return null;
-  }
-}
-
 /** After a /v1 failure: one internal read (§3.5), else a row carrying both errors. D5's fallback covers
  * Before and After only: a sample's failed alliance gets an error row (D69). */
 async function fallbackRow(run: Run, unionId: number, v1Error: unknown) {
   const { deps } = run;
-  if (run.sample) return { row: errorRow(unionId, `v1 ${describe(v1Error)}`), members: [] };
+  const label = run.labels.get(unionId);
+  if (run.sample) return { row: errorRow(unionId, `v1 ${describe(v1Error)}`, label), members: [] };
   try {
     const a = await deps.internal.fetchAlliance(unionId);
     await deps.logger.warn("internal.fallback", { union_id: unionId, v1_error: describe(v1Error) });
     return { row: dataRow(run.board, deps.now(), a, "internal"), members: a.members };
   } catch (fallbackError) {
     const error = `v1 ${describe(v1Error)}; internal ${describe(fallbackError)}`;
-    return { row: errorRow(unionId, error), members: [] as MemberRow[] };
+    return { row: errorRow(unionId, error, label), members: [] as MemberRow[] };
   }
 }
 
@@ -265,7 +248,12 @@ async function finish(run: Run, ids: number[], phase: SnapshotPhase, error: stri
     durationMs,
     error,
     stale: ok.filter((r) => !r.isFresh).map((r) => ({ unionId: r.unionId, tag: r.tag })),
-    failed: failedList(rows, ids, error),
+    failed: failedList(
+      rows,
+      ids,
+      error,
+      new Map(ids.map((id) => [id, run.labels.get(id)?.tag ?? null])),
+    ),
   } satisfies RunSummary;
 }
 
@@ -308,6 +296,7 @@ function newRun(deps: Deps, snapshotId: number, sample: boolean): Run {
     lowest: { remaining: null, calls: 0 },
     quotaBefore: null,
     board: null,
+    labels: new Map(),
     abort: null,
     capped: false,
     controller: new AbortController(),
@@ -323,6 +312,7 @@ async function collectRun(run: Run, ids: number[], phase: SnapshotPhase): Promis
   if (ids.length === 0) {
     return finish(run, ids, phase, "no alliance list on the event: BEFORE has not run");
   }
+  run.labels = await deps.repo.allianceLabels(ids);
 
   // The deadline wins the race when a read hangs; the abandoned work is cut by the abort signal.
   const work = (async () => {

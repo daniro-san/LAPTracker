@@ -10,7 +10,7 @@
 // goes on once the event's reads no longer need the quota. Never more than SQUAD_CALLS_MAX calls a day.
 // /admin's "Run the squads read now" and POST /api/squads-read run the same batches on the same queue.
 // Log lines are counts, the quota left and reasons: no names, no squads.
-import { ALLIANCES } from "../config/alliances";
+import { TRACKED_COUNT } from "../config/alliances";
 import { eventWorkspace } from "./analytics/server";
 import { RUN_STALE_AFTER_MS } from "./compute";
 import type { Db } from "./db";
@@ -155,9 +155,7 @@ async function targetBatch(
     return { kind: "idle" };
   }
   // A workspace key funds none of our event reads: it keeps the safety margin only (D124).
-  const reserve = target.key
-    ? SQUADS_SAFETY_MARGIN
-    : squadsReserve(now, deps.env, ALLIANCES.length);
+  const reserve = target.key ? SQUADS_SAFETY_MARGIN : squadsReserve(now, deps.env, TRACKED_COUNT);
   // Counted from before the claim and the catalog, so the whole batch stays well inside maxDuration.
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), deps.deadlineMs ?? SQUADS_BATCH_MS);

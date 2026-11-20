@@ -6,7 +6,6 @@
 // that has some asks first, since it closes the members' board (amended 2026-11-17).
 import { useState, type ReactNode } from "react";
 
-import { ALLIANCES } from "@/config/alliances";
 import { buttonClass } from "@/lib/brand/components/Button";
 import { Sheet } from "@/lib/brand/components/Sheet";
 import { copy, fill } from "@/lib/copy";
@@ -49,9 +48,13 @@ const loaded = (w: WorkspaceSettings): Values => ({
   roles: w.roles,
   memberRoles: w.memberRoles,
 });
-const firstUnion = ALLIANCES[0]?.unionId ?? 0;
+/** An alliance a workspace may be made for (D133: any alliance the board or a daily roster knows). */
+export interface AllianceChoice {
+  unionId: number;
+  label: string;
+}
 
-function useWorkspaceForm(workspaces: WorkspaceSettings[]) {
+function useWorkspaceForm(workspaces: WorkspaceSettings[], firstUnion: number) {
   const first = workspaces[0];
   const [editing, setEditing] = useState<number | null>(first?.id ?? null);
   const [values, setValues] = useState<Values>(
@@ -78,9 +81,10 @@ function useWorkspaceForm(workspaces: WorkspaceSettings[]) {
 /** Which workspace is edited, and its alliance: picking either loads that workspace's settings. */
 function Pickers(props: {
   workspaces: WorkspaceSettings[];
+  alliances: AllianceChoice[];
   form: ReturnType<typeof useWorkspaceForm>;
 }) {
-  const { workspaces, form: f } = props;
+  const { workspaces, alliances, form: f } = props;
   return (
     <>
       {workspaces.length > 0 && (
@@ -106,9 +110,9 @@ function Pickers(props: {
           onChange={(e) => f.pickAlliance(Number(e.target.value))}
           className={FIELD}
         >
-          {ALLIANCES.map((a) => (
+          {alliances.map((a) => (
             <option key={a.unionId} value={a.unionId}>
-              {a.tag} · {a.name}
+              {a.label}
             </option>
           ))}
         </select>
@@ -131,8 +135,16 @@ function CloseBoardSheet(props: { onCancel: () => void; onSave: () => void }) {
   );
 }
 
-export function WorkspaceForm({ workspaces, run }: { workspaces: WorkspaceSettings[]; run: Run }) {
-  const f = useWorkspaceForm(workspaces);
+export function WorkspaceForm({
+  workspaces,
+  alliances,
+  run,
+}: {
+  workspaces: WorkspaceSettings[];
+  alliances: AllianceChoice[];
+  run: Run;
+}) {
+  const f = useWorkspaceForm(workspaces, alliances[0]?.unionId ?? 0);
   const [asking, setAsking] = useState(false);
   const { values } = f;
   const send = () => {
@@ -171,7 +183,7 @@ export function WorkspaceForm({ workspaces, run }: { workspaces: WorkspaceSettin
           {f.current ? fill(t.editing, { slug: f.current.slug }) : t.adding}
         </h3>
         <p className="text-body-sm text-ink/70">{t.editHelp}</p>
-        <Pickers workspaces={workspaces} form={f} />
+        <Pickers workspaces={workspaces} alliances={alliances} form={f} />
         <Field label={t.guild}>
           <input name="guild" required inputMode="numeric" {...text("guild")} />
         </Field>

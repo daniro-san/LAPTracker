@@ -127,11 +127,21 @@ export interface PlayerSquadsInput {
   roster: { unionId: UnionId; updatedAt: Date; uids: Uid[] } | null;
 }
 
+/** An alliance's label as the ranks board shows it (D133); empty values are null. */
+export interface BoardLabel {
+  tag: string | null;
+  name: string | null;
+  /** 0 on the board means none: null here. */
+  badgeId: number | null;
+}
+
 export interface RanksBoard {
   /** The older of the two boards' pulled_at. */
   pulledAt: Date;
   power: Map<UnionId, number>;
   kills: Map<UnionId, number>;
+  /** Every alliance on either board (D133). */
+  labels: Map<UnionId, BoardLabel>;
 }
 
 /**
@@ -149,6 +159,8 @@ export interface CallOptions {
   maxRetries?: number | undefined;
   /** A workspace's own tracker key (D124), in place of LAP_API_KEY; decrypted by the caller at call time. */
   apiKey?: string | undefined;
+  /** An alliance read: false asks for the tracker's cached copy, without `?fresh=1` (D133). Default true (D64). */
+  fresh?: boolean | undefined;
 }
 
 export interface V1Source {

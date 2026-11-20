@@ -265,6 +265,37 @@ export const es = {
     showAll: "Ver todo",
     showLess: "Ver menos",
   },
+  alliances: {
+    title: "Todas las alianzas",
+    description: "Cada alianza del tablero de ranking del servidor, por Might.",
+    lead: "Cada alianza del tablero de ranking del servidor, por Might. Las {n} primeras se leen cada día, con sus miembros e historial.",
+    asOf: "Tablero de ranking del {date}",
+    tracked: "Leídas a diario",
+    more: "Más alianzas",
+    moreNote:
+      "Solo los números del tablero de ranking. Ábrela para ver o pedir los detalles de hoy.",
+    page: "Página {page} de {pages}",
+    previous: "Anterior",
+    next: "Siguiente",
+    none: "La lista se llena después de la actualización diaria de esta noche.",
+    link: "Todas las {n} alianzas del servidor",
+    board:
+      "Tablero de ranking del {date}: #{rank} por Might ({might}) · #{killsRank} por Kills ({kills})",
+    boardMight: "Tablero de ranking del {date}: #{rank} por Might ({might})",
+    noRoster: "Todavía no hay lista de miembros de esta alianza.",
+    notDaily: "Los detalles de esta alianza no se leen cada día.",
+    get: "Pedir los detalles de hoy",
+    getNote: "Una consulta al día, compartida con todos.",
+    getting: "Pidiendo los detalles de hoy…",
+    got: "Detalles de hoy, {time} · cualquiera puede pedirlos de nuevo mañana",
+    usedUp: "Las consultas de hoy se agotaron, vuelve a intentarlo mañana.",
+    failed: "La consulta de hoy no funcionó. Vuelve a intentarlo mañana.",
+    eventPause:
+      "Las consultas se pausan mientras dura el evento semanal. Vuelve a intentarlo después.",
+    tooMany:
+      "Demasiadas consultas desde aquí en este momento. Vuelve a intentarlo en unos minutos.",
+    error: "Algo salió mal. Vuelve a intentarlo en un momento.",
+  },
   history: {
     title: "Historial de miembros",
     lead: "Cada tarjeta compara la lista de miembros con la anterior. Quien entró y salió entre medias no se ve.",

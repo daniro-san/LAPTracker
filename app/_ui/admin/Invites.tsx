@@ -1,6 +1,5 @@
 // /admin's New alliances section (D130, issue 453): reads the invite links and the requests after the page's
 // own isAdmin() check and hands them, as words, to InvitesCard. English only (D48).
-import { ALLIANCES } from "@/config/alliances";
 import { copy, fill } from "@/lib/copy";
 import { rankWarning, rosterLine } from "@/lib/notify-request";
 import { withPageDb } from "@/lib/page";
@@ -10,18 +9,15 @@ import {
   REQUESTS_SHOWN,
   type AdminInvite,
 } from "@/lib/queries/alliance-invites";
+import type { AllianceLabel } from "@/lib/queries/alliance-list";
 
 import { InvitesCard } from "./InvitesCard";
 import { AdminSection } from "./parts";
+import { choiceLabel } from "./Workspaces";
 
 const t = copy.admin.invites;
 const day = (at: Date) =>
   new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", timeZone: "UTC" }).format(at);
-
-const label = (unionId: number) => {
-  const a = ALLIANCES.find((x) => x.unionId === unionId);
-  return a ? `${a.tag} · ${a.name}` : String(unionId);
-};
 
 function stateText(i: AdminInvite): string {
   const s = t.invites.state;
@@ -35,18 +31,28 @@ function stateText(i: AdminInvite): string {
   return fill(s[i.state], { name: i.name ?? "", date: until });
 }
 
-export async function Invites({ now, unionIds }: { now: Date; unionIds: number[] }) {
+export async function Invites({
+  now,
+  unionIds,
+  known,
+}: {
+  now: Date;
+  unionIds: number[];
+  /** Every alliance an invite may be made for (D133). */
+  known: ({ unionId: number } & AllianceLabel)[];
+}) {
   const [invites, requests] = await withPageDb((db) =>
     Promise.all([listInvites(db, now), listRequests(db)]),
   );
+  const labels = new Map(known.map((a) => [a.unionId, choiceLabel(a)]));
+  const label = (unionId: number) => labels.get(unionId) ?? String(unionId);
   const open = new Set(["waiting", "signedIn", "server"]);
   return (
     <AdminSection id="new-alliances" title={t.title} help={t.help}>
       <InvitesCard
-        alliances={ALLIANCES.filter((a) => !unionIds.includes(a.unionId)).map((a) => ({
-          unionId: a.unionId,
-          label: label(a.unionId),
-        }))}
+        alliances={known
+          .filter((a) => !unionIds.includes(a.unionId))
+          .map((a) => ({ unionId: a.unionId, label: choiceLabel(a) }))}
         invites={invites.map((i) => ({
           id: i.id,
           alliance: label(i.unionId),

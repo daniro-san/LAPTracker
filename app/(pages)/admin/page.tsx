@@ -7,6 +7,7 @@ import { AdminActions } from "@/app/_ui/admin/AdminActions";
 import { AdminShell } from "@/app/_ui/admin/AdminShell";
 import { AdminSection, Fact, StateChip } from "@/app/_ui/admin/parts";
 import { Rehearsal } from "@/app/_ui/admin/Rehearsal";
+import { TrackedCard } from "@/app/_ui/admin/TrackedCard";
 import {
   eventWord,
   phaseWord,
@@ -294,6 +295,7 @@ export default async function AdminPage() {
         />
       </AdminSection>
       <Rehearsal r={rehearsal} clock={clock} />
+      <TrackedCard now={now} clock={clock} />
       <Schedule env={env} next={next} clock={clock} />
       <Workspaces now={now} />
     </AdminShell>

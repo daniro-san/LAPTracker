@@ -41,7 +41,7 @@ export const guideCopy = {
     },
     notFound: {
       meaning: "The game's API has no alliance with this id.",
-      action: "The alliance may be gone. Check its id in config/alliances.ts.",
+      action: "The alliance may be gone. Check that it is still on the ranks board (/alliances).",
     },
     http: {
       meaning: "The game's API answered HTTP {status}.",

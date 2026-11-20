@@ -3,7 +3,6 @@
 // page's address, analytics or a Referer. An approved request's status secret opens the same invite (`r.`).
 // Every secret is compared with timingSafeEqual on its sha256. Signing in through Discord binds the invite to
 // that account (lib/private/invite-sign-in.ts); each step after it needs the claim cookie that sign-in set.
-import { ALLIANCES } from "../../config/alliances";
 import { IP_LIMIT, IP_WINDOW_MS, secretEquals } from "../auth";
 import type { Db } from "../db";
 import type { Env } from "../env";
@@ -14,6 +13,7 @@ import {
   takenWorkspaceKeys,
   type InviteRow,
 } from "../repo/alliance-invites";
+import { allianceLabelOf } from "../repo/alliances";
 import { currentCount, recordFailure } from "../repo/auth-attempts";
 import { installUrl } from "./discord-setup";
 import { ROLES_PERMISSIONS } from "./invite-discord";
@@ -87,10 +87,10 @@ export function claimed(row: InviteRow, jar: CookieJar): boolean {
   return Boolean(row.claimHash && claim && secretEquals(sha256(claim), row.claimHash));
 }
 
-/** The alliance's tag and name, from our tracked alliances (never OGs' unless it is OGs). */
-export function allianceOf(unionId: number): { tag: string; name: string } {
-  const a = ALLIANCES.find((x) => x.unionId === unionId);
-  return a ? { tag: a.tag, name: a.name } : { tag: String(unionId), name: "" };
+/** The alliance's tag and name, as the ranks board names it (D133); the id when nothing names it. */
+export async function allianceOf(db: Db, unionId: number): Promise<{ tag: string; name: string }> {
+  const a = await allianceLabelOf(db, unionId);
+  return { tag: a?.tag ?? String(unionId), name: a?.name ?? "" };
 }
 
 export type InviteView =
@@ -133,7 +133,7 @@ export async function inviteView(
   const guildId = row.guildId;
   return {
     state: "open",
-    alliance: allianceOf(row.unionId),
+    alliance: await allianceOf(db, row.unionId),
     expiresAt: row.expiresAt,
     signedIn:
       mine && row.claimedName !== null

@@ -4,9 +4,9 @@
 // member arrays.
 import { and, asc, desc, eq, inArray, isNotNull, lt, or, sql } from "drizzle-orm";
 
-import { ALLIANCES } from "../../config/alliances";
 import { FRESH_MAX_AGE_MS } from "../collector-rows";
 import type { Db } from "../db";
+import { allianceLabels } from "../repo/alliances";
 import { dailyReads, dailyRosters, runLogs } from "../schema";
 import type { UpstreamDetail } from "../sources/types";
 import { DEADLINE_ERROR, runTrace } from "./admin";
@@ -105,9 +105,11 @@ export async function getDailyRun(db: Db, day: string) {
     .select({ unionId: dailyRosters.unionId, tag: dailyRosters.tag })
     .from(dailyRosters)
     .where(eq(dailyRosters.readDay, day));
-  // The configured tags first: an alliance the read never reached has a line but no row.
+  // The day's labels first (D133): an alliance the read never reached has a line but no row.
+  const lineIds = [...new Set(logs.flatMap((l) => (l.unionId === null ? [] : [l.unionId])))];
+  const labels = await allianceLabels(db, lineIds);
   const tags = new Map<number, string | null>([
-    ...ALLIANCES.map((a) => [a.unionId, a.tag] as const),
+    ...[...labels.entries()].map(([id, l]) => [id, l.tag] as const),
     ...tagRows.map((t) => [t.unionId, t.tag] as const),
   ]);
   return {

@@ -9,7 +9,6 @@
 // the request beyond SEND_MS.
 import { after } from "next/server";
 
-import { ALLIANCES } from "../../config/alliances";
 import { analyticsKey } from "./events";
 import { POSTHOG_INGEST_HOST } from "./region";
 
@@ -100,18 +99,18 @@ export type DeskAction = (typeof DESK_ACTIONS)[number];
 
 /**
  * Which alliance an event came from (issue 452): the workspace's slug and its alliance's public tag (null
- * only if the alliance left config/alliances.ts). Neither is personal data. No PostHog groups (a paid add-on).
+ * when the caller has no label for it, D133). Neither is personal data. No PostHog groups (a paid add-on).
  */
 export interface EventWorkspace {
   workspace: string;
   alliance: string | null;
 }
 
-export function eventWorkspace(w: { slug: string; unionId: number }): EventWorkspace {
-  return {
-    workspace: w.slug,
-    alliance: ALLIANCES.find((a) => a.unionId === w.unionId)?.tag ?? null,
-  };
+export function eventWorkspace(w: {
+  slug: string;
+  alliance?: { tag: string | null } | null;
+}): EventWorkspace {
+  return { workspace: w.slug, alliance: w.alliance?.tag ?? null };
 }
 
 export interface ServerEvents {

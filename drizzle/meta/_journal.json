@@ -379,6 +379,20 @@
       "when": 1795154507241,
       "tag": "0053_squads_queue_player_reads",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1795159175858,
+      "tag": "0054_all_alliances",
+      "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1795160718686,
+      "tag": "0055_lookup_refused",
+      "breakpoints": true
     }
   ]
 }

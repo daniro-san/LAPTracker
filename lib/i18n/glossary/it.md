@@ -494,6 +494,8 @@ Words already used in `lib/i18n/it.ts`. Reuse them so the pages stay consistent;
 | Bloc                                  | Blocco                                | `balance.bloc`, `balance.noBloc`, `balance.addTo` — a hypothetical group of alliances on the balance page                                                                                  |
 | Tracked alliances                     | alleanze seguite                      | `flow.outside`, `flow.legend`, `flow.newTitle`, `flow.leftTitle` — the alliances the ledger follows; `compare.notTracked` uses it too                                                      |
 | Daily update                          | aggiornamento giornaliero             | `history.daily` and the prose that says "aggiornamento giornaliero" (`flow.*`, `balance.*`, `standing.*`, `history.lead`) — the once-a-day read of the member lists; replaces "Daily read" |
+| Ranks board                           | Classifica                            | `alliances.asOf`, `alliances.board`, `alliances.boardMight` — the game's board of alliances by might and kills; "Classifica del {date}"                                                    |
+| Lookup (get today's details)          | ricerca                               | `alliances.get*`, `alliances.usedUp`, `alliances.failed`, `alliances.tooMany` — one shared lookup a day; "Una ricerca al giorno"                                                           |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

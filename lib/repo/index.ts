@@ -9,6 +9,7 @@ import {
   insertSampleRow,
   listAllianceRows,
 } from "./alliance-snapshots";
+import { allianceLabels, trackedAllianceIds } from "./alliances";
 import { getEvent, setEventAllianceIds } from "./events";
 import { findSnapshot, finishSnapshot, startSample, startSnapshot } from "./snapshots";
 
@@ -109,6 +110,10 @@ export interface Repo {
   /** A sample's row (D69): the members as arrays on the row, no member rows, no raw_json. */
   insertSampleRow(snapshotId: number, row: AllianceRow, members: MemberRow[]): Promise<void>;
   finishSnapshot(snapshotId: number, result: SnapshotResult): Promise<void>;
+  /** The alliances a Before copies onto its event: the newest tracked set (D133). */
+  trackedAllianceIds(): Promise<number[]>;
+  /** The newest tag and name of each id that has one (D133). */
+  allianceLabels(ids: number[]): Promise<Map<number, { tag: string | null; name: string | null }>>;
 }
 
 export function createRepo(db: Db): Repo {
@@ -126,5 +131,7 @@ export function createRepo(db: Db): Repo {
     insertAllianceRow: (id, row, members) => insertAllianceRow(db, id, row, members),
     insertSampleRow: (id, row, members) => insertSampleRow(db, id, row, members),
     finishSnapshot: (id, result) => finishSnapshot(db, id, result),
+    trackedAllianceIds: () => trackedAllianceIds(db),
+    allianceLabels: (ids) => allianceLabels(db, ids),
   };
 }

@@ -15,7 +15,11 @@ export async function POST(request: Request): Promise<Response> {
   if (!parsed.success) return privateError(400, "bad_request");
   return withContext("/api/w/request", async (ctx, db) => {
     const sent = await submitRequest(db, parsed.data, clientIp(request.headers), ctx.now());
-    if (!sent.ok) return privateError(sent.code === "has_desk" ? 409 : 429, sent.code);
+    if (!sent.ok)
+      return privateError(
+        { has_desk: 409, rate_limited: 429, unknown_alliance: 400 }[sent.code],
+        sent.code === "unknown_alliance" ? "bad_request" : sent.code,
+      );
     const line = accessRequestMessage({
       unionId: parsed.data.union_id,
       ...sent.line,

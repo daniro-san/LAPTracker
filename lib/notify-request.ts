@@ -2,7 +2,6 @@
 // lines the admin Discord channel gets when a request arrives and when an invite makes a Desk (issue 500).
 // English only (D48). The in-game name and rank are public game data; no other roster field is read or sent
 // (D71).
-import { ALLIANCES } from "../config/alliances";
 import { copy, fill } from "./copy";
 import { allianceLabel, escapeDiscord } from "./notify";
 
@@ -26,11 +25,16 @@ export function rankWarning(r: { claimed: "r5" | "r4"; rank: string | null }): s
     : null;
 }
 
-/** The admin channel's line when an alliance completes its Desk through an invite (issue 500). */
-export function deskMadeMessage(w: { unionId: number; slug: string }): string {
-  const a = ALLIANCES.find((x) => x.unionId === w.unionId);
+/** The admin channel's line when an alliance completes its Desk through an invite (issue 500); the tag and
+ * name are the alliance's newest label (D133). */
+export function deskMadeMessage(w: {
+  unionId: number;
+  slug: string;
+  tag: string;
+  name: string;
+}): string {
   return fill(t.deskMade, {
-    alliance: allianceLabel({ unionId: w.unionId, tag: a?.tag ?? null, name: a?.name ?? null }),
+    alliance: allianceLabel({ unionId: w.unionId, tag: w.tag, name: w.name || null }),
     slug: w.slug,
   });
 }

@@ -23,3 +23,7 @@ export const statementCopy = {
   showAll: "Show all",
   showLess: "Show less",
 } as const;
+
+// Every alliance on the server (D133): re-exported here, beside the alliance page's other card, because
+// lib/copy.ts is at the 300-line limit.
+export { alliancesCopy } from "./copy-alliances";
