@@ -393,6 +393,13 @@
       "when": 1795160718686,
       "tag": "0055_lookup_refused",
       "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1795161389549,
+      "tag": "0056_notice_translated",
+      "breakpoints": true
     }
   ]
 }

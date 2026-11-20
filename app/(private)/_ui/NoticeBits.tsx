@@ -62,24 +62,18 @@ export function StaleLine({ t, children }: { t: WorkspaceDictionary; children: R
   );
 }
 
-/** On the read page: a compact tag beside the language's name that opens the editor. */
-export function OutOfDateTag({
-  label,
-  onOpen,
-  t,
-}: {
-  label: string;
-  onOpen: () => void;
-  t: WorkspaceDictionary;
-}) {
+/**
+ * On the read page, in the panel of a tab that may be out of date: "Update Português", which opens the
+ * editor at that language (issue 412: a verb, so it reads as an action, not a second tag).
+ */
+export function OutOfDateTag({ label, onOpen }: { label: string; onOpen: () => void }) {
   return (
     <button
       type="button"
       onClick={onOpen}
-      aria-label={label}
       className="drawn-frame-soft inline-flex min-h-11 items-center px-3 text-body-sm font-semibold text-yarn"
     >
-      {t["notices.outOfDate"]}
+      {label}
     </button>
   );
 }

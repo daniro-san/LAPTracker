@@ -12,7 +12,12 @@ import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dicti
 import { featureOn, writingOff } from "@/lib/private/features";
 import { toReviewCount } from "@/lib/private/import-view";
 import type { noticeReviews, ReviewView } from "@/lib/private/notice-reviews";
-import { NOTICE_LANGUAGES, type NoticeLanguage } from "@/lib/private/notice-rules";
+import {
+  NOTICE_LANGUAGES,
+  reviewedLanguages,
+  type NoticeLanguage,
+} from "@/lib/private/notice-rules";
+import type { NoticeDetail } from "@/lib/private/notices";
 import { RENEW_MS } from "@/lib/private/session";
 import { SLUG } from "@/lib/private/sign-in";
 import { serverDay } from "@/lib/schedule";
@@ -125,6 +130,16 @@ export function sourceFor(
 ): NoticeLanguage | null {
   return languages.find((l) => text[l].value !== "" && !stale.includes(l)) ?? null;
 }
+
+/**
+ * Each saved language's state for the tabs (issue 412): out of date, saved from Translate, and reviewed since
+ * its last save. The save times stay on the server.
+ */
+export const savedStates = (notice: NoticeDetail, reviews: ReviewView[]) => ({
+  stale: notice.stale,
+  translated: notice.translated,
+  reviewed: reviewedLanguages(notice.savedAt, reviews),
+});
 
 /** Review requests (D113): the open ones with who asked, what and for whom; the newest 5 answered. */
 export function reviewProps(

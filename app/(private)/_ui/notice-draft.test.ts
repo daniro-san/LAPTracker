@@ -32,6 +32,9 @@ const saved = (): NoticeFields => {
   };
 };
 
+/** No saved language out of date, translated or reviewed. */
+const NONE = { stale: [] };
+
 describe("the notice draft", () => {
   it("sends the changed and kept fields with their versions, and a translation's source while it is unchanged", () => {
     let d = startDraft(saved());
@@ -113,22 +116,36 @@ describe("the notice draft", () => {
       { fr: "Postulez !" },
       { kind: "translate", from: "en", to: ["pt-BR", "fr"], text: "Apply today." },
     );
-    expect(NOTICE_LANGUAGES.map((l) => tabState(d, l, l === "pt-BR"))).toEqual([
+    expect(NOTICE_LANGUAGES.map((l) => tabState(d, l, { stale: ["pt-BR"] }))).toEqual([
       "written",
       "stale",
       "draft",
     ]);
     expect([draftKind(d, "fr"), draftKind(d, "en")]).toEqual(["translate", null]);
     const accepted = accept(d, "fr");
-    expect([tabState(accepted, "fr", false), accepted.values.fr]).toEqual([
-      "written",
+    expect([tabState(accepted, "fr", NONE), accepted.values.fr]).toEqual([
+      "translated",
       "Postulez !",
     ]);
     expect(changesOf(accepted)[0]?.from).toEqual({ language: "en", version: 2 });
     const undone = discard(d, "fr");
-    expect([tabState(undone, "fr", false), undone.from.fr]).toEqual(["empty", undefined]);
+    expect([tabState(undone, "fr", NONE), undone.from.fr]).toEqual(["empty", undefined]);
     // "Keep as is", or a change, clears "may be out of date".
-    expect(tabState({ ...d, kept: { "pt-BR": true } }, "pt-BR", true)).toBe("written");
+    expect(tabState({ ...d, kept: { "pt-BR": true } }, "pt-BR", { stale: ["pt-BR"] })).toBe(
+      "written",
+    );
+  });
+
+  it("shows a saved language as reviewed, translated or written until it is changed by hand (issue 412)", () => {
+    const d = startDraft(saved());
+    const states = { stale: [], translated: ["en", "pt-BR"], reviewed: ["en"] } as const;
+    expect(NOTICE_LANGUAGES.map((l) => tabState(d, l, states))).toEqual([
+      "reviewed",
+      "translated",
+      "empty",
+    ]);
+    const typed = { ...d, values: { ...d.values, "pt-BR": "Candidate-se já." } };
+    expect(tabState(typed, "pt-BR", states)).toBe("written");
   });
 
   it("translates from the tab in view, or fills an empty tab or a translated draft from its source", () => {
@@ -168,7 +185,7 @@ describe("the notice draft", () => {
       for_members: "true",
     });
     expect(draftKind(d, "en")).toBe("restore");
-    expect(tabState(d, "en", false)).toBe("draft");
+    expect(tabState(d, "en", NONE)).toBe("draft");
     expect(d.values.for_members).toBe("true");
     expect(accept(d, "en").values.en).toBe("Apply on Monday.");
     expect(draftKind(accept(d, "en"), "en")).toBeNull();
@@ -200,7 +217,7 @@ describe("the notice draft", () => {
     const over = { ...full, values: { ...full.values, en: `${"a".repeat(1000)}🙂` } };
     expect(canFit(over, "en")).toBe(true);
     const fitted = withDrafts(over, { en: "Short." }, { kind: "fit", language: "en", text: "x" });
-    expect([draftKind(fitted, "en"), tabState(fitted, "en", false)]).toEqual(["fit", "draft"]);
+    expect([draftKind(fitted, "en"), tabState(fitted, "en", NONE)]).toEqual(["fit", "draft"]);
     expect(canFit(fitted, "en")).toBe(false);
     expect(discard(fitted, "en").values.en).toBe(over.values.en);
     expect(draftKind(accept(fitted, "en"), "en")).toBeNull();

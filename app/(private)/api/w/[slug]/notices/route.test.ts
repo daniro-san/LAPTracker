@@ -1,6 +1,6 @@
 // The notices' save (issues 304, 293): two officers on different fields both persist; on the same field the
 // second gets 409 with the first one's text and nothing of theirs is written; another workspace's notice is
-// not found.
+// not found. A text saved from Translate is stored as translated (issue 412).
 import { randomUUID } from "node:crypto";
 
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
@@ -12,6 +12,7 @@ import type { Db } from "@/lib/db";
 import { openTestDb, truncateAll } from "@/lib/db.test-helpers";
 import { createSession, SESSION_COOKIE } from "@/lib/private/session";
 import { workspaces, workspaceUsers } from "@/lib/schema";
+import { noticeEdits } from "@/lib/schema-notices";
 
 const holder = vi.hoisted(() => ({ ctx: null as AppContext | null }));
 vi.mock("@/lib/app-context", async (original) => ({
@@ -86,6 +87,31 @@ describe("POST /api/w/[slug]/notices", () => {
       changes: [{ field: "en", value: "Apply for Queen today, then pass it on.", version: 2 }],
     });
     expect([one.status, two.status]).toEqual([200, 200]);
+  });
+
+  it("stores a text saved from Translate as translated, and a hand-written one as not", async () => {
+    const ana = await officer("ogs", "Ana");
+    const id = await notice(ana);
+    const made = await save("ogs", ana, {
+      id,
+      changes: [
+        {
+          field: "fr",
+          value: "Postulez pour Reine aujourd’hui.",
+          version: 0,
+          from: { language: "en", version: 2 },
+        },
+      ],
+    });
+    expect(made.status).toBe(200);
+    const rows = await db
+      .select({ field: noticeEdits.field, translated: noticeEdits.translated })
+      .from(noticeEdits)
+      .orderBy(noticeEdits.id);
+    expect(rows.filter((r) => r.field !== "title")).toEqual([
+      { field: "en", translated: false },
+      { field: "fr", translated: true },
+    ]);
   });
 
   it("refuses a stale write of the same field with 409 and the newer text, and writes nothing", async () => {

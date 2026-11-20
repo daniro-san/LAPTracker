@@ -40,6 +40,8 @@ export interface FieldValue {
   version: number;
   value: string;
   basis: number | null;
+  /** Saved from Translate (issue 412): the tab says "Translated" until the text is changed by hand. */
+  translated?: boolean | undefined;
 }
 export type NoticeState = Partial<Record<NoticeField, FieldValue>>;
 
@@ -62,6 +64,25 @@ export function staleLanguages(state: NoticeState): NoticeLanguage[] {
   );
 }
 
+/**
+ * The written languages a review approved or edited after their last save (issue 412): a request on that
+ * language or on the whole notice, answered at or after the language's text was saved.
+ */
+export function reviewedLanguages(
+  savedAt: Partial<Record<NoticeLanguage, Date>>,
+  reviews: readonly { language: NoticeLanguage | null; outcome: { at: Date } | null }[],
+): NoticeLanguage[] {
+  return NOTICE_LANGUAGES.filter((l) => {
+    const saved = savedAt[l];
+    return (
+      saved !== undefined &&
+      reviews.some(
+        (r) => r.outcome && (r.language === null || r.language === l) && r.outcome.at >= saved,
+      )
+    );
+  });
+}
+
 /** One field as the officer saved it. */
 export interface Change {
   field: NoticeField;
@@ -76,6 +97,7 @@ export interface NewEdit {
   field: NoticeField;
   value: string;
   basis: number | null;
+  translated: boolean;
 }
 
 export type SavePlan = { ok: true; edits: NewEdit[] } | { ok: false; conflicts: NoticeField[] };
@@ -106,8 +128,18 @@ export function planSave(state: NoticeState, changes: readonly Change[]): SavePl
     // Made from the text the source still has: its revision. From an older text: behind at once.
     return source && source.version === c.from.version ? (source.basis ?? 0) : 0;
   };
+  // A translation is "Translated"; text saved unchanged ("Keep as is") keeps what it was.
+  const translated = (c: Change) =>
+    isNoticeLanguage(c.field) &&
+    (c.from !== undefined ||
+      (state[c.field]?.value === c.value && state[c.field]?.translated === true));
   return {
     ok: true,
-    edits: changes.map((c) => ({ field: c.field, value: c.value, basis: basisOf(c) })),
+    edits: changes.map((c) => ({
+      field: c.field,
+      value: c.value,
+      basis: basisOf(c),
+      translated: translated(c),
+    })),
   };
 }

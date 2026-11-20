@@ -11,7 +11,6 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { track } from "@/lib/analytics/events";
-import { buttonClass } from "@/lib/brand/components/Button";
 import { chip } from "@/lib/brand/components/controls";
 import { Notice } from "@/lib/brand/components/Notice";
 import { RadioField } from "@/lib/brand/components/RadioField";
@@ -67,7 +66,10 @@ function OpenRequest(props: {
   slug: string;
   t: WorkspaceDictionary;
   request: ReviewProps["open"][number];
+  /** The tab in view: no "Jump to" it (issue 412). */
+  active: NoticeLanguage;
   onEdit: () => void;
+  onJump: (language: NoticeLanguage) => void;
 }) {
   const { t, request } = props;
   const router = useRouter();
@@ -91,9 +93,11 @@ function OpenRequest(props: {
       <Notice tone="info">
         <p className="font-semibold">{request.line}</p>
         <p className="text-body-sm text-ink/75">{request.sub}</p>
-        {request.jump && request.language && (
+        {request.jump && request.language && request.language !== props.active && (
+          // Opens that language's tab and scrolls to the tabs (issue 412).
           <a
-            href={`#read-${request.language}`}
+            href="#read-tabs"
+            onClick={() => request.language && props.onJump(request.language)}
             className="inline-flex min-h-11 items-center text-body-sm font-semibold text-plum underline underline-offset-4"
           >
             {request.jump}
@@ -125,18 +129,23 @@ export function ReviewRequests(props: {
   slug: string;
   t: WorkspaceDictionary;
   reviews: ReviewProps;
+  active: NoticeLanguage;
   onEdit: (review: number, language: NoticeLanguage | null) => void;
+  /** "Jump to Français": that language's tab comes into view. */
+  onJump: (language: NoticeLanguage) => void;
 }) {
   if (props.reviews.open.length === 0) return null;
   return (
-    <ul aria-label={props.t["notices.review"]} className="mt-4 max-w-2xl space-y-2">
+    <ul aria-label={props.t["notices.review"]} className="mt-3 space-y-2">
       {props.reviews.open.map((r) => (
         <OpenRequest
           key={r.id}
           slug={props.slug}
           t={props.t}
           request={r}
+          active={props.active}
           onEdit={() => props.onEdit(r.id, r.language)}
+          onJump={props.onJump}
         />
       ))}
     </ul>
@@ -268,35 +277,21 @@ export function AskSheet(props: {
 }
 
 /** The "Review" section: the answered requests (times in server time, said once) and "Ask for a review". */
-export function ReviewSection(props: {
-  t: WorkspaceDictionary;
-  reviews: ReviewProps;
-  onAsk: () => void;
-}) {
+export function ReviewSection(props: { t: WorkspaceDictionary; reviews: ReviewProps }) {
   const { t, reviews } = props;
+  // Asking is in the tab's panel (issue 412): the section shows only when a request was answered.
+  if (reviews.done.length === 0) return null;
   return (
     <section aria-labelledby="notice-review" className="mt-6 border-t border-rule pt-3">
       <h2 id="notice-review" className="font-subhead text-display-sm">
         {t["notices.review"]}
       </h2>
-      {reviews.done.length > 0 && (
-        <>
-          <ul className="mt-1 space-y-1 text-body-sm text-ink/80">
-            {reviews.done.map((line, i) => (
-              <li key={i}>{line}</li>
-            ))}
-          </ul>
-          <p className="mt-1 text-body-sm text-ink/70">{t["notices.review.times"]}</p>
-        </>
-      )}
-      <button
-        type="button"
-        aria-haspopup="dialog"
-        onClick={props.onAsk}
-        className={buttonClass("secondary", "mt-3")}
-      >
-        {t["notices.review.ask"]}
-      </button>
+      <ul className="mt-1 space-y-1 text-body-sm text-ink/80">
+        {reviews.done.map((line, i) => (
+          <li key={i}>{line}</li>
+        ))}
+      </ul>
+      <p className="mt-1 text-body-sm text-ink/70">{t["notices.review.times"]}</p>
     </section>
   );
 }

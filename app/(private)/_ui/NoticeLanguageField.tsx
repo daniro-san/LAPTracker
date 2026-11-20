@@ -1,19 +1,21 @@
 "use client";
 
 // The notice's text (issues 304, 305, 363): one tab per language, EN · PT · FR, each with a small state
-// (empty, written, a draft to check, may be out of date), and one text box for the tab in view, which grows
+// (missing, written, translated, reviewed, a draft to check, may be out of date; issue 412) and its length,
+// and one text box for the tab in view, which grows
 // with what is written. In the tab in view: "may be out of date" with "Update from …" and "Keep as is"; a
 // draft's mark ("Draft from Translate, not saved"), Accept and Undo, and "Partly untranslated"; the counter
 // and how far over the game's limit the text is. The tabs and the draft mark are shared with Start here
-// (LanguageEditorParts.tsx, D116).
+// (LanguageTabs.tsx and LanguageEditorParts.tsx, D116).
 import { useLayoutEffect, useRef } from "react";
 
 import { FIELD } from "@/lib/brand/components/controls";
 import { fill } from "@/lib/copy";
 import { NOTICE_LIMIT, noticeLength, type NoticeLanguage } from "@/lib/private/notice-rules";
 
-import { DraftMark, LanguageTabs } from "./LanguageEditorParts";
+import { DraftMark } from "./LanguageEditorParts";
 import { LANGUAGE_NAME } from "./languages";
+import { LanguageTabs } from "./LanguageTabs";
 import { draftKind, tabState } from "./notice-draft";
 import type { Editor, EditorProps } from "./notice-editor-state";
 import { Counter, OverLimit, smallButton, StaleLine } from "./NoticeBits";
@@ -59,7 +61,7 @@ export function LanguageField({ p, e }: { p: EditorProps; e: Editor }) {
   const { t } = p;
   const language = e.active;
   const value = e.draft.values[language];
-  const stale = tabState(e.draft, language, p.stale.includes(language)) === "stale";
+  const stale = tabState(e.draft, language, p) === "stale";
   const from = p.source !== language ? p.source : null;
   return (
     <>
@@ -68,7 +70,8 @@ export function LanguageField({ p, e }: { p: EditorProps; e: Editor }) {
         t={t}
         languages={p.languages}
         active={language}
-        stateOf={(l) => tabState(e.draft, l, p.stale.includes(l))}
+        stateOf={(l) => tabState(e.draft, l, p)}
+        count={{ text: (l) => e.draft.values[l], language: p.viewer }}
         onPick={e.setActive}
       />
       <div id="notice-panel" role="tabpanel" aria-labelledby={`notice-tab-${language}`}>

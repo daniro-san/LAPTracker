@@ -15,6 +15,7 @@ export interface FieldRow {
   version: number;
   value: string;
   basis: number | null;
+  translated: boolean;
   by: string | null;
   at: Date;
 }
@@ -65,6 +66,7 @@ function newestFields(db: Pick<Db, "selectDistinctOn">, workspaceId: number, not
       version: noticeEdits.id,
       value: noticeEdits.value,
       basis: noticeEdits.basis,
+      translated: noticeEdits.translated,
       by: workspaceUsers.displayName,
       at: noticeEdits.editedAt,
     })
@@ -209,6 +211,7 @@ export interface NewEditRow {
   field: string;
   value: string;
   basis: number | null;
+  translated: boolean;
 }
 
 export interface NoticeWrite {

@@ -27,9 +27,9 @@ import {
   AI_REASON_ID,
   DraftMark,
   ImproveButton,
-  LanguageTabs,
 } from "./LanguageEditorParts";
 import { LANGUAGE_CODE, LANGUAGE_NAME } from "./languages";
+import { LanguageTabs } from "./LanguageTabs";
 import type { AiKind } from "./notice-editor-state";
 import { smallButton, StaleLine } from "./NoticeBits";
 import { RefusalLine } from "./SignedOut";
