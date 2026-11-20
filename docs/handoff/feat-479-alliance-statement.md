@@ -71,4 +71,4 @@
 - `app/(pages)/events/[id]/alliances/[unionId]/page.tsx` is at 274 counted lines (no blanks or comments) out of the 300-line lint limit.
 </adjustments>
 
-PR: (added by the orchestrator)
+https://github.com/daniro-san/LAPTracker/pull/488
