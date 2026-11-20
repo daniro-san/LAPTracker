@@ -9,42 +9,29 @@ import { useState } from "react";
 import { chip, FIELD } from "@/lib/brand/components/controls";
 import { Tag } from "@/lib/brand/components/Tag";
 import { fill, isolate } from "@/lib/copy";
-import { PREP_MESSAGE, type PrepMessageWords } from "@/lib/private/dictionary.raidprep";
+import { PREP_MESSAGE } from "@/lib/private/dictionary.raidprep";
 import type { Mark } from "@/lib/private/roll-call-rules";
 
 import type { CalendarSheetWords } from "./calendar-data";
 import type { PrepRowView, PrepTrackerView } from "./prep-data";
+import { prepMessage, shieldDone } from "./prep-message";
 import type { MarkRowView, MarkWords, RollSheetWords } from "./roll-call-data";
 import { Times } from "./YourTime";
-
-/**
- * The message: only the parts not yet ✓, then "bring your troops home", in the member's language. When the
- * tracker saw a shield, the shield part asks to check it is still on rather than to turn it on.
- */
-export function prepMessage(
-  w: PrepMessageWords,
-  name: string,
-  when: "reset" | "kvk",
-  done: { shield: boolean; wall: boolean; seen: boolean },
-): string {
-  const shield = done.seen ? w.check : w.shield;
-  const parts = [...(done.shield ? [] : [shield]), ...(done.wall ? [] : [w.wall]), w.home];
-  const last = parts.pop() as string;
-  const list = parts.length ? `${parts.join(", ")} ${w.and} ${last}` : last;
-  return fill(w.text, { name, when: w[when], parts: list });
-}
 
 function Pair(props: {
   label: string;
   name: string;
   mark: Mark | null;
-  words: { yes: string; no: string };
+  words: { yes: string; no: string; assumed?: string };
   button: string;
   onTap: (tapped: "yes" | "no") => void;
 }) {
+  // Every mark shows its word, "no problem seen" too (it has no button of its own), as RollCallMarks does.
+  const said = props.mark ? props.words[props.mark] : undefined;
   return (
     <div className="min-w-0">
       <p className="text-body-sm text-ink/80">{props.label}</p>
+      {said && <Tag tone={props.mark === "yes" ? "progress" : "neutral"}>{said}</Tag>}
       <div className="mt-0.5 flex gap-3">
         {(["yes", "no"] as const).map((v) => (
           <button
@@ -137,7 +124,7 @@ export function RaidPrepRow(props: {
 }) {
   const { row, prep, words } = props;
   const done = {
-    shield: props.shield === "yes",
+    shield: shieldDone(props.shield),
     wall: props.wall === "yes",
     seen: prep?.tracker?.on ?? false,
   };

@@ -4,17 +4,21 @@
 // runs at any other time; the leaders' message is posted once and then edited, only when turned on.
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
-import { OWN_ALLIANCE_ID } from "../config/alliances";
+import { OWN_ALLIANCE_ID, TRACKED_COUNT } from "../config/alliances";
 import { TEST_ENV } from "./app-context.test-helpers";
 import type { Db } from "./db";
 import { openTestDb, truncateAll } from "./db.test-helpers";
 import { saveWorkspace } from "./repo/workspaces";
 import { dailyReads, dailyRosters } from "./schema";
 import { shieldChecks, shieldQueue, shieldSettings } from "./schema-shield";
-import { playerReads, squadQueue } from "./schema-squads";
+import { playerReads, squadQueue, squadReads } from "./schema-squads";
+import { postShieldSummary, type PostDeps } from "./shield-post";
+import type { ShieldTarget } from "./shield-read";
 import { shieldTick } from "./shield-tick";
+import { squadsReserve } from "./squads";
 import type { SquadsDeps } from "./squads-read";
 import { playerAnswer } from "./squads.test-helpers";
+import { squadTargets } from "./workspace-keys";
 
 /** Friday 23:39 ST (UTC−2): the day's read is done, the burst starts. */
 const FRI = new Date("2026-11-21T01:39:00Z");
@@ -41,7 +45,7 @@ beforeEach(async () => {
 
 const range = (n: number) => Array.from({ length: n }, (_, i) => i + 1);
 
-async function dayRead(uids: number[]) {
+async function dayRead(uids: number[], name = (u: number) => `Wren${u}`) {
   await db.insert(dailyReads).values({
     day: DAY,
     startedAt: new Date(`${DAY}T23:30:00-02:00`),
@@ -56,17 +60,20 @@ async function dayRead(uids: number[]) {
     isFresh: true,
     sourceUpdatedAt: new Date(`${DAY}T23:00:00-02:00`),
     memberUids: uids,
-    memberNames: uids.map((u) => `Wren${u}`),
+    memberNames: uids.map(name),
     memberPower: uids.map(() => 1),
     memberKills: uids.map(() => 0),
   });
 }
 
-/** Every member answers; odd uids are seen with an 8-hour shield. */
-function deps(now: Date) {
+/**
+ * Every member answers; odd uids are seen with an 8-hour shield. `step`: how far the clock moves per call;
+ * `remaining`: the quota before the first call; `gone`: Discord answers an edit with 404.
+ */
+function deps(now: Date, opts: { step?: number; remaining?: number; gone?: boolean } = {}) {
   const calls: number[] = [];
   const posts: { method: string; url: string; content: string }[] = [];
-  let remaining = 900;
+  let remaining = opts.remaining ?? 900;
   const d: SquadsDeps & {
     calls: number[];
     posts: typeof posts;
@@ -92,12 +99,14 @@ function deps(now: Date) {
       if (!href.startsWith(HOOK)) return Response.json({});
       const body = JSON.parse(String(init?.body)) as { content: string };
       posts.push({ method: String(init?.method), url: href, content: body.content });
+      if (opts.gone && init?.method === "PATCH") return new Response(null, { status: 404 });
       return Response.json({ id: "900" });
     },
     v1: {
       fetchPlayer: async (uid, onAttempt) => {
         onAttempt?.(0);
         calls.push(uid);
+        d.at = new Date(d.at.getTime() + (opts.step ?? 0));
         const quota = { limit: 1000, used: 1000 - remaining, remaining: --remaining };
         const facts = {
           ...playerAnswer(uid).facts,
@@ -178,4 +187,94 @@ describe("the Raid Shield check's reads (D137)", () => {
     expect(d.posts[1]?.url).toBe(`${HOOK}/messages/900`);
     expect(d.posts[1]?.content).toContain("Not seen this morning: Wren2, Wren4");
   });
+
+  it("starts no batch that could end after 00:00 ST on Friday", async () => {
+    await dayRead(range(30));
+    const d = deps(new Date("2026-11-21T01:59:30Z")); // 23:59:30 ST
+    await tick(d);
+    expect(d.calls).toEqual([]);
+    d.at = new Date("2026-11-21T01:58:30Z"); // 23:58:30 ST: one batch still ends by 00:00
+    await tick(d);
+    expect(d.calls.length).toBeGreaterThan(0);
+  });
+
+  it("makes no call at or after 12:00 ST on Saturday", async () => {
+    await dayRead(range(30));
+    // 11:59:00 ST, each call takes 20 s: calls at 11:59:00, :20 and :40, none at 12:00.
+    const d = deps(new Date("2026-11-21T13:59:00Z"), { step: 20_000 });
+    await tick(d);
+    expect(d.calls).toHaveLength(3);
+    const [check] = await db.select().from(shieldChecks);
+    expect(check).toMatchObject({ morningStatus: "running", morningReason: null });
+  });
+
+  it("stops before the reserve and waits, on our key", async () => {
+    await dayRead(range(30));
+    const reserve = squadsReserve(SAT, { ...TEST_ENV, SAMPLE_EVERY_MIN: 15 }, TRACKED_COUNT);
+    const startedAt = new Date("2026-11-21T01:31:00Z");
+    await db.insert(squadReads).values({
+      day: DAY,
+      unionId: OWN_ALLIANCE_ID,
+      status: "done",
+      startedAt,
+      members: 30,
+      quotaRemaining: reserve + 3,
+    });
+    const d = deps(SAT, { remaining: reserve + 3 });
+    await tick(d);
+    expect(d.calls).toHaveLength(3);
+    const [check] = await db.select().from(shieldChecks);
+    expect(check).toMatchObject({ morningStatus: "running", morningQuotaRemaining: reserve });
+  });
+
+  it("shows typed names literally in the leaders' message", async () => {
+    await dayRead(range(2), (u) => (u === 2 ? "[click](https://evil.test) @everyone" : `Wren${u}`));
+    await db.insert(shieldSettings).values({ workspaceId: ws, discord: true, updatedAt: FRI });
+    const d = deps(FRI);
+    await tick(d);
+    const content = d.posts[0]?.content ?? "";
+    expect(content).toContain("\\[click\\](https://evil.test) @\u200beveryone");
+    expect(content).not.toContain("[click](");
+  });
+
+  it("keeps Friday's summary until a morning reading exists, and edits only a changed text", async () => {
+    await dayRead(range(4));
+    await db.insert(shieldSettings).values({ workspaceId: ws, discord: true, updatedAt: FRI });
+    const d = deps(FRI);
+    await tick(d);
+    expect(d.posts).toHaveLength(1);
+    const [target] = await shieldTargetsOf(d);
+    if (!target) throw new Error("no target");
+    const post = { env: d.env, fetch: d.fetch, now: d.now, origin: d.origin } as PostDeps;
+    // Saturday before any morning answer: the same text as Friday's, so no edit.
+    d.at = new Date("2026-11-21T11:00:00Z");
+    expect(await postShieldSummary(post, db, { day: DAY, target, pass: "morning" })).toBe(true);
+    expect(d.posts).toHaveLength(1);
+    d.at = SAT;
+    await tick(d);
+    expect(d.posts).toHaveLength(2);
+    expect(d.posts[1]?.content).toContain("Not seen this morning: Wren2, Wren4");
+  });
+
+  it("never posts again a message Discord says was deleted", async () => {
+    await dayRead(range(4));
+    await db.insert(shieldSettings).values({ workspaceId: ws, discord: true, updatedAt: FRI });
+    const d = deps(FRI, { gone: true });
+    await tick(d);
+    d.at = SAT;
+    await tick(d);
+    expect(d.posts.map((p) => p.method)).toEqual(["POST", "PATCH"]);
+    const [check] = await db.select().from(shieldChecks);
+    expect(check?.messageHash).toBe("gone");
+    d.at = new Date(SAT.getTime() + 15 * 60_000);
+    await tick(d);
+    expect(d.posts).toHaveLength(2);
+  });
 });
+
+/** The shield targets as the tick sees them, for a direct call of the leaders' message. */
+async function shieldTargetsOf(d: ReturnType<typeof deps>): Promise<ShieldTarget[]> {
+  const [settings] = await db.select().from(shieldSettings);
+  const targets = await squadTargets(db, d.env.WORKSPACE_KEYS_SECRET, d.at, "shield_check");
+  return targets.map((t) => ({ ...t, settings: settings ?? null }));
+}

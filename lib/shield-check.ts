@@ -56,6 +56,13 @@ export function shieldPassAt(
   return null;
 }
 
+/**
+ * Whether either read could run at `now` for any alliance (the earliest morning time): the tick looks at
+ * no workspace outside these windows.
+ */
+export const shieldWindowOpen = (now: Date, cfg: Cfg) =>
+  shieldPassAt(now, cfg, MORNING_MIN) !== null;
+
 const addDay = (day: string) =>
   new Date(Date.parse(`${day}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10);
 

@@ -88,6 +88,7 @@ export async function shieldMorning(
       target,
       calls: claim.row.morningCalls + (claim.fresh && target.key ? 1 : 0),
       remaining,
+      until: run.until,
       signal: controller.signal,
     });
     await finishMorning(deps, db, log, { ...q, claimedAt, target, b });
@@ -203,7 +204,7 @@ function blocked(calls: number, b: Batch, reserve: number): boolean {
 async function readMorning(
   deps: SquadsDeps,
   db: Db,
-  run: MorningRun & { calls: number; remaining: number | null },
+  run: MorningRun & { calls: number; remaining: number | null; until: number },
 ): Promise<Batch> {
   const { target, signal } = run;
   const q = { day: run.day, unionId: run.unionId };
@@ -224,7 +225,9 @@ async function readMorning(
     const due = await dueShield(db, q, deps.now(), SQUADS_BATCH_CALLS);
     if (due.length === 0) return b;
     for (const member of due) {
-      if (blocked(run.calls + b.calls, b, reserve) || signal.aborted) return b;
+      // Never a call at or after `until`: 12:00 ST, when KvK starts, or the tick's budget.
+      const late = deps.now().getTime() >= run.until;
+      if (blocked(run.calls + b.calls, b, reserve) || signal.aborted || late) return b;
       const save = (m: Parameters<typeof saveShieldCall>[3]) =>
         saveShieldCall(
           db,

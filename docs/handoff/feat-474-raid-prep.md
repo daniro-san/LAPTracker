@@ -23,6 +23,15 @@
 - **Analytics:** `ws_action` `roll_call` / `accept`, `raid_prep` / `save`; `ws_roll_call_marked` `how: tracker`.
 - **Docs:** D137. Amendments to D103, D132 and D134. Updates to ARCHITECTURE, GLOSSARY and the tracking plan. /admin no longer says "not built yet".
 
+- **Review of PR 517, fixed:**
+  - Member names in the leaders' message are escaped with `escapeDiscord` (markdown links, `@everyone`).
+  - "No problem seen" shows its word under the Shield pair, and the message never asks about a shield marked ✓ or "no problem seen" (`prep-message.ts`).
+  - On Saturday, until a morning answer exists, the message keeps Friday's summary and names.
+  - The message is edited only when its text changed (`message_hash`, migration `0059_shield_message_hash`); a deleted message (404) is never posted again and logs `shield.message_gone` only.
+  - The tick checks the clock first and reads no workspace outside the two windows; the morning read checks the clock before each call.
+  - New tests: the Friday 00:00 stop, the Saturday 12:00 stop, the reserve stop, the escaped names, the kept Friday summary with no needless edit, the deleted message, and the message with ✓ and "no problem seen".
+  - Left for the coordinator's follow-up: the duplicated webhook opening, and the settings route tests.
+
 ## Decisions
 
 - **D137.** D135 and D136 were taken by PRs 515 and 514, now merged; 0058 is still the next migration after the rebase.

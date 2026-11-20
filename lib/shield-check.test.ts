@@ -3,7 +3,13 @@
 import { describe, expect, it } from "vitest";
 
 import { TEST_ENV } from "./app-context.test-helpers";
-import { mayEndBeforeKvk, morningMinuteOf, shieldEndsBy, shieldPassAt } from "./shield-check";
+import {
+  mayEndBeforeKvk,
+  morningMinuteOf,
+  shieldEndsBy,
+  shieldPassAt,
+  shieldWindowOpen,
+} from "./shield-check";
 
 const at = (iso: string) => new Date(iso);
 const pass = (iso: string, morning = 600) => shieldPassAt(at(iso), TEST_ENV, morning)?.pass ?? null;
@@ -22,6 +28,9 @@ describe("the Raid Shield check's rules (D137)", () => {
     expect(pass("2026-11-21T13:59:00Z")).toBe("morning");
     expect(pass("2026-11-21T14:00:00Z")).toBeNull(); // 12:00 ST: KvK
     expect(pass("2026-11-20T01:40:00Z")).toBeNull(); // Thursday night
+    // The tick reads no workspace outside the windows.
+    expect(shieldWindowOpen(at("2026-11-21T11:59:00Z"), TEST_ENV)).toBe(false);
+    expect(shieldWindowOpen(at("2026-11-21T01:30:00Z"), TEST_ENV)).toBe(true);
     expect(morningMinuteOf(720)).toBe(660);
     expect(morningMinuteOf(null)).toBe(600);
   });

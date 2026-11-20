@@ -414,6 +414,13 @@
       "when": 1795167179195,
       "tag": "0058_raid_prep_shield_check",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1795216151026,
+      "tag": "0059_shield_message_hash",
+      "breakpoints": true
     }
   ]
 }

@@ -6,6 +6,7 @@ import type { Db } from "./db";
 import type { Env } from "./env";
 import { getDailyRead } from "./repo/daily-reads";
 import { allShieldSettings } from "./repo/shield-checks";
+import { shieldWindowOpen } from "./shield-check";
 import { postShieldSummary, type PostDeps } from "./shield-post";
 import { passesAt, shieldMorning, shieldNight, type ShieldTarget } from "./shield-read";
 import type { SquadsDeps } from "./squads-read";
@@ -36,6 +37,8 @@ export async function shieldTick(
   deadline: number,
 ): Promise<void> {
   const now = deps.now();
+  // The clock first: outside Friday's and Saturday's windows no workspace or setting is read.
+  if (!shieldWindowOpen(now, deps.env)) return;
   const due = passesAt(now, deps, await shieldTargets(deps, db, now));
   const [first] = due;
   if (!first) return;

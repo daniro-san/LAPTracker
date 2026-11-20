@@ -70,9 +70,17 @@ export async function updateMorning(
   return rows.length > 0;
 }
 
-/** The leaders' channel message to edit next time. */
-export async function keepMessage(db: Db, q: Day, messageId: string, now: Date): Promise<void> {
-  await db.update(shieldChecks).set({ messageId, postedAt: now }).where(one(q));
+/** The leaders' channel message to edit next time, and the text's hash (or `gone`). */
+export async function keepMessage(
+  db: Db,
+  q: Day,
+  message: { id: string; hash: string },
+  now: Date,
+): Promise<void> {
+  await db
+    .update(shieldChecks)
+    .set({ messageId: message.id, messageHash: message.hash, postedAt: now })
+    .where(one(q));
 }
 
 const queued = (q: Day) => and(eq(shieldQueue.day, q.day), eq(shieldQueue.unionId, q.unionId));

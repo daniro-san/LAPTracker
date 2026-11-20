@@ -3,6 +3,8 @@
 // webhook (D129; WORKSPACE_DISCORD_WEBHOOKS as its fallback). Only when the officers turned it on in
 // Alliance settings, never to the members' channel or anywhere public. Names only of members the tracker
 // did not see shielded, as a hint (D75); nothing is logged but counts, and the webhook URL never is.
+import { createHash } from "node:crypto";
+
 import {
   SHIELD_LANGUAGES,
   SHIELD_POST,
@@ -11,8 +13,9 @@ import {
 } from "./copy-shield";
 import type { Db } from "./db";
 import { discordClock } from "./discord-format";
-import { sendOrEdit } from "./discord-send";
+import { editOnly, sendOrEdit } from "./discord-send";
 import type { Env } from "./env";
+import { escapeDiscord } from "./notify";
 import {
   getShieldCheck,
   keepMessage,
@@ -27,6 +30,8 @@ import { masterFingerprint, openKey } from "./workspace-keys";
 
 /** Names listed at most, so the message stays far under Discord's 2,000 characters. */
 const NAMES_MAX = 40;
+/** `message_hash` once Discord said the message was deleted. */
+const GONE = "gone";
 
 type PostEnv = Pick<Env, "SERVER_TZ" | "WORKSPACE_KEYS_SECRET" | "WORKSPACE_DISCORD_WEBHOOKS">;
 export interface PostDeps {
@@ -92,8 +97,9 @@ function readLine(w: ShieldPostWords, s: ReadSummary, day: string, zone: string)
   return s.unread > 0 ? `${line} · ${fill(w.unread, { n: s.unread })}` : line;
 }
 
+/** Names typed in game show literally: Discord markdown and mentions are escaped (lib/notify.ts). */
 const names = (w: ShieldPostWords, list: string[]) => {
-  const shown = list.slice(0, NAMES_MAX).join(", ");
+  const shown = list.slice(0, NAMES_MAX).map(escapeDiscord).join(", ");
   const rest = list.length - NAMES_MAX;
   return rest > 0 ? `${shown} ${fill(w.more, { n: rest })}` : shown;
 };
@@ -122,7 +128,11 @@ const mondayOf = (day: string) => {
   return new Date(t - back * 86_400_000).toISOString().slice(0, 10);
 };
 
-/** Posts the summary, or edits the one posted for this check; nothing when turned off or no channel. */
+/**
+ * Posts the summary, or edits the one posted for this check, only when its text changed. A message
+ * Discord says was deleted is not posted again (a code-only log line). Nothing when turned off or no
+ * channel.
+ */
 export async function postShieldSummary(
   deps: PostDeps,
   db: Db,
@@ -130,15 +140,41 @@ export async function postShieldSummary(
 ): Promise<boolean> {
   const { target } = run;
   if (!target.settings?.discord || target.workspaceId === null) return false;
+  const q = { day: run.day, unionId: target.unionId };
+  const check = await getShieldCheck(db, q);
+  if (check?.messageHash === GONE) return false;
   const hook = await leadersHook(db, deps.env, target);
   if (!hook) return false;
   const content = await messageOf(deps, db, run);
-  const q = { day: run.day, unionId: target.unionId };
-  const before = (await getShieldCheck(db, q))?.messageId ?? null;
-  const body = { content, allowed_mentions: { parse: [] } };
-  const id = await sendOrEdit(deps.fetch, hook, body, before);
-  if (id && id !== before) await keepMessage(db, q, id, deps.now());
-  return id !== null;
+  const hash = createHash("sha256").update(content).digest("hex");
+  if (check?.messageId && check.messageHash === hash) return true;
+  return deliver(deps, db, { q, hook, content, hash, id: check?.messageId ?? null });
+}
+
+/** The first post, or an edit of the posted message; a deleted message is marked `gone`, not posted. */
+async function deliver(
+  deps: PostDeps,
+  db: Db,
+  m: {
+    q: { day: string; unionId: number };
+    hook: string;
+    content: string;
+    hash: string;
+    id: string | null;
+  },
+): Promise<boolean> {
+  const body = { content: m.content, allowed_mentions: { parse: [] } };
+  if (!m.id) {
+    const id = await sendOrEdit(deps.fetch, m.hook, body, null);
+    if (id) await keepMessage(db, m.q, { id, hash: m.hash }, deps.now());
+    return id !== null;
+  }
+  const edited = await editOnly(deps.fetch, m.hook, body, m.id);
+  if (edited === "failed") return false;
+  if (edited === "gone") console.warn("shield.message_gone");
+  const hash = edited === "ok" ? m.hash : GONE;
+  await keepMessage(db, m.q, { id: m.id, hash }, deps.now());
+  return edited === "ok";
 }
 
 /** The message's text from the stored readings of both reads. */
@@ -157,13 +193,15 @@ async function messageOf(
     members,
     await shieldReadings(db, target.unionId, windows.night.from, windows.night.to),
   );
-  const morning =
+  // Until the morning read has an answer, the message keeps Friday's summary and names.
+  const read =
     run.pass === "morning"
       ? summarize(
           members,
           await shieldReadings(db, target.unionId, windows.morning.from, windows.morning.to),
         )
       : null;
+  const morning = read && read.read > 0 ? read : null;
   const lang = target.settings?.language as ShieldLanguage;
   const words = SHIELD_POST[SHIELD_LANGUAGES.includes(lang) ? lang : "en"];
   const url = `${deps.origin}/w/${target.slug}/roll-call?week=${mondayOf(day)}`;

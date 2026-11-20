@@ -45,6 +45,11 @@ export const shieldChecks = pgTable(
     morningQuotaRemaining: integer("morning_quota_remaining"),
     morningReason: text("morning_reason"),
     messageId: text("message_id"),
+    /**
+     * The posted text's sha256, so an unchanged summary is not edited again; `gone` once Discord said the
+     * message was deleted: it is never posted again that night.
+     */
+    messageHash: text("message_hash"),
     postedAt: tstz("posted_at"),
   },
   (t) => [
