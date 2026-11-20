@@ -2,6 +2,7 @@
 // this file; migration 0021 creates the first two tables, 0028 the publishes (D102); deleted_* columns, D118.
 import { sql } from "drizzle-orm";
 import {
+  boolean,
   check,
   customType,
   index,
@@ -59,6 +60,7 @@ export const notices = pgTable(
  * and ends_on (YYYY-MM-DD, "" when cleared). The newest row per field is the current value, and its id
  * is the version an edit must name (409 otherwise). `basis` (languages only) is the revision of the text
  * that language reflects; a translation takes its source's, so an older basis means "may be out of date".
+ * `translated` (languages only): the text was saved from Translate, unchanged since (issue 412, D113).
  */
 export const noticeEdits = pgTable(
   "notice_edits",
@@ -73,6 +75,7 @@ export const noticeEdits = pgTable(
     field: text("field").notNull(),
     value: text("value").notNull(),
     basis: integer("basis"),
+    translated: boolean("translated").notNull().default(false),
     editedBy: integer("edited_by").references(() => workspaceUsers.id, { onDelete: "set null" }),
     editedAt: tstz("edited_at").notNull(),
   },

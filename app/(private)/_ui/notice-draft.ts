@@ -182,14 +182,29 @@ export const canFit = (d: Draft, language: NoticeLanguage): boolean =>
   // Trimmed, as the draft route counts it.
   noticeLength(d.values[language].trim()) > NOTICE_LIMIT;
 
-/** What a language's tab shows (issue 363): a draft to check, may be out of date, written, or empty. */
-export type TabState = "draft" | "stale" | "written" | "empty";
+/**
+ * What a language's tab shows (issues 363, 412): a draft to check, may be out of date, missing (empty),
+ * reviewed, translated, or written. A saved text keeps its saved state ("Reviewed", "Translated") until it
+ * is changed; an accepted translation not saved yet is "Translated", any other change "Written".
+ */
+export type TabState = "draft" | "stale" | "empty" | "reviewed" | "translated" | "written";
 
-/** `staleSaved`: the server says the saved text may be out of date; a change or "Keep as is" clears it. */
-export function tabState(d: Draft, language: NoticeLanguage, staleSaved: boolean): TabState {
+/** What the server knows of each saved language (issue 412). */
+export interface SavedStates {
+  stale: readonly NoticeLanguage[];
+  translated?: readonly NoticeLanguage[] | undefined;
+  reviewed?: readonly NoticeLanguage[] | undefined;
+}
+
+export function tabState(d: Draft, language: NoticeLanguage, saved: SavedStates): TabState {
   if (d.undo[language] !== undefined) return "draft";
-  if (staleSaved && !d.kept[language] && d.values[language] === d.base[language]) return "stale";
-  return d.values[language].trim() === "" ? "empty" : "written";
+  const unchanged = d.values[language] === d.base[language];
+  // "Keep as is", or a change, clears "may be out of date".
+  if (saved.stale.includes(language) && !d.kept[language] && unchanged) return "stale";
+  if (d.values[language].trim() === "") return "empty";
+  if (!unchanged) return d.from[language] ? "translated" : "written";
+  if (saved.reviewed?.includes(language)) return "reviewed";
+  return saved.translated?.includes(language) ? "translated" : "written";
 }
 
 /** Which action filled the language's draft, or null when it holds none. */

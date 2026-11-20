@@ -1,0 +1,1 @@
+ALTER TABLE "notice_edits" ADD COLUMN "translated" boolean DEFAULT false NOT NULL;

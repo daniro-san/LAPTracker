@@ -31,3 +31,20 @@ Why: a notice over the game board's 1,000 characters was cut when copied, and tr
 - Approval does not block Publish to Discord. Nothing is sent outside the app: no Discord message, no mail.
 - The route answers 401 `signed_out` to no session or a member's session (D99, D105), and is in `member-session.test.ts`. Logs: `notices.review.asked` (whole 0/1), `notices.review.approved`.
 - No comment or note field (owner, 2026-11-17).
+
+**Amendment, 2026-11-20 (issue 412, rollout PR 4: a notice's read page in language tabs; owner: "the notices page is still bad, why isn't it in tabs").**
+
+- A notice's read page shows one language at a time, in the editor's tab strip (`LanguageTabs.tsx`, WAI-ARIA tabs: arrow keys, Home, End, `aria-selected`, the one panel labelled by its tab). The officer's language comes first; the tab in view on opening is the first written one in that order. The stacked language cards and their headings are gone.
+- Each tab shows the text's length beside its code ("PT 433", seal when over 1,000; the full "433 of 1,000 characters" for screen readers) and one state: Missing, Out of date (yarn dot), ✓ Reviewed, Translated (AI), Written, and in the editor Draft (plum dot). "Missing" replaces "Empty" in both editors (D116); PT "Faltando", FR "Manquant". "Translated (AI)": "Traduzido (IA)", "Traduit (IA)". "Reviewed": "Revisado", "Relu".
+- **Translated (AI)** is stored: `notice_edits.translated` (migration `0056_notice_translated`), true when the save names Translate's source (`from`), and kept when the same text is saved again ("Keep as is"). A hand change makes it false. Notices saved before this read as Written.
+- **Reviewed**: a request on that language or on the whole notice answered (approved or edited) at or after the language's last save (`reviewedLanguages`, `notice-rules.ts`). The save times stay on the server.
+- In the editor a saved text keeps its saved state until it is changed; an accepted translation not saved yet reads Translated (AI); any other change Written.
+- The panel holds what each language card held: "Review waiting", the text, the line over the game's limit, the three copies with their lines (D116) and "Ask for a review" of that language; a missing language says "Not written yet." and the panel takes the focus. Copies and "Ask for a review" act on the tab in view; "Publish to Discord", the calendar link and Delete act on the whole notice, as before.
+- Persona panel (2026-11-20: an R4 on a phone, a product designer, product strategy; all "ship with fixes"), applied:
+  - the open review requests sit under the tab strip, so the tabs are on a phone's first screen; "Jump to Français" is left out while that tab is in view;
+  - one "Ask for a review", in the panel (the sheet still offers the whole notice); the "Review" section shows only when a request was answered, and lists those;
+  - the "Out of date" tag in the panel is now a verb, "Update Português" ("Atualizar …", "Mettre à jour …"), with a gap above it, and opens the editor at that language; the tab keeps "Out of date". The old label "… may be out of date. Edit the notice" is gone, so the visible words are the button's name;
+  - the tab's neutral state words are 12 px in the text colour.
+  - Not changed: answered requests keep each language's own name ("Rook aprovou English"), as this decision set on 2026-11-17 for the request lines.
+- Edit opens the editor at the tab in view, without scrolling past the title. "Jump to Français" in an open review request opens that tab.
+- The tabs and the panel are at most the editor's width (`max-w-2xl`) at every width.

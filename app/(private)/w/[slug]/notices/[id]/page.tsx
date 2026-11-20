@@ -20,6 +20,7 @@ import {
   noticePage,
   noticeWords,
   reviewProps,
+  savedStates,
   sourceFor,
 } from "../../../../_ui/notice-pages";
 import { NoticeScreen } from "../../../../_ui/NoticeScreen";
@@ -57,7 +58,6 @@ export default async function NoticePage({
   const audience = audienceOf(notice.forMembers);
   const nameOf = (a: string) =>
     channels[a === "members" ? "members" : "leaders"]?.replace(/^#/, "") ?? null;
-  const channel = nameOf(audience);
   // A new version of any field remounts the screen, so a save or a refresh closes the editor. A picture
   // change does not (D119): the editor closes itself after a picture-only save, and stays open, in step with
   // the stored picture, when the text save after it fails.
@@ -80,7 +80,7 @@ export default async function NoticePage({
         id={notice.id}
         fields={notice.fields}
         {...editorSwitches(access, notice.picture)}
-        stale={notice.stale}
+        {...savedStates(notice, reviews.list)}
         t={t}
         viewer={language}
         ai={getAppContext().ai !== null}
@@ -99,7 +99,7 @@ export default async function NoticePage({
         historyCut={history.cut}
         publish={{
           audience,
-          channel,
+          channel: nameOf(audience),
           last: words.posted(last, last && nameOf(last.audience)),
         }}
         calendar={calendar}

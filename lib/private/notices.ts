@@ -94,6 +94,10 @@ export interface NoticeDetail extends NoticeSummary {
   createdBy: string | null;
   fields: Record<NoticeField, { value: string; version: number }>;
   stale: NoticeLanguage[];
+  /** The written languages saved from Translate and not changed by hand since (issue 412). */
+  translated: NoticeLanguage[];
+  /** When each written language's text was last saved: for "Reviewed" (issue 412), never sent to a page. */
+  savedAt: Partial<Record<NoticeLanguage, Date>>;
   /** The notice's picture (D119). */
   picture: PictureView | null;
 }
@@ -157,6 +161,10 @@ export async function noticeDetail(
       ]),
     ) as NoticeDetail["fields"],
     stale: staleLanguages(state),
+    translated: NOTICE_LANGUAGES.filter((l) => state[l]?.value && state[l].translated),
+    savedAt: Object.fromEntries(
+      record.fields.filter((f) => isNoticeLanguage(f.field) && f.value).map((f) => [f.field, f.at]),
+    ),
     picture: picture ? { ...pictureView(picture), kept } : null,
   };
 }
