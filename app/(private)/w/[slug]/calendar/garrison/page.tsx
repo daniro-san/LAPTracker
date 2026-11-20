@@ -10,6 +10,7 @@ import { getEnv } from "@/lib/env";
 import type { WorkspaceAccess } from "@/lib/private/access";
 import { calendarDates, titleOf } from "@/lib/private/calendar-words";
 import { channelNames } from "@/lib/private/discord-webhooks";
+import { featureOn } from "@/lib/private/features";
 import { garrisonView } from "@/lib/private/garrison";
 
 import { SignedInFrame } from "../../../../_ui/Frame";
@@ -46,7 +47,7 @@ export default async function GarrisonPage({
     (db, access) => readGarrison(db, access, occasion.entry, occasion.week),
     "garrison",
   );
-  if (!page.data) return page.off ?? notFound();
+  if (!page.data) notFound();
   const { view, channels } = page.data;
   const { access, slug, t, language } = page;
   const words = garrisonWords(t);
@@ -80,14 +81,18 @@ export default async function GarrisonPage({
         version={view.version}
         carriedFrom={view.carriedFrom && calendarDates(language).short(view.carriedFrom)}
         words={words}
-        shot={{
-          read: t["shot.read"],
-          reading: t["shot.reading"],
-          failed: t["shot.failed"],
-          busy: t["shot.busy"],
-          notKept: t["shot.notKept"],
-          off: t["features.off.read"],
-        }}
+        // D126: no "Read from a screenshot" while reading screenshots is turned off for the alliance.
+        shot={
+          featureOn(access, "ocr")
+            ? {
+                read: t["shot.read"],
+                reading: t["shot.reading"],
+                failed: t["shot.failed"],
+                busy: t["shot.busy"],
+                notKept: t["shot.notKept"],
+              }
+            : null
+        }
       />
       {view.enemyMight === null ? (
         <p className="mt-4 border-t border-rule py-3">{t["garrison.enemyNone"]}</p>

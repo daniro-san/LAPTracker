@@ -66,22 +66,6 @@ function PreviewStrip({ slug, t }: { slug: string; t: WorkspaceDictionary }) {
   );
 }
 
-/** D126: the board is turned off; an officer gets the way back to the desk. */
-function BoardOff(props: { officer: boolean; slug: string; t: WorkspaceDictionary }) {
-  const { t } = props;
-  return (
-    <section className="drawn-card max-w-xl px-4 py-3" role="status">
-      <p className="font-semibold">{t["features.off.board"]}</p>
-      <p className="mt-2 text-body-sm text-ink/80">{t["features.off.kept"]}</p>
-      {props.officer && (
-        <a href={`/w/${props.slug}`} className={LINK}>
-          {t["board.preview.back"]}
-        </a>
-      )}
-    </section>
-  );
-}
-
 /** The board's visitor to PostHog by a pseudonymous id (D115), when analytics is on. */
 function BoardPerson({ env, access }: { env: Env; access: BoardAccess }) {
   const tier = access.officer ? "officer" : "member";
@@ -128,6 +112,12 @@ export default async function BoardPage({ params }: { params: Promise<{ slug: st
     refuse(slug, access.reason, `/w/${slug}/board`);
     redirect(`/w/${slug}`);
   }
+  // D126: the board turned off for the alliance is not there. An officer goes to Home; a member has
+  // nothing else here, so the standard not-found page.
+  if (!featureOn(access, "board")) {
+    if (access.officer) redirect(`/w/${slug}`);
+    notFound();
+  }
   const { language, t } = await workspaceWords();
   const alliance = ALLIANCES.find((a) => a.unionId === access.unionId);
   const account = <Account officer={access.officer} name={access.name ?? ""} slug={slug} t={t} />;
@@ -138,14 +128,6 @@ export default async function BoardPage({ params }: { params: Promise<{ slug: st
     account,
     ...(alliance && { subtitle: `${alliance.tag} · ${alliance.name}` }),
   };
-  // D126: the board turned off for the alliance: one calm line; nothing was deleted.
-  if (!featureOn(access, "board")) {
-    return (
-      <Frame {...frame}>
-        <BoardOff officer={access.officer} slug={slug} t={t} />
-      </Frame>
-    );
-  }
   if (!view) redirect(`/w/${slug}`);
   const linked = new Set(view.entries.flatMap((e) => (e.noticeId === null ? [] : [e.noticeId])));
   return (

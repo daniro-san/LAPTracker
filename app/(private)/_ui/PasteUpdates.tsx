@@ -42,7 +42,16 @@ async function makeDraft(slug: string, text: string): Promise<number | null> {
   return made.drafts[0]?.id ?? null;
 }
 
-export function PasteUpdates({ slug, words }: { slug: string; words: UpdatesWords }) {
+export function PasteUpdates({
+  slug,
+  words,
+  shots,
+}: {
+  slug: string;
+  words: UpdatesWords;
+  /** False while reading screenshots is turned off for the alliance (D126): no "Read from a screenshot". */
+  shots: boolean;
+}) {
   const [open, close] = usePageAction("paste-updates");
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
@@ -98,13 +107,15 @@ export function PasteUpdates({ slug, words }: { slug: string; words: UpdatesWord
           onChange={(e) => setText(e.target.value)}
           className={`${FIELD} mt-2`}
         />
-        <ReadScreenshot
-          slug={slug}
-          place="paste_updates"
-          multiple
-          words={shotWords(words)}
-          onText={(read) => setText((was) => (was.trim() === "" ? read : `${was}\n${read}`))}
-        />
+        {shots && (
+          <ReadScreenshot
+            slug={slug}
+            place="paste_updates"
+            multiple
+            words={shotWords(words)}
+            onText={(read) => setText((was) => (was.trim() === "" ? read : `${was}\n${read}`))}
+          />
+        )}
         <p className="mt-2 text-body-sm text-ink/80">{words["updates.after"]}</p>
         {error && <RefusalLine text={error} className="mt-2 text-seal" />}
       </Sheet>

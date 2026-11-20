@@ -167,7 +167,6 @@ export default async function RollCallPage({
   const page = await openRollCall(params, pathOf(archived, week), (db, access, today, _l, zone) =>
     listOf(db, access, zone, archived, week ?? today),
   );
-  if (page.off) return page.off;
   const { access, slug, t, language, today } = page;
   const monday = mondayOf(week ?? today);
   const ctx = { t, language, zone: page.zone };

@@ -18,7 +18,6 @@ import { START_HERE_MAX, startHereEdit } from "@/lib/private/start-here";
 import { SignedInFrame, workspaceWords } from "../../../_ui/Frame";
 import { refuse } from "../../../_ui/refuse";
 import { StartHereEditor } from "../../../_ui/StartHereEditor";
-import { TurnedOff } from "../../../_ui/TurnedOff";
 
 export default async function StartHerePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -40,8 +39,7 @@ export default async function StartHerePage({ params }: { params: Promise<{ slug
     refuse(slug, access.reason, `/w/${slug}/start-here`);
     redirect(`/w/${slug}`);
   }
-  if (!featureOn(access, "board"))
-    return <TurnedOff access={access} feature="board" waiting={waiting} />;
+  // D126: with the board off, Start here is not there either: its address goes to Home.
   if (!edit) redirect(`/w/${slug}`);
   const { language, t } = await workspaceWords();
   const link =

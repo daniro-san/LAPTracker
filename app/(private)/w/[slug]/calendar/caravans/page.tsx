@@ -36,7 +36,6 @@ export default async function CaravansPage({
     },
     "calendar/caravans",
   );
-  if (page.off) return page.off;
   const { access, slug, monday, ctx } = page;
   const { t, language } = ctx;
   const caravans = page.data.caravans.map((p) => agendaItem(p, ctx));

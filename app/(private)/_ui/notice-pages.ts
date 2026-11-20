@@ -2,7 +2,6 @@
 // words made here (dates in the officer's language, times in server time), and the language order.
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
-import type { ReactNode } from "react";
 
 import { fill, isolate } from "@/lib/copy";
 import type { Db } from "@/lib/db";
@@ -21,7 +20,6 @@ import { serverDay } from "@/lib/schedule";
 import { LANGUAGE_CODE, LANGUAGE_NAME } from "./languages";
 import type { ReviewProps } from "./NoticeReviews";
 import { refuse } from "./refuse";
-import { turnedOffPage } from "./TurnedOff";
 
 /** Checks access first, then reads; a refused visitor goes where `refuse` sends them, else to the sign-in. */
 export async function noticePage<T>(
@@ -29,7 +27,7 @@ export async function noticePage<T>(
   read: (db: Db, access: WorkspaceAccess) => Promise<T>,
   /** The page's path below /notices, for the return after sign-in (D99): "", "/new" or "/<id>". */
   sub: string,
-): Promise<{ access: WorkspaceAccess; data: T; waiting: number; off: ReactNode }> {
+): Promise<{ access: WorkspaceAccess; data: T; waiting: number }> {
   if (!SLUG.test(slug)) notFound();
   const jar = await cookies();
   // INVARIANT workspace.access-first: nothing private is read before this check.
@@ -37,17 +35,17 @@ export async function noticePage<T>(
     const now = new Date();
     const access = await requireWorkspace(db, slug, jar, now, RENEW_MS);
     if (!access.ok) return access;
-    const waiting = await toReviewCount(db, access, now);
-    // D126: notices turned off for the alliance: nothing of theirs is read; the page shows `off`.
-    const off = turnedOffPage(access, "notices", waiting);
-    if (off) return { access, data: null as T, waiting, off };
+    // D126: notices turned off for the alliance: nothing of theirs is read, and the address goes to Home.
+    if (!featureOn(access, "notices")) return { off: true } as const;
     // The Home tab's count of screenshot drafts (issue 299), in this page's own read.
-    return { access, data: await read(db, access), waiting, off };
+    const waiting = await toReviewCount(db, access, now);
+    return { access, data: await read(db, access), waiting };
   });
   if ("reason" in page) {
     refuse(slug, page.reason, `/w/${slug}/notices${sub}`);
     redirect(`/w/${slug}`);
   }
+  if ("off" in page) redirect(`/w/${slug}`);
   return page;
 }
 
