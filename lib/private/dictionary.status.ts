@@ -27,6 +27,9 @@ export const statusEn = {
   "status.key.invalid": "Tracker key refused · paste a new key in Alliance settings",
   "status.key.reenter": "Tracker key: paste it again in Alliance settings",
   "status.key.link": "Open Alliance settings",
+  // D137: the Raid Shield check.
+  "status.shield.running": "Checking Raid Shields · {read} of {members} · started {at} ST",
+  "status.shield.done": "Raid Shield check {at} ST · {on} of {members} seen with a shield",
 };
 
 export const statusPt: typeof statusEn = {
@@ -56,6 +59,11 @@ export const statusPt: typeof statusEn = {
     "Chave do tracker recusada · cole uma chave nova em Configurações da aliança",
   "status.key.reenter": "Chave do tracker: cole-a de novo em Configurações da aliança",
   "status.key.link": "Abrir Configurações da aliança",
+  // D137: the Raid Shield check.
+  "status.shield.running":
+    "Conferindo os Escudos de raid · {read} de {members} · começou às {at} ST",
+  "status.shield.done":
+    "Conferência do Escudo de raid {at} ST · {on} de {members} com escudo visto",
 };
 
 export const statusFr: typeof statusEn = {
@@ -86,4 +94,9 @@ export const statusFr: typeof statusEn = {
     "Clé du tracker refusée · collez une nouvelle clé dans Réglages de l’alliance",
   "status.key.reenter": "Clé du tracker : collez-la à nouveau dans Réglages de l’alliance",
   "status.key.link": "Ouvrir Réglages de l’alliance",
+  // D137: the Raid Shield check.
+  "status.shield.running":
+    "Vérification des Boucliers de raid · {read} sur {members} · commencée à {at} ST",
+  "status.shield.done":
+    "Vérification du Bouclier de raid {at} ST · {on} sur {members} avec un bouclier vu",
 };

@@ -48,3 +48,5 @@ Why: officers could not tell why a card was not updated yet: the squads read (D1
 - `lib/squads-key-rule.test.ts`: `squadsKey` and `squadTargets` agree on a key spent today, before and after the reset.
 - Issue 471's isolation suite (`cross-workspace-reads.test.ts`): each workspace's bar carries its own counts and no uid or name.
 - The member-session sweep covers the new route.
+
+**Amendment (2026-11-20, owner, issue 474, D137): the Raid Shield check's line.** While `shield_check` is on, the bar has a `shield` line for the check's quota day until KvK starts: "Checking Raid Shields · 40 of 101 · started 23:31 ST" while a read runs (progress, the bar polls), then "Raid Shield check 23:42 ST · 87 of 101 seen with a shield" (quiet). Counts and server times only. See D137.

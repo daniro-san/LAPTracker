@@ -58,10 +58,14 @@ The tracker sees shields at its map scan: a shield turned on since may not show 
 
 **Alliance settings → Raid Shield check** (only while the check is on): the morning time and the message switch and language, one Save (`POST /api/w/[slug]/raid-prep`, officers only, 30 saves per 15 minutes, `ws_action` `raid_prep` / `save`). The message switch is off until the leaders' channel is set up under Discord.
 
+**The read status bar** (D135; `lib/private/shield-status.ts`), only while the check is on, counts and server times only, for the check's quota day until KvK starts. It shows the newest read that started:
+
+- under way: "Checking Raid Shields · 40 of 101 · started 23:31 ST" (the bar polls while it runs). Friday's read runs while that day's squads queue runs and 00:00 ST has not come; Saturday's while `morning_status` is `running`;
+- done (a stopped morning read too, with what it read): "Raid Shield check 23:42 ST · 87 of 101 seen with a shield", at the newest answer's time, until 12:00 ST on Saturday.
+
 **Not built here.**
 
 - Web push (issue 474's optional part 3).
-- The desk status bar (D135, PR 515, not merged yet) does not show the check's progress; the page's counts and /admin's squads progress (D132) cover Friday's read until it does.
 - `shield_type` for the 12 h, 24 h and 3 d kinds: one plain read after a known kind is turned on, per kind, as the owner's test of 2026-11-20 did for type 0.
 - "A squad seen outside at the last scan" as a hint (the issue's clue about `seen_at`): to be confirmed by the owner's test first.
 
@@ -70,4 +74,5 @@ The tracker sees shields at its map scan: a shield turned on since may not show 
 - `lib/shield-check.test.ts`: the windows (Friday from 23:30 ST, Saturday from the alliance's time, nothing at 12:00 ST or on Thursday), the 8 h end and "may end before KvK".
 - `lib/shield-read.test.ts`: Friday's burst reads each member once as the squads read and a second tick reads nobody again; Saturday reads everyone once more from the alliance's time and nothing before or after; at most 120 calls; one leaders' message posted and then edited, only when turned on.
 - `lib/private/raid-prep.test.ts`: the row hints, "Accept the tracker's" writing ✓ only for those seen and keeping an officer's mark, the wall mark apart from the Shield mark and refused on another kind.
+- `lib/private/shield-status.test.ts`: the status bar's line under way on Friday, done, under way on Saturday, and none while off or after 12:00 ST.
 - The issue 471 suite: Alpha's wall mark and Accept on Bravo's roll calls are refused; Alpha's Raid prep never shows Bravo's readings. The member-session suite has the new route's fixture. `lib/private/features.test.ts`: the estimate.

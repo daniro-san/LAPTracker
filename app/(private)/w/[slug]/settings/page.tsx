@@ -59,6 +59,25 @@ function squadsLine(
 const canPost = (channels: Awaited<ReturnType<typeof webhookViews>>) =>
   channels.some((c) => c.channel === "leaders" && (c.state === "set" || c.state === "site"));
 
+/** The key card's state, last 4, quota left and "checked …" line, in the officer's words. */
+function keyForm(
+  view: Awaited<ReturnType<typeof trackerKeyView>>,
+  t: Awaited<ReturnType<typeof workspaceWords>>["t"],
+  language: WorkspaceLanguage,
+  now: Date,
+) {
+  const checked = view.checkedAt
+    ? fill(t["key.checked"], {
+        when: agoText(view.checkedAt.toISOString(), now, language, t["calendar.conflict.justNow"]),
+      })
+    : null;
+  const quota =
+    view.quotaRemaining === null
+      ? null
+      : fill(t["key.quota"], { n: new Intl.NumberFormat(language).format(view.quotaRemaining) });
+  return { state: view.state, last4: view.last4, quota, checked };
+}
+
 /** Everything the page shows, read after requireWorkspace, in parallel. */
 async function readSettings(
   db: Db,
@@ -98,11 +117,6 @@ export default async function SettingsPage({ params }: { params: Promise<{ slug:
     notFound();
   }
   const { view, waiting, bot, channels, squads, features, shield } = page;
-  const checked = view.checkedAt
-    ? fill(t["key.checked"], {
-        when: agoText(view.checkedAt.toISOString(), now, language, t["calendar.conflict.justNow"]),
-      })
-    : null;
   return (
     <SignedInFrame
       access={access}
@@ -121,17 +135,7 @@ export default async function SettingsPage({ params }: { params: Promise<{ slug:
         <TrackerKeyForm
           slug={slug}
           keyPage={new URL("/account", getEnv().LAP_API_BASE_URL).href}
-          view={{
-            state: view.state,
-            last4: view.last4,
-            quota:
-              view.quotaRemaining === null
-                ? null
-                : fill(t["key.quota"], {
-                    n: new Intl.NumberFormat(language).format(view.quotaRemaining),
-                  }),
-            checked,
-          }}
+          view={keyForm(view, t, language, now)}
           t={t}
         />
         {squads && (

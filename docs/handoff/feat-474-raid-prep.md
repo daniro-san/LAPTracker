@@ -17,6 +17,7 @@
   - Above the rows: "16 not seen yet · 10 may end before KvK", then each read's counts, the map-scan hint, and "Accept the tracker's (n)". Accept writes only ✓, and only for members seen with a shield and not marked yet.
   - A ready private message per row, in the member's language: their recorded languages, else the game's, else English. It holds only the parts not yet ✓, plus "bring your troops home", and has a Copy button. A row with both marks ✓ says "All set".
 - **The leaders' channel summary** (`lib/shield-post.ts`, `lib/copy-shield.ts`). It is opt-in, in EN, PT-BR or FR. It is posted after Friday's read, then edited in place by every later tick of both reads. It goes through the workspace's leaders webhook (D129), with the site's `WORKSPACE_DISCORD_WEBHOOKS` as fallback. It never goes to the members' channel, pings no one, and names at most 40 people.
+- **The D135 read status bar** (`lib/private/shield-status.ts`, after the rebase onto `origin/dev` with #514 and #515): while the check is on, "Checking Raid Shields · 40 of 101 · started 23:31 ST" during a read, then "Raid Shield check 23:42 ST · 87 of 101 seen with a shield" until KvK starts. Counts and server times only.
 - **Alliance settings → Raid Shield check** (`RaidPrepSettings.tsx`, `POST /api/w/[slug]/raid-prep`): the morning time, plus the message switch and its language. The section shows only while the check is on.
 - **Data:** migration `0058_raid_prep_shield_check` (`pnpm db:generate`) adds `shield_checks`, `shield_queue`, `shield_settings` and `roll_call_marks.part`. All three tables are deleted with the workspace and none is downloaded (D125).
 - **Analytics:** `ws_action` `roll_call` / `accept`, `raid_prep` / `save`; `ws_roll_call_marked` `how: tracker`.
@@ -24,7 +25,9 @@
 
 ## Decisions
 
-- **D137.** D135 and D136 are taken by open PRs 515 and 514.
+- **D137.** D135 and D136 were taken by PRs 515 and 514, now merged; 0058 is still the next migration after the rebase.
+- **Answered by the coordinator (2026-11-20):** the morning read on our key may skip the event-window pause and rely on the reserve; storing squads from Friday's read when the squads read is off is fine.
+- **The status bar's done line** stays until KvK starts (12:00 ST Saturday), not D135's 30 minutes: the check matters for the whole night before KvK. A stopped morning read shows as done with what it read.
 - **No event-window pause on our key for the morning read.** KvK's Before read is at 10:00 ST, and D132's pause would stop OGs' morning read. The event read runs inside the tick request and the shield read runs in `after`, so they never overlap. The reserve still keeps the event's quota.
 - **Squads read off:** an alliance with the squads read off but the shield check on is still read by Friday's burst, through the squads queue, with its squads stored. Its retries are taken only inside Friday's 23:30–00:00 window.
 - **The estimate** (D134) counts the shield check as 1 read per member when the squads read is on, and 2 when it is off.
@@ -42,14 +45,13 @@
 
 ## Deviations
 
-- **The D135 status bar** (PR 515) is not merged, so the check's progress is not in it. Until it is, the page's read counts and /admin's squads progress cover it.
 - **Web push** (part 3 of the issue) is out of scope, as the brief says.
 - **Home's activity line** counts a wall mark as "took the roll call", like a Shield mark. An "Accept the tracker's" of many members reads like "the rest".
 - **The Discord message lists away members** if the tracker did not see them, because the tick has no access to `lib/private`'s away notes. The page leaves them out.
 
 ## Verified
 
-- **`pnpm check`** passes: prettier, eslint, tsc, vitest (253 files, 1,339 tests pass, 4 skipped), drift and i18n (17 languages).
+- **`pnpm check`** passes: prettier, eslint, tsc, vitest (261 files, 1,366 tests pass, 4 skipped, after the rebase), drift and i18n (17 languages).
 - **New tests**, stubs only, with no upstream and no Discord call:
   - `lib/shield-check.test.ts` (2): the windows, the 8 h end, and "may end before KvK".
   - `lib/shield-read.test.ts` (4):
@@ -57,6 +59,7 @@
     - Saturday reads 30 of 30 again from 10:30 and reads nothing before or after;
     - a 130-member roster stops at 120 calls;
     - one message is POSTed, then PATCHed to `/messages/900`, and only when turned on.
+  - `lib/private/shield-status.test.ts` (4): the status bar's line under way on Friday, done, under way on Saturday, and none while off or after 12:00 ST.
   - `lib/private/raid-prep.test.ts` (3): the row hints; Accept marks only 104 and keeps the officer's ✗; the wall mark is kept apart from the Shield mark and refused on a non-shield roll call.
   - The #471 isolation suite: Alpha's wall mark and Accept on Bravo's two roll calls are refused, and Alpha's Raid prep never shows Bravo's readings. The member-session fixture covers the new route. The estimate test is updated.
 - **Migrations:** all 59 applied to an empty local Postgres 18.
@@ -77,7 +80,6 @@
 - Test once on a real Friday before relying on it (owner, issue 474): the map scan can be up to 7 h old.
 - `shield_type` for the 12 h, 24 h and 3 d kinds is still unmapped. One plain read after turning each kind on would map it.
 - "A squad seen outside at the last scan", as a hint, waits for the owner's `seen_at` test.
-- Follow-up: show the check's progress in the D135 status bar once PR 515 merges.
 - Follow-up: in the R4 review, the "Message" disclosure takes a row of its own. It could sit on the name's line.
 
 ## Next
@@ -91,7 +93,6 @@
 - **The plan itself needs no change.**
 
 <adjustments>
-- The D135 status bar can show Friday's read through `squadsToday`, because the burst is the squads queue. Saturday's read is in `shield_checks` (`morning_status`, `morning_calls`) and `shield_queue`.
 - Readers of shield data go through `lib/private/raid-prep.ts` (`prepView`). A member's newest reading in a window comes from `shieldReadings` in `lib/repo/shield-checks.ts`.
 </adjustments>
 
