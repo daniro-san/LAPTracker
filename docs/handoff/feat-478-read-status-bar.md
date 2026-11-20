@@ -94,4 +94,4 @@
 - #507: its first item (Settings' own running rule) is done by `squadsKey`/`squadsReader`; skip it.
 </adjustments>
 
-PR: (added by the orchestrator)
+https://github.com/daniro-san/LAPTracker/pull/515
