@@ -31,6 +31,9 @@
 - The `/w` list comes only from this browser's own session cookies. It never comes from Discord or from other workspaces, so it cannot reveal a workspace.
 - The state prefix is `w.`. No slug is shorter than two characters, so no new reserved slug is needed.
 - A workspace that refuses the person during the chooser's trip ends the session this browser held there (D99's renewal-or-out).
+- PR 504 review (orchestrator): when Discord fails while the chooser checks an alliance, the session this browser holds there is **kept**. This is a dated exception to D99, recorded in D131's amendment: one trip checks up to 10 alliances on a rate-limited Discord read, and a transient error must not sign anyone out.
+- The rule "the old cookie counts only where the workspace has none of its own" is one helper, `sessionCookieFor` (`lib/private/session.ts`). `sessionToken` and the chooser's list both use it.
+- The "none" line shows after any sign-in that found nothing, above the list, also when the device holds other sessions. The body of `/w` moved to `app/(private)/_ui/Chooser.tsx` so it can be rendered in a test.
 - Two wordings follow the persona panel; the orchestrator decided them under the owner's standing OK for persona-validated copy:
   - the "none" line: "We didn't find an alliance for this Discord account yet. Ask your alliance's leadership whether it uses LAPTracker." (was the issue's "…Ask your leadership for the link.");
   - the request link: "Request an Officers' Desk for your alliance" (was the task's "No Desk yet? Request one").
@@ -43,10 +46,15 @@
 
 ## Verified
 
-- **`pnpm check`**: green after rebasing onto `origin/dev` with #502: 238 test files, 1287 tests passed and 4 skipped; i18n: 17 languages up to date. The one conflict was `finishInvite`'s return in `lib/private/invite-steps.ts`: #502's `unionId` is kept, with this branch's per-workspace cookie.
-- **New tests**: 5 in `lib/private/chooser.test.ts`, and 1 more in the issue 471 suite (`lib/private/member-sessions.test.ts`):
+- **`pnpm check`**: green after the PR 504 fixes, on `origin/dev` with #502: 240 test files, 1292 tests passed and 4 skipped; i18n: 17 languages up to date. The one conflict was `finishInvite`'s return in `lib/private/invite-steps.ts`: #502's `unionId` is kept, with this branch's per-workspace cookie.
+- **New tests**: 7 in `lib/private/chooser.test.ts`, and 1 more in the issue 471 suite (`lib/private/member-sessions.test.ts`):
   - one browser keeps a cookie per workspace;
   - a token renamed to the other workspace's cookie opens nothing and is not listed.
+- **After the PR 504 review**, 5 more tests:
+  - the "none" line above the list (`app/(private)/_ui/Chooser.test.ts`);
+  - Sign out names the cookie to clear, per-alliance and old, and `sessionCookieFor` (`lib/private/session-cookie.test.ts`, 2);
+  - the chooser ends a held session when the alliance now refuses, and keeps it when Discord answers 500 (`chooser.test.ts`, 2, counted in the 7 above).
+  - The e2e was not rerun after these fixes. They change one page condition and add tests; the chooser's behaviour on a Discord failure was already "keep", and is now recorded and tested.
 - **Existing tests**: `sign-in.test.ts` now expects the per-workspace cookie name. All other tests pass unchanged, because they send the old cookie name, which is still read.
 - **Local e2e: 39 of 39 checks pass.**
   - Setup:
@@ -74,7 +82,7 @@
 
 ## Open issues
 
-- **Discord's rate limit** on `/users/@me/guilds/{id}/member` is tight. A person in many workspace servers gets up to 10 reads in one callback. A read Discord refuses leaves that workspace out, with no error shown.
+- **Discord's rate limit** on `/users/@me/guilds/{id}/member` is tight. A person in many workspace servers gets up to 10 reads in one callback. A read Discord refuses leaves that workspace out of this sign-in, with no error shown, and keeps any session already held there (D131's amendment).
 - **Old cookie**: sessions made before this change stay on `__Host-lap_ws` until they end (7 or 30 days). Nothing to do.
 - **`/w` lists only workspaces with an open session.** After 30 days without visiting, an alliance disappears from the list until the person signs in again.
 

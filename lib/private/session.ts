@@ -17,16 +17,25 @@ export const SESSION_COOKIE = "__Host-lap_ws";
 /** One session cookie per workspace (D131), so signing in to a second workspace keeps the first. */
 export const sessionCookieName = (slug: string) => `${SESSION_COOKIE}.${slug}`;
 
-/** This browser's session cookie for `slug`: its own, else the one cookie of before D131. */
+/**
+ * The name of the cookie that carries `slug`'s session, given which cookies the browser holds (`has`): the
+ * workspace's own, else the one cookie of before D131, which counts only while the workspace has no cookie
+ * of its own. null: neither.
+ */
+export function sessionCookieFor(has: (name: string) => boolean, slug: string): string | null {
+  const own = sessionCookieName(slug);
+  if (has(own)) return own;
+  return has(SESSION_COOKIE) ? SESSION_COOKIE : null;
+}
+
+/** This browser's session cookie for `slug` and its token (`sessionCookieFor`), or null. */
 export function sessionToken(
   cookies: { get(name: string): { value: string } | undefined },
   slug: string,
 ): { name: string; value: string } | null {
-  for (const name of [sessionCookieName(slug), SESSION_COOKIE]) {
-    const value = cookies.get(name)?.value;
-    if (value) return { name, value };
-  }
-  return null;
+  const name = sessionCookieFor((n) => Boolean(cookies.get(n)?.value), slug);
+  const value = name ? cookies.get(name)?.value : undefined;
+  return name && value ? { name, value } : null;
 }
 /** The cap: a session ends this long after sign-in, however often it was renewed. */
 export const SESSION_MS = 7 * 24 * 60 * 60_000;

@@ -10,7 +10,7 @@ import { saveWorkspace } from "../repo/workspaces";
 import { requireBoard, requireWorkspace } from "./access";
 import { chooserView, finishChooserSignIn, startChooserSignIn, type CookieList } from "./chooser";
 import { sessionCookieName } from "./session";
-import { STATE_COOKIE, type Step } from "./sign-in";
+import { STATE_COOKIE, type CallbackInput, type Step } from "./sign-in";
 import { cookieValue, env, location, ORIGIN } from "./sign-in.test-helpers";
 
 const SERVER = { ogs: "400000000000000001", nse: "400000000000000002", ursa: "400000000000000003" };
@@ -24,6 +24,8 @@ const ACCOUNTS: Record<string, Record<string, string[]>> = {
   twoAlliances: { [SERVER.ogs]: [LEAD], [SERVER.nse]: [MEMBER], [OTHER]: [] },
   memberOnly: { [SERVER.nse]: [MEMBER], [OTHER]: [] },
   guestEverywhere: { [SERVER.ogs]: [], [OTHER]: [] },
+  /** Discord answers 500 to every role read of this account. */
+  discordDown: { [SERVER.ogs]: [LEAD], [OTHER]: [] },
 };
 const reads: string[] = [];
 const discord: typeof fetch = async (input, init) => {
@@ -42,6 +44,7 @@ const discord: typeof fetch = async (input, init) => {
     );
   }
   const id = /guilds\/(\d+)\/member$/.exec(url)?.[1] ?? "";
+  if (servers === ACCOUNTS.discordDown) return new Response(null, { status: 500 });
   const roles = servers[id];
   return roles ? Response.json({ nick: null, roles }) : new Response(null, { status: 404 });
 };
@@ -70,13 +73,17 @@ beforeEach(async () => {
 
 const deps = { env, fetch: discord, now: T0 };
 
-async function chooserSignIn(code: string): Promise<Step> {
+/** `held`: the browser's cookies before this sign-in (none by default). */
+async function chooserSignIn(
+  code: string,
+  held: CallbackInput["cookies"] = { get: () => undefined },
+): Promise<Step> {
   const start = startChooserSignIn(deps, ORIGIN);
   const state = cookieValue(start, STATE_COOKIE) ?? "";
   return finishChooserSignIn(db, deps, {
     query: new URLSearchParams({ state, code }),
     stateCookie: state,
-    cookies: { get: () => undefined },
+    cookies: held,
     ip: "198.51.100.1",
     origin: ORIGIN,
   });
@@ -137,5 +144,19 @@ describe("the sign-in chooser (D131)", () => {
     const step = await chooserSignIn("guestEverywhere");
     expect(location(step)).toBe("/w?e=none");
     expect(await chooserView(db, browser(step), T0)).toEqual([]);
+  });
+
+  it("ends a session this browser holds in an alliance that now refuses the person (D99)", async () => {
+    const jar = browser(await chooserSignIn("twoAlliances"));
+    // The same account, after its OGs leadership role was taken away.
+    await chooserSignIn("guestEverywhere", jar);
+    expect(await requireWorkspace(db, "ogs", jar, T0)).toEqual({ ok: false, reason: "signed_out" });
+    expect((await requireBoard(db, "nse", jar, T0)).ok).toBe(true);
+  });
+
+  it("keeps a session this browser holds when Discord fails while checking that alliance (D131)", async () => {
+    const jar = browser(await chooserSignIn("twoAlliances"));
+    expect(location(await chooserSignIn("discordDown", jar))).toBe("/w?e=none");
+    expect((await requireWorkspace(db, "ogs", jar, T0)).ok).toBe(true);
   });
 });

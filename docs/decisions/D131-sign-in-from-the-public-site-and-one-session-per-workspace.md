@@ -61,3 +61,10 @@ The issue 471 suite (`lib/private/member-sessions.test.ts`): one browser keeps a
 2. Vercel: nothing.
 
 **Not done here.** A "switch alliance" menu in the desk header: `/w` lists the alliances instead. Listing alliances whose session ended (sign in again to see them).
+
+**Amendment (2026-11-20, PR 504 review; orchestrator).**
+
+- **Exception to D99: a Discord failure keeps the session.** D99 says a Discord error during the trip also deletes the session. In the chooser it does not. When Discord fails while the chooser reads the person's roles in one alliance (a timeout, a 429, an answer that does not parse), a session this browser already holds there is kept, and that alliance is left out of this sign-in. Why: the chooser checks up to 10 alliances in one trip, and Discord's per-server role read is rate-limited. A failure there says nothing about the person, so it must not sign anyone out of an alliance they did not ask to open. A real answer still ends it: "not in the server" (404) or roles that no longer pass. The alliance's own page still renews its session through Discord within 24 hours, as D99 says (`INVARIANT chooser.keep-on-error`).
+- **One rule for the old cookie.** `sessionCookieFor` (`lib/private/session.ts`) names the cookie that carries a workspace's session: its own `__Host-lap_ws.<slug>`, else the old `__Host-lap_ws`, only while the workspace has none of its own. `sessionToken` (the doors, the callback, Sign out) and the chooser's list both use it.
+- **The "none" line shows after any sign-in that found nothing**, above the list, also when this device holds other alliances' sessions (`app/(private)/_ui/Chooser.tsx`).
+- Tests: the line above the list (`Chooser.test.ts`); Sign out names the cookie to clear, per-alliance or old; `sessionCookieFor` (`session-cookie.test.ts`); the chooser ends a held session when the alliance now refuses, and keeps it when Discord fails (`chooser.test.ts`).

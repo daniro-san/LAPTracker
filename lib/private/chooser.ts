@@ -24,7 +24,7 @@ import {
   hashToken,
   revokeSession,
   SESSION_COOKIE,
-  sessionCookieName,
+  sessionCookieFor,
   sessionToken,
 } from "./session";
 import {
@@ -126,6 +126,8 @@ async function openOne(
   cookies: CallbackInput["cookies"],
 ) {
   const member = await memberIn(account.get, workspace.discordGuildId, account.user);
+  // INVARIANT chooser.keep-on-error: Discord failing here (a timeout, a 429, a bad answer) is not a refusal,
+  // so a session this browser holds in that workspace is kept (D131's exception to D99).
   if (!member.ok) return null;
   const token = sessionToken(cookies, workspace.slug)?.value;
   // INVARIANT chooser.same-rules: the same refusal and tier as the workspace's own sign-in.
@@ -164,11 +166,9 @@ export async function chooserView(db: Db, jar: CookieList, now: Date): Promise<C
   const named = new Map(held.map((c) => [hashToken(c.value), c.name]));
   const rows = await sessionsByHashes(db, [...named.keys()]);
   const open = rows.filter((r) => {
-    const own = sessionCookieName(r.slug);
-    const name = named.get(r.tokenHash);
-    // INVARIANT chooser.own-cookie: a cookie copied under another workspace's name lists nothing; the
-    // cookie of before D131 counts only where the workspace has no cookie of its own (sessionToken's order).
-    if (name !== own && (name !== SESSION_COOKIE || names.has(own))) return false;
+    // INVARIANT chooser.own-cookie: a cookie copied under another workspace's name lists nothing, and the
+    // cookie of before D131 counts only where the workspace has none of its own: the doors' own rule.
+    if (sessionCookieFor((n) => names.has(n), r.slug) !== named.get(r.tokenHash)) return false;
     if (r.expiresAt.getTime() <= now.getTime() || r.blocked) return false;
     return r.tier === "officer" || r.memberRoleIds.length > 0;
   });
