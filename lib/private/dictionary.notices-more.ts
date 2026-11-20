@@ -14,9 +14,9 @@ export const noticesMoreEn = {
   "notices.publish.where.members": "A notice for members goes to #{channel}.",
   "notices.publish.where.leaders": "A leadership notice goes to #{channel}.",
   "notices.publish.off.members":
-    "No Discord channel is set up for members’ notices yet. Ask the site owner.",
+    "No Discord channel is set up for members’ notices yet. An officer can add it in Alliance settings.",
   "notices.publish.off.leaders":
-    "No Discord channel is set up for leadership notices yet. Ask the site owner.",
+    "No Discord channel is set up for leadership notices yet. An officer can add it in Alliance settings.",
   "notices.publish.ask": "Post to #{channel}?",
   "notices.publish.languages": "Languages to post",
   "notices.publish.help": "Everyone who can read #{channel} sees it. It mentions nobody.",
@@ -80,9 +80,9 @@ export const noticesMorePt: Record<keyof typeof noticesMoreEn, string> = {
   "notices.publish.where.members": "Um aviso para os membros vai para #{channel}.",
   "notices.publish.where.leaders": "Um aviso da liderança vai para #{channel}.",
   "notices.publish.off.members":
-    "Ainda não há canal do Discord para avisos aos membros. Peça ao dono do site.",
+    "Ainda não há canal do Discord para avisos aos membros. Um oficial pode adicionar em Configurações da aliança.",
   "notices.publish.off.leaders":
-    "Ainda não há canal do Discord para avisos da liderança. Peça ao dono do site.",
+    "Ainda não há canal do Discord para avisos da liderança. Um oficial pode adicionar em Configurações da aliança.",
   "notices.publish.ask": "Publicar em #{channel}?",
   "notices.publish.languages": "Idiomas a publicar",
   "notices.publish.help": "Todos que leem #{channel} vão ver. Ninguém é mencionado.",
@@ -147,9 +147,9 @@ export const noticesMoreFr: Record<keyof typeof noticesMoreEn, string> = {
   "notices.publish.where.members": "Une annonce pour les membres va dans #{channel}.",
   "notices.publish.where.leaders": "Une annonce de la direction va dans #{channel}.",
   "notices.publish.off.members":
-    "Aucun salon Discord n’est encore prévu pour les annonces aux membres. Demandez au propriétaire du site.",
+    "Aucun salon Discord n’est encore prévu pour les annonces aux membres. Un officier peut l’ajouter dans les Réglages de l’alliance.",
   "notices.publish.off.leaders":
-    "Aucun salon Discord n’est encore prévu pour les annonces de la direction. Demandez au propriétaire du site.",
+    "Aucun salon Discord n’est encore prévu pour les annonces de la direction. Un officier peut l’ajouter dans les Réglages de l’alliance.",
   "notices.publish.ask": "Publier dans #{channel} ?",
   "notices.publish.languages": "Langues à publier",
   "notices.publish.help": "Tous ceux qui lisent #{channel} la verront. Elle ne mentionne personne.",

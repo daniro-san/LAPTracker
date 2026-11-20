@@ -39,6 +39,23 @@ function deletionLine(deletion: AdminWorkspace["deletion"]): string | null {
   return fill(d.line, { who, asked: day(deletion.askedAt), date: day(deletion.purgeAfter) });
 }
 
+/**
+ * D129: the bot seen or not, the commands registered (or not), and each channel's webhook: set by the
+ * workspace, `env` while WORKSPACE_DISCORD_WEBHOOKS still covers it, or not set. Never a webhook.
+ */
+function discordLine(w: AdminWorkspace, site: Partial<Record<string, unknown>> | undefined) {
+  const d = t.discord;
+  const hook = (c: "leaders" | "members") =>
+    w.discord.webhooks.includes(c) ? d.set : site?.[c] ? d.site : d.unset;
+  const commands = w.discord.commands;
+  return fill(d.line, {
+    bot: w.discord.botSeen ? d.botSeen : d.botUnseen,
+    commands: commands === null ? d.noCommands : commands.length ? commands.join(", ") : d.noneOn,
+    leaders: hook("leaders"),
+    members: hook("members"),
+  });
+}
+
 /** The workspaces the daily job deleted (D125): what is left of each, no member data. */
 function Deleted({ rows }: { rows: Awaited<ReturnType<typeof listTombstones>> }) {
   if (rows.length === 0) return null;
@@ -175,6 +192,7 @@ export async function Workspaces({ now }: { now: Date }) {
           })
         : t.key.unset,
       deletion: deletionLine(w.deletion),
+      discord: discordLine(w, getEnv().WORKSPACE_DISCORD_WEBHOOKS?.[w.slug]),
       people: w.signedIn.map((p) => ({
         id: p.userId,
         name: p.name ?? t.signOutUsers.noName,

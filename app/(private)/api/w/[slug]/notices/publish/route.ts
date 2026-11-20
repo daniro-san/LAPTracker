@@ -5,6 +5,7 @@
 // audience in the last 30 s), failed (Discord refused, timed out or ran past the budget).
 import { requireWorkspace } from "@/lib/private/access";
 import { counted } from "@/lib/private/desk-action";
+import { noticeChannels } from "@/lib/private/discord-webhooks";
 import { featureOn } from "@/lib/private/features";
 import {
   isSameOriginJson,
@@ -13,7 +14,7 @@ import {
   privateError,
   requestCookies,
 } from "@/lib/private/http";
-import { noticeChannels, publishInput, publishNotice } from "@/lib/private/notice-publish";
+import { publishInput, publishNotice } from "@/lib/private/notice-publish";
 import { SLUG } from "@/lib/private/sign-in";
 import { withContext } from "@/lib/route";
 
@@ -45,11 +46,11 @@ export async function POST(
     const access = await requireWorkspace(db, slug, requestCookies(request), now);
     if (!access.ok) return privateError(401, "signed_out");
     if (!featureOn(access, "notices")) return privateError(403, "turned_off");
-    const result = await privately("notices.publish", () =>
+    const result = await privately("notices.publish", async () =>
       publishNotice(db, access, parsed.data, {
         fetch: ctx.fetch,
         now,
-        channels: noticeChannels(ctx.env, slug),
+        channels: await noticeChannels(db, access, ctx.env),
         names: LANGUAGE_NAME,
       }),
     );

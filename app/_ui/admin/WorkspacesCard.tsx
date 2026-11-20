@@ -34,6 +34,8 @@ export interface WorkspaceView extends WorkspaceSettings {
   allowlist: string[];
   /** "Tracker key: set · invalid (2 hours ago)" or "Tracker key: not set" (D124). */
   trackerKey: string;
+  /** "Discord: bot in server · commands: … · leaders' webhook: set · …" (D129). */
+  discord: string;
   /** "Deletion asked by … · deleted after …" (D125), or null when none is asked. */
   deletion: string | null;
   /** Who has an open session, for "Sign out users". */
@@ -134,6 +136,7 @@ function WorkspaceList({
             {t.allowlist}: {w.allowlist.length === 0 ? t.allowlistNone : w.allowlist.join(", ")}
           </p>
           <p className="text-body-sm break-words text-ink/80">{w.trackerKey}</p>
+          <p className="text-body-sm break-words text-ink/80">{w.discord}</p>
           {w.deletion && <p className="text-body-sm font-semibold text-seal">{w.deletion}</p>}
           <p className="mt-2 flex flex-wrap gap-2">
             <button type="button" onClick={() => onSignOut(w)} className={buttonClass("secondary")}>

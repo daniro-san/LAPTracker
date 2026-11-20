@@ -3,7 +3,8 @@
 // where the app is installed with `applications.commands`, through lib/app-commands.ts's
 // registerAppCommands (the same function /admin's button calls), with DISCORD_CLIENT_ID and
 // DISCORD_CLIENT_SECRET from the environment (.env.local). The guild's commands are replaced by these three
-// (PUT is Discord's bulk overwrite). Prints the guild ids and HTTP statuses
+// (PUT is Discord's bulk overwrite), whatever the workspace's switches: /admin and Alliance settings
+// register only the commands that are on (D129). Prints the guild ids and HTTP statuses
 // only: never the secret or the token. DISCORD_API_BASE_URL points it at a stub for a local run.
 import { APP_COMMANDS, registerAppCommands } from "../lib/app-commands";
 
@@ -23,7 +24,7 @@ const result = await registerAppCommands(
     DISCORD_API_BASE_URL: process.env.DISCORD_API_BASE_URL || "https://discord.com/api",
   },
   fetch,
-  guilds,
+  guilds.map((guildId) => ({ guildId, commands: APP_COMMANDS })),
 );
 if (!result.ok) {
   console.error(result.code === "no_credentials" ? usage : `token: HTTP ${result.status}`);

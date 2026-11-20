@@ -27,6 +27,7 @@ type Route = { GET?: Handler; POST?: Handler };
 const ROUTES: Record<string, () => Promise<unknown>> = {
   activity: () => import("./activity/route"),
   calendar: () => import("./calendar/route"),
+  discord: () => import("./discord/route"),
   "follow-up": () => import("./follow-up/route"),
   garrison: () => import("./garrison/route"),
   import: () => import("./import/route"),

@@ -17,6 +17,7 @@ import { withPageDb } from "@/lib/page";
 import { requireWorkspace } from "@/lib/private/access";
 import { clockIn } from "@/lib/private/calendar-time";
 import type { WorkspaceDictionary, WorkspaceLanguage } from "@/lib/private/dictionary";
+import { channelNames } from "@/lib/private/discord-webhooks";
 import { LANGUAGES } from "@/lib/private/fact-fields";
 import { thanksSwitches } from "@/lib/private/features";
 import { formerMembers } from "@/lib/private/former-members";
@@ -103,7 +104,10 @@ async function readPage(
     waiting: await toReviewCount(db, access, now),
     view,
     // D126: the thanks sheet's switches.
-    switches: thanksSwitches(access),
+    switches: {
+      ...thanksSwitches(access),
+      channel: (await channelNames(db, access, getEnv())).members,
+    },
     // The list's own read (photos and past names); the card route never runs it (issue 337).
     rows: showFormer ? [] : await withListExtras(db, access, view.members),
     lifecycle: showFormer
@@ -117,7 +121,7 @@ async function readPage(
 }
 
 /** Refused: nothing is shown, so nothing is switched on. */
-const NO_SWITCHES: ThanksSwitches = { board: false, writing: false };
+const NO_SWITCHES: ThanksSwitches = { board: false, writing: false, channel: null };
 
 /** The editor's words; the add sheet says when the nightly roster is read (D106). */
 const lifecycleEditorWords = (t: WorkspaceDictionary, readAt: string) => ({

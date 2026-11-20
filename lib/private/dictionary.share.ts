@@ -40,7 +40,8 @@ export const shareEn = {
   "share.copyFailed": "Couldn’t copy",
   "share.discord": "Post to Discord",
   "share.discord.where": "Posts to #{channel}, in each language you wrote. Nobody is pinged.",
-  "share.discord.off": "No Discord channel is set up for members yet. Ask the site owner.",
+  "share.discord.off":
+    "No Discord channel is set up for members yet. An officer can add it in Alliance settings.",
   "share.discord.done": "Posted to #{channel}.",
   "share.discord.title": "Weekly appreciation",
   "share.board": "Post to the members’ board",
@@ -107,7 +108,7 @@ export const sharePt: ShareWords = {
   "share.discord.where":
     "Publica em #{channel}, em cada idioma que você escreveu. Ninguém é marcado.",
   "share.discord.off":
-    "Nenhum canal do Discord está configurado para os membros ainda. Fale com o dono do site.",
+    "Nenhum canal do Discord está configurado para os membros ainda. Um oficial pode adicionar em Configurações da aliança.",
   "share.discord.done": "Publicado em #{channel}.",
   "share.discord.title": "Agradecimento da semana",
   "share.board": "Publicar no mural dos membros",
@@ -174,7 +175,7 @@ export const shareFr: ShareWords = {
   "share.discord.where":
     "Publie dans #{channel}, dans chaque langue que vous avez écrite. Personne n’est mentionné.",
   "share.discord.off":
-    "Aucun salon Discord n’est configuré pour les membres. Demandez au propriétaire du site.",
+    "Aucun salon Discord n’est configuré pour les membres. Un officier peut l’ajouter dans les Réglages de l’alliance.",
   "share.discord.done": "Publié dans #{channel}.",
   "share.discord.title": "Remerciements de la semaine",
   "share.board": "Publier sur le tableau des membres",

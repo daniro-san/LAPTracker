@@ -40,6 +40,8 @@ export const DESK_FEATURES = [
   "garrison",
   "tracker_key",
   "workspace_data",
+  // D129: Alliance settings → Discord (the bot and commands check, the two webhooks and their test).
+  "discord",
   // D126: the owner's switches, caps and pauses on /admin (no person: `area` is `admin`).
   "features",
 ] as const;
@@ -91,6 +93,8 @@ export const DESK_ACTIONS = [
   "copy",
   "pause",
   "resume",
+  "check",
+  "test",
 ] as const;
 export type DeskAction = (typeof DESK_ACTIONS)[number];
 

@@ -13,7 +13,6 @@ import { buttonClass } from "@/lib/brand/components/Button";
 import { PageHead } from "@/lib/brand/components/layout/PageHead";
 import { Spread } from "@/lib/brand/components/layout/Spread";
 import { fill } from "@/lib/copy";
-import type { Db } from "@/lib/db";
 import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
 import { requireWorkspace, type WorkspaceAccess } from "@/lib/private/access";
@@ -30,18 +29,18 @@ import { featureOn, thanksSwitches } from "@/lib/private/features";
 import { toReview, type ReviewItem } from "@/lib/private/import-view";
 import { cardFormats } from "@/lib/private/member-card";
 import { membersView, progressHistory, type MembersView } from "@/lib/private/members";
-import { picturesDue, type DueItem } from "@/lib/private/notice-picture-due";
 import { reviewsForMe } from "@/lib/private/notice-reviews";
 import { matchOnRead, toMatch } from "@/lib/private/pending-members";
 import { RENEW_MS } from "@/lib/private/session";
 import { returnPath, SLUG } from "@/lib/private/sign-in";
 import { thanksNudge } from "@/lib/private/thanks";
-import { trackerKeyView, type KeyState } from "@/lib/private/tracker-key";
+import type { KeyState } from "@/lib/private/tracker-key";
 import { serverDay } from "@/lib/schedule";
 
 import { calendarWords, nextItems } from "../../_ui/calendar-data";
 import { OnDesk, RecentActivity } from "../../_ui/DeskActivity";
 import { Frame, SignedInFrame, workspaceWords } from "../../_ui/Frame";
+import { cards } from "../../_ui/home-cards";
 import { digestDays, type NextItem } from "../../_ui/home-digest";
 import { HomeMembers } from "../../_ui/HomeMembers";
 import { HomeNext } from "../../_ui/HomeNext";
@@ -167,7 +166,7 @@ function Home(props: {
   toMatch: number;
   /** D108: the other officers on the desk now, and what officers did lately; D119: the notice pictures
    * the weekly cleanup deletes soon; D124: the alliance's own tracker key. */
-  desk: { names: string[]; activity: ActivityPage; now: Date; due: DueItem[]; key: KeyState };
+  desk: { names: string[]; activity: ActivityPage; now: Date } & Awaited<ReturnType<typeof cards>>;
   shared: string[] | null;
   reviews: Awaited<ReturnType<typeof reviewsForMe>>;
   /** Sunday or Monday, and the week's thanks not shared yet (D114). */
@@ -232,7 +231,7 @@ function Home(props: {
               language={language}
               view={props.view}
               nudge={props.nudge}
-              switches={thanksSwitches(props.access)}
+              switches={{ ...thanksSwitches(props.access), channel: props.desk.channel }}
             />
           </>
         }
@@ -240,13 +239,6 @@ function Home(props: {
     </section>
   );
 }
-
-/** Home's two notes after its digest: D119's pictures due for the cleanup, and D124's tracker key. */
-const cards = (db: Db, access: WorkspaceAccess, now: Date, zone: string) =>
-  Promise.all([
-    picturesDue(db, access, now, { SERVER_TZ: zone }),
-    trackerKeyView(db, access, getEnv(), now).then((v) => v.state),
-  ]);
 
 export default async function WorkspacePage({
   params,
@@ -275,7 +267,7 @@ export default async function WorkspacePage({
     if (!access.ok) return { access, ...NONE };
     // D106: a roster read since a new member was added may now list them, as on Members.
     const pending = await matchOnRead(db, access, now);
-    const [items, placed, view, names, activity, reviews, [due, key]] = await Promise.all([
+    const [items, placed, view, names, activity, reviews, notes] = await Promise.all([
       toReview(db, access, now),
       calendarDays(db, access, days.from, days.to),
       progressHistory(db, access).then((history) => membersView(db, access, now, zone, history)),
@@ -284,7 +276,7 @@ export default async function WorkspacePage({
       featureOn(access, "notices") ? reviewsForMe(db, access) : [],
       cards(db, access, now, zone),
     ]);
-    const desk = { names, activity, now, due, key };
+    const desk = { names, activity, now, ...notes };
     const nudge = await thanksNudge(db, access, today);
     const unmatched = toMatch(pending, view.readAt).length;
     return { access, items, placed, view, toMatch: unmatched, desk, reviews, nudge };

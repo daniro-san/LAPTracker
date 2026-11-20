@@ -1,6 +1,9 @@
 // Alliance settings and the tracker key (D124, issue 438) in English, Brazilian Portuguese and French: one
 // module the three workspace dictionaries spread. The key itself is never shown: only its last 4
 // characters, its status and the quota it has left. French puts a no-break space before : and inside « ».
+import { discordEn, discordPt } from "./dictionary.discord";
+import { discordFr } from "./dictionary.discord-fr";
+
 export const settingsEn = {
   "settings.link": "Alliance settings",
   "settings.title": "Alliance settings",
@@ -48,6 +51,8 @@ export const settingsEn = {
     "Your key has no quota left today. Squads start again after the reset at 00:00 UTC.",
   "activity.key.set": "{who} updated the tracker key",
   "activity.key.removed": "{who} removed the tracker key",
+  // D129: Alliance settings → Discord.
+  ...discordEn,
 };
 
 export const settingsPt: typeof settingsEn = {
@@ -102,6 +107,8 @@ export const settingsPt: typeof settingsEn = {
     "Sua chave está sem cota hoje. Os esquadrões voltam depois do reinício às 00:00 UTC.",
   "activity.key.set": "{who} atualizou a chave do tracker",
   "activity.key.removed": "{who} removeu a chave do tracker",
+  // D129: Alliance settings → Discord.
+  ...discordPt,
 };
 
 export const settingsFr: typeof settingsEn = {
@@ -157,4 +164,6 @@ export const settingsFr: typeof settingsEn = {
     "Votre clé n’a plus de quota aujourd’hui. Les escouades reprennent après la remise à zéro à 00:00 UTC.",
   "activity.key.set": "{who} a mis à jour la clé du tracker",
   "activity.key.removed": "{who} a retiré la clé du tracker",
+  // D129: Alliance settings → Discord.
+  ...discordFr,
 };

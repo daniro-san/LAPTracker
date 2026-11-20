@@ -7,6 +7,7 @@
 //   {action: "take_down", id}: hides the board's card; not_found for another workspace's or a Discord share.
 import { requireWorkspace } from "@/lib/private/access";
 import { counted } from "@/lib/private/desk-action";
+import { noticeChannels } from "@/lib/private/discord-webhooks";
 import { featureOn } from "@/lib/private/features";
 import {
   isSameOriginJson,
@@ -15,7 +16,6 @@ import {
   privateError,
   requestCookies,
 } from "@/lib/private/http";
-import { noticeChannels } from "@/lib/private/notice-publish";
 import { SLUG } from "@/lib/private/sign-in";
 import { shareThanks, takeDownThanks, thanksInput } from "@/lib/private/thanks";
 import { withContext } from "@/lib/route";
@@ -56,11 +56,11 @@ export async function POST(
           )
         : privateError(404, "not_found");
     }
-    const result = await privately("thanks.share", () =>
+    const result = await privately("thanks.share", async () =>
       shareThanks(db, access, ask, {
         fetch: ctx.fetch,
         now,
-        channels: noticeChannels(ctx.env, slug),
+        channels: await noticeChannels(db, access, ctx.env),
         names: LANGUAGE_NAME,
       }),
     );
