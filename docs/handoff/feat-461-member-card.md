@@ -106,4 +106,4 @@ Issue 461. Decision D136 (amends D109, D117, D127). Branch `feat/member-card-tab
 - Insights / Me: the lineup (`MemberSquads`) and the last-7-days bars (`MemberLastDays`) are self-contained and take server-made words.
 </adjustments>
 
-PR: (added by the orchestrator)
+https://github.com/daniro-san/LAPTracker/pull/514
