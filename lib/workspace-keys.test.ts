@@ -204,6 +204,36 @@ describe("the squads read on each workspace's own key (D124)", () => {
     expect(calls.filter((c) => c.key === undefined).map((c) => c.uid)).toEqual([1, 2, 3]);
   });
 
+  it("never spends one workspace's key on another's members, even with its sealed row copied over (issue 471)", async () => {
+    await dayRead(THU.day);
+    await saveKey(ws.ogs, OGS_KEY);
+    await saveKey(ws.other, THEIR_KEY);
+    const members = (calls: { uid: number | "quota"; key: string | undefined }[], key: string) =>
+      calls.filter((c) => c.key === key && c.uid !== "quota").map((c) => c.uid);
+    const both = deps(THU.now);
+    await runSquadsBatch(both.d, db);
+    expect([members(both.calls, OGS_KEY), members(both.calls, THEIR_KEY)]).toEqual([
+      [1, 2, 3],
+      [11, 12, 13],
+    ]);
+
+    // OGs' sealed key copied into the other workspace's row: it opens for neither, and is not spent there.
+    const [own] = await db
+      .select()
+      .from(workspaceKeys)
+      .where(eq(workspaceKeys.workspaceId, ws.ogs));
+    await db
+      .update(workspaceKeys)
+      .set({ ciphertext: own?.ciphertext, nonce: own?.nonce })
+      .where(eq(workspaceKeys.workspaceId, ws.other));
+    await dayRead(FRI.day);
+    const copied = deps(FRI.now);
+    await runSquadsBatch(copied.d, db);
+    expect(members(copied.calls, OGS_KEY)).toEqual([1, 2, 3]);
+    expect(copied.calls.filter((c) => typeof c.uid === "number" && c.uid > 10)).toEqual([]);
+    expect((await keyFacts(db, ws.other)).status).toBe("reenter");
+  });
+
   it("marks the key invalid on a 401 and stops that workspace's reads", async () => {
     await dayRead(THU.day);
     await saveKey(ws.other, THEIR_KEY);

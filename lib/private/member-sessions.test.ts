@@ -1,5 +1,6 @@
 // D105's member tier at the edges: who gets it (a member role, amended 2026-11-17), a blocked member, Sign
-// out everyone, a member who became an officer, and a member who lost the role.
+// out everyone, a member who became an officer, a member who lost the role, and one person who is an officer
+// in one workspace and a member in another (issue 471).
 import { eq } from "drizzle-orm";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
@@ -130,5 +131,38 @@ describe("member sessions (D105)", () => {
     });
     const rows = await db.select().from(workspaceSessions);
     expect(rows.map((r) => r.tier)).toEqual(["officer"]);
+  });
+
+  it("gives one person, officer in one workspace and member in another, each under its own address only (issue 471)", async () => {
+    // Two alliances on different game servers: the only way one person is in both (owner, 2026-11-19).
+    await saveWorkspace(db, {
+      unionId: 900_002,
+      slug: "bravo",
+      discordGuildId: "400000000000000002",
+      leaderRoleIds: ["300000000000000077"],
+      memberRoleIds: [MEMBER_ROLE],
+    });
+    const desk = await signIn("ogs", "officer");
+    // The same browser signs in to the other workspace: its cookie now holds the member's session.
+    const board = await signIn("bravo", "officer", T0, {}, { session: desk.token ?? "" });
+    expect(location(board.step)).toBe("/w/bravo/board");
+    const [own, theirs] = [jar(desk.token), jar(board.token)];
+    const refused = { ok: false, reason: "other_workspace" };
+    expect((await requireWorkspace(db, "ogs", own, T0)).ok).toBe(true);
+    expect(await requireWorkspace(db, "bravo", own, T0)).toEqual(refused);
+    expect(await requireBoard(db, "bravo", own, T0)).toEqual(refused);
+    expect(await requireBoard(db, "bravo", theirs, T0)).toMatchObject({ ok: true, officer: false });
+    expect(await requireWorkspace(db, "bravo", theirs, T0)).toEqual({
+      ok: false,
+      reason: "member",
+    });
+    expect(await requireWorkspace(db, "ogs", theirs, T0)).toEqual(refused);
+    expect(await requireBoard(db, "ogs", theirs, T0)).toEqual(refused);
+    // One person, one row per workspace, each with its own tier.
+    const rows = await db.select().from(workspaceUsers);
+    expect(new Set(rows.map((r) => r.discordUserId)).size).toBe(1);
+    expect(rows.map((r) => r.workspaceId).sort()).toEqual(
+      [await workspaceId("ogs"), await workspaceId("bravo")].sort(),
+    );
   });
 });
