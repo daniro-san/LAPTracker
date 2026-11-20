@@ -72,9 +72,13 @@ export function toSnapshotInput(
   roster: Roster,
   extra: { cached: boolean | null; quota: Quota | null; raw: unknown },
 ): AllianceSnapshotInput {
-  // Issue 481: the tracker once listed 101 of 100, the extra one with an empty rank. A member sent with
-  // `rank_code: null` and no `rank_label` is not one of the read's members; the body (`raw`) keeps them.
-  const ranked = roster.members.filter((m) => !(m.rank_code === null && !m.rank_label));
+  // Issue 481: the tracker once listed 101 of 100, the extra one with an empty rank. Over capacity, a member
+  // sent with `rank_code: null` and no `rank_label` is not one of the read's members; the body (`raw`) keeps
+  // them. Under capacity they are kept: most likely new members the game has not ranked yet (D75).
+  const over = roster.capacity != null && roster.members.length > roster.capacity;
+  const ranked = over
+    ? roster.members.filter((m) => !(m.rank_code === null && !m.rank_label))
+    : roster.members;
   const members = ranked.map((m) => ({
     uid: m.uid,
     name: m.nick_name,

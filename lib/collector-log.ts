@@ -23,13 +23,13 @@ export async function logV1Fetch(
   });
 }
 
-/** Issue 481: a body that lists more members than its capacity, or members with an empty rank, keeps its
- * read without those members. One counts-only line says so, for /admin/runs. */
+/** Issue 481: a body that lists more members than its capacity keeps its read without its members with an
+ * empty rank. One counts-only line says so, for /admin/runs. */
 export async function logRosterCheck(logger: Logger, a: AllianceSnapshotInput): Promise<void> {
   const listed = a.listed ?? a.members.length;
   const unranked = listed - a.members.length;
   const capacity = a.capacity ?? null;
-  if (unranked === 0 && (capacity === null || listed <= capacity)) return;
+  if (capacity === null || listed <= capacity) return;
   await logger.warn("roster.over_capacity", {
     union_id: a.unionId,
     members: listed,

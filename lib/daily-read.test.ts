@@ -174,6 +174,16 @@ describe("a roster above its capacity (issue 481)", () => {
     });
   });
 
+  it("keeps the unranked members of an alliance under capacity, and logs nothing", async () => {
+    expect(await read(body(65, 100, 3))).toEqual({
+      memberCount: 65,
+      membersTab: 65,
+      queue: 65,
+      card: 65,
+      lines: [],
+    });
+  });
+
   it("leaves a full 120/120 alliance untouched", async () => {
     expect(await read(body(120, 120, 0))).toEqual({
       memberCount: 120,
