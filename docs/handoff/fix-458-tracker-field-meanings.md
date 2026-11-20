@@ -24,7 +24,7 @@ Issue 458. Branch `fix/tracker-field-meanings`, cut from `origin/dev` at 89050e4
   - caravan suggestions (`caravans.ts`, which now reads `WEEK_READS = 7` reads, not 1);
   - Elixir team picks (`roll-call-view.ts`, 7 reads);
   - the garrison "active" signal (`garrison-signals.ts`, which already read 15).
-- **No daily quests or no donations is a fact, not missing data** (owner, 2026-11-19). The read runs at the end of the server day, so a null `active` or `daily_tech` on it means none that day.
+- **No daily quests or no donations is a fact, not missing data.** The owner decided it for daily quest points on 2026-11-19; the donations half is my extension, pending the owner's confirmation. The read runs at the end of the server day, so a null `active` or `daily_tech` on it means none that day.
   - `missingOf` no longer lists `activity`. A read that lists the member with a null value gives the new `DayValue` `"none"`, so "No data: donations on {n} days" counts only days with no read of the member.
   - `MemberRow.noQuestsOn` and `noDonationsOn` hold the newest read's server day when it sent none.
   - The list row and the card say, in the status's muted tone: "No daily quests on {day}", "No donations on {day}", or both in one line, "No quests or donations on {day}" (`members.noQuests`, `members.noDonations`, `members.noQuestsOrDonations`, in EN, PT-BR and FR). A Fine row shows only that line. `nodata.activity` is removed.
@@ -54,7 +54,7 @@ Issue 458. Branch `fix/tracker-field-meanings`, cut from `origin/dev` at 89050e4
 
 ## Verified
 
-- **`pnpm check` exits 0** on the final commit, level with `origin/dev` (af093e30): prettier, eslint, tsc, vitest (**220 files passed, 2 skipped; 1,196 tests passed, 4 skipped**), the drift check and i18n (17 languages up to date).
+- **`pnpm check` exits 0** on the final commit, rebased onto `origin/dev` (be0c4e32, with #463): prettier, eslint, tsc, vitest (**224 files passed, 2 skipped; 1,214 tests passed, 4 skipped**), the drift check and i18n (17 languages up to date).
 - **Tests, one per behaviour:**
   - `member-week.test.ts`:
     - fires on 3 null successful reads (`{ days: 3 }`), and not when a donation breaks the run;
@@ -66,6 +66,7 @@ Issue 458. Branch `fix/tracker-field-meanings`, cut from `origin/dev` at 89050e4
   - `members-sheet.test.ts`: the spreadsheet headers are the new labels.
   - `member-list-data.test.ts`: a Fine member with no quest points shows "No daily quests on Mon, Nov 16"; with no donations, "No donations on …"; with neither, "No quests or donations on …".
   - `member-week.test.ts` (donations): a read with a null value is `"none"`, a day with no read is null.
+  - `caravans.test.ts` (after review): on three reads where the newest day ranks the members differently from the week, the caravan suggestions and the Elixir team picks follow the week's sum. Each assertion fails when its call site reads only the newest day. It is its own file because `roll-call.test.ts` is at the 300-line lint limit.
 - **Local e2e** on a production build (:3986), with this worktree's Postgres 18 (50 migrations) and the Discord sign-in stand-in. Every https call was blocked, and no upstream, Discord or Groq call was made.
   - Seed: an invented 36-member roster on 4 server days. Three members have nothing on the last 3 reads; every fifth member has no quests yet on the newest read; one member joined 2 days ago with nothing yet.
   - **73 of 73 checks pass**, at 360 and 1280, light and dark, EN and PT-BR:
