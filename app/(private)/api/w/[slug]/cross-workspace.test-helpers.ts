@@ -28,6 +28,7 @@ const ROUTES: Record<string, () => Promise<unknown>> = {
   activity: () => import("./activity/route"),
   calendar: () => import("./calendar/route"),
   discord: () => import("./discord/route"),
+  features: () => import("./features/route"),
   "follow-up": () => import("./follow-up/route"),
   garrison: () => import("./garrison/route"),
   import: () => import("./import/route"),
@@ -122,7 +123,7 @@ export async function seedTwo(db: Db, holder: { ctx: AppContext | null }): Promi
   await seedEverything(db, bravo);
   // Every feature on in both, so no refusal is a switch's.
   const allOn = Object.fromEntries(FEATURES.map((f) => [f, true]));
-  await db.update(workspaceFeatures).set({ switches: allOn });
+  await db.update(workspaceFeatures).set({ switches: allOn, allianceSwitches: allOn });
   const session = (ws: { workspaceId: number; officer: number }) =>
     createSession(db, ws.workspaceId, ws.officer, SEED_AT, null, "officer").then((s) => s.token);
   const two: Two = {

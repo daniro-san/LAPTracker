@@ -23,6 +23,7 @@ import {
   workspaces,
   workspaceUsers,
 } from "@/lib/schema";
+import { workspaceFeatures } from "@/lib/schema-features";
 import { workspaceKeyChanges, workspaceKeys } from "@/lib/schema-keys";
 import { runSquadsBatch } from "@/lib/squads-read";
 import { playerAnswer } from "@/lib/squads.test-helpers";
@@ -177,7 +178,12 @@ describe("POST /api/w/[slug]/tracker-key (D124)", () => {
     answers.push(await (await setKey(tokens.officer, "not-a-key")).text());
     await vi.waitFor(() => expect(payloads.join()).toContain("ws_action"));
 
-    // The nightly squads read on that key: one member's call fails with the key in its error.
+    // The nightly squads read on that key: one member's call fails with the key in its error. D134: the
+    // owner allows it and the officers turned it on.
+    const squadsOn = { squads: true };
+    await db
+      .insert(workspaceFeatures)
+      .values({ workspaceId: ws.nse, switches: squadsOn, allianceSwitches: squadsOn });
     const day = "2026-11-19";
     await db.insert(dailyReads).values({ day, startedAt: T0, status: "complete" });
     await db.insert(dailyRosters).values({

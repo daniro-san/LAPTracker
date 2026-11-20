@@ -2,7 +2,22 @@
 export const featuresAdminCopy = {
   summary: "Features: {on} of {all} on",
   usage: "AI today: {ai} · translations today: {translate}",
-  help: "Turn a feature off for this alliance: its tab or button goes away, and its address goes to Home. Nothing is deleted: turning it on again shows everything as it was. One tap each.",
+  help: "On: the alliance may use it, and its officers turn it on or off in Alliance settings. Off: it is not in their settings at all, its tab or button goes away, and its address goes to Home. Default follows the Defaults for new alliances; Changed is this alliance's own value. Nothing is deleted: turning it on again shows everything as it was. One tap each.",
+  byDefault: "Default ({value})",
+  changed: "Changed: {value}",
+  reset: "Reset to default",
+  allianceOff: "the alliance turned it off",
+  callsHelp:
+    "Own key: the alliance's tracker key. Squads read: about 106 calls a day per 100 members. Raid Shield check: about 200 calls on Friday night per 100 members.",
+  estimate: "Tracker calls: about {daily} a day of 1,000 ({members} members)",
+  estimatePeak:
+    "Tracker calls: about {daily} a day, {peak} on Saturdays (UTC), of 1,000 ({members} members)",
+  defaults: {
+    spendAsk:
+      "Every alliance whose card says Default for {name} gets it allowed now, and starts spending once its officers turn it on. Allow it by default?",
+    title: "Defaults for new alliances",
+    help: "Every alliance but OGs follows these wherever its card says Default, so a change here moves them at once. An alliance whose card says Changed keeps its own value. Features that spend tracker calls or your Groq limit start off.",
+  },
   groups: {
     tabs: "Tabs",
     ai: "AI (your Groq limit)",
@@ -17,7 +32,7 @@ export const featuresAdminCopy = {
     caravans: "Caravans",
     notices: "Notices",
     board: "Members' board",
-    notice_translate: "Notice Translate",
+    notice_translate: "Translate a notice",
     notice_improve: "Improve writing",
     notice_fit: "Shorten to 1,000",
     thanks_draft: "Draft the weekly thanks",
@@ -25,7 +40,8 @@ export const featuresAdminCopy = {
     discord_send: "Send to LAPTracker",
     discord_translate_me: "Translate for me",
     discord_translate_everyone: "Translate for everyone",
-    squads: "Squads read (on its own key)",
+    squads: "Squads read (own key)",
+    shield_check: "Raid Shield check (own key; not built yet, issue 474)",
     notice_pictures: "Notice pictures (Neon storage)",
     export: "Download our data",
   },
@@ -35,6 +51,8 @@ export const featuresAdminCopy = {
   caps: {
     head: "Daily caps",
     help: "A number, or empty for no cap. Counts reset at 00:00 UTC. At the cap, the alliance reads that its daily limit is used up.",
+    none: "no cap",
+    defaultIs: "default: {value}",
     ai: "AI requests a day",
     translate: "Discord translations a day",
     today: "Today: {used} · no cap",

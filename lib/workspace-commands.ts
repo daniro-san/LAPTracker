@@ -17,11 +17,14 @@ import { resolveFeatures, SPENDS, type Allowance, type Feature } from "./workspa
 
 const COMMAND_FEATURES: readonly Feature[] = Object.values(COMMAND_FEATURE);
 
-/** An /admin change of D126's settings, as far as the Discord commands care. */
+/**
+ * A change of D126's settings, as far as the Discord commands care: the owner's on /admin (a switch, a
+ * default for new alliances, a copy, a cap, a pause) or the alliance's own switch (D134).
+ */
 export type SettingsChange =
-  | { action: "switch"; feature: Feature }
+  | { action: "switch" | "default_switch"; feature: Feature }
   | { action: "copy" }
-  | { action: "cap" }
+  | { action: "cap" | "default_cap" }
   | { action: "pause"; allowance: Allowance };
 
 /**
@@ -31,7 +34,8 @@ export type SettingsChange =
  */
 export const changesCommands = (c: SettingsChange): boolean =>
   c.action === "copy" ||
-  (c.action === "switch" && COMMAND_FEATURES.includes(c.feature)) ||
+  ((c.action === "switch" || c.action === "default_switch") &&
+    COMMAND_FEATURES.includes(c.feature)) ||
   (c.action === "pause" && COMMAND_FEATURES.some((f) => SPENDS[f] === c.allowance));
 
 export interface CommandDeps {

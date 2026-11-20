@@ -92,6 +92,9 @@ export const DESK_ACTIONS = [
   "copy",
   "pause",
   "resume",
+  // D134: an /admin value back to its default, and a default for new alliances changed.
+  "reset",
+  "default",
   "check",
   "test",
 ] as const;

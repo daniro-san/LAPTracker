@@ -10,8 +10,9 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
 import { pruneEndedPictures, shiftDay } from "../repo/notice-picture-cleanup";
-import { setSwitch } from "../repo/workspace-features";
+import { setDefault, setSwitch } from "../repo/workspace-features";
 import { findWorkspaceBySlug, recordSignIn, saveWorkspace } from "../repo/workspaces";
+import { workspaces } from "../schema";
 import { noticePictures } from "../schema-notices";
 import { requireWorkspace, type WorkspaceAccess } from "./access";
 import { activityPage } from "./desk-activity";
@@ -205,6 +206,24 @@ describe("the weekly notice picture cleanup and its warning (D119)", () => {
     await setSwitch(db, officer.workspaceId, "notice_pictures", true, later(10));
     expect(await pruneEndedPictures(db, shiftDay(TODAY, 10), later(10))).toBe(0);
     expect(await pruneEndedPictures(db, shiftDay(TODAY, 16), later(16))).toBe(0);
+    expect(await pruneEndedPictures(db, shiftDay(TODAY, 17), later(17))).toBe(1);
+  });
+
+  it("warns 7 days again when a default turns pictures off and on for an alliance on it (D134)", async () => {
+    // A guest alliance: OGs ignores the defaults.
+    await db
+      .update(workspaces)
+      .set({ unionId: 900_001 })
+      .where(eq(workspaces.id, officer.workspaceId));
+    const id = await pictured("Old map", shiftDay(TODAY, -200));
+    await pruneEndedPictures(db, TODAY, NOW);
+    // Off and on again between two cleanups: Home could not show the warning meanwhile.
+    await setDefault(db, "switches", "notice_pictures", false, later(1));
+    await setDefault(db, "switches", "notice_pictures", true, later(2));
+    // Without a fresh warning, the one from day 0 would let this run delete the picture at once.
+    expect(await pruneEndedPictures(db, shiftDay(TODAY, 10), later(10))).toBe(0);
+    expect(await pruneEndedPictures(db, shiftDay(TODAY, 16), later(16))).toBe(0);
+    expect(await stored()).toEqual([id]);
     expect(await pruneEndedPictures(db, shiftDay(TODAY, 17), later(17))).toBe(1);
   });
 });

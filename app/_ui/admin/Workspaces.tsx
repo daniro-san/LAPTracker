@@ -9,14 +9,19 @@ import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
 import { knownAlliances } from "@/lib/queries/alliance-list";
 import { squadsProgress, type SquadsProgress } from "@/lib/queries/squads-progress";
-import { adminFeatures } from "@/lib/queries/workspace-features";
+import { adminFeatures, type AdminFeatures } from "@/lib/queries/workspace-features";
 import { listTombstones, listWorkspaces, type AdminWorkspace } from "@/lib/queries/workspaces";
 import { quotaDayRead } from "@/lib/schedule";
 import { stopKind } from "@/lib/squads";
-import { defaultSettings, resolveFeatures, type FeatureSettings } from "@/lib/workspace-features";
+import {
+  newAllianceDefaults,
+  resolveFeatures,
+  type FeatureSettings,
+} from "@/lib/workspace-features";
 import { keyUsable, masterFingerprint } from "@/lib/workspace-keys";
 
 import { DiscordCommandCard, type GuildView } from "./DiscordCommandCard";
+import { featuresView, settingsFor } from "./features-view";
 import { Invites } from "./Invites";
 import { AdminSection } from "./parts";
 import { SquadsCard, type SquadsRowView } from "./SquadsCard";
@@ -160,7 +165,7 @@ function nextLine(p: SquadsProgress, later: boolean): string[] {
 function squadsRows(page: {
   rows: AdminWorkspace[];
   squads: SquadsProgress[];
-  settingsOf: (w: AdminWorkspace) => FeatureSettings;
+  features: AdminFeatures;
   current: string | null;
   now: Date;
   allianceLabel: (unionId: number) => string;
@@ -169,7 +174,7 @@ function squadsRows(page: {
   return page.rows
     .filter(
       (w) =>
-        squadsOn(w, page.settingsOf(w), current, now) ||
+        squadsOn(w, settingsFor(page.features, w), current, now) ||
         squads.some((p) => p.unionId === w.unionId),
     )
     .map((w) => {
@@ -195,9 +200,6 @@ export async function Workspaces({ now }: { now: Date }) {
   // fingerprint, with no write and no tracker call. /admin never sees a key.
   const secret = getEnv().WORKSPACE_KEYS_SECRET;
   const current = secret ? masterFingerprint(secret) : null;
-  // D126: a workspace always has settings (its defaults until changed).
-  const settingsOf = (w: AdminWorkspace) =>
-    features.settings.get(w.id) ?? defaultSettings(w.unionId);
   const views = rows.map((w) => ({
     id: w.id,
     unionId: w.unionId,
@@ -226,10 +228,7 @@ export async function Workspaces({ now }: { now: Date }) {
       tier: p.tier,
       seen: fill(t.signOutUsers.seen, { ago: seen(p.lastSeen, now) }),
     })),
-    features: {
-      ...settingsOf(w),
-      used: features.usage.get(w.id) ?? { ai: 0, translate: 0 },
-    },
+    features: featuresView(features, w),
   }));
   const guilds: GuildView[] = [...new Set(rows.map((w) => w.discordGuildId))].map((guild) => ({
     guild,
@@ -243,14 +242,19 @@ export async function Workspaces({ now }: { now: Date }) {
     <>
       <AdminSection id="workspaces" title={t.title} help={t.help}>
         <p className="mb-4 text-body-sm text-ink/80">{t.key.rotation}</p>
-        <WorkspacesCard workspaces={views} alliances={choices} paused={features.paused} />
+        <WorkspacesCard
+          workspaces={views}
+          alliances={choices}
+          paused={features.paused}
+          defaults={newAllianceDefaults(features.defaults)}
+        />
         <Deleted rows={deleted} />
       </AdminSection>
       <Invites now={now} unionIds={rows.map((w) => w.unionId)} known={known} />
       <AdminSection id="squads" title={t.squads.title} help={t.squads.help}>
         <SquadsCard
           day={squadsDay}
-          rows={squadsRows({ rows, squads, settingsOf, current, now, allianceLabel })}
+          rows={squadsRows({ rows, squads, features, current, now, allianceLabel })}
         />
       </AdminSection>
       <AdminSection id="discord" title={t.command.title} help={t.command.help}>

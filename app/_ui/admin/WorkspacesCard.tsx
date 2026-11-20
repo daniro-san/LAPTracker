@@ -10,9 +10,10 @@ import { useState, useTransition } from "react";
 
 import { buttonClass } from "@/lib/brand/components/Button";
 import { copy, fill } from "@/lib/copy";
-import type { Allowance } from "@/lib/workspace-features";
+import type { Allowance, OwnerSettings } from "@/lib/workspace-features";
 
 import { ConfirmSheet } from "./ConfirmSheet";
+import { FeatureDefaults } from "./FeatureDefaults";
 import { Result } from "./outcome";
 import { forgetPin, PinSheet, savedPin } from "./PinSheet";
 import { SignOutUsersSheet, type SignOutChoice, type SignOutPerson } from "./SignOutUsersSheet";
@@ -207,11 +208,14 @@ export function WorkspacesCard({
   workspaces,
   alliances,
   paused,
+  defaults,
 }: {
   workspaces: WorkspaceView[];
   alliances: AllianceChoice[];
   /** D126: the paid allowances the owner paused for every workspace. */
   paused: Allowance[];
+  /** D134: the defaults for new alliances, as served. */
+  defaults: OwnerSettings;
 }) {
   const { run, message, sheet, busy } = usePinCall();
   const [signingOut, setSigningOut] = useState<WorkspaceView | null>(null);
@@ -242,6 +246,7 @@ export function WorkspacesCard({
     <div>
       {message && <Result message={message} />}
       <PausedSwitches paused={paused} run={run} busy={busy} />
+      <FeatureDefaults off={defaults.off} caps={defaults.caps} run={run} busy={busy} />
       <WorkspaceList
         workspaces={workspaces}
         onSignOut={setSigningOut}
