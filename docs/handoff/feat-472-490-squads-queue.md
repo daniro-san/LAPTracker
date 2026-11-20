@@ -87,4 +87,4 @@
 - #461, #487 and #489: the previous alliances and the might and kills timeline are in `player_history` (`union_abbr`, `player_union_id`, `power`, `kills`, `t`). It is keyed per workspace alliance.
 </adjustments>
 
-PR: (added by the orchestrator)
+https://github.com/daniro-san/LAPTracker/pull/505
