@@ -88,7 +88,7 @@ export type StepResult =
       /** The leadership role was made (or found) but Discord refused the member role. */
       memberFailed?: "no_permission" | "unreachable" | null;
     }
-  | { ok: true; slug: string; cookie: string }
+  | { ok: true; slug: string; cookie: string; unionId: number }
   | { ok: false; code: StepCode };
 
 const no = (code: StepCode) => ({ ok: false as const, code });
@@ -221,5 +221,5 @@ async function finish(
   await syncCommands(db, deps, { only: [made.workspaceId] }).catch(() => null);
   const session = await createSession(db, made.workspaceId, made.userId, deps.now, null, "officer");
   privateLog("w.invite.used", { invite: row.id, workspace: made.workspaceId });
-  return { ok: true, slug, cookie: session.cookie };
+  return { ok: true, slug, cookie: session.cookie, unionId: row.unionId };
 }

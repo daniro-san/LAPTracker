@@ -34,7 +34,6 @@ import { matchOnRead, toMatch } from "@/lib/private/pending-members";
 import { RENEW_MS } from "@/lib/private/session";
 import { returnPath, SLUG } from "@/lib/private/sign-in";
 import { thanksNudge } from "@/lib/private/thanks";
-import type { KeyState } from "@/lib/private/tracker-key";
 import { serverDay } from "@/lib/schedule";
 
 import { calendarWords, nextItems } from "../../_ui/calendar-data";
@@ -44,6 +43,7 @@ import { cards } from "../../_ui/home-cards";
 import { digestDays, type NextItem } from "../../_ui/home-digest";
 import { HomeMembers } from "../../_ui/HomeMembers";
 import { HomeNext } from "../../_ui/HomeNext";
+import { KeyCard } from "../../_ui/KeyCard";
 import { toMatchLine } from "../../_ui/member-lifecycle-data";
 import { PicturesDueCard } from "../../_ui/PicturesDue";
 import { nextQuery, refuse } from "../../_ui/refuse";
@@ -132,23 +132,6 @@ function NextUp({ slug, t, items }: { slug: string; t: WorkspaceDictionary; item
       />
       <a href={`/w/${slug}/calendar`} className={LINK}>
         {t["home.calendar"]}
-      </a>
-    </section>
-  );
-}
-
-/** D124: no key of the alliance's own (or the site's key meanwhile), or a key the tracker paused. */
-function KeyCard({ slug, t, state }: { slug: string; t: WorkspaceDictionary; state: KeyState }) {
-  if (state === "off" || state === "ok") return null;
-  const fix = state === "invalid" || state === "out_of_quota" || state === "reenter";
-  return (
-    <section aria-labelledby="home-key" className="drawn-card mt-4 px-4 py-3 first:mt-0">
-      <h2 id="home-key" className="font-subhead text-display-sm">
-        {t[fix ? "key.card.fix" : "key.card.add"]}
-      </h2>
-      <p className="mt-1">{t[`key.card.${state}`]}</p>
-      <a href={`/w/${slug}/settings`} className={LINK}>
-        {t["settings.link"]}
       </a>
     </section>
   );

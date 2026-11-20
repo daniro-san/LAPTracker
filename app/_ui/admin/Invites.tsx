@@ -2,9 +2,14 @@
 // own isAdmin() check and hands them, as words, to InvitesCard. English only (D48).
 import { ALLIANCES } from "@/config/alliances";
 import { copy, fill } from "@/lib/copy";
-import { rosterLine } from "@/lib/notify-request";
+import { rankWarning, rosterLine } from "@/lib/notify-request";
 import { withPageDb } from "@/lib/page";
-import { listInvites, listRequests, type AdminInvite } from "@/lib/queries/alliance-invites";
+import {
+  listInvites,
+  listRequests,
+  REQUESTS_SHOWN,
+  type AdminInvite,
+} from "@/lib/queries/alliance-invites";
 
 import { InvitesCard } from "./InvitesCard";
 import { AdminSection } from "./parts";
@@ -21,7 +26,9 @@ const label = (unionId: number) => {
 function stateText(i: AdminInvite): string {
   const s = t.invites.state;
   const until = day(i.expiresAt);
-  if (i.state === "used") return fill(s.used, { slug: i.slug ?? "" });
+  if (i.state === "used") {
+    return fill(s.used, { slug: i.slug ?? "", date: i.usedAt ? day(i.usedAt) : "" });
+  }
   if (i.state === "expired") return fill(s.expired, { date: until });
   if (i.state === "cancelled") return s.cancelled;
   if (i.state === "waiting") return fill(s.waiting, { date: until });
@@ -46,7 +53,8 @@ export async function Invites({ now, unionIds }: { now: Date; unionIds: number[]
           line: `${label(i.unionId)} · ${fill(t.invites.made, { date: day(i.createdAt) })} · ${stateText(i)}`,
           open: open.has(i.state),
         }))}
-        requests={requests.map((r) => ({
+        more={requests.more ? fill(t.requests.more, { n: String(REQUESTS_SHOWN) }) : null}
+        requests={requests.rows.map((r) => ({
           id: r.id,
           alliance: label(r.unionId),
           line: fill(t.requests.line, {
@@ -56,6 +64,7 @@ export async function Invites({ now, unionIds }: { now: Date; unionIds: number[]
             date: day(r.createdAt),
           }),
           roster: rosterLine(r),
+          warning: rankWarning(r),
           decided:
             r.decision && r.decidedAt
               ? fill(t.requests[r.decision], { date: day(r.decidedAt) })

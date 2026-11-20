@@ -1,6 +1,8 @@
-// "Request a Desk" (D130, issue 453) for the owner: the roster line /admin shows under a request, and the one
-// line the admin Discord channel gets when a request arrives. English only (D48). The in-game name and rank are
-// public game data; no other roster field is read or sent (D71).
+// "Request a Desk" (D130, issue 453) for the owner: the roster lines /admin shows under a request, and the
+// lines the admin Discord channel gets when a request arrives and when an invite makes a Desk (issue 500).
+// English only (D48). The in-game name and rank are public game data; no other roster field is read or sent
+// (D71).
+import { ALLIANCES } from "../config/alliances";
 import { copy, fill } from "./copy";
 import { allianceLabel, escapeDiscord } from "./notify";
 
@@ -15,6 +17,22 @@ export function rosterLine(r: { rank: string | null; seenAt: Date | null }): str
     timeZone: "UTC",
   }).format(r.seenAt);
   return fill(t.roster.found, { rank: r.rank ?? t.roster.noRank, date: seen });
+}
+
+/** A claimed R5 that the roster lists as R4: the line /admin highlights under the request, else null. */
+export function rankWarning(r: { claimed: "r5" | "r4"; rank: string | null }): string | null {
+  return r.claimed === "r5" && r.rank && /^R4\b/.test(r.rank)
+    ? fill(t.roster.r5AsR4, { rank: r.rank })
+    : null;
+}
+
+/** The admin channel's line when an alliance completes its Desk through an invite (issue 500). */
+export function deskMadeMessage(w: { unionId: number; slug: string }): string {
+  const a = ALLIANCES.find((x) => x.unionId === w.unionId);
+  return fill(t.deskMade, {
+    alliance: allianceLabel({ unionId: w.unionId, tag: a?.tag ?? null, name: a?.name ?? null }),
+    slug: w.slug,
+  });
 }
 
 /** The admin channel's line: the alliance, the name typed, the rank claimed and what the roster says. */

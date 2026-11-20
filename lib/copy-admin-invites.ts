@@ -24,7 +24,7 @@ export const invitesAdminCopy = {
       waiting: "not used yet · works until {date}",
       signedIn: "{name} signed in with Discord · works until {date}",
       server: "{name} picked the server; roles next · works until {date}",
-      used: "used: /w/{slug}",
+      used: "Desk made {date}: /w/{slug}",
       expired: "expired {date}",
       cancelled: "cancelled",
     },
@@ -39,15 +39,19 @@ export const invitesAdminCopy = {
     declineYes: "Decline the request",
     approved: "Approved {date}",
     declined: "Declined {date}",
+    more: "Showing the newest {n}. Requests never answered are deleted after 30 days.",
   },
   claimed: { r5: "R5 (leader)", r4: "R4" },
   roster: {
     found: "Roster says: {rank}, seen {date}",
     notFound: "Name not found in the roster",
     noRank: "in the alliance",
+    r5AsR4: "Says R5, but the roster lists {rank}. Worth a check before you approve.",
   },
   discordLine:
     "Desk requested: {alliance} · {player} says {claimed} · {roster}. Answer it on /admin#new-alliances.",
+  deskMade:
+    "Desk made: {alliance} now has its Officers' Desk at /w/{slug}. It shows on /admin#new-alliances.",
   errors: {
     has_workspace: "This alliance already has a workspace.",
     decided: "This request was already answered.",

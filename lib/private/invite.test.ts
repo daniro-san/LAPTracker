@@ -2,18 +2,26 @@
 // Discord's list keeps only the servers she may manage; the roles are read through the bot; the two roles are
 // created with the alliance's own tag; finishing makes the workspace with her as officer, signs her in and
 // registers the commands that are on; the link works once and expires. Discord is a stub (invite.test-helpers).
+// Issue 500: the wrong-link count and the IP limit, the 30-step limit, and the transaction's own guards.
 import { eq } from "drizzle-orm";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
+import { IP_LIMIT, IP_WINDOW_MS } from "../auth";
 import { T0 } from "../collector.test-helpers";
 import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
-import { INVITE_MS } from "../repo/alliance-invites";
+import {
+  createInvite,
+  createInvitedWorkspace,
+  INVITE_MS,
+  type InvitedWorkspace,
+} from "../repo/alliance-invites";
+import { currentCount } from "../repo/auth-attempts";
 import { workspaces, workspaceUsers } from "../schema";
 import { allianceInvites } from "../schema-invites";
 import { requireWorkspace } from "./access";
 import { inviteView, openInviteLink } from "./invite";
-import { inviteStep, type InviteInput } from "./invite-steps";
+import { inviteStep, STEPS, type InviteInput } from "./invite-steps";
 import {
   deps,
   discord,
@@ -23,8 +31,10 @@ import {
   MEMBER_ROLE,
   NOT_MANAGED,
   openedInvite,
+  OTHER_GUILD,
   R5_ROLE,
   signInThrough,
+  WACK,
 } from "./invite.test-helpers";
 import { SESSION_COOKIE } from "./session";
 
@@ -187,5 +197,82 @@ describe("the invite link (D130)", () => {
     expect(discord.created.map((r) => r.name)).toEqual(["[WACK] Leadership", "[WACK] Members"]);
     const leaderId = discord.created[0]?.id;
     expect("roles" in again && again.roles?.[0]?.id).toBe(leaderId);
+  });
+
+  it("counts each wrong link under the address, and then refuses even the right link from it", async () => {
+    const made = await createInvite(db, WACK, T0);
+    const id = made.credential.split(".")[0];
+    const ip = "203.0.113.9";
+    for (let i = 0; i < IP_LIMIT; i++) {
+      expect(await openInviteLink(db, `${id}.${"x".repeat(43)}`, ip, T0)).toEqual({
+        ok: false,
+        code: "bad_link",
+      });
+    }
+    expect(await currentCount(db, `w:ip:${ip}`, IP_WINDOW_MS, T0)).toBe(IP_LIMIT);
+    expect(await openInviteLink(db, made.credential, ip, T0)).toEqual({
+      ok: false,
+      code: "rate_limited",
+    });
+    expect((await openInviteLink(db, made.credential, "203.0.113.10", T0)).ok).toBe(true);
+  });
+
+  it("takes at most 30 steps every 15 minutes per invite, refused ones included", async () => {
+    const b = await openedInvite(db);
+    await signInThrough(db, b);
+    const step = { action: "server", guild_id: NOT_MANAGED } as const;
+    for (let i = 0; i < STEPS; i++) {
+      expect(await inviteStep(db, deps(), b.jar, step)).toEqual({ ok: false, code: "not_yours" });
+    }
+    expect(await inviteStep(db, deps(), b.jar, step)).toEqual({ ok: false, code: "rate_limited" });
+  });
+});
+
+describe("making the workspace from an invite (D130): the transaction's own guards", () => {
+  /** A signed-in invite and the workspace it would make, as finish passes it after its own checks. */
+  async function ready(): Promise<InvitedWorkspace> {
+    const b = await openedInvite(db);
+    await signInThrough(db, b);
+    const [row] = await db.select().from(allianceInvites);
+    return {
+      inviteId: row?.id ?? 0,
+      unionId: WACK,
+      slug: "wack",
+      guildId: GUILD,
+      leaderRoleIds: [R5_ROLE],
+      memberRoleIds: [],
+      discordUserId: row?.claimedBy ?? "",
+      displayName: row?.claimedName ?? "",
+      claimHash: row?.claimHash ?? "",
+    };
+  }
+  const usedAt = async () => (await db.select().from(allianceInvites))[0]?.usedAt ?? null;
+
+  it("uses an invite once: a second use makes nothing", async () => {
+    const w = await ready();
+    expect(await createInvitedWorkspace(db, w, T0)).toMatchObject({ ok: true });
+    expect(await createInvitedWorkspace(db, w, T0)).toEqual({ ok: false, code: "closed" });
+    expect(await db.select().from(workspaces)).toHaveLength(1);
+    expect(await db.select().from(workspaceUsers)).toHaveLength(1);
+  });
+
+  it("makes nothing, and keeps the link unused, when the server was taken meanwhile", async () => {
+    const w = await ready();
+    await db
+      .insert(workspaces)
+      .values({ unionId: 67109944, slug: "nse", discordGuildId: GUILD, leaderRoleIds: [] });
+    expect(await createInvitedWorkspace(db, w, T0)).toEqual({ ok: false, code: "taken" });
+    expect(await usedAt()).toBeNull();
+    expect(await db.select().from(workspaceUsers)).toEqual([]);
+  });
+
+  it("makes nothing, and keeps the link unused, when the address was taken meanwhile", async () => {
+    const w = await ready();
+    await db
+      .insert(workspaces)
+      .values({ unionId: 67109944, slug: "wack", discordGuildId: OTHER_GUILD, leaderRoleIds: [] });
+    expect(await createInvitedWorkspace(db, w, T0)).toEqual({ ok: false, code: "taken" });
+    expect(await usedAt()).toBeNull();
+    expect(await db.select().from(workspaceUsers)).toEqual([]);
   });
 });

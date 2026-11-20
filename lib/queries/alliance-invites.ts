@@ -11,6 +11,8 @@ export interface AdminInvite {
   createdAt: Date;
   expiresAt: Date;
   state: "waiting" | "signedIn" | "server" | "used" | "expired" | "cancelled";
+  /** When the link made its Desk; null until used. */
+  usedAt: Date | null;
   /** The Discord name of who signed in through it, once someone did. */
   name: string | null;
   slug: string | null;
@@ -64,12 +66,17 @@ export async function listInvites(db: Db, now: Date): Promise<AdminInvite[]> {
     createdAt: r.createdAt,
     expiresAt: r.expiresAt,
     state: inviteState(r, now),
+    usedAt: r.usedAt,
     name: r.name,
     slug: r.slug,
   }));
 }
 
-export async function listRequests(db: Db): Promise<AdminRequest[]> {
+/** /admin lists the newest this many requests (issue 500); older ones wait for the 30-day purge. */
+export const REQUESTS_SHOWN = 50;
+
+/** The newest REQUESTS_SHOWN requests, and whether there are more. */
+export async function listRequests(db: Db): Promise<{ rows: AdminRequest[]; more: boolean }> {
   const rows = await db
     .select({
       id: accessRequests.id,
@@ -83,6 +90,7 @@ export async function listRequests(db: Db): Promise<AdminRequest[]> {
       decidedAt: accessRequests.decidedAt,
     })
     .from(accessRequests)
-    .orderBy(desc(accessRequests.createdAt));
-  return rows;
+    .orderBy(desc(accessRequests.createdAt), desc(accessRequests.id))
+    .limit(REQUESTS_SHOWN + 1);
+  return { rows: rows.slice(0, REQUESTS_SHOWN), more: rows.length > REQUESTS_SHOWN };
 }

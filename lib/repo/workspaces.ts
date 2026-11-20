@@ -68,6 +68,47 @@ export async function saveWorkspace(
 }
 
 /**
+ * A new workspace only, never an edit of another alliance's (D130's invite): its id, or null when the alliance,
+ * the address or the server already has one (the unique keys).
+ */
+export async function insertNewWorkspace(
+  db: Db,
+  input: Required<WorkspaceInput>,
+): Promise<number | null> {
+  const [row] = await db
+    .insert(workspaces)
+    .values(input)
+    .onConflictDoNothing()
+    .returning({ id: workspaces.id });
+  return row?.id ?? null;
+}
+
+/**
+ * A new workspace's first officer (D130): the person who used the invite link, on the allowlist with no end,
+ * signed in now. Returns the user's id.
+ */
+export async function insertFirstOfficer(
+  db: Db,
+  workspaceId: number,
+  who: { discordUserId: string; displayName: string },
+  now: Date,
+): Promise<number> {
+  const [user] = await db
+    .insert(workspaceUsers)
+    .values({
+      workspaceId,
+      ...who,
+      lastLoginAt: now,
+      allowlisted: true,
+      allowlistAddedBy: "invite",
+      allowlistExpiresAt: null,
+    })
+    .returning({ id: workspaceUsers.id });
+  if (!user) throw new Error("workspace user insert returned no row");
+  return user.id;
+}
+
+/**
  * /admin's allowlist entry: the account is let in until the end of `expiresOn` (a YYYY-MM-DD day, UTC).
  * A day already over is refused.
  */

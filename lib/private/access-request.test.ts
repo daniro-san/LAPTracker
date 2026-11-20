@@ -1,12 +1,13 @@
 // "Request a Desk" (D130, issue 453): the name is matched against the alliance's newest roster for the owner
 // (rank and date kept, nothing else), never blocking; a few a day per address; an alliance with a workspace is
-// told so; once approved, the request's own status secret opens the invite. Invented names only.
+// told so; once approved, the request's own status secret opens the invite; at most 30 a day for the whole site,
+// and one never answered is deleted after 30 days (issue 500). Invented names only.
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { T0 } from "../collector.test-helpers";
 import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
-import { createInvite, decideRequest } from "../repo/alliance-invites";
+import { createInvite, decideRequest, KEEP_MS, purgeOldInvites } from "../repo/alliance-invites";
 import { currentCount } from "../repo/auth-attempts";
 import { dailyReads, dailyRosters, workspaces } from "../schema";
 import { accessRequests } from "../schema-invites";
@@ -14,6 +15,7 @@ import {
   continueRequest,
   PER_IP_DAY,
   requestView,
+  SITE_DAY,
   SITE_KEY,
   submitRequest,
 } from "./access-request";
@@ -107,5 +109,22 @@ describe("Request a Desk (D130)", () => {
     const cookie = await continueRequest(db, sent.credential, T0);
     const value = cookie?.split(";")[0]?.split("=")[1];
     expect((await inviteFrom(db, value))?.id).toBe(invite.id);
+  });
+
+  it("takes at most 30 requests a day for the whole site", async () => {
+    for (let i = 0; i < SITE_DAY; i++) {
+      const sent = await ask(`Name ${i}`, `203.0.113.${100 + Math.floor(i / PER_IP_DAY)}`);
+      expect(sent.ok).toBe(true);
+    }
+    expect(await ask("One more", "198.51.100.1")).toEqual({ ok: false, code: "rate_limited" });
+    expect(await db.select().from(accessRequests)).toHaveLength(SITE_DAY);
+  });
+
+  it("deletes a request never answered 30 days after it was sent", async () => {
+    await ask("Vellamo Rook");
+    await purgeOldInvites(db, new Date(T0.getTime() + KEEP_MS - 1));
+    expect(await db.select().from(accessRequests)).toHaveLength(1);
+    await purgeOldInvites(db, new Date(T0.getTime() + KEEP_MS + 1));
+    expect(await db.select().from(accessRequests)).toEqual([]);
   });
 });
