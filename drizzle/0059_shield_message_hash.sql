@@ -1,0 +1,1 @@
+ALTER TABLE "shield_checks" ADD COLUMN "message_hash" text;

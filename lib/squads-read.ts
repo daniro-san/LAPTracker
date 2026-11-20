@@ -63,6 +63,8 @@ export interface SquadsDeps {
 export interface SquadsRun {
   force?: boolean;
   unionId?: number;
+  /** D137: Friday night's Raid Shield burst reads the alliances whose shield check is on. */
+  shield?: boolean;
 }
 
 export type SquadsOutcome =
@@ -123,7 +125,8 @@ export async function runSquadsBatch(
   const eventOn = inEventWindow(now, deps.env);
   // INVARIANT keys.own-quota-only: a workspace is read only on its own key; LAP_API_KEY only for the own
   // alliance (D124).
-  const targets = (await squadTargets(db, deps.env.WORKSPACE_KEYS_SECRET, now)).filter(
+  const feature = run.shield ? "shield_check" : "squads";
+  const targets = (await squadTargets(db, deps.env.WORKSPACE_KEYS_SECRET, now, feature)).filter(
     (t) => (run.unionId === undefined || t.unionId === run.unionId) && (t.key || !eventOn),
   );
   const forced = run.force === true;

@@ -75,11 +75,15 @@ export function staleSaid(
   t: WorkspaceDictionary,
   language: WorkspaceLanguage,
   now: Date,
+  /** D137: Raid prep's squads off the wall mark has its own words. */
+  part: "main" | "wall" = "main",
 ): string {
   const mark = (newest?.mark ?? null) as Mark | null;
+  const word = (m: Mark) =>
+    part === "wall" && m !== "assumed" ? t[`roll.prep.wall.${m}`] : markWord(m, kind, t);
   return fill(t[mark ? "roll.conflict" : "roll.conflict.cleared"], {
     name: newest?.by ? isolate(newest.by) : t["calendar.conflict.someone"],
-    mark: mark ? markWord(mark, kind, t) : "",
+    mark: mark ? word(mark) : "",
     ago: agoText(newest?.at.toISOString() ?? null, now, language, t["calendar.conflict.justNow"]),
   });
 }

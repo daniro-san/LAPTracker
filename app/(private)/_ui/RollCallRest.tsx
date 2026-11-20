@@ -54,6 +54,8 @@ export function useRest(m: ReturnType<typeof useMarks>, marks: MarkWords, words:
  */
 export function RestBar(props: {
   left: number;
+  /** D137: how many "the rest" marks, when fewer than `left` (Raid prep leaves out the not-seen). */
+  rest?: number;
   away: number;
   words: RollSheetWords;
   marks: MarkWords;
@@ -61,6 +63,7 @@ export function RestBar(props: {
   onRest: () => void;
 }) {
   const { words, marks, r, left } = props;
+  const rest = props.rest ?? left;
   const count =
     props.away > 0
       ? fill(words["roll.leftAway"], { n: left, away: props.away })
@@ -86,14 +89,14 @@ export function RestBar(props: {
       ) : (
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <p className="min-w-0 text-body-sm tabular-nums sm:flex-1">{count}</p>
-          {marks.rest && (
+          {marks.rest && rest > 0 && (
             <button
               type="button"
               disabled={r.busy}
               onClick={props.onRest}
               className={buttonClass("secondary", "w-full sm:w-auto")}
             >
-              {fill(marks.rest.button, { n: left })}
+              {fill(marks.rest.button, { n: rest })}
             </button>
           )}
         </div>

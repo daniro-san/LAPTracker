@@ -20,6 +20,7 @@ import {
   notices,
 } from "./schema-notices";
 import { workspaceDataEvents } from "./schema-retention";
+import { shieldChecks, shieldQueue, shieldSettings } from "./schema-shield";
 import { memberSquads, playerHistory, playerReads, squadQueue, squadReads } from "./schema-squads";
 import { theftAttackers, theftFollowUps, thefts } from "./schema-thefts";
 
@@ -202,6 +203,12 @@ export async function seedKeyAndData(db: Db, ws: number, unionId: number, office
     power: 10,
     unionAbbr: "INV",
   });
+  // D137: the Raid Shield check's settings, its reads' state and the morning queue.
+  await db.insert(shieldSettings).values({ workspaceId: ws, discord: true, updatedAt: SEED_AT });
+  await db.insert(shieldChecks).values({ day: DAY, unionId, nightAt: SEED_AT, messageId: "1" });
+  await db
+    .insert(shieldQueue)
+    .values({ day: DAY, unionId, uid: 101, state: "done", attempts: 1, dueAt: SEED_AT });
   await db.insert(workspaceKeyChanges).values({
     workspaceId: ws,
     action: "set",

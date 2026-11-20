@@ -44,6 +44,7 @@ const ROUTES: Record<string, () => Promise<unknown>> = {
   "notices/reviews": () => import("./notices/reviews/route"),
   pending: () => import("./pending/route"),
   profile: () => import("./profile/route"),
+  "read-status": () => import("./read-status/route"),
   "roll-call": () => import("./roll-call/route"),
   shot: () => import("./shots/[id]/route"),
   thanks: () => import("./thanks/route"),

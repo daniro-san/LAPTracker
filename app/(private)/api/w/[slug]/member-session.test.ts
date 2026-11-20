@@ -70,6 +70,9 @@ const FIXTURES: Record<string, Partial<Record<Method, Fixture>>> = {
   },
   "pending/route.ts": { POST: { body: { action: "delete", uid: -1, requestId: ID } } },
   "profile/route.ts": { GET: {}, POST: { body: { action: "unlink" } } },
+  "raid-prep/route.ts": {
+    POST: { body: { morningMinute: 600, discord: false, language: "en" } },
+  },
   "roll-call/route.ts": {
     POST: { body: { action: "add", kind: "cheese", day: "2026-11-16", requestId: ID } },
   },
@@ -96,6 +99,7 @@ const FIXTURES: Record<string, Partial<Record<Method, Fixture>>> = {
   "discord/route.ts": { POST: { body: { action: "check" } } },
   "features/route.ts": { POST: { body: { feature: "thefts", on: false } } },
   "data-export/route.ts": { POST: { body: { requestId: ID } } },
+  "read-status/route.ts": { GET: {} },
   "workspace-deletion/route.ts": { POST: { body: { action: "cancel", requestId: ID } } },
 };
 

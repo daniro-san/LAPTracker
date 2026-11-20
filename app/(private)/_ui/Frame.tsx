@@ -5,7 +5,7 @@
 // Pages keep the 960 px width until each is laid out for the wider widths (D122 rollout); a page laid out
 // passes `wide`.
 import { cookies, headers } from "next/headers";
-import type { ReactNode } from "react";
+import { type ReactNode, Suspense } from "react";
 
 import { analyticsPerson } from "@/lib/analytics/person";
 import { AppShell } from "@/lib/brand/components/layout/AppShell";
@@ -19,6 +19,7 @@ import {
   type WorkspaceDictionary,
   type WorkspaceLanguage,
 } from "@/lib/private/dictionary";
+import { frameReadStatus } from "@/lib/private/read-status";
 import type { Feature } from "@/lib/workspace-features";
 
 import { AnalyticsPerson } from "./AnalyticsPerson";
@@ -27,6 +28,7 @@ import { type DeskView, SideNav, Tabs, VIEW_TAB } from "./DeskNav";
 import { FirstUse } from "./FirstUse";
 import { LanguageSwitch } from "./LanguageSwitch";
 import { ProfileSheet } from "./ProfileSheet";
+import { ReadStatusBar } from "./ReadStatusBar";
 import { SignedOutProvider } from "./SignedOut";
 import { SignOutButton } from "./SignOutButton";
 import type { TabId } from "./TabIcon";
@@ -143,7 +145,8 @@ export function DeletionNotice(props: {
 /**
  * The frame once signed in: the alliance under the name, "Signed in as … · Sign out", the tabs with the
  * count of screenshot drafts waiting for review on Home (`waiting`, read by the page in its own
- * database read: the frame opens no connection).
+ * database read), and the read status bar under the page head (D135: the frame's only connection, streamed
+ * in its own Suspense boundary so the page never waits for it).
  */
 export function SignedInFrame({
   access,
@@ -152,6 +155,7 @@ export function SignedInFrame({
   current: at,
   waiting,
   wide = false,
+  keyShown = false,
   children,
 }: {
   access: WorkspaceAccess;
@@ -162,6 +166,9 @@ export function SignedInFrame({
   waiting: number;
   /** Laid out for the wider widths (D122); see `Frame`. */
   wide?: boolean;
+  /** The page shows the tracker key's state itself (Home's key card, Alliance settings): the read status
+   * bar leaves out the lines that say the same (D135). */
+  keyShown?: boolean;
   children: ReactNode;
 }) {
   const view = at in VIEW_TAB ? (at as DeskView) : undefined;
@@ -197,10 +204,37 @@ export function SignedInFrame({
           t={t}
           language={language}
         />
+        <Suspense fallback={null}>
+          <ReadStatusLine access={access} t={t} keyShown={keyShown} />
+        </Suspense>
         {children}
       </Frame>
     </SignedOutProvider>
   );
+}
+
+/**
+ * The read status bar (D135): its own database read, streamed after the page, on the `access` the page's
+ * requireWorkspace gave. Nothing when no read has anything to say.
+ */
+async function ReadStatusLine({
+  access,
+  t,
+  keyShown,
+}: {
+  access: WorkspaceAccess;
+  t: WorkspaceDictionary;
+  keyShown: boolean;
+}) {
+  // A failed read renders nothing and logs a code (`frameReadStatus`): never the desk page's error.
+  const status = await frameReadStatus(access, t, new Date());
+  if (!status?.lines.some((l) => !(keyShown && l.keyCard))) return null;
+  const words = {
+    label: t["status.label"],
+    more: t["status.more"],
+    settings: t["status.key.link"],
+  };
+  return <ReadStatusBar slug={access.slug} initial={status} words={words} keyShown={keyShown} />;
 }
 
 /** "Signed in as …" with the officer's profile, Alliance settings and Sign out. */

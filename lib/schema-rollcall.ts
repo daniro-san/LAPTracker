@@ -84,7 +84,8 @@ export const rollCalls = pgTable(
 
 /**
  * One write of one member's mark: `yes`, `no`, `assumed` ("no problem seen", the Raid Shield's bulk
- * answer) or null (cleared). `version` counts that member's writes in that roll call.
+ * answer) or null (cleared). `version` counts that member's writes in that roll call and `part`. `part` is
+ * `main` (the roll call's own mark) or, on Raid prep (D137), `wall`: squads off the wall.
  */
 export const rollCallMarks = pgTable(
   "roll_call_marks",
@@ -95,15 +96,19 @@ export const rollCallMarks = pgTable(
       .references(() => rollCalls.id, { onDelete: "cascade" }),
     uid: big("uid").notNull(),
     version: integer("version").notNull(),
+    part: text("part", { enum: ["main", "wall"] })
+      .notNull()
+      .default("main"),
     mark: text("mark"),
     writtenBy: integer("written_by").references(() => workspaceUsers.id, { onDelete: "set null" }),
     writtenAt: tstz("written_at").notNull(),
   },
   (t) => [
-    unique("roll_call_marks_version_unique").on(t.rollCallId, t.uid, t.version),
+    unique("roll_call_marks_version_unique").on(t.rollCallId, t.uid, t.part, t.version),
     // Home's recent activity (D108) reads the marks of the last two weeks.
     index("roll_call_marks_written_idx").on(t.writtenAt),
     check("roll_call_marks_mark_check", sql`${t.mark} in ('yes', 'no', 'assumed')`),
+    check("roll_call_marks_part_check", sql`${t.part} in ('main', 'wall')`),
   ],
 );
 

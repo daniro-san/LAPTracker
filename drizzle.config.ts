@@ -16,6 +16,7 @@ export default defineConfig({
     "./lib/schema-discord.ts",
     "./lib/schema-invites.ts",
     "./lib/schema-alliances.ts",
+    "./lib/schema-shield.ts",
   ],
   out: "./drizzle",
 });

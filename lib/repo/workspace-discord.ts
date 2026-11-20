@@ -94,7 +94,7 @@ export function allWebhookChannels(db: Db) {
     .from(workspaceWebhooks);
 }
 
-/** The sealed webhooks, for the one module that opens them at call time. */
+/** The sealed webhooks, for the modules that open them at call time (D129; D137's leaders' message). */
 export function sealedWebhooks(db: Db, workspaceId: number) {
   return db
     .select({ ...FACTS, ciphertext: workspaceWebhooks.ciphertext, nonce: workspaceWebhooks.nonce })

@@ -76,3 +76,19 @@ export async function sendOrEdit(
   console.error("notify.failed", { http_status: res?.status ?? null });
   return messageId;
 }
+
+/**
+ * Edits `messageId` only, never posting again (D137): "ok", "gone" when Discord says the message was
+ * deleted (404), or "failed" (anything else; a later edit may work).
+ */
+export async function editOnly(
+  fetchFn: typeof fetch,
+  webhook: string,
+  body: object,
+  messageId: string,
+): Promise<"ok" | "gone" | "failed"> {
+  const url = `${webhook}/messages/${encodeURIComponent(messageId)}`;
+  const res = await call(fetchFn, "PATCH", url, body);
+  if (res?.ok) return "ok";
+  return res?.status === 404 ? "gone" : "failed";
+}

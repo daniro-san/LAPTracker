@@ -20,6 +20,7 @@ import {
   privateError,
   requestCookies,
 } from "@/lib/private/http";
+import { acceptTracker } from "@/lib/private/raid-prep";
 import {
   addCall,
   archiveCall,
@@ -56,9 +57,13 @@ const body = z.discriminatedUnion("action", [
       uid,
       mark: z.enum(MARKS).nullable(),
       version: z.number().int().min(0),
+      // D137: Raid prep's second mark, squads off the wall.
+      part: z.enum(["main", "wall"]).optional(),
     })
     .strict(),
   z.object({ action: z.literal("rest"), occasion, uids }).strict(),
+  // D137: Raid prep's "Accept the tracker's".
+  z.object({ action: z.literal("accept"), occasion, uids }).strict(),
   z
     .object({
       action: z.literal("undo"),
@@ -105,7 +110,8 @@ async function mark(input: Extract<Body, { action: "mark" }>, c: Ctx) {
     c.request.headers.get("accept-language"),
   );
   const n = result.newest;
-  const said = staleSaid(n, result.kind, WORKSPACE_DICTIONARIES[language], language, c.now);
+  const t = WORKSPACE_DICTIONARIES[language];
+  const said = staleSaid(n, result.kind, t, language, c.now, input.part);
   return Response.json(
     { code: "stale", mark: n?.mark ?? null, version: n?.version ?? 0, said },
     { status: 409, headers: NO_STORE },
@@ -136,11 +142,13 @@ async function run(input: Body, c: Ctx): Promise<Response> {
       return done.ok ? ok(done) : privateError(STATUS[done.code], done.code);
     }
     default: {
-      const done = await privately(`roll_call.${input.action}`, () =>
-        input.action === "rest"
-          ? markRest(db, access, input, { now, zone: c.zone })
-          : undoMarks(db, access, input, now),
-      );
+      const done = await privately(`roll_call.${input.action}`, () => {
+        const clock = { now, zone: c.zone };
+        if (input.action === "accept") return acceptTracker(db, access, input, clock);
+        return input.action === "rest"
+          ? markRest(db, access, input, clock)
+          : undoMarks(db, access, input, now);
+      });
       return done.ok ? ok(done) : privateError(STATUS[done.code], done.code);
     }
   }

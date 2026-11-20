@@ -175,10 +175,12 @@ describe("two layers over the defaults (D134)", () => {
 
   it("estimates tracker calls from the members: squads every day, the shield check on Saturdays", () => {
     expect(trackerEstimate(new Set(["squads"]), 101)).toEqual({ daily: 108, peak: 108 });
+    // D137: with the squads read on, Friday's shield read is that day's squads read.
     expect(trackerEstimate(new Set(["squads", "shield_check"]), 100)).toEqual({
       daily: 106,
-      peak: 306,
+      peak: 206,
     });
+    expect(trackerEstimate(new Set(["shield_check"]), 100)).toEqual({ daily: 0, peak: 200 });
     expect(trackerEstimate(new Set(["thefts"]), 100)).toEqual({ daily: 0, peak: 0 });
   });
 });

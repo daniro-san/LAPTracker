@@ -1,7 +1,7 @@
 // /w/[slug]/settings: Alliance settings (D124, issue 438). The alliance's own tracker key: its state, last 4
 // characters and quota left, and Save and test, Replace and Remove, with today's squads read (D132). Then
 // Features (D134): what the alliance turns on, of what the site's owner allows, with the tracker calls it
-// spends. Then Discord (D129): add the bot, Check, and the two notice channels' webhooks. Then the
+// spends. Then the Raid Shield check's own settings while it is on (D137). Then Discord (D129): add the bot, Check, and the two notice channels' webhooks. Then the
 // alliance's data (D125): "Download our data" and "Delete
 // this workspace". Officers only: a member's session goes to the board (refuse.ts). Neither the key nor a
 // webhook URL ever reaches the page.
@@ -16,29 +16,26 @@ import { withPageDb } from "@/lib/page";
 import { requireWorkspace, type WorkspaceAccess } from "@/lib/private/access";
 import { allianceFeaturesView } from "@/lib/private/alliance-features";
 import { agoText } from "@/lib/private/calendar-words";
+import type { WorkspaceLanguage } from "@/lib/private/dictionary";
 import { botView } from "@/lib/private/discord-setup";
 import { webhookViews } from "@/lib/private/discord-webhooks";
 import { featureOn } from "@/lib/private/features";
 import { toReviewCount } from "@/lib/private/import-view";
+import { serverClock } from "@/lib/private/read-status";
 import { RENEW_MS } from "@/lib/private/session";
+import { MORNING_CHOICES, shieldSettingsView } from "@/lib/private/shield-settings";
 import { SLUG } from "@/lib/private/sign-in";
-import { squadsToday, type SquadsToday } from "@/lib/private/squads-today";
+import { squadsReader, squadsToday, type SquadsToday } from "@/lib/private/squads-today";
 import { trackerKeyView } from "@/lib/private/tracker-key";
 import { DELETION_GRACE_MS } from "@/lib/private/workspace-deletion";
 
 import { AllianceFeatures } from "../../../_ui/AllianceFeatures";
 import { DiscordSection } from "../../../_ui/DiscordSection";
 import { deletionDate, SignedInFrame, workspaceWords } from "../../../_ui/Frame";
+import { RaidPrepSettings } from "../../../_ui/RaidPrepSettings";
 import { refuse } from "../../../_ui/refuse";
 import { TrackerKeyForm } from "../../../_ui/TrackerKeyForm";
 import { WorkspaceDataForm } from "../../../_ui/WorkspaceDataForm";
-
-/** The key states whose squads are read today (D124): the site's key, or a working key of their own. */
-const READING = new Set(["site", "ok", "out_of_quota"]);
-
-/** "02:15" on the server's clock. */
-const serverClock = (timeZone: string, at: Date) =>
-  new Intl.DateTimeFormat("en-GB", { timeZone, hour: "2-digit", minute: "2-digit" }).format(at);
 
 /** "Squads today: 98 of 101 read · 3 waiting to try again · next try at 02:15 ST" (D132). */
 function squadsLine(
@@ -58,17 +55,48 @@ function squadsLine(
   return `${today} · ${fill(t["squads.todayNext"], { at: serverClock(timeZone, s.nextAt) })}`;
 }
 
+/** The leaders' channel can take the Raid Shield check's message (D129, D137). */
+const canPost = (channels: Awaited<ReturnType<typeof webhookViews>>) =>
+  channels.some((c) => c.channel === "leaders" && (c.state === "set" || c.state === "site"));
+
+/** The key card's state, last 4, quota left and "checked …" line, in the officer's words. */
+function keyForm(
+  view: Awaited<ReturnType<typeof trackerKeyView>>,
+  t: Awaited<ReturnType<typeof workspaceWords>>["t"],
+  language: WorkspaceLanguage,
+  now: Date,
+) {
+  const checked = view.checkedAt
+    ? fill(t["key.checked"], {
+        when: agoText(view.checkedAt.toISOString(), now, language, t["calendar.conflict.justNow"]),
+      })
+    : null;
+  const quota =
+    view.quotaRemaining === null
+      ? null
+      : fill(t["key.quota"], { n: new Intl.NumberFormat(language).format(view.quotaRemaining) });
+  return { state: view.state, last4: view.last4, quota, checked };
+}
+
 /** Everything the page shows, read after requireWorkspace, in parallel. */
-async function readSettings(db: Db, access: WorkspaceAccess, env: Env, now: Date) {
-  const [view, waiting, bot, channels, squads, features] = await Promise.all([
+async function readSettings(
+  db: Db,
+  access: WorkspaceAccess,
+  ctx: { env: Env; now: Date; language: WorkspaceLanguage },
+) {
+  const { env, now } = ctx;
+  const [view, waiting, bot, channels, squads, features, shield] = await Promise.all([
     trackerKeyView(db, access, env, now),
     toReviewCount(db, access, now),
     botView(db, access, env),
     webhookViews(db, access, env),
-    featureOn(access, "squads") ? squadsToday(db, access, env, now) : null,
+    squadsReader(db, access, env, now).then((key) =>
+      key ? squadsToday(db, access, env, now) : null,
+    ),
     allianceFeaturesView(db, access),
+    shieldSettingsView(db, access, ctx.language),
   ]);
-  return { view, waiting, bot, channels, squads, features };
+  return { view, waiting, bot, channels, squads, features, shield };
 }
 
 export default async function SettingsPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -77,24 +105,27 @@ export default async function SettingsPage({ params }: { params: Promise<{ slug:
   const jar = await cookies();
   const now = new Date();
   const { env } = getAppContext();
+  const { language, t } = await workspaceWords();
   // INVARIANT workspace.access-first: nothing private is read before this check.
   const { access, page } = await withPageDb(async (db) => {
     const access = await requireWorkspace(db, slug, jar, now, RENEW_MS);
-    return { access, page: access.ok ? await readSettings(db, access, env, now) : null };
+    const ctx = { env, now, language };
+    return { access, page: access.ok ? await readSettings(db, access, ctx) : null };
   });
   if (!access.ok || !page) {
     if (!access.ok) refuse(slug, access.reason, `/w/${slug}/settings`);
     notFound();
   }
-  const { view, waiting, bot, channels, squads, features } = page;
-  const { language, t } = await workspaceWords();
-  const checked = view.checkedAt
-    ? fill(t["key.checked"], {
-        when: agoText(view.checkedAt.toISOString(), now, language, t["calendar.conflict.justNow"]),
-      })
-    : null;
+  const { view, waiting, bot, channels, squads, features, shield } = page;
   return (
-    <SignedInFrame access={access} language={language} t={t} current="home" waiting={waiting}>
+    <SignedInFrame
+      access={access}
+      language={language}
+      t={t}
+      current="home"
+      waiting={waiting}
+      keyShown
+    >
       <h1 className="font-display text-display-lg">{t["settings.title"]}</h1>
       <section aria-labelledby="tracker-key" className="drawn-card mt-4 max-w-2xl px-4 py-3">
         <h2 id="tracker-key" className="font-subhead text-display-sm">
@@ -104,25 +135,24 @@ export default async function SettingsPage({ params }: { params: Promise<{ slug:
         <TrackerKeyForm
           slug={slug}
           keyPage={new URL("/account", getEnv().LAP_API_BASE_URL).href}
-          view={{
-            state: view.state,
-            last4: view.last4,
-            quota:
-              view.quotaRemaining === null
-                ? null
-                : fill(t["key.quota"], {
-                    n: new Intl.NumberFormat(language).format(view.quotaRemaining),
-                  }),
-            checked,
-          }}
+          view={keyForm(view, t, language, now)}
           t={t}
         />
-        {squads && READING.has(view.state) && (
+        {squads && (
           <p className="mt-3 text-body-sm tabular-nums">{squadsLine(squads, t, env.SERVER_TZ)}</p>
         )}
       </section>
       {features.groups.length > 0 && (
         <AllianceFeatures slug={slug} view={features} language={language} t={t} />
+      )}
+      {shield && (
+        <RaidPrepSettings
+          slug={slug}
+          view={shield}
+          choices={MORNING_CHOICES}
+          leaders={canPost(channels)}
+          t={t}
+        />
       )}
       <DiscordSection
         slug={slug}

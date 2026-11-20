@@ -2,6 +2,8 @@
 // its history, posts and reviews, a draft, a roll call, a garrison plan, a member card), and Home's activity
 // pages. Each finds nothing of Bravo's. The pages call these reads after requireWorkspace, with the id from
 // the address. Invented names only.
+import { randomUUID } from "node:crypto";
+
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { AppContext } from "@/lib/app-context";
@@ -15,9 +17,18 @@ import { memberCard } from "@/lib/private/member-card";
 import { lastPublish } from "@/lib/private/notice-publish";
 import { noticeReviews } from "@/lib/private/notice-reviews";
 import { noticeDetail, noticeHistory } from "@/lib/private/notices";
+import { prepView } from "@/lib/private/raid-prep";
+import { addCall, openOccasion } from "@/lib/private/roll-call";
 import { callView } from "@/lib/private/roll-call-view";
+import { quotaDayRead } from "@/lib/schedule";
+import { dailyReads } from "@/lib/schema";
+import { workspaceKeys } from "@/lib/schema-keys";
+import { playerReads, squadQueue, squadReads } from "@/lib/schema-squads";
+import { masterFingerprint } from "@/lib/workspace-keys";
 
 import {
+  ALPHA,
+  BRAVO,
   call,
   type Ids,
   idsOf,
@@ -78,6 +89,32 @@ describe("the desk's pages given Bravo's ids, for Alpha's officer (issue 471)", 
     expect(await memberCard(db, a, 101, at)).not.toBeNull();
   });
 
+  it("show Alpha's Raid prep with Alpha's tracker readings only (D137)", async () => {
+    // Friday 23:31 ST: Bravo's member seen with a shield, Alpha's member not.
+    const night = new Date("2026-11-21T01:31:00Z");
+    await db.insert(playerReads).values([
+      { unionId: BRAVO, uid: 202, readAt: night, shielding: 1, shieldType: 0, mapUpdatedAt: night },
+      { unionId: ALPHA, uid: 101, readAt: night, shielding: 0, mapUpdatedAt: night },
+    ]);
+    const on = {
+      ...a,
+      features: { ...a.features, on: new Set([...a.features.on, "shield_check"]) },
+    };
+    const occasion = await addCall(
+      db,
+      on as WorkspaceAccess,
+      { kind: "shield", day: "2026-11-21" },
+      randomUUID(),
+    );
+    const opened = await openOccasion(db, on as WorkspaceAccess, occasion);
+    const view = await prepView(db, on as WorkspaceAccess, opened as NonNullable<typeof opened>, {
+      zone: ZONE,
+      now: night,
+    });
+    expect(view.rows.has(202)).toBe(false);
+    expect(view.night).toMatchObject({ read: 1, on: 0 });
+  });
+
   it("Home's activity pages carry Alpha's lines only", async () => {
     const page = await call(two, "activity", {
       query: `?before=${SEED_AT.getTime() + 86_400_000}`,
@@ -86,5 +123,38 @@ describe("the desk's pages given Bravo's ids, for Alpha's officer (issue 471)", 
     const text = JSON.stringify(page.json);
     expect(text).toContain("Officer alpha");
     expect(text).not.toMatch(/Officer bravo|Bravo plan|Bravo rules|Bravo old|Bryn Later/);
+  });
+
+  it("the read status bar carries each workspace's own squads counts, and no uid (D135)", async () => {
+    // Both keys sealed under the current master key, so both squads reads run on their own keys.
+    const secret = Buffer.alloc(32, 7).toString("base64");
+    const ctx = holder.ctx as AppContext;
+    holder.ctx = { ...ctx, env: { ...ctx.env, WORKSPACE_KEYS_SECRET: secret } };
+    await db.update(workspaceKeys).set({ masterFp: masterFingerprint(secret) });
+    const day = quotaDayRead(SEED_AT, ctx.env);
+    await db.insert(dailyReads).values({ day, startedAt: SEED_AT, status: "complete" });
+    const queue = async (unionId: number, members: number, done: number) => {
+      const base = { day, unionId };
+      await db
+        .insert(squadReads)
+        .values({ ...base, status: "running", startedAt: SEED_AT, members });
+      const uids = Array.from({ length: members }, (_, i) => 7000 + i);
+      await db.insert(squadQueue).values(
+        uids.map((uid, i) => ({
+          ...base,
+          uid,
+          state: i < done ? ("done" as const) : ("waiting" as const),
+          dueAt: SEED_AT,
+        })),
+      );
+    };
+    await queue(ALPHA, 3, 2);
+    await queue(BRAVO, 9, 7);
+    const ours = JSON.stringify((await call(two, "read-status", {})).json);
+    expect(ours).toContain("Squads: 2 of 3 read");
+    expect(ours).not.toMatch(/of 9|7000|Bea Invented|Ana Example/);
+    const theirs = JSON.stringify((await call(two, "read-status", { who: "bravo" })).json);
+    expect(theirs).toContain("Squads: 7 of 9 read");
+    expect(theirs).not.toContain("of 3 read");
   });
 });

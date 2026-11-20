@@ -43,6 +43,8 @@ export const DESK_FEATURES = [
   "discord",
   // D126: the owner's switches, caps and pauses on /admin (no person: `area` is `admin`).
   "features",
+  // D137: Alliance settings → Raid Shield check (the morning read's time and the leaders' message).
+  "raid_prep",
 ] as const;
 export type DeskFeature = (typeof DESK_FEATURES)[number];
 
@@ -97,6 +99,8 @@ export const DESK_ACTIONS = [
   "default",
   "check",
   "test",
+  // D137: Raid prep's "Accept the tracker's".
+  "accept",
 ] as const;
 export type DeskAction = (typeof DESK_ACTIONS)[number];
 
