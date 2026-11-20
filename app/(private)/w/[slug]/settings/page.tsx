@@ -59,8 +59,8 @@ async function readSettings(db: Db, access: WorkspaceAccess, env: Env, now: Date
     toReviewCount(db, access, now),
     botView(db, access, env),
     webhookViews(db, access, env),
-    squadsReader(db, access, env).then((key) =>
-      key ? squadsToday(db, access, env, now, key) : null,
+    squadsReader(db, access, env, now).then((key) =>
+      key ? squadsToday(db, access, env, now) : null,
     ),
     allianceFeaturesView(db, access),
   ]);

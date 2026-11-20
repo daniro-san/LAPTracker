@@ -46,7 +46,7 @@
 
 ## Verified
 
-- **`pnpm check` passes**: Prettier, ESLint, typecheck, Vitest (1,336 tests in 251 files, 4 skipped), drift and i18n.
+- **`pnpm check` passes**: Prettier, ESLint, typecheck, Vitest (1,344 tests in 253 files, 4 skipped, after the review fixes), drift and i18n.
 - **New and extended tests**:
   - `lib/private/read-status.test.ts`: 6 tests, one per state (running with moving counts, done, paused and stopped at the limit, skipped, key, late roster and nothing to say);
   - the issue 471 suite (`cross-workspace-reads.test.ts`): each workspace's bar carries its own counts, and no uid or name;
@@ -73,6 +73,15 @@
 - **Privacy**: the diff has none of the 100 names in the OGs fixture roster. No upstream, Discord or PostHog call was made.
 
 ## Open issues
+
+- **Review of PR 515, fixed here:**
+  - an expired done line no longer keeps a zero-delay timer redrawing the bar (`nextWake`, `read-status-wake.ts`);
+  - a failed connection or query renders no bar and logs `w.read_status.failed` (code only) instead of taking the desk page down (`frameReadStatus`);
+  - `squadsKey` and `squadTargets` share one rule in every branch (`ownKeyReads`, `StoredKey`), and so does `dailyKeyRule`. Behaviour change: a key spent today shows no squads line, on the bar or in Alliance settings, until the 00:00 UTC reset. Home's key card says it meanwhile;
+  - an alliance the daily read skips on purpose (refused, unreadable or spent key) gets no "roster is late" line;
+  - `readStatus` reads `workspace_keys` once and runs `squadsToday` in the same `Promise.all`;
+  - 8 more state and behaviour tests (read-status, the timer, the spent-today agreement).
+  - The e2e screenshots predate these fixes. Only "bear" (own key spent today) changed: it now shows no bar on any page.
 
 - **Not taken from the panel**, for the owner to decide:
   - **Hide paused lines?** Product strategy wanted to drop them as normal operation. The issue lists paused as a state, so they stay.

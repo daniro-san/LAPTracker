@@ -5,7 +5,7 @@ import type { Db } from "../db";
 import type { Env } from "../env";
 import { queueCounts } from "../repo/squad-queue";
 import { getSquadRead } from "../repo/squads";
-import { keyFacts } from "../repo/workspace-keys";
+import { keyFacts, type KeyFacts } from "../repo/workspace-keys";
 import { quotaDayRead } from "../schedule";
 import type { squadReads } from "../schema-squads";
 import { stopKind } from "../squads";
@@ -32,22 +32,33 @@ export interface SquadsToday {
     typeof squadReads.$inferSelect,
     "status" | "startedAt" | "finishedAt" | "reason"
   > | null;
-  /** The key that reads them (`squadsKey`): the site's, or the alliance's own. */
-  key: "site" | "own";
 }
 
+type Reader = Pick<WorkspaceAccess, "unionId" | "features">;
+
 /**
- * Whose key reads this workspace's squads today, or null when they are not read: the feature is off (D126,
- * D134) or no key can read them (`squadsKey`, the squads read's own rule).
+ * Whose key reads this workspace's squads today, from its key's stored facts, or null when they are not
+ * read: the feature is off (D126, D134) or no key reads them now (`squadsKey`, the squads read's own rule).
  */
+export function squadsReaderOf(
+  access: Reader,
+  facts: KeyFacts,
+  secret: string | undefined,
+  now: Date,
+): "site" | "own" | null {
+  if (!featureOn(access, "squads")) return null;
+  return squadsKey({ ...facts, unionId: access.unionId }, secret, now);
+}
+
+/** The same, reading the key's facts. */
 export async function squadsReader(
   db: Db,
-  access: Pick<WorkspaceAccess, "unionId" | "workspaceId" | "features">,
+  access: Reader & Pick<WorkspaceAccess, "workspaceId">,
   env: Pick<Env, "WORKSPACE_KEYS_SECRET">,
+  now: Date,
 ): Promise<"site" | "own" | null> {
-  if (!featureOn(access, "squads")) return null;
   const facts = await keyFacts(db, access.workspaceId);
-  return squadsKey({ ...facts, unionId: access.unionId }, env.WORKSPACE_KEYS_SECRET);
+  return squadsReaderOf(access, facts, env.WORKSPACE_KEYS_SECRET, now);
 }
 
 export async function squadsToday(
@@ -55,7 +66,6 @@ export async function squadsToday(
   access: Pick<WorkspaceAccess, "unionId">,
   env: Pick<Env, "SERVER_TZ" | "DAILY_ROSTER_AT">,
   now: Date,
-  key: "site" | "own",
 ): Promise<SquadsToday> {
   const day = quotaDayRead(now, env);
   const [[q], row] = await Promise.all([
@@ -72,7 +82,7 @@ export async function squadsToday(
         reason: row.reason,
       }
     : null;
-  const base = { stopped, day: dayRow, key };
+  const base = { stopped, day: dayRow };
   if (!q) {
     const none = { read: 0, members: 0, retrying: 0, failed: 0, dueNow: 0, nextAt: null };
     return { ...base, ...none, started: false };

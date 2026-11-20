@@ -6,17 +6,22 @@
 // - today's roster read failed, or is not in after its window closed: the cards keep the last numbers;
 // - the squads read (D132), while its feature is on and a key reads it (`squadsReader`): running, paused,
 //   done (for 30 minutes), stopped or skipped (until the quota day ends).
+import { getAppContext } from "../app-context";
 import { fill } from "../copy";
 import type { Db } from "../db";
 import type { Env } from "../env";
+import { withPageDb } from "../page";
 import { getDailyRead } from "../repo/daily-reads";
 import { dayRosterState } from "../repo/squads";
+import { keyFacts } from "../repo/workspace-keys";
 import { inEventWindow, quotaDayRead, serverInstant } from "../schedule";
 import { stopKind } from "../squads";
+import { dailyKeyRule, dailyTracked } from "../workspace-keys";
 import type { WorkspaceAccess } from "./access";
 import type { WorkspaceDictionary } from "./dictionary";
-import { squadsReader, squadsToday, type SquadsToday } from "./squads-today";
-import { trackerKeyView } from "./tracker-key";
+import { privateLog } from "./log";
+import { squadsReaderOf, squadsToday, type SquadsToday } from "./squads-today";
+import { keyViewOf } from "./tracker-key";
 
 /** A finished read's line stays this long after it ended (issue 478). */
 export const DONE_SHOWN_MS = 30 * 60_000;
@@ -28,7 +33,7 @@ export interface StatusLine {
   tone: "progress" | "quiet" | "attention";
   /** The line asks for Alliance settings. */
   settings?: true;
-  /** Home's key card says the same (a refused, spent or unreadable key): a page that shows it leaves it out. */
+  /** Home's key card says the same (a refused or unreadable key): a page that shows it leaves it out. */
   keyCard?: true;
   /** When the line goes (ms): a finished read's, 30 minutes after it ended. */
   until?: number;
@@ -56,36 +61,62 @@ export async function readStatus(
   t: WorkspaceDictionary,
 ): Promise<ReadStatus> {
   const day = quotaDayRead(now, env);
-  const [key, reader, roster, daily] = await Promise.all([
-    trackerKeyView(db, access, env, now),
-    squadsReader(db, access, env),
+  // One read of the key's facts serves the key line, the squads rule and the daily read's rule.
+  const [facts, squads, roster, daily, tracked] = await Promise.all([
+    keyFacts(db, access.workspaceId),
+    squadsToday(db, access, env, now),
     dayRosterState(db, day, access.unionId),
     getDailyRead(db, day),
+    dailyTracked(db, day),
   ]);
-  const squads = reader ? await squadsToday(db, access, env, now, reader) : null;
-  // The states Home's key card asks the officers to fix (KeyCard.tsx).
-  const card = key.state === "invalid" || key.state === "out_of_quota" || key.state === "reenter";
-  const w = { env, now, t, card };
-  const keyLine = (state: "invalid" | "reenter"): Dated => ({
-    at: Infinity,
-    line: {
-      id: "key",
-      text: t[`status.key.${state}`],
-      tone: "attention",
-      settings: true,
-      keyCard: true,
-    },
-  });
+  const secret = env.WORKSPACE_KEYS_SECRET;
+  const key = keyViewOf(access, facts, secret, now);
+  const reader = squadsReaderOf(access, facts, secret, now);
+  // The daily read leaves this alliance out on purpose (a refused, spent or unreadable key, D133): the
+  // key's state says why, so the roster says nothing.
+  const skipped =
+    dailyKeyRule({ ...facts, unionId: access.unionId }, secret, now, tracked) === "skip";
+  const w = { env, now, t, reader };
   const dated = [
-    key.state === "invalid" || key.state === "reenter" ? keyLine(key.state) : null,
-    rosterLine(day, roster, daily?.status === "running", reader !== null, w),
-    squads?.day ? squadsLine(squads, squads.day, w) : null,
+    key.state === "invalid" || key.state === "reenter" ? keyLine(key.state, t) : null,
+    skipped ? null : rosterLine(day, roster, daily?.status === "running", w),
+    reader && squads.day ? squadsLine(squads, squads.day, w) : null,
   ].filter((d): d is Dated => d !== null);
   const lines = dated.sort((a, b) => b.at - a.at).map((d) => d.line);
   return { lines, running: lines.some((l) => l.tone === "progress") };
 }
 
-type Words = { env: Env; now: Date; t: WorkspaceDictionary; card: boolean };
+/**
+ * The frame's read (D135): the same lines on a connection of its own, or null when that connection or a
+ * query fails. The bar is never worth the desk page: the failure is logged as a code only.
+ */
+export async function frameReadStatus(
+  access: WorkspaceAccess,
+  t: WorkspaceDictionary,
+  now: Date,
+): Promise<ReadStatus | null> {
+  const { env } = getAppContext();
+  try {
+    return await withPageDb((db) => readStatus(db, access, env, now, t));
+  } catch {
+    privateLog("w.read_status.failed");
+    return null;
+  }
+}
+
+type Words = { env: Env; now: Date; t: WorkspaceDictionary; reader: "site" | "own" | null };
+
+/** The key's line: always first, with Alliance settings; Home's key card says it too. */
+const keyLine = (state: "invalid" | "reenter", t: WorkspaceDictionary): Dated => ({
+  at: Infinity,
+  line: {
+    id: "key",
+    text: t[`status.key.${state}`],
+    tone: "attention",
+    settings: true,
+    keyCard: true,
+  },
+});
 
 /**
  * Today's roster read, when it failed, or is late: the day's read is not running and its window closed
@@ -95,15 +126,14 @@ function rosterLine(
   day: string,
   roster: "ok" | "failed" | null,
   dailyRunning: boolean,
-  squads: boolean,
-  { env, now, t }: Words,
+  { env, now, t, reader }: Words,
 ): Dated | null {
   const readAt = serverInstant(day, env.DAILY_ROSTER_AT, env).getTime();
   const closed = now.getTime() >= readAt + env.SNAPSHOT_WINDOW_MIN * 60_000;
   const late = roster === null && closed && !dailyRunning;
   if (roster !== "failed" && !late) return null;
   const said = t[roster === "failed" ? "status.roster.failed" : "status.roster.late"];
-  const text = squads ? `${said} · ${t["status.roster.squadsWait"]}` : said;
+  const text = reader ? `${said} · ${t["status.roster.squadsWait"]}` : said;
   return { at: readAt, line: { id: "roster", text, tone: "attention" } };
 }
 type Day = NonNullable<SquadsToday["day"]>;
@@ -115,11 +145,8 @@ function squadsLine(s: SquadsToday, day: Day, w: Words): Dated | null {
     at,
     line: { id: "squads", text, tone, ...(until && { until }) },
   });
-  if (day.status === "skipped" || day.status === "stopped") {
-    const over = said("attention", overText(s, day, w));
-    if (onKeyCard(s, day, w)) over.line.keyCard = true;
-    return over;
-  }
+  if (day.status === "skipped" || day.status === "stopped")
+    return said("attention", overText(s, day, w));
   const { t } = w;
   const counts = { read: s.read, members: s.members };
   const clock = (d: Date) => serverClock(w.env.SERVER_TZ, d);
@@ -130,7 +157,7 @@ function squadsLine(s: SquadsToday, day: Day, w: Words): Dated | null {
     const key = s.failed ? "status.squads.doneMissed" : "status.squads.done";
     return said("quiet", fill(t[key], words), until);
   }
-  const paused = pausedWhy(s, day, w);
+  const paused = pausedWhy(day, w);
   if (paused) return said("quiet", fill(t[paused], counts));
   // Everyone left waits for a later try.
   if (s.nextAt && s.dueNow === 0) {
@@ -147,15 +174,10 @@ function squadsLine(s: SquadsToday, day: Day, w: Words): Dated | null {
  * Why a running day waits: on the site's key nothing runs in the event window (D132), and `quota` waits
  * for the reserve. Null: it is reading.
  */
-function pausedWhy(s: SquadsToday, day: Day, w: Words) {
-  if (s.key === "site" && inEventWindow(w.now, w.env)) return "status.squads.pausedEvent" as const;
+function pausedWhy(day: Day, w: Words) {
+  if (w.reader === "site" && inEventWindow(w.now, w.env))
+    return "status.squads.pausedEvent" as const;
   return day.reason === "quota" ? ("status.squads.pausedMargin" as const) : null;
-}
-
-/** A day the tracker refused or spent the alliance's own key: Home's key card says it too. */
-function onKeyCard(s: SquadsToday, day: Day, w: Words): boolean {
-  const kind = stopKind(day.reason);
-  return w.card && s.key === "own" && (kind === "key" || kind === "limit");
 }
 
 /** Why a skipped or stopped day reads nobody more: D132's `stopKind` words, or the limit's reset time. */

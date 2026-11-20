@@ -8,11 +8,9 @@ import { cookies, headers } from "next/headers";
 import { type ReactNode, Suspense } from "react";
 
 import { analyticsPerson } from "@/lib/analytics/person";
-import { getAppContext } from "@/lib/app-context";
 import { AppShell } from "@/lib/brand/components/layout/AppShell";
 import { fill, isolate } from "@/lib/copy";
 import { getEnv } from "@/lib/env";
-import { withPageDb } from "@/lib/page";
 import type { WorkspaceAccess } from "@/lib/private/access";
 import { WORKSPACE_INTRO_COOKIE, WORKSPACE_LANG_COOKIE } from "@/lib/private/cookies";
 import {
@@ -21,7 +19,7 @@ import {
   type WorkspaceDictionary,
   type WorkspaceLanguage,
 } from "@/lib/private/dictionary";
-import { readStatus } from "@/lib/private/read-status";
+import { frameReadStatus } from "@/lib/private/read-status";
 import type { Feature } from "@/lib/workspace-features";
 
 import { AnalyticsPerson } from "./AnalyticsPerson";
@@ -228,9 +226,9 @@ async function ReadStatusLine({
   t: WorkspaceDictionary;
   keyShown: boolean;
 }) {
-  const { env } = getAppContext();
-  const status = await withPageDb((db) => readStatus(db, access, env, new Date(), t));
-  if (!status.lines.some((l) => !(keyShown && l.keyCard))) return null;
+  // A failed read renders nothing and logs a code (`frameReadStatus`): never the desk page's error.
+  const status = await frameReadStatus(access, t, new Date());
+  if (!status?.lines.some((l) => !(keyShown && l.keyCard))) return null;
   const words = {
     label: t["status.label"],
     more: t["status.more"],

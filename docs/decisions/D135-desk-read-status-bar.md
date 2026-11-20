@@ -4,7 +4,7 @@ Why: officers could not tell why a card was not updated yet: the squads read (D1
 
 **Where.** Under the page head of every desk page (`SignedInFrame`, the D122 AppShell's `<main>`), after the deletion notice. It is hidden when no read has anything to say.
 
-- The frame reads it itself (`ReadStatusLine` in `app/(private)/_ui/Frame.tsx`) in its own Suspense boundary, on the `access` that the page's `requireWorkspace` gave. The page never waits for it. This is the frame's only database connection: the page's own read stays as it was.
+- The frame reads it itself (`ReadStatusLine` in `app/(private)/_ui/Frame.tsx`) in its own Suspense boundary, on the `access` that the page's `requireWorkspace` gave. The page never waits for it. This is the frame's only database connection: the page's own read stays as it was. If that connection or a query fails, the bar renders nothing and logs the code `w.read_status.failed` only (`frameReadStatus`): the bar never takes the desk page down (review of PR 515).
 - The read model is `readStatus` in `lib/private/read-status.ts`. `GET /api/w/[slug]/read-status` serves the same lines for polling, to an officer's session of that workspace only (`401 signed_out` otherwise, D99). The answer is `private, no-store`, nothing is logged, and no tracker call is made.
 
 **What it says.** Lines are in the officer's language (EN, PT-BR, FR). They hold counts and server times only: no uid, name or value (D71). A workspace sees only its own reads, because the alliance comes from the session (issue 471).
@@ -21,8 +21,8 @@ Why: officers could not tell why a card was not updated yet: the squads read (D1
 | Squads, skipped             | `skipped`                                                                                                                                                                  | "Squads not read today: tracker limit unknown"                                                     |
 
 - **D132's read model, reused.** The squads line reads `squadsToday` (`lib/private/squads-today.ts`) and `stopKind` (`lib/squads.ts`), the same as Alliance settings' "Squads today". The stop reasons reuse its `squads.stop.*` words.
-- **Shown only when the squads read is on and a key reads it.** `squadsReader` checks the feature (D126, D134) and then `squadsKey` (`lib/workspace-keys.ts`, INVARIANT `squads.key-rule`). `squadTargets` follows the same rule, so the desk and the read cannot disagree (issue 507's first item).
-- **The key line comes first**, then the others, newest first. Stopped and skipped lines stay until the quota day ends. A day's queue belongs to its quota day (D132), so the next day starts with no line.
+- **Shown only when the squads read is on and a key reads it.** `squadsReader` checks the feature (D126, D134) and then `squadsKey` (`lib/workspace-keys.ts`, INVARIANT `squads.key-rule`). `squadTargets` follows the same rule in every branch, so the desk and the read cannot disagree (issue 507's first item). A key spent today reads again only after the 00:00 UTC reset, for both; Home's key card says so meanwhile (review of PR 515). `readStatus` reads `workspace_keys` once for the key line, this rule and the daily read's rule.
+- **The key line comes first**, then the others, newest first. Stopped and skipped lines stay until the quota day ends. A day's queue belongs to its quota day (D132), so the next day starts with no line. An alliance the daily read leaves out on purpose (`dailyKeyRule` "skip": a refused, unreadable or spent key, D133) gets no roster line: the key's state explains it (review of PR 515).
 - **D75.** A member the tracker did not answer for is "the tracker missed 3". It is never counted against the member, and no line names anyone.
 
 **How it looks** (DESIGN.md "Workspace components": read status bar).
@@ -31,9 +31,9 @@ Why: officers could not tell why a card was not updated yet: the squads read (D1
 - Each line starts with what and how far ("Squads: 43 of 101 read"), so even the cut line at 360 px says it.
 - A dot gives the tone: plum while running (it pulses, and is still under `prefers-reduced-motion`), sage when done or paused, yarn when a line needs a look. The words always say the state.
 - From 640 px, a key line also puts "Open Alliance settings" beside the closed bar.
-- **Home and Alliance settings show the key's state themselves** (Home's key card, D124). There the bar leaves out the key line, and a squads line stopped by the alliance's own refused or spent key (`keyCard`, `SignedInFrame keyShown`). This came from the persona panel: the same fact said twice, in two clocks.
+- **Home and Alliance settings show the key's state themselves** (Home's key card, D124). There the bar leaves out the key line (`keyCard`, `SignedInFrame keyShown`). This came from the persona panel: the same fact said twice, in two clocks.
 
-**Refresh.** While a line is running (`running: true`), the bar asks the route every 30 s, only while the tab is visible. Becoming visible again asks at once. When an answer says the read ended, the bar calls `router.refresh()` once, so the cards show the new numbers, and then stops asking. A done line goes at its `until` (30 minutes after the end), on a timer, with no request. A `401` ends the polling.
+**Refresh.** While a line is running (`running: true`), the bar asks the route every 30 s, only while the tab is visible. Becoming visible again asks at once. When an answer says the read ended, the bar calls `router.refresh()` once, so the cards show the new numbers, and then stops asking. A done line goes at its `until` (30 minutes after the end), on a timer, with no request; once no line is left to go, no timer runs (`nextWake`). A `401` ends the polling.
 
 **Not done here.**
 
@@ -43,6 +43,8 @@ Why: officers could not tell why a card was not updated yet: the squads read (D1
 
 **Tests.**
 
-- `lib/private/read-status.test.ts`, one per state: running (the counts move, nothing with the feature off, and the site's key with the keys off still reads); done (30 minutes, then nothing); paused and stopped at the limit (the reset time); skipped; a key to paste again (first, with the key card mark); a late roster (not inside its window), and nothing to say.
+- `lib/private/read-status.test.ts`, one per state: running (the counts move, nothing with the feature off, and the site's key with the keys off still reads); done (30 minutes, then nothing); waiting for retries; paused for the reserve and in the event window; stopped at the limit (the reset time), at the cap and for another reason; skipped; a key to paste again; a refused key with no roster line, and a key spent today with no line at all; a late roster (not inside its window), a failed roster, and nothing to say; a failed connection renders nothing and logs a code only.
+- `app/(private)/_ui/read-status-wake.test.ts`: no timer once nothing is left to go.
+- `lib/squads-key-rule.test.ts`: `squadsKey` and `squadTargets` agree on a key spent today, before and after the reset.
 - Issue 471's isolation suite (`cross-workspace-reads.test.ts`): each workspace's bar carries its own counts and no uid or name.
 - The member-session sweep covers the new route.

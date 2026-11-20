@@ -165,8 +165,7 @@ export interface SquadTarget {
  * cannot touch the rows). Only a key that fails to open under its own master key is marked `reenter`.
  */
 async function opened(db: Db, secret: string, r: SealedKey, now: Date): Promise<OpenKey | null> {
-  if (!r.ciphertext || !r.nonce || r.masterFp !== masterFingerprint(secret)) return null;
-  if (!keyUsable(r.status, r.statusAt, now)) return null;
+  if (!r.ciphertext || !r.nonce || !ownKeyReads(stored(r), secret, now)) return null;
   try {
     const apiKey = openKey(secret, r.workspaceId, { ciphertext: r.ciphertext, nonce: r.nonce });
     return { workspaceId: r.workspaceId, apiKey, nonce: r.nonce };
@@ -219,7 +218,7 @@ export async function dailyTargets(
 ): Promise<DailyTarget[]> {
   const targets: DailyTarget[] = tracked.map((unionId) => ({ unionId, key: null }));
   for (const r of await sealedKeys(db)) {
-    const rule = dailyKeyRule(r, secret, now, tracked);
+    const rule = dailyKeyRule(stored(r), secret, now, tracked);
     if (rule === "ours" && !tracked.includes(r.unionId))
       targets.push({ unionId: r.unionId, key: null });
     if (rule !== "own" || !secret) continue;
@@ -235,14 +234,32 @@ export async function dailyTargets(
  * key sealed under the current master key; "skip": a saved key that cannot be used now (never ours).
  */
 export function dailyKeyRule(
-  r: Pick<SealedKey, "unionId" | "ciphertext" | "masterFp" | "status" | "statusAt">,
+  r: StoredKey,
   secret: string | undefined,
   now: Date,
   tracked: readonly number[],
 ): "ours" | "own" | "skip" {
-  if (tracked.includes(r.unionId) || !secret || !r.ciphertext) return "ours";
-  if (r.masterFp !== masterFingerprint(secret)) return "skip";
-  return keyUsable(r.status, r.statusAt, now) ? "own" : "skip";
+  if (tracked.includes(r.unionId) || !secret || !r.set) return "ours";
+  return ownKeyReads(r, secret, now) ? "own" : "skip";
+}
+
+/** A key's stored facts, as the rules read them: whether one is saved, never the key itself. */
+export interface StoredKey {
+  unionId: number;
+  set: boolean;
+  masterFp: string | null;
+  status: KeyStatus;
+  statusAt: Date | null;
+}
+
+const stored = (r: SealedKey): StoredKey => ({ ...r, set: r.ciphertext !== null });
+
+/**
+ * A saved key reads now: the current master key sealed it, and its status reads (`ok`, or `out_of_quota`
+ * from before today's 00:00 UTC reset). A key spent today, refused or sealed elsewhere does not.
+ */
+function ownKeyReads(r: StoredKey, secret: string, now: Date): boolean {
+  return r.masterFp === masterFingerprint(secret) && keyUsable(r.status, r.statusAt, now);
 }
 
 /**
@@ -256,26 +273,31 @@ export async function dailyIds(
   secret: string | undefined,
   now: Date,
 ): Promise<number[]> {
-  const [set, rows] = await Promise.all([trackedSetOf(db, day), sealedKeys(db)]);
-  const tracked = set?.allianceIds ?? (await trackedAllianceIds(db));
-  const workspaces = rows.filter((r) => dailyKeyRule(r, secret, now, tracked) !== "skip");
+  const [tracked, rows] = await Promise.all([dailyTracked(db, day), sealedKeys(db)]);
+  const workspaces = rows.filter((r) => dailyKeyRule(stored(r), secret, now, tracked) !== "skip");
   return [...new Set([...tracked, ...workspaces.map((r) => r.unionId)])];
+}
+
+/** The day's tracked set (else the newest): the alliances the daily read covers on LAP_API_KEY (D133). */
+export async function dailyTracked(db: Db, day: string): Promise<readonly number[]> {
+  const set = await trackedSetOf(db, day);
+  return set?.allianceIds ?? trackedAllianceIds(db);
 }
 
 /**
  * INVARIANT squads.key-rule (D132, issue 507): whose key reads an alliance's squads, from its key's stored
  * facts without opening it. "site": LAP_API_KEY, for the own alliance only, while it has no saved key or the
- * keys are off (no WORKSPACE_KEYS_SECRET). "own": a saved key the current master key sealed whose status
- * reads (`ok`, or `out_of_quota`, which reads again after the reset). Null: nobody reads them. The squads
- * read (`squadTargets`) and the desk's progress lines (Alliance settings, the read status bar) follow it.
+ * keys are off (no WORKSPACE_KEYS_SECRET). "own": a saved key that reads now (`ownKeyReads`: a key spent
+ * today does not, until the reset). Null: nobody reads them. The squads read (`squadTargets`) and the
+ * desk's progress lines (Alliance settings, the read status bar) follow it.
  */
 export function squadsKey(
-  r: { unionId: number; set: boolean; masterFp: string | null; status: KeyStatus },
+  r: StoredKey,
   secret: string | undefined,
+  now: Date,
 ): "site" | "own" | null {
   if (!secret || !r.set) return r.unionId === OWN_ALLIANCE_ID ? "site" : null;
-  if (r.masterFp !== masterFingerprint(secret)) return null;
-  return r.status === "ok" || r.status === "out_of_quota" ? "own" : null;
+  return ownKeyReads(r, secret, now) ? "own" : null;
 }
 
 async function keyTargets(db: Db, secret: string | undefined, now: Date): Promise<SquadTarget[]> {
@@ -283,7 +305,7 @@ async function keyTargets(db: Db, secret: string | undefined, now: Date): Promis
   const own = rows.find((r) => r.unionId === OWN_ALLIANCE_ID);
   const targets: SquadTarget[] = [];
   // D125: without a workspace (none yet, or deleted) the own alliance's squads are not read at all.
-  if (own && squadsKey({ ...own, set: own.ciphertext !== null }, secret) === "site") {
+  if (own && squadsKey(stored(own), secret, now) === "site") {
     targets.push({
       unionId: OWN_ALLIANCE_ID,
       workspaceId: own.workspaceId,
@@ -293,6 +315,7 @@ async function keyTargets(db: Db, secret: string | undefined, now: Date): Promis
   }
   if (!secret) return targets;
   for (const r of rows) {
+    if (squadsKey(stored(r), secret, now) !== "own") continue;
     const key = await opened(db, secret, r, now);
     if (!key) continue;
     const target = { unionId: r.unionId, workspaceId: r.workspaceId, slug: r.slug, key };

@@ -12,6 +12,8 @@ import { type ReactNode, useEffect, useState } from "react";
 
 import type { ReadStatus, StatusLine } from "@/lib/private/read-status";
 
+import { nextWake } from "./read-status-wake";
+
 const POLL_MS = 30_000;
 
 const DOT: Record<StatusLine["tone"], string> = {
@@ -76,13 +78,12 @@ function usePolling(slug: string, running: boolean, take: (s: ReadStatus) => voi
 /** The lines still to show: a finished read's goes at its `until` (0 until mounted, so both renders agree). */
 function useShown(lines: StatusLine[]): StatusLine[] {
   const [now, setNow] = useState(0);
-  const next = Math.min(...lines.map((l) => l.until ?? Infinity));
+  const wait = nextWake(lines, now);
   useEffect(() => {
-    const wait = now === 0 ? 0 : next - Date.now();
-    if (wait === Infinity) return;
-    const timer = setTimeout(() => setNow(Date.now()), Math.max(0, wait));
+    if (wait === null) return;
+    const timer = setTimeout(() => setNow(Date.now()), wait);
     return () => clearTimeout(timer);
-  }, [next, now]);
+  }, [wait]);
   return lines.filter((l) => !l.until || now === 0 || l.until > now);
 }
 
