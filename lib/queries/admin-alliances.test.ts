@@ -1,3 +1,4 @@
+import { eq } from "drizzle-orm";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import type { Db } from "../db";
@@ -12,7 +13,10 @@ import {
   workspaceUsers,
 } from "../schema";
 import { thanksShares } from "../schema-board";
+import { workspaceWebhooks } from "../schema-discord";
+import { workspaceKeyChanges, workspaceKeys } from "../schema-keys";
 import { noticePublishes, notices } from "../schema-notices";
+import { rollCallMarks, rollCalls } from "../schema-rollcall";
 import { shieldChecks } from "../schema-shield";
 import { squadReads } from "../schema-squads";
 import { allianceUsage } from "./admin-alliances";
@@ -148,5 +152,96 @@ describe("allianceUsage (issue 485, D144)", () => {
     const usage = await allianceUsage(db, DAY, NOW);
     expect(usage.get(a)?.officerSeenAt).toEqual(ago(5));
     expect(usage.get(b)?.officerSeenAt).toBeNull();
+  });
+
+  it("gives each setup step's first time from our own tables, for a workspace older than the analytics events", async () => {
+    const day = (d: string) => new Date(`${d}T10:00:00Z`);
+    await db
+      .update(workspaces)
+      .set({ createdAt: day("2026-03-01") })
+      .where(eq(workspaces.id, a));
+    const [officer] = await db
+      .insert(workspaceUsers)
+      .values({ workspaceId: a, discordUserId: "11" })
+      .returning({ id: workspaceUsers.id });
+    const by = officer?.id ?? 0;
+    // a: the key saved twice and removed in between, so it is unset now; b: a key stored, no change kept.
+    await db.insert(workspaceKeys).values([
+      { workspaceId: a, status: "unset", statusAt: day("2026-04-01") },
+      { workspaceId: b, status: "ok", statusAt: day("2026-04-01") },
+    ]);
+    await db.insert(workspaceKeyChanges).values([
+      {
+        workspaceId: a,
+        action: "removed",
+        changedBy: by,
+        changedAt: day("2026-03-01"),
+        requestId: "k0",
+      },
+      {
+        workspaceId: a,
+        action: "set",
+        changedBy: by,
+        changedAt: day("2026-03-02"),
+        requestId: "k1",
+      },
+      {
+        workspaceId: a,
+        action: "set",
+        changedBy: by,
+        changedAt: day("2026-03-20"),
+        requestId: "k2",
+      },
+    ]);
+    const hook = {
+      workspaceId: a,
+      ciphertext: "c",
+      nonce: "n",
+      masterFp: "f",
+      name: "n",
+      forum: false,
+    };
+    await db.insert(workspaceWebhooks).values([
+      { ...hook, channel: "members", savedAt: day("2026-03-05"), requestId: "h1" },
+      { ...hook, channel: "leaders", savedAt: day("2026-03-04"), requestId: "h2" },
+    ]);
+    const [call] = await db
+      .insert(rollCalls)
+      .values({ workspaceId: a, kind: "shield", day: "2026-03-07", week: "2026-03-02" })
+      .returning({ id: rollCalls.id });
+    const mark = { rollCallId: call?.id ?? 0, mark: "yes", writtenBy: by };
+    await db.insert(rollCallMarks).values([
+      { ...mark, uid: 1, version: 1, writtenAt: day("2026-03-08") },
+      { ...mark, uid: 2, version: 1, writtenAt: day("2026-03-07") },
+    ]);
+    const [notice] = await db
+      .insert(notices)
+      .values({ workspaceId: a, createdAt: NOW, updatedAt: NOW })
+      .returning({ id: notices.id });
+    const publish = {
+      workspaceId: a,
+      noticeId: notice?.id ?? 0,
+      audience: "members",
+      languages: "en",
+    };
+    await db.insert(noticePublishes).values([
+      { ...publish, requestId: "p1", status: "failed", publishedAt: day("2026-03-09") },
+      { ...publish, requestId: "p2", status: "posted", publishedAt: day("2026-03-10") },
+    ]);
+
+    const usage = await allianceUsage(db, DAY, NOW);
+    expect(usage.get(a)?.setup).toEqual({
+      created: day("2026-03-01"),
+      key_saved: day("2026-03-02"),
+      webhook: day("2026-03-04"),
+      first_roll_call: day("2026-03-07"),
+      first_notice: day("2026-03-10"),
+    });
+    expect(usage.get(b)?.setup).toMatchObject({
+      key_saved: "done",
+      webhook: null,
+      first_roll_call: null,
+      first_notice: null,
+    });
   });
 });

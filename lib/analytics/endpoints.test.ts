@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { endpointRow, ENDPOINTS, firstTime, shownTotal } from "./endpoints";
+import { endpointRow, ENDPOINTS, shownTotal } from "./endpoints";
 
 // Next's data cache needs a Next request; here the read runs every time.
 vi.mock("next/cache", () => ({ unstable_cache: <T>(read: T) => read }));
@@ -47,9 +47,7 @@ describe("PostHog Endpoints (D145)", () => {
     }
   });
 
-  it("shows a total only from 5, rounded down to a multiple of 5, and reads minIf's 1970 as never", () => {
+  it("shows a total only from 5, rounded down to a multiple of 5", () => {
     expect([4, 5, "7", 62, 2.5, null].map(shownTotal)).toEqual([null, 5, 5, 60, null, null]);
-    expect(firstTime("1970-01-01T00:00:00Z")).toBeNull();
-    expect(firstTime("2026-11-20T10:00:00Z")?.toISOString()).toBe("2026-11-20T10:00:00.000Z");
   });
 });

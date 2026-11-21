@@ -42,6 +42,7 @@ import { RENEW_MS } from "@/lib/private/session";
 import { SLUG } from "@/lib/private/sign-in";
 import { serverDay } from "@/lib/schedule";
 
+import { AllianceWeekLine, allianceWeekParts } from "../../../_ui/AllianceWeekLine";
 import { editorWords, updatesWords } from "../../../_ui/facts-form";
 import { FormerMembers } from "../../../_ui/FormerMembers";
 import { SignedInFrame, workspaceWords } from "../../../_ui/Frame";
@@ -281,6 +282,7 @@ function Roster(props: {
   const checkins = view.members.filter((m) => needsAWord(whoOf(m))).length;
   const [from, to] = [view.week[0] ?? "", view.week[6] ?? ""];
   const share = shareThanksProps({ slug, t, language, view, today, switches: props.switches });
+  const allianceWeek = allianceWeekParts(view, t, f, today);
   const lead = (
     <>
       <MembersSource
@@ -292,6 +294,7 @@ function Roster(props: {
       <p className="mt-1 text-body-sm text-ink/80">
         {fill(t["members.week"], { from: f.date(from), to: f.date(to) })}
       </p>
+      <AllianceWeekLine parts={allianceWeek} className="mt-1 max-w-(--measure)" />
       <MembersThanks view={view} t={t} f={f} share={share} />
       {/* Before the first end-of-day read nothing is computed, so nothing is said about check-ins. */}
       <p className={view.early ? "hidden" : "mt-3"}>

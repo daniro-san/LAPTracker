@@ -83,3 +83,17 @@ Under 5 visitors there is no note at all. EN, PT-BR and FR (`lib/private/diction
   - totals rounded, and under 5 as null;
   - steps not reached as null;
   - a failed workspace left out.
+
+**Amendment (2026-11-21, owner check in production, issue 484): /admin's setup steps come from our own tables, and its action counts are exact.**
+
+- **Setup from our database, not PostHog.** On OGs the owner read "Created: not yet", "Key saved: not yet", "First roll call marked: not yet" and "First notice published: not yet". The `ws_action` events exist only since v5.29 (2026-11-21), and OGs was created and its key saved long before. So the event-based steps were false for every workspace older than the events. Each step is now its first time in our tables, read by D144's one `allianceUsage` statement (four more `group by` parts and one join, no new transaction):
+  1. created: `workspaces.created_at`;
+  2. key saved: the first `set` in `workspace_key_changes`, counted only once the workspace has a `workspace_keys` row (a key was stored at least once). A save claims its `set` row before the key's test and drops it when the key is refused, but a request that dies mid-test leaves the row (adversarial panel, 2026-11-21). "done", without a date, when a key is stored and no such row is left;
+  3. webhook set: the earliest `saved_at` of the workspace's stored channels. Saving a channel again moves its time later, and Remove deletes it, so this is the date by which a webhook was set;
+  4. first roll call marked: the first `roll_call_marks` write of the workspace's roll calls (deleted ones too);
+  5. first notice published: the first `notice_publishes` row that went through (`posted`).
+
+  A step with a row reads its UTC date, with "· day n" counted from Created. "done" is for a step whose table shows it done but keeps no time. "not yet" only when nothing exists. The site's fallback webhooks (`WORKSPACE_DISCORD_WEBHOOKS`) are not the workspace's own step, so they do not count. The cards are still drawn only when PostHog answered for the workspace, as before. `lap_alliance_usage` version 2 drops the five setup columns, and the code pins version 2; it reads columns by name and ignores any others.
+
+- **Action counts are exact.** Notices written, roll call marks, thanks shared and screenshots read count actions, not people, so they show as they are, 0 to 4 included, with no rounding. "Under 5" hid whether a feature is used at all (product panel SHOULD, 2026-11-21). An action cell that is not a whole number from 0 is an answer of another shape, so that workspace's card is left out. **People counts are unchanged:** officers active and board visitors still read "under 5" below 5 and are rounded down to a multiple of 5 (D75). The desk's board reach is unchanged.
+- **Tests.** `lib/queries/admin-alliances.test.ts`: a workspace created before the events shows its real dates, and a stored key with no change row reads "done". `lib/queries/admin-activity.test.ts`: action counts exact from 0, people under 5 as null and the rest rounded, and a column the app does not read is ignored.

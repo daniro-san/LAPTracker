@@ -12,36 +12,19 @@ const COLUMNS = [
   "roll_call_marks",
   "thanks_shared",
   "screenshots_read",
+  // A column the app does not read, as version 1's setup columns: ignored.
   "created",
-  "key_saved",
-  "webhook",
-  "first_roll_call",
-  "first_notice",
 ];
 
-describe("/admin's Activity (D145)", () => {
-  it("one call per workspace: totals rounded down to a multiple of 5 and under 5 as null, steps never reached as null, a workspace PostHog failed for left out", async () => {
+describe("/admin's Activity (D145, amended 2026-11-21)", () => {
+  it("one call per workspace: people under 5 as null and the rest rounded down, action counts exact from 0, a workspace PostHog failed for left out", async () => {
     const posthog = vi.fn(async (_url: RequestInfo | URL, init?: RequestInit) => {
       const { workspace } = JSON.parse(String(init?.body)).variables as { workspace: string };
       if (workspace === "cedar") return new Response("{}", { status: 503 });
       return new Response(
         JSON.stringify({
           columns: COLUMNS,
-          results: [
-            [
-              3,
-              41,
-              6,
-              120,
-              1,
-              9,
-              "2026-11-10T09:00:00Z",
-              "2026-11-10T09:30:00Z",
-              "2026-11-11T08:00:00Z",
-              "2026-11-12T18:00:00Z",
-              "1970-01-01T00:00:00Z",
-            ],
-          ],
+          results: [[3, 41, 6, "122", 0, 4, "2026-11-10T09:00:00Z"]],
         }),
       );
     });
@@ -53,17 +36,10 @@ describe("/admin's Activity (D145)", () => {
         totals: {
           officers_active: null,
           board_visitors: 40,
-          notices_written: 5,
-          roll_call_marks: 120,
-          thanks_shared: null,
-          screenshots_read: 5,
-        },
-        steps: {
-          created: new Date("2026-11-10T09:00:00Z"),
-          key_saved: new Date("2026-11-10T09:30:00Z"),
-          webhook: new Date("2026-11-11T08:00:00Z"),
-          first_roll_call: new Date("2026-11-12T18:00:00Z"),
-          first_notice: null,
+          notices_written: 6,
+          roll_call_marks: 122,
+          thanks_shared: 0,
+          screenshots_read: 4,
         },
       },
     ]);

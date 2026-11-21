@@ -160,7 +160,9 @@ export function Alliances({ rows }: { rows: AllianceRow[] }) {
       </AdminSection>
       {/* D145: PostHog's totals, streamed so they never hold up the page; nothing when PostHog has none. */}
       <Suspense fallback={null}>
-        <Activity workspaces={rows.map((r) => ({ slug: r.slug, alliance: r.alliance }))} />
+        <Activity
+          workspaces={rows.map((r) => ({ slug: r.slug, alliance: r.alliance, setup: r.setup }))}
+        />
       </Suspense>
     </>
   );
