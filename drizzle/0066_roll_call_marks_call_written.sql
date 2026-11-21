@@ -1,0 +1,1 @@
+CREATE INDEX "roll_call_marks_call_written_idx" ON "roll_call_marks" USING btree ("roll_call_id","written_at");

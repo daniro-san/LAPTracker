@@ -49,3 +49,5 @@ Why: officers get new main squad and AD Tech values from members whenever someon
 **Amendment 2026-11-19 (D122 rollout PR 3, 11av, issue 412).** "Paste updates" is the page head's main action on Members: at the right of the title from 768, and the one action shown beside "More" on a phone, above "Send a screenshot" and the Members / Former members tabs. It is still the page's one primary action; its words and its sheet are unchanged.
 
 **Amendment 2026-11-20 (owner, issue 461; D136).** On the member card, "Updated …" under Main squad and AD Tech shows only after "Show when each was updated" on the Info tab. The change line ("+400K since Nov 10") is unchanged. Pending and former members' cards keep showing "Updated …".
+
+**Amendment 2026-11-21 (perf panel; D149).** The thanks' progress on Home and Members reads only the thanks week's main squad and AD Tech versions and the version before them (`progressHistory` on `factHistorySince`), not every version. The thanks are unchanged.
