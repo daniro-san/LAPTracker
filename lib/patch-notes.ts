@@ -24,7 +24,7 @@ export const REPO_URL = "https://github.com/daniro-san/LAPTracker";
 /** Steps only the owner can do, open ones first in the order they matter. */
 export const ownerTodo: OwnerTodo[] = [
   {
-    text: "Browser notifications: add VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY (Sensitive) and VAPID_SUBJECT in Vercel (Production), or ask Claude to do it, then redeploy. Then test on a real iPhone (Home Screen icon) and on Android Chrome.",
+    text: "Browser notifications: test on a real iPhone (add the desk to the Home Screen, open it from the icon, then Alliance settings → Notifications) and on Android Chrome.",
     issue: 558,
   },
   {
@@ -75,6 +75,19 @@ export const ownerTodo: OwnerTodo[] = [
     issue: 527,
   },
   {
+    text: "VAPID keys for browser notifications: generated and set in Vercel (Production), private key Sensitive; production redeployed.",
+    issue: 558,
+    done: true,
+  },
+  {
+    text: "Squad lineup confirmed: API slots 1–2 are the front row (top), 3–5 the back row.",
+    done: true,
+  },
+  {
+    text: 'KvK "Took a heavy hit" rule kept for now (lost more than 25% and still under 80% of might before the KvK); officers will give feedback.',
+    done: true,
+  },
+  {
     text: "Neon pooler: confirmed. The production DATABASE_URL comes from the Neon integration, which fills it with the pooled address.",
     issue: 527,
     done: true,
@@ -102,6 +115,19 @@ export const ownerTodo: OwnerTodo[] = [
 ];
 
 export const patchNotes: PatchNote[] = [
+  {
+    version: "v5.44.0",
+    date: "2026-11-21",
+    title: "Event kills and might no longer count members who joined mid-event",
+    changes: [
+      "The tracker sometimes answered a read of one alliance with another alliance's members. Those readings are now refused, so they can no longer put fake spikes in the server pulse or the fight clock. Event 263's four bad readings were removed.",
+      "When an alliance gains members during an event, their lifetime kills used to count as event kills (YAHO showed +6.1M; +5.3M came in with 3 members who joined).",
+      "The ledger and the alliance page keep the total, with a tappable * when members changed: it opens Total, Came in with the members who joined, Went with those who left, and Without them.",
+      "Standings at the last reading, the server pulse, the fight clock, who carried and kill share now count only the members who were there, so alliances compare fairly. Past events show the corrected figures too.",
+      "The squads on the member card each sit in their own frame.",
+    ],
+    prs: [586, 587],
+  },
   {
     version: "v5.43.0",
     date: "2026-11-21",
