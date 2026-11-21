@@ -5,7 +5,7 @@ import { recordAppError } from "./app-errors";
 import { minutes, T0 } from "./collector.test-helpers";
 import { openTestDb, truncateAll } from "./db.test-helpers";
 import { claimAppErrorAlert } from "./repo/app-errors";
-import { workspaces } from "./schema";
+import { appErrors, workspaces } from "./schema";
 
 const db = await openTestDb();
 const HOUR = 60 * 60_000;
@@ -64,6 +64,26 @@ describe("app-error alert", () => {
     expect(known).toMatchObject({ workspace: "ogs", alliance: "OGs" });
     expect(unknown).not.toHaveProperty("workspace");
     expect(unknown).not.toHaveProperty("alliance");
+  });
+
+  it("stores the request's slug in a slug's shape only, for /admin's errors by workspace (D144)", async () => {
+    const { ctx, clock } = testContext(db);
+    for (const [i, slug] of ["ogs", "Not A Slug!", undefined].entries()) {
+      // After the other tests' clocks: the per-instance limiter keeps the last insert's time.
+      clock.now = new Date(T0.getTime() + 24 * HOUR + i * minutes(5));
+      await recordAppError(ctx, {
+        route: "/w/[slug]/thefts",
+        kind: "render",
+        digest: null,
+        error: new Error(),
+        ...(slug && { slug }),
+      });
+    }
+    const rows = await db
+      .select({ slug: appErrors.workspaceSlug })
+      .from(appErrors)
+      .orderBy(appErrors.id);
+    expect(rows.map((r) => r.slug)).toEqual(["ogs", null, null]);
   });
 
   it("gives the claim to exactly one of two concurrent callers", async () => {

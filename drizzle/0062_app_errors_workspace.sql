@@ -1,0 +1,1 @@
+ALTER TABLE "app_errors" ADD COLUMN "workspace_slug" text;

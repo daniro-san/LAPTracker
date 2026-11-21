@@ -7,6 +7,7 @@ import { copy, fill } from "@/lib/copy";
 import { discordClock } from "@/lib/discord-format";
 import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
+import { allianceUsage } from "@/lib/queries/admin-alliances";
 import { knownAlliances } from "@/lib/queries/alliance-list";
 import { squadsProgress, type SquadsProgress } from "@/lib/queries/squads-progress";
 import { adminFeatures, type AdminFeatures } from "@/lib/queries/workspace-features";
@@ -20,6 +21,8 @@ import {
 } from "@/lib/workspace-features";
 import { keyUsable, masterFingerprint } from "@/lib/workspace-keys";
 
+import { allianceRow, byAttention, type AllianceRow } from "./alliances-view";
+import { Alliances } from "./AlliancesTable";
 import { DiscordCommandCard, type GuildView } from "./DiscordCommandCard";
 import { featuresView, settingsFor } from "./features-view";
 import { Invites } from "./Invites";
@@ -183,15 +186,42 @@ function squadsRows(page: {
     });
 }
 
+/** The Alliances table's rows (D144), the ones that need a look first. */
+function allianceRows(page: {
+  rows: AdminWorkspace[];
+  features: AdminFeatures;
+  usage: Awaited<ReturnType<typeof allianceUsage>>;
+  current: string | null;
+  now: Date;
+  allianceLabel: (unionId: number) => string;
+}): AllianceRow[] {
+  const { features, current, now } = page;
+  return page.rows
+    .map((w) =>
+      allianceRow({
+        w,
+        alliance: page.allianceLabel(w.unionId),
+        features,
+        view: featuresView(features, w),
+        usage: page.usage.get(w.id),
+        current,
+        now,
+        ago: (at) => seen(at, now),
+      }),
+    )
+    .sort(byAttention);
+}
+
 export async function Workspaces({ now }: { now: Date }) {
   const squadsDay = quotaDayRead(now, getEnv());
-  const [rows, deleted, features, squads, known] = await withPageDb((db) =>
+  const [rows, deleted, features, squads, known, usage] = await withPageDb((db) =>
     Promise.all([
       listWorkspaces(db, now),
       listTombstones(db),
       adminFeatures(db, now),
       squadsProgress(db, squadsDay, now),
       knownAlliances(db),
+      allianceUsage(db, squadsDay, now),
     ]),
   );
   const choices = known.map((a) => ({ unionId: a.unionId, label: choiceLabel(a) }));
@@ -238,8 +268,10 @@ export async function Workspaces({ now }: { now: Date }) {
       .join(" · "),
   }));
   const env = getEnv();
+  const page = { rows, squads, features, usage, current, now, allianceLabel };
   return (
     <>
+      <Alliances rows={allianceRows(page)} />
       <AdminSection id="workspaces" title={t.title} help={t.help}>
         <p className="mb-4 text-body-sm text-ink/80">{t.key.rotation}</p>
         <WorkspacesCard
@@ -252,10 +284,7 @@ export async function Workspaces({ now }: { now: Date }) {
       </AdminSection>
       <Invites now={now} unionIds={rows.map((w) => w.unionId)} known={known} />
       <AdminSection id="squads" title={t.squads.title} help={t.squads.help}>
-        <SquadsCard
-          day={squadsDay}
-          rows={squadsRows({ rows, squads, features, current, now, allianceLabel })}
-        />
+        <SquadsCard day={squadsDay} rows={squadsRows(page)} />
       </AdminSection>
       <AdminSection id="discord" title={t.command.title} help={t.command.help}>
         <DiscordCommandCard
