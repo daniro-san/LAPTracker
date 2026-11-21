@@ -562,7 +562,7 @@ _(Corrected 2026-11-21, owner: this section now matches the repo's settings and 
 - `.github/workflows/ci.yml`: `pnpm/action-setup` (pinned SHA, version from `packageManager`) → `actions/setup-node` with `node-version-file: .nvmrc` and `cache: pnpm` → `pnpm install --frozen-lockfile && pnpm check`, once per PR and on `workflow_dispatch`, not on push (#444). A PR that touches only `docs/**` or `*.md` runs `prettier --check` only.
 - Claude Code hooks in `.claude/settings.json` (committed, so they run in cloud sessions too):
   - `SessionStart` → `scripts/install_pkgs.sh` (`pnpm install --frozen-lockfile` when the lockfile hash changed; cloud-aware).
-  - `PreToolUse` on `Bash` → `scripts/hooks/pr-base-guard.sh`: a `gh pr create` without `--base dev` is refused.
+  - `PreToolUse` on `Bash` → `scripts/hooks/pr-base-guard.sh`: a `gh pr create` invocation without `--base dev` is refused; a commit message or grep that only mentions it is not.
   - `PostToolUse` on `Edit|Write` → `eslint --fix` on the changed file (fast; errors go straight back to the agent). `tsc` runs in the Stop hook, not per edit, unless it proves fast enough.
   - `Stop` → `pnpm check`. It blocks the turn while the check fails, or while the tree has changes and `node_modules` is missing. After two failed fix rounds in a row it lets the turn end with a `systemMessage` to the user. Claude Code's own cap is 8 continuations.
 - Permissions:
@@ -573,7 +573,7 @@ _(Corrected 2026-11-21, owner: this section now matches the repo's settings and 
     - `gh issue view|list`;
     - `gh workflow list|view` and `gh workflow run release-prepare.yml`;
     - `git push -u origin HEAD`, and `git push origin HEAD:refs/heads/*` with or without `--force-with-lease`;
-    - `gh pr create --base dev *`, `gh pr view|diff|checks|list|comment|edit|ready`, and `gh pr merge` with `--squash` or `--merge`;
+    - `gh pr create *` (the PreToolUse hook enforces `--base dev`), `gh pr view|diff|checks|list|comment|edit|ready|close`, and `gh pr merge` with `--squash` or `--merge`;
     - `gh release *`.
   - **Deny:**
     - pushes to `main` or `dev` (target patterns, force included; `--all`, `--mirror`). There is no generic force-push deny: feature branches may force-push after a rebase;
@@ -584,7 +584,7 @@ _(Corrected 2026-11-21, owner: this section now matches the repo's settings and 
     - `gh workflow run tick*`;
     - `curl` to `/api/quota` and to production `/api/tick` and `/api/snapshot`;
     - `Read` of secret `.env*` files (`.env.example` stays readable);
-    - `pnpm dlx`, `pnpm exec node`, `pnpm node`, `db:seed` and `discord:register` (as `pnpm …`, `pnpm run …`, `npm run …` or the script path), `drizzle-kit push` and `drop`;
+    - `pnpm dlx`, `pnpm exec node`, `pnpm node`, `db:seed` and `discord:register` (as `pnpm …`, `pnpm run …`, `npm run …`, or the script run by `tsx` or `node`), `drizzle-kit push` and `drop`;
     - `rm -rf` / `rm -fr`, and `git reset --hard`.
 
 ### 11.5 The harness in `.claude/` — the minimum that pays per session

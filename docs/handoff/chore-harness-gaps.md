@@ -23,10 +23,13 @@
   - Deny `pnpm dlx`, `pnpm exec node`, `pnpm node`, `db:seed` and `discord:register` (through `pnpm`, `npm` or the script path), `drizzle-kit push`, and `rm -fr`.
   - `curl` allows are narrowed to `http://localhost:*`, `http://127.0.0.1:*` and `https://laptracker-inky.vercel.app/*`, so `localhost.evil.tld` no longer matches.
   - `gh api` allows: GET forms only (plain, `--paginate`, `-X GET`, `--method GET`) under `repos/daniro-san/LAPTracker/*` and `repos/{owner}/{repo}/*`, plus the run-approve call.
-  - `gh pr` allows: `create --base dev`, `view`, `diff`, `checks`, `list`, `comment`, `edit`, `ready`, and `merge` with `--squash` or `--merge` (with or without a PR number).
+  - `gh pr` allows: `create` (the guard below enforces `--base dev`), `view`, `diff`, `checks`, `list`, `comment`, `edit`, `ready`, `close`, and `merge` with `--squash` or `--merge` (with or without a PR number).
   - `gh workflow` allows: `list`, `view` and `run release-prepare.yml`.
   - Also allowed: `gh issue view` / `list`, and `git push origin HEAD:refs/heads/*` with or without `--force-with-lease`.
-- `scripts/hooks/pr-base-guard.sh` (new, PreToolUse on Bash): refuses a `gh pr create` that does not name `--base dev`, `--base=dev` or `-B dev`, in any flag order.
+- `scripts/hooks/pr-base-guard.sh` (new, PreToolUse on Bash): refuses a `gh pr create` invocation that does not name `--base dev`, `--base=dev` or `-B dev`, in any flag order.
+  - It reads `tool_input.command` with `jq` (`node` as a fallback).
+  - It splits the command on `&&`, `||`, `;`, `|` and newlines outside quotes, strips `NAME=value` prefixes, and checks only the parts that start with `gh pr create`.
+  - A commit message, grep or heredoc line that mentions it is not blocked.
 - `REVIEW.md`
   - Scope is all of `lib/` and `app/`, including the private paths. `/pr-review` reads it.
   - Correctness, privacy and regressions come first; findings about style only are skipped.
@@ -120,6 +123,12 @@
   3. `gh pr merge *--admin*` is denied.
   4. `git commit -n…`, `* -n`, `* -n *` and `*--no-verify*` are denied, plus `git *core.hooksPath*` and `*LEFTHOOK=0*`. Simulated: all denied; `git commit -m x` allowed.
   5. `db:seed` and `discord:register` are denied through `pnpm` (`run`, `-s`, `exec`), `npm`, or the script path (`scripts/seed.ts`, `discord-register-command`). Simulated: all six forms denied; `pnpm db:local:seed` and `pnpm db:migrate` allowed.
+- **Re-review on #594** (approve with comments, 4 false positives), fixed on top of `e98fe5bb`:
+  1. `gh pr create *` is allowed in any flag order, and `gh pr close` is allowed again. The PreToolUse guard still enforces `--base dev`, and the `--base main` / `-Bmain` denies stay.
+  2. The seed and Discord-register script denies now match only execution: `*tsx *scripts/seed.ts*`, `*node *scripts/seed.ts*`, and the same for `discord-register-command`. Simulated: `pnpm exec tsx scripts/seed.ts`, `tsx --env-file=… scripts/seed.ts`, `node scripts/seed.ts` and `pnpm tsx scripts/discord-register-command.ts` are denied. `git add`, `git diff` and `pnpm vitest related` on those files are not.
+  3. The guard checks real invocations only (see Built). Tested with payloads built by `jq`: 19 cases pass. Not blocked: commit messages that mention it (including a separator inside quotes, and a heredoc line), a grep, base dev anywhere in the flags, `--base=dev`, `-B dev`, a `GH_TOKEN=$(…)` prefix, and after `cd … &&`. Blocked: `gh pr create --title x`, a bare `gh pr create`, `--base main`, `-Bmain`, `--base develop`, after `&&` without a base, on a second line, and with a `GH_TOKEN=x` prefix whose title merely mentions "base dev".
+  4. The `--no-verify` deny matches it as a token (`git commit --no-verify*`, `* --no-verify`, `* --no-verify *`). A message quoting the flag next to a quote mark (`-m "explain --no-verify"`) is allowed. A message with ` --no-verify ` between spaces is still denied, because a glob cannot see quotes; that is accepted as a rare false positive.
+  - `pnpm check`: the first run had one PGlite timeout at load 36 (`lib/queries/roster-stays.test.ts`, 10 s), which passed alone. The re-run passed: 296 test files and 1,532 tests (4 skipped). The guard's `node` fallback also passed all 19 cases.
   6. Read denies now cover `.env.test*`, `.env.staging*`, `.env.vercel*`, `.env.dev*`, `.env.prod*` and backup names. `.env.example` stays readable.
   7. `git push -u origin HEAD`: CONTRIBUTING "Enforcement layers" says why it stays allowed (lefthook stops the commit; GitHub rejects the push).
   8. Merge wording: CLAUDE.md now says build agents never merge; the orchestrator squash-merges into `dev` after every gate and merges the release PR; nobody uses `--admin`. The merge allows stay.
