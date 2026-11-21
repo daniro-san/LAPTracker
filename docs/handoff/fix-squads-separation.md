@@ -47,4 +47,4 @@ These are SHOULD items from the designer review and were not done here:
 - The slot mapping (slots 1–2 front, 3–5 back) is confirmed. Don't list it as an open question any more.
 </adjustments>
 
-PR: (added by the orchestrator)
+PR: https://github.com/daniro-san/LAPTracker/pull/586
