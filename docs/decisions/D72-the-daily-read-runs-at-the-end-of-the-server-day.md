@@ -33,3 +33,5 @@ Why: `daily_tech` ("tech points donated today", API docs) is a counter of the se
   - For 20 alliances a year: 20 × 8,309 × 365 ≈ 61 MB (≈ 68 MB at OGs' size), on top of D60's member arrays (≈ 2.7 KB per roster, ≈ 20 MB a year).
 
 **Amendment (2026-11-20, D133, issue 459).** The ranks board is read right before the day's read, in its window. A workspace's alliance outside the top 20 is read on its own key when it saved one. `daily_rosters.read_day` no longer references `daily_reads`, because a lookup's roster may come before the day's read. The storage estimate above is for 20 alliances: each workspace outside them and each lookup add about 8 KB a day.
+
+**Amendment (2026-11-20, D138, issue 481).** "OGs (101 members)" above is a tracker artefact, not the alliance's size: server 325 holds 100, and the 101st member of that body had an empty rank. The sizes were measured on that body and stay as measured. From now on a daily roster leaves out members with an empty rank (`member_uids`, the arrays, `member_count`), and `raw_json` keeps the body as sent; see D138.
