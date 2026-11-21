@@ -1,8 +1,9 @@
 "use client";
 
-// One roll call (issue 298): compact rows, each with a ✓ / ✗ pair 48 px tall; the same button again
-// clears. Rows keep the order the page opened with, so nothing moves under the thumb. Not set is where
-// everyone starts and is counted only as "not set" (D75). Away members are listed apart and never asked.
+// One roll call (issue 298): a grid of member tiles (issue 412, RollCallGrid.tsx), each with its name, its
+// mark in words and a ✓ / ✗ pair 44 px tall; the same button again clears. Tiles keep the order the page
+// opened with and those already marked fold under "Marked (n)", so nothing moves under the thumb. Not set
+// is where everyone starts and is counted only as "not set" (D75). Away members are listed apart and never asked.
 // The bar at the bottom fills "the rest" with the kind's own answer (RollCallRest.tsx). "Someone is away"
 // sets a member's away dates (D80, D103).
 import { useState } from "react";
@@ -12,15 +13,17 @@ import { Tag } from "@/lib/brand/components/Tag";
 import { fill, isolate } from "@/lib/copy";
 import { fold } from "@/lib/private/members-list";
 import type { Occasion } from "@/lib/private/roll-call";
+import type { Mark } from "@/lib/private/roll-call-rules";
 
 import { AwaySheet, type AwayWho } from "./AwaySheet";
 import { useFreshOnReturn } from "./CalendarAgenda";
 import type { MarkRowView, MarkWords, RollSheetWords } from "./roll-call-data";
+import { RollGrid, tileClass, useGrid } from "./RollCallGrid";
 import { RestBar, useRest } from "./RollCallRest";
 import { RefusalLine } from "./SignedOut";
 import { useMarks, type Shown } from "./use-marks";
 
-function MarkRow(props: {
+function MarkTile(props: {
   row: MarkRowView;
   shown: Shown;
   note: string | undefined;
@@ -30,29 +33,48 @@ function MarkRow(props: {
 }) {
   const { row, shown, marks } = props;
   return (
-    <li className="flex items-center gap-2 border-t border-rule py-1">
-      <div className="min-w-0 flex-1">
-        <p translate="no" className="truncate font-semibold">
-          <bdi>{row.name}</bdi>
-        </p>
-        {shown.mark && (
-          <Tag tone={shown.mark === "yes" ? "progress" : "neutral"}>{marks[shown.mark]}</Tag>
-        )}
-        {props.note && <p className="text-body-sm font-semibold text-yarn">{props.note}</p>}
+    <li className={tileClass(shown.mark !== null)}>
+      <p translate="no" className="truncate font-semibold">
+        <bdi>{row.name}</bdi>
+      </p>
+      <MarkLine mark={shown.mark} words={marks} notSet={props.words["roll.notSet"]} />
+      {props.note && <p className="text-body-sm font-semibold text-yarn">{props.note}</p>}
+      <div className="mt-1 grid grid-cols-2 gap-2">
+        {(["yes", "no"] as const).map((v) => (
+          <button
+            key={v}
+            type="button"
+            aria-pressed={shown.mark === v}
+            aria-label={fill(props.words["roll.button"], {
+              word: marks[v],
+              name: isolate(row.name),
+            })}
+            onClick={() => props.onTap(row.uid, v)}
+            className={`${chip(shown.mark === v)} min-h-11 justify-center text-[22px]`}
+          >
+            <span aria-hidden="true">{v === "yes" ? "✓" : "✗"}</span>
+          </button>
+        ))}
       </div>
-      {(["yes", "no"] as const).map((v) => (
-        <button
-          key={v}
-          type="button"
-          aria-pressed={shown.mark === v}
-          aria-label={fill(props.words["roll.button"], { word: marks[v], name: isolate(row.name) })}
-          onClick={() => props.onTap(row.uid, v)}
-          className={`${chip(shown.mark === v)} min-h-12 min-w-12 shrink-0 justify-center text-[22px]`}
-        >
-          <span aria-hidden="true">{v === "yes" ? "✓" : "✗"}</span>
-        </button>
-      ))}
     </li>
+  );
+}
+
+/** The mark in words under the name, "Not set" while there is none, so a tile keeps its height. */
+export function MarkLine(props: {
+  mark: Mark | null;
+  words: { yes: string; no: string; assumed?: string };
+  notSet: string;
+}) {
+  const said = props.mark ? props.words[props.mark] : undefined;
+  return (
+    <p className="truncate leading-5">
+      {said ? (
+        <Tag tone={props.mark === "yes" ? "progress" : "neutral"}>{said}</Tag>
+      ) : (
+        <span className="text-label text-ink/75">{props.notSet}</span>
+      )}
+    </p>
   );
 }
 
@@ -88,8 +110,10 @@ export function AwayGroup(props: {
 }
 
 /**
- * Above the rows: "2 of 58 marked" (with "Undo the rest" while it applies), the ✓ / ✗ words and "Tap ✓ or
- * ✗. Tap again to clear."; why not set never counts and how rows are ordered sit under "How this works".
+ * Above the tiles: "2 of 58 marked" (with "All marked" and "Undo the rest" beside it), then the ✓ / ✗
+ * words and "Tap ✓ or ✗. Tap again to clear." as the summary of "How this works", which holds why not set
+ * never counts, how tiles are ordered and the page's own `more` lines (Raid prep's tracker notes), so a
+ * phone's first screen reaches the tiles (issue 412 persona review).
  */
 export function Intro(props: {
   marked: number;
@@ -98,29 +122,38 @@ export function Intro(props: {
   marks: MarkWords;
   shield: boolean;
   undo: (() => void) | null;
+  more?: string[];
 }) {
   const { words, marks } = props;
   return (
     <>
       <p className="mt-3 flex flex-wrap items-center gap-x-3 text-body-sm">
         <span>{fill(words["roll.progress"], { n: props.marked, total: props.total })}</span>
+        {props.total > 0 && props.marked === props.total && (
+          <span className="font-semibold">{words["roll.done"]}</span>
+        )}
         {props.undo && (
           <button type="button" onClick={props.undo} className={chip()}>
             {words["roll.undoRest"]}
           </button>
         )}
       </p>
-      <p className="text-body-sm text-ink/80">
-        {`✓ ${marks.yes} · ✗ ${marks.no}. ${words["roll.legend"]}`}
-      </p>
       <details className="text-body-sm text-ink/80">
-        <summary className="flex min-h-11 cursor-pointer items-center font-semibold text-plum underline underline-offset-4">
-          {words["roll.how"]}
+        <summary className="flex min-h-11 cursor-pointer items-center">
+          <span>
+            {`✓ ${marks.yes} · ✗ ${marks.no}. ${words["roll.legend"]} `}
+            <span className="font-semibold whitespace-nowrap text-plum underline underline-offset-4">
+              {words["roll.how"]}
+            </span>
+          </span>
         </summary>
         <div className="space-y-1 pb-2">
           <p>{words["roll.how.notSet"]}</p>
           <p>{words["roll.order"]}</p>
           {props.shield && <p>{words["roll.legend.shield"]}</p>}
+          {props.more?.map((line) => (
+            <p key={line}>{line}</p>
+          ))}
         </div>
       </details>
     </>
@@ -184,8 +217,9 @@ export function RollCallMarks(props: {
   const asked = all.filter((row) => row.away === null);
   const awayRows = all.filter((row) => row.away !== null);
   const notSet = asked.filter((row) => m.shown(row.uid).mark === null);
+  const g = useGrid(asked, (uid) => [m.shown(uid).mark]);
   const needle = fold(q.trim());
-  const found = asked.filter((row) => needle === "" || fold(row.name).includes(needle));
+  const found = needle === "" ? null : (row: MarkRowView) => fold(row.name).includes(needle);
   return (
     <>
       <Intro
@@ -197,12 +231,17 @@ export function RollCallMarks(props: {
         undo={r.undoable && !r.fresh ? () => void r.undo() : null}
       />
       <SearchBar q={q} words={words} onQ={setQ} onAway={() => setAway("pick")} />
-      {needle !== "" && found.length === 0 && (
+      {found && !asked.some(found) && (
         <p className="py-3">{fill(words["roll.noMatch"], { q: q.trim() })}</p>
       )}
-      <ul>
-        {found.map((row) => (
-          <MarkRow
+      <RollGrid
+        g={g}
+        found={found}
+        cols="one"
+        words={words}
+        said={marks}
+        tile={(row) => (
+          <MarkTile
             key={row.uid}
             row={row}
             shown={m.shown(row.uid)}
@@ -211,8 +250,8 @@ export function RollCallMarks(props: {
             marks={marks}
             onTap={m.tap}
           />
-        ))}
-      </ul>
+        )}
+      />
       {m.error && <RefusalLine text={m.error} className="mt-2 text-seal" />}
       <AwayGroup rows={awayRows} words={words} onOpen={setAway} />
       <RestBar

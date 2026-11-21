@@ -34,7 +34,8 @@ export const rollEn = {
   "roll.team.short": "Team {team}: {n}/{max}",
   "roll.legend": "Tap ✓ or ✗. Tap again to clear.",
   "roll.legend.shield": "No problem seen: not checked one by one.",
-  "roll.order": "Not set comes first and away members last. Rows stay in place while you mark.",
+  "roll.order":
+    "Not set comes first and away members last; those already marked fold under “Marked”. Nothing moves while you mark. Tap a filter to sort again.",
   "roll.progress": "{n} of {total} marked",
   "roll.left": "{n} not set",
   "roll.rest.assumed": "Mark the other {n} as no problem seen",
@@ -129,6 +130,15 @@ export const rollEn = {
   "roll.archived.none": "No archived roll calls. Archive one from its page when it is done.",
   "roll.archived.week.one": "1 archived roll call this week ›",
   "roll.archived.week.other": "{n} archived roll calls this week ›",
+  "roll.grid.aria": "Which members",
+  "roll.grid.todo": "To mark",
+  "roll.grid.yes": "{n} marked ✓",
+  "roll.grid.no": "{n} marked ✗",
+  "roll.grid.all": "All",
+  "roll.grid.marked": "Marked ({n})",
+  "roll.grid.more": "Show {n} more",
+  "roll.grid.none.todo": "Nobody left to mark.",
+  "roll.grid.none": "No one here.",
 } as const;
 
 export type RollKey = keyof typeof rollEn;
