@@ -48,4 +48,4 @@
 - The squad lineup is 2 + 3 at every width, with no breakpoint and no visible list. Any other place that draws a squad (for example the member's own page, which reuses `MemberSquads`) gets it as is.
 </adjustments>
 
-PR: (added by the orchestrator)
+PR: https://github.com/daniro-san/LAPTracker/pull/564
