@@ -85,4 +85,4 @@
 - The server-side spend per alliance is on /admin's Alliances table (D144). The PostHog dashboard need not repeat tracker calls, caps or webhook posts.
 </adjustments>
 
-PR: (added by the orchestrator)
+PR: https://github.com/daniro-san/LAPTracker/pull/544
