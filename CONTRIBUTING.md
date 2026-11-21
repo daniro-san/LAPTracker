@@ -57,11 +57,11 @@ The app's variables are listed in [.env.example](.env.example) and validated by 
 
 Production is Vercel (branch `main`), the database is Neon, and the scheduler is cron-job.org with GitHub Actions as a second path. Details: [plan §3.1 and §11.6](docs/IMPLEMENTATION_PLAN.md).
 
-**Deploy.** Work lands on `dev` through squash-merged PRs. A release takes three clicks: Actions → **Prepare release** → Run workflow (pick patch, minor or major) opens the PR `dev → main` titled `release: vX.Y.Z` with generated notes; review it; **Merge** it with a merge commit. The tag and the GitHub Release then appear on their own (`release-publish`). The version is the latest `v*` tag plus the bump; `package.json` is not used. Vercel builds `main` as production; its build command (`vercel.json`) runs `pnpm db:migrate` first, so migrations apply on every deploy. Prepare release refuses when `dev` has nothing beyond `main` or a release PR is already open. If Prepare release is unavailable, open the PR by hand and, after the merge, run `gh release create vX.Y.Z --target main --generate-notes`. Preview deployments (`dev`, PRs) use Preview-scoped env vars (own database branch, own secrets, no `NOTIFY_*`) and sit behind Vercel Authentication.
+**Deploy.** Work lands on `dev` through squash-merged PRs. A release takes three clicks: Actions → **Prepare release** → Run workflow (pick patch, minor or major) opens the PR `dev → main` titled `release: vX.Y.Z` with generated notes; review it; **Merge** it with a merge commit. The tag and the GitHub Release then appear on their own (`release-publish`). The version is the latest `v*` tag plus the bump; `package.json` is not used. Vercel builds `main` as production; its build command (`vercel.json`) runs `pnpm db:migrate` first, so migrations apply on every deploy. Prepare release refuses when `dev` has nothing beyond `main` or a release PR is already open. Merging that workflow-opened PR is the only way anything reaches `main`: never commit or push to `main`, and never open a PR into `main` by hand (owner, 2026-11-21). If Prepare release is unavailable, fix the workflow through a PR into `dev`, then run it. Preview deployments (`dev`, PRs) use Preview-scoped env vars (own database branch, own secrets, no `NOTIFY_*`) and sit behind Vercel Authentication.
 
 **How to cut a release.**
 
-1. Before running release-prepare, add the release's entry to lib/patch-notes.ts (shown on /admin/changes), and update its `ownerTodo` list.
+1. Before running release-prepare, add the release's entry to lib/patch-notes.ts (shown on /admin/changes) and update its `ownerTodo` list, through a PR into `dev` like any other change.
 2. Wait until the last push to `dev` has a green `check` (Actions → ci).
 3. GitHub → Actions → **Prepare release** → **Run workflow**, pick `patch` (fixes), `minor` (features) or `major` (breaking), run it. It opens the PR `dev → main` titled `release: vX.Y.Z` with generated notes, and prints the PR link in the run summary. It stops with a message if `dev` has nothing new or a release PR is already open.
 4. Open the PR, read the notes, wait for `check` to be green, then **Merge** with **Create a merge commit** (the only method `main` allows).
@@ -104,18 +104,21 @@ The next version is the latest `v*` tag plus the bump, so `package.json` is neve
 | `pnpm snapshot:dry`                          | one snapshot (`--phase before\|after`) through the real adapters with fixtures served instead of the network. No database, no quota                                                                              |
 | `pnpm i18n:todo` / `pnpm i18n:stamp`         | the translation work list as JSON / mark translated keys as current                                                                                                                                              |
 
+**Migrations.** Change the schema files `drizzle.config.ts` lists (`lib/schema*.ts`), then run `pnpm db:generate`; never hand-edit `drizzle/meta`. A data backfill may be added by hand to the generated `.sql` (as in `0061`). If a rebase brings in a migration with the same number as yours, set your `.sql` aside, restore `drizzle/meta` from `dev`, run `pnpm db:generate` again, and copy any hand-added statements into the new file.
+
 ## How the harness works
 
 The code is written mostly by Claude Code sessions with a human reviewing. Every check is a script, not a memory:
 
-- **CLAUDE.md** holds the standing rules every session reads. **`.claude/rules/*.md`** load only when an agent touches the matching paths (collector, API routes, tests).
+- **CLAUDE.md** holds the standing rules every session reads. **`.claude/rules/*.md`** load only when an agent touches the matching paths (collector, API routes, tests, the private workspace).
 - **Hooks** (`.claude/settings.json`, committed, so they also run in cloud sessions):
   - SessionStart → `scripts/install_pkgs.sh` installs deps when the lockfile changed and puts Node 26 on PATH in the cloud.
   - Every Edit/Write → `eslint --fix` on that file; remaining errors go straight back to the agent.
-  - Stop → `pnpm check`; the turn can't end while it fails.
+  - Stop → `pnpm check`; the main session's turn can't end while it fails, or while the tree has changes and `node_modules` is missing, until two fix rounds in a row have failed (then the agent reports). Subagents fire `SubagentStop`, which has no hook.
+- **Branches**: nobody commits or pushes to `dev` or `main`. A lefthook pre-commit job refuses a commit on either, and `.claude/settings.json` denies pushes to them. `main` changes only by merging the release-prepare PR.
 - **Pre-commit** (lefthook): prettier and eslint on staged files, and gitleaks for secrets (the repo is public).
 - **CI** (`.github/workflows/ci.yml`): `pnpm check` and `pnpm audit --audit-level high` on every push and PR. Dependabot sends weekly grouped updates.
 - **Translations**: the public pages' English strings (`lib/copy.ts`) are translated into `lib/i18n/<language>.ts`. A missing key reads English. `pnpm check` reports stale or missing keys, and the `translate-copy` skill (`.claude/skills/translate-copy`) fills them with the `translator` agent (`.claude/agents/translator.md`).
 - **Fixtures** are recorded only through the `record-fixture` skill (`.claude/skills/`), because it spends API quota.
-- **Review**: `/code-review` checks changes against [REVIEW.md](REVIEW.md).
-- **Docs**: [ARCHITECTURE](docs/ARCHITECTURE.md) (one dependency rule), [GLOSSARY](docs/GLOSSARY.md) (one word per concept), [decisions](docs/decisions/README.md) (append-only), and `docs/handoff/` (one file per session).
+- **Review**: `/code-review` checks changes against [REVIEW.md](REVIEW.md); `/pr-review` reads it through `.claude/pr-review.md`.
+- **Docs**: [ARCHITECTURE](docs/ARCHITECTURE.md) (one dependency rule), [GLOSSARY](docs/GLOSSARY.md) (one word per concept), [decisions](docs/decisions/README.md) (append-only), and `docs/handoff/` (one file per PR).

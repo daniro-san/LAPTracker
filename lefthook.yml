@@ -3,6 +3,9 @@
 pre-commit:
   parallel: true
   jobs:
+    - name: branch
+      # Never commit to dev or main: they change only through PRs (main only through the release-prepare PR).
+      run: case "$(git branch --show-current)" in dev|main) echo "Never commit to dev or main; commit on a branch cut from dev." >&2; exit 1;; esac
     - name: secrets
       run: gitleaks git --pre-commit --staged --redact --no-banner --verbose
     - name: prettier

@@ -8,7 +8,7 @@ The header text above is the old file's, kept as it was. The split it describes 
 
 ## Adding a decision
 
-- Create `docs/decisions/DNN-<slug>.md` with the next free number, zero-padded, and a heading `## DNN — Title (date, who, session, issue)`.
+- Create `docs/decisions/DNN-<slug>.md` with the next free number, zero-padded, and a heading `## DNN — Title (date, who, session, issue)`. The next free number is the highest `D*` file in `docs/decisions/` on the latest `origin/dev` plus one; there are no reserved ranges. If a rebase brings in a decision with the same number, renumber yours (file, heading, index line and every reference to it).
 - Add one line to the index below, in numeric order.
 - Never edit another session's entry. A reversal is a new entry that names the one it supersedes.
 

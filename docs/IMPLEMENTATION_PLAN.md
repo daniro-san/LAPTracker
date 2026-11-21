@@ -561,7 +561,7 @@ Dependency rule: `app → lib/{collector,queries,repo}`; `lib/collector → lib/
   - `PostToolUse` on `Edit|Write` → `eslint --fix` on the changed file (fast; errors go straight back to the agent). `tsc` runs in the Stop hook, not per edit, unless it proves fast enough.
   - `Stop` → `pnpm check`; blocks the turn from ending while it fails (bounded by Claude Code's block cap).
   - `SessionStart` → `scripts/install_pkgs.sh` (`pnpm install --frozen-lockfile` when the lockfile hash changed; cloud-aware).
-  - Permissions: allow `pnpm *`, `git commit`, `git push origin main`, `curl`, `gh api`, `gh workflow *`; deny `rm -rf *`, `git push --force*`, `git reset --hard*`, `pnpm drizzle-kit drop*`.
+  - Permissions: allow `pnpm *`, `git commit`, `curl`, `gh api`, `gh workflow *`; deny `rm -rf *`, `git push --force*`, `git reset --hard*`, `pnpm drizzle-kit drop*`. No push or commit to `main` or `dev`: pushes to either are denied in every form, and work goes on a branch whose PR goes into `dev`. `main` changes only by merging the release PR the `release-prepare` workflow opens from `dev` (corrected 2026-11-21, owner; this line used to allow `git push origin main`).
 
 ### 11.5 The harness in `.claude/` — the minimum that pays per session
 
