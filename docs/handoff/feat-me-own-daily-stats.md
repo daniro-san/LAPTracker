@@ -70,4 +70,4 @@
 - The member's own daily fields are allowed on `/w/[slug]/board/me` only (CLAUDE.md, D71 and D142 amendments, 2026-11-21). Any new member-facing read of them must take `MeAccess`, and must keep the bars inside `ph-no-capture`.
 </adjustments>
 
-PR: (added by the orchestrator)
+PR: https://github.com/daniro-san/LAPTracker/pull/548
