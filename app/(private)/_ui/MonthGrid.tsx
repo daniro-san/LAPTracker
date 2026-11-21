@@ -27,29 +27,30 @@ export function MonthGrid({
             {w}
           </span>
         ))}
+        {/* A day's link is named by the day in words, then the entries it shows, so every word seen is in
+            its name (WCAG 2.5.3, issue 585). A day of another month is muted ink, never faded. */}
         {cells.map((c) => (
           <a
             key={c.day}
             href={c.href}
-            aria-label={c.said}
             aria-current={c.today ? "date" : undefined}
             className={`flex min-h-20 min-w-0 flex-col gap-0.5 border p-1 ${
               c.today ? "border-plum border-2" : "border-rule"
-            } ${c.inMonth ? "" : "opacity-60"}`}
+            } ${c.inMonth ? "" : "text-ink/70"}`}
           >
-            <span className={`font-semibold tabular-nums ${c.today ? "text-plum" : ""}`}>
+            <span className="sr-only">{c.said}</span>
+            <span
+              aria-hidden="true"
+              className={`font-semibold tabular-nums ${c.today ? "text-plum" : ""}`}
+            >
               {c.date}
             </span>
             {c.labels.map((label, i) => (
-              <span key={i} aria-hidden="true" className="truncate">
+              <span key={i} className="truncate">
                 {label}
               </span>
             ))}
-            {c.more > 0 && (
-              <span aria-hidden="true" className="text-ink/70">
-                {fill(more, { n: c.more })}
-              </span>
-            )}
+            {c.more > 0 && <span className="text-ink/70">{fill(more, { n: c.more })}</span>}
           </a>
         ))}
       </div>

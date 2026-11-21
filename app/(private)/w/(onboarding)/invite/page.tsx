@@ -42,7 +42,7 @@ function Closed({
 /** Steps 2 to 4 before sign-in: their heads only, so she sees what comes. */
 function Ahead({ t }: { t: WorkspaceDictionary }) {
   return (
-    <ol className="mt-6 grid gap-3 text-ink/60" aria-label={t["invite.title"]}>
+    <ol className="mt-6 grid gap-3 text-ink/70" aria-label={t["invite.title"]}>
       {(["invite.server.head", "invite.bot.head", "invite.roles.head"] as const).map((k) => (
         <li key={k} className="font-subhead text-body-lg">
           {t[k]}

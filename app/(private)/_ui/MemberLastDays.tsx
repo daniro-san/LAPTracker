@@ -38,13 +38,13 @@ function Row({ row, noData }: { row: DaysRow; noData: string }) {
         // A member's own page (D142): this week and last week each on a line of its own, under the label.
         <>
           <p className="text-body-sm">{row.label}</p>
-          <p className="text-[12px] text-ink/70 tabular-nums">{withNoData(row.average, noData)}</p>
-          <p className="text-[12px] text-ink/70 tabular-nums">{row.last}</p>
+          <p className="text-body-sm text-ink/70 tabular-nums">{withNoData(row.average, noData)}</p>
+          <p className="text-body-sm text-ink/70 tabular-nums">{row.last}</p>
         </>
       ) : (
         <p className="flex flex-wrap items-baseline justify-between gap-x-2 text-body-sm">
           <span>{row.label}</span>
-          <span className="text-[12px] text-ink/70 tabular-nums">
+          <span className="text-body-sm text-ink/70 tabular-nums">
             {withNoData(row.average, noData)}
           </span>
         </p>
@@ -63,7 +63,7 @@ function Row({ row, noData }: { row: DaysRow; noData: string }) {
             <span aria-hidden="true" className="block h-px bg-ink/50" />
             <span
               aria-hidden="true"
-              className={`block truncate text-[12px] leading-5 tabular-nums ${b.none ? "text-ink/60" : ""}`}
+              className={`block text-body-sm leading-5 tabular-nums ${b.none ? "text-ink/70" : ""}`}
             >
               {withNoData(b.value, noData)}
             </span>

@@ -45,7 +45,7 @@ export default async function StartHerePage({ params }: { params: Promise<{ slug
   const link =
     "inline-flex min-h-11 items-center font-semibold text-plum underline underline-offset-4";
   return (
-    <SignedInFrame access={access} language={language} t={t} current="days" waiting={waiting}>
+    <SignedInFrame access={access} language={language} t={t} current={null} waiting={waiting}>
       <a href={`/w/${slug}/board`} className={link}>
         {t["starthere.board"]}
       </a>

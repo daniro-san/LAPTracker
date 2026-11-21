@@ -11,6 +11,8 @@ export const boardEn = {
   "board.lead.start": "Start here ↓",
   "board.week": "This week",
   "board.week.none": "Nothing planned for members in the next 7 days yet.",
+  "board.strip.legend":
+    "Each dot is one event planned that day, up to three. Tap a day to go to its events.",
   "board.times": "Your own time comes first, with server time (ST) under it.",
   "board.days": "The next 7 days",
   "board.events.one": "{n} event",
@@ -81,6 +83,8 @@ export const boardPt: BoardWords = {
   "board.lead.start": "Comece aqui ↓",
   "board.week": "Esta semana",
   "board.week.none": "Nada marcado para os membros nos próximos 7 dias por enquanto.",
+  "board.strip.legend":
+    "Cada ponto é um evento planejado naquele dia, até três. Toque em um dia para ir aos eventos dele.",
   "board.times": "O seu horário vem primeiro, com o horário do servidor (ST) embaixo.",
   "board.days": "Os próximos 7 dias",
   "board.events.one": "{n} evento",
@@ -148,6 +152,8 @@ export const boardFr: BoardWords = {
   "board.lead.start": "Pour commencer ↓",
   "board.week": "Cette semaine",
   "board.week.none": "Rien de prévu pour les membres dans les 7 prochains jours pour l’instant.",
+  "board.strip.legend":
+    "Chaque point est un événement prévu ce jour-là, jusqu’à trois. Touchez un jour pour aller à ses événements.",
   "board.times": "Votre heure vient d’abord, avec l’heure du serveur (ST) en dessous.",
   "board.days": "Les 7 prochains jours",
   "board.events.one": "{n} événement",

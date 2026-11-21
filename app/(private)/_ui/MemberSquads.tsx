@@ -30,8 +30,10 @@ const RARITY_LOOK: Record<Rarity, { text: string; frame: string }> = {
   UR: { text: "text-rarity-ur", frame: "border-2 border-rarity-ur" },
 };
 
+/** An empty star is drawn in outline at ink/70 (5.7:1 on paper, issue 585; a filled ink/20 star was 1.5:1),
+ * so a sighted reader can count "1 of 5" without telling two faint fills apart. */
 const STAR_COLOUR = {
-  empty: "text-ink/20",
+  empty: "text-ink/70",
   yellow: "text-star-yellow",
   red: "text-star-red",
 } as const;
@@ -59,7 +61,7 @@ export function MemberSquads({ squads }: { squads: SquadsCard }) {
       ) : (
         <>
           {squads.summary && <p className="mt-1 text-body-sm">{squads.summary}</p>}
-          <p className="text-[12px] text-ink/70">{squads.help}</p>
+          <p className="text-body-sm text-ink/70">{squads.help}</p>
           <ul className="mt-3 space-y-3">
             {squads.squads.map((s) => (
               <Squad key={s.squad} s={s} w={squads} />
@@ -82,7 +84,7 @@ function Seen({ s, w }: { s: SquadCard; w: Words }) {
     mine = `${fill(w.clock.yours, { time })}${mark ? ` (${mark})` : ""}`;
   }
   return (
-    <p className="text-[12px] text-ink/70 tabular-nums">
+    <p className="text-body-sm text-ink/70 tabular-nums">
       {s.seen}
       {mine && ` · ${mine}`}
       {s.age && ` · ${s.age}`}
@@ -107,7 +109,7 @@ function Squad({ s, w }: { s: SquadCard; w: Words }) {
         </span>
       </p>
       <Seen s={s} w={w} />
-      {change && <p className="text-[12px] text-ink/70 tabular-nums">{change}</p>}
+      {change && <p className="text-body-sm text-ink/70 tabular-nums">{change}</p>}
       {/* The lineup; screen readers get the list below instead. */}
       <div aria-hidden="true" className="mt-2 grid grid-cols-6 gap-x-2 gap-y-2">
         {s.slots.map((h, i) => (
@@ -142,7 +144,7 @@ const rarityOf = (h: HeroCard) => (h.rarity ? RARITY_LOOK[h.rarity] : null);
 function HeroFacts({ h, center }: { h: HeroCard; center?: boolean }) {
   return (
     <span
-      className={`flex flex-wrap gap-x-1.5 text-[12px] leading-4 whitespace-nowrap text-ink/75 tabular-nums ${center ? "justify-center" : ""}`}
+      className={`flex flex-wrap gap-x-1.5 text-body-sm leading-5 whitespace-nowrap text-ink/75 tabular-nums ${center ? "justify-center" : ""}`}
     >
       {h.rarity && (
         <span translate="no" className={`font-semibold ${rarityOf(h)?.text ?? ""}`}>
@@ -159,7 +161,7 @@ function LineupHero({ h }: { h: HeroCard }) {
   return (
     <>
       <HeroPicture id={h.id} known={h.known} frame={rarityOf(h)?.frame} />
-      <span translate="no" className="mt-0.5 w-full truncate text-center text-[12px] leading-4">
+      <span translate="no" className="mt-0.5 w-full text-center text-body-sm leading-5 break-words">
         {h.name}
       </span>
       <HeroFacts h={h} center />
@@ -183,7 +185,7 @@ function Stars({ icons, label }: { icons: StarIcon[]; label: string }) {
     <span role="img" aria-label={label} className="mt-0.5 flex gap-px">
       {icons.map((icon, i) => (
         <span key={i} className="relative inline-block size-[11px]">
-          <StarShape colour={STAR_COLOUR[icon.base]} />
+          <StarShape colour={STAR_COLOUR[icon.base]} outline={icon.base === "empty"} />
           {icon.next && (
             <span
               className="absolute inset-y-0 left-0 overflow-hidden"
@@ -201,14 +203,14 @@ function Stars({ icons, label }: { icons: StarIcon[]; label: string }) {
 /** A five-point star in a 10 × 10 box. */
 const STAR_PATH = "M5 .4l1.4 2.9 3.2.4-2.3 2.2.6 3.2L5 7.6 2.1 9.1l.6-3.2L.4 3.7l3.2-.4z";
 
-function StarShape({ colour }: { colour: string }) {
+function StarShape({ colour, outline = false }: { colour: string; outline?: boolean }) {
   return (
     <svg
       viewBox="0 0 10 10"
       aria-hidden="true"
-      className={`absolute top-0 left-0 size-[11px] max-w-none fill-current ${colour}`}
+      className={`absolute top-0 left-0 size-[11px] max-w-none ${outline ? "fill-none stroke-current" : "fill-current"} ${colour}`}
     >
-      <path d={STAR_PATH} />
+      <path d={STAR_PATH} strokeWidth={outline ? 0.9 : undefined} strokeLinejoin="round" />
     </svg>
   );
 }

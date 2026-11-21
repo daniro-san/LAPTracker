@@ -9,7 +9,8 @@ export interface NavProps {
   /** The nav's accessible name ("Sections"). */
   label: string;
   items: readonly NavItem[];
-  current: string;
+  /** The open destination; null on a page outside them (Alliance settings, Start here). */
+  current: string | null;
   /** The open view of the current destination (sidebar only). */
   view?: string;
   icons: Readonly<Record<string, ReactNode>>;
@@ -42,7 +43,7 @@ export function NavRail({ label, items, current, icons, badges, soon }: NavProps
                 <span
                   aria-disabled="true"
                   aria-label={`${item.label} (${soon})`}
-                  className={`${box} text-ink/55`}
+                  className={`${box} text-ink/70`}
                 >
                   {inside}
                 </span>

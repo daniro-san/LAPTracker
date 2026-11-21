@@ -13,13 +13,13 @@ import { listErrorGroups } from "@/lib/queries/admin";
 export default async function ErrorsPage() {
   const t = copy.admin.errors;
   // Session first (issue 218): locked, the PIN card and no database read.
-  if (!(await isAdmin())) return <AdminShell title={t.title} />;
+  if (!(await isAdmin())) return <AdminShell section="/admin/errors" title={t.title} />;
   const [groups, clock] = await Promise.all([
     withPageDb((db) => listErrorGroups(db)),
     requestServerClock(),
   ]);
   return (
-    <AdminShell title={t.title}>
+    <AdminShell section="/admin/errors" title={t.title}>
       {groups.length === 0 && <p>{t.none}</p>}
       <ul className="flex flex-col gap-3 sm:gap-0 sm:border sm:border-rule sm:px-6">
         {groups.map((g) => (

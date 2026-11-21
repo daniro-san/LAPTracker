@@ -8,7 +8,7 @@ colors:
   ink: "#1e1a1f"
   plum: "#3b2436"
   seal: "#8c2f2f"
-  yarn: "#75540f"
+  yarn: "#6c4e0d"
   sage: "#586750"
   rule: "#d9cdb4"
   dark-paper: "#1a1418"
@@ -259,13 +259,15 @@ A guild ledger, kept by hand, in a plague year. The page is aged paper; the ink 
 - **Ink** (`{colors.ink}` — #1e1a1f): all text. Dark: `{colors.dark-ink}`.
 - **Plum** (`{colors.plum}` — #3b2436): header, links, primary actions, focus rings. Dark: `{colors.dark-plum}`.
 - **Seal** (`{colors.seal}` — #8c2f2f): negative deltas, errors, "stale", the seal button. Dark: `{colors.dark-seal}`.
-- **Yarn** (`{colors.yarn}` — #75540f): positive deltas, highlights on public pages; in the officers' workspace, where nothing goes up or down, "needs a look" (see Workspace components). Bronze in daylight, gold by lamplight (dark: `{colors.dark-yarn}`); a true mustard cannot reach 4.5:1 on paper, so the light value is kept for contrast and only the word changed (08zzt, #173 M1).
+- **Yarn** (`{colors.yarn}` — #6c4e0d): positive deltas, highlights on public pages; in the officers' workspace, where nothing goes up or down, "needs a look" (see Workspace components). Bronze in daylight, gold by lamplight (dark: `{colors.dark-yarn}`); a true mustard cannot reach 4.5:1 on paper, so the light value is kept for contrast and only the word changed (08zzt, #173 M1).
 - **Sage** (`{colors.sage}` — #586750): neutral badges — `[TEST]`, "fallback source", "manual". Dark: `{colors.dark-sage}`.
 - **Rule** (`{colors.rule}` — #d9cdb4): borders and table rules. Dark: `{colors.dark-rule}`.
 - **Rarity** (`--rarity-sr` #1d5797, `--rarity-ssr` #6a3290, `--rarity-ur` #77550f; dark #7fb0e6, #c39ae0, #e0b04a): only a hero's rarity tag on the squads card and the thin frame around its picture, in the game's own colours: SR blue, SSR purple, UR gold (D117). The tag's word always says the rarity, so the colour carries no meaning alone. As 12 px semibold text each keeps 4.5:1 on paper and on the strongest squad's 5 % plum tint, in both themes (lowest: UR in light on the tint, 5.0:1).
 - **Star** (`--star-yellow` #9c7209, `--star-red` #a8321f; dark #e8c04a, #ef7a6a): only the five star icons of a hero on the squads card, in the game's colours: yellow for star levels 1–5, red replacing yellow from the left for 6–10 (D117). Small graphics beside a level said in words ("Star level 7 of 10" for screen readers), so 3:1 against paper and the tint in both themes (lowest: yellow in light on the tint, 3.2:1). The red is not `seal`: five red stars mean a maxed hero, never a warning.
 
-Rules: deltas are coloured by sign only; a colour that carries no meaning is not used. Text contrast ≥ 4.5:1, large numerals ≥ 3:1, checked in both modes. Light yarn and sage were darkened on 2026-11-05 (Session 7c, [issue #25](https://github.com/daniro-san/LAPTracker/issues/25)): yarn on paper 4.90:1, paper on sage 4.88:1; before that they were 2.15:1 and 3.46:1. Light yarn was darkened again to #75540f on 2026-11-21 (issue 473): #805c12 gave 4.10:1 on the leader's 10 % plum row tint; #75540f gives 5.58:1 on paper, 4.68:1 on the plum tint, 4.92:1 on the sage tint and 4.54:1 on a 15 % yarn tint. No gradients anywhere.
+Rules: deltas are coloured by sign only; a colour that carries no meaning is not used. Text contrast ≥ 4.5:1, large numerals ≥ 3:1, checked in both modes. Light yarn and sage were darkened on 2026-11-05 (Session 7c, [issue #25](https://github.com/daniro-san/LAPTracker/issues/25)): yarn on paper 4.90:1, paper on sage 4.88:1; before that they were 2.15:1 and 3.46:1. Light yarn was darkened again to #75540f on 2026-11-21 (issue 473): #805c12 gave 4.10:1 on the leader's 10 % plum row tint; #75540f gives 5.58:1 on paper, 4.68:1 on the plum tint, 4.92:1 on the sage tint and 4.54:1 on a 15 % yarn tint. It was darkened a third time to #6c4e0d on 2026-11-21 (issue 585): "Needs help" on the desk's open row (plum 15 %) was 4.24:1; #6c4e0d gives 6.19:1 on paper, 5.17:1 on plum 10 %, 4.71:1 on plum 15 %, 5.46:1 on the sage tint and 4.99:1 on a 15 % yarn tint. Dark yarn is unchanged. No gradients anywhere.
+
+**The muted-text floor (issue 585).** Muted text is never lighter than ink at 70 % (`text-ink/70`: 5.72:1 on paper, 7.22:1 in dark), so the two themes pass alike; ink/55 and ink/60 (3.62:1 and 4.17:1 in light) are not used for text. A placeholder is the field's own text at 70 % (`::placeholder` in `app/globals.css`) and only a hint: every field has a visible label. Something past or set aside is never faded with `opacity`, which drops a row and its live buttons below 3:1: it says so in a word ("Ended", the `Ended` tag) or a frame (a dashed frame on a left-out row), at full contrast. A disabled control is the one thing still dimmed. Values on the desk, the board and a member's page read at 14 px or more (`body-sm`); 12 px stays for labels (`{typography.label}`, tags, weekday heads, chart axes). An empty hero star is an outline at ink/70, not a faint fill.
 
 ## Typography
 

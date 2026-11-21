@@ -8,6 +8,7 @@ import type { MeView } from "@/lib/private/me";
 import type { Series } from "@/lib/private/me-parts";
 
 import { LineChart } from "../../_ui/charts/LineChart";
+import { Ended } from "./Ended";
 import { MemberLastDays } from "./MemberLastDays";
 import { MemberSquads } from "./MemberSquads";
 import { NoData } from "./NoData";
@@ -81,7 +82,7 @@ export function MeWeek({ view, t }: { view: Shown; t: WorkspaceDictionary }) {
           <div className="ph-no-capture">
             <MemberLastDays days={{ ...view.week, head: "" }} />
           </div>
-          <ul className="mt-3 text-[12px] leading-5 text-ink/70">
+          <ul className="mt-3 text-body-sm text-ink/70">
             <li>
               <span aria-hidden="true">
                 <NoData label={view.week.noData} />
@@ -106,14 +107,24 @@ export function MeSquads({ view }: { view: Shown }) {
   );
 }
 
-export function MeNeeded({ view, t }: { view: Shown; t: WorkspaceDictionary }) {
+/** `since`: when the server rendered the page (epoch ms), for "Ended" until the browser's clock takes over. */
+export function MeNeeded({
+  view,
+  t,
+  since,
+}: {
+  view: Shown;
+  t: WorkspaceDictionary;
+  since: number;
+}) {
   return view.needed.length === 0 ? (
     <p className="py-2 text-body-sm">{t["me.needed.none"]}</p>
   ) : (
     <ul>
-      {view.needed.map((line) => (
+      {view.needed.map(({ line, at }) => (
         <li key={line} className="border-t border-rule py-2 text-body-sm first:border-t-0">
           {line}
+          {at !== null && <Ended at={at} word={t["calendar.ended"]} since={since} />}
         </li>
       ))}
     </ul>

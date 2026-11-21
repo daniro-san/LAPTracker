@@ -30,6 +30,12 @@
   textarea {
     font-size: 16px;
   }
+  /* A placeholder is a hint, never the label (issue 585): at the muted-text floor, the field's text at 70 %
+     (5.7:1 on paper in light, 7.2:1 in dark), not the preflight's 50 % (3.2:1 in light). */
+  ::placeholder {
+    color: color-mix(in oklab, currentcolor 70%, transparent);
+    opacity: 1;
+  }
   /* Date and time fields: iOS draws them as a centred pill with a minimum width of its own, which
      pushes a sheet sideways. Here they shrink like a text field (their class sets the width), text on
      the left, 44 px tall, in the border and background their class gives them. */
@@ -78,10 +84,10 @@ html:has([data-rest-bar]) {
   }
 }
 
-/* A roll call's sticky search row (RollCallMarks.tsx, about 62 px): going back with Shift+Tab, a focused
-   control scrolls clear of it, never under it (WCAG 2.4.11, issue 585). */
+/* A roll call's sticky search row (RollCallMarks.tsx, about 84 px with its visible label): going back with
+   Shift+Tab, a focused control scrolls clear of it, never under it (WCAG 2.4.11, issue 585). */
 html:has([data-sticky-search]) {
-  scroll-padding-top: 4.5rem;
+  scroll-padding-top: 5.75rem;
 }
 
 /* Scrollbars (DESIGN.md "Workspace components"): the page's, a sheet's, a pane's and a sticky margin

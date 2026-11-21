@@ -19,7 +19,7 @@ import { getRun } from "@/lib/queries/admin";
 export default async function RunPage({ params }: { params: Promise<{ id: string }> }) {
   const t = copy.admin.runs;
   // Session first (issue 218): locked, the PIN card whatever the id, and no database read.
-  if (!(await isAdmin())) return <AdminShell title={t.title} />;
+  if (!(await isAdmin())) return <AdminShell section="/admin/runs" title={t.title} />;
   const raw = (await params).id;
   if (!/^\d{1,9}$/.test(raw)) notFound();
   const [found, clock] = await Promise.all([
@@ -29,7 +29,7 @@ export default async function RunPage({ params }: { params: Promise<{ id: string
   if (!found) notFound();
   const { run, logs, tags, trace, problems } = found;
   return (
-    <AdminShell title={fill(t.run, { id: run.id })}>
+    <AdminShell section="/admin/runs" title={fill(t.run, { id: run.id })}>
       <AdminSection
         id="run-summary"
         title={`${eventWord(run, clock)} · ${runWord(run, clock)}`}

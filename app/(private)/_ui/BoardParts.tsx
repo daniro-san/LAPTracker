@@ -58,10 +58,10 @@ export function BoardTimeColumn(props: {
         {own.time}
         {own.mark && <span className="ml-1 text-body-sm font-semibold">{own.mark}</span>}
       </span>
-      <span className="block text-[13px] leading-tight">
+      <span className="block text-body-sm leading-tight">
         {own.label} <span className="whitespace-nowrap">{own.zone}</span>
       </span>
-      <span className="block text-[13px] leading-tight text-ink/75 tabular-nums">{props.st}</span>
+      <span className="block text-body-sm leading-tight text-ink/75 tabular-nums">{props.st}</span>
     </>
   );
 }
@@ -116,8 +116,8 @@ export function LanguageTabs({
             onKeyDown={(ev) => onKey(ev, i)}
             className="tint-button min-h-11 min-w-11 px-3 font-semibold aria-selected:bg-plum/10 aria-selected:shadow-[inset_0_-3px_0_var(--color-plum)]"
           >
-            <span aria-hidden="true">{p.short}</span>
-            <span className="sr-only">{p.name}</span>
+            {p.short}
+            <span className="sr-only">{`, ${p.name}`}</span>
           </button>
         ))}
       </div>

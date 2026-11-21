@@ -17,7 +17,7 @@ const LINK =
 
 /** A toggle chip: plum when on, dashed when it would give no one. */
 export const chipClass = (on: boolean, zero: boolean) =>
-  `${chip(on)} whitespace-nowrap ${zero && !on ? "text-ink/60" : ""}`;
+  `${chip(on)} whitespace-nowrap ${zero && !on ? "text-ink/70" : ""}`;
 
 export function StickyBar(props: {
   s: ListState;
@@ -34,13 +34,17 @@ export function StickyBar(props: {
   return (
     // Out to the page's margins up to 1023; inside the list's column beside the pane from 1024 (D122).
     <div className="sticky top-0 z-[5] -mx-4 mt-4 border-b border-rule bg-paper px-4 py-2 md:-mx-6 md:px-6 lg:mx-0 lg:px-0">
-      <div className="flex gap-2" role="search">
+      {/* A label that stays on screen; the placeholder is only the hint (issue 585). */}
+      <label htmlFor="members-search" className="block text-body-sm font-semibold">
+        {t["members.search.aria"]}
+      </label>
+      <div className="mt-1 flex gap-2" role="search">
         <input
+          id="members-search"
           type="search"
           value={s.query.q}
           onChange={(e) => s.change({ q: e.target.value.slice(0, 64) })}
           placeholder={t["members.search.ph"]}
-          aria-label={t["members.search.aria"]}
           className="drawn-field min-h-11 min-w-0 flex-1 px-3"
         />
         <button

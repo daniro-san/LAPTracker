@@ -129,13 +129,14 @@ export async function ownTeam(
   return row?.variant ?? null;
 }
 
-/** The member's Alliance Caravan seats in the week starting `week`: the day and the seat. */
+/** The member's Alliance Caravan seats in the week starting `week`: the day, its time and the seat. */
 export async function ownSeats(db: Db, workspaceId: number, uid: number, week: string) {
   const o = calendarOccurrences;
   return db
     .select({
       movedTo: o.day,
       planned: calendarEntries.day,
+      minute: calendarEntries.minute,
       coach: sql<boolean>`${o.coachUid} = ${uid}`,
       second: o.secondKind,
     })
@@ -153,18 +154,23 @@ export async function ownSeats(db: Db, workspaceId: number, uid: number, week: s
     );
 }
 
-/** The newest mark of each part for the member, on the workspace's live roll calls from `today` on. */
+/**
+ * The newest mark of each part for the member, on the workspace's live roll calls from `today` on, with the
+ * time of the calendar entry the roll call is for (null when it has none).
+ */
 export async function ownMarks(db: Db, workspaceId: number, uid: number, today: string) {
   const rows = await db
     .selectDistinctOn([rollCallMarks.rollCallId, rollCallMarks.part], {
       kind: rollCalls.kind,
       variant: rollCalls.variant,
       day: rollCalls.day,
+      minute: calendarEntries.minute,
       part: rollCallMarks.part,
       mark: rollCallMarks.mark,
     })
     .from(rollCallMarks)
     .innerJoin(rollCalls, eq(rollCalls.id, rollCallMarks.rollCallId))
+    .leftJoin(calendarEntries, eq(calendarEntries.id, rollCalls.entryId))
     .where(
       and(
         eq(rollCalls.workspaceId, workspaceId),

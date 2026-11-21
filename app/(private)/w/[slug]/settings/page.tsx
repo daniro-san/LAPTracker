@@ -133,7 +133,7 @@ export default async function SettingsPage({ params }: { params: Promise<{ slug:
       access={access}
       language={language}
       t={t}
-      current="home"
+      current={null}
       waiting={waiting}
       keyShown
     >

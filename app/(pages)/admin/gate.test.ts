@@ -75,7 +75,7 @@ describe("/admin pages, locked", () => {
     const el = await page();
     expect(el.type).toBe(AdminShell);
     expect((el.props as { children?: unknown }).children).toBeUndefined();
-    await AdminShell(el.props as { title: string });
+    await AdminShell(el.props as Parameters<typeof AdminShell>[0]);
     expect(openDb).not.toHaveBeenCalled();
   });
 
