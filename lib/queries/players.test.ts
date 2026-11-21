@@ -4,7 +4,8 @@ import type { Db } from "../db";
 import { openTestDb } from "../db.test-helpers";
 import { allianceSnapshots, events, memberSnapshots, snapshots } from "../schema";
 import { findBlockedKeys } from "./blocked-keys";
-import { playerHistory, searchPlayers } from "./players";
+import { searchPlayers } from "./player-search";
+import { playerHistory } from "./players";
 
 // A raw_json that carries every blocked key, as a real /v1 roster does (plan §12.1).
 const rawJson = {
@@ -70,6 +71,36 @@ describe("player read models (plan §12.1)", () => {
     const [match] = await searchPlayers(db, "NANA");
     expect(match?.name).toBe("Nana Prime");
     expect(await searchPlayers(db, "Nana%")).toEqual([]);
+  });
+
+  it("lists names that start with the text first, with might and level", async () => {
+    const at = new Date("2026-10-31T14:00:00Z");
+    const [later] = await db
+      .insert(events)
+      .values({ name: "Later", eventAtUtc: at, allianceIds: [1], beforeAt: at, afterAt: at })
+      .returning({ id: events.id });
+    const [snap] = await db
+      .insert(snapshots)
+      .values({ eventId: later?.id ?? 0, phase: "after", startedAt: at, status: "complete" })
+      .returning({ id: snapshots.id });
+    const [alliance] = await db
+      .insert(allianceSnapshots)
+      .values({ snapshotId: snap?.id ?? 0, unionId: 1, source: "v1", isFresh: true })
+      .returning({ id: allianceSnapshots.id });
+    await db.insert(memberSnapshots).values({
+      allianceSnapshotId: alliance?.id ?? 0,
+      uid: 8,
+      name: "Banana",
+      power: 20,
+      kills: 1,
+      lv: 4,
+    });
+
+    const matches = await searchPlayers(db, "nan");
+    expect(matches.map((m) => [m.uid, m.power, m.lv])).toEqual([
+      [7, 12, 3],
+      [8, 20, 4],
+    ]);
   });
 
   it("takes the summary figures from the newest sighting in a real event, not a rehearsal", async () => {

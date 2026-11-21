@@ -44,9 +44,11 @@ export function AllianceRows({
             <AllianceBadge badgeId={a.badgeId} />
             <Link
               href={href(a.unionId)}
-              className="flex min-h-11 min-w-0 flex-1 items-center break-words font-medium text-plum underline-offset-2 hover:underline"
+              className="flex min-h-11 min-w-0 flex-1 items-center font-medium text-plum underline-offset-2 hover:underline"
             >
-              <bdi>{allianceLabel(a.tag ?? String(a.unionId), a.name)}</bdi>
+              <bdi className="min-w-0 name-fit">
+                {allianceLabel(a.tag ?? String(a.unionId), a.name)}
+              </bdi>
             </Link>
           </div>
           <p className="flex gap-4 pb-1 pl-12 text-sm tabular-nums sm:w-64 sm:justify-end sm:p-0">

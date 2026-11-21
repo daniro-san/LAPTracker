@@ -121,7 +121,7 @@ export function BalanceRows({
             >
               <div className="flex items-center gap-2 sm:flex-1">
                 <AllianceBadge badgeId={a.badgeId} />
-                <span className="min-w-0 flex-1 break-words">
+                <span className="min-w-0 flex-1 name-fit">
                   {allianceLabel(a.tag ?? String(a.unionId), a.name)}
                 </span>
                 <span className="shrink-0 font-medium tabular-nums">

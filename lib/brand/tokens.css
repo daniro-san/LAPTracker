@@ -7,11 +7,15 @@
   --ink: #1e1a1f;
   --plum: #3b2436;
   --seal: #8c2f2f;
-  --yarn: #805c12;
+  --yarn: #75540f;
   --sage: #586750;
   --rule: #d9cdb4;
   /* The workspace header (D71, brand PROPOSAL.md): paper-coloured (wax-paper) text on it, light and dark. */
   --burgundy: #6e2142;
+  /* The public header (DESIGN.md `header`): deep plum in light and dark, with wax-paper text, so the bar keeps
+     its colour by lamplight instead of turning to the pale dark-mode plum (issue 473). Dark lifts it a little
+     (#55344e, text 8.5:1) so the bar and its lace still part from the dark paper. */
+  --masthead: #3b2436;
   /* A hero's rarity on the squads card (D117), the game's colours: SR blue, SSR purple, UR gold. As text at
      12 px semibold they keep 4.5:1 on paper and on the strongest squad's 5 % plum tint, light and dark. */
   --rarity-sr: #1d5797;
@@ -76,6 +80,7 @@
     --sage: #93a585;
     --rule: #3a2f36;
     --burgundy: #7d2c4f;
+    --masthead: #55344e;
     --rarity-sr: #7fb0e6;
     --rarity-ssr: #c39ae0;
     --rarity-ur: #e0b04a;
@@ -97,6 +102,7 @@
   --sage: #93a585;
   --rule: #3a2f36;
   --burgundy: #7d2c4f;
+  --masthead: #55344e;
   --rarity-sr: #7fb0e6;
   --rarity-ssr: #c39ae0;
   --rarity-ur: #e0b04a;
@@ -122,6 +128,7 @@
   --color-sage: var(--sage);
   --color-rule: var(--rule);
   --color-burgundy: var(--burgundy);
+  --color-masthead: var(--masthead);
   --color-rarity-sr: var(--rarity-sr);
   --color-rarity-ssr: var(--rarity-ssr);
   --color-rarity-ur: var(--rarity-ur);

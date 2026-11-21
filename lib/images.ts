@@ -1,6 +1,8 @@
 // Upstream images served from our own origin (docs/decisions/D22), so the page CSP keeps img-src 'self'.
 // Never an open proxy: the upstream URL is built from a preset id or read from our own table,
 // and only these two hosts are fetched.
+import { NO_PHOTO_PATHS } from "./brand/components/Placeholders";
+import { tokenColor } from "./brand/palette";
 import { photoUrl, USER_AGENT } from "./sources/shared";
 
 const BADGE_IDS = { min: 101, max: 110 };
@@ -41,6 +43,23 @@ export const avatarSource = (stored: string | null): string | null => photoUrl(s
 /** 404 with no body: every failure looks the same from outside. */
 export const notFoundImage = (): Response =>
   new Response(null, { status: 404, headers: { "Cache-Control": "public, max-age=300" } });
+
+/**
+ * The drawn no-photo placeholder as a picture, 200 (issue 473): a player with no photo, or one that cannot
+ * be fetched, gets the drawing the pages draw instead of a 404 the browser reports as an error. Our own
+ * fixed SVG, never upstream content; ink at 45 % in the system's light or dark. Kept 5 minutes, like a
+ * failure was, so a photo that appears later shows soon.
+ */
+export function placeholderAvatar(): Response {
+  const paths = NO_PHOTO_PATHS.map(
+    (p) => `<path d="${p.d}"${p.evenodd ? ' fill-rule="evenodd"' : ""}/>`,
+  ).join("");
+  const style = `svg{color:${tokenColor("ink")}}@media (prefers-color-scheme:dark){svg{color:${tokenColor("ink", "dark")}}}`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="112" height="112" fill="currentColor" fill-opacity="0.45"><style>${style}</style>${paths}</svg>`;
+  return new Response(svg, {
+    headers: { "Content-Type": "image/svg+xml", "Cache-Control": "public, max-age=300" },
+  });
+}
 
 export type Image = { body: Uint8Array<ArrayBuffer>; type: string };
 /** Why a fetch failed: the HTTP status, or the error's class name. Never the URL or a message. */

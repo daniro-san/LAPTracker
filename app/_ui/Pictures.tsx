@@ -2,9 +2,10 @@
 
 // Alliance badges and player photos (DESIGN.md `alliance-badge`, `avatar`; docs/decisions/D22). Both load
 // from our own /img routes, lazily, with alt="" because the name is always printed beside them.
-// Without a photo or badge, or when the image does not load (the route answers 404 when the upstream
-// picture cannot be fetched, D22), the drawn placeholder stands in (lib/brand/components/Placeholders.tsx),
-// never the browser's broken-image icon. A client component: only `onError` can tell.
+// Without a photo or badge, or when the image does not load (the badge route answers 404 when the
+// upstream picture cannot be fetched, D22; the photo route serves the same drawing itself, issue 473),
+// the drawn placeholder stands in (lib/brand/components/Placeholders.tsx), never the browser's
+// broken-image icon. A client component: only `onError` can tell.
 import { useState, type ReactNode } from "react";
 
 import { NoBadge, NoPhoto } from "@/lib/brand/components/Placeholders";

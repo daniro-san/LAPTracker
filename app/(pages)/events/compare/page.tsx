@@ -15,9 +15,10 @@ import { loadComparePulses } from "@/app/_ui/event-page";
 import { AllianceCompareCard, CompareHeader, eventHead } from "@/app/_ui/EventCompare";
 import { ExactToggle } from "@/app/_ui/ExactToggle";
 import { allianceLabel, type Clock } from "@/app/_ui/format";
-import { requestClock, requestCopy, requestLocale } from "@/app/_ui/locale";
+import { notFoundTitle, requestClock, requestCopy, requestLocale } from "@/app/_ui/locale";
 import { MemberCompareCard } from "@/app/_ui/MemberCompare";
 import { PlayerCompareCard, PlayerCompareTitle } from "@/app/_ui/PlayerCompare";
+import { sharedEvents } from "@/app/_ui/public-reads";
 import { ShowFirst } from "@/app/_ui/ShowFirst";
 import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
@@ -84,6 +85,7 @@ export async function generateMetadata({
     requestClock(),
     requestCopy(),
   ]);
+  if (!page) return notFoundTitle();
   const c = page?.comparison ?? page?.player;
   const title = c
     ? fill(copy.compare.versus, { a: eventHead(c.a, c.b, clock), b: eventHead(c.b, c.a, clock) })
@@ -232,18 +234,17 @@ function TitleRow({
 export default async function ComparePage({ searchParams }: { searchParams: Search }) {
   const page = await read(searchParams);
   if (!page) notFound();
-  const [clock, copy, locale] = await Promise.all([requestClock(), requestCopy(), requestLocale()]);
+  const [clock, copy, locale, listed] = await Promise.all([
+    requestClock(),
+    requestCopy(),
+    requestLocale(),
+    sharedEvents(),
+  ]);
   const { comparison: c, player, unionId } = page;
   const one = unionId !== null ? c?.alliances[0] : undefined;
   return (
     <>
-      <SiteHeader
-        events={page.events}
-        currentId={null}
-        homeId={page.homeId}
-        clock={clock}
-        copy={copy}
-      />
+      <SiteHeader events={listed} currentId={null} homeId={page.homeId} clock={clock} copy={copy} />
       <main id="main" className="scroll-mt-20 mx-auto max-w-[960px] px-4 py-4 sm:px-6">
         {one && (
           <Breadcrumbs

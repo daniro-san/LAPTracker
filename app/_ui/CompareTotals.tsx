@@ -4,7 +4,7 @@ import { changeDifference } from "@/lib/compute";
 import { fill, type Dictionary } from "@/lib/copy";
 import type { EventComparison } from "@/lib/queries";
 
-import { dash, eventHead, MUTED, versus } from "./EventCompare";
+import { dash, Difference, eventHead, MUTED, versus } from "./EventCompare";
 import type { Clock } from "./format";
 import { Delta } from "./Num";
 import { LABEL } from "./StatTable";
@@ -38,11 +38,7 @@ export function CompareTotals({
         })}
         <p className="mt-1 border-t border-rule pt-1 text-sm leading-snug">
           <span className={`block text-xs ${MUTED}`}>{versus(data, clock, copy)}</span>
-          {diff ? (
-            <Delta delta={diff.delta} base={pick(t.a)[1] === null ? null : diff.base} stack />
-          ) : (
-            dash("diff")
-          )}
+          {diff ? <Difference d={diff} /> : dash("diff")}
         </p>
       </div>
     );

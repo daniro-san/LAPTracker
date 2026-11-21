@@ -2,7 +2,9 @@
 // alliance on the first day, columns: the alliance on the second, plus New and Left). Counts only, no member
 // is named, and a move under FLOW_MIN members is hidden. From 640 px the matrix is a table that scrolls inside
 // its own box; on a phone each row is a <details> that lists that source's destinations as text with counts.
-// HTML only (D68): the tint behind a count is decoration, the number is always written.
+// HTML only (D68): the tint behind a count is decoration, the number is always written. Every alliance named
+// links to its page (issue 473).
+import Link from "next/link";
 import { Fragment } from "react";
 
 import { TextLink } from "@/lib/brand/components/TextLink";
@@ -16,6 +18,20 @@ import { MERGE_PATH } from "./MergePicker";
 type Id = number | null;
 const key = (from: Id, to: Id) => `${from}>${to}`;
 const short = (a: FlowAlliance) => a.tag ?? a.name ?? String(a.unionId);
+/** An alliance's own page: its member history, which every tracked alliance has. */
+const pageOf = (id: number) => `/alliances/${id}/history`;
+const LINK = "text-link inline-flex min-h-11 items-center";
+
+/** An alliance's name as a link to its page; New and Left (no alliance) as plain text. */
+function Named({ id, label }: { id: Id; label: string }) {
+  return id === null ? (
+    <>{label}</>
+  ) : (
+    <Link href={pageOf(id)} className={LINK}>
+      {label}
+    </Link>
+  );
+}
 
 /** A count's tint, three steps of the biggest move shown; a stay is a neutral one. */
 const TINT = ["bg-plum/10", "bg-plum/20", "bg-plum/30"] as const;
@@ -128,7 +144,7 @@ function Matrix({
                 scope="col"
                 className={`${head} ${c.id === null ? stickyEnd : ""}`}
               >
-                {c.label}
+                <Named id={c.id} label={c.label} />
               </th>
             ))}
           </tr>
@@ -140,7 +156,7 @@ function Matrix({
                 scope="row"
                 className="sticky left-0 z-10 whitespace-nowrap border border-rule bg-paper px-2 text-left text-sm font-semibold"
               >
-                {r.label}
+                <Named id={r.id} label={r.label} />
               </th>
               {cols.map((c) => {
                 const n = by.get(key(r.id, c.id));
@@ -165,11 +181,14 @@ function Matrix({
 /** One phone row: the source, and when opened its destinations as text with counts. No row total: with
  * the cells shown it would give the size of the hidden ones. */
 function PhoneRow({
+  id,
   title,
   cells,
   names,
   copy,
 }: {
+  /** The source alliance; null for the New row. */
+  id: Id;
   title: string;
   cells: FlowCell[];
   names: Map<Id, string>;
@@ -177,7 +196,13 @@ function PhoneRow({
 }) {
   const f = copy.flow;
   const line = (c: FlowCell) =>
-    c.to === null ? f.leftTitle : c.from === c.to ? f.stayed : (names.get(c.to) ?? "");
+    c.to === null ? (
+      f.leftTitle
+    ) : c.from === c.to ? (
+      f.stayed
+    ) : (
+      <Named id={c.to} label={names.get(c.to) ?? ""} />
+    );
   // The moves first, the biggest first; the stay and the leavers after them.
   const rank = (c: FlowCell) => (c.to === null ? 1 : c.from === c.to ? 2 : 0);
   const sorted = [...cells].sort((p, q) => rank(p) - rank(q) || q.n - p.n);
@@ -187,7 +212,9 @@ function PhoneRow({
     <li className="border-b border-rule">
       {!moves ? (
         <div className={summary}>
-          <span className="min-w-0 break-words font-medium">{title}</span>
+          <span className="min-w-0 name-fit font-medium">
+            <Named id={id} label={title} />
+          </span>
           {cells[0] && (
             <span className="shrink-0 text-sm tabular-nums">
               {fill(f.rowStayed, { n: cells[0].n })}
@@ -197,12 +224,18 @@ function PhoneRow({
       ) : (
         <details className="group" open>
           <summary className={summary}>
-            <span className="min-w-0 break-words font-medium">{title}</span>
+            <span className="min-w-0 name-fit font-medium">{title}</span>
             <span aria-hidden="true" className="inline-block shrink-0 group-open:rotate-90">
               ›
             </span>
           </summary>
           <ul className="pb-2">
+            {/* The source's own page: its name in the summary opens and closes the row. */}
+            {id !== null && (
+              <li className="pl-3">
+                <Named id={id} label={title} />
+              </li>
+            )}
             {sorted.map((c) => (
               <li key={key(c.from, c.to)} className="flex justify-between gap-3 py-1 pl-3">
                 <span className="min-w-0 break-words">
@@ -252,6 +285,7 @@ export function FlowView({
         {phoneOrder.map((a) => (
           <PhoneRow
             key={a.unionId}
+            id={a.unionId}
             title={allianceLabel(a.tag, a.name)}
             cells={flow.cells.filter((c) => c.from === a.unionId)}
             names={names}
@@ -259,6 +293,7 @@ export function FlowView({
           />
         ))}
         <PhoneRow
+          id={null}
           title={f.newTitle}
           cells={flow.cells.filter((c) => c.from === null)}
           names={names}

@@ -1,5 +1,6 @@
 // GET /img/avatar/[uid]: the player's photo, looked up in our own roster rows and fetched only from
-// the photo host. The upstream URL never leaves the server (D22).
+// the photo host. The upstream URL never leaves the server (D22). No photo, or one that cannot be fetched:
+// the drawn placeholder with 200 (issue 473); a malformed uid is still a 404.
 import { getAppContext } from "@/lib/app-context";
 import {
   AVATAR_CACHE,
@@ -8,6 +9,7 @@ import {
   imageResponse,
   logImageFailure,
   notFoundImage,
+  placeholderAvatar,
 } from "@/lib/images";
 import { findPhoto } from "@/lib/repo/alliance-snapshots";
 
@@ -26,18 +28,18 @@ export async function GET(
   const { db, close } = ctx.openDb();
   try {
     const source = avatarSource((await findPhoto(db, Number(uid))).avatarUrl);
-    if (!source) return notFoundImage();
+    if (!source) return placeholderAvatar();
     const image = await fetchImage(source, ctx.fetch);
     if (!("body" in image)) {
       logImageFailure("/img/avatar", uid, image);
-      return notFoundImage();
+      return placeholderAvatar();
     }
     return (
       (await resizedResponse(image, AVATAR_PX, "cover", AVATAR_CACHE)) ??
       imageResponse(image, AVATAR_CACHE)
     );
   } catch {
-    return notFoundImage();
+    return placeholderAvatar();
   } finally {
     await close();
   }

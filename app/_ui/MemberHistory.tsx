@@ -6,11 +6,21 @@ import { fill, type Dictionary } from "@/lib/copy";
 import type { HistoryEntry } from "@/lib/queries";
 
 import { EventLabel } from "./EventLabel";
-import { type Clock } from "./format";
+import { joinedText, leftText, type Clock } from "./format";
 import type { HistoryFilter } from "./member-history";
 import { LazyCardBody } from "./MemberHistoryBody";
 
 const MUTED = "text-ink/70";
+
+/** `+3 joined · −2 left · 1 renamed`, the kinds with none left out; "No member changes." for none (issue 473). */
+function countsText(c: NonNullable<HistoryEntry["counts"]>, copy: Dictionary) {
+  const parts = [
+    c.joined > 0 && joinedText(c.joined, copy),
+    c.left > 0 && leftText(c.left, copy),
+    c.renamed > 0 && fill(copy.history.renamedCount, { n: c.renamed }),
+  ].filter(Boolean);
+  return parts.length > 0 ? parts.join(" · ") : copy.history.noChange;
+}
 
 /** The card's summary: when the data was read (a daily read, or an event's Start or End) and since when,
  * with the ▾ that opens and closes it. The whole row is the 44 px control. */
@@ -33,6 +43,7 @@ function CardHead({ entry, clock, copy }: { entry: HistoryEntry; clock: Clock; c
           {clock.at(entry.at)}
           {entry.since && <> · {fill(h.since, { time: clock.at(entry.since) })}</>}
         </p>
+        {entry.counts && <p className="text-sm">{countsText(entry.counts, copy)}</p>}
       </div>
       <span
         aria-hidden="true"

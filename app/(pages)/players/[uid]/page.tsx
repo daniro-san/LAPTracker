@@ -7,7 +7,7 @@ import { Breadcrumbs } from "@/app/_ui/Breadcrumbs";
 import { PlayerCompareLink } from "@/app/_ui/ComparePicker";
 import { ExactToggle } from "@/app/_ui/ExactToggle";
 import { allianceLabel, type Clock } from "@/app/_ui/format";
-import { requestClock, requestCopy } from "@/app/_ui/locale";
+import { notFoundTitle, requestClock, requestCopy } from "@/app/_ui/locale";
 import { Num } from "@/app/_ui/Num";
 import { AllianceBadge, PlayerAvatar } from "@/app/_ui/Pictures";
 import { PlayerAcrossEvents } from "@/app/_ui/PlayerAcrossEvents";
@@ -137,7 +137,7 @@ const uidOf = async (params: Params) => {
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const uid = await uidOf(params);
   const data = uid === null ? null : await loadPlayer(uid);
-  if (!data) return {};
+  if (!data) return notFoundTitle();
   const copy = await requestCopy();
   const { name, hasAvatar } = data.history.current;
   return {

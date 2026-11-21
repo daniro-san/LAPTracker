@@ -1,19 +1,12 @@
 // Member history (D60, issue 197): one alliance's rosters over time, from its daily reads and its public
 // event snapshots, each diffed against the previous usable one by uid (compute.rosterDiff). Served member
 // fields: uid, name, power, kills only; joined and left come from the diff, never from joined_at (§12.1).
-import { and, arrayOverlaps, desc, eq, inArray } from "drizzle-orm";
+import { and, arrayOverlaps, eq, inArray } from "drizzle-orm";
 
 import { rosterDiff } from "../compute";
 import type { Db } from "../db";
 import { allianceSnapshots, dailyRosters, events, memberSnapshots, snapshots } from "../schema";
-import {
-  dailyHead,
-  dailyReadings,
-  dailyUsable,
-  eventHeads,
-  eventReadings,
-  type Reading,
-} from "./history-readings";
+import { dailyReadings, eventReadings, type Reading } from "./history-readings";
 import { publicEvent } from "./visibility";
 
 export interface HistoryMember {
@@ -62,8 +55,11 @@ export type HistoryCardBody = Pick<
   "roster" | "joined" | "left" | "renamed" | "changed"
 >;
 
-/** A card's head only: when, which event, since when. */
-export type HistoryEntry = Pick<HistoryCard, "at" | "event" | "since">;
+/** A card's head only: when, which event, since when, and how many joined, left and changed name (null on
+ * the first card, which has nothing to compare with). */
+export type HistoryEntry = Pick<HistoryCard, "at" | "event" | "since"> & {
+  counts: { joined: number; left: number; renamed: number } | null;
+};
 
 export interface MemberHistoryIndex {
   unionId: number;
@@ -208,9 +204,21 @@ export async function memberHistory(
   };
 }
 
+/** How many members joined, left and changed name since the previous card's roster (issue 473). */
+export const countsOf = (c: {
+  since: Date | null;
+  joined: readonly unknown[];
+  left: readonly unknown[];
+  renamed: readonly unknown[];
+}) =>
+  c.since === null
+    ? null
+    : { joined: c.joined.length, left: c.left.length, renamed: c.renamed.length };
+
 /**
  * The heads of one page of member history, without member lists: the same rosters, order and paging
- * as memberHistory, for a page whose cards load their contents on open. Null as memberHistory.
+ * as memberHistory, for a page whose cards load their contents on open, each with its counts of who
+ * joined, left and changed name (issue 473). Null as memberHistory.
  */
 export async function memberHistoryIndex(
   db: Db,
@@ -218,29 +226,23 @@ export async function memberHistoryIndex(
   { before = null, limit = 14 }: { before?: Date | null; limit?: number } = {},
 ): Promise<MemberHistoryIndex | null> {
   const [daily, fromEvents] = await Promise.all([
-    db
-      .select(dailyHead)
-      .from(dailyRosters)
-      .where(dailyUsable(unionId, before))
-      .orderBy(desc(dailyRosters.sourceUpdatedAt))
-      .limit(limit + 1),
-    eventHeads(db, unionId, before, limit + 1),
+    dailyReadings(db, unionId, before, limit + 1),
+    eventReadings(db, unionId, before, limit + 1),
   ]);
-  const heads = [
-    ...daily.map((r) => ({ ...r, event: null })),
-    ...fromEvents.map(({ id: _, ...r }) => r),
-  ]
-    .map((r) => ({ ...r, at: r.at as Date }))
+  const readings = [...daily, ...fromEvents]
     .sort((a, b) => b.at.getTime() - a.at.getTime())
     .slice(0, limit + 1);
-  if (heads.length === 0 && !before) return null;
-  const shown = heads.slice(0, limit);
+  if (readings.length === 0 && !before) return null;
+  const shown = readings.slice(0, limit);
   const last = shown.at(-1);
   return {
     unionId,
-    ...headOf(heads[0]),
-    entries: shown.map((h, i) => ({ at: h.at, event: h.event, since: heads[i + 1]?.at ?? null })),
-    older: heads.length > limit && last ? last.at : null,
+    ...headOf(readings[0]),
+    entries: shown.map((r, i) => {
+      const { at, event, since, joined, left, renamed } = card(r, readings[i + 1]);
+      return { at, event, since, counts: countsOf({ since, joined, left, renamed }) };
+    }),
+    older: readings.length > limit && last ? last.at : null,
   };
 }
 

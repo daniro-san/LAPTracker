@@ -266,6 +266,7 @@ Words already used in `lib/i18n/ko.ts`. Reuse them so the pages stay consistent;
 | Ranks board               | 순위표                 | `alliances.asOf`, `alliances.board`, `alliances.boardMight` — the server's ranks board of a date                            |
 | Lookup                    | 조회                   | `alliances.get*`, `alliances.usedUp`, `alliances.failed`, `alliances.tooMany` — one on-demand read of an alliance's details |
 | Read every day            | 매일 읽음              | `alliances.tracked`, `alliances.notDaily`, `alliances.lead` — the alliances read by the daily update                        |
+| Typical member (median)   | 전형적인 멤버          | `ledger.progressMedian` — the alliance's median member's might change, `{tag}` is `[OGs]`                                   |
 
 - Might, Kills, Members and Level: the word in "Game terms (from the game)" below, also inside labels (`± Might`); English where that section has none. Never coin one (D52).
 - Counts read `Label: {n}` so no plural forms are needed.

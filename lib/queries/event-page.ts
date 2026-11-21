@@ -1,9 +1,15 @@
 // Everything the comparison page reads, in one call per page (plan Phase 5): the event, the
-// selector's events, joined/left counts per alliance, ledger ranks, who gained kills, kill share vs might share and every alliance's
-// name history.
+// selector's events, joined/left counts per alliance, ledger ranks, who gained kills, kill share vs might share, every alliance's
+// name history and the previous event's totals (issue 473).
 import type { Db } from "../db";
 import { whoCarried } from "./carried";
-import { getEventDetail, homeEvent, listEvents, type EventSummary } from "./events";
+import {
+  getEventDetail,
+  homeEvent,
+  listEvents,
+  previousEventTotals,
+  type EventSummary,
+} from "./events";
 import { allianceMovers, memberMovers } from "./movers";
 import { allianceNames } from "./names";
 import { eventRanks } from "./ranks";
@@ -45,7 +51,7 @@ async function eventReads(db: Db, id: number, sections: Sections) {
   const turnoutRead = Promise.resolve(
     sections.turnout ? turnoutOf(db, id, detail.snapshots) : null,
   );
-  const [names, ranks, changes, members, turnout, carried] = await Promise.all([
+  const [names, ranks, changes, members, turnout, carried, previous] = await Promise.all([
     allianceNames(db, unionIds),
     eventRanks(db, id),
     before && after
@@ -54,6 +60,7 @@ async function eventReads(db: Db, id: number, sections: Sections) {
     memberMovers(db, detail.snapshots),
     turnoutRead,
     sections.carried ? whoCarried(db, detail, turnoutRead) : null,
+    previousEventTotals(db, detail),
   ]);
   return {
     detail,
@@ -63,6 +70,7 @@ async function eventReads(db: Db, id: number, sections: Sections) {
     members,
     turnout,
     carried,
+    previous,
   };
 }
 
@@ -109,5 +117,10 @@ export async function getEventPage(
   };
   const names = new Map(read.names);
   const changes = new Map(read.changes);
-  return { events, homeId, page: { detail, names, ranks, changes, movers, turnout, carried } };
+  const previous = read.previous && { at: read.previous.at, rows: new Map(read.previous.rows) };
+  return {
+    events,
+    homeId,
+    page: { detail, names, ranks, changes, movers, turnout, carried, previous },
+  };
 }

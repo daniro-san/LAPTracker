@@ -8,7 +8,7 @@ colors:
   ink: "#1e1a1f"
   plum: "#3b2436"
   seal: "#8c2f2f"
-  yarn: "#805c12"
+  yarn: "#75540f"
   sage: "#586750"
   rule: "#d9cdb4"
   dark-paper: "#1a1418"
@@ -109,8 +109,8 @@ layout:
 
 components:
   header:
-    backgroundColor: "{colors.plum}"
-    textColor: "{colors.paper}"
+    backgroundColor: "#3b2436"
+    textColor: "#efe6d3"
     typography: "{typography.display-md}"
     padding: "{spacing.sm} {spacing.md}"
     ornament: lace-border
@@ -204,7 +204,7 @@ Members of a game alliance on server 325 — Russia, Spain, Brazil, the United S
 
 - **Numbers first, words second.** Every data row reads as `label · number · signed delta with arrow · percent`. The label is one word, the same word the game's own UI uses (Might, Kills, Members), because the players already know those words in the game. In a language whose game word is sourced (ko, vi, ru: `lib/i18n/glossary/<tag>.md`) the label is that word; elsewhere it stays the game's English word (D52).
 - **Three channels for every state**, never one: colour **and** an arrow/sign **and** a short word. Green alone, an arrow alone or English alone is not enough. Colour-blind safe by construction.
-- **One legend, once.** A compact legend (arrow up/down, the stale mark, the rounded mark, `[TEST]`) sits under the header; nothing else explains itself in a sentence.
+- **One legend, once.** A compact legend (arrow up/down, same, rank, the stale mark, the rounded mark, and the `*` of a change that includes members who left, only where a change carries it) sits under the header; nothing else explains itself in a sentence.
 - **A mark only when something is wrong** (Session 7d, 07c S2). Rows carry `○ Stale` or `✗ Failed` when their data is; good data carries no mark, so history rows do not repeat a word that means nothing weeks later.
 - **The game's four words stay in blank mode** (D23, 07c N1, D52): Might, Kills, Members and Level are the labels members read in the game's own UI, so the ten-second test keeps them, in the page's language where the game's word is sourced; every other string is blanked.
 - **Sentences only in the margins.** The grandma voice lives in empty states, error pages, section titles and the admin area. Status is chips, not prose: `Last updated at Oct 31, 14:01 server` and `Next update at …` (owner, 2026-11-05: these replace the earlier `Before ✓ 12:01` · `After ✓ 16:01` chips). A public page has no paragraph.
@@ -216,7 +216,10 @@ Members of a game alliance on server 325 — Russia, Spain, Brazil, the United S
 
 ## Navigation and hierarchy
 
-- Skip link (UX review N7): "Skip to the ledger" is the first Tab stop of every public page (`SiteHeader`; the admin pages have none). It is screen-reader only until focused, then shows at the header's top left in the soft drawn frame on paper, 44 px tall, and jumps to `main` (`id="main"`).
+- Skip link (UX review N7): "Skip to the ledger" is the first Tab stop of every public page (`SiteHeader`; the admin pages have none). It is screen-reader only until focused, then shows at the header's top left in the soft drawn frame on paper, 44 px tall with 16 px of padding on each side (issue 473), and jumps to `main` (`id="main"`).
+- Focus on drawn controls (issue 473): a control in the soft drawn frame (chips, filter links, Details) draws its keyboard ring 2 px wide in plum, 5 px outside the box, past the frame; on the header bar the ring is wax paper, 3 px out. A filled primary button's ring is plum too (its own text colour is paper). A scrolling row of chips leaves room for the ring.
+- Ledger rows from 640 px (issue 473): every row has the same tracks, the lead at least 10rem and each figure column at least `--fig-min` (0 below 768 px, 6.75rem from 768 px). A change and its percent are two unbroken pieces; when they do not fit side by side, the percent goes under the change, never into the next column.
+- Names in rows and cards (issue 473, `.name-fit` in app/globals.css): an alliance or player name wraps between words only; a single word too long for its line ends in "…" instead of breaking mid-word. Page titles (`h1`) still break, so the full name is always on the page.
 - Footer (UX review N9): the byline, then one short line ("Fan-made. Not affiliated with 37Games, Eyu or Last Asylum Plague.") and a 44 px "More" `<details>` that opens the full disclaimer in the same muted style, then the version. A public page has no paragraph; the full text is behind the control.
 - Header: wordmark · event selector · search · settings gear (theme, times, dates). Nothing else.
 - Main page, top to bottom: the title "Server 325 · Event Ledger" with the byline under the header (the 360 px header has no room for it) → the event's date and start time → status strip (the last-updated chip with the stale and failed counts on its line) and the capture window with a "Biggest changes in this event ↓" jump link to `movers` (≥ 44 px, left out when Movers has no rows; UX review B1, the link is built like "Across events ↓") → legend → the ledger, by rank, with the viewer's chosen alliance highlighted if they picked one → the "Next update at …" chip → `movers` → nothing else. The next-update chip sits under the ledger, where "when does this change" is asked (UX review S1: the first card's top is at 480 px or less at 360 × 740). The run buttons live on `/admin`.
@@ -256,13 +259,13 @@ A guild ledger, kept by hand, in a plague year. The page is aged paper; the ink 
 - **Ink** (`{colors.ink}` — #1e1a1f): all text. Dark: `{colors.dark-ink}`.
 - **Plum** (`{colors.plum}` — #3b2436): header, links, primary actions, focus rings. Dark: `{colors.dark-plum}`.
 - **Seal** (`{colors.seal}` — #8c2f2f): negative deltas, errors, "stale", the seal button. Dark: `{colors.dark-seal}`.
-- **Yarn** (`{colors.yarn}` — #805c12): positive deltas, highlights on public pages; in the officers' workspace, where nothing goes up or down, "needs a look" (see Workspace components). Bronze in daylight, gold by lamplight (dark: `{colors.dark-yarn}`); a true mustard cannot reach 4.5:1 on paper, so the light value is kept for contrast and only the word changed (08zzt, #173 M1).
+- **Yarn** (`{colors.yarn}` — #75540f): positive deltas, highlights on public pages; in the officers' workspace, where nothing goes up or down, "needs a look" (see Workspace components). Bronze in daylight, gold by lamplight (dark: `{colors.dark-yarn}`); a true mustard cannot reach 4.5:1 on paper, so the light value is kept for contrast and only the word changed (08zzt, #173 M1).
 - **Sage** (`{colors.sage}` — #586750): neutral badges — `[TEST]`, "fallback source", "manual". Dark: `{colors.dark-sage}`.
 - **Rule** (`{colors.rule}` — #d9cdb4): borders and table rules. Dark: `{colors.dark-rule}`.
 - **Rarity** (`--rarity-sr` #1d5797, `--rarity-ssr` #6a3290, `--rarity-ur` #77550f; dark #7fb0e6, #c39ae0, #e0b04a): only a hero's rarity tag on the squads card and the thin frame around its picture, in the game's own colours: SR blue, SSR purple, UR gold (D117). The tag's word always says the rarity, so the colour carries no meaning alone. As 12 px semibold text each keeps 4.5:1 on paper and on the strongest squad's 5 % plum tint, in both themes (lowest: UR in light on the tint, 5.0:1).
 - **Star** (`--star-yellow` #9c7209, `--star-red` #a8321f; dark #e8c04a, #ef7a6a): only the five star icons of a hero on the squads card, in the game's colours: yellow for star levels 1–5, red replacing yellow from the left for 6–10 (D117). Small graphics beside a level said in words ("Star level 7 of 10" for screen readers), so 3:1 against paper and the tint in both themes (lowest: yellow in light on the tint, 3.2:1). The red is not `seal`: five red stars mean a maxed hero, never a warning.
 
-Rules: deltas are coloured by sign only; a colour that carries no meaning is not used. Text contrast ≥ 4.5:1, large numerals ≥ 3:1, checked in both modes. Light yarn and sage were darkened on 2026-11-05 (Session 7c, [issue #25](https://github.com/daniro-san/LAPTracker/issues/25)): yarn on paper 4.90:1, paper on sage 4.88:1; before that they were 2.15:1 and 3.46:1. No gradients anywhere.
+Rules: deltas are coloured by sign only; a colour that carries no meaning is not used. Text contrast ≥ 4.5:1, large numerals ≥ 3:1, checked in both modes. Light yarn and sage were darkened on 2026-11-05 (Session 7c, [issue #25](https://github.com/daniro-san/LAPTracker/issues/25)): yarn on paper 4.90:1, paper on sage 4.88:1; before that they were 2.15:1 and 3.46:1. Light yarn was darkened again to #75540f on 2026-11-21 (issue 473): #805c12 gave 4.10:1 on the leader's 10 % plum row tint; #75540f gives 5.58:1 on paper, 4.68:1 on the plum tint, 4.92:1 on the sage tint and 4.54:1 on a 15 % yarn tint. No gradients anywhere.
 
 ## Typography
 
@@ -316,7 +319,7 @@ Mobile first does not mean phone only (owner, 2026-11-17, issue 412). A page is 
 | ≥ 1440      | 224 px labelled sidebar with sub-views  | 32     | 24     | the same, content up to 1200 px; extra table columns appear            |
 
 - **Page width.** Content is at most 1200 px (`--page-max`), centred in what the navigation leaves. Prose (notices, Start here, help lines, a member's notes) stays within 65 characters (`--measure`, Baymard: 50–75), and a form within 560 px (`--form-max`), wherever the column is wider. Nothing is stretched to the edge of a 1440 screen.
-- **Header.** The plum (public) and burgundy (desk) bars stay full width; their content starts where the page content starts (after the rail or sidebar on the desk) and ends at the content's right edge.
+- **Header.** The plum (public) and burgundy (desk) bars stay full width. The public bar is `--masthead`, deep plum in both themes (#3b2436, in dark #55344e) with wax-paper text (11.35:1 and 8.5:1), so it stays deep plum by lamplight instead of taking the pale dark-mode plum (issue 473); its lace hangs in the same colour. Their content starts where the page content starts (after the rail or sidebar on the desk) and ends at the content's right edge.
 - **The ledger spread.** At ≥ 1024 a page is a main column (2/3) and a margin column (1/3) on its right, divided by a 2 px ink rule, like the written page and the margin of a ledger. The main column holds the one dominant thing of the page (the ledger, the member list, the week, the notice being written) in drawn cards. The margin column holds what is read beside it — the figures, leadership, biggest changes, legend, counts, recent activity — as **margin notes**: no frame, a ruled head (`{typography.label}` over a 2 px ink rule) and hairline rows. The margin column is sticky when it is shorter than the main column; a sticky margin is at most the window's height less its 16 px from the top and the page's bottom padding, and scrolls on its own with the thin scrollbar, so a note that grows never makes the page longer (issue 412 UX pass). The HTML order is always the phone order; grid areas move the margin column to the right, so a phone, a screen reader and the keyboard read the same order everywhere. The margin column is never on the left.
 - **One dominant thing per page.** No row of equal-weight KPI tiles, no three equal cards across, no hero. If two blocks compete, one goes into the margin column.
 - **Master-detail** (Members, Follow-up, Former members). At ≥ 1024 the list (7/12) and the open item (5/12, sticky) sit side by side; the open row is tinted plum 15 % with a 3 px plum bar (11av persona check: 10 % read taupe in light mode; as the navigation's tint); the open item is in the URL (`?m=<uid>`), so back and a shared link work. Below 1024 the same item opens in the `Sheet`, as today. The detail pane is the sheet's content: one component, two containers. With nothing open the pane shows one muted line ("Pick a member to see their info."), never an empty frame. Built for Members and Former members in 11av (rollout PR 3): from 1024 a press on a row, or Enter on it, opens the member in the pane and pushes `?m=` (back goes to the member before, then to none); Up and Down move the focus to the next row and open it there, replacing the address rather than adding a step; the focus stays in the list, and the pane's Close gives it back to the open row. Below 1024 the open member is also in the address (replaced, not pushed: the sheet owns its history entry as before), so a shared link opens the sheet on a phone. A resize across 1024 moves the open member between the sheet and the pane. The pane sticks 8 px from the top, level with the list's search field, and is at most the window's height less 40 px; its bar's two buttons never break a label and take a row each when they do not fit side by side (PT at 1024); so at the end of the list the sticky pane never loses its title; nothing follows the list and its pane on the page (Members puts "Import the old spreadsheets" at the end of the list's column).

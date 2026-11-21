@@ -10,7 +10,15 @@ import type { HistoryRow } from "@/lib/queries";
 import { DetailTable, rankRow, type RankPair } from "./DetailLines";
 import { fellWithLeavers } from "./event-rows";
 import { EventLead } from "./EventLead";
-import { allianceLabel, changeText, joinedText, leftText, type Clock } from "./format";
+import {
+  allianceLabel,
+  changeText,
+  hhmmOn,
+  joinedText,
+  leftText,
+  onTwoDays,
+  type Clock,
+} from "./format";
 import { requestCopy } from "./locale";
 import { LABEL, StatTable, type StatMetric, type StatRow } from "./StatTable";
 import { FreshDots } from "./Status";
@@ -48,7 +56,8 @@ function inEventLine(
       : figure === "kills"
         ? e.fromKills
         : baseOf(r.memberCount, delta);
-  const label = fill(copy.ledger.since, { date: e.fromAt ? clock.hhmm(e.fromAt) : "—" });
+  const date = e.fromAt ? hhmmOn(clock, e.fromAt, onTwoDays(clock, e.fromAt, r.updatedAt)) : "—";
+  const label = fill(copy.ledger.since, { date });
   const memberMark = figure !== "members" && fellWithLeavers(delta, e.left);
   return { vs: { label, delta, base, memberMark } };
 }
@@ -137,7 +146,14 @@ function toRow(
     key: String(r.eventId),
     href: `/events/${r.eventId}/alliances/${unionId}`,
     rank: { n: ranks.might.after, move: ranks.might.move },
-    lead: <EventLead eventAt={r.eventAtUtc} dataAt={r.updatedAt} clock={clock} />,
+    lead: (
+      <EventLead
+        eventAt={r.eventAtUtc}
+        dataAt={r.updatedAt}
+        withDay={onTwoDays(clock, r.inEvent?.fromAt, r.updatedAt)}
+        clock={clock}
+      />
+    ),
     sub: (
       <>
         {allianceLabel(r.tag, r.name)}

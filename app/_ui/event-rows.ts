@@ -5,6 +5,7 @@ import { delta as computeDelta, rankDelta } from "@/lib/compute";
 import type { NameHistoryEntry } from "@/lib/compute";
 import type { Dictionary } from "@/lib/copy";
 import type { getEventDetail, Ranks, RosterChange } from "@/lib/queries";
+import type { EventTotals } from "@/lib/queries/events";
 
 import type { RankPair } from "./DetailLines";
 import { joinedText, leftText, membersLostText } from "./format";
@@ -203,6 +204,40 @@ export function comparisonRows(
   return rows.sort(
     (x, y) => order(x) - order(y) || might(y) - might(x) || x.tag.localeCompare(y.tag),
   );
+}
+
+/** A change since the previous event at least this big (of the earlier figure) shows its own line; for
+ * Members, also at least BIG_MEMBERS people, so 2 of 8 leaving does not light up a row (D75). */
+export const BIG_STEP = 0.25;
+export const BIG_MEMBERS = 5;
+
+/**
+ * The ledger row's "since Nov 7" line (issue 473): the change since the previous event's reference reading,
+ * under each figure, only when Might or Members moved by BIG_STEP or more since then (an alliance of 93
+ * members with 1 left reads `= 0` inside the event). `fresh`: the row's own figures were read fresh; a
+ * stale side has no change (INVARIANT freshness.no-stale-delta). Metrics are Might, Kills, Members.
+ */
+export function withSinceLast(
+  metrics: StatMetric[],
+  previous: EventTotals | undefined,
+  fresh: boolean,
+  label: string,
+): StatMetric[] {
+  if (!previous || !fresh) return metrics;
+  const was = [previous.power, previous.kills, previous.members];
+  const big = (i: number) => {
+    const [now, then] = [metrics[i]?.value ?? null, was[i] ?? null];
+    if (now === null || then === null || then <= 0) return false;
+    return (
+      Math.abs(now - then) / then >= BIG_STEP && (i !== 2 || Math.abs(now - then) >= BIG_MEMBERS)
+    );
+  };
+  if (!big(0) && !big(2)) return metrics;
+  return metrics.map((m, i) => {
+    const then = was[i] ?? null;
+    if (m.value === null || then === null) return m;
+    return { ...m, vs: { label, delta: m.value - then, base: then } };
+  });
 }
 
 /** The table's empty line. A manual round (D28) is never run by the tick, so it never promises an automatic update. */

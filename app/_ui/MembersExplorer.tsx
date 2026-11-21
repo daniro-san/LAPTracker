@@ -121,7 +121,7 @@ function SortChips({
     <div
       role="group"
       aria-label={copy.members.sort}
-      className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0"
+      className="-mx-4 -my-2 flex gap-2 overflow-x-auto px-4 py-2 sm:-mx-2 sm:flex-wrap sm:px-2"
     >
       {SORTS.filter((s) => compared || !CHANGE_SORTS.includes(s.key)).map((s) => {
         const on = f.sort === s.key;

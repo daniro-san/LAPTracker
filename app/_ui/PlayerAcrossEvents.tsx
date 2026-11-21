@@ -14,7 +14,7 @@ import { isGeneratedName } from "@/lib/schedule";
 
 import { DetailTable, rankCell, type RankPair } from "./DetailLines";
 import { EmptyState } from "./EmptyState";
-import { allianceLabel, changeText, type Clock } from "./format";
+import { allianceLabel, changeText, hhmmOn, onTwoDays, type Clock } from "./format";
 import { requestCopy } from "./locale";
 import { Delta, Num, Rank } from "./Num";
 import { LABEL, MoreBar } from "./StatTable";
@@ -22,9 +22,10 @@ import { FreshDots, SideHead } from "./Status";
 
 const SHOWN = 12;
 const MUTED = "text-ink/70";
-/** ≥ 640 px: event · line head · Might · Kills · Level · Details, shared by the header and every row. */
+/** ≥ 640 px: event · line head · Might · Kills · Level · Details, shared by the header and every row. From
+ * 768 px a figure column is at least 6.75rem (`--fig-min`), so most changes stay on one line (issue 473). */
 const GRID = {
-  "--cols": "minmax(0,1.5fr) minmax(0,1fr) repeat(3,minmax(0,1fr)) 6.75rem",
+  "--cols": "minmax(0,1.5fr) minmax(0,1fr) repeat(3,minmax(var(--fig-min),1fr)) 6.75rem",
 } as CSSProperties;
 
 type Stat = "power" | "kills" | "lv";
@@ -68,7 +69,11 @@ function rankPairs(r: PlayerEventRow, prev: PlayerEventRow | undefined) {
 function Line({ head, cells }: { head: ReactNode; cells: ReactNode[] }) {
   return (
     <>
-      <span className={`text-xs tabular-nums sm:col-start-2 ${MUTED}`}>{head}</span>
+      {/* Below 640 px the head shares the card with three figures: it wraps at 7.5rem, so a time with its
+          day never squeezes them (issue 473). */}
+      <span className={`max-w-[7.5rem] text-xs tabular-nums sm:col-start-2 sm:max-w-none ${MUTED}`}>
+        {head}
+      </span>
       {cells.map((c, i) => (
         <span key={i} className="text-right tabular-nums">
           {c}
@@ -107,6 +112,12 @@ function RowLead({
       <div className="flex items-baseline gap-3">
         <span className="text-base">
           <Rank n={rank.after} move={rank.move} />
+          {/* What the rank is of: the player's place in that alliance's roster (issue 473). */}
+          {rank.after !== null && r.tag !== null && (
+            <span className={`block whitespace-nowrap text-xs ${MUTED}`}>
+              {fill(copy.ledger.rankIn, { tag: r.tag })}
+            </span>
+          )}
         </span>
         <TextLink
           stretch
@@ -179,12 +190,24 @@ function rowDetail(
   );
 }
 
+/** The row's two times: its figures' and its Start's. A Start and an End on two days both carry their day,
+ * as does a time on another day than the event's (issue 473). */
+function timesOf(clock: Clock, eventAt: Date, dataAt: Date | null, beforeAt: Date | null) {
+  const split = onTwoDays(clock, beforeAt, dataAt);
+  const dataDay = split || onTwoDays(clock, dataAt, eventAt);
+  return {
+    data: dataAt && (dataDay ? clock.at(dataAt) : clock.time(dataAt)),
+    since: beforeAt ? hhmmOn(clock, beforeAt, split) : "",
+  };
+}
+
 function EventRow(props: RowProps) {
   const { r, prev, clock, copy } = props;
   const ranks = rankPairs(r, prev);
   const dataAt = (r.reference === "before" ? r.before : r.after)?.updatedAt ?? null;
   const beforeAt = r.inEvent ? (r.before?.updatedAt ?? null) : null;
   const lines = (1 + (beforeAt ? 1 : 0) + (prev ? 1 : 0)) as 1 | 2 | 3;
+  const times = timesOf(clock, r.eventAtUtc, dataAt, beforeAt);
   return (
     <li
       style={GRID}
@@ -199,7 +222,7 @@ function EventRow(props: RowProps) {
         </span>
       ))}
       <Line
-        head={dataAt ? clock.time(dataAt) : null}
+        head={times.data}
         cells={STATS.map((f) => (
           <span key={f} className="text-base font-medium">
             <Num n={r[f]} />
@@ -208,7 +231,7 @@ function EventRow(props: RowProps) {
       />
       {beforeAt && (
         <ChangeLine
-          head={fill(copy.ledger.since, { date: clock.hhmm(beforeAt) })}
+          head={fill(copy.ledger.since, { date: times.since })}
           delta={(f) => r.inEvent?.[f] ?? null}
           base={(f) => r.inEvent?.[FROM[f]] ?? null}
         />

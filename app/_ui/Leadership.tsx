@@ -69,13 +69,13 @@ function Card({
     <li className={`relative flex min-w-0 flex-col gap-2 drawn-card p-3 ${width}`}>
       <div className="flex min-w-0 items-center gap-3">
         <PlayerAvatar uid={m.uid} photo={m} size="lg" />
-        <div className="min-w-0 break-words">
+        <div className="min-w-0 flex-1">
           <TextLink
             stretch
             href={`/players/${m.uid}`}
-            className="inline-flex min-h-11 items-center font-subhead text-display-sm leading-tight"
+            className="flex min-h-11 min-w-0 items-center font-subhead text-display-sm leading-tight"
           >
-            <bdi>{m.name}</bdi>
+            <bdi className="min-w-0 name-fit">{m.name}</bdi>
           </TextLink>
           <p className="flex flex-wrap items-center gap-x-2 text-sm text-ink/70">
             {m.role && <RoleMark role={m.role} />}

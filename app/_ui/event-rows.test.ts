@@ -3,7 +3,14 @@ import { describe, expect, it } from "vitest";
 import { en } from "@/lib/copy";
 import type { Ranks } from "@/lib/queries";
 
-import { comparisonRows, emptyLine, formerlyOf, nextUpdateAt, type Snap } from "./event-rows";
+import {
+  comparisonRows,
+  emptyLine,
+  formerlyOf,
+  nextUpdateAt,
+  withSinceLast,
+  type Snap,
+} from "./event-rows";
 
 const cell = (unionId: number, tag: string, power: number, failed = false) => ({
   unionId,
@@ -102,6 +109,32 @@ describe("nextUpdateAt", () => {
     expect(nextUpdateAt([], event, scheduled, at("2026-11-02T00:00:00Z"))).toEqual(
       scheduled.beforeAt,
     );
+  });
+});
+
+describe("withSinceLast", () => {
+  const metric = (value: number) => ({ label: "x", value, delta: 0 });
+  const now = [metric(2_000_000), metric(500), metric(1)];
+
+  it("adds the change since the previous event when Might or Members moved by a quarter or more (issue 473)", () => {
+    const lines = withSinceLast(
+      now,
+      { power: 9_000_000, kills: 500, members: 93 },
+      true,
+      "since Nov 7",
+    );
+    expect(lines.map((m) => m.vs)).toEqual([
+      { label: "since Nov 7", delta: -7_000_000, base: 9_000_000 },
+      { label: "since Nov 7", delta: 0, base: 500 },
+      { label: "since Nov 7", delta: -92, base: 93 },
+    ]);
+  });
+
+  it("adds nothing for a small change, a stale row or an alliance the previous event did not read", () => {
+    const close = { power: 2_100_000, kills: 400, members: 4 };
+    expect(withSinceLast(now, close, true, "since").some((m) => m.vs)).toBe(false);
+    expect(withSinceLast(now, { ...close, members: 93 }, false, "since")).toBe(now);
+    expect(withSinceLast(now, undefined, true, "since")).toBe(now);
   });
 });
 

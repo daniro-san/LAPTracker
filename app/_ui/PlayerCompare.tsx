@@ -14,7 +14,7 @@ import { AllianceBadge, PlayerAvatar } from "./Pictures";
 type Player = PlayerComparison["player"];
 
 const TITLE_LINK = "text-link inline-flex min-h-11 min-w-11 items-center";
-const PLAIN_NAME = "min-w-0 break-words font-subhead text-display-sm leading-tight";
+const PLAIN_NAME = "min-w-0 name-fit font-subhead text-display-sm leading-tight";
 
 /** The player's name, linked to the player page when one exists (a player seen only in a standalone
  * manual round has none: plain text then). */
@@ -43,7 +43,7 @@ export function PlayerCompareTitle({ p }: { p: Player }) {
 const allianceOf = (f: PlayerEventFigures) => (
   <>
     <AllianceBadge badgeId={f.badgeId} />
-    <span className="min-w-0 break-words">{allianceLabel(f.tag, f.name)}</span>
+    <span className="min-w-0 name-fit">{allianceLabel(f.tag, f.name)}</span>
   </>
 );
 

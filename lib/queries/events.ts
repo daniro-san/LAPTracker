@@ -1,12 +1,12 @@
 // Read models for GET /api/events and /api/events/[id]. Columns are listed one by one: raw_json and
 // member rows are never selected, so no blocked roster key (plan §12.1) can reach a response.
 // Test events (rehearsals) are not public (plan Phase 6): /admin reads them elsewhere.
-import { and, asc, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, lt } from "drizzle-orm";
 
 import { runAbandoned } from "../compute";
 import type { Db } from "../db";
 import { allianceSnapshots, events, snapshots } from "../schema";
-import { phaseColumn, phaseSnapshot, publicEvent } from "./visibility";
+import { chainEvent, phaseColumn, phaseSnapshot, publicEvent } from "./visibility";
 
 const snapshotColumns = {
   id: snapshots.id,
@@ -153,5 +153,57 @@ export async function getEventDetail(db: Db, eventId: number) {
       ...s,
       alliances: rows.filter((r) => r.snapshotId === s.id).map(({ snapshotId: _, ...r }) => r),
     })),
+  };
+}
+
+/** One alliance's figures at an event's reference reading (the End, else the Start). */
+export interface EventTotals {
+  power: number | null;
+  kills: number | null;
+  members: number | null;
+}
+
+/**
+ * The previous event before `event` that takes part in "since the previous event" (`chainEvent`, D28): its
+ * day and each alliance's figures at its reference reading, the End when that was read fresh, else the
+ * Start (Phase 5e). Only fresh rows with no error (INVARIANT freshness.no-stale-delta). Null for a manual
+ * round, or when no earlier event has a reading (issue 473: the ledger's "since" line).
+ */
+export async function previousEventTotals(
+  db: Db,
+  event: { id: number; eventAtUtc: Date; manual: boolean },
+): Promise<{ at: Date; rows: [number, EventTotals][] } | null> {
+  if (event.manual) return null;
+  const [previous] = await db
+    .selectDistinct({ id: events.id, eventAtUtc: events.eventAtUtc })
+    .from(events)
+    .innerJoin(snapshots, eq(snapshots.eventId, events.id))
+    .where(and(chainEvent, lt(events.eventAtUtc, event.eventAtUtc), phaseSnapshot))
+    .orderBy(desc(events.eventAtUtc))
+    .limit(1);
+  if (!previous) return null;
+  const rows = await db
+    .select({
+      unionId: allianceSnapshots.unionId,
+      phase: phaseColumn,
+      power: allianceSnapshots.totalPower,
+      kills: allianceSnapshots.totalKills,
+      members: allianceSnapshots.memberCount,
+    })
+    .from(allianceSnapshots)
+    .innerJoin(snapshots, eq(snapshots.id, allianceSnapshots.snapshotId))
+    .where(
+      and(
+        eq(snapshots.eventId, previous.id),
+        phaseSnapshot,
+        eq(allianceSnapshots.isFresh, true),
+        isNull(allianceSnapshots.error),
+      ),
+    );
+  const picked = new Map<number, EventTotals & { phase: string }>();
+  for (const r of rows) if (!picked.has(r.unionId) || r.phase === "after") picked.set(r.unionId, r);
+  return {
+    at: previous.eventAtUtc,
+    rows: [...picked].map(([id, { power, kills, members }]) => [id, { power, kills, members }]),
   };
 }

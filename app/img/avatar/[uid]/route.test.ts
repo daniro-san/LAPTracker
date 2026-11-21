@@ -87,9 +87,22 @@ describe("GET /img/avatar/[uid]", () => {
 
     for (const uid of [2, 3, 4, 5]) {
       const res = await get(uid);
-      expect(res.status).toBe(404);
-      expect(await res.text()).toBe("");
+      expect(res.status).toBe(200);
+      expect(res.headers.get("content-type")).toBe("image/svg+xml");
     }
     expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("serves the drawn placeholder for a player with no photo, and 404 for a malformed uid", async () => {
+    holder.ctx = testContext(db).ctx;
+    const get = (uid: string) =>
+      GET(request(`/img/avatar/${uid}`, { method: "GET" }), {
+        params: Promise.resolve({ uid }),
+      });
+
+    const missing = await get("999");
+    expect(missing.status).toBe(200);
+    expect(await missing.text()).toMatch(/^<svg xmlns="http:\/\/www.w3.org\/2000\/svg"[^>]*>/);
+    expect((await get("12x")).status).toBe(404);
   });
 });
