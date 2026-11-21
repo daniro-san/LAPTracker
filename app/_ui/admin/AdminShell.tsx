@@ -30,7 +30,7 @@ const NAV = [
 ] as const;
 
 /** Where the page sits in the admin nav: the nav link that gets `aria-current` (issue 585). */
-export type AdminSection = (typeof NAV)[number]["href"];
+export type AdminNavHref = (typeof NAV)[number]["href"];
 
 export async function AdminShell({
   title,
@@ -38,7 +38,7 @@ export async function AdminShell({
   children,
 }: {
   title: string;
-  section: AdminSection;
+  section: AdminNavHref;
   children?: ReactNode;
 }) {
   const session = await adminSession();
@@ -73,7 +73,7 @@ async function Unlocked({
   children,
 }: {
   title: string;
-  section: AdminSection;
+  section: AdminNavHref;
   children?: ReactNode;
 }) {
   const now = new Date();

@@ -49,6 +49,10 @@ Findings F4, F5, F6, F16, F18, F27 and F48 of the #585 review, on the desk, the 
 
 ## Deviations
 
+- **Review fixes (`/pr-review` on #597).**
+  - A caravan seat and a roll call on Me take the time of a moved occurrence: `coalesce(occurrence.minute, entry.minute)` in `ownSeats` and `ownMarks`. Before, a caravan moved from 14:00 to 20:00 showed "· Started" from 14:00. The roll-call query now also joins the occurrence of its entry's week. A test in `lib/repo/me.test.ts` covers both; it fails without the fix.
+  - The nav type in `AdminShell.tsx` is `AdminNavHref`, so it no longer shares a name with the `AdminSection` component.
+  - D59 has a dated amendment for the footer's move from ink/65 to ink/70.
 - `BoardStrip.tsx` is a new file. `BoardSections.tsx` passed the 300-line lint limit with the legend in it, so the strip moved out unchanged.
 - On the board page, `<Week {...{ t, language, today, now }} {...view} />` spreads the view, to keep `BoardPage` under the 80-line limit.
 - The public alliances page count and the site footer moved from ink/60 and ink/65 to ink/70. They are outside the four areas, but the floor is site-wide.
