@@ -6,7 +6,7 @@ body:
     attributes:
       value: |
         The repo is public: invented names only, and no screenshots of the game or of Discord. Describe what you saw instead, or blur names, avatars and ids.
-        Labels: `ready` when nothing waits on the owner, `needs-decision` when the owner must choose first.
+        Labels: `ready` when nothing waits on the owner, `decision` when the owner must choose first.
   - type: textarea
     id: problem
     attributes:

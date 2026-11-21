@@ -32,15 +32,16 @@
   - S: the form is the whole spec;
   - M or L feature: run `tlc-spec-lean` first, then build against its frozen criteria;
   - QA checks the criteria one by one;
-  - what `ready` and `needs-decision` mean.
-- Labels created on GitHub with `gh label create`:
-  - `ready` (#0e8a16): "Criteria settled; can be built".
-  - `needs-decision` (#d93f0b): "Waits for the owner's decision before building".
+  - what `ready` and `decision` mean.
+- Labels:
+  - `ready` (#0e8a16, "Criteria settled; can be built"): created on GitHub with `gh label create`.
+  - `decision` ("Needs the owner's call", #d9cdb4): it already existed, and the forms and CONTRIBUTING.md use it for "wait for the owner".
 
 ## Decisions
 
 - No D-number. This is contributor tooling, not product behaviour.
-- The forms do not apply `ready` or `needs-decision` themselves. A form cannot pick a label from an answer. A default `needs-decision` would block every issue the owner files, and a default `ready` would mark unreviewed issues as buildable. The markdown header of each form says when to add which.
+- The task asked for a new `needs-decision` label. I created it, and then the orchestrator decided to keep the existing `decision` label instead, because existing issues already use it. No issue or PR used `needs-decision`, so it was deleted from GitHub.
+- The forms do not apply `ready` or `decision` themselves. A form cannot pick a label from an answer. A default `decision` would block every issue the owner files, and a default `ready` would mark unreviewed issues as buildable. The markdown header of each form says when to add which.
 - The bug form leaves criteria, privacy, verify, design and done when optional. Steps, expected and actual already define the fix for most bugs.
 - The section in CONTRIBUTING.md sits before "Deploy and release" and not at the end of the file. PR 594 appends "Working rules" at the end and edits the harness section. This placement avoids a rebase conflict with it.
 
@@ -60,12 +61,11 @@
 - `prettier --check .`: "All matched files use Prettier code style!". A glob run printed `config.yml` and the PR template, which confirms Prettier covers the new files.
 - `close-issues.yml`: the template's bare `Closes #` and the `#N` inside hints have no digits, so the keyword match never fires on an unfilled template.
 - `pnpm check`: exit 0. Prettier, ESLint and tsc are clean; Vitest ran 296 test files passed and 2 skipped, 1532 tests passed and 4 skipped; drift and i18n checks pass.
-- Labels: `gh label list --search ready` and `--search decision` show both new labels.
+- Labels: `gh label list --search decision` shows only `decision`, and `--search ready` shows `ready`. Before the delete, `gh issue list` and `gh pr list --label needs-decision --state all` both returned `[]`.
 - Not verified: how the forms render on GitHub. Forms render only from the default branch (`main`), so they appear after the next release.
 
 ## Open issues
 
-- The label `decision` ("Needs the owner's call", #d9cdb4) already existed and means the same as `needs-decision`. The owner may want to keep one of them and relabel the issues that use the other.
 - The issue forms show on GitHub only after this reaches `main` through a release.
 
 ## Next
@@ -76,7 +76,7 @@
 
 <adjustments>
 - Issues filed from now on carry EARS criteria in a `- [ ]` list under "Acceptance criteria". QA and `/pr-review` can read them from the issue body and tick them in the PR's "Acceptance criteria" section.
-- `ready` and `needs-decision` exist on GitHub. An agent picking up an issue labelled `needs-decision` waits for the owner.
+- `ready` exists on GitHub. An agent picking up an issue labelled `decision` waits for the owner.
 </adjustments>
 
 PR: (added by the orchestrator)

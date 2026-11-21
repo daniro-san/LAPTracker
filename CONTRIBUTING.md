@@ -55,7 +55,7 @@ The app's variables are listed in [.env.example](.env.example) and validated by 
 
 ## Issues and pull requests
 
-Open issues from the forms in `.github/ISSUE_TEMPLATE/` (feature, bug, improvement). Each asks for acceptance criteria in EARS style ("When X, the system shall Y"), one checkable line each. Size S: the issue form is the whole spec. Size M or L feature: run `tlc-spec-lean` on the issue first, then build against its frozen criteria. QA checks the acceptance criteria item by item, and the PR (`.github/pull_request_template.md`) ticks each one with where it was verified. Label `ready` means the criteria are settled and the issue can be built; `needs-decision` means wait for the owner before building.
+Open issues from the forms in `.github/ISSUE_TEMPLATE/` (feature, bug, improvement). Each asks for acceptance criteria in EARS style ("When X, the system shall Y"), one checkable line each. Size S: the issue form is the whole spec. Size M or L feature: run `tlc-spec-lean` on the issue first, then build against its frozen criteria. QA checks the acceptance criteria item by item, and the PR (`.github/pull_request_template.md`) ticks each one with where it was verified. Label `ready` means the criteria are settled and the issue can be built; `decision` means wait for the owner before building.
 
 ## Deploy and release
 
