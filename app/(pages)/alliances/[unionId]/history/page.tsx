@@ -24,6 +24,7 @@ import { SiteFooter } from "@/app/_ui/SiteFooter";
 import { SiteHeader } from "@/app/_ui/SiteHeader";
 import { TextLink } from "@/lib/brand/components/TextLink";
 import type { Dictionary } from "@/lib/copy";
+import { DataUnavailableError } from "@/lib/data-unavailable";
 import type { Db } from "@/lib/db";
 import { getEnv } from "@/lib/env";
 import { withPageDb } from "@/lib/page";
@@ -67,6 +68,19 @@ const noHistory = (unionId: number, b: BoardAlliance) => ({
   entries: [],
 });
 
+/** Null when the database cannot be reached (D143): the page is then served from the shared reads, and
+ * "Get today's details" is not shown. */
+const unlessDown = (error: unknown) => {
+  if (error instanceof DataUnavailableError) return null;
+  throw error;
+};
+
+/** "Get today's details" (null: unknown, the database is down) and the time of today's lookup. */
+async function detailsOf(unionId: number, now: Date, env: ReturnType<typeof getEnv>) {
+  const details = await withPageDb((db) => detailsState(db, unionId, now, env)).catch(unlessDown);
+  return { details, lookup: details?.lookup?.at.getTime() ?? null };
+}
+
 /** Shared by the page and its <title> within one request. The history, the board line, the statement and the
  * event list are shared with every viewer until the next write (D143); "Get today's details" is read per view:
  * it depends on the clock, the day's claims and the workspaces' keys, which are never shared. */
@@ -80,10 +94,9 @@ const load = cache(async (unionId: number, before: number | null, show: HistoryF
     ]);
     return history || board ? { history, board } : null;
   };
-  const details = await withPageDb((db) => detailsState(db, unionId, now, env));
   // Keyed by today's lookup too: "Get today's details" refreshes the page as soon as its answer comes, which
   // on Vercel can be before the invalidation is applied (after the response).
-  const lookup = details.lookup?.at.getTime() ?? null;
+  const { details, lookup } = await detailsOf(unionId, now, env);
   const [rows, events] = await Promise.all([
     // Only the first page is shared: an older page's `before` comes from the URL, so it would add an
     // entry per made-up time.
@@ -96,9 +109,11 @@ const load = cache(async (unionId: number, before: number | null, show: HistoryF
   const { history, board } = rows;
   const homeId = homeEvent(events, now, env.SNAPSHOT_WINDOW_MIN)?.id ?? null;
   const [statement, homeIds] = await Promise.all([
-    details.daily
+    details?.daily
       ? null
-      : sharedRead("statement", [unionId, lookup], (db) => allianceStatement(db, unionId)),
+      : sharedRead("statement", [unionId, lookup], (db) => allianceStatement(db, unionId)).catch(
+          unlessDown,
+        ),
     homeId === null ? ([] as number[]) : sharedEventAllianceIds(homeId),
   ]);
   return {

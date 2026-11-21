@@ -10,18 +10,19 @@ import { eventRanks } from "./ranks";
 import { rosterChanges, type RosterChange } from "./rosters";
 import { memberTurnout, memberTurnoutSoFar } from "./turnout";
 
-/** A read shared between requests for one event (the page passes the event cache, issue 327). `load` gets
- * the connection to read with: a shared read can run after this request's connection is closed. */
-type Shared = <T>(eventId: number, load: (db: Db) => Promise<T>) => Promise<T>;
+/** The page's reads of one event, shared between requests (the page passes the public cache, D143): `key`
+ * is the event's id and the section flags. `load` gets the connection to read with: a shared read can run
+ * after this request's connection is closed. */
+type Shared = <T>(key: [number, boolean, boolean], load: (db: Db) => Promise<T>) => Promise<T>;
 
 type Phases = NonNullable<Awaited<ReturnType<typeof getEventDetail>>>;
 
 /** Who gained kills: Start against End, or while there is no End, against each alliance's latest sample
- * (#307), shared between requests. */
-function turnoutOf(db: Db, id: number, snapshots: Phases["snapshots"], shared: Shared) {
+ * (#307). */
+function turnoutOf(db: Db, id: number, snapshots: Phases["snapshots"]) {
   const before = snapshots.find((s) => s.phase === "before");
   if (snapshots.some((s) => s.phase === "after")) return memberTurnout(db, snapshots);
-  return before ? shared(id, (read) => memberTurnoutSoFar(read, id, before.id)) : null;
+  return before ? memberTurnoutSoFar(db, id, before.id) : null;
 }
 
 /** Which war sections the page reads (their flags, D91); one left out is null and its rows are never read. */
@@ -30,13 +31,39 @@ interface Sections {
   carried: boolean;
 }
 
-/** War turnout and kill share vs might share, as reads on their way. Kill share vs might share takes each
- * row's "with kills" figure from the turnout, so without the turnout it has none. */
-function warReads(db: Db, id: number, detail: Phases, shared: Shared, sections: Sections) {
-  const turnout = Promise.resolve(
-    sections.turnout ? turnoutOf(db, id, detail.snapshots, shared) : null,
+/**
+ * What the page reads about one event; null for no such (public) event. War turnout and kill share vs might
+ * share only while their flags are on; kill share vs might share takes each row's "with kills" figure from
+ * the turnout, so without the turnout it has none. The Maps go as their entries, so the value is JSON.
+ */
+async function eventReads(db: Db, id: number, sections: Sections) {
+  const detail = await getEventDetail(db, id);
+  if (!detail) return null;
+  const before = detail.snapshots.find((s) => s.phase === "before");
+  const after = detail.snapshots.find((s) => s.phase === "after");
+  const unionIds = [...new Set(detail.snapshots.flatMap((s) => s.alliances.map((a) => a.unionId)))];
+  const turnoutRead = Promise.resolve(
+    sections.turnout ? turnoutOf(db, id, detail.snapshots) : null,
   );
-  return [turnout, sections.carried ? whoCarried(db, detail, turnout) : null] as const;
+  const [names, ranks, changes, members, turnout, carried] = await Promise.all([
+    allianceNames(db, unionIds),
+    eventRanks(db, id),
+    before && after
+      ? rosterChanges(db, { before: before.id, after: after.id })
+      : Promise.resolve(new Map<number, RosterChange>()),
+    memberMovers(db, detail.snapshots),
+    turnoutRead,
+    sections.carried ? whoCarried(db, detail, turnoutRead) : null,
+  ]);
+  return {
+    detail,
+    names: [...names],
+    ranks: [...ranks],
+    changes: [...changes],
+    members,
+    turnout,
+    carried,
+  };
 }
 
 /** The selector's events, the home event and the page's event: `eventId`, else the home event. */
@@ -51,40 +78,36 @@ async function whichEvent(
 }
 
 /**
- * `eventId` null = the home page's event (`homeEvent`). Null page: no such (public) event. `shared` keeps
- * the turnout so far (no End yet) for every viewer; by default it reads every time. `windowMin` is
- * SNAPSHOT_WINDOW_MIN, for `homeEvent`. `sections`: which war sections are read; it may still be on its way,
- * so the flags are read while the event is. `listed`: the event list (the page passes the shared one, D143).
+ * `eventId` null = the home page's event (`homeEvent`, per request: it depends on `now`). Null page: no such
+ * (public) event. `shared` keeps the event's reads for every viewer; by default it reads every time.
+ * `windowMin` is SNAPSHOT_WINDOW_MIN, for `homeEvent`. `sections`: which war sections are read; it may still
+ * be on its way, so the flags are read while the event list is. `listed`: the event list (the page passes the
+ * shared one, D143).
  */
 export async function getEventPage(
   db: Db,
   eventId: number | null,
   windowMin: number,
-  shared: Shared = (_id, load) => load(db),
+  shared: Shared = (_key, load) => load(db),
   sections: Sections | PromiseLike<Sections> = { turnout: true, carried: true },
   listed: () => Promise<EventSummary[]> = () => listEvents(db),
 ) {
   const { events, homeId, id } = await whichEvent(listed(), eventId, windowMin);
-  if (id === null) return { events, homeId, page: null };
-  const detail = await getEventDetail(db, id);
-  if (!detail) return { events, homeId, page: null };
+  // The list holds every public event (the same `publicEvent` filter as getEventDetail): an id not in it is
+  // never read, so a crawl of made-up ids costs nothing.
+  if (id === null || !events.some((e) => e.id === id)) return { events, homeId, page: null };
+  const on = await sections;
+  const read = await shared([id, on.turnout, on.carried], (own) => eventReads(own, id, on));
+  if (!read) return { events, homeId, page: null };
+  const { detail, members, turnout, carried } = read;
+  const ranks = new Map(read.ranks);
   const before = detail.snapshots.find((s) => s.phase === "before");
   const after = detail.snapshots.find((s) => s.phase === "after");
-  const unionIds = [...new Set(detail.snapshots.flatMap((s) => s.alliances.map((a) => a.unionId)))];
-  const [turnoutRead, carriedRead] = warReads(db, id, detail, shared, await sections);
-  const [names, ranks, changes, members, turnout, carried] = await Promise.all([
-    allianceNames(db, unionIds),
-    eventRanks(db, id),
-    before && after
-      ? rosterChanges(db, { before: before.id, after: after.id })
-      : Promise.resolve(new Map<number, RosterChange>()),
-    memberMovers(db, detail.snapshots),
-    turnoutRead,
-    carriedRead,
-  ]);
   const movers = {
     alliances: before && after ? allianceMovers(before.alliances, after.alliances, ranks) : null,
     members,
   };
+  const names = new Map(read.names);
+  const changes = new Map(read.changes);
   return { events, homeId, page: { detail, names, ranks, changes, movers, turnout, carried } };
 }
