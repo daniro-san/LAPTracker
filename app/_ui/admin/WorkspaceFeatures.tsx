@@ -5,8 +5,10 @@
 // turned an allowed one off; the two daily caps with today's use; the tracker calls the alliance's choices
 // spend; "Copy settings from" another workspace (asked first). Above the list, the global pause of each paid
 // allowance (the "Defaults for new alliances" are FeatureDefaults.tsx). Every press sends the PIN as x-edit-pin through `run`.
+// A switch or cap saved counts as `admin_feature_changed` (issue 486).
 import { useState } from "react";
 
+import { track } from "@/lib/analytics/events";
 import { buttonClass } from "@/lib/brand/components/Button";
 import { chip } from "@/lib/brand/components/controls";
 import { copy, fill } from "@/lib/copy";
@@ -61,11 +63,12 @@ function Switch(props: {
   const changed = view.changed.includes(feature);
   const spends = SPENDS[feature];
   const state = fill(changed ? t.changed : t.byDefault, { value: on ? t.on : t.off });
+  // Reset is shown only on a changed switch, whose value differs from the default: it flips.
   const send = (value: boolean | null) =>
     props.run({
       url: URL,
       body: { action: "switch", workspace_id: props.id, feature, on: value },
-      ok: saved,
+      ok: () => (track("admin_feature_changed", { feature, on: value ?? !on }), saved()),
     });
   return (
     <li className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -102,7 +105,11 @@ function Cap(props: { id: number; allowance: Allowance; view: FeaturesView; run:
     props.run({
       url: URL,
       body: { action: "cap", workspace_id: props.id, allowance, cap: value },
-      ok: saved,
+      ok: () => {
+        const after = value === "default" ? view.defaultCaps[allowance] : value;
+        track("admin_feature_changed", { feature: `${allowance}_cap`, on: after !== 0 });
+        return saved();
+      },
     });
   const save = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

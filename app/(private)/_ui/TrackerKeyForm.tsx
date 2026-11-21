@@ -4,10 +4,11 @@
 // quota left and when it was checked, then Replace and Remove; without one (or on Replace), a password field
 // and Save and test. The key is typed into a password field, sent once, and never comes back: the page
 // shows only what the server says about it. One request id per open form (D100), so a retry after a lost
-// answer makes no second test call.
+// answer makes no second test call. A key saved counts as `ws_key_saved` with the state the server answered.
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
+import { track } from "@/lib/analytics/events";
 import { buttonClass } from "@/lib/brand/components/Button";
 import { fill } from "@/lib/copy";
 import type { WorkspaceDictionary } from "@/lib/private/dictionary";
@@ -24,18 +25,24 @@ const REFUSALS: Record<string, keyof WorkspaceDictionary> = {
   rate_limited: "key.rateLimited",
 };
 
-/** The route's answer: null when it went through, else the refusal's code ("failed" for anything else). */
-async function send(slug: string, body: object): Promise<string | null> {
+/** The route's answer: the key's state when it went through, else the refusal's code ("failed" for anything else). */
+async function send(
+  slug: string,
+  body: object,
+): Promise<{ state: KeyState | undefined } | { code: string }> {
   try {
     const res = await fetch(`/api/w/${slug}/tracker-key`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(body),
     });
-    if (res.ok) return null;
-    return ((await res.json()) as { code?: string }).code ?? "failed";
+    if (res.ok) {
+      const answer = (await res.json().catch(() => ({}))) as { state?: KeyState };
+      return { state: answer.state };
+    }
+    return { code: ((await res.json()) as { code?: string }).code ?? "failed" };
   } catch {
-    return "failed";
+    return { code: "failed" };
   }
 }
 
@@ -168,27 +175,30 @@ export function TrackerKeyForm({ slug, keyPage, view, t }: FormProps) {
   /** The last answer: a line that went through, or a refusal. */
   const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null);
 
-  /** One write; true when it went through. */
-  const write = async (body: object, ok: string): Promise<boolean> => {
+  /** One write: the key's state when it went through, null when refused. */
+  const write = async (body: object, ok: string) => {
     setBusy(true);
     setNote(null);
-    const code = await send(slug, { ...body, requestId });
+    const answer = await send(slug, { ...body, requestId });
     setBusy(false);
     setAsking(false);
-    if (code !== null) {
+    if ("code" in answer) {
+      const { code } = answer;
       const text = code === SIGNED_OUT ? SIGNED_OUT : t[REFUSALS[code] ?? "key.failed"];
       setNote({ ok: false, text });
-      return false;
+      return null;
     }
     setNote({ ok: true, text: ok });
     setRequestId(crypto.randomUUID());
     router.refresh();
-    return true;
+    return answer;
   };
   const save = async (key: string) => {
-    const ok = await write({ action: "set", key }, t["key.saved"]);
-    if (ok) setEditing(false);
-    return ok;
+    const done = await write({ action: "set", key }, t["key.saved"]);
+    if (!done) return false;
+    if (done.state) track("ws_key_saved", { state: done.state });
+    setEditing(false);
+    return true;
   };
   const remove = async () => {
     if (await write({ action: "remove" }, t["key.removed"])) setEditing(true);

@@ -4,6 +4,8 @@
 // does not import posthog-js, so a page that only tracks never downloads it by itself.
 import type { PostHog } from "posthog-js";
 
+import type { Allowance, Feature } from "../workspace-features";
+
 /** The workspace languages (D71); the same three as lib/private/dictionary.ts, which this module may not import. */
 export type AnalyticsLanguage = "en" | "pt-BR" | "fr";
 /**
@@ -41,6 +43,13 @@ export type ScreenshotKind =
   | "elixir_teams"
   | "unrecognised"
   | "map";
+
+/**
+ * A tracker key's state after "Save and test" (D124): `KeyState` in lib/private/tracker-key.ts, which this
+ * module may not import. The form passes that type here, so `tsc` fails if a state is added there and not here.
+ */
+export type TrackerKeyState =
+  "off" | "none" | "site" | "ok" | "invalid" | "out_of_quota" | "reenter";
 
 /** The members' board's sections (D105; `data-board-section` in BoardSections.tsx). */
 export type BoardSection = "week" | "notices" | "start_here";
@@ -103,6 +112,13 @@ export interface AnalyticsEvents {
   ws_invite_opened: NoProperties;
   /** An invite used: the workspace made; whether the roles were created there rather than picked. */
   ws_invite_completed: { roles_created: boolean };
+  /** The alliance's tracker key saved after its test (D124): the state the server answered, never the key. */
+  ws_key_saved: { state: TrackerKeyState };
+  /**
+   * The owner changed one workspace's switch or daily cap on /admin (D126, D134): which one, and whether it
+   * is on afterwards (a cap: not 0). Nothing about the workspace: /admin events carry none (issue 452).
+   */
+  admin_feature_changed: { feature: Feature | `${Allowance}_cap`; on: boolean };
 }
 export type AnalyticsEvent = keyof AnalyticsEvents;
 
@@ -137,6 +153,8 @@ export const ANALYTICS_EVENTS = [
   "admin_workspace_approved",
   "ws_invite_opened",
   "ws_invite_completed",
+  "ws_key_saved",
+  "admin_feature_changed",
 ] as const satisfies readonly AnalyticsEvent[];
 
 /** The URL fragment the sign-in callback adds after a successful sign-in, when analytics is on. */
