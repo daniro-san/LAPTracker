@@ -69,4 +69,4 @@
 - Every release from now on adds its entry on top of `patchNotes` in lib/patch-notes.ts, and updates `ownerTodo`, before Prepare release (CONTRIBUTING.md step 1). The test fails on a wrong order, a repeated version or a bad date.
 </adjustments>
 
-PR: (added by the orchestrator)
+PR: https://github.com/daniro-san/LAPTracker/pull/559
