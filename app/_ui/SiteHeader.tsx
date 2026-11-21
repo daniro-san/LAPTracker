@@ -136,6 +136,7 @@ export function SiteHeader({
   clock,
   copy,
   publicPage = true,
+  prefetch = true,
 }: {
   events: SelectorEvent[];
   currentId: number | null;
@@ -149,6 +150,8 @@ export function SiteHeader({
   copy: Dictionary;
   /** The gear offers language, times and dates; /admin, English and in server time, the theme only. */
   publicPage?: boolean;
+  /** False on /admin (issue 521): each run watch refresh would prefetch `/` and `/players` again. */
+  prefetch?: boolean;
 }) {
   return (
     <header className="sticky top-0 z-30 text-plum">
@@ -164,6 +167,7 @@ export function SiteHeader({
         <div className="mx-auto flex max-w-[960px] items-center justify-between gap-1 px-3 py-1 sm:gap-2 sm:px-6">
           <Link
             href="/"
+            prefetch={prefetch ? null : false}
             className="tint-button flex min-h-11 min-w-11 items-center justify-center gap-1 rounded-xs min-[420px]:gap-1.5"
           >
             <WaxedMark size={40} solid />
@@ -177,6 +181,7 @@ export function SiteHeader({
           <div className="flex items-center gap-1.5 sm:gap-2">
             <Link
               href="/players"
+              prefetch={prefetch ? null : false}
               aria-current={section === "players" ? "page" : undefined}
               className={`drawn-frame-soft flex min-h-11 min-w-11 items-center justify-center gap-1.5 whitespace-nowrap px-3 text-sm font-medium aria-[current=page]:bg-paper/20 ${CONTROL}`}
             >

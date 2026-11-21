@@ -1,5 +1,6 @@
 // /admin/runs rows: a snapshot run and a daily roster read (D60), each opening its own page, with the
-// All / Events / Daily reads filter above them. The daily read's failures by reason are on its page.
+// All / Events / Daily reads filter above them. The daily read's failures by reason are on its page. No
+// link prefetches: each of the run watch's refreshes would prefetch every row again (issue 521).
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -29,6 +30,7 @@ export function RunsFilter({ show }: { show: RunFilter | null }) {
     <li key={key ?? "all"}>
       <Link
         href={key ? `/admin/runs?show=${key}` : "/admin/runs"}
+        prefetch={false}
         aria-current={show === key ? "page" : undefined}
         className="drawn-frame-soft tint-button inline-flex min-h-11 items-center px-3 text-sm font-medium text-plum aria-[current=page]:bg-plum/10"
       >
@@ -118,7 +120,7 @@ function Title({ children, note }: { children: ReactNode; note: string }) {
 
 export function SnapshotRunRow({ r, clock }: { r: SnapshotRun; clock: Clock }) {
   return (
-    <Link href={`/admin/runs/${r.id}`} className={`tint-button ${ROW}`}>
+    <Link href={`/admin/runs/${r.id}`} prefetch={false} className={`tint-button ${ROW}`}>
       <Flags status={r.status} problems={r.problems} deadline={r.deadline} />
       <Title note={clock.stamp(r.eventAtUtc)}>
         {eventWord(r, clock)} · {runWord(r, clock)}
@@ -174,7 +176,7 @@ export function DailyFailures({ r }: { r: DailyRun }) {
 /** Opens the daily read's page (/admin/runs/daily/[day]), as a snapshot row opens its run page. */
 export function DailyRunRow({ r, clock }: { r: DailyRun; clock: Clock }) {
   return (
-    <Link href={`/admin/runs/daily/${r.day}`} className={`tint-button ${ROW}`}>
+    <Link href={`/admin/runs/daily/${r.day}`} prefetch={false} className={`tint-button ${ROW}`}>
       <Flags status={r.status} problems={r.problems} deadline={r.deadline} />
       <Title note={clock.weekday(dayDate(r.day))}>{t.daily}</Title>
       <Facts
