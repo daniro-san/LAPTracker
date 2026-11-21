@@ -29,6 +29,10 @@ export const DONE_MAX_AGE_S = 24 * 60 * 60;
 
 const tagOf = (eventId: number) => `event:${eventId}`;
 
+/** Next's data cache outlives a deployment on Vercel: an entry of an older build may hold older figures (a
+ * finished event's for a day), so a new build reads its own (as lib/public-cache.ts). */
+const BUILD = process.env.VERCEL_DEPLOYMENT_ID ?? "local";
+
 /** Thrown by the cached loader, so Next's cache keeps nothing, with the rows it read across an
  * invalidation: this view is served them; the next one reads again (as lib/public-cache.ts). */
 class NotKept extends Error {
@@ -61,7 +65,7 @@ export const nextEventCache: EventCache = {
         if (state.generation !== from) throw new NotKept(value);
         return value;
       },
-      ["event-cache", key],
+      ["event-cache", BUILD, key],
       { tags: [tagOf(eventId)], revalidate: maxAgeS },
     );
     const read = cached()

@@ -2,7 +2,7 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
-import { allianceSnapshots, events, snapshots } from "../schema";
+import { allianceSnapshots, events, memberSnapshots, snapshots } from "../schema";
 import { eventProgress } from "./live";
 
 let db: Db;
@@ -119,5 +119,68 @@ describe("eventProgress", () => {
     );
     const p = await eventProgress(db, id, { now: at("12:40"), ...EVERY });
     expect(p?.standings[0]).toMatchObject({ change: { power: 0, kills: 30 }, at: at("12:15") });
+  });
+
+  it("counts the kills of the members in both readings: a joiner's lifetime kills and a one-row dropout move nothing", async () => {
+    const eventId = await seedEvent([], false);
+    const [start] = await db.select({ id: allianceSnapshots.id }).from(allianceSnapshots);
+    await db.insert(memberSnapshots).values([
+      { allianceSnapshotId: (start as { id: number }).id, uid: 11, name: "m11", kills: 100 },
+      { allianceSnapshotId: (start as { id: number }).id, uid: 12, name: "m12", kills: 200 },
+    ]);
+    // Member 13 joins at 12:15 with 5,000 lifetime kills; member 12 is missing from the 12:30 row only.
+    const readings: [string, [number, number][]][] = [
+      [
+        "12:15",
+        [
+          [11, 110],
+          [12, 220],
+          [13, 5000],
+        ],
+      ],
+      [
+        "12:30",
+        [
+          [11, 130],
+          [13, 5010],
+        ],
+      ],
+      [
+        "12:45",
+        [
+          [11, 150],
+          [12, 260],
+          [13, 5030],
+        ],
+      ],
+    ];
+    for (const [time, members] of readings) {
+      const [snap] = await db
+        .insert(snapshots)
+        .values({
+          eventId,
+          phase: "sample",
+          slotAt: at(time),
+          startedAt: at(time),
+          status: "complete",
+        })
+        .returning({ id: snapshots.id });
+      await db.insert(allianceSnapshots).values({
+        snapshotId: (snap as { id: number }).id,
+        unionId: 1,
+        totalPower: 1000,
+        totalKills: members.reduce((t, [, k]) => t + k, 0),
+        source: "v1",
+        isFresh: true,
+        memberUids: members.map(([uid]) => uid),
+        memberNames: members.map(([uid]) => `m${uid}`),
+        memberPower: members.map(() => 10),
+        memberKills: members.map(([, k]) => k),
+      });
+    }
+    const p = await eventProgress(db, eventId, { now: at("12:50"), ...EVERY });
+    expect(p?.pulse.map((s) => s.kills)).toEqual([30, 30, 40]);
+    // 50 + 60 by the two who stayed, 30 by the joiner since his first reading.
+    expect(p?.standings[0]?.change).toEqual({ power: 0, kills: 140 });
   });
 });

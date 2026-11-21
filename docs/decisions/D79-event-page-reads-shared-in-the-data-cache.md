@@ -17,3 +17,5 @@ Why: while an event runs, every viewer's page refreshes once per sample slot (`L
 **Amendment (2026-11-21, issue 521, D143).** The public pages' other shared reads (event list, alliances, players, history, banner) use a second cache, `lib/public-cache.ts`, tag `reads`. A run invalidates both.
 
 **Amendment (2026-11-21, issue 538, D143).** The `turnout-so-far` entry is gone: the war turnout, also "so far", is part of the event page's shared entry under `reads` (D143), bounded by the next run's invalidation or 1 h instead of 60 s. `progress` and `progress-done` stay here. This cache's in-flight map is now on `globalThis`, an invalidation drops the event's in-flight reads, and a read that ran across an invalidation is not kept (as `lib/public-cache.ts`).
+
+**Amendment (2026-11-21, D69 amendment "kills over the members").** Entries are keyed by the deployment (`VERCEL_DEPLOYMENT_ID`, as D143's public cache), because Next's data cache outlives a deployment. Without that, a finished event's `progress-done` entry would keep its old figures for up to a day after a release that changes them.

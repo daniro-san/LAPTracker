@@ -71,9 +71,10 @@ export const ko = {
     liveStandings: "지금까지 순위",
     liveStandingsDone: "마지막 읽기 기준",
     liveDuring: "이벤트 진행 중",
-    liveStandingsHelp: "시작 이후 변화, 처치 획득이 많은 순",
+    liveStandingsHelp:
+      "시작 이후 변화, 처치 획득이 많은 순. 멤버가 획득한 처치이며, 가입한 멤버가 가져온 몫은 빠집니다",
     livePulse: "서버 흐름",
-    livePulseHelp: "{min}분마다 {n}개 연맹이 획득한 처치",
+    livePulseHelp: "{min}분마다 {n}개 연맹의 멤버가 획득한 처치",
     liveBusiest: "지금까지 가장 바쁜 {span}분: {from}–{to} · 처치의 {share}",
     liveBusiestDone: "가장 바쁜 {span}분: {from}–{to} · 처치의 {share}",
     liveNoUpdate: "게임에서 온 업데이트 없음",
@@ -118,7 +119,7 @@ export const ko = {
     fewGainers: "인원 적음",
     carried: "처치 몫 대 전투력 몫",
     carriedHelp:
-      "시작부터 종료까지 획득한 처치 중 각 연맹의 몫과, 시작 때 전투력 중 몫입니다. 수비와 지원 플레이어는 처치를 획득하지 못합니다.",
+      "시작부터 종료까지 두 명단에 모두 있는 멤버가 획득한 처치 중 각 연맹의 몫과, 시작 때 전투력 중 몫입니다. 수비와 지원 플레이어는 처치를 획득하지 못합니다.",
     carriedTotal: "전체 {n}개 연맹: 획득 처치 {kills}, 시작 때 전투력 {might}",
     carriedMightMark: "시작 때 전투력 몫",
     carriedKillsMark: "획득 처치 몫",
@@ -358,6 +359,14 @@ export const ko = {
     rank: "순위",
     rounded: "반올림됨",
     members: "멤버 변동 포함",
+    membersTap: "멤버 변동 포함: *를 누르면 내역",
+  },
+  split: {
+    open: "멤버 변동 포함: 내역 보기",
+    total: "합계",
+    joined: "가입한 {n}명이 가져온 몫",
+    left: "탈퇴한 {n}명이 가져간 몫",
+    without: "그들을 빼면",
   },
   members: {
     search: "멤버 이름",

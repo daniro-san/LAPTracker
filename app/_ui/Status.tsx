@@ -284,8 +284,17 @@ export function SideHead({
 }
 
 /** The one legend (DESIGN.md "One legend, once"), under the page title. `memberMark`: the page shows a `*`
- * on some change, so its item is listed; otherwise the legend does not grow for nothing. */
-export function Legend({ memberMark = false, copy }: { memberMark?: boolean; copy: Dictionary }) {
+ * on some change, so its item is listed; otherwise the legend does not grow for nothing. `split`: some `*`
+ * opens its split when tapped (D69 amendment, 2026-11-21), and the item says so. */
+export function Legend({
+  memberMark = false,
+  split = false,
+  copy,
+}: {
+  memberMark?: boolean;
+  split?: boolean;
+  copy: Dictionary;
+}) {
   const l = copy.legend;
   const items: [ReactNode, string, string][] = [
     ["▲", l.up, "text-yarn"],
@@ -294,7 +303,9 @@ export function Legend({ memberMark = false, copy }: { memberMark?: boolean; cop
     ["#", l.rank, "text-ink"],
     ["○", l.stale, "text-seal"],
     ["≈", l.rounded, "text-ink"],
-    ...(memberMark ? [[MEMBER_MARK, l.members, "text-ink"] as [ReactNode, string, string]] : []),
+    ...(memberMark
+      ? [[MEMBER_MARK, split ? l.membersTap : l.members, "text-ink"] as [ReactNode, string, string]]
+      : []),
   ];
   return (
     <ul

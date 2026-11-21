@@ -71,9 +71,10 @@ export const tr = {
     liveStandings: "Şimdiye kadarki durum",
     liveStandingsDone: "Son okumada",
     liveDuring: "Etkinlik sürerken",
-    liveStandingsHelp: "Başlangıç’tan beri değişim, önce en çok Kills kazanan",
+    liveStandingsHelp:
+      "Başlangıç’tan beri değişim, önce en çok Kills kazanan. Üyelerin kazandığı Kills; katılanların getirdiği sayılmaz",
     livePulse: "Sunucu nabzı",
-    livePulseHelp: "Her {min} dakikada {n} ittifakın kazandığı Kills",
+    livePulseHelp: "Her {min} dakikada {n} ittifakın üyelerinin kazandığı Kills",
     liveBusiest: "Şimdiye kadarki en yoğun {span} dakika: {from}–{to} · Kills payı {share}",
     liveBusiestDone: "En yoğun {span} dakika: {from}–{to} · Kills payı {share}",
     liveNoUpdate: "Oyundan güncelleme yok",
@@ -124,7 +125,7 @@ export const tr = {
     fewGainers: "az kazanan",
     carried: "Kills payı ile Might payı",
     carriedHelp:
-      "Her ittifakın Kills payı, yanında Might payı. Kills Başlangıç’tan Bitiş’e, Might Başlangıç’ta ölçülür. Savunucular ve destek oyuncuları Kills kazanmaz.",
+      "Her ittifakın Kills payı, yanında Might payı. Kills, iki listede de olan üyelerin Başlangıç’tan Bitiş’e kazandığıdır; Might Başlangıç’ta ölçülür. Savunucular ve destek oyuncuları Kills kazanmaz.",
     carriedTotal: "Tüm {n} ittifak: {kills} Kills kazanıldı, Başlangıç’ta {might} Might",
     carriedMightMark: "Başlangıç’taki Might payı",
     carriedKillsMark: "Kazanılan Kills payı",
@@ -369,6 +370,14 @@ export const tr = {
     rank: "Sıra",
     rounded: "Yuvarlandı",
     members: "Üye değişimleri dahil",
+    membersTap: "Üye değişimleri dahil: dağılım için *'a dokunun",
+  },
+  split: {
+    open: "Üye değişimleri dahil: dağılımı göster",
+    total: "Toplam",
+    joined: "Katılan {n} üyeyle gelen",
+    left: "Ayrılan {n} üyeyle giden",
+    without: "Onlar olmadan",
   },
   members: {
     search: "Üye adı",

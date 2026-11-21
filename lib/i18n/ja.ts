@@ -70,9 +70,10 @@ export const ja = {
     liveStandings: "ここまでの順位",
     liveStandingsDone: "最後の読み取り時点",
     liveDuring: "イベント中",
-    liveStandingsHelp: "開始からの変化、Kills 増加の多い順",
+    liveStandingsHelp:
+      "開始からの変化、Kills 増加の多い順。メンバーが獲得した Kills で、加入者が持ち込んだ分は含みません",
     livePulse: "サーバーの動き",
-    livePulseHelp: "{min}分ごとに{n}同盟が獲得した Kills",
+    livePulseHelp: "{min}分ごとに{n}同盟のメンバーが獲得した Kills",
     liveBusiest: "ここまでで最も忙しかった{span}分：{from}–{to} · Kills 全体の{share}",
     liveBusiestDone: "最も忙しかった{span}分：{from}–{to} · Kills 全体の{share}",
     liveNoUpdate: "ゲームからの更新なし",
@@ -121,7 +122,7 @@ export const ja = {
     fewGainers: "少人数",
     carried: "Kills の割合 対 Might の割合",
     carriedHelp:
-      "各同盟の Kills の割合を、Might の割合と並べて示します。Kills は開始から終了まで、Might は開始時のものです。守備役と支援役のプレイヤーは Kills を得ません。",
+      "各同盟の Kills の割合を、Might の割合と並べて示します。Kills は両方の名簿にいるメンバーが開始から終了までに獲得したもの、Might は開始時のものです。守備役と支援役のプレイヤーは Kills を得ません。",
     carriedTotal: "全{n}同盟：獲得 Kills {kills}、開始時の Might {might}",
     carriedMightMark: "開始時の Might の割合",
     carriedKillsMark: "獲得 Kills の割合",
@@ -361,6 +362,14 @@ export const ja = {
     rank: "順位",
     rounded: "概数",
     members: "メンバー変動を含む",
+    membersTap: "メンバー変動を含む：* をタップで内訳",
+  },
+  split: {
+    open: "メンバー変動を含む：内訳を表示",
+    total: "合計",
+    joined: "加入した{n}人が持ち込んだ分",
+    left: "脱退した{n}人が持ち出した分",
+    without: "彼らを除く",
   },
   members: {
     search: "メンバー名",

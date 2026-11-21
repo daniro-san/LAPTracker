@@ -70,9 +70,10 @@ export const vi = {
     liveStandings: "Bảng xếp hạng đến nay",
     liveStandingsDone: "Tại lần đọc cuối",
     liveDuring: "Trong sự kiện",
-    liveStandingsHelp: "Thay đổi từ Bắt đầu, tiêu diệt tăng nhiều nhất lên trước",
+    liveStandingsHelp:
+      "Thay đổi từ Bắt đầu, tiêu diệt tăng nhiều nhất lên trước. Tiêu diệt do thành viên tăng, không gồm phần người mới vào mang đến",
     livePulse: "Nhịp máy chủ",
-    livePulseHelp: "{n} liên minh tăng tiêu diệt trong mỗi {min} phút",
+    livePulseHelp: "Thành viên của {n} liên minh tăng tiêu diệt trong mỗi {min} phút",
     liveBusiest: "{span} phút sôi động nhất đến nay: {from}–{to} · {share} tổng tiêu diệt",
     liveBusiestDone: "{span} phút sôi động nhất: {from}–{to} · {share} tổng tiêu diệt",
     liveNoUpdate: "Game chưa gửi cập nhật",
@@ -120,7 +121,7 @@ export const vi = {
     fewGainers: "ít tăng",
     carried: "Phần tiêu diệt so với Lực Chiến",
     carriedHelp:
-      "Phần tiêu diệt của mỗi liên minh, đặt cạnh phần Lực Chiến của liên minh đó. Tiêu diệt tăng từ Bắt đầu đến Kết thúc, Lực Chiến lúc Bắt đầu. Vai phòng thủ và hỗ trợ không tăng tiêu diệt.",
+      "Phần tiêu diệt của mỗi liên minh, đặt cạnh phần Lực Chiến của liên minh đó. Tiêu diệt do thành viên có trong cả hai danh sách tăng từ Bắt đầu đến Kết thúc, Lực Chiến lúc Bắt đầu. Vai phòng thủ và hỗ trợ không tăng tiêu diệt.",
     carriedTotal: "Cả {n} liên minh: {kills} tiêu diệt tăng, {might} Lực Chiến lúc Bắt đầu",
     carriedMightMark: "Phần Lực Chiến lúc Bắt đầu",
     carriedKillsMark: "Phần tiêu diệt tăng",
@@ -364,6 +365,14 @@ export const vi = {
     rank: "Hạng",
     rounded: "Đã làm tròn",
     members: "Gồm thay đổi thành viên",
+    membersTap: "Gồm thay đổi thành viên: chạm * để xem chi tiết",
+  },
+  split: {
+    open: "Gồm thay đổi thành viên: xem chi tiết",
+    total: "Tổng",
+    joined: "Do {n} người vào mang đến",
+    left: "Đi cùng {n} người rời",
+    without: "Không tính họ",
   },
   members: {
     search: "Tên thành viên",

@@ -7,11 +7,14 @@ import {
   EVENT_ID,
   fakeV1,
   IDS,
+  LABELS,
   makeDeps,
   minutes,
   roster,
+  rowsOf,
   T0,
 } from "./collector.test-helpers";
+import { createMemoryRepo } from "./repo/memory";
 import { type CallOptions, UpstreamError } from "./sources/types";
 
 const fresh = (id: number) => roster(id, ago(T0, minutes(2)));
@@ -97,5 +100,55 @@ describe("runSample hardening (D69)", () => {
 
     expect(options.quota).toEqual([{}]);
     expect([...options.alliance.values()]).toEqual(IDS.map(() => ({})));
+  });
+});
+
+describe("a sample's identity check (D69 amendment, 2026-11-21)", () => {
+  const [, , THIRD] = IDS as [number, number, number];
+
+  it("stores no row for a read that holds another alliance, counts it failed, and spends no extra call", async () => {
+    // FIRST's answer carries SECOND's id; THIRD's carries its own id with FIRST's tag and members.
+    const v1 = fakeV1((id) =>
+      id === FIRST ? fresh(SECOND) : id === THIRD ? { ...fresh(FIRST), unionId: THIRD } : fresh(id),
+    );
+    const { deps, repo } = makeDeps(v1);
+
+    const summary = await runSample(EVENT_ID, T0, deps);
+
+    const rows = rowsOf(repo, summary.snapshotId);
+    expect(rows.filter((r) => r.unionId === SECOND)).toHaveLength(1);
+    expect(rows.find((r) => r.unionId === FIRST)).toMatchObject({
+      error: "v1 wrong alliance (id)",
+      tag: `T${FIRST % 1000}`,
+      totalKills: null,
+    });
+    expect(rows.find((r) => r.unionId === THIRD)?.error).toBe("v1 wrong alliance (tag)");
+    expect(summary.status).toBe("partial");
+    expect(summary.callsUsed).toBe(IDS.length + 1);
+    expect(await repo.failedSampleUnionIds(EVENT_ID)).toEqual([FIRST, THIRD]);
+  });
+
+  it("stores a read under a new tag and name when its members are the alliance's own: a rename", async () => {
+    const v1 = fakeV1((id) =>
+      id === FIRST ? { ...fresh(id), tag: "NEW", name: "New name" } : fresh(id),
+    );
+    const { deps, repo } = makeDeps(v1);
+
+    const summary = await runSample(EVENT_ID, T0, deps);
+
+    expect(summary.status).toBe("complete");
+    const row = rowsOf(repo, summary.snapshotId).find((r) => r.unionId === FIRST);
+    expect(row).toMatchObject({ tag: "NEW", error: null, totalKills: 300 });
+  });
+
+  it("stores a read it cannot compare: the alliance has no daily roster yet", async () => {
+    const v1 = fakeV1((id) => (id === FIRST ? { ...fresh(SECOND), unionId: FIRST } : fresh(id)));
+    const repo = createMemoryRepo([{ id: EVENT_ID, allianceIds: IDS }], IDS, LABELS);
+    const deps = { ...makeDeps(v1).deps, repo };
+
+    const summary = await runSample(EVENT_ID, T0, deps);
+
+    const row = rowsOf(repo, summary.snapshotId).find((r) => r.unionId === FIRST);
+    expect(row).toMatchObject({ tag: `T${SECOND % 1000}`, error: null });
   });
 });

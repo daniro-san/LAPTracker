@@ -70,9 +70,10 @@ export const es = {
     liveStandings: "Clasificación hasta ahora",
     liveStandingsDone: "En la última lectura",
     liveDuring: "Durante el evento",
-    liveStandingsHelp: "Cambio desde Inicio, de más Kills ganados a menos",
+    liveStandingsHelp:
+      "Cambio desde Inicio, de más Kills ganados a menos. Kills que ganaron sus miembros, sin lo que trajeron los que entraron",
     livePulse: "Pulso del servidor",
-    livePulseHelp: "Kills ganados por {n} alianzas en cada {min} minutos",
+    livePulseHelp: "Kills ganados por los miembros de {n} alianzas en cada {min} minutos",
     liveBusiest: "Los {span} minutos más intensos hasta ahora: {from}–{to} · {share} de los Kills",
     liveBusiestDone: "Los {span} minutos más intensos: {from}–{to} · {share} de los Kills",
     liveNoUpdate: "Sin actualización del juego",
@@ -124,7 +125,7 @@ export const es = {
     fewGainers: "pocos subieron",
     carried: "Parte de Kills frente a parte de Might",
     carriedHelp:
-      "Parte de los Kills de cada alianza, junto a su parte del Might. Kills de Inicio a Fin; Might al Inicio. Los defensores y los jugadores de apoyo no ganan Kills.",
+      "Parte de los Kills de cada alianza, junto a su parte del Might. Kills que ganaron de Inicio a Fin sus miembros presentes en las dos listas; Might al Inicio. Los defensores y los jugadores de apoyo no ganan Kills.",
     carriedTotal: "Todas las {n} alianzas: {kills} Kills ganados, {might} de Might al Inicio",
     carriedMightMark: "Parte de Might al Inicio",
     carriedKillsMark: "Parte de Kills ganados",
@@ -371,6 +372,14 @@ export const es = {
     rank: "Puesto",
     rounded: "Redondeado",
     members: "Incluye cambios de miembros",
+    membersTap: "Incluye cambios de miembros: toca * para ver el desglose",
+  },
+  split: {
+    open: "Incluye cambios de miembros: ver el desglose",
+    total: "Total",
+    joined: "Traído por {n} que entraron",
+    left: "Llevado por {n} que salieron",
+    without: "Sin ellos",
   },
   members: {
     search: "Nombre del miembro",

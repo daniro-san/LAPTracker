@@ -70,9 +70,10 @@ export const pl = {
     liveStandings: "Wyniki dotąd",
     liveStandingsDone: "Przy ostatnim odczycie",
     liveDuring: "Podczas wydarzenia",
-    liveStandingsHelp: "Zmiana od Początku, najpierw największy przyrost Kills",
+    liveStandingsHelp:
+      "Zmiana od Początku, najpierw największy przyrost Kills. Kills zdobyte przez członków, bez tego, co wnieśli nowi",
     livePulse: "Puls serwera",
-    livePulseHelp: "Przyrost Kills sojuszy ({n}) w każdych {min} minutach",
+    livePulseHelp: "Przyrost Kills członków sojuszy ({n}) w każdych {min} minutach",
     liveBusiest: "Najaktywniejsze {span} minut dotąd: {from}–{to} · {share} wszystkich Kills",
     liveBusiestDone: "Najaktywniejsze {span} minut: {from}–{to} · {share} wszystkich Kills",
     liveNoUpdate: "Brak aktualizacji z gry",
@@ -123,7 +124,7 @@ export const pl = {
       "Żadne z wydarzeń nie ma odczytów {min}-minutowych, więc ich pulsu nie da się porównać",
     carried: "Udział w Kills vs udział w Might",
     carriedHelp:
-      "Udział każdego sojuszu w zdobytych Kills, obok jego udziału w Might. Kills od Początku do Końca, Might na Początku. Obrońcy i gracze wsparcia nie zdobywają Kills.",
+      "Udział każdego sojuszu w Kills zdobytych od Początku do Końca przez członków obecnych na obu listach, obok jego udziału w Might na Początku. Obrońcy i gracze wsparcia nie zdobywają Kills.",
     carriedTotal: "Razem ({n}): {kills} zdobytych Kills, {might} Might na Początku",
     carriedMightMark: "Udział w Might na Początku",
     carriedKillsMark: "Udział w zdobytych Kills",
@@ -370,6 +371,14 @@ export const pl = {
     rank: "Miejsce",
     rounded: "Zaokrąglone",
     members: "Uwzględnia zmiany członków",
+    membersTap: "Uwzględnia zmiany członków: dotknij *, aby zobaczyć podział",
+  },
+  split: {
+    open: "Uwzględnia zmiany członków: pokaż podział",
+    total: "Razem",
+    joined: "Wniesione przez nowych ({n})",
+    left: "Odeszło z odchodzącymi ({n})",
+    without: "Bez nich",
   },
   members: {
     search: "Nazwa członka",

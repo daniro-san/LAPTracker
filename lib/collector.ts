@@ -2,6 +2,7 @@
 // Everything it touches comes in through Deps (plan §11.1); time comes from deps.now.
 import { requiredQuota, sampleQuota } from "./budget";
 import { claim, RunRefusedError } from "./collector-claim";
+import { checkIdentity } from "./collector-identity";
 import { allianceIds, fetchBoard } from "./collector-ids";
 import { logRosterCheck, logV1Fetch } from "./collector-log";
 import { dataRow, errorRow, failedList } from "./collector-rows";
@@ -71,6 +72,8 @@ interface Run {
   board: RanksBoard | null;
   /** The run's alliances' newest tags and names (D133), for the rows and the summary of those that failed. */
   labels: Map<number, { tag: string | null; name: string | null }>;
+  /** The run's alliances' newest daily roster uids, for the identity check (D69 amendment, 2026-11-21). */
+  rosters: Map<number, number[]>;
   abort: string | null;
   capped: boolean;
   /** Aborts every in-flight /v1 call when the deadline is reached. */
@@ -145,6 +148,7 @@ async function fallbackRow(run: Run, unionId: number, v1Error: unknown) {
   try {
     const a = await deps.internal.fetchAlliance(unionId);
     await deps.logger.warn("internal.fallback", { union_id: unionId, v1_error: describe(v1Error) });
+    checkIdentity(run, unionId, a);
     await logRosterCheck(deps.logger, a);
     return { row: dataRow(run.board, deps.now(), a, "internal"), members: a.members };
   } catch (fallbackError) {
@@ -167,9 +171,12 @@ async function collectOne(run: Run, unionId: number): Promise<void> {
       run.controller.signal,
       callOptions(run, unionId),
     );
+    noteQuota(run, a.quota?.remaining);
+    // A 200 holding another alliance is a failed read of this one: its call is spent, nothing retries it,
+    // and its one v1.fetch line below carries the error.
+    checkIdentity(run, unionId, a);
     await logV1Fetch(run, started, call, { cached: a.cached, quota: a.quota });
     await logRosterCheck(deps.logger, a);
-    noteQuota(run, a.quota?.remaining);
     row = dataRow(run.board, deps.now(), a, "v1");
     members = a.members;
   } catch (e) {
@@ -299,6 +306,7 @@ function newRun(deps: Deps, snapshotId: number, sample: boolean): Run {
     quotaBefore: null,
     board: null,
     labels: new Map(),
+    rosters: new Map(),
     abort: null,
     capped: false,
     controller: new AbortController(),
@@ -315,6 +323,7 @@ async function collectRun(run: Run, ids: number[], phase: SnapshotPhase): Promis
     return finish(run, ids, phase, "no alliance list on the event: BEFORE has not run");
   }
   run.labels = await deps.repo.allianceLabels(ids);
+  run.rosters = await deps.repo.lastMemberUids(ids);
 
   // The deadline wins the race when a read hangs; the abandoned work is cut by the abort signal.
   const work = (async () => {

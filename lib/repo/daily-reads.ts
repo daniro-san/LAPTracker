@@ -1,5 +1,5 @@
 // daily_reads and daily_rosters (D60): the tick's once-a-day roster read for member history.
-import { and, eq, inArray, isNotNull, isNull, lt, or, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull, isNull, lt, or, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { dailyReads, dailyRosters } from "../schema";
@@ -135,4 +135,22 @@ export async function finishDailyRead(
     .update(dailyReads)
     .set({ ...result, callsUsed: sql`${dailyReads.callsUsed} + ${result.callsUsed}` })
     .where(eq(dailyReads.day, day));
+}
+
+/** Each id's members in its newest daily roster that was read; an id with none is left out. The collector's
+ * identity check compares a read under a new tag with it (D69 amendment, 2026-11-21). */
+export async function lastMemberUids(
+  db: Db,
+  ids: readonly number[],
+): Promise<Map<number, number[]>> {
+  if (ids.length === 0) return new Map();
+  const rows = await db
+    .selectDistinctOn([dailyRosters.unionId], {
+      unionId: dailyRosters.unionId,
+      uids: dailyRosters.memberUids,
+    })
+    .from(dailyRosters)
+    .where(and(inArray(dailyRosters.unionId, [...ids]), isNull(dailyRosters.error)))
+    .orderBy(dailyRosters.unionId, desc(dailyRosters.readDay));
+  return new Map(rows.map((r) => [r.unionId, r.uids]));
 }

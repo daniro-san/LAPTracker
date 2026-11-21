@@ -71,9 +71,10 @@ export const idID = {
     liveStandings: "Klasemen sejauh ini",
     liveStandingsDone: "Pada pembacaan terakhir",
     liveDuring: "Selama event",
-    liveStandingsHelp: "Perubahan sejak Awal, Kills terbanyak dulu",
+    liveStandingsHelp:
+      "Perubahan sejak Awal, Kills terbanyak dulu. Kills yang didapat anggotanya, tanpa yang dibawa anggota baru",
     livePulse: "Denyut server",
-    livePulseHelp: "Kills didapat {n} aliansi tiap {min} menit",
+    livePulseHelp: "Kills didapat anggota {n} aliansi tiap {min} menit",
     liveBusiest: "{span} menit paling ramai sejauh ini: {from}–{to} · {share} dari Kills",
     liveBusiestDone: "{span} menit paling ramai: {from}–{to} · {share} dari Kills",
     liveNoUpdate: "Tidak ada pembaruan dari game",
@@ -123,7 +124,7 @@ export const idID = {
     fewGainers: "sedikit kenaikan",
     carried: "Bagian Kills vs bagian Might",
     carriedHelp:
-      "Bagian tiap aliansi dari Kills, di samping bagiannya dari Might. Kills dari Awal sampai Akhir, Might pada Awal. Pemain bertahan dan pemain support tidak mendapat Kills.",
+      "Bagian tiap aliansi dari Kills, di samping bagiannya dari Might. Kills yang didapat anggota yang ada di kedua daftar dari Awal sampai Akhir, Might pada Awal. Pemain bertahan dan pemain support tidak mendapat Kills.",
     carriedTotal: "Semua {n} aliansi: {kills} Kills didapat, {might} Might di Awal",
     carriedMightMark: "Bagian Might di Awal",
     carriedKillsMark: "Bagian Kills didapat",
@@ -370,6 +371,14 @@ export const idID = {
     rank: "Peringkat",
     rounded: "Dibulatkan",
     members: "Termasuk perubahan anggota",
+    membersTap: "Termasuk perubahan anggota: ketuk * untuk rinciannya",
+  },
+  split: {
+    open: "Termasuk perubahan anggota: lihat rinciannya",
+    total: "Total",
+    joined: "Dibawa {n} yang masuk",
+    left: "Pergi bersama {n} yang keluar",
+    without: "Tanpa mereka",
   },
   members: {
     search: "Nama anggota",

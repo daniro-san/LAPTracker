@@ -70,9 +70,10 @@ export const nl = {
     liveStandings: "Stand tot nu toe",
     liveStandingsDone: "Bij de laatste meting",
     liveDuring: "Tijdens het event",
-    liveStandingsHelp: "Verschil sinds Begin, de meeste kills gewonnen eerst",
+    liveStandingsHelp:
+      "Verschil sinds Begin, de meeste kills gewonnen eerst. Kills die de leden wonnen, zonder wat nieuwe leden meebrachten",
     livePulse: "Serverpuls",
-    livePulseHelp: "Kills gewonnen door {n} allianties in elke {min} minuten",
+    livePulseHelp: "Kills gewonnen door de leden van {n} allianties in elke {min} minuten",
     liveBusiest: "Drukste {span} minuten tot nu toe: {from}–{to} · {share} van de kills",
     liveBusiestDone: "Drukste {span} minuten: {from}–{to} · {share} van de kills",
     liveNoUpdate: "Geen update van het spel",
@@ -124,7 +125,7 @@ export const nl = {
       "Geen van beide events heeft metingen van {min} minuten, dus hun pulsen kunnen niet vergeleken worden",
     carried: "Aandeel Kills tegen aandeel Might",
     carriedHelp:
-      "Het aandeel van elke alliantie in de Kills, naast haar aandeel in de Might. Kills van Begin tot Einde, Might bij Begin. Verdedigers en support-spelers krijgen geen Kills.",
+      "Het aandeel van elke alliantie in de Kills, naast haar aandeel in de Might. Kills die haar leden in beide lijsten wonnen van Begin tot Einde, Might bij Begin. Verdedigers en support-spelers krijgen geen Kills.",
     carriedTotal: "Alle {n} allianties: {kills} Kills gewonnen, {might} Might bij Begin",
     carriedMightMark: "Aandeel Might bij Begin",
     carriedKillsMark: "Aandeel Kills gewonnen",
@@ -369,6 +370,14 @@ export const nl = {
     rank: "Rang",
     rounded: "Afgerond",
     members: "Inclusief ledenwissels",
+    membersTap: "Inclusief ledenwissels: tik op * voor de verdeling",
+  },
+  split: {
+    open: "Inclusief ledenwissels: toon de verdeling",
+    total: "Totaal",
+    joined: "Meegebracht door {n} erbij",
+    left: "Weg met {n} vertrokken",
+    without: "Zonder hen",
   },
   members: {
     search: "Naam van lid",

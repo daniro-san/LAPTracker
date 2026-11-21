@@ -6,9 +6,11 @@ import type { NameHistoryEntry } from "@/lib/compute";
 import type { Dictionary } from "@/lib/copy";
 import type { getEventDetail, Ranks, RosterChange } from "@/lib/queries";
 import type { EventTotals } from "@/lib/queries/events";
+import type { MemberShare } from "@/lib/queries/rosters";
 
 import type { RankPair } from "./DetailLines";
 import { joinedText, leftText, membersLostText } from "./format";
+import type { MetricSplit } from "./SplitMark";
 import type { StatMetric } from "./StatTable";
 
 type Detail = NonNullable<Awaited<ReturnType<typeof getEventDetail>>>;
@@ -75,6 +77,31 @@ export function fellWithLeavers(delta: number | null, left: number): boolean {
   return delta !== null && delta < 0 && left > 0;
 }
 
+/**
+ * What the members who joined and left moved in a change (D69 amendment, 2026-11-21), for its tappable mark;
+ * undefined when there is no change or they moved nothing. The change stays the alliance's total.
+ */
+export function splitOf(
+  delta: number | null | undefined,
+  change: RosterChange | undefined,
+  share: (c: RosterChange) => MemberShare,
+): MetricSplit | undefined {
+  if (delta == null || !change) return undefined;
+  const { joined, left } = share(change);
+  if (joined === 0 && left === 0) return undefined;
+  return { joined: { n: change.joined, value: joined }, left: { n: change.left, value: left } };
+}
+
+/** The Might or Kills metric: the `*` of a fall with leavers, or the split when the roster moved it. */
+export function markOf(
+  delta: number | null | undefined,
+  change: RosterChange | undefined,
+  share: (c: RosterChange) => MemberShare,
+): Pick<StatMetric, "memberMark" | "split"> {
+  const split = splitOf(delta, change, share);
+  return split ? { split } : { memberMark: fellWithLeavers(delta ?? null, change?.left ?? 0) };
+}
+
 /** Kills only fall when people leave (plan Phase 5), so a negative kills delta names the loss. The words
  * sit in the Details panel, not on the Kills row, where all three personas read them as a kills figure
  * (7b); the row carries only the `*` mark. */
@@ -100,15 +127,14 @@ function metricsFor(
 ): StatMetric[] {
   const d = computeDelta(pairOf(before), pairOf(after));
   const [b, a] = [figures(before), figures(after)];
-  const marked = (delta: number | undefined) => fellWithLeavers(delta ?? null, change?.left ?? 0);
   return [
     {
       ...metric(copy.ledger.might, b.power, a.power, d?.power ?? null),
-      memberMark: marked(d?.power),
+      ...markOf(d?.power, change, (c) => c.power),
     },
     {
       ...metric(copy.ledger.kills, b.kills, a.kills, d?.kills ?? null),
-      memberMark: marked(d?.kills),
+      ...markOf(d?.kills, change, (c) => c.kills),
       detailNote: killNote(d?.kills ?? null, change, copy),
     },
     metric(
