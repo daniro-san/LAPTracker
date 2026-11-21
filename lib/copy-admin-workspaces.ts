@@ -106,6 +106,8 @@ export const workspacesAdminCopy = {
     set: "set",
     site: "env",
     unset: "not set",
+    /** D147: without its own channel the Raid Shield summary is not posted anywhere. */
+    shieldUnset: "not set (no summary posted)",
   },
   /** "Delete this workspace" (D125): the same 14 days as an officer's, and its officers can cancel. */
   deletion: {

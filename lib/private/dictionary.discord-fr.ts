@@ -35,20 +35,20 @@ export const discordFr: typeof discordEn = {
     "Seulement si un salon est privé : pour que les commandes y publient, ouvrez les paramètres du salon → Permissions → ajoutez LAPTracker, puis autorisez Voir le salon, Envoyer des messages, Créer des fils publics et Envoyer des messages dans les fils.",
   "discord.hooks.head": "3. Salons des annonces",
   "discord.hooks.lead":
-    "Quand vous touchez Publier sur Discord sur une annonce, les annonces de la direction vont dans le salon des chefs et celles des membres dans le salon des membres. Chaque salon a besoin de son propre webhook. Le résumé de la vérification du Bouclier de raid peut avoir son propre salon.",
+    "Quand vous touchez Publier sur Discord sur une annonce, les annonces de la direction vont dans le salon des chefs et celles des membres dans le salon des membres. Chaque salon a besoin de son propre webhook. Le résumé de la vérification du Bouclier de raid est publié seulement dans son propre salon.",
   "discord.hooks.how":
     "Sur Discord : ouvrez les paramètres du salon → Intégrations → Webhooks → Nouveau webhook → Copier l’URL du webhook. Collez-la ici.",
   "discord.channel.leaders": "Salon des chefs",
   "discord.channel.members": "Salon des membres",
   "discord.channel.shield": "Salon du Bouclier de raid",
   "discord.channel.shieldHelp":
-    "Pour le résumé de la vérification du Bouclier de raid. Il cite les membres sans bouclier vu, alors choisissez un salon que seuls les chefs et les officiers voient.",
+    "Pour le résumé de la vérification du Bouclier de raid. Il cite les membres sans bouclier vu, alors choisissez un salon que seuls les chefs et les officiers voient. Sans ce salon, aucun résumé n’est publié.",
   "discord.hook.set": "Configuré · #{name}",
   "discord.hook.site":
     "Utilise un salon configuré par le site (#{name}). Ajoutez le webhook de votre alliance pour publier dans votre salon.",
   "discord.hook.none": "Pas encore configuré.",
   "discord.hook.noneShield":
-    "Pas encore configuré. Le résumé va dans le salon des chefs tant qu’aucun n’est configuré.",
+    "Pas encore configuré. Aucun résumé du Bouclier de raid n’est publié tant qu’aucun n’est configuré.",
   "discord.hook.reenter":
     "Ce webhook doit être collé à nouveau. Le réglage de sécurité du site a changé, celui enregistré ne peut plus être lu.",
   "discord.hook.url": "URL du webhook",
@@ -75,8 +75,7 @@ export const discordFr: typeof discordEn = {
   "discord.hook.removed": "Webhook retiré.",
   "discord.hook.removeAsk": "Retirer le webhook de ce salon ?",
   "discord.hook.removeMore": "Publier sur Discord ne poste plus dans ce salon.",
-  "discord.hook.removeMoreShield":
-    "Le résumé du Bouclier de raid retourne dans le salon des chefs.",
+  "discord.hook.removeMoreShield": "Le résumé du Bouclier de raid n’est plus publié.",
   "discord.hook.keep": "Le garder",
   "discord.hook.bad":
     "Ce n’est pas une URL de webhook Discord. Copiez-la à nouveau depuis Intégrations → Webhooks du salon.",

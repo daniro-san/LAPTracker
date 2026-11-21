@@ -42,9 +42,11 @@ export const prepEn = {
   "prep.settings.morning": "Saturday's read at (ST)",
   "prep.settings.discord": "Post the summary to Discord",
   "prep.settings.discordHelp":
-    "One message after Friday's read, updated by Saturday's: how many have a shield seen and who not yet, with a link here. It goes to the Raid Shield channel, or to the leaders' channel while that one is not set. Never to the members' channel.",
+    "One message after Friday's read, updated by Saturday's: how many have a shield seen and who not yet, with a link here. It is posted only to the Raid Shield channel set up under Discord. Never to the leaders' or members' channel.",
   "prep.settings.noChannel":
-    "Set up the Raid Shield channel or the leaders' channel under Discord first.",
+    "The summary needs the Raid Shield channel. Set it up under Discord first.",
+  "prep.settings.notPosting":
+    "On, but no summary is posted: the Raid Shield channel is not set up under Discord.",
   "prep.settings.reenter":
     "Paste the Raid Shield channel's webhook again under Discord first. Until then the summary is not posted.",
   "prep.settings.language": "Message language",
@@ -94,9 +96,11 @@ export const prepPt: PrepWords = {
   "prep.settings.morning": "Leitura de sábado às (ST)",
   "prep.settings.discord": "Postar o resumo no Discord",
   "prep.settings.discordHelp":
-    "Uma mensagem depois da leitura de sexta, atualizada pela de sábado: quantos têm escudo visto e quem ainda não, com um link para cá. Vai para o canal do Escudo de raid, ou para o canal dos líderes enquanto aquele não estiver configurado. Nunca no canal dos membros.",
+    "Uma mensagem depois da leitura de sexta, atualizada pela de sábado: quantos têm escudo visto e quem ainda não, com um link para cá. É postada só no canal do Escudo de raid configurado em Discord. Nunca no canal dos líderes nem no dos membros.",
   "prep.settings.noChannel":
-    "Configure antes o canal do Escudo de raid ou o canal dos líderes em Discord.",
+    "O resumo precisa do canal do Escudo de raid. Configure-o antes em Discord.",
+  "prep.settings.notPosting":
+    "Ligado, mas nenhum resumo é postado: o canal do Escudo de raid não está configurado em Discord.",
   "prep.settings.reenter":
     "Cole de novo o webhook do canal do Escudo de raid em Discord. Até lá, o resumo não é postado.",
   "prep.settings.language": "Idioma da mensagem",
@@ -144,9 +148,11 @@ export const prepFr: PrepWords = {
   "prep.settings.morning": "Lecture du samedi à (ST)",
   "prep.settings.discord": "Publier le résumé sur Discord",
   "prep.settings.discordHelp":
-    "Un message après la lecture du vendredi, mis à jour par celle du samedi : combien ont un bouclier vu et qui pas encore, avec un lien ici. Il va dans le salon du Bouclier de raid, ou dans le salon des dirigeants tant que celui-ci n’est pas configuré. Jamais dans le salon des membres.",
+    "Un message après la lecture du vendredi, mis à jour par celle du samedi : combien ont un bouclier vu et qui pas encore, avec un lien ici. Il est publié seulement dans le salon du Bouclier de raid configuré sous Discord. Jamais dans le salon des chefs ni dans celui des membres.",
   "prep.settings.noChannel":
-    "Configurez d’abord le salon du Bouclier de raid ou le salon des dirigeants sous Discord.",
+    "Le résumé a besoin du salon du Bouclier de raid. Configurez-le d’abord sous Discord.",
+  "prep.settings.notPosting":
+    "Activé, mais aucun résumé n’est publié : le salon du Bouclier de raid n’est pas configuré sous Discord.",
   "prep.settings.reenter":
     "Collez à nouveau le webhook du salon du Bouclier de raid sous Discord. D’ici là, le résumé n’est pas publié.",
   "prep.settings.language": "Langue du message",

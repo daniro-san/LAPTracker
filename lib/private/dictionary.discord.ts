@@ -32,20 +32,19 @@ export const discordEn = {
     "Only if a channel is private: for the commands to post there, open the channel’s settings → Permissions → add LAPTracker, then allow View Channel, Send Messages, Create Public Threads and Send Messages in Threads.",
   "discord.hooks.head": "3. Channels for notices",
   "discord.hooks.lead":
-    "When you tap Publish to Discord on a notice, leadership notices go to the leaders’ channel and members’ notices to the members’ channel. Each channel needs its own webhook. The Raid Shield check’s summary can have a channel of its own.",
+    "When you tap Publish to Discord on a notice, leadership notices go to the leaders’ channel and members’ notices to the members’ channel. Each channel needs its own webhook. The Raid Shield check’s summary is posted only to its own channel.",
   "discord.hooks.how":
     "In Discord: open the channel’s settings → Integrations → Webhooks → New Webhook → Copy Webhook URL. Paste it here.",
   "discord.channel.leaders": "Leaders’ channel",
   "discord.channel.members": "Members’ channel",
   "discord.channel.shield": "Raid Shield channel",
   "discord.channel.shieldHelp":
-    "For the Raid Shield check’s summary. It names the members without a shield seen, so use a channel that only leaders and officers can see.",
+    "For the Raid Shield check’s summary. It names the members without a shield seen, so use a channel that only leaders and officers can see. Without this channel, no summary is posted.",
   "discord.hook.set": "Set · #{name}",
   "discord.hook.site":
     "Using a channel the site set up (#{name}). Add your alliance’s own webhook to post to your channel instead.",
   "discord.hook.none": "Not set yet.",
-  "discord.hook.noneShield":
-    "Not set yet. The summary goes to the leaders’ channel until you set one.",
+  "discord.hook.noneShield": "Not set yet. No Raid Shield summary is posted until you set one.",
   "discord.hook.reenter":
     "This webhook needs to be pasted again. The site’s security setting changed, so the saved one can no longer be read.",
   "discord.hook.url": "Webhook URL",
@@ -71,7 +70,7 @@ export const discordEn = {
   "discord.hook.removed": "Webhook removed.",
   "discord.hook.removeAsk": "Remove this channel’s webhook?",
   "discord.hook.removeMore": "Publish to Discord stops posting to this channel.",
-  "discord.hook.removeMoreShield": "The Raid Shield summary goes back to the leaders’ channel.",
+  "discord.hook.removeMoreShield": "The Raid Shield summary is no longer posted.",
   "discord.hook.keep": "Keep it",
   "discord.hook.bad":
     "This is not a Discord webhook URL. Copy it again from the channel’s Integrations → Webhooks.",
@@ -126,20 +125,20 @@ export const discordPt: typeof discordEn = {
     "Só se um canal for privado: para os comandos postarem nele, abra as configurações do canal → Permissões → adicione o LAPTracker e permita Ver canal, Enviar mensagens, Criar tópicos públicos e Enviar mensagens em tópicos.",
   "discord.hooks.head": "3. Canais dos avisos",
   "discord.hooks.lead":
-    "Quando você toca em Publicar no Discord num aviso, os avisos da liderança vão para o canal dos líderes e os avisos dos membros para o canal dos membros. Cada canal precisa do seu próprio webhook. O resumo da conferência do Escudo de raid pode ter um canal só dele.",
+    "Quando você toca em Publicar no Discord num aviso, os avisos da liderança vão para o canal dos líderes e os avisos dos membros para o canal dos membros. Cada canal precisa do seu próprio webhook. O resumo da conferência do Escudo de raid é postado só no seu próprio canal.",
   "discord.hooks.how":
     "No Discord: abra as configurações do canal → Integrações → Webhooks → Novo webhook → Copiar URL do webhook. Cole aqui.",
   "discord.channel.leaders": "Canal dos líderes",
   "discord.channel.members": "Canal dos membros",
   "discord.channel.shield": "Canal do Escudo de raid",
   "discord.channel.shieldHelp":
-    "Para o resumo da conferência do Escudo de raid. Ele cita os membros sem escudo visto, então use um canal que só os líderes e os oficiais veem.",
+    "Para o resumo da conferência do Escudo de raid. Ele cita os membros sem escudo visto, então use um canal que só os líderes e os oficiais veem. Sem este canal, nenhum resumo é postado.",
   "discord.hook.set": "Configurado · #{name}",
   "discord.hook.site":
     "Usando um canal configurado pelo site (#{name}). Adicione o webhook da sua aliança para postar no seu canal.",
   "discord.hook.none": "Ainda não configurado.",
   "discord.hook.noneShield":
-    "Ainda não configurado. O resumo vai para o canal dos líderes até você configurar um.",
+    "Ainda não configurado. Nenhum resumo do Escudo de raid é postado até você configurar um.",
   "discord.hook.reenter":
     "Este webhook precisa ser colado de novo. A configuração de segurança do site mudou, então o salvo não pode mais ser lido.",
   "discord.hook.url": "URL do webhook",
@@ -166,7 +165,7 @@ export const discordPt: typeof discordEn = {
   "discord.hook.removed": "Webhook removido.",
   "discord.hook.removeAsk": "Remover o webhook deste canal?",
   "discord.hook.removeMore": "Publicar no Discord deixa de postar neste canal.",
-  "discord.hook.removeMoreShield": "O resumo do Escudo de raid volta para o canal dos líderes.",
+  "discord.hook.removeMoreShield": "O resumo do Escudo de raid deixa de ser postado.",
   "discord.hook.keep": "Manter",
   "discord.hook.bad":
     "Isto não é uma URL de webhook do Discord. Copie de novo em Integrações → Webhooks do canal.",

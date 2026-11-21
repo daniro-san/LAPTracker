@@ -1,8 +1,9 @@
 // The Raid Shield check's one message to the alliance's leadership (issue 474, D137): posted after Friday
-// night's read and edited in place by Saturday morning's, through the workspace's own Raid Shield channel
-// when it saved one (D147), else its leaders' webhook (D129; WORKSPACE_DISCORD_WEBHOOKS as its fallback).
-// Only when the officers turned it on in Alliance settings, never to the members' channel or anywhere public. Names only of members the tracker
-// did not see shielded, as a hint (D75); nothing is logged but counts, and the webhook URL never is.
+// night's read and edited in place by Saturday morning's, only through the workspace's own Raid Shield
+// channel (D147, owner's rule of 2026-11-21): without one, nothing is posted, never to the leaders' channel.
+// Only when the officers turned it on in Alliance settings, never to the members' channel or anywhere
+// public. Names only of members the tracker did not see shielded, as a hint (D75); nothing is logged but
+// counts, and the webhook URL never is.
 import { createHash } from "node:crypto";
 
 import {
@@ -33,7 +34,7 @@ const NAMES_MAX = 40;
 /** `message_hash` once Discord said the message was deleted. */
 const GONE = "gone";
 
-type PostEnv = Pick<Env, "SERVER_TZ" | "WORKSPACE_KEYS_SECRET" | "WORKSPACE_DISCORD_WEBHOOKS">;
+type PostEnv = Pick<Env, "SERVER_TZ" | "WORKSPACE_KEYS_SECRET">;
 export interface PostDeps {
   env: PostEnv;
   fetch: typeof fetch;
@@ -42,40 +43,35 @@ export interface PostDeps {
 }
 
 /**
- * The webhook to post through, opened for this call only: its URL, whether it is a forum, whether it is the
- * Raid Shield channel's, and `key`, the URL's sha256 (on one host: discordapp.com is discord.com), stored
- * with the message so it is edited only through the same webhook (D147).
+ * The webhook to post through, opened for this call only: its URL, whether it is a forum, and `key`, the
+ * URL's sha256 (on one host: discordapp.com is discord.com), stored with the message so it is edited only
+ * through the same webhook (D147).
  */
-type Hook = { url: string; forum: boolean; shield: boolean; key: string };
-const hookOf = (url: string, forum: boolean, shield = false): Hook => ({
+type Hook = { url: string; forum: boolean; key: string };
+const hookOf = (url: string, forum: boolean): Hook => ({
   url,
   forum,
-  shield,
   key: createHash("sha256")
     .update(url.replace(/^https:\/\/discordapp\.com\//, "https://discord.com/"))
     .digest("hex"),
 });
 
 /**
- * The Raid Shield channel when the workspace saved one, else the leaders' channel as before (D147). A saved
- * webhook the master key cannot open posts nothing: never the leaders' channel or the site's in its place.
+ * The Raid Shield channel the workspace saved, and nothing else (D147, owner's rule of 2026-11-21): none
+ * saved, one the master key cannot open, or no master key posts nothing, never to the leaders' channel or
+ * the site's.
  */
 async function summaryHook(db: Db, env: PostEnv, target: ShieldTarget): Promise<Hook | null> {
   const id = target.workspaceId as number;
   const secret = env.WORKSPACE_KEYS_SECRET;
-  const rows = secret ? await sealedWebhooks(db, id) : [];
-  const row = rows.find((r) => r.channel === "shield") ?? rows.find((r) => r.channel === "leaders");
-  if (row && secret) {
-    if (row.masterFp !== masterFingerprint(secret)) return null;
-    try {
-      const url = openKey(secret, id, row, `webhook-${row.channel}`);
-      return hookOf(url, row.forum, row.channel === "shield");
-    } catch {
-      return null;
-    }
+  if (!secret) return null;
+  const row = (await sealedWebhooks(db, id)).find((r) => r.channel === "shield");
+  if (!row || row.masterFp !== masterFingerprint(secret)) return null;
+  try {
+    return hookOf(openKey(secret, id, row, "webhook-shield"), row.forum);
+  } catch {
+    return null;
   }
-  const site = env.WORKSPACE_DISCORD_WEBHOOKS?.[target.slug]?.leaders;
-  return site ? hookOf(site.url, site.forum) : null;
 }
 
 /** One read in numbers: who was seen shielded, who not yet, and the newest answer's time. */
@@ -175,14 +171,12 @@ export async function postShieldSummary(
 
 /**
  * The check's message, only when it went through this same webhook: else the channel changed (D147). A
- * message posted before D147 has no `message_hook` and went through the leaders' channel, so it counts as
- * this webhook's unless the summary now goes to the Raid Shield channel.
+ * message posted before D147 has no `message_hook`: it went through the leaders' channel, so it is never
+ * edited, and the Raid Shield channel gets a fresh post.
  */
 async function postedThrough(db: Db, q: { day: string; unionId: number }, hook: Hook) {
   const check = await getShieldCheck(db, q);
-  if (!check?.messageId) return null;
-  const same = check.messageHook === null ? !hook.shield : check.messageHook === hook.key;
-  if (!same) return null;
+  if (!check?.messageId || check.messageHook !== hook.key) return null;
   return { id: check.messageId, hash: check.messageHash };
 }
 

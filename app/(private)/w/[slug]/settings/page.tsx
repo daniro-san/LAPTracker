@@ -57,16 +57,13 @@ function squadsLine(
 }
 
 /**
- * The Raid Shield check's message has a channel (D137, D147): the Raid Shield channel once one is saved,
- * else the leaders' channel. A saved Raid Shield webhook that must be pasted again posts nothing, and the
- * switch says so.
+ * The Raid Shield check's message has a channel (D137, D147): only the Raid Shield channel, never the
+ * leaders' (owner's rule of 2026-11-21). One that must be pasted again posts nothing, and the switch says so.
  */
 function summaryChannel(channels: Awaited<ReturnType<typeof webhookViews>>) {
-  const state = (c: string) => channels.find((v) => v.channel === c)?.state ?? "none";
-  const shield = state("shield");
+  const shield = channels.find((v) => v.channel === "shield")?.state ?? "none";
   if (shield === "reenter") return "reenter";
-  const target = shield === "none" ? state("leaders") : shield;
-  return target === "set" || target === "site" ? "ok" : "none";
+  return shield === "set" ? "ok" : "none";
 }
 
 /** The key card's state, last 4, quota left and "checked …" line, in the officer's words. */

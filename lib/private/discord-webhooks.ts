@@ -4,7 +4,7 @@
 // WORKSPACE_KEYS_SECRET with the workspace and the channel as associated data, and opened only here, at call
 // time, to post. No answer, page, log or event carries the URL: only the channel name officers gave.
 // WORKSPACE_DISCORD_WEBHOOKS stays the fallback for a notice channel the workspace has not saved yet; the Raid
-// Shield channel has none (the summary then goes to the leaders' channel, lib/shield-post.ts).
+// Shield channel has none: without a saved one no summary is posted (lib/shield-post.ts).
 import { z } from "zod";
 
 import type { Db } from "../db";
