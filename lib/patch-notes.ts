@@ -116,6 +116,20 @@ export const ownerTodo: OwnerTodo[] = [
 
 export const patchNotes: PatchNote[] = [
   {
+    version: "v5.45.0",
+    date: "2026-11-21",
+    title: "Raid prep is faster on war day",
+    changes: [
+      'Fixed: "To mark" counted the optional squads-off-the-wall part, so it showed 98 to mark when only 6 were left. It now counts the shield only.',
+      'Raid prep cards are about half as tall; the wall marks show only when "Show squads off the wall" is on or someone already has one. Four columns on a wide screen.',
+      '"Copy names" and "Copy one message" give officers the members still to remind, ready to paste into Discord. The page also shows whether the Discord summary was posted, is off, or is not set up.',
+      "One set of words everywhere: Raid Shield check, Night check, Morning check, with the same times on every page.",
+      "Roll call wording fixes, and an Elixir team member who is away that day is now shown as away.",
+      "From the full review of the Officers' Desk (#585), batch 1 of 9.",
+    ],
+    prs: [590],
+  },
+  {
     version: "v5.44.0",
     date: "2026-11-21",
     title: "Event kills and might no longer count members who joined mid-event",
