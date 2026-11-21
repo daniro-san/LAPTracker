@@ -5,8 +5,10 @@
 // turned an allowed one off; the two daily caps with today's use; the tracker calls the alliance's choices
 // spend; "Copy settings from" another workspace (asked first). Above the list, the global pause of each paid
 // allowance (the "Defaults for new alliances" are FeatureDefaults.tsx). Every press sends the PIN as x-edit-pin through `run`.
+// A switch or cap saved counts as `admin_feature_changed` (issue 486).
 import { useState } from "react";
 
+import { track } from "@/lib/analytics/events";
 import { buttonClass } from "@/lib/brand/components/Button";
 import { chip } from "@/lib/brand/components/controls";
 import { copy, fill } from "@/lib/copy";
@@ -38,6 +40,8 @@ export interface FeaturesView {
   /** On now: allowed, turned on by the alliance, not paused. */
   on: number;
   caps: Record<Allowance, number | null>;
+  /** Not allowed by this workspace's defaults: what Reset puts back. */
+  defaultOff: readonly string[];
   defaultCaps: Record<Allowance, number | null>;
   changedCaps: readonly Allowance[];
   /** Today's (UTC) use of each allowance. */
@@ -61,11 +65,16 @@ function Switch(props: {
   const changed = view.changed.includes(feature);
   const spends = SPENDS[feature];
   const state = fill(changed ? t.changed : t.byDefault, { value: on ? t.on : t.off });
+  // Reset (null) puts back the workspace's default, which may equal the stored value (D134).
   const send = (value: boolean | null) =>
     props.run({
       url: URL,
       body: { action: "switch", workspace_id: props.id, feature, on: value },
-      ok: saved,
+      ok: () => {
+        const after = value ?? !view.defaultOff.includes(feature);
+        if (after !== on) track("admin_feature_changed", { feature, on: after });
+        return saved();
+      },
     });
   return (
     <li className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -93,7 +102,13 @@ function Switch(props: {
   );
 }
 
-function Cap(props: { id: number; allowance: Allowance; view: FeaturesView; run: Run }) {
+function Cap(props: {
+  id: number;
+  allowance: Allowance;
+  view: FeaturesView;
+  run: Run;
+  busy: boolean;
+}) {
   const { allowance, view } = props;
   const cap = view.caps[allowance];
   const used = view.used[allowance];
@@ -102,7 +117,13 @@ function Cap(props: { id: number; allowance: Allowance; view: FeaturesView; run:
     props.run({
       url: URL,
       body: { action: "cap", workspace_id: props.id, allowance, cap: value },
-      ok: saved,
+      ok: () => {
+        const after = value === "default" ? view.defaultCaps[allowance] : value;
+        if (after !== cap) {
+          track("admin_feature_changed", { feature: `${allowance}_cap`, on: after !== 0 });
+        }
+        return saved();
+      },
     });
   const save = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -129,12 +150,13 @@ function Cap(props: { id: number; allowance: Allowance; view: FeaturesView; run:
         {cap === null ? fill(t.caps.today, { used }) : fill(t.caps.todayOf, { used, cap })}
       </p>
       <div className="flex flex-wrap gap-2">
-        <button type="submit" className={buttonClass("secondary")}>
+        <button type="submit" disabled={props.busy} className={buttonClass("secondary")}>
           {t.caps.save}
         </button>
         {changed && (
           <button
             type="button"
+            disabled={props.busy}
             className={buttonClass("secondary")}
             onClick={() => send("default")}
           >
@@ -232,7 +254,14 @@ export function WorkspaceFeatures(props: {
       <p className="text-body-sm text-ink/80">{t.caps.help}</p>
       <div className="mt-2 grid gap-4 sm:grid-cols-2">
         {ALLOWANCES.map((a) => (
-          <Cap key={`${a}:${view.caps[a]}`} id={id} allowance={a} view={view} run={props.run} />
+          <Cap
+            key={`${a}:${view.caps[a]}`}
+            id={id}
+            allowance={a}
+            view={view}
+            run={props.run}
+            busy={props.busy}
+          />
         ))}
       </div>
       {props.others.length > 0 && (

@@ -88,7 +88,16 @@ export type StepResult =
       /** The leadership role was made (or found) but Discord refused the member role. */
       memberFailed?: "no_permission" | "unreachable" | null;
     }
-  | { ok: true; slug: string; cookie: string; unionId: number; tag: string; name: string }
+  | {
+      ok: true;
+      slug: string;
+      cookie: string;
+      unionId: number;
+      tag: string;
+      name: string;
+      /** The new officer (workspace_users.id), for her pseudonymous analytics id only. */
+      userId: number;
+    }
   | { ok: false; code: StepCode };
 
 const no = (code: StepCode) => ({ ok: false as const, code });
@@ -229,5 +238,6 @@ async function finish(
     unionId: row.unionId,
     tag,
     name,
+    userId: made.userId,
   };
 }

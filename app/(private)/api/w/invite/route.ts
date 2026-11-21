@@ -5,9 +5,10 @@
 //   {action: "create_roles", leader, member, give_me}  create the two roles (needs Manage Roles)
 //   {action: "finish", leader_role_ids, member_role_ids}  make the workspace and sign her in
 // Answers carry codes, role names and colours only; "finish" sets the officer's session cookie, and the owner
-// gets one line in the admin Discord channel (issue 500).
+// gets one line in the admin Discord channel (issue 500), and it counts as `ws_action` `workspace` / `create`.
 import { createNotifier } from "@/lib/notify";
 import { deskMadeMessage } from "@/lib/notify-request";
+import { counted } from "@/lib/private/desk-action";
 import { isSameOriginJson, NO_STORE, privateError, requestCookies } from "@/lib/private/http";
 import { inviteInput, inviteStep, type StepCode } from "@/lib/private/invite-steps";
 import { withContext } from "@/lib/route";
@@ -41,7 +42,17 @@ export async function POST(request: Request): Promise<Response> {
         .catch(() => null);
       const headers = new Headers(NO_STORE);
       headers.append("Set-Cookie", result.cookie);
-      return Response.json({ slug: result.slug }, { headers });
+      // Issue 486: the setup funnel's first step, on the new officer's pseudonymous id and the new workspace.
+      // An alliance with no label yet gets its union id as the tag (allianceOf); the desk's events send null.
+      const tag = result.tag === String(result.unionId) ? null : result.tag;
+      const made = { slug: result.slug, alliance: { tag }, user: { id: result.userId } };
+      return counted(
+        ctx,
+        made,
+        "workspace",
+        "create",
+        Response.json({ slug: result.slug }, { headers }),
+      );
     }
     return Response.json(
       {

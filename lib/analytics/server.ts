@@ -47,6 +47,8 @@ export const DESK_FEATURES = [
   "raid_prep",
   // D142: a member's "This is me" approved or removed by an officer.
   "member_link",
+  // Issue 486: the invite's "finish" made the workspace (the setup funnel's first step).
+  "workspace",
 ] as const;
 export type DeskFeature = (typeof DESK_FEATURES)[number];
 
@@ -103,6 +105,8 @@ export const DESK_ACTIONS = [
   "test",
   // D137: Raid prep's "Accept the tracker's".
   "accept",
+  // Issue 486: a workspace made from an invite.
+  "create",
 ] as const;
 export type DeskAction = (typeof DESK_ACTIONS)[number];
 
