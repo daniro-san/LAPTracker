@@ -157,7 +157,10 @@ lib/shield-read.ts  the Raid Shield check (D137): Friday 23:30–00:00 ST, the s
                     from `shield_queue` (lib/repo/shield-checks.ts, lib/schema-shield.ts). Run by lib/shield-tick.ts
                     in the tick's `after`, after the squads batch. Its rules: lib/shield-check.ts (pure). The
                     leaders' channel summary: lib/shield-post.ts, words in lib/copy-shield.ts. The desk's Raid
-                    prep: lib/private/raid-prep.ts; its settings: lib/private/shield-settings.ts.
+                    prep: lib/private/raid-prep.ts; its settings: lib/private/shield-settings.ts. The tracker's
+                    marks (the tick's night and morning checks and "Accept the tracker's", D137 2026-11-21):
+                    lib/raid-prep-fill.ts, outside lib/private so the tick can run it; the pure helpers it
+                    shares with lib/private: lib/calendar-time.ts, lib/calendar-layout.ts, lib/member-away.ts.
 lib/workspace-commands.ts which message commands each workspace's server has (D129): only those turned on,
                     registered by lib/app-commands.ts and recorded per workspace; used by /admin, Alliance
                     settings and a switch change on /admin (`changesCommands`: which changes re-register).

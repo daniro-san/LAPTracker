@@ -1,18 +1,21 @@
 // Raid prep (D137) against a real Postgres (PGlite): the tracker's hints on each row ("not seen yet" is a
-// hint, an 8-hour shield seen at T ends by T+8h and may end before KvK, a shield lost overnight), "Accept
+// hint, a shield seen shows no length, a shield lost overnight), "Accept
 // the tracker's" writing only ✓ for those seen with a shield, and the squads-off-the-wall mark kept apart
-// from the Shield mark.
+// from the Shield mark, and the tick's marks still to check until "Checked" or a tap on the row.
 import { randomUUID } from "node:crypto";
 
+import { eq } from "drizzle-orm";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import type { Db } from "../db";
 import { openTestDb, truncateAll } from "../db.test-helpers";
+import { fillRaidPrep } from "../raid-prep-fill";
 import { findWorkspaceBySlug, recordSignIn, saveWorkspace } from "../repo/workspaces";
 import { dailyReads, dailyRosters } from "../schema";
+import { rollCallMarks } from "../schema-rollcall";
 import { playerReads } from "../schema-squads";
 import { requireWorkspace, type WorkspaceAccess } from "./access";
-import { acceptTracker, prepView } from "./raid-prep";
+import { acceptTracker, checkTracker, prepView } from "./raid-prep";
 import { addCall, markOne, openOccasion } from "./roll-call";
 import { callView } from "./roll-call-view";
 import { createSession } from "./session";
@@ -87,24 +90,29 @@ describe("Raid prep (D137)", () => {
     expect(view.morning).toMatchObject({ read: 2, on: 1 });
     expect(view.when).toBe("kvk");
     const row = (uid: number) => view.rows.get(uid);
-    // Seen at 08:10 ST: ends by 16:10 ST, after KvK's 12:00 start.
-    expect(row(101)?.tracker).toMatchObject({
+    // Both checkpoints, each at its map scan's time; a shield seen, never its length (D137, 2026-11-21).
+    const night = at("2026-11-21T00:32:00Z").getTime();
+    expect(row(101)?.tracker).toEqual({
       suggestion: "on",
-      endsBy: at("2026-11-21T18:10:00Z").getTime(),
-      mayEndBeforeKvk: false,
+      checkpoints: [
+        { pass: "night", at: night, on: true },
+        { pass: "morning", at: at("2026-11-21T10:10:00Z").getTime(), on: true },
+      ],
     });
     expect(row(101)?.language).toBe("pt-BR");
-    expect(row(102)?.tracker).toMatchObject({
+    expect(row(102)?.tracker).toEqual({
       suggestion: "not_seen",
-      lost: {
-        night: at("2026-11-21T00:32:00Z").getTime(),
-        morning: at("2026-11-21T11:40:00Z").getTime(),
-      },
+      checkpoints: [
+        { pass: "night", at: night, on: true },
+        { pass: "morning", at: at("2026-11-21T11:40:00Z").getTime(), on: false },
+      ],
     });
-    // Not seen on Friday and not read on Saturday: still the night's hint, never a ✗.
-    expect(row(103)?.tracker?.suggestion).toBe("not_seen");
+    // Not seen on Friday and not read on Saturday: the night checkpoint only.
+    expect(row(103)?.tracker).toEqual({
+      suggestion: "not_seen",
+      checkpoints: [{ pass: "night", at: night, on: false }],
+    });
     expect(row(104)?.tracker).toBeNull();
-    // On Friday night, the 8-hour shield seen at 22:32 ST may end before KvK.
     const friday = await prepView(db, access, opened as NonNullable<typeof opened>, {
       zone: ZONE,
       now: at("2026-11-21T01:40:00Z"),
@@ -136,6 +144,24 @@ describe("Raid prep (D137)", () => {
         [104, "yes"],
       ]),
     );
+    // Accept only applies the tracker's reading: its ✓ is the tracker's, so a later morning reading that
+    // sees no shield on 104 still updates it, while the officer's tapped ✗ on 101 stays (D137, 2026-11-21).
+    const later = { unionId: OGS, readAt: at("2026-11-21T12:40:00Z"), shielding: 0, shieldType: 0 };
+    await db.insert(playerReads).values([
+      { ...later, uid: 101 },
+      { ...later, uid: 104 },
+    ]);
+    const scope = { workspaceId: access.workspaceId, unionId: OGS };
+    const fill = { now: at("2026-11-21T12:45:00Z"), zone: ZONE };
+    expect(await fillRaidPrep(db, scope, "2026-11-20", fill)).toBe(2);
+    const shield = await db.select().from(rollCallMarks).where(eq(rollCallMarks.part, "main"));
+    const of = (uid: number) =>
+      shield.filter((m) => m.uid === uid).map((m) => [m.version, m.mark, m.byTracker]);
+    expect(of(104)).toEqual([
+      [1, "yes", true],
+      [2, "no", true],
+    ]);
+    expect(of(101)).toEqual([[1, "no", false]]);
   });
 
   it("keeps the squads-off-the-wall mark apart from the Shield mark", async () => {
@@ -165,5 +191,40 @@ describe("Raid prep (D137)", () => {
       NOW,
     );
     expect(refused).toEqual({ ok: false, code: "invalid" });
+  });
+
+  it("shows the tick's marks as to check until Checked or a tap on the row (2026-11-21)", async () => {
+    const access = await signedIn();
+    const seen = { unionId: OGS, uid: 104, readAt: at("2026-11-21T12:10:00Z"), shielding: 1 };
+    await db.insert(playerReads).values({ ...seen, shieldType: 0, mapUpdatedAt: NOW });
+    const filled = at("2026-11-21T12:20:00Z");
+    const scope = { workspaceId: access.workspaceId, unionId: OGS };
+    // The morning check: ✓ for 101 and 104, ✗ No shield seen for 102; 103 has no morning reading.
+    expect(await fillRaidPrep(db, scope, "2026-11-20", { now: filled, zone: ZONE })).toBe(3);
+    // "Add a roll call" on another day of that week opens the tracker's Raid prep: one a week.
+    const occasion = await raidPrep(access);
+    const friday = await addCall(db, access, { kind: "shield", day: "2026-11-20" }, randomUUID());
+    expect(friday.id).toBe(occasion.id);
+    const view = async () => {
+      const opened = await openOccasion(db, access, occasion);
+      return prepView(db, access, opened as NonNullable<typeof opened>, { zone: ZONE, now: NOW });
+    };
+    const first = await view();
+    expect(first.toCheckAt).toBe(filled.getTime());
+    expect(first.rows.get(101)?.fromTracker).toEqual({ unchecked: true });
+    expect(first.rows.get(102)?.fromTracker).toEqual({ unchecked: true });
+    expect(first.rows.get(103)?.fromTracker).toBeNull();
+    // A wall tap on 104's row checks that row; Checked checks the rest it saw.
+    await markOne(db, access, { occasion, uid: 104, mark: "yes", version: 0, part: "wall" }, NOW);
+    expect((await view()).rows.get(104)?.fromTracker).toEqual({ unchecked: false });
+    expect(await checkTracker(db, access, { occasion, seen: filled.getTime() }, NOW)).toEqual({
+      ok: true,
+    });
+    const checked = await view();
+    expect(checked.toCheckAt).toBeNull();
+    expect(checked.rows.get(101)?.fromTracker).toEqual({ unchecked: false });
+    // ✓ on the tracker's ✓ makes it the officer's own.
+    await markOne(db, access, { occasion, uid: 101, mark: "yes", version: 1 }, NOW);
+    expect((await view()).rows.get(101)?.fromTracker).toBeNull();
   });
 });

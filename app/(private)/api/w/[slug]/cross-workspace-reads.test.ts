@@ -5,7 +5,7 @@
 // only.
 import { randomUUID } from "node:crypto";
 
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { AppContext } from "@/lib/app-context";
@@ -24,9 +24,11 @@ import { noticeDetail, noticeHistory } from "@/lib/private/notices";
 import { prepView } from "@/lib/private/raid-prep";
 import { addCall, openOccasion } from "@/lib/private/roll-call";
 import { callView } from "@/lib/private/roll-call-view";
+import { fillRaidPrep } from "@/lib/raid-prep-fill";
 import { quotaDayRead } from "@/lib/schedule";
 import { dailyReads, dailyRosters } from "@/lib/schema";
 import { workspaceKeys } from "@/lib/schema-keys";
+import { rollCallMarks, rollCalls } from "@/lib/schema-rollcall";
 import { playerHistory, playerReads, squadQueue, squadReads } from "@/lib/schema-squads";
 import { PRIVATE_MARKERS } from "@/lib/workspace-data.test-helpers";
 import { masterFingerprint } from "@/lib/workspace-keys";
@@ -118,6 +120,30 @@ describe("the desk's pages given Bravo's ids, for Alpha's officer (issue 471)", 
     });
     expect(view.rows.has(202)).toBe(false);
     expect(view.night).toMatchObject({ read: 1, on: 0 });
+  });
+
+  it("fill Alpha's Raid prep from Alpha's readings only, and never Bravo's (D137, 2026-11-21)", async () => {
+    // Friday 23:31 ST: both alliances' members seen with a shield.
+    const night = new Date("2026-11-21T01:31:00Z");
+    const seen = { readAt: night, shielding: 1, shieldType: 0, mapUpdatedAt: night };
+    await db.insert(playerReads).values([
+      { ...seen, unionId: BRAVO, uid: 202 },
+      { ...seen, unionId: ALPHA, uid: 101 },
+    ]);
+    // Alpha's seeded Raid prep mark of 101 is gone, so the fill has someone to mark.
+    const shield = (ws: number) => and(eq(rollCalls.workspaceId, ws), eq(rollCalls.kind, "shield"));
+    const [alphaCall] = await db.select().from(rollCalls).where(shield(a.workspaceId));
+    await db.delete(rollCallMarks).where(eq(rollCallMarks.rollCallId, alphaCall?.id ?? 0));
+    const before = new Set((await db.select().from(rollCallMarks)).map((m) => m.id));
+    const bravoBefore = await db.select().from(rollCalls).where(shield(b.workspace.id));
+    const scope = { workspaceId: a.workspaceId, unionId: ALPHA };
+    expect(await fillRaidPrep(db, scope, "2026-11-20", { now: night, zone: ZONE })).toBe(1);
+    // One mark in all: Alpha's 101, in Alpha's Raid prep. Bravo's 202 and Bravo's roll calls are untouched.
+    const added = (await db.select().from(rollCallMarks)).filter((m) => !before.has(m.id));
+    expect(added.map((m) => [m.uid, m.rollCallId, m.byTracker])).toEqual([
+      [101, alphaCall?.id, true],
+    ]);
+    expect(await db.select().from(rollCalls).where(shield(b.workspace.id))).toEqual(bravoBefore);
   });
 
   it("write Alpha's Follow-up messages from Alpha's own reads only, never Bravo's (D140)", async () => {

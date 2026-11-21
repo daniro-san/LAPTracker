@@ -7,6 +7,7 @@
 import { sql } from "drizzle-orm";
 import {
   bigint,
+  boolean,
   check,
   date,
   index,
@@ -60,6 +61,11 @@ export const rollCalls = pgTable(
     archivedBy: integer("archived_by").references(() => workspaceUsers.id, {
       onDelete: "set null",
     }),
+    /**
+     * Raid prep (D137, 2026-11-21): the newest tracker-written mark an officer saw when they pressed "Looks
+     * right". Tracker marks written after it are still to check.
+     */
+    trackerCheckedAt: tstz("tracker_checked_at"),
   },
   (t) => [
     index("roll_calls_workspace_week_idx").on(t.workspaceId, t.week),
@@ -85,7 +91,9 @@ export const rollCalls = pgTable(
 /**
  * One write of one member's mark: `yes`, `no`, `assumed` ("no problem seen", the Raid Shield's bulk
  * answer) or null (cleared). `version` counts that member's writes in that roll call and `part`. `part` is
- * `main` (the roll call's own mark) or, on Raid prep (D137), `wall`: squads off the wall.
+ * `main` (the roll call's own mark) or, on Raid prep (D137), `wall`: squads off the wall. `by_tracker`: written
+ * by the tick from the Raid Shield check's reading (D137, 2026-11-21), with no officer; an officer's write
+ * of the same member is the next version, their own.
  */
 export const rollCallMarks = pgTable(
   "roll_call_marks",
@@ -102,6 +110,7 @@ export const rollCallMarks = pgTable(
     mark: text("mark"),
     writtenBy: integer("written_by").references(() => workspaceUsers.id, { onDelete: "set null" }),
     writtenAt: tstz("written_at").notNull(),
+    byTracker: boolean("by_tracker").notNull().default(false),
   },
   (t) => [
     unique("roll_call_marks_version_unique").on(t.rollCallId, t.uid, t.part, t.version),
