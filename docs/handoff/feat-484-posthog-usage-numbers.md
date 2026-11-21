@@ -221,4 +221,4 @@ Follow-ups, not built:
 - `ws_board_section_viewed` cannot count notices read: it fires when the heading scrolls into view, even with no notices.
 </adjustments>
 
-PR: (added by the orchestrator)
+PR: https://github.com/daniro-san/LAPTracker/pull/546
