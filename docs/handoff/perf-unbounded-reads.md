@@ -153,4 +153,4 @@ Unchanged: `endOfDayReads`, 7–13 s a day, flat; `firstSeenDays`, 2.7 s a day, 
 - Next growing reads, in order: `firstSeenDays`, then `clearOldPlayerRaw`'s partial index.
 </adjustments>
 
-PR: (added by the orchestrator)
+PR: https://github.com/daniro-san/LAPTracker/pull/576
